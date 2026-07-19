@@ -41,7 +41,8 @@ EnterMap::
 OverworldLoop::
 	call DelayFrame
 OverworldLoopLessDelay::
-	call DelayFrame
+	; 60FPS: GBC double-speed is already enabled by InitGbcMode, so only one
+	; VBlank wait is needed for each normal overworld update.
 	call LoadGBPal
 	ld a,[wd736]
 	bit 6,a ; jumping down a ledge?
@@ -271,7 +272,9 @@ OverworldLoopLessDelay::
 	jp c,OverworldLoop
 
 .noCollision
-	ld a,$08
+	; 60FPS: double the number of movement updates so one 16-pixel step keeps
+	; the original duration while scrolling one pixel per rendered frame.
+	ld a,$10
 	ld [wWalkCounter],a
 	jr .moveAhead2
 
