@@ -18,7 +18,8 @@ AdvancePlayerSprite_::
 	ld [wXCoord],a
 .afterUpdateMapCoords
 	ld a,[wWalkCounter] ; walking animation counter
-	cp a,$07
+	; 60FPS: the first update now occurs at $0f because wWalkCounter starts at $10.
+	cp a,$0f
 	jp nz,.scrollBackgroundAndSprites
 ; if this is the first iteration of the animation
 	ld a,c
@@ -165,8 +166,7 @@ AdvancePlayerSprite_::
 	ld b,a
 	ld a,[wSpriteStateData1 + 5] ; delta X
 	ld c,a
-	sla b
-	sla c
+	; 60FPS: scroll one pixel per update instead of two pixels every other frame.
 	ld a,[hSCY]
 	add b
 	ld [hSCY],a ; update background scroll Y
