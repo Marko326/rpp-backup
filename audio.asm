@@ -293,7 +293,12 @@ PlayBattleMusic::
 	ld [MusicFade], a
 	dec a
 	ld [wNewSoundID], a
-	call PlayMusic ; stop music
+
+	; Audio fix: $ff is the stop command handled by PlaySound.
+	; Calling PlayMusic directly with $ff treats it as an invalid
+	; music ID and reads beyond the Music pointer table.
+	call PlaySound
+
 	call DelayFrame
 	;ld c, BANK(Music_GymLeaderBattle)
 	ld a, [wGymLeaderNo]
