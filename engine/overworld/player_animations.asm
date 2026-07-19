@@ -55,7 +55,8 @@ EnterMapAnim:
 	ld hl, wFlyAnimUsingCoordList
 	xor a ; is using coord list
 	ld [hli], a ; wFlyAnimUsingCoordList
-	ld a, 12
+	; 60FPS: the interpolated entry animation contains 36 coordinate pairs.
+	ld a, 36
 	ld [hli], a ; wFlyAnimCounter
 	ld [hl], $8 ; wFlyAnimBirdSpriteImageIndex (facing right)
 	ld de, FlyAnimationEnterScreenCoords
@@ -67,17 +68,42 @@ FlyAnimationEnterScreenCoords:
 ; y, x pairs
 ; This is the sequence of screen coordinates used by the overworld
 ; Fly animation when the player is entering a map.
+; 60FPS: interpolated coordinates provide one position update per rendered frame.
 	db $05, $98
+	db $08, $95
+	db $0B, $92
 	db $0F, $90
+	db $12, $8D
+	db $15, $8A
 	db $18, $88
+	db $1B, $85
+	db $1E, $82
 	db $20, $80
+	db $22, $7D
+	db $25, $7A
 	db $27, $78
+	db $29, $75
+	db $2B, $72
 	db $2D, $70
+	db $2F, $6D
+	db $30, $6A
 	db $32, $68
+	db $33, $65
+	db $35, $62
 	db $36, $60
+	db $37, $5D
+	db $38, $5A
 	db $39, $58
+	db $3A, $55
+	db $3A, $52
 	db $3B, $50
+	db $3B, $4D
+	db $3B, $4A
 	db $3C, $48
+	db $3C, $45
+	db $3C, $42
+	db $3C, $40
+	db $3C, $40
 	db $3C, $40
 
 PlayerSpinWhileMovingDown:
@@ -142,7 +168,8 @@ _LeaveMapAnim:
 	ld hl, wFlyAnimUsingCoordList
 	ld a, $ff ; is not using coord list (flap in place)
 	ld [hli], a ; wFlyAnimUsingCoordList
-	ld a, 8
+	; 60FPS: keep the original in-place duration while updating every frame.
+	ld a, 24
 	ld [hli], a ; wFlyAnimCounter
 	ld [hl], $c ; wFlyAnimBirdSpriteImageIndex
 	call DoFlyAnimation
@@ -151,7 +178,8 @@ _LeaveMapAnim:
 	ld hl, wFlyAnimUsingCoordList
 	xor a ; is using coord list
 	ld [hli], a ; wFlyAnimUsingCoordList
-	ld a, $c
+	; 60FPS: the interpolated first flight path contains 36 coordinate pairs.
+	ld a, 36
 	ld [hli], a ; wFlyAnimCounter
 	ld [hl], $c ; wFlyAnimBirdSpriteImageIndex (facing right)
 	ld de, FlyAnimationScreenCoords1
@@ -159,7 +187,8 @@ _LeaveMapAnim:
 	ld c, 40
 	call DelayFrames
 	ld hl, wFlyAnimCounter
-	ld a, 11
+	; 60FPS: the interpolated second flight path contains 33 coordinate pairs.
+	ld a, 33
 	ld [hli], a ; wFlyAnimCounter
 	ld [hl], $8 ; wFlyAnimBirdSpriteImageIndex (facing left)
 	ld de, FlyAnimationScreenCoords2
@@ -171,35 +200,82 @@ FlyAnimationScreenCoords1:
 ; y, x pairs
 ; This is the sequence of screen coordinates used by the first part
 ; of the Fly overworld animation.
+; 60FPS: interpolated coordinates provide one position update per rendered frame.
 	db $3C, $48
+	db $3C, $4B
+	db $3C, $4E
 	db $3C, $50
+	db $3C, $52
+	db $3C, $55
 	db $3B, $58
+	db $3B, $5B
+	db $3B, $5E
 	db $3A, $60
+	db $3A, $62
+	db $3A, $65
 	db $39, $68
+	db $39, $6B
+	db $38, $6E
 	db $37, $70
+	db $37, $73
+	db $37, $76
 	db $37, $78
+	db $35, $7B
+	db $34, $7E
 	db $33, $80
+	db $32, $82
+	db $31, $85
 	db $30, $88
+	db $2F, $8B
+	db $2E, $8E
 	db $2D, $90
+	db $2C, $92
+	db $2B, $95
 	db $2A, $98
+	db $29, $9B
+	db $28, $9E
 	db $27, $A0
+	db $26, $A3
+	db $25, $A6
 
 FlyAnimationScreenCoords2:
 ; y, x pairs
 ; This is the sequence of screen coordinates used by the second part
 ; of the Fly overworld animation.
+; 60FPS: interpolated coordinates provide one position update per rendered frame.
 	db $1A, $90
+	db $1A, $8B
+	db $1A, $86
 	db $19, $80
+	db $18, $79
+	db $18, $74
 	db $17, $70
+	db $17, $6B
+	db $16, $66
 	db $15, $60
+	db $14, $5B
+	db $13, $56
 	db $12, $50
+	db $11, $4B
+	db $10, $46
 	db $0F, $40
+	db $0E, $3B
+	db $0D, $36
 	db $0C, $30
+	db $0B, $2B
+	db $0A, $26
 	db $09, $20
+	db $08, $1B
+	db $06, $16
 	db $05, $10
+	db $03, $0B
+	db $01, $06
 	db $00, $00
-
+	db $00, $00
+	db $FA, $00
 	db $F0, $00
+	db $EB, $00
+	db $E6, $00
 
 LeaveMapThroughHoleAnim:
 	ld a, $ff
@@ -224,11 +300,21 @@ LeaveMapThroughHoleAnim:
 	jp RestoreFacingDirectionAndYScreenPos
 
 DoFlyAnimation:
+	; 60FPS: coordinates update every frame, while wing flapping remains at
+	; the original once-per-three-frames cadence.
+	ld a, 2
+	push af
+.loop
+	pop af
+	push af
+	and a
+	jr nz, .noFlapYet
 	ld a, [wFlyAnimBirdSpriteImageIndex]
 	xor $1 ; make the bird flap its wings
 	ld [wFlyAnimBirdSpriteImageIndex], a
 	ld [wSpriteStateData1 + 2], a
-	call Delay3
+.noFlapYet
+	call DelayFrame
 	ld a, [wFlyAnimUsingCoordList]
 	cp $ff
 	jr z, .skipCopyingCoords ; if the bird is flapping its wings in place
@@ -241,10 +327,17 @@ DoFlyAnimation:
 	inc de
 	ld [hl], a
 .skipCopyingCoords
-	ld a, [wFlyAnimCounter]
+	pop af
 	dec a
-	ld [wFlyAnimCounter], a
-	jr nz, DoFlyAnimation
+	cp $ff
+	jr nz, .keepFlapCounter
+	ld a, 2
+.keepFlapCounter
+	push af
+	ld hl, wFlyAnimCounter
+	dec [hl]
+	jr nz, .loop
+	pop af
 	ret
 
 LoadBirdSpriteGraphics:
@@ -541,6 +634,8 @@ _HandleMidJump:
 	ld a, [wPlayerJumpingYScreenCoordsIndex]
 	ld c, a
 	inc a
+	; 60FPS: repeat each ledge Y coordinate for one extra rendered frame.
+	call Ledge60FPS
 	cp $10
 	jr nc, .finishedJump
 	ld [wPlayerJumpingYScreenCoordsIndex], a
@@ -567,6 +662,15 @@ _HandleMidJump:
 	res 7, [hl] ; not simulating joypad states any more
 	xor a
 	ld [wJoyIgnore], a
+	ret
+
+; Adjust the ledge animation index using the player sprite's current 60 FPS phase.
+; c2xA is toggled by ToggleSprite60FPSPhase while UpdateSprites runs.
+Ledge60FPS:
+	push hl
+	ld hl, wSpriteStateData2 + $0a
+	sub [hl]
+	pop hl
 	ret
 
 PlayerJumpingYScreenCoords:

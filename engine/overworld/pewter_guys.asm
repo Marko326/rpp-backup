@@ -37,9 +37,18 @@ PewterGuys:
 	ret z
 	ld [de], a
 	inc de
-	ld a, [wSimulatedJoypadStatesIndex]
-	inc a
-	ld [wSimulatedJoypadStatesIndex], a
+	push hl
+	ld hl, wSimulatedJoypadStatesIndex
+	; 60FPS: zero is a one-frame pause marker, so duplicate it to preserve
+	; the original scripted pause duration after the overworld rate doubles.
+	and a
+	jr nz, .notWaitIndicator
+	ld [de], a
+	inc de
+	inc [hl]
+.notWaitIndicator
+	inc [hl]
+	pop hl
 	jr .copyMovementDataLoop
 .nextEntry1
 	inc hl
