@@ -12,29 +12,59 @@ ChangeBGPalColor0_4Frames:
 	ret
 
 PredefShakeScreenVertically:
-; Moves the window down and then back in a sequence of progressively smaller
-; numbers of pixels, starting at b.
+; Keep the apparent rpp-backup-flash cadence without writing rWY outside VBlank.
+; Each downward pulse lasts 2 frames; the removed flash frame is replaced by
+; one frame at the normal window position.
 	call GetPredefRegisters
 	ld a, 1
 	ld [wDisableVBlankWYUpdate], a
-	xor a
-.loop
-	ld [$ff96], a
-	call .MutateWY
-	call .MutateWY
-	dec b
+
+; Play the first pulse, then preserve the longer first return interval.
 	ld a, b
-	jr nz, .loop
+	ld c, 2
+	call .SetWYForFrames
+	dec b
+	jr z, .finish
 	xor a
+	ld c, 7
+	call .SetWYForFrames
+
+.loop
+	ld a, b
+	ld c, 2
+	call .SetWYForFrames
+	dec b
+	jr z, .finish
+	xor a
+	ld c, 4
+	call .SetWYForFrames
+	jr .loop
+
+.finish
+; Replace the final transition frame with a clean frame at the normal position.
+	xor a
+	ld c, 1
+	call .SetWYForFrames
+
+; Restore both the shadow register and normal VBlank updating.
+	xor a
+	ld [hWY], a
 	ld [wDisableVBlankWYUpdate], a
 	ret
 
-.MutateWY
-	ld a, [$ff96]
-	xor b
-	ld [$ff96], a
-	ld [rWY], a
-	ld c, 3
+.SetWYForFrames
+; Latch WY during VBlank, then keep it fixed for the remaining frames.
+	ld [hWY], a
+	push bc
+	xor a
+	ld [wDisableVBlankWYUpdate], a
+	ld c, 1
+	call DelayFrames
+	ld a, 1
+	ld [wDisableVBlankWYUpdate], a
+	pop bc
+	dec c
+	ret z
 	jp DelayFrames
 
 PredefShakeScreenHorizontally:
