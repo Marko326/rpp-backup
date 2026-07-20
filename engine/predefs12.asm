@@ -12,19 +12,31 @@ ChangeBGPalColor0_4Frames:
 	ret
 
 PredefShakeScreenVertically:
-; Moves the window down and then back in a sequence of progressively smaller
-; numbers of pixels, starting at b.
+; Keep the original 3-frame mutation cadence, but latch every WY change in
+; VBlank instead of writing rWY while the LCD may be drawing.
 	call GetPredefRegisters
+
+; The original routine returns to the shadow WY value. Preserve it rather than
+; assuming that the normal window position is always 0.
+	ld a, [hWY]
+	push af
 	ld a, 1
 	ld [wDisableVBlankWYUpdate], a
 	xor a
+
 .loop
+; Retain the original state machine exactly. Its first iteration is b -> 0;
+; later iterations are 0 -> b as b decreases.
 	ld [$ff96], a
 	call .MutateWY
 	call .MutateWY
 	dec b
 	ld a, b
 	jr nz, .loop
+
+; Restore the caller's shadow WY and let the next VBlank copy it safely.
+	pop af
+	ld [hWY], a
 	xor a
 	ld [wDisableVBlankWYUpdate], a
 	ret
@@ -33,8 +45,22 @@ PredefShakeScreenVertically:
 	ld a, [$ff96]
 	xor b
 	ld [$ff96], a
-	ld [rWY], a
 	ld c, 3
+	jp .SetWYForFrames
+
+.SetWYForFrames
+; Latch WY during VBlank, then keep it fixed for the remaining frames.
+	ld [hWY], a
+	push bc
+	xor a
+	ld [wDisableVBlankWYUpdate], a
+	ld c, 1
+	call DelayFrames
+	ld a, 1
+	ld [wDisableVBlankWYUpdate], a
+	pop bc
+	dec c
+	ret z
 	jp DelayFrames
 
 PredefShakeScreenHorizontally:
