@@ -119,10 +119,68 @@ StatusScreen:
 	coord hl, 10, 9
 	ld de, Type1Text
 	call PlaceString ; "TYPE1/"
+	; Clear the complete HP-number field before DrawHP. PrintNumber does not
+	; overwrite suppressed leading digits, so stale DV/Stat Exp digits would
+	; otherwise remain beside the normal HP fraction.
+	call StatusScreen_ClearHPValue
 	coord hl, 11, 3
 	predef DrawHP
+
+	; DrawHP returns the HP-bar length in E. Read the color immediately,
+	; before DV/Stat Exp printing reuses DE as a data pointer.
 	ld hl, wStatusScreenHPBarColor
 	call GetHealthBarColor
+
+	; --- BEGIN: held START/SELECT stat display ---
+	; Parse all five DVs before the stat box is printed.
+	call DVParse
+
+	; Default to normal calculated stats.
+	xor a
+	ld [wStatusScreenStatMode], a
+
+	; Input is read only here, never inside the shared PrintStatsBox routine.
+	; SELECT has priority when START and SELECT are held together.
+	call Joypad
+	ld a, [hJoyHeld]
+	bit BIT_SELECT, a
+	jr z, .CheckHeldStartSS
+
+	ld a, $02 ; Stat Exp
+	jr .StoreHeldStatModeSS
+
+.CheckHeldStartSS
+	bit BIT_START, a
+	jr z, .HeldHPDisplayDoneSS
+
+	ld a, $01 ; DV
+
+.StoreHeldStatModeSS
+	ld [wStatusScreenStatMode], a
+
+	; Clear all seven tiles and return HL to the first tile before printing.
+	; This prevents 2/5-digit values from surviving under a later 3/3 HP fraction.
+	call StatusScreen_ClearHPValue
+
+	ld a, [wStatusScreenStatMode]
+	cp $02
+	jr z, .PrintHeldHPStatExpSS
+
+	; START: HP DV
+	ld de, wDVCalcVar2 + 4
+	lb bc, 1, 2
+	jr .PrintHeldHPNumberSS
+
+.PrintHeldHPStatExpSS
+	; SELECT: HP Stat Exp
+	ld de, wLoadedMonHPExp
+	lb bc, 2, 5
+
+.PrintHeldHPNumberSS
+	call PrintNumber
+
+.HeldHPDisplayDoneSS
+	; --- END: held START/SELECT stat display ---
 	; is mon supposed to be shiny?
 	ld b, Bank(IsMonShiny)
 	ld hl, IsMonShiny
@@ -307,7 +365,41 @@ PrintGenderStatusScreen: ; called on status screen
 	ld [hl], a
 	ret
 
+; Return HL at the first tile of the seven-tile HP / Max HP field.
+StatusScreen_GetHPValuePosition:
+	coord hl, 11, 3
+	ld a, [hFlags_0xFFF6]
+	bit 0, a
+	jr z, .BelowBar
+	ld bc, $9
+	jr .PositionReady
+
+.BelowBar
+	ld bc, SCREEN_WIDTH + 1
+
+.PositionReady
+	add hl, bc
+	ret
+
+
+; Clear the complete HP-number field and return HL to its first tile.
+StatusScreen_ClearHPValue:
+	call StatusScreen_GetHPValuePosition
+	push hl
+	ld b, 7
+	ld a, " "
+
+.ClearLoop
+	ld [hli], a
+	dec b
+	jr nz, .ClearLoop
+	pop hl
+	ret
+
+
 PrintStatsBox:
+	; d = 0: status screen
+	; d != 0: level-up, Rare Candy, and other stat windows
 	ld a, d
 	and a ; a is 0 from the status screen
 	jr nz, .DifferentBox
@@ -317,7 +409,12 @@ PrintStatsBox:
 	call TextBoxBorder ; Draws the box
 	coord hl, 1, 9 ; Start printing stats from here
 	ld bc, $0019 ; Number offset
+
+	; Save that this call came from the status screen.
+	; PlaceString uses DE, so the original D register cannot be checked later.
+	ld a, $01
 	jr .PrintStats
+
 .DifferentBox
 	coord hl, 9, 2
 	ld b, 8
@@ -325,7 +422,12 @@ PrintStatsBox:
 	call TextBoxBorder
 	coord hl, 11, 3
 	ld bc, $0018
+
+	; Non-status screens must always show normal calculated stats.
+	xor a
+
 .PrintStats
+	push af
 	push bc
 	push hl
 	ld de, StatsText
@@ -333,6 +435,19 @@ PrintStatsBox:
 	pop hl
 	pop bc
 	add hl, bc
+	pop af
+
+	; Do not let START/SELECT affect level-up or Rare Candy stat windows.
+	and a
+	jr z, .PrintRegularStats
+
+	ld a, [wStatusScreenStatMode]
+	cp $02
+	jr z, .PrintStatExp
+	cp $01
+	jr z, .PrintDVs
+
+.PrintRegularStats
 	ld de, wLoadedMonAttack
 	lb bc, 2, 3
 	call PrintStat
@@ -342,6 +457,32 @@ PrintStatsBox:
 	call PrintStat
 	ld de, wLoadedMonSpecial
 	jp PrintNumber
+
+.PrintStatExp
+	; Stat Exp uses five digits, so begin two tiles farther left.
+	dec hl
+	dec hl
+	ld de, wLoadedMonAttackExp
+	lb bc, 2, 5
+	call PrintStat
+	ld de, wLoadedMonDefenseExp
+	call PrintStat
+	ld de, wLoadedMonSpeedExp
+	call PrintStat
+	ld de, wLoadedMonSpecialExp
+	jp PrintNumber
+
+.PrintDVs
+	ld de, wDVCalcVar2
+	lb bc, 1, 2
+	call PrintStat
+	ld de, wDVCalcVar2 + 1
+	call PrintStat
+	ld de, wDVCalcVar2 + 2
+	call PrintStat
+	ld de, wDVCalcVar2 + 3
+	jp PrintNumber
+
 PrintStat:
 	push hl
 	call PrintNumber
@@ -349,6 +490,7 @@ PrintStat:
 	ld de, SCREEN_WIDTH * 2
 	add hl, de
 	ret
+	; --- END: START/SELECT 扩展显示（四维） ---
 
 StatsText:
 	db   "Attack"
@@ -542,3 +684,62 @@ StatusScreen_PrintPP:
 	dec c
 	jr nz, StatusScreen_PrintPP
 	ret
+
+; --- BEGIN: DV parsing from yellow legacy ---
+; 解析 4 项 DV 并组合 HP DV，结果写入 wDVCalcVar2..wDVCalcVar2+4
+DVParse:
+	push hl
+	push bc
+	ld hl, wDVCalcVar2
+	ld b, $00
+
+	; Attack DV
+	ld a, [wLoadedMonDVs]
+	swap a
+	and $0F
+	ld [hl], a
+	inc hl
+	and $01
+	sla a
+	sla a
+	sla a
+	or b
+	ld b, a
+
+	; Defense DV
+	ld a, [wLoadedMonDVs]
+	and $0F
+	ld [hl], a
+	inc hl
+	and $01
+	sla a
+	sla a
+	or b
+	ld b, a
+
+	; Speed DV
+	ld a, [wLoadedMonDVs + 1]
+	swap a
+	and $0F
+	ld [hl], a
+	inc hl
+	and $01
+	sla a
+	or b
+	ld b, a
+
+	; Special DV
+	ld a, [wLoadedMonDVs + 1]
+	and $0F
+	ld [hl], a
+	inc hl
+	and $01
+	or b
+	ld b, a
+
+	; HP DV（由最低位组合）
+	ld [hl], b
+	pop bc
+	pop hl
+	ret
+; --- END: DV parsing from yellow legacy ---
