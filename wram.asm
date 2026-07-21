@@ -3371,8 +3371,21 @@ wCurMapScript:: ; da39
 ; mostly copied from map-specific map script pointer and written back later
 	ds 1
 
-; unused?
-	ds 7
+; --- BEGIN: status screen DV / Stat Exp variables ---
+; 0 = normal stats
+; 1 = DVs
+; 2 = Stat Exp
+wStatusScreenStatMode::
+	ds 1
+
+; Keep the original 7-byte WRAM allocation unchanged so later addresses do not move.
+	ds 1
+
+; Attack / Defense / Speed / Special / HP DV
+wDVCalcVar2::
+	ds 5
+; --- END: status screen DV / Stat Exp variables ---
+
 
 wPlayTimeHours:: ; da41
 	ds 1

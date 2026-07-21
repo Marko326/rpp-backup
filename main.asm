@@ -188,7 +188,6 @@ PlayerCharacterTitleGraphicsEnd:
 SECTION "Battle (bank 4)", ROMX, BANK[$4]
 
 INCLUDE "engine/overworld/is_player_just_outside_map.asm"
-INCLUDE "engine/menu/status_screen.asm"
 INCLUDE "engine/menu/party_menu.asm"
 
 RedPicFront::  INCBIN "pic/trainer/red.pic"
@@ -2719,3 +2718,4 @@ SECTION "Trainer Parties", ROMX,BANK[$3B]
 INCLUDE "engine/battle/read_trainer_party.asm"
 INCLUDE "engine/overworld/advance_player_sprite.asm"
 INCLUDE "engine/mon_gender.asm"
+INCLUDE "engine/menu/status_screen.asm"
