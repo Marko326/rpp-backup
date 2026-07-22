@@ -1,4 +1,33 @@
 
+
+; Fill the real CGB BG and OBJ palette RAM with black while the LCD is off.
+; This is used by the battle scene setup to hide a stale white palette frame
+; left by the encounter transition. The normal Red++ palette pipeline restores
+; the battle palettes after the LCD is enabled again.
+LoadBlackPalettesWhileLCDOff:
+	push bc
+
+	ld a, $80 ; start at color 0 and enable automatic index increment
+	ld [rBGPI], a
+	xor a ; RGB 0,0,0: both bytes of every color are zero
+	ld c, $40 ; 8 palettes * 4 colors * 2 bytes
+.bgPaletteLoop
+	ld [rBGPD], a
+	dec c
+	jr nz, .bgPaletteLoop
+
+	ld a, $80
+	ld [rOBPI], a
+	xor a
+	ld c, $40
+.objPaletteLoop
+	ld [rOBPD], a
+	dec c
+	jr nz, .objPaletteLoop
+
+	pop bc
+	ret
+
 ; Prepare stuff to be done during vblank
 ; This is called from the lcd interrupt, at line $70
 GbcPrepareVBlank:
