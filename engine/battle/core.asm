@@ -107,6 +107,12 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 	lb bc, 3, 7
 	call ClearScreenArea
 	call DisableLCD
+	; The Red++ color layer applies BGP/OBP changes during VBlank. The final
+	; white phase of the encounter flash can therefore remain in the real CGB
+	; palette RAM when the LCD is disabled. Prime both hardware palette banks
+	; to black before the LCD is enabled again so that stale white frame is
+	; never exposed.
+	callab LoadBlackPalettesWhileLCDOff
 	call LoadFontTilePatterns
 	call LoadHudAndHpBarAndStatusTilePatterns
 	ld hl, vBGMap0
@@ -6552,7 +6558,9 @@ DoBattleTransitionAndInitBattleVariables:
 .next
 	call DelayFrame
 	predef BattleTransition
-	callab LoadHudAndHpBarAndStatusTilePatterns
+	; These graphics are loaded again with the LCD disabled in
+	; SlidePlayerAndEnemySilhouettesOnScreen. Skip the first VBlank copy to
+	; shorten the black wait without changing the battle screen contents.
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ld a, $ff
