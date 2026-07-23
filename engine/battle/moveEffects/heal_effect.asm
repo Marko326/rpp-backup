@@ -42,7 +42,7 @@ HealEffect_:
 	res 0, [hl]
 	ld a, [bc]
 	and a
-	ld a, 3 ; Number of turns from Rest
+	ld a, 2 ; Number of turns from Rest 3turns → 2 turns
 	ld [bc], a
 	ld hl, StartedSleepingEffect
 	jr z, .printRestText
