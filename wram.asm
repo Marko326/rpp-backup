@@ -538,7 +538,9 @@ wPredefRegisters:: ; cc4f
 wTrainerHeaderFlagBit:: ; probably removable once I switch to Gen 2 style event flags
 	ds 1
 
-; unused?
+; Link opponent identity exchanged before entering the Cable Club map.
+; 0 = Red/male, 1 = Green/female.
+wLinkEnemyTrainerGender::
 	ds 1
 
 wNPCMovementScriptPointerTableNum:: ; cc57
@@ -550,8 +552,12 @@ wNPCMovementScriptBank:: ; cc58
 ; ROM bank of current NPC movement script
 	ds 1
 
-; unused?
-	ds 2
+; Keep battle-state flags in previously unused WRAM. This prevents them from
+; entering the serial player-data block and also preserves Red++ save offsets.
+wIsTrainerBattle::
+	ds 1
+wWasTrainerBattle::
+	ds 1
 
 wUnusedCC5B:: ; cc5b
 
@@ -2390,14 +2396,6 @@ wPartyMonOT::    ds NAME_LENGTH * PARTY_LENGTH ; d273
 wPartyMonNicks:: ds NAME_LENGTH * PARTY_LENGTH ; d2b5
 
 wPartyDataEnd::
-
-; Red++ battle-state flags must not sit between the serial preamble and
-; wPlayerName, or the receiver parses them as trainer/party data.  Keep them
-; outside both saved party data and saved main data instead.
-wIsTrainerBattle::
-	ds 1
-wWasTrainerBattle::
-	ds 1
 
 wMainDataStart::
 

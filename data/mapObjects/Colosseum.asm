@@ -6,4 +6,4 @@ ColosseumObject:
 	db $0 ; signs
 
 	db $1 ; objects
-	object SPRITE_RED, $2, $2, STAY, $0, $1 ; person
+	object VAR_SPRITE_1, $2, $2, STAY, $0, $1 ; linked opponent; set during handshake

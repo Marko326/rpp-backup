@@ -69,6 +69,7 @@ const_value = 1
 	const SPRITE_YOUNG_BOY                 ; $35
 	const SPRITE_GAMEBOY_KID               ; $36
 	const SPRITE_GAMEBOY_KID_COPY          ; $37
+SPRITE_LEAF EQU SPRITE_GAMEBOY_KID_COPY ; unused duplicate slot for linked Green/Leaf
 	const SPRITE_CLEFAIRY                  ; $38
 	const SPRITE_AGATHA                    ; $39
 	const SPRITE_BRUNO                     ; $3a

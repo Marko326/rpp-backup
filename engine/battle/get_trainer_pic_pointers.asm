@@ -1,10 +1,18 @@
 LoadTrainerPicPointer:: ; New function to load the pointer for the trainer's pic
 	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr nz, .notLinkBattle
+
+	; A link opponent has its own identity; do not hard-code Red.
+	ld a, [wLinkEnemyTrainerGender]
 	and a
 	ld a, PLAYER_M
-	jr nz, .linkBattle ; If it is a link battle, skip checking wTrainerPicID and load Red's sprite
+	jr z, .gotTrainerPicID
+	ld a, PLAYER_F
+	jr .gotTrainerPicID
+.notLinkBattle
 	ld a, [wTrainerPicID]
-.linkBattle
+.gotTrainerPicID
 	dec a
 	ld hl, TrainerPicPointers
 	ld bc, $3 ; length of each entry
