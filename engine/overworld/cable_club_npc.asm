@@ -1,6 +1,8 @@
 CableClubNPC:
 	ld hl, CableClubNPCWelcomeText
-	jp PrintText ; call PrintText
+	; Red++ temporarily returned here because its link data layout was broken.
+	; Continue into the original connection flow after printing the greeting.
+	call PrintText
 	CheckEvent EVENT_GOT_POKEDEX
 	jp nz, .receivedPokedex
 ; if the player hasn't received the pokedex
