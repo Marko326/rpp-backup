@@ -75,9 +75,17 @@ DeterminePaletteID:
 	; OPP_GARY, so ignore it)
 	ld a,[wLinkState]
 	cp LINK_STATE_BATTLING
+	jr nz, .notLinkTrainer
+
+	; Front trainer palette belongs to the remote player, independently of
+	; DeterminePaletteIDBack, which continues to use the local player's gender.
+	ld a, [wLinkEnemyTrainerGender]
+	and a
 	ld a, PAL_PLAYER_M
 	ret z
-	
+	ld a, PAL_PLAYER_F
+	ret
+.notLinkTrainer
 	ld a, [wTrainerPicID]
 	ld hl, TrainerPalettes
 	jr GetPaletteID

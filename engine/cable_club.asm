@@ -275,6 +275,13 @@ CableClub_DoBattleOrTradeAgain:
 	jr nz, .trading
 	ld a, LINK_STATE_BATTLING
 	ld [wLinkState], a
+	; Link battles are trainer battles, not wild encounters.
+	; Reset both flags explicitly because they are no longer serialized.
+	ld a, 1
+	ld [wIsTrainerBattle], a
+	xor a
+	ld [wWasTrainerBattle], a
+	ld [wBattleType], a ; ordinary trainer battle; no special wild-battle mode
 	ld a, OPP_SONY1
 	ld [wCurOpponent], a
 	call ClearScreen

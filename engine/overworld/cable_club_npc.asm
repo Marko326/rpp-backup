@@ -68,6 +68,10 @@ CableClubNPC:
 	xor a
 	ld [hl], a
 	ld [hSerialReceivedNewData], a
+	; Exchange Red/Green identity in the existing sync nybble.
+	; Add 1 so zero remains reserved for serial idle/sync traffic.
+	ld a, [wPlayerGender]
+	inc a
 	ld [wSerialExchangeNybbleSendData], a
 	call Serial_SyncAndExchangeNybble
 	ld hl, wUnknownSerialCounter
@@ -106,6 +110,26 @@ CableClubNPC:
 	ld [wMenuJoypadPollCount], a
 	ret
 .connected
+	; Save the remote identity independently from the local player.
+	; Unknown/legacy values safely fall back to Red.
+	ld a, [wSerialSyncAndExchangeNybbleReceiveData]
+	cp 2
+	ld a, 0
+	jr nz, .storeLinkEnemyGender
+	inc a
+.storeLinkEnemyGender
+	ld [wLinkEnemyTrainerGender], a
+
+	; The Cable Club object is VAR_SPRITE_1, so choose its actual graphic now.
+	ld a, [wLinkEnemyTrainerGender]
+	and a
+	ld a, SPRITE_RED
+	jr z, .storeLinkEnemySprite
+	ld a, SPRITE_LEAF
+.storeLinkEnemySprite
+	ld [wVarSprite1], a
+
+	; Clear the serial timeout counter before opening the Link Menu.
 	xor a
 	ld [hld], a
 	ld [hl], a

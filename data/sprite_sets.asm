@@ -460,10 +460,11 @@ SpriteSheetPointerTable:
 	db $c0 ; byte count
 	db BANK(GameboyKidSprite)
 
-	; SPRITE_GAMEBOY_KID_COPY
-	dw GameboyKidSprite
+	; SPRITE_GAMEBOY_KID_COPY / SPRITE_LEAF
+	; Reuse the formerly duplicated slot for the linked Green/Leaf avatar.
+	dw LeafSprite
 	db $c0 ; byte count
-	db BANK(GameboyKidSprite)
+	db BANK(LeafSprite)
 
 	; SPRITE_CLEFAIRY
 	dw ClefairySprite

@@ -69,10 +69,27 @@ ColorOverworldSprite:
 	ld e,a
 	ld d,wSpriteStateData1>>8
 	ld a,[de]		; Load A with picture ID
+
+	; Object state keeps VAR_SPRITE_* rather than the resolved graphic ID.
+	; Resolve it here so the remote player uses its own palette entry.
+	cp VAR_SPRITE_1
+	jr c, .notVariableSprite
+	push hl
+	sub VAR_SPRITE_1
+	ld e, a
+	ld d, 0
+	ld hl, wVarSprites
+	add hl, de
+	ld a, [hl]
+	pop hl
+	jr .regularSprite
+.notVariableSprite
 	dec a
 	and a
-	jr z, .playerSprite
-
+	jr z, .playerSprite ; only the real local SPRITE_RED uses local gender
+	inc a
+.regularSprite
+	dec a
 	ld de, SpritePaletteAssignments
 	add e
 	ld e,a
@@ -459,8 +476,8 @@ SpritePaletteAssignments: ; Characters on the overworld
 	; 0x36: SPRITE_GAMEBOY_KID
 	db PAL_OW_RANDOM
 
-	; 0x37: SPRITE_GAMEBOY_KID_COPY
-	db PAL_OW_RANDOM
+	; 0x37: SPRITE_GAMEBOY_KID_COPY / SPRITE_LEAF
+	db PAL_OW_GREEN ; linked Green/Leaf keeps a palette independent of local Red
 
 	; 0x38: SPRITE_CLEFAIRY
 	db PAL_OW_RED
