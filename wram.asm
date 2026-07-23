@@ -2366,11 +2366,8 @@ wEvoStoneItemID:: ; d156
 wSavedNPCMovementDirections2Index:: ; d157
 	ds 1
 
-wIsTrainerBattle::
-	ds 1
-wWasTrainerBattle::
-	ds 1
-
+; Keep wPlayerName exactly six bytes after wSerialPlayerDataBlock.
+; The Gen I link protocol treats those six bytes as its preamble.
 wPlayerName:: ; d158
 	ds NAME_LENGTH
 
@@ -2394,6 +2391,13 @@ wPartyMonNicks:: ds NAME_LENGTH * PARTY_LENGTH ; d2b5
 
 wPartyDataEnd::
 
+; Red++ battle-state flags must not sit between the serial preamble and
+; wPlayerName, or the receiver parses them as trainer/party data.  Keep them
+; outside both saved party data and saved main data instead.
+wIsTrainerBattle::
+	ds 1
+wWasTrainerBattle::
+	ds 1
 
 wMainDataStart::
 

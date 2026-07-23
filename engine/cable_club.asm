@@ -859,7 +859,18 @@ TradeCenter_Trade:
 	coord hl, 1, 14
 	ld de, TradeCompleted
 	call PlaceString
+
+	; SaveSAVtoSRAM2 is normally called by SaveSAVtoSRAM while audio is halted.
+	; A link trade calls it directly, so preserve the current state and prevent
+	; the audio update from changing ROM banking during the SRAM copy/checksum.
+	ld a, [wHaltAudio]
+	push af
+	ld a, 1
+	ld [wHaltAudio], a
 	predef SaveSAVtoSRAM2
+	pop af
+	ld [wHaltAudio], a
+
 	ld c, 50
 	call DelayFrames
 	xor a

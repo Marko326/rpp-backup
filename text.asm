@@ -2559,13 +2559,6 @@ _CableClubNPCAreaReservedFor2FriendsLinkedByCableText::
 _CableClubNPCWelcomeText::
 	text "Welcome to the"
 	line "Cable Club!"
-	
-	para "Unfortunately, the"
-	line "link machine is"
-	cont "broken."
-	
-	para "We're sorry for"
-	line "the inconvenience."
 	done
 
 _CableClubNPCPleaseApplyHereHaveToSaveText::
