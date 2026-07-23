@@ -1797,7 +1797,7 @@ Subanimation22:
 	db $47,$b0,$00
 
 Subanimation2d:
-	db $66
+	db $26
 	db $44,$64,$00
 	db $45,$65,$00
 	db $46,$66,$00
