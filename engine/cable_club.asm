@@ -916,13 +916,16 @@ CableClub_Run:
 	inc a ; LINK_STATE_IN_CABLE_CLUB
 	ld [wLinkState], a
 	ld [hJoy5], a
-	ld a, 10
+	; Red++ separates music playback from sound effects. MUSIC_CELADON and
+	; SFX_START_MENU both have numeric ID $06, so passing MUSIC_CELADON to
+	; PlaySound produced the menu-open sound and left the trade/battle music
+	; running. Restart the Cable Club room BGM through the music entry point.
+	xor a
 	ld [wAudioFadeOutControl], a
-	ld a, 0 ; BANK(Music_Celadon)
-	ld [wAudioSavedROMBank], a
 	ld a, MUSIC_CELADON
+	ld [wLastMusicSoundID], a
 	ld [wNewSoundID], a
-	jp PlaySound
+	jp PlayMusic
 
 EmptyFunc3:
 	ret
