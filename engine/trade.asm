@@ -59,6 +59,19 @@ TradeAnimCommon:
 	ld [hSCY], a
 	pop af
 	ld [wOptions], a
+
+	; Link trades must stay silent after the transfer animation until the
+	; "Trade completed!" message has been shown. Do not call PlayDefaultMusic
+	; here, because that starts the Cable Club map music during "Waiting...".
+	; In-game trades keep the original behavior and restore their map music.
+	ld a, [wLinkState]
+	cp LINK_STATE_TRADING
+	jr nz, .restoreDefaultMusic
+	xor a
+	ld [wLastMusicSoundID], a
+	call PlayMusic ; music ID 0 stops only the current background music
+	ret
+.restoreDefaultMusic
 	call PlayDefaultMusic
 	ret
 
