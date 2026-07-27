@@ -195,6 +195,16 @@ StatusScreen:
 .setPAL
 	ld b, SET_PAL_STATUS_SCREEN
 	call RunPaletteCommand
+
+	; Only the temporary Lv50 link mode hides the status-screen EXP bar.
+	; Normal Colosseum, Trade Center and all single-player screens keep it.
+	ld a, [wLinkState]
+	and a
+	jr z, .drawEXPBar
+	ld a, [wLinkBattleMode]
+	cp LINK_MODE_COLOSSEUM_50
+	jr z, .skipLinkBattleEXPBar
+.drawEXPBar
 	coord de, 18, 5
 	ld a, [wBattleMonLevel]
 	push af
@@ -206,6 +216,7 @@ StatusScreen:
 	ld [wLoadedMonLevel], a
 	pop af
 	ld [wBattleMonLevel], a
+.skipLinkBattleEXPBar
 	coord hl, 16, 6
 	ld de, wLoadedMonStatus
 	call PrintStatusCondition
@@ -593,6 +604,8 @@ StatusScreen2:
 	cp $4
 	jr nz, .PrintPP
 .PPDone
+	; Always keep the EXP labels and the next-level text (for example, L51).
+	; Lv50 link mode hides only the two numeric EXP values below those labels.
 	coord hl, 9, 3
 	ld de, StatusScreenExpText
 	call PlaceString
@@ -610,15 +623,26 @@ StatusScreen2:
 	call PrintLevel
 	pop af
 	ld [wLoadedMonLevel], a
+
+	; Only an active Lv50 link session suppresses the total EXP and the EXP
+	; needed for the next level. Normal link and single-player modes show both.
+	ld a, [wLinkState]
+	and a
+	jr z, .drawEXPValues
+	ld a, [wLinkBattleMode]
+	cp LINK_MODE_COLOSSEUM_50
+	jr z, .skipLinkBattleEXPValues
+.drawEXPValues
 	ld de, wLoadedMonExp
 	coord hl, 12, 4
 	lb bc, 3, 7
-	call PrintNumber ; exp
+	call PrintNumber ; total exp
 	call CalcExpToLevelUp
 	ld de, wLoadedMonExp
 	coord hl, 7, 6
 	lb bc, 3, 7
 	call PrintNumber ; exp needed to level up
+.skipLinkBattleEXPValues
 	coord hl, 9, 0
 	call StatusScreen_ClearName
 	coord hl, 9, 1
