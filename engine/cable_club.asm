@@ -2,6 +2,8 @@
 ; In the Colosseum, it starts a battle. In the Trade Center, it displays the trade selection screen.
 ; Before doing either action, it swaps random numbers, trainer names and party data with the other gameboy.
 CableClub_DoBattleOrTrade:
+	; Colosseum50 is already normalized immediately after both players confirm
+	; the Link Menu selection. Do not normalize again when the battle starts.
 	ld c, 80
 	call DelayFrames
 	call ClearScreen

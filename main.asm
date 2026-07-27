@@ -2532,6 +2532,9 @@ InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
 SECTION "pokecenters", ROMX,BANK[$35]
 
+; Keep the optional Lv50 link-battle rule outside capacity-constrained bank 1.
+INCLUDE "engine/link_battle_level.asm"
+
 ViridianPokecenterBlocks:
 CeladonPokecenterBlocks:
 RockTunnelPokecenterBlocks:

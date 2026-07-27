@@ -3154,7 +3154,10 @@ wDestinationMap:: ; d71a
 ; destination map (for certain types of special warps, not ordinary walking)
 	ds 1
 
+wLinkBattleMode::
 wUnusedD71B:: ; d71b
+; LINK_MODE_* value selected in the Cable Club menu.
+; This byte was only cleared during new-game initialization and was never read.
 	ds 1
 
 wTileInFrontOfBoulderAndBoulderCollisionResult:: ; d71c

@@ -250,13 +250,25 @@ LinkMenu:
 	call LoadScreenTilesFromBuffer1
 	ld a, [wLinkMenuSelectionSendBuffer]
 	and (B_BUTTON << 2) ; was B button pressed?
-	jr nz, .choseCancel ; cancel if B pressed
-	ld a, [wCurrentMenuItem]
-	cp $2
-	jr z, .choseCancel
+	jr nz, .choseCancel ; all three visible rows are real functions; B cancels
 	xor a
 	ld [wWalkBikeSurfState], a ; start walking
+
+	; Keep the synchronized menu index as the link mode. Both Colosseum modes
+	; warp to the original Colosseum map, while only mode 2 enables Lv50 rules.
 	ld a, [wCurrentMenuItem]
+	ld [wLinkBattleMode], a
+
+	; Colosseum50 must refresh the temporary party before entering the room so
+	; the player can inspect the level-50 stats and choose the lead Pokemon.
+	; Preserve the synchronized menu index because the banked call changes A.
+	push af
+	cp LINK_MODE_COLOSSEUM_50
+	jr nz, .skipLevel50Normalization
+	callba NormalizePartyForLevel50LinkBattle
+.skipLevel50Normalization
+	pop af
+
 	and a
 	ld a, COLOSSEUM
 	jr nz, .next
@@ -338,7 +350,7 @@ NewGameText:
 CableClubOptionsText:
 	db   "Trade Center"
 	next "Colosseum"
-	next "Cancel@"
+	next "Colosseum50@" ; third function; press B to cancel the Link Menu
 
 DisplayContinueGameInfo:
 	xor a

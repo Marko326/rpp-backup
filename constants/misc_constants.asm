@@ -208,6 +208,13 @@ LINK_STATE_BATTLING      EQU $04 ; in a link battle
 LINK_STATE_RESET         EQU $05 ; reset game (unused)
 LINK_STATE_TRADING       EQU $32 ; in a link trade
 
+; Cable Club menu modes. The selected mode is kept separately because
+; Colosseum and Colosseum50 use the same physical Colosseum map.
+LINK_MODE_TRADE_CENTER EQU 0
+LINK_MODE_COLOSSEUM    EQU 1
+LINK_MODE_COLOSSEUM_50 EQU 2
+LINK_BATTLE_LEVEL_50   EQU 50
+
 LINKBATTLE_RUN       EQU $F
 LINKBATTLE_STRUGGLE  EQU $E
 LINKBATTLE_NO_ACTION EQU $D
