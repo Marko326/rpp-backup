@@ -184,10 +184,10 @@ LoadTownMap_Fly:
 	ld b, $0
 	call DrawPlayerOrBirdSprite
 	ld hl, wFlyLocationsList
-	coord de, 18, 0
+;	coord de, 18, 0;No longer sets the destination address for the top‑right tile
 .townMapFlyLoop
-	ld a, " "
-	ld [de], a
+;	ld a, " ";No longer writes a blank tile to the top‑right corner
+;	ld [de], a;So the map background there stays intact
 	push hl
 	push hl
 	coord hl, 1, 0
@@ -241,7 +241,7 @@ LoadTownMap_Fly:
 	ld [hTilesetType], a
 	ret
 .pressedUp
-	coord de, 18, 0
+;	coord de, 18, 0;Prevents an extra blank write when the cursor moves upward, avoiding unnecessary overwrites
 	inc hl
 	ld a, [hl]
 	cp $ff
@@ -253,7 +253,7 @@ LoadTownMap_Fly:
 	ld hl, wFlyLocationsList
 	jp .townMapFlyLoop
 .pressedDown
-	coord de, 19, 0
+;	coord de, 19, 0;Prevents an extra blank write one column further right when the cursor moves downward
 	dec hl
 	ld a, [hl]
 	cp $ff
