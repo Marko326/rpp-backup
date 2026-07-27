@@ -2008,8 +2008,15 @@ DrawPlayerHUDAndHPBar:
 	call PlaceString
 	call PrintPlayerMonGender
 	call PrintPlayerMonShiny
+
+	; Link battles do not award experience. Hide the temporary/inconsistent
+	; experience bar while battling; every non-link battle remains unchanged.
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr z, .skipLinkBattleEXPBar
 	coord de, 17, 11
 	callab PrintEXPBar
+.skipLinkBattleEXPBar
 	ld hl, wBattleMonSpecies
 	ld de, wLoadedMon
 	ld bc, wBattleMonDVs - wBattleMonSpecies
