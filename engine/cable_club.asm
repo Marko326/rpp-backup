@@ -2,6 +2,11 @@
 ; In the Colosseum, it starts a battle. In the Trade Center, it displays the trade selection screen.
 ; Before doing either action, it swaps random numbers, trainer names and party data with the other gameboy.
 CableClub_DoBattleOrTrade:
+	ld a, [wLinkState]
+	cp LINK_STATE_START_BATTLE
+	jr nz, .skipLinkBattleNormalization
+	callba NormalizePartyForLinkBattle ; routine moved to bank $35 to keep bank1 within capacity
+.skipLinkBattleNormalization
 	ld c, 80
 	call DelayFrames
 	call ClearScreen
