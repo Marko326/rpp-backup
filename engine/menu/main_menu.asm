@@ -263,6 +263,10 @@ LinkMenu:
 	ld a, TRADE_CENTER
 .next
 	ld [wd72d], a
+	cp COLOSSEUM
+	jr nz, .skipLinkBattleNormalization
+	callba NormalizePartyForLinkBattle ; routine moved to bank $35 to keep bank1 within capacity
+.skipLinkBattleNormalization
 	ld hl, PleaseWaitText
 	call PrintText
 	ld c, 50
