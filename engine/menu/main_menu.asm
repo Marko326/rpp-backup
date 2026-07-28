@@ -639,6 +639,8 @@ SetOptionsFromCursorPositions:
 .storeOptions
 	ld a,d
 	ld [wOptions],a
+	ld a,1
+	ld [wLetterPrintingDelayFlags],a ; Fast=1(整句瞬出)，其余=0(逐字)
 	ret
 
 ; reads the options variable and places menu cursors in the correct positions within the options menu
@@ -687,9 +689,9 @@ SetCursorPositionsFromOptions:
 ; 00: X coordinate of menu cursor
 ; 01: delay after printing a letter (in frames)
 TextSpeedOptionData:
-	db 14,5 ; Slow
-	db  7,3 ; Medium
-	db  1,1 ; Fast
+	db 14,3 ; Slow  -> 3 帧，原 Normal
+	db  7,1 ; Normal-> 1 帧，原 Fast
+	db  1,0 ; Fast  -> 0 帧（配合标志=1，整句瞬出）
 	db 7 ; default X coordinate (Medium)
 	db $ff ; terminator
 
