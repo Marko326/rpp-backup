@@ -68,11 +68,14 @@ DisplayTextIDInit:
 	add hl,de
 	dec c
 	jr nz,.spriteStandStillLoop
+	; 修改备注：先加载字体，再把对话框/菜单传到屏幕。
+	; 原顺序会让边框先出现，随后等待约 8 帧字体传输，形成明显的“空框停顿”。
+	; 此修改不减少字体加载所需时间，只把等待移到边框出现之前，避免空框可见。
+	call LoadFontTilePatterns
 	ld b,$9c ; window background address
 	call CopyScreenTileBufferToVRAM ; transfer background in WRAM to VRAM
 	xor a
 	ld [hWY],a ; put the window on the screen
-	call LoadFontTilePatterns
 	ld a,$01
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable continuous WRAM to VRAM transfer each V-blank
 	ret
