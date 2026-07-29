@@ -167,7 +167,7 @@ SaveSAV:
 	coord hl, 1, 14
 	ld de,NowSavingString
 	call PlaceString
-	ld c,120
+	ld c,40
 	call DelayFrames
 	ld hl,GameSavedText
 	call PrintText
