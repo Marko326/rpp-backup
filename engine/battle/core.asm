@@ -6692,10 +6692,10 @@ ApplyBurnAndParalysisPenaltiesToEnemy:
 
 ApplyBurnAndParalysisPenalties:
 	ld [H_WHOSETURN], a
-	call QuarterSpeedDueToParalysis
+	call HalveSpeedDueToParalysis
 	jp HalveAttackDueToBurn
 
-QuarterSpeedDueToParalysis:
+HalveSpeedDueToParalysis:
 	ld a, [H_WHOSETURN]
 	and a
 	jr z, .playerTurn
@@ -6709,8 +6709,8 @@ QuarterSpeedDueToParalysis:
 	ld a, [hl]
 	srl a
 	rr b
-	srl a
-	rr b
+	;srl a ; shift right only once (divide by 2)
+	;rr b  ; rotate right with carry
 	ld [hli], a
 	or b
 	jr nz, .storePlayerSpeed
@@ -6728,8 +6728,8 @@ QuarterSpeedDueToParalysis:
 	ld a, [hl]
 	srl a
 	rr b
-	srl a
-	rr b
+	;srl a ; shift right only once (divide by 2)
+	;rr b  ; rotate right with carry
 	ld [hli], a
 	or b
 	jr nz, .storeEnemySpeed
@@ -7702,7 +7702,7 @@ FreezeBurnParalyzeEffect:
 ; .paralyze
 	ld a, 1 << PAR
 	ld [wEnemyMonStatus], a
-	call QuarterSpeedDueToParalysis ; quarter speed of affected mon
+	call HalveSpeedDueToParalysis ; halve speed of affected mon
 	ld a, ANIM_A9
 	call PlayBattleAnimation
 	jp PrintMayNotAttackText ; print paralysis text
@@ -7762,7 +7762,7 @@ opponentAttacker:
 ;paralyze
 	ld a, 1 << PAR
 	ld [wBattleMonStatus], a
-	call QuarterSpeedDueToParalysis
+	call HalveSpeedDueToParalysis
 	jp PrintMayNotAttackText
 .burn
 	ld a, 1 << BRN
@@ -7977,7 +7977,7 @@ UpdateStatDone:
 	call PrintText
 
 ; these shouldn't be here
-	call QuarterSpeedDueToParalysis ; apply speed penalty to the player whose turn is not, if it's paralyzed
+	call HalveSpeedDueToParalysis ; apply speed penalty to the player whose turn is not, if it's paralyzed
 	jp HalveAttackDueToBurn ; apply attack penalty to the player whose turn is not, if it's burned
 
 RestoreOriginalStatModifier:
@@ -8176,7 +8176,7 @@ UpdateLoweredStatDone:
 ; These where probably added given that a stat-down move affecting speed or attack will override
 ; the stat penalties from paralysis and burn respectively.
 ; But they are always called regardless of the stat affected by the stat-down move.
-	call QuarterSpeedDueToParalysis
+	call HalveSpeedDueToParalysis
 	jp HalveAttackDueToBurn
 
 CantLowerAnymore_Pop:
