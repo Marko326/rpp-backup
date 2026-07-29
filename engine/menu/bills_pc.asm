@@ -227,8 +227,6 @@ BillsPCDeposit:
 	call WaitForSoundToFinish
 	ld a, [wcf91]
 	call PlayCry
-	;call GetCryData
-	;call PlaySoundWaitForCurrent
 	ld a, PARTY_TO_BOX
 	ld [wMoveMonType], a
 	call MoveMon
@@ -281,8 +279,6 @@ BillsPCWithdraw:
 	call WaitForSoundToFinish
 	ld a, [wcf91]
 	call PlayCry
-	;call GetCryData
-	;call PlaySoundWaitForCurrent
 	xor a ; BOX_TO_PARTY
 	ld [wMoveMonType], a
 	call MoveMon
