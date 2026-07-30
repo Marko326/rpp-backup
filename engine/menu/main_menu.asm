@@ -561,10 +561,8 @@ DisplayOptionMenu:
 	ld [wOptionsBattleAnimCursorX],a
 	jp .eraseOldMenuCursor
 .cursorInBattleStyle
-	ld a,[wOptionsBattleStyleCursorX] ; battle style cursor X coordinate
-	xor a,$0b ; toggle between 1 and 10
-	ld [wOptionsBattleStyleCursorX],a
-	jp .eraseOldMenuCursor
+	; Battle Style 固定为 Set，此行仅用于保留菜单布局与光标导航。
+	jp .loop
 .pressedLeftInTextSpeed
 	ld a,[wOptionsTextSpeedCursorX] ; text speed cursor X coordinate
 	cp a,1
@@ -600,7 +598,7 @@ BattleAnimationOptionText:
 
 BattleStyleOptionText:
 	db   "Battle Style:"
-	next " Shift    Set@"
+	next " Set@"
 
 OptionMenuCancelText:
 	db "Back@"
@@ -624,19 +622,12 @@ SetOptionsFromCursorPositions:
 	jr z,.battleAnimationOn
 .battleAnimationOff
 	set 7,d
-	jr .checkBattleStyle
+	jr .storeOptions
 .battleAnimationOn
 	res 7,d
-.checkBattleStyle
-	ld a,[wOptionsBattleStyleCursorX] ; battle style cursor X coordinate
-	dec a
-	jr z,.battleStyleShift
-.battleStyleSet
-	set 6,d
-	jr .storeOptions
-.battleStyleShift
-	res 6,d
 .storeOptions
+	; 设置项仅显示 Set，同时固定保留 bit 6 的 Set 值。
+	set 6,d
 	ld a,d
 	ld [wOptions],a
 	ld a,1
@@ -661,16 +652,13 @@ SetCursorPositionsFromOptions:
 	sla c
 	ld a,1 ; On
 	jr nc,.storeBattleAnimationCursorX
-	ld a,10 ; Off
+	ld a,1 ; Off
 .storeBattleAnimationCursorX
 	ld [wOptionsBattleAnimCursorX],a ; battle animation cursor X coordinate
 	coord hl, 0, 8
 	call .placeUnfilledRightArrow
-	sla c
+	; Battle Style 固定为 Set，并与 Fast、On 使用相同的光标位置。
 	ld a,1
-	jr nc,.storeBattleStyleCursorX
-	ld a,10
-.storeBattleStyleCursorX
 	ld [wOptionsBattleStyleCursorX],a ; battle style cursor X coordinate
 	coord hl, 0, 13
 	call .placeUnfilledRightArrow
