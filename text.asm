@@ -1059,20 +1059,6 @@ _LinkBattleLostText::
 	text "!"
 	prompt
 
-_TrainerAboutToUseText::
-	TX_RAM wTrainerName
-	text " @"
-	TX_RAM wCurTrainerName
-	text ""
-	line "is about to use"
-	cont"@"
-	TX_RAM wEnemyMonNick
-	text "!"
-
-	para "Will [PLAYER]"
-	line "change #mon?"
-	done
-
 _TrainerSentOutText::
 	TX_RAM wTrainerName
 	text " @"
