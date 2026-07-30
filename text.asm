@@ -1325,11 +1325,8 @@ _GainedText::
 	line "@@"
 
 _WithExpAllText::
-	text "[PLAYER]'s other"
-	line "#mon gained"
-	cont "Exp. Points from@"
-	db $7
-	text "the Exp. Share!"
+	text "Party gained"
+	line "Exp. Points!"
 	prompt
 
 _BoostedText::

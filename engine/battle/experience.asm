@@ -21,16 +21,20 @@ GainExperience:
 	and a ; is mon's gain exp flag set?
 	pop hl
 	jp z, .nextMon ; if mon's gain exp flag not set, go to next mon
+	; During the EXP.ALL pass, print one shared message when the first actual
+	; recipient is found. Keep the nonzero flag so per-mon EXP text stays hidden.
 	ld a, [wBoostExpByExpAll]
 	and a
-	jp z, .finishedExpAllMessage
-	xor a
+	jr z, .finishedExpAllMessage
+	cp 2
+	jr z, .finishedExpAllMessage
+	inc a ; 1 = message pending, 2 = message already shown
 	ld [wBoostExpByExpAll], a
 	push hl
 	ld hl, WithExpAllText
 	call PrintText
 	pop hl
-.finishedExpAllMessage 
+.finishedExpAllMessage
 	ld de, (wPartyMon1HPExp + 1) - (wPartyMon1HP + 1)
 	add hl, de
 	ld d, h
@@ -164,8 +168,14 @@ GainExperience:
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMonNicks
 	call GetPartyMonName
+	; The EXP.ALL pass already printed one shared message above. Suppress only
+	; the repeated per-mon gained-EXP text; all EXP, level-up, and move logic remains.
+	ld a, [wBoostExpByExpAll]
+	and a
+	jr nz, .skipGainedExpText
 	ld hl, GainedText
 	call PrintText
+.skipGainedExpText
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation], a
 	call AnimateEXPBar
@@ -313,6 +323,7 @@ GainExperience:
 	ld hl, wPartyGainExpFlags
 	xor a
 	ld [hl], a ; clear gain exp flags
+	ld [wBoostExpByExpAll], a ; restore the original zeroed post-call state
 	ld a, [wPlayerMonNumber]
 	ld c, a
 	ld b, FLAG_SET
