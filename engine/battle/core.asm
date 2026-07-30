@@ -1466,7 +1466,6 @@ EnemySendOutFirstMon:
 	ld a,8
 	call SlideTrainerPicOffScreen
 	call PrintEmptyString
-	call SaveScreenTilesToBuffer1
 	ld a,[wLinkState]
 	cp LINK_STATE_BATTLING
 	jr nz,.next
@@ -1518,54 +1517,7 @@ EnemySendOutFirstMon:
 	ld [wLastSwitchInEnemyMonHP + 1],a
 	ld a,1
 	ld [wCurrentMenuItem],a
-	ld a,[wFirstMonsNotOutYet]
-	dec a
-	jr z,.next4
-	ld a,[wPartyCount]
-	dec a
-	jr z,.next4
-	ld a,[wLinkState]
-	cp LINK_STATE_BATTLING
-	jr z,.next4
-	ld a,[wOptions]
-	bit 6,a
-	jr nz,.next4
-	ld hl, TrainerAboutToUseText
-	call PrintText
-	coord hl, 0, 7
-	lb bc, 8, 1
-	ld a,TWO_OPTION_MENU
-	ld [wTextBoxID],a
-	call DisplayTextBoxID
-	ld a,[wCurrentMenuItem]
-	and a
-	jr nz,.next4
-	ld a,BATTLE_PARTY_MENU
-	ld [wPartyMenuTypeOrMessageID],a
-	call DisplayPartyMenu
-.next9
-	ld a,1
-	ld [wCurrentMenuItem],a
-	jr c,.next7
-	ld hl,wPlayerMonNumber
-	ld a,[wWhichPokemon]
-	cp [hl]
-	jr nz,.next6
-	ld hl,AlreadyOutText
-	call PrintText
-.next8
-	call GoBackToPartyMenu
-	jr .next9
-.next6
-	call HasMonFainted
-	jr z,.next8
-	xor a
-	ld [wCurrentMenuItem],a
-.next7
-	call GBPalWhiteOut
-	call LoadHudTilePatterns
-	call LoadScreenTilesFromBuffer1
-.next4
+	; 强制使用 Set 模式，不进入 Shift 模式的换宠询问与队伍菜单流程。
 	call ClearSprites
 	coord hl, 0, 0
 	lb bc, 4, 11
@@ -1608,10 +1560,6 @@ EnemySendOutFirstMon:
 	ld [wPartyFoughtCurrentEnemyFlags],a
 	call SaveScreenTilesToBuffer1
 	jp SwitchPlayerMon
-
-TrainerAboutToUseText:
-	TX_FAR _TrainerAboutToUseText
-	db "@"
 
 TrainerSentOutText:
 	TX_FAR _TrainerSentOutText
