@@ -2358,14 +2358,20 @@ DisplayBattleMenu:
 ; either the bag (normal battle) or bait (safari battle) was selected
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
-	jr nz, .notLinkBattle
+	jr z, .itemsCantBeUsedHere
 
-; can't use items in link battles
+; trainer battles cannot use items, while wild battles can still open the bag
+	ld a, [wIsInBattle]
+	cp $2 ; is it a trainer battle?
+	jr nz, .itemsCanBeUsed
+
+.itemsCantBeUsedHere
+; use the same message and return flow as link battles
 	ld hl, ItemsCantBeUsedHereText
 	call PrintText
 	jp DisplayBattleMenu
 
-.notLinkBattle
+.itemsCanBeUsed
 	call SaveScreenTilesToBuffer2
 	ld a, [wBattleType]
 	cp BATTLE_TYPE_SAFARI
