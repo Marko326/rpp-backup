@@ -2438,8 +2438,10 @@ _LearnedMove1Text::
 	text "!@@"
 
 _WhichMoveToForgetText::
-	text "Which move should"
-	next "be forgotten?"
+	text "Forget a move"
+	line "for @"
+	TX_RAM wcf4b
+	text "?"
 	done
 
 _AbandonLearningText::
@@ -2465,18 +2467,6 @@ _TryingToLearnText::
 	cont "@"
 	TX_RAM wcf4b
 	text "!"
-
-	para "But, @"
-	TX_RAM wLearnMoveMonName
-	text ""
-	line "can't learn more"
-	cont "than 4 moves!"
-
-	para "Delete an older"
-	line "move to make room"
-	cont "for @"
-	TX_RAM wcf4b
-	text "?"
 	done
 
 _OneTwoAndText::
