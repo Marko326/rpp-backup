@@ -616,6 +616,27 @@ LoadTownMapEntry:
 	ld l, a
 	ret
 
+GetMapNameForSaveScreen:
+; Copies the current Town Map legend to wBuffer for the Continue/Save info box.
+; callba overwrites register a with the destination ROM bank before entering
+; this function, so read wCurMap here instead of accepting the map number in a.
+; The Town Map-only line break character is changed to a normal space, while
+; the original map name remains unchanged for the Town Map's two-line display.
+	ld a, [wCurMap]
+	call LoadTownMapEntry
+	ld de, wBuffer
+.copyName
+	ld a, [hli]
+	cp "_"
+	jr nz, .storeCharacter
+	ld a, " "
+.storeCharacter
+	ld [de], a
+	inc de
+	cp "@"
+	jr nz, .copyName
+	ret
+
 INCLUDE "data/town_map_entries.asm"
 
 INCLUDE "text/map_names.asm"
