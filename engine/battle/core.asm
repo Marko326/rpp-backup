@@ -253,6 +253,8 @@ StartBattle:
 	ld [wActionResultOrTookBattleTurn], a
 	inc a
 	ld [wFirstMonsNotOutYet], a
+	xor a
+	ld [wFreezeTurnCounters], a ; low nibble: player, high nibble: enemy
 	ld hl, wEnemyMon1HP
 	ld bc, wEnemyMon2 - wEnemyMon1 - 1
 	ld d, $3
@@ -3542,10 +3544,19 @@ CheckPlayerStatusConditions:
 	jr z, .defrostMon
 	cp FLARE_BLITZ
 	jr z, .defrostMon
-	; Adding chance to defrost naturally
+	; Frozen lasts at most 3 skipped turns. Natural thaw can happen immediately. 51 / 256 = 19.92%, approximately 20% natural thaw chance
 	call BattleRandom
-	cp $19
+	cp $33
 	jr c, .defrostMon
+	ld a, [wFreezeTurnCounters]
+	and $0f
+	dec a
+	jr z, .defrostMon
+	ld b, a
+	ld a, [wFreezeTurnCounters]
+	and $f0
+	or b
+	ld [wFreezeTurnCounters], a
 	; Continues to original routine, calling you frozen
 	ld hl,IsFrozenText
 	call PrintText
@@ -3557,6 +3568,9 @@ CheckPlayerStatusConditions:
 .defrostMon ; New routine to thaw Pokemon, called from FrozenCheck
 	ld hl, wBattleMonStatus
 	res FRZ, [hl]
+	ld a, [wFreezeTurnCounters]
+	and $f0
+	ld [wFreezeTurnCounters], a
 	xor a
 	inc a
 	ld [H_WHOSETURN],a
@@ -6063,10 +6077,21 @@ CheckEnemyStatusConditions:
 	jr z, .defrostMon
 	cp FLARE_BLITZ
 	jr z, .defrostMon
-	; Add chance to defrost naturally
+	; Frozen lasts at most 3 skipped turns. Natural thaw can happen immediately. 51 / 256 = 19.92%, approximately 20% natural thaw chance
 	call BattleRandom
-	cp $19
+	cp $33
 	jr c, .defrostMon
+	ld a, [wFreezeTurnCounters]
+	swap a
+	and $0f
+	dec a
+	jr z, .defrostMon
+	swap a
+	ld b, a
+	ld a, [wFreezeTurnCounters]
+	and $0f
+	or b
+	ld [wFreezeTurnCounters], a
 	; Original routine continues here
 	ld hl, IsFrozenText
 	call PrintText
@@ -6078,6 +6103,9 @@ CheckEnemyStatusConditions:
 .defrostMon ; New routine to thaw mon
 	ld hl, wEnemyMonStatus
 	res FRZ, [hl]
+	ld a, [wFreezeTurnCounters]
+	and $0f
+	ld [wFreezeTurnCounters], a
 	xor a
 	ld [H_WHOSETURN],a
 	ld hl, FireDefrostedText
@@ -7477,10 +7505,12 @@ SleepEffect:
 	and a
 	jr nz, .didntAffect
 .setSleepCounter
-; set target's sleep counter to a random number between 2 and 7
+; induced sleep lasts 1-4 skipped turns: store a counter from 2 through 5
+; (the status routine decrements before deciding whether the target can act)
+.randomSleepTurns
 	call BattleRandom
-	and $7
-	set 1, a ; always at least 2, since 1 is now functionally 0
+	and $3
+	add 2
 	ld [de], a
 	call PlayCurrentMoveAnimation2
 	ld hl, FellAsleepText
@@ -7705,6 +7735,10 @@ FreezeBurnParalyzeEffect:
 	call ClearHyperBeam ; resets hyper beam (recharge) condition from target
 	ld a, 1 << FRZ
 	ld [wEnemyMonStatus], a
+	ld a, [wFreezeTurnCounters]
+	and $0f
+	or $30
+	ld [wFreezeTurnCounters], a
 	ld a, ANIM_A9
 	call PlayBattleAnimation
 	ld hl, FrozenText
@@ -7761,6 +7795,10 @@ opponentAttacker:
 ; hyper beam bits aren't reseted for opponent's side
 	ld a, 1 << FRZ
 	ld [wBattleMonStatus], a
+	ld a, [wFreezeTurnCounters]
+	and $f0
+	or $03
+	ld [wFreezeTurnCounters], a
 	ld hl, FrozenText
 	jp PrintText
 
