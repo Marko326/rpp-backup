@@ -337,9 +337,5 @@ WaterIsCalmTxt:
 	cont "use Surf?@@"
 
 MightBeHiding:
-	text "A #mon might"
-	line "be hiding in this"
-	cont "tree."
-
-	para "Want to use"
+	text "Want to use"
 	line "Headbutt?@@"
