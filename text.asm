@@ -3122,11 +3122,9 @@ _NoHeadbuttMonText::
 	prompt
 
 _FellOutOfTreeText::
-	text "Wild @"
 	TX_RAM wEnemyMonNick
-	text ""
-	line "fell out of the"
-	cont "tree!"
+	text " fell"
+	line "out of the tree!"
 	prompt
 
 

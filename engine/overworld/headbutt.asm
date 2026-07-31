@@ -54,7 +54,10 @@ UseHeadbuttOW2:: ; for calling it when not in party menu
 	call PrintText
 	ld hl, wd730
 	res 6, [hl]
-	call ReloadMapData
+; Do not call ReloadMapData here. It disables and re-enables the LCD, which
+; causes a visible flash when Headbutt finishes without starting a battle.
+; The party-menu entry already restores the map before reaching this code,
+; while the overworld entry closes its text box after this routine returns.
 	jp GetHeadbuttMons
 
 UsedHeadbuttText:
