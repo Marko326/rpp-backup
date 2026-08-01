@@ -12,45 +12,41 @@ ChangeBGPalColor0_4Frames:
 	ret
 
 PredefShakeScreenVertically:
-; Keep the apparent rpp-backup-flash cadence without writing rWY outside VBlank.
-; Each downward pulse lasts 2 frames; the removed flash frame is replaced by
-; one frame at the normal window position.
+; Keep the original 3-frame mutation cadence, but latch every WY change in
+; VBlank instead of writing rWY while the LCD may be drawing.
 	call GetPredefRegisters
+
+; The original routine returns to the shadow WY value. Preserve it rather than
+; assuming that the normal window position is always 0.
+	ld a, [hWY]
+	push af
 	ld a, 1
 	ld [wDisableVBlankWYUpdate], a
-
-; Play the first pulse, then preserve the longer first return interval.
-	ld a, b
-	ld c, 2
-	call .SetWYForFrames
-	dec b
-	jr z, .finish
 	xor a
-	ld c, 7
-	call .SetWYForFrames
 
 .loop
-	ld a, b
-	ld c, 2
-	call .SetWYForFrames
+; Retain the original state machine exactly. Its first iteration is b -> 0;
+; later iterations are 0 -> b as b decreases.
+	ld [$ff96], a
+	call .MutateWY
+	call .MutateWY
 	dec b
-	jr z, .finish
-	xor a
-	ld c, 4
-	call .SetWYForFrames
-	jr .loop
+	ld a, b
+	jr nz, .loop
 
-.finish
-; Replace the final transition frame with a clean frame at the normal position.
-	xor a
-	ld c, 1
-	call .SetWYForFrames
-
-; Restore both the shadow register and normal VBlank updating.
-	xor a
+; Restore the caller's shadow WY and let the next VBlank copy it safely.
+	pop af
 	ld [hWY], a
+	xor a
 	ld [wDisableVBlankWYUpdate], a
 	ret
+
+.MutateWY
+	ld a, [$ff96]
+	xor b
+	ld [$ff96], a
+	ld c, 3
+	jp .SetWYForFrames
 
 .SetWYForFrames
 ; Latch WY during VBlank, then keep it fixed for the remaining frames.
