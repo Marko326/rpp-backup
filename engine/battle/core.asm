@@ -634,14 +634,26 @@ HandlePoisonBurnLeechSeed:
 	and 1 << BRN
 	jr z, .poisoned
 	ld hl, HurtByBurnText
+	ld a, 1 ; burn damage uses 1/16 max HP
+	jr .printResidualDamageText
 .poisoned
+	xor a ; regular poison uses 1/8 max HP
+.printResidualDamageText
+	push af
 	call PrintText
 	xor a
 	ld [wAnimationType], a
 	ld a,BURN_PSN_ANIM
 	call PlayMoveAnimation   ; play burn/poison animation
+	pop af
 	pop hl
 	call HandlePoisonBurnLeechSeed_DecreaseOwnHP
+	; Stop residual processing if poison or burn already caused a faint.
+	; Leech Seed must not tick against a target that has 0 HP.
+	ld a, [hli]
+	or [hl]
+	dec hl
+	jr z, .fainted
 .notBurnedOrPoisoned
 	ld de, wPlayerBattleStatus2
 	ld a, [H_WHOSETURN]
@@ -664,6 +676,7 @@ HandlePoisonBurnLeechSeed:
 	pop af
 	ld [H_WHOSETURN], a
 	pop hl
+	xor a ; Leech Seed uses 1/8 max HP
 	call HandlePoisonBurnLeechSeed_DecreaseOwnHP
 	call HandlePoisonBurnLeechSeed_IncreaseEnemyHP
 	push hl
@@ -674,6 +687,7 @@ HandlePoisonBurnLeechSeed:
 	ld a, [hli]
 	or [hl]
 	ret nz          ; test if fainted
+.fainted
 	call DrawHUDsAndHPBars
 	ld c, 20
 	call DelayFrames
@@ -692,11 +706,14 @@ HurtByLeechSeedText:
 	TX_FAR _HurtByLeechSeedText
 	db "@"
 
-; decreases the mon's current HP by 1/16 of the Max HP (multiplied by number of toxic ticks if active)
-; note that the toxic ticks are considered even if the damage is not poison (hence the Leech Seed glitch)
+; decreases the mon's current HP by 1/8 of max HP for regular poison and Leech Seed
+; burn uses 1/16; Toxic uses a 1/16 base multiplied by the Toxic counter
+; Toxic ticks are still applied to Leech Seed, preserving the double-tick interaction
+; a: 0 for 1/8 damage, nonzero for 1/16 burn damage
 ; hl: HP pointer
-; bc (out): total damage
+; bc (out): actual HP removed, capped at current HP
 HandlePoisonBurnLeechSeed_DecreaseOwnHP:
+	ld e, a       ; preserve damage type until the max HP calculation is complete
 	push hl
 	push hl
 	ld bc, $e      ; skip to max HP
@@ -712,6 +729,11 @@ HandlePoisonBurnLeechSeed_DecreaseOwnHP:
 	srl b
 	rr c
 	srl c         ; c = max HP * 1/8 (assumption: HP < 1024)
+	ld a, e
+	and a
+	jr z, .checkMinimumDamage
+	srl c         ; burn damage = max HP * 1/16
+.checkMinimumDamage
 	ld a, c
 	and a
 	jr nz, .nonZeroDamage
@@ -757,6 +779,12 @@ HandlePoisonBurnLeechSeed_DecreaseOwnHP:
 	ld [hl], a
 	ld [wHPBarNewHP+1], a
 	jr nc, .noOverkill
+	; Return the HP that was actually removed, not the uncapped damage.
+	; Leech Seed uses bc as its healing amount after this routine returns.
+	ld a, [wHPBarOldHP+1]
+	ld b, a
+	ld a, [wHPBarOldHP]
+	ld c, a
 	xor a         ; overkill: zero HP
 	ld [hli], a
 	ld [hl], a
@@ -767,8 +795,8 @@ HandlePoisonBurnLeechSeed_DecreaseOwnHP:
 	pop hl
 	ret
 
-; adds bc to enemy HP
-; bc isn't updated if HP subtracted was capped to prevent overkill
+; adds the actual HP removed in bc to enemy HP
+; bc is capped to the target's remaining HP by the decrease routine
 HandlePoisonBurnLeechSeed_IncreaseEnemyHP:
 	push hl
 	ld hl, wEnemyMonMaxHP
