@@ -62,8 +62,7 @@ ENDM
 
 SECTION "WRAM Bank 0", WRAM0
 
-wFreezeTurnCounters:: ; c000
-; low nibble: player freeze turns remaining; high nibble: enemy
+wUnusedC000:: ; c000
 	ds 1
 
 wSoundID:: ; c001
