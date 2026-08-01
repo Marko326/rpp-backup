@@ -74,23 +74,18 @@ TrySurf:
 TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by mistake.
 	call IsCutTile
 	jr nc, .no
-	
-	; Prints the "This tree can be cut!" message, whether you can CUT yet or not.
-	call Text2_EnterTheText
-	ld hl,CanBeCutTxt
-	call PrintText
-	call ManualTextScroll
 
-	; Makes sure you have a Pokemon with CUT and have the proper badge.
+	; First check whether a party Pokemon knows CUT and the player has the proper badge.
 	ld d, CUT
 	call HasPartyMove
-	jr nz, .no2
+	jr nz, .cannotCut
 
 	ld a, [wObtainedKantoBadges]
 	bit 1, a ; CASCADE_BADGE
-	jr z, .no2
+	jr z, .cannotCut
 
-	; Asks the player if they want to use CUT, the way Gen 2 does.
+	; If CUT can be used, skip "This tree can be Cut!" and ask immediately.
+	call Text2_EnterTheText
 	ld hl,WantToCutTxt
 	call PrintText
 	call YesNoChoice
@@ -106,7 +101,16 @@ TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by
 .yes
 	xor a
 	ret
-	
+
+.cannotCut
+	; If CUT cannot be used yet, keep the original tree message.
+	call Text2_EnterTheText
+	ld hl,CanBeCutTxt
+	call PrintText
+	call ManualTextScroll
+	call Text3_DrakesDeception
+	jr .no
+
 .no2
 	call Text3_DrakesDeception
 .no
@@ -328,9 +332,9 @@ CanBeCutTxt:
 	line "Cut!@@"
 	
 WantToCutTxt:
-	text "Would you like to"
-	line "use Cut?@@"
-	
+	text "Want to use"
+	line "Cut?@@"
+
 WaterIsCalmTxt:
 	text "The water is calm."
 	line "Would you like to"
