@@ -253,8 +253,6 @@ StartBattle:
 	ld [wActionResultOrTookBattleTurn], a
 	inc a
 	ld [wFirstMonsNotOutYet], a
-	xor a
-	ld [wFreezeTurnCounters], a ; low nibble: player, high nibble: enemy
 	ld hl, wEnemyMon1HP
 	ld bc, wEnemyMon2 - wEnemyMon1 - 1
 	ld d, $3
@@ -3511,10 +3509,14 @@ CheckPlayerStatusConditions:
 	and a,SLP ; sleep mask
 	jr z,.FrozenCheck
 ; sleeping
+; Sleep advances only when this mon reaches the status check for an actual
+; action attempt; elapsed natural battle rounds do not decrement the counter.
+; If sleep was inflicted before this action, this is the first sleep check.
+; If it was inflicted after the mon had acted, the first check is next round.
 	dec a
-	ld [wBattleMonStatus],a ; decrement number of turns left
+	ld [wBattleMonStatus],a ; consume one sleep action check
 	and a
-	jr z,.WakeUp ; if the number of turns hit 0, wake up
+	jr z,.WakeUp ; counter reached 0: wake up and continue this action
 ; fast asleep
 	xor a
 	ld [wAnimationType],a
@@ -3544,20 +3546,14 @@ CheckPlayerStatusConditions:
 	jr z, .defrostMon
 	cp FLARE_BLITZ
 	jr z, .defrostMon
-	; Frozen lasts at most 3 skipped turns. Natural thaw can happen immediately. 51 / 256 = 19.92%, approximately 20% natural thaw chance
+	; Natural thaw is checked only when the frozen mon actually attempts to act.
+	; The chance is 51 / 256 (19.92%, approximately 20%) on every such check.
+	; Freeze has no duration counter or maximum length: success clears freeze and
+	; continues this action, while failure keeps freeze and skips this action.
 	call BattleRandom
 	cp $33
 	jr c, .defrostMon
-	ld a, [wFreezeTurnCounters]
-	and $0f
-	dec a
-	jr z, .defrostMon
-	ld b, a
-	ld a, [wFreezeTurnCounters]
-	and $f0
-	or b
-	ld [wFreezeTurnCounters], a
-	; Continues to original routine, calling you frozen
+	; Natural thaw failed: remain frozen and lose this action.
 	ld hl,IsFrozenText
 	call PrintText
 	xor a
@@ -3568,9 +3564,6 @@ CheckPlayerStatusConditions:
 .defrostMon ; New routine to thaw Pokemon, called from FrozenCheck
 	ld hl, wBattleMonStatus
 	res FRZ, [hl]
-	ld a, [wFreezeTurnCounters]
-	and $f0
-	ld [wFreezeTurnCounters], a
 	xor a
 	inc a
 	ld [H_WHOSETURN],a
@@ -6045,10 +6038,14 @@ CheckEnemyStatusConditions:
 	ld a, [hl]
 	and SLP ; sleep mask
 	jr z, .checkIfFrozen
-	dec a ; decrement number of turns left
+; Sleep advances only when this mon reaches the status check for an actual
+; action attempt; elapsed natural battle rounds do not decrement the counter.
+; If sleep was inflicted before this action, this is the first sleep check.
+; If it was inflicted after the mon had acted, the first check is next round.
+	dec a ; consume one sleep action check
 	ld [wEnemyMonStatus], a
 	and a
-	jr z, .wokeUp ; if the number of turns hit 0, wake up
+	jr z, .wokeUp ; counter reached 0: wake up and continue this action
 	ld hl, FastAsleepText
 	call PrintText
 	xor a
@@ -6077,22 +6074,14 @@ CheckEnemyStatusConditions:
 	jr z, .defrostMon
 	cp FLARE_BLITZ
 	jr z, .defrostMon
-	; Frozen lasts at most 3 skipped turns. Natural thaw can happen immediately. 51 / 256 = 19.92%, approximately 20% natural thaw chance
+	; Natural thaw is checked only when the frozen mon actually attempts to act.
+	; The chance is 51 / 256 (19.92%, approximately 20%) on every such check.
+	; Freeze has no duration counter or maximum length: success clears freeze and
+	; continues this action, while failure keeps freeze and skips this action.
 	call BattleRandom
 	cp $33
 	jr c, .defrostMon
-	ld a, [wFreezeTurnCounters]
-	swap a
-	and $0f
-	dec a
-	jr z, .defrostMon
-	swap a
-	ld b, a
-	ld a, [wFreezeTurnCounters]
-	and $0f
-	or b
-	ld [wFreezeTurnCounters], a
-	; Original routine continues here
+	; Natural thaw failed: remain frozen and lose this action.
 	ld hl, IsFrozenText
 	call PrintText
 	xor a
@@ -6103,9 +6092,6 @@ CheckEnemyStatusConditions:
 .defrostMon ; New routine to thaw mon
 	ld hl, wEnemyMonStatus
 	res FRZ, [hl]
-	ld a, [wFreezeTurnCounters]
-	and $0f
-	ld [wFreezeTurnCounters], a
 	xor a
 	ld [H_WHOSETURN],a
 	ld hl, FireDefrostedText
@@ -7505,8 +7491,12 @@ SleepEffect:
 	and a
 	jr nz, .didntAffect
 .setSleepCounter
-; induced sleep lasts 1-4 skipped turns: store a counter from 2 through 5
-; (the status routine decrements before deciding whether the target can act)
+; Externally induced sleep is measured by the target's actual action checks,
+; not by elapsed natural battle rounds. Store 2-5; the status routine first
+; decrements the counter, producing 1-4 skipped actions. The first check always
+; prevents movement, and the check after the fourth skipped action always wakes.
+; If inflicted before the target acts, the current round is the first check;
+; if inflicted after it acted, the first check occurs on its next action.
 .randomSleepTurns
 	call BattleRandom
 	and $3
@@ -7734,11 +7724,7 @@ FreezeBurnParalyzeEffect:
 .freeze
 	call ClearHyperBeam ; resets hyper beam (recharge) condition from target
 	ld a, 1 << FRZ
-	ld [wEnemyMonStatus], a
-	ld a, [wFreezeTurnCounters]
-	and $0f
-	or $30
-	ld [wFreezeTurnCounters], a
+	ld [wEnemyMonStatus], a ; no duration counter: remains frozen until thawed
 	ld a, ANIM_A9
 	call PlayBattleAnimation
 	ld hl, FrozenText
@@ -7794,11 +7780,7 @@ opponentAttacker:
 .freeze
 ; hyper beam bits aren't reseted for opponent's side
 	ld a, 1 << FRZ
-	ld [wBattleMonStatus], a
-	ld a, [wFreezeTurnCounters]
-	and $f0
-	or $03
-	ld [wFreezeTurnCounters], a
+	ld [wBattleMonStatus], a ; no duration counter: remains frozen until thawed
 	ld hl, FrozenText
 	jp PrintText
 
@@ -8915,6 +8897,8 @@ HazeEffect:
 	jpab HazeEffect_
 
 HealEffect:
+; HealEffect_ keeps Rest at a fixed two sleep turns: the move-use turn is the
+; first, the next action is skipped asleep, and the following check wakes and acts.
 	jpab HealEffect_
 
 TransformEffect:
