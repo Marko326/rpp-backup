@@ -62,6 +62,8 @@ StartMenu_Pokemon:
 	ld [hli],a ; menu watched keys
 	xor a
 	ld [hl],a
+	inc a
+	ld [wMenuWrappingEnabled],a ; allow first item <-> Cancel wrapping
 	call HandleMenuInput
 	push af
 	call LoadScreenTilesFromBuffer1 ; restore saved screen
