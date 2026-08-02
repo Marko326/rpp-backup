@@ -72,14 +72,14 @@ StartMenu_Pokemon:
 	ld a,[wMaxMenuItem]
 	ld b,a
 	ld a,[wCurrentMenuItem] ; menu selection
+	and a
+	jp z,.choseStats ; Stats is always the first menu item
 	cp b
 	jp z,.exitMenu ; if the player chose Cancel
 	dec b
 	cp b
 	jr z,.choseSwitch
-	dec b
-	cp b
-	jp z,.choseStats
+	dec a ; field moves begin immediately below Stats
 	ld c,a
 	ld b,0
 	ld hl,wFieldMoves

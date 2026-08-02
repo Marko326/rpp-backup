@@ -608,7 +608,7 @@ DisplayFieldMoveMonMenu:
 	ld c, a
 	pop af
 
-; For each field move, move the top of the text box up 2 rows while the leaving
+; For each field move, move the top of the text box up 2 rows while leaving
 ; the bottom of the text box at the bottom of the screen.
 	ld de, -SCREEN_WIDTH * 2
 .textBoxHeightLoop
@@ -618,7 +618,7 @@ DisplayFieldMoveMonMenu:
 	dec a
 	jr nz, .textBoxHeightLoop
 
-; Make space for an extra blank row above the top field move.
+; Make space for an extra blank row above the top menu item.
 	ld de, -SCREEN_WIDTH
 	add hl, de
 	inc b
@@ -626,7 +626,7 @@ DisplayFieldMoveMonMenu:
 	call TextBoxBorder
 	call UpdateSprites
 
-; Calculate the position of the first field move name to print.
+; Calculate the position of the first menu item to print.
 	coord hl, 0, 12
 	ld a, [wFieldMovesLeftmostXCoord]
 	inc a
@@ -639,6 +639,12 @@ DisplayFieldMoveMonMenu:
 	add hl, de
 	dec a
 	jr nz, .calcFirstFieldMoveYLoop
+
+; Stats is always the first item. Field moves are printed immediately below it.
+	ld de, PokemonMenuStatsEntry
+	call PlaceString
+	ld bc, SCREEN_WIDTH * 2
+	add hl, bc
 
 	xor a
 	ld [wNumFieldMoves], a
@@ -676,13 +682,13 @@ DisplayFieldMoveMonMenu:
 	pop hl
 	ld a, [wFieldMovesLeftmostXCoord]
 	ld [hFieldMoveMonMenuTopMenuItemX], a
-	coord hl, 0, 12
+	coord hl, 0, 14
 	ld a, [wFieldMovesLeftmostXCoord]
 	inc a
 	ld e, a
 	ld d, 0
 	add hl, de
-	ld de, PokemonMenuEntries
+	ld de, PokemonMenuSwitchCancelEntries
 	jp PlaceString
 
 FieldMoveNames:
@@ -700,6 +706,13 @@ FieldMoveNames:
 PokemonMenuEntries:
 	db   "Stats"
 	next "Switch"
+	next "Cancel@"
+
+PokemonMenuStatsEntry:
+	db "Stats@"
+
+PokemonMenuSwitchCancelEntries:
+	db   "Switch"
 	next "Cancel@"
 
 GetMonFieldMoves:
