@@ -1,8 +1,8 @@
 PrintStrengthTxt:
+	; Keep the party-menu result consistent with the boulder interaction:
+	; enable Strength and show only "<Pokemon> can move boulders."
 	ld hl, wd728
 	set 0, [hl]
-	ld hl, UsedStrengthText
-	call PrintText
 	ld hl, CanMoveBouldersText
 	jp PrintText
 
