@@ -1577,21 +1577,8 @@ ThrewRockText:
 
 ; also used for Dig out-of-battle effect
 ItemUseEscapeRope:
-	ld a,[wIsInBattle]
-	and a
-	jr nz,.notUsable
-	ld a,[wCurMap]
-	cp a,AGATHAS_ROOM
-	jr z,.notUsable
-	ld a,[wCurMapTileset]
-	ld b,a
-	ld hl,EscapeRopeTilesets
-.loop
-	ld a,[hli]
-	cp a,$ff
-	jr z,.notUsable
-	cp b
-	jr nz,.loop
+	call CanUseEscapeRope
+	jr nc,.notUsable
 	ld hl,wd732
 	set 3,[hl]
 	set 6,[hl]
@@ -1613,6 +1600,30 @@ ItemUseEscapeRope:
 	jp RemoveUsedItem
 .notUsable
 	jp ItemUseNotTime
+
+; Returns carry if Escape Rope/Dig is usable on the current map.
+; This contains only the original eligibility checks and has no side effects.
+CanUseEscapeRope::
+	ld a,[wIsInBattle]
+	and a
+	jr nz,.cannotUse
+	ld a,[wCurMap]
+	cp a,AGATHAS_ROOM
+	jr z,.cannotUse
+	ld a,[wCurMapTileset]
+	ld b,a
+	ld hl,EscapeRopeTilesets
+.loop
+	ld a,[hli]
+	cp a,$ff
+	jr z,.cannotUse
+	cp b
+	jr nz,.loop
+	scf
+	ret
+.cannotUse
+	and a ; clear carry
+	ret
 
 EscapeRopeTilesets:
 	db FOREST,CEMETERY,INTERIOR,CAVERN,FACILITY,SAFARI,ICE_CAVERN,$FF

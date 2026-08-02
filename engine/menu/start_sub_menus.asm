@@ -198,6 +198,13 @@ StartMenu_Pokemon:
 	TX_FAR _FlashLightsAreaText
 	db "@"
 .dig
+	; Keep the original failure path, but only ask for confirmation if Dig is usable.
+	callba CanUseEscapeRope
+	jr nc,.useDig
+	ld hl,.wantToUseDigText
+	call .confirmFieldMove
+	jp nz,.chosePokemon
+.useDig
 	ld a,ESCAPE_ROPE
 	ld [wcf91],a
 	ld [wPseudoItemID],a
@@ -220,6 +227,9 @@ StartMenu_Pokemon:
 	call PrintText
 	jp .loop
 .canTeleport
+	ld hl,.wantToUseTeleportText
+	call .confirmFieldMove
+	jp nz,.chosePokemon
 	ld hl,.warpToLastPokemonCenterText
 	call PrintText
 	ld hl,wd732
@@ -241,6 +251,22 @@ StartMenu_Pokemon:
 .cannotFlyHereText
 	TX_FAR _CannotFlyHereText
 	db "@"
+.wantToUseDigText
+	text "Want to use"
+	line "Dig?@@"
+.wantToUseTeleportText
+	text "Want to use"
+	line "Teleport?@@"
+
+; Print a confirmation prompt without overwriting the saved party screen.
+; Returns Z for Yes and NZ for No, after restoring the party screen.
+.confirmFieldMove
+	call PrintText
+	call Func_35f4
+	call LoadScreenTilesFromBuffer1
+	ld a,[wCurrentMenuItem]
+	and a
+	ret
 .softboiled
 	ld hl,wPartyMon1MaxHP
 	ld a,[wWhichPokemon]
