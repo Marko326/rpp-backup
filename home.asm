@@ -952,29 +952,7 @@ ExclamationText::
 
 BoulderText::
 	TX_FAR _BoulderText
-	TX_ASM
-	
-	ld a, [wObtainedKantoBadges]
-	bit 3,a ; RAINBOWBADGE
-	jr z, .done
-	
-	ld d, STRENGTH
-	farcall HasPartyMove
-	ld a, [wWhichTrade]
-	and a
-	jr nz, .done
-	
-	ld a, [wWhichPokemon]
-	push af
-	call ManualTextScroll
-	pop af
-	ld [wWhichPokemon], a
-	call GetPartyMonName2
-	predef PrintStrengthTxt
-	
-.done
-	jp TextScriptEnd
-	;db "@"
+	db "@"
 
 MartSignText::
 	TX_FAR _MartSignText

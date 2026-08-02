@@ -100,8 +100,17 @@ OverworldLoopLessDelay::
 	call IsSpriteOrSignInFrontOfPlayer
 	ld a,[hSpriteIndexOrTextID]
 	and a
-	jr nz, .displayDialogue
+	jr z, .tryBackgroundFieldMove
 
+	; Boulder interaction owns its text lifecycle, like CUT and SURF.
+	; If the object is not a boulder, continue with its normal text script.
+	predef HandleBoulderInteraction
+	ld a, [wWhichTrade]
+	and a
+	jp z, OverworldLoop
+	jr .displayDialogue
+
+.tryBackgroundFieldMove
 	; Check for field moves that interact with the bg.
 	predef TryFieldMove
 	jp OverworldLoop
