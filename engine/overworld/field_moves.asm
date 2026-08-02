@@ -208,15 +208,15 @@ HandleBoulderInteraction::
 TryHeadbutt:
 	call IsHeadbuttTile
 	jr nc, .no
-	
-	; Makes sure you have a Pokemon with HEADBUTT.
+
+	; Match CUT and SURF: if a party Pokemon knows HEADBUTT, ask
+	; immediately; otherwise, only show the tree's environmental hint.
 	ld d, HEADBUTT
 	call HasPartyMove
-	jr nz, .no
-	
-	; Prints the "A Pokemon might be hiding in this tree" message
+	jr nz, .cannotHeadbutt
+
 	call Text2_EnterTheText
-	ld hl,MightBeHiding
+	ld hl, WantToUseHeadbuttTxt
 	call PrintText
 	call YesNoChoice
 	ld a, [wCurrentMenuItem]
@@ -231,7 +231,17 @@ TryHeadbutt:
 .yes
 	xor a
 	ret
-	
+
+.cannotHeadbutt
+	; HEADBUTT has no badge requirement. If nobody knows the move,
+	; keep the environmental tree hint instead of silently doing nothing.
+	call Text2_EnterTheText
+	ld hl, HeadbuttTreeHintTxt
+	call PrintText
+	call ManualTextScroll
+	call Text3_DrakesDeception
+	jr .no
+
 .no2
 	call Text3_DrakesDeception
 .no
@@ -442,6 +452,10 @@ CanMoveBouldersOnlyTxt:
 	TX_FAR _CanMoveBouldersText
 	db "@"
 
-MightBeHiding:
+HeadbuttTreeHintTxt:
+	text "A #mon might be"
+	line "hiding in tree!@@"
+
+WantToUseHeadbuttTxt:
 	text "Want to use"
 	line "Headbutt?@@"
