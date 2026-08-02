@@ -127,6 +127,84 @@ TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by
 	and a
 	ret
 
+HandleBoulderInteraction::
+	; This routine is called before DisplayTextID handles the sprite's normal text.
+	; Return the result in wWhichTrade because the predef wrapper restores AF:
+	; 0 = handled boulder, 1 = not a boulder.
+	ld a, [hSpriteIndexOrTextID]
+	ld b, a
+	ld a, [wNumSprites]
+	cp b
+	jr c, .notBoulder ; sign IDs are above the sprite count
+
+	call GetSpriteMovementByte2Pointer
+	ld a, [hl]
+	cp BOULDER_MOVEMENT_BYTE_2
+	jr nz, .notBoulder
+
+	; From here on, own the complete text lifecycle just like CUT and SURF.
+	call Text2_EnterTheText
+
+	; If Strength is already active, show which Pokemon can move boulders.
+	ld hl, wd728
+	bit 0, [hl]
+	jr z, .checkRequirements
+	ld d, STRENGTH
+	call HasPartyMove
+	jr nz, .cannotUse
+	call GetPartyMonName2
+	ld hl, CanMoveBouldersOnlyTxt
+	call PrintText
+	jr .closeHandled
+
+.checkRequirements
+	; Match CUT and SURF: check the move first, then the required badge.
+	ld d, STRENGTH
+	call HasPartyMove
+	jr nz, .cannotUse
+
+	ld a, [wObtainedKantoBadges]
+	bit 3, a ; RAINBOW_BADGE
+	jr z, .cannotUse
+
+	; The player can use Strength, so skip the warning and ask immediately.
+	ld hl, WantToUseStrengthTxt
+	call PrintText
+	call YesNoChoice
+	ld a, [wCurrentMenuItem]
+	and a
+	jr nz, .closeHandled
+
+	; Enable boulder pushing and show only "<Pokemon> can move boulders."
+	call GetPartyMonName2
+	ld hl, wd728
+	set 0, [hl]
+	ld hl, CanMoveBouldersOnlyTxt
+	call PrintText
+
+.closeHandled
+	; Close the box here. DisplayTextID is skipped for handled boulders,
+	; so there is no outer text wait and no blank follow-up box.
+	call Text3_DrakesDeception
+	xor a
+	ld [wWhichTrade], a
+	ret
+
+.cannotUse
+	; Without the move or Rainbow Badge, keep the original boulder warning.
+	ld hl, BoulderNeedsStrengthTxt
+	call PrintText
+	call ManualTextScroll
+	call Text3_DrakesDeception
+	xor a
+	ld [wWhichTrade], a
+	ret
+
+.notBoulder
+	ld a, 1
+	ld [wWhichTrade], a
+	ret
+
 TryHeadbutt:
 	call IsHeadbuttTile
 	jr nc, .no
@@ -351,6 +429,18 @@ WaterIsCalmTxt:
 WantToSurfTxt:
 	text "Want to use"
 	line "Surf?@@"
+
+BoulderNeedsStrengthTxt:
+	TX_FAR _BoulderText
+	db "@"
+
+WantToUseStrengthTxt:
+	text "Want to use"
+	line "Strength?@@"
+
+CanMoveBouldersOnlyTxt:
+	TX_FAR _CanMoveBouldersText
+	db "@"
 
 MightBeHiding:
 	text "Want to use"
