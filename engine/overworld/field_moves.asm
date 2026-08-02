@@ -27,16 +27,16 @@ TrySurf:
 	call CheckForTilePairCollisions2
 	jr c, .no
 
-; Check for a Pokemon in the party with SURF, and for the proper badge to use it.
+; First check whether a party Pokemon knows SURF and the player has the proper badge.
 	ld d, SURF
 	call HasPartyMove
-	jr nz, .no
+	jr nz, .cannotSurf
 
 	ld a, [wObtainedKantoBadges]
 	bit 4, a ; SOUL_BADGE
-	jr z, .no
-	
-; Are we allowed to surf here?
+	jr z, .cannotSurf
+
+; If SURF can be used, check whether surfing is allowed on the current map.
 	call Text2_EnterTheText
 	callba IsSurfingAllowed ; in current Pokered, this is callba IsSurfingAllowed
 	ld hl,wd728
@@ -44,15 +44,15 @@ TrySurf:
 	res 1,[hl]
 	jr z,.no2
 
-; Display "The water is calm. Do you want to SURF?" prompt like Gen 2 does.
-	ld hl,WaterIsCalmTxt
+; If SURF can be used, skip "The water is calm." and ask immediately.
+	ld hl, WantToSurfTxt
 	call PrintText
 	call YesNoChoice
 	ld a, [wCurrentMenuItem]
 	and a
 	jr nz, .no2
 
-; Call the Surf routine if you said yes.
+; Call the Surf routine if the player said Yes.
 	call GetPartyMonName2
 	ld a, SURFBOARD
 	ld [wcf91], a
@@ -63,7 +63,16 @@ TrySurf:
 .yes
 	xor a
 	ret
-	
+
+.cannotSurf
+	; If SURF cannot be used yet, only keep the calm-water message.
+	call Text2_EnterTheText
+	ld hl, WaterIsCalmTxt
+	call PrintText
+	call ManualTextScroll
+	call Text3_DrakesDeception
+	jr .no
+
 .no2
 	call Text3_DrakesDeception
 .no
@@ -336,9 +345,12 @@ WantToCutTxt:
 	line "Cut?@@"
 
 WaterIsCalmTxt:
-	text "The water is calm."
-	line "Would you like to"
-	cont "use Surf?@@"
+	text "The water is"
+	line "calm!@@"
+
+WantToSurfTxt:
+	text "Want to use"
+	line "Surf?@@"
 
 MightBeHiding:
 	text "Want to use"
