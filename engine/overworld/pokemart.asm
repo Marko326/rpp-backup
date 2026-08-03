@@ -128,8 +128,6 @@ DisplayPokemartDialogue_:
 	ld [wInitListType],a
 	callab InitList
 
-	ld hl,PokemartBuyingGreetingText
-	call PrintText
 	call SaveScreenTilesToBuffer1
 .buyMenuLoop
 	call LoadScreenTilesFromBuffer1
@@ -227,9 +225,6 @@ DisplayPokemartDialogue_:
 	ld [wListScrollOffset],a
 	ret
 
-PokemartBuyingGreetingText:
-	TX_FAR _PokemartBuyingGreetingText
-	db "@"
 
 PokemartTellBuyPriceText:
 	TX_FAR _PokemartTellBuyPriceText
