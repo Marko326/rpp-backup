@@ -41,8 +41,6 @@ DisplayPokemonCenterDialogue_:
 .declinedHealing
 	call LoadScreenTilesFromBuffer1 ; restore screen
 .done
-	ld hl, PokemonCenterFarewellText
-	call PrintText
 	jp UpdateSprites
 
 PokemonCenterWelcomeText:
@@ -62,7 +60,3 @@ PokemonFightingFitText:
 	TX_FAR _PokemonFightingFitText
 	db "@"
 
-PokemonCenterFarewellText:
-	TX_DELAY
-	TX_FAR _PokemonCenterFarewellText
-	db "@"
