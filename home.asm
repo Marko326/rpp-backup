@@ -1410,17 +1410,37 @@ DisplayListMenuID::
 	ld a,5
 	ld [wTopMenuItemX],a
 	ld a,A_BUTTON | B_BUTTON | SELECT
+	ld b,a
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	ld a,b
+	jr nz,.storeWatchedKeys
+	or D_LEFT | D_RIGHT
+.storeWatchedKeys
 	ld [wMenuWatchedKeys],a
 	ld c,10
 	call DelayFrames
 
 DisplayListMenuIDLoop::
+	xor a ; normal redraw: accept repeated directions immediately
+	jr .drawList
+.redrawAndWaitForDPadRelease
+	ld a,1 ; boundary wrap: show the new position, then require release
+.drawList
+	push af
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable transfer
 	call PrintListMenuEntries
+	; Draw the cursor into the same hidden tilemap update as the list.
+	; This prevents a frame where the refreshed list is visible without a cursor.
+	call PlaceMenuCursor
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable transfer
 	call Delay3
+	pop af
+	and a
+	call nz,checkOtherKeys.waitForDPadRelease
+.input
 	ld a,[wBattleType]
 	and a ; is it the Old Man battle?
 	jr z,.notOldManBattle
@@ -1530,30 +1550,77 @@ skipStoringItemName:
 	ld hl,wd730
 	res 6,[hl] ; turn on letter printing delay
 	jp BankswitchBack
-checkOtherKeys: ; check B, SELECT, Up, and Down keys
+checkOtherKeys: ; check B, SELECT, directions
 	bit 1,a ; was the B button pressed?
 	jp nz,ExitListMenu ; if so, exit the menu
 	bit 2,a ; was the select button pressed?
 	jp nz,HandleItemListSwapping ; if so, allow the player to swap menu entries
 	ld b,a
+	and D_LEFT | D_RIGHT
+	jr nz,.leftOrRightPressed
 	bit 7,b ; was Down pressed?
 	ld hl,wListScrollOffset
 	jr z,.upPressed
 .downPressed
+; A held Down stops on Cancel. A fresh Down press on Cancel wraps once.
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	jr nz,.tryScrollingDown
+	ld a,[wCurrentMenuItem]
+	ld c,a
+	ld a,[hl]
+	add c
+	ld c,a
+	ld a,[wListCount]
+	cp c
+	jr nz,.tryScrollingDown
+	ld a,[hJoyPressed]
+	and D_DOWN
+	jr z,.waitForDPadReleaseAndInput
+	call ItemListJumpToFirst
+	jp DisplayListMenuIDLoop.redrawAndWaitForDPadRelease
+.tryScrollingDown
 	ld a,[hl]
 	add 3
 	ld b,a
 	ld a,[wListCount]
 	cp b ; will going down scroll past the Cancel button?
-	jp c,DisplayListMenuIDLoop
+	jr c,.waitForDPadReleaseAndInput
 	inc [hl] ; if not, go down
 	jp DisplayListMenuIDLoop
 .upPressed
 	ld a,[hl]
 	and a
-	jp z,DisplayListMenuIDLoop
+	jr nz,.scrollUp
+; A held Up stops on the first item. A fresh Up press wraps once.
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	jr nz,.waitForDPadReleaseAndInput
+	ld a,[hJoyPressed]
+	and D_UP
+	jr z,.waitForDPadReleaseAndInput
+	call ItemListJumpToCancel
+	jp DisplayListMenuIDLoop.redrawAndWaitForDPadRelease
+.scrollUp
 	dec [hl]
 	jp DisplayListMenuIDLoop
+.leftOrRightPressed
+; Left and Right page through item data only. Other list types ignore them.
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	jr nz,.waitForDPadReleaseAndInput
+	call PageItemListByFour
+	jp c,DisplayListMenuIDLoop
+.waitForDPadReleaseAndInput
+	call .waitForDPadRelease
+	jp DisplayListMenuIDLoop.input
+.waitForDPadRelease
+	call DelayFrame
+	call Joypad
+	ld a,[hJoyHeld]
+	and D_UP | D_DOWN | D_LEFT | D_RIGHT
+	jr nz,.waitForDPadRelease
+	ret
 
 DisplayChooseQuantityMenu::
 ; text box dimensions/coordinates for just quantity
@@ -1591,6 +1658,14 @@ DisplayChooseQuantityMenu::
 	jr nz,.incrementQuantity
 	bit 7,a ; was Down pressed?
 	jr nz,.decrementQuantity
+	ld b,a
+	ld a,[wListMenuID]
+	cp PRICEDITEMLISTMENU
+	jr nz,.waitForKeyPressLoop ; only buying and selling use Left/Right shortcuts
+	bit 5,b ; was Left pressed?
+	jr nz,.decrementQuantityBy10
+	bit 4,b ; was Right pressed?
+	jr nz,.incrementQuantityBy10
 	jr .waitForKeyPressLoop
 .incrementQuantity
 	ld a,[wMaxItemQuantity]
@@ -1612,6 +1687,31 @@ DisplayChooseQuantityMenu::
 ; wrap to the max quantity if the player goes below 1
 	ld a,[wMaxItemQuantity]
 	ld [hl],a
+	jr .handleNewQuantity
+.decrementQuantityBy10
+; Match Crystal's Left-key behavior: subtract 10 and clamp at 1.
+	ld hl,wItemQuantity
+	ld a,[hl]
+	sub 10
+	jr c,.setMinimumQuantity
+	jr z,.setMinimumQuantity
+	ld [hl],a
+	jr .handleNewQuantity
+.setMinimumQuantity
+	ld [hl],1
+	jr .handleNewQuantity
+.incrementQuantityBy10
+; Match Crystal's Right-key behavior: add 10 and clamp at the current maximum.
+	ld hl,wItemQuantity
+	ld a,[hl]
+	add 10
+	ld b,a
+	ld a,[wMaxItemQuantity]
+	cp b
+	jr nc,.storeIncreasedQuantity
+	ld b,a
+.storeIncreasedQuantity
+	ld [hl],b
 .handleNewQuantity
 	coord hl, 17, 10
 	ld a,[wListMenuID]
@@ -4048,6 +4148,12 @@ HandleMenuInput_::
 	jr .checkIfAButtonOrBButtonPressed
 
 PlaceMenuCursor::
+	; Prevent VBlank from transferring the tilemap between clearing the old
+	; cursor and drawing the new one. Restore the caller's transfer state below.
+	ld a,[H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
 	ld a,[wTopMenuItemY]
 	and a ; is the y coordinate 0?
 	jr z,.adjustForXCoord
@@ -4120,6 +4226,10 @@ PlaceMenuCursor::
 	ld [wMenuCursorLocation + 1],a
 	ld a,[wCurrentMenuItem]
 	ld [wLastMenuItem],a
+	ld b,a ; preserve the original return value while restoring transfer state
+	pop af
+	ld [H_AUTOBGTRANSFERENABLED],a
+	ld a,b
 	ret
 
 ; This is used to mark a menu cursor other than the one currently being
