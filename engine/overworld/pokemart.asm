@@ -311,6 +311,8 @@ DisplayListMenuIDLoop_Mart::
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable transfer
 	call PrintListMenuEntries
+	; Commit the refreshed product list and cursor in the same background update.
+	call PlaceMenuCursor
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable transfer
 	call Delay3
@@ -446,6 +448,103 @@ DisplayListMenuIDLoop_Mart::
 	call PrintItemDescription_Mart
 	jp DisplayListMenuIDLoop_Mart
 
+; Moves the selected item by four absolute list entries.
+; Left clamps at the first item and Right clamps at the last item.
+; Cancel is not part of horizontal paging.
+PageItemListByFour::
+	ld a,[wListCount]
+	and a
+	jr z,.noMovement
+	ld d,a ; number of item entries
+	ld a,[wCurrentMenuItem]
+	ld c,a ; preserve the cursor row where possible
+	ld a,[wListScrollOffset]
+	add c ; absolute selected index
+	cp d
+	jr nc,.noMovement ; ignore Left/Right while Cancel is selected
+	ld e,a
+	ld a,[hJoy5]
+	bit 5,a ; Left
+	jr nz,.moveLeft
+.moveRight
+	ld a,d
+	dec a ; last item index
+	cp e
+	jr z,.noMovement
+	ld a,e
+	add 4
+	ld e,a
+	ld a,d
+	dec a
+	cp e
+	jr nc,.positionTarget
+	ld e,a
+	jr .positionTarget
+.moveLeft
+	ld a,e
+	and a
+	jr z,.noMovement
+	sub 4
+	jr nc,.storeLeftTarget
+	xor a
+.storeLeftTarget
+	ld e,a
+.positionTarget
+; Keep the same cursor row when possible. Clamp the scroll offset to
+; wListCount - 2 so all three selectable rows remain valid near the end.
+	ld a,d
+	cp 2
+	jr c,.zeroMaximumOffset
+	sub 2
+	ld b,a
+	jr .getDesiredOffset
+.zeroMaximumOffset
+	xor a
+	ld b,a
+.getDesiredOffset
+	ld a,e
+	sub c
+	jr nc,.clampOffset
+	xor a
+.clampOffset
+	cp b
+	jr c,.storeOffset
+	ld a,b
+.storeOffset
+	ld [wListScrollOffset],a
+	ld b,a
+	ld a,e
+	sub b
+	ld [wCurrentMenuItem],a
+	scf ; report that the selected item changed
+	ret
+.noMovement
+	and a ; clear carry
+	ret
+
+; Select Cancel while keeping it on a valid cursor row.
+ItemListJumpToCancel::
+	ld a,[wListCount]
+	cp 2
+	jr c,.shortList
+	sub 2
+	ld [wListScrollOffset],a
+	ld a,2
+	ld [wCurrentMenuItem],a
+	ret
+.shortList
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wListCount]
+	ld [wCurrentMenuItem],a
+	ret
+
+ItemListJumpToFirst::
+	xor a
+	ld [wListScrollOffset],a
+	ld [wCurrentMenuItem],a
+	ret
+
 PrintItemDescription_Mart::
 	push bc
 	push de
@@ -577,6 +676,9 @@ HandleMenuInput_Mart::
 	ld [wCurrentMenuItem],a
 	call PrintItemDescription_Mart
 .checkOtherKeys
+	ld a,b
+	and D_LEFT | D_RIGHT
+	jp nz,.loop2 ; horizontal paging is intentionally disabled in marts
 	ld a,[wMenuWatchedKeys]
 	and b ; does the menu care about any of the pressed keys?
 	jp z,.loop1
@@ -605,4 +707,22 @@ HandleMenuInput_Mart::
 	ld a,[wMenuWatchMovingOutOfBounds]
 	and a ; should we return if the user tried to go past the top or bottom?
 	jr z,.checkOtherKeys
+	ld a,b
+	and A_BUTTON | B_BUTTON
+	jr nz,.checkIfAButtonOrBButtonPressed
+	bit 6,b ; Up at the top row: only return if the list can scroll up
+	jr z,.downBoundary
+	ld a,[wListScrollOffset]
+	and a
+	jp z,.loop2 ; already at the first item, so keep the cursor stable
+	jr .checkIfAButtonOrBButtonPressed
+.downBoundary
+	ld a,[wCurrentMenuItem]
+	ld c,a
+	ld a,[wListScrollOffset]
+	add c
+	ld c,a
+	ld a,[wListCount]
+	cp c
+	jp z,.loop2 ; already on Cancel, so keep the cursor stable
 	jr .checkIfAButtonOrBButtonPressed
