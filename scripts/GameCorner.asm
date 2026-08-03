@@ -137,37 +137,83 @@ CeladonGameCornerText1:
 
 CeladonGameCornerText2:
 	TX_ASM
+	; 先检查游戏盒，避免没有游戏盒时进入购买菜单。
+	ld b, COIN_CASE
+	call IsItemInBag
+	jp z, .noCoinCase
 	call CeladonGameCornerScript_48f1e
 	ld hl, CeladonGameCornerText_48d22
 	call PrintText
-	call YesNoChoice
+	; 首次进入默认选择 50 枚；重复购买时保留当前挡位。
+	xor a
+	ld [wCurrentMenuItem], a
+	ld [wLastMenuItem], a
+.menuLoop
+	call CeladonGameCornerScript_48f1e
+	call CeladonGameCornerPurchaseMenu
+	bit 1, a ; 按 B 等同于选择 Cancel。
+	jp nz, .cancel
 	ld a, [wCurrentMenuItem]
+	cp 2
+	jp z, .cancel
 	and a
-	jr nz, .asm_48d0f
-	ld b,COIN_CASE
-	call IsItemInBag
-	jr z, .asm_48d19
-	call Has9990Coins
-	jr nc, .asm_48d14
+	jp z, .buy50
+.buy500
+	; 500 枚售价 ¥10000，9500 枚及以上不能继续购买。
+	ld a, $95
+	ld [hCoins], a
+	xor a
+	ld [hCoins + 1], a
+	call HasEnoughCoins
+	jp nc, .coinCaseFull
+	ld a, $01
+	ld [hMoney], a
+	xor a
+	ld [hMoney + 1], a
+	ld [hMoney + 2], a
+	call HasEnoughMoney
+	jp c, .cantAfford
+	; 扣除 ¥10000。
+	ld hl, hMoney + 2
+	ld de, wPlayerMoney + 2
+	ld c, 3
+	predef SubBCDPredef
+	; 增加 500 枚游戏币。
+	xor a
+	ld [hUnusedCoinsByte], a
+	ld a, $05
+	ld [hCoins], a
+	xor a
+	ld [hCoins + 1], a
+	ld de, wPlayerCoins + 1
+	ld hl, hCoins + 1
+	ld c, 2
+	predef AddBCDPredef
+	call CeladonGameCornerScript_48f1e
+	ld hl, CeladonGameCornerReceived500CoinsText
+	call PrintText
+	jp .menuLoop
+.buy50
+	; 50 枚售价 ¥1000，9950 枚及以上不能继续购买。
+	ld a, $99
+	ld [hCoins], a
+	ld a, $50
+	ld [hCoins + 1], a
+	call HasEnoughCoins
+	jp nc, .coinCaseFull
 	xor a
 	ld [hMoney], a
 	ld [hMoney + 2], a
 	ld a, $10
 	ld [hMoney + 1], a
 	call HasEnoughMoney
-	jr nc, .asm_48cdb
-	ld hl, CeladonGameCornerText_48d31
-	jr .asm_48d1c
-.asm_48cdb
-	xor a
-	ld [hMoney], a
-	ld [hMoney + 2], a
-	ld a, $10
-	ld [hMoney + 1], a
+	jp c, .cantAfford
+	; 扣除 ¥1000。
 	ld hl, hMoney + 2
 	ld de, wPlayerMoney + 2
-	ld c, $3
+	ld c, 3
 	predef SubBCDPredef
+	; 增加 50 枚游戏币。
 	xor a
 	ld [hUnusedCoinsByte], a
 	ld [hCoins], a
@@ -175,22 +221,77 @@ CeladonGameCornerText2:
 	ld [hCoins + 1], a
 	ld de, wPlayerCoins + 1
 	ld hl, hCoins + 1
-	ld c, $2
+	ld c, 2
 	predef AddBCDPredef
 	call CeladonGameCornerScript_48f1e
 	ld hl, CeladonGameCornerText_48d27
-	jr .asm_48d1c
-.asm_48d0f
-	ld hl, CeladonGameCornerText_48d2c
-	jr .asm_48d1c
-.asm_48d14
+	call PrintText
+	jp .menuLoop
+.cantAfford
+	ld hl, CeladonGameCornerText_48d31
+	call PrintText
+	; 当前所选挡位金额不足时结束本次文本流程，不再返回购买菜单。
+	jp TextScriptEnd
+.coinCaseFull
 	ld hl, CeladonGameCornerText_48d36
-	jr .asm_48d1c
-.asm_48d19
-	ld hl, CeladonGameCornerText_48d3b
-.asm_48d1c
+	call PrintText
+	jp .menuLoop
+.cancel
+	ld hl, CeladonGameCornerText_48d2c
 	call PrintText
 	jp TextScriptEnd
+.noCoinCase
+	ld hl, CeladonGameCornerText_48d3b
+	call PrintText
+	jp TextScriptEnd
+
+; 三项购买菜单；不重置 wCurrentMenuItem，从而记住刚购买的挡位。
+; 使用单行间距，将菜单完整放在右上状态框与底部文本框之间。
+CeladonGameCornerPurchaseMenu:
+	ld hl, wd730
+	set 6, [hl]
+	ld a, A_BUTTON | B_BUTTON
+	ld [wMenuWatchedKeys], a
+	ld a, 2
+	ld [wMaxMenuItem], a
+	ld a, 8
+	ld [wTopMenuItemY], a
+	ld a, 7
+	ld [wTopMenuItemX], a
+	; 右对齐的 14×5 格窗口：上边紧接状态框，下边不碰文本框。
+	coord hl, 6, 7
+	ld b, 3
+	ld c, 12
+	call TextBoxBorder
+	call UpdateSprites
+	; 三个选项逐行绘制，避免 next 使用标准双行间距。
+	coord hl, 8, 8
+	ld de, GameCornerBuy50MenuText
+	call PlaceString
+	coord hl, 8, 9
+	ld de, GameCornerBuy500MenuText
+	call PlaceString
+	coord hl, 8, 10
+	ld de, GameCornerCancelMenuText
+	call PlaceString
+	ld hl, wd730
+	res 6, [hl]
+	; 置位 hFlags_0xFFF6 的 bit 1，使菜单光标按单行间距移动；返回后恢复。
+	ld hl, hFlags_0xFFF6
+	set 1, [hl]
+	call HandleMenuInput
+	ld hl, hFlags_0xFFF6
+	res 1, [hl]
+	ret
+
+GameCornerBuy50MenuText:
+	db " 50:  ¥1000@"
+
+GameCornerBuy500MenuText:
+	db "500: ¥10000@"
+
+GameCornerCancelMenuText:
+	db "Cancel@"
 
 CeladonGameCornerText_48d22:
 	TX_FAR _CeladonGameCornerText_48d22
@@ -198,6 +299,10 @@ CeladonGameCornerText_48d22:
 
 CeladonGameCornerText_48d27:
 	TX_FAR _CeladonGameCornerText_48d27
+	db "@"
+
+CeladonGameCornerReceived500CoinsText:
+	TX_FAR _CeladonGameCornerReceived500CoinsText
 	db "@"
 
 CeladonGameCornerText_48d2c:
