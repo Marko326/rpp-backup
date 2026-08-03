@@ -2371,9 +2371,6 @@ _RepelWoreOffText::
 	line "wore off."
 	prompt
 
-_PokemartBuyingGreetingText::
-	text "Take your time."
-	done
 
 _PokemartTellBuyPriceText::
 	TX_RAM wcf4b
