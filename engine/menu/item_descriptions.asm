@@ -373,7 +373,18 @@ FlashItemDescription_Mart:
 	ld hl, wd730
 	set 6, [hl]
 	pop hl
+	; Draw the whole description into the background tilemap before
+	; transferring it, so clearing the old text is never shown onscreen.
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
 	call PrintText
+	pop af
+	ld [H_AUTOBGTRANSFERENABLED], a
+	; Do not wait here. Every mart menu path reaches its normal Delay3
+	; before polling again, so the list, cursor, and description are
+	; transferred together instead of stalling for an extra three frames.
 	ld hl, wd730
 	res 6, [hl]
 	ret
