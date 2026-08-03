@@ -2492,11 +2492,7 @@ _HMCantDeleteText::
 _PokemonCenterWelcomeText::
 	text "Welcome to our"
 	line "#mon Center!"
-
-	para "We heal your"
-	line "#mon back to"
-	cont "perfect health!"
-	prompt
+	done
 
 _ShallWeHealYourPokemonText::
 	text "Shall we heal your"
@@ -2512,11 +2508,6 @@ _PokemonFightingFitText::
 	text "Thank you!"
 	line "Your #mon are"
 	cont "fighting fit!"
-	prompt
-
-_PokemonCenterFarewellText::
-	text "We hope to see"
-	line "you again!"
 	done
 
 _CableClubNPCAreaReservedFor2FriendsLinkedByCableText::
