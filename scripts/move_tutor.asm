@@ -23,18 +23,18 @@ MoveTutorScriptSpecial::
 	ld [wMenuWatchedKeys], a
 	ld a, $3
 	ld [wMaxMenuItem], a
-	ld a, $5
+	ld a, $4
 	ld [wTopMenuItemY], a
 	ld a, $1
 	ld [wTopMenuItemX], a
 	ld hl, wd730
 	set 6, [hl]
-	coord hl, 0, 3
+	coord hl, 0, 2
 	ld b, $8
 	ld c, $d
 	call TextBoxBorder
 	call UpdateSprites
-	coord hl, 2, 5
+	coord hl, 2, 4
 	ld de, ElementalHyperbeamsText
 	call PlaceString
 	ld hl, wd730
