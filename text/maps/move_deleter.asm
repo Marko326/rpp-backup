@@ -1,34 +1,21 @@
 _MoveDeleterGreetingText::
-	text "Umm..."
-
-	para "Oh, yes, I'm the"
-	line "Move Deleter."
-
-	para "I can make"
-	line "#mon forget"
-	cont "moves."
-
-	para "Shall I make a"
+	text "Shall I make a"
 	line "#mon forget?"
 	done
 
-_MoveDeleterSaidYesText::
-	text "Which #mon"
-	line "should forget a"
-	cont "move?"
-	prompt
-
 _MoveDeleterWhichMoveText::
 	text "Which move should"
-	line "it forget, then?"
+	line "@"
+	TX_RAM wcd6d
+	text " forget?"
 	done
 
 _MoveDeleterConfirmText::
-	text "Make it forget"
-	line "@"
-	TX_RAM wcf4b
-	text "?"
-	prompt
+	text "Should @"
+	TX_RAM wcd6d
+	text ""
+	line "forget this move?"
+	done
 
 _MoveDeleterForgotText::
 	text "@"

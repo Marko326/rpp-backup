@@ -19,8 +19,6 @@ MoveRelearnerText1:
 	call PrintText
 	jp TextScriptEnd
 .enoughMoney
-	ld hl, MoveRelearnerSaidYesText
-	call PrintText
 	; Select pokemon from party.
 	call SaveScreenTilesToBuffer2
 	xor a
@@ -49,6 +47,8 @@ MoveRelearnerText1:
 	call PrintText
 	jp TextScriptEnd
 .chooseMove
+	; 将当前选择的宝可梦昵称复制到 wcd6d，供后面的文本使用。
+	call GetPartyMonName2
 	ld hl, MoveRelearnerWhichMoveText
 	call PrintText
 	xor a
@@ -106,10 +106,6 @@ MoveRelearnerText1:
 
 MoveRelearnerGreetingText:
 	TX_FAR _MoveRelearnerGreetingText
-	db "@"
-
-MoveRelearnerSaidYesText:
-	TX_FAR _MoveRelearnerSaidYesText
 	db "@"
 
 MoveRelearnerNotEnoughMoneyText:

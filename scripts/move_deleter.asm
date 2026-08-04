@@ -6,8 +6,6 @@ MoveDeleterText1:
 	ld a, [wCurrentMenuItem]
 	and a
 	jp nz, .exit
-	ld hl, MoveDeleterSaidYesText
-	call PrintText
 	; Select pokemon from party.
 	call SaveScreenTilesToBuffer2
 	xor a
@@ -35,6 +33,7 @@ MoveDeleterText1:
 	call PrintText
 	jp TextScriptEnd
 .chooseMove
+	call GetPartyMonName2
 	push bc
 	xor a
 	ld [wListScrollOffset], a
@@ -61,7 +60,14 @@ MoveDeleterText1:
 	ld [wMoveNum], a
 	ld [wd11e],a
 	call GetMoveName
-	call CopyStringToCF4B ; copy name to wcf4b
+	call CopyStringToCF4B ; copy move name to wcf4b
+	; DisplayListMenuID 会把 wWhichPokemon 改成技能列表索引。
+	; 从栈中恢复所选宝可梦索引，再获取正确的昵称。
+	pop bc
+	push bc
+	ld a, b
+	ld [wWhichPokemon], a
+	call GetPartyMonName2 ; wcd6d = 当前选择的宝可梦昵称
 	ld hl, MoveDeleterConfirmText
 	call PrintText
 	call YesNoChoice
@@ -151,10 +157,6 @@ PrepareDeletableMoveList:
 
 MoveDeleterGreetingText:
 	TX_FAR _MoveDeleterGreetingText
-	db "@"
-
-MoveDeleterSaidYesText:
-	TX_FAR _MoveDeleterSaidYesText
 	db "@"
 
 MoveDeleterWhichMoveText:
