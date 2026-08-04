@@ -14,8 +14,6 @@ MoveTutorScriptSpecial::
 ; Handles choosing Frenzy Plant, Hydro Cannon, or Blast Burn, then teaching the move
 	call SaveScreenTilesToBuffer2
 	call EnableAutoTextBoxDrawing
-	ld hl,MoveTutorWelcomeText
-	call PrintText
 
 	; display the menu to choose which move to learn
 	xor a
@@ -61,8 +59,6 @@ MoveTutorScript::
 ; This is used by all other Move Tutors, who only teach one move
 	call SaveScreenTilesToBuffer2
 	call EnableAutoTextBoxDrawing
-	ld hl,MoveTutorWelcomeText
-	call PrintText
 	ld a,[wWhichTrade] ; which move tutor is this?
 	; fallthrough
 
@@ -160,10 +156,6 @@ DisplayTeachTutorMoveText:
 	call LoadGBPal
 	ld hl,MoveTutorComeAgainText
 	jp PrintText
-
-MoveTutorWelcomeText:
-	TX_FAR _MoveTutorWelcomeText
-	db "@"
 
 TeachTutorMoveText:
 	TX_FAR _TeachTutorMoveText

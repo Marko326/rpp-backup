@@ -1,19 +1,9 @@
-_MoveTutorWelcomeText::
-	text "Hello, I am a"
-	line "Move Tutor."
-	
-	para "For only ¥500, I"
-	line "can teach a move"
-	cont "to one of your"
-	cont "#mon."
-	prompt
-	
 _TeachTutorMoveText::
-	text "Want me to teach"
-	line "@"
+	text "For ¥500, I can"
+	line "teach @"
 	TX_RAM wcf4b
 	db $0
-	cont "to a #mon?"
+	cont "to a #mon."
 	done
 
 _MoveTutorComeAgainText::
