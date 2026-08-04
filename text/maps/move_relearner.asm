@@ -1,22 +1,8 @@
 _MoveRelearnerGreetingText::
-	text "I'm the #mon"
-	line "Move Maniac!"
-
-	para "I know every"
-	line "single move that"
-	cont "#mon learn"
-	cont "growing up."
-
-	para "For ¥500, I can"
+	text "For ¥500, I can"
 	line "make a #mon"
-	cont "of yours remember"
-	cont "a move."
+	cont "remember a move."
 	done
-
-_MoveRelearnerSaidYesText::
-	text "Which #mon"
-	line "should learn it?"
-	prompt
 
 _MoveRelearnerNotEnoughMoneyText::
 	text "Hmmm..."
@@ -27,14 +13,14 @@ _MoveRelearnerNotEnoughMoneyText::
 
 _MoveRelearnerWhichMoveText::
 	text "Which move should"
-	line "it learn?"
+	line "@"
+	TX_RAM wcd6d
+	text " learn?"
 	done
 
 _MoveRelearnerByeText::
-	text "If any of your"
-	line "#mon need to"
-	cont "remember a move,"
-	cont "come visit me!"
+	text "Come visit me"
+	line "again!"
 	done
 
 _MoveRelearnerNoMovesText::
