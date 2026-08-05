@@ -10,12 +10,16 @@
 ;	jp TextScriptEnd
 
 MoveTutorScriptSpecial::
-; This code is for the NPC who teaches Signature Moves to fully evolved starters 
-; Handles choosing Frenzy Plant, Hydro Cannon, or Blast Burn, then teaching the move
+; This code is for the NPC who teaches signature moves to fully evolved starters and Mew.
+; Handles choosing Frenzy Plant, Blast Burn, or Hydro Cannon, then teaching the move.
 	call SaveScreenTilesToBuffer2
 	call EnableAutoTextBoxDrawing
+	ld hl, MoveTutorSpecialIntroText
+	call PrintText
+	ld hl, MoveTutorChooseMoveText
+	call PrintText
 
-	; display the menu to choose which move to learn
+	; Display the menu to choose which move to learn.
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wLastMenuItem], a
@@ -46,9 +50,11 @@ MoveTutorScriptSpecial::
 	cp $3
 	jr z, .done
 
-	; convert wCurrentMenuItem to a Move Tutor ID and continue
+	; Convert wCurrentMenuItem to a Move Tutor ID.
 	inc a
-	jr DisplayTeachTutorMoveText
+	ld [wWhichTrade], a
+	call LoadTutorMoveName
+	jp MoveTutorCheckMoney
 
 .done
 	ld hl,MoveTutorComeAgainText
@@ -56,19 +62,23 @@ MoveTutorScriptSpecial::
 
 
 MoveTutorScript::
-; This is used by all other Move Tutors, who only teach one move
+; This is used by all other Move Tutors, who only teach one move.
 	call SaveScreenTilesToBuffer2
 	call EnableAutoTextBoxDrawing
-	ld a,[wWhichTrade] ; which move tutor is this?
-	; fallthrough
+	ld a, [wWhichTrade] ; which move tutor is this?
+	call LoadTutorMoveName
+	jr DisplayTeachTutorMoveText
 
-DisplayTeachTutorMoveText:
-	ld [wd11e],a
+LoadTutorMoveName:
+	ld [wd11e], a
 	callba TutorToMove
-	ld a,[wd11e]
-	ld [wMoveNum],a
+	ld a, [wd11e]
+	ld [wMoveNum], a
 	call GetMoveName
 	call CopyStringToCF4B ; copy name to wcf4b
+	ret
+
+DisplayTeachTutorMoveText:
 	ld hl,TeachTutorMoveText
 	call PrintText
 	coord hl, 14, 7
@@ -76,14 +86,16 @@ DisplayTeachTutorMoveText:
 	ld a,TWO_OPTION_MENU
 	ld [wTextBoxID],a
 	call DisplayTextBoxID ; yes/no menu
-	ld a,[wCurrentMenuItem]
+	ld a, [wCurrentMenuItem]
 	and a
-	jr z,.checkMoney
+	jp z, MoveTutorCheckMoney
 	; chose no
 	ld hl,MoveTutorComeAgainText
 	jp PrintText
-	
-.checkMoney ; If you said yes, Make sure you have money
+
+MoveTutorCheckMoney:
+; Make sure the player has ¥500. The special tutor reaches this directly,
+; while ordinary tutors reach it after their Yes/No confirmation.
 	xor a
 	ldh [$9f], a
 	ldh [$a1], a
@@ -114,7 +126,7 @@ DisplayTeachTutorMoveText:
 	pop af
 	jr nc,.checkIfAbleToLearnMove
 ; if the player cancelled teaching the move
-	jr .done
+	jp .done
 	
 .checkIfAbleToLearnMove
 	callba CanLearnTutor ; check if the pokemon can learn the move
@@ -133,7 +145,44 @@ DisplayTeachTutorMoveText:
 
 .checkIfAlreadyLearnedMove
 	callba CheckIfMoveIsKnown ; check if the pokemon already knows the move
-	jr c,.chooseMon
+	jr c, .chooseMon
+
+	; Tutor IDs 1-3 are the three special starter moves. Ordinary tutors
+	; skip the special Stat Exp requirement entirely.
+	ld a, [wWhichTrade]
+	cp 4
+	jr nc, .learnMove
+
+	; Mew may learn these moves without meeting the Stat Exp requirement.
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	cp MEW
+	jr z, .learnMove
+
+	; Require at least 40000 ($9C40) Special Stat Exp. Stat Exp words are
+	; stored big-endian, so compare the high byte first.
+	ld de, wPartyMon1SpecialExp - wPartyMon1
+	add hl, de
+	ld a, [hli]
+	cp $9c
+	jr c, .notStrongEnough
+	jr nz, .learnMove
+	ld a, [hl]
+	cp $40
+	jr c, .notStrongEnough
+	jr .learnMove
+
+.notStrongEnough
+	ld a, SFX_DENIED
+	call PlaySoundWaitForCurrent
+	ld hl, MonNotStrongEnoughTutorText
+	call PrintText
+	jp .chooseMon
+
+.learnMove
 	predef LearnMove ; teach move
 	ld a, b
 	and a ; did you learn the move, or cancel learning?
@@ -157,6 +206,14 @@ DisplayTeachTutorMoveText:
 	ld hl,MoveTutorComeAgainText
 	jp PrintText
 
+MoveTutorSpecialIntroText:
+	TX_FAR _MoveTutorSpecialIntroText
+	db "@"
+
+MoveTutorChooseMoveText:
+	TX_FAR _MoveTutorChooseMoveText
+	db "@"
+
 TeachTutorMoveText:
 	TX_FAR _TeachTutorMoveText
 	db "@"
@@ -167,6 +224,10 @@ MoveTutorComeAgainText:
 
 MonCannotLearnTutorMoveText:
 	TX_FAR _MonCannotLearnTutorMoveText
+	db "@"
+
+MonNotStrongEnoughTutorText:
+	TX_FAR _MonNotStrongEnoughTutorText
 	db "@"
 
 MoveTutorNotEnoughMoneyText:

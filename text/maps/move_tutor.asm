@@ -1,3 +1,15 @@
+_MoveTutorSpecialIntroText::
+	text "For ¥500,"
+	line "I can teach"
+	cont "your #mon"
+	cont "a mighty move."
+	prompt
+
+_MoveTutorChooseMoveText::
+	text "Please choose a"
+	line "move!"
+	done
+
 _TeachTutorMoveText::
 	text "For ¥500, I can"
 	line "teach @"
@@ -16,6 +28,14 @@ _MonCannotLearnTutorMoveText::
 	cont "@"
 	TX_RAM wcf4b
 	text "."
+	prompt
+
+_MonNotStrongEnoughTutorText::
+	text "@"
+	TX_RAM wcd6d
+	text " isn't"
+	line "strong enough to"
+	cont "master this move."
 	prompt
 
 _MoveTutorNotEnoughMoneyText::
