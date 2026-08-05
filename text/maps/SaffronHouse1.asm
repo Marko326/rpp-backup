@@ -1,10 +1,15 @@
 _SaffronHouse1Text1::
-	text "Thank you for"
-	line "writing. I hope"
-	cont "to see you soon!"
+	text "The tutor's moves"
+	line "are very powerful!"
 
-	para "Hey! Don't look"
-	line "at my letter!"
+	para "A #mon needs"
+	line "at least 40000"
+	cont "Special Stat Exp."
+
+	para "But I've heard"
+	line "that some rare"
+	cont "#mon need no"
+	cont "such training..."
 	done
 
 _SaffronHouse1Text2::
