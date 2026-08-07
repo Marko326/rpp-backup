@@ -27,9 +27,13 @@ ShowPokedexMenu:
 	inc hl
 	ld a,6
 	ld [hli],a ; max menu item ID
-	ld [hl],D_LEFT | D_RIGHT | B_BUTTON | A_BUTTON
+	; 图鉴列表额外监听 SELECT/START，仅用于当前宝可梦的叫声和地区快捷键。
+	ld [hl],D_LEFT | D_RIGHT | B_BUTTON | A_BUTTON | SELECT | START
 	call HandlePokedexListMenu
 	jr c,.goToSideMenu ; if the player chose a pokemon from the list
+	ld a,b
+	and a
+	jr nz,.setUpGraphics ; START 查看地区后重新初始化图鉴列表界面
 .exitPokedex
 	xor a
 	ld [wMenuWatchMovingOutOfBounds],a
@@ -156,7 +160,10 @@ HandlePokedexSideMenu:
 	jr .exitSideMenu
 
 ; handles the list of pokemon on the left of the pokedex screen
-; sets carry flag if player presses A, unsets carry flag if player presses B
+; OUTPUT:
+; carry set: player pressed A on the current pokemon
+; carry clear, b = 0: player pressed B and exited the pokedex
+; carry clear, b = 1: player used START to view the current pokemon's area
 HandlePokedexListMenu:
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
@@ -334,7 +341,7 @@ HandlePokedexListMenu:
 	jp .loop
 .checkIfLeftPressed ; scroll up 7 rows
 	bit 5,a ; was Left pressed?
-	jr z,.buttonAPressed
+	jr z,.checkIfAButtonPressed
 .leftPressed
 	ld a,[wListScrollOffset]
 	sub a,7
@@ -343,11 +350,50 @@ HandlePokedexListMenu:
 	xor a
 	ld [wListScrollOffset],a
 	jp .loop
+.checkIfAButtonPressed
+	; A/B 优先于快捷键，避免组合按键改变进入四项菜单或退出图鉴的原行为。
+	bit 0,a ; was A pressed?
+	jr nz,.buttonAPressed
+.checkIfSelectPressed
+	bit 2,a ; was SELECT pressed?
+	jr z,.checkIfStartPressed
+	call .getSelectedSeenMonIndex
+	jp z,.loop ; 未见的虚线条目没有可播放的对应叫声
+	ld a,[wd11e]
+	call PlayCry
+	jp .loop
+.checkIfStartPressed
+	bit 3,a ; was START pressed?
+	jp z,.loop
+	call .getSelectedSeenMonIndex
+	jp z,.loop ; 未见的虚线条目不能查看地区
+	predef LoadTownMap_Nest
+	call ClearScreen
+	ld b,1 ; 告诉上层重新载入图鉴图块并初始化列表菜单
+	and a
+	ret
 .buttonAPressed
 	scf
 	ret
 .buttonBPressed
+	ld b,0
 	and a
+	ret
+
+.getSelectedSeenMonIndex
+	; 将当前列表光标换算成图鉴编号，并沿用四项菜单的“仅已见有效”规则。
+	ld a,[wListScrollOffset]
+	ld b,a
+	ld a,[wCurrentMenuItem]
+	add b
+	inc a
+	ld [wd11e],a
+	ld hl,wPokedexSeen
+	call IsPokemonBitSet
+	ret z
+	call PokedexToIndex ; wd11e 转换为叫声和地区功能使用的内部编号
+	ld a,[wd11e]
+	and a ; 显式返回非零状态，供快捷键分支判断条目有效
 	ret
 
 DrawPokedexVerticalLine:
