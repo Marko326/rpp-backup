@@ -225,6 +225,12 @@ HandlePokedexListMenu:
 	ld a,b
 	ld [wDexMaxSeenMon],a
 .loop
+	xor a ; 普通重绘保持原有方向键连发
+	jr .drawList
+.loopAfterBoundaryWrap
+	ld a,1 ; 首尾跳转后先重绘目标位置，再等待上下键松开
+.drawList
+	push af
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
 	coord hl, 4, 2
@@ -289,65 +295,128 @@ HandlePokedexListMenu:
 	ld [wd11e],a
 	dec d
 	jr nz,.printPokemonLoop
+	; 在打开自动传输前同步箭头位置，避免首尾换页时旧光标残留一帧。
+	call PlaceMenuCursor
 	ld a,01
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call Delay3
 	call GBPalNormal
+	pop af
+	and a
+	call nz,.waitForVerticalRelease ; 按住上下键时，首尾跳转只执行一次
 	call HandleMenuInput
 	bit 1,a ; was the B button pressed?
 	jp nz,.buttonBPressed
 .checkIfUpPressed
 	bit 6,a ; was Up pressed?
 	jr z,.checkIfDownPressed
-.upPressed ; scroll up one row
+.upPressed ; 上移一行，或从图鉴第一项跳到当前最后一只已见宝可梦
 	ld a,[wListScrollOffset]
 	and a
-	jp z,.loop
+	jr nz,.scrollUpOneRow
+	; 只有按键开始时已经位于第一项，才允许执行首尾跳转。
+	; 从中间按住上键移动到第一项时，HandleMenuInput 返回的是连发输入，
+	; 此时 hJoyPressed 没有 UP，等待松键并停在第一项，避免继续跳到末项。
+	ld a,[hJoyPressed]
+	bit 6,a
+	jp z,.stopAtVerticalBoundary
+	jr .wrapToLastSeenMon
+.scrollUpOneRow
 	dec a
 	ld [wListScrollOffset],a
 	jp .loop
+.wrapToLastSeenMon
+	; wDexMaxSeenMon 是本次打开图鉴时动态扫描出的最高已见编号。
+	; 不写死宝可梦数量，扩充图鉴或已见状态变化后仍会跳到正确末项。
+	ld a,[wDexMaxSeenMon]
+	cp a,7
+	jr c,.lastSeenFitsOnFirstPage
+	sub a,7
+	ld [wListScrollOffset],a
+	ld a,6
+	ld [wCurrentMenuItem],a
+	jp .loopAfterBoundaryWrap
+.lastSeenFitsOnFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wDexMaxSeenMon]
+	dec a
+	ld [wCurrentMenuItem],a
+	jp .loopAfterBoundaryWrap
 .checkIfDownPressed
 	bit 7,a ; was Down pressed?
 	jr z,.checkIfRightPressed
-.downPressed ; scroll down one row
-	ld a,[wDexMaxSeenMon]
-	cp a,7
-	jp c,.loop ; can't if the list is shorter than 7
-	sub a,7
+.downPressed ; 下移一行，或从当前最后一只已见宝可梦跳回图鉴第一项
+	ld a,[wCurrentMenuItem]
 	ld b,a
 	ld a,[wListScrollOffset]
+	add b
+	inc a ; 当前绝对图鉴编号 = 滚动位置 + 屏幕光标 + 1
+	ld b,a
+	ld a,[wDexMaxSeenMon]
 	cp b
-	jp z,.loop
-	inc a
-	ld [wListScrollOffset],a
+	jr nz,.scrollDownOneRow
+	; 与上键相同，只有在末项重新按下 DOWN 才跳回第一项。
+	; 从中间按住下键到达末项时先等待松键，让光标稳定停在末项。
+	ld a,[hJoyPressed]
+	bit 7,a
+	jp z,.stopAtVerticalBoundary
+	jr .wrapToFirstEntry
+.scrollDownOneRow
+	ld hl,wListScrollOffset
+	inc [hl]
 	jp .loop
+.wrapToFirstEntry
+	; 同时重置屏幕光标和滚动位置，确保回到真正的第一项。
+	xor a
+	ld [wCurrentMenuItem],a
+	ld [wListScrollOffset],a
+	jp .loopAfterBoundaryWrap
 .checkIfRightPressed
 	bit 4,a ; was Right pressed?
 	jr z,.checkIfLeftPressed
-.rightPressed ; scroll down 7 rows
+.rightPressed ; 按住右键时每次向后移动 7 项，最终停在动态最后一项
 	ld a,[wDexMaxSeenMon]
 	cp a,7
-	jp c,.loop ; can't if the list is shorter than 7
-	sub a,6
+	jr c,.rightToLastSeenOnFirstPage
+	sub a,7 ; 最后一页的滚动位置 = 最高已见编号 - 7
 	ld b,a
 	ld a,[wListScrollOffset]
 	add a,7
-	ld [wListScrollOffset],a
 	cp b
-	jp c,.loop
-	dec b
+	jr c,.storeRightPageOffset
+	; 到达或越过最后一页时，同时把光标移到最后一行。
+	; 这样按住右键会真正停在最后一只已见宝可梦，而不是保留原屏幕行。
 	ld a,b
 	ld [wListScrollOffset],a
+	ld a,6
+	ld [wCurrentMenuItem],a
 	jp .loop
-.checkIfLeftPressed ; scroll up 7 rows
+.storeRightPageOffset
+	ld [wListScrollOffset],a
+	jp .loop
+.rightToLastSeenOnFirstPage
+	; 已见宝可梦不足 7 只时没有滚动页，右键直接落到动态末项。
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wDexMaxSeenMon]
+	dec a
+	ld [wCurrentMenuItem],a
+	jp .loop
+.checkIfLeftPressed ; 按住左键时每次向前移动 7 项，最终停在第一项
 	bit 5,a ; was Left pressed?
 	jr z,.checkIfAButtonPressed
 .leftPressed
 	ld a,[wListScrollOffset]
 	sub a,7
-	ld [wListScrollOffset],a
-	jp nc,.loop
+	jr nc,.storeLeftPageOffset
+	; 已经无法再退完整一页时，同时清零滚动位置和屏幕光标。
+	; 例如第 18 项按住左键依次为 18 → 11 → 4 → 1。
 	xor a
+	ld [wListScrollOffset],a
+	ld [wCurrentMenuItem],a
+	jp .loop
+.storeLeftPageOffset
 	ld [wListScrollOffset],a
 	jp .loop
 .checkIfAButtonPressed
@@ -378,6 +447,20 @@ HandlePokedexListMenu:
 .buttonBPressed
 	ld b,0
 	and a
+	ret
+
+.stopAtVerticalBoundary
+	; 从列表中间按住方向键到达首尾时，只停在边界并等待松键。
+	; 重新按一次对应方向键后，才会执行首尾跳转。
+	jp .loopAfterBoundaryWrap
+
+.waitForVerticalRelease
+	; 首尾跳转或按住到达边界后必须先松开上下键，防止继续移动。
+	call DelayFrame
+	call Joypad
+	ld a,[hJoyHeld]
+	and D_UP | D_DOWN
+	jr nz,.waitForVerticalRelease
 	ret
 
 .getSelectedSeenMonIndex
