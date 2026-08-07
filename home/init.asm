@@ -107,6 +107,13 @@ rLCDC_DEFAULT EQU %11100011
 	dec a
 	ld [wUpdateSpritesEnabled], a
 
+	; The intro and title screen run before MainMenu loads the save file.
+	; Read only the saved background-music option now so those sequences obey
+	; Music On/Off without loading the rest of the save data early.
+	ld a, 1 ; default options: fast text and background music on
+	ld [wOptions], a
+	call LoadStartupMusicOption
+
 	predef PlayIntro
 
 	call DisableLCD
@@ -123,6 +130,47 @@ ClearVram:
 	ld bc, $2000
 	xor a
 	jp FillMemory
+
+
+LoadStartupMusicOption:
+; Load only bit 5 of the saved options before the boot intro. SRAM without a
+; player-name terminator is treated as having no save, leaving music enabled.
+	push bc
+	push hl
+	di
+	ld a, SRAM_ENABLE
+	ld [MBC1SRamEnable], a
+	ld a, $1
+	ld [MBC1SRamBankingMode], a
+	ld [MBC1SRamBank], a
+
+	ld hl, sPlayerName
+	ld b, NAME_LENGTH
+.checkPlayerName
+	ld a, [hli]
+	cp "@"
+	jr z, .loadMusicOption
+	dec b
+	jr nz, .checkPlayerName
+	jr .closeSRAM
+
+.loadMusicOption
+	ld a, [sMainData + (wOptions - wMainDataStart)]
+	and 1 << 5
+	ld b, a
+	ld a, [wOptions]
+	and $df
+	or b
+	ld [wOptions], a
+
+.closeSRAM
+	xor a
+	ld [MBC1SRamBankingMode], a
+	ld [MBC1SRamEnable], a
+	ei
+	pop hl
+	pop bc
+	ret
 
 
 StopAllSounds::

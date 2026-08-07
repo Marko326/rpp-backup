@@ -127,7 +127,12 @@ MainMenu:
 InitOptions:
 	ld a,1 ; no delay
 	ld [wLetterPrintingDelayFlags],a
-	ld a,1 ; fast speed
+	; Keep the startup-loaded Music Off bit while resetting the other options.
+	; MainMenu runs before LoadSAV, so clearing bit 5 here would briefly let the
+	; title music leak out between the title screen and the Continue menu.
+	ld a,[wOptions]
+	and 1 << 5
+	or 1 ; fast speed
 	ld [wOptions],a
 	ret
 
@@ -457,40 +462,19 @@ SaveScreenInfoText:
 	next "Time@"
 
 DisplayOptionMenu:
-	coord hl, 0, 0
-	ld b,3
-	ld c,18
-	call TextBoxBorder
-	coord hl, 0, 5
-	ld b,3
-	ld c,18
-	call TextBoxBorder
-	coord hl, 0, 10
-	ld b,3
-	ld c,18
-	call TextBoxBorder
-	coord hl, 1, 1
-	ld de,TextSpeedOptionText
-	call PlaceString
-	coord hl, 1, 6
-	ld de,BattleAnimationOptionText
-	call PlaceString
-	coord hl, 1, 11
-	ld de,BattleStyleOptionText
-	call PlaceString
-	coord hl, 2, 16
-	ld de,OptionMenuCancelText
-	call PlaceString
+	xor a
+	ld [wOptionsMenuPage], a ; options menu page: 0 = main, 1 = music
+	call .drawPage1
 	xor a
 	ld [wCurrentMenuItem],a
 	ld [wLastMenuItem],a
 	inc a
 	ld [wLetterPrintingDelayFlags],a
-	ld [wUnusedCD40],a
-	ld a,3 ; text speed cursor Y coordinate
-	ld [wTopMenuItemY],a
 	call SetCursorPositionsFromOptions
-	ld a,[wOptionsTextSpeedCursorX] ; text speed cursor X coordinate
+	; Open the options menu with the active cursor on the page selector.
+	ld a,16
+	ld [wTopMenuItemY],a
+	ld a,1
 	ld [wTopMenuItemX],a
 	ld a,$01
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable auto background transfer
@@ -510,9 +494,8 @@ DisplayOptionMenu:
 	jr nz,.exitMenu
 	bit 0,b ; A button pressed?
 	jr z,.checkDirectionKeys
-	ld a,[wTopMenuItemY]
-	cp a,16 ; is the cursor on Cancel?
-	jr nz,.loop
+	; The page selector is navigated with Left/Right only.
+	jp .loop
 .exitMenu
 	ld a,SFX_PRESS_AB
 	call PlaySound
@@ -522,6 +505,11 @@ DisplayOptionMenu:
 	call EraseMenuCursor
 	jp .loop
 .checkDirectionKeys
+	ld a, [wOptionsMenuPage]
+	and a
+	jp nz, .checkPage2DirectionKeys
+
+; Page 1: Text Speed, Battle Effects, Battle Style, Back.
 	ld a,[wTopMenuItemY]
 	bit 7,b ; Down pressed?
 	jr nz,.downPressed
@@ -531,45 +519,48 @@ DisplayOptionMenu:
 	jr z,.cursorInBattleAnimation
 	cp a,13 ; cursor in Battle Style section?
 	jr z,.cursorInBattleStyle
-	cp a,16 ; cursor on Cancel?
-	jr z,.loop
+	cp a,16 ; cursor on Back?
+	jr z,.cursorOnPage1Back
 .cursorInTextSpeed
 	bit 5,b ; Left pressed?
 	jp nz,.pressedLeftInTextSpeed
 	jp .pressedRightInTextSpeed
 .downPressed
-	cp a,16
-	ld b,-13
-	ld hl,wOptionsTextSpeedCursorX
-	jr z,.updateMenuVariables
-	ld b,5
 	cp a,3
-	inc hl
-	jr z,.updateMenuVariables
+	jr z,.page1SelectBattleAnimation
 	cp a,8
-	inc hl
-	jr z,.updateMenuVariables
-	ld b,3
-	inc hl
-	jr .updateMenuVariables
-.upPressed
-	cp a,8
-	ld b,-5
-	ld hl,wOptionsTextSpeedCursorX
-	jr z,.updateMenuVariables
+	jr z,.page1SelectBattleStyle
 	cp a,13
-	inc hl
-	jr z,.updateMenuVariables
-	cp a,16
-	ld b,-3
-	inc hl
-	jr z,.updateMenuVariables
-	ld b,13
-	inc hl
-.updateMenuVariables
-	add b
+	jr z,.page1SelectBack
+	jr .page1SelectTextSpeed
+.upPressed
+	cp a,3
+	jr z,.page1SelectBack
+	cp a,8
+	jr z,.page1SelectTextSpeed
+	cp a,13
+	jr z,.page1SelectBattleAnimation
+	jr .page1SelectBattleStyle
+.page1SelectTextSpeed
+	ld a,3
 	ld [wTopMenuItemY],a
-	ld a,[hl]
+	ld a,[wOptionsTextSpeedCursorX]
+	jr .storePage1CursorX
+.page1SelectBattleAnimation
+	ld a,8
+	ld [wTopMenuItemY],a
+	ld a,[wOptionsBattleAnimCursorX]
+	jr .storePage1CursorX
+.page1SelectBattleStyle
+	ld a,13
+	ld [wTopMenuItemY],a
+	ld a,1
+	jr .storePage1CursorX
+.page1SelectBack
+	ld a,16
+	ld [wTopMenuItemY],a
+	ld a,1
+.storePage1CursorX
 	ld [wTopMenuItemX],a
 	call PlaceUnfilledArrowMenuCursor
 	jp .loop
@@ -579,7 +570,11 @@ DisplayOptionMenu:
 	ld [wOptionsBattleAnimCursorX],a
 	jp .eraseOldMenuCursor
 .cursorInBattleStyle
-	; Battle Style 固定为 Set，此行仅用于保留菜单布局与光标导航。
+	; Battle Style remains fixed to Set.
+	jp .loop
+.cursorOnPage1Back
+	bit 4,b ; Right pressed?
+	jp nz,.showPage2
 	jp .loop
 .pressedLeftInTextSpeed
 	ld a,[wOptionsTextSpeedCursorX] ; text speed cursor X coordinate
@@ -606,6 +601,153 @@ DisplayOptionMenu:
 	ld [wOptionsTextSpeedCursorX],a ; text speed cursor X coordinate
 	jp .eraseOldMenuCursor
 
+; Page 2: Music and Back. Left/right on Music toggles the option.
+; Left on Back returns to page 1.
+.checkPage2DirectionKeys
+	ld a,[wTopMenuItemY]
+	bit 7,b ; Down pressed?
+	jr nz,.page2DownPressed
+	bit 6,b ; Up pressed?
+	jr nz,.page2UpPressed
+	cp a,16 ; cursor on Back?
+	jr z,.cursorOnPage2Back
+.cursorInMusic
+	ld a,[wOptionsMusicCursorX]
+	xor a,$0b ; toggle between 1 and 10
+	ld [wOptionsMusicCursorX],a
+	jp .eraseOldMenuCursor
+.page2DownPressed
+	cp a,3
+	jr nz,.page2SelectMusic
+	ld a,16
+	ld [wTopMenuItemY],a
+	ld a,1
+	ld [wTopMenuItemX],a
+	call PlaceUnfilledArrowMenuCursor
+	jp .loop
+.page2UpPressed
+	cp a,16
+	jr nz,.page2SelectBack
+.page2SelectMusic
+	ld a,3
+	ld [wTopMenuItemY],a
+	ld a,[wOptionsMusicCursorX]
+	ld [wTopMenuItemX],a
+	call PlaceUnfilledArrowMenuCursor
+	jp .loop
+.page2SelectBack
+	ld a,16
+	ld [wTopMenuItemY],a
+	ld a,1
+	ld [wTopMenuItemX],a
+	call PlaceUnfilledArrowMenuCursor
+	jp .loop
+.cursorOnPage2Back
+	bit 5,b ; Left pressed?
+	jp nz,.showPage1
+	jp .loop
+
+.showPage2
+	ld a,1
+	ld [wOptionsMenuPage],a
+	; Build the next page completely in wTileMap before transferring it to VRAM.
+	; ClearScreen waits for three frames, so leaving auto-transfer enabled here
+	; would briefly display the cleared tilemap and make the page flash.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call ClearScreen
+	call .drawPage2
+	call .placePage2Arrows
+	; Always enter a different options page with the active cursor on Page.
+	ld a,16
+	ld [wTopMenuItemY],a
+	ld a,1
+	ld [wTopMenuItemX],a
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call Delay3
+	jp .loop
+
+.showPage1
+	xor a
+	ld [wOptionsMenuPage],a
+	; Keep the old page visible until the new page is fully drawn.
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call ClearScreen
+	call .drawPage1
+	call SetCursorPositionsFromOptions
+	ld a,16
+	ld [wTopMenuItemY],a
+	ld a,1
+	ld [wTopMenuItemX],a
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call Delay3
+	jp .loop
+
+.drawPage1
+	coord hl, 0, 0
+	ld b,3
+	ld c,18
+	call TextBoxBorder
+	coord hl, 0, 5
+	ld b,3
+	ld c,18
+	call TextBoxBorder
+	coord hl, 0, 10
+	ld b,3
+	ld c,18
+	call TextBoxBorder
+	coord hl, 1, 1
+	ld de,TextSpeedOptionText
+	call PlaceString
+	coord hl, 1, 6
+	ld de,BattleAnimationOptionText
+	call PlaceString
+	coord hl, 1, 11
+	ld de,BattleStyleOptionText
+	call PlaceString
+	coord hl, 2, 16
+	ld de,OptionMenuPageText
+	call PlaceString
+	coord hl, 16, 16
+	ld de,OptionMenuPage1Text
+	jp PlaceString
+
+.drawPage2
+	coord hl, 0, 0
+	ld b,3
+	ld c,18
+	call TextBoxBorder
+	coord hl, 0, 5
+	ld b,3
+	ld c,18
+	call TextBoxBorder
+	coord hl, 0, 10
+	ld b,3
+	ld c,18
+	call TextBoxBorder
+	coord hl, 1, 1
+	ld de,MusicOptionText
+	call PlaceString
+	coord hl, 2, 16
+	ld de,OptionMenuPageText
+	call PlaceString
+	coord hl, 16, 16
+	ld de,OptionMenuPage2Text
+	jp PlaceString
+
+.placePage2Arrows
+	coord hl, 0, 3
+	ld a,[wOptionsMusicCursorX]
+	ld e,a
+	ld d,0
+	add hl,de
+	ld [hl],$ec
+	coord hl, 1, 16
+	ld [hl],$ec
+	ret
+
 TextSpeedOptionText:
 	db   "Text Speed:"
 	next " Fast  Normal Slow@"
@@ -618,8 +760,18 @@ BattleStyleOptionText:
 	db   "Battle Style:"
 	next " Set@"
 
-OptionMenuCancelText:
-	db "Back@"
+MusicOptionText:
+	db   "Music:"
+	next " On       Off@"
+
+OptionMenuPageText:
+	db "Page@"
+
+OptionMenuPage1Text:
+	db "1/2@"
+
+OptionMenuPage2Text:
+	db "2/2@"
 
 ; sets the options variable according to the current placement of the menu cursors in the options menu
 SetOptionsFromCursorPositions:
@@ -640,12 +792,21 @@ SetOptionsFromCursorPositions:
 	jr z,.battleAnimationOn
 .battleAnimationOff
 	set 7,d
-	jr .storeOptions
+	jr .setBattleStyle
 .battleAnimationOn
 	res 7,d
-.storeOptions
-	; 设置项仅显示 Set，同时固定保留 bit 6 的 Set 值。
+.setBattleStyle
+	; Battle Style is displayed as Set and remains fixed to Set.
 	set 6,d
+	ld a,[wOptionsMusicCursorX]
+	dec a
+	jr z,.musicOn
+.musicOff
+	set 5,d
+	jr .storeOptions
+.musicOn
+	res 5,d
+.storeOptions
 	ld a,d
 	ld [wOptions],a
 	ld a,1
@@ -656,33 +817,42 @@ SetOptionsFromCursorPositions:
 SetCursorPositionsFromOptions:
 	ld hl,TextSpeedOptionData + 1
 	ld a,[wOptions]
+	and a,$0f
 	ld c,a
-	and a,$3f
-	push bc
 	ld de,2
 	call IsInArray
-	pop bc
 	dec hl
 	ld a,[hl]
 	ld [wOptionsTextSpeedCursorX],a ; text speed cursor X coordinate
 	coord hl, 0, 3
 	call .placeUnfilledRightArrow
-	sla c
+
+	ld a,[wOptions]
+	bit 7,a
 	ld a,1 ; On
-	jr nc,.storeBattleAnimationCursorX
-	ld a,1 ; Off
+	jr z,.storeBattleAnimationCursorX
+	ld a,10 ; Off
 .storeBattleAnimationCursorX
 	ld [wOptionsBattleAnimCursorX],a ; battle animation cursor X coordinate
 	coord hl, 0, 8
 	call .placeUnfilledRightArrow
-	; Battle Style 固定为 Set，并与 Fast、On 使用相同的光标位置。
-	ld a,1
-	ld [wOptionsBattleStyleCursorX],a ; battle style cursor X coordinate
-	coord hl, 0, 13
-	call .placeUnfilledRightArrow
-; cursor in front of Cancel
-	coord hl, 0, 16
-	ld a,1
+
+	; Battle Style is fixed to Set and does not need a cursor variable.
+	coord hl, 1, 13
+	ld [hl],$ec
+
+	ld a,[wOptions]
+	bit 5,a
+	ld a,1 ; On
+	jr z,.storeMusicCursorX
+	ld a,10 ; Off
+.storeMusicCursorX
+	ld [wOptionsMusicCursorX],a ; music cursor X coordinate
+
+; cursor in front of Back
+	coord hl, 1, 16
+	ld [hl],$ec
+	ret
 .placeUnfilledRightArrow
 	ld e,a
 	ld d,0
