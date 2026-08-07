@@ -79,8 +79,14 @@ StatusScreen:
 .DontRecalculate
 	ld hl, wd72c
 	set 1, [hl]
+	; Do not step NR50 down while Music Off is active. Silent routed DACs
+	; make that direct master-volume change audible as a click.
+	ld a, [wOptions]
+	bit 5, a
+	jr nz, .skipEntryVolumeReduction
 	ld a, $33
 	ld [rNR50], a ; Reduce the volume
+.skipEntryVolumeReduction
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
 	call UpdateSprites
@@ -660,8 +666,12 @@ StatusScreen2:
 	ld [hTilesetType], a
 	ld hl, wd72c
 	res 1, [hl]
+	ld a, [wOptions]
+	bit 5, a
+	jr nz, .skipExitVolumeRestore
 	ld a, $77
 	ld [rNR50], a
+.skipExitVolumeRestore
 	call GBPalWhiteOut
 	jp ClearScreen
 

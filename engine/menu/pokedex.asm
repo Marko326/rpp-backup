@@ -531,8 +531,15 @@ ShowPokedexData:
 ShowPokedexDataInternal:
 	ld hl,wd72c
 	set 1,[hl]
-	ld a,$33 ; 3/7 volume
-	ld [rNR50],a
+	; Music Off keeps silent hardware routes connected. Changing NR50 while
+	; those DACs are connected creates an audible pop, so only apply the
+	; temporary Pokedex volume reduction while background music is enabled.
+	ld a, [wOptions]
+	bit 5, a
+	jr nz, .skipEntryVolumeReduction
+	ld a, $33 ; 3/7 volume
+	ld [rNR50], a
+.skipEntryVolumeReduction
 	call GBPalWhiteOut ; zero all palettes
 	call ClearScreen
 	ld a,[wd11e] ; pokemon ID
@@ -717,8 +724,11 @@ ShowPokedexDataInternal:
 	call GBPalNormal
 	ld hl,wd72c
 	res 1,[hl]
-	ld a,$77 ; max volume
-	ld [rNR50],a
+	ld a, [wOptions]
+	bit 5, a
+	ret nz
+	ld a, $77 ; max volume
+	ld [rNR50], a
 	ret
 
 HeightWeightText:
