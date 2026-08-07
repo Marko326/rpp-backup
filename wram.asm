@@ -1056,7 +1056,7 @@ wDayCareTotalCost:: ; cd3f
 
 wJigglypuffFacingDirections:: ; cd3f
 
-wOptionsBattleStyleCursorX:: ; cd3f
+wOptionsMusicCursorX:: ; cd3f
 
 wTrainerInfoTextBoxNextRowOffset:: ; cd3f
 
@@ -1095,7 +1095,7 @@ wHiddenObjectY:: ; cd40
 
 wTrainerScreenY:: ; cd40
 
-wUnusedCD40:: ; cd40
+wOptionsMenuPage:: ; cd40
 	ds 1
 
 wDayCarePerLevelCost:: ; cd41
@@ -2428,6 +2428,9 @@ wOptions:: ; d355
 ; bit 6 = battle style
 ; 0: Shift
 ; 1: Set
+; bit 5 = background music
+; 0: On
+; 1: Off
 ; bits 0-3 = text speed (number of frames to delay after printing a letter)
 ; 1: Fast
 ; 3: Medium
@@ -3725,7 +3728,18 @@ MusicFadeIDLo:: ; c2a9
 	ds 1
 MusicFadeIDHi:: ; c2aa
 	ds 1
-	ds 5
+CurrentBGMID::
+CurrentBGMIDLo:: ; c2ab
+	ds 1
+CurrentBGMIDHi:: ; c2ac
+	ds 1
+MusicMuteState:: ; c2ad
+; 0 = Music On, 1 << 5 = Music Off
+	ds 1
+MusicResumeMask:: ; c2ae
+; bits 0-3 request a one-time hardware reload for music channels 1-4
+	ds 1
+	ds 1 ; c2af
 CryPitch:: ; c2b0
 	ds 1
 CryEcho:: ; c2b1

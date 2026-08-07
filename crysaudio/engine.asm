@@ -91,12 +91,26 @@ _UpdateSound:: ; e805c
 	ld a, [MusicPlaying]
 	and a
 	ret z
+
+	call HandleMusicOptionTransition
+
 	; start at ch1
 	xor a
 	ld [CurChannel], a ; just
 	ld [SoundOutput], a ; off
 	ld bc, Channel1
 .loop
+	; While Music Off is active, freeze software music channels 1-4.
+	; They still provide a silent hardware route when the corresponding
+	; SFX/cry channel is idle, matching the normal music/SFX handoff.
+	ld a, [wOptions]
+	bit 5, a
+	jr z, .checkChannelActive
+	ld a, [CurChannel]
+	cp a, $04
+	jp c, .mutedMusicChannel
+
+.checkChannelActive
 	; is the channel active?
 	ld hl, Channel1Flags - Channel1
 	add hl, bc
@@ -153,16 +167,16 @@ _UpdateSound:: ; e805c
 	jr nc, .next
 	; are any sfx channels active?
 	; if so, mute
-	ld hl, Crysaudio+$cc ; Channel5Flags
+	ld hl, Crysaudio+$cc ; Crysaudio+$cc
 	bit 0, [hl]
 	jr nz, .restnote
-	ld hl, Crysaudio+$fe ; Channel6Flags
+	ld hl, Crysaudio+$fe ; Crysaudio+$fe
 	bit 0, [hl]
 	jr nz, .restnote
-	ld hl, Crysaudio+$130 ; Channel7Flags
+	ld hl, Crysaudio+$130 ; Crysaudio+$130
 	bit 0, [hl]
 	jr nz, .restnote
-	ld hl, Crysaudio+$162 ; Channel8Flags
+	ld hl, Crysaudio+$162 ; Crysaudio+$162
 	bit 0, [hl]
 	jr z, .next
 .restnote
@@ -170,6 +184,7 @@ _UpdateSound:: ; e805c
 	add hl, bc
 	set 5, [hl] ; Rest
 .next
+.checkSFXOverride
 	; are we in a sfx channel right now?
 	ld a, [CurChannel]
 	cp a, $04 ; sfx
@@ -185,6 +200,19 @@ _UpdateSound:: ; e805c
 	ld a, [SoundOutput]
 	or [hl]
 	ld [SoundOutput], a
+	jr .asm_e80fc
+
+.mutedMusicChannel
+	; The matching SFX/cry channel owns the hardware while active.
+	ld hl, $00cb
+	add hl, bc
+	bit 0, [hl]
+	jr nz, .asm_e80fc
+	; Keep a silent route connected for this hardware channel. The hardware
+	; itself was silenced once when Music Off was selected, or by the normal
+	; SFX end/rest path. This prevents an NR51 disconnect at SFX end.
+	call MixMutedHardwareRoute
+
 .asm_e80fc
 	; clear note flags
 	ld hl, Channel1NoteFlags - Channel1
@@ -214,6 +242,75 @@ _UpdateSound:: ; e805c
 	ld [rNR51], a
 	ret
 ; e8125
+
+HandleMusicOptionTransition:
+	ld a, [wOptions]
+	and 1 << 5
+	ld hl, MusicMuteState
+	cp [hl]
+	ret z
+	ld [hl], a
+	and a
+	jr z, .musicEnabled
+
+.musicDisabled
+	; Silence only hardware channels that are not currently owned by an
+	; active SFX or cry. Their routes remain connected by muted placeholders.
+	call SilenceIdleMusicHardware
+	ret
+
+.musicEnabled
+	; This variant deliberately restarts the current scene music from its
+	; beginning instead of trying to restore an envelope mid-note.
+	ld a, [CurrentBGMIDLo]
+	ld e, a
+	ld a, [CurrentBGMIDHi]
+	ld d, a
+	ld a, e
+	or d
+	ret z
+	call _PlayMusic
+	ret
+
+SilenceIdleMusicHardware:
+	ld hl, Crysaudio+$cc
+	bit 0, [hl]
+	jr nz, .channel2
+	ld hl, rNR10
+	call ClearChannel
+.channel2
+	ld hl, Crysaudio+$fe
+	bit 0, [hl]
+	jr nz, .channel3
+	ld hl, $ff15
+	call ClearChannel
+.channel3
+	ld hl, Crysaudio+$130
+	bit 0, [hl]
+	jr nz, .channel4
+	ld hl, rNR30
+	call ClearChannel
+.channel4
+	ld hl, Crysaudio+$162
+	bit 0, [hl]
+	ret nz
+	ld hl, $ff1f
+	call ClearChannel
+	ret
+
+MixMutedHardwareRoute:
+	push de
+	ld a, [CurChannel]
+	and a, $03
+	ld e, a
+	ld d, $00
+	call GetLRTracks
+	add hl, de
+	ld a, [SoundOutput]
+	or [hl]
+	ld [SoundOutput], a
+	pop de
+	ret
 
 UpdateChannels: ; e8125
 	ld hl, .ChannelFnPtrs
@@ -498,16 +595,16 @@ UpdateChannels: ; e8125
 
 _CheckSFX: ; e82e7
 ; return carry if any sfx channels are active
-	ld hl, Crysaudio+$cc ; Channel5Flags
+	ld hl, Crysaudio+$cc ; Crysaudio+$cc
 	bit 0, [hl]
 	jr nz, .sfxon
-	ld hl, Crysaudio+$fe ; Channel6Flags
+	ld hl, Crysaudio+$fe ; Crysaudio+$fe
 	bit 0, [hl]
 	jr nz, .sfxon
-	ld hl, Crysaudio+$130 ; Channel7Flags
+	ld hl, Crysaudio+$130 ; Crysaudio+$130
 	bit 0, [hl]
 	jr nz, .sfxon
-	ld hl, Crysaudio+$162 ; Channel8Flags
+	ld hl, Crysaudio+$162 ; Crysaudio+$162
 	bit 0, [hl]
 	jr nz, .sfxon
 	and a
@@ -591,6 +688,71 @@ FadeMusic:: ; e8358
 ; notes:
 ;	max # frames per volume level is $3f
 
+	; While background music is disabled, complete pending song changes
+	; without changing the global volume or restarting SFX.
+	ld a, [wOptions]
+	bit 5, a
+	jr z, .checkFade
+	ld a, [MusicFade]
+	and a
+	ret z
+	; Some callers (notably Fly's StopMusic) wait for MusicFadeCount to
+	; become nonzero before waiting for it to return to zero. Preserve that
+	; two-update handshake even while muted, or those callers can deadlock.
+	ld a, [MusicFadeCount]
+	and a
+	jr nz, .completeMutedFade
+	inc a
+	ld [MusicFadeCount], a
+	ret
+.completeMutedFade
+	push bc
+	ld a, [MusicFadeIDLo]
+	ld e, a
+	ld a, [MusicFadeIDHi]
+	ld d, a
+	ld a, e
+	or d
+	jr z, .stopMutedMusic
+	call _PlayMusic
+	jr .finishMutedFade
+.stopMutedMusic
+	; Stop and clean only music channels 1-4. Active SFX and cries remain intact.
+	ld bc, Channel1
+	ld d, $04
+.clearMutedMusicChannel
+	ld hl, Channel1Flags - Channel1
+	add hl, bc
+	res 0, [hl]
+	ld hl, Channel1NoteFlags - Channel1
+	add hl, bc
+	ld [hl], 1 << 5 ; Rest
+	ld hl, Channel1MusicID - Channel1
+	add hl, bc
+	xor a
+	ld [hli], a
+	ld [hli], a
+	ld [hl], a ; MusicBank
+	ld hl, Channel2 - Channel1
+	add hl, bc
+	ld c, l
+	ld b, h
+	dec d
+	jr nz, .clearMutedMusicChannel
+	xor a
+	ld [CurrentBGMIDLo], a
+	ld [CurrentBGMIDHi], a
+	ld [MusicResumeMask], a
+.finishMutedFade
+	pop bc
+	xor a
+	ld [MusicFade], a
+	ld [MusicFadeCount], a
+	ld a, $77
+	ld [Volume], a
+	ret
+
+.checkFade
 	; fading?
 	ld a, [MusicFade]
 	and a
@@ -1044,7 +1206,7 @@ HandleNoise: ; e858c
 	bit 2, a ; sfx
 	jr nz, .next
 	; is ch8 on? (noise)
-	ld hl, Crysaudio+$162 ; Channel8Flags
+	ld hl, Crysaudio+$162 ; Crysaudio+$162
 	bit 0, [hl] ; on?
 	jr z, .next
 	; is ch8 playing noise?
@@ -1303,7 +1465,7 @@ GetNoiseSample: ; e86c5
 	ld a, [CurChannel]
 	bit 2, a ; are we in a sfx channel?
 	jr nz, .sfx
-	ld hl, Crysaudio+$162 ; Channel8Flags
+	ld hl, Crysaudio+$162 ; Crysaudio+$162
 	bit 0, [hl] ; is ch8 on? (noise)
 	ret nz
 	ld a, [MusicNoiseSampleSet]
@@ -2158,6 +2320,15 @@ MusicE5: ; e89d2
 	ld a, [MusicFade]
 	and a
 	ret nz
+	; Muted music channels 1-4 must not alter the global output volume used
+	; by cries and SFX. Channels 5-8 retain the original behavior.
+	ld a, [wOptions]
+	bit 5, a
+	jr z, .applyVolume
+	ld a, [CurChannel]
+	cp a, $04
+	ret c
+.applyVolume
 	; reload param
 	ld a, [CurMusicByte]
 	; set volume
@@ -2515,6 +2686,14 @@ _PlayMusic:: ; e8b30
 	ld a, e
 	and a
 	jp z, _SoundRestart
+	; Keep the current background-music target separate from MusicID, which
+	; is temporarily reused by cries and sound effects.
+	ld hl, CurrentBGMID
+	ld [hl], e
+	inc hl
+	ld [hl], d
+	xor a
+	ld [MusicResumeMask], a
 ; load music
 	call MusicOff
 	ld hl, MusicID
@@ -2700,7 +2879,7 @@ PlayCry_:: ; e8b79
 _PlaySFX:: ; e8c04
 ; clear channels if they aren't already
 	call MusicOff
-	ld hl, Crysaudio+$cc ; Channel5Flags
+	ld hl, Crysaudio+$cc ; Crysaudio+$cc
 	bit 0, [hl] ; ch5 on?
 	jr z, .ch6
 	res 0, [hl] ; turn it off

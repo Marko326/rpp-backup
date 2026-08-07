@@ -29,8 +29,10 @@ TradeAnimCommon:
 	push af
 	ld a, [hSCX]
 	push af
-	xor a
+	ld a, [wOptions]
+	and a, %00100000 ; preserve the background music setting
 	ld [wOptions], a
+	xor a
 	ld [hSCY], a
 	ld [hSCX], a
 	push de
