@@ -100,23 +100,26 @@ _UpdateSound:: ; e805c
 	ld [SoundOutput], a ; off
 	ld bc, Channel1
 .loop
-	; Freeze software music channels 1-4 whenever background music is
-	; effectively muted: either Music is Off, or BGM Volume is 0.
-	; They still provide a silent hardware route when the corresponding
-	; SFX/cry channel is idle, matching the normal music/SFX handoff.
-	ld a, [MusicMuteState]
-	and a
-	jr z, .checkChannelActive
-	ld a, [CurChannel]
-	cp a, $04
-	jp c, .mutedMusicChannel
-
+	; Music Off / BGM Volume 0 still advances music channels 1-4 in
+	; software. One-shot songs such as MUSIC_PKMN_HEALED are waited on by
+	; scripts, so freezing their software state can deadlock game logic.
+	; Hardware output is still suppressed below in .checkSFXOverride.
 .checkChannelActive
 	; is the channel active?
 	ld hl, Channel1Flags - Channel1
 	add hl, bc
 	bit 0, [hl]
+	jr nz, .channelActive
+	; In effective mute, inactive music channels still keep their silent
+	; hardware route connected (Scheme A). This avoids NR51 disconnect pops.
+	ld a, [MusicMuteState]
+	and a
 	jp z, .nextchannel
+	ld a, [CurChannel]
+	cp a, $04
+	jp c, .mutedMusicChannel
+	jp .nextchannel
+.channelActive
 	; check time left in the current note
 	ld hl, Channel1NoteDuration - Channel1
 	add hl, bc
@@ -190,6 +193,13 @@ _UpdateSound:: ; e805c
 	ld a, [CurChannel]
 	cp a, $04 ; sfx
 	jr nc, .asm_e80ee
+
+	; Effective mute advances the music parser but must never let hidden
+	; music channels 1-4 write the shared APU hardware.
+	ld a, [MusicMuteState]
+	and a
+	jr nz, .mutedMusicChannel
+
 	ld hl, $00cb
 	add hl, bc
 	bit 0, [hl]
@@ -1760,6 +1770,21 @@ MusicF2: ; e8780
 
 MusicF3: ; e8780
 ;custom waveform
+	; Hidden music must consume custom-waveform data so its parser remains
+	; synchronized, but it must not touch wave RAM shared with SFX/cry.
+	ld a, [MusicMuteState]
+	and a
+	jr z, .writeWave
+	ld a, [CurChannel]
+	cp a, $04
+	jr nc, .writeWave
+	ld e, 16
+.skipMutedWave
+	call GetMusicByte
+	dec e
+	jr nz, .skipMutedWave
+	ret
+.writeWave
 	ld e, 16
 	ld hl, $ff30
 .read
