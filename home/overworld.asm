@@ -535,8 +535,8 @@ WarpFound2::
 ; this is for handling "outside" maps that can't have the 0xFF destination map
 	ld a,[wCurMap]
 	ld [wLastMap],a
-	ld a,[wCurMapWidth]
-	ld [wUnusedD366],a ; not read
+	; d366 used to receive wCurMapWidth here, but the value was never read.
+	; It is now persistent BGM volume storage, so do not overwrite it on warps.
 	ld a,[hWarpDestinationMap]
 	ld [wCurMap],a
 	cp ROCK_TUNNEL_1
