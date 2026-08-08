@@ -2389,6 +2389,16 @@ MusicF0: ; e894f
 	; turn noise sampling on
 	set 4, [hl]
 	call GetMusicByte
+	; Hidden music must consume the parameter but must not alter the global
+	; SFX noise sample selection while it is only advancing in software.
+	ld a, [MusicMuteState]
+	and a
+	jr z, .applySFXNoiseSet
+	ld a, [CurChannel]
+	cp $04
+	ret c
+.applySFXNoiseSet
+	ld a, [CurMusicByte]
 	ld [SFXNoiseSampleSet], a
 	ret
 ; e8963
@@ -2416,6 +2426,16 @@ MusicDD: ; e8977
 ; update sound status
 ; params: 1
 	call GetMusicByte
+	; Music Off / BGM Volume 0 advances hidden music for timing only.
+	; Do not let that parser overwrite the global sweep input shared with SFX.
+	ld a, [MusicMuteState]
+	and a
+	jr z, .apply
+	ld a, [CurChannel]
+	cp $04
+	ret c
+.apply
+	ld a, [CurMusicByte]
 	ld [SoundInput], a
 	ld hl, Channel1NoteFlags - Channel1
 	add hl, bc
@@ -2618,6 +2638,15 @@ MusicE9: ; e89e1
 MusicEC: ; e89fd
 ; turn sfx priority on
 ; params: none
+	; Hidden music is restarted from the beginning when re-enabled, so it must
+	; not modify shared music/SFX arbitration state while effectively muted.
+	ld a, [MusicMuteState]
+	and a
+	jr z, .apply
+	ld a, [CurChannel]
+	cp $04
+	ret c
+.apply
 	ld a, $01
 	ld [SFXPriority], a
 	ret
@@ -2626,6 +2655,13 @@ MusicEC: ; e89fd
 MusicED: ; e8a03
 ; turn sfx priority off
 ; params: none
+	ld a, [MusicMuteState]
+	and a
+	jr z, .apply
+	ld a, [CurChannel]
+	cp $04
+	ret c
+.apply
 	xor a
 	ld [SFXPriority], a
 	ret
@@ -2934,11 +2970,72 @@ SetLRTracks: ; e8b1b
 SongTranspositions:
 	ds 46
 
+StopMusicOnly:
+; Stop only music channels 1-4 without resetting NR50/NR51 or SFX/cry state.
+; Keep their current output routes latched after silencing the hardware so
+; explicit music stops do not create the same DC step as an NR51 disconnect.
+	ld bc, Channel1
+	ld d, $04
+.collectRoutes
+	ld hl, Channel1Flags - Channel1
+	add hl, bc
+	bit 0, [hl]
+	jr z, .nextRoute
+	ld hl, Channel1Tracks - Channel1
+	add hl, bc
+	ld a, [MusicResumeMask]
+	or [hl]
+	ld [MusicResumeMask], a
+.nextRoute
+	ld hl, Channel2 - Channel1
+	add hl, bc
+	ld c, l
+	ld b, h
+	dec d
+	jr nz, .collectRoutes
+
+	; Silence only hardware channels not currently owned by SFX/cries.
+	; NR51 itself is left untouched here; ApplyHeldMusicRoutes preserves the
+	; silent route on subsequent audio updates until another song starts.
+	call SilenceIdleMusicHardware
+
+	ld bc, Channel1
+	ld d, $04
+.clearMusicChannels
+	ld hl, Channel1Flags - Channel1
+	add hl, bc
+	res 0, [hl]
+	ld hl, Channel1NoteFlags - Channel1
+	add hl, bc
+	ld [hl], 1 << 5 ; Rest
+	ld hl, Channel1MusicID - Channel1
+	add hl, bc
+	xor a
+	ld [hli], a ; id hi
+	ld [hli], a ; id lo
+	ld [hl], a  ; bank
+	ld hl, Channel2 - Channel1
+	add hl, bc
+	ld c, l
+	ld b, h
+	dec d
+	jr nz, .clearMusicChannels
+
+	xor a
+	ld [CurrentBGMIDLo], a
+	ld [CurrentBGMIDHi], a
+	ld [MusicFade], a
+	ld [MusicFadeCount], a
+	ld [MusicFadeIDLo], a
+	ld [MusicFadeIDHi], a
+	ld [MusicNoiseSampleSet], a
+	ret
+
 _PlayMusic:: ; e8b30
 	call OpenSRAMForSound
 	ld a, e
 	and a
-	jp z, _SoundRestart
+	jp z, StopMusicOnly
 	; Keep the current background-music target separate from MusicID, which
 	; is temporarily reused by cries and sound effects.
 	ld hl, CurrentBGMID

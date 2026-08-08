@@ -59,10 +59,10 @@ AnimateHealingMachine:
 	call PlayMusic
 	ld d, %01110100
 	call FlashSprite8Times
-.waitLoop2
-	ld a, [Channel1MusicID]
-	and a
-	jr nz, .waitLoop2
+	; Wait for the complete one-shot song, not just music channel 1.
+	; This uses the common four-channel completion check and remains safe
+	; while Music Off / BGM Volume 0 advances music in software only.
+	call WaitForSongToFinish
 
 	ld c, 32
 	call DelayFrames
