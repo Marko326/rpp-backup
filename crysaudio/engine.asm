@@ -248,6 +248,11 @@ _UpdateSound:: ; e805c
 	; write volume to hardware register
 	ld a, [Volume]
 	ld [rNR50], a
+	; Keep routes for music channels that have just ended connected until the
+	; next song starts. ClearChannel has already silenced the hardware, so
+	; retaining the route avoids the NR51 DC step that causes one-shot music
+	; (notably MUSIC_PKMN_HEALED) to end with a pop.
+	call ApplyHeldMusicRoutes
 	; write SO on/off to hardware register
 	ld a, [SoundOutput]
 	ld [rNR51], a
@@ -350,6 +355,56 @@ MixMutedHardwareRoute:
 	or [hl]
 	ld [SoundOutput], a
 	pop de
+	ret
+
+ApplyHeldMusicRoutes:
+; MusicResumeMask is repurposed by Scheme A as a silent route hold mask.
+; Only restore a held music route while its matching SFX/cry channel is idle,
+; so SFX stereo panning is never widened by the held route.
+	ld a, [MusicResumeMask]
+	and a
+	ret z
+	ld d, a
+
+	ld hl, Crysaudio+$cc ; Channel5Flags / hardware CH1
+	bit 0, [hl]
+	jr nz, .channel2
+	ld a, d
+	and $11
+	ld e, a
+	ld a, [SoundOutput]
+	or e
+	ld [SoundOutput], a
+.channel2
+	ld hl, Crysaudio+$fe ; Channel6Flags / hardware CH2
+	bit 0, [hl]
+	jr nz, .channel3
+	ld a, d
+	and $22
+	ld e, a
+	ld a, [SoundOutput]
+	or e
+	ld [SoundOutput], a
+.channel3
+	ld hl, Crysaudio+$130 ; Channel7Flags / hardware CH3
+	bit 0, [hl]
+	jr nz, .channel4
+	ld a, d
+	and $44
+	ld e, a
+	ld a, [SoundOutput]
+	or e
+	ld [SoundOutput], a
+.channel4
+	ld hl, Crysaudio+$162 ; Channel8Flags / hardware CH4
+	bit 0, [hl]
+	ret nz
+	ld a, d
+	and $88
+	ld e, a
+	ld a, [SoundOutput]
+	or e
+	ld [SoundOutput], a
 	ret
 
 UpdateChannels: ; e8125
@@ -1545,6 +1600,20 @@ ParseMusic: ; e85e1
 	xor a
 	ld [rNR10], a ; sweep = 0
 .ok
+	; A music channel that reaches sound_ret has already been converted to a
+	; hardware rest in this update. Keep its current NR51 route latched so the
+	; next frame does not abruptly disconnect the still-enabled DAC. The latch
+	; is cleared by _PlayMusic when the next song starts.
+	ld a, [CurChannel]
+	cp a, $04
+	jr nc, .noHoldMusicRoute
+	ld hl, Channel1Tracks - Channel1
+	add hl, bc
+	ld a, [hl]
+	ld hl, MusicResumeMask
+	or [hl]
+	ld [hl], a
+.noHoldMusicRoute
 ; stop playing
 	; turn channel off
 	ld hl, Channel1Flags - Channel1
