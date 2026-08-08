@@ -100,11 +100,12 @@ _UpdateSound:: ; e805c
 	ld [SoundOutput], a ; off
 	ld bc, Channel1
 .loop
-	; While Music Off is active, freeze software music channels 1-4.
+	; Freeze software music channels 1-4 whenever background music is
+	; effectively muted: either Music is Off, or BGM Volume is 0.
 	; They still provide a silent hardware route when the corresponding
 	; SFX/cry channel is idle, matching the normal music/SFX handoff.
-	ld a, [wOptions]
-	bit 5, a
+	ld a, [MusicMuteState]
+	and a
 	jr z, .checkChannelActive
 	ld a, [CurChannel]
 	cp a, $04
@@ -243,9 +244,37 @@ _UpdateSound:: ; e805c
 	ret
 ; e8125
 
-HandleMusicOptionTransition:
+GetBGMVolumeLevel:
+; Return UI BGM volume 0-10 in A. $a0-$aa are the only valid saved values.
+; Old/invalid save data defaults to 10.
+	ld a, [wBGMVolume]
+	cp $a0
+	jr c, .defaultVolume
+	cp $ab
+	jr nc, .defaultVolume
+	sub $a0
+	ret
+.defaultVolume
+	ld a, 10
+	ret
+
+GetEffectiveMusicMuteState:
+; Return 0 when BGM may play, or 1 << 5 when it must use Scheme A mute.
+; BGM Volume 0 intentionally does not change the Music option bit.
 	ld a, [wOptions]
 	and 1 << 5
+	ret nz
+	call GetBGMVolumeLevel
+	and a
+	jr z, .muted
+	xor a
+	ret
+.muted
+	ld a, 1 << 5
+	ret
+
+HandleMusicOptionTransition:
+	call GetEffectiveMusicMuteState
 	ld hl, MusicMuteState
 	cp [hl]
 	ret z
@@ -260,8 +289,9 @@ HandleMusicOptionTransition:
 	ret
 
 .musicEnabled
-	; This variant deliberately restarts the current scene music from its
-	; beginning instead of trying to restore an envelope mid-note.
+	; Scheme A: restart the current scene music from its beginning rather than
+	; trying to restore a hardware envelope mid-note. This also handles a
+	; BGM Volume transition from 0 to 1-10 while Music remains On.
 	ld a, [CurrentBGMIDLo]
 	ld e, a
 	ld a, [CurrentBGMIDHi]
@@ -397,6 +427,7 @@ UpdateChannels: ; e8125
 	or [hl]
 	ld [rNR11], a
 	ld a, [Crysaudio+$193]
+	call ScaleMusicEnvelope
 	ld [rNR12], a
 	ld a, [Crysaudio+$194]
 	ld [rNR13], a
@@ -453,6 +484,7 @@ UpdateChannels: ; e8125
 	or [hl]
 	ld [rNR21], a
 	ld a, [Crysaudio+$193]
+	call ScaleMusicEnvelope
 	ld [rNR22], a
 	ld a, [Crysaudio+$194]
 	ld [rNR23], a
@@ -556,6 +588,7 @@ UpdateChannels: ; e8125
 .skip
 	pop hl
 	ld a, [Crysaudio+$193]
+	call ScaleMusicWaveIntensity
 	and a, $f0
 	sla a
 	ld [rNR32], a
@@ -585,6 +618,7 @@ UpdateChannels: ; e8125
 	ld a, $3f ; sound length
 	ld [rNR41], a
 	ld a, [Crysaudio+$193]
+	call ScaleMusicEnvelope
 	ld [rNR42], a
 	ld a, [Crysaudio+$194]
 	ld [rNR43], a
@@ -592,6 +626,131 @@ UpdateChannels: ; e8125
 	ld [rNR44], a
 	ret
 ; e82e7
+
+ScaleMusicEnvelope:
+; Scale only music channels 1-4. SFX/cry channels 5-8 are returned unchanged.
+; BGM levels 1-9 use a compensated (non-linear) gain curve instead of a
+; straight 10%-per-step scale. Low settings retain more initial amplitude so
+; pulse/noise envelopes do not collapse as quickly and sound excessively dull.
+; The low nibble (envelope direction/period) is preserved exactly.
+; Level 10 bypasses all scaling and is bit-for-bit identical to the base RPP
+; music path. Level 0 never reaches music UpdateChannels (Scheme A mute).
+	push bc
+	push de
+	push hl
+	ld e, a
+	ld a, [CurChannel]
+	cp $04
+	jr nc, .unchanged
+	call GetBGMVolumeLevel
+	cp 10
+	jr z, .unchanged
+	and a
+	jr z, .unchanged
+
+	; Convert UI level 1-9 to a 4-bit gain numerator over 16:
+	; 1=5/16, 2=6/16, 3=8/16, 4=9/16, 5=10/16,
+	; 6=11/16, 7=12/16, 8=14/16, 9=15/16.
+	; This approximates a loudness-compensated curve while keeping the code
+	; entirely integer and cheap enough for note-start processing.
+	ld c, a
+	ld b, 0
+	ld hl, .gainTable
+	add hl, bc
+	ld c, [hl]
+
+	ld a, e
+	and $f0
+	swap a
+	and $0f
+	jr z, .zeroInitialVolume
+	ld d, a
+	xor a
+.multiply
+	add d
+	dec c
+	jr nz, .multiply
+	; Round (original * compensated_gain) / 16 to nearest integer.
+	add 8
+	swap a
+	and $0f
+	jr nz, .scaledReady
+	inc a ; keep a nonzero original volume from becoming a DAC-off value
+.scaledReady
+	swap a
+	ld d, a
+	ld a, e
+	and $0f
+	or d
+	jr .done
+.zeroInitialVolume
+	ld a, e
+	and $0f
+	jr .done
+.unchanged
+	ld a, e
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+.gainTable
+	; index 0 and 10 are not used by the scaling path, but are kept explicit.
+	db 0, 5, 6, 8, 9, 10, 11, 12, 14, 15, 16
+
+ScaleMusicWaveIntensity:
+; Wave output has only mute/100%/50%/25% in NR32. Match its coarse hardware
+; steps to the compensated pulse/noise curve. Do not rewrite wave RAM, so
+; SFX/cry wave data can never inherit a volume-scaled music waveform.
+	push bc
+	ld b, a
+	ld a, [CurChannel]
+	cp $04
+	jr nc, .unchanged
+	call GetBGMVolumeLevel
+	cp 8
+	jr nc, .unchanged ; 8-10 keep the song's original wave level
+	cp 3
+	jr c, .twoSteps ; 1-2 attenuate by two hardware steps
+
+	; 3-7: attenuate by one step: 100%->50%, 50%->25%, 25%->mute.
+	ld a, b
+	and $f0
+	cp $10
+	jr z, .useHalf
+	cp $20
+	jr z, .useQuarter
+	xor a
+	jr .combine
+.useHalf
+	ld a, $20
+	jr .combine
+.useQuarter
+	ld a, $30
+	jr .combine
+
+.twoSteps
+	; 1-2: 100%->25%; already-attenuated wave levels become mute.
+	ld a, b
+	and $f0
+	cp $10
+	jr nz, .mute
+	ld a, $30
+	jr .combine
+.mute
+	xor a
+.combine
+	ld c, a
+	ld a, b
+	and $0f
+	or c
+	jr .done
+.unchanged
+	ld a, b
+.done
+	pop bc
+	ret
 
 _CheckSFX: ; e82e7
 ; return carry if any sfx channels are active
@@ -688,10 +847,10 @@ FadeMusic:: ; e8358
 ; notes:
 ;	max # frames per volume level is $3f
 
-	; While background music is disabled, complete pending song changes
-	; without changing the global volume or restarting SFX.
-	ld a, [wOptions]
-	bit 5, a
+	; While background music is effectively muted (Music Off or BGM Volume 0),
+	; complete pending song changes without changing global SFX/cry volume.
+	ld a, [MusicMuteState]
+	and a
 	jr z, .checkFade
 	ld a, [MusicFade]
 	and a
@@ -2320,10 +2479,10 @@ MusicE5: ; e89d2
 	ld a, [MusicFade]
 	and a
 	ret nz
-	; Muted music channels 1-4 must not alter the global output volume used
-	; by cries and SFX. Channels 5-8 retain the original behavior.
-	ld a, [wOptions]
-	bit 5, a
+	; Effectively muted music channels 1-4 must not alter the global output
+	; volume used by cries and SFX. Channels 5-8 retain original behavior.
+	ld a, [MusicMuteState]
+	and a
 	jr z, .applyVolume
 	ld a, [CurChannel]
 	cp a, $04

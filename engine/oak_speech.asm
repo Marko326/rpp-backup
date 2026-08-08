@@ -3,6 +3,8 @@ SetDefaultNames:
 	push af
 	ld a, [wOptions]
 	push af
+	ld a, [wBGMVolume]
+	push af
 	ld a, [wd732]
 	push af
 	ld hl, wPlayerName
@@ -15,6 +17,8 @@ SetDefaultNames:
 	call FillMemory
 	pop af
 	ld [wd732], a
+	pop af
+	ld [wBGMVolume], a
 	pop af
 	ld [wOptions], a
 	pop af

@@ -2488,7 +2488,9 @@ wXBlockCoord:: ; d364
 wLastMap:: ; d365
 	ds 1
 
-wUnusedD366:: ; d366
+wBGMVolume:: ; d366
+; Saved BGM volume. $a0-$aa encode UI levels 0-10.
+; Any other value is treated as level 10 for old-save compatibility.
 	ds 1
 
 wCurMapTileset:: ; d367
@@ -3734,7 +3736,7 @@ CurrentBGMIDLo:: ; c2ab
 CurrentBGMIDHi:: ; c2ac
 	ds 1
 MusicMuteState:: ; c2ad
-; 0 = Music On, 1 << 5 = Music Off
+; 0 = BGM active, 1 << 5 = effectively muted (Music Off or BGM Volume 0)
 	ds 1
 MusicResumeMask:: ; c2ae
 ; bits 0-3 request a one-time hardware reload for music channels 1-4
