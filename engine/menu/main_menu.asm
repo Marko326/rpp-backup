@@ -464,6 +464,7 @@ SaveScreenInfoText:
 DisplayOptionMenu:
 	xor a
 	ld [wOptionsMenuPage], a ; options menu page: 0 = main, 1 = music
+	call NormalizeBGMVolumeOption
 	call .drawPage1
 	xor a
 	ld [wCurrentMenuItem],a
@@ -601,37 +602,67 @@ DisplayOptionMenu:
 	ld [wOptionsTextSpeedCursorX],a ; text speed cursor X coordinate
 	jp .eraseOldMenuCursor
 
-; Page 2: Music and Back. Left/right on Music toggles the option.
-; Left on Back returns to page 1.
+; Page 2: Music, BGM Volume, and Page.
+; Music and BGM Volume are intentionally independent. BGM Volume 0 uses the
+; same effective mute path as Music Off without changing the Music option bit.
 .checkPage2DirectionKeys
 	ld a,[wTopMenuItemY]
 	bit 7,b ; Down pressed?
 	jr nz,.page2DownPressed
 	bit 6,b ; Up pressed?
 	jr nz,.page2UpPressed
-	cp a,16 ; cursor on Back?
-	jr z,.cursorOnPage2Back
+	cp 16 ; cursor on Page?
+	jp z,.cursorOnPage2Back
+	cp 8 ; cursor on BGM Volume?
+	jr z,.cursorInBGMVolume
 .cursorInMusic
 	ld a,[wOptionsMusicCursorX]
 	xor a,$0b ; toggle between 1 and 10
 	ld [wOptionsMusicCursorX],a
 	jp .eraseOldMenuCursor
-.page2DownPressed
-	cp a,3
-	jr nz,.page2SelectMusic
-	ld a,16
-	ld [wTopMenuItemY],a
-	ld a,1
-	ld [wTopMenuItemX],a
-	call PlaceUnfilledArrowMenuCursor
+
+.cursorInBGMVolume
+	call GetBGMVolumeOptionLevel
+	bit 5,b ; Left pressed?
+	jr z,.increaseBGMVolume
+	and a
+	jr z,.bgmVolumeUnchanged
+	dec a
+	jr .storeBGMVolume
+.increaseBGMVolume
+	cp 10
+	jr z,.bgmVolumeUnchanged
+	inc a
+.storeBGMVolume
+	add $a0
+	ld [wBGMVolume],a
+	call DrawBGMVolumeValue
+.bgmVolumeUnchanged
 	jp .loop
+
+.page2DownPressed
+	cp 3
+	jr z,.page2SelectBGMVolume
+	cp 8
+	jr z,.page2SelectBack
+	jr .page2SelectMusic
 .page2UpPressed
-	cp a,16
-	jr nz,.page2SelectBack
+	cp 3
+	jr z,.page2SelectBack
+	cp 8
+	jr z,.page2SelectMusic
+	jr .page2SelectBGMVolume
 .page2SelectMusic
 	ld a,3
 	ld [wTopMenuItemY],a
 	ld a,[wOptionsMusicCursorX]
+	ld [wTopMenuItemX],a
+	call PlaceUnfilledArrowMenuCursor
+	jp .loop
+.page2SelectBGMVolume
+	ld a,8
+	ld [wTopMenuItemY],a
+	ld a,1
 	ld [wTopMenuItemX],a
 	call PlaceUnfilledArrowMenuCursor
 	jp .loop
@@ -730,6 +761,10 @@ DisplayOptionMenu:
 	coord hl, 1, 1
 	ld de,MusicOptionText
 	call PlaceString
+	coord hl, 1, 6
+	ld de,BGMVolumeOptionText
+	call PlaceString
+	call DrawBGMVolumeValue
 	coord hl, 2, 16
 	ld de,OptionMenuPageText
 	call PlaceString
@@ -743,6 +778,8 @@ DisplayOptionMenu:
 	ld e,a
 	ld d,0
 	add hl,de
+	ld [hl],$ec
+	coord hl, 1, 8
 	ld [hl],$ec
 	coord hl, 1, 16
 	ld [hl],$ec
@@ -764,6 +801,9 @@ MusicOptionText:
 	db   "Music:"
 	next " On       Off@"
 
+BGMVolumeOptionText:
+	db "Music Volume:@"
+
 OptionMenuPageText:
 	db "Page@"
 
@@ -772,6 +812,49 @@ OptionMenuPage1Text:
 
 OptionMenuPage2Text:
 	db "2/2@"
+
+NormalizeBGMVolumeOption:
+; $a0-$aa encode 0-10. Anything else is legacy data from the old unused d366
+; byte and becomes the default level 10.
+	ld a,[wBGMVolume]
+	cp $a0
+	jr c,.setDefault
+	cp $ab
+	ret c
+.setDefault
+	ld a,$aa
+	ld [wBGMVolume],a
+	ret
+
+GetBGMVolumeOptionLevel:
+	ld a,[wBGMVolume]
+	cp $a0
+	jr c,.defaultLevel
+	cp $ab
+	jr nc,.defaultLevel
+	sub $a0
+	ret
+.defaultLevel
+	ld a,10
+	ret
+
+DrawBGMVolumeValue:
+; Draw a right-aligned two-character value in the second Page 2 box.
+	call GetBGMVolumeOptionLevel
+	coord hl, 2, 8
+	cp 10
+	jr z,.drawTen
+	ld [hl]," "
+	inc hl
+	add "0"
+	ld [hl],a
+	ret
+.drawTen
+	ld a,"1"
+	ld [hli],a
+	ld a,"0"
+	ld [hl],a
+	ret
 
 ; sets the options variable according to the current placement of the menu cursors in the options menu
 SetOptionsFromCursorPositions:

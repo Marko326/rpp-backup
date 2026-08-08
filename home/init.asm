@@ -108,10 +108,12 @@ rLCDC_DEFAULT EQU %11100011
 	ld [wUpdateSpritesEnabled], a
 
 	; The intro and title screen run before MainMenu loads the save file.
-	; Read only the saved background-music option now so those sequences obey
-	; Music On/Off without loading the rest of the save data early.
+	; Read the saved Music switch and BGM volume early so those sequences obey
+	; the user's audio settings without loading the rest of the save data.
 	ld a, 1 ; default options: fast text and background music on
 	ld [wOptions], a
+	ld a, $aa ; encoded BGM volume 10
+	ld [wBGMVolume], a
 	call LoadStartupMusicOption
 
 	predef PlayIntro
@@ -133,8 +135,8 @@ ClearVram:
 
 
 LoadStartupMusicOption:
-; Load only bit 5 of the saved options before the boot intro. SRAM without a
-; player-name terminator is treated as having no save, leaving music enabled.
+; Load bit 5 of the saved options plus the encoded BGM volume before the boot
+; intro. SRAM without a player-name terminator is treated as having no save.
 	push bc
 	push hl
 	di
@@ -162,6 +164,16 @@ LoadStartupMusicOption:
 	and $df
 	or b
 	ld [wOptions], a
+
+	; Load saved BGM volume only if it uses the new $a0-$aa encoding.
+	; Old saves used d366 as an ignored map-width scratch byte, so any
+	; value outside this range keeps the default level 10.
+	ld a, [sMainData + (wBGMVolume - wMainDataStart)]
+	cp $a0
+	jr c, .closeSRAM
+	cp $ab
+	jr nc, .closeSRAM
+	ld [wBGMVolume], a
 
 .closeSRAM
 	xor a

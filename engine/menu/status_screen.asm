@@ -84,6 +84,9 @@ StatusScreen:
 	ld a, [wOptions]
 	bit 5, a
 	jr nz, .skipEntryVolumeReduction
+	ld a, [wBGMVolume]
+	cp $a0 ; BGM Volume 0 is also effectively muted
+	jr z, .skipEntryVolumeReduction
 	ld a, $33
 	ld [rNR50], a ; Reduce the volume
 .skipEntryVolumeReduction
@@ -669,6 +672,9 @@ StatusScreen2:
 	ld a, [wOptions]
 	bit 5, a
 	jr nz, .skipExitVolumeRestore
+	ld a, [wBGMVolume]
+	cp $a0 ; BGM Volume 0 is also effectively muted
+	jr z, .skipExitVolumeRestore
 	ld a, $77
 	ld [rNR50], a
 .skipExitVolumeRestore

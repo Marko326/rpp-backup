@@ -537,6 +537,9 @@ ShowPokedexDataInternal:
 	ld a, [wOptions]
 	bit 5, a
 	jr nz, .skipEntryVolumeReduction
+	ld a, [wBGMVolume]
+	cp $a0 ; BGM Volume 0 is also effectively muted
+	jr z, .skipEntryVolumeReduction
 	ld a, $33 ; 3/7 volume
 	ld [rNR50], a
 .skipEntryVolumeReduction
@@ -727,6 +730,9 @@ ShowPokedexDataInternal:
 	ld a, [wOptions]
 	bit 5, a
 	ret nz
+	ld a, [wBGMVolume]
+	cp $a0 ; BGM Volume 0 keeps the silent master-volume state
+	ret z
 	ld a, $77 ; max volume
 	ld [rNR50], a
 	ret
