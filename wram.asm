@@ -3739,7 +3739,8 @@ MusicMuteState:: ; c2ad
 ; 0 = BGM active, 1 << 5 = effectively muted (Music Off or BGM Volume 0)
 	ds 1
 MusicResumeMask:: ; c2ae
-; bits 0-3 request a one-time hardware reload for music channels 1-4
+; Scheme A: NR51 route bits retained after a music channel ends.
+; The mask is cleared when the next song starts.
 	ds 1
 	ds 1 ; c2af
 CryPitch:: ; c2b0
