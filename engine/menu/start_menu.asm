@@ -25,9 +25,9 @@ RedisplayStartMenu::
 	jr nz,.loop
 ; if the player pressed tried to go past the top item, wrap around to the bottom
 	CheckEvent EVENT_GOT_POKEDEX
-	ld a,6 ; there are 7 menu items with the pokedex, so the max index is 6
+	ld a,7 ; Pokédex + MoveDex add two entries, so the max visible index is 7
 	jr nz,.wrapMenuItemId
-	dec a ; there are only 6 menu items without the pokedex
+	ld a,5 ; there are 6 menu items without either dex entry
 .wrapMenuItemId
 	ld [wCurrentMenuItem],a
 	call EraseMenuCursor
@@ -38,9 +38,9 @@ RedisplayStartMenu::
 ; if the player pressed tried to go past the bottom item, wrap around to the top
 	CheckEvent EVENT_GOT_POKEDEX
 	ld a,[wCurrentMenuItem]
-	ld c,7 ; there are 7 menu items with the pokedex
+	ld c,8 ; there are 8 menu items with Pokédex + MoveDex
 	jr nz,.checkIfPastBottom
-	dec c ; there are only 6 menu items without the pokedex
+	ld c,6 ; there are 6 menu items without either dex entry
 .checkIfPastBottom
 	cp c
 	jr nz,.loop
@@ -60,19 +60,28 @@ RedisplayStartMenu::
 	CheckEvent EVENT_GOT_POKEDEX
 	ld a,[wCurrentMenuItem]
 	jr nz,.displayMenuItem
-	inc a ; adjust position to account for missing pokedex menu item
+	add 2 ; both Pokédex and MoveDex are hidden before the Pokédex is obtained
 .displayMenuItem
-	cp a,0
+	cp 0
 	jp z,StartMenu_Pokedex
-	cp a,1
+	cp 1
+	jr nz,.notMoveDex
+	callba ShowMoveDexMenu
+	call LoadScreenTilesFromBuffer2
+	call Delay3
+	call LoadGBPal
+	call UpdateSprites
+	jp RedisplayStartMenu
+.notMoveDex
+	cp 2
 	jp z,StartMenu_Pokemon
-	cp a,2
+	cp 3
 	jp z,StartMenu_Item
-	cp a,3
+	cp 4
 	jp z,StartMenu_TrainerInfo
-	cp a,4
+	cp 5
 	jp z,StartMenu_SaveReset
-	cp a,5
+	cp 6
 	jp z,StartMenu_Option
 
 ; EXIT falls through to here
