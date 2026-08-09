@@ -13,13 +13,15 @@ pokeblue_obj := audio_blue.o main_blue.o text_blue.o wram_blue.o
 .SECONDEXPANSION:
 # Suppress annoying intermediate file deletion messages.
 .PRECIOUS: %.2bpp
-.PHONY: all clean red blue compare tools
+.PHONY: all clean cleanpic map red blue compare tools
 
 roms := pokered.gbc pokeblue.gbc
+maps := $(roms:.gbc=.map)
 
 all: $(roms)
 red: pokered.gbc
 blue: pokeblue.gbc
+map: $(maps)
 
 # For contributors to make sure a change didn't affect the contents of the rom.
 compare: red blue
@@ -27,8 +29,12 @@ compare: red blue
 
 clean:
 	rm -f $(roms) $(pokered_obj) $(pokeblue_obj) $(roms:.gbc=.sym)
-	find . \( -iname '*.1bpp' -o -iname '*.2bpp' -o -iname '*.pic' \) -exec rm {} +
+	find . \( -iname '*.1bpp' -o -iname '*.2bpp' \) -exec rm {} +
 	$(MAKE) clean -C tools/
+
+cleanpic: clean
+	find . -iname '*.pic' -exec rm {} +
+	rm -f $(maps)
 
 tools:
 	$(MAKE) -C tools/
@@ -36,7 +42,7 @@ tools:
 
 # Build tools when building the rom.
 # This has to happen before the rules are processed, since that's when scan_includes is run.
-ifeq (,$(filter clean tools,$(MAKECMDGOALS)))
+ifeq (,$(filter clean cleanpic tools,$(MAKECMDGOALS)))
 $(info $(shell $(MAKE) -C tools))
 endif
 
@@ -58,6 +64,11 @@ pokeblue_opt = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
 %.gbc: $$(%_obj)
 	$(RGBDS_DIR)rgblink -n $*.sym -o $@ $^
 	$(RGBDS_DIR)rgbfix $($*_opt) $@
+	sort $*.sym -o $*.sym
+
+%.map: $$(%_obj)
+	$(RGBDS_DIR)rgblink -n $*.sym -m $@ -o $*.gbc $^
+	$(RGBDS_DIR)rgbfix $($*_opt) $*.gbc
 	sort $*.sym -o $*.sym
 
 gfx/blue/intro_purin_1.6x6.2bpp: rgbgfx += -h
