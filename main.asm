@@ -68,7 +68,7 @@ INCLUDE "engine/overworld/pokecenter.asm"
 INCLUDE "engine/overworld/set_blackout_map.asm"
 
 INCLUDE "engine/display_text_id_init.asm"
-INCLUDE "engine/menu/draw_start_menu.asm"
+; DrawStartMenu moved to bank $35 with MoveDex to preserve bank 1 space.
 
 INCLUDE "engine/overworld/cable_club_npc.asm"
 
@@ -2601,6 +2601,9 @@ INCLUDE "data/mapObjects/IndigoPlateauLobby.asm"
 INCLUDE "data/martInventories/indigo_plateau.asm"
 IndigoPlateauLobbyBlocks: INCBIN "maps/IndigoPlateauLobby.blk"
 
+; Start-menu drawing and MoveDex live in this roomy expansion bank.
+INCLUDE "engine/menu/draw_start_menu.asm"
+INCLUDE "engine/menu/movedex.asm"
 
 SECTION "bank36",ROMX,BANK[$36]
 
