@@ -2705,6 +2705,9 @@ ForestGate_GFX:      INCBIN "gfx/tilesets/forest_gate.2bpp"
 ForestGate_Block:    INCBIN "gfx/blocksets/forest_gate.bst"
 
 
+SECTION "Calc Stats", ROMX
+INCLUDE "engine/pokemon/calc_stats.asm"
+
 SECTION "random stuff", ROMX,BANK[$3A]
 WindowsGraphics1:
 	INCBIN "gfx/windows1.2bpp"
