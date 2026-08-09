@@ -7,12 +7,10 @@ homecall: MACRO
 	ld a, [H_LOADEDROMBANK]
 	push af
 	ld a, BANK(\1)
-	ld [H_LOADEDROMBANK], a
-	ld [MBC1RomBank], a
+	call SetRomBank
 	call \1
 	pop af
-	ld [H_LOADEDROMBANK], a
-	ld [MBC1RomBank], a
+	call SetRomBank
 ENDM
 
 farcall EQUS "callba"
@@ -20,13 +18,13 @@ farcall EQUS "callba"
 callba: MACRO
 	ld b, BANK(\1)
 	ld hl, \1
-	call Bankswitch
+	rst $18 ; rst $18 jumps to Bankswitch in home.asm
 ENDM
 
 callab: MACRO
 	ld hl, \1
 	ld b, BANK(\1)
-	call Bankswitch
+	rst $18 ; rst $18 jumps to Bankswitch in home.asm
 ENDM
 
 jpba: MACRO
