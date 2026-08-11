@@ -1215,10 +1215,23 @@ Functione8466: ; e8466
 	add hl, bc
 	set 0, [hl]
 .next
+	; [修复 v2] battle move 的 Frequency modifier 只在“新音符写入硬件”时生效。
+	; 普通 cry/tone 仍使用 Flags2 bit 4 的持续偏移；MoveSoundTable SFX 改用 Flags3 bit 7
+	; 做独立标记，并复用 Channel1CryPitch 保存 8 位 modifier。这样基础 Channel1Frequency
+	; 始终保持未修正值，vibrato / pitch slide 后续更新会像 pokered 一样回到原始频率基准。
 	ld hl, Channel1Flags2 - Channel1
 	add hl, bc
 	bit 4, [hl]
+	jr nz, .applyPitch
+	ld hl, Channel1Flags3 - Channel1
+	add hl, bc
+	bit 7, [hl]
 	jr z, .vibrato
+	ld hl, Channel1NoteFlags - Channel1
+	add hl, bc
+	bit 4, [hl] ; 新音符/新 SFX note 启动帧
+	jr z, .vibrato
+.applyPitch
 	ld hl, $0027
 	add hl, bc
 	ld e, [hl]
@@ -3113,12 +3126,49 @@ _PlayMusic:: ; e8b30
 .MTMusic
 	ld hl, MusicMT
 	jr .ContinueMusic
+ApplyBattleMoveCryModifiers:
+; [修复] 仅供 Growl/Roar 的 PlayCry 调用。wSFXDontWait=1 是现有战斗动画
+; 路径的临时标记，因此不会改变地图/菜单等普通 PlayCry。
+; pokered 的 cry pitch/tempo 都是 8 位 modifier：先与宝可梦基础值相加，
+; 再由音频引擎把 tempo 转为 $80 + modifier。这里按 crysaudio 的参数格式等价换算。
+	push bc
+
+	; Frequency modifier：保持 8 位回绕；CryEcho 是 red++ 自身的高字节扩展，
+	; 不吸收低字节加法的进位，避免改变非 Gen1 cry 的既有语义。
+	ld a, [CryPitch]
+	ld b, a
+	ld a, [wFrequencyModifier]
+	add b
+	ld [CryPitch], a
+
+	; crysaudio 的 CryLength 已经是“$80 + 基础 tempo modifier”的 16 位值。
+	; 先还原 8 位基础值，再加技能 tempo（丢弃该步进位），最后重新 +$80。
+	ld a, [CryLength]
+	sub $80
+	ld b, a
+	ld a, [wTempoModifier]
+	add b
+	add $80
+	ld [CryLength], a
+	ld a, $00
+	adc a, $00
+	ld [CryLength + 1], a
+
+	pop bc
+	ret
+
 PlayCry_:: ; e8b79
 ; Play cry de using parameters:
 ;	CryPitch
 ;	CryEcho
 ;	CryLength
 	call MusicOff
+
+	; [修复] Growl/Roar 在 GetMoveSound 中把技能 modifier 写好后，
+	; 现有代码会用 wSFXDontWait=1 调用 PlayCry；只在这个路径合并参数。
+	ld a, [wSFXDontWait]
+	cp 1
+	call z, ApplyBattleMoveCryModifiers
 	
 ; Overload the music id with the cry id
 	ld hl, MusicID
@@ -3226,6 +3276,66 @@ PlayCry_:: ; e8b79
 	ret
 ; e8c04
 
+ApplyBattleMoveSFXModifiers:
+; [修复 v2] AnimPlaySFX / 通用命中音在调用 PlaySFX 的短暂窗口内把 wSFXDontWait 设为 2。
+; 只给这种“Gen1 战斗 SFX”复制 modifier，避免地图/菜单中复用同一母音时误吃战斗参数。
+;
+; Frequency：不再设置 Flags2 bit 4（那是 crysaudio 的持续 tone/CryPitch 路径）。
+; 改用未占用的 Flags3 bit 7 标记当前 channel，并把 8 位 modifier 暂存在
+; Channel1CryPitch 低字节；Functione8466 只在每个新音符启动帧把它叠到临时硬件频率，
+; 让后续 vibrato / pitch slide 与 pokered 一样从未修正的基础频率继续工作。
+; Tempo：pokered 使用 $80 + wTempoModifier；噪声硬件通道不套 tempo modifier。
+; de 在 _PlaySFX 中仍指向下一条 channel header，因此本函数必须保存 de。
+	push de
+	push hl
+
+	ld a, [wSFXDontWait]
+	cp 2
+	jp nz, .done
+
+	; 标记为 MoveSoundTable / Gen1 battle SFX；ChannelInit 会在下一个 SFX 启动时清掉该位。
+	ld hl, Channel1Flags3 - Channel1
+	add hl, bc
+	set 7, [hl]
+	ld hl, Channel1CryPitch - Channel1
+	add hl, bc
+	ld a, [wFrequencyModifier]
+	ld [hli], a
+	xor a
+	ld [hl], a
+
+	; 与 pokered 一样，SFX noise channel 不应用 tempo modifier。
+	ld a, [CurChannel]
+	and a, $03
+	cp a, $03
+	jp z, .done
+
+	; Channel1Tempo 是小端 16 位；中性 modifier $80 会得到 $0100。
+	ld a, [wTempoModifier]
+	add a, $80
+	ld e, a
+	ld d, $00
+	jr nc, .storeTempo
+	inc d
+.storeTempo
+	ld hl, Channel1Tempo - Channel1
+	add hl, bc
+	ld [hl], e
+	inc hl
+	ld [hl], d
+
+	; SetTempo/ChannelInit 都会清这个 fractional accumulator；这里同步清零，
+	; 确保每个新技能 SFX channel 从干净的时长累计状态开始。
+	xor a
+	ld hl, $0016
+	add hl, bc
+	ld [hl], a
+
+.done
+	pop hl
+	pop de
+	ret
+
 _PlaySFX:: ; e8c04
 ; clear channels if they aren't already
 	call MusicOff
@@ -3313,6 +3423,7 @@ _PlaySFX:: ; e8c04
 .startchannels
 	push af
 	call LoadChannel ; bc = current channel
+	call ApplyBattleMoveSFXModifiers
 	ld hl, Channel1Flags - Channel1
 	add hl, bc
 	set 3, [hl]
