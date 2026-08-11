@@ -1,5 +1,5 @@
 SFX_Battle_2A_Ch4:
-	dutycycle 57
+	dutycyclepattern $39 ; 0,3,2,1
 	unknownsfx0x20 4, 244, 0, 6
 	unknownsfx0x20 3, 196, 0, 5
 	unknownsfx0x20 5, 181, 0, 6
@@ -10,7 +10,7 @@ SFX_Battle_2A_Ch4:
 
 
 SFX_Battle_2A_Ch5:
-	dutycycle 141
+	dutycyclepattern $8d ; 2,0,3,1
 	unknownsfx0x20 5, 228, 224, 5
 	unknownsfx0x20 4, 180, 224, 4
 	unknownsfx0x20 6, 165, 232, 5

@@ -7,7 +7,7 @@ SFX_Battle_28_Ch4:
 
 
 SFX_Battle_28_Ch5:
-	dutycycle 179
+	dutycyclepattern $b3 ; 2,3,0,3
 	unknownsfx0x20 0, 225, 193, 7
 	unknownsfx0x20 0, 225, 1, 7
 	loopchannel 12, SFX_Battle_28_Ch5

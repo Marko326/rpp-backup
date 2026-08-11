@@ -27,6 +27,13 @@ tempo: MACRO
 dutycycle: MACRO
 	db $db, \1
 	ENDM
+
+; Gen1 Audio2 duty_cycle_pattern. The parameter is four packed 2-bit
+; duty values (bits 7-6, 5-4, 3-2, 1-0). crysaudio command $DE
+; rotates this pattern by one duty step on each audio update.
+dutycyclepattern: MACRO
+	db $de, \1
+	ENDM
 intensity: MACRO
 	db $dc, \1
 	ENDM
