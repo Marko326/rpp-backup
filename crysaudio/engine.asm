@@ -100,18 +100,20 @@ _UpdateSound:: ; e805c
 	ld [SoundOutput], a ; off
 	ld bc, Channel1
 .loop
-	; Music Off / BGM Volume 0 still advances music channels 1-4 in
-	; software. One-shot songs such as MUSIC_PKMN_HEALED are waited on by
-	; scripts, so freezing their software state can deadlock game logic.
-	; Hardware output is still suppressed below in .checkSFXOverride.
+	; BGM Volume 0 still advances music channels 1-4 in software. Music Off
+	; instead hard-suppresses BGM like pokered, so its music channels are
+	; cleared and only SFX/cry remain active. Hardware output for the soft
+	; volume-zero path is suppressed below in .checkSFXOverride.
 .checkChannelActive
 	; is the channel active?
 	ld hl, Channel1Flags - Channel1
 	add hl, bc
 	bit 0, [hl]
 	jr nz, .channelActive
-	; In effective mute, inactive music channels still keep their silent
-	; hardware route connected (Scheme A). This avoids NR51 disconnect pops.
+	; Effective mute (Music Off or BGM Volume 0) keeps an idle hardware
+	; route connected for music channels 1-4. With Music Off the software BGM
+	; channels are still hard-stopped; this route is hardware-only and prevents
+	; the NR51 disconnect step that causes the menu Ding/SFX end pop.
 	ld a, [MusicMuteState]
 	and a
 	jp z, .nextchannel
@@ -298,8 +300,17 @@ HandleMusicOptionTransition:
 	jr z, .musicEnabled
 
 .musicDisabled
-	; Silence only hardware channels that are not currently owned by an
-	; active SFX or cry. Their routes remain connected by muted placeholders.
+	; Music Off uses the same clean separation as pokered: stop the BGM
+	; software channels completely while preserving the target song for
+	; re-enable. This leaves SFX/cry as the only active audio channels.
+	ld a, [wOptions]
+	bit 5, a
+	jr z, .volumeZeroMute
+	call HardStopMusicPreserveTarget
+	ret
+.volumeZeroMute
+	; BGM Volume 0 remains a soft mute so the independent volume feature
+	; keeps its previous behavior.
 	call SilenceIdleMusicHardware
 	ret
 
@@ -315,6 +326,23 @@ HandleMusicOptionTransition:
 	or d
 	ret z
 	call _PlayMusic
+	ret
+
+
+HardStopMusicPreserveTarget:
+; Stop music channels 1-4 without touching active SFX/cry, but preserve the
+; current BGM target so Music On can restart the correct scene song.
+	ld a, [CurrentBGMIDLo]
+	push af
+	ld a, [CurrentBGMIDHi]
+	push af
+	call StopMusicOnly
+	pop af
+	ld [CurrentBGMIDHi], a
+	pop af
+	ld [CurrentBGMIDLo], a
+	xor a
+	ld [MusicResumeMask], a
 	ret
 
 SilenceIdleMusicHardware:
@@ -3055,6 +3083,16 @@ _PlayMusic:: ; e8b30
 	ld [hl], e
 	inc hl
 	ld [hl], d
+
+	; With Music Off, remember new scene-music requests but do not start or
+	; parse them. This mirrors pokered's BGM filter while still allowing RPP
+	; to restart the latest scene target when Music is turned back on.
+	ld a, [wOptions]
+	bit 5, a
+	jr z, .musicAllowed
+	call HardStopMusicPreserveTarget
+	ret
+.musicAllowed
 	xor a
 	ld [MusicResumeMask], a
 ; load music
