@@ -9,7 +9,7 @@ SFX_Battle_2E_Ch4:
 
 
 SFX_Battle_2E_Ch5:
-	dutycycle 179
+	dutycyclepattern $b3 ; 2,3,0,3
 	unknownsfx0x20 2, 225, 2, 3
 	unknownsfx0x20 3, 225, 242, 7
 	unknownsfx0x20 4, 225, 2, 6

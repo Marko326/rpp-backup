@@ -10,7 +10,7 @@ SFX_Battle_27_branch_2062a:
 
 
 SFX_Battle_27_Ch5:
-	dutycycle 179
+	dutycyclepattern $b3 ; 2,3,0,3
 	unknownsfx0x20 15, 47, 200, 7
 
 SFX_Battle_27_branch_2063d:

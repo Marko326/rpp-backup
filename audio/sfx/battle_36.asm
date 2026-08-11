@@ -21,7 +21,7 @@ SFX_Battle_36_branch_20930:
 
 
 SFX_Battle_36_Ch5:
-	dutycycle 179
+	dutycyclepattern $b3 ; 2,3,0,3
 	unknownsfx0x20 2, 241, 129, 7
 	unknownsfx0x20 2, 241, 1, 7
 	unknownsfx0x20 2, 241, 145, 7
