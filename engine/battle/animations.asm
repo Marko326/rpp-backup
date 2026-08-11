@@ -263,7 +263,17 @@ AnimPlaySFX:
 	ld e, a
 	xor a
 	ld d, a
+
+	; [修复] wSFXDontWait 原本只有 Growl/Roar 临时使用值 1。
+	; 这里临时使用值 2 作为“技能动画 SFX”启动标记，只在 PlaySFX 调用期间存在；
+	; crysaudio 据此把 MoveSoundTable 的 pitch/tempo 写入新建的 SFX channel。
+	; PlaySFX 返回后立即清零，不改变 WaitForSoundToFinish 的正常行为。
+	ld a, 2
+	ld [wSFXDontWait], a
 	call PlaySFX
+	xor a
+	ld [wSFXDontWait], a
+
 	pop de
 	ret
 
@@ -2337,6 +2347,15 @@ GetMoveSound:
 	ld b,a
 	call IsCryMove
 	jr nc,.NotCryMove
+
+	; [修复] Growl/Roar 仍使用 red++ 的 PlayCry 路径。
+	; 先保存 MoveSoundTable 的 pitch/tempo，crysaudio 会在本次 cry 启动时
+	; 合并到宝可梦自身的叫声参数，行为与原版 pokered 一致。
+	ld a,[hli]
+	ld [wFrequencyModifier],a
+	ld a,[hli]
+	ld [wTempoModifier],a
+
 	ld a,[H_WHOSETURN]
 	and a
 	jr nz,.next
@@ -3039,25 +3058,29 @@ PlayApplyingAttackSound:
 	ld d, a
 	ld a, $e0
 	ld b, $ff
-	ld c, GSSFX_SUPER_EFFECTIVE ; SFX_SUPER_EFFECTIVE
+	; [修复 v2] 恢复 Gen1/pret pokered 的原版通用命中母音，不再使用 red++ 的 GSSFX 版本。
+	ld c, SFX_SUPER_EFFECTIVE
 	jr z, .playSound
 ; not very effective
 	ld a, d
 	cp %00000001
 	ld a, $50
 	ld b, $1
-	ld c, GSSFX_NOT_VERY_EFFECTIVE ; SFX_NOT_VERY_EFFECTIVE
+	ld c, SFX_NOT_VERY_EFFECTIVE
 	jr z, .playSound
 ; neutral
 	ld a, $20
 	ld b, $30
-	ld c, GSSFX_DAMAGE ; SFX_DAMAGE
+	ld c, SFX_DAMAGE
 .playSound
 	ld [wFrequencyModifier], a
 	ld a, b
 	ld [wTempoModifier], a
+
+	; [修复 v2] 这三种命中音也是 pokered battle SFX；直接复用 AnimPlaySFX，
+	; 由它在启动 channel 的短暂窗口内设置 wSFXDontWait=2，并在返回后自动清零。
 	ld a, c
-	jp PlaySound 
+	jp AnimPlaySFX
 
 
 
