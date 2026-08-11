@@ -1243,14 +1243,17 @@ Functione8466: ; e8466
 	add hl, bc
 	set 0, [hl]
 .next
-	; [修复 v2] battle move 的 Frequency modifier 只在“新音符写入硬件”时生效。
-	; 普通 cry/tone 仍使用 Flags2 bit 4 的持续偏移；MoveSoundTable SFX 改用 Flags3 bit 7
-	; 做独立标记，并复用 Channel1CryPitch 保存 8 位 modifier。这样基础 Channel1Frequency
-	; 始终保持未修正值，vibrato / pitch slide 后续更新会像 pokered 一样回到原始频率基准。
+	; [修复 v4.2-red] Gen1 battle SFX 的 Frequency modifier 必须像 pokered
+	; Audio2 一样在“每个新 SFX note 写硬件”时重新判断，而不能在 PlaySFX 时
+	; 永久绑定到 channel。Audio2 的判断还会同时观察 CH5 与 CH8 当前的 SFX ID；
+	; Leer 正是依赖这一点形成“BATTLE_1B noise 尚未结束时先播原始高音，
+	; noise 结束后 BATTLE_31 后续 note 才套 $ff 变成低音”的两阶段效果。
+	;
+	; 普通 cry/tone 仍使用 Flags2 bit 4 + Channel1CryPitch 的持续偏移。
 	ld hl, Channel1Flags2 - Channel1
 	add hl, bc
 	bit 4, [hl]
-	jr nz, .applyPitch
+	jr nz, .applyCryPitch
 	ld hl, Channel1Flags3 - Channel1
 	add hl, bc
 	bit 7, [hl]
@@ -1259,12 +1262,20 @@ Functione8466: ; e8466
 	add hl, bc
 	bit 4, [hl] ; 新音符/新 SFX note 启动帧
 	jr z, .vibrato
-.applyPitch
-	ld hl, $0027
+	call Gen1Audio2_IsBattleSFX
+	jr nc, .vibrato
+	; Audio2 uses the current global modifier at each note.
+	ld a, [wFrequencyModifier]
+	ld e, a
+	ld d, $00
+	jr .applyPitchDE
+.applyCryPitch
+	ld hl, Channel1CryPitch - Channel1
 	add hl, bc
 	ld e, [hl]
 	inc hl
 	ld d, [hl]
+.applyPitchDE
 	ld hl, Crysaudio+$194
 	ld a, [hli]
 	ld h, [hl]
@@ -1660,10 +1671,28 @@ ParseMusic: ; e85e1
 	ld hl, Channel1Flags - Channel1
 	add hl, bc
 	res 0, [hl]
-	; note = rest
+	; pokered Audio2 does not immediately clear pulse/noise hardware when a
+	; Gen1 battle SFX reaches sound_ret.  Its software channel ends here, but
+	; the last hardware envelope is allowed to keep running (e.g. Leer's final
+	; $f2 envelope fades naturally instead of being cut off).  Keep crysaudio's
+	; existing hard-rest behavior for music, normal/menu SFX, and CH7/wave.
+	ld a, [CurChannel]
+	cp a, $04
+	jr c, .setEndRest
+	cp a, $06
+	jr c, .checkBattleTail ; CH5/CH6 pulse
+	jr z, .setEndRest       ; CH7 wave: Audio2 explicitly resets wave output
+	; CH8 noise falls through and gets the same Audio2 tail behavior.
+.checkBattleTail
+	ld hl, Channel1Flags3 - Channel1
+	add hl, bc
+	bit 7, [hl] ; channel loaded through the Gen1 battle-SFX path?
+	jr nz, .keepHardwareTail
+.setEndRest
 	ld hl, Channel1NoteFlags - Channel1
 	add hl, bc
-	set 5, [hl]
+	set 5, [hl] ; Rest -> existing crysaudio ClearChannel path
+.keepHardwareTail
 	; clear music id & bank
 	ld hl, Channel1MusicID - Channel1
 	add hl, bc
@@ -2885,12 +2914,44 @@ SetNoteDuration: ; e8a8d
 	ld l, $00 ; just multiply
 	call MultiplySimple
 	ld a, l ; % $100
+	; [修复 v4.2-redfix] A 在这里是 NoteLength * delay 的低 8 位，
+	; 第二次 MultiplySimple 必须继续使用这个值。动态 Audio2 tempo 判定会大量改写 A，
+	; 因此先保存，等 de 中的 tempo 准备好后再恢复。上一版遗漏这一点会把
+	; $fb/$db/tempo modifier 等错误值当成音符长度，造成高音异常拉长、其他 SFX
+	; 时长污染，并让 WaitForSoundToFinish 看起来像死机。
+	push af
 	; store Tempo in de
+	; [修复 v4.2-red] Gen1 battle SFX 与 Frequency 一样，每个 note 都重新执行
+	; Audio2_IsBattleSFX。判定失败时使用中性 $0100；判定成功时才使用
+	; $80 + 当前全局 wTempoModifier。Noise/CH8 在 pokered 中始终绕过该 modifier。
+	ld hl, Channel1Flags3 - Channel1
+	add hl, bc
+	bit 7, [hl]
+	jr z, .loadStoredTempo
+	ld a, [CurChannel]
+	and a, $03
+	cp a, $03
+	jr z, .neutralBattleTempo
+	call Gen1Audio2_IsBattleSFX
+	jr nc, .neutralBattleTempo
+	ld a, [wTempoModifier]
+	add a, $80
+	ld e, a
+	ld d, $00
+	jr nc, .tempoReady
+	inc d
+	jr .tempoReady
+.neutralBattleTempo
+	ld de, $0100
+	jr .tempoReady
+.loadStoredTempo
 	ld hl, Channel1Tempo - Channel1
 	add hl, bc
 	ld e, [hl]
 	inc hl
 	ld d, [hl]
+.tempoReady
+	pop af ; restore NoteLength * delay for the second MultiplySimple
 	; add ???? to the next result
 	ld hl, $0016
 	add hl, bc
@@ -3314,16 +3375,131 @@ PlayCry_:: ; e8b79
 	ret
 ; e8c04
 
-ApplyBattleMoveSFXModifiers:
-; [修复 v2] AnimPlaySFX / 通用命中音在调用 PlaySFX 的短暂窗口内把 wSFXDontWait 设为 2。
-; 只给这种“Gen1 战斗 SFX”复制 modifier，避免地图/菜单中复用同一母音时误吃战斗参数。
+Gen1Audio2_IsBattleSFX:
+; Reproduce pokered Audio2_IsBattleSFX exactly enough for Red battle SFX.
+; Audio2 does not test the current channel's ID directly: it bitwise-ORs the
+; active CH5 and CH8 sound IDs, then accepts only $9d <= value < $ea.
 ;
-; Frequency：不再设置 Flags2 bit 4（那是 crysaudio 的持续 tone/CryPitch 路径）。
-; 改用未占用的 Flags3 bit 7 标记当前 channel，并把 8 位 modifier 暂存在
-; Channel1CryPitch 低字节；Functione8466 只在每个新音符启动帧把它叠到临时硬件频率，
-; 让后续 vibrato / pitch slide 与 pokered 一样从未修正的基础频率继续工作。
-; Tempo：pokered 使用 $80 + wTempoModifier；噪声硬件通道不套 tempo modifier。
-; de 在 _PlaySFX 中仍指向下一条 channel header，因此本函数必须保存 de。
+; RPP uses compact global SFX IDs, while pokered's Audio2 IDs advance by the
+; number of header channels (a 2-channel SFX consumes two IDs, etc.).  Convert
+; the active RPP IDs through the table below before performing the same OR.
+; Returns carry set when Audio2 would consider the current sound a battle SFX.
+	push bc
+	push de
+	push hl
+
+	ld bc, Channel8
+	call .getActiveLegacyID
+	push af
+	ld bc, Channel5
+	call .getActiveLegacyID
+	ld e, a
+	pop af
+	or e
+	cp $9d
+	jr c, .no
+	cp $ea
+	jr nc, .no
+	scf
+	jr .done
+.no
+	and a ; clear carry
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+.getActiveLegacyID
+	ld hl, Channel1Flags - Channel1
+	add hl, bc
+	bit 0, [hl]
+	jr z, .zero
+	ld hl, Channel1MusicID - Channel1
+	add hl, bc
+	ld a, [hli]
+	ld d, a
+	ld a, [hl]
+	and a
+	jr nz, .zero
+	ld a, d
+	cp SFX_PECK
+	jr c, .zero
+	cp SFX_SILPH_SCOPE + 1
+	jr nc, .zero
+	sub SFX_PECK
+	ld e, a
+	ld d, $00
+	ld hl, Gen1Audio2BattleSFXIDs
+	add hl, de
+	ld a, [hl]
+	ret
+.zero
+	xor a
+	ret
+
+Gen1Audio2BattleSFXIDs:
+; Audio2 header IDs corresponding to RPP's contiguous SFX_PECK..SFX_SILPH_SCOPE.
+; Values are derived from pokered's Audio2 header layout, where each channel
+; header occupies one 3-byte sound-ID slot.
+	db $9d ; SFX_PECK
+	db $9e ; SFX_FAINT_FALL
+	db $9f ; SFX_BATTLE_09
+	db $a0 ; SFX_POUND
+	db $a1 ; SFX_BATTLE_0B
+	db $a2 ; SFX_BATTLE_0C
+	db $a3 ; SFX_BATTLE_0D
+	db $a4 ; SFX_BATTLE_0E
+	db $a5 ; SFX_BATTLE_0F
+	db $a6 ; SFX_DAMAGE
+	db $a7 ; SFX_NOT_VERY_EFFECTIVE
+	db $a8 ; SFX_BATTLE_12
+	db $a9 ; SFX_BATTLE_13
+	db $aa ; SFX_BATTLE_14
+	db $ab ; SFX_VINE_WHIP
+	db $ac ; SFX_BATTLE_16
+	db $ad ; SFX_BATTLE_17
+	db $ae ; SFX_BATTLE_18
+	db $af ; SFX_BATTLE_19
+	db $b0 ; SFX_SUPER_EFFECTIVE
+	db $b1 ; SFX_BATTLE_1B
+	db $b2 ; SFX_BATTLE_1C
+	db $b3 ; SFX_DOUBLESLAP
+	db $b4 ; SFX_BATTLE_1E (2 channels)
+	db $b6 ; SFX_HORN_DRILL
+	db $b7 ; SFX_BATTLE_20
+	db $b8 ; SFX_BATTLE_21
+	db $b9 ; SFX_BATTLE_22
+	db $ba ; SFX_BATTLE_23
+	db $bb ; SFX_BATTLE_24 (2 channels)
+	db $bd ; SFX_BATTLE_25
+	db $be ; SFX_BATTLE_26
+	db $bf ; SFX_BATTLE_27 (3 channels)
+	db $c2 ; SFX_BATTLE_28 (3 channels)
+	db $c5 ; SFX_BATTLE_29 (2 channels)
+	db $c7 ; SFX_BATTLE_2A (3 channels)
+	db $ca ; SFX_BATTLE_2B (2 channels)
+	db $cc ; SFX_BATTLE_2C (3 channels)
+	db $cf ; SFX_PSYBEAM (3 channels)
+	db $d2 ; SFX_BATTLE_2E (3 channels)
+	db $d5 ; SFX_BATTLE_2F (3 channels)
+	db $d8 ; SFX_PSYCHIC_M (3 channels)
+	db $db ; SFX_BATTLE_31 (2 channels)
+	db $dd ; SFX_BATTLE_32 (2 channels)
+	db $df ; SFX_BATTLE_33 (2 channels)
+	db $e1 ; SFX_BATTLE_34 (3 channels)
+	db $e4 ; SFX_BATTLE_35 (2 channels)
+	db $e6 ; SFX_BATTLE_36 (3 channels)
+	db $e9 ; SFX_SILPH_SCOPE
+
+ApplyBattleMoveSFXModifiers:
+; AnimPlaySFX / Gen1 damage-hit SFX set wSFXDontWait=2 only for the short
+; PlaySFX call.  Mark those loaded channels with Flags3 bit 7; the actual
+; Frequency and Tempo modifiers are intentionally NOT captured here.
+;
+; pokered Audio2 re-reads the global wFrequencyModifier/wTempoModifier at every
+; SFX note and first runs Audio2_IsBattleSFX.  Functione8466 and SetNoteDuration
+; now do the same dynamic check.
 	push de
 	push hl
 
@@ -3331,43 +3507,18 @@ ApplyBattleMoveSFXModifiers:
 	cp 2
 	jp nz, .done
 
-	; 标记为 MoveSoundTable / Gen1 battle SFX；ChannelInit 会在下一个 SFX 启动时清掉该位。
+	; Audio2 resets CH5/NR10 whenever a new SFX takes hardware pulse channel 1.
+	ld a, [CurChannel]
+	and a, $03
+	jr nz, .mark
+	ld a, $08
+	ld [SoundInput], a
+	ld [rNR10], a
+
+.mark
 	ld hl, Channel1Flags3 - Channel1
 	add hl, bc
 	set 7, [hl]
-	ld hl, Channel1CryPitch - Channel1
-	add hl, bc
-	ld a, [wFrequencyModifier]
-	ld [hli], a
-	xor a
-	ld [hl], a
-
-	; 与 pokered 一样，SFX noise channel 不应用 tempo modifier。
-	ld a, [CurChannel]
-	and a, $03
-	cp a, $03
-	jp z, .done
-
-	; Channel1Tempo 是小端 16 位；中性 modifier $80 会得到 $0100。
-	ld a, [wTempoModifier]
-	add a, $80
-	ld e, a
-	ld d, $00
-	jr nc, .storeTempo
-	inc d
-.storeTempo
-	ld hl, Channel1Tempo - Channel1
-	add hl, bc
-	ld [hl], e
-	inc hl
-	ld [hl], d
-
-	; SetTempo/ChannelInit 都会清这个 fractional accumulator；这里同步清零，
-	; 确保每个新技能 SFX channel 从干净的时长累计状态开始。
-	xor a
-	ld hl, $0016
-	add hl, bc
-	ld [hl], a
 
 .done
 	pop hl
@@ -3375,8 +3526,15 @@ ApplyBattleMoveSFXModifiers:
 	ret
 
 _PlaySFX:: ; e8c04
-; clear channels if they aren't already
+; Normal/menu SFX keep crysaudio's existing all-channel replacement behavior.
+; Gen1 battle SFX (wSFXDontWait=2) follow pokered Audio2's channel coexistence:
+; LoadChannel below replaces only channels present in the new SFX header, while
+; unrelated active SFX channels keep playing.  Leer requires BATTLE_1B on CH8
+; to survive when BATTLE_31 starts on CH5+CH6.
 	call MusicOff
+	ld a, [wSFXDontWait]
+	cp 2
+	jp z, .chscleared
 	ld hl, Crysaudio+$cc ; Crysaudio+$cc
 	bit 0, [hl] ; ch5 on?
 	jr z, .ch6
