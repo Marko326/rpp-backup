@@ -1,5 +1,5 @@
 SFX_Psybeam_Ch4:
-	dutycycle 161
+	dutycyclepattern $a1 ; 2,2,0,1
 	unknownsfx0x20 10, 241, 64, 6
 	unknownsfx0x20 10, 243, 128, 6
 	unknownsfx0x20 10, 242, 32, 6
@@ -9,7 +9,7 @@ SFX_Psybeam_Ch4:
 
 
 SFX_Psybeam_Ch5:
-	dutycycle 179
+	dutycyclepattern $b3 ; 2,3,0,3
 	unknownsfx0x20 10, 243, 113, 5
 	unknownsfx0x20 7, 227, 49, 5
 	unknownsfx0x20 10, 241, 81, 5

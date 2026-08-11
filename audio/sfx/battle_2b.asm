@@ -1,5 +1,5 @@
 SFX_Battle_2B_Ch4:
-	dutycycle 210
+	dutycyclepattern $d2 ; 3,1,0,2
 	unknownsfx0x20 3, 129, 0, 3
 	unknownsfx0x20 3, 193, 0, 4
 	unknownsfx0x20 3, 241, 0, 5

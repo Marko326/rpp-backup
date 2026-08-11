@@ -1,5 +1,5 @@
 SFX_Battle_29_Ch4:
-	dutycycle 201
+	dutycyclepattern $c9 ; 3,0,2,1
 	unknownsfx0x20 11, 243, 32, 1
 	unknownsfx0x20 9, 211, 80, 1
 	loopchannel 5, SFX_Battle_29_Ch4
