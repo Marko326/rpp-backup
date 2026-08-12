@@ -1133,6 +1133,8 @@ DisplayTextID::
 	jr AfterDisplayingTextID
 .notSpecialCase
 	call PrintText_NoCreatingTextBox ; display the text
+; 修复：宝可梦中心 Cancel 返回时也从这里检查“不额外等待按键”标志。
+CheckForNoWaitAfterDisplayingTextID::
 	ld a,[wDoNotWaitForButtonPressAfterDisplayingText]
 	and a
 	jr nz,HoldTextDisplayOpen
@@ -1243,7 +1245,8 @@ DisplayPokemonCenterDialogue::
 	pop af
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a
-	jp AfterDisplayingTextID
+	; 修复：护士对话选择 Cancel 时复用正常文本的“不等待”检查。
+	jp CheckForNoWaitAfterDisplayingTextID
 
 DisplaySafariGameOverText::
 	callab PrintSafariGameOverText
@@ -3097,7 +3100,10 @@ InitYesNoTextBoxParameters::
 	ret
 
 YesNoChoicePokeCenter::
-	call SaveScreenTilesToBuffer1
+	; 修复：护士入口已经把原始地图画面保存到 Buffer1，这里不能再次覆盖。
+	nop
+	nop
+	nop
 	ld a, HEAL_CANCEL_MENU
 	ld [wTwoOptionMenuID], a
 	coord hl, 11, 6

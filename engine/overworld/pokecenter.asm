@@ -39,7 +39,9 @@ DisplayPokemonCenterDialogue_:
 	call DelayFrames
 	jr .done
 .declinedHealing
-	call LoadScreenTilesFromBuffer1 ; restore screen
+	; 修复：YesNoChoicePokeCenter 已恢复护士对话前保存的画面。
+	; 此处等长改为设置“不额外等待按键”标志，让 Cancel 直接结束对话。
+	call DisableWaitingAfterTextDisplay
 .done
 	jp UpdateSprites
 
