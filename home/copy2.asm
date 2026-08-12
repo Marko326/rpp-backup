@@ -211,3 +211,52 @@ ClearScreen::
 	dec b
 	jr nz, .loop
 	jp Delay3
+
+CopyVideoDataDoubleStartMenu::
+; START 菜单字体专用传输。
+; 静止状态下每个 VBlank 复制 12 个 1bpp tiles，减少字体加载等待，
+; 不改变普通文本和其他图像传输使用的原版 8-tile 时序。
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a ; disable auto-transfer while copying
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ld a, [H_LOADEDROMBANK]
+	ld [hROMBankTemp], a
+
+	ld a, b
+	ld [H_LOADEDROMBANK], a
+	ld [MBC1RomBank], a
+
+	ld a, e
+	ld [H_VBCOPYDOUBLESRC], a
+	ld a, d
+	ld [H_VBCOPYDOUBLESRC + 1], a
+
+	ld a, l
+	ld [H_VBCOPYDOUBLEDEST], a
+	ld a, h
+	ld [H_VBCOPYDOUBLEDEST + 1], a
+
+.loop
+	ld a, c
+	cp 12
+	jr nc, .keepgoing
+
+.done
+	ld [H_VBCOPYDOUBLESIZE], a
+	call DelayFrame
+	ld a, [hROMBankTemp]
+	ld [H_LOADEDROMBANK], a
+	ld [MBC1RomBank], a
+	pop af
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
+
+.keepgoing
+	ld a, 12
+	ld [H_VBCOPYDOUBLESIZE], a
+	call DelayFrame
+	ld a, c
+	sub 12
+	ld c, a
+	jr .loop
