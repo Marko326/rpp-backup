@@ -3866,6 +3866,13 @@ HandleMenuInput_::
 	ld [wAnimCounter],a ; counter for pokemon shaking animation
 	call PlaceMenuCursor
 	call Delay3
+	ld a,[hWY]
+	cp $91
+	jr nz,.loop2
+	; START 菜单的首次刷新完成后再显示 Window，避免菜单分段出现。
+	xor a
+	ld [hWY],a
+	call DelayFrame
 .loop2
 	push hl
 	ld a,[wPartyMenuAnimMonEnabled]

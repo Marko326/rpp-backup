@@ -68,14 +68,41 @@ DisplayTextIDInit:
 	add hl,de
 	dec c
 	jr nz,.spriteStandStillLoop
-	; 修改备注：先加载字体，再把对话框/菜单传到屏幕。
-	; 原顺序会让边框先出现，随后等待约 8 帧字体传输，形成明显的“空框停顿”。
-	; 此修改不减少字体加载所需时间，只把等待移到边框出现之前，避免空框可见。
+	; 先加载字体，再把对话框/菜单传到屏幕。
+	; START 菜单在没有待处理地图重绘时使用较快的字体传输。
+	; 移动刚结束仍有行/列重绘时保持原版字体传输时序，避免 VBlank 内的 VRAM 操作互相挤占。
+	ld a,[hSpriteIndexOrTextID]
+	and a
+	jr nz,.loadFontNormally
+	ld a,[wAutoTextBoxDrawingControl]
+	bit 0,a
+	jr nz,.loadFontNormally
+	ld a,[hRedrawRowOrColumnMode]
+	and a
+	jr nz,.loadFontNormally
+	ld de,FontGraphics
+	ld hl,vFont
+	lb bc, BANK(FontGraphics), (FontGraphicsEnd - FontGraphics) / $8
+	call CopyVideoDataDoubleStartMenu
+	jr .fontLoaded
+.loadFontNormally
 	call LoadFontTilePatterns
+.fontLoaded
 	ld b,$9c ; window background address
 	call CopyScreenTileBufferToVRAM ; transfer background in WRAM to VRAM
+	ld a,[hSpriteIndexOrTextID]
+	and a
+	jr nz,.showWindow
+	ld a,[wAutoTextBoxDrawingControl]
+	bit 0,a
+	jr nz,.showWindow
+	; START 菜单先保持 Window 在屏幕外，等完整菜单传输后再显示。
+	ld a,$91
+	jr .setWindowY
+.showWindow
 	xor a
-	ld [hWY],a ; put the window on the screen
+.setWindowY
+	ld [hWY],a
 	ld a,$01
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable continuous WRAM to VRAM transfer each V-blank
 	ret
