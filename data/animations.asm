@@ -751,8 +751,9 @@ TeleportAnim:
 	db $FF
 
 NightShadeAnim:
-	db SE_FLASH_SCREEN_LONG, $5C
+	db SE_DARK_SCREEN_PALETTE, $5C
 	db SE_WAVY_SCREEN, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
 MimicAnim:
