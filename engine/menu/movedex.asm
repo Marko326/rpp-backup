@@ -197,6 +197,9 @@ ShowMoveDexMenu:
 	pop af
 	ld [wListScrollOffset],a
 	call GBPalWhiteOutWithDelay3
+	; MoveDex 会加载 Pokédex 专用图块，其中一部分 VRAM 与户外屋顶/文本框共用。
+	; 返回 START 前先恢复当前 World 模式对应的文本框/屋顶图块，避免屋顶一直乱码到关闭菜单。
+	call LoadTextBoxTilePatterns
 	call RunDefaultPaletteCommand
 	ret
 
