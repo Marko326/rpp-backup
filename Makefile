@@ -15,12 +15,12 @@ pokeblue_obj := audio_blue.o main_blue.o text_blue.o wram_blue.o
 .PRECIOUS: %.2bpp
 .PHONY: all clean cleanpic map red blue compare tools
 
-roms := pokered.gbc pokeblue.gbc
+roms := patches/rppred.gbc patches/rppblue.gbc
 maps := $(roms:.gbc=.map)
 
 all: $(roms)
-red: pokered.gbc
-blue: pokeblue.gbc
+red: patches/rppred.gbc
+blue: patches/rppblue.gbc
 map: $(maps)
 
 # For contributors to make sure a change didn't affect the contents of the rom.
@@ -61,15 +61,23 @@ $(pokeblue_obj): %_blue.o: %.asm $$(dep)
 pokered_opt  = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
 pokeblue_opt = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
 
-%.gbc: $$(%_obj)
-	$(RGBDS_DIR)rgblink -n $*.sym -o $@ $^
-	$(RGBDS_DIR)rgbfix $($*_opt) $@
-	sort $*.sym -o $*.sym
+rppred_obj  := $(pokered_obj)
+rppblue_obj := $(pokeblue_obj)
+rppred_opt  := $(pokered_opt)
+rppblue_opt := $(pokeblue_opt)
 
-%.map: $$(%_obj)
-	$(RGBDS_DIR)rgblink -n $*.sym -m $@ -o $*.gbc $^
-	$(RGBDS_DIR)rgbfix $($*_opt) $*.gbc
-	sort $*.sym -o $*.sym
+patches:
+	mkdir -p $@
+
+patches/%.gbc: $$(%_obj) | patches
+	$(RGBDS_DIR)rgblink -n patches/$*.sym -o $@ $^
+	$(RGBDS_DIR)rgbfix $($*_opt) $@
+	sort patches/$*.sym -o patches/$*.sym
+
+patches/%.map: $$(%_obj) | patches
+	$(RGBDS_DIR)rgblink -n patches/$*.sym -m $@ -o patches/$*.gbc $^
+	$(RGBDS_DIR)rgbfix $($*_opt) patches/$*.gbc
+	sort patches/$*.sym -o patches/$*.sym
 
 gfx/blue/intro_purin_1.6x6.2bpp: rgbgfx += -h
 gfx/blue/intro_purin_2.6x6.2bpp: rgbgfx += -h
