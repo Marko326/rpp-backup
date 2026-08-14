@@ -22,6 +22,10 @@ DisplayHackVersionScreen::
 	coord hl, 2, 2
 	ld de, VersionScreenText
 	call PlaceString
+	coord hl, 2, 8
+	; World 模式不再改变启动页版本文字。
+	ld de,GameVersionText
+	call PlaceString
 ; wait for the player to press A
 	call WaitForTextScrollButtonPress
 ; load the tilemap for the screen again
@@ -62,15 +66,11 @@ VersionScreenText:
 	db   "Welcome to Red++"
 	next "You are playing"
 IF DEF(_HARD) ; Hard Rom
-	next "The Hard Patch"
+	next "The Hard Patch@"
 ELSE ; Normal Rom
-	next "The Normal Patch"
+	next "The Normal Patch@"
 ENDC
-IF DEF(_SNOW)
-	next "v3.0.2 (Snowy)@"
-ELSE
-	next "v3.0.2@"
-ENDC
+
 
 VersionScreenText2:
 	db   "Readme and FAQ"

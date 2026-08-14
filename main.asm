@@ -12,6 +12,7 @@ PICS_4 EQU $C
 PICS_5 EQU $D
 
 INCLUDE "home.asm"
+INCLUDE "data/game_version.asm"
 
 
 SECTION "bank1",ROMX,BANK[$1]

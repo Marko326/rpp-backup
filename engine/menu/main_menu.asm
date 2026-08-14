@@ -50,6 +50,8 @@ MainMenu:
 	ld de,NewGameText
 	call PlaceString
 .next2
+	; 参考 PureRGB 的布局，在主菜单左下角显示当前游戏版本号。
+	call DrawMainMenuVersionText
 	ld hl,wd730
 	res 6,[hl]
 	call UpdateSprites
@@ -84,6 +86,8 @@ MainMenu:
 	jr z,.choseContinue
 	cp a,1
 	jp z,StartNewGame
+	; 版本号只属于主菜单；进入选项前清除，避免残留在页面底部。
+	call ClearMainMenuVersionText
 	call DisplayOptionMenu
 	ld a,1
 	ld [wOptionsInitialized],a
@@ -360,6 +364,9 @@ CableClubOptionsText:
 DisplayContinueGameInfo:
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED], a
+	; Continue 信息框底边会占用第 17 行。先清除主菜单左下角的版本号，
+	; 再绘制信息框，避免框外残留版本号字符。
+	call ClearMainMenuVersionText
 	coord hl, 2, 6
 	ld b, 10
 	ld c, 16
@@ -454,6 +461,19 @@ PrintPlayTime:
 	ld de, wPlayTimeMinutes
 	lb bc, LEADING_ZEROES | 1, 2
 	jp PrintNumber
+
+DrawMainMenuVersionText:
+	; 公共版本字符串本身不带前导空格；右移一格保持原先的左下角显示位置。
+	coord hl, 1, 17
+	ld de,GameVersionText
+	jp PlaceString
+
+ClearMainMenuVersionText:
+	; 版本号位于最下面一行；整行清空可兼容以后版本号长度变化。
+	coord hl, 0, 17
+	ld b, 1
+	ld c, SCREEN_WIDTH
+	jp ClearScreenArea
 
 SaveScreenInfoText:
 	db   "Player"
