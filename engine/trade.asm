@@ -30,7 +30,7 @@ TradeAnimCommon:
 	ld a, [hSCX]
 	push af
 	ld a, [wOptions]
-	and a, %00100000 ; preserve the background music setting
+	and a, %00110000 ; preserve World appearance and background music settings
 	ld [wOptions], a
 	xor a
 	ld [hSCY], a

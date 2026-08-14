@@ -137,6 +137,9 @@ LoadTilesetPalette:
 	cp PLATEAU ; tileset 0 isn't the only outside tileset
 	call z, LoadTownPalette
 
+	; Snowy 模式只覆盖与普通版不同的调色板和 tile palette 分配。
+	callba ApplySnowPaletteOverrides
+
 	pop hl
 	pop de
 	pop bc
