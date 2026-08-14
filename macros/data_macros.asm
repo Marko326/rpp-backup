@@ -238,3 +238,14 @@ rept _NARG +- 1
 	shift
 endr
 endm
+
+; MoveDex 与战斗核心共用的暴击技能数据源。
+; 普通高暴击列表在各自 ROM bank 展开；必定暴击技能使用 move_constants 中的共享身份别名。
+db_high_critical_moves: MACRO
+	db KARATE_CHOP, RAZOR_LEAF, CRABHAMMER, SLASH, NIGHT_SLASH
+	db CROSS_CHOP, PSYCHO_CUT, LEAF_BLADE, AIR_CUTTER, AEROBLAST
+ENDM
+
+db_always_critical_moves: MACRO
+	db ALWAYS_CRIT_MOVE_1, ALWAYS_CRIT_MOVE_2
+ENDM

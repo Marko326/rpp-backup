@@ -3242,6 +3242,9 @@ LinkBattleExchangeData:
 ExecutePlayerMove:
 	xor a
 	ld [H_WHOSETURN], a ; set player's turn
+	; The Metronome-derived marker is only valid within one player action.
+	; Clear it before status/disobedience handling so a previous turn can never leak.
+	ld [wMoveDexPlayerMetronomeDerived], a
 	ld a, [wPlayerSelectedMove]
 	inc a
 	jp z, ExecutePlayerMoveDone ; for selected move = FF, skip most of player's turn
@@ -3270,6 +3273,9 @@ ExecutePlayerMove:
 	jp z, ExecutePlayerMoveDone
 
 CheckIfPlayerNeedsToChargeUp:
+	; MoveDex Seen/Use：到达这里说明状态/服从检查已经允许本次技能真正执行。
+	; Mirror Move 派生招仍按实际执行记 Use；Metronome 随机链由瞬时标志降为 Seen only。
+	callba MoveDexRecordPlayerMove
 	ld a, [wPlayerMoveEffect]
 	cp CHARGE_EFFECT
 	jp z, JumpMoveEffect
@@ -3386,6 +3392,10 @@ MirrorMoveCheck:
 	cp a,METRONOME_EFFECT
 	jr nz,.next
 	call MetronomePickMove
+	; The chosen move (and anything it invokes, e.g. Mirror Move) was generated
+	; by Metronome, so MoveDex must only mark it Seen, never Use.
+	ld a,1
+	ld [wMoveDexPlayerMetronomeDerived],a
 	jp CheckIfPlayerNeedsToChargeUp ; Go back to damage calculation for the move picked by Metronome
 .next
 	ld a,[wPlayerMoveEffect]
@@ -3936,12 +3946,11 @@ MonName1Text:
 	TX_ASM
 	ld a, [H_WHOSETURN]
 	and a
-	ld a, [wPlayerMoveNum]
 	ld hl, wPlayerUsedMove
 	jr z, .playerTurn
-	ld a, [wEnemyMoveNum]
 	ld hl, wEnemyUsedMove
 .playerTurn
+	call GetCurrentMoveID
 	ld [hl], a
 	ld hl, UsedText
 	ret
@@ -4832,10 +4841,10 @@ CriticalHitTest:
 	ld a, [wPlayerSelectedMove]
 	ld b,a
 .checkAlwaysCrit
-; first, check moves that always crit
-	cp STORM_THROW
+; 先检查必定暴击技能；身份别名与 MoveDex 共用。
+	cp ALWAYS_CRIT_MOVE_1
 	jr z, .CritSuccess
-	cp MIND_BLAST
+	cp ALWAYS_CRIT_MOVE_2
 	jr z, .CritSuccess
 .loop
 ; if it wasn't one of those, loop over the list of high-crit moves
@@ -4975,7 +4984,7 @@ ApplyAttackToEnemyPokemon:
 	ld hl,wBattleMonLevel
 	ld a,[hl]
 	ld b,a ; Seismic Toss deals damage equal to the user's level
-	ld a,[wPlayerMoveNum]
+	call GetCurrentMoveID
 	cp a,SEISMIC_TOSS
 	jr z,.storeDamage
 	cp a,NIGHT_SHADE
@@ -5094,7 +5103,7 @@ ApplyAttackToPlayerPokemon:
 	ld hl,wEnemyMonLevel
 	ld a,[hl]
 	ld b,a
-	ld a,[wEnemyMoveNum]
+	call GetCurrentMoveID
 	cp a,SEISMIC_TOSS
 	jr z,.storeDamage
 	cp a,NIGHT_SHADE
@@ -5260,8 +5269,8 @@ HandleBuildingRage:
 ; copy last move for Mirror Move
 ; sets zero flag on failure and unsets zero flag on success
 MirrorMoveCopyMove:
-; Mirror Move makes use of ccf1 (wPlayerUsedMove) and ccf2 (wEnemyUsedMove) addresses,
-; which are mainly used to print the "[Pokemon] used [Move]" text.
+; Mirror Move uses ccf1 (wPlayerUsedMove) and ccf2 (wEnemyUsedMove) as
+; real IDs of the last moves that reached the move-announcement stage.
 ; Both are set to 0 whenever a new Pokemon is sent out
 ; ccf1 is also set to 0 whenever the player is fast asleep or frozen solid.
 ; ccf2 is also set to 0 whenever the enemy is fast asleep or frozen solid.
@@ -5269,23 +5278,20 @@ MirrorMoveCopyMove:
 	ld a,[H_WHOSETURN]
 	and a
 ; values for player turn
-	ld a,[wEnemyUsedMove] ; Enemy Used Move
+	ld a,[wEnemyUsedMove] ; real ID of the enemy's last successfully announced move
 	ld de,wPlayerMoveNum
 	ld hl,wPlayerSelectedMove
-	ld bc,wEnemySelectedMove ; Added so we can check what they actually selected
 	jr z,.next
 ; values for enemy turn
 	ld a,[wPlayerUsedMove]
 	ld de,wEnemyMoveNum
 	ld hl,wEnemySelectedMove
-	ld bc,wPlayerSelectedMove ; Added so we can check what they actually selected
 .next
 	cp a,MIRROR_MOVE ; did the target pokemon also use Mirror Move?
 	jr z,.mirrorMoveFailed
 	and a ; null move?
 	jr z,.mirrorMoveFailed
-	ld a,[bc] ; Load A with whatever move they actually selected
-	ld [hl],a ; This command was originally up top and I just moved it down here because reasons
+	ld [hl],a ; copy the actual last-used move ID, not its animation alias
 	jr ReloadMoveData
 .mirrorMoveFailed
 	ld hl,MirrorMoveFailedText
@@ -5840,6 +5846,9 @@ ExecuteEnemyMove:
 	call GetCurrentMove
 
 CheckIfEnemyNeedsToChargeUp:
+	; 敌方技能只记 Seen；无法行动的状态分支不会到达这里。
+	; Metronome / Mirror Move 的实际调用招会在回跳后再次记录。
+	callba MoveDexRecordEnemyMove
 	ld a, [wEnemyMoveEffect]
 	cp CHARGE_EFFECT
 	jp z, JumpMoveEffect
@@ -5850,7 +5859,7 @@ EnemyCanExecuteChargingMove:
 	ld hl, wEnemyBattleStatus1
 	res ChargingUp, [hl] ; no longer charging up for attack
 	res Invulnerable, [hl] ; no longer invulnerable to typical attacks
-	ld a, [wEnemyMoveNum]
+	call GetCurrentMoveID
 	ld [wd0b5], a
 	ld a, BANK(MoveNames)
 	ld [wPredefBank], a
@@ -7018,12 +7027,11 @@ HandleExplodingAnimation:
 	and a
 	ld hl, wEnemyMonType1
 	ld de, wEnemyBattleStatus1
-	ld a, [wPlayerMoveNum]
 	jr z, .player
 	ld hl, wBattleMonType1
 	ld de, wEnemyBattleStatus1
-	ld a, [wEnemyMoveNum]
 .player
+	call GetCurrentMoveID
 	cp SELFDESTRUCT
 	jr z, .isExplodingMove
 	cp EXPLOSION
@@ -7568,19 +7576,18 @@ PoisonEffect:
 	dec hl
 	set 3, [hl] ; mon is now poisoned
 	push de
-	dec de
 	ld a, [H_WHOSETURN]
 	and a
 	ld b, ANIM_C7
 	ld hl, wPlayerBattleStatus3
-	ld a, [de]
 	ld de, wPlayerToxicCounter
 	jr nz, .ok
 	ld b, ANIM_A9
 	ld hl, wEnemyBattleStatus3
 	ld de, wEnemyToxicCounter
 .ok
-	cp BITE ; Animation ID, not Move ID. Poison Fang uses Bite's animation.
+	call GetCurrentMoveID
+	cp POISON_FANG
 	jr z, .badlyPoison
 	cp TOXIC
 	jr nz, .normalPoison ; done if move is not Toxic
@@ -8348,7 +8355,7 @@ SwitchAndTeleportEffect:
 	jr nc, .playerMoveWasSuccessful ; if so, allow teleporting
 	ld c, 50
 	call DelayFrames
-	ld a, [wPlayerMoveNum]
+	call GetCurrentMoveID
 	cp TELEPORT
 	jp nz, PrintDidntAffectText
 	jp PrintButItFailedText_
@@ -8364,7 +8371,7 @@ SwitchAndTeleportEffect:
 	ld c, 50
 	call DelayFrames
 	ld hl, IsUnaffectedText
-	ld a, [wPlayerMoveNum]
+	call GetCurrentMoveID
 	cp TELEPORT
 	jp nz, PrintText
 	jp PrintButItFailedText_
@@ -8390,7 +8397,7 @@ SwitchAndTeleportEffect:
 	jr nc, .enemyMoveWasSuccessful
 	ld c, 50
 	call DelayFrames
-	ld a, [wEnemyMoveNum]
+	call GetCurrentMoveID
 	cp TELEPORT
 	jp nz, PrintDidntAffectText
 	jp PrintButItFailedText_
@@ -8406,7 +8413,7 @@ SwitchAndTeleportEffect:
 	ld c, 50
 	call DelayFrames
 	ld hl, IsUnaffectedText
-	ld a, [wEnemyMoveNum]
+	call GetCurrentMoveID
 	cp TELEPORT
 	jp nz, PrintText
 	jp ConditionalPrintButItFailed
@@ -8416,6 +8423,7 @@ SwitchAndTeleportEffect:
 	ld c, 20
 	call DelayFrames
 	pop af
+	call GetCurrentMoveID
 	ld hl, RanFromBattleText
 	cp TELEPORT
 	jr z, .printText
@@ -8524,13 +8532,15 @@ ChargeEffect:
 .chargeEffect
 	set ChargingUp, [hl]
 	ld a, [de]
-	dec de ; de contains enemy or player MOVENUM
 	cp FLY_EFFECT
 	jr nz, .notFly
 	set Invulnerable, [hl] ; mon is now invulnerable to typical attacks (fly/dig)
 	ld b, TELEPORT ; load Teleport's animation
 .notFly
-	ld a, [de]
+	call GetCurrentMoveID
+	ld [wChargeMoveNum], a
+	; DIVE is currently unused and intentionally has no dedicated
+	; invulnerability/charge-text path yet.
 	cp DIG
 	jr nz, .notDigOrFly
 	set Invulnerable, [hl] ; mon is now invulnerable to typical attacks (fly/dig)
@@ -8540,8 +8550,6 @@ ChargeEffect:
 	ld [wAnimationType], a
 	ld a, b
 	call PlayBattleAnimation
-	ld a, [de]
-	ld [wChargeMoveNum], a
 	ld hl, ChargeMoveEffectText
 	jp PrintText
 

@@ -3585,14 +3585,14 @@ JoypadLowSensitivity::
 	ret
 
 WaitForTextScrollButtonPress::
-	ld a, [H_DOWNARROWBLINKCNT1]
+	ld a, [hDownArrowBlinkActive]
 	push af
-	ld a, [H_DOWNARROWBLINKCNT2]
+	ld a, [hDownArrowBlinkTimer]
 	push af
 	xor a
-	ld [H_DOWNARROWBLINKCNT1], a
-	ld a, $6
-	ld [H_DOWNARROWBLINKCNT2], a
+	ld [hDownArrowBlinkActive], a
+	ld a, DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer], a
 .loop
 	push hl
 	ld a, [wTownMapSpriteBlinkingEnabled]
@@ -3609,9 +3609,9 @@ WaitForTextScrollButtonPress::
 	and A_BUTTON | B_BUTTON
 	jr z, .loop
 	pop af
-	ld [H_DOWNARROWBLINKCNT2], a
+	ld [hDownArrowBlinkTimer], a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1], a
+	ld [hDownArrowBlinkActive], a
 	ret
 
 ; (unless in link battle) waits for A or B being pressed and outputs the scrolling sound effect
@@ -3861,14 +3861,14 @@ HandleMenuInput::
 	ld [wPartyMenuAnimMonEnabled],a
 
 HandleMenuInput_::
-	ld a,[H_DOWNARROWBLINKCNT1]
+	ld a,[hDownArrowBlinkActive]
 	push af
-	ld a,[H_DOWNARROWBLINKCNT2]
+	ld a,[hDownArrowBlinkTimer]
 	push af ; save existing values on stack
 	xor a
-	ld [H_DOWNARROWBLINKCNT1],a ; blinking down arrow timing value 1
-	ld a,6
-	ld [H_DOWNARROWBLINKCNT2],a ; blinking down arrow timing value 2
+	ld [hDownArrowBlinkActive],a ; 下箭头闪烁未激活
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a ; 下箭头剩余显示帧数
 .loop1
 	xor a
 	ld [wAnimCounter],a ; counter for pokemon shaking animation
@@ -3904,9 +3904,9 @@ HandleMenuInput_::
 .giveUpWaiting
 ; if a key wasn't pressed within the specified number of checks
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a ; restore previous values
+	ld [hDownArrowBlinkActive],a ; 恢复进入菜单前的闪烁状态
 	xor a
 	ld [wMenuWrappingEnabled],a ; disable menu wrapping
 	ret
@@ -3968,9 +3968,9 @@ HandleMenuInput_::
 	call PlaySound
 .skipPlayingSound
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a ; restore previous values
+	ld [hDownArrowBlinkActive],a ; 恢复进入菜单前的闪烁状态
 	xor a
 	ld [wMenuWrappingEnabled],a ; disable menu wrapping
 	ld a,[hJoy5]
@@ -4089,53 +4089,49 @@ EraseMenuCursor::
 	ld [hl]," "
 	ret
 
-; This toggles a blinking down arrow at hl on and off after a delay has passed.
-; This is often called even when no blinking is occurring.
-; The reason is that most functions that call this initialize H_DOWNARROWBLINKCNT1 to 0.
-; The effect is that if the tile at hl is initialized with a down arrow,
-; this function will toggle that down arrow on and off, but if the tile isn't
-; initialized with a down arrow, this function does nothing.
-; That allows this to be called without worrying about if a down arrow should
-; be blinking.
+; 按显示帧切换下箭头，而不是按输入循环调用次数切换。
+; Pokédex、MoveDex、通用列表和 Poké Mart 共用同一个帧间隔。
+; hDownArrowBlinkActive=0 表示尚未启用；只有当前位置原本是 ▼ 时才启用。
 HandleDownArrowBlinkTiming::
-	ld a,[hl]
-	ld b,a
-	ld a,"▼"
-	cp b
-	jr nz,.downArrowOff
-.downArrowOn
-	ld a,[H_DOWNARROWBLINKCNT1]
-	dec a
-	ld [H_DOWNARROWBLINKCNT1],a
-	ret nz
-	ld a,[H_DOWNARROWBLINKCNT2]
-	dec a
-	ld [H_DOWNARROWBLINKCNT2],a
-	ret nz
-	ld a," " ; textbox border bottom
-	ld [hl],a
-	ld a,$ff
-	ld [H_DOWNARROWBLINKCNT1],a
-	ld a,$06
-	ld [H_DOWNARROWBLINKCNT2],a
-	ret
-.downArrowOff
-	ld a,[H_DOWNARROWBLINKCNT1]
+	ld a,[hDownArrowBlinkActive]
 	and a
-	ret z
-	dec a
-	ld [H_DOWNARROWBLINKCNT1],a
+	jr nz,.active
+	ld a,[hl]
+	cp "▼"
 	ret nz
-	dec a
-	ld [H_DOWNARROWBLINKCNT1],a
-	ld a,[H_DOWNARROWBLINKCNT2]
-	dec a
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld a,1
+	ld [hDownArrowBlinkActive],a
+	; 本帧只做初始化，从下一次 VBlank 开始计时，保证首段完整显示。
+	ld [hDownArrowBlinkFrameProcessed],a
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
+	ret
+.active
+	; 同一 VBlank 内无论输入循环跑多少次都只计时一次。
+	ld a,[hDownArrowBlinkFrameProcessed]
+	and a
 	ret nz
-	ld a,$06
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld a,1
+	ld [hDownArrowBlinkFrameProcessed],a
+
+	ld a,[hDownArrowBlinkTimer]
+	dec a
+	ld [hDownArrowBlinkTimer],a
+	jr nz,.frameDone
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
+
+	ld a,[hl]
+	cp "▼"
 	ld a,"▼"
+	jr nz,.storeArrow
+	ld a," " ; textbox border bottom
+.storeArrow
 	ld [hl],a
+.frameDone
+	; 若 VBlank 恰好打断了上面的处理，这里再次锁住当前帧，避免同帧二次递减。
+	ld a,1
+	ld [hDownArrowBlinkFrameProcessed],a
 	ret
 
 ; The following code either enables or disables the automatic drawing of
@@ -4826,4 +4822,21 @@ DelayFrameHook:
 	pop hl
 	pop de
 	pop bc
+	ret
+
+; Return the real move ID for the side whose turn it is.
+; wPlayerMoveNum/wEnemyMoveNum are legacy animation IDs copied from the first
+; byte of the move data structure, so callers needing real move identity must not use them.
+GetCurrentMoveID::
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, [wFlags_D733]
+	bit BIT_TEST_BATTLE, a
+	ld a, [wTestBattlePlayerSelectedMove]
+	ret nz
+	ld a, [wPlayerSelectedMove]
+	ret
+.enemy
+	ld a, [wEnemySelectedMove]
 	ret

@@ -2698,6 +2698,9 @@ INCLUDE "engine/overworld/advance_player_sprite.asm"
 INCLUDE "engine/mon_gender.asm"
 INCLUDE "engine/menu/status_screen.asm"
 
+; MoveDex 技能说明使用独立扩展 bank，避免继续挤占 $35 的 UI/控制代码空间。
+INCLUDE "data/movedex_descriptions.asm"
+
 ; 运行时 Normal/Snowy 切换所需的差分资源与辅助例程。
 INCLUDE "data/snowy_runtime.asm"
 

@@ -46,6 +46,13 @@ NPlaceChar::
 	jr nz, .loop
 	ret
 
+MoveDexPlaceStringFar::
+; A=说明字符串所在 ROM bank，DE=字符串，HL=tilemap 目标位置。
+; 在 ROM0 内切 bank 后继续调用 PlaceString，避免 $35 的 MoveDex 代码被切走。
+	call BankswitchHome
+	call PlaceString
+	jp BankswitchBack
+
 PlaceString::
 	push hl
 PlaceNextChar::

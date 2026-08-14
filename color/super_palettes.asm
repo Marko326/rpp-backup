@@ -57,6 +57,12 @@ startPaletteTransfer:
 	ld [rSVBK],a
 	ret
 
+LoadMoveDexTypePalette:
+	; MoveDex 类型图标与 Pokémon 专用配色采用相同结构：
+	; 数据表只保存中间两色，LoadPalette 自动补白色和黑色。
+	ld hl, MoveDexTypePaletteTable
+	jr LoadPalette
+
 LoadPokemonPalette:
 	ld hl, PokemonPaletteTable
 	jr LoadPalette

@@ -3,12 +3,11 @@ HealEffect_:
 	and a
 	ld de, wBattleMonHP
 	ld hl, wBattleMonMaxHP
-	ld a, [wPlayerMoveNum]
 	jr z, .healEffect
 	ld de, wEnemyMonHP
 	ld hl, wEnemyMonMaxHP
-	ld a, [wEnemyMoveNum]
 .healEffect
+	call GetCurrentMoveID
 	ld b, a
 	ld a, [de]
 	cp [hl]
