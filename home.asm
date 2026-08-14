@@ -3207,6 +3207,14 @@ LoadFontTilePatterns::
 	jp CopyVideoDataDouble ; if LCD is on, transfer during V-blank
 
 LoadTextBoxTilePatterns::
+	; Snowy 的户外屋顶图块与文本框共用这段 VRAM。不能先装整套普通图块再覆盖
+	; Snowy 差分，否则 LCD 开启时会短暂显示普通屋顶，关 START 菜单时形成闪烁。
+	ld a,[wOptions]
+	bit 4,a
+	jr z,.normal
+	callba LoadSnowTextBoxTilePatterns
+	ret
+.normal
 	ld a, [rLCDC]
 	bit 7, a ; is the LCD enabled?
 	jr nz, .on

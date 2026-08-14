@@ -938,7 +938,10 @@ LoadTilesetTilePatternData::
 	ld de,vTileset
 	ld bc,$600
 	ld a,[wTilesetBank]
-	jp FarCopyData2
+	call FarCopyData2
+	; Snowy 以普通 tileset 为基础，只覆盖原补丁中真正变化的图块。
+	callba ApplySnowTilesetGfxPatch
+	ret
 
 ; this loads the current maps complete tile map (which references blocks, not individual tiles) to C6E8
 ; it can also load partial tile maps of connected maps into a border of length 3 around the current map
@@ -1504,6 +1507,24 @@ LoadCurrentMapView::
 .noCarry2
 	dec b
 	jr nz,.rowLoop
+	; Snowy block 差分表位于扩展 ROM bank。Normal 和不使用雪景 blockset 的 tileset
+	; 不做额外 bank switch；只有四套 Snowy tileset 才在 30 个普通 block 全部绘制后
+	; 跨 bank 一次，对 wTileMapBackup 应用差分。
+	ld a,[wOptions]
+	bit 4,a
+	jr z,.snowBlockPatchesDone
+	ld a,[wCurMapTileset]
+	cp OVERWORLD
+	jr z,.applySnowBlockPatches
+	cp FOREST
+	jr z,.applySnowBlockPatches
+	cp SAFARI
+	jr z,.applySnowBlockPatches
+	cp PLATEAU
+	jr nz,.snowBlockPatchesDone
+.applySnowBlockPatches
+	callba ApplySnowCurrentMapViewBlockPatches
+.snowBlockPatchesDone
 	ld hl,wTileMapBackup
 	ld bc,$0000
 .adjustForYCoordWithinTileBlock

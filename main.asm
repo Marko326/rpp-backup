@@ -173,11 +173,8 @@ NintendoCopyrightLogoGraphics:  INCBIN "gfx/copyright.2bpp"
 GamefreakLogoGraphics:          INCBIN "gfx/gamefreak.2bpp"
 GamefreakLogoGraphicsEnd:
 TextBoxGraphics:
-IF DEF(_SNOW)
-	INCBIN "gfx/text_box_snow.2bpp" ; Roof tiles are in here for outdoor tileset
-ELSE
-	INCBIN "gfx/text_box.2bpp"
-ENDC
+	; 运行时雪景以普通版为基础，只在加载后覆盖有差异的图块。
+	INCBIN "gfx/text_box.2bpp" ; Roof tiles are in here for outdoor tileset
 TextBoxGraphicsEnd:
 PokedexTileGraphics:            INCBIN "gfx/pokedex.2bpp"
 PokedexTileGraphicsEnd:
@@ -1925,18 +1922,10 @@ ShipPort_Block:    INCBIN "gfx/blocksets/ship_port.bst"
 Interior_GFX:      INCBIN "gfx/tilesets/interior.t1.2bpp"
 Interior_Block:    INCBIN "gfx/blocksets/interior.bst"
 Plateau_GFX:
-IF DEF(_SNOW)
-	INCBIN "gfx/tilesets/plateau_snow.t6.2bpp"
-ELSE
 	INCBIN "gfx/tilesets/plateau.t6.2bpp"
-ENDC
 
 Plateau_Block:
-IF DEF(_SNOW)
-	INCBIN "gfx/blocksets/plateau_snow.bst"
-ELSE
 	INCBIN "gfx/blocksets/plateau.bst"
-ENDC
 
 INCLUDE "engine/battle/get_trainer_pic_pointers.asm"
 
@@ -2615,51 +2604,27 @@ Museum2_GFX:         INCBIN "gfx/tilesets/museum2.2bpp"
 Museum2_Block:       INCBIN "gfx/blocksets/museum2.bst"
 
 Safari_GFX:
-IF DEF(_SNOW)
-	INCBIN "gfx/tilesets/safari_snow.2bpp"
-ELSE
 	INCBIN "gfx/tilesets/safari.2bpp"
-ENDC
 
 Safari_Block:
-IF DEF(_SNOW)
-	INCBIN "gfx/blocksets/safari_snow.bst"
-ELSE
 	INCBIN "gfx/blocksets/safari.bst"
-ENDC
 
 
 
 Forest_GFX:
-IF DEF(_SNOW)
-	INCBIN "gfx/tilesets/forest_snow.2bpp"
-ELSE
 	INCBIN "gfx/tilesets/forest.2bpp"
-ENDC
 
 Forest_Block:
-IF DEF(_SNOW)
-	INCBIN "gfx/blocksets/forest_snow.bst"
-ELSE
 	INCBIN "gfx/blocksets/forest.bst"
-ENDC
 
 
 SECTION "bank37",ROMX,BANK[$37]
 
 Overworld_GFX:
-IF DEF(_SNOW)
-	INCBIN "gfx/tilesets/overworld_snow.2bpp"
-ELSE
 	INCBIN "gfx/tilesets/overworld.2bpp"
-ENDC
 
 Overworld_Block:
-IF DEF(_SNOW)
-	INCBIN "gfx/blocksets/overworld_snow.bst"
-ELSE
 	INCBIN "gfx/blocksets/overworld.bst"
-ENDC
 
 
 Ferry_GFX:    INCBIN "gfx/tilesets/ferry.2bpp"
@@ -2732,3 +2697,10 @@ INCLUDE "engine/battle/read_trainer_party.asm"
 INCLUDE "engine/overworld/advance_player_sprite.asm"
 INCLUDE "engine/mon_gender.asm"
 INCLUDE "engine/menu/status_screen.asm"
+
+; 运行时 Normal/Snowy 切换所需的差分资源与辅助例程。
+INCLUDE "data/snowy_runtime.asm"
+
+; Bank 1 已接近满载，把完整 Options 菜单搬到空余更大的扩展 Bank $35。
+SECTION "Runtime Options Menu", ROMX, BANK[$35]
+INCLUDE "engine/menu/options_menu.asm"

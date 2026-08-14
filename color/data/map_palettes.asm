@@ -20,19 +20,12 @@ MapPalettes:
 	RGB 30,10,6
 	RGB 7,7,7
 
-IF DEF(_SNOW)
 ; 0x03: OUTDOOR_GREEN
-	RGB 27,31,27
-	RGB 1,27,27
-	RGB 5,17,31
-	RGB 7,7,7
-ELSE
-; 0x03: OUTDOOR_GREEN
+	; Normal is the base palette; Snowy overwrites this palette in WRAM at runtime.
 	RGB 22,31,10
 	RGB 12,25,1
 	RGB 5,14,0
 	RGB 7,7,7
-ENDC
 
 ; 0x04: OUTDOOR_BLUE
 	RGB 27,31,27
@@ -160,19 +153,12 @@ ENDC
 	RGB 13,0,8
 	RGB 0,0,0
 
-IF DEF(_SNOW)
 ; 0x19: CAVE_GREEN
-	RGB 15,14,24
-	RGB 0,10,22
-	RGB 0,7,15
-	RGB 0,0,0
-ELSE
-; 0x19: CAVE_GREEN
+	; Normal is the base palette; Snowy overwrites this palette in WRAM at runtime.
 	RGB 15,14,24
 	RGB 8,13,19
 	RGB 0,11,13
 	RGB 0,0,0
-ENDC
 
 ; 0x1a: CAVE_BLUE
 	RGB 15,14,24

@@ -2431,6 +2431,9 @@ wOptions:: ; d355
 ; bit 5 = background music
 ; 0: On
 ; 1: Off
+; bit 4 = world appearance
+; 0: Normal
+; 1: Snowy
 ; bits 0-3 = text speed (number of frames to delay after printing a letter)
 ; 1: Fast
 ; 3: Medium

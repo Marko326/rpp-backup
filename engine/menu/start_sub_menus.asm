@@ -762,14 +762,8 @@ StartMenu_SaveReset:
 	jp HoldTextDisplayOpen
 
 StartMenu_Option:
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED],a
-	call ClearScreen
-	call UpdateSprites
-	callab DisplayOptionMenu
-	call LoadScreenTilesFromBuffer2 ; restore saved screen
-	call LoadTextBoxTilePatterns
-	call UpdateSprites
+	; Bank 4 空间极紧，完整的 World 切换处理搬到扩展 Bank $35。
+	callba StartMenuOptionWithWorldSwitch
 	jp RedisplayStartMenu
 
 SwitchPartyMon:

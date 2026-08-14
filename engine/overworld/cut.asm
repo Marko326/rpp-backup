@@ -83,6 +83,14 @@ InitCutAnimOAM:
 	cp $52
 	jr z, .grass
 ; tree
+	; Snowy 运行时模式不能再直接固定读取普通 Overworld_GFX，
+	; 否则砍树动画会短暂显示普通树。雪景时改读对应的差分图块。
+	ld a,[wOptions]
+	bit 4,a
+	jr z,.normalTreeGraphics
+	callba LoadSnowCutTreeTiles
+	jr WriteCutAnimationOAMBlock
+.normalTreeGraphics
 	ld de, Overworld_GFX + $2d0 ; cuttable tree sprite top row
 	ld hl, vChars1 + $7c0
 	lb bc, BANK(Overworld_GFX), $02
