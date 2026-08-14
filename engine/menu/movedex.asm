@@ -76,6 +76,7 @@ ShowMoveDexMenu:
 	push hl
 	call GetMoveName
 	pop hl
+	inc hl ; x=1 留给未来的 Use 标记，技能名从 x=2 开始
 	call PlaceString
 
 	ld bc,2 * SCREEN_WIDTH
@@ -85,14 +86,6 @@ ShowMoveDexMenu:
 	ld [wd11e],a
 	dec d
 	jr nz,.printMoveLoop
-
-	; Refresh the selected absolute move number on the right panel.
-	call MoveDexGetSelectedMove
-	ld [wd11e],a
-	coord hl, 16, 6
-	ld de,wd11e
-	lb bc, LEADING_ZEROES | 1, 3
-	call PrintNumber
 
 	call PlaceMenuCursor
 	ld a,1
@@ -183,10 +176,13 @@ ShowMoveDexMenu:
 .checkA
 	bit 0,a
 	jp z,.loop
-	call MoveDexGetSelectedMove
-	ld [wd11e],a
-	call ShowMoveDexData
-	jp .redrawScreen
+	; 和 Pokédex 一样，A 先进入右侧功能菜单；Info 才打开技能详情。
+	call HandleMoveDexSideMenu
+	dec b
+	jp z,.buttonBPressed ; Quit
+	dec b
+	jp z,.loop ; B 或尚未实现的占位功能
+	jp .redrawScreen ; Info 返回后重绘列表
 
 .buttonBPressed
 	xor a
@@ -223,7 +219,7 @@ MoveDexGetSelectedMove:
 	ret
 
 MoveDexDrawStaticListUI:
-	; Same split-panel construction used by the Pokédex list.
+	; 右侧统计/功能区完全沿用 Pokédex 的对齐方式。
 	coord hl, 15, 8
 	ld a,"─"
 	ld [hli],a
@@ -241,25 +237,117 @@ MoveDexDrawStaticListUI:
 	coord hl, 1, 1
 	ld de,MoveDexContentsText
 	call PlaceString
-	coord hl, 15, 2
-	ld de,MoveDexMovesText
-	call PlaceString
+
+	; Seen / Use 的记录系统留到下一阶段；这里先用最大技能数量占位，
+	; 让版式、位数和未来真实统计完全一致。
 	ld a,NUM_ATTACKS - 1
 	ld [wBuffer],a
+	coord hl, 16, 2
+	ld de,MoveDexSeenText
+	call PlaceString
 	coord hl, 16, 3
 	ld de,wBuffer
 	lb bc, 1, 3
 	call PrintNumber
+
 	coord hl, 16, 5
-	ld de,MoveDexNumberText
+	ld de,MoveDexUseText
 	call PlaceString
-	coord hl, 15, 10
-	ld de,MoveDexInfoText
-	call PlaceString
-	coord hl, 15, 12
-	ld de,MoveDexQuitText
+	coord hl, 16, 6
+	ld de,wBuffer
+	lb bc, 1, 3
+	call PrintNumber
+
+	coord hl, 16, 10
+	ld de,MoveDexMenuItemsText
 	call PlaceString
 	ret
+
+HandleMoveDexSideMenu:
+	; 结构与 Pokédex 右侧菜单一致：列表光标留在左侧，右边出现空心箭头。
+	call PlaceUnfilledArrowMenuCursor
+	ld a,[wCurrentMenuItem]
+	push af
+	ld b,a
+	ld a,[wLastMenuItem]
+	push af
+	ld a,[wListScrollOffset]
+	push af
+	add b
+	inc a
+	ld [wd11e],a
+
+	ld hl,wTopMenuItemY
+	ld a,10
+	ld [hli],a
+	ld a,15
+	ld [hli],a
+	xor a
+	ld [hli],a ; current menu item
+	inc hl
+	ld a,3
+	ld [hli],a ; four rows: Info / Anim / Effe / Quit
+	ld [hli],a ; A_BUTTON | B_BUTTON = 3
+	xor a
+	ld [hli],a ; old menu item
+	ld [wMenuWatchMovingOutOfBounds],a
+
+.inputLoop
+	call HandleMenuInput
+	bit 1,a
+	ld b,2
+	jr nz,.restoreAndReturn
+
+	ld a,[wCurrentMenuItem]
+	and a
+	jr z,.info
+	cp 3
+	jr z,.quit
+
+	; Anim / Effe 先作为下一阶段功能占位，按 A 不离开右侧菜单。
+	jr .inputLoop
+
+.quit
+	ld b,1
+.restoreAndReturn
+	pop af
+	ld [wListScrollOffset],a
+	pop af
+	ld [wLastMenuItem],a
+	pop af
+	ld [wCurrentMenuItem],a
+	push bc
+	coord hl, 15, 10
+	ld de,SCREEN_WIDTH
+	lb bc, " ", 7
+	call DrawTileLine
+	pop bc
+	ret
+
+.info
+	; Info 会清屏，因此先恢复左侧列表状态；详情页左右切技能后可直接
+	; 复用 MoveDexSyncListSelection，把返回列表的位置同步到新技能。
+	pop af
+	ld [wListScrollOffset],a
+	pop af
+	ld [wLastMenuItem],a
+	pop af
+	ld [wCurrentMenuItem],a
+	call ShowMoveDexData
+	ld b,0
+	ret
+
+MoveDexContentsText:
+	db "MoveDex@"
+MoveDexSeenText:
+	db "Seen@"
+MoveDexUseText:
+	db "Use@"
+MoveDexMenuItemsText:
+	db   "Info"
+	next "Anim"
+	next "Effe"
+	next "Quit@"
 
 MoveDexDrawVerticalLine:
 	ld c,9
@@ -272,17 +360,6 @@ MoveDexDrawVerticalLine:
 	dec c
 	jr nz,.loop
 	ret
-
-MoveDexContentsText:
-	db "MoveDex@"
-MoveDexMovesText:
-	db "Moves@"
-MoveDexNumberText:
-	db "No.@"
-MoveDexInfoText:
-	db "Info@"
-MoveDexQuitText:
-	db "Quit@"
 
 ShowMoveDexData:
 	call GBPalWhiteOut
@@ -318,7 +395,7 @@ ShowMoveDexData:
 	; 如果在详情页用左右切换过技能，返回列表时同步选中位置。
 	call MoveDexSyncListSelection
 	call GBPalWhiteOut
-	; 详情页临时占用了字体区 $C0-$D8，白屏期间恢复这些字体图块，
+	; 详情页临时占用了字体区 $C0-$D9，白屏期间恢复这些字体图块，
 	; 避免离开 MoveDex 后留下潜在的共享 VRAM 图块污染。
 	call MoveDexRestoreFontTiles
 	call ClearScreen
@@ -350,18 +427,18 @@ ShowMoveDexData:
 	jr .inputLoop
 
 MoveDexLoadDataUITiles:
-	; PureRGB 的 <PREV/NEXT> 与分类标识图块。
-	; 1bpp 图块复制到 $C4-$D8，不覆盖当前 MoveDex/Pokédex 边框图块。
+	; PureRGB 的 <PREV/NEXT>、分类标识与百分号图块。
+	; 1bpp 图块复制到 $C4-$D9，不覆盖当前 MoveDex/Pokédex 边框图块。
 	ld de,MoveDexUI
 	ld hl,vChars1 + $440
 	lb bc, BANK(MoveDexUI), (MoveDexUIEnd - MoveDexUI) / $8
 	jp CopyVideoDataDouble
 
 MoveDexRestoreFontTiles:
-	; $C0-$D8 共 25 个 tile，对应 FontGraphics 中从第 $40 个字符开始的区域。
+	; $C0-$D9 共 26 个 tile，对应 FontGraphics 中从第 $40 个字符开始的区域。
 	ld de,FontGraphics + $200
 	ld hl,vChars1 + $400
-	lb bc, BANK(FontGraphics), $19
+	lb bc, BANK(FontGraphics), $1a
 	jp CopyVideoDataDouble
 
 MoveDexLoadMoveData:
@@ -407,9 +484,12 @@ MoveDexDrawDataFrame:
 	ld de,MoveDexDividerLine
 	call PlaceString
 
-	coord hl, 13, 1
-	ld de,MoveDexNoText
+	; PureRGB 把编号固定在最右侧：最长 12 字符技能名占 x=1..12，
+	; x=13 永远留一格，再从 x=14 显示 №. 和三位编号。
+	coord hl, 14, 1
+	ld de,MoveDexNumberPrefixText
 	call PlaceString
+
 	coord hl, 4, 3
 	ld de,MoveDexTypeLabel
 	call PlaceString
@@ -422,14 +502,8 @@ MoveDexDrawDataFrame:
 	coord hl, 1, 8
 	ld de,MoveDexAccuracyLabel
 	call PlaceString
-	coord hl, 13, 8
-	ld de,MoveDexPercentText
-	call PlaceString
 	coord hl, 1, 11
 	ld de,MoveDexEffectLabel
-	call PlaceString
-	coord hl, 1, 14
-	ld de,MoveDexCritLabel
 	call PlaceString
 
 	; 类型图标固定使用 $C0-$C3，切技能时只替换 VRAM 中的四个图块。
@@ -443,12 +517,16 @@ MoveDexDrawDataFrame:
 	ld [hli],a
 	inc a
 	ld [hl],a
+
+	; RPP charmap 没有 % 字符；$D9 是这页专用的百分号 UI tile。
+	ld a,$d9
+	Coorda 13, 8
 	ret
 
 MoveDexDrawMoveData:
 	call MoveDexLoadMoveData
 
-	; 技能名称与编号。
+	; 技能名称与编号。当前最长技能名为 12 字符，因此 x=13 保证为空格。
 	call GetMoveName
 	coord hl, 1, 1
 	call PlaceString
@@ -470,6 +548,15 @@ MoveDexDrawMoveData:
 	call PlaceString
 	call MoveDexDrawDamageClass
 
+	; 高暴击只在确实存在时显示，放在类型文字正下方。
+	ld a,[wd11e]
+	call MoveDexIsHighCrit
+	jr nc,.skipHighCrit
+	coord hl, 4, 5
+	ld de,MoveDexHighCritText
+	call PlaceString
+.skipHighCrit
+
 	; Power。
 	coord hl, 7, 6
 	ld de,wBuffer + 2
@@ -482,7 +569,7 @@ MoveDexDrawMoveData:
 	lb bc, 1, 2
 	call PrintNumber
 
-	; Accuracy：不再依赖固定查表，直接把 0-255 精度换算为百分比。
+	; Accuracy：0-255 直接换算为百分比，% 已由固定 UI tile 绘制。
 	ld a,[wBuffer + 4]
 	call MoveDexAccuracyToPercent
 	ld [wBuffer],a
@@ -491,19 +578,10 @@ MoveDexDrawMoveData:
 	lb bc, 1, 3
 	call PrintNumber
 
-	; 保留 RPP 当前 MoveDex 的 Effect 与 High Crit 信息。
+	; 第一阶段继续保留 RPP 的一行 Effect 摘要。
 	ld a,[wBuffer + 1]
 	call MoveDexGetEffectText
 	coord hl, 1, 12
-	call PlaceString
-
-	ld a,[wd11e]
-	call MoveDexIsHighCrit
-	ld de,MoveDexNoValue
-	jr nc,.critTextReady
-	ld de,MoveDexYesValue
-.critTextReady
-	coord hl, 12, 14
 	call PlaceString
 
 	jp MoveDexDrawBottomNavigation
@@ -517,6 +595,9 @@ MoveDexClearDynamicData:
 	call ClearScreenArea
 	coord hl, 4, 4
 	lb bc, 1, 8
+	call ClearScreenArea
+	coord hl, 4, 5
+	lb bc, 1, 6
 	call ClearScreenArea
 	coord hl, 15, 3
 	lb bc, 1, 4
@@ -532,9 +613,6 @@ MoveDexClearDynamicData:
 	call ClearScreenArea
 	coord hl, 1, 12
 	lb bc, 1, 17
-	call ClearScreenArea
-	coord hl, 12, 14
-	lb bc, 1, 3
 	call ClearScreenArea
 	coord hl, 1, 16
 	lb bc, 1, 3
@@ -782,8 +860,8 @@ MoveDexDividerLine:
 	db $68,$69,$6b,$69,$6b,$69,$6b,$69,$6b,$6b
 	db $6b,$6b,$69,$6b,$69,$6b,$69,$6b,$69,$6a,"@"
 
-MoveDexNoText:
-	db "No.@"
+MoveDexNumberPrefixText:
+	db "№.@"
 MoveDexTypeLabel:
 	db "Type@"
 MoveDexPowerLabel:
@@ -794,14 +872,8 @@ MoveDexPPLabel:
 	db "PP@"
 MoveDexEffectLabel:
 	db "Effect@"
-MoveDexCritLabel:
-	db "High Crit@"
-MoveDexPercentText:
-	db "%@"
-MoveDexYesValue:
-	db "Yes@"
-MoveDexNoValue:
-	db "No@"
+MoveDexHighCritText:
+	db "HiCrit@"
 
 MoveDexAccuracyToPercent:
 	; accuracy 字段是 0-255，按 100/255 换算并按余数四舍五入。
