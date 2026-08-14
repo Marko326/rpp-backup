@@ -317,9 +317,18 @@ Char4B::
 	pop de
 	ld a, " "
 	Coorda 18, 16
-	;fall through
-Char4C::
 	push de
+	call ScrollTextUpOneLine
+	call ScrollTextUpOneLine
+	coord hl, 1, 16
+	pop de
+	jp PlaceNextChar_inc
+
+Char4C::
+	; 自动继续前保留当前出场提示约半秒。
+	push de
+	ld c, 30
+	call DelayFrames
 	call ScrollTextUpOneLine
 	call ScrollTextUpOneLine
 	coord hl, 1, 16
