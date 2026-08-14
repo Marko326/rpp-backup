@@ -1065,7 +1065,8 @@ _TrainerSentOutText::
 	TX_RAM wCurTrainerName
 	text ""
 	line "sent out"
-	cont "@"
+	; 自动停留并滚动到对手宝可梦名称，不等待按键。
+	db $4C, "@"
 	TX_RAM wEnemyMonNick
 	text "!"
 	done
