@@ -434,7 +434,14 @@ ShowMoveDexData:
 	call MoveDexSetupTypeIconAttributes
 	; 每次进入技能详情都从说明第 1 页开始。
 	xor a
-	ld [wBuffer + 6],a ; MoveDex 专用说明页索引（0=第1页，1=第2页）
+	ld [wBuffer + 6],a ; MoveDex 专用说明页索引（0=第1页，可继续扩展）
+
+	; MoveDex 说明页直接复用 Pokédex/普通文本的下箭头闪烁计时器。
+	; 进入前先保存全局计时值，退出详情页时再完整恢复。
+	ld a,[H_DOWNARROWBLINKCNT1]
+	push af
+	ld a,[H_DOWNARROWBLINKCNT2]
+	push af
 	call MoveDexDrawMoveData
 
 	ld a,1
@@ -443,20 +450,24 @@ ShowMoveDexData:
 	call GBPalNormal
 
 .inputLoop
+	; 与 Pokédex 的文本翻页提示使用同一个闪烁函数和循环时序。
+	; 最后一页会把箭头 tile 保持为空且 CNT1=0，因此这里可无条件调用。
+	coord hl, 10, 16
+	call HandleDownArrowBlinkTiming
 	call JoypadLowSensitivity
 	ld a,[hJoy5]
 	bit 5,a
-	jr nz,.previousMove
+	jp nz,.previousMove
 	bit 4,a
-	jr nz,.nextMove
+	jp nz,.nextMove
 	bit 1,a ; B
-	jr nz,.close
+	jp nz,.close
 	bit 0,a ; A
 	jr nz,.nextDescriptionPage
 	jr .inputLoop
 
 .nextDescriptionPage
-	; PureRGB 风格分页：只有存在下一页时 A 才继续，最后一页按 A 不退出。
+	; PureRGB 风格分页：有下一页时 A 翻页；最后一页按 A 不退出。
 	call MoveDexDescriptionHasNextPage
 	jr nc,.inputLoop
 	ld a,[wBuffer + 6]
@@ -464,6 +475,8 @@ ShowMoveDexData:
 	ld [wBuffer + 6],a
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
+	; 说明正文只占 y=11..15。y=16 同时放着 <PREV/NEXT> 的上半部分，
+	; 不能整行清掉；中央下箭头由 MoveDexPrepareDescriptionArrow 单独处理。
 	coord hl, 1, 11
 	lb bc, 5, 18
 	call ClearScreenArea
@@ -474,6 +487,12 @@ ShowMoveDexData:
 	jr .inputLoop
 
 .close
+	; 恢复进入 MoveDex 详情页之前的全局下箭头闪烁计时值。
+	pop af
+	ld [H_DOWNARROWBLINKCNT2],a
+	pop af
+	ld [H_DOWNARROWBLINKCNT1],a
+
 	; 如果在详情页用左右切换过技能，返回列表时同步选中位置。
 	call MoveDexSyncListSelection
 	call GBPalWhiteOut
@@ -486,7 +505,7 @@ ShowMoveDexData:
 .previousMove
 	ld a,[wd11e]
 	cp 1
-	jr z,.inputLoop
+	jp z,.inputLoop
 	dec a
 	ld [wd11e],a
 	jr .redrawMove
@@ -494,7 +513,7 @@ ShowMoveDexData:
 .nextMove
 	ld a,[wd11e]
 	cp NUM_ATTACKS - 1
-	jr z,.inputLoop
+	jp z,.inputLoop
 	inc a
 	ld [wd11e],a
 
@@ -508,7 +527,7 @@ ShowMoveDexData:
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call Delay3
-	jr .inputLoop
+	jp .inputLoop
 
 MoveDexLoadDataUITiles:
 	; PureRGB 的 <PREV/NEXT>、分类标识与百分号图块。
@@ -959,39 +978,30 @@ MoveDexHighCritText:
 	db "HiCrit@"
 
 MoveDexDrawDescription:
-	; 说明页采用 MoveDex 本地分页，不修改全局文本引擎。
-	; 第 1 页尽量保留官方游戏说明的语气；第 2 页明确写 RPP 当前真实效果。
-	call MoveDexFindDescriptionEntry
+	; MoveDex 本地说明分页，不修改全局文本引擎。
+	; RPP 的 next 默认下移两行，因此说明区 y=11/13/15 天然形成
+	; 三行等间距布局；每页最多三行，不再把第 4 行挤到底框上。
+	call MoveDexGetDescriptionPagePointer
 	jr nc,.fallback
-	ld a,[wBuffer + 6]
-	and a
-	jr z,.page1
-	inc hl
-	inc hl ; page 2 pointer
-.page1
-	ld a,[hli]
-	ld d,[hl]
-	ld e,a
-	ld a,d
-	or e
-	jr z,.fallback
 	coord hl, 1, 11
 	call PlaceString
 	jp MoveDexDrawDescriptionPageArrow
 
 .fallback
-	; 尚未补正式说明的技能继续显示现有 Effect 摘要。
+	; 尚未补正式说明的技能保持三行以内。
 	coord hl, 1, 11
 	ld de,MoveDexDescriptionPendingText
 	call PlaceString
 	ld a,[wBuffer + 1]
 	call MoveDexGetEffectText
-	coord hl, 1, 14
+	coord hl, 1, 15
 	call PlaceString
 	jp MoveDexDrawDescriptionPageArrow
 
 MoveDexFindDescriptionEntry:
-	; 输出：carry=1 且 HL 指向 page1 pointer；不存在则 carry=0。
+	; 表格式：move ID + page-list 指针。
+	; page-list 可以包含任意数量的 dw 页面指针，最后用 dw 0 结束。
+	; 输出：carry=1 且 HL=page-list；不存在则 carry=0。
 	ld a,[wd11e]
 	ld b,a
 	ld hl,MoveDexDescriptionPreviewTable
@@ -1001,28 +1011,53 @@ MoveDexFindDescriptionEntry:
 	jr z,.notFound
 	cp b
 	jr z,.found
-	; 每条：move ID + page1 dw + page2 dw。
-	inc hl
-	inc hl
 	inc hl
 	inc hl
 	jr .search
 .found
+	ld a,[hli]
+	ld e,a
+	ld a,[hl]
+	ld h,a
+	ld l,e
 	scf
 	ret
 .notFound
 	and a
 	ret
 
-MoveDexDescriptionHasNextPage:
-	; 第一版最多两页；只有当前在第 1 页且 page2 非空时返回 carry。
-	ld a,[wBuffer + 6]
-	and a
-	jr nz,.no
+MoveDexGetDescriptionPagePointer:
+	; 输出：carry=1 且 DE=当前页字符串。
 	call MoveDexFindDescriptionEntry
-	jr nc,.no
-	inc hl
-	inc hl
+	ret nc
+	ld a,[wBuffer + 6]
+	add a
+	ld e,a
+	ld d,0
+	add hl,de
+	ld a,[hli]
+	ld d,[hl]
+	ld e,a
+	ld a,d
+	or e
+	jr z,.none
+	scf
+	ret
+.none
+	and a
+	ret
+
+MoveDexDescriptionHasNextPage:
+	; 检查 page-list 中当前页之后的指针。
+	; 0 指针结尾，所以第 3、4 页以后无需额外改代码。
+	call MoveDexFindDescriptionEntry
+	ret nc
+	ld a,[wBuffer + 6]
+	inc a
+	add a
+	ld e,a
+	ld d,0
+	add hl,de
 	ld a,[hli]
 	or [hl]
 	jr z,.no
@@ -1033,108 +1068,135 @@ MoveDexDescriptionHasNextPage:
 	ret
 
 MoveDexDrawDescriptionPageArrow:
-	; PureRGB 会用下箭头提示还有后页。这里放在底部中央，避开 PREV/NEXT。
+MoveDexPrepareDescriptionArrow:
+	; PureRGB/Pokédex 的翻页箭头位于 (10,16)。
+	; 先按 WaitForTextScrollButtonPress 的原版数值初始化闪烁计时：
+	; CNT1=0、CNT2=$06。HandleDownArrowBlinkTiming 会按相同频率闪烁。
+	xor a
+	ld [H_DOWNARROWBLINKCNT1],a
+	ld a,$06
+	ld [H_DOWNARROWBLINKCNT2],a
+
+	; 无论当前页是否为最后一页，先清掉旧箭头。
 	coord hl, 10, 16
 	ld a," "
 	ld [hl],a
+
 	call MoveDexDescriptionHasNextPage
 	ret nc
+
+	; 上面的查表会改写 HL，因此必须重新取得 tilemap 坐标。
+	; 上一版漏掉这一步，导致 $EE 没有真正写到屏幕上。
+	coord hl, 10, 16
 	ld a,"▼"
 	ld [hl],a
 	ret
 
-; 第一版分页说明样本。每页最多 5 行，每行最多 18 字符。
-; 概率百分号不能直接写 "%"：RPP charmap 没有该字符，统一使用详情页 $D9 百分号 tile。
+; 说明页规则：
+; - 每页最多 3 行，对应 y=11/13/15，中间自然空一行。
+; - 每行最多 18 字符；能放一行的内容不人为拆成两行。
+; - page-list 以 dw 0 结束，可自然扩展到三页或更多。
+; - RPP charmap 没有 "%"，所有概率统一使用 MoveDex 专用 $D9 百分号 tile。
 MoveDexDescriptionPreviewTable:
 	db POUND
-	dw MoveDexDescPound1, MoveDexDescPound2
+	dw MoveDexDescPoundPages
 	db DOUBLESLAP
-	dw MoveDexDescDoubleSlap1, MoveDexDescDoubleSlap2
+	dw MoveDexDescDoubleSlapPages
 	db FIRE_PUNCH
-	dw MoveDexDescFirePunch1, MoveDexDescFirePunch2
+	dw MoveDexDescFirePunchPages
 	db SWORDS_DANCE
-	dw MoveDexDescSwordsDance1, MoveDexDescSwordsDance2
+	dw MoveDexDescSwordsDancePages
 	db FLY
-	dw MoveDexDescFly1, MoveDexDescFly2
+	dw MoveDexDescFlyPages
 	db DRAGON_RAGE
-	dw MoveDexDescDragonRage1, MoveDexDescDragonRage2
+	dw MoveDexDescDragonRagePages
 	db RECOVER
-	dw MoveDexDescRecover1, MoveDexDescRecover2
+	dw MoveDexDescRecoverPages
 	db METRONOME
-	dw MoveDexDescMetronome1, MoveDexDescMetronome2
+	dw MoveDexDescMetronomePages
 	db METAL_CLAW
-	dw MoveDexDescMetalClaw1, MoveDexDescMetalClaw2
+	dw MoveDexDescMetalClawPages
 	db CRUNCH
-	dw MoveDexDescCrunch1, MoveDexDescCrunch2
+	dw MoveDexDescCrunchPages
 	db DARK_PULSE
-	dw MoveDexDescDarkPulse1, MoveDexDescDarkPulse2
+	dw MoveDexDescDarkPulsePages
 	db MOONBLAST
-	dw MoveDexDescMoonblast1, MoveDexDescMoonblast2
+	dw MoveDexDescMoonblastPages
 	db ACROBATICS
-	dw MoveDexDescAcrobatics1, MoveDexDescAcrobatics2
+	dw MoveDexDescAcrobaticsPages
 	db ICY_WIND
-	dw MoveDexDescIcyWind1, MoveDexDescIcyWind2
+	dw MoveDexDescIcyWindPages
 	db ELECTRO_BALL
-	dw MoveDexDescElectroBall1, MoveDexDescElectroBall2
+	dw MoveDexDescElectroBallPages
 	db DYNAMICPUNCH
-	dw MoveDexDescDynamicPunch1, MoveDexDescDynamicPunch2
+	dw MoveDexDescDynamicPunchPages
 	db HURRICANE
-	dw MoveDexDescHurricane1, MoveDexDescHurricane2
+	dw MoveDexDescHurricanePages
 	db AEROBLAST
-	dw MoveDexDescAeroblast1, MoveDexDescAeroblast2
+	dw MoveDexDescAeroblastPages
 	db ANCIENTPOWER
-	dw MoveDexDescAncientPower1, MoveDexDescAncientPower2
+	dw MoveDexDescAncientPowerPages
 	db LUSTER_PURGE
-	dw MoveDexDescLusterPurge1, MoveDexDescLusterPurge2
+	dw MoveDexDescLusterPurgePages
 	db MIND_BLAST
-	dw MoveDexDescMindBlast1, MoveDexDescMindBlast2
+	dw MoveDexDescMindBlastPages
 	db 0
 
 MoveDexDescriptionPendingText:
 	db   "Info pending."
-	next " "
 	next "Battle effect:@"
 
+; #001 Pound
+MoveDexDescPoundPages:
+	dw MoveDexDescPound1, MoveDexDescPound2, 0
 MoveDexDescPound1:
 	db   "Pounds with limbs"
 	next "or a sturdy tail.@"
 MoveDexDescPound2:
-	db   "No additional"
-	next "battle effect.@"
+	db   "No added effect.@"
 
+; #003 DoubleSlap
+MoveDexDescDoubleSlapPages:
+	dw MoveDexDescDoubleSlap1, MoveDexDescDoubleSlap2, 0
 MoveDexDescDoubleSlap1:
 	db   "Repeatedly slaps"
 	next "the target.@"
 MoveDexDescDoubleSlap2:
-	db   "Hits 2-5 times"
-	next "in succession.@"
+	db   "Hits 2-5 times.@"
 
+; #007 Fire Punch
+MoveDexDescFirePunchPages:
+	dw MoveDexDescFirePunch1, MoveDexDescFirePunch2, 0
 MoveDexDescFirePunch1:
 	db   "Strikes with a"
 	next "blazing fist.@"
 MoveDexDescFirePunch2:
-	db   "About 10", $d9, " chance"
-	next "to burn the"
-	next "target.@"
+	db   "10", $d9, " chance to burn"
+	next "the target.@"
 
+MoveDexDescSwordsDancePages:
+	dw MoveDexDescSwordsDance1, MoveDexDescSwordsDance2, 0
 MoveDexDescSwordsDance1:
 	db   "A battle dance"
 	next "raises fighting"
 	next "spirit.@"
 MoveDexDescSwordsDance2:
-	db   "Raises the user's"
-	next "Attack by"
+	db   "Raises Attack by"
 	next "2 stages.@"
 
+MoveDexDescFlyPages:
+	dw MoveDexDescFly1, MoveDexDescFly2, 0
 MoveDexDescFly1:
 	db   "Flies up high on"
 	next "the first turn,"
 	next "then attacks.@"
 MoveDexDescFly2:
-	db   "Strikes on turn 2."
+	db   "Attacks on turn 2."
 	next "Most attacks miss"
 	next "while airborne.@"
 
+MoveDexDescDragonRagePages:
+	dw MoveDexDescDragonRage1, MoveDexDescDragonRage2, 0
 MoveDexDescDragonRage1:
 	db   "Blasts the foe"
 	next "with dragon rage.@"
@@ -1142,14 +1204,16 @@ MoveDexDescDragonRage2:
 	db   "Always deals"
 	next "40 HP damage.@"
 
+MoveDexDescRecoverPages:
+	dw MoveDexDescRecover1, MoveDexDescRecover2, 0
 MoveDexDescRecover1:
-	db   "Restores the"
-	next "user's vitality.@"
+	db   "Restores vitality.@"
 MoveDexDescRecover2:
-	db   "Restores 1/2 of"
-	next "the user's"
+	db   "Restores half of"
 	next "maximum HP.@"
 
+MoveDexDescMetronomePages:
+	dw MoveDexDescMetronome1, MoveDexDescMetronome2, 0
 MoveDexDescMetronome1:
 	db   "Waggles a finger"
 	next "to trigger a move.@"
@@ -1157,57 +1221,64 @@ MoveDexDescMetronome2:
 	db   "Uses a random"
 	next "battle move.@"
 
+MoveDexDescMetalClawPages:
+	dw MoveDexDescMetalClaw1, MoveDexDescMetalClaw2, 0
 MoveDexDescMetalClaw1:
-	db   "Rakes the target"
-	next "with steel claws.@"
+	db   "Rakes with steel"
+	next "claws.@"
 MoveDexDescMetalClaw2:
-	db   "About 10", $d9, " chance"
-	next "to raise the"
-	next "user's Attack"
-	next "by 1 stage.@"
+	db   "10", $d9, " chance to"
+	next "raise Attack by 1.@"
 
+MoveDexDescCrunchPages:
+	dw MoveDexDescCrunch1, MoveDexDescCrunch2, 0
 MoveDexDescCrunch1:
-	db   "Crunches the foe"
-	next "with sharp fangs.@"
+	db   "Crunches with"
+	next "sharp fangs.@"
 MoveDexDescCrunch2:
-	db   "About 33", $d9, " chance"
-	next "to lower target's"
-	next "Defense by"
+	db   "33", $d9, " chance to"
+	next "lower Defense by"
 	next "1 stage.@"
 
+MoveDexDescDarkPulsePages:
+	dw MoveDexDescDarkPulse1, MoveDexDescDarkPulse2, 0
 MoveDexDescDarkPulse1:
 	db   "Releases a wave"
 	next "of dark energy.@"
 MoveDexDescDarkPulse2:
-	db   "About 10", $d9, " chance"
-	next "to make the"
-	next "target flinch.@"
+	db   "10", $d9, " chance to"
+	next "make foe flinch.@"
 
+MoveDexDescMoonblastPages:
+	dw MoveDexDescMoonblast1, MoveDexDescMoonblast2, 0
 MoveDexDescMoonblast1:
 	db   "Borrows the moon's"
 	next "power to attack.@"
 MoveDexDescMoonblast2:
-	db   "About 33", $d9, " chance"
-	next "to lower target's"
-	next "Special by"
+	db   "33", $d9, " chance to"
+	next "lower Special by"
 	next "1 stage.@"
 
+MoveDexDescAcrobaticsPages:
+	dw MoveDexDescAcrobatics1, MoveDexDescAcrobatics2, 0
 MoveDexDescAcrobatics1:
 	db   "A nimble aerial"
-	next "strike on the foe.@"
+	next "strike.@"
 MoveDexDescAcrobatics2:
-	db   "No additional"
-	next "battle effect.@"
+	db   "No added effect.@"
 
+; #207 Icy Wind
+MoveDexDescIcyWindPages:
+	dw MoveDexDescIcyWind1, MoveDexDescIcyWind2, 0
 MoveDexDescIcyWind1:
-	db   "Blasts the foe"
-	next "with icy wind.@"
+	db   "Blasts icy wind.@"
 MoveDexDescIcyWind2:
-	db   "About 33", $d9, " chance"
-	next "to lower target's"
-	next "Speed by"
-	next "1 stage.@"
+	db   "33", $d9, " chance to"
+	next "lower Speed by 1.@"
 
+; #210 Electro Ball
+MoveDexDescElectroBallPages:
+	dw MoveDexDescElectroBall1, MoveDexDescElectroBall2, 0
 MoveDexDescElectroBall1:
 	db   "Hurls an electric"
 	next "orb at the foe.@"
@@ -1216,59 +1287,67 @@ MoveDexDescElectroBall2:
 	next "80 if tied, 120"
 	next "if faster.@"
 
+; #242 DynamicPunch：三页测试，验证非最后页始终显示静态 ▼。
+MoveDexDescDynamicPunchPages:
+	dw MoveDexDescDynamicPunch1, MoveDexDescDynamicPunch2, MoveDexDescDynamicPunch3, 0
 MoveDexDescDynamicPunch1:
 	db   "Throws a powerful"
 	next "spinning punch.@"
 MoveDexDescDynamicPunch2:
-	db   "If the move hits,"
-	next "the target is"
-	next "always confused."
-	next "Confusion lasts"
+	db   "Always confuses if"
+	next "the move hits.@"
+MoveDexDescDynamicPunch3:
+	db   "Confusion lasts"
 	next "2-5 turns.@"
 
+MoveDexDescHurricanePages:
+	dw MoveDexDescHurricane1, MoveDexDescHurricane2, 0
 MoveDexDescHurricane1:
 	db   "Wraps the target"
-	next "in a fierce wind.@"
+	next "in fierce wind.@"
 MoveDexDescHurricane2:
-	db   "About 10", $d9, " chance"
-	next "to confuse the"
-	next "target.@"
+	db   "10", $d9, " chance to"
+	next "confuse target.@"
 
+MoveDexDescAeroblastPages:
+	dw MoveDexDescAeroblast1, MoveDexDescAeroblast2, 0
 MoveDexDescAeroblast1:
 	db   "Fires a focused"
 	next "blast of air.@"
 MoveDexDescAeroblast2:
-	db   "No added effect."
-	next "Has a high"
-	next "critical-hit rate.@"
+	db   "High critical-hit"
+	next "rate.@"
 
+; #250 AncientPower
+MoveDexDescAncientPowerPages:
+	dw MoveDexDescAncientPower1, MoveDexDescAncientPower2, 0
 MoveDexDescAncientPower1:
 	db   "Attacks with an"
 	next "ancient power.@"
 MoveDexDescAncientPower2:
-	db   "About 10", $d9, " chance"
-	next "to raise Attack,"
-	next "Defense, Speed and"
-	next "Special 1 stage.@"
+	db   "10", $d9, " chance to"
+	next "raise all stats by"
+	next "1 stage.@"
 
+MoveDexDescLusterPurgePages:
+	dw MoveDexDescLusterPurge1, MoveDexDescLusterPurge2, 0
 MoveDexDescLusterPurge1:
 	db   "Attacks with a"
 	next "burst of light.@"
 MoveDexDescLusterPurge2:
-	db   "About 33", $d9, " chance"
-	next "to lower target's"
-	next "Special by"
+	db   "33", $d9, " chance to"
+	next "lower Special by"
 	next "1 stage.@"
 
+MoveDexDescMindBlastPages:
+	dw MoveDexDescMindBlast1, MoveDexDescMindBlast2, 0
 MoveDexDescMindBlast1:
 	db   "Strikes with raw"
 	next "psychic force.@"
 MoveDexDescMindBlast2:
 	db   "Always critical."
-	next "About 10", $d9, " chance"
-	next "to raise Attack,"
-	next "Defense, Speed and"
-	next "Special 1 stage.@"
+	next "10", $d9, " chance: raise"
+	next "all stats by 1.@"
 
 MoveDexAccuracyToPercent:
 	; accuracy 字段是 0-255，按 100/255 换算并按余数四舍五入。
