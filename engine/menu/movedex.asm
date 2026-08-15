@@ -17,18 +17,7 @@ ShowMoveDexMenu:
 	ld [wd11e],a
 	ld [hJoy7],a
 
-	ld hl,wTopMenuItemY
-	ld a,3
-	ld [hli],a ; top menu item Y
-	xor a
-	ld [hli],a ; top menu item X
-	inc a
-	ld [wMenuWatchMovingOutOfBounds],a
-	inc hl
-	inc hl
-	ld a,6
-	ld [hli],a ; seven visible entries
-	ld [hl],D_LEFT | D_RIGHT | B_BUTTON | A_BUTTON
+	call MoveDexSetupListMenuParameters
 
 .redrawScreen
 	xor a
@@ -76,8 +65,12 @@ ShowMoveDexMenu:
 	push hl
 	call GetMoveName
 	pop hl
-	inc hl ; x=1 留给未来的 Use 标记，技能名从 x=2 开始
+	; x=1 留给未来的 Use 标记，技能名固定从 x=2 开始。
+	; PlaceString 会推进 HL，因此额外保存行起点，避免每一项继续向右漂移。
+	push hl
+	inc hl
 	call PlaceString
+	pop hl
 
 	ld bc,2 * SCREEN_WIDTH
 	add hl,bc
@@ -180,8 +173,11 @@ ShowMoveDexMenu:
 	call HandleMoveDexSideMenu
 	dec b
 	jp z,.buttonBPressed ; Quit
+	; 右侧菜单会临时改写通用菜单坐标/最大项等状态。
+	; 返回左侧列表前完整恢复参数，避免 Anim/Effe 后按 B 出现光标位置互换。
+	call MoveDexSetupListMenuParameters
 	dec b
-	jp z,.loop ; B 或尚未实现的占位功能
+	jp z,.loop ; B 返回列表
 	jp .redrawScreen ; Info 返回后重绘列表
 
 .buttonBPressed
@@ -216,6 +212,23 @@ MoveDexGetSelectedMove:
 	ld a,[wCurrentMenuItem]
 	add b
 	inc a
+	ret
+
+MoveDexSetupListMenuParameters:
+	; 左侧技能列表的通用菜单参数。进入右侧菜单后会被临时覆盖，
+	; 因此首次进入以及从右侧菜单返回时都从这里统一恢复。
+	ld hl,wTopMenuItemY
+	ld a,3
+	ld [hli],a
+	xor a
+	ld [hli],a
+	inc a
+	ld [wMenuWatchMovingOutOfBounds],a
+	inc hl
+	inc hl
+	ld a,6
+	ld [hli],a
+	ld [hl],D_LEFT | D_RIGHT | B_BUTTON | A_BUTTON
 	ret
 
 MoveDexDrawStaticListUI:
@@ -317,9 +330,15 @@ HandleMoveDexSideMenu:
 	pop af
 	ld [wCurrentMenuItem],a
 	push bc
+	; 清掉右侧菜单光标，同时清掉左侧被改成空心箭头的旧光标。
+	; 随后的列表循环会按恢复后的菜单参数重新绘制实心光标。
 	coord hl, 15, 10
 	ld de,SCREEN_WIDTH
 	lb bc, " ", 7
+	call DrawTileLine
+	coord hl, 0, 3
+	ld de,SCREEN_WIDTH
+	lb bc, " ", 13
 	call DrawTileLine
 	pop bc
 	ret
@@ -519,8 +538,9 @@ MoveDexDrawDataFrame:
 	ld [hl],a
 
 	; RPP charmap 没有 % 字符；$D9 是这页专用的百分号 UI tile。
+	; 百分比个位与 Power 个位同列（x=9），% 紧跟在 x=10。
 	ld a,$d9
-	Coorda 13, 8
+	Coorda 10, 8
 	ret
 
 MoveDexDrawMoveData:
@@ -548,15 +568,6 @@ MoveDexDrawMoveData:
 	call PlaceString
 	call MoveDexDrawDamageClass
 
-	; 高暴击只在确实存在时显示，放在类型文字正下方。
-	ld a,[wd11e]
-	call MoveDexIsHighCrit
-	jr nc,.skipHighCrit
-	coord hl, 4, 5
-	ld de,MoveDexHighCritText
-	call PlaceString
-.skipHighCrit
-
 	; Power。
 	coord hl, 7, 6
 	ld de,wBuffer + 2
@@ -569,14 +580,24 @@ MoveDexDrawMoveData:
 	lb bc, 1, 2
 	call PrintNumber
 
-	; Accuracy：0-255 直接换算为百分比，% 已由固定 UI tile 绘制。
+	; Accuracy：0-255 直接换算为百分比。
+	; 数字使用与 Power 相同的 x=7..9 三格右对齐，% 固定在 x=10。
 	ld a,[wBuffer + 4]
 	call MoveDexAccuracyToPercent
 	ld [wBuffer],a
-	coord hl, 10, 8
+	coord hl, 7, 8
 	ld de,wBuffer
 	lb bc, 1, 3
 	call PrintNumber
+
+	; HiCrit 只在高暴击技能显示；H 与 PP 的第一个 P 同列（x=13）。
+	ld a,[wd11e]
+	call MoveDexIsHighCrit
+	jr nc,.skipHighCrit
+	coord hl, 13, 8
+	ld de,MoveDexHighCritText
+	call PlaceString
+.skipHighCrit
 
 	; 第一阶段继续保留 RPP 的一行 Effect 摘要。
 	ld a,[wBuffer + 1]
@@ -596,9 +617,6 @@ MoveDexClearDynamicData:
 	coord hl, 4, 4
 	lb bc, 1, 8
 	call ClearScreenArea
-	coord hl, 4, 5
-	lb bc, 1, 6
-	call ClearScreenArea
 	coord hl, 15, 3
 	lb bc, 1, 4
 	call ClearScreenArea
@@ -608,8 +626,11 @@ MoveDexClearDynamicData:
 	coord hl, 16, 6
 	lb bc, 1, 2
 	call ClearScreenArea
-	coord hl, 10, 8
+	coord hl, 7, 8
 	lb bc, 1, 3
+	call ClearScreenArea
+	coord hl, 13, 8
+	lb bc, 1, 6
 	call ClearScreenArea
 	coord hl, 1, 12
 	lb bc, 1, 17
@@ -867,7 +888,7 @@ MoveDexTypeLabel:
 MoveDexPowerLabel:
 	db "Power@"
 MoveDexAccuracyLabel:
-	db "Accuracy@"
+	db "Accu@"
 MoveDexPPLabel:
 	db "PP@"
 MoveDexEffectLabel:
