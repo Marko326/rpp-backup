@@ -17,9 +17,7 @@ ShowMoveDexMenu:
 	ld [wd11e],a
 	ld [hJoy7],a
 
-	call MoveDexSetupListMenuParameters
-
-.redrawScreen
+.setUpGraphics
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call ClearScreen
@@ -27,8 +25,42 @@ ShowMoveDexMenu:
 	call RunPaletteCommand
 	callab LoadPokedexTilePatterns
 	call MoveDexDrawStaticListUI
-	jr .loop
 
+.doMoveListMenu
+	; 与 Pokédex 一样，右侧子菜单负责在返回前清掉自己的光标，
+	; 左侧这里只恢复列表参数并重新进入列表输入，不再额外重复扫描右栏。
+	call MoveDexSetupListMenuParameters
+	call HandleMoveDexListMenu
+	jr c,.goToSideMenu
+
+.exitMovedex
+	xor a
+	ld [wMenuWatchMovingOutOfBounds],a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	ld [hJoy7],a
+	pop af
+	ld [wListScrollOffset],a
+	call GBPalWhiteOutWithDelay3
+	; MoveDex 会加载 Pokédex 专用图块，其中一部分 VRAM 与户外屋顶/文本框共用。
+	; 返回 START 前先恢复当前 World 模式对应的文本框/屋顶图块，避免屋顶一直乱码到关闭菜单。
+	call LoadTextBoxTilePatterns
+	call RunDefaultPaletteCommand
+	ret
+
+.goToSideMenu
+	call HandleMoveDexSideMenu
+	dec b
+	jp z,.exitMovedex ; Quit
+	dec b
+	jp z,.doMoveListMenu ; B 返回左侧
+	jp .setUpGraphics ; Info 返回后重新加载列表图块与静态界面
+
+; 按 Pokédex 的结构把左侧列表做成独立处理函数。
+; OUTPUT:
+; carry set: A 选择当前技能
+; carry clear: B 退出 MoveDex
+HandleMoveDexListMenu:
 .loopAfterBoundaryWrap
 	ld a,1
 	jr .drawList
@@ -169,30 +201,11 @@ ShowMoveDexMenu:
 .checkA
 	bit 0,a
 	jp z,.loop
-	; 和 Pokédex 一样，A 先进入右侧功能菜单；Info 才打开技能详情。
-	call HandleMoveDexSideMenu
-	dec b
-	jp z,.buttonBPressed ; Quit
-	; 右侧菜单会临时改写通用菜单坐标/最大项等状态。
-	; 返回左侧列表前完整恢复参数，避免 Anim/Effe 后按 B 出现光标位置互换。
-	call MoveDexSetupListMenuParameters
-	dec b
-	jp z,.loop ; B 返回列表
-	jp .redrawScreen ; Info 返回后重绘列表
+	scf
+	ret
 
 .buttonBPressed
-	xor a
-	ld [wMenuWatchMovingOutOfBounds],a
-	ld [wCurrentMenuItem],a
-	ld [wLastMenuItem],a
-	ld [hJoy7],a
-	pop af
-	ld [wListScrollOffset],a
-	call GBPalWhiteOutWithDelay3
-	; MoveDex 会加载 Pokédex 专用图块，其中一部分 VRAM 与户外屋顶/文本框共用。
-	; 返回 START 前先恢复当前 World 模式对应的文本框/屋顶图块，避免屋顶一直乱码到关闭菜单。
-	call LoadTextBoxTilePatterns
-	call RunDefaultPaletteCommand
+	and a
 	ret
 
 .stopAtVerticalBoundary
@@ -277,7 +290,9 @@ MoveDexDrawStaticListUI:
 	ret
 
 HandleMoveDexSideMenu:
-	; 结构与 Pokédex 右侧菜单一致：列表光标留在左侧，右边出现空心箭头。
+	; 按 Pokédex 的父列表/右侧子菜单结构处理光标。
+	; RPP 的 PlaceMenuCursor 还会记录 wMenuCursorLocation/wTileBehindCursor，
+	; 因此 B 返回时必须先按“当前真实光标地址”擦除右栏箭头，再恢复父列表。
 	call PlaceUnfilledArrowMenuCursor
 	ld a,[wCurrentMenuItem]
 	push af
@@ -289,40 +304,46 @@ HandleMoveDexSideMenu:
 	add b
 	inc a
 	ld [wd11e],a
+	ld a,[wd11e]
+	push af
 
 	ld hl,wTopMenuItemY
 	ld a,10
-	ld [hli],a
+	ld [hli],a ; top menu item Y
 	ld a,15
-	ld [hli],a
+	ld [hli],a ; top menu item X
 	xor a
-	ld [hli],a ; current menu item
+	ld [hli],a ; current menu item ID
 	inc hl
 	ld a,3
-	ld [hli],a ; four rows: Info / Anim / Effe / Quit
-	ld [hli],a ; A_BUTTON | B_BUTTON = 3
+	ld [hli],a ; max menu item ID
+	ld [hli],a ; A_BUTTON | B_BUTTON
 	xor a
-	ld [hli],a ; old menu item
+	ld [hli],a ; old menu item ID
 	ld [wMenuWatchMovingOutOfBounds],a
 
-.inputLoop
+.handleMenuInput
 	call HandleMenuInput
 	bit 1,a
 	ld b,2
-	jr nz,.restoreAndReturn
+	jr nz,.buttonBPressed
 
 	ld a,[wCurrentMenuItem]
 	and a
-	jr z,.info
+	jr z,.choseInfo
 	cp 3
-	jr z,.quit
+	jr z,.choseQuit
 
-	; Anim / Effe 先作为下一阶段功能占位，按 A 不离开右侧菜单。
-	jr .inputLoop
+	; Anim / Effe 暂时只是占位。等待本次 A 松开后再重新进入
+	; HandleMenuInput，避免立即重复触发造成右侧光标状态异常。
+	call MoveDexWaitForABRelease
+	jr .handleMenuInput
 
-.quit
+.choseQuit
 	ld b,1
-.restoreAndReturn
+.exitSideMenu
+	pop af
+	ld [wd11e],a
 	pop af
 	ld [wListScrollOffset],a
 	pop af
@@ -330,22 +351,32 @@ HandleMoveDexSideMenu:
 	pop af
 	ld [wCurrentMenuItem],a
 	push bc
-	; 清掉右侧菜单光标，同时清掉左侧被改成空心箭头的旧光标。
-	; 随后的列表循环会按恢复后的菜单参数重新绘制实心光标。
+	coord hl, 0, 3
+	ld de,SCREEN_WIDTH
+	lb bc, " ", 13
+	call DrawTileLine ; 与 Pokédex 一样清掉左侧列表旧光标
+	pop bc
+	ret
+
+.buttonBPressed
+	; 先使用菜单系统记录的真实位置擦掉当前右栏光标。
+	; 这一步补齐 RPP 新版 PlaceMenuCursor 对 wMenuCursorLocation 的维护，
+	; 避免只按固定坐标清 tilemap 时留下右侧箭头。
+	call EraseMenuCursor
+	; 再保留 Pokédex 原版的整列清理作为保险，四个菜单项全部覆盖。
+	push bc
 	coord hl, 15, 10
 	ld de,SCREEN_WIDTH
 	lb bc, " ", 7
 	call DrawTileLine
-	coord hl, 0, 3
-	ld de,SCREEN_WIDTH
-	lb bc, " ", 13
-	call DrawTileLine
 	pop bc
-	ret
+	jr .exitSideMenu
 
-.info
-	; Info 会清屏，因此先恢复左侧列表状态；详情页左右切技能后可直接
-	; 复用 MoveDexSyncListSelection，把返回列表的位置同步到新技能。
+.choseInfo
+	; Info 会清屏。先恢复左侧列表状态，让详情页左右切换后的
+	; MoveDexSyncListSelection 使用正确的列表行作为返回基准。
+	pop af
+	ld [wd11e],a
 	pop af
 	ld [wListScrollOffset],a
 	pop af
@@ -354,6 +385,14 @@ HandleMoveDexSideMenu:
 	ld [wCurrentMenuItem],a
 	call ShowMoveDexData
 	ld b,0
+	ret
+
+MoveDexWaitForABRelease:
+	call DelayFrame
+	call Joypad
+	ld a,[hJoyHeld]
+	and A_BUTTON | B_BUTTON
+	jr nz,MoveDexWaitForABRelease
 	ret
 
 MoveDexContentsText:
@@ -447,6 +486,7 @@ ShowMoveDexData:
 
 MoveDexLoadDataUITiles:
 	; PureRGB 的 <PREV/NEXT>、分类标识与百分号图块。
+	; 三种伤害分类统一使用 PureRGB PHYSICAL 的完整宽底框和同一套字模。
 	; 1bpp 图块复制到 $C4-$D9，不覆盖当前 MoveDex/Pokédex 边框图块。
 	ld de,MoveDexUI
 	ld hl,vChars1 + $440
