@@ -561,9 +561,6 @@ MoveDexDrawDataFrame:
 	coord hl, 1, 8
 	ld de,MoveDexAccuracyLabel
 	call PlaceString
-	coord hl, 1, 11
-	ld de,MoveDexEffectLabel
-	call PlaceString
 
 	; 类型图标固定使用 $C0-$C3，切技能时只替换 VRAM 中的四个图块。
 	coord hl, 1, 3
@@ -639,11 +636,9 @@ MoveDexDrawMoveData:
 	call PlaceString
 .skipHighCrit
 
-	; 第一阶段继续保留 RPP 的一行 Effect 摘要。
-	ld a,[wBuffer + 1]
-	call MoveDexGetEffectText
-	coord hl, 1, 12
-	call PlaceString
+	; 技能说明区参考 PureRGB：上半部分描述招式本身，
+	; 最后明确写当前 RPP 实际使用的战斗效果。
+	call MoveDexDrawDescription
 
 	jp MoveDexDrawBottomNavigation
 
@@ -672,8 +667,8 @@ MoveDexClearDynamicData:
 	coord hl, 13, 8
 	lb bc, 1, 6
 	call ClearScreenArea
-	coord hl, 1, 12
-	lb bc, 1, 17
+	coord hl, 1, 11
+	lb bc, 5, 18
 	call ClearScreenArea
 	coord hl, 1, 16
 	lb bc, 1, 3
@@ -931,10 +926,238 @@ MoveDexAccuracyLabel:
 	db "Accu@"
 MoveDexPPLabel:
 	db "PP@"
-MoveDexEffectLabel:
-	db "Effect@"
 MoveDexHighCritText:
 	db "HiCrit@"
+
+MoveDexDrawDescription:
+	; 第一版先用稀疏表验证版式和文案风格。
+	; 金银已有技能以 Gen II 游戏说明为主要依据重新压缩措辞；
+	; 后世代技能参考其首次登场世代说明。最后一段始终以 RPP
+	; 当前 battle engine 的真实实现为准，避免照搬官方机制造成误导。
+	ld a,[wd11e]
+	ld b,a
+	ld hl,MoveDexDescriptionPreviewTable
+.search
+	ld a,[hli]
+	and a
+	jr z,.fallback
+	cp b
+	jr z,.found
+	inc hl
+	inc hl
+	jr .search
+.found
+	ld a,[hli]
+	ld d,[hl]
+	ld e,a
+	coord hl, 1, 11
+	jp PlaceString
+
+.fallback
+	; 尚未补正式说明的技能继续显示现有 Effect 摘要，
+	; 第一版不会因为缺文案而出现空白资料页。
+	coord hl, 1, 11
+	ld de,MoveDexDescriptionPendingText
+	call PlaceString
+	ld a,[wBuffer + 1]
+	call MoveDexGetEffectText
+	coord hl, 1, 14
+	jp PlaceString
+
+; 第一版说明样本。每行最多 18 字符，与 PureRGB 的 18 字宽说明区一致。
+MoveDexDescriptionPreviewTable:
+	db POUND
+	dw MoveDexDescPound
+	db DOUBLESLAP
+	dw MoveDexDescDoubleSlap
+	db FIRE_PUNCH
+	dw MoveDexDescFirePunch
+	db SWORDS_DANCE
+	dw MoveDexDescSwordsDance
+	db FLY
+	dw MoveDexDescFly
+	db DRAGON_RAGE
+	dw MoveDexDescDragonRage
+	db RECOVER
+	dw MoveDexDescRecover
+	db METRONOME
+	dw MoveDexDescMetronome
+	db METAL_CLAW
+	dw MoveDexDescMetalClaw
+	db CRUNCH
+	dw MoveDexDescCrunch
+	db DARK_PULSE
+	dw MoveDexDescDarkPulse
+	db MOONBLAST
+	dw MoveDexDescMoonblast
+	db ACROBATICS
+	dw MoveDexDescAcrobatics
+	db ICY_WIND
+	dw MoveDexDescIcyWind
+	db ELECTRO_BALL
+	dw MoveDexDescElectroBall
+	db DYNAMICPUNCH
+	dw MoveDexDescDynamicPunch
+	db HURRICANE
+	dw MoveDexDescHurricane
+	db AEROBLAST
+	dw MoveDexDescAeroblast
+	db ANCIENTPOWER
+	dw MoveDexDescAncientPower
+	db LUSTER_PURGE
+	dw MoveDexDescLusterPurge
+	db MIND_BLAST
+	dw MoveDexDescMindBlast
+	db 0
+
+MoveDexDescriptionPendingText:
+	db   "Info pending."
+	next " "
+	next "Battle effect:@"
+
+MoveDexDescPound:
+	db   "Pounds with limbs"
+	next "or a sturdy tail."
+	next " "
+	next "No additional"
+	next "effect.@"
+
+MoveDexDescDoubleSlap:
+	db   "Repeatedly slaps"
+	next "the target."
+	next "Hits 2-5 times"
+	next "in succession.@"
+
+MoveDexDescFirePunch:
+	db   "Strikes with a"
+	next "blazing fist."
+	next "10% chance to"
+	next "burn the target.@"
+
+MoveDexDescSwordsDance:
+	db   "A battle dance"
+	next "raises fighting"
+	next "spirit."
+	next "Raises Attack"
+	next "by 2 stages.@"
+
+MoveDexDescFly:
+	db   "Flies up high on"
+	next "the first turn."
+	next "Strikes on turn 2."
+	next "Protected while"
+	next "airborne.@"
+
+MoveDexDescDragonRage:
+	db   "Blasts the foe"
+	next "with dragon rage."
+	next " "
+	next "Always deals"
+	next "40 HP damage.@"
+
+MoveDexDescRecover:
+	db   "Restores the"
+	next "user's vitality."
+	next " "
+	next "Restores 1/2 of"
+	next "maximum HP.@"
+
+MoveDexDescMetronome:
+	db   "Waggles a finger"
+	next "to trigger a move."
+	next " "
+	next "Uses a random"
+	next "battle move.@"
+
+MoveDexDescMetalClaw:
+	db   "Rakes the target"
+	next "with steel claws."
+	next " "
+	next "10% chance to"
+	next "raise Attack +1.@"
+
+MoveDexDescCrunch:
+	db   "Crunches the foe"
+	next "with sharp fangs."
+	next " "
+	next "33% chance to"
+	next "lower Defense -1.@"
+
+MoveDexDescDarkPulse:
+	db   "Releases a wave"
+	next "of dark energy."
+	next " "
+	next "10% chance to"
+	next "make foe flinch.@"
+
+MoveDexDescMoonblast:
+	db   "Borrows the moon's"
+	next "power to attack."
+	next " "
+	next "33% chance to"
+	next "lower Special -1.@"
+
+MoveDexDescAcrobatics:
+	db   "A nimble aerial"
+	next "strike on the foe."
+	next " "
+	next "No additional"
+	next "effect.@"
+
+MoveDexDescIcyWind:
+	db   "Blasts with icy"
+	next "freezing wind."
+	next " "
+	next "33% chance to"
+	next "lower Speed -1.@"
+
+MoveDexDescElectroBall:
+	db   "Hurls an electric"
+	next "orb at the foe."
+	next "Power: 60 slower,"
+	next "80 tied, 120 fast.@"
+
+MoveDexDescDynamicPunch:
+	db   "Throws a powerful"
+	next "spinning punch."
+	next " "
+	next "Confuses target"
+	next "when it hits.@"
+
+MoveDexDescHurricane:
+	db   "Wraps the target"
+	next "in a fierce wind."
+	next " "
+	next "10% chance to"
+	next "confuse the foe.@"
+
+MoveDexDescAeroblast:
+	db   "Fires a focused"
+	next "blast of air."
+	next " "
+	next "No additional"
+	next "effect.@"
+
+MoveDexDescAncientPower:
+	db   "Attacks with an"
+	next "ancient power."
+	next " "
+	next "10% chance to"
+	next "raise all stats.@"
+
+MoveDexDescLusterPurge:
+	db   "Attacks with a"
+	next "burst of light."
+	next " "
+	next "33% chance to"
+	next "lower Special -1.@"
+
+MoveDexDescMindBlast:
+	db   "Strikes with raw"
+	next "psychic force."
+	next "Always critical."
+	next "10% chance to"
+	next "raise all stats.@"
 
 MoveDexAccuracyToPercent:
 	; accuracy 字段是 0-255，按 100/255 换算并按余数四舍五入。
@@ -976,6 +1199,9 @@ MoveDexIsHighCrit:
 MoveDexHighCritMoves:
 	db KARATE_CHOP, RAZOR_LEAF, CRABHAMMER, SLASH, NIGHT_SLASH
 	db CROSS_CHOP, PSYCHO_CUT, LEAF_BLADE, AIR_CUTTER, AEROBLAST
+	; RPP 战斗核心把 Storm Throw / Mind Blast 设为必定暴击，
+	; MoveDex 也显示 HiCrit，避免资料页与实际机制不一致。
+	db STORM_THROW, MIND_BLAST
 	db $ff
 
 MoveDexGetTypeText:
