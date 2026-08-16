@@ -450,7 +450,7 @@ ShowMoveDexData:
 	call GBPalNormal
 
 .inputLoop
-	; 与 Pokédex 的文本翻页提示使用同一个闪烁函数和循环时序。
+	; 闪烁计时由 HandleDownArrowBlinkTiming 按 VBlank 统一推进。
 	; 最后一页会把箭头 tile 保持为空且 CNT1=0，因此这里可无条件调用。
 	coord hl, 10, 16
 	call HandleDownArrowBlinkTiming
@@ -1070,11 +1070,11 @@ MoveDexDescriptionHasNextPage:
 MoveDexDrawDescriptionPageArrow:
 MoveDexPrepareDescriptionArrow:
 	; PureRGB/Pokédex 的翻页箭头位于 (10,16)。
-	; 先按 WaitForTextScrollButtonPress 的原版数值初始化闪烁计时：
-	; CNT1=0、CNT2=$06。HandleDownArrowBlinkTiming 会按相同频率闪烁。
+	; 使用全局帧数初始化闪烁计时。以后只改 DOWN_ARROW_BLINK_CYCLES
+	; 即可统一调整 MoveDex/Pokédex/通用列表/Poké Mart 的下箭头频率。
 	xor a
 	ld [H_DOWNARROWBLINKCNT1],a
-	ld a,$06
+	ld a,DOWN_ARROW_BLINK_FRAMES
 	ld [H_DOWNARROWBLINKCNT2],a
 
 	; 无论当前页是否为最后一页，先清掉旧箭头。

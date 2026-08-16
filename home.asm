@@ -3591,7 +3591,7 @@ WaitForTextScrollButtonPress::
 	push af
 	xor a
 	ld [H_DOWNARROWBLINKCNT1], a
-	ld a, $6
+	ld a, DOWN_ARROW_BLINK_FRAMES
 	ld [H_DOWNARROWBLINKCNT2], a
 .loop
 	push hl
@@ -3867,8 +3867,8 @@ HandleMenuInput_::
 	push af ; save existing values on stack
 	xor a
 	ld [H_DOWNARROWBLINKCNT1],a ; blinking down arrow timing value 1
-	ld a,6
-	ld [H_DOWNARROWBLINKCNT2],a ; blinking down arrow timing value 2
+	ld a,DOWN_ARROW_BLINK_FRAMES
+	ld [H_DOWNARROWBLINKCNT2],a ; 下箭头剩余显示帧数
 .loop1
 	xor a
 	ld [wAnimCounter],a ; counter for pokemon shaking animation
@@ -4089,52 +4089,45 @@ EraseMenuCursor::
 	ld [hl]," "
 	ret
 
-; This toggles a blinking down arrow at hl on and off after a delay has passed.
-; This is often called even when no blinking is occurring.
-; The reason is that most functions that call this initialize H_DOWNARROWBLINKCNT1 to 0.
-; The effect is that if the tile at hl is initialized with a down arrow,
-; this function will toggle that down arrow on and off, but if the tile isn't
-; initialized with a down arrow, this function does nothing.
-; That allows this to be called without worrying about if a down arrow should
-; be blinking.
+; 按显示帧切换下箭头，而不是按输入循环调用次数切换。
+; 这样 Pokédex、MoveDex、通用列表和 Poké Mart 即使循环负载不同，
+; 也会严格使用同一个 DOWN_ARROW_BLINK_CYCLES 频率。
+; CNT1=0 表示尚未启用闪烁；只有当前位置原本是 ▼ 时才会启用。
 HandleDownArrowBlinkTiming::
-	ld a,[hl]
-	ld b,a
-	ld a,"▼"
-	cp b
-	jr nz,.downArrowOff
-.downArrowOn
-	ld a,[H_DOWNARROWBLINKCNT1]
-	dec a
-	ld [H_DOWNARROWBLINKCNT1],a
-	ret nz
-	ld a,[H_DOWNARROWBLINKCNT2]
-	dec a
-	ld [H_DOWNARROWBLINKCNT2],a
-	ret nz
-	ld a," " ; textbox border bottom
-	ld [hl],a
-	ld a,$ff
-	ld [H_DOWNARROWBLINKCNT1],a
-	ld a,$06
-	ld [H_DOWNARROWBLINKCNT2],a
-	ret
-.downArrowOff
 	ld a,[H_DOWNARROWBLINKCNT1]
 	and a
-	ret z
-	dec a
-	ld [H_DOWNARROWBLINKCNT1],a
+	jr nz,.active
+	ld a,[hl]
+	cp "▼"
 	ret nz
-	dec a
+	ld a,1
 	ld [H_DOWNARROWBLINKCNT1],a
+	ld a,DOWN_ARROW_BLINK_FRAMES
+	ld [H_DOWNARROWBLINKCNT2],a
+	ret
+.active
+	; 同一 VBlank 内无论输入循环跑多少次都只计时一次。
+	ld a,[H_VBLANKOCCURRED]
+	and a
+	ret nz
+	ld a,1
+	ld [H_VBLANKOCCURRED],a
+
 	ld a,[H_DOWNARROWBLINKCNT2]
 	dec a
 	ld [H_DOWNARROWBLINKCNT2],a
 	ret nz
-	ld a,$06
+	ld a,DOWN_ARROW_BLINK_FRAMES
 	ld [H_DOWNARROWBLINKCNT2],a
+
+	ld a,[hl]
+	cp "▼"
+	jr z,.hideArrow
 	ld a,"▼"
+	ld [hl],a
+	ret
+.hideArrow
+	ld a," " ; textbox border bottom
 	ld [hl],a
 	ret
 

@@ -597,8 +597,8 @@ HandleMenuInput_Mart::
 	push af ; save existing values on stack
 	xor a
 	ld [H_DOWNARROWBLINKCNT1],a ; blinking down arrow timing value 1
-	ld a,$06
-	ld [H_DOWNARROWBLINKCNT2],a ; blinking down arrow timing value 2
+	ld a,DOWN_ARROW_BLINK_FRAMES
+	ld [H_DOWNARROWBLINKCNT2],a ; 下箭头剩余显示帧数
 .loop1
 	xor a
 	ld [wSubAnimTransform],a ; counter for pokemon shaking animation
