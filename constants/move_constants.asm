@@ -257,6 +257,10 @@ const_value = 1
 NUM_ATTACKS EQU const_value
 const_value = STRUGGLE + 1
 
+; 必定暴击技能的单一身份来源。战斗核心和 MoveDex 都引用这两个别名，
+; 避免以后替换必暴击技能时只改到其中一边。
+ALWAYS_CRIT_MOVE_1 EQU STORM_THROW
+ALWAYS_CRIT_MOVE_2 EQU MIND_BLAST
 
 	; Moves do double duty as animation identifiers.
 

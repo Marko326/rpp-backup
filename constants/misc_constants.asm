@@ -47,11 +47,9 @@ const_value = 0
 SCREEN_WIDTH  EQU 20
 SCREEN_HEIGHT EQU 18
 
-; 下箭头闪烁倍率。$0C 为当前实机确认可接受的速度。
-; 计时统一按 VBlank（显示帧）推进，不再受各菜单输入循环执行速度影响。
-DOWN_ARROW_BLINK_CYCLES EQU $0C
-; 保持 $0C 约 42 帧切换一次；以后仍只需要调整上面的倍率。
-DOWN_ARROW_BLINK_FRAMES EQU DOWN_ARROW_BLINK_CYCLES * 7 / 2
+; 下箭头每次亮/灭状态保持的显示帧数。
+; 42 帧约为 0.70 秒；数值越大闪得越慢，所有使用该箭头的界面共用此频率。
+DOWN_ARROW_BLINK_INTERVAL_FRAMES EQU 42
 
 SCREEN_WIDTH_PIXELS  EQU SCREEN_WIDTH * 8
 SCREEN_HEIGHT_PIXELS EQU SCREEN_HEIGHT * 8

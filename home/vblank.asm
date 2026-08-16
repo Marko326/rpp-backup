@@ -57,6 +57,10 @@ VBlank::
 	ld [H_VBLANKOCCURRED], a
 
 .skipZeroing
+	; 下箭头闪烁使用独立的每帧锁，不再借用 DelayFrame 的同步标记。
+	xor a
+	ld [hDownArrowBlinkFrameProcessed], a
+
 	ld a, [H_FRAMECOUNTER]
 	and a
 	jr z, .skipDec

@@ -591,14 +591,14 @@ ExitListMenu_Mart::
 HandleMenuInput_Mart::
 	xor a
 	ld [wPartyMenuAnimMonEnabled],a
-	ld a,[H_DOWNARROWBLINKCNT1]
+	ld a,[hDownArrowBlinkActive]
 	push af
-	ld a,[H_DOWNARROWBLINKCNT2]
+	ld a,[hDownArrowBlinkTimer]
 	push af ; save existing values on stack
 	xor a
-	ld [H_DOWNARROWBLINKCNT1],a ; blinking down arrow timing value 1
-	ld a,DOWN_ARROW_BLINK_FRAMES
-	ld [H_DOWNARROWBLINKCNT2],a ; 下箭头剩余显示帧数
+	ld [hDownArrowBlinkActive],a ; 下箭头闪烁未激活
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a ; 下箭头剩余显示帧数
 .loop1
 	xor a
 	ld [wSubAnimTransform],a ; counter for pokemon shaking animation
@@ -627,9 +627,9 @@ HandleMenuInput_Mart::
 .giveUpWaiting
 ; if a key wasn't pressed within the specified number of checks
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a ; restore previous values
+	ld [hDownArrowBlinkActive],a ; 恢复进入商店菜单前的闪烁状态
 	xor a
 	ld [wMenuWrappingEnabled],a ; disable menu wrapping
 	ret
@@ -696,9 +696,9 @@ HandleMenuInput_Mart::
 	call PlaySound ; play sound
 .skipPlayingSound
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a ; restore previous values
+	ld [hDownArrowBlinkActive],a ; 恢复进入商店菜单前的闪烁状态
 	xor a
 	ld [wMenuWrappingEnabled],a ; disable menu wrapping
 	ld a,[hJoy5]

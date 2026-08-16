@@ -31,9 +31,10 @@ H_SPRITEINTERLACECOUNTER EQU $FF8B
 H_SPRITEHEIGHT           EQU $FF8C ; in tiles
 H_SPRITEOFFSET           EQU $FF8D
 
-; counters for blinking down arrow
-H_DOWNARROWBLINKCNT1 EQU $FF8B
-H_DOWNARROWBLINKCNT2 EQU $FF8C
+; 下箭头闪烁状态。$FF8B/$FF8C 仍与其他临时 HRAM 变量复用，
+; 只在等待输入/菜单循环期间保存并恢复。
+hDownArrowBlinkActive EQU $FF8B
+hDownArrowBlinkTimer  EQU $FF8C
 
 H_SPRITEDATAOFFSET EQU $FF8B
 H_SPRITEINDEX      EQU $FF8C
@@ -268,6 +269,10 @@ H_VBLANKOCCURRED EQU $FFD6
 hTilesetType EQU $FFD7
 
 hMovingBGTilesCounter1 EQU $FFD8
+
+; 下箭头每个 VBlank 最多推进一次的独立锁。
+; VBlank 每帧清零，避免复用 H_VBLANKOCCURRED 的 DelayFrame 同步状态。
+hDownArrowBlinkFrameProcessed EQU $FFD9
 
 H_CURRENTSPRITEOFFSET EQU $FFDA ; multiple of $10
 

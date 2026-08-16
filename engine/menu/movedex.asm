@@ -438,9 +438,9 @@ ShowMoveDexData:
 
 	; MoveDex 说明页直接复用 Pokédex/普通文本的下箭头闪烁计时器。
 	; 进入前先保存全局计时值，退出详情页时再完整恢复。
-	ld a,[H_DOWNARROWBLINKCNT1]
+	ld a,[hDownArrowBlinkActive]
 	push af
-	ld a,[H_DOWNARROWBLINKCNT2]
+	ld a,[hDownArrowBlinkTimer]
 	push af
 	call MoveDexDrawMoveData
 
@@ -489,9 +489,9 @@ ShowMoveDexData:
 .close
 	; 恢复进入 MoveDex 详情页之前的全局下箭头闪烁计时值。
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a
+	ld [hDownArrowBlinkActive],a
 
 	; 如果在详情页用左右切换过技能，返回列表时同步选中位置。
 	call MoveDexSyncListSelection
@@ -988,13 +988,9 @@ MoveDexDrawDescription:
 	jp MoveDexDrawDescriptionPageArrow
 
 .fallback
-	; 尚未补正式说明的技能保持三行以内。
+	; 253 项当前都有正式说明；保留单行兜底，方便未来新增技能时显式暴露缺项。
 	coord hl, 1, 11
 	ld de,MoveDexDescriptionPendingText
-	call PlaceString
-	ld a,[wBuffer + 1]
-	call MoveDexGetEffectText
-	coord hl, 1, 15
 	call PlaceString
 	jp MoveDexDrawDescriptionPageArrow
 
@@ -1083,12 +1079,11 @@ MoveDexDescriptionHasNextPage:
 MoveDexDrawDescriptionPageArrow:
 MoveDexPrepareDescriptionArrow:
 	; PureRGB/Pokédex 的翻页箭头位于 (10,16)。
-	; 使用全局帧数初始化闪烁计时。以后只改 DOWN_ARROW_BLINK_CYCLES
-	; 即可统一调整 MoveDex/Pokédex/通用列表/Poké Mart 的下箭头频率。
+	; 使用全局帧间隔初始化闪烁计时；所有下箭头界面共用同一频率。
 	xor a
-	ld [H_DOWNARROWBLINKCNT1],a
-	ld a,DOWN_ARROW_BLINK_FRAMES
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkActive],a
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
 
 	; 无论当前页是否为最后一页，先清掉旧箭头。
 	coord hl, 10, 16
@@ -1114,8 +1109,7 @@ MoveDexPrepareDescriptionArrow:
 ; $35 只保留 UI/控制代码，说明表通过 FarCopyData 从扩展 bank 读取。
 
 MoveDexDescriptionPendingText:
-	db   "Info pending."
-	next "Battle effect:@"
+	db "Info pending.@"
 
 MoveDexAccuracyToPercent:
 	; accuracy 字段是 0-255，按 100/255 换算并按余数四舍五入。
@@ -1155,11 +1149,9 @@ MoveDexIsHighCrit:
 	ret
 
 MoveDexHighCritMoves:
-	db KARATE_CHOP, RAZOR_LEAF, CRABHAMMER, SLASH, NIGHT_SLASH
-	db CROSS_CHOP, PSYCHO_CUT, LEAF_BLADE, AIR_CUTTER, AEROBLAST
-	; RPP 战斗核心把 Storm Throw / Mind Blast 设为必定暴击，
-	; MoveDex 也显示 HiCrit，避免资料页与实际机制不一致。
-	db STORM_THROW, MIND_BLAST
+	; 与战斗核心共用宏定义：普通高暴击 + 必定暴击都显示 HiCrit。
+	db_high_critical_moves
+	db_always_critical_moves
 	db $ff
 
 MoveDexGetTypeText:
@@ -1198,213 +1190,6 @@ MoveDexTypePointers:
 .Fairy:    db "Fairy@"
 .Unknown:  db "???@"
 
-MoveDexGetEffectText:
-	add a
-	ld e,a
-	ld d,0
-	ld hl,MoveDexEffectPointers
-	add hl,de
-	ld a,[hli]
-	ld e,a
-	ld d,[hl]
-	ret
-
-; Compact one-line names for every effect currently defined by the engine.
-; These are labels for the mechanics, not separate gameplay data.
-MoveDexEffectPointers:
-	dw .NoAdditional
-	dw .Unused
-	dw .PoisonChance
-	dw .DrainHP
-	dw .BurnChance
-	dw .FreezeChance
-	dw .ParalyzeChance
-	dw .Explode
-	dw .DreamEater
-	dw .MirrorMove
-	dw .AttackUp1
-	dw .DefenseUp1
-	dw .SpeedUp1
-	dw .SpecialUp1
-	dw .AccuracyUp1
-	dw .EvasionUp1
-	dw .PayDay
-	dw .NeverMiss
-	dw .AttackDown1
-	dw .DefenseDown1
-	dw .SpeedDown1
-	dw .SpecialDown1
-	dw .AccuracyDown1
-	dw .EvasionDown1
-	dw .Conversion
-	dw .Haze
-	dw .Bide
-	dw .Thrash
-	dw .SwitchTarget
-	dw .MultiHit
-	dw .Unused
-	dw .FlinchChance
-	dw .Sleep
-	dw .PoisonChance
-	dw .BurnChance
-	dw .FreezeChance
-	dw .ParalyzeChance
-	dw .FlinchChance
-	dw .OHKO
-	dw .ChargeTurn
-	dw .HalfHP
-	dw .FixedDamage
-	dw .TrapTarget
-	dw .Fly
-	dw .HitTwice
-	dw .JumpKick
-	dw .Mist
-	dw .FocusEnergy
-	dw .Recoil
-	dw .Confuse
-	dw .AttackUp2
-	dw .DefenseUp2
-	dw .SpeedUp2
-	dw .SpecialUp2
-	dw .AccuracyUp2
-	dw .EvasionUp2
-	dw .Heal
-	dw .Transform
-	dw .AttackDown2
-	dw .DefenseDown2
-	dw .SpeedDown2
-	dw .SpecialDown2
-	dw .AccuracyDown2
-	dw .EvasionDown2
-	dw .LightScreen
-	dw .Reflect
-	dw .Poison
-	dw .Paralyze
-	dw .AttackDownChance
-	dw .DefenseDownChance
-	dw .SpeedDownChance
-	dw .SpecialDownChance
-	dw .AccuracyDownChance
-	dw .EvasionDownChance
-	dw .Unused
-	dw .Unused
-	dw .ConfuseChance
-	dw .Twineedle
-	dw .Nuzzle
-	dw .Substitute
-	dw .Recharge
-	dw .Rage
-	dw .Mimic
-	dw .Metronome
-	dw .LeechSeed
-	dw .Splash
-	dw .Disable
-	dw .FireFang
-	dw .IceFang
-	dw .ThunderFang
-	dw .VoltTackle
-	dw .PoisonFang
-	dw .Growth
-	dw .HoneClaws
-	dw .DynamicPunch
-	dw .SilverWind
-	dw .AttackUpChance
-	dw .AttackUpChance20
-	dw .DefenseUpChance
-	dw .TriAttack
-
-.NoAdditional:      db "No Additional@"
-.Unused:            db "Unused@"
-.PoisonChance:      db "Poison Chance@"
-.DrainHP:           db "Drain HP@"
-.BurnChance:        db "Burn Chance@"
-.FreezeChance:      db "Freeze Chance@"
-.ParalyzeChance:    db "Paralyze Chance@"
-.Explode:           db "Explode@"
-.DreamEater:        db "Dream Eater@"
-.MirrorMove:        db "Mirror Move@"
-.AttackUp1:         db "Attack +1@"
-.DefenseUp1:        db "Defense +1@"
-.SpeedUp1:          db "Speed +1@"
-.SpecialUp1:        db "Special +1@"
-.AccuracyUp1:       db "Accuracy +1@"
-.EvasionUp1:        db "Evasion +1@"
-.PayDay:            db "Pay Day@"
-.NeverMiss:         db "Never Miss@"
-.AttackDown1:       db "Attack -1@"
-.DefenseDown1:      db "Defense -1@"
-.SpeedDown1:        db "Speed -1@"
-.SpecialDown1:      db "Special -1@"
-.AccuracyDown1:     db "Accuracy -1@"
-.EvasionDown1:      db "Evasion -1@"
-.Conversion:        db "Conversion@"
-.Haze:              db "Haze@"
-.Bide:              db "Bide@"
-.Thrash:            db "Rampage@"
-.SwitchTarget:      db "Switch Target@"
-.MultiHit:          db "2-5 Hits@"
-.FlinchChance:      db "Flinch Chance@"
-.Sleep:             db "Sleep@"
-.OHKO:              db "One-Hit KO@"
-.ChargeTurn:        db "Charge Turn@"
-.HalfHP:            db "Halve HP@"
-.FixedDamage:       db "Fixed Damage@"
-.TrapTarget:        db "Trap Target@"
-.Fly:               db "Fly Turn@"
-.HitTwice:          db "Hit Twice@"
-.JumpKick:          db "Crash Recoil@"
-.Mist:              db "Mist@"
-.FocusEnergy:       db "Focus Energy@"
-.Recoil:            db "Recoil@"
-.Confuse:           db "Confuse@"
-.AttackUp2:         db "Attack +2@"
-.DefenseUp2:        db "Defense +2@"
-.SpeedUp2:          db "Speed +2@"
-.SpecialUp2:        db "Special +2@"
-.AccuracyUp2:       db "Accuracy +2@"
-.EvasionUp2:        db "Evasion +2@"
-.Heal:              db "Heal@"
-.Transform:         db "Transform@"
-.AttackDown2:       db "Attack -2@"
-.DefenseDown2:      db "Defense -2@"
-.SpeedDown2:        db "Speed -2@"
-.SpecialDown2:      db "Special -2@"
-.AccuracyDown2:     db "Accuracy -2@"
-.EvasionDown2:      db "Evasion -2@"
-.LightScreen:       db "Light Screen@"
-.Reflect:           db "Reflect@"
-.Poison:            db "Poison@"
-.Paralyze:          db "Paralyze@"
-.AttackDownChance:  db "Atk Down Chance@"
-.DefenseDownChance: db "Def Down Chance@"
-.SpeedDownChance:   db "Speed Down Chance@"
-.SpecialDownChance: db "Spcl Down Chance@"
-.AccuracyDownChance: db "Acc Down Chance@"
-.EvasionDownChance: db "Eva Down Chance@"
-.ConfuseChance:     db "Confuse Chance@"
-.Twineedle:         db "2 Hits + Poison@"
-.Nuzzle:            db "Paralyze Target@"
-.Substitute:        db "Substitute@"
-.Recharge:          db "Recharge Next@"
-.Rage:              db "Rage@"
-.Mimic:             db "Mimic@"
-.Metronome:         db "Metronome@"
-.LeechSeed:         db "Leech Seed@"
-.Splash:            db "No Effect@"
-.Disable:           db "Disable@"
-.FireFang:          db "Fire Fang Effect@"
-.IceFang:           db "Ice Fang Effect@"
-.ThunderFang:       db "Thunder Fang Eff.@"
-.VoltTackle:        db "Volt Tackle Eff.@"
-.PoisonFang:        db "Poison Fang Eff.@"
-.Growth:            db "Growth@"
-.HoneClaws:         db "Hone Claws@"
-.DynamicPunch:      db "DynamicPunch Eff.@"
-.SilverWind:        db "Silver Wind Eff.@"
-.AttackUpChance:    db "Attack Up Chance@"
-.AttackUpChance20:  db "Attack Up 20 pct@"
-.DefenseUpChance:   db "Defense Up Chance@"
-.TriAttack:         db "Tri Attack Effect@"
 ; MoveDex 第一阶段 UI 图形。
 ; 基础 UI 与初代类型图标来自 PureRGB 的 MoveDex 设计；Steel/Dark/Fairy 为 RPP 扩展类型补充图标。
 MoveDexUI:

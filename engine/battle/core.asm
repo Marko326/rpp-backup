@@ -4832,10 +4832,10 @@ CriticalHitTest:
 	ld a, [wPlayerSelectedMove]
 	ld b,a
 .checkAlwaysCrit
-; first, check moves that always crit
-	cp STORM_THROW
+; 先检查必定暴击技能；身份别名与 MoveDex 共用。
+	cp ALWAYS_CRIT_MOVE_1
 	jr z, .CritSuccess
-	cp MIND_BLAST
+	cp ALWAYS_CRIT_MOVE_2
 	jr z, .CritSuccess
 .loop
 ; if it wasn't one of those, loop over the list of high-crit moves

@@ -3585,14 +3585,14 @@ JoypadLowSensitivity::
 	ret
 
 WaitForTextScrollButtonPress::
-	ld a, [H_DOWNARROWBLINKCNT1]
+	ld a, [hDownArrowBlinkActive]
 	push af
-	ld a, [H_DOWNARROWBLINKCNT2]
+	ld a, [hDownArrowBlinkTimer]
 	push af
 	xor a
-	ld [H_DOWNARROWBLINKCNT1], a
-	ld a, DOWN_ARROW_BLINK_FRAMES
-	ld [H_DOWNARROWBLINKCNT2], a
+	ld [hDownArrowBlinkActive], a
+	ld a, DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer], a
 .loop
 	push hl
 	ld a, [wTownMapSpriteBlinkingEnabled]
@@ -3609,9 +3609,9 @@ WaitForTextScrollButtonPress::
 	and A_BUTTON | B_BUTTON
 	jr z, .loop
 	pop af
-	ld [H_DOWNARROWBLINKCNT2], a
+	ld [hDownArrowBlinkTimer], a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1], a
+	ld [hDownArrowBlinkActive], a
 	ret
 
 ; (unless in link battle) waits for A or B being pressed and outputs the scrolling sound effect
@@ -3861,14 +3861,14 @@ HandleMenuInput::
 	ld [wPartyMenuAnimMonEnabled],a
 
 HandleMenuInput_::
-	ld a,[H_DOWNARROWBLINKCNT1]
+	ld a,[hDownArrowBlinkActive]
 	push af
-	ld a,[H_DOWNARROWBLINKCNT2]
+	ld a,[hDownArrowBlinkTimer]
 	push af ; save existing values on stack
 	xor a
-	ld [H_DOWNARROWBLINKCNT1],a ; blinking down arrow timing value 1
-	ld a,DOWN_ARROW_BLINK_FRAMES
-	ld [H_DOWNARROWBLINKCNT2],a ; 下箭头剩余显示帧数
+	ld [hDownArrowBlinkActive],a ; 下箭头闪烁未激活
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a ; 下箭头剩余显示帧数
 .loop1
 	xor a
 	ld [wAnimCounter],a ; counter for pokemon shaking animation
@@ -3904,9 +3904,9 @@ HandleMenuInput_::
 .giveUpWaiting
 ; if a key wasn't pressed within the specified number of checks
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a ; restore previous values
+	ld [hDownArrowBlinkActive],a ; 恢复进入菜单前的闪烁状态
 	xor a
 	ld [wMenuWrappingEnabled],a ; disable menu wrapping
 	ret
@@ -3968,9 +3968,9 @@ HandleMenuInput_::
 	call PlaySound
 .skipPlayingSound
 	pop af
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
 	pop af
-	ld [H_DOWNARROWBLINKCNT1],a ; restore previous values
+	ld [hDownArrowBlinkActive],a ; 恢复进入菜单前的闪烁状态
 	xor a
 	ld [wMenuWrappingEnabled],a ; disable menu wrapping
 	ld a,[hJoy5]
@@ -4090,45 +4090,48 @@ EraseMenuCursor::
 	ret
 
 ; 按显示帧切换下箭头，而不是按输入循环调用次数切换。
-; 这样 Pokédex、MoveDex、通用列表和 Poké Mart 即使循环负载不同，
-; 也会严格使用同一个 DOWN_ARROW_BLINK_CYCLES 频率。
-; CNT1=0 表示尚未启用闪烁；只有当前位置原本是 ▼ 时才会启用。
+; Pokédex、MoveDex、通用列表和 Poké Mart 共用同一个帧间隔。
+; hDownArrowBlinkActive=0 表示尚未启用；只有当前位置原本是 ▼ 时才启用。
 HandleDownArrowBlinkTiming::
-	ld a,[H_DOWNARROWBLINKCNT1]
+	ld a,[hDownArrowBlinkActive]
 	and a
 	jr nz,.active
 	ld a,[hl]
 	cp "▼"
 	ret nz
 	ld a,1
-	ld [H_DOWNARROWBLINKCNT1],a
-	ld a,DOWN_ARROW_BLINK_FRAMES
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkActive],a
+	; 本帧只做初始化，从下一次 VBlank 开始计时，保证首段完整显示。
+	ld [hDownArrowBlinkFrameProcessed],a
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
 	ret
 .active
 	; 同一 VBlank 内无论输入循环跑多少次都只计时一次。
-	ld a,[H_VBLANKOCCURRED]
+	ld a,[hDownArrowBlinkFrameProcessed]
 	and a
 	ret nz
 	ld a,1
-	ld [H_VBLANKOCCURRED],a
+	ld [hDownArrowBlinkFrameProcessed],a
 
-	ld a,[H_DOWNARROWBLINKCNT2]
+	ld a,[hDownArrowBlinkTimer]
 	dec a
-	ld [H_DOWNARROWBLINKCNT2],a
-	ret nz
-	ld a,DOWN_ARROW_BLINK_FRAMES
-	ld [H_DOWNARROWBLINKCNT2],a
+	ld [hDownArrowBlinkTimer],a
+	jr nz,.frameDone
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
 
 	ld a,[hl]
 	cp "▼"
-	jr z,.hideArrow
 	ld a,"▼"
-	ld [hl],a
-	ret
-.hideArrow
+	jr nz,.storeArrow
 	ld a," " ; textbox border bottom
+.storeArrow
 	ld [hl],a
+.frameDone
+	; 若 VBlank 恰好打断了上面的处理，这里再次锁住当前帧，避免同帧二次递减。
+	ld a,1
+	ld [hDownArrowBlinkFrameProcessed],a
 	ret
 
 ; The following code either enables or disables the automatic drawing of
