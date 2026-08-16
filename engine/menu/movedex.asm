@@ -984,7 +984,7 @@ MoveDexDrawDescription:
 	call MoveDexGetDescriptionPagePointer
 	jr nc,.fallback
 	coord hl, 1, 11
-	call PlaceString
+	call MoveDexPlaceStringFar
 	jp MoveDexDrawDescriptionPageArrow
 
 .fallback
@@ -999,27 +999,30 @@ MoveDexDrawDescription:
 	jp MoveDexDrawDescriptionPageArrow
 
 MoveDexFindDescriptionEntry:
-	; 表格式：move ID + page-list 指针。
-	; page-list 可以包含任意数量的 dw 页面指针，最后用 dw 0 结束。
-	; 输出：carry=1 且 HL=page-list；不存在则 carry=0。
+	; 253 项固定索引表，每项为 bank + page-list 指针，共 3 bytes。
+	; 表和说明正文都放在扩展 bank，避免继续占用接近满载的 $35。
+	; 输出：carry=1、A=page-list bank、HL=page-list；无说明则 carry=0。
 	ld a,[wd11e]
-	ld b,a
-	ld hl,MoveDexDescriptionPreviewTable
-.search
-	ld a,[hli]
+	dec a
+	ld e,a
+	ld d,0
+	ld hl,MoveDexDescriptionPointerTable
+	add hl,de
+	add hl,de
+	add hl,de
+	ld de,wBuffer + 7
+	ld bc,3
+	ld a,BANK(MoveDexDescriptionPointerTable)
+	call FarCopyData
+	ld a,[wBuffer + 7]
 	and a
 	jr z,.notFound
-	cp b
-	jr z,.found
-	inc hl
-	inc hl
-	jr .search
-.found
-	ld a,[hli]
-	ld e,a
-	ld a,[hl]
+	ld b,a
+	ld a,[wBuffer + 8]
+	ld l,a
+	ld a,[wBuffer + 9]
 	ld h,a
-	ld l,e
+	ld a,b
 	scf
 	ret
 .notFound
@@ -1027,7 +1030,7 @@ MoveDexFindDescriptionEntry:
 	ret
 
 MoveDexGetDescriptionPagePointer:
-	; 输出：carry=1 且 DE=当前页字符串。
+	; 输出：carry=1、A=当前说明 bank、DE=当前页字符串。
 	call MoveDexFindDescriptionEntry
 	ret nc
 	ld a,[wBuffer + 6]
@@ -1035,12 +1038,17 @@ MoveDexGetDescriptionPagePointer:
 	ld e,a
 	ld d,0
 	add hl,de
-	ld a,[hli]
-	ld d,[hl]
+	ld de,wBuffer + 10
+	ld bc,2
+	ld a,[wBuffer + 7]
+	call FarCopyData
+	ld a,[wBuffer + 10]
 	ld e,a
-	ld a,d
+	ld a,[wBuffer + 11]
+	ld d,a
 	or e
 	jr z,.none
+	ld a,[wBuffer + 7]
 	scf
 	ret
 .none
@@ -1048,8 +1056,7 @@ MoveDexGetDescriptionPagePointer:
 	ret
 
 MoveDexDescriptionHasNextPage:
-	; 检查 page-list 中当前页之后的指针。
-	; 0 指针结尾，所以第 3、4 页以后无需额外改代码。
+	; 下一页指针也从对应说明 bank 读取；0 指针仍表示 page-list 结束。
 	call MoveDexFindDescriptionEntry
 	ret nc
 	ld a,[wBuffer + 6]
@@ -1058,8 +1065,14 @@ MoveDexDescriptionHasNextPage:
 	ld e,a
 	ld d,0
 	add hl,de
-	ld a,[hli]
-	or [hl]
+	ld de,wBuffer + 10
+	ld bc,2
+	ld a,[wBuffer + 7]
+	call FarCopyData
+	ld a,[wBuffer + 10]
+	ld e,a
+	ld a,[wBuffer + 11]
+	or e
 	jr z,.no
 	scf
 	ret
@@ -1097,471 +1110,12 @@ MoveDexPrepareDescriptionArrow:
 ; - 每行最多 18 字符；能放一行的内容不人为拆成两行。
 ; - page-list 以 dw 0 结束，可自然扩展到三页或更多。
 ; - RPP charmap 没有 "%"，所有概率统一使用 MoveDex 专用 $D9 百分号 tile。
-MoveDexDescriptionPreviewTable:
-	; 前 20 个技能连续收录，便于实机按列表顺序测试，不再需要跳着找编号。
-	db POUND
-	dw MoveDexDescPoundPages
-	db KARATE_CHOP
-	dw MoveDexDescKarateChopPages
-	db DOUBLESLAP
-	dw MoveDexDescDoubleSlapPages
-	db COMET_PUNCH
-	dw MoveDexDescCometPunchPages
-	db MEGA_PUNCH
-	dw MoveDexDescMegaPunchPages
-	db PAY_DAY
-	dw MoveDexDescPayDayPages
-	db FIRE_PUNCH
-	dw MoveDexDescFirePunchPages
-	db ICE_PUNCH
-	dw MoveDexDescIcePunchPages
-	db THUNDERPUNCH
-	dw MoveDexDescThunderPunchPages
-	db SCRATCH
-	dw MoveDexDescScratchPages
-	db VICEGRIP
-	dw MoveDexDescViceGripPages
-	db GUILLOTINE
-	dw MoveDexDescGuillotinePages
-	db RAZOR_WIND
-	dw MoveDexDescRazorWindPages
-	db SWORDS_DANCE
-	dw MoveDexDescSwordsDancePages
-	db CUT
-	dw MoveDexDescCutPages
-	db GUST
-	dw MoveDexDescGustPages
-	db WING_ATTACK
-	dw MoveDexDescWingAttackPages
-	db WHIRLWIND
-	dw MoveDexDescWhirlwindPages
-	db FLY
-	dw MoveDexDescFlyPages
-	db BIND
-	dw MoveDexDescBindPages
-
-	; 之前已经做好的非连续样本继续保留。
-	db DRAGON_RAGE
-	dw MoveDexDescDragonRagePages
-	db RECOVER
-	dw MoveDexDescRecoverPages
-	db METRONOME
-	dw MoveDexDescMetronomePages
-	db METAL_CLAW
-	dw MoveDexDescMetalClawPages
-	db CRUNCH
-	dw MoveDexDescCrunchPages
-	db DARK_PULSE
-	dw MoveDexDescDarkPulsePages
-	db MOONBLAST
-	dw MoveDexDescMoonblastPages
-	db ACROBATICS
-	dw MoveDexDescAcrobaticsPages
-	db ICY_WIND
-	dw MoveDexDescIcyWindPages
-	db ELECTRO_BALL
-	dw MoveDexDescElectroBallPages
-	db DYNAMICPUNCH
-	dw MoveDexDescDynamicPunchPages
-	db HURRICANE
-	dw MoveDexDescHurricanePages
-	db AEROBLAST
-	dw MoveDexDescAeroblastPages
-	db ANCIENTPOWER
-	dw MoveDexDescAncientPowerPages
-	db LUSTER_PURGE
-	dw MoveDexDescLusterPurgePages
-	db MIND_BLAST
-	dw MoveDexDescMindBlastPages
-	db 0
+; 正式说明数据已移到 data/movedex_descriptions.asm。
+; $35 只保留 UI/控制代码，说明表通过 FarCopyData 从扩展 bank 读取。
 
 MoveDexDescriptionPendingText:
 	db   "Info pending."
 	next "Battle effect:@"
-
-; #001 Pound
-MoveDexDescPoundPages:
-	; 没有附加效果的技能只保留动作描述，不额外写 No added effect。
-	dw MoveDexDescPound1, 0
-MoveDexDescPound1:
-	db   "Pounds with a limb"
-	next "or a strong tail.@"
-
-; #002 Karate Chop
-MoveDexDescKarateChopPages:
-	dw MoveDexDescKarateChop1, MoveDexDescEffectHighCrit, 0
-MoveDexDescKarateChop1:
-	db   "A martial chop"
-	next "with hand or paw.@"
-
-; #003 DoubleSlap
-MoveDexDescDoubleSlapPages:
-	dw MoveDexDescDoubleSlap1, MoveDexDescEffectHits2To5, 0
-MoveDexDescDoubleSlap1:
-	db   "Slaps repeatedly"
-	next "with both hands.@"
-
-; #004 Comet Punch
-MoveDexDescCometPunchPages:
-	; 与 DoubleSlap 共用 RPP TWO_TO_FIVE_ATTACKS_EFFECT 的机制页。
-	dw MoveDexDescCometPunch1, MoveDexDescEffectHits2To5, 0
-MoveDexDescCometPunch1:
-	db   "Strikes with a"
-	next "flurry of punches.@"
-
-; #005 Mega Punch
-MoveDexDescMegaPunchPages:
-	dw MoveDexDescMegaPunch1, 0
-MoveDexDescMegaPunch1:
-	; RPP 当前没有 PureRGB 的追加畏缩效果，因此只写动作描述。
-	db   "Throws a heavy"
-	next "powerful punch.@"
-
-; #006 Pay Day
-MoveDexDescPayDayPages:
-	dw MoveDexDescPayDay1, MoveDexDescPayDay2, 0
-MoveDexDescPayDay1:
-	db   "Scatters coins"
-	next "around the foe.@"
-MoveDexDescPayDay2:
-	; RPP 每次使用累加 user level * 2，战斗结束后结算。
-	db   "Gain extra money"
-	next "after battle: 2x"
-	next "the user's level.@"
-
-; #007 Fire Punch
-MoveDexDescFirePunchPages:
-	dw MoveDexDescFirePunch1, MoveDexDescEffectBurn10, 0
-MoveDexDescFirePunch1:
-	db   "Strikes with a"
-	next "burning fist.@"
-
-; #008 Ice Punch
-MoveDexDescIcePunchPages:
-	dw MoveDexDescIcePunch1, MoveDexDescEffectFreeze10, 0
-MoveDexDescIcePunch1:
-	db   "Punches with an"
-	next "icy-cold fist.@"
-
-; #009 ThunderPunch
-MoveDexDescThunderPunchPages:
-	dw MoveDexDescThunderPunch1, MoveDexDescEffectParalyze10, 0
-MoveDexDescThunderPunch1:
-	db   "Strikes with an"
-	next "electric fist.@"
-
-; #010 Scratch
-MoveDexDescScratchPages:
-	dw MoveDexDescScratch1, 0
-MoveDexDescScratch1:
-	db   "Rakes with sharp"
-	next "claws or barbs.@"
-
-; #011 ViceGrip
-MoveDexDescViceGripPages:
-	dw MoveDexDescViceGrip1, 0
-MoveDexDescViceGrip1:
-	; RPP 当前没有 PureRGB 的追加麻痹效果。
-	db   "Crushes the foe"
-	next "in strong pincers.@"
-
-; #012 Guillotine
-MoveDexDescGuillotinePages:
-	dw MoveDexDescGuillotine1, MoveDexDescEffectOHKO, 0
-MoveDexDescGuillotine1:
-	db   "Crushes the foe"
-	next "with huge pincers.@"
-
-; #013 Razor Wind
-MoveDexDescRazorWindPages:
-	dw MoveDexDescRazorWind1, 0
-MoveDexDescRazorWind1:
-	; RPP CHARGE_EFFECT：第一回合蓄力，下一回合攻击；不会像 Fly 那样进入无敌状态。
-	db   "Whips up a sharp"
-	next "wind on turn one."
-	next "Strikes next turn.@"
-
-; #014 Swords Dance
-MoveDexDescSwordsDancePages:
-	dw MoveDexDescSwordsDance1, MoveDexDescEffectAttackUp2, 0
-MoveDexDescSwordsDance1:
-	db   "Performs a fierce"
-	next "battle dance.@"
-
-; #015 Cut
-MoveDexDescCutPages:
-	dw MoveDexDescCut1, 0
-MoveDexDescCut1:
-	db   "Slashes with a"
-	next "sharp claw or"
-	next "cutting edge.@"
-
-; #016 Gust
-MoveDexDescGustPages:
-	dw MoveDexDescGust1, 0
-MoveDexDescGust1:
-	db   "Whips up a gust"
-	next "toward the foe.@"
-
-; #017 Wing Attack
-MoveDexDescWingAttackPages:
-	dw MoveDexDescWingAttack1, 0
-MoveDexDescWingAttack1:
-	db   "Batters the foe"
-	next "with its wings.@"
-
-; #018 Whirlwind
-MoveDexDescWhirlwindPages:
-	dw MoveDexDescWhirlwind1, MoveDexDescWhirlwind2, MoveDexDescWhirlwind3, 0
-MoveDexDescWhirlwind1:
-	db   "Blows the foe away"
-	next "with a whirlwind.@"
-MoveDexDescWhirlwind2:
-	; RPP 野外战成功率按双方等级计算；使用者等级不低于对手时必定成功。
-	db   "In wild fights,"
-	next "success depends on"
-	next "both levels.@"
-MoveDexDescWhirlwind3:
-	db   "User equal/higher:"
-	next "always succeeds."
-	next "Fails vs Trainers.@"
-
-; #019 Fly
-MoveDexDescFlyPages:
-	dw MoveDexDescFly1, MoveDexDescFly2, 0
-MoveDexDescFly1:
-	db   "Flies high on the"
-	next "first turn, then"
-	next "dives next turn.@"
-MoveDexDescFly2:
-	db   "Most attacks miss"
-	next "while airborne.@"
-
-; #020 Bind
-MoveDexDescBindPages:
-	dw MoveDexDescBind1, MoveDexDescEffectTrapTurns, MoveDexDescEffectTrapLock, 0
-MoveDexDescBind1:
-	db   "Grips and traps"
-	next "the foe tightly.@"
-
-; #082 Dragon Rage
-MoveDexDescDragonRagePages:
-	dw MoveDexDescDragonRage1, MoveDexDescDragonRage2, 0
-MoveDexDescDragonRage1:
-	db   "Unleashes dragon"
-	next "rage at the foe.@"
-MoveDexDescDragonRage2:
-	db   "Always deals"
-	next "40 HP damage.@"
-
-; #105 Recover
-MoveDexDescRecoverPages:
-	dw MoveDexDescRecover1, MoveDexDescRecover2, 0
-MoveDexDescRecover1:
-	db   "Regenerates cells"
-	next "to restore HP.@"
-MoveDexDescRecover2:
-	db   "Restores half of"
-	next "maximum HP.@"
-
-; #118 Metronome
-MoveDexDescMetronomePages:
-	dw MoveDexDescMetronome1, 0
-MoveDexDescMetronome1:
-	db   "Waggles a finger"
-	next "and triggers one"
-	next "random move.@"
-
-; #166 Metal Claw
-MoveDexDescMetalClawPages:
-	dw MoveDexDescMetalClaw1, MoveDexDescEffectAttackUp10, 0
-MoveDexDescMetalClaw1:
-	db   "Rakes the foe"
-	next "using sharp"
-	next "steel claws.@"
-
-; #171 Crunch
-MoveDexDescCrunchPages:
-	dw MoveDexDescCrunch1, MoveDexDescEffectDefenseDown33, 0
-MoveDexDescCrunch1:
-	db   "Bites down with"
-	next "razor-sharp fangs.@"
-
-; #172 Dark Pulse
-MoveDexDescDarkPulsePages:
-	dw MoveDexDescDarkPulse1, MoveDexDescEffectFlinch10, 0
-MoveDexDescDarkPulse1:
-	db   "Releases a wave"
-	next "of dark energy.@"
-
-; #175 Moonblast
-MoveDexDescMoonblastPages:
-	dw MoveDexDescMoonblast1, MoveDexDescEffectSpecialDown33, 0
-MoveDexDescMoonblast1:
-	db   "Draws on moonlight"
-	next "to attack the foe.@"
-
-; #205 Acrobatics
-MoveDexDescAcrobaticsPages:
-	; RPP 当前为固定 110 威力、无附加效果，因此不再额外显示 No added effect。
-	dw MoveDexDescAcrobatics1, 0
-MoveDexDescAcrobatics1:
-	db   "A nimble aerial"
-	next "strike at the foe.@"
-
-; #207 Icy Wind
-MoveDexDescIcyWindPages:
-	dw MoveDexDescIcyWind1, MoveDexDescEffectSpeedDown33, 0
-MoveDexDescIcyWind1:
-	db   "Sends icy wind"
-	next "across the foe.@"
-
-; #210 Electro Ball
-MoveDexDescElectroBallPages:
-	dw MoveDexDescElectroBall1, MoveDexDescElectroBall2, 0
-MoveDexDescElectroBall1:
-	db   "Hurls an electric"
-	next "orb at the foe.@"
-MoveDexDescElectroBall2:
-	; RPP 使用三档速度比较，不采用现代 Electro Ball 的倍率表。
-	db   "Power: 60 slower,"
-	next "80 tied, 120 if"
-	next "user is faster.@"
-
-; #242 DynamicPunch
-MoveDexDescDynamicPunchPages:
-	dw MoveDexDescDynamicPunch1, MoveDexDescDynamicPunch2, MoveDexDescEffectConfusionDuration, 0
-MoveDexDescDynamicPunch1:
-	db   "Throws a spinning"
-	next "powerful punch.@"
-MoveDexDescDynamicPunch2:
-	db   "Confuses the foe"
-	next "whenever it hits.@"
-; #246 Hurricane
-MoveDexDescHurricanePages:
-	dw MoveDexDescHurricane1, MoveDexDescEffectConfuse10, MoveDexDescEffectConfusionDuration, 0
-MoveDexDescHurricane1:
-	db   "Engulfs the foe"
-	next "in fierce winds.@"
-
-; #249 Aeroblast
-MoveDexDescAeroblastPages:
-	dw MoveDexDescAeroblast1, MoveDexDescEffectHighCrit, 0
-MoveDexDescAeroblast1:
-	db   "Fires a focused"
-	next "blast of air.@"
-
-; #250 AncientPower
-MoveDexDescAncientPowerPages:
-	dw MoveDexDescAncientPower1, MoveDexDescEffectAllStatsUp10, 0
-MoveDexDescAncientPower1:
-	db   "Unleashes ancient"
-	next "power at the foe.@"
-
-; #252 Luster Purge
-MoveDexDescLusterPurgePages:
-	dw MoveDexDescLusterPurge1, MoveDexDescEffectSpecialDown33, 0
-MoveDexDescLusterPurge1:
-	db   "Attacks with a"
-	next "burst of light.@"
-
-; #253 Mind Blast
-MoveDexDescMindBlastPages:
-	dw MoveDexDescMindBlast1, MoveDexDescEffectAlwaysCrit, MoveDexDescEffectAllStatsUp10, 0
-MoveDexDescMindBlast1:
-	db   "Strikes with raw"
-	next "psychic force.@"
-
-; ---------------------------------------------------------------------------
-; 共用机制页
-; 只共用“战斗机制完全一致”的页面；动作/风格描述仍由每个技能自己保留。
-; 不根据 effect ID 自动生成说明，因为 RPP 有不少按 move ID 特判或复合效果。
-; ---------------------------------------------------------------------------
-
-MoveDexDescEffectHighCrit:
-	; RPP 高暴击技能的基础临界率约为 25%。
-	db   "About 25", $d9, " of hits"
-	next "are critical hits.@"
-
-MoveDexDescEffectAlwaysCrit:
-	db   "Every hit scores a"
-	next "critical hit.@"
-
-MoveDexDescEffectHits2To5:
-	; RPP TWO_TO_FIVE_ATTACKS_EFFECT：2/3 次各 3/8，4/5 次各 1/8。
-	db   "Hits 2-5 times."
-	next "2-3 hits: 37.5", $d9
-	next "4-5 hits: 12.5", $d9, "@"
-
-MoveDexDescEffectBurn10:
-	db   "10", $d9, " chance to"
-	next "burn the foe.@"
-
-MoveDexDescEffectFreeze10:
-	db   "10", $d9, " chance to"
-	next "freeze the foe.@"
-
-MoveDexDescEffectParalyze10:
-	db   "10", $d9, " chance to"
-	next "paralyze the foe.@"
-
-MoveDexDescEffectOHKO:
-	; RPP OHKO：只要对手当前 Speed 更高就直接失败；命中率仍由详情页 Accuracy 显示。
-	db   "One-hit KO."
-	next "Fails against"
-	next "a faster foe.@"
-
-MoveDexDescEffectAttackUp2:
-	db   "Boosts Attack by"
-	next "2 full stages.@"
-
-MoveDexDescEffectTrapTurns:
-	; RPP TRAPPING_EFFECT 总持续 2-5 回合，分布与 2-5 连击相同。
-	db   "Lasts 2-5 turns."
-	next "2-3 turns: 37.5", $d9
-	next "4-5 turns: 12.5", $d9, "@"
-
-MoveDexDescEffectTrapLock:
-	db   "Foe cannot move"
-	next "while trapped.@"
-
-MoveDexDescEffectAttackUp10:
-	db   "Has a 10", $d9, " chance"
-	next "to raise Attack"
-	next "by 1 stage.@"
-
-MoveDexDescEffectDefenseDown33:
-	db   "Has a 33", $d9, " chance"
-	next "to lower Defense"
-	next "by 1 stage.@"
-
-MoveDexDescEffectFlinch10:
-	db   "10", $d9, " chance to make"
-	next "the foe flinch.@"
-
-MoveDexDescEffectSpecialDown33:
-	db   "Has a 33", $d9, " chance"
-	next "to lower Special"
-	next "by 1 stage.@"
-
-MoveDexDescEffectSpeedDown33:
-	db   "Has a 33", $d9, " chance"
-	next "to lower Speed"
-	next "by 1 stage.@"
-
-MoveDexDescEffectConfuse10:
-	db   "10", $d9, " chance to"
-	next "confuse the foe.@"
-
-MoveDexDescEffectConfusionDuration:
-	; RPP 混乱持续 2-5 回合，每种时长各 25%。
-	db   "Duration is 2-5"
-	next "turns, 25", $d9, " each.@"
-
-MoveDexDescEffectAllStatsUp10:
-	db   "Has a 10", $d9, " chance"
-	next "to raise all stats"
-	next "by 1 stage.@"
 
 MoveDexAccuracyToPercent:
 	; accuracy 字段是 0-255，按 100/255 换算并按余数四舍五入。
