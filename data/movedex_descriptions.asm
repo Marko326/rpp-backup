@@ -377,11 +377,16 @@ MoveDexDescSwordsDance1:
 
 ; #015 Cut
 MoveDexDescCutPages:
-	dw MoveDexDescCut1, 0
+	dw MoveDexDescCut1, MoveDexDescCutFieldUse, 0
 MoveDexDescCut1:
 	db   "Slashes with a"
 	next "sharp claw or"
 	next "cutting edge.@"
+MoveDexDescCutFieldUse:
+	; 对战外用途统一使用 Field Use 页，和战斗效果明确分开。
+	db   "Field Use:"
+	next "Cuts down small"
+	next "trees.@"
 
 ; #016 Gust
 MoveDexDescGustPages:
@@ -406,7 +411,7 @@ MoveDexDescWhirlwind1:
 
 ; #019 Fly
 MoveDexDescFlyPages:
-	dw MoveDexDescFly1, MoveDexDescFly2, 0
+	dw MoveDexDescFly1, MoveDexDescFly2, MoveDexDescFlyFieldUse, 0
 MoveDexDescFly1:
 	db   "Flies high on the"
 	next "first turn, then"
@@ -414,6 +419,10 @@ MoveDexDescFly1:
 MoveDexDescFly2:
 	db   "Most attacks miss"
 	next "while airborne.@"
+MoveDexDescFlyFieldUse:
+	db   "Field Use:"
+	next "Flies to visited"
+	next "destinations.@"
 
 ; #020 Bind
 MoveDexDescBindPages:
@@ -480,10 +489,14 @@ MoveDexDescSandAttack1:
 
 ; #029 Headbutt
 MoveDexDescHeadbuttPages:
-	dw MoveDexDescHeadbutt1, MoveDexDescEffectFlinch30, 0
+	dw MoveDexDescHeadbutt1, MoveDexDescEffectFlinch30, MoveDexDescHeadbuttFieldUse, 0
 MoveDexDescHeadbutt1:
 	db   "Rams the foe with"
 	next "a hard headbutt.@"
+MoveDexDescHeadbuttFieldUse:
+	db   "Field Use:"
+	next "Headbutts trees"
+	next "for wild Pokémon.@"
 
 ; #030 Horn Attack
 MoveDexDescHornAttackPages:
@@ -681,10 +694,14 @@ MoveDexDescHydroPump1:
 
 ; #057 Surf
 MoveDexDescSurfPages:
-	dw MoveDexDescSurf1, 0
+	dw MoveDexDescSurf1, MoveDexDescSurfFieldUse, 0
 MoveDexDescSurf1:
 	db   "A powerful wave"
 	next "swamps the foe.@"
+MoveDexDescSurfFieldUse:
+	db   "Field Use:"
+	next "Allows travel"
+	next "across water.@"
 
 ; #058 Ice Beam
 MoveDexDescIceBeamPages:
@@ -776,10 +793,14 @@ MoveDexDescSeismicToss1:
 
 ; #070 Strength
 MoveDexDescStrengthPages:
-	dw MoveDexDescStrength1, 0
+	dw MoveDexDescStrength1, MoveDexDescStrengthFieldUse, 0
 MoveDexDescStrength1:
 	db   "Hits the foe with"
 	next "immense strength.@"
+MoveDexDescStrengthFieldUse:
+	db   "Field Use:"
+	next "Moves large"
+	next "boulders.@"
 
 ; #082 Dragon Rage
 MoveDexDescDragonRagePages:
@@ -1134,11 +1155,15 @@ MoveDexDescFissure1:
 
 ; #091 Dig
 MoveDexDescDigPages:
-	dw MoveDexDescDig1, MoveDexDescEffectBUnderground, 0
+	dw MoveDexDescDig1, MoveDexDescEffectBUnderground, MoveDexDescDigFieldUse, 0
 MoveDexDescDig1:
 	db   "Digs underground"
 	next "on the first turn."
 	next "Strikes next turn.@"
+MoveDexDescDigFieldUse:
+	db   "Field Use:"
+	next "Works like an"
+	next "Escape Rope.@"
 
 ; #092 Toxic
 MoveDexDescToxicPages:
@@ -1198,10 +1223,14 @@ MoveDexDescRage1:
 
 ; #100 Teleport
 MoveDexDescTeleportPages:
-	dw MoveDexDescTeleport1, MoveDexDescEffectBWildEscape1, MoveDexDescEffectBWildEscape2, 0
+	dw MoveDexDescTeleport1, MoveDexDescEffectBWildEscape1, MoveDexDescEffectBWildEscape2, MoveDexDescTeleportFieldUse, 0
 MoveDexDescTeleport1:
 	db   "Teleports away"
 	next "from the battle.@"
+MoveDexDescTeleportFieldUse:
+	db   "Field Use:"
+	next "Returns to last"
+	next "Poké Center.@"
 
 
 ; #101 Night Shade
@@ -1483,10 +1512,14 @@ MoveDexDescKinesis1:
 
 ; #135 Softboiled
 MoveDexDescSoftboiledPages:
-	dw MoveDexDescSoftboiled1, MoveDexDescEffectBHealHalf, 0
+	dw MoveDexDescSoftboiled1, MoveDexDescEffectBHealHalf, MoveDexDescSoftboiledFieldUse, 0
 MoveDexDescSoftboiled1:
 	db   "Restores HP with a"
 	next "nourishing egg.@"
+MoveDexDescSoftboiledFieldUse:
+	db   "Field Use:"
+	next "Transfers 1/5 max"
+	next "HP to an ally.@"
 
 ; #136 Hi Jump Kick
 MoveDexDescHiJumpKickPages:
@@ -1586,10 +1619,14 @@ MoveDexDescSpore1:
 
 ; #148 Flash
 MoveDexDescFlashPages:
-	dw MoveDexDescFlash1, MoveDexDescEffectBAccuracyDown1, 0
+	dw MoveDexDescFlash1, MoveDexDescEffectBAccuracyDown1, MoveDexDescFlashFieldUse, 0
 MoveDexDescFlash1:
 	db   "Blinds the foe in"
 	next "a brilliant flash.@"
+MoveDexDescFlashFieldUse:
+	db   "Field Use:"
+	next "Lights up dark"
+	next "areas.@"
 
 ; #149 Psywave
 MoveDexDescPsywavePages:
