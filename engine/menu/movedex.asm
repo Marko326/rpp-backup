@@ -899,10 +899,8 @@ MoveDexDrawDataFrame:
 	inc a
 	ld [hl],a
 
-	; RPP charmap 没有 % 字符；$D9 是这页专用的百分号 UI tile。
-	; 百分比个位与 Power 个位同列（x=9），% 紧跟在 x=10。
-	ld a,$d9
-	Coorda 10, 8
+	; 数值和单位都属于动态资料。Seen-only 时先显示与字段实际宽度一致的 ? 占位，
+	; Use 解锁后再直接绘制真实数值；Accuracy 的 % 也只在解锁后出现。
 	ret
 
 MoveDexDrawMoveData:
@@ -933,8 +931,26 @@ MoveDexDrawMoveData:
 	; Use 对应 Pokédex 的 Own：Seen-only 只公开身份层（名字/编号/类型/分类），
 	; Power / PP / Accuracy / HiCrit / 完整说明在玩家实际使用过后解锁。
 	call MoveDexIsCurrentMoveUsed
-	jp z,.drawNavigationOnly
+	jr nz,.drawUnlockedData
+	; 参考 Pokédex 的未 Own 资料：标签继续显示，但未知数值按各字段
+	; 实际占用宽度显示 ?。Power / Accuracy 为 3 格，PP 为 2 格。
+	coord hl, 7, 6
+	ld de,MoveDexUnknown3Text
+	call PlaceString
+	coord hl, 16, 6
+	ld de,MoveDexUnknown2Text
+	call PlaceString
+	coord hl, 7, 8
+	ld de,MoveDexUnknown3Text
+	call PlaceString
 
+	; Seen-only 不绘制说明，因此必须显式关闭说明页下箭头。
+	; 否则输入循环会继续调用 HandleDownArrowBlinkTiming，可能继承进入详情前
+	; 的全局闪烁状态，在隐藏资料时错误显示“还有下一页”的光标。
+	call MoveDexPrepareDescriptionArrow
+	jp .drawNavigationOnly
+
+.drawUnlockedData
 	; Power。
 	coord hl, 7, 6
 	ld de,wBuffer + 2
@@ -956,6 +972,10 @@ MoveDexDrawMoveData:
 	ld de,wBuffer
 	lb bc, 1, 3
 	call PrintNumber
+	; RPP charmap 没有普通 % 字符；$D9 是 MoveDex 专用百分号 tile。
+	; 百分号属于已解锁资料，避免 Seen-only 时单独留下一个 %。
+	ld a,$d9
+	Coorda 10, 8
 
 	; HiCrit 只在高暴击技能显示；H 与 PP 的第一个 P 同列（x=13）。
 	ld a,[wd11e]
@@ -993,7 +1013,9 @@ MoveDexClearDynamicData:
 	lb bc, 1, 2
 	call ClearScreenArea
 	coord hl, 7, 8
-	lb bc, 1, 3
+	; Accuracy 数字占 x=7..9，解锁后 % 位于 x=10；切到 Seen-only
+	; 条目时四格必须一起清掉，不能留下上一招的百分号。
+	lb bc, 1, 4
 	call ClearScreenArea
 	coord hl, 13, 8
 	lb bc, 1, 6
@@ -1235,6 +1257,10 @@ MoveDexPPLabel:
 	db "PP@"
 MoveDexHighCritText:
 	db "HiCrit@"
+MoveDexUnknown2Text:
+	db "??@"
+MoveDexUnknown3Text:
+	db "???@"
 
 MoveDexDrawDescription:
 	; MoveDex 本地说明分页，不修改全局文本引擎。
