@@ -166,36 +166,40 @@ HandleMoveDexListMenu:
 .checkRight
 	bit 4,a
 	jr z,.checkLeft
-	; Right: advance seven absolute entries and clamp at the final move.
-	ld a,NUM_ATTACKS - 1
-	sub 7
+	; Right 的语义是“当前选中技能 +7”，不能直接移动 scroll offset。
+	; 先取得绝对技能 ID，靠近尾部时只把目标技能 clamp 到最后一招，
+	; 再由 MoveDexSyncListSelection 反推合法的 scroll offset 与光标行。
+	call MoveDexGetSelectedMove
 	ld b,a
-	ld a,[wListScrollOffset]
-	add 7
-	cp b
-	jr c,.storeRightOffset
+	ld a,NUM_ATTACKS - 1
+	sub b
+	cp 7
+	jr c,.rightClampToLast
 	ld a,b
-	ld [wListScrollOffset],a
-	ld a,6
-	ld [wCurrentMenuItem],a
-	jp .loop
-.storeRightOffset
-	ld [wListScrollOffset],a
+	add 7
+	jr .storeRightTarget
+.rightClampToLast
+	ld a,NUM_ATTACKS - 1
+.storeRightTarget
+	ld [wd11e],a
+	call MoveDexSyncListSelection
 	jp .loop
 
 .checkLeft
 	bit 5,a
 	jr z,.checkA
-	; Left: move back seven entries and clamp at move 001.
-	ld a,[wListScrollOffset]
+	; Left 同样按“当前选中技能 -7”计算。小于 #008 时只 clamp 到 #001，
+	; 不再把整个列表强制跳到 offset=0,row=0。
+	call MoveDexGetSelectedMove
+	cp 8
+	jr c,.leftClampToFirst
 	sub 7
-	jr nc,.storeLeftOffset
-	xor a
-	ld [wListScrollOffset],a
-	ld [wCurrentMenuItem],a
-	jp .loop
-.storeLeftOffset
-	ld [wListScrollOffset],a
+	jr .storeLeftTarget
+.leftClampToFirst
+	ld a,1
+.storeLeftTarget
+	ld [wd11e],a
+	call MoveDexSyncListSelection
 	jp .loop
 
 .checkA
