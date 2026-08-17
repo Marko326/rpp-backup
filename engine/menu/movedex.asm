@@ -351,6 +351,13 @@ MoveDexGetVisibleListCount:
 	ret
 
 MoveDexRecordPlayerMove:
+	; 与 Pokédex 一致：Link Battle / Test Battle 不写入正式收集数据。
+	ld a,[wLinkState]
+	cp LINK_STATE_BATTLING
+	ret z
+	ld a,[wFlags_D733]
+	bit BIT_TEST_BATTLE,a
+	ret nz
 	; 玩家真正进入技能执行流程：Use + Seen。
 	call MoveDexEnsureStateInitialized
 	ld a,[wPlayerMoveNum]
@@ -362,6 +369,13 @@ MoveDexRecordPlayerMove:
 	jp MoveDexSetMoveFlag
 
 MoveDexRecordEnemyMove:
+	; Link Battle / Test Battle 同样不记录敌方技能。
+	ld a,[wLinkState]
+	cp LINK_STATE_BATTLING
+	ret z
+	ld a,[wFlags_D733]
+	bit BIT_TEST_BATTLE,a
+	ret nz
 	; 敌方真正进入技能执行流程：只 Seen。
 	call MoveDexEnsureStateInitialized
 	ld a,[wEnemyMoveNum]
