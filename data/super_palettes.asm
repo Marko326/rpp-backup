@@ -224,6 +224,128 @@ SuperPalettes:
 	RGB 24,20,10
 	RGB 0,0,0
 
+; MoveDex 专用类型图标调色板。
+; 和 PokemonPaletteTable 一样，每项只保存中间两色。
+; LoadMoveDexTypePalette / LoadPalette 会自动补：白色 -> 两个自定义色 -> 黑色。
+; 表按 type ID 直接索引，因此 unused 项也必须保留，不能删除或改变顺序。
+MoveDexTypePaletteTable:
+
+; $00 NORMAL
+	RGB 25,25,27
+	RGB 20,20,23
+
+; $01 FIGHTING
+	RGB 25,8,13
+	RGB 17,4,3
+
+; $02 FLYING
+	RGB 20,23,29
+	RGB 10,10,10
+
+; $03 POISON
+	RGB 24,12,26
+	RGB 10,10,10
+
+; $04 GROUND
+	RGB 26,14,9
+	RGB 10,10,10
+
+; $05 ROCK
+	RGB 20,17,15
+	RGB 10,10,10
+
+; $06 unused / TYPELESS
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $07 BUG
+	RGB 20,26,16
+	RGB 9,20,11
+
+; $08 GHOST
+	RGB 18,16,14
+	RGB 10,7,13
+
+; $09 STEEL
+	RGB 25,25,27
+	RGB 16,16,18
+
+; $0A UNK_TYPE
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $0B unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $0C unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $0D unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $0E unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $0F unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $10 unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $11 unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $12 unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $13 unused
+	RGB 21,21,21
+	RGB 12,12,12
+
+; $14 FIRE
+	RGB 31,21,9
+	RGB 31,0,0
+
+; $15 WATER
+	RGB 14,24,28
+	RGB 10,10,10
+
+; $16 GRASS
+	RGB 20,26,16
+	RGB 9,20,11
+
+; $17 ELECTRIC
+	RGB 30,26,7
+	RGB 10,10,10
+
+; $18 PSYCHIC
+	RGB 30,14,14
+	RGB 10,10,10
+
+; $19 ICE
+	RGB 15,25,24
+	RGB 10,10,10
+
+; $1A DRAGON
+	RGB 1,16,23
+	RGB 10,10,10
+
+; $1B DARK
+	RGB 21,21,24
+	RGB 10,10,10
+
+; $1C FAIRY
+	RGB 29,19,22
+	RGB 10,10,10
+
 
 ; The following are only available with gen 2 graphics patch: individual palettes for
 ; pokemon, trainers, etc.

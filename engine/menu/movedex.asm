@@ -829,13 +829,11 @@ MoveDexSetupTypeIconAttributes:
 	ret
 
 MoveDexLoadTypePalette:
-	ld e,a
-	ld d,0
-	ld hl,MoveDexTypePaletteMap
-	add hl,de
-	ld d,[hl]
+	; a = type ID。专用表按 type ID 直接索引，只保存中间两色；
+	; LoadMoveDexTypePalette 会像 Pokémon palette 一样自动补白色/黑色。
+	ld d,a
 	ld e,2
-	callba LoadSGBPalette
+	callba LoadMoveDexTypePalette
 
 	; 新的类型颜色写入 palette 2 后请求下一次 VBlank 更新 BG palette。
 	ld a,[rSVBK]
@@ -847,31 +845,6 @@ MoveDexLoadTypePalette:
 	ld a,b
 	ld [rSVBK],a
 	ret
-
-MoveDexTypePaletteMap:
-	db PAL_GREYMON    ; NORMAL
-	db PAL_BROWNMON   ; FIGHTING
-	db PAL_MEWMON     ; FLYING
-	db PAL_PURPLEMON  ; POISON
-	db PAL_BROWNMON   ; GROUND
-	db PAL_GREYMON    ; ROCK
-	db PAL_GREYMON    ; unused $06
-	db PAL_GREENMON   ; BUG
-	db PAL_PURPLEMON  ; GHOST
-	db PAL_GREYMON    ; STEEL
-	db PAL_GREYMON    ; UNK_TYPE
-	rept 9
-		db PAL_GREYMON ; unused $0b-$13
-	endr
-	db PAL_REDMON     ; FIRE
-	db PAL_BLUEMON    ; WATER
-	db PAL_GREENMON   ; GRASS
-	db PAL_YELLOWMON  ; ELECTRIC
-	db PAL_PINKMON    ; PSYCHIC
-	db PAL_CYANMON    ; ICE
-	db PAL_PURPLEMON  ; DRAGON
-	db PAL_BLACK      ; DARK
-	db PAL_PINKMON    ; FAIRY
 
 MoveDexLoadTypeIcon:
 	add a
