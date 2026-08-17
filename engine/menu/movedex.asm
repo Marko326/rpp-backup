@@ -1,12 +1,15 @@
 ; MoveDex
-; Lists every usable move ID and displays its current battle data.
-; This intentionally has no seen/owned state: the first version is a complete
-; reference for all moves defined by the project.
+; Seen / Use v1：参考 Pokédex 的 Seen / Own 层级重新实现。
+; Seen 表示任意一方在实战中真正执行过该技能；Use 表示玩家方执行过，且 Use 必然同时 Seen。
+; 未 Seen 条目显示虚线，Use 条目显示 Poké Ball；列表上限由最高 Seen 技能动态决定。
 
 ShowMoveDexMenu:
 	call GBPalWhiteOut
 	call ClearScreen
 	call UpdateSprites
+	; 旧存档中的这段空间过去是 unused。magic/version 不匹配时从 0 开始建立新的 Seen/Use。
+	call MoveDexEnsureStateInitialized
+	call MoveDexFindMaxSeenMove
 	ld a,[wListScrollOffset]
 	push af
 	xor a
@@ -77,7 +80,11 @@ HandleMoveDexListMenu:
 	coord hl, 1, 3
 	ld a,[wListScrollOffset]
 	ld [wd11e],a
-	ld d,7
+	; 末页不足 7 项时同步缩小菜单行数；完全没有 Seen 时保留 #001 虚线占位。
+	call MoveDexGetVisibleListCount
+	ld d,a
+	dec a
+	ld [wMaxMenuItem],a
 .printMoveLoop
 	ld a,[wd11e]
 	inc a
@@ -94,11 +101,28 @@ HandleMoveDexListMenu:
 	call PrintNumber
 
 	pop hl
+	; Use 对应 Pokédex 的 Own：在技能名前显示同一枚 Poké Ball tile。
 	push hl
-	call GetMoveName
+	ld a,[wd11e]
+	ld hl,wMoveDexUsed
+	call MoveDexTestMoveFlag
 	pop hl
-	; x=1 留给未来的 Use 标记，技能名固定从 x=2 开始。
-	; PlaceString 会推进 HL，因此额外保存行起点，避免每一项继续向右漂移。
+	ld a," "
+	jr z,.writeUseMarker
+	ld a,$72
+.writeUseMarker
+	ld [hl],a
+
+	; Seen 对应 Pokédex 的 Seen：未见技能只公开编号，名字显示 12 格虚线。
+	push hl
+	ld a,[wd11e]
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
+	pop hl
+	ld de,.dashedMoveName
+	jr z,.placeMoveName
+	call GetMoveName
+.placeMoveName
 	push hl
 	inc hl
 	call PlaceString
@@ -111,6 +135,11 @@ HandleMoveDexListMenu:
 	ld [wd11e],a
 	dec d
 	jr nz,.printMoveLoop
+	jr .listDrawDone
+
+.dashedMoveName
+	db "------------@"
+.listDrawDone
 
 	call PlaceMenuCursor
 	ld a,1
@@ -126,17 +155,29 @@ HandleMoveDexListMenu:
 
 	bit 6,a
 	jr z,.checkDown
-	; Up: scroll one row. A fresh UP at the first entry wraps to the end.
+	; Up: scroll one row. A fresh UP at the first entry wraps to the highest Seen move.
+	ld a,[wMoveDexMaxSeenMove]
+	and a
+	jp z,.stopAtVerticalBoundary
 	ld a,[wListScrollOffset]
 	and a
 	jr nz,.scrollUpOne
 	ld a,[hJoyPressed]
 	bit 6,a
 	jp z,.stopAtVerticalBoundary
-	ld a,NUM_ATTACKS - 1
+	ld a,[wMoveDexMaxSeenMove]
+	cp 7
+	jr c,.wrapUpOnFirstPage
 	sub 7
 	ld [wListScrollOffset],a
 	ld a,6
+	ld [wCurrentMenuItem],a
+	jp .loopAfterBoundaryWrap
+.wrapUpOnFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wMoveDexMaxSeenMove]
+	dec a
 	ld [wCurrentMenuItem],a
 	jp .loopAfterBoundaryWrap
 .scrollUpOne
@@ -147,9 +188,14 @@ HandleMoveDexListMenu:
 .checkDown
 	bit 7,a
 	jr z,.checkRight
-	; Down: scroll one row. A fresh DOWN at the final entry wraps to move 001.
+	; Down: scroll one row. A fresh DOWN at the dynamic highest Seen entry wraps to move 001.
+	ld a,[wMoveDexMaxSeenMove]
+	and a
+	jp z,.stopAtVerticalBoundary
 	call MoveDexGetSelectedMove
-	cp NUM_ATTACKS - 1
+	ld b,a
+	ld a,[wMoveDexMaxSeenMove]
+	cp b
 	jr nz,.scrollDownOne
 	ld a,[hJoyPressed]
 	bit 7,a
@@ -166,12 +212,14 @@ HandleMoveDexListMenu:
 .checkRight
 	bit 4,a
 	jr z,.checkLeft
-	; Right 的语义是“当前选中技能 +7”，不能直接移动 scroll offset。
-	; 先取得绝对技能 ID，靠近尾部时只把目标技能 clamp 到最后一招，
-	; 再由 MoveDexSyncListSelection 反推合法的 scroll offset 与光标行。
+	; Right 的语义仍是“当前选中技能 +7”，只是合法末端改成动态最高 Seen 技能。
+	; 仍然通过 MoveDexSyncListSelection 同步，绝不退回直接修改 scroll offset。
+	ld a,[wMoveDexMaxSeenMove]
+	and a
+	jp z,.loop
 	call MoveDexGetSelectedMove
 	ld b,a
-	ld a,NUM_ATTACKS - 1
+	ld a,[wMoveDexMaxSeenMove]
 	sub b
 	cp 7
 	jr c,.rightClampToLast
@@ -179,7 +227,7 @@ HandleMoveDexListMenu:
 	add 7
 	jr .storeRightTarget
 .rightClampToLast
-	ld a,NUM_ATTACKS - 1
+	ld a,[wMoveDexMaxSeenMove]
 .storeRightTarget
 	ld [wd11e],a
 	call MoveDexSyncListSelection
@@ -188,8 +236,10 @@ HandleMoveDexListMenu:
 .checkLeft
 	bit 5,a
 	jr z,.checkA
-	; Left 同样按“当前选中技能 -7”计算。小于 #008 时只 clamp 到 #001，
-	; 不再把整个列表强制跳到 offset=0,row=0。
+	; Left 同样按“当前选中技能 -7”计算。小于 #008 时只 clamp 到 #001。
+	ld a,[wMoveDexMaxSeenMove]
+	and a
+	jp z,.loop
 	call MoveDexGetSelectedMove
 	cp 8
 	jr c,.leftClampToFirst
@@ -204,6 +254,11 @@ HandleMoveDexListMenu:
 
 .checkA
 	bit 0,a
+	jp z,.loop
+	; 与 Pokédex 一样，未 Seen 的虚线条目不能进入右侧功能菜单。
+	call MoveDexGetSelectedMove
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
 	jp z,.loop
 	scf
 	ret
@@ -221,6 +276,220 @@ HandleMoveDexListMenu:
 	ld a,[hJoyHeld]
 	and D_UP | D_DOWN
 	jr nz,.waitForVerticalRelease
+	ret
+
+; ---------------------------------------------------------------------------
+; MoveDex Seen / Use v1 状态辅助
+; ---------------------------------------------------------------------------
+
+MoveDexEnsureStateInitialized:
+	; "MDX" + version 1。旧存档原本把这片区域当 unused，因此只有 magic/version
+	; 全部匹配时才信任 bitfield；否则清零后从当前游戏进度重新记录。
+	ld a,[wMoveDexStateMagic0]
+	cp $4d ; M
+	jr nz,.reset
+	ld a,[wMoveDexStateMagic1]
+	cp $44 ; D
+	jr nz,.reset
+	ld a,[wMoveDexStateMagic2]
+	cp $58 ; X
+	jr nz,.reset
+	ld a,[wMoveDexStateVersion]
+	cp 1
+	ret z
+.reset
+	ld hl,wMoveDexStateMagic0
+	ld bc,wMoveDexStateEnd - wMoveDexStateMagic0
+	xor a
+	call FillMemory
+	ld a,$4d
+	ld [wMoveDexStateMagic0],a
+	ld a,$44
+	ld [wMoveDexStateMagic1],a
+	ld a,$58
+	ld [wMoveDexStateMagic2],a
+	ld a,1
+	ld [wMoveDexStateVersion],a
+	ret
+
+MoveDexFindMaxSeenMove:
+	; OUTPUT: wMoveDexMaxSeenMove = 0（一个都没见过）或最高 Seen 技能 ID。
+	ld a,NUM_ATTACKS - 1
+.loop
+	ld b,a
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
+	jr nz,.found
+	ld a,b
+	dec a
+	jr nz,.loop
+	xor a
+	ld [wMoveDexMaxSeenMove],a
+	ret
+.found
+	ld a,b
+	ld [wMoveDexMaxSeenMove],a
+	ret
+
+MoveDexGetVisibleListCount:
+	; OUTPUT: A = 当前 scroll offset 下应绘制的行数（1..7）。
+	; 完全没有 Seen 时仍保留 #001 虚线占位，因此返回 1。
+	ld a,[wMoveDexMaxSeenMove]
+	and a
+	jr nz,.hasSeen
+	inc a
+	ret
+.hasSeen
+	ld b,a
+	ld a,[wListScrollOffset]
+	ld c,a
+	ld a,b
+	sub c
+	cp 7
+	ret c
+	ld a,7
+	ret
+
+MoveDexRecordPlayerMove:
+	; 玩家真正进入技能执行流程：Use + Seen。
+	call MoveDexEnsureStateInitialized
+	ld a,[wPlayerMoveNum]
+	push af
+	ld hl,wMoveDexSeen
+	call MoveDexSetMoveFlag
+	pop af
+	ld hl,wMoveDexUsed
+	jp MoveDexSetMoveFlag
+
+MoveDexRecordEnemyMove:
+	; 敌方真正进入技能执行流程：只 Seen。
+	call MoveDexEnsureStateInitialized
+	ld a,[wEnemyMoveNum]
+	ld hl,wMoveDexSeen
+	jp MoveDexSetMoveFlag
+
+MoveDexIsCurrentMoveUsed:
+	ld a,[wd11e]
+	ld hl,wMoveDexUsed
+	jp MoveDexTestMoveFlag
+
+MoveDexFindPreviousSeenMove:
+	; INPUT: A = 当前技能 ID
+	; OUTPUT: carry set + A = 前一个 Seen；没有则 carry clear。
+	cp 1
+	jr z,.none
+.loop
+	dec a
+	ld b,a
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
+	ld a,b
+	jr nz,.found
+	cp 1
+	jr nz,.loop
+.none
+	and a
+	ret
+.found
+	scf
+	ret
+
+MoveDexFindNextSeenMove:
+	; INPUT: A = 当前技能 ID
+	; OUTPUT: carry set + A = 后一个 Seen；没有则 carry clear。
+.loop
+	inc a
+	ld b,a
+	ld a,[wMoveDexMaxSeenMove]
+	cp b
+	jr c,.none
+	ld a,b
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
+	ld a,b
+	jr z,.loop
+	scf
+	ret
+.none
+	ld a,b
+	and a
+	ret
+
+MoveDexSetMoveFlag:
+	; INPUT: A = move ID (1..253), HL = 32-byte bitfield。
+	; 非法/0 move（例如某些战斗内部占位）直接忽略。
+	and a
+	ret z
+	cp NUM_ATTACKS
+	ret nc
+	push bc
+	push de
+	push hl
+	dec a
+	ld c,a
+	and 7
+	ld e,a
+	ld a,c
+	srl a
+	srl a
+	srl a
+	ld c,a
+	ld b,0
+	add hl,bc
+	ld a,e
+	and a
+	ld a,1
+	jr z,.shifted
+.shift
+	sla a
+	dec e
+	jr nz,.shift
+.shifted
+	or [hl]
+	ld [hl],a
+	pop hl
+	pop de
+	pop bc
+	ret
+
+MoveDexTestMoveFlag:
+	; INPUT: A = move ID (1..253), HL = bitfield。
+	; OUTPUT: Z set = 未记录，Z clear = 已记录。BC/DE/HL 保持。
+	and a
+	jr z,.notSet
+	cp NUM_ATTACKS
+	jr nc,.notSet
+	push bc
+	push de
+	push hl
+	dec a
+	ld c,a
+	and 7
+	ld e,a
+	ld a,c
+	srl a
+	srl a
+	srl a
+	ld c,a
+	ld b,0
+	add hl,bc
+	ld a,e
+	and a
+	ld a,1
+	jr z,.shifted
+.shift
+	sla a
+	dec e
+	jr nz,.shift
+.shifted
+	and [hl]
+	pop hl
+	pop de
+	pop bc
+	and a
+	ret
+.notSet
+	xor a
 	ret
 
 MoveDexGetSelectedMove:
@@ -268,23 +537,26 @@ MoveDexDrawStaticListUI:
 	ld de,MoveDexContentsText
 	call PlaceString
 
-	; Seen / Use 的记录系统留到下一阶段；这里先用最大技能数量占位，
-	; 让版式、位数和未来真实统计完全一致。
-	ld a,NUM_ATTACKS - 1
-	ld [wBuffer],a
+	; Seen / Use 直接统计两个 32-byte bitfield，显示方式与 Pokédex Seen / Own 一致。
+	ld hl,wMoveDexSeen
+	ld b,wMoveDexSeenEnd - wMoveDexSeen
+	call CountSetBits
 	coord hl, 16, 2
 	ld de,MoveDexSeenText
 	call PlaceString
 	coord hl, 16, 3
-	ld de,wBuffer
+	ld de,wNumSetBits
 	lb bc, 1, 3
 	call PrintNumber
 
+	ld hl,wMoveDexUsed
+	ld b,wMoveDexUsedEnd - wMoveDexUsed
+	call CountSetBits
 	coord hl, 16, 5
 	ld de,MoveDexUseText
 	call PlaceString
 	coord hl, 16, 6
-	ld de,wBuffer
+	ld de,wNumSetBits
 	lb bc, 1, 3
 	call PrintNumber
 
@@ -310,6 +582,11 @@ HandleMoveDexSideMenu:
 	ld [wd11e],a
 	ld a,[wd11e]
 	push af
+	; 保险检查：即使未来别的入口直接调用右侧菜单，未 Seen 条目仍不能公开资料。
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
+	ld b,2
+	jr z,.exitSideMenu
 
 	ld hl,wTopMenuItemY
 	ld a,10
@@ -507,18 +784,17 @@ ShowMoveDexData:
 	ret
 
 .previousMove
+	; 详情页只在 Seen 技能之间移动，避免左右键泄露虚线条目的名字/资料。
 	ld a,[wd11e]
-	cp 1
-	jp z,.inputLoop
-	dec a
+	call MoveDexFindPreviousSeenMove
+	jp nc,.inputLoop
 	ld [wd11e],a
 	jr .redrawMove
 
 .nextMove
 	ld a,[wd11e]
-	cp NUM_ATTACKS - 1
-	jp z,.inputLoop
-	inc a
+	call MoveDexFindNextSeenMove
+	jp nc,.inputLoop
 	ld [wd11e],a
 
 .redrawMove
@@ -654,6 +930,11 @@ MoveDexDrawMoveData:
 	call PlaceString
 	call MoveDexDrawDamageClass
 
+	; Use 对应 Pokédex 的 Own：Seen-only 只公开身份层（名字/编号/类型/分类），
+	; Power / PP / Accuracy / HiCrit / 完整说明在玩家实际使用过后解锁。
+	call MoveDexIsCurrentMoveUsed
+	jp z,.drawNavigationOnly
+
 	; Power。
 	coord hl, 7, 6
 	ld de,wBuffer + 2
@@ -689,6 +970,7 @@ MoveDexDrawMoveData:
 	; 最后明确写当前 RPP 实际使用的战斗效果。
 	call MoveDexDrawDescription
 
+.drawNavigationOnly
 	jp MoveDexDrawBottomNavigation
 
 MoveDexClearDynamicData:
@@ -761,8 +1043,8 @@ MoveDexDrawBottomNavigation:
 	call MoveDexDrawTileLine
 
 	ld a,[wd11e]
-	cp 1
-	jr z,.noPrevious
+	call MoveDexFindPreviousSeenMove
+	jr nc,.noPrevious
 	coord hl, 1, 17
 	ld a,$c4
 	ld [hli],a
@@ -786,8 +1068,8 @@ MoveDexDrawBottomNavigation:
 
 .nextButton
 	ld a,[wd11e]
-	cp NUM_ATTACKS - 1
-	jr z,.noNext
+	call MoveDexFindNextSeenMove
+	jr nc,.noNext
 	coord hl, 16, 17
 	ld a,$c7
 	ld [hli],a
@@ -1029,6 +1311,12 @@ MoveDexGetDescriptionPagePointer:
 	ret
 
 MoveDexDescriptionHasNextPage:
+	; Seen-only 条目不显示说明页，也不显示/推进分页箭头。
+	call MoveDexIsCurrentMoveUsed
+	jr nz,.used
+	and a ; carry clear
+	ret
+.used
 	; 下一页指针也从对应说明 bank 读取；0 指针仍表示 page-list 结束。
 	call MoveDexFindDescriptionEntry
 	ret nc

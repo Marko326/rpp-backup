@@ -3270,6 +3270,9 @@ ExecutePlayerMove:
 	jp z, ExecutePlayerMoveDone
 
 CheckIfPlayerNeedsToChargeUp:
+	; MoveDex Seen/Use：到达这里说明状态/服从检查已经允许本次技能真正执行。
+	; Metronome / Mirror Move 重载技能后也会重新回到这里，因此原招和实际调用招都会记录。
+	callba MoveDexRecordPlayerMove
 	ld a, [wPlayerMoveEffect]
 	cp CHARGE_EFFECT
 	jp z, JumpMoveEffect
@@ -5840,6 +5843,9 @@ ExecuteEnemyMove:
 	call GetCurrentMove
 
 CheckIfEnemyNeedsToChargeUp:
+	; 敌方技能只记 Seen；无法行动的状态分支不会到达这里。
+	; Metronome / Mirror Move 的实际调用招会在回跳后再次记录。
+	callba MoveDexRecordEnemyMove
 	ld a, [wEnemyMoveEffect]
 	cp CHARGE_EFFECT
 	jp z, JumpMoveEffect

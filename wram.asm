@@ -923,6 +923,10 @@ wBoxMonCounts:: ; cd3d
 
 wDexMaxSeenMon:: ; cd3d
 
+; MoveDex 打开期间复用同一个临时字节保存“最高已见技能编号”。
+; Pokédex 与 MoveDex 不会同时运行，因此不新增 WRAM 占用。
+wMoveDexMaxSeenMove:: ; cd3d
+
 wPPRestoreItem:: ; cd3d
 
 wWereAnyMonsAsleep:: ; cd3d
@@ -2645,8 +2649,20 @@ wDestinationWarpID:: ; d42f
 ; if $ff, the player's coordinates are not updated when entering the map
 	ds 1
 
-; unused?
-	ds 128
+; 这 128 bytes 原本明确标为 unused，并且位于 wMainData 内，会随主存档一起保存/校验。
+; MoveDex Seen/Use 只复用其中前 68 bytes，不改变后续任何 WRAM/SRAM 地址。
+wMoveDexStateMagic0:: ds 1
+wMoveDexStateMagic1:: ds 1
+wMoveDexStateMagic2:: ds 1
+wMoveDexStateVersion:: ds 1
+wMoveDexSeen::
+	flag_array NUM_ATTACKS - 1
+wMoveDexSeenEnd::
+wMoveDexUsed::
+	flag_array NUM_ATTACKS - 1
+wMoveDexUsedEnd::
+wMoveDexStateEnd::
+	ds 60 ; 保持原 unused 区总长度仍为 128 bytes
 
 wNumSigns:: ; d4b0
 ; number of signs in the current map (up to 16)
