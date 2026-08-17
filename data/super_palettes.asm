@@ -272,8 +272,9 @@ MoveDexTypePaletteTable:
 	RGB 16,16,18
 
 ; $0A UNK_TYPE
-	RGB 21,21,21
-	RGB 12,12,12
+	; RPP 的 Struggle 使用 UNK_TYPE；与 $06 TYPELESS 共用 PureRGB 配色。
+	RGB 18,24,22
+	RGB 21,14,9
 
 ; $0B unused
 	RGB 21,21,21
