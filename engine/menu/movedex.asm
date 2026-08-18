@@ -871,10 +871,11 @@ MoveDexLoadDataUITiles:
 	jp CopyVideoDataDouble
 
 MoveDexRestoreFontTiles:
-	; $C0-$D9 共 26 个 tile，对应 FontGraphics 中从第 $40 个字符开始的区域。
+	; 详情页额外用 $DA-$DD 四格拼接小字来源标签，因此离开时连同
+	; 原来的 $C0-$D9 一起恢复；$C0-$DD 共 30 个字体 tile。
 	ld de,FontGraphics + $200
 	ld hl,vChars1 + $400
-	lb bc, BANK(FontGraphics), $1a
+	lb bc, BANK(FontGraphics), $1e
 	jp CopyVideoDataDouble
 
 MoveDexLoadMoveData:
@@ -980,6 +981,10 @@ MoveDexDrawMoveData:
 	call PlaceString
 	call MoveDexDrawDamageClass
 
+	; TM / HM / Tutor 属于技能的获取提示，Seen 后立即公开。
+	; 这样玩家在数值/说明尚未 Use 解锁时，也能知道一种可能的收集途径。
+	call MoveDexDrawLearnSource
+
 	; Use 对应 Pokédex 的 Own：Seen-only 只公开身份层（名字/编号/类型/分类），
 	; Power / PP / Accuracy / HiCrit / 完整说明在玩家实际使用过后解锁。
 	call MoveDexIsCurrentMoveUsed
@@ -1071,6 +1076,11 @@ MoveDexClearDynamicData:
 	call ClearScreenArea
 	coord hl, 13, 8
 	lb bc, 1, 6
+	call ClearScreenArea
+	; 小字来源标签固定在伤害分类黑框正下方（x=15..18, y=4）。
+	; 四格始终整体清除，确保 TM/HM/TUTOR 切换时没有残留或位移感。
+	coord hl, 15, 4
+	lb bc, 1, 4
 	call ClearScreenArea
 	coord hl, 1, 11
 	lb bc, 5, 18
@@ -1313,6 +1323,218 @@ MoveDexUnknown2Text:
 	db "??@"
 MoveDexUnknown3Text:
 	db "???@"
+MoveDexDrawLearnSource:
+	; GetMoveDexLearnSource 返回 H=TM/HM 编号（1..55），L=Tutor 标记。
+	; TM/HM 仍优先于 Tutor；Surf 等多来源技能只显示主要 HM 来源。
+	;
+	; 不再预存 TM01..TM50/HM01..HM05 的 56 张重复标签。
+	; ROM 只保存 A-Z/0-9 一套 8x8 小字模，进入详情时动态合成 32x8 badge。
+	callba GetMoveDexLearnSource
+	ld a,h
+	and a
+	jr nz,.numberedSource
+
+	ld a,l
+	and a
+	ret z
+
+	; Tutor-only：沿用旧版紧凑字距，锚点为 4/8/12/16/20。
+	call MoveDexClearLearnSourceBuffer
+	ld a,19 ; T
+	ld c,4
+	call MoveDexBlitSmallGlyph
+	ld a,20 ; U
+	ld c,8
+	call MoveDexBlitSmallGlyph
+	ld a,19 ; T
+	ld c,12
+	call MoveDexBlitSmallGlyph
+	ld a,14 ; O
+	ld c,16
+	call MoveDexBlitSmallGlyph
+	ld a,17 ; R
+	ld c,20
+	call MoveDexBlitSmallGlyph
+	jr .upload
+
+.numberedSource
+	; H=1..50 -> TM01..TM50；H=51..55 -> HM01..HM05。
+	; 按旧版预生成 PNG 的像素位置排版：TM/HM 字母锚点为 4/9，
+	; 两位编号为 16/20；与旧版截图逐像素保持一致。
+	; 注意 ClearLearnSourceBuffer 会 xor a，因此必须先保存来源编号；
+	; 否则编号会被清成 0，所有 TM/HM 都会错误显示成 TM00。
+	push af
+	call MoveDexClearLearnSourceBuffer
+	pop af
+	cp 51
+	jr c,.tmSource
+	sub 50
+	push af ; 保存 HM 编号 1..5
+	ld a,7 ; H
+	ld c,4
+	call MoveDexBlitSmallGlyph
+	ld a,12 ; M
+	ld c,9
+	call MoveDexBlitSmallGlyph
+	pop af
+	jr .drawNumber
+
+.tmSource
+	push af ; 保存 TM 编号 1..50
+	ld a,19 ; T
+	ld c,4
+	call MoveDexBlitSmallGlyph
+	ld a,12 ; M
+	ld c,9
+	call MoveDexBlitSmallGlyph
+	pop af
+
+.drawNumber
+	; A=1..50。始终显示两位数（01..50），并使用同一套数字字模。
+	ld b,0
+.tensLoop
+	cp 10
+	jr c,.digitsReady
+	sub 10
+	inc b
+	jr .tensLoop
+.digitsReady
+	push af ; ones
+	ld a,b
+	add 26 ; glyph 26..35 = 0..9
+	ld c,16
+	call MoveDexBlitSmallGlyph
+	pop af
+	add 26
+	ld c,20
+	call MoveDexBlitSmallGlyph
+
+.upload
+	; 动态合成结果固定为 32x8（4 个 1bpp tile）。只上传当前技能需要的
+	; 四格，而不是从 ROM 复制一整套预生成标签。
+	ld de,wMoveDexLearnSourceBuffer
+	ld hl,vChars1 + $5a0 ; tile $DA-$DD
+	ld b,BANK(MoveDexLearnSourceFont)
+	ld c,4
+	call CopyVideoDataDouble
+
+	; 与 Physical/Special/Status 黑框同列、正下方：x=15..18, y=4。
+	coord hl, 15, 4
+	ld a,$da
+	ld [hli],a
+	inc a
+	ld [hli],a
+	inc a
+	ld [hli],a
+	inc a
+	ld [hl],a
+	ret
+
+MoveDexClearLearnSourceBuffer:
+	ld hl,wMoveDexLearnSourceBuffer
+	xor a
+	ld b,32
+.loop
+	ld [hli],a
+	dec b
+	jr nz,.loop
+	ret
+
+; 小字模 PNG 在构建时转换成连续 8x8 1bpp tiles：
+; A-Z = 0..25，0-9 = 26..35。
+; INPUT: A = glyph index
+; OUTPUT: DE = glyph 1bpp pointer
+MoveDexGetSmallGlyphPointer:
+	ld hl,MoveDexLearnSourceFont
+	ld bc,8
+	call AddNTimes
+	ld d,h
+	ld e,l
+	ret
+
+; INPUT: A = glyph index, C = x pixel anchor (0..31)
+; 运行时把 glyph OR 到 32x8 临时 1bpp buffer。由于 x 可以不是 8 的倍数，
+; 跨 tile 的像素会自动拆到相邻 tile；因此 TM/HM/TUTOR 可以使用紧凑的 5px
+; 字距，同时保持首字母、数字末位与 TUTOR 的固定视觉锚点。
+MoveDexBlitSmallGlyph:
+	ld b,a ; 暂存 glyph index
+
+	; 保存右移/左移量。x&7=0 时 glyph 正好落在 tile 边界，不产生跨 tile。
+	ld a,c
+	and 7
+	ld [wMoveDexSmallFontShift],a
+	ld d,a
+	ld a,8
+	sub d
+	ld [wMoveDexSmallFontLeftShift],a
+
+	; 先算目标 tile：32px buffer 为 4 个连续 8-byte 1bpp tile，
+	; (x & $18) 正好等于目标 tile 的 byte offset（0/8/16/24）。
+	ld a,c
+	and $18
+	ld hl,wMoveDexLearnSourceBuffer
+	add l
+	ld l,a
+	jr nc,.destReady
+	inc h
+.destReady
+	push hl
+
+	ld a,b
+	call MoveDexGetSmallGlyphPointer
+	pop hl
+
+	ld c,8 ; 8 scanlines
+.rowLoop
+	ld a,[de]
+	inc de
+	ld b,a
+	ld a,[wMoveDexSmallFontShift]
+	and a
+	jr z,.aligned
+
+	; 当前 tile = glyph >> shift。
+	push bc
+	ld c,a
+	ld a,b
+.rightShift
+	srl a
+	dec c
+	jr nz,.rightShift
+	or [hl]
+	ld [hl],a
+	pop bc
+
+	; 下一 tile = glyph << (8-shift)。
+	push bc
+	ld a,[wMoveDexSmallFontLeftShift]
+	ld c,a
+	ld a,b
+.leftShift
+	sla a
+	dec c
+	jr nz,.leftShift
+	pop bc
+	push hl
+	push de
+	ld de,8
+	add hl,de
+	pop de
+	or [hl]
+	ld [hl],a
+	pop hl
+	jr .nextRow
+
+.aligned
+	ld a,b
+	or [hl]
+	ld [hl],a
+
+.nextRow
+	inc hl
+	dec c
+	jr nz,.rowLoop
+	ret
 
 MoveDexDrawDescription:
 	; MoveDex 本地说明分页，不修改全局文本引擎。
@@ -1538,6 +1760,13 @@ MoveDexTypePointers:
 MoveDexUI:
 	INCBIN "gfx/movedex/movedex_ui.1bpp"
 MoveDexUIEnd:
+
+; MoveDex 小型 UI 字模：A-Z + 0-9，共 36 个 8x8 1bpp glyph。
+; 仓库只保存 learn_source_font.png；.1bpp 由通用 Makefile 规则生成，
+; make clean 会删除生成物。TM/HM/TUTOR 标签在运行时由这些 glyph 动态合成。
+MoveDexLearnSourceFont:
+	INCBIN "gfx/movedex/learn_source_font.1bpp"
+MoveDexLearnSourceFontEnd:
 
 MoveDexNormalTypeIcon:   INCBIN "gfx/movedex/type_icons/normal.2bpp"
 MoveDexFightingTypeIcon: INCBIN "gfx/movedex/type_icons/fighting.2bpp"

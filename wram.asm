@@ -2650,7 +2650,8 @@ wDestinationWarpID:: ; d42f
 	ds 1
 
 ; 这 128 bytes 原本明确标为 unused，并且位于 wMainData 内，会随主存档一起保存/校验。
-; MoveDex Seen/Use 只复用其中前 68 bytes，不改变后续任何 WRAM/SRAM 地址。
+; MoveDex Seen/Use 使用前 68 bytes；随后 32 bytes 作为详情页临时小字合成缓冲。
+; 总长度仍严格保持 128 bytes，不改变后续任何 WRAM/SRAM 地址。
 wMoveDexStateMagic0:: ds 1
 wMoveDexStateMagic1:: ds 1
 wMoveDexStateMagic2:: ds 1
@@ -2662,7 +2663,13 @@ wMoveDexUsed::
 	flag_array NUM_ATTACKS - 1
 wMoveDexUsedEnd::
 wMoveDexStateEnd::
-	ds 60 ; 保持原 unused 区总长度仍为 128 bytes
+; MoveDex 详情页小字标签的 32-byte 临时 1bpp 合成缓冲。
+; 复用原 128-byte saved-unused 区剩余空间，不改变后续 WRAM/SRAM 地址。
+wMoveDexLearnSourceBuffer::
+	ds 32
+wMoveDexSmallFontShift:: ds 1
+wMoveDexSmallFontLeftShift:: ds 1
+	ds 26 ; 保持原 unused 区总长度仍为 128 bytes
 
 wNumSigns:: ; d4b0
 ; number of signs in the current map (up to 16)

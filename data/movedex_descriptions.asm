@@ -694,7 +694,7 @@ MoveDexDescHydroPump1:
 
 ; #057 Surf
 MoveDexDescSurfPages:
-	dw MoveDexDescSurf1, MoveDexDescSurfFieldUse, 0
+	dw MoveDexDescSurf1, MoveDexDescSurfFieldUse, MoveDexDescSurfTutor, 0
 MoveDexDescSurf1:
 	db   "A powerful wave"
 	next "swamps the foe.@"
@@ -702,6 +702,10 @@ MoveDexDescSurfFieldUse:
 	db   "Field Use:"
 	next "Allows travel"
 	next "across water.@"
+MoveDexDescSurfTutor:
+	db   "Pikachu can learn"
+	next "this move from a"
+	next "tutor.@"
 
 ; #058 Ice Beam
 MoveDexDescIceBeamPages:
