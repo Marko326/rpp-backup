@@ -2692,6 +2692,9 @@ INCLUDE "engine/overworld/headbutt.asm"
 INCLUDE "engine/sliding_tile_puzzle.asm"
 INCLUDE "engine/overworld/bike_shortcut.asm"
 
+; Phase-1 dedicated recipes for representative expanded moves.
+INCLUDE "data/extended_move_animations.asm"
+
 SECTION "Trainer Parties", ROMX,BANK[$3B]
 INCLUDE "engine/battle/read_trainer_party.asm"
 INCLUDE "engine/overworld/advance_player_sprite.asm"

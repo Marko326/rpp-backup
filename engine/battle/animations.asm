@@ -142,9 +142,13 @@ DrawFrameBlock:
 	jr z,.advanceFrameBlockDestAddr ; skip cleaning OAM buffer
 	cp a,4
 	jr z,.done ; skip cleaning OAM buffer and don't advance the frame block destination address
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.cleanOAM
 	ld a,[wAnimationID]
 	cp a,GROWL
 	jr z,.resetFrameBlockDestAddr
+.cleanOAM
 	call AnimationCleanOAM
 .resetFrameBlockDestAddr
 	ld hl,wOAMBuffer ; OAM buffer
@@ -165,7 +169,11 @@ PlayAnimation:
 	xor a
 	ld [$FF8B],a ; it looks like nothing reads this
 	ld [wSubAnimTransform],a
-	ld a,[wAnimationID] ; get animation number
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ld hl,wBuffer
+	jr nz,.animationLoop ; dedicated recipe staged by PrepareCurrentMoveAnimation
+	ld a,[wAnimationID] ; get legacy animation number
 	dec a
 	ld l,a
 	ld h,0
@@ -443,7 +451,11 @@ MoveAnimation:
 	ret
 
 ShareMoveAnimations:
-; some moves just reuse animations from status conditions
+; Some legacy moves reuse animations from status conditions. Dedicated recipes
+; were already selected by real move ID, so never remap them through the alias.
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ret nz
 	ld a,[H_WHOSETURN]
 	and a
 	ret z
@@ -658,6 +670,9 @@ DoSpecialEffectByAnimationId:
 	push hl
 	push de
 	push bc
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.done ; do not inherit frame effects from a compatibility alias
 	ld a,[wAnimationID]
 	ld hl,AnimationIdSpecialEffects
 	ld de,3
@@ -2384,7 +2399,11 @@ GetMoveSound:
 	ret
 
 IsCryMove:
-; set carry if the move animation involves playing a monster cry
+; set carry if the legacy move animation involves playing a monster cry.
+; Dedicated recipes must not inherit Growl/Roar cry behavior from an alias.
+	ld a,[wMoveAnimScriptLoaded]
+	and a ; also clears carry
+	ret nz
 	ld a,[wAnimationID]
 	cp a,GROWL
 	jr z,.CryMove

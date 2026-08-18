@@ -4816,3 +4816,55 @@ GetCurrentMoveID::
 .enemy
 	ld a, [wEnemySelectedMove]
 	ret
+
+
+; Stage a dedicated animation recipe for the current REAL move ID, if this phase
+; has one. A zero legacy animation ID is still respected because several callers
+; temporarily clear MoveNum to suppress animation.
+PrepareCurrentMoveAnimation::
+	xor a
+	ld [wMoveAnimScriptLoaded], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	call GetCurrentMoveID
+	cp METAL_CLAW
+	ret c
+	cp NUM_ATTACKS
+	ret nc
+	ld e, a ; callab clobbers BC but preserves DE
+	callab LoadExtendedMoveAnimation
+	ret
+
+; Keep these wrappers in ROM0 so bank-$0E callers that enter the bank-$0F public
+; stubs through BankswitchEtoF keep the expected bank active.
+PlayCurrentMoveAnimation2Home::
+	call PrepareCurrentMoveAnimation
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	jp PlayBattleAnimation2
+
+PlayCurrentMoveAnimationHome::
+	call PrepareCurrentMoveAnimation
+	xor a
+	ld [wAnimationType], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	jp PlayBattleAnimation

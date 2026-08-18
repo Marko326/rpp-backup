@@ -2010,6 +2010,9 @@ wTownMapSpriteBlinkingEnabled:: ; d09b
 ; non-zero when enabled. causes nest locations to blink on and off.
 ; the town selection cursor will blink regardless of what this value is
 
+; Battle-only alias: non-zero while a dedicated expanded-move recipe is staged
+; in wBuffer. MoveAnimation clears the same byte on every exit.
+wMoveAnimScriptLoaded:: ; d09b
 wUnusedD09B:: ; d09b
 	ds 1
 
