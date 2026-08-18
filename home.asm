@@ -4799,3 +4799,20 @@ DelayFrameHook:
 	pop de
 	pop bc
 	ret
+
+; Return the real move ID for the side whose turn it is.
+; wPlayerMoveNum/wEnemyMoveNum are legacy animation IDs copied from the first
+; byte of the move data structure, so callers needing real move identity must not use them.
+GetCurrentMoveID::
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, [wFlags_D733]
+	bit BIT_TEST_BATTLE, a
+	ld a, [wTestBattlePlayerSelectedMove]
+	ret nz
+	ld a, [wPlayerSelectedMove]
+	ret
+.enemy
+	ld a, [wEnemySelectedMove]
+	ret

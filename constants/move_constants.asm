@@ -262,7 +262,8 @@ const_value = STRUGGLE + 1
 ALWAYS_CRIT_MOVE_1 EQU STORM_THROW
 ALWAYS_CRIT_MOVE_2 EQU MIND_BLAST
 
-	; Moves do double duty as animation identifiers.
+	; Original move IDs also serve as legacy animation identifiers. Expanded moves
+	; keep real move identity separate from the compatibility animation byte.
 
 	const SHOWPIC_ANIM
 	const STATUS_AFFECTED_ANIM

@@ -1,12 +1,11 @@
 RecoilEffect_:
 	ld a, [H_WHOSETURN]
 	and a
-	ld a, [wPlayerMoveNum]
 	ld hl, wBattleMonMaxHP
 	jr z, .recoilEffect
-	ld a, [wEnemyMoveNum]
 	ld hl, wEnemyMonMaxHP
 .recoilEffect
+	call GetCurrentMoveID
 	ld d, a
 	ld a, [wDamage]
 	ld b, a
