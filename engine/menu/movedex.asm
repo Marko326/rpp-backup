@@ -393,7 +393,8 @@ MoveDexRecordPlayerMove:
 	ld a,[wFlags_D733]
 	bit BIT_TEST_BATTLE,a
 	ret nz
-	; 玩家真正进入技能执行流程：Use + Seen。
+	; 玩家真正进入技能执行流程：至少 Seen。
+	; 直接选择/正常派生执行的技能记 Use；Metronome 随机链中的技能只记 Seen。
 	call MoveDexEnsureStateInitialized
 	; wPlayerMoveNum 是 Moves 表第 1 byte 的兼容动画 ID；
 	; 扩展技能必须按真实 selected move ID 记录。
@@ -401,9 +402,15 @@ MoveDexRecordPlayerMove:
 	push af
 	ld hl,wMoveDexSeen
 	call MoveDexSetMoveFlag
+	ld a,[wMoveDexPlayerMetronomeDerived]
+	and a
+	jr nz,.seenOnly
 	pop af
 	ld hl,wMoveDexUsed
 	jp MoveDexSetMoveFlag
+.seenOnly
+	pop af
+	ret
 
 MoveDexRecordEnemyMove:
 	; Link Battle / Test Battle 同样不记录敌方技能。

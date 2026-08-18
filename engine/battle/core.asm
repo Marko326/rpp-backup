@@ -3242,6 +3242,9 @@ LinkBattleExchangeData:
 ExecutePlayerMove:
 	xor a
 	ld [H_WHOSETURN], a ; set player's turn
+	; The Metronome-derived marker is only valid within one player action.
+	; Clear it before status/disobedience handling so a previous turn can never leak.
+	ld [wMoveDexPlayerMetronomeDerived], a
 	ld a, [wPlayerSelectedMove]
 	inc a
 	jp z, ExecutePlayerMoveDone ; for selected move = FF, skip most of player's turn
@@ -3271,7 +3274,7 @@ ExecutePlayerMove:
 
 CheckIfPlayerNeedsToChargeUp:
 	; MoveDex Seen/Use：到达这里说明状态/服从检查已经允许本次技能真正执行。
-	; Metronome / Mirror Move 重载技能后也会重新回到这里，因此原招和实际调用招都会记录。
+	; Mirror Move 派生招仍按实际执行记 Use；Metronome 随机链由瞬时标志降为 Seen only。
 	callba MoveDexRecordPlayerMove
 	ld a, [wPlayerMoveEffect]
 	cp CHARGE_EFFECT
@@ -3389,6 +3392,10 @@ MirrorMoveCheck:
 	cp a,METRONOME_EFFECT
 	jr nz,.next
 	call MetronomePickMove
+	; The chosen move (and anything it invokes, e.g. Mirror Move) was generated
+	; by Metronome, so MoveDex must only mark it Seen, never Use.
+	ld a,1
+	ld [wMoveDexPlayerMetronomeDerived],a
 	jp CheckIfPlayerNeedsToChargeUp ; Go back to damage calculation for the move picked by Metronome
 .next
 	ld a,[wPlayerMoveEffect]
