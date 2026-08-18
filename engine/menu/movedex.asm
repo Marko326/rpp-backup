@@ -12,6 +12,21 @@ ShowMoveDexMenu:
 	call MoveDexFindMaxSeenMove
 	ld a,[wListScrollOffset]
 	push af
+	; 默认打开时直接定位到最低编号的 Seen 技能，并把它放在列表第一行。
+	; 如果一个技能都没见过，则继续保留原来的 #001 虚线占位。
+	call MoveDexFindMinSeenMove
+	and a
+	jr z,.openAtFirstMove
+	ld [wd11e],a
+	dec a
+	ld [wListScrollOffset],a
+	xor a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	inc a
+	ld [hJoy7],a
+	jp .setUpGraphics ; Info 返回后重新加载列表图块与静态界面
+.openAtFirstMove
 	xor a
 	ld [wCurrentMenuItem],a
 	ld [wListScrollOffset],a
@@ -310,6 +325,26 @@ MoveDexEnsureStateInitialized:
 	ld [wMoveDexStateMagic2],a
 	ld a,1
 	ld [wMoveDexStateVersion],a
+	ret
+
+MoveDexFindMinSeenMove:
+	; OUTPUT: A = 0（一个都没见过）或最低编号的 Seen 技能 ID。
+	ld a,1
+.loop
+	ld b,a
+	ld hl,wMoveDexSeen
+	call MoveDexTestMoveFlag
+	jr nz,.found
+	ld a,b
+	cp NUM_ATTACKS - 1
+	jr z,.noneSeen
+	inc a
+	jr .loop
+.found
+	ld a,b
+	ret
+.noneSeen
+	xor a
 	ret
 
 MoveDexFindMaxSeenMove:
