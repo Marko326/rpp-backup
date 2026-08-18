@@ -360,7 +360,9 @@ MoveDexRecordPlayerMove:
 	ret nz
 	; 玩家真正进入技能执行流程：Use + Seen。
 	call MoveDexEnsureStateInitialized
-	ld a,[wPlayerMoveNum]
+	; wPlayerMoveNum 是 Moves 表第 1 byte 的兼容动画 ID；
+	; 扩展技能必须按真实 selected move ID 记录。
+	ld a,[wPlayerSelectedMove]
 	push af
 	ld hl,wMoveDexSeen
 	call MoveDexSetMoveFlag
@@ -378,7 +380,8 @@ MoveDexRecordEnemyMove:
 	ret nz
 	; 敌方真正进入技能执行流程：只 Seen。
 	call MoveDexEnsureStateInitialized
-	ld a,[wEnemyMoveNum]
+	; 敌方同样使用真实技能 ID，避免 Gunk Shot 等被记成兼容动画技能。
+	ld a,[wEnemySelectedMove]
 	ld hl,wMoveDexSeen
 	jp MoveDexSetMoveFlag
 
