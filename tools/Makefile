@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-CC := gcc
+CC ?= cc
 CFLAGS := -O3 -std=c99 -Wall -Wextra -pedantic
 
 tools := scan_includes gfx pkmncompress

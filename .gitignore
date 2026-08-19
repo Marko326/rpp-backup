@@ -7,6 +7,9 @@
 # no binaries
 *.exe
 
+# no zip
+*.zip
+
 # roms
 *.gbc
 *.gb
@@ -29,6 +32,7 @@
 *.sgm
 *.sav
 *.sys
+*.rtc
 
 # for vim configuration
 # url: http://www.vim.org/scripts/script.php?script_id=441
@@ -40,6 +44,11 @@ GlitchMap/data.js
 # ignore .map files in main folder
 pokered.map
 pokeblue.map
+patches/rppblue.map
+patches/rppred.map
 
 # ignore local rgbds
 rgbds/*
+
+# ignore sync files
+.verysync/

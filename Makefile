@@ -1,8 +1,12 @@
-ifneq ($(wildcard rgbds/.*),)
-RGBDS_DIR = rgbds/
-else
-RGBDS_DIR =
-endif
+# RGBDS tools. By default they are resolved from PATH.
+# To use a project-local RGBDS version, run for example:
+#   make RGBDS=rgbds-0.5.2/
+# Individual tools can also be overridden explicitly.
+RGBDS ?=
+RGBASM ?= $(RGBDS)rgbasm
+RGBLINK ?= $(RGBDS)rgblink
+RGBFIX ?= $(RGBDS)rgbfix
+RGBGFX ?= $(RGBDS)rgbgfx
 
 MD5 := md5sum -c
 
@@ -52,11 +56,11 @@ endif
 
 %_red.o: dep = $(shell tools/scan_includes $(@D)/$*.asm)
 $(pokered_obj): %_red.o: %.asm $$(dep)
-	$(RGBDS_DIR)rgbasm -D _RED -h -o $@ $*.asm
+	$(RGBASM) -D _RED -h -o $@ $*.asm
 
 %_blue.o: dep = $(shell tools/scan_includes $(@D)/$*.asm)
 $(pokeblue_obj): %_blue.o: %.asm $$(dep)
-	$(RGBDS_DIR)rgbasm -D _BLUE -h -o $@ $*.asm
+	$(RGBASM) -D _BLUE -h -o $@ $*.asm
 
 pokered_opt  = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
 pokeblue_opt = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
@@ -70,13 +74,13 @@ patches:
 	mkdir -p $@
 
 patches/%.gbc: $$(%_obj) | patches
-	$(RGBDS_DIR)rgblink -n patches/$*.sym -o $@ $^
-	$(RGBDS_DIR)rgbfix $($*_opt) $@
+	$(RGBLINK) -n patches/$*.sym -o $@ $^
+	$(RGBFIX) $($*_opt) $@
 	sort patches/$*.sym -o patches/$*.sym
 
 patches/%.map: $$(%_obj) | patches
-	$(RGBDS_DIR)rgblink -n patches/$*.sym -m $@ -o patches/$*.gbc $^
-	$(RGBDS_DIR)rgbfix $($*_opt) patches/$*.gbc
+	$(RGBLINK) -n patches/$*.sym -m $@ -o patches/$*.gbc $^
+	$(RGBFIX) $($*_opt) patches/$*.gbc
 	sort patches/$*.sym -o patches/$*.sym
 
 gfx/blue/intro_purin_1.6x6.2bpp: rgbgfx += -h
@@ -93,11 +97,11 @@ gfx/tilesets/%.2bpp: tools/gfx += --trim-whitespace
 %.png: ;
 
 %.2bpp: %.png
-	rgbgfx $(rgbgfx) -o $@ $<
+	$(RGBGFX) $(rgbgfx) -o $@ $<
 	$(if $(tools/gfx),\
 		tools/gfx $(tools/gfx) -o $@ $@)
 %.1bpp: %.png
-	rgbgfx -d1 $(rgbgfx) -o $@ $<
+	$(RGBGFX) -d1 $(rgbgfx) -o $@ $<
 	$(if $(tools/gfx),\
 		tools/gfx $(tools/gfx) -d1 -o $@ $@)
 %.pic:  %.2bpp
