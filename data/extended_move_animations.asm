@@ -2,27 +2,23 @@
 ;
 ; Expanded move data still keeps a legacy animation byte for compatibility.
 ; PrepareCurrentMoveAnimation asks this bank for a dedicated recipe by REAL move
-; ID. If no entry exists yet, the move safely falls back to its legacy animation.
+; ID. Every expanded move from METAL_CLAW through MIND_BLAST now has a recipe.
 ;
 ; Each recipe starts with its byte length (including the $FF terminator). The
 ; command stream itself is copied into the existing 30-byte wBuffer.
 
 LoadExtendedMoveAnimation:
-; input: e = real move ID
-; output: wMoveAnimScriptLoaded = 1 only if a dedicated recipe was found/staged
-; callab/Bankswitch overwrites BC with its return trampoline, so DE carries the
-; argument and is preserved across the bank switch.
-	ld hl, ExtendedMoveAnimationTable
-.search
-	ld a, [hli]
-	and a
-	ret z
-	cp e
-	jr z, .found
-	inc hl
-	inc hl
-	jr .search
-.found
+; input: e = real move ID (range-checked by PrepareCurrentMoveAnimation)
+; output: wMoveAnimScriptLoaded = 1 after the dedicated recipe is staged
+;
+; Expanded move IDs are contiguous, so index a compact pointer table directly.
+	ld a, e
+	sub METAL_CLAW
+	add a
+	ld l, a
+	ld h, 0
+	ld de, ExtendedMoveAnimationPointers
+	add hl, de
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
@@ -39,116 +35,100 @@ LoadExtendedMoveAnimation:
 	ld [wMoveAnimScriptLoaded], a
 	ret
 
-; Sparse table: batches are enabled only after their engine behavior is validated.
-; Batches A6-B8 and B9-D7 are enabled as validated contiguous move-ID ranges.
-ExtendedMoveAnimationTable:
-	db METAL_CLAW
-	dw MetalClawExtAnim
-	db BULLET_PUNCH
-	dw BulletPunchExtAnim
-	db FLASH_CANNON
-	dw FlashCannonExtAnim
-	db IRON_TAIL
-	dw IronTailExtAnim
-	db METEOR_MASH
-	dw MeteorMashExtAnim
-	db CRUNCH
-	dw CrunchExtAnim
-	db DARK_PULSE
-	dw DarkPulseExtAnim
-	db FEINT_ATTACK
-	dw FeintAttackExtAnim
-	db NIGHT_SLASH
-	dw NightSlashExtAnim
-	db MOONBLAST
-	dw MoonblastExtAnim
-	db DRAININGKISS
-	dw DrainingKissExtAnim
-	db DISARM_VOICE
-	dw DisarmingVoiceExtAnim
-	db DAZZLINGLEAM
-	dw DazzlingGleamExtAnim
-	db DRACO_METEOR
-	dw DracoMeteorExtAnim
-	db DRAGONBREATH
-	dw DragonbreathExtAnim
-	db DRAGON_CLAW
-	dw DragonClawExtAnim
-	db DRAGON_PULSE
-	dw DragonPulseExtAnim
-	db TWISTER
-	dw TwisterExtAnim
-	db OUTRAGE
-	dw OutrageExtAnim
-	db SHADOW_CLAW
-	dw ShadowClawExtAnim
-	db STEEL_WING
-	dw SteelWingExtAnim
-	db IRON_DEFENSE
-	dw IronDefenseExtAnim
-	db AIR_SLASH
-	dw AirSlashExtAnim
-	db FIRE_FANG
-	dw FireFangExtAnim
-	db FLARE_BLITZ
-	dw FlareBlitzExtAnim
-	db BLAST_BURN
-	dw BlastBurnExtAnim
-	db ICE_FANG
-	dw IceFangExtAnim
-	db THUNDER_FANG
-	dw ThunderFangExtAnim
-	db WATER_PULSE
-	dw WaterPulseExtAnim
-	db AQUA_TAIL
-	dw AquaTailExtAnim
-	db HYDRO_CANNON
-	dw HydroCannonExtAnim
-	db FRENZY_PLANT
-	dw FrenzyPlantExtAnim
-	db SUCKER_PUNCH
-	dw SuckerPunchExtAnim
-	db SHADOW_BALL
-	dw ShadowBallExtAnim
-	db FLAME_WHEEL
-	dw FlameWheelExtAnim
-	db HEALINGLIGHT
-	dw MoonlightExtAnim
-	db HEX
-	dw HexExtAnim
-	db SHADOW_PUNCH
-	dw ShadowPunchExtAnim
-	db AERIAL_ACE
-	dw AerialAceExtAnim
-	db ACROBATICS
-	dw AcrobaticsExtAnim
-	db AIR_CUTTER
-	dw AirCutterExtAnim
-	db ICY_WIND
-	dw IcyWindExtAnim
-	db ICE_SHARD
-	dw IceShardExtAnim
-	db SHEER_COLD
-	dw SheerColdExtAnim
-	db ELECTRO_BALL
-	dw ElectroBallExtAnim
-	db NUZZLE
-	dw NuzzleExtAnim
-	db DISCHARGE
-	dw DischargeExtAnim
-	db VOLT_TACKLE
-	dw VoltTackleExtAnim
-	db MUDDY_WATER
-	dw MuddyWaterExtAnim
-	db WHIRLPOOL
-	dw WhirlpoolExtAnim
-	db GUNK_SHOT
-	dw GunkShotExtAnim
-	db POISON_FANG
-	dw PoisonFangExtAnim
-	db HYPER_VOICE
-	dw HyperVoiceExtAnim
-	db 0
+; Full contiguous table for expanded move IDs $A6-$FD.
+ExtendedMoveAnimationPointers:
+	dw MetalClawExtAnim             ; METAL_CLAW
+	dw BulletPunchExtAnim           ; BULLET_PUNCH
+	dw FlashCannonExtAnim           ; FLASH_CANNON
+	dw IronTailExtAnim              ; IRON_TAIL
+	dw MeteorMashExtAnim            ; METEOR_MASH
+	dw CrunchExtAnim                ; CRUNCH
+	dw DarkPulseExtAnim             ; DARK_PULSE
+	dw FeintAttackExtAnim           ; FEINT_ATTACK
+	dw NightSlashExtAnim            ; NIGHT_SLASH
+	dw MoonblastExtAnim             ; MOONBLAST
+	dw DrainingKissExtAnim          ; DRAININGKISS
+	dw DisarmingVoiceExtAnim        ; DISARM_VOICE
+	dw DazzlingGleamExtAnim         ; DAZZLINGLEAM
+	dw DracoMeteorExtAnim           ; DRACO_METEOR
+	dw DragonbreathExtAnim          ; DRAGONBREATH
+	dw DragonClawExtAnim            ; DRAGON_CLAW
+	dw DragonPulseExtAnim           ; DRAGON_PULSE
+	dw TwisterExtAnim               ; TWISTER
+	dw OutrageExtAnim               ; OUTRAGE
+	dw ShadowClawExtAnim            ; SHADOW_CLAW
+	dw SteelWingExtAnim             ; STEEL_WING
+	dw IronDefenseExtAnim           ; IRON_DEFENSE
+	dw AirSlashExtAnim              ; AIR_SLASH
+	dw FireFangExtAnim              ; FIRE_FANG
+	dw FlareBlitzExtAnim            ; FLARE_BLITZ
+	dw BlastBurnExtAnim             ; BLAST_BURN
+	dw IceFangExtAnim               ; ICE_FANG
+	dw ThunderFangExtAnim           ; THUNDER_FANG
+	dw WaterPulseExtAnim            ; WATER_PULSE
+	dw AquaTailExtAnim              ; AQUA_TAIL
+	dw HydroCannonExtAnim           ; HYDRO_CANNON
+	dw FrenzyPlantExtAnim           ; FRENZY_PLANT
+	dw SuckerPunchExtAnim           ; SUCKER_PUNCH
+	dw ShadowBallExtAnim            ; SHADOW_BALL
+	dw FlameWheelExtAnim            ; FLAME_WHEEL
+	dw MoonlightExtAnim             ; HEALINGLIGHT
+	dw HexExtAnim                   ; HEX
+	dw ShadowPunchExtAnim           ; SHADOW_PUNCH
+	dw AerialAceExtAnim             ; AERIAL_ACE
+	dw AcrobaticsExtAnim            ; ACROBATICS
+	dw AirCutterExtAnim             ; AIR_CUTTER
+	dw IcyWindExtAnim               ; ICY_WIND
+	dw IceShardExtAnim              ; ICE_SHARD
+	dw SheerColdExtAnim             ; SHEER_COLD
+	dw ElectroBallExtAnim           ; ELECTRO_BALL
+	dw NuzzleExtAnim                ; NUZZLE
+	dw DischargeExtAnim             ; DISCHARGE
+	dw VoltTackleExtAnim            ; VOLT_TACKLE
+	dw MuddyWaterExtAnim            ; MUDDY_WATER
+	dw WhirlpoolExtAnim             ; WHIRLPOOL
+	dw GigaDrainExtAnim             ; GIGA_DRAIN
+	dw PetalBlizzardExtAnim         ; PETALBLIZARD
+	dw LeafBladeExtAnim             ; LEAF_BLADE
+	dw WoodHammerExtAnim            ; WOOD_HAMMER
+	dw PoisonJabExtAnim             ; POISON_JAB
+	dw GunkShotExtAnim              ; GUNK_SHOT
+	dw PoisonFangExtAnim            ; POISON_FANG
+	dw SludgeWaveExtAnim            ; SLUDGE_WAVE
+	dw SilverWindExtAnim            ; SILVER_WIND
+	dw BugBuzzExtAnim               ; BUG_BUZZ
+	dw MegahornExtAnim              ; MEGAHORN
+	dw XScissorExtAnim              ; X_SCISSOR
+	dw SignalBeamExtAnim            ; SIGNAL_BEAM
+	dw EarthPowerExtAnim            ; EARTH_POWER
+	dw MudSlapExtAnim               ; MUD_SLAP
+	dw MudBombExtAnim               ; MUD_BOMB
+	dw ExtrasensoryExtAnim          ; EXTRASENSORY
+	dw ZenHeadbuttExtAnim           ; ZEN_HEADBUTT
+	dw PsychoCutExtAnim             ; PSYCHO_CUT
+	dw HyperVoiceExtAnim            ; HYPER_VOICE
+	dw ExtremespeedExtAnim          ; EXTREMESPEED
+	dw GigaImpactExtAnim            ; GIGA_IMPACT
+	dw PowerGemExtAnim              ; POWER_GEM
+	dw RockBlastExtAnim             ; ROCK_BLAST
+	dw RockPolishExtAnim            ; ROCK_POLISH
+	dw RockTombExtAnim              ; ROCK_TOMB
+	dw DynamicpunchExtAnim          ; DYNAMICPUNCH
+	dw StormThrowExtAnim            ; STORM_THROW
+	dw CrossChopExtAnim             ; CROSS_CHOP
+	dw LowSweepExtAnim              ; LOW_SWEEP
+	dw HurricaneExtAnim             ; HURRICANE
+	dw BabydolleyesExtAnim          ; BABYDOLLEYES
+	dw BoneRushExtAnim              ; BONE_RUSH
+	dw AeroblastExtAnim             ; AEROBLAST
+	dw AncientpowerExtAnim          ; ANCIENTPOWER
+	dw DiveExtAnim                  ; DIVE
+	dw LusterPurgeExtAnim           ; LUSTER_PURGE
+	dw MindBlastExtAnim             ; MIND_BLAST
+ExtendedMoveAnimationPointersEnd:
+	IF ExtendedMoveAnimationPointersEnd - ExtendedMoveAnimationPointers != (NUM_ATTACKS - METAL_CLAW) * 2
+		fail "extended move animation pointer table size mismatch"
+	ENDC
 
 MetalClawExtAnim:
 	db MetalClawExtAnimEnd - MetalClawExtAnimData
@@ -874,4 +854,445 @@ HyperVoiceExtAnimData:
 HyperVoiceExtAnimEnd:
 	IF HyperVoiceExtAnimEnd - HyperVoiceExtAnimData > 30
 		fail "Hyper Voice animation recipe exceeds wBuffer"
+	ENDC
+
+GigaDrainExtAnim:
+	db GigaDrainExtAnimEnd - GigaDrainExtAnimData
+GigaDrainExtAnimData:
+	db SE_LEAVES_FALLING,$4A
+	db $06,$FF,$21
+	db $06,$FF,$22
+	db $FF
+GigaDrainExtAnimEnd:
+	IF GigaDrainExtAnimEnd - GigaDrainExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+PetalBlizzardExtAnim:
+	db PetalBlizzardExtAnimEnd - PetalBlizzardExtAnimData
+PetalBlizzardExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$4F
+	db SE_PETALS_FALLING,$FF
+	db $01,$0C,$16
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+PetalBlizzardExtAnimEnd:
+	IF PetalBlizzardExtAnimEnd - PetalBlizzardExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+LeafBladeExtAnim:
+	db LeafBladeExtAnimEnd - LeafBladeExtAnimData
+LeafBladeExtAnimData:
+	db SE_LEAVES_FALLING,$4A
+	db $06,$A2,$0F
+	db $01,$0C,$16
+	db $FF
+LeafBladeExtAnimEnd:
+	IF LeafBladeExtAnimEnd - LeafBladeExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+WoodHammerExtAnim:
+	db WoodHammerExtAnimEnd - WoodHammerExtAnimData
+WoodHammerExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $04,$57,$30
+	db $46,$FF,$05
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+WoodHammerExtAnimEnd:
+	IF WoodHammerExtAnimEnd - WoodHammerExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+PoisonJabExtAnim:
+	db PoisonJabExtAnimEnd - PoisonJabExtAnimData
+PoisonJabExtAnimData:
+	db $06,$27,$00
+	db $46,$04,$04
+	db $46,$7B,$14
+	db $FF
+PoisonJabExtAnimEnd:
+	IF PoisonJabExtAnimEnd - PoisonJabExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SludgeWaveExtAnim:
+	db SludgeWaveExtAnimEnd - SludgeWaveExtAnimData
+SludgeWaveExtAnimData:
+	db SE_DARKEN_MON_PALETTE,$48
+	db $46,$7B,$13
+	db SE_WAVY_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+SludgeWaveExtAnimEnd:
+	IF SludgeWaveExtAnimEnd - SludgeWaveExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SilverWindExtAnim:
+	db SilverWindExtAnimEnd - SilverWindExtAnimData
+SilverWindExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $46,$0F,$10
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+SilverWindExtAnimEnd:
+	IF SilverWindExtAnimEnd - SilverWindExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BugBuzzExtAnim:
+	db BugBuzzExtAnimEnd - BugBuzzExtAnimData
+BugBuzzExtAnimData:
+	db $06,$2F,$31
+	db $46,$2D,$15
+	db SE_WAVY_SCREEN,$FF
+	db $FF
+BugBuzzExtAnimEnd:
+	IF BugBuzzExtAnimEnd - BugBuzzExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MegahornExtAnim:
+	db MegahornExtAnimEnd - MegahornExtAnimData
+MegahornExtAnimData:
+	db $06,$1D,$45
+	db $03,$29,$01
+	db $46,$FF,$05
+	db $FF
+MegahornExtAnimEnd:
+	IF MegahornExtAnimEnd - MegahornExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+XScissorExtAnim:
+	db XScissorExtAnimEnd - XScissorExtAnimData
+XScissorExtAnimData:
+	db SE_DARK_SCREEN_FLASH,$0E
+	db $04,$FF,$16
+	db $04,$FF,$16
+	db $FF
+XScissorExtAnimEnd:
+	IF XScissorExtAnimEnd - XScissorExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SignalBeamExtAnim:
+	db SignalBeamExtAnimEnd - SignalBeamExtAnimData
+SignalBeamExtAnimData:
+	db $03,$3B,$2E
+	db $03,$29,$01
+	db SE_FLASH_SCREEN_LONG,$FF
+	db $FF
+SignalBeamExtAnimEnd:
+	IF SignalBeamExtAnimEnd - SignalBeamExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+EarthPowerExtAnim:
+	db EarthPowerExtAnimEnd - EarthPowerExtAnimData
+EarthPowerExtAnimData:
+	db SE_SHAKE_SCREEN,$58
+	db $03,$3B,$2E
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+EarthPowerExtAnimEnd:
+	IF EarthPowerExtAnimEnd - EarthPowerExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MudSlapExtAnim:
+	db MudSlapExtAnimEnd - MudSlapExtAnimData
+MudSlapExtAnimData:
+	db $46,$1B,$28
+	db $08,$FF,$01
+	db $FF
+MudSlapExtAnimEnd:
+	IF MudSlapExtAnimEnd - MudSlapExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MudBombExtAnim:
+	db MudBombExtAnimEnd - MudBombExtAnimData
+MudBombExtAnimData:
+	db $43,$8B,$41
+	db $46,$1B,$28
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+MudBombExtAnimEnd:
+	IF MudBombExtAnimEnd - MudBombExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ExtrasensoryExtAnim:
+	db ExtrasensoryExtAnimEnd - ExtrasensoryExtAnimData
+ExtrasensoryExtAnimData:
+	db SE_FLASH_SCREEN_LONG,$5D
+	db $06,$FF,$02
+	db SE_WAVY_SCREEN,$FF
+	db $FF
+ExtrasensoryExtAnimEnd:
+	IF ExtrasensoryExtAnimEnd - ExtrasensoryExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ZenHeadbuttExtAnim:
+	db ZenHeadbuttExtAnimEnd - ZenHeadbuttExtAnimData
+ZenHeadbuttExtAnimData:
+	db SE_FLASH_SCREEN_LONG,$5C
+	db $46,$1C,$05
+	db $46,$FF,$05
+	db $FF
+ZenHeadbuttExtAnimEnd:
+	IF ZenHeadbuttExtAnimEnd - ZenHeadbuttExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+PsychoCutExtAnim:
+	db PsychoCutExtAnimEnd - PsychoCutExtAnimData
+PsychoCutExtAnimData:
+	db SE_FLASH_SCREEN_LONG,$FF
+	db $06,$A2,$0F
+	db $04,$FF,$16
+	db $FF
+PsychoCutExtAnimEnd:
+	IF PsychoCutExtAnimEnd - PsychoCutExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ExtremespeedExtAnim:
+	db ExtremespeedExtAnimEnd - ExtremespeedExtAnimData
+ExtremespeedExtAnimData:
+	db SE_SLIDE_MON_OFF,$61
+	db $46,$FF,$04
+	db $46,$FF,$05
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+ExtremespeedExtAnimEnd:
+	IF ExtremespeedExtAnimEnd - ExtremespeedExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+GigaImpactExtAnim:
+	db GigaImpactExtAnimEnd - GigaImpactExtAnimData
+GigaImpactExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $46,$04,$04
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+GigaImpactExtAnimEnd:
+	IF GigaImpactExtAnimEnd - GigaImpactExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+PowerGemExtAnim:
+	db PowerGemExtAnimEnd - PowerGemExtAnimData
+PowerGemExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $04,$57,$30
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+PowerGemExtAnimEnd:
+	IF PowerGemExtAnimEnd - PowerGemExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+RockBlastExtAnim:
+	db RockBlastExtAnimEnd - RockBlastExtAnimData
+RockBlastExtAnimData:
+	db $04,$57,$30
+	db $04,$57,$30
+	db $04,$57,$30
+	db $FF
+RockBlastExtAnimEnd:
+	IF RockBlastExtAnimEnd - RockBlastExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+RockPolishExtAnim:
+	db RockPolishExtAnimEnd - RockPolishExtAnimData
+RockPolishExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $46,$6F,$33
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+RockPolishExtAnimEnd:
+	IF RockPolishExtAnimEnd - RockPolishExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+RockTombExtAnim:
+	db RockTombExtAnimEnd - RockTombExtAnimData
+RockTombExtAnimData:
+	; Rock Slide's falling-rock frames expect frame-counter shakes/flash.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_ROCK_SLIDE
+	db $04,$9C,$1D
+	db $03,$9C,$1E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+RockTombExtAnimEnd:
+	IF RockTombExtAnimEnd - RockTombExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DynamicpunchExtAnim:
+	db DynamicpunchExtAnimEnd - DynamicpunchExtAnimData
+DynamicpunchExtAnimData:
+	db $46,$04,$04
+	db SE_FLASH_SCREEN_LONG,$5C
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+DynamicpunchExtAnimEnd:
+	IF DynamicpunchExtAnimEnd - DynamicpunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+StormThrowExtAnim:
+	db StormThrowExtAnimEnd - StormThrowExtAnimData
+StormThrowExtAnimData:
+	db $08,$01,$03
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+StormThrowExtAnimEnd:
+	IF StormThrowExtAnimEnd - StormThrowExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+CrossChopExtAnim:
+	db CrossChopExtAnimEnd - CrossChopExtAnimData
+CrossChopExtAnimData:
+	db $08,$01,$03
+	db $04,$FF,$16
+	db $08,$01,$03
+	db $FF
+CrossChopExtAnimEnd:
+	IF CrossChopExtAnimEnd - CrossChopExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+LowSweepExtAnim:
+	db LowSweepExtAnimEnd - LowSweepExtAnimData
+LowSweepExtAnimData:
+	; Dedicated recipes bypass MEGA_KICK's hard-coded flash, so add an explicit
+	; impact flash instead of depending on the legacy animation identity.
+	db $46,$18,$04
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+LowSweepExtAnimEnd:
+	IF LowSweepExtAnimEnd - LowSweepExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+HurricaneExtAnim:
+	db HurricaneExtAnimEnd - HurricaneExtAnimData
+HurricaneExtAnimData:
+	db $46,$0F,$10
+	db $46,$2D,$15
+	db SE_WAVY_SCREEN,$FF
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+HurricaneExtAnimEnd:
+	IF HurricaneExtAnimEnd - HurricaneExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BabydolleyesExtAnim:
+	db BabydolleyesExtAnimEnd - BabydolleyesExtAnimData
+BabydolleyesExtAnimData:
+	db $06,$8D,$12
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+BabydolleyesExtAnimEnd:
+	IF BabydolleyesExtAnimEnd - BabydolleyesExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BoneRushExtAnim:
+	db BoneRushExtAnimEnd - BoneRushExtAnimData
+BoneRushExtAnimData:
+	db $06,$9A,$02
+	db $06,$9A,$02
+	db $06,$9A,$02
+	db $FF
+BoneRushExtAnimEnd:
+	IF BoneRushExtAnimEnd - BoneRushExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AeroblastExtAnim:
+	db AeroblastExtAnimEnd - AeroblastExtAnimData
+AeroblastExtAnimData:
+	db $03,$3D,$2E
+	db $46,$0F,$10
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $FF
+AeroblastExtAnimEnd:
+	IF AeroblastExtAnimEnd - AeroblastExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AncientpowerExtAnim:
+	db AncientpowerExtAnimEnd - AncientpowerExtAnimData
+AncientpowerExtAnimData:
+	db $04,$9C,$1D
+	db $04,$57,$30
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+AncientpowerExtAnimEnd:
+	IF AncientpowerExtAnimEnd - AncientpowerExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DiveExtAnim:
+	db DiveExtAnimEnd - DiveExtAnimData
+DiveExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db SE_SLIDE_MON_DOWN,$48
+	db $06,$37,$1A
+	db SE_SLIDE_MON_UP,$FF
+	db $FF
+DiveExtAnimEnd:
+	IF DiveExtAnimEnd - DiveExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+LusterPurgeExtAnim:
+	db LusterPurgeExtAnimEnd - LusterPurgeExtAnimData
+LusterPurgeExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$48
+	db $03,$3B,$2E
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+LusterPurgeExtAnimEnd:
+	IF LusterPurgeExtAnimEnd - LusterPurgeExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MindBlastExtAnim:
+	db MindBlastExtAnimEnd - MindBlastExtAnimData
+MindBlastExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$5D
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_WAVY_SCREEN,$FF
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+MindBlastExtAnimEnd:
+	IF MindBlastExtAnimEnd - MindBlastExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
