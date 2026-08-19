@@ -1314,7 +1314,19 @@ AIIncreaseStat:
 	ld a,ANIM_AF
 	ld [hli],a
 	ld [hl],b
+
+	; AI X stat items use the same spiral-ball animation as the player.
+	; The palette lookup reads wEnemyMoveType, which still describes the
+	; previous real move. Use neutral NORMAL coloring for this synthetic
+	; item animation, then restore the real move type immediately afterwards.
+	ld a,[wEnemyMoveType]
+	push af
+	xor a ; NORMAL
+	ld [wEnemyMoveType],a
 	callab StatModifierUpEffect
+	pop af
+	ld [wEnemyMoveType],a
+
 	pop hl
 	pop af
 	ld [hli],a
