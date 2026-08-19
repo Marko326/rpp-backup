@@ -245,6 +245,22 @@ LoadAnimationTilesetPalettes:
 
 	call LoadAttackSpritePalettes
 
+	; Fairy attack sprites use ATK_PAL_PURPLE in the tile palette map, but give
+	; that slot a dedicated pink palette for this animation only. Other types
+	; still receive the normal purple attack palette on their own animations.
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,[wPlayerMoveType]
+	jr z,.gotAnimationMoveType
+	ld a,[wEnemyMoveType]
+.gotAnimationMoveType
+	cp FAIRY
+	jr nz,.notFairyAnimation
+	ld d,PAL_PINKMON
+	ld e,ATK_PAL_PURPLE
+	call LoadSGBPalette_Sprite
+.notFairyAnimation
+
 	; Indices 0 and 2 both refer to "AnimationTileset1", just different amounts of it.
 	; 0 is in-battle, 2 is during a trade.
 	; Index 1 refers to "AnimationTileset2".

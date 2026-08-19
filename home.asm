@@ -4971,6 +4971,7 @@ GetCurrentMoveID::
 ; temporarily clear MoveNum to suppress animation.
 PrepareCurrentMoveAnimation::
 	xor a
+	ld [wExtendedAnimFrameEffect], a
 	ld [wMoveAnimScriptLoaded], a
 	ld a, [H_WHOSETURN]
 	and a
