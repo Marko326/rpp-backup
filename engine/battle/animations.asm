@@ -187,27 +187,44 @@ PlayAnimation:
 	ld a,[hli]
 	cp a,$FF
 	ret z
-	cp a,$C0 ; is this subanimation or a special effect?
+	cp a,$C0 ; is this subanimation or a special effect/extended command?
 	jr c,.playSubanimation
-	; Valid special effects currently occupy the contiguous $D8-$FE range.
-	; Treat reserved/invalid $C0-$D7 command bytes as a safe end-of-animation
-	; instead of walking past SpecialEffectPointers into arbitrary ROM.
 	cp SE_WAVY_SCREEN
-	ret c
+	jr nc,.doSpecialEffect
+
+	; $C0-$D7 is reserved for dedicated-recipe commands.  Never interpret these
+	; bytes in a legacy animation stream, where they remain invalid/fail-closed.
+	ld b,a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ret z
+	ld a,b
+	cp EXT_ANIM_SET_FRAME_EFFECT
+	jr z,.setExtendedFrameEffect
+	cp EXT_ANIM_PLAY_USER_CRY
+	jr z,.playExtendedUserCry
+	ret
+.setExtendedFrameEffect
+	ld a,[hli]
+	cp EXT_FRAME_ROCK_SLIDE + 1
+	ret nc ; unknown mode: fail closed
+	ld [wExtendedAnimFrameEffect],a
+	jr .animationLoop
+.playExtendedUserCry
+	ld a,[hli]
+	push hl
+	call PlayExtendedAnimationUserCry
+	pop hl
+	jr .animationLoop
 .doSpecialEffect
-	ld c,a
-	ld de,SpecialEffectPointers
-.searchSpecialEffectTableLoop
-	ld a,[de]
-	cp $FF
-	ret z ; malformed table/unknown effect: fail closed instead of scanning ROM
-	cp c
-	jr z,.foundMatch
-	inc de
-	inc de
-	inc de
-	jr .searchSpecialEffectTableLoop
-.foundMatch
+	; SE_* commands are contiguous from $D8 through $FE. Convert the command
+	; directly to a 16-bit pointer-table offset instead of linearly searching a
+	; redundant ID+pointer table. This is smaller, faster, and cannot scan past
+	; the table; $FF has already been handled as the recipe terminator above.
+	sub SE_WAVY_SCREEN
+	add a ; two bytes per pointer
+	ld e,a
+	ld d,0
 	ld a,[hli]
 	cp a,$FF ; is there a sound to play?
 	jr z,.skipPlayingSound
@@ -220,12 +237,11 @@ PlayAnimation:
 	pop hl
 .skipPlayingSound
 	push hl
-	inc de
-	ld a,[de]
+	ld hl,SpecialEffectPointers
+	add hl,de
+	ld a,[hli]
+	ld h,[hl]
 	ld l,a
-	inc de
-	ld a,[de]
-	ld h,a
 	ld de,.nextAnimationCommand
 	push de
 	jp hl ; jump to special effect function
@@ -269,7 +285,7 @@ PlayAnimation:
 	ld [rOBP0],a
 .nextAnimationCommand
 	pop hl
-	jr .animationLoop
+	jp .animationLoop
 
 AnimPlaySFX:
 	push de
@@ -445,6 +461,7 @@ MoveAnimation:
 	call WaitForSoundToFinish
 	xor a
 	ld [wSubAnimSubEntryAddr],a
+	ld [wExtendedAnimFrameEffect],a
 	ld [wUnusedD09B],a
 	ld [wSubAnimTransform],a
 	dec a
@@ -677,7 +694,32 @@ DoSpecialEffectByAnimationId:
 	push bc
 	ld a,[wMoveAnimScriptLoaded]
 	and a
-	jr nz,.done ; do not inherit frame effects from a compatibility alias
+	jr z,.legacyAnimationID
+	ld a,[wExtendedAnimFrameEffect]
+	and a
+	jr z,.done
+	cp EXT_FRAME_FLASH_4
+	jr z,.extendedFlash4
+	cp EXT_FRAME_FLASH_8
+	jr z,.extendedFlash8
+	cp EXT_FRAME_BLIZZARD
+	jr z,.extendedBlizzard
+	cp EXT_FRAME_ROCK_SLIDE
+	jr z,.extendedRockSlide
+	jr .done
+.extendedFlash4
+	call FlashScreenEveryFourFrameBlocks
+	jr .done
+.extendedFlash8
+	call FlashScreenEveryEightFrameBlocks
+	jr .done
+.extendedBlizzard
+	call DoBlizzardSpecialEffects
+	jr .done
+.extendedRockSlide
+	call DoRockSlideSpecialEffects
+	jr .done
+.legacyAnimationID
 	ld a,[wAnimationID]
 	ld hl,AnimationIdSpecialEffects
 	ld de,3
@@ -1032,87 +1074,49 @@ TailWhipAnimationUnused:
 	ld c,20
 	jp DelayFrames
 
-; Format: Special Effect ID (1 byte), Address (2 bytes)
+; Format: 16-bit pointers indexed by contiguous SE_* command IDs.
 SpecialEffectPointers:
-	db SE_DARK_SCREEN_FLASH ; $FE
-	dw AnimationFlashScreen
-	db SE_DARK_SCREEN_PALETTE ; $FD
-	dw AnimationDarkScreenPalette
-	db SE_RESET_SCREEN_PALETTE ; $FC
-	dw AnimationResetScreenPalette
-	db SE_SHAKE_SCREEN ; $FB
-	dw AnimationShakeScreen
-	db SE_WATER_DROPLETS_EVERYWHERE ; $FA
-	dw AnimationWaterDropletsEverywhere
-	db SE_DARKEN_MON_PALETTE ; $F9
-	dw AnimationDarkenMonPalette
-	db SE_FLASH_SCREEN_LONG ; $F8
-	dw AnimationFlashScreenLong
-	db SE_SLIDE_MON_UP ; $F7
-	dw AnimationSlideMonUp
-	db SE_SLIDE_MON_DOWN ; $F6
-	dw AnimationSlideMonDown
-	db SE_FLASH_MON_PIC ; $F5
-	dw AnimationFlashMonPic
-	db SE_SLIDE_MON_OFF ; $F4
-	dw AnimationSlideMonOff
-	db SE_BLINK_MON ; $F3
-	dw AnimationBlinkMon
-	db SE_MOVE_MON_HORIZONTALLY ; $F2
-	dw AnimationMoveMonHorizontally
-	db SE_RESET_MON_POSITION ; $F1
-	dw AnimationResetMonPosition
-	db SE_LIGHT_SCREEN_PALETTE ; $F0
-	dw AnimationLightScreenPalette
-	db SE_HIDE_MON_PIC ; $EF
-	dw AnimationHideMonPic
-	db SE_SQUISH_MON_PIC ; $EE
-	dw AnimationSquishMonPic
-	db SE_SHOOT_BALLS_UPWARD ; $ED
-	dw AnimationShootBallsUpward
-	db SE_SHOOT_MANY_BALLS_UPWARD ; $EC
-	dw AnimationShootManyBallsUpward
-	db SE_BOUNCE_UP_AND_DOWN ; $EB
-	dw AnimationBoundUpAndDown
-	db SE_MINIMIZE_MON ; $EA
-	dw AnimationMinimizeMon
-	db SE_SLIDE_MON_DOWN_AND_HIDE ; $E9
-	dw AnimationSlideMonDownAndHide
-	db SE_TRANSFORM_MON ; $E8
-	dw AnimationTransformMon
-	db SE_LEAVES_FALLING ; $E7
-	dw AnimationLeavesFalling
-	db SE_PETALS_FALLING ; $E6
-	dw AnimationPetalsFalling
-	db SE_SLIDE_MON_HALF_OFF ; $E5
-	dw AnimationSlideMonHalfOff
-	db SE_SHAKE_ENEMY_HUD ; $E4
-	dw AnimationShakeEnemyHUD
-	db SE_SHAKE_ENEMY_HUD_2 ; unused--same pointer as SE_SHAKE_ENEMY_HUD ($E4)
-	dw AnimationShakeEnemyHUD
-	db SE_SPIRAL_BALLS_INWARD ; $E2
-	dw AnimationSpiralBallsInward
-	db SE_DELAY_ANIMATION_10 ; $E1
-	dw AnimationDelay10
-	db SE_FLASH_ENEMY_MON_PIC ; unused--same as SE_FLASH_MON_PIC ($F5), but for the enemy mon
-	dw AnimationFlashEnemyMonPic
-	db SE_HIDE_ENEMY_MON_PIC ; $DF
-	dw AnimationHideEnemyMonPic
-	db SE_BLINK_ENEMY_MON ; $DE
-	dw AnimationBlinkEnemyMon
-	db SE_SHOW_MON_PIC ; $DD
-	dw AnimationShowMonPic
-	db SE_SHOW_ENEMY_MON_PIC ; $DC
-	dw AnimationShowEnemyMonPic
-	db SE_SLIDE_ENEMY_MON_OFF ; $DB
-	dw AnimationSlideEnemyMonOff
-	db SE_SHAKE_BACK_AND_FORTH ; $DA
-	dw AnimationShakeBackAndForth
-	db SE_SUBSTITUTE_MON ; $D9
-	dw AnimationSubstitute
-	db SE_WAVY_SCREEN ; $D8
-	dw AnimationWavyScreen
-	db $FF
+; Indexed directly by (special_effect_id - SE_WAVY_SCREEN) * 2.
+; Keep this table in exact ascending command order, $D8 through $FE.
+	dw AnimationWavyScreen              ; $D8
+	dw AnimationSubstitute              ; $D9
+	dw AnimationShakeBackAndForth       ; $DA
+	dw AnimationSlideEnemyMonOff        ; $DB
+	dw AnimationShowEnemyMonPic         ; $DC
+	dw AnimationShowMonPic              ; $DD
+	dw AnimationBlinkEnemyMon           ; $DE
+	dw AnimationHideEnemyMonPic         ; $DF
+	dw AnimationFlashEnemyMonPic        ; $E0
+	dw AnimationDelay10                 ; $E1
+	dw AnimationSpiralBallsInward       ; $E2
+	dw AnimationShakeEnemyHUD           ; $E3
+	dw AnimationShakeEnemyHUD           ; $E4
+	dw AnimationSlideMonHalfOff         ; $E5
+	dw AnimationPetalsFalling           ; $E6
+	dw AnimationLeavesFalling           ; $E7
+	dw AnimationTransformMon            ; $E8
+	dw AnimationSlideMonDownAndHide     ; $E9
+	dw AnimationMinimizeMon             ; $EA
+	dw AnimationBoundUpAndDown          ; $EB
+	dw AnimationShootManyBallsUpward    ; $EC
+	dw AnimationShootBallsUpward        ; $ED
+	dw AnimationSquishMonPic            ; $EE
+	dw AnimationHideMonPic              ; $EF
+	dw AnimationLightScreenPalette      ; $F0
+	dw AnimationResetMonPosition        ; $F1
+	dw AnimationMoveMonHorizontally     ; $F2
+	dw AnimationBlinkMon                ; $F3
+	dw AnimationSlideMonOff             ; $F4
+	dw AnimationFlashMonPic             ; $F5
+	dw AnimationSlideMonDown            ; $F6
+	dw AnimationSlideMonUp              ; $F7
+	dw AnimationFlashScreenLong         ; $F8
+	dw AnimationDarkenMonPalette        ; $F9
+	dw AnimationWaterDropletsEverywhere ; $FA
+	dw AnimationShakeScreen             ; $FB
+	dw AnimationResetScreenPalette      ; $FC
+	dw AnimationDarkScreenPalette       ; $FD
+	dw AnimationFlashScreen             ; $FE
 
 AnimationDelay10:
 	ld c,10
@@ -2399,6 +2403,38 @@ GetMoveSound:
 	ld [wTempoModifier],a
 .done
 	ld a,b
+	ret
+
+PlayExtendedAnimationUserCry:
+; input: a = move ID whose MoveSoundTable pitch/tempo should profile the cry.
+; Dedicated recipes use this instead of pretending their animation ID is
+; GROWL/ROAR, so real move identity and cry behavior stay independent.
+	ld e,a
+	ld d,0
+	ld hl,MoveSoundTable
+	add hl,de
+	add hl,de
+	add hl,de
+	inc hl ; skip the regular SFX ID
+	ld a,[hli]
+	ld [wFrequencyModifier],a
+	ld a,[hl]
+	ld [wTempoModifier],a
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.enemy
+	ld a,[wBattleMonSpecies]
+	jr .play
+.enemy
+	ld a,[wEnemyMonSpecies]
+.play
+	push af
+	ld a,1
+	ld [wSFXDontWait],a
+	pop af
+	call PlayCry
+	xor a
+	ld [wSFXDontWait],a
 	ret
 
 IsCryMove:

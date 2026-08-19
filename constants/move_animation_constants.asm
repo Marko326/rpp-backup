@@ -1,3 +1,15 @@
+; Dedicated expanded-move recipe commands.  These occupy part of the otherwise
+; unused $C0-$D7 command range and are only accepted while a dedicated recipe
+; is staged.  Legacy animation streams still treat this range as invalid.
+EXT_ANIM_SET_FRAME_EFFECT EQU $C0 ; next byte: EXT_FRAME_* mode
+EXT_ANIM_PLAY_USER_CRY    EQU $C1 ; next byte: MoveSoundTable profile move ID
+
+EXT_FRAME_NONE        EQU 0
+EXT_FRAME_FLASH_4     EQU 1
+EXT_FRAME_FLASH_8     EQU 2
+EXT_FRAME_BLIZZARD    EQU 3
+EXT_FRAME_ROCK_SLIDE  EQU 4
+
 ; subanimations
 
 const_value = $D8

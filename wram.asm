@@ -1999,7 +1999,12 @@ wSubAnimSubEntryAddr:: ; d096
 ; the address of the current subentry of the current subanimation
 	ds 2
 
-	ds 2
+; Dedicated recipes can explicitly request one of the old per-frame visual
+; effects without pretending to be the legacy move that originally owned it.
+wExtendedAnimFrameEffect:: ; d098
+	ds 1
+
+	ds 1
 
 wOutwardSpiralTileMapPointer:: ; d09a
 	ds 1

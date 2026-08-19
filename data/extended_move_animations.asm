@@ -46,12 +46,16 @@ ExtendedMoveAnimationTable:
 	dw MetalClawExtAnim
 	db MOONBLAST
 	dw MoonblastExtAnim
+	db FLASH_CANNON
+	dw FlashCannonExtAnim
 	db DRACO_METEOR
 	dw DracoMeteorExtAnim
 	db GUNK_SHOT
 	dw GunkShotExtAnim
 	db POISON_FANG
 	dw PoisonFangExtAnim
+	db HYPER_VOICE
+	dw HyperVoiceExtAnim
 	db 0
 
 MetalClawExtAnim:
@@ -84,6 +88,25 @@ MoonblastExtAnimData:
 MoonblastExtAnimEnd:
 	IF MoonblastExtAnimEnd - MoonblastExtAnimData > 30
 		fail "Moonblast animation recipe exceeds wBuffer"
+	ENDC
+
+FlashCannonExtAnim:
+	db FlashCannonExtAnimEnd - FlashCannonExtAnimData
+FlashCannonExtAnimData:
+	; Explicitly opt into Hyper Beam's per-frame flash behavior without using
+	; HYPER_BEAM as this move's animation identity.
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_4
+	db $02,$3E,$2E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+FlashCannonExtAnimEnd:
+	IF FlashCannonExtAnimEnd - FlashCannonExtAnimData > 30
+		fail "Flash Cannon animation recipe exceeds wBuffer"
 	ENDC
 
 DracoMeteorExtAnim:
@@ -122,4 +145,19 @@ PoisonFangExtAnimData:
 PoisonFangExtAnimEnd:
 	IF PoisonFangExtAnimEnd - PoisonFangExtAnimData > 30
 		fail "Poison Fang animation recipe exceeds wBuffer"
+	ENDC
+
+HyperVoiceExtAnim:
+	db HyperVoiceExtAnimEnd - HyperVoiceExtAnimData
+HyperVoiceExtAnimData:
+	; Play the attacker's actual cry using ROAR's pitch/tempo profile, then layer
+	; the old sound-wave components without relying on wAnimationID == ROAR.
+	db EXT_ANIM_PLAY_USER_CRY,ROAR
+	db $46,$FF,$12
+	db $46,$2D,$15
+	db $50,$FF,$40
+	db $FF
+HyperVoiceExtAnimEnd:
+	IF HyperVoiceExtAnimEnd - HyperVoiceExtAnimData > 30
+		fail "Hyper Voice animation recipe exceeds wBuffer"
 	ENDC
