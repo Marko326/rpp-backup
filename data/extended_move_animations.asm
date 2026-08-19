@@ -40,7 +40,7 @@ LoadExtendedMoveAnimation:
 	ret
 
 ; Sparse table: batches are enabled only after their engine behavior is validated.
-; Batch A6-B8 is enabled as the first contiguous move-ID range.
+; Batches A6-B8 and B9-D7 are enabled as validated contiguous move-ID ranges.
 ExtendedMoveAnimationTable:
 	db METAL_CLAW
 	dw MetalClawExtAnim
@@ -80,6 +80,68 @@ ExtendedMoveAnimationTable:
 	dw TwisterExtAnim
 	db OUTRAGE
 	dw OutrageExtAnim
+	db SHADOW_CLAW
+	dw ShadowClawExtAnim
+	db STEEL_WING
+	dw SteelWingExtAnim
+	db IRON_DEFENSE
+	dw IronDefenseExtAnim
+	db AIR_SLASH
+	dw AirSlashExtAnim
+	db FIRE_FANG
+	dw FireFangExtAnim
+	db FLARE_BLITZ
+	dw FlareBlitzExtAnim
+	db BLAST_BURN
+	dw BlastBurnExtAnim
+	db ICE_FANG
+	dw IceFangExtAnim
+	db THUNDER_FANG
+	dw ThunderFangExtAnim
+	db WATER_PULSE
+	dw WaterPulseExtAnim
+	db AQUA_TAIL
+	dw AquaTailExtAnim
+	db HYDRO_CANNON
+	dw HydroCannonExtAnim
+	db FRENZY_PLANT
+	dw FrenzyPlantExtAnim
+	db SUCKER_PUNCH
+	dw SuckerPunchExtAnim
+	db SHADOW_BALL
+	dw ShadowBallExtAnim
+	db FLAME_WHEEL
+	dw FlameWheelExtAnim
+	db HEALINGLIGHT
+	dw MoonlightExtAnim
+	db HEX
+	dw HexExtAnim
+	db SHADOW_PUNCH
+	dw ShadowPunchExtAnim
+	db AERIAL_ACE
+	dw AerialAceExtAnim
+	db ACROBATICS
+	dw AcrobaticsExtAnim
+	db AIR_CUTTER
+	dw AirCutterExtAnim
+	db ICY_WIND
+	dw IcyWindExtAnim
+	db ICE_SHARD
+	dw IceShardExtAnim
+	db SHEER_COLD
+	dw SheerColdExtAnim
+	db ELECTRO_BALL
+	dw ElectroBallExtAnim
+	db NUZZLE
+	dw NuzzleExtAnim
+	db DISCHARGE
+	dw DischargeExtAnim
+	db VOLT_TACKLE
+	dw VoltTackleExtAnim
+	db MUDDY_WATER
+	dw MuddyWaterExtAnim
+	db WHIRLPOOL
+	dw WhirlpoolExtAnim
 	db GUNK_SHOT
 	dw GunkShotExtAnim
 	db POISON_FANG
@@ -344,6 +406,434 @@ OutrageExtAnimData:
 	db $FF
 OutrageExtAnimEnd:
 	IF OutrageExtAnimEnd - OutrageExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ShadowClawExtAnim:
+	db ShadowClawExtAnimEnd - ShadowClawExtAnimData
+ShadowClawExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $06,$A2,$0F
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+ShadowClawExtAnimEnd:
+	IF ShadowClawExtAnimEnd - ShadowClawExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SteelWingExtAnim:
+	db SteelWingExtAnimEnd - SteelWingExtAnimData
+SteelWingExtAnimData:
+	db $46,$10,$04
+	; Cut's slash component normally includes a preceding impact flash.
+	db SE_DARK_SCREEN_FLASH,$0E
+	db $04,$FF,$16
+	db $46,$FF,$05
+	db $FF
+SteelWingExtAnimEnd:
+	IF SteelWingExtAnimEnd - SteelWingExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IronDefenseExtAnim:
+	db IronDefenseExtAnimEnd - IronDefenseExtAnimData
+IronDefenseExtAnimData:
+	db $46,$6F,$33
+	db $46,$6F,$33
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $FF
+IronDefenseExtAnimEnd:
+	IF IronDefenseExtAnimEnd - IronDefenseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AirSlashExtAnim:
+	db AirSlashExtAnimEnd - AirSlashExtAnimData
+AirSlashExtAnimData:
+	db $46,$0F,$10
+	db SE_DARK_SCREEN_FLASH,$0E
+	db $04,$FF,$16
+	db $FF
+AirSlashExtAnimEnd:
+	IF AirSlashExtAnimEnd - AirSlashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FireFangExtAnim:
+	db FireFangExtAnimEnd - FireFangExtAnimData
+FireFangExtAnimData:
+	db $08,$2B,$02
+	db $46,$33,$11
+	db $46,$FF,$0C
+	db $FF
+FireFangExtAnimEnd:
+	IF FireFangExtAnimEnd - FireFangExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FlareBlitzExtAnim:
+	db FlareBlitzExtAnimEnd - FlareBlitzExtAnimData
+FlareBlitzExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $46,$34,$1F
+	db $46,$FF,$0C
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+FlareBlitzExtAnimEnd:
+	IF FlareBlitzExtAnimEnd - FlareBlitzExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BlastBurnExtAnim:
+	db BlastBurnExtAnimEnd - BlastBurnExtAnimData
+BlastBurnExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $46,$7D,$1F
+	db $46,$FF,$20
+	db $43,$77,$34
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+BlastBurnExtAnimEnd:
+	IF BlastBurnExtAnimEnd - BlastBurnExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IceFangExtAnim:
+	db IceFangExtAnimEnd - IceFangExtAnimData
+IceFangExtAnimData:
+	db $08,$2B,$02
+	; Blizzard's snow subanimation relies on frame-counter flashes in the legacy
+	; engine. Request them explicitly while the ice sprites are active.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
+	db $04,$3A,$38
+	db $04,$37,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $FF
+IceFangExtAnimEnd:
+	IF IceFangExtAnimEnd - IceFangExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ThunderFangExtAnim:
+	db ThunderFangExtAnimEnd - ThunderFangExtAnimData
+ThunderFangExtAnimData:
+	db $08,$2B,$02
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+ThunderFangExtAnimEnd:
+	IF ThunderFangExtAnimEnd - ThunderFangExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+WaterPulseExtAnim:
+	db WaterPulseExtAnimEnd - WaterPulseExtAnimData
+WaterPulseExtAnimData:
+	db $12,$3C,$35
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_WAVY_SCREEN,$FF
+	db $06,$37,$1A
+	db $FF
+WaterPulseExtAnimEnd:
+	IF WaterPulseExtAnimEnd - WaterPulseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AquaTailExtAnim:
+	db AquaTailExtAnimEnd - AquaTailExtAnimData
+AquaTailExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db $06,$37,$1A
+	db $06,$14,$02
+	db $FF
+AquaTailExtAnimEnd:
+	IF AquaTailExtAnimEnd - AquaTailExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+HydroCannonExtAnim:
+	db HydroCannonExtAnimEnd - HydroCannonExtAnimData
+HydroCannonExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db SE_DARK_SCREEN_FLASH,$FF
+	; Treat the cannon beam like other dedicated high-power beam recipes instead
+	; of depending on HYPER_BEAM as an animation identity.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_4
+	db $02,$3E,$2E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $46,$FF,$04
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+HydroCannonExtAnimEnd:
+	IF HydroCannonExtAnimEnd - HydroCannonExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FrenzyPlantExtAnim:
+	db FrenzyPlantExtAnimEnd - FrenzyPlantExtAnimData
+FrenzyPlantExtAnimData:
+	db SE_LEAVES_FALLING,$4A
+	db $01,$15,$16
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+FrenzyPlantExtAnimEnd:
+	IF FrenzyPlantExtAnimEnd - FrenzyPlantExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SuckerPunchExtAnim:
+	db SuckerPunchExtAnimEnd - SuckerPunchExtAnimData
+SuckerPunchExtAnimData:
+	db SE_SLIDE_MON_OFF,$43
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $46,$04,$04
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+SuckerPunchExtAnimEnd:
+	IF SuckerPunchExtAnimEnd - SuckerPunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ShadowBallExtAnim:
+	db ShadowBallExtAnimEnd - ShadowBallExtAnimData
+ShadowBallExtAnimData:
+	; Darken, condense energy, launch a ball, then distort the screen on impact.
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db $43,$8B,$41
+	db $05,$FF,$55
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_WAVY_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+ShadowBallExtAnimEnd:
+	IF ShadowBallExtAnimEnd - ShadowBallExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FlameWheelExtAnim:
+	db FlameWheelExtAnimEnd - FlameWheelExtAnimData
+FlameWheelExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $46,$33,$11
+	db $46,$FF,$05
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+FlameWheelExtAnimEnd:
+	IF FlameWheelExtAnimEnd - FlameWheelExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MoonlightExtAnim:
+	db MoonlightExtAnimEnd - MoonlightExtAnimData
+MoonlightExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_SPIRAL_BALLS_INWARD,$73
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+MoonlightExtAnimEnd:
+	IF MoonlightExtAnimEnd - MoonlightExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+HexExtAnim:
+	db HexExtAnimEnd - HexExtAnimData
+HexExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$5C
+	db SE_WAVY_SCREEN,$FF
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+HexExtAnimEnd:
+	IF HexExtAnimEnd - HexExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ShadowPunchExtAnim:
+	db ShadowPunchExtAnimEnd - ShadowPunchExtAnimData
+ShadowPunchExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $46,$04,$04
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+ShadowPunchExtAnimEnd:
+	IF ShadowPunchExtAnimEnd - ShadowPunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AerialAceExtAnim:
+	db AerialAceExtAnimEnd - AerialAceExtAnimData
+AerialAceExtAnimData:
+	db $46,$10,$04
+	db $46,$FF,$04
+	db $06,$FF,$02
+	db $FF
+AerialAceExtAnimEnd:
+	IF AerialAceExtAnimEnd - AerialAceExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AcrobaticsExtAnim:
+	db AcrobaticsExtAnimEnd - AcrobaticsExtAnimData
+AcrobaticsExtAnimData:
+	db SE_SLIDE_MON_OFF,$61
+	db $46,$10,$04
+	db $46,$FF,$04
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+AcrobaticsExtAnimEnd:
+	IF AcrobaticsExtAnimEnd - AcrobaticsExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AirCutterExtAnim:
+	db AirCutterExtAnimEnd - AirCutterExtAnimData
+AirCutterExtAnimData:
+	db $46,$0F,$10
+	db SE_DARK_SCREEN_FLASH,$0E
+	db $04,$FF,$16
+	db $06,$FF,$02
+	db $FF
+AirCutterExtAnimEnd:
+	IF AirCutterExtAnimEnd - AirCutterExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IcyWindExtAnim:
+	db IcyWindExtAnimEnd - IcyWindExtAnimData
+IcyWindExtAnimData:
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
+	db $04,$3A,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $46,$0F,$10
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
+	db $04,$37,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $FF
+IcyWindExtAnimEnd:
+	IF IcyWindExtAnimEnd - IcyWindExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IceShardExtAnim:
+	db IceShardExtAnimEnd - IceShardExtAnimData
+IceShardExtAnimData:
+	db $03,$29,$01
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
+	db $04,$3A,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $46,$FF,$05
+	db $FF
+IceShardExtAnimEnd:
+	IF IceShardExtAnimEnd - IceShardExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SheerColdExtAnim:
+	db SheerColdExtAnimEnd - SheerColdExtAnimData
+SheerColdExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
+	db $04,$3A,$38
+	db $04,$37,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+SheerColdExtAnimEnd:
+	IF SheerColdExtAnimEnd - SheerColdExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ElectroBallExtAnim:
+	db ElectroBallExtAnimEnd - ElectroBallExtAnimData
+ElectroBallExtAnimData:
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db $41,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $FF
+ElectroBallExtAnimEnd:
+	IF ElectroBallExtAnimEnd - ElectroBallExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+NuzzleExtAnim:
+	db NuzzleExtAnimEnd - NuzzleExtAnimData
+NuzzleExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $02,$FF,$23
+	db $46,$FF,$05
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+NuzzleExtAnimEnd:
+	IF NuzzleExtAnimEnd - NuzzleExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DischargeExtAnim:
+	db DischargeExtAnimEnd - DischargeExtAnimData
+DischargeExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$56
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db $42,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DischargeExtAnimEnd:
+	IF DischargeExtAnimEnd - DischargeExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+VoltTackleExtAnim:
+	db VoltTackleExtAnimEnd - VoltTackleExtAnimData
+VoltTackleExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db SE_DARK_SCREEN_FLASH,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $46,$FF,$04
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+VoltTackleExtAnimEnd:
+	IF VoltTackleExtAnimEnd - VoltTackleExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MuddyWaterExtAnim:
+	db MuddyWaterExtAnimEnd - MuddyWaterExtAnimData
+MuddyWaterExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db $06,$37,$1A
+	db $46,$1B,$28
+	db $FF
+MuddyWaterExtAnimEnd:
+	IF MuddyWaterExtAnimEnd - MuddyWaterExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+WhirlpoolExtAnim:
+	db WhirlpoolExtAnimEnd - WhirlpoolExtAnimData
+WhirlpoolExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db $46,$2D,$15
+	db SE_WAVY_SCREEN,$FF
+	db $FF
+WhirlpoolExtAnimEnd:
+	IF WhirlpoolExtAnimEnd - WhirlpoolExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
