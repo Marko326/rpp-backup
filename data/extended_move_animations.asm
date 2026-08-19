@@ -1,4 +1,4 @@
-; Phase-1 dedicated animation recipes for selected expanded moves.
+; Dedicated animation recipes for expanded moves.
 ;
 ; Expanded move data still keeps a legacy animation byte for compatibility.
 ; PrepareCurrentMoveAnimation asks this bank for a dedicated recipe by REAL move
@@ -39,17 +39,47 @@ LoadExtendedMoveAnimation:
 	ld [wMoveAnimScriptLoaded], a
 	ret
 
-; Sparse on purpose: phase 1 validates the engine with representative aliases
-; before enabling the remaining expanded moves.
+; Sparse table: batches are enabled only after their engine behavior is validated.
+; Batch A6-B8 is enabled as the first contiguous move-ID range.
 ExtendedMoveAnimationTable:
 	db METAL_CLAW
 	dw MetalClawExtAnim
-	db MOONBLAST
-	dw MoonblastExtAnim
+	db BULLET_PUNCH
+	dw BulletPunchExtAnim
 	db FLASH_CANNON
 	dw FlashCannonExtAnim
+	db IRON_TAIL
+	dw IronTailExtAnim
+	db METEOR_MASH
+	dw MeteorMashExtAnim
+	db CRUNCH
+	dw CrunchExtAnim
+	db DARK_PULSE
+	dw DarkPulseExtAnim
+	db FEINT_ATTACK
+	dw FeintAttackExtAnim
+	db NIGHT_SLASH
+	dw NightSlashExtAnim
+	db MOONBLAST
+	dw MoonblastExtAnim
+	db DRAININGKISS
+	dw DrainingKissExtAnim
+	db DISARM_VOICE
+	dw DisarmingVoiceExtAnim
+	db DAZZLINGLEAM
+	dw DazzlingGleamExtAnim
 	db DRACO_METEOR
 	dw DracoMeteorExtAnim
+	db DRAGONBREATH
+	dw DragonbreathExtAnim
+	db DRAGON_CLAW
+	dw DragonClawExtAnim
+	db DRAGON_PULSE
+	dw DragonPulseExtAnim
+	db TWISTER
+	dw TwisterExtAnim
+	db OUTRAGE
+	dw OutrageExtAnim
 	db GUNK_SHOT
 	dw GunkShotExtAnim
 	db POISON_FANG
@@ -72,6 +102,96 @@ MetalClawExtAnimData:
 MetalClawExtAnimEnd:
 	IF MetalClawExtAnimEnd - MetalClawExtAnimData > 30
 		fail "Metal Claw animation recipe exceeds wBuffer"
+	ENDC
+
+BulletPunchExtAnim:
+	db BulletPunchExtAnimEnd - BulletPunchExtAnimData
+BulletPunchExtAnimData:
+	db $04,$03,$02
+	db $04,$03,$02
+	db $46,$FF,$04
+	db $FF
+BulletPunchExtAnimEnd:
+	IF BulletPunchExtAnimEnd - BulletPunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IronTailExtAnim:
+	db IronTailExtAnimEnd - IronTailExtAnimData
+IronTailExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$84
+	db $04,$FF,$16
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+IronTailExtAnimEnd:
+	IF IronTailExtAnimEnd - IronTailExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MeteorMashExtAnim:
+	db MeteorMashExtAnimEnd - MeteorMashExtAnimData
+MeteorMashExtAnimData:
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db $46,$04,$04
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+MeteorMashExtAnimEnd:
+	IF MeteorMashExtAnimEnd - MeteorMashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+CrunchExtAnim:
+	db CrunchExtAnimEnd - CrunchExtAnimData
+CrunchExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $08,$2B,$02
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+CrunchExtAnimEnd:
+	IF CrunchExtAnimEnd - CrunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DarkPulseExtAnim:
+	db DarkPulseExtAnimEnd - DarkPulseExtAnimData
+DarkPulseExtAnimData:
+	; Darken the field and send three expanding pulse/wave bursts.
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $06,$2F,$31 ; Supersonic/Psywave-style pulse
+	db $08,$FF,$31
+	db $0A,$FF,$31
+	db SE_WAVY_SCREEN,$FF
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DarkPulseExtAnimEnd:
+	IF DarkPulseExtAnimEnd - DarkPulseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FeintAttackExtAnim:
+	db FeintAttackExtAnimEnd - FeintAttackExtAnimData
+FeintAttackExtAnimData:
+	db SE_SLIDE_MON_OFF,$61
+	db $46,$FF,$04
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+FeintAttackExtAnimEnd:
+	IF FeintAttackExtAnimEnd - FeintAttackExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+NightSlashExtAnim:
+	db NightSlashExtAnimEnd - NightSlashExtAnimData
+NightSlashExtAnimData:
+	db SE_DARK_SCREEN_FLASH,$0E
+	db $06,$A2,$0F
+	db $04,$FF,$16
+	db $FF
+NightSlashExtAnimEnd:
+	IF NightSlashExtAnimEnd - NightSlashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
 MoonblastExtAnim:
@@ -109,6 +229,46 @@ FlashCannonExtAnimEnd:
 		fail "Flash Cannon animation recipe exceeds wBuffer"
 	ENDC
 
+DrainingKissExtAnim:
+	db DrainingKissExtAnimEnd - DrainingKissExtAnimData
+DrainingKissExtAnimData:
+	db $06,$8D,$12
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db $06,$FF,$22
+	db $FF
+DrainingKissExtAnimEnd:
+	IF DrainingKissExtAnimEnd - DrainingKissExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DisarmingVoiceExtAnim:
+	db DisarmingVoiceExtAnimEnd - DisarmingVoiceExtAnimData
+DisarmingVoiceExtAnimData:
+	; Use the attacker's actual cry with Growl's softer pitch/tempo profile, then
+	; layer voice-wave visuals.  No dependency on wAnimationID == GROWL/ROAR.
+	db EXT_ANIM_PLAY_USER_CRY,GROWL
+	db $46,$FF,$12
+	db $50,$FF,$40
+	db $06,$2F,$31
+	db $FF
+DisarmingVoiceExtAnimEnd:
+	IF DisarmingVoiceExtAnimEnd - DisarmingVoiceExtAnimData > 30
+		fail "Disarming Voice animation recipe exceeds wBuffer"
+	ENDC
+
+DazzlingGleamExtAnim:
+	db DazzlingGleamExtAnimEnd - DazzlingGleamExtAnimData
+DazzlingGleamExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_DARK_SCREEN_FLASH,$88
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DazzlingGleamExtAnimEnd:
+	IF DazzlingGleamExtAnimEnd - DazzlingGleamExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
 DracoMeteorExtAnim:
 	db DracoMeteorExtAnimEnd - DracoMeteorExtAnimData
 DracoMeteorExtAnimData:
@@ -121,6 +281,70 @@ DracoMeteorExtAnimData:
 DracoMeteorExtAnimEnd:
 	IF DracoMeteorExtAnimEnd - DracoMeteorExtAnimData > 30
 		fail "Draco Meteor animation recipe exceeds wBuffer"
+	ENDC
+
+DragonbreathExtAnim:
+	db DragonbreathExtAnimEnd - DragonbreathExtAnimData
+DragonbreathExtAnimData:
+	db $46,$51,$1F
+	db $46,$FF,$0C
+	db $42,$55,$29
+	db $FF
+DragonbreathExtAnimEnd:
+	IF DragonbreathExtAnimEnd - DragonbreathExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DragonClawExtAnim:
+	db DragonClawExtAnimEnd - DragonClawExtAnimData
+DragonClawExtAnimData:
+	db $06,$A2,$0F
+	db $46,$FF,$0E
+	db $46,$FF,$05
+	db $FF
+DragonClawExtAnimEnd:
+	IF DragonClawExtAnimEnd - DragonClawExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DragonPulseExtAnim:
+	db DragonPulseExtAnimEnd - DragonPulseExtAnimData
+DragonPulseExtAnimData:
+	; Dragon-flame burst feeds into a focused pulse beam and screen shock.
+	db $46,$51,$1F ; Dragon Rage flame
+	db $46,$FF,$0C ; follow-up flame spiral
+	db $03,$3B,$2E ; Psybeam-style pulse beam
+	db SE_WAVY_SCREEN,$FF
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+DragonPulseExtAnimEnd:
+	IF DragonPulseExtAnimEnd - DragonPulseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+TwisterExtAnim:
+	db TwisterExtAnimEnd - TwisterExtAnimData
+TwisterExtAnimData:
+	db $46,$0F,$10
+	db $46,$2D,$15
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+TwisterExtAnimEnd:
+	IF TwisterExtAnimEnd - TwisterExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+OutrageExtAnim:
+	db OutrageExtAnimEnd - OutrageExtAnimData
+OutrageExtAnimData:
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $06,$62,$01
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+OutrageExtAnimEnd:
+	IF OutrageExtAnimEnd - OutrageExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
 GunkShotExtAnim:
