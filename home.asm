@@ -4834,9 +4834,12 @@ PrepareCurrentMoveAnimation::
 	and a
 	ret z
 	; X stat items temporarily replace MoveNum with a synthetic animation ID but
-	; leave SelectedMove holding the previous real move. Do not stage a dedicated
-	; recipe from that stale move identity.
+	; leave SelectedMove holding the previous real move. Player items use
+	; XSTATITEM_ANIM; trainer AI uses ANIM_AF. Do not stage a dedicated recipe
+	; from that stale move identity.
 	cp XSTATITEM_ANIM
+	ret z
+	cp ANIM_AF
 	ret z
 	call GetCurrentMoveID
 	cp METAL_CLAW

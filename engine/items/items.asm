@@ -1798,7 +1798,20 @@ ItemUseXStat:
 	call Delay3
 	xor a
 	ld [H_WHOSETURN],a ; set turn to player's turn
+
+	; XStatItemAnim uses the spiral-ball tile, whose CGB palette is normally
+	; selected from wPlayerMoveType.  Item use does not load a real move, so that
+	; byte still describes the previous move (e.g. Moonblast/Draco Meteor).  Use
+	; neutral NORMAL coloring for the synthetic item animation, then restore the
+	; real move type immediately afterwards.
+	ld a,[wPlayerMoveType]
+	push af
+	xor a ; NORMAL
+	ld [wPlayerMoveType],a
 	callba StatModifierUpEffect ; do stat increase move
+	pop af
+	ld [wPlayerMoveType],a
+
 	pop hl
 	pop af
 	ld [hld],a ; restore [wPlayerMoveEffect]
