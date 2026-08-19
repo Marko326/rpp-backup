@@ -2409,6 +2409,8 @@ PlayExtendedAnimationUserCry:
 ; input: a = move ID whose MoveSoundTable pitch/tempo should profile the cry.
 ; Dedicated recipes use this instead of pretending their animation ID is
 ; GROWL/ROAR, so real move identity and cry behavior stay independent.
+; Move IDs are 1-based, while MoveSoundTable starts directly at POUND (index 0).
+	dec a
 	ld e,a
 	ld d,0
 	ld hl,MoveSoundTable
