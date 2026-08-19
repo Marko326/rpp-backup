@@ -186,14 +186,21 @@ PlayAnimation:
 .animationLoop
 	ld a,[hli]
 	cp a,$FF
-	jr z,.AnimationOver
+	ret z
 	cp a,$C0 ; is this subanimation or a special effect?
 	jr c,.playSubanimation
+	; Valid special effects currently occupy the contiguous $D8-$FE range.
+	; Treat reserved/invalid $C0-$D7 command bytes as a safe end-of-animation
+	; instead of walking past SpecialEffectPointers into arbitrary ROM.
+	cp SE_WAVY_SCREEN
+	ret c
 .doSpecialEffect
 	ld c,a
 	ld de,SpecialEffectPointers
 .searchSpecialEffectTableLoop
 	ld a,[de]
+	cp $FF
+	ret z ; malformed table/unknown effect: fail closed instead of scanning ROM
 	cp c
 	jr z,.foundMatch
 	inc de
@@ -263,8 +270,6 @@ PlayAnimation:
 .nextAnimationCommand
 	pop hl
 	jr .animationLoop
-.AnimationOver
-	ret
 
 AnimPlaySFX:
 	push de
@@ -1990,10 +1995,8 @@ _AnimationSlideMonOff:
 .PlayerNextTile
 	ld a, [hl]
 	add 7
-; This is a bug. The lower right corner tile of the mon back pic is blanked
-; while the mon is sliding off the screen. It should compare with the max tile
-; plus one instead.
-	cp $61
+; Keep the lower-right tile valid until it actually slides past the edge.
+	cp $62
 	ret c
 	ld a, " "
 	ret
