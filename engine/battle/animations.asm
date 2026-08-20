@@ -471,7 +471,7 @@ MoveAnimation:
 	xor a
 	ld [wSubAnimSubEntryAddr],a
 	ld [wExtendedAnimFrameEffect],a
-	ld [wUnusedD09B],a
+	ld [wMoveAnimScriptLoaded],a ; clear staged extended recipe before later legacy animations
 	ld [wSubAnimTransform],a
 	dec a
 	ld [wAnimSoundID],a
@@ -1207,14 +1207,13 @@ FlashScreenLongSGB:
 ; causes a delay of 2 frames for the first cycle
 ; causes a delay of 1 frame for the second and third cycles
 FlashScreenLongDelay:
+	; Counter starts at 3 and only decreases: 2 frames on the first cycle,
+	; 1 frame on the remaining cycles. The old cp 4 branch was unreachable,
+	; and cp 2 had no consumer.
 	ld a,[wFlashScreenLongCounter]
-	cp a,4 ; never true since [wFlashScreenLongCounter] starts at 3
-	ld c,4
-	jr z,.delayFrames
 	cp a,3
 	ld c,2
 	jr z,.delayFrames
-	cp a,2 ; nothing is done with this
 	ld c,1
 .delayFrames
 	jp DelayFrames
@@ -1278,8 +1277,6 @@ SetAnimationBGPalette:
 .next
 	ld [rBGP], a
 	ret
-
-	ld b, $5
 
 AnimationShakeScreenVertically:
 	predef_jump PredefShakeScreenVertically
