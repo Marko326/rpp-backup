@@ -404,6 +404,7 @@ DoubleEdgeAnim:
 	db $FF
 
 TailWhipAnim:
+MetronomeAnim: ; identical script; share one immutable command stream
 	db SE_MOVE_MON_HORIZONTALLY, $84
 	db SE_DELAY_ANIMATION_10, $FF
 	db SE_RESET_MON_POSITION, $84
@@ -427,6 +428,7 @@ PinMissileAnim:
 	db $FF
 
 LeerAnim:
+DisableAnim: ; identical script
 	db SE_DARK_SCREEN_PALETTE, $48
 	db SE_DARK_SCREEN_FLASH, $2A
 	db SE_DARK_SCREEN_FLASH, $2A
@@ -462,13 +464,6 @@ SonicBoomAnim:
 	db $46,$2D,$15
 	db $46,$0F,$10
 	db $46,$FF,$05
-	db $FF
-
-DisableAnim:
-	db SE_DARK_SCREEN_PALETTE, $48
-	db SE_DARK_SCREEN_FLASH, $2A
-	db SE_DARK_SCREEN_FLASH, $2A
-	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
 AcidAnim:
@@ -870,16 +865,6 @@ BideAnim:
 	db $46,$74,$04
 	db $FF
 
-MetronomeAnim:
-	db SE_MOVE_MON_HORIZONTALLY, $84
-	db SE_DELAY_ANIMATION_10, $FF
-	db SE_RESET_MON_POSITION, $84
-	db SE_DELAY_ANIMATION_10, $FF
-	db SE_MOVE_MON_HORIZONTALLY, $84
-	db SE_DELAY_ANIMATION_10, $FF
-	db SE_RESET_MON_POSITION, $84
-	db $FF
-
 MirrorMoveAnim:
 	db $08,$76,$01
 	db $FF
@@ -952,6 +937,7 @@ ConstrictAnim:
 	db $FF
 
 AmnesiaAnim:
+ConfusedPlayerAnim: ; identical script
 	db $08,$84,$25
 	db $08,$84,$25
 	db $FF
@@ -1075,6 +1061,7 @@ BonemerangAnim:
 	db $FF
 
 RestAnim:
+SleepPlayerAnim: ; identical script
 	db $10,$9B,$3A
 	db $10,$9B,$3A
 	db $FF
@@ -1221,19 +1208,9 @@ PoisonAnim:
 	db $08,$13,$27
 	db $FF
 
-SleepPlayerAnim:
-	db $10,$9B,$3A
-	db $10,$9B,$3A
-	db $FF
-
 SleepEnemyAnim:
 	db $10,$9B,$3B
 	db $10,$9B,$3B
-	db $FF
-
-ConfusedPlayerAnim:
-	db $08,$84,$25
-	db $08,$84,$25
 	db $FF
 
 ConfusedEnemyAnim:
@@ -2683,6 +2660,7 @@ FrameBlock22:
 	db $18,$30,$13,$20
 
 FrameBlock23:
+FrameBlock38: ; byte-identical frame block
 	db $04
 	db $00,$00,$0a,$00
 	db $00,$08,$0b,$00
@@ -2741,6 +2719,7 @@ FrameBlock29:
 	db $06,$12,$47,$00
 
 FrameBlock2a:
+FrameBlock30: ; byte-identical frame block
 	db $04
 	db $00,$00,$44,$00
 	db $00,$08,$44,$20
@@ -2784,13 +2763,6 @@ FrameBlock2f:
 	db $00,$08,$0d,$00
 	db $08,$00,$0c,$40
 	db $08,$08,$0d,$40
-
-FrameBlock30:
-	db $04
-	db $00,$00,$44,$00
-	db $00,$08,$44,$20
-	db $08,$00,$44,$40
-	db $08,$08,$44,$60
 
 FrameBlock31:
 	db $01
@@ -2842,13 +2814,6 @@ FrameBlock37:
 	db $00,$08,$00,$a0
 	db $08,$00,$11,$a0
 	db $08,$08,$10,$a0
-
-FrameBlock38:
-	db $04
-	db $00,$00,$0a,$00
-	db $00,$08,$0b,$00
-	db $08,$00,$1a,$00
-	db $08,$08,$1b,$00
 
 FrameBlock39:
 	db $04
@@ -2976,6 +2941,7 @@ FrameBlock46:
 	db $08,$08,$49,$00
 
 FrameBlock47:
+FrameBlock5b: ; byte-identical frame block
 	db $04
 	db $00,$00,$43,$00
 	db $00,$08,$43,$20
@@ -3211,13 +3177,6 @@ FrameBlock5a:
 	db $10,$18,$34,$60
 	db $18,$10,$25,$60
 	db $18,$18,$24,$60
-
-FrameBlock5b:
-	db $04
-	db $00,$00,$43,$00
-	db $00,$08,$43,$20
-	db $08,$00,$43,$40
-	db $08,$08,$43,$60
 
 FrameBlock5c:
 	db $08
