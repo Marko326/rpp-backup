@@ -7,6 +7,168 @@
 ; Each recipe starts with its byte length (including the $FF terminator). The
 ; command stream itself is copied into the existing 30-byte wBuffer.
 
+; Gold-style orb projectile prototype.
+; RPP already contains the Gen 2 Sludge Bomb SFX in crysaudio/sfx.asm; rbsfx.asm
+; exposes it as the next SFX ID after the three existing GSSFX entries.
+GSSFX_SLUDGE_BOMB EQU GSSFX_SUPER_EFFECTIVE + 1
+
+; Keep the old public label because bank $1E already far-calls it.  The second
+; label is the direction for later reuse by Moonblast / Energy Ball / etc.
+PlayExtendedShadowBallProjectile:
+PlayExtendedOrbProjectile:
+	; Gold-style Shadow Ball projectile; C2 currently has no operand.
+	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
+	; LoadAnimationTileset calls the normal palette wrapper, then loads tileset 0.
+	; The two Gold orb tiles overwrite $31/$32 immediately below.
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	; Load the exact two unique tiles used by Gold's BARRAGE_BALL frameset.
+	; Use tile slots $35/$36 because AnimationTileset1Palettes maps both to
+	; ATK_PAL_BLUE.  ColorNonOverworldSprites therefore keeps the orb blue on
+	; every frame instead of forcing $31/$32 to the yellow palette.
+	ld hl,vSprites + $350
+	ld de,GoldOrbAnimationTileset
+	ld b,BANK(GoldOrbAnimationTileset)
+	ld c,2
+	call CopyVideoData
+
+	; Gold plays one SFX_SLUDGE_BOMB for the whole launch/flight/impact sequence.
+	; The impact smoke below is deliberately silent.
+	ld a,GSSFX_SLUDGE_BOMB
+	call PlaySound
+
+	; Gold's WAVE_TO_TARGET moves X by +2 and base Y by -1 each frame, with a
+	; 16-pixel sine wave whose phase advances by 4.  32 frames = two full waves.
+	; Mirror the path for an enemy user.
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.enemy
+	ld b,$40 ; object center X = 64
+	ld c,$5C ; object center Y = 92
+	ld d,$02 ; X += 2
+	ld e,$FF ; base Y -= 1
+	jr .start
+.enemy
+	ld b,$84 ; mirrored target-side center X = 132
+	ld c,$38 ; mirrored target-side center Y = 56
+	ld d,$FE ; X -= 2
+	ld e,$01 ; base Y += 1
+.start
+	ld hl,GoldShadowBallWaveOffsets
+	ld a,32
+.loop
+	push af
+	push bc ; un-waved center
+	push de ; base delta
+
+	; Read the signed Gold-like sine offset. Mirror its sign for enemy use so
+	; the whole path is the geometric reverse of the player's path.
+	ld a,[hli]
+	ld d,a
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.gotWave
+	ld a,d
+	cpl
+	inc a
+	ld d,a
+.gotWave
+	ld a,c
+	add d
+	ld c,a
+
+	; Keep the wave-table pointer alive across DelayFrame/ClearSprites.
+	; ClearSprites clobbers HL, so restore it only after the frame cleanup.
+	push hl
+	call .drawBall
+	call DelayFrame
+	call ClearSprites
+	pop hl
+
+	pop de
+	pop bc
+	ld a,b
+	add d
+	ld b,a
+	ld a,c
+	add e
+	ld c,a
+	pop af
+	dec a
+	jr nz,.loop
+
+	; Gold post-hit feedback is attacker-side based rather than side-effect based:
+	; player Shadow Ball -> blink enemy; enemy Shadow Ball -> vertical screen shake.
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,4
+	jr z,.setHitFeedback
+	ld a,1
+.setHitFeedback
+	ld [wAnimationType],a
+	ret
+
+.drawBall:
+	; B,C = 16x16 orb center. Gold's OAM set uses two unique left-half tiles and
+	; mirrors them horizontally to form the right half.
+	ld hl,wOAMBuffer
+
+	; top-left
+	ld a,c
+	sub 8
+	ld [hli],a
+	ld a,b
+	sub 8
+	ld [hli],a
+	ld a,$35
+	ld [hli],a
+	ld a,ATK_PAL_BLUE
+	ld [hli],a
+
+	; top-right = X-flipped copy of top-left tile
+	ld a,c
+	sub 8
+	ld [hli],a
+	ld a,b
+	ld [hli],a
+	ld a,$35
+	ld [hli],a
+	ld a,ATK_PAL_BLUE | OAM_HFLIP
+	ld [hli],a
+
+	; bottom-left
+	ld a,c
+	ld [hli],a
+	ld a,b
+	sub 8
+	ld [hli],a
+	ld a,$36
+	ld [hli],a
+	ld a,ATK_PAL_BLUE
+	ld [hli],a
+
+	; bottom-right = X-flipped copy of bottom-left tile
+	ld a,c
+	ld [hli],a
+	ld a,b
+	ld [hli],a
+	ld a,$36
+	ld [hli],a
+	ld a,ATK_PAL_BLUE | OAM_HFLIP
+	ld [hl],a
+	ret
+
+
+; d=16, phase += 4 in Gold. Two cycles over 32 frames.
+; Values are integer approximations of 16*sin(phase*pi/32).
+GoldShadowBallWaveOffsets:
+	db $00,$06,$0B,$0F,$10,$0F,$0B,$06
+	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
+	db $00,$06,$0B,$0F,$10,$0F,$0B,$06
+	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
+
 LoadExtendedMoveAnimation:
 ; input: e = real move ID (range-checked by PrepareCurrentMoveAnimation)
 ; output: wMoveAnimScriptLoaded = 1 after the dedicated recipe is staged
@@ -584,13 +746,13 @@ SuckerPunchExtAnimEnd:
 ShadowBallExtAnim:
 	db ShadowBallExtAnimEnd - ShadowBallExtAnimData
 ShadowBallExtAnimData:
-	; Darken, condense energy, launch a ball, then distort the screen on impact.
+	; V7+ structure: dark background, one Sludge Bomb SFX, 32-frame wave-to-target
+	; orb, then the V7 16-frame/40x40 poof. Keep the background dark for another
+	; 10 frames before restoring it, approximating Gold's post-impact tail.
 	db SE_DARK_SCREEN_PALETTE,$FF
-	db SE_SPIRAL_BALLS_INWARD,$FF
-	db $43,$8B,$41
-	db $05,$FF,$55
-	db SE_DARK_SCREEN_FLASH,$FF
-	db SE_WAVY_SCREEN,$FF
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $03,$FF,$3C
+	db SE_DELAY_ANIMATION_10,$FF
 	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
 ShadowBallExtAnimEnd:
@@ -1295,4 +1457,15 @@ MindBlastExtAnimData:
 MindBlastExtAnimEnd:
 	IF MindBlastExtAnimEnd - MindBlastExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+; Exact Gold BARRAGE_BALL source tiles after egg.2bpp --remove-whitespace:
+; compact tiles $0A and $0B (source PNG tiles 14 and 16).  The right half is
+; produced with OAM_HFLIP, just like Gold's BATTLE_ANIM_OAMSET_95.
+GoldOrbAnimationTileset::
+	db $00,$00,$00,$00,$03,$03,$0D,$0E,$12,$1C,$12,$1C,$21,$3E,$20,$3F
+	db $20,$3F,$20,$3F,$10,$1F,$10,$1F,$0C,$0F,$03,$03,$00,$00,$00,$00
+GoldOrbAnimationTilesetEnd::
+	IF GoldOrbAnimationTilesetEnd - GoldOrbAnimationTileset != 2 * 16
+		fail "Gold orb animation tileset must contain exactly 2 tiles"
 	ENDC

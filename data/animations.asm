@@ -1933,14 +1933,13 @@ Subanimation33:
 	db $34,$76,$00
 
 Subanimation3c:
-	db $67
-	db $59,$79,$03
-	db $59,$7b,$03
-	db $59,$77,$03
-	db $59,$7a,$03
-	db $59,$78,$03
-	db $59,$7c,$03
-	db $59,$76,$00
+	; Shadow Ball V7-style short poof: FrameBlocks 06-09 only.
+	; Type 2 mirrors the poof for an enemy attacker, matching Subanimation0a.
+	db $44
+	db $06,$1b,$00
+	db $07,$1b,$00
+	db $08,$36,$00
+	db $09,$36,$00
 
 Subanimation3d:
 	db $08
