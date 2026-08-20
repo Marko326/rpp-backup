@@ -203,6 +203,8 @@ PlayAnimation:
 	jr z,.setExtendedFrameEffect
 	cp EXT_ANIM_PLAY_USER_CRY
 	jr z,.playExtendedUserCry
+	cp EXT_ANIM_SHADOW_BALL_PROJECTILE
+	jr z,.playExtendedProjectile
 	ret
 .setExtendedFrameEffect
 	ld a,[hli]
@@ -216,6 +218,13 @@ PlayAnimation:
 	call PlayExtendedAnimationUserCry
 	pop hl
 	jr .animationLoop
+.playExtendedProjectile
+	; C2 has no operand. Extended projectile graphics are banked with their
+	; helper code and do not consume or redefine legacy animation tileset slots.
+	push hl
+	callba PlayExtendedShadowBallProjectile
+	pop hl
+	jp .animationLoop
 .doSpecialEffect
 	; SE_* commands are contiguous from $D8 through $FE. Convert the command
 	; directly to a 16-bit pointer-table offset instead of linearly searching a

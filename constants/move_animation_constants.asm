@@ -3,6 +3,7 @@
 ; is staged.  Legacy animation streams still treat this range as invalid.
 EXT_ANIM_SET_FRAME_EFFECT EQU $C0 ; next byte: EXT_FRAME_* mode
 EXT_ANIM_PLAY_USER_CRY    EQU $C1 ; next byte: MoveSoundTable profile move ID
+EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; plays the banked Shadow Ball projectile
 
 EXT_FRAME_NONE        EQU 0
 EXT_FRAME_FLASH_4     EQU 1

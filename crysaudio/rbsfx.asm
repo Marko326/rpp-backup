@@ -124,3 +124,6 @@ RedSfxHeaderPointers:
 	dbw BANK(Sfx_Damage), Sfx_Damage
 	dbw BANK(Sfx_SuperEffective), Sfx_SuperEffective
 
+	; Gold Shadow Ball: exact Gen 2 SFX already present in crysaudio/sfx.asm.
+	dbw BANK(Sfx_SludgeBomb), Sfx_SludgeBomb
+
