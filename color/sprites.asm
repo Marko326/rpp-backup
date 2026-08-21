@@ -245,9 +245,10 @@ LoadAnimationTilesetPalettes:
 
 	call LoadAttackSpritePalettes
 
-	; Fairy attack sprites use ATK_PAL_PURPLE in the tile palette map, but give
-	; that slot a dedicated pink palette for this animation only. Other types
-	; still receive the normal purple attack palette on their own animations.
+	; A move type may temporarily replace one generic attack palette slot.
+	; Fairy already uses this to turn ATK_PAL_PURPLE pink.  Dark similarly
+	; turns ATK_PAL_GREY into PAL_BLACK, so existing grey/type-colored assets
+	; can become dark without a second graphics tileset or per-move gfx copy.
 	ld a,[H_WHOSETURN]
 	and a
 	ld a,[wPlayerMoveType]
@@ -255,11 +256,20 @@ LoadAnimationTilesetPalettes:
 	ld a,[wEnemyMoveType]
 .gotAnimationMoveType
 	cp FAIRY
-	jr nz,.notFairyAnimation
+	jr z,.fairyAnimationPalette
+	cp DARK
+	jr z,.darkAnimationPalette
+	jr .animationTypePaletteDone
+.fairyAnimationPalette
 	ld d,PAL_PINKMON
 	ld e,ATK_PAL_PURPLE
+	jr .loadAnimationTypePalette
+.darkAnimationPalette
+	ld d,PAL_BLACK
+	ld e,ATK_PAL_GREY
+.loadAnimationTypePalette
 	call LoadSGBPalette_Sprite
-.notFairyAnimation
+.animationTypePaletteDone
 
 	; Indices 0 and 2 both refer to "AnimationTileset1", just different amounts of it.
 	; 0 is in-battle, 2 is during a trade.
