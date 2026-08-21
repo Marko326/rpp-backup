@@ -245,10 +245,15 @@ LoadAnimationTilesetPalettes:
 
 	call LoadAttackSpritePalettes
 
-	; A move type may temporarily replace one generic attack palette slot.
-	; Fairy already uses this to turn ATK_PAL_PURPLE pink.  Dark similarly
-	; turns ATK_PAL_GREY into PAL_BLACK, so existing grey/type-colored assets
-	; can become dark without a second graphics tileset or per-move gfx copy.
+	; Tileset 2 is the trade-animation path, not a battle move.  Trade callers
+	; do not initialize H_WHOSETURN / MoveType for this animation, so never let
+	; stale battle state recolor trade sprites (notably TradeBallPoofAnim).
+	ld a,c
+	cp 2
+	jr z,.animationTypePaletteDone
+
+	; A battle move type may temporarily replace one generic attack palette slot.
+	; Fairy turns ATK_PAL_PURPLE pink; Dark turns ATK_PAL_GREY into PAL_BLACK.
 	ld a,[H_WHOSETURN]
 	and a
 	ld a,[wPlayerMoveType]

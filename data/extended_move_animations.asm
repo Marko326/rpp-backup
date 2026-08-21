@@ -498,24 +498,38 @@ DracoMeteorExtAnimEnd:
 ; Generic duplicate+offset primitive used by Night Slash.
 ;
 ; DrawFrameBlock calls this after writing the source FrameBlock but before its
-; normal delay/cleanup.  Instead of appending the copy to the source stream,
-; write it to the matching OAM slot in the upper 20-sprite lane (slot + 20).
-; This preserves legacy mode-2/mode-4 overwrite/persistence behavior exactly.
+; normal delay/cleanup.  The copy uses the matching slot in OAM lane 20-39,
+; preserving legacy mode-2/mode-4 overwrite/persistence behavior.
 ;
-; Prototype budget: the source composition must remain within OAM slots 0-19.
-; Sub16 peaks below that limit.  Do not generalize the allocator until a
-; second real animation needs a larger composition.
+; Fail closed unless the ENTIRE source FrameBlock lies in slots 0-19.  This is
+; an interface invariant, not a comment-only promise: source + 20 must still
+; fit inside the 40-entry OAM buffer even if another recipe reuses this mode.
 ;
-; V2 widens Gold Slash's 4 px placement to 6 px because Gen1 Cut is a
-; thicker composite.  Mirror the local (-6,-6) offset through the source
-; transform so enemy use stays symmetric: transform 0/4=(-6,-6),
-; 1/3=(+6,+6), 2=(+6,-6).
+; Offset semantics follow DrawFrameBlock's local-coordinate transforms:
+; transform 0/3/4=(-6,-6), transform 1=(+6,+6), transform 2=(+6,-6).
 DuplicateCurrentFrameBlockOffset6:
 	; HL = source OAM slot for the FrameBlock just drawn.
 	ld a,[wFBDestAddr + 1]
 	ld l,a
 	ld a,[wFBDestAddr]
 	ld h,a
+
+	; The dedicated duplicate lane starts at sprite 20.  Reject a source that
+	; starts outside lane 0-19 or whose complete FrameBlock crosses that split.
+	ld a,h
+	cp HIGH(wOAMBuffer)
+	ret nz
+	ld a,l
+	sub LOW(wOAMBuffer)
+	cp 20 * 4
+	ret nc
+	ld c,a ; source byte offset within wOAMBuffer
+	ld a,[wNumFBTiles]
+	add a
+	add a ; bytes in this FrameBlock
+	add c
+	cp 20 * 4 + 1
+	ret nc ; end offset > 80 would make the duplicate overrun OAM
 
 	; DE = corresponding slot in the upper 20-sprite OAM lane.
 	ld a,l
@@ -526,11 +540,10 @@ DuplicateCurrentFrameBlockOffset6:
 	ld d,a
 
 	; C bits: bit 0 = +X instead of -X, bit 1 = +Y instead of -Y.
+	; Transform 3 flips BaseCoord only; FrameBlock-local offsets stay unflipped.
 	ld c,0
 	ld a,[wSubAnimTransform]
 	cp 1
-	jr z,.flipBoth
-	cp 3
 	jr z,.flipBoth
 	cp 2
 	jr nz,.offsetReady
@@ -574,11 +587,21 @@ DuplicateCurrentFrameBlockOffset6:
 	jr nz,.loop
 	ret
 
-; V2 anchor correction for the specific Sub38 -> FrameBlock68 prototype.
-; Every 66 -> 68 replacement grows from 8 px to 16 px in width, so shift
-; the star left 4 px.  Sub38's 67 entries are its mode-3 terminal objects,
-; except for the final entry (counter == 1); those also grow from 8 px to
-; 16 px in height, so shift them up 4 px as well.
+; Generic dispatch point for FrameBlock-override anchor corrections.  The
+; override mechanism itself has no Draco-specific geometry baked into bank $1E.
+ApplyFrameBlockOverrideAnchorCompensation:
+	ld a,[wAnimationID]
+	cp DRACO_METEOR
+	ret nz
+	ld a,[wExtendedAnimFrameEffect]
+	and $7f
+	cp $68
+	ret nz
+
+; Draco Meteor V2 anchor correction for Sub38 -> FrameBlock68.  Every 66 -> 68
+; replacement grows from 8 px to 16 px in width, so shift left 4 px.  Sub38's
+; 67 entries are its mode-3 terminal objects except the final entry; those also
+; grow from 8 px to 16 px in height, so shift them up 4 px.
 ApplyDracoMeteorStarAnchorCompensation:
 	ld a,[wBaseCoordX]
 	sub 4

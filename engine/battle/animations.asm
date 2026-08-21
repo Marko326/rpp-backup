@@ -137,11 +137,11 @@ DrawFrameBlock:
 	ld a,[wExtendedAnimFrameEffect]
 	cp EXT_FRAME_DUPLICATE_OFFSET_6
 	jr nz,.skipExtendedDuplicateOffset6
-	push bc
+	; DE is the source-lane end pointer and is needed by mode 2/3 below.
+	; BC is already scratch inside DrawFrameBlock, so do not save it here.
 	push de
 	callba DuplicateCurrentFrameBlockOffset6
 	pop de
-	pop bc
 .skipExtendedDuplicateOffset6
 	ld a,[wFBMode]
 	cp a,2
@@ -648,7 +648,6 @@ PlaySubanimation:
 	ld a,[wSubAnimSubEntryAddr]
 	ld l,a
 .loop
-	push hl
 	; Dedicated recipes may reuse a legacy motion while forcing a different
 	; complete FrameBlock.  This keeps the subanimation's BaseCoord and mode
 	; sequence intact instead of relying on cross-tileset half-objects.
@@ -656,11 +655,16 @@ PlaySubanimation:
 	bit 7,a
 	jr z,.useSubanimationFrameBlock
 	and $7f
+	cp $7A ; FrameBlockPointers contains IDs $00-$79
+	ret nc ; malformed override: fail closed before touching the pointer table
 	ld c,a
 	jr .gotFrameBlock
 .useSubanimationFrameBlock
 	ld c,[hl] ; frame block ID from the legacy subanimation
 .gotFrameBlock
+	; Save the legacy subentry pointer only after override validation, so an
+	; invalid override can return without leaving an unmatched stack entry.
+	push hl
 	ld b,0
 	ld hl,FrameBlockPointers
 	add hl,bc
@@ -685,14 +689,14 @@ PlaySubanimation:
 	inc hl
 	ld a,[hl] ; frame block mode
 	ld [wFBMode],a
-	; Draco Meteor V2: compensate the centre shift caused by replacing
-	; IceFall's narrow 66/67 objects with the complete 16x16 Swift star (68).
-	; Keep the larger helper in bank $3A so bank $1E only pays this small gate.
+	; FrameBlock overrides may need object-specific anchor compensation.  Keep
+	; the dispatch in bank $3A so this generic renderer is not tied to Draco
+	; Meteor or FrameBlock68.  The helper itself fail-closes for other cases.
 	ld a,[wExtendedAnimFrameEffect]
-	cp EXT_FRAMEBLOCK_OVERRIDE | $68
-	jr nz,.skipFrameBlockAnchorCompensation
+	bit 7,a
+	jr z,.skipFrameBlockAnchorCompensation
 	push bc ; DrawFrameBlock needs the resolved FrameBlock pointer after callba
-	callba ApplyDracoMeteorStarAnchorCompensation
+	callba ApplyFrameBlockOverrideAnchorCompensation
 	pop bc
 .skipFrameBlockAnchorCompensation
 	call DrawFrameBlock
