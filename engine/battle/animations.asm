@@ -131,6 +131,18 @@ DrawFrameBlock:
 	cp c
 	jp nz,.loop ; go back up if there are more tiles to draw
 .afterDrawingTiles
+	; Dedicated recipes may request a second copy of the FrameBlock that was
+	; just drawn.  The banked helper writes it into a separate OAM lane, so
+	; legacy mode-2/mode-4 overwrite semantics remain untouched.
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAME_DUPLICATE_OFFSET_6
+	jr nz,.skipExtendedDuplicateOffset6
+	push bc
+	push de
+	callba DuplicateCurrentFrameBlockOffset6
+	pop de
+	pop bc
+.skipExtendedDuplicateOffset6
 	ld a,[wFBMode]
 	cp a,2
 	jr z,.advanceFrameBlockDestAddr; skip delay and don't clean OAM buffer
@@ -210,7 +222,7 @@ PlayAnimation:
 	ld a,[hli]
 	bit 7,a
 	jr nz,.storeExtendedFrameMode ; bit 7 = FrameBlock override
-	cp EXT_FRAME_ROCK_SLIDE + 1
+	cp EXT_FRAME_DUPLICATE_OFFSET_6 + 1
 	ret nc ; unknown per-frame mode: fail closed
 .storeExtendedFrameMode
 	ld [wExtendedAnimFrameEffect],a
@@ -990,18 +1002,6 @@ DoBlizzardSpecialEffects:
 	cp a,5
 	jp z,AnimationFlashScreen
 	cp a,1
-	jp z,AnimationFlashScreen
-	ret
-
-; flashes the screen at 3 points in the subanimation
-; unused
-FlashScreenUnused:
-	ld a,[wSubAnimCounter]
-	cp a,14
-	jp z,AnimationFlashScreen
-	cp a,9
-	jp z,AnimationFlashScreen
-	cp a,2
 	jp z,AnimationFlashScreen
 	ret
 

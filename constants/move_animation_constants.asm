@@ -10,6 +10,7 @@ EXT_FRAME_FLASH_4     EQU 1
 EXT_FRAME_FLASH_8     EQU 2
 EXT_FRAME_BLIZZARD    EQU 3
 EXT_FRAME_ROCK_SLIDE  EQU 4
+EXT_FRAME_DUPLICATE_OFFSET_6 EQU 5 ; duplicate current FrameBlock at local (-6,-6)
 
 ; When bit 7 is set, the C0 operand is not a per-frame effect.  Instead, the
 ; low 7 bits force every entry of the next legacy subanimation to draw that

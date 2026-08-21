@@ -389,9 +389,13 @@ FeintAttackExtAnimEnd:
 NightSlashExtAnim:
 	db NightSlashExtAnimEnd - NightSlashExtAnimData
 NightSlashExtAnimData:
-	db SE_DARK_SCREEN_FLASH,$0E
-	db $06,$A2,$0F
-	db $04,$FF,$16
+	; Keep Cut's native tileset-0 geometry, but let the Dark-type palette
+	; override recolor its grey attack palette to PAL_BLACK.  Duplicate the
+	; clean Cut object at a wider local offset so the two slashes stay distinct.
+	; $03 -> $02 -> $01 still directly tunes the animation speed.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
+	db $03,$A2,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db $FF
 NightSlashExtAnimEnd:
 	IF NightSlashExtAnimEnd - NightSlashExtAnimData > 30
@@ -490,6 +494,85 @@ DracoMeteorExtAnimEnd:
 	IF DracoMeteorExtAnimEnd - DracoMeteorExtAnimData > 30
 		fail "Draco Meteor animation recipe exceeds wBuffer"
 	ENDC
+
+; Generic duplicate+offset primitive used by Night Slash.
+;
+; DrawFrameBlock calls this after writing the source FrameBlock but before its
+; normal delay/cleanup.  Instead of appending the copy to the source stream,
+; write it to the matching OAM slot in the upper 20-sprite lane (slot + 20).
+; This preserves legacy mode-2/mode-4 overwrite/persistence behavior exactly.
+;
+; Prototype budget: the source composition must remain within OAM slots 0-19.
+; Sub16 peaks below that limit.  Do not generalize the allocator until a
+; second real animation needs a larger composition.
+;
+; V2 widens Gold Slash's 4 px placement to 6 px because Gen1 Cut is a
+; thicker composite.  Mirror the local (-6,-6) offset through the source
+; transform so enemy use stays symmetric: transform 0/4=(-6,-6),
+; 1/3=(+6,+6), 2=(+6,-6).
+DuplicateCurrentFrameBlockOffset6:
+	; HL = source OAM slot for the FrameBlock just drawn.
+	ld a,[wFBDestAddr + 1]
+	ld l,a
+	ld a,[wFBDestAddr]
+	ld h,a
+
+	; DE = corresponding slot in the upper 20-sprite OAM lane.
+	ld a,l
+	add a,20 * 4
+	ld e,a
+	ld a,h
+	adc a,0
+	ld d,a
+
+	; C bits: bit 0 = +X instead of -X, bit 1 = +Y instead of -Y.
+	ld c,0
+	ld a,[wSubAnimTransform]
+	cp 1
+	jr z,.flipBoth
+	cp 3
+	jr z,.flipBoth
+	cp 2
+	jr nz,.offsetReady
+	set 0,c
+	jr .offsetReady
+.flipBoth
+	ld c,3
+.offsetReady
+	ld a,[wNumFBTiles]
+	ld b,a
+.loop
+	ld a,[hli] ; Y
+	bit 1,c
+	jr z,.subtractY
+	add 6
+	jr .storeY
+.subtractY
+	sub 6
+.storeY
+	ld [de],a
+	inc de
+
+	ld a,[hli] ; X
+	bit 0,c
+	jr z,.subtractX
+	add 6
+	jr .storeX
+.subtractX
+	sub 6
+.storeX
+	ld [de],a
+	inc de
+
+	ld a,[hli] ; tile
+	ld [de],a
+	inc de
+	ld a,[hli] ; flags
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.loop
+	ret
 
 ; V2 anchor correction for the specific Sub38 -> FrameBlock68 prototype.
 ; Every 66 -> 68 replacement grows from 8 px to 16 px in width, so shift
