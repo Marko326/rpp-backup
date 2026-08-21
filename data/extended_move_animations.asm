@@ -476,9 +476,13 @@ DazzlingGleamExtAnimEnd:
 DracoMeteorExtAnim:
 	db DracoMeteorExtAnimEnd - DracoMeteorExtAnimData
 DracoMeteorExtAnimData:
+	; Prototype: keep Blizzard/IceFall's BaseCoord + mode sequence (Sub38),
+	; but force Swift's complete 16x16 star object (FrameBlock68).  Tileset 1
+	; is required because FrameBlock68's $03/$13 tiles are Swift's star there.
 	db SE_DARK_SCREEN_PALETTE,$FF
-	db $04,$9C,$1D
-	db $03,$9C,$1E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
+	db $43,$9C,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db SE_SHAKE_SCREEN,$FF
 	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
@@ -486,6 +490,28 @@ DracoMeteorExtAnimEnd:
 	IF DracoMeteorExtAnimEnd - DracoMeteorExtAnimData > 30
 		fail "Draco Meteor animation recipe exceeds wBuffer"
 	ENDC
+
+; V2 anchor correction for the specific Sub38 -> FrameBlock68 prototype.
+; Every 66 -> 68 replacement grows from 8 px to 16 px in width, so shift
+; the star left 4 px.  Sub38's 67 entries are its mode-3 terminal objects,
+; except for the final entry (counter == 1); those also grow from 8 px to
+; 16 px in height, so shift them up 4 px as well.
+ApplyDracoMeteorStarAnchorCompensation:
+	ld a,[wBaseCoordX]
+	sub 4
+	ld [wBaseCoordX],a
+
+	ld a,[wFBMode]
+	cp 3
+	jr z,.shiftY
+	ld a,[wSubAnimCounter]
+	cp 1
+	ret nz
+.shiftY
+	ld a,[wBaseCoordY]
+	sub 4
+	ld [wBaseCoordY],a
+	ret
 
 DragonbreathExtAnim:
 	db DragonbreathExtAnimEnd - DragonbreathExtAnimData

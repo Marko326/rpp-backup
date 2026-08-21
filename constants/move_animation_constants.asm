@@ -11,6 +11,11 @@ EXT_FRAME_FLASH_8     EQU 2
 EXT_FRAME_BLIZZARD    EQU 3
 EXT_FRAME_ROCK_SLIDE  EQU 4
 
+; When bit 7 is set, the C0 operand is not a per-frame effect.  Instead, the
+; low 7 bits force every entry of the next legacy subanimation to draw that
+; FrameBlock while preserving the original BaseCoord/mode sequence.
+EXT_FRAMEBLOCK_OVERRIDE EQU $80
+
 ; subanimations
 
 const_value = $D8
