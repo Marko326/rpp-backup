@@ -208,8 +208,11 @@ PlayAnimation:
 	ret
 .setExtendedFrameEffect
 	ld a,[hli]
+	bit 7,a
+	jr nz,.storeExtendedFrameMode ; bit 7 = FrameBlock override
 	cp EXT_FRAME_ROCK_SLIDE + 1
-	ret nc ; unknown mode: fail closed
+	ret nc ; unknown per-frame mode: fail closed
+.storeExtendedFrameMode
 	ld [wExtendedAnimFrameEffect],a
 	jr .animationLoop
 .playExtendedUserCry
@@ -634,7 +637,18 @@ PlaySubanimation:
 	ld l,a
 .loop
 	push hl
-	ld c,[hl] ; frame block ID
+	; Dedicated recipes may reuse a legacy motion while forcing a different
+	; complete FrameBlock.  This keeps the subanimation's BaseCoord and mode
+	; sequence intact instead of relying on cross-tileset half-objects.
+	ld a,[wExtendedAnimFrameEffect]
+	bit 7,a
+	jr z,.useSubanimationFrameBlock
+	and $7f
+	ld c,a
+	jr .gotFrameBlock
+.useSubanimationFrameBlock
+	ld c,[hl] ; frame block ID from the legacy subanimation
+.gotFrameBlock
 	ld b,0
 	ld hl,FrameBlockPointers
 	add hl,bc
@@ -659,6 +673,16 @@ PlaySubanimation:
 	inc hl
 	ld a,[hl] ; frame block mode
 	ld [wFBMode],a
+	; Draco Meteor V2: compensate the centre shift caused by replacing
+	; IceFall's narrow 66/67 objects with the complete 16x16 Swift star (68).
+	; Keep the larger helper in bank $3A so bank $1E only pays this small gate.
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAMEBLOCK_OVERRIDE | $68
+	jr nz,.skipFrameBlockAnchorCompensation
+	push bc ; DrawFrameBlock needs the resolved FrameBlock pointer after callba
+	callba ApplyDracoMeteorStarAnchorCompensation
+	pop bc
+.skipFrameBlockAnchorCompensation
 	call DrawFrameBlock
 	call DoSpecialEffectByAnimationId ; run animation-specific function (if there is one)
 	ld a,[wSubAnimCounter]
