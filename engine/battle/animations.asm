@@ -217,6 +217,8 @@ PlayAnimation:
 	jr z,.playExtendedUserCry
 	cp EXT_ANIM_SHADOW_BALL_PROJECTILE
 	jr z,.playExtendedProjectile
+	cp EXT_ANIM_SET_PALETTE_MODE
+	jr z,.setExtendedPaletteMode
 	ret
 .setExtendedFrameEffect
 	ld a,[hli]
@@ -226,6 +228,12 @@ PlayAnimation:
 	ret nc ; unknown per-frame mode: fail closed
 .storeExtendedFrameMode
 	ld [wExtendedAnimFrameEffect],a
+	jr .animationLoop
+.setExtendedPaletteMode
+	ld a,[hli]
+	cp EXT_PALETTE_MODE_MOVE_TYPE + 1
+	ret nc ; unknown palette mode: fail closed
+	ld [wExtendedAnimPaletteMode],a
 	jr .animationLoop
 .playExtendedUserCry
 	ld a,[hli]
@@ -486,6 +494,7 @@ MoveAnimation:
 	xor a
 	ld [wSubAnimSubEntryAddr],a
 	ld [wExtendedAnimFrameEffect],a
+	ld [wExtendedAnimPaletteMode],a
 	ld [wMoveAnimScriptLoaded],a ; clear staged extended recipe before later legacy animations
 	ld [wSubAnimTransform],a
 	dec a

@@ -63,6 +63,13 @@ LoadMoveDexTypePalette:
 	ld hl, MoveDexTypePaletteTable
 	jr LoadPalette
 
+LoadBattleAnimTypePalette_Sprite:
+	; d = move type ID, e = OBJ palette slot.
+	; BattleAnimTypePaletteTable stores only the two visible middle colors;
+	; LoadPalette_Sprite supplies transparent color 0 and black color 3.
+	ld hl, BattleAnimTypePaletteTable
+	jr LoadPalette_Sprite
+
 LoadPokemonPalette:
 	ld hl, PokemonPaletteTable
 	jr LoadPalette

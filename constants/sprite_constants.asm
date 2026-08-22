@@ -150,7 +150,15 @@ ATK_PAL_YELLOW  EQU 4
 ATK_PAL_GREEN   EQU 5
 ATK_PAL_ICE     EQU 6
 ATK_PAL_PURPLE  EQU 7
-; 8: color based on attack type
+
+; Dedicated dynamic move-type palette slots.  These are only used while an
+; expanded animation recipe explicitly enables EXT_PALETTE_MODE_MOVE_TYPE.
+; The fixed animation gfx in each tileset do not use these slots, so loading a
+; move-specific palette here leaves legacy animation colors unchanged.
+BATTLE_TYPE_PAL_TILESET1 EQU 5 ; wWhichBattleAnimTileset = 0
+BATTLE_TYPE_PAL_TILESET2 EQU 3 ; wWhichBattleAnimTileset = 1
+
+; 8: legacy color based on attack type (TypeColorTable; semantics preserved)
 ; 9: don't change color palette (assume it's already set properly from elsewhere)
 
 ; Moved these here instead of making them local

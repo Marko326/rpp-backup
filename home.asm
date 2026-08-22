@@ -4972,6 +4972,7 @@ GetCurrentMoveID::
 PrepareCurrentMoveAnimation::
 	xor a
 	ld [wExtendedAnimFrameEffect], a
+	ld [wExtendedAnimPaletteMode], a
 	ld [wMoveAnimScriptLoaded], a
 	ld a, [H_WHOSETURN]
 	and a

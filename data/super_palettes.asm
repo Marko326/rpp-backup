@@ -224,6 +224,131 @@ SuperPalettes:
 	RGB 24,20,10
 	RGB 0,0,0
 
+; Battle-animation dedicated 18-type palettes.
+;
+; This is intentionally separate from both the legacy 8 attack palettes and
+; MoveDex presentation colors.  Expanded animation recipes opt into this table
+; explicitly, so original Swift/fire/ice/etc. colors remain untouched unless a
+; recipe asks for move-type coloring.  Sparse Gen1 type IDs keep placeholders.
+BattleAnimTypePaletteTable:
+
+; $00 NORMAL - warm neutral gray
+	RGB 27,26,24
+	RGB 17,16,15
+
+; $01 FIGHTING - crimson / brick red
+	RGB 29,11,8
+	RGB 17,4,3
+
+; $02 FLYING - pale sky blue
+	RGB 22,27,31
+	RGB 12,17,24
+
+; $03 POISON - vivid violet
+	RGB 27,11,29
+	RGB 14,5,18
+
+; $04 GROUND - ochre earth
+	RGB 28,18,7
+	RGB 16,9,3
+
+; $05 ROCK - tan stone
+	RGB 24,21,13
+	RGB 13,11,7
+
+; $06 unused / TYPELESS - neutral
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $07 BUG - yellow-green / olive
+	RGB 24,29,9
+	RGB 11,18,4
+
+; $08 GHOST - indigo purple
+	RGB 19,13,28
+	RGB 8,6,16
+
+; $09 STEEL - cool silver
+	RGB 27,30,31
+	RGB 15,18,21
+
+; $0A UNK_TYPE - neutral
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0B unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0C unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0D unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0E unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0F unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $10 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $11 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $12 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $13 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $14 FIRE - orange / hot red
+	RGB 31,19,5
+	RGB 26,3,1
+
+; $15 WATER - cyan / deep blue
+	RGB 11,23,31
+	RGB 5,11,23
+
+; $16 GRASS - leaf green
+	RGB 13,28,10
+	RGB 5,17,6
+
+; $17 ELECTRIC - bright yellow / gold
+	RGB 31,29,5
+	RGB 22,16,1
+
+; $18 PSYCHIC - hot pink / magenta red
+	RGB 31,14,23
+	RGB 20,5,13
+
+; $19 ICE - pale cyan / icy teal
+	RGB 20,30,30
+	RGB 8,19,22
+
+; $1A DRAGON - blue violet
+	RGB 12,14,31
+	RGB 6,5,19
+
+; $1B DARK - charcoal blue-black for type-colored battle animations
+	RGB 15,16,20
+	RGB 6,7,10
+
+; $1C FAIRY - preserve the previously approved PAL_PINKMON look
+	RGB 30,22,24
+	RGB 28,15,21
+
+
 ; MoveDex 专用类型图标调色板。
 ; 和 PokemonPaletteTable 一样，每项只保存中间两色。
 ; LoadMoveDexTypePalette / LoadPalette 会自动补：白色 -> 两个自定义色 -> 黑色。
