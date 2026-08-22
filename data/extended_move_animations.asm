@@ -204,7 +204,7 @@ ExtendedMoveAnimationPointers:
 	dw FlashCannonExtAnim           ; FLASH_CANNON
 	dw IronTailExtAnim              ; IRON_TAIL
 	dw MeteorMashExtAnim            ; METEOR_MASH
-	dw CrunchExtAnim                ; CRUNCH
+	dw FangHeavyExtAnim             ; CRUNCH
 	dw DarkPulseExtAnim             ; DARK_PULSE
 	dw FeintAttackExtAnim           ; FEINT_ATTACK
 	dw NightSlashExtAnim            ; NIGHT_SLASH
@@ -222,11 +222,11 @@ ExtendedMoveAnimationPointers:
 	dw SteelWingExtAnim             ; STEEL_WING
 	dw IronDefenseExtAnim           ; IRON_DEFENSE
 	dw AirSlashExtAnim              ; AIR_SLASH
-	dw FireFangExtAnim              ; FIRE_FANG
+	dw FangNormalExtAnim            ; FIRE_FANG
 	dw FlareBlitzExtAnim            ; FLARE_BLITZ
 	dw BlastBurnExtAnim             ; BLAST_BURN
-	dw IceFangExtAnim               ; ICE_FANG
-	dw ThunderFangExtAnim           ; THUNDER_FANG
+	dw FangNormalExtAnim            ; ICE_FANG
+	dw FangNormalExtAnim            ; THUNDER_FANG
 	dw WaterPulseExtAnim            ; WATER_PULSE
 	dw AquaTailExtAnim              ; AQUA_TAIL
 	dw HydroCannonExtAnim           ; HYDRO_CANNON
@@ -255,7 +255,7 @@ ExtendedMoveAnimationPointers:
 	dw WoodHammerExtAnim            ; WOOD_HAMMER
 	dw PoisonJabExtAnim             ; POISON_JAB
 	dw GunkShotExtAnim              ; GUNK_SHOT
-	dw PoisonFangExtAnim            ; POISON_FANG
+	dw FangNormalExtAnim            ; POISON_FANG
 	dw SludgeWaveExtAnim            ; SLUDGE_WAVE
 	dw SilverWindExtAnim            ; SILVER_WIND
 	dw BugBuzzExtAnim               ; BUG_BUZZ
@@ -344,17 +344,31 @@ MeteorMashExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-CrunchExtAnim:
-	db CrunchExtAnimEnd - CrunchExtAnimData
-CrunchExtAnimData:
-	db SE_DARK_SCREEN_PALETTE,$FF
+FangNormalExtAnim:
+	db FangNormalExtAnimEnd - FangNormalExtAnimData
+FangNormalExtAnimData:
+	; Shared Bite/Fang core.  Only this subanimation opts into move-type color.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db $08,$2B,$02
-	db SE_DARK_SCREEN_FLASH,$FF
-	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
-CrunchExtAnimEnd:
-	IF CrunchExtAnimEnd - CrunchExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
+FangNormalExtAnimEnd:
+	IF FangNormalExtAnimEnd - FangNormalExtAnimData > 30
+		fail "Fang normal animation recipe exceeds wBuffer"
+	ENDC
+
+FangHeavyExtAnim:
+	db FangHeavyExtAnimEnd - FangHeavyExtAnimData
+FangHeavyExtAnimData:
+	; Same Fang core and type color, plus a heavier impact profile for Crunch.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $08,$2B,$02
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+FangHeavyExtAnimEnd:
+	IF FangHeavyExtAnimEnd - FangHeavyExtAnimData > 30
+		fail "Fang heavy animation recipe exceeds wBuffer"
 	ENDC
 
 DarkPulseExtAnim:
@@ -798,18 +812,6 @@ AirSlashExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-FireFangExtAnim:
-	db FireFangExtAnimEnd - FireFangExtAnimData
-FireFangExtAnimData:
-	db $08,$2B,$02
-	db $46,$33,$11
-	db $46,$FF,$0C
-	db $FF
-FireFangExtAnimEnd:
-	IF FireFangExtAnimEnd - FireFangExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
-	ENDC
-
 FlareBlitzExtAnim:
 	db FlareBlitzExtAnimEnd - FlareBlitzExtAnimData
 FlareBlitzExtAnimData:
@@ -836,37 +838,6 @@ BlastBurnExtAnimData:
 	db $FF
 BlastBurnExtAnimEnd:
 	IF BlastBurnExtAnimEnd - BlastBurnExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
-	ENDC
-
-IceFangExtAnim:
-	db IceFangExtAnimEnd - IceFangExtAnimData
-IceFangExtAnimData:
-	db $08,$2B,$02
-	; Blizzard's snow subanimation relies on frame-counter flashes in the legacy
-	; engine. Request them explicitly while the ice sprites are active.
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
-	db $04,$3A,$38
-	db $04,$37,$38
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db $FF
-IceFangExtAnimEnd:
-	IF IceFangExtAnimEnd - IceFangExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
-	ENDC
-
-ThunderFangExtAnim:
-	db ThunderFangExtAnimEnd - ThunderFangExtAnimData
-ThunderFangExtAnimData:
-	db $08,$2B,$02
-	db SE_DARK_SCREEN_PALETTE,$FF
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
-	db $41,$54,$29
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db SE_RESET_SCREEN_PALETTE,$FF
-	db $FF
-ThunderFangExtAnimEnd:
-	IF ThunderFangExtAnimEnd - ThunderFangExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
@@ -1185,18 +1156,6 @@ GunkShotExtAnimData:
 GunkShotExtAnimEnd:
 	IF GunkShotExtAnimEnd - GunkShotExtAnimData > 30
 		fail "Gunk Shot animation recipe exceeds wBuffer"
-	ENDC
-
-PoisonFangExtAnim:
-	db PoisonFangExtAnimEnd - PoisonFangExtAnimData
-PoisonFangExtAnimData:
-	db $08,$2B,$02
-	db $46,$32,$13
-	db $46,$32,$14
-	db $FF
-PoisonFangExtAnimEnd:
-	IF PoisonFangExtAnimEnd - PoisonFangExtAnimData > 30
-		fail "Poison Fang animation recipe exceeds wBuffer"
 	ENDC
 
 HyperVoiceExtAnim:

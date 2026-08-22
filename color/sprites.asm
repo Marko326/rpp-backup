@@ -335,11 +335,23 @@ LoadAnimationTilesetPalettes:
 	ld [rSVBK],a
 	ld a,[wMoveAnimScriptLoaded]
 	and a
-	jr z,.dynamicTypePaletteRestoreBank2
+	jr nz,.checkExtendedDynamicTypePalette
+
+	; Legacy Bite has no expanded recipe, but it is the base animation for the
+	; Fang family.  Let the stock Bite animation use the same dynamic Dark
+	; palette as Crunch and the expanded elemental Fang recipes.  Other legacy
+	; animations keep their original fixed/type-color behavior.
+	ld a,[wAnimationID]
+	cp BITE
+	jr nz,.dynamicTypePaletteRestoreBank2
+	jr .loadDynamicTypePalette
+
+.checkExtendedDynamicTypePalette
 	ld a,[wExtendedAnimPaletteMode]
 	cp EXT_PALETTE_MODE_MOVE_TYPE
 	jr nz,.dynamicTypePaletteRestoreBank2
 
+.loadDynamicTypePalette
 	; Pick the current move's real type; unlike legacy palette-map 8, this new
 	; mode intentionally has no Absorb/Stun Spore/Solarbeam/Tri Attack exceptions.
 	ld a,[H_WHOSETURN]
