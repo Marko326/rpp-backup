@@ -2004,6 +2004,10 @@ wSubAnimSubEntryAddr:: ; d096
 wExtendedAnimFrameEffect:: ; d098
 	ds 1
 
+; Dedicated expanded-animation palette policy.  Zero preserves the legacy
+; per-tile palette map; EXT_PALETTE_MODE_MOVE_TYPE makes the next loaded
+; subanimation use the dedicated dynamic palette for the current move type.
+wExtendedAnimPaletteMode:: ; d099
 	ds 1
 
 wOutwardSpiralTileMapPointer:: ; d09a

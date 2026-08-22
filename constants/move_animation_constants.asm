@@ -4,6 +4,10 @@
 EXT_ANIM_SET_FRAME_EFFECT EQU $C0 ; next byte: EXT_FRAME_* mode
 EXT_ANIM_PLAY_USER_CRY    EQU $C1 ; next byte: MoveSoundTable profile move ID
 EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; plays the banked Shadow Ball projectile
+EXT_ANIM_SET_PALETTE_MODE EQU $C3 ; next byte: EXT_PALETTE_MODE_* for the next subanimation(s)
+
+EXT_PALETTE_MODE_FIXED     EQU 0 ; use the legacy per-tile animation palette map
+EXT_PALETTE_MODE_MOVE_TYPE EQU 1 ; use the dedicated 18-type dynamic OBJ palette
 
 EXT_FRAME_NONE        EQU 0
 EXT_FRAME_FLASH_4     EQU 1

@@ -167,9 +167,18 @@ ColorNonOverworldSprites:
 .getAttackType
 	push hl
 
-	; Load animation (move) being used
+	; Preserve legacy palette-map value 8 semantics, but only for real battle
+	; moves. Utility animations can inherit stale move/type state, so they fall
+	; back to palette 0 instead of being recolored by the previous attack.
 	xor a
 	ld [rSVBK],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.legacyTypeColorAllowed
+	ld a,[wAnimationID]
+	cp STRUGGLE + 1
+	jr nc,.legacyTypeColorFallback
+.legacyTypeColorAllowed
 	ld a,[wAnimationID]
 	ld d,a
 	ld a,2
@@ -213,6 +222,13 @@ ColorNonOverworldSprites:
 .noCarry
 	ld a,[hl]
 	pop hl
+	jr .setPalette
+
+.legacyTypeColorFallback
+	ld a,2
+	ld [rSVBK],a
+	xor a ; safe fixed palette for non-move users of legacy palette-map value 8
+	pop hl
 
 .setPalette
 	ld c,a
@@ -245,36 +261,48 @@ LoadAnimationTilesetPalettes:
 
 	call LoadAttackSpritePalettes
 
-	; Tileset 2 is the trade-animation path, not a battle move.  Trade callers
-	; do not initialize H_WHOSETURN / MoveType for this animation, so never let
-	; stale battle state recolor trade sprites (notably TradeBallPoofAnim).
+	; Preserve the existing Dark/Fairy battle look for legacy/fixed-palette
+	; animation content, but only for real battle moves.  Utility animations can
+	; inherit stale MoveType state, so fail closed before replacing whole slots.
 	ld a,c
 	cp 2
-	jr z,.animationTypePaletteDone
-
-	; A battle move type may temporarily replace one generic attack palette slot.
-	; Fairy turns ATK_PAL_PURPLE pink; Dark turns ATK_PAL_GREY into PAL_BLACK.
+	jr z,.legacyAnimationTypePaletteDone
+	xor a
+	ld [rSVBK],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.legacyAnimationMoveAllowed
+	ld a,[wAnimationID]
+	cp STRUGGLE + 1
+	jr nc,.legacyAnimationRestoreBank2
+.legacyAnimationMoveAllowed
+	ld a,2
+	ld [rSVBK],a
 	ld a,[H_WHOSETURN]
 	and a
 	ld a,[wPlayerMoveType]
-	jr z,.gotAnimationMoveType
+	jr z,.gotLegacyAnimationMoveType
 	ld a,[wEnemyMoveType]
-.gotAnimationMoveType
+.gotLegacyAnimationMoveType
 	cp FAIRY
 	jr z,.fairyAnimationPalette
 	cp DARK
 	jr z,.darkAnimationPalette
-	jr .animationTypePaletteDone
+	jr .legacyAnimationTypePaletteDone
 .fairyAnimationPalette
 	ld d,PAL_PINKMON
 	ld e,ATK_PAL_PURPLE
-	jr .loadAnimationTypePalette
+	jr .loadLegacyAnimationTypePalette
 .darkAnimationPalette
 	ld d,PAL_BLACK
 	ld e,ATK_PAL_GREY
-.loadAnimationTypePalette
+.loadLegacyAnimationTypePalette
 	call LoadSGBPalette_Sprite
-.animationTypePaletteDone
+	jr .legacyAnimationTypePaletteDone
+.legacyAnimationRestoreBank2
+	ld a,2
+	ld [rSVBK],a
+.legacyAnimationTypePaletteDone
 
 	; Indices 0 and 2 both refer to "AnimationTileset1", just different amounts of it.
 	; 0 is in-battle, 2 is during a trade.
@@ -293,6 +321,57 @@ LoadAnimationTilesetPalettes:
 	inc e
 	dec b
 	jr nz,.copyLoop
+
+	; Expanded recipes may explicitly opt the *next loaded subanimation* into
+	; move-type coloring.  Do not repurpose legacy palette-map value 8 and do not
+	; key this off tile IDs.  Instead, while the mode is active, map the complete
+	; battle-animation tileset range ($31-$7f) to one dedicated OBJ palette slot.
+	; A later subanimation reloads its original map when the recipe turns the mode
+	; back off, so Swift and other legacy users of the same gfx keep stock colors.
+	ld a,c
+	cp 2
+	jr z,.dynamicTypePaletteDone
+	xor a
+	ld [rSVBK],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr z,.dynamicTypePaletteRestoreBank2
+	ld a,[wExtendedAnimPaletteMode]
+	cp EXT_PALETTE_MODE_MOVE_TYPE
+	jr nz,.dynamicTypePaletteRestoreBank2
+
+	; Pick the current move's real type; unlike legacy palette-map 8, this new
+	; mode intentionally has no Absorb/Stun Spore/Solarbeam/Tri Attack exceptions.
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,[wPlayerMoveType]
+	jr z,.gotDynamicAnimationMoveType
+	ld a,[wEnemyMoveType]
+.gotDynamicAnimationMoveType
+	ld d,a
+	ld a,c
+	and a
+	ld e,BATTLE_TYPE_PAL_TILESET1
+	jr z,.gotDynamicTypePaletteSlot
+	ld e,BATTLE_TYPE_PAL_TILESET2
+.gotDynamicTypePaletteSlot
+	push de
+	call LoadBattleAnimTypePalette_Sprite
+	pop de
+	ld a,2
+	ld [rSVBK],a
+	ld hl,W2_SpritePaletteMap+$31
+	ld b,79
+	ld a,e
+.dynamicTypePaletteMapLoop
+	ld [hli],a
+	dec b
+	jr nz,.dynamicTypePaletteMapLoop
+	jr .dynamicTypePaletteDone
+.dynamicTypePaletteRestoreBank2
+	ld a,2
+	ld [rSVBK],a
+.dynamicTypePaletteDone
 
 	; If in a trade, some of the tiles near the end are different. Override some tiles
 	; for the link cable, and replace the "purple" palette to match the exact color of
