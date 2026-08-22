@@ -251,7 +251,7 @@ ExtendedMoveAnimationPointers:
 	dw WhirlpoolExtAnim             ; WHIRLPOOL
 	dw GigaDrainExtAnim             ; GIGA_DRAIN
 	dw PetalBlizzardExtAnim         ; PETALBLIZARD
-	dw LeafBladeExtAnim             ; LEAF_BLADE
+	dw NightSlashExtAnim            ; LEAF_BLADE - shared Blade family test
 	dw WoodHammerExtAnim            ; WOOD_HAMMER
 	dw PoisonJabExtAnim             ; POISON_JAB
 	dw GunkShotExtAnim              ; GUNK_SHOT
@@ -267,7 +267,7 @@ ExtendedMoveAnimationPointers:
 	dw MudBombExtAnim               ; MUD_BOMB
 	dw ExtrasensoryExtAnim          ; EXTRASENSORY
 	dw ZenHeadbuttExtAnim           ; ZEN_HEADBUTT
-	dw PsychoCutExtAnim             ; PSYCHO_CUT
+	dw NightSlashExtAnim            ; PSYCHO_CUT - shared Blade family test
 	dw HyperVoiceExtAnim            ; HYPER_VOICE
 	dw ExtremespeedExtAnim          ; EXTREMESPEED
 	dw GigaImpactExtAnim            ; GIGA_IMPACT
@@ -389,13 +389,13 @@ FeintAttackExtAnimEnd:
 NightSlashExtAnim:
 	db NightSlashExtAnimEnd - NightSlashExtAnimData
 NightSlashExtAnimData:
-	; Keep Cut's native tileset-0 geometry, but let the Dark-type palette
-	; override recolor its grey attack palette to PAL_BLACK.  Duplicate the
-	; clean Cut object at a wider local offset so the two slashes stay distinct.
-	; $03 -> $02 -> $01 still directly tunes the animation speed.
+	; Blade-family test: geometry stays native Cut, while this recipe explicitly
+	; opts only this subanimation into the dedicated 18-type palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
 	db $03,$A2,$16
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 NightSlashExtAnimEnd:
 	IF NightSlashExtAnimEnd - NightSlashExtAnimData > 30
@@ -495,49 +495,74 @@ DracoMeteorExtAnimEnd:
 		fail "Draco Meteor animation recipe exceeds wBuffer"
 	ENDC
 
-; Generic duplicate+offset primitive used by Night Slash.
+; Generic FrameBlock duplication primitives used by slash-family recipes.
 ;
 ; DrawFrameBlock calls this after writing the source FrameBlock but before its
-; normal delay/cleanup.  The copy uses the matching slot in OAM lane 20-39,
-; preserving legacy mode-2/mode-4 overwrite/persistence behavior.
+; normal delay/cleanup.  Duplicate modes use the matching slot in OAM lane
+; 20-39, preserving legacy mode-2/mode-4 overwrite/persistence behavior.
 ;
-; Fail closed unless the ENTIRE source FrameBlock lies in slots 0-19.  This is
-; an interface invariant, not a comment-only promise: source + 20 must still
-; fit inside the 40-entry OAM buffer even if another recipe reuses this mode.
-;
-; Offset semantics follow DrawFrameBlock's local-coordinate transforms:
-; transform 0/3/4=(-6,-6), transform 1=(+6,+6), transform 2=(+6,-6).
-DuplicateCurrentFrameBlockOffset6:
-	; HL = source OAM slot for the FrameBlock just drawn.
+; Both modes fail closed unless the ENTIRE source FrameBlock lies in slots
+; 0-19.  The wrapper preserves DE because DrawFrameBlock may need its source
+; end pointer immediately after the banked call.
+DuplicateCurrentFrameBlock:
+	push de
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAME_DUPLICATE_OFFSET_6
+	jr z,.offset6
+	cp EXT_FRAME_DUPLICATE_MIRROR_X
+	jr z,.mirrorX
+	jr .done
+.offset6
+	call DuplicateCurrentFrameBlockOffset6
+	jr .done
+.mirrorX
+	call DuplicateCurrentFrameBlockMirrorX
+.done
+	pop de
+	ret
+
+; Return HL = source FrameBlock OAM slot and DE = corresponding slot +20.
+; Carry is set only when source..source+size is wholly inside OAM lane 0-19.
+GetCurrentFrameBlockDuplicateLane:
 	ld a,[wFBDestAddr + 1]
 	ld l,a
 	ld a,[wFBDestAddr]
 	ld h,a
 
-	; The dedicated duplicate lane starts at sprite 20.  Reject a source that
-	; starts outside lane 0-19 or whose complete FrameBlock crosses that split.
 	ld a,h
 	cp HIGH(wOAMBuffer)
-	ret nz
+	jr nz,.invalid
 	ld a,l
 	sub LOW(wOAMBuffer)
 	cp 20 * 4
-	ret nc
+	jr nc,.invalid
 	ld c,a ; source byte offset within wOAMBuffer
 	ld a,[wNumFBTiles]
 	add a
 	add a ; bytes in this FrameBlock
 	add c
 	cp 20 * 4 + 1
-	ret nc ; end offset > 80 would make the duplicate overrun OAM
+	jr nc,.invalid ; end offset > 80 would make the duplicate overrun OAM
 
-	; DE = corresponding slot in the upper 20-sprite OAM lane.
 	ld a,l
 	add a,20 * 4
 	ld e,a
 	ld a,h
 	adc a,0
 	ld d,a
+	scf
+	ret
+.invalid
+	and a ; clear carry so callers fail closed
+	ret
+
+; Night Slash / parallel-slash primitive.  V2 widened Gold Slash's 4 px
+; placement to 6 px because Gen1 Cut is a thicker composite.
+; Offset semantics follow DrawFrameBlock's local-coordinate transforms:
+; transform 0/3/4=(-6,-6), transform 1=(+6,+6), transform 2=(+6,-6).
+DuplicateCurrentFrameBlockOffset6:
+	call GetCurrentFrameBlockDuplicateLane
+	ret nc
 
 	; C bits: bit 0 = +X instead of -X, bit 1 = +Y instead of -Y.
 	; Transform 3 flips BaseCoord only; FrameBlock-local offsets stay unflipped.
@@ -581,6 +606,45 @@ DuplicateCurrentFrameBlockOffset6:
 	ld [de],a
 	inc de
 	ld a,[hli] ; flags
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.loop
+	ret
+
+; Cross-slash primitive.  Mirror every sprite in the current FrameBlock around
+; the target Pokemon's vertical centerline and toggle HFLIP.  A diagonal Cut
+; arm therefore becomes its opposite diagonal without a copied Subanimation or
+; second graphics object.  Gen1 battle target centers are X=120 (enemy) and
+; X=48 (player), so for an 8 px OAM sprite: X' = (2*center - 8) - X.
+DuplicateCurrentFrameBlockMirrorX:
+	call GetCurrentFrameBlockDuplicateLane
+	ret nc
+
+	ld c,$E8 ; 2*120 - 8: player attacks enemy
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.gotMirrorConstant
+	ld c,$58 ; 2*48 - 8: enemy attacks player
+.gotMirrorConstant
+	ld a,[wNumFBTiles]
+	ld b,a
+.loop
+	ld a,[hli] ; Y is unchanged by a vertical-axis mirror
+	ld [de],a
+	inc de
+
+	ld a,c
+	sub [hl] ; X' = (2*targetCenter - 8) - X
+	inc hl
+	ld [de],a
+	inc de
+
+	ld a,[hli] ; tile
+	ld [de],a
+	inc de
+	ld a,[hli] ; flags
+	xor OAM_HFLIP
 	ld [de],a
 	inc de
 	dec b
@@ -1265,9 +1329,14 @@ MegahornExtAnimEnd:
 XScissorExtAnim:
 	db XScissorExtAnimEnd - XScissorExtAnimData
 XScissorExtAnimData:
+	; Cross-Blade accent: keep the verified mirror-X geometry, and explicitly
+	; color only the Cut subanimation with the current BUG palette.
 	db SE_DARK_SCREEN_FLASH,$0E
-	db $04,$FF,$16
-	db $04,$FF,$16
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_MIRROR_X
+	db $03,$FF,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 XScissorExtAnimEnd:
 	IF XScissorExtAnimEnd - XScissorExtAnimData > 30

@@ -132,17 +132,15 @@ DrawFrameBlock:
 	jp nz,.loop ; go back up if there are more tiles to draw
 .afterDrawingTiles
 	; Dedicated recipes may request a second copy of the FrameBlock that was
-	; just drawn.  The banked helper writes it into a separate OAM lane, so
-	; legacy mode-2/mode-4 overwrite semantics remain untouched.
+	; just drawn.  Modes 5-6 share a banked duplicate dispatcher and write the
+	; copy into a separate OAM lane, preserving legacy mode-2/mode-4 behavior.
+	; The banked dispatcher preserves DE for the mode-2/mode-3 continuation.
 	ld a,[wExtendedAnimFrameEffect]
-	cp EXT_FRAME_DUPLICATE_OFFSET_6
-	jr nz,.skipExtendedDuplicateOffset6
-	; DE is the source-lane end pointer and is needed by mode 2/3 below.
-	; BC is already scratch inside DrawFrameBlock, so do not save it here.
-	push de
-	callba DuplicateCurrentFrameBlockOffset6
-	pop de
-.skipExtendedDuplicateOffset6
+	sub EXT_FRAME_DUPLICATE_OFFSET_6
+	cp 2 ; offset-6 and target-mirror are the two duplicate modes
+	jr nc,.skipExtendedFrameDuplicate
+	callba DuplicateCurrentFrameBlock
+.skipExtendedFrameDuplicate
 	ld a,[wFBMode]
 	cp a,2
 	jr z,.advanceFrameBlockDestAddr; skip delay and don't clean OAM buffer
@@ -224,7 +222,7 @@ PlayAnimation:
 	ld a,[hli]
 	bit 7,a
 	jr nz,.storeExtendedFrameMode ; bit 7 = FrameBlock override
-	cp EXT_FRAME_DUPLICATE_OFFSET_6 + 1
+	cp EXT_FRAME_DUPLICATE_MIRROR_X + 1
 	ret nc ; unknown per-frame mode: fail closed
 .storeExtendedFrameMode
 	ld [wExtendedAnimFrameEffect],a
