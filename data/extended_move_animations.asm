@@ -169,6 +169,28 @@ GoldShadowBallWaveOffsets:
 	db $00,$06,$0B,$0F,$10,$0F,$0B,$06
 	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
 
+LoadLegacyMoveAnimationOverride:
+; input: e = real move ID below METAL_CLAW
+; output: stages a dedicated recipe only when the sparse table contains e
+;
+; Keep legacy animation IDs untouched.  This lets original elemental punches
+; join the same Punch family recipe system without changing MoveNum semantics.
+	ld hl, LegacyMoveAnimationOverrides
+.loop
+	ld a, [hli]
+	cp $FF
+	ret z
+	cp e
+	jr z, .found
+	inc hl ; skip recipe pointer
+	inc hl
+	jr .loop
+.found
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	jr StageDedicatedMoveAnimation
+
 LoadExtendedMoveAnimation:
 ; input: e = real move ID (range-checked by PrepareCurrentMoveAnimation)
 ; output: wMoveAnimScriptLoaded = 1 after the dedicated recipe is staged
@@ -184,6 +206,8 @@ LoadExtendedMoveAnimation:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
+
+StageDedicatedMoveAnimation:
 	ld a, [hli] ; recipe byte length, including terminator
 	ld b, a
 	ld de, wBuffer
@@ -196,6 +220,18 @@ LoadExtendedMoveAnimation:
 	ld a, 1
 	ld [wMoveAnimScriptLoaded], a
 	ret
+
+; Sparse dedicated recipes for original Gen 1 real move IDs.  These are the
+; elemental Punch-family members used by Contact V1.  The terminator is an ID
+; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
+LegacyMoveAnimationOverrides:
+	db FIRE_PUNCH
+	dw FirePunchDedicatedAnim
+	db ICE_PUNCH
+	dw IcePunchDedicatedAnim
+	db THUNDERPUNCH
+	dw ThunderPunchDedicatedAnim
+	db $FF
 
 ; Full contiguous table for expanded move IDs $A6-$FD.
 ExtendedMoveAnimationPointers:
@@ -292,6 +328,58 @@ ExtendedMoveAnimationPointersEnd:
 		fail "extended move animation pointer table size mismatch"
 	ENDC
 
+FirePunchDedicatedAnim:
+	db FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData
+FirePunchDedicatedAnimData:
+	; Normal contact profile.  Keep Fire Punch's original fire follow-up after
+	; the shared fist so family identity and move identity remain separate.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$06,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $46,$FF,$11
+	db $FF
+FirePunchDedicatedAnimEnd:
+	IF FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData > 30
+		fail "Fire Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+IcePunchDedicatedAnim:
+	db IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData
+IcePunchDedicatedAnimData:
+	; Same Normal contact core, followed by the original Ice Punch ice effect.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$07,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $10,$FF,$2F
+	db $FF
+IcePunchDedicatedAnimEnd:
+	IF IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData > 30
+		fail "Ice Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+ThunderPunchDedicatedAnim:
+	db ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData
+ThunderPunchDedicatedAnimData:
+	; Same Normal contact core, followed by the original ThunderPunch screen/
+	; lightning treatment.  Only the fist itself opts into Electric coloring.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$08,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $46,$FF,$2B
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+ThunderPunchDedicatedAnimEnd:
+	IF ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData > 30
+		fail "ThunderPunch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
 MetalClawExtAnim:
 	db MetalClawExtAnimEnd - MetalClawExtAnimData
 MetalClawExtAnimData:
@@ -311,9 +399,12 @@ MetalClawExtAnimEnd:
 BulletPunchExtAnim:
 	db BulletPunchExtAnimEnd - BulletPunchExtAnimData
 BulletPunchExtAnimData:
-	db $04,$03,$02
-	db $04,$03,$02
-	db $46,$FF,$04
+	; Quick profile: a short type-colored contact stamp at the target.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $42,$03,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 BulletPunchExtAnimEnd:
 	IF BulletPunchExtAnimEnd - BulletPunchExtAnimData > 30
@@ -969,8 +1060,13 @@ HexExtAnimEnd:
 ShadowPunchExtAnim:
 	db ShadowPunchExtAnimEnd - ShadowPunchExtAnimData
 ShadowPunchExtAnimData:
+	; Normal contact profile with the existing Ghost/Dark screen treatment.
 	db SE_DARK_SCREEN_PALETTE,$FF
-	db $46,$04,$04
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$04,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db SE_DARK_SCREEN_FLASH,$FF
 	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
@@ -1468,8 +1564,13 @@ RockTombExtAnimEnd:
 DynamicpunchExtAnim:
 	db DynamicpunchExtAnimEnd - DynamicpunchExtAnimData
 DynamicpunchExtAnimData:
-	db $46,$04,$04
-	db SE_FLASH_SCREEN_LONG,$5C
+	; Heavy profile: same six-frame contact stamp as Normal, but impact is
+	; communicated by shake rather than by making the fist travel more slowly.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$04,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db SE_SHAKE_SCREEN,$FF
 	db $FF
 DynamicpunchExtAnimEnd:
@@ -1628,4 +1729,14 @@ GoldOrbAnimationTileset::
 GoldOrbAnimationTilesetEnd::
 	IF GoldOrbAnimationTilesetEnd - GoldOrbAnimationTileset != 2 * 16
 		fail "Gold orb animation tileset must contain exactly 2 tiles"
+	ENDC
+
+
+; Shared 16x16 Punch-family contact object.  Exact four-tile asset retained from
+; the earlier Punch V0 test so Contact V1 isolates motion/profile changes.
+PunchBattleTiles::
+	INCBIN "gfx/punch_anim.2bpp"
+PunchBattleTilesEnd::
+	IF PunchBattleTilesEnd - PunchBattleTiles != 4 * 16
+		fail "Punch battle tileset must contain exactly 4 tiles"
 	ENDC

@@ -2305,6 +2305,7 @@ FrameBlockPointers:
 	dw FrameBlock77
 	dw FrameBlock78
 	dw FrameBlock79
+	dw PunchFrameBlock ; $7A - shared Punch family 16x16 contact object
 
 ; FrameBlock format is as follows:
 ; first byte = number of tiles in FrameBlock
@@ -3403,6 +3404,16 @@ FrameBlock78:
 FrameBlock79:
 	db $01
 	db $00,$00,$4e,$00
+
+PunchFrameBlock:
+	; 16x16 fist centered inside the 32x32 footprint used by Subanimation05.
+	; The contact profile deliberately holds this object on the target instead of
+	; sending it through Mega Punch/Subanimation04's long movement path.
+	db $04
+	db $08,$08,$4b,$00
+	db $08,$10,$4c,$00
+	db $10,$08,$4d,$00
+	db $10,$10,$4e,$00
 
 FrameBlockBaseCoords:
 	db $10,$68
