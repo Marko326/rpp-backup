@@ -4843,11 +4843,16 @@ PrepareCurrentMoveAnimation::
 	cp ANIM_AF
 	ret z
 	call GetCurrentMoveID
-	cp METAL_CLAW
-	ret c
 	cp NUM_ATTACKS
 	ret nc
 	ld e, a ; callab clobbers BC but preserves DE
+	cp METAL_CLAW
+	jr nc, .expandedMove
+	; Selected original moves can opt into shared family recipes by real move ID
+	; without changing their legacy animation byte.  Non-listed moves return.
+	callab LoadLegacyMoveAnimationOverride
+	ret
+.expandedMove
 	callab LoadExtendedMoveAnimation
 	ret
 

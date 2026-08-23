@@ -429,10 +429,19 @@ LoadAnimationTileset:
 	ld d,[hl] ; de = address of tileset
 	ld hl,vSprites + $310
 	ld b, BANK(AnimationTileset1) ; ROM bank
-	jp CopyVideoData ; load tileset
+	call CopyVideoData ; load the normal animation set first
 
-	; Padding to prevent data shifting
-	nop
+	; Punch-family contact recipes force FrameBlock $7A.  Replace only the final
+	; four battle-animation tile slots ($7C-$7F) while that override is active.
+	; The following normal subanimation reload restores the stock tileset.
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAMEBLOCK_OVERRIDE | $7A
+	ret nz
+	ld hl,vSprites + $7c0
+	ld de,PunchBattleTiles
+	ld b,BANK(PunchBattleTiles)
+	ld c,4
+	jp CopyVideoData
 
 AnimationTilesetPointers:
 	db 79 ; number of tiles
@@ -662,7 +671,7 @@ PlaySubanimation:
 	bit 7,a
 	jr z,.useSubanimationFrameBlock
 	and $7f
-	cp $7A ; FrameBlockPointers contains IDs $00-$79
+	cp $7B ; FrameBlockPointers contains IDs $00-$7A
 	ret nc ; malformed override: fail closed before touching the pointer table
 	ld c,a
 	jr .gotFrameBlock
