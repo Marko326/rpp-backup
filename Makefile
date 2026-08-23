@@ -2,6 +2,9 @@
 # To use a project-local RGBDS version, run for example:
 #   make RGBDS=rgbds-0.5.2/
 # Individual tools can also be overridden explicitly.
+# Variant output suffix: _move
+#   make red  -> patches/rppred_move.gbc
+#   make blue -> patches/rppblue_move.gbc
 RGBDS ?=
 RGBASM ?= $(RGBDS)rgbasm
 RGBLINK ?= $(RGBDS)rgblink
@@ -19,17 +22,17 @@ pokeblue_obj := audio_blue.o main_blue.o text_blue.o wram_blue.o
 .PRECIOUS: %.2bpp
 .PHONY: all clean cleanpic map red blue compare tools
 
-roms := patches/rppred.gbc patches/rppblue.gbc
+roms := patches/rppred_move.gbc patches/rppblue_move.gbc
 maps := $(roms:.gbc=.map)
 
 all: $(roms)
-red: patches/rppred.gbc
-blue: patches/rppblue.gbc
+red: patches/rppred_move.gbc
+blue: patches/rppblue_move.gbc
 map: $(maps)
 
 # For contributors to make sure a change didn't affect the contents of the rom.
 compare: red blue
-	@$(MD5) roms.md5
+	@sed -e 's#patches/rppred\.gbc#patches/rppred_move.gbc#' -e 's#patches/rppblue\.gbc#patches/rppblue_move.gbc#' roms.md5 | md5sum -c -
 
 clean:
 	rm -f $(roms) $(pokered_obj) $(pokeblue_obj) $(roms:.gbc=.sym)
@@ -65,10 +68,10 @@ $(pokeblue_obj): %_blue.o: %.asm $$(dep)
 pokered_opt  = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
 pokeblue_opt = -Cjv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "POKEMON RED"
 
-rppred_obj  := $(pokered_obj)
-rppblue_obj := $(pokeblue_obj)
-rppred_opt  := $(pokered_opt)
-rppblue_opt := $(pokeblue_opt)
+rppred_move_obj  := $(pokered_obj)
+rppblue_move_obj := $(pokeblue_obj)
+rppred_move_opt  := $(pokered_opt)
+rppblue_move_opt := $(pokeblue_opt)
 
 patches:
 	mkdir -p $@
