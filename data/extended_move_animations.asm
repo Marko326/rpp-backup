@@ -16,6 +16,13 @@ GSSFX_SLUDGE_BOMB EQU GSSFX_SUPER_EFFECTIVE + 1
 ; label is the direction for later reuse by Moonblast / Energy Ball / etc.
 PlayExtendedShadowBallProjectile:
 PlayExtendedOrbProjectile:
+	; C2 is a compact banked-helper gateway. Shadow Ball remains the default;
+	; DynamicPunch reuses the same gateway by real Move ID so BANK1E needs no new
+	; command branch. Legacy animation-ID semantics remain untouched.
+	call GetCurrentMoveID
+	cp DYNAMICPUNCH
+	jp z,PlayDynamicPunchGoldLike
+
 	; Gold-style Shadow Ball projectile; C2 currently has no operand.
 	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
 	; LoadAnimationTileset calls the normal palette wrapper, then loads tileset 0.
@@ -225,6 +232,10 @@ StageDedicatedMoveAnimation:
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID
 ; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
 LegacyMoveAnimationOverrides:
+	db COMET_PUNCH
+	dw CometPunchDedicatedAnim
+	db MEGA_PUNCH
+	dw MegaPunchDedicatedAnim
 	db FIRE_PUNCH
 	dw FirePunchDedicatedAnim
 	db ICE_PUNCH
@@ -328,17 +339,46 @@ ExtendedMoveAnimationPointersEnd:
 		fail "extended move animation pointer table size mismatch"
 	ENDC
 
+MegaPunchDedicatedAnim:
+	db MegaPunchDedicatedAnimEnd - MegaPunchDedicatedAnimData
+MegaPunchDedicatedAnimData:
+	; Preserve Gen1 Mega Punch's diagonal heavy-impact motion; add one heavy shake.
+	db $46,$04,$04
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+MegaPunchDedicatedAnimEnd:
+	IF MegaPunchDedicatedAnimEnd - MegaPunchDedicatedAnimData > 30
+		fail "Mega Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+CometPunchDedicatedAnim:
+	db CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData
+CometPunchDedicatedAnimData:
+	; Repeat profile: keep Comet Punch's original two-pass motion, but render the
+	; shared Punch object and use the move's Fighting palette for the whole pair.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $04,$03,$02
+	db $04,$03,$02
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+CometPunchDedicatedAnimEnd:
+	IF CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData > 30
+		fail "Comet Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
 FirePunchDedicatedAnim:
 	db FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData
 FirePunchDedicatedAnimData:
-	; Normal contact profile.  Keep Fire Punch's original fire follow-up after
-	; the shared fist so family identity and move identity remain separate.
+	; Gen1 elemental-Punch structure, but both the six-frame fist and the original
+	; fire follow-up stay inside the same Fire dynamic palette mode.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$06,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $46,$FF,$11
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 FirePunchDedicatedAnimEnd:
 	IF FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData > 30
@@ -348,13 +388,13 @@ FirePunchDedicatedAnimEnd:
 IcePunchDedicatedAnim:
 	db IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData
 IcePunchDedicatedAnimData:
-	; Same Normal contact core, followed by the original Ice Punch ice effect.
+	; Same rule as Fire Punch: fist and the original ice follow-up share Ice color.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$07,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $10,$FF,$2F
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 IcePunchDedicatedAnimEnd:
 	IF IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData > 30
@@ -364,16 +404,16 @@ IcePunchDedicatedAnimEnd:
 ThunderPunchDedicatedAnim:
 	db ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData
 ThunderPunchDedicatedAnimData:
-	; Same Normal contact core, followed by the original ThunderPunch screen/
-	; lightning treatment.  Only the fist itself opts into Electric coloring.
+	; Keep Gen1's dark-screen/lightning structure.  Both fist and lightning sprite
+	; remain Electric-colored until the sequence is complete.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$08,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db SE_DARK_SCREEN_PALETTE,$FF
 	db $46,$FF,$2B
 	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 ThunderPunchDedicatedAnimEnd:
 	IF ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData > 30
@@ -399,12 +439,14 @@ MetalClawExtAnimEnd:
 BulletPunchExtAnim:
 	db BulletPunchExtAnimEnd - BulletPunchExtAnimData
 BulletPunchExtAnimData:
-	; Quick profile: a short type-colored contact stamp at the target.
+	; Quick profile: Quick Attack hide/approach, then a six-frame Steel fist.
+	db SE_SLIDE_MON_OFF,$61
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
-	db $42,$03,$05
+	db $46,$03,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db SE_SHOW_MON_PIC,$FF
 	db $FF
 BulletPunchExtAnimEnd:
 	IF BulletPunchExtAnimEnd - BulletPunchExtAnimData > 30
@@ -426,8 +468,14 @@ IronTailExtAnimEnd:
 MeteorMashExtAnim:
 	db MeteorMashExtAnimEnd - MeteorMashExtAnimData
 MeteorMashExtAnimData:
+	; Gather a star-like charge, then use Swift's complete star object as the
+	; Steel-colored contact hit before a heavy screen shake.
 	db SE_SPIRAL_BALLS_INWARD,$FF
-	db $46,$04,$04
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
+	db $46,$04,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db SE_SHAKE_SCREEN,$FF
 	db $FF
 MeteorMashExtAnimEnd:
@@ -991,9 +1039,13 @@ FrenzyPlantExtAnimEnd:
 SuckerPunchExtAnim:
 	db SuckerPunchExtAnimEnd - SuckerPunchExtAnimData
 SuckerPunchExtAnimData:
-	db SE_SLIDE_MON_OFF,$43
-	db SE_DARK_SCREEN_FLASH,$FF
-	db $46,$04,$04
+	; Ambush/Quick profile: same speed language as Bullet Punch, but Dark color.
+	db SE_SLIDE_MON_OFF,$61
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$04,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db SE_SHOW_MON_PIC,$FF
 	db $FF
 SuckerPunchExtAnimEnd:
@@ -1060,14 +1112,15 @@ HexExtAnimEnd:
 ShadowPunchExtAnim:
 	db ShadowPunchExtAnimEnd - ShadowPunchExtAnimData
 ShadowPunchExtAnimData:
-	; Normal contact profile with the existing Ghost/Dark screen treatment.
+	; Ghost identity: dark field -> six-frame Ghost fist -> the exact short poof
+	; already used by Shadow Ball (Subanimation3C) -> restore.
 	db SE_DARK_SCREEN_PALETTE,$FF
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$04,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
-	db SE_DARK_SCREEN_FLASH,$FF
+	db $03,$FF,$3C
 	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
 ShadowPunchExtAnimEnd:
@@ -1564,14 +1617,14 @@ RockTombExtAnimEnd:
 DynamicpunchExtAnim:
 	db DynamicpunchExtAnimEnd - DynamicpunchExtAnimData
 DynamicpunchExtAnimData:
-	; Heavy profile: same six-frame contact stamp as Normal, but impact is
-	; communicated by shake rather than by making the fist travel more slowly.
+	; Gold-like heavy profile: six-frame Fighting fist, then one banked helper
+	; handles the inverted flash + Explosion-style impact + heavy shake.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$04,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
-	db SE_SHAKE_SCREEN,$FF
+	db EXT_ANIM_DYNAMIC_PUNCH_GOLD
 	db $FF
 DynamicpunchExtAnimEnd:
 	IF DynamicpunchExtAnimEnd - DynamicpunchExtAnimData > 30
@@ -1732,11 +1785,46 @@ GoldOrbAnimationTilesetEnd::
 	ENDC
 
 
-; Shared 16x16 Punch-family contact object.  Exact four-tile asset retained from
-; the earlier Punch V0 test so Contact V1 isolates motion/profile changes.
+; Shared Punch-family gfx loader.  Keep the 9-tile transfer in bank $3A;
+; BANK1E only retains a thin banked hook because the Punch V0 baseline has 18 bytes slack.
+LoadPunchFamilyTilesIfNeeded::
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAMEBLOCK_OVERRIDE | $7A
+	ret nz
+	ld hl,vSprites + $770
+	ld de,PunchBattleTiles
+	ld b,BANK(PunchBattleTiles)
+	ld c,9
+	jp CopyVideoData
+
 PunchBattleTiles::
 	INCBIN "gfx/punch_anim.2bpp"
 PunchBattleTilesEnd::
-	IF PunchBattleTilesEnd - PunchBattleTiles != 4 * 16
-		fail "Punch battle tileset must contain exactly 4 tiles"
+	IF PunchBattleTilesEnd - PunchBattleTiles != 9 * 16
+		fail "Punch battle tileset must contain exactly 9 tiles"
 	ENDC
+
+; DynamicPunch-only heavy impact helper. It is selected behind the existing C2
+; banked-helper gateway by real Move ID, avoiding any new BANK1E dispatcher bytes.
+PlayDynamicPunchGoldLike::
+	callba AnimationFlashScreen
+
+	; Reproduce the stock Explosion subanimation ($43,$98,$34) directly, then
+	; finish with the existing heavy shake.  This keeps the recipe compact and
+	; leaves future heavy Punches free to reuse the same primitive if desired.
+	ld a,3
+	ld [wSubAnimFrameDelay],a
+	ld a,1
+	ld [wWhichBattleAnimTileset],a
+	ld a,$98
+	ld [wAnimSoundID],a
+	ld hl,SubanimationPointers + $34 * 2
+	ld a,l
+	ld [wSubAnimAddrPtr],a
+	ld a,h
+	ld [wSubAnimAddrPtr + 1],a
+	callba LoadAnimationTileset
+	callba LoadSubanimation
+	callba PlaySubanimation
+	callba AnimationShakeScreen
+	ret
