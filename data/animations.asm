@@ -3406,14 +3406,19 @@ FrameBlock79:
 	db $00,$00,$4e,$00
 
 PunchFrameBlock:
-	; 16x16 fist centered inside the 32x32 footprint used by Subanimation05.
-	; The contact profile deliberately holds this object on the target instead of
-	; sending it through Mega Punch/Subanimation04's long movement path.
-	db $04
-	db $08,$08,$4b,$00
-	db $08,$10,$4c,$00
-	db $10,$08,$4d,$00
-	db $10,$10,$4e,$00
+	; Shared Punch-family object: user-selected 20x20 shadow-ring fist centered in
+	; a 24x24 / 3x3 tile canvas.  The canvas stays smaller than Headbutt-class
+	; impact objects while giving type palettes enough interior shading to read.
+	db $09
+	db $04,$04,$46,$00
+	db $04,$0c,$47,$00
+	db $04,$14,$48,$00
+	db $0c,$04,$49,$00
+	db $0c,$0c,$4a,$00
+	db $0c,$14,$4b,$00
+	db $14,$04,$4c,$00
+	db $14,$0c,$4d,$00
+	db $14,$14,$4e,$00
 
 FrameBlockBaseCoords:
 	db $10,$68

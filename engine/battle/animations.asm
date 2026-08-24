@@ -431,17 +431,10 @@ LoadAnimationTileset:
 	ld b, BANK(AnimationTileset1) ; ROM bank
 	call CopyVideoData ; load the normal animation set first
 
-	; Punch-family contact recipes force FrameBlock $7A.  Replace only the final
-	; four battle-animation tile slots ($7C-$7F) while that override is active.
-	; The following normal subanimation reload restores the stock tileset.
-	ld a,[wExtendedAnimFrameEffect]
-	cp EXT_FRAMEBLOCK_OVERRIDE | $7A
-	ret nz
-	ld hl,vSprites + $7c0
-	ld de,PunchBattleTiles
-	ld b,BANK(PunchBattleTiles)
-	ld c,4
-	jp CopyVideoData
+	; Keep all Punch-family override testing and the 9-tile transfer in bank $3A.
+	; This unconditional tail-call is intentionally tiny because BANK1E has only
+	; 18 bytes slack in the Punch V0 baseline.
+	jpba LoadPunchFamilyTilesIfNeeded
 
 AnimationTilesetPointers:
 	db 79 ; number of tiles
