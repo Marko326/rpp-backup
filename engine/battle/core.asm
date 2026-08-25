@@ -5523,7 +5523,7 @@ AIGetTypeEffectiveness:
 	ld hl,wBattleMonType
 	ld b,[hl]              ; b = type 1 of player's pokemon
 	ld a,10
-	ld [H_MULTIPLIER],a           ; initialize [wd11e] to neutral effectiveness
+	ld [H_MULTIPLIER],a           ; initialize type effectiveness to neutral
 	ld hl,TypeEffects
 .loop
 	ld a,[hli]
@@ -5584,7 +5584,7 @@ AIGetTypeEffectiveness:
     ld b, 4
     call Divide
     ld a, [H_QUOTIENT+3]
-    ld [wd11e], a
+    ld [wTypeEffectiveness], a
     ret
 
 INCLUDE "data/type_effects.asm"

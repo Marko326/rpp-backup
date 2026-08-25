@@ -283,8 +283,8 @@ SmartAI: ; originally by Dabomstew
 	pop de
 	pop bc
 	pop hl
-	ld a, [wd11e]
-	cp $0a
+	ld a, [wTypeEffectiveness]
+	cp 10
 	jr z, .seloop
 	jr c, .nvemove
 ; strongly encourage SE Move
@@ -469,7 +469,7 @@ AlterMovePriorityArray:
 	ld a, [hl]
 	add b
 	ld [hl], a
-	ret
+	jr .moveLoop ; keep scanning so every matching move is adjusted
 
 ; slightly encourage moves with specific effects.
 ; in particular, stat-modifying moves and other move effects
@@ -528,7 +528,7 @@ AIMoveChoiceModification3:
 	pop bc
 	pop hl
 	ld a, [wTypeEffectiveness]
-	cp $10
+	cp 10
 	jr z, .nextMove
 	jr c, .notEffectiveMove
 	dec [hl] ; slightly encourage this move
