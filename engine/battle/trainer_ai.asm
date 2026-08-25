@@ -38,7 +38,7 @@ AIEnemyTrainerChooseMoves:
 	pop hl
 	ld a, [hli]
 	and a
-	jr z, .loopFindMinimumEntries
+	jr z, .snapshotFinalPriorities
 	push hl
 	ld hl, AIMoveChoiceModificationFunctionPointers
 	dec a
@@ -52,6 +52,20 @@ AIEnemyTrainerChooseMoves:
 	ld de, .nextMoveChoiceModification  ; set return address
 	push de
 	jp hl         ; execute modification function
+.snapshotFinalPriorities
+; AI debug support: preserve the four final priority values before the normal
+; minimum-filter loop mutates wBuffer. Lower values are better. The David test
+; battle prints these exact values after the random tie-break selects a move.
+	ld hl, wBuffer
+	ld de, wBuffer + 4
+	ld c, NUM_MOVES
+.snapshotPriorityLoop
+	ld a, [hli]
+	ld [de], a
+	inc de
+	dec c
+	jr nz, .snapshotPriorityLoop
+
 .loopFindMinimumEntries ; all entries will be decremented sequentially until one of them is zero
 	ld hl, wBuffer  ; temp move selection array
 	ld de, wEnemyMonMoves  ; enemy moves
@@ -595,6 +609,331 @@ AIEstimateEnemyMoveDamage:
 .noEstimate
 	and a ; clear carry
 	ret
+
+; Debug-only battle telemetry for Route 3 Bug Catcher David (trainer #4).
+; This deliberately exposes the actual AI inputs used by V1.2 instead of
+; requiring testers to infer behavior from random move choices.
+;
+; The text shows:
+;   P1/P2/P3/P4 = exact final priority scores (lower is better)
+;   EFF          = type effectiveness (0/5/10/20/40)
+;   STAB         = 1 when the selected move matches an enemy type
+;   ACC          = internal accuracy byte (255 = nominal 100%)
+;   DMG          = deterministic pre-random-roll damage estimate
+;   HP           = player's current HP
+;   KO           = 0 none, 1 possible, 2 reliable
+;
+; This routine recomputes diagnostics for the already-selected move. It does
+; not alter the four priority scores or the selected move itself.
+AIDebugPrintSelectedMove::
+	; Display telemetry only for the dedicated Route 3 David test battle.
+	; This routine is called from the safe pre-execution point in the battle
+	; loop, never from inside EnemyMoveChoice.
+	ld a, [wIsInBattle]
+	cp 2
+	ret nz
+	ld a, [wTrainerClass]
+	cp BUG_CATCHER
+	ret nz
+	ld a, [wTrainerNo]
+	cp 4
+	ret nz
+	ld a, [wEnemySelectedMove]
+	and a
+	ret z
+	cp $ff
+	ret z
+
+	; Load selected move data.
+	call ReadMove
+
+	; Type effectiveness shown exactly as the AI sees it.
+	push af
+	callab AIGetTypeEffectiveness
+	ld a, [wTypeEffectiveness]
+	ld [wBuffer + 18], a
+	pop af
+
+	; STAB flag.
+	xor a
+	ld [wBuffer + 17], a
+	ld a, [wEnemyMoveType]
+	ld b, a
+	ld a, [wEnemyMonType1]
+	cp b
+	jr z, .debugHasSTAB
+	ld a, [wEnemyMonType2]
+	cp b
+	jr nz, .debugAccuracy
+.debugHasSTAB
+	ld a, 1
+	ld [wBuffer + 17], a
+
+.debugAccuracy
+	ld a, [wEnemyMoveAccuracy]
+	ld [wBuffer + 19], a
+
+	; Reuse the exact V1.2 deterministic damage estimator.
+	xor a
+	ld [wBuffer + 14], a
+	ld [wBuffer + 15], a
+	ld [wBuffer + 16], a ; KO class defaults to none
+	call AIEstimateEnemyMoveDamage
+	jr nc, .debugPrepareName
+	ld hl, wDamage
+	ld a, [hli]
+	ld [wBuffer + 14], a
+	ld a, [hl]
+	ld [wBuffer + 15], a
+
+	; Reliable KO = nominal 100% accuracy and estimate >= 125% current HP.
+	ld a, [wEnemyMoveAccuracy]
+	cp 100 percent
+	jr c, .debugPossibleKO
+	ld hl, wBattleMonHP
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+	ld d, b
+	ld e, c
+	srl d
+	rr e
+	srl d
+	rr e
+	ld a, c
+	add e
+	ld c, a
+	ld a, b
+	adc d
+	ld b, a
+	ld hl, wBuffer + 14
+	ld a, [hli]
+	cp b
+	jr c, .debugPossibleKO
+	jr nz, .debugReliableKO
+	ld a, [hl]
+	cp c
+	jr c, .debugPossibleKO
+.debugReliableKO
+	ld a, 2
+	ld [wBuffer + 16], a
+	jr .debugPrepareName
+
+.debugPossibleKO
+	; Possible KO = deterministic estimate reaches current HP.
+	ld hl, wBuffer + 14
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+	ld hl, wBattleMonHP
+	ld a, b
+	cp [hl]
+	jr c, .debugPrepareName
+	jr nz, .debugSetPossibleKO
+	inc hl
+	ld a, c
+	cp [hl]
+	jr c, .debugPrepareName
+.debugSetPossibleKO
+	ld a, 1
+	ld [wBuffer + 16], a
+
+.debugPrepareName
+	ld a, [wEnemySelectedMove]
+	ld [wd11e], a
+	call GetMoveName
+	call CopyStringToCF4B
+
+	; Render the telemetry directly into the battle message box.
+	; Do not use PrintText/TX_* here: those commands keep text-parser cursor
+	; state and caused page overlap, scroll SFX and lockups during battle setup.
+	call AIDebugDrawPage1
+	call WaitForTextScrollButtonPress
+	call AIDebugDrawPage2
+	call WaitForTextScrollButtonPress
+	; Leave a clean normal battle message box for the upcoming move text.
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	jp DisplayTextBoxID
+
+AIDebugDrawPage1:
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	call DisplayTextBoxID
+
+	; Row 1: selected move name.
+	coord hl, 1, 14
+	ld de, AIDebugAIText
+	call PlaceString
+	coord hl, 4, 14
+	ld de, wcf4b
+	call PlaceString
+
+	; Row 2: whether the selected move had the best final priority.
+	coord hl, 1, 16
+	ld de, AIDebugPickText
+	call PlaceString
+	call AIDebugSelectedPriorityIsBest
+	ld de, AIDebugBestText
+	jr c, .pickTextReady
+	ld de, AIDebugOtherText
+.pickTextReady
+	; AIDebugSelectedPriorityIsBest uses HL to scan wBuffer, so restore the
+	; tilemap destination before drawing BEST/OTHER. Without this, the word is
+	; written into WRAM instead of the battle text box and appears to vanish.
+	coord hl, 6, 16
+	jp PlaceString
+
+AIDebugDrawPage2:
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	call DisplayTextBoxID
+
+	; Row 1: plain-language main reason.
+	coord hl, 1, 14
+	ld de, AIDebugWhyText
+	call PlaceString
+	coord hl, 5, 14
+
+	ld a, [wEnemyMovePower]
+	and a
+	jr z, .statusMove
+
+	ld a, [wBuffer + 18] ; type effectiveness
+	cp 20
+	jr nc, .superEffective
+	cp 10
+	jr c, .notEffective
+
+	ld a, [wBuffer + 17] ; STAB flag
+	and a
+	jr nz, .stabMove
+	ld de, AIDebugDamageMoveText
+	jr .printReason
+
+.superEffective
+	ld de, AIDebugSuperText
+	jr .printReason
+.notEffective
+	ld de, AIDebugWeakText
+	jr .printReason
+.stabMove
+	ld de, AIDebugSTABMoveText
+	jr .printReason
+.statusMove
+	ld de, AIDebugStatusMoveText
+.printReason
+	call PlaceString
+
+	; Row 2: one plain-language outcome only. Keep the line sparse so it
+	; remains readable on the 18-character battle message box.
+	coord hl, 1, 16
+	ld a, [wEnemyMovePower]
+	and a
+	jr z, .statusSummary
+
+	ld de, AIDebugKOText
+	call PlaceString
+	coord hl, 4, 16
+	ld a, [wBuffer + 16]
+	cp 2
+	ld de, AIDebugSafeText
+	jr z, .printKO
+	cp 1
+	ld de, AIDebugPossibleText
+	jr z, .printKO
+	ld de, AIDebugNoText
+.printKO
+	jp PlaceString
+
+.statusSummary
+	ld de, AIDebugTargetText
+	call PlaceString
+	coord hl, 8, 16
+	ld a, [wBattleMonStatus]
+	and a
+	ld de, AIDebugHealthyText
+	jr z, .printTarget
+	ld de, AIDebugHasStatusText
+.printTarget
+	jp PlaceString
+
+; Carry set when the selected move's final priority equals the minimum among
+; the four final priority scores. This is intentionally simple and readable:
+; "BEST" includes ties for best.
+AIDebugSelectedPriorityIsBest:
+	ld a, [wEnemyMoveListIndex]
+	ld e, a
+	ld d, 0
+	ld hl, wBuffer + 4
+	add hl, de
+	ld a, [hl]
+	ld b, a ; selected priority
+
+	ld hl, wBuffer + 4
+	ld a, [hli]
+	ld c, a
+	ld a, [hli]
+	cp c
+	jr nc, .min3
+	ld c, a
+.min3
+	ld a, [hli]
+	cp c
+	jr nc, .min4
+	ld c, a
+.min4
+	ld a, [hl]
+	cp c
+	jr nc, .compare
+	ld c, a
+.compare
+	ld a, b
+	cp c
+	jr nz, .notBest
+	scf
+	ret
+.notBest
+	and a
+	ret
+
+AIDebugAIText:
+	db "AI:@"
+AIDebugPickText:
+	db "PICK:@"
+AIDebugBestText:
+	db "BEST@"
+AIDebugOtherText:
+	db "OTHER@"
+
+AIDebugWhyText:
+	db "WHY:@"
+AIDebugSuperText:
+	db "SUPER EFFECT@"
+AIDebugWeakText:
+	db "NOT EFFECTIVE@"
+AIDebugSTABMoveText:
+	db "STAB ATTACK@"
+AIDebugDamageMoveText:
+	db "DAMAGE MOVE@"
+AIDebugStatusMoveText:
+	db "STATUS MOVE@"
+
+AIDebugKOText:
+	db "KO:@"
+AIDebugSafeText:
+	db "SAFE@"
+AIDebugPossibleText:
+	db "POSSIBLE@"
+AIDebugNoText:
+	db "NO@"
+
+AIDebugTargetText:
+	db "TARGET:@"
+AIDebugHealthyText:
+	db "HEALTHY@"
+AIDebugHasStatusText:
+	db "HAS STATUS@"
 
 AlterMovePriority:
 ; [wAIBuffer1] = move

@@ -104,6 +104,10 @@ Route3Text1:
 
 Route3Text2:
 	TX_ASM
+; AI test fixture: David can be challenged repeatedly by talking to him.
+; Clear only his defeated flag immediately before TalkToTrainer so the normal
+; trainer flow starts a fresh battle without affecting any other Route 3 flags.
+	ResetEvent EVENT_BEAT_ROUTE_3_TRAINER_0
 	ld hl, Route3TrainerHeader0
 	call TalkToTrainer
 	jp TextScriptEnd

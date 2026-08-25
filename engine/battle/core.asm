@@ -3185,6 +3185,10 @@ SelectEnemyMove:
 	jr z, .chooseRandomMove ; move non-existant, try again
 .done
 	ld [wEnemySelectedMove], a
+	; Debug fixture: show the AI decision immediately after move selection.
+	; This happens before speed/order resolution, so the decision remains visible
+	; even if the player moves first and KOs the enemy.
+	callab AIDebugPrintSelectedMove
 	ret
 .linkedOpponentUsedStruggle
 	ld a, STRUGGLE

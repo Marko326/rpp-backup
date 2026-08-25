@@ -731,7 +731,26 @@ BugCatcherData:
 	db "Luke@",6,WEEDLE,CATERPIE,$FF
 	db "Finn@",7,WEEDLE,KAKUNA,WEEDLE,$FF
 	db "Jake@",9,WEEDLE,$FF
-	db "David@",10,CATERPIE,WEEDLE,CATERPIE,$FF
+	db "David@" ; ROUTE 3 AI test trainer
+	db SPECIAL_TRAINER2
+	db BUG_CATCHER ; keep the normal Bug Catcher battle portrait
+	db PKMN_TRAINER ; force SmartAI in both Normal and Hard modes
+
+	db 12,PIKACHU
+	moveset THUNDER_WAVE, 0, 0, 0
+
+	db 12,VICTREEBEL
+	moveset STUN_SPORE, POISONPOWDER, ACID, GIGA_DRAIN
+
+	db 12,STARMIE
+	moveset WATER_PULSE, SWIFT, THUNDER_WAVE, RECOVER
+
+	db 12,CLOYSTER
+	moveset ICE_BEAM, BLIZZARD, AURORA_BEAM, REST
+
+	db 12,RHYDON
+	moveset ROCK_TOMB, EARTHQUAKE, TAKE_DOWN, LEER
+	db $FF
 	db "Lou@",9,WEEDLE,KAKUNA,CATERPIE,METAPOD,$FF
 	db "Larry@",11,CATERPIE,METAPOD,$FF
 	db "Chuck@",11,WEEDLE,KAKUNA,$FF
