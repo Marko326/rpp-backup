@@ -20,6 +20,12 @@ PlayExtendedOrbProjectile:
 	; DynamicPunch reuses the same gateway by real Move ID so BANK1E needs no new
 	; command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
+	cp BULLET_PUNCH
+	jp z,SetPunchHorizontalHitFeedback
+	cp SUCKER_PUNCH
+	jp z,SetPunchHorizontalHitFeedback
+	cp SHADOW_PUNCH
+	jp z,PlayShadowPunchCenteredPoof
 	cp DYNAMICPUNCH
 	jp z,PlayDynamicPunchGoldLike
 
@@ -234,8 +240,6 @@ StageDedicatedMoveAnimation:
 LegacyMoveAnimationOverrides:
 	db COMET_PUNCH
 	dw CometPunchDedicatedAnim
-	db MEGA_PUNCH
-	dw MegaPunchDedicatedAnim
 	db FIRE_PUNCH
 	dw FirePunchDedicatedAnim
 	db ICE_PUNCH
@@ -339,28 +343,14 @@ ExtendedMoveAnimationPointersEnd:
 		fail "extended move animation pointer table size mismatch"
 	ENDC
 
-MegaPunchDedicatedAnim:
-	db MegaPunchDedicatedAnimEnd - MegaPunchDedicatedAnimData
-MegaPunchDedicatedAnimData:
-	; Preserve Gen1 Mega Punch's diagonal heavy-impact motion; add one heavy shake.
-	db $46,$04,$04
-	db SE_SHAKE_SCREEN,$FF
-	db $FF
-MegaPunchDedicatedAnimEnd:
-	IF MegaPunchDedicatedAnimEnd - MegaPunchDedicatedAnimData > 30
-		fail "Mega Punch dedicated animation recipe exceeds wBuffer"
-	ENDC
-
 CometPunchDedicatedAnim:
 	db CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData
 CometPunchDedicatedAnimData:
-	; Repeat profile: keep Comet Punch's original two-pass motion, but render the
-	; shared Punch object and use the move's Fighting palette for the whole pair.
+	; Keep Gen1 Comet Punch's original repeated impact geometry; only opt the
+	; two passes into the move's Fighting palette.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $04,$03,$02
 	db $04,$03,$02
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 CometPunchDedicatedAnimEnd:
@@ -371,12 +361,11 @@ CometPunchDedicatedAnimEnd:
 FirePunchDedicatedAnim:
 	db FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData
 FirePunchDedicatedAnimData:
-	; Gen1 elemental-Punch structure, but both the six-frame fist and the original
-	; fire follow-up stay inside the same Fire dynamic palette mode.
+	; Restore the stock Gen1 Fire Punch sequence exactly; only the explicit
+	; palette mode is new, so both the original impact and flame follow-up use
+	; the current Fire move-type palette.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
-	db $46,$06,$05
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $06,$06,$02
 	db $46,$FF,$11
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
@@ -388,11 +377,9 @@ FirePunchDedicatedAnimEnd:
 IcePunchDedicatedAnim:
 	db IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData
 IcePunchDedicatedAnimData:
-	; Same rule as Fire Punch: fist and the original ice follow-up share Ice color.
+	; Stock Gen1 Ice Punch geometry + the new explicit Ice move-type palette.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
-	db $46,$07,$05
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $06,$07,$02
 	db $10,$FF,$2F
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
@@ -404,12 +391,9 @@ IcePunchDedicatedAnimEnd:
 ThunderPunchDedicatedAnim:
 	db ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData
 ThunderPunchDedicatedAnimData:
-	; Keep Gen1's dark-screen/lightning structure.  Both fist and lightning sprite
-	; remain Electric-colored until the sequence is complete.
+	; Stock Gen1 ThunderPunch structure + the new explicit Electric palette.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
-	db $46,$08,$05
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $06,$08,$02
 	db SE_DARK_SCREEN_PALETTE,$FF
 	db $46,$FF,$2B
 	db SE_RESET_SCREEN_PALETTE,$FF
@@ -439,13 +423,16 @@ MetalClawExtAnimEnd:
 BulletPunchExtAnim:
 	db BulletPunchExtAnimEnd - BulletPunchExtAnimData
 BulletPunchExtAnimData:
-	; Quick profile: Quick Attack hide/approach, then a six-frame Steel fist.
+	; Quick profile: Quick Attack hide/approach, then a Steel fist.  Force the
+	; normal Gen1 "damaging move with an added effect" horizontal hit feedback
+	; instead of the weaker player-side blink used by no-effect damage moves.
 	db SE_SLIDE_MON_OFF,$61
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$03,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
 	db SE_SHOW_MON_PIC,$FF
 	db $FF
 BulletPunchExtAnimEnd:
@@ -468,15 +455,22 @@ IronTailExtAnimEnd:
 MeteorMashExtAnim:
 	db MeteorMashExtAnimEnd - MeteorMashExtAnimData
 MeteorMashExtAnimData:
-	; Gather a star-like charge, then use Swift's complete star object as the
-	; Steel-colored contact hit before a heavy screen shake.
-	db SE_SPIRAL_BALLS_INWARD,$FF
+	; Steel-star composition built entirely from existing Gen1 primitives:
+	; Rock Slide's lift motion -> Draco Meteor's proven IceFall/star motion ->
+	; a short body lean -> the stock 16x16 Swift star as the contact impact.
+	; Keep move-type palette mode active for every sprite segment in the move.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
-	db $46,$04,$05
+	db $43,$9C,$1D ; RocksLift motion, but draw full Swift stars
+	db $43,$FF,$38 ; IceFall/Draco motion, still drawing Swift stars
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
+	db $46,$04,$05 ; stock 16x16 Swift star at the contact point
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_RESET_MON_POSITION,$FF
 	db SE_SHAKE_SCREEN,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 MeteorMashExtAnimEnd:
 	IF MeteorMashExtAnimEnd - MeteorMashExtAnimData > 30
@@ -805,20 +799,26 @@ DuplicateCurrentFrameBlockMirrorX:
 	ret
 
 ; Generic dispatch point for FrameBlock-override anchor corrections.  The
-; override mechanism itself has no Draco-specific geometry baked into bank $1E.
+; correction belongs to a specific motion/object pairing, not to one move ID:
+; any recipe that runs legacy Sub38 (IceFall) with full Swift FrameBlock68 needs
+; the same center correction.  Other FrameBlock68 uses (for example RocksLift
+; or contact impact) intentionally fail closed here.
 ApplyFrameBlockOverrideAnchorCompensation:
-	ld a,[wAnimationID]
-	cp DRACO_METEOR
-	ret nz
 	ld a,[wExtendedAnimFrameEffect]
 	and $7f
 	cp $68
 	ret nz
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + $38 * 2)
+	ret nz
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + $38 * 2)
+	ret nz
 
-; Draco Meteor V2 anchor correction for Sub38 -> FrameBlock68.  Every 66 -> 68
-; replacement grows from 8 px to 16 px in width, so shift left 4 px.  Sub38's
-; 67 entries are its mode-3 terminal objects except the final entry; those also
-; grow from 8 px to 16 px in height, so shift them up 4 px.
+; Sub38 -> FrameBlock68 center correction.  Every 66 -> 68 replacement grows
+; from 8 px to 16 px in width, so shift left 4 px.  Sub38's 67 entries are its
+; mode-3 terminal objects except the final entry; those also grow from 8 px to
+; 16 px in height, so shift them up 4 px.
 ApplyDracoMeteorStarAnchorCompensation:
 	ld a,[wBaseCoordX]
 	sub 4
@@ -1040,12 +1040,14 @@ SuckerPunchExtAnim:
 	db SuckerPunchExtAnimEnd - SuckerPunchExtAnimData
 SuckerPunchExtAnimData:
 	; Ambush/Quick profile: same speed language as Bullet Punch, but Dark color.
+	; Use the Gen1 horizontal damage-feedback shake instead of the light blink.
 	db SE_SLIDE_MON_OFF,$61
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$04,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
 	db SE_SHOW_MON_PIC,$FF
 	db $FF
 SuckerPunchExtAnimEnd:
@@ -1112,15 +1114,16 @@ HexExtAnimEnd:
 ShadowPunchExtAnim:
 	db ShadowPunchExtAnimEnd - ShadowPunchExtAnimData
 ShadowPunchExtAnimData:
-	; Ghost identity: dark field -> six-frame Ghost fist -> the exact short poof
-	; already used by Shadow Ball (Subanimation3C) -> restore.
+	; Ghost identity: dark field -> Ghost fist -> Shadow Ball's short poof.
+	; C2 redraws the same poof tiles around the Punch contact center instead of
+	; inheriting Sub3C's lower projectile-impact anchor.
 	db SE_DARK_SCREEN_PALETTE,$FF
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$04,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
-	db $03,$FF,$3C
+	db EXT_ANIM_SHADOW_PUNCH_POOF
 	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
 ShadowPunchExtAnimEnd:
@@ -1786,7 +1789,8 @@ GoldOrbAnimationTilesetEnd::
 
 
 ; Shared Punch-family gfx loader.  Keep the 9-tile transfer in bank $3A;
-; BANK1E only retains a thin banked hook because the Punch V0 baseline has 18 bytes slack.
+; BANK1E only retains the existing thin hook.  Only true fist overrides use
+; FrameBlock $7A now; Meteor Mash has returned to stock Swift-star geometry.
 LoadPunchFamilyTilesIfNeeded::
 	ld a,[wExtendedAnimFrameEffect]
 	cp EXT_FRAMEBLOCK_OVERRIDE | $7A
@@ -1803,6 +1807,150 @@ PunchBattleTilesEnd::
 	IF PunchBattleTilesEnd - PunchBattleTiles != 9 * 16
 		fail "Punch battle tileset must contain exactly 9 tiles"
 	ENDC
+
+; Bullet Punch / Sucker Punch: use the same horizontal damage feedback that
+; stock Gen1 assigns to damaging moves with an additional effect.  This changes
+; the post-hit response from the player-side blink to a lateral screen jolt.
+SetPunchHorizontalHitFeedback::
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,5 ; player used a damaging move with side effect -> light horizontal shake
+	jr z,.store
+	ld a,2 ; enemy counterpart -> heavy horizontal shake
+.store
+	ld [wAnimationType],a
+	ret
+
+; Shadow Punch uses Shadow Ball's short poof vocabulary, but Sub3C is anchored
+; for the orb's lower projectile impact.  Redraw the same four poof frames around
+; the Punch contact center without adding a new BANK1E subanimation.
+PlayShadowPunchCenteredPoof::
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,48
+	ld [wBaseCoordY],a
+	ld a,136
+	jr z,.storeX
+	ld a,88
+	ld [wBaseCoordY],a
+	ld a,32
+.storeX
+	ld [wBaseCoordX],a
+
+	ld hl,ShadowPunchPoofFrame06
+	call .drawFrame
+	ld hl,ShadowPunchPoofFrame07
+	call .drawFrame
+	ld hl,ShadowPunchPoofFrame08
+	call .drawFrame
+	ld hl,ShadowPunchPoofFrame09
+	jp .drawFrame
+
+.drawFrame
+	; frame data = sprite count, object half-size, then legacy
+	; y-offset/x-offset/tile/flags tuples.
+	ld a,[hli]
+	ld b,a
+	ld a,[hli]
+	ld c,a
+	ld de,wOAMBuffer
+.loop
+	ld a,[wBaseCoordY]
+	sub c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,[wBaseCoordX]
+	sub c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,[hli]
+	add $31
+	ld [de],a
+	inc de
+	ld a,[hli]
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.loop
+	push hl
+	ld c,3
+	call DelayFrames
+	call ClearSprites
+	pop hl
+	ret
+
+ShadowPunchPoofFrame06:
+	db 12,16
+	db $00,$08,$23,$00
+	db $08,$00,$32,$00
+	db $08,$08,$33,$00
+	db $00,$10,$23,$20
+	db $08,$10,$33,$20
+	db $08,$18,$32,$20
+	db $10,$00,$32,$40
+	db $10,$08,$33,$40
+	db $18,$08,$23,$40
+	db $10,$10,$33,$60
+	db $10,$18,$32,$60
+	db $18,$10,$23,$60
+ShadowPunchPoofFrame07:
+	db 16,16
+	db $00,$00,$20,$00
+	db $00,$08,$21,$00
+	db $08,$00,$30,$00
+	db $08,$08,$31,$00
+	db $00,$10,$21,$20
+	db $00,$18,$20,$20
+	db $08,$10,$31,$20
+	db $08,$18,$30,$20
+	db $10,$00,$30,$40
+	db $10,$08,$31,$40
+	db $18,$00,$20,$40
+	db $18,$08,$21,$40
+	db $10,$10,$31,$60
+	db $10,$18,$30,$60
+	db $18,$10,$21,$60
+	db $18,$18,$20,$60
+ShadowPunchPoofFrame08:
+	db 16,20
+	db $00,$00,$20,$00
+	db $00,$08,$21,$00
+	db $08,$00,$30,$00
+	db $08,$08,$31,$00
+	db $00,$18,$21,$20
+	db $00,$20,$20,$20
+	db $08,$18,$31,$20
+	db $08,$20,$30,$20
+	db $18,$00,$30,$40
+	db $18,$08,$31,$40
+	db $20,$00,$20,$40
+	db $20,$08,$21,$40
+	db $18,$18,$31,$60
+	db $18,$20,$30,$60
+	db $20,$18,$21,$60
+	db $20,$20,$20,$60
+ShadowPunchPoofFrame09:
+	db 12,20
+	db $00,$00,$24,$00
+	db $00,$08,$25,$00
+	db $08,$00,$34,$00
+	db $00,$18,$25,$20
+	db $00,$20,$24,$20
+	db $08,$20,$34,$20
+	db $18,$00,$34,$40
+	db $20,$00,$24,$40
+	db $20,$08,$25,$40
+	db $18,$20,$34,$60
+	db $20,$18,$25,$60
+	db $20,$20,$24,$60
 
 ; DynamicPunch-only heavy impact helper. It is selected behind the existing C2
 ; banked-helper gateway by real Move ID, avoiding any new BANK1E dispatcher bytes.
@@ -1825,6 +1973,16 @@ PlayDynamicPunchGoldLike::
 	ld [wSubAnimAddrPtr + 1],a
 	callba LoadAnimationTileset
 	callba LoadSubanimation
+	; Sub34 is authored on the attacker's own side.  For DynamicPunch the
+	; Explosion impact belongs on the target: player use needs transform 1,
+	; enemy use needs raw transform 0.
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,1
+	jr z,.gotImpactTransform
+	xor a
+.gotImpactTransform
+	ld [wSubAnimTransform],a
 	callba PlaySubanimation
 	callba AnimationShakeScreen
 	ret
