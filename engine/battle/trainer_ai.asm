@@ -261,11 +261,11 @@ SmartAI: ; originally by Dabomstew
 	ld b, NUM_MOVES + 1
 .seloop
 	dec b
-	jr z, .selfBuffCheck
+	jp z, .selfBuffCheck
 	inc hl
 	ld a, [de]
 	and a
-	jr z, .selfBuffCheck
+	jp z, .selfBuffCheck
 	inc de
 	call ReadMove
 	ld a, [wEnemyMoveEffect]
@@ -285,19 +285,19 @@ SmartAI: ; originally by Dabomstew
 	pop hl
 	ld a, [wTypeEffectiveness]
 	cp 10
-	jr z, .seloop
+	jr z, .damageQualityCheck
 	jr c, .nvemove
 ; strongly encourage SE Move
 	rept 4
 	dec [hl]
 	endr
 	cp $15
-	jr c, .seloop
+	jr c, .damageQualityCheck
 ; even more strongly encourage 4x SE move
 	rept 3
 	dec [hl]
 	endr
-	jr .seloop
+	jr .damageQualityCheck
 .nvemove
 ; slighly discourage
 	inc [hl]
@@ -308,6 +308,160 @@ SmartAI: ; originally by Dabomstew
 	add 50
 	ld [hl], a
 	jr .seloop
+.damageQualityCheck
+; V1.2: keep the lightweight move-quality heuristic, but replace the V1.1
+; fixed <=25% HP finisher rule with deterministic KO awareness based on the
+; game's own (pre-random-roll) damage calculation.
+;
+; The KO bands are deliberately conservative:
+;   - reliable KO: calculated damage >= 125% of current HP and nominal 100% accuracy
+;     (the 125% margin safely covers the normal random damage roll)
+;   - possible KO: calculated damage >= current HP
+; A reliable KO receives a much larger bonus than a possible low-accuracy KO,
+; so the AI should not trade Ice Beam for Blizzard when both already finish.
+	push bc
+	ld a, [wEnemyMoveType]
+	ld b, a
+	ld a, [wEnemyMonType1]
+	cp b
+	jr z, .damageQualitySTAB
+	ld a, [wEnemyMonType2]
+	cp b
+	jr nz, .damageQualityPower
+.damageQualitySTAB
+	dec [hl]
+.damageQualityPower
+; Raw base power underrates multi-hit moves, so leave those to existing rules.
+	ld a, [wEnemyMoveEffect]
+	cp TWO_TO_FIVE_ATTACKS_EFFECT
+	jr z, .damageQualityKO
+	cp ATTACK_TWICE_EFFECT
+	jr z, .damageQualityKO
+	cp TWINEEDLE_EFFECT
+	jr z, .damageQualityKO
+	ld a, [wEnemyMovePower]
+	cp 40
+	jr c, .damageQualityWeak
+	cp 70
+	jr c, .damageQualityKO
+; 70+ BP gets a small quality bonus only when reasonably accurate.
+	ld a, [wEnemyMoveAccuracy]
+	cp 80 percent
+	jr c, .damageQualityKO
+	dec [hl]
+	jr .damageQualityKO
+.damageQualityWeak
+; Very weak neutral-or-better moves lose a little priority.
+	inc [hl]
+.damageQualityKO
+; Preserve the move-loop registers and current priority pointer while the
+; battle core computes deterministic damage for this candidate move.
+	push hl
+	push bc
+	push de
+	call AIEstimateEnemyMoveDamage
+	pop de
+	pop bc
+	pop hl
+	jr nc, .damageQualityExploration ; carry clear = no useful damage estimate
+
+; First test the conservative reliable-KO threshold: damage >= HP + HP/4.
+; We only call it reliable if the move has nominal 100% accuracy.
+	ld a, [wEnemyMoveAccuracy]
+	cp 100 percent
+	jr c, .damageQualityPossibleKO
+	push hl
+	ld hl, wBattleMonHP
+	ld a, [hli]
+	ld b, a
+	ld c, [hl] ; bc = current HP
+	; de = HP / 4
+	ld d, b
+	ld e, c
+	srl d
+	rr e
+	srl d
+	rr e
+	; bc = HP + HP/4
+	ld a, c
+	add e
+	ld c, a
+	ld a, b
+	adc d
+	ld b, a
+	; compare wDamage (big endian) >= bc
+	ld hl, wDamage
+	ld a, [hli]
+	cp b
+	jr c, .damageQualityReliableNo
+	jr nz, .damageQualityReliableYes
+	ld a, [hl]
+	cp c
+	jr c, .damageQualityReliableNo
+.damageQualityReliableYes
+	pop hl
+	; A stable finishing move should dominate ordinary quality bonuses.
+	rept 5
+	dec [hl]
+	endr
+	jr .damageQualityExploration
+.damageQualityReliableNo
+	pop hl
+
+.damageQualityPossibleKO
+; If a hit can cross the current HP line, give it a smaller KO bonus.
+; Low-accuracy nukes therefore become attractive only when they actually buy
+; a finishing line, rather than merely because the target is low on HP.
+	push hl
+	ld hl, wDamage
+	ld a, [hli]
+	ld b, a
+	ld c, [hl] ; bc = estimated max damage
+	ld hl, wBattleMonHP
+	ld a, b
+	cp [hl]
+	jr c, .damageQualityPossibleNo
+	jr nz, .damageQualityPossibleYes
+	inc hl
+	ld a, c
+	cp [hl]
+	jr c, .damageQualityPossibleNo
+.damageQualityPossibleYes
+	pop hl
+	ld a, [wEnemyMoveAccuracy]
+	cp 90 percent
+	jr c, .damageQualityRiskyKO
+	; accurate move that can KO on a favorable roll
+	rept 3
+	dec [hl]
+	endr
+	jr .damageQualityExploration
+.damageQualityRiskyKO
+	; risky finisher: useful, but intentionally weaker than a reliable KO.
+	dec [hl]
+	dec [hl]
+	jr .damageQualityExploration
+.damageQualityPossibleNo
+	pop hl
+
+.damageQualityExploration
+; Keep only a small amount of bounded exploration. It may break a one-point
+; tie among reasonable moves, but KO bonuses are deliberately much larger.
+	ld a, [wEnemyMoveAccuracy]
+	cp 70 percent
+	jr c, .damageQualityDone
+	call Random
+	ld a, [hRandomAdd]
+	cp $C0 ; 25% chance
+	jr c, .damageQualityDone
+	dec [hl]
+.damageQualityDone
+	pop bc
+	jp .seloop
+
+; Estimate the current enemy candidate move's deterministic damage by reusing
+; the battle core's normal damage path without CriticalHitTest or RandomizeDamage.
+; Returns carry set when wDamage contains a usable estimate.
 .selfBuffCheck
 ; 50% chance to encourage self-buff or status on turn 1/2
 	ld a, [wAILayer2Encouragement]
@@ -408,6 +562,40 @@ StatusOnlyMoves:
 	db SING
 	db $FF
 	
+AIEstimateEnemyMoveDamage:
+	ld a, [wEnemyMovePower]
+	and a
+	jr z, .noEstimate
+	; Fixed/special damage and OHKO moves do not fit this heuristic.
+	ld a, [wEnemyMoveEffect]
+	cp SUPER_FANG_EFFECT
+	jr z, .noEstimate
+	cp SPECIAL_DAMAGE_EFFECT
+	jr z, .noEstimate
+	cp OHKO_EFFECT
+	jr z, .noEstimate
+
+	ld a, [H_WHOSETURN]
+	push af
+	ld a, 1
+	ld [H_WHOSETURN], a
+	ld a, [wCriticalHitOrOHKO]
+	push af
+	xor a
+	ld [wCriticalHitOrOHKO], a
+	callab GetDamageVarsForEnemyAttack
+	callab CalculateDamage
+	callab AdjustDamageForMoveType
+	pop af
+	ld [wCriticalHitOrOHKO], a
+	pop af
+	ld [H_WHOSETURN], a
+	scf
+	ret
+.noEstimate
+	and a ; clear carry
+	ret
+
 AlterMovePriority:
 ; [wAIBuffer1] = move
 ; b = priority change
