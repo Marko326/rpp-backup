@@ -625,6 +625,79 @@ AIEstimateEnemyMoveDamage:
 ;
 ; This routine recomputes diagnostics for the already-selected move. It does
 ; not alter the four priority scores or the selected move itself.
+AIDebugSnapshotDecision::
+	; Only the dedicated David fixture needs the persistent decision snapshot.
+	ld a, [wIsInBattle]
+	cp 2
+	ret nz
+	ld a, [wTrainerClass]
+	cp BUG_CATCHER
+	ret nz
+	ld a, [wTrainerNo]
+	cp 4
+	ret nz
+	ld a, [wEnemySelectedMove]
+	and a
+	ret z
+	cp $ff
+	ret z
+
+	call ReadMove
+	call AIDebugClassifyLoadedMove
+	ld [wAIDecisionDebugClass], a
+	ret
+
+; Return a compact human-debug class in A for the currently loaded enemy move
+; against the player's currently active mon.
+; 0 = immune, 1 = resisted, 2 = neutral, 3 = super, 4 = 4x+
+; 5 = major status useful, 6 = major status blocked, 7 = other status
+AIDebugClassifyLoadedMove:
+	ld a, [wEnemyMovePower]
+	and a
+	jr z, .status
+
+	callab AIGetTypeEffectiveness
+	ld a, [wTypeEffectiveness]
+	and a
+	jr z, .immune
+	cp 10
+	jr c, .resisted
+	cp 20
+	jr c, .neutral
+	cp 40
+	jr c, .super
+	ld a, 4
+	ret
+.super
+	ld a, 3
+	ret
+.neutral
+	ld a, 2
+	ret
+.resisted
+	ld a, 1
+	ret
+.immune
+	xor a
+	ret
+
+.status
+	ld a, [wEnemyMoveEffect]
+	cp SLEEP_EFFECT
+	jr z, .majorStatus
+	cp POISON_EFFECT
+	jr z, .majorStatus
+	cp PARALYZE_EFFECT
+	jr z, .majorStatus
+	ld a, 7
+	ret
+.majorStatus
+	call AIIsUsefulMajorStatusMove
+	ld a, 5
+	ret c
+	inc a ; 6 = blocked/no current value
+	ret
+
 AIDebugPrintSelectedMove::
 	; Display telemetry only for the dedicated Route 3 David test battle.
 	; This routine is called from the safe pre-execution point in the battle
@@ -644,10 +717,12 @@ AIDebugPrintSelectedMove::
 	cp $ff
 	ret z
 
-	; Load selected move data.
+	; Load selected move data and classify it against the target that exists NOW.
 	call ReadMove
+	call AIDebugClassifyLoadedMove
+	ld [wBuffer + 27], a
 
-	; Type effectiveness shown exactly as the AI sees it.
+	; Type effectiveness shown exactly as the AI sees it now.
 	push af
 	callab AIGetTypeEffectiveness
 	ld a, [wTypeEffectiveness]
@@ -789,74 +864,84 @@ AIDebugDrawPage2:
 	ld [wTextBoxID], a
 	call DisplayTextBoxID
 
-	; Row 1: plain-language main reason.
+	; Row 1 = what the move meant against the target at decision time.
 	coord hl, 1, 14
-	ld de, AIDebugWhyText
+	ld de, AIDebugDecideText
 	call PlaceString
-	coord hl, 5, 14
-
-	ld a, [wEnemyMovePower]
-	and a
-	jr z, .statusMove
-
-	ld a, [wBuffer + 18] ; type effectiveness
-	cp 20
-	jr nc, .superEffective
-	cp 10
-	jr c, .notEffective
-
-	ld a, [wBuffer + 17] ; STAB flag
-	and a
-	jr nz, .stabMove
-	ld de, AIDebugDamageMoveText
-	jr .printReason
-
-.superEffective
-	ld de, AIDebugSuperText
-	jr .printReason
-.notEffective
-	ld de, AIDebugWeakText
-	jr .printReason
-.stabMove
-	ld de, AIDebugSTABMoveText
-	jr .printReason
-.statusMove
-	ld de, AIDebugStatusMoveText
-.printReason
+	coord hl, 8, 14
+	ld a, [wAIDecisionDebugClass]
+	call AIDebugClassToText
 	call PlaceString
 
-	; Row 2: one plain-language outcome only. Keep the line sparse so it
-	; remains readable on the 18-character battle message box.
+	; Row 2 = what that same locked move means against the target at execution.
+	; If the player switched, this can legitimately differ from DECIDE.
 	coord hl, 1, 16
-	ld a, [wEnemyMovePower]
-	and a
-	jr z, .statusSummary
-
-	ld de, AIDebugKOText
+	ld de, AIDebugNowText
 	call PlaceString
-	coord hl, 4, 16
-	ld a, [wBuffer + 16]
-	cp 2
-	ld de, AIDebugSafeText
-	jr z, .printKO
+	coord hl, 5, 16
+	ld a, [wBuffer + 27]
+	call AIDebugClassToText
+	jp PlaceString
+
+AIDebugClassToText:
 	cp 1
-	ld de, AIDebugPossibleText
-	jr z, .printKO
-	ld de, AIDebugNoText
-.printKO
-	jp PlaceString
+	jr z, .resist
+	cp 2
+	jr z, .normal
+	cp 3
+	jr z, .super
+	cp 4
+	jr z, .fourX
+	cp 5
+	jr z, .statusOK
+	cp 6
+	jr z, .statusNo
+	cp 7
+	jr z, .status
+	ld de, AIDebugImmuneText
+	ret
+.resist
+	ld de, AIDebugResistText
+	ret
+.normal
+	ld de, AIDebugNormalText
+	ret
+.super
+	ld de, AIDebugSuperShortText
+	ret
+.fourX
+	ld de, AIDebugFourXText
+	ret
+.statusOK
+	ld de, AIDebugStatusOKText
+	ret
+.statusNo
+	ld de, AIDebugStatusNoText
+	ret
+.status
+	ld de, AIDebugStatusShortText
+	ret
 
-.statusSummary
-	ld de, AIDebugTargetText
-	call PlaceString
-	coord hl, 8, 16
-	ld a, [wBattleMonStatus]
-	and a
-	ld de, AIDebugHealthyText
-	jr z, .printTarget
-	ld de, AIDebugHasStatusText
-.printTarget
-	jp PlaceString
+AIDebugDecideText:
+	db "DECIDE:@"
+AIDebugNowText:
+	db "NOW:@"
+AIDebugImmuneText:
+	db "IMMUNE@"
+AIDebugResistText:
+	db "RESIST@"
+AIDebugNormalText:
+	db "NORMAL@"
+AIDebugSuperShortText:
+	db "SUPER@"
+AIDebugFourXText:
+	db "4X@"
+AIDebugStatusOKText:
+	db "STATUS OK@"
+AIDebugStatusNoText:
+	db "STATUS NO@"
+AIDebugStatusShortText:
+	db "STATUS@"
 
 ; Carry set when the selected move's final priority equals the minimum among
 ; the four final priority scores. This is intentionally simple and readable:
@@ -1229,6 +1314,21 @@ TrainerAI:
 	ld a,[wLinkState]
 	cp LINK_STATE_BATTLING
 	ret z
+
+	; Basic Switch test: execute only the action that was locked during enemy
+	; action selection. Do not re-evaluate after the player has acted.
+	ld a, [wAIPlannedSwitchTarget]
+	inc a
+	jr z, .noPlannedSwitch
+	dec a
+	ld [wWhichPokemon], a
+	call SwitchEnemyMon
+	ld a, $ff
+	ld [wAIPlannedSwitchTarget], a
+	scf
+	ret
+
+.noPlannedSwitch
 	ld a,[wTrainerAINumber] ; what trainer class is this?
 	dec a
 	ld c,a
@@ -1252,6 +1352,281 @@ TrainerAI:
 	ld l,a
 	call Random
 	jp hl
+
+AIPlanDavidSmartSwitch:
+	; 3.0.12new 3HKO Threshold V0.
+	; A damaging move is now judged by estimated hits-to-KO rather than by a
+	; fixed type-effectiveness cutoff. If any move can KO the current target in
+	; at most three successful hits, staying in is considered reasonable.
+	; Status Utility V0 remains an independent reason to stay.
+	; Accuracy, incoming damage, speed and switch-in quality are not scored yet.
+	ld a, [wTrainerClass]
+	cp BUG_CATCHER
+	jp nz, .noPlan
+	ld a, [wTrainerNo]
+	cp 4
+	jp nz, .noPlan
+
+	ld a, $ff
+	ld [wAIPlannedSwitchTarget], a
+
+	; Current mon: one damaging move that is an estimated 1HKO/2HKO/3HKO is
+	; enough to stay, even if resisted. If no such damage exists, Status Utility
+	; V0 can still provide a useful major-status action.
+	ld hl, wEnemyMonMoves
+	ld b, NUM_MOVES
+.currentMoveLoop
+	ld a, [hli]
+	and a
+	jr z, .findBench
+	push hl
+	push bc
+	call ReadMove
+	call AIIsUsefulDamagingMove
+	jr c, .currentHasUsefulAction
+	call AIIsUsefulMajorStatusMove
+	jr c, .currentHasUsefulAction
+	pop bc
+	pop hl
+	dec b
+	jr nz, .currentMoveLoop
+	jr .findBench
+
+.currentHasUsefulAction
+	pop bc
+	pop hl
+	jp .noPlan
+
+.findBench
+	ld a, [wEnemyPartyCount]
+	ld c, a
+	ld b, 0
+.candidateLoop
+	ld a, b
+	ld d, a
+	ld a, [wEnemyMonPartyPos]
+	cp d
+	jp z, .nextCandidate
+
+	; Candidate must be alive.
+	push bc
+	ld hl, wEnemyMon1HP
+	ld a, b
+	ld bc, wEnemyMon2 - wEnemyMon1
+	call AddNTimes
+	ld a, [hli]
+	ld e, a
+	ld a, [hl]
+	or e
+	pop bc
+	jp z, .nextCandidate
+
+	; Candidate must have at least one damaging move estimated to KO the
+	; player's current mon within three successful hits. First valid candidate
+	; still wins; switch-in quality is deliberately not ranked yet.
+	push bc
+	ld hl, wEnemyMon1Moves
+	ld a, b
+	ld bc, wEnemyMon2 - wEnemyMon1
+	call AddNTimes
+	ld d, NUM_MOVES
+.candidateMoveLoop
+	ld a, [hli]
+	and a
+	jr z, .candidateNoAttack
+	push hl
+	push de
+	call ReadMove
+	call AIIsUsefulDamagingMove
+	pop de
+	pop hl
+	jp c, .candidateFound
+	dec d
+	jr nz, .candidateMoveLoop
+.candidateNoAttack
+	pop bc
+	jp .nextCandidate
+
+.candidateFound
+	pop bc
+	ld a, b
+	ld [wAIPlannedSwitchTarget], a
+	scf
+	ret
+
+.nextCandidate
+	inc b
+	dec c
+	jp nz, .candidateLoop
+
+.noPlan
+	and a
+	ret
+
+AIIsUsefulDamagingMove:
+	; 3HKO Threshold V0. The deterministic damage estimator already includes
+	; level, stats, move power, STAB and type effectiveness. A move is sufficient
+	; to stay only when three successful hits of that estimate can finish the
+	; player's current HP. This intentionally ignores accuracy for now.
+	ld a, [wEnemyMovePower]
+	and a
+	jr z, .notUseful
+	call AIEstimateEnemyMoveDamage
+	jr nc, .notUseful
+
+	; DE = deterministic estimated damage.
+	ld hl, wDamage
+	ld a, [hli]
+	ld d, a
+	ld e, [hl]
+	ld a, d
+	or e
+	jr z, .notUseful
+
+	; BC = player's current HP. Repeatedly subtract one estimated hit.
+	ld hl, wBattleMonHP
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+	ld a, 3
+.hitLoop
+	push af
+	; If remaining HP <= estimated damage, this hit finishes the target.
+	ld a, b
+	cp d
+	jr c, .usefulPop
+	jr nz, .subtract
+	ld a, c
+	cp e
+	jr c, .usefulPop
+	jr z, .usefulPop
+.subtract
+	ld a, c
+	sub e
+	ld c, a
+	ld a, b
+	sbc d
+	ld b, a
+	pop af
+	dec a
+	jr nz, .hitLoop
+	jr .notUseful
+
+.usefulPop
+	pop af
+	scf
+	ret
+.notUseful
+	and a ; clear carry
+	ret
+
+AIIsUsefulMajorStatusMove:
+	; Status Utility V0 deliberately handles only persistent major status:
+	; sleep, poison and paralysis. It does not yet score confusion, stat drops,
+	; healing, screens, setup moves, accuracy, immunity, or status chance.
+	ld a, [wBattleMonStatus]
+	and a
+	jr nz, .notUseful
+
+	; First check whether the status move can actually affect the target.
+	; This catches cases like Thunder Wave versus Ground type.
+	callab AIGetTypeEffectiveness
+	ld a, [wTypeEffectiveness]
+	and a
+	jr z, .notUseful
+
+	ld a, [wEnemyMoveEffect]
+	cp SLEEP_EFFECT
+	jr z, .useful
+	cp POISON_EFFECT
+	jr z, .useful
+	cp PARALYZE_EFFECT
+	jr z, .useful
+
+.notUseful
+	and a ; clear carry
+	ret
+.useful
+	scf
+	ret
+
+AIDebugPrintCancelledDecision::
+	; Only David uses the preselection experiment.
+	ld a, [wIsInBattle]
+	cp 2
+	ret nz
+	ld a, [wTrainerClass]
+	cp BUG_CATCHER
+	ret nz
+	ld a, [wTrainerNo]
+	cp 4
+	ret nz
+
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	call DisplayTextBoxID
+
+	coord hl, 1, 14
+	ld de, AIDebugPlanText
+	call PlaceString
+
+	ld a, [wAIPlannedSwitchTarget]
+	inc a
+	jr z, .plannedMove
+	coord hl, 6, 14
+	ld de, AIDebugSwitchShortText
+	call PlaceString
+	jr .cancelLine
+
+.plannedMove
+	ld a, [wEnemySelectedMove]
+	and a
+	jr z, .cancelLine
+	cp $ff
+	jr z, .cancelLine
+	ld [wd11e], a
+	call GetMoveName
+	call CopyStringToCF4B
+	coord hl, 6, 14
+	ld de, wcf4b
+	call PlaceString
+
+.cancelLine
+	coord hl, 1, 16
+	ld de, AIDebugCancelFaintedText
+	call PlaceString
+	call WaitForTextScrollButtonPress
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	jp DisplayTextBoxID
+
+AIDebugPlanText:
+	db "PLAN:@"
+AIDebugSwitchShortText:
+	db "SWITCH@"
+AIDebugCancelFaintedText:
+	db "CANCEL:FAINTED@"
+
+AIDebugPrintSwitchDecision::
+	; Human-readable single-page switch explanation for David.
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	call DisplayTextBoxID
+	coord hl, 1, 14
+	ld de, AIDebugSwitchActionText
+	call PlaceString
+	coord hl, 1, 16
+	ld de, AIDebugBadMatchupText
+	call PlaceString
+	call WaitForTextScrollButtonPress
+	ld a, MESSAGE_BOX
+	ld [wTextBoxID], a
+	jp DisplayTextBoxID
+
+AIDebugSwitchActionText:
+	db "AI ACTION:SWITCH@"
+AIDebugBadMatchupText:
+	db "WHY:NO USEFUL MOVE@"
 
 TrainerAIPointers:
 ; one entry per trainer class

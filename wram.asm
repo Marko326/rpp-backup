@@ -699,8 +699,14 @@ wAICount:: ; ccdf
 ; number of times remaining that AI action can occur
 	ds 1
 
-; unused?
-	ds 2
+; Basic trainer switch test state.
+; $ff means no switch action is locked this turn; otherwise this is the
+; enemy party index chosen before either side acts.
+wAIPlannedSwitchTarget:: ; cce0
+	ds 1
+
+; unused
+	ds 1 ; cce1
 
 wEnemyMoveListIndex:: ; cce2
 	ds 1
@@ -720,8 +726,8 @@ wSafariEscapeFactor:: ; cce8
 wSafariBaitFactor:: ; cce9
 	ds 1;
 
-; unused?
-	ds 1
+; unused
+	ds 1 ; ccea
 
 wTransformedEnemyMonOriginalDVs:: ; cceb
 	ds 2
@@ -1829,7 +1835,9 @@ wPlayerDisabledMove:: ; d06d
 ; high nibble: which move is disabled (1-4)
 ; low nibble: disable turns left
 	ds 1
-; unused?
+wAIActionPreselected:: ; d06e
+; 3.0.8new: nonzero when David's enemy action was locked before the player
+; committed this turn's move/switch. Uses the existing unused byte.
 	ds 1
 
 wEnemyNumAttacksLeft:: ; d06f
@@ -1846,7 +1854,10 @@ wEnemyDisabledMove:: ; d072
 ; high nibble: which move is disabled (1-4)
 ; low nibble: disable turns left
 	ds 1
-; unused?
+wAIDecisionDebugClass:: ; d073
+; 3.0.9new: compact decision-time classification for David's locked move.
+; Stored before the player commits this turn's action, so execution-time
+; target changes cannot rewrite the original explanation.
 	ds 1
 
 wPlayerNumHits:: ; d074

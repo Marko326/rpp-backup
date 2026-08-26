@@ -9,9 +9,8 @@ _Route3Text1::
 	done
 
 _Route3BattleText1::
-	text "Hi! I like shorts!"
-	line "They're comfy and"
-	cont "easy to wear!"
+	text "AI TEST BUILD"
+	line "3.0.12new"
 	done
 
 _Route3EndBattleText1::

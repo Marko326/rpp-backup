@@ -395,6 +395,9 @@ EnemyRanText:
 	db "@"
 
 MainInBattleLoop:
+	; New decision loop iteration: no action is preselected yet.
+	xor a
+	ld [wAIActionPreselected], a
 	call ReadPlayerMonCurHPAndStatus
 	ld hl, wBattleMonHP
 	ld a, [hli]
@@ -419,6 +422,10 @@ MainInBattleLoop:
 	and (1 << ThrashingAbout) | (1 << ChargingUp) ; check if the player is thrashing about or charging for an attack
 	jr nz, .selectEnemyMove ; if so, jump
 ; the player is neither thrashing about nor charging for an attack
+	; 3.0.8new Decision Snapshot V0: for the David test fixture, lock the
+	; enemy action now, while the player's currently active mon is still the
+	; one visible before the player chooses Fight/PKMN/Item.
+	call PreselectDavidEnemyAction
 	call DisplayBattleMenu ; show battle menu
 	ret c ; return if player ran from battle
 	ld a, [wEscapedFromBattle]
@@ -450,7 +457,13 @@ MainInBattleLoop:
 	pop af
 	jr nz, MainInBattleLoop ; if the player didn't select a move, jump
 .selectEnemyMove
+	; If David already locked his action before the player's choice, do not
+	; recalculate after a player switch. Other battles keep the original flow.
+	ld a, [wAIActionPreselected]
+	and a
+	jr nz, .enemyActionAlreadySelected
 	call SelectEnemyMove
+.enemyActionAlreadySelected
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
 	jr nz, .noLinkBattle
@@ -482,6 +495,27 @@ MainInBattleLoop:
 .specialMoveNotUsed
 	callab SwitchEnemyMon
 .noLinkBattle
+	; 3.0.10new Switch Priority V0:
+	; a strategic switch that was locked before the player's command is not a
+	; normal move and must not enter Quick Attack / Counter / speed ordering.
+	; Execute it now, before either side's ordinary move. If the player already
+	; switched or used an item, ExecutePlayerMove later will correctly no-op.
+	; Only a current-turn David preselection may own a strategic switch.
+	; This prevents stale test state from leaking into wild battles.
+	ld a, [wAIActionPreselected]
+	and a
+	jr z, .noLockedAISwitch
+	ld a, [wAIPlannedSwitchTarget]
+	inc a
+	jr z, .noLockedAISwitch
+	ld a, $1
+	ld [H_WHOSETURN], a
+	callab AIDebugPrintLockedEnemyAction
+	callab TrainerAI
+	jp c, .AIActionUsedEnemyFirst
+	; Defensive fallback: if the plan vanished unexpectedly, continue through
+	; the original move-order logic rather than granting an extra action.
+.noLockedAISwitch
 	ld a, [wPlayerSelectedMove]
 	cp EXTREMESPEED
 	jr z, .PriorityMoveUsed
@@ -560,6 +594,7 @@ MainInBattleLoop:
 	ld a, $1
 	ld [H_WHOSETURN], a
 	ld [wEnemyWentFirst], a
+	callab AIDebugPrintLockedEnemyAction
 	callab TrainerAI
 	jr c, .AIActionUsedEnemyFirst
 	call ExecuteEnemyMove
@@ -600,6 +635,7 @@ MainInBattleLoop:
 	call DrawHUDsAndHPBars
 	ld a, $1
 	ld [H_WHOSETURN], a
+	callab AIDebugPrintLockedEnemyAction
 	callab TrainerAI
 	jr c, .AIActionUsedPlayerFirst
 	call ExecuteEnemyMove
@@ -912,6 +948,19 @@ HandleEnemyMonFainted:
 	jp MainInBattleLoop
 
 FaintEnemyPokemon:
+	; If David had a locked action that never reached its execution debug point,
+	; expose that it was cancelled by the faint. In 3.0.10new an ordinary move
+	; can still be cancelled by a faster KO, but a locked strategic switch should
+	; already have executed before normal move priority reaches this point.
+	ld a, [wAIActionPreselected]
+	cp 1
+	jr nz, .skipCancelledActionDebug
+	callab AIDebugPrintCancelledDecision
+.skipCancelledActionDebug
+
+	; Cancel any stale Basic Switch target so normal faint replacement is used.
+	ld a, $ff
+	ld [wAIPlannedSwitchTarget], a
 	call ReadPlayerMonCurHPAndStatus
 	ld a, [wIsInBattle]
 	dec a
@@ -1507,6 +1556,16 @@ EnemySendOutFirstMon:
 	ld [wWhichPokemon],a
 	jr .next3
 .next
+	; A Basic Switch action may preselect an exact bench target. Only honor the
+	; target while wAIPlannedSwitchTarget is live; legacy SwitchOutAI calls keep
+	; their original first-healthy behavior.
+	ld a, [wAIPlannedSwitchTarget]
+	inc a
+	jr z, .chooseFirstHealthy
+	dec a
+	ld [wWhichPokemon], a
+	jr .next3
+.chooseFirstHealthy
 	ld b,$FF
 .next2
 	inc b
@@ -3101,6 +3160,26 @@ PhysicalText: ; Added for PS Split
 SpecialText: ; added for PS Split
 	db "Special@"
 
+PreselectDavidEnemyAction:
+	; Keep this experiment isolated to Route 3 Bug Catcher David.
+	ld a, [wIsInBattle]
+	cp 2
+	ret nz
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	ret z
+	ld a, [wTrainerClass]
+	cp BUG_CATCHER
+	ret nz
+	ld a, [wTrainerNo]
+	cp 4
+	ret nz
+
+	call SelectEnemyMove
+	ld a, 1
+	ld [wAIActionPreselected], a
+	ret
+
 SelectEnemyMove:
 	ld a, [wLinkState]
 	sub LINK_STATE_BATTLING
@@ -3153,6 +3232,12 @@ SelectEnemyMove:
 	ld a, [wIsInBattle]
 	dec a
 	jr z, .chooseRandomMove ; wild encounter
+
+	; Basic Switch: decide and lock switch intent at the same point the enemy
+	; would otherwise choose a move, before either side executes its action.
+	callab AIPlanDavidSmartSwitch
+	jr c, .smartSwitchLocked
+
 	callab AIEnemyTrainerChooseMoves
 .chooseRandomMove
 	push hl
@@ -3183,12 +3268,21 @@ SelectEnemyMove:
 	jr z, .chooseRandomMove ; move disabled, try again
 	and a
 	jr z, .chooseRandomMove ; move non-existant, try again
+	jr .done ; normal move selected: do not fall through into switch action
+.smartSwitchLocked
+	; A switch is the entire enemy action. Use $ff so the abandoned move cannot
+	; affect priority/counter checks. $ff also marks "no move decision class".
+	ld a, $ff
+	ld [wEnemySelectedMove], a
+	ld [wAIDecisionDebugClass], a
+	ret
+
 .done
 	ld [wEnemySelectedMove], a
-	; Debug fixture: show the AI decision immediately after move selection.
-	; This happens before speed/order resolution, so the decision remains visible
-	; even if the player moves first and KOs the enemy.
-	callab AIDebugPrintSelectedMove
+	; 3.0.9new: snapshot the meaning of the selected move against the target
+	; that existed at decision time. Debug itself is still deferred until
+	; enemy execution.
+	callab AIDebugSnapshotDecision
 	ret
 .linkedOpponentUsedStruggle
 	ld a, STRUGGLE
@@ -7113,6 +7207,7 @@ InitBattleCommon:
 	ld [hStartTileID], a
 	dec a
 	ld [wAICount], a
+	ld [wAIPlannedSwitchTarget], a
 	coord hl, 12, 0
 	predef CopyUncompressedPicToTilemap
 	ld a, $ff

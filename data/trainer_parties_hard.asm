@@ -797,7 +797,7 @@ BugCatcherData: ; COMPLETED
 	db PKMN_TRAINER ; force SmartAI in both Normal and Hard modes
 
 	db 12,PIKACHU
-	moveset THUNDER_WAVE, 0, 0, 0
+	moveset THUNDER_WAVE, THUNDERBOLT, 0, 0
 
 	db 12,VICTREEBEL
 	moveset STUN_SPORE, POISONPOWDER, ACID, GIGA_DRAIN

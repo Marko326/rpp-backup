@@ -2597,6 +2597,9 @@ INCLUDE "engine/menu/movedex.asm"
 
 SECTION "bank36",ROMX,BANK[$36]
 
+; Debug-only bridge moved out of full bankF.
+INCLUDE "engine/battle/ai_debug_bridge.asm"
+
 Museum_GFX:          INCBIN "gfx/tilesets/museum.2bpp"
 Museum_Block:        INCBIN "gfx/blocksets/museum.bst"
 
