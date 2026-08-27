@@ -1996,8 +1996,12 @@ PlayRocksLiftWithSwiftStars::
 	; Swift-star replacements above.  The next normal $43 command reloads
 	; attack_anim_2; if the OAM is still alive at that VBlank, the same objects
 	; instantly turn back into the stock sand/Poison-Gas-looking tiles.
-	; Give the held star frame one final VBlank, then clear it before returning
-	; to the recipe so the following tileset reload cannot morph the stars.
+	; Sub1D ends on mode 3, so the three raised stars are still live in OAM.
+	; Hold that completed pose briefly using the engine's standard 10-frame delay
+	; convention (SE_DELAY_ANIMATION_10 is also just ld c,10 / DelayFrames), then
+	; clear OAM before returning so the following tileset reload cannot morph them.
+	ld c,5
+	call DelayFrames
 	callba AnimationCleanOAM
 	ret
 
