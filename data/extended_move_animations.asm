@@ -28,6 +28,8 @@ PlayExtendedOrbProjectile:
 	jp z,PlayShadowPunchCenteredPoof
 	cp DYNAMICPUNCH
 	jp z,PlayDynamicPunchGoldLike
+	cp METEOR_MASH
+	jp z,PlayRocksLiftWithSwiftStars
 
 	; Gold-style Shadow Ball projectile; C2 currently has no operand.
 	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
@@ -456,13 +458,14 @@ MeteorMashExtAnim:
 	db MeteorMashExtAnimEnd - MeteorMashExtAnimData
 MeteorMashExtAnimData:
 	; Steel-star composition built entirely from existing Gen1 primitives:
-	; Rock Slide's lift motion -> Draco Meteor's proven IceFall/star motion ->
-	; a short body lean -> the stock 16x16 Swift star as the contact impact.
+	; preserve Rock Slide's native multi-rock layout but temporarily replace its
+	; rock quadrants with Swift-star quadrants, then use Draco Meteor's proven
+	; IceFall/star motion -> a short body lean -> stock Swift-star contact.
 	; Keep move-type palette mode active for every sprite segment in the move.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; C2 gateway: RocksLift with 3-star rock layout
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
-	db $43,$9C,$1D ; RocksLift motion, but draw full Swift stars
-	db $43,$FF,$38 ; IceFall/Draco motion, still drawing Swift stars
+	db $43,$FF,$38 ; IceFall/Draco motion, drawing full Swift stars
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db SE_MOVE_MON_HORIZONTALLY,$48
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
@@ -1951,6 +1954,55 @@ ShadowPunchPoofFrame09:
 	db $18,$20,$34,$60
 	db $20,$18,$25,$60
 	db $20,$20,$24,$60
+
+; Reuse Rock Slide's *native* RocksLift object layout for Meteor Mash.
+; FrameBlock23/24/25 already encode the 1 -> 2 -> 3 rock reveal and the final
+; three-object lift.  Instead of overriding those FrameBlocks with one Swift
+; star (which collapses the top phase to one object), patch the four rock
+; quadrant tiles with the stock Swift star's four quadrants, then play Sub1D
+; unchanged.  The next normal subanimation reload restores attack_anim_2.
+PlayRocksLiftWithSwiftStars::
+	ld a,1
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	; RocksLift uses relative tiles $0A/$0B for the top row and $1A/$1B for
+	; the bottom row.  Animation tiles begin at OBJ tile $31.
+	ld hl,vSprites + $3B0 ; $31 + $0A
+	ld de,MeteorMashLiftStarTiles
+	ld b,BANK(MeteorMashLiftStarTiles)
+	ld c,2
+	call CopyVideoData
+	ld hl,vSprites + $4B0 ; $31 + $1A
+	ld de,MeteorMashLiftStarTiles + 2 * 16
+	ld b,BANK(MeteorMashLiftStarTiles)
+	ld c,2
+	call CopyVideoData
+
+	ld a,3
+	ld [wSubAnimFrameDelay],a
+	ld a,$9C
+	ld [wAnimSoundID],a
+	ld hl,SubanimationPointers + $1D * 2
+	ld a,l
+	ld [wSubAnimAddrPtr],a
+	ld a,h
+	ld [wSubAnimAddrPtr + 1],a
+	callba LoadSubanimation
+	callba PlaySubanimation
+
+	; Sub1D deliberately ends on mode 3, leaving the final three-object rock
+	; layout in OAM.  Those objects point at the temporary $0A/$0B/$1A/$1B
+	; Swift-star replacements above.  The next normal $43 command reloads
+	; attack_anim_2; if the OAM is still alive at that VBlank, the same objects
+	; instantly turn back into the stock sand/Poison-Gas-looking tiles.
+	; Give the held star frame one final VBlank, then clear it before returning
+	; to the recipe so the following tileset reload cannot morph the stars.
+	callba AnimationCleanOAM
+	ret
+
+MeteorMashLiftStarTiles:
+	INCBIN "gfx/meteor_mash_lift_star.2bpp"
 
 ; DynamicPunch-only heavy impact helper. It is selected behind the existing C2
 ; banked-helper gateway by real Move ID, avoiding any new BANK1E dispatcher bytes.
