@@ -17,8 +17,8 @@ GSSFX_SLUDGE_BOMB EQU GSSFX_SUPER_EFFECTIVE + 1
 PlayExtendedShadowBallProjectile:
 PlayExtendedOrbProjectile:
 	; C2 is a compact banked-helper gateway. Shadow Ball remains the default;
-	; DynamicPunch reuses the same gateway by real Move ID so BANK1E needs no new
-	; command branch. Legacy animation-ID semantics remain untouched.
+	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
+	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
 	cp BULLET_PUNCH
 	jp z,SetPunchHorizontalHitFeedback
@@ -304,7 +304,7 @@ ExtendedMoveAnimationPointers:
 	dw WhirlpoolExtAnim             ; WHIRLPOOL
 	dw GigaDrainExtAnim             ; GIGA_DRAIN
 	dw PetalBlizzardExtAnim         ; PETALBLIZARD
-	dw NightSlashExtAnim            ; LEAF_BLADE - shared Blade family test
+	dw ParallelBladeExtAnim         ; LEAF_BLADE - keep V1.9 shared Blade pacing
 	dw WoodHammerExtAnim            ; WOOD_HAMMER
 	dw PoisonJabExtAnim             ; POISON_JAB
 	dw GunkShotExtAnim              ; GUNK_SHOT
@@ -320,7 +320,7 @@ ExtendedMoveAnimationPointers:
 	dw MudBombExtAnim               ; MUD_BOMB
 	dw ExtrasensoryExtAnim          ; EXTRASENSORY
 	dw ZenHeadbuttExtAnim           ; ZEN_HEADBUTT
-	dw NightSlashExtAnim            ; PSYCHO_CUT - shared Blade family test
+	dw ParallelBladeExtAnim         ; PSYCHO_CUT - keep V1.9 shared Blade pacing
 	dw HyperVoiceExtAnim            ; HYPER_VOICE
 	dw ExtremespeedExtAnim          ; EXTREMESPEED
 	dw GigaImpactExtAnim            ; GIGA_IMPACT
@@ -539,8 +539,9 @@ FeintAttackExtAnimEnd:
 NightSlashExtAnim:
 	db NightSlashExtAnimEnd - NightSlashExtAnimData
 NightSlashExtAnimData:
-	; Blade-family test: geometry stays native Cut, while this recipe explicitly
-	; opts only this subanimation into the dedicated 18-type palette.
+	; Night Slash keeps the established 6 px parallel Cut, but uses the stock
+	; Cut timing (4 frames per visible stage) so the completed double slash reads
+	; more clearly without adding a held-object helper.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
 	db $03,$A2,$16
@@ -549,6 +550,22 @@ NightSlashExtAnimData:
 	db $FF
 NightSlashExtAnimEnd:
 	IF NightSlashExtAnimEnd - NightSlashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+; Leaf Blade / Psycho Cut keep the V1.9 Blade-family timing.  This small recipe
+; split isolates the Night Slash speed test without changing their cadence.
+ParallelBladeExtAnim:
+	db ParallelBladeExtAnimEnd - ParallelBladeExtAnimData
+ParallelBladeExtAnimData:
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
+	db $03,$A2,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+ParallelBladeExtAnimEnd:
+	IF ParallelBladeExtAnimEnd - ParallelBladeExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
@@ -706,8 +723,9 @@ GetCurrentFrameBlockDuplicateLane:
 	and a ; clear carry so callers fail closed
 	ret
 
-; Night Slash / parallel-slash primitive.  V2 widened Gold Slash's 4 px
-; placement to 6 px because Gen1 Cut is a thicker composite.
+; Night Slash / parallel-slash primitive.  Keep the established 6 px spacing.
+; The V1.9 10 px experiment was not the real fix for the clipped final head;
+; Subanimation16 now preserves that final FrameBlock in separate OAM slots.
 ; Offset semantics follow DrawFrameBlock's local-coordinate transforms:
 ; transform 0/3/4=(-6,-6), transform 1=(+6,+6), transform 2=(+6,-6).
 DuplicateCurrentFrameBlockOffset6:
@@ -1997,9 +2015,8 @@ PlayRocksLiftWithSwiftStars::
 	; attack_anim_2; if the OAM is still alive at that VBlank, the same objects
 	; instantly turn back into the stock sand/Poison-Gas-looking tiles.
 	; Sub1D ends on mode 3, so the three raised stars are still live in OAM.
-	; Hold that completed pose briefly using the engine's standard 10-frame delay
-	; convention (SE_DELAY_ANIMATION_10 is also just ld c,10 / DelayFrames), then
-	; clear OAM before returning so the following tileset reload cannot morph them.
+	; Hold that completed pose for the user-tested 5-frame delay, then clear OAM
+	; before returning so the following tileset reload cannot morph the stars.
 	ld c,5
 	call DelayFrames
 	callba AnimationCleanOAM
