@@ -251,7 +251,7 @@ BillsPCDeposit:
 	ld [hl], "@"
 	ld hl, MonWasStoredText
 	call PrintText
-	jp BillsPCMenu
+	jp BillsPCDeposit
 
 BillsPCWithdraw:
 	ld a, [wNumInBox]
@@ -288,7 +288,7 @@ BillsPCWithdraw:
 	call WaitForSoundToFinish
 	ld hl, MonIsTakenOutText
 	call PrintText
-	jp BillsPCMenu
+	jp BillsPCWithdraw
 
 BillsPCRelease:
 	ld a, [wNumInBox]
@@ -414,11 +414,10 @@ DisplayDepositWithdrawMenu:
 	ld [hli], a ; wMenuWatchedKeys
 	xor a
 	ld [hl], a ; wLastMenuItem
-	ld hl, wListScrollOffset
-	ld [hli], a ; wListScrollOffset
-	ld [hl], a ; wMenuWatchMovingOutOfBounds
+	; Keep the mon list cursor/scroll state while this action menu is open so
+	; returning to Deposit/Withdraw can redraw the same list page.
+	ld [wMenuWatchMovingOutOfBounds], a
 	ld [wPlayerMonNumber], a
-	ld [wPartyAndBillsPCSavedMenuItem], a
 .loop
 	call HandleMenuInput
 	bit 1, a ; pressed B?
