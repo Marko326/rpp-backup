@@ -248,6 +248,8 @@ LegacyMoveAnimationOverrides:
 	dw IcePunchDedicatedAnim
 	db THUNDERPUNCH
 	dw ThunderPunchDedicatedAnim
+	db SLASH
+	dw SlashDedicatedAnim
 	db $FF
 
 ; Full contiguous table for expanded move IDs $A6-$FD.
@@ -358,6 +360,20 @@ CometPunchDedicatedAnimData:
 CometPunchDedicatedAnimEnd:
 	IF CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData > 30
 		fail "Comet Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+SlashDedicatedAnim:
+	db SlashDedicatedAnimEnd - SlashDedicatedAnimData
+SlashDedicatedAnimData:
+	; Gen1 Slash uses the established 6 px parallel Cut geometry.
+	; Keep fixed/legacy animation colors: do not opt into MOVE_TYPE palette.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
+	db $04,$A2,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $FF
+SlashDedicatedAnimEnd:
+	IF SlashDedicatedAnimEnd - SlashDedicatedAnimData > 30
+		fail "Slash animation recipe exceeds wBuffer"
 	ENDC
 
 FirePunchDedicatedAnim:
