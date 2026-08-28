@@ -1589,7 +1589,10 @@ Subanimation16:
 	db $2a,$1b,$04
 	db $2b,$1b,$02
 	db $2b,$20,$02
-	db $2a,$2f,$04
+	; Keep the final complete Cut head in its own OAM slots.  Mode 3 advances
+	; the destination after the normal delay, so the following off-screen $2c
+	; cleanup frames cannot overwrite half of FrameBlock2a.
+	db $2a,$2f,$03
 	db $2c,$00,$02
 	db $2c,$00,$00
 
