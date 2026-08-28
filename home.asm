@@ -4155,6 +4155,30 @@ AutoTextBoxDrawingCommon::
 	ld [wDoNotWaitForButtonPressAfterDisplayingText],a ; make DisplayTextID wait for button press
 	ret
 
+; Save the exact Bill's PC mon-list screen before the action menu covers it.
+; Buffer 1 is restored on B/Cancel so the existing bottom message text is kept.
+PrepareBillsPCActionMenu::
+	call SaveScreenTilesToBuffer1
+	xor a
+	ld [wCurrentMenuItem], a
+	ret
+
+; Tail-called by DisplayDepositWithdrawMenu when B/Cancel is chosen.
+RestoreBillsPCActionMenuAndCancel::
+	call LoadScreenTilesFromBuffer1
+	and a
+	ret
+
+; Restore the underlying list after Stats and redraw the action menu on top.
+RestoreBillsPCActionMenuAfterStats::
+	call LoadScreenTilesFromBuffer1
+	call ReloadTilesetTilePatterns
+	call RunDefaultPaletteCommand
+	call LoadGBPal
+	ld a, 1
+	ld [wCurrentMenuItem], a
+	ret
+
 PrintText::
 ; Print text hl at (1, 14).
 	push hl

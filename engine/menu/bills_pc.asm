@@ -209,7 +209,7 @@ BillsPCDeposit:
 	call DisplayMonListMenu
 	jp c, BillsPCMenu
 	call DisplayDepositWithdrawMenu
-	jp nc, BillsPCMenu
+	jr nc, BillsPCDeposit
 	; Allow the Deposit list to open even with only one party mon or a full
 	; box. Enforce those limits only when Deposit is actually confirmed.
 	ld a, [wPartyCount]
@@ -268,7 +268,7 @@ BillsPCWithdraw:
 	call DisplayMonListMenu
 	jp c, BillsPCMenu
 	call DisplayDepositWithdrawMenu
-	jp nc, BillsPCMenu
+	jr nc, BillsPCWithdraw
 	; A full party may still browse the Withdraw list. Reject only the
 	; confirmed Withdraw action, then redraw the same Withdraw list.
 	ld a, [wPartyCount]
@@ -294,7 +294,12 @@ BillsPCWithdraw:
 	call WaitForSoundToFinish
 	ld hl, MonIsTakenOutText
 	call PrintText
-	jp BillsPCWithdraw
+	; If that was the last mon in the box, leave Withdraw directly instead of
+	; re-entering it and triggering NoMonText from the empty-box entry check.
+	ld a, [wNumInBox]
+	and a
+	jp z, BillsPCMenu
+	jr BillsPCWithdraw
 
 ; If the removed mon was the final entry in the old list, the saved
 ; scroll offset + menu row now points at Cancel. Move the saved cursor
@@ -418,6 +423,10 @@ HMMoveArray:
 	db -1
 
 DisplayDepositWithdrawMenu:
+	; Preserve the exact mon-list screen underneath the action menu, including
+	; the current bottom message text. B/Cancel can then restore it verbatim.
+	call PrepareBillsPCActionMenu
+.redrawActionMenu
 	coord hl, 9, 10
 	ld b, 6
 	ld c, 9
@@ -438,8 +447,7 @@ DisplayDepositWithdrawMenu:
 	ld [hli], a ; wTopMenuItemY
 	ld a, 10
 	ld [hli], a ; wTopMenuItemX
-	xor a
-	ld [hli], a ; wCurrentMenuItem
+	inc hl ; keep the action-menu selection chosen by the setup helper
 	inc hl
 	ld a, 2
 	ld [hli], a ; wMaxMenuItem
@@ -461,13 +469,13 @@ DisplayDepositWithdrawMenu:
 	dec a
 	jr z, .viewStats
 .exit
-	and a
-	ret
+	; Restore the exact list screen that was present before this action menu.
+	; Tail-call the ROM0 helper so Carry is cleared before returning.
+	jp RestoreBillsPCActionMenuAndCancel
 .choseDepositWithdraw
 	scf
 	ret
 .viewStats
-	call SaveScreenTilesToBuffer1
 	ld a, [wParentMenuItem]
 	and a
 	ld a, PLAYER_PARTY_DATA
@@ -477,11 +485,10 @@ DisplayDepositWithdrawMenu:
 	ld [wMonDataLocation], a
 	predef StatusScreen
 	predef StatusScreen2
-	call LoadScreenTilesFromBuffer1
-	call ReloadTilesetTilePatterns
-	call RunDefaultPaletteCommand
-	call LoadGBPal
-	jr .loop
+	; Buffer 1 still contains the underlying mon list. Restore it, reload the
+	; display state, and keep Stats selected before redrawing the action menu.
+	call RestoreBillsPCActionMenuAfterStats
+	jr .redrawActionMenu
 
 DepositPCText:  db "Deposit@"
 WithdrawPCText: db "Withdraw@"
