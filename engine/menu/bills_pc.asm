@@ -235,6 +235,7 @@ BillsPCDeposit:
 	xor a
 	ld [wRemoveMonFromBox], a
 	call RemovePokemon
+	call NormalizeBillsPCListCursorAfterRemoval
 	call WaitForSoundToFinish
 	ld hl, wBoxNumString
 	ld a, [wCurrentBoxNum]
@@ -289,15 +290,38 @@ BillsPCWithdraw:
 	ld a, 1
 	ld [wRemoveMonFromBox], a
 	call RemovePokemon
+	call NormalizeBillsPCListCursorAfterRemoval
 	call WaitForSoundToFinish
 	ld hl, MonIsTakenOutText
 	call PrintText
-	; If that was the last mon in the box, leave Withdraw directly instead of
-	; re-entering it and triggering NoMonText from the empty-box entry check.
-	ld a, [wNumInBox]
+	jp BillsPCWithdraw
+
+; If the removed mon was the final entry in the old list, the saved
+; scroll offset + menu row now points at Cancel. Move the saved cursor
+; back by one entry while preserving the current page whenever possible.
+NormalizeBillsPCListCursorAfterRemoval:
+	ld hl, wPartyCount
+	ld a, [wRemoveMonFromBox]
 	and a
-	jp z, BillsPCMenu
-	jr BillsPCWithdraw
+	jr z, .gotCount
+	ld hl, wNumInBox
+.gotCount
+	ld a, [wWhichPokemon]
+	cp [hl]
+	ret c
+	ld hl, wPartyAndBillsPCSavedMenuItem
+	ld a, [hl]
+	and a
+	jr z, .moveScrollUp
+	dec [hl]
+	ret
+.moveScrollUp
+	ld hl, wListScrollOffset
+	ld a, [hl]
+	and a
+	ret z
+	dec [hl]
+	ret
 
 BillsPCRelease:
 	ld a, [wNumInBox]
