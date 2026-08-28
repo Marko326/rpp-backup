@@ -172,14 +172,14 @@ BillsPCMenu:
 	call Delay3
 	call HandleMenuInput
 	bit 1, a
-	jp nz, ExitBillsPC ; b button
+	jr nz, ExitBillsPC ; b button
 	call PlaceUnfilledArrowMenuCursor
 	ld a, [wCurrentMenuItem]
 	ld [wParentMenuItem], a
 	and a
 	jp z, BillsPCWithdraw ; withdraw
 	cp $1
-	jp z, BillsPCDeposit ; deposit
+	jr z, BillsPCDeposit ; deposit
 	cp $2
 	jp z, BillsPCRelease ; release
 	cp $3
@@ -205,25 +205,27 @@ ExitBillsPC:
 	ret
 
 BillsPCDeposit:
+	ld hl, wPartyCount
+	call DisplayMonListMenu
+	jp c, BillsPCMenu
+	call DisplayDepositWithdrawMenu
+	jp nc, BillsPCMenu
+	; Allow the Deposit list to open even with only one party mon or a full
+	; box. Enforce those limits only when Deposit is actually confirmed.
 	ld a, [wPartyCount]
 	dec a
 	jr nz, .partyLargeEnough
 	ld hl, CantDepositLastMonText
 	call PrintText
-	jp BillsPCMenu
+	jr BillsPCDeposit
 .partyLargeEnough
 	ld a, [wNumInBox]
 	cp MONS_PER_BOX
 	jr nz, .boxNotFull
 	ld hl, BoxFullText
 	call PrintText
-	jp BillsPCMenu
+	jr BillsPCDeposit
 .boxNotFull
-	ld hl, wPartyCount
-	call DisplayMonListMenu
-	jp c, BillsPCMenu
-	call DisplayDepositWithdrawMenu
-	jp nc, BillsPCMenu
 	call WaitForSoundToFinish
 	ld a, [wcf91]
 	call PlayCry
@@ -251,7 +253,7 @@ BillsPCDeposit:
 	ld [hl], "@"
 	ld hl, MonWasStoredText
 	call PrintText
-	jp BillsPCDeposit
+	jr BillsPCDeposit
 
 BillsPCWithdraw:
 	ld a, [wNumInBox]
@@ -261,18 +263,20 @@ BillsPCWithdraw:
 	call PrintText
 	jp BillsPCMenu
 .boxNotEmpty
-	ld a, [wPartyCount]
-	cp PARTY_LENGTH
-	jr nz, .partyNotFull
-	ld hl, CantTakeMonText
-	call PrintText
-	jp BillsPCMenu
-.partyNotFull
 	ld hl, wNumInBox
 	call DisplayMonListMenu
 	jp c, BillsPCMenu
 	call DisplayDepositWithdrawMenu
 	jp nc, BillsPCMenu
+	; A full party may still browse the Withdraw list. Reject only the
+	; confirmed Withdraw action, then redraw the same Withdraw list.
+	ld a, [wPartyCount]
+	cp PARTY_LENGTH
+	jr nz, .partyNotFull
+	ld hl, CantTakeMonText
+	call PrintText
+	jr BillsPCWithdraw
+.partyNotFull
 	ld a, [wWhichPokemon]
 	ld hl, wBoxMonNicks
 	call GetPartyMonName
@@ -288,7 +292,12 @@ BillsPCWithdraw:
 	call WaitForSoundToFinish
 	ld hl, MonIsTakenOutText
 	call PrintText
-	jp BillsPCWithdraw
+	; If that was the last mon in the box, leave Withdraw directly instead of
+	; re-entering it and triggering NoMonText from the empty-box entry check.
+	ld a, [wNumInBox]
+	and a
+	jp z, BillsPCMenu
+	jr BillsPCWithdraw
 
 BillsPCRelease:
 	ld a, [wNumInBox]

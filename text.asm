@@ -1686,9 +1686,6 @@ _MonIsTakenOutText::
 	TX_RAM wcf4b
 	text " is"
 	line "taken out."
-	cont "Got @"
-	TX_RAM wcf4b
-	text "."
 	prompt
 
 _NoMonText::
@@ -1697,11 +1694,8 @@ _NoMonText::
 	prompt
 
 _CantTakeMonText::
-	text "You can't take"
-	line "any more #mon."
-
-	para "Deposit #mon"
-	line "first."
+	text "Your party"
+	line "is full."
 	prompt
 
 _ReleaseWhichMonText::
