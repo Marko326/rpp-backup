@@ -300,7 +300,7 @@ ExtendedMoveAnimationPointers:
 	dw ShadowPunchExtAnim           ; SHADOW_PUNCH
 	dw AerialAceExtAnim             ; AERIAL_ACE
 	dw AcrobaticsExtAnim            ; ACROBATICS
-	dw AirCutterExtAnim             ; AIR_CUTTER
+	dw AirSlashExtAnim              ; AIR_CUTTER - share finalized Flying Blade animation
 	dw IcyWindExtAnim               ; ICY_WIND
 	dw IceShardExtAnim              ; ICE_SHARD
 	dw SheerColdExtAnim             ; SHEER_COLD
@@ -992,9 +992,13 @@ IronDefenseExtAnimEnd:
 AirSlashExtAnim:
 	db AirSlashExtAnimEnd - AirSlashExtAnimData
 AirSlashExtAnimData:
+	; Flying-family blade: tint both the native Gust wind-up and the long Cut
+	; slice with the move-type palette so the whole wind -> blade sequence reads
+	; as one Flying animation.  Keep the Cut sound attached to the slice itself.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db $46,$0F,$10
-	db SE_DARK_SCREEN_FLASH,$0E
 	db $04,$FF,$16
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 AirSlashExtAnimEnd:
 	IF AirSlashExtAnimEnd - AirSlashExtAnimData > 30
@@ -1206,19 +1210,6 @@ AcrobaticsExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-AirCutterExtAnim:
-	db AirCutterExtAnimEnd - AirCutterExtAnimData
-AirCutterExtAnimData:
-	db $46,$0F,$10
-	db SE_DARK_SCREEN_FLASH,$0E
-	db $04,$FF,$16
-	db $06,$FF,$02
-	db $FF
-AirCutterExtAnimEnd:
-	IF AirCutterExtAnimEnd - AirCutterExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
-	ENDC
-
 IcyWindExtAnim:
 	db IcyWindExtAnimEnd - IcyWindExtAnimData
 IcyWindExtAnimData:
@@ -1400,18 +1391,6 @@ PetalBlizzardExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-LeafBladeExtAnim:
-	db LeafBladeExtAnimEnd - LeafBladeExtAnimData
-LeafBladeExtAnimData:
-	db SE_LEAVES_FALLING,$4A
-	db $06,$A2,$0F
-	db $01,$0C,$16
-	db $FF
-LeafBladeExtAnimEnd:
-	IF LeafBladeExtAnimEnd - LeafBladeExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
-	ENDC
-
 WoodHammerExtAnim:
 	db WoodHammerExtAnimEnd - WoodHammerExtAnimData
 WoodHammerExtAnimData:
@@ -1572,18 +1551,6 @@ ZenHeadbuttExtAnimData:
 	db $FF
 ZenHeadbuttExtAnimEnd:
 	IF ZenHeadbuttExtAnimEnd - ZenHeadbuttExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
-	ENDC
-
-PsychoCutExtAnim:
-	db PsychoCutExtAnimEnd - PsychoCutExtAnimData
-PsychoCutExtAnimData:
-	db SE_FLASH_SCREEN_LONG,$FF
-	db $06,$A2,$0F
-	db $04,$FF,$16
-	db $FF
-PsychoCutExtAnimEnd:
-	IF PsychoCutExtAnimEnd - PsychoCutExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
