@@ -21,9 +21,15 @@ PlayExtendedOrbProjectile:
 	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
 	cp BULLET_PUNCH
-	jp z,SetPunchHorizontalHitFeedback
+	jp z,SetHorizontalHitFeedback
 	cp SUCKER_PUNCH
-	jp z,SetPunchHorizontalHitFeedback
+	jp z,SetHorizontalHitFeedback
+	cp METAL_CLAW
+	jp z,PlayClawThrashStyleShake
+	cp DRAGON_CLAW
+	jp z,PlayClawThrashStyleShake
+	cp SHADOW_CLAW
+	jp z,PlayClawThrashStyleShake
 	cp SHADOW_PUNCH
 	jp z,PlayShadowPunchCenteredPoof
 	cp DYNAMICPUNCH
@@ -425,13 +431,13 @@ ThunderPunchDedicatedAnimEnd:
 MetalClawExtAnim:
 	db MetalClawExtAnimEnd - MetalClawExtAnimData
 MetalClawExtAnimData:
-	; Metal sheen -> crossing claw cuts -> impact shake.
-	db SE_LIGHT_SCREEN_PALETTE,$FF
-	db $04,$09,$0F ; Scratch-style claw
-	db SE_DARK_SCREEN_FLASH,$FF
-	db $04,$FF,$16 ; Cut-style crossing slash
-	db SE_SHAKE_SCREEN,$FF
-	db SE_RESET_SCREEN_PALETTE,$FF
+	; Steel Claw: voiced square closing prep -> Thrash-style slow back-and-forth
+	; -> native Scratch. $69 is Harden's original square-closing sound.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$69,$43
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
+	db $06,$A2,$0F
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 MetalClawExtAnimEnd:
 	IF MetalClawExtAnimEnd - MetalClawExtAnimData > 30
@@ -888,9 +894,13 @@ DragonbreathExtAnimEnd:
 DragonClawExtAnim:
 	db DragonClawExtAnimEnd - DragonClawExtAnimData
 DragonClawExtAnimData:
+	; Dragon Claw: voiced square closing prep -> Thrash-style slow back-and-forth
+	; -> native Scratch. Reuse the square-closing $69 sound.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$69,$43
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
 	db $06,$A2,$0F
-	db $46,$FF,$0E
-	db $46,$FF,$05
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 DragonClawExtAnimEnd:
 	IF DragonClawExtAnimEnd - DragonClawExtAnimData > 30
@@ -940,10 +950,13 @@ OutrageExtAnimEnd:
 ShadowClawExtAnim:
 	db ShadowClawExtAnimEnd - ShadowClawExtAnimData
 ShadowClawExtAnimData:
-	db SE_DARK_SCREEN_PALETTE,$FF
+	; Shadow Claw: voiced circle closing prep -> Thrash-style slow back-and-forth
+	; -> native Scratch. $6E is Defense Curl's original circle-closing sound.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$6E,$43
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
 	db $06,$A2,$0F
-	db SE_DARK_SCREEN_FLASH,$FF
-	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 ShadowClawExtAnimEnd:
 	IF ShadowClawExtAnimEnd - ShadowClawExtAnimData > 30
@@ -1845,18 +1858,32 @@ PunchBattleTilesEnd::
 		fail "Punch battle tileset must contain exactly 9 tiles"
 	ENDC
 
-; Bullet Punch / Sucker Punch: use the same horizontal damage feedback that
-; stock Gen1 assigns to damaging moves with an additional effect.  This changes
-; the post-hit response from the player-side blink to a lateral screen jolt.
+; Punch users keep Gen1's fast horizontal damage feedback.
+SetHorizontalHitFeedback::
 SetPunchHorizontalHitFeedback::
 	ld a,[H_WHOSETURN]
 	and a
-	ld a,5 ; player used a damaging move with side effect -> light horizontal shake
+	ld a,5 ; player damaging move with side effect -> fast/light horizontal shake
 	jr z,.store
-	ld a,2 ; enemy counterpart -> heavy horizontal shake
+	ld a,2 ; enemy counterpart -> fast/heavy horizontal shake
 .store
 	ld [wAnimationType],a
 	ret
+
+; Claw family uses Thrash's visibly slower back-and-forth cadence *inside*
+; the recipe between Closing and Scratch.  After that immediate pre-attack
+; motion, restore the normal damaging-move horizontal feedback so Gen1 still
+; appends the final hit shake + applying-attack sound after Scratch finishes.
+PlayClawThrashStyleShake::
+SetClawThrashStyleFeedback::
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.enemy
+	callba ShakeScreenHorizontallySlow2 ; player pre-attack: b=3,c=2
+	jp SetHorizontalHitFeedback         ; final hit: type 5 fast/light
+.enemy
+	callba ShakeScreenHorizontallySlow  ; enemy pre-attack: b=6,c=2
+	jp SetHorizontalHitFeedback         ; final hit: type 2 fast/heavy
 
 ; Shadow Punch uses Shadow Ball's short poof vocabulary, but Sub3C is anchored
 ; for the orb's lower projectile impact.  Redraw the same four poof frames around
