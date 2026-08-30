@@ -2679,7 +2679,11 @@ wMoveDexSmallFontLeftShift:: ds 1
 ; 玩家当前行动是否已经进入 Metronome 随机派生链。
 ; 这是战斗瞬时标志；ExecutePlayerMove 每次入口都会清零。
 wMoveDexPlayerMetronomeDerived:: ds 1
-	ds 25 ; 保持原 unused 区总长度仍为 128 bytes
+wBagPocketTitleVRAMSet:: ds 1 ; 0=wide $C0-$CF, 1=short $D0-$DB; Bag only
+wBagPocketTitleSpanLeft:: ds 1 ; left tile column inside the centered 64px canvas
+wBagPocketTitleSpanWidth:: ds 1 ; packed tile columns per title row
+wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
+	ds 21 ; 保持原 unused 区总长度仍为 128 bytes
 
 wNumSigns:: ; d4b0
 ; number of signs in the current map (up to 16)

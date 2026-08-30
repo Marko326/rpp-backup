@@ -2,9 +2,23 @@
 ; The real inventory remains wNumBagItems/wBagItems. The visible Pocket list is
 ; a conventional ITEMLISTMENU list, so Home only needs tiny input/header hooks.
 
-BAG_POCKET_TITLE_TILE_COUNT EQU 6
-BAG_POCKET_TITLE_BYTES EQU BAG_POCKET_TITLE_TILE_COUNT * 8
-BAG_POCKET_TITLE_VRAM_TILE EQU $c0
+BAG_POCKET_TITLE_WIDTH_TILES EQU 8
+BAG_POCKET_TITLE_HEIGHT_TILES EQU 2
+BAG_POCKET_TITLE_TILE_COUNT EQU BAG_POCKET_TITLE_WIDTH_TILES * BAG_POCKET_TITLE_HEIGHT_TILES
+BAG_POCKET_TITLE_BUFFER_BYTES EQU BAG_POCKET_TITLE_TILE_COUNT * 8
+BAG_POCKET_TITLE_VRAM_SET0 EQU $c0
+BAG_POCKET_TITLE_VRAM_SET1 EQU $d0
+
+; The top border occupies screen y=0..7 and the first item text begins at
+; y=24. That leaves a 16-pixel title area (y=8..23). The stock uppercase
+; FontGraphics glyphs are 7 pixels high, so BASE_Y=4 is the upper of the two
+; possible centered positions. BAGTITLE-004 keeps that result nudged up one pixel,
+; placing title ink at screen y=11..17. Change only Y_NUDGE for later tuning.
+BAG_POCKET_TITLE_BASE_Y EQU 4
+BAG_POCKET_TITLE_Y_NUDGE EQU -1
+BAG_POCKET_TITLE_Y EQU BAG_POCKET_TITLE_BASE_Y + BAG_POCKET_TITLE_Y_NUDGE
+
+BAG_POCKET_TITLE_END EQU $00
 
 PrepareBagPocketMenu::
 	; Persistent state uses ten bytes that were already reserved as unused game
@@ -36,8 +50,9 @@ PrepareBagPocketMenu::
 .validPocket
 	ld a, 1
 	ld [wBagPocketActive], a
-	; Load only the current 6-tile MoveDex-style Pocket title. This costs one
-	; VBlank on Bag entry, while vertical list movement does no title VRAM work.
+	; Load only the current Pocket title graphics. BAGTITLE-011 keeps wide and
+	; short titles in separate safe VRAM ranges; vertical list movement still does
+	; no title VRAM work.
 	call LoadBagPocketTitleTiles
 	call BuildCurrentBagPocket
 	call LoadCurrentBagPocketCursor
@@ -181,6 +196,7 @@ FinalizeBagPocketMenuResult::
 .chosen
 	and a
 	ret
+
 
 ResolveBagPocketSelection:
 	; The visible Pocket list contains normal item/quantity pairs. To recover the
@@ -452,33 +468,269 @@ PrintBagPocketName::
 	ld [wTextBoxID], a
 	call DisplayTextBoxID
 .layoutReady
-	; The larger proportional title is a centered 48x8 strip occupying six tiles.
-	; Its pixels are loaded only on Bag entry / Left / Right; redraws merely put
-	; the same six tile IDs back into the title row, so Up/Down stays lightweight.
-	coord hl, 9, 1
-	ld a, BAG_POCKET_TITLE_VRAM_TILE
-	ld b, BAG_POCKET_TITLE_TILE_COUNT
-.drawTitleTiles
+	; BAGTITLE-011 keeps BAGTITLE-004's centered 64x16 presentation, but short
+	; singular titles use only the tile columns they actually
+	; occupy. Clear the whole canvas first so switching from a wide title cannot
+	; leave stale tile IDs at either side.
+	coord hl, 8, 1
+	ld b, BAG_POCKET_TITLE_HEIGHT_TILES
+	ld c, BAG_POCKET_TITLE_WIDTH_TILES
+	call ClearScreenArea
+
+	ld a, [wBagPocketTitleSpanLeft]
+	ld e, a
+	ld d, 0
+	coord hl, 8, 1
+	add hl, de
+	ld a, [wBagPocketTitleVRAMSet]
+	and 1
+	jr z, .useSet0
+	ld c, BAG_POCKET_TITLE_VRAM_SET1
+	jr .haveTitleBase
+.useSet0
+	ld c, BAG_POCKET_TITLE_VRAM_SET0
+.haveTitleBase
+	ld a, [wBagPocketTitleSpanWidth]
+	ld b, a
+	ld a, c
+.drawTopTitleTiles
 	ld [hli], a
 	inc a
 	dec b
-	jr nz, .drawTitleTiles
+	jr nz, .drawTopTitleTiles
+	ld c, a ; bottom row starts immediately after the packed top row
+
+	ld a, [wBagPocketTitleSpanLeft]
+	ld e, a
+	ld d, 0
+	coord hl, 8, 2
+	add hl, de
+	ld a, [wBagPocketTitleSpanWidth]
+	ld b, a
+	ld a, c
+.drawBottomTitleTiles
+	ld [hli], a
+	inc a
+	dec b
+	jr nz, .drawBottomTitleTiles
 	ret
 
 LoadBagPocketTitleTiles:
-	; Each Pocket owns one 48x8 row (6 consecutive 1bpp tiles) in the source
-	; graphic. Copy only the selected row into the unused English-font VRAM slots
-	; $C0-$C5. Those tile IDs are Japanese glyph slots and do not collide with
-	; normal English item names or the compact item descriptions.
+	; Singular titles are rendered directly into a packed two-row buffer. ITEM and
+	; BALL use 4 columns (8 tiles total), BERRY uses 6 columns (12 tiles), while
+	; MACHINE and KEY ITEM retain the full 8 columns (16 tiles). This preserves
+	; BAGTITLE-004's pixel placement without uploading guaranteed-empty side tiles.
+	call LoadBagPocketTitleSpan
+	call ClearBagPocketTitleBuffer
 	ld a, [wBagPocketCurrent]
-	ld hl, BagPocketTitleGraphics
-	ld bc, BAG_POCKET_TITLE_BYTES
+	add a
+	ld e, a
+	ld d, 0
+	ld hl, BagPocketTitleLayouts
+	add hl, de
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+.drawGlyph
+	ld a, [hli]
+	cp BAG_POCKET_TITLE_END
+	jr z, .upload
+	ld c, [hl]
+	inc hl
+	push hl
+	call BlitBagPocketTitleGlyph
+	pop hl
+	jr .drawGlyph
+
+.upload
+	; Keep the full-width titles in $C0-$CF and all short titles in $D0-$DB.
+	; This deliberately never touches $DF, the project's [SHINY] font tile.
+	; MACHINE and KEY ITEM are not adjacent Pockets, so the 16-tile wide buffer is
+	; never rewritten while it is visible. ITEM and BALL can switch directly while
+	; sharing the short buffer, but all eight referenced tiles are replaced within
+	; one VBlank; BERRY also fits the copier's 12-tile single-VBlank budget.
+	ld a, [wBagPocketTitleSpanWidth]
+	cp BAG_POCKET_TITLE_WIDTH_TILES
+	jr z, .uploadWide
+	ld a, 1
+	push af
+	ld hl, vChars1 + $500 ; short set: tiles $D0-$DB maximum
+	jr .haveUploadDestination
+.uploadWide
+	xor a
+	push af
+	ld hl, vChars1 + $400 ; wide set: tiles $C0-$CF
+.haveUploadDestination
+	ld de, wFilteredBagItems
+	ld b, BANK(FontGraphics)
+	ld a, [wBagPocketTitleSpanWidth]
+	add a ; top row + bottom row
+	ld c, a
+	call CopyVideoDataDoubleStartMenu
+	pop af
+	ld [wBagPocketTitleVRAMSet], a
+	ret
+
+LoadBagPocketTitleSpan:
+	ld a, [wBagPocketCurrent]
+	add a
+	ld e, a
+	ld d, 0
+	ld hl, BagPocketTitleSpans
+	add hl, de
+	ld a, [hli]
+	ld [wBagPocketTitleSpanLeft], a
+	ld a, [hl]
+	ld [wBagPocketTitleSpanWidth], a
+	add a
+	add a
+	add a
+	ld [wBagPocketTitleRowBytes], a
+	ret
+
+ClearBagPocketTitleBuffer:
+	ld hl, wFilteredBagItems
+	ld a, [wBagPocketTitleRowBytes]
+	add a ; two packed tile rows
+	ld b, a
+	xor a
+.loop
+	ld [hli], a
+	dec b
+	jr nz, .loop
+	ret
+
+; INPUT: A = normal font character code ($80="A" .. $99="Z")
+; Copies the corresponding project-owned gfx/font.png tile to eight scratch bytes
+; directly after the 128-byte temporary title canvas. Both areas live inside
+; wFilteredBagItems and are overwritten by BuildCurrentBagPocket immediately after
+; the title upload, so they consume no additional persistent WRAM.
+LoadBagPocketTitleGlyph:
+	sub "A"
+	ld hl, FontGraphics
+	ld bc, 8
 	call AddNTimes
-	ld d, h
-	ld e, l
-	ld hl, vChars1 + $400 ; tile $C0
-	lb bc, BANK(BagPocketTitleGraphics), BAG_POCKET_TITLE_TILE_COUNT
-	jp CopyVideoDataDouble
+	ld de, wFilteredBagItems + BAG_POCKET_TITLE_BUFFER_BYTES
+	ld bc, 8
+	ld a, BANK(FontGraphics)
+	jp FarCopyData
+
+; INPUT: A = normal font character code, C = x-pixel anchor in the 64px canvas.
+; The source is the original 8x8 FontGraphics tile. Its seven ink rows are placed
+; at BAG_POCKET_TITLE_Y in one complete 64x16 tile buffer. Rendering once instead
+; of four separate segments removes both repeated FarCopyData work and the old
+; left/right carry reconstruction.
+BlitBagPocketTitleGlyph:
+	ld b, a ; preserve font character while calculating x destination
+
+	ld a, c
+	and 7
+	ld [wMoveDexSmallFontShift], a
+	ld d, a
+	ld a, 8
+	sub d
+	ld [wMoveDexSmallFontLeftShift], a
+
+	; x & $38 selects one of the eight top-row destination tiles.
+	ld a, c
+	and $38
+	ld hl, wFilteredBagItems
+	add l
+	ld l, a
+	jr nc, .destTileReady
+	inc h
+.destTileReady
+	push hl
+	ld a, b
+	call LoadBagPocketTitleGlyph
+	pop hl
+
+	ld de, wFilteredBagItems + BAG_POCKET_TITLE_BUFFER_BYTES
+	ld b, 7
+	ld c, BAG_POCKET_TITLE_Y
+.rowLoop
+	ld a, [de]
+	push bc
+	push de
+	push hl
+	push af
+
+	; Convert absolute title y to a byte in the top or bottom packed tile row.
+	ld a, c
+	cp 8
+	jr c, .topTileRow
+	ld a, [wBagPocketTitleRowBytes]
+	add l
+	ld l, a
+	jr nc, .verticalTileRowReady
+	inc h
+.verticalTileRowReady
+	ld a, c
+	and 7
+	jr .addScanline
+.topTileRow
+	and 7
+.addScanline
+	add l
+	ld l, a
+	jr nc, .destRowReady
+	inc h
+.destRowReady
+
+	pop af
+	ld b, a
+	ld a, [wMoveDexSmallFontShift]
+	and a
+	jr z, .aligned
+
+	; Current tile = glyph >> shift.
+	push bc
+	ld c, a
+	ld a, b
+.rightShift
+	srl a
+	dec c
+	jr nz, .rightShift
+	or [hl]
+	ld [hl], a
+	pop bc
+
+	; Next tile = glyph << (8-shift). Uppercase FontGraphics keeps column 7
+	; blank, so each packed layout can end safely at its declared tile span.
+	push bc
+	ld a, [wMoveDexSmallFontLeftShift]
+	ld c, a
+	ld a, b
+.leftShift
+	sla a
+	dec c
+	jr nz, .leftShift
+	pop bc
+	and a
+	jr z, .rowDrawn
+	push hl
+	push de
+	ld de, 8
+	add hl, de
+	pop de
+	or [hl]
+	ld [hl], a
+	pop hl
+	jr .rowDrawn
+
+.aligned
+	ld a, b
+	or [hl]
+	ld [hl], a
+.rowDrawn
+	pop hl
+	pop de
+	pop bc
+	inc de
+	inc c
+	dec b
+	jr nz, .rowLoop
+	ret
 
 UpdateBagPocketDescription::
 	; Determine the item under the cursor in the filtered pair list. Cancel (or
@@ -556,9 +808,70 @@ UpdateBagPocketDescription::
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
 
-; Five 48x8 title strips use a larger 5x7 proportional uppercase style.
-; They keep the existing six-tile title loader, so only the graphics change;
-; vertical Bag movement still performs no title VRAM upload.
-BagPocketTitleGraphics:
-	INCBIN "gfx/movedex/bag_pocket_titles.1bpp"
-BagPocketTitleGraphicsEnd:
+; Per-Pocket layout data. Every pair is: project font character, local x anchor.
+; BAGTITLE-011 keeps BAGTITLE-004's project FontGraphics and one visible blank
+; pixel between letters, but removes the plural endings requested for the Bag.
+BagPocketTitleLayouts:
+	dw BagPocketTitleItem
+	dw BagPocketTitleBall
+	dw BagPocketTitleMachine
+	dw BagPocketTitleBerry
+	dw BagPocketTitleKeyItem
+
+; Tilemap left column (inside the 64px canvas), followed by packed row width.
+; The layouts below subtract left*8 from their old absolute x anchors, so their
+; on-screen pixel positions remain centered while short titles upload fewer tiles.
+BagPocketTitleSpans:
+	db 2, 4 ; ITEM:    canvas x=16..47, visible ink x=17..45
+	db 2, 4 ; BALL:    canvas x=16..47, visible ink x=16..46
+	db 0, 8 ; MACHINE: full natural-width title
+	db 1, 6 ; BERRY:   canvas x=8..55,  visible ink x=12..50
+	db 0, 8 ; KEY ITEM: centered with the original four-pixel word gap
+
+; Ordinary -> ordinary: +8 anchor pixels = 7px ink + 1px blank.
+; I -> ordinary: +7 because I ink is five pixels wide at anchor+1..+5.
+; Ordinary -> I: +7 because I itself begins one pixel to the right of its anchor.
+BagPocketTitleItem:
+	db "I", 0
+	db "T", 7
+	db "E", 15
+	db "M", 23
+	db BAG_POCKET_TITLE_END
+
+BagPocketTitleBall:
+	db "B", 0
+	db "A", 8
+	db "L", 16
+	db "L", 24
+	db BAG_POCKET_TITLE_END
+
+BagPocketTitleMachine:
+	db "M", 5
+	db "A", 13
+	db "C", 21
+	db "H", 29
+	db "I", 36
+	db "N", 43
+	db "E", 51
+	db BAG_POCKET_TITLE_END
+
+BagPocketTitleBerry:
+	db "B", 4
+	db "E", 12
+	db "R", 20
+	db "R", 28
+	db "Y", 36
+	db BAG_POCKET_TITLE_END
+
+; KEY ITEM is 56 visible pixels wide when BAGTITLE-004's spacing is preserved.
+; Centering it in 64px leaves four blank pixels on each side; the visible gap
+; between Y and I remains four pixels.
+BagPocketTitleKeyItem:
+	db "K", 4
+	db "E", 12
+	db "Y", 20
+	db "I", 30
+	db "T", 37
+	db "E", 45
+	db "M", 53
+	db BAG_POCKET_TITLE_END

@@ -245,6 +245,7 @@ CopyVideoDataDoubleStartMenu::
 .done
 	ld [H_VBCOPYDOUBLESIZE], a
 	call DelayFrame
+.restore
 	ld a, [hROMBankTemp]
 	ld [H_LOADEDROMBANK], a
 	ld [MBC1RomBank], a
@@ -259,4 +260,7 @@ CopyVideoDataDoubleStartMenu::
 	ld a, c
 	sub 12
 	ld c, a
+	; An exact multiple of 12 is already complete after this VBlank. The old
+	; loop scheduled one extra zero-size DelayFrame before restoring state.
+	jr z, .restore
 	jr .loop
