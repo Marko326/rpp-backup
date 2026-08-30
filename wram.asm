@@ -572,10 +572,9 @@ wFilteredBagItems:: ; cc5b
 ; List of bag items that has been filtered to a certain type of items,
 ; such as drinks or fossils.
 
-; Categorized Bag view. The scratch union runs from $cc5b up to the first
-; allocated byte at $cd30 (213 bytes). A full 100-slot ITEMLISTMENU requires
-; 202 bytes: count + 100 * (item, quantity) + terminator.
-wBagPocketList EQU wFilteredBagItems
+; Categorized Bag view. V3 reuses this same union through numeric offsets in
+; constants/item_constants.asm; other existing users keep the canonical symbol.
+wBagPocketList EQU wFilteredBagItems ; legacy V2 alias
 
 wElevatorWarpMaps:: ; cc5b
 

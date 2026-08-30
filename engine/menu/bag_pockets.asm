@@ -1,24 +1,11 @@
 ; Categorized player Bag runtime. This entire file lives in ROMX bank $35.
-; The real inventory remains wNumBagItems/wBagItems. The visible Pocket list is
-; a conventional ITEMLISTMENU list, so Home only needs tiny input/header hooks.
+; The real inventory remains wNumBagItems/wBagItems. START Bag builds one
+; real-slot index map per menu session and never reorders the physical Bag.
 
 BAG_POCKET_TITLE_WIDTH_TILES EQU 8
 BAG_POCKET_TITLE_HEIGHT_TILES EQU 2
-BAG_POCKET_TITLE_TILE_COUNT EQU BAG_POCKET_TITLE_WIDTH_TILES * BAG_POCKET_TITLE_HEIGHT_TILES
-BAG_POCKET_TITLE_BUFFER_BYTES EQU BAG_POCKET_TITLE_TILE_COUNT * 8
 BAG_POCKET_TITLE_VRAM_SET0 EQU $c0
 BAG_POCKET_TITLE_VRAM_SET1 EQU $d0
-
-; The top border occupies screen y=0..7 and the first item text begins at
-; y=24. That leaves a 16-pixel title area (y=8..23). The stock uppercase
-; FontGraphics glyphs are 7 pixels high, so BASE_Y=4 is the upper of the two
-; possible centered positions. BAGTITLE-004 keeps that result nudged up one pixel,
-; placing title ink at screen y=11..17. Change only Y_NUDGE for later tuning.
-BAG_POCKET_TITLE_BASE_Y EQU 4
-BAG_POCKET_TITLE_Y_NUDGE EQU -1
-BAG_POCKET_TITLE_Y EQU BAG_POCKET_TITLE_BASE_Y + BAG_POCKET_TITLE_Y_NUDGE
-
-BAG_POCKET_TITLE_END EQU $00
 
 PrepareBagPocketMenu::
 	; Persistent state uses ten bytes that were already reserved as unused game
@@ -32,7 +19,7 @@ PrepareBagPocketMenu::
 .initializeState
 	xor a
 	ld hl, wBagPocketCurrent
-	ld b, 8 ; current + five saved positions + two work bytes
+	ld b, 8 ; current + five saved positions + two legacy work bytes
 .clearStateLoop
 	ld [hli], a
 	dec b
@@ -50,20 +37,16 @@ PrepareBagPocketMenu::
 .validPocket
 	ld a, 1
 	ld [wBagPocketActive], a
-	; Load only the current Pocket title graphics. BAGTITLE-011 keeps wide and
-	; short titles in separate safe VRAM ranges; vertical list movement still does
-	; no title VRAM work.
+	call BuildBagPocketMap
 	call LoadBagPocketTitleTiles
-	call BuildCurrentBagPocket
 	call LoadCurrentBagPocketCursor
-	; Work byte 1 doubles as a one-session layout-initialized flag after the
-	; filtered list has been built. Work byte 2 caches the item whose short
-	; description is currently displayed.
 	xor a
-	ld [wBagPocketWorkByte1], a
+	ld [wFilteredBagItems + BAG_POCKET_LAYOUT_READY_OFFSET], a
 	ld a, $fe
-	ld [wBagPocketWorkByte2], a
-	ld hl, wFilteredBagItems
+	ld [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET], a
+	; Keep a conventional real-Bag pointer installed for code paths which are not
+	; Pocket-aware. ITEMLISTMENU explicitly switches to the Slot Map while active.
+	ld hl, wNumBagItems
 	ld a, l
 	ld [wListPointer], a
 	ld a, h
@@ -71,6 +54,9 @@ PrepareBagPocketMenu::
 	ret
 
 SwitchBagPocket::
+	; A pending SELECT swap is local to one Pocket and never crosses Left/Right.
+	xor a
+	ld [wMenuItemToSwap], a
 	call SaveCurrentBagPocketCursor
 	ld a, [hJoy5]
 	bit 5, a ; Left
@@ -90,25 +76,11 @@ SwitchBagPocket::
 	dec a
 .storePocket
 	ld [wBagPocketCurrent], a
-	; Left/Right changes the title graphics once; Up/Down never reloads them.
 	call LoadBagPocketTitleTiles
-	call BuildCurrentBagPocket
 	call LoadCurrentBagPocketCursor
-	ld hl, wFilteredBagItems
-	ld a, l
-	ld [wListPointer], a
-	ld a, h
-	ld [wListPointer + 1], a
-	ld a, [wFilteredBagItems]
-	ld [wListCount], a
-	cp 2
-	ld a, 1
-	jr c, .storeMaxMenuItem
-	inc a
-.storeMaxMenuItem
-	ld [wMaxMenuItem], a
-	xor a
-	ld [wMenuItemToSwap], a
+	call UpdateCurrentBagPocketMenuLimits
+	ld a, $fe
+	ld [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET], a
 	ret
 
 SaveCurrentBagPocketCursor::
@@ -127,8 +99,54 @@ SaveCurrentBagPocketCursor::
 	ld [hl], b
 	ret
 
+StoreCurrentBagPocketSavedPosition:
+	; INPUT: A = Pocket-local absolute item index.
+	ld b, a
+	ld a, [wBagPocketCurrent]
+	ld e, a
+	ld d, 0
+	ld hl, wBagPocketSavedPositions
+	add hl, de
+	ld [hl], b
+	ret
+
+GetCurrentBagPocketCount:
+	ld a, [wBagPocketCurrent]
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	add hl, de
+	ld a, [hl]
+	ret
+
+GetCurrentBagPocketStart:
+	ld a, [wBagPocketCurrent]
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_STARTS_OFFSET
+	add hl, de
+	ld a, [hl]
+	ret
+
+UpdateCurrentBagPocketMenuLimits:
+	call GetCurrentBagPocketCount
+	ld [wListCount], a
+	and a
+	jr z, .empty
+	cp 2
+	ld a, 1
+	jr c, .store
+	inc a
+.store
+	ld [wMaxMenuItem], a
+	ret
+.empty
+	xor a
+	ld [wMaxMenuItem], a
+	ret
+
 LoadCurrentBagPocketCursor:
-	ld a, [wFilteredBagItems]
+	call GetCurrentBagPocketCount
 	and a
 	jr z, .emptyPocket
 	ld b, a ; number of real items in this Pocket
@@ -167,26 +185,15 @@ LoadCurrentBagPocketCursor:
 	ret
 
 FinalizeBagPocketMenuResult::
-	; Convert the filtered-list selection back to a real wBagItems slot before
-	; any item-use/toss code sees wWhichPokemon. Also reproduce the original
-	; DisplayListMenuID carry result for the caller.
+	; A-button handling already resolves the Pocket entry to a physical Bag slot.
+	; This routine only saves the Pocket-local cursor and reproduces the original
+	; DisplayListMenuID carry result for START-menu callers.
 	ld a, [wBagPocketActive]
 	and a
 	jr z, .returnMenuResult
 	call SaveCurrentBagPocketCursor
-	ld a, [wMenuExitMethod]
-	cp CHOSE_MENU_ITEM
-	jr nz, .cancelled
-	call ResolveBagPocketSelection
 	xor a
 	ld [wBagPocketActive], a
-	and a
-	ret
-.cancelled
-	xor a
-	ld [wBagPocketActive], a
-	scf
-	ret
 .returnMenuResult
 	ld a, [wMenuExitMethod]
 	cp CHOSE_MENU_ITEM
@@ -197,219 +204,426 @@ FinalizeBagPocketMenuResult::
 	and a
 	ret
 
-
-ResolveBagPocketSelection:
-	; The visible Pocket list contains normal item/quantity pairs. To recover the
-	; physical Bag slot robustly when duplicate item IDs occupy multiple slots,
-	; count how many copies of this same item precede the selected Pocket entry,
-	; then select the matching occurrence in the real Bag.
-	ld a, [wWhichPokemon]
-	ld [wBagPocketWorkByte1], a ; selected Pocket index
-	xor a
-	ld [wBagPocketWorkByte2], a ; preceding occurrence count
-	ld hl, wFilteredBagItems + 1
-	ld a, [wBagPocketWorkByte1]
-	ld b, a
-.countPreceding
-	ld a, b
-	and a
-	jr z, .scanRealBag
-	ld a, [hli]
+ResolveCurrentBagPocketEntry::
+	; Cross-bank-safe resolver interface. The caller writes the Pocket-local
+	; absolute index to wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET and reads all results from WRAM.
+	; No A/BC/flags return convention is required across callba.
+	call GetCurrentBagPocketCount
 	ld c, a
-	inc hl ; skip quantity
-	ld a, [wcf91]
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET]
 	cp c
-	jr nz, .nextPocketEntry
-	ld a, [wBagPocketWorkByte2]
-	inc a
-	ld [wBagPocketWorkByte2], a
-.nextPocketEntry
-	dec b
-	jr .countPreceding
-
-.scanRealBag
-	ld a, [wBagPocketWorkByte2]
-	ld c, a
-	ld hl, wBagItems
-	ld a, [wNumBagItems]
+	jr nc, .invalid
 	ld b, a
-	xor a
-	ld [wBagPocketWorkByte1], a ; real Bag slot index
-.realLoop
-	ld a, b
-	and a
-	ret z ; defensive fallback: leave the filtered index unchanged
-	ld a, [hli]
-	ld d, a
-	ld a, [wcf91]
-	cp d
-	jr nz, .nextRealEntry
-	ld a, c
-	and a
-	jr z, .foundRealEntry
-	dec c
-.nextRealEntry
-	inc hl ; skip quantity
-	ld a, [wBagPocketWorkByte1]
-	inc a
-	ld [wBagPocketWorkByte1], a
-	dec b
-	jr .realLoop
-.foundRealEntry
-	ld a, [wBagPocketWorkByte1]
-	ld [wWhichPokemon], a
-	ret
-
-BuildCurrentBagPocket:
-	xor a
-	ld [wFilteredBagItems], a
-	ld a, [wBagPocketCurrent]
-	cp BAG_POCKET_TM_HM
-	jr z, BuildTMHMPocket
-
-	ld hl, wBagItems
-	ld a, [wNumBagItems]
-	ld b, a
-.scanBag
-	ld a, b
-	and a
-	jr z, FinishBagPocketList
-	ld a, [hli]
-	ld [wcf91], a
-	call DoesItemBelongInCurrentPocket
-	jr nc, .skipItem
-	call AppendCurrentBagEntry
-.skipItem
-	inc hl ; quantity -> next item
-	dec b
-	jr .scanBag
-
-BuildTMHMPocket:
-	; Fixed display order regardless of acquisition/physical Bag order.
-	ld a, TM_01
-.tmLoop
-	push af
-	call AppendAllBagSlotsMatchingItem
-	pop af
-	inc a
-	cp TM_50 + 1
-	jr c, .tmLoop
-	ld a, HM_01
-.hmLoop
-	push af
-	call AppendAllBagSlotsMatchingItem
-	pop af
-	inc a
-	cp HM_05 + 1
-	jr c, .hmLoop
-	jr FinishBagPocketList
-
-AppendAllBagSlotsMatchingItem:
-	ld [wBagPocketWorkByte1], a ; target item ID
-	ld hl, wBagItems
-	ld a, [wNumBagItems]
-	ld b, a
-.loop
-	ld a, b
-	and a
-	ret z
-	ld a, [hli]
-	ld c, a
-	ld a, [wBagPocketWorkByte1]
-	cp c
-	jr nz, .next
-	ld a, c
-	ld [wcf91], a
-	call AppendCurrentBagEntry
-.next
-	inc hl ; quantity -> next item
-	dec b
-	jr .loop
-
-AppendCurrentBagEntry:
-	; INPUT: [wcf91] = item ID, hl = source quantity byte in wBagItems.
-	ld a, [hl]
+	call GetCurrentBagPocketStart
+	add b
 	ld e, a
-	push bc
-	push hl
-	ld a, [wFilteredBagItems]
-	ld c, a
-	ld b, 0
-	sla c
-	rl b
-	ld hl, wFilteredBagItems + 1
-	add hl, bc
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [hl]
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVED_SLOT_OFFSET], a
+	call GetBagItemPointerFromRealSlot
+	ld a, [hli]
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVED_ITEM_OFFSET], a
+	ld a, [hl]
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVED_QUANTITY_OFFSET], a
+	ret
+.invalid
+	ld a, $ff
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVED_SLOT_OFFSET], a
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVED_ITEM_OFFSET], a
+	xor a
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVED_QUANTITY_OFFSET], a
+	ret
+
+ChooseCurrentBagPocketEntry::
+	; START-menu A-button wrapper. Input is wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET; all selection
+	; state is written to the same globals used by the legacy ITEMLISTMENU path.
+	call ResolveCurrentBagPocketEntry
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_SLOT_OFFSET]
+	ld [wWhichPokemon], a
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_ITEM_OFFSET]
+	ld [wcf91], a
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_QUANTITY_OFFSET]
+	ld [wMaxItemQuantity], a
+	call GetItemPrice
 	ld a, [wcf91]
+	ld [wd0b5], a
+	ld a, BANK(ItemNames)
+	ld [wPredefBank], a
+	ld a, ITEM_NAME
+	ld [wNameListType], a
+	call GetName
+	ret
+
+BuildBagPocketMap:
+	; First pass counts each Pocket. Second pass writes each real Bag slot into
+	; its pre-sized segment. This costs at most two 100-slot scans per START Bag
+	; opening; Left/Right switches never scan the Bag again.
+	xor a
+	ld hl, wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	ld b, NUM_BAG_POCKETS
+.clearCounts
 	ld [hli], a
-	ld a, e
-	ld [hl], a
-	ld hl, wFilteredBagItems
+	dec b
+	jr nz, .clearCounts
+
+	ld hl, wBagItems
+	ld a, [wNumBagItems]
+	ld b, a
+.countLoop
+	ld a, b
+	and a
+	jr z, .countsReady
+	ld a, [hli]
+	push hl
+	push bc
+	call GetBagPocketForItem
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	add hl, de
 	inc [hl]
-	pop hl
 	pop bc
-	ret
+	pop hl
+	inc hl ; quantity -> next item
+	dec b
+	jr .countLoop
 
-FinishBagPocketList:
-	ld a, [wFilteredBagItems]
-	ld c, a
+.countsReady
+	; Convert counts to starts and initialize one write cursor per Pocket.
+	ld hl, wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	ld de, wFilteredBagItems + BAG_POCKET_STARTS_OFFSET
+	ld b, 0 ; running total
+	ld c, NUM_BAG_POCKETS
+.startLoop
+	ld a, b
+	ld [de], a
+	inc de
+	add [hl]
+	ld b, a
+	inc hl
+	dec c
+	jr nz, .startLoop
+
+	ld hl, wFilteredBagItems + BAG_POCKET_STARTS_OFFSET
+	ld de, wFilteredBagItems + BAG_POCKET_BUILD_CURSORS_OFFSET
+	ld bc, NUM_BAG_POCKETS
+	call CopyData
+
+	ld hl, wBagItems
+	ld a, [wNumBagItems]
+	ld b, a
+	xor a
+	ld [wFilteredBagItems + BAG_POCKET_BUILD_SLOT_OFFSET], a
+.fillLoop
+	ld a, b
+	and a
+	jr z, .filled
+	ld a, [hli]
+	push hl
+	push bc
+	call GetBagPocketForItem
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_BUILD_CURSORS_OFFSET
+	add hl, de
+	ld a, [hl]
+	ld c, a ; map index
+	inc [hl]
 	ld b, 0
-	sla c
-	rl b
-	ld hl, wFilteredBagItems + 1
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
 	add hl, bc
-	ld [hl], $ff
+	ld a, [wFilteredBagItems + BAG_POCKET_BUILD_SLOT_OFFSET]
+	ld [hl], a
+	inc a
+	ld [wFilteredBagItems + BAG_POCKET_BUILD_SLOT_OFFSET], a
+	pop bc
+	pop hl
+	inc hl ; quantity -> next item
+	dec b
+	jr .fillLoop
+.filled
+	call SortBagPocketMachines
 	ret
 
-DoesItemBelongInCurrentPocket:
-	ld a, [wBagPocketCurrent]
-	cp BAG_POCKET_ITEMS
-	jr z, .items
-	cp BAG_POCKET_BALLS
-	jr z, .balls
-	cp BAG_POCKET_BERRIES
-	jr z, .berries
-	; KEY ITEMS: use the project's existing definition after higher-priority
-	; categories have been excluded.
-.keyItems
-	ld a, [wcf91]
+GetBagPocketForItem:
+	; INPUT: A = item ID. OUTPUT: A = BAG_POCKET_*.
+	ld [wcf91], a
 	call IsBagPocketMachine
-	jr c, .no
+	jr c, .machine
 	ld a, [wcf91]
 	call IsBagPocketBall
-	jr c, .no
+	jr c, .balls
 	ld a, [wcf91]
 	call IsBagPocketBerry
-	jr c, .no
+	jr c, .berries
 	call IsKeyItem
 	ld a, [wIsKeyItem]
 	and a
-	jr z, .no
-	scf
+	jr nz, .key
+	ld a, BAG_POCKET_ITEMS
 	ret
 .balls
-	ld a, [wcf91]
-	jp IsBagPocketBall
-.berries
-	ld a, [wcf91]
-	jp IsBagPocketBerry
-.items
-	ld a, [wcf91]
-	call IsBagPocketMachine
-	jr c, .no
-	ld a, [wcf91]
-	call IsBagPocketBall
-	jr c, .no
-	ld a, [wcf91]
-	call IsBagPocketBerry
-	jr c, .no
-	call IsKeyItem
-	ld a, [wIsKeyItem]
-	and a
-	jr nz, .no
-	scf
+	ld a, BAG_POCKET_BALLS
 	ret
-.no
+.machine
+	ld a, BAG_POCKET_TM_HM
+	ret
+.berries
+	ld a, BAG_POCKET_BERRIES
+	ret
+.key
+	ld a, BAG_POCKET_KEY
+	ret
+
+SortBagPocketMachines:
+	; Stable insertion sort of only the MACHINE Slot Map segment. The physical
+	; Bag is never reordered. Equal ranks stop the left shift, so duplicate TM/HM
+	; slots preserve their original relative order.
+	ld a, [wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET + BAG_POCKET_TM_HM]
+	cp 2
+	ret c
+	ld a, 1
+	ld [wFilteredBagItems + BAG_POCKET_SORT_INDEX_OFFSET], a
+.outer
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_INDEX_OFFSET]
+	ld b, a
+	ld a, [wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET + BAG_POCKET_TM_HM]
+	cp b
+	ret z
+	ret c ; defensive if metadata is ever stale
+
+	; Capture the current key slot and its TM/HM display rank.
+	ld a, [wFilteredBagItems + BAG_POCKET_STARTS_OFFSET + BAG_POCKET_TM_HM]
+	add b
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [hl]
+	ld [wFilteredBagItems + BAG_POCKET_SORT_KEY_SLOT_OFFSET], a
+	call GetMachineRankForRealSlot
+	ld [wFilteredBagItems + BAG_POCKET_SORT_KEY_RANK_OFFSET], a
+	ld a, b
+	ld [wFilteredBagItems + BAG_POCKET_SORT_SCAN_OFFSET], a
+
+.inner
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_SCAN_OFFSET]
 	and a
+	jp z, .placeKey
+	dec a
+	ld c, a ; previous Pocket-local index
+	ld a, [wFilteredBagItems + BAG_POCKET_STARTS_OFFSET + BAG_POCKET_TM_HM]
+	add c
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [hl]
+	ld [wFilteredBagItems + BAG_POCKET_BUILD_SLOT_OFFSET], a ; previous real slot; map construction is finished
+	call GetMachineRankForRealSlot
+	ld b, a ; previous rank
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_KEY_RANK_OFFSET]
+	cp b
+	jr nc, .placeKey ; key >= previous gives a stable insertion point
+
+	; Shift the previous real-slot index one map position to the right.
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_SCAN_OFFSET]
+	ld c, a
+	ld a, [wFilteredBagItems + BAG_POCKET_STARTS_OFFSET + BAG_POCKET_TM_HM]
+	add c
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [wFilteredBagItems + BAG_POCKET_BUILD_SLOT_OFFSET]
+	ld [hl], a
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_SCAN_OFFSET]
+	dec a
+	ld [wFilteredBagItems + BAG_POCKET_SORT_SCAN_OFFSET], a
+	jr .inner
+
+.placeKey
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_SCAN_OFFSET]
+	ld c, a
+	ld a, [wFilteredBagItems + BAG_POCKET_STARTS_OFFSET + BAG_POCKET_TM_HM]
+	add c
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [wFilteredBagItems + BAG_POCKET_SORT_KEY_SLOT_OFFSET]
+	ld [hl], a
+	ld hl, wFilteredBagItems + BAG_POCKET_SORT_INDEX_OFFSET
+	inc [hl]
+	jp .outer
+
+GetMachineRankForRealSlot:
+	; INPUT: A = real Bag slot. OUTPUT: A = TM01..TM50 -> 0..49,
+	; HM01..HM05 -> 50..54. All callers pass MACHINE entries only.
+	call GetBagItemAtRealSlot
+	cp TM_01
+	jr c, .hm
+	sub TM_01
+	ret
+.hm
+	sub HM_01
+	add 50
+	ret
+
+GetBagItemPointerFromRealSlot:
+	; INPUT: A = real Bag slot. OUTPUT: HL = address of its (item, quantity) pair.
+	add a
+	ld e, a
+	ld d, 0
+	ld hl, wBagItems
+	add hl, de
+	ret
+
+GetBagItemAtRealSlot:
+	; INPUT: A = real Bag slot. OUTPUT: A = item ID.
+	call GetBagItemPointerFromRealSlot
+	ld a, [hl]
+	ret
+
+HandleBagPocketSwapping::
+	ld a, [wBagPocketCurrent]
+	cp BAG_POCKET_TM_HM
+	ret z
+	ld a, [wCurrentMenuItem]
+	ld b, a
+	ld a, [wListScrollOffset]
+	add b
+	ld [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_INDEX_OFFSET], a
+	ld b, a
+	call GetCurrentBagPocketCount
+	cp b
+	ret z
+	ret c ; Cancel or defensive out-of-range position
+
+	ld a, [wMenuItemToSwap]
+	and a
+	jr nz, .haveFirst
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_INDEX_OFFSET]
+	inc a
+	ld [wMenuItemToSwap], a
+	ld c, 20
+	call DelayFrames
+	ret
+.haveFirst
+	dec a
+	ld [wFilteredBagItems + BAG_POCKET_SWAP_FIRST_INDEX_OFFSET], a
+	ld b, a
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_INDEX_OFFSET]
+	cp b
+	ret z
+	ld c, 20
+	call DelayFrames
+
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_FIRST_INDEX_OFFSET]
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET], a
+	call ResolveCurrentBagPocketEntry
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_SLOT_OFFSET]
+	ld [wFilteredBagItems + BAG_POCKET_SWAP_FIRST_SLOT_OFFSET], a
+
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_INDEX_OFFSET]
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET], a
+	call ResolveCurrentBagPocketEntry
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_SLOT_OFFSET]
+	ld [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_SLOT_OFFSET], a
+
+	call GetBagPocketSwapAddresses
+	ld a, [de]
+	ld b, a
+	ld a, [hl]
+	cp b
+	jr z, .sameItem
+
+	; Different item IDs: exchange the two physical item/quantity pairs. Both
+	; positions belong to this same Pocket, so the Slot Map itself stays valid.
+	ld c, a ; second item ID
+	ld a, c
+	ld [de], a
+	ld a, b
+	ld [hl], a
+	inc de
+	inc hl
+	ld a, [de]
+	ld b, a
+	ld a, [hl]
+	ld c, a
+	ld a, c
+	ld [de], a
+	ld a, b
+	ld [hl], a
+	jr .done
+
+.sameItem
+	inc de ; first quantity
+	inc hl ; second quantity
+	ld a, [hl]
+	ld b, a
+	ld a, [de]
+	add b
+	cp 100
+	jr c, .combineSlots
+	; Keep the original item-list semantics: fill the second selected slot to 99
+	; and leave the remainder in the first selected slot.
+	sub 99
+	ld [de], a
+	ld a, 99
+	ld [hl], a
+	jr .done
+
+.combineSlots
+	ld [hl], a ; merged quantity remains in the second selected slot
+	; Let the project's inventory primitive erase the first physical slot. This
+	; keeps slot compaction, item count, and legacy menu side effects in one place.
+	ld a, [de]
+	ld [wItemQuantity], a
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_FIRST_SLOT_OFFSET]
+	ld [wWhichPokemon], a
+	ld hl, wNumBagItems
+	call RemoveItemFromInventory
+	; Removing a physical slot invalidates every later real-slot index.
+	call BuildBagPocketMap
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_INDEX_OFFSET]
+	ld b, a
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_FIRST_INDEX_OFFSET]
+	cp b
+	jr nc, .cursorIndexReady
+	dec b
+.cursorIndexReady
+	ld a, b
+	call GetCurrentBagPocketCount
+	ld c, a
+	ld a, b
+	cp c
+	jr c, .storeMergedCursor
+	ld a, c
+	and a
+	jr z, .storeMergedCursor
+	dec a
+.storeMergedCursor
+	call StoreCurrentBagPocketSavedPosition
+	call LoadCurrentBagPocketCursor
+	call UpdateCurrentBagPocketMenuLimits
+.done
+	xor a
+	ld [wMenuItemToSwap], a
+	ld a, $fe
+	ld [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET], a
+	ret
+
+GetBagPocketSwapAddresses:
+	; OUTPUT: DE = first item pair, HL = second item pair.
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_FIRST_SLOT_OFFSET]
+	call GetBagItemPointerFromRealSlot
+	push hl
+	ld a, [wFilteredBagItems + BAG_POCKET_SWAP_SECOND_SLOT_OFFSET]
+	call GetBagItemPointerFromRealSlot
+	pop de
 	ret
 
 IsBagPocketMachine:
@@ -455,11 +669,11 @@ PrintBagPocketName::
 	; giving 4,0 -> 19,11. Row 12 is therefore free for the unmodified global
 	; MESSAGE_BOX (0,12 -> 19,17), so the two borders no longer overlap.
 	; The layout is drawn once per Bag session, not on cursor movement.
-	ld a, [wBagPocketWorkByte1]
+	ld a, [wFilteredBagItems + BAG_POCKET_LAYOUT_READY_OFFSET]
 	and a
 	jr nz, .layoutReady
 	inc a
-	ld [wBagPocketWorkByte1], a
+	ld [wFilteredBagItems + BAG_POCKET_LAYOUT_READY_OFFSET], a
 	coord hl, 4, 0
 	ld b, 10
 	ld c, 14
@@ -515,54 +729,116 @@ PrintBagPocketName::
 	jr nz, .drawBottomTitleTiles
 	ret
 
+PrintBagPocketListEntries::
+	; Keep the categorized redraw in one ROM bank so Home only Bankswitches once.
+	coord hl, 5, 2
+	ld b, 9
+	ld c, 14
+	call ClearScreenArea
+	call PrintBagPocketName
+	call PrintBagPocketEntries
+	jp UpdateBagPocketDescription
+
+PrintBagPocketEntries::
+	; Pocket-active ITEMLISTMENU entries are not a conventional pair list. Resolve
+	; each visible local index through the Slot Map before printing item/quantity.
+	coord hl, 6, 3
+	ld b, 4
+	ld c, 0 ; visible row offset
+.loop
+	ld a, [wListScrollOffset]
+	add c
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET], a
+	ld e, a
+	ld a, [wListCount]
+	cp e
+	jr z, .printCancel
+	jr c, .printCancel
+
+	push bc
+	push hl
+	call ResolveCurrentBagPocketEntry
+	pop hl
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_ITEM_OFFSET]
+	ld [wd11e], a
+	ld [wcf91], a
+	push hl
+	call GetItemName
+	call PlaceString
+	pop hl
+
+	call IsKeyItem
+	ld a, [wIsKeyItem]
+	and a
+	jr nz, .skipQuantity
+	push hl
+	ld de, SCREEN_WIDTH + 8
+	add hl, de
+	ld a, "×"
+	ld [hli], a
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_QUANTITY_OFFSET]
+	ld [wMaxItemQuantity], a
+	ld [wd11e], a
+	ld de, wd11e
+	lb bc, 1, 2
+	call PrintNumber
+	pop hl
+.skipQuantity
+	ld a, [wMenuItemToSwap]
+	and a
+	jr z, .rowDone
+	dec a
+	ld e, a
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET]
+	cp e
+	jr nz, .rowDone
+	dec hl
+	ld a, $ec
+	ld [hli], a
+.rowDone
+	pop bc
+	ld de, 2 * SCREEN_WIDTH
+	add hl, de
+	inc c
+	dec b
+	jr nz, .loop
+	ld bc, -8
+	add hl, bc
+	ld a, "▼"
+	ld [hl], a
+	ret
+.printCancel
+	ld de, ListMenuCancelText
+	jp PlaceString
+
 LoadBagPocketTitleTiles:
-	; Singular titles are rendered directly into a packed two-row buffer. ITEM and
-	; BALL use 4 columns (8 tiles total), BERRY uses 6 columns (12 tiles), while
-	; MACHINE and KEY ITEM retain the full 8 columns (16 tiles). This preserves
-	; BAGTITLE-004's pixel placement without uploading guaranteed-empty side tiles.
+	; Five fixed Pocket titles are pre-rendered from the project's gfx/font.png
+	; layout into 1bpp ROM data. Runtime no longer uses the $cc5b Bag scratch as
+	; a 128-byte title canvas, so the Slot Map survives for the whole Bag session.
 	call LoadBagPocketTitleSpan
-	call ClearBagPocketTitleBuffer
 	ld a, [wBagPocketCurrent]
 	add a
 	ld e, a
 	ld d, 0
-	ld hl, BagPocketTitleLayouts
+	ld hl, BagPocketTitleGfxPointers
 	add hl, de
 	ld a, [hli]
-	ld h, [hl]
-	ld l, a
-.drawGlyph
-	ld a, [hli]
-	cp BAG_POCKET_TITLE_END
-	jr z, .upload
-	ld c, [hl]
-	inc hl
-	push hl
-	call BlitBagPocketTitleGlyph
-	pop hl
-	jr .drawGlyph
+	ld e, a
+	ld d, [hl]
 
-.upload
-	; Keep the full-width titles in $C0-$CF and all short titles in $D0-$DB.
-	; This deliberately never touches $DF, the project's [SHINY] font tile.
-	; MACHINE and KEY ITEM are not adjacent Pockets, so the 16-tile wide buffer is
-	; never rewritten while it is visible. ITEM and BALL can switch directly while
-	; sharing the short buffer, but all eight referenced tiles are replaced within
-	; one VBlank; BERRY also fits the copier's 12-tile single-VBlank budget.
 	ld a, [wBagPocketTitleSpanWidth]
 	cp BAG_POCKET_TITLE_WIDTH_TILES
 	jr z, .uploadWide
 	ld a, 1
 	push af
 	ld hl, vChars1 + $500 ; short set: tiles $D0-$DB maximum
-	jr .haveUploadDestination
+	jr .haveDestination
 .uploadWide
 	xor a
 	push af
 	ld hl, vChars1 + $400 ; wide set: tiles $C0-$CF
-.haveUploadDestination
-	ld de, wFilteredBagItems
-	ld b, BANK(FontGraphics)
+.haveDestination
+	ld b, BANK(BagPocketTitleItemGfx)
 	ld a, [wBagPocketTitleSpanWidth]
 	add a ; top row + bottom row
 	ld c, a
@@ -582,183 +858,28 @@ LoadBagPocketTitleSpan:
 	ld [wBagPocketTitleSpanLeft], a
 	ld a, [hl]
 	ld [wBagPocketTitleSpanWidth], a
-	add a
-	add a
-	add a
-	ld [wBagPocketTitleRowBytes], a
-	ret
-
-ClearBagPocketTitleBuffer:
-	ld hl, wFilteredBagItems
-	ld a, [wBagPocketTitleRowBytes]
-	add a ; two packed tile rows
-	ld b, a
-	xor a
-.loop
-	ld [hli], a
-	dec b
-	jr nz, .loop
-	ret
-
-; INPUT: A = normal font character code ($80="A" .. $99="Z")
-; Copies the corresponding project-owned gfx/font.png tile to eight scratch bytes
-; directly after the 128-byte temporary title canvas. Both areas live inside
-; wFilteredBagItems and are overwritten by BuildCurrentBagPocket immediately after
-; the title upload, so they consume no additional persistent WRAM.
-LoadBagPocketTitleGlyph:
-	sub "A"
-	ld hl, FontGraphics
-	ld bc, 8
-	call AddNTimes
-	ld de, wFilteredBagItems + BAG_POCKET_TITLE_BUFFER_BYTES
-	ld bc, 8
-	ld a, BANK(FontGraphics)
-	jp FarCopyData
-
-; INPUT: A = normal font character code, C = x-pixel anchor in the 64px canvas.
-; The source is the original 8x8 FontGraphics tile. Its seven ink rows are placed
-; at BAG_POCKET_TITLE_Y in one complete 64x16 tile buffer. Rendering once instead
-; of four separate segments removes both repeated FarCopyData work and the old
-; left/right carry reconstruction.
-BlitBagPocketTitleGlyph:
-	ld b, a ; preserve font character while calculating x destination
-
-	ld a, c
-	and 7
-	ld [wMoveDexSmallFontShift], a
-	ld d, a
-	ld a, 8
-	sub d
-	ld [wMoveDexSmallFontLeftShift], a
-
-	; x & $38 selects one of the eight top-row destination tiles.
-	ld a, c
-	and $38
-	ld hl, wFilteredBagItems
-	add l
-	ld l, a
-	jr nc, .destTileReady
-	inc h
-.destTileReady
-	push hl
-	ld a, b
-	call LoadBagPocketTitleGlyph
-	pop hl
-
-	ld de, wFilteredBagItems + BAG_POCKET_TITLE_BUFFER_BYTES
-	ld b, 7
-	ld c, BAG_POCKET_TITLE_Y
-.rowLoop
-	ld a, [de]
-	push bc
-	push de
-	push hl
-	push af
-
-	; Convert absolute title y to a byte in the top or bottom packed tile row.
-	ld a, c
-	cp 8
-	jr c, .topTileRow
-	ld a, [wBagPocketTitleRowBytes]
-	add l
-	ld l, a
-	jr nc, .verticalTileRowReady
-	inc h
-.verticalTileRowReady
-	ld a, c
-	and 7
-	jr .addScanline
-.topTileRow
-	and 7
-.addScanline
-	add l
-	ld l, a
-	jr nc, .destRowReady
-	inc h
-.destRowReady
-
-	pop af
-	ld b, a
-	ld a, [wMoveDexSmallFontShift]
-	and a
-	jr z, .aligned
-
-	; Current tile = glyph >> shift.
-	push bc
-	ld c, a
-	ld a, b
-.rightShift
-	srl a
-	dec c
-	jr nz, .rightShift
-	or [hl]
-	ld [hl], a
-	pop bc
-
-	; Next tile = glyph << (8-shift). Uppercase FontGraphics keeps column 7
-	; blank, so each packed layout can end safely at its declared tile span.
-	push bc
-	ld a, [wMoveDexSmallFontLeftShift]
-	ld c, a
-	ld a, b
-.leftShift
-	sla a
-	dec c
-	jr nz, .leftShift
-	pop bc
-	and a
-	jr z, .rowDrawn
-	push hl
-	push de
-	ld de, 8
-	add hl, de
-	pop de
-	or [hl]
-	ld [hl], a
-	pop hl
-	jr .rowDrawn
-
-.aligned
-	ld a, b
-	or [hl]
-	ld [hl], a
-.rowDrawn
-	pop hl
-	pop de
-	pop bc
-	inc de
-	inc c
-	dec b
-	jr nz, .rowLoop
 	ret
 
 UpdateBagPocketDescription::
-	; Determine the item under the cursor in the filtered pair list. Cancel (or
-	; an empty Pocket) uses $ff and therefore the existing empty description.
+	; Resolve the item under the Pocket-local cursor. Cancel and empty Pockets use
+	; $ff so the existing empty two-line description remains unchanged.
 	ld a, [wCurrentMenuItem]
 	ld c, a
 	ld a, [wListScrollOffset]
 	add c
-	ld c, a
-	ld a, [wFilteredBagItems]
-	cp c
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET], a
+	ld b, a
+	call GetCurrentBagPocketCount
+	cp b
 	jr z, .cancel
 	jr c, .cancel
-	ld a, c
-	add a
-	ld c, a
-	ld b, 0
-	ld hl, wFilteredBagItems + 1
-	add hl, bc
-	ld a, [hl]
+	call ResolveCurrentBagPocketEntry
+	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_ITEM_OFFSET]
 	jr .haveItem
 .cancel
 	ld a, $ff
 .haveItem
-	; Do no tile work at all if the newly selected entry has the same
-	; description as the one already displayed. This also makes duplicate item
-	; slots essentially free to move between.
-	ld hl, wBagPocketWorkByte2
+	ld hl, wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET
 	cp [hl]
 	ret z
 	ld [hl], a
@@ -782,7 +903,7 @@ UpdateBagPocketDescription::
 	; Reuse the Pokemart's compact two-line description pointer table. Pointer
 	; arithmetic itself is bank-independent; the tiny bank-$15 helper switches
 	; to the table's bank before PrintText_NoCreatingTextBox reads it.
-	ld a, [wBagPocketWorkByte2]
+	ld a, [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET]
 	cp $ff
 	ld de, EmptyDescription
 	jr z, .printDescription
@@ -808,70 +929,91 @@ UpdateBagPocketDescription::
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
 
-; Per-Pocket layout data. Every pair is: project font character, local x anchor.
-; BAGTITLE-011 keeps BAGTITLE-004's project FontGraphics and one visible blank
-; pixel between letters, but removes the plural endings requested for the Bag.
-BagPocketTitleLayouts:
-	dw BagPocketTitleItem
-	dw BagPocketTitleBall
-	dw BagPocketTitleMachine
-	dw BagPocketTitleBerry
-	dw BagPocketTitleKeyItem
-
-; Tilemap left column (inside the 64px canvas), followed by packed row width.
-; The layouts below subtract left*8 from their old absolute x anchors, so their
-; on-screen pixel positions remain centered while short titles upload fewer tiles.
+; Tilemap left column (inside the centered 64px canvas), followed by the packed
+; row width. These values are unchanged from BAGTITLE-011.
 BagPocketTitleSpans:
-	db 2, 4 ; ITEM:    canvas x=16..47, visible ink x=17..45
-	db 2, 4 ; BALL:    canvas x=16..47, visible ink x=16..46
-	db 0, 8 ; MACHINE: full natural-width title
-	db 1, 6 ; BERRY:   canvas x=8..55,  visible ink x=12..50
-	db 0, 8 ; KEY ITEM: centered with the original four-pixel word gap
+	db 2, 4 ; ITEM
+	db 2, 4 ; BALL
+	db 0, 8 ; MACHINE
+	db 1, 6 ; BERRY
+	db 0, 8 ; KEY ITEM
 
-; Ordinary -> ordinary: +8 anchor pixels = 7px ink + 1px blank.
-; I -> ordinary: +7 because I ink is five pixels wide at anchor+1..+5.
-; Ordinary -> I: +7 because I itself begins one pixel to the right of its anchor.
-BagPocketTitleItem:
-	db "I", 0
-	db "T", 7
-	db "E", 15
-	db "M", 23
-	db BAG_POCKET_TITLE_END
+BagPocketTitleGfxPointers:
+	dw BagPocketTitleItemGfx
+	dw BagPocketTitleBallGfx
+	dw BagPocketTitleMachineGfx
+	dw BagPocketTitleBerryGfx
+	dw BagPocketTitleKeyItemGfx
 
-BagPocketTitleBall:
-	db "B", 0
-	db "A", 8
-	db "L", 16
-	db "L", 24
-	db BAG_POCKET_TITLE_END
+; Pre-rendered 1bpp title tiles generated from the project's existing
+; gfx/font.png glyphs using BAGTITLE-011's exact anchors and y placement.
+; CopyVideoDataDoubleStartMenu expands these to 2bpp while uploading to VRAM.
+BagPocketTitleItemGfx:
+	db $00, $00, $00, $7d, $10, $10, $10, $10
+	db $00, $00, $00, $fd, $21, $21, $21, $21
+	db $00, $00, $00, $fd, $01, $01, $f9, $01
+	db $00, $00, $00, $04, $8c, $54, $24, $04
+	db $10, $7c, $00, $00, $00, $00, $00, $00
+	db $21, $21, $00, $00, $00, $00, $00, $00
+	db $01, $fd, $00, $00, $00, $00, $00, $00
+	db $04, $04, $00, $00, $00, $00, $00, $00
 
-BagPocketTitleMachine:
-	db "M", 5
-	db "A", 13
-	db "C", 21
-	db "H", 29
-	db "I", 36
-	db "N", 43
-	db "E", 51
-	db BAG_POCKET_TITLE_END
+BagPocketTitleBallGfx:
+	db $00, $00, $00, $f8, $84, $84, $fc, $82
+	db $00, $00, $00, $10, $28, $28, $44, $7c
+	db $00, $00, $00, $80, $80, $80, $80, $80
+	db $00, $00, $00, $80, $80, $80, $80, $80
+	db $82, $fc, $00, $00, $00, $00, $00, $00
+	db $82, $82, $00, $00, $00, $00, $00, $00
+	db $80, $fe, $00, $00, $00, $00, $00, $00
+	db $80, $fe, $00, $00, $00, $00, $00, $00
 
-BagPocketTitleBerry:
-	db "B", 4
-	db "E", 12
-	db "R", 20
-	db "R", 28
-	db "Y", 36
-	db BAG_POCKET_TITLE_END
+BagPocketTitleMachineGfx:
+	db $00, $00, $00, $04, $06, $05, $04, $04
+	db $00, $00, $00, $10, $31, $51, $92, $13
+	db $00, $00, $00, $81, $42, $44, $24, $e4
+	db $00, $00, $00, $e4, $14, $04, $07, $04
+	db $00, $00, $00, $17, $11, $11, $f1, $11
+	db $00, $00, $00, $d0, $18, $14, $12, $11
+	db $00, $00, $00, $5f, $50, $50, $5f, $50
+	db $00, $00, $00, $c0, $00, $00, $80, $00
+	db $04, $04, $00, $00, $00, $00, $00, $00
+	db $14, $14, $00, $00, $00, $00, $00, $00
+	db $12, $11, $00, $00, $00, $00, $00, $00
+	db $14, $e4, $00, $00, $00, $00, $00, $00
+	db $11, $17, $00, $00, $00, $00, $00, $00
+	db $10, $d0, $00, $00, $00, $00, $00, $00
+	db $d0, $5f, $00, $00, $00, $00, $00, $00
+	db $00, $c0, $00, $00, $00, $00, $00, $00
 
-; KEY ITEM is 56 visible pixels wide when BAGTITLE-004's spacing is preserved.
-; Centering it in 64px leaves four blank pixels on each side; the visible gap
-; between Y and I remains four pixels.
-BagPocketTitleKeyItem:
-	db "K", 4
-	db "E", 12
-	db "Y", 20
-	db "I", 30
-	db "T", 37
-	db "E", 45
-	db "M", 53
-	db BAG_POCKET_TITLE_END
+BagPocketTitleBerryGfx:
+	db $00, $00, $00, $0f, $08, $08, $0f, $08
+	db $00, $00, $00, $8f, $48, $48, $cf, $28
+	db $00, $00, $00, $ef, $08, $08, $cf, $08
+	db $00, $00, $00, $cf, $28, $28, $cf, $88
+	db $00, $00, $00, $c8, $24, $22, $c1, $81
+	db $00, $00, $00, $20, $40, $80, $00, $00
+	db $08, $0f, $00, $00, $00, $00, $00, $00
+	db $28, $cf, $00, $00, $00, $00, $00, $00
+	db $08, $e8, $00, $00, $00, $00, $00, $00
+	db $48, $28, $00, $00, $00, $00, $00, $00
+	db $41, $21, $00, $00, $00, $00, $00, $00
+	db $00, $00, $00, $00, $00, $00, $00, $00
+
+BagPocketTitleKeyItemGfx:
+	db $00, $00, $00, $08, $08, $09, $0b, $0c
+	db $00, $00, $00, $4f, $88, $08, $0f, $88
+	db $00, $00, $00, $e8, $04, $02, $c1, $01
+	db $00, $00, $00, $21, $40, $80, $00, $00
+	db $00, $00, $00, $f7, $40, $40, $40, $40
+	db $00, $00, $00, $f7, $84, $84, $87, $84
+	db $00, $00, $00, $f4, $06, $05, $e4, $04
+	db $00, $00, $00, $10, $30, $50, $90, $10
+	db $08, $08, $00, $00, $00, $00, $00, $00
+	db $48, $2f, $00, $00, $00, $00, $00, $00
+	db $01, $e1, $00, $00, $00, $00, $00, $00
+	db $00, $01, $00, $00, $00, $00, $00, $00
+	db $40, $f0, $00, $00, $00, $00, $00, $00
+	db $84, $87, $00, $00, $00, $00, $00, $00
+	db $04, $f4, $00, $00, $00, $00, $00, $00
+	db $10, $10, $00, $00, $00, $00, $00, $00

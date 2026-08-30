@@ -1382,11 +1382,23 @@ DisplayListMenuID::
 	xor a
 	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped
 	ld [wListCount],a
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.loadConventionalListCount
+	ld a,[wBagPocketCurrent]
+	ld e,a
+	ld d,0
+	ld hl,wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	add hl,de
+	ld a,[hl]
+	jr .storeListCount
+.loadConventionalListCount
 	ld a,[wListPointer]
 	ld l,a
 	ld a,[wListPointer + 1]
 	ld h,a ; hl = address of the list
 	ld a,[hl] ; the first byte is the number of entries in the list
+.storeListCount
 	ld [wListCount],a
 	ld a,LIST_MENU_BOX
 	ld [wTextBoxID],a
@@ -1400,12 +1412,22 @@ DisplayListMenuID::
 	jr nz,.skipMovingSprites
 	call UpdateSprites
 .skipMovingSprites
-	ld a,1 ; max menu item ID is 1 if the list has less than 2 entries
+	ld a,1
 	ld [wMenuWatchMovingOutOfBounds],a
 	ld a,[wListCount]
-	cp 2 ; does the list have less than 2 entries?
+	and a
+	jr nz,.nonemptyList
+	ld a,[wBagPocketActive]
+	and a
+	ld a,1 ; preserve the original empty-list value outside categorized Bag
+	jr z,.setMenuVariables
+	xor a ; empty Pocket has only Cancel at menu position 0
+	jr .setMenuVariables
+.nonemptyList
+	cp 2
+	ld a,1
 	jr c,.setMenuVariables
-	ld a,2 ; max menu item ID is 2 if the list has at least 2 entries
+	inc a
 .setMenuVariables
 	ld [wMaxMenuItem],a
 	ld a,[wBagPocketActive]
@@ -1439,7 +1461,7 @@ DisplayListMenuIDLoop::
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable transfer
 	call PrintListMenuEntries
-	call RefreshBagPocketDescription
+	; Categorized Bag redraw updates its description in the same far call.
 	; Draw the cursor into the same hidden tilemap update as the list.
 	; This prevents a frame where the refreshed list is visible without a cursor.
 	call PlaceMenuCursor
@@ -1496,6 +1518,20 @@ DisplayListMenuIDLoop::
 	dec a
 	cp c ; did the player select Cancel?
 	jp c,ExitListMenu ; if so, exit the menu
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.resolveConventionalSelection
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	jr nz,.resolveConventionalSelection
+	; Pocket-local list index -> real Bag slot/item/quantity. All callba inputs
+	; and outputs live in WRAM, so Bankswitch does not destroy the interface.
+	ld a,c
+	ld [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET],a
+	callba ChooseCurrentBagPocketEntry
+	jp storeChosenEntry
+
+.resolveConventionalSelection
 	ld a,c
 	ld [wWhichPokemon],a
 	ld a,[wListMenuID]
@@ -1569,7 +1605,8 @@ checkOtherKeys: ; check B, SELECT, directions
 	and a
 	ld a,b
 	jp z,HandleItemListSwapping ; non-Bag item lists keep the original swap behavior
-	jp DisplayListMenuIDLoop ; categorized Bag keeps its fixed filtered ordering
+	callba HandleBagPocketSwapping
+	jp DisplayListMenuIDLoop
 .notSelect
 	ld b,a
 	and D_LEFT | D_RIGHT
@@ -1832,21 +1869,16 @@ RefreshBagPocketDescription:
 	ret
 
 PrintListMenuEntries::
-	coord hl, 5, 3
 	ld a,[wBagPocketActive]
 	and a
-	jr z,.listClearCoordsReady
-	ld bc,-SCREEN_WIDTH
-	add hl,bc ; categorized Bag: clear y=2..10, preserving its y=11 border
-.listClearCoordsReady
+	jr z,.printConventionalEntries
+	callba PrintBagPocketListEntries
+	ret
+.printConventionalEntries
+	coord hl, 5, 3
 	ld b,9
 	ld c,14
 	call ClearScreenArea
-	ld a,[wBagPocketActive]
-	and a
-	jr z,.skipBagPocketName
-	callba PrintBagPocketName
-.skipBagPocketName
 	ld a,[wListPointer]
 	ld e,a
 	ld a,[wListPointer + 1]
@@ -1869,12 +1901,6 @@ PrintListMenuEntries::
 	inc d
 .noCarry
 	coord hl, 6, 4 ; coordinates of first list entry name
-	ld a,[wBagPocketActive]
-	and a
-	jr z,.listEntryCoordsReady
-	ld bc,-SCREEN_WIDTH
-	add hl,bc ; categorized Bag first item starts at y=3
-.listEntryCoordsReady
 	ld b,4 ; print 4 names
 .loop
 	ld a,b
