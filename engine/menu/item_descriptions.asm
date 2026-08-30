@@ -349,6 +349,14 @@ EmptyDescription:
 	TX_FAR _EmptyDescription
 	db "@"
 
+; Bag pocket descriptions calculate a pointer into ItemDescriptionPointers_Mart
+; from bank $35. Bankswitch here, restore that pointer from de, then reuse the
+; Home text renderer without recreating the MESSAGE_BOX or adding another Delay3.
+PrintBagItemDescriptionText::
+	ld h, d
+	ld l, e
+	jp PrintText_NoCreatingTextBox
+
 FlashItemDescription_Mart:
 	; d = item id
 	ld a, d

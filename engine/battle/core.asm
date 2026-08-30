@@ -2330,7 +2330,7 @@ DisplayBattleMenu:
 .throwSafariBallWasSelected
 	ld a, SAFARI_BALL
 	ld [wcf91], a
-	jr UseBagItem
+	jp UseBagItem
 
 .upperLeftMenuItemWasNotSelected ; a menu item other than the upper left item was selected
 	cp $2
@@ -2361,7 +2361,7 @@ DisplayBattleMenu:
 ; bait was selected
 	ld a, SAFARI_BAIT
 	ld [wcf91], a
-	jr UseBagItem
+	jp UseBagItem
 
 BagWasSelected:
 	call LoadScreenTilesFromBuffer1
@@ -2388,12 +2388,11 @@ OldManItemList:
 	db -1
 
 DisplayPlayerBag:
-	; get the pointer to player's bag when in a normal battle
-	ld hl, wNumBagItems
-	ld a, l
-	ld [wListPointer], a
-	ld a, h
-	ld [wListPointer + 1], a
+	; Build the categorized view of the player's real Bag. Old Man/Safari
+	; pseudo-item lists still enter DisplayBagMenu directly and are untouched.
+	ld hl, PrepareBagPocketMenu
+	ld b, BANK(PrepareBagPocketMenu)
+	call Bankswitch
 
 DisplayBagMenu:
 	xor a
@@ -2403,6 +2402,7 @@ DisplayBagMenu:
 	ld a, [wBagSavedMenuItem]
 	ld [wCurrentMenuItem], a
 	call DisplayListMenuID
+	callba FinalizeBagPocketMenuResult
 	ld a, [wCurrentMenuItem]
 	ld [wBagSavedMenuItem], a
 	ld a, $0

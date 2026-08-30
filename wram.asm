@@ -572,6 +572,11 @@ wFilteredBagItems:: ; cc5b
 ; List of bag items that has been filtered to a certain type of items,
 ; such as drinks or fossils.
 
+; Categorized Bag view. The scratch union runs from $cc5b up to the first
+; allocated byte at $cd30 (213 bytes). A full 100-slot ITEMLISTMENU requires
+; 202 bytes: count + 100 * (item, quantity) + terminator.
+wBagPocketList EQU wFilteredBagItems
+
 wElevatorWarpMaps:: ; cc5b
 
 wMonPartySpritesSavedOAM:: ; cc5b
@@ -876,7 +881,9 @@ wSimulatedJoypadStatesIndex:: ; cd38
 	ds 1
 
 wWastedByteCD39:: ; cd39
-; written to but nothing ever reads it
+wBagPocketActive::
+; This byte was previously only written with zero by the surfing helper, so it
+; can safely act as the transient "categorized player Bag list is open" flag.
 	ds 1
 
 wWastedByteCD3A:: ; cd3a
@@ -3036,8 +3043,20 @@ wSlidingTilePuzzleInitialPositions::
 	ds 2
 wSlidingTilePuzzleHeaderEnd::
 
-; unused bytes originally allocated with game progress flags
-	ds 10
+; Ten bytes originally reserved but unused in the game-progress block.
+; Re-label them without changing any following WRAM/save offsets.
+wBagPocketCurrent::
+	ds 1
+wBagPocketSavedPositions:: ; one absolute list index per Pocket
+	ds NUM_BAG_POCKETS
+wBagPocketWorkByte1::
+	ds 1
+wBagPocketWorkByte2::
+	ds 1
+wBagPocketStateMagic1::
+	ds 1
+wBagPocketStateMagic2::
+	ds 1
 
 
 

@@ -350,11 +350,9 @@ StartMenu_Item:
 	call PrintText
 	jr .exitMenu
 .notInCableClubRoom
-	ld bc,wNumBagItems
-	ld hl,wListPointer
-	ld a,c
-	ld [hli],a
-	ld [hl],b ; store item bag pointer in wListPointer (for DisplayListMenuID)
+	ld hl, PrepareBagPocketMenu
+	ld b, BANK(PrepareBagPocketMenu)
+	call Bankswitch
 	xor a
 	ld [wPrintItemPrices],a
 	ld a,ITEMLISTMENU
@@ -362,6 +360,7 @@ StartMenu_Item:
 	ld a,[wBagSavedMenuItem]
 	ld [wCurrentMenuItem],a
 	call DisplayListMenuID
+	callba FinalizeBagPocketMenuResult
 	ld a,[wCurrentMenuItem]
 	ld [wBagSavedMenuItem],a
 	jr nc,.choseItem
@@ -373,10 +372,10 @@ StartMenu_Item:
 .choseItem
 ; erase menu cursor (blank each tile in front of an item name)
 	ld a," "
-	Coorda 5, 4
-	Coorda 5, 6
-	Coorda 5, 8
-	Coorda 5, 10
+	Coorda 5, 3
+	Coorda 5, 5
+	Coorda 5, 7
+	Coorda 5, 9
 	call PlaceUnfilledArrowMenuCursor
 	xor a
 	ld [wMenuItemToSwap],a

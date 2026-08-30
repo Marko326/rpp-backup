@@ -180,3 +180,11 @@ const_value = $C4
 	const TM_48         ; $F8
 	const TM_49         ; $F9
 	const TM_50         ; $FA
+
+; Player Bag pocket IDs. The real inventory remains a single wBagItems list.
+BAG_POCKET_ITEMS   EQU 0
+BAG_POCKET_BALLS   EQU 1
+BAG_POCKET_TM_HM   EQU 2
+BAG_POCKET_BERRIES EQU 3
+BAG_POCKET_KEY     EQU 4
+NUM_BAG_POCKETS    EQU 5

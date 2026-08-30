@@ -1408,7 +1408,12 @@ DisplayListMenuID::
 	ld a,2 ; max menu item ID is 2 if the list has at least 2 entries
 .setMenuVariables
 	ld [wMaxMenuItem],a
+	ld a,[wBagPocketActive]
+	and a
 	ld a,4
+	jr z,.storeTopMenuItemY
+	dec a ; categorized Bag list window is one row higher
+.storeTopMenuItemY
 	ld [wTopMenuItemY],a
 	ld a,5
 	ld [wTopMenuItemX],a
@@ -1434,6 +1439,7 @@ DisplayListMenuIDLoop::
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable transfer
 	call PrintListMenuEntries
+	call RefreshBagPocketDescription
 	; Draw the cursor into the same hidden tilemap update as the list.
 	; This prevents a frame where the refreshed list is visible without a cursor.
 	call PlaceMenuCursor
@@ -1557,7 +1563,14 @@ checkOtherKeys: ; check B, SELECT, directions
 	bit 1,a ; was the B button pressed?
 	jp nz,ExitListMenu ; if so, exit the menu
 	bit 2,a ; was the select button pressed?
-	jp nz,HandleItemListSwapping ; if so, allow the player to swap menu entries
+	jr z,.notSelect
+	ld b,a
+	ld a,[wBagPocketActive]
+	and a
+	ld a,b
+	jp z,HandleItemListSwapping ; non-Bag item lists keep the original swap behavior
+	jp DisplayListMenuIDLoop ; categorized Bag keeps its fixed filtered ordering
+.notSelect
 	ld b,a
 	and D_LEFT | D_RIGHT
 	jr nz,.leftOrRightPressed
@@ -1608,10 +1621,17 @@ checkOtherKeys: ; check B, SELECT, directions
 	dec [hl]
 	jp DisplayListMenuIDLoop
 .leftOrRightPressed
-; Left and Right page through item data only. Other list types ignore them.
+; Categorized player Bag uses Left/Right for pockets. Other ITEMLISTMENU
+; callers keep the project's existing four-entry vertical paging.
 	ld a,[wListMenuID]
 	cp ITEMLISTMENU
 	jr nz,.waitForDPadReleaseAndInput
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.pageRegularItemList
+	callba SwitchBagPocket
+	jp DisplayListMenuIDLoop.redrawAndWaitForDPadRelease
+.pageRegularItemList
 	call PageItemListByFour
 	jp c,DisplayListMenuIDLoop
 .waitForDPadReleaseAndInput
@@ -1799,11 +1819,34 @@ ExitListMenu::
 	scf
 	ret
 
+RefreshBagPocketDescription:
+	; Keep all non-Bag list menus on their original fast path. The far call only
+	; happens while the categorized player Bag is active. Preserve bc because
+	; HandleMenuInput keeps the current joypad state there.
+	ld a, [wBagPocketActive]
+	and a
+	ret z
+	push bc
+	callba UpdateBagPocketDescription
+	pop bc
+	ret
+
 PrintListMenuEntries::
 	coord hl, 5, 3
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.listClearCoordsReady
+	ld bc,-SCREEN_WIDTH
+	add hl,bc ; categorized Bag: clear y=2..10, preserving its y=11 border
+.listClearCoordsReady
 	ld b,9
 	ld c,14
 	call ClearScreenArea
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.skipBagPocketName
+	callba PrintBagPocketName
+.skipBagPocketName
 	ld a,[wListPointer]
 	ld e,a
 	ld a,[wListPointer + 1]
@@ -1826,6 +1869,12 @@ PrintListMenuEntries::
 	inc d
 .noCarry
 	coord hl, 6, 4 ; coordinates of first list entry name
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.listEntryCoordsReady
+	ld bc,-SCREEN_WIDTH
+	add hl,bc ; categorized Bag first item starts at y=3
+.listEntryCoordsReady
 	ld b,4 ; print 4 names
 .loop
 	ld a,b
@@ -3895,6 +3944,12 @@ HandleMenuInput_::
 	jr nz,.keyPressed
 	push hl
 	coord hl, 18, 11 ; coordinates of blinking down arrow in some menus
+	ld a,[wBagPocketActive]
+	and a
+	jr z,.downArrowCoordsReady
+	ld bc,-SCREEN_WIDTH
+	add hl,bc ; categorized Bag down arrow moves from y=11 to y=10
+.downArrowCoordsReady
 	call HandleDownArrowBlinkTiming ; blink down arrow (if any)
 	pop hl
 	ld a,[wMenuJoypadPollCount]
@@ -3924,7 +3979,7 @@ HandleMenuInput_::
 .notAtTop
 	dec a
 	ld [wCurrentMenuItem],a ; move selected menu item up one space
-	jr .checkOtherKeys
+	jr .refreshBagDescription
 .alreadyAtTop
 	ld a,[wMenuWrappingEnabled]
 	and a ; is wrapping around enabled?
@@ -3950,6 +4005,8 @@ HandleMenuInput_::
 .notAtBottom
 	ld a,c
 	ld [wCurrentMenuItem],a
+.refreshBagDescription
+	call RefreshBagPocketDescription
 .checkOtherKeys
 	ld a,[wMenuWatchedKeys]
 	and b ; does the menu care about any of the pressed keys?
