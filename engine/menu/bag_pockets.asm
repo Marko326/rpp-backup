@@ -7,6 +7,12 @@ BAG_POCKET_TITLE_HEIGHT_TILES EQU 2
 BAG_POCKET_TITLE_VRAM_SET0 EQU $c0
 BAG_POCKET_TITLE_VRAM_SET1 EQU $d0
 
+; Battle titles use the already-resident font as 8x8 sprites. This keeps the exact
+; BAGTITLE-011 pixel anchors/y-position without borrowing any battle BG tile VRAM.
+BATTLE_BAG_TITLE_OAM_FIRST EQU 33
+BATTLE_BAG_TITLE_OAM_COUNT EQU 7
+BATTLE_BAG_TITLE_OAM_Y     EQU 11 + 16 ; OAM Y is screen Y + 16
+
 PrepareBagPocketMenu::
 	; Persistent state uses ten bytes that were already reserved as unused game
 	; progress WRAM. Magic bytes make old saves initialize deterministically.
@@ -14,7 +20,7 @@ PrepareBagPocketMenu::
 	cp $b6
 	jr nz, .initializeState
 	ld a, [wBagPocketStateMagic2]
-	cp $47
+	cp $48
 	jr z, .stateReady
 .initializeState
 	xor a
@@ -26,7 +32,7 @@ PrepareBagPocketMenu::
 	jr nz, .clearStateLoop
 	ld a, $b6
 	ld [wBagPocketStateMagic1], a
-	ld a, $47
+	ld a, $48
 	ld [wBagPocketStateMagic2], a
 .stateReady
 	ld a, [wBagPocketCurrent]
@@ -35,7 +41,7 @@ PrepareBagPocketMenu::
 	xor a
 	ld [wBagPocketCurrent], a
 .validPocket
-	ld a, 1
+	ld a, BAG_POCKET_MODE_START
 	ld [wBagPocketActive], a
 	call BuildBagPocketMap
 	call LoadBagPocketTitleTiles
@@ -53,7 +59,70 @@ PrepareBagPocketMenu::
 	ld [wListPointer + 1], a
 	ret
 
+ClearBattleBagTransientState::
+	; Called from MainMenu and safe to call at any session boundary. None of this
+	; state is saved, so old .sav bytes can never be interpreted as Battle Bag flags.
+	xor a
+	ld [wBagPocketActive], a
+	ld [wBattleBagPocket], a
+	ld hl, wBattleBagSavedPositions
+	ld b, 4
+.clearSavedPositions
+	ld [hli], a
+	dec b
+	jr nz, .clearSavedPositions
+	ld a, $ff
+	ld [wBattleBagCachedPocket], a
+	ld [wBattleBagCachedScroll], a
+	ld hl, wBattleBagVisibleSlots
+	ld b, 4
+.clearVisibleSlots
+	ld [hli], a
+	dec b
+	jr nz, .clearVisibleSlots
+	ld a, $fe
+	ld [wBattleBagDescriptionCache], a
+	ret
+
+PrepareBattleBagPocketMenu::
+	; Wild-battle Bag never touches the START Slot Map at $cc5b. Battle-only state
+	; lives in unsaved WRAM, so Continue cannot inherit a stale Pocket/layout/VRAM
+	; flag from an older save schema.
+	ld a, BAG_POCKET_MODE_BATTLE
+	ld [wBagPocketActive], a
+	xor a
+	ld [wMenuItemToSwap], a
+	ld a, $fe
+	ld [wBattleBagDescriptionCache], a
+	call InvalidateBattleBagPageCache
+
+	ld a, [wBattleBagPocket]
+	cp BAG_POCKET_ITEMS
+	jr z, .pocketValid
+	cp BAG_POCKET_BALLS
+	jr z, .pocketValid
+	cp BAG_POCKET_BERRIES
+	jr z, .pocketValid
+	cp BAG_POCKET_KEY
+	jr z, .pocketValid
+	xor a
+	ld [wBattleBagPocket], a
+.pocketValid
+	call EnsureBattleBagPocketHasItems
+	call LoadBattleBagCursor
+	; Leave a conventional real-Bag pointer installed for legacy code which only
+	; needs the physical Bag after DisplayListMenuID returns.
+	ld hl, wNumBagItems
+	ld a, l
+	ld [wListPointer], a
+	ld a, h
+	ld [wListPointer + 1], a
+	ret
+
 SwitchBagPocket::
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jp z, SwitchBattleBagPocket
 	; A pending SELECT swap is local to one Pocket and never crosses Left/Right.
 	xor a
 	ld [wMenuItemToSwap], a
@@ -81,6 +150,259 @@ SwitchBagPocket::
 	call UpdateCurrentBagPocketMenuLimits
 	ld a, $fe
 	ld [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET], a
+	ret
+
+SwitchBattleBagPocket:
+	; Battle is a use-only view. Remember this Pocket's absolute cursor before
+	; cycling, skip empty Pockets, then restore the destination Pocket's cursor.
+	xor a
+	ld [wMenuItemToSwap], a
+	call SaveCurrentBattleBagCursor
+	ld a, [wBattleBagPocket]
+	push af ; original Pocket ID
+	ld d, 4 ; ITEM/BALL/BERRY/KEY
+.search
+	ld a, [wBattleBagPocket]
+	call StepBattleBagPocket
+	ld [wBattleBagPocket], a
+	push de ; GetBattleBagPocketCount clobbers DE while resolving ItemUse handlers
+	call GetBattleBagPocketCount
+	pop de
+	and a
+	jr nz, .found
+	dec d
+	jr nz, .search
+	pop af
+	ld [wBattleBagPocket], a
+	ret
+.found
+	pop bc ; B = original Pocket ID
+	ld a, [wBattleBagPocket]
+	cp b
+	ret z ; only the current Pocket was non-empty
+	call LoadBattleBagCursor
+	call UpdateBattleBagMenuLimitsFromCount
+	call InvalidateBattleBagPageCache
+	ld a, $fe
+	ld [wBattleBagDescriptionCache], a
+	ret
+
+UpdateBattleBagMenuLimitsFromCount:
+	ld a, [wListCount]
+	and a
+	jr z, .empty
+	cp 2
+	ld a, 1
+	jr c, .store
+	inc a
+.store
+	ld [wMaxMenuItem], a
+	ret
+.empty
+	xor a
+	ld [wMaxMenuItem], a
+	ret
+
+StepBattleBagPocket:
+	; INPUT/OUTPUT: A = actual BAG_POCKET_* ID. hJoy5 selects direction.
+	ld c, a
+	ld a, [hJoy5]
+	bit 5, a ; Left
+	ld a, c
+	jr nz, .left
+.right
+	cp BAG_POCKET_ITEMS
+	jr z, .toBalls
+	cp BAG_POCKET_BALLS
+	jr z, .toBerries
+	cp BAG_POCKET_BERRIES
+	jr z, .toKey
+	xor a ; KEY -> ITEM
+	ret
+.toBalls
+	ld a, BAG_POCKET_BALLS
+	ret
+.toBerries
+	ld a, BAG_POCKET_BERRIES
+	ret
+.toKey
+	ld a, BAG_POCKET_KEY
+	ret
+.left
+	cp BAG_POCKET_ITEMS
+	jr z, .toKey
+	cp BAG_POCKET_BALLS
+	jr z, .toItems
+	cp BAG_POCKET_BERRIES
+	jr z, .toBalls
+	ld a, BAG_POCKET_BERRIES ; KEY -> BERRY
+	ret
+.toItems
+	xor a
+	ret
+
+EnsureBattleBagPocketHasItems:
+	call GetBattleBagPocketCount
+	and a
+	ret nz
+	; Search forward independent of the current joypad state.
+	ld d, 4
+.search
+	ld a, [wBattleBagPocket]
+	cp BAG_POCKET_ITEMS
+	jr z, .balls
+	cp BAG_POCKET_BALLS
+	jr z, .berries
+	cp BAG_POCKET_BERRIES
+	jr z, .key
+	xor a
+	jr .store
+.balls
+	ld a, BAG_POCKET_BALLS
+	jr .store
+.berries
+	ld a, BAG_POCKET_BERRIES
+	jr .store
+.key
+	ld a, BAG_POCKET_KEY
+.store
+	ld [wBattleBagPocket], a
+	push de ; preserve the four-Pocket search counter across the counting call
+	call GetBattleBagPocketCount
+	pop de
+	and a
+	ret nz
+	dec d
+	jr nz, .search
+	xor a
+	ld [wBattleBagPocket], a
+	ret
+
+StoreCurrentBattleBagPocketCount::
+	callab CountBattleBagPocketItems
+	ret
+
+GetBattleBagPocketCount:
+	callab CountBattleBagPocketItems
+	ld a, [wListCount]
+	ret
+
+InvalidateBattleBagPageCache:
+	ld a, $ff
+	ld [wBattleBagCachedPocket], a
+	ld [wBattleBagCachedScroll], a
+	ret
+
+EnsureBattleBagPageCache:
+	ld a, [wBattleBagCachedPocket]
+	ld b, a
+	ld a, [wBattleBagPocket]
+	cp b
+	jr nz, .rebuild
+	ld a, [wBattleBagCachedScroll]
+	ld b, a
+	ld a, [wListScrollOffset]
+	cp b
+	ret z
+.rebuild
+	callab BuildBattleBagVisiblePage
+	ret
+
+SaveCurrentBattleBagCursor::
+	; Store one absolute filtered index for each Battle Pocket. The array is
+	; unsaved battle-runtime state, so positions live only for this battle.
+	ld a, [wListScrollOffset]
+	ld b, a
+	ld a, [wCurrentMenuItem]
+	add b
+	ld b, a
+	ld a, [wBattleBagPocket]
+	call GetBattleBagSavedCursorAddress
+	ld [hl], b
+	ret
+
+GetBattleBagSavedCursorAddress:
+	; INPUT: A = actual BAG_POCKET_* ID. OUTPUT: HL = ITEM/BALL/BERRY/KEY slot.
+	cp BAG_POCKET_BERRIES
+	jr z, .berries
+	cp BAG_POCKET_KEY
+	jr z, .key
+	; ITEM=0 and BALL=1 already match their compact cursor indices.
+	ld e, a
+	jr .haveIndex
+.berries
+	ld e, 2
+	jr .haveIndex
+.key
+	ld e, 3
+.haveIndex
+	ld d, 0
+	ld hl, wBattleBagSavedPositions
+	add hl, de
+	ret
+
+LoadBattleBagCursor:
+	; Restore this Pocket's absolute cursor and clamp it to the current filtered
+	; count. Reconstruct scroll+row using the same three-row selectable window.
+	call GetBattleBagPocketCount
+	ld a, [wListCount]
+	and a
+	jr z, .empty
+	ld b, a
+	ld a, [wBattleBagPocket]
+	call GetBattleBagSavedCursorAddress
+	ld a, [hl]
+	cp b
+	jr c, .positionValid
+	ld a, b
+	dec a
+.positionValid
+	ld c, a
+	cp 3
+	jr c, .topRows
+	sub 2
+	ld [wListScrollOffset], a
+	ld a, 2
+	jr .storeRow
+.topRows
+	xor a
+	ld [wListScrollOffset], a
+	ld a, c
+.storeRow
+	ld [wCurrentMenuItem], a
+	ld [wBagSavedMenuItem], a
+	ret
+.empty
+	xor a
+	ld [wListScrollOffset], a
+	ld [wCurrentMenuItem], a
+	ld [wBagSavedMenuItem], a
+	ret
+
+ResolveCurrentBattleBagEntry:
+	; Current selection always lives inside the four-slot visible-page cache.
+	call EnsureBattleBagPageCache
+	ld a, [wCurrentMenuItem]
+	ld e, a
+	ld d, 0
+	ld hl, wBattleBagVisibleSlots
+	add hl, de
+	ld a, [hl]
+	cp $ff
+	jr z, .invalid
+	ld [wWhichPokemon], a
+	call GetBagItemPointerFromRealSlot
+	ld a, [hli]
+	ld [wcf91], a
+	ld a, [hl]
+	ld [wMaxItemQuantity], a
+	ret
+.invalid
+	ld a, $ff
+	ld [wWhichPokemon], a
+	ld [wcf91], a
+	xor a
+	ld [wMaxItemQuantity], a
 	ret
 
 SaveCurrentBagPocketCursor::
@@ -237,6 +559,9 @@ ResolveCurrentBagPocketEntry::
 	ret
 
 ChooseCurrentBagPocketEntry::
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jp z, ChooseCurrentBattleBagEntry
 	; START-menu A-button wrapper. Input is wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET; all selection
 	; state is written to the same globals used by the legacy ITEMLISTMENU path.
 	call ResolveCurrentBagPocketEntry
@@ -246,6 +571,21 @@ ChooseCurrentBagPocketEntry::
 	ld [wcf91], a
 	ld a, [wFilteredBagItems + BAG_POCKET_RESOLVED_QUANTITY_OFFSET]
 	ld [wMaxItemQuantity], a
+	call GetItemPrice
+	ld a, [wcf91]
+	ld [wd0b5], a
+	ld a, BANK(ItemNames)
+	ld [wPredefBank], a
+	ld a, ITEM_NAME
+	ld [wNameListType], a
+	call GetName
+	ret
+
+ChooseCurrentBattleBagEntry:
+	call ResolveCurrentBattleBagEntry
+	ld a, [wcf91]
+	cp $ff
+	ret z
 	call GetItemPrice
 	ld a, [wcf91]
 	ld [wd0b5], a
@@ -488,6 +828,9 @@ GetBagItemAtRealSlot:
 	ret
 
 HandleBagPocketSwapping::
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	ret z
 	ld a, [wBagPocketCurrent]
 	cp BAG_POCKET_TM_HM
 	ret z
@@ -664,16 +1007,17 @@ IsBagPocketBall:
 	ret
 
 PrintBagPocketName::
-	; The stock LIST_MENU_BOX is 4,2 -> 19,12. The categorized Bag keeps its
-	; taller 12-row layout but moves that whole custom window up one more row,
-	; giving 4,0 -> 19,11. Row 12 is therefore free for the unmodified global
-	; MESSAGE_BOX (0,12 -> 19,17), so the two borders no longer overlap.
-	; The layout is drawn once per Bag session, not on cursor movement.
-	ld a, [wFilteredBagItems + BAG_POCKET_LAYOUT_READY_OFFSET]
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jr z, .battleTitle
+
+	; START keeps its existing custom frame, drawn once per Bag session.
+	ld hl, wFilteredBagItems + BAG_POCKET_LAYOUT_READY_OFFSET
+	ld a, [hl]
 	and a
-	jr nz, .layoutReady
+	jr nz, .startLayoutReady
 	inc a
-	ld [wFilteredBagItems + BAG_POCKET_LAYOUT_READY_OFFSET], a
+	ld [hl], a
 	coord hl, 4, 0
 	ld b, 10
 	ld c, 14
@@ -681,11 +1025,11 @@ PrintBagPocketName::
 	ld a, MESSAGE_BOX
 	ld [wTextBoxID], a
 	call DisplayTextBoxID
-.layoutReady
-	; BAGTITLE-011 keeps BAGTITLE-004's centered 64x16 presentation, but short
-	; singular titles use only the tile columns they actually
-	; occupy. Clear the whole canvas first so switching from a wide title cannot
-	; leave stale tile IDs at either side.
+	; DisplayListMenuID already clipped map sprites against the upper list box,
+	; but this description box is created later during the first categorized redraw.
+	; Re-run clipping once now so sprites covered by y=12..17 are hidden too.
+	call UpdateSprites
+.startLayoutReady
 	coord hl, 8, 1
 	ld b, BAG_POCKET_TITLE_HEIGHT_TILES
 	ld c, BAG_POCKET_TITLE_WIDTH_TILES
@@ -712,7 +1056,7 @@ PrintBagPocketName::
 	inc a
 	dec b
 	jr nz, .drawTopTitleTiles
-	ld c, a ; bottom row starts immediately after the packed top row
+	ld c, a
 
 	ld a, [wBagPocketTitleSpanLeft]
 	ld e, a
@@ -729,7 +1073,80 @@ PrintBagPocketName::
 	jr nz, .drawBottomTitleTiles
 	ret
 
+.battleTitle
+	; Battle uses font sprites at BAGTITLE-011's exact pixel anchors. The BG title
+	; canvas stays blank, so switching Pockets never mutates battle BG tile graphics.
+	coord hl, 8, 1
+	ld b, BAG_POCKET_TITLE_HEIGHT_TILES
+	ld c, BAG_POCKET_TITLE_WIDTH_TILES
+	call ClearScreenArea
+	jp DrawBattleBagTitleSprites
+
+HideBattleBagTitleSprites::
+	ld hl, wOAMBuffer + BATTLE_BAG_TITLE_OAM_FIRST * 4
+	ld de, 4
+	ld b, BATTLE_BAG_TITLE_OAM_COUNT
+	ld a, 160 ; hidden below the visible OBJ range
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
+	ret
+
+DrawBattleBagTitleSprites:
+	call HideBattleBagTitleSprites
+	ld a, [wBattleBagPocket]
+	cp BAG_POCKET_BALLS
+	jr z, .ball
+	cp BAG_POCKET_BERRIES
+	jr z, .berry
+	cp BAG_POCKET_KEY
+	jr z, .key
+	ld de, BattleBagTitleItemLayout
+	jr .draw
+.ball
+	ld de, BattleBagTitleBallLayout
+	jr .draw
+.berry
+	ld de, BattleBagTitleBerryLayout
+	jr .draw
+.key
+	ld de, BattleBagTitleKeyLayout
+.draw
+	ld hl, wOAMBuffer + BATTLE_BAG_TITLE_OAM_FIRST * 4
+.nextGlyph
+	ld a, [de]
+	inc de
+	and a
+	ret z
+	ld b, a
+	ld a, BATTLE_BAG_TITLE_OAM_Y
+	ld [hli], a
+	ld a, [de]
+	inc de
+	ld [hli], a
+	ld a, b ; sprite tile ID equals the resident font character code ($80-$ff)
+	ld [hli], a
+	xor a ; palette 0, no flip, above BG
+	ld [hli], a
+	jr .nextGlyph
+
+; Pairs are font tile ID and OAM X (screen X + 8). These are BAGTITLE-011's
+; exact anchors, including I's seven-pixel spacing and KEY ITEM's four-pixel gap.
+BattleBagTitleItemLayout:
+	db "I", 88, "T", 95, "E", 103, "M", 111, 0
+BattleBagTitleBallLayout:
+	db "B", 88, "A", 96, "L", 104, "L", 112, 0
+BattleBagTitleBerryLayout:
+	db "B", 84, "E", 92, "R", 100, "R", 108, "Y", 116, 0
+BattleBagTitleKeyLayout:
+	db "K", 76, "E", 84, "Y", 92, "I", 102, "T", 109, "E", 117, "M", 125, 0
+
 PrintBagPocketListEntries::
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jp z, PrintBattleBagListEntries
 	; Keep the categorized redraw in one ROM bank so Home only Bankswitches once.
 	coord hl, 5, 2
 	ld b, 9
@@ -811,10 +1228,98 @@ PrintBagPocketEntries::
 	ld de, ListMenuCancelText
 	jp PlaceString
 
+PrintBattleBagListEntries:
+	; Current-page real slots are cached in unsaved WRAM. Up/Down inside the same
+	; page reuses these four slots; only a scroll/Pocket change rescans wBagItems.
+	coord hl, 5, 2
+	ld b, 9
+	ld c, 14
+	call ClearScreenArea
+	call PrintBagPocketName
+	call EnsureBattleBagPageCache
+
+	coord hl, 6, 3
+	ld b, 4
+	ld c, 0
+.rowLoop
+	push hl
+	ld a, c
+	ld e, a
+	ld d, 0
+	ld hl, wBattleBagVisibleSlots
+	add hl, de
+	ld a, [hl]
+	pop hl
+	cp $ff
+	jr z, .printCancel
+	ld [wWhichPokemon], a
+
+	push bc
+	push hl
+	call GetBagItemPointerFromRealSlot
+	ld a, [hli]
+	ld [wd11e], a
+	ld [wcf91], a
+	ld a, [hl]
+	ld [wMaxItemQuantity], a
+	pop hl
+	push hl
+	call GetItemName
+	call PlaceString
+	pop hl
+
+	ld a, [wBattleBagPocket]
+	cp BAG_POCKET_KEY
+	jr z, .rowDone
+	push hl
+	ld de, SCREEN_WIDTH + 8
+	add hl, de
+	ld a, "×"
+	ld [hli], a
+	ld a, [wMaxItemQuantity]
+	ld [wd11e], a
+	ld de, wd11e
+	lb bc, 1, 2
+	call PrintNumber
+	pop hl
+.rowDone
+	pop bc
+	ld de, 2 * SCREEN_WIDTH
+	add hl, de
+	inc c
+	dec b
+	jr nz, .rowLoop
+	call PrintBattleBagCancelOrDownArrow
+	jp UpdateBattleBagDescription
+.printCancel
+	ld de, ListMenuCancelText
+	call PlaceString
+	jp UpdateBattleBagDescription
+
+PrintBattleBagCancelOrDownArrow:
+	ld a, [wListCount]
+	ld b, a
+	ld a, [wListScrollOffset]
+	ld c, a
+	ld a, b
+	sub c
+	cp 4
+	jr nc, .downArrow
+	; A = visible Cancel row.
+	ld bc, 2 * SCREEN_WIDTH
+	coord hl, 6, 3
+	call AddNTimes
+	ld de, ListMenuCancelText
+	jp PlaceString
+.downArrow
+	coord hl, 18, 10
+	ld a, "▼"
+	ld [hl], a
+	ret
+
 LoadBagPocketTitleTiles:
-	; Five fixed Pocket titles are pre-rendered from the project's gfx/font.png
-	; layout into 1bpp ROM data. Runtime no longer uses the $cc5b Bag scratch as
-	; a 128-byte title canvas, so the Slot Map survives for the whole Bag session.
+	; START Bag alone owns the pre-rendered BG title graphics. Battle titles are
+	; font sprites and therefore never borrow EXP/font tile VRAM.
 	call LoadBagPocketTitleSpan
 	ld a, [wBagPocketCurrent]
 	add a
@@ -840,7 +1345,7 @@ LoadBagPocketTitleTiles:
 .haveDestination
 	ld b, BANK(BagPocketTitleItemGfx)
 	ld a, [wBagPocketTitleSpanWidth]
-	add a ; top row + bottom row
+	add a
 	ld c, a
 	call CopyVideoDataDoubleStartMenu
 	pop af
@@ -861,6 +1366,9 @@ LoadBagPocketTitleSpan:
 	ret
 
 UpdateBagPocketDescription::
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jp z, UpdateBattleBagDescription
 	; Resolve the item under the Pocket-local cursor. Cancel and empty Pockets use
 	; $ff so the existing empty two-line description remains unchanged.
 	ld a, [wCurrentMenuItem]
@@ -926,6 +1434,77 @@ UpdateBagPocketDescription::
 .printDescription
 	callab PrintBagItemDescriptionText
 	pop af
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
+
+UpdateBattleBagDescription:
+	call EnsureBattleBagPageCache
+	ld a, [wCurrentMenuItem]
+	ld c, a
+	ld a, [wListScrollOffset]
+	add c
+	ld c, a
+	ld a, [wListCount]
+	cp c
+	jr z, .cancel
+	jr c, .cancel
+
+	ld a, [wCurrentMenuItem]
+	ld e, a
+	ld d, 0
+	ld hl, wBattleBagVisibleSlots
+	add hl, de
+	ld a, [hl]
+	cp $ff
+	jr z, .cancel
+	call GetBagItemAtRealSlot
+	jr .haveItem
+.cancel
+	ld a, $ff
+.haveItem
+	ld hl, wBattleBagDescriptionCache
+	cp [hl]
+	ret z
+	ld [hl], a
+	push af
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	coord hl, 1, 14
+	ld b, 1
+	ld c, 18
+	call ClearScreenArea
+	coord hl, 1, 16
+	ld b, 1
+	ld c, 18
+	call ClearScreenArea
+	pop bc
+	pop af
+	cp $ff
+	ld de, EmptyDescription
+	jr z, .printDescription
+	dec a
+	cp HM_01 - 1
+	jr c, .descriptionIndexReady
+	sub ((HM_01 - GO_HOME) - 1)
+.descriptionIndexReady
+	ld hl, ItemDescriptionPointers_Mart
+	ld de, 5
+.findDescriptionPointer
+	and a
+	jr z, .descriptionPointerReady
+	dec a
+	add hl, de
+	jr .findDescriptionPointer
+.descriptionPointerReady
+	ld d, h
+	ld e, l
+.printDescription
+	push bc
+	callab PrintBagItemDescriptionText
+	pop bc
+	ld a, b
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
 

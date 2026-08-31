@@ -247,6 +247,9 @@ SetScrollXForSlidingPlayerBodyLeft:
 	ret
 
 StartBattle:
+	; Battle Bag scratch overlaps the START Slot Map union. Reset it at each battle
+	; boundary so a Pocket/cache byte can never inherit a prior START Bag value.
+	callba ClearBattleBagTransientState
 	xor a
 	ld [wPartyGainExpFlags], a
 	ld [wPartyFoughtCurrentEnemyFlags], a
@@ -2375,6 +2378,8 @@ BagWasSelected:
 	ld a, [wBattleType]
 	dec a ; is it the old man tutorial?
 	jr nz, DisplayPlayerBag ; no, it is a normal battle
+	xor a
+	ld [wBagPocketActive], a ; tutorial keeps its fixed one-entry pseudo list
 	ld hl, OldManItemList
 	ld a, l
 	ld [wListPointer], a
@@ -2388,30 +2393,40 @@ OldManItemList:
 	db -1
 
 DisplayPlayerBag:
-	; Battle keeps the legacy full Bag. The categorized Slot Map uses a START-menu
-	; scratch union that overlaps battle state, so battle must never enter Pocket mode.
-	ld hl, wNumBagItems
-	ld a, l
-	ld [wListPointer], a
-	ld a, h
-	ld [wListPointer + 1], a
+	; Only normal wild battles reach this real-player-Bag entry. Build a filtered
+	; battle view without touching the START Bag Slot Map scratch used at $cc5b.
+	callba PrepareBattleBagPocketMenu
 
 DisplayBagMenu:
-	; Also covers Old Man/Safari pseudo lists that enter here without DisplayPlayerBag.
 	xor a
-	ld [wBagPocketActive], a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
 	ld [wListMenuID], a
 	ld a, [wBagSavedMenuItem]
 	ld [wCurrentMenuItem], a
 	call DisplayListMenuID
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jr nz, .battleCursorSaved
+	callba SaveCurrentBattleBagCursor
+.battleCursorSaved
 	ld a, [wCurrentMenuItem]
 	ld [wBagSavedMenuItem], a
-	ld a, $0
+
+	; Battle titles are font sprites only. Hiding their reserved OAM entries is the
+	; complete cleanup; no BG tile graphics or PartyMenu restore hook is needed.
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jr nz, .battleTitleSpritesHidden
+	callba HideBattleBagTitleSprites
+.battleTitleSpritesHidden
+	xor a
+	ld [wBagPocketActive], a ; never leak filtered-menu mode into item-use/battle code
 	ld [wMenuWatchMovingOutOfBounds], a
 	ld [wMenuItemToSwap], a
-	jp c, DisplayBattleMenu ; go back to battle menu if an item was not selected
+	ld a, [wMenuExitMethod]
+	cp CHOSE_MENU_ITEM
+	jp nz, DisplayBattleMenu ; B/Cancel returns to battle menu
 
 UseBagItem:
 	; either use an item from the bag or use a safari zone item

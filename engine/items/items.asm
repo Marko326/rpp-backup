@@ -124,6 +124,186 @@ ItemUsePtrTable:
 	dw ItemUseMedicine   ; LUM_BERRY
 	dw ItemUseVitamin    ; ACAI_BERRY
 
+; -----------------------------------------------------------------------------
+; Battle Bag filtering
+; -----------------------------------------------------------------------------
+; The Battle Bag asks the existing ItemUsePtrTable which handler owns an item
+; instead of maintaining a second item-ID whitelist. The real item handler still
+; decides whether the item succeeds in the current battle context.
+GetBattleBagPocketForUsableItem::
+	; INPUT: A = item ID. OUTPUT: carry set and A = BAG_POCKET_* when this item
+	; belongs to a battle-capable handler; carry clear otherwise. ItemUsePtrTable
+	; ends at ACAI_BERRY, so GO_HOME and the discontiguous TM/HM IDs are rejected.
+	ld [wcf91], a
+	cp GO_HOME
+	jr nc, .notUsable
+	dec a
+	ld c, a
+	ld b, 0
+	ld hl, ItemUsePtrTable
+	add hl, bc
+	add hl, bc
+	ld e, [hl]
+	inc hl
+	ld d, [hl]
+
+	ld hl, BattleBagUsableHandlers
+.handlerLoop
+	ld a, [hli]
+	ld c, a
+	ld a, [hli]
+	ld b, a
+	or c
+	jr z, .notUsable
+	ld a, e
+	cp c
+	jr nz, .nextHandler
+	ld a, d
+	cp b
+	jr nz, .nextHandler
+
+	; Berry items share Medicine/PPRestore handlers with ordinary ITEM-pocket
+	; consumables, so only this presentation split remains item-ID based.
+	ld a, [wcf91]
+	cp ORAN_BERRY
+	jr c, .useHandlerPocket
+	cp LUM_BERRY + 1
+	jr c, .berry
+.useHandlerPocket
+	ld a, [hl]
+	scf
+	ret
+.berry
+	ld a, BAG_POCKET_BERRIES
+	scf
+	ret
+.nextHandler
+	inc hl ; skip Pocket byte
+	jr .handlerLoop
+.notUsable
+	and a
+	ret
+
+; Each entry is handler pointer + Battle Pocket. Berry IDs override ITEM above.
+BattleBagUsableHandlers:
+	dw ItemUseBall
+	db BAG_POCKET_BALLS
+	dw ItemThiefBall
+	db BAG_POCKET_BALLS
+	dw ItemUseMedicine
+	db BAG_POCKET_ITEMS
+	dw ItemUseXAccuracy
+	db BAG_POCKET_ITEMS
+	dw ItemUsePokedoll
+	db BAG_POCKET_ITEMS
+	dw ItemUseGuardSpec
+	db BAG_POCKET_ITEMS
+	dw ItemUseDireHit
+	db BAG_POCKET_ITEMS
+	dw ItemUseXStat
+	db BAG_POCKET_ITEMS
+	dw ItemUsePokeflute
+	db BAG_POCKET_KEY
+	dw ItemUsePPRestore
+	db BAG_POCKET_ITEMS
+	dw 0
+	db 0
+
+CountBattleBagPocketItems::
+	; Count the currently selected Battle Pocket. Store through WRAM because far-call
+	; A/BC return values are not part of the project's stable cross-bank ABI.
+	ld hl, wBagItems
+	ld a, [wNumBagItems]
+	ld b, a
+	ld c, 0
+.loop
+	ld a, b
+	and a
+	jr z, .done
+	ld a, [hli]
+	push bc
+	push hl
+	call GetBattleBagPocketForUsableItem
+	pop hl
+	pop bc
+	jr nc, .next
+	ld d, a
+	ld a, [wBattleBagPocket]
+	cp d
+	jr nz, .next
+	inc c
+.next
+	inc hl ; quantity -> next item
+	dec b
+	jr .loop
+.done
+	ld a, c
+	ld [wListCount], a
+	ret
+
+BuildBattleBagVisiblePage::
+	; Cache the four real Bag slots starting at wListScrollOffset and count the
+	; entire current Pocket in the same scan. Pure Up/Down within this page then
+	; needs no real-Bag rescan.
+	ld hl, wBattleBagVisibleSlots
+	ld b, 4
+	ld a, $ff
+.clearSlots
+	ld [hli], a
+	dec b
+	jr nz, .clearSlots
+
+	ld a, [wBattleBagPocket]
+	ld [wBattleBagCachedPocket], a
+	ld a, [wListScrollOffset]
+	ld [wBattleBagCachedScroll], a
+	xor a
+	ld [wListCount], a
+
+	ld hl, wBagItems
+	ld a, [wNumBagItems]
+	ld b, a
+	ld c, 0 ; real Bag slot
+.scan
+	ld a, b
+	and a
+	ret z
+	ld a, [hli]
+	push bc
+	push hl
+	call GetBattleBagPocketForUsableItem
+	pop hl
+	pop bc
+	jr nc, .nextRealSlot
+	ld d, a
+	ld a, [wBattleBagPocket]
+	cp d
+	jr nz, .nextRealSlot
+
+	ld a, [wListCount]
+	ld d, a ; zero-based Pocket-local index
+	inc a
+	ld [wListCount], a
+	ld a, [wListScrollOffset]
+	ld e, a
+	ld a, d
+	sub e
+	jr c, .nextRealSlot
+	cp 4
+	jr nc, .nextRealSlot
+	ld e, a
+	ld d, 0
+	push hl
+	ld hl, wBattleBagVisibleSlots
+	add hl, de
+	ld [hl], c
+	pop hl
+.nextRealSlot
+	inc hl ; quantity -> next item
+	inc c
+	dec b
+	jr .scan
+
 ItemThiefBall:
 	ld a,[wIsInBattle]
 	and a

@@ -189,6 +189,11 @@ BAG_POCKET_BERRIES EQU 3
 BAG_POCKET_KEY     EQU 4
 NUM_BAG_POCKETS    EQU 5
 
+; wBagPocketActive modes. Battle uses a filtered view without the START Slot Map.
+BAG_POCKET_MODE_NONE   EQU 0
+BAG_POCKET_MODE_START  EQU 1
+BAG_POCKET_MODE_BATTLE EQU 2
+
 ; START Bag session scratch layout, relative to wFilteredBagItems.
 ; Keep these as pure numeric offsets so both main.asm and wram.asm can use them
 ; without exporting relocatable WRAM aliases across object files.

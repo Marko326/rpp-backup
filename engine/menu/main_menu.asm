@@ -1,4 +1,7 @@
 MainMenu:
+	; Battle Bag state is runtime-only. Clear it before either New Game or Continue
+	; so no prior session/soft-reset value can reach menu or overworld logic.
+	callab ClearBattleBagTransientState
 ; Check save file
 	call InitOptions
 	xor a

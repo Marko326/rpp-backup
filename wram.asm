@@ -759,7 +759,11 @@ wLowHealthAlarmDisabled:: ; ccf6
 wPlayerMonMinimized:: ; ccf7
 	ds 1
 
-	ds 13
+; Per-Pocket Battle Bag cursor memory. These bytes come from the explicitly unused
+; battle-runtime gap and are not saved. Each entry stores one absolute filtered
+; index for ITEM / BALL / BERRY / KEY during the current battle session.
+wBattleBagSavedPositions:: ds 4
+	ds 9
 
 wLuckySlotHiddenObjectIndex:: ; cd05
 
@@ -770,8 +774,15 @@ wEnemyBideAccumulatedDamage:: ; cd05
 ; the amount of damage accumulated by the enemy while biding (2 bytes)
 	ds 2
 
-; unused?
-	ds 8
+; Eight bytes unused by the normal battle runtime. Battle Bag owns them only while
+; its filtered view is open. This is unsaved WRAM, so no .sav value can become
+; Battle Bag state. START never uses these aliases because its Slot Map owns the
+; overlapping $cc5b-$cd2f union instead.
+wBattleBagPocket:: ds 1
+wBattleBagCachedPocket:: ds 1
+wBattleBagCachedScroll:: ds 1
+wBattleBagDescriptionCache:: ds 1
+wBattleBagVisibleSlots:: ds 4
 
 wInGameTradeGiveMonSpecies:: ; cd0f
 

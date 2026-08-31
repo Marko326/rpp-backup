@@ -1385,12 +1385,18 @@ DisplayListMenuID::
 	ld a,[wBagPocketActive]
 	and a
 	jr z,.loadConventionalListCount
+	cp BAG_POCKET_MODE_BATTLE
+	jr z,.loadBattleBagListCount
 	ld a,[wBagPocketCurrent]
 	ld e,a
 	ld d,0
 	ld hl,wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
 	add hl,de
 	ld a,[hl]
+	jr .storeListCount
+.loadBattleBagListCount
+	callba StoreCurrentBattleBagPocketCount
+	ld a,[wListCount]
 	jr .storeListCount
 .loadConventionalListCount
 	ld a,[wListPointer]
@@ -1402,7 +1408,22 @@ DisplayListMenuID::
 	ld [wListCount],a
 	ld a,LIST_MENU_BOX
 	ld [wTextBoxID],a
-	call DisplayTextBoxID ; draw the menu text box
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jr nz,.drawStockListMenuBox
+	; Battle Pocket mode owns its final frame from the first menu draw: title area
+	; at y=1..2, four item rows at y=3/5/7/9, bottom border y=11, description y=12+.
+	coord hl, 4, 0
+	ld b,10
+	ld c,14
+	call TextBoxBorder
+	ld a,MESSAGE_BOX
+	ld [wTextBoxID],a
+	call DisplayTextBoxID
+	jr .listMenuBoxReady
+.drawStockListMenuBox
+	call DisplayTextBoxID ; draw the stock menu text box
+.listMenuBoxReady
 	call UpdateSprites ; disable sprites behind the text box
 ; the code up to .skipMovingSprites appears to be useless
 	coord hl, 4, 2 ; coordinates of upper left corner of menu text box
@@ -1441,6 +1462,11 @@ DisplayListMenuID::
 	ld [wTopMenuItemX],a
 	ld a,A_BUTTON | B_BUTTON | SELECT
 	ld b,a
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jr nz,.haveBaseWatchedKeys
+	ld b,A_BUTTON | B_BUTTON ; Battle Bag is use-only; SELECT is ignored entirely
+.haveBaseWatchedKeys
 	ld a,[wListMenuID]
 	cp ITEMLISTMENU
 	ld a,b
@@ -1524,10 +1550,16 @@ DisplayListMenuIDLoop::
 	ld a,[wListMenuID]
 	cp ITEMLISTMENU
 	jr nz,.resolveConventionalSelection
-	; Pocket-local list index -> real Bag slot/item/quantity. All callba inputs
-	; and outputs live in WRAM, so Bankswitch does not destroy the interface.
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jr z,.resolveBattleBagSelection
+	; START Pocket-local list index -> real Bag slot/item/quantity.
 	ld a,c
 	ld [wFilteredBagItems + BAG_POCKET_RESOLVER_INDEX_OFFSET],a
+	callba ChooseCurrentBagPocketEntry
+	jp storeChosenEntry
+.resolveBattleBagSelection
+	; Battle resolves the highlighted row through its current-page real-slot cache.
 	callba ChooseCurrentBagPocketEntry
 	jp storeChosenEntry
 
@@ -1605,6 +1637,9 @@ checkOtherKeys: ; check B, SELECT, directions
 	and a
 	ld a,b
 	jp z,HandleItemListSwapping ; non-Bag item lists keep the original swap behavior
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_BATTLE
+	jp z,DisplayListMenuIDLoop ; Battle Bag is a filtered use-only view; SELECT never reorders wBagItems
 	callba HandleBagPocketSwapping
 	jp DisplayListMenuIDLoop
 .notSelect
