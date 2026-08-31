@@ -6,6 +6,7 @@ BAG_POCKET_TITLE_WIDTH_TILES EQU 8
 BAG_POCKET_TITLE_HEIGHT_TILES EQU 2
 BAG_POCKET_TITLE_VRAM_SET0 EQU $c0
 BAG_POCKET_TITLE_VRAM_SET1 EQU $d0
+BAG_POCKET_TITLE_VRAM_SET1_LAST EQU $e9 ; 16th wide-title tile; leaves [SHINY]=$df untouched
 
 ; Battle titles use the already-resident font as 8x8 sprites. This keeps the exact
 ; BAGTITLE-011 pixel anchors/y-position without borrowing any battle BG tile VRAM.
@@ -44,6 +45,14 @@ PrepareBagPocketMenu::
 	ld a, BAG_POCKET_MODE_START
 	ld [wBagPocketActive], a
 	call BuildBagPocketMap
+	; The START entry point rejects a completely empty real Bag. If the remembered
+	; Pocket itself is empty, move right to the first non-empty Pocket before any
+	; title/cursor/layout work so skipped Pockets never become visible states.
+	call EnsureCurrentBagPocketHasItems
+	; START title graphics use true C/D ping-pong. Seed set 1 as the inactive
+	; marker so the first load deterministically uploads to set 0.
+	ld a, 1
+	ld [wBagPocketTitleVRAMSet], a
 	call LoadBagPocketTitleTiles
 	call LoadCurrentBagPocketCursor
 	xor a
@@ -127,29 +136,90 @@ SwitchBagPocket::
 	xor a
 	ld [wMenuItemToSwap], a
 	call SaveCurrentBagPocketCursor
+
+	; Search with a temporary candidate. Empty Pockets never become the active
+	; Pocket, so they cannot upload a title, reset a cursor, or invalidate the
+	; description cache. At most five logical START Pockets are inspected.
+	ld a, [wBagPocketCurrent]
+	push af ; original Pocket ID
+	ld c, a ; candidate Pocket ID
+	ld b, NUM_BAG_POCKETS
+.search
 	ld a, [hJoy5]
 	bit 5, a ; Left
 	jr nz, .previousPocket
-	ld a, [wBagPocketCurrent]
+	ld a, c
 	inc a
 	cp NUM_BAG_POCKETS
-	jr c, .storePocket
+	jr c, .candidateReady
 	xor a
-	jr .storePocket
+	jr .candidateReady
 .previousPocket
-	ld a, [wBagPocketCurrent]
+	ld a, c
 	and a
 	jr nz, .decrementPocket
 	ld a, NUM_BAG_POCKETS
 .decrementPocket
 	dec a
-.storePocket
+.candidateReady
+	ld c, a
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	add hl, de
+	ld a, [hl]
+	and a
+	jr nz, .found
+	dec b
+	jr nz, .search
+
+	; Defensive all-empty fallback. The START entry point normally prevents this,
+	; but keep the current Pocket and UI state if metadata is ever unexpectedly empty.
+	pop af
+	ret
+.found
+	pop de ; D = original Pocket ID (matching the existing push AF / pop rr idiom)
+	ld a, c
+	cp d
+	ret z ; only the current Pocket was non-empty: true no-op
 	ld [wBagPocketCurrent], a
 	call LoadBagPocketTitleTiles
 	call LoadCurrentBagPocketCursor
 	call UpdateCurrentBagPocketMenuLimits
 	ld a, $fe
 	ld [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET], a
+	ret
+
+EnsureCurrentBagPocketHasItems:
+	; Opening START Bag has no direction input. Keep a valid remembered Pocket; if
+	; it is empty, search to the right and commit only the first non-empty result.
+	call GetCurrentBagPocketCount
+	and a
+	ret nz
+	ld a, [wBagPocketCurrent]
+	ld c, a
+	ld b, NUM_BAG_POCKETS
+.search
+	ld a, c
+	inc a
+	cp NUM_BAG_POCKETS
+	jr c, .candidateReady
+	xor a
+.candidateReady
+	ld c, a
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_COUNTS_OFFSET
+	add hl, de
+	ld a, [hl]
+	and a
+	jr nz, .found
+	dec b
+	jr nz, .search
+	ret ; defensive: leave current Pocket untouched if every count is zero
+.found
+	ld a, c
+	ld [wBagPocketCurrent], a
 	ret
 
 SwitchBattleBagPocket:
@@ -1065,6 +1135,25 @@ PrintBagPocketName::
 	add hl, de
 	ld a, [wBagPocketTitleSpanWidth]
 	ld b, a
+	ld a, [wBagPocketTitleVRAMSet]
+	and 1
+	jr z, .drawBottomContiguous
+	ld a, b
+	cp BAG_POCKET_TITLE_WIDTH_TILES
+	jr nz, .drawBottomContiguous
+	; Set 1 deliberately skips tile $df ([SHINY]). Wide titles use D8-DE
+	; for the first seven bottom-row tiles and the unmapped $e9 for the last.
+	ld b, BAG_POCKET_TITLE_WIDTH_TILES - 1
+	ld a, c
+.drawBottomSet1Wide
+	ld [hli], a
+	inc a
+	dec b
+	jr nz, .drawBottomSet1Wide
+	ld a, BAG_POCKET_TITLE_VRAM_SET1_LAST
+	ld [hl], a
+	ret
+.drawBottomContiguous
 	ld a, c
 .drawBottomTitleTiles
 	ld [hli], a
@@ -1318,8 +1407,9 @@ PrintBattleBagCancelOrDownArrow:
 	ret
 
 LoadBagPocketTitleTiles:
-	; START Bag alone owns the pre-rendered BG title graphics. Battle titles are
-	; font sprites and therefore never borrow EXP/font tile VRAM.
+	; Upload the next START title into the inactive VRAM set. The currently visible
+	; title keeps referencing the old set until the normal menu redraw commits the
+	; new tilemap, so same-size transitions can never expose half-replaced glyphs.
 	call LoadBagPocketTitleSpan
 	ld a, [wBagPocketCurrent]
 	add a
@@ -1331,26 +1421,48 @@ LoadBagPocketTitleTiles:
 	ld e, a
 	ld d, [hl]
 
-	ld a, [wBagPocketTitleSpanWidth]
-	cp BAG_POCKET_TITLE_WIDTH_TILES
-	jr z, .uploadWide
-	ld a, 1
-	push af
-	ld hl, vChars1 + $500 ; short set: tiles $D0-$DB maximum
-	jr .haveDestination
-.uploadWide
-	xor a
-	push af
-	ld hl, vChars1 + $400 ; wide set: tiles $C0-$CF
-.haveDestination
+	ld a, [wBagPocketTitleVRAMSet]
+	xor 1
+	and 1
+	ld [wBagPocketTitleVRAMSet], a
+	jr nz, .uploadSet1
+
+	; Set 0 is a conventional 16-tile C0-CF buffer and can hold every title.
+	ld hl, vChars1 + $400
 	ld b, BANK(BagPocketTitleItemGfx)
 	ld a, [wBagPocketTitleSpanWidth]
 	add a
 	ld c, a
+	jp CopyVideoDataDoubleStartMenu
+
+.uploadSet1
+	ld a, [wBagPocketTitleSpanWidth]
+	add a
+	cp BAG_POCKET_TITLE_WIDTH_TILES * BAG_POCKET_TITLE_HEIGHT_TILES
+	jr z, .uploadSet1Wide
+	; Short titles fit entirely in D0-DB (BERRY uses D0-DB as well).
+	ld c, a
+	ld hl, vChars1 + $500
+	ld b, BANK(BagPocketTitleItemGfx)
+	jp CopyVideoDataDoubleStartMenu
+
+.uploadSet1Wide
+	; A full 8x2 title needs sixteen tiles. Keep $df reserved for [SHINY]:
+	; copy tiles 0..14 to D0-DE, then tile 15 to the otherwise-unused $e9.
+	push de
+	ld hl, vChars1 + $500
+	ld b, BANK(BagPocketTitleItemGfx)
+	ld c, 15
 	call CopyVideoDataDoubleStartMenu
-	pop af
-	ld [wBagPocketTitleVRAMSet], a
-	ret
+	pop hl
+	ld de, 15 * 8 ; source graphics are packed 1bpp tiles
+	add hl, de
+	ld d, h
+	ld e, l
+	ld hl, vChars1 + $690 ; font tile $e9
+	ld b, BANK(BagPocketTitleItemGfx)
+	ld c, 1
+	jp CopyVideoDataDoubleStartMenu
 
 LoadBagPocketTitleSpan:
 	ld a, [wBagPocketCurrent]

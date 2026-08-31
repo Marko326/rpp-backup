@@ -2604,6 +2604,10 @@ _NewBadgeRequiredText::
 	line "is required."
 	prompt
 
+_BagEmptyText::
+	text "You have no items."
+	prompt
+
 _CannotUseItemsHereText::
 	text "You can't use items"
 	line "here."

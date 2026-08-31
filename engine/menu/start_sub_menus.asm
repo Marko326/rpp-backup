@@ -350,6 +350,15 @@ StartMenu_Item:
 	call PrintText
 	jr .exitMenu
 .notInCableClubRoom
+	; A completely empty Bag has no meaningful Pocket to enter. Return to the
+	; START menu before building the Slot Map or changing persistent Pocket state.
+	ld a, [wNumBagItems]
+	and a
+	jr nz, .bagNotEmpty
+	ld hl, BagEmptyText
+	call PrintText
+	jr .exitMenu
+.bagNotEmpty
 	ld hl, PrepareBagPocketMenu
 	ld b, BANK(PrepareBagPocketMenu)
 	call Bankswitch
@@ -488,6 +497,10 @@ StartMenu_Item:
 	ld b, Bank(DisplayItemDescription)
 	call Bankswitch
 	jp ItemMenuLoop
+
+BagEmptyText:
+	TX_FAR _BagEmptyText
+	db "@"
 
 CannotUseItemsHereText:
 	TX_FAR _CannotUseItemsHereText

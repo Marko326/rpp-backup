@@ -2689,7 +2689,7 @@ wMoveDexSmallFontLeftShift:: ds 1
 ; 玩家当前行动是否已经进入 Metronome 随机派生链。
 ; 这是战斗瞬时标志；ExecutePlayerMove 每次入口都会清零。
 wMoveDexPlayerMetronomeDerived:: ds 1
-wBagPocketTitleVRAMSet:: ds 1 ; 0=wide $C0-$CF, 1=short $D0-$DB; Bag only
+wBagPocketTitleVRAMSet:: ds 1 ; START title ping-pong: 0=$C0-$CF, 1=$D0-$DE + $E9
 wBagPocketTitleSpanLeft:: ds 1 ; left tile column inside the centered 64px canvas
 wBagPocketTitleSpanWidth:: ds 1 ; packed tile columns per title row
 wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
