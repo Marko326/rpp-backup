@@ -1480,8 +1480,10 @@ _PartyMenuBattleText::
 	done
 
 _PartyMenuUseTMText::
-	text "Teach to which"
-	line "#mon?"
+	text "Teach @"
+	TX_RAM wTempMoveNameBuffer
+	text ""
+	line "to which #mon?"
 	done
 
 _PartyMenuSwapMonText::

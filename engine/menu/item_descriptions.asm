@@ -1,349 +1,45 @@
-DisplayItemDescription:
-	ld a, [wcf91]
-	dec a
-	cp a, HM_01 - 1
-	jr c, .ready
-	sub ((HM_01 - GO_HOME) - 1) ; TM and HM ids are now adjusted to be after the rest of the normal items
-.ready
-	ld hl,ItemDescriptionPointers
-	ld bc, 5
-.add
-	and a
-	jr z, .doneAdding
-	dec a
-	add hl, bc
-	jr .add
-.doneAdding
-	call PrintText
-	ret
+; Compact Bag/Mart item descriptions.
+; The old Bag-only INFO page and its duplicate long-description pointer table
+; were removed. Normal items use the shared two-line Mart descriptions below;
+; TM/HM descriptions are generated from the live move data instead.
 
-ItemDescriptionPointers:
-	TX_FAR _MasterBallDescription
-	db "@"
-	TX_FAR _UltraBallDescription
-	db "@"
-	TX_FAR _GreatBallDescription
-	db "@"
-	TX_FAR _PokeBallDescription
-	db "@"
-	TX_FAR _TownMapDescription
-	db "@"
-	TX_FAR _BicycleDescription
-	db "@"
-	TX_FAR _SurfboardDescription
-	db "@"
-	TX_FAR _SafariBallDescription
-	db "@"
-	TX_FAR _PokedexDescription
-	db "@"
-	TX_FAR _MoonStoneDescription
-	db "@"
-	TX_FAR _AntidoteDescription
-	db "@"
-	TX_FAR _BurnHealDescription
-	db "@"
-	TX_FAR _IceHealDescription
-	db "@"
-	TX_FAR _AwakeningDescription
-	db "@"
-	TX_FAR _ParalyzeHealDescription
-	db "@"
-	TX_FAR _FullRestoreDescription
-	db "@"
-	TX_FAR _MaxPotionDescription
-	db "@"
-	TX_FAR _HyperPotionDescription
-	db "@"
-	TX_FAR _SuperPotionDescription
-	db "@"
-	TX_FAR _PotionDescription
-	db "@"
-	TX_FAR _SafariBaitDescription
-	db "@"
-	TX_FAR _SafariRockDescription
-	db "@"
-	TX_FAR _OldSeaMapDescription
-	db "@"
-	TX_FAR _MysticTicketDescription
-	db "@"
-	TX_FAR _EonTicketDescription
-	db "@"
-	TX_FAR _TeruSama1ADescription
-	db "@"
-	TX_FAR _TeruSama1BDescription
-	db "@"
-	TX_FAR _TeruSama1CDescription
-	db "@"
-	TX_FAR _EscapeRopeDescription
-	db "@"
-	TX_FAR _RepelDescription
-	db "@"
-	TX_FAR _OldAmberDescription
-	db "@"
-	TX_FAR _FireStoneDescription
-	db "@"
-	TX_FAR _ThunderStoneDescription
-	db "@"
-	TX_FAR _WaterStoneDescription
-	db "@"
-	TX_FAR _HPUpDescription
-	db "@"
-	TX_FAR _ProteinDescription
-	db "@"
-	TX_FAR _IronDescription
-	db "@"
-	TX_FAR _CarbosDescription
-	db "@"
-	TX_FAR _CalciumDescription
-	db "@"
-	TX_FAR _RareCandyDescription
-	db "@"
-	TX_FAR _DomeFossilDescription
-	db "@"
-	TX_FAR _HelixFossilDescription
-	db "@"
-	TX_FAR _SecretKeyDescription
-	db "@"
-	TX_FAR _SunStoneDescription
-	db "@"
-	TX_FAR _BikeVoucherDescription
-	db "@"
-	TX_FAR _XAccuracyDescription
-	db "@"
-	TX_FAR _LeafStoneDescription
-	db "@"
-	TX_FAR _CardKeyDescription
-	db "@"
-	TX_FAR _NuggetDescription
-	db "@"
-	TX_FAR _ThiefBallDescription
-	db "@"
-	TX_FAR _PokeDollDescription
-	db "@"
-	TX_FAR _FullHealDescription
-	db "@"
-	TX_FAR _ReviveDescription
-	db "@"
-	TX_FAR _MaxReviveDescription
-	db "@"
-	TX_FAR _GuardSpecDescription
-	db "@"
-	TX_FAR _SuperRepelDescription
-	db "@"
-	TX_FAR _MaxRepelDescription
-	db "@"
-	TX_FAR _DireHitDescription
-	db "@"
-	TX_FAR _CoinDescription
-	db "@"
-	TX_FAR _FreshWaterDescription
-	db "@"
-	TX_FAR _SodaPopDescription
-	db "@"
-	TX_FAR _LemonadeDescription
-	db "@"
-	TX_FAR _SSTicketDescription
-	db "@"
-	TX_FAR _GoldTeethDescription
-	db "@"
-	TX_FAR _XAttackDescription
-	db "@"
-	TX_FAR _XDefendDescription
-	db "@"
-	TX_FAR _XSpeedDescription
-	db "@"
-	TX_FAR _XSpecialDescription
-	db "@"
-	TX_FAR _CoinCaseDescription
-	db "@"
-	TX_FAR _OaksParcelDescription
-	db "@"
-	TX_FAR _ItemFinderDescription
-	db "@"
-	TX_FAR _SilphScopeDescription
-	db "@"
-	TX_FAR _PokeFluteDescription
-	db "@"
-	TX_FAR _LiftKeyDescription
-	db "@"
-	TX_FAR _EXPShareDescription
-	db "@"
-	TX_FAR _OldRodDescription
-	db "@"
-	TX_FAR _GoodRodDescription
-	db "@"
-	TX_FAR _SuperRodDescription
-	db "@"
-	TX_FAR _PPUpDescription
-	db "@"
-	TX_FAR _EtherDescription
-	db "@"
-	TX_FAR _MaxEtherDescription
-	db "@"
-	TX_FAR _ElixerDescription
-	db "@"
-	TX_FAR _MaxElixerDescription
-	db "@"
-	TX_FAR _FloorB2FDescription
-	db "@"
-	TX_FAR _FloorB1FDescription
-	db "@"
-	TX_FAR _Floor1FDescription
-	db "@"
-	TX_FAR _Floor2FDescription
-	db "@"
-	TX_FAR _Floor3FDescription
-	db "@"
-	TX_FAR _Floor4FDescription
-	db "@"
-	TX_FAR _Floor5FDescription
-	db "@"
-	TX_FAR _Floor6FDescription
-	db "@"
-	TX_FAR _Floor7FDescription
-	db "@"
-	TX_FAR _Floor8FDescription
-	db "@"
-	TX_FAR _Floor9FDescription
-	db "@"
-	TX_FAR _Floor10FDescription
-	db "@"
-	TX_FAR _Floor11FDescription
-	db "@"
-	TX_FAR _FloorB4FDescription
-	db "@"
-	TX_FAR _OranBerryDescription
-	db "@"
-	TX_FAR _SitrusBerryDescription
-	db "@"
-	TX_FAR _LeppaBerryDescription
-	db "@"
-	TX_FAR _PechaBerryDescription
-	db "@"
-	TX_FAR _RawstBerryDescription
-	db "@"
-	TX_FAR _AspearBerryDescription
-	db "@"
-	TX_FAR _ChestoBerryDescription
-	db "@"
-	TX_FAR _CheriBerryDescription
-	db "@"
-	TX_FAR _LumBerryDescription
-	db "@"
-	TX_FAR _SwegBerryDescription
-	db "@"
-	TX_FAR _GoHomeDescription
-	db "@"
-	TX_FAR _HM01Description
-	db "@"
-	TX_FAR _HM02Description
-	db "@"
-	TX_FAR _HM03Description
-	db "@"
-	TX_FAR _HM04Description
-	db "@"
-	TX_FAR _HM05Description
-	db "@"
-	TX_FAR _TM01Description
-	db "@"
-	TX_FAR _TM02Description
-	db "@"
-	TX_FAR _TM03Description
-	db "@"
-	TX_FAR _TM04Description
-	db "@"
-	TX_FAR _TM05Description
-	db "@"
-	TX_FAR _TM06Description
-	db "@"
-	TX_FAR _TM07Description
-	db "@"
-	TX_FAR _TM08Description
-	db "@"
-	TX_FAR _TM09Description
-	db "@"
-	TX_FAR _TM10Description
-	db "@"
-	TX_FAR _TM11Description
-	db "@"
-	TX_FAR _TM12Description
-	db "@"
-	TX_FAR _TM13Description
-	db "@"
-	TX_FAR _TM14Description
-	db "@"
-	TX_FAR _TM15Description
-	db "@"
-	TX_FAR _TM16Description
-	db "@"
-	TX_FAR _TM17Description
-	db "@"
-	TX_FAR _TM18Description
-	db "@"
-	TX_FAR _TM19Description
-	db "@"
-	TX_FAR _TM20Description
-	db "@"
-	TX_FAR _TM21Description
-	db "@"
-	TX_FAR _TM22Description
-	db "@"
-	TX_FAR _TM23Description
-	db "@"
-	TX_FAR _TM24Description
-	db "@"
-	TX_FAR _TM25Description
-	db "@"
-	TX_FAR _TM26Description
-	db "@"
-	TX_FAR _TM27Description
-	db "@"
-	TX_FAR _TM28Description
-	db "@"
-	TX_FAR _TM29Description
-	db "@"
-	TX_FAR _TM30Description
-	db "@"
-	TX_FAR _TM31Description
-	db "@"
-	TX_FAR _TM32Description
-	db "@"
-	TX_FAR _TM33Description
-	db "@"
-	TX_FAR _TM34Description
-	db "@"
-	TX_FAR _TM35Description
-	db "@"
-	TX_FAR _TM36Description
-	db "@"
-	TX_FAR _TM37Description
-	db "@"
-	TX_FAR _TM38Description
-	db "@"
-	TX_FAR _TM39Description
-	db "@"
-	TX_FAR _TM40Description
-	db "@"
-	TX_FAR _TM41Description
-	db "@"
-	TX_FAR _TM42Description
-	db "@"
-	TX_FAR _TM43Description
-	db "@"
-	TX_FAR _TM44Description
-	db "@"
-	TX_FAR _TM45Description
-	db "@"
-	TX_FAR _TM46Description
-	db "@"
-	TX_FAR _TM47Description
-	db "@"
-	TX_FAR _TM48Description
-	db "@"
-	TX_FAR _TM49Description
-	db "@"
-	TX_FAR _TM50Description
-	db "@"
+; INPUT: D = HM_01..HM_05 or TM_01..TM_50.
+; D is used deliberately because callab/Bankswitch does not preserve A/BC/HL.
+; Draws the compact machine summary used by Bag/Mart:
+;   TM01  DynamicPunch
+; The machine label is generated by GetMachineName and the move name is read
+; from the live TechnicalMachines/MoveNames data, so neither is hard-coded here.
+DrawMachineItemDescription::
+	; Draw the real machine label first (TM01/HM01). The description area has
+	; already been cleared, so starting the move name at x=7 leaves exactly
+	; two spaces between the four-character machine label and the move name.
+	; GetItemName is the safe public helper here: unlike GetMachineName, it
+	; returns DE = wcd6d for PlaceString. Preserve the selected item ID because
+	; that returned DE necessarily overwrites D.
+	push de
+	ld a, d
+	ld [wd11e], a
+	call GetItemName
+	coord hl, 1, 14
+	call PlaceString
+	pop de
+
+	; Convert the selected machine item to its current move dynamically.
+	ld a, d
+	cp TM_01
+	jr nc, .tm
+	sub HM_01
+	add 51 ; HMs are entries 51..55 in TechnicalMachines
+	jr .haveMachineNumber
+.tm
+	sub TM_01 - 1 ; TM01..TM50 -> 1..50
+.haveMachineNumber
+	ld [wd11e], a
+	callba TMToMove
+	call GetMoveName
+	coord hl, 7, 14
+	call PlaceString
+	ret
 
 EmptyDescription:
 	TX_FAR _EmptyDescription
@@ -361,22 +57,24 @@ FlashItemDescription_Mart:
 	; d = item id
 	ld a, d
 	cp $ff
-	ld hl, EmptyDescription
-	jr z, .doneAdding
+	jr z, .empty
+	cp HM_01
+	jr c, .normal
+	cp TM_50 + 1
+	jr c, .machine
+.normal
 	dec a
-	cp a, HM_01 - 1
-	jr c, .ready
-	sub ((HM_01 - GO_HOME) - 1) ; TM and HM ids are now adjusted to be after the rest of the normal items
-.ready
-	ld hl,ItemDescriptionPointers_Mart
+	ld hl, ItemDescriptionPointers_Mart
 	ld bc, 5
 .add
 	and a
-	jr z, .doneAdding
+	jr z, .normalReady
 	dec a
 	add hl, bc
 	jr .add
-.doneAdding
+.empty
+	ld hl, EmptyDescription
+.normalReady
 	push hl
 	ld hl, wd730
 	set 6, [hl]
@@ -388,11 +86,28 @@ FlashItemDescription_Mart:
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call PrintText
+	jr .finishDraw
+
+.machine
+	ld hl, wd730
+	set 6, [hl]
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	; Recreate/clear the normal MESSAGE_BOX just like PrintText does for
+	; ordinary Mart descriptions, then draw the dynamic machine data into it.
+	push de
+	ld hl, EmptyDescription
+	call PrintText
+	pop de
+	call DrawMachineItemDescription
+
+.finishDraw
 	pop af
 	ld [H_AUTOBGTRANSFERENABLED], a
-	; Do not wait here. Every mart menu path reaches its normal Delay3
-	; before polling again, so the list, cursor, and description are
-	; transferred together instead of stalling for an extra three frames.
+	; Do not add another wait here. Mart menu paths reach their normal Delay3
+	; before polling again, so list, cursor, and description transfer together.
 	ld hl, wd730
 	res 6, [hl]
 	ret
@@ -613,114 +328,4 @@ ItemDescriptionPointers_Mart:
 	TX_FAR _SwegBerryDescription_Mart
 	db "@"
 	TX_FAR _GoHomeDescription_Mart
-	db "@"
-	TX_FAR _HM01Description_Mart
-	db "@"
-	TX_FAR _HM02Description_Mart
-	db "@"
-	TX_FAR _HM03Description_Mart
-	db "@"
-	TX_FAR _HM04Description_Mart
-	db "@"
-	TX_FAR _HM05Description_Mart
-	db "@"
-	TX_FAR _TM01Description_Mart
-	db "@"
-	TX_FAR _TM02Description_Mart
-	db "@"
-	TX_FAR _TM03Description_Mart
-	db "@"
-	TX_FAR _TM04Description_Mart
-	db "@"
-	TX_FAR _TM05Description_Mart
-	db "@"
-	TX_FAR _TM06Description_Mart
-	db "@"
-	TX_FAR _TM07Description_Mart
-	db "@"
-	TX_FAR _TM08Description_Mart
-	db "@"
-	TX_FAR _TM09Description_Mart
-	db "@"
-	TX_FAR _TM10Description_Mart
-	db "@"
-	TX_FAR _TM11Description_Mart
-	db "@"
-	TX_FAR _TM12Description_Mart
-	db "@"
-	TX_FAR _TM13Description_Mart
-	db "@"
-	TX_FAR _TM14Description_Mart
-	db "@"
-	TX_FAR _TM15Description_Mart
-	db "@"
-	TX_FAR _TM16Description_Mart
-	db "@"
-	TX_FAR _TM17Description_Mart
-	db "@"
-	TX_FAR _TM18Description_Mart
-	db "@"
-	TX_FAR _TM19Description_Mart
-	db "@"
-	TX_FAR _TM20Description_Mart
-	db "@"
-	TX_FAR _TM21Description_Mart
-	db "@"
-	TX_FAR _TM22Description_Mart
-	db "@"
-	TX_FAR _TM23Description_Mart
-	db "@"
-	TX_FAR _TM24Description_Mart
-	db "@"
-	TX_FAR _TM25Description_Mart
-	db "@"
-	TX_FAR _TM26Description_Mart
-	db "@"
-	TX_FAR _TM27Description_Mart
-	db "@"
-	TX_FAR _TM28Description_Mart
-	db "@"
-	TX_FAR _TM29Description_Mart
-	db "@"
-	TX_FAR _TM30Description_Mart
-	db "@"
-	TX_FAR _TM31Description_Mart
-	db "@"
-	TX_FAR _TM32Description_Mart
-	db "@"
-	TX_FAR _TM33Description_Mart
-	db "@"
-	TX_FAR _TM34Description_Mart
-	db "@"
-	TX_FAR _TM35Description_Mart
-	db "@"
-	TX_FAR _TM36Description_Mart
-	db "@"
-	TX_FAR _TM37Description_Mart
-	db "@"
-	TX_FAR _TM38Description_Mart
-	db "@"
-	TX_FAR _TM39Description_Mart
-	db "@"
-	TX_FAR _TM40Description_Mart
-	db "@"
-	TX_FAR _TM41Description_Mart
-	db "@"
-	TX_FAR _TM42Description_Mart
-	db "@"
-	TX_FAR _TM43Description_Mart
-	db "@"
-	TX_FAR _TM44Description_Mart
-	db "@"
-	TX_FAR _TM45Description_Mart
-	db "@"
-	TX_FAR _TM46Description_Mart
-	db "@"
-	TX_FAR _TM47Description_Mart
-	db "@"
-	TX_FAR _TM48Description_Mart
-	db "@"
-	TX_FAR _TM49Description_Mart
-	db "@"
-	TX_FAR _TM50Description_Mart
 	db "@"

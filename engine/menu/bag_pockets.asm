@@ -1527,11 +1527,15 @@ UpdateBagPocketDescription::
 	cp $ff
 	ld de, EmptyDescription
 	jr z, .printDescription
+	cp HM_01
+	jr c, .normalDescription
+	cp TM_50 + 1
+	jr nc, .normalDescription
+	ld d, a ; callab/Bankswitch clobbers A, so pass the machine item ID in D
+	callab DrawMachineItemDescription
+	jr .descriptionDone
+.normalDescription
 	dec a
-	cp HM_01 - 1
-	jr c, .descriptionIndexReady
-	sub ((HM_01 - GO_HOME) - 1)
-.descriptionIndexReady
 	ld hl, ItemDescriptionPointers_Mart
 	ld bc, 5
 .findDescriptionPointer
@@ -1545,6 +1549,7 @@ UpdateBagPocketDescription::
 	ld e, l
 .printDescription
 	callab PrintBagItemDescriptionText
+.descriptionDone
 	pop af
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
@@ -1596,11 +1601,17 @@ UpdateBattleBagDescription:
 	cp $ff
 	ld de, EmptyDescription
 	jr z, .printDescription
+	cp HM_01
+	jr c, .normalDescription
+	cp TM_50 + 1
+	jr nc, .normalDescription
+	ld d, a ; callab/Bankswitch clobbers A, so pass the machine item ID in D
+	push bc
+	callab DrawMachineItemDescription
+	pop bc
+	jr .descriptionDone
+.normalDescription
 	dec a
-	cp HM_01 - 1
-	jr c, .descriptionIndexReady
-	sub ((HM_01 - GO_HOME) - 1)
-.descriptionIndexReady
 	ld hl, ItemDescriptionPointers_Mart
 	ld de, 5
 .findDescriptionPointer
@@ -1616,6 +1627,7 @@ UpdateBattleBagDescription:
 	push bc
 	callab PrintBagItemDescriptionText
 	pop bc
+.descriptionDone
 	ld a, b
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
