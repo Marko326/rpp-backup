@@ -407,10 +407,9 @@ wBagSavedMenuItem:: ; cc2c
 	ds 1
 
 wBattleAndStartSavedMenuItem:: ; cc2d
-; It is used by the start menu to remember the cursor position while the menu
-; isn't active.
 ; The battle menu uses it so that the cursor position doesn't get lost when
-; a sub-menu is shown. It's reset at the start of each battle.
+; a sub-menu is shown. It's reset at the start of each battle. START has its
+; own session-only cursor below, so battle resets cannot disturb the START menu.
 	ds 1
 
 wPlayerMoveListIndex:: ; cc2e
@@ -424,8 +423,13 @@ wMenuCursorLocation:: ; cc30
 ; the address of the menu cursor's current location within wTileMap
 	ds 2
 
+wStartMenuSavedMenuItem:: ; cc32
+; Session-only START menu cursor. It is deliberately outside wMainData so it
+; never enters .sav, and MainMenu clears it once at the start of a play session.
+	ds 1
+
 ; unused?
-	ds 2
+	ds 1
 
 wMenuJoypadPollCount:: ; cc34
 ; how many times should HandleMenuInput poll the joypad state before it returns?

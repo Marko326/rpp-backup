@@ -52,7 +52,7 @@ RedisplayStartMenu::
 .buttonPressed ; A, B, or Start button pressed
 	call PlaceUnfilledArrowMenuCursor
 	ld a,[wCurrentMenuItem]
-	ld [wBattleAndStartSavedMenuItem],a ; save current menu selection
+	ld [wStartMenuSavedMenuItem],a ; remember START selection for this play session
 	ld a,b
 	and a,%00001010 ; was the Start button or B button pressed?
 	jp nz,CloseStartMenu

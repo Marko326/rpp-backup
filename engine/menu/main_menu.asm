@@ -2,6 +2,10 @@ MainMenu:
 	; Battle Bag state is runtime-only. Clear it before either New Game or Continue
 	; so no prior session/soft-reset value can reach menu or overworld logic.
 	callab ClearBattleBagTransientState
+	; START remembers its cursor only for the current play session. Keep it out of
+	; .sav and reset it when returning to the title/main-menu session boundary.
+	xor a
+	ld [wStartMenuSavedMenuItem], a
 ; Check save file
 	call InitOptions
 	xor a
