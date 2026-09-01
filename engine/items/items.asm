@@ -2147,6 +2147,8 @@ CoinCaseNumCoinsText:
 ItemUseOldRod:
 	call FishingInit
 	jp c, ItemUseNotTime
+	ld a, OLD_ROD
+	ld [wRepeatFishingRod], a
 .RandomLoop ; choose which slot
 	call Random
 	srl a
@@ -2187,6 +2189,8 @@ INCLUDE "data/old_rod.asm"
 ItemUseGoodRod:
 	call FishingInit
 	jp c,ItemUseNotTime
+	ld a, GOOD_ROD
+	ld [wRepeatFishingRod], a
 .RandomLoop
 	call Random
 	srl a
@@ -2215,10 +2219,18 @@ INCLUDE "data/good_rod.asm"
 ItemUseSuperRod:
 	call FishingInit
 	jp c, ItemUseNotTime
+	ld a, SUPER_ROD
+	ld [wRepeatFishingRod], a
 	call ReadSuperRodData
 	ld a, e
 RodResponse:
 	ld [wRodResponse], a
+	and a ; only "Not even a nibble" may offer an immediate retry
+	jr z, .repeatAvailable
+	xor a
+	ld [wRepeatFishingRod], a
+	ld a, [wRodResponse]
+.repeatAvailable
 
 	dec a ; is there a bite?
 	jr nz, .next

@@ -6,6 +6,7 @@ MainMenu:
 	; .sav and reset it when returning to the title/main-menu session boundary.
 	xor a
 	ld [wStartMenuSavedMenuItem], a
+	ld [wRepeatFishingRod], a
 ; Check save file
 	call InitOptions
 	xor a

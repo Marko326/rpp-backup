@@ -454,7 +454,9 @@ wMenuWatchMovingOutOfBounds:: ; cc37
 wTradeCenterPointerTableIndex:: ; cc38
 	ds 1
 
-; unused?
+wRepeatFishingRod:: ; cc39
+; OLD_ROD/GOOD_ROD/SUPER_ROD only while a no-bite retry prompt is pending.
+; Runtime-only; never saved.
 	ds 1
 
 wTextDest:: ; cc3a

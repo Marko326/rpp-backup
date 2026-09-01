@@ -412,6 +412,58 @@ HasPartyMove::
 	ret
 
 
+CheckRepeatFishingRodOverworld::
+; Retry is deliberately short-lived: only a no-bite result leaves this set.
+	ld a, [wRepeatFishingRod]
+	and a
+	ret z
+	call CheckRepeatFishingRod
+	; Do not leak the YES/NO A/B press into the rest of this overworld frame.
+	xor a
+	ld [hJoyHeld], a
+	ld [hJoyPressed], a
+	ld [hJoyReleased], a
+	ret
+
+CheckRepeatFishingRod::
+; Consume first. A retry that also gets no bite will set it again itself.
+	ld a, [wRepeatFishingRod]
+	and a
+	ret z
+	ld b, a
+	xor a
+	ld [wRepeatFishingRod], a
+	push bc
+	call Text2_EnterTheText
+	ld hl, UseRodAgainText
+	call PrintText
+	call YesNoChoice
+	ld a, [wCurrentMenuItem]
+	and a
+	jr nz, .done
+	pop bc
+	; Rebuild the shared item-name buffer exactly like normal Bag item use.
+	ld a, b
+	ld [wd11e], a
+	push bc
+	call GetItemName
+	call CopyStringToCF4B
+	pop bc
+	ld a, b
+	ld [wcf91], a
+	ld [wPseudoItemID], a
+	call UseItem
+	call Text3_DrakesDeception
+	ret
+.done
+	pop bc
+	call Text3_DrakesDeception
+	ret
+
+UseRodAgainText:
+	text "Use the"
+	line "rod again?@@"
+
 Text2_EnterTheText: ; Gets everything setup to let you display text properly
 	call EnableAutoTextBoxDrawing
 	ld a, 1 ; not 0

@@ -59,6 +59,7 @@ SafariZoneCheckSteps:
 SafariZoneGameStillGoing:
 	xor a
 	ld [wSafariZoneGameOver], a
+	callba CheckRepeatFishingRodOverworld
 	ret
 
 SafariZoneGameOver:

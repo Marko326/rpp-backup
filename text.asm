@@ -41,7 +41,8 @@ _TrainerNameText::
 	text ": @@"
 
 _NoNibbleText::
-	text "Not even a nibble!"
+	text "Not even"
+	line "a nibble!"
 	prompt
 
 _NothingHereText::
@@ -1358,7 +1359,7 @@ _HookedMonAttackedText::
 	line "@"
 	TX_RAM wEnemyMonNick
 	text ""
-	cont "attacked!"
+	db $4C, "attacked!"
 	prompt
 
 _EnemyAppearedText::
