@@ -2708,6 +2708,9 @@ INCLUDE "data/snowy_runtime.asm"
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"
 
+SECTION "Fly Town Map Helpers", ROMX, BANK[$35]
+INCLUDE "engine/fly_town_map_helpers.asm"
+
 ; Bank 1 已接近满载，把完整 Options 菜单搬到空余更大的扩展 Bank $35。
 SECTION "Runtime Options Menu", ROMX, BANK[$35]
 INCLUDE "engine/menu/options_menu.asm"

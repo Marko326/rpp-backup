@@ -1199,6 +1199,10 @@ wTempCoins2:: ; cd4a
 ; 2 bytes
 ; temporary variable used to subtract the bet amount from the player's coins
 
+wFlyLocationsAxis:: ; cd4a
+; Fly menu scratch state: 0 = city axis (Up/Down), 1 = special axis (Left/Right).
+; Kept immediately after the city list's end sentinel at cd49.
+
 wPayoutCoins:: ; cd4a
 ; 2 bytes
 	ds 2
@@ -3175,7 +3179,19 @@ wWalkBikeSurfState:: ; d700
 	ds 1
 
 ; unused?
-	ds 10
+	ds 9
+
+; Persistent unlock bits for the special Fly destination axis.
+; Reuses one byte from the existing unused save area so all following WRAM/save
+; addresses stay unchanged.
+wSpecialFlyVisitedFlag:: ; d70a
+; bit 0 = Mt. Moon
+; bit 1 = Mt. Moon Square
+; bit 2 = Rock Tunnel
+; bit 3 = Power Plant
+; bit 4 = Seafoam Islands
+; bit 5 = Cerulean Cave
+	ds 1
 
 wKantoTownVisitedFlag:: ; d70b
 	ds 2

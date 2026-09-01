@@ -114,17 +114,22 @@ LoadSpecialWarpData:
 	ld a, [wDestinationMap]
 .usedFlyWarp
 	ld b, a
-	ld [wCurMap], a
 	ld hl, FlyWarpDataPtr
 .flyWarpDataPtrLoop
-	ld a, [hli]
-	inc hl
+	ld a, [hli] ; Fly selector / normal destination map
 	cp b
 	jr z, .foundFlyWarpMatch
+	inc hl ; skip actual destination map
 	inc hl
-	inc hl
+	inc hl ; skip warp-data pointer
 	jr .flyWarpDataPtrLoop
 .foundFlyWarpMatch
+	; The second byte is normally identical to the selector. Extra Fly
+	; destinations use a landmark map ID for Town Map display while landing on
+	; an outdoor map, so resolve the real destination here.
+	ld a, [hli]
+	ld [wDestinationMap], a
+	ld [wCurMap], a
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a

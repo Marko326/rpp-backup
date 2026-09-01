@@ -60,32 +60,54 @@ ColosseumSpec2:
 	db CLUB
 
 FlyWarpDataPtr:
-	db PALLET_TOWN, 0
+; [selector shown on Town Map], [actual destination map], [warp-data pointer]
+; For normal cities/blackout destinations the first two bytes are identical.
+; Extra Fly destinations can therefore share an outdoor map without breaking
+; the existing Route 4/Route 10 Pokemon Center blackout/Teleport entries.
+	db PALLET_TOWN, PALLET_TOWN
 	dw PalletTownFlyWarp
-	db VIRIDIAN_CITY, 0
+	db VIRIDIAN_CITY, VIRIDIAN_CITY
 	dw ViridianCityFlyWarp
-	db PEWTER_CITY, 0
+	db PEWTER_CITY, PEWTER_CITY
 	dw PewterCityFlyWarp
-	db CERULEAN_CITY, 0
+	db CERULEAN_CITY, CERULEAN_CITY
 	dw CeruleanCityFlyWarp
-	db LAVENDER_TOWN, 0
+	db LAVENDER_TOWN, LAVENDER_TOWN
 	dw LavenderTownFlyWarp
-	db VERMILION_CITY, 0
+	db VERMILION_CITY, VERMILION_CITY
 	dw VermilionCityFlyWarp
-	db CELADON_CITY, 0
+	db CELADON_CITY, CELADON_CITY
 	dw CeladonCityFlyWarp
-	db FUCHSIA_CITY, 0
+	db FUCHSIA_CITY, FUCHSIA_CITY
 	dw FuchsiaCityFlyWarp
-	db CINNABAR_ISLAND, 0
+	db CINNABAR_ISLAND, CINNABAR_ISLAND
 	dw CinnabarIslandFlyWarp
-	db INDIGO_PLATEAU, 0
+	db INDIGO_PLATEAU, INDIGO_PLATEAU
 	dw IndigoPlateauFlyWarp
-	db SAFFRON_CITY, 0
+	db SAFFRON_CITY, SAFFRON_CITY
 	dw SaffronCityFlyWarp
-	db ROUTE_4, 0
+
+	; Canonical route entries are retained for blackout/Teleport from the route
+	; Pokemon Centers.
+	db ROUTE_4, ROUTE_4
 	dw Route4FlyWarp
-	db ROUTE_10, 0
+	db ROUTE_10, ROUTE_10
 	dw Route10FlyWarp
+
+	; Extra Fly destinations. The first byte supplies the Town Map name/position; the
+	; second byte is the map that is actually loaded after Fly.
+	db MT_MOON_3, ROUTE_4
+	dw Route4FlyWarp
+	db MT_MOON_SQUARE, MT_MOON_SQUARE
+	dw MtMoonSquareFlyWarp
+	db ROCK_TUNNEL_1, ROUTE_10
+	dw Route10FlyWarp
+	db POWER_PLANT, ROUTE_10
+	dw PowerPlantFlyWarp
+	db SEAFOAM_ISLANDS_1, ROUTE_20
+	dw SeafoamIslandsFlyWarp
+	db UNKNOWN_DUNGEON_1, CERULEAN_CITY
+	dw CeruleanCaveFlyWarp
 
 ; Original Format:
 ;   [Event Displacement][Y-block][X-block][Y-sub_block][X-sub_block]
@@ -117,3 +139,11 @@ Route4FlyWarp:
 	FLYWARP_DATA ROUTE_4_WIDTH,          6, 11
 Route10FlyWarp:
 	FLYWARP_DATA ROUTE_10_WIDTH,        20, 11
+MtMoonSquareFlyWarp:
+	FLYWARP_DATA MT_MOON_SQUARE_WIDTH, 10, 19
+PowerPlantFlyWarp:
+	FLYWARP_DATA ROUTE_10_WIDTH,        40,  6
+SeafoamIslandsFlyWarp:
+	FLYWARP_DATA ROUTE_20_WIDTH,        10, 58
+CeruleanCaveFlyWarp:
+	FLYWARP_DATA CERULEAN_CITY_WIDTH,   12,  4

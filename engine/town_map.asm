@@ -167,20 +167,16 @@ LoadTownMap_Fly:
 	ld hl, vSprites + $40
 	lb bc, BANK(BirdSprite), $c
 	call CopyVideoData
-	ld de, TownMapUpArrow
-	ld hl, vChars1 + $6d0
-	lb bc, BANK(TownMapUpArrow), (TownMapUpArrowEnd - TownMapUpArrow) / $8
-	call CopyVideoDataDouble
+	xor a
+	ld [wFlyLocationsAxis], a ; 0 = city axis (Up/Down), 1 = special axis (Left/Right)
 	call BuildFlyLocationsList
 	ld hl, wUpdateSpritesEnabled
 	ld a, [hl]
 	push af
 	ld [hl], $ff
 	push hl
-	coord hl, 0, 0
-	ld a, $3f ; up/down arrow tile
-	ld [hl], a
-	ld a, [wCurMap]
+	callab GetFlyTownMapPlayerMap
+	ld a, d
 	ld b, $0
 	call DrawPlayerOrBirdSprite
 	ld hl, wFlyLocationsList
@@ -210,16 +206,20 @@ LoadTownMap_Fly:
 	ld a, [hJoy5]
 	ld b, a
 	pop hl
-	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
+	and A_BUTTON | B_BUTTON | D_RIGHT | D_LEFT | D_UP | D_DOWN
 	jr z, .inputLoop
 	bit 0, b
 	jr nz, .pressedA
 	ld a, SFX_TINK
 	call PlaySound
+	bit 4, b
+	jr nz, .pressedLeftOrRight
+	bit 5, b
+	jr nz, .pressedLeftOrRight
 	bit 6, b
-	jr nz, .pressedUp
+	jp nz, .pressedUp
 	bit 7, b
-	jr nz, .pressedDown
+	jp nz, .pressedDown
 	jr .pressedB
 .pressedA
 	ld a, SFX_HEAL_AILMENT
@@ -240,58 +240,184 @@ LoadTownMap_Fly:
 	pop af
 	ld [hTilesetType], a
 	ret
+.pressedLeftOrRight
+; Left/Right owns the special-destination axis. The first horizontal press
+; enters that axis; further horizontal presses cycle only unlocked special
+; destinations. Up/Down always returns to the original city axis.
+	ld a, [wSpecialFlyVisitedFlag]
+	and %00111111
+	jp z, .townMapFlyLoop ; no special destinations unlocked yet
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .alreadyOnSpecialAxis
+	; Decide the horizontal direction before rebuilding the list: the list
+	; builder uses B/BC internally, so hJoy5 must not be read from B afterwards.
+	bit 4, b
+	jr nz, .enterSpecialRight
+.enterSpecialLeft
+	inc a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	jr .selectLastAvailable ; Left enters from the opposite end
+.enterSpecialRight
+	inc a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	jr .selectFirstAvailable ; Right enters at the first unlocked destination
+.alreadyOnSpecialAxis
+	bit 4, b
+	jr nz, .moveSpecialRight
+	jr .moveSpecialLeft
+
+.selectFirstAvailable
+	ld hl, wFlyLocationsList
+.findFirstAvailable
+	ld a, [hl]
+	cp $fe
+	jp nz, .townMapFlyLoop
+	inc hl
+	jr .findFirstAvailable
+
+.selectLastAvailable
+	call FindFlyListEnd
+	jr .moveSpecialLeft
+
+.moveSpecialRight
+	inc hl
+	ld a, [hl]
+	cp $ff
+	jr z, .wrapSpecialRight
+	cp $fe
+	jr z, .moveSpecialRight
+	jp .townMapFlyLoop
+.wrapSpecialRight
+	ld hl, wFlyLocationsList
+	jr .findFirstAvailable
+
+.moveSpecialLeft
+	dec hl
+	ld a, [hl]
+	cp $ff
+	jr z, .wrapSpecialLeft
+	cp $fe
+	jr z, .moveSpecialLeft
+	jp .townMapFlyLoop
+.wrapSpecialLeft
+	call FindFlyListEnd
+	jr .moveSpecialLeft
+
 .pressedUp
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .moveCityUp
+	; Vertical input always returns to the normal city axis. Up starts from the
+	; first visited city; Down starts from the opposite end.
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	jr .selectFirstAvailable
+.moveCityUp
 ;	coord de, 18, 0;Prevents an extra blank write when the cursor moves upward, avoiding unnecessary overwrites
 	inc hl
 	ld a, [hl]
 	cp $ff
-	jr z, .wrapToStartOfList
+	jr z, .wrapCityUp
 	cp $fe
-	jr z, .pressedUp ; skip past unvisited towns
+	jr z, .moveCityUp ; skip past unvisited towns
 	jp .townMapFlyLoop
-.wrapToStartOfList
-	ld hl, wFlyLocationsList
-	jp .townMapFlyLoop
+.wrapCityUp
+	ld hl, wFlyLocationsList - 1
+	jr .moveCityUp
+
 .pressedDown
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .moveCityDown
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	call FindFlyListEnd
+	jr .moveCityDown
+.moveCityDown
 ;	coord de, 19, 0;Prevents an extra blank write one column further right when the cursor moves downward
 	dec hl
 	ld a, [hl]
 	cp $ff
-	jr z, .wrapToEndOfList
+	jr z, .wrapCityDown
 	cp $fe
-	jr z, .pressedDown ; skip past unvisited towns
+	jr z, .moveCityDown ; skip past unvisited towns
 	jp .townMapFlyLoop
-.wrapToEndOfList
-	ld hl, wFlyLocationsList + 11
-	jr .pressedDown
+.wrapCityDown
+	call FindFlyListEnd
+	jr .moveCityDown
+
+FindFlyListEnd:
+; Return HL pointing at the $ff end sentinel of the currently built Fly list.
+	ld hl, wFlyLocationsList
+.loop
+	ld a, [hli]
+	cp $ff
+	jr nz, .loop
+	dec hl
+	ret
 
 BuildFlyLocationsList:
 	ld hl, wFlyLocationsList - 1
 	ld [hl], $ff
 	inc hl
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .specialLocations
+
+	; Original city page: the 11 town flags/map IDs are unchanged.
 	ld a, [wKantoTownVisitedFlag]
 	ld e, a
 	ld a, [wKantoTownVisitedFlag + 1]
 	ld d, a
 	ld bc, SAFFRON_CITY + 1
-.loop
+.cityLoop
 	srl d
 	rr e
 	ld a, $fe ; store $fe if the town hasn't been visited
-	jr nc, .notVisited
+	jr nc, .storeCity
 	ld a, b ; store the map number of the town if it has been visited
-.notVisited
+.storeCity
 	ld [hl], a
 	inc hl
 	inc b
 	dec c
-	jr nz, .loop
+	jr nz, .cityLoop
 	ld [hl], $ff
 	ret
 
-TownMapUpArrow:
-	INCBIN "gfx/up_arrow.1bpp"
-TownMapUpArrowEnd:
+.specialLocations
+	; Special axis: each bit corresponds to one display-map ID below.
+	ld a, [wSpecialFlyVisitedFlag]
+	ld c, a
+	ld de, SpecialFlyLocationMapIDs
+	ld b, SpecialFlyLocationMapIDsEnd - SpecialFlyLocationMapIDs
+.specialLoop
+	srl c
+	ld a, $fe
+	jr nc, .storeSpecial
+	ld a, [de]
+.storeSpecial
+	ld [hli], a
+	inc de
+	dec b
+	jr nz, .specialLoop
+	ld [hl], $ff
+	ret
+
+SpecialFlyLocationMapIDs:
+	; These IDs are used only for Town Map position/name and FlyWarpDataPtr lookup.
+	db MT_MOON_3
+	db MT_MOON_SQUARE
+	db ROCK_TUNNEL_1
+	db POWER_PLANT
+	db SEAFOAM_ISLANDS_1
+	db UNKNOWN_DUNGEON_1
+SpecialFlyLocationMapIDsEnd:
 
 LoadTownMap:
 	call GBPalWhiteOutWithDelay3
