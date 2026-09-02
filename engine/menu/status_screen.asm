@@ -64,6 +64,11 @@ DrawHP_:
 
 ; Predef 0x37
 StatusScreen:
+	; Gold/Silver-style summary state: page changes and Pokémon changes are
+	; separate operations. This first version only exposes page navigation; the
+	; same state will later be retained when UP/DOWN Pokémon switching is added.
+	ld a, $1
+	ld [wStatusScreenPage], a
 	call LoadMonData
 	ld a, [wMonDataLocation]
 	cp BOX_DATA
@@ -271,16 +276,41 @@ StatusScreen:
 	call PrintGenderStatusScreen
 	ld d, $0
 	call PrintStatsBox
-	call Delay3
-	call GBPalNormal
+
+	; The Pokémon graphic is part of the persistent summary header. Gold/Silver
+	; never reload it for LEFT/RIGHT page changes, so place it before snapshotting
+	; either page and leave it alone for the rest of this session.
 	coord hl, 1, 0
-	call LoadFlippedFrontSpriteByMonIndex ; draw Pokémon picture
+	call LoadFlippedFrontSpriteByMonIndex
+
+	; Page 1 is the visible window map ($9c00). Keep the screen white while its
+	; complete tilemap + CGB attribute map are transferred.
+	call StatusScreen_SetTransferMap1
+	ld a, $1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+
+	; Build page 2 from the finished page-1 tilemap. The Pokémon header/frontpic
+	; remains untouched; only the page-specific fields are replaced. Then copy the
+	; finished page to the hidden window map ($9800). This transfer can take three
+	; frames because the player still sees the already-complete page 1.
+	call StatusScreen_BuildPage2
+	call StatusScreen_SetTransferMap0
+	ld a, $1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+
+	; Page navigation now becomes an atomic window-map flip in VBlank. No page
+	; change reloads mon data, frontpic, Pokémon palette, or cry.
+	call StatusScreen_ShowPage1
+	call GBPalNormal
 	ld a, [wcf91]
-	call PlayCry ; play Pokémon cry
-	call WaitForTextScrollButtonPress ; wait for button
-	pop af
-	ld [hTilesetType], a
-	ret
+	call PlayCry ; Gold/Silver: cry on initial Pokémon load only, not page changes
+	jp StatusScreen_InputLoop
 
 .GetStringPointer
 	ld a, [wMonDataLocation]
@@ -519,11 +549,14 @@ StatsText:
 	next "Special@"
 
 StatusScreen2:
-	ld a, [hTilesetType]
-	push af
-	xor a
-	ld [hTilesetType], a
-	ld [H_AUTOBGTRANSFERENABLED], a
+	; Compatibility predef. All known callers now enter StatusScreen only; page 2
+	; is prepared and selected by the unified summary loop below.
+	ret
+
+StatusScreen_BuildPage2:
+	; H_AUTOBGTRANSFERENABLED is deliberately off here. Page 1 remains visible in
+	; VRAM while this routine edits only wTileMap, mirroring Gold/Silver's rule
+	; that page changes never touch Pokémon lifecycle state.
 	ld bc, NUM_MOVES + 1
 	ld hl, wMoves
 	call FillMemory
@@ -647,7 +680,7 @@ StatusScreen2:
 	lb bc, 3, 7
 	call PrintNumber ; total exp
 	call CalcExpToLevelUp
-	ld de, wLoadedMonExp
+	ld de, wStatusScreenExpToNext
 	coord hl, 7, 6
 	lb bc, 3, 7
 	call PrintNumber ; exp needed to level up
@@ -661,10 +694,101 @@ StatusScreen2:
 	call GetMonName
 	coord hl, 9, 1
 	call PlaceString
+	ret
+
+StatusScreen_InputLoop:
+	call JoypadLowSensitivity
+	; The old per-page wait loop serviced link communication every frame. Keep
+	; that contract while the summary owns input itself.
+	predef CableClub_Run
+	ld a, [hJoy5]
+	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON
+	jr z, StatusScreen_InputLoop
+	bit BIT_B_BUTTON, a
+	jp nz, StatusScreen_Exit
+	bit BIT_D_LEFT, a
+	jr nz, .PreviousPage
+	bit BIT_D_RIGHT, a
+	jr nz, .NextPage
+	bit BIT_A_BUTTON, a
+	jr nz, .AButton
+	; Gold/Silver reserves UP/DOWN for Pokémon navigation. SUMMARY01 deliberately
+	; leaves those inputs inactive until the page lifecycle is proven stable.
+	jr StatusScreen_InputLoop
+
+.PreviousPage
+	; Gold/Silver page navigation wraps. With Red's two pages, either direction
+	; simply selects the other prepared page.
+	ld a, [wStatusScreenPage]
+	cp $1
+	jr z, .ShowPage2
+	jr .ShowPage1
+
+.NextPage
+	ld a, [wStatusScreenPage]
+	cp $1
+	jr z, .ShowPage2
+	jr .ShowPage1
+
+.AButton
+	; Gold/Silver compatibility: A advances a page; A on the final page exits.
+	ld a, [wStatusScreenPage]
+	cp $1
+	jr z, .ShowPage2
+	jp StatusScreen_Exit
+
+.ShowPage1
+	call StatusScreen_ShowPage1
+	jr StatusScreen_InputLoop
+
+.ShowPage2
+	call StatusScreen_ShowPage2
+	jr StatusScreen_InputLoop
+
+StatusScreen_ShowPage1:
+	; Flip only the window tilemap selector, and do it during VBlank so a single
+	; frame can never contain halves of two pages. Pokémon graphics/palettes are
+	; identical in both prepared maps.
+	callba WaitForVBlank
+	ld a, [rLCDC]
+	set 6, a ; window tile map = $9c00
+	ld [rLCDC], a
+	ld a, $1
+	ld [wStatusScreenPage], a
+	ret
+
+StatusScreen_ShowPage2:
+	callba WaitForVBlank
+	ld a, [rLCDC]
+	res 6, a ; window tile map = $9800
+	ld [rLCDC], a
+	ld a, $2
+	ld [wStatusScreenPage], a
+	ret
+
+StatusScreen_SetTransferMap0:
+	xor a
+	ld [H_AUTOBGTRANSFERDEST], a
+	ld a, vBGMap0 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1], a
+	ret
+
+StatusScreen_SetTransferMap1:
+	xor a
+	ld [H_AUTOBGTRANSFERDEST], a
+	ld a, vBGMap1 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1], a
+	ret
+
+StatusScreen_Exit:
+	; Restore the project's normal full-screen window map before returning to any
+	; caller. Whiteout hides this bookkeeping, then ClearScreen repopulates map 1
+	; exactly as the original status-screen exit did.
+	call GBPalWhiteOut
+	call StatusScreen_ShowPage1
+	call StatusScreen_SetTransferMap1
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
-	call Delay3
-	call WaitForTextScrollButtonPress ; wait for button
 	pop af
 	ld [hTilesetType], a
 	ld hl, wd72c
@@ -678,10 +802,11 @@ StatusScreen2:
 	ld a, $77
 	ld [rNR50], a
 .skipExitVolumeRestore
-	call GBPalWhiteOut
 	jp ClearScreen
 
 CalcExpToLevelUp:
+	; Gold/Silver keeps total EXP immutable and writes "EXP to next" separately.
+	; Page 2 can therefore be prepared/revisited without corrupting mon data.
 	ld a, [wLoadedMonLevel]
 	cp MAX_LEVEL
 	jr z, .atMaxLevel
@@ -689,18 +814,23 @@ CalcExpToLevelUp:
 	ld d, a
 	callab CalcExperience
 	ld hl, wLoadedMonExp + 2
+	ld de, wStatusScreenExpToNext + 2
 	ld a, [hExperience + 2]
 	sub [hl]
-	ld [hld], a
+	ld [de], a
+	dec hl
+	dec de
 	ld a, [hExperience + 1]
 	sbc [hl]
-	ld [hld], a
+	ld [de], a
+	dec hl
+	dec de
 	ld a, [hExperience]
 	sbc [hl]
-	ld [hld], a
+	ld [de], a
 	ret
 .atMaxLevel
-	ld hl, wLoadedMonExp
+	ld hl, wStatusScreenExpToNext
 	xor a
 	ld [hli], a
 	ld [hli], a

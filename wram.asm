@@ -3454,9 +3454,18 @@ wCurMapScript:: ; da39
 wStatusScreenStatMode::
 	ds 1
 
-; Keep the original 7-byte WRAM allocation unchanged so later addresses do not move.
+
+; Current status page. Red has two pages, but the navigation/lifecycle mirrors
+; Gold/Silver: page switches do not reload the Pokémon; future mon switches can
+; rebuild both pages while preserving this value. Reuses the existing reserved
+; byte so all later WRAM addresses stay unchanged.
+wStatusScreenPage::
 	ds 1
 
+; Page 2 uses the first three bytes as a non-destructive "EXP to next" buffer.
+; Page 1 has already finished reading the DV values before page 2 is prepared,
+; so these lifetimes do not overlap.
+wStatusScreenExpToNext::
 ; Attack / Defense / Speed / Special / HP DV
 wDVCalcVar2::
 	ds 5

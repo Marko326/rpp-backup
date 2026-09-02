@@ -2558,9 +2558,8 @@ PartyMenuOrRockOrRun:
 	ld [wMonDataLocation], a
 	ld hl, wPartyMon1
 	call ClearSprites
-; display the two status screens
+; display the unified status screen; page navigation is handled internally
 	predef StatusScreen
-	predef StatusScreen2
 ; now we need to reload the enemy mon pic
 	ld a, [wEnemyBattleStatus2]
 	bit HasSubstituteUp, a ; does the enemy mon have a substitute?
