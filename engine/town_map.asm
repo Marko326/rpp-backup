@@ -11,7 +11,8 @@ DisplayTownMap:
 	push hl
 	ld a, $1
 	ld [hJoy7], a
-	ld a, [wCurMap]
+	callab GetFlyTownMapPlayerMap
+	ld a, d
 	push af
 	ld b, $0
 	call DrawPlayerOrBirdSprite ; player sprite
@@ -175,6 +176,9 @@ LoadTownMap_Fly:
 	push af
 	ld [hl], $ff
 	push hl
+	coord hl, 0, 0
+	ld a, $3f ; up/down arrow tile
+	ld [hl], a
 	callab GetFlyTownMapPlayerMap
 	ld a, d
 	ld b, $0
@@ -244,8 +248,12 @@ LoadTownMap_Fly:
 ; Left/Right owns the special-destination axis. The first horizontal press
 ; enters that axis; further horizontal presses cycle only unlocked special
 ; destinations. Up/Down always returns to the original city axis.
+	; Preserve B: it still holds hJoy5 and determines Left vs Right below.
 	ld a, [wSpecialFlyVisitedFlag]
-	and %00111111
+	ld c, a
+	ld a, [wSpecialFlyVisitedFlag2]
+	and %00000001
+	or c
 	jp z, .townMapFlyLoop ; no special destinations unlocked yet
 	ld a, [wFlyLocationsAxis]
 	and a
@@ -391,33 +399,10 @@ BuildFlyLocationsList:
 	ret
 
 .specialLocations
-	; Special axis: each bit corresponds to one display-map ID below.
-	ld a, [wSpecialFlyVisitedFlag]
-	ld c, a
-	ld de, SpecialFlyLocationMapIDs
-	ld b, SpecialFlyLocationMapIDsEnd - SpecialFlyLocationMapIDs
-.specialLoop
-	srl c
-	ld a, $fe
-	jr nc, .storeSpecial
-	ld a, [de]
-.storeSpecial
-	ld [hli], a
-	inc de
-	dec b
-	jr nz, .specialLoop
-	ld [hl], $ff
+	; The special list and its second saved flag byte live in expansion bank $35.
+	callab BuildSpecialFlyLocationsList
 	ret
 
-SpecialFlyLocationMapIDs:
-	; These IDs are used only for Town Map position/name and FlyWarpDataPtr lookup.
-	db MT_MOON_3
-	db MT_MOON_SQUARE
-	db ROCK_TUNNEL_1
-	db POWER_PLANT
-	db SEAFOAM_ISLANDS_1
-	db UNKNOWN_DUNGEON_1
-SpecialFlyLocationMapIDsEnd:
 
 LoadTownMap:
 	call GBPalWhiteOutWithDelay3

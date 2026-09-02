@@ -7,7 +7,7 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wKantoTownVisitedFlag   ; mark town as visited (for flying)
 	predef FlagActionPredef
 .notInTown
-	call MarkSpecialFlyLocationVisited
+	callab MarkSpecialFlyLocationVisited
 	ld hl, MapHSPointers
 	ld a, [wCurMap]
 	ld b, $0
@@ -68,47 +68,6 @@ LoadMissableObjects:
 	ld [de], a                 ; write sentinel
 	ret
 
-
-MarkSpecialFlyLocationVisited:
-; The normal town Fly flags only cover the 11 city maps. Extra destinations use
-; a separate saved byte and are unlocked only after the player actually loads
-; one of the maps belonging to that destination.
-	ld a, [wCurMap]
-	ld d, a
-	ld hl, SpecialFlyVisitedMaps
-.loop
-	ld a, [hli]
-	cp $ff
-	ret z
-	cp d
-	jr z, .found
-	inc hl ; skip destination bit
-	jr .loop
-.found
-	ld c, [hl]
-	ld b, FLAG_SET
-	ld hl, wSpecialFlyVisitedFlag
-	predef FlagActionPredef
-	ret
-
-SpecialFlyVisitedMaps:
-	; map, bit in wSpecialFlyVisitedFlag
-	db MT_MOON_1, 0
-	db MT_MOON_2, 0
-	db MT_MOON_3, 0
-	db MT_MOON_SQUARE, 1
-	db ROCK_TUNNEL_1, 2
-	db ROCK_TUNNEL_2, 2
-	db POWER_PLANT, 3
-	db SEAFOAM_ISLANDS_1, 4
-	db SEAFOAM_ISLANDS_2, 4
-	db SEAFOAM_ISLANDS_3, 4
-	db SEAFOAM_ISLANDS_4, 4
-	db SEAFOAM_ISLANDS_5, 4
-	db UNKNOWN_DUNGEON_1, 5
-	db UNKNOWN_DUNGEON_2, 5
-	db UNKNOWN_DUNGEON_3, 5
-	db $ff
 
 InitializeMissableObjectsFlags:
 	ld hl, wMissableObjectFlags

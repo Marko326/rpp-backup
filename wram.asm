@@ -3179,11 +3179,16 @@ wWalkBikeSurfState:: ; d700
 	ds 1
 
 ; unused?
-	ds 9
+	ds 8
+
+; Second saved byte for special Fly destinations. It consumes another byte from
+; the same pre-existing unused save area, so wKantoTownVisitedFlag and every
+; following WRAM/save address remain unchanged.
+wSpecialFlyVisitedFlag2:: ; d709
+; bit 0 = Victory Road
+	ds 1
 
 ; Persistent unlock bits for the special Fly destination axis.
-; Reuses one byte from the existing unused save area so all following WRAM/save
-; addresses stay unchanged.
 wSpecialFlyVisitedFlag:: ; d70a
 ; bit 0 = Mt. Moon
 ; bit 1 = Mt. Moon Square
@@ -3191,6 +3196,8 @@ wSpecialFlyVisitedFlag:: ; d70a
 ; bit 3 = Power Plant
 ; bit 4 = Seafoam Islands
 ; bit 5 = Cerulean Cave
+; bit 6 = Sea Cottage
+; bit 7 = Safari Zone
 	ds 1
 
 wKantoTownVisitedFlag:: ; d70b

@@ -113,23 +113,26 @@ LoadSpecialWarpData:
 .otherDestination
 	ld a, [wDestinationMap]
 .usedFlyWarp
-	ld b, a
+	; Extra Fly destinations live in expansion bank $35 so bank $01 only keeps
+	; the original town/blackout table. D survives the far-call bank switch.
+	ld d, a
+	callab TryLoadSpecialFlyWarpData
+	jr c, .finishSpecialWarp
+
+	; Original town/blackout/Teleport destinations.
+	ld b, d
+	ld a, d
+	ld [wCurMap], a
 	ld hl, FlyWarpDataPtr
 .flyWarpDataPtrLoop
-	ld a, [hli] ; Fly selector / normal destination map
+	ld a, [hli]
+	inc hl ; skip unused byte in the original 4-byte record
 	cp b
 	jr z, .foundFlyWarpMatch
-	inc hl ; skip actual destination map
 	inc hl
 	inc hl ; skip warp-data pointer
 	jr .flyWarpDataPtrLoop
 .foundFlyWarpMatch
-	; The second byte is normally identical to the selector. Extra Fly
-	; destinations use a landmark map ID for Town Map display while landing on
-	; an outdoor map, so resolve the real destination here.
-	ld a, [hli]
-	ld [wDestinationMap], a
-	ld [wCurMap], a
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
@@ -142,6 +145,7 @@ LoadSpecialWarpData:
 	inc de
 	dec c
 	jr nz, .copyWarpDataLoop2
+.finishSpecialWarp
 	xor a ; OVERWORLD
 	ld [wCurMapTileset], a
 .done
