@@ -484,7 +484,6 @@ DisplayDepositWithdrawMenu:
 .next2
 	ld [wMonDataLocation], a
 	predef StatusScreen
-	predef StatusScreen2
 	; Buffer 1 still contains the underlying mon list. Restore it, reload the
 	; display state, and keep Stats selected before redrawing the action menu.
 	call RestoreBillsPCActionMenuAfterStats
