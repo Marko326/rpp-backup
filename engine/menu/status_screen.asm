@@ -830,21 +830,28 @@ StatusScreen_TrySwitchPartyMon:
 	ret
 
 StatusScreen_RebuildSwitchedPartyMon:
-	; SUMMARY04/05 rebuilt the new Pokémon through a second live picture buffer
-	; and flipped to a hidden map. On real hardware/emulators that path can stall
-	; before the map flip. Reuse the proven initial-entry lifecycle instead: keep
-	; the display white while both maps and the primary picture buffer are rebuilt.
-	call GBPalWhiteOutWithDelay3
+	; SUMMARY10 keeps the visible page stable while the shared vFrontPic tiles
+	; are replaced across multiple VBlanks. Only BG palette 0 (the upper-left
+	; Pokémon picture area) is blanked during the upload; the rest of the page
+	; remains visible. The new species palette is revealed only after both page
+	; maps and the complete frontpic are resident in VRAM.
+	call StatusScreen_WhitePokemonPaletteAndWait
 	xor a
 	ld [wStatusScreenStatMode], a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call StatusScreen_LoadCurrentMon
 	call ClearScreen
 	call StatusScreen_DrawPage1
+	; SetPal_StatusScreen has now prepared the next Pokémon palette in WRAM,
+	; but no force-update is requested yet. Hardware palette 0 remains white, so
+	; CopyVideoData can replace vFrontPic over multiple frames without exposing
+	; either a mixed old/new picture or a picture using the wrong species palette.
 	coord hl, 1, 0
 	call LoadFlippedFrontSpriteByMonIndex
 
 	; Restore the normal physical assignment: Page 1 in map 1, Page 2 in map 0.
+	; Keep palette 0 white through both transfers; the picture is revealed only
+	; after the complete status-screen state is resident in VRAM.
 	call StatusScreen_SetTransferMap1
 	call StatusScreen_TransferPreparedMap
 	call StatusScreen_BuildPage2
@@ -861,11 +868,74 @@ StatusScreen_RebuildSwitchedPartyMon:
 .showPage2
 	call StatusScreen_ShowPage2
 .pageSelected
-	; GBPalNormal changes the compatibility register immediately; one full frame
-	; commits the newly prepared species palettes before input is accepted again.
 	call GBPalNormal
-	call DelayFrame
+	; DrawPage1 already loaded the next species/HP/EXP palettes into bank-2
+	; palette WRAM. Force their normal conversion now and wait for the actual
+	; VBlank copy to finish before accepting another key. This is a completion
+	; handshake, not a fixed-frame delay.
+	call StatusScreen_ForceBgPaletteUpdateAndWait
 	; Only initial entry plays the cry; UP/DOWN Pokémon switching stays silent.
+	ret
+
+StatusScreen_WhitePokemonPaletteAndWait:
+	; Palette 0 is reserved for the upper-left 8x7 Pokémon picture on the status
+	; screen. This project is GBC-only (InitializeColor rejects non-GBC hardware),
+	; and wGBC is intentionally left at 0 by Start, so do not gate this path on
+	; wGBC == GBC. Make all four colors white, request a normal palette refresh,
+	; and do not continue until VBlank has consumed it.
+	ld a, [rSVBK]
+	ld b, a
+	ld a, 2
+	ld [rSVBK], a
+	ld hl, W2_BgPaletteData
+	ld c, 8
+	ld a, $ff
+.whiteLoop
+	ld [hli], a
+	dec c
+	jr nz, .whiteLoop
+	ld a, 1
+	ld [W2_ForceBGPUpdate], a
+	ld a, b
+	ld [rSVBK], a
+	jp StatusScreen_WaitForBgPaletteCommit
+
+StatusScreen_ForceBgPaletteUpdateAndWait:
+	; SetPal_StatusScreen has already written the desired source palettes. Ask the
+	; existing pre-VBlank/VBlank pipeline to convert and upload them, then wait for
+	; both producer and consumer flags to become idle. This project is GBC-only;
+	; wGBC is not a usable runtime GBC discriminator here.
+	ld a, [rSVBK]
+	ld b, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, 1
+	ld [W2_ForceBGPUpdate], a
+	ld a, b
+	ld [rSVBK], a
+	jp StatusScreen_WaitForBgPaletteCommit
+
+StatusScreen_WaitForBgPaletteCommit:
+	; W2_ForceBGPUpdate is cleared by RefreshPalettesPreVBlank after preparing the
+	; converted buffer. W2_BgPaletteDataModified is cleared only after the VBlank
+	; hook actually writes that buffer into CGB palette RAM. Requiring both to be
+	; zero gives this caller a real completion boundary independent of scanline.
+.wait
+	call DelayFrame
+	ld a, [rSVBK]
+	ld b, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_ForceBGPUpdate]
+	ld c, a
+	ld a, [W2_BgPaletteDataModified]
+	or c
+	ld c, a
+	ld a, b
+	ld [rSVBK], a
+	ld a, c
+	and a
+	jr nz, .wait
 	ret
 
 StatusScreen_TransferPreparedMap:
