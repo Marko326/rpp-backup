@@ -57,7 +57,7 @@ InternalMapEntries:
 	IMAP BILLS_HOUSE,               132,  44, SeaCottageName
 	IMAP VERMILION_DOCK,            116,  92, VermilionCityName
 	IMAP SS_ANNE_10,                116,  94, SSAnneName
-	IMAP MT_MOON_SHOP,               84,  56, MountMoonSquareName
+	IMAP MT_MOON_SHOP,               84,  52, MountMoonSquareName
 	IMAP VERMILION_FERRY_DOCK,      116,  92, VermilionCityName
 	IMAP VICTORY_ROAD_1,             36,  68, VictoryRoadName
 	IMAP SOUTHERN_ISLAND_INSIDE,    116,  94, AreaUnknownText
