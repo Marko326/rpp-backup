@@ -108,13 +108,14 @@ StartMenu_Pokemon:
 	ld a, [wWhichPokemon]
 	ld [wPartyAndBillsPCSavedMenuItem], a
 	call ReloadMapData
-	; Summary page 2 shares vBGMap0 with the overworld. ReloadMapData rebuilds
-	; wTileMap and the tileset, but it does not restore that VRAM map.
+	; Summary page 2 shares vBGMap0 with the overworld, so its page data must
+	; be replaced before returning to the Party/START-menu lifecycle.  Do not
+	; use _LoadMapVramAndColors here: that map-load helper always writes from
+	; $9800 and loses the current overworld ring-buffer phase after walking.
+	; RedrawMapView rebuilds vBGMap0 from the live wMapViewVRAMPointer instead.
 	ld b, SET_PAL_OVERWORLD
 	call RunPaletteCommand
-	call DisableLCD
-	call _LoadMapVramAndColors
-	call EnableLCD
+	callba RedrawMapView
 	jp StartMenu_Pokemon
 .choseOutOfBattleMove
 	push hl
