@@ -94,8 +94,11 @@ InitTownMapLocationFromPlayerMap::
 
 ; Mirror TownMapOrder in this roomy expansion bank. The entries come from the
 ; same macro as the real list, so geographic-order edits cannot make them drift.
+TownMapOrderAnchorMapIDsLeadingSentinel:
+	db $ff
 TownMapOrderAnchorMapIDs:
 	TownMapOrderEntries
+TownMapOrderAnchorMapIDsEnd:
 	db $ff
 
 GetFlyTownMapPlayerMap::
@@ -219,11 +222,123 @@ UpdateSeafoamEntranceSource::
 	set 1, [hl] ; west/red-side Seafoam destination
 	ret
 
+FindCityFlyLocationFromSpecialAnchor::
+; Switch from the Fly special axis back to the city axis without losing the
+; current geographic position.
+;
+; in:  D = 0 for Down/previous, 1 for Up/next
+;      E = currently selected special Fly selector
+;      wBuffer = already rebuilt city Fly list
+; out: DE = pointer to the selected visited city entry in wBuffer
+;
+; Find the special selector's explicit TownMapOrder anchor, then walk normal
+; Town Map geography in the requested direction. City map IDs are the original
+; contiguous PALLET_TOWN..SAFFRON_CITY Fly entries, so wBuffer + 1 + map ID is
+; their availability slot. Locked/unvisited cities are skipped; wrap happens
+; only after reaching the corresponding end of TownMapOrder.
+	ld a, d
+	push af ; direction
+	ld c, e ; special selector
+	ld hl, SpecialFlyLocationEntries
+.findSpecialRow
+	ld a, [hli]
+	cp $ff
+	jp z, .fallback
+	cp c
+	jr z, .haveSpecialRow
+	inc hl ; TownMapOrder anchor
+	inc hl ; flag-byte offset
+	inc hl ; bit mask
+	jr .findSpecialRow
+.haveSpecialRow
+	ld c, [hl] ; TownMapOrder anchor
+	ld hl, TownMapOrderAnchorMapIDs
+.findAnchor
+	ld a, [hli]
+	cp $ff
+	jp z, .fallback
+	cp c
+	jr nz, .findAnchor
+	dec hl ; point at the matched special anchor
+	pop af ; direction
+	and a
+	jr nz, .scanNext
+
+.scanPrevious
+	dec hl
+	ld a, [hl]
+	cp $ff
+	jr z, .wrapPrevious
+	call .tryCity
+	jr nc, .scanPrevious
+	ret
+.wrapPrevious
+	ld hl, TownMapOrderAnchorMapIDsEnd
+	jr .scanPrevious
+
+.scanNext
+	inc hl
+	ld a, [hl]
+	cp $ff
+	jr z, .wrapNext
+	call .tryCity
+	jr nc, .scanNext
+	ret
+.wrapNext
+	ld hl, TownMapOrderAnchorMapIDsLeadingSentinel
+	jr .scanNext
+
+.tryCity
+; in: A = TownMapOrder map ID, HL = scan pointer
+; out: carry set and DE = city-list pointer when this is a visited Fly city;
+;      carry clear otherwise. HL scan pointer is preserved on failure.
+	cp SAFFRON_CITY + 1
+	jr nc, .notCity
+	push hl
+	ld e, a
+	ld d, 0
+	ld hl, wBuffer + 1
+	add hl, de
+	ld a, [hl]
+	cp $fe
+	jr z, .unavailableCity
+	cp $ff
+	jr z, .unavailableCity
+	ld d, h
+	ld e, l
+	pop hl
+	scf
+	ret
+.unavailableCity
+	pop hl
+.notCity
+	and a ; clear carry
+	ret
+
+.fallback
+; Defensive fallback for a future special selector/anchor table mismatch.
+; Normal saves always have at least Pallet Town available.
+	pop af
+	ld hl, wBuffer + 1
+.findFirstVisitedCity
+	ld a, [hli]
+	cp $ff
+	jr z, .fallbackPallet
+	cp $fe
+	jr z, .findFirstVisitedCity
+	dec hl
+	ld d, h
+	ld e, l
+	ret
+.fallbackPallet
+	ld de, wBuffer + 1
+	ret
+
 BuildSpecialFlyLocationsList::
 ; Build the special horizontal-axis list in the same geographic browsing order
 ; as TownMapOrder, rather than in historical feature/bit-assignment order.
-; Each table row is: selector, flag-byte offset from wSpecialFlyVisitedFlag2,
-; bit mask. The saved bit assignments themselves stay unchanged.
+; Each table row is: selector, TownMapOrder anchor, flag-byte offset from
+; wSpecialFlyVisitedFlag2, bit mask. The saved bit assignments stay unchanged.
 	ld hl, wBuffer
 	ld [hl], $ff
 	inc hl
@@ -234,6 +349,7 @@ BuildSpecialFlyLocationsList::
 	cp $ff
 	jr z, .done
 	ld c, a ; selector
+	inc de ; skip TownMapOrder anchor
 	ld a, [de]
 	inc de
 	push hl
@@ -258,24 +374,109 @@ BuildSpecialFlyLocationsList::
 	ld [hl], $ff
 	ret
 
+BuildSpecialFlyLocationsListFromCityAnchor::
+; Switch from the Fly city axis to the special axis without losing the current
+; geographic position. Special selectors do not always equal their TownMapOrder
+; entry (Mt. Moon, Rock Tunnel, Safari, Seafoam, and Victory Road use aliases),
+; so every special row carries an explicit TownMapOrder anchor.
+;
+; in:  D = 0 for Left/previous, 1 for Right/next
+;      E = currently selected city map
+; out: DE = list boundary pointer for the existing moveSpecialLeft/Right loops
+;      carry set = Right, carry clear = Left
+;      wBuffer rebuilt as the special Fly list
+	push de
+	call BuildSpecialFlyLocationsList
+	pop de
+	ld a, d
+	push af ; direction
+	ld c, e ; selected city selector
+	ld hl, TownMapOrderAnchorMapIDs
+	ld de, SpecialFlyLocationEntries
+	ld b, 0 ; number of special anchors before the selected city
+.findBoundary
+	ld a, [hli]
+	cp $ff
+	jr z, .cityNotFound
+	cp c
+	jr z, .haveBoundary
+	; SpecialFlyLocationEntries is kept in TownMapOrder order. When this Town Map
+	; entry is the next special anchor, advance the special boundary by one row.
+	push bc
+	push af
+	ld a, [de]
+	cp $ff
+	jr z, .noMoreSpecialAnchors
+	inc de
+	ld a, [de]
+	ld b, a ; next special TownMapOrder anchor
+	dec de
+	pop af
+	cp b
+	pop bc
+	jr nz, .findBoundary
+	inc b
+	inc de
+	inc de
+	inc de
+	inc de ; next 4-byte special row
+	jr .findBoundary
+.noMoreSpecialAnchors
+	pop af
+	pop bc
+	jr .findBoundary
+.cityNotFound
+	; Defensive fallback. City-axis selectors should all exist in TownMapOrder; if
+	; a future entry does not, treat it as being before the first special anchor.
+	ld b, 0
+.haveBoundary
+	; Convert the special count to a pointer at the city/special boundary.
+	; Right's existing loop increments first, so it starts at wBuffer + count.
+	; Left's loop decrements first, so it starts one byte later.
+	ld hl, wBuffer
+	ld c, b
+.positionBoundary
+	ld a, c
+	and a
+	jr z, .boundaryReady
+	inc hl
+	dec c
+	jr .positionBoundary
+.boundaryReady
+	pop af ; direction
+	and a
+	jr nz, .returnRight
+	inc hl ; Left pre-decrements to the previous special entry
+	ld d, h
+	ld e, l
+	and a ; clear carry = Left
+	ret
+.returnRight
+	ld d, h
+	ld e, l
+	scf ; carry = Right
+	ret
+
 SpecialFlyLocationEntries:
-	; selector, flag-byte offset (0=flag2, 1=flag1), bit mask
-	; Order follows normal Town Map geography. Cerulean Cave is intentionally
-	; placed after Route 4 / before Cerulean City, per the TownMapOrder override.
-	db VIRIDIAN_FOREST,         0, %00000100 ; flag2 bit 2
-	db DIGLETTS_CAVE_EXIT,      0, %00001000 ; flag2 bit 3, Route 2 side
-	db MT_MOON_3,               1, %00000001 ; flag1 bit 0
-	db MT_MOON_SQUARE,          1, %00000010 ; flag1 bit 1
-	db UNKNOWN_DUNGEON_1,       1, %00100000 ; flag1 bit 5, Cerulean Cave
-	db BILLS_HOUSE,              1, %01000000 ; flag1 bit 6, Sea Cottage
-	db DIGLETTS_CAVE_ENTRANCE,  0, %00010000 ; flag2 bit 4, Route 11 side
-	db ROCK_TUNNEL_1,            1, %00000100 ; flag1 bit 2
-	db POWER_PLANT,              1, %00001000 ; flag1 bit 3
-	db SAFARI_ZONE_ENTRANCE,     1, %10000000 ; flag1 bit 7
-	db SEAFOAM_ISLANDS_1,        1, %00010000 ; flag1 bit 4, east side
-	db UNUSED_MAP_F1,            0, %00000010 ; flag2 bit 1, west/red side
-	db VICTORY_ROAD_1,           0, %00000001 ; flag2 bit 0
+	; selector, TownMapOrder anchor, flag-byte offset (0=flag2, 1=flag1), bit mask
+	; Order follows normal Town Map geography. The anchor column makes aliases
+	; explicit instead of assuming every Fly selector appears directly in the order.
+	db VIRIDIAN_FOREST,         VIRIDIAN_FOREST,          0, %00000100 ; flag2 bit 2
+	db DIGLETTS_CAVE_EXIT,      DIGLETTS_CAVE_EXIT,       0, %00001000 ; flag2 bit 3, Route 2 side
+	db MT_MOON_3,               MT_MOON_1,                1, %00000001 ; flag1 bit 0
+	db MT_MOON_SQUARE,          MT_MOON_SQUARE,           1, %00000010 ; flag1 bit 1
+	db UNKNOWN_DUNGEON_1,       UNKNOWN_DUNGEON_1,        1, %00100000 ; flag1 bit 5, Cerulean Cave
+	db BILLS_HOUSE,             BILLS_HOUSE,              1, %01000000 ; flag1 bit 6, Sea Cottage
+	db DIGLETTS_CAVE_ENTRANCE, DIGLETTS_CAVE_ENTRANCE,  0, %00010000 ; flag2 bit 4, Route 11 side
+	db ROCK_TUNNEL_1,           ROCK_TUNNEL_POKECENTER,   1, %00000100 ; flag1 bit 2
+	db POWER_PLANT,             POWER_PLANT,              1, %00001000 ; flag1 bit 3
+	db SAFARI_ZONE_ENTRANCE,    SAFARI_ZONE_EAST,         1, %10000000 ; flag1 bit 7
+	db SEAFOAM_ISLANDS_1,       SEAFOAM_ISLANDS_2,        1, %00010000 ; flag1 bit 4, east side
+	db UNUSED_MAP_F1,           UNUSED_MAP_F1,            0, %00000010 ; flag2 bit 1, west/red side
+	db VICTORY_ROAD_1,          VICTORY_ROAD_3,           0, %00000001 ; flag2 bit 0
+SpecialFlyLocationEntriesEnd:
 	db $ff
+
 
 MarkSpecialFlyLocationVisited::
 ; Unlock extra Fly destinations only when the player actually loads the chosen

@@ -79,10 +79,12 @@ DisplayTownMap:
 	call JoypadLowSensitivity
 	ld a, [hJoy5]
 	ld b, a
-	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
+	and A_BUTTON | B_BUTTON | START | D_UP | D_DOWN
 	jr z, .inputLoop
 	ld a, SFX_TINK
 	call PlaySound
+	bit 3, b
+	jr nz, .pressedStart
 	bit 6, b
 	jr nz, .pressedUp
 	bit 7, b
@@ -98,6 +100,10 @@ DisplayTownMap:
 	pop af
 	ld [hTilesetType], a
 	ret
+.pressedStart
+	xor a ; TownMapOrder index 0 = Pallet Town
+	ld [wWhichTownMapLocation], a
+	jp .townMapLoop
 .pressedUp
 	ld a, [wWhichTownMapLocation]
 	inc a
@@ -215,12 +221,14 @@ LoadTownMap_Fly:
 	ld a, [hJoy5]
 	ld b, a
 	pop hl
-	and A_BUTTON | B_BUTTON | D_RIGHT | D_LEFT | D_UP | D_DOWN
+	and A_BUTTON | B_BUTTON | START | D_RIGHT | D_LEFT | D_UP | D_DOWN
 	jr z, .inputLoop
 	bit 0, b
 	jr nz, .pressedA
 	ld a, SFX_TINK
 	call PlaySound
+	bit 3, b
+	jr nz, .pressedStart
 	bit 4, b
 	jr nz, .pressedLeftOrRight
 	bit 5, b
@@ -230,6 +238,13 @@ LoadTownMap_Fly:
 	bit 7, b
 	jp nz, .pressedDown
 	jr .pressedB
+.pressedStart
+	xor a
+	ld [wFlyLocationsAxis], a ; START always returns to the city axis
+	call BuildFlyLocationsList
+	; Pallet Town is the first visited city in a normal save. Reuse the existing
+	; availability scan so malformed/unusual visit flags never select a $fe entry.
+	jr .selectFirstAvailable
 .pressedA
 	ld a, SFX_HEAL_AILMENT
 	call PlaySound
@@ -263,20 +278,22 @@ LoadTownMap_Fly:
 	ld a, [wFlyLocationsAxis]
 	and a
 	jr nz, .alreadyOnSpecialAxis
-	; Decide the horizontal direction before rebuilding the list: the list
-	; builder uses B/BC internally, so hJoy5 must not be read from B afterwards.
+	; Enter the special axis relative to the currently selected city. The helper
+	; uses TownMapOrder anchors, skips locked special destinations, and wraps only
+	; after reaching the corresponding geographic end.
+	ld e, [hl] ; current city selector
+	ld d, 0 ; Left = previous special destination
 	bit 4, b
-	jr nz, .enterSpecialRight
-.enterSpecialLeft
-	inc a
+	jr z, .enterSpecialFromCity
+	inc d ; Right = next special destination
+.enterSpecialFromCity
+	ld a, 1
 	ld [wFlyLocationsAxis], a
-	call BuildFlyLocationsList
-	jr .selectLastAvailable ; Left enters from the opposite end
-.enterSpecialRight
-	inc a
-	ld [wFlyLocationsAxis], a
-	call BuildFlyLocationsList
-	jr .selectFirstAvailable ; Right enters at the first unlocked destination
+	callab BuildSpecialFlyLocationsListFromCityAnchor
+	ld h, d
+	ld l, e ; DE safely returns the geographic boundary across Bankswitch
+	jr c, .moveSpecialRight
+	jr .moveSpecialLeft
 .alreadyOnSpecialAxis
 	bit 4, b
 	jr nz, .moveSpecialRight
@@ -333,12 +350,8 @@ LoadTownMap_Fly:
 	ld a, [wFlyLocationsAxis]
 	and a
 	jr z, .moveCityUp
-	; Vertical input always returns to the normal city axis. Up starts from the
-	; first visited city; Down starts from the opposite end.
-	xor a
-	ld [wFlyLocationsAxis], a
-	call BuildFlyLocationsList
-	jr .selectFirstAvailable
+	ld d, 1 ; Up = next city after the current special TownMapOrder anchor
+	jr .enterCityFromSpecial
 .moveCityUp
 ;	coord de, 18, 0;Prevents an extra blank write when the cursor moves upward, avoiding unnecessary overwrites
 	inc hl
@@ -356,11 +369,18 @@ LoadTownMap_Fly:
 	ld a, [wFlyLocationsAxis]
 	and a
 	jr z, .moveCityDown
+	ld d, 0 ; Down = previous city before the current special TownMapOrder anchor
+.enterCityFromSpecial
+	ld e, [hl] ; current special selector
+	push de
 	xor a
 	ld [wFlyLocationsAxis], a
-	call BuildFlyLocationsList
-	call FindFlyListEnd
-	jr .moveCityDown
+	call BuildFlyLocationsList ; rebuild wBuffer as the normal city Fly list
+	pop de
+	callab FindCityFlyLocationFromSpecialAnchor
+	ld h, d
+	ld l, e ; DE safely returns the selected city-list pointer across Bankswitch
+	jp .townMapFlyLoop
 .moveCityDown
 ;	coord de, 19, 0;Prevents an extra blank write one column further right when the cursor moves downward
 	dec hl
