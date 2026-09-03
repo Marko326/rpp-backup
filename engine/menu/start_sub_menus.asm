@@ -100,8 +100,21 @@ StartMenu_Pokemon:
 	call ClearSprites
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
+	; SUMMARY04: only START Party owns UP/DOWN Pokémon navigation for now.
+	ld a, $80
+	ld [wStatusScreenPage], a
 	predef StatusScreen
+	; Return the Party cursor to the last Pokémon viewed in Summary.
+	ld a, [wWhichPokemon]
+	ld [wPartyAndBillsPCSavedMenuItem], a
 	call ReloadMapData
+	; Summary page 2 shares vBGMap0 with the overworld. ReloadMapData rebuilds
+	; wTileMap and the tileset, but it does not restore that VRAM map.
+	ld b, SET_PAL_OVERWORLD
+	call RunPaletteCommand
+	call DisableLCD
+	call _LoadMapVramAndColors
+	call EnableLCD
 	jp StartMenu_Pokemon
 .choseOutOfBattleMove
 	push hl
