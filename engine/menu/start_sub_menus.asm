@@ -141,6 +141,8 @@ StartMenu_Pokemon:
 	jr z, .canFly
 	cp VIRIDIAN_FOREST
 	jr z, .canFly
+	cp CELADON_MART_ROOF
+	jr z, .canFly
 	call CheckIfInOutsideMap
 	jr z,.canFly
 	ld a,[wWhichPokemon]

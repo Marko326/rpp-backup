@@ -272,7 +272,7 @@ LoadTownMap_Fly:
 	ld a, [wSpecialFlyVisitedFlag]
 	ld c, a
 	ld a, [wSpecialFlyVisitedFlag2]
-	and %00011111 ; only bits 0-4 are currently defined
+	and %00111111 ; bits 0-5 are defined; bits 6-7 remain unused
 	or c
 	jp z, .townMapFlyLoop ; no defined special destinations unlocked yet
 	ld a, [wFlyLocationsAxis]

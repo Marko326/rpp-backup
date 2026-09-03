@@ -400,7 +400,7 @@ BuildSpecialFlyLocationsListFromCityAnchor::
 	jr z, .cityNotFound
 	cp c
 	jr z, .haveBoundary
-	; SpecialFlyLocationEntries is kept in TownMapOrder order. When this Town Map
+	; IMPORTANT: SpecialFlyLocationEntries is kept in TownMapOrder order. When this Town Map
 	; entry is the next special anchor, advance the special boundary by one row.
 	push bc
 	push af
@@ -470,6 +470,7 @@ SpecialFlyLocationEntries:
 	db DIGLETTS_CAVE_ENTRANCE, DIGLETTS_CAVE_ENTRANCE,  0, %00010000 ; flag2 bit 4, Route 11 side
 	db ROCK_TUNNEL_1,           ROCK_TUNNEL_POKECENTER,   1, %00000100 ; flag1 bit 2
 	db POWER_PLANT,             POWER_PLANT,              1, %00001000 ; flag1 bit 3
+	db CELADON_MART_ROOF,       CELADON_MART_ROOF,        0, %00100000 ; flag2 bit 5
 	db SAFARI_ZONE_ENTRANCE,    SAFARI_ZONE_EAST,         1, %10000000 ; flag1 bit 7
 	db SEAFOAM_ISLANDS_1,       SEAFOAM_ISLANDS_2,        1, %00010000 ; flag1 bit 4, east side
 	db UNUSED_MAP_F1,           UNUSED_MAP_F1,            0, %00000010 ; flag2 bit 1, west/red side
@@ -524,11 +525,12 @@ SpecialFlyVisitedMaps:
 	db VIRIDIAN_FOREST, 10 ; flag2 bit 2
 	db DIGLETTS_CAVE_EXIT, 11 ; flag2 bit 3, Route 2 side
 	db DIGLETTS_CAVE_ENTRANCE, 12 ; flag2 bit 4, Route 11 side
+	db CELADON_MART_ROOF, 13 ; flag2 bit 5
 	db VICTORY_ROAD_1, 8
 	db $ff
 
 TryLoadSpecialTownMapEntry::
-; Exact Town Map entries for selector/entrance IDs that must not be inserted into
+; Exact Town Map entries for selector/entrance/interior IDs that must not be inserted into
 ; InternalMapEntries (that table intentionally uses range/upper-bound semantics).
 ; in: E = map/selector ID
 ; out on match: carry set, D = y, E = x, HL = name pointer
@@ -540,6 +542,8 @@ TryLoadSpecialTownMapEntry::
 	jr z, .diglettRoute2
 	cp DIGLETTS_CAVE_ENTRANCE
 	jr z, .diglettRoute11
+	cp CELADON_MART_ROOF
+	jr z, .celadonMartRoof
 	and a ; clear carry
 	ret
 .seafoamWest
@@ -558,6 +562,12 @@ TryLoadSpecialTownMapEntry::
 	ld d, 84
 	ld e, 124
 	ld hl, DiglettsCaveName
+	scf
+	ret
+.celadonMartRoof
+	ld d, 68
+	ld e, 92
+	ld hl, CeladonDeptRoofName
 	scf
 	ret
 
@@ -601,6 +611,9 @@ SpecialFlyWarpData:
 	FLYWARP_DATA ROUTE_10_WIDTH, 20, 11
 	db POWER_PLANT, ROUTE_10
 	FLYWARP_DATA ROUTE_10_WIDTH, 40, 6
+	db CELADON_MART_ROOF, CELADON_MART_ROOF
+	; Land two steps below the vending machine and two steps right of the nearby man.
+	FLYWARP_DATA CELADON_MART_ROOF_WIDTH, 4, 12
 	db SEAFOAM_ISLANDS_1, ROUTE_20
 	FLYWARP_DATA ROUTE_20_WIDTH, 10, 58
 	db UNUSED_MAP_F1, ROUTE_20 ; Seafoam west/red-side pseudo selector

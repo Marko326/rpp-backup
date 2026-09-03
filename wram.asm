@@ -3190,6 +3190,7 @@ wSpecialFlyVisitedFlag2:: ; d709
 ; bit 2 = Viridian Forest
 ; bit 3 = Diglett's Cave Route 2 side
 ; bit 4 = Diglett's Cave Route 11 side
+; bit 5 = Celadon Dept. Store Roof
 	ds 1
 
 ; Persistent unlock bits for the special Fly destination axis.

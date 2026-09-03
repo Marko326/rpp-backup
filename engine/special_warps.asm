@@ -30,8 +30,13 @@ SpecialWarpIn:
 	; directly and would otherwise leave VIRIDIAN_FOREST in wLastMap, causing
 	; the gate's south exit to warp straight back into the forest.
 	cp VIRIDIAN_FOREST
-	jr nz,.storeLastMap
+	jr nz,.notViridianForest
 	ld a,ROUTE_2
+	jr .storeLastMap
+.notViridianForest
+	cp CELADON_MART_ROOF
+	jr nz,.storeLastMap
+	ld a,CELADON_CITY
 .storeLastMap
 	ld [wLastMap],a
 	ret

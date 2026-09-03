@@ -77,6 +77,8 @@ MountMoonName:
 	db "Mt. Moon@"
 MountMoonSquareName:
 	db "Mt. Moon_Square@"
+CeladonDeptRoofName:
+	db "CeladonDept_Roof@"
 RockTunnelName:
 	db "Rock Tunnel@"
 SeaCottageName:
