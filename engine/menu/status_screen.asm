@@ -865,8 +865,7 @@ StatusScreen_RebuildSwitchedPartyMon:
 	; commits the newly prepared species palettes before input is accepted again.
 	call GBPalNormal
 	call DelayFrame
-	ld a, [wcf91]
-	call PlayCry
+	; Only initial entry plays the cry; UP/DOWN Pokémon switching stays silent.
 	ret
 
 StatusScreen_TransferPreparedMap:
