@@ -1,6 +1,103 @@
 ; Fly-only helpers kept in expansion bank $35 so the capacity-constrained
 ; overworld/Town Map/special-warp banks do not need to grow.
 
+
+
+InitTownMapLocationFromPlayerMap::
+; Initialize ordinary Town Map Up/Down browsing from the player's displayed
+; Town Map position rather than from Pallet Town.
+;
+; in: E = map/selector currently used to draw the player's Town Map position
+; out: wWhichTownMapLocation = matching/nearest TownMapOrder index
+;
+; E is used deliberately: callab/callba replace A with the destination ROM bank,
+; while DE survives Bankswitch. First use an exact selector match. If the player
+; is on an interior map that is not itself in TownMapOrder, fall back to the
+; nearest Town Map coordinates.
+	ld d, e ; preserve displayed selector for the exact-ID scan
+	xor a
+	ld [wBuffer + 1], a ; current TownMapOrder index
+	ld hl, TownMapOrderAnchorMapIDs
+.exactLoop
+	ld a, [hli]
+	cp $ff
+	jr z, .findByCoords
+	cp d
+	jr z, .storeCurrentIndex
+	ld a, [wBuffer + 1]
+	inc a
+	ld [wBuffer + 1], a
+	jr .exactLoop
+.storeCurrentIndex
+	ld a, [wBuffer + 1]
+	ld [wWhichTownMapLocation], a
+	ret
+.findByCoords
+	ld e, d
+	callba LoadTownMapEntryFromE
+	ld a, d
+	ld [wBuffer + 2], a ; player's Town Map y
+	ld a, e
+	ld [wBuffer + 3], a ; player's Town Map x
+	ld a, $ff
+	ld [wBuffer], a ; best Manhattan distance seen so far
+	xor a
+	ld [wBuffer + 1], a
+	ld [wWhichTownMapLocation], a ; safe fallback = Pallet Town
+	ld hl, TownMapOrderAnchorMapIDs
+.coordLoop
+	ld a, [hli]
+	cp $ff
+	ret z
+	ld e, a ; E survives the far-call bankswitch
+	push hl
+	callba LoadTownMapEntryFromE ; returns D = y, E = x
+	ld a, [wBuffer + 2]
+	ld c, a
+	ld a, d
+	sub c
+	jr nc, .haveYDistance
+	cpl
+	inc a
+.haveYDistance
+	ld h, a
+	ld a, [wBuffer + 3]
+	ld c, a
+	ld a, e
+	sub c
+	jr nc, .haveXDistance
+	cpl
+	inc a
+.haveXDistance
+	add h
+	jr z, .exactCoords
+	ld c, a ; C = Manhattan distance for this TownMapOrder entry
+	ld a, [wBuffer]
+	cp c
+	jr c, .next ; existing best is smaller
+	jr z, .next ; keep the earlier entry when distances tie
+	ld a, c
+	ld [wBuffer], a
+	ld a, [wBuffer + 1]
+	ld [wWhichTownMapLocation], a
+.next
+	pop hl
+	ld a, [wBuffer + 1]
+	inc a
+	ld [wBuffer + 1], a
+	jr .coordLoop
+.exactCoords
+	ld a, [wBuffer + 1]
+	ld [wWhichTownMapLocation], a
+	pop hl
+	ret
+
+; Mirror TownMapOrder in this roomy expansion bank. The entries come from the
+; same macro as the real list, so geographic-order edits cannot make them drift.
+TownMapOrderAnchorMapIDs:
+	TownMapOrderEntries
+	db $ff
+
 GetFlyTownMapPlayerMap::
 ; Some special Fly selectors land on a nearby outdoor map instead of loading the
 ; landmark map itself. For Town Map display, treat configured landmark anchors

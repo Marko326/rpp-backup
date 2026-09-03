@@ -139,6 +139,8 @@ StartMenu_Pokemon:
 	ld a, [wCurMap]
 	cp MT_MOON_SQUARE
 	jr z, .canFly
+	cp VIRIDIAN_FOREST
+	jr z, .canFly
 	call CheckIfInOutsideMap
 	jr z,.canFly
 	ld a,[wWhichPokemon]

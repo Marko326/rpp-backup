@@ -30,8 +30,13 @@ DisplayTownMap:
 	ld de, TownMapCursor
 	lb bc, BANK(TownMapCursor), (TownMapCursorEnd - TownMapCursor) / $8
 	call CopyVideoDataDouble
-	xor a
-	ld [wWhichTownMapLocation], a
+	; wWhichTownMapLocation shares scratch WRAM at $cd3d, so initialize it only
+	; after the Town Map/OAM setup above has finished using that scratch area.
+	; Preserve the displayed player selector across the far call for .enterLoop.
+	pop af
+	push af
+	ld e, a ; callab clobbers A, so pass the displayed selector through E
+	callab InitTownMapLocationFromPlayerMap
 	pop af
 	jr .enterLoop
 
@@ -704,6 +709,16 @@ ZeroOutDuplicatesInList:
 .skipZeroing
 	inc hl
 	jr .zeroDuplicatesLoop
+
+LoadTownMapEntryFromE::
+; Far-call trampoline for callers that need to pass a map selector across Bankswitch.
+; callab/callba overwrite A/BC/HL while DE survives the switch, so return the
+; Town Map coordinates in D/E instead of relying on LoadTownMapEntry's B/C.
+	ld a, e
+	call LoadTownMapEntry
+	ld d, b ; y
+	ld e, c ; x
+	ret
 
 LoadTownMapEntry:
 ; in: a = map number
