@@ -25,6 +25,14 @@ SpecialWarpIn:
 	bit 4,[hl] ; dungeon warp?
 	ret nz
 ; if not dungeon warp
+	; Viridian Forest's south gate exits through LAST_MAP. A normal visit keeps
+	; ROUTE_2 here from the outdoor -> gate warp, but Fly enters the forest
+	; directly and would otherwise leave VIRIDIAN_FOREST in wLastMap, causing
+	; the gate's south exit to warp straight back into the forest.
+	cp VIRIDIAN_FOREST
+	jr nz,.storeLastMap
+	ld a,ROUTE_2
+.storeLastMap
 	ld [wLastMap],a
 	ret
 

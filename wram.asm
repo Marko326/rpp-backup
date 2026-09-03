@@ -1056,7 +1056,8 @@ wBadgeNameTile:: ; cd3e
 ; first tile ID of the name being drawn
 
 wFlyLocationsList:: ; cd3e
-; 11 bytes plus $ff sentinel values at each end
+; Legacy Fly-list scratch address. FLY011 uses wBuffer + 1 instead because the
+; expanded special list is larger than the original 11-city list.
 
 wSlotMachineWheel1Offset:: ; cd3e
 
@@ -1201,7 +1202,6 @@ wTempCoins2:: ; cd4a
 
 wFlyLocationsAxis:: ; cd4a
 ; Fly menu scratch state: 0 = city axis (Up/Down), 1 = special axis (Left/Right).
-; Kept immediately after the city list's end sentinel at cd49.
 
 wPayoutCoins:: ; cd4a
 ; 2 bytes
@@ -3186,6 +3186,10 @@ wWalkBikeSurfState:: ; d700
 ; following WRAM/save address remain unchanged.
 wSpecialFlyVisitedFlag2:: ; d709
 ; bit 0 = Victory Road
+; bit 1 = Seafoam Islands west/red-side entrance
+; bit 2 = Viridian Forest
+; bit 3 = Diglett's Cave Route 2 side
+; bit 4 = Diglett's Cave Route 11 side
 	ds 1
 
 ; Persistent unlock bits for the special Fly destination axis.
@@ -3388,8 +3392,12 @@ wWarpedFromWhichWarp:: ; d73b
 wWarpedFromWhichMap:: ; d73c
 	ds 1
 
+; 0: unknown, 1: Route 20 west/red-side entrance, 2: Route 20 east entrance
+wSeafoamEntranceSource:: ; d73d
+	ds 1
+
 ; unused?
-	ds 2
+	ds 1
 
 wCardKeyDoorY:: ; d73f
 	ds 1

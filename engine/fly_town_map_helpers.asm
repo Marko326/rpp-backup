@@ -13,6 +13,17 @@ GetFlyTownMapPlayerMap::
 ; out: D = map ID whose Town Map coordinates/name should be used for the player.
 	ld a, [wCurMap]
 	ld d, a
+	; Seafoam 1F has two Route 20 entrances. If the latest external entrance was
+	; the west/red-side entrance, show the dedicated west Fly selector instead of
+	; the original east-side Seafoam selector.
+	cp SEAFOAM_ISLANDS_1
+	jr nz, .scanOverrides
+	ld a, [wSeafoamEntranceSource]
+	cp 1
+	jr nz, .scanOverrides
+	ld d, UNUSED_MAP_F1 ; pseudo selector reserved for Seafoam west entrance
+	ret
+.scanOverrides
 	ld hl, FlyTownMapPlayerOverrides
 .loop
 	ld a, [hli]
@@ -64,6 +75,8 @@ FlyTownMapPlayerOverrides:
 	db ROUTE_25,       3, 45, BILLS_HOUSE
 	db FUCHSIA_CITY,   3, 18, SAFARI_ZONE_ENTRANCE
 	db ROUTE_23,      31,  4, VICTORY_ROAD_1
+	db ROUTE_2,        9, 12, DIGLETTS_CAVE_EXIT ; Diglett's Cave Route 2 side
+	db ROUTE_11,       5,  4, DIGLETTS_CAVE_ENTRANCE ; Diglett's Cave Route 11 side
 
 	; Additional real entrances that share the same Town Map landmark. These do
 	; not change Fly destinations; they only make ordinary Town Map display
@@ -73,56 +86,106 @@ FlyTownMapPlayerOverrides:
 	db ROUTE_4,        5, 24, MT_MOON_3
 	db ROUTE_10,      17,  8, ROCK_TUNNEL_1
 	db ROUTE_10,      53,  8, ROCK_TUNNEL_1
-	db ROUTE_20,       5, 48, SEAFOAM_ISLANDS_1
+	db ROUTE_20,       5, 48, UNUSED_MAP_F1 ; Seafoam west/red-side entrance
 	db $ff
 
+
+UpdateSeafoamEntranceSource::
+; Remember which Route 20 side was used to enter Seafoam Islands 1F and unlock
+; only that entrance's Fly destination. This keeps the two entrances independent:
+; wWarpedFromWhichWarp is the zero-based index of the source Route 20 warp:
+;   source index 0 / Route 20 (48,5) = west/red-side Seafoam Fly point (flag2 bit 1)
+;   source index 1 / Route 20 (58,9) = original east-side Seafoam Fly point (flag1 bit 4)
+; The source byte is temporary; the unlock bits themselves are saved permanently.
+; Only overwrite the source on a real Route 20 -> Seafoam 1F transition. Internal
+; Seafoam floor changes must preserve the latest external entrance.
+	ld a, [wCurMap]
+	cp SEAFOAM_ISLANDS_1
+	ret nz
+	ld a, [wWarpedFromWhichMap]
+	cp ROUTE_20
+	ret nz
+	ld a, [wWarpedFromWhichWarp]
+	and a ; Route 20 source warp index 0 = (48,5), west/red side
+	jr z, .west
+	cp 1 ; Route 20 source warp index 1 = (58,9), east side
+	ret nz
+	ld a, 2
+	ld [wSeafoamEntranceSource], a
+	ld hl, wSpecialFlyVisitedFlag
+	set 4, [hl] ; original/east Seafoam destination
+	ret
+.west
+	ld a, 1
+	ld [wSeafoamEntranceSource], a
+	ld hl, wSpecialFlyVisitedFlag2
+	set 1, [hl] ; west/red-side Seafoam destination
+	ret
+
 BuildSpecialFlyLocationsList::
-; Build the special horizontal-axis list. The first eight selectors map directly
-; to bits 0-7 of the original saved byte; Victory Road uses bit 0 of the second.
-	ld hl, wFlyLocationsList - 1
+; Build the special horizontal-axis list in the same geographic browsing order
+; as TownMapOrder, rather than in historical feature/bit-assignment order.
+; Each table row is: selector, flag-byte offset from wSpecialFlyVisitedFlag2,
+; bit mask. The saved bit assignments themselves stay unchanged.
+	ld hl, wBuffer
 	ld [hl], $ff
 	inc hl
-	ld de, SpecialFlyLocationMapIDs
-	ld a, [wSpecialFlyVisitedFlag]
-	ld c, a
-	ld b, 8
-.firstFlagByteLoop
-	srl c
-	ld a, $fe
-	jr nc, .storeFirstByteEntry
+	ld de, SpecialFlyLocationEntries
+.loop
 	ld a, [de]
-.storeFirstByteEntry
-	ld [hli], a
 	inc de
-	dec b
-	jr nz, .firstFlagByteLoop
-
-	ld a, [wSpecialFlyVisitedFlag2]
-	srl a
-	ld a, $fe
-	jr nc, .storeSecondByteEntry
+	cp $ff
+	jr z, .done
+	ld c, a ; selector
 	ld a, [de]
-.storeSecondByteEntry
+	inc de
+	push hl
+	ld hl, wSpecialFlyVisitedFlag2
+	and a
+	jr z, .gotFlagByte
+	inc hl ; offset 1 = wSpecialFlyVisitedFlag
+.gotFlagByte
+	ld a, [hl]
+	pop hl
+	ld b, a
+	ld a, [de]
+	inc de
+	and b
+	ld a, $fe
+	jr z, .store
+	ld a, c
+.store
 	ld [hli], a
+	jr .loop
+.done
 	ld [hl], $ff
 	ret
 
-SpecialFlyLocationMapIDs:
-	; Town Map selector IDs in Left/Right cycling order.
-	db MT_MOON_3
-	db MT_MOON_SQUARE
-	db ROCK_TUNNEL_1
-	db POWER_PLANT
-	db SEAFOAM_ISLANDS_1
-	db UNKNOWN_DUNGEON_1
-	db BILLS_HOUSE
-	db SAFARI_ZONE_ENTRANCE
-	db VICTORY_ROAD_1
+SpecialFlyLocationEntries:
+	; selector, flag-byte offset (0=flag2, 1=flag1), bit mask
+	; Order follows normal Town Map geography. Cerulean Cave is intentionally
+	; placed after Route 4 / before Cerulean City, per the TownMapOrder override.
+	db VIRIDIAN_FOREST,         0, %00000100 ; flag2 bit 2
+	db DIGLETTS_CAVE_EXIT,      0, %00001000 ; flag2 bit 3, Route 2 side
+	db MT_MOON_3,               1, %00000001 ; flag1 bit 0
+	db MT_MOON_SQUARE,          1, %00000010 ; flag1 bit 1
+	db UNKNOWN_DUNGEON_1,       1, %00100000 ; flag1 bit 5, Cerulean Cave
+	db BILLS_HOUSE,              1, %01000000 ; flag1 bit 6, Sea Cottage
+	db DIGLETTS_CAVE_ENTRANCE,  0, %00010000 ; flag2 bit 4, Route 11 side
+	db ROCK_TUNNEL_1,            1, %00000100 ; flag1 bit 2
+	db POWER_PLANT,              1, %00001000 ; flag1 bit 3
+	db SAFARI_ZONE_ENTRANCE,     1, %10000000 ; flag1 bit 7
+	db SEAFOAM_ISLANDS_1,        1, %00010000 ; flag1 bit 4, east side
+	db UNUSED_MAP_F1,            0, %00000010 ; flag2 bit 1, west/red side
+	db VICTORY_ROAD_1,           0, %00000001 ; flag2 bit 0
+	db $ff
 
 MarkSpecialFlyLocationVisited::
 ; Unlock extra Fly destinations only when the player actually loads the chosen
-; landmark/entrance map. Bits 0-7 use wSpecialFlyVisitedFlag; bit 8 maps to bit
-; 0 of wSpecialFlyVisitedFlag2.
+; landmark map. Diglett's Cave remains entrance-based because its two ends are
+; distinct Fly destinations. Bits 0-7 use wSpecialFlyVisitedFlag; bit indices 8+ map
+; to the corresponding bits of wSpecialFlyVisitedFlag2. Seafoam is handled separately by
+; UpdateSeafoamEntranceSource so each Route 20 entrance unlocks independently.
 	ld a, [wCurMap]
 	ld d, a
 	ld hl, SpecialFlyVisitedMaps
@@ -151,21 +214,54 @@ MarkSpecialFlyLocationVisited::
 SpecialFlyVisitedMaps:
 	; map, special Fly bit index
 	; Mt. Moon, Rock Tunnel, and Cerulean Cave unlock only from their canonical
-	; first/entrance floor. Seafoam keeps its established all-floor behavior.
+	; first/entrance floor. Seafoam is intentionally absent here because its two
+	; Route 20 entrances now have separate unlock bits.
 	db MT_MOON_1, 0
 	db MT_MOON_SQUARE, 1
 	db ROCK_TUNNEL_1, 2
 	db POWER_PLANT, 3
-	db SEAFOAM_ISLANDS_1, 4
-	db SEAFOAM_ISLANDS_2, 4
-	db SEAFOAM_ISLANDS_3, 4
-	db SEAFOAM_ISLANDS_4, 4
-	db SEAFOAM_ISLANDS_5, 4
 	db UNKNOWN_DUNGEON_1, 5
 	db BILLS_HOUSE, 6
 	db SAFARI_ZONE_ENTRANCE, 7
+	db VIRIDIAN_FOREST, 10 ; flag2 bit 2
+	db DIGLETTS_CAVE_EXIT, 11 ; flag2 bit 3, Route 2 side
+	db DIGLETTS_CAVE_ENTRANCE, 12 ; flag2 bit 4, Route 11 side
 	db VICTORY_ROAD_1, 8
 	db $ff
+
+TryLoadSpecialTownMapEntry::
+; Exact Town Map entries for selector/entrance IDs that must not be inserted into
+; InternalMapEntries (that table intentionally uses range/upper-bound semantics).
+; in: E = map/selector ID
+; out on match: carry set, D = y, E = x, HL = name pointer
+; out on miss: carry clear
+	ld a, e
+	cp UNUSED_MAP_F1
+	jr z, .seafoamWest
+	cp DIGLETTS_CAVE_EXIT
+	jr z, .diglettRoute2
+	cp DIGLETTS_CAVE_ENTRANCE
+	jr z, .diglettRoute11
+	and a ; clear carry
+	ret
+.seafoamWest
+	ld d, 140
+	ld e, 68
+	ld hl, SeafoamIslandsName
+	scf
+	ret
+.diglettRoute2
+	ld d, 68
+	ld e, 68
+	ld hl, DiglettsCaveName
+	scf
+	ret
+.diglettRoute11
+	ld d, 84
+	ld e, 124
+	ld hl, DiglettsCaveName
+	scf
+	ret
 
 TryLoadSpecialFlyWarpData::
 ; in: D = Fly selector map ID
@@ -209,12 +305,21 @@ SpecialFlyWarpData:
 	FLYWARP_DATA ROUTE_10_WIDTH, 40, 6
 	db SEAFOAM_ISLANDS_1, ROUTE_20
 	FLYWARP_DATA ROUTE_20_WIDTH, 10, 58
+	db UNUSED_MAP_F1, ROUTE_20 ; Seafoam west/red-side pseudo selector
+	FLYWARP_DATA ROUTE_20_WIDTH, 6, 48
 	db UNKNOWN_DUNGEON_1, CERULEAN_CITY
 	FLYWARP_DATA CERULEAN_CITY_WIDTH, 12, 4
 	db BILLS_HOUSE, ROUTE_25
 	FLYWARP_DATA ROUTE_25_WIDTH, 4, 45
 	db SAFARI_ZONE_ENTRANCE, FUCHSIA_CITY
 	FLYWARP_DATA FUCHSIA_CITY_WIDTH, 4, 18
+	db VIRIDIAN_FOREST, VIRIDIAN_FOREST
+	; Match the normal south-gate entry after its automatic step into the forest.
+	FLYWARP_DATA VIRIDIAN_FOREST_WIDTH, 46, 16
+	db DIGLETTS_CAVE_EXIT, ROUTE_2
+	FLYWARP_DATA ROUTE_2_WIDTH, 10, 12
+	db DIGLETTS_CAVE_ENTRANCE, ROUTE_11
+	FLYWARP_DATA ROUTE_11_WIDTH, 6, 4
 	db VICTORY_ROAD_1, ROUTE_23
 	FLYWARP_DATA ROUTE_23_WIDTH, 32, 4
 	db $ff

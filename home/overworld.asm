@@ -9,6 +9,7 @@ EnterMap::
 	ld [wJoyIgnore], a
 	call LoadMapData
 	callba ClearVariablesOnEnterMap
+	callab UpdateSeafoamEntranceSource
 	ld hl, wd72c
 	bit 0, [hl] ; has the player already made 3 steps since the last battle?
 	jr z, .skipGivingThreeStepsOfNoRandomBattles

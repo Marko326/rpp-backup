@@ -183,7 +183,7 @@ LoadTownMap_Fly:
 	ld a, d
 	ld b, $0
 	call DrawPlayerOrBirdSprite
-	ld hl, wFlyLocationsList
+	ld hl, wBuffer + 1 ; expanded Fly list; wBuffer holds the leading $ff sentinel
 ;	coord de, 18, 0;No longer sets the destination address for the top‑right tile
 .townMapFlyLoop
 ;	ld a, " ";No longer writes a blank tile to the top‑right corner
@@ -252,9 +252,9 @@ LoadTownMap_Fly:
 	ld a, [wSpecialFlyVisitedFlag]
 	ld c, a
 	ld a, [wSpecialFlyVisitedFlag2]
-	and %00000001
+	and %00011111 ; only bits 0-4 are currently defined
 	or c
-	jp z, .townMapFlyLoop ; no special destinations unlocked yet
+	jp z, .townMapFlyLoop ; no defined special destinations unlocked yet
 	ld a, [wFlyLocationsAxis]
 	and a
 	jr nz, .alreadyOnSpecialAxis
@@ -278,13 +278,23 @@ LoadTownMap_Fly:
 	jr .moveSpecialLeft
 
 .selectFirstAvailable
-	ld hl, wFlyLocationsList
+	ld hl, wBuffer + 1
 .findFirstAvailable
 	ld a, [hl]
+	cp $ff
+	jr z, .noSpecialAvailable
 	cp $fe
 	jp nz, .townMapFlyLoop
 	inc hl
 	jr .findFirstAvailable
+.noSpecialAvailable
+	; Defensive fallback: never let the end sentinel become a map selector.
+	; A valid save with any defined special bit cannot reach this branch.
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	ld hl, wBuffer ; .moveCityUp increments before examining the first city entry
+	jr .moveCityUp
 
 .selectLastAvailable
 	call FindFlyListEnd
@@ -299,7 +309,7 @@ LoadTownMap_Fly:
 	jr z, .moveSpecialRight
 	jp .townMapFlyLoop
 .wrapSpecialRight
-	ld hl, wFlyLocationsList
+	ld hl, wBuffer + 1
 	jr .findFirstAvailable
 
 .moveSpecialLeft
@@ -334,7 +344,7 @@ LoadTownMap_Fly:
 	jr z, .moveCityUp ; skip past unvisited towns
 	jp .townMapFlyLoop
 .wrapCityUp
-	ld hl, wFlyLocationsList - 1
+	ld hl, wBuffer
 	jr .moveCityUp
 
 .pressedDown
@@ -361,7 +371,7 @@ LoadTownMap_Fly:
 
 FindFlyListEnd:
 ; Return HL pointing at the $ff end sentinel of the currently built Fly list.
-	ld hl, wFlyLocationsList
+	ld hl, wBuffer + 1
 .loop
 	ld a, [hli]
 	cp $ff
@@ -370,7 +380,9 @@ FindFlyListEnd:
 	ret
 
 BuildFlyLocationsList:
-	ld hl, wFlyLocationsList - 1
+; wBuffer is a 30-byte temporary area. Byte 0 is the leading sentinel and the
+; actual list starts at byte 1, leaving enough room for the expanded special list.
+	ld hl, wBuffer
 	ld [hl], $ff
 	inc hl
 	ld a, [wFlyLocationsAxis]
@@ -696,6 +708,15 @@ ZeroOutDuplicatesInList:
 LoadTownMapEntry:
 ; in: a = map number
 ; out: b = y, c = x, hl = address of name
+; Selector-only/entrance points are exact-matched in expansion bank $35 so they
+; do not alter InternalMapEntries' interval semantics.
+	push af
+	push de
+	ld e, a
+	callab TryLoadSpecialTownMapEntry
+	jr c, .specialEntry
+	pop de
+	pop af
 	cp REDS_HOUSE_1F
 	jr c, .external
 	ld bc, 5
@@ -725,6 +746,12 @@ LoadTownMapEntry:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
+	ret
+.specialEntry
+	ld b, d
+	ld c, e
+	pop de ; preserve LoadTownMapEntry's original DE behavior
+	pop af ; discard saved selector
 	ret
 
 GetMapNameForSaveScreen:
