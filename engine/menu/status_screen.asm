@@ -62,17 +62,14 @@ DrawHP_:
 	ret
 
 
-; Predef 0x37
-StatusScreen:
-	; Gold/Silver-style summary state: page changes and Pokémon changes are
-	; separate operations. This first version only exposes page navigation; the
-	; same state will later be retained when UP/DOWN Pokémon switching is added.
-	ld a, $1
-	ld [wStatusScreenPage], a
+DEF STATUS_SCREEN_PAGE_MASK EQU %00000011
+DEF STATUS_SCREEN_MON_SWITCH_F EQU 7
+
+StatusScreen_LoadCurrentMon:
 	call LoadMonData
 	ld a, [wMonDataLocation]
 	cp BOX_DATA
-	jr c, .DontRecalculate
+	ret c
 ; mon is in a box or daycare
 	ld a, [wLoadedMonBoxLevel]
 	ld [wLoadedMonLevel], a
@@ -81,7 +78,18 @@ StatusScreen:
 	ld de, wLoadedMonStats
 	ld b, $1
 	call CalcStats ; Recalculate stats
-.DontRecalculate
+	ret
+
+; Predef 0x37
+StatusScreen:
+	; Bit 7 is set only by START -> Pokémon. Preserve that ownership flag while
+	; resetting the summary itself to page 1, the normal map assignment, and the
+	; primary frontpic buffer. Other callers therefore keep UP/DOWN disabled.
+	ld a, [wStatusScreenPage]
+	and $80
+	or $1
+	ld [wStatusScreenPage], a
+	call StatusScreen_LoadCurrentMon
 	ld hl, wd72c
 	set 1, [hl]
 	; Do not step NR50 down while Music Off is active. Silent routed DACs
@@ -119,6 +127,88 @@ StatusScreen:
 	push af
 	xor a
 	ld [hTilesetType], a
+	call StatusScreen_DetectInitialStatMode
+	call StatusScreen_DrawPage1
+
+	; The Pokémon graphic is persistent across LEFT/RIGHT. UP/DOWN keeps the
+	; display white while rebuilding the primary frontpic buffer and both page
+	; maps, then restores the logical page that was being viewed.
+	coord hl, 1, 0
+	call LoadFlippedFrontSpriteByMonIndex
+
+	; Page 1 is the visible window map ($9c00). Keep the screen white while its
+	; complete tilemap + CGB attribute map are transferred.
+	call StatusScreen_SetTransferMap1
+	ld a, $1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+
+	; START/SELECT are dedicated single-page inspection modes. Keep them fully
+	; isolated from the normal Summary page lifecycle: Page 2 is not built and
+	; the hidden window map is never touched while DVs/Stat Exp are being viewed.
+	ld a, [wStatusScreenStatMode]
+	and a
+	jr nz, .PagesReady
+
+	; Normal Summary mode prepares page 2 from the finished page-1 tilemap. The
+	; Pokémon header/frontpic remains untouched; only page-specific fields change.
+	; The finished page is copied to the hidden window map ($9800) while page 1
+	; remains visible.
+	call StatusScreen_BuildPage2
+	call StatusScreen_SetTransferMap0
+	ld a, $1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+
+.PagesReady
+	; Page navigation now becomes an atomic window-map flip in VBlank. No page
+	; change reloads mon data, frontpic, Pokémon palette, or cry.
+	call StatusScreen_ShowPage1
+	call GBPalNormal
+	ld a, [wcf91]
+	call PlayCry ; Gold/Silver: cry on initial Pokémon load only, not page changes
+	jp StatusScreen_InputLoop
+
+StatusScreen_GetStringPointer:
+	ld a, [wMonDataLocation]
+	add a
+	ld c, a
+	ld b, 0
+	add hl, bc
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	ld a, [wMonDataLocation]
+	cp DAYCARE_DATA
+	ret z
+	ld a, [wWhichPokemon]
+	jp SkipFixedLengthTextEntries
+
+
+StatusScreen_DetectInitialStatMode:
+	; START/SELECT are entry modifiers, not live Summary controls. SELECT keeps
+	; priority when both are held, matching the pre-Summary implementation.
+	xor a
+	ld [wStatusScreenStatMode], a
+	call Joypad
+	ld a, [hJoyHeld]
+	bit BIT_SELECT, a
+	jr z, .checkStart
+	ld a, $02 ; Stat Exp
+	ld [wStatusScreenStatMode], a
+	ret
+.checkStart
+	bit BIT_START, a
+	ret z
+	ld a, $01 ; DV
+	ld [wStatusScreenStatMode], a
+	ret
+
+StatusScreen_DrawPage1:
 	coord hl, 19, 3
 	lb bc, 2, 8
 	call DrawLineBox ; Draws the box around name, HP and status
@@ -146,31 +236,12 @@ StatusScreen:
 	call GetHealthBarColor
 
 	; --- BEGIN: held START/SELECT stat display ---
-	; Parse all five DVs before the stat box is printed.
+	; Parse all five DVs before the stat box is printed. The inspection mode was
+	; sampled once on entry; Pokémon switching is disabled while that mode is set.
 	call DVParse
-
-	; Default to normal calculated stats.
-	xor a
-	ld [wStatusScreenStatMode], a
-
-	; Input is read only here, never inside the shared PrintStatsBox routine.
-	; SELECT has priority when START and SELECT are held together.
-	call Joypad
-	ld a, [hJoyHeld]
-	bit BIT_SELECT, a
-	jr z, .CheckHeldStartSS
-
-	ld a, $02 ; Stat Exp
-	jr .StoreHeldStatModeSS
-
-.CheckHeldStartSS
-	bit BIT_START, a
+	ld a, [wStatusScreenStatMode]
+	and a
 	jr z, .HeldHPDisplayDoneSS
-
-	ld a, $01 ; DV
-
-.StoreHeldStatModeSS
-	ld [wStatusScreenStatMode], a
 
 	; Clear all seven tiles and return HL to the first tile before printing.
 	; This prevents 2/5-digit values from surviving under a later 3/3 HP fraction.
@@ -255,13 +326,13 @@ StatusScreen:
 	coord hl, 11, 10
 	predef PrintMonType
 	ld hl, NamePointers2
-	call .GetStringPointer
+	call StatusScreen_GetStringPointer
 	ld d, h
 	ld e, l
 	coord hl, 9, 1
 	call PlaceString ; Pokémon name
 	ld hl, OTPointers
-	call .GetStringPointer
+	call StatusScreen_GetStringPointer
 	ld d, h
 	ld e, l
 	coord hl, 12, 16
@@ -276,56 +347,7 @@ StatusScreen:
 	call PrintGenderStatusScreen
 	ld d, $0
 	call PrintStatsBox
-
-	; The Pokémon graphic is part of the persistent summary header. Gold/Silver
-	; never reload it for LEFT/RIGHT page changes, so place it before snapshotting
-	; either page and leave it alone for the rest of this session.
-	coord hl, 1, 0
-	call LoadFlippedFrontSpriteByMonIndex
-
-	; Page 1 is the visible window map ($9c00). Keep the screen white while its
-	; complete tilemap + CGB attribute map are transferred.
-	call StatusScreen_SetTransferMap1
-	ld a, $1
-	ld [H_AUTOBGTRANSFERENABLED], a
-	call Delay3
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
-
-	; Build page 2 from the finished page-1 tilemap. The Pokémon header/frontpic
-	; remains untouched; only the page-specific fields are replaced. Then copy the
-	; finished page to the hidden window map ($9800). This transfer can take three
-	; frames because the player still sees the already-complete page 1.
-	call StatusScreen_BuildPage2
-	call StatusScreen_SetTransferMap0
-	ld a, $1
-	ld [H_AUTOBGTRANSFERENABLED], a
-	call Delay3
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
-
-	; Page navigation now becomes an atomic window-map flip in VBlank. No page
-	; change reloads mon data, frontpic, Pokémon palette, or cry.
-	call StatusScreen_ShowPage1
-	call GBPalNormal
-	ld a, [wcf91]
-	call PlayCry ; Gold/Silver: cry on initial Pokémon load only, not page changes
-	jp StatusScreen_InputLoop
-
-.GetStringPointer
-	ld a, [wMonDataLocation]
-	add a
-	ld c, a
-	ld b, 0
-	add hl, bc
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
-	ld a, [wMonDataLocation]
-	cp DAYCARE_DATA
-	ret z
-	ld a, [wWhichPokemon]
-	jp SkipFixedLengthTextEntries
+	ret
 
 OTPointers:
 	dw wPartyMonOT
@@ -680,7 +702,10 @@ StatusScreen_BuildPage2:
 	lb bc, 3, 7
 	call PrintNumber ; total exp
 	call CalcExpToLevelUp
-	ld de, wStatusScreenExpToNext
+	; Keep the original DV workspace intact. START/SELECT stat display owns
+	; wDVCalcVar2 for the whole summary session, so use the general scratch
+	; buffer for the three-byte "EXP to next" value instead.
+	ld de, wBuffer
 	coord hl, 7, 6
 	lb bc, 3, 7
 	call PrintNumber ; exp needed to level up
@@ -706,36 +731,61 @@ StatusScreen_InputLoop:
 	jr z, StatusScreen_InputLoop
 	bit BIT_B_BUTTON, a
 	jp nz, StatusScreen_Exit
+
+	; START/SELECT inspection remains a dedicated Page-1-only mode. It deliberately
+	; ignores every navigation key except B, so the original DV/Stat Exp lifecycle
+	; stays isolated from both page and Pokémon switching.
+	ld a, [wStatusScreenStatMode]
+	and a
+	jr nz, StatusScreen_InputLoop
+
+	ld a, [hJoy5]
+	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON
 	bit BIT_D_LEFT, a
 	jr nz, .PreviousPage
 	bit BIT_D_RIGHT, a
 	jr nz, .NextPage
 	bit BIT_A_BUTTON, a
 	jr nz, .AButton
-	; Gold/Silver reserves UP/DOWN for Pokémon navigation. SUMMARY01 deliberately
-	; leaves those inputs inactive until the page lifecycle is proven stable.
+
+	; SUMMARY04 exposes Gold/Silver-style Pokémon navigation only to the START
+	; Party caller. Other StatusScreen callers leave bit 7 clear and therefore
+	; retain SUMMARY03 behavior until their own staged integration.
+	ld b, a
+	ld a, [wStatusScreenPage]
+	bit STATUS_SCREEN_MON_SWITCH_F, a
+	jr z, StatusScreen_InputLoop
+	ld a, b
+	and D_UP | D_DOWN
+	jr z, StatusScreen_InputLoop
+	call StatusScreen_TrySwitchPartyMon
+	jr nc, StatusScreen_InputLoop
+	call StatusScreen_RebuildSwitchedPartyMon
 	jr StatusScreen_InputLoop
 
 .PreviousPage
 	; Gold/Silver page navigation wraps. With Red's two pages, either direction
 	; simply selects the other prepared page.
 	ld a, [wStatusScreenPage]
+	and STATUS_SCREEN_PAGE_MASK
 	cp $1
 	jr z, .ShowPage2
 	jr .ShowPage1
 
 .NextPage
 	ld a, [wStatusScreenPage]
+	and STATUS_SCREEN_PAGE_MASK
 	cp $1
 	jr z, .ShowPage2
 	jr .ShowPage1
 
 .AButton
-	; Gold/Silver compatibility: A advances a page; A on the final page exits.
+	; A always toggles between the two pages. B remains the only exit.
 	ld a, [wStatusScreenPage]
+	and STATUS_SCREEN_PAGE_MASK
 	cp $1
 	jr z, .ShowPage2
-	jp StatusScreen_Exit
+	jr .ShowPage1
 
 .ShowPage1
 	call StatusScreen_ShowPage1
@@ -745,15 +795,96 @@ StatusScreen_InputLoop:
 	call StatusScreen_ShowPage2
 	jr StatusScreen_InputLoop
 
+StatusScreen_TrySwitchPartyMon:
+	; A = D_UP / D_DOWN. Carry is set only when the selection actually changes.
+	; This routine is intentionally Party-only for SUMMARY04.
+	ld c, a
+	ld a, [wMonDataLocation]
+	cp PLAYER_PARTY_DATA
+	jr nz, .cantSwitch
+	ld a, [wPartyCount]
+	cp 2
+	jr c, .cantSwitch
+	ld b, a
+	ld a, c
+	bit BIT_D_UP, a
+	jr z, .down
+	ld a, [wWhichPokemon]
+	and a
+	jr z, .cantSwitch
+	dec a
+	jr .store
+.down
+	ld a, [wWhichPokemon]
+	inc a
+	cp b
+	jr nc, .cantSwitch
+.store
+	ld [wWhichPokemon], a
+	; Keep the START Party cursor synchronized with the Pokémon currently shown.
+	ld [wPartyAndBillsPCSavedMenuItem], a
+	scf
+	ret
+.cantSwitch
+	and a
+	ret
+
+StatusScreen_RebuildSwitchedPartyMon:
+	; SUMMARY04/05 rebuilt the new Pokémon through a second live picture buffer
+	; and flipped to a hidden map. On real hardware/emulators that path can stall
+	; before the map flip. Reuse the proven initial-entry lifecycle instead: keep
+	; the display white while both maps and the primary picture buffer are rebuilt.
+	call GBPalWhiteOutWithDelay3
+	xor a
+	ld [wStatusScreenStatMode], a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call StatusScreen_LoadCurrentMon
+	call ClearScreen
+	call StatusScreen_DrawPage1
+	coord hl, 1, 0
+	call LoadFlippedFrontSpriteByMonIndex
+
+	; Restore the normal physical assignment: Page 1 in map 1, Page 2 in map 0.
+	call StatusScreen_SetTransferMap1
+	call StatusScreen_TransferPreparedMap
+	call StatusScreen_BuildPage2
+	call StatusScreen_SetTransferMap0
+	call StatusScreen_TransferPreparedMap
+
+	; Preserve whichever logical page the player was viewing before the switch.
+	ld a, [wStatusScreenPage]
+	and STATUS_SCREEN_PAGE_MASK
+	cp $2
+	jr z, .showPage2
+	call StatusScreen_ShowPage1
+	jr .pageSelected
+.showPage2
+	call StatusScreen_ShowPage2
+.pageSelected
+	; GBPalNormal changes the compatibility register immediately; one full frame
+	; commits the newly prepared species palettes before input is accepted again.
+	call GBPalNormal
+	call DelayFrame
+	ld a, [wcf91]
+	call PlayCry
+	ret
+
+StatusScreen_TransferPreparedMap:
+	ld a, $1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
+
 StatusScreen_ShowPage1:
-	; Flip only the window tilemap selector, and do it during VBlank so a single
-	; frame can never contain halves of two pages. Pokémon graphics/palettes are
-	; identical in both prepared maps.
 	callba WaitForVBlank
 	ld a, [rLCDC]
 	set 6, a ; window tile map = $9c00
 	ld [rLCDC], a
-	ld a, $1
+	ld a, [wStatusScreenPage]
+	and %11111100
+	or $1
 	ld [wStatusScreenPage], a
 	ret
 
@@ -762,7 +893,9 @@ StatusScreen_ShowPage2:
 	ld a, [rLCDC]
 	res 6, a ; window tile map = $9800
 	ld [rLCDC], a
-	ld a, $2
+	ld a, [wStatusScreenPage]
+	and %11111100
+	or $2
 	ld [wStatusScreenPage], a
 	ret
 
@@ -785,7 +918,15 @@ StatusScreen_Exit:
 	; caller. Whiteout hides this bookkeeping, then ClearScreen repopulates map 1
 	; exactly as the original status-screen exit did.
 	call GBPalWhiteOut
-	call StatusScreen_ShowPage1
+	; On CGB, GBPalWhiteOut first changes the DMG compatibility registers; the
+	; converted hardware palettes are committed by the following VBlank hook.
+	; WaitForVBlank only checks the current LCD mode and can return inside the
+	; already-running VBlank, exposing Page 1 for one frame on a fast Page-2 exit.
+	call DelayFrame
+	callba WaitForVBlank
+	ld a, [rLCDC]
+	set 6, a ; restore the project's normal window tile map at $9c00
+	ld [rLCDC], a
 	call StatusScreen_SetTransferMap1
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
@@ -802,6 +943,16 @@ StatusScreen_Exit:
 	ld a, $77
 	ld [rNR50], a
 .skipExitVolumeRestore
+	; Do not leak the Summary exit key or a held START/SELECT stat modifier into
+	; the caller's Party/PC/START-menu input loop. This mirrors the project's
+	; existing anti-input-penetration pattern used by other modal flows.
+	xor a
+	ld [wStatusScreenStatMode], a
+	ld [wStatusScreenPage], a
+	ld [hJoyHeld], a
+	ld [hJoyPressed], a
+	ld [hJoyReleased], a
+	ld [hJoy5], a
 	jp ClearScreen
 
 CalcExpToLevelUp:
@@ -814,7 +965,7 @@ CalcExpToLevelUp:
 	ld d, a
 	callab CalcExperience
 	ld hl, wLoadedMonExp + 2
-	ld de, wStatusScreenExpToNext + 2
+	ld de, wBuffer + 2
 	ld a, [hExperience + 2]
 	sub [hl]
 	ld [de], a
@@ -830,7 +981,7 @@ CalcExpToLevelUp:
 	ld [de], a
 	ret
 .atMaxLevel
-	ld hl, wStatusScreenExpToNext
+	ld hl, wBuffer
 	xor a
 	ld [hli], a
 	ld [hli], a

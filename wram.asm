@@ -3455,18 +3455,14 @@ wStatusScreenStatMode::
 	ds 1
 
 
-; Current status page. Red has two pages, but the navigation/lifecycle mirrors
-; Gold/Silver: page switches do not reload the Pokémon; future mon switches can
-; rebuild both pages while preserving this value. Reuses the existing reserved
-; byte so all later WRAM addresses stay unchanged.
+; Summary state packed into the existing reserved byte so later WRAM addresses
+; stay unchanged. Bits 0-1 = current page; bit 7 = START Party owns UP/DOWN
+; Pokémon navigation.
 wStatusScreenPage::
 	ds 1
 
-; Page 2 uses the first three bytes as a non-destructive "EXP to next" buffer.
-; Page 1 has already finished reading the DV values before page 2 is prepared,
-; so these lifetimes do not overlap.
-wStatusScreenExpToNext::
-; Attack / Defense / Speed / Special / HP DV
+; Attack / Defense / Speed / Special / HP DV. Keep this workspace intact for
+; the whole Summary session; Page 2 uses wBuffer for its temporary Next EXP.
 wDVCalcVar2::
 	ds 5
 ; --- END: status screen DV / Stat Exp variables ---
