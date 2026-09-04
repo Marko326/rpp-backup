@@ -1,4 +1,12 @@
 ShowPokedexMenu:
+	; Pokédex is a full-screen menu. Keep overworld OAM disabled for the whole
+	; session so returning from Nest Map cannot redraw the player/NPC sprites
+	; over the Pokédex list. Restore the caller's exact state on exit.
+	ld hl,wUpdateSpritesEnabled
+	ld a,[hl]
+	push af
+	ld [hl],$ff
+	call ClearSprites
 	call GBPalWhiteOut
 	call ClearScreen
 	call UpdateSprites
@@ -46,6 +54,8 @@ ShowPokedexMenu:
 	ld [wListScrollOffset],a
 	call GBPalWhiteOutWithDelay3
 	call RunDefaultPaletteCommand
+	pop af
+	ld [wUpdateSpritesEnabled],a
 	jp ReloadMapData
 .goToSideMenu
 	call HandlePokedexSideMenu
