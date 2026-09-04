@@ -3465,8 +3465,14 @@ ENDU
 wTrainerHeaderPtr:: ; da30
 	ds 2
 
+; SUMMARY18new live-switch staging flag. Reuse one byte from the existing
+; six-byte reserved block so no later WRAM addresses move. Nonzero means
+; Page 1 may prepare tile data without replacing the currently visible palette.
+wStatusScreenDeferPaletteUpdate::
+	ds 1
+
 ; unused?
-	ds 6
+	ds 5
 
 wOpponentAfterWrongAnswer:: ; da38
 ; the trainer the player must face after getting a wrong answer in the Cinnabar

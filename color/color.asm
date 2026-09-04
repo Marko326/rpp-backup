@@ -326,10 +326,11 @@ INCLUDE "color/town_map_pals.asm"
 INCLUDE "color/town_map_pal_assignments.asm"
 
 ; Status screen
-; Load only the next Pokémon palette into spare BG slot 2. This deliberately does
-; not touch the static palette map: the VBlank-side picture wipe changes only the
-; attributes for graphics tiles that have actually completed uploading.
-StatusScreen_LoadNextPokemonPalette2:
+; Stage only the next Pokémon palette data into spare BG slot 2. Do not request a
+; hardware palette update yet: during a live switch the still-visible old frontpic
+; may itself be using palette 2 from the previous completed wipe. The staged colors
+; become visible only after StatusScreen_CommitPreparedNextPokemonPalette2.
+StatusScreen_PrepareNextPokemonPalette2:
 	ld a, [wcf91]
 	cp NUM_POKEMON + 1
 	jr c, .pokemon
@@ -348,6 +349,16 @@ StatusScreen_LoadNextPokemonPalette2:
 .notShiny
 	callba LoadPokemonPalette
 .loaded
+	xor a
+	ld [rSVBK], a
+	ret
+
+; Make the already-staged palette 2 eligible for the normal pre-VBlank/VBlank
+; palette pipeline. This is intentionally separate from preparation so 21 can do
+; the CPU work early without recoloring the old picture before text is committed.
+StatusScreen_CommitPreparedNextPokemonPalette2:
+	ld a, 2
+	ld [rSVBK], a
 	ld a, 1
 	ld [W2_ForceBGPUpdate], a
 	xor a
