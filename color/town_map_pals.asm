@@ -20,7 +20,8 @@ TownMapPals:
 	RGB 20, 13, 08
 
 	; 3
-	RGB 31, 31, 31
+	; Seafoam split-tile palette: dark water, mid water, island, outline.
+	RGB 00, 11, 19
 	RGB 00, 17, 19
 	RGB 29, 17, 10
 	RGB 04, 04, 04

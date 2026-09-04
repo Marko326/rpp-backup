@@ -74,7 +74,7 @@ InternalMapEntries:
 	IMAP FUCHSIA_HOUSE_2,           100, 124, FuchsiaCityName
 	IMAP SAFARI_ZONE_ENTRANCE,      100, 116, SafariZoneName
 	IMAP FUCHSIA_MEETING_ROOM,      100, 124, FuchsiaCityName
-	IMAP SEAFOAM_ISLANDS_5,          76, 148, SeafoamIslandsName
+	IMAP SEAFOAM_ISLANDS_5,          80, 148, SeafoamIslandsName
 	IMAP VERMILION_HOUSE_2,         116,  92, VermilionCityName
 	IMAP FUCHSIA_HOUSE_3,           100, 124, FuchsiaCityName
 	IMAP MANSION_1,                  58, 146, PokemonMansionName
@@ -86,7 +86,7 @@ InternalMapEntries:
 	IMAP ROUTE_16_HOUSE,             76,  76, Route16Name
 	IMAP ROUTE_12_HOUSE,            148,  92, Route12Name
 	IMAP ROUTE_18_GATE_2F,           88, 124, Route18Name
-	IMAP SEAFOAM_ISLANDS_1,          76, 148, SeafoamIslandsName
+	IMAP SEAFOAM_ISLANDS_1,          80, 148, SeafoamIslandsName
 	IMAP ROUTE_22_GATE,              48,  92, Route22Name
 	IMAP VICTORY_ROAD_2,             36,  68, VictoryRoadName
 	IMAP ROUTE_12_GATE_2F,          148,  92, Route12Name

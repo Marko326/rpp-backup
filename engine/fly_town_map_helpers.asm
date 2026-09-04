@@ -548,7 +548,7 @@ TryLoadSpecialTownMapEntry::
 	ret
 .seafoamWest
 	ld d, 140
-	ld e, 68
+	ld e, 72
 	ld hl, SeafoamIslandsName
 	scf
 	ret
