@@ -86,6 +86,8 @@ StatusScreen:
 	and $80
 	or $1
 	ld [wStatusScreenPage], a
+	xor a
+	ld [wStatusScreenDeferPaletteUpdate], a
 	call StatusScreen_LoadCurrentMon
 	ld hl, wd72c
 	set 1, [hl]
@@ -275,8 +277,15 @@ StatusScreen_DrawPage1:
 .shiny
 	set 0, [hl]
 .setPAL
+	; Live switching can stage the next page while preserving the old palette.
+	; Keep palette 0 on the old Pokémon until the proven
+	; SUMMARY17 dual-palette wipe has completely finished.
+	ld a, [wStatusScreenDeferPaletteUpdate]
+	and a
+	jr nz, .paletteDone
 	ld b, SET_PAL_STATUS_SCREEN
 	call RunPaletteCommand
+.paletteDone
 
 	; Only the temporary Lv50 link mode hides the status-screen EXP bar.
 	; Normal Colosseum, Trade Center and all single-player screens keep it.
@@ -829,61 +838,75 @@ StatusScreen_TrySwitchPartyMon:
 	ret
 
 StatusScreen_RebuildSwitchedPartyMon:
-	; SUMMARY15 keeps SUMMARY14's native 8-tiles/VBlank diagonal wipe, but gives
-	; the old and new portions independent palettes during the transition.
-	; Palette 0 remains the old Pokémon; palette 2 is prepared for the new one.
-	; A tiny VBlank-side attribute updater switches exactly the same picture cells
-	; that the graphics copier completed in that frame from palette 0 to palette 2.
+	; 21 keeps 20new's early CPU-side frontpic preparation and 19new's safe visible
+	; order, but separates palette-2 data preparation from palette-2 activation.
+	; The old picture therefore keeps its old colors until the new text/data page is
+	; fully committed, while the expensive image/palette data work is still overlapped.
 	xor a
 	ld [wStatusScreenStatMode], a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call StatusScreen_LoadCurrentMon
 	call StatusScreen_UpdateShinyFlag
-	; Prepare the next Pokémon in unused BG palette slot 2. Do not block here:
-	; sprite decompression/alignment below is pure CPU work, so let the normal
-	; pre-VBlank/VBlank palette pipeline run in parallel. The dual-palette loader
-	; performs the completion check immediately before the first graphics batch.
-	callba StatusScreen_LoadNextPokemonPalette2
-	call StatusScreen_ClearTileMapNoWait
-	; Build the flipped 7x7 2bpp image in SRAM and copy it with the StatusScreen
-	; batch protocol. The global CopyVideoData routine is intentionally untouched.
-	call StatusScreen_LoadFlippedFrontPicDualPalette
-	; Now the complete new picture is visible using palette 2. Build Page 1; this
-	; loads the same new Pokémon into normal palette 0 and resets the WRAM static
-	; palette map to the ordinary StatusScreen layout.
-	call StatusScreen_DrawPage1
-	call GBPalNormal
-	; Commit the new normal palette 0 while the visible picture still uses palette
-	; 2, so converting the page attributes back to palette 0 cannot expose old color.
-	call StatusScreen_ForceBgPaletteUpdateAndWait
 
-	; Preserve SUMMARY11's lazy hidden-page rebuild. Only the page currently
-	; visible is transferred; the opposite physical map is marked dirty and is
-	; rebuilt on demand when the player actually navigates to it.
+	; Stage the next palette's bytes and prepare the new 7x7 2bpp image entirely
+	; off-screen. Crucially, palette 2 is NOT committed to CGB palette RAM yet, so
+	; an old picture still using palette 2 cannot be recolored to the next Pokémon.
+	callba StatusScreen_PrepareNextPokemonPalette2
+	call StatusScreen_PrepareFlippedFrontPicDualPalette
+	call StatusScreen_ClearTileMapNoWait
+
+	; Build the new text/data in WRAM but deliberately keep palette 0 on the old
+	; Pokémon. The old frontpic remains visible until the later SUMMARY17 wipe.
+	ld a, 1
+	ld [wStatusScreenDeferPaletteUpdate], a
+	call StatusScreen_DrawPage1
 	ld a, [wStatusScreenPage]
 	and STATUS_SCREEN_PAGE_MASK
 	cp $2
-	jr z, .refreshPage2
+	jr nz, .pagePrepared
+	call StatusScreen_BuildPage2
+.pagePrepared
+	; ClearTileMapNoWait erased the 7x7 tile references. Restore those references
+	; before the page transfer; vFrontPic still contains the old Pokémon graphics.
+	call StatusScreen_DrawFlippedFrontPicTileMap
+	xor a
+	ld [wStatusScreenDeferPaletteUpdate], a
 
-.refreshPage1
+	; Use SUMMARY17's exact complete page-transfer helper, unchanged. This retains
+	; the existing GBC static-palette/AutoBG handshake and avoids the failed
+	; SUMMARY18/19/20 partial-refresh and fixed-portion assumptions.
+	ld a, [wStatusScreenPage]
+	and STATUS_SCREEN_PAGE_MASK
+	cp $2
+	jr z, .transferPage2
+.transferPage1
 	call StatusScreen_SetTransferMap1
 	call StatusScreen_TransferPreparedMap
-	jr .markHiddenDirty
-
-.refreshPage2
-	call StatusScreen_BuildPage2
+	jr .pageVisible
+.transferPage2
 	call StatusScreen_SetTransferMap0
 	call StatusScreen_TransferPreparedMap
+.pageVisible
 
-.markHiddenDirty
+	; Text/data is now fully visible. Only now allow the already-staged next palette
+	; to reach CGB palette RAM, then immediately enter the unchanged 49-tile wipe.
+	; This preserves 20new's early preparation without tinting the old picture first.
+	callba StatusScreen_CommitPreparedNextPokemonPalette2
+	call StatusScreen_CommitPreparedFlippedFrontPicDualPalette
+
+	; Commit the new normal palette 0. The visible picture may remain on palette 2
+	; after this switch because palette 0 and palette 2 now contain the same Pokémon
+	; colors. The next normal page transfer (page navigation or another mon switch)
+	; safely restores ordinary palette-0 picture attributes before palette 2 is reused.
+	ld b, SET_PAL_STATUS_SCREEN
+	call RunPaletteCommand
+	call GBPalNormal
+	call StatusScreen_ForceBgPaletteUpdateAndWait
+
+	; The opposite physical page still belongs to the previous Pokémon. Rebuild it
+	; only if the player actually navigates there, exactly like SUMMARY17.
 	ld hl, wStatusScreenPage
 	set STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, [hl]
-
-	; The live switch never changes the physical LCDC page: the refreshed map is
-	; the page that was already visible. Do not call StatusScreen_ShowPage1/2 here;
-	; those helpers begin with WaitForVBlank and would only re-assert the existing
-	; LCDC bit/page value. Palette 0 was committed before the transfer, so the
-	; normal page attributes can safely replace the temporary palette-2 wipe attrs.
 	ret
 
 
@@ -900,7 +923,7 @@ StatusScreen_UpdateShinyFlag:
 	set 0, [hl]
 	ret
 
-StatusScreen_LoadFlippedFrontPicDualPalette:
+StatusScreen_PrepareFlippedFrontPicDualPalette:
 	; Party-only live switch helper. StatusScreen_LoadCurrentMon has already loaded
 	; a valid Pokémon header, so we can reuse the original Home decompression and
 	; alignment helpers while replacing only the final CopyVideoData stage.
@@ -990,9 +1013,14 @@ StatusScreen_LoadFlippedFrontPicDualPalette:
 	ld a, b
 	or c
 	jr nz, .flipLoop
-	; Palette 2 must be resident before graphics batch 0 becomes visible. Most of
-	; this wait should already have overlapped the decompression/alignment work
-	; above; keep the explicit completion boundary for correctness.
+	; Stop here: the prepared pixels live only in SRAM. Do not touch vFrontPic or
+	; the visible tilemap until the ordinary text/data transfer has fully completed.
+	ret
+
+StatusScreen_CommitPreparedFlippedFrontPicDualPalette:
+	; Palette 2 must be resident before graphics batch 0 becomes visible. Its data
+	; was prepared early, but hardware commit is intentionally requested only after
+	; the text/data transfer, preventing the old picture from taking the next colors.
 	call StatusScreen_WaitForBgPaletteCommit
 	call StatusScreen_CopyFrontPicDualPalette
 	call StatusScreen_DrawFlippedFrontPicTileMap
