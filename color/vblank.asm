@@ -317,9 +317,15 @@ GbcVBlankHook:
 	ld hl,W2_DrewRowOrColumn
 	ld a,[hl]
 	and a
-	jr nz,.end
+	jr nz,.pictureAttributes
 
 	call RefreshPalettesVBlank
+.pictureAttributes
+	; SUMMARY15: VBlankCopy has already completed this frame's frontpic graphics
+	; batch. If a StatusScreen dual-palette wipe armed a matching batch, switch
+	; exactly those 7x7 Window-map cells to palette 2 before leaving VBlank. This
+	; must still run if a row/column redraw suppressed palette RAM work this frame.
+	call StatusScreen_UpdatePictureAttributesVBlank
 
 .end
 	xor a
@@ -331,6 +337,79 @@ GbcVBlankHook:
 ; It takes ~1024 cycles (1.1 scanlines) to write 8 palettes.
 ; So for each operation, it checks that it's not further than line $97. It'll have lines
 ; $98 and $00 to work with.
+StatusScreen_UpdatePictureAttributesVBlank:
+	; GbcVBlankHook keeps rSVBK = 2 for color WRAM, but wStatusScreenPage lives
+	; in WRAM bank 1. Read the armed wipe state from the correct bank, then
+	; restore bank 2 before continuing the normal color VBlank path.
+	ld a, 1
+	ld [rSVBK], a
+	ld a, [wStatusScreenPage]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, c
+	bit STATUS_SCREEN_WIPE_ACTIVE_F, a
+	ret z
+	and STATUS_SCREEN_WIPE_BATCH_MASK
+	rrca
+	rrca
+	rrca
+	ld b, a ; batch 0..6
+	add a
+	add a
+	add a ; table index = batch * 8
+	ld e, a
+	ld d, 0
+	ld hl, StatusScreenPictureAttrOffsets
+	add hl, de
+	ld a, b
+	cp 6
+	ld b, 8
+	jr nz, .countReady
+	ld b, 1
+.countReady
+	; Page 1 lives in vBGMap1/$9c00; Page 2 in vBGMap0/$9800.
+	ld a, c
+	and STATUS_SCREEN_PAGE_MASK
+	ld d, vBGMap1 / $100
+	cp 2
+	jr nz, .destReady
+	ld d, vBGMap0 / $100
+.destReady
+	ld a, 1
+	ld [rVBK], a
+	ld c, 2
+.attrLoop
+	ld a, [hli]
+	ld e, a
+	ld a, c
+	ld [de], a
+	dec b
+	jr nz, .attrLoop
+	xor a
+	ld [rVBK], a
+	; Clear the producer/consumer handshake bit in the same WRAM bank that armed
+	; it. Return to bank 2 because GbcVBlankHook clears W2_DrewRowOrColumn next.
+	ld a, 1
+	ld [rSVBK], a
+	ld hl, wStatusScreenPage
+	res STATUS_SCREEN_WIPE_ACTIVE_F, [hl]
+	ld a, 2
+	ld [rSVBK], a
+	ret
+
+; Tile-id order for a flipped 7x7 frontpic. coord(1,0) is the left edge; tile 0
+; starts at the upper-right and IDs advance down each column, then move left.
+; Each byte is the offset inside the 32x32 Window BG map for one tile ID.
+StatusScreenPictureAttrOffsets:
+	db 7, 39, 71, 103, 135, 167, 199
+	db 6, 38, 70, 102, 134, 166, 198
+	db 5, 37, 69, 101, 133, 165, 197
+	db 4, 36, 68, 100, 132, 164, 196
+	db 3, 35, 67, 99, 131, 163, 195
+	db 2, 34, 66, 98, 130, 162, 194
+	db 1, 33, 65, 97, 129, 161, 193
+
 RefreshPalettesVBlank:
 
 .checkBgPalettes
