@@ -542,9 +542,9 @@ SpriteSheetPointerTable:
 	db BANK(GreeterWoman)
 	
 	; SPRITE_LAPRAS
-	dw SurfingLapras
+	dw LaprasOverworldSprite
 	db $c0 ; byte count
-	db BANK(SurfingLapras)
+	db BANK(LaprasOverworldSprite)
 	
 	; SPRITE_SURF_PIKACHU
 	dw SurfingPikachu

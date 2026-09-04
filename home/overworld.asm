@@ -1873,7 +1873,7 @@ LoadWalkingPlayerSpriteGraphics::
 	jr LoadPlayerSpriteGraphicsCommon
 
 LoadSurfingPlayerSpriteGraphics::
-	ld de,SurfingLapras
+	ld de,SeelSprite
 	ld hl,vNPCSprites
 	jr LoadPlayerSpriteGraphicsCommon
 

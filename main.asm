@@ -245,7 +245,7 @@ GameboyKidSprite:     INCBIN "gfx/sprites/gameboy_kid.2bpp"
 AgathaSprite:         INCBIN "gfx/sprites/agatha.2bpp"
 BrunoSprite:          INCBIN "gfx/sprites/bruno.2bpp"
 LoreleiSprite:        INCBIN "gfx/sprites/lorelei.2bpp"
-SurfingLapras:        INCBIN "gfx/sprites/surf_lapras.2bpp"
+SeelSprite:           INCBIN "gfx/sprites/seel.2bpp"
 
 
 SECTION "Battle (bank 5)", ROMX, BANK[$5]
@@ -2288,7 +2288,7 @@ SnorlaxSprite:         INCBIN "gfx/sprites/snorlax.2bpp"
 CelebiSprite:          INCBIN "gfx/sprites/celebi.2bpp"
 
 SurfingPikachu:        INCBIN "gfx/sprites/surfing_pikachu.2bpp"
-SeelSprite:            INCBIN "gfx/sprites/seel.2bpp"
+LaprasOverworldSprite: INCBIN "gfx/sprites/surf_lapras.2bpp"
 SlowbroSprite:         INCBIN "gfx/sprites/slowbro.2bpp"
 
 BirdSprite:            INCBIN "gfx/sprites/bird.2bpp"

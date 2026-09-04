@@ -11,9 +11,9 @@ LoadPlayerSpriteGraphicsForFlyTownMap::
 	ld a, [wWalkBikeSurfState]
 	cp 2
 	jp nz, LoadPlayerSpriteGraphics
-	ld de, SurfingLapras
+	ld de, SeelSprite
 	ld hl, vNPCSprites
-	lb bc, BANK(SurfingLapras), 4
+	lb bc, BANK(SeelSprite), 4
 	jp CopyVideoData
 
 InitTownMapLocationFromPlayerMap::
