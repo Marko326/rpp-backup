@@ -93,12 +93,12 @@ DisplayTownMap:
 	ld [wTownMapSpriteBlinkingEnabled], a
 	ld [hJoy7], a
 	ld [wAnimCounter], a
-	call ExitTownMap
 	pop hl
 	pop af
 	ld [hl], a
 	pop af
 	ld [hTilesetType], a
+	call ExitTownMap
 	ret
 .pressedStart
 	xor a ; TownMapOrder index 0 = Pallet Town
@@ -152,12 +152,12 @@ LoadTownMap_Nest:
 	ld de, NestText
 	call PlaceString
 	call WaitForTextScrollButtonPress
-	call ExitTownMap
 	pop hl
 	pop af
 	ld [hl], a
 	pop af
 	ld [hTilesetType], a
+	call ExitTownMap
 	ret
 
 MonsText:
@@ -173,7 +173,9 @@ LoadTownMap_Fly:
 	ld [hTilesetType], a
 	call ClearSprites
 	call LoadTownMap
-	call LoadPlayerSpriteGraphics
+	; Re-establish the four player tiles used by the current-location marker.
+	; Surf needs a Town Map-specific path because hTilesetType is temporarily 0.
+	callab LoadPlayerSpriteGraphicsForFlyTownMap
 	call LoadFontTilePatterns
 	ld de, BirdSprite
 	ld hl, vSprites + $40

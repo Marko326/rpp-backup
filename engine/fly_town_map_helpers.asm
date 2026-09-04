@@ -3,6 +3,19 @@
 
 
 
+LoadPlayerSpriteGraphicsForFlyTownMap::
+; Fly Map temporarily forces hTilesetType = 0. Keep the original loader for
+; Walking/Bike, but reload only the four Surf tiles used by the current-player
+; Town Map marker so Surf is not converted to Walking. BirdSprite starts at
+; vSprites + $40 (tile 4), so these tiles do not overlap the Fly cursor.
+	ld a, [wWalkBikeSurfState]
+	cp 2
+	jp nz, LoadPlayerSpriteGraphics
+	ld de, SurfingLapras
+	ld hl, vNPCSprites
+	lb bc, BANK(SurfingLapras), 4
+	jp CopyVideoData
+
 InitTownMapLocationFromPlayerMap::
 ; Initialize ordinary Town Map Up/Down browsing from the player's displayed
 ; Town Map position rather than from Pallet Town.
