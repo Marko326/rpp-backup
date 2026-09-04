@@ -326,6 +326,34 @@ INCLUDE "color/town_map_pals.asm"
 INCLUDE "color/town_map_pal_assignments.asm"
 
 ; Status screen
+; Load only the next Pokémon palette into spare BG slot 2. This deliberately does
+; not touch the static palette map: the VBlank-side picture wipe changes only the
+; attributes for graphics tiles that have actually completed uploading.
+StatusScreen_LoadNextPokemonPalette2:
+	ld a, [wcf91]
+	cp NUM_POKEMON + 1
+	jr c, .pokemon
+	ld a, $1
+.pokemon
+	call DeterminePaletteID
+	ld d, a
+	ld a, 2
+	ld [rSVBK], a
+	ld e, 2
+	ld a, [wShinyMonFlag]
+	bit 0, a
+	jr z, .notShiny
+	callba LoadShinyPokemonPalette
+	jr .loaded
+.notShiny
+	callba LoadPokemonPalette
+.loaded
+	ld a, 1
+	ld [W2_ForceBGPUpdate], a
+	xor a
+	ld [rSVBK], a
+	ret
+
 ; [wShinyMonFlag] must be appropriately set before this is called
 SetPal_StatusScreen:
 	ld a, [wcf91]

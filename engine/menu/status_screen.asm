@@ -62,9 +62,6 @@ DrawHP_:
 	ret
 
 
-DEF STATUS_SCREEN_PAGE_MASK EQU %00000011
-DEF STATUS_SCREEN_MON_SWITCH_F EQU 7
-
 StatusScreen_LoadCurrentMon:
 	call LoadMonData
 	ld a, [wMonDataLocation]
@@ -788,10 +785,12 @@ StatusScreen_InputLoop:
 	jr .ShowPage1
 
 .ShowPage1
+	call StatusScreen_PreparePage1IfDirty
 	call StatusScreen_ShowPage1
 	jr StatusScreen_InputLoop
 
 .ShowPage2
+	call StatusScreen_PreparePage2IfDirty
 	call StatusScreen_ShowPage2
 	jr StatusScreen_InputLoop
 
@@ -830,81 +829,329 @@ StatusScreen_TrySwitchPartyMon:
 	ret
 
 StatusScreen_RebuildSwitchedPartyMon:
-	; SUMMARY10 keeps the visible page stable while the shared vFrontPic tiles
-	; are replaced across multiple VBlanks. Only BG palette 0 (the upper-left
-	; Pokémon picture area) is blanked during the upload; the rest of the page
-	; remains visible. The new species palette is revealed only after both page
-	; maps and the complete frontpic are resident in VRAM.
-	call StatusScreen_WhitePokemonPaletteAndWait
+	; SUMMARY15 keeps SUMMARY14's native 8-tiles/VBlank diagonal wipe, but gives
+	; the old and new portions independent palettes during the transition.
+	; Palette 0 remains the old Pokémon; palette 2 is prepared for the new one.
+	; A tiny VBlank-side attribute updater switches exactly the same picture cells
+	; that the graphics copier completed in that frame from palette 0 to palette 2.
 	xor a
 	ld [wStatusScreenStatMode], a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call StatusScreen_LoadCurrentMon
-	call ClearScreen
+	call StatusScreen_UpdateShinyFlag
+	; Prepare the next Pokémon in unused BG palette slot 2. Do not block here:
+	; sprite decompression/alignment below is pure CPU work, so let the normal
+	; pre-VBlank/VBlank palette pipeline run in parallel. The dual-palette loader
+	; performs the completion check immediately before the first graphics batch.
+	callba StatusScreen_LoadNextPokemonPalette2
+	call StatusScreen_ClearTileMapNoWait
+	; Build the flipped 7x7 2bpp image in SRAM and copy it with the StatusScreen
+	; batch protocol. The global CopyVideoData routine is intentionally untouched.
+	call StatusScreen_LoadFlippedFrontPicDualPalette
+	; Now the complete new picture is visible using palette 2. Build Page 1; this
+	; loads the same new Pokémon into normal palette 0 and resets the WRAM static
+	; palette map to the ordinary StatusScreen layout.
 	call StatusScreen_DrawPage1
-	; SetPal_StatusScreen has now prepared the next Pokémon palette in WRAM,
-	; but no force-update is requested yet. Hardware palette 0 remains white, so
-	; CopyVideoData can replace vFrontPic over multiple frames without exposing
-	; either a mixed old/new picture or a picture using the wrong species palette.
-	coord hl, 1, 0
-	call LoadFlippedFrontSpriteByMonIndex
+	call GBPalNormal
+	; Commit the new normal palette 0 while the visible picture still uses palette
+	; 2, so converting the page attributes back to palette 0 cannot expose old color.
+	call StatusScreen_ForceBgPaletteUpdateAndWait
 
-	; Restore the normal physical assignment: Page 1 in map 1, Page 2 in map 0.
-	; Keep palette 0 white through both transfers; the picture is revealed only
-	; after the complete status-screen state is resident in VRAM.
+	; Preserve SUMMARY11's lazy hidden-page rebuild. Only the page currently
+	; visible is transferred; the opposite physical map is marked dirty and is
+	; rebuilt on demand when the player actually navigates to it.
+	ld a, [wStatusScreenPage]
+	and STATUS_SCREEN_PAGE_MASK
+	cp $2
+	jr z, .refreshPage2
+
+.refreshPage1
 	call StatusScreen_SetTransferMap1
 	call StatusScreen_TransferPreparedMap
+	jr .markHiddenDirty
+
+.refreshPage2
 	call StatusScreen_BuildPage2
 	call StatusScreen_SetTransferMap0
 	call StatusScreen_TransferPreparedMap
 
-	; Preserve whichever logical page the player was viewing before the switch.
-	ld a, [wStatusScreenPage]
-	and STATUS_SCREEN_PAGE_MASK
-	cp $2
-	jr z, .showPage2
-	call StatusScreen_ShowPage1
-	jr .pageSelected
-.showPage2
-	call StatusScreen_ShowPage2
-.pageSelected
-	call GBPalNormal
-	; DrawPage1 already loaded the next species/HP/EXP palettes into bank-2
-	; palette WRAM. Force their normal conversion now and wait for the actual
-	; VBlank copy to finish before accepting another key. This is a completion
-	; handshake, not a fixed-frame delay.
-	call StatusScreen_ForceBgPaletteUpdateAndWait
-	; Only initial entry plays the cry; UP/DOWN Pokémon switching stays silent.
+.markHiddenDirty
+	ld hl, wStatusScreenPage
+	set STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, [hl]
+
+	; The live switch never changes the physical LCDC page: the refreshed map is
+	; the page that was already visible. Do not call StatusScreen_ShowPage1/2 here;
+	; those helpers begin with WaitForVBlank and would only re-assert the existing
+	; LCDC bit/page value. Palette 0 was committed before the transfer, so the
+	; normal page attributes can safely replace the temporary palette-2 wipe attrs.
 	ret
 
-StatusScreen_WhitePokemonPaletteAndWait:
-	; Palette 0 is reserved for the upper-left 8x7 Pokémon picture on the status
-	; screen. This project is GBC-only (InitializeColor rejects non-GBC hardware),
-	; and wGBC is intentionally left at 0 by Start, so do not gate this path on
-	; wGBC == GBC. Make all four colors white, request a normal palette refresh,
-	; and do not continue until VBlank has consumed it.
-	ld a, [rSVBK]
+
+StatusScreen_UpdateShinyFlag:
+	ld b, Bank(IsMonShiny)
+	ld hl, IsMonShiny
+	ld de, wLoadedMonDVs
+	call Bankswitch
+	ld hl, wShinyMonFlag
+	jr nz, .shiny
+	res 0, [hl]
+	ret
+.shiny
+	set 0, [hl]
+	ret
+
+StatusScreen_LoadFlippedFrontPicDualPalette:
+	; Party-only live switch helper. StatusScreen_LoadCurrentMon has already loaded
+	; a valid Pokémon header, so we can reuse the original Home decompression and
+	; alignment helpers while replacing only the final CopyVideoData stage.
+	ld a, 1
+	ld [wSpriteFlipped], a
+	ld hl, wMonHFrontSprite - wMonHeader
+	call UncompressMonSprite
+	ld hl, wMonHSpriteDim
+	ld a, [hli]
+	ld c, a
+
+	and $f
+	ld [H_SPRITEWIDTH], a
 	ld b, a
-	ld a, 2
-	ld [rSVBK], a
-	ld hl, W2_BgPaletteData
-	ld c, 8
-	ld a, $ff
-.whiteLoop
+	ld a, $7
+	sub b
+	inc a
+	srl a
+	ld b, a
+	add a
+	add a
+	add a
+	sub b
+	ld [H_SPRITEOFFSET], a
+	ld a, c
+	swap a
+	and $f
+	ld b, a
+	add a
+	add a
+	add a
+	ld [H_SPRITEHEIGHT], a
+	ld a, $7
+	sub b
+	ld b, a
+	ld a, [H_SPRITEOFFSET]
+	add b
+	add a
+	add a
+	add a
+	ld [H_SPRITEOFFSET], a
+	xor a
+	ld [$4000], a
+	ld hl, sSpriteBuffer0
+	call ZeroSpriteBuffer
+	ld de, sSpriteBuffer1
+	ld hl, sSpriteBuffer0
+	call AlignSpriteDataCentered
+	ld hl, sSpriteBuffer1
+	call ZeroSpriteBuffer
+	ld de, sSpriteBuffer2
+	ld hl, sSpriteBuffer1
+	call AlignSpriteDataCentered
+
+	; Interlace the two 1bpp planes into the same contiguous 49-tile 2bpp buffer
+	; used by the stock loader, including its horizontal nibble flip.
+	xor a
+	ld [$4000], a
+	ld hl, sSpriteBuffer2 + (SPRITEBUFFERSIZE - 1)
+	ld de, sSpriteBuffer1 + (SPRITEBUFFERSIZE - 1)
+	ld bc, sSpriteBuffer0 + (SPRITEBUFFERSIZE - 1)
+	ld a, SPRITEBUFFERSIZE / 2
+	ld [H_SPRITEINTERLACECOUNTER], a
+.interlaceLoop
+	ld a, [de]
+	dec de
+	ld [hld], a
+	ld a, [bc]
+	dec bc
+	ld [hld], a
+	ld a, [de]
+	dec de
+	ld [hld], a
+	ld a, [bc]
+	dec bc
+	ld [hld], a
+	ld a, [H_SPRITEINTERLACECOUNTER]
+	dec a
+	ld [H_SPRITEINTERLACECOUNTER], a
+	jr nz, .interlaceLoop
+	ld bc, 2 * SPRITEBUFFERSIZE
+	ld hl, sSpriteBuffer1
+.flipLoop
+	swap [hl]
+	inc hl
+	dec bc
+	ld a, b
+	or c
+	jr nz, .flipLoop
+	; Palette 2 must be resident before graphics batch 0 becomes visible. Most of
+	; this wait should already have overlapped the decompression/alignment work
+	; above; keep the explicit completion boundary for correctness.
+	call StatusScreen_WaitForBgPaletteCommit
+	call StatusScreen_CopyFrontPicDualPalette
+	call StatusScreen_DrawFlippedFrontPicTileMap
+	xor a
+	ld [wSpriteFlipped], a
+	ret
+
+StatusScreen_DrawFlippedFrontPicTileMap:
+	; Match CopyUncompressedPicToHL's flipped 7x7 tile-ID layout without another
+	; banked call: tile 0 begins at coord(7,0), IDs run downward, then columns move
+	; left. The visible VRAM map already has this layout during the wipe; rebuilding
+	; it here only restores the cleared WRAM page for the later normal transfer.
+	coord hl, 7, 0
+	xor a
+	ld b, 7
+.columnLoop
+	push bc
+	push hl
+	ld c, 7
+.rowLoop
+	ld [hl], a
+	ld de, SCREEN_WIDTH
+	add hl, de
+	inc a
+	dec c
+	jr nz, .rowLoop
+	pop hl
+	dec hl
+	pop bc
+	dec b
+	jr nz, .columnLoop
+	ret
+
+StatusScreen_CopyFrontPicDualPalette:
+	; Local equivalent of CopyVideoData for the 49-tile frontpic. Before each
+	; DelayFrame, arm one batch number in wStatusScreenPage. VBlankCopy writes the
+	; graphics first; the existing GBC VBlank hook then updates those same cells'
+	; attributes to palette 2 before the frame becomes visible.
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ld hl, sSpriteBuffer1
+	ld a, l
+	ld [H_VBCOPYSRC], a
+	ld a, h
+	ld [H_VBCOPYSRC + 1], a
+	ld hl, vFrontPic
+	ld a, l
+	ld [H_VBCOPYDEST], a
+	ld a, h
+	ld [H_VBCOPYDEST + 1], a
+	ld c, 49
+	ld d, 0
+.copyLoop
+	ld a, c
+	cp 8
+	jr c, .lastBatch
+	ld a, 8
+	jr .armBatch
+.lastBatch
+	ld a, c
+.armBatch
+	ld [H_VBCOPYSIZE], a
+	push af
+	ld a, d
+	call StatusScreen_ArmPicturePaletteBatch
+	pop af
+	call DelayFrame
+	ld a, c
+	sub 8
+	jr c, .done
+	ld c, a
+	inc d
+	jr .copyLoop
+.done
+	; Clear the temporary batch/active bits; page, hidden-dirty and ownership bits
+	; remain untouched.
+	ld a, [wStatusScreenPage]
+	and %10000111
+	ld [wStatusScreenPage], a
+	pop af
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
+
+StatusScreen_ArmPicturePaletteBatch:
+	; A = batch index 0..6. Encode it in bits 3..5 and set bit 6. The VBlank-side
+	; consumer clears only the active bit after applying that batch's attributes.
+	and 7
+	add a
+	add a
+	add a
+	ld b, a
+	ld a, [wStatusScreenPage]
+	and %10000111
+	or b
+	set STATUS_SCREEN_WIPE_ACTIVE_F, a
+	ld [wStatusScreenPage], a
+	ret
+
+StatusScreen_PreparePage1IfDirty:
+	; Dirty always refers to the hidden page. Therefore this path is reached only
+	; while Page 2 is visible. Recreate Page 1 in WRAM, transfer it to hidden
+	; vBGMap1, then clear the dirty marker before the LCDC page flip.
+	ld a, [wStatusScreenPage]
+	bit STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, a
+	ret z
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call StatusScreen_SetTransferMap1
+	call StatusScreen_ClearTileMapNoWait
+	call StatusScreen_DrawPage1
+	; ClearTileMapNoWait also erased the 7x7 frontpic tile IDs. The graphics are
+	; still resident in vFrontPic, so restore only the flipped tilemap references
+	; before transferring the rebuilt hidden Page 1.
+	call StatusScreen_DrawFlippedFrontPicTileMap
+	call StatusScreen_TransferPreparedMap
+	ld hl, wStatusScreenPage
+	res STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, [hl]
+	ret
+
+StatusScreen_PreparePage2IfDirty:
+	; While Page 1 is visible, its freshly drawn tilemap remains in wTileMap after
+	; a live switch. Derive Page 2 from that buffer only when the player asks to
+	; see it, then transfer the completed page to hidden vBGMap0.
+	ld a, [wStatusScreenPage]
+	bit STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, a
+	ret z
+	call StatusScreen_SetTransferMap0
+	call StatusScreen_BuildPage2
+	call StatusScreen_TransferPreparedMap
+	ld hl, wStatusScreenPage
+	res STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, [hl]
+	ret
+
+
+StatusScreen_ClearTileMapNoWait:
+	; Clear the full 20x18 WRAM tilemap exactly like ClearScreen, but return
+	; immediately instead of waiting three frames for AutoBG. StatusScreen callers
+	; use this only while AutoBG is disabled and perform an explicit map transfer
+	; after the page has been completely redrawn.
+	ld bc, SCREEN_WIDTH * SCREEN_HEIGHT
+	inc b
+	coord hl, 0, 0
+	ld a, " "
+.loop
 	ld [hli], a
 	dec c
-	jr nz, .whiteLoop
-	ld a, 1
-	ld [W2_ForceBGPUpdate], a
-	ld a, b
-	ld [rSVBK], a
-	jp StatusScreen_WaitForBgPaletteCommit
+	jr nz, .loop
+	dec b
+	jr nz, .loop
+	ret
 
 StatusScreen_ForceBgPaletteUpdateAndWait:
-	; SetPal_StatusScreen has already written the desired source palettes. Ask the
-	; existing pre-VBlank/VBlank pipeline to convert and upload them, then wait for
-	; both producer and consumer flags to become idle. This project is GBC-only;
-	; wGBC is not a usable runtime GBC discriminator here.
+	; SetPal_StatusScreen has written the desired palette sources in WRAM. Force
+	; the normal pre-VBlank conversion and wait until the VBlank consumer has
+	; copied the result into CGB palette RAM. This preserves the correctness
+	; boundary established by SUMMARY08/10 while the frontpic upload itself stays
+	; visible instead of being hidden by a white curtain.
 	ld a, [rSVBK]
 	ld b, a
 	ld a, 2
@@ -918,10 +1165,10 @@ StatusScreen_ForceBgPaletteUpdateAndWait:
 StatusScreen_WaitForBgPaletteCommit:
 	; W2_ForceBGPUpdate is cleared by RefreshPalettesPreVBlank after preparing the
 	; converted buffer. W2_BgPaletteDataModified is cleared only after the VBlank
-	; hook actually writes that buffer into CGB palette RAM. Requiring both to be
-	; zero gives this caller a real completion boundary independent of scanline.
-.wait
-	call DelayFrame
+	; hook actually writes that buffer into CGB palette RAM. Check first so callers
+	; can overlap unrelated CPU work with the transaction; only wait another frame
+	; when either producer or consumer is still busy.
+.check
 	ld a, [rSVBK]
 	ld b, a
 	ld a, 2
@@ -935,8 +1182,9 @@ StatusScreen_WaitForBgPaletteCommit:
 	ld [rSVBK], a
 	ld a, c
 	and a
-	jr nz, .wait
-	ret
+	ret z
+	call DelayFrame
+	jr .check
 
 StatusScreen_TransferPreparedMap:
 	ld a, $1
