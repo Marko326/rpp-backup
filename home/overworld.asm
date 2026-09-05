@@ -1811,9 +1811,11 @@ CollisionCheckOnWater::
 	jr z,.stopSurfing ; stop surfing if the tile is passable
 	jr .loop
 .collision
-	ld a,[wChannelSoundIDs + Ch4]
-	cp SFX_COLLISION ; check if collision sound is already playing
-	jr z,.setCarry
+	; Match land collision behavior: use the active SFX channel state
+	; instead of the legacy sound-ID byte, which can retrigger while held.
+	ld hl, Channel5 + Channel1Flags - Channel1
+	bit 0, [hl]
+	jr nz,.setCarry
 	ld a,SFX_COLLISION
 	call PlaySound ; play collision sound (if it's not already playing)
 .setCarry
