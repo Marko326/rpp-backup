@@ -96,6 +96,10 @@ LogOff:
 	ld hl, wFlags_0xcd60
 	res 3, [hl]
 	res 5, [hl]
+	; Summary page 2 uses vBGMap0, the same ring buffer as the overworld.
+	; Keep Bill's PC intact while it owns the screen, and only rebuild that map
+	; here at the real PC -> overworld ownership boundary.
+	callba RedrawMapView
 	ret
 
 TurnedOnPC1Text:
