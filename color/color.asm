@@ -326,11 +326,10 @@ INCLUDE "color/town_map_pals.asm"
 INCLUDE "color/town_map_pal_assignments.asm"
 
 ; Status screen
-; Stage only the next Pokémon palette data into spare BG slot 2. Do not request a
-; hardware palette update yet: during a live switch the still-visible old frontpic
-; may itself be using palette 2 from the previous completed wipe. The staged colors
-; become visible only after StatusScreen_CommitPreparedNextPokemonPalette2.
-StatusScreen_PrepareNextPokemonPalette2:
+; Stage the next Pokémon palette in unused BG palette slot 7. Slot 7 is not used by
+; the status-screen positional palette map, so the expensive palette lookup can run
+; early without changing either the old picture (palette 0/2) or the HP bar.
+StatusScreen_PrepareNextPokemonPaletteScratch:
 	ld a, [wcf91]
 	cp NUM_POKEMON + 1
 	jr c, .pokemon
@@ -340,7 +339,7 @@ StatusScreen_PrepareNextPokemonPalette2:
 	ld d, a
 	ld a, 2
 	ld [rSVBK], a
-	ld e, 2
+	ld e, 7
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
@@ -353,12 +352,39 @@ StatusScreen_PrepareNextPokemonPalette2:
 	ld [rSVBK], a
 	ret
 
-; Make the already-staged palette 2 eligible for the normal pre-VBlank/VBlank
-; palette pipeline. This is intentionally separate from preparation so 21 can do
-; the CPU work early without recoloring the old picture before text is committed.
+; Page 1 has already calculated wStatusScreenHPBarColor. Load only that color into
+; palette 1 and request the normal palette pipeline. Because the next Pokémon is
+; still parked in unused slot 7, this can safely commit on the same first VBlank as
+; the new text/HP tiles without recoloring the still-visible old frontpic.
+StatusScreen_PrepareHPBarPalette1:
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [wStatusScreenHPBarColor]
+	add PAL_GREENBAR
+	ld d, a
+	ld e, 1
+	callba LoadSGBPalette
+	ld a, 1
+	ld [W2_ForceBGPUpdate], a
+	xor a
+	ld [rSVBK], a
+	ret
+
+; After the complete normal page transfer, every old picture cell has been restored
+; to palette 0. Promote the already-prepared slot-7 colors into transition slot 2,
+; then request the normal palette commit immediately before the picture wipe.
 StatusScreen_CommitPreparedNextPokemonPalette2:
 	ld a, 2
 	ld [rSVBK], a
+	ld hl, W2_BgPaletteData + 7 * 8
+	ld de, W2_BgPaletteData + 2 * 8
+	ld b, 8
+.copyPalette
+	ld a, [hli]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copyPalette
 	ld a, 1
 	ld [W2_ForceBGPUpdate], a
 	xor a
