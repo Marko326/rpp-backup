@@ -42,9 +42,10 @@ TownMapOrderEntries: MACRO
 	db FUCHSIA_CITY
 	db SAFARI_ZONE_EAST
 	db ROUTE_19
-	db ROUTE_20
+	db UNUSED_MAP_F3 ; Seafoam east/Fuchsia-side SeaRoute 19 Town Map point
 	db SEAFOAM_ISLANDS_2
 	db UNUSED_MAP_F1 ; Seafoam west/red-side Town Map point
+	db UNUSED_MAP_F2 ; Cinnabar-side SeaRoute 20 Town Map point
 	db CINNABAR_ISLAND
 	db ROUTE_21
 	db ROUTE_22

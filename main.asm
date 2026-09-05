@@ -2523,6 +2523,75 @@ INCLUDE "data/mapObjects/InsideFerry.asm"
 INCLUDE "scripts/InsideFerry.asm"
 InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
+; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.
+; BANK $35 is capacity-constrained, so keep the larger F23.12n geography logic here.
+SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$34]
+INCLUDE "engine/fly_town_map_route20.asm"
+
+; F23.15fix: build the Pokédex habitat list in the same logical Town Map selector
+; space used by Town Map/Fly. Route 20 water represents both side lanes, while
+; the Seafoam interior represents both world-map island entrances.
+BuildPokedexTownMapLocations::
+	callba FindWildLocationsOfMon
+	ld hl, wBuffer
+	ld b, 0 ; bit 0 = Route 20 seen, bit 1 = Seafoam interior seen
+	ld c, 29 ; keep one of wBuffer's 30 bytes reserved for the final $ff
+.scan
+	ld a, [hl]
+	cp $ff
+	jr z, .appendLogicalLocations
+	cp ROUTE_20
+	jr z, .route20
+	cp SEAFOAM_ISLANDS_1
+	jr z, .seafoam
+	sub SEAFOAM_ISLANDS_2
+	cp SEAFOAM_ISLANDS_5 - SEAFOAM_ISLANDS_2 + 1
+	jr c, .seafoam
+.next
+	inc hl
+	dec c
+	jr .scan
+.route20
+	ld [hl], UNUSED_MAP_F2 ; Cinnabar-side SeaRoute 20
+	set 0, b
+	jr .next
+.seafoam
+	ld [hl], UNUSED_MAP_F1 ; west/upper Seafoam island
+	set 1, b
+	jr .next
+.appendLogicalLocations
+	; Never consume the final reserved byte: every optional append must leave
+	; room for the $ff terminator. If the original habitat list is already
+	; full, keep the existing logical nodes and terminate safely.
+	bit 0, b
+	jr z, .noRoute20East
+	ld a, c
+	and a
+	jr z, .terminate
+	ld [hl], UNUSED_MAP_F3 ; east/Fuchsia-side SeaRoute 19
+	inc hl
+	dec c
+.noRoute20East
+	bit 1, b
+	jr z, .terminate
+	ld a, c
+	and a
+	jr z, .terminate
+	ld [hl], SEAFOAM_ISLANDS_1 ; east/lower Seafoam island
+	inc hl
+	dec c
+.terminate
+	ld [hl], $ff
+
+	; The Pokédex player marker must use the exact same logical selector as the
+	; ordinary Town Map and Fly Map. wOAMBaseTile is temporary here and is not
+	; needed by the nest-icon loop, so use it to carry the selector without
+	; consuming habitat-list space or growing bank $1C.
+	callba GetFlyTownMapPlayerMap
+	ld a, d
+	ld [wOAMBaseTile], a
+	ret
+
 SECTION "pokecenters", ROMX,BANK[$35]
 
 ; Keep the optional Lv50 link-battle rule outside capacity-constrained bank 1.

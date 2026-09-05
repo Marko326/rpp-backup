@@ -125,10 +125,6 @@ DisplayTownMap:
 
 INCLUDE "data/town_map_order.asm"
 
-TownMapCursor:
-	INCBIN "gfx/town_map_cursor.1bpp"
-TownMapCursorEnd:
-
 LoadTownMap_Nest:
 	ld a, [hTilesetType]
 	push af
@@ -522,7 +518,7 @@ DrawPlayerOrBirdSprite:
 	jp CopyData
 
 DisplayWildLocations:
-	callba FindWildLocationsOfMon
+	callba BuildPokedexTownMapLocations
 	call ZeroOutDuplicatesInList
 	ld hl, wOAMBuffer
 	ld de, wBuffer
@@ -561,7 +557,7 @@ DisplayWildLocations:
 	call PlaceString
 	jr .done
 .drawPlayerSprite
-	ld a, [wCurMap]
+	ld a, [wOAMBaseTile] ; logical Town Map selector saved by BuildPokedexTownMapLocations
 	ld b, $0
 	call DrawPlayerOrBirdSprite
 .done
@@ -815,10 +811,6 @@ GetMapNameForSaveScreen:
 INCLUDE "data/town_map_entries.asm"
 
 INCLUDE "text/map_names.asm"
-
-MonNestIcon:
-	INCBIN "gfx/mon_nest_icon.2bpp"
-MonNestIconEnd:
 
 TownMapSpriteBlinkingAnimation:
 	ld a, [wAnimCounter]

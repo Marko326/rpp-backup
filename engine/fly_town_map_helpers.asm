@@ -149,7 +149,8 @@ InitTownMapLocationFromPlayerMap::
 ; E is used deliberately: callab/callba replace A with the destination ROM bank,
 ; while DE survives Bankswitch. First use an exact selector match. If the player
 ; is on an interior map that is not itself in TownMapOrder, fall back to the
-; nearest Town Map coordinates.
+; nearest Town Map coordinates. F23.15fix keeps all Route 20/Seafoam pseudo
+; selectors as real browse nodes, so the displayed selector can be scanned as-is.
 	ld d, e ; preserve displayed selector for the exact-ID scan
 	xor a
 	ld [wBuffer + 1], a ; current TownMapOrder index
@@ -238,27 +239,18 @@ TownMapOrderAnchorMapIDsEnd:
 	db $ff
 
 GetFlyTownMapPlayerMap::
-; Some special Fly selectors land on a nearby outdoor map instead of loading the
-; landmark map itself. For Town Map display, treat configured landmark anchors
-; and the tile immediately below each anchor as the landmark selector.
+; Return the logical Town Map area for the player's current position.
+; Route 20 contains both Seafoam land and the west/east sea lanes, so classify
+; that map before the generic landmark-anchor overrides.
 ;
-; The table contains both Fly landing anchors (including the legacy Mt. Moon and
-; Rock Tunnel Pokemon Center landing points) and real landmark entrances. This
-; keeps Fly -> Town Map naming consistent without losing the other entrances.
-;
-; out: D = map ID whose Town Map coordinates/name should be used for the player.
+; out: D = map/selector whose Town Map coordinates/name should be displayed.
 	ld a, [wCurMap]
 	ld d, a
-	; Seafoam 1F has two Route 20 entrances. If the latest external entrance was
-	; the west/red-side entrance, show the dedicated west Fly selector instead of
-	; the original east-side Seafoam selector.
-	cp SEAFOAM_ISLANDS_1
-	jr nz, .scanOverrides
-	ld a, [wSeafoamEntranceSource]
-	cp 1
-	jr nz, .scanOverrides
-	ld d, UNUSED_MAP_F1 ; pseudo selector reserved for Seafoam west entrance
-	ret
+	; F23.12n Route 20 / Seafoam geography is kept in roomy bank $34.
+	; The helper sets carry when it handled the current map and returns D as
+	; the logical Town Map selector; otherwise D remains the real map ID.
+	callba ClassifyRoute20SeafoamTownMap
+	ret c
 .scanOverrides
 	ld hl, FlyTownMapPlayerOverrides
 .loop
@@ -296,6 +288,7 @@ GetFlyTownMapPlayerMap::
 	inc hl ; selector map
 	jr .loop
 
+
 FlyTownMapPlayerOverrides:
 	; actual map, anchor y, anchor x, Town Map selector
 	; The immediately lower tile is also treated as the same landmark.
@@ -306,7 +299,6 @@ FlyTownMapPlayerOverrides:
 	db ROUTE_4,        5, 11, MT_MOON_3
 	db ROUTE_10,      19, 11, ROCK_TUNNEL_1
 	db ROUTE_10,      39,  6, POWER_PLANT
-	db ROUTE_20,       9, 58, SEAFOAM_ISLANDS_1
 	db CERULEAN_CITY, 11,  4, UNKNOWN_DUNGEON_1
 	db ROUTE_25,       3, 45, BILLS_HOUSE
 	db FUCHSIA_CITY,   3, 18, SAFARI_ZONE_ENTRANCE
@@ -322,7 +314,6 @@ FlyTownMapPlayerOverrides:
 	db ROUTE_4,        5, 24, MT_MOON_3
 	db ROUTE_10,      17,  8, ROCK_TUNNEL_1
 	db ROUTE_10,      53,  8, ROCK_TUNNEL_1
-	db ROUTE_20,       5, 48, UNUSED_MAP_F1 ; Seafoam west/red-side entrance
 	db $ff
 
 
@@ -674,6 +665,10 @@ TryLoadSpecialTownMapEntry::
 	ld a, e
 	cp UNUSED_MAP_F1
 	jr z, .seafoamWest
+	cp UNUSED_MAP_F2
+	jr z, .route20West
+	cp UNUSED_MAP_F3
+	jr z, .route19East
 	cp DIGLETTS_CAVE_EXIT
 	jr z, .diglettRoute2
 	cp DIGLETTS_CAVE_ENTRANCE
@@ -686,6 +681,18 @@ TryLoadSpecialTownMapEntry::
 	ld d, 140
 	ld e, 72
 	ld hl, SeafoamIslandsName
+	scf
+	ret
+.route20West
+	ld d, 148
+	ld e, 70
+	ld hl, Route20Name
+	scf
+	ret
+.route19East
+	ld d, 148
+	ld e, 90
+	ld hl, Route19Name
 	scf
 	ret
 .diglettRoute2
@@ -770,3 +777,13 @@ SpecialFlyWarpData:
 	db VICTORY_ROAD_1, ROUTE_23
 	FLYWARP_DATA ROUTE_23_WIDTH, 32, 4
 	db $ff
+
+; Keep Town Map UI graphics out of the nearly-full bank $1C. Both callers use
+; BANK(label), so these assets are safe to keep with the expansion-bank helpers.
+TownMapCursor:
+	INCBIN "gfx/town_map_cursor.1bpp"
+TownMapCursorEnd:
+
+MonNestIcon:
+	INCBIN "gfx/mon_nest_icon.2bpp"
+MonNestIconEnd:
