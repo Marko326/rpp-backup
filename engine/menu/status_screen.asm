@@ -838,20 +838,18 @@ StatusScreen_TrySwitchPartyMon:
 	ret
 
 StatusScreen_RebuildSwitchedPartyMon:
-	; 21 keeps 20new's early CPU-side frontpic preparation and 19new's safe visible
-	; order, but separates palette-2 data preparation from palette-2 activation.
-	; The old picture therefore keeps its old colors until the new text/data page is
-	; fully committed, while the expensive image/palette data work is still overlapped.
+	; 22 keeps 21's early CPU-side image/palette preparation and safe visible order.
+	; The next Pokémon colors are staged in unused palette 7, allowing the HP-bar
+	; palette to change with the new text while palette 2 still protects the old pic.
 	xor a
 	ld [wStatusScreenStatMode], a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call StatusScreen_LoadCurrentMon
 	call StatusScreen_UpdateShinyFlag
 
-	; Stage the next palette's bytes and prepare the new 7x7 2bpp image entirely
-	; off-screen. Crucially, palette 2 is NOT committed to CGB palette RAM yet, so
-	; an old picture still using palette 2 cannot be recolored to the next Pokémon.
-	callba StatusScreen_PrepareNextPokemonPalette2
+	; Stage the next Pokémon colors in unused palette 7 and prepare the new 7x7 2bpp
+	; image entirely off-screen. Palette 2 remains the old/current Pokémon for now.
+	callba StatusScreen_PrepareNextPokemonPaletteScratch
 	call StatusScreen_PrepareFlippedFrontPicDualPalette
 	call StatusScreen_ClearTileMapNoWait
 
@@ -872,6 +870,11 @@ StatusScreen_RebuildSwitchedPartyMon:
 	xor a
 	ld [wStatusScreenDeferPaletteUpdate], a
 
+	; Put the newly calculated green/yellow/red HP palette into slot 1 before the
+	; ordinary page transfer. The first transfer VBlank therefore changes HP color
+	; together with the new HP/text tiles, while the old frontpic colors stay intact.
+	callba StatusScreen_PrepareHPBarPalette1
+
 	; Use SUMMARY17's exact complete page-transfer helper, unchanged. This retains
 	; the existing GBC static-palette/AutoBG handshake and avoids the failed
 	; SUMMARY18/19/20 partial-refresh and fixed-portion assumptions.
@@ -888,9 +891,9 @@ StatusScreen_RebuildSwitchedPartyMon:
 	call StatusScreen_TransferPreparedMap
 .pageVisible
 
-	; Text/data is now fully visible. Only now allow the already-staged next palette
-	; to reach CGB palette RAM, then immediately enter the unchanged 49-tile wipe.
-	; This preserves 20new's early preparation without tinting the old picture first.
+	; Text/data (including the correct HP-bar color) is now fully visible. Promote
+	; the already-staged next Pokémon colors from unused slot 7 into transition slot
+	; 2, then immediately enter the unchanged 49-tile wipe.
 	callba StatusScreen_CommitPreparedNextPokemonPalette2
 	call StatusScreen_CommitPreparedFlippedFrontPicDualPalette
 
