@@ -1,3 +1,5 @@
+DEF TOWN_MAP_ORDER_VERMILION_INDEX EQU 18 ; zero-based index in TownMapOrder
+
 TownMapOrderEntries: MACRO
 	db PALLET_TOWN
 	db ROUTE_1

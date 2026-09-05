@@ -77,14 +77,22 @@ DisplayTownMap:
 .inputLoop
 	call TownMapSpriteBlinkingAnimation
 	call JoypadLowSensitivity
+	; Keep directional/menu repeat from JoypadLowSensitivity, but START/SELECT are
+	; edge-triggered so held shortcut buttons cannot repeatedly jump the cursor.
 	ld a, [hJoy5]
+	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
 	ld b, a
-	and A_BUTTON | B_BUTTON | START | D_UP | D_DOWN
+	ld a, [hJoyPressed]
+	and START | SELECT
+	or b
+	ld b, a
 	jr z, .inputLoop
 	ld a, SFX_TINK
 	call PlaySound
 	bit 3, b
 	jr nz, .pressedStart
+	bit 2, b
+	jr nz, .pressedSelect
 	bit 6, b
 	jr nz, .pressedUp
 	bit 7, b
@@ -102,6 +110,10 @@ DisplayTownMap:
 	ret
 .pressedStart
 	xor a ; TownMapOrder index 0 = Pallet Town
+	ld [wWhichTownMapLocation], a
+	jp .townMapLoop
+.pressedSelect
+	ld a, TOWN_MAP_ORDER_VERMILION_INDEX
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 .pressedUp
@@ -216,10 +228,16 @@ LoadTownMap_Fly:
 	push hl
 	call DelayFrame
 	call JoypadLowSensitivity
+	; Fly Map keeps held-direction repeat, while START/SELECT only react to
+	; newly-pressed edges so held shortcut buttons do not repeatedly retrigger.
 	ld a, [hJoy5]
+	and A_BUTTON | B_BUTTON | D_RIGHT | D_LEFT | D_UP | D_DOWN
+	ld b, a
+	ld a, [hJoyPressed]
+	and START | SELECT
+	or b
 	ld b, a
 	pop hl
-	and A_BUTTON | B_BUTTON | START | D_RIGHT | D_LEFT | D_UP | D_DOWN
 	jr z, .inputLoop
 	bit 0, b
 	jr nz, .pressedA
@@ -227,6 +245,8 @@ LoadTownMap_Fly:
 	call PlaySound
 	bit 3, b
 	jr nz, .pressedStart
+	bit 2, b
+	jr nz, .pressedSelect
 	bit 4, b
 	jr nz, .pressedLeftOrRight
 	bit 5, b
@@ -243,6 +263,18 @@ LoadTownMap_Fly:
 	; Pallet Town is the first visited city in a normal save. Reuse the existing
 	; availability scan so malformed/unusual visit flags never select a $fe entry.
 	jr .selectFirstAvailable
+.pressedSelect
+	; SELECT jumps directly to Vermilion City only after its normal Fly flag is set.
+	; Check the visit bit before rebuilding the list so an unavailable shortcut
+	; leaves the current city/special selection untouched.
+	ld a, [wKantoTownVisitedFlag]
+	bit VERMILION_CITY, a
+	jp z, .townMapFlyLoop
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	ld hl, wBuffer + 1 + VERMILION_CITY
+	jp .townMapFlyLoop
 .pressedA
 	ld a, SFX_HEAL_AILMENT
 	call PlaySound
