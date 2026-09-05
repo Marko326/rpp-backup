@@ -11,10 +11,133 @@ LoadPlayerSpriteGraphicsForFlyTownMap::
 	ld a, [wWalkBikeSurfState]
 	cp 2
 	jp nz, LoadPlayerSpriteGraphics
-	ld de, SeelSprite
+	call GetSurfPlayerSpriteGraphics
 	ld hl, vNPCSprites
-	lb bc, BANK(SeelSprite), 4
+	ld c, 4
 	jp CopyVideoData
+
+LoadSurfingPlayerSpriteGraphicsByUser::
+; Load the full overworld Surf sheet selected when Surf was started.
+	call GetSurfPlayerSpriteGraphics
+	ld hl, vNPCSprites
+	ld c, $0c
+	push bc
+	push de
+	push hl
+	call CopyVideoData
+	pop hl
+	pop de
+	pop bc
+	ld a, $c0
+	add e
+	ld e, a
+	jr nc, .noCarry
+	inc d
+.noCarry
+	set 3, h
+	jp CopyVideoData
+
+GetSurfPlayerSpriteGraphics:
+; wd728 bit 2 records whether the most recently selected Surf user was Pikachu.
+; Forced Surf may reuse that identity, but only while a Surf-capable Pikachu
+; still exists in the current party.
+	ld a, [wd728]
+	bit 2, a
+	jr z, .useSeel
+	call FindSurfingPikachuInParty
+	jr c, .usePikachu
+	ld hl, wd728
+	res 2, [hl]
+.useSeel
+	ld de, SeelSprite
+	ld b, BANK(SeelSprite)
+	ret
+.usePikachu
+	ld de, SurfingPikachu
+	ld b, BANK(SurfingPikachu)
+	ret
+
+PreferSurfingPikachuForFieldSurf::
+; Automatic water interaction prefers a Pikachu that actually knows Surf.
+; Manual party-menu Surf does not call this, so it keeps the selected Pokemon.
+	call FindSurfingPikachuInParty
+	ret nc
+	ld [wWhichPokemon], a
+	ret
+
+FindSurfingPikachuInParty:
+; Find the first Pikachu in the current party that actually knows Surf.
+; out: carry set and A = party index if found; carry clear if not found.
+	ld a, [wPartyCount]
+	and a
+	ret z
+	ld b, a
+	ld c, 0
+	ld de, wPartySpecies
+	ld hl, wPartyMon1Moves
+.checkPokemon
+	ld a, [de]
+	inc de
+	cp PIKACHU
+	jr nz, .skipMoves
+	ld a, [hli]
+	cp SURF
+	jr z, .found
+	ld a, [hli]
+	cp SURF
+	jr z, .found
+	ld a, [hli]
+	cp SURF
+	jr z, .found
+	ld a, [hli]
+	cp SURF
+	jr z, .found
+	ld a, wPartyMon2 - wPartyMon1 - NUM_MOVES
+	jr .advanceMoves
+.skipMoves
+	ld a, wPartyMon2 - wPartyMon1
+.advanceMoves
+	add l
+	ld l, a
+	ld a, 0
+	adc h
+	ld h, a
+	inc c
+	dec b
+	jr nz, .checkPokemon
+	and a
+	ret
+.found
+	ld a, c
+	scf
+	ret
+
+StartSurfingWithSelectedPokemon::
+; wWhichPokemon is the exact Surf user selected by the active entry path.
+	ld hl, wd728
+	res 2, [hl]
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wPartySpecies
+	add hl, de
+	ld a, [hl]
+	cp PIKACHU
+	jr nz, .gotSurfUser
+	ld hl, wd728
+	set 2, [hl]
+.gotSurfUser
+	ld hl, wd730
+	set 7, [hl]
+	ld a, 2
+	ld [wWalkBikeSurfState], a
+	call PlayDefaultMusic
+	ld hl, SurfingGotOnText
+	jp PrintText
+
+SurfingGotOnText:
+	TX_FAR _SurfingGotOnText
+	db "@"
 
 InitTownMapLocationFromPlayerMap::
 ; Initialize ordinary Town Map Up/Down browsing from the player's displayed

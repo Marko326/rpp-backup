@@ -1873,9 +1873,7 @@ LoadWalkingPlayerSpriteGraphics::
 	jr LoadPlayerSpriteGraphicsCommon
 
 LoadSurfingPlayerSpriteGraphics::
-	ld de,SeelSprite
-	ld hl,vNPCSprites
-	jr LoadPlayerSpriteGraphicsCommon
+	jpba LoadSurfingPlayerSpriteGraphicsByUser
 
 LoadBikePlayerSpriteGraphics::
 	ld de,RedCyclingSprite

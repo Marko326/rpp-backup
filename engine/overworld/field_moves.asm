@@ -53,6 +53,7 @@ TrySurf:
 	jr nz, .no2
 
 ; Call the Surf routine if the player said Yes.
+	callba PreferSurfingPikachuForFieldSurf
 	call GetPartyMonName2
 	ld a, SURFBOARD
 	ld [wcf91], a

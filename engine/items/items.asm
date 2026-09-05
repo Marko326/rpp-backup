@@ -921,13 +921,7 @@ ItemUseSurfboard:
 	jp c,SurfingAttemptFailed
 .surf
 	call .makePlayerMoveForward
-	ld hl,wd730
-	set 7,[hl]
-	ld a,2
-	ld [wWalkBikeSurfState],a ; change player state to surfing
-	call PlayDefaultMusic ; play surfing music
-	ld hl,SurfingGotOnText
-	jp PrintText
+	jpba StartSurfingWithSelectedPokemon
 .tryToStopSurfing
 	xor a
 	ld [hSpriteIndexOrTextID],a
@@ -986,10 +980,6 @@ ItemUseSurfboard:
 	inc a
 	ld [wSimulatedJoypadStatesIndex],a
 	ret
-
-SurfingGotOnText:
-	TX_FAR _SurfingGotOnText
-	db "@"
 
 SurfingNoPlaceToGetOffText:
 	TX_FAR _SurfingNoPlaceToGetOffText

@@ -3283,6 +3283,7 @@ wUnusedD71F:: ; d71f
 wd728:: ; d728
 ; bit 0: using Strength outside of battle
 ; bit 1: set by IsSurfingAllowed when surfing's allowed, but the caller resets it after checking the result
+; bit 2: current Surf user is Pikachu; selects the Yellow-style Surfing Pikachu sprite
 ; bit 3: received Old Rod
 ; bit 4: received Good Rod
 ; bit 5: received Super Rod
