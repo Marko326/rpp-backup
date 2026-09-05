@@ -1,15 +1,16 @@
 VendingMachineMenu:
 	ld hl, VendingMachineText1
 	call PrintText
-	ld a, MONEY_BOX
-	ld [wTextBoxID], a
-	call DisplayTextBoxID
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wLastMenuItem], a
+.menuLoop
+	ld a, MONEY_BOX
+	ld [wTextBoxID], a
+	call DisplayTextBoxID
 	ld a, A_BUTTON | B_BUTTON
 	ld [wMenuWatchedKeys], a
-	ld a, 3
+	ld a, 2
 	ld [wMaxMenuItem], a
 	ld a, 5
 	ld [wTopMenuItemY], a
@@ -18,7 +19,7 @@ VendingMachineMenu:
 	ld hl, wd730
 	set 6, [hl]
 	coord hl, 0, 3
-	ld b, 8
+	ld b, 7
 	ld c, 12
 	call TextBoxBorder
 	call UpdateSprites
@@ -34,8 +35,6 @@ VendingMachineMenu:
 	bit 1, a ; pressed B?
 	jr nz, .notThirsty
 	ld a, [wCurrentMenuItem]
-	cp 3 ; chose Cancel?
-	jr z, .notThirsty
 	xor a
 	ld [hMoney], a
 	ld [hMoney + 2], a
@@ -53,7 +52,7 @@ VendingMachineMenu:
 	call GiveItem
 	jr nc, .BagFull
 
-	ld b, 60 ; number of times to play the "brrrrr" sound
+	ld b, 30 ; shortened vending-machine delivery sound
 .playDeliverySound
 	ld c, 2
 	call DelayFrames
@@ -70,9 +69,7 @@ VendingMachineMenu:
 	ld de, wPlayerMoney + 2
 	ld c, $3
 	predef SubBCDPredef
-	ld a, MONEY_BOX
-	ld [wTextBoxID], a
-	jp DisplayTextBoxID
+	jp .menuLoop
 .BagFull
 	ld hl, VendingMachineText6
 	jp PrintText
@@ -87,8 +84,7 @@ VendingMachineText1:
 DrinkText:
 	db   "Fresh Water"
 	next "Soda Pop"
-	next "Lemonade"
-	next "Cancel@"
+	next "Lemonade@"
 
 DrinkPriceText:
 	db   "¥200"
