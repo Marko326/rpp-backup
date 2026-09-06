@@ -87,6 +87,7 @@ PlayerPCDeposit:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	ld [wWhichPokemon], a ; initial absolute list position
 	ld a, [wNumBagItems]
 	and a
 	jr nz, .loop
@@ -101,6 +102,7 @@ PlayerPCDeposit:
 	ld [wListPointer], a
 	ld a, h
 	ld [wListPointer + 1], a
+	callba RestoreItemListPosition
 	xor a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
@@ -127,8 +129,8 @@ PlayerPCDeposit:
 	call PrintText
 	jp .loop
 .roomAvailable
-	ld hl, wNumBagItems
-	call RemoveItemFromInventory
+	ld de, wNumBagItems
+	callba RemoveItemFromInventoryPreserveListState
 	call WaitForSoundToFinish
 	ld a, SFX_WITHDRAW_DEPOSIT
 	call PlaySound
@@ -141,6 +143,7 @@ PlayerPCWithdraw:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	ld [wWhichPokemon], a ; initial absolute list position
 	ld a, [wNumBoxItems]
 	and a
 	jr nz, .loop
@@ -155,6 +158,7 @@ PlayerPCWithdraw:
 	ld [wListPointer], a
 	ld a, h
 	ld [wListPointer + 1], a
+	callba RestoreItemListPosition
 	xor a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
@@ -181,8 +185,8 @@ PlayerPCWithdraw:
 	call PrintText
 	jp .loop
 .roomAvailable
-	ld hl, wNumBoxItems
-	call RemoveItemFromInventory
+	ld de, wNumBoxItems
+	callba RemoveItemFromInventoryPreserveListState
 	call WaitForSoundToFinish
 	ld a, SFX_WITHDRAW_DEPOSIT
 	call PlaySound
@@ -195,6 +199,7 @@ PlayerPCToss:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	ld [wWhichPokemon], a ; initial absolute list position
 	ld a, [wNumBoxItems]
 	and a
 	jr nz, .loop
@@ -209,17 +214,14 @@ PlayerPCToss:
 	ld [wListPointer], a
 	ld a, h
 	ld [wListPointer + 1], a
+	callba RestoreItemListPosition
 	xor a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
 	ld [wListMenuID], a
-	push hl
 	call DisplayListMenuID
-	pop hl
 	jp c, PlayerPCMenu
-	push hl
 	call IsKeyItem
-	pop hl
 	ld a, 1
 	ld [wItemQuantity], a
 	ld a, [wIsKeyItem]
@@ -229,14 +231,13 @@ PlayerPCToss:
 	call IsItemHM
 	jr c, .next
 ; if it's not a key item, there can be more than one of the item
-	push hl
 	ld hl, TossHowManyText
 	call PrintText
 	call DisplayChooseQuantityMenu
-	pop hl
 	cp $ff
 	jp z, .loop
 .next
+	ld hl, wNumBoxItems
 	call TossItem ; disallows tossing key items
 	jp .loop
 

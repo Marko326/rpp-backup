@@ -2980,8 +2980,9 @@ TossItem_:
 	ret z ; return if the player chose No
 ; if the player chose Yes
 	push hl
-	ld a,[wWhichPokemon]
-	call RemoveItemFromInventory
+	ld d,h
+	ld e,l
+	callba RemoveItemFromInventoryPreserveListState
 	ld a,[wcf91]
 	ld [wd11e],a
 	call GetItemName

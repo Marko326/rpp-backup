@@ -2443,6 +2443,9 @@ SECTION "bank34",ROMX,BANK[$34]
 INCLUDE "data/item_prices.asm"
 INCLUDE "text/item_names.asm"
 
+; Shared conventional item-list state helpers live in roomy bank $34.
+INCLUDE "engine/menu/item_list_state.asm"
+
 ; Mt Moon Square
 INCLUDE "data/mapHeaders/MtMoonSquare.asm"
 INCLUDE "scripts/MtMoonSquare.asm"

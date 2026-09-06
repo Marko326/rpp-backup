@@ -34,18 +34,16 @@ VendingMachineMenu:
 	call HandleMenuInput
 	bit 1, a ; pressed B?
 	jr nz, .notThirsty
-	ld a, [wCurrentMenuItem]
-	xor a
-	ld [hMoney], a
-	ld [hMoney + 2], a
-	ld a, $2
-	ld [hMoney + 1], a
-	call HasEnoughMoney
+	call LoadVendingMachineItem
+	ld de, wPlayerMoney
+	ld hl, hVendingMachinePrice
+	ld c, 3
+	call StringCmp
 	jr nc, .enoughMoney
 	ld hl, VendingMachineText4
-	jp PrintText
+	call PrintText
+	jp .menuLoop
 .enoughMoney
-	call LoadVendingMachineItem
 	ld a, [hVendingMachineItem]
 	ld b, a
 	ld c, 1
@@ -72,7 +70,8 @@ VendingMachineMenu:
 	jp .menuLoop
 .BagFull
 	ld hl, VendingMachineText6
-	jp PrintText
+	call PrintText
+	jp .menuLoop
 .notThirsty
 	ld hl, VendingMachineText7
 	jp PrintText
