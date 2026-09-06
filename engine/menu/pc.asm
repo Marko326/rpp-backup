@@ -86,7 +86,9 @@ BillsPC:
 ReloadMainMenu:
 	xor a
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
-	call ReloadMapData
+	; PC keeps ownership of the screen while returning from submenus.
+	; ReloadMapData was causing a visible map redraw flash before the PC menu
+	; was rebuilt. The overworld redraw is handled only at LogOff.
 	call UpdateSprites
 	jp PCMainMenu
 LogOff:
