@@ -2446,6 +2446,9 @@ INCLUDE "text/item_names.asm"
 ; Shared conventional item-list state helpers live in roomy bank $34.
 INCLUDE "engine/menu/item_list_state.asm"
 
+; Elevator floor-menu positioning is kept in the roomy expansion bank.
+INCLUDE "engine/overworld/elevator_cursor.asm"
+
 ; Mt Moon Square
 INCLUDE "data/mapHeaders/MtMoonSquare.asm"
 INCLUDE "scripts/MtMoonSquare.asm"

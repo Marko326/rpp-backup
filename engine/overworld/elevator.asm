@@ -1,4 +1,11 @@
 ShakeElevator:
+	ld b, 100 ; legacy fixed duration (used by the ferry)
+	jr ShakeElevatorWithLoopCount
+
+ShakeBuildingElevator::
+	ld b, 40 ; shorter fixed duration for building elevators
+
+ShakeElevatorWithLoopCount:
 	ld de, -$20
 	call ShakeElevatorRedrawRow
 	ld de, SCREEN_HEIGHT * $20
@@ -9,7 +16,6 @@ ShakeElevator:
 	ld a, [hSCY]
 	ld d, a
 	ld e, $1
-	ld b, 100
 .shakeLoop ; scroll the BG up and down and play a sound effect
 	ld a, e
 	xor $fe
