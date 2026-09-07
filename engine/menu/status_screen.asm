@@ -1218,9 +1218,49 @@ StatusScreen_WaitForBgPaletteCommit:
 	jr .check
 
 StatusScreen_TransferPreparedMap:
+	; A live-switch wipe leaves the visible 7x7 picture attributes on palette 2.
+	; Do not rely on a destination change or a previous RunPaletteCommand to mark
+	; the static attribute map dirty: same-page consecutive switches can otherwise
+	; promote the next Pokemon colors into palette 2 while the old picture still
+	; references it, producing a one-frame recolored old sprite.
+	ld a, 2
+	ld [rSVBK], a
+	ld a, 3
+	ld [W2_StaticPaletteMapChanged], a
+	xor a
+	ld [rSVBK], a
+
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call Delay3
+
+	; Delay3 is the normal three-portion transfer time, but palette-map preparation
+	; and its VBlank DMA use an explicit producer/consumer handshake. Wait for all
+	; three portions and any final prepared window portion to be consumed before
+	; palette 2 is allowed to change. In the common case this exits immediately.
+.waitForPaletteMapCommit
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_StaticPaletteMapChanged]
+	and a
+	jr nz, .paletteMapPending
+	ld a, [W2_StaticPaletteMapChanged_vbl]
+	and a
+	jr nz, .paletteMapPending
+	ld a, [W2_UpdatedWindowPortion]
+	and a
+	jr nz, .paletteMapPending
+	xor a
+	ld [rSVBK], a
+	jr .transferComplete
+
+.paletteMapPending
+	xor a
+	ld [rSVBK], a
+	call DelayFrame
+	jr .waitForPaletteMapCommit
+
+.transferComplete
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
