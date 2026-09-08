@@ -470,7 +470,7 @@ HandlePokedexListMenu:
 	; 首尾跳转或按住到达边界后必须先松开上下键，防止继续移动。
 	call DelayFrame
 	call Joypad
-	ld a,[hJoyHeld]
+	ldh a,[hJoyHeld]
 	and D_UP | D_DOWN
 	jr nz,.waitForVerticalRelease
 	ret
@@ -698,6 +698,12 @@ ShowPokedexDataCommon:
 	pop bc
 	pop af
 
+	; $FF8B is shared with H_SPRITEWIDTH, so the frontpic loader may leave the
+	; down-arrow Active alias nonzero. Reinitialize it only after picture/cry work
+	; has finished; Owned descriptions will explicitly arm it again after rendering.
+	xor a
+	ld [hDownArrowBlinkActive],a
+
 	ld a,c
 	and a
 	jp z,.waitForButtonPress ; if the pokemon has not been owned, don't print the height, weight, or description
@@ -785,19 +791,11 @@ ShowPokedexDataCommon:
 	jr .exitData
 
 .waitForInternalInput
-	; Only a render entered from UP/DOWN needs the release gate. On the initial
-	; A->Info entry, avoid an extra Joypad poll that could swallow a fresh A/B.
-	ld a,[hJoyHeld]
-	and D_UP | D_DOWN
-	jr z,.internalInputLoop
-	callba PokedexData_WaitForVerticalRelease
-	; The wait helper already polled Joypad on the release frame; consume that
-	; hJoyPressed value once before polling again so simultaneous A/B is not lost.
-	jr .handleInternalPressed
 .internalInputLoop
-	call JoypadLowSensitivity
-.handleInternalPressed
-	ld a,[hJoyPressed]
+	; The roomy helper owns release gating plus the stock blinking ▼ animation and
+	; returns the already-polled fresh button state in E. This also shrinks bank $10.
+	callba PokedexData_ReadInternalInput
+	ld a,e
 	ld b,a
 	and B_BUTTON
 	jr nz,.exitData
@@ -810,14 +808,18 @@ ShowPokedexDataCommon:
 	and D_UP | D_DOWN
 	jr z,.internalInputLoop
 
-	; PlayCry uses wd11e as scratch. Restore the current internal species before
-	; searching for the next Seen entry in Pokédex-number space.
-	ld e,a ; DE survives Bankswitch; E carries the fresh vertical direction
-	ld a,[wcf91]
-	ld [wd11e],a
+	; The bank $34 selector restores wd11e from wcf91 before searching, because
+	; PlayCry uses wd11e as scratch. E survives Bankswitch and carries direction.
+	ld e,a
 	callba PokedexData_TryStepSeen
 	jr nc,.internalInputLoop
-	jp .renderEntry
+	; A Pokémon change always returns to description page 1. Keep the session
+	; stack state synchronized with the locally refreshed page.
+	pop af
+	ld a,1
+	push af
+	callba PokedexData_RenderSwitchedEntry
+	jr .waitForButtonPress
 
 .toggleDescription
 	; Seen-but-not-Owned entries intentionally keep the original limited display,

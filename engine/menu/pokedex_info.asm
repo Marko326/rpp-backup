@@ -41,6 +41,10 @@ PokedexData_SelectCurrentListEntry:
 	ret
 
 PokedexData_BeginSessionVolume:
+	; Info owns its description-arrow animation. Start from an inactive state so a
+	; blinking arrow left by the Pokédex list cannot leak into a Seen-only entry.
+	xor a
+	ld [hDownArrowBlinkActive],a
 	; UpdateSound writes Volume back to NR50 every audio tick. Store the reduced
 	; value in Volume itself so it persists for the whole Info session. Music Off
 	; and BGM Volume 0 stay untouched to avoid changing silent routed DACs.
@@ -55,7 +59,23 @@ PokedexData_BeginSessionVolume:
 	ret
 
 PokedexData_EndSession:
+	xor a
+	ld [hDownArrowBlinkActive],a
 	call GBPalWhiteOut
+	; Internal Info swaps between the two Window BG maps so a prepared text page can
+	; appear atomically. Restore the project's normal map 1 ownership while the
+	; screen is white before rebuilding the caller's menu.
+	call DelayFrame
+	callba WaitForVBlank
+	ld a,[rLCDC]
+	set 6,a
+	ld [rLCDC],a
+	xor a
+	ld [H_AUTOBGTRANSFERDEST],a
+	ld a,vBGMap1 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1],a
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
 	call ClearScreen
 	call RunDefaultPaletteCommand
 	call LoadTextBoxTilePatterns
@@ -74,10 +94,296 @@ PokedexData_EndSession:
 
 PokedexData_WaitForVerticalRelease:
 	call DelayFrame
+	call PokedexData_TickDescriptionArrow
 	call Joypad
 	ld a,[hJoyHeld]
 	and D_UP | D_DOWN
 	jr nz,PokedexData_WaitForVerticalRelease
+	ret
+
+; Poll one internal Info input. SUMMARY26 only enters the stock down-arrow timing
+; loop after Char49 has explicitly produced a valid description-page arrow. Keep
+; the same ownership model here: a stale ▼ tile can never start blinking by itself.
+; E survives the callba trampoline, so return the fresh button state there.
+PokedexData_ReadInternalInput:
+	; Match WaitForTextScrollButtonPress: advance the arrow before polling input.
+	call PokedexData_TickDescriptionArrow
+	ldh a,[hJoyHeld]
+	and D_UP | D_DOWN
+	jr z,.poll
+	call PokedexData_WaitForVerticalRelease
+	jr .haveInput
+.poll
+	call JoypadLowSensitivity
+.haveInput
+	ldh a,[hJoyPressed]
+	ld e,a
+	ret
+
+PokedexData_TickDescriptionArrow:
+	; $FF8B/$FF8C are shared scratch HRAM. Rendering code must reset Active after its
+	; last scratch user, and only an Owned Page 1 may arm it before entering this loop.
+	; Once input begins, the same narrow ownership window as SUMMARY26 is safe.
+	ld a,[hDownArrowBlinkActive]
+	and a
+	ret z
+	coord hl,18,16
+	jp HandleDownArrowBlinkTiming
+
+PokedexData_ArmDescriptionArrow:
+	; SUMMARY26 initializes the visible ▼ with the shared 42-frame interval and marks
+	; the current VBlank as already processed, so the first decrement starts on the
+	; next displayed frame. Reproduce that timing exactly for internal Info.
+	ld a,1
+	ld [hDownArrowBlinkActive],a
+	ld [hDownArrowBlinkFrameProcessed],a
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
+	ret
+
+; Refresh only the Pokédex fields that belong to the selected Pokémon. The frame,
+; divider, fixed labels and session state stay visible. Palette 0 is temporarily
+; made white so the frontpic alone disappears in one palette commit. The complete
+; new text page is transferred to the hidden Window BG map and exposed with one
+; LCDC map flip, then the final Pokémon palette reveals the complete new picture.
+; Input: wd11e = newly selected internal species.
+PokedexData_RenderSwitchedEntry:
+	; Stop the previous page's ▼ phase while a new entry is prepared. Owned Page 1
+	; will re-arm it after the coherent page has been committed; Seen-only stays off.
+	xor a
+	ld [hDownArrowBlinkActive],a
+	; Hide only the frontpic through palette 0. Keeping its 7x7 tilemap references
+	; intact avoids the two AutoBG thirds that otherwise reveal the new picture in
+	; separate frames. Wait until the white palette is really resident in hardware
+	; before any vFrontPic tile is replaced.
+	call PokedexData_HideFrontPicPalette0
+	callba StatusScreen_WaitForBgPaletteCommit
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+
+	ld a,[wd11e]
+	ld [wcf91],a
+	ld [wd0b5],a
+	push af
+	ld b,SET_PAL_POKEDEX
+	call RunPaletteCommand
+	pop af
+	ld [wd11e],a
+
+	; Name and species are the only variable strings above the divider. Clear their
+	; exact 10-column fields in WRAM so shorter replacements cannot leave old glyphs.
+	coord hl,9,2
+	lb bc,1,10
+	call ClearScreenArea
+	coord hl,9,4
+	lb bc,1,10
+	call ClearScreenArea
+
+	ld a,[wcf91]
+	ld [wd11e],a
+	call GetMonName
+	coord hl,9,2
+	call PlaceString
+
+	call PokedexData_GetEntryPointer
+	ld d,h
+	ld e,l
+	coord hl,9,4
+	ld a,BANK(PokedexEntryPointers)
+	call MoveDexPlaceStringFar
+
+	; The No. label itself is fixed; only replace its three digits.
+	ld a,[wcf91]
+	ld [wd11e],a
+	predef IndexToPokedex
+	coord hl,4,8
+	ld de,wd11e
+	lb bc,LEADING_ZEROES | 1,3
+	call PrintNumber
+	ld a,[wcf91]
+	ld [wd11e],a
+
+	; Always restore the stock Ht/Wt placeholders first. This also erases data when
+	; moving from an Owned entry to a Seen-but-not-Owned one.
+	coord hl,9,6
+	ld de,HeightWeightText
+	ld a,BANK(HeightWeightText)
+	call MoveDexPlaceStringFar
+
+	call PokedexData_CurrentMonOwned
+	jr z,.notOwned
+
+	; Read feet, inches and little-endian weight from the bank-$10 entry.
+	call PokedexData_GetEntryFieldsPointer
+	ld de,wBuffer + 14
+	ld bc,4
+	ld a,BANK(PokedexEntryPointers)
+	call FarCopyData
+
+	ld de,wBuffer + 14
+	coord hl,12,6
+	lb bc,1,2
+	call PrintNumber
+	ld a,$60
+	ld [hl],a
+	ld de,wBuffer + 15
+	coord hl,15,6
+	lb bc,LEADING_ZEROES | 1,2
+	call PrintNumber
+	ld a,$61
+	ld [hl],a
+
+	; PrintNumber expects big-endian input. Reverse the stored little-endian weight
+	; into unused low scratch bytes instead of borrowing hDexWeight.
+	ld a,[wBuffer + 17]
+	ld [wBuffer + 12],a
+	ld a,[wBuffer + 16]
+	ld [wBuffer + 13],a
+	ld de,wBuffer + 12
+	coord hl,11,8
+	lb bc,2,5
+	call PrintNumber
+	coord hl,14,8
+	ld a,[wBuffer + 13]
+	sub 10
+	ld a,[wBuffer + 12]
+	sbc 0
+	jr nc,.weightAtLeastTen
+	ld [hl],"0"
+.weightAtLeastTen
+	inc hl
+	ld a,[hli]
+	ld [hld],a
+	ld [hl],"⠄"
+
+	ld e,0
+	call PokedexData_DrawDescriptionPageNoWait
+	; SUMMARY26 does not show the page arrow until after the picture/cry path has
+	; completed. Keep the prepared Page 1 text, but expose the ▼ separately later.
+	coord hl,18,16
+	ld [hl]," "
+	jr .commitText
+
+.notOwned
+	; Seen-only entries must erase an Owned predecessor's description completely.
+	coord hl,1,10
+	lb bc,7,18
+	call ClearScreenArea
+
+.commitText
+	; Transfer the completely prepared page to the currently hidden Window BG map,
+	; then flip maps in VBlank. This makes name/number/Ht/Wt and all description lines
+	; change on the same displayed frame instead of leaking AutoBG's three thirds.
+	call PokedexData_CommitPreparedInfoPage
+
+	; Hide palette 0 while the stock loader copies its 49 graphics tiles over seven
+	; VBlanks. Its final tilemap write is the same 0..48 layout already resident on
+	; screen, so AutoBG can stay disabled and no partial picture is ever exposed.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call GetMonHeader
+	coord hl,1,1
+	call LoadFlippedFrontSpriteByMonIndex
+
+	; SetPal_Pokedex prepared the new source palette before the graphics upload.
+	; Commit it only now: changing palette 0 from all-white to the new Pokémon's
+	; colors reveals the fully resident frontpic in one hardware palette update.
+	call PokedexData_ForceBgPaletteUpdate
+	callba StatusScreen_WaitForBgPaletteCommit
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	ld a,[wcf91]
+	call PlayCry
+
+	; LoadFlippedFrontSpriteByMonIndex uses H_SPRITEWIDTH/H_SPRITEHEIGHT, which are
+	; the same physical $FF8B/$FF8C bytes as the stock arrow Active/Timer. Discard
+	; those scratch values now, after the last renderer that can overwrite them.
+	xor a
+	ld [hDownArrowBlinkActive],a
+
+	; The original SUMMARY26 path reaches Char49 only for an Owned description. Its
+	; ▼ is transferred by ProtectedDelay3 before the 42-frame timer is armed. A
+	; switched entry always returns to Page 1, so ownership is the only condition here.
+	call PokedexData_CurrentMonOwned
+	ret z
+	ld a,"▼"
+	Coorda 18,16
+	call ProtectedDelay3
+	jp PokedexData_ArmDescriptionArrow
+
+PokedexData_CommitPreparedInfoPage:
+	; Pick the Window BG map that is not currently visible. StatusScreen's proven
+	; prepared-map helper performs the three hidden transfers plus the palette-map
+	; producer/consumer wait, so no third of the new text becomes visible early.
+	ld a,[rLCDC]
+	bit 6,a
+	jr z,.visibleMap0
+	; map 1 visible -> prepare map 0
+	xor a
+	ld [H_AUTOBGTRANSFERDEST],a
+	ld a,vBGMap0 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1],a
+	jr .transfer
+.visibleMap0
+	xor a
+	ld [H_AUTOBGTRANSFERDEST],a
+	ld a,vBGMap1 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1],a
+.transfer
+	callba StatusScreen_TransferPreparedMap
+
+	; The hidden map now contains one coherent page. Flip only during VBlank, then
+	; point future AutoBG updates (including the blinking ▼) at the new visible map.
+	callba WaitForVBlank
+	ld a,[rLCDC]
+	xor %01000000
+	ld [rLCDC],a
+	bit 6,a
+	jr z,.nowMap0
+	xor a
+	ld [H_AUTOBGTRANSFERDEST],a
+	ld a,vBGMap1 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1],a
+	ret
+.nowMap0
+	xor a
+	ld [H_AUTOBGTRANSFERDEST],a
+	ld a,vBGMap0 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1],a
+	ret
+
+PokedexData_HideFrontPicPalette0:
+	; The Pokédex attribute map assigns palette 0 only to the 7x7 picture area (plus
+	; one blank column). Make all four colors white without touching palette 1, so
+	; the frame and text stay visible while the picture graphics are replaced.
+	ld a,[rSVBK]
+	ld b,a
+	ld a,2
+	ld [rSVBK],a
+	ld hl,W2_BgPaletteData
+	ld c,4
+.loop
+	ld a,$ff
+	ld [hli],a
+	ld a,$7f
+	ld [hli],a
+	dec c
+	jr nz,.loop
+	ld a,1
+	ld [W2_ForceBGPUpdate],a
+	ld a,b
+	ld [rSVBK],a
+	ret
+
+PokedexData_ForceBgPaletteUpdate:
+	ld a,[rSVBK]
+	ld b,a
+	ld a,2
+	ld [rSVBK],a
+	ld a,1
+	ld [W2_ForceBGPUpdate],a
+	ld a,b
+	ld [rSVBK],a
 	ret
 
 ; Return Z when the current Pokédex entry is Seen but not Owned, matching the
@@ -100,6 +406,28 @@ PokedexData_CurrentMonOwned:
 ; the global ROM0 text engine untouched: `next`, `page` and `dex` are consumed
 ; here instead of teaching Char49 a Pokédex-only behavior.
 PokedexData_DrawDescriptionPage:
+	; Prepare the next description page only in WRAM. If AutoBG stays enabled here, a
+	; VBlank can expose one unfinished third of wTileMap before the hidden-map flip.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call PokedexData_DrawDescriptionPageNoWait
+	call PokedexData_CommitPreparedInfoPage
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	; Page 1 is the only custom description page that leaves a visible ▼ in wTileMap.
+	; Arm it explicitly after the coherent page is on screen; Page 2 remains disabled.
+	coord hl,18,16
+	ld a,[hl]
+	cp "▼"
+	ret nz
+	jp PokedexData_ArmDescriptionArrow
+
+PokedexData_DrawDescriptionPageNoWait:
+	; Changing description pages always disables the previous arrow first. Page 1
+	; may draw a new ▼ below; the public wrapper explicitly arms its timer only after
+	; the complete hidden BG page has been committed. Seen-only never enters here.
+	xor a
+	ld [hDownArrowBlinkActive],a
 	ld a,e
 	ld [wBuffer + 20],a
 	coord hl,1,10
@@ -183,12 +511,11 @@ PokedexData_DrawDescriptionPage:
 	ld a,"▼"
 	Coorda 18,16
 .finish
-	call Delay3
 	ret
 
-; Resolve the current internal species (wcf91) to its TX_FAR description.
-; Output: carry set, A = text bank, HL = far pointer to the leading `text` byte.
-PokedexData_GetDescriptionPointer:
+; Resolve the current internal species (wcf91) to the bank-$10 entry pointer.
+; Output: HL = entry start.
+PokedexData_GetEntryPointer:
 	ld a,[wcf91]
 	dec a
 	ld e,a
@@ -204,6 +531,11 @@ PokedexData_GetDescriptionPointer:
 	ld l,a
 	ld a,[wBuffer + 1]
 	ld h,a
+	ret
+
+; Output: HL = first byte after the species-string terminator (feet).
+PokedexData_GetEntryFieldsPointer:
+	call PokedexData_GetEntryPointer
 .findSpeciesEnd
 	ld de,wBuffer + 28
 	ld bc,1
@@ -212,6 +544,12 @@ PokedexData_GetDescriptionPointer:
 	ld a,[wBuffer + 28]
 	cp "@"
 	jr nz,.findSpeciesEnd
+	ret
+
+; Resolve the current internal species (wcf91) to its TX_FAR description.
+; Output: carry set, A = text bank, HL = far pointer to the leading `text` byte.
+PokedexData_GetDescriptionPointer:
+	call PokedexData_GetEntryFieldsPointer
 	; HL is now just after the species terminator. Skip height (2), weight (2)
 	; and the TX_FAR opcode, then read pointer low/high and bank.
 	ld de,5
@@ -283,7 +621,7 @@ PokedexData_ReadDescriptionLine:
 	scf
 	ret
 
-; Input: E = fresh D_UP or D_DOWN press, wd11e = current internal species.
+; Input: E = fresh D_UP or D_DOWN press; wcf91 = current internal species.
 ; Output: carry set with wd11e changed to the previous/next Seen species;
 ; carry clear with the original internal species restored when no target exists.
 ; Navigation stops at the first/last Seen boundary and never wraps. Unseen
@@ -291,7 +629,9 @@ PokedexData_ReadDescriptionLine:
 PokedexData_TryStepSeen:
 	ld a,e
 	ld [wBuffer + 20],a
-	ld a,[wd11e]
+	; PlayCry uses wd11e as scratch, so wcf91 is the authoritative current species.
+	ld a,[wcf91]
+	ld [wd11e],a
 	push af
 	predef IndexToPokedex
 .search
