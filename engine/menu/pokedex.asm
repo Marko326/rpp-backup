@@ -151,8 +151,10 @@ HandlePokedexSideMenu:
 
 .choseData
 	call ShowPokedexDataInternal
-	ld b,0
-	jr .exitSideMenu
+	; The paged Info session returns the last viewed Pokédex number in wd11e.
+	; Do not restore the original list cursor after browsing: return the player to
+	; the Pokémon that is actually on screen when B is pressed.
+	jp PokedexData_ExitSideMenuAtCurrentEntry
 
 ; play pokemon cry
 .choseCry
@@ -530,29 +532,65 @@ IsPokemonBitSet:
 	and a
 	ret
 
+; ShowPokedexDataInternal returns the final viewed Pokédex number in wd11e.
+; The side menu has five saved values above its return address; discard the
+; original selection and rebuild the list cursor around the final entry instead.
+PokedexData_ExitSideMenuAtCurrentEntry:
+	ld a,[wd11e]
+	ld d,a ; DE survives the far-call bank switch; D = final Pokédex number
+	pop af
+	ld [wDexMaxSeenMon],a
+	pop af ; discard original wd11e
+	pop af ; discard original wListScrollOffset
+	pop af ; discard original wLastMenuItem
+	pop af ; original visible row becomes the preferred return row
+	ld e,a ; E = preferred visible row (0..6)
+	callba PokedexData_SelectCurrentListEntry
+	ld b,0
+	push bc
+	coord hl, 0, 3
+	ld de,20
+	lb bc, " ", 13
+	call DrawTileLine
+	pop bc
+	ret
+
 ; function to display pokedex data from outside the pokedex
 ShowPokedexData:
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
 	call UpdateSprites
 	callab LoadPokedexTilePatterns ; load pokedex tiles
+	xor a ; external callers keep the original single-entry A/B-only behavior
+	jr ShowPokedexDataCommon
 
 ; function to display pokedex data from inside the pokedex
 ShowPokedexDataInternal:
+	ld a,1 ; Pokédex list -> Info enables UP/DOWN browsing
+
+ShowPokedexDataCommon:
+	; Save the caller mode above the original hTilesetType value so the whole
+	; paged session owns one setup/teardown pair, even when entries are redrawn.
+	ld b,a
+	ld a,[hTilesetType]
+	push af
+	ld a,b
+	push af
 	ld hl,wd72c
 	set 1,[hl]
-	; Music Off keeps silent hardware routes connected. Changing NR50 while
-	; those DACs are connected creates an audible pop, so only apply the
-	; temporary Pokedex volume reduction while background music is enabled.
-	ld a, [wOptions]
-	bit 5, a
-	jr nz, .skipEntryVolumeReduction
-	ld a, [wBGMVolume]
-	cp $a0 ; BGM Volume 0 is also effectively muted
-	jr z, .skipEntryVolumeReduction
-	ld a, $33 ; 3/7 volume
-	ld [rNR50], a
-.skipEntryVolumeReduction
+	; The audio engine rewrites NR50 from Volume every update, so a direct NR50
+	; write only lasts a frame. Keep the temporary Pokédex attenuation in the
+	; audio engine's master-volume state instead; the roomy helper bank owns it.
+	callba PokedexData_BeginSessionVolume
+.renderEntry
+	; External callers use state 0. Internal Info browsing uses 1/2 for the two
+	; description halves; every Pokémon change always returns to description 1.
+	pop af
+	and a
+	jr z,.storeDescriptionState
+	ld a,1
+.storeDescriptionState
+	push af
 	call GBPalWhiteOut ; zero all palettes
 	call ClearScreen
 	ld a,[wd11e] ; pokemon ID
@@ -562,8 +600,6 @@ ShowPokedexDataInternal:
 	call RunPaletteCommand
 	pop af
 	ld [wd11e],a
-	ld a,[hTilesetType]
-	push af
 	xor a
 	ld [hTilesetType],a
 
@@ -717,34 +753,108 @@ ShowPokedexDataInternal:
 	ld [hDexWeight],a ; restore original value of [hDexWeight]
 	pop hl
 	inc hl ; hl = address of pokedex description text
+	; External one-shot callers retain the original text engine behavior, where
+	; the embedded `page` command waits for A/B. Internal Pokédex Info owns its
+	; description input so B can exit from either half and A alone toggles halves.
+	pop af
+	push af
+	and a
+	jr nz,.renderInternalDescription
 	coord bc, 1, 11
 	ld a,2
 	ld [$fff4],a
-	call TextCommandProcessor ; print pokedex description text
+	call TextCommandProcessor ; original external Pokédex description behavior
 	xor a
 	ld [$fff4],a
+	jr .waitForButtonPress
+
+.renderInternalDescription
+	ld e,0
+	callba PokedexData_DrawDescriptionPage
+
 .waitForButtonPress
+	pop af
+	push af
+	and a
+	jr nz,.waitForInternalInput
+.externalInputLoop
 	call JoypadLowSensitivity
 	ld a,[hJoy5]
-	and a,A_BUTTON | B_BUTTON
-	jr z,.waitForButtonPress
+	and A_BUTTON | B_BUTTON
+	jr z,.externalInputLoop
+	jr .exitData
+
+.waitForInternalInput
+	; Only a render entered from UP/DOWN needs the release gate. On the initial
+	; A->Info entry, avoid an extra Joypad poll that could swallow a fresh A/B.
+	ld a,[hJoyHeld]
+	and D_UP | D_DOWN
+	jr z,.internalInputLoop
+	callba PokedexData_WaitForVerticalRelease
+	; The wait helper already polled Joypad on the release frame; consume that
+	; hJoyPressed value once before polling again so simultaneous A/B is not lost.
+	jr .handleInternalPressed
+.internalInputLoop
+	call JoypadLowSensitivity
+.handleInternalPressed
+	ld a,[hJoyPressed]
+	ld b,a
+	and B_BUTTON
+	jr nz,.exitData
+
+	ld a,b
+	and A_BUTTON
+	jr nz,.toggleDescription
+
+	ld a,b
+	and D_UP | D_DOWN
+	jr z,.internalInputLoop
+
+	; PlayCry uses wd11e as scratch. Restore the current internal species before
+	; searching for the next Seen entry in Pokédex-number space.
+	ld e,a ; DE survives Bankswitch; E carries the fresh vertical direction
+	ld a,[wcf91]
+	ld [wd11e],a
+	callba PokedexData_TryStepSeen
+	jr nc,.internalInputLoop
+	jp .renderEntry
+
+.toggleDescription
+	; Seen-but-not-Owned entries intentionally keep the original limited display,
+	; so A has no description page to toggle for them.
+	callba PokedexData_CurrentMonOwned
+	jr z,.internalInputLoop
+	pop af
+	cp 1
+	jr z,.showSecondDescription
+	ld a,1
+	push af
+	ld e,0
+	callba PokedexData_DrawDescriptionPage
+	jr .internalInputLoop
+.showSecondDescription
+	ld a,2
+	push af
+	ld e,1
+	callba PokedexData_DrawDescriptionPage
+	jr .internalInputLoop
+
+.exitData
+	pop af
+	ld c,a ; 0 = external one-shot, nonzero = internal Pokédex Info
 	pop af
 	ld [hTilesetType],a
-	call GBPalWhiteOut
-	call ClearScreen
-	call RunDefaultPaletteCommand
-	call LoadTextBoxTilePatterns
-	call GBPalNormal
-	ld hl,wd72c
-	res 1,[hl]
-	ld a, [wOptions]
-	bit 5, a
-	ret nz
-	ld a, [wBGMVolume]
-	cp $a0 ; BGM Volume 0 keeps the silent master-volume state
+	push bc
+	callba PokedexData_EndSession
+	pop bc
+	ld a,c
+	and a
 	ret z
-	ld a, $77 ; max volume
-	ld [rNR50], a
+	; Return the final viewed Pokédex number so HandlePokedexSideMenu can move
+	; the list cursor to the Pokémon the player actually exited from.
+	ld a,[wcf91]
+	ld [wd11e],a
+	call IndexToPokedex
 	ret
 
 HeightWeightText:

@@ -2446,6 +2446,9 @@ INCLUDE "text/item_names.asm"
 ; Shared conventional item-list state helpers live in roomy bank $34.
 INCLUDE "engine/menu/item_list_state.asm"
 
+; Pokédex Info browsing helpers live outside capacity-constrained bank $10.
+INCLUDE "engine/menu/pokedex_info.asm"
+
 ; Elevator floor-menu positioning is kept in the roomy expansion bank.
 INCLUDE "engine/overworld/elevator_cursor.asm"
 
