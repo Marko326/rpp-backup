@@ -79,9 +79,9 @@ StatusScreen_LoadCurrentMon:
 
 ; Predef 0x37
 StatusScreen:
-	; Bit 7 is set only by START -> Pokémon. Preserve that ownership flag while
-	; resetting the summary itself to page 1, the normal map assignment, and the
-	; primary frontpic buffer. Other callers therefore keep UP/DOWN disabled.
+	; Bit 7 is an explicit caller-owned permission for live party navigation.
+	; START -> Pokémon and Bill's PC Deposit Stats may set it; other callers leave it
+	; clear. Preserve that permission while resetting the Summary itself to page 1.
 	ld a, [wStatusScreenPage]
 	and $80
 	or $1
@@ -754,9 +754,9 @@ StatusScreen_InputLoop:
 	bit BIT_A_BUTTON, a
 	jr nz, .AButton
 
-	; SUMMARY04 exposes Gold/Silver-style Pokémon navigation only to the START
-	; Party caller. Other StatusScreen callers leave bit 7 clear and therefore
-	; retain SUMMARY03 behavior until their own staged integration.
+	; Gold/Silver-style Pokémon navigation is available only when the caller sets
+	; the switch-permission bit. StatusScreen_TrySwitchPartyMon independently checks
+	; PLAYER_PARTY_DATA as a second guard, so Box/Daycare callers cannot opt in by accident.
 	ld b, a
 	ld a, [wStatusScreenPage]
 	bit STATUS_SCREEN_MON_SWITCH_F, a
@@ -805,7 +805,7 @@ StatusScreen_InputLoop:
 
 StatusScreen_TrySwitchPartyMon:
 	; A = D_UP / D_DOWN. Carry is set only when the selection actually changes.
-	; This routine is intentionally Party-only for SUMMARY04.
+	; This routine is intentionally Party-only; the caller separately owns permission.
 	ld c, a
 	ld a, [wMonDataLocation]
 	cp PLAYER_PARTY_DATA
@@ -829,7 +829,9 @@ StatusScreen_TrySwitchPartyMon:
 	jr nc, .cantSwitch
 .store
 	ld [wWhichPokemon], a
-	; Keep the START Party cursor synchronized with the Pokémon currently shown.
+	; Keep the party-backed caller synchronized with the Pokémon currently shown.
+	; START consumes this as its final cursor directly; Bill's PC converts the absolute
+	; index back to its scroll-offset + visible-row representation after Stats exits.
 	ld [wPartyAndBillsPCSavedMenuItem], a
 	scf
 	ret

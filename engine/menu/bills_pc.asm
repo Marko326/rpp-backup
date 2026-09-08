@@ -478,16 +478,204 @@ DisplayDepositWithdrawMenu:
 .viewStats
 	ld a, [wParentMenuItem]
 	and a
+	jr z, .viewWithdrawStats
+
+	; Deposit is backed by PLAYER_PARTY_DATA, so it can reuse the mature party
+	; Summary UP/DOWN switch pipeline. Require the action-menu direction to be
+	; released before entry so a held DOWN used to reach Stats cannot become the
+	; first Summary navigation input.
+	call BillsPC_WaitForVerticalRelease
 	ld a, PLAYER_PARTY_DATA
-	jr nz, .next2
-	ld a, BOX_DATA
-.next2
 	ld [wMonDataLocation], a
+	ld a, 1 << STATUS_SCREEN_MON_SWITCH_F
+	ld [wStatusScreenPage], a
 	predef StatusScreen
-	; Buffer 1 still contains the underlying mon list. Restore it, reload the
-	; display state, and keep Stats selected before redrawing the action menu.
+
+	; Unlike the START Party caller, Bill's PC should not keep the action menu open.
+	; Follow the last Pokémon actually viewed, rebuild the complete underlying PC list
+	; while the StatusScreen whiteout still hides it, then reveal that final page in
+	; one transaction. The normal list initializer may still run afterwards, but its
+	; 10-frame setup now happens behind an already-correct visible page.
+	call BillsPC_SelectViewedMonInList
+	call BillsPC_RebuildMonListAfterStats
+	and a
+	ret
+
+.viewWithdrawStats
+	; BOX_DATA keeps the existing single-Pokémon Stats behavior for this first PC
+	; stage. Explicitly clear the switch flag so a previous Deposit browse cannot
+	; leak navigation permission into Withdraw.
+	ld a, BOX_DATA
+	ld [wMonDataLocation], a
+	xor a
+	ld [wStatusScreenPage], a
+	predef StatusScreen
+
+.restoreAfterStats
+	; Withdraw keeps its original single-entry behavior: restore the saved list and
+	; redraw the same action menu with Stats selected.
 	call RestoreBillsPCActionMenuAfterStats
-	jr .redrawActionMenu
+	jp .redrawActionMenu
+
+BillsPC_WaitForVerticalRelease:
+	call Joypad
+	ldh a, [hJoyHeld]
+	and D_UP | D_DOWN
+	ret z
+.wait
+	call DelayFrame
+	call Joypad
+	ldh a, [hJoyHeld]
+	and D_UP | D_DOWN
+	jr nz, .wait
+	ret
+
+; StatusScreen leaves an absolute selected index in wWhichPokemon. Bill's PC list
+; always displays three selectable Pokémon rows at a time, whether the backing list
+; is the six-mon party or a larger Box. Keep the existing viewport when possible and
+; shift it only far enough to make the final viewed entry selectable.
+BillsPC_SelectViewedMonInList:
+	ld a, [wListScrollOffset]
+	ld c, a
+	ld a, [wWhichPokemon]
+	cp c
+	jr c, .aboveWindow
+	sub c
+	cp 3
+	jr c, .storeRow
+	ld a, [wWhichPokemon]
+	sub 2
+	ld [wListScrollOffset], a
+	ld a, 2
+	jr .storeRow
+.aboveWindow
+	ld a, [wWhichPokemon]
+	ld [wListScrollOffset], a
+	xor a
+.storeRow
+	ld [wPartyAndBillsPCSavedMenuItem], a
+	ret
+
+BillsPC_RebuildMonListAfterStats:
+	; Buffer 1 is the complete Bill's PC page from immediately before the action menu.
+	; Restore it only to wTileMap while the StatusScreen whiteout is still active; the
+	; stale list/cursor therefore never reaches the LCD.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ld hl, wTileMapBackup
+	coord de, 0, 0
+	ld bc, SCREEN_WIDTH * SCREEN_HEIGHT
+	call CopyData
+
+	; Rebuild the Pokémon-list portion in the same hidden wTileMap using the final
+	; scroll offset and row. Keep this generic over wListPointer so the same resume
+	; transaction can later serve the larger Withdraw/Box list as well.
+	ld a, [wListPointer]
+	ld l, a
+	ld a, [wListPointer + 1]
+	ld h, a
+	ld a, [hl]
+	ld [wListCount], a
+	xor a
+	ld [wPrintItemPrices], a
+	ld [wListMenuID], a
+	ld [wMenuItemToSwap], a
+	ld [wLastMenuItem], a
+	inc a
+	ld [wNameListType], a
+	ld a, [wPartyAndBillsPCSavedMenuItem]
+	ld [wCurrentMenuItem], a
+	ld a, 4
+	ld [wTopMenuItemY], a
+	ld a, 5
+	ld [wTopMenuItemX], a
+
+	; The stock list renderer uses wWhichPokemon/wcf91 as scratch while printing.
+	; Preserve StatusScreen's final absolute selection so the logical target remains
+	; synchronized with the page that is about to be revealed.
+	ld a, [wWhichPokemon]
+	push af
+	ld a, [wcf91]
+	push af
+	call PrintListMenuEntries
+	call PlaceMenuCursor
+	pop af
+	ld [wcf91], a
+	pop af
+	ld [wWhichPokemon], a
+
+	; Finish every visual dependency before revealing anything. RunDefaultPaletteCommand
+	; prepares the generic PC palette/map while rBGP is still white, so CGB hardware
+	; remains hidden. Transfer all three BG thirds and explicitly wait for the palette
+	; map producer/consumer before restoring normal colors.
+	call ReloadTilesetTilePatterns
+	call RunDefaultPaletteCommand
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	call BillsPC_WaitForHiddenListCommit
+
+	; Make the final color restore a real completion boundary as well. Forcing the BGP
+	; conversion guarantees the CGB palette buffer is produced after LoadGBPal changes
+	; rBGP; the local waiter does not return until hardware consumed it.
+	ld a, [rSVBK]
+	ld b, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, 1
+	ld [W2_ForceBGPUpdate], a
+	ld a, b
+	ld [rSVBK], a
+	call LoadGBPal
+	call BillsPC_WaitForBgPaletteCommit
+	ret
+
+BillsPC_WaitForHiddenListCommit:
+	; Delay3 covers the three tilemap thirds, but CGB attribute-map preparation and
+	; VBlank consumption can trail them. Keep the page white until both queues and
+	; the last Window portion are completely drained.
+.wait
+	ld a, [rSVBK]
+	ld b, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_StaticPaletteMapChanged]
+	ld c, a
+	ld a, [W2_StaticPaletteMapChanged_vbl]
+	or c
+	ld c, a
+	ld a, [W2_UpdatedWindowPortion]
+	or c
+	ld c, a
+	ld a, b
+	ld [rSVBK], a
+	ld a, c
+	and a
+	ret z
+	call DelayFrame
+	jr .wait
+
+BillsPC_WaitForBgPaletteCommit:
+	; Bill's PC is assembled from audio.asm while StatusScreen is assembled from
+	; main.asm. Keep this waiter bank-local: callba cannot resolve BANK() for the
+	; StatusScreen-private symbol while audio.asm is being assembled.
+.check
+	ld a, [rSVBK]
+	ld b, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_ForceBGPUpdate]
+	ld c, a
+	ld a, [W2_BgPaletteDataModified]
+	or c
+	ld c, a
+	ld a, b
+	ld [rSVBK], a
+	ld a, c
+	and a
+	ret z
+	call DelayFrame
+	jr .check
 
 DepositPCText:  db "Deposit@"
 WithdrawPCText: db "Withdraw@"
