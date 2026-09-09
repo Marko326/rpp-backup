@@ -3495,8 +3495,8 @@ wStatusScreenStatMode::
 
 
 ; Summary state packed into the existing reserved byte so later WRAM addresses
-; stay unchanged. Bits 0-1 = current page; bit 7 = START Party owns UP/DOWN
-; Pokémon navigation.
+; stay unchanged. Bits 0-1 = current page; bit 7 = caller authorizes UP/DOWN
+; Pokémon navigation for supported Party/Box data.
 wStatusScreenPage::
 	ds 1
 

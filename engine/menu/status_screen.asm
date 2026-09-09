@@ -79,9 +79,9 @@ StatusScreen_LoadCurrentMon:
 
 ; Predef 0x37
 StatusScreen:
-	; Bit 7 is an explicit caller-owned permission for live party navigation.
-	; START -> Pokémon and Bill's PC Deposit Stats may set it; other callers leave it
-	; clear. Preserve that permission while resetting the Summary itself to page 1.
+	; Bit 7 is an explicit caller-owned permission for live Pokémon navigation.
+	; START -> Pokémon plus Bill's PC Deposit/Withdraw Stats may set it; other
+	; callers leave it clear. Preserve that permission while resetting Summary to page 1.
 	ld a, [wStatusScreenPage]
 	and $80
 	or $1
@@ -755,8 +755,8 @@ StatusScreen_InputLoop:
 	jr nz, .AButton
 
 	; Gold/Silver-style Pokémon navigation is available only when the caller sets
-	; the switch-permission bit. StatusScreen_TrySwitchPartyMon independently checks
-	; PLAYER_PARTY_DATA as a second guard, so Box/Daycare callers cannot opt in by accident.
+	; the switch-permission bit. StatusScreen_TrySwitchPartyMon independently accepts
+	; only Party or Box data, so enemy/daycare callers cannot opt in by accident.
 	ld b, a
 	ld a, [wStatusScreenPage]
 	bit STATUS_SCREEN_MON_SWITCH_F, a
@@ -805,12 +805,18 @@ StatusScreen_InputLoop:
 
 StatusScreen_TrySwitchPartyMon:
 	; A = D_UP / D_DOWN. Carry is set only when the selection actually changes.
-	; This routine is intentionally Party-only; the caller separately owns permission.
+	; The caller owns permission; only Party and Box data are accepted here.
 	ld c, a
 	ld a, [wMonDataLocation]
 	cp PLAYER_PARTY_DATA
+	jr z, .party
+	cp BOX_DATA
 	jr nz, .cantSwitch
+	ld a, [wNumInBox]
+	jr .gotCount
+.party
 	ld a, [wPartyCount]
+.gotCount
 	cp 2
 	jr c, .cantSwitch
 	ld b, a
@@ -829,9 +835,9 @@ StatusScreen_TrySwitchPartyMon:
 	jr nc, .cantSwitch
 .store
 	ld [wWhichPokemon], a
-	; Keep the party-backed caller synchronized with the Pokémon currently shown.
-	; START consumes this as its final cursor directly; Bill's PC converts the absolute
-	; index back to its scroll-offset + visible-row representation after Stats exits.
+	; Keep the caller synchronized with the Pokémon currently shown. START consumes
+	; this as its final party cursor directly; Bill's PC converts the absolute index
+	; back to its scroll-offset + visible-row representation after Stats exits.
 	ld [wPartyAndBillsPCSavedMenuItem], a
 	scf
 	ret
@@ -929,8 +935,8 @@ StatusScreen_UpdateShinyFlag:
 	ret
 
 StatusScreen_PrepareFlippedFrontPicDualPalette:
-	; Party-only live switch helper. StatusScreen_LoadCurrentMon has already loaded
-	; a valid Pokémon header, so we can reuse the original Home decompression and
+	; Live-switch helper. StatusScreen_LoadCurrentMon has already loaded a valid
+	; Pokémon header from Party or Box, so reuse the original Home decompression and
 	; alignment helpers while replacing only the final CopyVideoData stage.
 	ld a, 1
 	ld [wSpriteFlipped], a

@@ -502,20 +502,23 @@ DisplayDepositWithdrawMenu:
 	ret
 
 .viewWithdrawStats
-	; BOX_DATA keeps the existing single-Pokémon Stats behavior for this first PC
-	; stage. Explicitly clear the switch flag so a previous Deposit browse cannot
-	; leak navigation permission into Withdraw.
+	; Withdraw uses the same live-switch contract as Deposit, but the backing list is
+	; BOX_DATA and may contain up to MONS_PER_BOX entries. Release the direction that
+	; selected Stats before granting Summary ownership of UP/DOWN.
+	call BillsPC_WaitForVerticalRelease
 	ld a, BOX_DATA
 	ld [wMonDataLocation], a
-	xor a
+	ld a, 1 << STATUS_SCREEN_MON_SWITCH_F
 	ld [wStatusScreenPage], a
 	predef StatusScreen
 
-.restoreAfterStats
-	; Withdraw keeps its original single-entry behavior: restore the saved list and
-	; redraw the same action menu with Stats selected.
-	call RestoreBillsPCActionMenuAfterStats
-	jp .redrawActionMenu
+	; StatusScreen leaves the absolute Box index in wWhichPokemon. Convert that final
+	; target back into the three-row Bill's PC viewport, then reveal the rebuilt list
+	; atomically and close the action menu exactly like Deposit Stats.
+	call BillsPC_SelectViewedMonInList
+	call BillsPC_RebuildMonListAfterStats
+	and a
+	ret
 
 BillsPC_WaitForVerticalRelease:
 	call Joypad
