@@ -138,9 +138,7 @@ HandleItemListSwapping:
 	inc de
 	jr .moveItemsUpLoop
 .afterMovingItemsUp
-	xor a
-	ld [wListScrollOffset],a
-	ld [wCurrentMenuItem],a
+	callba RestoreMergedItemListPosition
 .done
 	xor a
 	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped

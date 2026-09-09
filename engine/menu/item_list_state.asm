@@ -57,6 +57,25 @@ RestoreItemListPosition::
 	ret
 
 
+; After two equal item stacks are fully merged, the first selected slot is
+; physically removed and the merged stack remains at the second selection.
+; Follow that surviving stack instead of resetting the conventional list to top.
+RestoreMergedItemListPosition::
+	ld a,[wCurrentMenuItem]
+	ld b,a
+	ld a,[wListScrollOffset]
+	add b
+	ld b,a ; old absolute index of the second selected slot
+	ld a,[wMenuItemToSwap] ; zero-based index of the removed first slot
+	cp b
+	jr nc,.targetReady
+	dec b ; removing an earlier slot shifts the merged stack up by one
+.targetReady
+	ld a,b
+	ld [wWhichPokemon],a
+	jp RestoreItemListPosition
+
+
 ; Remove an inventory item while insulating the surrounding list UI from the
 ; legacy whole-slot removal side effects. The inventory primitive still updates
 ; the item count/list limits, but cursor restoration is handled separately from

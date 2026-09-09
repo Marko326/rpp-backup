@@ -348,12 +348,16 @@ BillsPCRelease:
 	inc a
 	ld [wRemoveMonFromBox], a
 	call RemovePokemon
+	call NormalizeBillsPCListCursorAfterRemoval
 	call WaitForSoundToFinish
 	ld a, [wcf91]
 	call PlayCry
 	ld hl, MonWasReleasedText
 	call PrintText
-	jp BillsPCMenu
+	ld a, [wNumInBox]
+	and a
+	jp z, BillsPCMenu
+	jr .loop
 
 BillsPCChangeBox:
 	callba ChangeBox
