@@ -38,6 +38,11 @@ _CalcStat::
 	and a
 	jr z, .statExpDone  ; consider stat exp?
 	add hl, bc          ; skip to corresponding stat exp value
+	; Box Summary recalculates all five stats on every live switch. Keep the exact
+	; results, but avoid the original repeated Multiply-based square-root loop.
+	ld a, [wMonDataLocation]
+	cp BOX_DATA
+	jr z, .boxStatExpFast
 .statExpLoop            ; calculates ceil(Sqrt(stat exp)) in b
 	xor a
 	ld [H_MULTIPLICAND], a
@@ -58,6 +63,9 @@ _CalcStat::
 	ld a, [$ff97]
 	sbc d               ; test if (current stat exp bonus)^2 < stat exp
 	jr c, .statExpLoop
+	jr .statExpDone
+.boxStatExpFast
+	call .CalcBoxStatExpQuarterRootFast
 .statExpDone
 	srl c
 	pop hl
@@ -197,3 +205,77 @@ _CalcStat::
 	pop de
 	pop hl
 	ret
+
+; Input:  hl = low byte of the selected Stat Exp value.
+; Output: b  = 4 * floor(ceil(sqrt(Stat Exp)) / 4).
+; The existing two SRL B instructions below convert it to the normal stat bonus.
+;
+; This binary-searches the 63 exact transition thresholds. It preserves the
+; complete five-stat CalcStats path while replacing up to 255 Multiply loops
+; per stat with at most six small comparisons.
+.CalcBoxStatExpQuarterRootFast
+	push hl
+	push de
+	push bc
+	dec hl
+	ld a, [hli]
+	ld d, a             ; Stat Exp high byte
+	ld a, [hl]
+	ld e, a             ; Stat Exp low byte
+	ld b, 0             ; lower bound: number of passed thresholds
+	ld c, 63            ; upper bound (exclusive)
+.search
+	ld a, b
+	cp c
+	jr z, .done
+	ld a, b
+	add c
+	srl a               ; midpoint
+	push af              ; keep midpoint while reading the table
+	push bc              ; keep search bounds
+	add a                ; two bytes per threshold
+	ld c, a
+	ld b, 0
+	ld hl, .BoxStatExpQuarterRootThresholds
+	add hl, bc
+	ld a, [hli]         ; threshold high byte
+	cp d
+	jr c, .passed
+	jr nz, .notPassed
+	ld a, [hl]          ; threshold low byte
+	cp e
+	jr c, .passed
+.notPassed
+	pop bc
+	pop af
+	ld c, a             ; upper = midpoint
+	jr .search
+.passed
+	pop bc
+	pop af
+	inc a
+	ld b, a             ; lower = midpoint + 1
+	jr .search
+.done
+	ld a, b
+	pop bc
+	ld b, a
+	sla b
+	sla b               ; existing SRL B / SRL B restores the exact bonus
+	pop de
+	pop hl
+	ret
+
+; Threshold q is (4q - 1)^2 for q = 1..63.
+.BoxStatExpQuarterRootThresholds
+	db $00, $09, $00, $31, $00, $79, $00, $e1, $01, $69, $02, $11
+	db $02, $d9, $03, $c1, $04, $c9, $05, $f1, $07, $39, $08, $a1
+	db $0a, $29, $0b, $d1, $0d, $99, $0f, $81, $11, $89, $13, $b1
+	db $15, $f9, $18, $61, $1a, $e9, $1d, $91, $20, $59, $23, $41
+	db $26, $49, $29, $71, $2c, $b9, $30, $21, $33, $a9, $37, $51
+	db $3b, $19, $3f, $01, $43, $09, $47, $31, $4b, $79, $4f, $e1
+	db $54, $69, $59, $11, $5d, $d9, $62, $c1, $67, $c9, $6c, $f1
+	db $72, $39, $77, $a1, $7d, $29, $82, $d1, $88, $99, $8e, $81
+	db $94, $89, $9a, $b1, $a0, $f9, $a7, $61, $ad, $e9, $b4, $91
+	db $bb, $59, $c2, $41, $c9, $49, $d0, $71, $d7, $b9, $df, $21
+	db $e6, $a9, $ee, $51, $f6, $19
