@@ -103,9 +103,24 @@ StatusScreen:
 	ld [rNR50], a ; Reduce the volume
 .skipEntryVolumeReduction
 	call GBPalWhiteOutWithDelay3
-	call ClearScreen
+	; The display is already white and AutoBG is not needed until the completed
+	; Page 1 transfer below. Clear only the WRAM tilemap here; ClearScreen would
+	; spend another fixed three frames transferring an intermediate blank map.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call StatusScreen_ClearTileMapNoWait
 	call UpdateSprites
+
+	; START Party and the initial Bill's PC entry may have loaded these exact shared
+	; graphics immediately beforehand. The hint is deliberately one-shot: consume
+	; it now so later callers cannot skip a load after unrelated VRAM activity.
+	ld a, [wStatusScreenCommonTilesReady]
+	and a
+	jr nz, .commonTilesReady
 	call LoadHpBarAndStatusTilePatterns
+.commonTilesReady
+	xor a
+	ld [wStatusScreenCommonTilesReady], a
 	ld de, BattleHudTiles1  ; source
 	ld hl, vChars2 + $6d0 ; dest
 	lb bc, BANK(BattleHudTiles1), $03
@@ -151,17 +166,11 @@ StatusScreen:
 	and a
 	jr nz, .PagesReady
 
-	; Normal Summary mode prepares page 2 from the finished page-1 tilemap. The
-	; Pokémon header/frontpic remains untouched; only page-specific fields change.
-	; The finished page is copied to the hidden window map ($9800) while page 1
-	; remains visible.
-	call StatusScreen_BuildPage2
-	call StatusScreen_SetTransferMap0
-	ld a, $1
-	ld [H_AUTOBGTRANSFERENABLED], a
-	call Delay3
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
+	; Do not keep the initial white screen up just to prepare the hidden Page 2.
+	; Existing dirty-page machinery will build and transfer it on the first request,
+	; while Page 1 can become visible immediately after its completed transfer.
+	ld hl, wStatusScreenPage
+	set STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, [hl]
 
 .PagesReady
 	; Page navigation now becomes an atomic window-map flip in VBlank. No page
@@ -1345,6 +1354,7 @@ StatusScreen_Exit:
 	xor a
 	ld [wStatusScreenStatMode], a
 	ld [wStatusScreenPage], a
+	ld [wStatusScreenCommonTilesReady], a
 	ld [hJoyHeld], a
 	ld [hJoyPressed], a
 	ld [hJoyReleased], a

@@ -100,6 +100,10 @@ BillsPC_::
 	inc a               ; MONSTER_NAME
 	ld [wNameListType], a
 	call LoadHpBarAndStatusTilePatterns
+	; The shared Summary HP/status/EXP graphics were just loaded. Allow the first
+	; StatusScreen entered from this Bill's PC session to reuse them once.
+	ld a, 1
+	ld [wStatusScreenCommonTilesReady], a
 	ld a, [wListScrollOffset]
 	push af
 	ld a, [wFlags_0xcd60]
@@ -202,6 +206,10 @@ ExitBillsPC:
 	ld [wListScrollOffset], a
 	ld hl, wd730
 	res 6, [hl]
+	; Do not leak an unused one-shot graphics hint if Bill's PC is exited before
+	; opening Summary.
+	xor a
+	ld [wStatusScreenCommonTilesReady], a
 	ret
 
 BillsPCDeposit:

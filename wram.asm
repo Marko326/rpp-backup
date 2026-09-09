@@ -3471,8 +3471,14 @@ wTrainerHeaderPtr:: ; da30
 wStatusScreenDeferPaletteUpdate::
 	ds 1
 
+; One-shot producer hint: nonzero means the caller has just loaded the shared
+; HP/status/EXP graphics and StatusScreen may reuse them once. Consume and clear
+; this flag on entry so unrelated callers always fall back to the full load.
+wStatusScreenCommonTilesReady::
+	ds 1
+
 ; unused?
-	ds 5
+	ds 4
 
 wOpponentAfterWrongAnswer:: ; da38
 ; the trainer the player must face after getting a wrong answer in the Cinnabar

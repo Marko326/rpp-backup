@@ -103,6 +103,10 @@ StartMenu_Pokemon:
 	; SUMMARY04: only START Party owns UP/DOWN Pokémon navigation for now.
 	ld a, $80
 	ld [wStatusScreenPage], a
+	; PartyMenuInit loaded the shared HP/status/EXP graphics immediately before
+	; this action menu. Reuse them once instead of uploading the same tiles again.
+	ld a, 1
+	ld [wStatusScreenCommonTilesReady], a
 	predef StatusScreen
 	; Return the Party cursor to the last Pokémon viewed in Summary.
 	ld a, [wWhichPokemon]
