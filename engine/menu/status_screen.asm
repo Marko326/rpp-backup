@@ -1365,12 +1365,19 @@ StatusScreen_Exit:
 	ld [hJoyPressed], a
 	ld [hJoyReleased], a
 	ld [hJoy5], a
-	; START Party immediately restores/redraws its saved full-screen
-	; tilemap, and RedrawPartyMenu already performs the required three-frame BG
-	; transfer. Avoid clearing wTileMap and waiting another three frames here.
-	ld a, [wStatusScreenStartPartyCaller]
-	and a
-	ret nz
+	; START Party immediately restores/redraws its saved full-screen tilemap.
+	; Battle Party also redraws immediately, but has no saved Party tilemap to
+	; restore first. Clear only WRAM there; the Party redraw performs the one
+	; visible three-frame transfer that is actually needed.
+	ld a, [wStatusScreenPartyCaller]
+	cp SUMMARY_PARTY_CALLER_START
+	ret z
+	cp SUMMARY_PARTY_CALLER_BATTLE
+	jr nz, .genericCaller
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	jp StatusScreen_ClearTileMapNoWait
+.genericCaller
 	jp ClearScreen
 
 CalcExpToLevelUp:

@@ -398,6 +398,8 @@ PartyMenuInit::
 	ld a, 1 ; hardcoded bank
 	call BankswitchHome
 	call LoadHpBarAndStatusTilePatterns
+
+PartyMenuInitState::
 	ld hl, wd730
 	set 6, [hl] ; turn off letter printing delay
 	xor a ; PLAYER_PARTY_DATA

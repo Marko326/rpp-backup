@@ -3477,13 +3477,23 @@ wStatusScreenDeferPaletteUpdate::
 wStatusScreenCommonTilesReady::
 	ds 1
 
-; Nonzero only while StatusScreen is owned by START -> Pokémon -> Stats.
-; Use it to scope the temporary overworld BG0 cache/restore.
-wStatusScreenStartPartyCaller::
+; Party-owned StatusScreen caller enum:
+; 0 = none, 1 = START Party, 2 = Battle Party. A single byte prevents two caller
+; booleans from ever describing an impossible simultaneous state.
+wStatusScreenPartyCaller::
 	ds 1
 
-; unused?
-	ds 3
+; Keep the former second caller byte reserved so the 48.3 dirty-flag address also
+; stays stable while the two caller booleans collapse into one enum.
+	ds 1
+
+; Summary overwrites vFrontPic. Defer restoring the enemy front picture until
+; Party actually returns to battle or performs a switch.
+wBattlePartySummaryEnemyPicDirty::
+	ds 1
+
+; still unused; total reserved footprint remains unchanged.
+	ds 1
 
 wOpponentAfterWrongAnswer:: ; da38
 ; the trainer the player must face after getting a wrong answer in the Cinnabar

@@ -2536,6 +2536,11 @@ INCLUDE "data/mapObjects/InsideFerry.asm"
 INCLUDE "scripts/InsideFerry.asm"
 InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
+; Battle Party <-> Summary fast path lives in its own floating section so bank
+; $34's fragmented free space can be used without growing the existing bank34 section.
+SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
+INCLUDE "engine/menu/battle_party_summary_fast_path.asm"
+
 ; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.
 ; BANK $35 is capacity-constrained, so keep the larger F23.12n geography logic here.
 SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$34]

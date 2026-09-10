@@ -10,28 +10,37 @@
 
 DEF SUMMARY_OVERWORLD_BG_CACHE EQU vBGMap1 + 20 * BG_MAP_WIDTH
 
+DEF SUMMARY_PARTY_CALLER_NONE   EQU 0
+DEF SUMMARY_PARTY_CALLER_START  EQU 1
+DEF SUMMARY_PARTY_CALLER_BATTLE EQU 2
+
 Summary_RunStartPartyStatusScreen::
-	; Preserve the START Party caller contract: START Party permits UP/DOWN live
-	; switching and can reuse the HP/status/EXP graphics loaded by PartyMenuInit.
+	; START Party permits UP/DOWN live switching. Fall through to the shared Party
+	; caller wrapper after selecting the START-specific mode.
 	ld a, $80
 	ld [wStatusScreenPage], a
-	ld a, 1
+	ld a, SUMMARY_PARTY_CALLER_START
+Summary_RunPartyStatusScreen::
+	; PartyMenu has just loaded the shared HP/status/EXP graphics. Mark the caller
+	; explicitly and let StatusScreen consume that graphics-ready hint once.
+	ld [wStatusScreenPartyCaller], a
+	; Both Party caller enum values are nonzero, which is exactly the one-shot
+	; contract wStatusScreenCommonTilesReady needs. Reuse A here so this shared
+	; wrapper does not grow the existing large bank-$34 section.
 	ld [wStatusScreenCommonTilesReady], a
-	ld [wStatusScreenStartPartyCaller], a
 	predef StatusScreen
-	xor a
-	ld [wStatusScreenStartPartyCaller], a
+	xor a ; SUMMARY_PARTY_CALLER_NONE
+	ld [wStatusScreenPartyCaller], a
 	ret
 
 Summary_MaybeCacheOverworldBG0::
-	ld a, [wStatusScreenStartPartyCaller]
-	and a
-	jr nz, Summary_CacheOverworldBG0
-	; Battle Summary Page 2 also overwrites vBGMap0. Preserve the fixed
+	ld a, [wStatusScreenPartyCaller]
+	cp SUMMARY_PARTY_CALLER_START
+	jr z, Summary_CacheOverworldBG0
+	; Battle Party Summary Page 2 also overwrites vBGMap0. Preserve the fixed
 	; battle BG so horizontal window shake can expose the original screen.
-	ld a, [wIsInBattle]
-	and a
-	ret z
+	cp SUMMARY_PARTY_CALLER_BATTLE
+	ret nz
 
 Summary_CacheOverworldBG0::
 	; StatusScreen has already white-outed the display. Disable LCD so both VRAM
@@ -52,9 +61,9 @@ Summary_CacheOverworldBG0::
 	jp EnableLCD
 
 .copyRingToScratch
-	ld a, [wIsInBattle]
-	and a
-	jr nz, .battleBG0
+	ld a, [wStatusScreenPartyCaller]
+	cp SUMMARY_PARTY_CALLER_BATTLE
+	jr z, .battleBG0
 	ld a, [wMapViewVRAMPointer]
 	ld l, a
 	ld a, [wMapViewVRAMPointer + 1]
@@ -101,12 +110,11 @@ Summary_CacheOverworldBG0::
 	ret
 
 Summary_MaybeRestoreOverworldBG0::
-	ld a, [wStatusScreenStartPartyCaller]
-	and a
-	jr nz, Summary_RestoreOverworldBG0
-	ld a, [wIsInBattle]
-	and a
-	ret z
+	ld a, [wStatusScreenPartyCaller]
+	cp SUMMARY_PARTY_CALLER_START
+	jr z, Summary_RestoreOverworldBG0
+	cp SUMMARY_PARTY_CALLER_BATTLE
+	ret nz
 
 Summary_RestoreOverworldBG0::
 	; StatusScreen_Exit has just synchronized to VBlank with the display white, so
@@ -122,13 +130,13 @@ Summary_RestoreOverworldBG0::
 	call .copyScratchToRing
 	xor a
 	ld [rVBK], a
-	jp EnableLCD
+	jp Summary_BattlePartyRestoreCommonTilesAndEnableLCD
 
 .copyScratchToRing
 	ld hl, SUMMARY_OVERWORLD_BG_CACHE
-	ld a, [wIsInBattle]
-	and a
-	jr nz, .battleBG0
+	ld a, [wStatusScreenPartyCaller]
+	cp SUMMARY_PARTY_CALLER_BATTLE
+	jr z, .battleBG0
 	ld a, [wMapViewVRAMPointer]
 	ld e, a
 	ld a, [wMapViewVRAMPointer + 1]

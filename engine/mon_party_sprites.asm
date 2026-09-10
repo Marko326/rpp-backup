@@ -129,6 +129,9 @@ LoadMonPartySpriteGfxWithLCDDisabled:
 ; Load mon party sprite tile patterns into VRAM immediately by disabling the
 ; LCD.
 	call DisableLCD
+LoadMonPartySpriteGfxLCDOff::
+; Alternate entry for callers that already disabled the LCD. This label adds no
+; bytes; the shared tail still enables the LCD before returning.
 	ld hl, MonPartySpritePointers
 	ld a, $1c
 	ld bc, $0

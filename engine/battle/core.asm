@@ -2506,12 +2506,14 @@ PartyMenuOrRockOrRun:
 	xor a ; NORMAL_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID], a
 	ld [wMenuItemToSwap], a
-	call DisplayPartyMenu
+	ld [wBattlePartySummaryEnemyPicDirty], a
+	callba Summary_DisplayBattlePartyMenu
 .checkIfPartyMonWasSelected
 	jp nc, .partyMonWasSelected ; if a party mon was selected, jump, else we quit the party menu
 .quitPartyMenu
 	call ClearSprites
 	call GBPalWhiteOut
+	callba Summary_BattlePartyRestoreEnemyFrontPicIfDirty
 	call LoadHudTilePatterns
 	call LoadScreenTilesFromBuffer2
 	call RunDefaultPaletteCommand
@@ -2530,8 +2532,9 @@ PartyMenuOrRockOrRun:
 	call FillMemory
 	xor a ; NORMAL_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID], a
-	call GoBackToPartyMenu
-	jr .checkIfPartyMonWasSelected
+	; The Party graphics are still resident; reuse the same state-only redraw used
+	; after Summary instead of reloading the shared HP/status graphics.
+	jr .goBackToBattlePartyMenu
 .partyMonWasSelected
 	ld a, SWITCH_STATS_CANCEL_MENU_TEMPLATE
 	ld [wTextBoxID], a
@@ -2564,33 +2567,21 @@ PartyMenuOrRockOrRun:
 	ld [wMonDataLocation], a
 	ld hl, wPartyMon1
 	call ClearSprites
-; display the unified status screen; page navigation is handled internally
-	predef StatusScreen
-; now we need to reload the enemy mon pic
-	ld a, [wEnemyBattleStatus2]
-	bit HasSubstituteUp, a ; does the enemy mon have a substitute?
-	ld hl, AnimationSubstitute
-	jr nz, .doEnemyMonAnimation
-; enemy mon doesn't have substitute
-	ld a, [wEnemyMonMinimized]
-	and a ; has the enemy mon used Minimise?
-	ld hl, AnimationMinimizeMon
-	jr nz, .doEnemyMonAnimation
-; enemy mon is not minimised
-	ld a, [wEnemyMonSpecies]
-	ld [wcf91], a
-	ld [wd0b5], a
-	call GetMonHeader
-	ld de, vFrontPic
-	call LoadMonFrontSprite
-	jr .enemyMonPicReloaded
-.doEnemyMonAnimation
+; display the unified status screen; page navigation is handled internally.
+; The Battle Party path already has the shared Summary graphics resident, so the
+; wrapper reuses them and returns through a bank-$34 fast Party redraw.
+	callba Summary_RunBattlePartyStatusScreen
+
+	; Summary replaced vFrontPic with the inspected Pokémon. Party does not use
+	; the enemy picture, so defer restoring it until Party really resumes battle.
 	ld a, 1
-	ld [H_WHOSETURN], a
-	ld b, BANK(AnimationSubstitute) ; BANK(AnimationMinimizeMon)
-	call Bankswitch
-.enemyMonPicReloaded ; enemy mon pic has been reloaded, so return to the party menu
-	jp .partyMenuWasSelected
+	ld [wBattlePartySummaryEnemyPicDirty], a
+	xor a ; NORMAL_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID], a
+	ld [wMenuItemToSwap], a
+.goBackToBattlePartyMenu
+	callba Summary_GoBackToBattlePartyMenu
+	jp .checkIfPartyMonWasSelected
 .switchMon
 	ld a, [wPlayerMonNumber]
 	ld d, a
@@ -2608,6 +2599,7 @@ PartyMenuOrRockOrRun:
 	ld [wActionResultOrTookBattleTurn], a
 	call GBPalWhiteOut
 	call ClearSprites
+	callba Summary_BattlePartyRestoreEnemyFrontPicIfDirty
 	call LoadHudTilePatterns
 	call LoadScreenTilesFromBuffer1
 	call RunDefaultPaletteCommand
