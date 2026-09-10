@@ -26,6 +26,11 @@ Summary_RunStartPartyStatusScreen::
 Summary_MaybeCacheOverworldBG0::
 	ld a, [wStatusScreenStartPartyCaller]
 	and a
+	jr nz, Summary_CacheOverworldBG0
+	; Battle Summary Page 2 also overwrites vBGMap0. Preserve the fixed
+	; battle BG so horizontal window shake can expose the original screen.
+	ld a, [wIsInBattle]
+	and a
 	ret z
 
 Summary_CacheOverworldBG0::
@@ -47,10 +52,17 @@ Summary_CacheOverworldBG0::
 	jp EnableLCD
 
 .copyRingToScratch
+	ld a, [wIsInBattle]
+	and a
+	jr nz, .battleBG0
 	ld a, [wMapViewVRAMPointer]
 	ld l, a
 	ld a, [wMapViewVRAMPointer + 1]
 	ld h, a
+	jr .sourceReady
+.battleBG0
+	ld hl, vBGMap0
+.sourceReady
 	ld de, SUMMARY_OVERWORLD_BG_CACHE
 	ld b, SCREEN_HEIGHT
 .row
@@ -91,6 +103,9 @@ Summary_CacheOverworldBG0::
 Summary_MaybeRestoreOverworldBG0::
 	ld a, [wStatusScreenStartPartyCaller]
 	and a
+	jr nz, Summary_RestoreOverworldBG0
+	ld a, [wIsInBattle]
+	and a
 	ret z
 
 Summary_RestoreOverworldBG0::
@@ -111,10 +126,17 @@ Summary_RestoreOverworldBG0::
 
 .copyScratchToRing
 	ld hl, SUMMARY_OVERWORLD_BG_CACHE
+	ld a, [wIsInBattle]
+	and a
+	jr nz, .battleBG0
 	ld a, [wMapViewVRAMPointer]
 	ld e, a
 	ld a, [wMapViewVRAMPointer + 1]
 	ld d, a
+	jr .destReady
+.battleBG0
+	ld de, vBGMap0
+.destReady
 	ld b, SCREEN_HEIGHT
 .row
 	push de
