@@ -4,6 +4,15 @@
 ; enlarge ROM0 Home or capacity-constrained battle bank $0F sections.
 
 Summary_DisplayBattlePartyMenu::
+	; DisplayBattleMenu turns the selected Pokémon cursor into the parent-menu
+	; outline arrow before dispatching here, and PartyMenuOrRockOrRun has already
+	; snapshotted that tile into wTileMapBackup2. The Party covers the full screen,
+	; so the parent marker is unnecessary. Remove it from the saved battle-menu
+	; frame now; otherwise the fast return can briefly restore the stale $EC tile
+	; before AutoBG's three one-third transfers have all caught up.
+	ld hl, wTileMapBackup2 + 14 * SCREEN_WIDTH + 15
+	ld [hl], " "
+
 	; Battle's normal Pokémon command does not need DisplayPartyMenu's two staged
 	; three-frame blank transfers. White out, stop AutoBG, then prepare all shared
 	; Party VRAM while the LCD is already off. Only the final RedrawPartyMenu
