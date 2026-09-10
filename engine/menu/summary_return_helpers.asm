@@ -176,15 +176,21 @@ Summary_RestoreStartMenuFromParty::
 	callba InitMapSprites
 	call LoadTilesetTilePatternData
 	call LoadTextBoxTilePatterns
-	call EnableLCD
 	pop hl
 	pop af
 	ld [hl], a
 
-	; These two routines intentionally remain LCD-on: the existing video-copy
-	; pipeline schedules their data during VBlank and preserves its normal timing.
-	call LoadPlayerSpriteGraphics
+	; Party graphics overwrite both halves of the overworld sprite area and the
+	; font. 47.9n restored the player through two CopyVideoData calls (four
+	; VBlanks total) and then restored the 128-tile 1bpp font through
+	; CopyVideoDataDouble (sixteen more VBlanks). The screen is already white and
+	; the LCD is still disabled here, so restore the exact same final VRAM bytes
+	; immediately instead of serialising those transfers across ~20 frames.
+	xor a
+	ld [rVBK], a
+	call Summary_LoadPlayerSpriteGraphicsLCDOff
 	call LoadFontTilePatterns
+	call EnableLCD
 	call UpdateSprites
 
 	; Restore the START tilemap saved before entering Party. The normal three-frame
@@ -221,3 +227,89 @@ Summary_RestoreStartMenuFromParty::
 	dec b
 	jr nz, .objLoop
 	ret
+
+Summary_LoadPlayerSpriteGraphicsLCDOff:
+	; Match LoadPlayerSpriteGraphics' source selection and state corrections, but
+	; copy the two 12-tile halves directly while LCD access is unrestricted.
+	ld a, [wWalkBikeSurfState]
+	dec a
+	jr z, .ridingBike
+
+	ld a, [hTilesetType]
+	and a
+	jr nz, .determineGraphics
+	jr .startWalking
+
+.ridingBike
+	call IsBikeRidingAllowed
+	jr c, .determineGraphics
+.startWalking
+	xor a
+	ld [wWalkBikeSurfState], a
+	ld [wWalkBikeSurfStateCopy], a
+	jr .walking
+
+.determineGraphics
+	ld a, [wWalkBikeSurfState]
+	and a
+	jr z, .walking
+	dec a
+	jr z, .bike
+	dec a
+	jr z, .surf
+
+.walking
+	ld de, RedSprite
+	ld a, [wPlayerGender]
+	and a
+	jr z, .walkingSourceReady
+	ld de, LeafSprite
+.walkingSourceReady
+	ld a, BANK(RedSprite)
+	jr .copySheet
+
+.bike
+	ld de, RedCyclingSprite
+	ld a, [wPlayerGender]
+	and a
+	jr z, .bikeSourceReady
+	ld de, LeafCyclingSprite
+.bikeSourceReady
+	ld a, BANK(RedSprite)
+	jr .copySheet
+
+.surf
+	; Preserve GetSurfPlayerSpriteGraphics' Pikachu-validity contract. Bankswitch
+	; preserves carry across the far call, which is all this test needs.
+	ld a, [wd728]
+	bit 2, a
+	jr z, .surfSeel
+	callba FindSurfingPikachuInParty
+	jr c, .surfPikachu
+	ld hl, wd728
+	res 2, [hl]
+.surfSeel
+	ld de, SeelSprite
+	ld a, BANK(SeelSprite)
+	jr .copySheet
+.surfPikachu
+	ld de, SurfingPikachu
+	ld a, BANK(SurfingPikachu)
+
+.copySheet
+	; The normal player loader copies 12 tiles to vNPCSprites and the following
+	; 12 tiles to vNPCSprites2. Keep that layout and ordering exactly.
+	ld h, d
+	ld l, e
+	push af
+	push hl
+	ld de, vNPCSprites
+	ld bc, $0c * $10
+	call FarCopyData2
+	pop hl
+	ld bc, $0c * $10
+	add hl, bc
+	pop af
+	ld de, vNPCSprites2
+	ld bc, $0c * $10
+	jp FarCopyData2
