@@ -103,6 +103,9 @@ StatusScreen:
 	ld [rNR50], a ; Reduce the volume
 .skipEntryVolumeReduction
 	call GBPalWhiteOutWithDelay3
+	; START -> Pokémon -> Stats may later use vBGMap0 for Page 2. The far helper
+	; cheaply returns for other callers and otherwise caches the live overworld BG0.
+	callba Summary_MaybeCacheOverworldBG0
 	; The display is already white and AutoBG is not needed until the completed
 	; Page 1 transfer below. Clear only the WRAM tilemap here; ClearScreen would
 	; spend another fixed three frames transferring an intermediate blank map.
@@ -1332,6 +1335,9 @@ StatusScreen_Exit:
 	ld a, [rLCDC]
 	set 6, a ; restore the project's normal window tile map at $9c00
 	ld [rLCDC], a
+	; Restore START Party's cached overworld BG0 before returning. Other StatusScreen
+	; callers take the far helper's immediate return path.
+	callba Summary_MaybeRestoreOverworldBG0
 	call StatusScreen_SetTransferMap1
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
@@ -1359,6 +1365,12 @@ StatusScreen_Exit:
 	ld [hJoyPressed], a
 	ld [hJoyReleased], a
 	ld [hJoy5], a
+	; START Party immediately restores/redraws its saved full-screen
+	; tilemap, and RedrawPartyMenu already performs the required three-frame BG
+	; transfer. Avoid clearing wTileMap and waiting another three frames here.
+	ld a, [wStatusScreenStartPartyCaller]
+	and a
+	ret nz
 	jp ClearScreen
 
 CalcExpToLevelUp:

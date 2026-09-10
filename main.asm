@@ -2446,6 +2446,10 @@ INCLUDE "text/item_names.asm"
 ; Shared conventional item-list state helpers live in roomy bank $34.
 INCLUDE "engine/menu/item_list_state.asm"
 
+; Keep the overworld BG0 cache/restore and Party -> START fast
+; path out of capacity-constrained bank $04.
+INCLUDE "engine/menu/summary_return_helpers.asm"
+
 ; Pokédex Info browsing helpers live outside capacity-constrained bank $10.
 INCLUDE "engine/menu/pokedex_info.asm"
 

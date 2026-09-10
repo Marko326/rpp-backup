@@ -3477,8 +3477,13 @@ wStatusScreenDeferPaletteUpdate::
 wStatusScreenCommonTilesReady::
 	ds 1
 
+; Nonzero only while StatusScreen is owned by START -> Pokémon -> Stats.
+; Use it to scope the temporary overworld BG0 cache/restore.
+wStatusScreenStartPartyCaller::
+	ds 1
+
 ; unused?
-	ds 4
+	ds 3
 
 wOpponentAfterWrongAnswer:: ; da38
 ; the trainer the player must face after getting a wrong answer in the Cinnabar

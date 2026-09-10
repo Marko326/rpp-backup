@@ -24,9 +24,10 @@ StartMenu_Pokemon:
 .checkIfPokemonChosen
 	jr nc,.chosePokemon
 .exitMenu
-	call GBPalWhiteOutWithDelay3
-	call RestoreScreenTilesAndReloadTilePatterns
-    call ReloadMapData
+	; The cached BG0 restore still makes ReloadMapData unnecessary.
+	; Restore the saved START screen and all overwritten overworld graphics in one
+	; consolidated white/LCD-off phase instead of two separate restore waits.
+	callba Summary_RestoreStartMenuFromParty
 	call LoadGBPal
 	jp RedisplayStartMenu
 .chosePokemon
@@ -100,27 +101,20 @@ StartMenu_Pokemon:
 	call ClearSprites
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
-	; SUMMARY04: only START Party owns UP/DOWN Pokémon navigation for now.
-	ld a, $80
-	ld [wStatusScreenPage], a
-	; PartyMenuInit loaded the shared HP/status/EXP graphics immediately before
-	; this action menu. Reuse them once instead of uploading the same tiles again.
-	ld a, 1
-	ld [wStatusScreenCommonTilesReady], a
-	predef StatusScreen
+	; START Party owns live UP/DOWN navigation and the temporary overworld-BG0
+	; cache used by the Summary return path. Keep the caller-specific setup outside
+	; bank $04.
+	callba Summary_RunStartPartyStatusScreen
 	; Return the Party cursor to the last Pokémon viewed in Summary.
 	ld a, [wWhichPokemon]
 	ld [wPartyAndBillsPCSavedMenuItem], a
-	call ReloadMapData
-	; Summary page 2 shares vBGMap0 with the overworld, so its page data must
-	; be replaced before returning to the Party/START-menu lifecycle.  Do not
-	; use _LoadMapVramAndColors here: that map-load helper always writes from
-	; $9800 and loses the current overworld ring-buffer phase after walking.
-	; RedrawMapView rebuilds vBGMap0 from the live wMapViewVRAMPointer instead.
-	ld b, SET_PAL_OVERWORLD
-	call RunPaletteCommand
-	callba RedrawMapView
-	jp StartMenu_Pokemon
+	; The Summary exit path restores the cached overworld BG0 before StatusScreen
+	; returns.
+	; The Party is still full-screen here, so keep the fast return: restore the
+	; Party tilemap saved before the action menu and resume its already-resident
+	; icon set without rebuilding or redrawing the overworld.
+	call LoadScreenTilesFromBuffer1
+	jp .loop
 .choseOutOfBattleMove
 	push hl
 	ld a,[wWhichPokemon]
