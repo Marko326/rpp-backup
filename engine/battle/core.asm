@@ -2515,8 +2515,14 @@ PartyMenuOrRockOrRun:
 	call LoadHudTilePatterns
 	call LoadScreenTilesFromBuffer2
 	call RunDefaultPaletteCommand
+	; Buffer2 already contains the complete battle menu saved immediately before
+	; entering Party. Keep the screen white until all three BG-map thirds have
+	; reached VRAM, then resume the existing menu input directly. Re-entering
+	; DisplayBattleMenu would first restore Buffer1 (without the command box) and
+	; rebuild the box across VBlanks, making the lower-right frame flash once.
+	call Delay3
 	call GBPalNormal
-	jp DisplayBattleMenu
+	jp DisplayBattleMenu.handleBattleMenuInput
 .partyMonDeselected
 	coord hl, 11, 11
 	ld bc, 6 * SCREEN_WIDTH + 9
