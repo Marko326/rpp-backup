@@ -3400,14 +3400,19 @@ SaveScreenTilesToBuffer1::
 	jp CopyData
 
 LoadScreenTilesFromBuffer1::
+	call LoadScreenTilesFromBuffer1DisableBGTransfer
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
+
+; loads screen tiles stored in wTileMapBackup but leaves H_AUTOBGTRANSFERENABLED disabled
+LoadScreenTilesFromBuffer1DisableBGTransfer::
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ld hl, wTileMapBackup
 	coord de, 0, 0
 	ld bc, SCREEN_WIDTH * SCREEN_HEIGHT
 	call CopyData
-	ld a, 1
-	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
 
 DelayFrames::

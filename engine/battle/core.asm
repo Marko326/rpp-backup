@@ -2177,11 +2177,13 @@ CenterMonName:
 	ret
 
 DisplayBattleMenu:
-	call LoadScreenTilesFromBuffer1 ; restore saved screen
+	call LoadScreenTilesFromBuffer1DisableBGTransfer ; restore saved screen off-screen
 	ld a, [wBattleType]
 	and a
 	jr nz, .nonstandardbattle
 	call DrawHUDsAndHPBars
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
 	call PrintEmptyString
 	call SaveScreenTilesToBuffer1
 .nonstandardbattle
@@ -2193,6 +2195,9 @@ DisplayBattleMenu:
 .menuselected
 	ld [wTextBoxID], a
 	call DisplayTextBoxID
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
 	ld a, [wBattleType]
 	dec a
 	jp nz, .handleBattleMenuInput ; handle menu input if it's not the old man tutorial

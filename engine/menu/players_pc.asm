@@ -21,7 +21,7 @@ PlayerPCMenu:
 	ld [wCurrentMenuItem], a
 	ld hl, wFlags_0xcd60
 	set 5, [hl]
-	call LoadScreenTilesFromBuffer2
+	call LoadScreenTilesFromBuffer2DisableBGTransfer
 	coord hl, 0, 0
 	ld b, $8
 	ld c, $e
@@ -49,6 +49,9 @@ PlayerPCMenu:
 	ld [wPlayerMonNumber], a
 	ld hl, WhatDoYouWantText
 	call PrintText
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
 	call HandleMenuInput
 	bit 1, a
 	jp nz, ExitPlayerPC

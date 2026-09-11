@@ -53,7 +53,7 @@ DisplayPokemartDialogue_:
 	call PrintText
 	call SaveScreenTilesToBuffer1 ; save screen
 .sellMenuLoop
-	call LoadScreenTilesFromBuffer1 ; restore saved screen
+	call LoadScreenTilesFromBuffer1DisableBGTransfer ; restore saved screen off-screen
 	ld a,MONEY_BOX
 	ld [wTextBoxID],a
 	call DisplayTextBoxID ; draw money text box
