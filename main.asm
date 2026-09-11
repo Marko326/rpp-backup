@@ -2545,6 +2545,11 @@ INCLUDE "engine/menu/battle_party_summary_fast_path.asm"
 SECTION "Red Bedroom PC", ROMX, BANK[$34]
 INCLUDE "engine/menu/red_bedroom_pc.asm"
 
+; Shared Poké Flute party wake-up logic is kept out of the capacity-constrained
+; item-use bank. Battle and field callers both use the same helper.
+SECTION "Poke Flute Party Wake", ROMX, BANK[$34]
+INCLUDE "engine/items/pokeflute_party.asm"
+
 ; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.
 ; BANK $35 is capacity-constrained, so keep the larger F23.12n geography logic here.
 SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$34]

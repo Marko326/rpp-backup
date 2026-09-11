@@ -2009,29 +2009,22 @@ ItemUsePokeflute:
 	SetEvent EVENT_FIGHT_ROUTE16_SNORLAX
 	ret
 .noSnorlaxToWakeUp
+	; Outside battle, reuse the same party wake-up helper as the battle path.
+	; The two successful Snorlax branches above return before reaching here, so
+	; waking Snorlax never also wakes the player's party.
+	callba WakeSleepingPlayerPartyWithPokeflute
 	ld hl,PlayedFluteNoEffectText
+	jp z,PrintText
+	ld hl,PlayedFluteHadEffectText
+	call PrintText
+	ld hl,FluteWokeUpText
 	jp PrintText
 .inBattle
-	xor a
-	ld [wWereAnyMonsAsleep],a
-	ld b,~SLP & $ff
-	ld hl,wPartyMon1Status
-	call WakeUpEntireParty
-	ld a,[wIsInBattle]
-	dec a ; is it a trainer battle?
-	jr z,.skipWakingUpEnemyParty
-; if it's a trainer battle
-	ld hl,wEnemyMon1Status
-	call WakeUpEntireParty
-.skipWakingUpEnemyParty
-	ld hl,wBattleMonStatus
-	ld a,[hl]
-	and b ; remove Sleep status
-	ld [hl],a
-	ld hl,wEnemyMonStatus
-	ld a,[hl]
-	and b ; remove Sleep status
-	ld [hl],a
+	; Keep the original battle wake-up behavior, but perform the whole operation
+	; inside the shared helper bank. callba uses B/HL for its own bank dispatch,
+	; so the old 48.8 direct callba WakeUpEntireParty calls destroyed that helper's
+	; B/HL arguments (and also clobbered B before clearing the active battlers).
+	callba WakeSleepingBattlePartiesWithPokeflute
 	call LoadScreenTilesFromBuffer2 ; restore saved screen
 	ld a,[wWereAnyMonsAsleep]
 	and a ; were any pokemon asleep before playing the flute?
@@ -2043,41 +2036,13 @@ ItemUsePokeflute:
 	ld a,[wDanger]
 	and a,$80
 	jr nz,.skipMusic
-	call WaitForSoundToFinish ; wait for sound to end
-	;callba Music_PokeFluteInBattle ; play in-battle pokeflute music ; XXX
-.musicWaitLoop ; wait for music to finish playing
-	ld a,[wChannelSoundIDs + Ch6]
-	and a ; music off?
-	jr nz,.musicWaitLoop
+	; The old pokered Music_PokeFluteInBattle routine was removed when this
+	; project switched audio engines. Use the live SFX API instead of touching
+	; legacy wChannelCommandPointers/wChannelSoundIDs state.
+	callba PlayBattlePokefluteSfx
 .skipMusic
 	ld hl,FluteWokeUpText
 	jp PrintText
-
-; wakes up all party pokemon
-; INPUT:
-; hl must point to status of first pokemon in party (player's or enemy's)
-; b must equal ~SLP
-; [wWereAnyMonsAsleep] should be initialized to 0
-; OUTPUT:
-; [wWereAnyMonsAsleep]: set to 1 if any pokemon were asleep
-WakeUpEntireParty:
-	ld de,44
-	ld c,6
-.loop
-	ld a,[hl]
-	push af
-	and a,SLP ; is pokemon asleep?
-	jr z,.notAsleep
-	ld a,1
-	ld [wWereAnyMonsAsleep],a ; indicate that a pokemon had to be woken up
-.notAsleep
-	pop af
-	and b ; remove Sleep status
-	ld [hl],a
-	add hl,de
-	dec c
-	jr nz,.loop
-	ret
 
 ; Format:
 ; 00: Y
