@@ -2541,6 +2541,10 @@ InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
 INCLUDE "engine/menu/battle_party_summary_fast_path.asm"
 
+; Red bedroom PC gate is kept in its own small floating section.
+SECTION "Red Bedroom PC", ROMX, BANK[$34]
+INCLUDE "engine/menu/red_bedroom_pc.asm"
+
 ; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.
 ; BANK $35 is capacity-constrained, so keep the larger F23.12n geography logic here.
 SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$34]

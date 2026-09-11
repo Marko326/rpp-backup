@@ -1285,7 +1285,12 @@ wFlags_0xcd60:: ; cd60
 ; bit 6: tried pushing against boulder once (you need to push twice before it will move)
 	ds 1
 
-; unused?
+; Reserved runtime scratch space ($CD61-$CD69).
+; Future temporary flags/state bytes should be allocated from this block first
+; instead of adding new WRAM elsewhere. Replace part of this `ds 9` with named
+; bytes (or packed flag bytes) and reduce the remaining `ds` by the same amount.
+; Keep the total footprint exactly 9 bytes so wActionResultOrTookBattleTurn and
+; every address after $CD69 stay unchanged. This area is not save data.
 	ds 9
 
 wActionResultOrTookBattleTurn:: ; cd6a
@@ -2792,6 +2797,10 @@ wGrassTile:: ; d535
 
 	ds 4
 
+; Player PC item-storage save fields. These are active save-backed data and must
+; remain at their original addresses for save compatibility. Do not delete, shrink,
+; move, or treat this block as general free WRAM. Runtime flags should use the
+; reserved $CD61-$CD69 scratch block above instead.
 wNumBoxItems:: ; d53a
 	ds 1
 wBoxItems:: ; d53b

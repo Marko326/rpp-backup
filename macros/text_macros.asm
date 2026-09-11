@@ -73,7 +73,7 @@ TX_VENDING_MACHINE         EQUS "db $f5"
 TX_CABLE_CLUB_RECEPTIONIST EQUS "db $f6"
 TX_PRIZE_VENDOR            EQUS "db $f7"
 TX_POKECENTER_PC           EQUS "db $f9"
-TX_PLAYERS_PC              EQUS "db $fc"
+TX_RED_BEDROOM_PC           EQUS "db $fc"
 TX_BILLS_PC                EQUS "db $fd"
 
 MART_LIST EQU $FE

@@ -1116,8 +1116,8 @@ DisplayTextID::
 	jp z,DisplayPokemartDialogue
 	cp $ff   ; Pokemon Center NPC
 	jp z,DisplayPokemonCenterDialogue
-	cp $fc   ; Item Storage PC
-	jp z,FuncTX_ItemStoragePC
+	cp $fc   ; Red's bedroom PC
+	jp z,FuncTX_RedBedroomPC
 	cp $fd   ; Bill's PC
 	jp z,FuncTX_BillsPC
 	cp $f9   ; Pokemon Center PC
@@ -2894,10 +2894,9 @@ DecodeArrowMovementRLE::
 	inc hl
 	jr DecodeArrowMovementRLE
 
-FuncTX_ItemStoragePC::
-	call SaveScreenTilesToBuffer2
-	ld b, BANK(PlayerPC)
-	ld hl, PlayerPC
+FuncTX_RedBedroomPC::
+	ld b, BANK(OpenRedBedroomPC)
+	ld hl, OpenRedBedroomPC
 	jr bankswitchAndContinue
 
 FuncTX_BillsPC::

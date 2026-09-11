@@ -11,7 +11,7 @@ OpenRedsPC:
 	tx_pre_jump RedBedroomPCText
 
 RedBedroomPCText:
-	TX_PLAYERS_PC
+	TX_RED_BEDROOM_PC
 
 Route15GateLeftBinoculars:
 	ld a, [wSpriteStateData1 + 9]
