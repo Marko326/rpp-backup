@@ -2526,6 +2526,8 @@ PartyMenuOrRockOrRun:
 	call GBPalNormal
 	jp DisplayBattleMenu.handleBattleMenuInput
 .partyMonDeselected
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a ; hide clearing/rebuilding the party menu
 	coord hl, 11, 11
 	ld bc, 6 * SCREEN_WIDTH + 9
 	ld a, " "

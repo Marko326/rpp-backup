@@ -25,6 +25,8 @@ DrawPartyMenu_:
 	callba LoadMonPartySpriteGfxWithLCDDisabled ; load pokemon icon graphics
 
 RedrawPartyMenu_:
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a ; keep the redraw off-screen until it is complete
 	ld a,[wPartyMenuTypeOrMessageID]
 	cp a,SWAP_MONS_PARTY_MENU
 	jp z,.printMessage
