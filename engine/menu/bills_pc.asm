@@ -532,6 +532,10 @@ DisplayDepositWithdrawMenu:
 	and a
 	ret
 
+; Shared by every action menu that grants StatusScreen ownership of UP/DOWN.
+; Keep Bill's PC's original symbol as an alias so both existing callers and the
+; Battle Party Summary path use the same release gate.
+Summary_WaitForVerticalRelease::
 BillsPC_WaitForVerticalRelease:
 	call Joypad
 	ldh a, [hJoyHeld]

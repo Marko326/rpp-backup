@@ -46,6 +46,12 @@ Summary_DisplayBattlePartyMenu::
 	jr Summary_HandleBattlePartyMenuInput
 
 Summary_RunBattlePartyStatusScreen::
+	; Reuse the existing Summary live-switch contract used by START Party and
+	; Bill's PC. Release the direction that selected Stats first, then grant the
+	; ordinary PLAYER_PARTY_DATA switch pipeline permission through bit 7.
+	callba Summary_WaitForVerticalRelease
+	ld a, 1 << STATUS_SCREEN_MON_SWITCH_F
+	ld [wStatusScreenPage], a
 	ld a, SUMMARY_PARTY_CALLER_BATTLE
 	jp Summary_RunPartyStatusScreen
 
