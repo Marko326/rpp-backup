@@ -7,6 +7,82 @@
 ; Each recipe starts with its byte length (including the $FF terminator). The
 ; command stream itself is copied into the existing 30-byte wBuffer.
 
+; ROM0 relief: moved here from SECTION "Home" (movedex_v1.2.7 and later).
+; This file is included by main.asm inside bank $3A, alongside the dedicated
+; animation recipe tables/loaders used below.
+PrepareCurrentMoveAnimation::
+	xor a
+	ld [wExtendedAnimFrameEffect], a
+	ld [wExtendedAnimPaletteMode], a
+	ld [wMoveAnimScriptLoaded], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	; X stat items temporarily replace MoveNum with a synthetic animation ID but
+	; leave SelectedMove holding the previous real move. Player items use
+	; XSTATITEM_ANIM; trainer AI uses ANIM_AF. Do not stage a dedicated recipe
+	; from that stale move identity.
+	cp XSTATITEM_ANIM
+	ret z
+	cp ANIM_AF
+	ret z
+	call GetCurrentMoveID
+	cp NUM_ATTACKS
+	ret nc
+	ld e, a
+	cp METAL_CLAW
+	jr nc, .expandedMove
+	; Selected original moves can opt into shared family recipes by real move ID
+	; without changing their legacy animation byte. Non-listed moves return.
+	call LoadLegacyMoveAnimationOverride
+	ret
+.expandedMove
+	call LoadExtendedMoveAnimation
+	ret
+
+; Bank-$0F public entry points tail-call these routines with jpab. Keeping the
+; actual wrappers here removes their movedex-era footprint from ROM0 while still
+; allowing bank-$0E -> BankswitchEtoF -> bank-$0F callers to restore correctly.
+PlayCurrentMoveAnimation2Far::
+	call PrepareCurrentMoveAnimation
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	ld [wAnimationID], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, $6
+	jr z, .storeAnimationType
+	ld a, $3
+.storeAnimationType
+	ld [wAnimationType], a
+	jpab PlayBattleAnimationGotID
+
+PlayCurrentMoveAnimationFar::
+	call PrepareCurrentMoveAnimation
+	xor a
+	ld [wAnimationType], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	ld [wAnimationID], a
+	jpab PlayBattleAnimationGotID
+
 ; Gold-style orb projectile prototype.
 ; RPP already contains the Gen 2 Sludge Bomb SFX in crysaudio/sfx.asm; rbsfx.asm
 ; exposes it as the next SFX ID after the three existing GSSFX entries.
