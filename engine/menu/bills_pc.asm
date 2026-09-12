@@ -796,3 +796,29 @@ JustAMomentText::
 
 OpenBillsPCText::
 	db $FD ; FuncTX_BillsPC
+
+; These helpers are private to Bill's PC. Keep them in the same ROMX section as
+; their only callers instead of spending scarce ROM0 space on module-local code.
+; All routines they call directly are ROM0, so no extra bank switch is needed.
+PrepareBillsPCActionMenu::
+	call SaveScreenTilesToBuffer1
+	xor a
+	ld [wCurrentMenuItem], a
+	ret
+
+; Tail-called by DisplayDepositWithdrawMenu when B/Cancel is chosen.
+RestoreBillsPCActionMenuAndCancel::
+	call LoadScreenTilesFromBuffer1
+	and a
+	ret
+
+; Currently unused, but kept beside the other Bill's PC helpers for the Stats
+; return path so it no longer reserves ROM0 space.
+RestoreBillsPCActionMenuAfterStats::
+	call LoadScreenTilesFromBuffer1
+	call ReloadTilesetTilePatterns
+	call RunDefaultPaletteCommand
+	call LoadGBPal
+	ld a, 1
+	ld [wCurrentMenuItem], a
+	ret
