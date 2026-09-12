@@ -2,7 +2,7 @@ Moves:
 ; Characteristics of each move.
 
 move: macro
-	db \1 ; animation (interchangeable with move id)
+	db \1 ; legacy animation ID (do not use as real move identity)
 	db \2 ; effect
 	db \3 ; power
 	db \4 ; type
