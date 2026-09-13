@@ -1,5 +1,92 @@
 ; Type effectiveness and STAB calculations moved out of Bank F.
 ; Keep the battle and AI paths together with the shared TypeEffects table.
+;
+; TypeEffects stays compact in ROM while readable macros describe each relationship.
+; Group headers use bit 7; matchup bytes keep bit 7 clear, so every relationship
+; still costs only one byte.
+
+TYPE_EFFECT_TYPE_MASK    EQU $1f
+TYPE_EFFECT_IMMUNE_CODE  EQU $00
+TYPE_EFFECT_NVE_CODE     EQU $20
+TYPE_EFFECT_SE_CODE      EQU $40
+TYPE_EFFECT_MULT_MASK    EQU $60
+TYPE_EFFECT_GROUP_FLAG   EQU $80
+
+; Readable source macros. These still emit one byte per matchup.
+; ASSERT prevents future type IDs from being silently truncated.
+type_effect_group: MACRO
+	assert (\1) <= TYPE_EFFECT_TYPE_MASK
+	db TYPE_EFFECT_GROUP_FLAG | (\1)
+ENDM
+
+super_effective: MACRO
+	assert (\1) <= TYPE_EFFECT_TYPE_MASK
+	db (\1) | TYPE_EFFECT_SE_CODE
+ENDM
+
+not_very_effective: MACRO
+	assert (\1) <= TYPE_EFFECT_TYPE_MASK
+	db (\1) | TYPE_EFFECT_NVE_CODE
+ENDM
+
+no_effect: MACRO
+	assert (\1) <= TYPE_EFFECT_TYPE_MASK
+	db (\1) | TYPE_EFFECT_IMMUNE_CODE
+ENDM
+
+; Input:  A = attacking type
+; Output: HL = first packed matchup in that attacking-type group
+;         carry set if the group exists, clear if it does not
+; Clobbers: A, C, HL
+FindTypeEffectGroup:
+	ld c, a
+	ld hl, TypeEffects
+.nextGroup
+	ld a, [hli]
+.nextHeader
+	cp $ff
+	ret z ; equal also clears carry
+	and TYPE_EFFECT_TYPE_MASK
+	cp c
+	jr z, .found
+.skipGroup
+	ld a, [hli]
+	bit 7, a
+	jr z, .skipGroup
+	jr .nextHeader
+.found
+	scf
+	ret
+
+; Input:  D = attacking type, B = defending type
+; Output: A = multiplier (0, 5, 10, or 20)
+; Clobbers: A, C, HL
+GetTypeEffectivenessForDefender:
+	ld a, d
+	call FindTypeEffectGroup
+	ld a, 10
+	ret nc
+.loop
+	ld a, [hli]
+	bit 7, a
+	jr nz, .neutral
+	ld c, a
+	and TYPE_EFFECT_TYPE_MASK
+	cp b
+	jr z, .match
+	jr .loop
+.match
+	ld a, c
+	and TYPE_EFFECT_MULT_MASK
+	ret z ; immunity: A = 0
+	cp TYPE_EFFECT_NVE_CODE
+	ld a, 5
+	ret z
+	ld a, 20
+	ret
+.neutral
+	ld a, 10
+	ret
 
 ; function to adjust the base damage of an attack to account for type effectiveness
 AdjustDamageForMoveType:
@@ -50,51 +137,46 @@ AdjustDamageForMoveType:
 	ld hl, H_MULTIPLIER
 	ld [hl], 3
 	call Multiply
-	
+
 	ld [hl], 2
 	ld b, 4
 	call Divide
-	
+
 	ld hl,wDamageMultipliers
 	set 7,[hl] ; STAB
 .skipSameTypeAttackBonus
 	ld a,[wMoveType]
-	ld b,a
-	ld hl,TypeEffects
+	call FindTypeEffectGroup
+	jr nc, StoreDamage
 .loop
-	ld a,[hli] ; a = "attacking type" of the current type pair
-	cp a,$ff
-	jr z, StoreDamage
-	cp b ; does move type match "attacking type"?
-	jr nz,.nextTypePair
-	ld a,[hl] ; a = "defending type" of the current type pair
-	cp d ; does type 1 of defender match "defending type"?
+	ld a,[hli]
+	bit 7, a
+	jp nz, StoreDamage
+	ld c,a
+	and TYPE_EFFECT_TYPE_MASK
+	cp d ; does type 1 of defender match?
 	jr z,.matchingPairFound
-	cp e ; does type 2 of defender match "defending type"?
+	cp e ; does type 2 of defender match?
 	jr z,.matchingPairFound
-	jr .nextTypePair
+	jr .loop
 .matchingPairFound
-; if the move type matches the "attacking type" and one of the defender's types matches the "defending type"
+; if the move type and one of the defender's types match this packed matchup
 	push hl
 	push bc
-	inc hl
-	ld a,[hl] ; a = damage multiplier
-	ld [H_MULTIPLIER],a
-	
-; done if type immunity
-	and a
-	jr z, .typeImmunityDone
-	
-; update damage multipliers
-	cp $a
-	ld hl, wDamageMultipliers
-	jr c, .nve
-	set 1, [hl]
+	ld a,c
+	and TYPE_EFFECT_MULT_MASK
+	jr z,.typeImmunityDone
+	cp TYPE_EFFECT_NVE_CODE
+	ld a,5
+	ld hl,wDamageMultipliers
+	jr z,.nve
+	ld a,20
+	set 1,[hl]
 	jr .multiply
 .nve
-	set 0, [hl]
-; apply damage multiplier
+	set 0,[hl]
 .multiply
+	ld [H_MULTIPLIER],a
 	call Multiply
 
 ; divide by 10
@@ -105,12 +187,11 @@ AdjustDamageForMoveType:
 
 	pop bc
 	pop hl
-.nextTypePair
-	inc hl
-	inc hl
-	jp .loop
-	
+	jr .loop
+
 .typeImmunityDone
+; keep the old immunity path's H_MULTIPLIER = 0 side effect
+	ld [H_MULTIPLIER],a
 	call StoreDamage
 	ld a, $7f
 	ld [wDamageMultipliers], a
@@ -119,7 +200,7 @@ AdjustDamageForMoveType:
 	pop bc
 	pop hl
 	ret
-	
+
 StoreDamage:
 ; store the result of those multiply/divide operations back in wDamage
 	ld hl, wDamage
@@ -138,70 +219,32 @@ AIGetTypeEffectiveness:
 	ld a,[wEnemyMoveType]
 	ld d,a                    ; d = type of enemy move
 	ld hl,wBattleMonType
-	ld b,[hl]              ; b = type 1 of player's pokemon
-	ld a,10
-	ld [H_MULTIPLIER],a           ; initialize [wd11e] to neutral effectiveness
-	ld hl,TypeEffects
-.loop
-	ld a,[hli]
-	cp a,$ff
-	jr z, .start2
-	cp d                   ; match the type of the move
-	jr nz,.nextTypePair1
-	ld a,[hli]
-	cp b                   ; match with type 1 of pokemon
-	jr z,.match
-	jr .nextTypePair2
-.nextTypePair1
-	inc hl
-.nextTypePair2
-	inc hl
-	jr .loop
-.match
+	ld b,[hl]                 ; b = type 1 of player's pokemon
+	call GetTypeEffectivenessForDefender
+	ld [H_MULTIPLIER],a
+	ld hl,wBattleMonType+1
 	ld a,[hl]
-	ld [H_MULTIPLIER],a           ; store damage multiplier
-.start2
-    ld hl,wBattleMonType+1
-    ld a,[hl]
-    cp b
-    jr nz,.checksecondtype
-    ld a, [H_MULTIPLIER]
-    ld [wTypeEffectiveness], a
+	cp b
+	jr nz,.checksecondtype
+	ld a,[H_MULTIPLIER]
+	ld [wTypeEffectiveness], a
 	ret
 .checksecondtype
-    ld b,[hl]
-    xor a
-    ld [H_MULTIPLICAND],a
-    ld [H_MULTIPLICAND+1],a
-    ld a,10
-    ld [H_MULTIPLICAND+2],a
-    ld hl,TypeEffects
-.loop2
-    ld a,[hli]
-    cp a,$ff
-    jr z,.multandret
-    cp d ; match the type
-    jr nz, .nextTypePair3
-    ld a,[hli]
-    cp b ; match with type 2 of pokemon
-    jr z,.match2
-    jr .nextTypePair4
-.nextTypePair3
-    inc hl
-.nextTypePair4
-    inc hl
-    jr .loop2
-.match2
-    ld a,[hl]
-    ld [H_MULTIPLICAND+2],a
-.multandret
-    call Multiply
-    ld a, 10
-    ld [H_DIVISOR], a
-    ld b, 4
-    call Divide
-    ld a, [H_QUOTIENT+3]
-    ld [wd11e], a
-    ret
+	ld b,[hl]
+	xor a
+	ld [H_MULTIPLICAND],a
+	ld [H_MULTIPLICAND+1],a
+	ld a,10
+	ld [H_MULTIPLICAND+2],a
+	call GetTypeEffectivenessForDefender
+	ld [H_MULTIPLICAND+2],a
+	call Multiply
+	ld a, 10
+	ld [H_DIVISOR], a
+	ld b, 4
+	call Divide
+	ld a, [H_QUOTIENT+3]
+	ld [wd11e], a
+	ret
 
 INCLUDE "data/type_effects.asm"

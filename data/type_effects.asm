@@ -1,127 +1,162 @@
 TypeEffects:
-; format: attacking type, defending type, damage multiplier
-; the multiplier is a (decimal) fixed-point number:
-;     20 is ×2.0
-;     05 is ×0.5
-;     00 is ×0
-	db WATER,FIRE,20
-	db FIRE,GRASS,20
-	db FIRE,ICE,20
-	db GRASS,WATER,20
-	db ELECTRIC,WATER,20
-	db WATER,ROCK,20
-	db GROUND,FLYING,00
-	db WATER,WATER,05
-	db FIRE,FIRE,05
-	db ELECTRIC,ELECTRIC,05
-	db ICE,ICE,05
-	db GRASS,GRASS,05
-	db PSYCHIC,PSYCHIC,05
-	db FIRE,WATER,05
-	db GRASS,FIRE,05
-	db WATER,GRASS,05
-	db ELECTRIC,GRASS,05
-	db NORMAL,ROCK,05
-	db NORMAL,GHOST,00
-	db GHOST,GHOST,20
-	db FIRE,BUG,20
-	db FIRE,ROCK,05
-	db WATER,GROUND,20
-	db ELECTRIC,GROUND,00
-	db ELECTRIC,FLYING,20
-	db GRASS,GROUND,20
-	db GRASS,BUG,05
-	db GRASS,POISON,05
-	db GRASS,ROCK,20
-	db GRASS,FLYING,05
-	db ICE,WATER,05
-	db ICE,GRASS,20
-	db ICE,GROUND,20
-	db ICE,FLYING,20
-	db FIGHTING,NORMAL,20
-	db FIGHTING,POISON,05
-	db FIGHTING,FLYING,05
-	db FIGHTING,PSYCHIC,05
-	db FIGHTING,BUG,05
-	db FIGHTING,ROCK,20
-	db FIGHTING,ICE,20
-	db FIGHTING,GHOST,00
-	db POISON,GRASS,20
-	db POISON,POISON,05
-	db POISON,GROUND,05
-	db POISON,ROCK,05
-	db POISON,GHOST,05
-	db GROUND,FIRE,20
-	db GROUND,ELECTRIC,20
-	db GROUND,GRASS,05
-	db GROUND,BUG,05
-	db GROUND,ROCK,20
-	db GROUND,POISON,20
-	db FLYING,ELECTRIC,05
-	db FLYING,FIGHTING,20
-	db FLYING,BUG,20
-	db FLYING,GRASS,20
-	db FLYING,ROCK,05
-	db PSYCHIC,FIGHTING,20
-	db PSYCHIC,POISON,20
-	db BUG,FIRE,05
-	db BUG,GRASS,20
-	db BUG,FIGHTING,05
-	db BUG,FLYING,05
-	db BUG,PSYCHIC,20
-	db BUG,GHOST,05
-	db BUG,POISON,05
-	db ROCK,FIRE,20
-	db ROCK,FIGHTING,05
-	db ROCK,GROUND,05
-	db ROCK,FLYING,20
-	db ROCK,BUG,20
-	db ROCK,ICE,20
-	db GHOST,NORMAL,00
-	db GHOST,PSYCHIC,20
-	db FIRE,DRAGON,05
-	db WATER,DRAGON,05
-	db ELECTRIC,DRAGON,05
-	db GRASS,DRAGON,05
-	db ICE,DRAGON,20
-	db DRAGON,DRAGON,20
-	db DARK,FIGHTING,05
-	db DARK,GHOST,20
-	db DARK,PSYCHIC,20
-	db DARK,FAIRY,05
-	db FIGHTING,DARK,20
-	db BUG,DARK,20
-	db GHOST,DARK,05
-	db PSYCHIC,DARK,00
-	db DARK,DARK,05
-	db FAIRY,DARK,20
-	db FAIRY,FIGHTING,20
-	db FAIRY,POISON,05
-	db FAIRY,STEEL,05
-	db FAIRY,FIRE,05
-	db FAIRY,DRAGON,20
-	db FIGHTING,FAIRY,05
-	db POISON,FAIRY,20
-	db BUG,FAIRY,05
-	db DRAGON,FAIRY,00
-	db STEEL,ROCK,20
-	db STEEL,STEEL,05
-	db STEEL,FIRE,05
-	db STEEL,WATER,05
-	db STEEL,ELECTRIC,05
-	db STEEL,ICE,20
-	db STEEL,FAIRY,20
-	db NORMAL,STEEL,05
-	db FIGHTING,STEEL,20
-	db FLYING,STEEL,05
-	db POISON,STEEL,00
-	db GROUND,STEEL,20
-	db ROCK,STEEL,05
-	db BUG,STEEL,05
-	db FIRE,STEEL,20
-	db GRASS,STEEL,05
-	db PSYCHIC,STEEL,05
-	db ICE,STEEL,05
-	db DRAGON,STEEL,05
-	db ICE,FIRE,05
-	db $FF
+; Readable source macros still emit the compact one-byte matchup format.
+; A group header has bit 7 set; matchup bytes keep bit 7 clear.
+; $ff terminates the whole table.
+
+	type_effect_group WATER
+	super_effective FIRE
+	super_effective ROCK
+	not_very_effective WATER
+	not_very_effective GRASS
+	super_effective GROUND
+	not_very_effective DRAGON
+
+	type_effect_group FIRE
+	super_effective GRASS
+	super_effective ICE
+	not_very_effective FIRE
+	not_very_effective WATER
+	super_effective BUG
+	not_very_effective ROCK
+	not_very_effective DRAGON
+	super_effective STEEL
+
+	type_effect_group GRASS
+	super_effective WATER
+	not_very_effective GRASS
+	not_very_effective FIRE
+	super_effective GROUND
+	not_very_effective BUG
+	not_very_effective POISON
+	super_effective ROCK
+	not_very_effective FLYING
+	not_very_effective DRAGON
+	not_very_effective STEEL
+
+	type_effect_group ELECTRIC
+	super_effective WATER
+	not_very_effective ELECTRIC
+	not_very_effective GRASS
+	no_effect GROUND
+	super_effective FLYING
+	not_very_effective DRAGON
+
+	type_effect_group GROUND
+	no_effect FLYING
+	super_effective FIRE
+	super_effective ELECTRIC
+	not_very_effective GRASS
+	not_very_effective BUG
+	super_effective ROCK
+	super_effective POISON
+	super_effective STEEL
+
+	type_effect_group ICE
+	not_very_effective ICE
+	not_very_effective WATER
+	super_effective GRASS
+	super_effective GROUND
+	super_effective FLYING
+	super_effective DRAGON
+	not_very_effective STEEL
+	not_very_effective FIRE
+
+	type_effect_group PSYCHIC
+	not_very_effective PSYCHIC
+	super_effective FIGHTING
+	super_effective POISON
+	no_effect DARK
+	not_very_effective STEEL
+
+	type_effect_group NORMAL
+	not_very_effective ROCK
+	no_effect GHOST
+	not_very_effective STEEL
+
+	type_effect_group GHOST
+	super_effective GHOST
+	no_effect NORMAL
+	super_effective PSYCHIC
+	not_very_effective DARK
+
+	type_effect_group FIGHTING
+	super_effective NORMAL
+	not_very_effective POISON
+	not_very_effective FLYING
+	not_very_effective PSYCHIC
+	not_very_effective BUG
+	super_effective ROCK
+	super_effective ICE
+	no_effect GHOST
+	super_effective DARK
+	not_very_effective FAIRY
+	super_effective STEEL
+
+	type_effect_group POISON
+	super_effective GRASS
+	not_very_effective POISON
+	not_very_effective GROUND
+	not_very_effective ROCK
+	not_very_effective GHOST
+	super_effective FAIRY
+	no_effect STEEL
+
+	type_effect_group FLYING
+	not_very_effective ELECTRIC
+	super_effective FIGHTING
+	super_effective BUG
+	super_effective GRASS
+	not_very_effective ROCK
+	not_very_effective STEEL
+
+	type_effect_group BUG
+	not_very_effective FIRE
+	super_effective GRASS
+	not_very_effective FIGHTING
+	not_very_effective FLYING
+	super_effective PSYCHIC
+	not_very_effective GHOST
+	not_very_effective POISON
+	super_effective DARK
+	not_very_effective FAIRY
+	not_very_effective STEEL
+
+	type_effect_group ROCK
+	super_effective FIRE
+	not_very_effective FIGHTING
+	not_very_effective GROUND
+	super_effective FLYING
+	super_effective BUG
+	super_effective ICE
+	not_very_effective STEEL
+
+	type_effect_group DRAGON
+	super_effective DRAGON
+	no_effect FAIRY
+	not_very_effective STEEL
+
+	type_effect_group DARK
+	not_very_effective FIGHTING
+	super_effective GHOST
+	super_effective PSYCHIC
+	not_very_effective FAIRY
+	not_very_effective DARK
+
+	type_effect_group FAIRY
+	super_effective DARK
+	super_effective FIGHTING
+	not_very_effective POISON
+	not_very_effective STEEL
+	not_very_effective FIRE
+	super_effective DRAGON
+
+	type_effect_group STEEL
+	super_effective ROCK
+	not_very_effective STEEL
+	not_very_effective FIRE
+	not_very_effective WATER
+	not_very_effective ELECTRIC
+	super_effective ICE
+	super_effective FAIRY
+
+	db $ff
