@@ -4986,58 +4986,13 @@ ApplyAttackToEnemyPokemon:
 	jp z,ApplyAttackToEnemyPokemonDone ; no attack to apply if base power is 0
 	jr ApplyDamageToEnemyPokemon
 .superFangEffect
-; set the damage to half the target's HP
-	ld hl,wEnemyMonHP
-	ld de,wDamage
-	ld a,[hli]
-	srl a
-	ld [de],a
-	inc de
-	ld b,a
-	ld a,[hl]
-	rr a
-	ld [de],a
-	or b
-	jr nz,ApplyDamageToEnemyPokemon
-; make sure Super Fang's damage is always at least 1
-	ld a,$01
-	ld [de],a
+	ld hl, wEnemyMonHP
+	call CalculateSuperFangDamage
 	jr ApplyDamageToEnemyPokemon
 .specialDamage
-	ld hl,wBattleMonLevel
-	ld a,[hl]
-	ld b,a ; Seismic Toss deals damage equal to the user's level
-	call GetCurrentMoveID
-	cp a,SEISMIC_TOSS
-	jr z,.storeDamage
-	cp a,NIGHT_SHADE
-	jr z,.storeDamage
-	ld b,SONICBOOM_DAMAGE ; 20
-	cp a,SONICBOOM
-	jr z,.storeDamage
-	ld b,DRAGON_RAGE_DAMAGE ; 40
-	cp a,DRAGON_RAGE
-	jr z,.storeDamage
-; Psywave
-	ld a,[hl]
-	ld b,a
-	srl a
-	add b
-	ld b,a ; b = level * 1.5
-; loop until a random number in the range [1, b) is found
-.loop
-	call BattleRandom
-	and a
-	jr z,.loop
-	cp b
-	jr nc,.loop
-	ld b,a
-.storeDamage ; store damage value at b
-	ld hl,wDamage
-	xor a
-	ld [hli],a
-	ld a,b
-	ld [hl],a
+	ld hl, wBattleMonLevel
+	call CalculateSpecialMoveDamage
+	jr ApplyDamageToEnemyPokemon
 
 ApplyDamageToEnemyPokemon:
 	ld hl,wDamage
@@ -5105,58 +5060,13 @@ ApplyAttackToPlayerPokemon:
 	jp z,ApplyAttackToPlayerPokemonDone
 	jr ApplyDamageToPlayerPokemon
 .superFangEffect
-; set the damage to half the target's HP
-	ld hl,wBattleMonHP
-	ld de,wDamage
-	ld a,[hli]
-	srl a
-	ld [de],a
-	inc de
-	ld b,a
-	ld a,[hl]
-	rr a
-	ld [de],a
-	or b
-	jr nz,ApplyDamageToPlayerPokemon
-; make sure Super Fang's damage is always at least 1
-	ld a,$01
-	ld [de],a
+	ld hl, wBattleMonHP
+	call CalculateSuperFangDamage
 	jr ApplyDamageToPlayerPokemon
 .specialDamage
-	ld hl,wEnemyMonLevel
-	ld a,[hl]
-	ld b,a
-	call GetCurrentMoveID
-	cp a,SEISMIC_TOSS
-	jr z,.storeDamage
-	cp a,NIGHT_SHADE
-	jr z,.storeDamage
-	ld b,SONICBOOM_DAMAGE
-	cp a,SONICBOOM
-	jr z,.storeDamage
-	ld b,DRAGON_RAGE_DAMAGE
-	cp a,DRAGON_RAGE
-	jr z,.storeDamage
-; Psywave
-	ld a,[hl]
-	ld b,a
-	srl a
-	add b
-	ld b,a ; b = attacker's level * 1.5
-; loop until a random number in the range [1, b) is found
-.loop
-	call BattleRandom
-	and a
-	jr z,.loop
-	cp b
-	jr nc,.loop
-	ld b,a
-.storeDamage
-	ld hl,wDamage
-	xor a
-	ld [hli],a
-	ld a,b
-	ld [hl],a
+	ld hl, wEnemyMonLevel
+	call CalculateSpecialMoveDamage
+	jr ApplyDamageToPlayerPokemon
 
 ApplyDamageToPlayerPokemon:
 	ld hl,wDamage
@@ -5209,6 +5119,61 @@ ApplyDamageToPlayerPokemon:
 	predef UpdateHPBar2 ; animate the HP bar shortening
 ApplyAttackToPlayerPokemonDone:
 	jp DrawHUDsAndHPBars
+
+; hl = target HP. Store max(1, target HP / 2) in wDamage.
+CalculateSuperFangDamage:
+	ld de, wDamage
+	ld a, [hli]
+	srl a
+	ld [de], a
+	inc de
+	ld b, a
+	ld a, [hl]
+	rr a
+	ld [de], a
+	or b
+	ret nz
+	; INC saves 1 byte vs "ld a, 1"; callers do not depend on flags.
+	inc a
+	ld [de], a
+	ret
+
+; hl = attacker's level. Handles Seismic Toss, Night Shade, SonicBoom,
+; Dragon Rage and Psywave, and writes the 16-bit result to wDamage.
+CalculateSpecialMoveDamage:
+	ld a, [hl]
+	ld b, a
+	call GetCurrentMoveID
+	cp SEISMIC_TOSS
+	jr z, .storeDamage
+	cp NIGHT_SHADE
+	jr z, .storeDamage
+	ld b, SONICBOOM_DAMAGE
+	cp SONICBOOM
+	jr z, .storeDamage
+	ld b, DRAGON_RAGE_DAMAGE
+	cp DRAGON_RAGE
+	jr z, .storeDamage
+	; Psywave
+	ld a, [hl]
+	ld b, a
+	srl a
+	add b
+	ld b, a
+.loop
+	call BattleRandom
+	and a
+	jr z, .loop
+	cp b
+	jr nc, .loop
+	ld b, a
+.storeDamage
+	ld hl, wDamage
+	xor a
+	ld [hli], a
+	ld a, b
+	ld [hl], a
+	ret
 
 AttackSubstitute:
 ; Unlike the two ApplyAttackToPokemon functions, Attack Substitute is shared by player and enemy.
@@ -6733,42 +6698,33 @@ HalveSpeedDueToParalysis:
 	ld a, [H_WHOSETURN]
 	and a
 	jr z, .playerTurn
-.enemyTurn ; quarter the player's speed
+.enemyTurn ; halve the player's speed
 	ld a, [wBattleMonStatus]
 	and 1 << PAR
 	ret z ; return if player not paralysed
 	ld hl, wBattleMonSpeed + 1
-	ld a, [hld]
-	ld b, a
-	ld a, [hl]
-	srl a
-	rr b
-	;srl a ; shift right only once (divide by 2)
-	;rr b  ; rotate right with carry
-	ld [hli], a
-	or b
-	jr nz, .storePlayerSpeed
-	ld b, 1 ; give the player a minimum of at least one speed point
-.storePlayerSpeed
-	ld [hl], b
-	ret
-.playerTurn ; quarter the enemy's speed
+	jr Halve16BitBattleStat
+.playerTurn ; halve the enemy's speed
 	ld a, [wEnemyMonStatus]
 	and 1 << PAR
 	ret z ; return if enemy not paralysed
 	ld hl, wEnemyMonSpeed + 1
+	; fall through
+
+; hl points at the low byte of a big-endian 16-bit battle stat.
+; Halve it in place and clamp the result to a minimum of 1.
+Halve16BitBattleStat:
 	ld a, [hld]
 	ld b, a
 	ld a, [hl]
 	srl a
 	rr b
-	;srl a ; shift right only once (divide by 2)
-	;rr b  ; rotate right with carry
 	ld [hli], a
 	or b
-	jr nz, .storeEnemySpeed
-	ld b, 1 ; give the enemy a minimum of at least one speed point
-.storeEnemySpeed
+	jr nz, .store
+	; INC saves 1 byte vs "ld b, 1"; callers do not depend on flags.
+	inc b ; a|b == 0 here, so b is known to be 0
+.store
 	ld [hl], b
 	ret
 
@@ -6781,35 +6737,13 @@ HalveAttackDueToBurn:
 	and 1 << BRN
 	ret z ; return if player not burnt
 	ld hl, wBattleMonAttack + 1
-	ld a, [hld]
-	ld b, a
-	ld a, [hl]
-	srl a
-	rr b
-	ld [hli], a
-	or b
-	jr nz, .storePlayerAttack
-	ld b, 1 ; give the player a minimum of at least one attack point
-.storePlayerAttack
-	ld [hl], b
-	ret
+	jr Halve16BitBattleStat
 .playerTurn ; halve the enemy's attack
 	ld a, [wEnemyMonStatus]
 	and 1 << BRN
 	ret z ; return if enemy not burnt
 	ld hl, wEnemyMonAttack + 1
-	ld a, [hld]
-	ld b, a
-	ld a, [hl]
-	srl a
-	rr b
-	ld [hli], a
-	or b
-	jr nz, .storeEnemyAttack
-	ld b, 1 ; give the enemy a minimum of at least one attack point
-.storeEnemyAttack
-	ld [hl], b
-	ret
+	jr Halve16BitBattleStat
 
 CalculateModifiedStats:
 	ld c, 0
@@ -6855,28 +6789,7 @@ CalculateModifiedStat:
 	inc d
 .noCarry2
 	pop bc
-	push hl
-	ld hl, StatModifierRatios
-	dec b
-	sla b
-	ld c, b
-	ld b, 0
-	add hl, bc
-	xor a
-	ld [H_MULTIPLICAND], a
-	ld a, [de]
-	ld [H_MULTIPLICAND + 1], a
-	inc de
-	ld a, [de]
-	ld [H_MULTIPLICAND + 2], a
-	ld a, [hli]
-	ld [H_MULTIPLIER], a
-	call Multiply
-	ld a, [hl]
-	ld [H_DIVISOR], a
-	ld b, $4
-	call Divide
-	pop hl
+	call RecalculateBattleStatFromModifier
 	ld a, [H_DIVIDEND + 3]
 	sub 999 % $100
 	ld a, [H_DIVIDEND + 2]
@@ -6898,6 +6811,35 @@ CalculateModifiedStat:
 	inc [hl] ; if the stat is 0, bump it up to 1
 .done
 	pop bc
+	ret
+
+RecalculateBattleStatFromModifier:
+; b = stat modifier (1..13), c = stat index, de = unmodified 16-bit stat,
+; hl = destination modified stat. Restores hl and preserves c like the old inline code.
+	push hl
+	push bc
+	ld hl, StatModifierRatios
+	dec b
+	sla b
+	ld c, b
+	ld b, 0
+	add hl, bc
+	pop bc
+	xor a
+	ld [H_MULTIPLICAND], a
+	ld a, [de]
+	ld [H_MULTIPLICAND + 1], a
+	inc de
+	ld a, [de]
+	ld [H_MULTIPLICAND + 2], a
+	ld a, [hli]
+	ld [H_MULTIPLIER], a
+	call Multiply
+	ld a, [hl]
+	ld [H_DIVISOR], a
+	ld b, $4
+	call Divide
+	pop hl
 	ret
 
 ApplyBadgeStatBoosts:
@@ -7926,30 +7868,7 @@ StatModifierUpEffect:
 	jp z, RestoreOriginalStatModifier
 .recalculateStat ; recalculate affected stat
                  ; paralysis and burn penalties, as well as badge boosts are ignored
-	push hl
-	push bc
-	ld hl, StatModifierRatios
-	dec b
-	sla b
-	ld c, b
-	ld b, $0
-	add hl, bc
-	pop bc
-	xor a
-	ld [H_MULTIPLICAND], a
-	ld a, [de]
-	ld [H_MULTIPLICAND + 1], a
-	inc de
-	ld a, [de]
-	ld [H_MULTIPLICAND + 2], a
-	ld a, [hli]
-	ld [H_MULTIPLIER], a
-	call Multiply
-	ld a, [hl]
-	ld [H_DIVISOR], a
-	ld b, $4
-	call Divide
-	pop hl
+	call RecalculateBattleStatFromModifier
 ; cap at 999
 	ld a, [H_PRODUCT + 3]
 	sub 999 % $100
@@ -8153,30 +8072,7 @@ StatModifierDownEffect:
 .recalculateStat
 ; recalculate affected stat
 ; paralysis and burn penalties, as well as badge boosts are ignored
-	push hl
-	push bc
-	ld hl, StatModifierRatios
-	dec b
-	sla b
-	ld c, b
-	ld b, $0
-	add hl, bc
-	pop bc
-	xor a
-	ld [H_MULTIPLICAND], a
-	ld a, [de]
-	ld [H_MULTIPLICAND + 1], a
-	inc de
-	ld a, [de]
-	ld [H_MULTIPLICAND + 2], a
-	ld a, [hli]
-	ld [H_MULTIPLIER], a
-	call Multiply
-	ld a, [hl]
-	ld [H_DIVISOR], a
-	ld b, $4
-	call Divide
-	pop hl
+	call RecalculateBattleStatFromModifier
 	ld a, [H_PRODUCT + 3]
 	ld b, a
 	ld a, [H_PRODUCT + 2]
