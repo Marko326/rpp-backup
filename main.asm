@@ -2545,6 +2545,9 @@ INCLUDE "engine/battle/type_effectiveness.asm"
 ; small far-call entry cost. Their outputs are committed to memory/screen before return.
 SECTION "Battle Helpers (bank 34)", ROMX, BANK[$34]
 INCLUDE "engine/battle/bank34_helpers.asm"
+INCLUDE "engine/battle/moveEffects/switch_teleport_effect.asm"
+INCLUDE "engine/battle/moveEffects/mimic_effect.asm"
+INCLUDE "engine/battle/moveEffects/disable_effect.asm"
 
 ; Battle Party <-> Summary fast path lives in its own floating section so bank
 ; $34's fragmented free space can be used without growing the existing bank34 section.

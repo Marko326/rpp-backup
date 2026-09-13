@@ -6723,6 +6723,12 @@ BattleRandom:
 	pop hl
 	ret
 
+; Far-call adapter for battle effects moved out of Bank F. Bankswitch restores the
+; source ROM bank through A/B/C/HL, so return BattleRandom's byte in E instead.
+BattleRandomFar:
+	call BattleRandom
+	ld e, a
+	ret
 
 HandleExplodingAnimation:
 	ld a, [H_WHOSETURN]
@@ -7976,120 +7982,7 @@ ThrashPetalDanceEffect:
 	jp PlayBattleAnimation2
 
 SwitchAndTeleportEffect:
-	ld a, [H_WHOSETURN]
-	and a
-	jr nz, .handleEnemy
-	ld a, [wIsInBattle]
-	dec a
-	jr nz, .notWildBattle1
-	ld a, [wCurEnemyLVL]
-	ld b, a
-	ld a, [wBattleMonLevel]
-	cp b ; is the player's level greater than the enemy's level?
-	jr nc, .playerMoveWasSuccessful ; if so, teleport will always succeed
-	add b
-	ld c, a
-	inc c ; c = sum of player level and enemy level
-.rejectionSampleLoop1
-	call BattleRandom
-	cp c ; get a random number between 0 and c
-	jr nc, .rejectionSampleLoop1
-	srl b
-	srl b  ; b = enemyLevel / 4
-	cp b ; is rand[0, playerLevel + enemyLevel) >= (enemyLevel / 4)?
-	jr nc, .playerMoveWasSuccessful ; if so, allow teleporting
-	ld c, 50
-	call DelayFrames
-	call GetCurrentMoveID
-	cp TELEPORT
-	jp nz, PrintDidntAffectText
-	jp PrintButItFailedText_
-.playerMoveWasSuccessful
-	call ReadPlayerMonCurHPAndStatus
-	xor a
-	ld [wAnimationType], a
-	inc a
-	ld [wEscapedFromBattle], a
-	ld a, [wPlayerMoveNum]
-	jr .playAnimAndPrintText
-.notWildBattle1
-	ld c, 50
-	call DelayFrames
-	ld hl, IsUnaffectedText
-	call GetCurrentMoveID
-	cp TELEPORT
-	jp nz, PrintText
-	jp PrintButItFailedText_
-.handleEnemy
-	ld a, [wIsInBattle]
-	dec a
-	jr nz, .notWildBattle2
-	ld a, [wBattleMonLevel]
-	ld b, a
-	ld a, [wCurEnemyLVL]
-	cp b
-	jr nc, .enemyMoveWasSuccessful
-	add b
-	ld c, a
-	inc c
-.rejectionSampleLoop2
-	call BattleRandom
-	cp c
-	jr nc, .rejectionSampleLoop2
-	srl b
-	srl b
-	cp b
-	jr nc, .enemyMoveWasSuccessful
-	ld c, 50
-	call DelayFrames
-	call GetCurrentMoveID
-	cp TELEPORT
-	jp nz, PrintDidntAffectText
-	jp PrintButItFailedText_
-.enemyMoveWasSuccessful
-	call ReadPlayerMonCurHPAndStatus
-	xor a
-	ld [wAnimationType], a
-	inc a
-	ld [wEscapedFromBattle], a
-	ld a, [wEnemyMoveNum]
-	jr .playAnimAndPrintText
-.notWildBattle2
-	ld c, 50
-	call DelayFrames
-	ld hl, IsUnaffectedText
-	call GetCurrentMoveID
-	cp TELEPORT
-	jp nz, PrintText
-	jp ConditionalPrintButItFailed
-.playAnimAndPrintText
-	push af
-	call PlayBattleAnimation
-	ld c, 20
-	call DelayFrames
-	pop af
-	call GetCurrentMoveID
-	ld hl, RanFromBattleText
-	cp TELEPORT
-	jr z, .printText
-	ld hl, RanAwayScaredText
-	cp ROAR
-	jr z, .printText
-	ld hl, WasBlownAwayText
-.printText
-	jp PrintText
-
-RanFromBattleText:
-	TX_FAR _RanFromBattleText
-	db "@"
-
-RanAwayScaredText:
-	TX_FAR _RanAwayScaredText
-	db "@"
-
-WasBlownAwayText:
-	TX_FAR _WasBlownAwayText
-	db "@"
+	jpab SwitchAndTeleportEffect_
 
 TwoToFiveAttacksEffect:
 	ld hl, wPlayerBattleStatus1
@@ -8371,80 +8264,7 @@ RageEffect:
 	ret
 
 MimicEffect:
-	ld c, 50
-	call DelayFrames
-	call MoveHitTest
-	ld a, [wMoveMissed]
-	and a
-	jr nz, .mimicMissed
-	ld a, [H_WHOSETURN]
-	and a
-	ld hl, wBattleMonMoves
-	ld a, [wPlayerBattleStatus1]
-	jr nz, .enemyTurn
-	ld a, [wLinkState]
-	cp LINK_STATE_BATTLING
-	jr nz, .letPlayerChooseMove
-	ld hl, wEnemyMonMoves
-	ld a, [wEnemyBattleStatus1]
-.enemyTurn
-	bit Invulnerable, a
-	jr nz, .mimicMissed
-.getRandomMove
-	push hl
-	call BattleRandom
-	and $3
-	ld c, a
-	ld b, $0
-	add hl, bc
-	ld a, [hl]
-	pop hl
-	and a
-	jr z, .getRandomMove
-	ld d, a
-	ld a, [H_WHOSETURN]
-	and a
-	ld hl, wBattleMonMoves
-	ld a, [wPlayerMoveListIndex]
-	jr z, .playerTurn
-	ld hl, wEnemyMonMoves
-	ld a, [wEnemyMoveListIndex]
-	jr .playerTurn
-.letPlayerChooseMove
-	ld a, [wEnemyBattleStatus1]
-	bit Invulnerable, a
-	jr nz, .mimicMissed
-	ld a, [wCurrentMenuItem]
-	push af
-	ld a, $1
-	ld [wMoveMenuType], a
-	call MoveSelectionMenu
-	call LoadScreenTilesFromBuffer1
-	ld hl, wEnemyMonMoves
-	ld a, [wCurrentMenuItem]
-	ld c, a
-	ld b, $0
-	add hl, bc
-	ld d, [hl]
-	pop af
-	ld hl, wBattleMonMoves
-.playerTurn
-	ld c, a
-	ld b, $0
-	add hl, bc
-	ld a, d
-	ld [hl], a
-	ld [wd11e], a
-	call GetMoveName
-	call PlayCurrentMoveAnimation
-	ld hl, MimicLearnedMoveText
-	jp PrintText
-.mimicMissed
-	jp PrintButItFailedText_
-
-MimicLearnedMoveText:
-	TX_FAR _MimicLearnedMoveText
-	db "@"
+	jpab MimicEffect_
 
 LeechSeedEffect:
 	jpab LeechSeedEffect_
@@ -8454,91 +8274,7 @@ SplashEffect:
 	jp PrintNoEffectText
 
 DisableEffect:
-	call MoveHitTest
-	ld a, [wMoveMissed]
-	and a
-	jr nz, .moveMissed
-	ld de, wEnemyDisabledMove
-	ld hl, wEnemyMonMoves
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .disableEffect
-	ld de, wPlayerDisabledMove
-	ld hl, wBattleMonMoves
-.disableEffect
-; no effect if target already has a move disabled
-	ld a, [de]
-	and a
-	jr nz, .moveMissed
-.pickMoveToDisable
-	push hl
-	call BattleRandom
-	and $3
-	ld c, a
-	ld b, $0
-	add hl, bc
-	ld a, [hl]
-	pop hl
-	and a
-	jr z, .pickMoveToDisable ; loop until a non-00 move slot is found
-	ld [wd11e], a ; store move number
-	push hl
-	ld a, [H_WHOSETURN]
-	and a
-	ld hl, wBattleMonPP
-	jr nz, .enemyTurn
-	ld a, [wLinkState]
-	cp LINK_STATE_BATTLING
-	pop hl ; wEnemyMonMoves
-	jr nz, .playerTurnNotLinkBattle
-; .playerTurnLinkBattle
-	push hl
-	ld hl, wEnemyMonPP
-.enemyTurn
-	push hl
-	ld a, [hli]
-	or [hl]
-	inc hl
-	or [hl]
-	inc hl
-	or [hl]
-	and $3f
-	pop hl ; wBattleMonPP or wEnemyMonPP
-	jr z, .moveMissedPopHL ; nothing to do if all moves have no PP left
-	add hl, bc
-	ld a, [hl]
-	pop hl
-	and a
-	jr z, .pickMoveToDisable ; pick another move if this one had 0 PP
-.playerTurnNotLinkBattle
-; non-link battle enemies have unlimited PP so the previous checks aren't needed
-	call BattleRandom
-	and $7
-	inc a ; 1-8 turns disabled
-	inc c ; move 1-4 will be disabled
-	swap c
-	add c ; map disabled move to high nibble of wEnemyDisabledMove / wPlayerDisabledMove
-	ld [de], a
-	call PlayCurrentMoveAnimation2
-	ld hl, wPlayerDisabledMoveNumber
-	ld a, [H_WHOSETURN]
-	and a
-	jr nz, .printDisableText
-	inc hl ; wEnemyDisabledMoveNumber
-.printDisableText
-	ld a, [wd11e] ; move number
-	ld [hl], a
-	call GetMoveName
-	ld hl, MoveWasDisabledText
-	jp PrintText
-.moveMissedPopHL
-	pop hl
-.moveMissed
-	jp PrintButItFailedText_
-
-MoveWasDisabledText:
-	TX_FAR _MoveWasDisabledText
-	db "@"
+	jpab DisableEffect_
 
 PayDayEffect:
 	jpab PayDayEffect_
@@ -8591,10 +8327,6 @@ PrintDidntAffectText:
 
 DidntAffectText:
 	TX_FAR _DidntAffectText
-	db "@"
-
-IsUnaffectedText:
-	TX_FAR _IsUnaffectedText
 	db "@"
 
 PrintMayNotAttackText:
