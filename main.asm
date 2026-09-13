@@ -112,7 +112,6 @@ INCLUDE "engine/overworld/wild_mons.asm"
 
 INCLUDE "engine/items/items.asm"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-INCLUDE "engine/menu/draw_badges.asm"
 
 INCLUDE "engine/overworld/update_map.asm"
 INCLUDE "engine/overworld/cut.asm"
@@ -122,14 +121,24 @@ INCLUDE "engine/overworld/push_boulder.asm"
 INCLUDE "engine/add_mon.asm"
 INCLUDE "engine/flag_action.asm"
 INCLUDE "engine/heal_party.asm"
-INCLUDE "engine/bcd.asm"
 INCLUDE "engine/init_player_data.asm"
 INCLUDE "engine/get_bag_item_quantity.asm"
-INCLUDE "engine/pathfinding.asm"
 INCLUDE "engine/hp_bar.asm"
 INCLUDE "engine/hidden_object_functions3.asm"
 
 INCLUDE "color/update_hp_bar.asm"
+
+; Relocatable Bank 3 helpers. These routines are reached through predef tables,
+; so keeping them in floating ROMX sections preserves their APIs while freeing
+; fixed Bank $03 space for code that cannot move as easily.
+SECTION "Trainer Card Badges", ROMX
+INCLUDE "engine/menu/draw_badges.asm"
+
+SECTION "BCD Math", ROMX
+INCLUDE "engine/bcd.asm"
+
+SECTION "NPC Pathfinding", ROMX
+INCLUDE "engine/pathfinding.asm"
 
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
