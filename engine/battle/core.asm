@@ -1948,8 +1948,8 @@ DrawPlayerHUDAndHPBar:
 	coord hl, 10, 7
 	call CenterMonName
 	call PlaceString
-	call PrintPlayerMonGender
-	call PrintPlayerMonShiny
+	callab PrintPlayerMonGender
+	callab PrintPlayerMonShiny
 
 	; Link battles do not award experience. Hide the temporary/inconsistent
 	; experience bar while battling; every non-link battle remains unchanged.
@@ -2018,8 +2018,8 @@ DrawEnemyHUDAndHPBar:
 	coord hl, 1, 0
 	call CenterMonName
 	call PlaceString
-	call PrintEnemyMonGender
-	call PrintEnemyMonShiny
+	callab PrintEnemyMonGender
+	callab PrintEnemyMonShiny
 	coord hl, 6, 1
 	push hl
 	inc hl
@@ -4277,7 +4277,7 @@ GetDamageVarsForPlayerAttack:
 	ld hl, wDamage ; damage to eventually inflict, initialise to zero
 	ldi [hl], a
 	ld [hl], a
-	call UpdateVariableMovePower
+	callab UpdateVariableMovePower
 	ld hl, wPlayerMovePower
 	ld a, [hli]
 	and a
@@ -4430,7 +4430,7 @@ GetDamageVarsForEnemyAttack:
 	xor a
 	ld [hli], a
 	ld [hl], a
-	call UpdateVariableMovePower
+	callab UpdateVariableMovePower
 	ld hl, wEnemyMovePower
 	ld a, [hli]
 	ld d, a ; d = move power
@@ -8693,86 +8693,31 @@ SilverWindEffect:
 	call BattleRandom
 	cp $1a
 	ret nc
-	
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .notEnemyTurn
-; Enemy's turn
-	xor a
-	ld [wEnemyMoveNum], a
+
+; Silver Wind is a secondary effect, so do not replay the move animation while
+; applying its four stat boosts.
 	ld a, ATTACK_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	call StatModifierUpEffect
+	call ApplyStatUpEffectToCurrentMonNoAnim
 	ld a, DEFENSE_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	call StatModifierUpEffect
+	call ApplyStatUpEffectToCurrentMon
 	ld a, SPEED_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	call StatModifierUpEffect
+	call ApplyStatUpEffectToCurrentMon
 	ld a, SPECIAL_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	jp StatModifierUpEffect
-.notEnemyTurn
-	xor a
-	ld [wPlayerMoveNum], a
-	ld a, ATTACK_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	call StatModifierUpEffect
-	ld a, DEFENSE_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	call StatModifierUpEffect
-	ld a, SPEED_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	call StatModifierUpEffect
-	ld a, SPECIAL_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	jp StatModifierUpEffect
+	jp ApplyStatUpEffectToCurrentMon
 
 GrowthEffect:
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .notEnemyTurn
-; Enemy's turn
+; Let the first stat change play Growth's animation, then suppress the second.
 	ld a, SPECIAL_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	call StatModifierUpEffect
-	xor a
-	ld [wEnemyMoveNum], a
+	call ApplyStatUpEffectToCurrentMon
 	ld a, ATTACK_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	jp StatModifierUpEffect
-.notEnemyTurn
-	ld a, SPECIAL_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	call StatModifierUpEffect
-	xor a
-	ld [wPlayerMoveNum], a
-	ld a, ATTACK_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	jp StatModifierUpEffect
-	
+	jp ApplyStatUpEffectToCurrentMonNoAnim
+
 HoneClawsEffect:
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .notEnemyTurn
-; Enemy's turn
+; Let the first stat change play Hone Claws' animation, then suppress the second.
 	ld a, ATTACK_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	call StatModifierUpEffect
-	xor a
-	ld [wEnemyMoveNum], a
+	call ApplyStatUpEffectToCurrentMon
 	ld a, ACCURACY_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	jp StatModifierUpEffect
-.notEnemyTurn
-	ld a, ATTACK_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	call StatModifierUpEffect
-	xor a
-	ld [wPlayerMoveNum], a
-	ld a, ACCURACY_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	jp StatModifierUpEffect
+	jp ApplyStatUpEffectToCurrentMonNoAnim
 
 AttackUpSideEffect2:
 ; 20% chance to boost stat
@@ -8789,21 +8734,8 @@ AttackUpSideEffect:
 	; fallthrough
 
 AttackUpSideEffectSuccess:
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .notEnemyTurn
-; Enemy's turn
-	xor a
-	ld [wEnemyMoveNum], a
 	ld a, ATTACK_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
-	jp StatModifierUpEffect
-.notEnemyTurn
-	xor a
-	ld [wPlayerMoveNum], a
-	ld a, ATTACK_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	jp StatModifierUpEffect
+	jp ApplyStatUpEffectToCurrentMonNoAnim
 
 DefenseUpSideEffect:
 ; 10% chance to boost stat
@@ -8813,21 +8745,38 @@ DefenseUpSideEffect:
 	; fallthrough
 
 DefenseUpSideEffectSuccess:
+	ld a, DEFENSE_UP1_EFFECT
+	jp ApplyStatUpEffectToCurrentMonNoAnim
+
+; Apply a stat-up effect to whichever battler is currently acting. This keeps
+; the player/enemy address selection in one place instead of duplicating each
+; multi-stat move for both sides.
+ApplyStatUpEffectToCurrentMon:
+	ld b, a
+	ld hl, wPlayerMoveEffect
 	ld a, [H_WHOSETURN]
 	and a
-	jr z, .notEnemyTurn
-; Enemy's turn
-	xor a
-	ld [wEnemyMoveNum], a
-	ld a, DEFENSE_UP1_EFFECT
-	ld [wEnemyMoveEffect], a
+	jr z, .storeEffect
+	ld hl, wEnemyMoveEffect
+.storeEffect
+	ld [hl], b
 	jp StatModifierUpEffect
-.notEnemyTurn
+
+; Secondary/additional stat changes must not replay the move animation. Clearing
+; the current move number preserves the original Silver Wind/Growth/Hone Claws
+; and side-effect behaviour before applying the stat change.
+ApplyStatUpEffectToCurrentMonNoAnim:
+	push af
+	ld hl, wPlayerMoveNum
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .clearMoveNum
+	ld hl, wEnemyMoveNum
+.clearMoveNum
 	xor a
-	ld [wPlayerMoveNum], a
-	ld a, DEFENSE_UP1_EFFECT
-	ld [wPlayerMoveEffect], a
-	jp StatModifierUpEffect
+	ld [hl], a
+	pop af
+	jr ApplyStatUpEffectToCurrentMon
 
 ; Return a compact move-priority tier used by MainInBattleLoop.
 ; 2 = priority move, 1 = normal move, 0 = Counter.
@@ -8854,64 +8803,6 @@ PriorityMoves:
 	db QUICK_ATTACK
 	db -1
 
-; Update base power for moves whose power depends on the current battle state.
-; Hex: 65 normally, 130 if the target has a major status condition.
-; Electro Ball: 120/80/60 based on the existing player/enemy Speed comparison.
-UpdateVariableMovePower:
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .playerTurn
-; Enemy's turn: target the player and update the enemy move power.
-	ld a, [wEnemySelectedMove]
-	ld de, wBattleMonStatus
-	ld hl, wEnemyMovePower
-	jr .checkMove
-.playerTurn
-	ld a, [wPlayerSelectedMove]
-	ld de, wEnemyMonStatus
-	ld hl, wPlayerMovePower
-.checkMove
-	cp HEX
-	jr z, .hex
-	cp ELECTRO_BALL
-	ret nz
-
-; Preserve the selected move-power address while StringCmp advances HL/DE.
-	push hl
-	ld de, wBattleMonSpeed ; player speed value
-	ld hl, wEnemyMonSpeed ; enemy speed value
-	ld c, $2
-	call StringCmp ; compare speed values
-	pop hl ; POP does not alter the comparison flags
-	ld a, 80
-	jr z, .store
-	jr nc, .playerFaster
-; Enemy is faster: player gets 60 BP, enemy gets 120 BP.
-	ld a, [H_WHOSETURN]
-	and a
-	ld a, 60
-	jr z, .store
-	add a
-	jr .store
-.playerFaster
-; Player is faster: player gets 120 BP, enemy gets 60 BP.
-	ld a, [H_WHOSETURN]
-	and a
-	ld a, 60
-	jr nz, .store
-	add a
-	jr .store
-
-.hex
-	ld a, [de]
-	and a
-	ld a, 65
-	jr z, .store
-	add a ; 130 BP if the target is statused
-.store
-	ld [hl], a
-	ret
-
 ; Determine if a move is Physical, Special, or Status
 ; INPUT: Move ID in register a
 ; OUTPUT: Move Physical/Special/Status type in register a
@@ -8919,66 +8810,6 @@ PhysicalSpecialSplit:
 	ld [wTempMoveID], a
 	callba _PhysicalSpecialSplit
 	ld a, [wTempMoveID]
-	ret
-
-PrintEnemyMonGender: ; called during battle
-	; get gender
-	ld a, [wEnemyMonSpecies]
-	ld de, wEnemyMonDVs
-	call PrintGenderCommon
-	coord hl, 9, 1
-	ld [hl], a
-	ret
-
-PrintPlayerMonGender: ; called during battle
-	; get gender
-	ld a, [wBattleMonSpecies]
-	ld de, wBattleMonDVs
-	call PrintGenderCommon
-	coord hl, 17, 8
-	ld [hl], a
-	ret
-
-PrintGenderCommon: ; used by both routines
-	ld [wGenderTemp], a
-	callba GetMonGender
-	ld a, [wGenderTemp]
-	and a
-	jr z, .noGender
-	dec a
-	jr z, .male
-	; else female
-	ld a, "♀"
-	ret
-.male
-	ld a, "♂"
-	ret
-.noGender
-	ld a, " "
-	ret
-
-PrintEnemyMonShiny: ; show shiny symbol beside gender symbol
-	; check if mon is shiny
-	ld de, wEnemyMonDVs
-	call PrintShinyCommon
-	coord hl, 10, 1
-	ld [hl], a
-	ret
-
-PrintPlayerMonShiny: ; show shiny symbol beside gender symbol
-	; check if mon is shiny
-	ld de, wBattleMonDVs
-	call PrintShinyCommon
-	coord hl, 18, 8
-	ld [hl], a
-	ret
-
-PrintShinyCommon: ; used by both routines
-	callba IsMonShiny
-	ld a, "[SHINY]"
-	ret nz
-	; else, it's normal
-	ld a, " "
 	ret
 
 LoadBackSpriteUnzoomed: ; HAX

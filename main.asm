@@ -2541,6 +2541,11 @@ InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 SECTION "Battle Type Effectiveness", ROMX, BANK[$34]
 INCLUDE "engine/battle/type_effectiveness.asm"
 
+; Relocatable battle helpers live in roomy bank $34 so Bank F only pays the
+; small far-call entry cost. Their outputs are committed to memory/screen before return.
+SECTION "Battle Helpers (bank 34)", ROMX, BANK[$34]
+INCLUDE "engine/battle/bank34_helpers.asm"
+
 ; Battle Party <-> Summary fast path lives in its own floating section so bank
 ; $34's fragmented free space can be used without growing the existing bank34 section.
 SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
