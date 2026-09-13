@@ -468,21 +468,6 @@ MainInBattleLoop:
 	sub 4
 	jr c, .noLinkBattle
 ; the link battle enemy has switched mons
-	ld a, [wPlayerBattleStatus1]
-	bit UsingTrappingMove, a ; check if using multi-turn move like Wrap
-	jr z, .specialMoveNotUsed
-	ld a, [wPlayerMoveListIndex]
-	ld hl, wBattleMonMoves
-	ld c, a
-	ld b, 0
-	add hl, bc
-	ld a, [hl]
-	cp METRONOME
-	jr nz, .specialMoveNotUsed
-	cp MIRROR_MOVE
-	jr nz, .specialMoveNotUsed
-	ld [wPlayerSelectedMove], a
-.specialMoveNotUsed
 	callab SwitchEnemyMon
 .noLinkBattle
 	ld a, [wPlayerSelectedMove]
@@ -7406,25 +7391,8 @@ FreezeBurnParalyzeEffect:
 	cp b ; do target type 2 and move type match?
 	ret z  ; return if they match
 	ld a, [wPlayerMoveEffect]
-	cp a, PARALYZE_SIDE_EFFECT1 + 1 ; 10% status effects are 04, 05, 06 so 07 will set carry for those
-	ld b, $1a       ;[1A-1]/100 or [26-1]/256 = 9.8%~ chance
-	jr c, .next1  ;branch ahead if this is a 10% chance effect..
-	cp PARALYZE_SIDE_EFFECT2 + 1
-	jr c, .effect2
-	; otherwise, it's a fang effect
-	sub a, $53 ; map to the other effects
-	ld b, $1a
-	jr .next1
-.effect2
-	ld b, $4d       ;use [4D-1]/100 or [76-1]/256 = 29.7%~ chance
-	sub a, $1e      ;subtract $1E to map to equivalent 10% chance effects
-.next1
-	push af
-	call BattleRandom ; get random 8bit value for probability test
-	cp b
-	pop bc
-	ret nc ; do nothing if random value is >= 1A or 4D [no status applied]
-	ld a, b ; what type of effect is this?
+	call RollStatusSideEffect
+	ret nc ; do nothing if the side effect roll failed
 	cp a, BURN_SIDE_EFFECT1
 	jr z, .burn
 	cp a, FREEZE_SIDE_EFFECT
@@ -7466,25 +7434,8 @@ opponentAttacker:
 	cp b
 	ret z
 	ld a, [wEnemyMoveEffect]
-	cp a, PARALYZE_SIDE_EFFECT1 + 1 ; 10% status effects are 04, 05, 06 so 07 will set carry for those
-	ld b, $1a       ;[1A-1]/100 or [26-1]/256 = 9.8%~ chance
-	jr c, .next1  ;branch ahead if this is a 10% chance effect..
-	cp PARALYZE_SIDE_EFFECT2 + 1
-	jr c, .effect2
-	; otherwise, it's a fang effect
-	sub a, $53 ; map to the other effects
-	ld b, $1a
-	jr .next1
-.effect2
-	ld b, $4d       ;use [4D-1]/100 or [76-1]/256 = 29.7%~ chance
-	sub a, $1e      ;subtract $1E to map to equivalent 10% chance effects
-.next1
-	push af
-	call BattleRandom
-	cp b
-	pop bc
+	call RollStatusSideEffect
 	ret nc
-	ld a, b
 	cp a, BURN_SIDE_EFFECT1
 	jr z, .burn
 	cp a, FREEZE_SIDE_EFFECT
@@ -7507,6 +7458,29 @@ opponentAttacker:
 	ld [wBattleMonStatus], a ; no duration counter: remains frozen until thawed
 	ld hl, FrozenText
 	jp PrintText
+
+; Normalize burn/freeze/paralyze side-effect IDs and perform their shared
+; probability roll. Returns the normalized effect in A with carry set on success.
+RollStatusSideEffect:
+	cp PARALYZE_SIDE_EFFECT1 + 1
+	ld b, $1a ; ~10% effects
+	jr c, .roll
+	cp PARALYZE_SIDE_EFFECT2 + 1
+	jr c, .effect2
+	; Fang-style effects map back to their base burn/freeze/paralyze effect IDs.
+	sub $53
+	ld b, $1a
+	jr .roll
+.effect2
+	ld b, $4d ; ~30% effects
+	sub $1e
+.roll
+	push af
+	call BattleRandom
+	cp b
+	pop bc ; B = normalized effect; POP preserves the result flags from CP
+	ld a, b
+	ret
 
 BurnedText:
 	TX_FAR _BurnedText
