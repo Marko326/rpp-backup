@@ -486,58 +486,16 @@ MainInBattleLoop:
 	callab SwitchEnemyMon
 .noLinkBattle
 	ld a, [wPlayerSelectedMove]
-	cp EXTREMESPEED
-	jr z, .PriorityMoveUsed
-	cp BABYDOLLEYES
-	jr z, .PriorityMoveUsed
-	cp SUCKER_PUNCH
-	jr z, .PriorityMoveUsed
-    cp ICE_SHARD
-    jr z, .PriorityMoveUsed
-    cp BULLET_PUNCH
-    jr z, .PriorityMoveUsed
-	cp QUICK_ATTACK
-	jr nz, .playerDidNotUsePriorityMove
-.PriorityMoveUsed
+	call GetMovePriorityTier
+	push af
 	ld a, [wEnemySelectedMove]
-	cp EXTREMESPEED
-	jr z, .compareSpeed
-	cp BABYDOLLEYES
-	jr z, .compareSpeed
-	cp SUCKER_PUNCH
-	jr z, .compareSpeed
-    cp ICE_SHARD
-	jr z, .compareSpeed
-    cp BULLET_PUNCH
-	jr z, .compareSpeed
-	cp QUICK_ATTACK
-	jr z, .compareSpeed  ; if both used Quick Attack
-	jp .playerMovesFirst ; if player used Quick Attack and enemy didn't
-.playerDidNotUsePriorityMove
-	ld a, [wEnemySelectedMove]
-	cp EXTREMESPEED
-	jr z, .enemyMovesFirst
-	cp BABYDOLLEYES
-	jr z, .enemyMovesFirst
-	cp SUCKER_PUNCH
-	jr z, .enemyMovesFirst
-    cp ICE_SHARD
-	jr z, .enemyMovesFirst
-    cp BULLET_PUNCH
-	jr z, .enemyMovesFirst
-	cp QUICK_ATTACK
-	jr z, .enemyMovesFirst ; if enemy used Quick Attack and player didn't
-	ld a, [wPlayerSelectedMove]
-	cp COUNTER
-	jr nz, .playerDidNotUseCounter
-	ld a, [wEnemySelectedMove]
-	cp COUNTER
-	jr z, .compareSpeed ; if both used Counter
-	jr .enemyMovesFirst ; if player used Counter and enemy didn't
-.playerDidNotUseCounter
-	ld a, [wEnemySelectedMove]
-	cp COUNTER
-	jr z, .playerMovesFirst ; if enemy used Counter and player didn't
+	call GetMovePriorityTier
+	ld b, a
+	pop af
+	cp b
+	jr z, .compareSpeed ; same priority tier: compare Speed
+	jp nc, .playerMovesFirst ; higher player priority tier moves first
+	jr .enemyMovesFirst
 .compareSpeed
 	ld de, wBattleMonSpeed ; player speed value
 	ld hl, wEnemyMonSpeed ; enemy speed value
@@ -3350,7 +3308,7 @@ PlayerCalcMoveDamage:
 	jp z,playerCheckIfFlyOrChargeEffect ; for moves with 0 BP, skip any further damage calculation and, for now, skip MoveHitTest
 	               ; for these moves, accuracy tests will only occur if they are called as part of the effect itself
 .skipCalc ; Hopefully by calling this first, it will fix the Dragon Rage issue
-	call AdjustDamageForMoveType
+	callab AdjustDamageForMoveType
 	call RandomizeDamage
 .moveHitTest
 	call MoveHitTest
@@ -4319,8 +4277,7 @@ GetDamageVarsForPlayerAttack:
 	ld hl, wDamage ; damage to eventually inflict, initialise to zero
 	ldi [hl], a
 	ld [hl], a
-	call CheckForHex
-	call CheckForElectroBall
+	call UpdateVariableMovePower
 	ld hl, wPlayerMovePower
 	ld a, [hli]
 	and a
@@ -4473,8 +4430,7 @@ GetDamageVarsForEnemyAttack:
 	xor a
 	ld [hli], a
 	ld [hl], a
-	call CheckForHex
-	call CheckForElectroBall
+	call UpdateVariableMovePower
 	ld hl, wEnemyMovePower
 	ld a, [hli]
 	ld d, a ; d = move power
@@ -5371,211 +5327,6 @@ IncrementMovePP:
 	inc [hl] ; increment PP in the party memory location
 	ret
 
-; function to adjust the base damage of an attack to account for type effectiveness
-AdjustDamageForMoveType:
-; values for player turn
-	ld hl,wBattleMonType
-	ld a,[hli]
-	ld b,a    ; b = type 1 of attacker
-	ld c,[hl] ; c = type 2 of attacker
-	ld hl,wEnemyMonType
-	ld a,[hli]
-	ld d,a    ; d = type 1 of defender
-	ld e,[hl] ; e = type 2 of defender
-	ld a,[wPlayerMoveType]
-	ld [wMoveType],a
-	ld a,[H_WHOSETURN]
-	and a
-	jr z,.next
-; values for enemy turn
-	ld hl,wEnemyMonType
-	ld a,[hli]
-	ld b,a    ; b = type 1 of attacker
-	ld c,[hl] ; c = type 2 of attacker
-	ld hl,wBattleMonType
-	ld a,[hli]
-	ld d,a    ; d = type 1 of defender
-	ld e,[hl] ; e = type 2 of defender
-	ld a,[wEnemyMoveType]
-	ld [wMoveType],a
-.next
-; store wDamage in the multiplicand beforehand
-	xor a
-	ld [H_MULTIPLICAND], a
-	ld hl, wDamage
-	ld a, [hli]
-	ld [H_MULTIPLICAND + 1], a
-	ld a, [hl]
-	ld [H_MULTIPLICAND + 2], a
-; continue on
-	ld a,[wMoveType] ; move type
-	cp b ; does the move type match type 1 of the attacker?
-	jr z,.sameTypeAttackBonus
-	cp c ; does the move type match type 2 of the attacker?
-	jr z,.sameTypeAttackBonus
-	jr .skipSameTypeAttackBonus
-.sameTypeAttackBonus
-; if the move type matches one of the attacker's types
-; multiply by 3/2
-	ld hl, H_MULTIPLIER
-	ld [hl], 3
-	call Multiply
-	
-	ld [hl], 2
-	ld b, 4
-	call Divide
-	
-	ld hl,wDamageMultipliers
-	set 7,[hl] ; STAB
-.skipSameTypeAttackBonus
-	ld a,[wMoveType]
-	ld b,a
-	ld hl,TypeEffects
-.loop
-	ld a,[hli] ; a = "attacking type" of the current type pair
-	cp a,$ff
-	jr z, StoreDamage
-	cp b ; does move type match "attacking type"?
-	jr nz,.nextTypePair
-	ld a,[hl] ; a = "defending type" of the current type pair
-	cp d ; does type 1 of defender match "defending type"?
-	jr z,.matchingPairFound
-	cp e ; does type 2 of defender match "defending type"?
-	jr z,.matchingPairFound
-	jr .nextTypePair
-.matchingPairFound
-; if the move type matches the "attacking type" and one of the defender's types matches the "defending type"
-	push hl
-	push bc
-	inc hl
-	ld a,[hl] ; a = damage multiplier
-	ld [H_MULTIPLIER],a
-	
-; done if type immunity
-	and a
-	jr z, .typeImmunityDone
-	
-; update damage multipliers
-	cp $a
-	ld hl, wDamageMultipliers
-	jr c, .nve
-	set 1, [hl]
-	jr .multiply
-.nve
-	set 0, [hl]
-; apply damage multiplier
-.multiply
-	call Multiply
-
-; divide by 10
-	ld a,10
-	ld [H_DIVISOR], a
-	ld b,$04
-	call Divide
-
-	pop bc
-	pop hl
-.nextTypePair
-	inc hl
-	inc hl
-	jp .loop
-	
-.typeImmunityDone
-	call StoreDamage
-	ld a, $7f
-	ld [wDamageMultipliers], a
-	ld a, 1
-	ld [wMoveMissed], a
-	pop bc
-	pop hl
-	ret
-	
-StoreDamage:
-; store the result of those multiply/divide operations back in wDamage
-	ld hl, wDamage
-	ld a, [H_QUOTIENT + 2]
-	ld [hli], a
-	ld a, [H_QUOTIENT + 3]
-	ld [hl], a
-	ret
-
-; function to tell how effective the type of an enemy attack is on the player's current pokemon
-; modified to take dual types into effect
-; the result is stored in [wTypeEffectiveness]
-; ($00 immune; $02 or $05 NVE; $0a neutral; $14 or $28 SE)
-; as far is can tell, this is only used once in some AI code to help decide which move to use
-AIGetTypeEffectiveness:
-	ld a,[wEnemyMoveType]
-	ld d,a                    ; d = type of enemy move
-	ld hl,wBattleMonType
-	ld b,[hl]              ; b = type 1 of player's pokemon
-	ld a,10
-	ld [H_MULTIPLIER],a           ; initialize [wd11e] to neutral effectiveness
-	ld hl,TypeEffects
-.loop
-	ld a,[hli]
-	cp a,$ff
-	jr z, .start2
-	cp d                   ; match the type of the move
-	jr nz,.nextTypePair1
-	ld a,[hli]
-	cp b                   ; match with type 1 of pokemon
-	jr z,.match
-	jr .nextTypePair2
-.nextTypePair1
-	inc hl
-.nextTypePair2
-	inc hl
-	jr .loop
-.match
-	ld a,[hl]
-	ld [H_MULTIPLIER],a           ; store damage multiplier
-.start2
-    ld hl,wBattleMonType+1
-    ld a,[hl]
-    cp b
-    jr nz,.checksecondtype
-    ld a, [H_MULTIPLIER]
-    ld [wTypeEffectiveness], a
-	ret
-.checksecondtype
-    ld b,[hl]
-    xor a
-    ld [H_MULTIPLICAND],a
-    ld [H_MULTIPLICAND+1],a
-    ld a,10
-    ld [H_MULTIPLICAND+2],a
-    ld hl,TypeEffects
-.loop2
-    ld a,[hli]
-    cp a,$ff
-    jr z,.multandret
-    cp d ; match the type
-    jr nz, .nextTypePair3
-    ld a,[hli]
-    cp b ; match with type 2 of pokemon
-    jr z,.match2
-    jr .nextTypePair4
-.nextTypePair3
-    inc hl
-.nextTypePair4
-    inc hl
-    jr .loop2
-.match2
-    ld a,[hl]
-    ld [H_MULTIPLICAND+2],a
-.multandret
-    call Multiply
-    ld a, 10
-    ld [H_DIVISOR], a
-    ld b, 4
-    call Divide
-    ld a, [H_QUOTIENT+3]
-    ld [wd11e], a
-    ret
-
-INCLUDE "data/type_effects.asm"
-
 ; some tests that need to pass for a move to hit
 MoveHitTest:
 ; player's turn
@@ -5892,7 +5643,7 @@ EnemyCalcMoveDamage:
 	call CalculateDamage
 	jp z, EnemyCheckIfFlyOrChargeEffect
 .skipCalc ; Jumps here instead of the old place, so hopefully it will miss properly
-	call AdjustDamageForMoveType
+	callab AdjustDamageForMoveType
 	call RandomizeDamage
 
 EnemyMoveHitTest:
@@ -9078,83 +8829,87 @@ DefenseUpSideEffectSuccess:
 	ld [wPlayerMoveEffect], a
 	jp StatModifierUpEffect
 
-CheckForHex:
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .notEnemyTurn
-	ld a,[wEnemySelectedMove]
-	cp HEX
-	ret nz
-	ld a,[wBattleMonStatus]
-	and a
-	ld hl,wEnemyMovePower
-	ld a,65
-	jp z, .skip1
-	ld a,130
-.skip1
-	ld [hl],a
+; Return a compact move-priority tier used by MainInBattleLoop.
+; 2 = priority move, 1 = normal move, 0 = Counter.
+GetMovePriorityTier:
+	cp COUNTER
+	jr z, .counter
+	ld hl, PriorityMoves
+	ld de, 1
+	call IsInArray
+	ld a, 1
+	ret nc
+	inc a
 	ret
-.notEnemyTurn
-	ld a,[wPlayerSelectedMove]
-	cp HEX
-	ret nz
-	ld a,[wEnemyMonStatus]
-	and a
-	ld hl,wPlayerMovePower
-	ld a,65
-	jp z, .skip2
-	ld a,130
-.skip2
-	ld [hl],a
+.counter
+	xor a
 	ret
 
-CheckForElectroBall:
+PriorityMoves:
+	db EXTREMESPEED
+	db BABYDOLLEYES
+	db SUCKER_PUNCH
+	db ICE_SHARD
+	db BULLET_PUNCH
+	db QUICK_ATTACK
+	db -1
+
+; Update base power for moves whose power depends on the current battle state.
+; Hex: 65 normally, 130 if the target has a major status condition.
+; Electro Ball: 120/80/60 based on the existing player/enemy Speed comparison.
+UpdateVariableMovePower:
 	ld a, [H_WHOSETURN]
 	and a
-	jr z, .notEnemyTurn
-; Enemy's Turn
+	jr z, .playerTurn
+; Enemy's turn: target the player and update the enemy move power.
 	ld a, [wEnemySelectedMove]
-	cp ELECTRO_BALL
-	ret nz
-	ld de, wBattleMonSpeed ; player speed value
-	ld hl, wEnemyMonSpeed ; enemy speed value
-	ld c, $2
-	call StringCmp ; compare speed values
-	ld hl,wEnemyMovePower
-	jr z, .speedEqual1
-	jr nc, .playerFaster1 ; if player is faster
-; Enemy Faster 1
-	ld a,120
-	jp .done
-.speedEqual1
-	ld a,80
-	jp .done
-.playerFaster1
-	ld a,60
-	jp .done
-.notEnemyTurn
-; Player's turn
+	ld de, wBattleMonStatus
+	ld hl, wEnemyMovePower
+	jr .checkMove
+.playerTurn
 	ld a, [wPlayerSelectedMove]
+	ld de, wEnemyMonStatus
+	ld hl, wPlayerMovePower
+.checkMove
+	cp HEX
+	jr z, .hex
 	cp ELECTRO_BALL
 	ret nz
+
+; Preserve the selected move-power address while StringCmp advances HL/DE.
+	push hl
 	ld de, wBattleMonSpeed ; player speed value
 	ld hl, wEnemyMonSpeed ; enemy speed value
 	ld c, $2
 	call StringCmp ; compare speed values
-	ld hl,wPlayerMovePower
-	jr z, .speedEqual2
-	jr nc, .playerFaster2 ; if player is faster
-; Enemy Faster 2
-	ld a,60
-	jp .done
-.speedEqual2
-	ld a,80
-	jp .done
-.playerFaster2
-	ld a,120
-; fall through
-.done
-	ld [hl],a
+	pop hl ; POP does not alter the comparison flags
+	ld a, 80
+	jr z, .store
+	jr nc, .playerFaster
+; Enemy is faster: player gets 60 BP, enemy gets 120 BP.
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, 60
+	jr z, .store
+	add a
+	jr .store
+.playerFaster
+; Player is faster: player gets 120 BP, enemy gets 60 BP.
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, 60
+	jr nz, .store
+	add a
+	jr .store
+
+.hex
+	ld a, [de]
+	and a
+	ld a, 65
+	jr z, .store
+	add a ; 130 BP if the target is statused
+.store
+	ld [hl], a
 	ret
 
 ; Determine if a move is Physical, Special, or Status

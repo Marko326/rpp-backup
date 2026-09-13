@@ -2536,6 +2536,11 @@ INCLUDE "data/mapObjects/InsideFerry.asm"
 INCLUDE "scripts/InsideFerry.asm"
 InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
+; Type effectiveness/STAB logic is kept out of capacity-constrained Bank F.
+; Battle damage and trainer AI share the same routines and TypeEffects table.
+SECTION "Battle Type Effectiveness", ROMX, BANK[$34]
+INCLUDE "engine/battle/type_effectiveness.asm"
+
 ; Battle Party <-> Summary fast path lives in its own floating section so bank
 ; $34's fragmented free space can be used without growing the existing bank34 section.
 SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
