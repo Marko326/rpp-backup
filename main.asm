@@ -140,6 +140,9 @@ INCLUDE "engine/bcd.asm"
 SECTION "NPC Pathfinding", ROMX
 INCLUDE "engine/pathfinding.asm"
 
+SECTION "List Menu Helpers", ROMX
+INCLUDE "engine/menu/list_menu_helpers.asm"
+
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
 RocketFSprite:         INCBIN "gfx/sprites/rocketf.2bpp"
