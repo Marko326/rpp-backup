@@ -1,253 +1,75 @@
-WildDataPointers:
-	dw NoMons      ; PALLET_TOWN
-	dw NoMons      ; VIRIDIAN_CITY
-	dw NoMons      ; PEWTER_CITY
-	dw NoMons      ; CERULEAN_CITY
-	dw NoMons      ; LAVENDER_TOWN
-	dw NoMons      ; VERMILION_CITY
-	dw NoMons      ; CELADON_CITY
-	dw NoMons      ; FUCHSIA_CITY
-	dw NoMons      ; CINNABAR_ISLAND
-	dw NoMons      ; INDIGO_PLATEAU
-	dw NoMons      ; SAFFRON_CITY
-	dw NoMons      ; unused
-	dw Route1Mons  ; ROUTE_1
-	dw Route2Mons  ; ROUTE_2
-	dw Route3Mons  ; ROUTE_3
-	dw Route4Mons  ; ROUTE_4
-	dw Route5Mons  ; ROUTE_5
-	dw Route6Mons  ; ROUTE_6
-	dw Route7Mons  ; ROUTE_7
-	dw Route8Mons  ; ROUTE_8
-	dw Route9Mons  ; ROUTE_9
-	dw Route10Mons ; ROUTE_10
-	dw Route11Mons ; ROUTE_11
-	dw Route12Mons ; ROUTE_12
-	dw Route13Mons ; ROUTE_13
-	dw Route14Mons ; ROUTE_14
-	dw Route15Mons ; ROUTE_15
-	dw Route16Mons ; ROUTE_16
-	dw Route17Mons ; ROUTE_17
-	dw Route18Mons ; ROUTE_18
-	dw WaterMons   ; ROUTE_19
-	dw WaterMons   ; ROUTE_20
-	dw Route21Mons ; ROUTE_21
-	dw Route22Mons ; ROUTE_22
-	dw Route23Mons ; ROUTE_23
-	dw Route24Mons ; ROUTE_24
-	dw Route25Mons ; ROUTE_25
-	dw NoMons      ; REDS_HOUSE_1F
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw ForestMons ; ViridianForest
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw MoonMons1
-	dw MoonMonsB1
-	dw MoonMonsB2
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw TunnelMonsB1
-	dw PowerPlantMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw MtMoonSquareMons
-	dw NoMons
-	dw NoMons
-	dw PlateauMons1
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw TowerMons1
-	dw TowerMons2
-	dw TowerMons3
-	dw TowerMons4
-	dw TowerMons5
-	dw TowerMons6
-	dw TowerMons7
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw IslandMonsB1
-	dw IslandMonsB2
-	dw IslandMonsB3
-	dw IslandMonsB4
-	dw NoMons
-	dw NoMons
-	dw MansionMons1
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw IslandMons1
-	dw NoMons
-	dw PlateauMons2
-	dw NoMons
-	dw NoMons
-	dw CaveMons
-	dw PlateauMons3
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw MansionMons2
-	dw MansionMons3
-	dw MansionMonsB1
-	dw ZoneMons1
-	dw ZoneMons2
-	dw ZoneMons3
-	dw ZoneMonsCenter
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw DungeonMons2
-	dw DungeonMonsB1
-	dw DungeonMons1
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw TunnelMonsB2
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw NoMons
-	dw $FFFF
+; Sparse map -> wild data table. Maps without an entry use NoMons.
+; Keeping only maps with encounters saves space versus a 248-entry pointer table.
+; Entries must remain sorted by Map ID so Pokedex location results preserve map order.
+; Duplicate Map IDs are not allowed; lookups stop at the first matching entry.
+wild_data: MACRO
+	assert (\1) < $ff
+	db \1
+	dw \2
+ENDM
+
+WildDataTable:
+	wild_data ROUTE_1, Route1Mons
+	wild_data ROUTE_2, Route2Mons
+	wild_data ROUTE_3, Route3Mons
+	wild_data ROUTE_4, Route4Mons
+	wild_data ROUTE_5, Route5Mons
+	wild_data ROUTE_6, Route6Mons
+	wild_data ROUTE_7, Route7Mons
+	wild_data ROUTE_8, Route8Mons
+	wild_data ROUTE_9, Route9Mons
+	wild_data ROUTE_10, Route10Mons
+	wild_data ROUTE_11, Route11Mons
+	wild_data ROUTE_12, Route12Mons
+	wild_data ROUTE_13, Route13Mons
+	wild_data ROUTE_14, Route14Mons
+	wild_data ROUTE_15, Route15Mons
+	wild_data ROUTE_16, Route16Mons
+	wild_data ROUTE_17, Route17Mons
+	wild_data ROUTE_18, Route18Mons
+	wild_data ROUTE_19, WaterMons
+	wild_data ROUTE_20, WaterMons
+	wild_data ROUTE_21, Route21Mons
+	wild_data ROUTE_22, Route22Mons
+	wild_data ROUTE_23, Route23Mons
+	wild_data ROUTE_24, Route24Mons
+	wild_data ROUTE_25, Route25Mons
+	wild_data VIRIDIAN_FOREST, ForestMons
+	wild_data MT_MOON_1, MoonMons1
+	wild_data MT_MOON_2, MoonMonsB1
+	wild_data MT_MOON_3, MoonMonsB2
+	wild_data ROCK_TUNNEL_1, TunnelMonsB1
+	wild_data POWER_PLANT, PowerPlantMons
+	wild_data MT_MOON_SQUARE, MtMoonSquareMons
+	wild_data VICTORY_ROAD_1, PlateauMons1
+	wild_data POKEMONTOWER_1, TowerMons1
+	wild_data POKEMONTOWER_2, TowerMons2
+	wild_data POKEMONTOWER_3, TowerMons3
+	wild_data POKEMONTOWER_4, TowerMons4
+	wild_data POKEMONTOWER_5, TowerMons5
+	wild_data POKEMONTOWER_6, TowerMons6
+	wild_data POKEMONTOWER_7, TowerMons7
+	wild_data SEAFOAM_ISLANDS_2, IslandMonsB1
+	wild_data SEAFOAM_ISLANDS_3, IslandMonsB2
+	wild_data SEAFOAM_ISLANDS_4, IslandMonsB3
+	wild_data SEAFOAM_ISLANDS_5, IslandMonsB4
+	wild_data MANSION_1, MansionMons1
+	wild_data SEAFOAM_ISLANDS_1, IslandMons1
+	wild_data VICTORY_ROAD_2, PlateauMons2
+	wild_data DIGLETTS_CAVE, CaveMons
+	wild_data VICTORY_ROAD_3, PlateauMons3
+	wild_data MANSION_2, MansionMons2
+	wild_data MANSION_3, MansionMons3
+	wild_data MANSION_4, MansionMonsB1
+	wild_data SAFARI_ZONE_EAST, ZoneMons1
+	wild_data SAFARI_ZONE_NORTH, ZoneMons2
+	wild_data SAFARI_ZONE_WEST, ZoneMons3
+	wild_data SAFARI_ZONE_CENTER, ZoneMonsCenter
+	wild_data UNKNOWN_DUNGEON_2, DungeonMons2
+	wild_data UNKNOWN_DUNGEON_3, DungeonMonsB1
+	wild_data UNKNOWN_DUNGEON_1, DungeonMons1
+	wild_data ROCK_TUNNEL_2, TunnelMonsB2
+	db $ff
 
 ; wild pokemon data is divided into two parts.
 ; first part:  pokemon found in grass

@@ -3286,14 +3286,13 @@ ItemUseReloadOverworldData:
 ; creates a list at wBuffer of maps where the mon in [wd11e] can be found.
 ; this is used by the pokedex to display locations the mon can be found on the map.
 FindWildLocationsOfMon:
-	ld hl, WildDataPointers
+	ld hl, WildDataTable
 	ld de, wBuffer
-	ld c, $0
 .loop
-	inc hl
-	ld a, [hld]
-	inc a
+	ld a, [hli]
+	cp $ff
 	jr z, .done
+	ld c, a ; map ID
 	push hl
 	ld a, [hli]
 	ld h, [hl]
@@ -3307,7 +3306,6 @@ FindWildLocationsOfMon:
 	pop hl
 	inc hl
 	inc hl
-	inc c
 	jr .loop
 .done
 	ld a, $ff ; list terminator
