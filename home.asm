@@ -50,7 +50,9 @@ SECTION "joypad", ROM0 [$60]
 	reti
 
 
-SECTION "Home", ROM0
+; Keep tiny ROM0 helpers in separate sections so rgblink can fill the
+; fragmented holes below $0150 instead of requiring one large Home block.
+SECTION "Home Disable LCD", ROM0
 
 DisableLCD::
 	xor a
@@ -72,11 +74,15 @@ DisableLCD::
 	ld [rIE], a
 	ret
 
+SECTION "Home Enable LCD", ROM0
+
 EnableLCD::
 	ld a, [rLCDC]
 	set rLCDC_ENABLE, a
 	ld [rLCDC], a
 	ret
+
+SECTION "Home Clear Sprites", ROM0
 
 ClearSprites::
 	xor a
@@ -87,6 +93,8 @@ ClearSprites::
 	dec b
 	jr nz, .loop
 	ret
+
+SECTION "Home Hide Sprites", ROM0
 
 HideSprites::
 	ld a, 160
