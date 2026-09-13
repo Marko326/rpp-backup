@@ -160,3 +160,10 @@ TypeEffects:
 	super_effective FAIRY
 
 	db $ff
+
+; Move-specific exceptions are intentionally separate from the global type chart.
+; Entries are: move ID, defending type, final multiplier (0/5/10/20).
+MoveTypeEffectOverrides:
+	neutral_type_override BONE_CLUB, FLYING
+	neutral_type_override BONEMERANG, FLYING
+	db 0

@@ -279,6 +279,9 @@ SmartAI: ; originally by Dabomstew
 	push hl
 	push bc
 	push de
+	dec de
+	ld a, [de] ; candidate move ID for move-specific type overrides
+	ld d, a
 	callab AIGetTypeEffectiveness
 	pop de
 	pop bc
@@ -523,6 +526,9 @@ AIMoveChoiceModification3:
 	push hl
 	push bc
 	push de
+	dec de
+	ld a, [de] ; candidate move ID for move-specific type overrides
+	ld d, a
 	callab AIGetTypeEffectiveness
 	pop de
 	pop bc
