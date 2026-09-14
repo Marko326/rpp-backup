@@ -455,9 +455,6 @@ AnimationTileset1:
 AnimationTileset2:
 	INCBIN "gfx/attack_anim_2.2bpp"
 
-SlotMachineTiles2:
-	INCBIN "gfx/red/slotmachine2.2bpp"
-
 MoveAnimation:
 	push hl
 	push de
@@ -633,7 +630,7 @@ SetAnimationPalette:
 	nop
 	ret
 .notSGB
-	ld a, $e4
+	; A is already $e4 from the common setup above.
 	ld [wAnimPalette], a
 	ld [rOBP0], a
 	ld a, $6c
@@ -1006,17 +1003,16 @@ DoExplodeSpecialEffects:
 	jp AnimationHideMonPic ; make pokemon disappear
 
 ; flashes the screen when subanimation counter is 1 modulo 4
+; Legacy Blizzard only flashes at 13/9/5/1. Keep the upper bound so malformed
+; or future longer subanimations do not gain extra flashes.
 DoBlizzardSpecialEffects:
 	ld a,[wSubAnimCounter]
-	cp a,13
-	jp z,AnimationFlashScreen
-	cp a,9
-	jp z,AnimationFlashScreen
-	cp a,5
-	jp z,AnimationFlashScreen
-	cp a,1
-	jp z,AnimationFlashScreen
-	ret
+	cp 14
+	ret nc
+	dec a
+	and 3
+	ret nz
+	jp AnimationFlashScreen
 
 ; function to make the pokemon disappear at the beginning of the animation
 TradeHidePokemon:
@@ -1280,30 +1276,15 @@ AnimationDarkenMonPalette:
 	lb bc, $f9, $f4
 	jr SetAnimationBGPalette
 
-AnimationUnusedPalette1:
-	lb bc, $fe, $f8
-	jr SetAnimationBGPalette
-
-AnimationUnusedPalette2:
-	lb bc, $ff, $ff
-	jr SetAnimationBGPalette
-
 AnimationResetScreenPalette:
 ; Restores the screen's palette to the normal palette.
 	lb bc, $e4, $e4
-	jr SetAnimationBGPalette
-
-AnimationUnusedPalette3:
-	lb bc, $00, $00
 	jr SetAnimationBGPalette
 
 AnimationLightScreenPalette:
 ; Changes the screen to use a palette with light colors.
 	lb bc, $90, $90
 	jr SetAnimationBGPalette
-
-AnimationUnusedPalette4:
-	lb bc, $40, $40
 
 SetAnimationBGPalette:
 	ld a, [wOnSGB]
@@ -1524,46 +1505,39 @@ AdjustOAMBlockXPos:
 	ld h, d
 
 AdjustOAMBlockXPos2:
-	ld de, 4
-.loop
-	ld a, [wCoordAdjustmentAmount]
-	ld b, a
-	ld a, [hl]
-	add b
-	cp 168
-	jr c, .skipPuttingEntryOffScreen
-; put off-screen if X >= 168
-	dec hl
-	ld a, 160
-	ld [hli], a
-.skipPuttingEntryOffScreen
-	ld [hl], a
-	add hl, de
-	dec c
-	jr nz, .loop
-	ret
+	ld d, 168
+	jr AdjustOAMBlockPos2
 
 AdjustOAMBlockYPos:
 	ld l, e
 	ld h, d
 
 AdjustOAMBlockYPos2:
-	ld de, 4
+	ld d, 112
+
+; Shared X/Y OAM coordinate adjustment. D is the off-screen threshold.
+; Preserve the legacy DE=$0004 return value even though the loop now advances
+; HL directly instead of using ADD HL,DE.
+AdjustOAMBlockPos2:
 .loop
 	ld a, [wCoordAdjustmentAmount]
 	ld b, a
 	ld a, [hl]
 	add b
-	cp 112
-	jr c, .skipSettingPreviousEntrysAttribute
+	cp d
+	jr c, .storeAdjustedCoordinate
 	dec hl
-	ld a, 160 ; bug, sets previous OAM entry's attribute
+	ld a, 160 ; preserves the legacy X/Y off-screen behavior, including Y's old attribute write
 	ld [hli], a
-.skipSettingPreviousEntrysAttribute
+.storeAdjustedCoordinate
 	ld [hl], a
-	add hl, de
+	inc hl
+	inc hl
+	inc hl
+	inc hl
 	dec c
 	jr nz, .loop
+	ld de, 4
 	ret
 
 AnimationBlinkEnemyMon:

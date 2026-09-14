@@ -2648,6 +2648,15 @@ BuildPokedexTownMapLocations::
 	ld [wOAMBaseTile], a
 	ret
 
+; Keep non-battle slot-machine graphics out of the capacity-constrained
+; battle-animation bank. Slot-machine loaders already use BANK(SlotMachineTiles2).
+SECTION "Slot Machine Tiles 2", ROMX, BANK[$34]
+SlotMachineTiles2:
+	INCBIN "gfx/red/slotmachine2.2bpp"
+SlotMachineTiles2End:
+	assert SlotMachineTiles2End - SlotMachineTiles2 == $180
+
+
 SECTION "pokecenters", ROMX,BANK[$35]
 
 ; Keep the optional Lv50 link-battle rule outside capacity-constrained bank 1.
