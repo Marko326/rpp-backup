@@ -12,6 +12,11 @@ const_value = 0
 	const SPRITE_SNAKE     ; $8
 	const SPRITE_QUADRUPED ; $9
 
+; Bit 0 of a SpriteSheetPointerTable byte-count marks a sheet with no separate
+; walking block. Sprite graphics lengths are multiples of 16 bytes, so this bit
+; is free metadata and is masked before the copy length is used.
+SPRITE_SHEET_REUSE_STANDING EQU $01
+
 ; overworld sprites
 const_value = 1
 	const SPRITE_RED                       ; $01

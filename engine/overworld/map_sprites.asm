@@ -128,6 +128,7 @@ LoadMapSpriteTilePatterns:
 .noCarry2
 	push hl
 	call ReadSpriteSheetData
+	res 0,c ; mask SPRITE_SHEET_REUSE_STANDING from the copy length
 	push af
 	push de
 	push bc
@@ -178,13 +179,16 @@ LoadMapSpriteTilePatterns:
 	jr nc,.skipSecondLoad ; if so, there is no second block
 	push de
 	call ReadSpriteSheetData
+	bit 0,c ; standing-only sheets reuse the first $c0-byte block
+	res 0,c ; mask SPRITE_SHEET_REUSE_STANDING from the copy length
 	push af
+	jr nz,.walkingSourceReady
 	ld a,$c0
 	add e
 	ld e,a
-	jr nc,.noCarry3
+	jr nc,.walkingSourceReady
 	inc d
-.noCarry3
+.walkingSourceReady
 	ld a,[wFontLoaded]
 	bit 0,a ; reloading upper half of tile patterns after displaying text?
 	jr nz,.loadWhileLCDOn
@@ -239,7 +243,7 @@ LoadMapSpriteTilePatterns:
 ; hl = address of sprite sheet entry
 ; OUTPUT:
 ; de = pointer to sprite sheet
-; bc = length in bytes
+; bc = length in bytes; C bit 0 may contain SPRITE_SHEET_REUSE_STANDING metadata
 ; a = ROM bank
 ReadSpriteSheetData:
 	ld a,[hli]

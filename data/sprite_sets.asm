@@ -292,7 +292,7 @@ SpriteSheetPointerTable:
 
 	; SPRITE_BIKE_SHOP_GUY
 	dw BikeShopGuySprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(BikeShopGuySprite)
 
 	; SPRITE_MR_FUJI
@@ -362,17 +362,17 @@ SpriteSheetPointerTable:
 
 	; SPRITE_WHITE_PLAYER
 	dw WhitePlayerSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(WhitePlayerSprite)
 
 	; SPRITE_GYM_HELPER
 	dw GymHelperSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(GymHelperSprite)
 
 	; SPRITE_OLD_PERSON
 	dw OldPersonSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(OldPersonSprite)
 
 	; SPRITE_MART_GUY
@@ -382,17 +382,17 @@ SpriteSheetPointerTable:
 
 	; SPRITE_FISHER
 	dw FisherSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(FisherSprite)
 
 	; SPRITE_OLD_MEDIUM_WOMAN
 	dw OldMediumWomanSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(OldMediumWomanSprite)
 
 	; SPRITE_NURSE
 	dw NurseSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(NurseSprite)
 
 	; SPRITE_CABLE_CLUB_WOMAN
@@ -402,22 +402,22 @@ SpriteSheetPointerTable:
 
 	; SPRITE_MR_MASTERBALL
 	dw MrMasterballSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(MrMasterballSprite)
 
 	; SPRITE_LAPRAS_GIVER
 	dw LaprasGiverSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(LaprasGiverSprite)
 
 	; SPRITE_WARDEN
 	dw WardenSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(WardenSprite)
 
 	; SPRITE_SS_CAPTAIN
 	dw SsCaptainSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(SsCaptainSprite)
 
 	; SPRITE_FISHER2
@@ -442,22 +442,22 @@ SpriteSheetPointerTable:
 
 	; SPRITE_MOM
 	dw MomSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(MomSprite)
 
 	; SPRITE_BALDING_GUY
 	dw BaldingGuySprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(BaldingGuySprite)
 
 	; SPRITE_YOUNG_BOY
 	dw YoungBoySprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(YoungBoySprite)
 
 	; SPRITE_GAMEBOY_KID
 	dw GameboyKidSprite
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(GameboyKidSprite)
 
 	; SPRITE_GAMEBOY_KID_COPY / SPRITE_LEAF
@@ -513,7 +513,7 @@ SpriteSheetPointerTable:
 	
 	; SPRITE_SABRINA
 	dw SabrinaOverworld
-	db $c0 ; byte count
+	db $c0 | SPRITE_SHEET_REUSE_STANDING ; byte count + standing-only metadata
 	db BANK(SabrinaOverworld)
 	
 	; SPRITE_KOGA
