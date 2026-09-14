@@ -2363,8 +2363,8 @@ Subanimation54:
 
 ; Compact nonzero-mode coordinate table for 2-byte subanimation entries.
 ; Entry byte 0: bit 7 marks a nonzero mode, bits 0-6 are FrameBlock ID.
-; Entry byte 1: mode-0 entries store BaseCoord ID directly; marked entries
-; index this table. Indices 0-20 => mode 2, 21-41 => mode 3, 42-65 => mode 4.
+; Entry byte 1: mode-0 entries store BaseCoord ID directly. For marked entries,
+; bits 7-6 encode modes 2/3/4 as 1/2/3 and bits 5-0 index this table.
 ; Shared BaseCoord table for nonzero-mode subentries.
 ; IMPORTANT: append new coordinates only; do not reorder existing entries.
 ; The subentry macro resolves raw BaseCoord values to these stable 6-bit indices.

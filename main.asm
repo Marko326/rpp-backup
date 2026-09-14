@@ -2775,6 +2775,12 @@ INCLUDE "scripts/BeachHouse.asm"
 INCLUDE "data/mapObjects/BeachHouse.asm"
 BeachHouseBlocks: INCBIN "maps/BeachHouse.blk"
 
+; Raw battle-animation graphics are bank-independent at runtime: all consumers
+; use BANK(AnimationTileset*) with CopyVideoData.  Keep them in the graphics-heavy
+; Bank $37 instead of occupying the fixed Battle Animation Bank $1E.
+SECTION "Battle Animation Tilesets", ROMX, BANK[$37]
+INCLUDE "data/animation_tilesets.asm"
+
 SECTION "field moves", ROMX,BANK[$38]
 
 INCLUDE "engine/overworld/field_moves.asm"

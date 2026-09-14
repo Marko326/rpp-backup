@@ -446,12 +446,6 @@ AnimationTilesetPointers:
 	dw AnimationTileset1
 	db $FF
 
-AnimationTileset1:
-	INCBIN "gfx/attack_anim_1.2bpp"
-
-AnimationTileset2:
-	INCBIN "gfx/attack_anim_2.2bpp"
-
 MoveAnimation:
 	push hl
 	push de
