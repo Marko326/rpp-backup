@@ -141,24 +141,23 @@ ApplySnowPaletteOverrides::
 
 	ld a,c
 	cp OVERWORLD
-	ld hl,SnowOverworldPaletteAssignment
-	jr z,.copyAssignment
+	ld hl,SnowOverworldPalettePatch
+	jr z,.applyAssignmentPatch
 	cp FOREST
-	ld hl,SnowForestPaletteAssignment
-	jr z,.copyAssignment
+	ld hl,SnowForestPalettePatch
+	jr z,.applyAssignmentPatch
 	cp PLATEAU
-	ld hl,SnowPlateauPaletteAssignment
-	jr z,.copyAssignment
+	ld hl,SnowPlateauPalettePatch
+	jr z,.applyAssignmentPatch
 	cp SAFARI
-	ld hl,SnowSafariPaletteAssignment
+	ld hl,SnowSafariPalettePatch
 	jr nz,.skipAssignment
-.copyAssignment
-	; CopyData consumes BC, but C holds the current tileset for the later palette choices.
-	; Save/restore it while the stack is safely in WRAM Bank 2.
-	push bc
-	ld de,W2_TilesetPaletteMap
-	ld bc,$60
-	call CopyData
+.applyAssignmentPatch
+	; The normal 96-byte assignment is already in W2_TilesetPaletteMap.
+	; Patch only tiles whose Snowy palette differs. Bit 7 selects GRAY;
+	; clear entries select GREEN. $ff terminates the compact list.
+	push bc ; C must keep the current tileset for the palette logic below
+	call ApplySnowPaletteAssignmentPatch
 	pop bc
 .skipAssignment
 
@@ -227,14 +226,52 @@ SnowCaveGreenPalette:
 	RGB 0,7,15
 	RGB 0,0,0
 
-SnowOverworldPaletteAssignment:
-	INCLUDE "color/tilesets/overworld_snow.asm"
-SnowForestPaletteAssignment:
-	INCLUDE "color/tilesets/forest_snow.asm"
-SnowPlateauPaletteAssignment:
-	INCLUDE "color/tilesets/plateau_snow.asm"
-SnowSafariPaletteAssignment:
-	INCLUDE "color/tilesets/safari_snow.asm"
+ApplySnowPaletteAssignmentPatch:
+.loop
+	ld a,[hli]
+	cp $ff
+	ret z
+	ld b,a
+	and $7f
+	ld e,a
+	ld d,0
+	push hl
+	ld hl,W2_TilesetPaletteMap
+	add hl,de
+	bit 7,b
+	ld a,PAL_BG_GREEN
+	jr z,.store
+	ld a,PAL_BG_GRAY
+.store
+	ld [hl],a
+	pop hl
+	jr .loop
+
+; Compact Snowy assignment deltas. Tile IDs below $80 select GREEN.
+; Setting bit 7 selects GRAY. The base normal assignment remains untouched
+; for every tile not listed here.
+SnowOverworldPalettePatch:
+	db $01,$02,$05,$06,$07,$08,$09,$0d,$11,$12,$15,$16,$17,$18,$19,$1e
+	db $24,$25,$26,$27,$28,$29,$30,$32,$33,$34,$35,$36,$37,$38,$39
+	db $46,$47,$48,$49,$4c,$4d,$53,$54,$58,$59,$5a,$5c,$5d
+	db $80 | $04,$80 | $3c
+	db $ff
+
+SnowForestPalettePatch:
+	db $08,$09,$0c,$18,$19,$1c,$1d,$1e,$1f,$21,$22,$2d,$2e,$2f,$3d,$3e,$3f
+	db $80 | $31,$80 | $32
+	db $ff
+
+SnowPlateauPalettePatch:
+	db $01,$02,$09,$0a,$11,$13,$1d,$1e,$1f,$22,$24,$27,$2a,$2b,$2d
+	db $32,$33,$34,$35,$36,$37,$39,$3a,$3b,$3c,$3d,$3e,$40,$41,$44
+	db $ff
+
+SnowSafariPalettePatch:
+	db $08,$09,$0c,$0e,$0f,$18,$19,$1c,$1d,$1e,$1f,$21,$22,$2d,$2e,$2f
+	db $3d,$3e,$3f,$48,$49,$4a,$4d,$4e
+	db $80 | $31,$80 | $32
+	db $ff
 
 SnowOverworldGfxPatchTable:
 	db $01,2
