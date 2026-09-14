@@ -692,9 +692,8 @@ HandleMoveDexSideMenu:
 	ld [wCurrentMenuItem],a
 	push bc
 	coord hl, 0, 3
-	ld de,SCREEN_WIDTH
-	lb bc, " ", 13
-	call DrawTileLine ; 与 Pokédex 一样清掉左侧列表旧光标
+	lb bc, 13, 1
+	call ClearScreenArea ; ROM0 helper: avoid cross-bank call to Pokédex DrawTileLine in bank $10
 	pop bc
 	ret
 
@@ -706,9 +705,8 @@ HandleMoveDexSideMenu:
 	; 再保留 Pokédex 原版的整列清理作为保险，四个菜单项全部覆盖。
 	push bc
 	coord hl, 15, 10
-	ld de,SCREEN_WIDTH
-	lb bc, " ", 7
-	call DrawTileLine
+	lb bc, 7, 1
+	call ClearScreenArea ; clear the right-side cursor column without leaving bank $35
 	pop bc
 	jr .exitSideMenu
 
