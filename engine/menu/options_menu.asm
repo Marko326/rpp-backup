@@ -83,30 +83,28 @@ DisplayOptionMenu:
 	ld a,3
 	ld [wTopMenuItemY],a
 	ld a,[wOptionsTextSpeedCursorX]
-	jr .storePage1CursorX
+	jr .storeOptionMenuCursorX
 .page1SelectBattleAnimation
 	ld a,8
 	ld [wTopMenuItemY],a
 	ld a,[wOptionsBattleAnimCursorX]
-	jr .storePage1CursorX
+	jr .storeOptionMenuCursorX
 .page1SelectBattleStyle
 	ld a,13
 	ld [wTopMenuItemY],a
 	ld a,1
-	jr .storePage1CursorX
+	jr .storeOptionMenuCursorX
 .page1SelectBack
 	ld a,16
 	ld [wTopMenuItemY],a
 	ld a,1
-.storePage1CursorX
+.storeOptionMenuCursorX
 	ld [wTopMenuItemX],a
 	call PlaceUnfilledArrowMenuCursor
 	jp .loop
 .cursorInBattleAnimation
-	ld a,[wOptionsBattleAnimCursorX] ; battle animation cursor X coordinate
-	xor a,$0b ; toggle between 1 and 10
-	ld [wOptionsBattleAnimCursorX],a
-	jp .eraseOldMenuCursor
+	ld hl,wOptionsBattleAnimCursorX
+	jp .toggleBinaryCursorX
 .cursorInBattleStyle
 	; Battle Style remains fixed to Set.
 	jp .loop
@@ -155,9 +153,11 @@ DisplayOptionMenu:
 	cp 8 ; cursor on BGM Volume?
 	jp z,.cursorInBGMVolume
 .cursorInMusic
-	ld a,[wOptionsMusicCursorX]
+	ld hl,wOptionsMusicCursorX
+.toggleBinaryCursorX
+	ld a,[hl]
 	xor a,$0b ; toggle between 1 and 10
-	ld [wOptionsMusicCursorX],a
+	ld [hl],a
 	jp .eraseOldMenuCursor
 
 .cursorInBGMVolume
@@ -211,30 +211,22 @@ DisplayOptionMenu:
 	ld a,3
 	ld [wTopMenuItemY],a
 	ld a,[wOptionsMusicCursorX]
-	ld [wTopMenuItemX],a
-	call PlaceUnfilledArrowMenuCursor
-	jp .loop
+	jp .storeOptionMenuCursorX
 .page2SelectBGMVolume
 	ld a,8
 	ld [wTopMenuItemY],a
 	ld a,1
-	ld [wTopMenuItemX],a
-	call PlaceUnfilledArrowMenuCursor
-	jp .loop
+	jp .storeOptionMenuCursorX
 .page2SelectWorld
 	ld a,13
 	ld [wTopMenuItemY],a
 	call GetWorldOptionCursorX
-	ld [wTopMenuItemX],a
-	call PlaceUnfilledArrowMenuCursor
-	jp .loop
+	jp .storeOptionMenuCursorX
 .page2SelectBack
 	ld a,16
 	ld [wTopMenuItemY],a
 	ld a,1
-	ld [wTopMenuItemX],a
-	call PlaceUnfilledArrowMenuCursor
-	jp .loop
+	jp .storeOptionMenuCursorX
 .cursorOnPage2Back
 	bit 5,b ; Left pressed?
 	jp nz,.showPage1
@@ -251,6 +243,17 @@ DisplayOptionMenu:
 	call ClearScreen
 	call .drawPage2
 	call .placePage2Arrows
+	jp .finishPageSwitch
+
+.showPage1
+	xor a
+	ld [wOptionsMenuPage],a
+	; Keep the old page visible until the new page is fully drawn.
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call ClearScreen
+	call .drawPage1
+	call SetCursorPositionsFromOptions
+.finishPageSwitch
 	; Always enter a different options page with the active cursor on Page.
 	ld a,16
 	ld [wTopMenuItemY],a
@@ -261,24 +264,7 @@ DisplayOptionMenu:
 	call Delay3
 	jp .loop
 
-.showPage1
-	xor a
-	ld [wOptionsMenuPage],a
-	; Keep the old page visible until the new page is fully drawn.
-	ld [H_AUTOBGTRANSFERENABLED],a
-	call ClearScreen
-	call .drawPage1
-	call SetCursorPositionsFromOptions
-	ld a,16
-	ld [wTopMenuItemY],a
-	ld a,1
-	ld [wTopMenuItemX],a
-	ld a,1
-	ld [H_AUTOBGTRANSFERENABLED],a
-	call Delay3
-	jp .loop
-
-.drawPage1
+.drawPageFrame
 	coord hl, 0, 0
 	ld b,3
 	ld c,18
@@ -290,7 +276,10 @@ DisplayOptionMenu:
 	coord hl, 0, 10
 	ld b,3
 	ld c,18
-	call TextBoxBorder
+	jp TextBoxBorder
+
+.drawPage1
+	call .drawPageFrame
 	coord hl, 1, 1
 	ld de,TextSpeedOptionText
 	call PlaceString
@@ -300,26 +289,11 @@ DisplayOptionMenu:
 	coord hl, 1, 11
 	ld de,BattleStyleOptionText
 	call PlaceString
-	coord hl, 2, 16
-	ld de,OptionMenuPageText
-	call PlaceString
-	coord hl, 16, 16
 	ld de,OptionMenuPage1Text
-	jp PlaceString
+	jp .drawPageSelector
 
 .drawPage2
-	coord hl, 0, 0
-	ld b,3
-	ld c,18
-	call TextBoxBorder
-	coord hl, 0, 5
-	ld b,3
-	ld c,18
-	call TextBoxBorder
-	coord hl, 0, 10
-	ld b,3
-	ld c,18
-	call TextBoxBorder
+	call .drawPageFrame
 	coord hl, 1, 1
 	ld de,MusicOptionText
 	call PlaceString
@@ -330,11 +304,16 @@ DisplayOptionMenu:
 	coord hl, 1, 11
 	ld de,WorldOptionText
 	call PlaceString
+	ld de,OptionMenuPage2Text
+	jp .drawPageSelector
+
+.drawPageSelector
+	push de
 	coord hl, 2, 16
 	ld de,OptionMenuPageText
 	call PlaceString
+	pop de
 	coord hl, 16, 16
-	ld de,OptionMenuPage2Text
 	jp PlaceString
 
 .placePage2Arrows
