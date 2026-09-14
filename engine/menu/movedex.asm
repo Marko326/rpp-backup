@@ -1543,6 +1543,163 @@ MoveDexBlitSmallGlyph:
 	jr nz,.rowLoop
 	ret
 
+; MoveDex description text compression. RGBDS 0.5.2 charmaps can map multi-character
+; strings to one byte, so the source descriptions stay as ordinary readable English.
+; Token bytes $01-$40 are private to MoveDex descriptions; raw MoveDex text never uses
+; this range. Each ROM token expands recursively to the two symbols stored here.
+; Keep the CHARMAP definition and runtime pair table in one macro so they cannot drift.
+NEWCHARMAP movedex_desc, main
+
+movedex_desc_token: MACRO
+	CHARMAP \1, \2
+	ASSERT CHARLEN(\1) == 1
+	db \3, \4
+ENDM
+
+MoveDexDescriptionTokenPairs:
+	movedex_desc_token "s ", $01, $b2, $7f
+	movedex_desc_token "e ", $02, $a4, $7f
+	movedex_desc_token "th", $03, $b3, $a7
+	movedex_desc_token "fo", $04, $a5, $ae
+	movedex_desc_token "the ", $05, $03, $02
+	movedex_desc_token "e.", $06, $a4, $e8
+	movedex_desc_token "the fo", $07, $05, $04
+	movedex_desc_token "er", $08, $a4, $b1
+	movedex_desc_token "es ", $09, $a4, $01
+	movedex_desc_token "st", $0a, $b2, $b3
+	movedex_desc_token "in", $0b, $a8, $ad
+	movedex_desc_token "an", $0c, $a0, $ad
+	movedex_desc_token "a ", $0d, $a0, $7f
+	movedex_desc_token "s.", $0e, $b2, $e8
+	movedex_desc_token "t ", $0f, $b3, $7f
+	movedex_desc_token "ar", $10, $a0, $b1
+	movedex_desc_token "on", $11, $ae, $ad
+	movedex_desc_token "ch", $12, $a2, $a7
+	movedex_desc_token "wi", $13, $b6, $a8
+	movedex_desc_token "to", $14, $b3, $ae
+	movedex_desc_token "en", $15, $a4, $ad
+	movedex_desc_token "al", $16, $a0, $ab
+	movedex_desc_token "d ", $17, $a3, $7f
+	movedex_desc_token "ag", $18, $a0, $a6
+	movedex_desc_token "ur", $19, $b4, $b1
+	movedex_desc_token "it", $1a, $a8, $b3
+	movedex_desc_token "the foe.", $1b, $07, $06
+	movedex_desc_token "with", $1c, $13, $03
+	movedex_desc_token "ro", $1d, $b1, $ae
+	movedex_desc_token "at", $1e, $a0, $b3
+	movedex_desc_token "is", $1f, $a8, $b2
+	movedex_desc_token "the foe ", $20, $07, $02
+	movedex_desc_token "or", $21, $ae, $b1
+	movedex_desc_token "ea", $22, $a4, $a0
+	movedex_desc_token "la", $23, $ab, $a0
+	movedex_desc_token "y ", $24, $b8, $7f
+	movedex_desc_token "ck", $25, $a2, $aa
+	movedex_desc_token "with ", $26, $1c, $7f
+	movedex_desc_token "er ", $27, $08, $7f
+	movedex_desc_token "us", $28, $b4, $b2
+	movedex_desc_token " st", $29, $7f, $0a
+	movedex_desc_token "ee", $2a, $a4, $a4
+	movedex_desc_token "of", $2b, $ae, $a5
+	movedex_desc_token "urn", $2c, $19, $ad
+	movedex_desc_token "anc", $2d, $0c, $a2
+	movedex_desc_token "ow", $2e, $ae, $b6
+	movedex_desc_token "ri", $2f, $b1, $a8
+	movedex_desc_token "ing", $30, $0b, $a6
+	movedex_desc_token "un", $31, $b4, $ad
+	movedex_desc_token " ch", $32, $7f, $12
+	movedex_desc_token "to ", $33, $14, $7f
+	movedex_desc_token " chanc", $34, $32, $2d
+	movedex_desc_token "sh", $35, $b2, $a7
+	movedex_desc_token "ta", $36, $b3, $a0
+	movedex_desc_token "turn", $37, $b3, $2c
+	movedex_desc_token "ir", $38, $a8, $b1
+	movedex_desc_token "ra", $39, $b1, $a0
+	movedex_desc_token "ps ", $3a, $af, $01
+	movedex_desc_token "the foe", $3b, $07, $a4
+	movedex_desc_token "il", $3c, $a8, $ab
+	movedex_desc_token "le", $3d, $ab, $a4
+	movedex_desc_token "gh", $3e, $a6, $a7
+	movedex_desc_token "age.", $3f, $18, $06
+	movedex_desc_token " h", $40, $7f, $a7
+MoveDexDescriptionTokenPairsEnd:
+ASSERT MoveDexDescriptionTokenPairsEnd - MoveDexDescriptionTokenPairs == $40 * 2
+SETCHARMAP main
+
+; A=description bank, DE=packed page, HL=tilemap destination.
+; Read one packed byte at a time through FarCopyData2 so no speculative read can cross
+; a linker section/bank boundary. This is a cold MoveDex-only path and displayed glyphs
+; still use the original PrintLetterDelay behavior.
+MoveDexPlacePackedDescriptionFar:
+	ld [wBuffer + 24],a ; source bank
+	ld a,e
+	ld [wBuffer + 25],a ; source low
+	ld a,d
+	ld [wBuffer + 26],a ; source high
+	xor a
+	ld [wBuffer + 27],a ; rendered line index: 0/1/2
+.readNext:
+	push hl
+	ld a,[wBuffer + 25]
+	ld l,a
+	ld a,[wBuffer + 26]
+	ld h,a
+	ld de,wBuffer + 28
+	ld bc,1
+	ld a,[wBuffer + 24]
+	call FarCopyData2
+	ld a,l
+	ld [wBuffer + 25],a
+	ld a,h
+	ld [wBuffer + 26],a
+	pop hl
+
+	ld a,[wBuffer + 28]
+	cp "@"
+	ret z
+	cp $4e ; next
+	jr z,.nextLine
+	call MoveDexEmitDescriptionSymbol
+	jr .readNext
+
+.nextLine
+	ld a,[wBuffer + 27]
+	inc a
+	ld [wBuffer + 27],a
+	cp 1
+	jr z,.line2
+	coord hl,1,15
+	jr .readNext
+.line2
+	coord hl,1,13
+	jr .readNext
+
+; A = one packed symbol. Token bytes recursively expand to raw game-font bytes.
+; Token phrases never contain MoveDex page-control bytes, so only the top-level stream
+; handles @ / next; expansions just render glyphs.
+MoveDexEmitDescriptionSymbol:
+	cp $41
+	jr nc,.rawGlyph
+	dec a
+	add a
+	ld e,a
+	ld d,0
+	push hl
+	ld hl,MoveDexDescriptionTokenPairs
+	add hl,de
+	ld a,[hli]
+	ld c,a
+	ld b,[hl]
+	pop hl
+	push bc
+	ld a,c
+	call MoveDexEmitDescriptionSymbol
+	pop bc
+	ld a,b
+	jp MoveDexEmitDescriptionSymbol
+.rawGlyph
+	ld [hli],a
+	jp PrintLetterDelay
+
 MoveDexDrawDescription:
 	; MoveDex 本地说明分页，不修改全局文本引擎。
 	; RPP 的 next 默认下移两行，因此说明区 y=11/13/15 天然形成
@@ -1550,7 +1707,7 @@ MoveDexDrawDescription:
 	call MoveDexGetDescriptionPagePointer
 	jr nc,.fallback
 	coord hl, 1, 11
-	call MoveDexPlaceStringFar
+	call MoveDexPlacePackedDescriptionFar
 	jp MoveDexDrawDescriptionPageArrow
 
 .fallback

@@ -1,5 +1,9 @@
 SECTION "MoveDex Descriptions A", ROMX, BANK[$3B]
 
+; MoveDex 说明文本保持可读英文源码；运行时存储由 Bank $35 中定义的
+; movedex_desc charmap 自动替换常见字串 token。page-list / pointer ABI 不变。
+SETCHARMAP movedex_desc
+
 ; MoveDex 正式说明独立于 $35 UI bank。
 ; 每项固定 3 bytes：page-list 所在 bank + 16-bit page-list 地址。
 ; 之后若说明扩展到 $39/$34 等 bank，只需让对应 page-list 与其页面留在同一 bank。
@@ -3047,3 +3051,5 @@ MoveDexDescEffectDChargeOnly:
 	db   "Charges on turn 1."
 	next "Attacks on turn 2.@"
 
+; 后续源码恢复项目默认字符映射。
+SETCHARMAP main
