@@ -369,11 +369,8 @@ LoadSubanimation:
 ; if the animation is reversed, then place the initial subentry address at the end of the list of subentries
 	ld a,[wSubAnimCounter]
 	dec a
-	ld bc,3
-.loop
-	add hl,bc
-	dec a
-	jr nz,.loop
+	add a ; 2 bytes per compact subentry
+	ld l,a
 .storeSubentryAddr
 	inc de
 	add hl,de
@@ -654,23 +651,50 @@ PlaySubanimation:
 	ld a,[wSubAnimSubEntryAddr]
 	ld l,a
 .loop
-	; Dedicated recipes may reuse a legacy motion while forcing a different
-	; complete FrameBlock.  This keeps the subanimation's BaseCoord and mode
-	; sequence intact instead of relying on cross-tileset half-objects.
+	; Compact subentries are always 2 bytes. Byte 0 stores FrameBlock ID in
+	; bits 0-6; bit 7 marks a nonzero mode. For marked entries, byte 1 bits
+	; 7-6 encode modes 2/3/4 as 1/2/3 and bits 5-0 index SubanimationCoordTable.
+	; Unmarked byte 1 is the BaseCoord ID directly and implies mode 0.
+	; Dedicated recipes may still override only the FrameBlock while preserving
+	; the subentry's BaseCoord and mode.
 	ld a,[wExtendedAnimFrameEffect]
 	bit 7,a
 	jr z,.useSubanimationFrameBlock
 	and $7f
 	cp $7B ; FrameBlockPointers contains IDs $00-$7A
-	ret nc ; malformed override: fail closed before touching the pointer table
+	ret nc ; malformed override: fail closed before consuming the subentry
 	ld c,a
-	jr .gotFrameBlock
+	ld a,[hli] ; consume encoded legacy FrameBlock/mode marker
+	ld d,a
+	jr .decodeSubanimationCoordMode
 .useSubanimationFrameBlock
-	ld c,[hl] ; frame block ID from the legacy subanimation
-.gotFrameBlock
-	; Save the legacy subentry pointer only after override validation, so an
-	; invalid override can return without leaving an unmatched stack entry.
-	push hl
+	ld a,[hli]
+	ld d,a
+	and $7f
+	ld c,a
+.decodeSubanimationCoordMode
+	ld a,[hl]
+	bit 7,d
+	jr z,.subanimationMode0
+	ld e,a ; packed mode in bits 7-6, coordinate index in bits 5-0
+	rlca
+	rlca
+	and 3
+	inc a ; encoded 1/2/3 -> modes 2/3/4
+	ld [wFBMode],a
+	ld a,e
+	and $3f
+	ld e,a
+	ld d,0
+	ld hl,SubanimationCoordTable
+	add hl,de
+	ld e,[hl]
+	jr .gotSubanimationBaseCoord
+.subanimationMode0
+	ld e,a
+	xor a
+	ld [wFBMode],a
+.gotSubanimationBaseCoord
 	ld b,0
 	ld hl,FrameBlockPointers
 	add hl,bc
@@ -679,10 +703,6 @@ PlaySubanimation:
 	ld c,a
 	ld a,[hli]
 	ld b,a
-	pop hl
-	inc hl
-	push hl
-	ld e,[hl] ; base coordinate ID
 	ld d,0
 	ld hl,FrameBlockBaseCoords  ; base coordinate table
 	add hl,de
@@ -691,10 +711,6 @@ PlaySubanimation:
 	ld [wBaseCoordY],a
 	ld a,[hl]
 	ld [wBaseCoordX],a
-	pop hl
-	inc hl
-	ld a,[hl] ; frame block mode
-	ld [wFBMode],a
 	; FrameBlock overrides may need object-specific anchor compensation.  Keep
 	; the dispatch in bank $3A so this generic renderer is not tied to Draco
 	; Meteor or FrameBlock68.  The helper itself fail-closes for other cases.
@@ -717,9 +733,9 @@ PlaySubanimation:
 	ld l,a
 	ld a,[wSubAnimTransform]
 	cp a,4 ; is the animation reversed?
-	ld bc,3
+	ld bc,2
 	jr nz,.nextSubanimationSubentry
-	ld bc,-3
+	ld bc,-2
 .nextSubanimationSubentry
 	add hl,bc
 	ld a,h
@@ -946,7 +962,7 @@ DoBallShakeSpecialEffects:
 	ld l,a
 	ld a,[wSubAnimSubEntryAddr + 1]
 	ld h,a
-	ld de,-(4 * 3) ; 4 subentries and 3 bytes per subentry
+	ld de,-(4 * 2) ; 4 compact subentries and 2 bytes per subentry
 	add hl,de
 	ld a,l
 	ld [wSubAnimSubEntryAddr],a
