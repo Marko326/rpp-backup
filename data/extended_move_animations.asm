@@ -49,7 +49,13 @@ PrepareCurrentMoveAnimation::
 ; actual wrappers here removes their movedex-era footprint from ROM0 while still
 ; allowing bank-$0E -> BankswitchEtoF -> bank-$0F callers to restore correctly.
 PlayCurrentMoveAnimation2Far::
+	; Legacy callers expect DE to survive PlayCurrentMoveAnimation*. The recipe
+	; preparer uses E for the real move ID (and expanded recipes reuse DE again),
+	; so preserve DE across that new preprocessing layer. Minimize in particular
+	; keeps DE pointing at MoveNum across the animation to balance its saved stack.
+	push de
 	call PrepareCurrentMoveAnimation
+	pop de
 	ld a, [H_WHOSETURN]
 	and a
 	ld a, [wPlayerMoveNum]
@@ -69,7 +75,10 @@ PlayCurrentMoveAnimation2Far::
 	jpab PlayBattleAnimationGotID
 
 PlayCurrentMoveAnimationFar::
+	; Keep the original PlayCurrentMoveAnimation DE-preservation ABI.
+	push de
 	call PrepareCurrentMoveAnimation
+	pop de
 	xor a
 	ld [wAnimationType], a
 	ld a, [H_WHOSETURN]
