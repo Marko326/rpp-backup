@@ -3232,11 +3232,50 @@ GetName::
 	ld a,b          ;wanted entry
 	cp c
 	jr nz,.nextName
+
+	; Types 2-4 are packed ROM tables (type 3 aliases MoveNames), and type 7 is
+	; the packed trainer table. MONSTER_NAME keeps the legacy fixed-record path;
+	; types 5/6 are RAM OT-name lists and stay raw.
+	ld a,[wNameListType]
+	cp PLAYEROT_NAME
+	jr c,.packedName
+	cp TRAINER_NAME
+	jr z,.packedName
+
 	ld h,d
 	ld l,e
 	ld de,wcd6d
 	ld bc,$0014
 	call CopyData
+	jr .gotPtr
+
+.packedName
+	; DE=start, HL=one byte past @. The decoder consumes this metadata before
+	; reusing wcd6d as its in-place packed/input and expanded/output buffer.
+	ld a,e
+	ld [wcd6d],a
+	ld a,d
+	ld [wcd6d + 1],a
+	ld a,[wPredefBank]
+	ld [wcd6d + 2],a
+	ld a,l
+	sub e
+	ld c,a
+	ld a,h
+	sbc d
+	jr nz,.packedNameTooLong
+	ld a,c
+	ld [wcd6d + 3],a
+	callba DecodePackedName
+	ld de,wcd6d
+	jr .gotPtr
+
+.packedNameTooLong
+	; Current names are <= 20 bytes and cannot reach this path. Keep a safe
+	; terminator rather than truncating from an invalid >255-byte packed entry.
+	ld de,wcd6d
+	ld a,"@"
+	ld [de],a
 .gotPtr
 	ld a,e
 	ld [wUnusedCF8D],a

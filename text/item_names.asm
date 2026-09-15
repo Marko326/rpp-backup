@@ -1,3 +1,7 @@
+; Keep names readable in source; RGBDS packs common phrases with the shared
+; packed_names charmap. Runtime GetName expands them back to main-charmap bytes.
+SETCHARMAP packed_names
+
 ItemNames:
 	db "Master Ball@"
 	db "Ultra Ball@"
@@ -107,3 +111,5 @@ ItemNames:
 	db "Lum Berry@"
 	db "Acai Berry@"
 	db "Go Home@"
+
+SETCHARMAP main

@@ -2458,6 +2458,9 @@ SECTION "bank34",ROMX,BANK[$34]
 INCLUDE "data/item_prices.asm"
 INCLUDE "text/item_names.asm"
 
+; Shared packed-name decoder/table live in roomy bank $34, not ROM0.
+INCLUDE "engine/name_compression.asm"
+
 ; Shared conventional item-list state helpers live in roomy bank $34.
 INCLUDE "engine/menu/item_list_state.asm"
 

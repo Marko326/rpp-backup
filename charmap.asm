@@ -267,3 +267,73 @@ charmap "6", $FC
 charmap "7", $FD
 charmap "8", $FE
 charmap "9", $FF
+
+; Shared packed-name charmap. Token bytes $01-$40 are private to the three
+; packed ROM name tables that explicitly SETCHARMAP packed_names. The normal main
+; charmap remains active everywhere else.
+NEWCHARMAP packed_names, main
+CHARMAP "er", $01
+CHARMAP "on", $02
+CHARMAP "in", $03
+CHARMAP "ar", $04
+CHARMAP "ck", $05
+CHARMAP "an", $06
+CHARMAP "le", $07
+CHARMAP "or", $08
+CHARMAP "ea", $09
+CHARMAP " B", $0a
+CHARMAP "ch", $0b
+CHARMAP "e ", $0c
+CHARMAP "la", $0d
+CHARMAP "ra", $0e
+CHARMAP "un", $0f
+CHARMAP "is", $10
+CHARMAP "ow", $11
+CHARMAP "ee", $12
+CHARMAP " S", $13
+CHARMAP "it", $14
+CHARMAP "ll", $15
+CHARMAP "at", $16
+CHARMAP "st", $17
+CHARMAP "ur", $18
+CHARMAP " P", $19
+CHARMAP "ic", $1a
+CHARMAP "Ma", $1b
+CHARMAP "et", $1c
+CHARMAP "ir", $1d
+CHARMAP "der", $1e
+CHARMAP "en", $1f
+CHARMAP "ol", $20
+CHARMAP "ing", $21
+CHARMAP "id", $22
+CHARMAP "Ro", $23
+CHARMAP "ick", $24
+CHARMAP "sh", $25
+CHARMAP "tt", $26
+CHARMAP "ge", $27
+CHARMAP "os", $28
+CHARMAP " A", $29
+CHARMAP "am", $2a
+CHARMAP "el", $2b
+CHARMAP "om", $2c
+CHARMAP "per", $2d
+CHARMAP "th", $2e
+CHARMAP "unch", $2f
+CHARMAP "Po", $30
+CHARMAP "St", $31
+CHARMAP "ig", $32
+CHARMAP " C", $33
+CHARMAP " K", $34
+CHARMAP " T", $35
+CHARMAP "Dra", $36
+CHARMAP "Lea", $37
+CHARMAP "ack", $38
+CHARMAP "al", $39
+CHARMAP "il", $3a
+CHARMAP "ub", $3b
+CHARMAP "ut", $3c
+CHARMAP "err", $3d
+CHARMAP "one", $3e
+CHARMAP " Berr", $3f
+CHARMAP " Berry", $40
+SETCHARMAP main
