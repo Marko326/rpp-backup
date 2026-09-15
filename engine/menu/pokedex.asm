@@ -56,7 +56,7 @@ ShowPokedexMenu:
 	call RunDefaultPaletteCommand
 	pop af
 	ld [wUpdateSpritesEnabled],a
-	jp ReloadMapData
+	jp Pokedex_ReloadAndRedrawOverworld
 .goToSideMenu
 	call HandlePokedexSideMenu
 	dec b

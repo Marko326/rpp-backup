@@ -82,6 +82,16 @@ EnableLCD::
 	ld [rLCDC], a
 	ret
 
+SECTION "Home Pokedex Overworld Restore", ROM0
+
+; Pokédex Info uses both VRAM BG maps for atomic, flicker-free page swaps.
+; vBGMap0 is scratch while the Pokédex is open, so rebuild the visible overworld
+; ring before control returns to any caller that expects overworld BG0 ownership.
+Pokedex_ReloadAndRedrawOverworld::
+	call ReloadMapData
+	callba RedrawMapView
+	ret
+
 SECTION "Home Clear Sprites", ROM0
 
 ClearSprites::
