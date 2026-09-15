@@ -120,6 +120,74 @@ PokedexData_ReadInternalInput:
 	ld e,a
 	ret
 
+; Run the complete internal Info page/navigation loop in roomy bank $34. The bank-$10
+; caller only needs to distinguish external state 0 from internal nonzero, so the
+; logical page state stays local here and consumes no WRAM. Returns only when B is
+; pressed. State 1/2 are description halves; state 3 is Base Stats.
+PokedexData_RunInternalInputLoop:
+	ld a,1
+	push af
+.loop
+	call PokedexData_ReadInternalInput
+	ld a,e
+	ld b,a
+	and B_BUTTON
+	jr nz,.exit
+
+	ld a,b
+	and A_BUTTON
+	jr nz,.advancePage
+
+	ld a,b
+	and D_UP | D_DOWN
+	jr z,.loop
+	ld e,a
+	call PokedexData_TryStepSeen
+	jr nc,.loop
+	; Description halves reset to Page 1 when the species changes. Base Stats is a
+	; logical page and stays selected across UP/DOWN. If the new target is Seen-only,
+	; RenderSwitchedEntry shows its limited page while state 3 remains remembered.
+	pop af
+	cp 3
+	jr z,.keepBrowsePage
+	ld a,1
+.keepBrowsePage
+	push af
+	ld e,a
+	call PokedexData_RenderSwitchedEntry
+	jr .loop
+
+.advancePage
+	; Detailed pages remain Owned-only. A Seen-only entry cannot enter description
+	; paging or Base Stats, but an already-selected state 3 may survive navigation.
+	call PokedexData_CurrentMonOwned
+	jr z,.loop
+	pop af
+	cp 1
+	jr z,.showDescription2
+	cp 2
+	jr z,.showBaseStats
+	; State 3 -> description Page 1.
+	ld a,1
+	push af
+	ld e,0
+	call PokedexData_DrawDescriptionPage
+	jr .loop
+.showDescription2
+	ld a,2
+	push af
+	ld e,1
+	call PokedexData_DrawDescriptionPage
+	jr .loop
+.showBaseStats
+	ld a,3
+	push af
+	call PokedexData_DrawBaseStatsPage
+	jr .loop
+.exit
+	pop af
+	ret
+
 PokedexData_TickDescriptionArrow:
 	; $FF8B/$FF8C are shared scratch HRAM. Rendering code must reset Active after its
 	; last scratch user, and only an Owned Page 1 may arm it before entering this loop.
@@ -146,8 +214,12 @@ PokedexData_ArmDescriptionArrow:
 ; made white so the frontpic alone disappears in one palette commit. The complete
 ; new text page is transferred to the hidden Window BG map and exposed with one
 ; LCDC map flip, then the final Pokémon palette reveals the complete new picture.
-; Input: wd11e = newly selected internal species.
+; Input: wd11e = newly selected internal species, E = desired internal page state
+; (1 = description page 1, 3 = Base Stats). Seen-only entries keep the state but
+; render the stock limited page because detailed data is Owned-only.
 PokedexData_RenderSwitchedEntry:
+	ld a,e
+	ld [wBuffer + 18],a ; preserve page state across the refresh helpers
 	; Stop the previous page's ▼ phase while a new entry is prepared. Owned Page 1
 	; will re-arm it after the coherent page has been committed; Seen-only stays off.
 	xor a
@@ -256,12 +328,19 @@ PokedexData_RenderSwitchedEntry:
 	ld [hld],a
 	ld [hl],"⠄"
 
+	ld a,[wBuffer + 18]
+	cp 3
+	jr z,.renderBaseStats
 	ld e,0
 	call PokedexData_DrawDescriptionPageNoWait
 	; SUMMARY26 does not show the page arrow until after the picture/cry path has
 	; completed. Keep the prepared Page 1 text, but expose the ▼ separately later.
 	coord hl,18,16
 	ld [hl]," "
+	jr .commitText
+
+.renderBaseStats
+	call PokedexData_DrawBaseStatsPageNoWait
 	jr .commitText
 
 .notOwned
@@ -302,8 +381,11 @@ PokedexData_RenderSwitchedEntry:
 	ld [hDownArrowBlinkActive],a
 
 	; The original SUMMARY26 path reaches Char49 only for an Owned description. Its
-	; ▼ is transferred by ProtectedDelay3 before the 42-frame timer is armed. A
-	; switched entry always returns to Page 1, so ownership is the only condition here.
+	; ▼ is transferred by ProtectedDelay3 before the 42-frame timer is armed. Base
+	; Stats has no description arrow, and Seen-only entries never expose Page 1 text.
+	ld a,[wBuffer + 18]
+	cp 1
+	ret nz
 	call PokedexData_CurrentMonOwned
 	ret z
 	ld a,"▼"
@@ -512,6 +594,135 @@ PokedexData_DrawDescriptionPageNoWait:
 	Coorda 18,16
 .finish
 	ret
+
+; Render the third visible Info screen. It deliberately reuses the same lower
+; 18x7 content area as the two description halves, so the existing hidden-BG
+; commit path keeps A-page changes flicker-free. This page is only reachable for
+; Owned Pokémon; callers keep Seen-only entries on the limited stock display.
+PokedexData_DrawBaseStatsPage:
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call PokedexData_DrawBaseStatsPageNoWait
+	call PokedexData_CommitPreparedInfoPage
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	ret
+
+PokedexData_DrawBaseStatsPageNoWait:
+	; Base Stats never owns the blinking description arrow.
+	xor a
+	ld [hDownArrowBlinkActive],a
+	coord hl,1,10
+	lb bc,7,18
+	call ClearScreenArea
+
+	; Refresh the current base-stat header explicitly so this renderer is independent
+	; of which picture/text helper happened to run immediately before it.
+	ld a,[wcf91]
+	ld [wd0b5],a
+	call GetMonHeader
+
+	; Keep PureRGB's compact layout: types on the left, five base stats plus total
+	; on the right. PrintMonType erases TYPE2/ itself for single-type Pokémon.
+	coord hl,1,11
+	ld de,PokedexBaseStatsType1Text
+	call PlaceString
+	coord hl,1,13
+	ld de,PokedexBaseStatsType2Text
+	call PlaceString
+	coord hl,2,12
+	predef PrintMonType
+
+	coord hl,9,10
+	ld de,PokedexBaseStatsTitle
+	call PlaceString
+	coord hl,12,11
+	ld de,PokedexBaseStatsHPText
+	call PlaceString
+	ld de,wMonHBaseHP
+	coord hl,15,11
+	lb bc,1,3
+	call PrintNumber
+	coord hl,11,12
+	ld de,PokedexBaseStatsATKText
+	call PlaceString
+	ld de,wMonHBaseAttack
+	coord hl,15,12
+	lb bc,1,3
+	call PrintNumber
+	coord hl,11,13
+	ld de,PokedexBaseStatsDEFText
+	call PlaceString
+	ld de,wMonHBaseDefense
+	coord hl,15,13
+	lb bc,1,3
+	call PrintNumber
+	coord hl,11,14
+	ld de,PokedexBaseStatsSPDText
+	call PlaceString
+	ld de,wMonHBaseSpeed
+	coord hl,15,14
+	lb bc,1,3
+	call PrintNumber
+	coord hl,11,15
+	ld de,PokedexBaseStatsSPCText
+	call PlaceString
+	ld de,wMonHBaseSpecial
+	coord hl,15,15
+	lb bc,1,3
+	call PrintNumber
+
+	; The five one-byte stats can total more than 255, so accumulate in HL and feed
+	; PrintNumber a temporary big-endian two-byte value. wBuffer+12/+13 are free once
+	; the height/weight refresh has completed and do not overlap the saved page state.
+	ld b,0
+	ld hl,0
+	ld a,[wMonHBaseHP]
+	ld c,a
+	add hl,bc
+	ld a,[wMonHBaseAttack]
+	ld c,a
+	add hl,bc
+	ld a,[wMonHBaseDefense]
+	ld c,a
+	add hl,bc
+	ld a,[wMonHBaseSpeed]
+	ld c,a
+	add hl,bc
+	ld a,[wMonHBaseSpecial]
+	ld c,a
+	add hl,bc
+	ld a,h
+	ld [wBuffer + 12],a
+	ld a,l
+	ld [wBuffer + 13],a
+	coord hl,9,16
+	ld de,PokedexBaseStatsTotalText
+	call PlaceString
+	ld de,wBuffer + 12
+	coord hl,15,16
+	lb bc,2,3
+	call PrintNumber
+	ret
+
+PokedexBaseStatsTitle:
+	db "BASE STATS@"
+PokedexBaseStatsType1Text:
+	db "TYPE1/@"
+PokedexBaseStatsType2Text:
+	db "TYPE2/@"
+PokedexBaseStatsHPText:
+	db "HP@"
+PokedexBaseStatsATKText:
+	db "ATK@"
+PokedexBaseStatsDEFText:
+	db "DEF@"
+PokedexBaseStatsSPDText:
+	db "SPD@"
+PokedexBaseStatsSPCText:
+	db "SPE@"
+PokedexBaseStatsTotalText:
+	db "TOTAL@"
 
 ; Resolve the current internal species (wcf91) to the bank-$10 entry pointer.
 ; Output: HL = entry start.

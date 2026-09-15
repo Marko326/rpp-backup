@@ -583,8 +583,8 @@ ShowPokedexDataCommon:
 	; audio engine's master-volume state instead; the roomy helper bank owns it.
 	callba PokedexData_BeginSessionVolume
 .renderEntry
-	; External callers use state 0. Internal Info browsing uses 1/2 for the two
-	; description halves; every Pokémon change always returns to description 1.
+	; External callers keep state 0; internal callers normalize to 1 as the session
+	; mode marker. The bank-$34 input loop owns its local 1/2/3 page state.
 	pop af
 	and a
 	jr z,.storeDescriptionState
@@ -791,55 +791,9 @@ ShowPokedexDataCommon:
 	jr .exitData
 
 .waitForInternalInput
-.internalInputLoop
-	; The roomy helper owns release gating plus the stock blinking ▼ animation and
-	; returns the already-polled fresh button state in E. This also shrinks bank $10.
-	callba PokedexData_ReadInternalInput
-	ld a,e
-	ld b,a
-	and B_BUTTON
-	jr nz,.exitData
-
-	ld a,b
-	and A_BUTTON
-	jr nz,.toggleDescription
-
-	ld a,b
-	and D_UP | D_DOWN
-	jr z,.internalInputLoop
-
-	; The bank $34 selector restores wd11e from wcf91 before searching, because
-	; PlayCry uses wd11e as scratch. E survives Bankswitch and carries direction.
-	ld e,a
-	callba PokedexData_TryStepSeen
-	jr nc,.internalInputLoop
-	; A Pokémon change always returns to description page 1. Keep the session
-	; stack state synchronized with the locally refreshed page.
-	pop af
-	ld a,1
-	push af
-	callba PokedexData_RenderSwitchedEntry
-	jr .waitForButtonPress
-
-.toggleDescription
-	; Seen-but-not-Owned entries intentionally keep the original limited display,
-	; so A has no description page to toggle for them.
-	callba PokedexData_CurrentMonOwned
-	jr z,.internalInputLoop
-	pop af
-	cp 1
-	jr z,.showSecondDescription
-	ld a,1
-	push af
-	ld e,0
-	callba PokedexData_DrawDescriptionPage
-	jr .internalInputLoop
-.showSecondDescription
-	ld a,2
-	push af
-	ld e,1
-	callba PokedexData_DrawDescriptionPage
-	jr .internalInputLoop
+	; The roomy helper owns the whole internal A/B/UP/DOWN page loop. Keeping the
+	; three-state page machine in bank $34 avoids growing capacity-constrained bank $10.
+	callba PokedexData_RunInternalInputLoop
 
 .exitData
 	pop af
