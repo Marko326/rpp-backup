@@ -7,6 +7,7 @@ MainMenu:
 	xor a
 	ld [wStartMenuSavedMenuItem], a
 	ld [wPokedexSavedSelection], a
+	ld [wMoveDexSavedSelection], a
 	ld [wRepeatFishingRod], a
 ; Check save file
 	call InitOptions

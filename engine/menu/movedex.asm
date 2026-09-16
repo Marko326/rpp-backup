@@ -12,7 +12,38 @@ ShowMoveDexMenu:
 	call MoveDexFindMaxSeenMove
 	ld a,[wListScrollOffset]
 	push af
-	; 默认打开时直接定位到最低编号的 Seen 技能，并把它放在列表第一行。
+	; 与 Pokédex 一样，优先恢复本次游戏会话中最后停留的技能。这里只
+	; 记绝对 move ID，不写存档；超过第一页的条目放在可见列表最底行。
+	; 如果记录因状态重置而已经超过当前最高 Seen，则退回原来的默认逻辑。
+	ld a,[wMoveDexSavedSelection]
+	and a
+	jr z,.openAtLowestSeenMove
+	ld b,a
+	ld a,[wMoveDexMaxSeenMove]
+	cp b
+	jr c,.openAtLowestSeenMove
+	ld a,b
+	ld [wd11e],a
+	dec a ; zero-based absolute move index
+	cp 7
+	jr c,.savedMoveOnFirstPage
+	sub 6
+	ld [wListScrollOffset],a
+	ld a,6
+	jr .storeSavedMoveRow
+.savedMoveOnFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wd11e]
+	dec a
+.storeSavedMoveRow
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	ld a,1
+	ld [hJoy7],a
+	jp .setUpGraphics ; Info 返回后重新加载列表图块与静态界面
+.openAtLowestSeenMove
+	; 首次打开仍直接定位到最低编号的 Seen 技能，并把它放在列表第一行。
 	; 如果一个技能都没见过，则继续保留原来的 #001 虚线占位。
 	call MoveDexFindMinSeenMove
 	and a
@@ -52,6 +83,10 @@ ShowMoveDexMenu:
 	jr c,.goToSideMenu
 
 .exitMovedex
+	; 只在运行时 WRAM 记住最后选中的技能。MainMenu 会在回到标题/主菜单
+	; 的会话边界清零，因此重启后恢复首次打开逻辑，也不会增加 .sav 数据。
+	call MoveDexGetSelectedMove
+	ld [wMoveDexSavedSelection],a
 	xor a
 	ld [wMenuWatchMovingOutOfBounds],a
 	ld [wCurrentMenuItem],a

@@ -485,8 +485,13 @@ wSerialExchangeNybbleReceiveData:: ; cc3e
 ; the final received nybble is stored here by Serial_ExchangeNybble
 	ds 1
 
-; unused?
-	ds 3
+; cc3f-cc40 are touched by TradeCenter_SelectMon's four-byte serial scratch clear.
+	ds 2
+
+wMoveDexSavedSelection:: ; cc41
+; Session-only MoveDex selection as a 1-based move ID. 0 means no saved
+; selection yet. It is outside wMainData, so it never enters .sav.
+	ds 1
 
 wSerialExchangeNybbleSendData:: ; cc42
 ; this nybble is sent when using Serial_SyncAndExchangeNybble or Serial_ExchangeNybble
