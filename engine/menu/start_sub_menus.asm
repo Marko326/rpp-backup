@@ -10,6 +10,19 @@ StartMenu_Pokemon:
 	ld a,[wPartyCount]
 	and a
 	jp z,RedisplayStartMenu
+	; Battles and Bill's PC share/clear the generic party cursor. Restore START's
+	; session-only cursor before opening the party so battles cannot reset it.
+	; Fall back to the first Pokémon if the saved slot no longer exists.
+	ld a,[wPartyCount]
+	dec a
+	ld b,a
+	ld a,[wStartPartySavedMenuItem]
+	cp b
+	jr c,.restoreSavedCursor
+	jr z,.restoreSavedCursor
+	xor a
+.restoreSavedCursor
+	ld [wPartyAndBillsPCSavedMenuItem],a
 	xor a
 	ld [wMenuItemToSwap],a
 	ld [wPartyMenuTypeOrMessageID],a
@@ -22,6 +35,10 @@ StartMenu_Pokemon:
 	ld [wPartyMenuTypeOrMessageID],a
 	call GoBackToPartyMenu
 .checkIfPokemonChosen
+	; HandlePartyMenuInput has just updated the generic cursor. Mirror it now so
+	; every START Party exit path retains the latest selected Pokémon.
+	ld a,[wPartyAndBillsPCSavedMenuItem]
+	ld [wStartPartySavedMenuItem],a
 	jr nc,.chosePokemon
 .exitMenu
 	; The cached BG0 restore still makes ReloadMapData unnecessary.

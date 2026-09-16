@@ -538,6 +538,10 @@ wCheckFor180DegreeTurn:: ; cc4b
 ; whether to check for 180-degree turn (0 = don't, 1 = do)
 	ds 1
 
+wStartPartySavedMenuItem:: ; cc4c
+; Session-only START -> POKEMON cursor. The generic party-menu cursor at cc2b is
+; cleared/repurposed by battles and Bill's PC, so START keeps its own copy here.
+; This byte is outside wMainData and therefore never enters .sav.
 	ds 1
 
 wMissableObjectIndex:: ; cc4d

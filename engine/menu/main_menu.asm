@@ -8,6 +8,7 @@ MainMenu:
 	ld [wStartMenuSavedMenuItem], a
 	ld [wPokedexSavedSelection], a
 	ld [wMoveDexSavedSelection], a
+	ld [wStartPartySavedMenuItem], a
 	ld [wRepeatFishingRod], a
 ; Check save file
 	call InitOptions
