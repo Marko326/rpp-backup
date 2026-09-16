@@ -1691,8 +1691,11 @@ checkOtherKeys: ; check B, SELECT, directions
 .downPressed
 ; A held Down stops on Cancel. A fresh Down press on Cancel wraps once.
 	ld a,[wListMenuID]
+	and a ; PC Pokémon lists use the same first <-> Cancel boundary wrap as item lists
+	jr z,.checkDownBoundaryWrap
 	cp ITEMLISTMENU
 	jr nz,.tryScrollingDown
+.checkDownBoundaryWrap
 	ld a,[wCurrentMenuItem]
 	ld c,a
 	ld a,[hl]
@@ -1721,8 +1724,11 @@ checkOtherKeys: ; check B, SELECT, directions
 	jr nz,.scrollUp
 ; A held Up stops on the first item. A fresh Up press wraps once.
 	ld a,[wListMenuID]
+	and a ; PC Pokémon lists wrap from the first entry to Cancel too
+	jr z,.checkUpBoundaryWrap
 	cp ITEMLISTMENU
 	jr nz,.waitForDPadReleaseAndInput
+.checkUpBoundaryWrap
 	ld a,[hJoyPressed]
 	and D_UP
 	jr z,.waitForDPadReleaseAndInput
