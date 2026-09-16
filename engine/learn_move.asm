@@ -162,23 +162,13 @@ TryingToLearn:
 	ld c, a
 	ld b, 0
 	add hl, bc
+	; HM-5.19.0: HM moves are no longer protected from replacement. Treat an
+	; HM move exactly like any other move selected from the forget-move list.
 	ld a, [hl]
-	push af
-	push bc
-	call IsMoveHM
-	pop bc
-	pop de
-	ld a, d
-	jr c, .hm
 	pop hl
 	add hl, bc
 	and a
 	ret
-.hm
-	ld hl, HMCantDeleteText
-	call PrintText
-	pop hl
-	jr .loop
 .cancel
 	scf
 	ret
@@ -221,6 +211,8 @@ ForgotAndText:
 	TX_FAR _ForgotAndText
 	db "@"
 
-HMCantDeleteText:
-	TX_FAR _HMCantDeleteText
-	db "@"
+; HM-5.19.0: legacy local wrapper for the old HM replacement restriction.
+; Kept as comments together with _HMCantDeleteText for source-history lookup.
+; HMCantDeleteText:
+; 	TX_FAR _HMCantDeleteText
+; 	db "@"

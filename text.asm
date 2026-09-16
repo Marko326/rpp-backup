@@ -2482,10 +2482,13 @@ _ForgotAndText::
 	para "And..."
 	prompt
 
-_HMCantDeleteText::
-	text "HM techniques"
-	line "can't be deleted!"
-	prompt
+; [HM-5.19.0] Legacy text for the old HM-forget restriction.
+; The learn-move path no longer references this text because HM moves are now
+; replaceable. Keep it commented for future source lookup without emitting ROM data.
+; _HMCantDeleteText::
+; 	text "HM techniques"
+; 	line "can't be deleted!"
+; 	prompt
 
 _PokemonCenterWelcomeText::
 	text "Welcome to our"

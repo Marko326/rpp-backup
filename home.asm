@@ -1936,16 +1936,21 @@ IsItemHM::
 	and a
 	ret
 
-; sets carry if move is an HM, clears carry if move is not an HM
-; Input: a = move ID
-IsMoveHM::
-	ld hl,HMMoves
-	ld de,1
-	jp IsInArray
-
-HMMoves::
-	db CUT,FLY,SURF,STRENGTH,DIVE
-	db $ff ; terminator
+; [HM-5.19.0] Legacy HM-move deletion guard, intentionally disabled.
+; Normal move learning can now replace an HM move, so IsMoveHM and HMMoves no
+; longer have live callers. Keep the old implementation commented here for code
+; archaeology; re-enable it only if the HM-forget restriction is restored.
+;
+; ; sets carry if move is an HM, clears carry if move is not an HM
+; ; Input: a = move ID
+; IsMoveHM::
+; 	ld hl,HMMoves
+; 	ld de,1
+; 	jp IsInArray
+;
+; HMMoves::
+; 	db CUT,FLY,SURF,STRENGTH,DIVE
+; 	db $ff ; terminator
 
 GetMoveName::
 	push hl
