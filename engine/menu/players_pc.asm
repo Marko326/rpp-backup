@@ -112,6 +112,17 @@ PlayerPCDeposit:
 	ld [wListMenuID], a
 	call DisplayListMenuID
 	jp c, PlayerPCMenu
+	; HMs are progression-critical reusable machines. Keep them in the Bag so the
+	; player cannot strand a required field move by leaving its machine in the PC.
+	ld a, [wcf91]
+	call IsItemHM
+	jr nc, .notHM
+	ld a, SFX_DENIED
+	call PlaySoundWaitForCurrent
+	ld hl, HMItemCantBeStoredText
+	call PrintText
+	jp .loop
+.notHM
 	call IsKeyItem
 	ld a, 1
 	ld [wItemQuantity], a
@@ -261,6 +272,11 @@ WhatDoYouWantText:
 WhatToDepositText:
 	TX_FAR _WhatToDepositText
 	db "@"
+
+HMItemCantBeStoredText:
+	text "HMs can't be"
+	line "stored via PC."
+	prompt
 
 DepositHowManyText:
 	TX_FAR _DepositHowManyText
