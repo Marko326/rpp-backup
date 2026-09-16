@@ -1465,10 +1465,29 @@ DisplayListMenuID::
 	xor a ; empty Pocket has only Cancel at menu position 0
 	jr .setMenuVariables
 .nonemptyList
+	; PC Pokémon lists can temporarily keep an older scroll offset after removing
+	; entries from the end. Limit the selectable rows to what is actually visible
+	; so Cancel remains the final selectable row without rewriting the saved cursor.
+	ld b,a
+	ld a,[wListMenuID]
+	and a ; is it a PC Pokémon list?
+	ld a,b
+	jr nz,.setMenuLimitFromCount
+	ld b,a
+	ld a,[wListScrollOffset]
+	cp b
+	jr nc,.pcCancelOnly
+	ld c,a
+	ld a,b
+	sub c ; remaining Pokémon entries from the current scroll offset
+.setMenuLimitFromCount
 	cp 2
 	ld a,1
 	jr c,.setMenuVariables
 	inc a
+	jr .setMenuVariables
+.pcCancelOnly
+	xor a
 .setMenuVariables
 	ld [wMaxMenuItem],a
 	ld a,[wBagPocketActive]
