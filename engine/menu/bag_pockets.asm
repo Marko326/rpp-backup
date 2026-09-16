@@ -183,6 +183,7 @@ SwitchBagPocket::
 	cp d
 	ret z ; only the current Pocket was non-empty: true no-op
 	ld [wBagPocketCurrent], a
+	call UpdateBagPocketStartShortcutWatchedKey
 	call LoadBagPocketTitleTiles
 	call LoadCurrentBagPocketCursor
 	call UpdateCurrentBagPocketMenuLimits
@@ -540,6 +541,56 @@ LoadCurrentBagPocketCursor:
 	add hl, de
 	ld a, b
 	jp LoadBagPocketCursorFromSavedPosition
+
+UpdateBagPocketStartShortcutWatchedKey::
+	; START is watched only while the categorized START Bag is on the TM/HM Pocket.
+	; Other Pockets keep START completely ignored, matching their previous behavior.
+	ld hl, wMenuWatchedKeys
+	res BIT_START, [hl]
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	ret nz
+	ld a, [wBagPocketCurrent]
+	cp BAG_POCKET_TM_HM
+	ret nz
+	set BIT_START, [hl]
+	ret
+
+JumpBagPocketToHM01::
+	; START is a direct shortcut only inside the START Bag's TM/HM Pocket. Check
+	; the active mode defensively before touching its transient Slot Map, then scan
+	; actual owned entries so the shortcut is a no-op until HM01 really exists.
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	ret nz
+	ld a, [wBagPocketCurrent]
+	cp BAG_POCKET_TM_HM
+	ret nz
+	call GetCurrentBagPocketCount
+	ld b, a
+	call GetCurrentBagPocketStart
+	ld c, a
+	xor a ; Pocket-local absolute index
+.scan
+	cp b
+	ret nc ; HM01 is not owned
+	push af
+	add c
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [hl]
+	call GetBagItemAtRealSlot
+	cp HM_01
+	jr z, .found
+	pop af
+	inc a
+	jr .scan
+.found
+	pop af
+	call StoreCurrentBagPocketSavedPosition
+	jp LoadCurrentBagPocketCursor
 
 FinalizeBagPocketMenuResult::
 	; A-button handling already resolves the Pocket entry to a physical Bag slot.

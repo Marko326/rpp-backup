@@ -1513,6 +1513,11 @@ DisplayListMenuID::
 	or D_LEFT | D_RIGHT
 .storeWatchedKeys
 	ld [wMenuWatchedKeys],a
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	jr nz,.watchedKeysReady
+	callba UpdateBagPocketStartShortcutWatchedKey
+.watchedKeysReady
 	ld c,10
 	call DelayFrames
 
@@ -1666,9 +1671,20 @@ skipStoringItemName:
 	ld hl,wd730
 	res 6,[hl] ; turn on letter printing delay
 	jp BankswitchBack
-checkOtherKeys: ; check B, SELECT, directions
+checkOtherKeys: ; check B, START, SELECT, directions
 	bit 1,a ; was the B button pressed?
 	jp nz,ExitListMenu ; if so, exit the menu
+	bit 3,a ; was START newly pressed? held/repeated START was filtered above
+	jr z,.notStart
+	; HandleMenuInput returns the complete hJoy5 state once any watched key fires.
+	; Only consume START when this menu explicitly watches it; otherwise combos such
+	; as START+RIGHT must continue through the normal direction/SELECT handling.
+	ld hl,wMenuWatchedKeys
+	bit BIT_START,[hl]
+	jr z,.notStart
+	callba JumpBagPocketToHM01
+	jp DisplayListMenuIDLoop
+.notStart
 	bit 2,a ; was the select button pressed?
 	jr z,.notSelect
 	ld b,a
@@ -3743,6 +3759,18 @@ HandleMenuInput_::
 .getJoypadState
 	pop hl
 	call JoypadLowSensitivity
+	; START -> Bag keeps low-sensitivity repeat for normal menu controls, but the
+	; HM01 shortcut itself is edge-triggered. Strip held/repeated START after its
+	; initial press so holding START never retriggers or blocks direction input.
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	jr nz,.bagStartInputReady
+	ld a,[hJoyPressed]
+	bit BIT_START,a
+	jr nz,.bagStartInputReady
+	ld hl,hJoy5
+	res BIT_START,[hl]
+.bagStartInputReady
 	ld a,[hJoy5]
 	and a ; was a key pressed?
 	jr nz,.keyPressed
