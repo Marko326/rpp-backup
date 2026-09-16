@@ -792,7 +792,7 @@ ShowPokedexDataCommon:
 
 .waitForInternalInput
 	; The roomy helper owns the whole internal A/B/D-pad category/subpage loop. Keeping
-	; its three-state machine in bank $34 avoids growing capacity-constrained bank $10.
+	; its four-state machine in bank $34 avoids growing capacity-constrained bank $10.
 	callba PokedexData_RunInternalInputLoop
 
 .exitData

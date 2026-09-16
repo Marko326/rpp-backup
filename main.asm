@@ -2468,8 +2468,10 @@ INCLUDE "engine/menu/item_list_state.asm"
 ; path out of capacity-constrained bank $04.
 INCLUDE "engine/menu/summary_return_helpers.asm"
 
-; Pokédex Info browsing helpers live outside capacity-constrained bank $10.
+; Pokédex Info browsing helpers and their direct-pre-evolution reverse index live
+; outside capacity-constrained bank $10 / evolution-data bank $0E.
 INCLUDE "engine/menu/pokedex_info.asm"
+INCLUDE "data/pokedex_pre_evos.asm"
 
 ; Elevator floor-menu positioning is kept in the roomy expansion bank.
 INCLUDE "engine/overworld/elevator_cursor.asm"

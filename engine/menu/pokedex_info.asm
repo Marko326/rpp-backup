@@ -122,9 +122,9 @@ PokedexData_ReadInternalInput:
 
 ; Run the complete internal Info category/subpage loop in roomy bank $34. The
 ; bank-$10 caller only distinguishes external state 0 from internal nonzero, so
-; the local state consumes no WRAM. State 1/2 are Details subpages; state 3 is
-; the Base Stats category home. B exits, A stays inside the current category,
-; LEFT/RIGHT switches category, and UP/DOWN changes species.
+; the local state consumes no WRAM. State 1/2 are Details subpages; states 3/4
+; are Base Stats / evolution-change subpages. B exits, A stays inside the current
+; category, LEFT/RIGHT switches category, and UP/DOWN changes species.
 PokedexData_RunInternalInputLoop:
 	ld a,1
 	push af
@@ -135,7 +135,7 @@ PokedexData_RunInternalInputLoop:
 	ld a,e
 	ld b,a
 	and B_BUTTON
-	jr nz,.exit
+	jp nz,.exit
 
 	ld a,b
 	and A_BUTTON
@@ -152,11 +152,14 @@ PokedexData_RunInternalInputLoop:
 	call PokedexData_TryStepSeen
 	jr nc,.loop
 	; Species changes preserve the category but return to that category's home.
-	; Details 1/2 therefore normalize to state 1; Base Stats remains state 3.
-	; Seen-only targets keep state 3 remembered while rendering the limited page.
+	; Details 1/2 normalize to state 1; Base Stats 3/4 normalize to state 3.
+	; Seen-only targets keep the category remembered while rendering the limited page.
 	pop af
 	cp 3
-	jr z,.keepBrowseCategory
+	jr c,.browseDetails
+	ld a,3
+	jr .keepBrowseCategory
+.browseDetails
 	ld a,1
 .keepBrowseCategory
 	push af
@@ -165,13 +168,15 @@ PokedexData_RunInternalInputLoop:
 	jr .loop
 
 .advanceSubpage
-	; A only moves inside the current category. Details toggles 1 <-> 2; Base
-	; Stats currently has one subpage, so A deliberately does nothing there.
+	; A only moves inside the current category. Details toggles 1 <-> 2. Base Stats
+	; toggles 3 <-> 4, but a basic-stage Pokémon has no evolution delta to display.
 	call PokedexData_CurrentMonOwned
 	jr z,.loop
 	pop af
 	cp 3
-	jr z,.keepBaseStats
+	jr z,.showBaseStatsDelta
+	cp 4
+	jr z,.showBaseStatsHome
 	cp 1
 	jr z,.showDescription2
 	; State 2 -> Details home (description Page 1).
@@ -180,9 +185,22 @@ PokedexData_RunInternalInputLoop:
 	ld e,0
 	call PokedexData_DrawDescriptionPage
 	jr .loop
+.showBaseStatsDelta
+	call PokedexData_GetPreEvolution
+	and a
+	jr z,.keepBaseStats
+	ld a,4
+	push af
+	call PokedexData_DrawBaseStatsDeltaPage
+	jr .loop
 .keepBaseStats
 	ld a,3
 	push af
+	jr .loop
+.showBaseStatsHome
+	ld a,3
+	push af
+	call PokedexData_DrawBaseStatsPage
 	jr .loop
 .showDescription2
 	ld a,2
@@ -198,17 +216,17 @@ PokedexData_RunInternalInputLoop:
 	jr z,.loop
 	pop af
 	cp 3
-	jr z,.showDescription1
+	jr nc,.showDescription1
 	ld a,3
 	push af
 	call PokedexData_DrawBaseStatsPage
-	jr .loop
+	jp .loop
 .showDescription1
 	ld a,1
 	push af
 	ld e,0
 	call PokedexData_DrawDescriptionPage
-	jr .loop
+	jp .loop
 
 .exit
 	pop af
@@ -241,8 +259,8 @@ PokedexData_ArmDescriptionArrow:
 ; new text page is transferred to the hidden Window BG map and exposed with one
 ; LCDC map flip, then the final Pokémon palette reveals the complete new picture.
 ; Input: wd11e = newly selected internal species, E = desired internal page state
-; (1 = description page 1, 3 = Base Stats). Seen-only entries keep the state but
-; render the stock limited page because detailed data is Owned-only.
+; (1 = description page 1, 3 = Base Stats home). Seen-only entries keep the category
+; but render the stock limited page because detailed data is Owned-only.
 PokedexData_RenderSwitchedEntry:
 	ld a,e
 	ld [wBuffer + 18],a ; preserve page state across the refresh helpers
@@ -356,7 +374,7 @@ PokedexData_RenderSwitchedEntry:
 
 	ld a,[wBuffer + 18]
 	cp 3
-	jr z,.renderBaseStats
+	jr nc,.renderBaseStats
 	ld e,0
 	call PokedexData_DrawDescriptionPageNoWait
 	; SUMMARY26 does not show the page arrow until after the picture/cry path has
@@ -621,10 +639,10 @@ PokedexData_DrawDescriptionPageNoWait:
 .finish
 	ret
 
-; Render the third visible Info screen. It deliberately reuses the same lower
-; 18x7 content area as the two description halves, so the existing hidden-BG
-; commit path keeps A-page changes flicker-free. This page is only reachable for
-; Owned Pokémon; callers keep Seen-only entries on the limited stock display.
+; Render the Base Stats category home. It deliberately reuses the same lower 18x7
+; content area as the two description halves, so the existing hidden-BG commit path
+; keeps A-page changes flicker-free. This page is only reachable for Owned Pokémon;
+; callers keep Seen-only entries on the limited stock display.
 PokedexData_DrawBaseStatsPage:
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
@@ -649,7 +667,7 @@ PokedexData_DrawBaseStatsPageNoWait:
 	call GetMonHeader
 
 	; Keep PureRGB's compact layout: types on the left, five base stats plus total
-	; on the right. PrintMonType erases TYPE2/ itself for single-type Pokémon.
+	; on the right. PrintMonType erases TYPE2 itself for single-type Pokémon.
 	coord hl,1,11
 	ld de,PokedexBaseStatsType1Text
 	call PlaceString
@@ -731,12 +749,222 @@ PokedexData_DrawBaseStatsPageNoWait:
 	call PrintNumber
 	ret
 
+; Render the second Base Stats subpage. The five values show the signed change from
+; the current Pokémon's direct pre-evolution. The predecessor relation is a compact
+; bank-$34 reverse index generated from data/evos_moves.asm; no runtime scan or bank
+; $0E parser is needed. Basic-stage Pokémon never enter this page.
+PokedexData_DrawBaseStatsDeltaPage:
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call PokedexData_DrawBaseStatsDeltaPageNoWait
+	call PokedexData_CommitPreparedInfoPage
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	ret
+
+PokedexData_DrawBaseStatsDeltaPageNoWait:
+	; Base Stats subpages never own the blinking description arrow.
+	xor a
+	ld [hDownArrowBlinkActive],a
+	coord hl,1,10
+	lb bc,7,18
+	call ClearScreenArea
+
+	; Load the direct predecessor first and retain only its five one-byte base stats.
+	; If this routine is ever called for a basic-stage Pokémon, fall back to the home
+	; page rather than exposing an empty comparison screen.
+	call PokedexData_GetPreEvolution
+	and a
+	jp z,PokedexData_DrawBaseStatsPageNoWait
+	ld [wd0b5],a
+	call GetMonHeader
+	ld hl,wMonHBaseStats
+	ld de,wBuffer + 12
+	ld bc,5
+	call CopyData
+
+	; Preserve the predecessor total before GetMonHeader replaces wMonHeader with the
+	; current Pokémon. Store it big-endian for the signed TOTAL subtraction below.
+	ld hl,wMonHBaseStats
+	call PokedexData_SumFiveBaseStats
+	ld a,d
+	ld [wBuffer + 17],a
+	ld a,e
+	ld [wBuffer + 18],a
+
+	; Finish with the current header resident in wMonHeader so type printing and any
+	; later caller observe the same species as on the normal Base Stats page.
+	ld a,[wcf91]
+	ld [wd0b5],a
+	call GetMonHeader
+
+	coord hl,1,11
+	ld de,PokedexBaseStatsType1Text
+	call PlaceString
+	coord hl,1,13
+	ld de,PokedexBaseStatsType2Text
+	call PlaceString
+	coord hl,2,12
+	predef PrintMonType
+
+	coord hl,9,10
+	ld de,PokedexBaseStatsTitle
+	call PlaceString
+	coord hl,12,11
+	ld de,PokedexBaseStatsHPText
+	call PlaceString
+	ld a,[wBuffer + 12]
+	ld b,a
+	ld a,[wMonHBaseHP]
+	coord hl,15,11
+	call PokedexData_PrintBaseStatDelta
+
+	coord hl,11,12
+	ld de,PokedexBaseStatsATKText
+	call PlaceString
+	ld a,[wBuffer + 13]
+	ld b,a
+	ld a,[wMonHBaseAttack]
+	coord hl,15,12
+	call PokedexData_PrintBaseStatDelta
+
+	coord hl,11,13
+	ld de,PokedexBaseStatsDEFText
+	call PlaceString
+	ld a,[wBuffer + 14]
+	ld b,a
+	ld a,[wMonHBaseDefense]
+	coord hl,15,13
+	call PokedexData_PrintBaseStatDelta
+
+	coord hl,11,14
+	ld de,PokedexBaseStatsSPDText
+	call PlaceString
+	ld a,[wBuffer + 15]
+	ld b,a
+	ld a,[wMonHBaseSpeed]
+	coord hl,15,14
+	call PokedexData_PrintBaseStatDelta
+
+	coord hl,11,15
+	ld de,PokedexBaseStatsSPCText
+	call PlaceString
+	ld a,[wBuffer + 16]
+	ld b,a
+	ld a,[wMonHBaseSpecial]
+	coord hl,15,15
+	call PokedexData_PrintBaseStatDelta
+
+	; TOTAL uses a signed 16-bit difference. Individual stats are one byte, but the
+	; sum can exceed 255. Current project data fits the same three displayed digits.
+	coord hl,9,16
+	ld de,PokedexBaseStatsTotalText
+	call PlaceString
+	ld hl,wMonHBaseStats
+	call PokedexData_SumFiveBaseStats ; DE = current total
+	ld a,[wBuffer + 18]
+	ld c,a
+	ld a,e
+	sub c
+	ld e,a
+	ld a,[wBuffer + 17]
+	ld c,a
+	ld a,d
+	sbc c
+	ld d,a
+	coord hl,15,16
+	jp PokedexData_PrintBaseStatTotalDelta
+
+; Input: A = current one-byte stat, B = predecessor stat, HL = first digit tile.
+; Output is one fixed sign column plus a right-aligned three-digit magnitude.
+PokedexData_PrintBaseStatDelta:
+	sub b
+	jr nc,.nonnegative
+	cpl
+	inc a
+	ld b,a
+	ld a,"-"
+	jr .placeSign
+.nonnegative
+	ld b,a
+	and a
+	ld a,"+"
+	jr nz,.placeSign
+	ld a," "
+.placeSign
+	dec hl
+	ld [hli],a
+	ld a,b
+	ld [wBuffer + 28],a
+	ld de,wBuffer + 28
+	lb bc,1,3
+	jp PrintNumber
+
+; Input: HL = five consecutive one-byte base stats. Output: DE = 16-bit sum.
+PokedexData_SumFiveBaseStats:
+	ld de,0
+	ld b,5
+.loop
+	ld a,[hli]
+	add e
+	ld e,a
+	jr nc,.noCarry
+	inc d
+.noCarry
+	dec b
+	jr nz,.loop
+	ret
+
+; Input: DE = signed 16-bit total delta, HL = first digit tile.
+PokedexData_PrintBaseStatTotalDelta:
+	bit 7,d
+	jr z,.nonnegative
+	ld a,e
+	cpl
+	ld e,a
+	ld a,d
+	cpl
+	ld d,a
+	inc de
+	ld a,"-"
+	jr .placeSign
+.nonnegative
+	ld a,d
+	or e
+	ld a,"+"
+	jr nz,.placeSign
+	ld a," "
+.placeSign
+	dec hl
+	ld [hli],a
+	ld a,d
+	ld [wBuffer + 26],a
+	ld a,e
+	ld [wBuffer + 27],a
+	ld de,wBuffer + 26
+	lb bc,2,3
+	jp PrintNumber
+
+; Return the current Pokémon's direct predecessor as an internal species ID.
+; Zero means there is no predecessor and therefore no Base Stats delta subpage.
+PokedexData_GetPreEvolution:
+	ld a,[wcf91]
+	and a
+	ret z
+	dec a
+	ld e,a
+	ld d,0
+	ld hl,PokedexPreEvolutionTable
+	add hl,de
+	ld a,[hl]
+	ret
+
 PokedexBaseStatsTitle:
 	db "BASE STATS@"
 PokedexBaseStatsType1Text:
-	db "TYPE1/@"
+	db "TYPE1@"
 PokedexBaseStatsType2Text:
-	db "TYPE2/@"
+	db "TYPE2@"
 PokedexBaseStatsHPText:
 	db "HP@"
 PokedexBaseStatsATKText:
