@@ -791,8 +791,8 @@ ShowPokedexDataCommon:
 	jr .exitData
 
 .waitForInternalInput
-	; The roomy helper owns the whole internal A/B/UP/DOWN page loop. Keeping the
-	; three-state page machine in bank $34 avoids growing capacity-constrained bank $10.
+	; The roomy helper owns the whole internal A/B/D-pad category/subpage loop. Keeping
+	; its three-state machine in bank $34 avoids growing capacity-constrained bank $10.
 	callba PokedexData_RunInternalInputLoop
 
 .exitData

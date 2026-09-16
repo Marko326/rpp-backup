@@ -120,14 +120,17 @@ PokedexData_ReadInternalInput:
 	ld e,a
 	ret
 
-; Run the complete internal Info page/navigation loop in roomy bank $34. The bank-$10
-; caller only needs to distinguish external state 0 from internal nonzero, so the
-; logical page state stays local here and consumes no WRAM. Returns only when B is
-; pressed. State 1/2 are description halves; state 3 is Base Stats.
+; Run the complete internal Info category/subpage loop in roomy bank $34. The
+; bank-$10 caller only distinguishes external state 0 from internal nonzero, so
+; the local state consumes no WRAM. State 1/2 are Details subpages; state 3 is
+; the Base Stats category home. B exits, A stays inside the current category,
+; LEFT/RIGHT switches category, and UP/DOWN changes species.
 PokedexData_RunInternalInputLoop:
 	ld a,1
 	push af
 .loop
+	; This helper returns hJoyPressed, so only a fresh press reaches this loop.
+	; Holding LEFT/RIGHT cannot repeatedly bounce between categories.
 	call PokedexData_ReadInternalInput
 	ld a,e
 	ld b,a
@@ -136,7 +139,11 @@ PokedexData_RunInternalInputLoop:
 
 	ld a,b
 	and A_BUTTON
-	jr nz,.advancePage
+	jr nz,.advanceSubpage
+
+	ld a,b
+	and D_LEFT | D_RIGHT
+	jr nz,.switchCategory
 
 	ld a,b
 	and D_UP | D_DOWN
@@ -144,34 +151,38 @@ PokedexData_RunInternalInputLoop:
 	ld e,a
 	call PokedexData_TryStepSeen
 	jr nc,.loop
-	; Description halves reset to Page 1 when the species changes. Base Stats is a
-	; logical page and stays selected across UP/DOWN. If the new target is Seen-only,
-	; RenderSwitchedEntry shows its limited page while state 3 remains remembered.
+	; Species changes preserve the category but return to that category's home.
+	; Details 1/2 therefore normalize to state 1; Base Stats remains state 3.
+	; Seen-only targets keep state 3 remembered while rendering the limited page.
 	pop af
 	cp 3
-	jr z,.keepBrowsePage
+	jr z,.keepBrowseCategory
 	ld a,1
-.keepBrowsePage
+.keepBrowseCategory
 	push af
 	ld e,a
 	call PokedexData_RenderSwitchedEntry
 	jr .loop
 
-.advancePage
-	; Detailed pages remain Owned-only. A Seen-only entry cannot enter description
-	; paging or Base Stats, but an already-selected state 3 may survive navigation.
+.advanceSubpage
+	; A only moves inside the current category. Details toggles 1 <-> 2; Base
+	; Stats currently has one subpage, so A deliberately does nothing there.
 	call PokedexData_CurrentMonOwned
 	jr z,.loop
 	pop af
+	cp 3
+	jr z,.keepBaseStats
 	cp 1
 	jr z,.showDescription2
-	cp 2
-	jr z,.showBaseStats
-	; State 3 -> description Page 1.
+	; State 2 -> Details home (description Page 1).
 	ld a,1
 	push af
 	ld e,0
 	call PokedexData_DrawDescriptionPage
+	jr .loop
+.keepBaseStats
+	ld a,3
+	push af
 	jr .loop
 .showDescription2
 	ld a,2
@@ -179,11 +190,26 @@ PokedexData_RunInternalInputLoop:
 	ld e,1
 	call PokedexData_DrawDescriptionPage
 	jr .loop
-.showBaseStats
+
+.switchCategory
+	; With two categories, LEFT and RIGHT both select the other category. Crossing
+	; a category boundary always lands on that category's home page.
+	call PokedexData_CurrentMonOwned
+	jr z,.loop
+	pop af
+	cp 3
+	jr z,.showDescription1
 	ld a,3
 	push af
 	call PokedexData_DrawBaseStatsPage
 	jr .loop
+.showDescription1
+	ld a,1
+	push af
+	ld e,0
+	call PokedexData_DrawDescriptionPage
+	jr .loop
+
 .exit
 	pop af
 	ret
