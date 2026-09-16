@@ -428,7 +428,9 @@ wStartMenuSavedMenuItem:: ; cc32
 ; never enters .sav, and MainMenu clears it once at the start of a play session.
 	ds 1
 
-; unused?
+wPokedexSavedSelection:: ; cc33
+; Session-only Pokédex selection as a 1-based Pokédex number. 0 means no saved
+; selection yet. It is outside wMainData, so it never enters .sav.
 	ds 1
 
 wMenuJoypadPollCount:: ; cc34

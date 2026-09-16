@@ -12,12 +12,39 @@ ShowPokedexMenu:
 	call UpdateSprites
 	ld a,[wListScrollOffset]
 	push af
+	; Restore the last Pokédex selection for this play session. Only the absolute
+	; Pokédex number is remembered, so reopening keeps the same Pokémon selected
+	; without adding anything to save data. Entries beyond the first page are
+	; placed on the bottom visible row.
+	ld a,[wPokedexSavedSelection]
+	and a
+	jr z,.useFirstPokedexEntry
+	ld [wd11e],a
+	dec a ; zero-based absolute list index
+	cp 7
+	jr c,.savedPokedexEntryOnFirstPage
+	sub 6
+	ld [wListScrollOffset],a
+	ld a,6
+	jr .storeSavedPokedexRow
+.savedPokedexEntryOnFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wd11e]
+	dec a
+.storeSavedPokedexRow
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	jr .pokedexSelectionReady
+.useFirstPokedexEntry
 	xor a
 	ld [wCurrentMenuItem],a
 	ld [wListScrollOffset],a
 	ld [wLastMenuItem],a
 	inc a
 	ld [wd11e],a
+.pokedexSelectionReady
+	ld a,1
 	ld [hJoy7],a
 .setUpGraphics
 	ld b, SET_PAL_GENERIC
@@ -43,6 +70,15 @@ ShowPokedexMenu:
 	and a
 	jr nz,.setUpGraphics ; START 查看地区后重新初始化图鉴列表界面
 .exitPokedex
+	; Remember the selected Pokémon only in runtime WRAM. MainMenu clears this at
+	; the title/main-menu session boundary, so Continue/new game after a restart
+	; starts the Pokédex from entry 1 and no .sav bytes are involved.
+	ld a,[wListScrollOffset]
+	ld b,a
+	ld a,[wCurrentMenuItem]
+	add b
+	inc a
+	ld [wPokedexSavedSelection],a
 	xor a
 	ld [wMenuWatchMovingOutOfBounds],a
 	ld [wCurrentMenuItem],a
