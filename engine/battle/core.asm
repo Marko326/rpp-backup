@@ -173,9 +173,11 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 	; when entering battle. Also had to remove "delay" calls above.
 	call EnableLCD
 .slideSilhouettesLoop ; slide silhouettes of the player's pic and the enemy's pic onto the screen
+	; Fixed 3-pixel step: 144 pixels / 3 = 48 frames (~0.8 s).
 	ld h, b
 	ld l, $40
 	call SetScrollXForSlidingPlayerBodyLeft ; begin background scrolling on line $40
+	inc b
 	inc b
 	inc b
 	ld h, $0
@@ -184,6 +186,7 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 	call SlidePlayerHeadLeft
 	ld a, c
 	ld [hSCX], a
+	dec c
 	dec c
 	dec c
 	jr nz, .slideSilhouettesLoop
@@ -226,6 +229,7 @@ SlidePlayerHeadLeft:
 	ld c, $15 ; number of OAM entries
 	ld de, $4 ; size of OAM entry
 .loop
+	dec [hl] ; decrement X
 	dec [hl] ; decrement X
 	dec [hl] ; decrement X
 	add hl, de ; next OAM entry
