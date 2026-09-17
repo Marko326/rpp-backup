@@ -1501,12 +1501,18 @@ ItemUseMedicine:
 	ld a,[wPseudoItemID]
 	and a ; using Softboiled?
 	ret nz ; if so, return
-	call GBPalWhiteOut
-	call z,RunDefaultPaletteCommand
 	ld a,[wIsInBattle]
 	and a
-	ret nz
-	jp ReloadMapData
+	jr z,.returnToStartBag
+	; Battle callers still own their original white/palette restore.
+	call GBPalWhiteOut
+	call RunDefaultPaletteCommand
+	ret
+.returnToStartBag
+	; BAG-5.19.1: START -> Bag owns the Party-to-Bag graphics restore in
+	; StartMenu_Item's caller. ReloadMapData here rebuilt the overworld only to have
+	; it hidden immediately by the Bag, adding an unnecessary LCD-off map reload.
+	ret
 .useVitamin
 	push hl
 	ld a,[hl]
@@ -2602,10 +2608,10 @@ ItemUseTMHM:
 ; if the player canceled teaching the move
 	pop af
 	pop af
-	call GBPalWhiteOutWithDelay3
-	call ClearSprites
-	call RunDefaultPaletteCommand
-	jp LoadScreenTilesFromBuffer1 ; restore saved screen
+	; BAG-5.19.1: the START Bag caller immediately performs the consolidated
+	; Party-to-Bag restore. Do not first spend three frames restoring the pre-Party
+	; Bag buffer only to replace it again on return.
+	ret
 .checkIfAbleToLearnMove
 	predef CanLearnTM ; check if the pokemon can learn the move
 	push bc

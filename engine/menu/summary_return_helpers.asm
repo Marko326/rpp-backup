@@ -178,6 +178,24 @@ Summary_RestoreOverworldBG0::
 	ret
 
 Summary_RestoreStartMenuFromParty::
+	call Summary_RestoreStartGraphicsFromParty
+
+	; Normal START -> Party return exposes the saved START screen before input, so
+	; keep the complete three-frame window transfer on this path.
+	call LoadScreenTilesFromBuffer2
+	call RunDefaultPaletteCommand
+	jp Delay3
+
+Summary_RestoreStartBagFromParty::
+	; BAG-5.19.1: item use returns straight into StartMenu_Item. Restore the VRAM
+	; content Party overwrote, and restore the saved START tilemap in WRAM only.
+	; DisplayListMenuID redraws the Bag before its first visible transfer, so making
+	; the intermediate START screen visible for three frames is redundant.
+	call Summary_RestoreStartGraphicsFromParty
+	call LoadScreenTilesFromBuffer2DisableBGTransfer
+	jp RunDefaultPaletteCommand
+
+Summary_RestoreStartGraphicsFromParty:
 	; Fold the old pre-restore whiteout wait and the two separate
 	; LCD-off graphics restores into one phase. DMG/SGB become white immediately
 	; through BGP/OBP; once LCD is off, explicitly whiten CGB palette RAM too so
@@ -222,13 +240,7 @@ Summary_RestoreStartMenuFromParty::
 	call LoadFontTilePatterns
 	call EnableLCD
 	call UpdateSprites
-
-	; Restore the START tilemap saved before entering Party. The normal three-frame
-	; window transfer is still required so both tile IDs and CGB attributes reach
-	; vBGMap1; it now doubles as the only fixed restore wait on this path.
-	call LoadScreenTilesFromBuffer2
-	call RunDefaultPaletteCommand
-	jp Delay3
+	ret
 
 .loadWhiteCGBPalettesWhileLCDOff
 	; CGB white is RGB15 $7fff. Writes to these CGB-only registers are harmless on

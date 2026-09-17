@@ -495,8 +495,12 @@ StartMenu_Item:
 	ld a,[wActionResultOrTookBattleTurn]
 	cp a,$02
 	jp z,.partyMenuNotDisplayed
-	call GBPalWhiteOutWithDelay3
-	call RestoreScreenTilesAndReloadTilePatterns
+	; BAG-5.19.1: Party-target item handlers can overwrite the same overworld
+	; sprite/font VRAM as the normal Party menu. Restore those graphics once, but
+	; keep the saved START tilemap hidden because StartMenu_Item immediately redraws
+	; the Bag over it. This avoids both the legacy VBlank reload and an intermediate
+	; three-frame START transfer.
+	callba Summary_RestoreStartBagFromParty
 	pop af
 	ld [wUpdateSpritesEnabled],a
 	jp StartMenu_Item
