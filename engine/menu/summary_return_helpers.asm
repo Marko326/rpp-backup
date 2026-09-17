@@ -200,7 +200,10 @@ Summary_RestoreStartGraphicsFromParty:
 	; LCD-off graphics restores into one phase. DMG/SGB become white immediately
 	; through BGP/OBP; once LCD is off, explicitly whiten CGB palette RAM too so
 	; no stale Party palette can flash when LCD is enabled again.
-	call GBPalWhiteOut
+	; Keep the old three-frame pre-LCD-off window: menu B/A SFX is advanced by
+	; UpdateSound from VBlank, and disabling LCD immediately would freeze the
+	; freshly-started SFX command and make the press sound audibly stretch.
+	call GBPalWhiteOutWithDelay3
 
 	; Stop VBlank/OAM DMA before modifying wOAMBuffer. This closes the CGB timing
 	; window where cleared sprite data could reach OAM while the previous Party
