@@ -152,19 +152,18 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 	ld [hSCY], a
 	dec a
 	ld [wUpdateSpritesEnabled], a
+	; BATTLE-5.19.4: 继续保留此前移除旧 Delay 空 NOP 的优化；平移相位改在 C 初始化后建立。
+	; 这样不额外占用 WRAM，也不再依赖这里碰巧得到的 $ff 作为动画相位。
 	;call Delay3
-	nop
-	nop
 	ld a,1 ; HAX: don't disable bg transfer. Makes the battle transition smoother.
 	ld [H_AUTOBGTRANSFERENABLED], a
-	ld b, $70
 	ld c, $90
+	; BATTLE-5.19.4: C 保存敌方背景剩余的横向滚动量，D 复用同一个 $90 作为 2/3 像素相位累加器。
+	; 以 $90 起步会得到 2,3,2,3,2 的 5 帧循环；首帧和末帧都是 2 像素，进入/停止都比 3 像素起步柔和。
+	ld d, c
 	ld a, c
 	ld [hSCX], a
 	;call DelayFrame
-	nop
-	nop
-	nop
 	ld a, %11100100 ; inverted palette for silhouette effect
 	ld [rBGP], a
 	ld [rOBP0], a
@@ -173,24 +172,35 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 	; when entering battle. Also had to remove "delay" calls above.
 	call EnableLCD
 .slideSilhouettesLoop ; slide silhouettes of the player's pic and the enemy's pic onto the screen
-	; Fixed 3-pixel step: 144 pixels / 3 = 48 frames (~0.8 s).
-	ld h, b
+	; BATTLE-5.19.4: 60 帧移动完 144 像素，约 1.00 秒；GB 只能整像素滚动，因此用 2/3 像素分配逼近 2.4 像素/帧。
+	; $66 累加器在 D=$90 时稳定得到 2,3,2,3,2：每 5 帧正好 12 像素，重复 12 次正好 144 像素。
+	; 每个显示帧都发生位移，不插入 DelayFrame/DelayFrames，也不通过跳帧制造速度。
+	ld a, d
+	add $66
+	ld d, a
+	ld a, 1
+	adc a ; carry=1 时为 3 像素，否则为 2 像素
+	ld e, a
+	; BATTLE-5.19.4: 玩家身体滚动量始终等于 -C (mod 256)，直接由 C 推导，删除冗余的 B 位置状态。
+	; BATTLE-5.19.5: 用 0-C 直接求补码；与 CPL+INC 完全等价，并再节省 1 byte ROM。
+	xor a
+	sub c
+	ld h, a
 	ld l, $40
 	call SetScrollXForSlidingPlayerBodyLeft ; begin background scrolling on line $40
-	inc b
-	inc b
-	inc b
 	ld h, $0
 	ld l, $60
 	call SetScrollXForSlidingPlayerBodyLeft ; end background scrolling on line $60
 	call SlidePlayerHeadLeft
+	; BATTLE-5.19.4: 先计算下一帧 C，再写 hSCX；VBlank 时敌方背景会与本帧已经更新的 Sprite/身体同时前进。
+	; BATTLE-5.19.3 固定 3px/帧版是先写旧 C 再减步长，会让敌方背景相对另外两层慢一帧。
 	ld a, c
+	sub e
+	ld c, a
 	ld [hSCX], a
-	dec c
-	dec c
-	dec c
 	jr nz, .slideSilhouettesLoop
-	ld a, $1
+	; BATTLE-5.19.4: 最后一帧 A/C 都恰好为 0；直接 inc a 恢复 $01，继续避免额外的立即数装载。
+	inc a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ld a, $31
 	ld [hStartTileID], a
@@ -224,18 +234,21 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 ; the reason for this is that it shares Y coordinates with the lower part of the enemy pic, so background scrolling wouldn't work for both pics
 ; instead, the enemy pic is part of the background and uses the scroll register, while the player's head is a sprite and is slid by changing its X coordinates in a loop
 SlidePlayerHeadLeft:
-	push bc
 	ld hl, wOAMBuffer + $01
-	ld c, $15 ; number of OAM entries
-	ld de, $4 ; size of OAM entry
+	; BATTLE-5.19.5: E 已经是本帧 2/3px 的最终步长，直接从每个 OAM X 坐标减 E。
+	; 不再把 E 拆成 2 次固定 DEC + 条件第 3 次 DEC，减少 WRAM read-modify-write 和分支。
+	ld b, $15 ; number of OAM entries
 .loop
-	dec [hl] ; decrement X
-	dec [hl] ; decrement X
-	dec [hl] ; decrement X
-	add hl, de ; next OAM entry
-	dec c
+	ld a, [hl]
+	sub e
+	ld [hli], a
+	; wOAMBuffer=$c300，本循环 X 字节只覆盖 $c301-$c351，不跨 256-byte 页。
+	; LD [HLI],A 写回后已前进 1 byte，再 INC L 三次即可到下一条 OAM 的 X 字节。
+	inc l
+	inc l
+	inc l ; next OAM entry
+	dec b
 	jr nz, .loop
-	pop bc
 	ret
 
 SetScrollXForSlidingPlayerBodyLeft:
