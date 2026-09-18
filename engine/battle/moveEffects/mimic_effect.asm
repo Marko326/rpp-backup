@@ -66,12 +66,22 @@ MimicEffect_:
 	ld c, a
 	ld b, $0
 	add hl, bc
+	; MIMIC-5.19.17: keep Gen I target selection intact.  The selected/random
+	; candidate is judged only after Mimic's animation, so an invalid attempt
+	; still consumes Mimic's PP and fails normally instead of being re-rolled.
+	push hl ; preserve the Mimic slot that will be replaced only on success
+	ld a, d
+	push af ; PlayCurrentMoveAnimation may clobber A, keep the candidate move ID
+	callab PlayCurrentMoveAnimation
+	pop af
+	call .isCopyAllowed
+	pop hl
+	jp nc, .mimicMissed
 	ld a, d
 	ld [hl], a
-	push af ; MIMIC-5.19.14: keep the copied move ID across the learned-move message
+	push af ; keep the copied move ID across the learned-move message
 	ld [wd11e], a
 	call GetMoveName
-	callab PlayCurrentMoveAnimation
 	ld hl, MimicLearnedMoveText
 	call PrintText
 	ld a, [H_WHOSETURN]
@@ -94,6 +104,40 @@ MimicEffect_:
 	ld hl, CheckIfPlayerNeedsToChargeUp
 	ret z
 	ld hl, CheckIfEnemyNeedsToChargeUp
+	ret
+
+.isCopyAllowed
+	; Immediate-use Mimic must never execute these candidates.  MIMIC is the
+	; direct recursion guard, TRANSFORM is reserved for its future immediate-
+	; action behavior, and STRUGGLE remains uncopyable as in Gen I.
+	ld d, a
+	cp MIMIC
+	jr z, .copyRejected
+	cp TRANSFORM
+	jr z, .copyRejected
+	cp STRUGGLE
+	jr z, .copyRejected
+
+	; Second guard: Mimic fails if the acting battler already has the candidate
+	; in its current battle move list.  This also catches recursive paths even
+	; when Mimic itself was invoked indirectly by another move.
+	ld hl, wBattleMonMoves
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .checkKnownMoves
+	ld hl, wEnemyMonMoves
+.checkKnownMoves
+	ld b, NUM_MOVES
+.checkKnownMoveLoop
+	ld a, [hli]
+	cp d
+	jr z, .copyRejected
+	dec b
+	jr nz, .checkKnownMoveLoop
+	scf
+	ret
+.copyRejected
+	and a ; clear carry: candidate is not legal to copy
 	ret
 
 .reloadCopiedMoveData
