@@ -8198,7 +8198,12 @@ RageEffect:
 	ret
 
 MimicEffect:
-	jpab MimicEffect_
+	; MIMIC-5.19.15: MimicEffect_ returns the Bank F continuation in HL.
+	; Discard JumpMoveEffect's forced-b=1 return path so a copied move KO can
+	; return its real faint result directly to the main battle loop.
+	callab MimicEffect_
+	pop bc
+	jp hl
 
 LeechSeedEffect:
 	jpab LeechSeedEffect_

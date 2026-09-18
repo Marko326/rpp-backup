@@ -52,6 +52,8 @@ MimicEffect_:
 	ld [wMoveMenuType], a
 	callab MoveSelectionMenu
 	call LoadScreenTilesFromBuffer1
+	; MIMIC-5.19.14: restore the HUD after returning from the target move menu.
+	callab DrawHUDsAndHPBars
 	ld hl, wEnemyMonMoves
 	ld a, [wCurrentMenuItem]
 	ld c, a
@@ -66,13 +68,58 @@ MimicEffect_:
 	add hl, bc
 	ld a, d
 	ld [hl], a
+	push af ; MIMIC-5.19.14: keep the copied move ID across the learned-move message
 	ld [wd11e], a
 	call GetMoveName
 	callab PlayCurrentMoveAnimation
 	ld hl, MimicLearnedMoveText
-	jp PrintText
+	call PrintText
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, wPlayerSelectedMove
+	ld de, wPlayerMoveNum
+	jr z, .executeCopiedMove
+	ld hl, wEnemySelectedMove
+	ld de, wEnemyMoveNum
+.executeCopiedMove
+	pop af
+	ld [hl], a
+	; ReloadMoveData normally receives the move ID in A. A cross-bank callab
+	; cannot be used for it because Bankswitch overwrites A with BANK($F),
+	; which is $0f (CUT). Reproduce the small reload sequence in this roomy
+	; bank so the copied move ID reaches the Moves lookup intact.
+	call .reloadCopiedMoveData
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, CheckIfPlayerNeedsToChargeUp
+	ret z
+	ld hl, CheckIfEnemyNeedsToChargeUp
+	ret
+
+.reloadCopiedMoveData
+	ld [wd11e], a
+	dec a
+	ld hl, Moves
+	ld bc, MoveEnd - Moves
+	call AddNTimes
+	ld a, BANK(Moves)
+	call FarCopyData
+	; IncrementMovePP does not consume A, so it is safe to call across banks.
+	callab IncrementMovePP
+	call GetMoveName
+	call CopyStringToCF4B
+	ld a, $1
+	and a
+	ret
+
 .mimicMissed
-	jpab PrintButItFailedText_
+	callab PrintButItFailedText_
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, ExecutePlayerMoveDone
+	ret z
+	ld hl, ExecuteEnemyMoveDone
+	ret
 
 MimicLearnedMoveText:
 	TX_FAR _MimicLearnedMoveText
