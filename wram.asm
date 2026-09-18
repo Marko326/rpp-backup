@@ -1302,7 +1302,13 @@ wFlags_0xcd60:: ; cd60
 ; bytes (or packed flag bytes) and reduce the remaining `ds` by the same amount.
 ; Keep the total footprint exactly 9 bytes so wActionResultOrTookBattleTurn and
 ; every address after $CD69 stay unchanged. This area is not save data.
-	ds 9
+wHPBarDamageSpeed:: ; cd61, BATTLE-5.19.6; tiers revised BATTLE-5.19.7
+; 0 = inactive/default; 1 = 25-<50%, 2 = 50-<75%, 3 = >=75% direct attack damage
+	ds 1
+wHPBarDamagePhase:: ; cd62, BATTLE-5.19.6; policy revised BATTLE-5.19.7
+; phase counter used only by the 2px/frame and 3px/frame direct-attack tiers
+	ds 1
+	ds 7
 
 wActionResultOrTookBattleTurn:: ; cd6a
 ; This has overlapping related uses.

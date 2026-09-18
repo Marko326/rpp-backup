@@ -128,6 +128,11 @@ INCLUDE "engine/hidden_object_functions3.asm"
 
 INCLUDE "color/update_hp_bar.asm"
 
+; BATTLE-5.19.6: attack-only HP animation policy. Keep it relocatable so the
+; tight fixed battle/HP-bar banks only pay for their far-call hooks.
+SECTION "Battle Damage HP Animation", ROMX
+INCLUDE "engine/battle/damage_hp_animation.asm"
+
 ; Relocatable Bank 3 helpers. These routines are reached through predef tables,
 ; so keeping them in floating ROMX sections preserves their APIs while freeing
 ; fixed Bank $03 space for code that cannot move as easily.

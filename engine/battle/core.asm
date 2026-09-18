@@ -4998,10 +4998,11 @@ ApplyDamageToEnemyPokemon:
 	ld [wHPBarNewHP+1],a
 	ld a,[hl]
 	ld [wHPBarNewHP],a
-	coord hl, 2, 2
 	xor a
 	ld [wHPBarType],a
-	predef UpdateHPBar2 ; animate the HP bar shortening
+	; BATTLE-5.19.7: normal opponent-target damage uses exact HP-percentage tiers;
+	; the wrapper sends self-damage and <25% loss through original UpdateHPBar2.
+	callab UpdateAttackDamageHPBar
 ApplyAttackToEnemyPokemonDone:
 	jp DrawHUDsAndHPBars
 
@@ -5071,10 +5072,10 @@ ApplyDamageToPlayerPokemon:
 	ld [wHPBarMaxHP+1],a
 	ld a,[hl]
 	ld [wHPBarMaxHP],a
-	coord hl, 10, 9
 	ld a,$01
 	ld [wHPBarType],a
-	predef UpdateHPBar2 ; animate the HP bar shortening
+	; BATTLE-5.19.7: same opponent-target/original-slow policy as the enemy HP bar.
+	callab UpdateAttackDamageHPBar
 ApplyAttackToPlayerPokemonDone:
 	jp DrawHUDsAndHPBars
 
