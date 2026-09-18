@@ -119,7 +119,41 @@ VBlankCopyBgMap::
 	ld b,a
 	xor a
 	ld [H_VBCOPYBGSRC],a ; disable transfer so it doesn't continue next V-blank
+
+	; BATTLE-5.19.9: bit 7 requests a tile-only row copy for accelerated battle
+	; HP animation. Do it here in ROM0 so CGB attribute/palette bytes are never
+	; touched and no ROMX bank switch is needed while SP points into wTileMap.
+	bit 7,b
+	jr nz,.tileOnlyRows
 	jr TransferBgRows
+
+.tileOnlyRows
+	res 7,b
+.nextTileOnlyRow
+	ld c,20 / 2
+.copyTileOnlyRow
+	pop de
+	ld [hl],e
+	inc l
+	ld [hl],d
+	inc l
+	dec c
+	jr nz,.copyTileOnlyRow
+
+	; This special path is only used for battle rows 2, 9 and 10, whose VRAM
+	; low-byte destinations cannot wrap while advancing to the next 32-tile row.
+	ld a,32 - 20
+	add l
+	ld l,a
+	dec b
+	jr nz,.nextTileOnlyRow
+
+	ld a,[H_SPTEMP]
+	ld h,a
+	ld a,[H_SPTEMP + 1]
+	ld l,a
+	ld sp,hl
+	ret
 
 
 VBlankCopyDouble::

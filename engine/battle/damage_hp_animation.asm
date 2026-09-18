@@ -1,4 +1,4 @@
-; BATTLE-5.19.7
+; BATTLE-5.19.9
 ; Direct opponent-target damage uses exact effective-HP-loss percentages.
 ;
 ; Only ordinary attacks where the acting side and target HUD are opposite mons
@@ -6,12 +6,20 @@
 ;   < 25% max HP loss = original UpdateHPBar2, unchanged
 ;   25% - <50%         = normal    : 1 pixel / 1 frame
 ;   50% - <75%         = fast      : 2 pixels / 1 frame
-;   >=75%               = very fast : 3 pixels / 1 frame
+;   >=75%               = very fast : 4 pixels / 1 frame
 ;
 ; Confusion self-damage and Jump Kick / Hi Jump Kick crash damage have
 ; H_WHOSETURN != wHPBarType and therefore also keep original UpdateHPBar2.
 ; Healing, ordinary recoil, items and other generic HP-bar callers never enter
 ; this wrapper and retain their existing cadence.
+;
+; BATTLE-5.19.9 smooth display refinement:
+; accelerated damage temporarily disables normal one-third AutoBG transfer.
+; Each real animation wait requests a TILE-ONLY VBlank row copy, so battle
+; Pokemon palette attributes are left untouched. Enemy HUD copies one row;
+; player HUD copies two rows so its numeric HP remains synchronized.
+; The >=75% tier uses 4 visible pixels/frame to retain the punch of the older
+; chunkier AutoBG presentation while still updating every display frame.
 
 DEF HP_DAMAGE_SPEED_NORMAL    EQU 1
 DEF HP_DAMAGE_SPEED_FAST      EQU 2
@@ -144,6 +152,14 @@ UpdateAttackDamageHPBar:
 ; bar pixels rather than by one DelayFrame per HP point.
 ; hl = HUD HP-bar tile pointer.
 AttackHPBar_AnimateDamage:
+	; Keep intermediate 1-pixel states in wTileMap from leaking through the
+	; normal top/middle/bottom AutoBG cycle. Dedicated tile-only VBlank copies
+	; below expose only the intended 1/2/4-pixel visible steps.
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	push af
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+
 	; Keep the final target HP in DE while wHPBarNewHP temporarily walks toward it.
 	ld a, [wHPBarNewHP]
 	ld e, a
@@ -202,18 +218,23 @@ AttackHPBar_AnimateDamage:
 	call AttackHPBar_PrintHPNumber
 	ld d, 6
 	call AttackDrawHPBarWithColor
-	call WaitAttackDamageHPBarFrame
-	jp Delay3
+	; Expose the exact final bar/number once, then restore the caller's AutoBG
+	; state. No Delay3 is needed because this copy is not waiting for a third.
+	call AttackHPBar_WaitVisibleFrame
+	pop af
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
 
 ; a = number of bar pixels to remove, e = current bar length in pixels.
 AttackHPBar_AnimatePixels:
 	push hl
 .loop
 	push af
+	; Draw the next shorter state so the first visible accelerated frame moves.
+	dec e
 	ld d, 6
 	call AttackDrawHPBarWithColor
 	call WaitAttackDamageHPBarFrame
-	dec e
 	pop af
 	dec a
 	jr nz, .loop
@@ -221,33 +242,89 @@ AttackHPBar_AnimatePixels:
 	ret
 
 ; Accelerated-path wait policy. 1 px/frame needs no phase; the 2 px/frame and
-; 3 px/frame tiers carry phase across individual HP steps.
+; 4 px/frame tiers carry phase across individual HP steps.
 WaitAttackDamageHPBarFrame:
 	ld a, [wHPBarDamageSpeed]
 	cp HP_DAMAGE_SPEED_FAST
 	jr z, .fast
 	cp HP_DAMAGE_SPEED_VERY_FAST
 	jr z, .veryFast
-	; 25%-<50% and any unexpected value use one pixel per frame.
-	jp DelayFrame
+	; 25%-<50% and any unexpected value use one visible pixel per frame.
+	jp AttackHPBar_WaitVisibleFrame
 .fast
-	; Submit two successive pixel states before waiting for the next frame.
+	; Submit two successive pixel states before exposing the latest one.
 	ld a, [wHPBarDamagePhase]
 	xor 1
 	ld [wHPBarDamagePhase], a
 	ret nz
-	jp DelayFrame
+	jp AttackHPBar_WaitVisibleFrame
 .veryFast
-	; Submit three successive pixel states before waiting for the next frame.
+	; Four visible pixels/frame restores the very-fast feel while the dedicated
+	; copy keeps the motion regular instead of bunching several frames together.
 	ld a, [wHPBarDamagePhase]
 	inc a
-	cp 3
+	cp 4
 	jr nc, .veryFastWait
 	ld [wHPBarDamagePhase], a
 	ret
 .veryFastWait
 	xor a
 	ld [wHPBarDamagePhase], a
+	jp AttackHPBar_WaitVisibleFrame
+
+; Queue a TILE-ONLY row transfer for the next VBlank and wait exactly one frame.
+; Bit 7 of H_VBCOPYBGNUMROWS requests the BATTLE-5.19.9 tile-only path in
+; VBlankCopyBgMap. The low 7 bits are the actual row count.
+; This deliberately leaves CGB BG attributes untouched: battle Pokemon graphics
+; share these rows, so rewriting their attributes would corrupt their palettes.
+AttackHPBar_WaitVisibleFrame:
+	push bc
+	push de
+	push hl
+
+	ld a, [wHPBarType]
+	and a
+	jr z, .enemyHUD
+
+	; Player: row 9 contains the bar and row 10 contains numeric HP.
+	coord hl, 0, 9
+	ld de, 9 * BG_MAP_WIDTH
+	ld b, $82
+	jr .schedule
+
+.enemyHUD
+	; Enemy: only row 2 is needed.
+	coord hl, 0, 2
+	ld de, 2 * BG_MAP_WIDTH
+	ld b, $81
+
+.schedule
+	; H_VBCOPYBGSRC low byte doubles as the enable flag. Enable only after the
+	; source high byte, destination and mode/count have all been prepared.
+	xor a
+	ld [H_VBCOPYBGSRC], a
+	ld c, l
+	ld a, h
+	ld [H_VBCOPYBGSRC + 1], a
+	ld a, b
+	ld [H_VBCOPYBGNUMROWS], a
+
+	ld a, [H_AUTOBGTRANSFERDEST]
+	ld l, a
+	ld a, [H_AUTOBGTRANSFERDEST + 1]
+	ld h, a
+	add hl, de
+	ld a, l
+	ld [H_VBCOPYBGDEST], a
+	ld a, h
+	ld [H_VBCOPYBGDEST + 1], a
+
+	ld a, c
+	ld [H_VBCOPYBGSRC], a
+
+	pop hl
+	pop de
+	pop bc
 	jp DelayFrame
 
 ; Same HP-number update as UpdateHPBar_PrintHPNumber, but without DelayFrame.
