@@ -3393,7 +3393,7 @@ MirrorMoveCheck:
 	ld a,[wPlayerMoveEffect]
 	cp a,EXPLODE_EFFECT ; even if Explosion or Selfdestruct missed, its effect still needs to be activated
 	jr z,.notDone
-	jp ExecutePlayerMoveDone ; otherwise, we're done if the move missed
+	jr ExecutePlayerMoveDone ; otherwise, we're done if the move missed
 .moveDidNotMiss
 	call ApplyAttackToEnemyPokemon
 	call PrintAttackResultText
@@ -3980,6 +3980,10 @@ PrintMoveFailureText:
 .gotTextToPrint
 	push de
 	call PrintText
+	; THRASH-5.19.18: a missed/ineffective Thrash-class move ends the lock.
+	; On the natural final turn ThrashingAbout was already cleared and Confused
+	; was already set before the hit check, so the final-turn confusion remains.
+	callab StopThrashingAfterFailedMove
 	xor a
 	ld [wCriticalHitOrOHKO], a
 	pop de
@@ -5781,7 +5785,7 @@ EnemyCheckIfMirrorMoveEffect:
 	ld a, [wEnemyMoveEffect]
 	cp EXPLODE_EFFECT
 	jr z, .handleExplosionMiss
-	jp ExecuteEnemyMoveDone
+	jr ExecuteEnemyMoveDone
 .moveDidNotMiss
 	call ApplyAttackToPlayerPokemon
 	call PrintAttackResultText

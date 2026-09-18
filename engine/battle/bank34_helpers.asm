@@ -116,3 +116,16 @@ PrintShinyCommon:
 	ret nz
 	ld a, " "
 	ret
+
+; THRASH-5.19.18: failed Thrash/Petal Dance/Outrage attempts end the lock early.
+; PrintMoveFailureText is shared by the player/enemy miss paths, so keep the
+; duplicated status cleanup here rather than spending scarce Bank F space twice.
+StopThrashingAfterFailedMove:
+	ld hl, wPlayerBattleStatus1
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .clear
+	ld hl, wEnemyBattleStatus1
+.clear
+	res ThrashingAbout, [hl]
+	ret
