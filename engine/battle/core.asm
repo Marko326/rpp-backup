@@ -3396,8 +3396,7 @@ MirrorMoveCheck:
 	jp ExecutePlayerMoveDone ; otherwise, we're done if the move missed
 .moveDidNotMiss
 	call ApplyAttackToEnemyPokemon
-	call PrintCriticalOHKOText
-	callab DisplayEffectiveness
+	call PrintAttackResultText
 	ld a,1
 	ld [wMoveDidntMiss],a
 .notDone
@@ -4038,6 +4037,55 @@ PrintDoesntAffectText:
 DoesntAffectMonText:
 	TX_FAR _DoesntAffectMonText
 	db "@"
+
+; Delay critical/effectiveness messages for multi-hit attacks until the final hit.
+; Keep the original multi-hit effect timing intact: on the first hit the
+; AttackingMultipleTimes flag has not been set yet, so identify that hit by
+; its move effect. If a hit faints the target, print immediately because the
+; remaining hits will never run.
+PrintAttackResultText:
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld hl, wEnemyMonHP
+	ld a, [hli]
+	or [hl]
+	jr z, .print
+	ld hl, wPlayerBattleStatus1
+	bit AttackingMultipleTimes, [hl]
+	jr nz, .playerMultiHit
+	ld a, [wPlayerMoveEffect]
+	jr .checkFirstHitEffect
+.playerMultiHit
+	ld a, [wPlayerNumAttacksLeft]
+	cp 1
+	ret nz
+	jr .print
+.enemy
+	ld hl, wBattleMonHP
+	ld a, [hli]
+	or [hl]
+	jr z, .print
+	ld hl, wEnemyBattleStatus1
+	bit AttackingMultipleTimes, [hl]
+	jr nz, .enemyMultiHit
+	ld a, [wEnemyMoveEffect]
+.checkFirstHitEffect
+	cp TWO_TO_FIVE_ATTACKS_EFFECT
+	ret z
+	cp ATTACK_TWICE_EFFECT
+	ret z
+	cp TWINEEDLE_EFFECT
+	ret z
+	jr .print
+.enemyMultiHit
+	ld a, [wEnemyNumAttacksLeft]
+	cp 1
+	ret nz
+.print
+	call PrintCriticalOHKOText
+	callab DisplayEffectiveness
+	ret
 
 ; if there was a critical hit or an OHKO was successful, print the corresponding text
 PrintCriticalOHKOText:
@@ -5736,8 +5784,7 @@ EnemyCheckIfMirrorMoveEffect:
 	jp ExecuteEnemyMoveDone
 .moveDidNotMiss
 	call ApplyAttackToPlayerPokemon
-	call PrintCriticalOHKOText
-	callab DisplayEffectiveness
+	call PrintAttackResultText
 	ld a, 1
 	ld [wMoveDidntMiss], a
 .handleExplosionMiss
