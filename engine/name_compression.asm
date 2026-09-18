@@ -93,8 +93,17 @@ DecodePackedName::
 	sbc b
 	ld d,a
 	push de ; packed RAM start
+	; FarCopyData2 uses the shared $ff8b HRAM scratch byte internally. GetName
+	; historically does not expose that temporary clobber to its callers, and
+	; $ff8b may currently hold values such as hItemPrice or menu blink state.
+	; Preserve it around the packed-ROM copy so compressed-name decoding keeps
+	; the same caller-visible scratch state as the legacy raw-name path.
+	ldh a,[hROMBankTemp]
+	push af
 	ld a,[wcd6d + 2]
 	call FarCopyData2
+	pop af
+	ldh [hROMBankTemp],a
 	pop hl
 	ld de,wcd6d
 .nextSymbol
