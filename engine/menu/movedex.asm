@@ -72,7 +72,12 @@ ShowMoveDexMenu:
 	call ClearScreen
 	ld b, SET_PAL_GENERIC
 	call RunPaletteCommand
+IF DEF(_BLUE)
+	callab SetBlueMoveDexListPokeballPalettes
+ENDC
+IF DEF(_RED)
 	callab LoadPokedexTilePatterns
+ENDC
 	call MoveDexDrawStaticListUI
 
 .doMoveListMenu

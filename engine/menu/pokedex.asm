@@ -49,7 +49,12 @@ ShowPokedexMenu:
 .setUpGraphics
 	ld b, SET_PAL_GENERIC
 	call RunPaletteCommand
+IF DEF(_BLUE)
+	callab SetBluePokedexListPokeballPalettes
+ENDC
+IF DEF(_RED)
 	callab LoadPokedexTilePatterns
+ENDC
 .doPokemonListMenu
 	ld hl,wTopMenuItemY
 	ld a,3

@@ -62,6 +62,17 @@ const_value = 0
 	const PAL_CAVE                 ; $23
 	const PAL_GAMEFREAK            ; $24
 
+; DUAL-5.19.27: shared UI theme selectors. Red++ keeps the existing red
+; presentation while Blue++ uses the corresponding blue menu palette.
+IF DEF(_RED)
+VERSION_UI_PALETTE  EQU PAL_REDMON
+VERSION_BAR_PALETTE EQU PAL_REDBAR
+ENDC
+IF DEF(_BLUE)
+VERSION_UI_PALETTE  EQU PAL_BLUEMON
+VERSION_BAR_PALETTE EQU PAL_BLUEMON
+ENDC
+
 
 const_value = 0
 	const PAL_BULBASAUR

@@ -489,7 +489,8 @@ SetPal_Pokedex:
 
 	callba LoadPokemonPalette
 
-	ld d,PAL_REDMON
+	; DUAL-5.19.27: keep the Pokemon picture on its own palette and theme the UI shell.
+	ld d,VERSION_UI_PALETTE
 	ld e,1
 	callba LoadSGBPalette
 
@@ -713,13 +714,28 @@ SetPal_Generic:
 	ld a,2
 	ld [rSVBK],a
 
-	ld d,PAL_REDBAR	; Red lifebar color (for pokeballs)
+	; DUAL-5.19.27: version theme for generic UI (Pokedex list, MoveDex, Diploma).
+IF DEF(_RED)
+	ld d,VERSION_BAR_PALETTE
 	ld e,0
 	push de
 	callba LoadSGBPalette
 	pop de
 	inc e
 	callba LoadSGBPalette ; Load it into the second slot as well. Prevents a minor glitch.
+ENDC
+IF DEF(_BLUE)
+	ld d,VERSION_BAR_PALETTE
+	ld e,0
+	callba LoadSGBPalette
+
+	; DUAL-5.19.28: keep palette 1 on the stock red-bar colors so Blue++
+	; Pokédex/MoveDex list Poké Balls can use their default coloring without
+	; recoloring the rest of the generic menu.
+	ld d,PAL_REDBAR
+	ld e,1
+	callba LoadSGBPalette
+ENDC
 
 	ld bc,20*18
 	ld hl,W2_TilesetPaletteMap
@@ -795,6 +811,8 @@ SetPal_PartyMenu:
 	ld a,2
 	ld [rSVBK],a
 
+	; DUAL-5.19.30: party-menu Pokémon icons intentionally keep the existing
+	; OBJ palette behavior in both versions; version theming applies to menu UI only.
 	CALL_INDIRECT LoadOverworldSpritePalettes
 
 	ld d,PAL_GREENBAR	; Filler for palette 0 (technically, green)
@@ -1015,8 +1033,8 @@ SetPal_TrainerCard:
 	ld e,4
 	callba LoadTrainerPalette
 
-	; Palette for border tiles
-	ld d, PAL_REDMON
+	; DUAL-5.19.27: version-theme only the card border; badge palettes stay semantic.
+	ld d, VERSION_UI_PALETTE
 	ld e,5
 	callba LoadSGBPalette
 
@@ -1210,7 +1228,8 @@ SetPal_VersionScreen:
 	ld a,2
 	ld [rSVBK],a
 
-	ld d,PAL_CYANMON
+	; DUAL-5.19.27: the Red++ / Blue++ welcome screen follows the version theme.
+	ld d,VERSION_UI_PALETTE
 	ld e,0
 	callba LoadSGBPalette
 

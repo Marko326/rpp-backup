@@ -2586,6 +2586,14 @@ INCLUDE "engine/battle/moveEffects/sleep_charge_effects.asm"
 SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
 INCLUDE "engine/menu/battle_party_summary_fast_path.asm"
 
+; Version-themed menu helpers live in roomy bank $34 so the packed Pokédex bank
+; does not grow. Blue++ only assigns palette 1 to list-page Poké Ball cells; the
+; Poké Ball graphics stay shared with Red++ and the surrounding UI remains blue.
+IF DEF(_BLUE)
+SECTION "Version Theme Helpers", ROMX, BANK[$34]
+INCLUDE "color/version_theme_helpers.asm"
+ENDC
+
 ; Red bedroom PC gate is kept in its own small floating section.
 SECTION "Red Bedroom PC", ROMX, BANK[$34]
 INCLUDE "engine/menu/red_bedroom_pc.asm"
