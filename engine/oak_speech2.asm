@@ -35,7 +35,7 @@ ChoosePlayerName:
 	ld a, [wcf4b]
 	cp "@"
 	jr nz, .notBlankName
-	ld hl, RedDefaultName
+	ld hl, PlayerDefaultName
 	ld a, [wPlayerGender]
 	and a
 	jr z, .okGo
@@ -254,9 +254,16 @@ DisplayIntroNameTextBox:
 
 DefaultNamesPlayer:
 	db   "New Name"
+IF DEF(_RED)
 	next "Red"
 	next "Ash"
 	next "Jack"
+ENDC
+IF DEF(_BLUE)
+	next "Blue"
+	next "Gary"
+	next "John"
+ENDC
 	db   "@"
 	
 DefaultNamesGirl:
@@ -268,9 +275,16 @@ DefaultNamesGirl:
 
 DefaultNamesRival:
 	db   "New Name"
+IF DEF(_RED)
 	next "Blue"
 	next "Gary"
 	next "John"
+ENDC
+IF DEF(_BLUE)
+	next "Red"
+	next "Ash"
+	next "Jack"
+ENDC
 	db   "@"
 
 GetDefaultName:
@@ -299,17 +313,31 @@ GetDefaultName:
 
 DefaultNamesPlayerList:
 	db "New Name@"
-RedDefaultName:
+PlayerDefaultName:
+IF DEF(_RED)
 	db "Red@"
 	db "Ash@"
 	db "Jack@"
+ENDC
+IF DEF(_BLUE)
+	db "Blue@"
+	db "Gary@"
+	db "John@"
+ENDC
 
 DefaultNamesRivalList:
 	db "New Name@"
 RivalDefaultName:
+IF DEF(_RED)
 	db "Blue@"
 	db "Gary@"
 	db "John@"
+ENDC
+IF DEF(_BLUE)
+	db "Red@"
+	db "Ash@"
+	db "Jack@"
+ENDC
 
 DefaultNamesGirlList:
 	db "New Name@"

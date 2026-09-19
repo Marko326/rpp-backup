@@ -1953,7 +1953,13 @@ SECTION "bank1A",ROMX,BANK[$1A]
 
 INCLUDE "engine/battle/decrement_pp.asm"
 
-Version_GFX:       INCBIN "gfx/red/redgreenversion.1bpp" ; 10 tiles
+Version_GFX:
+IF DEF(_RED)
+	INCBIN "gfx/red/redgreenversion.1bpp" ; 10 tiles
+ENDC
+IF DEF(_BLUE)
+	INCBIN "gfx/blue/blueversion.1bpp" ; 10 tiles
+ENDC
 Version_GFXEnd:
 
 OakTS_GFX:         INCBIN "gfx/tilesets/oakts.2bpp"
@@ -2662,7 +2668,12 @@ BuildPokedexTownMapLocations::
 ; battle-animation bank. Slot-machine loaders already use BANK(SlotMachineTiles2).
 SECTION "Slot Machine Tiles 2", ROMX, BANK[$34]
 SlotMachineTiles2:
+IF DEF(_RED)
 	INCBIN "gfx/red/slotmachine2.2bpp"
+ENDC
+IF DEF(_BLUE)
+	INCBIN "gfx/blue/slotmachine2.2bpp"
+ENDC
 SlotMachineTiles2End:
 	assert SlotMachineTiles2End - SlotMachineTiles2 == $180
 

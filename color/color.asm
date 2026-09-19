@@ -687,7 +687,12 @@ SetPal_NidorinoIntro:
 	ld a,2
 	ld [rSVBK],a
 
+IF DEF(_RED)
 	ld d, PAL_NIDORINO
+ENDC
+IF DEF(_BLUE)
+	ld d, PAL_JIGGLYPUFF
+ENDC
 	ld e,0
 	callba LoadPokemonPalette_Sprite
 

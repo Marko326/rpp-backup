@@ -117,7 +117,12 @@ DisplayTitleScreen:
 	call SaveScreenTilesToBuffer2
 	call LoadScreenTilesFromBuffer2
 	call EnableLCD
-	ld a,CHARIZARD ; which Pokemon to show first on the title screen
+IF DEF(_RED)
+	ld a, CHARIZARD ; Red++ title lead
+ENDC
+IF DEF(_BLUE)
+	ld a, BLASTOISE ; Blue++ title lead
+ENDC
 	ld [wTitleMonSpecies], a
 	call LoadTitleMonSprite
 	ld a, (vBGMap0 + $300) / $100
@@ -313,7 +318,9 @@ DrawPlayerCharacter:
 	xor a
 	ld [wPlayerCharacterOAMTile], a
 	ld hl, wOAMBuffer
-	ld de, $605a
+	; DUAL-5.19.26: keep every title Pokemon on the original fixed 7x7 canvas
+	; and move Oak right instead, so the carousel no longer shifts with sprite size.
+	ld de, $6062
 	ld b, 7
 .loop
 	push de
@@ -349,8 +356,11 @@ ClearBothBGMaps:
 LoadTitleMonSprite:
 	ld [wcf91], a
 	ld [wd0b5], a
-	coord hl, 5, 10
 	call GetMonHeader
+	; DUAL-5.19.26: restore the original fixed title-mon canvas position.
+	; LoadFrontSpriteByMonIndex rewrites the full 7x7 tilemap, so the old 8x7
+	; union clear is no longer needed once every carousel sprite uses x=5.
+	coord hl, 5, 10
 	jp LoadFrontSpriteByMonIndex
 
 TitleScreenCopyTileMapToVRAM:
@@ -380,13 +390,15 @@ CopyrightTextString:
 
 ; prints version text (red, blue)
 PrintGameVersionOnTitleScreen:
-	coord hl, 7, 8
+	; DUAL-5.19.24: each version strip is a complete 10-tile, 80px canvas.
+	; Starting at x=5 centers that canvas exactly on the 160px title screen.
+	coord hl, 5, 8
 	ld de, VersionOnTitleScreenText
 	jp PlaceString
 
 ; these point to special tiles specifically loaded for that purpose and are not usual text
 VersionOnTitleScreenText:
-	db $60,$61,$62,$7F,$65,$66,$67,$68,$69,"@" ; "Red Version"
+	db $60,$61,$62,$63,$64,$65,$66,$67,$68,$69,"@"
 
 NintenText: db "Ninten@"
 SonyText:   db "Sony@"
