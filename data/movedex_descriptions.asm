@@ -1400,14 +1400,15 @@ MoveDexDescMirrorMovePages:
 	dw MoveDexDescMirrorMove1, MoveDexDescMirrorMove2, MoveDexDescMirrorMove3, 0
 MoveDexDescMirrorMove1:
 	db   "Copies the foe's"
-	next "selected move.@"
+	next "last selected"
+	next "move.@"
 MoveDexDescMirrorMove2:
-	; RPP 实际执行的是对手本回合 selected move，但仍要求 used-move 记录非空。
-	db   "Needs the foe to"
-	next "have used a move"
-	next "earlier in battle.@"
+	db   "Memory survives"
+	next "switches or turns"
+	next "foe can't move.@"
 MoveDexDescMirrorMove3:
-	db   "Also fails after"
+	db   "Fails with no move"
+	next "stored, or after"
 	next "foe's Mirror Move.@"
 
 ; #120 SelfDestruct

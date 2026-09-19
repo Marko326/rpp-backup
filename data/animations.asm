@@ -872,7 +872,9 @@ BideAnim:
 	db $FF
 
 MirrorMoveAnim:
-	db $08,$76,$01
+	; PureRGB transition recipe adapted to RPP IDs:
+	; Conversion sound + Barrier visual, tileset 1, short delay 2.
+	db $42,$9F,$33
 	db $FF
 
 SelfdestructAnim:

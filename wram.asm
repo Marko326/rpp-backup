@@ -1308,7 +1308,13 @@ wHPBarDamageSpeed:: ; cd61, BATTLE-5.19.6; tiers revised BATTLE-5.19.7
 wHPBarDamagePhase:: ; cd62, BATTLE-5.19.6; policy revised BATTLE-5.19.7
 ; phase counter used only by the 2px/frame and 3px/frame direct-attack tiers
 	ds 1
-	ds 7
+wPlayerLastSelectedMove:: ; cd63, MIRROR-5.19.19
+; Last move the player reached the executable-move stage with. Persists across switches.
+	ds 1
+wEnemyLastSelectedMove:: ; cd64, MIRROR-5.19.19
+; Last move the enemy reached the executable-move stage with. Persists across switches.
+	ds 1
+	ds 5
 
 wActionResultOrTookBattleTurn:: ; cd6a
 ; This has overlapping related uses.

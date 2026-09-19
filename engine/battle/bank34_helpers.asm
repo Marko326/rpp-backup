@@ -129,3 +129,101 @@ StopThrashingAfterFailedMove:
 .clear
 	res ThrashingAbout, [hl]
 	ret
+
+; MIRROR-5.19.19: called through the existing tail bank-switch at battle init,
+; so Bank $14 does not grow beyond its four-byte slack.
+InitMirrorMoveMemoryAndPlayBattleMusic:
+	xor a
+	ld [wPlayerLastSelectedMove], a
+	ld [wEnemyLastSelectedMove], a
+	callab PlayBattleMusic
+	ret
+
+; PureRGB-style Mirror Move memory/transition, without PureRGB's priority change.
+; The memory stores the last move that reached executable selection after status
+; gating and is intentionally not cleared when a battler switches or cannot act.
+; On success, play Mirror Move's transition before reloading the copied move.
+MirrorMoveCopyMove_:
+	ldh a, [H_WHOSETURN]
+	and a
+	ld a, [wEnemyLastSelectedMove]
+	ld hl, wPlayerSelectedMove
+	ld de, wPlayerMoveNum
+	jr z, .gotRememberedMove
+	ld a, [wPlayerLastSelectedMove]
+	ld hl, wEnemySelectedMove
+	ld de, wEnemyMoveNum
+.gotRememberedMove
+	cp MIRROR_MOVE
+	jr z, .failed
+	and a
+	jr z, .failed
+
+	; PureRGB transition: temporarily expose Mirror Move as the real selected
+	; move so RPP's animation preparer stages Mirror Move rather than the copy.
+	push af
+	ld [hl], MIRROR_MOVE
+	push hl
+	push de
+	callab PlayCurrentMoveAnimation
+	pop de
+	pop hl
+	pop af
+	ld [hl], a
+
+	; ReloadMoveData lives in Bank F. Reproduce its small body here instead of
+	; passing the move ID through Bankswitch, which overwrites A with the bank ID.
+	ld [wd11e], a
+	dec a
+	ld hl, Moves
+	ld bc, MoveEnd - Moves
+	call AddNTimes
+	ld a, BANK(Moves)
+	call FarCopyData
+	callab IncrementMovePP
+	call GetMoveName
+	call CopyStringToCF4B
+	ld a, $1
+	and a
+	ret
+
+.failed
+	ld hl, MirrorMoveFailedText
+	call PrintText
+	xor a
+	ret
+
+MirrorMoveFailedText:
+	TX_FAR _MirrorMoveFailedText
+	db "@"
+
+; MIRROR-5.19.21: finish SelectEnemyMove's write in roomy bank $34.
+; In Link Battle the remote side transmits only its move-slot index. During an
+; automatic continuation that slot still names the root caller (for example
+; Mirror Move/Metronome), while wEnemySelectedMove already holds the actual
+; child move (for example Fly). Preserve that child only
+; when the battler truly bypassed MoveSelectionMenu. Status gating such as
+; sleep/freeze happens after a fresh choice and therefore must not preserve it.
+FinalizeEnemyMoveSelectionForMirrorMove:
+	ld a, [wd11e]
+	inc a ; CANNOT_MOVE / $ff is not a fresh selection
+	jr z, .storeWithoutClearing
+
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr nz, .storeWithoutClearing
+
+	ld a, [wEnemyBattleStatus2]
+	and (1 << NeedsToRecharge) | (1 << UsingRage)
+	ret nz
+	ld a, [wEnemyBattleStatus1]
+	and (1 << ChargingUp) | (1 << ThrashingAbout) | (1 << UsingTrappingMove) | (1 << StoringEnergy)
+	ret nz
+	ld a, [wPlayerBattleStatus1]
+	bit UsingTrappingMove, a
+	ret nz
+
+.storeWithoutClearing
+	ld a, [wd11e]
+	ld [wEnemySelectedMove], a
+	ret

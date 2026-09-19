@@ -3166,7 +3166,11 @@ SelectEnemyMove:
 	and a
 	jr z, .chooseRandomMove ; move non-existant, try again
 .done
-	ld [wEnemySelectedMove], a
+	; Link battles exchange only a move-slot index. Let the banked helper keep an
+	; already-resolved child move during forced continuations instead of replacing
+	; it with Mirror Move/Metronome.
+	ld [wd11e], a
+	callab FinalizeEnemyMoveSelectionForMirrorMove
 	ret
 .linkedOpponentUsedStruggle
 	ld a, STRUGGLE
@@ -3244,6 +3248,10 @@ ExecutePlayerMove:
 	jr nz, .playerHasNoSpecialCondition
 	jp hl
 .playerHasNoSpecialCondition
+	; MIRROR-5.19.19: keep a PureRGB-style persistent selection memory. Store
+	; after status gating so sleep/freeze/flinch leave the previous move intact.
+	ld a, [wPlayerSelectedMove]
+	ld [wPlayerLastSelectedMove], a
 	call GetCurrentMove
 	ld hl, wPlayerBattleStatus1
 	bit ChargingUp, [hl] ; charging up for attack
@@ -5267,40 +5275,9 @@ HandleBuildingRage:
 
 ; copy last move for Mirror Move
 ; sets zero flag on failure and unsets zero flag on success
+; MIRROR-5.19.19: body moved to roomy bank $34.
 MirrorMoveCopyMove:
-; Mirror Move uses ccf1 (wPlayerUsedMove) and ccf2 (wEnemyUsedMove) as
-; real IDs of the last moves that reached the move-announcement stage.
-; Both are set to 0 whenever a new Pokemon is sent out
-; ccf1 is also set to 0 whenever the player is fast asleep or frozen solid.
-; ccf2 is also set to 0 whenever the enemy is fast asleep or frozen solid.
-
-	ld a,[H_WHOSETURN]
-	and a
-; values for player turn
-	ld a,[wEnemyUsedMove] ; real ID of the enemy's last successfully announced move
-	ld de,wPlayerMoveNum
-	ld hl,wPlayerSelectedMove
-	jr z,.next
-; values for enemy turn
-	ld a,[wPlayerUsedMove]
-	ld de,wEnemyMoveNum
-	ld hl,wEnemySelectedMove
-.next
-	cp a,MIRROR_MOVE ; did the target pokemon also use Mirror Move?
-	jr z,.mirrorMoveFailed
-	and a ; null move?
-	jr z,.mirrorMoveFailed
-	ld [hl],a ; copy the actual last-used move ID, not its animation alias
-	jr ReloadMoveData
-.mirrorMoveFailed
-	ld hl,MirrorMoveFailedText
-	call PrintText
-	xor a
-	ret
-
-MirrorMoveFailedText:
-	TX_FAR _MirrorMoveFailedText
-	db "@"
+	jpab MirrorMoveCopyMove_
 
 ; function used to reload move data for moves like Mirror Move and Metronome
 ReloadMoveData:
@@ -5634,6 +5611,10 @@ ExecuteEnemyMove:
 	jr nz, .enemyHasNoSpecialConditions
 	jp hl
 .enemyHasNoSpecialConditions
+	; Same persistent selection memory for the enemy side. Mirror Move itself is
+	; recorded here; its copied move re-enters below and does not overwrite it.
+	ld a, [wEnemySelectedMove]
+	ld [wEnemyLastSelectedMove], a
 	ld hl, wEnemyBattleStatus1
 	bit ChargingUp, [hl] ; is the enemy charging up for attack?
 	jr nz, EnemyCanExecuteChargingMove ; if so, jump
