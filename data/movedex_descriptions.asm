@@ -1397,7 +1397,7 @@ MoveDexDescMetronome2:
 
 ; #119 Mirror Move
 MoveDexDescMirrorMovePages:
-	dw MoveDexDescMirrorMove1, MoveDexDescMirrorMove2, MoveDexDescMirrorMove3, 0
+	dw MoveDexDescMirrorMove1, MoveDexDescMirrorMove2, MoveDexDescMirrorMove3, MoveDexDescMirrorMove4, 0
 MoveDexDescMirrorMove1:
 	db   "Copies the foe's"
 	next "last selected"
@@ -1407,6 +1407,9 @@ MoveDexDescMirrorMove2:
 	next "switches or turns"
 	next "foe can't move.@"
 MoveDexDescMirrorMove3:
+	db   "Direct non-STAB"
+	next "damage gets +20%.@"
+MoveDexDescMirrorMove4:
 	db   "Fails with no move"
 	next "stored, or after"
 	next "foe's Mirror Move.@"

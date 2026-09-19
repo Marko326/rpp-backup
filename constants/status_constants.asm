@@ -30,3 +30,4 @@ BadlyPoisoned    EQU 0
 HasLightScreenUp EQU 1
 HasReflectUp     EQU 2
 Transformed      EQU 3
+MirrorMoveBoost  EQU 4 ; MIRROR-5.19.19: direct non-STAB Mirror Move copy gets 1.2x damage

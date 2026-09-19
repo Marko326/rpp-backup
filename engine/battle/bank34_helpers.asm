@@ -139,6 +139,21 @@ InitMirrorMoveMemoryAndPlayBattleMusic:
 	callab PlayBattleMusic
 	ret
 
+; Clear the copied-move damage marker for the acting side. Used when a
+; move-calling effect (currently Metronome/Mimic) starts a second call layer,
+; because only the move copied directly by Mirror Move is boosted.
+ClearMirrorMoveBoost:
+	push hl
+	ld hl, wPlayerBattleStatus3
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .clear
+	ld hl, wEnemyBattleStatus3
+.clear
+	res MirrorMoveBoost, [hl]
+	pop hl
+	ret
+
 ; PureRGB-style Mirror Move memory/transition, without PureRGB's priority change.
 ; The memory stores the last move that reached executable selection after status
 ; gating and is intentionally not cleared when a battler switches or cannot act.
@@ -171,6 +186,17 @@ MirrorMoveCopyMove_:
 	pop af
 	ld [hl], a
 
+	; The direct copied move may receive the non-STAB 1.2x damage adjustment.
+	push af
+	ld hl, wPlayerBattleStatus3
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .markBoost
+	ld hl, wEnemyBattleStatus3
+.markBoost
+	set MirrorMoveBoost, [hl]
+	pop af
+
 	; ReloadMoveData lives in Bank F. Reproduce its small body here instead of
 	; passing the move ID through Bankswitch, which overwrites A with the bank ID.
 	ld [wd11e], a
@@ -201,7 +227,7 @@ MirrorMoveFailedText:
 ; In Link Battle the remote side transmits only its move-slot index. During an
 ; automatic continuation that slot still names the root caller (for example
 ; Mirror Move/Metronome), while wEnemySelectedMove already holds the actual
-; child move (for example Fly). Preserve that child only
+; child move (for example Fly). Preserve that child and MirrorMoveBoost only
 ; when the battler truly bypassed MoveSelectionMenu. Status gating such as
 ; sleep/freeze happens after a fresh choice and therefore must not preserve it.
 FinalizeEnemyMoveSelectionForMirrorMove:
@@ -211,7 +237,7 @@ FinalizeEnemyMoveSelectionForMirrorMove:
 
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
-	jr nz, .storeWithoutClearing
+	jr nz, .freshSelection
 
 	ld a, [wEnemyBattleStatus2]
 	and (1 << NeedsToRecharge) | (1 << UsingRage)
@@ -223,6 +249,9 @@ FinalizeEnemyMoveSelectionForMirrorMove:
 	bit UsingTrappingMove, a
 	ret nz
 
+.freshSelection
+	ld hl, wEnemyBattleStatus3
+	res MirrorMoveBoost, [hl]
 .storeWithoutClearing
 	ld a, [wd11e]
 	ld [wEnemySelectedMove], a

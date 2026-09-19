@@ -280,6 +280,44 @@ AdjustDamageForMoveType:
 	ld hl,wDamageMultipliers
 	set 7,[hl] ; STAB
 .skipSameTypeAttackBonus
+	; MIRROR-5.19.19: a move copied directly by Mirror Move gets 1.2x damage
+	; only when it is not STAB. Fixed-damage/Super Fang/OHKO effects keep their
+	; special damage rules; move-calling children clear the marker beforehand.
+	ld a, [wDamageMultipliers]
+	bit 7, a ; STAB already applied above?
+	jr nz, .skipMirrorMoveBoost
+	ld hl, wPlayerBattleStatus3
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .checkMirrorMoveBoost
+	ld hl, wEnemyBattleStatus3
+.checkMirrorMoveBoost
+	bit MirrorMoveBoost, [hl]
+	jr z, .skipMirrorMoveBoost
+	; Counter reflects prior damage rather than using its nominal base power.
+	call GetCurrentMoveID
+	cp COUNTER
+	jr z, .skipMirrorMoveBoost
+	ld hl, wPlayerMoveEffect
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .checkMirrorMoveEffect
+	ld hl, wEnemyMoveEffect
+.checkMirrorMoveEffect
+	ld a, [hl]
+	cp SPECIAL_DAMAGE_EFFECT
+	jr z, .skipMirrorMoveBoost
+	cp SUPER_FANG_EFFECT
+	jr z, .skipMirrorMoveBoost
+	cp OHKO_EFFECT
+	jr z, .skipMirrorMoveBoost
+	ld hl, H_MULTIPLIER
+	ld [hl], 6
+	call Multiply
+	ld [hl], 5
+	ld b, 4
+	call Divide
+.skipMirrorMoveBoost
 	call GetCurrentMoveID
 	ld b, a ; keep the real move ID for move-specific type overrides
 	ld a,[wMoveType]

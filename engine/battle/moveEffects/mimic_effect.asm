@@ -92,6 +92,9 @@ MimicEffect_:
 	ld hl, wEnemySelectedMove
 	ld de, wEnemyMoveNum
 .executeCopiedMove
+	; If Mirror Move directly copied Mimic, Mimic's immediate child is a second
+	; call layer and must not inherit Mirror Move's non-STAB damage bonus.
+	call ClearMirrorMoveBoost
 	pop af
 	ld [hl], a
 	; ReloadMoveData normally receives the move ID in A. A cross-bank callab

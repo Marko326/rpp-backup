@@ -469,6 +469,10 @@ MainInBattleLoop:
 	call DrawHUDsAndHPBars
 	pop af
 	jr nz, MainInBattleLoop ; if the player didn't select a move, jump
+	; A newly chosen move ends any prior Mirror Move copied-move damage state.
+	; Locked multi-turn moves bypass MoveSelectionMenu, so their state persists.
+	ld hl, wPlayerBattleStatus3
+	res MirrorMoveBoost, [hl]
 .selectEnemyMove
 	call SelectEnemyMove
 	ld a, [wLinkState]
@@ -3168,7 +3172,7 @@ SelectEnemyMove:
 .done
 	; Link battles exchange only a move-slot index. Let the banked helper keep an
 	; already-resolved child move during forced continuations instead of replacing
-	; it with Mirror Move/Metronome.
+	; it with Mirror Move/Metronome and clearing the copied-move damage marker.
 	ld [wd11e], a
 	callab FinalizeEnemyMoveSelectionForMirrorMove
 	ret
@@ -3248,19 +3252,20 @@ ExecutePlayerMove:
 	jr nz, .playerHasNoSpecialCondition
 	jp hl
 .playerHasNoSpecialCondition
-	; MIRROR-5.19.19: keep a PureRGB-style persistent selection memory. Store
-	; after status gating so sleep/freeze/flinch leave the previous move intact.
-	ld a, [wPlayerSelectedMove]
-	ld [wPlayerLastSelectedMove], a
 	call GetCurrentMove
 	ld hl, wPlayerBattleStatus1
 	bit ChargingUp, [hl] ; charging up for attack
 	jr nz, PlayerCanExecuteChargingMove
 	ld hl, wExtraFlags
 	bit 2, [hl]
-	jr nz, CheckIfPlayerNeedsToChargeUp ; If you chose to let trade mons obey, skip the check
+	jr nz, .recordLastSelectedMove ; If you chose to let trade mons obey, skip the check
 	call CheckForDisobedience
 	jp z, ExecutePlayerMoveDone
+	; MIRROR-5.19.22: record only a fresh root move that survives status and
+	; obedience checks. A disobedient random move has already replaced SelectedMove.
+.recordLastSelectedMove
+	ld a, [wPlayerSelectedMove]
+	ld [wPlayerLastSelectedMove], a
 
 CheckIfPlayerNeedsToChargeUp:
 	; MoveDex Seen/Use：到达这里说明状态/服从检查已经允许本次技能真正执行。
@@ -5302,6 +5307,8 @@ MetronomePickMove:
 	ld [wAnimationType],a
 	ld a,METRONOME
 	call PlayMoveAnimation ; play Metronome's animation
+	; A random Metronome child is not a direct Mirror Move copy.
+	callab ClearMirrorMoveBoost
 ; values for player turn
 	ld de,wPlayerMoveNum
 	ld hl,wPlayerSelectedMove
@@ -5611,13 +5618,13 @@ ExecuteEnemyMove:
 	jr nz, .enemyHasNoSpecialConditions
 	jp hl
 .enemyHasNoSpecialConditions
-	; Same persistent selection memory for the enemy side. Mirror Move itself is
-	; recorded here; its copied move re-enters below and does not overwrite it.
-	ld a, [wEnemySelectedMove]
-	ld [wEnemyLastSelectedMove], a
 	ld hl, wEnemyBattleStatus1
 	bit ChargingUp, [hl] ; is the enemy charging up for attack?
 	jr nz, EnemyCanExecuteChargingMove ; if so, jump
+	; MIRROR-5.19.22: only a fresh enemy root selection updates Mirror Move memory.
+	; Automatic charge continuations keep the caller that originally started them.
+	ld a, [wEnemySelectedMove]
+	ld [wEnemyLastSelectedMove], a
 	call GetCurrentMove
 
 CheckIfEnemyNeedsToChargeUp:
