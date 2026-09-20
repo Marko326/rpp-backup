@@ -1,4 +1,4 @@
-; MAPSIGN-5.19.40
+; MAPSIGN-5.19.41
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
@@ -77,15 +77,12 @@ UpdateMapNameSign::
 	jr .hide
 
 .mapChanged
-	; Any raw map transition immediately retires the previous popup. This is what
-	; keeps a still-visible city sign from reappearing after entering a house.
+	; MAPSIGN-5.19.41: do not hide an already-visible sign before we know what
+	; the new effective landmark is. If the new map needs another sign, keep the
+	; Window at Y=112 and atomically replace its four rows during VBlank. This
+	; matches Crystal's continuous frame behavior when crossing landmarks.
 	ld a, [wCurMap]
 	ld [wMapNameSignLastMap], a
-	xor a
-	ld [wMapNameSignTimer], a
-	ld a, SCREEN_HEIGHT_PIXELS
-	ld [hWY], a
-	ld [rWY], a
 
 	; MAPSIGN-5.19.40: transit maps inherit the previous effective landmark.
 	; This prevents same-route gates (Route 12/15/16/18, etc.) from forcing a
@@ -96,7 +93,7 @@ UpdateMapNameSign::
 	jr nz, .resolveLandmark
 	ld a, [wMapNameSignNamePtr + 1]
 	and a
-	ret nz ; already initialized: preserve the previous effective landmark
+	jp nz, .cancel ; already initialized: preserve the previous effective landmark
 
 	; Loading a save directly inside a neutral map still needs a stable initial
 	; landmark. Resolve its physical surroundings once, but never display it.
@@ -127,13 +124,13 @@ UpdateMapNameSign::
 	; equivalent Town Map name. Unknown pseudo locations are also never shown.
 	ld de, AreaUnknownText
 	call .CompareNamePointer
-	ret z
+	jp z, .cancel
 	ld de, UndergroundPathName
 	call .CompareNamePointer
-	ret z
+	jp z, .cancel
 	ld de, IndigoPlateauName
 	call .CompareNamePointer
-	ret z
+	jp z, .cancel
 
 	; The resolved name itself lives in bank $1c. Copy a bounded 20-byte window
 	; into private scratch just after the 4-row frame, then flatten Town Map's '_'
@@ -152,7 +149,8 @@ UpdateMapNameSign::
 	ld a, h
 	ld [wMapNameSignNamePtr + 1], a
 .sameLandmark
-	ret
+	; Same/neutral/no-sign transitions should still retire an old popup immediately.
+	jp .cancel
 
 .CompareNamePointer
 ; Compare current landmark pointer in wMapNameSignNamePtr against DE.

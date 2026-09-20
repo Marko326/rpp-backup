@@ -2,6 +2,17 @@
 DisplayTextIDInit:
 	xor a
 	ld [wListMenuID],a
+
+	; MAPSIGN-5.19.41: START and the map-name sign share Window BG $9c00.
+	; Hide the existing Window before START begins its multi-frame font/tilemap
+	; transfer; otherwise the visible map-name sign briefly shows partially
+	; overwritten START-menu rows. $91 is the existing START hidden sentinel.
+	ld a,[hSpriteIndexOrTextID]
+	and a
+	jr nz,.windowOwnerReady
+	ld a,$91
+	ld [hWY],a
+.windowOwnerReady
 	ld a,[wAutoTextBoxDrawingControl]
 	bit 0,a
 	jr nz,.skipDrawingTextBoxBorder
