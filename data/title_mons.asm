@@ -1,11 +1,9 @@
-; *** This file is not used in Red++
-; *** Instead of a list, any valid Pokemon ID can show up at random
+; DUAL-5.19.31: active Red++/Blue++ title-screen rotation pools.
+; Each build compiles exactly one 16-entry list, matching the original
+; international Red/Blue version split while keeping Red++ species IDs.
 TitleMons:
 ; mons on the title screen are randomly chosen from here
 IF DEF(_RED)
-	db CHARMANDER
-	db SQUIRTLE
-	db BULBASAUR
 	db WEEDLE
 	db NIDORAN_M
 	db SCYTHER
@@ -21,9 +19,6 @@ IF DEF(_RED)
 	db MAGIKARP
 ENDC
 IF DEF(_GREEN)
-	db BULBASAUR
-	db CHARMANDER
-	db SQUIRTLE
 	db CATERPIE
 	db NIDORAN_F
 	db PINSIR
@@ -39,9 +34,6 @@ IF DEF(_GREEN)
 	db MAGIKARP
 ENDC
 IF DEF(_BLUE)
-	db SQUIRTLE
-	db CHARMANDER
-	db BULBASAUR
 	db MANKEY
 	db HITMONLEE
 	db VULPIX

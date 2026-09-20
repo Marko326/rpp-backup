@@ -14,31 +14,57 @@ NoThanksText:
 PrizeMenuMon1Entries:
 	db ABRA
 	db CLEFAIRY
-	db EEVEE
+IF DEF(_RED)
+	db NIDORINA
+ENDC
+IF DEF(_BLUE)
+	db NIDORINO
+ENDC
 	db "@"
 
 PrizeMenuMon1Cost:
+; DUAL-5.19.33: restore the original Red/Blue coin-price split while
+; retaining Red++'s current prize species (including Eevee/Heracross).
+IF DEF(_RED)
 	coins 180
 	coins 500
+ENDC
+IF DEF(_BLUE)
+	coins 120
+	coins 750
+ENDC
 	coins 1200
 	db "@"
 
 PrizeMenuMon2Entries:
-	db HERACROSS
+IF DEF(_RED)
 	db DRATINI
+	db SCYTHER
+ENDC
+IF DEF(_BLUE)
+	db PINSIR
+	db DRATINI
+ENDC
 	db PORYGON
 	db "@"
 
 PrizeMenuMon2Cost:
+IF DEF(_RED)
+	coins 2800
+	coins 5500
+	coins 9999
+ENDC
+IF DEF(_BLUE)
 	coins 2500
 	coins 4600
 	coins 6500
+ENDC
 	db "@"
 
 PrizeMenuTMsEntries:
-	db TM_37
-	db TM_24
 	db TM_13
+	db TM_24
+	db TM_37
 	db "@"
 
 PrizeMenuTMsCost:

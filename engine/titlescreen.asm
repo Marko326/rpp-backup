@@ -264,13 +264,18 @@ TitleScreenPickNewMon:
 	call TitleScreenCopyTileMapToVRAM
 
 .loop
+; DUAL-5.19.31: restore the 16-entry version-specific title-screen pool.
 ; Keep looping until a mon different from the current one is picked.
 	call Random
-	and a
-	jp z, .loop        ; Make sure it isn't 0
-	cp NUM_POKEMON + 1 ; Make sure it's a valid mon
-	jr nc, .loop       ; If it isn't, try again
-	ld hl, wWhichTrade ; wWhichTrade
+	and $f
+	cp TitleMonsEnd - TitleMons
+	jr nc, .loop
+	ld c, a
+	ld b, 0
+	ld hl, TitleMons
+	add hl, bc
+	ld a, [hl]
+	ld hl, wTitleMonSpecies
 
 ; Can't be the same as before.
 	cp [hl]
@@ -285,6 +290,9 @@ TitleScreenPickNewMon:
 	; HAX; palette must be refreshed
 	callba LoadTitleMonTilesAndPalettes
 	ret
+
+INCLUDE "data/title_mons.asm"
+TitleMonsEnd:
 
 TitleScreenScrollInMon:
 	ld d, 0 ; scroll in
