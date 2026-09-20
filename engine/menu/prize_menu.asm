@@ -13,6 +13,7 @@ CeladonPrizeMenu:
 	xor a
 	ld [wCurrentMenuItem],a
 	ld [wLastMenuItem],a
+.menuLoop
 	ld a,A_BUTTON | B_BUTTON
 	ld [wMenuWatchedKeys],a
 	ld a,$03
@@ -37,6 +38,9 @@ CeladonPrizeMenu:
 	cp 3 ; "NO,THANKS" choice
 	jr z, .noChoice
 	call HandlePrizeChoice
+	ld a,[wWhichPrize]
+	ld [wCurrentMenuItem],a ; Yes/No overwrites it; restore the selected prize
+	jr .menuLoop
 .noChoice
 	ld hl,wd730
 	res 6,[hl]
@@ -208,7 +212,7 @@ HandlePrizeChoice:
 	call YesNoChoice
 	ld a,[wCurrentMenuItem] ; yes/no answer (Y=0, N=1)
 	and a
-	jr nz, .printOhFineThen
+	ret nz ; No/B: return straight to the prize list, like the Pokemart
 	call LoadCoinsToSubtract
 	call HasEnoughCoins
 	jr c, .notEnoughCoins
@@ -217,8 +221,7 @@ HandlePrizeChoice:
 	jr nz, .giveMon
 	ld a,[wd11e]
 	ld b,a
-	ld a,1
-	ld c,a
+	ld c,1
 	call GiveItem
 	jr nc, .bagFull
 	jr .subtractCoins
@@ -249,15 +252,13 @@ HandlePrizeChoice:
 	ld de,wPlayerCoins + 1
 	ld c,$02 ; how many bytes
 	predef SubBCDPredef
-	jp PrintPrizePrice
+	ret ; the outer menu loop redraws the updated coin total
 .bagFull
 	ld hl,PrizeRoomBagIsFullTextPtr
-	jp PrintText
+	jr .printResultText
 .notEnoughCoins
 	ld hl,SorryNeedMoreCoinsText
-	jp PrintText
-.printOhFineThen
-	ld hl,OhFineThenTextPtr
+.printResultText
 	jp PrintText
 
 UnknownPrizeData:
@@ -280,11 +281,6 @@ SorryNeedMoreCoinsText:
 
 PrizeRoomBagIsFullTextPtr:
 	TX_FAR _OopsYouDontHaveEnoughRoomText
-	TX_WAIT
-	db "@"
-
-OhFineThenTextPtr:
-	TX_FAR _OhFineThenText
 	TX_WAIT
 	db "@"
 

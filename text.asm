@@ -1757,9 +1757,6 @@ _OopsYouDontHaveEnoughRoomText::
 	text "Oops! You don't"
 	line "have enough room.@@"
 
-_OhFineThenText::
-	text "Oh, fine then.@@"
-
 _GetDexRatedText::
 	text "Want to get your"
 	line "#dex rated?"
