@@ -77,6 +77,18 @@ PrepareOAMData:
 
 	call GetSpriteScreenXY
 
+	; MAPSIGN-5.19.40: while the bottom map-name Window is actually visible,
+	; omit the whole 16x16 logical sprite as soon as it overlaps the Window.
+	; MAPCLIP-5.19.37 clipped individual 8x8 OAM pieces after rendering, which
+	; could make moving characters lose half their body / appear to flicker.
+	ldh a, [hWY]
+	cp MAP_NAME_SIGN_Y
+	jr nz, .mapNameSignClear
+	ldh a, [hSpriteScreenY]
+	cp MAP_NAME_SIGN_Y - 15
+	jp nc, .nextSprite
+.mapNameSignClear
+
 	ld a, [hOAMBufferOffset]
 	ld e, a
 	ld d, wOAMBuffer / $100

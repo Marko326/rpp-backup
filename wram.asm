@@ -1314,7 +1314,16 @@ wPlayerLastSelectedMove:: ; cd63, MIRROR-5.19.19
 wEnemyLastSelectedMove:: ; cd64, MIRROR-5.19.19
 ; Last move the enemy reached the executable-move stage with. Persists across switches.
 	ds 1
-	ds 5
+wMapNameSignLastMap:: ; cd65, MAPSIGN-5.19.36
+; Last raw map ID observed by the map-name sign core.
+	ds 1
+wMapNameSignNamePtr:: ; cd66, MAPSIGN-5.19.36
+; Current Town Map name pointer used as the logical landmark identity.
+	ds 2
+wMapNameSignTimer:: ; cd68, MAPSIGN-5.19.36
+; Remaining display frames for the bottom Window map-name sign.
+	ds 1
+	ds 1 ; cd69 remains reserved for a later map-name-sign extension
 
 wActionResultOrTookBattleTurn:: ; cd6a
 ; This has overlapping related uses.

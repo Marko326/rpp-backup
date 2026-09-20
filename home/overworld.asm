@@ -45,6 +45,7 @@ OverworldLoopLessDelay::
 	; 60FPS: GBC double-speed is already enabled by InitGbcMode, so only one
 	; VBlank wait is needed for each normal overworld update.
 	call LoadGBPal
+	callab UpdateMapNameSign ; MAPSIGN-5.19.36
 	ld a,[wd736]
 	bit 6,a ; jumping down a ledge?
 	call nz, HandleMidJump
@@ -2198,6 +2199,7 @@ LoadMapData::
 	ld a,[H_LOADEDROMBANK]
 	push af
 	call DisableLCD
+	callab LoadMapNameSignGFX ; MAPSIGN-5.19.36: private CGB VRAM bank 1 copy
 	ld a,$98
 	ld [wMapViewVRAMPointer + 1],a
 	xor a
