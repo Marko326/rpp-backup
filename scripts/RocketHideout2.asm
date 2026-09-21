@@ -314,6 +314,14 @@ RocketHideout2Script3:
 	ret
 
 LoadSpinnerArrowTiles:
+	; SPIN-5.19.51: Yellow Legacy updates an 8-step, 2-pixel movement at 30 FPS.
+	; This project updates a 16-step, 1-pixel movement at 60 FPS, so run the
+	; spinner visual update only on every other movement step. That keeps the
+	; same 8 facing rotations and 8 spinner refreshes per 16-pixel tile.
+	ld a, [wWalkCounter]
+	bit 0, a
+	ret nz
+
 	ld a, [wSpriteStateData1 + 2]
 	srl a
 	srl a
@@ -326,18 +334,18 @@ LoadSpinnerArrowTiles:
 	ld a, [wCurMapTileset]
 	cp FACILITY
 	ld hl, FacilitySpinnerArrows
-	jr z, .asm_44ff6
+	jr z, .gotSpinnerArrows
 	ld hl, GymSpinnerArrows
-.asm_44ff6
+.gotSpinnerArrows
 	ld a, [wSimulatedJoypadStatesIndex]
 	bit 0, a
-	jr nz, .asm_45001
-	ld de, $18
+	jr nz, .alternateGraphics
+	ld de, 6 * 4
 	add hl, de
-.asm_45001
+.alternateGraphics
 	ld a, $4
 	ld bc, $0
-.asm_45006
+.loop
 	push af
 	push hl
 	push bc
@@ -353,7 +361,7 @@ LoadSpinnerArrowTiles:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	call CopyVideoData
+	call CopySpinnerTile
 	pop bc
 	ld a, $6
 	add c
@@ -361,7 +369,61 @@ LoadSpinnerArrowTiles:
 	pop hl
 	pop af
 	dec a
-	jr nz, .asm_45006
+	jr nz, .loop
+	; Yellow Legacy performs one VBlank wait after all four tiles. Combined with
+	; the every-other-step gate above, the 60 FPS movement keeps the same 24-frame
+	; spinner traversal timing instead of either crawling or spinning twice as fast.
+	call DelayFrame
+	ret
+
+CopySpinnerTile:
+	; Yellow Legacy's spinner path avoids CopyVideoData's one-VBlank wait per tile.
+	; Copy one 2bpp tile directly during safe LCD modes, then let the caller wait
+	; once after the complete four-tile set. Preserve CGB VRAM bank selection.
+	di
+	ld a, [rVBK]
+	push af
+	xor a
+	ld [rVBK], a
+
+	; Save destination and the real stack pointer. H_SPTEMP is the same scratch
+	; pair used by the engine's VBlank tile copier; interrupts are disabled here.
+	ld b, h
+	ld c, l
+	ld hl, sp + 0
+	ld a, h
+	ld [H_SPTEMP], a
+	ld a, l
+	ld [H_SPTEMP + 1], a
+
+	; Use the stack as a fast 16-byte ROM source, matching Yellow Legacy.
+	ld h, d
+	ld l, e
+	ld sp, hl
+	ld h, b
+	ld l, c
+	ld c, 8
+.copyLoop
+	pop de
+.waitVRAM
+	ld a, [rSTAT]
+	and %10
+	jr nz, .waitVRAM
+	ld [hl], e
+	inc l
+	ld [hl], d
+	inc l
+	dec c
+	jr nz, .copyLoop
+
+	ld a, [H_SPTEMP]
+	ld h, a
+	ld a, [H_SPTEMP + 1]
+	ld l, a
+	ld sp, hl
+	pop af
+	ld [rVBK], a
+	ei
 	ret
 
 spinner: MACRO
@@ -378,14 +440,15 @@ FacilitySpinnerArrows:
 FACILITY_SPINNER EQU $20 * $10
 vFacilitySpinner EQU vTileset + FACILITY_SPINNER
 
+	; Yellow Legacy: two complete four-direction animation frames.
 	spinner SpinnerArrowAnimTiles, $00, 1, vFacilitySpinner
 	spinner SpinnerArrowAnimTiles, $10, 1, vFacilitySpinner + $10
 	spinner SpinnerArrowAnimTiles, $20, 1, vFacilitySpinner + $100
 	spinner SpinnerArrowAnimTiles, $30, 1, vFacilitySpinner + $110
-	spinner Facility_GFX, FACILITY_SPINNER + $000, 1, vFacilitySpinner
-	spinner Facility_GFX, FACILITY_SPINNER + $010, 1, vFacilitySpinner + $10
-	spinner Facility_GFX, FACILITY_SPINNER + $100, 1, vFacilitySpinner + $100
-	spinner Facility_GFX, FACILITY_SPINNER + $110, 1, vFacilitySpinner + $110
+	spinner SpinnerArrowAnimTiles, $40, 1, vFacilitySpinner
+	spinner SpinnerArrowAnimTiles, $50, 1, vFacilitySpinner + $10
+	spinner SpinnerArrowAnimTiles, $60, 1, vFacilitySpinner + $100
+	spinner SpinnerArrowAnimTiles, $70, 1, vFacilitySpinner + $110
 
 GymSpinnerArrows:
 GYM_SPINNER EQU $3c * $10
@@ -395,10 +458,10 @@ vGymSpinner EQU vTileset + GYM_SPINNER
 	spinner SpinnerArrowAnimTiles, $30, 1, vGymSpinner + $10
 	spinner SpinnerArrowAnimTiles, $00, 1, vGymSpinner + $100
 	spinner SpinnerArrowAnimTiles, $20, 1, vGymSpinner + $110
-	spinner Gym_GFX, GYM_SPINNER + $000, 1, vGymSpinner
-	spinner Gym_GFX, GYM_SPINNER + $010, 1, vGymSpinner + $10
-	spinner Gym_GFX, GYM_SPINNER + $100, 1, vGymSpinner + $100
-	spinner Gym_GFX, GYM_SPINNER + $110, 1, vGymSpinner + $110
+	spinner SpinnerArrowAnimTiles, $50, 1, vGymSpinner
+	spinner SpinnerArrowAnimTiles, $70, 1, vGymSpinner + $10
+	spinner SpinnerArrowAnimTiles, $40, 1, vGymSpinner + $100
+	spinner SpinnerArrowAnimTiles, $60, 1, vGymSpinner + $110
 
 SpinnerPlayerFacingDirections:
 ; This isn't the order of the facing directions.  Rather, it's a list of
