@@ -1,4 +1,4 @@
-; ISLE-5.19.55
+; SHIP-5.19.57
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
@@ -17,6 +17,10 @@
 ; and Pewter Museum while keeping the Dept. Store elevator as a transit map.
 ; ISLE-5.19.55 gives Faraway Island, Southern Island, and Navel Rock explicit
 ; map-sign identities instead of falling through AreaUnknownText.
+; SHIP-5.19.56 gives S.S. Anne real deck/floor identities; cabin maps inherit
+; their parent floor while Bow, Kitchen, and Captain remain distinct landmarks.
+; SHIP-5.19.57 shortens the three room/deck labels and treats Vermilion Dock
+; as a neutral bridge so Vermilion City appears only after reaching the city map.
 ;
 ; BG/window graphics are deliberately kept in CGB VRAM bank 1. Bank 0 remains owned
 ; by the normal overworld tiles, textbox/roof graphics, and NPC walking frames.
@@ -32,6 +36,9 @@ DEF MAP_NAME_SIGN_SAFARI_WEST    EQU MAP_NAME_SIGN_SPECIAL | 4
 DEF MAP_NAME_SIGN_FARAWAY_ISLAND EQU MAP_NAME_SIGN_SPECIAL | 5
 DEF MAP_NAME_SIGN_SOUTHERN_ISLAND EQU MAP_NAME_SIGN_SPECIAL | 6
 DEF MAP_NAME_SIGN_NAVEL_ROCK     EQU MAP_NAME_SIGN_SPECIAL | 7
+DEF MAP_NAME_SIGN_SS_ANNE_BOW     EQU MAP_NAME_SIGN_SPECIAL | 8
+DEF MAP_NAME_SIGN_SS_ANNE_KITCHEN EQU MAP_NAME_SIGN_SPECIAL | 9
+DEF MAP_NAME_SIGN_SS_ANNE_CAPTAIN EQU MAP_NAME_SIGN_SPECIAL | 10
 ; Text scratch starts after the 20x4 frame in wTileMapBackup2.
 ; Do not define this with EQU: wTileMapBackup2 is a relocatable WRAM label in RGBDS 0.5.2.
 
@@ -216,13 +223,13 @@ UpdateMapNameSign::
 	ret c
 	ld a, [wCurMap]
 	cp CELADON_MANSION_4
-	jr z, .celadonMansionRoof
+	jp z, .celadonMansionRoof
 	cp CELADON_MANSION_5
-	jr z, .celadonMansionRoof
+	jp z, .celadonMansionRoof
 	cp SAFARI_ZONE_CENTER
-	jr z, .safariCenter
+	jp z, .safariCenter
 	cp SAFARI_ZONE_EAST
-	jr z, .safariEast
+	jp z, .safariEast
 	cp SAFARI_ZONE_NORTH
 	jp z, .safariNorth
 	cp SAFARI_ZONE_WEST
@@ -240,11 +247,17 @@ UpdateMapNameSign::
 	cp NAVEL_ROCK_OUTSIDE
 	jp z, .navelRock
 	cp NAVEL_ROCK_CAVE_1
-	jr z, .navelRock
+	jp z, .navelRock
 	cp NAVEL_ROCK_CAVE_2
-	jr z, .navelRock
+	jp z, .navelRock
 	cp NAVEL_ROCK_LUGIA_ROOM
-	jr z, .navelRock
+	jp z, .navelRock
+	cp SS_ANNE_5
+	jp z, .ssAnneBow
+	cp SS_ANNE_6
+	jp z, .ssAnneKitchen
+	cp SS_ANNE_7
+	jp z, .ssAnneCaptain
 	cp GAME_CORNER
 	jr z, .gameCorner
 	cp ROCK_TUNNEL_POKECENTER
@@ -320,6 +333,18 @@ UpdateMapNameSign::
 	ld e, GAME_CORNER
 	callab LoadTownMapEntryFromE
 	ld b, MAP_NAME_SIGN_GAME_CORNER
+	ret
+.ssAnneBow
+	ld hl, .SSAnneBowName
+	ld b, MAP_NAME_SIGN_SS_ANNE_BOW
+	ret
+.ssAnneKitchen
+	ld hl, .SSAnneKitchenName
+	ld b, MAP_NAME_SIGN_SS_ANNE_KITCHEN
+	ret
+.ssAnneCaptain
+	ld hl, .SSAnneCaptainName
+	ld b, MAP_NAME_SIGN_SS_ANNE_CAPTAIN
 	ret
 .load
 	callab LoadTownMapEntryFromE
@@ -442,6 +467,23 @@ UpdateMapNameSign::
 	db MUSEUM_2F, 2
 	dw .PewterMuseumName
 
+	; SHIP-5.19.56: S.S. Anne decks/floors. Cabin maps deliberately reuse the
+	; parent floor identity, so entering/leaving a cabin does not retrigger the sign.
+	db SS_ANNE_1, 1
+	dw SSAnneName
+	db SS_ANNE_8, 1 ; 1F rooms
+	dw SSAnneName
+	db SS_ANNE_2, 2
+	dw SSAnneName
+	db SS_ANNE_9, 2 ; 2F rooms
+	dw SSAnneName
+	db SS_ANNE_3, 3
+	dw SSAnneName
+	db SS_ANNE_4, MAP_NAME_SIGN_BASEMENT | 1
+	dw SSAnneName
+	db SS_ANNE_10, MAP_NAME_SIGN_BASEMENT | 1 ; B1F rooms
+	dw SSAnneName
+
 	; Mt. Moon 1F/B1F/B2F.
 	db MT_MOON_1, 1
 	dw MountMoonName
@@ -523,6 +565,9 @@ UpdateMapNameSign::
 	; BLDG-5.19.52: the department-store floors now have real floor identities;
 	; only the elevator remains a neutral bridge between them.
 	db CELADON_MART_ELEVATOR
+	; SHIP-5.19.57: keep the S.S. Anne identity on the dock. Vermilion City
+	; becomes effective only after the player reaches the actual city map.
+	db VERMILION_DOCK
 	db $ff
 
 .CopyMapNameToBuffer
@@ -681,6 +726,9 @@ UpdateMapNameSign::
 	dw .FarawayIslandName
 	dw .SouthernIslandName
 	dw .NavelRockName
+	dw .SSAnneBowName
+	dw .SSAnneKitchenName
+	dw .SSAnneCaptainName
 
 .GameCornerName
 	db "Rocket Game Corner@"
@@ -698,6 +746,12 @@ UpdateMapNameSign::
 	db "Southern Island@"
 .NavelRockName
 	db "Navel Rock@"
+.SSAnneBowName
+	db "Bow@"
+.SSAnneKitchenName
+	db "Kitchen@"
+.SSAnneCaptainName
+	db "Captain's Room@"
 
 .BuildMapNameSign
 ; Build a 20x4 frame in wTileMapBackup2 using graphics already mirrored in VRAM1.
