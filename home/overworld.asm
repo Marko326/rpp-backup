@@ -25,6 +25,11 @@ EnterMap::
 	ld a, [hl]
 	and 1 << 4 | 1 << 3 ; fly warp or dungeon warp
 	jr z, .didNotEnterUsingFlyWarpOrDungeonWarp
+	; MAPFLOOR-5.19.44: for non-Fly warp pads, prepare a changed destination
+	; floor sign before EnterMapAnim fades the target map in. This prevents the
+	; destination's sprites/BG details from flashing before the bottom Window appears.
+	callab PrimeMapNameSignForWarpPad
+	ld hl, wd732 ; callab does not preserve HL
 	res 3, [hl]
 	callba EnterMapAnim
 	call UpdateSprites

@@ -1323,7 +1323,10 @@ wMapNameSignNamePtr:: ; cd66, MAPSIGN-5.19.36
 wMapNameSignTimer:: ; cd68, MAPSIGN-5.19.36
 ; Remaining display frames for the bottom Window map-name sign.
 	ds 1
-	ds 1 ; cd69 remains reserved for a later map-name-sign extension
+wMapNameSignFloor:: ; cd69, MAPFLOOR-5.19.42
+; Optional floor identity for the current map sign. 0 = no floor suffix; positive
+; values render as nF. Kept separate from the base landmark pointer for reuse.
+	ds 1
 
 wActionResultOrTookBattleTurn:: ; cd6a
 ; This has overlapping related uses.

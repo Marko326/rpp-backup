@@ -1,10 +1,12 @@
-; MAPSIGN-5.19.41
+; MAPFLOOR-5.19.42
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
 ; aliases. Ordinary one-room interiors inherit their surrounding city/route; transit
 ; maps keep the previous landmark; Celadon Dept. Store floors are neutral so the
 ; rooftop remains distinct until the player actually exits back to Celadon City.
+; MAPFLOOR-5.19.42 adds a separate floor identity without duplicating Town Map names;
+; step 1 enables Silph Co. 1F-11F while keeping its elevator neutral.
 ;
 ; BG/window graphics are deliberately kept in CGB VRAM bank 1. Bank 0 remains owned
 ; by the normal overworld tiles, textbox/roof graphics, and NPC walking frames.
@@ -31,6 +33,19 @@ LoadMapNameSignGFX::
 	pop af
 	ld [rIE], a
 	ret
+
+PrimeMapNameSignForWarpPad::
+; MAPFLOOR-5.19.44: warp-pad destinations are already loaded before EnterMapAnim.
+; Prime the destination sign before the target floor fades in, so sprites/background
+; details at the bottom cannot appear briefly before the Window covers them.
+; Fly also uses wd732 bit 3, so keep Fly timing unchanged via wFlags_D733 bit 7.
+	ld a, [wd732]
+	bit 3, a
+	ret z
+	ld a, [wFlags_D733]
+	bit 7, a
+	ret nz
+	jp UpdateMapNameSign
 
 UpdateMapNameSign::
 ; Called once per normal overworld frame.
@@ -97,10 +112,14 @@ UpdateMapNameSign::
 
 	; Loading a save directly inside a neutral map still needs a stable initial
 	; landmark. Resolve its physical surroundings once, but never display it.
+	; B returns the optional floor identity (0 = none).
 	call .ResolvePhysicalLandmark
 	jp .storeWithoutShowing
 
 .resolveLandmark
+	; MAPFLOOR-5.19.42: HL is the base landmark name and B is a separate floor tag.
+	; Keeping them separate lets every Silph floor share SilphCoName while still
+	; treating 1F -> 2F, warp pads, etc. as real map-sign transitions.
 	call .ResolvePhysicalLandmark
 
 	ld a, [wMapNameSignNamePtr + 1]
@@ -112,6 +131,9 @@ UpdateMapNameSign::
 	jr nz, .newLandmark
 	ld a, [wMapNameSignNamePtr + 1]
 	cp h
+	jr nz, .newLandmark
+	ld a, [wMapNameSignFloor]
+	cp b
 	jr z, .sameLandmark
 
 .newLandmark
@@ -119,6 +141,8 @@ UpdateMapNameSign::
 	ld [wMapNameSignNamePtr], a
 	ld a, h
 	ld [wMapNameSignNamePtr + 1], a
+	ld a, b
+	ld [wMapNameSignFloor], a
 
 	; Match Crystal's notable no-sign landmarks where this project has an
 	; equivalent Town Map name. Unknown pseudo locations are also never shown.
@@ -148,6 +172,8 @@ UpdateMapNameSign::
 	ld [wMapNameSignNamePtr], a
 	ld a, h
 	ld [wMapNameSignNamePtr + 1], a
+	ld a, b
+	ld [wMapNameSignFloor], a
 .sameLandmark
 	; Same/neutral/no-sign transitions should still retire an old popup immediately.
 	jp .cancel
@@ -162,10 +188,12 @@ UpdateMapNameSign::
 	ret
 
 .ResolvePhysicalLandmark
-; Resolve the map-name sign from the real loaded map, with only a few physical
-; geography corrections for one-room interiors / neutral entrance maps whose Town
-; Map UI names are intentionally POI-oriented. Fly destination aliases never enter
-; this path.
+; Resolve the map-name sign from the real loaded map.
+; out: HL = base landmark name pointer, B = optional floor identity (0 = none).
+; MAPFLOOR-5.19.42 keeps floor identity separate from the shared Town Map name, so
+; later multi-floor sites can reuse the same mechanism without adding duplicate names.
+	call .ResolveSilphFloor
+	ret c
 	ld a, [wCurMap]
 	cp ROCK_TUNNEL_POKECENTER
 	jr z, .route10
@@ -179,6 +207,7 @@ UpdateMapNameSign::
 	jr z, .fuchsiaCity
 	ld e, a
 	callab LoadTownMapEntryFromE
+	ld b, 0
 	ret
 .route2
 	ld e, ROUTE_2
@@ -196,7 +225,45 @@ UpdateMapNameSign::
 	ld e, FUCHSIA_CITY
 .load
 	callab LoadTownMapEntryFromE
+	ld b, 0
 	ret
+
+.ResolveSilphFloor
+; Step 1 floor table. Carry = set when wCurMap is a real Silph Co. floor.
+; The elevator is intentionally excluded and handled as a neutral transit map.
+	ld a, [wCurMap]
+	ld c, a
+	ld hl, .SilphFloorMapList
+.loopSilphFloors
+	ld a, [hli]
+	cp $ff
+	jr z, .notSilphFloor
+	cp c
+	jr z, .silphFloorFound
+	inc hl ; skip floor tag
+	jr .loopSilphFloors
+.silphFloorFound
+	ld b, [hl]
+	ld hl, SilphCoName
+	scf
+	ret
+.notSilphFloor
+	and a ; clear carry
+	ret
+
+.SilphFloorMapList
+	db SILPH_CO_1F, 1
+	db SILPH_CO_2F, 2
+	db SILPH_CO_3F, 3
+	db SILPH_CO_4F, 4
+	db SILPH_CO_5F, 5
+	db SILPH_CO_6F, 6
+	db SILPH_CO_7F, 7
+	db SILPH_CO_8F, 8
+	db SILPH_CO_9F, 9
+	db SILPH_CO_10F, 10
+	db SILPH_CO_11F, 11
+	db $ff
 
 .IsNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -227,6 +294,9 @@ UpdateMapNameSign::
 	db ROUTE_18_GATE_1F, ROUTE_18_GATE_2F
 	db ROUTE_19_GATE, ROUTE_22_GATE, SAFARI_ZONE_ENTRANCE
 	db DIGLETTS_CAVE_EXIT, DIGLETTS_CAVE_ENTRANCE
+	; MAPFLOOR-5.19.42: Silph elevator inherits the floor last visited. Exiting
+	; onto another floor then compares that floor tag and shows the destination.
+	db SILPH_CO_ELEVATOR
 	; Keep the rooftop distinct while ordinary department-store floors/elevator
 	; merely bridge between it and Celadon City.
 	db CELADON_MART_1, CELADON_MART_2, CELADON_MART_3, CELADON_MART_4
@@ -251,9 +321,42 @@ UpdateMapNameSign::
 	ld [hl], " "
 .checkEnd
 	cp "@"
-	ret z
+	jr z, .appendFloor
 	inc hl
 	jr .normalize
+
+.appendFloor
+; MAPFLOOR-5.19.42: append " nF" to the copied display text only. The base name
+; pointer remains unchanged, while wMapNameSignFloor participates in identity checks.
+	ld a, [wMapNameSignFloor]
+	and a
+	ret z
+	ld [hl], " "
+	inc hl
+	ld b, a
+	ld c, 0
+	ld a, b
+.countFloorTens
+	cp 10
+	jr c, .writeFloorDigits
+	sub 10
+	inc c
+	jr .countFloorTens
+.writeFloorDigits
+	ld b, a ; ones digit
+	ld a, c
+	and a
+	jr z, .writeFloorOnes
+	add "0"
+	ld [hli], a
+.writeFloorOnes
+	ld a, b
+	add "0"
+	ld [hli], a
+	ld [hl], "F"
+	inc hl
+	ld [hl], "@"
+	ret
 
 .BuildMapNameSign
 ; Build a 20x4 frame in wTileMapBackup2 using graphics already mirrored in VRAM1.
