@@ -54,9 +54,11 @@ DOWN_ARROW_BLINK_INTERVAL_FRAMES EQU 42
 SCREEN_WIDTH_PIXELS  EQU SCREEN_WIDTH * 8
 SCREEN_HEIGHT_PIXELS EQU SCREEN_HEIGHT * 8
 
-; MAPSIGN-5.19.36: bottom four-row Crystal-style map-name Window.
+; MAPSIGN-5.19.41: bottom four-row Crystal-style map-name Window.
 MAP_NAME_SIGN_Y      EQU SCREEN_HEIGHT_PIXELS - 4 * 8
-MAP_NAME_SIGN_FRAMES EQU 60
+; 60FPS overworld: 90 frames = about 1.5 seconds, between the old 1s RPP timing
+; and Crystal's roughly 2s visual duration.
+MAP_NAME_SIGN_FRAMES EQU 90
 
 BG_MAP_WIDTH  EQU 32
 BG_MAP_HEIGHT EQU 32
