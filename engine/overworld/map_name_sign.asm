@@ -1,4 +1,4 @@
-; MAPFLOOR-5.19.50
+; BLDG-5.19.52
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
@@ -13,6 +13,8 @@
 ; treating the room as neutral between Celadon City and Team Rocket HQ.
 ; MAPFLOOR-5.19.50 adds Safari Zone area identities and floor labels for the main
 ; multi-level caves while keeping Safari rest/secret houses as transit interiors.
+; BLDG-5.19.52 adds floor identities for Celadon Dept. Store, Celadon Mansion,
+; and Pewter Museum while keeping the Dept. Store elevator as a transit map.
 ;
 ; BG/window graphics are deliberately kept in CGB VRAM bank 1. Bank 0 remains owned
 ; by the normal overworld tiles, textbox/roof graphics, and NPC walking frames.
@@ -114,9 +116,8 @@ UpdateMapNameSign::
 
 	; MAPSIGN-5.19.40: transit maps inherit the previous effective landmark.
 	; This prevents same-route gates (Route 12/15/16/18, etc.) from forcing a
-	; duplicate route popup when the player exits on either side. Celadon Dept.
-	; Store 1F-5F/elevator use the same neutral rule so Roof -> floor does not
-	; immediately pop CELADON CITY; it appears only after leaving the building.
+	; duplicate route popup when the player exits on either side. The Celadon
+	; Dept. Store elevator remains neutral between the building's real floors.
 	call .IsNeutralMap
 	jr nz, .resolveLandmark
 	ld a, [wMapNameSignNamePtr + 1]
@@ -209,6 +210,10 @@ UpdateMapNameSign::
 	call .ResolveKnownFloor
 	ret c
 	ld a, [wCurMap]
+	cp CELADON_MANSION_4
+	jr z, .celadonMansionRoof
+	cp CELADON_MANSION_5
+	jr z, .celadonMansionRoof
 	cp SAFARI_ZONE_CENTER
 	jr z, .safariCenter
 	cp SAFARI_ZONE_EAST
@@ -248,6 +253,11 @@ UpdateMapNameSign::
 .fuchsiaCity
 	ld e, FUCHSIA_CITY
 	jr .load
+.celadonMansionRoof
+	; BLDG-5.19.52: rooftop room and outdoor roof share one effective landmark.
+	ld hl, .CeladonMansionRoofName
+	ld b, 0
+	ret
 .safariCenter
 	ld e, SAFARI_ZONE_CENTER
 	callab LoadTownMapEntryFromE
@@ -370,6 +380,33 @@ UpdateMapNameSign::
 	db ROCKET_HIDEOUT_4, MAP_NAME_SIGN_BASEMENT | 4
 	dw RocketHQName
 
+	; BLDG-5.19.52: Celadon Dept. Store 1F-5F. Elevator stays neutral below;
+	; the existing rooftop name remains a separate landmark.
+	db CELADON_MART_1, 1
+	dw .CeladonDeptStoreName
+	db CELADON_MART_2, 2
+	dw .CeladonDeptStoreName
+	db CELADON_MART_3, 3
+	dw .CeladonDeptStoreName
+	db CELADON_MART_4, 4
+	dw .CeladonDeptStoreName
+	db CELADON_MART_5, 5
+	dw .CeladonDeptStoreName
+
+	; Celadon Mansion 1F-3F. Maps 4/5 share the Roof identity above.
+	db CELADON_MANSION_1, 1
+	dw .CeladonMansionName
+	db CELADON_MANSION_2, 2
+	dw .CeladonMansionName
+	db CELADON_MANSION_3, 3
+	dw .CeladonMansionName
+
+	; Pewter Museum 1F-2F.
+	db MUSEUM_1F, 1
+	dw .PewterMuseumName
+	db MUSEUM_2F, 2
+	dw .PewterMuseumName
+
 	; Mt. Moon 1F/B1F/B2F.
 	db MT_MOON_1, 1
 	dw MountMoonName
@@ -448,10 +485,9 @@ UpdateMapNameSign::
 	; MAPFLOOR: elevators inherit the floor last visited. Exiting onto another
 	; floor then compares that floor tag and shows the destination.
 	db SILPH_CO_ELEVATOR, ROCKET_HIDEOUT_ELEVATOR
-	; Keep the rooftop distinct while ordinary department-store floors/elevator
-	; merely bridge between it and Celadon City.
-	db CELADON_MART_1, CELADON_MART_2, CELADON_MART_3, CELADON_MART_4
-	db CELADON_MART_5, CELADON_MART_ELEVATOR
+	; BLDG-5.19.52: the department-store floors now have real floor identities;
+	; only the elevator remains a neutral bridge between them.
+	db CELADON_MART_ELEVATOR
 	db $ff
 
 .CopyMapNameToBuffer
@@ -460,7 +496,24 @@ UpdateMapNameSign::
 ; original MapNames bank has only a few bytes of layout slack left.
 	ld a, [wMapNameSignFloor]
 	bit 6, a
-	jr nz, .copySpecialName
+	jp nz, .copySpecialName
+
+	; BLDG-5.19.52: new building names live in this roomy map-sign bank instead
+	; of consuming the shared Town Map name bank. They still use the normal floor
+	; suffix path, so only the source-copy step differs.
+	ld de, .CeladonDeptStoreName
+	call .CompareNamePointer
+	jr z, .copyLocalName
+	ld de, .CeladonMansionName
+	call .CompareNamePointer
+	jr z, .copyLocalName
+	ld de, .CeladonMansionRoofName
+	call .CompareNamePointer
+	jr z, .copyLocalName
+	ld de, .PewterMuseumName
+	call .CompareNamePointer
+	jr z, .copyLocalName
+
 	ld a, [wMapNameSignNamePtr]
 	ld l, a
 	ld a, [wMapNameSignNamePtr + 1]
@@ -480,6 +533,20 @@ UpdateMapNameSign::
 	jr z, .appendFloor
 	inc hl
 	jr .normalize
+
+.copyLocalName
+	ld a, [wMapNameSignNamePtr]
+	ld e, a
+	ld a, [wMapNameSignNamePtr + 1]
+	ld d, a
+	ld hl, wTileMapBackup2 + 4 * SCREEN_WIDTH
+.copyLocalNameLoop
+	ld a, [de]
+	inc de
+	ld [hli], a
+	cp "@"
+	jr nz, .copyLocalNameLoop
+	dec hl ; point back at the terminator so the floor suffix can replace it
 
 .appendFloor
 ; MAPFLOOR-5.19.46: append " nF" or " BnF" to the copied display text only.
@@ -558,6 +625,17 @@ UpdateMapNameSign::
 	cp "@"
 	jr nz, .copySpecialNameLoop
 	ret
+
+; BLDG-5.19.52: local building labels. Floor suffixes are appended by the shared
+; floor formatter; the roof name is already final text.
+.CeladonDeptStoreName
+	db "Celadon Dept.@"
+.CeladonMansionName
+	db "Celadon Mansion@"
+.CeladonMansionRoofName
+	db "Celadon Mans. Roof@"
+.PewterMuseumName
+	db "Pewter Museum@"
 
 .SpecialNameTable
 	dw .GameCornerName
