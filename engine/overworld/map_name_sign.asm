@@ -1,4 +1,4 @@
-; MAPFLOOR-5.19.49
+; MAPFLOOR-5.19.50
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
@@ -11,13 +11,20 @@
 ; MAPFLOOR-5.19.48 fixes the Mansion B1F separator check.
 ; MAPFLOOR-5.19.49 gives Rocket Game Corner its own map-sign identity instead of
 ; treating the room as neutral between Celadon City and Team Rocket HQ.
+; MAPFLOOR-5.19.50 adds Safari Zone area identities and floor labels for the main
+; multi-level caves while keeping Safari rest/secret houses as transit interiors.
 ;
 ; BG/window graphics are deliberately kept in CGB VRAM bank 1. Bank 0 remains owned
 ; by the normal overworld tiles, textbox/roof graphics, and NPC walking frames.
 
 DEF MAP_NAME_SIGN_ATTR        EQU PAL_BG_TEXT | (1 << OAM_TILE_BANK) | (1 << OAM_PRIORITY)
-DEF MAP_NAME_SIGN_BASEMENT    EQU 1 << 7
-DEF MAP_NAME_SIGN_GAME_CORNER EQU 1 << 6 ; private non-floor identity tag
+DEF MAP_NAME_SIGN_BASEMENT       EQU 1 << 7
+DEF MAP_NAME_SIGN_SPECIAL        EQU 1 << 6 ; private non-floor identity namespace
+DEF MAP_NAME_SIGN_GAME_CORNER    EQU MAP_NAME_SIGN_SPECIAL | 0
+DEF MAP_NAME_SIGN_SAFARI_CENTER  EQU MAP_NAME_SIGN_SPECIAL | 1
+DEF MAP_NAME_SIGN_SAFARI_EAST    EQU MAP_NAME_SIGN_SPECIAL | 2
+DEF MAP_NAME_SIGN_SAFARI_NORTH   EQU MAP_NAME_SIGN_SPECIAL | 3
+DEF MAP_NAME_SIGN_SAFARI_WEST    EQU MAP_NAME_SIGN_SPECIAL | 4
 ; Text scratch starts after the 20x4 frame in wTileMapBackup2.
 ; Do not define this with EQU: wTileMapBackup2 is a relocatable WRAM label in RGBDS 0.5.2.
 
@@ -202,6 +209,14 @@ UpdateMapNameSign::
 	call .ResolveKnownFloor
 	ret c
 	ld a, [wCurMap]
+	cp SAFARI_ZONE_CENTER
+	jr z, .safariCenter
+	cp SAFARI_ZONE_EAST
+	jr z, .safariEast
+	cp SAFARI_ZONE_NORTH
+	jr z, .safariNorth
+	cp SAFARI_ZONE_WEST
+	jr z, .safariWest
 	cp GAME_CORNER
 	jr z, .gameCorner
 	cp ROCK_TUNNEL_POKECENTER
@@ -233,6 +248,26 @@ UpdateMapNameSign::
 .fuchsiaCity
 	ld e, FUCHSIA_CITY
 	jr .load
+.safariCenter
+	ld e, SAFARI_ZONE_CENTER
+	callab LoadTownMapEntryFromE
+	ld b, MAP_NAME_SIGN_SAFARI_CENTER
+	ret
+.safariEast
+	ld e, SAFARI_ZONE_EAST
+	callab LoadTownMapEntryFromE
+	ld b, MAP_NAME_SIGN_SAFARI_EAST
+	ret
+.safariNorth
+	ld e, SAFARI_ZONE_NORTH
+	callab LoadTownMapEntryFromE
+	ld b, MAP_NAME_SIGN_SAFARI_NORTH
+	ret
+.safariWest
+	ld e, SAFARI_ZONE_WEST
+	callab LoadTownMapEntryFromE
+	ld b, MAP_NAME_SIGN_SAFARI_WEST
+	ret
 .gameCorner
 	; The original Celadon sign calls this place "Rocket Game Corner". Keep the
 	; existing Celadon Town Map pointer for identity storage, but add a private
@@ -334,12 +369,55 @@ UpdateMapNameSign::
 	dw RocketHQName
 	db ROCKET_HIDEOUT_4, MAP_NAME_SIGN_BASEMENT | 4
 	dw RocketHQName
+
+	; Mt. Moon 1F/B1F/B2F.
+	db MT_MOON_1, 1
+	dw MountMoonName
+	db MT_MOON_2, MAP_NAME_SIGN_BASEMENT | 1
+	dw MountMoonName
+	db MT_MOON_3, MAP_NAME_SIGN_BASEMENT | 2
+	dw MountMoonName
+
+	; Rock Tunnel 1F/B1F.
+	db ROCK_TUNNEL_1, 1
+	dw RockTunnelName
+	db ROCK_TUNNEL_2, MAP_NAME_SIGN_BASEMENT | 1
+	dw RockTunnelName
+
+	; Victory Road 1F-3F.
+	db VICTORY_ROAD_1, 1
+	dw VictoryRoadName
+	db VICTORY_ROAD_2, 2
+	dw VictoryRoadName
+	db VICTORY_ROAD_3, 3
+	dw VictoryRoadName
+
+	; Cerulean Cave 1F/2F/B1F.
+	db UNKNOWN_DUNGEON_1, 1
+	dw CeruleanCaveName
+	db UNKNOWN_DUNGEON_2, 2
+	dw CeruleanCaveName
+	db UNKNOWN_DUNGEON_3, MAP_NAME_SIGN_BASEMENT | 1
+	dw CeruleanCaveName
+
+	; Seafoam Islands 1F/B1F-B4F.
+	db SEAFOAM_ISLANDS_1, 1
+	dw SeafoamIslandsName
+	db SEAFOAM_ISLANDS_2, MAP_NAME_SIGN_BASEMENT | 1
+	dw SeafoamIslandsName
+	db SEAFOAM_ISLANDS_3, MAP_NAME_SIGN_BASEMENT | 2
+	dw SeafoamIslandsName
+	db SEAFOAM_ISLANDS_4, MAP_NAME_SIGN_BASEMENT | 3
+	dw SeafoamIslandsName
+	db SEAFOAM_ISLANDS_5, MAP_NAME_SIGN_BASEMENT | 4
+	dw SeafoamIslandsName
 	db $ff
 
 .IsNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
-; Safari rest houses are deliberately not listed: they already resolve to Safari
-; Zone and therefore behave like ordinary one-room interiors.
+; Safari rest/secret houses inherit the outdoor Safari area. Once Center/East/North/West
+; have separate identities, treating the rooms as normal maps would incorrectly fall
+; back to the generic Safari Zone name every time the player enters one.
 	ld a, [wCurMap]
 	ld c, a
 	ld hl, .NeutralMapList
@@ -364,6 +442,8 @@ UpdateMapNameSign::
 	db ROUTE_16_GATE_1F, ROUTE_16_GATE_2F
 	db ROUTE_18_GATE_1F, ROUTE_18_GATE_2F
 	db ROUTE_19_GATE, ROUTE_22_GATE, SAFARI_ZONE_ENTRANCE
+	db SAFARI_ZONE_REST_HOUSE_1, SAFARI_ZONE_REST_HOUSE_2
+	db SAFARI_ZONE_REST_HOUSE_3, SAFARI_ZONE_REST_HOUSE_4, SAFARI_ZONE_SECRET_HOUSE
 	db DIGLETTS_CAVE_EXIT, DIGLETTS_CAVE_ENTRANCE
 	; MAPFLOOR: elevators inherit the floor last visited. Exiting onto another
 	; floor then compares that floor tag and shows the destination.
@@ -379,8 +459,8 @@ UpdateMapNameSign::
 ; Rocket Game Corner uses a private label in this roomy map-sign bank because the
 ; original MapNames bank has only a few bytes of layout slack left.
 	ld a, [wMapNameSignFloor]
-	cp MAP_NAME_SIGN_GAME_CORNER
-	jr z, .copyGameCornerName
+	bit 6, a
+	jr nz, .copySpecialName
 	ld a, [wMapNameSignNamePtr]
 	ld l, a
 	ld a, [wMapNameSignNamePtr + 1]
@@ -407,23 +487,24 @@ UpdateMapNameSign::
 	ld a, [wMapNameSignFloor]
 	and a
 	ret z
-	; Pokemon Mansion B1F is one column too wide with the normal separator.
-	; Omit only this space so 1F-3F keep their existing alignment and other
-	; basement names (for example Team Rocket HQ B1F) remain unchanged.
-	; Keep the floor byte in C while testing the name pointer. LD does not
-	; alter flags, so the NZ result from CompareNamePointer survives until
-	; the branch below. 5.19.47 restored AF too early and accidentally
-	; restored the old NZ flag as well, so the separator was still written.
+	; Pokemon Mansion and Seafoam Islands are both exactly 18 columns with a normal
+	; floor suffix, but 19 columns as "... BnF". Omit only the basement separator
+	; for these two names; all other floor labels retain the normal space.
 	ld c, a
+	bit 7, a
+	jr z, .writeFloorSeparator
 	ld de, PokemonMansionName
 	call .CompareNamePointer
-	ld a, c
-	jr nz, .writeFloorSeparator
-	bit 7, a
-	jr nz, .checkBasementPrefix
+	jr z, .omitFloorSeparator
+	ld de, SeafoamIslandsName
+	call .CompareNamePointer
+	jr z, .omitFloorSeparator
 .writeFloorSeparator
+	ld a, c
 	ld [hl], " "
 	inc hl
+.omitFloorSeparator
+	ld a, c
 .checkBasementPrefix
 	bit 7, a
 	jr z, .floorNumberReady
@@ -456,19 +537,45 @@ UpdateMapNameSign::
 	ld [hl], "@"
 	ret
 
-.copyGameCornerName
-	ld de, .GameCornerName
+.copySpecialName
+	; bit 6 selects a private display string in this bank. The low six bits are
+	; the table index; these variants participate in landmark identity but never
+	; receive a floor suffix.
+	and $3f
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, .SpecialNameTable
+	add hl, bc
+	ld a, [hli]
+	ld d, [hl]
+	ld e, a
 	ld hl, wTileMapBackup2 + 4 * SCREEN_WIDTH
-.copyGameCornerNameLoop
+.copySpecialNameLoop
 	ld a, [de]
 	inc de
 	ld [hli], a
 	cp "@"
-	jr nz, .copyGameCornerNameLoop
+	jr nz, .copySpecialNameLoop
 	ret
+
+.SpecialNameTable
+	dw .GameCornerName
+	dw .SafariCenterName
+	dw .SafariEastName
+	dw .SafariNorthName
+	dw .SafariWestName
 
 .GameCornerName
 	db "Rocket Game Corner@"
+.SafariCenterName
+	db "Safari Zone Center@"
+.SafariEastName
+	db "Safari Zone East@"
+.SafariNorthName
+	db "Safari Zone North@"
+.SafariWestName
+	db "Safari Zone West@"
 
 .BuildMapNameSign
 ; Build a 20x4 frame in wTileMapBackup2 using graphics already mirrored in VRAM1.
