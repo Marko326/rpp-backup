@@ -203,20 +203,16 @@ DoIslandMenu:
 	ret
 	
 WelcomeToSeagallopText:
+	; FERRY-5.19.58: keep ticket/no-ticket logic unchanged, shorten the common greeting.
 	text "Welcome aboard"
-	line "the Seagallop"
-	cont "Ferry!"
-	
-	para "We travel all"
-	line "over carrying"
-	cont "passengers."
-	
-	para "Do you have a"
-	line "ticket to travel"
-	cont "with us today?@@"
+ 	line "the Seagallop"
+	cont "Ferry!@@"
 
 NoTicketText:
-	text "No? That's too"
+	text "Do you have a"
+	line "ticket to travel"
+	cont "with us today?"
+	para "No? That's too"
 	line "bad."
 	
 	para "Come back and see"

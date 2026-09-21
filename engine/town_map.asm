@@ -599,7 +599,7 @@ DisplayWildLocations:
 	jp CopyData
 
 AreaUnknownText:
-	db " Area unknown@"
+	db "AreaUnknown@"
 
 TownMapCoordsToOAMCoords:
 ; in: b = y, c = x
