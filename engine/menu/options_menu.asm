@@ -289,6 +289,12 @@ DisplayOptionMenu:
 	coord hl, 1, 11
 	ld de,BattleStyleOptionText
 	call PlaceString
+	; Keep the build version visible in-game without consuming the spare bottom row.
+	; The Battle Style value occupies x=2-4, so x=6 leaves one blank column
+	; and fits the 12-character DUAL-x.xx.xx string inside the frame.
+	coord hl, 6, 13
+	ld de,GameVersionText
+	call PlaceString
 	ld de,OptionMenuPage1Text
 	jp .drawPageSelector
 
