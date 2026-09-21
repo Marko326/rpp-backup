@@ -1,17 +1,23 @@
-; MAPFLOOR-5.19.42
+; MAPFLOOR-5.19.49
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
 ; aliases. Ordinary one-room interiors inherit their surrounding city/route; transit
 ; maps keep the previous landmark; Celadon Dept. Store floors are neutral so the
 ; rooftop remains distinct until the player actually exits back to Celadon City.
-; MAPFLOOR-5.19.42 adds a separate floor identity without duplicating Town Map names;
-; step 1 enables Silph Co. 1F-11F while keeping its elevator neutral.
+; MAPFLOOR-5.19.42 added a separate floor identity without duplicating Town Map names.
+; MAPFLOOR-5.19.46 expands the same table to Pokemon Tower, Pokemon Mansion, and
+; Team Rocket HQ, including B1F-B4F basement suffixes while elevators remain neutral.
+; MAPFLOOR-5.19.48 fixes the Mansion B1F separator check.
+; MAPFLOOR-5.19.49 gives Rocket Game Corner its own map-sign identity instead of
+; treating the room as neutral between Celadon City and Team Rocket HQ.
 ;
 ; BG/window graphics are deliberately kept in CGB VRAM bank 1. Bank 0 remains owned
 ; by the normal overworld tiles, textbox/roof graphics, and NPC walking frames.
 
 DEF MAP_NAME_SIGN_ATTR        EQU PAL_BG_TEXT | (1 << OAM_TILE_BANK) | (1 << OAM_PRIORITY)
+DEF MAP_NAME_SIGN_BASEMENT    EQU 1 << 7
+DEF MAP_NAME_SIGN_GAME_CORNER EQU 1 << 6 ; private non-floor identity tag
 ; Text scratch starts after the 20x4 frame in wTileMapBackup2.
 ; Do not define this with EQU: wTileMapBackup2 is a relocatable WRAM label in RGBDS 0.5.2.
 
@@ -117,9 +123,9 @@ UpdateMapNameSign::
 	jp .storeWithoutShowing
 
 .resolveLandmark
-	; MAPFLOOR-5.19.42: HL is the base landmark name and B is a separate floor tag.
-	; Keeping them separate lets every Silph floor share SilphCoName while still
-	; treating 1F -> 2F, warp pads, etc. as real map-sign transitions.
+	; MAPFLOOR: HL is the shared base name and B is a separate floor tag.
+	; The tag makes movement between floors a real sign transition without needing
+	; duplicate Town Map names for every floor.
 	call .ResolvePhysicalLandmark
 
 	ld a, [wMapNameSignNamePtr + 1]
@@ -190,11 +196,14 @@ UpdateMapNameSign::
 .ResolvePhysicalLandmark
 ; Resolve the map-name sign from the real loaded map.
 ; out: HL = base landmark name pointer, B = optional floor identity (0 = none).
-; MAPFLOOR-5.19.42 keeps floor identity separate from the shared Town Map name, so
-; later multi-floor sites can reuse the same mechanism without adding duplicate names.
-	call .ResolveSilphFloor
+; MAPFLOOR-5.19.46 uses one shared table for supported multi-floor indoor sites.
+; bit 7 of B marks a basement floor; normal floors use the low bits. 5.19.49
+; reserves bit 6 as a private Game Corner identity tag with no floor suffix.
+	call .ResolveKnownFloor
 	ret c
 	ld a, [wCurMap]
+	cp GAME_CORNER
+	jr z, .gameCorner
 	cp ROCK_TUNNEL_POKECENTER
 	jr z, .route10
 	cp BILLS_HOUSE
@@ -223,46 +232,108 @@ UpdateMapNameSign::
 	jr .load
 .fuchsiaCity
 	ld e, FUCHSIA_CITY
+	jr .load
+.gameCorner
+	; The original Celadon sign calls this place "Rocket Game Corner". Keep the
+	; existing Celadon Town Map pointer for identity storage, but add a private
+	; non-floor tag so entering/leaving the building is a real sign transition.
+	ld e, GAME_CORNER
+	callab LoadTownMapEntryFromE
+	ld b, MAP_NAME_SIGN_GAME_CORNER
+	ret
 .load
 	callab LoadTownMapEntryFromE
 	ld b, 0
 	ret
 
-.ResolveSilphFloor
-; Step 1 floor table. Carry = set when wCurMap is a real Silph Co. floor.
-; The elevator is intentionally excluded and handled as a neutral transit map.
+.ResolveKnownFloor
+; Carry = set when wCurMap is a supported multi-floor map.
+; Entry format: map id, floor tag, base-name pointer. $ff terminates the table.
 	ld a, [wCurMap]
 	ld c, a
-	ld hl, .SilphFloorMapList
-.loopSilphFloors
+	ld hl, .KnownFloorMapList
+.loopKnownFloors
 	ld a, [hli]
 	cp $ff
-	jr z, .notSilphFloor
+	jr z, .notKnownFloor
 	cp c
-	jr z, .silphFloorFound
+	jr z, .knownFloorFound
 	inc hl ; skip floor tag
-	jr .loopSilphFloors
-.silphFloorFound
+	inc hl ; skip name pointer low byte
+	inc hl ; skip name pointer high byte
+	jr .loopKnownFloors
+.knownFloorFound
 	ld b, [hl]
-	ld hl, SilphCoName
+	inc hl
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
 	scf
 	ret
-.notSilphFloor
+.notKnownFloor
 	and a ; clear carry
 	ret
 
-.SilphFloorMapList
+.KnownFloorMapList
+	; Silph Co. 1F-11F. The elevator remains neutral below.
 	db SILPH_CO_1F, 1
+	dw SilphCoName
 	db SILPH_CO_2F, 2
+	dw SilphCoName
 	db SILPH_CO_3F, 3
+	dw SilphCoName
 	db SILPH_CO_4F, 4
+	dw SilphCoName
 	db SILPH_CO_5F, 5
+	dw SilphCoName
 	db SILPH_CO_6F, 6
+	dw SilphCoName
 	db SILPH_CO_7F, 7
+	dw SilphCoName
 	db SILPH_CO_8F, 8
+	dw SilphCoName
 	db SILPH_CO_9F, 9
+	dw SilphCoName
 	db SILPH_CO_10F, 10
+	dw SilphCoName
 	db SILPH_CO_11F, 11
+	dw SilphCoName
+
+	; Pokemon Tower 1F-7F.
+	db POKEMONTOWER_1, 1
+	dw PokemonTowerName
+	db POKEMONTOWER_2, 2
+	dw PokemonTowerName
+	db POKEMONTOWER_3, 3
+	dw PokemonTowerName
+	db POKEMONTOWER_4, 4
+	dw PokemonTowerName
+	db POKEMONTOWER_5, 5
+	dw PokemonTowerName
+	db POKEMONTOWER_6, 6
+	dw PokemonTowerName
+	db POKEMONTOWER_7, 7
+	dw PokemonTowerName
+
+	; Pokemon Mansion 1F-3F and B1F.
+	db MANSION_1, 1
+	dw PokemonMansionName
+	db MANSION_2, 2
+	dw PokemonMansionName
+	db MANSION_3, 3
+	dw PokemonMansionName
+	db MANSION_4, MAP_NAME_SIGN_BASEMENT | 1
+	dw PokemonMansionName
+
+	; Team Rocket HQ B1F-B4F. The elevator remains neutral below.
+	db ROCKET_HIDEOUT_1, MAP_NAME_SIGN_BASEMENT | 1
+	dw RocketHQName
+	db ROCKET_HIDEOUT_2, MAP_NAME_SIGN_BASEMENT | 2
+	dw RocketHQName
+	db ROCKET_HIDEOUT_3, MAP_NAME_SIGN_BASEMENT | 3
+	dw RocketHQName
+	db ROCKET_HIDEOUT_4, MAP_NAME_SIGN_BASEMENT | 4
+	dw RocketHQName
 	db $ff
 
 .IsNeutralMap
@@ -294,9 +365,9 @@ UpdateMapNameSign::
 	db ROUTE_18_GATE_1F, ROUTE_18_GATE_2F
 	db ROUTE_19_GATE, ROUTE_22_GATE, SAFARI_ZONE_ENTRANCE
 	db DIGLETTS_CAVE_EXIT, DIGLETTS_CAVE_ENTRANCE
-	; MAPFLOOR-5.19.42: Silph elevator inherits the floor last visited. Exiting
-	; onto another floor then compares that floor tag and shows the destination.
-	db SILPH_CO_ELEVATOR
+	; MAPFLOOR: elevators inherit the floor last visited. Exiting onto another
+	; floor then compares that floor tag and shows the destination.
+	db SILPH_CO_ELEVATOR, ROCKET_HIDEOUT_ELEVATOR
 	; Keep the rooftop distinct while ordinary department-store floors/elevator
 	; merely bridge between it and Celadon City.
 	db CELADON_MART_1, CELADON_MART_2, CELADON_MART_3, CELADON_MART_4
@@ -305,6 +376,11 @@ UpdateMapNameSign::
 
 .CopyMapNameToBuffer
 ; Copy enough bytes for every Town Map name (validated <= 18 rendered columns).
+; Rocket Game Corner uses a private label in this roomy map-sign bank because the
+; original MapNames bank has only a few bytes of layout slack left.
+	ld a, [wMapNameSignFloor]
+	cp MAP_NAME_SIGN_GAME_CORNER
+	jr z, .copyGameCornerName
 	ld a, [wMapNameSignNamePtr]
 	ld l, a
 	ld a, [wMapNameSignNamePtr + 1]
@@ -326,13 +402,35 @@ UpdateMapNameSign::
 	jr .normalize
 
 .appendFloor
-; MAPFLOOR-5.19.42: append " nF" to the copied display text only. The base name
-; pointer remains unchanged, while wMapNameSignFloor participates in identity checks.
+; MAPFLOOR-5.19.46: append " nF" or " BnF" to the copied display text only.
+; The base-name pointer remains unchanged; wMapNameSignFloor is also part of identity.
 	ld a, [wMapNameSignFloor]
 	and a
 	ret z
+	; Pokemon Mansion B1F is one column too wide with the normal separator.
+	; Omit only this space so 1F-3F keep their existing alignment and other
+	; basement names (for example Team Rocket HQ B1F) remain unchanged.
+	; Keep the floor byte in C while testing the name pointer. LD does not
+	; alter flags, so the NZ result from CompareNamePointer survives until
+	; the branch below. 5.19.47 restored AF too early and accidentally
+	; restored the old NZ flag as well, so the separator was still written.
+	ld c, a
+	ld de, PokemonMansionName
+	call .CompareNamePointer
+	ld a, c
+	jr nz, .writeFloorSeparator
+	bit 7, a
+	jr nz, .checkBasementPrefix
+.writeFloorSeparator
 	ld [hl], " "
 	inc hl
+.checkBasementPrefix
+	bit 7, a
+	jr z, .floorNumberReady
+	ld [hl], "B"
+	inc hl
+	and $7f
+.floorNumberReady
 	ld b, a
 	ld c, 0
 	ld a, b
@@ -357,6 +455,20 @@ UpdateMapNameSign::
 	inc hl
 	ld [hl], "@"
 	ret
+
+.copyGameCornerName
+	ld de, .GameCornerName
+	ld hl, wTileMapBackup2 + 4 * SCREEN_WIDTH
+.copyGameCornerNameLoop
+	ld a, [de]
+	inc de
+	ld [hli], a
+	cp "@"
+	jr nz, .copyGameCornerNameLoop
+	ret
+
+.GameCornerName
+	db "Rocket Game Corner@"
 
 .BuildMapNameSign
 ; Build a 20x4 frame in wTileMapBackup2 using graphics already mirrored in VRAM1.

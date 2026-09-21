@@ -1323,9 +1323,9 @@ wMapNameSignNamePtr:: ; cd66, MAPSIGN-5.19.36
 wMapNameSignTimer:: ; cd68, MAPSIGN-5.19.36
 ; Remaining display frames for the bottom Window map-name sign.
 	ds 1
-wMapNameSignFloor:: ; cd69, MAPFLOOR-5.19.42
-; Optional floor identity for the current map sign. 0 = no floor suffix; positive
-; values render as nF. Kept separate from the base landmark pointer for reuse.
+wMapNameSignFloor:: ; cd69, MAPFLOOR-5.19.42 / MAPFLOOR-5.19.46 / MAPFLOOR-5.19.49
+; Optional map-sign variant identity. 0 = no suffix; normal values hold the floor
+; number, bit 7 marks a basement floor (BnF), and bit 6 is the private Game Corner tag.
 	ds 1
 
 wActionResultOrTookBattleTurn:: ; cd6a
