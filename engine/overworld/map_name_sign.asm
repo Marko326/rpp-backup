@@ -1,4 +1,4 @@
-; BLDG-5.19.52
+; ISLE-5.19.55
 ; Crystal-style map-name sign for Red++ / Blue++.
 ;
 ; The sign follows the player's physical map landmark rather than Fly/Town Map POI
@@ -15,6 +15,8 @@
 ; multi-level caves while keeping Safari rest/secret houses as transit interiors.
 ; BLDG-5.19.52 adds floor identities for Celadon Dept. Store, Celadon Mansion,
 ; and Pewter Museum while keeping the Dept. Store elevator as a transit map.
+; ISLE-5.19.55 gives Faraway Island, Southern Island, and Navel Rock explicit
+; map-sign identities instead of falling through AreaUnknownText.
 ;
 ; BG/window graphics are deliberately kept in CGB VRAM bank 1. Bank 0 remains owned
 ; by the normal overworld tiles, textbox/roof graphics, and NPC walking frames.
@@ -27,6 +29,9 @@ DEF MAP_NAME_SIGN_SAFARI_CENTER  EQU MAP_NAME_SIGN_SPECIAL | 1
 DEF MAP_NAME_SIGN_SAFARI_EAST    EQU MAP_NAME_SIGN_SPECIAL | 2
 DEF MAP_NAME_SIGN_SAFARI_NORTH   EQU MAP_NAME_SIGN_SPECIAL | 3
 DEF MAP_NAME_SIGN_SAFARI_WEST    EQU MAP_NAME_SIGN_SPECIAL | 4
+DEF MAP_NAME_SIGN_FARAWAY_ISLAND EQU MAP_NAME_SIGN_SPECIAL | 5
+DEF MAP_NAME_SIGN_SOUTHERN_ISLAND EQU MAP_NAME_SIGN_SPECIAL | 6
+DEF MAP_NAME_SIGN_NAVEL_ROCK     EQU MAP_NAME_SIGN_SPECIAL | 7
 ; Text scratch starts after the 20x4 frame in wTileMapBackup2.
 ; Do not define this with EQU: wTileMapBackup2 is a relocatable WRAM label in RGBDS 0.5.2.
 
@@ -219,9 +224,27 @@ UpdateMapNameSign::
 	cp SAFARI_ZONE_EAST
 	jr z, .safariEast
 	cp SAFARI_ZONE_NORTH
-	jr z, .safariNorth
+	jp z, .safariNorth
 	cp SAFARI_ZONE_WEST
-	jr z, .safariWest
+	jp z, .safariWest
+	cp FARAWAY_ISLAND_OUTSIDE
+	jp z, .farawayIsland
+	cp FARAWAY_ISLAND_INSIDE
+	jp z, .farawayIsland
+	cp SOUTHERN_ISLAND_OUTSIDE
+	jp z, .southernIsland
+	cp SOUTHERN_ISLAND_INSIDE
+	jp z, .southernIsland
+	cp NAVEL_ROCK_FERRY_DOCK
+	jp z, .navelRock
+	cp NAVEL_ROCK_OUTSIDE
+	jp z, .navelRock
+	cp NAVEL_ROCK_CAVE_1
+	jr z, .navelRock
+	cp NAVEL_ROCK_CAVE_2
+	jr z, .navelRock
+	cp NAVEL_ROCK_LUGIA_ROOM
+	jr z, .navelRock
 	cp GAME_CORNER
 	jr z, .gameCorner
 	cp ROCK_TUNNEL_POKECENTER
@@ -277,6 +300,18 @@ UpdateMapNameSign::
 	ld e, SAFARI_ZONE_WEST
 	callab LoadTownMapEntryFromE
 	ld b, MAP_NAME_SIGN_SAFARI_WEST
+	ret
+.farawayIsland
+	ld hl, .FarawayIslandName
+	ld b, MAP_NAME_SIGN_FARAWAY_ISLAND
+	ret
+.southernIsland
+	ld hl, .SouthernIslandName
+	ld b, MAP_NAME_SIGN_SOUTHERN_ISLAND
+	ret
+.navelRock
+	ld hl, .NavelRockName
+	ld b, MAP_NAME_SIGN_NAVEL_ROCK
 	ret
 .gameCorner
 	; The original Celadon sign calls this place "Rocket Game Corner". Keep the
@@ -643,6 +678,9 @@ UpdateMapNameSign::
 	dw .SafariEastName
 	dw .SafariNorthName
 	dw .SafariWestName
+	dw .FarawayIslandName
+	dw .SouthernIslandName
+	dw .NavelRockName
 
 .GameCornerName
 	db "Rocket Game Corner@"
@@ -654,6 +692,12 @@ UpdateMapNameSign::
 	db "Safari Zone North@"
 .SafariWestName
 	db "Safari Zone West@"
+.FarawayIslandName
+	db "Faraway Island@"
+.SouthernIslandName
+	db "Southern Island@"
+.NavelRockName
+	db "Navel Rock@"
 
 .BuildMapNameSign
 ; Build a 20x4 frame in wTileMapBackup2 using graphics already mirrored in VRAM1.
