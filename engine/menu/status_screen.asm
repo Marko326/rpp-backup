@@ -150,6 +150,10 @@ StatusScreen:
 	; The Pokémon graphic is persistent across LEFT/RIGHT. UP/DOWN keeps the
 	; display white while rebuilding the primary frontpic buffer and both page
 	; maps, then restores the logical page that was being viewed.
+	; FORM-5.20.03: StatusScreen_DrawPage1 -> PrintEXPBar reloads the stock species
+	; header and therefore discards regional sprite pointers. Rebuild the header
+	; from the caught mon's persistent form marker immediately before drawing.
+	callba RegionalFormLoadLoadedMonHeader
 	coord hl, 1, 0
 	call LoadFlippedFrontSpriteByMonIndex
 
@@ -343,6 +347,9 @@ StatusScreen_DrawPage1:
 	call PrintNumber ; Pokémon no.
 	coord hl, 11, 10
 	predef PrintMonType
+	; FORM-5.21.00: stock PrintMonType only knows species. If this individual has
+	; a registered form, redraw both type values from its resolved full header.
+	call StatusScreen_ApplyRegionalFormTypes
 	ld hl, NamePointers2
 	call StatusScreen_GetStringPointer
 	ld d, h
@@ -366,6 +373,45 @@ StatusScreen_DrawPage1:
 	ld d, $0
 	call PrintStatsBox
 	ret
+
+; FORM-5.21.00: species-agnostic status type redraw. The regional engine returns
+; carry only when wLoadedMon has a registered form and leaves that form's complete
+; header in wMonHeader. No concrete species or type is hard-coded here.
+StatusScreen_ApplyRegionalFormTypes:
+	callba RegionalFormLoadLoadedMonHeader
+	ret nc
+
+	; Clear the old species Type 1 value before writing the form value.
+	coord hl,11,10
+	ld a," "
+	ld bc,8
+	call FillMemory
+	coord de,11,10
+	ld a,[wMonHType1]
+	ld [wRegionalFormPrintTypeArgument],a ; FORM-5.21.02: A is not far-call-safe
+	callba PrintTypeAtDE
+
+	; Clear any stock Type 2 label/value, then redraw it only for dual types.
+	coord hl,10,11
+	ld a," "
+	ld bc,6
+	call FillMemory
+	coord hl,11,12
+	ld a," "
+	ld bc,8
+	call FillMemory
+	ld a,[wMonHType1]
+	ld b,a
+	ld a,[wMonHType2]
+	cp b
+	ret z
+	coord hl,10,11
+	ld de,Type2Text
+	call PlaceString
+	coord de,11,12
+	ld a,[wMonHType2]
+	ld [wRegionalFormPrintTypeArgument],a ; FORM-5.21.02: A is not far-call-safe
+	jpba PrintTypeAtDE
 
 OTPointers:
 	dw wPartyMonOT

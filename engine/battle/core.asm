@@ -1530,7 +1530,7 @@ EnemySendOutFirstMon:
 	ld a,[wEnemyMonSpecies2]
 	ld [wcf91],a
 	ld [wd0b5],a
-	call GetMonHeader
+	callba RegionalFormLoadStoredEnemyHeader ; FORM-5.20.03
 	ld de,vFrontPic
 	call LoadMonFrontSprite
 	ld a,-$31
@@ -1759,7 +1759,7 @@ LoadBattleMonFromParty:
 	call CopyData
 	ld a, [wBattleMonSpecies2]
 	ld [wd0b5], a
-	call GetMonHeader
+	callba RegionalFormLoadBattleMonHeader ; FORM-5.21.00 descriptor-backed persistent form
 	ld hl, wPartyMonNicks
 	ld a, [wPlayerMonNumber]
 	call SkipFixedLengthTextEntries
@@ -1803,7 +1803,7 @@ LoadEnemyMonFromParty:
 	call CopyData
 	ld a, [wEnemyMonSpecies]
 	ld [wd0b5], a
-	call GetMonHeader
+	callba RegionalFormLoadStoredEnemyHeader ; FORM-5.20.03
 	ld hl, wEnemyMonNicks
 	ld a, [wWhichPokemon]
 	call SkipFixedLengthTextEntries
@@ -1844,6 +1844,10 @@ SendOutMon:
 	call DrawEnemyHUDAndHPBar
 .skipDrawingEnemyHUDAndHPBar
 	call DrawPlayerHUDAndHPBar
+	; FORM-5.20.03: HUD/text helpers may reload the stock species header after
+	; LoadBattleMonFromParty. Restore the stored form immediately before the
+	; back sprite is decompressed so registered forms use their own rear graphic.
+	callba RegionalFormLoadBattleMonHeader
 	predef LoadMonBackPic
 	xor a
 	ld [hStartTileID], a
@@ -4665,9 +4669,9 @@ GetEnemyMonStat:
 .notLinkBattle
 	ld a, [wEnemyMonLevel]
 	ld [wCurEnemyLVL], a
-	ld a, [wEnemyMonSpecies]
-	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.20.06: critical-hit stat reconstruction must use the active form's
+	; base stats, not the base species header. The helper also sets wd0b5.
+	callba RegionalFormLoadCurrentEnemyHeader
 	ld hl, wEnemyMonDVs
 	ld de, wLoadedMonSpeedExp
 	ld a, [hli]
@@ -6178,7 +6182,7 @@ LoadEnemyMonData:
 	ld a, [wEnemyMonSpecies2]
 	ld [wEnemyMonSpecies], a
 	ld [wd0b5], a
-	call GetMonHeader
+	callba RegionalFormLoadWildEnemyHeader ; FORM-5.21.00 table-driven wild regional form
 	ld a, [wEnemyBattleStatus3]
 	bit Transformed, a ; is enemy mon transformed?
 	ld hl, wTransformedEnemyMonOriginalDVs ; original DVs before transforming
@@ -6293,7 +6297,11 @@ LoadEnemyMonData:
 	dec de
 	xor a
 	ld [wLearningMovesFromDayCare], a
+	; FORM-5.21.00: registered wild forms use their descriptor learnset.
+	callba RegionalFormTryWriteEnemyMonMoves
+	jr c,.regionalMovesReady
 	predef WriteMonMoves ; get moves based on current level
+.regionalMovesReady
 .loadMovePPs
 	ld hl, wEnemyMonMoves
 	ld de, wEnemyMonPP - 1
@@ -6320,6 +6328,7 @@ LoadEnemyMonData:
 	ld de, wEnemyMonNick
 	ld bc, NAME_LENGTH
 	call CopyData
+	; FORM-5.20.03: forms share the ordinary species Seen bit (#019).
 	ld a, [wEnemyMonSpecies2]
 	ld [wd11e], a
 	predef IndexToPokedex

@@ -2,7 +2,8 @@
 CalcLevelFromExperience:
 	ld a, [wLoadedMonSpecies]
 	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.21.00: growth rate is part of the complete form header.
+	callba RegionalFormLoadLoadedMonHeader
 	ld d, $1 ; init level to 1
 .loop
 	inc d ; increment level

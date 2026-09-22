@@ -2,7 +2,9 @@
 CanLearnTM:
 	ld a, [wcf91]
 	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.21.00: TM compatibility comes from the selected individual's
+	; descriptor header when it is a registered regional form.
+	callba RegionalFormLoadPartyMonHeader
 	ld hl, wMonHLearnset
 	push hl
 	ld a, [wMoveNum]
@@ -42,7 +44,8 @@ INCLUDE "data/tms.asm"
 CanLearnTutor:
 	ld a, [wcf91]
 	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.21.00: tutor compatibility uses the same full descriptor header.
+	callba RegionalFormLoadPartyMonHeader
 	ld hl, wMonHMoves
 	push hl
 	ld a, [wMoveNum]

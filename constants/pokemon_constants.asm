@@ -209,6 +209,15 @@ const_value = 1
 	const LINOONE     ; 207
 	const HO_OH       ; 208
 
+; FORM-5.21.00: regional form IDs are instance metadata, not extra species IDs.
+FORM_NORMAL EQU 0
+FORM_ALOLA  EQU 1
+
+; Persistent form markers live in the legacy stored CatchRate byte. The marker
+; describes the form, while species + marker selects a descriptor; all registered
+; Alolan forms can therefore share $fe without species-specific engine logic.
+REGIONAL_FORM_MARKER_ALOLA EQU $fe
+
 MON_GHOST           EQU 252
 FOSSIL_KABUTOPS     EQU 253
 FOSSIL_AERODACTYL   EQU 254

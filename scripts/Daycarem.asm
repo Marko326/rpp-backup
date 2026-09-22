@@ -182,7 +182,11 @@ DayCareMText1:
 	ld e, l
 	ld a, 1
 	ld [wLearningMovesFromDayCare], a
+	; FORM-5.21.00: stored registered forms learn from their descriptor learnset.
+	callba RegionalFormTryWriteStoredMonMoves
+	jr c,.regionalMovesReady
 	predef WriteMonMoves
+.regionalMovesReady
 	pop bc
 	pop af
 

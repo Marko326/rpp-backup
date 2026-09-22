@@ -738,7 +738,8 @@ BallAnyway:
 	ld hl,ItemUseBallText05
 	call PrintText
 
-; Add the caught Pokémon to the Pokédex.
+; Add the caught Pokémon to the Pokédex. FORM-5.20.03 deliberately uses the
+; shared species entry; regional forms do not create separate Pokédex entries.
 	predef IndexToPokedex
 	ld a,[wd11e]
 	dec a
@@ -1522,7 +1523,14 @@ ItemUseMedicine:
 	add hl,bc ; hl now points to level
 	ld a,[hl] ; a = level
 	ld [wCurEnemyLVL],a ; store level
-	call GetMonHeader
+	; FORM-5.20.05: match GetMonHeader's BC/HL preservation around the far
+	; form-aware header load. This keeps the medicine path safe if later code
+	; starts depending on the current party pointer/register state.
+	push bc
+	push hl
+	callba RegionalFormLoadPartyMonHeader
+	pop hl
+	pop bc
 	push de
 	ld a,d
 	ld hl,wPartyMonNicks
@@ -1669,7 +1677,11 @@ ItemUseMedicine:
 	call WaitForTextScrollButtonPress ; wait for button press
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
+	; FORM-5.20.03: Rare Candy uses the independent regional level-up table.
+	callba RegionalFormTryLearnLevelMove
+	jr c,.rareCandyMoveHandled
 	predef LearnMoveFromLevelUp ; learn level up move, if any
+.rareCandyMoveHandled
 	xor a
 	ld [wForceEvolution],a
 	callab TryEvolvingMon ; evolve pokemon, if appropriate
@@ -3052,6 +3064,7 @@ SendNewMonToBox:
 	cp $ff
 	jr nz, .asm_e7b1
 	call GetMonHeader
+	callba RegionalFormPrepareCaughtMonHeader ; FORM-5.20.03 persist caught form in box
 	ld hl, wBoxMonOT
 	ld bc, NAME_LENGTH
 	ld a, [wNumInBox]

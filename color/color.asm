@@ -130,10 +130,12 @@ SetPal_Battle_Common:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
-	callba LoadShinyPokemonPalette
+	; FORM-5.20.03: shiny regional forms use the bank-$34 form-aware loader.
+	callba RegionalFormLoadBattleShinyPokemonPalette
 	jr .getEnemyMonPal
 .notShiny
-	callba LoadPokemonPalette
+	; FORM-5.20.03: use the bank-$34 form-aware battle palette path.
+	callba RegionalFormLoadBattlePokemonPalette
 	jr .getEnemyMonPal
 .loadTrainerPal
 	callba LoadTrainerPalette
@@ -176,10 +178,12 @@ SetPal_Battle_Common:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny2
-	callba LoadShinyPokemonPalette
+	; FORM-5.20.03: shiny regional forms use the bank-$34 form-aware loader.
+	callba RegionalFormLoadBattleShinyPokemonPalette
 	jr .loadLifebarPal
 .notShiny2
-	callba LoadPokemonPalette
+	; FORM-5.20.03: use the bank-$34 form-aware battle palette path.
+	callba RegionalFormLoadBattlePokemonPalette
 	jr .loadLifebarPal
 .loadTrainerPal2
 	callba LoadTrainerPalette
@@ -343,10 +347,12 @@ StatusScreen_PrepareNextPokemonPaletteScratch:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
-	callba LoadShinyPokemonPalette
+	; FORM-5.21.00: caught registered forms keep their descriptor shiny palette.
+	callba RegionalFormLoadStatusShinyPokemonPalette
 	jr .loaded
 .notShiny
-	callba LoadPokemonPalette
+	; FORM-5.20.03: status-screen palettes follow the stored form marker.
+	callba RegionalFormLoadStatusPokemonPalette
 .loaded
 	xor a
 	ld [rSVBK], a
@@ -424,10 +430,12 @@ SetPal_StatusScreen:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
-	callba LoadShinyPokemonPalette
+	; FORM-5.20.03: status screen uses the Alolan shiny palette when appropriate.
+	callba RegionalFormLoadStatusShinyPokemonPalette
 	jr .afterMon
 .notShiny
-	callba LoadPokemonPalette
+	; FORM-5.20.03: status screen uses the stored regional-form palette.
+	callba RegionalFormLoadStatusPokemonPalette
 .afterMon
 
 

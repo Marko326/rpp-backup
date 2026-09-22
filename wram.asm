@@ -2261,6 +2261,9 @@ wMovesString:: ; d0e1
 	ds 56
 
 wUnusedD119:: ; d119
+wEnemyMonForm::
+; FORM-5.21.00: transient descriptor form ID of the current enemy Pokémon. Persistent party/box
+; form data lives in the legacy CatchRate byte, so this does not expand WRAM.
 	ds 1
 
 wWalkBikeSurfStateCopy:: ; d11a
@@ -2446,6 +2449,8 @@ wPseudoItemID:: ; d152
 	ds 1
 
 wUnusedD153:: ; d153
+wRegionalFormPrintTypeArgument::
+; FORM-5.21.02: alias existing unused scratch; does not grow WRAM/save layout.
 	ds 1
 
 	ds 2

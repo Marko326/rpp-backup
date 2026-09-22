@@ -2461,6 +2461,10 @@ LinoonePicBack::    INCBIN "pic/monback/linooneb.pic"
 HoohPicFront::      INCBIN "pic/bmon/hooh.pic"
 HoohPicBack::       INCBIN "pic/monback/hoohb.pic"
 
+; FORM-5.21.00: all species-specific regional-form descriptors, complete
+; headers, learnsets, graphics and palettes live together in data. That file owns
+; its data/graphics sections; the engine below remains species-agnostic.
+INCLUDE "data/regional_forms.asm"
 
 SECTION "bank34",ROMX,BANK[$34]
 
@@ -2478,6 +2482,10 @@ INCLUDE "engine/menu/item_list_state.asm"
 ; Keep the overworld BG0 cache/restore and Party -> START fast
 ; path out of capacity-constrained bank $04.
 INCLUDE "engine/menu/summary_return_helpers.asm"
+
+; FORM-5.21.00: table-driven Species + Form runtime/persistence engine.
+; No separate Pokédex row, Seen/Owned state, numbering, or navigation is added.
+INCLUDE "engine/regional_forms.asm"
 
 ; Pokédex Info browsing helpers and their direct-pre-evolution reverse index live
 ; outside capacity-constrained bank $10 / evolution-data bank $0E.

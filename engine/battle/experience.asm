@@ -200,7 +200,15 @@ GainExperience:
 	ld a, [hl] ; species
 	ld [wd0b5], a
 	ld [wd11e], a
-	call GetMonHeader
+	; FORM-5.20.05: callba itself consumes BC/HL for the far call. The stock
+	; GetMonHeader call preserved both registers, and the level-up path still
+	; needs HL to point at this party mon immediately afterwards. Preserve the
+	; caller's real registers outside the far call.
+	push bc
+	push hl
+	callba RegionalFormLoadPartyMonHeader
+	pop hl
+	pop bc
 	ld bc, (wPartyMon1MaxHP + 1) - wPartyMon1Species
 	add hl, bc
 	push hl
@@ -292,7 +300,11 @@ GainExperience:
 	ld a, b
 	ld [wCurEnemyLVL], a
 	push bc
+	; FORM-5.20.03: suppress #019's stock learnset when this instance is Alolan.
+	callba RegionalFormTryLearnLevelMove
+	jr c,.levelMoveHandled
 	predef LearnMoveFromLevelUp
+.levelMoveHandled
 	pop bc
 	ld a, b
 	cp c

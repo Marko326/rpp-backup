@@ -104,8 +104,9 @@ Summary_BattlePartyRestoreEnemyFrontPicIfDirty::
 	jr nz, .doEnemyMonAnimation
 	ld a, [wEnemyMonSpecies]
 	ld [wcf91], a
-	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.20.06: preserve the already-resolved enemy form when Summary
+	; reloads the front sprite. Regional-form core is in the same bank ($34).
+	call RegionalFormLoadCurrentEnemyHeader
 	ld de, vFrontPic
 	jp LoadMonFrontSprite
 .doEnemyMonAnimation

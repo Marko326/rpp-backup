@@ -67,6 +67,7 @@ _AddPartyMon:
 	ld a, [wcf91]
 	ld [wd0b5], a
 	call GetMonHeader
+	callba RegionalFormPrepareCaughtMonHeader ; FORM-5.20.03: persist caught form
 	ld hl, wMonHeader
 	ld a, [hli]
 	ld [de], a ; species
@@ -88,6 +89,7 @@ _AddPartyMon:
 	jr nz, .writeFreshMonData
 
 ; If the mon is being added to the player's party, update the pokedex.
+	; FORM-5.20.03: regional forms intentionally share their species Pokédex bit.
 	ld a, [wcf91]
 	ld [wd11e], a
 	push de
@@ -203,7 +205,11 @@ _AddPartyMon:
 	dec de
 	xor a
 	ld [wLearningMovesFromDayCare], a
+	; FORM-5.20.03: a stored Alolan marker selects its independent level-up table.
+	callba RegionalFormTryWriteStoredMonMoves
+	jr c,.regionalMovesReady
 	predef WriteMonMoves
+.regionalMovesReady
 	pop de
 	ld a, [wPlayerID]  ; set trainer ID to player ID
 	inc de

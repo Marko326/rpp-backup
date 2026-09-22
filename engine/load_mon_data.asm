@@ -19,8 +19,7 @@ LoadMonData_:
 
 .GetMonHeader
 	ld a, [wcf91]
-	ld [wd0b5], a ; input for GetMonHeader
-	call GetMonHeader
+	ld [wd0b5], a ; input for form-aware header reload after struct copy
 
 	ld hl, wPartyMons
 	ld bc, wPartyMon2 - wPartyMon1
@@ -46,4 +45,7 @@ LoadMonData_:
 .copyMonData
 	ld de, wLoadedMon
 	ld bc, wPartyMon2 - wPartyMon1
-	jp CopyData
+	call CopyData
+	; FORM-5.20.03: after the stored bytes arrive, rebuild the form-aware header.
+	callba RegionalFormLoadLoadedMonHeader
+	ret
