@@ -66,7 +66,23 @@ LoadMissableObjects:
 .done
 	ld a, $ff
 	ld [de], a                 ; write sentinel
-	ret
+
+	; HOOH-5.19.56: HS_HO_OH uses a newly reclaimed flag bit. Old saves used
+	; that byte as transient OAM scratch, so never trust its saved value. Keep
+	; the missable-object state authoritative to the already-persistent battle
+	; event whenever this room is loaded. This also repairs saves made after
+	; Ho-Oh was defeated/caught by older builds where the sprite did not hide.
+	ld a, [wCurMap]
+	cp NAVEL_ROCK_LUGIA_ROOM
+	ret nz
+	CheckEvent EVENT_BEAT_HO_OH
+	ld b, FLAG_RESET
+	jr z, .syncHoOhFlag
+	ld b, FLAG_SET
+.syncHoOhFlag
+	ld hl, wMissableObjectFlags
+	ld c, HS_HO_OH
+	jp MissableObjectFlagAction
 
 
 InitializeMissableObjectsFlags:

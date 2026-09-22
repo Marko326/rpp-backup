@@ -318,6 +318,10 @@ hSpriteAnimFrameCounter EQU $FFEA
 
 H_WHOSETURN EQU $FFF3 ; 0 on player’s turn, 1 on enemy’s turn
 
+; HOOH-5.19.56: OAM-only scratch moved out of saved WRAM so the old byte can
+; extend wMissableObjectFlags without shifting any following save-data address.
+hOAMFacingAnim EQU $FFF5
+
 ; bit 0: draw HP fraction to the right of bar instead of below (for party menu)
 ; bit 1: menu is double spaced
 hFlags_0xFFF6 EQU $FFF6

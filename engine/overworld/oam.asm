@@ -28,7 +28,7 @@ PrepareOAMData:
 	inc e
 	inc e
 	ld a, [de] ; c1x2 (facing/anim)
-	ld [wd5cd], a
+	ldh [hOAMFacingAnim], a ; HOOH-5.19.56: runtime-only scratch, no longer stored in save WRAM
 	cp $ff ; off-screen (don't draw)
 	jr nz, .visible
 
@@ -110,7 +110,7 @@ PrepareOAMData:
 	push bc
 	ld b, a
 
-	ld a, [wd5cd]            ; temp copy of c1x2
+	ldh a, [hOAMFacingAnim]  ; temp copy of c1x2
 	swap a                   ; high nybble determines sprite used (0 is always player sprite, next are some npcs)
 	and $f
 

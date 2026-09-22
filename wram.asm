@@ -2876,10 +2876,10 @@ wPlayerCoins:: ; d5a4
 wMissableObjectFlags:: ; d5a6
 ; bit array of missable objects. set = removed
 ; TODO: will be removed once hide/show uses normal flags with the Gen 2 style system
-	flag_array $E7
+; HOOH-5.19.56: include HS_HO_OH (E8). The extra byte reuses the former wd5cd
+; OAM scratch byte, so wMissableObjectList and all following save-data addresses stay fixed.
+	flag_array HS_HO_OH + 1
 wMissableObjectFlagsEnd::
-
-wd5cd:: ds 1 ; temp copy of c1x2 (sprite facing/anim)
 
 wMissableObjectList:: ; d5ce
 ; each entry consists of 2 bytes
