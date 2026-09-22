@@ -1,9 +1,6 @@
 ShakeElevator:
-	ld b, 100 ; legacy fixed duration (used by the ferry)
-	jr ShakeElevatorWithLoopCount
-
 ShakeBuildingElevator::
-	ld b, 40 ; shorter fixed duration for building elevators
+	ld b, 40 ; FERY-5.19.59: shared ferry/building-elevator duration
 
 ShakeElevatorWithLoopCount:
 	ld de, -$20

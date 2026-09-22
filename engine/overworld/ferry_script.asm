@@ -93,13 +93,46 @@ PrintTicketsInBag:
 	pop hl
 	jr .loop
 
+SetFerryMenuCursorToCurrentStop:
+; FERY-5.19.59: derive the initial cursor from the ferry's current warp target.
+; The ticket list is filtered dynamically, so find the current island's ticket in
+; wFilteredBagItems instead of assuming a fixed menu index. Vermilion (or any
+; unexpected target) deliberately defaults to the first available destination.
+	xor a
+	ld [wCurrentMenuItem], a
+	ld a, [wWarpEntries + 3]
+	cp FARAWAY_ISLAND_OUTSIDE
+	ld b, OLD_SEA_MAP
+	jr z, .findTicket
+	cp SOUTHERN_ISLAND_OUTSIDE
+	ld b, EON_TICKET
+	jr z, .findTicket
+	cp NAVEL_ROCK_FERRY_DOCK
+	ld b, MYSTIC_TICKET
+	ret nz
+.findTicket
+	ld hl, wFilteredBagItems
+	ld c, 0
+.loop
+	ld a, [hli]
+	cp $ff
+	ret z
+	cp b
+	jr z, .found
+	inc c
+	jr .loop
+.found
+	ld a, c
+	ld [wCurrentMenuItem], a
+	ret
+
 DoIslandMenu:
 ; Display the menu we generated earlier, let the player choose an item to use,
 ; then do the elevator thing and update the warps accordingly
+	call SetFerryMenuCursorToCurrentStop
+.menuLoop
 	ld hl, wd730
 	set 6, [hl]
-	xor a
-	ld [wCurrentMenuItem], a
 	ld a, $3 ; A_BUTTON | B_BUTTON
 	ld [wMenuWatchedKeys], a
 	ld a, [wFilteredBagItemsCount]
@@ -200,7 +233,11 @@ DoIslandMenu:
 .alreadyThere
 	ld hl, AlreadyThereText
 	call PrintText
-	ret
+	; FERY-5.19.59: this is a failed travel attempt, not a menu exit. Rebuild
+	; the destination menu with the cursor on the current island. No extra WRAM
+	; is needed because the stop can be reconstructed from wWarpEntries.
+	call SetFerryMenuCursorToCurrentStop
+	jp .menuLoop
 	
 WelcomeToSeagallopText:
 	; FERRY-5.19.58: keep ticket/no-ticket logic unchanged, shorten the common greeting.
