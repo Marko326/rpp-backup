@@ -27,17 +27,17 @@ MoveDeleterText1:
 	pop bc
 	ld a, [wDeletableMoves]
 	cp 2
-	jr nc, .chooseMove
-	pop bc
+	jr nc, .initMoveCursor
 	ld hl, MoveDeleterOneMoveText
 	call PrintText
 	jp TextScriptEnd
-.chooseMove
-	call GetPartyMonName2
-	push bc
+.initMoveCursor
 	xor a
 	ld [wListScrollOffset], a
 	ld [wCurrentMenuItem], a
+.chooseMove
+	call GetPartyMonName2
+	push bc
 	ld hl, MoveDeleterWhichMoveText
 	call PrintText
 	ld a, MOVESLISTMENU
@@ -52,6 +52,11 @@ MoveDeleterText1:
 	call DisplayListMenuID
 	pop bc
 	jr c, .exit  ; exit if player chose cancel
+	; DisplayListMenuID leaves the selected absolute move-list index in
+	; wWhichPokemon. Preserve it across the confirmation box so choosing No can
+	; return to the same move without adding another WRAM cursor variable.
+	ld a, [wWhichPokemon]
+	push af
 	; Save the selected move id.
 	ld a, [wcf91]
 	ld d, a
@@ -75,7 +80,20 @@ MoveDeleterText1:
 	pop de
 	ld a, [wCurrentMenuItem]
 	and a
-	jr nz, .chooseMove
+	jr z, .forgetMove
+	; YesNoChoice overwrites wCurrentMenuItem. Restore the move list from the
+	; absolute index saved above, then put wWhichPokemon back on the party mon
+	; before redrawing the Move Deleter prompt.
+	pop af
+	ld [wWhichPokemon], a
+	push bc
+	callba RestoreItemListPosition
+	pop bc
+	ld a, b
+	ld [wWhichPokemon], a
+	jr .chooseMove
+.forgetMove
+	pop af ; discard the saved move-list index
 	push de
 	ld a, b ; a = mon index
 	ld hl, wPartyMon1Moves
