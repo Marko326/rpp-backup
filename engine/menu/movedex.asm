@@ -834,27 +834,36 @@ ShowMoveDexData:
 	call HandleDownArrowBlinkTiming
 	call JoypadLowSensitivity
 	ld a,[hJoy5]
-	bit 5,a
-	jp nz,.previousMove
-	bit 4,a
-	jp nz,.nextMove
+	; 与 Pokédex Info 一样，退出/翻页优先于条目切换。
+	; 方向仍读取 hJoy5，因此继续保留 MoveDex 原有的长按快速切换。
 	bit 1,a ; B
 	jp nz,.close
 	bit 0,a ; A
 	jr nz,.nextDescriptionPage
+	bit 6,a ; UP
+	jp nz,.previousMove
+	bit 7,a ; DOWN
+	jp nz,.nextMove
 	jr .inputLoop
 
 .nextDescriptionPage
-	; PureRGB 风格分页：有下一页时 A 翻页；最后一页按 A 不退出。
+	; 与 Pokédex 的 Details 翻页习惯一致：A 逐页前进，最后一页再按 A 回第 1 页。
+	; 单页说明没有可循环的后续页，因此仍保持原页不动。
 	call MoveDexDescriptionHasNextPage
-	jr nc,.inputLoop
 	ld a,[wBuffer + 6]
+	jr c,.advanceDescriptionPage
+	and a
+	jr z,.inputLoop
+	xor a
+	jr .setDescriptionPage
+.advanceDescriptionPage
 	inc a
+.setDescriptionPage
 	ld [wBuffer + 6],a
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
-	; 说明正文只占 y=11..15。y=16 同时放着 <PREV/NEXT> 的上半部分，
-	; 不能整行清掉；中央下箭头由 MoveDexPrepareDescriptionArrow 单独处理。
+	; 说明正文只占 y=11..15；y=16 留给分页下箭头，
+	; 因此这里只清正文区域，箭头由 MoveDexPrepareDescriptionArrow 单独处理。
 	coord hl, 1, 11
 	lb bc, 5, 18
 	call ClearScreenArea
@@ -871,7 +880,7 @@ ShowMoveDexData:
 	pop af
 	ld [hDownArrowBlinkActive],a
 
-	; 如果在详情页用左右切换过技能，返回列表时同步选中位置。
+	; 如果在详情页用上下切换过技能，返回列表时同步选中位置。
 	call MoveDexSyncListSelection
 	call GBPalWhiteOut
 	; 详情页临时占用了字体区 $C0-$D9，白屏期间恢复这些字体图块，
@@ -881,7 +890,7 @@ ShowMoveDexData:
 	ret
 
 .previousMove
-	; 详情页只在 Seen 技能之间移动，避免左右键泄露虚线条目的名字/资料。
+	; 详情页只在 Seen 技能之间移动，避免上下键泄露虚线条目的名字/资料。
 	ld a,[wd11e]
 	call MoveDexFindPreviousSeenMove
 	jp nc,.inputLoop
@@ -895,19 +904,22 @@ ShowMoveDexData:
 	ld [wd11e],a
 
 .redrawMove
-	; 左右切换技能时回到说明第 1 页。
+	; 上下切换技能时回到说明第 1 页。
 	xor a
 	ld [wBuffer + 6],a
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call MoveDexClearDynamicData
 	call MoveDexDrawMoveData
+	; 新技能先以隐藏状态启动分页箭头。只要玩家持续快速切换，
+	; 每次切换都会重新开始隐藏阶段，因此不会在连续浏览时闪出 ▼。
+	call MoveDexStartSwitchedDescriptionArrowHidden
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call Delay3
 	jp .inputLoop
 
 MoveDexLoadDataUITiles:
-	; PureRGB 的 <PREV/NEXT>、分类标识与百分号图块。
+	; PureRGB 的分类标识、百分号等 MoveDex UI 图块。
 	; 三种伤害分类统一使用 PureRGB PHYSICAL 的完整宽底框和同一套字模。
 	; 1bpp 图块复制到 $C4-$D9，不覆盖当前 MoveDex/Pokédex 边框图块。
 	ld de,MoveDexUI
@@ -1093,7 +1105,7 @@ MoveDexDrawMoveData:
 	call MoveDexDrawDescription
 
 .drawNavigationOnly
-	jp MoveDexDrawBottomNavigation
+	ret
 
 MoveDexClearDynamicData:
 	coord hl, 1, 1
@@ -1133,12 +1145,6 @@ MoveDexClearDynamicData:
 	coord hl, 10, 16
 	ld a," "
 	ld [hl],a
-	coord hl, 1, 16
-	lb bc, 1, 3
-	call ClearScreenArea
-	coord hl, 16, 16
-	lb bc, 1, 3
-	call ClearScreenArea
 	ret
 
 MoveDexDrawDamageClass:
@@ -1163,62 +1169,6 @@ MoveDexDrawDamageClass:
 	dec c
 	jr nz,.loop
 	ret
-
-MoveDexDrawBottomNavigation:
-	; 先恢复中央底边，再根据当前技能是否有前/后项绘制按钮。
-	coord hl, 4, 17
-	ld de,1
-	lb bc, $6f, 12
-	call MoveDexDrawTileLine
-
-	ld a,[wd11e]
-	call MoveDexFindPreviousSeenMove
-	jr nc,.noPrevious
-	coord hl, 1, 17
-	ld a,$c4
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	coord hl, 1, 16
-	ld a,$ca
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	jr .nextButton
-.noPrevious
-	coord hl, 1, 17
-	ld de,1
-	lb bc, $6f, 3
-	call MoveDexDrawTileLine
-
-.nextButton
-	ld a,[wd11e]
-	call MoveDexFindNextSeenMove
-	jr nc,.noNext
-	coord hl, 16, 17
-	ld a,$c7
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	coord hl, 16, 16
-	ld a,$ca
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	ret
-.noNext
-	coord hl, 16, 17
-	ld de,1
-	lb bc, $6f, 3
-	jp MoveDexDrawTileLine
 
 MoveDexSetupTypeIconAttributes:
 	; 给 2x2 类型图标单独使用 BG palette 2，其余 MoveDex UI 保持原菜单配色。
@@ -1841,6 +1791,24 @@ MoveDexDescriptionHasNextPage:
 	ret
 .no
 	and a
+	ret
+
+MoveDexStartSwitchedDescriptionArrowHidden:
+	; 切换技能后的新页面先不显示分页箭头。若当前说明还有下一页，
+	; 直接以 active + 空白 tile 启动闪烁计时；计时结束后才第一次显示 ▼。
+	; 连续按住上下快速切换时，每次切换都会重新开始这段隐藏时间。
+	xor a
+	ld [hDownArrowBlinkActive],a
+	coord hl, 10, 16
+	ld a," "
+	ld [hl],a
+	call MoveDexDescriptionHasNextPage
+	ret nc
+	ld a,1
+	ld [hDownArrowBlinkActive],a
+	ld [hDownArrowBlinkFrameProcessed],a
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
 	ret
 
 MoveDexDrawDescriptionPageArrow:
