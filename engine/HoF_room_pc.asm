@@ -23,13 +23,18 @@ HallOfFamePC:
 	call EnableLCD
 	ld a, $ff
 	call PlaySoundWaitForCurrent
+	; HOF-5.27.03: AnimateHallOfFame has already incremented wNumHoFTeams.
+	; Play the full staff credits only for the first clear; repeat clears go
+	; straight to the shared THE END renderer after Oak's Hall of Fame rating.
+	ld a, [wNumHoFTeams]
+	dec a
+	jp nz, CreditsShowTheEnd
 	ld c, 0 ; BANK(Music_Credits)
 	ld a, MUSIC_CREDITS
 	call PlayMusic
 	ld c, 128
 	call DelayFrames
 	xor a
-	ld [wUnusedCD3D], a ; not read
 	ld [wNumCreditsMonsDisplayed], a
 	jp Credits
 
@@ -240,10 +245,11 @@ Credits:
 	pop de
 	jr .nextCreditsCommand
 .showTheEnd
+	pop de ; discard the CreditsOrder return pointer used by the full credits path
+CreditsShowTheEnd:
 	ld c, 16
 	call DelayFrames
 	call FillMiddleOfScreenWithWhite
-	pop de
 	ld de, TheEndGfx
 	ld hl, vChars2 + $600
 	lb bc, BANK(TheEndGfx), (TheEndGfxEnd - TheEndGfx) / $10
