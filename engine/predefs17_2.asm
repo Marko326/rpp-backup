@@ -6,7 +6,7 @@ SetPartyMonTypes:
 	ld a, [wd11e]
 	ld [wd0b5], a
 	push hl
-	call GetMonHeader
+	callba RegionalFormLoadPartyMonHeader
 	pop hl
 	ld a, [wMonHType1]
 	ld [hli], a

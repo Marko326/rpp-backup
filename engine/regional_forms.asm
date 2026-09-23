@@ -1,4 +1,4 @@
-; FORM-5.21.00 table-driven regional-form engine.
+; FORM-5.21.03 table-driven regional-form engine.
 ;
 ; Public battle/status/storage paths only deal with Species + Form. Concrete
 ; species, maps, stats, types, graphics, palettes and learnsets live in
@@ -10,9 +10,10 @@ RF_DESC_FORM          EQU 1
 RF_DESC_MARKER        EQU 2
 RF_DESC_HEADER        EQU 3
 RF_DESC_LEARNSET      EQU 5
-RF_DESC_PALETTE       EQU 7
-RF_DESC_SHINY_PALETTE EQU 9
-RF_DESC_SIZE          EQU 11
+RF_DESC_EVOLUTION     EQU 7
+RF_DESC_PALETTE       EQU 9
+RF_DESC_SHINY_PALETTE EQU 11
+RF_DESC_SIZE          EQU 13
 
 RF_WILD_MAP     EQU 0
 RF_WILD_SPECIES EQU 1
@@ -138,6 +139,11 @@ RegionalFormApplyDescriptorHeader:
 ; HL = descriptor -> HL = level-up learnset.
 RegionalFormGetLearnsetPointer:
 	ld bc,RF_DESC_LEARNSET
+	jp RegionalFormGetDescriptorPointer
+
+; HL = descriptor -> HL = evolution data.
+RegionalFormGetEvolutionPointer:
+	ld bc,RF_DESC_EVOLUTION
 	jp RegionalFormGetDescriptorPointer
 
 ; HL = descriptor -> HL = normal palette.
@@ -496,8 +502,346 @@ RegionalFormTryLearnLevelMove:
 	ret
 
 ; -----------------------------------------------------------------------------
+; Evolution / relearn helpers
+; -----------------------------------------------------------------------------
+RegionalFormTryGetLoadedMonEvolutionPointer:
+	ld a,[wLoadedMonSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.notFound
+	call RegionalFormGetEvolutionPointer
+	ld a,l
+	ld [wRegionalFormEvolutionReadPointer],a
+	ld a,h
+	ld [wRegionalFormEvolutionReadPointer + 1],a
+	scf
+	ret
+.notFound
+	xor a
+	ld [wRegionalFormEvolutionReadPointer],a
+	ld [wRegionalFormEvolutionReadPointer + 1],a
+	and a
+	ret
+
+; FORM-5.21.06: bank-$E's evolution parser consumes regional evolution data as a
+; byte stream. Keeping only the ROM pointer in WRAM removes the old wEnemyMon
+; table copy and therefore has no table-length/WRAM-boundary limit.
+;
+; IMPORTANT: callba/Bankswitch does not preserve A on return; it restores the
+; caller ROM bank through A. Return the data byte in E instead, matching the
+; project's existing far-call adapter convention (for example BattleRandomFar).
+RegionalFormReadEvolutionByte:
+	push hl
+	ld a,[wRegionalFormEvolutionReadPointer]
+	ld l,a
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	ld h,a
+	ld e,[hl]
+	inc hl
+	ld a,l
+	ld [wRegionalFormEvolutionReadPointer],a
+	ld a,h
+	ld [wRegionalFormEvolutionReadPointer + 1],a
+	pop hl
+	ret
+
+; Same stream access without advancing. Return E, not A, for the same far-call
+; reason as RegionalFormReadEvolutionByte.
+RegionalFormPeekEvolutionByte:
+	push hl
+	ld a,[wRegionalFormEvolutionReadPointer]
+	ld l,a
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	ld h,a
+	ld e,[hl]
+	pop hl
+	ret
+
+; A = evolution type. Returns C = bytes after the type byte in one stock entry.
+; Keep one definition of the format so EV_ITEM / EV_RAND / EV_TYROGUE cannot
+; drift between the generic regional parsers.
+RegionalFormGetEvolutionPayloadLength:
+	ld c,2
+	cp EV_ITEM
+	jr z,.long
+	cp EV_RAND
+	jr z,.long
+	cp EV_TYROGUE
+	ret nz
+.long
+	inc c
+	ret
+
+RegionalFormGetEvolutionStoneMenuText:
+	ld a,[wLoadedMonSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.notRegional
+	call RegionalFormGetEvolutionPointer
+.loop
+	ld a,[hli]
+	and a
+	jr z,.notAble
+	cp EV_ITEM
+	jr z,.item
+	call RegionalFormGetEvolutionPayloadLength
+.skipPayload
+	inc hl
+	dec c
+	jr nz,.skipPayload
+	jr .loop
+.item
+	; EV_ITEM = item, minimum level, target species. Consume all three bytes even
+	; when the stone does not match, so the next iteration starts on an entry type.
+	ld a,[hli]
+	ld b,a
+	inc hl ; minimum level
+	inc hl ; target species
+	ld a,[wEvoStoneItemID]
+	cp b
+	jr nz,.loop
+	ld de,PartyMenuAbleToEvolveText
+	scf
+	ret
+.notAble
+	ld de,PartyMenuNotAbleToEvolveText
+	scf
+	ret
+.notRegional
+	and a
+	ret
+
+; Build wRelearnableMoves entirely while bank $34 is active. The old helper
+; copied the complete learnset into wEnemyMon and could cross the $CFFF WRAM0
+; boundary for ordinary 30+ byte learnsets. Carry set means the regional form
+; was handled; carry clear lets the caller use the stock species table.
+RegionalFormPrepareRelearnableMoveList:
+	ld a,[wWhichPokemon]
+	ld hl,wPartyMon1Species
+	ld bc,wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a,[hl]
+	ld d,a
+	ld bc,wPartyMon1CatchRate - wPartyMon1Species
+	add hl,bc
+	ld a,[hl]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jp nc,.notFound
+	call RegionalFormGetLearnsetPointer
+	push hl ; regional learnset pointer
+	ld a,[wWhichPokemon]
+	ld hl,wPartyMon1Level
+	ld bc,wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a,[hl]
+	ld b,a ; current level
+	push bc ; preserve B=current level while AddNTimes needs BC as the party stride
+	ld a,[wWhichPokemon]
+	ld hl,wPartyMon1Moves
+	ld bc,wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld d,h
+	ld e,l ; DE = current moves
+	pop bc ; restore B=current level
+	pop hl ; HL = regional learnset
+	ld c,0 ; relearnable count
+.loop
+	ld a,[hli]
+	and a
+	jp z,.done
+	cp b
+	jr c,.candidate
+	jp nz,.done
+.candidate
+	ld a,[hli]
+	push af ; candidate move
+	push bc ; B = current level, C = relearnable count
+	ld b,a
+	push de
+	ld c,NUM_MOVES
+.checkKnown
+	ld a,[de]
+	cp b
+	jr z,.known
+	inc de
+	dec c
+	jr nz,.checkKnown
+	pop de
+	pop bc
+	; wRelearnableMoves is 10 bytes total: count + up to 8 moves + $ff.
+	ld a,c
+	cp 8
+	jr nc,.discardCandidate
+	pop af ; candidate move
+	push hl
+	; B must remain the current Pokémon level across list indexing.
+	; FORM-5.21.08 zeroed B here and therefore stopped after the first
+	; relearnable move on the next level comparison.
+	push bc
+	ld hl,wRelearnableMoves + 1
+	ld b,0
+	add hl,bc
+	ld [hl],a
+	pop bc
+	pop hl
+	inc c
+	jp .loop
+.discardCandidate
+	pop af
+	jp .loop
+.known
+	pop de
+	pop bc
+	pop af
+	jp .loop
+.done
+	ld b,0
+	ld hl,wRelearnableMoves + 1
+	add hl,bc
+	ld [hl],$ff
+	ld hl,wRelearnableMoves
+	ld [hl],c
+	scf
+	ret
+.notFound
+	and a
+	ret
+
+RegionalFormResolveEvolutionTargetForm:
+	xor a
+	ld [wRegionalFormEvolutionTargetForm],a
+	ld a,[wEvoOldSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	ret nc
+	inc hl
+	ld a,[hl]
+	ld e,a
+	ld a,[wEvoNewSpecies]
+	ld d,a
+	call RegionalFormFindBySpeciesForm
+	ret nc
+	inc hl
+	ld a,[hl]
+	ld [wRegionalFormEvolutionTargetForm],a
+	scf
+	ret
+
+RegionalFormLoadEvolutionSourceHeader:
+	push de
+	ld a,[wEvoOldSpecies]
+	ld [wd0b5],a
+	call GetMonHeader
+	ld a,[wEvoOldSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.done
+	call RegionalFormApplyDescriptorHeader
+.done
+	pop de
+	ret
+
+RegionalFormLoadEvolutionTargetHeader:
+	push de
+	ld a,[wEvoNewSpecies]
+	ld [wd0b5],a
+	call GetMonHeader
+	ld a,[wEvoNewSpecies]
+	ld d,a
+	ld a,[wRegionalFormEvolutionTargetForm]
+	and a
+	jr z,.done
+	ld e,a
+	call RegionalFormFindBySpeciesForm
+	jr nc,.done
+	call RegionalFormApplyDescriptorHeader
+.done
+	pop de
+	ret
+
+RegionalFormCommitEvolutionTargetHeader:
+	push de
+	ld a,[wEvoNewSpecies]
+	ld [wd0b5],a
+	call GetMonHeader
+	ld a,[wEvoOldSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.done
+	ld a,[wRegionalFormEvolutionTargetForm]
+	and a
+	jr z,.clearMarker
+	ld e,a
+	ld a,[wEvoNewSpecies]
+	ld d,a
+	call RegionalFormFindBySpeciesForm
+	jr nc,.clearMarker
+	call RegionalFormApplyDescriptorHeader
+	inc hl
+	inc hl
+	ld a,[hl]
+	ld [wLoadedMonCatchRate],a
+	jr .done
+.clearMarker
+	ld a,[wMonHCatchRate]
+	ld [wLoadedMonCatchRate],a
+.done
+	pop de
+	ret
+
+; -----------------------------------------------------------------------------
 ; Palette helpers
 ; -----------------------------------------------------------------------------
+
+RegionalFormOverrideEvolutionPalette:
+	push de
+	ld a,[wWholeScreenPaletteMonSpecies]
+	ld b,a
+	ld a,[wEvoOldSpecies]
+	cp b
+	jr z,.source
+	ld a,[wEvoNewSpecies]
+	cp b
+	jr nz,.done
+	ld d,b
+	ld a,[wRegionalFormEvolutionTargetForm]
+	and a
+	jr z,.done
+	ld e,a
+	call RegionalFormFindBySpeciesForm
+	jr nc,.done
+	jr .descriptorReady
+.source
+	ld d,b
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.done
+.descriptorReady
+	ld a,[wShinyMonFlag]
+	bit 0,a
+	jr nz,.shiny
+	call RegionalFormGetPalettePointer
+	jr .copy
+.shiny
+	call RegionalFormGetShinyPalettePointer
+.copy
+	ld e,0
+	call RegionalFormCopyPaletteFromHL
+.done
+	pop de
+	ret
 
 ; HL = two middle CGB colors (4 bytes), E = BG palette slot.
 RegionalFormCopyPaletteFromHL:

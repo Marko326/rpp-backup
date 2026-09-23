@@ -137,7 +137,7 @@ GainExperience:
 	add hl, bc
 	ld a, [hl] ; species
 	ld [wd0b5], a
-	call GetMonHeader
+	callba RegionalFormLoadPartyMonHeader
 	ld d, MAX_LEVEL
 	callab CalcExperience ; get max exp
 ; compare max exp with current exp

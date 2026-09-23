@@ -142,6 +142,8 @@ RedrawPartyMenu_:
 	db "Not able@"
 .evolutionStoneMenu
 	push hl
+	callba RegionalFormGetEvolutionStoneMenuText
+	jr c,.placeEvolutionStoneString
 	ld hl,EvosMovesPointerTable
 	ld b,0
 	ld a,[wLoadedMonSpecies]
@@ -163,7 +165,7 @@ RedrawPartyMenu_:
 	ld bc,Mon133_EvosEnd - Mon133_EvosMoves
 	call FarCopyData
 	ld hl,wEnemyMon
-	ld de,.notAbleToEvolveText
+	ld de,PartyMenuNotAbleToEvolveText
 ; loop through the pokemon's evolution entries
 .checkEvolutionsLoop
 	ld a,[hli]
@@ -184,7 +186,7 @@ RedrawPartyMenu_:
 	cp b ; does the player's stone match this evolution entry's stone?
 	jr nz,.checkEvolutionsLoop
 ; if it does match
-	ld de,.ableToEvolveText
+	ld de,PartyMenuAbleToEvolveText
 .placeEvolutionStoneString
 	ld bc,20 + 9 ; down 1 row and right 9 columns
 	pop hl
@@ -193,10 +195,6 @@ RedrawPartyMenu_:
 	call PlaceString
 	pop hl
 	jr .printLevel
-.ableToEvolveText
-	db "Able@"
-.notAbleToEvolveText
-	db "Not able@"
 .afterDrawingMonEntries
 	ld b, SET_PAL_PARTY_MENU
 	call RunPaletteCommand
@@ -243,6 +241,14 @@ RedrawPartyMenu_:
 	pop hl
 	call PrintText
 	jr .done
+
+; FORM-5.21.05: these strings are global because bank $34 returns their DE
+; pointers. Keep them after RedrawPartyMenu_'s final local label so they do not
+; rebind .afterDrawingMonEntries/.printMessage to the wrong global scope.
+PartyMenuAbleToEvolveText::
+	db "Able@"
+PartyMenuNotAbleToEvolveText::
+	db "Not able@"
 
 PartyMenuItemUseMessagePointers:
 	dw AntidoteText

@@ -24,10 +24,11 @@ EvolveMon:
 	ld [wWholeScreenPaletteMonSpecies], a
 	ld c, 0
 	call EvolutionSetWholeScreenPalette
+	callba RegionalFormOverrideEvolutionPalette
 	ld a, [wEvoNewSpecies]
 	ld [wcf91], a
 	ld [wd0b5], a
-	call Evolution_LoadPic
+	call Evolution_LoadNewPic
 	ld de, vFrontPic
 	ld hl, vBackPic
 	ld bc, 7 * 7
@@ -35,7 +36,7 @@ EvolveMon:
 	ld a, [wEvoOldSpecies]
 	ld [wcf91], a
 	ld [wd0b5], a
-	call Evolution_LoadPic
+	call Evolution_LoadOldPic
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ld a, [wEvoOldSpecies]
@@ -74,6 +75,7 @@ EvolveMon:
 	call PlayCry
 	ld c, 0
 	call EvolutionSetWholeScreenPalette
+	callba RegionalFormOverrideEvolutionPalette
 	pop af
 	ld [wd0b5], a
 	pop af
@@ -99,8 +101,14 @@ EvolutionSetWholeScreenPalette:
 	ld hl, EvolutionSetWholeScreenPalette_
 	jp Bankswitch
 
-Evolution_LoadPic:
-	call GetMonHeader
+Evolution_LoadNewPic:
+	callba RegionalFormLoadEvolutionTargetHeader
+	jr Evolution_LoadPicFromHeader
+
+Evolution_LoadOldPic:
+	callba RegionalFormLoadEvolutionSourceHeader
+
+Evolution_LoadPicFromHeader:
 	coord hl, 7, 2
 	jp LoadFlippedFrontSpriteByMonIndex
 

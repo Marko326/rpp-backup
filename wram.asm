@@ -2450,9 +2450,14 @@ wPseudoItemID:: ; d152
 
 wUnusedD153:: ; d153
 wRegionalFormPrintTypeArgument::
-; FORM-5.21.02: alias existing unused scratch; does not grow WRAM/save layout.
+wRegionalFormEvolutionTargetForm::
+; FORM-5.21.03: shared scratch; no WRAM/save-layout growth.
 	ds 1
 
+; FORM-5.21.05: two bytes were already reserved here. Regional evolution uses
+; them as a bank-$34 ROM stream pointer instead of copying an arbitrarily long
+; evolution table into wEnemyMon. High byte 0 means the stream is inactive.
+wRegionalFormEvolutionReadPointer::
 	ds 2
 
 wEvoStoneItemID:: ; d156

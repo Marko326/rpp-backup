@@ -41,6 +41,15 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, c
 	and a ; is the mon's bit set?
 	jp z, Evolution_PartyMonLoop ; if not, go to the next mon
+	ld a, [wcf91]
+	push af
+	xor a ; PLAYER_PARTY_DATA
+	ld [wMonDataLocation], a
+	call LoadMonData
+	pop af
+	ld [wcf91], a
+	callba RegionalFormTryGetLoadedMonEvolutionPointer
+	jr c,.evolutionDataReady
 	ld a, [wEvoOldSpecies]
 	dec a
 	ld b, 0
@@ -52,18 +61,11 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	push hl
-	ld a, [wcf91]
-	push af
-	xor a ; PLAYER_PARTY_DATA
-	ld [wMonDataLocation], a
-	call LoadMonData
-	pop af
-	ld [wcf91], a
-	pop hl
+	jr .evolutionDataReady
+.evolutionDataReady
 
 .evoEntryLoop ; loop over evolution entries
-	ld a, [hli]
+	call .readDataByte
 	and a ; have we reached the end of the evolution data?
 	jr z, Evolution_PartyMonLoop
 	ld b, a ; evolution type
@@ -95,7 +97,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, [wLinkState]
 	cp LINK_STATE_TRADING
 	jp nz, .nextEvoEntry1 ; if not trading, go to the next evolution entry
-	ld a, [hli] ; level requirement
+	call .readDataByte ; level requirement
 	ld b, a
 	ld a, [wLoadedMonLevel]
 	cp b ; is the mon's level greater than the evolution requirement?
@@ -103,7 +105,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jp .doEvolution
 	
 .checkMapEvo
-	ld a, [hli]
+	call .readDataByte
 	ld b, a ; Map to evolve on
 	ld a, [wCurMap]
 	cp b ; Are we on the right map?
@@ -112,7 +114,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jp .doEvolution; Do evolution
 	
 .checkMoveEvo
-	ld a, [hli] ; get the move number
+	call .readDataByte ; get the move number
 	ld [wMoveNum],a ; store it here to hang onto it
 	push hl ; We don't want to lose our place
 	call CheckForMove ; New routine based on the one used by TMs
@@ -122,12 +124,12 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jp .doEvolution; If they did know it, do the evolution
 	
 .checkRandomEvo
-	ld a, [hli] ; get level to evolve
+	call .readDataByte ; get level to evolve
 	ld b, a
 	ld a, [wLoadedMonLevel]
 	cp b
 	jp c, .nextEvoEntry1 ; if too low, go to next evolution
-	ld a, [hli] ; which method is this?
+	call .readDataByte ; which method is this?
 	dec a ; is it RAND_1?
 	jr z, .rand1
 ;rand2
@@ -147,12 +149,12 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jr .doEvolution ; Do evolution
 	
 .checkTyrogueEvo
-    ld a, [hli] ; level to evolve
+    call .readDataByte ; level to evolve
     ld b, a
     ld a, [wLoadedMonLevel] ; current level
     cp b
     jp c, .nextEvoEntry1 ; if too low, go to next evo
-    ld a, [hli] ; which method is this?
+    call .readDataByte ; which method is this?
     cp ATK_HIGHER
     jp z, .AtkHigher
     cp BOTH_EQUAL
@@ -183,7 +185,7 @@ Evolution_PartyMonLoop: ; loop over party mons
     jr .doEvolution ; Do first Pokemon if Def is higher
 	
 .checkItemEvo
-	ld a, [hli]
+	call .readDataByte
 	ld b, a ; evolution item
     ld a,[wIsInBattle] ; check if we're in a battle
 	and a
@@ -194,7 +196,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	; fallthrough
 	
 .checkLevel
-	ld a, [hli] ; level requirement
+	call .readDataByte ; level requirement
 	ld b, a
 	ld a, [wLoadedMonLevel]
 	cp b ; is the mon's level greater than the evolution requirement?
@@ -206,8 +208,9 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, 1
 	ld [wEvolutionOccurred], a
 	push hl
-	ld a, [hl]
+	call .peekDataByte
 	ld [wEvoNewSpecies], a
+	callba RegionalFormResolveEvolutionTargetForm
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMonNicks
 	call GetPartyMonName
@@ -231,10 +234,9 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld hl, EvolvedText
 	call PrintText
 	pop hl
-	ld a, [hl]
+	ld a, [wEvoNewSpecies]
 	ld [wd0b5], a
 	ld [wLoadedMonSpecies], a
-	ld [wEvoNewSpecies], a
 	ld a, MONSTER_NAME
 	ld [wNameListType], a
 	ld a, BANK(TrainerNames) ; bank is not used for monster names
@@ -252,22 +254,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	call RenameEvolvedMon
 	ld a, [wd11e]
 	push af
-	ld a, [wd0b5]
-	ld [wd11e], a
-	predef IndexToPokedex
-	ld a, [wd11e]
-	dec a
-	ld hl, BaseStats
-	ld bc, MonBaseStatsEnd - MonBaseStats
-	call AddNTimes
-	ld de, wMonHeader
-	;call CopyData
-; New thing to move BaseStats into another bank
-	ld a, BANK(BaseStats)
-	call FarCopyData
-;End new thing
-	ld a, [wd0b5]
-	ld [wMonHIndex], a
+	callba RegionalFormCommitEvolutionTargetHeader
 	pop af
 	ld [wd11e], a
 	ld hl, wLoadedMonHPExp - 1
@@ -308,7 +295,10 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld [wd11e], a
 	xor a
 	ld [wMonDataLocation], a
+	callba RegionalFormTryLearnLevelMove
+	jr c,.evolutionLevelMoveHandled
 	call LearnMoveFromLevelUp
+.evolutionLevelMoveHandled
 	pop hl
 	predef SetPartyMonTypes
 	ld a, [wIsInBattle]
@@ -335,11 +325,55 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jr .nextEvoEntry2
    
 .nextEvoEntry1
-	inc hl
+	call .skipDataByte
 
 .nextEvoEntry2
-	inc hl
+	call .skipDataByte
 	jp .evoEntryLoop
+
+; FORM-5.21.06: normal species keep using HL directly. A non-zero high byte in
+; wRegionalFormEvolutionReadPointer switches the same parser to bank-$34 data.
+; The far helpers return their byte in E because Bankswitch overwrites A while
+; restoring the caller ROM bank. Preserve the parser's DE around the adapter.
+.readDataByte:
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	and a
+	jr z,.readNormal
+	push de
+	callba RegionalFormReadEvolutionByte
+	ld a,e
+	pop de
+	ret
+.readNormal
+	ld a,[hli]
+	ret
+
+.peekDataByte:
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	and a
+	jr z,.peekNormal
+	push de
+	callba RegionalFormPeekEvolutionByte
+	ld a,e
+	pop de
+	ret
+.peekNormal
+	ld a,[hl]
+	ret
+
+.skipDataByte:
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	and a
+	jr z,.skipNormal
+	ld hl,wRegionalFormEvolutionReadPointer
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.skipNormal
+	inc hl
+	ret
 
 .done
 	pop de
@@ -666,14 +700,14 @@ GetMonDVs:
 PrepareRelearnableMoveList:
 ; Loads relearnable move list to wRelearnableMoves.
 ; Input: party mon index = [wWhichPokemon]
-	; Get mon id.
+	callba RegionalFormPrepareRelearnableMoveList
+	ret c
 	ld a, [wWhichPokemon]
 	ld c, a
 	ld b, 0
 	ld hl, wPartySpecies
 	add hl, bc
-	ld a, [hl] ; a = mon id
-	; Get pointer to evos moves data.
+	ld a, [hl]
 	dec a
 	ld c, a
 	ld b, 0
@@ -682,7 +716,13 @@ PrepareRelearnableMoveList:
 	add hl, bc
 	ld a, [hli]
 	ld h, [hl]
-	ld l, a  ; hl = pointer to evos moves data for our mon
+	ld l, a
+.skipEvoEntriesLoop
+	ld a, [hli]
+	and a
+	jr nz, .skipEvoEntriesLoop
+	jr .learnsetReady
+.learnsetReady
 	push hl
 	; Get pointer to mon's currently-known moves.
 	ld a, [wWhichPokemon]
@@ -700,11 +740,6 @@ PrepareRelearnableMoveList:
 	ld d, h
 	ld e, l
 	pop hl
-	; Skip over evolution data.
-.skipEvoEntriesLoop
-	ld a, [hli]
-	and a
-	jr nz, .skipEvoEntriesLoop
 	; Write list of relearnable moves, while keeping count along the way.
 	; de = pointer to mon's currently-known moves
 	; hl = pointer to moves data for our mon
