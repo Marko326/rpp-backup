@@ -597,13 +597,20 @@ RegionalFormGetEvolutionStoneMenuText:
 .item
 	; EV_ITEM = item, minimum level, target species. Consume all three bytes even
 	; when the stone does not match, so the next iteration starts on an entry type.
+	; FORM-5.22.00: regional item evolutions may have a real minimum level (the
+	; first such production case is Alolan Vulpix). Match both item and level so
+	; the Party menu does not claim "Able" when TryEvolvingMon will reject it.
 	ld a,[hli]
-	ld b,a
-	inc hl ; minimum level
+	ld b,a ; required item
+	ld a,[hli]
+	ld c,a ; minimum level
 	inc hl ; target species
 	ld a,[wEvoStoneItemID]
 	cp b
 	jr nz,.loop
+	ld a,[wLoadedMonLevel]
+	cp c
+	jr c,.loop
 	ld de,PartyMenuAbleToEvolveText
 	scf
 	ret

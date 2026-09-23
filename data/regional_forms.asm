@@ -1,4 +1,4 @@
-; FORM-5.21.05: table-driven regional-form data.
+; FORM-5.22.00: table-driven regional-form data.
 ;
 ; The engine never names a concrete regional Pokémon. To add another form,
 ; define its complete header/learnset/evolution/palettes below, add one descriptor row,
@@ -32,12 +32,29 @@ RegionalFormDescriptors::
 	dw AlolanRaticateEvolutions
 	dw AlolanRaticatePreviewPalette
 	dw AlolanRaticateShinyPalette
+
+	db VULPIX, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
+	dw AlolanVulpixBaseStats
+	dw AlolanVulpixLevelMoves
+	dw AlolanVulpixEvolutions
+	dw AlolanVulpixPreviewPalette
+	dw AlolanVulpixShinyPalette
+
+	db NINETALES, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
+	dw AlolanNinetalesBaseStats
+	dw AlolanNinetalesLevelMoves
+	dw AlolanNinetalesEvolutions
+	dw AlolanNinetalesPreviewPalette
+	dw AlolanNinetalesShinyPalette
 	db 0 ; terminator: species 0 is never a valid descriptor
 
 ; Wild-only producer table: map, species, form.
 ; Stored/trainer/link Pokémon resolve their form from the persistent marker.
 RegionalFormWildEncounters::
 	db ROUTE_1, RATTATA, FORM_ALOLA
+	; FORM-5.22.00: Route 7 Vulpix uses the Alolan descriptor. Other maps
+	; continue to produce normal Vulpix, so both forms remain obtainable.
+	db ROUTE_7, VULPIX, FORM_ALOLA
 	db $ff ; terminator: no real map uses this entry here
 
 ; -----------------------------------------------------------------------------
@@ -172,6 +189,134 @@ AlolanRaticateShinyPalette::
 	RGB 18, 06, 11
 
 
+; -----------------------------------------------------------------------------
+; Alolan Vulpix
+; -----------------------------------------------------------------------------
+; Sprite/palette/learnset/evolution references come from the user-supplied
+; "Furret...pic" package. That source represents Alolan Vulpix as ICE/FAIRY
+; and uses SUN_STONE at level 30 because this branch has no ICE_STONE item constant.
+AlolanVulpixBaseStats::
+	db DEX_VULPIX
+	db 38
+	db 41
+	db 40
+	db 65
+	db 65
+	db ICE
+	db FAIRY
+	db 190
+	db 63
+	db $66
+	dw AlolanVulpixPicFront
+	dw AlolanVulpixPicBack
+	m_tutor 8
+	m_tutor 13
+	m_tutor 0
+	m_tutor 0
+	db 0
+	tmlearn 6,8
+	tmlearn 9,10,13,14
+	tmlearn 0
+	tmlearn 28,29,30,31,32
+	tmlearn 33,34,39
+	tmlearn 43,44,46
+	tmlearn 49,50,55
+	db BANK(AlolanVulpixPicFront)
+
+AlolanVulpixLevelMoves::
+	db 1,TACKLE
+	db 4,LEER
+	db 7,QUICK_ATTACK
+	db 11,ICE_SHARD
+	db 14,NIGHT_SHADE
+	db 17,DRAININGKISS
+	db 20,ICE_FANG
+	db 23,HEX
+	db 26,AURORA_BEAM
+	db 28,ZEN_HEADBUTT
+	db 34,HYPNOSIS
+	db 37,EXTRASENSORY
+	db 40,SHADOW_BALL
+	db 46,ICE_BEAM
+	db 50,DAZZLINGLEAM
+	db 0
+
+AlolanVulpixEvolutions::
+	db EV_ITEM,SUN_STONE,30,NINETALES
+	db 0
+
+AlolanVulpixPreviewPalette::
+	RGB 19, 23, 28
+	RGB 09, 14, 18
+AlolanVulpixShinyPalette::
+	RGB 27, 20, 27
+	RGB 21, 11, 12
+
+
+; -----------------------------------------------------------------------------
+; Alolan Ninetales
+; -----------------------------------------------------------------------------
+AlolanNinetalesBaseStats::
+	db DEX_NINETALES
+	; Alolan redistribution established by the regional-stat plan: same BST,
+	; Attack 67 / Speed 109 instead of normal Ninetales 76 / 100.
+	db 73
+	db 67
+	db 75
+	db 109
+	db 100
+	db ICE
+	db FAIRY
+	db 75
+	db 178
+	db $77
+	dw AlolanNinetalesPicFront
+	dw AlolanNinetalesPicBack
+	m_tutor 8
+	m_tutor 13
+	m_tutor 0
+	m_tutor 0
+	db 0
+	tmlearn 6,8
+	tmlearn 9,10,13,14,15
+	tmlearn 0
+	tmlearn 27,28,29,30,31,32
+	tmlearn 33,34,39
+	tmlearn 43,44,46
+	tmlearn 49,50,55
+	db BANK(AlolanNinetalesPicFront)
+
+AlolanNinetalesLevelMoves::
+	db 1,CONFUSE_RAY
+	db 11,ICE_SHARD
+	db 17,DRAININGKISS
+	db 20,ICE_FANG
+	db 23,HEX
+	db 26,AURORA_BEAM
+	db 28,ZEN_HEADBUTT
+	db 34,HYPNOSIS
+	db 37,EXTRASENSORY
+	db 40,SHADOW_BALL
+	db 46,ICE_BEAM
+	db 55,DAZZLINGLEAM
+	db 60,PSYCHIC_M
+	db 65,BLIZZARD
+	; The supplied source has FLEUR_CANNON at Lv70, but this branch has no
+	; FLEUR_CANNON move constant. Do not silently substitute another move.
+	db 75,AMNESIA
+	db 0
+
+AlolanNinetalesEvolutions::
+	db 0
+
+AlolanNinetalesPreviewPalette::
+	RGB 19, 23, 27
+	RGB 09, 14, 18
+AlolanNinetalesShinyPalette::
+	RGB 24, 19, 31
+	RGB 14, 07, 21
+
+
 ; Graphics are a separate section on purpose. Future forms can put their sprites
 ; in another roomy bank without changing the descriptor engine.
 SECTION "Regional Form Graphics - Alolan Rattata Family", ROMX, BANK[$34]
@@ -179,3 +324,13 @@ AlolanRattataPicFront:: INCBIN "pic/bmon/rattata_alola.pic"
 AlolanRattataPicBack::  INCBIN "pic/monback/rattata_alolab.pic"
 AlolanRaticatePicFront:: INCBIN "pic/bmon/raticate_alola.pic"
 AlolanRaticatePicBack::  INCBIN "pic/monback/raticate_alolab.pic"
+
+
+; FORM-5.22.00: user-provided Alolan Vulpix/Ninetales battle sprites. Bank $34
+; is intentionally left for descriptors/engine data; bank $3E keeps this
+; expansion inside the original 1 MiB ROM and the form header stores the pic bank.
+SECTION "Regional Form Graphics - Alolan Vulpix Family", ROMX, BANK[$3E]
+AlolanVulpixPicFront:: INCBIN "pic/bmon/vulpix_alola.pic"
+AlolanVulpixPicBack::  INCBIN "pic/monback/vulpix_alolab.pic"
+AlolanNinetalesPicFront:: INCBIN "pic/bmon/ninetales_alola.pic"
+AlolanNinetalesPicBack::  INCBIN "pic/monback/ninetales_alolab.pic"
