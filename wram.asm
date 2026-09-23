@@ -2190,8 +2190,9 @@ wPredefBank:: ; d0b7
 wMonHeader:: ; d0b8
 
 wMonHIndex:: ; d0b8
-; In the ROM base stats data structure, this is the dex number, but it is
-; overwritten with the internal index number after the header is copied to WRAM.
+; FORM-5.27.00: compact stock ROM BaseStats omit the redundant Pokédex id.
+; GetMonHeader still materializes the internal species id here, preserving the
+; historical 28-byte wMonHeader runtime layout.
 	ds 1
 
 wMonHBaseStats:: ; d0b9

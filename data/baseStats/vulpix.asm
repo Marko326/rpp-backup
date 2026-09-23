@@ -1,4 +1,3 @@
-db DEX_VULPIX ; pokedex id
 db 38 ; base hp
 db 41 ; base attack
 db 40 ; base defense
@@ -14,9 +13,6 @@ dw VulpixPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 5,6,8
 	tmlearn 9,10,16

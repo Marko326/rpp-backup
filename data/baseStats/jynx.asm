@@ -1,4 +1,3 @@
-db DEX_JYNX ; pokedex id
 db 65 ; base hp
 db 50 ; base attack
 db 35 ; base defense
@@ -14,9 +13,6 @@ dw JynxPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,15

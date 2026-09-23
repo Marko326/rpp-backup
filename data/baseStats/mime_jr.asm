@@ -1,5 +1,4 @@
 MimeJrBaseStats:
-db DEX_MIME_JR ; pokedex id
 db 20 ; base hp
 db 25 ; base attack
 db 45 ; base defense
@@ -15,9 +14,6 @@ dw MimeJrPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10

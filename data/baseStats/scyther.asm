@@ -1,4 +1,3 @@
-db DEX_SCYTHER ; pokedex id
 db 70 ; base hp
 db 110 ; base attack
 db 80 ; base defense
@@ -14,9 +13,6 @@ dw ScytherPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,4,6
 	tmlearn 9,10,15

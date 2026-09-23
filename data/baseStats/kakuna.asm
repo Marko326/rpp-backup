@@ -1,4 +1,3 @@
-db DEX_KAKUNA ; pokedex id
 db 45 ; base hp
 db 25 ; base attack
 db 50 ; base defense
@@ -14,9 +13,6 @@ dw KakunaPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 0
 	tmlearn 0

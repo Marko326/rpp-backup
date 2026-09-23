@@ -1,4 +1,3 @@
-db DEX_RATTATA ; pokedex id
 db 30 ; base hp
 db 56 ; base attack
 db 35 ; base defense
@@ -14,9 +13,6 @@ dw RattataPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,5,6,8
 	tmlearn 9,10,11,12,13,14,16

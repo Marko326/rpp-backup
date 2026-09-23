@@ -2348,6 +2348,9 @@ BenchGuySprite:        INCBIN "gfx/sprites/bench_guy.2bpp"
 SECTION "bank30",ROMX,BANK[$30]
 
 BaseStats: INCLUDE "data/base_stats.asm"
+INCLUDE "data/base_stats_growth_rates.asm"
+INCLUDE "data/base_stats_tutor_extensions.asm"
+INCLUDE "engine/compact_mon_header.asm"
 
 
 SECTION "bank31",ROMX,BANK[$31]

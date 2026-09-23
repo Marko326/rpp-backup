@@ -1,4 +1,3 @@
-db DEX_LINOONE ; pokedex id
 db 78  ; base hp
 db 70  ; base attack
 db 61  ; base defense
@@ -14,9 +13,6 @@ dw LinoonePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 2,3,5,6,8
 	tmlearn 9,10,11,12,13,14,15,16

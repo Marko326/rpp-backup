@@ -1,5 +1,4 @@
 MewBaseStats:
-db DEX_MEW ; pokedex id
 db 100 ; base hp
 db 100 ; base attack
 db 100 ; base defense
@@ -15,9 +14,6 @@ dw MewPicBack
 ; move tutor compatibility flags
 	m_tutor 1,2,3,5,6,7,8
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,2,3,4,5,6,7,8
 	tmlearn 9,10,11,12,13,14,15,16

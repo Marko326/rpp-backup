@@ -1,4 +1,3 @@
-db DEX_WEEZING ; pokedex id
 db 65 ; base hp
 db 90 ; base attack
 db 120 ; base defense
@@ -14,9 +13,6 @@ dw WeezingPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6
 	tmlearn 9,10,15

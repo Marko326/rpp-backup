@@ -1,5 +1,4 @@
 TangrowthBaseStats:
-db DEX_TANGROWTH ; pokedex id
 db 100 ; base hp
 db 100 ; base attack
 db 125 ; base defense
@@ -9,15 +8,12 @@ db GRASS ; species type 1
 db GRASS ; species type 2
 db 30 ; catch rate
 db 211 ; base exp yield
-INCBIN "pic/bmon/tangrowth.pic",0,1 ; 66, sprite dimensions
+INCBIN "pic/bmon/tangrowth.pic",0,1 ; sprite dimensions
 dw TangrowthPicFront
 dw TangrowthPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,6,8
 	tmlearn 9,10,15

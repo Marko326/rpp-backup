@@ -1,4 +1,3 @@
-db DEX_VICTREEBEL ; pokedex id
 db 80 ; base hp
 db 105 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw VictreebelPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,6,8
 	tmlearn 9,10,15

@@ -1,4 +1,3 @@
-db DEX_TENTACOOL ; pokedex id
 db 40 ; base hp
 db 40 ; base attack
 db 35 ; base defense
@@ -14,9 +13,6 @@ dw TentacoolPicBack
 ; move tutor compatibility flags
 	m_tutor 5,8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 3,6
 	tmlearn 9,10,11,12,13,14

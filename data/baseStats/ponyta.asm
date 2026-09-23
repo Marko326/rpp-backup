@@ -1,4 +1,3 @@
-db DEX_PONYTA ; pokedex id
 db 50 ; base hp
 db 85 ; base attack
 db 55 ; base defense
@@ -14,9 +13,6 @@ dw PonytaPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 5,6,7,8
 	tmlearn 9,10,16

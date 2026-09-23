@@ -1,4 +1,3 @@
-db DEX_TAUROS ; pokedex id
 db 75 ; base hp
 db 100 ; base attack
 db 95 ; base defense
@@ -14,9 +13,6 @@ dw TaurosPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 1,5,6,7,8
 	tmlearn 9,10,11,13,14,15,16

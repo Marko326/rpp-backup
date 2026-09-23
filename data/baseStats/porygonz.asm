@@ -1,5 +1,4 @@
 PorygonZBaseStats:
-db DEX_PORYGONZ ; pokedex id
 db 85 ; base hp
 db 80 ; base attack
 db 70 ; base defense
@@ -9,15 +8,12 @@ db NORMAL ; species type 1
 db NORMAL ; species type 2
 db 30 ; catch rate
 db 185 ; base exp yield
-INCBIN "pic/bmon/porygonz.pic",0,1 ; 66, sprite dimensions
+INCBIN "pic/bmon/porygonz.pic",0,1 ; sprite dimensions
 dw PorygonZPicFront
 dw PorygonZPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6
 	tmlearn 9,10,13,14,15,16

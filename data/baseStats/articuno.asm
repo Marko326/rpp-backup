@@ -1,4 +1,3 @@
-db DEX_ARTICUNO ; pokedex id
 db 90 ; base hp
 db 85 ; base attack
 db 100 ; base defense
@@ -14,9 +13,6 @@ dw ArticunoPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10,11,13,14,15

@@ -1,4 +1,3 @@
-db DEX_ODDISH ; pokedex id
 db 45 ; base hp
 db 50 ; base attack
 db 55 ; base defense
@@ -14,9 +13,6 @@ dw OddishPicBack
 ; move tutor compatibility flags
 	m_tutor 7
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,6
 	tmlearn 9,10

@@ -1,4 +1,3 @@
-db DEX_GEODUDE ; pokedex id
 db 40 ; base hp
 db 80 ; base attack
 db 100 ; base defense
@@ -14,9 +13,6 @@ dw GeodudePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,6,8
 	tmlearn 9,10

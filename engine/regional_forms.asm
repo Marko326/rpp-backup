@@ -302,7 +302,9 @@ RegionalFormApplyDescriptorHeader:
 	ld bc,RF_DESC_HEADER
 	call RegionalFormGetDescriptorPointer
 	ld de,wMonHeader
-	ld bc,MonBaseStatsEnd - MonBaseStats
+	; FORM-5.27.00: regional headers intentionally remain independent legacy
+	; 28-byte records; do not reuse the 24-byte stock ROM record size here.
+	ld bc,wMonHPicBank + 1 - wMonHeader
 	call CopyData
 	pop af
 	ld [wMonHIndex],a

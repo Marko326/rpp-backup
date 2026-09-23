@@ -1,4 +1,3 @@
-db DEX_RHYDON ; pokedex id
 db 105 ; base hp
 db 130 ; base attack
 db 120 ; base defense
@@ -14,9 +13,6 @@ dw RhydonPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,7,8
 	tmlearn 9,10,11,12,13,14,15,16

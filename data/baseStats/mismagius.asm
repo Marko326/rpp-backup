@@ -1,5 +1,4 @@
 MismagiusBaseStats:
-db DEX_MISMAGIUS ; pokedex id
 db 60 ; base hp
 db 60 ; base attack
 db 60 ; base defense
@@ -9,15 +8,12 @@ db GHOST ; species type 1
 db GHOST ; species type 2
 db 45 ; catch rate
 db 187 ; base exp yield
-INCBIN "pic/bmon/mismagius.pic",0,1 ; 55, sprite dimensions
+INCBIN "pic/bmon/mismagius.pic",0,1 ; sprite dimensions
 dw MismagiusPicFront
 dw MismagiusPicBack
 ; move tutor compatibility flags
 	m_tutor 7,8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,15

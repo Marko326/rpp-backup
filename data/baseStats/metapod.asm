@@ -1,4 +1,3 @@
-db DEX_METAPOD ; pokedex id
 db 50 ; base hp
 db 20 ; base attack
 db 55 ; base defense
@@ -14,9 +13,6 @@ dw MetapodPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 0
 	tmlearn 0

@@ -1,4 +1,3 @@
-db DEX_ZIGZAGOON ; pokedex id
 db 38 ; base hp
 db 30 ; base attack
 db 41 ; base defense
@@ -14,9 +13,6 @@ dw ZigzagoonPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 2,3,5,6,8
 	tmlearn 9,10,11,12,13,14,16

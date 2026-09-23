@@ -1,4 +1,3 @@
-db DEX_ONIX ; pokedex id
 db 35 ; base hp
 db 45 ; base attack
 db 160 ; base defense
@@ -14,9 +13,6 @@ dw OnixPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,6,7,8
 	tmlearn 9,10,15,16

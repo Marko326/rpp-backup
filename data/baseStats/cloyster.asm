@@ -1,4 +1,3 @@
-db DEX_CLOYSTER ; pokedex id
 db 50 ; base hp
 db 95 ; base attack
 db 180 ; base defense
@@ -14,9 +13,6 @@ dw CloysterPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,7
 	tmlearn 9,10,11,12,13,14,15

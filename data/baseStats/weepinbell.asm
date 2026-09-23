@@ -1,4 +1,3 @@
-db DEX_WEEPINBELL ; pokedex id
 db 65 ; base hp
 db 90 ; base attack
 db 50 ; base defense
@@ -14,9 +13,6 @@ dw WeepinbellPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,6
 	tmlearn 9,10

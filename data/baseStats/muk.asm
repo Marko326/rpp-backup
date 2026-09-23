@@ -1,4 +1,3 @@
-db DEX_MUK ; pokedex id
 db 105 ; base hp
 db 105 ; base attack
 db 75 ; base defense
@@ -14,9 +13,6 @@ dw MukPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,6,8
 	tmlearn 9,10,12,15

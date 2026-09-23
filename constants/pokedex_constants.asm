@@ -210,3 +210,5 @@ const_value = 1
 	const DEX_HO_OH      ; 208
 
 NUM_POKEMON    EQU 208
+; FORM-5.27.00: compact stock BaseStats ROM record size.
+COMPACT_MON_HEADER_SIZE EQU 24

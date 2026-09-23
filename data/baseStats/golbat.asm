@@ -1,4 +1,3 @@
-db DEX_GOLBAT ; pokedex id
 db 75 ; base hp
 db 80 ; base attack
 db 70 ; base defense
@@ -14,9 +13,6 @@ dw GolbatPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,4,6,8
 	tmlearn 9,10,15

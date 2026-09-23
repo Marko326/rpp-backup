@@ -1,5 +1,4 @@
 ScizorBaseStats:
-db DEX_SCIZOR ; pokedex id
 db 70 ; base hp
 db 130 ; base attack
 db 100 ; base defense
@@ -15,9 +14,6 @@ dw ScizorPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,4,6
 	tmlearn 9,10,15

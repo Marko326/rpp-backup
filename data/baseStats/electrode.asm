@@ -1,4 +1,3 @@
-db DEX_ELECTRODE ; pokedex id
 db 60 ; base hp
 db 50 ; base attack
 db 70 ; base defense
@@ -14,9 +13,6 @@ dw ElectrodePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6
 	tmlearn 9,15

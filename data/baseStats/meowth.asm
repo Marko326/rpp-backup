@@ -1,4 +1,3 @@
-db DEX_MEOWTH ; pokedex id
 db 40 ; base hp
 db 45 ; base attack
 db 35 ; base defense
@@ -14,9 +13,6 @@ dw MeowthPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,11,12,16

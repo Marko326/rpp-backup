@@ -1,4 +1,3 @@
-db DEX_HO_OH ; pokedex id
 db 106 ; base hp
 db 130 ; base attack
 db 90  ; base defense
@@ -14,9 +13,6 @@ dw HoohPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10,15

@@ -1,5 +1,4 @@
 MagbyBaseStats:
-db DEX_MAGBY ; pokedex id
 db 45 ; base hp
 db 75 ; base attack
 db 37 ; base defense
@@ -15,9 +14,6 @@ dw MagbyPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,16

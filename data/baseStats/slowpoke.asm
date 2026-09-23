@@ -1,4 +1,3 @@
-db DEX_SLOWPOKE ; pokedex id
 db 90 ; base hp
 db 65 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw SlowpokePicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,16

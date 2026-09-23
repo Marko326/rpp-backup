@@ -1,4 +1,3 @@
-db DEX_DRAGONITE ; pokedex id
 db 91 ; base hp
 db 134 ; base attack
 db 95 ; base defense
@@ -14,9 +13,6 @@ dw DragonitePicBack
 ; move tutor compatibility flags
 	m_tutor 6
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 2,4,6,7,8
 	tmlearn 9,10,11,12,13,14,15,16

@@ -1,5 +1,4 @@
 MagcargoBaseStats:
-db DEX_MAGCARGO ; pokedex id
 db 60 ; base hp
 db 50 ; base attack
 db 120 ; base defense
@@ -9,15 +8,12 @@ db FIRE ; species type 1
 db ROCK ; species type 2
 db 75 ; catch rate
 db 154 ; base exp yield
-INCBIN "pic/bmon/magcargo.pic",0,1 ; 55, sprite dimensions
+INCBIN "pic/bmon/magcargo.pic",0,1 ; sprite dimensions
 dw MagcargoPicFront
 dw MagcargoPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,15

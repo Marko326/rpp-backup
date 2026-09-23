@@ -1,4 +1,3 @@
-db DEX_DITTO ; pokedex id
 db 48 ; base hp
 db 48 ; base attack
 db 48 ; base defense
@@ -14,9 +13,6 @@ dw DittoPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 0
 	tmlearn 0

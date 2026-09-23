@@ -1,4 +1,3 @@
-db DEX_MEWTWO ; pokedex id
 db 106 ; base hp
 db 110 ; base attack
 db 90 ; base defense
@@ -14,9 +13,6 @@ dw MewtwoPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,15,16

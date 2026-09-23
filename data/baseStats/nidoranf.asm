@@ -1,4 +1,3 @@
-db DEX_NIDORAN_F ; pokedex id
 db 55 ; base hp
 db 47 ; base attack
 db 52 ; base defense
@@ -14,9 +13,6 @@ dw NidoranFPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,7,8
 	tmlearn 9,10,11,12,13,14,16

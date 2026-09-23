@@ -1,5 +1,4 @@
 MonBaseStats:
-db DEX_BULBASAUR ; pokedex id
 db 45 ; base hp
 db 49 ; base attack
 db 49 ; base defense
@@ -15,9 +14,6 @@ dw BulbasaurPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,6,8
 	tmlearn 9,10
@@ -28,3 +24,4 @@ db 3 ; growth rate
 	tmlearn 50,51,54
 db BANK(BulbasaurPicFront)
 MonBaseStatsEnd:
+ASSERT MonBaseStatsEnd - MonBaseStats == COMPACT_MON_HEADER_SIZE

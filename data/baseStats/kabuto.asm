@@ -1,4 +1,3 @@
-db DEX_KABUTO ; pokedex id
 db 30 ; base hp
 db 80 ; base attack
 db 90 ; base defense
@@ -14,9 +13,6 @@ dw KabutoPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,6,8
 	tmlearn 9,10,11,12,13,14

@@ -1,5 +1,4 @@
 MurkrowBaseStats:
-db DEX_MURKROW ; pokedex id
 db 60 ; base hp
 db 85 ; base attack
 db 42 ; base defense
@@ -9,15 +8,12 @@ db DARK ; species type 1
 db FLYING ; species type 2
 db 30 ; catch rate
 db 81 ; base exp yield
-INCBIN "pic/bmon/murkrow.pic",0,1 ; 55, sprite dimensions
+INCBIN "pic/bmon/murkrow.pic",0,1 ; sprite dimensions
 dw MurkrowPicFront
 dw MurkrowPicBack
 ; move tutor compatibility flags
 	m_tutor 7,8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10

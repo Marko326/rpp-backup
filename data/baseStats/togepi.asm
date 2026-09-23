@@ -1,5 +1,4 @@
 TogepiBaseStats:
-db DEX_TOGEPI ; pokedex id
 db 35 ; base hp
 db 20 ; base attack
 db 65 ; base defense
@@ -15,9 +14,6 @@ dw TogepiPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 5,6,8
 	tmlearn 9,10,11

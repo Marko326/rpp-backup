@@ -1,5 +1,4 @@
 Porygon2BaseStats:
-db DEX_PORYGON2 ; pokedex id
 db 85 ; base hp
 db 80 ; base attack
 db 90 ; base defense
@@ -15,9 +14,6 @@ dw Porygon2PicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6
 	tmlearn 9,10,13,14,15,16

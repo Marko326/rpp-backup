@@ -1,4 +1,3 @@
-db DEX_PINSIR ; pokedex id
 db 65 ; base hp
 db 125 ; base attack
 db 100 ; base defense
@@ -14,9 +13,6 @@ dw PinsirPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,8
 	tmlearn 9,10,15

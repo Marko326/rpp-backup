@@ -1,4 +1,3 @@
-db DEX_ZAPDOS ; pokedex id
 db 90 ; base hp
 db 90 ; base attack
 db 85 ; base defense
@@ -14,9 +13,6 @@ dw ZapdosPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10,15

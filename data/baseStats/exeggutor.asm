@@ -1,4 +1,3 @@
-db DEX_EXEGGUTOR ; pokedex id
 db 95 ; base hp
 db 95 ; base attack
 db 85 ; base defense
@@ -14,9 +13,6 @@ dw ExeggutorPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 3,5,6
 	tmlearn 9,10,15

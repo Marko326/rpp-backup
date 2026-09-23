@@ -1,4 +1,3 @@
-db DEX_VENONAT ; pokedex id
 db 60 ; base hp
 db 55 ; base attack
 db 50 ; base defense
@@ -14,9 +13,6 @@ dw VenonatPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10

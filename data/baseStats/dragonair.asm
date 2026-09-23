@@ -1,4 +1,3 @@
-db DEX_DRAGONAIR ; pokedex id
 db 61 ; base hp
 db 84 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw DragonairPicBack
 ; move tutor compatibility flags
 	m_tutor 6
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,7,8
 	tmlearn 9,10,11,12,13,14,15,16

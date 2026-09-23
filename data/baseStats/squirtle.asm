@@ -1,4 +1,3 @@
-db DEX_SQUIRTLE ; pokedex id
 db 44 ; base hp
 db 48 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw SquirtlePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 11
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,16

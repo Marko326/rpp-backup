@@ -1,4 +1,3 @@
-db DEX_IVYSAUR ; pokedex id
 db 60 ; base hp
 db 62 ; base attack
 db 63 ; base defense
@@ -14,9 +13,6 @@ dw IvysaurPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,6,8
 	tmlearn 9,10

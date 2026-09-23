@@ -1,4 +1,3 @@
-db DEX_NINETALES ; pokedex id
 db 73 ; base hp
 db 76 ; base attack
 db 75 ; base defense
@@ -14,9 +13,6 @@ dw NinetalesPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 5,6,8
 	tmlearn 9,10,15,16

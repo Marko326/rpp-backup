@@ -1,4 +1,3 @@
-db DEX_PIKACHU ; pokedex id
 db 35 ; base hp
 db 55 ; base attack
 db 40 ; base defense
@@ -14,9 +13,6 @@ dw PikachuPicBack
 ; move tutor compatibility flags
 	m_tutor 4
 	m_tutor 9
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,16

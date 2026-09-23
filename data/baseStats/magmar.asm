@@ -1,4 +1,3 @@
-db DEX_MAGMAR ; pokedex id
 db 65 ; base hp
 db 95 ; base attack
 db 57 ; base defense
@@ -14,9 +13,6 @@ dw MagmarPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,15,16

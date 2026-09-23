@@ -1,5 +1,4 @@
 TyrogueBaseStats:
-db DEX_TYROGUE ; pokedex id
 db 35 ; base hp
 db 35 ; base attack
 db 35 ; base defense
@@ -9,15 +8,12 @@ db FIGHTING ; species type 1
 db FIGHTING ; species type 2
 db 45 ; catch rate
 db 91 ; base exp yield
-INCBIN "pic/bmon/tyrogue.pic",0,1 ; 77, sprite dimensions
+INCBIN "pic/bmon/tyrogue.pic",0,1 ; sprite dimensions
 dw TyroguePicFront
 dw TyroguePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10

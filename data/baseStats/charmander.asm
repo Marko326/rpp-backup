@@ -1,4 +1,3 @@
-db DEX_CHARMANDER ; pokedex id
 db 39 ; base hp
 db 52 ; base attack
 db 43 ; base defense
@@ -14,9 +13,6 @@ dw CharmanderPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,2,3,5,6,8
 	tmlearn 9,10,16

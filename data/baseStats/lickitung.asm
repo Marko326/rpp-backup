@@ -1,4 +1,3 @@
-db DEX_LICKITUNG ; pokedex id
 db 90 ; base hp
 db 55 ; base attack
 db 75 ; base defense
@@ -14,9 +13,6 @@ dw LickitungPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,8
 	tmlearn 9,10,11,12,13,14,15,16

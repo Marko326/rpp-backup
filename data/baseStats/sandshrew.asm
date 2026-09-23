@@ -1,4 +1,3 @@
-db DEX_SANDSHREW ; pokedex id
 db 50 ; base hp
 db 75 ; base attack
 db 85 ; base defense
@@ -14,9 +13,6 @@ dw SandshrewPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,3,6,8
 	tmlearn 9,10,16

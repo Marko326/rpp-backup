@@ -1,4 +1,3 @@
-db DEX_GROWLITHE ; pokedex id
 db 55 ; base hp
 db 70 ; base attack
 db 45 ; base defense
@@ -14,9 +13,6 @@ dw GrowlithePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,16

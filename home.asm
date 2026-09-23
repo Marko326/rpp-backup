@@ -628,12 +628,12 @@ GetMonHeader::
 	predef IndexToPokedex   ; convert pokemon ID in [wd11e] to pokedex number
 	ld a,[wd11e]
 	dec a
-	ld bc, MonBaseStatsEnd - MonBaseStats
+	ld bc,COMPACT_MON_HEADER_SIZE
 	ld hl,BaseStats
 	call AddNTimes
-	ld de,wMonHeader
-	ld bc, MonBaseStatsEnd - MonBaseStats
-	call CopyData
+	; FORM-5.27.00: stock records are compact in ROM. Bank $30 is already
+	; mapped here; rebuild the unchanged 28-byte wMonHeader runtime ABI.
+	call DecodeCompactMonHeader
 	jr .done
 .specialID
 	ld hl,wMonHSpriteDim

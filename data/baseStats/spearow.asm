@@ -1,4 +1,3 @@
-db DEX_SPEAROW ; pokedex id
 db 40 ; base hp
 db 60 ; base attack
 db 30 ; base defense
@@ -14,9 +13,6 @@ dw SpearowPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10
