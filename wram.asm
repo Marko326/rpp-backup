@@ -914,7 +914,9 @@ wBagPocketActive::
 	ds 1
 
 wWastedByteCD3A:: ; cd3a
-; written to but nothing ever reads it
+wPokedexViewForm::
+; Pokédex Info-only view form. Outside the Pokédex this byte remains the existing
+; overworld scratch byte; full-screen Pokédex use and overworld movement do not overlap.
 	ds 1
 
 wOverrideSimulatedJoypadStatesMask:: ; cd3b

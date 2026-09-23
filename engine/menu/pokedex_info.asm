@@ -41,9 +41,12 @@ PokedexData_SelectCurrentListEntry:
 	ret
 
 PokedexData_BeginSessionVolume:
+	; Every Info session starts on the normal form. START/SELECT only changes this
+	; transient view byte after the stock first render has completed.
+	xor a
+	ld [wPokedexViewForm],a
 	; Info owns its description-arrow animation. Start from an inactive state so a
 	; blinking arrow left by the Pokédex list cannot leak into a Seen-only entry.
-	xor a
 	ld [hDownArrowBlinkActive],a
 	; UpdateSound writes Volume back to NR50 every audio tick. Store the reduced
 	; value in Volume itself so it persists for the whole Info session. Music Off
@@ -137,20 +140,34 @@ PokedexData_RunInternalInputLoop:
 	and B_BUTTON
 	jp nz,.exit
 
+	; START/SELECT are form navigation only for species that actually have at
+	; least one registered regional descriptor. Species with no regional forms
+	; receive carry clear from the generic lookup and these buttons do nothing.
+	ld a,b
+	and START
+	jr nz,.nextForm
+	ld a,b
+	and SELECT
+	jr nz,.previousForm
+
 	ld a,b
 	and A_BUTTON
 	jr nz,.advanceSubpage
 
 	ld a,b
 	and D_LEFT | D_RIGHT
-	jr nz,.switchCategory
+	jp nz,.switchCategory
 
 	ld a,b
 	and D_UP | D_DOWN
-	jr z,.loop
+	jp z,.loop
 	ld e,a
 	call PokedexData_TryStepSeen
-	jr nc,.loop
+	jp nc,.loop
+	; A different species always starts from its normal form. This prevents a form
+	; selected on one Pokédex entry from leaking into the next species.
+	xor a
+	ld [wPokedexViewForm],a
 	; Species changes preserve the category but return to that category's home.
 	; Details 1/2 normalize to state 1; Base Stats 3/4 normalize to state 3.
 	; Seen-only targets keep the category remembered while rendering the limited page.
@@ -165,13 +182,48 @@ PokedexData_RunInternalInputLoop:
 	push af
 	ld e,a
 	call PokedexData_RenderSwitchedEntry
-	jr .loop
+	jp .loop
+
+.nextForm
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	call RegionalFormGetNextPokedexForm
+	jp nc,.loop
+	ld [wPokedexViewForm],a
+	jr .redrawForm
+
+.previousForm
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	call RegionalFormGetPreviousPokedexForm
+	jp nc,.loop
+	ld [wPokedexViewForm],a
+
+.redrawForm
+	; Keep the selected category, but normalize to that category's home page just
+	; like an UP/DOWN species change.
+	pop af
+	cp 3
+	jr c,.formDetails
+	ld a,3
+	jr .formStateReady
+.formDetails
+	ld a,1
+.formStateReady
+	push af
+	ld e,a
+	call PokedexData_RenderSwitchedEntry
+	jp .loop
 
 .advanceSubpage
 	; A only moves inside the current category. Details toggles 1 <-> 2. Base Stats
 	; toggles 3 <-> 4, but a basic-stage Pokémon has no evolution delta to display.
 	call PokedexData_CurrentMonOwned
-	jr z,.loop
+	jp z,.loop
 	pop af
 	cp 3
 	jr z,.showBaseStatsDelta
@@ -184,7 +236,7 @@ PokedexData_RunInternalInputLoop:
 	push af
 	ld e,0
 	call PokedexData_DrawDescriptionPage
-	jr .loop
+	jp .loop
 .showBaseStatsDelta
 	call PokedexData_GetPreEvolution
 	and a
@@ -192,28 +244,28 @@ PokedexData_RunInternalInputLoop:
 	ld a,4
 	push af
 	call PokedexData_DrawBaseStatsDeltaPage
-	jr .loop
+	jp .loop
 .keepBaseStats
 	ld a,3
 	push af
-	jr .loop
+	jp .loop
 .showBaseStatsHome
 	ld a,3
 	push af
 	call PokedexData_DrawBaseStatsPage
-	jr .loop
+	jp .loop
 .showDescription2
 	ld a,2
 	push af
 	ld e,1
 	call PokedexData_DrawDescriptionPage
-	jr .loop
+	jp .loop
 
 .switchCategory
 	; With two categories, LEFT and RIGHT both select the other category. Crossing
 	; a category boundary always lands on that category's home page.
 	call PokedexData_CurrentMonOwned
-	jr z,.loop
+	jp z,.loop
 	pop af
 	cp 3
 	jr nc,.showDescription1
@@ -285,6 +337,11 @@ PokedexData_RenderSwitchedEntry:
 	call RunPaletteCommand
 	pop af
 	ld [wd11e],a
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	call RegionalFormOverridePokedexPalette
 
 	; Name and species are the only variable strings above the divider. Clear their
 	; exact 10-column fields in WRAM so shorter replacements cannot leave old glyphs.
@@ -404,7 +461,11 @@ PokedexData_RenderSwitchedEntry:
 	; screen, so AutoBG can stay disabled and no partial picture is ever exposed.
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
-	call GetMonHeader
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	call RegionalFormLoadPokedexHeader
 	coord hl,1,1
 	call LoadFlippedFrontSpriteByMonIndex
 
@@ -639,6 +700,16 @@ PokedexData_DrawDescriptionPageNoWait:
 .finish
 	ret
 
+; Input: A = internal species ID. Load the header for the Pokédex's currently
+; selected form. If that species does not implement the same form ID (for example
+; a predecessor without a regional counterpart), the regional helper safely leaves
+; the normal header resident.
+PokedexData_LoadViewHeaderForSpecies:
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	jp RegionalFormLoadPokedexHeader
+
 ; Render the Base Stats category home. It deliberately reuses the same lower 18x7
 ; content area as the two description halves, so the existing hidden-BG commit path
 ; keeps A-page changes flicker-free. This page is only reachable for Owned Pokémon;
@@ -663,8 +734,7 @@ PokedexData_DrawBaseStatsPageNoWait:
 	; Refresh the current base-stat header explicitly so this renderer is independent
 	; of which picture/text helper happened to run immediately before it.
 	ld a,[wcf91]
-	ld [wd0b5],a
-	call GetMonHeader
+	call PokedexData_LoadViewHeaderForSpecies
 
 	; Keep PureRGB's compact layout: types on the left, five base stats plus total
 	; on the right. PrintMonType erases TYPE2 itself for single-type Pokémon.
@@ -776,8 +846,7 @@ PokedexData_DrawBaseStatsDeltaPageNoWait:
 	call PokedexData_GetPreEvolution
 	and a
 	jp z,PokedexData_DrawBaseStatsPageNoWait
-	ld [wd0b5],a
-	call GetMonHeader
+	call PokedexData_LoadViewHeaderForSpecies
 	ld hl,wMonHBaseStats
 	ld de,wBuffer + 12
 	ld bc,5
@@ -795,8 +864,7 @@ PokedexData_DrawBaseStatsDeltaPageNoWait:
 	; Finish with the current header resident in wMonHeader so type printing and any
 	; later caller observe the same species as on the normal Base Stats page.
 	ld a,[wcf91]
-	ld [wd0b5],a
-	call GetMonHeader
+	call PokedexData_LoadViewHeaderForSpecies
 
 	coord hl,1,11
 	ld de,PokedexBaseStatsType1Text

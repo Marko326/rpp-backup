@@ -78,6 +78,179 @@ RegionalFormFindBySpeciesMarker:
 	and a
 	ret
 
+; D = species, E = current Pokédex view form.
+; Return A = next registered form and carry set when this species has any
+; regional form. FORM_NORMAL wraps to the first descriptor; the last descriptor
+; wraps back to FORM_NORMAL. Descriptors do not need to be contiguous.
+RegionalFormGetNextPokedexForm:
+	ld a,e
+	and a
+	jr z,.fromNormal
+	ld hl,RegionalFormDescriptors
+	ld b,0 ; 0 until the current form has been encountered
+	ld c,0 ; nonzero once this species has at least one descriptor
+.loop
+	ld a,[hl]
+	and a
+	jr z,.wrap
+	cp d
+	jr nz,.next
+	ld c,1
+	push hl
+	inc hl
+	ld a,[hl]
+	pop hl
+	push af
+	ld a,b
+	and a
+	jr z,.checkCurrent
+	pop af
+	scf
+	ret
+.checkCurrent
+	pop af
+	cp e
+	jr nz,.next
+	ld b,1
+.next
+	push bc
+	ld bc,RF_DESC_SIZE
+	add hl,bc
+	pop bc
+	jr .loop
+.wrap
+	ld a,c
+	and a
+	jr z,.none
+	xor a ; after the last regional form, return to NORMAL
+	scf
+	ret
+.fromNormal
+	ld hl,RegionalFormDescriptors
+.firstLoop
+	ld a,[hl]
+	and a
+	jr z,.none
+	cp d
+	jr z,.firstFound
+	ld bc,RF_DESC_SIZE
+	add hl,bc
+	jr .firstLoop
+.firstFound
+	inc hl
+	ld a,[hl]
+	scf
+	ret
+.none
+	and a
+	ret
+
+; D = species, E = current Pokédex view form.
+; Return A = previous registered form and carry set when this species has any
+; regional form. FORM_NORMAL wraps to the last descriptor; the first descriptor
+; wraps back to FORM_NORMAL.
+RegionalFormGetPreviousPokedexForm:
+	ld a,e
+	and a
+	jr z,.fromNormal
+	ld hl,RegionalFormDescriptors
+	ld b,FORM_NORMAL ; previous matching form
+	ld c,0 ; has at least one descriptor for species
+.loop
+	ld a,[hl]
+	and a
+	jr z,.missingCurrent
+	cp d
+	jr nz,.next
+	ld c,1
+	push hl
+	inc hl
+	ld a,[hl]
+	pop hl
+	cp e
+	jr z,.foundCurrent
+	ld b,a
+.next
+	push bc
+	ld bc,RF_DESC_SIZE
+	add hl,bc
+	pop bc
+	jr .loop
+.foundCurrent
+	ld a,b
+	scf
+	ret
+.missingCurrent
+	ld a,c
+	and a
+	jr z,.none
+	xor a
+	scf
+	ret
+.fromNormal
+	ld hl,RegionalFormDescriptors
+	ld b,FORM_NORMAL
+	ld c,0
+.lastLoop
+	ld a,[hl]
+	and a
+	jr z,.lastDone
+	cp d
+	jr nz,.lastNext
+	ld c,1
+	push hl
+	inc hl
+	ld a,[hl]
+	pop hl
+	ld b,a
+.lastNext
+	push bc
+	ld bc,RF_DESC_SIZE
+	add hl,bc
+	pop bc
+	jr .lastLoop
+.lastDone
+	ld a,c
+	and a
+	jr z,.none
+	ld a,b
+	scf
+	ret
+.none
+	and a
+	ret
+
+; D = species, E = Pokédex view form. Load the stock header first and replace it
+; with the descriptor header only when that exact form exists. This means callers
+; can safely request the current view form for a pre-evolution that may not have
+; the same regional form; such cases automatically fall back to NORMAL.
+RegionalFormLoadPokedexHeader:
+	push de
+	ld a,d
+	ld [wd0b5],a
+	call GetMonHeader
+	pop de
+	ld a,e
+	and a
+	ret z
+	call RegionalFormFindBySpeciesForm
+	ret nc
+	call RegionalFormApplyDescriptorHeader
+	scf
+	ret
+
+; D = species, E = Pokédex view form. RunPaletteCommand has already prepared the
+; normal species palette; replace only palette slot 0 for a registered form.
+RegionalFormOverridePokedexPalette:
+	ld a,e
+	and a
+	ret z
+	call RegionalFormFindBySpeciesForm
+	ret nc
+	call RegionalFormGetPalettePointer
+	ld e,0
+	jp RegionalFormCopyPaletteFromHL
+
 ; D = map id, E = species
 ; Returns A = runtime form id and carry set when this wild encounter has a form.
 RegionalFormFindWildForm:
