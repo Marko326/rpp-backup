@@ -10,11 +10,20 @@
 ;   level-up learnset pointer,
 ;   evolution data pointer (stock-compatible entries),
 ;   normal palette pointer,
-;   shiny palette pointer
+;   shiny palette pointer,
+;   optional Pokédex metrics bank + pointer
 ;
 ; Descriptor/header/learnset/evolution/palette data stay with the generic engine in bank
-; $34. Sprite binaries themselves may live in any ROM bank because each complete
-; form header carries its own picture bank.
+; $34. Sprite binaries and optional height/weight metric records may live in other
+; roomy banks; their descriptor fields carry the required bank/pointer information.
+
+
+; Optional regional-form Pokédex metrics layout. Zero means "inherit the stock
+; Species field", so forms only spend ROM on height/weight values that differ.
+; Long description text and category are intentionally shared with the Species.
+RF_DEX_HEIGHT         EQU 0 ; feet, inches; 0,0 = inherit
+RF_DEX_WEIGHT         EQU 2 ; little-endian tenths of a pound; 0 = inherit
+RF_DEX_SIZE           EQU 4
 
 SECTION "Regional Form Data", ROMX, BANK[$34]
 
@@ -25,6 +34,8 @@ RegionalFormDescriptors::
 	dw AlolanRattataEvolutions
 	dw AlolanRattataPreviewPalette
 	dw AlolanRattataShinyPalette
+	db BANK(AlolanRattataDexMetrics)
+	dw AlolanRattataDexMetrics
 
 	db RATICATE, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanRaticateBaseStats
@@ -32,6 +43,8 @@ RegionalFormDescriptors::
 	dw AlolanRaticateEvolutions
 	dw AlolanRaticatePreviewPalette
 	dw AlolanRaticateShinyPalette
+	db BANK(AlolanRaticateDexMetrics)
+	dw AlolanRaticateDexMetrics
 
 	db VULPIX, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanVulpixBaseStats
@@ -39,6 +52,8 @@ RegionalFormDescriptors::
 	dw AlolanVulpixEvolutions
 	dw AlolanVulpixPreviewPalette
 	dw AlolanVulpixShinyPalette
+	db 0
+	dw 0 ; height/weight match normal Vulpix
 
 	db NINETALES, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanNinetalesBaseStats
@@ -46,6 +61,8 @@ RegionalFormDescriptors::
 	dw AlolanNinetalesEvolutions
 	dw AlolanNinetalesPreviewPalette
 	dw AlolanNinetalesShinyPalette
+	db 0
+	dw 0 ; height/weight match normal Ninetales
 	db 0 ; terminator: species 0 is never a valid descriptor
 
 ; Wild-only producer table: map, species, form.
@@ -130,16 +147,20 @@ AlolanRattataShinyPalette::
 ; -----------------------------------------------------------------------------
 ; Alolan Raticate
 ; -----------------------------------------------------------------------------
-; FORM-5.21.03: official stats 75/71/70/40/80/77. This Gen-I engine has one
-; Special stat; follow the project's later-generation convention and map Sp.Def
-; 80 to Special. Other balance fields follow this project's normal Raticate.
+; FORM-5.25.00: official six-stat Alolan Raticate is 75/71/70/40/80/77
+; (BST 413), while normal Raticate is 55/81/60/50/70/97 (also 413). This
+; Gen-I-style engine has one Special stat, so there is no official one-to-one
+; value to copy. Preserve the project's normal five-stat total instead:
+;   normal total = 55 + 81 + 60 + 97 + 50 = 343
+;   Alola Special = 343 - (75 + 71 + 70 + 77) = 50
+; This deterministic residual rule keeps regional redistribution total-neutral.
 AlolanRaticateBaseStats::
 	db DEX_RATICATE
 	db 75
 	db 71
 	db 70
 	db 77
-	db 80 ; Special <- official Sp.Def
+	db 50 ; five-stat residual; preserves normal Raticate total 343
 	db NORMAL
 	db DARK
 	db 90
@@ -334,3 +355,21 @@ AlolanVulpixPicFront:: INCBIN "pic/bmon/vulpix_alola.pic"
 AlolanVulpixPicBack::  INCBIN "pic/monback/vulpix_alolab.pic"
 AlolanNinetalesPicFront:: INCBIN "pic/bmon/ninetales_alola.pic"
 AlolanNinetalesPicBack::  INCBIN "pic/monback/ninetales_alolab.pic"
+
+
+; -----------------------------------------------------------------------------
+; Optional regional-form Pokédex metrics
+; -----------------------------------------------------------------------------
+; FORM-5.25.00 keeps only gameplay-relevant numeric differences here. Category
+; and long Pokédex descriptions are shared with the Species. Web-verified Alolan
+; Rattata/Raticate heights match their normal forms, but their weights differ.
+; Vulpix/Ninetales match both height and weight and therefore need no record.
+SECTION "Regional Form Pokedex Metrics", ROMX, BANK[$3E]
+
+AlolanRattataDexMetrics::
+	db 0,0 ; height 1'00" matches normal -> inherit
+	dw 84 ; 8.4 lb
+
+AlolanRaticateDexMetrics::
+	db 0,0 ; height 2'04" matches normal -> inherit
+	dw 562 ; 56.2 lb

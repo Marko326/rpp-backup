@@ -13,7 +13,9 @@ RF_DESC_LEARNSET      EQU 5
 RF_DESC_EVOLUTION     EQU 7
 RF_DESC_PALETTE       EQU 9
 RF_DESC_SHINY_PALETTE EQU 11
-RF_DESC_SIZE          EQU 13
+RF_DESC_DEX_METRICS_BANK EQU 13
+RF_DESC_DEX_METRICS_PTR  EQU 14
+RF_DESC_SIZE          EQU 16
 
 RF_WILD_MAP     EQU 0
 RF_WILD_SPECIES EQU 1
@@ -328,6 +330,29 @@ RegionalFormGetPalettePointer:
 RegionalFormGetShinyPalettePointer:
 	ld bc,RF_DESC_SHINY_PALETTE
 	jp RegionalFormGetDescriptorPointer
+
+
+; D = species, E = form. Return carry set with A = metrics ROM bank and
+; HL = metrics pointer when this form has height/weight overrides. NORMAL and
+; descriptors with a null metrics field return carry clear.
+RegionalFormGetPokedexMetricsPointer:
+	ld a,e
+	and a
+	ret z
+	call RegionalFormFindBySpeciesForm
+	ret nc
+	ld bc,RF_DESC_DEX_METRICS_BANK
+	add hl,bc
+	ld a,[hli]
+	and a
+	ret z
+	ld b,a
+	ld a,[hli]
+	ld h,[hl]
+	ld l,a
+	ld a,b
+	scf
+	ret
 
 ; -----------------------------------------------------------------------------
 ; Header resolution for the different Pokémon storage/runtime representations

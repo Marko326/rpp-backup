@@ -358,11 +358,12 @@ PokedexData_RenderSwitchedEntry:
 	coord hl,9,2
 	call PlaceString
 
-	call PokedexData_GetEntryPointer
+	call PokedexData_GetCategoryPointer
+	push af
 	ld d,h
 	ld e,l
 	coord hl,9,4
-	ld a,BANK(PokedexEntryPointers)
+	pop af
 	call MoveDexPlaceStringFar
 
 	; The No. label itself is fixed; only replace its three digits.
@@ -386,12 +387,9 @@ PokedexData_RenderSwitchedEntry:
 	call PokedexData_CurrentMonOwned
 	jr z,.notOwned
 
-	; Read feet, inches and little-endian weight from the bank-$10 entry.
-	call PokedexData_GetEntryFieldsPointer
-	ld de,wBuffer + 14
-	ld bc,4
-	ld a,BANK(PokedexEntryPointers)
-	call FarCopyData
+	; Load stock feet/inches/weight, then selectively apply numeric regional
+	; overrides. Equal fields inherit the Species entry and cost no extra record.
+	call PokedexData_CopyHeightWeightFields
 
 	ld de,wBuffer + 14
 	coord hl,12,6
@@ -737,15 +735,9 @@ PokedexData_DrawBaseStatsPageNoWait:
 	call PokedexData_LoadViewHeaderForSpecies
 
 	; Keep PureRGB's compact layout: types on the left, five base stats plus total
-	; on the right. PrintMonType erases TYPE2 itself for single-type Pokémon.
-	coord hl,1,11
-	ld de,PokedexBaseStatsType1Text
-	call PlaceString
-	coord hl,1,13
-	ld de,PokedexBaseStatsType2Text
-	call PlaceString
-	coord hl,2,12
-	predef PrintMonType
+	; on the right. Do not call stock PrintMonType here: it calls GetMonHeader and
+	; would replace the selected regional header with the normal Species header.
+	call PokedexData_DrawViewTypes
 
 	coord hl,9,10
 	ld de,PokedexBaseStatsTitle
@@ -819,6 +811,38 @@ PokedexData_DrawBaseStatsPageNoWait:
 	call PrintNumber
 	ret
 
+; Draw the two type rows from the already resolved wMonHeader without calling
+; stock PrintMonType. The stock predef reloads the normal Species header, which was
+; the reason regional Base Stats pages appeared to keep normal-form values.
+PokedexData_DrawViewTypes:
+	coord hl,1,11
+	ld de,PokedexBaseStatsType1Text
+	call PlaceString
+	coord hl,1,13
+	ld de,PokedexBaseStatsType2Text
+	call PlaceString
+
+	coord de,2,12
+	ld a,[wMonHType1]
+	ld [wRegionalFormPrintTypeArgument],a
+	callba PrintTypeAtDE
+
+	ld a,[wMonHType1]
+	ld b,a
+	ld a,[wMonHType2]
+	cp b
+	jr z,.singleType
+	coord de,2,14
+	ld [wRegionalFormPrintTypeArgument],a
+	jpba PrintTypeAtDE
+
+.singleType
+	; Remove the TYPE2 label/value for single-type forms. This area is isolated from
+	; the stat column at x=9, so clearing eight columns is safe.
+	coord hl,1,13
+	lb bc,2,8
+	jp ClearScreenArea
+
 ; Render the second Base Stats subpage. The five values show the signed change from
 ; the current Pokémon's direct pre-evolution. The predecessor relation is a compact
 ; bank-$34 reverse index generated from data/evos_moves.asm; no runtime scan or bank
@@ -866,14 +890,7 @@ PokedexData_DrawBaseStatsDeltaPageNoWait:
 	ld a,[wcf91]
 	call PokedexData_LoadViewHeaderForSpecies
 
-	coord hl,1,11
-	ld de,PokedexBaseStatsType1Text
-	call PlaceString
-	coord hl,1,13
-	ld de,PokedexBaseStatsType2Text
-	call PlaceString
-	coord hl,2,12
-	predef PrintMonType
+	call PokedexData_DrawViewTypes
 
 	coord hl,9,10
 	ld de,PokedexBaseStatsTitle
@@ -1066,6 +1083,22 @@ PokedexData_GetEntryPointer:
 	ld h,a
 	ret
 
+; Return the active regional form's optional height/weight metric record.
+; Output: carry set, A = metrics bank, HL = metrics pointer.
+PokedexData_GetRegionalDexMetricsPointer:
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	jp RegionalFormGetPokedexMetricsPointer
+
+; Category/species text is intentionally shared across forms.
+; Output: A = source bank, HL = category/species string.
+PokedexData_GetCategoryPointer:
+	call PokedexData_GetEntryPointer
+	ld a,BANK(PokedexEntryPointers)
+	ret
+
 ; Output: HL = first byte after the species-string terminator (feet).
 PokedexData_GetEntryFieldsPointer:
 	call PokedexData_GetEntryPointer
@@ -1079,7 +1112,47 @@ PokedexData_GetEntryFieldsPointer:
 	jr nz,.findSpeciesEnd
 	ret
 
-; Resolve the current internal species (wcf91) to its TX_FAR description.
+; Fill wBuffer+14..17 with feet, inches and little-endian tenths-of-a-pound.
+; Start from the stock Species entry. A metric record uses 0,0 height and/or
+; weight 0 as "inherit", so identical values consume no duplicate data.
+PokedexData_CopyHeightWeightFields:
+	call PokedexData_GetEntryFieldsPointer
+	ld de,wBuffer + 14
+	ld bc,4
+	ld a,BANK(PokedexEntryPointers)
+	call FarCopyData
+
+	call PokedexData_GetRegionalDexMetricsPointer
+	ret nc
+	ld de,wBuffer + 3
+	ld bc,RF_DEX_SIZE
+	call FarCopyData
+
+	; Height overrides only when either feet or inches is nonzero.
+	ld a,[wBuffer + 3]
+	ld b,a
+	ld a,[wBuffer + 4]
+	or b
+	jr z,.weight
+	ld a,[wBuffer + 3]
+	ld [wBuffer + 14],a
+	ld a,[wBuffer + 4]
+	ld [wBuffer + 15],a
+.weight
+	; Weight 0 means inherit.
+	ld a,[wBuffer + 5]
+	ld b,a
+	ld a,[wBuffer + 6]
+	or b
+	ret z
+	ld a,[wBuffer + 5]
+	ld [wBuffer + 16],a
+	ld a,[wBuffer + 6]
+	ld [wBuffer + 17],a
+	ret
+
+; Long Pokédex descriptions are Species-level data and are deliberately shared
+; across forms to avoid duplicating large, rarely viewed text blocks.
 ; Output: carry set, A = text bank, HL = far pointer to the leading `text` byte.
 PokedexData_GetDescriptionPointer:
 	call PokedexData_GetEntryFieldsPointer
