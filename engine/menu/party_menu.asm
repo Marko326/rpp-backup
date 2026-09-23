@@ -325,7 +325,9 @@ ReviveText:
 RareCandyText:
 	TX_FAR _RareCandyText
 	TX_SFX_ITEM_1 ; probably supposed to play SFX_LEVEL_UP but the wrong music bank is loaded
-	TX_BLINK
+	; ITEM-5.27.02: TX_SFX_ITEM_1 already waits for the sound to finish.
+	; Return immediately afterwards so Rare Candy opens the stat box automatically
+	; instead of showing a down arrow and requiring an extra A/B press here.
 	db "@"
 
 SetPartyMenuHPBarColor:
