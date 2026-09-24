@@ -890,41 +890,66 @@ DrawTileLine:
 
 INCLUDE "data/pokedex_entries.asm"
 
+INCLUDE "data/pokedex_order.asm"
+
+; MAP-5.30.02: Species ID and Pokédex number remain independent concepts.
+; With the current identity ordering, assembly keeps the original entry points at
+; the minimal identity implementation. Any declared non-identity pair automatically
+; enables the sparse bidirectional lookup below.
+IF PokedexOrderOverrideCount == 0
 PokedexToIndex:
-	; converts the Pokédex number at wd11e to an index
+IndexToPokedex:
+	ld a,[wd11e]
+	ret
+ELSE
+PokedexToIndex:
+	; converts the Pokédex number at wd11e to an internal species ID
 	push bc
 	push hl
 	ld a,[wd11e]
 	ld b,a
-	ld c,0
-	ld hl,PokedexOrder
-
-.loop ; go through the list until we find an entry with a matching dex number
-	inc c
-	ld a,[hli]
+	ld hl,PokedexOrderOverrides
+.loop
+	ld a,[hli] ; species ID, or 0 terminator
+	and a
+	jr z,.identity
+	ld c,a
+	ld a,[hli] ; Pokédex number
 	cp b
 	jr nz,.loop
-
 	ld a,c
+	jr .store
+.identity
+	ld a,b
+.store
 	ld [wd11e],a
 	pop hl
 	pop bc
 	ret
 
 IndexToPokedex:
-	; converts the index number at wd11e to a Pokédex number
+	; converts the internal species ID at wd11e to a Pokédex number
 	push bc
 	push hl
 	ld a,[wd11e]
-	dec a
-	ld hl,PokedexOrder
-	ld b,0
-	ld c,a
-	add hl,bc
+	ld b,a
+	ld hl,PokedexOrderOverrides
+.loop
+	ld a,[hli] ; species ID, or 0 terminator
+	and a
+	jr z,.identity
+	cp b
+	jr z,.found
+	inc hl ; skip Pokédex number
+	jr .loop
+.found
 	ld a,[hl]
+	jr .store
+.identity
+	ld a,b
+.store
 	ld [wd11e],a
 	pop hl
 	pop bc
 	ret
-
-INCLUDE "data/pokedex_order.asm"
+ENDC

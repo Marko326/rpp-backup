@@ -86,9 +86,17 @@ DeterminePaletteID:
 	ld a, PAL_PLAYER_F
 	ret
 .notLinkTrainer
+	; MAP-5.30.02: TrainerPaletteTable is in trainer-pic ID order, so valid
+	; trainer IDs map directly to palette index (ID - 1). Preserve the
+	; PAL_GREYMON fallback for the zero/sentinel case.
 	ld a, [wTrainerPicID]
-	ld hl, TrainerPalettes
-	jr GetPaletteID
+	and a
+	jr z, .fallbackTrainerPalette
+	dec a
+	ret
+.fallbackTrainerPalette
+	ld a, PAL_GREYMON
+	ret
 
 DeterminePaletteIDBack:
 	ld [wd11e],a
@@ -104,23 +112,11 @@ DeterminePaletteIDBack:
 	ret
 
 GetMonPalette:
-	push bc
-	predef IndexToPokedex ; turn Pokemon ID number into Pokedex number
-	pop bc
-
+	; INPUT: wd11e = valid Pokémon species ID 1..NUM_POKEMON.
+	; MAP-5.30.02: PokemonPaletteTable / ShinyPokemonPaletteTable are in
+	; species ID order, so the palette index is simply species - 1.
 	ld a, [wd11e]
-	ld hl, MonsterPalettes
-	ld e, a
-	ld d, $00
-	add hl, de
-	ld a, [hl]
-	ret
-
-GetPaletteID:
-	ld e, a
-	ld d, $00
-	add hl, de
-	ld a, [hl]
+	dec a
 	ret
 
 
