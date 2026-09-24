@@ -4,17 +4,12 @@ _BikeShopText_1d810::
 
 	para "Have we got just"
 	line "the Bike for you!"
-	prompt
 
-_BikeShopText_1d815::
-	text "It's a cool Bike!"
-	line "Do you want it?"
+	para "It's ¥1,000,000!"
+	line "But with a"
+	cont "Bike Voucher,"
+	cont "it's yours!"
 	done
-
-_BikeShopCantAffordText::
-	text "Sorry! You can't"
-	line "afford it!"
-	prompt
 
 _BikeShopText_1d81f::
 	text "Oh, that's..."
@@ -28,11 +23,6 @@ _BikeShopText_1d824::
 	text "[PLAYER] exchanged"
 	line "the Bike Voucher"
 	cont "for a Bicycle.@@"
-
-_BikeShopComeAgainText::
-	text "Come back again"
-	line "some time!"
-	done
 
 _BikeShopText_1d82f::
 	text "How do you like"
