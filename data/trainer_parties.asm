@@ -1,3 +1,6 @@
+; TRN-5.33.02: trainer_party_name scopes packed_names to the name field.
+; Runtime decoding preserves the original wCurTrainerName representation.
+
 TrainerDataPointers:
 	dw YoungsterData
 	dw BugCatcherData
@@ -74,7 +77,7 @@ TrainerDataPointers:
 
 	
 BrockData:
-	db "Brock@"
+	trainer_party_name "Brock"
 	db SPECIAL_TRAINER
 	
 	db 12,GEODUDE
@@ -85,7 +88,7 @@ BrockData:
 	db $FF
 	
 MistyData:
-	db "Misty@"
+	trainer_party_name "Misty"
 	db SPECIAL_TRAINER
 	
 	db 18,STARYU
@@ -96,7 +99,7 @@ MistyData:
 	db $FF
 	
 LtSurgeData:
-	db "Lt.Surge@"
+	trainer_party_name "Lt.Surge"
 	db SPECIAL_TRAINER
 	
 	db 21,VOLTORB
@@ -110,7 +113,7 @@ LtSurgeData:
 	db $FF
 	
 ErikaData:
-	db "Erika@"
+	trainer_party_name "Erika"
 	db SPECIAL_TRAINER
 	
 	db 29,VICTREEBEL
@@ -124,7 +127,7 @@ ErikaData:
 	db $FF
 	
 KogaData:
-	db "Koga@"
+	trainer_party_name "Koga"
 	db SPECIAL_TRAINER
 	
 	db 37,VENOMOTH
@@ -141,7 +144,7 @@ KogaData:
 	db $FF
 	
 SabrinaData:
-	db "Sabrina@"
+	trainer_party_name "Sabrina"
 	db SPECIAL_TRAINER
 	
 	db 38,KADABRA
@@ -158,7 +161,7 @@ SabrinaData:
 	db $FF
 	
 BlaineData:
-	db "Blaine@"
+	trainer_party_name "Blaine"
 	db SPECIAL_TRAINER
 	
 	db 42,GROWLITHE
@@ -178,7 +181,7 @@ BlaineData:
 	db $FF
 	
 ; Giovanni Gym Battle
-	db "Giovanni@"
+	trainer_party_name "Giovanni"
 	db SPECIAL_TRAINER2
 	db GIOVANNI_2 ; pic
 	db AI_HYPER_POTION ; AI
@@ -201,7 +204,7 @@ BlaineData:
 	
 GiovanniData:
 	; Hideout
-	db "Giovanni@"
+	trainer_party_name "Giovanni"
 	db SPECIAL_TRAINER
 	
 	db 25,ONIX
@@ -216,7 +219,7 @@ GiovanniData:
 	
 	
 	; Silph Co
-	db "Giovanni@"
+	trainer_party_name "Giovanni"
 	db SPECIAL_TRAINER
 	
 	db 35,ONIX
@@ -233,7 +236,7 @@ GiovanniData:
 	db $FF
 	
 LoreleiData:
-	db "Lorelei@"
+	trainer_party_name "Lorelei"
 	db SPECIAL_TRAINER
 	
 	db 54,DEWGONG
@@ -253,7 +256,7 @@ LoreleiData:
 	db $FF
 	
 BrunoData:
-	db "Bruno@"
+	trainer_party_name "Bruno"
 	db SPECIAL_TRAINER
 	
 	db 53,ONIX
@@ -273,7 +276,7 @@ BrunoData:
 	db $FF	
 	
 AgathaData:
-	db "Agatha@"
+	trainer_party_name "Agatha"
 	db SPECIAL_TRAINER
 	
 	db 56,MISDREAVUS
@@ -293,7 +296,7 @@ AgathaData:
 	db $FF
 	
 LanceData:
-	db "Lance@"
+	trainer_party_name "Lance"
 	db SPECIAL_TRAINER
 	
 	db 58,GYARADOS
@@ -314,19 +317,19 @@ LanceData:
 	
 Green1Data:
 	; Oak's Lab
-	db "[RIVAL]@",5,SQUIRTLE,$FF
-	db "[RIVAL]@",5,BULBASAUR,$FF
-	db "[RIVAL]@",5,CHARMANDER,$FF
+	trainer_party_name "[RIVAL]",5,SQUIRTLE,$FF
+	trainer_party_name "[RIVAL]",5,BULBASAUR,$FF
+	trainer_party_name "[RIVAL]",5,CHARMANDER,$FF
 	
 	
 	; Beside Viridian
-	db "[RIVAL]@",SPECIAL_LEVELS,9,PIDGEY,8,SQUIRTLE,$FF
-	db "[RIVAL]@",SPECIAL_LEVELS,9,PIDGEY,8,BULBASAUR,$FF
-	db "[RIVAL]@",SPECIAL_LEVELS,9,PIDGEY,8,CHARMANDER,$FF
+	trainer_party_name "[RIVAL]",SPECIAL_LEVELS,9,PIDGEY,8,SQUIRTLE,$FF
+	trainer_party_name "[RIVAL]",SPECIAL_LEVELS,9,PIDGEY,8,BULBASAUR,$FF
+	trainer_party_name "[RIVAL]",SPECIAL_LEVELS,9,PIDGEY,8,CHARMANDER,$FF
 	
 	
 	; Cerulean
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 18,PIDGEOTTO
@@ -344,7 +347,7 @@ Green1Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 18,PIDGEOTTO
@@ -362,7 +365,7 @@ Green1Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 18,PIDGEOTTO
@@ -382,7 +385,7 @@ Green1Data:
 	
 Green2Data:
 	; SS Anne
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 19,PIDGEOTTO
@@ -400,7 +403,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 19,PIDGEOTTO
@@ -418,7 +421,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 19,PIDGEOTTO
@@ -438,7 +441,7 @@ Green2Data:
 	
 	; Pokemon Tower
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 25,PIDGEOTTO
@@ -459,7 +462,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 25,PIDGEOTTO
@@ -480,7 +483,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 25,PIDGEOTTO
@@ -503,7 +506,7 @@ Green2Data:
 	
 	; Silph Co
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 37,PIDGEOT
@@ -524,7 +527,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 37,PIDGEOT
@@ -545,7 +548,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 37,PIDGEOT
@@ -568,7 +571,7 @@ Green2Data:
 	
 	; Before Pokemon Leage
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 47,PIDGEOT
@@ -592,7 +595,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 47,PIDGEOT
@@ -616,7 +619,7 @@ Green2Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 47,PIDGEOT
@@ -642,7 +645,7 @@ Green2Data:
 	
 Green3Data:
 	; Champion
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 61,PIDGEOT
@@ -666,7 +669,7 @@ Green3Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 61,PIDGEOT
@@ -690,7 +693,7 @@ Green3Data:
 	
 	
 	
-	db "[RIVAL]@"
+	trainer_party_name "[RIVAL]"
 	db SPECIAL_TRAINER
 	
 	db 61,PIDGEOT
@@ -713,357 +716,357 @@ Green3Data:
 	db $FF
 	
 YoungsterData:
-	db "Ben@",11,ZIGZAGOON,RATTATA,$FF
-	db "Arnold@",14,SPEAROW,$FF
-	db "Anthony@",10,RATTATA,RATTATA,ZUBAT,$FF
-	db "Samuel@",14,RATTATA,EKANS,ZUBAT,$FF
-	db "Adam@",15,RATTATA,SPEAROW,$FF
-	db "Ben@",17,SLOWPOKE,$FF
-	db "Calvin@",14,EKANS,SANDSHREW,$FF
-	db "Chad@",21,NIDORAN_M,$FF
-	db "Dan@",21,EKANS,$FF
-	db "Dave@",19,SANDSHREW,ZUBAT,$FF
-	db "Josh@",17,ZIGZAGOON,ZIGZAGOON,LINOONE,$FF
-	db "Timmy@",18,NIDORAN_M,NIDORINO,$FF
-	db "Nash@",17,SPEAROW,RATTATA,RATTATA,SPEAROW,$FF
+	trainer_party_name "Ben",11,ZIGZAGOON,RATTATA,$FF
+	trainer_party_name "Arnold",14,SPEAROW,$FF
+	trainer_party_name "Anthony",10,RATTATA,RATTATA,ZUBAT,$FF
+	trainer_party_name "Samuel",14,RATTATA,EKANS,ZUBAT,$FF
+	trainer_party_name "Adam",15,RATTATA,SPEAROW,$FF
+	trainer_party_name "Ben",17,SLOWPOKE,$FF
+	trainer_party_name "Calvin",14,EKANS,SANDSHREW,$FF
+	trainer_party_name "Chad",21,NIDORAN_M,$FF
+	trainer_party_name "Dan",21,EKANS,$FF
+	trainer_party_name "Dave",19,SANDSHREW,ZUBAT,$FF
+	trainer_party_name "Josh",17,ZIGZAGOON,ZIGZAGOON,LINOONE,$FF
+	trainer_party_name "Timmy",18,NIDORAN_M,NIDORINO,$FF
+	trainer_party_name "Nash",17,SPEAROW,RATTATA,RATTATA,SPEAROW,$FF
 	
 BugCatcherData:
-	db "Luke@",6,WEEDLE,CATERPIE,$FF
-	db "Finn@",7,WEEDLE,KAKUNA,WEEDLE,$FF
-	db "Jake@",9,WEEDLE,$FF
-	db "David@",10,CATERPIE,WEEDLE,CATERPIE,$FF
-	db "Lou@",9,WEEDLE,KAKUNA,CATERPIE,METAPOD,$FF
-	db "Larry@",11,CATERPIE,METAPOD,$FF
-	db "Chuck@",11,WEEDLE,KAKUNA,$FF
-	db "Zach@",10,CATERPIE,METAPOD,CATERPIE,$FF
-	db "Chris@",14,CATERPIE,WEEDLE,$FF
-	db "Rick@",16,WEEDLE,CATERPIE,WEEDLE,$FF
-	db "Bob@",20,BUTTERFREE,$FF
-	db "Gray@",18,METAPOD,CATERPIE,VENONAT,$FF
-	db "Matt@",19,BEEDRILL,BEEDRILL,$FF
-	db "Ed@",20,CATERPIE,WEEDLE,VENONAT,$FF
+	trainer_party_name "Luke",6,WEEDLE,CATERPIE,$FF
+	trainer_party_name "Finn",7,WEEDLE,KAKUNA,WEEDLE,$FF
+	trainer_party_name "Jake",9,WEEDLE,$FF
+	trainer_party_name "David",10,CATERPIE,WEEDLE,CATERPIE,$FF
+	trainer_party_name "Lou",9,WEEDLE,KAKUNA,CATERPIE,METAPOD,$FF
+	trainer_party_name "Larry",11,CATERPIE,METAPOD,$FF
+	trainer_party_name "Chuck",11,WEEDLE,KAKUNA,$FF
+	trainer_party_name "Zach",10,CATERPIE,METAPOD,CATERPIE,$FF
+	trainer_party_name "Chris",14,CATERPIE,WEEDLE,$FF
+	trainer_party_name "Rick",16,WEEDLE,CATERPIE,WEEDLE,$FF
+	trainer_party_name "Bob",20,BUTTERFREE,$FF
+	trainer_party_name "Gray",18,METAPOD,CATERPIE,VENONAT,$FF
+	trainer_party_name "Matt",19,BEEDRILL,BEEDRILL,$FF
+	trainer_party_name "Ed",20,CATERPIE,WEEDLE,VENONAT,$FF
 	
 LassData:
-	db "Nicole@",9,PIDGEY,PIDGEY,$FF
-	db "Jennifer@",10,ZIGZAGOON,NIDORAN_M,$FF
-	db "Hillary@",14,JIGGLYPUFF,$FF
-	db "Rachel@",31,PARAS,PARAS,PARASECT,$FF
-	db "Christy@",11,ODDISH,BELLSPROUT,$FF
-	db "Jessica@",14,CLEFAIRY,$FF
-	db "Trish@",16,PIDGEY,NIDORAN_F,$FF
-	db "Monica@",14,PIDGEY,NIDORAN_F,$FF
-	db "Lulu@",15,NIDORAN_M,NIDORAN_F,$FF
-	db "Brooke@",13,ODDISH,PIDGEY,ODDISH,$FF
-	db "Rose@",18,TOGETIC,ESPEON,$FF
-	db "Martha@",18,RATTATA,PIKACHU,$FF
-	db "Amanda@",23,NIDORAN_F,NIDORINA,$FF
-	db "Meadow@",24,MEOWTH,MEOWTH,MEOWTH,$FF
-	db "Whitney@",19,PIDGEY,RATTATA,NIDORAN_M,MEOWTH,PIKACHU,$FF
-	db "Samantha@",22,CLEFAIRY,CLEFAIRY,$FF
-	db "Katie@",23,BELLSPROUT,WEEPINBELL,$FF
-	db "Bella@",23,ODDISH,GLOOM,$FF
+	trainer_party_name "Nicole",9,PIDGEY,PIDGEY,$FF
+	trainer_party_name "Jennifer",10,ZIGZAGOON,NIDORAN_M,$FF
+	trainer_party_name "Hillary",14,JIGGLYPUFF,$FF
+	trainer_party_name "Rachel",31,PARAS,PARAS,PARASECT,$FF
+	trainer_party_name "Christy",11,ODDISH,BELLSPROUT,$FF
+	trainer_party_name "Jessica",14,CLEFAIRY,$FF
+	trainer_party_name "Trish",16,PIDGEY,NIDORAN_F,$FF
+	trainer_party_name "Monica",14,PIDGEY,NIDORAN_F,$FF
+	trainer_party_name "Lulu",15,NIDORAN_M,NIDORAN_F,$FF
+	trainer_party_name "Brooke",13,ODDISH,PIDGEY,ODDISH,$FF
+	trainer_party_name "Rose",18,TOGETIC,ESPEON,$FF
+	trainer_party_name "Martha",18,RATTATA,PIKACHU,$FF
+	trainer_party_name "Amanda",23,NIDORAN_F,NIDORINA,$FF
+	trainer_party_name "Meadow",24,MEOWTH,MEOWTH,MEOWTH,$FF
+	trainer_party_name "Whitney",19,PIDGEY,RATTATA,NIDORAN_M,MEOWTH,PIKACHU,$FF
+	trainer_party_name "Samantha",22,CLEFAIRY,CLEFAIRY,$FF
+	trainer_party_name "Katie",23,BELLSPROUT,WEEPINBELL,$FF
+	trainer_party_name "Bella",23,ODDISH,GLOOM,$FF
 	
 SailorData:
-	db "Jack@",18,MACHOP,SHELLDER,$FF
-	db "Will@",17,MACHOP,TENTACOOL,$FF
-	db "Lewis@",21,SHELLDER,$FF
-	db "Huey@",17,HORSEA,SHELLDER,TENTACOOL,$FF
-	db "Dave@",18,TENTACOOL,STARYU,$FF
-	db "Eugene@",17,HORSEA,HORSEA,HORSEA,$FF
-	db "Flynn@",20,MACHOP,$FF
-	db "Hans@",21,PIKACHU,PIKACHU,$FF
+	trainer_party_name "Jack",18,MACHOP,SHELLDER,$FF
+	trainer_party_name "Will",17,MACHOP,TENTACOOL,$FF
+	trainer_party_name "Lewis",21,SHELLDER,$FF
+	trainer_party_name "Huey",17,HORSEA,SHELLDER,TENTACOOL,$FF
+	trainer_party_name "Dave",18,TENTACOOL,STARYU,$FF
+	trainer_party_name "Eugene",17,HORSEA,HORSEA,HORSEA,$FF
+	trainer_party_name "Flynn",20,MACHOP,$FF
+	trainer_party_name "Hans",21,PIKACHU,PIKACHU,$FF
 	
 CamperData:
-	db "Daniel@",9,DIGLETT,SANDSHREW,$FF
-	db "Craig@",14,POLIWAG,GOLDEEN,$FF
-	db "Harry@",18,MANKEY,$FF
-	db "Ronald@",20,SQUIRTLE,$FF
-	db "Mark@",16,SPEAROW,RATICATE,$FF
-	db "Mike@",18,DIGLETT,DIGLETT,SANDSHREW,$FF
-	db "Nick@",21,GROWLITHE,HOUNDOUR,$FF
-	db "Robert@",19,RATTATA,DIGLETT,EKANS,SANDSHREW,$FF
-	db "Ian@",29,NIDORAN_M,NIDORINO,$FF
-	db "Flint@",14,ZIGZAGOON,EKANS,$FF
+	trainer_party_name "Daniel",9,DIGLETT,SANDSHREW,$FF
+	trainer_party_name "Craig",14,POLIWAG,GOLDEEN,$FF
+	trainer_party_name "Harry",18,MANKEY,$FF
+	trainer_party_name "Ronald",20,SQUIRTLE,$FF
+	trainer_party_name "Mark",16,SPEAROW,RATICATE,$FF
+	trainer_party_name "Mike",18,DIGLETT,DIGLETT,SANDSHREW,$FF
+	trainer_party_name "Nick",21,GROWLITHE,HOUNDOUR,$FF
+	trainer_party_name "Robert",19,RATTATA,DIGLETT,EKANS,SANDSHREW,$FF
+	trainer_party_name "Ian",29,NIDORAN_M,NIDORINO,$FF
+	trainer_party_name "Flint",14,ZIGZAGOON,EKANS,$FF
 	
 PicnickerData:
-	db "Cindy@",19,GOLDEEN,$FF
-	db "Debra@",16,RATTATA,PIKACHU,$FF
-	db "Heidi@",16,PIDGEY,PIDGEY,PIDGEY,$FF
-	db "Brooke@",22,BULBASAUR,$FF
-	db "Liz@",18,ODDISH,BELLSPROUT,ODDISH,BELLSPROUT,$FF
-	db "Hope@",23,MEOWTH,$FF
-	db "Kim@",20,PIKACHU,CLEFAIRY,$FF
-	db "Alice@",21,PIDGEY,PIDGEOTTO,$FF
-	db "Becky@",21,JIGGLYPUFF,PIDGEY,MEOWTH,$FF
-	db "Carol@",22,ODDISH,BULBASAUR,$FF
-	db "Diana@",24,BULBASAUR,IVYSAUR,$FF
-	db "Gina@",24,PIDGEY,MEOWTH,RATTATA,PIKACHU,MEOWTH,$FF
-	db "Jenny@",30,POLIWAG,POLIWAG,$FF
-	db "Clara@",27,PIDGEY,MEOWTH,PIDGEY,PIDGEOTTO,$FF
-	db "Kelsey@",28,GOLDEEN,POLIWAG,HORSEA,$FF
-	db "Missy@",31,GOLDEEN,SEAKING,$FF
-	db "Donna@",22,BELLSPROUT,CLEFAIRY,$FF
-	db "Susan@",20,MEOWTH,ODDISH,PIDGEY,$FF
-	db "Nanci@",19,PIDGEY,RATTATA,RATTATA,BELLSPROUT,$FF
-	db "Tina@",28,GLOOM,ODDISH,ODDISH,$FF
-	db "Julie@",29,PIKACHU,RAICHU,$FF
-	db "Connie@",33,CLEFAIRY,$FF
-	db "Wendy@",29,BELLSPROUT,ODDISH,TANGELA,$FF
-	db "Rei@",30,TENTACOOL,HORSEA,SEEL,$FF
+	trainer_party_name "Cindy",19,GOLDEEN,$FF
+	trainer_party_name "Debra",16,RATTATA,PIKACHU,$FF
+	trainer_party_name "Heidi",16,PIDGEY,PIDGEY,PIDGEY,$FF
+	trainer_party_name "Brooke",22,BULBASAUR,$FF
+	trainer_party_name "Liz",18,ODDISH,BELLSPROUT,ODDISH,BELLSPROUT,$FF
+	trainer_party_name "Hope",23,MEOWTH,$FF
+	trainer_party_name "Kim",20,PIKACHU,CLEFAIRY,$FF
+	trainer_party_name "Alice",21,PIDGEY,PIDGEOTTO,$FF
+	trainer_party_name "Becky",21,JIGGLYPUFF,PIDGEY,MEOWTH,$FF
+	trainer_party_name "Carol",22,ODDISH,BULBASAUR,$FF
+	trainer_party_name "Diana",24,BULBASAUR,IVYSAUR,$FF
+	trainer_party_name "Gina",24,PIDGEY,MEOWTH,RATTATA,PIKACHU,MEOWTH,$FF
+	trainer_party_name "Jenny",30,POLIWAG,POLIWAG,$FF
+	trainer_party_name "Clara",27,PIDGEY,MEOWTH,PIDGEY,PIDGEOTTO,$FF
+	trainer_party_name "Kelsey",28,GOLDEEN,POLIWAG,HORSEA,$FF
+	trainer_party_name "Missy",31,GOLDEEN,SEAKING,$FF
+	trainer_party_name "Donna",22,BELLSPROUT,CLEFAIRY,$FF
+	trainer_party_name "Susan",20,MEOWTH,ODDISH,PIDGEY,$FF
+	trainer_party_name "Nanci",19,PIDGEY,RATTATA,RATTATA,BELLSPROUT,$FF
+	trainer_party_name "Tina",28,GLOOM,ODDISH,ODDISH,$FF
+	trainer_party_name "Julie",29,PIKACHU,RAICHU,$FF
+	trainer_party_name "Connie",33,CLEFAIRY,$FF
+	trainer_party_name "Wendy",29,BELLSPROUT,ODDISH,TANGELA,$FF
+	trainer_party_name "Rei",30,TENTACOOL,HORSEA,SEEL,$FF
 	
 PokemaniacData:
-	db "Terry@",30,RHYHORN,LICKITUNG,$FF
-	db "Ben@",20,CUBONE,SLOWPOKE,$FF
-	db "Scott@",20,SLOWPOKE,SLOWPOKE,SLOWPOKE,$FF
-	db "Jessy@",CUSTOM_PIC,COSPLAY_GIRL,22,PIKACHU,CUBONE,$FF
-	db "Andy@",25,SLOWPOKE,$FF
-	db "Jerry@",40,CHARMELEON,LAPRAS,LICKITUNG,$FF
-	db "Bruce@",23,CUBONE,SLOWPOKE,$FF
+	trainer_party_name "Terry",30,RHYHORN,LICKITUNG,$FF
+	trainer_party_name "Ben",20,CUBONE,SLOWPOKE,$FF
+	trainer_party_name "Scott",20,SLOWPOKE,SLOWPOKE,SLOWPOKE,$FF
+	trainer_party_name "Jessy",CUSTOM_PIC,COSPLAY_GIRL,22,PIKACHU,CUBONE,$FF
+	trainer_party_name "Andy",25,SLOWPOKE,$FF
+	trainer_party_name "Jerry",40,CHARMELEON,LAPRAS,LICKITUNG,$FF
+	trainer_party_name "Bruce",23,CUBONE,SLOWPOKE,$FF
 	
 SuperNerdData:
-	db "Teru@",11,VOLTORB,VOLTORB,$FF
-	db "Eric@",16,PIKACHU,UMBREON,$FF
-	db "Markus@",20,VOLTORB,KOFFING,VOLTORB,MAGNEMITE,$FF
-	db "Alan@",22,GRIMER,MUK,GRIMER,$FF
-	db "Derek@",26,KOFFING,$FF
-	db "Clif@",22,KOFFING,MAGNEMITE,WEEZING,$FF
-	db "Owen@",20,MAGNEMITE,MAGNEMITE,KOFFING,MAGNEMITE,$FF
-	db "Ben@",24,MAGNEMITE,VOLTORB,$FF
-	db "Rick@",36,VULPIX,VULPIX,NINETALES,$FF
-	db "Marty@",34,PONYTA,CHARMANDER,VULPIX,GROWLITHE,$FF
-	db "Vince@",41,RAPIDASH,$FF
-	db "Avery@",37,GROWLITHE,VULPIX,$FF
+	trainer_party_name "Teru",11,VOLTORB,VOLTORB,$FF
+	trainer_party_name "Eric",16,PIKACHU,UMBREON,$FF
+	trainer_party_name "Markus",20,VOLTORB,KOFFING,VOLTORB,MAGNEMITE,$FF
+	trainer_party_name "Alan",22,GRIMER,MUK,GRIMER,$FF
+	trainer_party_name "Derek",26,KOFFING,$FF
+	trainer_party_name "Clif",22,KOFFING,MAGNEMITE,WEEZING,$FF
+	trainer_party_name "Owen",20,MAGNEMITE,MAGNEMITE,KOFFING,MAGNEMITE,$FF
+	trainer_party_name "Ben",24,MAGNEMITE,VOLTORB,$FF
+	trainer_party_name "Rick",36,VULPIX,VULPIX,NINETALES,$FF
+	trainer_party_name "Marty",34,PONYTA,CHARMANDER,VULPIX,GROWLITHE,$FF
+	trainer_party_name "Vince",41,RAPIDASH,$FF
+	trainer_party_name "Avery",37,GROWLITHE,VULPIX,$FF
 	
 HikerData:
-	db "Jeff@",10,GEODUDE,MACHOP,ONIX,$FF
-	db "Dillon@",15,MACHOP,GEODUDE,$FF
-	db "Russel@",13,GEODUDE,MANKEY,MACHOP,$FF
-	db "Michael@",17,DIGLETT,ONIX,$FF
-	db "Trent@",21,GEODUDE,ONIX,$FF
-	db "Clark@",20,GEODUDE,MACHOP,GEODUDE,$FF
-	db "Lenny@",21,MACHOP,ONIX,$FF
-	db "Jay@",19,ONIX,GRAVELER,$FF
-	db "Bryan@",21,GEODUDE,GEODUDE,GRAVELER,$FF
-	db "Lucas@",25,SKARMORY,$FF
-	db "George@",20,MACHOP,ONIX,$FF
-	db "Devan@",19,GEODUDE,MACHOP,GEODUDE,GEODUDE,$FF
-	db "Steve@",20,ONIX,ONIX,GEODUDE,$FF
-	db "Kurt@",21,GEODUDE,GRAVELER,$FF
+	trainer_party_name "Jeff",10,GEODUDE,MACHOP,ONIX,$FF
+	trainer_party_name "Dillon",15,MACHOP,GEODUDE,$FF
+	trainer_party_name "Russel",13,GEODUDE,MANKEY,MACHOP,$FF
+	trainer_party_name "Michael",17,DIGLETT,ONIX,$FF
+	trainer_party_name "Trent",21,GEODUDE,ONIX,$FF
+	trainer_party_name "Clark",20,GEODUDE,MACHOP,GEODUDE,$FF
+	trainer_party_name "Lenny",21,MACHOP,ONIX,$FF
+	trainer_party_name "Jay",19,ONIX,GRAVELER,$FF
+	trainer_party_name "Bryan",21,GEODUDE,GEODUDE,GRAVELER,$FF
+	trainer_party_name "Lucas",25,SKARMORY,$FF
+	trainer_party_name "George",20,MACHOP,ONIX,$FF
+	trainer_party_name "Devan",19,GEODUDE,MACHOP,GEODUDE,GEODUDE,$FF
+	trainer_party_name "Steve",20,ONIX,ONIX,GEODUDE,$FF
+	trainer_party_name "Kurt",21,GEODUDE,GRAVELER,$FF
 	
 BikerData:
-	db "Charles@",28,KOFFING,GRIMER,EKANS,$FF
-	db "Glenn@",29,RHYHORN,RHYHORN,$FF
-	db "Dwayne@",25,KOFFING,GRIMER,$FF
-	db "Joel@",28,GRIMER,SLUGMA,$FF
-	db "Kyle@",29,GRIMER,KOFFING,$FF
-	db "Billy@",33,DITTO,$FF
-	db "Alex@",26,GRIMER,GRIMER,GRIMER,GRIMER,$FF
-	db "Isaac@",28,WEEZING,KOFFING,WEEZING,$FF
-	db "Jacob@",33,MUK,$FF
-	db "Wesley@",29,VOLTORB,MAGNEMITE,$FF
-	db "Logan@",29,HOUNDOUR,MURKROW,$FF
-	db "Jared@",25,KOFFING,WEEZING,KOFFING,KOFFING,WEEZING,$FF
-	db "Rick@",26,KOFFING,KOFFING,GRIMER,KOFFING,$FF
-	db "Jimmy@",28,SLUGMA,SLUGMA,KOFFING,$FF
-	db "Reggie@",29,MURKROW,MUK,$FF
+	trainer_party_name "Charles",28,KOFFING,GRIMER,EKANS,$FF
+	trainer_party_name "Glenn",29,RHYHORN,RHYHORN,$FF
+	trainer_party_name "Dwayne",25,KOFFING,GRIMER,$FF
+	trainer_party_name "Joel",28,GRIMER,SLUGMA,$FF
+	trainer_party_name "Kyle",29,GRIMER,KOFFING,$FF
+	trainer_party_name "Billy",33,DITTO,$FF
+	trainer_party_name "Alex",26,GRIMER,GRIMER,GRIMER,GRIMER,$FF
+	trainer_party_name "Isaac",28,WEEZING,KOFFING,WEEZING,$FF
+	trainer_party_name "Jacob",33,MUK,$FF
+	trainer_party_name "Wesley",29,VOLTORB,MAGNEMITE,$FF
+	trainer_party_name "Logan",29,HOUNDOUR,MURKROW,$FF
+	trainer_party_name "Jared",25,KOFFING,WEEZING,KOFFING,KOFFING,WEEZING,$FF
+	trainer_party_name "Rick",26,KOFFING,KOFFING,GRIMER,KOFFING,$FF
+	trainer_party_name "Jimmy",28,SLUGMA,SLUGMA,KOFFING,$FF
+	trainer_party_name "Reggie",29,MURKROW,MUK,$FF
 	
 BurglarData:
-	db "Arnie@",29,GROWLITHE,VULPIX,$FF
-	db "Dusty@",33,GROWLITHE,$FF
-	db "Paul@",28,VULPIX,CHARMANDER,PONYTA,$FF
-	db "Simon@",36,GROWLITHE,VULPIX,NINETALES,$FF
-	db "Darryl@",41,TORKOAL,$FF
-	db "Corey@",37,VULPIX,GROWLITHE,$FF
-	db "Eddie@",34,CHARMANDER,CHARMELEON,$FF
-	db "Duncan@",38,NINETALES,$FF
-	db "Isaiah@",34,HOUNDOUR,PONYTA,$FF
+	trainer_party_name "Arnie",29,GROWLITHE,VULPIX,$FF
+	trainer_party_name "Dusty",33,GROWLITHE,$FF
+	trainer_party_name "Paul",28,VULPIX,CHARMANDER,PONYTA,$FF
+	trainer_party_name "Simon",36,GROWLITHE,VULPIX,NINETALES,$FF
+	trainer_party_name "Darryl",41,TORKOAL,$FF
+	trainer_party_name "Corey",37,VULPIX,GROWLITHE,$FF
+	trainer_party_name "Eddie",34,CHARMANDER,CHARMELEON,$FF
+	trainer_party_name "Duncan",38,NINETALES,$FF
+	trainer_party_name "Isaiah",34,HOUNDOUR,PONYTA,$FF
 	
 EngineerData:
-	db "Bernie@",21,MAGNEMITE,PIKACHU,$FF
-	db "Flint@",21,MAGNEMITE,CHINCHOU,$FF
-	db "Jack@",18,MAGNEMITE,PIKACHU,$FF
+	trainer_party_name "Bernie",21,MAGNEMITE,PIKACHU,$FF
+	trainer_party_name "Flint",21,MAGNEMITE,CHINCHOU,$FF
+	trainer_party_name "Jack",18,MAGNEMITE,PIKACHU,$FF
 
 CoupleData: 
-	db "Mike & Nat@",20,CUBONE,WEEPINBELL,$FF
+	trainer_party_name "Mike & Nat",20,CUBONE,WEEPINBELL,$FF
 
 FisherData:
-	db "Walt@",17,GOLDEEN,TENTACOOL,GOLDEEN,$FF
-	db "Chris@",17,TENTACOOL,STARYU,SHELLDER,$FF
-	db "Craig@",22,GOLDEEN,POLIWAG,GOLDEEN,$FF
-	db "Bill@",24,TENTACOOL,GOLDEEN,$FF
-	db "Hank@",27,GOLDEEN,$FF
-	db "Brad@",21,POLIWAG,SHELLDER,GOLDEEN,HORSEA,$FF
-	db "Jimmy@",28,SEAKING,GOLDEEN,SEAKING,SEAKING,$FF
-	db "Ralph@",31,SHELLDER,CLOYSTER,$FF
-	db "Bob@",27,MAGIKARP,MAGIKARP,MAGIKARP,MAGIKARP,MAGIKARP,MAGIKARP,$FF
-	db "Joe@",33,SEAKING,GOLDEEN,$FF
-	db "Wilton@",24,MAGIKARP,MAGIKARP,$FF
+	trainer_party_name "Walt",17,GOLDEEN,TENTACOOL,GOLDEEN,$FF
+	trainer_party_name "Chris",17,TENTACOOL,STARYU,SHELLDER,$FF
+	trainer_party_name "Craig",22,GOLDEEN,POLIWAG,GOLDEEN,$FF
+	trainer_party_name "Bill",24,TENTACOOL,GOLDEEN,$FF
+	trainer_party_name "Hank",27,GOLDEEN,$FF
+	trainer_party_name "Brad",21,POLIWAG,SHELLDER,GOLDEEN,HORSEA,$FF
+	trainer_party_name "Jimmy",28,SEAKING,GOLDEEN,SEAKING,SEAKING,$FF
+	trainer_party_name "Ralph",31,SHELLDER,CLOYSTER,$FF
+	trainer_party_name "Bob",27,MAGIKARP,MAGIKARP,MAGIKARP,MAGIKARP,MAGIKARP,MAGIKARP,$FF
+	trainer_party_name "Joe",33,SEAKING,GOLDEEN,$FF
+	trainer_party_name "Wilton",24,MAGIKARP,MAGIKARP,$FF
 	
 SwimmerData:
-	db "George@",16,HORSEA,SHELLDER,$FF
-	db "Bruno@",30,TENTACOOL,SHELLDER,$FF
-	db "Charlie@",29,GOLDEEN,HORSEA,STARYU,$FF
-	db "Robert@",30,POLIWAG,POLIWHIRL,$FF
-	db "Chris@",27,HORSEA,TENTACOOL,TENTACOOL,GOLDEEN,$FF
-	db "Riley@",29,GOLDEEN,SHELLDER,SEAKING,$FF
-	db "John@",30,HORSEA,HORSEA,$FF
-	db "Abe@",27,TENTACOOL,TENTACOOL,STARYU,HORSEA,TENTACRUEL,$FF
-	db "Matthew@",31,SHELLDER,CLOYSTER,$FF
-	db "Kirk@",35,STARYU,$FF
-	db "Parker@",28,HORSEA,HORSEA,SEADRA,HORSEA,$FF
-	db "Ross@",33,SEADRA,TENTACRUEL,$FF
-	db "Perry@",37,STARMIE,$FF
-	db "Ryan@",33,STARYU,WARTORTLE,$FF
-	db "Ben@",32,CHINCHOU,LANTURN,STARMIE,$FF
-	db "Josiah@",31,TENTACOOL,TENTACOOL,TENTACRUEL,$FF
+	trainer_party_name "George",16,HORSEA,SHELLDER,$FF
+	trainer_party_name "Bruno",30,TENTACOOL,SHELLDER,$FF
+	trainer_party_name "Charlie",29,GOLDEEN,HORSEA,STARYU,$FF
+	trainer_party_name "Robert",30,POLIWAG,POLIWHIRL,$FF
+	trainer_party_name "Chris",27,HORSEA,TENTACOOL,TENTACOOL,GOLDEEN,$FF
+	trainer_party_name "Riley",29,GOLDEEN,SHELLDER,SEAKING,$FF
+	trainer_party_name "John",30,HORSEA,HORSEA,$FF
+	trainer_party_name "Abe",27,TENTACOOL,TENTACOOL,STARYU,HORSEA,TENTACRUEL,$FF
+	trainer_party_name "Matthew",31,SHELLDER,CLOYSTER,$FF
+	trainer_party_name "Kirk",35,STARYU,$FF
+	trainer_party_name "Parker",28,HORSEA,HORSEA,SEADRA,HORSEA,$FF
+	trainer_party_name "Ross",33,SEADRA,TENTACRUEL,$FF
+	trainer_party_name "Perry",37,STARMIE,$FF
+	trainer_party_name "Ryan",33,STARYU,WARTORTLE,$FF
+	trainer_party_name "Ben",32,CHINCHOU,LANTURN,STARMIE,$FF
+	trainer_party_name "Josiah",31,TENTACOOL,TENTACOOL,TENTACRUEL,$FF
 	
 CueBallData:
-	db "Chance@",28,MACHOP,MANKEY,MACHOP,$FF
-	db "Dave@",29,MANKEY,MACHOP,$FF
-	db "Chad@",33,MACHOP,$FF
-	db "Scott@",29,MANKEY,PRIMEAPE,$FF
-	db "Nick@",29,MACHOP,MACHOKE,$FF
-	db "Reese@",33,MACHOKE,$FF
-	db "Kenny@",26,MANKEY,MANKEY,MACHOKE,MACHOP,$FF
-	db "Bruce@",29,PRIMEAPE,MACHOKE,$FF
+	trainer_party_name "Chance",28,MACHOP,MANKEY,MACHOP,$FF
+	trainer_party_name "Dave",29,MANKEY,MACHOP,$FF
+	trainer_party_name "Chad",33,MACHOP,$FF
+	trainer_party_name "Scott",29,MANKEY,PRIMEAPE,$FF
+	trainer_party_name "Nick",29,MACHOP,MACHOKE,$FF
+	trainer_party_name "Reese",33,MACHOKE,$FF
+	trainer_party_name "Kenny",26,MANKEY,MANKEY,MACHOKE,MACHOP,$FF
+	trainer_party_name "Bruce",29,PRIMEAPE,MACHOKE,$FF
 	
 GamblerData:
-	db "Stan@",18,POLIWAG,HORSEA,$FF
-	db "Rich@",18,BELLSPROUT,ODDISH,$FF
-	db "Dirk@",18,VOLTORB,MAGNEMITE,$FF
-	db "Jasper@",18,GROWLITHE,VULPIX,$FF
-	db "Phil@",22,POLIWAG,POLIWAG,POLIWHIRL,$FF
-	db "Biff@",22,ONIX,GEODUDE,GRAVELER,$FF
-	db "Joel@",24,GROWLITHE,VULPIX,$FF
+	trainer_party_name "Stan",18,POLIWAG,HORSEA,$FF
+	trainer_party_name "Rich",18,BELLSPROUT,ODDISH,$FF
+	trainer_party_name "Dirk",18,VOLTORB,MAGNEMITE,$FF
+	trainer_party_name "Jasper",18,GROWLITHE,VULPIX,$FF
+	trainer_party_name "Phil",22,POLIWAG,POLIWAG,POLIWHIRL,$FF
+	trainer_party_name "Biff",22,ONIX,GEODUDE,GRAVELER,$FF
+	trainer_party_name "Joel",24,GROWLITHE,VULPIX,$FF
 	
 SwimmerFData:
 BeautyData:
-	db "Charlotte@",24,ODDISH,GLOOM,BELLOSSOM,$FF
-	db "Beth@",24,BELLSPROUT,WEEPINBELL,$FF
-	db "Selena@",26,EXEGGCUTE,$FF
-	db "Ariana@",27,RATTATA,PIKACHU,RATTATA,$FF
-	db "Callie@",29,CLEFAIRY,MEOWTH,$FF
-	db "Malena@",35,SEAKING,$FF
-	db "Brea@",30,SHELLDER,SHELLDER,CLOYSTER,$FF
-	db "Kaylee@",31,POLIWAG,SEAKING,$FF
-	db "Lynn@",29,PIDGEOTTO,WIGGLYTUFF,$FF
-	db "Holly@",29,BULBASAUR,IVYSAUR,$FF
-	db "Carly@",33,WEEPINBELL,BELLSPROUT,WEEPINBELL,$FF
-	db "Kiera@",27,POLIWAG,GOLDEEN,SEAKING,GOLDEEN,POLIWAG,$FF
-	db "Mandy@",30,GOLDEEN,SEAKING,$FF
-	db "Anna@",29,STARYU,STARYU,STARYU,$FF
-	db "Caitlyn@",30,SEADRA,HORSEA,SEADRA,$FF
-	db "Colby@",19,GOLDEEN,$FF ; Misty's Gym, Trainer # 0x10
-	db "Callie@",30,TENTACOOL,HORSEA,SEEL,$FF ; Route 20, Trainer # 0x11
-	db "Marie@",31,GOLDEEN,SEAKING,$FF ; Route 20, Trainer # 0x12
+	trainer_party_name "Charlotte",24,ODDISH,GLOOM,BELLOSSOM,$FF
+	trainer_party_name "Beth",24,BELLSPROUT,WEEPINBELL,$FF
+	trainer_party_name "Selena",26,EXEGGCUTE,$FF
+	trainer_party_name "Ariana",27,RATTATA,PIKACHU,RATTATA,$FF
+	trainer_party_name "Callie",29,CLEFAIRY,MEOWTH,$FF
+	trainer_party_name "Malena",35,SEAKING,$FF
+	trainer_party_name "Brea",30,SHELLDER,SHELLDER,CLOYSTER,$FF
+	trainer_party_name "Kaylee",31,POLIWAG,SEAKING,$FF
+	trainer_party_name "Lynn",29,PIDGEOTTO,WIGGLYTUFF,$FF
+	trainer_party_name "Holly",29,BULBASAUR,IVYSAUR,$FF
+	trainer_party_name "Carly",33,WEEPINBELL,BELLSPROUT,WEEPINBELL,$FF
+	trainer_party_name "Kiera",27,POLIWAG,GOLDEEN,SEAKING,GOLDEEN,POLIWAG,$FF
+	trainer_party_name "Mandy",30,GOLDEEN,SEAKING,$FF
+	trainer_party_name "Anna",29,STARYU,STARYU,STARYU,$FF
+	trainer_party_name "Caitlyn",30,SEADRA,HORSEA,SEADRA,$FF
+	trainer_party_name "Colby",19,GOLDEEN,$FF ; Misty's Gym, Trainer # 0x10
+	trainer_party_name "Callie",30,TENTACOOL,HORSEA,SEEL,$FF ; Route 20, Trainer # 0x11
+	trainer_party_name "Marie",31,GOLDEEN,SEAKING,$FF ; Route 20, Trainer # 0x12
 	
 PsychicData:
-	db "Yuri@",31,KADABRA,SLOWPOKE,MR_MIME,KADABRA,$FF
-	db "Teru@",34,MR_MIME,KADABRA,$FF
-	db "Kio@",33,SLOWPOKE,SLOWBRO,SLOWKING,$FF
-	db "Rhen@",38,SLOWKING,$FF
+	trainer_party_name "Yuri",31,KADABRA,SLOWPOKE,MR_MIME,KADABRA,$FF
+	trainer_party_name "Teru",34,MR_MIME,KADABRA,$FF
+	trainer_party_name "Kio",33,SLOWPOKE,SLOWBRO,SLOWKING,$FF
+	trainer_party_name "Rhen",38,SLOWKING,$FF
 	
 RockerData:
-	db "Debbie@",CUSTOM_PIC,ROCKER_F,20,VOLTORB,VOLTORB,VOLTORB,$FF
-	db "C.C.@",29,EKANS,ARBOK,$FF
+	trainer_party_name "Debbie",CUSTOM_PIC,ROCKER_F,20,VOLTORB,VOLTORB,VOLTORB,$FF
+	trainer_party_name "C.C.",29,EKANS,ARBOK,$FF
 	
 JugglerData:
-	db "Irwin@",29,KADABRA,MR_MIME,$FF
-	db "Horton@",41,DROWZEE,HYPNO,KADABRA,KADABRA,$FF
-	db "Fritz@",31,GRIMER,MUK,KOFFING,$FF
-	db "Liam@",34,GRIMER,MUK,TENTACRUEL,$FF
-	db "Cloyd@",48,MR_MIME,$FF
-	db "Derek@",33,HYPNO,$FF
-	db "Will@",38,CROBAT,MUK,$FF
-	db "Shawn@",34,GOLBAT,WEEZING,MUK,$FF
+	trainer_party_name "Irwin",29,KADABRA,MR_MIME,$FF
+	trainer_party_name "Horton",41,DROWZEE,HYPNO,KADABRA,KADABRA,$FF
+	trainer_party_name "Fritz",31,GRIMER,MUK,KOFFING,$FF
+	trainer_party_name "Liam",34,GRIMER,MUK,TENTACRUEL,$FF
+	trainer_party_name "Cloyd",48,MR_MIME,$FF
+	trainer_party_name "Derek",33,HYPNO,$FF
+	trainer_party_name "Will",38,CROBAT,MUK,$FF
+	trainer_party_name "Shawn",34,GOLBAT,WEEZING,MUK,$FF
 	
 TamerData:
-	db "Cole@",34,NIDORINO,ARBOK,$FF
-	db "Edgar@",33,ARBOK,NIDORINO,ARBOK,$FF
-	db "Evan@",43,RHYHORN,$FF
-	db "Jason@",39,ARBOK,TAUROS,$FF
-	db "Phil@",44,PERSIAN,GOLDUCK,$FF
-	db "Vince@",42,RHYHORN,PRIMEAPE,ARBOK,TAUROS,$FF
+	trainer_party_name "Cole",34,NIDORINO,ARBOK,$FF
+	trainer_party_name "Edgar",33,ARBOK,NIDORINO,ARBOK,$FF
+	trainer_party_name "Evan",43,RHYHORN,$FF
+	trainer_party_name "Jason",39,ARBOK,TAUROS,$FF
+	trainer_party_name "Phil",44,PERSIAN,GOLDUCK,$FF
+	trainer_party_name "Vince",42,RHYHORN,PRIMEAPE,ARBOK,TAUROS,$FF
 	
 BirdKeeperData:
-	db "Rod@",29,PIDGEY,PIDGEOTTO,$FF
-	db "Abe@",25,SPEAROW,PIDGEY,PIDGEY,SPEAROW,SPEAROW,$FF
-	db "Bob@",26,PIDGEY,PIDGEOTTO,SPEAROW,FEAROW,$FF
-	db "Hank@",33,FARFETCHD,$FF
-	db "Bret@",29,SPEAROW,FEAROW,$FF
-	db "Roy@",26,PIDGEOTTO,FARFETCHD,DODUO,PIDGEY,$FF
-	db "Toby@",28,DODRIO,DODUO,DODUO,$FF
-	db "Chad@",29,SPEAROW,FEAROW,$FF
-	db "Mike@",34,DODRIO,$FF
-	db "Kyle@",26,SPEAROW,SPEAROW,FEAROW,SPEAROW,$FF
-	db "Willy@",30,FEAROW,FEAROW,PIDGEOTTO,$FF
-	db "Jeff@",39,PIDGEOTTO,PIDGEOTTO,PIDGEY,PIDGEOTTO,$FF
-	db "Troy@",42,FARFETCHD,FEAROW,$FF
-	db "Kevin@",28,PIDGEY,DODUO,PIDGEOTTO,$FF
-	db "Jim@",26,MURKROW,SPEAROW,MURKROW,FEAROW,$FF
-	db "Eric@",29,PIDGEOTTO,FEAROW,$FF
-	db "Chris@",28,SPEAROW,MURKROW,FEAROW,$FF
+	trainer_party_name "Rod",29,PIDGEY,PIDGEOTTO,$FF
+	trainer_party_name "Abe",25,SPEAROW,PIDGEY,PIDGEY,SPEAROW,SPEAROW,$FF
+	trainer_party_name "Bob",26,PIDGEY,PIDGEOTTO,SPEAROW,FEAROW,$FF
+	trainer_party_name "Hank",33,FARFETCHD,$FF
+	trainer_party_name "Bret",29,SPEAROW,FEAROW,$FF
+	trainer_party_name "Roy",26,PIDGEOTTO,FARFETCHD,DODUO,PIDGEY,$FF
+	trainer_party_name "Toby",28,DODRIO,DODUO,DODUO,$FF
+	trainer_party_name "Chad",29,SPEAROW,FEAROW,$FF
+	trainer_party_name "Mike",34,DODRIO,$FF
+	trainer_party_name "Kyle",26,SPEAROW,SPEAROW,FEAROW,SPEAROW,$FF
+	trainer_party_name "Willy",30,FEAROW,FEAROW,PIDGEOTTO,$FF
+	trainer_party_name "Jeff",39,PIDGEOTTO,PIDGEOTTO,PIDGEY,PIDGEOTTO,$FF
+	trainer_party_name "Troy",42,FARFETCHD,FEAROW,$FF
+	trainer_party_name "Kevin",28,PIDGEY,DODUO,PIDGEOTTO,$FF
+	trainer_party_name "Jim",26,MURKROW,SPEAROW,MURKROW,FEAROW,$FF
+	trainer_party_name "Eric",29,PIDGEOTTO,FEAROW,$FF
+	trainer_party_name "Chris",28,SPEAROW,MURKROW,FEAROW,$FF
 	
 BlackbeltData:
-	db "Kenji@",37,HITMONLEE,HITMONCHAN,$FF
-	db "Lao@",31,MANKEY,MANKEY,PRIMEAPE,$FF
-	db "Hung@",32,MACHOP,MACHOKE,$FF
-	db "Chang@",36,PRIMEAPE,$FF
-	db "Toru@",31,MACHOP,MANKEY,PRIMEAPE,$FF
-	db "Yoshi@",40,MACHOP,MACHOKE,$FF
-	db "Wang@",43,MACHOKE,$FF
-	db "Nob@",38,MACHOKE,MACHOP,MACHOKE,$FF
-	db "Wai@",43,MACHOKE,MACHOP,MACHOKE,$FF
+	trainer_party_name "Kenji",37,HITMONLEE,HITMONCHAN,$FF
+	trainer_party_name "Lao",31,MANKEY,MANKEY,PRIMEAPE,$FF
+	trainer_party_name "Hung",32,MACHOP,MACHOKE,$FF
+	trainer_party_name "Chang",36,PRIMEAPE,$FF
+	trainer_party_name "Toru",31,MACHOP,MANKEY,PRIMEAPE,$FF
+	trainer_party_name "Yoshi",40,MACHOP,MACHOKE,$FF
+	trainer_party_name "Wang",43,MACHOKE,$FF
+	trainer_party_name "Nob",38,MACHOKE,MACHOP,MACHOKE,$FF
+	trainer_party_name "Wai",43,MACHOKE,MACHOP,MACHOKE,$FF
 	
 GentlemanData:
-	db "Alfred@",18,GROWLITHE,GROWLITHE,$FF
-	db "Edward@",19,NIDORAN_M,NIDORAN_F,$FF
-	db "Preston@",23,PIKACHU,$FF
-	db "Gregory@",48,PRIMEAPE,$FF
-	db "Howard@",17,GROWLITHE,PONYTA,$FF
-	db "Nathan@",18,HOUNDOUR,$FF
+	trainer_party_name "Alfred",18,GROWLITHE,GROWLITHE,$FF
+	trainer_party_name "Edward",19,NIDORAN_M,NIDORAN_F,$FF
+	trainer_party_name "Preston",23,PIKACHU,$FF
+	trainer_party_name "Gregory",48,PRIMEAPE,$FF
+	trainer_party_name "Howard",17,GROWLITHE,PONYTA,$FF
+	trainer_party_name "Nathan",18,HOUNDOUR,$FF
 	
 ChannelerData:
-	db "Amelia@",22,GASTLY,$FF
-	db "Selene@",24,GASTLY,$FF
-	db "Karina@",23,MISDREAVUS,GASTLY,$FF
-	db "Hope@",24,HAUNTER,$FF
-	db "Stacy@",23,GASTLY,$FF
-	db "Gwen@",24,GASTLY,$FF
-	db "Mary@",24,HAUNTER,$FF
-	db "Jane@",22,GASTLY,$FF
-	db "Carly@",24,GASTLY,$FF
-	db "Trixie@",23,GASTLY,MISDREAVUS,$FF
-	db "Jodie@",24,HAUNTER,$FF
-	db "Faith@",22,GASTLY,$FF
-	db "Alice@",24,GASTLY,$FF
-	db "Ashe@",23,HAUNTER,$FF
-	db "Holly@",24,GASTLY,$FF
-	db "Cindy@",22,GASTLY,$FF
-	db "Grace@",24,GASTLY,$FF
-	db "Rei@",22,MISDREAVUS,$FF
-	db "Leah@",22,GASTLY,GASTLY,GASTLY,$FF
-	db "Eve@",24,GASTLY,$FF
-	db "Cassie@",24,GASTLY,$FF
+	trainer_party_name "Amelia",22,GASTLY,$FF
+	trainer_party_name "Selene",24,GASTLY,$FF
+	trainer_party_name "Karina",23,MISDREAVUS,GASTLY,$FF
+	trainer_party_name "Hope",24,HAUNTER,$FF
+	trainer_party_name "Stacy",23,GASTLY,$FF
+	trainer_party_name "Gwen",24,GASTLY,$FF
+	trainer_party_name "Mary",24,HAUNTER,$FF
+	trainer_party_name "Jane",22,GASTLY,$FF
+	trainer_party_name "Carly",24,GASTLY,$FF
+	trainer_party_name "Trixie",23,GASTLY,MISDREAVUS,$FF
+	trainer_party_name "Jodie",24,HAUNTER,$FF
+	trainer_party_name "Faith",22,GASTLY,$FF
+	trainer_party_name "Alice",24,GASTLY,$FF
+	trainer_party_name "Ashe",23,HAUNTER,$FF
+	trainer_party_name "Holly",24,GASTLY,$FF
+	trainer_party_name "Cindy",22,GASTLY,$FF
+	trainer_party_name "Grace",24,GASTLY,$FF
+	trainer_party_name "Rei",22,MISDREAVUS,$FF
+	trainer_party_name "Leah",22,GASTLY,GASTLY,GASTLY,$FF
+	trainer_party_name "Eve",24,GASTLY,$FF
+	trainer_party_name "Cassie",24,GASTLY,$FF
 	
 ScientistData:
-	db "Sheldon@",34,KOFFING,VOLTORB,$FF
-	db "Ross@",26,GRIMER,WEEZING,KOFFING,WEEZING,$FF
-	db "Mitch@",28,MAGNEMITE,VOLTORB,MAGNETON,$FF
-	db "Jed@",29,ELECTRODE,WEEZING,$FF
-	db "Marc@",33,ELECTRODE,$FF
-	db "Taylor@",26,MAGNETON,KOFFING,WEEZING,MAGNEMITE,$FF
-	db "Nick@",25,VOLTORB,KOFFING,MAGNETON,MAGNEMITE,KOFFING,$FF
-	db "Kevin@",29,ELECTRODE,MUK,$FF
-	db "Howie@",29,GRIMER,ELECTRODE,$FF
-	db "Brian@",28,VOLTORB,KOFFING,MAGNETON,$FF
-	db "Alex@",29,MAGNEMITE,KOFFING,$FF
-	db "Justin@",33,MAGNEMITE,MAGNETON,VOLTORB,$FF
-	db "Chris@",34,MAGNEMITE,ELECTRODE,$FF
+	trainer_party_name "Sheldon",34,KOFFING,VOLTORB,$FF
+	trainer_party_name "Ross",26,GRIMER,WEEZING,KOFFING,WEEZING,$FF
+	trainer_party_name "Mitch",28,MAGNEMITE,VOLTORB,MAGNETON,$FF
+	trainer_party_name "Jed",29,ELECTRODE,WEEZING,$FF
+	trainer_party_name "Marc",33,ELECTRODE,$FF
+	trainer_party_name "Taylor",26,MAGNETON,KOFFING,WEEZING,MAGNEMITE,$FF
+	trainer_party_name "Nick",25,VOLTORB,KOFFING,MAGNETON,MAGNEMITE,KOFFING,$FF
+	trainer_party_name "Kevin",29,ELECTRODE,MUK,$FF
+	trainer_party_name "Howie",29,GRIMER,ELECTRODE,$FF
+	trainer_party_name "Brian",28,VOLTORB,KOFFING,MAGNETON,$FF
+	trainer_party_name "Alex",29,MAGNEMITE,KOFFING,$FF
+	trainer_party_name "Justin",33,MAGNEMITE,MAGNETON,VOLTORB,$FF
+	trainer_party_name "Chris",34,MAGNEMITE,ELECTRODE,$FF
 	
 RocketFData:
 RocketData:
-	db "Executive@"
+	trainer_party_name "Executive"
 	db SPECIAL_TRAINER2
 	db EXECUTIVE_F
 	db AI_POTION
@@ -1075,76 +1078,76 @@ RocketData:
 	moveset PECK, QUICK_ATTACK, WING_ATTACK, GROWL
 	db $FF
 
-	db "James@",CUSTOM_PIC,JAMES,13,KOFFING,$FF
-	db "Jessie@",CUSTOM_PIC,JESSIE,13,EKANS,$FF
-	db "Grunt@",14,RATICATE,$FF
-	db "Grunt@",17,MACHOP,DROWZEE,$FF
-	db "Grunt@",CUSTOM_PIC,PI_TRAINER,15,EKANS,ZUBAT,$FF ; Nugget Bridge "Boss"
-	db "Grunt@",20,RATICATE,ZUBAT,$FF
-	db "Grunt@",21,DROWZEE,MACHOP,$FF
-	db "Grunt@",21,RATICATE,RATICATE,$FF
-	db "Grunt@",20,GRIMER,KOFFING,KOFFING,$FF
-	db "Grunt@",19,RATTATA,RATICATE,RATICATE,RATTATA,$FF
-	db "Grunt@",22,GRIMER,KOFFING,$FF
-	db "Grunt@",17,ZUBAT,KOFFING,GRIMER,ZUBAT,RATICATE,$FF
-	db "Grunt@",20,RATTATA,RATICATE,DROWZEE,$FF
-	db "Grunt@",21,MACHOP,MACHOP,$FF
-	db "James@",CUSTOM_PIC,JAMES,23,WEEZING,WEEPINBELL,$FF ; James in Game Corner
-	db "Jessie@",CUSTOM_PIC,JESSIE,23,ARBOK,LICKITUNG,$FF ; Jessie in Game Corner
-	db "Grunt@",21,KOFFING,ZUBAT,$FF
-	db "Grunt@",25,ZUBAT,ZUBAT,GOLBAT,$FF
-	db "Grunt@",26,KOFFING,DROWZEE,$FF
-	db "Executive@",CUSTOM_PIC,EXECUTIVE_M,23,HOUNDOUR,HONCHKROW,KOFFING,$FF
-	db "Grunt@",26,DROWZEE,KOFFING,$FF
-	db "Grunt@",29,CUBONE,ZUBAT,$FF
-	db "Grunt@",25,GOLBAT,ZUBAT,ZUBAT,RATICATE,ZUBAT,$FF
-	db "Grunt@",28,RATICATE,HYPNO,RATICATE,$FF
-	db "Grunt@",29,MACHOP,DROWZEE,$FF
-	db "Grunt@",28,EKANS,ZUBAT,CUBONE,$FF
-	db "Grunt@",33,ARBOK,$FF
-	db "Grunt@",33,HYPNO,$FF
-	db "Grunt@",29,MACHOP,MACHOKE,$FF
-	db "Grunt@",28,ZUBAT,ZUBAT,GOLBAT,$FF
-	db "Grunt@",26,RATICATE,ARBOK,KOFFING,GOLBAT,$FF
-	db "Grunt@",29,CUBONE,CUBONE,$FF
-	db "Grunt@",29,SANDSHREW,SANDSLASH,$FF
-	db "Grunt@",26,RATICATE,ZUBAT,GOLBAT,RATTATA,$FF
-	db "Grunt@",28,WEEZING,GOLBAT,KOFFING,$FF
-	db "Grunt@",28,DROWZEE,GRIMER,MACHOP,$FF
-	db "Grunt@",28,GOLBAT,DROWZEE,HYPNO,$FF
-	db "Grunt@",33,MACHOKE,$FF
-	db "Grunt@",25,RATTATA,RATTATA,ZUBAT,RATTATA,EKANS,$FF
-	db "Executive@",CUSTOM_PIC,EXECUTIVE_M,34,CUBONE,DROWZEE,MAROWAK,$FF
+	trainer_party_name "James",CUSTOM_PIC,JAMES,13,KOFFING,$FF
+	trainer_party_name "Jessie",CUSTOM_PIC,JESSIE,13,EKANS,$FF
+	trainer_party_name "Grunt",14,RATICATE,$FF
+	trainer_party_name "Grunt",17,MACHOP,DROWZEE,$FF
+	trainer_party_name "Grunt",CUSTOM_PIC,PI_TRAINER,15,EKANS,ZUBAT,$FF ; Nugget Bridge "Boss"
+	trainer_party_name "Grunt",20,RATICATE,ZUBAT,$FF
+	trainer_party_name "Grunt",21,DROWZEE,MACHOP,$FF
+	trainer_party_name "Grunt",21,RATICATE,RATICATE,$FF
+	trainer_party_name "Grunt",20,GRIMER,KOFFING,KOFFING,$FF
+	trainer_party_name "Grunt",19,RATTATA,RATICATE,RATICATE,RATTATA,$FF
+	trainer_party_name "Grunt",22,GRIMER,KOFFING,$FF
+	trainer_party_name "Grunt",17,ZUBAT,KOFFING,GRIMER,ZUBAT,RATICATE,$FF
+	trainer_party_name "Grunt",20,RATTATA,RATICATE,DROWZEE,$FF
+	trainer_party_name "Grunt",21,MACHOP,MACHOP,$FF
+	trainer_party_name "James",CUSTOM_PIC,JAMES,23,WEEZING,WEEPINBELL,$FF ; James in Game Corner
+	trainer_party_name "Jessie",CUSTOM_PIC,JESSIE,23,ARBOK,LICKITUNG,$FF ; Jessie in Game Corner
+	trainer_party_name "Grunt",21,KOFFING,ZUBAT,$FF
+	trainer_party_name "Grunt",25,ZUBAT,ZUBAT,GOLBAT,$FF
+	trainer_party_name "Grunt",26,KOFFING,DROWZEE,$FF
+	trainer_party_name "Executive",CUSTOM_PIC,EXECUTIVE_M,23,HOUNDOUR,HONCHKROW,KOFFING,$FF
+	trainer_party_name "Grunt",26,DROWZEE,KOFFING,$FF
+	trainer_party_name "Grunt",29,CUBONE,ZUBAT,$FF
+	trainer_party_name "Grunt",25,GOLBAT,ZUBAT,ZUBAT,RATICATE,ZUBAT,$FF
+	trainer_party_name "Grunt",28,RATICATE,HYPNO,RATICATE,$FF
+	trainer_party_name "Grunt",29,MACHOP,DROWZEE,$FF
+	trainer_party_name "Grunt",28,EKANS,ZUBAT,CUBONE,$FF
+	trainer_party_name "Grunt",33,ARBOK,$FF
+	trainer_party_name "Grunt",33,HYPNO,$FF
+	trainer_party_name "Grunt",29,MACHOP,MACHOKE,$FF
+	trainer_party_name "Grunt",28,ZUBAT,ZUBAT,GOLBAT,$FF
+	trainer_party_name "Grunt",26,RATICATE,ARBOK,KOFFING,GOLBAT,$FF
+	trainer_party_name "Grunt",29,CUBONE,CUBONE,$FF
+	trainer_party_name "Grunt",29,SANDSHREW,SANDSLASH,$FF
+	trainer_party_name "Grunt",26,RATICATE,ZUBAT,GOLBAT,RATTATA,$FF
+	trainer_party_name "Grunt",28,WEEZING,GOLBAT,KOFFING,$FF
+	trainer_party_name "Grunt",28,DROWZEE,GRIMER,MACHOP,$FF
+	trainer_party_name "Grunt",28,GOLBAT,DROWZEE,HYPNO,$FF
+	trainer_party_name "Grunt",33,MACHOKE,$FF
+	trainer_party_name "Grunt",25,RATTATA,RATTATA,ZUBAT,RATTATA,EKANS,$FF
+	trainer_party_name "Executive",CUSTOM_PIC,EXECUTIVE_M,34,CUBONE,DROWZEE,MAROWAK,$FF
 	
 AceTrainerMData:
-	db "Aaron@",39,NIDORINO,NIDOKING,$FF
-	db "Blake@",43,EXEGGUTOR,CLOYSTER,ARCANINE,$FF
-	db "Brian@",43,KINGLER,TENTACRUEL,BLASTOISE,$FF
-	db "Cody@",45,KINGLER,STARMIE,$FF
-	db "Gaven@",42,IVYSAUR,WARTORTLE,CHARMELEON,CHARIZARD,$FF
-	db "Jake@",44,IVYSAUR,WARTORTLE,CHARMELEON,$FF
-	db "Danny@",49,NIDOKING,$FF
-	db "Mike@",44,KINGLER,CLOYSTER,$FF
-	db "Nick@",39,SANDSLASH,DUGTRIO,$FF
-	db "Zoro@",43,RHYHORN,$FF
+	trainer_party_name "Aaron",39,NIDORINO,NIDOKING,$FF
+	trainer_party_name "Blake",43,EXEGGUTOR,CLOYSTER,ARCANINE,$FF
+	trainer_party_name "Brian",43,KINGLER,TENTACRUEL,BLASTOISE,$FF
+	trainer_party_name "Cody",45,KINGLER,STARMIE,$FF
+	trainer_party_name "Gaven",42,IVYSAUR,WARTORTLE,CHARMELEON,CHARIZARD,$FF
+	trainer_party_name "Jake",44,IVYSAUR,WARTORTLE,CHARMELEON,$FF
+	trainer_party_name "Danny",49,NIDOKING,$FF
+	trainer_party_name "Mike",44,KINGLER,CLOYSTER,$FF
+	trainer_party_name "Nick",39,SANDSLASH,DUGTRIO,$FF
+	trainer_party_name "Zoro",43,RHYHORN,$FF
 	
 AceTrainerFData:
-	db "Beth@",24,WEEPINBELL,GLOOM,IVYSAUR,$FF
-	db "Lola@",43,BELLSPROUT,WEEPINBELL,VICTREEBEL,$FF
-	db "Megan@",43,PARASECT,DEWGONG,CHANSEY,$FF
-	db "Quinn@",46,VILEPLUME,BUTTERFREE,$FF
-	db "Irene@",44,PERSIAN,NINETALES,$FF
-	db "Sara@",45,IVYSAUR,VENUSAUR,$FF
-	db "Lisa@",45,NIDORINA,NIDOQUEEN,$FF
-	db "Anna@",43,PERSIAN,NINETALES,RAICHU,$FF
+	trainer_party_name "Beth",24,WEEPINBELL,GLOOM,IVYSAUR,$FF
+	trainer_party_name "Lola",43,BELLSPROUT,WEEPINBELL,VICTREEBEL,$FF
+	trainer_party_name "Megan",43,PARASECT,DEWGONG,CHANSEY,$FF
+	trainer_party_name "Quinn",46,VILEPLUME,BUTTERFREE,$FF
+	trainer_party_name "Irene",44,PERSIAN,NINETALES,$FF
+	trainer_party_name "Sara",45,IVYSAUR,VENUSAUR,$FF
+	trainer_party_name "Lisa",45,NIDORINA,NIDOQUEEN,$FF
+	trainer_party_name "Anna",43,PERSIAN,NINETALES,RAICHU,$FF
 	
 HexManiacData:
-	db "Alice@",34,GASTLY,HAUNTER,$FF
-	db "Luna@",38,HAUNTER,$FF
-	db "Carrie@",33,GASTLY,GASTLY,HAUNTER,$FF
+	trainer_party_name "Alice",34,GASTLY,HAUNTER,$FF
+	trainer_party_name "Luna",38,HAUNTER,$FF
+	trainer_party_name "Carrie",33,GASTLY,GASTLY,HAUNTER,$FF
 
 PkmnTrainerData:
-    db "Flannery@"
+    trainer_party_name "Flannery"
 	db SPECIAL_TRAINER2
 	db FLANNERY ; pic
 	db AI_FULL_RESTORE ; AI
@@ -1161,7 +1164,7 @@ PkmnTrainerData:
 	
 	
 	
-	db "Janine@"
+	trainer_party_name "Janine"
 	db SPECIAL_TRAINER2
 	db JANINE ; pic
 	db AI_X_ATTACK ; AI

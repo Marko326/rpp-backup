@@ -48,7 +48,8 @@ ReadTrainer:
 ; SPECIAL_LEVELS has custom levels, default moves
 ; Otherwise, all Pokemon are the same level and use default moves
 .IterateTrainer
-	call SetCustomName
+	; TRN-5.33.01: party trainer names use the shared packed_names charmap.
+	call SetPackedTrainerName
 	ld a,[hli]
 	cp SPECIAL_TRAINER ; is the trainer special?
 	jr z,.SpecialTrainer ; if so, check for special moves
@@ -168,6 +169,42 @@ AddCustomMoves:
 	inc de
 	dec b
 	jr nz, .addMoveLoop
+	ret
+
+; TRN-5.33.01: decode one packed individual trainer name while preserving
+; ReadTrainer's legacy contract: HL returns immediately after the @ terminator.
+; The shared packed-name decoder expands into wcd6d; this routine then copies
+; the decoded name into the existing 13-byte wCurTrainerName buffer.
+SetPackedTrainerName:
+	ld d, h
+	ld e, l ; packed source start
+	ld c, 0
+.countPackedBytes
+	inc c
+	ld a, [hli]
+	cp "@"
+	jr nz, .countPackedBytes
+	push hl ; source continuation after the packed name
+
+	ld a, e
+	ld [wcd6d], a
+	ld a, d
+	ld [wcd6d + 1], a
+	ld a, BANK(TrainerDataPointers)
+	ld [wcd6d + 2], a
+	ld a, c
+	ld [wcd6d + 3], a
+	callba DecodePackedName
+
+	ld hl, wcd6d
+	ld de, wCurTrainerName
+.copyDecodedName
+	ld a, [hli]
+	ld [de], a
+	inc de
+	cp "@"
+	jr nz, .copyDecodedName
+	pop hl
 	ret
 
 GetTrainerMonDVs:: ; called from engine/battle/core.asm

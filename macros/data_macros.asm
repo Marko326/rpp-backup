@@ -250,6 +250,24 @@ db_always_critical_moves: MACRO
 	db ALWAYS_CRIT_MOVE_1, ALWAYS_CRIT_MOVE_2
 ENDM
 
+; TRN-5.33.02: individual trainer names are stored with packed_names.
+; Callers pass the visible name without a terminator. Keep the packed charmap
+; local to this field so future strings added to trainer data remain in their
+; caller-selected encoding. wCurTrainerName is a 13-byte decoded buffer.
+trainer_party_name: MACRO
+	ASSERT STRIN(\1, "@") == 0
+	PUSHC
+	SETCHARMAP main
+	ASSERT CHARLEN(\1) + 1 <= 13
+	SETCHARMAP packed_names
+	db \1, "@"
+	POPC
+	rept _NARG +- 1
+		shift
+		db \1
+	endr
+ENDM
+
 ; LEARN-5.31.02: compact level-up learnsets.
 ; Source keeps absolute levels for readability. At assembly time adjacent level
 ; deltas are packed two per header byte. Delta codes 0..14 are inline; code $f
