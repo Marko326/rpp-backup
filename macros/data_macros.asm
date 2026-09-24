@@ -249,3 +249,91 @@ ENDM
 db_always_critical_moves: MACRO
 	db ALWAYS_CRIT_MOVE_1, ALWAYS_CRIT_MOVE_2
 ENDM
+
+; LEARN-5.31.02: compact level-up learnsets.
+; Source keeps absolute levels for readability. At assembly time adjacent level
+; deltas are packed two per header byte. Delta codes 0..14 are inline; code $f
+; stores the real delta in one following byte, so unusual/future level gaps keep
+; their full 8-bit range instead of becoming a format restriction.
+;
+; Pair layout:
+;   db move1
+;   db (delta1_code << 4) | delta2_code
+;   [db delta1] ; only when delta1 >= 15
+;   db move2    ; 0 marks an odd final entry / end
+;   [db delta2] ; only when delta2 >= 15
+; Even-length learnsets end with a single zero move byte.
+PackedLearnsetPreviousLevel = 0
+PackedLearnsetPending = 0
+PackedLearnsetPendingDelta = 0
+PackedLearnsetPendingMove = 0
+PackedLearnsetDelta = 0
+PackedLearnsetFirstCode = 0
+PackedLearnsetSecondCode = 0
+PackedLearnsetDeclarationCount = 0
+PackedLearnsetActive = 0
+
+packed_learnset_start: MACRO
+	ASSERT PackedLearnsetActive == 0
+	ASSERT PackedLearnsetPending == 0
+PackedLearnsetActive = 1
+PackedLearnsetDeclarationCount = PackedLearnsetDeclarationCount + 1
+PackedLearnsetPreviousLevel = 0
+ENDM
+
+level_move: MACRO
+	ASSERT PackedLearnsetActive == 1
+	ASSERT \1 > 0
+	ASSERT \1 <= MAX_LEVEL
+	ASSERT \1 >= PackedLearnsetPreviousLevel
+	ASSERT \2 != 0
+PackedLearnsetDelta = \1 - PackedLearnsetPreviousLevel
+	ASSERT PackedLearnsetDelta <= $ff
+IF PackedLearnsetPending == 0
+PackedLearnsetPending = 1
+PackedLearnsetPendingDelta = PackedLearnsetDelta
+PackedLearnsetPendingMove = \2
+ELSE
+PackedLearnsetFirstCode = PackedLearnsetPendingDelta
+IF PackedLearnsetFirstCode >= $f
+PackedLearnsetFirstCode = $f
+ENDC
+PackedLearnsetSecondCode = PackedLearnsetDelta
+IF PackedLearnsetSecondCode >= $f
+PackedLearnsetSecondCode = $f
+ENDC
+	db PackedLearnsetPendingMove
+	db (PackedLearnsetFirstCode << 4) | PackedLearnsetSecondCode
+IF PackedLearnsetPendingDelta >= $f
+	db PackedLearnsetPendingDelta
+ENDC
+	db \2
+IF PackedLearnsetDelta >= $f
+	db PackedLearnsetDelta
+ENDC
+PackedLearnsetPending = 0
+ENDC
+PackedLearnsetPreviousLevel = \1
+ENDM
+
+packed_learnset_end: MACRO
+	ASSERT PackedLearnsetActive == 1
+IF PackedLearnsetPending != 0
+PackedLearnsetFirstCode = PackedLearnsetPendingDelta
+IF PackedLearnsetFirstCode >= $f
+PackedLearnsetFirstCode = $f
+ENDC
+	db PackedLearnsetPendingMove
+	db PackedLearnsetFirstCode << 4
+IF PackedLearnsetPendingDelta >= $f
+	db PackedLearnsetPendingDelta
+ENDC
+	db 0
+ELSE
+	; Full final pair: a zero move1 terminates iteration.
+	db 0
+ENDC
+PackedLearnsetPending = 0
+PackedLearnsetPreviousLevel = 0
+PackedLearnsetActive = 0
+ENDM

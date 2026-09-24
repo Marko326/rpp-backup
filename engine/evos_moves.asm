@@ -452,6 +452,66 @@ Evolution_ReloadTilesetTilePatterns:
 	ret z
 	jp ReloadTilesetTilePatterns
 
+ReadPackedLevelMove:
+; LEARN-5.31.01 packed level-up learnset iterator.
+; Input:
+;   HL = packed learnset cursor
+;   B  = previous absolute learn level (0 before the first entry)
+;   C  = iterator state (0 before the first entry)
+; Output when carry is set:
+;   A  = move ID
+;   B  = absolute learn level
+;   C  = updated iterator state
+;   HL = cursor for the next entry
+; Carry clear means end of learnset. DE is preserved.
+	push de
+	bit 7,c
+	jr nz,.secondEntry
+
+	ld a,[hli] ; first move, or 0 for an even-length terminator
+	and a
+	jr z,.done
+	ld e,a
+	ld a,[hli] ; packed delta header
+	ld d,a
+	and $f
+	or $80
+	ld c,a ; remember second delta and mark it pending
+	ld a,d
+	swap a
+	and $f
+	ld d,a ; first delta code
+	jr .applyDelta
+
+.secondEntry
+	ld d,c
+	res 7,c ; consuming the pending second entry
+	ld a,[hli] ; second move, or 0 for an odd-length terminator
+	and a
+	jr z,.done
+	ld e,a
+	ld a,d
+	and $f
+	ld d,a ; second delta code
+
+.applyDelta
+	ld a,d
+	cp $f
+	jr nz,.deltaReady
+	ld a,[hli] ; escaped full 8-bit delta
+.deltaReady
+	add b
+	ld b,a
+	ld a,e
+	pop de
+	scf
+	ret
+
+.done
+	pop de
+	and a ; clear carry
+	ret
+
 LearnMoveFromLevelUp:
 	ld a, [wd11e] ; species
 	ld [wcf91], a
@@ -469,20 +529,19 @@ LearnMoveFromLevelUp:
 	ld a, [hli]
 	and a ; have we reached the end of the evolution data?
 	jr nz, .skipEvolutionDataLoop ; if not, jump back up
-	
-.learnSetLoop ; loop over the learn set until we reach a move that is learnt at the current level or the end of the list
-	ld a, [hli]
-	and a ; have we reached the end of the learn set?
-	jr z, .done ; if we've reached the end of the learn set, jump
-	
-	ld b, a ; level the move is learnt at
-	ld a, [wCurEnemyLVL]
+
+	ld b,0 ; previous absolute learn level
+	ld c,0 ; packed iterator state
+.learnSetLoop ; loop over the packed learnset until the current level is found
+	call ReadPackedLevelMove
+	jr nc,.done
+	ld d,a ; move ID
+	ld a,[wCurEnemyLVL]
 	cp b ; is the move learnt at the mon's current level?
-	ld a, [hli] ; move ID
-	jr nz, .learnSetLoop
-	
+	jr nz,.learnSetLoop
+
 	push hl
-	ld d, a ; ID of move to learn
+	push bc ; preserve packed iterator state across move-learning code
 	ld hl, wPartyMon1Moves
 	ld a, [wWhichPokemon]
 	ld bc, wPartyMon2 - wPartyMon1
@@ -503,6 +562,7 @@ LearnMoveFromLevelUp:
 	call CopyStringToCF4B
 	predef LearnMove
 .has_move
+	pop bc
 	pop hl
 	jr .learnSetLoop
 	
@@ -533,27 +593,28 @@ WriteMonMoves:
 	ld a, [hli]
 	and a
 	jr nz, .skipEvoEntriesLoop
-	jr .firstMove
-.nextMove
-	pop de
-.nextMove2
-	inc hl
-.firstMove
-	ld a, [hli]       ; read level of next move in learnset
-	and a
-	jp z, .done       ; end of list
-	ld b, a
-	ld a, [wCurEnemyLVL]
-	cp b
-	jp c, .done       ; mon level < move level (assumption: learnset is sorted by level)
-	ld a, [wLearningMovesFromDayCare]
-	and a
-	jr z, .skipMinLevelCheck
-	ld a, [wDayCareStartLevel]
-	cp b
-	jr nc, .nextMove2 ; min level >= move level
 
-.skipMinLevelCheck
+	ld b,0 ; previous absolute learn level
+	ld c,0 ; packed iterator state
+.learnSetLoop
+	call ReadPackedLevelMove
+	jp nc,.done
+	push af ; keep move ID while checking the level filters
+	ld a,[wCurEnemyLVL]
+	cp b
+	jr c,.pastCurrentLevel ; learnsets are sorted by level
+	ld a,[wLearningMovesFromDayCare]
+	and a
+	jr z,.processMove
+	ld a,[wDayCareStartLevel]
+	cp b
+	jr nc,.skipPackedMove ; min level >= move level
+
+.processMove
+	pop af
+	push hl ; packed cursor
+	push bc ; packed iterator state
+	ld b,a ; current move ID
 
 ; check if the move is already known
 	push de
@@ -561,8 +622,8 @@ WriteMonMoves:
 .alreadyKnowsCheckLoop
 	ld a, [de]
 	inc de
-	cp [hl]
-	jr z, .nextMove
+	cp b
+	jr z, .finishEntryWithDE
 	dec c
 	jr nz, .alreadyKnowsCheckLoop
 
@@ -573,7 +634,7 @@ WriteMonMoves:
 .findEmptySlotLoop
 	ld a, [de]
 	and a
-	jr z, .writeMoveToSlot2
+	jr z, .writeMoveToSlot
 	inc de
 	dec c
 	jr nz, .findEmptySlotLoop
@@ -581,7 +642,6 @@ WriteMonMoves:
 ; no empty move slots found
 	pop de
 	push de
-	push hl
 	ld h, d
 	ld l, e
 	call WriteMonMoves_ShiftMoveData ; shift all moves one up (deleting move 1)
@@ -590,6 +650,8 @@ WriteMonMoves:
 	jr z, .writeMoveToSlot
 
 ; shift PP as well if learning moves from day care
+	ld a,b
+	push af ; preserve current move ID while BC is used for the PP offset
 	push de
 	ld bc, wPartyMon1PP - (wPartyMon1Moves + 3)
 	add hl, bc
@@ -597,19 +659,18 @@ WriteMonMoves:
 	ld e, l
 	call WriteMonMoves_ShiftMoveData ; shift all move PP data one up
 	pop de
+	pop af
+	ld b,a
 
 .writeMoveToSlot
-	pop hl
-.writeMoveToSlot2
-	ld a, [hl]
+	ld a,b
 	ld [de], a
 	ld a, [wLearningMovesFromDayCare]
 	and a
-	jr z, .nextMove
+	jr z, .finishEntryWithDE
 
 ; write move PP value if learning moves from day care
-	push hl
-	ld a, [hl]
+	ld a,b
 	ld hl, wPartyMon1PP - wPartyMon1Moves
 	add hl, de
 	push hl
@@ -623,9 +684,20 @@ WriteMonMoves:
 	ld a, [wBuffer + 5]
 	pop hl
 	ld [hl], a
-	pop hl
-	jr .nextMove
 
+.finishEntryWithDE
+	pop de
+.finishEntry
+	pop bc
+	pop hl
+	jr .learnSetLoop
+
+.skipPackedMove
+	pop af
+	jr .learnSetLoop
+
+.pastCurrentLevel
+	pop af
 .done
 	pop bc
 	pop de
@@ -721,83 +793,77 @@ PrepareRelearnableMoveList:
 	ld a, [hli]
 	and a
 	jr nz, .skipEvoEntriesLoop
-	jr .learnsetReady
-.learnsetReady
 	push hl
-	; Get pointer to mon's currently-known moves.
+	; Cache the mon's current level in the existing generic scratch buffer.
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1Level
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
 	ld a, [hl]
-	ld b, a
-	push bc
+	ld [wBuffer],a
+	; Get pointer to mon's currently-known moves.
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
-	pop bc
 	ld d, h
 	ld e, l
 	pop hl
-	; Write list of relearnable moves, while keeping count along the way.
-	; de = pointer to mon's currently-known moves
-	; hl = pointer to moves data for our mon
-	;  b = mon's level
-	ld c, 0 ; c = count of relearnable moves
+	xor a
+	ld [wRelearnableMoves],a ; running output count
+	ld b,0 ; previous absolute learn level
+	ld c,0 ; packed iterator state
 .loop
-	ld a, [hli]
-	and a
-	jr z, .done
+	call ReadPackedLevelMove
+	jr nc,.done
+	push af ; current move ID
+	ld a,[wBuffer]
 	cp b
-	jr c, .addMove
-	jr nz, .done
-.addMove
-	push bc
-	ld a, [hli] ; move id
-	ld b, a
+	jr c,.pastCurrentLevel ; sorted learnset: no later move can qualify
+	pop af
+	push hl
+	push bc ; preserve packed iterator state
+	ld b,a ; move ID
 	; Check if move is already known by our mon.
 	push de
-	ld a, [de]
-	cp b
-	jr z, .knowsMove
+	ld c,NUM_MOVES
+.knowsMoveLoop
+	ld a,[de]
 	inc de
-	ld a, [de]
 	cp b
-	jr z, .knowsMove
-	inc de
-	ld a, [de]
-	cp b
-	jr z, .knowsMove
-	inc de
-	ld a, [de]
-	cp b
-	jr z, .knowsMove
-.relearnableMove
+	jr z,.knowsMove
+	dec c
+	jr nz,.knowsMoveLoop
 	pop de
-	push hl
-	; Add move to the list, and update the running count.
-	ld a, b
-	ld b, 0
-	ld hl, wRelearnableMoves + 1
-	add hl, bc
-	ld [hl], a
-	pop hl
-	pop bc
-	inc c
-	jr .loop
+
+	; Append move to the relearnable list.
+	ld a,[wRelearnableMoves]
+	ld c,a
+	ld a,b
+	ld b,0
+	ld hl,wRelearnableMoves + 1
+	add hl,bc
+	ld [hl],a
+	ld hl,wRelearnableMoves
+	inc [hl]
+	jr .nextEntry
+
 .knowsMove
 	pop de
+.nextEntry
 	pop bc
+	pop hl
 	jr .loop
+
+.pastCurrentLevel
+	pop af
 .done
-	ld b, 0
-	ld hl, wRelearnableMoves + 1
-	add hl, bc
-	ld a, $ff
-	ld [hl], a
-	ld hl, wRelearnableMoves
-	ld [hl], c
+	ld a,[wRelearnableMoves]
+	ld c,a
+	ld b,0
+	ld hl,wRelearnableMoves + 1
+	add hl,bc
+	ld [hl],$ff
 	ret
 
 INCLUDE "data/evos_moves.asm"
