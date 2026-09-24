@@ -18,6 +18,22 @@ AIEnemyTrainerChooseMoves:
 	add hl, bc    ; advance pointer to forbidden move
 	ld [hl], $50  ; forbid (highly discourage) disabled move
 .noMoveDisabled
+IF DEF(_HARD)
+	; OPT-5.28.00: Hard mode keeps the legacy ordered modifier-list format,
+	; but trainer classes select those lists through a pointer table. All current
+	; classes share one 1,4,0 list; any class can later point to its own arbitrary
+	; ordered/repeating list without changing the decoder or encoding rules.
+	ld a, [wTrainerAINumber]
+	dec a
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, TrainerClassMoveChoiceModificationPointers
+	add hl, bc
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+ELSE
 	ld hl, TrainerClassMoveChoiceModifications
 	ld a, [wTrainerAINumber]
 	ld b, a
@@ -30,6 +46,7 @@ AIEnemyTrainerChooseMoves:
 	jr nz, .loopTrainerClassData
 	jr .loopTrainerClasses
 .readTrainerClassData
+ENDC
 	ld a, [hl]
 	and a
 	jp z, .useOriginalMoveSet
@@ -580,8 +597,10 @@ AIMoveChoiceModification3:
 	jr z, .nextMove
 	inc [hl] ; slightly discourage this move
 	jr .nextMove
-AIMoveChoiceModification4:
-	ret
+; OPT-5.28.00: this historical empty stub has no callers; slot 4 already
+; points directly to SmartAI. Keep it documented without allocating ROM.
+; AIMoveChoiceModification4:
+;	ret
 
 ReadMove:
 	push hl
@@ -597,58 +616,65 @@ ReadMove:
 
 ; move choice modification methods that are applied for each trainer class
 ; 0 is sentinel value
-TrainerClassMoveChoiceModifications:
 IF DEF(_HARD) ; Hard Version
-	db 1,4,0  ; YOUNGSTER
-	db 1,4,0  ; BUG CATCHER
-	db 1,4,0  ; LASS
-	db 1,4,0  ; SAILOR
-	db 1,4,0  ; JR__TRAINER_M
-	db 1,4,0  ; JR__TRAINER_F
-	db 1,4,0  ; POKEMANIAC
-	db 1,4,0  ; SUPER_NERD
-	db 1,4,0  ; HIKER
-	db 1,4,0  ; BIKER
-	db 1,4,0  ; BURGLAR
-	db 1,4,0  ; ENGINEER
-	db 1,4,0  ; Couple
-	db 1,4,0  ; FISHER
-	db 1,4,0  ; SWIMMER
-	db 1,4,0  ; CUE_BALL
-	db 1,4,0  ; GAMBLER
-	db 1,4,0  ; BEAUTY
-	db 1,4,0  ; PSYCHIC_TR
-	db 1,4,0  ; ROCKER
-	db 1,4,0  ; JUGGLER
-	db 1,4,0  ; TAMER
-	db 1,4,0  ; BIRD_KEEPER
-	db 1,4,0  ; BLACKBELT
-	db 1,4,0  ; SONY1
-	db 1,4,0  ; SWIMMER_F
-	db 1,4,0  ; ROCKET_F
-	db 1,4,0  ; SCIENTIST
-	db 1,4,0  ; GIOVANNI
-	db 1,4,0  ; ROCKET
-	db 1,4,0  ; COOLTRAINER_M
-	db 1,4,0  ; COOLTRAINER_F
-	db 1,4,0  ; BRUNO
-	db 1,4,0  ; BROCK
-	db 1,4,0  ; MISTY
-	db 1,4,0  ; LT_SURGE
-	db 1,4,0  ; ERIKA
-	db 1,4,0  ; KOGA
-	db 1,4,0  ; BLAINE
-	db 1,4,0  ; SABRINA
-	db 1,4,0  ; GENTLEMAN
-	db 1,4,0  ; SONY2
-	db 1,4,0  ; SONY3
-	db 1,4,0  ; LORELEI
-	db 1,4,0  ; CHANNELER
-	db 1,4,0  ; AGATHA
-	db 1,4,0  ; LANCE
-	db 1,4,0  ; HEX_MANIAC
-	db 1,4,0  ; TRAINER
+TrainerClassMoveChoiceModificationPointers:
+	dw HardTrainerAIMods_Default  ; YOUNGSTER
+	dw HardTrainerAIMods_Default  ; BUG CATCHER
+	dw HardTrainerAIMods_Default  ; LASS
+	dw HardTrainerAIMods_Default  ; SAILOR
+	dw HardTrainerAIMods_Default  ; JR__TRAINER_M
+	dw HardTrainerAIMods_Default  ; JR__TRAINER_F
+	dw HardTrainerAIMods_Default  ; POKEMANIAC
+	dw HardTrainerAIMods_Default  ; SUPER_NERD
+	dw HardTrainerAIMods_Default  ; HIKER
+	dw HardTrainerAIMods_Default  ; BIKER
+	dw HardTrainerAIMods_Default  ; BURGLAR
+	dw HardTrainerAIMods_Default  ; ENGINEER
+	dw HardTrainerAIMods_Default  ; Couple
+	dw HardTrainerAIMods_Default  ; FISHER
+	dw HardTrainerAIMods_Default  ; SWIMMER
+	dw HardTrainerAIMods_Default  ; CUE_BALL
+	dw HardTrainerAIMods_Default  ; GAMBLER
+	dw HardTrainerAIMods_Default  ; BEAUTY
+	dw HardTrainerAIMods_Default  ; PSYCHIC_TR
+	dw HardTrainerAIMods_Default  ; ROCKER
+	dw HardTrainerAIMods_Default  ; JUGGLER
+	dw HardTrainerAIMods_Default  ; TAMER
+	dw HardTrainerAIMods_Default  ; BIRD_KEEPER
+	dw HardTrainerAIMods_Default  ; BLACKBELT
+	dw HardTrainerAIMods_Default  ; SONY1
+	dw HardTrainerAIMods_Default  ; SWIMMER_F
+	dw HardTrainerAIMods_Default  ; ROCKET_F
+	dw HardTrainerAIMods_Default  ; SCIENTIST
+	dw HardTrainerAIMods_Default  ; GIOVANNI
+	dw HardTrainerAIMods_Default  ; ROCKET
+	dw HardTrainerAIMods_Default  ; COOLTRAINER_M
+	dw HardTrainerAIMods_Default  ; COOLTRAINER_F
+	dw HardTrainerAIMods_Default  ; BRUNO
+	dw HardTrainerAIMods_Default  ; BROCK
+	dw HardTrainerAIMods_Default  ; MISTY
+	dw HardTrainerAIMods_Default  ; LT_SURGE
+	dw HardTrainerAIMods_Default  ; ERIKA
+	dw HardTrainerAIMods_Default  ; KOGA
+	dw HardTrainerAIMods_Default  ; BLAINE
+	dw HardTrainerAIMods_Default  ; SABRINA
+	dw HardTrainerAIMods_Default  ; GENTLEMAN
+	dw HardTrainerAIMods_Default  ; SONY2
+	dw HardTrainerAIMods_Default  ; SONY3
+	dw HardTrainerAIMods_Default  ; LORELEI
+	dw HardTrainerAIMods_Default  ; CHANNELER
+	dw HardTrainerAIMods_Default  ; AGATHA
+	dw HardTrainerAIMods_Default  ; LANCE
+	dw HardTrainerAIMods_Default  ; HEX_MANIAC
+	dw HardTrainerAIMods_Default  ; TRAINER
+assert @ - TrainerClassMoveChoiceModificationPointers == PKMN_TRAINER * 2
+
+; Current Hard-mode default. The list keeps the original sentinel format,
+; so per-class overrides may preserve arbitrary order, repetition and length.
+HardTrainerAIMods_Default:
+	db 1,4,0
 ELSE ; Normal Version
+TrainerClassMoveChoiceModifications:
 	db 0      ; YOUNGSTER
 	db 1,0    ; BUG CATCHER
 	db 1,0    ; LASS
@@ -1239,12 +1265,14 @@ AICureStatus:
 	res 0,[hl]
 	ret
 
-AIUseXAccuracy: ; unused
-	call AIPlayRestoringSFX
-	ld hl,wEnemyBattleStatus2
-	set 0,[hl]
-	ld a,X_ACCURACY
-	jp AIPrintItemUse
+; OPT-5.28.00: AIUseXAccuracy has no active callers; retain its previous source
+; here for future reuse without spending ROM.
+; AIUseXAccuracy: ; unused
+;	call AIPlayRestoringSFX
+;	ld hl,wEnemyBattleStatus2
+;	set 0,[hl]
+;	ld a,X_ACCURACY
+;	jp AIPrintItemUse
 
 AIUseGuardSpec:
 	call AIPlayRestoringSFX
@@ -1253,12 +1281,14 @@ AIUseGuardSpec:
 	ld a,GUARD_SPEC
 	jp AIPrintItemUse
 
-AIUseDireHit: ; unused
-	call AIPlayRestoringSFX
-	ld hl,wEnemyBattleStatus2
-	set 2,[hl]
-	ld a,DIRE_HIT
-	jp AIPrintItemUse
+; OPT-5.28.00: AIUseDireHit has no active callers; retain its previous source
+; here for future reuse without spending ROM.
+; AIUseDireHit: ; unused
+;	call AIPlayRestoringSFX
+;	ld hl,wEnemyBattleStatus2
+;	set 2,[hl]
+;	ld a,DIRE_HIT
+;	jp AIPrintItemUse
 
 AICheckIfHPBelowFraction:
 ; return carry if enemy trainer's current HP is below 1 / a of the maximum
@@ -1301,10 +1331,12 @@ AIUseXSpeed:
 	ld a,X_SPEED
 	jr AIIncreaseStat
 
-AIUseXSpecial:
-	ld b,$D
-	ld a,X_SPECIAL
-	; fallthrough
+; OPT-5.28.00: AIUseXSpecial has no active callers; retain its previous source
+; here for future reuse without spending ROM.
+; AIUseXSpecial:
+;	ld b,$D
+;	ld a,X_SPECIAL
+;	; fallthrough
 
 AIIncreaseStat:
 	ld [wAIItem],a

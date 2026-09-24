@@ -2570,6 +2570,10 @@ ItemUseTMHM:
 	add a,55 ; if item is an HM, add 55
 .skipAdding
 	inc a
+	; OPT-5.28.00: preserve the actual 1..55 machine slot before TMToMove
+	; replaces wd11e with the taught move ID. This keeps compatibility checks
+	; correct even when two machines teach the same move.
+	ld [wSelectedMachineIndex],a
 	ld [wd11e],a
 	predef TMToMove ; get move ID from TM/HM ID
 	ld a,[wd11e]

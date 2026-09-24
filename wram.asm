@@ -1744,7 +1744,10 @@ wBattleMon:: battle_struct wBattleMon ; d014
 wTrainerClass:: ; d031
 	ds 1
 
-; unused?
+wSelectedMachineIndex::
+; OPT-5.28.00: this names the existing anonymous byte after wTrainerClass.
+; 1..55 = TM01..TM50/HM01..HM05 while ItemUseTMHM is active.
+; No following WRAM symbol moves and no WRAM is added.
 	ds 1
 	
 wTrainerPicID::
