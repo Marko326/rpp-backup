@@ -6,19 +6,12 @@ VermilionCityScript:
 	push hl
 	call nz, VermilionCityScript_197cb
 	pop hl
-	bit 5, [hl]
+; GYM-5.34.00: the gym switches use fixed cans, so Vermilion City no longer
+; needs to randomize the first switch whenever this map is entered.
 	res 5, [hl]
-	call nz, VermilionCityScript_197c0
 	ld hl, VermilionCityScriptPointers
 	ld a, [wVermilionCityCurScript]
 	jp CallFunctionInTable
-
-VermilionCityScript_197c0:
-	call Random
-	ld a, [$ffd4]
-	and $e
-	ld [wFirstLockTrashCanIndex], a
-	ret
 
 VermilionCityScript_197cb:
 	CheckEventHL EVENT_SS_ANNE_LEFT

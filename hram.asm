@@ -280,6 +280,7 @@ hItemCounter EQU $FFDB
 
 hGymGateIndex EQU $FFDB
 
+; GYM-5.34.00: legacy alias retained; fixed switches no longer use RNG masking.
 hGymTrashCanRandNumMask EQU $FFDB
 
 hDexRatingNumMonsSeen  EQU $FFDB

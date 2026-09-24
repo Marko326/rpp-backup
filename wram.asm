@@ -1273,6 +1273,7 @@ wStandingOnWarpPadOrHole:: ; cd5b
 
 wOAMBaseTile:: ; cd5b
 
+; GYM-5.34.00: legacy trash-can scratch alias retained to preserve WRAM layout.
 wGymTrashCanIndex:: ; cd5b
 	ds 1
 
@@ -3483,6 +3484,8 @@ wCardKeyDoorX:: ; d740
 ; unused?
 	ds 2
 
+; GYM-5.34.00: legacy random-switch slots retained to preserve WRAM layout.
+; The fixed-switch puzzle no longer reads or writes either byte.
 wFirstLockTrashCanIndex:: ; d743
 	ds 1
 

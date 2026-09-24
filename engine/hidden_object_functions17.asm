@@ -312,10 +312,16 @@ VermilionGymTrashText:
 	TX_FAR _VermilionGymTrashText
 	db "@"
 
+; GYM-5.34.00: keep the two-switch puzzle, but use a fixed adjacent pair.
+; Hidden-object arguments are stable can indices, so changing these two
+; constants is enough to move either switch without rebuilding a lookup table.
+DEF VERMILION_GYM_FIRST_SWITCH_CAN  EQU 7
+DEF VERMILION_GYM_SECOND_SWITCH_CAN EQU 10
+
 GymTrashScript:
 	call EnableAutoTextBoxDrawing
 	ld a, [wHiddenObjectFunctionArgument]
-	ld [wGymTrashCanIndex], a
+	ld b, a
 
 ; Don't do the trash can puzzle if it's already been done.
 	CheckEvent EVENT_2ND_LOCK_OPENED
@@ -327,74 +333,28 @@ GymTrashScript:
 	CheckEventReuseA EVENT_1ST_LOCK_OPENED
 	jr nz, .trySecondLock
 
-	ld a, [wFirstLockTrashCanIndex]
-	ld b, a
-	ld a, [wGymTrashCanIndex]
-	cp b
+	ld a, b
+	cp VERMILION_GYM_FIRST_SWITCH_CAN
 	jr z, .openFirstLock
 
 	tx_pre_id VermilionGymTrashText
 	jr .done
 
 .openFirstLock
-; Next can is trying for the second switch.
+; Next can is trying for the fixed adjacent second switch.
 	SetEvent EVENT_1ST_LOCK_OPENED
-
-	ld hl, GymTrashCans
-	ld a, [wGymTrashCanIndex]
-	; * 5
-	ld b, a
-	add a
-	add a
-	add b
-
-	ld d, 0
-	ld e, a
-	add hl, de
-	ld a, [hli]
-
-; There is a bug in this code. It should calculate a value in the range [0, 3]
-; but if the mask and random number don't have any 1 bits in common, then
-; the result of the AND will be 0. When 1 is subtracted from that, the value
-; will become $ff. This will result in 255 being added to hl, which will cause
-; hl to point to one of the zero bytes that pad the end of the ROM bank.
-; Trash can 0 was intended to be able to have the second lock only when the
-; first lock was in trash can 1 or 3. However, due to this bug, trash can 0 can
-; have the second lock regardless of which trash can had the first lock.
-
-	ld [hGymTrashCanRandNumMask], a
-	push hl
-	call Random
-	swap a
-	ld b, a
-	ld a, [hGymTrashCanRandNumMask]
-	and b
-	dec a
-	pop hl
-
-	ld d, 0
-	ld e, a
-	add hl, de
-	ld a, [hl]
-	and $f
-	ld [wSecondLockTrashCanIndex], a
 
 	tx_pre_id VermilionGymTrashSuccessText1
 	jr .done
 
 .trySecondLock
-	ld a, [wSecondLockTrashCanIndex]
-	ld b, a
-	ld a, [wGymTrashCanIndex]
-	cp b
+	ld a, b
+	cp VERMILION_GYM_SECOND_SWITCH_CAN
 	jr z, .openSecondLock
 
-; Reset the cans.
+; Reset the first switch after a wrong second choice. The switch positions
+; stay fixed, so the old reroll and random-neighbor state are unnecessary.
 	ResetEvent EVENT_1ST_LOCK_OPENED
-	call Random
-
-	and $e
-	ld [wFirstLockTrashCanIndex], a
 
 	tx_pre_id VermilionGymTrashFailText
 	jr .done
@@ -409,29 +369,6 @@ GymTrashScript:
 
 .done
 	jp PrintPredefTextID
-
-GymTrashCans:
-; byte 0: mask for random number
-; bytes 1-4: indices of the trash cans that can have the second lock
-;            (but see the comment above explaining a bug regarding this)
-; Note that the mask is simply the number of valid trash can indices that
-; follow. The remaining bytes are filled with 0 to pad the length of each entry
-; to 5 bytes.
-	db 2,  1,  3,  0,  0 ; 0
-	db 3,  0,  2,  4,  0 ; 1
-	db 2,  1,  5,  0,  0 ; 2
-	db 3,  0,  4,  6,  0 ; 3
-	db 4,  1,  3,  5,  7 ; 4
-	db 3,  2,  4,  8,  0 ; 5
-	db 3,  3,  7,  9,  0 ; 6
-	db 4,  4,  6,  8, 10 ; 7
-	db 3,  5,  7, 11,  0 ; 8
-	db 3,  6, 10, 12,  0 ; 9
-	db 4,  7,  9, 11, 13 ; 10
-	db 3,  8, 10, 14,  0 ; 11
-	db 2,  9, 13,  0,  0 ; 12
-	db 3, 10, 12, 14,  0 ; 13
-	db 2, 11, 13,  0,  0 ; 14
 
 VermilionGymTrashSuccessText1:
 	TX_FAR _VermilionGymTrashSuccessText1
@@ -474,9 +411,5 @@ VermilionGymTrashFailText:
 	call WaitForSoundToFinish
 	jp TextScriptEnd
 
-; Trash cans are broken and can read the 255th entry sometimes for
-; the second can.
-; rgblink was placing stuff here, so the behavior was different from
-; original Red.  This is the simplest non-code fix: allocate zeroes as
-; far as the broken code could reach.
-	ds 255
+; GYM-5.34.00: the old random-neighbor code and its out-of-bounds read were
+; removed, so the former 255-byte compatibility padding is no longer needed.
