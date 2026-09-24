@@ -34,75 +34,13 @@ BrunoScriptPointers:
 	dw BrunoScript0
 	dw DisplayEnemyTrainerTextAndStartBattle
 	dw BrunoScript2
-	dw BrunoScript3
-	dw BrunoScript4
-
-BrunoScript4:
-	ret
-
-BrunoScriptWalkIntoRoom:
-; Walk six steps upward.
-	ld hl, wSimulatedJoypadStatesEnd
-	ld a, D_UP
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hl], a
-	ld a, $6
-	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
-	ld a, $3
-	ld [wBrunoCurScript], a
-	ld [wCurMapScript], a
-	ret
+	dw EliteFourRoomEntranceWait
+	dw EliteFourRoomNoOp
 
 BrunoScript0:
-	ld hl, BrunoEntranceCoords
-	call ArePlayerCoordsInArray
-	jp nc, CheckFightingMapTrainers
-	xor a
-	ld [hJoyPressed], a
-	ld [hJoyHeld], a
-	ld [wSimulatedJoypadStatesEnd], a
-	ld [wSimulatedJoypadStatesIndex], a
-	ld a, [wCoordIndex]
-	cp $3  ; Is player standing one tile above the exit?
-	jr c, .stopPlayerFromLeaving
-	CheckAndSetEvent EVENT_AUTOWALKED_INTO_BRUNOS_ROOM
-	jr z, BrunoScriptWalkIntoRoom
-.stopPlayerFromLeaving
-	ld a, $2
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID  ; "Don't run away!"
-	ld a, D_UP
-	ld [wSimulatedJoypadStatesEnd], a
-	ld a, $1
-	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
-	ld a, $3
-	ld [wBrunoCurScript], a
-	ld [wCurMapScript], a
-	ret
-
-BrunoEntranceCoords:
-	db $0A,$04
-	db $0A,$05
-	db $0B,$04
-	db $0B,$05
-	db $FF
-
-BrunoScript3:
-	ld a, [wSimulatedJoypadStatesIndex]
-	and a
-	ret nz
-	call Delay3
-	xor a
-	ld [wJoyIgnore], a
-	ld [wBrunoCurScript], a
-	ld [wCurMapScript], a
-	ret
+	EventFlagAddress de, EVENT_AUTOWALKED_INTO_BRUNOS_ROOM
+	ld b, 1 << (EVENT_AUTOWALKED_INTO_BRUNOS_ROOM % 8)
+	jp EliteFourRoomEntranceScript
 
 BrunoScript2:
 	call EndTrainerBattle

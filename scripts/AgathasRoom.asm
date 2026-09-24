@@ -34,75 +34,13 @@ AgathaScriptPointers:
 	dw AgathaScript0
 	dw DisplayEnemyTrainerTextAndStartBattle
 	dw AgathaScript2
-	dw AgathaScript3
-	dw AgathaScript4
-
-AgathaScript4:
-	ret
-
-AgathaScriptWalkIntoRoom:
-; Walk six steps upward.
-	ld hl, wSimulatedJoypadStatesEnd
-	ld a, D_UP
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hli], a
-	ld [hl], a
-	ld a, $6
-	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
-	ld a, $3
-	ld [wAgathaCurScript], a
-	ld [wCurMapScript], a
-	ret
+	dw EliteFourRoomEntranceWait
+	dw EliteFourRoomNoOp
 
 AgathaScript0:
-	ld hl, AgathaEntranceCoords
-	call ArePlayerCoordsInArray
-	jp nc, CheckFightingMapTrainers
-	xor a
-	ld [hJoyPressed], a
-	ld [hJoyHeld], a
-	ld [wSimulatedJoypadStatesEnd], a
-	ld [wSimulatedJoypadStatesIndex], a
-	ld a, [wCoordIndex]
-	cp $3  ; Is player standing one tile above the exit?
-	jr c, .stopPlayerFromLeaving
-	CheckAndSetEvent EVENT_AUTOWALKED_INTO_AGATHAS_ROOM
-	jr z, AgathaScriptWalkIntoRoom
-.stopPlayerFromLeaving
-	ld a, $2
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID  ; "Don't run away!"
-	ld a, D_UP
-	ld [wSimulatedJoypadStatesEnd], a
-	ld a, $1
-	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
-	ld a, $3
-	ld [wAgathaCurScript], a
-	ld [wCurMapScript], a
-	ret
-
-AgathaEntranceCoords:
-	db $0A,$04
-	db $0A,$05
-	db $0B,$04
-	db $0B,$05
-	db $FF
-
-AgathaScript3:
-	ld a, [wSimulatedJoypadStatesIndex]
-	and a
-	ret nz
-	call Delay3
-	xor a
-	ld [wJoyIgnore], a
-	ld [wAgathaCurScript], a
-	ld [wCurMapScript], a
-	ret
+	EventFlagAddress de, EVENT_AUTOWALKED_INTO_AGATHAS_ROOM
+	ld b, 1 << (EVENT_AUTOWALKED_INTO_AGATHAS_ROOM % 8)
+	jp EliteFourRoomEntranceScript
 
 AgathaScript2:
 	call EndTrainerBattle
