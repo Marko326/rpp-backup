@@ -866,8 +866,8 @@ HandleEnemyMonFainted:
 	ld a, [hli]
 	or [hl] ; does battle mon have 0 HP?
 	jr nz, .skipReplacingBattleMon ; if not, skip replacing battle mon
-	call DoUseNextMonDialogue ; this call is useless in a trainer battle. it shouldn't be here
-	ret c
+	; CLEAN-5.27.04: this path is already a trainer battle, so the wild-only
+	; UseNextMon dialogue would immediately return and is intentionally skipped.
 	call ChooseNextMon
 .skipReplacingBattleMon
 	ld a, $1
@@ -1515,9 +1515,8 @@ EnemySendOutFirstMon:
 	ld [wLastSwitchInEnemyMonHP],a
 	ld a,[hl]
 	ld [wLastSwitchInEnemyMonHP + 1],a
-	ld a,1
-	ld [wCurrentMenuItem],a
-	; 强制使用 Set 模式，不进入 Shift 模式的换宠询问与队伍菜单流程。
+	; CLEAN-5.27.04: Battle Style is permanently Set. The old Shift-mode
+	; pre-switch menu state is no longer created here.
 	call ClearSprites
 	coord hl, 0, 0
 	lb bc, 4, 11
@@ -1552,14 +1551,7 @@ EnemySendOutFirstMon:
 	ld a,[wEnemyMonSpecies2]
 	call PlayCry
 	call DrawEnemyHUDAndHPBar
-	ld a,[wCurrentMenuItem]
-	and a
-	ret nz
-	xor a
-	ld [wPartyGainExpFlags],a
-	ld [wPartyFoughtCurrentEnemyFlags],a
-	call SaveScreenTilesToBuffer1
-	jp SwitchPlayerMon
+	ret
 
 TrainerSentOutText:
 	TX_FAR _TrainerSentOutText
@@ -1771,7 +1763,6 @@ LoadBattleMonFromParty:
 	ld bc, 1 + NUM_STATS * 2
 	call CopyData
 	call ApplyBurnAndParalysisPenaltiesToPlayer
-	call ApplyBadgeStatBoosts
 	ld a, $7 ; default stat modifier
 	ld b, NUM_STAT_MODS
 	ld hl, wPlayerMonAttackMod
@@ -6644,65 +6635,8 @@ RecalculateBattleStatFromModifier:
 	pop hl
 	ret
 
-ApplyBadgeStatBoosts:
-IF DEF (_HARD)
-	; Hard Mode does not have Badges boost your stats
-	ret
-ELSE
-	; Normal Mode keeps this in place
-	ld a, [wLinkState]
-	cp LINK_STATE_BATTLING
-	ret z ; return if link battle
-	ld a, [wObtainedKantoBadges]
-	ld b, a
-	ld hl, wBattleMonAttack
-	ld c, $4
-; the boost is applied for badges whose bit position is even
-; the order of boosts matches the order they are laid out in RAM
-; Boulder (bit 0) - attack
-; Thunder (bit 2) - defense
-; Soul (bit 4) - speed
-; Volcano (bit 6) - special
-.loop
-	srl b
-	call c, .applyBoostToStat
-	inc hl
-	inc hl
-	srl b
-	dec c
-	jr nz, .loop
-	ret
-
-; multiply stat at hl by 1.125
-; cap stat at 999
-.applyBoostToStat
-	ld a, [hli]
-	ld d, a
-	ld e, [hl]
-	srl d
-	rr e
-	srl d
-	rr e
-	srl d
-	rr e
-	ld a, [hl]
-	add e
-	ld [hld], a
-	ld a, [hl]
-	adc d
-	ld [hli], a
-	ld a, [hld]
-	sub 999 % $100
-	ld a, [hl]
-	sbc 999 / $100
-	ret c
-	ld a, 999 / $100
-	ld [hli], a
-	ld a, 999 % $100
-	ld [hld], a
-	ret
-ENDC
-
+; CLEAN-5.27.03: _HARD is globally fixed, so the obsolete badge stat boost routine
+; and all of its battle-time calls were removed. Badge ownership/permissions are unchanged.
 LoadHudAndHpBarAndStatusTilePatterns:
 	call LoadHpBarAndStatusTilePatterns
 
@@ -7662,7 +7596,7 @@ UpdateStatDone:
 	call PlayCurrentMoveAnimation
 	ld a, [de]
 	cp MINIMIZE
-	jr nz, .applyBadgeBoostsAndStatusPenalties
+	jr nz, .applyStatusPenalties
 	pop bc
 	ld a, $1
 	ld [bc], a
@@ -7670,11 +7604,7 @@ UpdateStatDone:
 	ld b, BANK(ReshowSubstituteAnim)
 	pop af
 	call nz, Bankswitch
-.applyBadgeBoostsAndStatusPenalties
-	ld a, [H_WHOSETURN]
-	and a
-	call z, ApplyBadgeStatBoosts ; whenever the player uses a stat-up move, badge boosts get reapplied again to every stat,
-	                             ; even to those not affected by the stat-up move (will be boosted further)
+.applyStatusPenalties
 	ld hl, MonsStatsRoseText
 	call PrintText
 
@@ -7842,13 +7772,9 @@ UpdateLoweredStatDone:
 	pop de
 	ld a, [de]
 	cp $44
-	jr nc, .ApplyBadgeBoostsAndStatusPenalties
+	jr nc, .ApplyStatusPenalties
 	call PlayCurrentMoveAnimation2
-.ApplyBadgeBoostsAndStatusPenalties
-	ld a, [H_WHOSETURN]
-	and a
-	call nz, ApplyBadgeStatBoosts ; whenever the player uses a stat-down move, badge boosts get reapplied again to every stat,
-	                              ; even to those not affected by the stat-up move (will be boosted further)
+.ApplyStatusPenalties
 	ld hl, MonsStatsFellText
 	call PrintText
 
