@@ -768,6 +768,8 @@ SECTION "Cries", ROMX
 
 CryHeaders:: INCLUDE "crysaudio/cry_headers.asm"
 
+INCLUDE "crysaudio/cry_header_decoder.asm"
+
 INCLUDE "crysaudio/cries.asm"
 
 

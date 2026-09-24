@@ -191,8 +191,8 @@ PlayCry::
 	push bc
 	push af
 	ld [wd11e], a
-	predef IndexToPokedex
-	ld a, [wd11e]
+	; CRY-5.32.01: cry headers are keyed directly by internal species ID.
+	; This avoids coupling cry data to Pokédex ordering if those mappings diverge.
 	dec a
 	ld e, a
 	ld d, 0
@@ -201,33 +201,12 @@ PlayCry::
 	ld a, [hROMBank]
 	push af
 
-; Cry headers are stuck in one bank.
+; Cry headers and their decoder are stuck in one bank.
 	ld a, BANK(CryHeaders)
 	ld [hROMBank], a
 	ld [$2000], a
 
-; Each header is 6 bytes long:
-	ld hl, CryHeaders
-	add hl, de
-	add hl, de
-	add hl, de
-	add hl, de
-	add hl, de
-	add hl, de
-
-	ld e, [hl]
-	inc hl
-	ld d, [hl]
-	inc hl
-
-	ld a, [hli]
-	ld [CryPitch], a
-	ld a, [hli]
-	ld [CryEcho], a
-	ld a, [hli]
-	ld [CryLength], a
-	ld a, [hl]
-	ld [CryLength+1], a
+	call DecodePackedCryHeader
 
 	ld a, BANK(PlayCry_)
 	ld [hROMBank], a
