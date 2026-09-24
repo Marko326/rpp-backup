@@ -1818,28 +1818,11 @@ ListMenuCancelText::
 	db "Cancel@"
 
 GetMonName::
+	; NAME-5.29.01: packed Pokémon names are block-indexed in bank 7.
+	; GetPackedMonName reads wd11e itself because callba clobbers A while
+	; switching banks. Keep the legacy contract: preserve HL, DE = wcd6d.
 	push hl
-	ld a,[H_LOADEDROMBANK]
-	push af
-	ld a,BANK(MonsterNames)
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
-	ld a,[wd11e]
-	dec a
-	ld hl,MonsterNames
-	ld c,10
-	ld b,0
-	call AddNTimes
-	ld de,wcd6d
-	push de
-	ld bc,10
-	call CopyData
-	ld hl,wcd6d + 10
-	ld [hl], "@"
-	pop de
-	pop af
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
+	callba GetPackedMonName
 	pop hl
 	ret
 
@@ -3290,8 +3273,8 @@ GetName::
 	jr nz,.nextName
 
 	; Types 2-4 are packed ROM tables (type 3 aliases MoveNames), and type 7 is
-	; the packed trainer table. MONSTER_NAME keeps the legacy fixed-record path;
-	; types 5/6 are RAM OT-name lists and stay raw.
+	; the packed trainer table. MONSTER_NAME uses its dedicated packed block-index
+	; path in GetMonName; types 5/6 are RAM OT-name lists and stay raw.
 	ld a,[wNameListType]
 	cp PLAYEROT_NAME
 	jr c,.packedName

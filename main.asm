@@ -386,6 +386,10 @@ DiglettsCaveEntranceRoute11Blocks:
 DiglettsCaveRoute2Blocks: INCBIN "maps/DiglettsCaveExit.blk"
 
 INCLUDE "text/monster_names.asm"
+; NAME-5.29.01: Pokémon-name lookup lives beside the compressed table in bank 7.
+; The existing shared packed-name decoder stays in bank $34 so Move/Item/Trainer
+; name handling keeps its previous bank layout and call path unchanged.
+INCLUDE "engine/monster_name_lookup.asm"
 
 INCLUDE "engine/clear_save.asm"
 

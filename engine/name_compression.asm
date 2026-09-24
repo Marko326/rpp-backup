@@ -1,4 +1,4 @@
-; Shared decoder for packed Move / Item / Trainer names.
+; Shared decoder for packed Pokémon / Move / Item / Trainer names.
 ; GetName locates the selected packed entry in its source bank, then stores the
 ; source pointer/bank/length in wcd6d[0..3] before calling here. The decoder
 ; loads that metadata before it reuses the same buffer for the packed stream.

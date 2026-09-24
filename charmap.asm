@@ -268,8 +268,8 @@ charmap "7", $FD
 charmap "8", $FE
 charmap "9", $FF
 
-; Shared packed-name charmap. Token bytes $01-$40 are private to the three
-; packed ROM name tables that explicitly SETCHARMAP packed_names. The normal main
+; Shared packed-name charmap. Token bytes $01-$40 are private to the packed ROM
+; name tables that explicitly SETCHARMAP packed_names. The normal main
 ; charmap remains active everywhere else.
 NEWCHARMAP packed_names, main
 CHARMAP "er", $01
