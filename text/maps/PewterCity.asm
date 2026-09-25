@@ -20,29 +20,14 @@ _PewterCityText2::
 	cont "into it!"
 	done
 
-_PewterCityText_193f1::
-	text "Did you check out"
-	line "the Museum?"
-	done
+_PewterCityText3::
+	text "You should visit"
+	line "the MUSEUM!"
 
-_PewterCityText_193f6::
-	text "Weren't those"
-	line "fossils from Mt."
-	cont "Moon amazing?"
-	done
+	para "They have fossils"
+	line "from MT.MOON!"
 
-_PewterCityText_193fb::
-	text "Really?"
-	line "You absolutely"
-	cont "have to go!"
-	done
-
-_PewterCityText13::
-	text "It's right here!"
-	line "You have to pay"
-	cont "to get in, but"
-	cont "it's worth it!"
-	cont "See you around!"
+	para "They're amazing!"
 	done
 
 _PewterCityText_19427::

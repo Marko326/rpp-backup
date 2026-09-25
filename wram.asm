@@ -2377,8 +2377,7 @@ wDungeonWarpDataEntrySize:: ; d12f
 ; the size is always 6, so they didn't need a variable in RAM for this
 
 wWhichPewterGuy:: ; d12f
-; 0 = museum guy
-; 1 = gym guy
+; PWT-5.40.03: legacy/reserved Pewter guide scratch alias; keep WRAM layout stable.
 
 wWhichPrizeWindow:: ; d12f
 ; there are 3 windows, from 0 to 2

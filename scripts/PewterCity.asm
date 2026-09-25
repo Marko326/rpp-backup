@@ -6,12 +6,9 @@ PewterCityScript:
 
 PewterCityScriptPointers:
 	dw PewterCityScript0
-	dw PewterCityScript1
-	dw PewterCityScript2
-	dw PewterCityScript3
-	dw PewterCityScript4
-	dw PewterCityScript5
-	dw PewterCityScript6
+	dw PewterCityGymGuideArrived
+	dw PewterCityGymGuideExitWait
+	dw PewterCityGymGuideRestore
 
 PewterCityTextPointers:
 	dw PewterCityText1
@@ -57,75 +54,9 @@ CoordsData_19277:
 	db $13,$25
 	db $ff
 
-PewterCityScript1:
-	ld a, [wNPCMovementScriptPointerTableNum]
-	and a
-	ret nz
-	ld a, $3
-	ld [H_SPRITEINDEX], a
-	ld a, SPRITE_FACING_UP
-	ld [hSpriteFacingDirection], a
-	call SetSpriteFacingDirectionAndDelay
-	ld a, ($3 << 4) | SPRITE_FACING_UP
-	ld [hSpriteImageIndex], a
-	call SetSpriteImageIndexAfterSettingFacingDirection
-	call PlayDefaultMusic
-	ld hl, wFlags_0xcd60
-	set 4, [hl]
-	ld a, $f
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	ld a, $3c
-	ld [$ffeb], a
-	ld a, $30
-	ld [$ffec], a
-	ld a, $c
-	ld [$ffed], a
-	ld a, $11
-	ld [$ffee], a
-	ld a, $3
-	ld [wSpriteIndex], a
-	call SetSpritePosition1
-	ld a, $3
-	ld [H_SPRITEINDEX], a
-	ld de, MovementData_PewterMuseumGuyExit
-	call MoveSprite
-	ld a, $2
-	ld [wPewterCityCurScript], a
-	ret
-
-MovementData_PewterMuseumGuyExit:
-	db NPC_MOVEMENT_DOWN
-	db NPC_MOVEMENT_DOWN
-	db NPC_MOVEMENT_DOWN
-	db NPC_MOVEMENT_DOWN
-	db $FF
-
-PewterCityScript2:
-	ld a, [wd730]
-	bit 0, a
-	ret nz
-	ld a, HS_MUSEUM_GUY
-	ld [wMissableObjectIndex], a
-	predef HideObject
-	ld a, $3
-	ld [wPewterCityCurScript], a
-	ret
-
-PewterCityScript3:
-	ld a, $3
-	ld [wSpriteIndex], a
-	call SetSpritePosition2
-	ld a, HS_MUSEUM_GUY
-	ld [wMissableObjectIndex], a
-	predef ShowObject
-	xor a
-	ld [wJoyIgnore], a
-	ld a, $0
-	ld [wPewterCityCurScript], a
-	ret
-
-PewterCityScript4:
+; PWT-5.40.03: the Museum NPC is a normal town NPC again; only the Gym
+; guide keeps scripted movement, arrival dialogue, exit animation, and restore.
+PewterCityGymGuideArrived:
 	ld a, [wNPCMovementScriptPointerTableNum]
 	and a
 	ret nz
@@ -154,11 +85,32 @@ PewterCityScript4:
 	ld a, $5
 	ld [wSpriteIndex], a
 	call SetSpritePosition1
-	ld a, $5
-	ld [H_SPRITEINDEX], a
 	ld de, MovementData_PewterGymGuyExit
 	call MoveSprite
+	ld a, $2
+	ld [wPewterCityCurScript], a
+	ret
+
+PewterCityGymGuideExitWait:
+	ld a, [wd730]
+	bit 0, a
+	ret nz
+	ld a, HS_GYM_GUY
+	ld [wMissableObjectIndex], a
+	predef HideObject
+	ld a, $3
+	ld [wPewterCityCurScript], a
+	ret
+
+PewterCityGymGuideRestore:
 	ld a, $5
+	ld [wSpriteIndex], a
+	call SetSpritePosition2
+	ld a, HS_GYM_GUY
+	ld [wMissableObjectIndex], a
+	predef ShowObject
+	xor a
+	ld [wJoyIgnore], a
 	ld [wPewterCityCurScript], a
 	ret
 
@@ -170,27 +122,18 @@ MovementData_PewterGymGuyExit:
 	db NPC_MOVEMENT_RIGHT
 	db $FF
 
-PewterCityScript5:
-	ld a, [wd730]
-	bit 0, a
-	ret nz
-	ld a, HS_GYM_GUY
-	ld [wMissableObjectIndex], a
-	predef HideObject
-	ld a, $6
-	ld [wPewterCityCurScript], a
-	ret
-
-PewterCityScript6:
+PewterCityStartGymGuide:
+	xor a
+	ld [hJoyHeld], a
+	ld [wNPCMovementScriptFunctionNum], a
+	ld a, $3 ; NPC movement table 3 = Gym guide
+	ld [wNPCMovementScriptPointerTableNum], a
+	ld a, [H_LOADEDROMBANK]
+	ld [wNPCMovementScriptBank], a
 	ld a, $5
 	ld [wSpriteIndex], a
-	call SetSpritePosition2
-	ld a, HS_GYM_GUY
-	ld [wMissableObjectIndex], a
-	predef ShowObject
-	xor a
-	ld [wJoyIgnore], a
-	ld a, $0
+	call GetSpritePosition2
+	ld a, $1
 	ld [wPewterCityCurScript], a
 	ret
 
@@ -203,49 +146,8 @@ PewterCityText2:
 	db "@"
 
 PewterCityText3:
-	TX_ASM
-	ld hl, PewterCityText_193f1
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
-	jr nz, .asm_193c9
-	ld hl, PewterCityText_193f6
-	call PrintText
-	jr .asm_193ee
-.asm_193c9
-	ld hl, PewterCityText_193fb
-	call PrintText
-	xor a
-	ld [hJoyPressed], a
-	ld [hJoyHeld], a
-	ld [wNPCMovementScriptFunctionNum], a
-	ld a, $2
-	ld [wNPCMovementScriptPointerTableNum], a
-	ld a, [H_LOADEDROMBANK]
-	ld [wNPCMovementScriptBank], a
-	ld a, $3
-	ld [wSpriteIndex], a
-	call GetSpritePosition2
-	ld a, $1
-	ld [wPewterCityCurScript], a
-.asm_193ee
-	jp TextScriptEnd
-
-PewterCityText_193f1:
-	TX_FAR _PewterCityText_193f1
-	db "@"
-
-PewterCityText_193f6:
-	TX_FAR _PewterCityText_193f6
-	db "@"
-
-PewterCityText_193fb:
-	TX_FAR _PewterCityText_193fb
-	db "@"
-
 PewterCityText13:
-	TX_FAR _PewterCityText13
+	TX_FAR _PewterCityText3
 	db "@"
 
 PewterCityText4:
@@ -281,18 +183,7 @@ PewterCityText5:
 	TX_ASM
 	ld hl, PewterCityText_1945d
 	call PrintText
-	xor a
-	ld [hJoyHeld], a
-	ld [wNPCMovementScriptFunctionNum], a
-	ld a, $3
-	ld [wNPCMovementScriptPointerTableNum], a
-	ld a, [H_LOADEDROMBANK]
-	ld [wNPCMovementScriptBank], a
-	ld a, $5
-	ld [wSpriteIndex], a
-	call GetSpritePosition2
-	ld a, $4
-	ld [wPewterCityCurScript], a
+	call PewterCityStartGymGuide
 	jp TextScriptEnd
 
 PewterCityText_1945d:

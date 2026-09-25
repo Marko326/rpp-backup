@@ -8,15 +8,8 @@ PewterGuys:
 	add hl, de
 	ld d, h
 	ld e, l
-	ld hl, PointerTable_37ce6
-	ld a, [wWhichPewterGuy]
-	add a
-	ld b, 0
-	ld c, a
-	add hl, bc
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
+	; PWT-5.40.03: only the Gym guide still uses this positioning helper.
+	ld hl, PewterGymGuyCoords
 	ld a, [wYCoord]
 	ld b, a
 	ld a, [wXCoord]
@@ -56,32 +49,6 @@ PewterGuys:
 	inc hl
 	inc hl
 	jr .findMatchingCoordsLoop
-
-PointerTable_37ce6:
-	dw PewterMuseumGuyCoords
-	dw PewterGymGuyCoords
-
-; these are the four coordinates of the spaces below, above, to the left and
-; to the right of the museum guy, and pointers to different movements for
-; the player to make to get positioned before the main movement.
-PewterMuseumGuyCoords:
-	db 18, 27
-	dw .down
-	db 16, 27
-	dw .up
-	db 17, 26
-	dw .left
-	db 17, 28
-	dw .right
-
-.down
-	db D_UP, D_UP, $ff
-.up
-	db D_RIGHT, D_LEFT, $ff
-.left
-	db D_UP, D_RIGHT, $ff
-.right
-	db D_UP, D_LEFT, $ff
 
 ; these are the five coordinates which trigger the gym guy and pointers to
 ; different movements for the player to make to get positioned before the

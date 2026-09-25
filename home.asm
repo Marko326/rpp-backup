@@ -2101,7 +2101,8 @@ RunNPCMovementScript::
 
 .NPCMovementScriptPointerTables
 	dw PalletMovementScriptPointerTable
-	dw PewterMuseumGuyMovementScriptPointerTable
+	; PWT-5.40.03: legacy Museum-guide table slot; no Museum movement remains.
+	dw PewterGymGuyMovementScriptPointerTable
 	dw PewterGymGuyMovementScriptPointerTable
 .playerStepOutFromDoor
 	jpba PlayerStepOutFromDoor
