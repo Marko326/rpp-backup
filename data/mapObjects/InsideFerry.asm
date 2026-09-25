@@ -9,7 +9,3 @@ InsideFerryObject:
 
 	db $1 ; people
 	db SPRITE_SS_CAPTAIN, $3 + 4, $3 + 4, $ff, $d1, $1 ; person
-
-	; warp-to
-	EVENT_DISP INSIDE_FERRY_WIDTH, $1, $5 ; VERMILION_FERRY_DOCK
-	EVENT_DISP INSIDE_FERRY_WIDTH, $1, $6 ; unused

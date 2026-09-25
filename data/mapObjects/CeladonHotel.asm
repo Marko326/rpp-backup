@@ -12,7 +12,3 @@ CeladonHotelObject:
 	object SPRITE_FOULARD_WOMAN, $2, $4, STAY, NONE, $2 ; person
 	object SPRITE_BLACK_HAIR_BOY_2, $8, $4, WALK, $2, $3 ; person
 	object SPRITE_BENCH_GUY, $0, $4, STAY, NONE, $4
-
-	; warp-to
-	EVENT_DISP CELADON_HOTEL_WIDTH, $7, $3
-	EVENT_DISP CELADON_HOTEL_WIDTH, $7, $4

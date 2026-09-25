@@ -9,6 +9,3 @@ Route15GateUpstairsObject:
 
 	db $1 ; objects
 	object SPRITE_OAK_AIDE, $4, $2, STAY, DOWN, $1
-
-	; warp-to
-	EVENT_DISP ROUTE_15_GATE_2F_WIDTH, $7, $7 ; ROUTE_15_GATE_1F

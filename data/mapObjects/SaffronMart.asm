@@ -11,7 +11,3 @@ SaffronMartObject:
 	object SPRITE_MART_GUY, $0, $5, STAY, RIGHT, $1 ; person
 	object SPRITE_BLACK_HAIR_BOY_2, $4, $2, STAY, NONE, $2 ; person
 	object SPRITE_LASS, $7, $5, WALK, $0, $3 ; person
-
-	; warp-to
-	EVENT_DISP SAFFRON_MART_WIDTH, $7, $3
-	EVENT_DISP SAFFRON_MART_WIDTH, $7, $4

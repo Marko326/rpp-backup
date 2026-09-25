@@ -1487,6 +1487,8 @@ wTextPredefFlag:: ; cf11
 ;        to the current map's bank
 	ds 1
 
+; WDP-5.49.00: no longer used by destination warps; keep this byte reserved so
+; the existing WRAM layout and save/debug addresses do not move.
 wPredefParentBank:: ; cf12
 	ds 1
 

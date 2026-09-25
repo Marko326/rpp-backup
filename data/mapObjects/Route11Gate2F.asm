@@ -11,6 +11,3 @@ Route11GateUpstairsObject:
 	db $2 ; objects
 	object SPRITE_BUG_CATCHER, $4, $2, WALK, $2, $1 ; person
 	object SPRITE_OAK_AIDE, $2, $6, STAY, NONE, $2 ; person
-
-	; warp-to
-	EVENT_DISP ROUTE_11_GATE_2F_WIDTH, $7, $7 ; ROUTE_11_GATE_1F

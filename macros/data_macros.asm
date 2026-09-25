@@ -27,6 +27,8 @@ ENDM
 coins equs "bcd2"
 money equs "bcd3"
 
+; WDP-5.49.00: normal map-object warp destinations are reconstructed at runtime.
+; EVENT_DISP remains for FLYWARP_DATA and other explicit special-warp records.
 ;\1 = Map Width
 ;\2 = Rows above (Y-blocks)
 ;\3 = X movement (X-blocks)

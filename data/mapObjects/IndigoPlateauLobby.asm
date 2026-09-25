@@ -14,8 +14,3 @@ IndigoPlateauLobbyObject:
 	object SPRITE_LASS, $5, $1, STAY, DOWN, $3 ; person
 	object SPRITE_MART_GUY, $0, $5, STAY, RIGHT, $4 ; person
 	object SPRITE_CABLE_CLUB_WOMAN, $d, $6, STAY, DOWN, $5 ; person
-
-	; warp-to
-	EVENT_DISP INDIGO_PLATEAU_LOBBY_WIDTH, $b, $7
-	EVENT_DISP INDIGO_PLATEAU_LOBBY_WIDTH, $b, $8
-	EVENT_DISP INDIGO_PLATEAU_LOBBY_WIDTH, $0, $8 ; LORELEIS_ROOM

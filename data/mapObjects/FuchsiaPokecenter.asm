@@ -13,7 +13,3 @@ FuchsiaPokecenterObject:
 	object SPRITE_LASS, $6, $5, WALK, $2, $3 ; person
 	object SPRITE_CABLE_CLUB_WOMAN, $b, $2, STAY, DOWN, $4 ; person
 	object SPRITE_BENCH_GUY, $0, $4, STAY, NONE, $5
-
-	; warp-to
-	EVENT_DISP FUCHSIA_POKECENTER_WIDTH, $7, $3
-	EVENT_DISP FUCHSIA_POKECENTER_WIDTH, $7, $4

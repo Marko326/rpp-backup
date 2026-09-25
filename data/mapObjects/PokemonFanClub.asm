@@ -16,7 +16,3 @@ FanClubObject:
 	object SPRITE_SEEL, $1, $4, STAY, RIGHT, $4 ; person
 	object SPRITE_GENTLEMAN, $3, $1, STAY, DOWN, $5 ; person
 	object SPRITE_GREETER, $5, $1, STAY, DOWN, $6 ; person
-
-	; warp-to
-	EVENT_DISP POKEMON_FAN_CLUB_WIDTH, $7, $2
-	EVENT_DISP POKEMON_FAN_CLUB_WIDTH, $7, $3

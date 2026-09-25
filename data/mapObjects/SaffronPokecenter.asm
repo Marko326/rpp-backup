@@ -13,7 +13,3 @@ SaffronPokecenterObject:
 	object SPRITE_GENTLEMAN, $8, $3, STAY, DOWN, $3 ; person
 	object SPRITE_CABLE_CLUB_WOMAN, $b, $2, STAY, DOWN, $4 ; person
 	object SPRITE_BENCH_GUY, $0, $4, STAY, NONE, $5
-
-	; warp-to
-	EVENT_DISP SAFFRON_POKECENTER_WIDTH, $7, $3
-	EVENT_DISP SAFFRON_POKECENTER_WIDTH, $7, $4

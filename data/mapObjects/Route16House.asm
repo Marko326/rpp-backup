@@ -10,7 +10,3 @@ Route16HouseObject:
 	db $2 ; objects
 	object SPRITE_BRUNETTE_GIRL, $2, $3, STAY, RIGHT, $1 ; person
 	object SPRITE_BIRD, $6, $4, WALK, $0, $2 ; person
-
-	; warp-to
-	EVENT_DISP ROUTE_16_HOUSE_WIDTH, $7, $2
-	EVENT_DISP ROUTE_16_HOUSE_WIDTH, $7, $3

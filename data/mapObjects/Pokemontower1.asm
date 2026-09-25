@@ -14,8 +14,3 @@ PokemonTower1Object:
 	object SPRITE_BALDING_GUY, $8, $c, STAY, NONE, $3 ; person
 	object SPRITE_GIRL, $d, $7, STAY, NONE, $4 ; person
 	object SPRITE_MEDIUM, $11, $7, STAY, LEFT, $5 ; person
-
-	; warp-to
-	EVENT_DISP POKEMONTOWER_1_WIDTH, $11, $a
-	EVENT_DISP POKEMONTOWER_1_WIDTH, $11, $b
-	EVENT_DISP POKEMONTOWER_1_WIDTH, $9, $12 ; POKEMONTOWER_2

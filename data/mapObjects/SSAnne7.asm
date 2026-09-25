@@ -10,6 +10,3 @@ SSAnne7Object:
 
 	db $1 ; objects
 	object SPRITE_SS_CAPTAIN, $4, $2, STAY, UP, $1 ; person
-
-	; warp-to
-	EVENT_DISP SS_ANNE_7_WIDTH, $7, $0 ; SS_ANNE_2

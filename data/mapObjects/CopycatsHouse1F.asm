@@ -12,8 +12,3 @@ CopycatsHouse1FObject:
 	object SPRITE_MOM_GEISHA, $2, $2, STAY, DOWN, $1 ; person
 	object SPRITE_FAT_BALD_GUY, $5, $4, STAY, LEFT, $2 ; person
 	object SPRITE_CLEFAIRY, $1, $4, WALK, $1, $3 ; person
-
-	; warp-to
-	EVENT_DISP COPYCATS_HOUSE_1F_WIDTH, $7, $2
-	EVENT_DISP COPYCATS_HOUSE_1F_WIDTH, $7, $3
-	EVENT_DISP COPYCATS_HOUSE_1F_WIDTH, $0, $7 ; COPYCATS_HOUSE_2F

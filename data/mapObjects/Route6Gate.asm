@@ -11,9 +11,3 @@ Route6GateObject:
 
 	db $1 ; objects
 	object SPRITE_GUARD, $6, $2, STAY, LEFT, $1 ; person
-
-	; warp-to
-	EVENT_DISP ROUTE_6_GATE_WIDTH, $5, $3
-	EVENT_DISP ROUTE_6_GATE_WIDTH, $5, $4
-	EVENT_DISP ROUTE_6_GATE_WIDTH, $0, $3
-	EVENT_DISP ROUTE_6_GATE_WIDTH, $0, $4

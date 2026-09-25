@@ -8,7 +8,3 @@ IndigoPlateauObject:
 	db $0 ; signs
 
 	db $0 ; objects
-
-	; warp-to
-	EVENT_DISP INDIGO_PLATEAU_WIDTH, $5, $9 ; INDIGO_PLATEAU_LOBBY
-	EVENT_DISP INDIGO_PLATEAU_WIDTH, $5, $a ; INDIGO_PLATEAU_LOBBY

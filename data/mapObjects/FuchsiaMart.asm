@@ -11,7 +11,3 @@ FuchsiaMartObject:
 	object SPRITE_MART_GUY, $0, $5, STAY, RIGHT, $1 ; person
 	object SPRITE_FAT_BALD_GUY, $4, $2, STAY, NONE, $2 ; person
 	object SPRITE_LASS, $7, $6, WALK, $1, $3 ; person
-
-	; warp-to
-	EVENT_DISP FUCHSIA_MART_WIDTH, $7, $3
-	EVENT_DISP FUCHSIA_MART_WIDTH, $7, $4

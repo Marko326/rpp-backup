@@ -11,6 +11,3 @@ Route16GateUpstairsObject:
 	db $2 ; objects
 	object SPRITE_YOUNG_BOY, $4, $2, STAY, NONE, $1 ; person
 	object SPRITE_LITTLE_GIRL, $2, $5, WALK, $2, $2 ; person
-
-	; warp-to
-	EVENT_DISP ROUTE_16_GATE_2F_WIDTH, $7, $7 ; ROUTE_16_GATE_1F

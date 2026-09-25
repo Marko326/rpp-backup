@@ -14,8 +14,3 @@ RedsHouse1FObject:
 
 	db $1 ; objects
 	object SPRITE_MOM, $5, $4, $FF, $D2, $1 ; Mom
-
-	; warp-to
-	EVENT_DISP REDS_HOUSE_1F_WIDTH, $7, $2
-	EVENT_DISP REDS_HOUSE_1F_WIDTH, $7, $3
-	EVENT_DISP REDS_HOUSE_1F_WIDTH, $0, $7

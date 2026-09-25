@@ -13,7 +13,3 @@ CeladonDinerObject:
 	object SPRITE_FAT_BALD_GUY, $1, $4, STAY, DOWN, $3 ; person
 	object SPRITE_FISHER2, $5, $3, STAY, RIGHT, $4 ; person
 	object SPRITE_GYM_HELPER, $0, $1, STAY, DOWN, $5 ; person
-
-	; warp-to
-	EVENT_DISP CELADON_DINER_WIDTH, $7, $3
-	EVENT_DISP CELADON_DINER_WIDTH, $7, $4

@@ -16,8 +16,3 @@ PalletTownObject:
 	object SPRITE_OAK, $8, $5, STAY, NONE, $1 ; person
 	object SPRITE_GIRL, $3, $8, WALK, $0, $2 ; person
 	object SPRITE_FISHER2, $b, $e, WALK, $0, $3 ; person
-
-	; warp-to
-	EVENT_DISP PALLET_TOWN_WIDTH, $5, $5 ; REDS_HOUSE_1F
-	EVENT_DISP PALLET_TOWN_WIDTH, $5, $d ; BLUES_HOUSE
-	EVENT_DISP PALLET_TOWN_WIDTH, $b, $c ; OAKS_LAB

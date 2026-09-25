@@ -11,7 +11,3 @@ Lab2Object:
 	object SPRITE_OAK_AIDE, $3, $2, STAY, DOWN, $1 ; person
 	object SPRITE_OLD_PERSON, $1, $4, STAY, NONE, $2 ; person
 	object SPRITE_FOULARD_WOMAN, $5, $5, STAY, UP, $3 ; person
-
-	; warp-to
-	EVENT_DISP CINNABAR_LAB_2_WIDTH, $7, $2 ; CINNABAR_LAB_1
-	EVENT_DISP CINNABAR_LAB_2_WIDTH, $7, $3 ; CINNABAR_LAB_1

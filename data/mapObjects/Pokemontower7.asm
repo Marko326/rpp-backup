@@ -11,6 +11,3 @@ PokemonTower7Object:
 	object SPRITE_ROCKET_F, $c, $9, STAY, LEFT, $2, OPP_ROCKET_F, $14
 	object SPRITE_ROCKET, $9, $7, STAY, RIGHT, $3, OPP_ROCKET, $15
 	object SPRITE_MR_FUJI, $a, $3, STAY, DOWN, $4 ; person
-
-	; warp-to
-	EVENT_DISP POKEMONTOWER_7_WIDTH, $10, $9 ; POKEMONTOWER_6

@@ -15,7 +15,3 @@ BluesHouseObject:
 	object SPRITE_DAISY, $2, $4, $FF, $D3, $1 ; Daisy, sitting by map
 	object SPRITE_DAISY, $2, $2, $FE, $1, $2, $0 ; Daisy, walking around
 	object SPRITE_TOWN_MAP, $3, $4, $FF, $FF, $3, $0 ; map on table
-
-	; warp-to
-	EVENT_DISP BLUES_HOUSE_WIDTH, $7, $2
-	EVENT_DISP BLUES_HOUSE_WIDTH, $7, $3

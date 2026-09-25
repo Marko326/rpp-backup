@@ -19,7 +19,3 @@ OaksLabObject:
 	object SPRITE_GIRL, $1, $9, WALK, $1, $9 ; person
 	object SPRITE_OAK_AIDE, $2, $a, STAY, NONE, $a ; person
 	object SPRITE_OAK_AIDE, $8, $a, STAY, NONE, $b ; person
-
-	; warp-to
-	EVENT_DISP OAKS_LAB_WIDTH, $b, $4
-	EVENT_DISP OAKS_LAB_WIDTH, $b, $5

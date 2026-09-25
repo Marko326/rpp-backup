@@ -14,6 +14,3 @@ SSAnne6Object:
 	object SPRITE_COOK, $d, $8, STAY, NONE, $5 ; person
 	object SPRITE_COOK, $d, $a, STAY, NONE, $6 ; person
 	object SPRITE_COOK, $b, $d, STAY, UP, $7 ; person
-
-	; warp-to
-	EVENT_DISP SS_ANNE_6_WIDTH, $0, $6 ; SS_ANNE_1

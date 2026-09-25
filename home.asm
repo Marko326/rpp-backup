@@ -226,29 +226,11 @@ CheckForUserInterruption::
 	scf
 	ret
 
-; function to load position data for destination warp when switching maps
-; INPUT:
-; a = ID of destination warp within destination map
+; WDP-5.49.00: normal map warp-to records are no longer stored in ROM.
+; Reconstruct the destination position from the destination map's wWarpEntries.
+; Input: wDestinationWarpID = zero-based destination warp ID within the current map.
 LoadDestinationWarpPosition::
-	ld b,a
-	ld a,[H_LOADEDROMBANK]
-	push af
-	ld a,[wPredefParentBank]
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
-	ld a,b
-	add a
-	add a
-	ld c,a
-	ld b,0
-	add hl,bc
-	ld bc,4
-	ld de,wCurrentTileBlockMapViewPointer
-	call CopyData
-	pop af
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
-	ret
+	jpba ReconstructDestinationWarpPosition
 
 
 DrawHPBar::

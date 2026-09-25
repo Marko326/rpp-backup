@@ -16,7 +16,3 @@ FuchsiaGymObject:
 	object SPRITE_ROCKER, $8, $2, STAY, DOWN, $6, OPP_TAMER, $2
 	object SPRITE_ROCKER, $2, $7, STAY, LEFT, $7, OPP_JUGGLER, $4
 	object SPRITE_GYM_HELPER, $7, $f, STAY, DOWN, $8 ; person
-
-	; warp-to
-	EVENT_DISP FUCHSIA_GYM_WIDTH, $11, $4
-	EVENT_DISP FUCHSIA_GYM_WIDTH, $11, $5

@@ -13,7 +13,3 @@ SSAnne5Object:
 	object SPRITE_BLACK_HAIR_BOY_1, $7, $b, STAY, NONE, $3 ; person
 	object SPRITE_SAILOR, $4, $4, STAY, DOWN, $4, OPP_SAILOR, $1
 	object SPRITE_SAILOR, $a, $8, STAY, UP, $5, OPP_SAILOR, $2
-
-	; warp-to
-	EVENT_DISP SS_ANNE_5_WIDTH, $6, $d ; SS_ANNE_3
-	EVENT_DISP SS_ANNE_5_WIDTH, $7, $d ; SS_ANNE_3

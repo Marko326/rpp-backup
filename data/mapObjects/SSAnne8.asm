@@ -23,11 +23,3 @@ SSAnne8Object:
 	object SPRITE_GIRL, $a, $d, STAY, RIGHT, $9 ; person
 	object SPRITE_BALL, $c, $f, STAY, NONE, $a, TM_08
 	object SPRITE_LOOKER, $15, $d, WALK, $2, $b ; person
-
-	; warp-to
-	EVENT_DISP SS_ANNE_8_WIDTH, $0, $0 ; SS_ANNE_1
-	EVENT_DISP SS_ANNE_8_WIDTH, $0, $a ; SS_ANNE_1
-	EVENT_DISP SS_ANNE_8_WIDTH, $0, $14 ; SS_ANNE_1
-	EVENT_DISP SS_ANNE_8_WIDTH, $a, $0 ; SS_ANNE_1
-	EVENT_DISP SS_ANNE_8_WIDTH, $a, $a ; SS_ANNE_1
-	EVENT_DISP SS_ANNE_8_WIDTH, $a, $14 ; SS_ANNE_1

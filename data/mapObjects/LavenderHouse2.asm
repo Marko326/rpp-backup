@@ -10,7 +10,3 @@ LavenderHouse2Object:
 	db $2 ; objects
 	object SPRITE_SLOWBRO, $3, $5, STAY, UP, $1 ; person
 	object SPRITE_MEDIUM, $2, $4, STAY, RIGHT, $2 ; person
-
-	; warp-to
-	EVENT_DISP LAVENDER_HOUSE_2_WIDTH, $7, $2
-	EVENT_DISP LAVENDER_HOUSE_2_WIDTH, $7, $3

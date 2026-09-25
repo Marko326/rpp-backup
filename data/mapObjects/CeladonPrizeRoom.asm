@@ -13,7 +13,3 @@ CeladonPrizeRoomObject:
 	db $2 ; objects
 	object SPRITE_BALDING_GUY, $1, $4, STAY, NONE, $1 ; person
 	object SPRITE_GAMBLER, $7, $3, WALK, $2, $2 ; person
-
-	; warp-to
-	EVENT_DISP CELADON_PRIZE_ROOM_WIDTH, $7, $4
-	EVENT_DISP CELADON_PRIZE_ROOM_WIDTH, $7, $5

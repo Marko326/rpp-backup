@@ -18,6 +18,3 @@ Route25Object:
 	object SPRITE_HIKER, $17, $9, STAY, UP, $8, OPP_HIKER, $3
 	object SPRITE_HIKER, $d, $7, STAY, RIGHT, $9, OPP_HIKER, $4
 	object SPRITE_BALL, $16, $2, STAY, NONE, $a, TM_19
-
-	; warp-to
-	EVENT_DISP ROUTE_25_WIDTH, $3, $2d ; BILLS_HOUSE

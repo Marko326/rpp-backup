@@ -11,7 +11,3 @@ CeruleanMartObject:
 	object SPRITE_MART_GUY, $0, $5, STAY, RIGHT, $1 ; person
 	object SPRITE_BLACK_HAIR_BOY_2, $3, $4, WALK, $1, $2 ; person
 	object SPRITE_LASS, $6, $2, WALK, $2, $3 ; person
-
-	; warp-to
-	EVENT_DISP CERULEAN_MART_WIDTH, $7, $3
-	EVENT_DISP CERULEAN_MART_WIDTH, $7, $4
