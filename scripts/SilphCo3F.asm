@@ -1,51 +1,16 @@
 SilphCo3Script:
-	call SilphCo3Script_59f71
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
+	ld hl, wCurrentMapScriptFlags
+	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
+	res 5, [hl]
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
 	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SilphCo3TrainerHeader0
 	ld bc, wSilphCo3CurScript
 	jp Bank16RunStandardTrainerMapScript
-
-SilphCo3Script_59f71:
-	ld hl, wCurrentMapScriptFlags
-	bit 5, [hl]
-	res 5, [hl]
-	ret z
-	ld hl, SilphCo3GateCoords
-	call SilphCo2Script_59d43
-	call SilphCo3Script_59fad
-	CheckEvent EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	jr nz, .asm_59f98
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 4, 4
-	predef ReplaceTileBlock
-	pop af
-.asm_59f98
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_3_UNLOCKED_DOOR2, EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 4, 8
-	predef_jump ReplaceTileBlock
-
-SilphCo3GateCoords:
-	db $04,$04
-	db $04,$08
-	db $FF
-
-SilphCo3Script_59fad:
-	EventFlagAddress hl, EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	ld a, [$ffe0]
-	and a
-	ret z
-	cp $1
-	jr nz, .next
-	SetEventReuseHL EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	ret
-.next
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_3_UNLOCKED_DOOR2, EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	ret
 
 SilphCo3TextPointers:
 	dw SilphCo3Text1

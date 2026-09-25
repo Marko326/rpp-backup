@@ -1,35 +1,16 @@
 SilphCo6Script:
-	call SilphCo6Script_1a1bf
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
+	ld hl, wCurrentMapScriptFlags
+	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
+	res 5, [hl]
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
 	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SilphCo6TrainerHeader0
 	ld bc, wSilphCo6CurScript
 	jp Bank06RunStandardTrainerMapScript
-
-SilphCo6Script_1a1bf:
-	ld hl, wCurrentMapScriptFlags
-	bit 5, [hl]
-	res 5, [hl]
-	ret z
-	ld hl, SilphCo6GateCoords
-	call SilphCo4Script_19d5d
-	call SilphCo6Script_1a1e6
-	CheckEvent EVENT_SILPH_CO_6_UNLOCKED_DOOR
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 6, 2
-	predef_jump ReplaceTileBlock
-
-SilphCo6GateCoords:
-	db $06,$02
-	db $FF
-
-SilphCo6Script_1a1e6:
-	ld a, [$ffe0]
-	and a
-	ret z
-	SetEvent EVENT_SILPH_CO_6_UNLOCKED_DOOR
-	ret
 
 SilphCo6TextPointers:
 	dw SilphCo6Text1

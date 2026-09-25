@@ -1,72 +1,17 @@
 SilphCo11Script:
-	call SilphCo11Script_62110
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
+	ld hl, wCurrentMapScriptFlags
+	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
+	res 5, [hl]
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
 	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, SilphCo11TrainerHeader0
 	ld de, SilphCo11ScriptPointers
 	ld bc, wSilphCo11CurScript
 	jp Bank18RunTrainerMapScript
-
-SilphCo11Script_62110:
-	ld hl, wCurrentMapScriptFlags
-	bit 5, [hl]
-	res 5, [hl]
-	ret z
-	ld hl, SilphCo11GateCoords
-	call SilphCo11Script_62137
-	call SilphCo11Script_62163
-	CheckEvent EVENT_SILPH_CO_11_UNLOCKED_DOOR
-	ret nz
-	ld a, $20
-	ld [wNewTileBlockID], a
-	lb bc, 6, 3
-	predef_jump ReplaceTileBlock
-
-SilphCo11GateCoords:
-	db $06,$03
-	db $FF
-
-SilphCo11Script_62137:
-	push hl
-	ld hl, wCardKeyDoorY
-	ld a, [hli]
-	ld b, a
-	ld a, [hl]
-	ld c, a
-	xor a
-	ld [$ffe0], a
-	pop hl
-.asm_62143
-	ld a, [hli]
-	cp $ff
-	jr z, .asm_6215f
-	push hl
-	ld hl, $ffe0
-	inc [hl]
-	pop hl
-	cp b
-	jr z, .asm_62154
-	inc hl
-	jr .asm_62143
-.asm_62154
-	ld a, [hli]
-	cp c
-	jr nz, .asm_62143
-	ld hl, wCardKeyDoorY
-	xor a
-	ld [hli], a
-	ld [hl], a
-	ret
-.asm_6215f
-	xor a
-	ld [$ffe0], a
-	ret
-
-SilphCo11Script_62163:
-	ld a, [$ffe0]
-	and a
-	ret z
-	SetEvent EVENT_SILPH_CO_11_UNLOCKED_DOOR
-	ret
 
 SilphCo11Script_6216d:
 	ld hl, MissableObjectIDs_6219b
