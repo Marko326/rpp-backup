@@ -1,12 +1,10 @@
 VictoryRoad3Script:
 	call VictoryRoad3Script_44996
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, VictoryRoad3TrainerHeader0
 	ld de, VictoryRoad3ScriptPointers
-	ld a, [wVictoryRoad3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVictoryRoad3CurScript], a
-	ret
+	ld bc, wVictoryRoad3CurScript
+	jp Bank11RunTrainerMapScript
 
 VictoryRoad3Script_44996:
 	ld hl, wCurrentMapScriptFlags

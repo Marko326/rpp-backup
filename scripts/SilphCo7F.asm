@@ -1,12 +1,10 @@
 SilphCo7Script:
 	call SilphCo7Script_51b77
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, SilphCo7TrainerHeader0
 	ld de, SilphCo7ScriptPointers
-	ld a, [wSilphCo7CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo7CurScript], a
-	ret
+	ld bc, wSilphCo7CurScript
+	jp Bank14RunTrainerMapScript
 
 SilphCo7Script_51b77:
 	ld hl, wCurrentMapScriptFlags

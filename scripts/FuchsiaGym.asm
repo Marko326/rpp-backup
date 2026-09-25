@@ -1,12 +1,10 @@
 FuchsiaGymScript:
 	call FuchsiaGymScript_75453
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, FuchsiaGymTrainerHeader0
 	ld de, FuchsiaGymScriptPointers
-	ld a, [wFuchsiaGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wFuchsiaGymCurScript], a
-	ret
+	ld bc, wFuchsiaGymCurScript
+	jp Bank1DRunTrainerMapScript
 
 FuchsiaGymScript_75453:
 	ld hl, wCurrentMapScriptFlags

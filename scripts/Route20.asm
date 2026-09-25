@@ -1,13 +1,31 @@
+; TMD-5.47.00: standard three-state trainer maps in bank 14
+; share one script table and the generic bank-local dispatcher.
+Bank14RunStandardTrainerMapScript:
+	ld de, Bank14StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank14RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
+Bank14StandardTrainerScriptPointers:
+	dw CheckFightingMapTrainers
+	dw DisplayEnemyTrainerTextAndStartBattle
+	dw EndTrainerBattle
+
 Route20Script:
 	CheckAndResetEvent EVENT_IN_SEAFOAM_ISLANDS
 	call nz, Route20Script_50cc6
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route20TrainerHeader0
-	ld de, Route20ScriptPointers
-	ld a, [wRoute20CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute20CurScript], a
-	ret
+	ld bc, wRoute20CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Route20Script_50cc6:
 	CheckBothEventsSet EVENT_SEAFOAM3_BOULDER1_DOWN_HOLE, EVENT_SEAFOAM3_BOULDER2_DOWN_HOLE
@@ -55,11 +73,6 @@ Route20Script_50d0c:
 Route20Script_50d14:
 	ld [wMissableObjectIndex], a
 	predef_jump HideObject
-
-Route20ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 Route20TextPointers:
 	dw Route20Text1

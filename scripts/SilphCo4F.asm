@@ -1,12 +1,30 @@
+; TMD-5.47.00: standard three-state trainer maps in bank 06
+; share one script table and the generic bank-local dispatcher.
+Bank06RunStandardTrainerMapScript:
+	ld de, Bank06StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank06RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
+Bank06StandardTrainerScriptPointers:
+	dw CheckFightingMapTrainers
+	dw DisplayEnemyTrainerTextAndStartBattle
+	dw EndTrainerBattle
+
 SilphCo4Script:
 	call SilphCo4Script_19d21
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SilphCo4TrainerHeader0
-	ld de, SilphCo4ScriptPointers
-	ld a, [wSilphCo4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo4CurScript], a
-	ret
+	ld bc, wSilphCo4CurScript
+	jp Bank06RunStandardTrainerMapScript
 
 SilphCo4Script_19d21:
 	ld hl, wCurrentMapScriptFlags
@@ -85,11 +103,6 @@ SilphCo4Script_19d89:
 .next
 	SetEventAfterBranchReuseHL EVENT_SILPH_CO_4_UNLOCKED_DOOR2, EVENT_SILPH_CO_4_UNLOCKED_DOOR1
 	ret
-
-SilphCo4ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 SilphCo4TextPointers:
 	dw SilphCo4Text1

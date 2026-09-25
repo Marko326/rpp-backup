@@ -4,16 +4,12 @@ SSAnne9Script:
 	xor a
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ld hl, SSAnne9TrainerHeader0
-	ld de, SSAnne9ScriptPointers
+	; TMD-5.47.00: share bank 18's standard three-state trainer script table.
+	ld de, Bank18StandardTrainerScriptPointers
 	ld a, [wSSAnne9CurScript]
 	call ExecuteCurMapScriptInTable
 	ld [wSSAnne9CurScript], a
 	ret
-
-SSAnne9ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 SSAnne9TextPointers:
 	dw SSAnne9Text1

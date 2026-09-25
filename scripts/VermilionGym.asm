@@ -8,13 +8,11 @@ VermilionGymScript:
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, VermilionGymScript_5ca6d
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, VermilionGymTrainerHeader0
 	ld de, VermilionGymScriptPointers
-	ld a, [wVermilionGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVermilionGymCurScript], a
-	ret
+	ld bc, wVermilionGymCurScript
+	jp Bank17RunTrainerMapScript
 
 VermilionGymScript_5ca4c:
 	ld hl, Gym3CityName

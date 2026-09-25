@@ -1,16 +1,8 @@
 PokemonTower4Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, PokemonTower4TrainerHeader0
-	ld de, PokemonTower4ScriptPointers
-	ld a, [wPokemonTower4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower4CurScript], a
-	ret
-
-PokemonTower4ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wPokemonTower4CurScript
+	jp Bank18RunStandardTrainerMapScript
 
 PokemonTower4TextPointers:
 	dw PokemonTower4Text1

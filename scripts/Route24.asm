@@ -1,11 +1,9 @@
 Route24Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, Route24TrainerHeader0
 	ld de, Route24ScriptPointers
-	ld a, [wRoute24CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute24CurScript], a
-	ret
+	ld bc, wRoute24CurScript
+	jp Bank14RunTrainerMapScript
 
 Route24Script_513c0:
 	xor a

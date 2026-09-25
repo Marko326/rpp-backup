@@ -3,13 +3,11 @@ SaffronGymScript:
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, .extra
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, SaffronGymTrainerHeader0
 	ld de, SaffronGymScriptPointers
-	ld a, [wSaffronGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSaffronGymCurScript], a
-	ret
+	ld bc, wSaffronGymCurScript
+	jp Bank17RunTrainerMapScript
 
 .extra
 	ld hl, Gym6CityName

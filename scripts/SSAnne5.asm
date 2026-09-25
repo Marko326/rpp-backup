@@ -1,16 +1,8 @@
 SSAnne5Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SSAnne5TrainerHeader0
-	ld de, SSAnne5ScriptPointers
-	ld a, [wSSAnne5CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSSAnne5CurScript], a
-	ret
-
-SSAnne5ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wSSAnne5CurScript
+	jp Bank18RunStandardTrainerMapScript
 
 SSAnne5TextPointers:
 	dw SSAnne5Text1

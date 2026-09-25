@@ -1,15 +1,34 @@
+; TMD-5.47.00: standard three-state trainer maps in bank 12
+; share one script table and the generic bank-local dispatcher.
+Bank12RunStandardTrainerMapScript:
+	ld de, Bank12StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank12RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
+Bank12StandardTrainerScriptPointers:
+	dw CheckFightingMapTrainers
+	dw DisplayEnemyTrainerTextAndStartBattle
+	dw EndTrainerBattle
+
 CeladonGymScript:
 	ld hl, wCurrentMapScriptFlags
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, CeladonGymScript_48927
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, CeladonGymTrainerHeader0
 	ld de, CeladonGymScriptPointers
-	ld a, [wCeladonGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wCeladonGymCurScript], a
-	ret
+	ld bc, wCeladonGymCurScript
+	jp Bank12RunTrainerMapScript
 
 CeladonGymScript_48927:
 	ld hl, Gym4CityName

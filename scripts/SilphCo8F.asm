@@ -1,12 +1,9 @@
 SilphCo8Script:
 	call SilphCo8Script_5651a
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SilphCo8TrainerHeader0
-	ld de, SilphCo8ScriptPointers
-	ld a, [wSilphCo8CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo8CurScript], a
-	ret
+	ld bc, wSilphCo8CurScript
+	jp Bank15RunStandardTrainerMapScript
 
 SilphCo8Script_5651a:
 	ld hl, wCurrentMapScriptFlags
@@ -69,11 +66,6 @@ SilphCo8Script_5656d:
 	ret z
 	SetEvent EVENT_SILPH_CO_8_UNLOCKED_DOOR
 	ret
-
-SilphCo8ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 SilphCo8TextPointers:
 	dw SilphCo8Text1

@@ -1,11 +1,9 @@
 FightingDojoScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, FightingDojoTrainerHeader0
 	ld de, FightingDojoScriptPointers
-	ld a, [wFightingDojoCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wFightingDojoCurScript], a
-	ret
+	ld bc, wFightingDojoCurScript
+	jp Bank17RunTrainerMapScript
 
 FightingDojoScript_5cd70:
 	xor a

@@ -3,13 +3,11 @@ CeruleanGymScript:
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, CeruleanGymScript_5c6d0
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, CeruleanGymTrainerHeader0
 	ld de, CeruleanGymScriptPointers
-	ld a, [wCeruleanGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wCeruleanGymCurScript], a
-	ret
+	ld bc, wCeruleanGymCurScript
+	jp Bank17RunTrainerMapScript
 
 CeruleanGymScript_5c6d0:
 	ld hl, Gym2CityName

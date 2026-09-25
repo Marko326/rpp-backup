@@ -3,13 +3,11 @@ VictoryRoad1Script:
 	bit 5, [hl]
 	res 5, [hl]
 	call nz, .next
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, VictoryRoad1TrainerHeader0
 	ld de, VictoryRoad1ScriptPointers
-	ld a, [wVictoryRoad1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVictoryRoad1CurScript], a
-	ret
+	ld bc, wVictoryRoad1CurScript
+	jp Bank17RunTrainerMapScript
 .next
 	CheckEvent EVENT_VICTORY_ROAD_1_BOULDER_ON_SWITCH
 	ret z

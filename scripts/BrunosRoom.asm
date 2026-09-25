@@ -1,12 +1,10 @@
 BrunoScript:
 	call BrunoShowOrHideExitBlock
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, BrunoTrainerHeader0
 	ld de, BrunoScriptPointers
-	ld a, [wBrunoCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wBrunoCurScript], a
-	ret
+	ld bc, wBrunoCurScript
+	jp Bank1DRunTrainerMapScript
 
 BrunoShowOrHideExitBlock:
 ; Blocks or clears the exit to the next room.

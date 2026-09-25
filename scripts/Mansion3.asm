@@ -1,12 +1,10 @@
 Mansion3Script:
 	call Mansion3Script_52204
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, Mansion3TrainerHeader0
 	ld de, Mansion3ScriptPointers
-	ld a, [wMansion3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMansion3CurScript], a
-	ret
+	ld bc, wMansion3CurScript
+	jp Bank14RunTrainerMapScript
 
 Mansion3Script_52204:
 	ld hl, wCurrentMapScriptFlags

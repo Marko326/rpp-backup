@@ -1,16 +1,29 @@
-Route6Script:
+; TMD-5.47.00: standard three-state trainer maps in bank 16
+; share one script table and the generic bank-local dispatcher.
+Bank16RunStandardTrainerMapScript:
+	ld de, Bank16StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank16RunTrainerMapScript:
 	call EnableAutoTextBoxDrawing
-	ld hl, Route6TrainerHeader0
-	ld de, Route6ScriptPointers
-	ld a, [wRoute6CurScript]
+	ld a, [bc]
+	push bc
 	call ExecuteCurMapScriptInTable
-	ld [wRoute6CurScript], a
+	pop bc
+	ld [bc], a
 	ret
 
-Route6ScriptPointers:
+Bank16StandardTrainerScriptPointers:
 	dw CheckFightingMapTrainers
 	dw DisplayEnemyTrainerTextAndStartBattle
 	dw EndTrainerBattle
+
+Route6Script:
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
+	ld hl, Route6TrainerHeader0
+	ld bc, wRoute6CurScript
+	jp Bank16RunStandardTrainerMapScript
 
 Route6TextPointers:
 	dw Route6Text1

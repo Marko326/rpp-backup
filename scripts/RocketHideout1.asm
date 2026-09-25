@@ -1,12 +1,9 @@
 RocketHideout1Script:
 	call RocketHideout1Script_44be0
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, RocketHideout1TrainerHeader0
-	ld de, RocketHideout1ScriptPointers
-	ld a, [wRocketHideout1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRocketHideout1CurScript], a
-	ret
+	ld bc, wRocketHideout1CurScript
+	jp Bank11RunStandardTrainerMapScript
 
 RocketHideout1Script_44be0:
 	ld hl, wCurrentMapScriptFlags
@@ -29,11 +26,6 @@ RocketHideout1Script_44be0:
 	ld [wNewTileBlockID], a
 	lb bc, 8, 12
 	predef_jump ReplaceTileBlock
-
-RocketHideout1ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 RocketHideout1TextPointers:
 	dw RocketHideout1Text1

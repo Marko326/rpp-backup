@@ -1,16 +1,8 @@
 MtMoon1Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, MtMoon1TrainerHeader0
-	ld de, MtMoon1ScriptPointers
-	ld a, [wMtMoon1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMtMoon1CurScript], a
-	ret
-
-MtMoon1ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wMtMoon1CurScript
+	jp Bank12RunStandardTrainerMapScript
 
 MtMoon1TextPointers:
 	dw MtMoon1Text1

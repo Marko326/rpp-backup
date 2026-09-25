@@ -1,11 +1,9 @@
 RocketHideout3Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, RocketHideout3TrainerHeader0
 	ld de, RocketHideout3ScriptPointers
-	ld a, [wRocketHideout3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRocketHideout3CurScript], a
-	ret
+	ld bc, wRocketHideout3CurScript
+	jp Bank11RunTrainerMapScript
 
 RocketHideout3ScriptPointers:
 	dw RocketHideout3Script0

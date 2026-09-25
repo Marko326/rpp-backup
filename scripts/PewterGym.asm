@@ -1,15 +1,24 @@
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank17RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
 PewterGymScript:
 	ld hl, wCurrentMapScriptFlags
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, PewterGymScript_5c3a4
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, PewterGymTrainerHeader0
 	ld de, PewterGymScriptPointers
-	ld a, [wPewterGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPewterGymCurScript], a
-	ret
+	ld bc, wPewterGymCurScript
+	jp Bank17RunTrainerMapScript
 
 PewterGymScript_5c3a4:
 	ld hl, Gym1CityName

@@ -1,12 +1,9 @@
 Mansion4Script:
 	call Mansion4Script_523cf
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Mansion4TrainerHeader0
-	ld de, Mansion4ScriptPointers
-	ld a, [wMansion4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMansion4CurScript], a
-	ret
+	ld bc, wMansion4CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Mansion4Script_523cf:
 	ld hl, wCurrentMapScriptFlags
@@ -52,11 +49,6 @@ Mansion4Script_Switches:
 	ld a, $9
 	ld [hSpriteIndexOrTextID], a
 	jp DisplayTextID
-
-Mansion4ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 Mansion4TextPointers:
 	dw Mansion4Text1

@@ -1,12 +1,10 @@
 LanceScript:
 	call LanceShowOrHideEntranceBlocks
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, LanceTrainerHeader0
 	ld de, LanceScriptPointers
-	ld a, [wLanceCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wLanceCurScript], a
-	ret
+	ld bc, wLanceCurScript
+	jp Bank16RunTrainerMapScript
 
 LanceShowOrHideEntranceBlocks:
 	ld hl, wCurrentMapScriptFlags

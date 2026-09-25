@@ -1,16 +1,8 @@
 NavelRockLugiaRoomScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, NavelRockLugiaRoomTrainerHeaders
-	ld de, NavelRockLugiaRoomScriptPointers
-	ld a, [wNavelRockLugiaRoomCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wNavelRockLugiaRoomCurScript], a
-	ret
-
-NavelRockLugiaRoomScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wNavelRockLugiaRoomCurScript
+	jp Bank34RunStandardTrainerMapScript
 
 NavelRockLugiaRoomTextPointers:
 	dw NavelRockLugiaRoomText1 ; Lugia

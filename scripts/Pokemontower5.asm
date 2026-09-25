@@ -1,11 +1,9 @@
 PokemonTower5Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, PokemonTower5TrainerHeader0
 	ld de, PokemonTower5ScriptPointers
-	ld a, [wPokemonTower5CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower5CurScript], a
-	ret
+	ld bc, wPokemonTower5CurScript
+	jp Bank18RunTrainerMapScript
 
 PokemonTower5ScriptPointers:
 	dw PokemonTower5Script0

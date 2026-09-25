@@ -3,18 +3,10 @@ MtMoon3Script:
 	; Make sure nothing breaks
 	ld a, ROUTE_4
 	ld [wLastMap], a
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, MtMoon3TrainerHeader0
-	ld de, MtMoon3ScriptPointers
-	ld a, [wMtMoon3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMtMoon3CurScript], a
-	ret
-
-MtMoon3ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wMtMoon3CurScript
+	jp Bank12RunStandardTrainerMapScript
 
 MtMoon3TextPointers:
 	dw MtMoon3Text1

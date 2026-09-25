@@ -1,16 +1,8 @@
 RockTunnel2Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, RockTunnel2TrainerHeader0
-	ld de, RockTunnel2ScriptPointers
-	ld a, [wRockTunnel2CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRockTunnel2CurScript], a
-	ret
-
-RockTunnel2ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRockTunnel2CurScript
+	jp Bank11RunStandardTrainerMapScript
 
 RockTunnel2TextPointers:
 	dw RockTunnel2Text1

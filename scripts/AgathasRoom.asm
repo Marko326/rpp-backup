@@ -1,12 +1,10 @@
 AgathaScript:
 	call AgathaShowOrHideExitBlock
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, AgathaTrainerHeader0
 	ld de, AgathaScriptPointers
-	ld a, [wAgathaCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wAgathaCurScript], a
-	ret
+	ld bc, wAgathaCurScript
+	jp Bank1DRunTrainerMapScript
 
 AgathaShowOrHideExitBlock:
 ; Blocks or clears the exit to the next room.

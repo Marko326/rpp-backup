@@ -1,12 +1,10 @@
 LoreleiScript:
 	call LoreleiShowOrHideExitBlock
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, LoreleiTrainerHeader0
 	ld de, LoreleiScriptPointers
-	ld a, [wLoreleiCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wLoreleiCurScript], a
-	ret
+	ld bc, wLoreleiCurScript
+	jp Bank1DRunTrainerMapScript
 
 LoreleiShowOrHideExitBlock:
 ; Blocks or clears the exit to the next room.

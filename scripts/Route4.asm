@@ -1,16 +1,8 @@
 Route4Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route4TrainerHeader0
-	ld de, Route4ScriptPointers
-	ld a, [wRoute4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute4CurScript], a
-	ret
-
-Route4ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRoute4CurScript
+	jp Bank15RunStandardTrainerMapScript
 
 Route4TextPointers:
 	dw Route4Text1

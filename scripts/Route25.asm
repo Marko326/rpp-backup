@@ -1,12 +1,9 @@
 Route25Script:
 	call Route25Script_515e1
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route25TrainerHeader0
-	ld de, Route25ScriptPointers
-	ld a, [wRoute25CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute25CurScript], a
-	ret
+	ld bc, wRoute25CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Route25Script_515e1:
 	ld hl, wCurrentMapScriptFlags
@@ -34,11 +31,6 @@ Route25Script_515e1:
 	ld a, HS_BILL_2
 	ld [wMissableObjectIndex], a
 	predef_jump ShowObject
-
-Route25ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 Route25TextPointers:
 	dw Route25Text1

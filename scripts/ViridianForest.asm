@@ -1,16 +1,8 @@
 ViridianForestScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, ViridianForestTrainerHeader0
-	ld de, ViridianForestScriptPointers
-	ld a, [wViridianForestCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wViridianForestCurScript], a
-	ret
-
-ViridianForestScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wViridianForestCurScript
+	jp Bank18RunStandardTrainerMapScript
 
 ViridianForestTextPointers:
 	dw ViridianForestText1

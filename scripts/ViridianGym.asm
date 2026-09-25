@@ -1,14 +1,23 @@
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank1DRunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
 ViridianGymScript:
 	ld hl, Gym8CityName
 	ld de, Gym8LeaderName
 	call LoadGymLeaderAndCityName
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, ViridianGymTrainerHeader0
 	ld de, ViridianGymScriptPointers
-	ld a, [wViridianGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wViridianGymCurScript], a
-	ret
+	ld bc, wViridianGymCurScript
+	jp Bank1DRunTrainerMapScript
 
 Gym8CityName:
 	db "Viridian City@"
