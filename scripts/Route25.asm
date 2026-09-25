@@ -128,58 +128,31 @@ Route25TrainerHeader8:
 	db $ff
 
 Route25Text1:
-	TX_ASM
-	ld hl, Route25TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader0
 
 Route25Text2:
-	TX_ASM
-	ld hl, Route25TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader1
 
 Route25Text3:
-	TX_ASM
-	ld hl, Route25TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader2
 
 Route25Text4:
-	TX_ASM
-	ld hl, Route25TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader3
 
 Route25Text5:
-	TX_ASM
-	ld hl, Route25TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader4
 
 Route25Text6:
-	TX_ASM
-	ld hl, Route25TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader5
 
 Route25Text7:
-	TX_ASM
-	ld hl, Route25TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader6
 
 Route25Text8:
-	TX_ASM
-	ld hl, Route25TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader7
 
 Route25Text9:
-	TX_ASM
-	ld hl, Route25TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader8
 
 Route25BattleText1:
 	TX_FAR _Route25BattleText1

@@ -28,10 +28,7 @@ MewtwoTrainerHeader:
 	db $ff
 
 MewtwoText:
-	TX_ASM
-	ld hl, MewtwoTrainerHeader
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MewtwoTrainerHeader
 
 MewtwoBattleText:
 	TX_FAR _MewtwoBattleText

@@ -121,28 +121,16 @@ VictoryRoad3TrainerHeader3:
 	db $ff
 
 VictoryRoad3Text1:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader0
 
 VictoryRoad3Text2:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader1
 
 VictoryRoad3Text3:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader2
 
 VictoryRoad3Text4:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader3
 
 VictoryRoad3BattleText2:
 	TX_FAR _VictoryRoad3BattleText2

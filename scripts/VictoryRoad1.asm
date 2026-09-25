@@ -65,16 +65,10 @@ VictoryRoad1TrainerHeader1:
 	db $ff
 
 VictoryRoad1Text1:
-	TX_ASM
-	ld hl, VictoryRoad1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad1TrainerHeader0
 
 VictoryRoad1Text2:
-	TX_ASM
-	ld hl, VictoryRoad1TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad1TrainerHeader1
 
 VictoryRoad1BattleText1:
 	TX_FAR _VictoryRoad1BattleText1

@@ -209,40 +209,22 @@ Route24Text_51530:
 	db "@"
 
 Route24Text2:
-	TX_ASM
-	ld hl, Route24TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader0
 
 Route24Text3:
-	TX_ASM
-	ld hl, Route24TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader1
 
 Route24Text4:
-	TX_ASM
-	ld hl, Route24TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader2
 
 Route24Text5:
-	TX_ASM
-	ld hl, Route24TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader3
 
 Route24Text6:
-	TX_ASM
-	ld hl, Route24TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader4
 
 Route24Text7:
-	TX_ASM
-	ld hl, Route24TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader5
 
 Route24BattleText1:
 	TX_FAR _Route24BattleText1

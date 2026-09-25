@@ -66,16 +66,10 @@ SilphCo10TrainerHeader1:
 	db $ff
 
 SilphCo10Text1:
-	TX_ASM
-	ld hl, SilphCo10TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo10TrainerHeader0
 
 SilphCo10Text2:
-	TX_ASM
-	ld hl, SilphCo10TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo10TrainerHeader1
 
 SilphCo10Text3:
 	TX_ASM

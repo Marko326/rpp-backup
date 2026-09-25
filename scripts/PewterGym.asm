@@ -160,10 +160,7 @@ PewterGymText_5c4bc:
 	db "@"
 
 PewterGymText2:
-	TX_ASM
-	ld hl, PewterGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PewterGymTrainerHeader0
 
 PewterGymBattleText1:
 	TX_FAR _PewterGymBattleText1

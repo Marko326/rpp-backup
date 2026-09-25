@@ -44,22 +44,13 @@ PokemonTower3TrainerHeader2:
 	db $ff
 
 PokemonTower3Text1:
-	TX_ASM
-	ld hl, PokemonTower3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower3TrainerHeader0
 
 PokemonTower3Text2:
-	TX_ASM
-	ld hl, PokemonTower3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower3TrainerHeader1
 
 PokemonTower3Text3:
-	TX_ASM
-	ld hl, PokemonTower3TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower3TrainerHeader2
 
 PokemonTower3BattleText1:
 	TX_FAR _PokemonTower3BattleText1

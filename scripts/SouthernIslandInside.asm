@@ -37,16 +37,10 @@ SouthernIslandInsideTrainerHeader1:
 	db $ff
 
 SouthernIslandInsideText1:
-	TX_ASM
-	ld hl, SouthernIslandInsideTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
-	
+	TX_TRAINER SouthernIslandInsideTrainerHeader0
+
 SouthernIslandInsideText2:
-	TX_ASM
-	ld hl, SouthernIslandInsideTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SouthernIslandInsideTrainerHeader1
 
 SouthernIslandInsideLatiosText:
 	TX_FAR _SouthernIslandInsideLatiText

@@ -81,41 +81,25 @@ RockTunnel1TrainerHeader6:
 	db $ff
 
 RockTunnel1Text1:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader0
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader0
 
 RockTunnel1Text2:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader1
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader1
 
 RockTunnel1Text3:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader2
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader2
 
 RockTunnel1Text4:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader3
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader3
 
 RockTunnel1Text5:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader4
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader4
 
 RockTunnel1Text6:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader5
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader5
 
 RockTunnel1Text7:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader6
-RockTunnel1TalkToTrainer:
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel1TrainerHeader6
 
 RockTunnel1BattleText1:
 	TX_FAR _RockTunnel1BattleText1

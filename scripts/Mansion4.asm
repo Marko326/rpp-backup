@@ -88,16 +88,10 @@ Mansion4TrainerHeader1:
 	db $ff
 
 Mansion4Text1:
-	TX_ASM
-	ld hl, Mansion4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion4TrainerHeader0
 
 Mansion4Text2:
-	TX_ASM
-	ld hl, Mansion4TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion4TrainerHeader1
 
 Mansion4BattleText1:
 	TX_FAR _Mansion4BattleText1

@@ -401,6 +401,8 @@ NextTextCommand::
 	ret
 .doTextCommand
 	push hl
+	cp a, $18
+	jr z, TextCommand18
 	cp a, $17
 	jp z, TextCommand17
 	cp a, $0e
@@ -417,6 +419,20 @@ NextTextCommand::
 	ld h, [hl]
 	ld l, a
 	jp hl
+
+; TTX-5.45.00: ordinary map trainer
+; 18AAAA
+; AAAA = TrainerHeader address in the current map bank
+TextCommand18::
+	pop hl
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	; Match TX_ASM's continuation/register setup before entering TalkToTrainer.
+	ld de, NextTextCommand
+	push de
+	call TalkToTrainer
+	jp TextScriptEnd
 
 ; draw box
 ; 04AAAABBCC

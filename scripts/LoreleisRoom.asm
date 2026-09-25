@@ -142,10 +142,7 @@ LoreleiTrainerHeader0:
 	db $ff
 
 LoreleiText1:
-	TX_ASM
-	ld hl, LoreleiTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER LoreleiTrainerHeader0
 
 LoreleiBeforeBattleText:
 	TX_FAR _LoreleiBeforeBattleText

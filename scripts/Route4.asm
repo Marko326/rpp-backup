@@ -37,10 +37,7 @@ Route4Text1:
 	db "@"
 
 Route4Text2:
-	TX_ASM
-	ld hl, Route4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route4TrainerHeader0
 
 Route4BattleText1:
 	TX_FAR _Route4BattleText1

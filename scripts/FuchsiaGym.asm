@@ -195,10 +195,7 @@ FuchsiaGymText11:
 	db "@"
 
 FuchsiaGymText2:
-	TX_ASM
-	ld hl, FuchsiaGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FuchsiaGymTrainerHeader0
 
 FuchsiaGymBattleText1:
 	TX_FAR _FuchsiaGymBattleText1
@@ -213,10 +210,7 @@ FuchsiaGymAfterBattleText1:
 	db "@"
 
 FuchsiaGymText3:
-	TX_ASM
-	ld hl, FuchsiaGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FuchsiaGymTrainerHeader1
 
 FuchsiaGymBattleText2:
 	TX_FAR _FuchsiaGymBattleText2
@@ -231,10 +225,7 @@ FuchsiaGymAfterBattleText2:
 	db "@"
 
 FuchsiaGymText4:
-	TX_ASM
-	ld hl, FuchsiaGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FuchsiaGymTrainerHeader2
 
 FuchsiaGymBattleText3:
 	TX_FAR _FuchsiaGymBattleText3
@@ -249,10 +240,7 @@ FuchsiaGymAfterBattleText3:
 	db "@"
 
 FuchsiaGymText5:
-	TX_ASM
-	ld hl, FuchsiaGymTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FuchsiaGymTrainerHeader3
 
 FuchsiaGymBattleText4:
 	TX_FAR _FuchsiaGymBattleText4
@@ -267,10 +255,7 @@ FuchsiaGymAfterBattleText4:
 	db "@"
 
 FuchsiaGymText6:
-	TX_ASM
-	ld hl, FuchsiaGymTrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FuchsiaGymTrainerHeader4
 
 FuchsiaGymBattleText5:
 	TX_FAR _FuchsiaGymBattleText5
@@ -285,10 +270,7 @@ FuchsiaGymAfterBattleText5:
 	db "@"
 
 FuchsiaGymText7:
-	TX_ASM
-	ld hl, FuchsiaGymTrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FuchsiaGymTrainerHeader5
 
 FuchsiaGymBattleText6:
 	TX_FAR _FuchsiaGymBattleText6

@@ -142,10 +142,7 @@ SilphCo4Text_19de5:
 	db "@"
 
 SilphCo4Text2:
-	TX_ASM
-	ld hl, SilphCo4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo4TrainerHeader0
 
 SilphCo4BattleText2:
 	TX_FAR _SilphCo4BattleText2
@@ -160,10 +157,7 @@ SilphCo4AfterBattleText2:
 	db "@"
 
 SilphCo4Text3:
-	TX_ASM
-	ld hl, SilphCo4TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo4TrainerHeader1
 
 SilphCo4BattleText3:
 	TX_FAR _SilphCo4BattleText3
@@ -178,10 +172,7 @@ SilphCo4AfterBattleText3:
 	db "@"
 
 SilphCo4Text4:
-	TX_ASM
-	ld hl, SilphCo4TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo4TrainerHeader2
 
 SilphCo4BattleText4:
 	TX_FAR _SilphCo4BattleText4

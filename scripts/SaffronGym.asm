@@ -202,46 +202,25 @@ SaffronGymText12:
 	db "@"
 
 SaffronGymText2:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader0
 
 SaffronGymText3:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader1
 
 SaffronGymText4:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader2
 
 SaffronGymText5:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader3
 
 SaffronGymText6:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader4
 
 SaffronGymText7:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader5
 
 SaffronGymText8:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader6
 
 SaffronGymText9:
 	TX_ASM

@@ -100,10 +100,7 @@ Route8TrainerHeader8:
 	db $ff
 
 Route8Text1:
-	TX_ASM
-	ld hl, Route8TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader0
 
 Route8BattleText1:
 	TX_FAR _Route8BattleText1
@@ -118,10 +115,7 @@ Route8AfterBattleText1:
 	db "@"
 
 Route8Text2:
-	TX_ASM
-	ld hl, Route8TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader1
 
 Route8BattleText2:
 	TX_FAR _Route8BattleText2
@@ -136,10 +130,7 @@ Route8AfterBattleText2:
 	db "@"
 
 Route8Text3:
-	TX_ASM
-	ld hl, Route8TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader2
 
 Route8BattleText3:
 	TX_FAR _Route8BattleText3
@@ -154,10 +145,7 @@ Route8AfterBattleText3:
 	db "@"
 
 Route8Text4:
-	TX_ASM
-	ld hl, Route8TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader3
 
 Route8BattleText4:
 	TX_FAR _Route8BattleText4
@@ -172,10 +160,7 @@ Route8AfterBattleText4:
 	db "@"
 
 Route8Text5:
-	TX_ASM
-	ld hl, Route8TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader4
 
 Route8BattleText5:
 	TX_FAR _Route8BattleText5
@@ -190,10 +175,7 @@ Route8AfterBattleText5:
 	db "@"
 
 Route8Text6:
-	TX_ASM
-	ld hl, Route8TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader5
 
 Route8BattleText6:
 	TX_FAR _Route8BattleText6
@@ -208,10 +190,7 @@ Route8AfterBattleText6:
 	db "@"
 
 Route8Text7:
-	TX_ASM
-	ld hl, Route8TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader6
 
 Route8BattleText7:
 	TX_FAR _Route8BattleText7
@@ -226,10 +205,7 @@ Route8AfterBattleText7:
 	db "@"
 
 Route8Text8:
-	TX_ASM
-	ld hl, Route8TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader7
 
 Route8BattleText8:
 	TX_FAR _Route8BattleText8
@@ -244,10 +220,7 @@ Route8AfterBattleText8:
 	db "@"
 
 Route8Text9:
-	TX_ASM
-	ld hl, Route8TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route8TrainerHeader8
 
 Route8BattleText9:
 	TX_FAR _Route8BattleText9

@@ -50,10 +50,7 @@ SSAnne5Text3:
 	db "@"
 
 SSAnne5Text4:
-	TX_ASM
-	ld hl, SSAnne5TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne5TrainerHeader0
 
 SSAnne5BattleText1:
 	TX_FAR _SSAnne5BattleText1
@@ -68,10 +65,7 @@ SSAnne5AfterBattleText1:
 	db "@"
 
 SSAnne5Text5:
-	TX_ASM
-	ld hl, SSAnne5TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne5TrainerHeader1
 
 SSAnne5BattleText2:
 	TX_FAR _SSAnne5BattleText2

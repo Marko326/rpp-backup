@@ -163,10 +163,7 @@ SilphCo6Text_1a2ab:
 	db "@"
 
 SilphCo6Text6:
-	TX_ASM
-	ld hl, SilphCo6TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo6TrainerHeader0
 
 SilphCo6BattleText2:
 	TX_FAR _SilphCo6BattleText2
@@ -181,10 +178,7 @@ SilphCo6AfterBattleText2:
 	db "@"
 
 SilphCo6Text7:
-	TX_ASM
-	ld hl, SilphCo6TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo6TrainerHeader1
 
 SilphCo6BattleText3:
 	TX_FAR _SilphCo6BattleText3
@@ -199,10 +193,7 @@ SilphCo6AfterBattleText3:
 	db "@"
 
 SilphCo6Text8:
-	TX_ASM
-	ld hl, SilphCo6TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo6TrainerHeader2
 
 SilphCo6BattleText4:
 	TX_FAR _SilphCo6BattleText4

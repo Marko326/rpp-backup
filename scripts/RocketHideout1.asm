@@ -87,34 +87,19 @@ RocketHideout1TrainerHeader4:
 	db $ff
 
 RocketHideout1Text1:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader0
 
 RocketHideout1Text2:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader1
 
 RocketHideout1Text3:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader2
 
 RocketHideout1Text4:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader3
 
 RocketHideout1Text5:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader4
 
 RocketHideout1EndBattleText6:
 	TX_FAR _RocketHideout1EndBattleText6

@@ -60,22 +60,13 @@ ViridianForestText1:
 	db "@"
 
 ViridianForestText2:
-	TX_ASM
-	ld hl, ViridianForestTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianForestTrainerHeader0
 
 ViridianForestText3:
-	TX_ASM
-	ld hl, ViridianForestTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianForestTrainerHeader1
 
 ViridianForestText4:
-	TX_ASM
-	ld hl, ViridianForestTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianForestTrainerHeader2
 
 ViridianForestBattleText1:
 	TX_FAR _ViridianForestBattleText1

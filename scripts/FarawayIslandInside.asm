@@ -27,10 +27,7 @@ FarawayIslandInsideTrainerHeader0:
 	db $ff
 
 FarawayIslandInsideText1:
-	TX_ASM
-	ld hl, FarawayIslandInsideTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FarawayIslandInsideTrainerHeader0
 
 FarawayIslandInsideMewText:
 	TX_FAR _FarawayIslandInsideMewText

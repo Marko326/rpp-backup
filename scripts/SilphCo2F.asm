@@ -169,28 +169,16 @@ TM36NoRoomText:
 	db "@"
 
 SilphCo2Text2:
-	TX_ASM
-	ld hl, SilphCo2TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo2TrainerHeader0
 
 SilphCo2Text3:
-	TX_ASM
-	ld hl, SilphCo2TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo2TrainerHeader1
 
 SilphCo2Text4:
-	TX_ASM
-	ld hl, SilphCo2TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo2TrainerHeader2
 
 SilphCo2Text5:
-	TX_ASM
-	ld hl, SilphCo2TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo2TrainerHeader3
 
 SilphCo2BattleText1:
 	TX_FAR _SilphCo2BattleText1

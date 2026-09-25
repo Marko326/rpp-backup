@@ -71,35 +71,19 @@ MtMoon3TrainerHeader4:
 
 
 MtMoon3Text1:
-	TX_ASM
-	ld hl, MtMoon3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon3TrainerHeader0
 
 MtMoon3Text2:
-	TX_ASM
-	ld hl, MtMoon3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon3TrainerHeader1
 
 MtMoon3Text3:
-	TX_ASM
-	ld hl, MtMoon3TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon3TrainerHeader2
 
 MtMoon3Text4:
-	TX_ASM
-	ld hl, MtMoon3TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon3TrainerHeader3
 
 MtMoon3Text5:
-	TX_ASM
-	ld hl, MtMoon3TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
-
+	TX_TRAINER MtMoon3TrainerHeader4
 
 MtMoon3BattleText1:
 	TX_FAR _MtMoon3BattleText1

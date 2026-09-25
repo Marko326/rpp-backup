@@ -187,22 +187,13 @@ SilphCo9Text_5d8ef:
 	db "@"
 
 SilphCo9Text2:
-	TX_ASM
-	ld hl, SilphCo9TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo9TrainerHeader0
 
 SilphCo9Text3:
-	TX_ASM
-	ld hl, SilphCo9TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo9TrainerHeader1
 
 SilphCo9Text4:
-	TX_ASM
-	ld hl, SilphCo9TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo9TrainerHeader2
 
 SilphCo9BattleText1:
 	TX_FAR _SilphCo9BattleText1

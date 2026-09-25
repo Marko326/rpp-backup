@@ -158,10 +158,7 @@ CeruleanGymText_5c7d8:
 	db "@"
 
 CeruleanGymText2:
-	TX_ASM
-	ld hl, CeruleanGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeruleanGymTrainerHeader0
 
 CeruleanGymBattleText1:
 	TX_FAR _CeruleanGymBattleText1
@@ -176,10 +173,7 @@ CeruleanGymAfterBattleText1:
 	db "@"
 
 CeruleanGymText3:
-	TX_ASM
-	ld hl, CeruleanGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeruleanGymTrainerHeader1
 
 CeruleanGymBattleText2:
 	TX_FAR _CeruleanGymBattleText2

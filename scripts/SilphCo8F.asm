@@ -126,22 +126,13 @@ SilphCo8Text_565c3:
 	db "@"
 
 SilphCo8Text2:
-	TX_ASM
-	ld hl, SilphCo8TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo8TrainerHeader0
 
 SilphCo8Text3:
-	TX_ASM
-	ld hl, SilphCo8TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo8TrainerHeader1
 
 SilphCo8Text4:
-	TX_ASM
-	ld hl, SilphCo8TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo8TrainerHeader2
 
 SilphCo8BattleText1:
 	TX_FAR _SilphCo8BattleText1

@@ -108,64 +108,34 @@ Route19TrainerHeader9:
 	db $ff
 
 Route19Text1:
-	TX_ASM
-	ld hl, Route19TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader0
 
 Route19Text2:
-	TX_ASM
-	ld hl, Route19TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader1
 
 Route19Text3:
-	TX_ASM
-	ld hl, Route19TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader2
 
 Route19Text4:
-	TX_ASM
-	ld hl, Route19TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader3
 
 Route19Text5:
-	TX_ASM
-	ld hl, Route19TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader4
 
 Route19Text6:
-	TX_ASM
-	ld hl, Route19TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader5
 
 Route19Text7:
-	TX_ASM
-	ld hl, Route19TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader6
 
 Route19Text8:
-	TX_ASM
-	ld hl, Route19TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader7
 
 Route19Text9:
-	TX_ASM
-	ld hl, Route19TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader8
 
 Route19Text10:
-	TX_ASM
-	ld hl, Route19TrainerHeader9
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route19TrainerHeader9
 
 Route19BattleText1:
 	TX_FAR _Route19BattleText1

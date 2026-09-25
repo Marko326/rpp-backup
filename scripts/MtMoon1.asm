@@ -87,46 +87,25 @@ MtMoon1TrainerHeader6:
 	db $ff
 
 MtMoon1Text1:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader0
 
 MtMoon1Text2:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader1
 
 MtMoon1Text3:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader2
 
 MtMoon1Text4:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader3
 
 MtMoon1Text5:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader4
 
 MtMoon1Text6:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader5
 
 MtMoon1Text7:
-	TX_ASM
-	ld hl, MtMoon1TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MtMoon1TrainerHeader6
 
 MtMoon1BattleText2:
 	TX_FAR _MtMoon1BattleText2

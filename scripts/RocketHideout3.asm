@@ -168,10 +168,7 @@ RocketHideout3TrainerHeader1:
 	db $ff
 
 RocketHideout3Text1:
-	TX_ASM
-	ld hl, RocketHideout3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout3TrainerHeader0
 
 RocketHideout3BattleText2:
 	TX_FAR _RocketHideout3BattleText2
@@ -186,10 +183,7 @@ RocketHideout3AfterBattleTxt2:
 	db "@"
 
 RocketHideout3Text2:
-	TX_ASM
-	ld hl, RocketHideout3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout3TrainerHeader1
 
 RocketHideout3BattleTxt:
 	TX_FAR _RocketHideout3BattleTxt

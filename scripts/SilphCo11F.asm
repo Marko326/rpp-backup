@@ -355,10 +355,7 @@ SilphCo11Text6:
 	db "@"
 
 SilphCo11Text4:
-	TX_ASM
-	ld hl, SilphCo11TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo11TrainerHeader0
 
 SilphCo11BattleText1:
 	TX_FAR _SilphCo11BattleText1
@@ -373,10 +370,7 @@ SilphCo11AfterBattleText1:
 	db "@"
 
 SilphCo11Text5:
-	TX_ASM
-	ld hl, SilphCo11TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo11TrainerHeader1
 
 SilphCo11BattleText2:
 	TX_FAR _SilphCo11BattleText2

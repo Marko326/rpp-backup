@@ -98,10 +98,7 @@ SilphCo3Text_59ffe:
 	db "@"
 
 SilphCo3Text2:
-	TX_ASM
-	ld hl, SilphCo3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo3TrainerHeader0
 
 SilphCo3BattleText1:
 	TX_FAR _SilphCo3BattleText1
@@ -116,10 +113,7 @@ SilphCo3AfterBattleText1:
 	db "@"
 
 SilphCo3Text3:
-	TX_ASM
-	ld hl, SilphCo3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo3TrainerHeader1
 
 SilphCo3BattleText2:
 	TX_FAR _SilphCo3BattleText2

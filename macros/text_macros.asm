@@ -39,6 +39,13 @@ TX_BLINK   EQUS "db $06"
 ;TX_SCROLL EQUS "db $07"
 TX_ASM     EQUS "db $08"
 
+; TTX-5.45.00: encode ordinary map-trainer interaction as data instead of
+; repeating an inline TX_ASM wrapper around TalkToTrainer for every trainer.
+TX_TRAINER: MACRO
+	db $18
+	dw \1
+ENDM
+
 TX_NUM: MACRO
 ; print a big-endian decimal number.
 ; \1: address to read from

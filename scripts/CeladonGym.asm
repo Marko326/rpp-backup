@@ -200,10 +200,7 @@ TM21NoRoomText:
 	db "@"
 
 CeladonGymText2:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader0
 
 CeladonGymBattleText2:
 	TX_FAR _CeladonGymBattleText2
@@ -218,10 +215,7 @@ CeladonGymAfterBattleText2:
 	db "@"
 
 CeladonGymText3:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader1
 
 CeladonGymBattleText3:
 	TX_FAR _CeladonGymBattleText3
@@ -236,10 +230,7 @@ CeladonGymAfterBattleText3:
 	db "@"
 
 CeladonGymText4:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader2
 
 CeladonGymBattleText4:
 	TX_FAR _CeladonGymBattleText4
@@ -254,10 +245,7 @@ CeladonGymAfterBattleText4:
 	db "@"
 
 CeladonGymText5:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader3
 
 CeladonGymBattleText5:
 	TX_FAR _CeladonGymBattleText5
@@ -272,10 +260,7 @@ CeladonGymAfterBattleText5:
 	db "@"
 
 CeladonGymText6:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader4
 
 CeladonGymBattleText6:
 	TX_FAR _CeladonGymBattleText6
@@ -290,10 +275,7 @@ CeladonGymAfterBattleText6:
 	db "@"
 
 CeladonGymText7:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader5
 
 CeladonGymBattleText7:
 	TX_FAR _CeladonGymBattleText7
@@ -308,10 +290,7 @@ CeladonGymAfterBattleText7:
 	db "@"
 
 CeladonGymText8:
-	TX_ASM
-	ld hl, CeladonGymTrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeladonGymTrainerHeader6
 
 CeladonGymBattleText8:
 	TX_FAR _CeladonGymBattleText8

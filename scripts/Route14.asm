@@ -108,10 +108,7 @@ Route14TrainerHeader9:
 	db $ff
 
 Route14Text1:
-	TX_ASM
-	ld hl, Route14TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader0
 
 Route14BattleText1:
 	TX_FAR _Route14BattleText1
@@ -126,10 +123,7 @@ Route14AfterBattleText1:
 	db "@"
 
 Route14Text2:
-	TX_ASM
-	ld hl, Route14TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader1
 
 Route14BattleText2:
 	TX_FAR _Route14BattleText2
@@ -144,10 +138,7 @@ Route14AfterBattleText2:
 	db "@"
 
 Route14Text3:
-	TX_ASM
-	ld hl, Route14TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader2
 
 Route14BattleText3:
 	TX_FAR _Route14BattleText3
@@ -162,10 +153,7 @@ Route14AfterBattleText3:
 	db "@"
 
 Route14Text4:
-	TX_ASM
-	ld hl, Route14TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader3
 
 Route14BattleText4:
 	TX_FAR _Route14BattleText4
@@ -180,10 +168,7 @@ Route14AfterBattleText4:
 	db "@"
 
 Route14Text5:
-	TX_ASM
-	ld hl, Route14TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader4
 
 Route14BattleText5:
 	TX_FAR _Route14BattleText5
@@ -198,10 +183,7 @@ Route14AfterBattleText5:
 	db "@"
 
 Route14Text6:
-	TX_ASM
-	ld hl, Route14TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader5
 
 Route14BattleText6:
 	TX_FAR _Route14BattleText6
@@ -216,10 +198,7 @@ Route14AfterBattleText6:
 	db "@"
 
 Route14Text7:
-	TX_ASM
-	ld hl, Route14TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader6
 
 Route14BattleText7:
 	TX_FAR _Route14BattleText7
@@ -234,10 +213,7 @@ Route14AfterBattleText7:
 	db "@"
 
 Route14Text8:
-	TX_ASM
-	ld hl, Route14TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader7
 
 Route14BattleText8:
 	TX_FAR _Route14BattleText8
@@ -252,10 +228,7 @@ Route14AfterBattleText8:
 	db "@"
 
 Route14Text9:
-	TX_ASM
-	ld hl, Route14TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader8
 
 Route14BattleText9:
 	TX_FAR _Route14BattleText9
@@ -270,10 +243,7 @@ Route14AfterBattleText9:
 	db "@"
 
 Route14Text10:
-	TX_ASM
-	ld hl, Route14TrainerHeader9
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route14TrainerHeader9
 
 Route14BattleText10:
 	TX_FAR _Route14BattleText10

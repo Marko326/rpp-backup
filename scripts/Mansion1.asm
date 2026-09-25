@@ -77,10 +77,7 @@ Mansion1TrainerHeader0:
 	db $ff
 
 Mansion1Text1:
-	TX_ASM
-	ld hl, Mansion1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion1TrainerHeader0
 
 Mansion1BattleText2:
 	TX_FAR _Mansion1BattleText2

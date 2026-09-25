@@ -65,28 +65,16 @@ SSAnne9TrainerHeader3:
 	db $ff
 
 SSAnne9Text1:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader0
 
 SSAnne9Text2:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader1
 
 SSAnne9Text3:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader2
 
 SSAnne9Text4:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader3
 
 SSAnne9Text5:
 	TX_ASM

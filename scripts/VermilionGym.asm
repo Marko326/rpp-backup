@@ -186,10 +186,7 @@ ReceivedThunderbadgeText:
 	db "@"
 
 VermilionGymText2:
-	TX_ASM
-	ld hl, VermilionGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VermilionGymTrainerHeader0
 
 VermilionGymBattleText1:
 	TX_FAR _VermilionGymBattleText1
@@ -204,10 +201,7 @@ VermilionGymAfterBattleText1:
 	db "@"
 
 VermilionGymText3:
-	TX_ASM
-	ld hl, VermilionGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VermilionGymTrainerHeader1
 
 VermilionGymBattleText2:
 	TX_FAR _VermilionGymBattleText2
@@ -222,10 +216,7 @@ VermilionGymAfterBattleText2:
 	db "@"
 
 VermilionGymText4:
-	TX_ASM
-	ld hl, VermilionGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VermilionGymTrainerHeader2
 
 VermilionGymBattleText3:
 	TX_FAR _VermilionGymBattleText3

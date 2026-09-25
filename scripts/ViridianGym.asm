@@ -321,10 +321,7 @@ ViridianGymText14:
 	db "@"
 
 ViridianGymText2:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader0
 
 ViridianGymBattleText1:
 	TX_FAR _ViridianGymBattleText1
@@ -339,10 +336,7 @@ ViridianGymAfterBattleText1:
 	db "@"
 
 ViridianGymText3:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader1
 
 ViridianGymBattleText2:
 	TX_FAR _ViridianGymBattleText2
@@ -357,10 +351,7 @@ ViridianGymAfterBattleText2:
 	db "@"
 
 ViridianGymText4:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader2
 
 ViridianGymBattleText3:
 	TX_FAR _ViridianGymBattleText3
@@ -375,10 +366,7 @@ ViridianGymAfterBattleText3:
 	db "@"
 
 ViridianGymText5:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader3
 
 ViridianGymBattleText4:
 	TX_FAR _ViridianGymBattleText4
@@ -393,10 +381,7 @@ ViridianGymAfterBattleText4:
 	db "@"
 
 ViridianGymText6:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader4
 
 ViridianGymBattleText5:
 	TX_FAR _ViridianGymBattleText5
@@ -411,10 +396,7 @@ ViridianGymAfterBattleText5:
 	db "@"
 
 ViridianGymText7:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader5
 
 ViridianGymBattleText6:
 	TX_FAR _ViridianGymBattleText6
@@ -429,10 +411,7 @@ ViridianGymAfterBattleText6:
 	db "@"
 
 ViridianGymText8:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader6
 
 ViridianGymBattleText7:
 	TX_FAR _ViridianGymBattleText7
@@ -447,10 +426,7 @@ ViridianGymAfterBattleText7:
 	db "@"
 
 ViridianGymText9:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader7
 
 ViridianGymBattleText8:
 	TX_FAR _ViridianGymBattleText8

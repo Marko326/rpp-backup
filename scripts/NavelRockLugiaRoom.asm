@@ -36,16 +36,10 @@ NavelRockLugiaRoomTrainerHeader1:
 	db $ff
 
 NavelRockLugiaRoomText1:
-	TX_ASM
-	ld hl, NavelRockLugiaRoomTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER NavelRockLugiaRoomTrainerHeader0
 
 NavelRockLugiaRoomText2:
-	TX_ASM
-	ld hl, NavelRockLugiaRoomTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER NavelRockLugiaRoomTrainerHeader1
 
 NavelRockLugiaRoomLugiaText:
 	TX_FAR _NavelRockLugiaRoomLugiaText

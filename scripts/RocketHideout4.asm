@@ -151,10 +151,7 @@ RocketHideout4Text10:
 	db "@"
 
 RocketHideout4Text2:
-	TX_ASM
-	ld hl, RocketHideout4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout4TrainerHeader0
 
 RocketHideout4BattleText2:
 	TX_FAR _RocketHideout4BattleText2
@@ -169,10 +166,7 @@ RocketHideout4AfterBattleText2:
 	db "@"
 
 RocketHideout4Text3:
-	TX_ASM
-	ld hl, RocketHideout4TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout4TrainerHeader1
 
 RocketHideout4BattleText3:
 	TX_FAR _RocketHideout4BattleText3
@@ -187,10 +181,7 @@ RocketHideout4AfterBattleText3:
 	db "@"
 
 RocketHideout4Text4:
-	TX_ASM
-	ld hl, RocketHideout4TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout4TrainerHeader2
 
 RocketHideout4BattleText4:
 	TX_FAR _RocketHideout4BattleText4

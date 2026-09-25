@@ -127,10 +127,7 @@ Route16TrainerHeader5:
 	db $ff
 
 Route16Text1:
-	TX_ASM
-	ld hl, Route16TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader0
 
 Route16BattleText1:
 	TX_FAR _Route16BattleText1
@@ -145,10 +142,7 @@ Route16AfterBattleText1:
 	db "@"
 
 Route16Text2:
-	TX_ASM
-	ld hl, Route16TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader1
 
 Route16BattleText2:
 	TX_FAR _Route16BattleText2
@@ -163,10 +157,7 @@ Route16AfterBattleText2:
 	db "@"
 
 Route16Text3:
-	TX_ASM
-	ld hl, Route16TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader2
 
 Route16BattleText3:
 	TX_FAR _Route16BattleText3
@@ -181,10 +172,7 @@ Route16AfterBattleText3:
 	db "@"
 
 Route16Text4:
-	TX_ASM
-	ld hl, Route16TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader3
 
 Route16BattleText4:
 	TX_FAR _Route16BattleText4
@@ -199,10 +187,7 @@ Route16AfterBattleText4:
 	db "@"
 
 Route16Text5:
-	TX_ASM
-	ld hl, Route16TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader4
 
 Route16BattleText5:
 	TX_FAR _Route16BattleText5
@@ -217,10 +202,7 @@ Route16AfterBattleText5:
 	db "@"
 
 Route16Text6:
-	TX_ASM
-	ld hl, Route16TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader5
 
 Route16BattleText6:
 	TX_FAR _Route16BattleText6

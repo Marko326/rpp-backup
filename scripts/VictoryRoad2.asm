@@ -134,40 +134,22 @@ MoltresTrainerHeader:
 	db $ff
 
 VictoryRoad2Text1:
-	TX_ASM
-	ld hl, VictoryRoad2TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad2TrainerHeader0
 
 VictoryRoad2Text2:
-	TX_ASM
-	ld hl, VictoryRoad2TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad2TrainerHeader1
 
 VictoryRoad2Text3:
-	TX_ASM
-	ld hl, VictoryRoad2TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad2TrainerHeader2
 
 VictoryRoad2Text4:
-	TX_ASM
-	ld hl, VictoryRoad2TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad2TrainerHeader3
 
 VictoryRoad2Text5:
-	TX_ASM
-	ld hl, VictoryRoad2TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad2TrainerHeader4
 
 MoltresText:
-	TX_ASM
-	ld hl, MoltresTrainerHeader
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MoltresTrainerHeader
 
 MoltresBattleText:
 	TX_FAR _MoltresBattleText

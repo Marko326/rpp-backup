@@ -69,10 +69,7 @@ AgathaTrainerHeader0:
 	db $ff
 
 AgathaText1:
-	TX_ASM
-	ld hl, AgathaTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER AgathaTrainerHeader0
 
 AgathaBeforeBattleText:
 	TX_FAR _AgathaBeforeBattleText

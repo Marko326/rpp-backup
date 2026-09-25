@@ -89,52 +89,28 @@ RockTunnel2TrainerHeader7:
 	db $ff
 
 RockTunnel2Text1:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader0
 
 RockTunnel2Text2:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader1
 
 RockTunnel2Text3:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader2
 
 RockTunnel2Text4:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader3
 
 RockTunnel2Text5:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader4
 
 RockTunnel2Text6:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader5
 
 RockTunnel2Text7:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader6
 
 RockTunnel2Text8:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader7
 
 RockTunnel2BattleText2:
 	TX_FAR _RockTunnel2BattleText2

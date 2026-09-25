@@ -100,51 +100,31 @@ Route9TrainerHeader8:
 	db $ff
 
 Route9Text1:
-	TX_ASM
-	ld hl, Route9TrainerHeader0
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader0
 
 Route9Text2:
-	TX_ASM
-	ld hl, Route9TrainerHeader1
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader1
 
 Route9Text3:
-	TX_ASM
-	ld hl, Route9TrainerHeader2
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader2
 
 Route9Text4:
-	TX_ASM
-	ld hl, Route9TrainerHeader3
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader3
 
 Route9Text5:
-	TX_ASM
-	ld hl, Route9TrainerHeader4
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader4
 
 Route9Text6:
-	TX_ASM
-	ld hl, Route9TrainerHeader5
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader5
 
 Route9Text7:
-	TX_ASM
-	ld hl, Route9TrainerHeader6
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader6
 
 Route9Text8:
-	TX_ASM
-	ld hl, Route9TrainerHeader7
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader7
 
 Route9Text9:
-	TX_ASM
-	ld hl, Route9TrainerHeader8
-Route9TalkToTrainer:
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route9TrainerHeader8
 
 Route9BattleText1:
 	TX_FAR _Route9BattleText1

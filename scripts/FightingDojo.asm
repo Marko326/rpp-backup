@@ -173,10 +173,7 @@ FightingDojoText_5ce9d:
 	db "@"
 
 FightingDojoText2:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader0
 
 FightingDojoBattleText1:
 	TX_FAR _FightingDojoBattleText1
@@ -191,10 +188,7 @@ FightingDojoAfterBattleText1:
 	db "@"
 
 FightingDojoText3:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader1
 
 FightingDojoBattleText2:
 	TX_FAR _FightingDojoBattleText2
@@ -209,10 +203,7 @@ FightingDojoAfterBattleText2:
 	db "@"
 
 FightingDojoText4:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader2
 
 FightingDojoBattleText3:
 	TX_FAR _FightingDojoBattleText3
@@ -227,10 +218,7 @@ FightingDojoAfterBattleText3:
 	db "@"
 
 FightingDojoText5:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader3
 
 FightingDojoBattleText4:
 	TX_FAR _FightingDojoBattleText4
