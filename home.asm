@@ -2187,6 +2187,10 @@ TalkToTrainer::
 	call PrintText
 	ld a, TRAINER_HEADER_END_TEXT
 	call ReadTrainerHeaderInfo     ; read end battle text
+; TRH-5.44.01: map TrainerHeaders share one end-battle text, so initialize
+; both runtime win/lose pointers from that same header pointer.
+	ld d, h
+	ld e, l
 	call SaveEndBattleTextPointers
 	ld hl, wFlags_D733
 	set 4, [hl]                    ; activate map script index override (index is set below)
