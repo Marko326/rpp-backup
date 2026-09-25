@@ -322,11 +322,6 @@ ItemUseBall:
 	jp nz,ThrowBallAtTrainerMon
 
 BallAnyway:
-; If this is for the old man battle, skip checking if the party & box are full.
-	ld a,[wBattleType]
-	dec a
-	jr z,.canUseBall
-
 	ld a,[wPartyCount] ; is party full?
 	cp a,PARTY_LENGTH
 	jr nz,.canUseBall
@@ -362,18 +357,6 @@ BallAnyway:
 	ld b,$10 ; can't be caught value
 	jp z,.setAnimData
 
-	ld a,[wBattleType]
-	dec a
-	jr nz,.notOldManBattle
-
-.oldManBattle
-	ld hl,wCurTrainerName
-	ld de,wPlayerName
-	ld bc,NAME_LENGTH
-	call CopyData ; restore player name
-	jp .captured
-
-.notOldManBattle
 ; If the player is fighting the ghost Marowak, set the value that indicates the
 ; Pokémon can't be caught and skip the capture calculations.
 	ld a,[wCurMap]
@@ -731,10 +714,6 @@ BallAnyway:
 	ld [wCapturedMonSpecies],a
 	ld [wcf91],a
 	ld [wd11e],a
-	ld a,[wBattleType]
-	dec a ; is this the old man battle?
-	jr z,.oldManCaughtMon ; if so, don't give the player the caught Pokémon
-
 	ld hl,ItemUseBallText05
 	call PrintText
 
@@ -787,17 +766,14 @@ BallAnyway:
 	call PrintText
 	jr .done
 
-.oldManCaughtMon
-	ld hl,ItemUseBallText05
-
 .printMessage
 	call PrintText
 	call ClearSprites
 
 .done
 	ld a,[wBattleType]
-	and a ; is this the old man battle?
-	ret nz ; if so, don't remove a ball from the bag
+	cp BATTLE_TYPE_SAFARI
+	ret z ; Safari Balls use wNumSafariBalls, not the player's bag.
 
 ; Remove a ball from the bag.
 	ld hl,wNumBagItems

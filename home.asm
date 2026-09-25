@@ -1388,14 +1388,9 @@ DisplayListMenuID::
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable auto-transfer
 	ld a,1
 	ld [hJoy7],a ; joypad state update flag
-	ld a,[wBattleType]
-	and a ; is it the Old Man battle?
-	jr nz,.specialBattleType
+	; TUT-5.41.00: no Old Man pseudo-bag remains; all list menus use
+	; the normal list-menu bank-switch path.
 	ld a,$01 ; hardcoded bank
-	jr .bankswitch
-.specialBattleType ; Old Man battle
-	ld a, BANK(DisplayBattleMenu)
-.bankswitch
 	call BankswitchHome
 	ld hl,wd730
 	set 6,[hl] ; turn off letter printing delay
@@ -1542,23 +1537,6 @@ DisplayListMenuIDLoop::
 	and a
 	call nz,checkOtherKeys.waitForDPadRelease
 .input
-	ld a,[wBattleType]
-	and a ; is it the Old Man battle?
-	jr z,.notOldManBattle
-.oldManBattle
-	ld a,"▶"
-	Coorda 5, 4 ; place menu cursor in front of first menu entry
-	ld c,80
-	call DelayFrames
-	xor a
-	ld [wCurrentMenuItem],a
-	coord hl, 5, 4
-	ld a,l
-	ld [wMenuCursorLocation],a
-	ld a,h
-	ld [wMenuCursorLocation + 1],a
-	jr .buttonAPressed
-.notOldManBattle
 	call LoadGBPal
 	call HandleMenuInput
 	push af

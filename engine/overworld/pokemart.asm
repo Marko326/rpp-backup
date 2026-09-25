@@ -318,23 +318,7 @@ DisplayListMenuIDLoop_Mart::
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable transfer
 	call Delay3
-	ld a,[wBattleType]
-	and a ; is it the Old Man battle?
-	jr z,.notOldManBattle
-.oldManBattle
-	ld a,"▶"
-	Coorda 5, 4 ; place menu cursor in front of first menu entry
-	ld c,80
-	call DelayFrames
-	xor a
-	ld [wCurrentMenuItem],a
-	coord hl, 5, 4
-	ld a,l
-	ld [wMenuCursorLocation],a
-	ld a,h
-	ld [wMenuCursorLocation + 1],a
-	jr .buttonAPressed
-.notOldManBattle
+	; TUT-5.41.00: the Old Man pseudo-list is gone.
 	call LoadGBPal
 	call HandleMenuInput_Mart
 	push af

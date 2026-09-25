@@ -6,9 +6,7 @@ ViridianCityScript:
 
 ViridianCityScriptPointers:
 	dw ViridianCityScript0
-	dw ViridianCityScript1
-	dw ViridianCityScript2
-	dw ViridianCityScript3
+	dw ViridianCityPushbackWait
 
 ViridianCityScript0:
 	call ViridianCityScript_1900b
@@ -35,7 +33,7 @@ ViridianCityScript_1900b:
 	xor a
 	ld [hJoyHeld], a
 	call ViridianCityScript_190cf
-	ld a, $3
+	ld a, $1
 	ld [wViridianCityCurScript], a
 	ret
 
@@ -54,62 +52,18 @@ ViridianCityScript_1903d:
 	xor a
 	ld [hJoyHeld], a
 	call ViridianCityScript_190cf
-	ld a, $3
+	ld a, $1
 	ld [wViridianCityCurScript], a
 	ret
 
-ViridianCityScript1:
-	ld a, [wSpriteStateData1 + $34]
-	ld [$ffeb], a
-	ld a, [wSpriteStateData1 + $36]
-	ld [$ffec], a
-	ld a, [wSpriteStateData2 + $34]
-	ld [$ffed], a
-	ld a, [wSpriteStateData2 + $35]
-	ld [$ffee], a
-	xor a
-	ld [wListScrollOffset], a
-
-	; set up battle for Old Man
-	ld a, BATTLE_TYPE_OLD_MAN
-	ld [wBattleType], a
-	ld a, 5
-	ld [wCurEnemyLVL], a
-	ld a, WEEDLE
-	ld [wCurOpponent], a
-	ld a, $2
-	ld [wViridianCityCurScript], a
-	ret
-
-ViridianCityScript2:
-	ld a, [$ffeb]
-	ld [wSpriteStateData1 + $34], a
-	ld a, [$ffec]
-	ld [wSpriteStateData1 + $36], a
-	ld a, [$ffed]
-	ld [wSpriteStateData2 + $34], a
-	ld a, [$ffee]
-	ld [wSpriteStateData2 + $35], a
-	call UpdateSprites
-	call Delay3
-	xor a
-	ld [wJoyIgnore], a
-	ld a, $f
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	xor a
-	ld [wBattleType], a
-	ld [wJoyIgnore], a
-	ld a, $0
-	ld [wViridianCityCurScript], a
-	ret
-
-ViridianCityScript3:
+; TUT-5.41.00: the Old Man keeps his catching advice, but the dedicated
+; tutorial battle is removed. State 1 now only waits for map pushback.
+ViridianCityPushbackWait:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
 	call Delay3
-	ld a, 0
+	xor a
 	ld [wViridianCityCurScript], a
 	ret
 
@@ -139,7 +93,6 @@ ViridianCityTextPointers:
 	dw PokeCenterSignText
 	dw ViridianCityText13
 	dw ViridianCityText14
-	dw ViridianCityText15
 
 ViridianCityText1:
 	TX_FAR _ViridianCityText1
@@ -221,7 +174,7 @@ ViridianCityText5:
 	ld hl, ViridianCityText_19191
 	call PrintText
 	call ViridianCityScript_190cf
-	ld a, $3
+	ld a, $1
 	ld [wViridianCityCurScript], a
 	jp TextScriptEnd
 
@@ -281,13 +234,11 @@ ViridianCityText7:
 	jr z, .asm_42f68
 	ld hl, ViridianCityText_1920f
 	call PrintText
-	ld a, $1
-	ld [wViridianCityCurScript], a
-	jr .asm_2413a
+	jr .done
 .asm_42f68
 	ld hl, ViridianCityText_19214
 	call PrintText
-.asm_2413a
+.done
 	jp TextScriptEnd
 
 ViridianCityText_1920a:
@@ -300,10 +251,6 @@ ViridianCityText_1920f:
 
 ViridianCityText_19214:
 	TX_FAR _ViridianCityText_19214
-	db "@"
-
-ViridianCityText15:
-	TX_FAR _ViridianCityText_19219
 	db "@"
 
 ViridianCityText8:

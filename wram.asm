@@ -1805,7 +1805,7 @@ wCurOpponent:: ; d059
 
 wBattleType:: ; d05a
 ; in normal battle, this is 0
-; in old man battle, this is 1
+; value 1 is legacy/reserved (former Old Man tutorial)
 ; in safari battle, this is 2
 	ds 1
 

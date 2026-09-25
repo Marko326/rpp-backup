@@ -2292,7 +2292,6 @@ MissingnoPic::          INCBIN "pic/other/missingno.pic"
 
 RedPicBack::            INCBIN "pic/trainer/redb.pic"
 LeafPicBack::           INCBIN "pic/trainer/leafb.pic"
-OldManPic::             INCBIN "pic/trainer/oldman.pic"
 
 LeafFishingTilesFront:: INCBIN "gfx/leaf_fishing_tile_front.2bpp"
 LeafFishingTilesBack::  INCBIN "gfx/leaf_fishing_tile_back.2bpp"

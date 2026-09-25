@@ -189,7 +189,7 @@ BIT_TEST_BATTLE EQU 0
 
 ; battle type constants
 BATTLE_TYPE_NORMAL  EQU 0
-BATTLE_TYPE_OLD_MAN EQU 1
+BATTLE_TYPE_OLD_MAN EQU 1 ; TUT-5.41.00: legacy/reserved; keep Safari value stable
 BATTLE_TYPE_SAFARI  EQU 2
 
 ; serial

@@ -2157,33 +2157,8 @@ DisplayBattleMenu:
 	ld a, 1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call Delay3
-	ld a, [wBattleType]
-	dec a
-	jp nz, .handleBattleMenuInput ; handle menu input if it's not the old man tutorial
-; the following happens for the old man tutorial
-	ld hl, wPlayerName
-	ld de, wCurTrainerName
-	ld bc, NAME_LENGTH
-	call CopyData  ; temporarily save the player name, so we can show Old Man instead
-	ld hl, .oldManName
-	ld de, wPlayerName
-	ld bc, NAME_LENGTH
-	call CopyData
-; the following simulates the keystrokes by drawing menus on screen
-	coord hl, 9, 14
-	ld [hl], "▶"
-	ld c, 80
-	call DelayFrames
-	ld [hl], " "
-	coord hl, 9, 16
-	ld [hl], "▶"
-	ld c, 50
-	call DelayFrames
-	ld [hl], "▷"
-	ld a, $2 ; select the "ITEM" menu
-	jp .upperLeftMenuItemWasNotSelected
-.oldManName
-	db "Old Man@"
+; TUT-5.41.00: the Old Man catching lesson is dialogue-only, so battle
+; input no longer needs a scripted tutorial path.
 .handleBattleMenuInput
 	ld a, [wBattleAndStartSavedMenuItem]
 	ld [wCurrentMenuItem], a
@@ -2332,29 +2307,7 @@ DisplayBattleMenu:
 
 BagWasSelected:
 	call LoadScreenTilesFromBuffer1
-	ld a, [wBattleType]
-	and a ; is it a normal battle?
-	jr nz, .next
-
-; normal battle
 	call DrawHUDsAndHPBars
-.next
-	ld a, [wBattleType]
-	dec a ; is it the old man tutorial?
-	jr nz, DisplayPlayerBag ; no, it is a normal battle
-	xor a
-	ld [wBagPocketActive], a ; tutorial keeps its fixed one-entry pseudo list
-	ld hl, OldManItemList
-	ld a, l
-	ld [wListPointer], a
-	ld a, h
-	ld [wListPointer + 1], a
-	jr DisplayBagMenu
-
-OldManItemList:
-	db 1 ; # items
-	db POKE_BALL, 50
-	db -1
 
 DisplayPlayerBag:
 	; Only normal wild battles reach this real-player-Bag entry. Build a filtered
@@ -6392,14 +6345,10 @@ SwapPlayerAndEnemyLevels:
 	pop bc
 	ret
 
-; loads either player back pic or old man back pic
+; loads the player's back pic
 ; also writes OAM data and loads tile patterns for the back sprite's head
 ; (for use when scrolling the player sprite and enemy's silhouettes on screen)
 LoadPlayerBackPic:
-	ld a, [wBattleType]
-	dec a
-	ld de, OldManPic
-	jr z, .next
 	ld a, [wPlayerGender]
 	and a
 	jr z, .RedBack
