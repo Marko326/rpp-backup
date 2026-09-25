@@ -58,18 +58,31 @@ GiveFossilToCinnabarLab:
 	ld a, [wCurrentMenuItem]
 	and a
 	jr nz, .cancelledGivingFossil
+	; FSL-5.42.01: revival is immediate, but keep the original convenience of
+	; sending the Pokémon to the current Box when the party is full.
+	ld a, [wPartyCount]
+	cp PARTY_LENGTH
+	jr c, .haveRoom
+	ld a, [wNumInBox]
+	cp MONS_PER_BOX
+	jr nc, .noRoom
+.haveRoom
 	ld hl, LabFossil_610b3
 	call PrintText
 	ld a, [wFossilItem]
 	ld [hItemToRemoveID], a
 	callba RemoveItemByID
-	ld hl, LabFossil_610b8
+	scf
+	ret
+.noRoom
+	ld hl, LabFossilNoRoomText
 	call PrintText
-	SetEvents EVENT_GAVE_FOSSIL_TO_LAB, EVENT_LAB_STILL_REVIVING_FOSSIL
+	and a
 	ret
 .cancelledGivingFossil
 	ld hl, LabFossil_610bd
 	call PrintText
+	and a
 	ret
 
 LabFossil_610ae:
@@ -80,8 +93,8 @@ LabFossil_610b3:
 	TX_FAR _Lab4Text_610b3
 	db "@"
 
-LabFossil_610b8:
-	TX_FAR _Lab4Text_610b8
+LabFossilNoRoomText:
+	TX_FAR _BoxIsFullText
 	db "@"
 
 LabFossil_610bd:

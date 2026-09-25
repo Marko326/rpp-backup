@@ -48,39 +48,29 @@ FossilsList:
 
 Lab4Text1:
 	TX_ASM
-	CheckEvent EVENT_GAVE_FOSSIL_TO_LAB
-	jr nz, .asm_75d96
+	; FSL-5.42.01: fossil revival completes in one interaction. The old
+	; hand-in/wait/return progress events are retained only as reserved IDs.
 	ld hl, Lab4Text_75dc6
 	call PrintText
 	call Lab4Script_GetFossilsInBag
 	ld a, [wFilteredBagItemsCount]
 	and a
-	jr z, .asm_75d8d
+	jr z, .noFossil
 	callba GiveFossilToCinnabarLab
-	jr .asm_75d93
-.asm_75d8d
-	ld hl, Lab4Text_75dcb
+	jr nc, .done
+	ld hl, Lab4FossilRevivedText
 	call PrintText
-.asm_75d93
-	jp TextScriptEnd
-.asm_75d96
-	CheckEventAfterBranchReuseA EVENT_LAB_STILL_REVIVING_FOSSIL, EVENT_GAVE_FOSSIL_TO_LAB
-	jr z, .asm_75da2
-	ld hl, Lab4Text_75dd0
-	call PrintText
-	jr .asm_75d93
-.asm_75da2
-	call LoadFossilItemAndMonNameBank1D
-	ld hl, Lab4Text_75dd5
-	call PrintText
-	SetEvent EVENT_LAB_HANDING_OVER_FOSSIL_MON
 	ld a, [wFossilMon]
 	ld b, a
 	ld c, 30
 	call GivePokemon
-	jr nc, .asm_75d93
-	ResetEvents EVENT_GAVE_FOSSIL_TO_LAB, EVENT_LAB_STILL_REVIVING_FOSSIL, EVENT_LAB_HANDING_OVER_FOSSIL_MON
-	jr .asm_75d93
+	jr .done
+
+.noFossil
+	ld hl, Lab4Text_75dcb
+	call PrintText
+.done
+	jp TextScriptEnd
 
 Lab4Text_75dc6:
 	TX_FAR _Lab4Text_75dc6
@@ -90,12 +80,8 @@ Lab4Text_75dcb:
 	TX_FAR _Lab4Text_75dcb
 	db "@"
 
-Lab4Text_75dd0:
-	TX_FAR _Lab4Text_75dd0
-	db "@"
-
-Lab4Text_75dd5:
-	TX_FAR _Lab4Text_75dd5
+Lab4FossilRevivedText:
+	TX_FAR _Lab4FossilRevivedText
 	db "@"
 
 Lab4Text2:
@@ -109,6 +95,3 @@ Lab4Text2:
 	
 Trader9Name:
 	db "Ross@"
-
-LoadFossilItemAndMonNameBank1D:
-	jpba LoadFossilItemAndMonName

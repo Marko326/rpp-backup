@@ -736,9 +736,9 @@ const_value = 0
 	;const EVENT_2DD                                  ; 2DD, (D7A2, bit 5)
 	;const EVENT_2DE                                  ; 2DE, (D7A2, bit 6)
 	;const EVENT_2DF                                  ; 2DF, (D7A2, bit 7)
-	const EVENT_GAVE_FOSSIL_TO_LAB                   ; 2E0, (D7A3, bit 0)
-	const EVENT_LAB_STILL_REVIVING_FOSSIL            ; 2E1, (D7A3, bit 1)
-	const EVENT_LAB_HANDING_OVER_FOSSIL_MON          ; 2E2, (D7A3, bit 2)
+	const EVENT_GAVE_FOSSIL_TO_LAB                   ; 2E0, (D7A3, bit 0) ; FSL-5.42.01: legacy/reserved, keep numbering stable
+	const EVENT_LAB_STILL_REVIVING_FOSSIL            ; 2E1, (D7A3, bit 1) ; FSL-5.42.01: legacy/reserved, keep numbering stable
+	const EVENT_LAB_HANDING_OVER_FOSSIL_MON          ; 2E2, (D7A3, bit 2) ; FSL-5.42.01: legacy/reserved, keep numbering stable
 	const EVENT_2E3                                  ; 2E3, (D7A3, bit 3)
 	const EVENT_2E4                                  ; 2E4, (D7A3, bit 4)
 	const EVENT_2E5                                  ; 2E5, (D7A3, bit 5)
