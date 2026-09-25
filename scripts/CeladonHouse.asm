@@ -1,7 +1,3 @@
-CeladonHouseScript:
-	call EnableAutoTextBoxDrawing
-	ret
-
 CeladonHouseTextPointers:
 	dw CeladonHouseText1
 	dw CeladonHouseText2

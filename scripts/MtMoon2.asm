@@ -1,7 +1,3 @@
-MtMoon2Script:
-	call EnableAutoTextBoxDrawing
-	ret
-
 MtMoon2TextPointers:
 	dw MtMoonText1
 

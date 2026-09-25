@@ -1,6 +1,3 @@
-Route7Script:
-	jp EnableAutoTextBoxDrawing
-
 Route7TextPointers:
 	dw Route7Tree1
 	dw Route7Text1

@@ -1,6 +1,3 @@
-SafariZoneSecretHouseScript:
-	jp EnableAutoTextBoxDrawing
-
 SafariZoneSecretHouseTextPointers:
 	dw SafariZoneSecretHouseText1
 

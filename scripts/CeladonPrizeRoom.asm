@@ -1,6 +1,3 @@
-CeladonPrizeRoomScript:
-	jp EnableAutoTextBoxDrawing
-
 CeladonPrizeRoomTextPointers:
 	dw CeladonPrizeRoomText1
 	dw CeladonPrizeRoomText2

@@ -1,6 +1,3 @@
-Route12HouseScript:
-	jp EnableAutoTextBoxDrawing
-
 Route12HouseTextPointers:
 	dw Route12HouseText1
 

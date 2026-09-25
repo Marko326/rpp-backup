@@ -1,6 +1,3 @@
-CeladonMansion3Script:
-	jp EnableAutoTextBoxDrawing
-
 CeladonMansion3TextPointers:
 	dw ProgrammerText
 	dw GraphicArtistText

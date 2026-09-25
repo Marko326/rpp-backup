@@ -1,6 +1,3 @@
-BikeShopScript:
-	jp EnableAutoTextBoxDrawing
-
 BikeShopTextPointers:
 	dw BikeShopText1
 	dw BikeShopText2

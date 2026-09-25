@@ -1,6 +1,3 @@
-FuchsiaHouse2Script:
-	jp EnableAutoTextBoxDrawing
-
 FuchsiaHouse2TextPointers:
 	dw FuchsiaHouse2Text1
 	dw PickUpItemText

@@ -1,6 +1,3 @@
-Route11GateScript:
-	jp EnableAutoTextBoxDrawing
-
 Route11GateTextPointers:
 	dw Route11GateText1
 

@@ -1,7 +1,3 @@
-CeladonDinerScript:
-	call EnableAutoTextBoxDrawing
-	ret
-
 CeladonDinerTextPointers:
 	dw CeladonDinerText1
 	dw CeladonDinerText2

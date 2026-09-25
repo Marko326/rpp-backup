@@ -1,6 +1,3 @@
-MtMoonSquareScript:
-	jp EnableAutoTextBoxDrawing
-
 MtMoonSquareTextPointers:
 	dw MtMoonSquareText1
 	dw MtMoonSquareText2

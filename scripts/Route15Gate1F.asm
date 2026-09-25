@@ -1,6 +1,3 @@
-Route15GateScript:
-	jp EnableAutoTextBoxDrawing
-
 Route15GateTextPointers:
 	dw Route15GateText1
 

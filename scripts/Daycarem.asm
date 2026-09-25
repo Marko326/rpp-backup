@@ -1,6 +1,3 @@
-DayCareMScript:
-	jp EnableAutoTextBoxDrawing
-
 DayCareMTextPointers:
 	dw DayCareMText1 ; Day Care Lady
 	dw DayCareMText2 ; Day Care Man

@@ -1,7 +1,3 @@
-SSAnne6Script:
-	call EnableAutoTextBoxDrawing
-	ret
-
 SSAnne6TextPointers:
 	dw SSAnne6Text1
 	dw SSAnne6Text2

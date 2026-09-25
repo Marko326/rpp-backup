@@ -1,6 +1,3 @@
-VermilionHouse2Script:
-	jp EnableAutoTextBoxDrawing
-
 VermilionHouse2TextPointers:
 	dw VermilionHouse2Text1
 

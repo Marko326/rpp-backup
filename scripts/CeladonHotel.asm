@@ -1,6 +1,3 @@
-CeladonHotelScript:
-	jp EnableAutoTextBoxDrawing
-
 CeladonHotelTextPointers:
 	dw CeladonHotelText1
 	dw CeladonHotelText2

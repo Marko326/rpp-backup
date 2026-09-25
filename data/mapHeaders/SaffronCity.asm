@@ -1,7 +1,8 @@
 SaffronCity_h:
 	db OVERWORLD ; tileset
 	db SAFFRON_CITY_HEIGHT, SAFFRON_CITY_WIDTH ; dimensions (y, x)
-	dw SaffronCityBlocks, SaffronCityTextPointers, SaffronCityScript ; blocks, texts, scripts
+	; MSP-5.43.00: use the shared text-box routine directly; redundant local MapScript wrapper removed.
+	dw SaffronCityBlocks, SaffronCityTextPointers, EnableAutoTextBoxDrawing ; blocks, texts, scripts
 	db NORTH | SOUTH | WEST | EAST ; connections
 	NORTH_MAP_CONNECTION SAFFRON_CITY, ROUTE_5, 5, 0, Route5Blocks
 	SOUTH_MAP_CONNECTION SAFFRON_CITY, ROUTE_6, 5, 0, Route6Blocks, 1

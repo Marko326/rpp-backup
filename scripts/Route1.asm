@@ -1,6 +1,3 @@
-Route1Script:
-	jp EnableAutoTextBoxDrawing
-
 Route1TextPointers:
 	dw Route1Text1
 	dw Route1Text2

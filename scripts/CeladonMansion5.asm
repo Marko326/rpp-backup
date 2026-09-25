@@ -1,6 +1,3 @@
-CeladonMansion5Script:
-	jp EnableAutoTextBoxDrawing
-
 CeladonMansion5TextPointers:
 	dw CeladonMansion5Text1
 	dw CeladonMansion5Text2

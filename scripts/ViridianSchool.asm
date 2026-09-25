@@ -1,6 +1,3 @@
-SchoolScript:
-	jp EnableAutoTextBoxDrawing
-
 SchoolTextPointers:
 	dw SchoolText1
 	dw SchoolText2

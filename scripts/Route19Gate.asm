@@ -1,6 +1,3 @@
-Route19GateScript:
-	jp EnableAutoTextBoxDrawing
-
 Route19GateTextPointers:
 	dw Route19GateText1
 

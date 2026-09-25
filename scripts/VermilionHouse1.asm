@@ -1,7 +1,3 @@
-VermilionHouse1Script:
-	call EnableAutoTextBoxDrawing
-	ret
-
 VermilionHouse1TextPointers:
 	dw VermilionHouse1Text1
 	dw VermilionHouse1Text2

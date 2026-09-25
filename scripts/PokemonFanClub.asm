@@ -1,6 +1,3 @@
-FanClubScript:
-	jp EnableAutoTextBoxDrawing
-
 FanClubBikeInBag:
 ; check if any bike paraphernalia in bag
 	CheckEvent EVENT_GOT_BIKE_VOUCHER

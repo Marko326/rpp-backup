@@ -1,6 +1,3 @@
-Route16GateUpstairsScript:
-	jp DisableAutoTextBoxDrawing
-
 Route16GateUpstairsTextPointers:
 	dw Route16GateUpstairsText1
 	dw Route16GateUpstairsText2

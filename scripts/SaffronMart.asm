@@ -1,6 +1,3 @@
-SaffronMartScript:
-	jp EnableAutoTextBoxDrawing
-
 SaffronMartTextPointers:
 	dw SaffronCashierText
 	dw SaffronMartText2

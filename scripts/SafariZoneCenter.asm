@@ -1,6 +1,3 @@
-SafariZoneCenterScript:
-	jp EnableAutoTextBoxDrawing
-
 SafariZoneCenterTextPointers:
 	dw PickUpItemText
 	dw SafariZoneCenterText2

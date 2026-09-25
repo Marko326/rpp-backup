@@ -1,6 +1,3 @@
-NameRaterScript:
-	jp EnableAutoTextBoxDrawing
-
 NameRaterScript_1da15:
 	call PrintText
 	call YesNoChoice

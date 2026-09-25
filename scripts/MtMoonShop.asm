@@ -1,6 +1,3 @@
-MtMoonShopScript:
-	jp EnableAutoTextBoxDrawing
-
 MtMoonShopTextPointers:
 	dw FossilMartText
 	dw MtMoonShopText2

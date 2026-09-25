@@ -1,6 +1,3 @@
-CeruleanHouse1Script:
-	jp EnableAutoTextBoxDrawing
-
 CeruleanHouse1TextPointers:
 	dw CeruleanHouse1Text1
 	dw CeruleanHouse1Text2

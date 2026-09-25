@@ -1,6 +1,3 @@
-CinnabarMartScript:
-	jp EnableAutoTextBoxDrawing
-
 CinnabarMartTextPointers:
 	dw CinnabarCashierText
 	dw CinnabarMartText2
