@@ -569,7 +569,7 @@ const_value = 0
 	;const EVENT_236                                  ; 236, (D78D, bit 6)
 	;const EVENT_237                                  ; 237, (D78D, bit 7)
 	const EVENT_GOT_HM04                             ; 238, (D78E, bit 0)
-	const EVENT_GAVE_GOLD_TEETH                      ; 239, (D78E, bit 1)
+	const EVENT_GAVE_GOLD_TEETH                      ; 239, (D78E, bit 1) ; HM4-5.38.00: legacy/reserved, keep event numbering stable
 	const EVENT_23A                                  ; 23A, (D78E, bit 2)
 	const EVENT_23B                                  ; 23B, (D78E, bit 3)
 	const EVENT_23C                                  ; 23C, (D78E, bit 4)

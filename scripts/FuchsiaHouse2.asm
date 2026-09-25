@@ -11,48 +11,46 @@ FuchsiaHouse2TextPointers:
 FuchsiaHouse2Text1:
 	TX_ASM
 	CheckEvent EVENT_GOT_HM04
-	jr nz, .subtract
-	ld b,GOLD_TEETH
+	jr nz, .explainHM04
+	ld b, GOLD_TEETH
 	call IsItemInBag
-	jr nz, .asm_3f30f
-	CheckEvent EVENT_GAVE_GOLD_TEETH
-	jr nz, .asm_60cba
+	jr z, .gibberish
+
+; HM4-5.38.00: make the Gold Teeth -> HM04 reward atomic. Gold Teeth is
+; a unique quantity-1 overworld item, so removing it always frees one
+; wBagItems slot before HM04 is added. The old EVENT_GAVE_GOLD_TEETH /
+; bag-full intermediate state is therefore unnecessary.
+	ld hl, WardenTeethText1
+	call PrintText
+	ld a, GOLD_TEETH
+	ld [$ffdb], a
+	callba RemoveItemByID
+	ld hl, WardenThankYouText
+	call PrintText
+	lb bc, HM_04, 1
+	call GiveItem
+	ld hl, ReceivedHM04Text
+	call PrintText
+	SetEvent EVENT_GOT_HM04
+	jr .done
+
+.gibberish
 	ld hl, WardenGibberishText1
 	call PrintText
 	call YesNoChoice
 	ld a, [wCurrentMenuItem]
 	and a
 	ld hl, WardenGibberishText3
-	jr nz, .asm_61238
+	jr nz, .printGibberishReply
 	ld hl, WardenGibberishText2
-.asm_61238
+.printGibberishReply
 	call PrintText
-	jr .asm_52039
-.asm_3f30f
-	ld hl, WardenTeethText1
-	call PrintText
-	ld a, GOLD_TEETH
-	ld [$ffdb], a
-	callba RemoveItemByID
-	SetEvent EVENT_GAVE_GOLD_TEETH
-.asm_60cba
-	ld hl, WardenThankYouText
-	call PrintText
-	lb bc, HM_04, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld hl, ReceivedHM04Text
-	call PrintText
-	SetEvent EVENT_GOT_HM04
-	jr .asm_52039
-.subtract
+	jr .done
+
+.explainHM04
 	ld hl, HM04ExplanationText
 	call PrintText
-	jr .asm_52039
-.BagFull
-	ld hl, HM04NoRoomText
-	call PrintText
-.asm_52039
+.done
 	jp TextScriptEnd
 
 WardenGibberishText1:
@@ -86,10 +84,6 @@ ReceivedHM04Text:
 
 HM04ExplanationText:
 	TX_FAR _HM04ExplanationText
-	db "@"
-
-HM04NoRoomText:
-	TX_FAR _HM04NoRoomText
 	db "@"
 
 FuchsiaHouse2Text5:
