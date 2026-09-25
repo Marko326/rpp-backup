@@ -331,40 +331,8 @@ CeladonGameCornerText4:
 
 CeladonGameCornerText5:
 	TX_ASM
-	CheckEvent EVENT_GOT_10_COINS
-	jr nz, .asm_48d89
-	ld hl, CeladonGameCornerText_48d9c
-	call PrintText
-	ld b, COIN_CASE
-	call IsItemInBag
-	jr z, .asm_48d93
-	call Has9990Coins
-	jr nc, .asm_48d8e
-	xor a
-	ld [hUnusedCoinsByte], a
-	ld [hCoins], a
-	ld a, $10
-	ld [hCoins + 1], a
-	ld de, wPlayerCoins + 1
-	ld hl, hCoins + 1
-	ld c, $2
-	predef AddBCDPredef
-	SetEvent EVENT_GOT_10_COINS
-	ld a, $1
-	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
-	ld hl, Received10CoinsText
-	jr .asm_48d96
-.asm_48d89
-	ld hl, CeladonGameCornerText_48dac
-	jr .asm_48d96
-.asm_48d8e
-	ld hl, CeladonGameCornerText_48da7
-	jr .asm_48d96
-.asm_48d93
-	ld hl, CeladonGameCornerText_48f19
-.asm_48d96
-	call PrintText
-	jp TextScriptEnd
+	ld hl, GameCornerFreeCoins10Data
+	jp GameCornerGiveFreeCoins
 
 CeladonGameCornerText_48d9c:
 	TX_FAR _CeladonGameCornerText_48d9c
@@ -411,38 +379,8 @@ CeladonGameCornerText8:
 
 CeladonGameCornerText9:
 	TX_ASM
-	CheckEvent EVENT_GOT_20_COINS_2
-	jr nz, .asm_48e13
-	ld hl, CeladonGameCornerText_48e26
-	call PrintText
-	ld b, COIN_CASE
-	call IsItemInBag
-	jr z, .asm_48e1d
-	call Has9990Coins
-	jr nc, .asm_48e18
-	xor a
-	ld [hUnusedCoinsByte], a
-	ld [hCoins], a
-	ld a, $20
-	ld [hCoins + 1], a
-	ld de, wPlayerCoins + 1
-	ld hl, hCoins + 1
-	ld c, $2
-	predef AddBCDPredef
-	SetEvent EVENT_GOT_20_COINS_2
-	ld hl, Received20CoinsText
-	jr .asm_48e20
-.asm_48e13
-	ld hl, CeladonGameCornerText_48e36
-	jr .asm_48e20
-.asm_48e18
-	ld hl, CeladonGameCornerText_48e31
-	jr .asm_48e20
-.asm_48e1d
-	ld hl, CeladonGameCornerText_48f19
-.asm_48e20
-	call PrintText
-	jp TextScriptEnd
+	ld hl, GameCornerFreeCoins20Data2
+	jp GameCornerGiveFreeCoins
 
 CeladonGameCornerText_48e26:
 	TX_FAR _CeladonGameCornerText_48e26
@@ -463,38 +401,8 @@ CeladonGameCornerText_48e36:
 
 CeladonGameCornerText10:
 	TX_ASM
-	CheckEvent EVENT_GOT_20_COINS
-	jr nz, .asm_48e75
-	ld hl, CeladonGameCornerText_48e88
-	call PrintText
-	ld b,COIN_CASE
-	call IsItemInBag
-	jr z, .asm_48e7f
-	call Has9990Coins
-	jr z, .asm_48e7a
-	xor a
-	ld [hUnusedCoinsByte], a
-	ld [hCoins], a
-	ld a, $20
-	ld [hCoins + 1], a
-	ld de, wPlayerCoins + 1
-	ld hl, hCoins + 1
-	ld c, $2
-	predef AddBCDPredef
-	SetEvent EVENT_GOT_20_COINS
-	ld hl, CeladonGameCornerText_48e8d
-	jr .asm_48e82
-.asm_48e75
-	ld hl, CeladonGameCornerText_48e98
-	jr .asm_48e82
-.asm_48e7a
-	ld hl, CeladonGameCornerText_48e93
-	jr .asm_48e82
-.asm_48e7f
-	ld hl, CeladonGameCornerText_48f19
-.asm_48e82
-	call PrintText
-	jp TextScriptEnd
+	ld hl, GameCornerFreeCoins20Data
+	jp GameCornerGiveFreeCoins
 
 CeladonGameCornerText_48e88:
 	TX_FAR _CeladonGameCornerText_48e88
@@ -512,6 +420,117 @@ CeladonGameCornerText_48e93:
 CeladonGameCornerText_48e98:
 	TX_FAR _CeladonGameCornerText_48e98
 	db "@"
+
+; GCN-5.39.00: the three free-coin NPCs share one reward state machine.
+; Each declaration still owns its event, amount, and dialogue pointers so future
+; NPC-specific changes only require editing that declaration.
+DEF GAME_CORNER_FREE_COINS_NO_WAIT EQU 1 << 7
+DEF GAME_CORNER_FREE_COINS_AMOUNT_MASK EQU $7f
+DEF GAME_CORNER_FREE_COINS_EVENT_BYTE EQU EVENT_GOT_10_COINS / 8
+
+MACRO game_corner_free_coins
+	ASSERT (\1 / 8) == GAME_CORNER_FREE_COINS_EVENT_BYTE
+	ASSERT (\2 & GAME_CORNER_FREE_COINS_NO_WAIT) == 0
+	db 1 << (\1 % 8)
+	db (\2) | (\3)
+	dw \4 ; already received
+	dw \5 ; offer
+	dw \6 ; received
+	dw \7 ; coin case full
+ENDM
+
+GameCornerFreeCoins10Data:
+	game_corner_free_coins EVENT_GOT_10_COINS, $10, GAME_CORNER_FREE_COINS_NO_WAIT, CeladonGameCornerText_48dac, CeladonGameCornerText_48d9c, Received10CoinsText, CeladonGameCornerText_48da7
+
+GameCornerFreeCoins20Data2:
+	game_corner_free_coins EVENT_GOT_20_COINS_2, $20, 0, CeladonGameCornerText_48e36, CeladonGameCornerText_48e26, Received20CoinsText, CeladonGameCornerText_48e31
+
+GameCornerFreeCoins20Data:
+	game_corner_free_coins EVENT_GOT_20_COINS, $20, 0, CeladonGameCornerText_48e98, CeladonGameCornerText_48e88, CeladonGameCornerText_48e8d, CeladonGameCornerText_48e93
+
+GameCornerGiveFreeCoins:
+; HL = reward record:
+; event mask, BCD coin amount/flags, already/offer/received/full text.
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	ld a, [wEventFlags + GAME_CORNER_FREE_COINS_EVENT_BYTE]
+	and b
+	jr z, .newReward
+	call .printNextText
+	jr .done
+
+.newReward
+	inc hl ; skip the already-received text pointer
+	inc hl
+	call .printNextText
+
+	push hl
+	push bc
+	ld b, COIN_CASE
+	call IsItemInBag
+	pop bc
+	pop hl
+	jr z, .noCoinCase
+
+	push hl
+	push bc
+	call Has9990Coins
+	pop bc
+	pop hl
+	jr nc, .coinCaseFull
+
+	push hl
+	push bc
+	xor a
+	ld [hUnusedCoinsByte], a
+	ld [hCoins], a
+	ld a, c
+	and GAME_CORNER_FREE_COINS_AMOUNT_MASK
+	ld [hCoins + 1], a
+	ld de, wPlayerCoins + 1
+	ld hl, hCoins + 1
+	ld c, $2
+	predef AddBCDPredef
+	pop bc
+	pop hl
+	ld a, [wEventFlags + GAME_CORNER_FREE_COINS_EVENT_BYTE]
+	or b
+	ld [wEventFlags + GAME_CORNER_FREE_COINS_EVENT_BYTE], a
+	bit 7, c
+	jr z, .received
+	ld a, $1
+	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
+.received
+	call .printNextText
+	jr .done
+
+.coinCaseFull
+	inc hl ; skip the received text pointer
+	inc hl
+	call .printNextText
+	jr .done
+
+.noCoinCase
+	ld hl, CeladonGameCornerText_48f19
+	call PrintText
+.done
+	jp TextScriptEnd
+
+.printNextText
+	ld a, [hli]
+	ld e, a
+	ld a, [hli]
+	ld d, a
+	push hl
+	push bc
+	ld h, d
+	ld l, e
+	call PrintText
+	pop bc
+	pop hl
+	ret
 
 CeladonGameCornerText11:
 	TX_ASM
