@@ -93,7 +93,6 @@ VictoryRoad3TrainerHeader0:
 	dw VictoryRoad3BattleText2 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText2 ; TextAfterBattle
 	dw VictoryRoad3EndBattleText2 ; TextEndBattle
-	dw VictoryRoad3EndBattleText2 ; TextEndBattle
 
 VictoryRoad3TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_3_TRAINER_1
@@ -101,7 +100,6 @@ VictoryRoad3TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_VICTORY_ROAD_3_TRAINER_1
 	dw VictoryRoad3BattleText3 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText3 ; TextAfterBattle
-	dw VictoryRoad3EndBattleText3 ; TextEndBattle
 	dw VictoryRoad3EndBattleText3 ; TextEndBattle
 
 VictoryRoad3TrainerHeader2:
@@ -111,7 +109,6 @@ VictoryRoad3TrainerHeader2:
 	dw VictoryRoad3BattleText4 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText4 ; TextAfterBattle
 	dw VictoryRoad3EndBattleText4 ; TextEndBattle
-	dw VictoryRoad3EndBattleText4 ; TextEndBattle
 
 VictoryRoad3TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_3_TRAINER_3
@@ -119,7 +116,6 @@ VictoryRoad3TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_VICTORY_ROAD_3_TRAINER_3
 	dw VictoryRoad3BattleText5 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText5 ; TextAfterBattle
-	dw VictoryRoad3EndBattleText5 ; TextEndBattle
 	dw VictoryRoad3EndBattleText5 ; TextEndBattle
 
 	db $ff

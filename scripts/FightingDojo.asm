@@ -97,7 +97,6 @@ FightingDojoTrainerHeader0:
 	dw FightingDojoBattleText1 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText1 ; TextAfterBattle
 	dw FightingDojoEndBattleText1 ; TextEndBattle
-	dw FightingDojoEndBattleText1 ; TextEndBattle
 
 FightingDojoTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_FIGHTING_DOJO_TRAINER_1
@@ -105,7 +104,6 @@ FightingDojoTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_FIGHTING_DOJO_TRAINER_1
 	dw FightingDojoBattleText2 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText2 ; TextAfterBattle
-	dw FightingDojoEndBattleText2 ; TextEndBattle
 	dw FightingDojoEndBattleText2 ; TextEndBattle
 
 FightingDojoTrainerHeader2:
@@ -115,7 +113,6 @@ FightingDojoTrainerHeader2:
 	dw FightingDojoBattleText3 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText3 ; TextAfterBattle
 	dw FightingDojoEndBattleText3 ; TextEndBattle
-	dw FightingDojoEndBattleText3 ; TextEndBattle
 
 FightingDojoTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_FIGHTING_DOJO_TRAINER_3
@@ -123,7 +120,6 @@ FightingDojoTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_FIGHTING_DOJO_TRAINER_3
 	dw FightingDojoBattleText4 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText4 ; TextAfterBattle
-	dw FightingDojoEndBattleText4 ; TextEndBattle
 	dw FightingDojoEndBattleText4 ; TextEndBattle
 
 	db $ff

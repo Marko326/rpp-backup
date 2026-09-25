@@ -73,7 +73,6 @@ Mansion1TrainerHeader0:
 	dw Mansion1BattleText2 ; TextBeforeBattle
 	dw Mansion1AfterBattleText2 ; TextAfterBattle
 	dw Mansion1EndBattleText2 ; TextEndBattle
-	dw Mansion1EndBattleText2 ; TextEndBattle
 
 	db $ff
 

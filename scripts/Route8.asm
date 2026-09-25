@@ -32,7 +32,6 @@ Route8TrainerHeader0:
 	dw Route8BattleText1 ; TextBeforeBattle
 	dw Route8AfterBattleText1 ; TextAfterBattle
 	dw Route8EndBattleText1 ; TextEndBattle
-	dw Route8EndBattleText1 ; TextEndBattle
 
 Route8TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_8_TRAINER_1
@@ -40,7 +39,6 @@ Route8TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_8_TRAINER_1
 	dw Route8BattleText2 ; TextBeforeBattle
 	dw Route8AfterBattleText2 ; TextAfterBattle
-	dw Route8EndBattleText2 ; TextEndBattle
 	dw Route8EndBattleText2 ; TextEndBattle
 
 Route8TrainerHeader2:
@@ -50,7 +48,6 @@ Route8TrainerHeader2:
 	dw Route8BattleText3 ; TextBeforeBattle
 	dw Route8AfterBattleText3 ; TextAfterBattle
 	dw Route8EndBattleText3 ; TextEndBattle
-	dw Route8EndBattleText3 ; TextEndBattle
 
 Route8TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_8_TRAINER_3
@@ -58,7 +55,6 @@ Route8TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_8_TRAINER_3
 	dw Route8BattleText4 ; TextBeforeBattle
 	dw Route8AfterBattleText4 ; TextAfterBattle
-	dw Route8EndBattleText4 ; TextEndBattle
 	dw Route8EndBattleText4 ; TextEndBattle
 
 Route8TrainerHeader4:
@@ -68,7 +64,6 @@ Route8TrainerHeader4:
 	dw Route8BattleText5 ; TextBeforeBattle
 	dw Route8AfterBattleText5 ; TextAfterBattle
 	dw Route8EndBattleText5 ; TextEndBattle
-	dw Route8EndBattleText5 ; TextEndBattle
 
 Route8TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_8_TRAINER_5
@@ -76,7 +71,6 @@ Route8TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_8_TRAINER_5
 	dw Route8BattleText6 ; TextBeforeBattle
 	dw Route8AfterBattleText6 ; TextAfterBattle
-	dw Route8EndBattleText6 ; TextEndBattle
 	dw Route8EndBattleText6 ; TextEndBattle
 
 Route8TrainerHeader6:
@@ -86,7 +80,6 @@ Route8TrainerHeader6:
 	dw Route8BattleText7 ; TextBeforeBattle
 	dw Route8AfterBattleText7 ; TextAfterBattle
 	dw Route8EndBattleText7 ; TextEndBattle
-	dw Route8EndBattleText7 ; TextEndBattle
 
 Route8TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_8_TRAINER_7, 1
@@ -95,7 +88,6 @@ Route8TrainerHeader7:
 	dw Route8BattleText8 ; TextBeforeBattle
 	dw Route8AfterBattleText8 ; TextAfterBattle
 	dw Route8EndBattleText8 ; TextEndBattle
-	dw Route8EndBattleText8 ; TextEndBattle
 
 Route8TrainerHeader8:
 	dbEventFlagBit EVENT_BEAT_ROUTE_8_TRAINER_8, 1
@@ -103,7 +95,6 @@ Route8TrainerHeader8:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_8_TRAINER_8, 1
 	dw Route8BattleText9 ; TextBeforeBattle
 	dw Route8AfterBattleText9 ; TextAfterBattle
-	dw Route8EndBattleText9 ; TextEndBattle
 	dw Route8EndBattleText9 ; TextEndBattle
 
 	db $ff

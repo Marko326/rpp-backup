@@ -29,7 +29,6 @@ Route4TrainerHeader0:
 	dw Route4BattleText1 ; TextBeforeBattle
 	dw Route4AfterBattleText1 ; TextAfterBattle
 	dw Route4EndBattleText1 ; TextEndBattle
-	dw Route4EndBattleText1 ; TextEndBattle
 
 	db $ff
 

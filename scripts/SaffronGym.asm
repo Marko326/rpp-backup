@@ -89,7 +89,6 @@ SaffronGymTrainerHeader0:
 	dw SaffronGymBattleText1 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText1 ; TextAfterBattle
 	dw SaffronGymEndBattleText1 ; TextEndBattle
-	dw SaffronGymEndBattleText1 ; TextEndBattle
 
 SaffronGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_1
@@ -97,7 +96,6 @@ SaffronGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SAFFRON_GYM_TRAINER_1
 	dw SaffronGymBattleText2 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText2 ; TextAfterBattle
-	dw SaffronGymEndBattleText2 ; TextEndBattle
 	dw SaffronGymEndBattleText2 ; TextEndBattle
 
 SaffronGymTrainerHeader2:
@@ -107,7 +105,6 @@ SaffronGymTrainerHeader2:
 	dw SaffronGymBattleText3 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText3 ; TextAfterBattle
 	dw SaffronGymEndBattleText3 ; TextEndBattle
-	dw SaffronGymEndBattleText3 ; TextEndBattle
 
 SaffronGymTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_3
@@ -115,7 +112,6 @@ SaffronGymTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_SAFFRON_GYM_TRAINER_3
 	dw SaffronGymBattleText4 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText4 ; TextAfterBattle
-	dw SaffronGymEndBattleText4 ; TextEndBattle
 	dw SaffronGymEndBattleText4 ; TextEndBattle
 
 SaffronGymTrainerHeader4:
@@ -125,7 +121,6 @@ SaffronGymTrainerHeader4:
 	dw SaffronGymBattleText5 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText5 ; TextAfterBattle
 	dw SaffronGymEndBattleText5 ; TextEndBattle
-	dw SaffronGymEndBattleText5 ; TextEndBattle
 
 SaffronGymTrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_5
@@ -134,7 +129,6 @@ SaffronGymTrainerHeader5:
 	dw SaffronGymBattleText6 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText6 ; TextAfterBattle
 	dw SaffronGymEndBattleText6 ; TextEndBattle
-	dw SaffronGymEndBattleText6 ; TextEndBattle
 
 SaffronGymTrainerHeader6:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_6, 1
@@ -142,7 +136,6 @@ SaffronGymTrainerHeader6:
 	dwEventFlagAddress EVENT_BEAT_SAFFRON_GYM_TRAINER_6, 1
 	dw SaffronGymBattleText7 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText7 ; TextAfterBattle
-	dw SaffronGymEndBattleText7 ; TextEndBattle
 	dw SaffronGymEndBattleText7 ; TextEndBattle
 
 	db $ff

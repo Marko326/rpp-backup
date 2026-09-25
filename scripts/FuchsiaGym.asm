@@ -88,7 +88,6 @@ FuchsiaGymTrainerHeader0:
 	dw FuchsiaGymBattleText1 ; TextBeforeBattle
 	dw FuchsiaGymAfterBattleText1 ; TextAfterBattle
 	dw FuchsiaGymEndBattleText1 ; TextEndBattle
-	dw FuchsiaGymEndBattleText1 ; TextEndBattle
 
 FuchsiaGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_FUCHSIA_GYM_TRAINER_1
@@ -96,7 +95,6 @@ FuchsiaGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_FUCHSIA_GYM_TRAINER_1
 	dw FuchsiaGymBattleText2 ; TextBeforeBattle
 	dw FuchsiaGymAfterBattleText2 ; TextAfterBattle
-	dw FuchsiaGymEndBattleText2 ; TextEndBattle
 	dw FuchsiaGymEndBattleText2 ; TextEndBattle
 
 FuchsiaGymTrainerHeader2:
@@ -106,7 +104,6 @@ FuchsiaGymTrainerHeader2:
 	dw FuchsiaGymBattleText3 ; TextBeforeBattle
 	dw FuchsiaGymAfterBattleText3 ; TextAfterBattle
 	dw FuchsiaGymEndBattleText3 ; TextEndBattle
-	dw FuchsiaGymEndBattleText3 ; TextEndBattle
 
 FuchsiaGymTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_FUCHSIA_GYM_TRAINER_3
@@ -114,7 +111,6 @@ FuchsiaGymTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_FUCHSIA_GYM_TRAINER_3
 	dw FuchsiaGymBattleText4 ; TextBeforeBattle
 	dw FuchsiaGymAfterBattleText4 ; TextAfterBattle
-	dw FuchsiaGymEndBattleText4 ; TextEndBattle
 	dw FuchsiaGymEndBattleText4 ; TextEndBattle
 
 FuchsiaGymTrainerHeader4:
@@ -124,7 +120,6 @@ FuchsiaGymTrainerHeader4:
 	dw FuchsiaGymBattleText5 ; TextBeforeBattle
 	dw FuchsiaGymAfterBattleText5 ; TextAfterBattle
 	dw FuchsiaGymEndBattleText5 ; TextEndBattle
-	dw FuchsiaGymEndBattleText5 ; TextEndBattle
 
 FuchsiaGymTrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_FUCHSIA_GYM_TRAINER_5
@@ -132,7 +127,6 @@ FuchsiaGymTrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_FUCHSIA_GYM_TRAINER_5
 	dw FuchsiaGymBattleText6 ; TextBeforeBattle
 	dw FuchsiaGymAfterBattleText6 ; TextAfterBattle
-	dw FuchsiaGymEndBattleText6 ; TextEndBattle
 	dw FuchsiaGymEndBattleText6 ; TextEndBattle
 
 	db $ff

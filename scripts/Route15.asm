@@ -33,7 +33,6 @@ Route15TrainerHeader0:
 	dw Route15BattleText1 ; TextBeforeBattle
 	dw Route15AfterBattleText1 ; TextAfterBattle
 	dw Route15EndBattleText1 ; TextEndBattle
-	dw Route15EndBattleText1 ; TextEndBattle
 
 Route15TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_1
@@ -41,7 +40,6 @@ Route15TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_1
 	dw Route15BattleText2 ; TextBeforeBattle
 	dw Route15AfterBattleText2 ; TextAfterBattle
-	dw Route15EndBattleText2 ; TextEndBattle
 	dw Route15EndBattleText2 ; TextEndBattle
 
 Route15TrainerHeader2:
@@ -51,7 +49,6 @@ Route15TrainerHeader2:
 	dw Route15BattleText3 ; TextBeforeBattle
 	dw Route15AfterBattleText3 ; TextAfterBattle
 	dw Route15EndBattleText3 ; TextEndBattle
-	dw Route15EndBattleText3 ; TextEndBattle
 
 Route15TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_3
@@ -59,7 +56,6 @@ Route15TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_3
 	dw Route15BattleText4 ; TextBeforeBattle
 	dw Route15AfterBattleText4 ; TextAfterBattle
-	dw Route15EndBattleText4 ; TextEndBattle
 	dw Route15EndBattleText4 ; TextEndBattle
 
 Route15TrainerHeader4:
@@ -69,7 +65,6 @@ Route15TrainerHeader4:
 	dw Route15BattleText5 ; TextBeforeBattle
 	dw Route15AfterBattleText5 ; TextAfterBattle
 	dw Route15EndBattleText5 ; TextEndBattle
-	dw Route15EndBattleText5 ; TextEndBattle
 
 Route15TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_5
@@ -77,7 +72,6 @@ Route15TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_5
 	dw Route15BattleText6 ; TextBeforeBattle
 	dw Route15AfterBattleText6 ; TextAfterBattle
-	dw Route15EndBattleText6 ; TextEndBattle
 	dw Route15EndBattleText6 ; TextEndBattle
 
 Route15TrainerHeader6:
@@ -87,7 +81,6 @@ Route15TrainerHeader6:
 	dw Route15BattleText7 ; TextBeforeBattle
 	dw Route15AfterBattleText7 ; TextAfterBattle
 	dw Route15EndBattleText7 ; TextEndBattle
-	dw Route15EndBattleText7 ; TextEndBattle
 
 Route15TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_7, 1
@@ -95,7 +88,6 @@ Route15TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_7, 1
 	dw Route15BattleText8 ; TextBeforeBattle
 	dw Route15AfterBattleText8 ; TextAfterBattle
-	dw Route15EndBattleText8 ; TextEndBattle
 	dw Route15EndBattleText8 ; TextEndBattle
 
 Route15TrainerHeader8:
@@ -105,7 +97,6 @@ Route15TrainerHeader8:
 	dw Route15BattleText9 ; TextBeforeBattle
 	dw Route15AfterBattleText9 ; TextAfterBattle
 	dw Route15EndBattleText9 ; TextEndBattle
-	dw Route15EndBattleText9 ; TextEndBattle
 
 Route15TrainerHeader9:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_9, 1
@@ -113,7 +104,6 @@ Route15TrainerHeader9:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_9, 1
 	dw Route15BattleText10 ; TextBeforeBattle
 	dw Route15AfterBattleText10 ; TextAfterBattle
-	dw Route15EndBattleText10 ; TextEndBattle
 	dw Route15EndBattleText10 ; TextEndBattle
 
 	db $ff

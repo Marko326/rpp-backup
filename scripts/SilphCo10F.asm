@@ -54,7 +54,6 @@ SilphCo10TrainerHeader0:
 	dw SilphCo10BattleText1 ; TextBeforeBattle
 	dw SilphCo10AfterBattleText1 ; TextAfterBattle
 	dw SilphCo10EndBattleText1 ; TextEndBattle
-	dw SilphCo10EndBattleText1 ; TextEndBattle
 
 SilphCo10TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_10F_TRAINER_1
@@ -62,7 +61,6 @@ SilphCo10TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_10F_TRAINER_1
 	dw SilphCo10BattleText2 ; TextBeforeBattle
 	dw SilphCo10AfterBattleText2 ; TextAfterBattle
-	dw SilphCo10EndBattleText2 ; TextEndBattle
 	dw SilphCo10EndBattleText2 ; TextEndBattle
 
 	db $ff

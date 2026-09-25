@@ -104,7 +104,6 @@ VermilionGymTrainerHeader0:
 	dw VermilionGymBattleText1 ; TextBeforeBattle
 	dw VermilionGymAfterBattleText1 ; TextAfterBattle
 	dw VermilionGymEndBattleText1 ; TextEndBattle
-	dw VermilionGymEndBattleText1 ; TextEndBattle
 
 VermilionGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VERMILION_GYM_TRAINER_1
@@ -113,7 +112,6 @@ VermilionGymTrainerHeader1:
 	dw VermilionGymBattleText2 ; TextBeforeBattle
 	dw VermilionGymAfterBattleText2 ; TextAfterBattle
 	dw VermilionGymEndBattleText2 ; TextEndBattle
-	dw VermilionGymEndBattleText2 ; TextEndBattle
 
 VermilionGymTrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_VERMILION_GYM_TRAINER_2
@@ -121,7 +119,6 @@ VermilionGymTrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_VERMILION_GYM_TRAINER_2
 	dw VermilionGymBattleText3 ; TextBeforeBattle
 	dw VermilionGymAfterBattleText3 ; TextAfterBattle
-	dw VermilionGymEndBattleText3 ; TextEndBattle
 	dw VermilionGymEndBattleText3 ; TextEndBattle
 
 	db $ff

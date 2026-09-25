@@ -62,7 +62,6 @@ BrunoTrainerHeader0:
 	dw BrunoBeforeBattleText ; TextBeforeBattle
 	dw BrunoAfterBattleText ; TextAfterBattle
 	dw BrunoEndBattleText ; TextEndBattle
-	dw BrunoEndBattleText ; TextEndBattle
 
 	db $ff
 

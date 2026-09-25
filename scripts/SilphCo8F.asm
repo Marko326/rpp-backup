@@ -88,7 +88,6 @@ SilphCo8TrainerHeader0:
 	dw SilphCo8BattleText1 ; TextBeforeBattle
 	dw SilphCo8AfterBattleText1 ; TextAfterBattle
 	dw SilphCo8EndBattleText1 ; TextEndBattle
-	dw SilphCo8EndBattleText1 ; TextEndBattle
 
 SilphCo8TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_8F_TRAINER_1
@@ -97,7 +96,6 @@ SilphCo8TrainerHeader1:
 	dw SilphCo8BattleText2 ; TextBeforeBattle
 	dw SilphCo8AfterBattleText2 ; TextAfterBattle
 	dw SilphCo8EndBattleText2 ; TextEndBattle
-	dw SilphCo8EndBattleText2 ; TextEndBattle
 
 SilphCo8TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_8F_TRAINER_2
@@ -105,7 +103,6 @@ SilphCo8TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_8F_TRAINER_2
 	dw SilphCo8BattleText3 ; TextBeforeBattle
 	dw SilphCo8AfterBattleText3 ; TextAfterBattle
-	dw SilphCo8EndBattleText3 ; TextEndBattle
 	dw SilphCo8EndBattleText3 ; TextEndBattle
 
 	db $ff

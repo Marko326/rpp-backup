@@ -25,7 +25,6 @@ SouthernIslandInsideTrainerHeader0:
 	dw SouthernIslandInsideLatiosText ; TextBeforeBattle
 	dw SouthernIslandInsideLatiosText ; TextAfterBattle
 	dw SouthernIslandInsideLatiosText ; TextEndBattle
-	dw SouthernIslandInsideLatiosText ; TextEndBattle
 
 SouthernIslandInsideTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SOUTHERN_INSIDE_TRAINER_1
@@ -33,7 +32,6 @@ SouthernIslandInsideTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SOUTHERN_INSIDE_TRAINER_1
 	dw SouthernIslandInsideLatiasText ; TextBeforeBattle
 	dw SouthernIslandInsideLatiasText ; TextAfterBattle
-	dw SouthernIslandInsideLatiasText ; TextEndBattle
 	dw SouthernIslandInsideLatiasText ; TextEndBattle
 	
 	db $ff

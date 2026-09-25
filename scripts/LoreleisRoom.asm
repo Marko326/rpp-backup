@@ -138,7 +138,6 @@ LoreleiTrainerHeader0:
 	dw LoreleiBeforeBattleText ; TextBeforeBattle
 	dw LoreleiAfterBattleText ; TextAfterBattle
 	dw LoreleiEndBattleText ; TextEndBattle
-	dw LoreleiEndBattleText ; TextEndBattle
 
 	db $ff
 

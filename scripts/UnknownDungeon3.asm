@@ -24,7 +24,6 @@ MewtwoTrainerHeader:
 	dw MewtwoBattleText ; TextBeforeBattle
 	dw MewtwoBattleText ; TextAfterBattle
 	dw MewtwoBattleText ; TextEndBattle
-	dw MewtwoBattleText ; TextEndBattle
 
 	db $ff
 

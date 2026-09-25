@@ -65,7 +65,6 @@ AgathaTrainerHeader0:
 	dw AgathaBeforeBattleText ; TextBeforeBattle
 	dw AgathaAfterBattleText ; TextAfterBattle
 	dw AgathaEndBattleText ; TextEndBattle
-	dw AgathaEndBattleText ; TextEndBattle
 
 	db $ff
 

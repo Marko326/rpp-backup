@@ -137,7 +137,6 @@ LanceTrainerHeader0:
 	dw LanceBeforeBattleText ; TextBeforeBattle
 	dw LanceAfterBattleText ; TextAfterBattle
 	dw LanceEndBattleText ; TextEndBattle
-	dw LanceEndBattleText ; TextEndBattle
 
 	db $ff
 

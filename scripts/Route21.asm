@@ -30,7 +30,6 @@ Route21TrainerHeader0:
 	dw Route21BattleText1 ; TextBeforeBattle
 	dw Route21AfterBattleText1 ; TextAfterBattle
 	dw Route21EndBattleText1 ; TextEndBattle
-	dw Route21EndBattleText1 ; TextEndBattle
 
 Route21TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_1
@@ -38,7 +37,6 @@ Route21TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_1
 	dw Route21BattleText2 ; TextBeforeBattle
 	dw Route21AfterBattleText2 ; TextAfterBattle
-	dw Route21EndBattleText2 ; TextEndBattle
 	dw Route21EndBattleText2 ; TextEndBattle
 
 Route21TrainerHeader2:
@@ -48,7 +46,6 @@ Route21TrainerHeader2:
 	dw Route21BattleText3 ; TextBeforeBattle
 	dw Route21AfterBattleText3 ; TextAfterBattle
 	dw Route21EndBattleText3 ; TextEndBattle
-	dw Route21EndBattleText3 ; TextEndBattle
 
 Route21TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_3
@@ -56,7 +53,6 @@ Route21TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_3
 	dw Route21BattleText4 ; TextBeforeBattle
 	dw Route21AfterBattleText4 ; TextAfterBattle
-	dw Route21EndBattleText4 ; TextEndBattle
 	dw Route21EndBattleText4 ; TextEndBattle
 
 Route21TrainerHeader4:
@@ -66,7 +62,6 @@ Route21TrainerHeader4:
 	dw Route21BattleText5 ; TextBeforeBattle
 	dw Route21AfterBattleText5 ; TextAfterBattle
 	dw Route21EndBattleText5 ; TextEndBattle
-	dw Route21EndBattleText5 ; TextEndBattle
 
 Route21TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_5
@@ -74,7 +69,6 @@ Route21TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_5
 	dw Route21BattleText6 ; TextBeforeBattle
 	dw Route21AfterBattleText6 ; TextAfterBattle
-	dw Route21EndBattleText6 ; TextEndBattle
 	dw Route21EndBattleText6 ; TextEndBattle
 
 Route21TrainerHeader6:
@@ -84,7 +78,6 @@ Route21TrainerHeader6:
 	dw Route21BattleText7 ; TextBeforeBattle
 	dw Route21AfterBattleText7 ; TextAfterBattle
 	dw Route21EndBattleText7 ; TextEndBattle
-	dw Route21EndBattleText7 ; TextEndBattle
 
 Route21TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_7, 1
@@ -93,7 +86,6 @@ Route21TrainerHeader7:
 	dw Route21BattleText8 ; TextBeforeBattle
 	dw Route21AfterBattleText8 ; TextAfterBattle
 	dw Route21EndBattleText8 ; TextEndBattle
-	dw Route21EndBattleText8 ; TextEndBattle
 
 Route21TrainerHeader8:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_8, 1
@@ -101,7 +93,6 @@ Route21TrainerHeader8:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_8, 1
 	dw Route21BattleText9 ; TextBeforeBattle
 	dw Route21AfterBattleText9 ; TextAfterBattle
-	dw Route21EndBattleText9 ; TextEndBattle
 	dw Route21EndBattleText9 ; TextEndBattle
 
 	db $ff

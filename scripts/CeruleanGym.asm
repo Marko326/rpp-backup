@@ -84,7 +84,6 @@ CeruleanGymTrainerHeader0:
 	dw CeruleanGymBattleText1 ; TextBeforeBattle
 	dw CeruleanGymAfterBattleText1 ; TextAfterBattle
 	dw CeruleanGymEndBattleText1 ; TextEndBattle
-	dw CeruleanGymEndBattleText1 ; TextEndBattle
 
 CeruleanGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_CERULEAN_GYM_TRAINER_1
@@ -92,7 +91,6 @@ CeruleanGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_CERULEAN_GYM_TRAINER_1
 	dw CeruleanGymBattleText2 ; TextBeforeBattle
 	dw CeruleanGymAfterBattleText2 ; TextAfterBattle
-	dw CeruleanGymEndBattleText2 ; TextEndBattle
 	dw CeruleanGymEndBattleText2 ; TextEndBattle
 
 	db $ff

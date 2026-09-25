@@ -35,7 +35,6 @@ Voltorb0TrainerHeader:
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
 	dw VoltorbBattleText ; TextEndBattle
-	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb1TrainerHeader:
 	dbEventFlagBit EVENT_BEAT_POWER_PLANT_VOLTORB_1
@@ -43,7 +42,6 @@ Voltorb1TrainerHeader:
 	dwEventFlagAddress EVENT_BEAT_POWER_PLANT_VOLTORB_1
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
-	dw VoltorbBattleText ; TextEndBattle
 	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb2TrainerHeader:
@@ -53,7 +51,6 @@ Voltorb2TrainerHeader:
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
 	dw VoltorbBattleText ; TextEndBattle
-	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb3TrainerHeader:
 	dbEventFlagBit EVENT_BEAT_POWER_PLANT_VOLTORB_3
@@ -61,7 +58,6 @@ Voltorb3TrainerHeader:
 	dwEventFlagAddress EVENT_BEAT_POWER_PLANT_VOLTORB_3
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
-	dw VoltorbBattleText ; TextEndBattle
 	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb4TrainerHeader:
@@ -71,7 +67,6 @@ Voltorb4TrainerHeader:
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
 	dw VoltorbBattleText ; TextEndBattle
-	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb5TrainerHeader:
 	dbEventFlagBit EVENT_BEAT_POWER_PLANT_VOLTORB_5
@@ -79,7 +74,6 @@ Voltorb5TrainerHeader:
 	dwEventFlagAddress EVENT_BEAT_POWER_PLANT_VOLTORB_5
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
-	dw VoltorbBattleText ; TextEndBattle
 	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb6TrainerHeader:
@@ -89,7 +83,6 @@ Voltorb6TrainerHeader:
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
 	dw VoltorbBattleText ; TextEndBattle
-	dw VoltorbBattleText ; TextEndBattle
 
 Voltorb7TrainerHeader:
 	dbEventFlagBit EVENT_BEAT_POWER_PLANT_VOLTORB_7, 1
@@ -98,7 +91,6 @@ Voltorb7TrainerHeader:
 	dw VoltorbBattleText ; TextBeforeBattle
 	dw VoltorbBattleText ; TextAfterBattle
 	dw VoltorbBattleText ; TextEndBattle
-	dw VoltorbBattleText ; TextEndBattle
 
 ZapdosTrainerHeader:
 	dbEventFlagBit EVENT_BEAT_ZAPDOS, 1
@@ -106,7 +98,6 @@ ZapdosTrainerHeader:
 	dwEventFlagAddress EVENT_BEAT_ZAPDOS, 1
 	dw ZapdosBattleText ; TextBeforeBattle
 	dw ZapdosBattleText ; TextAfterBattle
-	dw ZapdosBattleText ; TextEndBattle
 	dw ZapdosBattleText ; TextEndBattle
 
 	db $ff

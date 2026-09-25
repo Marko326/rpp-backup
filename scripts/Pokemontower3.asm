@@ -25,7 +25,6 @@ PokemonTower3TrainerHeader0:
 	dw PokemonTower3BattleText1 ; TextBeforeBattle
 	dw PokemonTower3AfterBattleText1 ; TextAfterBattle
 	dw PokemonTower3EndBattleText1 ; TextEndBattle
-	dw PokemonTower3EndBattleText1 ; TextEndBattle
 
 PokemonTower3TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_3_TRAINER_1
@@ -34,7 +33,6 @@ PokemonTower3TrainerHeader1:
 	dw PokemonTower3BattleText2 ; TextBeforeBattle
 	dw PokemonTower3AfterBattleText2 ; TextAfterBattle
 	dw PokemonTower3EndBattleText2 ; TextEndBattle
-	dw PokemonTower3EndBattleText2 ; TextEndBattle
 
 PokemonTower3TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_3_TRAINER_2
@@ -42,7 +40,6 @@ PokemonTower3TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_3_TRAINER_2
 	dw PokemonTower3BattleText3 ; TextBeforeBattle
 	dw PokemonTower3AfterBattleText3 ; TextAfterBattle
-	dw PokemonTower3EndBattleText3 ; TextEndBattle
 	dw PokemonTower3EndBattleText3 ; TextEndBattle
 	db $ff
 

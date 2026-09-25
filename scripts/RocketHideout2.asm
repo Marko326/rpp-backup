@@ -490,7 +490,6 @@ RocketHideout2TrainerHeader0:
 	dw RocketHideout2BattleText2 ; TextBeforeBattle
 	dw RocketHideout2AfterBattleTxt2 ; TextAfterBattle
 	dw RocketHideout2EndBattleText2 ; TextEndBattle
-	dw RocketHideout2EndBattleText2 ; TextEndBattle
 
 	db $ff
 

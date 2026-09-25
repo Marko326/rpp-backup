@@ -33,7 +33,6 @@ Route11TrainerHeader0:
 	dw Route11BattleText1 ; TextBeforeBattle
 	dw Route11AfterBattleText1 ; TextAfterBattle
 	dw Route11EndBattleText1 ; TextEndBattle
-	dw Route11EndBattleText1 ; TextEndBattle
 
 Route11TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_11_TRAINER_1
@@ -41,7 +40,6 @@ Route11TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_11_TRAINER_1
 	dw Route11BattleText2 ; TextBeforeBattle
 	dw Route11AfterBattleText2 ; TextAfterBattle
-	dw Route11EndBattleText2 ; TextEndBattle
 	dw Route11EndBattleText2 ; TextEndBattle
 
 Route11TrainerHeader2:
@@ -51,7 +49,6 @@ Route11TrainerHeader2:
 	dw Route11BattleText3 ; TextBeforeBattle
 	dw Route11AfterBattleText3 ; TextAfterBattle
 	dw Route11EndBattleText3 ; TextEndBattle
-	dw Route11EndBattleText3 ; TextEndBattle
 
 Route11TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_11_TRAINER_3
@@ -59,7 +56,6 @@ Route11TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_11_TRAINER_3
 	dw Route11BattleText4 ; TextBeforeBattle
 	dw Route11AfterBattleText4 ; TextAfterBattle
-	dw Route11EndBattleText4 ; TextEndBattle
 	dw Route11EndBattleText4 ; TextEndBattle
 
 Route11TrainerHeader4:
@@ -69,7 +65,6 @@ Route11TrainerHeader4:
 	dw Route11BattleText5 ; TextBeforeBattle
 	dw Route11AfterBattleText5 ; TextAfterBattle
 	dw Route11EndBattleText5 ; TextEndBattle
-	dw Route11EndBattleText5 ; TextEndBattle
 
 Route11TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_11_TRAINER_5
@@ -77,7 +72,6 @@ Route11TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_11_TRAINER_5
 	dw Route11BattleText6 ; TextBeforeBattle
 	dw Route11AfterBattleText6 ; TextAfterBattle
-	dw Route11EndBattleText6 ; TextEndBattle
 	dw Route11EndBattleText6 ; TextEndBattle
 
 Route11TrainerHeader6:
@@ -87,7 +81,6 @@ Route11TrainerHeader6:
 	dw Route11BattleText7 ; TextBeforeBattle
 	dw Route11AfterBattleText7 ; TextAfterBattle
 	dw Route11EndBattleText7 ; TextEndBattle
-	dw Route11EndBattleText7 ; TextEndBattle
 
 Route11TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_11_TRAINER_7, 1
@@ -95,7 +88,6 @@ Route11TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_11_TRAINER_7, 1
 	dw Route11BattleText8 ; TextBeforeBattle
 	dw Route11AfterBattleText8 ; TextAfterBattle
-	dw Route11EndBattleText8 ; TextEndBattle
 	dw Route11EndBattleText8 ; TextEndBattle
 
 Route11TrainerHeader8:
@@ -105,7 +97,6 @@ Route11TrainerHeader8:
 	dw Route11BattleText9 ; TextBeforeBattle
 	dw Route11AfterBattleText9 ; TextAfterBattle
 	dw Route11EndBattleText9 ; TextEndBattle
-	dw Route11EndBattleText9 ; TextEndBattle
 
 Route11TrainerHeader9:
 	dbEventFlagBit EVENT_BEAT_ROUTE_11_TRAINER_9, 1
@@ -113,7 +104,6 @@ Route11TrainerHeader9:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_11_TRAINER_9, 1
 	dw Route11BattleText10 ; TextBeforeBattle
 	dw Route11AfterBattleText10 ; TextAfterBattle
-	dw Route11EndBattleText10 ; TextEndBattle
 	dw Route11EndBattleText10 ; TextEndBattle
 
 	db $ff

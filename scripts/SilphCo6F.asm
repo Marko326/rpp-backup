@@ -58,7 +58,6 @@ SilphCo6TrainerHeader0:
 	dw SilphCo6BattleText2 ; TextBeforeBattle
 	dw SilphCo6AfterBattleText2 ; TextAfterBattle
 	dw SilphCo6EndBattleText2 ; TextEndBattle
-	dw SilphCo6EndBattleText2 ; TextEndBattle
 
 SilphCo6TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_6F_TRAINER_1
@@ -67,7 +66,6 @@ SilphCo6TrainerHeader1:
 	dw SilphCo6BattleText3 ; TextBeforeBattle
 	dw SilphCo6AfterBattleText3 ; TextAfterBattle
 	dw SilphCo6EndBattleText3 ; TextEndBattle
-	dw SilphCo6EndBattleText3 ; TextEndBattle
 
 SilphCo6TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_6F_TRAINER_2, 1
@@ -75,7 +73,6 @@ SilphCo6TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_6F_TRAINER_2, 1
 	dw SilphCo6BattleText4 ; TextBeforeBattle
 	dw SilphCo6AfterBattleText4 ; TextAfterBattle
-	dw SilphCo6EndBattleText4 ; TextEndBattle
 	dw SilphCo6EndBattleText4 ; TextEndBattle
 
 	db $ff

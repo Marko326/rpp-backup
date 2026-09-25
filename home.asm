@@ -2130,6 +2130,8 @@ LoadGymLeaderAndCityName::
 	ld bc, NAME_LENGTH
 	jp CopyData     ; load gym leader name
 
+; TRH-5.44.00: TrainerHeader is now 10 bytes and stores one end-battle text
+; pointer. Offset 0 is the flag bit; every other valid field is a pointer.
 ; reads specific information from trainer header (pointed to at wTrainerHeaderPtr)
 ; a: offset in header data
 ;    0 -> flag's bit (into wTrainerHeaderFlagBit)
@@ -2139,40 +2141,24 @@ LoadGymLeaderAndCityName::
 ;    8 -> end battle text (into hl)
 ReadTrainerHeaderInfo::
 	push de
-	push af
-	ld d, $0
 	ld e, a
+	ld d, $0
 	ld hl, wTrainerHeaderPtr
 	ld a, [hli]
 	ld l, [hl]
 	ld h, a
 	add hl, de
-	pop af
+	ld a, e
 	and a
-	jr nz, .nonZeroOffset
+	jr nz, .readPointer
 	ld a, [hl]
 	ld [wTrainerHeaderFlagBit], a  ; store flag's bit
-	jr .done
-.nonZeroOffset
-	cp $2
-	jr z, .readPointer ; read flag's byte ptr
-	cp $4
-	jr z, .readPointer ; read before battle text
-	cp $6
-	jr z, .readPointer ; read after battle text
-	cp $8
-	jr z, .readPointer ; read end battle text
-	cp $a
-	jr nz, .done
-	ld a, [hli]        ; read end battle text (2) but override the result afterwards (XXX why, bug?)
-	ld d, [hl]
-	ld e, a
-	jr .done
+	pop de
+	ret
 .readPointer
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-.done
 	pop de
 	ret
 
@@ -2183,7 +2169,7 @@ TalkToTrainer::
 	call StoreTrainerHeaderPointer
 	xor a
 	call ReadTrainerHeaderInfo     ; read flag's bit
-	ld a, $2
+	ld a, TRAINER_HEADER_FLAG_PTR
 	call ReadTrainerHeaderInfo     ; read flag's byte ptr
 	ld a, [wTrainerHeaderFlagBit]
 	ld c, a
@@ -2192,19 +2178,15 @@ TalkToTrainer::
 	ld a, c
 	and a
 	jr z, .trainerNotYetFought     ; test trainer's flag
-	ld a, $6
+	ld a, TRAINER_HEADER_AFTER_TEXT
 	call ReadTrainerHeaderInfo     ; print after battle text
 	jp PrintText
 .trainerNotYetFought
-	ld a, $4
+	ld a, TRAINER_HEADER_BEFORE_TEXT
 	call ReadTrainerHeaderInfo     ; print before battle text
 	call PrintText
-	ld a, $a
-	call ReadTrainerHeaderInfo     ; (?) does nothing apparently (maybe bug in ReadTrainerHeaderInfo)
-	push de
-	ld a, $8
+	ld a, TRAINER_HEADER_END_TEXT
 	call ReadTrainerHeaderInfo     ; read end battle text
-	pop de
 	call SaveEndBattleTextPointers
 	ld hl, wFlags_D733
 	set 4, [hl]                    ; activate map script index override (index is set below)
@@ -2280,7 +2262,7 @@ EndTrainerBattle::
 	ld a, [wIsInBattle]
 	cp $ff
 	jr z, EndTrainerBattleWhiteout
-	ld a, $2
+	ld a, TRAINER_HEADER_FLAG_PTR
 	call ReadTrainerHeaderInfo
 	ld a, [wTrainerHeaderFlagBit]
 	ld c, a
@@ -2374,7 +2356,7 @@ CheckForEngagingTrainers::
 	ld [wTrainerHeaderFlagBit], a
 	cp $ff
 	ret z
-	ld a, $2
+	ld a, TRAINER_HEADER_FLAG_PTR
 	call ReadTrainerHeaderInfo       ; read trainer flag's byte ptr
 	ld b, FLAG_TEST
 	ld a, [wTrainerHeaderFlagBit]
@@ -2402,7 +2384,7 @@ CheckForEngagingTrainers::
 	and a
 	ret nz        ; break if the trainer is engaging
 .continue
-	ld hl, $c
+	ld hl, TRAINER_HEADER_SIZE
 	add hl, de
 	ld d, h
 	ld e, l

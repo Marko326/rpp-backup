@@ -189,7 +189,6 @@ ViridianGymTrainerHeader0:
 	dw ViridianGymBattleText1 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText1 ; TextAfterBattle
 	dw ViridianGymEndBattleText1 ; TextEndBattle
-	dw ViridianGymEndBattleText1 ; TextEndBattle
 
 ViridianGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_1
@@ -197,7 +196,6 @@ ViridianGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_1
 	dw ViridianGymBattleText2 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText2 ; TextAfterBattle
-	dw ViridianGymEndBattleText2 ; TextEndBattle
 	dw ViridianGymEndBattleText2 ; TextEndBattle
 
 ViridianGymTrainerHeader2:
@@ -207,7 +205,6 @@ ViridianGymTrainerHeader2:
 	dw ViridianGymBattleText3 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText3 ; TextAfterBattle
 	dw ViridianGymEndBattleText3 ; TextEndBattle
-	dw ViridianGymEndBattleText3 ; TextEndBattle
 
 ViridianGymTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_3
@@ -215,7 +212,6 @@ ViridianGymTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_3
 	dw ViridianGymBattleText4 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText4 ; TextAfterBattle
-	dw ViridianGymEndBattleText4 ; TextEndBattle
 	dw ViridianGymEndBattleText4 ; TextEndBattle
 
 ViridianGymTrainerHeader4:
@@ -225,7 +221,6 @@ ViridianGymTrainerHeader4:
 	dw ViridianGymBattleText5 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText5 ; TextAfterBattle
 	dw ViridianGymEndBattleText5 ; TextEndBattle
-	dw ViridianGymEndBattleText5 ; TextEndBattle
 
 ViridianGymTrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_5
@@ -233,7 +228,6 @@ ViridianGymTrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_5
 	dw ViridianGymBattleText6 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText6 ; TextAfterBattle
-	dw ViridianGymEndBattleText6 ; TextEndBattle
 	dw ViridianGymEndBattleText6 ; TextEndBattle
 
 ViridianGymTrainerHeader6:
@@ -243,7 +237,6 @@ ViridianGymTrainerHeader6:
 	dw ViridianGymBattleText7 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText7 ; TextAfterBattle
 	dw ViridianGymEndBattleText7 ; TextEndBattle
-	dw ViridianGymEndBattleText7 ; TextEndBattle
 
 ViridianGymTrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_7, 1
@@ -251,7 +244,6 @@ ViridianGymTrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_7, 1
 	dw ViridianGymBattleText8 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText8 ; TextAfterBattle
-	dw ViridianGymEndBattleText8 ; TextEndBattle
 	dw ViridianGymEndBattleText8 ; TextEndBattle
 
 	db $ff

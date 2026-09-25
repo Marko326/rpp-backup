@@ -156,7 +156,6 @@ RocketHideout3TrainerHeader0:
 	dw RocketHideout3BattleText2 ; TextBeforeBattle
 	dw RocketHideout3AfterBattleTxt2 ; TextAfterBattle
 	dw RocketHideout3EndBattleText2 ; TextEndBattle
-	dw RocketHideout3EndBattleText2 ; TextEndBattle
 
 RocketHideout3TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_3_TRAINER_1
@@ -164,7 +163,6 @@ RocketHideout3TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROCKET_HIDEOUT_3_TRAINER_1
 	dw RocketHideout3BattleTxt ; TextBeforeBattle
 	dw RocketHideout3AfterBattleText3 ; TextAfterBattle
-	dw RocketHideout3EndBattleText3 ; TextEndBattle
 	dw RocketHideout3EndBattleText3 ; TextEndBattle
 
 	db $ff

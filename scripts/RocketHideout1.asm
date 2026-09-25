@@ -51,7 +51,6 @@ RocketHideout1TrainerHeader0:
 	dw RocketHideout1BattleText2 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt2 ; TextAfterBattle
 	dw RocketHideout1EndBattleText2 ; TextEndBattle
-	dw RocketHideout1EndBattleText2 ; TextEndBattle
 
 RocketHideout1TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_1
@@ -59,7 +58,6 @@ RocketHideout1TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_1
 	dw RocketHideout1BattleText3 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt3 ; TextAfterBattle
-	dw RocketHideout1EndBattleText3 ; TextEndBattle
 	dw RocketHideout1EndBattleText3 ; TextEndBattle
 
 RocketHideout1TrainerHeader2:
@@ -69,7 +67,6 @@ RocketHideout1TrainerHeader2:
 	dw RocketHideout1BattleText4 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt4 ; TextAfterBattle
 	dw RocketHideout1EndBattleText4 ; TextEndBattle
-	dw RocketHideout1EndBattleText4 ; TextEndBattle
 
 RocketHideout1TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_3
@@ -78,7 +75,6 @@ RocketHideout1TrainerHeader3:
 	dw RocketHideout1BattleText5 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt5 ; TextAfterBattle
 	dw RocketHideout1EndBattleText5 ; TextEndBattle
-	dw RocketHideout1EndBattleText5 ; TextEndBattle
 
 RocketHideout1TrainerHeader4:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_4
@@ -86,7 +82,6 @@ RocketHideout1TrainerHeader4:
 	dwEventFlagAddress EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_4
 	dw RocketHideout1BattleText6 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt6 ; TextAfterBattle
-	dw RocketHideout1EndBattleText6 ; TextEndBattle
 	dw RocketHideout1EndBattleText6 ; TextEndBattle
 
 	db $ff

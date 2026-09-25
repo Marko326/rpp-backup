@@ -31,7 +31,6 @@ Route10TrainerHeader0:
 	dw Route10BattleText1 ; TextBeforeBattle
 	dw Route10AfterBattleText1 ; TextAfterBattle
 	dw Route10EndBattleText1 ; TextEndBattle
-	dw Route10EndBattleText1 ; TextEndBattle
 
 Route10TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_10_TRAINER_1
@@ -39,7 +38,6 @@ Route10TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_10_TRAINER_1
 	dw Route10BattleText2 ; TextBeforeBattle
 	dw Route10AfterBattleText2 ; TextAfterBattle
-	dw Route10EndBattleText2 ; TextEndBattle
 	dw Route10EndBattleText2 ; TextEndBattle
 
 Route10TrainerHeader2:
@@ -49,7 +47,6 @@ Route10TrainerHeader2:
 	dw Route10BattleText3 ; TextBeforeBattle
 	dw Route10AfterBattleText3 ; TextAfterBattle
 	dw Route10EndBattleText3 ; TextEndBattle
-	dw Route10EndBattleText3 ; TextEndBattle
 
 Route10TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_10_TRAINER_3
@@ -57,7 +54,6 @@ Route10TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_10_TRAINER_3
 	dw Route10BattleText4 ; TextBeforeBattle
 	dw Route10AfterBattleText4 ; TextAfterBattle
-	dw Route10EndBattleText4 ; TextEndBattle
 	dw Route10EndBattleText4 ; TextEndBattle
 
 Route10TrainerHeader4:
@@ -67,7 +63,6 @@ Route10TrainerHeader4:
 	dw Route10BattleText5 ; TextBeforeBattle
 	dw Route10AfterBattleText5 ; TextAfterBattle
 	dw Route10EndBattleText5 ; TextEndBattle
-	dw Route10EndBattleText5 ; TextEndBattle
 
 Route10TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_10_TRAINER_5
@@ -75,7 +70,6 @@ Route10TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_10_TRAINER_5
 	dw Route10BattleText6 ; TextBeforeBattle
 	dw Route10AfterBattleText6 ; TextAfterBattle
-	dw Route10EndBattleText6 ; TextEndBattle
 	dw Route10EndBattleText6 ; TextEndBattle
 
 	db $ff

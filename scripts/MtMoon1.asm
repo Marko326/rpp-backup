@@ -35,7 +35,6 @@ MtMoon1TrainerHeader0:
 	dw MtMoon1BattleText2 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText2 ; TextAfterBattle
 	dw MtMoon1EndBattleText2 ; TextEndBattle
-	dw MtMoon1EndBattleText2 ; TextEndBattle
 
 MtMoon1TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_MT_MOON_1_TRAINER_1
@@ -43,7 +42,6 @@ MtMoon1TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_MT_MOON_1_TRAINER_1
 	dw MtMoon1BattleText3 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText3 ; TextAfterBattle
-	dw MtMoon1EndBattleText3 ; TextEndBattle
 	dw MtMoon1EndBattleText3 ; TextEndBattle
 
 MtMoon1TrainerHeader2:
@@ -53,7 +51,6 @@ MtMoon1TrainerHeader2:
 	dw MtMoon1BattleText4 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText4 ; TextAfterBattle
 	dw MtMoon1EndBattleText4 ; TextEndBattle
-	dw MtMoon1EndBattleText4 ; TextEndBattle
 
 MtMoon1TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_MT_MOON_1_TRAINER_3
@@ -61,7 +58,6 @@ MtMoon1TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_MT_MOON_1_TRAINER_3
 	dw MtMoon1BattleText5 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText5 ; TextAfterBattle
-	dw MtMoon1EndBattleText5 ; TextEndBattle
 	dw MtMoon1EndBattleText5 ; TextEndBattle
 
 MtMoon1TrainerHeader4:
@@ -71,7 +67,6 @@ MtMoon1TrainerHeader4:
 	dw MtMoon1BattleText6 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText6 ; TextAfterBattle
 	dw MtMoon1EndBattleText6 ; TextEndBattle
-	dw MtMoon1EndBattleText6 ; TextEndBattle
 
 MtMoon1TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_MT_MOON_1_TRAINER_5
@@ -80,7 +75,6 @@ MtMoon1TrainerHeader5:
 	dw MtMoon1BattleText7 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText7 ; TextAfterBattle
 	dw MtMoon1EndBattleText7 ; TextEndBattle
-	dw MtMoon1EndBattleText7 ; TextEndBattle
 
 MtMoon1TrainerHeader6:
 	dbEventFlagBit EVENT_BEAT_MT_MOON_1_TRAINER_6
@@ -88,7 +82,6 @@ MtMoon1TrainerHeader6:
 	dwEventFlagAddress EVENT_BEAT_MT_MOON_1_TRAINER_6
 	dw MtMoon1BattleText8 ; TextBeforeBattle
 	dw MtMoon1AfterBattleText8 ; TextAfterBattle
-	dw MtMoon1EndBattleText8 ; TextEndBattle
 	dw MtMoon1EndBattleText8 ; TextEndBattle
 
 	db $ff

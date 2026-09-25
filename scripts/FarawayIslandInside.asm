@@ -23,7 +23,6 @@ FarawayIslandInsideTrainerHeader0:
 	dw FarawayIslandInsideMewText ; TextBeforeBattle
 	dw FarawayIslandInsideMewText ; TextAfterBattle
 	dw FarawayIslandInsideMewText ; TextEndBattle
-	dw FarawayIslandInsideMewText ; TextEndBattle
 
 	db $ff
 

@@ -90,7 +90,6 @@ VictoryRoad2TrainerHeader0:
 	dw VictoryRoad2BattleText1 ; TextBeforeBattle
 	dw VictoryRoad2AfterBattleText1 ; TextAfterBattle
 	dw VictoryRoad2EndBattleText1 ; TextEndBattle
-	dw VictoryRoad2EndBattleText1 ; TextEndBattle
 
 VictoryRoad2TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_2_TRAINER_1
@@ -98,7 +97,6 @@ VictoryRoad2TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_VICTORY_ROAD_2_TRAINER_1
 	dw VictoryRoad2BattleText2 ; TextBeforeBattle
 	dw VictoryRoad2AfterBattleText2 ; TextAfterBattle
-	dw VictoryRoad2EndBattleText2 ; TextEndBattle
 	dw VictoryRoad2EndBattleText2 ; TextEndBattle
 
 VictoryRoad2TrainerHeader2:
@@ -108,7 +106,6 @@ VictoryRoad2TrainerHeader2:
 	dw VictoryRoad2BattleText3 ; TextBeforeBattle
 	dw VictoryRoad2AfterBattleText3 ; TextAfterBattle
 	dw VictoryRoad2EndBattleText3 ; TextEndBattle
-	dw VictoryRoad2EndBattleText3 ; TextEndBattle
 
 VictoryRoad2TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_2_TRAINER_3
@@ -116,7 +113,6 @@ VictoryRoad2TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_VICTORY_ROAD_2_TRAINER_3
 	dw VictoryRoad2BattleText4 ; TextBeforeBattle
 	dw VictoryRoad2AfterBattleText4 ; TextAfterBattle
-	dw VictoryRoad2EndBattleText4 ; TextEndBattle
 	dw VictoryRoad2EndBattleText4 ; TextEndBattle
 
 VictoryRoad2TrainerHeader4:
@@ -126,7 +122,6 @@ VictoryRoad2TrainerHeader4:
 	dw VictoryRoad2BattleText5 ; TextBeforeBattle
 	dw VictoryRoad2AfterBattleText5 ; TextAfterBattle
 	dw VictoryRoad2EndBattleText5 ; TextEndBattle
-	dw VictoryRoad2EndBattleText5 ; TextEndBattle
 
 MoltresTrainerHeader:
 	dbEventFlagBit EVENT_BEAT_MOLTRES
@@ -134,7 +129,6 @@ MoltresTrainerHeader:
 	dwEventFlagAddress EVENT_BEAT_MOLTRES
 	dw MoltresBattleText ; TextBeforeBattle
 	dw MoltresBattleText ; TextAfterBattle
-	dw MoltresBattleText ; TextEndBattle
 	dw MoltresBattleText ; TextEndBattle
 
 	db $ff

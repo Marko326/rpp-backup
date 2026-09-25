@@ -210,7 +210,6 @@ PokemonTower7TrainerHeader0:
 	dw PokemonTower7BattleText1 ; TextBeforeBattle
 	dw PokemonTower7AfterBattleText1 ; TextAfterBattle
 	dw PokemonTower7EndBattleText1 ; TextEndBattle
-	dw PokemonTower7EndBattleText1 ; TextEndBattle
 
 PokemonTower7TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_7_TRAINER_1
@@ -219,7 +218,6 @@ PokemonTower7TrainerHeader1:
 	dw PokemonTower7BattleText2 ; TextBeforeBattle
 	dw PokemonTower7AfterBattleText2 ; TextAfterBattle
 	dw PokemonTower7EndBattleText2 ; TextEndBattle
-	dw PokemonTower7EndBattleText2 ; TextEndBattle
 
 PokemonTower7TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_7_TRAINER_2
@@ -227,7 +225,6 @@ PokemonTower7TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_7_TRAINER_2
 	dw PokemonTower7BattleText3 ; TextBeforeBattle
 	dw PokemonTower7AfterBattleText3 ; TextAfterBattle
-	dw PokemonTower7EndBattleText3 ; TextEndBattle
 	dw PokemonTower7EndBattleText3 ; TextEndBattle
 
 	db $ff
