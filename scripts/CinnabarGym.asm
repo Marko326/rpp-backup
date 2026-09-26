@@ -213,8 +213,7 @@ CinnabarGymText1:
 	jp TextScriptEnd
 .asm_3012f
 	ld hl, BlaineFireBlastText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .asm_d9332
 	ld hl, BlaineBattleText
 	call PrintText
@@ -266,8 +265,7 @@ CinnabarGymText2:
 	jp CinnabarGymScript_758b7
 .asm_46bb4
 	ld hl, CinnabarGymText_75969
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_7595f:
 	TX_FAR _CinnabarGymText_7595f
@@ -294,8 +292,7 @@ CinnabarGymText3:
 	jp CinnabarGymScript_758b7
 .asm_4b406
 	ld hl, CinnabarGymText_7599e
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75994:
 	TX_FAR _CinnabarGymText_75994
@@ -322,8 +319,7 @@ CinnabarGymText4:
 	jp CinnabarGymScript_758b7
 .asm_c0673
 	ld hl, CinnabarGymText_759d3
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_759c9:
 	TX_FAR _CinnabarGymText_759c9
@@ -350,8 +346,7 @@ CinnabarGymText5:
 	jp CinnabarGymScript_758b7
 .asm_5cfd7
 	ld hl, CinnabarGymText_75a08
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_759fe:
 	TX_FAR _CinnabarGymText_759fe
@@ -378,8 +373,7 @@ CinnabarGymText6:
 	jp CinnabarGymScript_758b7
 .asm_776b4
 	ld hl, CinnabarGymText_75a3d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75a33:
 	TX_FAR _CinnabarGymText_75a33
@@ -406,8 +400,7 @@ CinnabarGymText7:
 	jp CinnabarGymScript_758b7
 .asm_2f755
 	ld hl, CinnabarGymText_75a72
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75a68:
 	TX_FAR _CinnabarGymText_75a68
@@ -434,8 +427,7 @@ CinnabarGymText8:
 	jp CinnabarGymScript_758b7
 .asm_d87be
 	ld hl, CinnabarGymText_75aa7
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75a9d:
 	TX_FAR _CinnabarGymText_75a9d
@@ -458,8 +450,7 @@ CinnabarGymText9:
 .asm_627d9
 	ld hl, CinnabarGymText_75ac7
 .asm_0b11d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75ac2:
 	TX_FAR _CinnabarGymText_75ac2

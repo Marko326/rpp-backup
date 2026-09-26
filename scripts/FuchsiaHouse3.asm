@@ -40,8 +40,7 @@ FuchsiaHouse3Text1:
 	ld hl, FuchsiaHouse3Text_56217
 
 .talk
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 FuchsiaHouse3Text_561bd:
 	TX_FAR _FuchsiaHouse3Text_561bd

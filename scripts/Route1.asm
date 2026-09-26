@@ -21,8 +21,7 @@ Route1Text1:
 .asm_1cada
 	ld hl, Route1Text_1caee
 .asm_1cadd
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route1ViridianMartSampleText:
 	TX_FAR _Route1ViridianMartSampleText

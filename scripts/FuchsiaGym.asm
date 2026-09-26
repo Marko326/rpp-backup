@@ -289,8 +289,7 @@ FuchsiaGymText8:
 	jr nz, .asm_50671
 	ld hl, FuchsiaGymText_7564e
 .asm_50671
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 FuchsiaGymText_7564e:
 	TX_FAR _FuchsiaGymText_7564e

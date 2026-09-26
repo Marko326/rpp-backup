@@ -51,8 +51,7 @@ SilphCo8Text1:
 	jr nz, .asm_565b8
 	ld hl, SilphCo8Text_565be
 .asm_565b8
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SilphCo8Text_565be:
 	TX_FAR _SilphCo8Text_565be

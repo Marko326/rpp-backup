@@ -178,8 +178,7 @@ Museum1FText_5c242:
 Museum1FText2:
 	TX_ASM
 	ld hl, Museum1FText_5c251
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c251:
 	TX_FAR _Museum1FText_5c251
@@ -206,8 +205,7 @@ Museum1FText3:
 .asm_5c285
 	ld hl, Museum1FText_5c299
 .asm_5c288
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c28e:
 	TX_FAR _Museum1FText_5c28e
@@ -229,8 +227,7 @@ Museum1FText_5c29e:
 Museum1FText4:
 	TX_ASM
 	ld hl, Museum1FText_5c2ad
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c2ad:
 	TX_FAR _Museum1FText_5c2ad
@@ -239,8 +236,7 @@ Museum1FText_5c2ad:
 Museum1FText5:
 	TX_ASM
 	ld hl, Museum1FText_5c2bc
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c2bc:
 	TX_FAR _Museum1FText_5c2bc

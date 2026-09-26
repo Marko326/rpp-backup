@@ -28,8 +28,7 @@ VermilionHouse2Text1:
 .asm_03ef5
 	ld hl, VermilionHouse2Text_560c5
 .asm_5dd95
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 VermilionHouse2Text_560b1:
 	TX_FAR _VermilionHouse2Text_560b1

@@ -229,21 +229,18 @@ CeladonGameCornerText2:
 	jp .menuLoop
 .cantAfford
 	ld hl, CeladonGameCornerText_48d31
-	call PrintText
 	; 当前所选挡位金额不足时结束本次文本流程，不再返回购买菜单。
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .coinCaseFull
 	ld hl, CeladonGameCornerText_48d36
 	call PrintText
 	jp .menuLoop
 .cancel
 	ld hl, CeladonGameCornerText_48d2c
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .noCoinCase
 	ld hl, CeladonGameCornerText_48d3b
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 ; 三项购买菜单；不重置 wCurrentMenuItem，从而记住刚购买的挡位。
 ; 使用单行间距，将菜单完整放在右上状态框与底部文本框之间。
@@ -362,8 +359,7 @@ CeladonGameCornerText7:
 	jr z, .asm_48dc4
 	ld hl, CeladonGameCornerText_48dcf
 .asm_48dc4
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CeladonGameCornerText_48dca:
 	TX_FAR _CeladonGameCornerText_48dca

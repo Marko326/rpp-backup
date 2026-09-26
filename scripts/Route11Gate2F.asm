@@ -57,8 +57,7 @@ Route11GateUpstairsText3:
 	jr z, .print
 	ld hl, BinocularsNoSnorlaxText
 .print
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 BinocularsSnorlaxText:
 	TX_FAR _BinocularsSnorlaxText

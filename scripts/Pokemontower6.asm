@@ -146,8 +146,7 @@ PokemonTower6Text7:
 	ld c, 30
 	call DelayFrames
 	ld hl, PokemonTower2Text_60c24
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 PokemonTower2Text_60c1f:
 	TX_FAR _PokemonTower2Text_60c1f

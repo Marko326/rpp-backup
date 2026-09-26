@@ -48,8 +48,7 @@ SSAnne6Text7:
 .asm_7436c
 	ld hl, SSAnne6Text_61816
 .asm_63292
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne6Text_61807:
 	TX_FAR _SSAnne6Text_61807

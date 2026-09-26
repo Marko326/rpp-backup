@@ -73,8 +73,7 @@ NameRaterText1:
 	jr c, .asm_1daae
 	ld hl, NameRaterText_1dac7
 .asm_1daa8
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .asm_1daae
 	ld hl, NameRaterText_1dacc
 	jr .asm_1daa8

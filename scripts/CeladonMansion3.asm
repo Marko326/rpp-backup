@@ -36,8 +36,7 @@ DirectorText:
 	
 	; if you haven't gotten it yet, and you don't have enough
 	ld hl, .GameDesigner
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 .Enough
 	ld hl, .GameDesignerGiveTicketText
@@ -52,13 +51,11 @@ DirectorText:
 	set 3, [hl]
 .alreadyGiven
 	ld hl, .Already
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 	
 .bagFull
 	ld hl, .noRoom
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 	
 .GameDesigner
 	TX_FAR _GameDesignerText

@@ -403,8 +403,7 @@ SilphCo7AfterBattleText4:
 SilphCo7Text9:
 	TX_ASM
 	ld hl, SilphCo7Text_51ebe
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SilphCo7Text_51ebe:
 	TX_FAR _SilphCo7Text_51ebe

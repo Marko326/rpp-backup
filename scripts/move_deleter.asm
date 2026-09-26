@@ -29,8 +29,7 @@ MoveDeleterText1:
 	cp 2
 	jr nc, .initMoveCursor
 	ld hl, MoveDeleterOneMoveText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .initMoveCursor
 	xor a
 	ld [wListScrollOffset], a
@@ -107,8 +106,7 @@ MoveDeleterText1:
 	call PrintText
 .exit
 	ld hl, MoveDeleterByeText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 DeleteMove:
 ; d = move id

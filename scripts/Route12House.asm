@@ -28,8 +28,7 @@ Route12HouseText1:
 .asm_b4cad
 	ld hl, Route12HouseText_564d4
 .asm_df984
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route12HouseText_564c0:
 	TX_FAR _Route12HouseText_564c0

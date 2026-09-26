@@ -92,8 +92,7 @@ FuchsiaHouse2Text4:
 	jr nz, .asm_4c9a2
 	ld hl, FuchsiaHouse2Text_75176
 .asm_4c9a2
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 FuchsiaHouse2Text_75176:
 	TX_FAR _FuchsiaHouse2Text_75176

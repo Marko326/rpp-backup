@@ -66,8 +66,7 @@ BikeShopText_1d834:
 BikeShopText2:
 	TX_ASM
 	ld hl, BikeShopText_1d843
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 BikeShopText_1d843:
 	TX_FAR _BikeShopText_1d843
@@ -80,8 +79,7 @@ BikeShopText3:
 	jr nz, .asm_34d2d
 	ld hl, BikeShopText_1d85c
 .asm_34d2d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 BikeShopText_1d85c:
 	TX_FAR _BikeShopText_1d85c

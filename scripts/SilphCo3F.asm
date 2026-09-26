@@ -43,8 +43,7 @@ SilphCo3Text1:
 	jr nz, .asm_59fee
 	ld hl, SilphCo3Text_59ff9
 .asm_59fee
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SilphCo3Text_59ff9:
 	TX_FAR _SilphCo3Text_59ff9

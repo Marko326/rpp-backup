@@ -169,8 +169,7 @@ PalletTownText1:
 .next
 	ld hl,OakWalksUpText
 .done
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 OakAppearsText:
 	TX_FAR _OakAppearsText

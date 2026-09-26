@@ -206,8 +206,7 @@ BillsHouseText_1e8cb:
 BillsHouseText3:
 	TX_ASM
 	ld hl, BillsHouseText_1e8da
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 BillsHouseText_1e8da:
 	TX_FAR _BillsHouseText_1e8da

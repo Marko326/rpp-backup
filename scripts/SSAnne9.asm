@@ -89,8 +89,7 @@ SSAnne9Text_61bf2:
 SSAnne9Text7:
 	TX_ASM
 	ld hl, SSAnne9Text_61c01
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c01:
 	TX_FAR _SSAnne9Text_61c01
@@ -99,8 +98,7 @@ SSAnne9Text_61c01:
 SSAnne9Text8:
 	TX_ASM
 	ld hl, SSAnne9Text_61c10
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c10:
 	TX_FAR _SSAnne9Text_61c10
@@ -109,8 +107,7 @@ SSAnne9Text_61c10:
 SSAnne9Text10:
 	TX_ASM
 	ld hl, SSAnne9Text_61c1f
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c1f:
 	TX_FAR _SSAnne9Text_61c1f
@@ -119,8 +116,7 @@ SSAnne9Text_61c1f:
 SSAnne9Text11:
 	TX_ASM
 	ld hl, SSAnne9Text_61c2e
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c2e:
 	TX_FAR _SSAnne9Text_61c2e
@@ -129,8 +125,7 @@ SSAnne9Text_61c2e:
 SSAnne9Text12:
 	TX_ASM
 	ld hl, SSAnne9Text_61c3d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c3d:
 	TX_FAR _SSAnne9Text_61c3d
@@ -139,8 +134,7 @@ SSAnne9Text_61c3d:
 SSAnne9Text13:
 	TX_ASM
 	ld hl, SSAnne9Text_61c4c
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c4c:
 	TX_FAR _SSAnne9Text_61c4c

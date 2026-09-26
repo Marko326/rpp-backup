@@ -116,8 +116,7 @@ IndigoPlateauStatues:
 	jr nz, .ok
 	ld hl, IndigoPlateauStatuesText3
 .ok
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 IndigoPlateauStatuesText1:
 	TX_FAR _IndigoPlateauStatuesText1
@@ -142,8 +141,7 @@ BookOrSculptureText:
 	jr nz, .ok
 	ld hl, DiglettSculptureText
 .ok
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 PokemonBooksText:
 	TX_FAR _PokemonBooksText

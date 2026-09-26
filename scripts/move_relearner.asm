@@ -16,8 +16,7 @@ MoveRelearnerText1:
 	jr nc, .enoughMoney
 	; not enough money
 	ld hl, MoveRelearnerNotEnoughMoneyText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .enoughMoney
 	; Select pokemon from party.
 	call SaveScreenTilesToBuffer2
@@ -44,8 +43,7 @@ MoveRelearnerText1:
 	jr nz, .chooseMove
 	pop bc
 	ld hl, MoveRelearnerNoMovesText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .chooseMove
 	; 将当前选择的宝可梦昵称复制到 wcd6d，供后面的文本使用。
 	call GetPartyMonName2
@@ -97,12 +95,10 @@ MoveRelearnerText1:
 	ld c, $3
 	predef SubBCDPredef
 	ld hl, MoveRelearnerByeText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .exit
 	ld hl, MoveRelearnerByeText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 MoveRelearnerGreetingText:
 	TX_FAR _MoveRelearnerGreetingText

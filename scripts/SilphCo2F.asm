@@ -69,8 +69,7 @@ SilphCo2Text1:
 .asm_59de4
 	ld hl, TM36ExplanationText
 .asm_59de7
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SilphCo2Text_59ded:
 	TX_FAR _SilphCo2Text_59ded

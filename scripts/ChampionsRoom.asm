@@ -255,8 +255,7 @@ GaryText1:
 	jr z, .printText
 	ld hl, GaryText_76103
 .printText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 GaryChampionIntroText:
 	TX_FAR _GaryChampionIntroText
@@ -284,8 +283,7 @@ GaryText3:
 	ld [wd11e], a
 	call GetMonName
 	ld hl, GaryText_76120
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 GaryText_76120:
 	TX_FAR _GaryText_76120

@@ -170,8 +170,7 @@ Route24Text1:
 	jp TextScriptEnd
 .asm_514f9
 	ld hl, Route24Text_51530
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .BagFull
 	ld hl, Route24Text_51521
 	call PrintText

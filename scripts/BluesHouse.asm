@@ -112,8 +112,7 @@ BluesHouseText7:
 	jr nz, .done ; if player is not facing up
 	ld hl, BluesTVText
 .done
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 	
 BluesTVText:
 	TX_FAR _BluesTVText

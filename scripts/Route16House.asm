@@ -18,8 +18,7 @@ Route16HouseText1:
 .BagFull
 	ld hl, HM02NoRoomText
 .asm_13616
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route16HouseText3:
 	TX_FAR _Route16HouseText3

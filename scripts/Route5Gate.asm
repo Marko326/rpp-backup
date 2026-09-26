@@ -198,8 +198,7 @@ Route5GateText1:
 	jp TextScriptEnd
 .alreadyAllowed
 	ld hl, SaffronGateText_1dff6
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route8GateText2:
 Route7GateText2:

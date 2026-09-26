@@ -108,8 +108,7 @@ ViridianCityText2:
 	jr nz, .asm_ae9fe
 	ld hl, ViridianCityText_19122
 .asm_ae9fe
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 ViridianCityText_19122:
 	TX_FAR _ViridianCityText_19122

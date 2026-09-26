@@ -49,20 +49,17 @@ Lab2Text1:
 	; ...and talk about the item
 .alreadyGiven
 	ld hl, TalkAboutNavelRockText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 	
 	; if you haven't seen all of them
 .done
 	ld hl, MysticTooBadText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 	
 	; if there is no room in the pack, say so
 .bagFull
 	ld hl, NoRoomForMysticText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 
 ; Checks to see if the Pokémon has been seen

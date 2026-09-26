@@ -295,8 +295,7 @@ SafariZoneEntranceTextPointers:
 	jr nz, .Explanation
 	ld hl, .ExplanationText
 .Explanation
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 .FirstTimeQuestionText
 	TX_FAR _SafariZoneEntranceText_753e6

@@ -210,8 +210,7 @@ DayCareMText1:
 	ld [wDayCareMonBoxLevel], a
 
 .done
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 DayCareIntroText:
 	TX_FAR _DayCareIntroText

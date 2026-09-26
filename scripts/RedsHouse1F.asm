@@ -74,8 +74,7 @@ RedsHouse1FText2: ; TV
 .girl
 	ld hl,WizardOfOzText
 .done
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 StandByMeText:
 	TX_FAR _StandByMeText

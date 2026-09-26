@@ -7,8 +7,7 @@ Route16GateUpstairsTextPointers:
 Route16GateUpstairsText1:
 	TX_ASM
 	ld hl, Route16GateUpstairsText_49820
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route16GateUpstairsText_49820:
 	TX_FAR _Route16GateUpstairsText_49820
@@ -17,8 +16,7 @@ Route16GateUpstairsText_49820:
 Route16GateUpstairsText2:
 	TX_ASM
 	ld hl, Route16GateUpstairsText_4982f
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route16GateUpstairsText_4982f:
 	TX_FAR _Route16GateUpstairsText_4982f

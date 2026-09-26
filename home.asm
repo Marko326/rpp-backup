@@ -3988,6 +3988,11 @@ PrintText_NoCreatingTextBox::
 	coord bc, 1, 14
 	jp TextCommandProcessor
 
+; PTE-5.50.00: share the common PrintText -> TextScriptEnd tail used by scripts.
+PrintTextAndTextScriptEnd::
+	call PrintText
+	jp TextScriptEnd
+
 
 PrintNumber::
 ; Print the c-digit, b-byte value at de.
