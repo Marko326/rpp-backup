@@ -1844,7 +1844,7 @@ MusicCommands: ; e8720
 	dw MusicD7 ; octave 1
 	dw MusicD8 ; note length + intensity
 	dw MusicD9 ; set starting octave
-	; GSC-5.54.02: legacy Music Test night overrides were removed.
+	; MUS-5.54.03: legacy Music Test night overrides were removed.
 	dw MusicF1 ; tempo
 	dw MusicF2 ; duty cycle
 	dw MusicDC ; intensity
@@ -2514,7 +2514,7 @@ MusicDD: ; e8977
 	ret
 ; e8984
 
-; GSC-5.54.02: MusicDB now dispatches directly to MusicF2.
+; MUS-5.54.03: MusicDB now dispatches directly to MusicF2.
 
 MusicDC: ; e8991
 ; intensity
@@ -2528,7 +2528,7 @@ MusicDC: ; e8991
 	ret
 ; e899a
 
-; GSC-5.54.02: MusicDA now dispatches directly to MusicF1.
+; MUS-5.54.03: MusicDA now dispatches directly to MusicF1.
 
 MusicD0: ; e89a6
 MusicD1: ; e89a6
@@ -2998,7 +2998,7 @@ SetLRTracks: ; e8b1b
 	ret
 ; e8b30
 
-; GSC-5.54.02: removed the unused SongTranspositions table; playback still
+; MUS-5.54.03: removed the unused SongTranspositions table; playback still
 ; resets wTranspositionInterval to zero for identical normal behavior.
 
 StopMusicOnly:
@@ -3092,7 +3092,7 @@ _PlayMusic:: ; e8b30
 	inc hl
 	ld [hl], d ; MusicIDHi (always $00)
 
-	; GSC-5.54.02: only the normal Music table remains. MusicMT/Music2
+	; MUS-5.54.03: only the normal Music table remains. MusicMT/Music2
 	; were unreachable in normal gameplay and their resources were removed.
 	xor a
 	ld [wTranspositionInterval], a

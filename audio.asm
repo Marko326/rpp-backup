@@ -428,7 +428,7 @@ INCLUDE "crysaudio/engine.asm"
 ; What music plays when a trainer notices you
 ;INCLUDE "crysaudio/trainer_encounters.asm"
 
-; GSC-5.54.02: removed the legacy Music Test / alternate soundtrack tables.
+; MUS-5.54.03: removed the legacy Music Test / alternate soundtrack tables.
 ; The normal soundtrack remains data-driven through red_pointers.asm.
 Music:
 INCLUDE "crysaudio/red_pointers.asm"
@@ -443,7 +443,7 @@ INCLUDE "crysaudio/cry_pointers.asm"
 INCLUDE "crysaudio/rbsfx.asm"
 
 
-; GSC-5.54.02: removed the legacy Music Test / alternate soundtrack libraries while
+; MUS-5.54.03: removed the legacy Music Test / alternate soundtrack libraries while
 ; retaining the complete official Gold/Silver BGM set and all Crystal-exclusive
 ; music for a future RBY/GSC soundtrack option. MusicMT/Music2 remain removed.
 
@@ -608,7 +608,7 @@ SECTION "RBY Songs 2", ROMX
 	inc_section "crysaudio/music/RBY/gym.asm"
 	inc_section "crysaudio/music/RBY/pokecenter.asm"
 
-; GSC-5.54.02: retain every song added by Pokemon Crystal. These are kept
+; MUS-5.54.03: retain every song added by Pokemon Crystal. These are kept
 ; independent of the active Gen 1 Music table so a future soundtrack option can
 ; map to them explicitly without bringing back the legacy MusicMT/Music2 library.
 SECTION "Crystal Exclusive Songs", ROMX
@@ -623,12 +623,30 @@ SECTION "Crystal Exclusive Songs", ROMX
 	inc_section "crysaudio/music/battletowerlobby.asm"
 	inc_section "crysaudio/music/mobilecenter.asm"
 
+; MUS-5.54.03: restore every non-empty custom song from the pre-cleanup library.
+; Keep them as independent movable sections for future direct track selection;
+; they are not added back to the legacy MusicMT/Music2 playback system.
+SECTION "Custom Songs 1", ROMX
+	inc_section "crysaudio/music/custom/johtoGSC.asm"
+	inc_section "crysaudio/music/custom/ceruleanGSC.asm"
+	inc_section "crysaudio/music/custom/cinnabarGSC.asm"
+	inc_section "crysaudio/music/custom/nuggetbridge.asm"
+	inc_section "crysaudio/music/custom/shop.asm"
+	inc_section "crysaudio/music/custom/pokeathelonfinal.asm"
+
+SECTION "Custom Songs 2", ROMX
+	inc_section "crysaudio/music/custom/naljowildbattle.asm"
+	inc_section "crysaudio/music/custom/naljogymbattle.asm"
+	inc_section "crysaudio/music/custom/palletbattle.asm"
+	inc_section "crysaudio/music/custom/cinnabarremix.asm"
+	inc_section "crysaudio/music/custom/kantogymleaderremix.asm"
+
 SECTION "Sound Effects", ROMX
 
 INCLUDE "crysaudio/sfx.asm"
 
 
-; GSC-5.54.02: retain all 17 Crystal-exclusive SFX; they are independent of the removed Music Test assets.
+; MUS-5.54.03: retain all 17 Crystal-exclusive SFX; they are independent of the removed Music Test assets.
 SECTION "Crystal Sound Effects", ROMX
 
 INCLUDE "crysaudio/sfx_crystal.asm"
