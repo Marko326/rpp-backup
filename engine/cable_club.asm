@@ -632,6 +632,10 @@ TradeCenter_PlaceSelectedEnemyMonMenuCursor:
 TradeCenter_DisplayStats:
 	ld a, [wCurrentMenuItem]
 	ld [wWhichPokemon], a
+	; LNK-5.55.00: link receive data overlaps the Summary one-shot tile flag.
+	; Force the shared HP/status tiles to reload before every link Summary.
+	xor a
+	ld [wStatusScreenCommonTilesReady], a
 	predef StatusScreen
 	call GBPalNormal
 	call LoadTrainerInfoTextBoxTiles

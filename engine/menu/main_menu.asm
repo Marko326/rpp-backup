@@ -367,10 +367,11 @@ NewGameText:
 	db   "New Game"
 	next "Options@"
 
+; LNK-5.55.00: keep the Lv50 menu label consistent with its room name.
 CableClubOptionsText:
 	db   "Trade Center"
 	next "Colosseum"
-	next "Colosseum50@" ; third function; press B to cancel the Link Menu
+	next "Colosseum 50@" ; third function; press B to cancel the Link Menu
 
 DisplayContinueGameInfo:
 	xor a

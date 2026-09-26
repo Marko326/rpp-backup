@@ -109,3 +109,10 @@ CeruleanCaveName:
 	db "Cerulean_Cave@"
 PowerPlantName:
 	db "Power Plant@"
+; LNK-5.55.00: exact Cable Club names used by the Town Map/map-name paths.
+TradeCenterName:
+	db "Trade Center@"
+ColosseumName:
+	db "Colosseum@"
+Colosseum50Name:
+	db "Colosseum 50@"

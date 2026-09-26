@@ -663,6 +663,12 @@ TryLoadSpecialTownMapEntry::
 ; out on match: carry set, D = y, E = x, HL = name pointer
 ; out on miss: carry clear
 	ld a, e
+	; LNK-5.55.00: Cable Club maps need exact room names instead of the
+	; InternalMapEntries upper-bound fallback to Pokemon League.
+	cp TRADE_CENTER
+	jr z, .tradeCenter
+	cp COLOSSEUM
+	jr z, .colosseum
 	cp UNUSED_MAP_F1
 	jr z, .seafoamWest
 	cp UNUSED_MAP_F2
@@ -676,6 +682,23 @@ TryLoadSpecialTownMapEntry::
 	cp CELADON_MART_ROOF
 	jr z, .celadonMartRoof
 	and a ; clear carry
+	ret
+.tradeCenter
+	ld d, 36
+	ld e, 92
+	ld hl, TradeCenterName
+	scf
+	ret
+.colosseum
+	ld d, 36
+	ld e, 92
+	ld hl, ColosseumName
+	ld a, [wLinkBattleMode]
+	cp LINK_MODE_COLOSSEUM_50
+	jr nz, .colosseumNameReady
+	ld hl, Colosseum50Name
+.colosseumNameReady
+	scf
 	ret
 .seafoamWest
 	ld d, 140
