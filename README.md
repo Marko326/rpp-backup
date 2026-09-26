@@ -27,10 +27,7 @@ For a list of features, check out [**FEATURES.md**](FEATURES.md).
 ## Frequently Asked Questions
 
 ### Q: Are all Pokémon available?
-A: Yes, all 208 Pokémon that are included in the game are available without needing to trade with another person or abusing Wonder Trade.
-
-### Q: Which Pokémon are in Wonder Trade?
-A: Every Pokémon that isn't legendary can appear in Wonder Trade, but you will only find Pokémon that can legally exist at the same level as the one you offered for the trade.
+A: Yes, all 208 Pokémon that are included in the game are available without needing to trade with another person.
 
 ### Q: How do you get Dive?
 A: Dive is not available because the functionality hasn't been added yet. It will be in v4.

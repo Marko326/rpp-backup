@@ -4371,7 +4371,9 @@ const_value = 1
 	add_tx_pre BookOrSculptureText                  ; 40
 	add_tx_pre ElevatorText                         ; 41
 	add_tx_pre PokemonStuffText                     ; 42
-	add_tx_pre WonderTradeMachineText               ; 43
+	; WTR-5.53.00: Wonder Trade was removed. Keep slot $43 reserved so later
+	; HOME entry offsets remain unchanged.
+UnusedPredefText43_id:: dw UnusedPredefText           ; 43 XXX unused/reserved
 	
 SetCustomName:
 ; INPUTS: hl = pointer to name

@@ -69,7 +69,6 @@ These are notable features which have been added
 * New areas in Kanto
 * Navel Rock, Faraway Island, and Southern Island from Pokémon Emerald are all included
 * Breeding at the Day-Care
-* Offline Wonder Trade (Similar to Pokémon Christmas)
 * Smarter AI for Boss trainers (Normal Patch) or All Trainers (Hard Patch)
 * Item Descriptions in Mart and bag menus
 * Move Relearner

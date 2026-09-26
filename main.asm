@@ -2719,6 +2719,8 @@ PewterPokecenterBlocks:
 CeruleanPokecenterBlocks:
 CinnabarPokecenterBlocks:
 FuchsiaPokecenterBlocks:
+	; WTR-5.53.01: remove both halves of the retired Wonder Trade terminal
+	; from the shared Pokemon Center layout.
 	INCBIN "maps/Pokecenter.blk"
 
 INCLUDE "data/mapHeaders/ViridianPokecenter.asm"
@@ -2769,6 +2771,7 @@ INCLUDE "data/mapHeaders/IndigoPlateauLobby.asm"
 INCLUDE "scripts/IndigoPlateauLobby.asm"
 INCLUDE "data/mapObjects/IndigoPlateauLobby.asm"
 INCLUDE "data/martInventories/indigo_plateau.asm"
+; WTR-5.53.01: remove the same retired terminal from Indigo Plateau Lobby.
 IndigoPlateauLobbyBlocks: INCBIN "maps/IndigoPlateauLobby.blk"
 
 ; Start-menu drawing and MoveDex live in this roomy expansion bank.
@@ -2830,7 +2833,7 @@ INCLUDE "data/animation_tilesets.asm"
 SECTION "field moves", ROMX,BANK[$38]
 
 INCLUDE "engine/overworld/field_moves.asm"
-INCLUDE "engine/wonder_trade.asm"
+; WTR-5.53.00: offline Wonder Trade and its dedicated code were removed.
 INCLUDE "engine/overworld/automatic_repel.asm"
 INCLUDE "scripts/DayCareManScript.asm"
 INCLUDE "engine/overworld/ferry_script.asm"
