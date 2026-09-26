@@ -62,25 +62,9 @@ CeladonGymScript3:
 	ld [wJoyIgnore], a
 
 CeladonGymText_48963:
-	ld a, $9
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_ERIKA
-	lb bc, TM_21, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $a
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM21
-	jr .asm_4898c
-.BagFull
-	ld a, $b
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_4898c
-	ld hl, wObtainedKantoBadges
-	set 3, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 3
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_CELADON_GYM_TRAINER_0, EVENT_BEAT_CELADON_GYM_TRAINER_6

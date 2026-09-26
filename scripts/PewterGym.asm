@@ -52,25 +52,9 @@ PewterGymScript3:
 	ld [wJoyIgnore], a
 
 PewterGymScript_5c3df:
-	ld a, $4
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_BROCK
-	lb bc, TM_36, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $5
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM34
-	jr .asm_5c408
-.BagFull
-	ld a, $6
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5c408
-	ld hl, wObtainedKantoBadges
-	set 0, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 0
+	callba GiveGymLeaderReward
 
 	ld a, HS_GYM_GUY
 	ld [wMissableObjectIndex], a

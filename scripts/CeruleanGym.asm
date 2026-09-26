@@ -41,25 +41,9 @@ CeruleanGymScript3:
 	ld [wJoyIgnore], a
 
 CeruleanGymScript_5c70d:
-	ld a, $5
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_MISTY
-	lb bc, TM_11, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $6
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM11
-	jr .asm_5c736
-.BagFull
-	ld a, $7
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5c736
-	ld hl, wObtainedKantoBadges
-	set 1, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 1
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEvents EVENT_BEAT_CERULEAN_GYM_TRAINER_0, EVENT_BEAT_CERULEAN_GYM_TRAINER_1

@@ -41,25 +41,9 @@ SaffronGymScript3:
 	ld [wJoyIgnore], a
 
 SaffronGymText_5d068:
-	ld a, $a
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_SABRINA
-	lb bc, TM_46, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $b
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM46
-	jr .asm_5d091
-.BagFull
-	ld a, $c
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5d091
-	ld hl, wObtainedKantoBadges
-	set 5, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 5
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_SAFFRON_GYM_TRAINER_0, EVENT_BEAT_SAFFRON_GYM_TRAINER_6

@@ -41,25 +41,9 @@ FuchsiaGymScript3:
 	ld a, $f0
 	ld [wJoyIgnore], a
 FuchsiaGymScript3_75497:
-	ld a, $9
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_KOGA
-	lb bc, TM_06, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $a
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM06
-	jr .asm_754c0
-.BagFull
-	ld a, $b
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_754c0
-	ld hl, wObtainedKantoBadges
-	set 4, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 4
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_FUCHSIA_GYM_TRAINER_0, EVENT_BEAT_FUCHSIA_GYM_TRAINER_5

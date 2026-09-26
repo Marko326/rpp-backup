@@ -60,25 +60,9 @@ VermilionGymScript3:
 	ld [wJoyIgnore], a
 
 VermilionGymScript_5caaa:
-	ld a, $6
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_LT_SURGE
-	lb bc, TM_24, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $7
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM24
-	jr .asm_5cad3
-.BagFull
-	ld a, $8
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5cad3
-	ld hl, wObtainedKantoBadges
-	set 2, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 2
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_VERMILION_GYM_TRAINER_0, EVENT_BEAT_VERMILION_GYM_TRAINER_2

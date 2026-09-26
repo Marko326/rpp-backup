@@ -140,25 +140,9 @@ CinnabarGymScript3:
 	ld a, $f0
 	ld [wJoyIgnore], a
 CinnabarGymScript3_75857:
-	ld a, $a
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_BLAINE
-	lb bc, TM_38, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $b
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM38
-	jr .asm_75880
-.BagFull
-	ld a, $c
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_75880
-	ld hl, wObtainedKantoBadges
-	set 6, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 6
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_CINNABAR_GYM_TRAINER_0, EVENT_BEAT_CINNABAR_GYM_TRAINER_6

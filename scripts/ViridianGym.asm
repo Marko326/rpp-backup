@@ -146,25 +146,9 @@ ViridianGymScript3:
 	ld a, $f0
 	ld [wJoyIgnore], a
 ViridianGymScript3_74995:
-	ld a, $c
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_VIRIDIAN_GYM_GIOVANNI
-	lb bc, TM_27, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $d
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM27
-	jr .asm_749be
-.BagFull
-	ld a, $e
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_749be
-	ld hl, wObtainedKantoBadges
-	set 7, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 7
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_VIRIDIAN_GYM_TRAINER_0, EVENT_BEAT_VIRIDIAN_GYM_TRAINER_7
