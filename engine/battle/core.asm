@@ -592,6 +592,13 @@ HandlePoisonBurnLeechSeed:
 	ld hl, wEnemyMonHP
 	ld de, wEnemyMonStatus
 .playersTurn
+	; RSD-5.51.02: self-damage and recoil can reduce the acting mon to 0 HP
+	; before residual effects begin. Skip poison, burn, Toxic, and Leech Seed
+	; entirely when the selected actor has already fainted.
+	ld a, [hli]
+	or [hl]
+	dec hl
+	jr z, .fainted
 	ld a, [de]
 	and (1 << BRN) | (1 << PSN)
 	jr z, .notBurnedOrPoisoned
