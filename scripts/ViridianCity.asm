@@ -121,10 +121,7 @@ ViridianCityText_19127:
 ViridianCityText3:
 	TX_ASM
 	ld hl, ViridianCityText_1914d
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_6dfea
 	ld hl, ViridianCityText_19157
 	call PrintText

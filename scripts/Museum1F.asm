@@ -73,10 +73,7 @@ Museum1FText1:
 	xor a
 	ld [hJoyHeld], a
 	ld hl, Museum1FText_5c21f
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_de133
 	xor a
 	ld [hMoney], a
@@ -125,10 +122,7 @@ Museum1FText1:
 
 Museum1FScript_5c1f9:
 	ld hl, Museum1FText_5c22e
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	cp $0
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_d1144
 	ld hl, Museum1FText_5c233
 	call PrintText

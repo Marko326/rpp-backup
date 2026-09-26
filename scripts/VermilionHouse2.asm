@@ -7,10 +7,7 @@ VermilionHouse2Text1:
 	bit 3, a
 	jr nz, .asm_03ef5
 	ld hl, VermilionHouse2Text_560b1
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_eb1b7
 	lb bc, OLD_ROD, 1
 	call GiveItem

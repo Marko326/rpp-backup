@@ -10,10 +10,7 @@ DayCareMText1:
 	and a
 	jp nz, .daycareInUse
 	ld hl, DayCareIntroText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ld hl, DayCareComeAgainText
 	jp nz, .done
 	ld a, [wPartyCount]

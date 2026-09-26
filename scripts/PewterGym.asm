@@ -173,10 +173,7 @@ PewterGymText3:
 	bit 0, a
 	jr nz, .asm_5c50c
 	ld hl, PewterGymText_5c515
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_5c4fe
 	ld hl, PewterGymText_5c51a
 	call PrintText

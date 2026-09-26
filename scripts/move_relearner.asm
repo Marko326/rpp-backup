@@ -2,10 +2,7 @@ MoveRelearnerText1:
 	TX_ASM
 ; Display the list of moves to the player.
 	ld hl, MoveRelearnerGreetingText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, .exit
 	xor a
 	ldh [$9f], a

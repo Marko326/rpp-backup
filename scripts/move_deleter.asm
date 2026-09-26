@@ -1,10 +1,7 @@
 MoveDeleterText1:
 	TX_ASM
 	ld hl, MoveDeleterGreetingText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, .exit
 	; Select pokemon from party.
 	call SaveScreenTilesToBuffer2

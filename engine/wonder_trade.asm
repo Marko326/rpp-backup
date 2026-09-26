@@ -18,10 +18,7 @@ DoWonderTradeDialogue:: ; Called by an event to start the Wonder Trade process
 	; If the player has a Pokedex, go on to ask if they want to make a Wonder Trade
 .hasPokedex
 	ld hl, WouldYouLikeToWonderTradeText
-	call PrintText
-	call YesNoChoice
-	ld a,[wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz,.comeAgain
 	call WonderTrade_DoTrade
 	jr c, .comeAgain ; If the trade failed, go to the "please come again" text
@@ -66,10 +63,7 @@ WonderTrade_DoTrade:
 	
 	; Ask if the player is sure they want to trade this Pokemon
 	ld hl, AreYouSureText
-	call PrintText
-	call YesNoChoice
-	ld a,[wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz,.tradeFailed ; If not, cancel the trade
 
 	; Take whatever level the Pokemon you offered was, and set it to be the level the received 'mon will be

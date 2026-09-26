@@ -92,10 +92,7 @@ Mansion3Text6:
 Mansion2Text5:
 	TX_ASM
 	ld hl, Mansion2Text_520c2
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_520b9
 	ld a, $1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a

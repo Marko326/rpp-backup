@@ -46,10 +46,7 @@ TrySurf:
 
 ; If SURF can be used, skip "The water is calm." and ask immediately.
 	ld hl, WantToSurfTxt
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .no2
 
 ; Call the Surf routine if the player said Yes.
@@ -97,10 +94,7 @@ TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by
 	; If CUT can be used, skip "This tree can be Cut!" and ask immediately.
 	call Text2_EnterTheText
 	ld hl,WantToCutTxt
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .no2
 
 	; Calls the CUT routine if they said Yes.
@@ -170,10 +164,7 @@ HandleBoulderInteraction::
 
 	; The player can use Strength, so skip the warning and ask immediately.
 	ld hl, WantToUseStrengthTxt
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .closeHandled
 
 	; Enable boulder pushing and show only "<Pokemon> can move boulders."
@@ -218,10 +209,7 @@ TryHeadbutt:
 
 	call Text2_EnterTheText
 	ld hl, WantToUseHeadbuttTxt
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .no2
 
 	; Calls the HEADBUTT routine if they said Yes.
@@ -437,10 +425,7 @@ CheckRepeatFishingRod::
 	push bc
 	call Text2_EnterTheText
 	ld hl, UseRodAgainText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done
 	pop bc
 	; Rebuild the shared item-name buffer exactly like normal Bag item use.

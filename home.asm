@@ -4488,3 +4488,12 @@ GetCurrentMoveID::
 .enemy
 	ld a, [wEnemySelectedMove]
 	ret
+
+; YNP-5.52.01: keep this shared prompt tail at the end of HOME so existing
+; HOME entry points retain their addresses.
+PrintTextAndYesNoChoice::
+	call PrintText
+	call YesNoChoice
+	ld a, [wCurrentMenuItem]
+	and a
+	ret

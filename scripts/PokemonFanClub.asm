@@ -101,10 +101,7 @@ FanClubText5:
 	jr nz, .nothingleft
 
 	ld hl, .meetchairtext
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .nothanks
 
 	; tell the story

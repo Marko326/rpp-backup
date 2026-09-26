@@ -107,10 +107,7 @@ Mansion1AfterBattleText2:
 Mansion1Text4:
 	TX_ASM
 	ld hl, MansionSwitchText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_4438c
 	ld a, $1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a

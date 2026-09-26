@@ -348,10 +348,7 @@ BillsPCRelease:
 	call DisplayMonListMenu
 	jp c, BillsPCMenu
 	ld hl, OnceReleasedText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .loop
 	inc a
 	ld [wRemoveMonFromBox], a

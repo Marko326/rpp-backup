@@ -153,10 +153,7 @@ PewterCityText13:
 PewterCityText4:
 	TX_ASM
 	ld hl, PewterCityText_19427
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	cp $0
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_1941e
 	ld hl, PewterCityText_1942c
 	call PrintText

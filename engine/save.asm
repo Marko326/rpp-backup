@@ -346,10 +346,7 @@ BoxSRAMPointerTable:
 
 ChangeBox::
 	ld hl, WhenYouChangeBoxText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ret nz ; return if No was chosen
 	ld hl, wCurrentBoxNum
 	bit 7, [hl] ; is it the first time player is changing the box?

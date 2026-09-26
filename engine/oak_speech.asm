@@ -83,10 +83,7 @@ OakSpeech:
 	ld [wPlayerGender], a ; store player's gender. 00 for boy, 01 for girl
 
 	ld hl,ShouldMonsObeyText
-	call PrintText
-	call YesNoChoice
-	ld a,[wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .canDisobey
 	ld hl,wExtraFlags
 	set 2,[hl]

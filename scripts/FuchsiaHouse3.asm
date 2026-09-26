@@ -11,11 +11,7 @@ FuchsiaHouse3Text1:
 	jr nz, .after
 
 	ld hl, FuchsiaHouse3Text_561bd
-	call PrintText
-
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .refused
 
 	lb bc, GOOD_ROD, 1

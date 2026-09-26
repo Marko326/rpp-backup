@@ -53,10 +53,7 @@ GiveFossilToCinnabarLab:
 	ld [wFossilMon], a
 	call LoadFossilItemAndMonName
 	ld hl, LabFossil_610ae
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .cancelledGivingFossil
 	; FSL-5.42.01: revival is immediate, but keep the original convenience of
 	; sending the Pokémon to the current Box when the party is full.

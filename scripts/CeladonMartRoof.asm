@@ -226,10 +226,7 @@ CeladonMartRoofText2:
 	ld a, 1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ld hl, CeladonMartRoofText4
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done
 	call CeladonMartRoofScript_GiveDrinkToGirl
 	jr .done

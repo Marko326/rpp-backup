@@ -127,10 +127,7 @@ BillsHouseText4:
 BillsHouseText1:
 	TX_ASM
 	ld hl, BillsHouseText_1e865
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_1e85a
 .asm_1e84d
 	ld hl, BillsHouseText_1e86a

@@ -6,10 +6,7 @@ PromptUserToPlaySlots:
 	ld hl, DisplayTextIDInit
 	call Bankswitch
 	ld hl, PlaySlotMachineText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done ; if player chose No
 	dec a
 	ld [wUpdateSpritesEnabled], a

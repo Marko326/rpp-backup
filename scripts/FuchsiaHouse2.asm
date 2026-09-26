@@ -33,10 +33,7 @@ FuchsiaHouse2Text1:
 
 .gibberish
 	ld hl, WardenGibberishText1
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ld hl, WardenGibberishText3
 	jr nz, .printGibberishReply
 	ld hl, WardenGibberishText2

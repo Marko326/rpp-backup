@@ -16,10 +16,7 @@ DayCareManScript::
 	cp $06
 	jp z, .partyFull
 	ld hl, DayCareManText2 ; It looks like they had an egg! Do you want the Pokemon that hatched from it?
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, .nevermind
 	call GetBabyID ; Reads the entry from the table, and stores it in register b for the mon ID
 	ld c, $5	   ; Babies are at lv 5, like Gen 2

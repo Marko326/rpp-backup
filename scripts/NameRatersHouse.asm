@@ -1,8 +1,5 @@
 NameRaterScript_1da15:
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ret
 
 NameRaterScript_1da20:

@@ -3,10 +3,7 @@ OpenOaksPC:
 	ld hl, AccessedOaksPCText
 	call PrintText
 	ld hl, GetDexRatedText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .closePC
 	predef DisplayDexRating
 .closePC

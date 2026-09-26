@@ -287,10 +287,7 @@ SafariZoneEntranceTextPointers:
 .SafariZoneEntranceText2
 	TX_ASM
 	ld hl, .FirstTimeQuestionText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ld hl, .RegularText
 	jr nz, .Explanation
 	ld hl, .ExplanationText

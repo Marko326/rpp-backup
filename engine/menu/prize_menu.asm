@@ -208,10 +208,7 @@ HandlePrizeChoice:
 	call GetMonName
 .givePrize
 	ld hl,SoYouWantPrizeTextPtr
-	call PrintText
-	call YesNoChoice
-	ld a,[wCurrentMenuItem] ; yes/no answer (Y=0, N=1)
-	and a
+	call PrintTextAndYesNoChoice
 	ret nz ; No/B: return straight to the prize list, like the Pokemart
 	call LoadCoinsToSubtract
 	call HasEnoughCoins

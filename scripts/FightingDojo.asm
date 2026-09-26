@@ -242,10 +242,7 @@ FightingDojoText6:
 	ld a, HITMONLEE
 	call DisplayPokedex
 	ld hl, WantHitmonleeText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done
 	ld a, [wcf91]
 	ld b, a
@@ -277,10 +274,7 @@ FightingDojoText7:
 	ld a, HITMONCHAN
 	call DisplayPokedex
 	ld hl, WantHitmonchanText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done
 	ld a, [wcf91]
 	ld b, a

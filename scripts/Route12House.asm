@@ -7,10 +7,7 @@ Route12HouseText1:
 	bit 5, a
 	jr nz, .asm_b4cad
 	ld hl, Route12HouseText_564c0
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_a2d76
 	lb bc, SUPER_ROD, 1
 	call GiveItem

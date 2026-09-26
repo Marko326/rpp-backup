@@ -58,10 +58,7 @@ ChoosePlayerName:
 	call IntroDisplayPicCenteredOrUpperRight
 .done
 	ld hl, YourNameIsText2
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, ReChoosePlayerName
 	ld hl, YourNameIsText
 	jp PrintText
@@ -109,10 +106,7 @@ ChooseRivalName:
 	call IntroDisplayPicCenteredOrUpperRight
 .done
 	ld hl, HisNameIsText2
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, ReChooseRivalName
 	ld hl, HisNameIsText
 	jp PrintText
