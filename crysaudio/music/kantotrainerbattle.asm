@@ -2293,5 +2293,3 @@ Music_KantoTrainerBattle_branch_ece5a: ; ece5a
 
 	loopchannel 0, Music_KantoTrainerBattle_branch_ece5a
 ; ed06d
-
-

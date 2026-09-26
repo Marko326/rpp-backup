@@ -1844,8 +1844,9 @@ MusicCommands: ; e8720
 	dw MusicD7 ; octave 1
 	dw MusicD8 ; note length + intensity
 	dw MusicD9 ; set starting octave
-	dw MusicDA ; tempo
-	dw MusicDB ; duty cycle
+	; GSC-5.54.02: legacy Music Test night overrides were removed.
+	dw MusicF1 ; tempo
+	dw MusicF2 ; duty cycle
 	dw MusicDC ; intensity
 	dw MusicDD ; update sound status
 	dw MusicDE ; ???? + duty cycle
@@ -2513,40 +2514,7 @@ MusicDD: ; e8977
 	ret
 ; e8984
 
-MusicDB: ; e8984
-; duty cycle, includes nite check
-; params: 1
-	ld a, [GBPrinter]
-	bit 2, a
-	jr nz, .ForceNite ;for the Music test
-	bit 3, a
-	jp nz, MusicF2 ;skip nite check
-.ForceNite
-	ld a, [CurChannel]
-	cp a, $04
-	jp nc, MusicF2 ;skip nite check
-	call GetMusicByte
-	rrca
-	rrca
-	and a, $c0
-	ld hl, Channel1DutyCycle - Channel1
-	add hl, bc
-	ld d, a
-	ld a, [GBPrinter]
-	bit 2, a
-	jr nz, .NiteDuty ;for the Music test
-	;ld a, [TimeOfDay]
-	;cp NITE
-	;jr z, .NiteDuty
-	ld a, d
-	ld [hl], a
-	ret
-.NiteDuty
-	ld a, d
-	xor a, $40
-	ld [hl], a
-	ret
-; e8991
+; GSC-5.54.02: MusicDB now dispatches directly to MusicF2.
 
 MusicDC: ; e8991
 ; intensity
@@ -2560,46 +2528,7 @@ MusicDC: ; e8991
 	ret
 ; e899a
 
-MusicDA: ; e899a
-; global tempo includes nite check
-; params: 2
-;	de: tempo
-	ld a, [GBPrinter]
-	bit 2, a
-	jr nz, .ForceNite ;for the Music test
-	bit 3, a
-	jp nz, MusicF1 ;skip nite check
-.ForceNite
-	ld a, [CurChannel]
-	cp a, $04
-	jp nc, MusicF1 ;skip nite check
-	call GetMusicByte
-	ld d, a
-	call GetMusicByte
-	ld e, a
-	ld a, [GBPrinter]
-	bit 2, a
-	jr nz, .NiteTempo ;for the Music test
-	;ld a, [TimeOfDay]
-	;cp NITE
-	;jr z, .NiteTempo
-	call SetGlobalTempo
-	ret
-.NiteTempo
-	push de
-	srl d
-	rr e
-	srl d
-	rr e
-	push de
-	pop hl
-	pop de
-	add hl, de
-	push hl
-	pop de
-	call SetGlobalTempo
-	ret
-; e89a6
+; GSC-5.54.02: MusicDA now dispatches directly to MusicF1.
 
 MusicD0: ; e89a6
 MusicD1: ; e89a6
@@ -3069,8 +2998,8 @@ SetLRTracks: ; e8b1b
 	ret
 ; e8b30
 
-SongTranspositions:
-	ds 46
+; GSC-5.54.02: removed the unused SongTranspositions table; playback still
+; resets wTranspositionInterval to zero for identical normal behavior.
 
 StopMusicOnly:
 ; Stop only music channels 1-4 without resetting NR50/NR51 or SFX/cry state.
@@ -3163,18 +3092,11 @@ _PlayMusic:: ; e8b30
 	inc hl
 	ld [hl], d ; MusicIDHi (always $00)
 
-	ld hl, SongTranspositions
-	add hl, de
-	xor a ;ld a, [hl] ; XXX Currently unused
+	; GSC-5.54.02: only the normal Music table remains. MusicMT/Music2
+	; were unreachable in normal gameplay and their resources were removed.
+	xor a
 	ld [wTranspositionInterval], a
-
-	ld a, [GBPrinter]
-	bit 1, a
-	jr nz, .MTMusic
-	bit 0, a
-	jr nz, .AltMusic
 	ld hl, Music
-.ContinueMusic
 	add hl, de ; three
 	add hl, de ; byte
 	add hl, de ; pointer
@@ -3219,12 +3141,6 @@ _PlayMusic:: ; e8b30
 	ret
 ; e8b79
 
-.AltMusic
-	ld hl, Music2
-	jr .ContinueMusic
-.MTMusic
-	ld hl, MusicMT
-	jr .ContinueMusic
 ApplyBattleMoveCryModifiers:
 ; [修复] 仅供 Growl/Roar 的 PlayCry 调用。wSFXDontWait=1 是现有战斗动画
 ; 路径的临时标记，因此不会改变地图/菜单等普通 PlayCry。

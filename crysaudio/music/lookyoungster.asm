@@ -297,8 +297,3 @@ Music_LookYoungster_branch_f67ae: ; f67ae
 	note __, 1
 	loopchannel 0, Music_LookYoungster_branch_f67ae
 ; f6810
-
-
-
-
-

@@ -3986,7 +3986,7 @@ wTranspositionInterval:: ds 1
 
 ; misc crys labels
 Options:: ds 1
-GBPrinter:: ds 1
+GBPrinter:: ds 1 ; GSC-5.54.02: legacy music-test control byte kept as WRAM padding
 PlayerState:: ds 1
 
 wSongSelection:: ds 2
