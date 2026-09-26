@@ -154,6 +154,10 @@ INCLUDE "engine/number_printing.asm"
 SECTION "Gym Leader Rewards", ROMX
 INCLUDE "engine/gym_leader_rewards.asm"
 
+; GBP-5.56.01: relocatable GB Player UI and track library menu.
+SECTION "GB Player", ROMX
+INCLUDE "engine/menu/gb_player.asm"
+
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
 RocketFSprite:         INCBIN "gfx/sprites/rocketf.2bpp"

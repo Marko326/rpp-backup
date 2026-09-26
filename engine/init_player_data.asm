@@ -23,6 +23,16 @@ InitPlayerData2:
 	ld hl, wNumBoxItems
 	call InitializeEmptyList
 
+	; GBP-5.56.01 v1: make the GB Player immediately available on new saves.
+	; The item ID is stable; a later patch can move acquisition to an NPC/reward
+	; without changing save/item numbering.
+	ld hl, wNumBagItems
+	ld a, GB_PLAYER
+	ld [wcf91], a
+	ld a, 1
+	ld [wItemQuantity], a
+	call AddItemToInventory
+
 START_MONEY EQU $3000
 	ld hl, wPlayerMoney + 1
 	ld a, START_MONEY / $100

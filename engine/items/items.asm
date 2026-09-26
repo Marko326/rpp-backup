@@ -41,7 +41,7 @@ ItemUsePtrTable:
 	dw UnusableItem      ; OLD SEA MAP
 	dw UnusableItem      ; FERRY TICKET
 	dw UnusableItem      ; EON TICKET
-	dw UnusableItem      ; TERU-SAMA
+	dw ItemUseGBPlayer   ; GB_PLAYER (reuses TERU_SAMA_1A)
 	dw UnusableItem      ; TERU-SAMA
 	dw UnusableItem      ; TERU-SAMA
 	dw ItemUseEscapeRope ; ESCAPE_ROPE
@@ -825,6 +825,18 @@ ItemUseBallText06:
 	TX_SFX_DEX_PAGE_ADDED
 	TX_BLINK
 	db "@"
+
+; GBP-5.56.01: GB Player is a reusable Key Item backed by the old $1A
+; TERU-SAMA slot. The player UI lives in a relocatable ROMX section so bank $03
+; only pays for this small far-call hook.
+ItemUseGBPlayer:
+	ld a,[wIsInBattle]
+	and a
+	jp nz,ItemUseNotTime
+	callba GBPlayerMenu
+	xor a
+	ld [wActionResultOrTookBattleTurn],a ; keep the Bag open after returning
+	ret
 
 ItemUseTownMap:
 	ld a,[wIsInBattle]

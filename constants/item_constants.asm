@@ -31,7 +31,7 @@ const_value = 1
 	const EON_TICKET   ; $19
 
 ; Currently Unused Items
-	const TERU_SAMA_1A ; $1A
+	const GB_PLAYER    ; $1A ; GBP-5.56.01: replaces unused TERU_SAMA_1A slot
 	const TERU_SAMA_1B ; $1B
 	const TERU_SAMA_1C ; $1C
 

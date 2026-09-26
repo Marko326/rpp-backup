@@ -28,7 +28,7 @@ ItemNames:
 	db "Old Sea Map@"
 	db "MysticTicket@"
 	db "Eon Ticket@"
-	db "Teru-sama@"
+	db "GB Player@"
 	db "Teru-sama@"
 	db "Teru-sama@"
 	db "Escape Rope@"

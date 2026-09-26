@@ -3989,9 +3989,16 @@ Options:: ds 1
 GBPrinter:: ds 1 ; MUS-5.54.03: legacy music-test control byte kept as WRAM padding
 PlayerState:: ds 1
 
-wSongSelection:: ds 2
+; GBP-5.56.01: reuse dead Music Test selector scratch for the GB Player UI.
+; Keep the legacy labels at identical addresses for compatibility/debug symbols.
+wGBPlayerTrackIndex::
+wSongSelection:: ds 1
+wGBPlayerTrackCount:: ds 1
+wGBPlayerCategory::
 wNumNoteLines:: ds 1
+wGBPlayerDrawIndex::
 wTmpCh:: ds 1
+wGBPlayerDrawRow::
 wChLastNotes:: ds 3
 wVolTimer:: ds 1
 wC1Vol:: ds 1
@@ -4003,7 +4010,9 @@ wC3VolSub:: ds 1
 wC4Vol:: ds 1
 wC4VolSub:: ds 1
 wNoteEnded:: ds 3
+wGBPlayerScrollOffset::
 wSelectorTop:: ds 1
+wGBPlayerCursorRow::
 wSelectorCur:: ds 1
 wChannelSelector:: ds 1
 wChannelSelectorSwitches:: ds 8

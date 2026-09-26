@@ -126,8 +126,9 @@ _EonTicketDescription_Mart::
 	line "Southern Island."
 	done
 
-_TeruSama1ADescription_Mart::
-	text "..."
+_GBPlayerDescription_Mart::
+	text "Plays RBY, GSC,"
+	line "and custom songs."
 	done
 
 _TeruSama1BDescription_Mart::
