@@ -92,6 +92,49 @@ PlayCurrentMoveAnimationFar::
 	ld [wAnimationID], a
 	jpab PlayBattleAnimationGotID
 
+; BAS-5.51.01: HealEffect fills the six bytes beginning at wHPBarMaxHP before
+; playing its move animation. Dedicated recipes reuse that same wBuffer range,
+; so keep only those six bytes on the stack until the animation has finished.
+; This wrapper is private to HealEffect; other move-animation callers retain
+; their existing dispatch and scratch-memory behavior.
+PlayHealingMoveAnimation::
+	ld hl, wHPBarMaxHP
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	push bc
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	push bc
+	ld a, [hli]
+	ld b, a
+	ld a, [hl]
+	ld c, a
+	push bc
+
+	call PlayCurrentMoveAnimationFar
+
+	ld hl, wHPBarNewHP + 1
+	pop bc
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hld], a
+	pop bc
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hld], a
+	pop bc
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hl], a
+	ret
+
 ; Gold-style orb projectile prototype.
 ; RPP already contains the Gen 2 Sludge Bomb SFX in crysaudio/sfx.asm; rbsfx.asm
 ; exposes it as the next SFX ID after the three existing GSSFX entries.

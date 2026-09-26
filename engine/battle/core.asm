@@ -7213,7 +7213,12 @@ PoisonEffect:
 	call PlayBattleAnimation2
 	jp PrintText
 .regularPoisonEffect
+	; BAS-5.51.01: PoisonEffect prepares its result text pointer in HL before
+	; the move animation. Preserve that legacy caller state across the banked
+	; animation path without changing the animation ABI for unrelated skills.
+	push hl
 	call PlayCurrentMoveAnimation2
+	pop hl
 	jp PrintText
 .noEffect
 	ld a, [de]

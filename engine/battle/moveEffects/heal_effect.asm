@@ -93,8 +93,10 @@ HealEffect_:
 	ld [de], a
 	ld [wHPBarNewHP], a
 .playAnim
-	ld hl, PlayCurrentMoveAnimation
-	call BankswitchEtoF
+	; BAS-5.51.01: dedicated move-animation recipes stage through wBuffer,
+	; which aliases the six HP-bar values prepared above. Preserve only those
+	; values for HealEffect so unrelated animation paths remain unchanged.
+	callab PlayHealingMoveAnimation
 	ld a, [H_WHOSETURN]
 	and a
 	coord hl, 10, 9
