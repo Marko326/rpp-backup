@@ -42,10 +42,14 @@ NameRaterText1:
 	jr nz, .asm_1daae
 	ld hl, NameRaterText_1dab8
 	call PrintText
+.chooseMon
+	; MENU-5.61.06: naming-screen/text restoration re-enables overworld sprite
+	; updates. Reapply Party state before every return so Pokémon icons stay in OAM.
 	xor a
 	ld [wPartyMenuTypeOrMessageID], a
 	ld [wUpdateSpritesEnabled], a
 	ld [wMenuItemToSwap], a
+	; MENU-5.61.06: keep Party as the parent of rename confirmation/naming.
 	call DisplayPartyMenu
 	push af
 	call GBPalWhiteOutWithDelay3
@@ -63,11 +67,11 @@ NameRaterText1:
 .canRename
 	ld hl, NameRaterText_1dabd
 	call NameRaterScript_1da15
-	jr nz, .asm_1daae
+	jp nz, .chooseMon ; No/B only cancels this Pokémon's rename operation
 	ld hl, NameRaterText_1dac2
 	call PrintText
 	callba DisplayNameRaterScreen
-	jr c, .asm_1daae
+	jp c, .chooseMon ; empty-name cancel also returns to the Pokémon list
 	ld hl, NameRaterText_1dac7
 .asm_1daa8
 	jp PrintTextAndTextScriptEnd

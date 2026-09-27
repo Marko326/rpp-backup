@@ -16,11 +16,20 @@ MoveTutorScriptSpecial::
 	call EnableAutoTextBoxDrawing
 	ld hl, MoveTutorSpecialIntroText
 	call PrintText
+	xor a
+	ld [wWhichTrade], a ; no previous special move selection yet
+
+MoveTutorSpecialChooseMove:
 	ld hl, MoveTutorChooseMoveText
 	call PrintText
 
-	; Display the menu to choose which move to learn.
-	xor a
+	; MENU-5.61.06: this is the parent menu for the special tutor's Party list.
+	; Re-enter it on Party cancel and restore the last selected special move.
+	ld a, [wWhichTrade]
+	and a
+	jr z, .cursorReady
+	dec a
+.cursorReady
 	ld [wCurrentMenuItem], a
 	ld [wLastMenuItem], a
 	ld a, $3
@@ -126,7 +135,15 @@ MoveTutorCheckMoney:
 	pop af
 	jr nc,.checkIfAbleToLearnMove
 ; if the player cancelled teaching the move
-	jp .done
+	; MENU-5.61.06: special tutor backs out to its move picker; ordinary tutors
+	; have no parent list above Party and therefore finish normally.
+	ld a, [wWhichTrade]
+	cp 4
+	jp nc, .done
+	call GBPalWhiteOutWithDelay3
+	call RestoreScreenTilesAndReloadTilePatterns
+	call LoadGBPal
+	jp MoveTutorSpecialChooseMove
 	
 .checkIfAbleToLearnMove
 	callba CanLearnTutor ; check if the pokemon can learn the move
@@ -186,8 +203,14 @@ MoveTutorCheckMoney:
 	predef LearnMove ; teach move
 	ld a, b
 	and a ; did you learn the move, or cancel learning?
-	jr z, .done
+	jr nz, .learnedMove
+	; MENU-5.61.06: abandoning LearnMove returns to the Pokémon list. Rebuild the
+	; tutor move name because LearnMove may have reused the shared name buffers.
+	ld a, [wWhichTrade]
+	call LoadTutorMoveName
+	jp .chooseMon
 
+.learnedMove
 	; Charge 500 money if you learned it
 	xor a
 	ld [wWhichTrade], a

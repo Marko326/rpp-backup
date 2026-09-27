@@ -5,11 +5,17 @@ MoveDeleterText1:
 	jp nz, .exit
 	; Select pokemon from party.
 	call SaveScreenTilesToBuffer2
+.chooseMon
+	; MENU-5.61.06: child-menu restoration re-enables overworld sprite updates.
+	; Reapply the complete Party-menu state on every entry so its icon OAM is not
+	; replaced by the map sprite updater after returning from the move list.
 	xor a
 	ld [wListScrollOffset], a
 	ld [wPartyMenuTypeOrMessageID], a
 	ld [wUpdateSpritesEnabled], a
 	ld [wMenuItemToSwap], a
+	; MENU-5.61.06: the Pokémon list owns the move list; child cancellation only
+	; backs out one level and the existing Party cursor keeps the same Pokémon.
 	call DisplayPartyMenu
 	push af
 	call GBPalWhiteOutWithDelay3
@@ -26,7 +32,8 @@ MoveDeleterText1:
 	cp 2
 	jr nc, .initMoveCursor
 	ld hl, MoveDeleterOneMoveText
-	jp PrintTextAndTextScriptEnd
+	call PrintText
+	jp .chooseMon
 .initMoveCursor
 	xor a
 	ld [wListScrollOffset], a
@@ -47,7 +54,7 @@ MoveDeleterText1:
 	ld [wPrintItemPrices], a ; don't print prices
 	call DisplayListMenuID
 	pop bc
-	jr c, .exit  ; exit if player chose cancel
+	jp c, .chooseMon ; B/Cancel backs out one level to the Pokémon list
 	; DisplayListMenuID leaves the selected absolute move-list index in
 	; wWhichPokemon. Preserve it across the confirmation box so choosing No can
 	; return to the same move without adding another WRAM cursor variable.

@@ -2636,6 +2636,17 @@ ItemUseTMHM:
 	callab CheckIfMoveIsKnown ; check if the pokemon already knows the move
 	jr c,.chooseMon
 	predef LearnMove ; teach move
+	ld a,b
+	and a
+	jr nz,.machineLearned
+	; MENU-5.61.06: abandoning the replacement flow backs out to Party instead of
+	; skipping straight to the Bag. Keep the saved Bag item state on the stack.
+	ld a,[wMoveNum]
+	ld [wd11e],a
+	call GetMoveName
+	call CopyStringToCF4B
+	jp .chooseMon
+.machineLearned
 	pop af
 	ld [wcf91],a
 	pop af
