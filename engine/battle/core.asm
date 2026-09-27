@@ -8031,8 +8031,13 @@ ConfusionSideEffectSuccess:
 	inc a
 	ld [bc], a ; confusion status will last 2-5 turns
 	pop af
+	; BAT-5.61.01: damaging Dynamic Punch already played its hit animation.
+	; Keep the deferred animation only for non-damaging confusion effects.
 	cp CONFUSION_SIDE_EFFECT
+	jr z, .skipAnimation
+	cp DYNAMIC_PUNCH_EFFECT
 	call nz, PlayCurrentMoveAnimation2
+.skipAnimation
 	ld hl, BecameConfusedText
 	jp PrintText
 
@@ -8042,6 +8047,11 @@ BecameConfusedText:
 
 ConfusionEffectFailed:
 	cp CONFUSION_SIDE_EFFECT
+	ret z
+	; BAT-5.61.01: Dynamic Punch has already dealt damage. If the target is
+	; already confused, only its secondary effect failed, so do not add the
+	; standalone confusion move's 50-frame failure pause/message.
+	cp DYNAMIC_PUNCH_EFFECT
 	ret z
 	ld c, 50
 	call DelayFrames
