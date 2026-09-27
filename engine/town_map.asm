@@ -60,13 +60,7 @@ DisplayTownMap:
 	ld hl, wOAMBuffer + $10
 	call WriteTownMapSpriteOAM ; town map cursor sprite
 	pop hl
-	ld de, wcd6d
-.copyMapName
-	ld a, [hli]
-	ld [de], a
-	inc de
-	cp "@"
-	jr nz, .copyMapName
+	call CopyTownMapDisplayName
 	coord hl, 1, 0
 	ld de, wcd6d
 	call PlaceString
@@ -537,13 +531,7 @@ DrawPlayerOrBirdSprite:
 	call TownMapCoordsToOAMCoords
 	call WritePlayerOrBirdSpriteOAM
 	pop hl
-	ld de, wcd6d
-.loop
-	ld a, [hli]
-	ld [de], a
-	inc de
-	cp "@"
-	jr nz, .loop
+	call CopyTownMapDisplayName
 	ld hl, wOAMBuffer
 	ld de, wTileMapBackup
 	ld bc, $a0
@@ -585,7 +573,7 @@ DisplayWildLocations:
 	ld c, 15
 	call TextBoxBorder
 	coord hl, 2, 9
-	ld de, AreaUnknownText
+	ld de, PokedexAreaUnknownText
 	call PlaceString
 	jr .done
 .drawPlayerSprite
@@ -598,8 +586,39 @@ DisplayWildLocations:
 	ld bc, $a0
 	jp CopyData
 
+; MAP-5.61.03: preserve the original Pokédex alignment without making the
+; leading padding part of the shared map name. The Pokédex enters one byte
+; earlier, while save/continue and map-name users start at AreaUnknownText.
+PokedexAreaUnknownText:
+	db " "
 AreaUnknownText:
+	db "Area unknown@"
+
+; MAP-5.61.03: the regular/Fly Town Map legend only clears 11 columns, so keep
+; its compact spelling local to that narrow display.
+AreaUnknownTownMapText:
 	db "AreaUnknown@"
+
+CopyTownMapDisplayName:
+; in: hl = shared Town Map name
+; out: wcd6d = display name, using the compact unknown spelling when necessary
+	ld de, AreaUnknownText
+	ld a, l
+	cp e
+	jr nz, .copy
+	ld a, h
+	cp d
+	jr nz, .copy
+	ld hl, AreaUnknownTownMapText
+.copy
+	ld de, wcd6d
+.loop
+	ld a, [hli]
+	ld [de], a
+	inc de
+	cp "@"
+	jr nz, .loop
+	ret
 
 TownMapCoordsToOAMCoords:
 ; in: b = y, c = x
