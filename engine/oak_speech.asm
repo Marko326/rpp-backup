@@ -69,6 +69,10 @@ OakSpeech:
 	
 	callba DisplayHackVersionScreen
 	
+	; NEW-5.61.09: reset the palette map left by the version screen before Oak.
+	ld b, SET_PAL_OAK_INTRO
+	call RunPaletteCommand
+	call Delay3
 	call GBFadeOutToWhite
 	call ClearScreen
 	call GetOakPalID
