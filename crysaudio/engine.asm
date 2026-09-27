@@ -3083,7 +3083,7 @@ _PlayMusic:: ; e8b30
 	call HardStopMusicPreserveTarget
 	ret
 .musicAllowed
-	; MUS-5.59.01: resolve legacy RBY IDs through the selected soundtrack style.
+	; MUS-5.60.00: resolve legacy RBY IDs through the selected soundtrack style.
 	; Extended GB Player IDs are outside the legacy range and pass through unchanged.
 	call ResolveMusicStyleFromAudio
 	xor a

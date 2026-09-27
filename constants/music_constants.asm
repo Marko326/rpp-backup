@@ -39,7 +39,7 @@ BIT_EXECUTE_MUSIC EQU 0 ; if in execute music
 
 ; Song ids are calculated by address to save space.
 
-; MUS-5.59.01: persistent soundtrack mode. Bits 0-1 select the main family;
+; MUS-5.60.00: persistent soundtrack mode. Bits 0-1 select the main family;
 ; bits 2/3 independently remember whether RBY/GSC should prefer CSTM matches.
 MUSIC_STYLE_RBY              EQU 0
 MUSIC_STYLE_GSC              EQU 1

@@ -31,7 +31,7 @@ DisplayOptionMenu:
 	jr nz,.exitMenu
 	bit 3,b ; Start button pressed?
 	jr z,.checkAButton
-	; MUS-5.59.01: START on the Music Style row toggles only the Custom
+	; MUS-5.60.00: START on the Music Style row toggles only the Custom
 	; preference for the currently selected RBY/GSC family. RND has no sub-mode.
 	ld a,[wOptionsMenuPage]
 	cp 1
@@ -392,7 +392,7 @@ DisplayOptionMenu:
 	jp .drawPageSelector
 
 .drawPage3
-	; MUS-5.59.01: World moved intact from Page 2 to the first row of Page 3.
+	; MUS-5.60.00: World moved intact from Page 2 to the first row of Page 3.
 	; Keep the normal three-row frame so the remaining two rows stay available for later options.
 	call .drawPageFrame
 	coord hl,1,1
@@ -817,7 +817,7 @@ StoreMusicStyleSignature:
 	ret
 
 ReadMusicStyleState:
-; MUS-5.59.01: return the packed runtime state in A. The previous three-value
+; MUS-5.60.00: return the packed runtime state in A. The previous three-value
 ; "MS" format is accepted in-place so old saves work before Options is opened:
 ; 0=RBY, 1=GSC, 2=old CSTM -> RBYC. Invalid/pre-feature data becomes RBY.
 	ld a,[wMusicStyleMagic0]
@@ -870,8 +870,8 @@ ResolveMusicStyle::
 ; RBYC : CSTM counterpart when present, otherwise RBY.
 ; GSC  : GSC counterpart when present, otherwise RBY.
 ; GSCC : CSTM first, then GSC, then RBY.
-; RND  : independent of both Custom flags; choose uniformly from the counterparts
-;        that actually exist for this request (RBY is always one candidate).
+; RND  : independent of both Custom flags; choose uniformly from RBY, primary
+;        counterparts, and any extra scene-compatible candidates in the RND pool.
 	ld a,d
 	and a
 	ret nz
@@ -916,48 +916,79 @@ ResolveMusicStyle::
 	ret
 
 .random
-	; RND ignores the remembered RBYC/GSCC bits. Build candidates only from
-	; mappings that exist for this requested legacy track. B=GSC, C=CSTM.
+	; MUS-5.60.00: RND keeps the normal GSC/CSTM counterparts, then appends
+	; any additional scene-compatible songs from MusicStyleRandomExtraMap.
+	; RBY is always candidate 0. Pools are capped at eight total candidates,
+	; so Random & 7 + rejection gives every available song equal probability.
 	ld hl,MusicStyleGSCMap
 	call LookupMusicStyleMap
-	ld b,a
+	ld b,a ; primary GSC counterpart, or 0
 	ld hl,MusicStyleCSTMMap
 	call LookupMusicStyleMap
-	ld c,a
-	ld a,b
-	or c
-	ret z ; only RBY exists
+	ld c,a ; primary CSTM counterpart, or 0
+	ld hl,MusicStyleRandomExtraMap
+	call LookupMusicStyleRandomExtras
+	ld d,a ; additional candidate count
 	ld a,b
 	and a
-	jr z,.randomRBYCSTM
+	jr z,.randomNoGSC
+	inc d
+.randomNoGSC
 	ld a,c
 	and a
-	jr z,.randomRBYGSC
+	jr z,.randomNoCSTM
+	inc d
+.randomNoCSTM
+	inc d ; original RBY request is always one candidate
 
-.randomThree
-	; Use two random low bits and reject 3: 0/1/2 are exactly equiprobable.
+.randomPick
 	call Random
-	and 3
-	cp 3
-	jr z,.randomThree
+	and 7
+	cp d
+	jr nc,.randomPick
 	and a
-	ret z ; 0 = RBY
+	jr z,.randomKeepRBY
 	dec a
-	jr z,.pickGSC ; 1 = GSC
-	ld e,c ; 2 = CSTM
-	ret
-.randomRBYGSC
-	call Random
-	and 1
-	ret z
-.pickGSC
-	ld e,b
-	ret
-.randomRBYCSTM
-	call Random
-	and 1
-	ret z
+	ld d,a ; zero-based index among non-RBY candidates
+
+	ld a,b
+	and a
+	jr z,.randomSkipGSC
+	ld a,d
+	and a
+	jr z,.randomPickGSC
+	dec d
+.randomSkipGSC
+	ld a,c
+	and a
+	jr z,.randomSkipCSTM
+	ld a,d
+	and a
+	jr z,.randomPickCSTM
+	dec d
+.randomSkipCSTM
+	; HL still points at the first extra candidate returned by the table lookup.
+.randomExtraLoop
+	ld a,d
+	and a
+	jr z,.randomPickExtra
+	inc hl
+	dec d
+	jr .randomExtraLoop
+.randomPickExtra
+	ld e,[hl]
+	jr .randomFinish
+.randomPickCSTM
 	ld e,c
+	jr .randomFinish
+.randomPickGSC
+	ld e,b
+	jr .randomFinish
+.randomKeepRBY
+	; E still contains the original RBY Music ID.
+.randomFinish
+	xor a
+	ld d,a
 	ret
 
 LookupMusicStyleMap:
@@ -972,6 +1003,26 @@ LookupMusicStyleMap:
 	jr .loop
 .found
 	ld a,[hl]
+	ret
+
+LookupMusicStyleRandomExtras:
+; MUS-5.60.00 table format: source ID, extra-count, extra Music IDs...; 0 ends.
+; INPUT: HL = table, E = legacy RBY ID. OUTPUT: A = count, HL = first extra.
+.loop
+	ld a,[hli]
+	and a
+	ret z
+	cp e
+	jr z,.found
+	ld a,[hli]
+	ld d,a
+.skip
+	inc hl
+	dec d
+	jr nz,.skip
+	jr .loop
+.found
+	ld a,[hli]
 	ret
 
 ; Legacy RBY ID -> corresponding GSC direct-select ID.
@@ -1023,9 +1074,54 @@ MusicStyleCSTMMap:
 	db MUSIC_WILD_BATTLE,          MUSIC_GBP_CUSTOM_NALJO_WILD_BATTLE
 	db 0
 
+; MUS-5.60.00: extra RND-only candidates. Deterministic RBY/GSC/Custom modes keep
+; using the two counterpart maps above; this table only broadens Random variety.
+; Keep total candidates per source <= 8, including RBY + primary GSC + CSTM.
+MusicStyleRandomExtraMap:
+	; Town/city families.
+	db MUSIC_PALLET_TOWN, 1, MUSIC_GBP_GSC_NEW_BARK_TOWN
+	db MUSIC_CITIES1, 3, MUSIC_GBP_GSC_GOLDENROD_CITY, MUSIC_GBP_GSC_VIOLET_CITY, MUSIC_GBP_GSC_CHERRYGROVE_CITY
+	db MUSIC_CITIES2, 2, MUSIC_GBP_GSC_AZALEA_TOWN, MUSIC_GBP_GSC_ECRUTEAK_CITY
+	db MUSIC_CELADON, 1, MUSIC_GBP_GSC_GOLDENROD_CITY
+	db MUSIC_LAVENDER, 1, MUSIC_GBP_GSC_ECRUTEAK_CITY
+
+	; Routes and outdoor challenge areas.
+	db MUSIC_ROUTES1, 2, MUSIC_GBP_GSC_ROUTE29, MUSIC_GBP_GSC_ROUTE30
+	db MUSIC_ROUTES2, 2, MUSIC_GBP_GSC_ROUTE36, MUSIC_GBP_GSC_ROUTE37
+	db MUSIC_ROUTES3, 1, MUSIC_GBP_GSC_ROUTE26
+	db MUSIC_SAFARI_ZONE, 2, MUSIC_GBP_GSC_NATIONAL_PARK, MUSIC_GBP_GSC_BUG_CATCHING_CONTEST
+
+	; Battles: RND may choose any matching battle-family arrangement.
+	db MUSIC_GYM_LEADER_BATTLE, 1, MUSIC_GBP_GSC_JOHTO_GYM_BATTLE
+	db MUSIC_TRAINER_BATTLE, 3, MUSIC_GBP_GSC_JOHTO_TRAINER_BATTLE, MUSIC_GBP_GSC_RIVAL_BATTLE, MUSIC_GBP_GSC_ROCKET_BATTLE
+	db MUSIC_WILD_BATTLE, 3, MUSIC_GBP_GSC_JOHTO_WILD_BATTLE, MUSIC_GBP_GSC_JOHTO_WILD_BATTLE_NIGHT, MUSIC_GBP_GSC_SUICUNE_BATTLE
+	db MUSIC_FINAL_BATTLE, 1, MUSIC_GBP_GSC_RIVAL_BATTLE
+
+	; Dungeons / hostile facilities.
+	db MUSIC_DUNGEON1, 2, MUSIC_GBP_GSC_ROCKET_HIDEOUT, MUSIC_GBP_GSC_DARK_CAVE
+	db MUSIC_DUNGEON2, 2, MUSIC_GBP_GSC_UNION_CAVE, MUSIC_GBP_GSC_RUINS_OF_ALPH_INTERIOR
+	db MUSIC_DUNGEON3, 3, MUSIC_GBP_GSC_MT_MOON, MUSIC_GBP_GSC_VICTORY_ROAD, MUSIC_GBP_GSC_DRAGONS_DEN
+	db MUSIC_CINNABAR_MANSION, 1, MUSIC_GBP_GSC_BURNED_TOWER
+	db MUSIC_POKEMON_TOWER, 3, MUSIC_GBP_GSC_TIN_TOWER, MUSIC_GBP_GSC_SPROUT_TOWER, MUSIC_GBP_GSC_BURNED_TOWER
+	db MUSIC_SILPH_CO, 2, MUSIC_GBP_GSC_ROCKET_HIDEOUT, MUSIC_GBP_GSC_ROCKET_THEME
+
+	; Encounters / character themes.
+	db MUSIC_MEET_PROF_OAK, 1, MUSIC_GBP_GSC_PROF_OAKS_POKEMON_TALK
+	db MUSIC_MEET_EVIL_TRAINER, 1, MUSIC_GBP_GSC_ROCKET_THEME
+	db MUSIC_MEET_FEMALE_TRAINER, 2, MUSIC_GBP_GSC_LOOK_BEAUTY, MUSIC_GBP_GSC_LOOK_KIMONO_GIRL
+	db MUSIC_MEET_MALE_TRAINER, 4, MUSIC_GBP_GSC_LOOK_HIKER, MUSIC_GBP_GSC_LOOK_POKEMANIAC, MUSIC_GBP_GSC_LOOK_SAGE, MUSIC_GBP_GSC_LOOK_OFFICER
+
+	; System / event themes with clear same-purpose alternates.
+	db MUSIC_MUSEUM_GUY, 1, MUSIC_GBP_GSC_SHOW_ME_AROUND
+	db MUSIC_JIGGLYPUFF_SONG, 1, MUSIC_GBP_GSC_POKEMON_LULLABY
+	db MUSIC_TITLE_SCREEN, 1, MUSIC_GBP_GSC_MAIN_MENU
+	db MUSIC_CREDITS, 1, MUSIC_GBP_GSC_POST_CREDITS
+	db MUSIC_INTRO_BATTLE, 2, MUSIC_GBP_GSC_GOLD_SILVER_OPENING, MUSIC_GBP_GSC_CRYSTAL_OPENING
+	db 0
+
 SECTION "Runtime Options Wrapper", ROMX
 StartMenuOptionWithWorldSwitch::
-	; MUS-5.59.01: World still owns the no-LCD-disable tile refresh. Music Style
+	; MUS-5.60.00: World still owns the no-LCD-disable tile refresh. Music Style
 	; previews immediately inside DisplayOptionMenu, so exiting Options must not replay it.
 	ld a,[wOptions]
 	and 1 << 4

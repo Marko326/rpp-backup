@@ -117,7 +117,7 @@ ENDC
 	ld [wOptions], a
 	ld a,$aa ; encoded BGM volume 10
 	ld [wBGMVolume],a
-	; MUS-5.59.01 defaults to the original RBY soundtrack until a valid saved
+	; MUS-5.60.00 defaults to the original RBY soundtrack until a valid saved
 	; Music Style signature is loaded below.
 	xor a
 	ld [wMusicStyle],a
@@ -146,7 +146,7 @@ ClearVram:
 
 
 LoadStartupMusicOption:
-; MUS-5.59.01: load saved World/Music, BGM volume, and Music Style before the
+; MUS-5.60.00: load saved World/Music, BGM volume, and Music Style before the
 ; boot intro. SRAM without a player-name terminator is treated as no save.
 	push bc
 	push hl
@@ -187,7 +187,7 @@ LoadStartupMusicOption:
 	ld [wBGMVolume], a
 
 .loadMusicStyle
-	; MUS-5.59.01 accepts both the packed "M2" format and the legacy
+	; MUS-5.60.00 accepts both the packed "M2" format and the legacy
 	; three-value "MS" format so title/intro music already respects old saves.
 	ld a, [sMainData + (wMusicStyleMagic0 - wMainDataStart)]
 	cp MUSIC_STYLE_MAGIC0
