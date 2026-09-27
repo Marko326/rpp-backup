@@ -204,6 +204,11 @@ DrawFrameBlock:
 ; Great Ball, Ultra Ball, Pay Day, Safari Throw Rock and Safari Throw Bait.
 ; FrameBlock changes such as Throw Rock impact still fall back to legacy timing.
 ;
+
+; ANM-5.61.12 adds the final $22 return profile used by Absorb-family effects.
+; It keeps continuous per-VBlank motion while varying each leg duration to restore
+; the launch/apex/drop weight of the original two-stage drain animation.
+;
 ; This code stays in bank $1E with DrawFrameBlock instead of ROM0/HOME.  The
 ; same bank also contains SubanimationPointers and FrameBlockBaseCoords, so no
 ; bank switch is needed and HOME space is not consumed.
@@ -418,6 +423,39 @@ SmoothBattleAnimDelayFrames::
 	call SmoothBattleAnimGetMotionWindow
 	pop de
 	pop bc
+	; ANM-5.61.12: $22 uses a gravity-timed motion profile without adding static
+	; holds. Launch is quick, the apex stays slower, and the descending legs
+	; progressively shorten so the return keeps its original weight.
+	cp 28
+	jr nz,.normalMotionWindow
+	ld a,b
+	cp 6
+	jr nz,.useFullMotionWindow       ; nonstandard $22 timing: preserve legacy
+	ld b,6                           ; apex / tiny descent: 7 intervals
+	ld a,d
+	bit 7,a
+	jr z,.gravityFall
+	call SmoothBattleAnimAbsA
+	cp 4
+	jr c,.gravityWindowReady
+	ld b,4                           ; early rise: 5 intervals
+	jr .gravityWindowReady
+.gravityFall
+	cp 4
+	jr c,.gravityWindowReady
+	ld b,5                           ; ordinary descent: 6 intervals
+	cp 16
+	jr c,.gravityWindowReady
+	ld b,4                           ; large drop: 5 intervals
+	cp 24
+	jr c,.gravityWindowReady
+	ld b,3                           ; final 24 px drop: 4 intervals
+.gravityWindowReady
+	ld a,b
+	inc a
+	ld c,a                           ; full-motion denominator for this leg
+	jr .initTweenAccumulators
+.normalMotionWindow
 	and a
 	jr z,.useFullMotionWindow
 	cp b
@@ -440,6 +478,7 @@ SmoothBattleAnimDelayFrames::
 	ld a,c
 	inc a
 	ld c,a                           ; denominator = active updates + 1
+.initTweenAccumulators
 	xor a
 	ld h,a                           ; Y DDA accumulator
 	ld l,a                           ; X DDA accumulator
@@ -542,6 +581,11 @@ SmoothBattleAnimGetMotionWindow:
 	jr nz,.fullWindow
 	srl c
 
+	; ANM-5.61.12: $22 asks the caller for gravity timing.
+	ld a,c
+	cp $22
+	jr z,.gravityWindow
+
 	ld hl,SmoothBattleAnimMotionWindows
 .checkWindow
 	ld a,[hli]
@@ -553,6 +597,10 @@ SmoothBattleAnimGetMotionWindow:
 	jr .checkWindow
 .foundWindow
 	ld a,[hl]
+	ret
+
+.gravityWindow
+	ld a,28                         ; sentinel, not an active-wait count
 	ret
 
 .fullWindow
@@ -614,6 +662,7 @@ SmoothShiftCurrentFrameBlock:
 ; Total keyframe duration is unchanged; unlisted IDs use the full delay.
 SmoothBattleAnimMotionWindows:
 	db $13, 4 ; Acid / Sludge: keep 2 of 6 waits static, then move over the final 4
+	; ANM-5.61.12: $22 gravity timing is handled above.
 	db $ff
 
 ; ANM-5.61.10: verified continuous-travel allowlist.
@@ -623,6 +672,7 @@ SmoothBattleAnimSubanimationIDs:
 	db $08 ; Ultra Ball toss arc
 	db $13 ; Acid / Sludge projectile
 	db $1b ; Leech Seed throw
+	db $22 ; Absorb/Mega Drain/Leech Life/Mimic/Transform/Conversion return particle
 	db $2c ; Water Gun projectile (same-FrameBlock travel phase only)
 	db $3f ; Swift stars
 	db $41 ; Egg Bomb / Barrage projectile

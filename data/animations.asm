@@ -1926,6 +1926,8 @@ Subanimation20:
 	subentry $42, $07, 0
 	subentry $43, $07, 0
 
+; ANM-5.61.12: keep the original 40 -> 24 -> 8 contraction beats while
+; tightening their delay so the first pull remains deliberate instead of drifting.
 Subanimation21:
 	db $43
 	subentry $44, $00, 0
