@@ -144,9 +144,10 @@ DrawFrameBlock:
 	ld a,[wFBMode]
 	cp a,2
 	jr z,.advanceFrameBlockDestAddr; skip delay and don't clean OAM buffer
-	ld a,[wSubAnimFrameDelay]
-	ld c,a
-	call DelayFrames
+	; ANM-5.61.10: keep legacy keyframe timing, but let selected continuous
+	; projectiles update their existing OAM position during the hold VBlanks.
+	; Non-selected/discrete effects still use the original DelayFrames path.
+	call SmoothBattleAnimDelayFrames
 	ld a,[wFBMode]
 	cp a,3
 	jr z,.advanceFrameBlockDestAddr ; skip cleaning OAM buffer
@@ -174,6 +175,452 @@ DrawFrameBlock:
 	ld [wFBDestAddr],a
 .done
 	ret
+
+; ---------------------------------------------------------------------------
+; ANM-5.61.10 - smooth selected continuous battle-animation motion
+; ---------------------------------------------------------------------------
+; Keep the original FrameBlock keyframe duration.  During the VBlanks that
+; would otherwise be pure DelayFrames, translate the already-drawn OAM object
+; toward the next BaseCoord.  Graphic/keyframe timing is unchanged.
+;
+; Verified continuous travel phases:
+;   $1B = Leech Seed throw
+;   $3F = Swift stars
+;   $44 = Razor Leaf projectile
+; The discrete Leech Seed landing phase ($1C) and Supersonic/Psywave ($31)
+; remain legacy-timed because interpolation changes their intended motion.
+;
+; ANM-5.61.10 extends the same guarded path to Acid / Sludge, Water Gun and
+; Egg Bomb / Barrage. Water Gun smoothing naturally stops when its FrameBlock
+; changes into the impact splash, which keeps the authored hit timing intact.
+; Acid / Sludge retain their total keyframe delay but move during the final four
+; hold VBlanks so the projectile remains quick instead of drifting slowly.
+;
+; Dedicated / extended move recipes may reuse the same verified allowlist, so
+; Moonblast, Gunk Shot, Sludge Wave and Mud Bomb inherit only already-approved
+; projectile stages without opening smoothing to recipe-only commands.
+;
+; This code stays in bank $1E with DrawFrameBlock instead of ROM0/HOME.  The
+; same bank also contains SubanimationPointers and FrameBlockBaseCoords, so no
+; bank switch is needed and HOME space is not consumed.
+SmoothBattleAnimDelayFrames::
+	push bc
+	push de
+	push hl
+
+	; Extended recipes may reuse this helper, but only when their active
+	; Subanimation is already in the verified allowlist below.
+
+	; Only mode-0 compact subentries are safe for this lightweight OAM tween.
+	ld a,[wFBMode]
+	and a
+	jp nz,.legacyDelay
+
+	ld a,[wSubAnimFrameDelay]
+	and a
+	jp z,.legacyDelay
+
+	; Convert the pointer-table address back to a compact Subanimation ID and
+	; require an explicit V2 allowlist entry.
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld c,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	and a
+	jp nz,.legacyDelay
+	bit 0,c
+	jp nz,.legacyDelay
+	srl c
+	ld hl,SmoothBattleAnimSubanimationIDs
+.checkWhitelist
+	ld a,[hli]
+	cp $ff
+	jp z,.legacyDelay
+	cp c
+	jr nz,.checkWhitelist
+
+	; Swift gets one extra case: at the end of each star trajectory, continue
+	; along the previous segment during the existing hold frames so the star
+	; actually exits the screen instead of disappearing on the right edge.
+	ld a,[wSubAnimCounter]
+	cp 2
+	jp c,.trySwiftTail
+
+	; Locate the current compact subentry and remember its FrameBlock ID.
+	ld a,[wSubAnimSubEntryAddr]
+	ld l,a
+	ld a,[wSubAnimSubEntryAddr + 1]
+	ld h,a
+	ld a,[hl]
+	bit 7,a
+	jp nz,.legacyDelay
+	and $7f
+	ld b,a
+
+	; Find the next keyframe in playback order. Transform 4 reverses the compact
+	; list; every other transform advances normally.
+	ld a,[wSubAnimTransform]
+	cp 4
+	jr z,.previousSubentry
+	inc hl
+	inc hl
+	jr .gotNextSubentry
+.previousSubentry
+	dec hl
+	dec hl
+.gotNextSubentry
+	ld a,[hli]
+	bit 7,a
+	jp nz,.legacyDelay
+	and $7f
+	cp b
+	jp nz,.legacyDelay
+
+	; Byte 1 is a direct BaseCoord ID for a mode-0 compact subentry.
+	ld a,[hl]
+	ld l,a
+	ld h,0
+	add hl,hl
+	ld de,FrameBlockBaseCoords
+	add hl,de
+	ld a,[hli]
+	ld d,a                           ; next raw base Y
+	ld a,[hl]
+	ld e,a                           ; next raw base X
+
+	; Signed next-current delta in raw BaseCoord space.
+	ld a,[wBaseCoordY]
+	ld c,a
+	ld a,d
+	sub c
+	ld d,a
+	ld a,[wBaseCoordX]
+	ld c,a
+	ld a,e
+	sub c
+	ld e,a
+
+	; Large jumps are projectile respawns/resets, not travel.  Swift uses those
+	; reset points as the cue to extrapolate the outgoing star instead.
+	ld a,d
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.trySwiftTail
+	ld a,e
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.trySwiftTail
+	jp .applyTransform
+
+.trySwiftTail
+	; Only Swift may extrapolate.  Other allowlisted animations keep their
+	; original final-keyframe hold and disappearance behavior.
+	call SmoothBattleAnimIsSwift
+	jp nz,.legacyDelay
+
+	; Current compact entry, mode 0 only.
+	ld a,[wSubAnimSubEntryAddr]
+	ld l,a
+	ld a,[wSubAnimSubEntryAddr + 1]
+	ld h,a
+	ld a,[hl]
+	bit 7,a
+	jp nz,.legacyDelay
+	and $7f
+	ld b,a
+
+	; Read the previous keyframe in playback order and require the same object.
+	ld a,[wSubAnimTransform]
+	cp 4
+	jr z,.swiftPreviousIsForward
+	dec hl
+	dec hl
+	jr .gotSwiftPrevious
+.swiftPreviousIsForward
+	inc hl
+	inc hl
+.gotSwiftPrevious
+	ld a,[hli]
+	bit 7,a
+	jp nz,.legacyDelay
+	and $7f
+	cp b
+	jp nz,.legacyDelay
+
+	; Resolve previous BaseCoord to raw Y/X.
+	ld a,[hl]
+	ld l,a
+	ld h,0
+	add hl,hl
+	ld de,FrameBlockBaseCoords
+	add hl,de
+	ld a,[hli]
+	ld d,a                           ; previous raw base Y
+	ld a,[hl]
+	ld e,a                           ; previous raw base X
+
+	; Extrapolation delta = current - previous, i.e. continue the same velocity.
+	ld a,d
+	ld c,a
+	ld a,[wBaseCoordY]
+	sub c
+	ld d,a
+	ld a,e
+	ld c,a
+	ld a,[wBaseCoordX]
+	sub c
+	ld e,a
+
+	; Fail closed if Swift data is ever changed into a large discontinuity.
+	ld a,d
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.legacyDelay
+	ld a,e
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.legacyDelay
+
+.applyTransform
+	; Match DrawFrameBlock's screen-space transforms.  Types 1 and 3 reverse
+	; both axes; type 2 reverses X only; type 4 only reverses keyframe order.
+	ld a,[wSubAnimTransform]
+	cp 1
+	jr z,.invertBothAxes
+	cp 3
+	jr z,.invertBothAxes
+	cp 2
+	jr z,.invertXAxis
+	jr .deltasReady
+.invertBothAxes
+	xor a
+	sub d
+	ld d,a
+.invertXAxis
+	xor a
+	sub e
+	ld e,a
+.deltasReady
+
+	; There are delay+1 displayed intervals between normal keyframes: the
+	; DrawFrameBlock delay plus AnimationCleanOAM's final VBlank.  Most smooth
+	; animations use the full delay as before. ANM-5.61.10 gives selected long
+	; trajectories a shorter late-motion window without changing total waits.
+	ld a,[wSubAnimFrameDelay]
+	ld b,a                           ; total DelayFrame waits before cleanup
+	push bc
+	push de
+	call SmoothBattleAnimGetMotionWindow
+	pop de
+	pop bc
+	and a
+	jr z,.useFullMotionWindow
+	cp b
+	jr c,.motionWindowReady
+.useFullMotionWindow
+	ld a,b                           ; default/full-window tween
+.motionWindowReady
+	ld c,a                           ; active movement waits
+	ld a,b
+	sub c                            ; initial legacy-style hold waits
+	jr z,.startTweenWindow
+	push bc
+	push de
+	ld c,a
+	call DelayFrames
+	pop de
+	pop bc
+.startTweenWindow
+	ld b,c                           ; intermediate movement updates
+	ld a,c
+	inc a
+	ld c,a                           ; denominator = active updates + 1
+	xor a
+	ld h,a                           ; Y DDA accumulator
+	ld l,a                           ; X DDA accumulator
+
+.smoothFrameLoop
+	push bc
+	push de
+	push hl
+	call DelayFrame
+	pop hl
+	pop de
+	pop bc
+
+	; Y DDA. Shift the current FrameBlock by one pixel for every denominator
+	; crossed.  Small projectile deltas keep this inexpensive.
+	ld a,d
+	and a
+	jr z,.stepX
+	call SmoothBattleAnimAbsA
+	add h
+	ld h,a
+.yConsume
+	ld a,h
+	cp c
+	jr c,.stepX
+	sub c
+	ld h,a
+	ld a,1
+	bit 7,d
+	jr z,.shiftY
+	ld a,$ff
+.shiftY
+	push bc
+	push de
+	push hl
+	ld c,0                           ; OAM byte 0 = Y
+	call SmoothShiftCurrentFrameBlock
+	pop hl
+	pop de
+	pop bc
+	jr .yConsume
+
+.stepX
+	ld a,e
+	and a
+	jr z,.finishSmoothStep
+	call SmoothBattleAnimAbsA
+	add l
+	ld l,a
+.xConsume
+	ld a,l
+	cp c
+	jr c,.finishSmoothStep
+	sub c
+	ld l,a
+	ld a,1
+	bit 7,e
+	jr z,.shiftX
+	ld a,$ff
+.shiftX
+	push bc
+	push de
+	push hl
+	ld c,1                           ; OAM byte 1 = X
+	call SmoothShiftCurrentFrameBlock
+	pop hl
+	pop de
+	pop bc
+	jr .xConsume
+
+.finishSmoothStep
+	dec b
+	jp nz,.smoothFrameLoop
+	jr .doneSmoothDelay
+
+.legacyDelay
+	ld a,[wSubAnimFrameDelay]
+	ld c,a
+	call DelayFrames
+
+.doneSmoothDelay
+	pop hl
+	pop de
+	pop bc
+	; DelayFrames leaves C at zero. Preserve that caller-visible detail.
+	ld c,0
+	ret
+
+; ANM-5.61.10: return the number of DelayFrame waits that should actively
+; move the current object. A=0 means use the full legacy delay. Keeping this
+; data-driven makes later per-animation timing tuning a table-only change.
+SmoothBattleAnimGetMotionWindow:
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld c,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	jr nz,.fullWindow
+	bit 0,c
+	jr nz,.fullWindow
+	srl c
+
+	ld hl,SmoothBattleAnimMotionWindows
+.checkWindow
+	ld a,[hli]
+	cp $ff
+	jr z,.fullWindow
+	cp c
+	jr z,.foundWindow
+	inc hl                           ; skip this entry's active-wait count
+	jr .checkWindow
+.foundWindow
+	ld a,[hl]
+	ret
+
+.fullWindow
+	xor a
+	ret
+
+; Return abs(A), treating A as signed 8-bit.
+SmoothBattleAnimAbsA:
+	bit 7,a
+	ret z
+	cpl
+	inc a
+	ret
+
+; Z if the active Subanimation pointer is entry $3F (Swift), NZ otherwise.
+SmoothBattleAnimIsSwift:
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld e,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	ret nz
+	bit 0,e
+	ret nz
+	srl e
+	ld a,e
+	cp $3f
+	ret
+
+; Translate every sprite belonging to the currently drawn FrameBlock by one
+; signed pixel. A = +1/-1, C = OAM coordinate byte (0=Y, 1=X).
+SmoothShiftCurrentFrameBlock:
+	ld d,a
+	ld a,[wFBDestAddr + 1]
+	ld l,a
+	ld a,[wFBDestAddr]
+	ld h,a
+	ld a,c
+	and a
+	jr z,.gotAxis
+	inc hl
+.gotAxis
+	ld a,[wNumFBTiles]
+	ld b,a
+.shiftLoop
+	ld a,[hl]
+	add d
+	ld [hl],a
+	inc hl
+	inc hl
+	inc hl
+	inc hl
+	dec b
+	jr nz,.shiftLoop
+	ret
+
+; ANM-5.61.10 late-motion profiles. Each pair is:
+;   subanimation ID, active DelayFrame waits
+; Total keyframe duration is unchanged; unlisted IDs use the full delay.
+SmoothBattleAnimMotionWindows:
+	db $13, 4 ; Acid / Sludge: keep 2 of 6 waits static, then move over the final 4
+	db $ff
+
+; ANM-5.61.10: verified continuous-travel allowlist.
+SmoothBattleAnimSubanimationIDs:
+	db $13 ; Acid / Sludge projectile
+	db $1b ; Leech Seed throw
+	db $2c ; Water Gun projectile (same-FrameBlock travel phase only)
+	db $3f ; Swift stars
+	db $41 ; Egg Bomb / Barrage projectile
+	db $44 ; Razor Leaf projectile
+	db $ff
 
 PlayAnimation:
 	xor a
