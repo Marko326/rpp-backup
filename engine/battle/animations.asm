@@ -200,6 +200,10 @@ DrawFrameBlock:
 ; Moonblast, Gunk Shot, Sludge Wave and Mud Bomb inherit only already-approved
 ; projectile stages without opening smoothing to recipe-only commands.
 ;
+; ANM-5.61.11 adds the verified single-object parabolas used by Poké Ball,
+; Great Ball, Ultra Ball, Pay Day, Safari Throw Rock and Safari Throw Bait.
+; FrameBlock changes such as Throw Rock impact still fall back to legacy timing.
+;
 ; This code stays in bank $1E with DrawFrameBlock instead of ROM0/HOME.  The
 ; same bank also contains SubanimationPointers and FrameBlockBaseCoords, so no
 ; bank switch is needed and HOME space is not consumed.
@@ -614,12 +618,18 @@ SmoothBattleAnimMotionWindows:
 
 ; ANM-5.61.10: verified continuous-travel allowlist.
 SmoothBattleAnimSubanimationIDs:
+	db $06 ; Poke Ball toss arc
+	db $07 ; Great Ball toss arc
+	db $08 ; Ultra Ball toss arc
 	db $13 ; Acid / Sludge projectile
 	db $1b ; Leech Seed throw
 	db $2c ; Water Gun projectile (same-FrameBlock travel phase only)
 	db $3f ; Swift stars
 	db $41 ; Egg Bomb / Barrage projectile
 	db $44 ; Razor Leaf projectile
+	db $52 ; Pay Day coin path
+	db $53 ; Safari Throw Rock arc
+	db $54 ; Safari Throw Bait arc
 	db $ff
 
 PlayAnimation:
