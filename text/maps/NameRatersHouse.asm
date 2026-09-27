@@ -22,8 +22,8 @@ _NameRaterText_1dabd::
 	para "But, would you"
 	line "like me to give"
 	cont "it a nicer name?"
-
-	para "How about it?"
+	; MENU-5.61.07: end this prompt immediately here so the caller can open
+	; Yes/No without an extra text advance or the redundant "How about it?" page.
 	done
 
 _NameRaterText_1dac2::
