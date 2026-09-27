@@ -162,11 +162,11 @@ DrawFrameBlock:
 .cleanOAM
 	call AnimationCleanOAM
 .resetFrameBlockDestAddr
-	ld hl,wOAMBuffer ; OAM buffer
+	call BattleAnimGetFrameDest
 	ld a,l
 	ld [wFBDestAddr + 1],a
 	ld a,h
-	ld [wFBDestAddr],a ; set destination address to beginning of OAM buffer
+	ld [wFBDestAddr],a ; reset to normal base or the lane after a carried source
 	ret
 .advanceFrameBlockDestAddr
 	ld a,e
@@ -175,6 +175,48 @@ DrawFrameBlock:
 	ld [wFBDestAddr],a
 .done
 	ret
+
+; Return the first OAM byte available to the active stage. During an overlap
+; bridge, the source pose owns the first N OAM entries and the target renders
+; immediately after them. wOAMBuffer is page-aligned, so count*4 is the low byte.
+BattleAnimGetFrameDest:
+	ld hl,wOAMBuffer
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	ret z
+	and $3f
+	add a
+	add a
+	ld l,a
+	ret
+
+; ANM-5.61.13: carry timing is inert for ordinary animations. Only an active
+; overlap target routes delay VBlanks through the carry lifetime updater.
+BattleAnimDelayFrameMaybeCarry:
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jp z,DelayFrame
+	push bc
+	push de
+	push hl
+	callba BattleAnimCarryDelayFrame
+	pop hl
+	pop de
+	pop bc
+	ret
+
+BattleAnimDelayFramesMaybeCarry:
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jp z,DelayFrames
+.loop
+	push bc
+	call BattleAnimDelayFrameMaybeCarry
+	pop bc
+	dec c
+	jr nz,.loop
+	ret
+
 
 ; ---------------------------------------------------------------------------
 ; ANM-5.61.10 - smooth selected continuous battle-animation motion
@@ -470,7 +512,7 @@ SmoothBattleAnimDelayFrames::
 	push bc
 	push de
 	ld c,a
-	call DelayFrames
+	call BattleAnimDelayFramesMaybeCarry
 	pop de
 	pop bc
 .startTweenWindow
@@ -487,7 +529,7 @@ SmoothBattleAnimDelayFrames::
 	push bc
 	push de
 	push hl
-	call DelayFrame
+	call BattleAnimDelayFrameMaybeCarry
 	pop hl
 	pop de
 	pop bc
@@ -557,7 +599,7 @@ SmoothBattleAnimDelayFrames::
 .legacyDelay
 	ld a,[wSubAnimFrameDelay]
 	ld c,a
-	call DelayFrames
+	call BattleAnimDelayFramesMaybeCarry
 
 .doneSmoothDelay
 	pop hl
@@ -661,7 +703,7 @@ SmoothShiftCurrentFrameBlock:
 ;   subanimation ID, active DelayFrame waits
 ; Total keyframe duration is unchanged; unlisted IDs use the full delay.
 SmoothBattleAnimMotionWindows:
-	db $13, 4 ; Acid / Sludge: keep 2 of 6 waits static, then move over the final 4
+	db $13, 5 ; Acid / Sludge: keep 1 of 6 waits static, then move over the final 5
 	; ANM-5.61.12: $22 gravity timing is handled above.
 	db $ff
 
@@ -686,6 +728,9 @@ PlayAnimation:
 	xor a
 	ld [$FF8B],a ; it looks like nothing reads this
 	ld [wSubAnimTransform],a
+	; ANM-5.61.13: bridge state is local to one PlayAnimation command stream.
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
 	ld a,[wMoveAnimScriptLoaded]
 	and a
 	ld hl,wBuffer
@@ -815,7 +860,18 @@ PlayAnimation:
 ;	ld [rOBP0],a	; HAX
 	nop
 	nop
+	; ANM-5.61.13: resolve only a verified same-tileset bridge before loading
+	; graphics. Acid $13 -> $14 can skip the redundant copy at the boundary.
+	callba UpdateSeamlessBattleAnimStage
+	ld a,[wBattleAnimStageCarryTimer]
+	bit 7,a
+	jr nz,.seamlessTilesetReady
 	call LoadAnimationTileset
+	jr .afterSeamlessTileset
+.seamlessTilesetReady
+	and $7f
+	ld [wBattleAnimStageCarryTimer],a
+.afterSeamlessTileset
 	call LoadSubanimation
 	call PlaySubanimation
 	pop af
@@ -1142,7 +1198,7 @@ PlaySubanimation:
 	call GetMoveSound
 	call nc, AnimPlaySFX
 .skipPlayingSound
-	ld hl,wOAMBuffer ; base address of OAM buffer
+	call BattleAnimGetFrameDest ; base address, or lane after a carried source pose
 	ld a,l
 	ld [wFBDestAddr + 1],a
 	ld a,h
@@ -1250,8 +1306,17 @@ AnimationCleanOAM:
 	push de
 	push bc
 	push af
+	; Ordinary animations retain the exact local path; only a verified source or
+	; active overlap target pays for the banked bridge cleanup logic.
+	ld a,[wBattleAnimSeamlessStage]
+	and a
+	jr nz,.seamless
 	call DelayFrame
 	call ClearSprites
+	jr .done
+.seamless
+	callba AnimationCleanOAMSeamlessBody
+.done
 	pop af
 	pop bc
 	pop de

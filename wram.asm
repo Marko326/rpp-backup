@@ -1976,7 +1976,12 @@ wSavedListScrollOffset:: ; d081
 ; so that it can be restored when the player is done with the pokemart NPC
 	ds 1
 
-	ds 2
+; ANM-5.61.13: battle-only state for verified seamless/overlap stage bridges.
+; These labels reuse the two existing anonymous bytes, so WRAM layout is unchanged.
+wBattleAnimSeamlessStage::
+	ds 1
+wBattleAnimStageCarryTimer::
+	ds 1
 
 ; base coordinates of frame block
 wBaseCoordX:: ; d084

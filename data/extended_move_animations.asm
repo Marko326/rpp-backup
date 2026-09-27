@@ -2197,3 +2197,218 @@ PlayDynamicPunchGoldLike::
 	callba PlaySubanimation
 	callba AnimationShakeScreen
 	ret
+
+; ---------------------------------------------------------------------------
+; ANM-5.61.13 - reusable high-water overlap bridge; Acid-only activation
+; ---------------------------------------------------------------------------
+; Keep Subanimation data untouched. A bridge entry only changes the boundary
+; between two verified stages that share one animation tileset.
+;
+; lifetime = 0: seamless replacement with no blank or redundant tileset load.
+; lifetime > 0: keep the source's complete final OAM composition in a leading
+;               lane while the target starts immediately in the following lane.
+;
+; The important detail is "complete": a source may accumulate mode 2/3/4
+; FrameBlocks before a normal final cleanup frame. wNumFBTiles describes only
+; that final FrameBlock, so cleanup records the real OAM high-water mark: start
+; slot of the final FrameBlock + its size. The lifetime field remains available
+; for future verified overlap pairs without changing this framework.
+UpdateSeamlessBattleAnimStage::
+	; Recover the compact Subanimation ID from its pointer-table address.
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld c,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	jr nz,.invalidStage
+	bit 0,c
+	jr nz,.invalidStage
+	srl c
+
+	; Preserve the immediately preceding source token and the high-water count
+	; captured on its final frame. wFBTileCounter is dead between subanimations,
+	; so it is safe as a one-call scratch byte here.
+	ld a,[wBattleAnimSeamlessStage]
+	ld e,a
+	ld a,[wBattleAnimStageCarryTimer]
+	ld [wFBTileCounter],a
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	ld a,[wAnimationID]
+	ld b,a
+	ld hl,SeamlessBattleAnimStagePairs
+.loop
+	ld a,[hli]
+	cp $ff
+	ret z
+	cp b
+	jr nz,.skipPair
+	ld a,[hli]
+	ld d,a                           ; source Subanimation ID
+	ld a,[hli]                       ; target Subanimation ID
+	cp c
+	jr nz,.consumeLifetime
+	; A target may bridge only from this exact immediately preceding source.
+	ld a,d
+	inc a                            ; source token = source ID + 1
+	cp e
+	jr nz,.consumeLifetime
+	ld a,[hl]                        ; carry lifetime in VBlanks
+	and $7f
+	or $80                           ; one-shot marker: same tileset, skip reload
+	ld [wBattleAnimStageCarryTimer],a
+	and $7f
+	jr z,.noCarryPose
+	; Use the source's recorded OAM high-water mark, not the size of its last
+	; FrameBlock. This preserves accumulated beams/flames built with mode 2/3/4.
+	ld a,[wFBTileCounter]
+	and $3f
+	jr z,.noCarryPose
+	cp 40
+	jr c,.storeCarryLane
+	ld a,40
+.storeCarryLane
+	or $80
+	ld [wBattleAnimSeamlessStage],a
+	jr .consumeLifetime
+.noCarryPose
+	; Zero-lifetime entries are pure seamless bridges: replace WRAM OAM now;
+	; hardware keeps the source visible until the target's first VBlank.
+	call ClearSprites
+.consumeLifetime
+	inc hl                           ; lifetime byte
+	ld a,d
+	cp c
+	jr nz,.loop
+	; Mark this stage as a possible source unless it is already the active target
+	; of an overlap bridge. The final-frame cleanup will capture its high-water.
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jr nz,.loop
+	ld a,d
+	inc a
+	ld [wBattleAnimSeamlessStage],a
+	jr .loop
+.skipPair
+	inc hl                           ; source ID
+	inc hl                           ; target ID
+	inc hl                           ; lifetime
+	jr .loop
+.invalidStage
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+
+; One VBlank of battle-animation time. When a target is carrying the preceding
+; source pose, decrement its independent lifetime after the combined OAM frame
+; has reached hardware. Expiry hides only the source lane; the target keeps going.
+BattleAnimCarryDelayFrame::
+	call DelayFrame
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	ret z
+	ld a,[wBattleAnimStageCarryTimer]
+	and a
+	ret z
+	dec a
+	ld [wBattleAnimStageCarryTimer],a
+	ret nz
+	ld a,[wBattleAnimSeamlessStage]
+	and $3f
+	ld b,a
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld hl,wOAMBuffer
+	ld a,b
+	and a
+	ret z
+	xor a
+.hideSourceLoop
+	ld [hl],a                       ; Y=0 hides this OAM entry
+	inc hl
+	inc hl
+	inc hl
+	inc hl
+	dec b
+	jr nz,.hideSourceLoop
+	ret
+
+; Clear only the target lane while an overlap carry is alive. The source owns
+; entries [0,high-water); target keyframes are redrawn in [high-water,40).
+ClearBattleAnimTargetOAMKeepingCarry::
+	ld a,[wBattleAnimSeamlessStage]
+	and $3f
+	add a
+	add a
+	ld l,a
+	ld h,HIGH(wOAMBuffer)
+	ld a,40 * 4
+	sub l
+	ld b,a
+	ret z
+	xor a
+.clearTargetLoop
+	ld [hli],a
+	dec b
+	jr nz,.clearTargetLoop
+	ret
+
+; Capture the complete final OAM composition of an approved source stage.
+; wFBDestAddr points at the start of the final FrameBlock while wNumFBTiles is
+; that FrameBlock's size. Their sum is the actual high-water even after mode 2/3
+; accumulated earlier FrameBlocks. wOAMBuffer is page-aligned, so low/4 is slot.
+SaveBattleAnimSourceOAMHighWater::
+	ld a,[wFBDestAddr + 1]
+	srl a
+	srl a
+	ld b,a
+	ld a,[wNumFBTiles]
+	add b
+	cp 41
+	jr c,.store
+	ld a,40
+.store
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+
+; Called through the register-preserving AnimationCleanOAM wrapper in BANK1E.
+; Approved sources keep only their final composite pose. Carry targets preserve
+; that complete source lane while clearing/redrawing only their own lane.
+AnimationCleanOAMSeamlessBody::
+	call BattleAnimCarryDelayFrame
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jr nz,.carryTarget
+	and a
+	jr z,.clearAll
+	ld a,[wSubAnimCounter]
+	cp 1
+	jr nz,.clearAll
+	call SaveBattleAnimSourceOAMHighWater
+	ret                              ; hold final source pose across the boundary
+.clearAll
+	jp ClearSprites
+.carryTarget
+	ld a,[wSubAnimCounter]
+	cp 1
+	jr nz,.clearTargetOnly
+	; Never leak a residual pose beyond its target stage even if its requested
+	; lifetime is longer than the target itself.
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	jp ClearSprites
+.clearTargetOnly
+	jp ClearBattleAnimTargetOAMKeepingCarry
+
+; animation ID, source Subanimation ID, target Subanimation ID, carry VBlanks
+; Keep activation intentionally narrow. Acid uses lifetime 0 for the proven
+; no-flash/no-pause bridge. Positive lifetimes are supported by the reusable
+; framework but are not enabled for any other move in this revision. Future
+; entries must share one tileset, finish the source on a cleanup-capable frame,
+; and be checked so carried + target OAM stays within 40 sprites / scanline limits.
+SeamlessBattleAnimStagePairs:
+	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
+	db $ff
