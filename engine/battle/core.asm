@@ -7600,7 +7600,8 @@ MonsStatsRoseText:
 	ret
 
 GreatlyRoseText:
-	TX_DELAY
+	; BAT-5.61.04: Char4C already provides the intended 30-frame pause before
+	; scrolling, so do not stack TX_DELAY on top of it for +2 stat text.
 	TX_FAR _GreatlyRoseText
 ; fallthrough
 RoseText:
@@ -7785,7 +7786,7 @@ MonsStatsFellText:
 	ret
 
 GreatlyFellText:
-	TX_DELAY
+	; BAT-5.61.04: keep -2 stat text on the same single Char4C pause as +2.
 	TX_FAR _GreatlyFellText
 ; fallthrough
 FellText:
