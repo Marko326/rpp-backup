@@ -55,7 +55,6 @@ These are notable features which have been added
 * New evolution methods added
 * Updated move pools for all Pokémon, inspired by XY/ORAS (not exact)
 * Berry Trees (working off of a step counter)
-* Option to choose (during the intro) how traded Pokémon behave
 * New trainer classes added
 * Trainers have individual names
 * Animated EXP Bar in battle

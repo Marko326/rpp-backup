@@ -78,13 +78,6 @@ _BoyGirlText::
 	line "as a girl?"
 	done
 	
-_ShouldMonsObeyText::
-	text "Should traded"
-	line "#mon behave"
-	cont "like caught"
-	cont "#mon?"
-	done
-
 _YourNameIsText2::
 	text "Is it [PLAYER]?"
 	done

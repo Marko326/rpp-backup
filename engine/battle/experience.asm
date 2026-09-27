@@ -93,16 +93,8 @@ GainExperience:
 	ld a, 0
 	jr z, .next
 .tradedMon
-	push hl
-	ld hl, wExtraFlags
-	bit 2,[hl]
-	pop hl
-	jr nz, .noBoost
 	call BoostExp ; traded mon exp boost
 	ld a, 1
-	jr .next
-.noBoost
-	ld a, 0 ; Makes traded Pokemon act the same as normal ones
 .next
 	ld [wGainBoostedExp], a
 	ld a, [wIsInBattle]

@@ -70,25 +70,7 @@ OakSpeech:
 	callba DisplayHackVersionScreen
 	
 	call GBFadeOutToWhite
-	ld a, PAL_MEWMON
-	ld [wWholeScreenPaletteMonSpecies], a
-	ld b, SET_PAL_WHOLE_SCREEN
-	call RunPaletteCommand
-	call FadeInIntroPic
-	
-	ld hl,BoyGirlText  ; added to the same file as the other oak text
-	call PrintText     ; show this text
-	call BoyGirlChoice ; added routine at the end of this file
-	ld a, [wCurrentMenuItem]
-	ld [wPlayerGender], a ; store player's gender. 00 for boy, 01 for girl
-
-	ld hl,ShouldMonsObeyText
-	call PrintTextAndYesNoChoice
-	jr nz, .canDisobey
-	ld hl,wExtraFlags
-	set 2,[hl]
-.canDisobey
-	call ClearScreen ; clear the screen before resuming normal intro
+	call ClearScreen
 	call GetOakPalID
 	ld de,ProfOakPic
 	lb bc, Bank(ProfOakPic), $00
@@ -98,8 +80,14 @@ OakSpeech:
 	call PrintText
 	call GBFadeOutToWhite
 	;call ClearScreen
-	call GetSylveonPalID ; HAX
-	ld a,SYLVEON
+	call GetOakIntroMonPalID
+; NEW-5.61.08: Red++ shows Nidorino; Blue++ shows Nidorina.
+IF DEF(_RED)
+	ld a,NIDORINO
+ENDC
+IF DEF(_BLUE)
+	ld a,NIDORINA
+ENDC
 	ld [wd0b5],a
 	ld [wcf91],a
 	call GetMonHeader
@@ -108,6 +96,23 @@ OakSpeech:
 	call MovePicLeft
 	ld hl,OakSpeechText2
 	call PrintText
+
+; NEW-5.61.08: choose gender immediately before the player-name flow so B on
+; the name list can return here without replaying Oak's Pokémon introduction.
+.choosePlayerGender
+	call GBFadeOutToWhite
+	call ClearScreen ; discard name-list/menu tiles before redrawing gender choice
+	call GetOakPalID
+	ld de,ProfOakPic
+	lb bc, Bank(ProfOakPic), $00
+	call IntroDisplayPicCenteredOrUpperRight
+	call FadeInIntroPic
+	ld hl,BoyGirlText
+	call PrintText
+	call BoyGirlChoice
+	ld a, [wCurrentMenuItem]
+	ld [wPlayerGender], a ; 00 = boy, 01 = girl
+
 	call GBFadeOutToWhite
 	call GetRedPalID ; HAX
 	ld de,RedPicFront
@@ -123,6 +128,7 @@ OakSpeech:
 	ld hl,IntroducePlayerText
 	call PrintText
 	call ChoosePlayerName
+	jr c, .choosePlayerGender
 	call GBFadeOutToWhite
 	call GetRivalPalID ; HAX
 	ld de,Rival1Pic
@@ -211,7 +217,7 @@ OakSpeechText1:
 	db "@"
 OakSpeechText2:
 	TX_FAR _OakSpeechText2A
-	TX_CRY_NIDORINA
+	TX_CRY_OAK_INTRO_MON
 	TX_FAR _OakSpeechText2B
 	db "@"
 IntroducePlayerText:
@@ -225,9 +231,6 @@ OakSpeechText3:
 	db "@"
 BoyGirlText: ; This is new so we had to add a reference to get it to compile
 	TX_FAR _BoyGirlText
-	db "@"
-ShouldMonsObeyText: ; Added to ask if you wanted traded Pokemon to obey like normal ones
-	TX_FAR _ShouldMonsObeyText
 	db "@"
 
 FadeInIntroPic:

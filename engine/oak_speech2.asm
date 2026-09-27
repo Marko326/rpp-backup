@@ -7,7 +7,9 @@ ChoosePlayerName:
 	and a        ; Added gender check
 	jr nz, .AreGirl ; Skip to girl names if you are a girl instead
 	ld de, DefaultNamesPlayer
-	call DisplayIntroNameTextBox
+	call DisplayPlayerIntroNameTextBox
+	bit BIT_B_BUTTON, a
+	jp nz, .cancelNameList
 	ld a, [wCurrentMenuItem]
 	and a
 	jr z, .customName
@@ -18,7 +20,9 @@ ChoosePlayerName:
 	jr .done
 .AreGirl ; Copy of the boy naming routine, just with girl's names
 	ld de, DefaultNamesGirl
-	call DisplayIntroNameTextBox
+	call DisplayPlayerIntroNameTextBox
+	bit BIT_B_BUTTON, a
+	jp nz, .cancelNameList
 	ld a, [wCurrentMenuItem] ; wCurrentMenuItem
 	and a
 	jr z, .customName
@@ -61,7 +65,14 @@ ChoosePlayerName:
 	call PrintTextAndYesNoChoice
 	jp nz, ReChoosePlayerName
 	ld hl, YourNameIsText
-	jp PrintText
+	call PrintText
+	and a ; clear carry: confirmed names remain in the name flow
+	ret
+
+.cancelNameList
+; NEW-5.61.08: only B on the player-name list returns to gender selection.
+	scf
+	ret
 
 YourNameIsText:
 	TX_FAR _YourNameIsText
@@ -218,7 +229,14 @@ OakSpeechSlidePicCommon:
 	pop hl
 	ret
 
+DisplayPlayerIntroNameTextBox:
+	ld a, A_BUTTON | B_BUTTON
+	jr DisplayIntroNameTextBoxWithKeys
+
 DisplayIntroNameTextBox:
+	ld a, A_BUTTON
+DisplayIntroNameTextBoxWithKeys:
+	ld [wMenuWatchedKeys], a
 	push de
 	coord hl, 0, 0
 	ld b, $a
@@ -236,7 +254,6 @@ DisplayIntroNameTextBox:
 	ld [wLastMenuItem], a
 	inc a
 	ld [wTopMenuItemX], a
-	ld [wMenuWatchedKeys], a ; A_BUTTON
 	inc a
 	ld [wTopMenuItemY], a
 	inc a

@@ -3211,14 +3211,10 @@ ExecutePlayerMove:
 	ld hl, wPlayerBattleStatus1
 	bit ChargingUp, [hl] ; charging up for attack
 	jr nz, PlayerCanExecuteChargingMove
-	ld hl, wExtraFlags
-	bit 2, [hl]
-	jr nz, .recordLastSelectedMove ; If you chose to let trade mons obey, skip the check
 	call CheckForDisobedience
 	jp z, ExecutePlayerMoveDone
 	; MIRROR-5.19.22: record only a fresh root move that survives status and
 	; obedience checks. A disobedient random move has already replaced SelectedMove.
-.recordLastSelectedMove
 	ld a, [wPlayerSelectedMove]
 	ld [wPlayerLastSelectedMove], a
 
