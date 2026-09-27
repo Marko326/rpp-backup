@@ -1,398 +1,635 @@
-; GBP-5.56.01: GB Player UI with flicker-free cursor/list refresh.
-; Static screens are drawn only on screen transitions. Cursor moves update only
-; reserved cursor tiles, while track scrolling redraws its list area atomically
-; with automatic BG transfer paused, matching the Pokédex/MoveDex pattern.
-; Track selection still stays separate from the map/battle soundtrack policy:
-; selecting a track plays it immediately, while RESUME MAP BGM hands control
-; back to the normal overworld music resolver.
+; GBP-5.57.01: GB Player v2 MoveDex/Pokédex menu infrastructure alignment.
+; The list/sidebar layout, menu cursor lifecycle, Pokédex list tile patterns,
+; BG-transfer discipline, and full-screen sprite hiding now follow MoveDex/
+; Pokédex instead of maintaining a parallel hand-written cursor implementation.
+; Play/Map remain live; Info stays visible as a reserved slot for later expansion.
 
 GB_PLAYER_VISIBLE_TRACKS EQU 7
-GB_PLAYER_MAIN_OPTIONS   EQU 5
+GB_PLAYER_LIBRARY_COUNT  EQU 3
+GB_PLAYER_SIDE_OPTIONS   EQU 4
 GB_PLAYER_RBY_COUNT      EQU 45
 GB_PLAYER_GSC_COUNT      EQU 102
 GB_PLAYER_CUSTOM_COUNT   EQU 11
+GB_PLAYER_NAME_WIDTH     EQU 12
 
 GBPlayerMenu::
 	call GBPlayerWaitForRelease
-	xor a
-	ld [wGBPlayerCursorRow], a
-	call GBPlayerDrawMainMenu
 
-.mainLoop
-	call GBPlayerWaitInput
-	bit 1, a ; B
-	ret nz
-	bit 6, a ; Up
-	jr nz, .up
-	bit 7, a ; Down
-	jr nz, .down
-	bit 0, a ; A
-	jr nz, .choose
-	jr .mainLoop
+	; Full-screen menus must own OAM while visible. Preserve the Bag/overworld
+	; caller state, disable overworld sprite generation, and clear the current OAM
+	; buffer before drawing the GB Player. This mirrors the Pokédex protection and
+	; prevents player/NPC sprites from appearing over the list.
+	ld hl,wUpdateSpritesEnabled
+	ld a,[hl]
+	push af
+	ld [hl],$ff
+	call ClearSprites
+	call GBPalWhiteOut
+	call ClearScreen
+	call UpdateSprites
+
+	; GB Player is opened from the Bag. HandleMenuInput has Bag-specific refresh
+	; hooks, so temporarily leave Bag mode while this independent full-screen menu
+	; owns input; restore it exactly on exit.
+	ld a,[wBagPocketActive]
+	push af
+	xor a
+	ld [wBagPocketActive],a
+
+	; Force the same double-spaced cursor geometry used by MoveDex, but preserve
+	; the caller's HRAM flags because the Bag will be redrawn after we return.
+	ld a,[hFlags_0xFFF6]
+	push af
+	res 1,a
+	ld [hFlags_0xFFF6],a
+
+	ld a,[wListScrollOffset]
+	push af
+	xor a
+	ld [wGBPlayerCategory],a
+	ld [wListScrollOffset],a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	inc a
+	ld [hJoy7],a
+	call GBPlayerLoadCategoryTable
+
+.setUpGraphics
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call ClearScreen
+	ld b,SET_PAL_GENERIC
+	call RunPaletteCommand
+IF DEF(_BLUE)
+	callab SetBlueMoveDexListPokeballPalettes
+ENDC
+IF DEF(_RED)
+	; $70/$71/$72 and the sidebar connector graphics are Pokédex list tiles.
+	; Loading normal text-box patterns here was the reason v2 showed broken
+	; comma-like vertical separators instead of the MoveDex line/connector set.
+	callab LoadPokedexTilePatterns
+ENDC
+	call GBPlayerDrawStaticUI
+
+.doTrackListMenu
+	call GBPlayerSetupListMenuParameters
+	call HandleGBPlayerListMenu
+	jr c,.goToSideMenu
+
+.exitGBPlayer
+	xor a
+	ld [wMenuWatchMovingOutOfBounds],a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	ld [hJoy7],a
+	pop af
+	ld [wListScrollOffset],a
+	pop af
+	ld [hFlags_0xFFF6],a
+	pop af
+	ld [wBagPocketActive],a
+
+	; GB Player temporarily loads the Pokédex list graphics. Restore the shared
+	; text-box/font tiles while the screen is white before returning to the Bag.
+	call GBPalWhiteOutWithDelay3
+	call LoadTextBoxTilePatterns
+	call RunDefaultPaletteCommand
+	pop af
+	ld [wUpdateSpritesEnabled],a
+	ret
+
+.goToSideMenu
+	call HandleGBPlayerSideMenu
+	dec b
+	jr z,.exitGBPlayer ; Quit
+	; B returns to the left list. The side-menu helper already restored the parent
+	; selection; redraw the list cursor through the same menu system as MoveDex.
+	jr .doTrackListMenu
+
+; ---------------------------------------------------------------------------
+; MoveDex-style left track list
+; ---------------------------------------------------------------------------
+
+GBPlayerSetupListMenuParameters:
+	call GBPlayerGetVisibleListCount
+	dec a
+	ld b,a
+	ld hl,wTopMenuItemY
+	ld a,3
+	ld [hli],a ; top menu item Y
+	xor a
+	ld [hli],a ; top menu item X
+	inc a
+	ld [wMenuWatchMovingOutOfBounds],a
+	inc hl
+	inc hl
+	ld a,b
+	ld [hli],a ; max menu item ID
+	ld a,D_UP | D_DOWN | D_LEFT | D_RIGHT | B_BUTTON | A_BUTTON
+	ld [hl],a
+	ret
+
+HandleGBPlayerListMenu:
+	call GBPlayerRedrawList
+.inputLoop
+	; Keep the pre-input row so UP/DOWN can distinguish an ordinary cursor move
+	; from an attempted move past the visible boundary.
+	ld a,[wCurrentMenuItem]
+	ld [wGBPlayerDrawRow],a
+	call HandleMenuInput
+	bit 1,a
+	jp nz,.buttonBPressed
+	bit 6,a
+	jr nz,.up
+	bit 7,a
+	jr nz,.down
+	bit 5,a
+	jp nz,.previousLibrary
+	bit 4,a
+	jp nz,.nextLibrary
+	bit 0,a
+	jr z,.inputLoop
+	scf
+	ret
 
 .up
-	ld hl, wGBPlayerCursorRow
-	ld a, [hl]
+	ld a,[wCurrentMenuItem]
+	ld b,a
+	ld a,[wGBPlayerDrawRow]
+	cp b
+	jp nz,.cursorMoved
+
+	; Cursor was already on the first visible row: scroll upward, or wrap from the
+	; first track to the last track only on a fresh UP press (same boundary rule as MoveDex).
+	ld a,[wListScrollOffset]
 	and a
-	jr nz, .decrementMain
-	ld [hl], GB_PLAYER_MAIN_OPTIONS - 1
-	call GBPlayerDrawMainCursor
-	jr .mainLoop
-.decrementMain
-	dec [hl]
-	call GBPlayerDrawMainCursor
-	jr .mainLoop
+	jr nz,.scrollUpOne
+	ld a,[hJoyPressed]
+	bit 6,a
+	jr z,.inputLoop
+	ld a,[wGBPlayerTrackCount]
+	cp GB_PLAYER_VISIBLE_TRACKS + 1
+	jr c,.wrapUpFirstPage
+	sub GB_PLAYER_VISIBLE_TRACKS
+	ld [wListScrollOffset],a
+	ld a,GB_PLAYER_VISIBLE_TRACKS - 1
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	call GBPlayerRedrawList
+	call GBPlayerWaitForVerticalRelease
+	jr .inputLoop
+.wrapUpFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wGBPlayerTrackCount]
+	dec a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	call GBPlayerRedrawList
+	call GBPlayerWaitForVerticalRelease
+	jr .inputLoop
+.scrollUpOne
+	dec a
+	ld [wListScrollOffset],a
+	call GBPlayerRedrawList
+	jr .inputLoop
 
 .down
-	ld hl, wGBPlayerCursorRow
-	ld a, [hl]
+	ld a,[wCurrentMenuItem]
+	ld b,a
+	ld a,[wGBPlayerDrawRow]
+	cp b
+	jr nz,.cursorMoved
+
+	; Cursor was already on the last visible row. Scroll until the final track;
+	; a fresh DOWN at the true end wraps to the first track.
+	call GBPlayerGetSelectedTrackIndex
 	inc a
-	cp GB_PLAYER_MAIN_OPTIONS
-	jr c, .storeMain
+	ld b,a
+	ld a,[wGBPlayerTrackCount]
+	cp b
+	jr nz,.scrollDownOne
+	ld a,[hJoyPressed]
+	bit 7,a
+	jp z,.inputLoop
 	xor a
-.storeMain
-	ld [hl], a
-	call GBPlayerDrawMainCursor
-	jr .mainLoop
+	ld [wListScrollOffset],a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	call GBPlayerRedrawList
+	call GBPlayerWaitForVerticalRelease
+	jp .inputLoop
+.scrollDownOne
+	ld hl,wListScrollOffset
+	inc [hl]
+	call GBPlayerRedrawList
+	jp .inputLoop
 
-.choose
-	ld a, [wGBPlayerCursorRow]
-	cp 3
-	jr c, .openCategory
-	jr z, .resumeMap
-	ret ; EXIT
-
-.openCategory
-	ld [wGBPlayerCategory], a
+.cursorMoved
+	; HandleMenuInput already changed the generic menu row. Let PlaceMenuCursor
+	; atomically erase/place the arrow, then update only the dynamic track number.
+	ld a,[H_AUTOBGTRANSFERENABLED]
+	push af
 	xor a
-	ld [wGBPlayerTrackIndex], a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call PlaceMenuCursor
+	call GBPlayerDrawTrackNumber
+	pop af
+	ld [H_AUTOBGTRANSFERENABLED],a
+	jp .inputLoop
+
+.previousLibrary
+	ld a,[wGBPlayerCategory]
+	and a
+	jr nz,.previousLibraryInRange
+	ld a,GB_PLAYER_LIBRARY_COUNT
+.previousLibraryInRange
+	dec a
+	jr .storeLibrary
+
+.nextLibrary
+	ld a,[wGBPlayerCategory]
+	inc a
+	cp GB_PLAYER_LIBRARY_COUNT
+	jr c,.storeLibrary
+	xor a
+.storeLibrary
+	ld [wGBPlayerCategory],a
+	xor a
+	ld [wListScrollOffset],a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
 	call GBPlayerLoadCategoryTable
-	call GBPlayerTrackMenu
-	call GBPlayerWaitForRelease
-	; Return to the category the player just browsed. The track screen replaced
-	; the main screen, so this is a real screen transition and needs one redraw.
-	ld a, [wGBPlayerCategory]
-	ld [wGBPlayerCursorRow], a
-	call GBPlayerDrawMainMenu
-	jr .mainLoop
+	call GBPlayerSetupListMenuParameters
+	call GBPlayerRedrawLibrary
+	call GBPlayerWaitForDirectionalRelease
+	jp .inputLoop
+
+.buttonBPressed
+	and a
+	ret
+
+GBPlayerWaitForVerticalRelease:
+	call DelayFrame
+	call Joypad
+	ld a,[hJoyHeld]
+	and D_UP | D_DOWN
+	jr nz,GBPlayerWaitForVerticalRelease
+	ret
+
+; ---------------------------------------------------------------------------
+; MoveDex-style right function menu
+; ---------------------------------------------------------------------------
+
+HandleGBPlayerSideMenu:
+	; Preserve the parent cursor as MoveDex does: turn the filled left arrow into
+	; the outline marker, then let HandleMenuInput own the right-side arrow.
+	call PlaceUnfilledArrowMenuCursor
+	ld a,[wCurrentMenuItem]
+	push af
+	ld b,a
+	ld a,[wLastMenuItem]
+	push af
+	ld a,[wListScrollOffset]
+	push af
+	add b
+	ld [wGBPlayerTrackIndex],a ; zero-based absolute track index
+
+	ld hl,wTopMenuItemY
+	ld a,10
+	ld [hli],a
+	ld a,15
+	ld [hli],a
+	xor a
+	ld [hli],a
+	inc hl
+	ld a,GB_PLAYER_SIDE_OPTIONS - 1
+	ld [hli],a
+	ld a,A_BUTTON | B_BUTTON
+	ld [hli],a
+	xor a
+	ld [hli],a
+	ld [wMenuWatchMovingOutOfBounds],a
+
+.handleMenuInput
+	call HandleMenuInput
+	bit 1,a
+	ld b,2
+	jr nz,.buttonBPressed
+
+	ld a,[wCurrentMenuItem]
+	and a
+	jr z,.play
+	dec a
+	jr z,.resumeMap
+	dec a
+	jr z,.placeholderInfo
+	ld b,1 ; Quit
+	jr .exitSideMenu
+
+.play
+	ld a,[wGBPlayerTrackIndex]
+	call GBPlayerGetTrackEntry
+	ld a,[hl]
+	call PlayMusic
+	call GBPlayerWaitForABRelease
+	jr .handleMenuInput
 
 .resumeMap
 	call PlayDefaultMusic
-	call GBPlayerWaitForRelease
-	jr .mainLoop
+	call GBPlayerWaitForABRelease
+	jr .handleMenuInput
 
-GBPlayerTrackMenu:
-	call GBPlayerWaitForRelease
-	call GBPlayerDrawTrackMenu
-.loop
-	call GBPlayerWaitInput
-	bit 1, a ; B
-	ret nz
-	bit 6, a ; Up
-	jr nz, .up
-	bit 7, a ; Down
-	jr nz, .down
-	bit 0, a ; A
-	jr nz, .play
-	jr .loop
+.placeholderInfo
+	; Reserved for per-track information in a later GB Player version.
+	call GBPlayerWaitForABRelease
+	jr .handleMenuInput
 
-.up
-	ld hl, wGBPlayerTrackIndex
-	ld a, [hl]
-	and a
-	jr nz, .decrement
-	ld a, [wGBPlayerTrackCount]
-	dec a
-	ld [hl], a
-	call GBPlayerRefreshTrackSelection
-	jr .loop
-.decrement
-	dec [hl]
-	call GBPlayerRefreshTrackSelection
-	jr .loop
+.buttonBPressed
+	; Erase the real right-side cursor location recorded by PlaceMenuCursor, then
+	; clear the whole right cursor column as the same defensive cleanup MoveDex uses.
+	call EraseMenuCursor
+	push bc
+	coord hl,15,10
+	lb bc,7,1
+	call ClearScreenArea
+	pop bc
 
-.down
-	ld hl, wGBPlayerTrackIndex
-	ld a, [hl]
-	inc a
-	ld b, a
-	ld a, [wGBPlayerTrackCount]
-	cp b
-	jr nz, .storeDown
-	xor a
-	ld b, a
-.storeDown
-	ld [hl], b
-	call GBPlayerRefreshTrackSelection
-	jr .loop
-
-.play
-	ld a, [wGBPlayerTrackIndex]
-	call GBPlayerGetTrackEntry
-	ld a, [hl] ; regular/extended Music ID
-	call PlayMusic
-	jr .loop
+.exitSideMenu
+	pop af
+	ld [wListScrollOffset],a
+	pop af
+	ld [wLastMenuItem],a
+	pop af
+	ld [wCurrentMenuItem],a
+	push bc
+	coord hl,0,3
+	lb bc,13,1
+	call ClearScreenArea
+	pop bc
+	ret
 
 GBPlayerWaitForRelease:
 	call Joypad
-	ld a, [hJoyHeld]
-	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
+	ld a,[hJoyHeld]
+	and A_BUTTON | B_BUTTON | D_UP | D_DOWN | D_LEFT | D_RIGHT
 	ret z
 	call DelayFrame
 	jr GBPlayerWaitForRelease
 
-GBPlayerWaitInput:
-	call Delay3
+GBPlayerWaitForABRelease:
+	call DelayFrame
+	call Joypad
+	ld a,[hJoyHeld]
+	and A_BUTTON | B_BUTTON
+	jr nz,GBPlayerWaitForABRelease
+	ret
+
+GBPlayerWaitForDirectionalRelease:
+	call DelayFrame
+	call Joypad
+	ld a,[hJoyHeld]
+	and D_LEFT | D_RIGHT
+	jr nz,GBPlayerWaitForDirectionalRelease
+	ret
+
+; ---------------------------------------------------------------------------
+; Drawing helpers
+; ---------------------------------------------------------------------------
+
+GBPlayerDrawStaticUI:
+	; Exact MoveDex/Pokédex list geometry. These $70/$71 connector tiles require
+	; the Pokédex list tile patterns loaded in GBPlayerMenu.setUpGraphics.
+	coord hl,15,8
+	ld a,"─"
+	ld [hli],a
+	ld [hli],a
+	ld [hli],a
+	ld [hli],a
+	ld [hli],a
+	coord hl,14,0
+	ld [hl],$71
+	coord hl,14,1
+	call GBPlayerDrawVerticalLine
+	coord hl,14,9
+	call GBPlayerDrawVerticalLine
+
+	coord hl,1,1
+	ld de,GBPlayerContentsText
+	call PlaceString
+	coord hl,16,2
+	ld de,GBPlayerLibraryLabelText
+	call PlaceString
+	coord hl,16,5
+	ld de,GBPlayerNumberLabelText
+	call PlaceString
+	coord hl,16,10
+	ld de,GBPlayerMenuItemsText
+	call PlaceString
+	call GBPlayerDrawLibraryStatus
+	jp GBPlayerDrawTrackNumber
+
+GBPlayerDrawVerticalLine:
+	ld c,9
+	ld de,SCREEN_WIDTH
+	ld a,$71
 .loop
-	call JoypadLowSensitivity
-	ld a, [hJoy5]
-	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
-	jr z, .loop
+	ld [hl],a
+	add hl,de
+	xor 1
+	dec c
+	jr nz,.loop
 	ret
 
-GBPlayerDrawMainMenu:
-	call ClearScreen
-	call LoadTextBoxTilePatterns
-	call RunDefaultPaletteCommand
-	coord hl, 5, 0
-	ld de, GBPlayerTitleText
-	call PlaceString
-	coord hl, 2, 2
-	ld de, GBPlayerChooseText
-	call PlaceString
-
-	coord hl, 3, 4
-	ld de, GBPlayerRBYText
-	call PlaceString
-	coord hl, 3, 6
-	ld de, GBPlayerGSCText
-	call PlaceString
-	coord hl, 3, 8
-	ld de, GBPlayerCustomText
-	call PlaceString
-	coord hl, 3, 10
-	ld de, GBPlayerResumeText
-	call PlaceString
-	coord hl, 3, 12
-	ld de, GBPlayerExitText
-	call PlaceString
-
-	coord hl, 2, 16
-	ld de, GBPlayerMainFooterText
-	call PlaceString
-
-	call GBPlayerDrawMainCursor
-	ret
-
-GBPlayerDrawTrackMenu:
-	call ClearScreen
-	call LoadTextBoxTilePatterns
-	call RunDefaultPaletteCommand
-	coord hl, 5, 0
-	ld de, GBPlayerTitleText
-	call PlaceString
-	call GBPlayerPlaceCategoryTitle
-	coord hl, 2, 17
-	ld de, GBPlayerTrackFooterText
-	call PlaceString
-	call GBPlayerComputeWindow
+GBPlayerRedrawList:
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	coord hl,0,2
+	lb bc,14,14
+	call ClearScreenArea
+	call GBPlayerSetupListMenuParameters
 	call GBPlayerDrawVisibleTracks
-	call GBPlayerDrawTrackCursor
+	call PlaceMenuCursor
+	call GBPlayerDrawTrackNumber
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call Delay3
+	call GBPalNormal
 	ret
 
-GBPlayerPlaceCategoryTitle:
-	ld a, [wGBPlayerCategory]
+GBPlayerRedrawLibrary:
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	coord hl,0,2
+	lb bc,14,14
+	call ClearScreenArea
+	call GBPlayerDrawVisibleTracks
+	call PlaceMenuCursor
+	call GBPlayerDrawLibraryStatus
+	call GBPlayerDrawTrackNumber
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call Delay3
+	ret
+
+GBPlayerDrawLibraryStatus:
+	coord hl,16,3
+	lb bc,1,4
+	call ClearScreenArea
+	ld a,[wGBPlayerCategory]
 	add a
-	ld c, a
-	ld b, 0
-	ld hl, GBPlayerCategoryTitlePointers
-	add hl, bc
-	ld e, [hl]
+	ld c,a
+	ld b,0
+	ld hl,GBPlayerCategoryStatusPointers
+	add hl,bc
+	ld e,[hl]
 	inc hl
-	ld d, [hl]
-	coord hl, 7, 1
+	ld d,[hl]
+	coord hl,16,3
 	jp PlaceString
 
-GBPlayerComputeWindow:
-	xor a
-	ld [wGBPlayerScrollOffset], a
-	ld a, [wGBPlayerTrackCount]
-	cp GB_PLAYER_VISIBLE_TRACKS + 1
-	jr c, .cursor
+GBPlayerDrawTrackNumber:
+	call GBPlayerGetSelectedTrackIndex
+	inc a
+	ld [wGBPlayerTrackIndex],a
+	coord hl,16,6
+	lb bc,1,3
+	call ClearScreenArea
+	coord hl,16,6
+	ld de,wGBPlayerTrackIndex
+	lb bc,LEADING_ZEROES | 1,3
+	jp PrintNumber
 
-	ld a, [wGBPlayerTrackIndex]
-	cp 3
-	jr c, .cursor
-	sub 3
-	ld b, a ; candidate scroll
+GBPlayerGetSelectedTrackIndex:
+	ld a,[wListScrollOffset]
+	ld b,a
+	ld a,[wCurrentMenuItem]
+	add b
+	ret
 
-	ld a, [wGBPlayerTrackCount]
-	sub GB_PLAYER_VISIBLE_TRACKS
-	cp b
-	jr nc, .storeCandidate
-	ld b, a
-.storeCandidate
-	ld a, b
-	ld [wGBPlayerScrollOffset], a
-
-.cursor
-	ld a, [wGBPlayerTrackIndex]
-	ld b, a
-	ld a, [wGBPlayerScrollOffset]
-	ld c, a
-	ld a, b
+GBPlayerGetVisibleListCount:
+	; OUTPUT: A = number of visible rows from current scroll offset (1..7).
+	ld a,[wGBPlayerTrackCount]
+	ld b,a
+	ld a,[wListScrollOffset]
+	ld c,a
+	ld a,b
 	sub c
-	ld [wGBPlayerCursorRow], a
+	cp GB_PLAYER_VISIBLE_TRACKS
+	ret c
+	ld a,GB_PLAYER_VISIBLE_TRACKS
 	ret
 
 GBPlayerDrawVisibleTracks:
-	ld a, [wGBPlayerScrollOffset]
-	ld [wGBPlayerDrawIndex], a
+	ld a,[wListScrollOffset]
+	ld [wGBPlayerDrawIndex],a
 	xor a
-	ld [wGBPlayerDrawRow], a
+	ld [wGBPlayerDrawRow],a
 .loop
-	ld a, [wGBPlayerDrawRow]
+	ld a,[wGBPlayerDrawRow]
 	cp GB_PLAYER_VISIBLE_TRACKS
 	ret z
-
-	ld a, [wGBPlayerDrawIndex]
-	ld b, a
-	ld a, [wGBPlayerTrackCount]
+	ld a,[wGBPlayerDrawIndex]
+	ld b,a
+	ld a,[wGBPlayerTrackCount]
 	cp b
 	ret z
 
-	ld a, b
-	call GBPlayerGetTrackEntry
-	inc hl ; skip Music ID
-	ld e, [hl]
-	inc hl
-	ld d, [hl]
-
-	ld a, [wGBPlayerDrawRow]
-	push de ; GBPlayerGetTrackRowCoord uses E as scratch.
+	; Number on the line above the track name, matching the MoveDex list layout.
+	ld a,b
+	inc a
+	ld [wGBPlayerTrackIndex],a
+	push bc
+	ld a,[wGBPlayerDrawRow]
 	call GBPlayerGetTrackRowCoord
-	pop de
-	call PlaceString
+	ld de,-SCREEN_WIDTH
+	add hl,de
+	inc hl
+	ld de,wGBPlayerTrackIndex
+	lb bc,LEADING_ZEROES | 1,3
+	call PrintNumber
+	pop bc
 
-	ld hl, wGBPlayerDrawIndex
+	ld a,b
+	call GBPlayerGetTrackEntry
+	inc hl
+	ld e,[hl]
+	inc hl
+	ld d,[hl]
+	ld a,[wGBPlayerDrawRow]
+	push de
+	call GBPlayerGetTrackRowCoord
+	inc hl
+	ld [hl]," " ; reserve MoveDex's marker column even though GB Player has no Own marker
+	inc hl
+	pop de
+	call GBPlayerPlaceTrackName
+
+	ld hl,wGBPlayerDrawIndex
 	inc [hl]
-	ld hl, wGBPlayerDrawRow
+	ld hl,wGBPlayerDrawRow
 	inc [hl]
 	jr .loop
 
-GBPlayerDrawMainCursor:
-	coord hl, 1, 4
-	ld b, GB_PLAYER_MAIN_OPTIONS
-	jr GBPlayerDrawCursorRows
-
-GBPlayerDrawTrackCursor:
-	coord hl, 0, 3
-	ld b, GB_PLAYER_VISIBLE_TRACKS
-
-GBPlayerDrawCursorRows:
-; INPUT: HL = first reserved cursor tile, B = number of double-spaced rows.
-; Clear every reserved cursor cell and place the current arrow while automatic
-; BG transfer is paused, so VBlank can never expose the erase/place midpoint.
-	ld a, [H_AUTOBGTRANSFERENABLED]
-	push af
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
-	push hl
-	ld de, 2 * SCREEN_WIDTH
-.clearLoop
-	ld [hl], " "
-	add hl, de
+GBPlayerPlaceTrackName:
+	; The MoveDex left pane reserves x0 for the cursor and x1 for its marker. Keep
+	; track names inside x2..x13 so they can never overwrite the x14 divider.
+	ld b,GB_PLAYER_NAME_WIDTH
+.loop
+	ld a,[de]
+	cp "@"
+	ret z
+	ld [hli],a
+	inc de
 	dec b
-	jr nz, .clearLoop
-	pop hl
-	ld a, [wGBPlayerCursorRow]
-	and a
-	jr z, .place
-	ld bc, 2 * SCREEN_WIDTH
-.seekLoop
-	add hl, bc
-	dec a
-	jr nz, .seekLoop
-.place
-	ld [hl], "▶"
-	pop af
-	ld [H_AUTOBGTRANSFERENABLED], a
+	jr nz,.loop
 	ret
-
-GBPlayerRefreshTrackSelection:
-; Recompute the centered seven-row window after Up/Down. If the window did not
-; move, only refresh the cursor. If it scrolled, redraw only the track rows and
-; keep that redraw hidden until the shadow tilemap is complete.
-	ld a, [wGBPlayerScrollOffset]
-	ld [wGBPlayerDrawIndex], a ; temporary old scroll offset
-	call GBPlayerComputeWindow
-	ld a, [wGBPlayerScrollOffset]
-	ld b, a
-	ld a, [wGBPlayerDrawIndex]
-	cp b
-	jr z, .cursorOnly
-
-	ld a, [H_AUTOBGTRANSFERENABLED]
-	push af
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
-	coord hl, 0, 3
-	lb bc, 13, SCREEN_WIDTH
-	call ClearScreenArea
-	call GBPlayerDrawVisibleTracks
-	call GBPlayerDrawTrackCursor
-	pop af
-	ld [H_AUTOBGTRANSFERENABLED], a
-	ret
-
-.cursorOnly
-	jp GBPlayerDrawTrackCursor
 
 GBPlayerGetTrackRowCoord:
-; INPUT: A = visible row 0..6. OUTPUT: HL = x2, y(3 + 2*A).
-	ld e, a
-	coord hl, 2, 3
-	ld a, e
+	; INPUT: A = visible row 0..6. OUTPUT: HL = x0, y(3 + 2*A).
+	ld e,a
+	coord hl,0,3
+	ld a,e
 	and a
 	ret z
-	ld bc, 2 * SCREEN_WIDTH
+	ld bc,2 * SCREEN_WIDTH
 .loop
-	add hl, bc
+	add hl,bc
 	dec a
-	jr nz, .loop
+	jr nz,.loop
 	ret
 
 GBPlayerGetTrackEntry:
-; INPUT: A = absolute index within current category.
-; OUTPUT: HL = 3-byte entry: db MusicID, dw name.
+	; INPUT: A = zero-based absolute index within current category.
+	; OUTPUT: HL = 3-byte entry: db MusicID, dw name.
 	push af
 	call GBPlayerLoadCategoryTable
 	pop af
-	ld c, a
-	ld b, 0
-	add hl, bc
-	add hl, bc
-	add hl, bc
+	ld c,a
+	ld b,0
+	add hl,bc
+	add hl,bc
+	add hl,bc
 	ret
 
 GBPlayerLoadCategoryTable:
-; OUTPUT: HL = category table; wGBPlayerTrackCount updated.
-	ld a, [wGBPlayerCategory]
-	ld e, a
+	; OUTPUT: HL = category table; wGBPlayerTrackCount updated.
+	ld a,[wGBPlayerCategory]
+	ld e,a
 	add a
-	add e ; A = category * 3
-	ld c, a
-	ld b, 0
-	ld hl, GBPlayerCategoryTables
-	add hl, bc
-	ld e, [hl]
+	add e
+	ld c,a
+	ld b,0
+	ld hl,GBPlayerCategoryTables
+	add hl,bc
+	ld e,[hl]
 	inc hl
-	ld d, [hl]
+	ld d,[hl]
 	inc hl
-	ld a, [hl]
-	ld [wGBPlayerTrackCount], a
-	ld h, d
-	ld l, e
+	ld a,[hl]
+	ld [wGBPlayerTrackCount],a
+	ld h,d
+	ld l,e
 	ret
 
 GBPlayerCategoryTables:
@@ -403,29 +640,28 @@ GBPlayerCategoryTables:
 	dw GBPlayerCustomTracks
 	db GB_PLAYER_CUSTOM_COUNT
 
-GBPlayerCategoryTitlePointers:
-	dw GBPlayerRBYText
-	dw GBPlayerGSCText
-	dw GBPlayerCustomText
+GBPlayerCategoryStatusPointers:
+	dw GBPlayerRBYStatusText
+	dw GBPlayerGSCStatusText
+	dw GBPlayerCustomStatusText
 
-GBPlayerTitleText:
-	db "GB PLAYER@"
-GBPlayerChooseText:
-	db "SELECT LIBRARY@"
-GBPlayerRBYText:
+GBPlayerContentsText:
+	db "GB Player@"
+GBPlayerLibraryLabelText:
+	db "Lib@"
+GBPlayerNumberLabelText:
+	db "No.@"
+GBPlayerRBYStatusText:
 	db "RBY@"
-GBPlayerGSCText:
+GBPlayerGSCStatusText:
 	db "GSC@"
-GBPlayerCustomText:
-	db "CUSTOM@"
-GBPlayerResumeText:
-	db "RESUME MAP BGM@"
-GBPlayerExitText:
-	db "EXIT@"
-GBPlayerMainFooterText:
-	db "A:SELECT B:EXIT@"
-GBPlayerTrackFooterText:
-	db "A:PLAY B:BACK@"
+GBPlayerCustomStatusText:
+	db "CSTM@"
+GBPlayerMenuItemsText:
+	db   "Play"
+	next "Map"
+	next "Info"
+	next "Quit@"
 
 gbplayer_track: MACRO
 	db \1
@@ -596,7 +832,7 @@ GBPlayerCustomTracks:
 	gbplayer_track MUSIC_GBP_CUSTOM_CINNABAR_REMIX, GBPlayerCustomName09
 	gbplayer_track MUSIC_GBP_CUSTOM_KANTO_GYM_LEADER_REMIX, GBPlayerCustomName10
 
-; Display names are capped at 18 characters to fit beside the cursor.
+; Display names are capped at 12 characters to fit beside the cursor.
 GBPlayerRBYName00: db "Pallet Town@"
 GBPlayerRBYName01: db "Pokémon Center@"
 GBPlayerRBYName02: db "Gym@"

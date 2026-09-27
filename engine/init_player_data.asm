@@ -23,7 +23,7 @@ InitPlayerData2:
 	ld hl, wNumBoxItems
 	call InitializeEmptyList
 
-	; GBP-5.56.01 v1: make the GB Player immediately available on new saves.
+	; GBP-5.57.01: keep the initial policy of making GB Player available on new saves.
 	; The item ID is stable; a later patch can move acquisition to an NPC/reward
 	; without changing save/item numbering.
 	ld hl, wNumBagItems

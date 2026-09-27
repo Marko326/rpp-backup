@@ -96,7 +96,7 @@ const_value = 1
 	const MUSIC_ABANDONED_SHIP
 	const MUSIC_LAKE_OF_RAGE
 
-	; GBP-5.56.01: GB Player-only IDs extend the existing Music pointer table.
+	; GBP-5.57.01: GB Player-only IDs extend the existing Music pointer table.
 	; Existing map/battle IDs 1..48 remain unchanged.
 	const MUSIC_GBP_GSC_ROUTE36
 	const MUSIC_GBP_GSC_RIVAL_BATTLE

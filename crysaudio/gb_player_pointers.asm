@@ -1,4 +1,4 @@
-; GBP-5.56.01: GB Player-only continuation of the normal Music pointer table.
+; GBP-5.57.01: GB Player-only continuation of the normal Music pointer table.
 ; IDs are defined after the existing 48 runtime music IDs, so normal gameplay
 ; keeps every legacy ID stable while the player can address the retained library.
 

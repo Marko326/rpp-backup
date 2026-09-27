@@ -432,7 +432,7 @@ INCLUDE "crysaudio/engine.asm"
 ; The normal soundtrack remains data-driven through red_pointers.asm.
 Music:
 INCLUDE "crysaudio/red_pointers.asm"
-; GBP-5.56.01: append direct-select IDs for the GB Player library.
+; GBP-5.57.01: append direct-select IDs for the GB Player library.
 INCLUDE "crysaudio/gb_player_pointers.asm"
 
 

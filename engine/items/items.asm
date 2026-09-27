@@ -826,7 +826,7 @@ ItemUseBallText06:
 	TX_BLINK
 	db "@"
 
-; GBP-5.56.01: GB Player is a reusable Key Item backed by the old $1A
+; GBP-5.57.01: GB Player is a reusable Key Item backed by the old $1A
 ; TERU-SAMA slot. The player UI lives in a relocatable ROMX section so bank $03
 ; only pays for this small far-call hook.
 ItemUseGBPlayer:

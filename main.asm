@@ -154,7 +154,7 @@ INCLUDE "engine/number_printing.asm"
 SECTION "Gym Leader Rewards", ROMX
 INCLUDE "engine/gym_leader_rewards.asm"
 
-; GBP-5.56.01: relocatable GB Player UI and track library menu.
+; GBP-5.57.01: relocatable GB Player UI and track library menu.
 SECTION "GB Player", ROMX
 INCLUDE "engine/menu/gb_player.asm"
 
