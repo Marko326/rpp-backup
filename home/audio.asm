@@ -157,6 +157,12 @@ UpdateSound::
 ;	pop hl
 	ret
 
+ResolveMusicStyleFromAudio::
+; MUS-5.59.00: keep the nearly-full Audio Engine 1 bank to a 3-byte HOME call.
+; The movable resolver owns the larger style lookup tables.
+	callba ResolveMusicStyle
+	ret
+
 PlayMusic::
 	ld e, a
 	xor a

@@ -2777,7 +2777,13 @@ wBagPocketTitleVRAMSet:: ds 1 ; START title ping-pong: 0=$C0-$CF, 1=$D0-$DE + $E
 wBagPocketTitleSpanLeft:: ds 1 ; left tile column inside the centered 64px canvas
 wBagPocketTitleSpanWidth:: ds 1 ; packed tile columns per title row
 wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
-	ds 21 ; 保持原 unused 区总长度仍为 128 bytes
+; MUS-5.59.00: three saved bytes from the still-unused tail of this legacy
+; 128-byte block. wMusicStyle packs base family + independent RBY/GSC Custom
+; preferences; the two-byte signature version-gates this format for old saves.
+wMusicStyle:: ds 1
+wMusicStyleMagic0:: ds 1
+wMusicStyleMagic1:: ds 1
+	ds 18 ; 保持原 unused 区总长度仍为 128 bytes
 
 wNumSigns:: ; d561
 ; number of signs in the current map (up to 16)

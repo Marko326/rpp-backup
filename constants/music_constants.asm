@@ -39,6 +39,20 @@ BIT_EXECUTE_MUSIC EQU 0 ; if in execute music
 
 ; Song ids are calculated by address to save space.
 
+; MUS-5.59.00: persistent soundtrack mode. Bits 0-1 select the main family;
+; bits 2/3 independently remember whether RBY/GSC should prefer CSTM matches.
+MUSIC_STYLE_RBY              EQU 0
+MUSIC_STYLE_GSC              EQU 1
+MUSIC_STYLE_RND              EQU 2
+MUSIC_STYLE_BASE_COUNT       EQU 3
+MUSIC_STYLE_BASE_MASK        EQU %00000011
+MUSIC_STYLE_RBY_CUSTOM_BIT   EQU 2
+MUSIC_STYLE_GSC_CUSTOM_BIT   EQU 3
+MUSIC_STYLE_MAGIC0           EQU $4d ; "M"
+MUSIC_STYLE_MAGIC1           EQU $32 ; "2" (packed independent-CSTM format)
+MUSIC_STYLE_LEGACY_MAGIC1    EQU $53 ; "S" (legacy three-value format)
+MUSIC_STYLE_LEGACY_CSTM      EQU 2
+
 ;music_const: MACRO
 ;\1 EQUS "RB(\2)"
 ;ENDM

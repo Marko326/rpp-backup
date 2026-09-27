@@ -108,15 +108,23 @@ rLCDC_DEFAULT EQU %11100011
 	ld [wUpdateSpritesEnabled], a
 
 	; The intro and title screen run before MainMenu loads the save file.
-	; Read the saved Music/World switches and BGM volume early so those sequences
-	; obey the user's settings without loading the rest of the save data.
+	; Read the saved Music/World switches, BGM volume, and Music Style early so
+	; those sequences obey the user's settings without loading the rest of the save data.
 	ld a, 1 ; default options: fast text, music on, Normal world
 IF DEF(_SNOW)
 	or 1 << 4 ; _SNOW now only selects the default runtime appearance
 ENDC
 	ld [wOptions], a
-	ld a, $aa ; encoded BGM volume 10
-	ld [wBGMVolume], a
+	ld a,$aa ; encoded BGM volume 10
+	ld [wBGMVolume],a
+	; MUS-5.59.00 defaults to the original RBY soundtrack until a valid saved
+	; Music Style signature is loaded below.
+	xor a
+	ld [wMusicStyle],a
+	ld a,MUSIC_STYLE_MAGIC0
+	ld [wMusicStyleMagic0],a
+	ld a,MUSIC_STYLE_MAGIC1
+	ld [wMusicStyleMagic1],a
 	call LoadStartupMusicOption
 
 	predef PlayIntro
@@ -138,8 +146,8 @@ ClearVram:
 
 
 LoadStartupMusicOption:
-; Load bits 4-5 of the saved options (World + Music) plus the encoded BGM volume
-; before the boot intro. SRAM without a player-name terminator is treated as no save.
+; MUS-5.59.00: load saved World/Music, BGM volume, and Music Style before the
+; boot intro. SRAM without a player-name terminator is treated as no save.
 	push bc
 	push hl
 	di
@@ -168,15 +176,55 @@ LoadStartupMusicOption:
 	or b
 	ld [wOptions], a
 
-	; Load saved BGM volume only if it uses the new $a0-$aa encoding.
+	; Load saved BGM volume only if it uses the $a0-$aa encoding.
 	; Old saves used d366 as an ignored map-width scratch byte, so any
 	; value outside this range keeps the default level 10.
 	ld a, [sMainData + (wBGMVolume - wMainDataStart)]
 	cp $a0
-	jr c, .closeSRAM
+	jr c, .loadMusicStyle
 	cp $ab
-	jr nc, .closeSRAM
+	jr nc, .loadMusicStyle
 	ld [wBGMVolume], a
+
+.loadMusicStyle
+	; MUS-5.59.00 accepts both the packed "M2" format and the legacy
+	; three-value "MS" format so title/intro music already respects old saves.
+	ld a, [sMainData + (wMusicStyleMagic0 - wMainDataStart)]
+	cp MUSIC_STYLE_MAGIC0
+	jr nz, .closeSRAM
+	ld a, [sMainData + (wMusicStyleMagic1 - wMainDataStart)]
+	cp MUSIC_STYLE_MAGIC1
+	jr z, .loadPackedMusicStyle
+	cp MUSIC_STYLE_LEGACY_MAGIC1
+	jr nz, .closeSRAM
+
+	ld a, [sMainData + (wMusicStyle - wMainDataStart)]
+	cp MUSIC_STYLE_LEGACY_CSTM
+	jr z, .legacyCustomStyle
+	cp MUSIC_STYLE_LEGACY_CSTM
+	jr nc, .closeSRAM
+	jr .storeMusicStyle
+.legacyCustomStyle
+	ld a, 1 << MUSIC_STYLE_RBY_CUSTOM_BIT ; old CSTM -> RBYC
+	jr .storeMusicStyle
+
+.loadPackedMusicStyle
+	ld a, [sMainData + (wMusicStyle - wMainDataStart)]
+	ld b, a
+	and %11110000
+	jr nz, .closeSRAM
+	ld a, b
+	and MUSIC_STYLE_BASE_MASK
+	cp MUSIC_STYLE_BASE_COUNT
+	jr nc, .closeSRAM
+	ld a, b
+
+.storeMusicStyle
+	ld [wMusicStyle], a
+	ld a, MUSIC_STYLE_MAGIC0
+	ld [wMusicStyleMagic0], a
+	ld a, MUSIC_STYLE_MAGIC1
+	ld [wMusicStyleMagic1], a
 
 .closeSRAM
 	xor a
