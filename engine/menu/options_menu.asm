@@ -31,7 +31,7 @@ DisplayOptionMenu:
 	jr nz,.exitMenu
 	bit 3,b ; Start button pressed?
 	jr z,.checkAButton
-	; MUS-5.59.00: START on the Music Style row toggles only the Custom
+	; MUS-5.59.01: START on the Music Style row toggles only the Custom
 	; preference for the currently selected RBY/GSC family. RND has no sub-mode.
 	ld a,[wOptionsMenuPage]
 	cp 1
@@ -392,7 +392,7 @@ DisplayOptionMenu:
 	jp .drawPageSelector
 
 .drawPage3
-	; MUS-5.59.00: World moved intact from Page 2 to the first row of Page 3.
+	; MUS-5.59.01: World moved intact from Page 2 to the first row of Page 3.
 	; Keep the normal three-row frame so the remaining two rows stay available for later options.
 	call .drawPageFrame
 	coord hl,1,1
@@ -817,7 +817,7 @@ StoreMusicStyleSignature:
 	ret
 
 ReadMusicStyleState:
-; MUS-5.59.00: return the packed runtime state in A. The previous three-value
+; MUS-5.59.01: return the packed runtime state in A. The previous three-value
 ; "MS" format is accepted in-place so old saves work before Options is opened:
 ; 0=RBY, 1=GSC, 2=old CSTM -> RBYC. Invalid/pre-feature data becomes RBY.
 	ld a,[wMusicStyleMagic0]
@@ -1011,8 +1011,6 @@ MusicStyleGSCMap:
 	db MUSIC_MEET_EVIL_TRAINER,    MUSIC_GBP_GSC_LOOK_ROCKET
 	db MUSIC_MEET_FEMALE_TRAINER,  MUSIC_GBP_GSC_LOOK_LASS
 	db MUSIC_MEET_MALE_TRAINER,    MUSIC_GBP_GSC_LOOK_YOUNGSTER
-	db MUSIC_MT_MOON_SQUARE,       MUSIC_GBP_GSC_MT_MOON_SQUARE
-	db MUSIC_LAKE_OF_RAGE,         MUSIC_GBP_GSC_LAKE_OF_RAGE
 	db 0
 
 ; Legacy RBY ID -> corresponding track from the CSTM library.
@@ -1027,7 +1025,7 @@ MusicStyleCSTMMap:
 
 SECTION "Runtime Options Wrapper", ROMX
 StartMenuOptionWithWorldSwitch::
-	; MUS-5.59.00: World still owns the no-LCD-disable tile refresh. Music Style
+	; MUS-5.59.01: World still owns the no-LCD-disable tile refresh. Music Style
 	; previews immediately inside DisplayOptionMenu, so exiting Options must not replay it.
 	ld a,[wOptions]
 	and 1 << 4

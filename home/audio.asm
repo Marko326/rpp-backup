@@ -158,7 +158,7 @@ UpdateSound::
 	ret
 
 ResolveMusicStyleFromAudio::
-; MUS-5.59.00: keep the nearly-full Audio Engine 1 bank to a 3-byte HOME call.
+; MUS-5.59.01: keep the nearly-full Audio Engine 1 bank to a 3-byte HOME call.
 ; The movable resolver owns the larger style lookup tables.
 	callba ResolveMusicStyle
 	ret
