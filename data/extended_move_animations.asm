@@ -160,6 +160,11 @@ PlayExtendedOrbProjectile:
 	jp z,PlayClawThrashStyleShake
 	cp SHADOW_PUNCH
 	jp z,PlayShadowPunchCenteredPoof
+	cp WING_ATTACK
+	jr nz,.notWingAttack
+	callba PlayWingAttackClosingPairs
+	ret
+.notWingAttack
 	cp DRILL_PECK
 	jp z,PlayDrillPeckGoldLike
 	cp DYNAMICPUNCH
@@ -505,10 +510,10 @@ CometPunchDedicatedAnimEnd:
 WingAttackDedicatedAnim:
 	db WingAttackDedicatedAnimEnd - WingAttackDedicatedAnimData
 WingAttackDedicatedAnimData:
-	; ANM-5.61.26: keep Gen1 graphics and Wing Attack SFX, but borrow Gen2's
-	; three-step bilateral closing motion. Sub56 uses the Poison Sting/Peck hit
-	; object twice per beat and mirrors the whole sequence for an enemy user.
-	db $05,$10,$56
+	; ANM-5.61.30: keep the same three-step Gen2-inspired bilateral closing
+	; motion without reserving a Subanimation ID. C2 dispatches by real move ID
+	; to the bank-$1E helper, which reuses FrameBlock01 directly.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $FF
 WingAttackDedicatedAnimEnd:
 	IF WingAttackDedicatedAnimEnd - WingAttackDedicatedAnimData > 30

@@ -1403,9 +1403,6 @@ subentry: MACRO
 		IF (\2) == $48
 			DEF _subanim_coord_index = 51
 		ENDC
-		IF (\2) == $b1
-			DEF _subanim_coord_index = 52
-		ENDC
 		assert _subanim_coord_index >= 0
 		assert _subanim_coord_index < $40
 		db $80 | (\1), (((\3) - 1) << 6) | _subanim_coord_index
@@ -1499,7 +1496,6 @@ SubanimationPointers:
 	dw Subanimation53
 	dw Subanimation54
 	dw Subanimation55
-	dw Subanimation56
 
 Subanimation04:
 	db $43
@@ -2370,19 +2366,6 @@ Subanimation54:
 	subentry $79, $a9, 0
 	subentry $79, $34, 0
 
-; ANM-5.61.26: Gen2-inspired Wing Attack using Gen1's Poison Sting/Peck hit
-; object.  Mode 2 keeps the left arm in OAM while the right arm is drawn, so
-; each pair closes toward the target as one beat.  Type 2 mirrors the whole
-; sequence to the player's side for an enemy user.
-Subanimation56:
-	db $46
-	subentry $01, $15, 2 ; far left
-	subentry $01, $19, 0 ; far right
-	subentry $01, $b1, 2 ; middle left
-	subentry $01, $b2, 0 ; middle right
-	subentry $01, $16, 2 ; near left
-	subentry $01, $18, 0 ; near right
-
 ; Compact nonzero-mode coordinate table for 2-byte subanimation entries.
 ; Entry byte 0: bit 7 marks a nonzero mode, bits 0-6 are FrameBlock ID.
 ; Entry byte 1: mode-0 entries store BaseCoord ID directly. For marked entries,
@@ -2396,10 +2379,9 @@ SubanimationCoordTable:
 	db $1c,$16,$05,$0c,$11,$1b,$2f,$10,$1d,$22,$2c,$2a ; indices 24-35
 	db $99,$62,$0f,$68,$6a,$69,$73,$83,$84,$85,$01,$28 ; indices 36-47
 	db $26,$12,$1e,$48 ; indices 48-51
-	db $b1             ; index 52: Wing Attack middle-left anchor
 SubanimationCoordTableEnd:
 
-ASSERT SubanimationCoordTableEnd - SubanimationCoordTable == 53
+ASSERT SubanimationCoordTableEnd - SubanimationCoordTable == 52
 ASSERT SubanimationCoordTableEnd - SubanimationCoordTable <= $40
 
 FrameBlockPointers:
@@ -3818,13 +3800,5 @@ FrameBlockBaseCoords:
 	db $18,$4C
 	db $1C,$48
 	db $48,$28
-; ANM-5.61.26: Wing Attack's middle closing pair (BaseCoord IDs $B1/$B2).
-WingAttackMidLeftBaseCoord:
-	db $28,$6C ; y=40, x=108
-WingAttackMidRightBaseCoord:
-	db $28,$84 ; y=40, x=132
-ASSERT (WingAttackMidLeftBaseCoord - FrameBlockBaseCoords) / 2 == $b1
-ASSERT (WingAttackMidRightBaseCoord - FrameBlockBaseCoords) / 2 == $b2
-
 FrameBlock00:
 	db $00,$00

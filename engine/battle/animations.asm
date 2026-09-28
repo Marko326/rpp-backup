@@ -257,6 +257,85 @@ BattleAnimDelayFramesMaybeCarry:
 ; This code stays in bank $1E with DrawFrameBlock instead of ROM0/HOME.  The
 ; same bank also contains SubanimationPointers and FrameBlockBaseCoords, so no
 ; bank switch is needed and HOME space is not consumed.
+; ANM-5.61.30: Wing Attack no longer reserves Subanimation56. Reproduce the
+; exact three closing pairs directly from FrameBlock01: left arm is mode 2 so it
+; stays in OAM, right arm is mode 0 so each completed pair holds for 5 frames
+; and then cleans normally. Enemy use keeps the old type-2 transform.
+PlayWingAttackClosingPairs::
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	call LoadAnimationTileset
+
+	ld a,5
+	ld [wSubAnimFrameDelay],a
+	; Keep the generic smooth-delay dispatcher on a known non-whitelisted ID so
+	; these discrete closing beats retain their original legacy timing.
+	ld hl,SubanimationPointers + 2 * $04
+	ld a,l
+	ld [wSubAnimAddrPtr],a
+	ld a,h
+	ld [wSubAnimAddrPtr + 1],a
+
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,2
+	jr nz,.storeTransform
+	xor a
+.storeTransform
+	ld [wSubAnimTransform],a
+
+	; Legacy Wing Attack sound index is its zero-based MoveSoundTable entry.
+	ld a,WING_ATTACK - 1
+	call GetMoveSound
+	call nc,AnimPlaySFX
+
+	ld hl,.pairXs
+	ld a,3
+	ld [wSubAnimCounter],a
+.pairLoop
+	; BattleAnimGetFrameDest returns the OAM destination in HL, so preserve the
+	; .pairXs stream pointer across the call before consuming the next X pair.
+	push hl
+	call BattleAnimGetFrameDest
+	ld a,l
+	ld [wFBDestAddr + 1],a
+	ld a,h
+	ld [wFBDestAddr],a
+	pop hl
+
+	ld a,$28
+	ld [wBaseCoordY],a
+	ld a,[hli]
+	ld [wBaseCoordX],a
+	ld a,2
+	ld [wFBMode],a
+	push hl
+	ld bc,FrameBlock01
+	call DrawFrameBlock
+	pop hl
+
+	ld a,$28
+	ld [wBaseCoordY],a
+	ld a,[hli]
+	ld [wBaseCoordX],a
+	xor a
+	ld [wFBMode],a
+	push hl
+	ld bc,FrameBlock01
+	call DrawFrameBlock
+	pop hl
+
+	ld a,[wSubAnimCounter]
+	dec a
+	ld [wSubAnimCounter],a
+	jr nz,.pairLoop
+	ret
+
+.pairXs
+	; far L/R, middle L/R, near L/R. These are the raw BaseCoord X values
+	; formerly referenced by $15/$19, $B1/$B2 and $16/$18 in Subanimation56.
+	db $68,$88,$6C,$84,$70,$80
+
 SmoothBattleAnimDelayFrames::
 	push bc
 	push de
