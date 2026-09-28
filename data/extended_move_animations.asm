@@ -160,6 +160,8 @@ PlayExtendedOrbProjectile:
 	jp z,PlayClawThrashStyleShake
 	cp SHADOW_PUNCH
 	jp z,PlayShadowPunchCenteredPoof
+	cp DRILL_PECK
+	jp z,PlayDrillPeckGoldLike
 	cp DYNAMICPUNCH
 	jp z,PlayDynamicPunchGoldLike
 	cp METEOR_MASH
@@ -376,6 +378,10 @@ StageDedicatedMoveAnimation:
 LegacyMoveAnimationOverrides:
 	db COMET_PUNCH
 	dw CometPunchDedicatedAnim
+	db WING_ATTACK
+	dw WingAttackDedicatedAnim
+	db DRILL_PECK
+	dw DrillPeckDedicatedAnim
 	db FIRE_PUNCH
 	dw FirePunchDedicatedAnim
 	db ICE_PUNCH
@@ -494,6 +500,31 @@ CometPunchDedicatedAnimData:
 CometPunchDedicatedAnimEnd:
 	IF CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData > 30
 		fail "Comet Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+WingAttackDedicatedAnim:
+	db WingAttackDedicatedAnimEnd - WingAttackDedicatedAnimData
+WingAttackDedicatedAnimData:
+	; ANM-5.61.26: keep Gen1 graphics and Wing Attack SFX, but borrow Gen2's
+	; three-step bilateral closing motion. Sub56 uses the Poison Sting/Peck hit
+	; object twice per beat and mirrors the whole sequence for an enemy user.
+	db $05,$10,$56
+	db $FF
+WingAttackDedicatedAnimEnd:
+	IF WingAttackDedicatedAnimEnd - WingAttackDedicatedAnimData > 30
+		fail "Wing Attack dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+DrillPeckDedicatedAnim:
+	db DrillPeckDedicatedAnimEnd - DrillPeckDedicatedAnimData
+DrillPeckDedicatedAnimData:
+	; ANM-5.61.26: C2 plays the Gold Drill Peck timing directly: a 4-sprite
+	; small hit every 4 VBlanks, with SFX_PECK retriggered for every point.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+DrillPeckDedicatedAnimEnd:
+	IF DrillPeckDedicatedAnimEnd - DrillPeckDedicatedAnimData > 30
+		fail "Drill Peck dedicated animation recipe exceeds wBuffer"
 	ENDC
 
 SlashDedicatedAnim:
@@ -1979,6 +2010,144 @@ SetClawThrashStyleFeedback::
 .enemy
 	callba ShakeScreenHorizontallySlow  ; enemy pre-attack: b=6,c=2
 	jp SetHorizontalHitFeedback         ; final hit: type 2 fast/heavy
+
+; ---------------------------------------------------------------------------
+; ANM-5.61.26 - Gold-style Drill Peck using only Gen1 animation graphics
+; ---------------------------------------------------------------------------
+; Gold uses HIT_SMALL (4 OAM sprites) rather than Wing Attack's 9-sprite HIT,
+; spawns one point every 4 VBlanks, retriggers SFX_PECK on every point, and lets
+; each point live for 6 VBlanks.  Keep that timing while reusing Gen1 tile $44.
+PlayDrillPeckGoldLike::
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	ld a,20
+	ld [wSubAnimCounter],a
+
+	; First point: 4 VBlanks alone, then it overlaps the second point for 2.
+	call .loadCenter
+	ld a,SFX_PECK
+	call PlaySound
+	ld de,wOAMBuffer
+	call .drawSmallHit
+	ld c,4
+	call DelayFrames
+	ld a,[wSubAnimCounter]
+	dec a
+	ld [wSubAnimCounter],a
+
+.loop
+	call .loadCenter
+	ld a,SFX_PECK
+	call PlaySound
+
+	; New point appears beside the previous point for the 2-VBlank overlap
+	; that Gold gets from a 6-frame object lifetime and 4-frame spawn interval.
+	ld de,wOAMBuffer + 4 * 4
+	call .drawSmallHit
+	ld c,2
+	call DelayFrames
+
+	; Retire the previous point, compact the new point to lane 0, then leave it
+	; alone for 2 VBlanks before the following point is spawned.
+	call ClearSprites
+	ld de,wOAMBuffer
+	call .drawSmallHit
+	ld c,2
+	call DelayFrames
+
+	ld a,[wSubAnimCounter]
+	dec a
+	ld [wSubAnimCounter],a
+	jr nz,.loop
+
+	; Gold's last HIT_SMALL survives 6 VBlanks total.  Its anim_wait 16 then
+	; continues for another 14 blank VBlanks after the object deletes.
+	ld c,2
+	call DelayFrames
+	call ClearSprites
+	ld c,14
+	jp DelayFrames
+
+.loadCenter
+	; Counter 20,19,18,17... maps to center indices 0,1,2,3... without
+	; storing five copies of the same four-point orbit.
+	ld a,[wSubAnimCounter]
+	cpl
+	inc a
+	and 3
+	add a
+	ld e,a
+	ld d,0
+	ld hl,DrillPeckGoldCenters
+	add hl,de
+	ld a,[hli] ; player-side center X
+	ld b,a
+	ld a,[hl] ; player-side center Y
+	ld c,a
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.storeCenter
+	; Mirror the target-side orbit to the player's sprite position, matching
+	; legacy type-2 battle-animation geometry.
+	ld a,176
+	sub b
+	ld b,a
+	ld a,c
+	add 40
+	ld c,a
+.storeCenter
+	ld a,c
+	ld [wBaseCoordY],a
+	ld a,b
+	ld [wBaseCoordX],a
+	ret
+
+.drawSmallHit
+	; FrameBlock30 is the existing 16x16 four-quadrant impact made from tile
+	; $44.  Draw it around the requested center into the caller-selected OAM lane.
+	ld a,[wBaseCoordY]
+	sub 8
+	ld b,a
+	ld a,[wBaseCoordX]
+	sub 8
+	ld c,a
+	ld hl,DrillPeckSmallHitOAM
+	ld a,4
+.drawLoop
+	push af
+	ld a,b
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,$31 + $44
+	ld [de],a
+	inc de
+	ld a,[hli]
+	ld [de],a
+	inc de
+	pop af
+	dec a
+	jr nz,.drawLoop
+	ret
+
+DrillPeckSmallHitOAM:
+	db 0,0,0
+	db 0,8,OAM_HFLIP
+	db 8,0,OAM_VFLIP
+	db 8,8,OAM_HFLIP | OAM_VFLIP
+
+; Gold centers: left -> top -> right -> bottom. The 20-hit loop repeats these
+; five times; enemy use mirrors the four target-side centers.
+DrillPeckGoldCenters:
+	db 124,56, 132,48, 140,56, 132,64
 
 ; ANM-5.61.14: $FE is reserved inside the seamless-pair table for a banked
 ; custom helper target rather than a normal Subanimation ID.
