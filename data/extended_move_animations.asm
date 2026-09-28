@@ -1980,13 +1980,69 @@ SetClawThrashStyleFeedback::
 	callba ShakeScreenHorizontallySlow  ; enemy pre-attack: b=6,c=2
 	jp SetHorizontalHitFeedback         ; final hit: type 2 fast/heavy
 
+; ANM-5.61.14: $FE is reserved inside the seamless-pair table for a banked
+; custom helper target rather than a normal Subanimation ID.
+SEAMLESS_CUSTOM_TARGET EQU $FE
+
 ; Shadow Punch uses Shadow Ball's short poof vocabulary, but Sub3C is anchored
-; for the orb's lower projectile impact.  Redraw the same four poof frames around
-; the Punch contact center without adding a new BANK1E subanimation.
+; for the orb's lower projectile impact.  Keep the fist from Subanimation $05
+; alive in the seamless high-water lane while these four centered poof frames run.
 PlayShadowPunchCenteredPoof::
+	; ANM-5.61.14: reuse the Acid high-water bridge for the first custom-target
+	; experiment.  Subanimation $05 has already left its final 3x3 fist in OAM;
+	; promote that saved high-water count to a 12-VBlank overlap carry.
+	ld c,SEAMLESS_CUSTOM_TARGET
+	call ActivateCustomBattleAnimBridge
+	; The largest poof frame uses 16 sprites.  If a future fist grows beyond
+	; 24 carried sprites, fail closed to the old poof path instead of overrunning OAM.
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jr z,.carrySizeReady
+	and $3f
+	cp 25
+	jr c,.carrySizeReady
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	call ClearSprites
+.carrySizeReady
+
+	; The poof uses a few tiles from AnimationTileset1, while the carried fist
+	; occupies $77-$7F.  Loading all 79 tiles would overwrite the live fist for
+	; several VBlanks, so refresh only the palette map and the two poof tile runs.
 	xor a
 	ld [wWhichBattleAnimTileset],a
-	callba LoadAnimationTileset
+	callba _LoadAnimationTilesetPalettes
+
+	; The fixed poof palette reload replaces the dynamic Ghost palette slot/map.
+	; Restore only the carried fist's nine tile IDs; the poof keeps its stock colors.
+	ld d,GHOST
+	ld e,BATTLE_TYPE_PAL_TILESET2
+	callba LoadBattleAnimTypePalette_Sprite
+	ld a,2
+	ld [rSVBK],a
+	ld hl,W2_SpritePaletteMap + $77
+	ld b,9
+	ld a,BATTLE_TYPE_PAL_TILESET2
+.restoreFistPaletteMap
+	ld [hli],a
+	dec b
+	jr nz,.restoreFistPaletteMap
+	ld a,1
+	ld [W2_ForceOBPUpdate],a
+	xor a
+	ld [rSVBK],a
+
+	ld hl,vSprites + $510
+	ld de,AnimationTileset1 + $20 * 16
+	ld b,BANK(AnimationTileset1)
+	ld c,6
+	call CopyVideoData
+	ld hl,vSprites + $610
+	ld de,AnimationTileset1 + $30 * 16
+	ld b,BANK(AnimationTileset1)
+	ld c,5
+	call CopyVideoData
 
 	ld a,[H_WHOSETURN]
 	and a
@@ -2011,12 +2067,19 @@ PlayShadowPunchCenteredPoof::
 
 .drawFrame
 	; frame data = sprite count, object half-size, then legacy
-	; y-offset/x-offset/tile/flags tuples.
+	; y-offset/x-offset/tile/flags tuples.  During the carry, draw after the fist's
+	; saved OAM high-water lane instead of overwriting it.
 	ld a,[hli]
 	ld b,a
 	ld a,[hli]
 	ld c,a
-	ld de,wOAMBuffer
+	push hl
+	push bc
+	callba BattleAnimGetFrameDest
+	ld d,h
+	ld e,l
+	pop bc
+	pop hl
 .loop
 	ld a,[wBaseCoordY]
 	sub c
@@ -2041,8 +2104,15 @@ PlayShadowPunchCenteredPoof::
 	jr nz,.loop
 	push hl
 	ld c,3
-	call DelayFrames
-	call ClearSprites
+.delay
+	push bc
+	call BattleAnimCarryDelayFrame
+	pop bc
+	dec c
+	jr nz,.delay
+	; For the first three frames this clears only the poof lane.  On frame 09,
+	; the 12-VBlank carry has just expired, so the same helper clears both layers.
+	call ClearBattleAnimTargetOAMKeepingCarry
 	pop hl
 	ret
 
@@ -2199,10 +2269,11 @@ PlayDynamicPunchGoldLike::
 	ret
 
 ; ---------------------------------------------------------------------------
-; ANM-5.61.13 - reusable high-water overlap bridge; Acid-only activation
+; ANM-5.61.14 - reusable high-water overlap bridge, extended from Acid
 ; ---------------------------------------------------------------------------
-; Keep Subanimation data untouched. A bridge entry only changes the boundary
-; between two verified stages that share one animation tileset.
+; Keep Subanimation data untouched. Normal target IDs bridge verified stages that
+; share one animation tileset; a reserved custom target lets a banked helper manage
+; its own graphics transition while reusing the same source-pose/high-water state.
 ;
 ; lifetime = 0: seamless replacement with no blank or redundant tileset load.
 ; lifetime > 0: keep the source's complete final OAM composition in a leading
@@ -2213,6 +2284,16 @@ PlayDynamicPunchGoldLike::
 ; that final FrameBlock, so cleanup records the real OAM high-water mark: start
 ; slot of the final FrameBlock + its size. The lifetime field remains available
 ; for future verified overlap pairs without changing this framework.
+; Pair keys use the real move ID for dedicated recipes and the legacy animation
+; ID for ordinary command streams.  This keeps expanded moves such as Shadow Punch
+; distinct even when their Moves-table compatibility animation reuses Mega Punch.
+GetBattleAnimBridgeID::
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ld a,[wAnimationID]
+	ret z
+	jp GetCurrentMoveID
+
 UpdateSeamlessBattleAnimStage::
 	; Recover the compact Subanimation ID from its pointer-table address.
 	ld a,[wSubAnimAddrPtr]
@@ -2235,7 +2316,7 @@ UpdateSeamlessBattleAnimStage::
 	xor a
 	ld [wBattleAnimSeamlessStage],a
 	ld [wBattleAnimStageCarryTimer],a
-	ld a,[wAnimationID]
+	call GetBattleAnimBridgeID
 	ld b,a
 	ld hl,SeamlessBattleAnimStagePairs
 .loop
@@ -2335,6 +2416,62 @@ BattleAnimCarryDelayFrame::
 	jr nz,.hideSourceLoop
 	ret
 
+; ANM-5.61.14: activate a carried source for a banked custom helper target.
+; Input: C = pseudo-target ID from SeamlessBattleAnimStagePairs.
+; The source token/high-water were captured by the same path Acid uses; this
+; routine only converts them to the active overlap representation and lifetime.
+ActivateCustomBattleAnimBridge::
+	ld a,[wBattleAnimSeamlessStage]
+	ld e,a                           ; source token = source Subanimation ID + 1
+	ld a,[wBattleAnimStageCarryTimer]
+	ld d,a                           ; saved source OAM high-water
+	call GetBattleAnimBridgeID
+	ld b,a
+	ld hl,SeamlessBattleAnimStagePairs
+.loop
+	ld a,[hli]
+	cp $ff
+	jr z,.fail
+	cp b
+	jr nz,.skipEntry
+	ld a,[hli]                       ; source Subanimation ID
+	inc a
+	cp e
+	jr nz,.skipTargetAndLifetime
+	ld a,[hli]                       ; target Subanimation/pseudo-target ID
+	cp c
+	jr nz,.skipLifetime
+	ld a,d
+	and $3f
+	jr z,.fail
+	cp 40
+	jr c,.storeLane
+	ld a,40
+.storeLane
+	or $80
+	ld [wBattleAnimSeamlessStage],a
+	ld a,[hl]                        ; carry lifetime in VBlanks
+	and $7f
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+.skipLifetime
+	inc hl
+	jr .loop
+.skipTargetAndLifetime
+	inc hl
+	inc hl
+	jr .loop
+.skipEntry
+	inc hl
+	inc hl
+	inc hl
+	jr .loop
+.fail
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	jp ClearSprites
+
 ; Clear only the target lane while an overlap carry is alive. The source owns
 ; entries [0,high-water); target keyframes are redrawn in [high-water,40).
 ClearBattleAnimTargetOAMKeepingCarry::
@@ -2403,12 +2540,12 @@ AnimationCleanOAMSeamlessBody::
 .clearTargetOnly
 	jp ClearBattleAnimTargetOAMKeepingCarry
 
-; animation ID, source Subanimation ID, target Subanimation ID, carry VBlanks
-; Keep activation intentionally narrow. Acid uses lifetime 0 for the proven
-; no-flash/no-pause bridge. Positive lifetimes are supported by the reusable
-; framework but are not enabled for any other move in this revision. Future
-; entries must share one tileset, finish the source on a cleanup-capable frame,
-; and be checked so carried + target OAM stays within 40 sprites / scanline limits.
+; bridge key, source Subanimation ID, target Subanimation ID, carry VBlanks
+; Normal target IDs must share one tileset. SEAMLESS_CUSTOM_TARGET reserves the
+; boundary for a banked helper that explicitly manages any graphics/palette swap.
+; Every carried pair must finish the source on a cleanup-capable frame and be
+; checked so source + target OAM stays within 40 sprites / scanline limits.
 SeamlessBattleAnimStagePairs:
 	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
+	db SHADOW_PUNCH, $05, SEAMLESS_CUSTOM_TARGET, 12 ; 9-sprite fist through 4x3-frame poof
 	db $ff
