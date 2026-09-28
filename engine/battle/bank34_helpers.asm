@@ -256,3 +256,91 @@ FinalizeEnemyMoveSelectionForMirrorMove:
 	ld a, [wd11e]
 	ld [wEnemySelectedMove], a
 	ret
+
+; ---------------------------------------------------------------------------
+; BATTLE-5.61.18 - later-generation Fly / Dig move interactions
+; ---------------------------------------------------------------------------
+; Called only after the target's Invulnerable bit is known to be set.  The
+; target's selected move identifies which semi-invulnerable state is active:
+; Fly or Dig are the only moves that currently set that bit in this project.
+;
+; Return carry set when the current attacking move may hit this state; carry
+; clear means the legacy invulnerability miss remains in force.  Bankswitch does
+; not alter carry, so this survives callab without consuming a WRAM scratch byte.
+; A table flag separately requests 2x already-calculated damage before the normal
+; accuracy test.
+;
+; This table is intentionally identity-based instead of effect-based. Expanded
+; moves may reuse legacy animation/effect bytes, so GetCurrentMoveID and the real
+; selected move IDs are required for safe future extension.
+DEF SEMI_INVUL_DOUBLE_DAMAGE EQU 1 << 0
+
+GetSemiInvulnerableMoveInteraction::
+	ldh a,[H_WHOSETURN]
+	and a
+	ld a,[wEnemySelectedMove]
+	jr z,.gotTargetMove
+	; During automated test battles the player-side current selection lives in
+	; the dedicated test slot, matching GetCurrentMove/GetCurrentMoveID.
+	ld a,[wFlags_D733]
+	bit BIT_TEST_BATTLE,a
+	ld a,[wTestBattlePlayerSelectedMove]
+	jr nz,.gotTargetMove
+	ld a,[wPlayerSelectedMove]
+.gotTargetMove
+	ld b,a                           ; target's active Fly / Dig move ID
+	call GetCurrentMoveID
+	ld c,a                           ; real attacking move ID
+	ld hl,SemiInvulnerableMoveInteractions
+.loop
+	ld a,[hli]                       ; target semi-invulnerable move
+	and a
+	jr z,.noInteraction
+	cp b
+	jr nz,.skipAttackAndFlags
+	ld a,[hli]                       ; attacking move
+	cp c
+	jr nz,.skipFlags
+	ld a,[hl]                        ; flags
+	bit 0,a
+	call nz,DoubleSemiInvulnerableMoveDamage
+	scf
+	ret
+.skipFlags
+	inc hl                           ; flags
+	jr .loop
+.skipAttackAndFlags
+	inc hl                           ; attacking move
+	inc hl                           ; flags
+	jr .loop
+.noInteraction
+	and a                            ; clear carry
+	ret
+
+; Double normal calculated damage with the same $ffff saturation used by
+; Counter.  Fissure is deliberately not marked for this path.
+DoubleSemiInvulnerableMoveDamage:
+	ld hl,wDamage + 1
+	ld a,[hl]
+	add a
+	ld [hld],a
+	ld a,[hl]
+	adc a
+	ld [hl],a
+	ret nc
+	ld a,$ff
+	ld [hli],a
+	ld [hl],a
+	ret
+
+; target state, attacking move, flags
+; Thunder / Hurricane are allowed to target Fly but keep their normal accuracy.
+; Only Gust / Twister and Earthquake receive the later-generation 2x modifier.
+SemiInvulnerableMoveInteractions:
+	db DIG, EARTHQUAKE, SEMI_INVUL_DOUBLE_DAMAGE
+	db DIG, FISSURE,    0
+	db FLY, GUST,       SEMI_INVUL_DOUBLE_DAMAGE
+	db FLY, TWISTER,    SEMI_INVUL_DOUBLE_DAMAGE
+	db FLY, THUNDER,    0
+	db FLY, HURRICANE,  0
+	db 0

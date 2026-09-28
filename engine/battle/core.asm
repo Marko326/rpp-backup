@@ -5339,7 +5339,13 @@ MoveHitTest:
 	jp z,.moveMissed
 .checkForDigOrFlyStatus
 	bit Invulnerable,[hl]
-	jp nz,.moveMissed
+	jr z,.swiftCheck
+	; BATTLE-5.61.18: later-generation semi-invulnerable interactions are
+	; data-driven in roomy bank $34. Ordinary moves still miss Fly/Dig exactly
+	; as before; approved moves return carry set and may apply their optional 2x
+	; damage modifier before continuing through the normal accuracy test.
+	callab GetSemiInvulnerableMoveInteraction
+	jp nc,.moveMissed
 .swiftCheck
 	ld a,[de]
 	cp a,SWIFT_EFFECT
