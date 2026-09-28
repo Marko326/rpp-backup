@@ -894,6 +894,8 @@ SmogAnim:
 
 SludgeAnim:
 	db $46,$7B,$13
+	; ANM-5.61.29: reuse $14 unchanged; the renderer replays only its two-drop
+	; tail once for Sludge, keeping Acid/Lick on the original two-drop sequence.
 ; Lick is Sludge's final subanimation plus terminator.
 LickAnim:
 	db $46,$7B,$14

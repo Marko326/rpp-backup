@@ -987,6 +987,10 @@ PlayAnimation:
 .afterSeamlessTileset
 	call LoadSubanimation
 	call PlaySubanimation
+	; ANM-5.61.29: Sludge reuses the authored $14 impact data for one extra
+	; two-drop pair. The helper replays only the tail entries, so there is no
+	; second setup pause and no duplicate Subanimation data.
+	call ReplaySludgeImpactTail
 	pop af
 	ld [rOBP0],a
 .nextAnimationCommand
@@ -1320,6 +1324,11 @@ PlaySubanimation:
 	ld h,a
 	ld a,[wSubAnimSubEntryAddr]
 	ld l,a
+
+; Entry point for replaying an already-loaded compact Subanimation slice.
+; The caller supplies wSubAnimSubEntryAddr/wSubAnimCounter and, when needed,
+; preserves wFBDestAddr so mode-2 accumulated OAM can flow into the next slice.
+PlaySubanimationEntries:
 .loop
 	; Compact subentries are always 2 bytes. Byte 0 stores FrameBlock ID in
 	; bits 0-6; bit 7 marks a nonzero mode. For marked entries, byte 1 bits
@@ -1413,6 +1422,59 @@ PlaySubanimation:
 	ld a,l
 	ld [wSubAnimSubEntryAddr],a
 	jp .loop
+
+SLUDGE_EXTRA_DRIP_PAIRS EQU 1 ; 1 = 4 total drops, 2 = 6 total drops
+
+; ANM-5.61.29: append extra pairs of Sludge impact drops without creating a
+; second Subanimation. $14 entries 0-1 are the one-time impact setup; entries
+; 2-8 are the two authored drops, with entry 5 rebuilding their shared 2x2 base.
+; Replaying entry 5 once and then entries 2-8 reproduces the exact same 19-VBlank
+; launch cadence as the first pair while skipping the 13-VBlank setup pause.
+ReplaySludgeImpactTail:
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $14)
+	ret nz
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $14)
+	ret nz
+	call GetCurrentMoveID
+	cp SLUDGE
+	ret nz
+
+	ld b,SLUDGE_EXTRA_DRIP_PAIRS
+.repeatPair
+	push bc
+	; Start from the ordinary OAM lane. Entry 5 (mode 2) draws the shared
+	; FrameBlock30 base and advances the destination without consuming a VBlank.
+	call BattleAnimGetFrameDest
+	ld a,l
+	ld [wFBDestAddr + 1],a
+	ld a,h
+	ld [wFBDestAddr],a
+	ld hl,Subanimation14 + 1 + 5 * 2
+	ld a,1
+	call PlaySubanimationSlice
+
+	; Entries 2-8 are the two actual drops. Their counters are 7..1, exactly
+	; matching the original $14 playback, so smoothing/tail timing is unchanged.
+	ld hl,Subanimation14 + 1 + 2 * 2
+	ld a,7
+	call PlaySubanimationSlice
+	pop bc
+	dec b
+	jr nz,.repeatPair
+	ret
+
+; A = number of compact subentries, HL = first compact subentry.
+; Graphics, transform, frame delay, sound and Subanimation ID are intentionally
+; inherited from the active $14 command; only the selected data window changes.
+PlaySubanimationSlice:
+	ld [wSubAnimCounter],a
+	ld a,l
+	ld [wSubAnimSubEntryAddr],a
+	ld a,h
+	ld [wSubAnimSubEntryAddr + 1],a
+	jp PlaySubanimationEntries
 
 AnimationCleanOAM:
 	push hl
