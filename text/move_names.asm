@@ -256,5 +256,7 @@ MoveNames::
 	db "Dive@"
 	db "Luster Purge@"
 	db "Mind Blast@"
+	; MOV-5.61.31: KEP Iron Head.
+	db "Iron Head@"
 
 SETCHARMAP main

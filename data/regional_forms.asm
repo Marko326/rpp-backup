@@ -544,8 +544,7 @@ AlolanSandshrewBaseStats::
 	db BANK(AlolanSandshrewPicFront)
 
 AlolanSandshrewLevelMoves::
-	; Source moves unavailable in this branch are intentionally omitted:
-	; db 40,IRON_HEAD
+	; MOV-5.61.31: Iron Head is now available; other unavailable source moves remain omitted.
 	; db 50,ICICLE_CRASH
 	db 1,SCRATCH
 	db 1,HARDEN
@@ -558,6 +557,7 @@ AlolanSandshrewLevelMoves::
 	db 25,PIN_MISSILE
 	db 29,DIG
 	db 35,SLASH
+	db 40,IRON_HEAD
 	db 45,X_SCISSOR
 	db 55,EARTHQUAKE
 	db 0
@@ -611,8 +611,7 @@ AlolanSandslashBaseStats::
 	db BANK(AlolanSandslashPicFront)
 
 AlolanSandslashLevelMoves::
-	; Source moves unavailable in this branch are intentionally omitted:
-	; db 40,IRON_HEAD
+	; MOV-5.61.31: Iron Head is now available; other unavailable source moves remain omitted.
 	; db 50,ICICLE_CRASH
 	; db 60,GLACIALLANCE
 	db 1,HONE_CLAWS
@@ -622,6 +621,7 @@ AlolanSandslashLevelMoves::
 	db 25,PIN_MISSILE
 	db 29,DIG
 	db 35,SLASH
+	db 40,IRON_HEAD
 	db 45,X_SCISSOR
 	db 55,EARTHQUAKE
 	db 66,GUILLOTINE
@@ -675,8 +675,7 @@ AlolanDiglettBaseStats::
 	db BANK(AlolanDiglettPicFront)
 
 AlolanDiglettLevelMoves::
-	; Source moves unavailable in this branch are intentionally omitted:
-	; db 23,IRON_HEAD
+	; MOV-5.61.31: restore the previously omitted Iron Head source move.
 	db 1,ROCK_POLISH
 	db 1,SCRATCH
 	db 1,SAND_ATTACK
@@ -684,6 +683,7 @@ AlolanDiglettLevelMoves::
 	db 10,DIG
 	db 14,METAL_CLAW
 	db 18,ROCK_TOMB
+	db 23,IRON_HEAD
 	db 26,SLASH
 	db 30,EARTHQUAKE
 	db 35,NIGHT_SLASH
@@ -738,8 +738,7 @@ AlolanDugtrioBaseStats::
 	db BANK(AlolanDugtrioPicFront)
 
 AlolanDugtrioLevelMoves::
-	; Source moves unavailable in this branch are intentionally omitted:
-	; db 28,IRON_HEAD
+	; MOV-5.61.31: Iron Head is now available; other unavailable source moves remain omitted.
 	; db 49,EARTH_CRUSH
 	; db 60,TITAN_IMPACT
 	db 1,ROCK_POLISH
@@ -748,6 +747,7 @@ AlolanDugtrioLevelMoves::
 	db 14,METAL_CLAW
 	db 18,ROCK_TOMB
 	db 23,DIG
+	db 28,IRON_HEAD
 	db 31,SLASH
 	db 34,EARTHQUAKE
 	db 38,ROCK_SLIDE

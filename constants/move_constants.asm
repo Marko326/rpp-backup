@@ -253,6 +253,8 @@ const_value = 1
 	const DIVE         ; fb (Unused) 
 	const LUSTER_PURGE ; fc
 	const MIND_BLAST   ; fd
+	; MOV-5.61.31: KEP Iron Head uses the final safe real-move ID before $FF sentinels.
+	const IRON_HEAD    ; fe
 
 NUM_ATTACKS EQU const_value
 const_value = STRUGGLE + 1

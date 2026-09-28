@@ -397,7 +397,7 @@ LegacyMoveAnimationOverrides:
 	dw SlashDedicatedAnim
 	db $FF
 
-; Full contiguous table for expanded move IDs $A6-$FD.
+; Full contiguous table for expanded move IDs $A6-$FE.
 ExtendedMoveAnimationPointers:
 	dw MetalClawExtAnim             ; METAL_CLAW
 	dw BulletPunchExtAnim           ; BULLET_PUNCH
@@ -487,6 +487,7 @@ ExtendedMoveAnimationPointers:
 	dw DiveExtAnim                  ; DIVE
 	dw LusterPurgeExtAnim           ; LUSTER_PURGE
 	dw MindBlastExtAnim             ; MIND_BLAST
+	dw IronHeadExtAnim              ; IRON_HEAD
 ExtendedMoveAnimationPointersEnd:
 	IF ExtendedMoveAnimationPointersEnd - ExtendedMoveAnimationPointers != (NUM_ATTACKS - METAL_CLAW) * 2
 		fail "extended move animation pointer table size mismatch"
@@ -1955,6 +1956,24 @@ MindBlastExtAnimData:
 MindBlastExtAnimEnd:
 	IF MindBlastExtAnimEnd - MindBlastExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IronHeadExtAnim:
+	db IronHeadExtAnimEnd - IronHeadExtAnimData
+IronHeadExtAnimData:
+	; MOV-5.61.31: reproduce KEP Iron Head without consuming a new Subanimation slot.
+	; $2D is the stock circles-centering sequence; FLASH and DOUBLE_EDGE provide
+	; the same charge/impact sound profiles used by KEP.
+	db SE_LIGHT_SCREEN_PALETTE,FLASH - 1
+	db $06,$FF,$2D
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db SE_MOVE_MON_HORIZONTALLY,$FF
+	db SE_DARK_SCREEN_FLASH,DOUBLE_EDGE - 1
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+IronHeadExtAnimEnd:
+	IF IronHeadExtAnimEnd - IronHeadExtAnimData > 30
+		fail "Iron Head animation recipe exceeds wBuffer"
 	ENDC
 
 ; Exact Gold BARRAGE_BALL source tiles after egg.2bpp --remove-whitespace:

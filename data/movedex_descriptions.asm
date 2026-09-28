@@ -267,8 +267,9 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescDivePages ; DIVE #251
 	movedex_desc_ptr MoveDexDescLusterPurgePages ; LUSTER_PURGE #252
 	movedex_desc_ptr MoveDexDescMindBlastPages ; MIND_BLAST #253
+	movedex_desc_ptr MoveDexDescIronHeadPages ; IRON_HEAD #254
 MoveDexDescriptionPointerTableEnd::
-; 固定表为 (NUM_ATTACKS - 1) * 3 = 759 bytes（253 个技能）。
+; 固定表为 (NUM_ATTACKS - 1) * 3 = 762 bytes（254 个技能）。
 
 ; #001 Pound
 MoveDexDescPoundPages:
@@ -1390,7 +1391,7 @@ MoveDexDescMetronome1:
 	next "then uses a random"
 	next "move.@"
 MoveDexDescMetronome2:
-	; MetronomePickMove 排除 Metronome、Struggle，以及从 Dive 起的 #251-#253。
+	; MetronomePickMove 排除 Metronome、Struggle，以及从 Dive 起的 #251-#254。
 	db   "Won't call itself,"
 	next "Struggle, Dive or"
 	next "later moves.@"
@@ -2506,7 +2507,7 @@ MoveDexDescEffectCConfuse10:
 SECTION "MoveDex Descriptions D", ROMX, BANK[$38]
 
 ; ---------------------------------------------------------------------------
-; #201-#253：最后一批连续技能说明。
+; #201-#254：最后一批连续技能说明。
 ; 本 bank 内的 page-list 只引用本 bank 页面，避免二级跨 bank 指针。
 ; ---------------------------------------------------------------------------
 
@@ -2899,6 +2900,14 @@ MoveDexDescMindBlastPages:
 MoveDexDescMindBlast1:
 	db   "Hits the foe with"
 	next "raw psychic force.@"
+
+; #254 Iron Head
+MoveDexDescIronHeadPages:
+	; MOV-5.61.31: KEP stats/effect: 80 power, Steel, 100 accuracy, 30% flinch.
+	dw MoveDexDescIronHead1, MoveDexDescEffectDFlinch30, 0
+MoveDexDescIronHead1:
+	db   "Slams the foe with"
+	next "a steel-hard head.@"
 
 ; ---------------------------------------------------------------------------
 ; Bank $38 共用机制页。

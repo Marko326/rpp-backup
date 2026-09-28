@@ -264,4 +264,6 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;Dive (Unused)
     db SPECIAL ;Luster Purge
     db SPECIAL ;Psystrike
+    ; MOV-5.61.31: Iron Head is a physical Steel attack.
+    db PHYSICAL;Iron Head
     

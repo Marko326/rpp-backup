@@ -264,3 +264,5 @@ MoveEnd:
 	move SURF,         CHARGE_EFFECT,               80, WATER,    100, 10 ; Dive (Unused)
 	move FLASH,        SPECIAL_DOWN_SIDE_EFFECT,    70, PSYCHIC,  100,  5 ; Luster Purge
 	move GLARE,        SILVER_WIND_EFFECT,         100, PSYCHIC,  100, 10 ; Mind Blast
+	; MOV-5.61.31: KEP Iron Head; DOUBLE_EDGE also matches KEP's $20/$c0 impact sound profile.
+	move DOUBLE_EDGE,  FLINCH_SIDE_EFFECT2,          80, STEEL,    100, 15 ; Iron Head

@@ -3598,7 +3598,7 @@ Mon142_EvosMoves:
 	level_move 33,CRUNCH
 	level_move 41,TAKE_DOWN
 	level_move 49,AERIAL_ACE ; Sky Drop → TM move
-	level_move 57,STEEL_WING ; Iron Head → TM move
+	level_move 57,IRON_HEAD ; MOV-5.61.31: restore intended Iron Head
 	level_move 65,HYPER_BEAM
 	level_move 73,ROCK_SLIDE
 	level_move 81,GIGA_IMPACT
@@ -4103,7 +4103,7 @@ Mon163_EvosMoves:
 	level_move 41,X_SCISSOR
 	level_move 45,NIGHT_SLASH
 	level_move 49,CRUNCH ; Double Hit → Prism tutor move
-	level_move 50,AIR_SLASH ; Iron Head → Scyther move
+	level_move 50,IRON_HEAD ; MOV-5.61.31: restore intended Iron Head
 	level_move 57,SWORDS_DANCE
 	packed_learnset_end
 
@@ -4129,7 +4129,7 @@ Mon164_EvosMoves:
 	level_move 31,SCREECH
 	level_move 34,ROCK_SLIDE
 	level_move 37,CRUNCH
-	level_move 40,IRON_TAIL ; Iron Head → evolution move
+	level_move 40,IRON_HEAD ; MOV-5.61.31: restore intended Iron Head
 	level_move 43,DIG
 	level_move 46,FLASH_CANNON ; Stone Edge → TM move
 	level_move 49,DOUBLE_EDGE
