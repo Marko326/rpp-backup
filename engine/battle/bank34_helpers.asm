@@ -344,3 +344,136 @@ SemiInvulnerableMoveInteractions:
 	db FLY, THUNDER,    0
 	db FLY, HURRICANE,  0
 	db 0
+
+; ---------------------------------------------------------------------------
+; BATTLE-5.61.20 - move-rule helpers relocated from capacity-constrained Bank F
+; ---------------------------------------------------------------------------
+
+; Preserve the original critical-hit rules while keeping the hot Bank-F path
+; small. The only public result is wCriticalHitOrOHKO.
+CriticalHitTest_:
+	xor a
+	ld [wCriticalHitOrOHKO], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, wPlayerMovePower
+	ld de, wPlayerBattleStatus2
+	jr z, .calcCriticalHitProbability
+	ld hl, wEnemyMovePower
+	ld de, wEnemyBattleStatus2
+.calcCriticalHitProbability
+	ld a, [hld]
+	and a
+	ret z
+
+	ld c, 0
+	ld a, [de]
+	bit 2, a
+	jr z, .checkCritMove
+	inc c
+.checkCritMove
+	ld hl, HighCriticalMoves
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .playersTurn
+	ld a, [wEnemySelectedMove]
+	ld b, a
+	jr .checkAlwaysCrit
+.playersTurn
+	ld a, [wPlayerSelectedMove]
+	ld b, a
+.checkAlwaysCrit
+	cp ALWAYS_CRIT_MOVE_1
+	jr z, .critSuccess
+	cp ALWAYS_CRIT_MOVE_2
+	jr z, .critSuccess
+.loop
+	ld a, [hli]
+	cp b
+	jr z, .highCritical
+	inc a
+	jr nz, .loop
+	jr .skipHighCritical
+.highCritical
+	inc c
+	inc c
+.skipHighCritical
+	; Preserve the existing A + Left critical-hit debug shortcut.
+	ld a, [hJoyInput]
+	cp a, $21
+	jr nz, .calculate
+	inc c
+	inc c
+.calculate
+	ld hl, .chances
+	ld b, 0
+	add hl, bc
+	push hl
+	callab BattleRandomFar
+	ld a, e
+	pop hl
+	cp [hl]
+	ret nc
+.critSuccess
+	ld a, 1
+	ld [wCriticalHitOrOHKO], a
+	ret
+
+.chances
+	; 6.25% 12.1% 24.6% 33.2% 49.6% 49.6% 49.6%
+	db $11, $20, $40, $55, $80, $80, $80
+
+; Keep the data beside its only runtime consumer after relocation.
+INCLUDE "data/high_crit_moves.asm"
+
+; Seismic Toss / Night Shade use attacker level; SonicBoom and Dragon Rage use
+; fixed damage; Psywave keeps the existing 1..floor(1.5*level)-1 random range.
+; The acting side is resolved here so Bank F does not need a cross-bank pointer ABI.
+CalculateSpecialMoveDamage_:
+	ld hl, wBattleMonLevel
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .gotAttackerLevel
+	ld hl, wEnemyMonLevel
+.gotAttackerLevel
+	ld a, [hl]
+	ld c, a
+	call GetCurrentMoveID
+	cp SEISMIC_TOSS
+	jr z, .levelDamage
+	cp NIGHT_SHADE
+	jr z, .levelDamage
+	ld b, SONICBOOM_DAMAGE
+	cp SONICBOOM
+	jr z, .storeDamage
+	ld b, DRAGON_RAGE_DAMAGE
+	cp DRAGON_RAGE
+	jr z, .storeDamage
+
+	; Psywave
+	ld b, c
+	ld a, c
+	srl a
+	add b
+	ld b, a
+.randomLoop
+	push bc
+	callab BattleRandomFar
+	ld a, e
+	pop bc
+	and a
+	jr z, .randomLoop
+	cp b
+	jr nc, .randomLoop
+	ld b, a
+	jr .storeDamage
+
+.levelDamage
+	ld b, c
+.storeDamage
+	ld hl, wDamage
+	xor a
+	ld [hli], a
+	ld a, b
+	ld [hl], a
+	ret

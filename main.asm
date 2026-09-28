@@ -2597,6 +2597,7 @@ INCLUDE "engine/battle/type_effectiveness.asm"
 ; small far-call entry cost. Their outputs are committed to memory/screen before return.
 SECTION "Battle Helpers (bank 34)", ROMX, BANK[$34]
 INCLUDE "engine/battle/bank34_helpers.asm"
+INCLUDE "engine/battle/moveEffects/poison_effect.asm"
 INCLUDE "engine/battle/moveEffects/switch_teleport_effect.asm"
 INCLUDE "engine/battle/moveEffects/mimic_effect.asm"
 INCLUDE "engine/battle/moveEffects/disable_effect.asm"

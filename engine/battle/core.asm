@@ -4805,82 +4805,10 @@ JumpToOHKOMoveEffect:
 
 
 ; determines if attack is a critical hit
+; BATTLE-5.61.20: move-specific critical-hit rules now live in bank $34.
+; The helper writes wCriticalHitOrOHKO directly, so Bank F keeps only this entry.
 CriticalHitTest:
-	xor a
-	ld [wCriticalHitOrOHKO], a
-	ld a, [H_WHOSETURN]
-	and a
-	ld hl, wPlayerMovePower
-	ld de, wPlayerBattleStatus2
-	jr z, .calcCriticalHitProbability
-	ld hl, wEnemyMovePower
-	ld de, wEnemyBattleStatus2
-.calcCriticalHitProbability
-	ld a, [hld]                  ; read base power from RAM
-	and a
-	ret z                        ; do nothing if zero
-
-	ld c, 0 ; Set default entry as 0
-	ld a,[de]
-	bit 2, a ; Check for Focus Energy
-	jr z, .CheckCritMove
-	inc c
-.CheckCritMove
-	ld hl, HighCriticalMoves
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .PlayersTurn
-.EnemyTurn
-	ld a, [wEnemySelectedMove]
-	ld b, a
-	jr .checkAlwaysCrit
-.PlayersTurn
-	ld a, [wPlayerSelectedMove]
-	ld b,a
-.checkAlwaysCrit
-; 先检查必定暴击技能；身份别名与 MoveDex 共用。
-	cp ALWAYS_CRIT_MOVE_1
-	jr z, .CritSuccess
-	cp ALWAYS_CRIT_MOVE_2
-	jr z, .CritSuccess
-.loop
-; if it wasn't one of those, loop over the list of high-crit moves
-	ld a, [hli]
-	cp b
-	jr z, .HighCritical
-	inc a
-	jr nz, .loop
-	jr .SkipHighCritical
-.HighCritical
-	inc c
-	inc c
-.SkipHighCritical
-	; Add cheat for A + Left
-	ld a, [hJoyInput]
-	cp a, $21 ; A + Left
-	jr nz, .Calculate
-	inc c
-	inc c
-.Calculate
-	ld hl, .Chances
-	ld b, 0
-	add hl,bc
-	call BattleRandom
-	cp [hl]
-	ret nc
-.CritSuccess
-	ld a,1
-	ld [wCriticalHitOrOHKO],a ; Critical Hit Flag
-	ret
-
-.Chances
-	; 6.25% 12.1% 24.6% 33.2% 49.6% 49.6% 49.6%
-	db $11,  $20,  $40,  $55,  $80,  $80,  $80
-	;   0     1     2     3     4     5     6
-
-
-; high critical hit moves
-INCLUDE "data/high_crit_moves.asm"
+	jpab CriticalHitTest_
 
 
 ; function to determine if Counter hits and if so, how much damage it does
@@ -4964,8 +4892,7 @@ ApplyAttackToEnemyPokemon:
 	call CalculateSuperFangDamage
 	jr ApplyDamageToEnemyPokemon
 .specialDamage
-	ld hl, wBattleMonLevel
-	call CalculateSpecialMoveDamage
+	callab CalculateSpecialMoveDamage_
 	jr ApplyDamageToEnemyPokemon
 
 ApplyDamageToEnemyPokemon:
@@ -5039,8 +4966,7 @@ ApplyAttackToPlayerPokemon:
 	call CalculateSuperFangDamage
 	jr ApplyDamageToPlayerPokemon
 .specialDamage
-	ld hl, wEnemyMonLevel
-	call CalculateSpecialMoveDamage
+	callab CalculateSpecialMoveDamage_
 	jr ApplyDamageToPlayerPokemon
 
 ApplyDamageToPlayerPokemon:
@@ -5113,42 +5039,10 @@ CalculateSuperFangDamage:
 	ld [de], a
 	ret
 
-; hl = attacker's level. Handles Seismic Toss, Night Shade, SonicBoom,
-; Dragon Rage and Psywave, and writes the 16-bit result to wDamage.
-CalculateSpecialMoveDamage:
-	ld a, [hl]
-	ld b, a
-	call GetCurrentMoveID
-	cp SEISMIC_TOSS
-	jr z, .storeDamage
-	cp NIGHT_SHADE
-	jr z, .storeDamage
-	ld b, SONICBOOM_DAMAGE
-	cp SONICBOOM
-	jr z, .storeDamage
-	ld b, DRAGON_RAGE_DAMAGE
-	cp DRAGON_RAGE
-	jr z, .storeDamage
-	; Psywave
-	ld a, [hl]
-	ld b, a
-	srl a
-	add b
-	ld b, a
-.loop
-	call BattleRandom
-	and a
-	jr z, .loop
-	cp b
-	jr nc, .loop
-	ld b, a
-.storeDamage
-	ld hl, wDamage
-	xor a
-	ld [hli], a
-	ld a, b
-	ld [hl], a
-	ret
+; BATTLE-5.61.20: fixed/special-damage move rules live in bank $34.
+; CalculateSpecialMoveDamage_ selects the acting side's level itself and writes
+; the result directly to wDamage.
+
 
 AttackSubstitute:
 ; Unlike the two ApplyAttackToPokemon functions, Attack Substitute is shared by player and enemy.
@@ -7139,112 +7033,10 @@ SleepEffect:
 	jpab SleepEffect_
 
 PoisonEffect:
-	ld hl, wEnemyMonStatus
-	ld de, wPlayerMoveEffect
-	ld a, [H_WHOSETURN]
-	and a
-	jr z, .poisonEffect
-	ld hl, wBattleMonStatus
-	ld de, wEnemyMoveEffect
-.poisonEffect
-	call CheckTargetSubstitute
-	jp nz, .noEffect ; can't poison a substitute target
-	ld a, [hli]
-	ld b, a
-	and a
-	jr nz, .noEffect ; miss if target is already statused
-	ld a, [hli]
-	cp POISON ; can't poison a poison-type target
-	jr z, .noEffect
-	cp STEEL ; can't poison a steel-type target
-	jr z, .noEffect
-	ld a, [hld]
-	cp POISON ; can't poison a poison-type target
-	jr z, .noEffect
-	cp STEEL ; can't poison a steel-type target
-	jr z, .noEffect
-	ld a, [de]
-	cp POISON_SIDE_EFFECT1
-	ld b, $34 ; ~20% chance of poisoning
-	jr z, .sideEffectTest
-	cp POISON_SIDE_EFFECT2
-	ld b, $67 ; ~40% chance of poisoning
-	jr z, .sideEffectTest
-	cp POISON_FANG_EFFECT
-	ld b, $67 ; ~40% chance of poisoning
-	jr z, .sideEffectTest
-	push hl
-	push de
-	call MoveHitTest ; apply accuracy tests
-	pop de
-	pop hl
-	ld a, [wMoveMissed]
-	and a
-	jr nz, .didntAffect
-	jr .inflictPoison
-.sideEffectTest
-	call BattleRandom
-	cp b ; was side effect successful?
-	ret nc
-.inflictPoison
-	dec hl
-	set 3, [hl] ; mon is now poisoned
-	push de
-	ld a, [H_WHOSETURN]
-	and a
-	ld b, ANIM_C7
-	ld hl, wPlayerBattleStatus3
-	ld de, wPlayerToxicCounter
-	jr nz, .ok
-	ld b, ANIM_A9
-	ld hl, wEnemyBattleStatus3
-	ld de, wEnemyToxicCounter
-.ok
-	call GetCurrentMoveID
-	cp POISON_FANG
-	jr z, .badlyPoison
-	cp TOXIC
-	jr nz, .normalPoison ; done if move is not Toxic
-.badlyPoison
-	set BadlyPoisoned, [hl] ; else set Toxic battstatus
-	xor a
-	ld [de], a
-	ld hl, BadlyPoisonedText
-	jr .continue
-.normalPoison
-	ld hl, PoisonedText
-.continue
-	pop de
-	ld a, [de]
-	cp POISON_EFFECT
-	jr z, .regularPoisonEffect
-	ld a, b
-	call PlayBattleAnimation2
-	jp PrintText
-.regularPoisonEffect
-	; BAS-5.51.01: PoisonEffect prepares its result text pointer in HL before
-	; the move animation. Preserve that legacy caller state across the banked
-	; animation path without changing the animation ABI for unrelated skills.
-	push hl
-	call PlayCurrentMoveAnimation2
-	pop hl
-	jp PrintText
-.noEffect
-	ld a, [de]
-	cp POISON_EFFECT
-	ret nz
-.didntAffect
-	ld c, 50
-	call DelayFrames
-	jp PrintDidntAffectText
+	; BATTLE-5.61.20: keep the MoveEffectPointerTable entry local to Bank F,
+	; while Poison/Toxic/Poison Fang behavior lives with the other move effects.
+	jpab PoisonEffect_
 
-PoisonedText:
-	TX_FAR _PoisonedText
-	db "@"
-
-BadlyPoisonedText:
-	TX_FAR _BadlyPoisonedText
-	db "@"
 
 DrainHPEffect:
 	jpab DrainHPEffect_
