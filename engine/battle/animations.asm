@@ -2159,6 +2159,19 @@ AnimationFlashEnemyMonPic:
 	jp CallWithTurnFlipped
 
 AnimationShowMonPic:
+	; BATTLE-5.61.19: a special Fly/Dig hit may deal damage without ending the
+	; target's semi-invulnerable state. Mirror Gen II's ShowMon guard: while the
+	; mon is still Invulnerable, keep its battle picture hidden and preserve the
+	; original three-frame timing. Its own charge continuation clears the bit
+	; before the second-turn animation, so Fly/Dig still reappear normally then.
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerBattleStatus1]
+	jr z, .checkInvulnerable
+	ld a, [wEnemyBattleStatus1]
+.checkInvulnerable
+	bit Invulnerable, a
+	jp nz, Delay3
 	xor a
 	call GetTileIDList
 	call GetMonSpriteTileMapPointerFromRowCount
