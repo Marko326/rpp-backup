@@ -237,6 +237,9 @@ BattleAnimDelayFramesMaybeCarry:
 ; changes into the impact splash, which keeps the authored hit timing intact.
 ; Acid / Sludge retain their total keyframe delay but move during the final four
 ; hold VBlanks so the projectile remains quick instead of drifting slowly.
+; ANM-5.61.27 smooths only their $14 mode-4 impact-droplet legs and, like
+; Swift's edge-exit tail, extrapolates each final droplet along its last segment
+; during the existing hold frames before cleanup. Other $14 users stay legacy.
 ;
 ; Dedicated / extended move recipes may reuse the same verified allowlist, so
 ; Moonblast, Gunk Shot, Sludge Wave and Mud Bomb inherit only already-approved
@@ -262,11 +265,6 @@ SmoothBattleAnimDelayFrames::
 	; Extended recipes may reuse this helper, but only when their active
 	; Subanimation is already in the verified allowlist below.
 
-	; Only mode-0 compact subentries are safe for this lightweight OAM tween.
-	ld a,[wFBMode]
-	and a
-	jp nz,.legacyDelay
-
 	ld a,[wSubAnimFrameDelay]
 	and a
 	jp z,.legacyDelay
@@ -283,6 +281,35 @@ SmoothBattleAnimDelayFrames::
 	bit 0,c
 	jp nz,.legacyDelay
 	srl c
+
+	; ANM-5.61.27: Subanimation $14 is shared by several moves. Allow its
+	; persistent mode-4 legs, plus the final mode-0 droplet frame needed for
+	; Swift-style edge extrapolation, only for ordinary Acid / Sludge.
+	ld a,[wFBMode]
+	and a
+	jr z,.checkImpactMode0
+	cp 4
+	jp nz,.legacyDelay
+	ld a,c
+	cp $14
+	jp nz,.legacyDelay
+	push bc
+	call SmoothBattleAnimIsAcidSludgeImpact
+	pop bc
+	jp nz,.legacyDelay
+	jr .motionAllowed
+
+.checkImpactMode0
+	ld a,c
+	cp $14
+	jr nz,.checkStandardWhitelist
+	push bc
+	call SmoothBattleAnimIsAcidSludgeImpact
+	pop bc
+	jp nz,.legacyDelay
+	jr .motionAllowed
+
+.checkStandardWhitelist
 	ld hl,SmoothBattleAnimSubanimationIDs
 .checkWhitelist
 	ld a,[hli]
@@ -290,13 +317,13 @@ SmoothBattleAnimDelayFrames::
 	jp z,.legacyDelay
 	cp c
 	jr nz,.checkWhitelist
+.motionAllowed
 
-	; Swift gets one extra case: at the end of each star trajectory, continue
-	; along the previous segment during the existing hold frames so the star
-	; actually exits the screen instead of disappearing on the right edge.
+	; Swift and Acid / Sludge $14 may use a final velocity tail: continue the
+	; previous segment during existing hold frames before OAM cleanup.
 	ld a,[wSubAnimCounter]
 	cp 2
-	jp c,.trySwiftTail
+	jp c,.tryMotionTail
 
 	; Locate the current compact subentry and remember its FrameBlock ID.
 	ld a,[wSubAnimSubEntryAddr]
@@ -304,10 +331,22 @@ SmoothBattleAnimDelayFrames::
 	ld a,[wSubAnimSubEntryAddr + 1]
 	ld h,a
 	ld a,[hl]
-	bit 7,a
-	jp nz,.legacyDelay
+	ld e,a                           ; preserve packed-mode marker
 	and $7f
 	ld b,a
+	bit 7,e
+	jr z,.currentEntryReady
+	; Only the verified $14 mode-4 droplet legs may reach this packed path.
+	ld a,c
+	cp $14
+	jp nz,.legacyDelay
+	inc hl
+	ld a,[hl]
+	and $c0
+	cp $c0                           ; packed mode 4
+	jp nz,.legacyDelay
+	dec hl
+.currentEntryReady
 
 	; Find the next keyframe in playback order. Transform 4 reverses the compact
 	; list; every other transform advances normally.
@@ -322,14 +361,32 @@ SmoothBattleAnimDelayFrames::
 	dec hl
 .gotNextSubentry
 	ld a,[hli]
-	bit 7,a
-	jp nz,.legacyDelay
+	ld e,a                           ; preserve packed marker for coordinate decode
 	and $7f
 	cp b
+	jp nz,.tryMotionTail
+	bit 7,e
+	jr z,.nextMode0Coord
+	; $14 mode-4 -> mode-4/mode-0 is the only packed continuous leg approved.
+	ld a,c
+	cp $14
 	jp nz,.legacyDelay
-
-	; Byte 1 is a direct BaseCoord ID for a mode-0 compact subentry.
 	ld a,[hl]
+	ld e,a
+	and $c0
+	cp $c0
+	jp nz,.legacyDelay
+	ld a,e
+	and $3f
+	ld e,a
+	ld d,0
+	ld hl,SubanimationCoordTable
+	add hl,de
+	ld a,[hl]
+	jr .resolveNextBaseCoord
+.nextMode0Coord
+	ld a,[hl]
+.resolveNextBaseCoord
 	ld l,a
 	ld h,0
 	add hl,hl
@@ -357,20 +414,25 @@ SmoothBattleAnimDelayFrames::
 	ld a,d
 	call SmoothBattleAnimAbsA
 	cp 33
-	jp nc,.trySwiftTail
+	jp nc,.tryMotionTail
 	ld a,e
 	call SmoothBattleAnimAbsA
 	cp 33
-	jp nc,.trySwiftTail
+	jp nc,.tryMotionTail
 	jp .applyTransform
 
-.trySwiftTail
-	; Only Swift may extrapolate.  Other allowlisted animations keep their
-	; original final-keyframe hold and disappearance behavior.
+.tryMotionTail
+	; Swift uses this to leave the screen. ANM-5.61.27 applies the same final
+	; velocity extrapolation only to Acid / Sludge $14 impact droplets.
 	call SmoothBattleAnimIsSwift
+	jr z,.tailEligible
+	call SmoothBattleAnimIsSubanimation14
 	jp nz,.legacyDelay
+	call SmoothBattleAnimIsAcidSludgeImpact
+	jp nz,.legacyDelay
+.tailEligible
 
-	; Current compact entry, mode 0 only.
+	; Tail sources themselves must be cleanup-capable mode-0 entries.
 	ld a,[wSubAnimSubEntryAddr]
 	ld l,a
 	ld a,[wSubAnimSubEntryAddr + 1]
@@ -380,6 +442,13 @@ SmoothBattleAnimDelayFrames::
 	jp nz,.legacyDelay
 	and $7f
 	ld b,a
+	; Acid / Sludge may extrapolate only the one-sprite droplet FrameBlock $31.
+	call SmoothBattleAnimIsSwift
+	jr z,.tailCurrentReady
+	ld a,b
+	cp $31
+	jp nz,.legacyDelay
+.tailCurrentReady
 
 	; Read the previous keyframe in playback order and require the same object.
 	ld a,[wSubAnimTransform]
@@ -393,14 +462,30 @@ SmoothBattleAnimDelayFrames::
 	inc hl
 .gotSwiftPrevious
 	ld a,[hli]
-	bit 7,a
-	jp nz,.legacyDelay
+	ld e,a                           ; previous packed marker, if any
 	and $7f
 	cp b
 	jp nz,.legacyDelay
-
-	; Resolve previous BaseCoord to raw Y/X.
+	bit 7,e
+	jr z,.tailPreviousMode0Coord
+	; The Acid / Sludge final droplet follows a packed mode-4 entry. Decode its
+	; coordinate exactly as PlaySubanimation does before extending that velocity.
 	ld a,[hl]
+	ld e,a
+	and $c0
+	cp $c0
+	jp nz,.legacyDelay
+	ld a,e
+	and $3f
+	ld e,a
+	ld d,0
+	ld hl,SubanimationCoordTable
+	add hl,de
+	ld a,[hl]
+	jr .resolveTailPreviousBaseCoord
+.tailPreviousMode0Coord
+	ld a,[hl]
+.resolveTailPreviousBaseCoord
 	ld l,a
 	ld h,0
 	add hl,hl
@@ -518,8 +603,15 @@ SmoothBattleAnimDelayFrames::
 .startTweenWindow
 	ld b,c                           ; intermediate movement updates
 	ld a,c
-	inc a
-	ld c,a                           ; denominator = active updates + 1
+	; Ordinary mode-0 frames include AnimationCleanOAM's final VBlank, matching
+	; Swift's tail timing. Persistent mode 4 has no cleanup VBlank, so use the
+	; delay count itself and reach the authored next anchor without a final snap.
+	ld c,a
+	ld a,[wFBMode]
+	cp 4
+	jr z,.tweenDenominatorReady
+	inc c
+.tweenDenominatorReady
 .initTweenAccumulators
 	xor a
 	ld h,a                           ; Y DDA accumulator
@@ -670,6 +762,27 @@ SmoothBattleAnimIsSwift:
 	srl e
 	ld a,e
 	cp $3f
+	ret
+
+; Z only while the active compact Subanimation is $14.
+SmoothBattleAnimIsSubanimation14:
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $14)
+	ret nz
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $14)
+	ret
+
+; ANM-5.61.27: $14 is shared widely, so smooth/tail handling is restricted to
+; ordinary Acid / Sludge command streams rather than every move that reuses it.
+SmoothBattleAnimIsAcidSludgeImpact:
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ret nz
+	ld a,[wAnimationID]
+	cp ACID
+	ret z
+	cp SLUDGE
 	ret
 
 ; Translate every sprite belonging to the currently drawn FrameBlock by one

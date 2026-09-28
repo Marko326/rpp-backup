@@ -2715,6 +2715,9 @@ AnimationCleanOAMSeamlessBody::
 ; Every carried pair must finish the source on a cleanup-capable frame and be
 ; checked so source + target OAM stays within 40 sprites / scanline limits.
 SeamlessBattleAnimStagePairs:
+	; ANM-5.61.27: Sludge uses the same adjacent $13 -> $14 stages and tileset
+	; as Acid, so keep the boundary pose instead of clearing/reloading between them.
 	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
+	db SLUDGE,       $13, $14, 0      ; same two-stage poison animation as Acid
 	db SHADOW_PUNCH, $05, SEAMLESS_CUSTOM_TARGET, 12 ; 9-sprite fist through 4x3-frame poof
 	db $ff
