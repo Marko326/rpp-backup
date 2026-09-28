@@ -7,6 +7,8 @@
 ; 03: learn TM/HM menu
 ; 04: swap pokemon positions menu
 ; 05: use evolution stone on pokemon menu
+; 06: move tutor menu
+; 07: START -> Pokémon normal menu (SELECT shortcut scope)
 ; otherwise, it is a message ID
 ; f0: poison healed
 ; f1: burn healed
@@ -269,6 +271,7 @@ PartyMenuMessagePointers:
 	dw PartyMenuSwapMonText
 	dw PartyMenuItemUseText
 	dw PartyMenuUseTMText
+	dw PartyMenuNormalText ; START_PARTY_MENU
 
 PartyMenuNormalText:
 	TX_FAR _PartyMenuNormalText

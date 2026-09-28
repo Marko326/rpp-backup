@@ -430,9 +430,31 @@ PartyMenuInitState::
 	ld [wForcePlayerToChooseMon], a
 	inc a ; a = A_BUTTON
 .next
+	; MENU-5.61.17: SELECT belongs only to START -> Pokémon. Other callers may
+	; use NORMAL_PARTY_MENU too, so the dedicated START type is the scope guard.
+	ld b, a
+	ld a, [wIsInBattle]
+	and a
+	jr nz, .restoreWatchedKeys
+	ld a, [wPartyMenuTypeOrMessageID]
+	cp START_PARTY_MENU
+	jr nz, .restoreWatchedKeys
+	ld a, b
+	or SELECT
+	jr .storeWatchedKeys
+.restoreWatchedKeys
+	ld a, b
+.storeWatchedKeys
 	ld [hli], a ; menu watched keys
 	pop af
 	ld [hl], a ; old menu item ID
+	ret
+
+SetStartPartyMenuType::
+	; MENU-5.61.17: START -> Pokémon gets a distinct menu type so SELECT cannot
+	; leak into other callers which also use NORMAL_PARTY_MENU.
+	ld a, START_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID], a
 	ret
 
 HandlePartyMenuInput::
@@ -443,6 +465,27 @@ HandlePartyMenuInput::
 	call HandleMenuInput_
 	call PlaceUnfilledArrowMenuCursor
 	ld b,a
+	; MENU-5.61.17: SELECT swaps the highlighted non-battle Party member with
+	; slot 1. hJoyPressed makes a held SELECT identical to one short press.
+	bit BIT_SELECT, b
+	jr z, .partyShortcutDone
+	ld a, [wMenuWatchedKeys]
+	bit BIT_SELECT, a
+	jr z, .partyShortcutDone
+	ld a, [hJoyPressed]
+	bit BIT_SELECT, a
+	jr nz, .freshPartySelect
+	; Ignore low-sensitivity SELECT repeats. If A/B was newly combined with the held
+	; key, keep that normal action; direction-only repeats have already moved cursor.
+	res BIT_SELECT, b
+	ld a, b
+	and A_BUTTON | B_BUTTON
+	jr nz, .partyShortcutDone
+	jr HandlePartyMenuInput
+.freshPartySelect
+	callba QuickSwapPartyMonWithFirst
+	jr HandlePartyMenuInput
+.partyShortcutDone
 	xor a
 	ld [wPartyMenuAnimMonEnabled],a
 	ld a,[wCurrentMenuItem]
@@ -484,12 +527,12 @@ HandlePartyMenuInput::
 	ld [wMenuItemToSwap],a
 	ld [wPartyMenuTypeOrMessageID],a
 	call RedrawPartyMenu
-	jr HandlePartyMenuInput
+	jp HandlePartyMenuInput
 .handleSwap
 	ld a,[wCurrentMenuItem]
 	ld [wWhichPokemon],a
 	callba SwitchPartyMon
-	jr HandlePartyMenuInput
+	jp HandlePartyMenuInput
 
 DrawPartyMenu::
 	ld hl, DrawPartyMenu_
@@ -1490,8 +1533,10 @@ DisplayListMenuID::
 	or D_LEFT | D_RIGHT
 .storeWatchedKeys
 	ld [wMenuWatchedKeys],a
-	ld a,[wBagPocketActive]
-	cp BAG_POCKET_MODE_START
+	; MENU-5.61.17: only the categorized START Bag may opt into START.
+	; Other ITEMLISTMENU callers keep their historical input behavior.
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
 	jr nz,.watchedKeysReady
 	callba UpdateBagPocketStartShortcutWatchedKey
 .watchedKeysReady
@@ -1634,15 +1679,30 @@ skipStoringItemName:
 checkOtherKeys: ; check B, START, SELECT, directions
 	bit 1,a ; was the B button pressed?
 	jp nz,ExitListMenu ; if so, exit the menu
-	bit 3,a ; was START newly pressed? held/repeated START was filtered above
+	bit 3,a ; was START pressed?
 	jr z,.notStart
+	; MENU-5.61.17: consume the Bag shortcut only on the physical press edge.
+	; JoypadLowSensitivity may repeat a held START; repeated states are masked below
+	; so holding the key never jumps again and direction combos still work normally.
+	ld b,a
+	ld a,[hJoyPressed]
+	bit BIT_START,a
+	ld a,b
+	jr nz,.freshBagStart
+	; A repeated START is not a command. Remove it before continuing so a held
+	; START cannot be mistaken for UP by the direction fallback below.
+	res BIT_START,a
+	and a
+	jp z,DisplayListMenuIDLoop.input
+	jr .notStart
+.freshBagStart
 	; HandleMenuInput returns the complete hJoy5 state once any watched key fires.
 	; Only consume START when this menu explicitly watches it; otherwise combos such
 	; as START+RIGHT must continue through the normal direction/SELECT handling.
 	ld hl,wMenuWatchedKeys
 	bit BIT_START,[hl]
 	jr z,.notStart
-	callba JumpBagPocketToHM01
+	callba HandleBagStartShortcut
 	jp DisplayListMenuIDLoop
 .notStart
 	bit 2,a ; was the select button pressed?

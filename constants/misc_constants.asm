@@ -136,6 +136,7 @@ BATTLE_PARTY_MENU    EQU 2
 TMHM_PARTY_MENU      EQU 3
 SWAP_MONS_PARTY_MENU EQU 4
 EVO_STONE_PARTY_MENU EQU 5
+START_PARTY_MENU     EQU 7 ; START -> Pokémon only; same display as normal Party
 
 ; party menu message IDs
 ANTIDOTE_MSG     EQU $F0

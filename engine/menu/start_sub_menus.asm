@@ -25,14 +25,14 @@ StartMenu_Pokemon:
 	ld [wPartyAndBillsPCSavedMenuItem],a
 	xor a
 	ld [wMenuItemToSwap],a
-	ld [wPartyMenuTypeOrMessageID],a
 	ld [wUpdateSpritesEnabled],a
+	call SetStartPartyMenuType
 	call DisplayPartyMenu
 	jr .checkIfPokemonChosen
 .loop
 	xor a
 	ld [wMenuItemToSwap],a
-	ld [wPartyMenuTypeOrMessageID],a
+	call SetStartPartyMenuType
 	call GoBackToPartyMenu
 .checkIfPokemonChosen
 	; HandlePartyMenuInput has just updated the generic cursor. Mirror it now so

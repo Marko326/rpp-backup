@@ -543,15 +543,13 @@ LoadCurrentBagPocketCursor:
 	jp LoadBagPocketCursorFromSavedPosition
 
 UpdateBagPocketStartShortcutWatchedKey::
-	; START is watched only while the categorized START Bag is on the TM/HM Pocket.
-	; Other Pockets keep START completely ignored, matching their previous behavior.
+	; MENU-5.61.17: START is scoped by menu mode, not by inventory pointer.
+	; Mart Sell and PC Deposit also point at wNumBagItems, so only the categorized
+	; START Bag may watch this shortcut; Battle and every other item list ignore it.
 	ld hl, wMenuWatchedKeys
 	res BIT_START, [hl]
 	ld a, [wBagPocketActive]
 	cp BAG_POCKET_MODE_START
-	ret nz
-	ld a, [wBagPocketCurrent]
-	cp BAG_POCKET_TM_HM
 	ret nz
 	set BIT_START, [hl]
 	ret

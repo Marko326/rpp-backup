@@ -2914,6 +2914,10 @@ INCLUDE "engine/overworld/warp_destination.asm"
 SECTION "Runtime Options Menu", ROMX, BANK[$35]
 INCLUDE "engine/menu/options_menu.asm"
 
+; MENU-5.61.17: keep Party/Bag shortcut executors out of crowded bank $35.
+SECTION "Menu Shortcut Helpers", ROMX, BANK[$3D]
+INCLUDE "engine/menu/menu_shortcuts.asm"
+
 SECTION "Map Name Sign", ROMX, BANK[$3D]
 ; Crystal-style overworld location popup lives in a fully empty expansion bank.
 INCLUDE "engine/overworld/map_name_sign.asm"
