@@ -9,8 +9,9 @@ EXT_ANIM_PUNCH_HORIZONTAL_HIT EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Bullet/Sucke
 EXT_ANIM_SHADOW_PUNCH_POOF EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Shadow Punch: centered Shadow Ball poof
 EXT_ANIM_SET_PALETTE_MODE EQU $C3 ; next byte: EXT_PALETTE_MODE_* for the next subanimation(s)
 
-EXT_PALETTE_MODE_FIXED     EQU 0 ; use the legacy per-tile animation palette map
-EXT_PALETTE_MODE_MOVE_TYPE EQU 1 ; use the dedicated 18-type dynamic OBJ palette
+EXT_PALETTE_MODE_FIXED            EQU 0 ; use the legacy per-tile animation palette map
+EXT_PALETTE_MODE_MOVE_TYPE        EQU 1 ; use the dedicated 18-type dynamic OBJ palette
+EXT_PALETTE_MODE_MOVE_TYPE_DARK   EQU 2 ; use move type colors and map OBJ color 3 to type dark
 
 EXT_FRAME_NONE        EQU 0
 EXT_FRAME_FLASH_4     EQU 1

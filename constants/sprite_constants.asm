@@ -156,8 +156,8 @@ ATK_PAL_GREEN   EQU 5
 ATK_PAL_ICE     EQU 6
 ATK_PAL_PURPLE  EQU 7
 
-; Dedicated dynamic move-type palette slots.  These are only used while an
-; expanded animation recipe explicitly enables EXT_PALETTE_MODE_MOVE_TYPE.
+; Dedicated dynamic move-type palette slots. These are only used while an
+; expanded animation recipe explicitly enables a move-type palette mode.
 ; The fixed animation gfx in each tileset do not use these slots, so loading a
 ; move-specific palette here leaves legacy animation colors unchanged.
 BATTLE_TYPE_PAL_TILESET1 EQU 5 ; wWhichBattleAnimTileset = 0

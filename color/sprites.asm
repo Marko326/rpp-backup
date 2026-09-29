@@ -348,8 +348,10 @@ LoadAnimationTilesetPalettes:
 
 .checkExtendedDynamicTypePalette
 	ld a,[wExtendedAnimPaletteMode]
-	cp EXT_PALETTE_MODE_MOVE_TYPE
-	jr nz,.dynamicTypePaletteRestoreBank2
+	and a
+	jr z,.dynamicTypePaletteRestoreBank2
+	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK + 1
+	jr nc,.dynamicTypePaletteRestoreBank2
 
 .loadDynamicTypePalette
 	; Pick the current move's real type; unlike legacy palette-map 8, this new
@@ -370,6 +372,16 @@ LoadAnimationTilesetPalettes:
 	push de
 	call LoadBattleAnimTypePalette_Sprite
 	pop de
+	; ANM-5.61.39: Gunk Shot and Poison Jab use the Poison type palette, but
+	; some restored legacy material draws with OBJ color 3. DARK keeps colors 1/2
+	; intact and maps only color 3 from black to the staged type-dark color.
+	ld a,[wExtendedAnimPaletteMode]
+	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK
+	jr nz,.dynamicTypePaletteDarkDone
+	push de
+	call LoadBattleAnimTypeDarkPalette_Sprite
+	pop de
+.dynamicTypePaletteDarkDone
 	ld a,2
 	ld [rSVBK],a
 	ld hl,W2_SpritePaletteMap+$31

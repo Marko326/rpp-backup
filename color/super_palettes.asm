@@ -101,6 +101,36 @@ LoadPalette:
 	ld de,W2_BgPaletteData
 	jr startHalfPaletteTransfer
 
+; ANM-5.61.39: keep the normal type light/dark pair in OBJ colors 1/2, but
+; replace source color 3 (normally black) with the already-loaded type dark color.
+; This lets black-heavy legacy material inherit the move type without flattening
+; the whole sprite into one dark color.
+; input: e = OBJ palette slot. DE may be clobbered; BC is preserved.
+LoadBattleAnimTypeDarkPalette_Sprite:
+	ld a,[rSVBK]
+	push af
+	ld a,2
+	ld [rSVBK],a
+
+	ld a,e
+	add a
+	add a
+	add a
+	add LOW(W2_BgPaletteData + $40 + 4) ; OBJ palette color 2
+	ld l,a
+	ld h,HIGH(W2_BgPaletteData + $40 + 4)
+	ld a,[hli]
+	ld d,a
+	ld a,[hli]
+	; HL now points at OBJ palette color 3.
+	ld [hl],d
+	inc hl
+	ld [hl],a
+
+	pop af
+	ld [rSVBK],a
+	ret
+
 LoadPokemonPalette_Sprite:
 	ld hl, PokemonPaletteTable
 	jr LoadPalette_Sprite

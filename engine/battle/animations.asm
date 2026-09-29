@@ -985,7 +985,7 @@ PlayAnimation:
 	jr .animationLoop
 .setExtendedPaletteMode
 	ld a,[hli]
-	cp EXT_PALETTE_MODE_MOVE_TYPE + 1
+	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK + 1
 	ret nc ; unknown palette mode: fail closed
 	ld [wExtendedAnimPaletteMode],a
 	jr .animationLoop

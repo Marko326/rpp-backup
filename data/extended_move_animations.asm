@@ -370,6 +370,8 @@ DirectMoveAnimationOverrides:
 	dw VoltTackleDirectAnim
 	db GIGA_IMPACT
 	dw GigaImpactDirectAnim
+	db GUNK_SHOT
+	dw GunkShotDirectAnim
 	db $FF
 
 LoadLegacyMoveAnimationOverride:
@@ -1619,9 +1621,13 @@ WoodHammerExtAnimEnd:
 PoisonJabExtAnim:
 	db PoisonJabExtAnimEnd - PoisonJabExtAnimData
 PoisonJabExtAnimData:
-	db $06,$27,$00
-	db $46,$04,$04
-	db $46,$7B,$14
+	; ANM-5.61.39: keep the restored $00/$14 two-stage material. DARK preserves
+	; the normal Poison light/dark pair and remaps only source color 3 from black
+	; to the Poison type-dark color.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE_DARK
+	db $08,$27,$00
+	db $46,$5B,$14
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 PoisonJabExtAnimEnd:
 	IF PoisonJabExtAnimEnd - PoisonJabExtAnimData > 30
