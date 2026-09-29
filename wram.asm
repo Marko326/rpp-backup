@@ -2103,8 +2103,9 @@ wTownMapSpriteBlinkingEnabled:: ; d09e
 ; non-zero when enabled. causes nest locations to blink on and off.
 ; the town selection cursor will blink regardless of what this value is
 
-; Battle-only alias: non-zero while a dedicated expanded-move recipe is staged
-; in wBuffer. MoveAnimation clears the same byte on every exit.
+; Battle-only animation script mode. MoveAnimation clears the same byte on exit.
+; 0 = normal legacy pointer table, 1 = recipe staged in wBuffer,
+; 2 = direct bank-$1E ROM pointer stored in wBuffer[0:2] (ANM-5.61.33).
 wMoveAnimScriptLoaded:: ; d09e
 wUnusedD09B:: ; d09e
 	ds 1

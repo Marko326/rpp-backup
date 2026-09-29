@@ -1196,6 +1196,53 @@ UnusedAnim:
 	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
+; ANM-5.61.33: restored directly from the legacy project. These scripts stay
+; in bank $1E beside PlayAnimation, so Flare Blitz's 32-byte stream does not need
+; a compression-only command just to fit the 30-byte extended recipe buffer.
+FlareBlitzDirectAnim:
+	db SE_DARK_SCREEN_PALETTE, $48
+	db SE_SPIRAL_BALLS_INWARD, $FF
+	db SE_MOVE_MON_HORIZONTALLY, $FF
+	db $46,FIRE_BLAST - 1,$20
+	db $46,$FF,$20
+	db $46,$FF,$0C
+	db $46,$FF,$0D
+	db $46,HEADBUTT - 1,$05
+	db SE_HIDE_ENEMY_MON_PIC, $FF
+	db SE_SHAKE_SCREEN, $FF
+	db SE_SHOW_ENEMY_MON_PIC, $FF
+	db SE_RESET_MON_POSITION, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
+	db $FF
+
+VoltTackleDirectAnim:
+	db SE_SQUISH_MON_PIC, $8E
+	db SE_SHOOT_BALLS_UPWARD, $FF
+	db SE_DARK_SCREEN_PALETTE, $56
+	db SE_DARK_SCREEN_FLASH, $FF
+	db $45,$FF,$2B
+	db $42,THUNDERBOLT - 1,$29
+	db $46,HEADBUTT - 1,$05
+	db SE_HIDE_ENEMY_MON_PIC, $FF
+	db SE_SHAKE_SCREEN, $FF
+	db SE_SHOW_ENEMY_MON_PIC, $FF
+	db SE_RESET_MON_POSITION, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
+	db $FF
+
+GigaImpactDirectAnim:
+	db SE_DARK_SCREEN_PALETTE, $48
+	db SE_SPIRAL_BALLS_INWARD, $FF
+	db SE_MOVE_MON_HORIZONTALLY, $FF
+	db $41,$04,$0A
+	db SE_HIDE_ENEMY_MON_PIC, $FF
+	db SE_SHAKE_SCREEN, $FF
+	db SE_SHOW_ENEMY_MON_PIC, $FF
+	db SE_RESET_MON_POSITION, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
+	db $FF
+
 ParalyzeAnim:
 	db $04,$13,$24
 	db $04,$13,$24

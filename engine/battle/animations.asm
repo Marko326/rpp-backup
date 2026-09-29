@@ -925,8 +925,20 @@ PlayAnimation:
 	ld [wBattleAnimStageCarryTimer],a
 	ld a,[wMoveAnimScriptLoaded]
 	and a
+	jr z,.legacyAnimation
+	dec a
+	jr z,.stagedAnimation
+	; ANM-5.61.33 mode 2: wBuffer holds a bank-$1E ROM script pointer. The
+	; interpreter is already in the same bank, so no staging-size limit applies.
+	ld a,[wBuffer]
+	ld l,a
+	ld a,[wBuffer + 1]
+	ld h,a
+	jr .animationLoop
+.stagedAnimation
 	ld hl,wBuffer
-	jr nz,.animationLoop ; dedicated recipe staged by PrepareCurrentMoveAnimation
+	jr .animationLoop
+.legacyAnimation
 	ld a,[wAnimationID] ; get legacy animation number
 	dec a
 	ld l,a
@@ -1082,6 +1094,15 @@ AnimPlaySFX:
 	xor a
 	ld d, a
 
+	; ANM-5.61.33: direct legacy-project scripts (mode 2) keep the audio behavior
+	; they were authored against: a new SFX replaces the previous SFX channels,
+	; and the later Gen1 dynamic pitch/tempo path is not enabled for that launch.
+	; This prevents Volt Tackle's electric pulse channels from leaking into the
+	; following Headbutt impact and restores its original launch sound.
+	ld a,[wMoveAnimScriptLoaded]
+	cp 2
+	jr z,.legacyDirect
+
 	; [修复] wSFXDontWait 原本只有 Growl/Roar 临时使用值 1。
 	; 这里临时使用值 2 作为“技能动画 SFX”启动标记，只在 PlaySFX 调用期间存在；
 	; crysaudio 据此把 MoveSoundTable 的 pitch/tempo 写入新建的 SFX channel。
@@ -1089,6 +1110,12 @@ AnimPlaySFX:
 	ld a, 2
 	ld [wSFXDontWait], a
 	call PlaySFX
+	jr .clearMarker
+.legacyDirect
+	xor a
+	ld [wSFXDontWait], a
+	call PlaySFX
+.clearMarker
 	xor a
 	ld [wSFXDontWait], a
 
@@ -1235,6 +1262,11 @@ MoveAnimation:
 	ld c,30
 	call DelayFrames
 .next4
+	; ANM-5.61.33: direct-script mode applies only to the authored move animation.
+	; Clear it before the generic hit/effectiveness animation so its SFX keeps the
+	; normal Gen1 battle-SFX modifier/coexistence path.
+	xor a
+	ld [wMoveAnimScriptLoaded],a
 	call PlayApplyingAttackAnimation ; shake the screen or flash the pic in and out (to show damage)
 .animationFinished
 	call WaitForSoundToFinish

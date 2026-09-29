@@ -4,8 +4,10 @@
 ; PrepareCurrentMoveAnimation asks this bank for a dedicated recipe by REAL move
 ; ID. Every expanded move from METAL_CLAW through MIND_BLAST now has a recipe.
 ;
-; Each recipe starts with its byte length (including the $FF terminator). The
-; command stream itself is copied into the existing 30-byte wBuffer.
+; Each staged recipe starts with its byte length (including the $FF terminator)
+; and is copied into the existing 30-byte wBuffer. ANM-5.61.33 restores the
+; three longer legacy-project scripts through direct bank-$1E ROM pointers, so
+; their authored command streams are no longer constrained by that staging size.
 
 ; ROM0 relief: moved here from SECTION "Home" (movedex_v1.2.7 and later).
 ; This file is included by main.asm inside bank $3A, alongside the dedicated
@@ -35,6 +37,12 @@ PrepareCurrentMoveAnimation::
 	cp NUM_ATTACKS
 	ret nc
 	ld e, a
+	; ANM-5.61.33: selected legacy-project animations live beside the interpreter
+	; in bank $1E and execute directly from ROM. This restores their original
+	; command streams without inventing compression-only animation commands.
+	call LoadDirectMoveAnimationOverride
+	ret c
+	ld a, e
 	cp METAL_CLAW
 	jr nc, .expandedMove
 	; Selected original moves can opt into shared family recipes by real move ID
@@ -324,6 +332,45 @@ GoldShadowBallWaveOffsets:
 	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
 	db $00,$06,$0B,$0F,$10,$0F,$0B,$06
 	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
+
+LoadDirectMoveAnimationOverride:
+; input: e = real move ID
+; output: carry set and wMoveAnimScriptLoaded = 2 when a direct bank-$1E script
+;         pointer has been written to wBuffer; carry clear otherwise.
+;
+; Mode 2 deliberately keeps only the 16-bit ROM pointer in wBuffer. The actual
+; animation remains in bank $1E, where PlayAnimation can read it directly.
+	ld hl, DirectMoveAnimationOverrides
+.loop
+	ld a, [hli]
+	cp $FF
+	jr z, .notFound
+	cp e
+	jr z, .found
+	inc hl
+	inc hl
+	jr .loop
+.found
+	ld a, [hli]
+	ld [wBuffer], a
+	ld a, [hl]
+	ld [wBuffer + 1], a
+	ld a, 2
+	ld [wMoveAnimScriptLoaded], a
+	scf
+	ret
+.notFound
+	and a ; clear carry
+	ret
+
+DirectMoveAnimationOverrides:
+	db FLARE_BLITZ
+	dw FlareBlitzDirectAnim
+	db VOLT_TACKLE
+	dw VoltTackleDirectAnim
+	db GIGA_IMPACT
+	dw GigaImpactDirectAnim
+	db $FF
 
 LoadLegacyMoveAnimationOverride:
 ; input: e = real move ID below METAL_CLAW
