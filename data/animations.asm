@@ -263,7 +263,12 @@ VicegripAnim:
 	db $FF
 
 GuillotineAnim:
-	db $06,$0B,$2A
+	; ANM-5.61.40: restore two opening clamp beats, then reuse the same bilateral
+	; blade material for the final inward close. Delay 6 keeps the Guillotine-only
+	; short flash on the final closing subanimation.
+	db $05,$13,$23
+	db $05,$13,$23
+	db $06,$0B,$56
 	db $FF
 
 RazorWindAnim:
@@ -501,7 +506,9 @@ SurfAnim:
 
 IceBeamAnim:
 	db $03,$39,$2E
-	db $10,$FF,$2F
+	; ANM-5.61.40: restore sound $05 for Subanimation2f; PlayIcePillarSound
+	; adds its extra repeat during the ice-pillar sequence.
+	db $10,$05,$2F
 	db $FF
 
 BlizzardAnim:
@@ -964,7 +971,10 @@ SoftboiledAnim:
 	db $FF
 
 HiJumpKickAnim:
+	; ANM-5.61.40: restore the old-project lunge, impact and return sequence.
+	db SE_MOVE_MON_HORIZONTALLY, $FF
 	db $46,$87,$04
+	db SE_RESET_MON_POSITION, $FF
 	db $FF
 
 GlareAnim:
@@ -1052,8 +1062,14 @@ AcidArmorAnim:
 	db $FF
 
 CrabHammerAnim:
-	db $46,$97,$05
-	db $06,$FF,$2A
+	; ANM-5.61.40: restore two water sweeps, two clamp hits and the final hammer.
+	; Subanimations57/58 add Crabhammer-only Y-3 copies of FrameBlock0C to thicken
+	; the water bands without changing the shared sweep data or animation gfx.
+	db $06,$34,$57
+	db $06,$34,$58
+	db $06,$13,$23
+	db $06,$13,$23
+	db $43,$0B,$2A
 	db $FF
 
 ExplosionAnim:
@@ -1099,9 +1115,17 @@ ConversionAnim:
 	db $FF
 
 TriAttackAnim:
+	; ANM-5.61.40: keep the existing Tri Attack opening, then continue with the
+	; old-project fire -> ice -> electric stages and their palette transitions.
 	db SE_DARK_SCREEN_FLASH, $A0
 	db $46,$FF,$4D
 	db SE_DARK_SCREEN_FLASH, $FF
+	db $46,$34,$0E
+	db SE_LIGHT_SCREEN_PALETTE, $FF
+	db $06,$05,$2F
+	db SE_DARK_SCREEN_PALETTE, $56
+	db $43,$FF,$2B
+	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
 SuperFangAnim:
@@ -1296,7 +1320,7 @@ ThrowBaitAnim:
 ;   the mode in byte 1 bits 7-6. Byte 0 bit 7 marks the packed-mode form.
 ; Keep SubanimationCoordTable append-only: existing coordinate indices are stable.
 ; To add a new nonzero-mode BaseCoord, append it to SubanimationCoordTable and
-; add one matching lookup clause below using the next free index (currently 52-63).
+; add one matching lookup clause below using the next free index (currently 55-63).
 subentry: MACRO
 	assert (\1) < $80
 	assert (\3) == 0 || (\3) == 2 || (\3) == 3 || (\3) == 4
@@ -1460,6 +1484,15 @@ subentry: MACRO
 		IF (\2) == $48
 			DEF _subanim_coord_index = 51
 		ENDC
+		IF (\2) == $b4
+			DEF _subanim_coord_index = 52
+		ENDC
+		IF (\2) == $b5
+			DEF _subanim_coord_index = 53
+		ENDC
+		IF (\2) == $b6
+			DEF _subanim_coord_index = 54
+		ENDC
 		assert _subanim_coord_index >= 0
 		assert _subanim_coord_index < $40
 		db $80 | (\1), (((\3) - 1) << 6) | _subanim_coord_index
@@ -1553,6 +1586,9 @@ SubanimationPointers:
 	dw Subanimation53
 	dw Subanimation54
 	dw Subanimation55
+	dw Subanimation56
+	dw Subanimation57
+	dw Subanimation58
 
 Subanimation04:
 	db $43
@@ -2091,6 +2127,45 @@ Subanimation23:
 	subentry $51, $2d, 0
 	subentry $51, $6e, 0
 
+; ANM-5.61.40: Guillotine final close. Reuse FrameBlock51's left/right blade
+; art and progressively move both halves toward the target center.
+Subanimation56:
+	db $44
+	subentry $51, $2d, 0
+	subentry $7b, $2d, 0
+	subentry $7c, $2d, 0
+	subentry $7d, $2d, 0
+
+; ANM-5.61.40: Crabhammer-only taller first water sweep. Pair each original
+; FrameBlock0C anchor with a matching Y-3 copy without changing shared sweep data
+; or animation gfx.
+Subanimation57:
+	db $46
+	subentry $0c, $20, 2
+	subentry $0c, $b1, 0
+	subentry $0c, $21, 2
+	subentry $0c, $b2, 0
+	subentry $0c, $23, 2
+	subentry $0c, $b3, 0
+
+; ANM-5.61.40: Crabhammer-only taller second water sweep. Each four-entry beat
+; keeps the upper/lower copies plus one Y-3 copy in OAM, then uses the final
+; mode-0 copy for the original six-frame hold and cleanup.
+Subanimation58:
+	db $4c
+	subentry $0c, $15, 2
+	subentry $0c, $b4, 2
+	subentry $0c, $20, 2
+	subentry $0c, $b1, 0
+	subentry $0c, $17, 2
+	subentry $0c, $b5, 2
+	subentry $0c, $21, 2
+	subentry $0c, $b2, 0
+	subentry $0c, $19, 2
+	subentry $0c, $b6, 2
+	subentry $0c, $23, 2
+	subentry $0c, $b3, 0
+
 Subanimation24:
 	db $a2
 	subentry $51, $2d, 0
@@ -2436,9 +2511,10 @@ SubanimationCoordTable:
 	db $1c,$16,$05,$0c,$11,$1b,$2f,$10,$1d,$22,$2c,$2a ; indices 24-35
 	db $99,$62,$0f,$68,$6a,$69,$73,$83,$84,$85,$01,$28 ; indices 36-47
 	db $26,$12,$1e,$48 ; indices 48-51
+	db $b4,$b5,$b6 ; indices 52-54: Crabhammer upper Y-3 copies
 SubanimationCoordTableEnd:
 
-ASSERT SubanimationCoordTableEnd - SubanimationCoordTable == 52
+ASSERT SubanimationCoordTableEnd - SubanimationCoordTable == 55
 ASSERT SubanimationCoordTableEnd - SubanimationCoordTable <= $40
 
 FrameBlockPointers:
@@ -2565,6 +2641,9 @@ FrameBlockPointers:
 	dw FrameBlock78
 	dw FrameBlock79
 	dw PunchFrameBlock ; $7A - shared Punch family 16x16 contact object
+	dw GuillotineClampMid1FrameBlock ; $7B
+	dw GuillotineClampMid2FrameBlock ; $7C
+	dw GuillotineClampClosedFrameBlock ; $7D
 
 ; FrameBlock format is as follows:
 ; first byte = number of tiles in FrameBlock
@@ -3664,6 +3743,41 @@ FrameBlock79:
 	db $01
 	db $00,$00,$4e,$00
 
+; ANM-5.61.40: inward-closing variants of FrameBlock51. Tile $35 and all flip
+; attributes stay unchanged; only the left/right X offsets converge.
+GuillotineClampMid1FrameBlock:
+	db $08
+	db $00,$08,$35,$20
+	db $08,$08,$35,$40
+	db $10,$08,$35,$00
+	db $18,$08,$35,$60
+	db $00,$38,$35,$00
+	db $08,$38,$35,$60
+	db $10,$38,$35,$20
+	db $18,$38,$35,$40
+
+GuillotineClampMid2FrameBlock:
+	db $08
+	db $00,$10,$35,$20
+	db $08,$10,$35,$40
+	db $10,$10,$35,$00
+	db $18,$10,$35,$60
+	db $00,$30,$35,$00
+	db $08,$30,$35,$60
+	db $10,$30,$35,$20
+	db $18,$30,$35,$40
+
+GuillotineClampClosedFrameBlock:
+	db $08
+	db $00,$1c,$35,$20
+	db $08,$1c,$35,$40
+	db $10,$1c,$35,$00
+	db $18,$1c,$35,$60
+	db $00,$24,$35,$00
+	db $08,$24,$35,$60
+	db $10,$24,$35,$20
+	db $18,$24,$35,$40
+
 PunchFrameBlock:
 	; Shared Punch-family object: user-selected 20x20 shadow-ring fist centered in
 	; a 24x24 / 3x3 tile canvas.  The canvas stays smaller than Headbutt-class
@@ -3857,5 +3971,26 @@ FrameBlockBaseCoords:
 	db $18,$4C
 	db $1C,$48
 	db $48,$28
+; ANM-5.61.40: Crabhammer-only Y-3 copies of the restored sweep anchors.
+; $B1-$B3 mirror the lower band ($38 -> $35); $B4-$B6 mirror the upper band
+; ($28 -> $25). X positions stay identical to the shared $0C/$0D sweep.
+CrabhammerLowerTallLeftBaseCoord:
+	db $35,$68
+CrabhammerLowerTallMidBaseCoord:
+	db $35,$78
+CrabhammerLowerTallRightBaseCoord:
+	db $35,$88
+CrabhammerUpperTallLeftBaseCoord:
+	db $25,$68
+CrabhammerUpperTallMidBaseCoord:
+	db $25,$78
+CrabhammerUpperTallRightBaseCoord:
+	db $25,$88
+ASSERT (CrabhammerLowerTallLeftBaseCoord - FrameBlockBaseCoords) / 2 == $b1
+ASSERT (CrabhammerLowerTallMidBaseCoord - FrameBlockBaseCoords) / 2 == $b2
+ASSERT (CrabhammerLowerTallRightBaseCoord - FrameBlockBaseCoords) / 2 == $b3
+ASSERT (CrabhammerUpperTallLeftBaseCoord - FrameBlockBaseCoords) / 2 == $b4
+ASSERT (CrabhammerUpperTallMidBaseCoord - FrameBlockBaseCoords) / 2 == $b5
+ASSERT (CrabhammerUpperTallRightBaseCoord - FrameBlockBaseCoords) / 2 == $b6
 FrameBlock00:
 	db $00,$00

@@ -1513,6 +1513,8 @@ PlaySubanimationEntries:
 .skipFrameBlockAnchorCompensation
 	call DrawFrameBlock
 	call DoSpecialEffectByAnimationId ; run animation-specific function (if there is one)
+	; ANM-5.61.40: restore the old-project repeated ice-pillar SFX cadence.
+	call PlayIcePillarSound
 	ld a,[wSubAnimCounter]
 	dec a
 	ld [wSubAnimCounter],a
@@ -1533,6 +1535,60 @@ PlaySubanimationEntries:
 	ld a,l
 	ld [wSubAnimSubEntryAddr],a
 	jp .loop
+
+; ANM-5.61.40: repeated ice-pillar SFX helper shared by Ice Shard, Ice Beam
+; and Tri Attack's ice stage. Sound $05 starts with the subanimation; this adds
+; the extra repeats for Subanimation2f/3f at their configured frame points.
+PlayIcePillarSound:
+	ld a,[wAnimSoundID]
+	cp PAY_DAY - 1
+	ret nz
+
+	; Resolve the currently loaded Subanimation data address.
+	ld a,[wSubAnimAddrPtr + 1]
+	ld h,a
+	ld a,[wSubAnimAddrPtr]
+	ld l,a
+	ld a,[hli]
+	ld e,a
+	ld a,[hl]
+	ld d,a
+
+	; Subanimation2f: add one repeat when three entries remain.
+	ld hl,Subanimation2f
+	ld a,e
+	cp l
+	jr nz,.checkSubanimation3f
+	ld a,d
+	cp h
+	jr nz,.checkSubanimation3f
+	ld a,[wSubAnimCounter]
+	cp 1
+	ret z
+	bit 0,a
+	ret z
+	jr .playSound
+
+.checkSubanimation3f
+	; Subanimation3f: add repeats when 13 and 7 entries remain.
+	ld hl,Subanimation3f
+	ld a,e
+	cp l
+	ret nz
+	ld a,d
+	cp h
+	ret nz
+	ld a,[wSubAnimCounter]
+	cp 13
+	jr z,.playSound
+	cp 7
+	ret nz
+
+.playSound
+	ld a,PAY_DAY - 1
+	call GetMoveSound
+	call nc,AnimPlaySFX
+	ret
 
 SLUDGE_EXTRA_DRIP_PAIRS EQU 1 ; 1 = 4 total drops, 2 = 6 total drops
 
@@ -1667,7 +1723,10 @@ AnimationIdSpecialEffects:
 	dw AnimationFlashScreen
 
 	db GUILLOTINE
-	dw AnimationFlashScreen
+	dw DoGuillotineSpecialEffects
+
+	db CRABHAMMER
+	dw DoCrabhammerSpecialEffects
 
 	db MEGA_KICK
 	dw AnimationFlashScreen
@@ -2118,6 +2177,43 @@ FlashScreenLongDelay:
 	ld c,1
 .delayFrames
 	jp DelayFrames
+
+; ANM-5.61.40: Guillotine flashes only during its final closing subanimation.
+; The two opening clamp beats use delay 5; the final close uses delay 6.
+DoGuillotineSpecialEffects:
+	ld a,[wSubAnimFrameDelay]
+	cp a,6
+	ret nz
+	jp AnimationFlashScreenLegacyShort
+
+; ANM-5.61.40: Crabhammer flashes when three entries remain in the final
+; delay-3 hammer subanimation.
+DoCrabhammerSpecialEffects:
+	ld a,[wSubAnimFrameDelay]
+	cp a,3
+	ret nz
+	ld a,[wSubAnimCounter]
+	cp a,3
+	ret nz
+	jp AnimationFlashScreenLegacyShort
+
+; The old project used a one-frame inverted phase and one-frame white phase
+; for these two move-specific flashes. Keep that timing local instead of
+; changing the current global two-frame AnimationFlashScreen behavior.
+AnimationFlashScreenLegacyShort:
+	ld a,[rBGP]
+	push af
+	ld a,%00011011
+	ld [rBGP],a
+	ld c,1
+	call DelayFrames
+	xor a
+	ld [rBGP],a
+	ld c,1
+	call DelayFrames
+	pop af
+	ld [rBGP],a
+	ret
 
 AnimationFlashScreen:
 	ld a,[rBGP]

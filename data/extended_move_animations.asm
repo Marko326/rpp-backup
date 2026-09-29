@@ -1151,10 +1151,11 @@ TwisterExtAnimEnd:
 OutrageExtAnim:
 	db OutrageExtAnimEnd - OutrageExtAnimData
 OutrageExtAnimData:
-	db SE_DARK_SCREEN_FLASH,$FF
-	db $06,$62,$01
-	db $46,$FF,$05
-	db SE_SHAKE_SCREEN,$FF
+	; ANM-5.61.40: restore Thrash's original command stream for Outrage, while
+	; enabling the Dragon-type dynamic OBJ palette only for Outrage.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$24,$04
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 OutrageExtAnimEnd:
 	IF OutrageExtAnimEnd - OutrageExtAnimData > 30
@@ -1443,11 +1444,8 @@ IcyWindExtAnimEnd:
 IceShardExtAnim:
 	db IceShardExtAnimEnd - IceShardExtAnimData
 IceShardExtAnimData:
-	db $03,$29,$01
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
-	db $04,$3A,$38
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db $46,$FF,$05
+	; ANM-5.61.40: restore the old-project single Ice Shard impact.
+	db $01,$05,$3F
 	db $FF
 IceShardExtAnimEnd:
 	IF IceShardExtAnimEnd - IceShardExtAnimData > 30
@@ -1802,10 +1800,11 @@ GigaImpactExtAnimEnd:
 PowerGemExtAnim:
 	db PowerGemExtAnimEnd - PowerGemExtAnimData
 PowerGemExtAnimData:
-	db SE_LIGHT_SCREEN_PALETTE,$FF
-	db $04,$57,$30
-	db SE_DARK_SCREEN_FLASH,$FF
-	db SE_RESET_SCREEN_PALETTE,$FF
+	; ANM-5.61.40: send one rock/gem object along Swift's smooth Subanimation3F
+	; path, overriding its object with Rock Throw's FrameBlock23 material.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $23
+	db $03,$80,$3F
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db $FF
 PowerGemExtAnimEnd:
 	IF PowerGemExtAnimEnd - PowerGemExtAnimData > 30
@@ -1815,9 +1814,11 @@ PowerGemExtAnimEnd:
 RockBlastExtAnim:
 	db RockBlastExtAnimEnd - RockBlastExtAnimData
 RockBlastExtAnimData:
-	db $04,$57,$30
-	db $04,$57,$30
-	db $04,$57,$30
+	; ANM-5.61.40: reuse Barrage's smooth Subanimation41 projectile path and
+	; override its ball with Rock Throw's FrameBlock23. Multi-hit battle flow
+	; replays this recipe once for each actual Rock Blast hit.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $23
+	db $03,$57,$41
 	db $FF
 RockBlastExtAnimEnd:
 	IF RockBlastExtAnimEnd - RockBlastExtAnimData > 30
