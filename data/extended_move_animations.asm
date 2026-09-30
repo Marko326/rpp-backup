@@ -2299,7 +2299,9 @@ PlayShadowPunchCenteredPoof::
 	jr z,.storeX
 	ld a,88
 	ld [wBaseCoordY],a
-	ld a,32
+	; ANM-5.61.43: enemy Punch transform centers the carried fist at X=36.
+	; Poof frames average 4 px left of wBaseCoordX, so use 40 (not 32).
+	ld a,40
 .storeX
 	ld [wBaseCoordX],a
 
