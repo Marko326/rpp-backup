@@ -82,8 +82,26 @@ LeaguePCShowTeam:
 	ret
 
 LeaguePCShowMon:
+	; HOF-5.61.51 Keep the League PC frame visible while advancing through a recorded team.
+	; Only the very first entry needs the original whole-screen setup. Later entries
+	; blank the 7x7 frontpic canvas, let that local wipe reach VRAM, then load the
+	; next picture behind the blank canvas. Text boxes and the HoF number redraw in
+	; place, matching the Pokédex live-switch principle without flashing the screen.
+	ld a, [wHoFTeamIndex2]
+	and a
+	jr nz, .refreshFrontPic
+	ld a, c
+	cp PARTY_LENGTH
+	jr nz, .refreshFrontPic
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
+	jr .loadMon
+.refreshFrontPic
+	coord hl, 12, 5
+	lb bc, 7, 7
+	call ClearScreenArea
+	call Delay3
+.loadMon
 	ld hl, wHallOfFame
 	ld a, [hli]
 	ld [wHoFMonSpecies], a
