@@ -41,8 +41,17 @@ PoisonEffect_:
 
 	ld a, [de]
 	cp POISON_SIDE_EFFECT1
-	ld b, $34
+	jr nz, .checkPoisonSideEffect2
+	; ANM-5.61.45: Sludge Bomb uses $4d/256 (~30%) while Poison Sting and
+	; other POISON_SIDE_EFFECT1 users retain the original $34/256 (~20%).
+	call GetCurrentMoveID
+	cp SLUDGE_BOMB
+	ld b, $4d
 	jr z, .sideEffectTest
+	ld b, $34
+	jr .sideEffectTest
+.checkPoisonSideEffect2
+	ld a, [de]
 	cp POISON_SIDE_EFFECT2
 	ld b, $67
 	jr z, .sideEffectTest

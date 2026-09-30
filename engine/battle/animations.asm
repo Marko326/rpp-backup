@@ -242,7 +242,7 @@ BattleAnimDelayFramesMaybeCarry:
 ; during the existing hold frames before cleanup. Other $14 users stay legacy.
 ;
 ; Dedicated / extended move recipes may reuse the same verified allowlist, so
-; Moonblast, Gunk Shot, Sludge Wave and Mud Bomb inherit only already-approved
+; Moonblast, Gunk Shot, Sludge Bomb and Mud Bomb inherit only already-approved
 ; projectile stages without opening smoothing to recipe-only commands.
 ;
 ; ANM-5.61.11 adds the verified single-object parabolas used by Poké Ball,

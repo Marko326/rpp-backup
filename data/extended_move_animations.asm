@@ -144,9 +144,7 @@ PlayHealingMoveAnimation::
 	ret
 
 ; Gold-style orb projectile prototype.
-; RPP already contains the Gen 2 Sludge Bomb SFX in crysaudio/sfx.asm; rbsfx.asm
-; exposes it as the next SFX ID after the three existing GSSFX entries.
-GSSFX_SLUDGE_BOMB EQU GSSFX_SUPER_EFFECTIVE + 1
+; ANM-5.61.45: Sludge Bomb/Toxic SFX IDs now live with the shared music constants.
 
 ; Keep the old public label because bank $1E already far-calls it.  The second
 ; label is the direction for later reuse by Moonblast / Energy Ball / etc.
@@ -179,6 +177,12 @@ PlayExtendedOrbProjectile:
 	jp z,PlayDynamicPunchGoldLike
 	cp METEOR_MASH
 	jp z,PlayRocksLiftWithSwiftStars
+	cp SLUDGE_BOMB
+	jr nz,.notSludgeBomb
+	; ANM-5.61.45: keep the bulky Gold Sludge Bomb renderer in roomy bank $3D.
+	callba PlayGoldSludgeBombAnimation
+	ret
+.notSludgeBomb
 
 	; Gold-style Shadow Ball projectile; C2 currently has no operand.
 	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
@@ -505,7 +509,7 @@ ExtendedMoveAnimationPointers:
 	dw PoisonJabExtAnim             ; POISON_JAB
 	dw GunkShotExtAnim              ; GUNK_SHOT
 	dw FangNormalExtAnim            ; POISON_FANG
-	dw SludgeWaveExtAnim            ; SLUDGE_WAVE
+	dw SludgeBombExtAnim            ; SLUDGE_BOMB
 	dw SilverWindExtAnim            ; SILVER_WIND
 	dw BugBuzzExtAnim               ; BUG_BUZZ
 	dw MegahornExtAnim              ; MEGAHORN
@@ -1632,16 +1636,15 @@ PoisonJabExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-SludgeWaveExtAnim:
-	db SludgeWaveExtAnimEnd - SludgeWaveExtAnimData
-SludgeWaveExtAnimData:
-	db SE_DARKEN_MON_PALETTE,$48
-	db $46,$7B,$13
-	db SE_WAVY_SCREEN,$FF
-	db SE_RESET_SCREEN_PALETTE,$FF
+SludgeBombExtAnim:
+	db SludgeBombExtAnimEnd - SludgeBombExtAnimData
+SludgeBombExtAnimData:
+	; ANM-5.61.45: the banked Gold helper owns the gentle full-sequence palette
+	; darkening and restores the normal battle palette only after the sludge tail.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; C2 gateway dispatches by real move ID
 	db $FF
-SludgeWaveExtAnimEnd:
-	IF SludgeWaveExtAnimEnd - SludgeWaveExtAnimData > 30
+SludgeBombExtAnimEnd:
+	IF SludgeBombExtAnimEnd - SludgeBombExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 

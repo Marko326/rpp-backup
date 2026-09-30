@@ -222,7 +222,7 @@ const_value = 1
 	const POISON_JAB   ; dc
 	const GUNK_SHOT    ; dd
 	const POISON_FANG  ; de
-	const SLUDGE_WAVE  ; df
+	const SLUDGE_BOMB  ; df
 	const SILVER_WIND  ; e0
 	const BUG_BUZZ     ; e1
 	const MEGAHORN     ; e2

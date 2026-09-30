@@ -1022,7 +1022,7 @@ AlolanGrimerLevelMoves::
 	db 21,MUD_BOMB
 	db 24,TOXIC
 	db 27,ICE_PUNCH
-	db 30,SLUDGE_WAVE
+	db 30,SLUDGE_BOMB
 	db 34,SCREECH
 	db 36,HAZE
 	db 38,GUNK_SHOT
@@ -1088,7 +1088,7 @@ AlolanMukLevelMoves::
 	db 18,DISABLE
 	db 21,MUD_BOMB
 	db 27,ICE_PUNCH
-	db 30,SLUDGE_WAVE
+	db 30,SLUDGE_BOMB
 	db 33,SCREECH
 	db 36,CRUNCH
 	db 39,HAZE

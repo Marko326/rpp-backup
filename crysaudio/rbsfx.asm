@@ -124,6 +124,9 @@ RedSfxHeaderPointers:
 	dbw BANK(Sfx_Damage), Sfx_Damage
 	dbw BANK(Sfx_SuperEffective), Sfx_SuperEffective
 
-	; Gold Shadow Ball: exact Gen 2 SFX already present in crysaudio/sfx.asm.
+	; ANM-5.61.45: Gold Sludge Bomb launch plus the exact Toxic bubble SFX.
+	; Sfx_Unknown7F is byte-for-byte Gold's Sfx_Toxic, so reuse it instead of
+	; duplicating audio data. Shadow Ball continues sharing Sfx_SludgeBomb.
 	dbw BANK(Sfx_SludgeBomb), Sfx_SludgeBomb
+	dbw BANK(Sfx_Unknown7F), Sfx_Unknown7F
 

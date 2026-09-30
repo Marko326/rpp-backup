@@ -234,7 +234,7 @@ Mon001_EvosMoves:
 	level_move 31,ANCIENTPOWER ; Worry Seed → Similar Move
 	level_move 33,HEALINGLIGHT ; Synthesis → Similar Move
 	level_move 37,LEAF_BLADE ; Seed Bomb → New Move
-	level_move 43,SLUDGE_WAVE ; Sludge Bomb (TM Move) → Similar Move
+	level_move 43,SLUDGE_BOMB ; Sludge Bomb (TM Move) → Similar Move
 	packed_learnset_end
 
 Mon002_EvosMoves:
@@ -258,7 +258,7 @@ Mon002_EvosMoves:
 	level_move 36,ANCIENTPOWER ; Worry Seed → Similar Move
 	level_move 39,HEALINGLIGHT ; Synthesis → Similar Move
 	level_move 44,LEAF_BLADE ; Seed Bomb → New Move
-	level_move 50,SLUDGE_WAVE ; Sludge Bomb (TM Move) → Similar Move
+	level_move 50,SLUDGE_BOMB ; Sludge Bomb (TM Move) → Similar Move
 	packed_learnset_end
 
 Mon003_EvosMoves:
@@ -285,7 +285,7 @@ Mon003_EvosMoves:
 	level_move 39,ANCIENTPOWER ; Worry Seed → Similar Move
 	level_move 45,HEALINGLIGHT ; Synthesis → Similar Move
 	level_move 50,LEAF_BLADE ; Seed Bomb → New Move
-	level_move 53,SLUDGE_WAVE ; Solar Beam → Sludge Wave
+	level_move 53,SLUDGE_BOMB ; Solar Beam → Sludge Bomb
 	level_move 60,SOLARBEAM
 	packed_learnset_end
 
@@ -1899,7 +1899,7 @@ Mon072_EvosMoves:
 	level_move 34,WHIRLPOOL ; Brine → TM Move
 	level_move 37,SCREECH
 	level_move 40,HEX
-	level_move 43,SLUDGE_WAVE
+	level_move 43,SLUDGE_BOMB
 	level_move 46,HYDRO_PUMP
 	level_move 49,GUNK_SHOT ; new move
 	packed_learnset_end
@@ -1924,7 +1924,7 @@ Mon073_EvosMoves:
 	level_move 36,WHIRLPOOL ; Brine → TM Move
 	level_move 40,SCREECH
 	level_move 44,HEX
-	level_move 48,SLUDGE_WAVE
+	level_move 48,SLUDGE_BOMB
 	level_move 52,HYDRO_PUMP
 	level_move 56,GUNK_SHOT ; new move
 	packed_learnset_end
@@ -2302,7 +2302,7 @@ Mon088_EvosMoves:
 	level_move 21,MINIMIZE
 	level_move 26,HAZE ; Fling → egg move
 	level_move 29,TOXIC ; Sludge bomb → TM move
-	level_move 32,SLUDGE_WAVE
+	level_move 32,SLUDGE_BOMB
 	level_move 37,SCREECH
 	level_move 40,GUNK_SHOT
 	level_move 43,ACID_ARMOR
@@ -2325,7 +2325,7 @@ Mon089_EvosMoves:
 	level_move 21,MINIMIZE
 	level_move 26,HAZE ; Fling → egg move
 	level_move 29,TOXIC ; Sludge Bomb → TM move
-	level_move 32,SLUDGE_WAVE
+	level_move 32,SLUDGE_BOMB
 	level_move 37,SCREECH
 	level_move 40,GUNK_SHOT
 	level_move 46,ACID_ARMOR
@@ -2822,7 +2822,7 @@ Mon109_EvosMoves:
 	level_move 23,TOXIC ; Selfdestruct → TM move
 	level_move 26,HAZE
 	level_move 29,SELFDESTRUCT ; Gyro Ball → Selfdestruct
-	level_move 34,SLUDGE_WAVE ; Sludge Bomb → similar move
+	level_move 34,SLUDGE_BOMB ; Sludge Bomb → similar move
 	level_move 37,SHADOW_BALL ; Explosion → TM move
 	level_move 40,TAKE_DOWN ; Destiny Bond →
 	level_move 42,GUNK_SHOT ; Belch → similar move
@@ -2845,7 +2845,7 @@ Mon110_EvosMoves:
 	level_move 23,TOXIC ; Selfdestruct → TM move
 	level_move 26,HAZE
 	level_move 29,SELFDESTRUCT ; Gyro Ball → Selfdestruct
-	level_move 34,SLUDGE_WAVE ; Sludge Bomb → similar move
+	level_move 34,SLUDGE_BOMB ; Sludge Bomb → similar move
 	level_move 40,SHADOW_BALL ; Explosion → TM move
 	level_move 46,TAKE_DOWN ; Destiny Bond →
 	level_move 51,GUNK_SHOT ; Belch → similar move

@@ -233,7 +233,7 @@ MoveEnd:
 	move COMET_PUNCH,  POISON_SIDE_EFFECT2,         80, POISON,   100, 20 ; Poison Jab
 	move SLUDGE,       POISON_SIDE_EFFECT2,        120, POISON,    80,  5 ; Gunk Shot
 	move BITE,         POISON_FANG_EFFECT,          50, POISON,   100, 15 ; Poison Fang
-	move SURF,         POISON_SIDE_EFFECT1,         95, POISON,   100, 10 ; Sludge Wave
+	move SLUDGE,       POISON_SIDE_EFFECT1,         90, POISON,   100, 10 ; Sludge Bomb
 	move MIST,         SILVER_WIND_EFFECT,          60, BUG,      100,  5 ; Silver Wind
 	move SUPERSONIC,   SPECIAL_DOWN_SIDE_EFFECT,    90, BUG,      100, 10 ; Bug Buzz
 	move HORN_ATTACK,  NO_ADDITIONAL_EFFECT,       120, BUG,       85, 10 ; Megahorn

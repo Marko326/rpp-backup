@@ -2922,3 +2922,7 @@ INCLUDE "engine/menu/menu_shortcuts.asm"
 SECTION "Map Name Sign", ROMX, BANK[$3D]
 ; Crystal-style overworld location popup lives in a fully empty expansion bank.
 INCLUDE "engine/overworld/map_name_sign.asm"
+
+; ANM-5.61.45: Gold Sludge Bomb renderer/data stay out of crowded animation bank $3A.
+SECTION "Gold Sludge Bomb Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/sludge_bomb_animation.asm"

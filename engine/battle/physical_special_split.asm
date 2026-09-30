@@ -233,7 +233,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;Poison Jab
 	db PHYSICAL;Gunk Shot
 	db PHYSICAL;Poison Fang
-	db SPECIAL ;Sludge Wave
+	db SPECIAL ;Sludge Bomb
 	db SPECIAL ;Silver Wind
 	db SPECIAL ;Bug Buzz
 	db PHYSICAL;Megahorn

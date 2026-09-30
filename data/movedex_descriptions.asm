@@ -236,7 +236,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescPoisonJabPages ; POISON_JAB #220
 	movedex_desc_ptr MoveDexDescGunkShotPages ; GUNK_SHOT #221
 	movedex_desc_ptr MoveDexDescPoisonFangPages ; POISON_FANG #222
-	movedex_desc_ptr MoveDexDescSludgeWavePages ; SLUDGE_WAVE #223
+	movedex_desc_ptr MoveDexDescSludgeBombPages ; SLUDGE_BOMB #223
 	movedex_desc_ptr MoveDexDescSilverWindPages ; SILVER_WIND #224
 	movedex_desc_ptr MoveDexDescBugBuzzPages ; BUG_BUZZ #225
 	movedex_desc_ptr MoveDexDescMegahornPages ; MEGAHORN #226
@@ -2678,12 +2678,12 @@ MoveDexDescPoisonFang1:
 	db   "Bites the foe with"
 	next "toxic fangs.@"
 
-; #223 Sludge Wave
-MoveDexDescSludgeWavePages:
-	dw MoveDexDescSludgeWave1, MoveDexDescEffectDPoison20, MoveDexDescEffectDPoisonImmune, 0
-MoveDexDescSludgeWave1:
-	db   "Sweeps the foe in"
-	next "a sludge wave.@"
+; #223 Sludge Bomb
+MoveDexDescSludgeBombPages:
+	dw MoveDexDescSludgeBomb1, MoveDexDescEffectDPoison30, MoveDexDescEffectDPoisonImmune, 0
+MoveDexDescSludgeBomb1:
+	db   "Hurls sludge bombs"
+	next "that may poison.@"
 
 ; #224 Silver Wind
 MoveDexDescSilverWindPages:
@@ -2991,6 +2991,12 @@ MoveDexDescEffectDPoison40:
 
 MoveDexDescEffectDPoison20:
 	db   "20", $d9, " chance to"
+	next "poison the foe.@"
+
+; ANM-5.61.45: Sludge Bomb keeps its Gen 2/modern 30% poison chance without
+; changing the shared 20% Poison Sting effect.
+MoveDexDescEffectDPoison30:
+	db   "30", $d9, " chance to"
 	next "poison the foe.@"
 
 MoveDexDescEffectDBadPoison40:

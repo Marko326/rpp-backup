@@ -225,7 +225,7 @@ MoveNames::
 	db "Poison Jab@"
 	db "Gunk Shot@"
 	db "Poison Fang@"
-	db "Sludge Wave@"
+	db "Sludge Bomb@"
 	db "Silver Wind@"
 	db "Bug Buzz@"
 	db "Megahorn@"
