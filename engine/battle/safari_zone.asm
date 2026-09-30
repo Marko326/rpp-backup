@@ -15,9 +15,9 @@ PrintSafariZoneBattleText:
 	ld hl, SafariZoneAngryText
 	jr nz, .asm_429f
 	push hl
-	ld a, [wEnemyMonSpecies]
-	ld [wd0b5], a
-	call GetMonHeader
+	; FRM-5.61.46: restore the catch rate from the already-resolved enemy form.
+	; Reloading the stock header here could silently revert a regional encounter.
+	callba RegionalFormLoadCurrentEnemyHeader
 	ld a, [wMonHCatchRate]
 	ld [wEnemyMonCatchRate], a
 	pop hl

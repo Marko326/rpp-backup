@@ -407,16 +407,22 @@ RegionalFormPrepareStoredEnemyHeader:
 ; Callers that replace a direct GetMonHeader with CALLBA must save their own
 ; BC/HL before CALLBA because the far-call macro consumes those registers.
 RegionalFormLoadPartyMonHeader:
-	call GetMonHeader
 	push bc
 	push de
 	push hl
-	ld a,[wd0b5]
-	ld d,a
+	; FRM-5.61.46: resolve both the stock header and persistent form marker from
+	; the same party slot. This prevents a stale wd0b5 from selecting another
+	; Species header when wWhichPokemon already identifies the real target mon.
 	ld a,[wWhichPokemon]
-	ld hl,wPartyMon1CatchRate
+	ld hl,wPartyMon1Species
 	ld bc,wPartyMon2 - wPartyMon1
 	call AddNTimes
+	ld a,[hl]
+	ld d,a
+	ld [wd0b5],a
+	call GetMonHeader
+	ld bc,wPartyMon1CatchRate - wPartyMon1Species
+	add hl,bc
 	ld a,[hl]
 	ld e,a
 	call RegionalFormFindBySpeciesMarker
@@ -466,7 +472,9 @@ RegionalFormPrepareCaughtMonHeader:
 	and a
 	jr z,.done
 	ld e,a
-	ld a,[wcf91]
+	; FRM-5.61.46: persist the form against the actual enemy instance species.
+	; wcf91 is scratch state and may have been repurposed by display/predef paths.
+	ld a,[wEnemyMonSpecies]
 	ld d,a
 	call RegionalFormFindBySpeciesForm
 	jr nc,.done

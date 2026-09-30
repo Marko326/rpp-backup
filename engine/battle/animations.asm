@@ -3195,7 +3195,19 @@ ChangeMonPic:
 	ld [wd0b5], a
 	xor a
 	ld [wSpriteFlipped], a
+	; FRM-5.61.46: ordinary redraws of the active enemy must reuse its already
+	; resolved runtime form. A deliberate species swap (Transform/Ghost Marowak)
+	; still uses the stock requested-species header below.
+	ld a, [wChangeMonPicEnemyTurnSpecies]
+	ld b, a
+	ld a, [wEnemyMonSpecies]
+	cp b
+	jr nz, .enemyStockHeader
+	callba RegionalFormLoadCurrentEnemyHeader
+	jr .enemyHeaderReady
+.enemyStockHeader
 	call GetMonHeader
+.enemyHeaderReady
 	coord hl, 12, 0
 	call LoadFrontSpriteByMonIndex
 	jr .done
@@ -3205,7 +3217,17 @@ ChangeMonPic:
 	ld a, [wChangeMonPicPlayerTurnSpecies]
 	ld [wBattleMonSpecies2], a
 	ld [wd0b5], a
+	; FRM-5.61.46: same rule for the player's back sprite. Only preserve the
+	; stored form when the requested redraw species is the active battle species.
+	ld b, a
+	ld a, [wBattleMonSpecies]
+	cp b
+	jr nz, .playerStockHeader
+	callba RegionalFormLoadBattleMonHeader
+	jr .playerHeaderReady
+.playerStockHeader
 	call GetMonHeader
+.playerHeaderReady
 	predef LoadMonBackPic
 	xor a
 	call GetTileIDList

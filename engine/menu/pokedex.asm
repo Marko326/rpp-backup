@@ -607,6 +607,10 @@ ShowPokedexData:
 
 ; function to display pokedex data from inside the pokedex
 ShowPokedexDataInternal:
+	; FRM-5.61.46: browsing from the Pokédex list always starts on NORMAL.
+	; Capture one-shots seed wPokedexViewForm before entering ShowPokedexData.
+	xor a
+	ld [wPokedexViewForm],a
 	ld a,1 ; Pokédex list -> Info enables UP/DOWN browsing
 
 ShowPokedexDataCommon:
@@ -727,8 +731,10 @@ ShowPokedexDataCommon:
 	push hl
 
 	call Delay3
+	; FRM-5.61.46: resolve the caller-selected form immediately before the stock
+	; palette commit/frontpic load, keeping the original first-render timing local.
+	callba PokedexData_PrepareInitialViewForm
 	call GBPalNormal
-	call GetMonHeader ; load pokemon picture location
 	coord hl, 1, 1
 	call LoadFlippedFrontSpriteByMonIndex ; draw pokemon picture
 	ld a,[wcf91]
@@ -798,6 +804,9 @@ ShowPokedexDataCommon:
 	ld [hDexWeight + 1],a ; restore original value of [hDexWeight + 1]
 	pop af
 	ld [hDexWeight],a ; restore original value of [hDexWeight]
+	; FRM-5.61.46: after the stock Species metrics are drawn, replace only the
+	; numeric Ht/Wt fields when the selected regional form defines overrides.
+	callba PokedexData_OverrideInitialViewMetrics
 	pop hl
 	inc hl ; hl = address of pokedex description text
 	; External one-shot callers retain the original text engine behavior, where

@@ -743,6 +743,10 @@ BallAnyway:
 	call ClearSprites
 	ld a,[wEnemyMonSpecies]
 	ld [wd11e],a
+	; FRM-5.61.46: seed the one-shot Pokédex page with the form that was
+	; actually captured. The session renderer consumes this transient byte.
+	ld a,[wEnemyMonForm]
+	ld [wPokedexViewForm],a
 	predef ShowPokedexData
 
 .skipShowingPokedexData

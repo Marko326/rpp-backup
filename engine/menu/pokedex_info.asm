@@ -41,12 +41,11 @@ PokedexData_SelectCurrentListEntry:
 	ret
 
 PokedexData_BeginSessionVolume:
-	; Every Info session starts on the normal form. START/SELECT only changes this
-	; transient view byte after the stock first render has completed.
-	xor a
-	ld [wPokedexViewForm],a
+	; FRM-5.61.46: the caller owns the initial form seed. Pokédex-list browsing
+	; explicitly seeds NORMAL; a successful capture seeds the captured runtime form.
 	; Info owns its description-arrow animation. Start from an inactive state so a
 	; blinking arrow left by the Pokédex list cannot leak into a Seen-only entry.
+	xor a
 	ld [hDownArrowBlinkActive],a
 	; UpdateSound writes Volume back to NR50 every audio tick. Store the reduced
 	; value in Volume itself so it persists for the whole Info session. Music Off
@@ -64,6 +63,9 @@ PokedexData_BeginSessionVolume:
 PokedexData_EndSession:
 	xor a
 	ld [hDownArrowBlinkActive],a
+	; FRM-5.61.46: form selection is session-local; never leak a captured/viewed
+	; form into a later one-shot Pokédex display.
+	ld [wPokedexViewForm],a
 	call GBPalWhiteOut
 	; Internal Info swaps between the two Window BG maps so a prepared text page can
 	; appear atomically. Restore the project's normal map 1 ownership while the
@@ -128,6 +130,65 @@ PokedexData_ReadInternalInput:
 ; the local state consumes no WRAM. State 1/2 are Details subpages; states 3/4
 ; are Base Stats / evolution-change subpages. B exits, A stays inside the current
 ; category, LEFT/RIGHT switches category, and UP/DOWN changes species.
+
+; FRM-5.61.46: keep the stock first-render path for capture one-shots and only
+; substitute the selected form's header/palette/metrics at the stock draw points.
+PokedexData_PrepareInitialViewForm:
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	; RegionalFormLoadPokedexHeader always establishes a valid stock/form header.
+	; Preserve DE so the palette override receives the same Species + Form pair.
+	push de
+	call RegionalFormLoadPokedexHeader
+	pop de
+	jp RegionalFormOverridePokedexPalette
+
+PokedexData_OverrideInitialViewMetrics:
+	ld a,[wPokedexViewForm]
+	and a
+	ret z
+	; Reuse the normal form-aware copy helper; missing/zero overrides inherit stock.
+	call PokedexData_CopyHeightWeightFields
+
+	ld de,wBuffer + 14
+	coord hl,12,6
+	lb bc,1,2
+	call PrintNumber
+	ld a,$60
+	ld [hl],a
+	ld de,wBuffer + 15
+	coord hl,15,6
+	lb bc,LEADING_ZEROES | 1,2
+	call PrintNumber
+	ld a,$61
+	ld [hl],a
+
+	; PrintNumber expects big-endian input. Keep the same scratch convention as
+	; the internal form renderer and leave hDexWeight untouched.
+	ld a,[wBuffer + 17]
+	ld [wBuffer + 12],a
+	ld a,[wBuffer + 16]
+	ld [wBuffer + 13],a
+	ld de,wBuffer + 12
+	coord hl,11,8
+	lb bc,2,5
+	call PrintNumber
+	coord hl,14,8
+	ld a,[wBuffer + 13]
+	sub 10
+	ld a,[wBuffer + 12]
+	sbc 0
+	jr nc,.weightAtLeastTen
+	ld [hl],"0"
+.weightAtLeastTen
+	inc hl
+	ld a,[hli]
+	ld [hld],a
+	ld [hl],"⠄"
+	ret
+
 PokedexData_RunInternalInputLoop:
 	ld a,1
 	push af
