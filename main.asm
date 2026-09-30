@@ -2622,7 +2622,9 @@ INCLUDE "engine/menu/red_bedroom_pc.asm"
 
 ; Shared Poké Flute party wake-up logic is kept out of the capacity-constrained
 ; item-use bank. Battle and field callers both use the same helper.
-SECTION "Poke Flute Party Wake", ROMX, BANK[$34]
+; FRM-5.61.48: all external users are bank-aware CALLBA sites, so keep this
+; floating helper in roomy bank $3D instead of competing with form data in $34.
+SECTION "Poke Flute Party Wake", ROMX, BANK[$3D]
 INCLUDE "engine/items/pokeflute_party.asm"
 
 ; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.

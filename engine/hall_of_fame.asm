@@ -53,6 +53,9 @@ AnimateHallOfFame:
 	call AddNTimes
 	ld a, [hl]
 	ld [wHoFMonLevel], a
+	; FRM-5.61.47: stage the exact party instance marker in the first spare
+	; byte of this HoF record before its sprite/palette/type are displayed.
+	call HoFStagePartyMonFormMarker
 	call HoFShowMonOrPlayer
 	call HoFDisplayAndRecordMonInfo
 	ld c, 80
@@ -120,7 +123,7 @@ HoFShowMonOrPlayer:
 	jr .next1
 .showMon
 	coord hl, 12, 5
-	call GetMonHeader
+	call HoFLoadMonHeaderForForm
 	call LoadFrontSpriteByMonIndex
 	predef LoadMonBackPic
 .next1
@@ -134,6 +137,9 @@ HoFShowMonOrPlayer:
 .player
 	ld c, 0
 	call RunPaletteCommand
+	; FRM-5.61.47: player rendering returns immediately; Pokémon records can
+	; replace palette 0 from their persisted regional-form marker.
+	call HoFOverrideRegionalPalette
 	ld a, %11100100
 	ld [rBGP], a
 	ld c, $31 ; back pic
@@ -188,6 +194,9 @@ HoFDisplayMonInfo:
 	ld [wd0b5], a
 	coord hl, 3, 9
 	predef PrintMonType
+	; FRM-5.61.47: stock PrintMonType reloads Species-only data; redraw the
+	; recorded instance's regional types when its HoF marker identifies one.
+	call HoFOverrideRegionalTypes
 	ld a, [wHoFMonSpecies]
 	jp PlayCry
 
@@ -295,6 +304,96 @@ DexSeenOwnedText:
 DexRatingText:
 	TX_FAR _DexRatingText
 	db "@"
+
+; FRM-5.61.47: each 16-byte Hall of Fame mon record has three legacy spare
+; bytes. Store the party instance's persistent form-marker byte in the first one.
+HoFStagePartyMonFormMarker::
+	ld a, [wHoFPartyMonIndex]
+	ld hl, wPartyMon1CatchRate
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	; Snapshot the current instance form once. HoF index variables share union
+	; scratch with legacy UI code and are not reliable across later predefs.
+	ld [wHoFMonFormMarker], a
+	ld e, a
+	ld a, [wHoFPartyMonIndex]
+	ld hl, wHallOfFame + HOF_MON_FORM_MARKER
+	ld bc, HOF_MON
+	call AddNTimes
+	ld [hl], e
+	ret
+
+; Return D = current Species and E = the form marker staged for this display.
+; Do not re-index wHallOfFame here: wHoFPartyMonIndex is union scratch and may
+; be reused by the legacy palette/type/display routines called by HoF screens.
+HoFGetRegionalFormIdentity:
+	ld a, [wHoFMonFormMarker]
+	ld e, a
+	ld a, [wHoFMonSpecies]
+	ld d, a
+	ret
+
+HoFLoadMonHeaderForForm::
+	push hl
+	ld a, [wHoFMonSpecies]
+	ld [wd0b5], a
+	call GetMonHeader
+	call HoFGetRegionalFormIdentity
+	callba RegionalFormApplySpeciesMarkerHeader
+	pop hl
+	ret
+
+HoFOverrideRegionalPalette::
+	ld a, [wHoFMonOrPlayer]
+	and a
+	ret nz
+HoFOverrideRegionalPaletteMon::
+	call HoFGetRegionalFormIdentity
+	callba RegionalFormOverrideWholeScreenPaletteByMarker
+	ret
+
+; Stock PrintMonType is Species-only. Redraw the recorded form's types, restoring
+; the Type 2 label when a monotype base Species becomes a dual-type regional form.
+HoFOverrideRegionalTypes::
+	call HoFGetRegionalFormIdentity
+	callba RegionalFormApplySpeciesMarkerHeader
+	; FRM-5.61.49: far-call bank restoration does not provide a stable Carry
+	; result here. Always redraw from the final header: stock for normal forms,
+	; descriptor-backed for registered regional forms.
+	coord hl, 3, 9
+	ld a, " "
+	ld bc, 8
+	call FillMemory
+	coord de, 3, 9
+	ld a, [wMonHType1]
+	ld [wRegionalFormPrintTypeArgument], a
+	callba PrintTypeAtDE
+	coord hl, 3, 11
+	ld a, " "
+	ld bc, 8
+	call FillMemory
+	ld a, [wMonHType1]
+	ld b, a
+	ld a, [wMonHType2]
+	cp b
+	jr z, .singleType
+	coord hl, 2, 10
+	ld de, .type2Text
+	call PlaceString
+	coord de, 3, 11
+	; PlaceString clobbers A, so reload the resolved form's second type here.
+	ld a, [wMonHType2]
+	ld [wRegionalFormPrintTypeArgument], a
+	callba PrintTypeAtDE
+	ret
+.singleType
+	coord hl, 2, 10
+	ld a, " "
+	ld bc, 6
+	jp FillMemory
+.type2Text
+	db "Type 2@"
 
 HoFRecordMonInfo:
 	ld hl, wHallOfFame

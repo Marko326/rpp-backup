@@ -458,6 +458,40 @@ RegionalFormPrepareLoadedMonHeader:
 	scf
 	ret
 
+; -----------------------------------------------------------------------------
+; Stored-instance display helpers
+; -----------------------------------------------------------------------------
+
+; D = species, E = persistent marker. The caller has already loaded the stock
+; Species header; replace it with the exact stored regional descriptor when one
+; exists. Carry is set only when a registered regional form was applied.
+RegionalFormApplySpeciesMarkerHeader:
+	call RegionalFormFindBySpeciesMarker
+	ret nc
+	call RegionalFormApplyDescriptorHeader
+	scf
+	ret
+
+; D = species, E = persistent marker. RunPaletteCommand has already loaded the
+; stock whole-screen palette; replace palette slot 0 only for a stored form.
+RegionalFormOverrideWholeScreenPaletteByMarker:
+	push de
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.done
+	ld a,[wShinyMonFlag]
+	bit 0,a
+	jr nz,.shiny
+	call RegionalFormGetPalettePointer
+	jr .copy
+.shiny
+	call RegionalFormGetShinyPalettePointer
+.copy
+	ld e,0
+	call RegionalFormCopyPaletteFromHL
+.done
+	pop de
+	ret
+
 ; Materialize the current wild form into persistent storage. Party insertion
 ; copies wMonHCatchRate; full-party SendNewMonToBox copies the parallel byte in
 ; wEnemyMon, so both storage sources receive the descriptor marker.

@@ -92,11 +92,18 @@ LeaguePCShowMon:
 	ld de, wcd6d
 	ld bc, NAME_LENGTH
 	call CopyData
+	; LeaguePCShowTeam shifts the record being displayed into slot 0. Read its
+	; saved form once before any legacy UI routine can reuse HoF union scratch.
+	ld a, [wHallOfFame + HOF_MON_FORM_MARKER]
+	ld [wHoFMonFormMarker], a
 	ld b, SET_PAL_POKEMON_WHOLE_SCREEN
 	ld c, 0
 	call RunPaletteCommand
+	callba HoFOverrideRegionalPaletteMon
+	; FRM-5.61.49: CALLBA owns HL. Set the tilemap destination only after the
+	; form-aware header call so LoadFrontSpriteByMonIndex cannot write elsewhere.
+	callba HoFLoadMonHeaderForForm
 	coord hl, 12, 5
-	call GetMonHeader
 	call LoadFrontSpriteByMonIndex
 	call GBPalNormal
 	coord hl, 0, 13
