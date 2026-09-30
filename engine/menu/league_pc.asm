@@ -47,8 +47,12 @@ PKMNLeaguePC:
 	res 6, [hl]
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
+	; PC-5.61.50 League PC front pictures overwrite vChars2/vFrontPic, which overlaps the
+	; overworld tileset. Rebuild the complete map here, while the palettes are
+	; still white; the caller redraws the PC menu before revealing the screen.
+	call ReloadMapData
 	call RunDefaultPaletteCommand
-	jp GBPalNormal
+	ret
 
 LeaguePCShowTeam:
 	ld c, PARTY_LENGTH

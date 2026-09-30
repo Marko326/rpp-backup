@@ -11,6 +11,7 @@ ActivatePC:
 	call Delay3
 PCMainMenu:
 	callba DisplayPCMainMenu
+PCMainMenu_HandleInput:
 	ld hl, wFlags_0xcd60
 	set 5, [hl]
 	call HandleMenuInput
@@ -69,7 +70,16 @@ PKMNLeague:
 	call PlaySound
 	call WaitForSoundToFinish
 	callba PKMNLeaguePC
-	jr ReloadMainMenu
+	; PC-5.61.50 League PC overwrites the overworld BG tile patterns with Pokémon front pics.
+	; PKMNLeaguePC rebuilds the map while palettes are still white; redraw the PC
+	; menu on top, wait for all BG thirds to commit, then reveal the finished screen.
+	xor a
+	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
+	call UpdateSprites
+	callba DisplayPCMainMenu
+	call Delay3
+	call GBPalNormal
+	jp PCMainMenu_HandleInput
 BillsPC:
 	ld a, SFX_ENTER_PC
 	call PlaySound
