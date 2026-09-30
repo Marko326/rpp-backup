@@ -2926,3 +2926,7 @@ INCLUDE "engine/overworld/map_name_sign.asm"
 ; ANM-5.61.45: Gold Sludge Bomb renderer/data stay out of crowded animation bank $3A.
 SECTION "Gold Sludge Bomb Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/sludge_bomb_animation.asm"
+
+; ANM-5.61.46: Gold-style Aeroblast renderer/data share roomy expansion bank $3D.
+SECTION "Gold Aeroblast Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/aeroblast_animation.asm"

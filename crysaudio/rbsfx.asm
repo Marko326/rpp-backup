@@ -130,3 +130,5 @@ RedSfxHeaderPointers:
 	dbw BANK(Sfx_SludgeBomb), Sfx_SludgeBomb
 	dbw BANK(Sfx_Unknown7F), Sfx_Unknown7F
 
+	; ANM-5.61.46: exact Gold Aeroblast SFX; audio data already exists in sfx.asm.
+	dbw BANK(Sfx_Aeroblast), Sfx_Aeroblast

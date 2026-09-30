@@ -183,6 +183,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldSludgeBombAnimation
 	ret
 .notSludgeBomb
+	cp AEROBLAST
+	jr nz,.notAeroblast
+	; ANM-5.61.46: keep the Aeroblast fan renderer/data in roomy bank $3D.
+	callba PlayGoldAeroblastAnimation
+	ret
+.notAeroblast
 
 	; Gold-style Shadow Ball projectile; C2 currently has no operand.
 	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
@@ -1953,9 +1959,9 @@ BoneRushExtAnimEnd:
 AeroblastExtAnim:
 	db AeroblastExtAnimEnd - AeroblastExtAnimData
 AeroblastExtAnimData:
-	db $03,$3D,$2E
-	db $46,$0F,$10
-	db SE_DARK_SCREEN_FLASH,$FF
+	; ANM-5.61.47: the banked helper owns the complete Gold-style 84-frame
+	; timeline so screen shake can continue while the three beam objects appear.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; C2 gateway dispatches by real move ID
 	db $FF
 AeroblastExtAnimEnd:
 	IF AeroblastExtAnimEnd - AeroblastExtAnimData > 30

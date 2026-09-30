@@ -349,3 +349,4 @@ const_value = 1
 	const GSSFX_SUPER_EFFECTIVE
 	const GSSFX_SLUDGE_BOMB ; ANM-5.61.45: exact Gold Sludge Bomb launch SFX
 	const GSSFX_TOXIC       ; ANM-5.61.45: exact Gold sludge-bubble SFX (Sfx_Unknown7F)
+	const GSSFX_AEROBLAST   ; ANM-5.61.46: exact Gold Aeroblast SFX
