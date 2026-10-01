@@ -666,20 +666,12 @@ BallAnyway:
 
 	push hl
 
-; If the Pokémon is transformed, the Pokémon is assumed to be a Ditto.
-; This is a bug because a wild Pokémon could have used Transform via
-; Mirror Move even though the only wild Pokémon that knows Transform is Ditto.
+; CAP-5.61.53: Transform only replaces the active wEnemyMonSpecies.
+; wEnemyMonSpecies2 still holds the original wild species, so preserve it when
+; rebuilding a caught transformed Pokémon instead of assuming Ditto/Mew.
 	ld hl,wEnemyBattleStatus3
 	bit Transformed,[hl]
-	jr z,.notTransformed
-	ld a, [wCurMap] ; check which map we're on
-	cp FARAWAY_ISLAND_INSIDE ; If we're on Faraway Island, the only Pokemon that can transform is MEW
-	ld a,MEW
-	jr z, .faraway ; if we're on Faraway Island, we're done. Otherwise, load DITTO instead
-	ld a,DITTO ; A Pokémon that has transformed anywhere else is treated as Ditto once caught
-.faraway
-	ld [wEnemyMonSpecies2],a
-	jr .skip6
+	jr nz,.skip6
 
 .notTransformed
 ; If the Pokémon is not transformed, set the transformed bit and copy the
