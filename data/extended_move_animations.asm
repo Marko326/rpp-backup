@@ -193,6 +193,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldAeroblastAnimation
 	ret
 .notAeroblast
+	cp FLAME_WHEEL
+	jr nz,.notFlameWheel
+	; ANM-5.61.62: Gold/Crystal Flame Wheel timeline reuses Sacred Fire fire assets in bank $3D.
+	callba PlayGoldFlameWheelAnimation
+	ret
+.notFlameWheel
 	cp SACRED_FIRE
 	jr nz,.notSacredFire
 	; MOV-5.61.53: Sacred Fire owns its complete Gold-style timeline in roomy bank $3D.
@@ -1364,10 +1370,8 @@ ShadowBallExtAnimEnd:
 FlameWheelExtAnim:
 	db FlameWheelExtAnimEnd - FlameWheelExtAnimData
 FlameWheelExtAnimData:
-	db SE_MOVE_MON_HORIZONTALLY,$48
-	db $46,$33,$11
-	db $46,$FF,$05
-	db SE_RESET_MON_POSITION,$FF
+	; ANM-5.61.62: banked helper owns Gold's 8 orbiting flames, lunge, flash and split impact.
+	db EXT_ANIM_FLAME_WHEEL_GOLD
 	db $FF
 FlameWheelExtAnimEnd:
 	IF FlameWheelExtAnimEnd - FlameWheelExtAnimData > 30

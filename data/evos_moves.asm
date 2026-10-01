@@ -2700,7 +2700,7 @@ Mon104_EvosMoves:
 	level_move 27,LOW_KICK ; False Swipe → HGSS tutor move
 	level_move 31,ANCIENTPOWER ; Thrash → TM move
 	level_move 33,THRASH ; Fling → Thrash
-	level_move 37,BONE_RUSH ; Stomping Tantrum → Bone Rush
+	; MOV-5.61.53: Lv37 Bone Rush removed because move #248 is now Sacred Fire.
 	level_move 41,EARTH_POWER ; Endeavor → Tutor move
 	level_move 43,DOUBLE_EDGE
 	level_move 47,OUTRAGE ; Bone Rush → Outrage
@@ -2724,7 +2724,7 @@ Mon105_EvosMoves:
 	level_move 27,LOW_KICK ; False Swipe → HGSS tutor move
 	level_move 33,SHADOW_CLAW ; Thrash → TM move
 	level_move 37,THRASH ; Fling → Thrash
-	level_move 43,BONE_RUSH ; Stomping Tantrum → Bone Rush
+	; MOV-5.61.53: Lv43 Bone Rush removed because move #248 is now Sacred Fire.
 	level_move 49,EARTH_POWER ; Endeavor → Tutor move
 	level_move 53,DOUBLE_EDGE
 	level_move 59,OUTRAGE ; Bone Rush → Outrage
@@ -5141,8 +5141,8 @@ Mon208_EvosMoves:
 	level_move 23,EXTRASENSORY
 	level_move 29,SHADOW_BALL ; Sunny Day → TM move
 	level_move 37,FIRE_BLAST
-	level_move 43,SOLARBEAM ; Sacred Fire → Solarbeam
-	level_move 50,FLARE_BLITZ ; Solarbeam → new move
+	level_move 43,SOLARBEAM
+	level_move 50,SACRED_FIRE ; MOV-5.61.53: restore Ho-Oh's Gen II signature move.
 	level_move 57,ANCIENTPOWER
 	level_move 65,HAZE ; Safeguard → new move
 	level_move 71,RECOVER

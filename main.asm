@@ -2942,3 +2942,7 @@ INCLUDE "engine/battle/sacred_fire_animation.asm"
 ; ANM-5.61.59: Gold Quick Attack approach used by Shadow Punch stays in roomy bank $3D.
 SECTION "Gold Quick Attack Shadow Punch", ROMX, BANK[$3D]
 INCLUDE "engine/battle/shadow_punch_quick_attack.asm"
+
+; ANM-5.61.62: Gold/Crystal Flame Wheel reuses the shared Gold fire assets in bank $3D.
+SECTION "Gold Flame Wheel Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/flame_wheel_animation.asm"

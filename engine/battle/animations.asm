@@ -1326,7 +1326,19 @@ ShareMoveAnimations:
 PlayApplyingAttackAnimation:
 ; Generic animation that shows after the move's individual animation
 ; Different animation depending on whether the move has an additional effect and on whose turn it is
+	; ANM-5.61.62: Gold Flame Wheel uses the same player-side vertical damage
+	; reaction as Shadow Ball. Select it here rather than inside the move renderer so
+	; the feedback stays correct even when battle animations are disabled.
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.useStoredType
+	ld a,[wAnimationID]
+	cp FLAME_WHEEL
+	ld a,1
+	jr z,.gotType
+.useStoredType
 	ld a,[wAnimationType]
+.gotType
 	and a
 	ret z
 	dec a
