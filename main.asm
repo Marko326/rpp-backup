@@ -2938,3 +2938,7 @@ INCLUDE "engine/battle/dynamic_punch_animation.asm"
 ; MOV-5.61.53: Gold-style Sacred Fire renderer/data also live in roomy bank $3D.
 SECTION "Gold Sacred Fire Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/sacred_fire_animation.asm"
+
+; ANM-5.61.59: Gold Quick Attack approach used by Shadow Punch stays in roomy bank $3D.
+SECTION "Gold Quick Attack Shadow Punch", ROMX, BANK[$3D]
+INCLUDE "engine/battle/shadow_punch_quick_attack.asm"

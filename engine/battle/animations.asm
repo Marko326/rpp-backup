@@ -973,6 +973,9 @@ PlayAnimation:
 	jr z,.playExtendedProjectile
 	cp EXT_ANIM_SET_PALETTE_MODE
 	jr z,.setExtendedPaletteMode
+	; ANM-5.61.59: dedicated Gold Quick Attack phase command used by Shadow Punch.
+	cp EXT_ANIM_GOLD_QUICK_ATTACK_PHASE
+	jr z,.playGoldQuickAttackPhase
 	ret
 .setExtendedFrameEffect
 	ld a,[hli]
@@ -1000,6 +1003,15 @@ PlayAnimation:
 	; helper code and do not consume or redefine legacy animation tileset slots.
 	push hl
 	callba PlayExtendedShadowBallProjectile
+	pop hl
+	jp .animationLoop
+.playGoldQuickAttackPhase
+	ld a,[hli]
+	cp GOLD_QUICK_ATTACK_RETURN + 1
+	ret nc ; unknown phase: fail closed
+	ld e,a
+	push hl
+	callba PlayGoldQuickAttackPhase
 	pop hl
 	jp .animationLoop
 .doSpecialEffect

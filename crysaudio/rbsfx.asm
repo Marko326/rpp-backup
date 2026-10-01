@@ -138,3 +138,6 @@ RedSfxHeaderPointers:
 
 	; MOV-5.61.53: Sacred Fire reuses the exact Gold Ember SFX data already present.
 	dbw BANK(Sfx_Ember), Sfx_Ember
+
+	; ANM-5.61.59: Shadow Punch reuses Gold Quick Attack's exact SFX_MENU data.
+	dbw BANK(Sfx_Menu), Sfx_Menu

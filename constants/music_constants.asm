@@ -352,3 +352,4 @@ const_value = 1
 	const GSSFX_AEROBLAST   ; ANM-5.61.46: exact Gold Aeroblast SFX
 	const GSSFX_EGG_BOMB    ; ANM-5.61.48: exact Gold/Crystal DynamicPunch explosion SFX
 	const GSSFX_EMBER       ; MOV-5.61.53: exact Gold Sacred Fire Ember SFX
+	const GSSFX_MENU        ; ANM-5.61.59: exact Gold Quick Attack vanish SFX

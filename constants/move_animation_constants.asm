@@ -8,6 +8,11 @@ EXT_ANIM_DYNAMIC_PUNCH_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; same banked-he
 EXT_ANIM_PUNCH_HORIZONTAL_HIT EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Bullet/Sucker: restore Gen1 horizontal damage feedback
 EXT_ANIM_SHADOW_PUNCH_POOF EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Shadow Punch: centered Shadow Ball poof
 EXT_ANIM_SET_PALETTE_MODE EQU $C3 ; next byte: EXT_PALETTE_MODE_* for the next subanimation(s)
+EXT_ANIM_GOLD_QUICK_ATTACK_PHASE EQU $C4 ; ANM-5.61.59: next byte = Shadow Punch preload/approach/return phase
+
+GOLD_QUICK_ATTACK_PREPARE  EQU 0
+GOLD_QUICK_ATTACK_APPROACH EQU 1
+GOLD_QUICK_ATTACK_RETURN   EQU 2
 
 EXT_PALETTE_MODE_FIXED            EQU 0 ; use the legacy per-tile animation palette map
 EXT_PALETTE_MODE_MOVE_TYPE        EQU 1 ; use the dedicated 18-type dynamic OBJ palette

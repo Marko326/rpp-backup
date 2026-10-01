@@ -1403,17 +1403,22 @@ HexExtAnimEnd:
 ShadowPunchExtAnim:
 	db ShadowPunchExtAnimEnd - ShadowPunchExtAnimData
 ShadowPunchExtAnimData:
-	; Ghost identity: dark field -> Ghost fist -> Shadow Ball's short poof.
-	; C2 redraws the same poof tiles around the Punch contact center instead of
-	; inheriting Sub3C's lower projectile-impact anchor.
-	db SE_DARK_SCREEN_PALETTE,$FF
+	; ANM-5.61.59: preload Shadow Punch's fist before the Quick Attack vanish so the Gold
+	; approach can flow straight into the existing hit without a VRAM-load gap.
+	; Gold's Comet Punch sound / HIT object are intentionally not reproduced.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_PREPARE
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_APPROACH
 	db $46,$04,$05
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db EXT_ANIM_SHADOW_PUNCH_POOF
+	; Keep the full attack in darkness, but restore the normal battle palette
+	; before redrawing the user so the return does not linger as a dark-palette silhouette.
 	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_RETURN
 	db $FF
 ShadowPunchExtAnimEnd:
 	IF ShadowPunchExtAnimEnd - ShadowPunchExtAnimData > 30
@@ -2331,7 +2336,16 @@ PlayShadowPunchCenteredPoof::
 	ld hl,ShadowPunchPoofFrame08
 	call .drawFrame
 	ld hl,ShadowPunchPoofFrame09
-	jp .drawFrame
+	call .drawFrame
+	; ANM-5.61.59: match Shadow Ball only for the player-side damage reaction: when the
+	; enemy used Shadow Punch, force the generic post-hit feedback to the
+	; vertical shake. Player-used Shadow Punch keeps its existing feedback.
+	ld a,[H_WHOSETURN]
+	and a
+	ret z
+	ld a,1
+	ld [wAnimationType],a
+	ret
 
 .drawFrame
 	; frame data = sprite count, object half-size, then legacy
@@ -2783,6 +2797,7 @@ SeamlessBattleAnimStagePairs:
 	; as Acid, so keep the boundary pose instead of clearing/reloading between them.
 	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
 	db SLUDGE,       $13, $14, 0      ; same two-stage poison animation as Acid
+	db SHADOW_PUNCH, $FD, $05, 0      ; ANM-5.61.59: prepared Quick Attack handoff; skip fist gfx reload
 	db SHADOW_PUNCH, $05, SEAMLESS_CUSTOM_TARGET, 12 ; 9-sprite fist through 4x3-frame poof
 	; ANM-5.61.48: Gold starts Explosion2 four VBlanks before PunchShake disappears.
 	db DYNAMICPUNCH,  $05, SEAMLESS_CUSTOM_TARGET, 4  ; carry final fist into first explosion
