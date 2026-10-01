@@ -1148,7 +1148,10 @@ RegionalFormFindBattleSlotDescriptor:
 	and a
 	jr z,.player
 .enemy
-	ld a,[wEnemyMonSpecies2]
+	; FRM-5.61.52: use the active battle Species here. wEnemyMonSpecies2 keeps
+	; the original enemy identity across Transform, while wEnemyMonForm now tracks
+	; the transformed runtime form that must drive the palette override.
+	ld a,[wEnemyMonSpecies]
 	ld d,a
 	ld a,[wEnemyMonForm]
 	ld e,a
@@ -1168,6 +1171,24 @@ RegionalFormFindBattleSlotDescriptor:
 	jp RegionalFormFindBySpeciesMarker
 .no
 	and a
+	ret
+
+; E = 0 player, E = 1 enemy. Return D = runtime form ID and E = persistent
+; marker with carry set for a registered regional form. DE survives CALLBA's
+; Bankswitch return, so callers in other ROM banks never dereference a bank-$34
+; descriptor pointer after the original bank has been restored.
+RegionalFormGetBattleSlotFormIdentity:
+	call RegionalFormFindBattleSlotDescriptor
+	jr nc,.none
+	inc hl
+	ld d,[hl] ; runtime form ID
+	inc hl
+	ld e,[hl] ; persistent marker
+	ret
+.none
+	xor a
+	ld d,a
+	ld e,a
 	ret
 
 RegionalFormLoadBattlePokemonPalette:

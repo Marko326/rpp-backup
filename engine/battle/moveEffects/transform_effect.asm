@@ -29,6 +29,11 @@ TransformEffect_:
 	ld hl, HideSubstituteShowMonAnim
 	ld b, BANK(HideSubstituteShowMonAnim)
 	call nz, Bankswitch
+	; FRM-5.61.52: Transform redraws before the stock data copy below. Stage the
+	; user's runtime Species + regional identity only after any Substitute prep,
+	; so the first Transform redraw resolves the target form without changing the
+	; pre-animation Substitute/Minimize cleanup semantics.
+	call .syncRegionalFormIdentity
 	ld a, [wOptions]
 	add a
 	ld hl, PlayCurrentMoveAnimation
@@ -64,6 +69,10 @@ TransformEffect_:
 	inc bc
 	inc bc
 	call CopyData
+	; The stock seven-byte copy includes CatchRate. For a transformed player that
+	; byte is the target battle catch rate, not the persistent regional marker, so
+	; restore the staged form identity after the copy as well.
+	call .syncRegionalFormIdentity
 	ld a, [H_WHOSETURN]
 	and a
 	jr z, .next
@@ -126,6 +135,50 @@ TransformEffect_:
 	call .copyBasedOnTurn ; stat mods
 	ld hl, TransformedText
 	jp PrintText
+
+.syncRegionalFormIdentity
+; Preserve the Transform copy pointers. The only outputs are the active battle
+; Species/form identity bytes used by form-aware graphics/header/palette paths.
+	push de
+	push hl
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyUser
+
+; Player transforms into the active enemy. The enemy keeps a runtime form ID,
+; while the player battle struct needs the matching persistent marker byte.
+.playerUser
+	ld a, [wEnemyMonSpecies]
+	ld [wBattleMonSpecies], a
+	ld e, 1 ; enemy battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	jr nc, .playerNormal
+	ld a, e ; persistent marker returned across CALLBA
+	ld [wBattleMonCatchRate], a
+	jr .done
+.playerNormal
+	xor a ; transformed player uses 0 as the unambiguous NORMAL-form marker
+	ld [wBattleMonCatchRate], a
+	jr .done
+
+; Enemy transforms into the active player. Resolve the player's stored marker to
+; a runtime form ID for wEnemyMonForm; NORMAL deliberately clears the old form.
+.enemyUser
+	ld a, [wBattleMonSpecies]
+	ld [wEnemyMonSpecies], a
+	ld e, 0 ; player battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	jr nc, .enemyNormal
+	ld a, d ; runtime form ID returned across CALLBA
+	ld [wEnemyMonForm], a
+	jr .done
+.enemyNormal
+	xor a
+	ld [wEnemyMonForm], a
+.done
+	pop hl
+	pop de
+	ret
 
 .copyBasedOnTurn
 	ld a, [H_WHOSETURN]

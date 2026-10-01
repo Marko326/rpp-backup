@@ -3195,9 +3195,9 @@ ChangeMonPic:
 	ld [wd0b5], a
 	xor a
 	ld [wSpriteFlipped], a
-	; FRM-5.61.46: ordinary redraws of the active enemy must reuse its already
-	; resolved runtime form. A deliberate species swap (Transform/Ghost Marowak)
-	; still uses the stock requested-species header below.
+	; FRM-5.61.52: ordinary redraws of the active enemy reuse its already resolved
+	; runtime form. Transform pre-stages the target identity before reaching here;
+	; only unrelated deliberate swaps such as Ghost Marowak use the stock header.
 	ld a, [wChangeMonPicEnemyTurnSpecies]
 	ld b, a
 	ld a, [wEnemyMonSpecies]
@@ -3217,8 +3217,8 @@ ChangeMonPic:
 	ld a, [wChangeMonPicPlayerTurnSpecies]
 	ld [wBattleMonSpecies2], a
 	ld [wd0b5], a
-	; FRM-5.61.46: same rule for the player's back sprite. Only preserve the
-	; stored form when the requested redraw species is the active battle species.
+	; FRM-5.61.52: same rule for the player's back sprite. Transform has already
+	; staged the target Species + marker, so its redraw also follows this form path.
 	ld b, a
 	ld a, [wBattleMonSpecies]
 	cp b
