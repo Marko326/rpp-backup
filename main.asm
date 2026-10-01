@@ -2934,3 +2934,7 @@ INCLUDE "engine/battle/aeroblast_animation.asm"
 ; ANM-5.61.48: Gold/Crystal DynamicPunch explosion timeline/data stay in roomy bank $3D.
 SECTION "Gold DynamicPunch Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/dynamic_punch_animation.asm"
+
+; MOV-5.61.53: Gold-style Sacred Fire renderer/data also live in roomy bank $3D.
+SECTION "Gold Sacred Fire Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/sacred_fire_animation.asm"

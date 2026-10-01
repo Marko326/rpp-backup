@@ -193,6 +193,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldAeroblastAnimation
 	ret
 .notAeroblast
+	cp SACRED_FIRE
+	jr nz,.notSacredFire
+	; MOV-5.61.53: Sacred Fire owns its complete Gold-style timeline in roomy bank $3D.
+	callba PlayGoldSacredFireAnimation
+	ret
+.notSacredFire
 
 	; Gold-style Shadow Ball projectile; C2 currently has no operand.
 	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
@@ -544,7 +550,7 @@ ExtendedMoveAnimationPointers:
 	dw LowSweepExtAnim              ; LOW_SWEEP
 	dw HurricaneExtAnim             ; HURRICANE
 	dw BabydolleyesExtAnim          ; BABYDOLLEYES
-	dw BoneRushExtAnim              ; BONE_RUSH
+	dw SacredFireExtAnim            ; SACRED_FIRE
 	dw AeroblastExtAnim             ; AEROBLAST
 	dw AncientpowerExtAnim          ; ANCIENTPOWER
 	dw DiveExtAnim                  ; DIVE
@@ -1948,16 +1954,16 @@ BabydolleyesExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-BoneRushExtAnim:
-	db BoneRushExtAnimEnd - BoneRushExtAnimData
-BoneRushExtAnimData:
-	db $06,$9A,$02
-	db $06,$9A,$02
-	db $06,$9A,$02
+SacredFireExtAnim:
+	db SacredFireExtAnimEnd - SacredFireExtAnimData
+SacredFireExtAnimData:
+	; MOV-5.61.53: C2 dispatches by real move ID; the banked helper owns the
+	; eight rising flames, target lunge and three-way Fire Blast impact.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $FF
-BoneRushExtAnimEnd:
-	IF BoneRushExtAnimEnd - BoneRushExtAnimData > 30
-		fail "extended move animation recipe exceeds wBuffer"
+SacredFireExtAnimEnd:
+	IF SacredFireExtAnimEnd - SacredFireExtAnimData > 30
+		fail "Sacred Fire animation recipe exceeds wBuffer"
 	ENDC
 
 AeroblastExtAnim:

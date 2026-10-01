@@ -250,7 +250,7 @@ MoveNames::
 	db "Low Sweep@"
 	db "Hurricane@"
 	db "BabyDollEyes@"
-	db "Bone Rush@"
+	db "Sacred Fire@"
 	db "Aeroblast@"
 	db "AncientPower@"
 	db "Dive@"

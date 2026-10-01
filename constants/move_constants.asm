@@ -247,7 +247,8 @@ const_value = 1
 	const LOW_SWEEP    ; f5
 	const HURRICANE    ; f6
 	const BABYDOLLEYES ; f7
-	const BONE_RUSH    ; f8
+	; MOV-5.61.53: replace low-use Bone Rush slot with Ho-Oh signature move Sacred Fire.
+	const SACRED_FIRE  ; f8
 	const AEROBLAST    ; f9
 	const ANCIENTPOWER ; fa
 	const DIVE         ; fb (Unused) 

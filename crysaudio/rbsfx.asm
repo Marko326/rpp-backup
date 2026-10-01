@@ -135,3 +135,6 @@ RedSfxHeaderPointers:
 
 	; ANM-5.61.48: exact Gold/Crystal DynamicPunch explosion SFX.
 	dbw BANK(Sfx_EggBomb), Sfx_EggBomb
+
+	; MOV-5.61.53: Sacred Fire reuses the exact Gold Ember SFX data already present.
+	dbw BANK(Sfx_Ember), Sfx_Ember

@@ -261,7 +261,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescLowSweepPages ; LOW_SWEEP #245
 	movedex_desc_ptr MoveDexDescHurricanePages ; HURRICANE #246
 	movedex_desc_ptr MoveDexDescBabyDollEyesPages ; BABYDOLLEYES #247
-	movedex_desc_ptr MoveDexDescBoneRushPages ; BONE_RUSH #248
+	movedex_desc_ptr MoveDexDescSacredFirePages ; SACRED_FIRE #248
 	movedex_desc_ptr MoveDexDescAeroblastPages ; AEROBLAST #249
 	movedex_desc_ptr MoveDexDescAncientPowerPages ; ANCIENTPOWER #250
 	movedex_desc_ptr MoveDexDescDivePages ; DIVE #251
@@ -2857,12 +2857,13 @@ MoveDexDescBabyDollEyes1:
 	db   "Stares with round"
 	next "charming eyes.@"
 
-; #248 Bone Rush
-MoveDexDescBoneRushPages:
-	dw MoveDexDescBoneRush1, MoveDexDescEffectDHits2To5, 0
-MoveDexDescBoneRush1:
-	db   "Strikes repeatedly"
-	next "with a hard bone.@"
+; #248 Sacred Fire
+MoveDexDescSacredFirePages:
+	; MOV-5.61.53: dedicated 50% burn plus Gen II self-thaw behavior.
+	dw MoveDexDescSacredFire1, MoveDexDescEffectDBurn50, MoveDexDescEffectDFireBurnImmune, MoveDexDescEffectDSelfThaw, 0
+MoveDexDescSacredFire1:
+	db   "Mystical fire that"
+	next "may burn the foe.@"
 
 ; #249 Aeroblast
 MoveDexDescAeroblastPages:
@@ -3039,6 +3040,18 @@ MoveDexDescEffectDFlinch10:
 MoveDexDescEffectDFlinch30:
 	db   "30", $d9, " chance to make"
 	next "the foe flinch.@"
+
+MoveDexDescEffectDBurn50:
+	db   "50", $d9, " chance to"
+	next "burn the foe.@"
+
+MoveDexDescEffectDFireBurnImmune:
+	db   "Cannot burn a"
+	next "Fire-type foe.@"
+
+MoveDexDescEffectDSelfThaw:
+	db   "Thaws frozen user"
+	next "before attacking.@"
 
 MoveDexDescEffectDRecharge:
 	db   "User must recharge"

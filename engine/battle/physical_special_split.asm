@@ -258,7 +258,8 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;Low Sweep
 	db SPECIAL ;Hurricane
 	db OTHER_M ;Baby Doll Eyes
-	db PHYSICAL;Bone Rush
+	; MOV-5.61.53: Sacred Fire is a physical Fire attack.
+	db PHYSICAL;Sacred Fire
 	db SPECIAL ;Aeroblast
 	db SPECIAL ;AncientPower
 	db PHYSICAL;Dive (Unused)

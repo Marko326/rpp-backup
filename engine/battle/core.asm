@@ -82,7 +82,7 @@ SpecialEffects:
 	db PAY_DAY_EFFECT
 	db SWIFT_EFFECT
 	db TWO_TO_FIVE_ATTACKS_EFFECT
-	db $1E
+	; MOV-5.61.53: SACRED_FIRE_EFFECT ($1E) must run at end-of-move through JumpMoveEffect.
 	db CHARGE_EFFECT
 	db SUPER_FANG_EFFECT
 	db SPECIAL_DAMAGE_EFFECT
@@ -3496,11 +3496,13 @@ CheckPlayerStatusConditions:
 .FrozenCheck
 	bit FRZ,[hl] ; frozen?
 	jr z,.HeldInPlaceCheck ; to 5898
-	; Adding checks for Flame Wheel and Flare Blitz to thaw you
+	; MOV-5.61.53: Flame Wheel, Flare Blitz and Sacred Fire thaw a frozen user.
 	ld a, [wPlayerSelectedMove]
 	cp FLAME_WHEEL
 	jr z, .defrostMon
 	cp FLARE_BLITZ
+	jr z, .defrostMon
+	cp SACRED_FIRE
 	jr z, .defrostMon
 	; Natural thaw is checked only when the frozen mon actually attempts to act.
 	; The chance is 51 / 256 (19.92%, approximately 20%) on every such check.
@@ -4659,8 +4661,7 @@ CalculateDamage:
 ; Multi-hit attacks may or may not have 0 bp.
 	cp a, TWO_TO_FIVE_ATTACKS_EFFECT
 	jr z, .skipbp
-	cp a, $1e
-	jr z, .skipbp
+	; MOV-5.61.53: $1E is Sacred Fire now, not the old unused multi-hit placeholder.
 
 ; Calculate OHKO damage based on remaining HP.
 	cp a, OHKO_EFFECT
@@ -5710,11 +5711,13 @@ CheckEnemyStatusConditions:
 .checkIfFrozen
 	bit FRZ, [hl]
 	jr z, .checkIfTrapped
-	; Add check for Flame Wheel and Flare Blitz
+	; MOV-5.61.53: Flame Wheel, Flare Blitz and Sacred Fire thaw a frozen user.
 	ld a, [wEnemySelectedMove]
 	cp FLAME_WHEEL
 	jr z, .defrostMon
 	cp FLARE_BLITZ
+	jr z, .defrostMon
+	cp SACRED_FIRE
 	jr z, .defrostMon
 	; Natural thaw is checked only when the frozen mon actually attempts to act.
 	; The chance is 51 / 256 (19.92%, approximately 20%) on every such check.
@@ -6958,7 +6961,7 @@ MoveEffectPointerTable:
 	 dw ThrashPetalDanceEffect    ; THRASH_PETAL_DANCE_EFFECT
 	 dw SwitchAndTeleportEffect   ; SWITCH_AND_TELEPORT_EFFECT
 	 dw TwoToFiveAttacksEffect    ; TWO_TO_FIVE_ATTACKS_EFFECT
-	 dw TwoToFiveAttacksEffect    ; unused effect
+	 dw FreezeBurnParalyzeEffect  ; SACRED_FIRE_EFFECT
 	 dw FlinchSideEffect           ; FLINCH_SIDE_EFFECT1
 	 dw SleepEffect               ; SLEEP_EFFECT
 	 dw PoisonEffect              ; POISON_SIDE_EFFECT2
@@ -7171,6 +7174,14 @@ opponentAttacker:
 ; Normalize burn/freeze/paralyze side-effect IDs and perform their shared
 ; probability roll. Returns the normalized effect in A with carry set on success.
 RollStatusSideEffect:
+	; MOV-5.61.53: Sacred Fire uses an exact 128/256 (50%) burn roll, then
+	; normalizes to the ordinary burn ID so the shared immunity/status code stays intact.
+	cp SACRED_FIRE_EFFECT
+	jr nz, .standardStatusRoll
+	ld b, $80
+	ld a, BURN_SIDE_EFFECT1
+	jr .roll
+.standardStatusRoll
 	cp PARALYZE_SIDE_EFFECT1 + 1
 	ld b, $1a ; ~10% effects
 	jr c, .roll

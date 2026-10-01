@@ -2642,6 +2642,36 @@ AnimationResetMonPosition:
 	call ClearMonPicFromTileMap
 	jp AnimationShowMonPic
 
+; MOV-5.61.53: Sacred Fire runs from bank $3D, so its lunge must enter bank $1E
+; through one normal far-call.  Keep all tile-list work local to this bank: using
+; the ROM0-only `homecall` macro from ROMX switches away from the caller itself.
+SacredFireShiftUserForwardNoDelay::
+	call AnimationHideMonPic
+	ld a, [H_WHOSETURN]
+	and a
+	coord hl, 2, 5
+	jr z, .coordReady
+	coord hl, 11, 0
+.coordReady
+	xor a
+	push hl
+	call GetTileIDList
+	pop hl
+	jp CopyPicTiles
+
+SacredFireRestoreUserPositionNoDelay::
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, 5 * SCREEN_WIDTH + 2
+	jr z, .clearReady
+	ld a, 11
+.clearReady
+	call ClearMonPicFromTileMap
+	xor a
+	call GetTileIDList
+	call GetMonSpriteTileMapPointerFromRowCount
+	jp CopyPicTiles
+
 AnimationSpiralBallsInward:
 ; Creates an effect that looks like energy balls spiralling into the
 ; player mon's sprite.  Used in Focus Energy, for example.

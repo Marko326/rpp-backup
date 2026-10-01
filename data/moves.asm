@@ -258,11 +258,10 @@ MoveEnd:
 	move MEGA_KICK,    SPEED_DOWN_SIDE_EFFECT,      65, FIGHTING, 100, 20 ; Low Sweep
 	move SONICBOOM,    CONFUSION_SIDE_EFFECT,      110, FLYING,    85, 10 ; Hurricane
 	move TAIL_WHIP,    ATTACK_DOWN1_EFFECT,          0, FAIRY,    100, 30 ; Baby Doll Eyes
-	move BONEMERANG,   TWO_TO_FIVE_ATTACKS_EFFECT,  25, GROUND,    90, 10 ; Bone Rush
+	move FIRE_BLAST,   SACRED_FIRE_EFFECT,         100, FIRE,      95,  5 ; Sacred Fire ; MOV-5.61.53: Gen II Sacred Fire: 100 power / 95% / 5 PP / 50% burn.
 	move AURORA_BEAM,  NO_ADDITIONAL_EFFECT,       100, FLYING,   100,  5 ; Aeroblast
 	move ROCK_THROW,   SILVER_WIND_EFFECT,          60, ROCK,     100,  5 ; Ancient Power
 	move SURF,         CHARGE_EFFECT,               80, WATER,    100, 10 ; Dive (Unused)
 	move FLASH,        SPECIAL_DOWN_SIDE_EFFECT,    70, PSYCHIC,  100,  5 ; Luster Purge
 	move GLARE,        SILVER_WIND_EFFECT,         100, PSYCHIC,  100, 10 ; Mind Blast
-	; MOV-5.61.31: KEP Iron Head; DOUBLE_EDGE also matches KEP's $20/$c0 impact sound profile.
-	move DOUBLE_EDGE,  FLINCH_SIDE_EFFECT2,          80, STEEL,    100, 15 ; Iron Head
+	move DOUBLE_EDGE,  FLINCH_SIDE_EFFECT2,         80, STEEL,    100, 15 ; Iron Head ; MOV-5.61.31: KEP Iron Head; DOUBLE_EDGE also matches KEP's $20/$c0 impact sound profile.
