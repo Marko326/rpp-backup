@@ -927,9 +927,12 @@ wOverrideSimulatedJoypadStatesMask:: ; cd3b
 ; XXX is it ever not 0?
 	ds 1
 
-; unused?
+; ANM-5.61.67: fixed-WRAM battle-animation WX latch state. These labels reuse
+; the two existing scratch bytes, so WRAM layout is unchanged.
+wBattleAnimWXEnabled:: ; cd3c
 	ds 1
 
+wBattleAnimWX:: ; cd3d
 wFallingObjectsMovementData:: ; cd3d
 ; up to 20 bytes (one byte for each falling object)
 

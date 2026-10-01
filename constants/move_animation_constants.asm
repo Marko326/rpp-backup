@@ -3,9 +3,10 @@
 ; is staged.  Legacy animation streams still treat this range as invalid.
 EXT_ANIM_SET_FRAME_EFFECT EQU $C0 ; next byte: EXT_FRAME_* mode
 EXT_ANIM_PLAY_USER_CRY    EQU $C1 ; next byte: MoveSoundTable profile move ID
-EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; real-move gateway (Shadow Ball / Sludge Bomb / Aeroblast / Flame Wheel / Sacred Fire / compact helpers)
+EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; real-move gateway (Shadow Ball / Sludge Bomb / Aeroblast / Flame Wheel / Cross Chop / Sacred Fire / compact helpers)
 EXT_ANIM_DYNAMIC_PUNCH_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; same banked-helper gateway, real-Move dispatched
 EXT_ANIM_FLAME_WHEEL_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.62: Gold/Crystal Flame Wheel timeline
+EXT_ANIM_CROSS_CHOP_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.67: Gold/Crystal Cross Chop timeline
 EXT_ANIM_PUNCH_HORIZONTAL_HIT EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Bullet/Sucker: restore Gen1 horizontal damage feedback
 EXT_ANIM_SHADOW_PUNCH_POOF EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Shadow Punch: centered Shadow Ball poof
 EXT_ANIM_SET_PALETTE_MODE EQU $C3 ; next byte: EXT_PALETTE_MODE_* for the next subanimation(s)

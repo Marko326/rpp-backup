@@ -2946,3 +2946,7 @@ INCLUDE "engine/battle/shadow_punch_quick_attack.asm"
 ; ANM-5.61.62: Gold/Crystal Flame Wheel reuses the shared Gold fire assets in bank $3D.
 SECTION "Gold Flame Wheel Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/flame_wheel_animation.asm"
+
+; ANM-5.61.67: Gold/Crystal Cross Chop renderer/data stay in roomy bank $3D.
+SECTION "Gold Cross Chop Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/cross_chop_animation.asm"

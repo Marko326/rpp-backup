@@ -36,6 +36,11 @@ PlayGoldAeroblastAnimation::
 	ld c, AEROBLAST_BEAM_TILE_COUNT
 	call CopyVideoData
 
+	; ANM-5.61.67: keep the normal battle Window/tilemap ownership intact.
+	; Only arm the shared VBlank-latched WX path used by this animation and
+	; Cross Chop; no BG-map destination or auto-transfer state is changed.
+	call GoldBattleHorizontalShakeBegin
+
 	; Gold/Crystal use anim_bgp $1b. This is much closer to their dark/inverted
 	; stage than the generic Gen 1 $6f blackout and remains active for the move.
 	ld a, $1b
@@ -113,9 +118,10 @@ PlayGoldAeroblastAnimation::
 .tipDone
 
 	; Gold's shake is +/-4 px, flips direction every two VBlanks, and lasts 80.
-	call .ApplyHorizontalShake
+	; Stage the next absolute WX; the existing VBlank hook commits it before
+	; scanline 0 so the whole Window moves as one frame.
+	call .SetHorizontalShake
 	call DelayFrame
-	call .UndoHorizontalShake
 	call ClearSprites
 
 	ld hl, wSubAnimCounter
@@ -126,7 +132,7 @@ PlayGoldAeroblastAnimation::
 
 	; Gen 2's animation cleanup restores the battle palette after the command ends.
 	callba AnimationResetScreenPalette
-	ret
+	jp GoldBattleHorizontalShakeEnd
 
 .PlayHyperBeamSfx
 	; RPP's Hyper Beam MoveSoundTable entry is SFX_BATTLE_36 with $00/$80
@@ -181,37 +187,17 @@ PlayGoldAeroblastAnimation::
 	ld [rSVBK], a
 	ret
 
-.ApplyHorizontalShake
-	ld a, [wSubAnimCounter]
-	cp AEROBLAST_SHAKE_FRAMES
-	ret nc
-	and 2
-	ld a, [rWX]
-	jr nz, .shakeRight
-	sub 4 ; Gold's first two shake frames use -4.
-	ld [rWX], a
-	ret
-.shakeRight
-	add 4
-	ld [rWX], a
-	ret
-
-.UndoHorizontalShake
-	ld a, [wSubAnimCounter]
-	cp AEROBLAST_SHAKE_FRAMES
-	ret nc
-	and 2
-	ld a, [rWX]
-	jr nz, .undoRight
-	add 4
-	ld [rWX], a
-	ret
-.undoRight
-	sub 4
-	ld [rWX], a
-	ret
+.SetHorizontalShake
+	ld b, 0
+	ld c, AEROBLAST_SHAKE_FRAMES
+	ld d, 2 ; Gold Aeroblast keeps each sign for two VBlanks.
+	ld e, 4
+	jp GoldBattleHorizontalShakeSet
 
 .DrawFanFrame
+	; ANM-5.61.67: the shared horizontal-shake setter uses D/E as parameters.
+	; Never inherit DE from the previous frame; always start the fan in OAM buffer.
+	ld de, wOAMBuffer
 	; A = pose 0..3. Gold OAM sets CF-D2 use six new tiles per pose.
 	ld c, a
 	add a
@@ -332,6 +318,56 @@ PlayGoldAeroblastAnimation::
 
 	dec b
 	jr nz, .spriteLoop
+	ret
+
+; ANM-5.61.67: full-frame horizontal battle shake shared by Aeroblast and
+; Cross Chop. Keep the battle Window exactly where the rest of the battle engine
+; expects it; only stage an absolute WX value in fixed WRAM. GbcVBlankHook commits
+; that value to rWX during VBlank, eliminating the old mid-scanline tear without
+; touching hWY, BG maps, H_AUTOBGTRANSFERDEST or auto-transfer state.
+
+GoldBattleHorizontalShakeBegin::
+	ld a, 7 ; normal battle Window X
+	ld [wBattleAnimWX], a
+	ld a, 1
+	ld [wBattleAnimWXEnabled], a
+	ret
+
+; B = first active frame, C = first inactive frame, D = phase mask, E = pixels.
+GoldBattleHorizontalShakeSet::
+	ld a, [wSubAnimCounter]
+	cp b
+	jr c, .base
+	cp c
+	jr nc, .base
+	sub b
+	and d
+	jr nz, .right
+
+	; Match the previous Window-shake direction exactly: first phase is base-E.
+	ld a, 7
+	sub e
+	ld [wBattleAnimWX], a
+	ret
+
+.right
+	ld a, 7
+	add e
+	ld [wBattleAnimWX], a
+	ret
+
+.base
+	ld a, 7
+	ld [wBattleAnimWX], a
+	ret
+
+GoldBattleHorizontalShakeEnd::
+	; Both animations spend several VBlanks at the base position after shaking,
+	; so rWX has already been restored safely before this latch is disarmed.
+	ld a, 7
+	ld [wBattleAnimWX], a
+	xor a
+	ld [wBattleAnimWXEnabled], a
 	ret
 
 ; Exact Gold OAMData_cf geometry used by OAM sets CF-D2.

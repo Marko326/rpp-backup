@@ -199,6 +199,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldFlameWheelAnimation
 	ret
 .notFlameWheel
+	cp CROSS_CHOP
+	jr nz,.notCrossChop
+	; ANM-5.61.67: Gold/Crystal Cross Chop timeline lives in bank $3D.
+	callba PlayGoldCrossChopAnimation
+	ret
+.notCrossChop
 	cp SACRED_FIRE
 	jr nz,.notSacredFire
 	; MOV-5.61.53: Sacred Fire owns its complete Gold-style timeline in roomy bank $3D.
@@ -1913,9 +1919,9 @@ StormThrowExtAnimEnd:
 CrossChopExtAnim:
 	db CrossChopExtAnimEnd - CrossChopExtAnimData
 CrossChopExtAnimData:
-	db $08,$01,$03
-	db $04,$FF,$16
-	db $08,$01,$03
+	; ANM-5.61.67: replace the old Gen I combination with Gold/Crystal's two
+	; crossing cut objects, long horizontal shake and delayed inverted impact.
+	db EXT_ANIM_CROSS_CHOP_GOLD
 	db $FF
 CrossChopExtAnimEnd:
 	IF CrossChopExtAnimEnd - CrossChopExtAnimData > 30

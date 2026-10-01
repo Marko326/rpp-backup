@@ -141,3 +141,7 @@ RedSfxHeaderPointers:
 
 	; ANM-5.61.59: Shadow Punch reuses Gold Quick Attack's exact SFX_MENU data.
 	dbw BANK(Sfx_Menu), Sfx_Menu
+
+	; ANM-5.61.67: Cross Chop reuses the exact Gold Cut/Vicegrip data already present.
+	dbw BANK(Sfx_Cut), Sfx_Cut
+	dbw BANK(Sfx_Vicegrip), Sfx_Vicegrip
