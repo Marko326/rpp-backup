@@ -174,7 +174,11 @@ PlayExtendedOrbProjectile:
 	cp DRILL_PECK
 	jp z,PlayDrillPeckGoldLike
 	cp DYNAMICPUNCH
-	jp z,PlayDynamicPunchGoldLike
+	jr nz,.notDynamicPunch
+	; ANM-5.61.48: exact overlapping Gold/Crystal explosion timeline lives in bank $3D.
+	callba PlayGoldDynamicPunchAnimation
+	ret
+.notDynamicPunch
 	cp METEOR_MASH
 	jp z,PlayRocksLiftWithSwiftStars
 	cp SLUDGE_BOMB
@@ -1865,8 +1869,8 @@ RockTombExtAnimEnd:
 DynamicpunchExtAnim:
 	db DynamicpunchExtAnimEnd - DynamicpunchExtAnimData
 DynamicpunchExtAnimData:
-	; Gold-like heavy profile: six-frame Fighting fist, then one banked helper
-	; handles the inverted flash + Explosion-style impact + heavy shake.
+	; ANM-5.61.48: keep the existing Fighting fist, then let the banked Gold/Crystal
+	; impact helper overlap its final pose with five independently-timed explosions.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
 	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
 	db $46,$04,$05
@@ -2491,41 +2495,6 @@ PlayRocksLiftWithSwiftStars::
 MeteorMashLiftStarTiles:
 	INCBIN "gfx/meteor_mash_lift_star.2bpp"
 
-; DynamicPunch-only heavy impact helper. It is selected behind the existing C2
-; banked-helper gateway by real Move ID, avoiding any new BANK1E dispatcher bytes.
-PlayDynamicPunchGoldLike::
-	callba AnimationFlashScreen
-
-	; Reproduce the stock Explosion subanimation ($43,$98,$34) directly, then
-	; finish with the existing heavy shake.  This keeps the recipe compact and
-	; leaves future heavy Punches free to reuse the same primitive if desired.
-	ld a,3
-	ld [wSubAnimFrameDelay],a
-	ld a,1
-	ld [wWhichBattleAnimTileset],a
-	ld a,$98
-	ld [wAnimSoundID],a
-	ld hl,SubanimationPointers + $34 * 2
-	ld a,l
-	ld [wSubAnimAddrPtr],a
-	ld a,h
-	ld [wSubAnimAddrPtr + 1],a
-	callba LoadAnimationTileset
-	callba LoadSubanimation
-	; Sub34 is authored on the attacker's own side.  For DynamicPunch the
-	; Explosion impact belongs on the target: player use needs transform 1,
-	; enemy use needs raw transform 0.
-	ld a,[H_WHOSETURN]
-	and a
-	ld a,1
-	jr z,.gotImpactTransform
-	xor a
-.gotImpactTransform
-	ld [wSubAnimTransform],a
-	callba PlaySubanimation
-	callba AnimationShakeScreen
-	ret
-
 ; ---------------------------------------------------------------------------
 ; ANM-5.61.14 - reusable high-water overlap bridge, extended from Acid
 ; ---------------------------------------------------------------------------
@@ -2809,4 +2778,6 @@ SeamlessBattleAnimStagePairs:
 	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
 	db SLUDGE,       $13, $14, 0      ; same two-stage poison animation as Acid
 	db SHADOW_PUNCH, $05, SEAMLESS_CUSTOM_TARGET, 12 ; 9-sprite fist through 4x3-frame poof
+	; ANM-5.61.48: Gold starts Explosion2 four VBlanks before PunchShake disappears.
+	db DYNAMICPUNCH,  $05, SEAMLESS_CUSTOM_TARGET, 4  ; carry final fist into first explosion
 	db $ff

@@ -132,3 +132,6 @@ RedSfxHeaderPointers:
 
 	; ANM-5.61.46: exact Gold Aeroblast SFX; audio data already exists in sfx.asm.
 	dbw BANK(Sfx_Aeroblast), Sfx_Aeroblast
+
+	; ANM-5.61.48: exact Gold/Crystal DynamicPunch explosion SFX.
+	dbw BANK(Sfx_EggBomb), Sfx_EggBomb

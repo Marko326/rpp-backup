@@ -2930,3 +2930,7 @@ INCLUDE "engine/battle/sludge_bomb_animation.asm"
 ; ANM-5.61.46: Gold-style Aeroblast renderer/data share roomy expansion bank $3D.
 SECTION "Gold Aeroblast Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/aeroblast_animation.asm"
+
+; ANM-5.61.48: Gold/Crystal DynamicPunch explosion timeline/data stay in roomy bank $3D.
+SECTION "Gold DynamicPunch Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/dynamic_punch_animation.asm"
