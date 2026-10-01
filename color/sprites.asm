@@ -339,7 +339,8 @@ LoadAnimationTilesetPalettes:
 
 	; Legacy Bite has no expanded recipe, but it is the base animation for the
 	; Fang family.  Let the stock Bite animation use the same dynamic Dark
-	; palette as Crunch and the expanded elemental Fang recipes.  Other legacy
+	; palette as the expanded elemental Fang recipes. Crunch now uses its dedicated
+	; Gold/Crystal renderer and fixed gray OBJ palette. Other legacy
 	; animations keep their original fixed/type-color behavior.
 	ld a,[wAnimationID]
 	cp BITE

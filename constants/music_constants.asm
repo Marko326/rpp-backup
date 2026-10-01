@@ -355,3 +355,4 @@ const_value = 1
 	const GSSFX_MENU        ; ANM-5.61.59: exact Gold Quick Attack vanish SFX
 	const GSSFX_CUT         ; ANM-5.61.67: exact Gold Cross Chop opening SFX
 	const GSSFX_VICEGRIP    ; ANM-5.61.67: exact Gold Cross Chop impact SFX
+	const GSSFX_BITE        ; ANM-5.61.69: exact Gold/Crystal Crunch Bite SFX

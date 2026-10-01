@@ -145,3 +145,6 @@ RedSfxHeaderPointers:
 	; ANM-5.61.67: Cross Chop reuses the exact Gold Cut/Vicegrip data already present.
 	dbw BANK(Sfx_Cut), Sfx_Cut
 	dbw BANK(Sfx_Vicegrip), Sfx_Vicegrip
+
+	; ANM-5.61.69: Crunch reuses the exact Gold/Crystal Bite SFX already present.
+	dbw BANK(Sfx_Bite), Sfx_Bite

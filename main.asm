@@ -2950,3 +2950,7 @@ INCLUDE "engine/battle/flame_wheel_animation.asm"
 ; ANM-5.61.67: Gold/Crystal Cross Chop renderer/data stay in roomy bank $3D.
 SECTION "Gold Cross Chop Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/cross_chop_animation.asm"
+
+; ANM-5.61.69: Gold/Crystal Crunch reuses the shared full-frame WX shake in bank $3D.
+SECTION "Gold Crunch Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/crunch_animation.asm"

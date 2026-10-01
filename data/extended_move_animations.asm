@@ -173,6 +173,12 @@ PlayExtendedOrbProjectile:
 .notWingAttack
 	cp DRILL_PECK
 	jp z,PlayDrillPeckGoldLike
+	cp CRUNCH
+	jr nz,.notCrunch
+	; ANM-5.61.69: exact Gold/Crystal jaw, full-frame shake and double-impact timeline lives in bank $3D.
+	callba PlayGoldCrunchAnimation
+	ret
+.notCrunch
 	cp DYNAMICPUNCH
 	jr nz,.notDynamicPunch
 	; ANM-5.61.48: exact overlapping Gold/Crystal explosion timeline lives in bank $3D.
@@ -295,15 +301,8 @@ PlayExtendedOrbProjectile:
 	dec a
 	jr nz,.loop
 
-	; Gold post-hit feedback is attacker-side based rather than side-effect based:
-	; player Shadow Ball -> blink enemy; enemy Shadow Ball -> vertical screen shake.
-	ld a,[H_WHOSETURN]
-	and a
-	ld a,4
-	jr z,.setHitFeedback
-	ld a,1
-.setHitFeedback
-	ld [wAnimationType],a
+	; ANM-5.61.69: Shadow Ball's exceptional generic damage feedback is
+	; selected centrally by PlayApplyingAttackAnimation from the real-move override table.
 	ret
 
 .drawBall:
@@ -485,7 +484,7 @@ ExtendedMoveAnimationPointers:
 	dw FlashCannonExtAnim           ; FLASH_CANNON
 	dw IronTailExtAnim              ; IRON_TAIL
 	dw MeteorMashExtAnim            ; METEOR_MASH
-	dw FangHeavyExtAnim             ; CRUNCH
+	dw CrunchGoldExtAnim            ; CRUNCH
 	dw DarkPulseExtAnim             ; DARK_PULSE
 	dw FeintAttackExtAnim           ; FEINT_ATTACK
 	dw NightSlashExtAnim            ; NIGHT_SLASH
@@ -761,18 +760,16 @@ FangNormalExtAnimEnd:
 		fail "Fang normal animation recipe exceeds wBuffer"
 	ENDC
 
-FangHeavyExtAnim:
-	db FangHeavyExtAnimEnd - FangHeavyExtAnimData
-FangHeavyExtAnimData:
-	; Same Fang core and type color, plus a heavier impact profile for Crunch.
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
-	db $08,$2B,$02
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
-	db SE_SHAKE_SCREEN,$FF
+CrunchGoldExtAnim:
+	db CrunchGoldExtAnimEnd - CrunchGoldExtAnimData
+CrunchGoldExtAnimData:
+	; ANM-5.61.69: banked helper owns Gold's paired jaws, 32-frame VBlank-latched
+	; X shake, two offset HitBig bursts and both original Bite SFX triggers.
+	db EXT_ANIM_CRUNCH_GOLD
 	db $FF
-FangHeavyExtAnimEnd:
-	IF FangHeavyExtAnimEnd - FangHeavyExtAnimData > 30
-		fail "Fang heavy animation recipe exceeds wBuffer"
+CrunchGoldExtAnimEnd:
+	IF CrunchGoldExtAnimEnd - CrunchGoldExtAnimData > 30
+		fail "Crunch Gold animation recipe exceeds wBuffer"
 	ENDC
 
 DarkPulseExtAnim:
@@ -2347,14 +2344,8 @@ PlayShadowPunchCenteredPoof::
 	call .drawFrame
 	ld hl,ShadowPunchPoofFrame09
 	call .drawFrame
-	; ANM-5.61.59: match Shadow Ball only for the player-side damage reaction: when the
-	; enemy used Shadow Punch, force the generic post-hit feedback to the
-	; vertical shake. Player-used Shadow Punch keeps its existing feedback.
-	ld a,[H_WHOSETURN]
-	and a
-	ret z
-	ld a,1
-	ld [wAnimationType],a
+	; ANM-5.61.69: the prior enemy-side vertical feedback override is now
+	; centralized in DamageFeedbackOverrides; this renderer only draws the poof.
 	ret
 
 .drawFrame

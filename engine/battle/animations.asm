@@ -1326,16 +1326,20 @@ ShareMoveAnimations:
 PlayApplyingAttackAnimation:
 ; Generic animation that shows after the move's individual animation
 ; Different animation depending on whether the move has an additional effect and on whose turn it is
-	; ANM-5.61.62: Gold Flame Wheel uses the same player-side vertical damage
-	; reaction as Shadow Ball. Select it here rather than inside the move renderer so
-	; the feedback stays correct even when battle animations are disabled.
-	ld a,[H_WHOSETURN]
+	; ANM-5.61.69: keep RPP's stock effect-based feedback as the default. Only
+	; real moves whose restored behavior intentionally differs from that default
+	; are listed in DamageFeedbackOverrides below. This avoids teaching every
+	; Gold/Crystal renderer about wAnimationType while preserving ordinary side-
+	; effect horizontal shakes for moves that still use them.
+	ld a,[wAnimationType]
 	and a
-	jr z,.useStoredType
-	ld a,[wAnimationID]
-	cp FLAME_WHEEL
-	ld a,1
-	jr z,.gotType
+	ret z ; miss/immune/no-reaction path
+	cp 3
+	jr z,.useStoredType ; enemy non-damaging animation
+	cp 6
+	jr z,.useStoredType ; player non-damaging animation
+	call GetDamageFeedbackOverride
+	jr c,.gotType
 .useStoredType
 	ld a,[wAnimationType]
 .gotType
@@ -1359,6 +1363,46 @@ AnimationTypePointerTable:
 	dw BlinkEnemyMonSprite ; player mon has used a damaging move without a side effect
 	dw ShakeScreenHorizontallyLight ; player mon has used a damaging move with a side effect
 	dw ShakeScreenHorizontallySlow2 ; player mon has used a non-damaging move
+
+; Return carry with A = replacement animation type only when this real move/side
+; is an explicit exception to the stock effect-based table above. A zero override
+; means "keep the stored wAnimationType for this side".
+GetDamageFeedbackOverride:
+	call GetCurrentMoveID
+	ld b,a
+	ld hl,DamageFeedbackOverrides
+.loop
+	ld a,[hli]
+	and a
+	ret z ; terminator; AND clears carry
+	cp b
+	jr z,.found
+	inc hl ; skip player override
+	inc hl ; skip enemy override
+	jr .loop
+.found
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.enemy
+	ld a,[hli]
+	jr .finish
+.enemy
+	inc hl
+	ld a,[hl]
+.finish
+	and a
+	ret z ; zero = use stock feedback; AND clears carry
+	scf
+	ret
+
+; move, player-side override, enemy-side override
+; 4 = BlinkEnemyMonSprite, 1 = ShakeScreenVertically, 0 = keep stock type.
+DamageFeedbackOverrides:
+	db SHADOW_BALL, 4, 1
+	db SHADOW_PUNCH, 0, 1
+	db FLAME_WHEEL, 0, 1
+	db CRUNCH, 4, 1
+	db 0
 
 ShakeScreenVertically:
 	call PlayApplyingAttackSound
