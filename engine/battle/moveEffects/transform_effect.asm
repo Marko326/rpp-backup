@@ -12,6 +12,23 @@ TransformEffect_:
 	ld [wPlayerMoveListIndex], a
 	ld a, [wPlayerBattleStatus1]
 .hitTest
+	; TRN-5.61.54: reject Transform before animation/data copying if the user is
+	; already transformed or already matches the target Species + regional form.
+	push af
+	ld a, [bc]
+	bit Transformed, a
+	jr z, .checkSameIdentity
+	pop af
+	jp .failed
+.checkSameIdentity
+	pop af
+	push af
+	call .sameSpeciesAndForm
+	jr nz, .differentIdentity
+	pop af
+	jp .failed
+.differentIdentity
+	pop af
 	bit Invulnerable, a ; is mon invulnerable to typical attacks? (fly/dig)
 	jp nz, .failed
 	push hl
@@ -135,6 +152,32 @@ TransformEffect_:
 	call .copyBasedOnTurn ; stat mods
 	ld hl, TransformedText
 	jp PrintText
+
+.sameSpeciesAndForm
+; Return Z only when both active battle slots have the same Species and runtime
+; regional form. Preserve Transform copy pointers used by the caller.
+	push bc
+	push de
+	push hl
+	ld a, [wEnemyMonSpecies]
+	ld d, a
+	ld a, [wBattleMonSpecies]
+	cp d
+	jr nz, .identityCompared
+	ld e, 0 ; player battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	ld a, d
+	push af
+	ld e, 1 ; enemy battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	ld e, d
+	pop af
+	cp e
+.identityCompared
+	pop hl
+	pop de
+	pop bc
+	ret
 
 .syncRegionalFormIdentity
 ; Preserve the Transform copy pointers. The only outputs are the active battle
