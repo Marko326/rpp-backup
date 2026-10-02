@@ -2603,9 +2603,9 @@ INCLUDE "engine/battle/moveEffects/mimic_effect.asm"
 INCLUDE "engine/battle/moveEffects/disable_effect.asm"
 INCLUDE "engine/battle/moveEffects/sleep_charge_effects.asm"
 
-; Battle Party <-> Summary fast path lives in its own floating section so bank
-; $34's fragmented free space can be used without growing the existing bank34 section.
-SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
+; Battle Party <-> Summary fast path lives in its own section in roomy bank $1F.
+; Bank $34 is capacity-constrained and also owns the regional-form core used here.
+SECTION "Battle Party Summary Fast Path", ROMX, BANK[$1F]
 INCLUDE "engine/menu/battle_party_summary_fast_path.asm"
 
 ; Version-themed menu helpers live in roomy expansion bank $3D so the packed
@@ -2616,8 +2616,9 @@ SECTION "Version Theme Helpers", ROMX, BANK[$3D]
 INCLUDE "color/version_theme_helpers.asm"
 ENDC
 
-; Red bedroom PC gate is kept in its own small floating section.
-SECTION "Red Bedroom PC", ROMX, BANK[$34]
+; Red bedroom PC gate is bank-independent: Home resolves BANK(OpenRedBedroomPC)
+; dynamically, so keep it with the Summary fast path in roomy bank $1F instead of $34.
+SECTION "Red Bedroom PC", ROMX, BANK[$1F]
 INCLUDE "engine/menu/red_bedroom_pc.asm"
 
 ; Shared Poké Flute party wake-up logic is kept out of the capacity-constrained

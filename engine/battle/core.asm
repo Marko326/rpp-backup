@@ -1516,7 +1516,10 @@ EnemySendOutFirstMon:
 	ld a,[hl]
 	ld [wEnemyMonSpecies2],a
 	ld [wcf91],a
-	call LoadEnemyMonData
+	; FRM-5.61.56: trainer parties may carry a persistent regional-form marker.
+	; Stage that selected party marker while LoadEnemyMonData materializes the
+	; current enemy, otherwise it rebuilds the mon from Species + Level only.
+	callba RegionalFormLoadTrainerEnemyMonData
 	ld hl,wEnemyMonHP
 	ld a,[hli]
 	ld [wLastSwitchInEnemyMonHP],a

@@ -130,7 +130,7 @@ Summary_RestoreOverworldBG0::
 	call .copyScratchToRing
 	xor a
 	ld [rVBK], a
-	jp Summary_BattlePartyRestoreCommonTilesAndEnableLCD
+	jpba Summary_BattlePartyRestoreCommonTilesAndEnableLCD
 
 .copyScratchToRing
 	ld hl, SUMMARY_OVERWORLD_BG_CACHE

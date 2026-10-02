@@ -213,6 +213,15 @@ const_value = 1
 FORM_NORMAL EQU 0
 FORM_ALOLA  EQU 1
 
+; FRM-5.61.56: trainer-party entries may opt into an explicit runtime form
+; without changing the layout of ordinary trainer data. No real Species uses $fa.
+TRAINER_FORM_MON EQU $fa
+ASSERT HO_OH < TRAINER_FORM_MON
+
+; Bit 7 of wHPBarDamageSpeed is reused only while synchronously creating a new
+; explicit-form Pokemon. The damage animation always rewrites the full byte.
+BIT_REGIONAL_FORM_NEW_MON_OVERRIDE EQU 7
+
 ; Persistent form markers live in the legacy stored CatchRate byte. The marker
 ; describes the form, while species + marker selects a descriptor; all registered
 ; Alolan forms can therefore share $fe without species-specific engine logic.

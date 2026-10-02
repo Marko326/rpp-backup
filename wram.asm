@@ -898,7 +898,8 @@ wInGameTradeReceiveMonSpecies::
 ; previously unnamed/unused and are outside both save data and the link payload.
 wTradedPlayerMonFormMarker:: ; cd35
 	ds 1
-wTradedEnemyMonFormMarker:: ; cd36
+wInGameTradeReceiveMonForm:: ; cd36; runtime form until trade animation preparation
+wTradedEnemyMonFormMarker:: ; same byte becomes the validated persistent marker
 wHoFMonFormMarker:: ; shared display scratch; trade and Hall of Fame never overlap
 	ds 1
 
@@ -1314,10 +1315,14 @@ wFlags_0xcd60:: ; cd60
 ; Keep the total footprint exactly 9 bytes so wActionResultOrTookBattleTurn and
 ; every address after $CD69 stay unchanged. This area is not save data.
 wHPBarDamageSpeed:: ; cd61, BATTLE-5.19.6; tiers revised BATTLE-5.19.7
-; 0 = inactive/default; 1 = 25-<50%, 2 = 50-<75%, 3 = >=75% direct attack damage
+; low bits: 0 = inactive/default; 1 = 25-<50%, 2 = 50-<75%, 3 = >=75% damage
+; bit 7: FRM-5.61.56 transient explicit-form new-mon override flag. The producer
+; clears it before returning, so it never overlaps the battle damage animation.
 	ds 1
 wHPBarDamagePhase:: ; cd62, BATTLE-5.19.6; policy revised BATTLE-5.19.7
-; phase counter used only by the 2px/frame and 3px/frame direct-attack tiers
+wRegionalFormNewMonMarker:: ; FRM-5.61.56; synchronous new-mon producer scratch
+; In battle this is the HP-animation phase counter. Explicit-form producers run
+; outside the damage animation and clear their valid flag before returning.
 	ds 1
 wPlayerLastSelectedMove:: ; cd63, MIRROR-5.19.19
 ; Last move the player reached the executable-move stage with. Persists across switches.

@@ -173,6 +173,12 @@ RegionalFormWildEncounters::
 	db ROUTE_7, VULPIX, FORM_ALOLA
 	db $ff ; terminator: no real map uses this entry here
 
+; FRM-5.61.56: location-specific evolutions whose target form differs from the
+; source instance. Layout: map, source Species, source form, target Species, target form.
+; Keep production data empty until a story/map explicitly opts into such a rule.
+RegionalFormEvolutionOverrides::
+	db $ff
+
 ; FORM-5.26.00 bulk-imported forms intentionally do not add wild-map rows here.
 ; Their descriptors are live for Pokédex/data testing, while encounter placement remains
 ; a separate balance decision instead of being silently changed by a data-only batch.

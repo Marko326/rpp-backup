@@ -22,6 +22,13 @@ RF_WILD_SPECIES EQU 1
 RF_WILD_FORM    EQU 2
 RF_WILD_SIZE    EQU 3
 
+RF_EVO_OVERRIDE_MAP            EQU 0
+RF_EVO_OVERRIDE_SOURCE_SPECIES EQU 1
+RF_EVO_OVERRIDE_SOURCE_FORM    EQU 2
+RF_EVO_OVERRIDE_TARGET_SPECIES EQU 3
+RF_EVO_OVERRIDE_TARGET_FORM    EQU 4
+RF_EVO_OVERRIDE_SIZE           EQU 5
+
 ; -----------------------------------------------------------------------------
 ; Descriptor lookup
 ; -----------------------------------------------------------------------------
@@ -78,6 +85,98 @@ RegionalFormFindBySpeciesMarker:
 	ret
 .notFound
 	and a
+	ret
+
+; FRM-5.61.56: D = species, E = runtime form. Return E = persistent marker and
+; carry set when that exact descriptor exists. E is used as the far-call return
+; register because Bankswitch restores the caller bank through A.
+RegionalFormGetMarkerBySpeciesForm:
+	ld a,e
+	and a
+	ret z
+	call RegionalFormFindBySpeciesForm
+	ret nc
+	inc hl
+	inc hl
+	ld e,[hl]
+	scf
+	ret
+
+; Stage one explicit-form new-mon insertion without growing any Pokemon struct.
+; The marker shares the battle HP-animation phase byte only while no HP animation
+; can run, while bit 7 of wHPBarDamageSpeed makes it valid for this producer call.
+; D = species, E = runtime form. Invalid/normal forms clear the override.
+RegionalFormStageNewMonForm:
+	call RegionalFormGetMarkerBySpeciesForm
+	jr nc,RegionalFormClearNewMonForm
+	ld a,e
+	ld [wRegionalFormNewMonMarker],a
+	ld hl,wHPBarDamageSpeed
+	set BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	scf
+	ret
+
+; D = species, E = persistent marker. Validate before staging so malformed data
+; cannot accidentally turn a stock CatchRate value into a regional identity.
+RegionalFormStageNewMonMarker:
+	ld a,e
+	and a
+	jr z,RegionalFormClearNewMonForm
+	call RegionalFormFindBySpeciesMarker
+	jr nc,RegionalFormClearNewMonForm
+	inc hl
+	inc hl
+	ld a,[hl]
+	ld [wRegionalFormNewMonMarker],a
+	ld hl,wHPBarDamageSpeed
+	set BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	scf
+	ret
+
+RegionalFormClearNewMonForm:
+	ld hl,wHPBarDamageSpeed
+	res BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	xor a
+	ld [wRegionalFormNewMonMarker],a
+	ret
+
+; wcf91 = species, E = runtime form. Add the Pokemon through the stock routine,
+; but keep the explicit form staged for header/move/marker materialization.
+RegionalFormAddPartyMonWithForm:
+	ld a,[wcf91]
+	ld d,a
+	call RegionalFormStageNewMonForm
+	call AddPartyMon
+	push af
+	call RegionalFormClearNewMonForm
+	pop af
+	ret
+
+; D = species, E = persistent marker; wcf91 already contains the same species.
+RegionalFormAddPartyMonWithMarker:
+	call RegionalFormStageNewMonMarker
+	call AddPartyMon
+	push af
+	call RegionalFormClearNewMonForm
+	pop af
+	ret
+
+; Public gift API for scripts and other explicit-form producers. CALLBA preserves DE, so callers
+; place species/level in the stock gift globals first: wcf91 = species,
+; wCurEnemyLVL = level, E = runtime form. Party-full gifts keep the same staged
+; identity while SendNewMonToBox builds the boxed structure.
+RegionalFormGivePokemon:
+	ld a,[wcf91]
+	ld d,a
+	call RegionalFormStageNewMonForm
+	ld a,[wcf91]
+	ld b,a
+	ld a,[wCurEnemyLVL]
+	ld c,a
+	call GivePokemon
+	push af
+	call RegionalFormClearNewMonForm
+	pop af
 	ret
 
 ; D = species, E = current Pokédex view form.
@@ -360,11 +459,30 @@ RegionalFormGetPokedexMetricsPointer:
 ; Header resolution for the different Pokémon storage/runtime representations
 ; -----------------------------------------------------------------------------
 
-; Wild encounters get their form from the data table. Trainer/link/stored
-; Pokémon do not use this path; they resolve from their persistent marker.
+; Wild encounters get their form from the map table. FRM-5.61.56 also lets
+; synchronous gift producers stage a validated persistent marker before
+; LoadEnemyMonData; this is needed when a full party sends the gift to the box.
 RegionalFormPrepareWildEnemyHeader:
 	xor a
 	ld [wEnemyMonForm],a
+	ld hl,wHPBarDamageSpeed
+	bit BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	jr z,.checkWild
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	ld a,[wRegionalFormNewMonMarker]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	ret nc
+	push hl
+	inc hl
+	ld a,[hl]
+	ld [wEnemyMonForm],a
+	pop hl
+	call RegionalFormApplyDescriptorHeader
+	scf
+	ret
+.checkWild
 	ld a,[wIsInBattle]
 	cp 1 ; wild battle only
 	ret nz
@@ -492,13 +610,23 @@ RegionalFormOverrideWholeScreenPaletteByMarker:
 	pop de
 	ret
 
-; Materialize the current wild form into persistent storage. Party insertion
-; copies wMonHCatchRate; full-party SendNewMonToBox copies the parallel byte in
-; wEnemyMon, so both storage sources receive the descriptor marker.
+; Materialize a wild or explicitly staged form into persistent storage. Party
+; insertion copies wMonHCatchRate; SendNewMonToBox copies the parallel byte in
+; wEnemyMon, so both storage sources receive the exact same marker.
 RegionalFormPrepareCaughtMonHeader:
-	; FORM-5.21.02: CALLBA preserves DE, and AddPartyMon keeps its new-mon
-	; destination there across this API. Preserve that public far-call contract.
+	; CALLBA preserves DE, and AddPartyMon keeps its new-mon destination there.
 	push de
+	ld hl,wHPBarDamageSpeed
+	bit BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	jr z,.checkWild
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wRegionalFormNewMonMarker]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.done
+	jr .descriptorReady
+.checkWild
 	ld a,[wIsInBattle]
 	cp 1
 	jr nz,.done
@@ -506,12 +634,12 @@ RegionalFormPrepareCaughtMonHeader:
 	and a
 	jr z,.done
 	ld e,a
-	; FRM-5.61.46: persist the form against the actual enemy instance species.
-	; wcf91 is scratch state and may have been repurposed by display/predef paths.
+	; Persist the form against the actual enemy instance species; wcf91 is scratch.
 	ld a,[wEnemyMonSpecies]
 	ld d,a
 	call RegionalFormFindBySpeciesForm
 	jr nc,.done
+.descriptorReady
 	push hl
 	inc hl
 	inc hl
@@ -964,14 +1092,72 @@ RegionalFormPrepareRelearnableMoveList:
 RegionalFormResolveEvolutionTargetForm:
 	xor a
 	ld [wRegionalFormEvolutionTargetForm],a
+	; Resolve the source runtime form first. Normal stored CatchRate values fall
+	; back to FORM_NORMAL; registered regional markers return their descriptor form.
 	ld a,[wEvoOldSpecies]
 	ld d,a
 	ld a,[wLoadedMonCatchRate]
 	ld e,a
 	call RegionalFormFindBySpeciesMarker
+	jr nc,.normalSource
+	inc hl
+	ld a,[hl]
+	jr .sourceFormReady
+.normalSource
+	ld a,FORM_NORMAL
+.sourceFormReady
+	ld b,a ; no descriptor lookup occurs again until an override fully matches
+
+	; A location rule may explicitly produce a different target form even from a
+	; normal source (for example a future region-specific Pikachu -> Raichu rule).
+	ld hl,RegionalFormEvolutionOverrides
+.overrideLoop
+	ld a,[hl]
+	cp $ff
+	jr z,.inheritSourceForm
+	push hl ; keep the row start for the fixed-size step
+	ld c,a
+	ld a,[wCurMap]
+	cp c
+	jr nz,.nextOverride
+	inc hl
+	ld a,[hl]
+	ld c,a
+	ld a,[wEvoOldSpecies]
+	cp c
+	jr nz,.nextOverride
+	inc hl
+	ld a,[hl]
+	cp b
+	jr nz,.nextOverride
+	inc hl
+	ld a,[hl]
+	ld c,a
+	ld a,[wEvoNewSpecies]
+	cp c
+	jr nz,.nextOverride
+	inc hl
+	ld e,[hl]
+	pop hl ; discard row-start copy before descriptor lookup
+	ld a,[wEvoNewSpecies]
+	ld d,a
+	call RegionalFormFindBySpeciesForm
 	ret nc
 	inc hl
 	ld a,[hl]
+	ld [wRegionalFormEvolutionTargetForm],a
+	scf
+	ret
+.nextOverride
+	pop hl
+	ld de,RF_EVO_OVERRIDE_SIZE
+	add hl,de
+	jr .overrideLoop
+
+.inheritSourceForm
+	ld a,b
+	and a
+	ret z
 	ld e,a
 	ld a,[wEvoNewSpecies]
 	ld d,a
@@ -1022,27 +1208,31 @@ RegionalFormCommitEvolutionTargetHeader:
 	ld a,[wEvoNewSpecies]
 	ld [wd0b5],a
 	call GetMonHeader
-	ld a,[wEvoOldSpecies]
-	ld d,a
-	ld a,[wLoadedMonCatchRate]
-	ld e,a
-	call RegionalFormFindBySpeciesMarker
-	jr nc,.done
+	; A non-normal target form must be persisted even when the source Pokemon was
+	; normal. This is the producer half of location-specific regional evolution.
 	ld a,[wRegionalFormEvolutionTargetForm]
 	and a
-	jr z,.clearMarker
+	jr z,.maybeClearInheritedMarker
 	ld e,a
 	ld a,[wEvoNewSpecies]
 	ld d,a
 	call RegionalFormFindBySpeciesForm
-	jr nc,.clearMarker
+	jr nc,.maybeClearInheritedMarker
 	call RegionalFormApplyDescriptorHeader
 	inc hl
 	inc hl
 	ld a,[hl]
 	ld [wLoadedMonCatchRate],a
 	jr .done
-.clearMarker
+.maybeClearInheritedMarker
+	; Stock evolutions preserve the legacy CatchRate byte. Only replace it with
+	; the target's stock value when the source actually carried a regional marker.
+	ld a,[wEvoOldSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	call RegionalFormFindBySpeciesMarker
+	jr nc,.done
 	ld a,[wMonHCatchRate]
 	ld [wLoadedMonCatchRate],a
 .done

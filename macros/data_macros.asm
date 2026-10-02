@@ -232,6 +232,12 @@ moveset: MACRO
 	db \1, \2, \3, \4
 ENDM
 
+; FRM-5.61.56: use wherever a trainer-party Species byte is expected.
+; Ordinary Species entries keep their original one-byte format.
+trainer_form_mon: MACRO
+	db TRAINER_FORM_MON, \1, \2
+ENDM
+
 tilepal: MACRO
 ; vram bank, pals
 x = \1 << 3

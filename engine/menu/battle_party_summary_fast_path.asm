@@ -1,7 +1,7 @@
 ; Battle Party <-> Summary fast path.
 ;
-; Kept in its own floating ROMX section in bank $34 so the optimization does not
-; enlarge ROM0 Home or capacity-constrained battle bank $0F sections.
+; Kept in its own ROMX section in roomy bank $1F so the optimization does not
+; enlarge ROM0 Home or capacity-constrained battle/bank-$34 sections.
 
 Summary_DisplayBattlePartyMenu::
 	; DisplayBattleMenu turns the selected Pokémon cursor into the parent-menu
@@ -53,7 +53,7 @@ Summary_RunBattlePartyStatusScreen::
 	ld a, 1 << STATUS_SCREEN_MON_SWITCH_F
 	ld [wStatusScreenPage], a
 	ld a, SUMMARY_PARTY_CALLER_BATTLE
-	jp Summary_RunPartyStatusScreen
+	jpba Summary_RunPartyStatusScreen
 
 Summary_BattlePartyRestoreCommonTilesAndEnableLCD::
 	; Summary_RestoreOverworldBG0 reaches here with LCD off and rVBK=0. For the
@@ -78,9 +78,9 @@ Summary_GoBackToBattlePartyMenu::
 
 Summary_HandleBattlePartyMenuInput:
 	; HandlePartyMenuInput normally returns through BankswitchBack because stock
-	; PartyMenuInit switched to bank 1. These bank-$34 fast paths intentionally skip
-	; that switch, so make the stock exit restore $34; the outer callba then restores
-	; the original battle bank.
+	; PartyMenuInit switched to bank 1. This bank-$1F fast path intentionally skips
+	; that switch, so make the stock exit restore the fast-path bank; the outer callba
+	; then restores the original battle bank.
 	ld a, BANK(Summary_DisplayBattlePartyMenu)
 	ld [wBankswitchHomeSavedROMBank], a
 	jp HandlePartyMenuInput
@@ -93,7 +93,7 @@ Summary_BattlePartyRestoreEnemyFrontPicIfDirty::
 	ld [wBattlePartySummaryEnemyPicDirty], a
 
 	; Stock post-Summary enemy-picture restore, relocated from capacity-constrained
-	; battle bank $0F to this dedicated bank-$34 section.
+	; battle bank $0F to this dedicated bank-$1F section.
 	ld a, [wEnemyBattleStatus2]
 	bit HasSubstituteUp, a
 	ld hl, AnimationSubstitute
@@ -105,8 +105,8 @@ Summary_BattlePartyRestoreEnemyFrontPicIfDirty::
 	ld a, [wEnemyMonSpecies]
 	ld [wcf91], a
 	; FORM-5.20.06: preserve the already-resolved enemy form when Summary
-	; reloads the front sprite. Regional-form core is in the same bank ($34).
-	call RegionalFormLoadCurrentEnemyHeader
+	; reloads the front sprite. Regional-form core remains in bank $34.
+	callba RegionalFormLoadCurrentEnemyHeader
 	ld de, vFrontPic
 	jp LoadMonFrontSprite
 .doEnemyMonAnimation

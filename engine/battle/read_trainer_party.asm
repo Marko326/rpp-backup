@@ -46,6 +46,7 @@ ReadTrainer:
 ; SPECIAL_TRAINER has a team with custom levels and custom moves
 ; CUSTOM_PIC has a custom sprite, all Pokemon are same level, standard moves
 ; SPECIAL_LEVELS has custom levels, default moves
+; FRM-5.61.56: any Species field may use trainer_form_mon Species, Form.
 ; Otherwise, all Pokemon are the same level and use default moves
 .IterateTrainer
 	; TRN-5.33.01: party trainer names use the shared packed_names charmap.
@@ -68,12 +69,11 @@ ReadTrainer:
 	ld a,[hli]
 	cp $FF ; have we reached the end of the trainer data?
 	jr z,.FinishUp
-	ld [wcf91],a ; write species somewhere (XXX why?)
+	ld d,a
 	ld a,ENEMY_PARTY_DATA
 	ld [wMonDataLocation],a
-	push hl
-	call AddPartyMon
-	pop hl
+	ld a,d
+	call .AddTrainerMon
 	jr .LoopTrainerData
 	
 .PicOnly
@@ -103,12 +103,11 @@ ReadTrainer:
 	jr z,.FinishUp
 	ld [wCurEnemyLVL],a
 	ld a,[hli]
-	ld [wcf91],a
+	ld d,a
 	ld a,ENEMY_PARTY_DATA
 	ld [wMonDataLocation],a
-	push hl
-	call AddPartyMon
-	pop hl
+	ld a,d
+	call .AddTrainerMon
 	call AddCustomMoves
 	jr .SpecialTrainer
 .SpecialLevelsOnly
@@ -120,13 +119,33 @@ ReadTrainer:
 	jr z,.FinishUp
 	ld [wCurEnemyLVL],a
 	ld a,[hli]
-	ld [wcf91],a
+	ld d,a
 	ld a,ENEMY_PARTY_DATA
 	ld [wMonDataLocation],a
+	ld a,d
+	call .AddTrainerMon
+	jr .SpecialLevelsOnly
+
+; A = ordinary Species or TRAINER_FORM_MON. HL points immediately after A.
+; Regional entries consume Species + Form and otherwise leave all existing party
+; encodings untouched, including SPECIAL_TRAINER custom moves.
+.AddTrainerMon
+	cp TRAINER_FORM_MON
+	jr z,.AddRegionalTrainerMon
+	ld [wcf91],a
 	push hl
 	call AddPartyMon
 	pop hl
-	jr .SpecialLevelsOnly
+	ret
+.AddRegionalTrainerMon
+	ld a,[hli]
+	ld [wcf91],a
+	ld a,[hli]
+	ld e,a
+	push hl
+	callba RegionalFormAddPartyMonWithForm
+	pop hl
+	ret
 .FinishUp
 ; clear wAmountMoneyWon addresses
 	xor a
@@ -150,6 +169,29 @@ ReadTrainer:
 	dec b
 	jr nz,.LastLoop ; repeat wCurEnemyLVL times
 	ret
+
+; FRM-5.61.56: trainer party structs carry the persistent form marker in
+; CatchRate. Keep this send-out bridge in roomy bank $3B instead of bank $34,
+; then stage that marker while LoadEnemyMonData builds the active enemy.
+RegionalFormLoadTrainerEnemyMonData:
+	ld hl,wEnemyMon1CatchRate
+	ld a,[wWhichPokemon]
+	ld bc,wEnemyMon2 - wEnemyMon1
+	call AddNTimes
+	ld e,[hl]
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	callba RegionalFormStageNewMonMarker
+	callab LoadEnemyMonData
+	; FRM-5.61.56: LoadEnemyMonData copies the descriptor's real Catch Rate into
+	; the active battle struct. That byte is otherwise unused there, while the
+	; regional-form runtime treats it as the persistent marker for stored-enemy
+	; header reloads. Restore the staged marker before the send-out sprite reload.
+	ld a,[wRegionalFormNewMonMarker]
+	ld [wEnemyMonCatchRate_NotReferenced],a
+	callba RegionalFormClearNewMonForm
+	ret
+
 ; Original R/B Routine removed
 ; Custom routine to add moves stored after each Pokemon/Level combo
 AddCustomMoves:
