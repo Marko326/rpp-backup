@@ -361,6 +361,12 @@ SmoothBattleAnimDelayFrames::
 	jp nz,.legacyDelay
 	srl c
 
+	; ANM-5.61.76: enemy Acid / Sludge $13 is corrected at every authored
+	; anchor instead of bending only its final hold toward $14. The first point
+	; stays untouched; the remaining five absorb the exact -16 X / +5 Y boundary
+	; mismatch progressively, so the smoothed projectile remains one trajectory.
+	; The next-anchor path below applies the same correction before DDA deltas are
+	; calculated, avoiding a snap back toward the legacy coordinate between keys.
 	; ANM-5.61.27: Subanimation $14 is shared by several moves. Allow its
 	; persistent mode-4 legs, plus the final mode-0 droplet frame needed for
 	; Swift-style edge extrapolation, only for ordinary Acid / Sludge.
@@ -475,8 +481,9 @@ SmoothBattleAnimDelayFrames::
 	ld d,a                           ; next raw base Y
 	ld a,[hl]
 	ld e,a                           ; next raw base X
+	call AdjustAcidSludgeEnemyProjectileNextAnchor
 
-	; Signed next-current delta in raw BaseCoord space.
+	; Signed next-current delta in corrected BaseCoord space.
 	ld a,[wBaseCoordY]
 	ld c,a
 	ld a,d
@@ -863,6 +870,111 @@ SmoothBattleAnimIsAcidSludgeImpact:
 	ret z
 	cp SLUDGE
 	ret
+
+; Carry only for the ordinary enemy Acid / Sludge $13 source while the verified
+; zero-lifetime $13 -> $14 bridge is armed. This keeps the coordinate correction
+; out of player use and out of every other move that happens to reuse $13.
+IsAcidSludgeEnemyProjectileBridge:
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $13)
+	jr nz,.no
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $13)
+	jr nz,.no
+	ld a,[wBattleAnimSeamlessStage]
+	cp $14                         ; source token = $13 + 1
+	jr nz,.no
+	ldh a,[H_WHOSETURN]
+	and a
+	jr z,.no
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.no
+	ld a,[wAnimationID]
+	cp ACID
+	jr z,.yes
+	cp SLUDGE
+	jr nz,.no
+.yes
+	scf
+	ret
+.no
+	and a                           ; clear carry
+	ret
+
+; A = remaining $13 keyframe count (6..1). Return HL -> signed X,Y correction.
+; Enemy playback reverses the six authored points, so counter 6 is the launch
+; anchor and counter 1 is the impact anchor. The table linearly distributes the
+; exact boundary correction instead of adding a second motion leg at the end.
+GetAcidSludgeEnemyProjectileCorrection:
+	cp 7
+	jr c,.counterValid
+	ld a,6
+.counterValid
+	ld b,a
+	ld a,6
+	sub b                           ; phase 0..5 from launch to impact
+	add a
+	ld e,a
+	ld d,0
+	ld hl,AcidSludgeEnemyProjectileCorrections
+	add hl,de
+	ret
+
+ApplyAcidSludgeEnemyProjectileAnchorCorrection:
+	push bc
+	push de
+	push hl
+	call IsAcidSludgeEnemyProjectileBridge
+	jr nc,.done
+	ld a,[wSubAnimCounter]
+	call GetAcidSludgeEnemyProjectileCorrection
+	ld a,[wBaseCoordX]
+	add [hl]
+	ld [wBaseCoordX],a
+	inc hl
+	ld a,[wBaseCoordY]
+	add [hl]
+	ld [wBaseCoordY],a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; D/E = next raw BaseCoord Y/X. Apply the correction belonging to the next
+; enemy $13 keyframe before SmoothBattleAnimDelayFrames derives its DDA delta.
+AdjustAcidSludgeEnemyProjectileNextAnchor:
+	push af
+	push bc
+	push hl
+	call IsAcidSludgeEnemyProjectileBridge
+	jr nc,.done
+	ld a,[wSubAnimCounter]
+	dec a                           ; next keyframe has one fewer entry remaining
+	push de
+	call GetAcidSludgeEnemyProjectileCorrection
+	pop de
+	ld a,e
+	add [hl]
+	ld e,a
+	inc hl
+	ld a,d
+	add [hl]
+	ld d,a
+.done
+	pop hl
+	pop bc
+	pop af
+	ret
+
+AcidSludgeEnemyProjectileCorrections:
+	db   0,0
+	db  -3,1
+	db  -6,2
+	db -10,3
+	db -13,4
+	db -16,5
 
 ; Translate every sprite belonging to the currently drawn FrameBlock by one
 ; signed pixel. A = +1/-1, C = OAM coordinate byte (0=Y, 1=X).
@@ -1571,6 +1683,7 @@ PlaySubanimationEntries:
 	ld [wBaseCoordY],a
 	ld a,[hl]
 	ld [wBaseCoordX],a
+	call ApplyAcidSludgeEnemyProjectileAnchorCorrection
 	; FrameBlock overrides may need object-specific anchor compensation.  Keep
 	; the dispatch in bank $3A so this generic renderer is not tied to Draco
 	; Meteor or FrameBlock68.  The helper itself fail-closes for other cases.
