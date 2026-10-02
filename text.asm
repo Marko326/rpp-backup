@@ -2054,10 +2054,7 @@ _WasBlownAwayText::
 _ChargeMoveEffectText::
 	text "[USER]@@"
 
-_MadeWhirlwindText::
-	text ""
-	line "made a whirlwind!"
-	prompt
+; ANM-5.61.72: Razor Wind was replaced by Spark; its unique charge text is no longer emitted.
 
 _TookInSunlightText::
 	text ""

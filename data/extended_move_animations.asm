@@ -173,6 +173,11 @@ PlayExtendedOrbProjectile:
 .notWingAttack
 	cp DRILL_PECK
 	jp z,PlayDrillPeckGoldLike
+	cp SPARK
+	jr nz,.notSpark
+	callba PlayGoldSparkAnimation
+	ret
+.notSpark
 	cp CRUNCH
 	jr nz,.notCrunch
 	; ANM-5.61.69: exact Gold/Crystal jaw, full-frame shake and double-impact timeline lives in bank $3D.
@@ -461,6 +466,8 @@ StageDedicatedMoveAnimation:
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID
 ; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
 LegacyMoveAnimationOverrides:
+	db SPARK
+	dw SparkGoldDedicatedAnim
 	db COMET_PUNCH
 	dw CometPunchDedicatedAnim
 	db WING_ATTACK
@@ -571,6 +578,18 @@ ExtendedMoveAnimationPointers:
 ExtendedMoveAnimationPointersEnd:
 	IF ExtendedMoveAnimationPointersEnd - ExtendedMoveAnimationPointers != (NUM_ATTACKS - METAL_CLAW) * 2
 		fail "extended move animation pointer table size mismatch"
+	ENDC
+
+
+SparkGoldDedicatedAnim:
+	db SparkGoldDedicatedAnimEnd - SparkGoldDedicatedAnimData
+SparkGoldDedicatedAnimData:
+	; ANM-5.61.72: Gold/Crystal Spark owns its complete lightning/tackle/impact timeline in bank $3D.
+	db EXT_ANIM_SPARK_GOLD
+	db $FF
+SparkGoldDedicatedAnimEnd:
+	IF SparkGoldDedicatedAnimEnd - SparkGoldDedicatedAnimData > 30
+		fail "Spark Gold animation recipe exceeds wBuffer"
 	ENDC
 
 CometPunchDedicatedAnim:

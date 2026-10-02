@@ -102,9 +102,6 @@ ChargeMoveEffectText:
 	TX_FAR _ChargeMoveEffectText
 	TX_ASM
 	ld a, [wChargeMoveNum]
-	cp RAZOR_WIND
-	ld hl, MadeWhirlwindText
-	jr z, .gotText
 	cp SOLARBEAM
 	ld hl, TookInSunlightText
 	jr z, .gotText
@@ -121,10 +118,6 @@ ChargeMoveEffectText:
 	ld hl, DugAHoleText
 .gotText
 	ret
-
-MadeWhirlwindText:
-	TX_FAR _MadeWhirlwindText
-	db "@"
 
 TookInSunlightText:
 	TX_FAR _TookInSunlightText

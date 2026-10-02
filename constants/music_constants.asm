@@ -356,3 +356,6 @@ const_value = 1
 	const GSSFX_CUT         ; ANM-5.61.67: exact Gold Cross Chop opening SFX
 	const GSSFX_VICEGRIP    ; ANM-5.61.67: exact Gold Cross Chop impact SFX
 	const GSSFX_BITE        ; ANM-5.61.69: exact Gold/Crystal Crunch Bite SFX
+	const GSSFX_ZAP_CANNON   ; ANM-5.61.72: exact Gold Spark opening SFX
+	const GSSFX_SPARK        ; ANM-5.61.72: exact Gold Spark tackle SFX
+	const GSSFX_THUNDERSHOCK ; ANM-5.61.72: exact Gold Spark impact SFX

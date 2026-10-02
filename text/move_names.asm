@@ -15,7 +15,7 @@ MoveNames::
 	db "Scratch@"
 	db "Vice Grip@"
 	db "Guillotine@"
-	db "Razor Wind@"
+	db "Spark@"
 	db "Swords Dance@"
 	db "Cut@"
 	db "Gust@"

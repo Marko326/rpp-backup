@@ -26,7 +26,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescScratchPages ; SCRATCH
 	movedex_desc_ptr MoveDexDescViceGripPages ; VICEGRIP
 	movedex_desc_ptr MoveDexDescGuillotinePages ; GUILLOTINE
-	movedex_desc_ptr MoveDexDescRazorWindPages ; RAZOR_WIND
+	movedex_desc_ptr MoveDexDescSparkPages ; SPARK
 	movedex_desc_ptr MoveDexDescSwordsDancePages ; SWORDS_DANCE
 	movedex_desc_ptr MoveDexDescCutPages ; CUT
 	movedex_desc_ptr MoveDexDescGustPages ; GUST
@@ -364,14 +364,12 @@ MoveDexDescGuillotine1:
 	db   "Crushes the foe"
 	next "with huge pincers.@"
 
-; #013 Razor Wind
-MoveDexDescRazorWindPages:
-	dw MoveDexDescRazorWind1, 0
-MoveDexDescRazorWind1:
-	; RPP CHARGE_EFFECT：第一回合蓄力，下一回合攻击；不会像 Fly 那样进入无敌状态。
-	db   "Whips up a sharp"
-	next "wind on turn one."
-	next "Strikes next turn.@"
+; #013 Spark
+MoveDexDescSparkPages:
+	dw MoveDexDescSpark1, 0
+MoveDexDescSpark1:
+	db   "An attack that may"
+	next "cause paralysis.@"
 
 ; #014 Swords Dance
 MoveDexDescSwordsDancePages:

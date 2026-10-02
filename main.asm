@@ -2954,3 +2954,7 @@ INCLUDE "engine/battle/cross_chop_animation.asm"
 ; ANM-5.61.69: Gold/Crystal Crunch reuses the shared full-frame WX shake in bank $3D.
 SECTION "Gold Crunch Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/crunch_animation.asm"
+
+; ANM-5.61.72: Gold/Crystal Spark renderer/data share the roomy animation expansion bank.
+SECTION "Gold Spark Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/spark_animation.asm"

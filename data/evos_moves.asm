@@ -757,7 +757,7 @@ Mon025_EvosMoves:
 	level_move 18,THUNDER_WAVE
 	level_move 21,SWIFT ; Feint → TM Move
 	level_move 23,DOUBLE_TEAM
-	level_move 26,NUZZLE ; Spark → Nuzzle
+	level_move 26,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 29,IRON_TAIL ; Nuzzle → TM Move
 	level_move 34,DISCHARGE
 	level_move 37,SLAM
@@ -783,7 +783,7 @@ Mon026_EvosMoves:
 	level_move 18,THUNDER_WAVE
 	level_move 21,SWIFT ; Feint → TM Move
 	level_move 23,DOUBLE_TEAM
-	level_move 26,NUZZLE ; Spark → Nuzzle
+	level_move 26,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 29,IRON_TAIL ; Nuzzle → TM Move
 	level_move 34,DISCHARGE
 	level_move 37,SLAM
@@ -2117,7 +2117,7 @@ Mon081_EvosMoves:
 	level_move 11,QUICK_ATTACK ; Magnet Bomb → TCG move
 	level_move 13,LIGHT_SCREEN
 	level_move 17,SONICBOOM
-	level_move 19,THUNDERBOLT ; Spark → TM move
+	level_move 19,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 23,SWIFT ; Mirror Shot → TM move
 	level_move 25,SELFDESTRUCT ; Metal Sound → TCG move
 	level_move 29,ELECTRO_BALL
@@ -2145,7 +2145,7 @@ Mon082_EvosMoves:
 	level_move 11,QUICK_ATTACK ; Magnet Bomb → TCG move
 	level_move 13,LIGHT_SCREEN
 	level_move 17,SONICBOOM
-	level_move 19,THUNDERBOLT ; Spark → TM move
+	level_move 19,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 23,SWIFT ; Mirror Shot → TM move
 	level_move 25,SELFDESTRUCT ; Metal Sound → TCG move
 	level_move 29,ELECTRO_BALL
@@ -2596,7 +2596,7 @@ Mon100_EvosMoves:
 	level_move 1,TACKLE
 	level_move 4,SONICBOOM
 	level_move 6,AGILITY ; Eerie Impulse → event move
-	level_move 9,THUNDERSHOCK ; Spark → similar move
+	level_move 9,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 11,MIMIC ; Rollout → tutor move
 	level_move 13,SCREECH
 	level_move 16,SIGNAL_BEAM ; Charge Beam → tutor move
@@ -2620,7 +2620,7 @@ Mon101_EvosMoves:
 	level_move 1,TACKLE
 	level_move 4,SONICBOOM
 	level_move 6,AGILITY ; Eerie Impulse → event move
-	level_move 9,THUNDERSHOCK ; Spark → similar move
+	level_move 9,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 11,MIMIC ; Rollout → tutor move
 	level_move 13,SCREECH
 	level_move 16,SIGNAL_BEAM ; Charge Beam → tutor move
@@ -4377,7 +4377,7 @@ Mon175_EvosMoves:
 	level_move 11,QUICK_ATTACK ; Magnet Bomb → TCG move
 	level_move 13,LIGHT_SCREEN
 	level_move 17,SONICBOOM
-	level_move 19,THUNDERBOLT ; Spark → TM move
+	level_move 19,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 23,SWIFT ; Mirror Shot → TM move
 	level_move 25,SELFDESTRUCT ; Metal Sound → TCG move
 	level_move 29,ELECTRO_BALL
@@ -4711,7 +4711,7 @@ Mon188_EvosMoves:
 	level_move 12,WATER_GUN
 	level_move 17,CONFUSE_RAY
 	level_move 20,BUBBLEBEAM
-	level_move 23,THUNDERBOLT ; Spark → Thunderbolt
+	level_move 23,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 28,SIGNAL_BEAM
 	level_move 31,WATER_PULSE ; Flail → TM move
 	level_move 34,DISCHARGE
@@ -4735,7 +4735,7 @@ Mon189_EvosMoves:
 	level_move 12,WATER_GUN
 	level_move 17,CONFUSE_RAY
 	level_move 20,BUBBLEBEAM
-	level_move 23,THUNDERBOLT ; Spark → Thunderbolt
+	level_move 23,SPARK ; ANM-5.61.72: restore Spark now that move #013 is available.
 	level_move 29,SIGNAL_BEAM
 	level_move 33,WATER_PULSE ; Flail → TM move
 	level_move 37,DISCHARGE

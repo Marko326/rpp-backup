@@ -148,3 +148,8 @@ RedSfxHeaderPointers:
 
 	; ANM-5.61.69: Crunch reuses the exact Gold/Crystal Bite SFX already present.
 	dbw BANK(Sfx_Bite), Sfx_Bite
+
+	; ANM-5.61.72: Gold Spark reuses the exact audio data already present in crysaudio/sfx.asm.
+	dbw BANK(Sfx_ZapCannon), Sfx_ZapCannon
+	dbw BANK(Sfx_Spark), Sfx_Spark
+	dbw BANK(Sfx_Thundershock), Sfx_Thundershock

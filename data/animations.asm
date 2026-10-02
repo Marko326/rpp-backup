@@ -11,7 +11,7 @@ AttackAnimationPointers:
 	dw ScratchAnim
 	dw VicegripAnim
 	dw GuillotineAnim
-	dw RazorWindAnim
+	dw SparkAnim
 	dw SwordsDanceAnim
 	dw CutAnim
 	dw GustAnim
@@ -271,7 +271,9 @@ GuillotineAnim:
 	db $06,$0B,$56
 	db $FF
 
-RazorWindAnim:
+SparkAnim:
+	; Dedicated Gold Spark recipe is staged by real move ID. Keep a compact
+	; legacy fallback for synthetic animation-ID callers.
 	db $04,$0C,$16
 	db $FF
 

@@ -1399,6 +1399,7 @@ GetDamageFeedbackOverride:
 ; 4 = BlinkEnemyMonSprite, 1 = ShakeScreenVertically, 0 = keep stock type.
 DamageFeedbackOverrides:
 	db SHADOW_BALL, 4, 1
+	db SPARK, 4, 1 ; ANM-5.61.72: Gold-style hit reaction, matching Shadow Ball.
 	db SHADOW_PUNCH, 0, 1
 	db FLAME_WHEEL, 0, 1
 	db CRUNCH, 4, 1
@@ -3565,7 +3566,7 @@ MoveSoundTable:
 	db SFX_DAMAGE,            $00,$80 ; SCRATCH
 	db SFX_BATTLE_0F,         $20,$40 ; VICEGRIP
 	db SFX_BATTLE_0F,         $00,$80 ; GUILLOTINE
-	db SFX_BATTLE_0E,         $00,$a0 ; RAZOR_WIND
+	db SFX_BATTLE_0E,         $00,$a0 ; SPARK (legacy fallback only)
 	db SFX_NOT_VERY_EFFECTIVE,$10,$c0 ; SWORDS_DANCE
 	db SFX_NOT_VERY_EFFECTIVE,$00,$a0 ; CUT
 	db SFX_BATTLE_12,         $00,$c0 ; GUST
