@@ -12,6 +12,10 @@ MistEffect_:
 	ld hl, ShroudedInMistText
 	jp PrintText
 .mistAlreadyInUse
+	; BTL-5.61.55: ResidualEffects1 skips the core pause; keep the move-use text
+	; visible briefly before printing the failure message.
+	ld c, 50
+	call DelayFrames
 	jpab PrintButItFailedText_
 
 ShroudedInMistText:

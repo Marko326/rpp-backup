@@ -236,6 +236,10 @@ TransformEffect_:
 	jp CopyData
 
 .failed
+	; BTL-5.61.55: ResidualEffects1 skips the core pause, so keep the move-use
+	; text visible briefly before the common failure message replaces it.
+	ld c, 50
+	call DelayFrames
 	ld hl, PrintButItFailedText_
 	jp BankswitchEtoF
 

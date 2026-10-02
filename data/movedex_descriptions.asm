@@ -678,7 +678,7 @@ MoveDexDescFlamethrower1:
 
 ; #054 Mist
 MoveDexDescMistPages:
-	dw MoveDexDescMist1, MoveDexDescEffectMist, MoveDexDescEffectMistDuration, 0
+	dw MoveDexDescMist1, MoveDexDescEffectMist, MoveDexDescEffectMistDuration, MoveDexDescEffectMistRepeat, 0
 MoveDexDescMist1:
 	db   "Covers the user"
 	next "in a cooling mist.@"
@@ -998,13 +998,18 @@ MoveDexDescEffectDisable:
 	next "Each length: 12.5", $d9, "@"
 
 MoveDexDescEffectMist:
-	db   "Blocks foe-caused"
-	next "stat reductions.@"
+	; BTL-5.61.55: Mist 只阻止变化招式直接降低能力，不拦截攻击招式的追加降能力。
+	db   "Blocks stat drops"
+	next "from status moves.@"
 
 MoveDexDescEffectMistDuration:
 	; ProtectedByMist 会在换人或 Haze 时清除。
 	db   "Lasts until user"
 	next "switches or Haze.@"
+
+MoveDexDescEffectMistRepeat:
+	db   "Fails while Mist"
+	next "is active.@"
 
 MoveDexDescEffectAttackDown33:
 	db   "33", $d9, " chance."
@@ -1597,17 +1602,24 @@ MoveDexDescSkyAttack1:
 
 ; #144 Transform
 MoveDexDescTransformPages:
-	dw MoveDexDescTransform1, MoveDexDescTransform2, MoveDexDescTransform3, MoveDexDescEffectBTargetInvulnerable, 0
+	dw MoveDexDescTransform1, MoveDexDescTransform2, MoveDexDescTransform3, MoveDexDescTransform4, MoveDexDescTransform5, MoveDexDescEffectBTargetInvulnerable, 0
 MoveDexDescTransform1:
+	; BTL-5.61.55: 分页区分身份复制、战斗数据复制与失败条件。
 	db   "Copies the foe's"
-	next "form in battle.@"
+	next "form and types.@"
 MoveDexDescTransform2:
-	; RPP 复制 type、DVs、Attack/Defense/Speed/Special、stat mods 和招式。
-	db   "Copies foe types"
-	next "stats and moves.@"
+	db   "Copies stats,"
+	next "stat stages and"
+	next "moves.@"
 MoveDexDescTransform3:
 	db   "Copied moves have"
 	next "5 PP each.@"
+MoveDexDescTransform4:
+	db   "Fails if already"
+	next "transformed.@"
+MoveDexDescTransform5:
+	db   "Fails against same"
+	next "species and form.@"
 
 ; #145 Bubble
 MoveDexDescBubblePages:
@@ -2027,12 +2039,16 @@ MoveDexDescHoneClaws1:
 
 ; #160 Conversion
 MoveDexDescConversionPages:
-	dw MoveDexDescConversion1, MoveDexDescConversion2, 0
+	dw MoveDexDescConversion1, MoveDexDescConversion2, MoveDexDescConversion3, 0
 MoveDexDescConversion1:
 	; 当前 RPP 复制目标的两个属性槽；改用 both 避免 two / to 在小字体下看岔。
 	db   "Copies both of"
 	next "the foe's types.@"
 MoveDexDescConversion2:
+	; BTL-5.61.55: 属性已经相同时仍可成功使用。
+	db   "Still works if"
+	next "types match.@"
+MoveDexDescConversion3:
 	; ConversionEffect_ 对 Fly/Dig 的 Invulnerable 目标直接失败。
 	db   "Fails if foe is"
 	next "flying high or"
