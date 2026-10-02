@@ -344,7 +344,7 @@ const_value = 1
 	const SFX_SLOTS_NEW_SPIN
 	const SFX_SHOOTING_STAR
 
-	const GSSFX_NOT_VERY_EFFECTIVE
+	const GSSFX_EGG_BOMB_LAUNCH ; EGG-A4-5.61.75: Egg Bomb-only low-pitch Ball Toss bridge
 	const GSSFX_DAMAGE
 	const GSSFX_SUPER_EFFECTIVE
 	const GSSFX_SLUDGE_BOMB ; ANM-5.61.45: exact Gold Sludge Bomb launch SFX

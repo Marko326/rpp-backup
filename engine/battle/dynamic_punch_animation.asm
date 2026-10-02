@@ -14,17 +14,37 @@ DYNAMIC_PUNCH_EXPLOSION_TILE_COUNT EQU 9
 DYNAMIC_PUNCH_IMPACT_FRAMES        EQU 36
 
 PlayGoldDynamicPunchAnimation::
+	call LoadGoldDynamicPunchExplosionAssets
+
+	; Unlike Aeroblast, this is a true command-boundary overlap: the legacy $05
+	; fist has already finished, so promote its saved OAM high-water to a four-frame
+	; custom carry before the new explosion timeline starts.
+	ld c, SEAMLESS_CUSTOM_TARGET
+	callba ActivateCustomBattleAnimBridge
+	jp PlayGoldDynamicPunchExplosionTimeline
+
+; EGG-A4-5.61.75: Egg Bomb enters here after its egg projectile disappears.
+; The exact DynamicPunch explosion assets/timeline are shared byte-for-byte.
+PlayGoldDynamicPunchExplosionOnly::
+	xor a
+	ld [wBattleAnimSeamlessStage], a
+	ld [wBattleAnimStageCarryTimer], a
+	call ClearSprites
+	call LoadGoldDynamicPunchExplosionAssets
+	jp PlayGoldDynamicPunchExplosionTimeline
+
+LoadGoldDynamicPunchExplosionAssets:
 	; Gold's processed explosion.png contains nine nonblank tiles. Loading those
-	; private slots costs two VBlanks; the source fist remains visible because the
-	; bridge source pose has already been captured and no OAM cleanup occurs here.
+	; private slots costs two VBlanks; DynamicPunch's source fist remains visible
+	; because its bridge pose was captured before this helper was entered.
 	ld hl, vSprites + DYNAMIC_PUNCH_EXPLOSION_TILE_BASE * 16
 	ld de, GoldDynamicPunchExplosionTiles
 	ld b, BANK(GoldDynamicPunchExplosionTiles)
 	ld c, DYNAMIC_PUNCH_EXPLOSION_TILE_COUNT
 	call CopyVideoData
 
-	; The current punch tiles/palette stay untouched at $77-$7f. Only the private
-	; explosion vocabulary is mapped to RPP's already-loaded red attack palette.
+	; Only the private explosion vocabulary is mapped to RPP's already-loaded
+	; red attack palette. Egg Bomb may reuse the same VRAM slots for its egg first.
 	ld a, 2
 	ld [rSVBK], a
 	ld hl, W2_SpritePaletteMap + DYNAMIC_PUNCH_EXPLOSION_TILE_BASE
@@ -38,13 +58,9 @@ PlayGoldDynamicPunchAnimation::
 	ld [W2_ForceOBPUpdate], a
 	xor a
 	ld [rSVBK], a
+	ret
 
-	; Unlike Aeroblast, this is a true command-boundary overlap: the legacy $05
-	; fist has already finished, so promote its saved OAM high-water to a four-frame
-	; custom carry before the new explosion timeline starts.
-	ld c, SEAMLESS_CUSTOM_TARGET
-	callba ActivateCustomBattleAnimBridge
-
+PlayGoldDynamicPunchExplosionTimeline:
 	xor a
 	ld [wSubAnimCounter], a
 .frameLoop

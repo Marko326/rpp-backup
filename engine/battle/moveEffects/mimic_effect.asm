@@ -153,11 +153,8 @@ MimicEffect_:
 	call FarCopyData
 	; IncrementMovePP does not consume A, so it is safe to call across banks.
 	callab IncrementMovePP
-	call GetMoveName
-	call CopyStringToCF4B
-	ld a, $1
-	and a
-	ret
+	; EGG-A4-5.61.75: immediate-use Mimic shares the same runtime type finalizer.
+	jpba FinalizeReloadedMoveData
 
 .mimicMissed
 	callab PrintButItFailedText_

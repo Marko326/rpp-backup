@@ -131,7 +131,9 @@ MoveEnd:
 	move METRONOME,    METRONOME_EFFECT,             0, NORMAL,   100, 10
 	move MIRROR_MOVE,  MIRROR_MOVE_EFFECT,           0, FLYING,   100, 20
 	move SELFDESTRUCT, EXPLODE_EFFECT,             200, NORMAL,   100,  5
-	move EGG_BOMB,     NO_ADDITIONAL_EFFECT,       100, NORMAL,    75, 10
+	; EGG-A4-5.61.75: NORMAL is only the out-of-battle fallback; battle load replaces
+	; Egg Bomb's runtime type with the acting Pokemon's first type.
+	move EGG_BOMB,     CONFUSION_SIDE_EFFECT,       100, NORMAL,    90, 10
 	move LICK,         PARALYZE_SIDE_EFFECT2,       30, GHOST,    100, 30
 	move SMOG,         POISON_SIDE_EFFECT2,         30, POISON,    70, 20
 	move SLUDGE,       POISON_SIDE_EFFECT2,         65, POISON,   100, 20

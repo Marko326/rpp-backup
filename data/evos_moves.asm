@@ -2606,6 +2606,7 @@ Mon100_EvosMoves:
 	level_move 29,LIGHT_SCREEN
 	level_move 34,REFLECT ; Magnet Rise → TM move
 	level_move 37,DISCHARGE
+	level_move 39,EGG_BOMB
 	level_move 41,EXPLOSION
 	level_move 46,THUNDER ; Gyro Ball → TM move
 	level_move 48,SUBSTITUTE ; Mirror Coat → RBY TM move
@@ -2630,6 +2631,7 @@ Mon101_EvosMoves:
 	level_move 29,LIGHT_SCREEN
 	level_move 36,REFLECT ; Magnet Rise → TM move
 	level_move 41,DISCHARGE
+	level_move 44,EGG_BOMB
 	level_move 47,EXPLOSION
 	level_move 54,THUNDER ; Gyro Ball → TM move
 	level_move 58,SUBSTITUTE ; Mirror Coat → RBY TM move
@@ -2651,6 +2653,7 @@ Mon102_EvosMoves:
 	level_move 21,POISONPOWDER
 	level_move 23,SLEEP_POWDER
 	level_move 27,CONFUSION
+	level_move 31,EGG_BOMB
 	level_move 33,ANCIENTPOWER ; Worry Seed → HGSS tutor move
 	level_move 37,HEALINGLIGHT ; Natural Gift → new move
 	level_move 43,SOLARBEAM
@@ -2673,7 +2676,7 @@ Mon103_EvosMoves:
 	level_move 19,STUN_SPORE
 	level_move 21,POISONPOWDER
 	level_move 23,SLEEP_POWDER
-	level_move 27,EGG_BOMB
+	level_move 31,EGG_BOMB
 	level_move 33,ANCIENTPOWER ; Worry Seed → HGSS tutor move
 	level_move 37,WOOD_HAMMER
 	level_move 43,SOLARBEAM
@@ -2847,6 +2850,7 @@ Mon110_EvosMoves:
 	level_move 29,SELFDESTRUCT ; Gyro Ball → Selfdestruct
 	level_move 34,SLUDGE_BOMB ; Sludge Bomb → similar move
 	level_move 40,SHADOW_BALL ; Explosion → TM move
+	level_move 43,EGG_BOMB
 	level_move 46,TAKE_DOWN ; Destiny Bond →
 	level_move 51,GUNK_SHOT ; Belch → similar move
 	level_move 57,EXPLOSION ; Memento → Explosion

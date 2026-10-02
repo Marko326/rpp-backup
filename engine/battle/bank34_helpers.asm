@@ -207,11 +207,8 @@ MirrorMoveCopyMove_:
 	ld a, BANK(Moves)
 	call FarCopyData
 	callab IncrementMovePP
-	call GetMoveName
-	call CopyStringToCF4B
-	ld a, $1
-	and a
-	ret
+	; EGG-A4-5.61.75: copied Egg Bomb inherits the acting mon's primary type too.
+	jpba FinalizeReloadedMoveData
 
 .failed
 	ld hl, MirrorMoveFailedText

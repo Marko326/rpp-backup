@@ -5140,12 +5140,9 @@ ReloadMoveData:
 	ld a,BANK(Moves)
 	call FarCopyData ; copy the move's stats
 	call IncrementMovePP
-; the follow two function calls are used to reload the move name
-	call GetMoveName
-	call CopyStringToCF4B
-	ld a,$01
-	and a
-	ret
+	; EGG-A4-5.61.75: apply runtime move-type overrides and reload the move name
+	; in roomy bank $3D so Metronome children stay consistent.
+	jpba FinalizeReloadedMoveData
 
 ; function that picks a random move for metronome
 MetronomePickMove:
@@ -6017,13 +6014,8 @@ GetCurrentMove:
 	ld a, BANK(Moves)
 	call FarCopyData
 
-	ld a, BANK(MoveNames)
-	ld [wPredefBank], a
-	ld a, MOVE_NAME
-	ld [wNameListType], a
-	call GetName
-	ld de, wcd6d
-	jp CopyStringToCF4B
+	; EGG-A4-5.61.75: finish dynamic type + name setup outside packed bank $0F.
+	jpba FinalizeCurrentMoveLoad
 
 LoadEnemyMonData:
 	ld a, [wLinkState]

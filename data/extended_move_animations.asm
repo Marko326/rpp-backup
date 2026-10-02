@@ -184,6 +184,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldCrunchAnimation
 	ret
 .notCrunch
+	cp EGG_BOMB
+	jr nz,.notEggBomb
+	; EGG-A4-5.61.75: Gold egg projectile + shared DynamicPunch five-explosion impact.
+	callba PlayGoldEggBombAnimation
+	ret
+.notEggBomb
 	cp DYNAMICPUNCH
 	jr nz,.notDynamicPunch
 	; ANM-5.61.48: exact overlapping Gold/Crystal explosion timeline lives in bank $3D.
@@ -482,6 +488,8 @@ LegacyMoveAnimationOverrides:
 	dw ThunderPunchDedicatedAnim
 	db SLASH
 	dw SlashDedicatedAnim
+	db EGG_BOMB
+	dw EggBombDedicatedAnim
 	db $FF
 
 ; Full contiguous table for expanded move IDs $A6-$FE.
@@ -644,6 +652,18 @@ SlashDedicatedAnimData:
 SlashDedicatedAnimEnd:
 	IF SlashDedicatedAnimEnd - SlashDedicatedAnimData > 30
 		fail "Slash animation recipe exceeds wBuffer"
+	ENDC
+
+EggBombDedicatedAnim:
+	db EggBombDedicatedAnimEnd - EggBombDedicatedAnimData
+EggBombDedicatedAnimData:
+	; EGG-A4-5.61.75: C2 dispatches by real move ID to the Gold egg projectile,
+	; then reuses DynamicPunch's shared five-Explosion2 impact timeline.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+EggBombDedicatedAnimEnd:
+	IF EggBombDedicatedAnimEnd - EggBombDedicatedAnimData > 30
+		fail "Egg Bomb dedicated animation recipe exceeds wBuffer"
 	ENDC
 
 FirePunchDedicatedAnim:

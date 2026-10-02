@@ -1422,10 +1422,13 @@ MoveDexDescSelfdestruct1:
 
 ; #121 Egg Bomb
 MoveDexDescEggBombPages:
-	dw MoveDexDescEggBomb1, 0
+	dw MoveDexDescEggBomb1, MoveDexDescEggBomb2, MoveDexDescEffectBConfuse10, MoveDexDescEffectBConfusionDuration, 0
 MoveDexDescEggBomb1:
 	db   "Throws a large egg"
 	next "at the foe.@"
+MoveDexDescEggBomb2:
+	db   "Matches the user's"
+	next "first type.@"
 
 ; #122 Lick
 MoveDexDescLickPages:

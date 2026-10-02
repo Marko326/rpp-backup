@@ -444,6 +444,23 @@ INCLUDE "crysaudio/cry_pointers.asm"
 ;SFX:
 INCLUDE "crysaudio/rbsfx.asm"
 
+; Egg Bomb-only low-pitch Ball Toss clone. Keep audio command macros here
+; in audio.asm; ordinary battle-engine sources do not define them.
+SECTION "Egg Bomb Ball Toss SFX", ROMX
+EggBombBallTossLow::
+	audio EggBombBallTossLow, Ch4, Ch5
+
+EggBombBallTossLow_Ch4:
+	dutycycle 2
+	unknownsfx0x10 47
+	unknownsfx0x20 15, 242, $70, 7
+	endchannel
+
+EggBombBallTossLow_Ch5:
+	dutycycle 2
+	unknownsfx0x20 15, 194, $72, 7
+	endchannel
+
 
 ; MUS-5.54.03: removed the legacy Music Test / alternate soundtrack libraries while
 ; retaining the complete official Gold/Silver BGM set and all Crystal-exclusive

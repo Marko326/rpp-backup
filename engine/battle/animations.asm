@@ -1403,6 +1403,7 @@ DamageFeedbackOverrides:
 	db SHADOW_PUNCH, 0, 1
 	db FLAME_WHEEL, 0, 1
 	db CRUNCH, 4, 1
+	db EGG_BOMB, 0, 1 ; EGG-A4-5.61.75: enemy use shakes the player vertically.
 	db 0
 
 ShakeScreenVertically:

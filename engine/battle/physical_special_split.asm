@@ -131,7 +131,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db OTHER_M ;METRONOME    EQU $76
 	db OTHER_M ;MIRROR_MOVE  EQU $77
 	db PHYSICAL;SELFDESTRUCT EQU $78
-	db PHYSICAL;EGG_BOMB     EQU $79
+	db SPECIAL ;EGG_BOMB     EQU $79
 	db PHYSICAL;LICK         EQU $7A
 	db SPECIAL ;SMOG         EQU $7B
 	db SPECIAL ;SLUDGE       EQU $7C

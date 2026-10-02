@@ -120,7 +120,9 @@ RedSfxHeaderPointers:
 	dbw BANK(SFX_Slots_New_Spin), SFX_Slots_New_Spin
 	dbw BANK(SFX_Shooting_Star), SFX_Shooting_Star
 
-	dbw BANK(Sfx_NotVeryEffective), Sfx_NotVeryEffective
+	; Egg Bomb lower-pitch Ball Toss option: private audio data lives in a
+	; floating ROMX section, leaving the stock capture Ball Toss untouched.
+	dbw BANK(EggBombBallTossLow), EggBombBallTossLow
 	dbw BANK(Sfx_Damage), Sfx_Damage
 	dbw BANK(Sfx_SuperEffective), Sfx_SuperEffective
 
