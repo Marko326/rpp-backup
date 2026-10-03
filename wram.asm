@@ -2910,7 +2910,9 @@ wCurrentBoxNum:: ; d679
 wNumHoFTeams:: ; d67b
 	ds 1
 
-wUnusedD5A3:: ; d67c
+wWildEncounterFormMarker:: ; d67c
+; Persistent identity of the original wild encounter for the current battle.
+; Unlike wEnemyMonForm, this must survive Transform and UI/header reloads.
 	ds 1
 
 wPlayerCoins:: ; d67d

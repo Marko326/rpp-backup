@@ -192,6 +192,30 @@ RegionalFormLoadTrainerEnemyMonData:
 	callba RegionalFormClearNewMonForm
 	ret
 
+; Keep the original random/scripted wild identity stable for the whole battle.
+; wEnemyMonForm is runtime state and may change during Transform, so capture and
+; later header reloads must not use it as the persistent identity source.
+RegionalFormLatchWildEnemyMarker:
+	xor a
+	ld [wWildEncounterFormMarker],a
+	ld hl,wHPBarDamageSpeed
+	bit BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	ret z
+	ld a,[wRegionalFormNewMonMarker]
+	ld [wWildEncounterFormMarker],a
+	ret
+
+; Rebuild the original wild enemy (capture/identity refresh) from the latched
+; encounter marker, not from Map + Species or the possibly transformed runtime form.
+RegionalFormReloadWildEnemyMonData:
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	ld a,[wWildEncounterFormMarker]
+	ld e,a
+	callba RegionalFormStageNewMonMarker
+	callab LoadEnemyMonData
+	ret
+
 ; Original R/B Routine removed
 ; Custom routine to add moves stored after each Pokemon/Level combo
 AddCustomMoves:

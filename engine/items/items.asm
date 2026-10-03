@@ -691,7 +691,7 @@ BallAnyway:
 	ld [wcf91],a
 	ld a,[wEnemyMonLevel]
 	ld [wCurEnemyLVL],a
-	callab LoadEnemyMonData
+	callba RegionalFormReloadWildEnemyMonData
 	pop af
 	ld [wcf91],a
 	pop hl

@@ -6681,6 +6681,9 @@ InitBattleCommon:
 InitWildBattle:
 	ld a, $1
 	ld [wIsInBattle], a
+	; Preserve the producer-selected marker before LoadEnemyMonData consumes its
+	; transient staging state. Non-staged wild battles explicitly latch NORMAL.
+	callba RegionalFormLatchWildEnemyMarker
 	call LoadEnemyMonData
 	call DoBattleTransitionAndInitBattleVariables
 	ld a, [wCurOpponent]

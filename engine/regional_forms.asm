@@ -17,10 +17,10 @@ RF_DESC_DEX_METRICS_BANK EQU 13
 RF_DESC_DEX_METRICS_PTR  EQU 14
 RF_DESC_SIZE          EQU 16
 
-RF_WILD_MAP     EQU 0
-RF_WILD_SPECIES EQU 1
-RF_WILD_FORM    EQU 2
-RF_WILD_SIZE    EQU 3
+RF_WILD_MAP      EQU 0
+RF_WILD_SELECTOR EQU 1
+RF_WILD_FORM     EQU 2
+RF_WILD_SIZE     EQU 3
 
 RF_EVO_OVERRIDE_MAP            EQU 0
 RF_EVO_OVERRIDE_SOURCE_SPECIES EQU 1
@@ -352,8 +352,9 @@ RegionalFormOverridePokedexPalette:
 	ld e,0
 	jp RegionalFormCopyPaletteFromHL
 
-; D = map id, E = species
-; Returns A = runtime form id and carry set when this wild encounter has a form.
+; WLD-5.61.57: D = map id, E = encounter selector. The selector binds the
+; form to one exact grass/water slot, so normal and regional instances of the
+; same Species can coexist on the same map. Returns A = runtime form id and carry.
 RegionalFormFindWildForm:
 	ld hl,RegionalFormWildEncounters
 .loop
@@ -379,6 +380,17 @@ RegionalFormFindWildForm:
 .notFound
 	and a
 	ret
+
+; D = map id, E = encounter selector; wEnemyMonSpecies2 = selected Species.
+; Stage the exact selected slot's form for LoadEnemyMonData. A non-overridden slot
+; explicitly clears the transient producer state instead of inheriting old data.
+RegionalFormStageWildEncounter:
+	call RegionalFormFindWildForm
+	jp nc,RegionalFormClearNewMonForm
+	ld e,a
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	jp RegionalFormStageNewMonForm
 
 ; HL = descriptor. Returns HL = 16-bit pointer at descriptor field BC.
 RegionalFormGetDescriptorPointer:
@@ -459,15 +471,16 @@ RegionalFormGetPokedexMetricsPointer:
 ; Header resolution for the different Pokémon storage/runtime representations
 ; -----------------------------------------------------------------------------
 
-; Wild encounters get their form from the map table. FRM-5.61.56 also lets
-; synchronous gift producers stage a validated persistent marker before
-; LoadEnemyMonData; this is needed when a full party sends the gift to the box.
+; WLD-5.61.57: wild identity is selected by the encounter producer and staged
+; before LoadEnemyMonData. No battle-time Map + Species rediscovery remains. Gift
+; and Trainer producers use the same validated marker bridge; only an actual wild
+; battle consumes the transient stage here after wEnemyMonForm is materialized.
 RegionalFormPrepareWildEnemyHeader:
 	xor a
 	ld [wEnemyMonForm],a
 	ld hl,wHPBarDamageSpeed
 	bit BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
-	jr z,.checkWild
+	ret z
 	ld a,[wEnemyMonSpecies2]
 	ld d,a
 	ld a,[wRegionalFormNewMonMarker]
@@ -480,25 +493,9 @@ RegionalFormPrepareWildEnemyHeader:
 	ld [wEnemyMonForm],a
 	pop hl
 	call RegionalFormApplyDescriptorHeader
-	scf
-	ret
-.checkWild
 	ld a,[wIsInBattle]
-	cp 1 ; wild battle only
-	ret nz
-	ld a,[wCurMap]
-	ld d,a
-	ld a,[wEnemyMonSpecies2]
-	ld e,a
-	call RegionalFormFindWildForm
-	ret nc
-	ld [wEnemyMonForm],a
-	ld e,a
-	ld a,[wEnemyMonSpecies2]
-	ld d,a
-	call RegionalFormFindBySpeciesForm
-	ret nc
-	call RegionalFormApplyDescriptorHeader
+	cp 1
+	call z,RegionalFormClearNewMonForm
 	scf
 	ret
 
@@ -630,14 +627,15 @@ RegionalFormPrepareCaughtMonHeader:
 	ld a,[wIsInBattle]
 	cp 1
 	jr nz,.done
-	ld a,[wEnemyMonForm]
+	ld a,[wWildEncounterFormMarker]
+	ld e,a
 	and a
 	jr z,.done
-	ld e,a
-	; Persist the form against the actual enemy instance species; wcf91 is scratch.
-	ld a,[wEnemyMonSpecies]
+	; Capture persists the original encounter identity. The active runtime form may
+	; have changed through Transform, but Species2 + the latched marker do not.
+	ld a,[wEnemyMonSpecies2]
 	ld d,a
-	call RegionalFormFindBySpeciesForm
+	call RegionalFormFindBySpeciesMarker
 	jr nc,.done
 .descriptorReady
 	push hl

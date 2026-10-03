@@ -1,8 +1,8 @@
 ; FORM-5.26.00: table-driven regional-form data.
 ;
 ; The engine never names a concrete regional Pokémon. To add another form,
-; define its complete header/learnset/evolution/palettes below, add one descriptor row,
-; and (only if it should appear in the wild) add one wild encounter row.
+; define its complete header/learnset/evolution/palettes below and add one descriptor row.
+; WLD-5.61.57: wild placement is opt-in per grass/water encounter slot below.
 ;
 ; Descriptor layout:
 ;   species, form id, persistent marker,
@@ -164,13 +164,24 @@ RegionalFormDescriptors::
 	dw AlolanMarowakDexMetrics
 	db 0 ; terminator: species 0 is never a valid descriptor
 
-; Wild-only producer table: map, species, form.
-; Stored/trainer/link Pokémon resolve their form from the persistent marker.
+; WLD-5.61.57: random-wild producer table: map, grass/water + slot, form.
+; Identity is attached to the selected encounter slot before battle setup instead
+; of being rediscovered from Map + Species. This allows the same Species to have
+; normal and regional slots on one map without changing the 20-byte wild tables.
+regional_wild_slot: MACRO
+	assert (\2) == REGIONAL_WILD_GRASS || (\2) == REGIONAL_WILD_WATER
+	assert (\3) < 10
+	db \1, (\2) | (\3), \4
+ENDM
+
 RegionalFormWildEncounters::
-	db ROUTE_1, RATTATA, FORM_ALOLA
-	; FORM-5.22.00: Route 7 Vulpix uses the Alolan descriptor. Other maps
-	; continue to produce normal Vulpix, so both forms remain obtainable.
-	db ROUTE_7, VULPIX, FORM_ALOLA
+	; Route 1 Rattata currently occupy slots 1, 2 and 9.
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 1, FORM_ALOLA
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 2, FORM_ALOLA
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 9, FORM_ALOLA
+	; Route 7 Vulpix currently occupy slots 4 and 6. Other maps remain normal.
+	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 4, FORM_ALOLA
+	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 6, FORM_ALOLA
 	db $ff ; terminator: no real map uses this entry here
 
 ; FRM-5.61.56: location-specific evolutions whose target form differs from the
