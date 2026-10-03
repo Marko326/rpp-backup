@@ -574,13 +574,24 @@ PlayGoldIcyWindAnimation::
 	and a
 	jr nz, .applyLowerTargetEdge
 
-	; RPP keeps the player HUD at Y=56. The upper wave ends at Y=54, so only a
-	; +2 peak there could sample the HUD's first row; display +1 for that case.
+	; ANM-5.61.95: the enemy front picture reaches Y=55, immediately above the
+	; player HUD at Y=56. Keep Y=54 safe from +2 -> Y=56 sampling, then let
+	; Y=55 inherit only negative/upward offsets so its last scanline can move
+	; without ever pulling the player name's top pixels into the wave.
 	ld l, $36
 	ld a, [hl]
+	ld b, a
 	cp 2
-	ret nz
+	jr nz, .upperEdge54Ready
 	dec [hl]
+.upperEdge54Ready
+	ld a, b
+	bit 7, a
+	jr nz, .upperEdge55Ready
+	xor a
+.upperEdge55Ready
+	inc l
+	ld [hl], a
 	ret
 
 .applyLowerTargetEdge

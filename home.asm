@@ -103,7 +103,7 @@ LCDStatInterrupt::
 	; avoiding needless interrupts, this guarantees STAT is low again before the
 	; normal line-$6e LYC source rises (the two STAT sources share one edge line).
 	ld a, l
-	cp $37 ; upper target: HBlank 54 has staged baseline line 55
+	cp $38 ; ANM-5.61.95: HBlank 55 stages baseline line 56 after safe Y=55 wave
 	jr z, .maybeStopUpperIcyWind
 	cp $60 ; lower target: HBlank 95 has staged baseline line 96
 	jr nz, .done
