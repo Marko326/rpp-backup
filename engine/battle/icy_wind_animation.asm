@@ -467,7 +467,7 @@ PlayGoldIcyWindAnimation::
 	; displayed edge value to +1, then restore the ring before it rotates.
 	ldh a, [H_WHOSETURN]
 	and a
-	jr nz, .renderTargetWave
+	jr nz, .renderLowerTargetEdge
 	ld hl, wTempPic + $18 + $36
 	ld a, [hl]
 	cp 2
@@ -477,6 +477,35 @@ PlayGoldIcyWindAnimation::
 	ld hl, wTempPic + $18 + $36
 	inc [hl]
 	ret
+
+.renderLowerTargetEdge
+	; ANM-5.61.93: RPP's 48x48 back picture reaches Y=95, immediately above
+	; the message box. Let that last row follow only safe upward samples. Clamp
+	; Y=94 from +2 to +1 so neither row can sample Y=96 or below.
+	ld hl, wTempPic + $18 + $5e
+	ld a, [hl]
+	push af
+	cp 2
+	jr nz, .lowerEdge94Ready
+	dec [hl]
+.lowerEdge94Ready
+	pop af
+	push af
+	bit 7, a
+	jr nz, .lowerEdge95Ready
+	xor a
+.lowerEdge95Ready
+	ld [wTempPic + $18 + $5f], a
+	call .RenderTargetWaveFrame
+	xor a
+	ld [wTempPic + $18 + $5f], a
+	pop af
+	cp 2
+	ret nz
+	ld hl, wTempPic + $18 + $5e
+	inc [hl]
+	ret
+
 .renderTargetWave
 	jp .RenderTargetWaveFrame
 
