@@ -360,7 +360,20 @@ wAIBuffer1::
 wTempMoveID::
 wTempPic::
 wOverworldMap:: ; c6e8
-	ds 1300
+	; ANM-5.61.94: Icy Wind reuses three page-aligned slices of this existing scratch area while
+	; its raster is active. Splitting the ds keeps every following WRAM address unchanged.
+	ds $18
+wIcyWindWaveBufferA:: ; c700, visible raster table A (144 bytes)
+	ds SCREEN_HEIGHT_PIXELS
+	ds $70 ; pad to the next page so the ISR only needs a high-byte selector
+wIcyWindWaveBufferB:: ; c800, visible raster table B (144 bytes)
+	ds SCREEN_HEIGHT_PIXELS
+	ds $70 ; pad to the next page
+wIcyWindWaveRaw:: ; c900, unclamped Gold ring used to build the next table
+	ds SCREEN_HEIGHT_PIXELS
+wIcyWindRasterHue:: ; c990, next frame's staged BGP/OBP1 value
+	ds 1
+	ds 1300 - $2a9
 
 wRedrawRowOrColumnSrcTiles:: ; cbfc
 ; the tiles of the row or column to be redrawn by RedrawRowOrColumn
@@ -927,12 +940,14 @@ wOverrideSimulatedJoypadStatesMask:: ; cd3b
 ; XXX is it ever not 0?
 	ds 1
 
-; ANM-5.61.67: fixed-WRAM battle-animation WX latch state. These labels reuse
-; the two existing scratch bytes, so WRAM layout is unchanged.
-wBattleAnimWXEnabled:: ; cd3c
+; Shared fixed-WRAM battle-animation VBlank/raster state. Storage is unchanged:
+; 0 = off, 1 = WX latch, 2 = Icy Wind raster active, 3 = stop Icy Wind next VBlank.
+wBattleAnimRasterMode:: ; cd3c
+wBattleAnimWXEnabled::
 	ds 1
 
-wBattleAnimWX:: ; cd3d
+wBattleAnimRasterTableHigh:: ; cd3d; Icy Wind uses $c7/$c8, WX mode uses a pixel value
+wBattleAnimWX::
 wFallingObjectsMovementData:: ; cd3d
 ; up to 20 bytes (one byte for each falling object)
 

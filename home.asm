@@ -35,9 +35,7 @@ SECTION "vblank", ROM0 [$40]
 	ld hl, VBlank
 	jp InterruptWrapper
 SECTION "hblank",   ROM0 [$48] ; HAX: interrupt wasn't used in original game
-	push hl
-	ld hl, _GbcPrepareVBlank
-	jp InterruptWrapper
+	jp LCDStatInterrupt
 SECTION "timer",  ROM0 [$50]
 	push hl
 	ld hl, Timer
@@ -81,6 +79,55 @@ EnableLCD::
 	set rLCDC_ENABLE, a
 	ld [rLCDC], a
 	ret
+
+SECTION "Home LCD STAT Dispatch", ROM0
+
+LCDStatInterrupt::
+	; ANM-5.61.94: Icy Wind temporarily enables STAT mode-0 interrupts. Keep this fast path in
+	; ROM0 and touch only AF/HL so next-line SCY lands inside the same HBlank.
+	; The normal line-$6e LYC interrupt still uses the color wrapper below.
+	push af
+	ldh a, [rSTAT]
+	and $3
+	jr nz, .prepareColorVBlank
+	push hl
+	ldh a, [rLY]
+	inc a
+	ld l, a
+	ld a, [wBattleAnimRasterTableHigh]
+	ld h, a
+	ld a, [hl]
+	ldh [rSCY], a
+
+	; Stop Icy Wind's mode-0 source immediately after the target band. Apart from
+	; avoiding needless interrupts, this guarantees STAT is low again before the
+	; normal line-$6e LYC source rises (the two STAT sources share one edge line).
+	ld a, l
+	cp $37 ; upper target: HBlank 54 has staged baseline line 55
+	jr z, .maybeStopUpperIcyWind
+	cp $60 ; lower target: HBlank 95 has staged baseline line 96
+	jr nz, .done
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .done
+	jr .stopIcyWindHBlank
+.maybeStopUpperIcyWind
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .done
+.stopIcyWindHBlank
+	ldh a, [rSTAT]
+	res 3, a
+	ldh [rSTAT], a
+.done
+	pop hl
+	pop af
+	reti
+.prepareColorVBlank
+	pop af
+	push hl
+	ld hl, _GbcPrepareVBlank
+	jp InterruptWrapper
 
 SECTION "Home Pokedex Overworld Restore", ROM0
 

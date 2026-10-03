@@ -299,9 +299,9 @@ GbcVBlankHook:
 	; ANM-5.61.67: battle animations that need full-frame horizontal Window
 	; movement stage the next WX in fixed WRAM. Commit it here, still inside
 	; VBlank, before any visible scanline can observe a half-updated frame.
-	ld a, [wBattleAnimWXEnabled]
-	and a
-	jr z, .battleAnimWXDone
+	ld a, [wBattleAnimRasterMode]
+	cp 1 ; mode 1 is the shared Aeroblast/Crunch/Cross Chop WX latch
+	jr nz, .battleAnimWXDone
 	ld a, [wBattleAnimWX]
 	ld [rWX], a
 .battleAnimWXDone

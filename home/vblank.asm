@@ -10,8 +10,50 @@ VBlank::
 
 	ld a, [hSCX]
 	ld [rSCX], a
+
+	; ANM-5.61.94: Icy Wind swaps between two page-aligned SCY tables at the VBlank boundary.
+	; This gives line 0 its own value before the fast STAT path owns lines 1..143.
+	ld a, [wBattleAnimRasterMode]
+	cp 2
+	jr z, .icyWindRasterStartFrame
+	cp 3
+	jr z, .icyWindRasterStop
+.normalSCY
 	ld a, [hSCY]
+	jr .commitSCY
+.icyWindRasterStartFrame
+	ld a, [wBattleAnimRasterTableHigh]
+	cp HIGH(wIcyWindWaveBufferA)
+	ld a, HIGH(wIcyWindWaveBufferA)
+	jr nz, .icyWindRasterTableReady
+	ld a, HIGH(wIcyWindWaveBufferB)
+.icyWindRasterTableReady
+	ld [wBattleAnimRasterTableHigh], a
+	ld h, a
+	ld l, 0
+	ld a, [hl]
 	ld [rSCY], a
+	; The prior visible frame disabled mode-0 at its target-band boundary. Arm it
+	; again only now, after line 0 has been preloaded for this complete frame.
+	ld a, [rSTAT]
+	or $08
+	ld [rSTAT], a
+	ld a, [wIcyWindRasterHue]
+	ld [rBGP], a
+	ld [rOBP1], a
+	jr .scyDone
+.icyWindRasterStop
+	; Mode 3 is requested during the final visible wave frame. Stop mode-0 STAT
+	; before the following line 0 and restore the ordinary SCY shadow.
+	ld a, [rSTAT]
+	and $f7
+	ld [rSTAT], a
+	xor a
+	ld [wBattleAnimRasterMode], a
+	ld a, [hSCY]
+.commitSCY
+	ld [rSCY], a
+.scyDone
 
 	ld a, [wDisableVBlankWYUpdate]
 	and a
@@ -46,8 +88,33 @@ VBlank::
 	nop
 	nop
 
-	; VBlank-sensitive operations end.
+	; VBlank-sensitive operations end. Icy Wind may need the mode-0 STAT handler
+	; to preempt the long audio/timekeeping tail if it spills into visible lines.
+	; Mask every other interrupt source while nested interrupts are allowed; their
+	; IF bits remain pending and are serviced after the normal VBlank return.
+	ld a, [wBattleAnimRasterMode]
+	cp 2
+	jr z, .icyWindInterruptibleTail
+	call .nonCriticalTail
+	jr .finish
+.icyWindInterruptibleTail
+	ld a, [rIE]
+	push af
+	ld a, 1 << LCD_STAT
+	ld [rIE], a
+	ei
+	call .nonCriticalTail
+	di
+	pop af
+	ld [rIE], a
+.finish
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
 
+.nonCriticalTail
 	call Random
 
 	ld a, [H_VBLANKOCCURRED]
@@ -100,11 +167,6 @@ VBlank::
 	ld a, [wVBlankSavedROMBank]
 	ld [H_LOADEDROMBANK], a
 	ld [MBC1RomBank], a
-
-	pop hl
-	pop de
-	pop bc
-	pop af
 	ret
 
 

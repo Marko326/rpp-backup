@@ -99,6 +99,25 @@ PlayGoldIcyWindAnimation::
 	ld [H_AUTOBGTRANSFERDEST + 1], a
 	ld a, 1
 	ld [H_AUTOBGTRANSFERENABLED], a
+
+	; ANM-5.61.94: the upper Gold ring legitimately reaches SCY -1/-2 at LY=0. Prepare the
+	; off-screen bottom BG row as blank well before the wave starts so that wrap
+	; samples are empty pixels instead of stale VRAM. Only the visible 20 tiles
+	; are needed; the ordinary color row-copy path also writes safe attributes.
+	ld hl, wTempPic
+	ld bc, SCREEN_WIDTH
+	ld a, " "
+	call FillMemory
+	ld a, HIGH(wTempPic)
+	ld [H_VBCOPYBGSRC + 1], a
+	ld a, LOW(vBGMap0 + 31 * 32)
+	ld [H_VBCOPYBGDEST], a
+	ld a, HIGH(vBGMap0 + 31 * 32)
+	ld [H_VBCOPYBGDEST + 1], a
+	ld a, 1
+	ld [H_VBCOPYBGNUMROWS], a
+	ld a, LOW(wTempPic) ; low byte is nonzero and therefore arms VBlankCopyBgMap
+	ld [H_VBCOPYBGSRC], a
 	ret
 
 .MaskBattlerOverlapInTilemap
@@ -330,14 +349,25 @@ PlayGoldIcyWindAnimation::
 	ret
 
 .UpdateGoldHueCycle
+	call .GetGoldHueCycleValue
+	ld [rBGP], a
+	ld [rOBP1], a
+	ret
+
+.StageGoldHueCycle
+	; During the interrupt-driven wave, commit hue only at VBlank so visible
+	; scanlines never see the next frame's BGP/OBP1 half-way down the screen.
+	call .GetGoldHueCycleValue
+	ld [wIcyWindRasterHue], a
+	ret
+
+.GetGoldHueCycleValue
 	; Gold ALTERNATE_HUES starts on the normal palette for one update; after
 	; that, each next entry lasts three updates and the eight-entry list loops.
 	ld a, [wSubAnimCounter]
 	and a
 	jr nz, .hueAfterFirst
 	ld a, $e4
-	ld [rBGP], a
-	ld [rOBP1], a
 	ret
 .hueAfterFirst
 	dec a
@@ -352,8 +382,6 @@ PlayGoldIcyWindAnimation::
 	ld hl, GoldIcyWindHueCycleAfterFirst
 	add hl, bc
 	ld a, [hl]
-	ld [rBGP], a
-	ld [rOBP1], a
 	ret
 
 .DrawActiveSparkles
@@ -434,129 +462,151 @@ PlayGoldIcyWindAnimation::
 	jp .DrawGoldLayout
 
 .PlayTargetWave64
-	; Reuse RPP's established HBlank-polling path for Gold's per-line SCY wave.
+	; ANM-5.61.94: keep Gold's raw rotating ring separate from the two displayed SCY tables.
+	; While one page is consumed by the HBlank ISR, the other can be prepared for
+	; the next frame without changing any scanline that is currently being drawn.
 	xor a
-	ld hl, wTempPic + $18
+	ld hl, wIcyWindWaveRaw
 	ld bc, SCREEN_HEIGHT_PIXELS
 	call FillMemory
-	ld hl, wTempPic + $18
+	ld hl, wIcyWindWaveRaw
 	call .BuildInitialWaveBuffer
 
-	ld d, 64
-.waveFrame
-	call .UpdateGoldHueCycle
-	call .RenderTargetWaveFrameForTurn
+	; Prime display frame 0 in page A and frame 1 in page B. The raw ring is then
+	; left at frame 2 so every later visible frame can prepare exactly one page.
+	ld hl, wIcyWindWaveRaw
+	ld de, wIcyWindWaveBufferA
+	call .CopyWaveFrameForDisplay
+	call .RotateWaveTargetBandInPlace
+	ld hl, wIcyWindWaveRaw
+	ld de, wIcyWindWaveBufferB
+	call .CopyWaveFrameForDisplay
+	call .RotateWaveTargetBandInPlace
+
+	; The VBlank handler toggles the page before presenting a frame, so seed it
+	; with B to make the first toggle select A. Mode-0 STAT remains disabled until
+	; the first target VBlank has atomically selected a complete display page.
+	call .StageGoldHueCycle
+	ld a, HIGH(wIcyWindWaveBufferB)
+	ld [wBattleAnimRasterTableHigh], a
+	ld a, 2
+	ld [wBattleAnimRasterMode], a
+	xor a
+	ld [hSCY], a
+	ld [rSCY], a
+	; Keep the LCD interrupt enabled, but do not arm mode-0 yet: doing that from
+	; the animation thread could expose a partial wave in the current frame. The
+	; first target VBlank preloads line 0 and then arms mode-0 atomically.
+	ld a, [rIE]
+	or 1 << LCD_STAT
+	ld [rIE], a
+
+	; First VBlank presents frame 0. Frame 1 is already waiting in the other page.
+	call .WaitIcyWindVBlank
 	ld hl, wSubAnimCounter
 	inc [hl]
-	dec d
-	jr z, .waveDone
+	call .StageGoldHueCycle
+	ld d, 1
+
+.waveFrame
+	; Each VBlank atomically switches to the page prepared on the prior frame.
+	; Once that happens, the old page is free to receive raw frame D+1.
+	call .WaitIcyWindVBlank
+	ld a, d
+	cp 63
+	jr z, .lastWaveFrame
 	push de
-	call .RotateWaveTargetBandInPlace
+	call .PrepareNextWaveBuffer
 	pop de
+	ld hl, wSubAnimCounter
+	inc [hl]
+	call .StageGoldHueCycle
+	inc d
 	jr .waveFrame
 
-.waveDone
+.lastWaveFrame
+	; Keep the fast HBlank path alive for frame 63, but tell the following VBlank
+	; to restore baseline SCY and disable mode-0 STAT before a 65th wave can start.
+	ld hl, wSubAnimCounter
+	inc [hl]
+	ld a, 3
+	ld [wBattleAnimRasterMode], a
+	call .WaitIcyWindVBlank
 	xor a
+	ld [wBattleAnimRasterTableHigh], a
 	ld [rSCY], a
 	ld [hSCY], a
 	ret
 
-.RenderTargetWaveFrameForTurn
-	; ANM-5.61.86: RPP keeps the player HUD at Y=56. The upper wave ends
-	; at Y=54, so only its +2 peak can sample the first HUD row. Clamp that
-	; displayed edge value to +1, then restore the ring before it rotates.
-	ldh a, [H_WHOSETURN]
+.WaitIcyWindVBlank
+	; Do not use DelayFrame here: its OAM hook would disturb the protected battler
+	; objects. HBlank/LCD interrupts may wake HALT early, so wait on VBlank's flag.
+	ld a, 1
+	ld [H_VBLANKOCCURRED], a
+.waitVBlank
+	halt
+	ld a, [H_VBLANKOCCURRED]
 	and a
-	jr nz, .renderLowerTargetEdge
-	ld hl, wTempPic + $18 + $36
-	ld a, [hl]
-	cp 2
-	jr nz, .renderTargetWave
-	dec [hl]
-	call .RenderTargetWaveFrame
-	ld hl, wTempPic + $18 + $36
-	inc [hl]
+	jr nz, .waitVBlank
 	ret
 
-.renderLowerTargetEdge
-	; ANM-5.61.93: RPP's 48x48 back picture reaches Y=95, immediately above
-	; the message box. Let that last row follow only safe upward samples. Clamp
-	; Y=94 from +2 to +1 so neither row can sample Y=96 or below.
-	ld hl, wTempPic + $18 + $5e
+.PrepareNextWaveBuffer
+	ld a, [wBattleAnimRasterTableHigh]
+	cp HIGH(wIcyWindWaveBufferA)
+	ld de, wIcyWindWaveBufferB
+	jr z, .gotInactiveWaveBuffer
+	ld de, wIcyWindWaveBufferA
+.gotInactiveWaveBuffer
+	ld hl, wIcyWindWaveRaw
+	call .CopyWaveFrameForDisplay
+	jp .RotateWaveTargetBandInPlace
+
+.CopyWaveFrameForDisplay
+	; HL = raw 144-line table, DE = inactive page. Preserve the page base so the
+	; existing HUD/message-box edge rules can be applied only to displayed data.
+	push de
+	ld bc, SCREEN_HEIGHT_PIXELS
+	call CopyData
+	pop hl
+
+.ApplyWaveDisplayEdges
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .applyLowerTargetEdge
+
+	; RPP keeps the player HUD at Y=56. The upper wave ends at Y=54, so only a
+	; +2 peak there could sample the HUD's first row; display +1 for that case.
+	ld l, $36
 	ld a, [hl]
-	push af
+	cp 2
+	ret nz
+	dec [hl]
+	ret
+
+.applyLowerTargetEdge
+	; RPP's 48x48 back picture reaches Y=95 immediately above the message box.
+	; Preserve the raw ring elsewhere, clamp Y=94 +2 to +1 for display, and let
+	; Y=95 inherit only negative/upward offsets so it can never sample Y=96+.
+	ld l, $5e
+	ld a, [hl]
+	ld b, a
 	cp 2
 	jr nz, .lowerEdge94Ready
 	dec [hl]
 .lowerEdge94Ready
-	pop af
-	push af
+	ld a, b
 	bit 7, a
 	jr nz, .lowerEdge95Ready
 	xor a
 .lowerEdge95Ready
-	ld [wTempPic + $18 + $5f], a
-	call .RenderTargetWaveFrame
-	xor a
-	ld [wTempPic + $18 + $5f], a
-	pop af
-	cp 2
-	ret nz
-	ld hl, wTempPic + $18 + $5e
-	inc [hl]
-	ret
-
-.renderTargetWave
-	jp .RenderTargetWaveFrame
-
-.RenderTargetWaveFrame
-	; Entered during VBlank. Follow every visible line through HBlank, exactly as
-	; AnimationWavyScreen does. The table is zero outside Gold's target band, so
-	; HUD/text rows cannot inherit the target's ±2-pixel offset.
-.waitVisible
-	ld a, [rLY]
-	cp SCREEN_HEIGHT_PIXELS
-	jr nc, .waitVisible
-.lineLoop
-.waitHBlank
-	ld a, [rSTAT]
-	and $3
-	jr nz, .waitHBlank
-	ld a, [rLY]
-	ld c, a
-	cp SCREEN_HEIGHT_PIXELS - 1
-	jr z, .frameDone
-	; HBlank on line N stages SCY for visible line N+1. Line 0 deliberately
-	; stays at baseline zero; from line 1 onward this matches Gold's absolute LY
-	; table without ever preloading a frame-wide nonzero SCY in VBlank.
-	inc c
-	ld b, 0
-	ld hl, wTempPic + $18
-	add hl, bc
-	ld a, [hl]
-	ld [rSCY], a
-.waitHBlankEnd
-	ld a, [rSTAT]
-	and $3
-	jr z, .waitHBlankEnd
-	jr .lineLoop
-.frameDone
-	; Always enter VBlank at baseline SCY so no per-frame offset can leak into
-	; the whole battle field.
-	xor a
-	ld [rSCY], a
-.waitVBlankStart
-	; Do not let the next 64-frame iteration re-consume the tail of line 143.
-	; Waiting for the VBlank range is safe because LY only has to cross a range,
-	; not hit one exact scanline value.
-	ld a, [rLY]
-	cp SCREEN_HEIGHT_PIXELS
-	jr c, .waitVBlankStart
+	inc l
+	ld [hl], a
 	ret
 
 .BuildInitialWaveBuffer
-	; HL = wTempPic+$18. Gold leaves the configured start line at zero while the
-	; sine phase advances on every absolute line, then rotates start..end as a ring.
+	; HL is the page-aligned raw table. Gold leaves the configured start line at
+	; zero while the sine phase advances on every absolute line, then rotates the
+	; target start..end range as one ring after each displayed frame.
 	ld d, h
 	ldh a, [H_WHOSETURN]
 	and a
@@ -587,8 +637,10 @@ PlayGoldIcyWindAnimation::
 	ret
 
 .RotateWaveTargetBandInPlace
-	; Exact Gold WavyScreenFX shift-and-wrap, performed after the visible frame.
-	ld hl, wTempPic + $18
+	; Exact Gold WavyScreenFX shift-and-wrap on the unclamped raw ring. Keeping
+	; this separate from the display pages prevents edge safety clamps from
+	; feeding back into later phases.
+	ld hl, wIcyWindWaveRaw
 	ld d, h
 	ldh a, [H_WHOSETURN]
 	and a
