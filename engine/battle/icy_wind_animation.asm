@@ -445,7 +445,7 @@ PlayGoldIcyWindAnimation::
 	ld d, 64
 .waveFrame
 	call .UpdateGoldHueCycle
-	call .RenderTargetWaveFrame
+	call .RenderTargetWaveFrameForTurn
 	ld hl, wSubAnimCounter
 	inc [hl]
 	dec d
@@ -460,6 +460,25 @@ PlayGoldIcyWindAnimation::
 	ld [rSCY], a
 	ld [hSCY], a
 	ret
+
+.RenderTargetWaveFrameForTurn
+	; ANM-5.61.86: RPP keeps the player HUD at Y=56. The upper wave ends
+	; at Y=54, so only its +2 peak can sample the first HUD row. Clamp that
+	; displayed edge value to +1, then restore the ring before it rotates.
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .renderTargetWave
+	ld hl, wTempPic + $18 + $36
+	ld a, [hl]
+	cp 2
+	jr nz, .renderTargetWave
+	dec [hl]
+	call .RenderTargetWaveFrame
+	ld hl, wTempPic + $18 + $36
+	inc [hl]
+	ret
+.renderTargetWave
+	jp .RenderTargetWaveFrame
 
 .RenderTargetWaveFrame
 	; Entered during VBlank. Follow every visible line through HBlank, exactly as
