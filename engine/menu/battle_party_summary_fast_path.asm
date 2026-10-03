@@ -92,6 +92,11 @@ Summary_BattlePartyRestoreEnemyFrontPicIfDirty::
 	xor a
 	ld [wBattlePartySummaryEnemyPicDirty], a
 
+	; SUM-5.61.59: StatusScreen temporarily replaces battle HUD tile $72 with
+	; its PP "P" glyph. Restore that one tile at the final Party -> Battle
+	; boundary so the fast path cannot return with the enemy HP frame showing P.
+	call .restoreEnemyHudLeftTile
+
 	; Stock post-Summary enemy-picture restore, relocated from capacity-constrained
 	; battle bank $0F to this dedicated bank-$1F section.
 	ld a, [wEnemyBattleStatus2]
@@ -109,6 +114,14 @@ Summary_BattlePartyRestoreEnemyFrontPicIfDirty::
 	callba RegionalFormLoadCurrentEnemyHeader
 	ld de, vFrontPic
 	jp LoadMonFrontSprite
+
+.restoreEnemyHudLeftTile
+	; HpBarAndStatusGraphics starts at VRAM tile $62; tile $72 is 16 tiles in.
+	ld de, HpBarAndStatusGraphics + ($72 - $62) * $10
+	ld hl, vChars2 + $720
+	lb bc, BANK(HpBarAndStatusGraphics), 1
+	jp CopyVideoData
+
 .doEnemyMonAnimation
 	ld a, 1
 	ld [H_WHOSETURN], a
