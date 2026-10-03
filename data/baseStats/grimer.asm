@@ -5,7 +5,8 @@ db 25 ; base speed
 db 40 ; base special
 db POISON ; species type 1
 db POISON ; species type 2
-db 190 ; catch rate
+GRIMER_CATCH_RATE EQU 190
+db GRIMER_CATCH_RATE ; catch rate
 db 90 ; base exp yield
 INCBIN "pic/bmon/grimer.pic",0,1 ; 55, sprite dimensions
 dw GrimerPicFront

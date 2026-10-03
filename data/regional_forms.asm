@@ -27,7 +27,22 @@ RF_DEX_SIZE           EQU 4
 
 SECTION "Regional Form Data", ROMX, BANK[$34]
 
+; FRM-5.61.63: every descriptor is paired with a compile-time identity guard.
+; The guard rejects normal-form rows, marker 0, and a marker that aliases the
+; same Species' stock Catch Rate. The count assertion below keeps the guard list
+; in lockstep with the 16-byte descriptor table without changing its runtime ABI.
+RF_DESCRIPTOR_GUARD_COUNT = 0
+regional_form_guard: MACRO
+	ASSERT \1 > 0
+	ASSERT \1 <= NUM_POKEMON
+	ASSERT \2 != FORM_NORMAL
+	ASSERT \3 != 0
+	ASSERT \4 != \3
+RF_DESCRIPTOR_GUARD_COUNT = RF_DESCRIPTOR_GUARD_COUNT + 1
+ENDM
+
 RegionalFormDescriptors::
+	regional_form_guard RATTATA, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, RATTATA_CATCH_RATE
 	db RATTATA, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanRattataBaseStats
 	dw AlolanRattataLevelMoves
@@ -37,6 +52,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanRattataDexMetrics)
 	dw AlolanRattataDexMetrics
 
+	regional_form_guard RATICATE, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, RATICATE_CATCH_RATE
 	db RATICATE, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanRaticateBaseStats
 	dw AlolanRaticateLevelMoves
@@ -46,6 +62,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanRaticateDexMetrics)
 	dw AlolanRaticateDexMetrics
 
+	regional_form_guard VULPIX, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, VULPIX_CATCH_RATE
 	db VULPIX, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanVulpixBaseStats
 	dw AlolanVulpixLevelMoves
@@ -55,6 +72,7 @@ RegionalFormDescriptors::
 	db 0
 	dw 0 ; height/weight match normal Vulpix
 
+	regional_form_guard NINETALES, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, NINETALES_CATCH_RATE
 	db NINETALES, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanNinetalesBaseStats
 	dw AlolanNinetalesLevelMoves
@@ -64,6 +82,7 @@ RegionalFormDescriptors::
 	db 0
 	dw 0 ; height/weight match normal Ninetales
 
+	regional_form_guard RAICHU, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, RAICHU_CATCH_RATE
 	db RAICHU, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanRaichuBaseStats
 	dw AlolanRaichuLevelMoves
@@ -73,6 +92,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanRaichuDexMetrics)
 	dw AlolanRaichuDexMetrics
 
+	regional_form_guard SANDSHREW, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, SANDSHREW_CATCH_RATE
 	db SANDSHREW, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanSandshrewBaseStats
 	dw AlolanSandshrewLevelMoves
@@ -82,6 +102,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanSandshrewDexMetrics)
 	dw AlolanSandshrewDexMetrics
 
+	regional_form_guard SANDSLASH, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, SANDSLASH_CATCH_RATE
 	db SANDSLASH, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanSandslashBaseStats
 	dw AlolanSandslashLevelMoves
@@ -91,6 +112,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanSandslashDexMetrics)
 	dw AlolanSandslashDexMetrics
 
+	regional_form_guard DIGLETT, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, DIGLETT_CATCH_RATE
 	db DIGLETT, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanDiglettBaseStats
 	dw AlolanDiglettLevelMoves
@@ -100,6 +122,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanDiglettDexMetrics)
 	dw AlolanDiglettDexMetrics
 
+	regional_form_guard DUGTRIO, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, DUGTRIO_CATCH_RATE
 	db DUGTRIO, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanDugtrioBaseStats
 	dw AlolanDugtrioLevelMoves
@@ -109,6 +132,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanDugtrioDexMetrics)
 	dw AlolanDugtrioDexMetrics
 
+	regional_form_guard GEODUDE, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, GEODUDE_CATCH_RATE
 	db GEODUDE, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanGeodudeBaseStats
 	dw AlolanGeodudeLevelMoves
@@ -118,6 +142,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanGeodudeDexMetrics)
 	dw AlolanGeodudeDexMetrics
 
+	regional_form_guard GRAVELER, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, GRAVELER_CATCH_RATE
 	db GRAVELER, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanGravelerBaseStats
 	dw AlolanGravelerLevelMoves
@@ -127,6 +152,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanGravelerDexMetrics)
 	dw AlolanGravelerDexMetrics
 
+	regional_form_guard GOLEM, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, GOLEM_CATCH_RATE
 	db GOLEM, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanGolemBaseStats
 	dw AlolanGolemLevelMoves
@@ -136,6 +162,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanGolemDexMetrics)
 	dw AlolanGolemDexMetrics
 
+	regional_form_guard GRIMER, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, GRIMER_CATCH_RATE
 	db GRIMER, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanGrimerBaseStats
 	dw AlolanGrimerLevelMoves
@@ -145,6 +172,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanGrimerDexMetrics)
 	dw AlolanGrimerDexMetrics
 
+	regional_form_guard MUK, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, MUK_CATCH_RATE
 	db MUK, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanMukBaseStats
 	dw AlolanMukLevelMoves
@@ -154,6 +182,7 @@ RegionalFormDescriptors::
 	db BANK(AlolanMukDexMetrics)
 	dw AlolanMukDexMetrics
 
+	regional_form_guard MAROWAK, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, MAROWAK_CATCH_RATE
 	db MAROWAK, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
 	dw AlolanMarowakBaseStats
 	dw AlolanMarowakLevelMoves
@@ -162,7 +191,9 @@ RegionalFormDescriptors::
 	dw AlolanMarowakShinyPalette
 	db BANK(AlolanMarowakDexMetrics)
 	dw AlolanMarowakDexMetrics
+RegionalFormDescriptorsTerminator::
 	db 0 ; terminator: species 0 is never a valid descriptor
+ASSERT RegionalFormDescriptorsTerminator - RegionalFormDescriptors == RF_DESCRIPTOR_GUARD_COUNT * 16
 
 ; WLD-5.61.62: wild producer table: map, source + slot, form.
 ; Identity is attached to the exact producer slot before battle setup instead of
