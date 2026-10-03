@@ -2966,3 +2966,7 @@ INCLUDE "engine/battle/crunch_animation.asm"
 ; ANM-5.61.72: Gold/Crystal Spark renderer/data share the roomy animation expansion bank.
 SECTION "Gold Spark Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/spark_animation.asm"
+
+; ANM-5.61.81: Gold/Crystal Icy Wind renderer/data share animation bank $3D.
+SECTION "Gold Icy Wind Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/icy_wind_animation.asm"

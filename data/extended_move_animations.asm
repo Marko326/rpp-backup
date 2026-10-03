@@ -178,6 +178,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldSparkAnimation
 	ret
 .notSpark
+	cp ICY_WIND
+	jr nz,.notIcyWind
+	; ANM-5.61.81: Gold/Crystal Icy Wind renderer lives in bank $3D.
+	callba PlayGoldIcyWindAnimation
+	ret
+.notIcyWind
 	cp CRUNCH
 	jr nz,.notCrunch
 	; ANM-5.61.69: exact Gold/Crystal jaw, full-frame shake and double-impact timeline lives in bank $3D.
@@ -1499,13 +1505,8 @@ AcrobaticsExtAnimEnd:
 IcyWindExtAnim:
 	db IcyWindExtAnimEnd - IcyWindExtAnimData
 IcyWindExtAnimData:
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
-	db $04,$3A,$38
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db $46,$0F,$10
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
-	db $04,$37,$38
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	; ANM-5.61.81: use the dedicated Gold/Crystal Icy Wind timeline.
+	db EXT_ANIM_ICY_WIND_GOLD
 	db $FF
 IcyWindExtAnimEnd:
 	IF IcyWindExtAnimEnd - IcyWindExtAnimData > 30

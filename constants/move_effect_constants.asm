@@ -78,7 +78,7 @@ const_value = 0
 	const SPECIAL_DOWN_SIDE_EFFECT   ; $47
 	const ACCURACY_DOWN_SIDE_EFFECT  ; $48
 	const EVASION_DOWN_SIDE_EFFECT   ; $49
-	const UNUSED_EFFECT_4A           ; $4A
+	const SPEED_DOWN_ALWAYS_SIDE_EFFECT ; $4A ANM-5.61.81: guaranteed Icy Wind Speed drop
 	const UNUSED_EFFECT_4B           ; $4B
 	const CONFUSION_SIDE_EFFECT      ; $4C
 	const TWINEEDLE_EFFECT           ; $4D

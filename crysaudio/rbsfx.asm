@@ -155,3 +155,6 @@ RedSfxHeaderPointers:
 	dbw BANK(Sfx_ZapCannon), Sfx_ZapCannon
 	dbw BANK(Sfx_Spark), Sfx_Spark
 	dbw BANK(Sfx_Thundershock), Sfx_Thundershock
+
+	; ANM-5.61.81: Icy Wind reuses Gold/Crystal Psychic SFX data.
+	dbw BANK(Sfx_Psychic), Sfx_Psychic

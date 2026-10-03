@@ -219,7 +219,7 @@ MoveEnd:
 	move WING_ATTACK,  SWIFT_EFFECT,                60, FLYING,   100, 20 ; Aerial Ace
 	move QUICK_ATTACK, NO_ADDITIONAL_EFFECT,       110, FLYING,   100, 15 ; Acrobatics
 	move CUT,          NO_ADDITIONAL_EFFECT,        60, FLYING,   100, 25 ; Air Cutter
-	move GUST,         SPEED_DOWN_SIDE_EFFECT,      55, ICE,       95, 15 ; Icy Wind
+	move GUST,         SPEED_DOWN_ALWAYS_SIDE_EFFECT, 55, ICE,       95, 15 ; Icy Wind
 	move BLIZZARD,     NO_ADDITIONAL_EFFECT,        40, ICE,      100, 30 ; Ice Shard
 	move BLIZZARD,     OHKO_EFFECT,                  1, ICE,       30,  5 ; Sheer Cold
 	move THUNDER,      NO_ADDITIONAL_EFFECT,        80, ELECTRIC, 100, 10 ; Electro Ball

@@ -6997,7 +6997,7 @@ MoveEffectPointerTable:
 	 dw StatModifierDownEffect    ; SPECIAL_DOWN_SIDE_EFFECT
 	 dw StatModifierDownEffect    ; ACCURACY_DOWN_SIDE_EFFECT
 	 dw StatModifierDownEffect    ; EVASION_DOWN_SIDE_EFFECT
-	 dw StatModifierDownEffect    ; unused effect
+	 dw StatModifierDownEffect    ; SPEED_DOWN_ALWAYS_SIDE_EFFECT
 	 dw StatModifierDownEffect    ; unused effect
 	 dw ConfusionSideEffect       ; CONFUSION_SIDE_EFFECT
 	 dw TwoToFiveAttacksEffect    ; TWINEEDLE_EFFECT
@@ -7419,6 +7419,10 @@ StatModifierDownEffect:
 	ld hl, wPlayerMonStatMods
 	ld de, wEnemyMoveEffect
 	ld bc, wPlayerBattleStatus1
+	; ANM-5.61.81: Icy Wind bypasses Red's enemy-only 25% stat-effect failure.
+	ld a, [de]
+	cp SPEED_DOWN_ALWAYS_SIDE_EFFECT
+	jr z, .statModifierDownEffect
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
 	jr z, .statModifierDownEffect
@@ -7429,6 +7433,8 @@ StatModifierDownEffect:
 	call CheckTargetSubstitute ; can't hit through substitute
 	jp nz, MoveMissed
 	ld a, [de]
+	cp SPEED_DOWN_ALWAYS_SIDE_EFFECT
+	jr z, .guaranteedSpeedDown
 	cp ATTACK_DOWN_SIDE_EFFECT
 	jr c, .nonSideEffect
 	call BattleRandom
@@ -7436,6 +7442,9 @@ StatModifierDownEffect:
 	jp nc, CantLowerAnymore
 	ld a, [de]
 	sub ATTACK_DOWN_SIDE_EFFECT ; map each stat to 0-3
+	jr .decrementStatMod
+.guaranteedSpeedDown
+	ld a, SPEED_DOWN_SIDE_EFFECT - ATTACK_DOWN_SIDE_EFFECT ; Speed stat index = 2
 	jr .decrementStatMod
 .nonSideEffect ; non-side effects only
 	push hl

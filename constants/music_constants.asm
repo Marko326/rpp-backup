@@ -359,3 +359,4 @@ const_value = 1
 	const GSSFX_ZAP_CANNON   ; ANM-5.61.72: exact Gold Spark opening SFX
 	const GSSFX_SPARK        ; ANM-5.61.72: exact Gold Spark tackle SFX
 	const GSSFX_THUNDERSHOCK ; ANM-5.61.72: exact Gold Spark impact SFX
+	const GSSFX_PSYCHIC      ; ANM-5.61.81: Gold/Crystal Icy Wind Psychic SFX

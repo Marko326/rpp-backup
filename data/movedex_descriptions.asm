@@ -2559,7 +2559,7 @@ MoveDexDescAirCutter1:
 
 ; #207 Icy Wind
 MoveDexDescIcyWindPages:
-	dw MoveDexDescIcyWind1, MoveDexDescEffectDSpeedDown33, 0
+	dw MoveDexDescIcyWind1, MoveDexDescEffectDSpeedDownAlways, 0
 MoveDexDescIcyWind1:
 	db   "Sends icy wind"
 	next "across the foe.@"
@@ -2938,6 +2938,12 @@ MoveDexDescEffectDSpeedDown33:
 	db   "33", $d9, " chance."
 	next "Foe's Speed"
 	next "drops 1 stage.@"
+
+MoveDexDescEffectDSpeedDownAlways:
+	; ANM-5.61.81: Icy Wind guarantees a one-stage Speed drop on hit.
+	db   "Always lowers the"
+	next "foe's Speed by"
+	next "1 stage.@"
 
 MoveDexDescEffectDPriority:
 	db   "Moves before most"
