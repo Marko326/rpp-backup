@@ -164,13 +164,14 @@ RegionalFormDescriptors::
 	dw AlolanMarowakDexMetrics
 	db 0 ; terminator: species 0 is never a valid descriptor
 
-; WLD-5.61.61: wild producer table: map, source + slot, form.
-; Identity is attached to the exact selected slot before battle setup instead of
-; being rediscovered from Map + Species. Grass/water, all rods and Headbutt use
-; separate source nybbles, so the same Species may mix forms on the same map.
+; WLD-5.61.62: wild producer table: map, source + slot, form.
+; Identity is attached to the exact producer slot before battle setup instead of
+; being rediscovered from Map + Species. Random, fishing, Headbutt and both static
+; producer families use separate source nybbles, so one map may mix forms safely.
 regional_wild_slot: MACRO
 	assert ((\2) & REGIONAL_WILD_SLOT_MASK) == 0
-	assert (\3) < 10
+	assert (\2) <= REGIONAL_WILD_STATIC_SCRIPT
+	assert (\3) <= REGIONAL_WILD_SLOT_MASK
 	db \1, (\2) | (\3), \4
 ENDM
 
@@ -182,6 +183,7 @@ RegionalFormWildEncounters::
 	; Route 7 Vulpix currently occupy slots 4 and 6. Other maps remain normal.
 	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 4, FORM_ALOLA
 	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 6, FORM_ALOLA
+	; Static Object / Static Script are supported but have no production overrides yet.
 	db $ff ; terminator: no real map uses this entry here
 
 ; FRM-5.61.56: location-specific evolutions whose target form differs from the

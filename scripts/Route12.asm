@@ -31,6 +31,9 @@ Route12Script0:
 	ld [wCurOpponent], a
 	ld a, 30
 	ld [wCurEnemyLVL], a
+	; WLD-5.61.62: this is static-script slot 0 on Route 12.
+	ld e, REGIONAL_WILD_STATIC_SCRIPT
+	call RegionalFormStageStaticEncounter_Bank0
 	xor a
 	ld [wIsTrainerBattle], a ; wild battle
 	ld a, HS_ROUTE_12_SNORLAX

@@ -1,6 +1,6 @@
-; WLD-5.61.61: explicit-form bridges for wild producers that select an entry
+; WLD-5.61.62: explicit-form bridges for wild producers that select an entry
 ; outside the normal grass/water encounter routine. Keep these helpers in roomy
-; bank $3B instead of adding producer-specific logic to tight bank $03 / $34.
+; bank $3B instead of adding producer-specific logic to tight producer banks.
 
 ; CALLBA restores the caller ROM bank through A and uses BC/HL internally, so
 ; arguments and return values that must survive the bank switch travel through DE.
@@ -39,3 +39,29 @@ RegionalFormStageFishingRodResponse::
 	callba RegionalFormStageWildEncounter
 	ld e,1
 	ret
+
+; WLD-5.61.62: shared static-wild staging. E = source | 0-based slot.
+; Scripted static encounters enter through the ROM0 bridge; OW_POKEMON objects
+; use the wrapper below so the exact map object id becomes the slot identity.
+RegionalFormStageStaticEncounter::
+	ld a,[wCurOpponent]
+	ld [wEnemyMonSpecies2],a
+	ld a,[wCurMap]
+	ld d,a
+	callba RegionalFormStageWildEncounter
+	ret
+
+RegionalFormStageStaticObjectEncounter::
+	ld a,[wSpriteIndex]
+	dec a ; object ids are 1-based; producer slots are 0-based
+	cp REGIONAL_WILD_SLOT_MASK + 1
+	jr nc,.unsupportedObject
+	or REGIONAL_WILD_STATIC_OBJECT
+	ld e,a
+	jr RegionalFormStageStaticEncounter
+.unsupportedObject
+	; More than 16 map objects cannot be represented by the selector's low nybble.
+	; Route such an unsupported object through an impossible selector so staging
+	; explicitly clears transient Form instead of aliasing another object slot.
+	ld e,$ff
+	jr RegionalFormStageStaticEncounter

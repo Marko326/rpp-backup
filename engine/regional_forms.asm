@@ -352,8 +352,8 @@ RegionalFormOverridePokedexPalette:
 	ld e,0
 	jp RegionalFormCopyPaletteFromHL
 
-; WLD-5.61.61: D = map id, E = encounter selector. The selector binds the
-; form to one exact producer slot (grass/water/rod/headbutt), so normal and
+; WLD-5.61.62: D = map id, E = encounter selector. The selector binds the
+; form to one exact producer slot (random/rod/headbutt/static), so normal and
 ; regional instances of the same Species can coexist. Returns A = form + carry.
 RegionalFormFindWildForm:
 	ld hl,RegionalFormWildEncounters

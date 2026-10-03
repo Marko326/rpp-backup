@@ -34,6 +34,9 @@ PokemonTower6Script0:
 	ld [wCurOpponent], a
 	ld a, 30
 	ld [wCurEnemyLVL], a
+	; WLD-5.61.62: Ghost Marowak is static-script slot 0 on this map.
+	ld e, REGIONAL_WILD_STATIC_SCRIPT
+	call RegionalFormStageStaticEncounter_Bank0
 	ld a, $4
 	ld [wPokemonTower6CurScript], a
 	ld [wCurMapScript], a
