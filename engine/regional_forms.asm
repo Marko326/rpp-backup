@@ -352,9 +352,9 @@ RegionalFormOverridePokedexPalette:
 	ld e,0
 	jp RegionalFormCopyPaletteFromHL
 
-; WLD-5.61.57: D = map id, E = encounter selector. The selector binds the
-; form to one exact grass/water slot, so normal and regional instances of the
-; same Species can coexist on the same map. Returns A = runtime form id and carry.
+; WLD-5.61.61: D = map id, E = encounter selector. The selector binds the
+; form to one exact producer slot (grass/water/rod/headbutt), so normal and
+; regional instances of the same Species can coexist. Returns A = form + carry.
 RegionalFormFindWildForm:
 	ld hl,RegionalFormWildEncounters
 .loop
@@ -382,7 +382,7 @@ RegionalFormFindWildForm:
 	ret
 
 ; D = map id, E = encounter selector; wEnemyMonSpecies2 = selected Species.
-; Stage the exact selected slot's form for LoadEnemyMonData. A non-overridden slot
+; Stage the exact producer slot's form for LoadEnemyMonData. A non-overridden slot
 ; explicitly clears the transient producer state instead of inheriting old data.
 RegionalFormStageWildEncounter:
 	call RegionalFormFindWildForm

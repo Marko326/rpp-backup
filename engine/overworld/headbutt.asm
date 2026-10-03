@@ -119,14 +119,24 @@ GetHeadbuttMons:
 
 	call CheckChainHeadbuttShiny
 
+	; WLD-5.61.61: bind Form to this exact Headbutt slot before battle setup.
+	; C still holds the stock byte offset (slot * 2).
+	ld a,c
+	srl a
+	or REGIONAL_WILD_HEADBUTT
+	ld e,a
 	ld a, 2
 	ld [wMoveMissed], a ; fell out of tree text at start of battle
 	ld a, [hli]
 	ld [wCurEnemyLVL], a
 	ld a, [hl]
 	ld [wCurOpponent], a
+	ld [wEnemyMonSpecies2],a
 	xor a
 	ld [wIsTrainerBattle], a ; make sure this doesn't try to be a glitch trainer
+	ld a,[wCurMap]
+	ld d,a
+	callba RegionalFormStageWildEncounter
 	ret
 
 .noHeadbuttMon

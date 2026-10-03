@@ -2144,6 +2144,7 @@ ItemUseOldRod:
 .done
 ; Set up the encounter
 	pop af
+	ld e,a ; WLD-5.61.61: preserve the selected 0-based rod slot
 	add a,a
 	ld c,a
 	ld b,0
@@ -2151,7 +2152,8 @@ ItemUseOldRod:
 	ld b,[hl]
 	inc hl
 	ld c,[hl]
-	ld a, 1
+	ld a,e
+	or REGIONAL_FISHING_SLOT_FLAG ; RodResponse resolves source + slot before battle
 	jr RodResponse
 	
 INCLUDE "data/old_rod.asm"
@@ -2174,6 +2176,7 @@ ItemUseGoodRod:
 	jr nc, .RandomLoop
 	; choose which monster appears
 	ld hl,GoodRodMons
+	ld e,a ; WLD-5.61.61: preserve the selected 0-based rod slot
 	add a,a
 	ld c,a
 	ld b,0
@@ -2181,7 +2184,8 @@ ItemUseGoodRod:
 	ld b,[hl]
 	inc hl
 	ld c,[hl]
-	ld a, 1
+	ld a,e
+	or REGIONAL_FISHING_SLOT_FLAG ; RodResponse resolves source + slot before battle
 	jr RodResponse
 
 INCLUDE "data/good_rod.asm"
@@ -2194,6 +2198,15 @@ ItemUseSuperRod:
 	call ReadSuperRodData
 	ld a, e
 RodResponse:
+	; WLD-5.61.61: CALLBA does not preserve A/BC. Pass the encoded response
+	; and selected Species through DE, preserve level/Species in BC, and take the
+	; normalized stock rod response back through E.
+	ld d,a
+	ld e,c
+	push bc
+	callba RegionalFormStageFishingRodResponse
+	pop bc
+	ld a,e
 	ld [wRodResponse], a
 	and a ; only "Not even a nibble" may offer an immediate retry
 	jr z, .repeatAvailable
@@ -3245,7 +3258,7 @@ WaterTilesets:
 
 ReadSuperRodData:
 ; return e = 2 if no fish on this map
-; return e = 1 if a bite, bc = level,species
+; return e = REGIONAL_FISHING_SLOT_FLAG | slot if a bite, bc = level,species
 ; return e = 0 if no bite
 	ld a, [wCurMap]
 	ld de, 3 ; each fishing group is three bytes wide
@@ -3283,6 +3296,7 @@ ReadSuperRodData:
 	jr nc, .RandomLoop ; if a is greater than the number of mons, regenerate
 .hookedMon
 	; get the mon
+	ld e,a ; WLD-5.61.61: preserve selected 0-based Super Rod slot
 	add a
 	ld c, a
 	ld b, $0
@@ -3290,7 +3304,7 @@ ReadSuperRodData:
 	ld b, [hl] ; level
 	inc hl
 	ld c, [hl] ; species
-	ld e, $1 ; $1 if there's a bite
+	set 7,e ; mark this as a bite while keeping the slot for RodResponse
 	ret
 
 INCLUDE "data/super_rod.asm"

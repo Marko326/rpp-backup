@@ -164,12 +164,12 @@ RegionalFormDescriptors::
 	dw AlolanMarowakDexMetrics
 	db 0 ; terminator: species 0 is never a valid descriptor
 
-; WLD-5.61.57: random-wild producer table: map, grass/water + slot, form.
-; Identity is attached to the selected encounter slot before battle setup instead
-; of being rediscovered from Map + Species. This allows the same Species to have
-; normal and regional slots on one map without changing the 20-byte wild tables.
+; WLD-5.61.61: wild producer table: map, source + slot, form.
+; Identity is attached to the exact selected slot before battle setup instead of
+; being rediscovered from Map + Species. Grass/water, all rods and Headbutt use
+; separate source nybbles, so the same Species may mix forms on the same map.
 regional_wild_slot: MACRO
-	assert (\2) == REGIONAL_WILD_GRASS || (\2) == REGIONAL_WILD_WATER
+	assert ((\2) & REGIONAL_WILD_SLOT_MASK) == 0
 	assert (\3) < 10
 	db \1, (\2) | (\3), \4
 ENDM

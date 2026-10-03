@@ -2895,6 +2895,9 @@ INCLUDE "data/extended_move_animations.asm"
 SECTION "Trainer Parties", ROMX,BANK[$3B]
 INCLUDE "engine/battle/read_trainer_party.asm"
 INCLUDE "engine/starter_forms.asm"
+; WLD-5.61.61: fishing producer bridge lives in roomy bank $3B; bank $03 only
+; pays for one far-call at the shared RodResponse boundary.
+INCLUDE "engine/wild_form_producers.asm"
 INCLUDE "engine/overworld/advance_player_sprite.asm"
 INCLUDE "engine/mon_gender.asm"
 INCLUDE "engine/menu/status_screen.asm"
