@@ -2978,3 +2978,7 @@ INCLUDE "engine/battle/icy_wind_animation.asm"
 ; ANM-5.61.102: lightweight Earth Power reuses Gen I Ember/Rock Throw assets.
 SECTION "Gold-like Earth Power Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/earth_power_animation.asm"
+
+; ANM-5.62.05: Polished Crystal Energy Ball renderer/data share animation bank $3D.
+SECTION "Polished Crystal Energy Ball Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/energy_ball_animation.asm"

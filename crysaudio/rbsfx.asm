@@ -158,3 +158,8 @@ RedSfxHeaderPointers:
 
 	; ANM-5.61.81: Icy Wind reuses Gold/Crystal Psychic SFX data.
 	dbw BANK(Sfx_Psychic), Sfx_Psychic
+
+	; ANM-5.62.05: Energy Ball reuses the existing Polished Crystal / Gen II SFX data.
+	dbw BANK(Sfx_WarpTo), Sfx_WarpTo
+	dbw BANK(Sfx_Present), Sfx_Present
+	dbw BANK(Sfx_SweetScent), Sfx_SweetScent

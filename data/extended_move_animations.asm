@@ -246,6 +246,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldSacredFireAnimation
 	ret
 .notSacredFire
+	cp ENERGY_BALL
+	jr nz,.notEnergyBall
+	; ANM-5.62.05: Energy Ball owns its full Polished Crystal timeline in bank $3D.
+	callba PlayPolishedCrystalEnergyBallAnimation
+	ret
+.notEnergyBall
 
 	; Gold-style Shadow Ball projectile; C2 currently has no operand.
 	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
@@ -565,7 +571,7 @@ ExtendedMoveAnimationPointers:
 	dw MuddyWaterExtAnim            ; MUDDY_WATER
 	dw WhirlpoolExtAnim             ; WHIRLPOOL
 	dw GigaDrainExtAnim             ; GIGA_DRAIN
-	dw PetalBlizzardExtAnim         ; PETALBLIZARD
+	dw EnergyBallExtAnim            ; ENERGY_BALL
 	dw ParallelBladeExtAnim         ; LEAF_BLADE - keep V1.9 shared Blade pacing
 	dw WoodHammerExtAnim            ; WOOD_HAMMER
 	dw PoisonJabExtAnim             ; POISON_JAB
@@ -1673,16 +1679,14 @@ GigaDrainExtAnimEnd:
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 
-PetalBlizzardExtAnim:
-	db PetalBlizzardExtAnimEnd - PetalBlizzardExtAnimData
-PetalBlizzardExtAnimData:
-	db SE_LIGHT_SCREEN_PALETTE,$4F
-	db SE_PETALS_FALLING,$FF
-	db $01,$0C,$16
-	db SE_RESET_SCREEN_PALETTE,$FF
+EnergyBallExtAnim:
+	db EnergyBallExtAnimEnd - EnergyBallExtAnimData
+EnergyBallExtAnimData:
+	; ANM-5.62.05: the bank-$3D helper owns the complete Polished Crystal timeline.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $FF
-PetalBlizzardExtAnimEnd:
-	IF PetalBlizzardExtAnimEnd - PetalBlizzardExtAnimData > 30
+EnergyBallExtAnimEnd:
+	IF EnergyBallExtAnimEnd - EnergyBallExtAnimData > 30
 		fail "extended move animation recipe exceeds wBuffer"
 	ENDC
 

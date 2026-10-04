@@ -1511,6 +1511,7 @@ GetDamageFeedbackOverride:
 ; 4 = BlinkEnemyMonSprite, 1 = ShakeScreenVertically, 0 = keep stock type.
 DamageFeedbackOverrides:
 	db SHADOW_BALL, 4, 1
+	db ENERGY_BALL, 4, 1 ; ANM-5.62.05: custom impact is followed by standard blink/vertical hit feedback.
 	db SPARK, 4, 1 ; ANM-5.61.72: Gold-style hit reaction, matching Shadow Ball.
 	db ICY_WIND, 4, 1 ; ANM-5.61.81: player hit blinks target; enemy hit shakes player vertically.
 	db EARTH_POWER, 4, 1 ; ANM-5.61.102: avoid a redundant post-eruption side-effect shake.

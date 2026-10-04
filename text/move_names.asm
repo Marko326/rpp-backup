@@ -219,7 +219,7 @@ MoveNames::
 	db "Muddy Water@"
 	db "Whirlpool@"
 	db "Giga Drain@"
-	db "PetalBlizard@"
+	db "Energy Ball@"
 	db "Leaf Blade@"
 	db "Wood Hammer@"
 	db "Poison Jab@"

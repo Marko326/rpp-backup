@@ -230,7 +230,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescMuddyWaterPages ; MUDDY_WATER #214
 	movedex_desc_ptr MoveDexDescWhirlpoolPages ; WHIRLPOOL #215
 	movedex_desc_ptr MoveDexDescGigaDrainPages ; GIGA_DRAIN #216
-	movedex_desc_ptr MoveDexDescPetalBlizzardPages ; PETALBLIZARD #217
+	movedex_desc_ptr MoveDexDescEnergyBallPages ; ENERGY_BALL #217
 	movedex_desc_ptr MoveDexDescLeafBladePages ; LEAF_BLADE #218
 	movedex_desc_ptr MoveDexDescWoodHammerPages ; WOOD_HAMMER #219
 	movedex_desc_ptr MoveDexDescPoisonJabPages ; POISON_JAB #220
@@ -2636,12 +2636,12 @@ MoveDexDescGigaDrain1:
 	next "from the foe to"
 	next "restore health.@"
 
-; #217 Petal Blizzard
-MoveDexDescPetalBlizzardPages:
-	dw MoveDexDescPetalBlizzard1, 0
-MoveDexDescPetalBlizzard1:
-	db   "Hits the foe with"
-	next "a storm of petals.@"
+; #217 Energy Ball
+MoveDexDescEnergyBallPages:
+	dw MoveDexDescEnergyBall1, MoveDexDescEffectCSpecialDown33, 0
+MoveDexDescEnergyBall1:
+	db   "Fires a sphere of"
+	next "natural energy.@"
 
 ; #218 Leaf Blade
 MoveDexDescLeafBladePages:

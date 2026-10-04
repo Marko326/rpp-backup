@@ -360,3 +360,7 @@ const_value = 1
 	const GSSFX_SPARK        ; ANM-5.61.72: exact Gold Spark tackle SFX
 	const GSSFX_THUNDERSHOCK ; ANM-5.61.72: exact Gold Spark impact SFX
 	const GSSFX_PSYCHIC      ; ANM-5.61.81: Gold/Crystal Icy Wind Psychic SFX
+	; ANM-5.62.05: Polished Crystal Energy Ball SFX.
+	const GSSFX_WARP_TO
+	const GSSFX_PRESENT
+	const GSSFX_SWEET_SCENT

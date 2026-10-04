@@ -227,7 +227,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db SPECIAL ;Muddy Water
 	db SPECIAL ;Whirlpool
 	db SPECIAL ;Giga Drain
-	db PHYSICAL;Petal Blizzard
+	db SPECIAL ;Energy Ball
 	db PHYSICAL;Leaf Blade
 	db PHYSICAL;Wood Hammer
 	db PHYSICAL;Poison Jab

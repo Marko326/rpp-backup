@@ -267,7 +267,7 @@ Mon003_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
-	level_move 1,PETALBLIZARD ; Move Reminder Move
+	level_move 1,ENERGY_BALL ; Gen VII TM53 / Move Reminder Move
 	level_move 1,PETAL_DANCE ; Evolution Move
 	level_move 1,OUTRAGE ; HGSS Tutor Move
 	level_move 1,TACKLE
@@ -1249,7 +1249,7 @@ Mon045_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
-	level_move 1,PETALBLIZARD ; New Move
+	level_move 1,ENERGY_BALL ; Gen VII TM53 / Move Reminder Move
 	level_move 1,POISONPOWDER
 	level_move 1,STUN_SPORE
 	level_move 1,MEGA_DRAIN
@@ -4222,7 +4222,7 @@ Mon168_EvosMoves:
 	level_move 1,HEALINGLIGHT ; Heal Bell → new move
 	level_move 1,STUN_SPORE
 	level_move 39,GROWTH ; Quiver Dance → Growth
-	level_move 49,PETALBLIZARD
+	level_move 49,ENERGY_BALL ; Gen VII TM53 compatibility
 	level_move 59,PETAL_DANCE ; evolution move
 	level_move 69,SOLARBEAM ; Leaf Storm → TM move
 	packed_learnset_end

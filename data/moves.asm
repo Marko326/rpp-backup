@@ -229,7 +229,7 @@ MoveEnd:
 	move SURF,         ACCURACY_DOWN_SIDE_EFFECT,   90, WATER,     85, 10 ; Muddy Water
 	move GUST,         TRAPPING_EFFECT,             35, WATER,     85, 15 ; Whirlpool
 	move MEGA_DRAIN,   DRAIN_HP_EFFECT,             75, GRASS,    100, 10 ; Giga Drain
-	move PETAL_DANCE,  NO_ADDITIONAL_EFFECT,        90, GRASS,    100, 15 ; Petal Blizzard
+	move PETAL_DANCE,  SPECIAL_DOWN_SIDE_EFFECT,    90, GRASS,    100, 10 ; Energy Ball
 	move CUT,          NO_ADDITIONAL_EFFECT,        90, GRASS,    100, 15 ; Leaf Blade
 	move ROCK_THROW,   RECOIL_EFFECT,              120, GRASS,    100, 15 ; Wood Hammer
 	move COMET_PUNCH,  POISON_SIDE_EFFECT2,         80, POISON,   100, 20 ; Poison Jab

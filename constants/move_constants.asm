@@ -216,7 +216,7 @@ const_value = 1
 	const MUDDY_WATER  ; d6
 	const WHIRLPOOL    ; d7
 	const GIGA_DRAIN   ; d8
-	const PETALBLIZARD ; d9
+	const ENERGY_BALL  ; d9
 	const LEAF_BLADE   ; da
 	const WOOD_HAMMER  ; db
 	const POISON_JAB   ; dc
