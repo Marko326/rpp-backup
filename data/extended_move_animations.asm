@@ -190,6 +190,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldIcyWindAnimation
 	ret
 .notIcyWind
+	cp EARTH_POWER
+	jr nz,.notEarthPower
+	; ANM-5.61.102: compact Ember + Rock Throw eruption renderer lives in bank $3D.
+	callba PlayGoldEarthPowerAnimation
+	ret
+.notEarthPower
 	cp CRUNCH
 	jr nz,.notCrunch
 	; ANM-5.61.69: exact Gold/Crystal jaw, full-frame shake and double-impact timeline lives in bank $3D.
@@ -1790,9 +1796,9 @@ SignalBeamExtAnimEnd:
 EarthPowerExtAnim:
 	db EarthPowerExtAnimEnd - EarthPowerExtAnimData
 EarthPowerExtAnimData:
-	db SE_SHAKE_SCREEN,$58
-	db $03,$3B,$2E
-	db SE_SHAKE_SCREEN,$FF
+	; ANM-5.61.102: C2 dispatches by real move ID to the lightweight three-burst
+	; Earth Power renderer; no dedicated graphics or audio resources are added.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $FF
 EarthPowerExtAnimEnd:
 	IF EarthPowerExtAnimEnd - EarthPowerExtAnimData > 30

@@ -3,7 +3,7 @@
 ; is staged.  Legacy animation streams still treat this range as invalid.
 EXT_ANIM_SET_FRAME_EFFECT EQU $C0 ; next byte: EXT_FRAME_* mode
 EXT_ANIM_PLAY_USER_CRY    EQU $C1 ; next byte: MoveSoundTable profile move ID
-EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; real-move gateway (Shadow Ball / Egg Bomb / Sludge Bomb / Aeroblast / Crunch / Flame Wheel / Cross Chop / Sacred Fire / Spark / Icy Wind / Dragon Pulse / compact helpers)
+EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; real-move gateway (Shadow Ball / Egg Bomb / Sludge Bomb / Aeroblast / Crunch / Flame Wheel / Cross Chop / Sacred Fire / Spark / Icy Wind / Dragon Pulse / Earth Power / compact helpers)
 EXT_ANIM_CRUNCH_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.69: Gold/Crystal Crunch timeline
 EXT_ANIM_SPARK_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.72: Gold/Crystal Spark timeline
 EXT_ANIM_ICY_WIND_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.81: Gold/Crystal Icy Wind renderer
