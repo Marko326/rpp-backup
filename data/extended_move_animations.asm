@@ -264,65 +264,61 @@ PlayExtendedOrbProjectile:
 	ld a,GSSFX_SLUDGE_BOMB
 	call PlaySound
 
-	; Gold's WAVE_TO_TARGET moves X by +2 and base Y by -1 each frame, with a
-	; 16-pixel sine wave whose phase advances by 4.  32 frames = two full waves.
-	; Mirror the path for an enemy user.
-	ld a,[H_WHOSETURN]
-	and a
-	jr nz,.enemy
-	ld b,$40 ; object center X = 64
-	ld c,$5C ; object center Y = 92
-	ld d,$02 ; X += 2
-	ld e,$FF ; base Y -= 1
-	jr .start
-.enemy
-	ld b,$84 ; mirrored target-side center X = 132
-	ld c,$38 ; mirrored target-side center Y = 56
-	ld d,$FE ; X -= 2
-	ld e,$01 ; base Y += 1
-.start
-	ld hl,GoldShadowBallWaveOffsets
-	ld a,32
-.loop
+	; ANM-5.61.99: Shadow Ball follows Gold's actual WAVE_TO_TARGET coordinate
+	; rules instead of the old hand-mirrored prototype. Gold stores one logical
+	; path for both sides: each frame moves X += 2 / Y -= 1 first, then applies
+	; its sine/cosine offsets; RELATIVE_X maps only the enemy display coordinates.
+	; Keep 34 visible frames so the handoff reaches the existing V7 poof anchor
+	; smoothly without importing Gen2's object/poof overlap engine.
+	ld b,$40 ; logical center X = 64
+	ld c,$5C ; logical center Y = 92
+	ld hl,GoldShadowBallWaveXYOffsets
+	ld a,34
+.shadowLoop
 	push af
-	push bc ; un-waved center
-	push de ; base delta
 
-	; Read the signed Gold-like sine offset. Mirror its sign for enemy use so
-	; the whole path is the geometric reverse of the player's path.
+	; BattleAnimFunction_MoveWaveToTarget updates the base coordinate before OAM.
+	inc b
+	inc b
+	dec c
+	push bc ; preserve the logical center for the next frame
+
 	ld a,[hli]
-	ld d,a
+	ld d,a ; signed X cosine offset (Gold divides amplitude-16 cosine by 16)
+	ld a,[hli]
+	ld e,a ; signed Y sine offset, amplitude 16
+
 	ld a,[H_WHOSETURN]
 	and a
-	jr z,.gotWave
-	ld a,d
-	cpl
-	inc a
-	ld d,a
-.gotWave
-	ld a,c
-	add d
-	ld c,a
-
-	; Keep the wave-table pointer alive across DelayFrame/ClearSprites.
-	; ClearSprites clobbers HL, so restore it only after the frame cleanup.
-	push hl
-	call .drawBall
-	call DelayFrame
-	call ClearSprites
-	pop hl
-
-	pop de
-	pop bc
+	jr nz,.shadowEnemy
 	ld a,b
 	add d
 	ld b,a
 	ld a,c
 	add e
 	ld c,a
+	jr .drawShadowFrame
+.shadowEnemy
+	ld a,$B4 ; 180 - logical X - X offset
+	sub b
+	sub d
+	ld b,a
+	ld a,$98 ; fixY $98: 152 - logical Y + Y offset
+	sub c
+	add e
+	ld c,a
+.drawShadowFrame
+	; DelayFrame/ClearSprites clobber HL, so preserve the offset-table pointer.
+	push hl
+	call .drawBall
+	call DelayFrame
+	call ClearSprites
+	pop hl
+
+	pop bc
 	pop af
 	dec a
-	jr nz,.loop
+	jr nz,.shadowLoop
 
 	; ANM-5.61.69: Shadow Ball's exceptional generic damage feedback is
 	; selected centrally by PlayApplyingAttackAnimation from the real-move override table.
@@ -379,13 +375,19 @@ PlayExtendedOrbProjectile:
 	ret
 
 
-; d=16, phase += 4 in Gold. Two cycles over 32 frames.
-; Values are integer approximations of 16*sin(phase*pi/32).
-GoldShadowBallWaveOffsets:
-	db $00,$06,$0B,$0F,$10,$0F,$0B,$06
-	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
-	db $00,$06,$0B,$0F,$10,$0F,$0B,$06
-	db $00,$FA,$F5,$F1,$F0,$F1,$F5,$FA
+; ANM-5.61.99: Gold WAVE_TO_TARGET offsets for Shadow Ball. Each pair is
+; signed X,Y after cosine is divided by 16 and sine keeps amplitude 16.
+; 34 visible frames preserve the selected smooth handoff into the existing poof.
+GoldShadowBallWaveXYOffsets:
+	db  1,$00, 0,$06, 0,$0B, 0,$0E
+	db  0,$10,$FF,$0E,$FF,$0B,$FF,$06
+	db $FF,$00,$FF,$FA,$FF,$F5,$FF,$F2
+	db  0,$F0, 0,$F2, 0,$F5, 0,$FA
+	db  1,$00, 0,$06, 0,$0B, 0,$0E
+	db  0,$10,$FF,$0E,$FF,$0B,$FF,$06
+	db $FF,$00,$FF,$FA,$FF,$F5,$FF,$F2
+	db  0,$F0, 0,$F2, 0,$F5, 0,$FA
+	db  1,$00, 0,$06
 
 LoadDirectMoveAnimationOverride:
 ; input: e = real move ID
@@ -1404,9 +1406,9 @@ SuckerPunchExtAnimEnd:
 ShadowBallExtAnim:
 	db ShadowBallExtAnimEnd - ShadowBallExtAnimData
 ShadowBallExtAnimData:
-	; V7+ structure: dark background, one Sludge Bomb SFX, 32-frame wave-to-target
-	; orb, then the V7 16-frame/40x40 poof. Keep the background dark for another
-	; 10 frames before restoring it, approximating Gold's post-impact tail.
+	; ANM-5.61.99: Gold-accurate coordinate math for the orb, with two extra
+	; live projectile frames retained so the handoff reaches the existing V7 poof.
+	; Keep the V7 poof and post-impact tail unchanged.
 	db SE_DARK_SCREEN_PALETTE,$FF
 	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $03,$FF,$3C
