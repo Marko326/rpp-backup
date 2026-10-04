@@ -105,41 +105,60 @@ PlayGoldDragonPulseAnimation::
 	jr c, .movingAge
 	ld a, DRAGON_PULSE_MOVING_FRAMES - 1
 .movingAge
-	; Four bytes per age: player X,Y then enemy X,Y. The table bakes in Gold's
-	; sine/cosine offsets plus RELATIVE_X/fixY, sampled at 80% timeline speed.
+	; The 80%-speed resample repeats its exact wave phase every 20 display
+	; frames. Each repeat is only a base translation: player +32 X/-16 Y,
+	; enemy -32 X/+16 Y. Keep one 20-frame cycle instead of all 45 XY pairs.
+	ld b, 0 ; cycle X translation magnitude
+	ld c, 0 ; cycle Y translation magnitude
+	cp 20
+	jr c, .ageInCycle
+	sub 20
+	ld b, 32
+	ld c, 16
+	cp 20
+	jr c, .ageInCycle
+	sub 20
+	ld b, 64
+	ld c, 32
+.ageInCycle
+	push bc
 	add a
 	add a
 	ld l, a
 	ld h, 0
-	ld bc, DragonPulseSlowPositions
+	ld bc, DragonPulseSlowCyclePositions
 	add hl, bc
+	pop bc
 	ld a, [H_WHOSETURN]
 	and a
 	jr nz, .enemyCoords
 	ld a, [hli]
+	add b
 	ld [wBaseCoordX], a
 	ld a, [hl]
+	sub c
 	ld [wBaseCoordY], a
 	jr .draw
 .enemyCoords
 	inc hl
 	inc hl
 	ld a, [hli]
+	sub b
 	ld [wBaseCoordX], a
 	ld a, [hl]
+	add c
 	ld [wBaseCoordY], a
 .draw
 	ld a, DRAGON_PULSE_TILE_BASE
 	ld [wDropletTile], a
 	jp PlayGoldSacredFireAnimation.DrawLargeFlame
 
-; Smooth 80%-speed resample of BATTLE_ANIM_FUNC_WAVE_TO_TARGET.
-; For display age t=0..44:
-;   logical X = 66 + round(8*t/5), logical Y = 91 - round(4*t/5)
-;   wave phase = floor(16*t/5), with Gold's d=16 Q8 sine/cosine behavior.
-; Rounding the base coordinates keeps horizontal motion advancing every frame;
-; the final sample lands on the same Gold endpoint used by original age 35.
-DragonPulseSlowPositions:
+; One exact 20-frame period of the smooth 80%-speed Gold WAVE_TO_TARGET
+; resample. For display age t, phase=floor(16*t/5); after 20 frames phase has
+; advanced by 64 (one full turn), while the base path has translated exactly
+; 32 px horizontally and 16 px vertically. Runtime applies that translation to
+; cycles 1 and 2, preserving every coordinate from the former 45-entry table.
+DragonPulseSlowCyclePositions:
 	; ages 00-04
 	db 67,91,115,53,68,94,112,58,69,97,111,63,71,101,109,67,72,102,108,70
 	; ages 05-09
@@ -148,17 +167,7 @@ DragonPulseSlowPositions:
 	db 81,83,97,61,83,78,95,58,84,73,94,55,86,69,92,51,87,66,91,50
 	; ages 15-19
 	db 90,63,90,49,92,63,88,51,93,64,87,54,95,67,85,57,96,70,84,62
-	; ages 20-24
-	db 99,75,83,69,100,78,80,74,101,81,79,79,103,85,77,83,104,86,76,86
-	; ages 25-29
-	db 106,87,74,89,107,85,71,89,108,82,70,88,110,79,68,85,111,74,67,82
-	; ages 30-34
-	db 113,67,65,77,115,62,63,74,116,57,62,71,118,53,60,67,119,50,59,66
-	; ages 35-39
-	db 122,47,58,65,124,47,56,67,125,48,55,70,127,51,53,73,128,54,52,78
-	; ages 40-44
-	db 131,59,51,85,132,62,48,90,133,65,47,95,135,69,45,99,136,70,44,102
-DragonPulseSlowPositionsEnd:
-	IF DragonPulseSlowPositionsEnd - DragonPulseSlowPositions != DRAGON_PULSE_MOVING_FRAMES * 4
-		fail "Dragon Pulse slow position table must contain 45 four-byte samples"
+DragonPulseSlowCyclePositionsEnd:
+	IF DragonPulseSlowCyclePositionsEnd - DragonPulseSlowCyclePositions != 20 * 4
+		fail "Dragon Pulse slow cycle table must contain 20 four-byte samples"
 	ENDC
