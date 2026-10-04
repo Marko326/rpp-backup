@@ -173,6 +173,12 @@ PlayExtendedOrbProjectile:
 .notWingAttack
 	cp DRILL_PECK
 	jp z,PlayDrillPeckGoldLike
+	cp DRAGON_PULSE
+	jr nz,.notDragonPulse
+	; ANM-5.61.97: Dragon Pulse uses Gold/Crystal Dragon Rage's 16-wave projectile timeline at 80% speed.
+	callba PlayGoldDragonPulseAnimation
+	ret
+.notDragonPulse
 	cp SPARK
 	jr nz,.notSpark
 	callba PlayGoldSparkAnimation
@@ -1198,12 +1204,9 @@ DragonClawExtAnimEnd:
 DragonPulseExtAnim:
 	db DragonPulseExtAnimEnd - DragonPulseExtAnimData
 DragonPulseExtAnimData:
-	; Dragon-flame burst feeds into a focused pulse beam and screen shock.
-	db $46,$51,$1F ; Dragon Rage flame
-	db $46,$FF,$0C ; follow-up flame spiral
-	db $03,$3B,$2E ; Psybeam-style pulse beam
-	db SE_WAVY_SCREEN,$FF
-	db SE_SHAKE_SCREEN,$FF
+	; ANM-5.61.97: port Gold/Crystal Dragon Rage's projectile stream at 80% speed to
+	; Dragon Pulse; the renderer replaces Gold red with RPP's Dragon-type palette.
+	db EXT_ANIM_DRAGON_PULSE_GOLD
 	db $FF
 DragonPulseExtAnimEnd:
 	IF DragonPulseExtAnimEnd - DragonPulseExtAnimData > 30
