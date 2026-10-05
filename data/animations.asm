@@ -911,7 +911,11 @@ LickAnim:
 	db $FF
 
 BoneClubAnim:
-	db $08,$7C,$02
+	; ANM-5.62.09: Gold bone spin on the smoothed pureRGB toss route.
+	db SE_MOVE_MON_HORIZONTALLY,$FF
+	db $81,$7C,$59 ; smoothed pureRGB BONE_TOSS, tileset 2, delay 1
+	db $08,$FF,$02
+	db SE_RESET_MON_POSITION,$FF
 	db $FF
 
 FireBlastAnim:
@@ -1083,7 +1087,14 @@ FurySwipesAnim:
 	db $FF
 
 BonemerangAnim:
-	db $06,$9A,$02
+	; ANM-5.62.09: Both travel legs now interpolate the same authored route at one update/VBlank
+	; while Gold's two-frame bone spin alternates every visible frame.
+	db SE_MOVE_MON_HORIZONTALLY,$FF
+	db $81,$9A,$59 ; smoothed pureRGB BONE_TOSS, tileset 2, delay 1
+	db $06,$FF,$02
+	db SE_DELAY_ANIMATION_10,$FF
+	db $81,$FF,$5A ; smoothed pureRGB BONE_RECOVER, tileset 2, delay 1
+	db SE_RESET_MON_POSITION,$17 ; pureRGB uses DOUBLE_KICK's sound profile here
 	db $FF
 
 RestAnim:
@@ -1591,6 +1602,8 @@ SubanimationPointers:
 	dw Subanimation56
 	dw Subanimation57
 	dw Subanimation58
+	dw Subanimation59 ; ANM-5.62.09: 60fps pureRGB-route bone toss
+	dw Subanimation5a ; ANM-5.62.09: 60fps pureRGB-route bone recover
 
 Subanimation04:
 	db $43
@@ -2168,6 +2181,43 @@ Subanimation58:
 	subentry $0c, $23, 2
 	subentry $0c, $b3, 0
 
+; ANM-5.62.09: delay-3 keyframes to one position per VBlank. Every original key remains at
+; the same 3-frame boundary, so total timing and route are unchanged; only the
+; in-between motion and Gold-style spin are now continuous. Type 4 keeps the
+; original enemy-side reverse traversal.
+Subanimation59:
+	db $8c ; type 4, 12 entries = original 4 keys * 3 VBlanks
+	subentry $7e, $40, 0
+	subentry $7f, $b7, 0
+	subentry $7e, $b8, 0
+	subentry $7f, $41, 0
+	subentry $7e, $b9, 0
+	subentry $7f, $ba, 0
+	subentry $7e, $42, 0
+	subentry $7f, $bb, 0
+	subentry $7e, $bc, 0
+	subentry $7f, $21, 0
+	subentry $7e, $21, 0
+	subentry $7f, $21, 0
+
+Subanimation5a:
+	db $8f ; type 4, 15 entries = original 5 keys * 3 VBlanks
+	subentry $7e, $10, 0
+	subentry $7f, $bd, 0
+	subentry $7e, $be, 0
+	subentry $7f, $0e, 0
+	subentry $7e, $bf, 0
+	subentry $7f, $c0, 0
+	subentry $7e, $92, 0
+	subentry $7f, $c1, 0
+	subentry $7e, $c2, 0
+	subentry $7f, $32, 0
+	subentry $7e, $c3, 0
+	subentry $7f, $c4, 0
+	subentry $7e, $31, 0
+	subentry $7f, $31, 0
+	subentry $7e, $31, 0
+
 Subanimation24:
 	db $a2
 	subentry $51, $2d, 0
@@ -2646,6 +2696,8 @@ FrameBlockPointers:
 	dw GuillotineClampMid1FrameBlock ; $7B
 	dw GuillotineClampMid2FrameBlock ; $7C
 	dw GuillotineClampClosedFrameBlock ; $7D
+	dw GoldBoneFrameBlockA ; $7E - ANM-5.62.09
+	dw GoldBoneFrameBlockB ; $7F - ANM-5.62.09
 
 ; FrameBlock format is as follows:
 ; first byte = number of tiles in FrameBlock
@@ -3795,6 +3847,22 @@ PunchFrameBlock:
 	db $14,$0c,$4d,$00
 	db $14,$14,$4e,$00
 
+; ANM-5.62.09: Gold misc.png tiles $04/$05 are loaded as local tile IDs 0/1. The second
+; FrameBlock is the frameset's one-VBlank whole-object X flip.
+GoldBoneFrameBlockA:
+	db 4
+	db $00,$00,$00,$00
+	db $00,$08,$01,$00
+	db $08,$00,$01,OAM_HFLIP | OAM_VFLIP
+	db $08,$08,$00,OAM_HFLIP | OAM_VFLIP
+
+GoldBoneFrameBlockB:
+	db 4
+	db $00,$00,$01,OAM_HFLIP
+	db $00,$08,$00,OAM_HFLIP
+	db $08,$00,$00,OAM_VFLIP
+	db $08,$08,$01,OAM_VFLIP
+
 FrameBlockBaseCoords:
 	db $10,$68
 	db $10,$70
@@ -3994,5 +4062,25 @@ ASSERT (CrabhammerLowerTallRightBaseCoord - FrameBlockBaseCoords) / 2 == $b3
 ASSERT (CrabhammerUpperTallLeftBaseCoord - FrameBlockBaseCoords) / 2 == $b4
 ASSERT (CrabhammerUpperTallMidBaseCoord - FrameBlockBaseCoords) / 2 == $b5
 ASSERT (CrabhammerUpperTallRightBaseCoord - FrameBlockBaseCoords) / 2 == $b6
+
+; ANM-5.62.09: delay-3 bone keyframes. IDs $b7-$c4 are append-only so existing BaseCoord IDs
+; stay stable. Original anchors ($40/$41/$42/$21 and $10/$0e/$92/$32/$31) are
+; still used verbatim at every three-frame boundary.
+BoneTossInterp1BaseCoord: db $4d,$43 ; $b7: (77,67)
+BoneTossInterp2BaseCoord: db $4b,$49 ; $b8: (75,73)
+BoneTossInterp3BaseCoord: db $45,$57 ; $b9: (69,87)
+BoneTossInterp4BaseCoord: db $43,$5d ; $ba: (67,93)
+BoneTossInterp5BaseCoord: db $3d,$6b ; $bb: (61,107)
+BoneTossInterp6BaseCoord: db $3b,$71 ; $bc: (59,113)
+BoneRecoverInterp1BaseCoord: db $20,$73 ; $bd: (32,115)
+BoneRecoverInterp2BaseCoord: db $20,$6d ; $be: (32,109)
+BoneRecoverInterp3BaseCoord: db $23,$63 ; $bf: (35,99)
+BoneRecoverInterp4BaseCoord: db $25,$5d ; $c0: (37,93)
+BoneRecoverInterp5BaseCoord: db $2c,$53 ; $c1: (44,83)
+BoneRecoverInterp6BaseCoord: db $2f,$4d ; $c2: (47,77)
+BoneRecoverInterp7BaseCoord: db $38,$43 ; $c3: (56,67)
+BoneRecoverInterp8BaseCoord: db $3e,$3d ; $c4: (62,61)
+ASSERT (BoneTossInterp1BaseCoord - FrameBlockBaseCoords) / 2 == $b7
+ASSERT (BoneRecoverInterp8BaseCoord - FrameBlockBaseCoords) / 2 == $c4
 FrameBlock00:
 	db $00,$00

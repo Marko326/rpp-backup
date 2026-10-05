@@ -16,6 +16,13 @@ AnimationTileset2:
 AnimationTileset2End:
 	ASSERT AnimationTileset2End - AnimationTileset2 == 79 * 16
 
+; ANM-5.62.09: Bone Club/Bonemerang. The normal tileset-2 path remains untouched; the battle
+; loader overlays only Gold misc.png tiles $04/$05 into OBJ $31/$32.
+GoldBoneAnimationTiles:
+	INCBIN "gfx/gold_bone_anim.2bpp"
+GoldBoneAnimationTilesEnd:
+	ASSERT GoldBoneAnimationTilesEnd - GoldBoneAnimationTiles == 2 * 16
+
 ; AnimationTilesetPointers stores only 16-bit addresses and the loader uses
 ; BANK(AnimationTileset1) for every entry, so both resources must stay together.
 ASSERT BANK(AnimationTileset1) == BANK(AnimationTileset2)

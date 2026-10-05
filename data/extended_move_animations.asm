@@ -2140,12 +2140,40 @@ GoldOrbAnimationTilesetEnd::
 LoadPunchFamilyTilesIfNeeded::
 	ld a,[wExtendedAnimFrameEffect]
 	cp EXT_FRAMEBLOCK_OVERRIDE | $7A
-	ret nz
+	jr nz,.checkGoldBone
 	ld hl,vSprites + $770
 	ld de,PunchBattleTiles
 	ld b,BANK(PunchBattleTiles)
 	ld c,9
 	jp CopyVideoData
+
+.checkGoldBone
+	; ANM-5.62.09: Bone Club / Bonemerang keep pureRGB's authored routes but
+	; use Gold/Crystal's two source bone tiles and gray OBJ palette. Legacy index-2
+	; trade/utility graphics remain untouched for every other animation.
+	ld a,[wWhichBattleAnimTileset]
+	cp 2
+	ret nz
+	ld a,[wAnimationID]
+	cp BONE_CLUB
+	jr z,.loadGoldBone
+	cp BONEMERANG
+	ret nz
+.loadGoldBone
+	ld hl,vSprites + $310
+	ld de,GoldBoneAnimationTiles
+	ld b,BANK(GoldBoneAnimationTiles)
+	ld c,2
+	call CopyVideoData
+	; Gold BATTLE_ANIM_OBJ_BONE_CLUB/BONEMERANG use PAL_BATTLE_OB_GRAY.
+	ld a,2
+	ld [rSVBK],a
+	ld a,ATK_PAL_GREY
+	ld [W2_SpritePaletteMap + $31],a
+	ld [W2_SpritePaletteMap + $32],a
+	xor a
+	ld [rSVBK],a
+	ret
 
 PunchBattleTiles::
 	INCBIN "gfx/punch_anim.2bpp"
