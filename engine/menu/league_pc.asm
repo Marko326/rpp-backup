@@ -46,9 +46,14 @@ PKMNLeaguePC:
 	pop hl
 	res 6, [hl]
 	call GBPalWhiteOutWithDelay3
-	call ClearScreen
+	; PC-5.62.14: League PC front pictures overwrite vFrontPic, which aliases the
+	; overworld tileset in vChars2. Restore only those tile patterns here; the
+	; caller restores its saved background instead of rebuilding the whole map.
+	call ReloadTilesetTilePatterns
 	call RunDefaultPaletteCommand
-	jp GBPalNormal
+	; Keep the screen white. The caller restores the PC background and redraws the
+	; complete menu before revealing it, so no HoF or partial-menu frame is shown.
+	ret
 
 LeaguePCShowTeam:
 	ld c, PARTY_LENGTH
