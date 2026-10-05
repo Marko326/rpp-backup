@@ -10,6 +10,10 @@ DisplayTextIDInit:
 	ld a,[hSpriteIndexOrTextID]
 	and a
 	jr nz,.windowOwnerReady
+	; MENU-5.62.11: every new START session begins on the lightweight path.
+	; Special auto-text maps may set this flag again below before legacy init.
+	ld hl,wStartMenuSavedMenuItem
+	res START_MENU_FULL_RESTORE_F,[hl]
 	ld a,$91
 	ld [hWY],a
 .windowOwnerReady
@@ -19,26 +23,13 @@ DisplayTextIDInit:
 	ld a,[hSpriteIndexOrTextID] ; text ID (or sprite ID)
 	and a
 	jr nz,.notStartMenu
-; if text ID is 0 (i.e. the start menu)
-; Note that the start menu text border is also drawn in the function directly
-; below this, so this seems unnecessary.
-	CheckEvent EVENT_GOT_POKEDEX
-; start menu with pokedex
-	coord hl, 10, 0
-	ld b,$0e
-	ld c,$08
-	jr nz,.drawTextBoxBorder
-; start menu without pokedex
-	coord hl, 10, 0
-	ld b,$0c
-	ld c,$08
-	jr .drawTextBoxBorder
+	; MENU-5.62.11: DrawStartMenu owns the START border; skip the duplicate hidden draw.
+	jr .skipDrawingTextBoxBorder
 ; if text ID is not 0 (i.e. not the start menu) then do a standard dialogue text box
 .notStartMenu
 	coord hl, 0, 12
 	ld b,$04
 	ld c,$12
-.drawTextBoxBorder
 	call TextBoxBorder
 .skipDrawingTextBoxBorder
 	ld hl,wFontLoaded
@@ -63,6 +54,28 @@ DisplayTextIDInit:
 	add hl,de
 	dec c
 	jr nz,.spriteFacingDirectionCopyLoop
+	; MENU-5.62.11: START normally renders from the resident Bank-1 font/textbox
+	; copy. Auto-text maps still require the legacy Bank-0 font contract; mark that
+	; session for the complete map/sprite restore before entering normal init.
+	ld a,[hSpriteIndexOrTextID]
+	and a
+	jr nz,.normalTextInit
+	ld a,[wAutoTextBoxDrawingControl]
+	bit 0,a
+	jr z,.startFastTextInit
+	ld hl,wStartMenuSavedMenuItem
+	set START_MENU_FULL_RESTORE_F,[hl]
+	jr .normalTextInit
+.startFastTextInit
+	; If a just-finished step still has one row/column redraw armed, let that VBlank
+	; finish before START enables its three-part Window transfer. This preserves the
+	; safety condition from the older fast-font path without paying a font upload.
+	ld a,[hRedrawRowOrColumnMode]
+	and a
+	call nz,DelayFrame
+	ret
+
+.normalTextInit
 ; loop to force all the sprites in the middle of animation to stand still
 ; (so that they don't like they're frozen mid-step during the dialogue)
 	ld hl,wSpriteStateData1 + 2
@@ -79,41 +92,11 @@ DisplayTextIDInit:
 	add hl,de
 	dec c
 	jr nz,.spriteStandStillLoop
-	; 先加载字体，再把对话框/菜单传到屏幕。
-	; START 菜单在没有待处理地图重绘时使用较快的字体传输。
-	; 移动刚结束仍有行/列重绘时保持原版字体传输时序，避免 VBlank 内的 VRAM 操作互相挤占。
-	ld a,[hSpriteIndexOrTextID]
-	and a
-	jr nz,.loadFontNormally
-	ld a,[wAutoTextBoxDrawingControl]
-	bit 0,a
-	jr nz,.loadFontNormally
-	ld a,[hRedrawRowOrColumnMode]
-	and a
-	jr nz,.loadFontNormally
-	ld de,FontGraphics
-	ld hl,vFont
-	lb bc, BANK(FontGraphics), (FontGraphicsEnd - FontGraphics) / $8
-	call CopyVideoDataDoubleStartMenu
-	jr .fontLoaded
-.loadFontNormally
 	call LoadFontTilePatterns
-.fontLoaded
 	ld b,$9c ; window background address
 	call CopyScreenTileBufferToVRAM ; transfer background in WRAM to VRAM
-	ld a,[hSpriteIndexOrTextID]
-	and a
-	jr nz,.showWindow
-	ld a,[wAutoTextBoxDrawingControl]
-	bit 0,a
-	jr nz,.showWindow
-	; START 菜单先保持 Window 在屏幕外，等完整菜单传输后再显示。
-	ld a,$91
-	jr .setWindowY
-.showWindow
 	xor a
-.setWindowY
-	ld [hWY],a
+	ld [hWY],a ; put the window on the screen
 	ld a,$01
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable continuous WRAM to VRAM transfer each V-blank
 	ret

@@ -1,9 +1,8 @@
 StartMenu_Pokedex:
 	predef ShowPokedexMenu
 	call LoadScreenTilesFromBuffer2 ; restore saved screen
-	call Delay3
-	call LoadGBPal
-	call UpdateSprites
+	; MENU-5.62.11: finish the START transfer while CGB OBJ palettes commit invisibly.
+	callba StartMenuFinishWhiteReturn
 	jp RedisplayStartMenu
 
 StartMenu_Pokemon:
@@ -44,8 +43,8 @@ StartMenu_Pokemon:
 	; The cached BG0 restore still makes ReloadMapData unnecessary.
 	; Restore the saved START screen and all overwritten overworld graphics in one
 	; consolidated white/LCD-off phase instead of two separate restore waits.
+	; The helper also completes the CGB palette reveal atomically.
 	callba Summary_RestoreStartMenuFromParty
-	call LoadGBPal
 	jp RedisplayStartMenu
 .chosePokemon
 	call SaveScreenTilesToBuffer1

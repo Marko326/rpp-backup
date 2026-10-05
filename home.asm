@@ -1323,6 +1323,8 @@ CloseTextDisplay::
 	call LoadGBPal
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable continuous WRAM to VRAM transfer each V-blank
+CloseTextDisplayAfterWindowHide::
+; MENU-5.62.11: START full-restore continuation after its Window-hide phase already completed.
 ; loop to make sprites face the directions they originally faced before the dialogue
 	ld hl,wSpriteStateData2 + $19
 	ld c,$0f

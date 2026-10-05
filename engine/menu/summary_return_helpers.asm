@@ -184,7 +184,8 @@ Summary_RestoreStartMenuFromParty::
 	; keep the complete three-frame window transfer on this path.
 	call LoadScreenTilesFromBuffer2
 	call RunDefaultPaletteCommand
-	jp Delay3
+	callba StartMenuFinishWhiteReturn
+	ret
 
 Summary_RestoreStartBagFromParty::
 	; BAG-5.19.1: item use returns straight into StartMenu_Item. Restore the VRAM

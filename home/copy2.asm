@@ -213,8 +213,8 @@ ClearScreen::
 	jp Delay3
 
 CopyVideoDataDoubleStartMenu::
-; START 菜单字体专用传输。
-; 静止状态下每个 VBlank 复制 12 个 1bpp tiles，减少字体加载等待，
+; MENU-5.62.11: START 初次打开使用常驻 VRAM Bank 1 字体；只有真正进入
+; 子菜单时才延后加载 Bank 0 字体。此传输器也继续供 Bag pocket 图形使用，
 ; 不改变普通文本和其他图像传输使用的原版 8-tile 时序。
 	ld a, [H_AUTOBGTRANSFERENABLED]
 	push af

@@ -6,7 +6,6 @@ DisplayStartMenu::
 	ld [wWalkBikeSurfStateCopy],a
 	ld a, SFX_START_MENU
 	call PlaySound
-
 RedisplayStartMenu::
 	callba DrawStartMenu
 	callba PrintSafariZoneSteps ; print Safari Zone info, if in Safari Zone
@@ -25,9 +24,9 @@ RedisplayStartMenu::
 	jr nz,.loop
 ; if the player pressed tried to go past the top item, wrap around to the bottom
 	CheckEvent EVENT_GOT_POKEDEX
-	ld a,7 ; Pokédex + MoveDex add two entries, so the max visible index is 7
+	ld a,START_MENU_ITEM_COUNT_WITH_DEX - 1 ; max visible index with Pokédex + MoveDex
 	jr nz,.wrapMenuItemId
-	ld a,5 ; there are 6 menu items without either dex entry
+	ld a,START_MENU_ITEM_COUNT_WITHOUT_DEX - 1 ; max visible index without either dex entry
 .wrapMenuItemId
 	ld [wCurrentMenuItem],a
 	call EraseMenuCursor
@@ -38,9 +37,9 @@ RedisplayStartMenu::
 ; if the player pressed tried to go past the bottom item, wrap around to the top
 	CheckEvent EVENT_GOT_POKEDEX
 	ld a,[wCurrentMenuItem]
-	ld c,8 ; there are 8 menu items with Pokédex + MoveDex
+	ld c,START_MENU_ITEM_COUNT_WITH_DEX
 	jr nz,.checkIfPastBottom
-	ld c,6 ; there are 6 menu items without either dex entry
+	ld c,START_MENU_ITEM_COUNT_WITHOUT_DEX
 .checkIfPastBottom
 	cp c
 	jr nz,.loop
@@ -52,25 +51,34 @@ RedisplayStartMenu::
 .buttonPressed ; A, B, or Start button pressed
 	call PlaceUnfilledArrowMenuCursor
 	ld a,[wCurrentMenuItem]
-	ld [wStartMenuSavedMenuItem],a ; remember START selection for this play session
+	ld c,a
+	ld a,[wStartMenuSavedMenuItem]
+	and 1 << START_MENU_FULL_RESTORE_F
+	or c
+	ld [wStartMenuSavedMenuItem],a ; remember cursor without losing restore state
 	ld a,b
 	and a,%00001010 ; was the Start button or B button pressed?
 	jp nz,CloseStartMenu
-	call SaveScreenTilesToBuffer2 ; copy background from wTileMap to wTileMapBackup2
 	CheckEvent EVENT_GOT_POKEDEX
 	ld a,[wCurrentMenuItem]
 	jr nz,.displayMenuItem
-	add 2 ; both Pokédex and MoveDex are hidden before the Pokédex is obtained
+	add START_MENU_HIDDEN_DEX_ITEM_COUNT ; Pokédex + MoveDex are hidden before the Pokédex is obtained
 .displayMenuItem
+	cp START_MENU_EXIT_ID
+	jp z,CloseStartMenu ; EXIT never touched Bank 0 and keeps the fast close path
+	push af
+	; MENU-5.62.11: prepare the legacy Bank-0 text contract only when a real
+	; submenu is selected; the helper also snapshots START and marks full restore.
+	callba StartMenuPrepareSubmenuText
+	pop af
 	cp 0
 	jp z,StartMenu_Pokedex
 	cp 1
 	jr nz,.notMoveDex
 	callba ShowMoveDexMenu
 	call LoadScreenTilesFromBuffer2
-	call Delay3
-	call LoadGBPal
-	call UpdateSprites
+	; Keep BG/Window white until the real CGB OBJ palette commit is complete.
+	callba StartMenuFinishWhiteReturn
 	jp RedisplayStartMenu
 .notMoveDex
 	cp 2
@@ -84,11 +92,21 @@ RedisplayStartMenu::
 	cp 6
 	jp z,StartMenu_Option
 
-; EXIT falls through to here
 CloseStartMenu::
 	call Joypad
 	ld a,[hJoyPressed]
 	bit 0,a ; was A button newly pressed?
 	jr nz,CloseStartMenu
-	call LoadTextBoxTilePatterns
-	jp CloseTextDisplay
+	; MENU-5.62.11: the ROMX helper selects lightweight direct close or the proven
+	; full map/sprite restore path. Carry = full restore.
+	callba StartMenuPrepareClose
+	jr c,StartMenuFullRestoreClose
+	pop af
+	ld [H_LOADEDROMBANK],a
+	ld [MBC1RomBank],a
+	jp UpdateSprites
+
+StartMenuFullRestoreClose::
+	ld a,[wCurMap]
+	call SwitchToMapRomBank
+	jp CloseTextDisplayAfterWindowHide

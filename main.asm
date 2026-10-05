@@ -2923,6 +2923,11 @@ SECTION "Map Name Sign", ROMX, BANK[$3D]
 ; Crystal-style overworld location popup lives in a fully empty expansion bank.
 INCLUDE "engine/overworld/map_name_sign.asm"
 
+; MENU-5.62.11: START helpers have no fixed-bank dependency. Keep them floating so
+; future animation/UI growth does not pin both bank $3D and bank $34 near capacity.
+SECTION "START Menu Helpers", ROMX
+INCLUDE "engine/menu/start_menu_helpers.asm"
+
 ; ANM-5.61.45: Gold Sludge Bomb renderer/data stay out of crowded animation bank $3A.
 SECTION "Gold Sludge Bomb Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/sludge_bomb_animation.asm"

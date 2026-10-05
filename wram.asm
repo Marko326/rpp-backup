@@ -440,8 +440,9 @@ wMenuCursorLocation:: ; cc30
 	ds 2
 
 wStartMenuSavedMenuItem:: ; cc32
-; Session-only START menu cursor. It is deliberately outside wMainData so it
-; never enters .sav, and MainMenu clears it once at the start of a play session.
+; MENU-5.62.11: low 7 bits are the session-only START cursor; bit 7 marks that
+; this START session used the legacy Bank-0 text path and needs full map/sprite restore.
+; It stays outside wMainData, never enters .sav, and MainMenu clears it per session.
 	ds 1
 
 wPokedexSavedSelection:: ; cc33
