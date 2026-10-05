@@ -163,3 +163,6 @@ RedSfxHeaderPointers:
 	dbw BANK(Sfx_WarpTo), Sfx_WarpTo
 	dbw BANK(Sfx_Present), Sfx_Present
 	dbw BANK(Sfx_SweetScent), Sfx_SweetScent
+
+	; ANM-5.62.06: Iron Tail reuses the exact Gold/Crystal Mega Kick impact data.
+	dbw BANK(Sfx_MegaKick), Sfx_MegaKick

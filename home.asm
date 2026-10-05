@@ -83,13 +83,22 @@ EnableLCD::
 SECTION "Home LCD STAT Dispatch", ROM0
 
 LCDStatInterrupt::
-	; ANM-5.61.94: Icy Wind temporarily enables STAT mode-0 interrupts. Keep this fast path in
-	; ROM0 and touch only AF/HL so next-line SCY lands inside the same HBlank.
-	; The normal line-$6e LYC interrupt still uses the color wrapper below.
+	; ANM-5.62.06: Iron Tail uses sparse LYC triggers plus one HBlank edge at each real band
+	; boundary. LYC is disabled before mode-0 is armed, so the shared STAT signal
+	; always gets a fresh edge instead of the old LYC/mode-0 lockout.
 	push af
+	ld a, [wBattleAnimRasterMode]
+	cp 4
+	jr z, .ironTailLYC
+	cp 5
+	jr z, .ironTailLYC
+
+	; ANM-5.61.94: Icy Wind temporarily enables STAT mode-0 interrupts. Keep this
+	; fast path in ROM0 and touch only AF/HL so next-line SCY lands in HBlank.
+	; The normal line-$6e LYC interrupt still uses the color wrapper below.
 	ldh a, [rSTAT]
 	and $3
-	jr nz, .prepareColorVBlank
+	jp nz, .prepareColorVBlank
 	push hl
 	ldh a, [rLY]
 	inc a
@@ -119,6 +128,67 @@ LCDStatInterrupt::
 	ldh a, [rSTAT]
 	res 3, a
 	ldh [rSTAT], a
+	jr .done
+
+.ironTailLYC
+	; Gold WOBBLE_MON changes SCX in HBlank. Keep LYC only as a sparse trigger that
+	; arms one HBlank edge at each band boundary; this avoids touching either side
+	; of the shared Y=48..55 target-protection row while pixels are being drawn.
+	ldh a, [rSTAT]
+	and $3
+	jr z, .ironTailHBlank
+
+	; Normal LYC source: preserve the project's color-preparation interrupt.
+	ldh a, [rLY]
+	cp $6e
+	jp z, .prepareColorVBlank
+	; Drop LYC while its coincidence signal is high, then arm mode-0. This creates
+	; a fresh STAT edge when the same scanline reaches HBlank.
+	ldh a, [rSTAT]
+	and $bf
+	or $08
+	ldh [rSTAT], a
+	jr .ironTailDone
+
+.ironTailHBlank
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .ironTailEnemyHBlank
+
+	ldh a, [rLY]
+	cp $2f
+	jr nz, .ironTailPlayerEnd
+	; HBlank 47: line 48 begins Gold's player-user wobble band.
+	ld a, [wBattleAnimRasterTableHigh]
+	ldh [rSCX], a
+	ld a, $5f
+	jr .ironTailFinishHBlank
+
+.ironTailPlayerEnd
+	; HBlank 95: restore baseline before line 96.
+	ldh a, [hSCX]
+	ldh [rSCX], a
+	ld a, $6e
+	jr .ironTailFinishHBlank
+
+.ironTailEnemyHBlank
+	; Enemy user was preloaded at line 0. HBlank 55 restores baseline for line 56.
+	ldh a, [hSCX]
+	ldh [rSCX], a
+	ld a, $6e
+
+.ironTailFinishHBlank
+	; Change LYC before re-enabling its source, so the just-finished line cannot
+	; immediately retrigger through the shared STAT signal.
+	ldh [rLYC], a
+	ldh a, [rSTAT]
+	and $f7
+	or $40
+	ldh [rSTAT], a
+	jr .ironTailDone
+.ironTailDone
+	pop af
+	reti
 .done
 	pop hl
 	pop af

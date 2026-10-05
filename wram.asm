@@ -941,12 +941,12 @@ wOverrideSimulatedJoypadStatesMask:: ; cd3b
 	ds 1
 
 ; Shared fixed-WRAM battle-animation VBlank/raster state. Storage is unchanged:
-; 0 = off, 1 = WX latch, 2 = Icy Wind raster active, 3 = stop Icy Wind next VBlank.
+; ANM-5.62.06: 0 = off, 1 = WX latch, 2/3 = Icy Wind active/stop, 4/5 = Iron Tail SCX active/stop.
 wBattleAnimRasterMode:: ; cd3c
 wBattleAnimWXEnabled::
 	ds 1
 
-wBattleAnimRasterTableHigh:: ; cd3d; Icy Wind uses $c7/$c8, WX mode uses a pixel value
+wBattleAnimRasterTableHigh:: ; cd3d; Icy Wind uses $c7/$c8; Iron Tail stores staged absolute SCX; WX mode uses a pixel value
 wBattleAnimWX::
 wFallingObjectsMovementData:: ; cd3d
 ; up to 20 bytes (one byte for each falling object)

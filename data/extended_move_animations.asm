@@ -179,6 +179,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldDragonPulseAnimation
 	ret
 .notDragonPulse
+	cp IRON_TAIL
+	jr nz,.notIronTail
+	; ANM-5.62.06: Iron Tail routes its Gold-style wobble/impact rear half here.
+	callba PlayGoldIronTailFinishAnimation
+	ret
+.notIronTail
 	cp SPARK
 	jr nz,.notSpark
 	callba PlayGoldSparkAnimation
@@ -777,9 +783,12 @@ BulletPunchExtAnimEnd:
 IronTailExtAnim:
 	db IronTailExtAnimEnd - IronTailExtAnimData
 IronTailExtAnimData:
-	db SE_MOVE_MON_HORIZONTALLY,$84
-	db $04,$FF,$16
-	db SE_RESET_MON_POSITION,$FF
+	; ANM-5.62.06: keep the compact white-charge intro; the helper owns the
+	; Gold-style 32-frame wobble, protected target row, Steel hit and impact SFX.
+	db SE_LIGHT_SCREEN_PALETTE,FLASH - 1
+	db $06,$FF,$2D
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $FF
 IronTailExtAnimEnd:
 	IF IronTailExtAnimEnd - IronTailExtAnimData > 30

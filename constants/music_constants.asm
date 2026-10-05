@@ -364,3 +364,4 @@ const_value = 1
 	const GSSFX_WARP_TO
 	const GSSFX_PRESENT
 	const GSSFX_SWEET_SCENT
+	const GSSFX_MEGA_KICK    ; ANM-5.62.06: exact Gold Iron Tail impact SFX

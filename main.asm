@@ -2959,6 +2959,10 @@ INCLUDE "engine/battle/flame_wheel_animation.asm"
 SECTION "Gold Dragon Pulse Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/dragon_pulse_animation.asm"
 
+; ANM-5.62.06: Iron Tail Gold-style wobble/hit helper lives in roomy bank $3D.
+SECTION "Gold Iron Tail Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/iron_tail_animation.asm"
+
 ; ANM-5.61.67: Gold/Crystal Cross Chop renderer/data stay in roomy bank $3D.
 SECTION "Gold Cross Chop Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/cross_chop_animation.asm"
