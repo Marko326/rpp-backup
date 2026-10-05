@@ -83,8 +83,25 @@ LeaguePCShowTeam:
 	ret
 
 LeaguePCShowMon:
+	; HOF-5.62.15: keep the League PC frame stable while advancing through a
+	; recorded team. The first entry still performs the stock whole-screen setup;
+	; later entries blank only the 7x7 front-pic canvas and wait until that local
+	; wipe reaches VRAM before replacing the picture behind it.
+	ld a, [wHoFTeamIndex2]
+	and a
+	jr nz, .refreshFrontPic
+	ld a, c
+	cp PARTY_LENGTH
+	jr nz, .refreshFrontPic
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
+	jr .loadMon
+.refreshFrontPic
+	coord hl, 12, 5
+	lb bc, 7, 7
+	call ClearScreenArea
+	call Delay3
+.loadMon
 	ld hl, wHallOfFame
 	ld a, [hli]
 	ld [wHoFMonSpecies], a
