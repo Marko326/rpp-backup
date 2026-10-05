@@ -370,6 +370,13 @@ PlayGoldIronTailAnimation::
 .BackupOBP0AndSetReflect
 	ld a, [rOBP0]
 	ld [wIcyWindWaveBufferA + $58], a
+	ld a, [rOBP1]
+	ld [wIcyWindWaveBufferA + $59], a
+	; ANM-5.62.08: Battle Party switching runs GBPalWhiteOut, while GBPalNormal restores only
+	; BGP/OBP0. The protected target row uses OBJ palette 4 through OBP1, so a
+	; stale $00 here maps every copied target-row color to white after a switch.
+	ld a, $e4
+	ld [rOBP1], a
 	xor a ; Gold anim_obp0 $00
 	ld [rOBP0], a
 	ret
@@ -377,6 +384,11 @@ PlayGoldIronTailAnimation::
 .RestoreOBP0
 	ld a, [wIcyWindWaveBufferA + $58]
 	ld [rOBP0], a
+	ret
+
+.RestoreOBP1
+	ld a, [wIcyWindWaveBufferA + $59]
+	ld [rOBP1], a
 	ret
 
 .LoadHitTilesAndPalette
@@ -821,6 +833,9 @@ PlayGoldIronTailAnimation::
 	ld a, 1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	callba LoadAnimationTilesetPalettes
+	; ANM-5.62.08: the protected row is gone and palette slots 4..7 are back on OBP0; restore
+	; the caller's exact OBP1 state instead of leaking Iron Tail's neutral map.
+	call .RestoreOBP1
 	xor a
 	ld [hWY], a
 	; ANM-5.62.07: enemy Iron Tail is followed by the stock vertical damage shake,
