@@ -689,6 +689,23 @@ TradeCenter_PrintPartyListNames:
 	inc c
 	jr .loop
 
+; FORM-5.62.13: preserve the selected stored instances' form-marker bytes before
+; RemovePokemon shifts the local party and the received structure is appended.
+TradeCenter_CaptureRegionalFormMarkers:
+	ld a, [wTradingWhichPlayerMon]
+	ld hl, wPartyMon1CatchRate
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	ld [wTradedPlayerMonFormMarker], a
+	ld a, [wTradingWhichEnemyMon]
+	ld hl, wEnemyMon1CatchRate
+	ld bc, wEnemyMon2 - wEnemyMon1
+	call AddNTimes
+	ld a, [hl]
+	ld [wTradedEnemyMonFormMarker], a
+	ret
+
 TradeCenter_Trade:
 	ld c, 100
 	call DelayFrames
@@ -765,6 +782,9 @@ TradeCenter_Trade:
 	call PlaceString
 	jp .tradeCancelled
 .doTrade
+	; FORM-5.62.13: capture both instance markers while the selected party slots
+	; still refer to the pre-trade parties.
+	call TradeCenter_CaptureRegionalFormMarkers
 	ld a, [wTradingWhichPlayerMon]
 	ld hl, wPartyMonOT
 	call SkipFixedLengthTextEntries

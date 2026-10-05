@@ -161,7 +161,21 @@ InGameTrade_RestoreScreen:
 	call DelayFrames
 	jpba LoadWildData
 
+; FORM-5.62.13: retain the selected player's stored form for the send-off
+; animation. Scripted received Pokémon do not produce a regional marker yet.
+InGameTrade_CaptureRegionalFormMarkers:
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1CatchRate
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	ld [wTradedPlayerMonFormMarker], a
+	xor a
+	ld [wTradedEnemyMonFormMarker], a
+	ret
+
 InGameTrade_PrepareTradeData:
+	call InGameTrade_CaptureRegionalFormMarkers
 	ld hl, wTradedPlayerMonSpecies
 	ld a, [wInGameTradeGiveMonSpecies]
 	ld [hli], a ; wTradedPlayerMonSpecies

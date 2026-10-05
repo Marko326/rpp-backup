@@ -908,8 +908,13 @@ wEnemyMonEvasionMod:: ; cd33
 wInGameTradeReceiveMonSpecies::
 	ds 1
 
-; unused?
-	ds 2
+; FORM-5.62.13: trade-animation regional-form scratch. These bytes were
+; previously unnamed/unused and remain outside save data and the link payload.
+wTradedPlayerMonFormMarker:: ; cd35
+	ds 1
+wTradedEnemyMonFormMarker:: ; cd36
+wHoFMonFormMarker:: ; shared display scratch; trade and Hall of Fame do not overlap
+	ds 1
 
 wNPCMovementDirections2Index:: ; cd37
 
