@@ -83,7 +83,7 @@ EnableLCD::
 SECTION "Home LCD STAT Dispatch", ROM0
 
 LCDStatInterrupt::
-	; ANM-5.62.06: Iron Tail uses sparse LYC triggers plus one HBlank edge at each real band
+	; ANM-5.62.07: Iron Tail uses sparse LYC triggers plus one HBlank edge at each real band
 	; boundary. LYC is disabled before mode-0 is armed, so the shared STAT signal
 	; always gets a fresh edge instead of the old LYC/mode-0 lockout.
 	push af

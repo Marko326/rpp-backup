@@ -11,7 +11,7 @@ VBlank::
 	ld a, [hSCX]
 	ld [rSCX], a
 
-	; ANM-5.62.06: mode 5 is the VBlank-latched Iron Tail raster stop. The
+	; ANM-5.62.07: mode 5 is the VBlank-latched Iron Tail raster stop. The
 	; active mode is configured later, after the normal LY=$6e color interrupt.
 	ld a, [wBattleAnimRasterMode]
 	cp 5

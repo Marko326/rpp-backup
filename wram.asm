@@ -941,7 +941,7 @@ wOverrideSimulatedJoypadStatesMask:: ; cd3b
 	ds 1
 
 ; Shared fixed-WRAM battle-animation VBlank/raster state. Storage is unchanged:
-; ANM-5.62.06: 0 = off, 1 = WX latch, 2/3 = Icy Wind active/stop, 4/5 = Iron Tail SCX active/stop.
+; ANM-5.62.07: 0 = off, 1 = WX latch, 2/3 = Icy Wind active/stop, 4/5 = Iron Tail SCX active/stop.
 wBattleAnimRasterMode:: ; cd3c
 wBattleAnimWXEnabled::
 	ds 1
