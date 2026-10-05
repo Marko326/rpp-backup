@@ -619,6 +619,9 @@ ShowPokedexDataCommon:
 	push af
 	ld hl,wd72c
 	set 1,[hl]
+	; FORM-5.62.12: pass the caller mode in E. The roomy helper starts internal
+	; browsing on NORMAL and derives capture one-shots from wCapturedMonSpecies.
+	ld e,a
 	; The audio engine rewrites NR50 from Volume every update, so a direct NR50
 	; write only lasts a frame. Keep the temporary Pokédex attenuation in the
 	; audio engine's master-volume state instead; the roomy helper bank owns it.
@@ -727,8 +730,10 @@ ShowPokedexDataCommon:
 	push hl
 
 	call Delay3
+	; FORM-5.62.12: resolve the caller-selected form immediately before the stock
+	; palette commit/frontpic load, preserving the original first-render timing.
+	callba PokedexData_PrepareInitialViewForm
 	call GBPalNormal
-	call GetMonHeader ; load pokemon picture location
 	coord hl, 1, 1
 	call LoadFlippedFrontSpriteByMonIndex ; draw pokemon picture
 	ld a,[wcf91]
@@ -798,6 +803,9 @@ ShowPokedexDataCommon:
 	ld [hDexWeight + 1],a ; restore original value of [hDexWeight + 1]
 	pop af
 	ld [hDexWeight],a ; restore original value of [hDexWeight]
+	; FORM-5.62.12: after the stock metrics are drawn, replace only the numeric
+	; Ht/Wt fields when the selected regional form defines overrides.
+	callba PokedexData_OverrideInitialViewMetrics
 	pop hl
 	inc hl ; hl = address of pokedex description text
 	; External one-shot callers retain the original text engine behavior, where

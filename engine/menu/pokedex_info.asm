@@ -41,12 +41,25 @@ PokedexData_SelectCurrentListEntry:
 	ret
 
 PokedexData_BeginSessionVolume:
-	; Every Info session starts on the normal form. START/SELECT only changes this
-	; transient view byte after the stock first render has completed.
+	; FORM-5.62.12: E is the caller mode (0 external one-shot, nonzero internal
+	; list browsing). Internal/ordinary external pages start on NORMAL. A successful
+	; capture still has wCapturedMonSpecies set, so only that one-shot inherits the
+	; active enemy runtime form without growing the capacity-constrained item bank.
+	ld a,e
+	and a
+	jr nz,.normalForm
+	ld a,[wCapturedMonSpecies]
+	and a
+	jr z,.normalForm
+	ld a,[wEnemyMonForm]
+	jr .storeForm
+.normalForm
 	xor a
+.storeForm
 	ld [wPokedexViewForm],a
 	; Info owns its description-arrow animation. Start from an inactive state so a
 	; blinking arrow left by the Pokédex list cannot leak into a Seen-only entry.
+	xor a
 	ld [hDownArrowBlinkActive],a
 	; UpdateSound writes Volume back to NR50 every audio tick. Store the reduced
 	; value in Volume itself so it persists for the whole Info session. Music Off
@@ -64,6 +77,9 @@ PokedexData_BeginSessionVolume:
 PokedexData_EndSession:
 	xor a
 	ld [hDownArrowBlinkActive],a
+	; FORM-5.62.12: form selection is session-local; never leak a captured/viewed
+	; form into a later one-shot Pokédex display.
+	ld [wPokedexViewForm],a
 	call GBPalWhiteOut
 	; Internal Info swaps between the two Window BG maps so a prepared text page can
 	; appear atomically. Restore the project's normal map 1 ownership while the
@@ -128,6 +144,7 @@ PokedexData_ReadInternalInput:
 ; the local state consumes no WRAM. State 1/2 are Details subpages; states 3/4
 ; are Base Stats / evolution-change subpages. B exits, A stays inside the current
 ; category, LEFT/RIGHT switches category, and UP/DOWN changes species.
+
 PokedexData_RunInternalInputLoop:
 	ld a,1
 	push af

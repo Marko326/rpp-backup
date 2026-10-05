@@ -2721,7 +2721,10 @@ AnimationFlashMonPic:
 	ld [wChangeMonPicPlayerTurnSpecies], a
 	ld a, [wEnemyMonSpecies]
 	ld [wChangeMonPicEnemyTurnSpecies], a
-	jp ChangeMonPic
+	; FORM-5.62.12: this is an ordinary redraw of the active battler, so preserve
+	; its already-resolved regional form. Deliberate species replacements such as
+	; Transform use ChangeMonPic directly and keep stock requested-species semantics.
+	jp ChangeMonPicPreserveCurrentForm
 
 AnimationFlashEnemyMonPic:
 ; Flashes the enemy mon's sprite on and off
@@ -3405,6 +3408,15 @@ AnimationTransformMon:
 	ld [wChangeMonPicEnemyTurnSpecies], a
 
 ChangeMonPic:
+	; Deliberate species replacement (for example Transform): use the stock
+	; requested-species header. Ordinary redraws enter through the form-aware label.
+	xor a
+	jr ChangeMonPicModeReady
+
+ChangeMonPicPreserveCurrentForm:
+	ld a, 1
+ChangeMonPicModeReady:
+	ld b, a
 	ld a, [H_WHOSETURN]
 	and a
 	jr z, .playerTurn
@@ -3413,7 +3425,16 @@ ChangeMonPic:
 	ld [wd0b5], a
 	xor a
 	ld [wSpriteFlipped], a
+	ld a, b
+	and a
+	jr z, .enemyStockHeader
+	; FORM-5.62.12: active-enemy redraws reuse the runtime form that was already
+	; resolved when this battle instance was created.
+	callba RegionalFormLoadCurrentEnemyHeader
+	jr .enemyHeaderReady
+.enemyStockHeader
 	call GetMonHeader
+.enemyHeaderReady
 	coord hl, 12, 0
 	call LoadFrontSpriteByMonIndex
 	jr .done
@@ -3423,7 +3444,15 @@ ChangeMonPic:
 	ld a, [wChangeMonPicPlayerTurnSpecies]
 	ld [wBattleMonSpecies2], a
 	ld [wd0b5], a
+	ld a, b
+	and a
+	jr z, .playerStockHeader
+	; FORM-5.62.12: same rule for the active player's back sprite.
+	callba RegionalFormLoadBattleMonHeader
+	jr .playerHeaderReady
+.playerStockHeader
 	call GetMonHeader
+.playerHeaderReady
 	predef LoadMonBackPic
 	xor a
 	call GetTileIDList

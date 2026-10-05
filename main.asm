@@ -2479,6 +2479,11 @@ HoohPicBack::       INCBIN "pic/monback/hoohb.pic"
 ; its data/graphics sections; the engine below remains species-agnostic.
 INCLUDE "data/regional_forms.asm"
 
+; FORM-5.62.12: capture-time Pokédex form rendering stays in a floating ROMX
+; section so fixed bank $34 keeps its expansion room.
+SECTION "Regional Form Initial Pokedex Helpers", ROMX
+INCLUDE "engine/menu/pokedex_initial_form.asm"
+
 SECTION "bank34",ROMX,BANK[$34]
 
 ; Read-only item data is accessed through BANK(ItemNames/ItemPrices),
