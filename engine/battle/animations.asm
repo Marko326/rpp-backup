@@ -242,7 +242,7 @@ BattleAnimDelayFramesMaybeCarry:
 ; during the existing hold frames before cleanup. Other $14 users stay legacy.
 ;
 ; Dedicated / extended move recipes may reuse the same verified allowlist, so
-; Moonblast, Gunk Shot, Sludge Bomb and Mud Bomb inherit only already-approved
+; Moonblast, Sludge Bomb and Mud Bomb inherit only already-approved
 ; projectile stages without opening smoothing to recipe-only commands.
 ;
 ; ANM-5.61.11 adds the verified single-object parabolas used by Poké Ball,
@@ -1512,6 +1512,7 @@ GetDamageFeedbackOverride:
 DamageFeedbackOverrides:
 	db SHADOW_BALL, 4, 1
 	db ENERGY_BALL, 4, 1 ; ANM-5.62.05: custom impact is followed by standard blink/vertical hit feedback.
+	db GUNK_SHOT, 0, 1 ; ANM-5.62.10: keep player feedback; enemy hit shakes the player vertically.
 	db SPARK, 4, 1 ; ANM-5.61.72: Gold-style hit reaction, matching Shadow Ball.
 	db ICY_WIND, 4, 1 ; ANM-5.61.81: player hit blinks target; enemy hit shakes player vertically.
 	db IRON_TAIL, 0, 1 ; ANM-5.62.07: keep player feedback; enemy hit shakes the player vertically.

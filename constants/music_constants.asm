@@ -367,3 +367,4 @@ const_value = 1
 	const GSSFX_MEGA_KICK    ; ANM-5.62.07: exact Gold Iron Tail impact SFX
 	const GSSFX_RAGE         ; ANM-5.62.07: exact Gold Iron Tail opening SFX
 	const GSSFX_SHINE        ; ANM-5.62.07: exact Gold Metallic SFX
+	const GSSFX_BUBBLE_BEAM  ; ANM-5.62.10: Polished Crystal Gunk Shot barrage SFX

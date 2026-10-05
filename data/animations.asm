@@ -1281,13 +1281,10 @@ GigaImpactDirectAnim:
 	db $FF
 
 GunkShotDirectAnim:
-	; ANM-5.61.39: keep the restored two-stage graphics/SFX and use the Poison
-	; type palette for both $2D and $35. DARK only remaps source color 3 to the
-	; type-dark color, so normal light/dark shading is preserved. $96/$48 stay raw.
-	db EXT_ANIM_SET_PALETTE_MODE, EXT_PALETTE_MODE_MOVE_TYPE_DARK
-	db $08,$96,$2D
-	db $43,$48,$35
-	db EXT_ANIM_SET_PALETTE_MODE, EXT_PALETTE_MODE_FIXED
+	; ANM-5.62.10: the dedicated renderer keeps the charge on the normal
+	; battlefield and switches to the dark palette only for the barrage.
+	db EXT_ANIM_GUNK_SHOT_PC
+	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
 
 ParalyzeAnim:

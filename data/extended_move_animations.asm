@@ -252,6 +252,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldSacredFireAnimation
 	ret
 .notSacredFire
+	cp GUNK_SHOT
+	jr nz,.notGunkShot
+	; ANM-5.62.10: Gunk Shot owns its full Polished Crystal timeline in bank $3D.
+	callba PlayPolishedCrystalGunkShotAnimation
+	ret
+.notGunkShot
 	cp ENERGY_BALL
 	jr nz,.notEnergyBall
 	; ANM-5.62.05: Energy Ball owns its full Polished Crystal timeline in bank $3D.
@@ -1649,9 +1655,10 @@ WhirlpoolExtAnimEnd:
 GunkShotExtAnim:
 	db GunkShotExtAnimEnd - GunkShotExtAnimData
 GunkShotExtAnimData:
-	db $46,$7B,$13
-	db $43,$8B,$41
-	db $46,$7B,$14
+	; ANM-5.62.10: mirror the direct override; the renderer itself changes to
+	; the dark palette between the charge and barrage stages.
+	db EXT_ANIM_GUNK_SHOT_PC
+	db SE_RESET_SCREEN_PALETTE,$FF
 	db $FF
 GunkShotExtAnimEnd:
 	IF GunkShotExtAnimEnd - GunkShotExtAnimData > 30

@@ -170,3 +170,6 @@ RedSfxHeaderPointers:
 	; ANM-5.62.07: exact Gold Iron Tail opening / Metallic audio.
 	dbw BANK(Sfx_Rage), Sfx_Rage
 	dbw BANK(Sfx_Shine), Sfx_Shine
+
+	; ANM-5.62.10: Gunk Shot reuses the existing Gen II Bubble Beam SFX data.
+	dbw BANK(Sfx_Bubblebeam), Sfx_Bubblebeam

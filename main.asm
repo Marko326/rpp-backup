@@ -2986,3 +2986,7 @@ INCLUDE "engine/battle/earth_power_animation.asm"
 ; ANM-5.62.05: Polished Crystal Energy Ball renderer/data share animation bank $3D.
 SECTION "Polished Crystal Energy Ball Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/energy_ball_animation.asm"
+
+; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
+SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/gunk_shot_animation.asm"

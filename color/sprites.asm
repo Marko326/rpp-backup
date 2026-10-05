@@ -373,8 +373,8 @@ LoadAnimationTilesetPalettes:
 	push de
 	call LoadBattleAnimTypePalette_Sprite
 	pop de
-	; ANM-5.61.39: Gunk Shot and Poison Jab use the Poison type palette, but
-	; some restored legacy material draws with OBJ color 3. DARK keeps colors 1/2
+	; ANM-5.61.39: Poison Jab uses the Poison type palette, but some restored
+	; legacy material draws with OBJ color 3. DARK keeps colors 1/2
 	; intact and maps only color 3 from black to the staged type-dark color.
 	ld a,[wExtendedAnimPaletteMode]
 	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK
