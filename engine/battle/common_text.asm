@@ -54,7 +54,7 @@ PrintBeginningBattleText:
 	ld a, b
 	and a
 	jr z, .noSilphScope
-	callab LoadEnemyMonData
+	callba RegionalFormReloadWildEnemyMonData
 	jr .notPokemonTower
 .noSilphScope
 	ld hl, EnemyAppearedText
@@ -70,7 +70,7 @@ PrintBeginningBattleText:
 	call PrintText
 	ld hl, UnveiledGhostText
 	call PrintText
-	callab LoadEnemyMonData
+	callba RegionalFormReloadWildEnemyMonData
 	callab MarowakAnim
 	ld hl, WildMonAppearedText
 	call PrintText

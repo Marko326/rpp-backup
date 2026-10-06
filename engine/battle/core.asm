@@ -6675,7 +6675,11 @@ InitBattleCommon:
 InitWildBattle:
 	ld a, $1
 	ld [wIsInBattle], a
+	; WLD-5.62.21: convert transient encounter staging into battle-local identity
+	; before the first header load, then release the shared HP-bar scratch.
+	callba RegionalFormLatchWildEnemyMarker
 	call LoadEnemyMonData
+	callba RegionalFormClearNewMonForm
 	call DoBattleTransitionAndInitBattleVariables
 	ld a, [wCurOpponent]
 	cp MAROWAK

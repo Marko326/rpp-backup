@@ -213,6 +213,11 @@ const_value = 1
 FORM_NORMAL EQU 0
 FORM_ALOLA  EQU 1
 
+; WLD-5.62.21: random wild-form overrides bind to the selected encounter slot.
+; The high nybble identifies the source and the low nybble is the 0-based slot.
+REGIONAL_WILD_GRASS EQU $00
+REGIONAL_WILD_WATER EQU $10
+
 ; FORM-5.62.20: trainer-party Species slots may opt into an explicit runtime
 ; form without changing the layout of ordinary trainer entries. No real Species
 ; occupies $fa; $fb-$fe remain the existing trainer-type/special values.

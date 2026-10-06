@@ -67,12 +67,14 @@ TryDoWildEncounter:
 .gotEncounterSlot
 ; determine which wild pokemon (grass or water) can appear in the half-block we're standing in
 	ld c, [hl]
+	ld e, REGIONAL_WILD_WATER ; WLD-5.62.21: preserve source for slot identity
 	ld hl, wWaterMons
 	aCoord 8, 9	
 	cp $14 ; is the bottom left tile (8,9) of the half-block we're standing in a water tile?	
 	jr z, .gotWildEncounterType ; if so, it's water
 	cp $32 ; is the bottom left tile (8,9) of the half-block we're standing in a shore tile?
 	jr z, .gotWildEncounterType ; if so, it's water
+	ld e, REGIONAL_WILD_GRASS
 	ld hl, wGrassMons
 ; since the bottom right tile of a "left shore" half-block is $14 but the bottom left tile is not,
 ; "left shore" half-blocks (such as the one in the east coast of Cinnabar) load grass encounters.
@@ -106,6 +108,15 @@ TryDoWildEncounter:
 	and a
 	ret
 .willEncounter
+	; WLD-5.62.21: C is still slot * 2 and E identifies grass/water. Bind the
+	; runtime form to this exact selected slot before battle initialization.
+	ld a,c
+	srl a
+	or e
+	ld e,a
+	ld a,[wCurMap]
+	ld d,a
+	callba RegionalFormStageWildEncounter
 	xor a
 	ret
 

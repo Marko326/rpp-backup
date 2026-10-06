@@ -40,6 +40,43 @@ RegionalFormClearNewMonForm:
 	ld [wRegionalFormNewMonMarker],a
 	ret
 
+; WLD-5.62.21: D = map id, E = grass/water + exact slot. Convert the selected
+; random encounter into the same validated transient marker used by other producers.
+; A normal slot clears staging explicitly so a previous producer cannot leak.
+RegionalFormStageWildEncounter:
+	; CALLBA overwrites A while restoring the previous ROM bank, so use the
+	; far-call-safe byte-return wrapper and receive the runtime form in E.
+	callba RegionalFormGetWildFormBySlot
+	jr nc,RegionalFormClearNewMonForm
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	jp RegionalFormStageNewMonForm
+
+; WLD-5.62.21: latch the producer-selected identity before the first wild header
+; load. Keep staging active for that first LoadEnemyMonData; the header consumer
+; clears it only after materializing the regional header, matching the tested 025 flow.
+RegionalFormLatchWildEnemyMarker:
+	xor a
+	ld [wWildEncounterFormMarker],a
+	ld hl,wHPBarDamageSpeed
+	bit BIT_REGIONAL_FORM_NEW_MON_OVERRIDE,[hl]
+	ret z
+	ld a,[wRegionalFormNewMonMarker]
+	ld [wWildEncounterFormMarker],a
+	ret
+
+; Rebuild the original wild enemy from its latched marker. Capture and Pokémon
+; Tower reloads must not rediscover identity from Map + Species or runtime Form.
+RegionalFormReloadWildEnemyMonData:
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	ld a,[wWildEncounterFormMarker]
+	ld e,a
+	call RegionalFormStageNewMonMarker
+	callab LoadEnemyMonData
+	call RegionalFormClearNewMonForm
+	ret
+
 ; wcf91 = species, E = runtime form. Match the tested branch contract so
 ; ReadTrainer and script producers do not depend on D surviving unrelated setup.
 RegionalFormAddPartyMonWithForm:

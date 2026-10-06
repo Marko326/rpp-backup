@@ -758,7 +758,10 @@ wSafariEscapeFactor:: ; cce8
 wSafariBaitFactor:: ; cce9
 	ds 1;
 
-; unused?
+wWildEncounterFormMarker:: ; ccea
+; WLD-5.62.21: original wild-instance marker for the current battle. InitBattleVariables
+; already clears this battle-runtime byte before each encounter; it then survives
+; Transform and later LoadEnemyMonData refreshes until the battle ends.
 	ds 1
 
 wTransformedEnemyMonOriginalDVs:: ; cceb

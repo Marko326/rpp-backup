@@ -1,8 +1,8 @@
 ; FORM-5.26.00: table-driven regional-form data.
 ;
 ; The engine never names a concrete regional Pokémon. To add another form,
-; define its complete header/learnset/evolution/palettes below, add one descriptor row,
-; and (only if it should appear in the wild) add one wild encounter row.
+; define its complete header/learnset/evolution/palettes below and add one descriptor row.
+; WLD-5.62.21: random wild placement is opt-in per grass/water encounter slot below.
 ;
 ; Descriptor layout:
 ;   species, form id, persistent marker,
@@ -164,13 +164,23 @@ RegionalFormDescriptors::
 	dw AlolanMarowakDexMetrics
 	db 0 ; terminator: species 0 is never a valid descriptor
 
-; Wild-only producer table: map, species, form.
-; Stored/trainer/link Pokémon resolve their form from the persistent marker.
+; WLD-5.62.21: random-wild producer table: map, grass/water + exact slot, form.
+; Identity is attached when the encounter slot is selected instead of being
+; rediscovered from Map + Species after battle setup.
+regional_wild_slot: MACRO
+	assert (\2) == REGIONAL_WILD_GRASS || (\2) == REGIONAL_WILD_WATER
+	assert (\3) < 10
+	db \1, (\2) | (\3), \4
+ENDM
+
 RegionalFormWildEncounters::
-	db ROUTE_1, RATTATA, FORM_ALOLA
-	; FORM-5.22.00: Route 7 Vulpix uses the Alolan descriptor. Other maps
-	; continue to produce normal Vulpix, so both forms remain obtainable.
-	db ROUTE_7, VULPIX, FORM_ALOLA
+	; Route 1 Rattata currently occupy slots 1, 2 and 9.
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 1, FORM_ALOLA
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 2, FORM_ALOLA
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 9, FORM_ALOLA
+	; Route 7 Vulpix currently occupy slots 4 and 6. Other maps remain normal.
+	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 4, FORM_ALOLA
+	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 6, FORM_ALOLA
 	db $ff ; terminator: no real map uses this entry here
 
 ; FORM-5.26.00 bulk-imported forms intentionally do not add wild-map rows here.
