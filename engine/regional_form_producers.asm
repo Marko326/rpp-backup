@@ -115,6 +115,53 @@ RegionalFormGivePokemon:
 	pop af
 	ret
 
+; STR-5.62.22: resolve the selected Oak Lab Starter's explicit runtime Form.
+; Unknown Species intentionally returns NORMAL so stale producer state cannot
+; turn an unrelated Starter into a regional instance.
+RegionalFormGetStarterForm:
+	ld a,[wcf91]
+	ld d,a
+	ld hl,StarterFormTable
+.loop
+	ld a,[hli]
+	and a
+	jr z,.normal
+	cp d
+	jr z,.found
+	inc hl
+	jr .loop
+.found
+	ld e,[hl]
+	ret
+.normal
+	ld e,FORM_NORMAL
+	ret
+
+; Preview the same Species/Form identity that insertion will use. The current
+; one-shot Pokédex renderer already understands captured Species + enemy Form;
+; borrow that handoff only for this synchronous call, then restore both bytes.
+RegionalFormShowStarterDex:
+	call RegionalFormGetStarterForm
+	ld a,[wcf91]
+	ld [wCapturedMonSpecies],a
+	ld a,e
+	ld [wEnemyMonForm],a
+	predef StarterDex
+	; Oak Lab runs before any capture battle; leave both transient battle bytes
+	; in their normal overworld state rather than holding stack data across CGB
+	; Pokédex palette code that may switch WRAM banks internally.
+	xor a
+	ld [wCapturedMonSpecies],a
+	ld [wEnemyMonForm],a
+	ret
+
+; Materialize the selected Starter through the same validated explicit-form
+; bridge used by other producers. wPlayerStarter remains Species-only.
+RegionalFormAddStarter:
+	call RegionalFormGetStarterForm
+	call RegionalFormAddPartyMonWithForm
+	ret
+
 ; Resolve source form, then apply the first exact location/source/target override.
 ; If no override matches, inherit the source runtime form only when the target
 ; species has that descriptor. FORM_NORMAL remains the stock fallback.

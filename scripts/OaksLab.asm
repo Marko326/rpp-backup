@@ -856,7 +856,7 @@ OaksLabScript_1d157:
 	ld [hl], SPRITE_FACING_RIGHT
 	ld hl, wd730
 	set 6, [hl]
-	predef StarterDex
+	callba RegionalFormShowStarterDex
 	ld hl, wd730
 	res 6, [hl]
 	call ReloadMapData
@@ -929,7 +929,7 @@ OaksLabMonChoiceMenu:
 	ld [wCurEnemyLVL], a
 	ld a, [wcf91]
 	ld [wd11e], a
-	call AddPartyMon
+	callba RegionalFormAddStarter
 	ld hl, wd72e
 	set 3, [hl]
 	ld a, $fc
