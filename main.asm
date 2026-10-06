@@ -2484,6 +2484,12 @@ INCLUDE "data/regional_forms.asm"
 SECTION "Regional Form Initial Pokedex Helpers", ROMX
 INCLUDE "engine/menu/pokedex_initial_form.asm"
 
+; FORM-5.62.20: producer/staging and map-specific evolution override logic stay
+; floating so fixed bank $34 only grows by small descriptor-facing entry points.
+SECTION "Regional Form Producers", ROMX
+INCLUDE "data/regional_form_producers.asm"
+INCLUDE "engine/regional_form_producers.asm"
+
 SECTION "bank34",ROMX,BANK[$34]
 
 ; Read-only item data is accessed through BANK(ItemNames/ItemPrices),

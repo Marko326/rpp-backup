@@ -232,6 +232,14 @@ moveset: MACRO
 	db \1, \2, \3, \4
 ENDM
 
+; FORM-5.62.20: use in a trainer-party Species slot when that instance needs an
+; explicit regional form. Ordinary Species entries stay one byte wide.
+trainer_form_mon: MACRO
+	ASSERT \1 <= HO_OH
+	ASSERT \2 != FORM_NORMAL
+	db TRAINER_FORM_MON, \1, \2
+ENDM
+
 tilepal: MACRO
 ; vram bank, pals
 x = \1 << 3

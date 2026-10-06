@@ -862,7 +862,7 @@ wPlayerMonAccuracyMod:: ; cd1e
 wPlayerMonEvasionMod:: ; cd1f
 	ds 1
 
-; unused?
+; unused
 	ds 3
 
 wEnemyMonUnmodifiedLevel:: ; cd23
@@ -908,11 +908,11 @@ wEnemyMonEvasionMod:: ; cd33
 wInGameTradeReceiveMonSpecies::
 	ds 1
 
-; FORM-5.62.13: trade-animation regional-form scratch. These bytes were
-; previously unnamed/unused and remain outside save data and the link payload.
+; FORM-5.62.13/FORM-5.62.20: trade-animation regional-form scratch.
 wTradedPlayerMonFormMarker:: ; cd35
 	ds 1
-wTradedEnemyMonFormMarker:: ; cd36
+wInGameTradeReceiveMonForm:: ; cd36; runtime form until trade animation preparation
+wTradedEnemyMonFormMarker:: ; same byte becomes the validated persistent marker
 wHoFMonFormMarker:: ; shared display scratch; trade and Hall of Fame do not overlap
 	ds 1
 
@@ -1333,10 +1333,14 @@ wFlags_0xcd60:: ; cd60
 ; Keep the total footprint exactly 9 bytes so wActionResultOrTookBattleTurn and
 ; every address after $CD69 stay unchanged. This area is not save data.
 wHPBarDamageSpeed:: ; cd61, BATTLE-5.19.6; tiers revised BATTLE-5.19.7
-; 0 = inactive/default; 1 = 25-<50%, 2 = 50-<75%, 3 = >=75% direct attack damage
+; low bits: 0 = inactive/default; 1 = 25-<50%, 2 = 50-<75%, 3 = >=75% damage
+; bit 7: FORM-5.62.20 transient explicit-form producer-valid flag. Producers
+; clear it synchronously before returning, outside HP damage animation.
 	ds 1
 wHPBarDamagePhase:: ; cd62, BATTLE-5.19.6; policy revised BATTLE-5.19.7
-; phase counter used only by the 2px/frame and 3px/frame direct-attack tiers
+wRegionalFormNewMonMarker:: ; FORM-5.62.20 synchronous producer scratch
+; In battle this byte is the HP-animation phase counter. Explicit-form producers
+; use it only while bit 7 above is set, then clear the staging before returning.
 	ds 1
 wPlayerLastSelectedMove:: ; cd63, MIRROR-5.19.19
 ; Last move the player reached the executable-move stage with. Persists across switches.

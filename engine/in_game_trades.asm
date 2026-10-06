@@ -5,8 +5,7 @@ DoInGameTradeDialogue:
 	ld a,[wWhichTrade]
 	ld b,a
 	swap a
-	sub b
-	sub b
+	sub b ; FORM-5.62.20: 15-byte TradeMons records
 	ld c,a
 	ld b,0
 	add hl,bc
@@ -14,6 +13,8 @@ DoInGameTradeDialogue:
 	ld [wInGameTradeGiveMonSpecies],a
 	ld a,[hli]
 	ld [wInGameTradeReceiveMonSpecies],a
+	ld a,[hli]
+	ld [wInGameTradeReceiveMonForm],a
 	ld a,[hli]
 	push af
 	ld de,wInGameTradeMonNick
@@ -135,7 +136,11 @@ InGameTrade_DoTrade:
 	call RemovePokemon
 	ld a,$80 ; prevent the player from naming the mon
 	ld [wMonDataLocation],a
-	call AddPartyMon
+	ld a,[wInGameTradeReceiveMonSpecies]
+	ld d,a
+	ld a,[wTradedEnemyMonFormMarker]
+	ld e,a
+	callba RegionalFormAddPartyMonWithMarker
 	call InGameTrade_CopyDataToReceivedMon
 	callab EvolveTradeMon
 	call ClearScreen
@@ -161,8 +166,8 @@ InGameTrade_RestoreScreen:
 	call DelayFrames
 	jpba LoadWildData
 
-; FORM-5.62.13: retain the selected player's stored form for the send-off
-; animation. Scripted received Pokémon do not produce a regional marker yet.
+; FORM-5.62.20: retain the selected player's stored marker and convert the
+; scripted receive runtime form into the persistent marker used by animation/storage.
 InGameTrade_CaptureRegionalFormMarkers:
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1CatchRate
@@ -170,8 +175,18 @@ InGameTrade_CaptureRegionalFormMarkers:
 	call AddNTimes
 	ld a, [hl]
 	ld [wTradedPlayerMonFormMarker], a
+	ld a,[wInGameTradeReceiveMonSpecies]
+	ld d,a
+	ld a,[wInGameTradeReceiveMonForm]
+	ld e,a
+	callba RegionalFormGetMarkerBySpeciesForm
+	jr nc,.normalReceivedForm
+	ld a,e
+	ld [wTradedEnemyMonFormMarker],a
+	ret
+.normalReceivedForm
 	xor a
-	ld [wTradedEnemyMonFormMarker], a
+	ld [wTradedEnemyMonFormMarker],a
 	ret
 
 InGameTrade_PrepareTradeData:

@@ -213,6 +213,16 @@ const_value = 1
 FORM_NORMAL EQU 0
 FORM_ALOLA  EQU 1
 
+; FORM-5.62.20: trainer-party Species slots may opt into an explicit runtime
+; form without changing the layout of ordinary trainer entries. No real Species
+; occupies $fa; $fb-$fe remain the existing trainer-type/special values.
+TRAINER_FORM_MON EQU $fa
+ASSERT HO_OH < TRAINER_FORM_MON
+
+; FORM-5.62.20: synchronous explicit-form producers reuse the HP-bar scratch
+; only while no HP animation can run. Bit 7 marks wRegionalFormNewMonMarker valid.
+BIT_REGIONAL_FORM_NEW_MON_OVERRIDE EQU 7
+
 ; Persistent form markers live in the legacy stored CatchRate byte. The marker
 ; describes the form, while species + marker selects a descriptor; all registered
 ; Alolan forms can therefore share $fe without species-specific engine logic.

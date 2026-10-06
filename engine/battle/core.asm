@@ -1516,7 +1516,9 @@ EnemySendOutFirstMon:
 	ld a,[hl]
 	ld [wEnemyMonSpecies2],a
 	ld [wcf91],a
-	call LoadEnemyMonData
+	; FORM-5.62.20: preserve a trainer PartyMon's stored form marker while the
+	; active enemy data/header is materialized. Wild battles never enter here.
+	callba RegionalFormLoadTrainerEnemyMonData
 	ld hl,wEnemyMonHP
 	ld a,[hli]
 	ld [wLastSwitchInEnemyMonHP],a

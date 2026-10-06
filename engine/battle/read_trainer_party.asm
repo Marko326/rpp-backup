@@ -46,6 +46,7 @@ ReadTrainer:
 ; SPECIAL_TRAINER has a team with custom levels and custom moves
 ; CUSTOM_PIC has a custom sprite, all Pokemon are same level, standard moves
 ; SPECIAL_LEVELS has custom levels, default moves
+; FORM-5.62.20: any Species slot may instead be TRAINER_FORM_MON, Species, Form.
 ; Otherwise, all Pokemon are the same level and use default moves
 .IterateTrainer
 	; TRN-5.33.01: party trainer names use the shared packed_names charmap.
@@ -68,12 +69,11 @@ ReadTrainer:
 	ld a,[hli]
 	cp $FF ; have we reached the end of the trainer data?
 	jr z,.FinishUp
-	ld [wcf91],a ; write species somewhere (XXX why?)
+	ld d,a
 	ld a,ENEMY_PARTY_DATA
 	ld [wMonDataLocation],a
-	push hl
-	call AddPartyMon
-	pop hl
+	ld a,d
+	call .AddTrainerMon
 	jr .LoopTrainerData
 	
 .PicOnly
@@ -103,12 +103,11 @@ ReadTrainer:
 	jr z,.FinishUp
 	ld [wCurEnemyLVL],a
 	ld a,[hli]
-	ld [wcf91],a
+	ld d,a
 	ld a,ENEMY_PARTY_DATA
 	ld [wMonDataLocation],a
-	push hl
-	call AddPartyMon
-	pop hl
+	ld a,d
+	call .AddTrainerMon
 	call AddCustomMoves
 	jr .SpecialTrainer
 .SpecialLevelsOnly
@@ -120,13 +119,33 @@ ReadTrainer:
 	jr z,.FinishUp
 	ld [wCurEnemyLVL],a
 	ld a,[hli]
-	ld [wcf91],a
+	ld d,a
 	ld a,ENEMY_PARTY_DATA
 	ld [wMonDataLocation],a
+	ld a,d
+	call .AddTrainerMon
+	jr .SpecialLevelsOnly
+
+; A = ordinary Species or TRAINER_FORM_MON. HL points immediately after A.
+; Explicit entries consume Species + Form; every stock trainer encoding keeps its
+; original width for ordinary Species.
+.AddTrainerMon
+	cp TRAINER_FORM_MON
+	jr z,.AddRegionalTrainerMon
+	ld [wcf91],a
 	push hl
 	call AddPartyMon
 	pop hl
-	jr .SpecialLevelsOnly
+	ret
+.AddRegionalTrainerMon
+	ld a,[hli]
+	ld [wcf91],a
+	ld a,[hli]
+	ld e,a
+	push hl
+	callba RegionalFormAddPartyMonWithForm
+	pop hl
+	ret
 .FinishUp
 ; clear wAmountMoneyWon addresses
 	xor a
@@ -150,6 +169,25 @@ ReadTrainer:
 	dec b
 	jr nz,.LastLoop ; repeat wCurEnemyLVL times
 	ret
+
+; FORM-5.62.20: the selected trainer/link PartyMon already stores its persistent
+; marker in CatchRate. Stage that byte while LoadEnemyMonData materializes the
+; active enemy, then restore it after the header's real Catch Rate was copied.
+RegionalFormLoadTrainerEnemyMonData:
+	ld hl,wEnemyMon1CatchRate
+	ld a,[wWhichPokemon]
+	ld bc,wEnemyMon2 - wEnemyMon1
+	call AddNTimes
+	ld e,[hl]
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	callba RegionalFormStageNewMonMarker
+	callab LoadEnemyMonData
+	ld a,[wRegionalFormNewMonMarker]
+	ld [wEnemyMonCatchRate_NotReferenced],a
+	callba RegionalFormClearNewMonForm
+	ret
+
 ; Original R/B Routine removed
 ; Custom routine to add moves stored after each Pokemon/Level combo
 AddCustomMoves:
