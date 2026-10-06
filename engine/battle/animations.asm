@@ -2722,8 +2722,8 @@ AnimationFlashMonPic:
 	ld a, [wEnemyMonSpecies]
 	ld [wChangeMonPicEnemyTurnSpecies], a
 	; FORM-5.62.12: this is an ordinary redraw of the active battler, so preserve
-	; its already-resolved regional form. Deliberate species replacements such as
-	; Transform use ChangeMonPic directly and keep stock requested-species semantics.
+	; its already-resolved regional form. TRN-5.62.16 also gives Transform its own
+	; staged form-aware redraw; unrelated deliberate replacements stay stock.
 	jp ChangeMonPicPreserveCurrentForm
 
 AnimationFlashEnemyMonPic:
@@ -3402,14 +3402,60 @@ AnimationBoundUpAndDown:
 AnimationTransformMon:
 ; Redraws this mon's sprite as the back/front sprite of the opposing mon.
 ; Used in Transform.
+	; TRN-5.62.16: resolve the target Species + form at the actual Transform redraw.
+	; This runs after Substitute cleanup with animations both on and off. Keeping the
+	; staging here also avoids growing the capacity-constrained Transform effect bank.
+	call .prepareRegionalFormIdentity
 	ld a, [wEnemyMonSpecies]
 	ld [wChangeMonPicPlayerTurnSpecies], a
 	ld a, [wBattleMonSpecies]
 	ld [wChangeMonPicEnemyTurnSpecies], a
+	; The transformed identity is now current, so this redraw uses the form-aware
+	; path. Other deliberate Species replacements keep ChangeMonPic stock semantics.
+	jp ChangeMonPicPreserveCurrentForm
+
+.prepareRegionalFormIdentity
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyUser
+
+; Player transforms into the active enemy. Mirror its marker into the enemy's
+; otherwise-unused battle CatchRate byte so the stock Transform copy naturally
+; carries the marker into wBattleMonCatchRate after the animation.
+.playerUser
+	ld a, [wEnemyMonSpecies]
+	ld [wBattleMonSpecies], a
+	ld e, 1
+	callba RegionalFormGetBattleSlotFormIdentity
+	jr nc, .playerNormal
+	ld a, e
+	jr .storePlayerMarker
+.playerNormal
+	xor a
+.storePlayerMarker
+	ld [wBattleMonCatchRate], a
+	ld [wEnemyMonCatchRate_NotReferenced], a
+	ret
+
+; Enemy transforms into the active player. wEnemyMonSpecies2 deliberately remains
+; the original enemy identity; only the active Species/runtime form are replaced.
+.enemyUser
+	ld a, [wBattleMonSpecies]
+	ld [wEnemyMonSpecies], a
+	ld e, 0
+	callba RegionalFormGetBattleSlotFormIdentity
+	jr nc, .enemyNormal
+	ld a, d
+	jr .storeEnemyForm
+.enemyNormal
+	xor a
+.storeEnemyForm
+	ld [wEnemyMonForm], a
+	ret
 
 ChangeMonPic:
-	; Deliberate species replacement (for example Transform): use the stock
-	; requested-species header. Ordinary redraws enter through the form-aware label.
+	; Deliberate species replacement uses the stock requested-species header.
+	; Ordinary redraws and TRN-5.62.16 Transform enter through the form-aware label.
 	xor a
 	jr ChangeMonPicModeReady
 

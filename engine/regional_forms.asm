@@ -1146,7 +1146,9 @@ RegionalFormFindBattleSlotDescriptor:
 	and a
 	jr z,.player
 .enemy
-	ld a,[wEnemyMonSpecies2]
+	; TRN-5.62.16: wEnemyMonSpecies2 preserves the original enemy identity across
+	; Transform. Battle palette/form lookup must follow the active transformed Species.
+	ld a,[wEnemyMonSpecies]
 	ld d,a
 	ld a,[wEnemyMonForm]
 	ld e,a
@@ -1166,6 +1168,23 @@ RegionalFormFindBattleSlotDescriptor:
 	jp RegionalFormFindBySpeciesMarker
 .no
 	and a
+	ret
+
+; E = 0 player, E = 1 enemy. Return D = runtime form ID and E = persistent
+; marker with carry set for a registered regional form. Only DE crosses CALLBA;
+; descriptor pointers remain private to bank $34.
+RegionalFormGetBattleSlotFormIdentity:
+	call RegionalFormFindBattleSlotDescriptor
+	jr nc,.none
+	inc hl
+	ld d,[hl]
+	inc hl
+	ld e,[hl]
+	ret
+.none
+	xor a
+	ld d,a
+	ld e,a
 	ret
 
 RegionalFormLoadBattlePokemonPalette:
