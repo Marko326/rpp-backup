@@ -2,15 +2,21 @@ TransformEffect_:
 	ld hl, wBattleMonSpecies
 	ld de, wEnemyMonSpecies
 	ld bc, wEnemyBattleStatus3
-	ld a, [wEnemyBattleStatus1]
 	ld a, [H_WHOSETURN]
 	and a
-	jr nz, .hitTest
+	jr z, .playerUser
+	; BTL-5.62.19: enemy user targets the player, so the Fly/Dig test must
+	; inspect the player's BattleStatus1 instead of the turn selector itself.
+	ld a, [wPlayerBattleStatus1]
+	jr .hitTest
+.playerUser
 	ld hl, wEnemyMonSpecies
 	ld de, wBattleMonSpecies
 	ld bc, wPlayerBattleStatus3
 	ld [wPlayerMoveListIndex], a
-	ld a, [wPlayerBattleStatus1]
+	; Player user targets the enemy; preserve the target's BattleStatus1 for the
+	; Invulnerable test after the Transform identity checks.
+	ld a, [wEnemyBattleStatus1]
 .hitTest
 	; TRN-5.62.18: reject a second Transform before any animation/data copy, and
 	; reject an already-identical Species + runtime form. Same Species with a
@@ -187,6 +193,10 @@ TransformEffect_:
 	jp CopyData
 
 .failed
+	; BTL-5.62.19: ResidualEffects1 skips the common post-move pause. Match
+	; other direct-failure effects so the move-use text remains readable first.
+	ld c, 50
+	call DelayFrames
 	ld hl, PrintButItFailedText_
 	jp BankswitchEtoF
 

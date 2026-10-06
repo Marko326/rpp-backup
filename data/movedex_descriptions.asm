@@ -676,7 +676,7 @@ MoveDexDescFlamethrower1:
 
 ; #054 Mist
 MoveDexDescMistPages:
-	dw MoveDexDescMist1, MoveDexDescEffectMist, MoveDexDescEffectMistDuration, 0
+	dw MoveDexDescMist1, MoveDexDescEffectMist, MoveDexDescEffectMistDuration, MoveDexDescEffectMistRepeat, 0
 MoveDexDescMist1:
 	db   "Covers the user"
 	next "in a cooling mist.@"
@@ -996,13 +996,19 @@ MoveDexDescEffectDisable:
 	next "Each length: 12.5", $d9, "@"
 
 MoveDexDescEffectMist:
-	db   "Blocks foe-caused"
-	next "stat reductions.@"
+	; BTL-5.62.19: Mist only blocks direct stat-down status effects; damaging
+	; move side effects use the separate $44+ path and are not stopped here.
+	db   "Blocks stat drops"
+	next "from status moves.@"
 
 MoveDexDescEffectMistDuration:
 	; ProtectedByMist 会在换人或 Haze 时清除。
 	db   "Lasts until user"
 	next "switches or Haze.@"
+
+MoveDexDescEffectMistRepeat:
+	db   "Fails while Mist"
+	next "is active.@"
 
 MoveDexDescEffectAttackDown33:
 	db   "33", $d9, " chance."
@@ -1598,17 +1604,30 @@ MoveDexDescSkyAttack1:
 
 ; #144 Transform
 MoveDexDescTransformPages:
-	dw MoveDexDescTransform1, MoveDexDescTransform2, MoveDexDescTransform3, MoveDexDescEffectBTargetInvulnerable, 0
+	dw MoveDexDescTransform1, MoveDexDescTransform2, MoveDexDescTransform3, MoveDexDescTransform4, MoveDexDescTransform5, MoveDexDescTransform6, MoveDexDescTransform7, MoveDexDescEffectBTargetInvulnerable, 0
 MoveDexDescTransform1:
 	db   "Copies the foe's"
-	next "form in battle.@"
+	next "form and types.@"
 MoveDexDescTransform2:
-	; RPP 复制 type、DVs、Attack/Defense/Speed/Special、stat mods 和招式。
-	db   "Copies foe types"
-	next "stats and moves.@"
+	; BTL-5.62.19: Transform copies the four battle stats, not HP or level.
+	db   "Copies Attack,"
+	next "Defense, Speed and"
+	next "Special stats.@"
 MoveDexDescTransform3:
+	db   "Copies stat stages"
+	next "and foe's moves.@"
+MoveDexDescTransform4:
 	db   "Copied moves have"
 	next "5 PP each.@"
+MoveDexDescTransform5:
+	db   "Keeps own HP,"
+	next "level and colors.@"
+MoveDexDescTransform6:
+	db   "Fails if already"
+	next "transformed.@"
+MoveDexDescTransform7:
+	db   "Fails against same"
+	next "species and form.@"
 
 ; #145 Bubble
 MoveDexDescBubblePages:
@@ -2034,10 +2053,10 @@ MoveDexDescConversion1:
 	db   "Copies both of"
 	next "the foe's types.@"
 MoveDexDescConversion2:
-	; ConversionEffect_ 对 Fly/Dig 的 Invulnerable 目标直接失败。
-	db   "Fails if foe is"
-	next "flying high or"
-	next "underground.@"
+	; BTL-5.62.19: matching types still succeed; Invulnerable Fly/Dig targets fail.
+	; Keep both facts on the existing page instead of growing tight bank $34.
+	db   "Type match works."
+	next "Fails vs Fly/Dig.@"
 
 ; #161 Tri Attack
 MoveDexDescTriAttackPages:
