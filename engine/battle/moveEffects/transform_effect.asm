@@ -12,11 +12,30 @@ TransformEffect_:
 	ld [wPlayerMoveListIndex], a
 	ld a, [wPlayerBattleStatus1]
 .hitTest
+	; TRN-5.62.18: reject a second Transform before any animation/data copy, and
+	; reject an already-identical Species + runtime form. Same Species with a
+	; different regional form is still a meaningful Transform and remains allowed.
+	push af
+	ld a, [bc]
+	bit Transformed, a
+	jr nz, .identityFailed
+	call .sameSpeciesAndForm
+	jr nz, .differentIdentity
+.identityFailed
+	pop af
+	jp .failed
+.differentIdentity
+	pop af
 	bit Invulnerable, a ; is mon invulnerable to typical attacks? (fly/dig)
 	jp nz, .failed
 	push hl
 	push de
 	push bc
+	; TRN-5.62.18: all failure conditions have passed. Cache the user's exact
+	; pre-transform palette before the animation changes Species/Form. A short-lived
+	; staging bit makes palette reloads during the animation use this cache without
+	; changing the stock timing of the battle-status Transformed flag.
+	callba CacheTransformUserPalette
 	ld hl, wPlayerBattleStatus2
 	ld a, [H_WHOSETURN]
 	and a
@@ -46,6 +65,8 @@ TransformEffect_:
 	ld a, [bc]
 	set Transformed, a ; mon is now Transformed
 	ld [bc], a
+	; The permanent battle-status bit now owns palette restoration.
+	callba ClearTransformPaletteStaging
 	pop de
 	pop hl
 	push hl
@@ -126,6 +147,32 @@ TransformEffect_:
 	call .copyBasedOnTurn ; stat mods
 	ld hl, TransformedText
 	jp PrintText
+
+.sameSpeciesAndForm
+; Return Z only when both active battle slots have the same Species and runtime
+; regional form. Preserve the Transform copy pointers used by the caller.
+	push bc
+	push de
+	push hl
+	ld a, [wEnemyMonSpecies]
+	ld d, a
+	ld a, [wBattleMonSpecies]
+	cp d
+	jr nz, .identityCompared
+	ld e, 0 ; player battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	ld a, d
+	push af
+	ld e, 1 ; enemy battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	ld e, d
+	pop af
+	cp e
+.identityCompared
+	pop hl
+	pop de
+	pop bc
+	ret
 
 .copyBasedOnTurn
 	ld a, [H_WHOSETURN]

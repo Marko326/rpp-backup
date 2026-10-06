@@ -5,6 +5,10 @@ SECTION "bank1C_extension",ROMX,BANK[$1C]
 SetPal_BattleBlack:
 	ld a,$02
 	ld [rSVBK],a
+	; TRN-5.62.18: staging is only meaningful inside one successful Transform.
+	; Clear the reused cache-state byte when a new battle palette session starts.
+	xor a
+	ld [W2_TransformPaletteStaging],a
 
 	ld d,PAL_BLACK
 	ld e,7
@@ -77,52 +81,110 @@ SetPal_Battle:
 .doneDelay
 	ret
 
+; TRN-5.62.18: snapshot the Transform user's currently displayed Pokémon palette.
+; H_WHOSETURN selects player slot 0 or enemy slot 1. The full 8 bytes are cached so
+; normal, regional and shiny palettes can all be restored exactly after menus/redraws.
+; Public far-call helper: caller must preserve any registers required across CALLBA.
+CacheTransformUserPalette:
+	; TRN-5.62.18: the stack itself lives in banked WRAM. Never push in one
+	; WRAM bank and pop after switching rSVBK; keep the old bank in C, then
+	; push/pop only after bank 2 is active.
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	push bc
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, [W2_TransformPaletteStaging]
+	set 0, a ; player staging active
+	set 2, a ; player Transform palette cache valid
+	ld [W2_TransformPaletteStaging], a
+	ld hl, W2_BgPaletteData
+	ld de, W2_TransformPlayerPalette
+	jr .copy
+.enemy
+	ld a, [W2_TransformPaletteStaging]
+	set 1, a ; enemy staging active
+	set 3, a ; enemy Transform palette cache valid
+	ld [W2_TransformPaletteStaging], a
+	ld hl, W2_BgPaletteData + 8
+	ld de, W2_TransformEnemyPalette
+.copy
+	ld bc, 8
+	call CopyData
+	pop bc
+	ld a, c
+	ld [rSVBK], a
+	ret
+
+; Clear only the in-animation staging bit. Once Transform finishes, the normal
+; battle-status Transformed bit keeps selecting the same cached palette.
+ClearTransformPaletteStaging:
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, W2_TransformPaletteStaging
+	jr nz, .enemy
+	res 0, [hl]
+	jr .done
+.enemy
+	res 1, [hl]
+.done
+	ld a, c
+	ld [rSVBK], a
+	ret
+
 SetPal_Battle_Common:
 	ld hl, wShinyMonFlag
 	res 0, [hl]
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_TransformPaletteStaging]
+	ld b, a
+	ld a, c
+	ld [rSVBK], a
+	ld a, [wPlayerBattleStatus3]
+	bit Transformed, a
+	jr z, .checkPlayerTransformStaging
+	; TRN-5.62.18 amendment: capture and a few legacy reload paths may use the
+	; Transformed status bit as a temporary data-preservation selector. Only treat
+	; it as a palette-cache identity when CacheTransformUserPalette actually ran.
+	bit 2, b
+	jr nz, .restoreTransformedPlayerPal
+	jr .playerPaletteStateReady
+.checkPlayerTransformStaging
+	bit 0, b
+	jr nz, .restoreTransformedPlayerPal
+.playerPaletteStateReady
+
 	ld a, [wBattleMonSpecies]
 	and a
-	jr z, .getPALID
+	jr z, .getBattleMonPal
 	; is mon shiny?
 	ld b, BANK(IsMonShiny)
 	ld hl, IsMonShiny
 	ld de, wBattleMonDVs
 	call Bankswitch
-	jr z, .getPALID
+	jr z, .getBattleMonPal
 	ld hl, wShinyMonFlag
 	set 0, [hl]
-.getPALID
- 	ld a, [wPlayerBattleStatus3]
-	bit Transformed,a
-	jr z,.getBattleMonPal
-
-	; If transformed, don't trust the "DeterminePaletteIDBack" function.
-	ld a,$02
-	ld [rSVBK],a
-	ld a,[W2_BattleMonPalette]
-	ld b,a
-	xor a
-	ld [rSVBK],a
-	jr .loadPlayerPal
-
 .getBattleMonPal
 	ld a, [wBattleMonSpecies]        ; player Pokemon ID
 	call DeterminePaletteIDBack
 	ld d, a
 
-.loadPlayerPal
-	; Save ID
+	; Player palette
 	ld a, [wBattleMonSpecies]
 	ld b, a
-
 	ld a,$02
 	ld [rSVBK],a
-
-	; Save the player mon's palette in case it transforms later
-	ld a,d
-	ld [W2_BattleMonPalette],a
-
-	; Player palette
 	ld a,b
 	ld e,0
 	and a
@@ -139,6 +201,15 @@ SetPal_Battle_Common:
 	jr .getEnemyMonPal
 .loadTrainerPal
 	callba LoadTrainerPalette
+	jr .getEnemyMonPal
+
+.restoreTransformedPlayerPal
+	; TRN-5.62.18: Transform keeps the user's pre-transform palette. Restoring the
+	; exact cached bytes also preserves regional and shiny palettes without trying to
+	; recover the original form/DVs from the transformed battle struct.
+	ld hl, W2_TransformPlayerPalette
+	ld de, W2_BgPaletteData
+	call .restoreCachedTransformPalette
 
 .getEnemyMonPal
 	xor a
@@ -146,6 +217,28 @@ SetPal_Battle_Common:
 
 	ld hl, wShinyMonFlag
 	res 0, [hl]
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_TransformPaletteStaging]
+	ld b, a
+	ld a, c
+	ld [rSVBK], a
+	ld a, [wEnemyBattleStatus3]
+	bit Transformed, a
+	jr z, .checkEnemyTransformStaging
+	; TRN-5.62.18 amendment: a set battle-status bit alone does not prove that
+	; the full enemy Transform palette cache was populated. This matters during
+	; capture, which temporarily sets Transformed solely to preserve DVs on reload.
+	bit 3, b
+	jr nz, .restoreTransformedEnemyPal
+	jr .enemyPaletteStateReady
+.checkEnemyTransformStaging
+	bit 1, b
+	jr nz, .restoreTransformedEnemyPal
+.enemyPaletteStateReady
+
 	ld a, [wEnemyMonSpecies2]
 	and a
 	jr z, .getPALID2
@@ -187,6 +280,35 @@ SetPal_Battle_Common:
 	jr .loadLifebarPal
 .loadTrainerPal2
 	callba LoadTrainerPalette
+	jr .loadLifebarPal
+
+.restoreTransformedEnemyPal
+	; Enemy Transform follows the same Gen-I/II rule: keep the user's original
+	; palette even though Species/Form/graphics now come from the opposing battler.
+	ld hl, W2_TransformEnemyPalette
+	ld de, W2_BgPaletteData + 8
+	call .restoreCachedTransformPalette
+	; TRN-5.62.18: enemy palette restoration returns to the caller's WRAM bank
+	; (normally bank 1). The shared lifebar/tile-palette tail below owns W2_* data
+	; and requires bank 2.
+	ld a, 2
+	ld [rSVBK], a
+	jr .loadLifebarPal
+
+.restoreCachedTransformPalette
+	; TRN-5.62.18: the stack is banked with rSVBK. Switch first, keep the old
+	; bank in C, and only push/pop while bank 2 is active. Restore before RET.
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	push bc
+	ld bc, 8
+	call CopyData
+	pop bc
+	ld a, c
+	ld [rSVBK], a
+	ret
 
 	; Player lifebar
 .loadLifebarPal
