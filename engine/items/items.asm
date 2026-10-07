@@ -2139,6 +2139,7 @@ ItemUseOldRod:
 .done
 ; Set up the encounter
 	pop af
+	ld e,a ; WLD-5.62.23: preserve the selected 0-based Old Rod slot
 	add a,a
 	ld c,a
 	ld b,0
@@ -2146,7 +2147,8 @@ ItemUseOldRod:
 	ld b,[hl]
 	inc hl
 	ld c,[hl]
-	ld a, 1
+	ld a,e
+	or REGIONAL_FISHING_SLOT_FLAG
 	jr RodResponse
 	
 INCLUDE "data/old_rod.asm"
@@ -2169,6 +2171,7 @@ ItemUseGoodRod:
 	jr nc, .RandomLoop
 	; choose which monster appears
 	ld hl,GoodRodMons
+	ld e,a ; WLD-5.62.23: preserve the selected 0-based Good Rod slot
 	add a,a
 	ld c,a
 	ld b,0
@@ -2176,7 +2179,8 @@ ItemUseGoodRod:
 	ld b,[hl]
 	inc hl
 	ld c,[hl]
-	ld a, 1
+	ld a,e
+	or REGIONAL_FISHING_SLOT_FLAG
 	jr RodResponse
 
 INCLUDE "data/good_rod.asm"
@@ -2189,6 +2193,15 @@ ItemUseSuperRod:
 	call ReadSuperRodData
 	ld a, e
 RodResponse:
+	; WLD-5.62.23: preserve level/species in BC across the far producer bridge.
+	; D carries either stock response 0/2 or bite-flag + exact rod slot; E carries
+	; the hooked Species on bites. The bridge returns normalized response in E.
+	ld d,a
+	ld e,c
+	push bc
+	callba RegionalFormStageFishingRodResponse
+	pop bc
+	ld a,e
 	ld [wRodResponse], a
 	and a ; only "Not even a nibble" may offer an immediate retry
 	jr z, .repeatAvailable
@@ -2200,7 +2213,11 @@ RodResponse:
 	dec a ; is there a bite?
 	jr nz, .next
 
-	call CheckChainFishingShiny
+	; WLD-5.62.23: shiny-chain helper moved out of packed bank $03.
+	; CALLBA uses BC internally, so preserve the selected level/species pair.
+	push bc
+	callba CheckChainFishingShiny
+	pop bc
 
 	; if yes, store level and species data
 	ld a, 1
@@ -2220,50 +2237,6 @@ RodResponse:
 	pop hl
 	pop af
 	ld [hl], a
-	ret
-
-; Checks if the hooked pokemon should be shiny, based on the current
-; chain the player has built up.
-; Sets the "force shiny" flag appropriately.
-; Probablities are based on this research: http://mrnbayoh.github.io/pkmn6gen/chain_fishing_shiny/
-; Once a chain of 20 is reached, it's approximately a 1/100 chance.
-CheckChainFishingShiny:
-	push de
-	push bc
-	ld a, [wChainFishingStreak]
-	cp 21
-	jr c, .ok
-	ld a, 20  ; maximum of 20 * 2 attempts at being shiny
-.ok
-	sla a
-	push af
-	; increase chain
-	ld a, [wChainFishingStreak]
-	cp $ff
-	jr z, .maxChain
-	inc a
-	ld [wChainFishingStreak], a
-.maxChain
-	pop af
-	ld e, a  ; e = number of rolls to try and get shiny
-	inc e
-.loop
-	dec e
-	jr z, .end
-	; Generate a random number and see if its shiny (1/256 now, since 1/1024 for normal wild)
-	call Random
-	; Check if a = $AA
-	cp a, $AA
-	jr nz, .loop
-	; Force wild pokemon to be shiny
-	ld hl, wExtraFlags
-	set 0, [hl]
-	; Reset chain
-	xor a
-	ld [wChainFishingStreak], a
-.end
-	pop bc
-	pop de
 	ret
 
 ; checks if fishing is possible and if so, runs initialization code common to all rods
@@ -3240,7 +3213,7 @@ WaterTilesets:
 
 ReadSuperRodData:
 ; return e = 2 if no fish on this map
-; return e = 1 if a bite, bc = level,species
+; return e = REGIONAL_FISHING_SLOT_FLAG | slot if a bite, bc = level,species
 ; return e = 0 if no bite
 	ld a, [wCurMap]
 	ld de, 3 ; each fishing group is three bytes wide
@@ -3278,6 +3251,7 @@ ReadSuperRodData:
 	jr nc, .RandomLoop ; if a is greater than the number of mons, regenerate
 .hookedMon
 	; get the mon
+	ld e,a ; WLD-5.62.23: preserve selected 0-based Super Rod slot
 	add a
 	ld c, a
 	ld b, $0
@@ -3285,7 +3259,7 @@ ReadSuperRodData:
 	ld b, [hl] ; level
 	inc hl
 	ld c, [hl] ; species
-	ld e, $1 ; $1 if there's a bite
+	set 7,e ; mark bite while keeping the exact slot for RodResponse
 	ret
 
 INCLUDE "data/super_rod.asm"

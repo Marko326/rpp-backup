@@ -40,9 +40,9 @@ RegionalFormClearNewMonForm:
 	ld [wRegionalFormNewMonMarker],a
 	ret
 
-; WLD-5.62.21: D = map id, E = grass/water + exact slot. Convert the selected
-; random encounter into the same validated transient marker used by other producers.
-; A normal slot clears staging explicitly so a previous producer cannot leak.
+; WLD-5.62.23: D = map id, E = producer source + exact slot. Convert the
+; selected wild encounter into the same validated transient marker used by other
+; producers. A normal slot clears staging explicitly so old state cannot leak.
 RegionalFormStageWildEncounter:
 	; CALLBA overwrites A while restoring the previous ROM bank, so use the
 	; far-call-safe byte-return wrapper and receive the runtime form in E.
@@ -52,7 +52,7 @@ RegionalFormStageWildEncounter:
 	ld d,a
 	jp RegionalFormStageNewMonForm
 
-; WLD-5.62.21: latch the producer-selected identity before the first wild header
+; WLD-5.62.23: latch the producer-selected identity before the first wild header
 ; load. Keep staging active for that first LoadEnemyMonData; the header consumer
 ; clears it only after materializing the regional header, matching the tested 025 flow.
 RegionalFormLatchWildEnemyMarker:

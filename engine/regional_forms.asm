@@ -277,44 +277,6 @@ RegionalFormOverridePokedexPalette:
 	ld e,0
 	jp RegionalFormCopyPaletteFromHL
 
-; WLD-5.62.21: D = map id, E = encounter selector (source + exact slot).
-; Returns A = runtime form id and carry set when that slot has an override.
-RegionalFormFindWildForm:
-	ld hl,RegionalFormWildEncounters
-.loop
-	ld a,[hl]
-	cp $ff
-	jr z,.notFound
-	cp d
-	jr nz,.next
-	inc hl
-	ld a,[hl]
-	dec hl
-	cp e
-	jr nz,.next
-	inc hl
-	inc hl
-	ld a,[hl]
-	scf
-	ret
-.next
-	ld bc,RF_WILD_SIZE
-	add hl,bc
-	jr .loop
-.notFound
-	and a
-	ret
-
-; WLD-5.62.21: far-call-safe wrapper for the floating producer bank. CALLBA
-; consumes A on return while restoring the caller bank, so return the form in E.
-; D = map id, E = encounter selector -> E = runtime form, carry on success.
-RegionalFormGetWildFormBySlot:
-	call RegionalFormFindWildForm
-	ret nc
-	ld e,a
-	scf
-	ret
-
 ; HL = descriptor. Returns HL = 16-bit pointer at descriptor field BC.
 RegionalFormGetDescriptorPointer:
 	add hl,bc
@@ -395,8 +357,8 @@ RegionalFormGetPokedexMetricsPointer:
 ; -----------------------------------------------------------------------------
 
 ; FORM-5.62.20 explicit producers stage a validated marker while a new instance
-; is materialized. WLD-5.62.21 random wild slots use the same transient staging
-; for the first header load; later wild reloads restage from wWildEncounterFormMarker.
+; is materialized. WLD-5.62.23 wild producers use the same transient staging for
+; the first header load; later wild reloads restage from wWildEncounterFormMarker.
 RegionalFormPrepareWildEnemyHeader:
 	xor a
 	ld [wEnemyMonForm],a
@@ -548,7 +510,7 @@ RegionalFormPrepareCaughtMonHeader:
 	ld e,a
 	and a
 	jr z,.done
-	; WLD-5.62.21: persist the original encounter identity. Runtime Species/Form
+	; WLD-5.62.23: persist the original encounter identity. Runtime Species/Form
 	; may change through Transform, but Species2 + the latched marker do not.
 	ld a,[wEnemyMonSpecies2]
 	ld d,a

@@ -2912,6 +2912,12 @@ INCLUDE "data/movedex_descriptions.asm"
 ; 运行时 Normal/Snowy 切换所需的差分资源与辅助例程。
 INCLUDE "data/snowy_runtime.asm"
 
+; WLD-5.62.23: wild producer data/bridges and fishing-only support live in
+; roomy bank $3B. Current map has ample room; keep packed banks $03/$34 stable.
+SECTION "Wild Form Producers", ROMX, BANK[$3B]
+INCLUDE "data/wild_form_producers.asm"
+INCLUDE "engine/wild_form_producers.asm"
+
 ; Categorized player Bag helpers live in the roomy expansion bank.
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"
