@@ -34,6 +34,10 @@ PokemonTower6Script0:
 	ld [wCurOpponent], a
 	ld a, 30
 	ld [wCurEnemyLVL], a
+	; WLD-5.62.24: Ghost Marowak is scripted static producer slot 0. The
+	; latched marker survives the Ghost -> Marowak reveal reload.
+	ld e, REGIONAL_WILD_STATIC_SCRIPT
+	call RegionalFormStageStaticEncounter_Bank0
 	ld a, $4
 	ld [wPokemonTower6CurScript], a
 	ld [wCurMapScript], a

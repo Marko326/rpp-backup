@@ -2489,7 +2489,15 @@ InitBattleEnemyParameters::
 .noTrainer
 	ld a, [wEngagedTrainerSet]
 	ld [wCurEnemyLVL], a
+	; WLD-5.62.24: OW_POKEMON retains the exact 1-based map object id in
+	; wSpriteIndex. Bind that static-object identity before battle setup.
+	callba RegionalFormStageStaticObjectEncounter
 	ret
+
+; WLD-5.62.24: tight map-script banks use this tiny ROM0 bridge after writing
+; wCurOpponent. E already contains REGIONAL_WILD_STATIC_SCRIPT | 0-based slot.
+RegionalFormStageStaticEncounter_Bank0::
+	jpba RegionalFormStageStaticEncounter
 
 GetSpritePosition1::
 	ld hl, _GetSpritePosition1

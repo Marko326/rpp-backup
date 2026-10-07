@@ -1,11 +1,11 @@
-; WLD-5.62.23: wild producer configuration lives with the producer bridge in
-; roomy bank $3B instead of consuming the remaining bytes of fixed bank $34.
-; Each row is map, source + exact 0-based slot, runtime form.
+; WLD-5.62.24: wild producer configuration lives with the producer bridge in
+; roomy bank $3B instead of consuming packed banks $03/$34. Each row is
+; map, source + exact 0-based slot, runtime form.
 
 regional_wild_slot: MACRO
 	assert ((\2) & REGIONAL_WILD_SLOT_MASK) == 0
-	assert (\2) < REGIONAL_FISHING_SLOT_FLAG
-	assert (\3) < 10
+	assert (\2) <= REGIONAL_WILD_STATIC_SCRIPT
+	assert (\3) <= REGIONAL_WILD_SLOT_MASK
 	db \1, (\2) | (\3), \4
 ENDM
 

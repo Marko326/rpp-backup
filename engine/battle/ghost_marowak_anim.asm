@@ -15,7 +15,9 @@ MarowakAnim:
 	ld [wChangeMonPicEnemyTurnSpecies], a
 	ld a, $1
 	ld [H_WHOSETURN], a
-	callab ChangeMonPic
+	; WLD-5.62.24: Ghost Marowak is the same static wild instance after reveal.
+	; Preserve the runtime form already restored from wWildEncounterFormMarker.
+	callab ChangeMonPicPreserveCurrentForm
  ; alternate between black and light grey 8 times.
  ; this makes the ghost's body appear to flash
 	ld d, $80

@@ -1,4 +1,4 @@
-; WLD-5.62.23: wild/fishing producer helpers live in roomy bank $3B.
+; WLD-5.62.24: wild producer helpers live in roomy bank $3B.
 ; This keeps producer data out of capacity-constrained bank $34 and moves the
 ; fishing-only shiny-chain helper out of packed bank $03.
 
@@ -110,3 +110,29 @@ CheckChainFishingShiny::
 	pop bc
 	pop de
 	ret
+
+; WLD-5.62.24: shared static-wild staging. E = source | 0-based slot.
+; Scripted static encounters call this through the ROM0 bridge after setting
+; wCurOpponent; OW_POKEMON objects use the wrapper below so their exact map
+; object id becomes the producer slot.
+RegionalFormStageStaticEncounter::
+	ld a,[wCurOpponent]
+	ld [wEnemyMonSpecies2],a
+	ld a,[wCurMap]
+	ld d,a
+	callba RegionalFormStageWildEncounter
+	ret
+
+RegionalFormStageStaticObjectEncounter::
+	ld a,[wSpriteIndex]
+	dec a ; object ids are 1-based; producer slots are 0-based
+	cp REGIONAL_WILD_SLOT_MASK + 1
+	jr nc,.unsupportedObject
+	or REGIONAL_WILD_STATIC_OBJECT
+	ld e,a
+	jr RegionalFormStageStaticEncounter
+.unsupportedObject
+	; Object ids above 16 cannot fit the low nybble. Use an impossible selector
+	; so transient staging is explicitly cleared instead of aliasing another slot.
+	ld e,$ff
+	jr RegionalFormStageStaticEncounter

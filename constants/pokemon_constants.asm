@@ -213,17 +213,19 @@ const_value = 1
 FORM_NORMAL EQU 0
 FORM_ALOLA  EQU 1
 
-; WLD-5.62.23: wild-form overrides bind to the exact producer slot.
+; WLD-5.62.24: wild-form overrides bind to the exact producer slot.
 ; The high nybble identifies the source and the low nybble is the 0-based slot.
 ; Bit 7 is reserved as the transient fishing "bite + slot" response flag.
-REGIONAL_WILD_GRASS     EQU $00
-REGIONAL_WILD_WATER     EQU $10
-REGIONAL_WILD_OLD_ROD   EQU $20
-REGIONAL_WILD_GOOD_ROD  EQU $30
-REGIONAL_WILD_SUPER_ROD EQU $40
-REGIONAL_WILD_HEADBUTT  EQU $50
-REGIONAL_WILD_SLOT_MASK EQU $0f
-REGIONAL_FISHING_SLOT_FLAG EQU $80
+REGIONAL_WILD_GRASS         EQU $00
+REGIONAL_WILD_WATER         EQU $10
+REGIONAL_WILD_OLD_ROD       EQU $20
+REGIONAL_WILD_GOOD_ROD      EQU $30
+REGIONAL_WILD_SUPER_ROD     EQU $40
+REGIONAL_WILD_HEADBUTT      EQU $50
+REGIONAL_WILD_STATIC_OBJECT EQU $60
+REGIONAL_WILD_STATIC_SCRIPT EQU $70
+REGIONAL_WILD_SLOT_MASK     EQU $0f
+REGIONAL_FISHING_SLOT_FLAG  EQU $80
 
 ; FORM-5.62.20: trainer-party Species slots may opt into an explicit runtime
 ; form without changing the layout of ordinary trainer entries. No real Species
