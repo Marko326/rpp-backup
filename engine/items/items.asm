@@ -1033,6 +1033,12 @@ ItemUseMedicine:
 	ld a,[wPartyCount]
 	and a
 	jp z,.emptyParty
+	ld a,[wPseudoItemID]
+	and a ; using Softboiled?
+	jr nz,.prepareSelection
+	ld a,[wcf91]
+	ld [wPartyConsumableItemID],a
+.prepareSelection
 	ld a,[wWhichPokemon]
 	push af
 	ld a,[wcf91]
@@ -1058,6 +1064,21 @@ ItemUseMedicine:
 	prompt
 .notUsingSoftboiled
 	call DisplayPartyMenu
+	jr .getPartyMonDataAddress
+.returnToParty
+	; ITEM-5.62.28: out-of-battle consumables keep the player in the Party
+	; selector while the same stack still has at least one item remaining.
+	ld a,[wPartyConsumableItemID]
+	ld [wcf91],a
+	ld a,[wWhichPokemon]
+	push af
+	ld a,[wcf91]
+	push af
+	ld a,USE_ITEM_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID],a
+	ld a,$ff
+	ld [wUpdateSpritesEnabled],a
+	call GoBackToPartyMenu
 .getPartyMonDataAddress
 	jp c,.canceledItemUse
 	ld hl,wPartyMons
@@ -1080,7 +1101,7 @@ ItemUseMedicine:
 ; if using softboiled
 	ld a,[wWhichPokemon]
 	cp d ; is the pokemon trying to use softboiled on itself?
-	jr z,ItemUseMedicine ; if so, force another choice
+	jp z,ItemUseMedicine ; if so, force another choice
 .checkItemType
 	ld a,[wcf91]
 	cp a,ACAI_BERRY
@@ -1434,8 +1455,16 @@ ItemUseMedicine:
 	jr .doneHealing
 .healingItemNoEffect
 	call ItemUseNoEffect
-	jp .done
+	ld a,[wPseudoItemID]
+	and a ; Softboiled keeps its original one-shot field-move flow
+	jp nz,.done
+	ld a,[wIsInBattle]
+	and a ; battle item use still returns to the battle after one attempt
+	jp nz,.done
+	jp .returnToParty
 .doneHealing
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a ; a later success overrides an earlier failed selection
 	ld a,[wPseudoItemID]
 	and a ; using Softboiled?
 	jr nz,.skipRemovingItem ; no item to remove if using Softboiled
@@ -1443,6 +1472,28 @@ ItemUseMedicine:
 	call RemoveUsedItem
 	pop hl
 .skipRemovingItem
+	; Save whether this successful field use may immediately select another mon.
+	; Keep battle items and Softboiled on their existing one-shot return paths.
+	ld a,[wPseudoItemID]
+	and a
+	jr nz,.noContinuousMedicineUse
+	ld a,[wIsInBattle]
+	and a
+	jr nz,.noContinuousMedicineUse
+	ld a,[wMaxItemQuantity]
+	and a
+	jr z,.noContinuousMedicineUse
+	ld a,1
+	jr .saveContinuousMedicineUse
+.noContinuousMedicineUse
+	xor a
+.saveContinuousMedicineUse
+	push af
+	; RedrawPartyMenu walks every Party entry and leaves wWhichPokemon on the
+	; last Party slot. Preserve the Bag slot used by RemoveUsedItem across that
+	; redraw or the next repeat would decrement an unrelated Bag entry.
+	ld a,[wWhichPokemon]
+	push af
 	ld a,[wcf91]
 	cp a,PECHA_BERRY
 	jr nc,.playStatusAilmentCuringSound
@@ -1483,9 +1534,25 @@ ItemUseMedicine:
 	call RedrawPartyMenu ; redraws the party menu and displays the message
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a
+	; Field consumables already finish their HP/status animation before this text.
+	; Do not add the legacy fixed 50-frame dead time on every repeat; the explicit
+	; button wait below is sufficient. Battle/Softboiled keep the old delay.
+	ld a,[wPseudoItemID]
+	and a
+	jr nz,.medicineMessageDelay
+	ld a,[wIsInBattle]
+	and a
+	jr z,.medicineMessageReady
+.medicineMessageDelay
 	ld c,50
 	call DelayFrames
+.medicineMessageReady
 	call WaitForTextScrollButtonPress
+	pop af
+	ld [wWhichPokemon],a
+	pop af
+	and a
+	jp nz,.returnToParty
 	jr .done
 .canceledItemUse
 	xor a
@@ -1518,13 +1585,20 @@ ItemUseMedicine:
 	ld a,[hl] ; a = level
 	ld [wCurEnemyLVL],a ; store level
 	; FORM-5.20.05: match GetMonHeader's BC/HL preservation around the far
-	; form-aware header load. This keeps the medicine path safe if later code
-	; starts depending on the current party pointer/register state.
+	; form-aware header load. wWhichPokemon normally holds the Bag slot here,
+	; while D holds the selected Party slot; temporarily expose the Party slot so
+	; RegionalFormLoadPartyMonHeader resolves the correct stored instance.
+	ld a,[wWhichPokemon]
+	push af
+	ld a,d
+	ld [wWhichPokemon],a
 	push bc
 	push hl
 	callba RegionalFormLoadPartyMonHeader
 	pop hl
 	pop bc
+	pop af
+	ld [wWhichPokemon],a
 	push de
 	ld a,d
 	ld hl,wPartyMonNicks
@@ -1580,12 +1654,18 @@ ItemUseMedicine:
 	call PlaySound
 	ld hl,VitaminStatRoseText
 	call PrintText
-	jp RemoveUsedItem
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a
+	call RemoveUsedItem
+	ld a,[wMaxItemQuantity]
+	and a
+	jp nz,.returnToParty
+	jp .done
 .vitaminNoEffect
 	pop hl
 	ld hl,VitaminNoEffectText
 	call PrintText
-	jp GBPalWhiteOut
+	jp .returnToParty
 .recalculateStats
 	ld bc,wPartyMon1Stats - wPartyMon1
 	add hl,bc
@@ -1685,7 +1765,13 @@ ItemUseMedicine:
 	ld [wcf91],a
 	pop af
 	ld [wWhichPokemon],a
-	jp RemoveUsedItem
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a
+	call RemoveUsedItem
+	ld a,[wMaxItemQuantity]
+	and a
+	jp nz,.returnToParty
+	jp .done
 
 VitaminStatRoseText:
 	TX_FAR _VitaminStatRoseText
@@ -2339,10 +2425,14 @@ ItemUsePPRestore:
 	jp .itemNotUsed
 .chooseMove
 	ld a,[wPPRestoreItem]
-	cp a,ELIXER
-	jp z,.useElixir ; if Elixir or Max Elixir
-	cp a,MAX_ELIXER
-	jp z,.useElixir
+	sub a,ELIXER
+	cp a,2 ; Elixir and Max Elixir are consecutive item IDs
+	jp c,.useElixir
+	; A newly selected Party member starts on move 1. Repeat use on the same
+	; member jumps to .chooseMoveKeepCursor and preserves wPlayerMoveListIndex.
+	xor a
+	ld [wPlayerMoveListIndex],a
+.chooseMoveKeepCursor
 	ld a,$02
 	ld [wMoveMenuType],a
 	ld hl,RaisePPWhichTechniqueText
@@ -2352,11 +2442,7 @@ ItemUsePPRestore:
 	ld hl,RestorePPWhichTechniqueText ; otherwise, print the restore PP message
 .printWhichTechniqueMessage
 	call PrintText
-	xor a
-	ld [wPlayerMoveListIndex],a
 	callab MoveSelectionMenu ; move selection menu
-	ld a,0
-	ld [wPlayerMoveListIndex],a
 	jr nz,.chooseMon
 	ld hl,wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
@@ -2369,7 +2455,7 @@ ItemUsePPRestore:
 	pop hl
 	ld a,[wPPRestoreItem]
 	cp a,ETHER
-	jr nc,.useEther ; if Ether or Max Ether
+	jp nc,.useEther ; if Ether or Max Ether
 .usePPUp
 	ld bc,wPartyMon1PP - wPartyMon1Moves
 	add hl,bc
@@ -2378,7 +2464,7 @@ ItemUsePPRestore:
 	jr c,.PPNotMaxedOut
 	ld hl,PPMaxedOutText
 	call PrintText
-	jr .chooseMove
+	jr .chooseMoveKeepCursor
 .PPNotMaxedOut
 	ld a,[hl]
 	add a,1 << 6 ; increase PP Up count by 1
@@ -2389,11 +2475,49 @@ ItemUsePPRestore:
 	ld hl,PPIncreasedText
 	call PrintText
 .done
-	pop af
+	; wWhichPokemon is the selected Party slot here, while the stack still holds
+	; the original Bag slot. Preserve the Party slot across RemoveUsedItem so a
+	; single-move PP item can reopen the same move list without returning to Party.
+	ld a,[wWhichPokemon]
+	ld b,a ; B = selected Party slot
+	pop af ; A = Bag slot
 	ld [wWhichPokemon],a
+	push bc
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a
+	call RemoveUsedItem
+	ld a,[wMaxItemQuantity]
+	and a
+	jr z,.finishUsedItemDropPartySlot
+	pop bc
+	ld a,[wPPRestoreItem]
+	sub a,ELIXER
+	cp a,2 ; Elixir and Max Elixir are consecutive item IDs
+	jr c,.returnToPartyAfterPPUse
+	; PP Up / Ether / Max Ether / Leppa Berry target one move. Keep both the
+	; selected Party member and MoveSelectionMenu cursor so repeated use resumes
+	; on the exact move that was just changed.
+	ld a,[wWhichPokemon]
+	push af ; restore the Bag-slot backup expected by the next successful use
+	ld a,b
+	ld [wWhichPokemon],a
+	jp .chooseMoveKeepCursor
+.returnToPartyAfterPPUse
+	; Elixir / Max Elixir affect every move at once, so their repeat unit is the
+	; Pokémon rather than a move. Return one level to the Party selector.
+	ld a,[wWhichPokemon]
+	push af
+	ld a,USE_ITEM_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID],a
+	call GoBackToPartyMenu
+	jp nc,.chooseMove
+	jp .itemNotUsed
+.finishUsedItemDropPartySlot
+	pop bc
+.finishUsedItem
 	call GBPalWhiteOut
 	call RunDefaultPaletteCommand
-	jp RemoveUsedItem
+	ret
 .afterRestoringPP ; after using a (Max) Ether/Elixir
 	ld a,[wWhichPokemon]
 	ld b,a
@@ -2415,9 +2539,9 @@ ItemUsePPRestore:
 .useEther
 	call .restorePP
 	jr nz,.afterRestoringPP
-	jp .noEffect
+	call ItemUseNoEffect
+	jp .chooseMoveKeepCursor
 ; unsets zero flag if PP was restored, sets zero flag if not
-; however, this is bugged for Max Ethers and Max Elixirs (see below)
 .restorePP
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
@@ -2431,6 +2555,8 @@ ItemUsePPRestore:
 	ld b,a
 	ld a,[wPPRestoreItem]
 	cp a,MAX_ETHER
+	jr z,.fullyRestorePP
+	cp a,MAX_ELIXER
 	jr z,.fullyRestorePP
 	ld a,[hl] ; move PP
 	and a,%00111111 ; lower 6 bit bits store current PP
@@ -2452,18 +2578,13 @@ ItemUsePPRestore:
 	ret
 .fullyRestorePP
 	ld a,[hl] ; move PP
-; Note that this code has a bug. It doesn't mask out the upper two bits, which
-; are used to count how many PP Ups have been used on the move. So, Max Ethers
-; and Max Elixirs will not be detected as having no effect on a move with full
-; PP if the move has had any PP Ups used on it.
+	and a,%00111111 ; ignore PP Up counter bits when checking whether PP is full
 	cp b ; does current PP equal max PP?
 	ret z
 	jr .storeNewAmount
 .useElixir
-; decrement the item ID so that ELIXER becomes ETHER and MAX_ELIXER becomes MAX_ETHER
-	ld hl,wPPRestoreItem
-	dec [hl]
-	dec [hl]
+	; Keep the original item ID intact across repeated Party selections.
+	; .restorePP handles ELIXER/MAX_ELIXER as their single-move counterparts.
 	xor a
 	ld hl,wCurrentMenuItem
 	ld [hli],a
@@ -2492,8 +2613,9 @@ ItemUsePPRestore:
 	ld a,[wTileBehindCursor]
 	and a ; did any moves have their PP restored?
 	jp nz,.afterRestoringPP
-.noEffect
 	call ItemUseNoEffect
+	call GoBackToPartyMenu
+	jp nc,.chooseMove
 .itemNotUsed
 	call GBPalWhiteOut
 	call RunDefaultPaletteCommand

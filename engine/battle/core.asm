@@ -2656,9 +2656,8 @@ MoveSelectionMenu:
 	ld [hli], a ; wTopMenuItemX
 	ld a, [wMoveMenuType]
 	cp $1
-	jr z, .selectedmoveknown
 	ld a, $1
-	jr nc, .selectedmoveknown
+	jr z, .selectedmoveknown
 	ld a, [wPlayerMoveListIndex]
 	inc a
 .selectedmoveknown

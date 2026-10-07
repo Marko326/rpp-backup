@@ -2510,7 +2510,9 @@ wEvolutionStoneReadPointer::
 wRegionalFormEvolutionReadPointer::
 	ds 2
 
+wPartyConsumableItemID::
 wEvoStoneItemID:: ; d159
+	; ITEM-5.62.28: non-overlapping Party-item flows share this one-byte item ID.
 	ds 1
 
 wSavedNPCMovementDirections2Index:: ; d15a
