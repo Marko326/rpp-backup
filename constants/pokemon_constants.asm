@@ -240,7 +240,10 @@ BIT_REGIONAL_FORM_NEW_MON_OVERRIDE EQU 7
 ; Persistent form markers live in the legacy stored CatchRate byte. The marker
 ; describes the form, while species + marker selects a descriptor; all registered
 ; Alolan forms can therefore share $fe without species-specific engine logic.
+; FORM-5.62.25: descriptor guards also verify that the marker cannot alias the
+; corresponding Species' stock Catch Rate.
 REGIONAL_FORM_MARKER_ALOLA EQU $fe
+ASSERT REGIONAL_FORM_MARKER_ALOLA != 0
 
 MON_GHOST           EQU 252
 FOSSIL_KABUTOPS     EQU 253

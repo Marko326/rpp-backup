@@ -5,7 +5,8 @@ db 100 ; base speed
 db 100 ; base special
 db FIRE ; species type 1
 db FIRE ; species type 2
-db 75 ; catch rate
+NINETALES_CATCH_RATE EQU 75
+db NINETALES_CATCH_RATE ; catch rate
 db 178 ; base exp yield
 INCBIN "pic/bmon/ninetales.pic",0,1 ; 77, sprite dimensions
 dw NinetalesPicFront

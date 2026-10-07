@@ -5,7 +5,8 @@ db 45 ; base speed
 db 55 ; base special
 db ROCK ; species type 1
 db GROUND ; species type 2
-db 45 ; catch rate
+GOLEM_CATCH_RATE EQU 45
+db GOLEM_CATCH_RATE ; catch rate
 db 177 ; base exp yield
 INCBIN "pic/bmon/golem.pic",0,1 ; 66, sprite dimensions
 dw GolemPicFront
