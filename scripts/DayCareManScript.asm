@@ -19,8 +19,12 @@ DayCareManScript::
 	call PrintTextAndYesNoChoice
 	jp nz, .nevermind
 	call GetBabyID ; Reads the entry from the table, and stores it in register b for the mon ID
-	ld c, $5	   ; Babies are at lv 5, like Gen 2
-	call GivePokemon
+	ld a, b
+	ld [wcf91], a
+	ld a, $5	   ; Babies are at lv 5, like Gen 2
+	ld [wCurEnemyLVL], a
+	call GetDayCareBabyForm
+	callba RegionalFormGivePokemon
 	call SetupBabymonStats
 	ld hl, wExtraFlags ; Extra flags
 	res 1, [hl] ; Mark there not being a babymon at Day Care
@@ -99,6 +103,27 @@ GetBabyID: ; Read the table to determine which baby the Pokemon had
 	add hl,bc
 	ld a, [hl]
 	ld b, a
+	ret
+
+; BRD-5.62.26: inherit the stored parent's runtime form only when the selected
+; baby Species has the same registered form. Unsupported combinations explicitly
+; fall back to NORMAL instead of deriving identity from map or Species alone.
+GetDayCareBabyForm:
+	ld a, [wDayCareMonSpecies]
+	ld d, a
+	ld a, [wDayCareMonCatchRate]
+	ld e, a
+	callba RegionalFormGetFormBySpeciesMarker
+	jr nc, .normal
+	ld e, d
+	ld a, [wcf91]
+	ld d, a
+	push de
+	callba RegionalFormGetMarkerBySpeciesForm
+	pop de
+	ret c
+.normal
+	ld e, FORM_NORMAL
 	ret
 
 SetupBabymonStats: ; Inherit stuff from the parents, currently just DVs for now
