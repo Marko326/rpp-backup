@@ -131,8 +131,9 @@ _GBPlayerDescription_Mart::
 	line "and custom songs."
 	done
 
-_TeruSama1BDescription_Mart::
-	text "..."
+_IceStoneDescription_Mart::
+	text "Evolves certain"
+	line "#mon."
 	done
 
 _TeruSama1CDescription_Mart::

@@ -2504,7 +2504,9 @@ wRegionalFormEvolutionTargetForm::
 
 ; FORM-5.21.05: two bytes were already reserved here. Regional evolution uses
 ; them as a bank-$34 ROM stream pointer instead of copying an arbitrarily long
-; evolution table into wEnemyMon. High byte 0 means the stream is inactive.
+; evolution table into wEnemyMon. EVO-5.62.27 also reuses the same non-overlapping
+; scratch for stock evolution-stone table streaming. High byte 0 means inactive.
+wEvolutionStoneReadPointer::
 wRegionalFormEvolutionReadPointer::
 	ds 2
 

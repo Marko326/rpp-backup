@@ -29,7 +29,7 @@ ItemNames:
 	db "MysticTicket@"
 	db "Eon Ticket@"
 	db "GB Player@"
-	db "Teru-sama@"
+	db "Ice Stone@"
 	db "Teru-sama@"
 	db "Escape Rope@"
 	db "Repel@"

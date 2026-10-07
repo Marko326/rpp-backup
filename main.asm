@@ -2490,6 +2490,9 @@ SECTION "Regional Form Producers", ROMX
 INCLUDE "data/regional_form_producers.asm"
 INCLUDE "engine/regional_form_producers.asm"
 
+SECTION "Evolution Stone UI Helpers", ROMX
+INCLUDE "engine/evolution_stone_ui.asm"
+
 SECTION "bank34",ROMX,BANK[$34]
 
 ; Read-only item data is accessed through BANK(ItemNames/ItemPrices),

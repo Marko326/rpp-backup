@@ -32,7 +32,7 @@ const_value = 1
 
 ; Currently Unused Items
 	const GB_PLAYER    ; $1A ; GBP-5.57.01: replaces unused TERU_SAMA_1A slot
-	const TERU_SAMA_1B ; $1B
+	const ICE_STONE    ; $1B ; EVO-5.62.27: replaces unused TERU_SAMA_1B slot
 	const TERU_SAMA_1C ; $1C
 
 	const ESCAPE_ROPE   ; $1D

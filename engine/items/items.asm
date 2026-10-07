@@ -42,7 +42,7 @@ ItemUsePtrTable:
 	dw UnusableItem      ; FERRY TICKET
 	dw UnusableItem      ; EON TICKET
 	dw ItemUseGBPlayer   ; GB_PLAYER (reuses TERU_SAMA_1A)
-	dw UnusableItem      ; TERU-SAMA
+	dw ItemUseEvoStone   ; ICE_STONE
 	dw UnusableItem      ; TERU-SAMA
 	dw ItemUseEscapeRope ; ESCAPE_ROPE
 	dw ItemUseRepel      ; REPEL
@@ -976,16 +976,28 @@ ItemUseEvoStone:
 	push af
 	ld a,[wcf91]
 	ld [wEvoStoneItemID],a
-	push af
 	ld a,EVO_STONE_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID],a
 	ld a,$ff
 	ld [wUpdateSpritesEnabled],a
 	call DisplayPartyMenu
-	pop bc
+.checkSelection
 	jr c,.canceledItemUse
-	ld a,b
+	ld a,[wEvoStoneItemID]
 	ld [wcf91],a
+	; EVO-5.62.27: failed stone use stays in the Party selector. A non-matching
+	; stone and a level-gated match are both rejected before the use sound, so a
+	; sound/item-consumption side effect only happens once the stone is usable.
+	callba EvolutionStoneCheckSelectedMonLevel
+	jr nc,.tryEvolution
+	ld a,[wd11e]
+	and a
+	jr nz,.returnToParty
+	call ItemUseNoEffect
+.returnToParty
+	call GoBackToPartyMenu
+	jr .checkSelection
+.tryEvolution
 	ld a,$01
 	ld [wForceEvolution],a
 	ld a,SFX_HEAL_AILMENT
@@ -1002,7 +1014,10 @@ ItemUseEvoStone:
 	ld [wItemQuantity],a
 	jp RemoveItemFromInventory
 .noEffect
+	; This should only be reachable if evolution data changed between the precheck
+	; and TryEvolvingMon. Treat it like every other failed stone use and stay here.
 	call ItemUseNoEffect
+	jr .returnToParty
 .canceledItemUse
 	xor a
 	ld [wActionResultOrTookBattleTurn],a ; item not used

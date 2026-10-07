@@ -821,7 +821,10 @@ RegionalFormGetEvolutionPayloadLength:
 	inc c
 	ret
 
-RegionalFormGetEvolutionStoneMenuText:
+RegionalFormGetEvolutionStoneMinimumLevel:
+	; EVO-5.62.27: carry set means this is a registered regional-form instance.
+	; E returns 0 when this stone has no matching EV_ITEM entry, otherwise the
+	; entry's minimum level. E is used because CALLBA restores the caller bank via A.
 	ld a,[wLoadedMonSpecies]
 	ld d,a
 	ld a,[wLoadedMonCatchRate]
@@ -842,11 +845,8 @@ RegionalFormGetEvolutionStoneMenuText:
 	jr nz,.skipPayload
 	jr .loop
 .item
-	; EV_ITEM = item, minimum level, target species. Consume all three bytes even
-	; when the stone does not match, so the next iteration starts on an entry type.
-	; FORM-5.22.00: regional item evolutions may have a real minimum level (the
-	; first such production case is Alolan Vulpix). Match both item and level so
-	; the Party menu does not claim "Able" when TryEvolvingMon will reject it.
+	; EV_ITEM = item, minimum level, target species. Consume the complete entry
+	; even on a mismatch so the next iteration begins on an evolution type byte.
 	ld a,[hli]
 	ld b,a ; required item
 	ld a,[hli]
@@ -855,14 +855,12 @@ RegionalFormGetEvolutionStoneMenuText:
 	ld a,[wEvoStoneItemID]
 	cp b
 	jr nz,.loop
-	ld a,[wLoadedMonLevel]
-	cp c
-	jr c,.loop
-	ld de,PartyMenuAbleToEvolveText
+	ld e,c
 	scf
 	ret
 .notAble
-	ld de,PartyMenuNotAbleToEvolveText
+	xor a
+	ld e,a
 	scf
 	ret
 .notRegional

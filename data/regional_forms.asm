@@ -339,7 +339,7 @@ AlolanRaticateShinyPalette::
 ; -----------------------------------------------------------------------------
 ; Sprite/palette/learnset/evolution references come from the user-supplied
 ; "Furret...pic" package. That source represents Alolan Vulpix as ICE/FAIRY
-; and uses SUN_STONE at level 30 because this branch has no ICE_STONE item constant.
+; and uses ICE_STONE with a minimum level of 30.
 AlolanVulpixBaseStats::
 	db DEX_VULPIX
 	db 38
@@ -387,7 +387,7 @@ AlolanVulpixLevelMoves::
 	db 0
 
 AlolanVulpixEvolutions::
-	db EV_ITEM,SUN_STONE,30,NINETALES
+	db EV_ITEM,ICE_STONE,30,NINETALES
 	db 0
 
 AlolanVulpixPreviewPalette::

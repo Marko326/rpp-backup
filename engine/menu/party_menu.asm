@@ -144,57 +144,12 @@ RedrawPartyMenu_:
 	db "Not able@"
 .evolutionStoneMenu
 	push hl
-	callba RegionalFormGetEvolutionStoneMenuText
-	jr c,.placeEvolutionStoneString
-	ld hl,EvosMovesPointerTable
-	ld b,0
-	ld a,[wLoadedMonSpecies]
-	dec a
-	add a
-	rl b
-	ld c,a
-	add hl,bc
-	ld de,wEnemyMon ; Used as a buffer since we aren't in battle
-	ld a,BANK(EvosMovesPointerTable)
-	ld bc,2
-	call FarCopyData
-	ld hl,wEnemyMon
-	ld a,[hli]
-	ld h,[hl]
-	ld l,a
-	ld de,wEnemyMon
-	ld a,BANK(EvosMovesPointerTable)
-	ld bc,Mon133_EvosEnd - Mon133_EvosMoves
-	call FarCopyData
-	ld hl,wEnemyMon
-	ld de,PartyMenuNotAbleToEvolveText
-; loop through the pokemon's evolution entries
-.checkEvolutionsLoop
-	ld a,[hli]
-	and a ; reached terminator?
-	jr z,.placeEvolutionStoneString ; if so, place the "NOT ABLE" string
-	inc hl
-	inc hl
-	cp a,EV_ITEM
-	jr nz,.checkEvolutionsLoop
-; if it's a stone evolution entry
-	dec hl
-	dec hl
-	ld b,[hl]
-	ld a,[wEvoStoneItemID] ; the stone the player used
-	inc hl
-	inc hl
-	inc hl
-	cp b ; does the player's stone match this evolution entry's stone?
-	jr nz,.checkEvolutionsLoop
-; if it does match
-	ld de,PartyMenuAbleToEvolveText
-.placeEvolutionStoneString
-	ld bc,20 + 9 ; down 1 row and right 9 columns
-	pop hl
-	push hl
-	add hl,bc
-	call PlaceString
+	; EVO-5.62.27: CALLBA consumes HL for the far target address, so never pass
+	; a Party-menu tilemap pointer through HL. Doing so can redirect UI writes
+	; into ROM/MBC control addresses and corrupt the active bank state.
+	ld d,h
+	ld e,l
+	callba EvolutionStoneDrawPartyStatus
 	pop hl
 	jr .printLevel
 .afterDrawingMonEntries
@@ -243,14 +198,6 @@ RedrawPartyMenu_:
 	pop hl
 	call PrintText
 	jr .done
-
-; FORM-5.21.05: these strings are global because bank $34 returns their DE
-; pointers. Keep them after RedrawPartyMenu_'s final local label so they do not
-; rebind .afterDrawingMonEntries/.printMessage to the wrong global scope.
-PartyMenuAbleToEvolveText::
-	db "Able@"
-PartyMenuNotAbleToEvolveText::
-	db "Not able@"
 
 PartyMenuItemUseMessagePointers:
 	dw AntidoteText

@@ -2,6 +2,7 @@
 
 This file is the working roadmap for the current RPP branch.
 Implementation details, ABI/bank constraints, test history, and handoff notes belong in the current handoff document; this file tracks what is finished, what is next, and what remains from the original upstream wishlist.
+Reusable development failures and prevention rules are kept in `RPP_DEVELOPMENT_PITFALLS.md`; read it before changing related engine paths.
 
 Status legend:
 
@@ -17,11 +18,10 @@ Status legend:
 - [x] FORM-5.62.13 through FORM-5.62.25 — regional-form instance identity work: Link Trade, Hall of Fame, Transform, Capture, Trainer/Gift/NPC Trade/Evolution, random wild encounters, Starter, Fishing, Headbutt, Static Wild/Ghost Marowak, and persistent-marker compile-time guards.
 - [x] BRD-5.62.26 — Day Care / Breeding producer uses the stored parent's persistent form marker and gives the baby the same registered runtime Form when supported; otherwise it explicitly falls back to `FORM_NORMAL`.
 
-### Planned — Evolution / Items
+### Completed — Evolution / Items
 
-- [ ] Evolution-stone flow: handle the existing level-30 + evolution-stone requirement cleanly. The current Alolan Vulpix data uses `SUN_STONE` at level 30 only because this branch has no `ICE_STONE` item constant.
-- [ ] Add an evolution-stone hint at level 28 for the above level-30 stone evolution flow.
-- [ ] Add `ICE_STONE` and migrate the affected regional evolution data away from the temporary `SUN_STONE` substitute.
+- [x] EVO-5.62.27 — evolution-stone Party UI reads the matching evolution entry's minimum level dynamically: below the requirement it shows `LvXX+`, at/above the requirement it shows `Able`, and actual use below the requirement gives a short level-specific no-effect message. Failed selections do not play the use sound or consume the stone and return to the same Party selector. This already covers cases such as a Lv28 Pokémon whose stone evolution requires Lv30; no separate Lv28 reminder is needed.
+- [x] EVO-5.62.27 — add `ICE_STONE` in the former `$1B` unused slot, make it a normal purchasable item, and migrate Alolan Vulpix from the temporary `SUN_STONE` substitute to `ICE_STONE` at level 30.
 
 ### Planned — Day Care
 
