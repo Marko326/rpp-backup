@@ -8255,29 +8255,29 @@ CheckSuckerPunchSuccess:
 	scf
 	ret
 
-; Return a compact move-priority tier used by MainInBattleLoop.
-; 2 = priority move, 1 = normal move, 0 = Counter.
+; PRI-5.62.35: Return an encoded move priority used by MainInBattleLoop.
+; Actual priority is stored with +7 bias so unsigned comparison preserves -7..+5 ordering.
+; Roar, Whirlwind, Teleport, and Bide remain priority 0 until their mechanics are revised.
+DEF MOVE_PRIORITY_ZERO EQU 7
+
 GetMovePriorityTier:
-	cp COUNTER
-	jr z, .counter
-	ld hl, PriorityMoves
-	ld de, 1
+	ld hl, MovePriorityTable
+	ld de, 2
 	call IsInArray
-	ld a, 1
+	ld a, MOVE_PRIORITY_ZERO
 	ret nc
-	inc a
-	ret
-.counter
-	xor a
+	inc hl
+	ld a, [hl]
 	ret
 
-PriorityMoves:
-	db EXTREMESPEED
-	db BABYDOLLEYES
-	db SUCKER_PUNCH
-	db ICE_SHARD
-	db BULLET_PUNCH
-	db QUICK_ATTACK
+MovePriorityTable:
+	db EXTREMESPEED,   MOVE_PRIORITY_ZERO + 2
+	db BABYDOLLEYES,   MOVE_PRIORITY_ZERO + 1
+	db SUCKER_PUNCH,   MOVE_PRIORITY_ZERO + 1
+	db ICE_SHARD,      MOVE_PRIORITY_ZERO + 1
+	db BULLET_PUNCH,   MOVE_PRIORITY_ZERO + 1
+	db QUICK_ATTACK,   MOVE_PRIORITY_ZERO + 1
+	db COUNTER,        MOVE_PRIORITY_ZERO - 5
 	db -1
 
 ; Determine if a move is Physical, Special, or Status

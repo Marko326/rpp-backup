@@ -15,9 +15,9 @@ Status legend:
 
 > 用途：以后新窗口先看这里，就能按**类型 + 状态 + 顺序**判断哪些已移植、哪些还没改。下面的 `Current RPP Roadmap` 和 `Legacy Upstream Wishlist` 保留原来的详细背景；旧条目的 `[x]` 仅表示原文所述功能已存在，不自动代表本次用户实机测试过。
 >
-> **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 更新本看板和相应详细记录 → 编写提交日志并单独 Git 提交 → 才开始下一条。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
+> **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 单独交付该补丁的验收 TODO 和提交日志 → 用户确认并提交 → 再单独交付下一项功能。** **不得把上一项验收与下一项功能补丁打包交付。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**① 暴风、② 突袭动画、③ 突袭现代失败判定，均由用户反馈运行测试暂未发现明显问题；③ 已完成额外战斗逻辑静态复审，提交日志已准备，但是否真正提交以用户仓库为准。④～⑩尚未移植；下一项为④多级优先度。**
+> 当前情况：**①～④：用户已测试，暂未发现明显问题；④ 多级技能优先度的源码逻辑复审未发现明确阻断问题，本次只收口验收记录，实际 Git 提交由用户自行完成；⑤～⑩均未移植，本次不处理新功能。**
 
 ### 动画类（Animation）
 
@@ -28,8 +28,8 @@ Status legend:
 
 ### 战斗功能 / 结算类（Battle logic）
 
-- [x] **③ `SP-5.62.34` / `5ca3afb3` — Sucker Punch 现代失败判定**：先手且目标选择伤害招式时方能成功；变化招式、后手、Recharge、换人及道具行为有专门失败检查；失败显示 `But it failed!`，我方进入判定前扣 PP。包含 Trainer AI 单次提前判定、Mirror Move 实际招式 ID、MoveDex 和 `$CCE0` WRAM 状态。**用户反馈已实机测试，暂未发现明显问题（2026-10-08）**；进一步代码逻辑复审未发现明确阻断问题。未提供各边界场景逐项结果；Trainer 道具/换人的全局排序仍为旧架构限制。③提交日志已准备，实际提交由用户完成。④未移植。
-- [ ] **④ `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：未移植，衔接③。
+- [x] **③ `SP-5.62.34` / `5ca3afb3` — Sucker Punch 现代失败判定**：先手且目标选择伤害招式时方能成功；变化招式、后手、Recharge、换人及道具行为有专门失败检查；失败显示 `But it failed!`，我方进入判定前扣 PP。包含 Trainer AI 单次提前判定、Mirror Move 实际招式 ID、MoveDex 和 `$CCE0` WRAM 状态。**用户反馈已实机测试，暂未发现明显问题（2026-10-08）**；进一步代码逻辑复审未发现明确阻断问题。未提供各边界场景逐项结果；Trainer 道具/换人的全局排序仍为旧架构限制。③提交日志已准备，实际提交由用户完成。④已移植并获用户测试反馈。
+- [x] **④ `PRI-5.62.35` / `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：源码已单独移植；**用户反馈已运行测试，暂未发现明显问题（2026-10-08），后续源码逻辑复审未发现明确阻断问题**。优先度以 `+7` 偏移编码：ExtremeSpeed `+2`、Sucker Punch/Baby-Doll Eyes/Ice Shard/Bullet Punch/Quick Attack `+1`、普通 `0`、Counter `-5`；同优先度仍按 Speed / 同速随机决定顺序。Roar、Whirlwind、Teleport、Bide 暂保持 `0`，不提前升级效果机制。未提供逐项边界测试记录，不将联机、AI 道具/换人等特殊场景标记为全部通过；旧架构中训练家道具/换人决策时序仍待以后复查。**未调整③失败判定或已验收动画，④验收提交日志已单独准备；是否 Git 提交以用户仓库为准。**
 - [ ] **⑦ `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：未移植，涉及公共战斗结算。
 - [ ] **⑧ `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：未移植，依赖⑦的帮助函数。
 - [ ] **⑨ `d41f0048` — Substitute 多段攻击与反伤结算时序**：未移植，依赖⑦、⑧。
@@ -78,6 +78,10 @@ Status legend:
 ### User-tested — Battle logic
 
 - [x] SP-5.62.34 — Sucker Punch modern failure gate from `5ca3afb3`. Source audit of turn order, damaging-move type, action intent, failure/PP flow, Mirror Move ID, AI early decision and `$CCE0` WRAM found no definite blocking issue. **User reports runtime testing without obvious problems (2026-10-08)**; individual edge cases not separately certified. Existing general Trainer item/switch priority timing is a broader architectural limitation. ③ commit message prepared; actual Git commit remains user-controlled. Does not include ④ priority tiers.
+
+### User-tested — Priority / Battle logic
+
+- [x] PRI-5.62.35 — Move priority tiers imported independently from `ddddb20e`: +7 offset, ExtremeSpeed +2 > priority +1 moves > normal 0 > Counter -5. Same-tier Speed/tie logic unchanged; Roar/Whirlwind/Teleport/Bide keep priority 0 pending a full action/mechanics review. **User reports runtime testing without obvious problems (2026-10-08)**; individual edge cases are not separately certified. Source review found no definite blocking issue; Trainer AI item/switch decision timing remains a broader architectural limitation. ④ acceptance log prepared; no ROM build or Git commit by assistant.
 
 ### Completed — Evolution / Items
 
