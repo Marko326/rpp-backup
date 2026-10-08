@@ -654,7 +654,7 @@ MoveDexDescDisable1:
 
 ; #051 Acid
 MoveDexDescAcidPages:
-	dw MoveDexDescAcid1, MoveDexDescEffectSpecialDown33, 0
+	dw MoveDexDescAcid1, MoveDexDescEffectSpecialDown10, 0
 MoveDexDescAcid1:
 	db   "Sprays corrosive"
 	next "acid at the foe.@"
@@ -733,14 +733,14 @@ MoveDexDescPsybeam1:
 
 ; #061 Bubble Beam
 MoveDexDescBubbleBeamPages:
-	dw MoveDexDescBubbleBeam1, MoveDexDescEffectSpeedDown33, 0
+	dw MoveDexDescBubbleBeam1, MoveDexDescEffectSpeedDown10, 0
 MoveDexDescBubbleBeam1:
 	db   "Blasts the foe in"
 	next "a rush of bubbles.@"
 
 ; #062 Aurora Beam
 MoveDexDescAuroraBeamPages:
-	dw MoveDexDescAuroraBeam1, MoveDexDescEffectAttackDown33, 0
+	dw MoveDexDescAuroraBeam1, MoveDexDescEffectAttackDown10, 0
 MoveDexDescAuroraBeam1:
 	db   "Fires a colorful"
 	next "beam of icy light.@"
@@ -888,13 +888,13 @@ MoveDexDescEffectFlinch10:
 	db   "10", $d9, " chance to make"
 	next "the foe flinch.@"
 
-MoveDexDescEffectSpecialDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectSpecialDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
-MoveDexDescEffectSpeedDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectSpeedDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Speed"
 	next "drops 1 stage.@"
 
@@ -1010,8 +1010,8 @@ MoveDexDescEffectMistRepeat:
 	db   "Fails while Mist"
 	next "is active.@"
 
-MoveDexDescEffectAttackDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectAttackDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Attack"
 	next "drops 1 stage.@"
 
@@ -1103,7 +1103,7 @@ MoveDexDescPetalDance1:
 
 ; #081 String Shot
 MoveDexDescStringShotPages:
-	dw MoveDexDescStringShot1, MoveDexDescEffectBSpeedDown1, 0
+	dw MoveDexDescStringShot1, MoveDexDescEffectBSpeedDown2, 0
 MoveDexDescStringShot1:
 	db   "Fires sticky silk"
 	next "around the foe.@"
@@ -1194,7 +1194,7 @@ MoveDexDescConfusion1:
 
 ; #094 Psychic
 MoveDexDescPsychicPages:
-	dw MoveDexDescPsychic1, MoveDexDescEffectBSpecialDown33, 0
+	dw MoveDexDescPsychic1, MoveDexDescEffectBSpecialDown10, 0
 MoveDexDescPsychic1:
 	db   "Unleashes psychic"
 	next "power at the foe.@"
@@ -1294,7 +1294,7 @@ MoveDexDescHarden1:
 
 ; #107 Minimize
 MoveDexDescMinimizePages:
-	dw MoveDexDescMinimize1, MoveDexDescEffectBEvasionUp1, 0
+	dw MoveDexDescMinimize1, MoveDexDescEffectBEvasionUp2, 0
 MoveDexDescMinimize1:
 	db   "Shrinks the body"
 	next "to evade attacks.@"
@@ -1511,14 +1511,14 @@ MoveDexDescSpikeCannon1:
 
 ; #132 Constrict
 MoveDexDescConstrictPages:
-	dw MoveDexDescConstrict1, MoveDexDescEffectBSpeedDown33, 0
+	dw MoveDexDescConstrict1, MoveDexDescEffectBSpeedDown10, 0
 MoveDexDescConstrict1:
 	db   "Tightly squeezes"
 	next "the foe in coils.@"
 
 ; #133 Amnesia
 MoveDexDescAmnesiaPages:
-	dw MoveDexDescAmnesia1, MoveDexDescEffectBSpecialUp2, 0
+	dw MoveDexDescAmnesia1, MoveDexDescEffectBSpecialUp1, 0
 MoveDexDescAmnesia1:
 	db   "Clears the mind to"
 	next "focus its power.@"
@@ -1631,7 +1631,7 @@ MoveDexDescTransform7:
 
 ; #145 Bubble
 MoveDexDescBubblePages:
-	dw MoveDexDescBubble1, MoveDexDescEffectBSpeedDown33, 0
+	dw MoveDexDescBubble1, MoveDexDescEffectBSpeedDown10, 0
 MoveDexDescBubble1:
 	db   "Blows bubbles that"
 	next "burst on the foe.@"
@@ -1692,6 +1692,10 @@ MoveDexDescEffectBDefenseDown2:
 MoveDexDescEffectBEvasionUp1:
 	db   "Raises Evasion"
 	next "by 1 stage.@"
+
+MoveDexDescEffectBEvasionUp2:
+	db   "Raises Evasion"
+	next "by 2 stages.@"
 
 MoveDexDescEffectBHealHalf:
 	; HealEffect_ 对 Recover / Softboiled 在满 HP 时会直接失败。
@@ -1798,15 +1802,14 @@ MoveDexDescEffectBHits2To5:
 	next "2-3 hits: 37.5", $d9
 	next "4-5 hits: 12.5", $d9, "@"
 
-MoveDexDescEffectBSpeedDown33:
-	; SPEED_DOWN_SIDE_EFFECT 通过 85/256 判定，约 33%。
-	db   "33", $d9, " chance."
+MoveDexDescEffectBSpeedDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Speed"
 	next "drops 1 stage.@"
 
-MoveDexDescEffectBSpecialUp2:
+MoveDexDescEffectBSpecialUp1:
 	db   "Raises Special"
-	next "by 2 stages.@"
+	next "by 1 stage.@"
 
 MoveDexDescEffectBJumpKickCrash:
 	; 当前 RPP miss 时 wDamage 已为 0，最低 crash damage 因而固定为 1 HP。
@@ -1878,6 +1881,10 @@ MoveDexDescEffectBSpeedDown1:
 	db   "Lowers Speed"
 	next "by 1 stage.@"
 
+MoveDexDescEffectBSpeedDown2:
+	db   "Lowers Speed"
+	next "by 2 stages.@"
+
 MoveDexDescEffectBTrapTurns:
 	db   "Lasts 2-5 turns."
 	next "2-3 turns: 37.5", $d9
@@ -1928,8 +1935,8 @@ MoveDexDescEffectBConfuse10:
 	db   "10", $d9, " chance to"
 	next "confuse the foe.@"
 
-MoveDexDescEffectBSpecialDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectBSpecialDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
@@ -2109,14 +2116,14 @@ MoveDexDescBulletPunch1:
 
 ; #168 Flash Cannon
 MoveDexDescFlashCannonPages:
-	dw MoveDexDescFlashCannon1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescFlashCannon1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescFlashCannon1:
 	db   "Fires a steel beam"
 	next "of bright energy.@"
 
 ; #169 Iron Tail
 MoveDexDescIronTailPages:
-	dw MoveDexDescIronTail1, MoveDexDescEffectCDefenseDown33, 0
+	dw MoveDexDescIronTail1, MoveDexDescEffectCDefenseDown30, 0
 MoveDexDescIronTail1:
 	db   "Slams with a hard"
 	next "steel-coated tail.@"
@@ -2130,7 +2137,7 @@ MoveDexDescMeteorMash1:
 
 ; #171 Crunch
 MoveDexDescCrunchPages:
-	dw MoveDexDescCrunch1, MoveDexDescEffectCDefenseDown33, 0
+	dw MoveDexDescCrunch1, MoveDexDescEffectCDefenseDown20, 0
 MoveDexDescCrunch1:
 	db   "Bites the foe with"
 	next "razor-sharp fangs.@"
@@ -2158,7 +2165,7 @@ MoveDexDescNightSlash1:
 
 ; #175 Moonblast
 MoveDexDescMoonblastPages:
-	dw MoveDexDescMoonblast1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescMoonblast1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescMoonblast1:
 	db   "Draws on moonlight"
 	next "to attack the foe.@"
@@ -2186,8 +2193,7 @@ MoveDexDescDazzlingGleam1:
 
 ; #179 Draco Meteor
 MoveDexDescDracoMeteorPages:
-	; 当前 RPP 为 SPECIAL_DOWN_SIDE_EFFECT：约 33% 降低目标 Special 1 stage。
-	dw MoveDexDescDracoMeteor1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescDracoMeteor1, MoveDexDescEffectCSelfSpecialDown1, 0
 MoveDexDescDracoMeteor1:
 	db   "Calls down fierce"
 	next "dragon meteors.@"
@@ -2237,7 +2243,7 @@ MoveDexDescShadowClaw1:
 
 ; #186 Steel Wing
 MoveDexDescSteelWingPages:
-	dw MoveDexDescSteelWing1, MoveDexDescEffectCDefenseUp10, 0
+	dw MoveDexDescSteelWing1, MoveDexDescEffectCDefenseUp30, 0
 MoveDexDescSteelWing1:
 	db   "Strikes with hard"
 	next "steel-like wings.@"
@@ -2335,7 +2341,7 @@ MoveDexDescSuckerPunch2:
 
 ; #199 Shadow Ball
 MoveDexDescShadowBallPages:
-	dw MoveDexDescShadowBall1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescShadowBall1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescShadowBall1:
 	db   "Fires a shadow orb"
 	next "of dark energy.@"
@@ -2430,19 +2436,28 @@ MoveDexDescEffectCPriority:
 	db   "Moves before most"
 	next "other attacks.@"
 
-MoveDexDescEffectCSpecialDown33:
-	; SIDE_EFFECT stat-down 统一用 85/256，约 33%；作用目标是对手。
-	db   "33", $d9, " chance."
+MoveDexDescEffectCSpecialDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
-MoveDexDescEffectCDefenseDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectCSelfSpecialDown1:
+	db   "After it hits,"
+	next "user's Special"
+	next "drops 1 stage.@"
+
+MoveDexDescEffectCDefenseDown30:
+	db   "30", $d9, " chance."
+	next "Foe's Defense"
+	next "drops 1 stage.@"
+
+MoveDexDescEffectCDefenseDown20:
+	db   "20", $d9, " chance."
 	next "Foe's Defense"
 	next "drops 1 stage.@"
 
 MoveDexDescEffectCAttackUp20:
-	; ATTACK_UP1_SIDE_EFFECT2 为 $34/256，约 20%。
+	; Meteor Mash shares ATTACK_UP1_SIDE_EFFECT; Move-ID table supplies ~20%.
 	db   "20", $d9, " chance to"
 	next "raise Attack"
 	next "by 1 stage.@"
@@ -2477,9 +2492,9 @@ MoveDexDescEffectCConfusionDuration:
 	db   "Duration is 2-5"
 	next "turns, 25", $d9, " each.@"
 
-MoveDexDescEffectCDefenseUp10:
-	; DEFENSE_UP1_SIDE_EFFECT 为约 10%，作用于使用者。
-	db   "10", $d9, " chance to"
+MoveDexDescEffectCDefenseUp30:
+	; RPP Steel Wing balance: 77/256 (~30%) user Defense +1.
+	db   "30", $d9, " chance to"
 	next "raise Defense"
 	next "by 1 stage.@"
 
@@ -2638,7 +2653,7 @@ MoveDexDescVoltTackle1:
 
 ; #214 Muddy Water
 MoveDexDescMuddyWaterPages:
-	dw MoveDexDescMuddyWater1, MoveDexDescEffectDAccuracyDown33, 0
+	dw MoveDexDescMuddyWater1, MoveDexDescEffectDAccuracyDown30, 0
 MoveDexDescMuddyWater1:
 	db   "Hurls muddy water"
 	next "all over the foe.@"
@@ -2660,7 +2675,7 @@ MoveDexDescGigaDrain1:
 
 ; #217 Energy Ball
 MoveDexDescEnergyBallPages:
-	dw MoveDexDescEnergyBall1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescEnergyBall1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescEnergyBall1:
 	db   "Fires a sphere of"
 	next "natural energy.@"
@@ -2717,7 +2732,7 @@ MoveDexDescSilverWind1:
 
 ; #225 Bug Buzz
 MoveDexDescBugBuzzPages:
-	dw MoveDexDescBugBuzz1, MoveDexDescEffectDSpecialDown33, 0
+	dw MoveDexDescBugBuzz1, MoveDexDescEffectDSpecialDown10, 0
 MoveDexDescBugBuzz1:
 	db   "Hits with a harsh"
 	next "buzzing vibration.@"
@@ -2745,14 +2760,14 @@ MoveDexDescSignalBeam1:
 
 ; #229 Earth Power
 MoveDexDescEarthPowerPages:
-	dw MoveDexDescEarthPower1, MoveDexDescEffectDSpecialDown33, 0
+	dw MoveDexDescEarthPower1, MoveDexDescEffectDSpecialDown10, 0
 MoveDexDescEarthPower1:
 	db   "Makes ground erupt"
 	next "beneath the foe.@"
 
 ; #230 Mud-Slap
 MoveDexDescMudSlapPages:
-	dw MoveDexDescMudSlap1, MoveDexDescEffectDAccuracyDown33, 0
+	dw MoveDexDescMudSlap1, MoveDexDescEffectDAccuracyDownAlways, 0
 MoveDexDescMudSlap1:
 	db   "Throws a clump"
 	next "of mud into the"
@@ -2760,7 +2775,7 @@ MoveDexDescMudSlap1:
 
 ; #231 Mud Bomb
 MoveDexDescMudBombPages:
-	dw MoveDexDescMudBomb1, MoveDexDescEffectDAccuracyDown33, 0
+	dw MoveDexDescMudBomb1, MoveDexDescEffectDAccuracyDown30, 0
 MoveDexDescMudBomb1:
 	db   "Hurls a mud bomb"
 	next "right at the foe.@"
@@ -2830,7 +2845,7 @@ MoveDexDescRockPolish1:
 
 ; #241 Rock Tomb
 MoveDexDescRockTombPages:
-	dw MoveDexDescRockTomb1, MoveDexDescEffectDSpeedDown33, 0
+	dw MoveDexDescRockTomb1, MoveDexDescEffectDSpeedDownAlways, 0
 MoveDexDescRockTomb1:
 	db   "Drops rocks around"
 	next "the foe to pin it.@"
@@ -2859,7 +2874,7 @@ MoveDexDescCrossChop1:
 
 ; #245 Low Sweep
 MoveDexDescLowSweepPages:
-	dw MoveDexDescLowSweep1, MoveDexDescEffectDSpeedDown33, 0
+	dw MoveDexDescLowSweep1, MoveDexDescEffectDSpeedDownAlways, 0
 MoveDexDescLowSweep1:
 	db   "Sweeps low at the"
 	next "foe's legs.@"
@@ -2912,7 +2927,7 @@ MoveDexDescDive1:
 
 ; #252 Luster Purge
 MoveDexDescLusterPurgePages:
-	dw MoveDexDescLusterPurge1, MoveDexDescEffectDSpecialDown33, 0
+	dw MoveDexDescLusterPurge1, MoveDexDescEffectDSpecialDown30, 0
 MoveDexDescLusterPurge1:
 	db   "Unleashes bright"
 	next "psychic light.@"
@@ -2956,13 +2971,8 @@ MoveDexDescEffectDHighCrit:
 	db   "About 25", $d9, " of hits"
 	next "are critical hits.@"
 
-MoveDexDescEffectDSpeedDown33:
-	db   "33", $d9, " chance."
-	next "Foe's Speed"
-	next "drops 1 stage.@"
-
 MoveDexDescEffectDSpeedDownAlways:
-	; ANM-5.61.81: Icy Wind guarantees a one-stage Speed drop on hit.
+	; Icy Wind / Rock Tomb / Low Sweep use the shared Move-ID table at 100%.
 	db   "Always lowers the"
 	next "foe's Speed by"
 	next "1 stage.@"
@@ -2997,10 +3007,15 @@ MoveDexDescEffectDRecoil25:
 	db   "User takes 25", $d9, " of"
 	next "damage as recoil.@"
 
-MoveDexDescEffectDAccuracyDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectDAccuracyDown30:
+	db   "30", $d9, " chance."
 	next "Foe's Accuracy"
 	next "drops 1 stage.@"
+
+MoveDexDescEffectDAccuracyDownAlways:
+	db   "Always lowers the"
+	next "foe's Accuracy by"
+	next "1 stage.@"
 
 MoveDexDescEffectDTrapTurns:
 	db   "Lasts 2-5 turns."
@@ -3040,7 +3055,7 @@ MoveDexDescEffectDPoisonImmune:
 	next "Poison/Steel foes.@"
 
 MoveDexDescEffectDAllStatsUp10:
-	; SilverWindEffect 只提升 Attack / Defense / Speed / Special，不含 Accuracy / Evasion。
+	; Silver Wind / AncientPower / Mind Blast raise the four Gen I battle stats only.
 	db   "10", $d9, " chance to"
 	next "raise 4 stats by"
 	next "1 stage.@"
@@ -3049,8 +3064,13 @@ MoveDexDescEffectDAllStatsList:
 	db   "Attack, Defense,"
 	next "Speed and Special.@"
 
-MoveDexDescEffectDSpecialDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectDSpecialDown10:
+	db   "10", $d9, " chance."
+	next "Foe's Special stat"
+	next "drops 1 stage.@"
+
+MoveDexDescEffectDSpecialDown30:
+	db   "30", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 

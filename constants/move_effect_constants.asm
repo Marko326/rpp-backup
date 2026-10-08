@@ -78,7 +78,7 @@ const_value = 0
 	const SPECIAL_DOWN_SIDE_EFFECT   ; $47
 	const ACCURACY_DOWN_SIDE_EFFECT  ; $48
 	const EVASION_DOWN_SIDE_EFFECT   ; $49
-	const SPEED_DOWN_ALWAYS_SIDE_EFFECT ; $4A ANM-5.61.81: guaranteed Icy Wind Speed drop
+	const SPEED_DOWN_ALWAYS_SIDE_EFFECT ; $4A legacy guaranteed Speed-drop side effect (reserved)
 	const UNUSED_EFFECT_4B           ; $4B
 	const CONFUSION_SIDE_EFFECT      ; $4C
 	const TWINEEDLE_EFFECT           ; $4D
@@ -100,10 +100,11 @@ const_value = 0
 	const HONE_CLAWS_EFFECT          ; $5D
 	const DYNAMIC_PUNCH_EFFECT       ; $5E
 	const SILVER_WIND_EFFECT         ; $5F
-	const ATTACK_UP1_SIDE_EFFECT     ; $60: 10% chance to raise attack 1 stage
-	const ATTACK_UP1_SIDE_EFFECT2    ; $61: 20% chance to raise attack 1 stage
-	const DEFENSE_UP1_SIDE_EFFECT    ; $62: 10% chance to raise defense 1 stage
+	const ATTACK_UP1_SIDE_EFFECT     ; $60: move-specific chance to raise Attack 1 stage
+	const ATTACK_UP1_SIDE_EFFECT2    ; $61: legacy second Attack-up side effect (reserved)
+	const DEFENSE_UP1_SIDE_EFFECT    ; $62: move-specific chance to raise Defense 1 stage
 	const TRI_ATTACK_EFFECT          ; Randomly burn, freeze, or paralyze the opponent
+	const SELF_SPECIAL_DOWN1_EFFECT  ; $64: guaranteed user Special -1 after damage
 
 ; fixed damage constants
 SONICBOOM_DAMAGE   EQU 20

@@ -2036,6 +2036,21 @@ _WontFallAnymoreText::
 	cont "go any lower!"
 	prompt
 
+_UsersStatFellText::
+	text "[USER]'s"
+	line "@"
+	TX_RAM wcf4b
+	text " fell!"
+	prompt
+
+_UserStatWontFallAnymoreText::
+	text "[USER]'s"
+	line "@"
+	TX_RAM wcf4b
+	text " won't"
+	cont "go any lower!"
+	prompt
+
 _RanFromBattleText::
 	text "[USER]"
 	line "ran from battle!"

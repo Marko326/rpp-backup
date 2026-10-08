@@ -17,7 +17,7 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 单独交付该补丁的验收 TODO 和提交日志 → 用户确认并提交 → 再单独交付下一项功能。** **不得把上一项验收与下一项功能补丁打包交付。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**①～⑥已完成本轮用户验收（仅按报告场景记录）；⑥ `SW-5.62.37` Steel Wing 金属翼已通过用户本轮三组场景测试，暂未发现异常；⑦～⑩未移植。⑤特殊伤害数值与升级学习表未实机验证（源码已静态核对）。⑥验收提交日志已准备，实际 Git 提交由用户完成。**
+> 当前情况：**①～⑦已按用户反馈完成本轮验收（仅按实际报告范围记录）；⑦版本保持 `BSE-5.62.38`，缩小继续每次提升回避2级，不采用此前 `BSE-5.62.39` 的 +1 修订；Stomp / Body Slam 针对缩小目标的特殊反制列入后续独立待办，下一版不做；⑧～⑩仍未移植。⑤特殊伤害数值与升级学习表未实机验证（源码已静态核对）。⑦提交日志已准备，实际 Git 提交由用户完成。**
 
 ### 动画类（Animation）
 
@@ -30,9 +30,10 @@ Status legend:
 
 - [x] **③ `SP-5.62.34` / `5ca3afb3` — Sucker Punch 现代失败判定**：先手且目标选择伤害招式时方能成功；变化招式、后手、Recharge、换人及道具行为有专门失败检查；失败显示 `But it failed!`，我方进入判定前扣 PP。包含 Trainer AI 单次提前判定、Mirror Move 实际招式 ID、MoveDex 和 `$CCE0` WRAM 状态。**用户反馈已实机测试，暂未发现明显问题（2026-10-08）**；进一步代码逻辑复审未发现明确阻断问题。未提供各边界场景逐项结果；Trainer 道具/换人的全局排序仍为旧架构限制。③提交日志已准备，实际提交由用户完成。④已移植并获用户测试反馈。
 - [x] **④ `PRI-5.62.35` / `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：源码已单独移植；**用户反馈已运行测试，暂未发现明显问题（2026-10-08），后续源码逻辑复审未发现明确阻断问题**。优先度以 `+7` 偏移编码：ExtremeSpeed `+2`、Sucker Punch/Baby-Doll Eyes/Ice Shard/Bullet Punch/Quick Attack `+1`、普通 `0`、Counter `-5`；同优先度仍按 Speed / 同速随机决定顺序。Roar、Whirlwind、Teleport、Bide 暂保持 `0`，不提前升级效果机制。未提供逐项边界测试记录，不将联机、AI 道具/换人等特殊场景标记为全部通过；旧架构中训练家道具/换人决策时序仍待以后复查。**未调整③失败判定或已验收动画，④验收提交日志已单独准备；是否 Git 提交以用户仓库为准。**
-- [ ] **⑦ `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：未移植，涉及公共战斗结算。
+- [x] **⑦ `BSE-5.62.38` / `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：已单独移植；**用户反馈已运行测试，其他效果暂未发现明显异常（2026-10-08），但未逐项提交所有概率、双侧、替身／击倒、能力极限等边界测试结果**。共享 Move ID 概率表统一伤害附加能力变化（10% / 20% / 30% / 命中后必定）；Metal Claw / Meteor Mash / Steel Wing / Silver Wind / AncientPower / Mind Blast 的自身能力提升及 Draco Meteor 的自身 Special 下降在目标被击倒前处理。Gen I 共用 Special 平衡及 MoveDex 说明保持本次移植内容；吐丝降速度2级、瞬间失忆提升 Special 1级、**缩小每次提升回避2级（10 PP）**。经讨论确认维持缩小 +2，不应用此前尚未验收的 `BSE-5.62.39`（+1）试验修正。⑦验收只更新 TODO，不再改游戏代码；实际提交由用户完成。
 - [ ] **⑧ `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：未移植，依赖⑦的帮助函数。
 - [ ] **⑨ `d41f0048` — Substitute 多段攻击与反伤结算时序**：未移植，依赖⑦、⑧。
+- [ ] **缩小的后世代反制（后续独立专项，非下一版）**：以后再考虑为 Stomp（踩踏）和 Body Slam（泰山压顶）增加“目标实际使用过 Minimize 时，跳过一般命中／回避判定并使伤害×2”的特殊规则；Fly / Dig 无敌阶段和正常属性免疫仍应保留，单纯 Double Team 不触发。需单独审查双方判定、状态清除和伤害结算。**当前未实现，本轮⑦及下一版⑧均不加入。**
 
 ### 招式 / 数据类（Moves & data）
 
@@ -86,6 +87,10 @@ Status legend:
 ### User-tested — Steel Wing animation
 
 - [x] SW-5.62.37 — Steel Wing Gold/Crystal animation from `75ac4ff2`; reuse Iron Tail Metallic intro, restore display and call Wing Attack closing pairs; Steel type palette; enemy-side vertical shake and BG0 top-row cleanup. **User reports all three requested test scenarios completed without obvious problems (2026-10-08): player use, enemy use including vertical shake/top-row residue, and alternating Steel Wing / Iron Tail / Wing Attack with display restoration.** No additional frame-by-frame or rare edge-case certification is implied; acceptance log prepared, no assistant ROM build or Git commit.
+
+### User-tested — Battle stat effects
+
+- [x] BSE-5.62.38 — damage-triggered stat side effects and Gen I Special balance from `ff4fec55`. User reports runtime testing with no obvious issues in the tested scenarios (2026-10-08); individual edge cases were not independently certified. **Minimize remains +2 evasion / 10 PP** by user balance decision; String Shot remains -2 Speed, Amnesia +1 Special. The experimental BSE-5.62.39 +1 change is **not** applied. Future, not-next-version standalone task: Stomp and Body Slam deal 2× damage and bypass ordinary accuracy/evasion against a target that used Minimize, while keeping Fly/Dig and type-immunity exceptions; not implemented here. ⑦ acceptance log prepared; no assistant ROM build or Git commit.
 
 ### User-tested — Moves / animation
 

@@ -72,6 +72,7 @@ AlwaysHappenSideEffects:
 	db TWINEEDLE_EFFECT
 	db RAGE_EFFECT
 	db -1
+
 SpecialEffects:
 ; Effects from arrays 2, 4, and 5B, minus Twineedle and Rage.
 ; Includes all effects that do not need to be called at the end of
@@ -91,6 +92,10 @@ SpecialEffects:
 	db JUMP_KICK_EFFECT
 	db RECOIL_EFFECT
 	db VOLT_TACKLE_EFFECT
+	db SILVER_WIND_EFFECT
+	db ATTACK_UP1_SIDE_EFFECT
+	db DEFENSE_UP1_SIDE_EFFECT
+	db SELF_SPECIAL_DOWN1_EFFECT
 	; fallthrough to Next EffectsArray
 SpecialEffectsCont:
 ; damaging moves whose effect is executed prior to damage calculation
@@ -3386,6 +3391,7 @@ MirrorMoveCheck:
 	ld de,1
 	call IsInArray
 	call c,JumpMoveEffect ; not done after executing effects of AlwaysHappenSideEffects
+	callab HandleSelfStatAfterDamageEffect
 	ld hl,wEnemyMonHP
 	ld a,[hli]
 	ld b,[hl]
@@ -5658,6 +5664,7 @@ EnemyCheckIfMirrorMoveEffect:
 	ld de, $1
 	call IsInArray
 	call c, JumpMoveEffect
+	callab HandleSelfStatAfterDamageEffect
 	ld hl, wBattleMonHP
 	ld a, [hli]
 	ld b, [hl]
@@ -7051,6 +7058,7 @@ MoveEffectPointerTable:
 	 dw AttackUpSideEffect2       ; ATTACK_UP1_SIDE_EFFECT2
 	 dw DefenseUpSideEffect       ; DEFENSE_UP1_SIDE_EFFECT
 	 dw TriAttackEffect           ; TRI_ATTACK_EFFECT
+	 dw StatModifierDownEffect    ; SELF_SPECIAL_DOWN1_EFFECT
 
 SleepEffect:
 	jpab SleepEffect_
@@ -7443,33 +7451,48 @@ StatModifierDownEffect:
 	ld bc, wEnemyBattleStatus1
 	ld a, [H_WHOSETURN]
 	and a
-	jr z, .statModifierDownEffect
+	jr z, .checkSelfSpecialDown
 	ld hl, wPlayerMonStatMods
 	ld de, wEnemyMoveEffect
 	ld bc, wPlayerBattleStatus1
-	; ANM-5.61.81: Icy Wind bypasses Red's enemy-only 25% stat-effect failure.
+.checkSelfSpecialDown
 	ld a, [de]
-	cp SPEED_DOWN_ALWAYS_SIDE_EFFECT
-	jr z, .statModifierDownEffect
-	ld a, [wLinkState]
-	cp LINK_STATE_BATTLING
-	jr z, .statModifierDownEffect
-	call BattleRandom
-	cp $40 ; 1/4 chance to miss by in regular battle
-	jp c, MoveMissed
+	cp SELF_SPECIAL_DOWN1_EFFECT
+	jr z, .selfSpecialDown
+	; BSE-5.62.38: remove Red's enemy-only extra 25% failure for pure
+	; stat-lowering moves. Accuracy, Substitute and invulnerability checks below
+	; now apply symmetrically to player and enemy users.
 .statModifierDownEffect
 	call CheckTargetSubstitute ; can't hit through substitute
 	jp nz, MoveMissed
 	ld a, [de]
 	cp SPEED_DOWN_ALWAYS_SIDE_EFFECT
 	jr z, .guaranteedSpeedDown
-	cp ATTACK_DOWN_SIDE_EFFECT
+	sub ATTACK_DOWN_SIDE_EFFECT
 	jr c, .nonSideEffect
-	call BattleRandom
-	cp $55 ; 85/256 chance for side effects
+	cp EVASION_DOWN_SIDE_EFFECT + 1 - ATTACK_DOWN_SIDE_EFFECT
+	ret nc ; reserved/non-stat effect IDs must not be interpreted as stat indices
+	push hl
+	push de
+	callab RollStatSideEffectChance
+	pop de
+	pop hl
 	jp nc, CantLowerAnymore
+.sideEffectStatIndex
 	ld a, [de]
-	sub ATTACK_DOWN_SIDE_EFFECT ; map each stat to 0-3
+	sub ATTACK_DOWN_SIDE_EFFECT ; map each stat to 0-5
+	jr .decrementStatMod
+.selfSpecialDown
+	ld a, [wMoveMissed]
+	and a
+	ret nz ; type immunity is discovered during damage calculation
+	ld hl, wPlayerMonStatMods
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .selfSpecialDownReady
+	ld hl, wEnemyMonStatMods
+.selfSpecialDownReady
+	ld a, SPECIAL_DOWN_SIDE_EFFECT - ATTACK_DOWN_SIDE_EFFECT
 	jr .decrementStatMod
 .guaranteedSpeedDown
 	ld a, SPEED_DOWN_SIDE_EFFECT - ATTACK_DOWN_SIDE_EFFECT ; Speed stat index = 2
@@ -7515,6 +7538,9 @@ StatModifierDownEffect:
 	jr nc, UpdateLoweredStatDone ; jump for evasion/accuracy
 	push hl
 	push de
+	ld a, [de]
+	cp SELF_SPECIAL_DOWN1_EFFECT
+	jr z, .pointToSelfStat
 	ld hl, wEnemyMonAttack + 1
 	ld de, wEnemyMonUnmodifiedAttack
 	ld a, [H_WHOSETURN]
@@ -7522,6 +7548,15 @@ StatModifierDownEffect:
 	jr z, .pointToStat
 	ld hl, wBattleMonAttack + 1
 	ld de, wPlayerMonUnmodifiedAttack
+	jr .pointToStat
+.pointToSelfStat
+	ld hl, wBattleMonAttack + 1
+	ld de, wPlayerMonUnmodifiedAttack
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .pointToStat
+	ld hl, wEnemyMonAttack + 1
+	ld de, wEnemyMonUnmodifiedAttack
 .pointToStat
 	push bc
 	sla c
@@ -7567,6 +7602,8 @@ UpdateLoweredStatDone:
 	call PrintStatText
 	pop de
 	ld a, [de]
+	cp SELF_SPECIAL_DOWN1_EFFECT
+	jr z, .userStatFell
 	cp $44
 	jr nc, .ApplyStatusPenalties
 	call PlayCurrentMoveAnimation2
@@ -7579,6 +7616,9 @@ UpdateLoweredStatDone:
 ; But they are always called regardless of the stat affected by the stat-down move.
 	call HalveSpeedDueToParalysis
 	jp HalveAttackDueToBurn
+.userStatFell
+	ld hl, UsersStatFellText
+	jp PrintText
 
 CantLowerAnymore_Pop:
 	pop de
@@ -7587,12 +7627,20 @@ CantLowerAnymore_Pop:
 
 CantLowerAnymore:
 	ld a, [de]
+	cp SELF_SPECIAL_DOWN1_EFFECT
+	jr z, .userCantLower
 	cp ATTACK_DOWN_SIDE_EFFECT
 	ret nc
 	ld b, c
 	inc b
 	call PrintStatText
 	ld hl, WontFallAnymoreText
+	jp PrintText
+.userCantLower
+	ld b, c
+	inc b
+	call PrintStatText
+	ld hl, UserStatWontFallAnymoreText
 	jp PrintText
 
 MoveMissed:
@@ -7629,6 +7677,14 @@ FellText:
 
 WontFallAnymoreText:
 	TX_FAR _WontFallAnymoreText
+	db "@"
+
+UsersStatFellText:
+	TX_FAR _UsersStatFellText
+	db "@"
+
+UserStatWontFallAnymoreText:
+	TX_FAR _UserStatWontFallAnymoreText
 	db "@"
 
 PrintStatText:
@@ -8067,9 +8123,8 @@ VoltTackleEffect:
 	jp FreezeBurnParalyzeEffect
 
 SilverWindEffect:
-; 10% chance to boost all stats
-	call BattleRandom
-	cp $1a
+; Move-specific chance to boost all four Gen I battle stats.
+	callab RollStatSideEffectChance
 	ret nc
 
 ; Silver Wind is a secondary effect, so do not replay the move animation while
@@ -8098,29 +8153,18 @@ HoneClawsEffect:
 	jp ApplyStatUpEffectToCurrentMonNoAnim
 
 AttackUpSideEffect2:
-; 20% chance to boost stat
-	call BattleRandom
-	cp $34
-	ret nc
-	jr AttackUpSideEffectSuccess
-
+; Legacy effect ID; use the same move-ID resolver as the canonical handler.
 AttackUpSideEffect:
-; 10% chance to boost stat
-	call BattleRandom
-	cp $1a
+	callab RollStatSideEffectChance
 	ret nc
-	; fallthrough
 
 AttackUpSideEffectSuccess:
 	ld a, ATTACK_UP1_EFFECT
 	jp ApplyStatUpEffectToCurrentMonNoAnim
 
 DefenseUpSideEffect:
-; 10% chance to boost stat
-	call BattleRandom
-	cp $1a
+	callab RollStatSideEffectChance
 	ret nc
-	; fallthrough
 
 DefenseUpSideEffectSuccess:
 	ld a, DEFENSE_UP1_EFFECT
