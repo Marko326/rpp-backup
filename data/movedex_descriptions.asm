@@ -2323,12 +2323,15 @@ MoveDexDescFrenzyPlant1:
 	next "wild plant roots.@"
 
 ; #198 Sucker Punch
+; SP-5.62.34: document the damaging-move requirement used by the battle gate.
 MoveDexDescSuckerPunchPages:
-	; 当前 RPP 只把 Sucker Punch 放入 priority move 列表，没有现代版“目标未选择攻击则失败”的判定。
-	dw MoveDexDescSuckerPunch1, MoveDexDescEffectCPriority, 0
+	dw MoveDexDescSuckerPunch1, MoveDexDescSuckerPunch2, MoveDexDescEffectCPriority, 0
 MoveDexDescSuckerPunch1:
 	db   "Ambushes the foe"
 	next "with a sudden hit.@"
+MoveDexDescSuckerPunch2:
+	db   "Fails unless foe's"
+	next "move deals damage.@"
 
 ; #199 Shadow Ball
 MoveDexDescShadowBallPages:

@@ -737,8 +737,12 @@ wAICount:: ; ccdf
 ; number of times remaining that AI action can occur
 	ds 1
 
+wSuckerPunchAIState:: ; cce0, SP-5.62.34
+; 0 = normal AI timing; 1 = AI checked/no action; 2 = AI item/switch already used
+	ds 1
+
 ; unused?
-	ds 2
+	ds 1
 
 wEnemyMoveListIndex:: ; cce2
 	ds 1

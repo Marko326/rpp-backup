@@ -17,7 +17,7 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 更新本看板和相应详细记录 → 编写提交日志并单独 Git 提交 → 才开始下一条。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**① 暴风、② Sucker Punch 动画均已移植；用户反馈运行测试暂未发现明显问题。② 的提交日志已准备，实际 Git 提交由用户完成。③～⑩尚未移植。下一步单独处理③现代失败判定。**
+> 当前情况：**① 暴风、② 突袭动画、③ 突袭现代失败判定，均由用户反馈运行测试暂未发现明显问题；③ 已完成额外战斗逻辑静态复审，提交日志已准备，但是否真正提交以用户仓库为准。④～⑩尚未移植；下一项为④多级优先度。**
 
 ### 动画类（Animation）
 
@@ -28,7 +28,7 @@ Status legend:
 
 ### 战斗功能 / 结算类（Battle logic）
 
-- [ ] **③ `5ca3afb3` — Sucker Punch 现代失败判定**：未移植；②验收收口后下一项。
+- [x] **③ `SP-5.62.34` / `5ca3afb3` — Sucker Punch 现代失败判定**：先手且目标选择伤害招式时方能成功；变化招式、后手、Recharge、换人及道具行为有专门失败检查；失败显示 `But it failed!`，我方进入判定前扣 PP。包含 Trainer AI 单次提前判定、Mirror Move 实际招式 ID、MoveDex 和 `$CCE0` WRAM 状态。**用户反馈已实机测试，暂未发现明显问题（2026-10-08）**；进一步代码逻辑复审未发现明确阻断问题。未提供各边界场景逐项结果；Trainer 道具/换人的全局排序仍为旧架构限制。③提交日志已准备，实际提交由用户完成。④未移植。
 - [ ] **④ `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：未移植，衔接③。
 - [ ] **⑦ `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：未移植，涉及公共战斗结算。
 - [ ] **⑧ `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：未移植，依赖⑦的帮助函数。
@@ -74,6 +74,10 @@ Status legend:
 
 - [x] SP-5.62.33 — Sucker Punch animation-only: two purple punch passes, Dark HIT_BIG palette and new sound events, integrated without the separate modern success/failure gate. User reports testing the move without noticing obvious problems (2026-10-08); do not interpret this as confirmation of each player/enemy/repeated-use case. The ③ battle-logic patch is still pending, and the actual Git commit remains user-controlled.
 - [x] HUR-5.62.32 — Hurricane: Polished Crystal wind-column renderer, five persistent high-speed streak sets, Thunder timing, bilateral animation support and normal post-hit feedback imported in isolation from Energy Ball branch `32b5022c`. The user reports having tested this move and observed no obvious problem (2026-10-08). This closes the previously pending general runtime check based on user feedback; individual player/enemy, palette/WX restoration and follow-up move/menu cases were **not separately documented as passed**. Reopen if a reproducible issue appears. Commit message prepared; actual Git commit must be made in the user's repository.
+
+### User-tested — Battle logic
+
+- [x] SP-5.62.34 — Sucker Punch modern failure gate from `5ca3afb3`. Source audit of turn order, damaging-move type, action intent, failure/PP flow, Mirror Move ID, AI early decision and `$CCE0` WRAM found no definite blocking issue. **User reports runtime testing without obvious problems (2026-10-08)**; individual edge cases not separately certified. Existing general Trainer item/switch priority timing is a broader architectural limitation. ③ commit message prepared; actual Git commit remains user-controlled. Does not include ④ priority tiers.
 
 ### Completed — Evolution / Items
 

@@ -427,6 +427,7 @@ MainInBattleLoop:
 	call SaveScreenTilesToBuffer1
 	xor a
 	ld [wFirstMonsNotOutYet], a
+	ld [wSuckerPunchAIState], a
 	ld a, [wPlayerBattleStatus2]
 	and (1 << NeedsToRecharge) | (1 << UsingRage) ; check if the player is using Rage or needs to recharge
 	jr nz, .selectEnemyMove
@@ -567,8 +568,14 @@ MainInBattleLoop:
 	call DrawHUDsAndHPBars
 	ld a, $1
 	ld [H_WHOSETURN], a
+	ld a, [wSuckerPunchAIState]
+	cp 2
+	jr z, .AIActionUsedPlayerFirst
+	and a
+	jr nz, .executeEnemyMovePlayerFirst
 	callab TrainerAI
 	jr c, .AIActionUsedPlayerFirst
+.executeEnemyMovePlayerFirst
 	call ExecuteEnemyMove
 	ld a, [wEscapedFromBattle]
 	and a ; was Teleport, Road, or Whirlwind used to escape from battle?
@@ -3239,11 +3246,19 @@ PlayerCanExecuteChargingMove:
 	                    ; resulting in the Pokemon being invulnerable for the whole battle
 	res Invulnerable,[hl]
 PlayerCanExecuteMove:
+	call PrepareSuckerPunchTrainerAI
 	call PrintMonName1Text
 	ld hl,DecrementPP
 	ld de,wPlayerSelectedMove ; pointer to the move just used
 	ld b,BANK(DecrementPP)
 	call Bankswitch
+	call CheckSuckerPunchSuccess
+	jr nc, .suckerPunchPassed
+	ld c, 50
+	call DelayFrames
+	call PrintButItFailedText_
+	jp ExecutePlayerMoveDone
+.suckerPunchPassed
 	ld a,[wPlayerMoveEffect] ; effect of the move just used
 	ld hl,ResidualEffects1
 	ld de,1
@@ -5505,6 +5520,13 @@ EnemyCanExecuteMove:
 	xor a
 	ld [wMonIsDisobedient], a
 	call PrintMonName1Text
+	call CheckSuckerPunchSuccess
+	jr nc, .suckerPunchPassed
+	ld c, 50
+	call DelayFrames
+	call PrintButItFailedText_
+	jp ExecuteEnemyMoveDone
+.suckerPunchPassed
 	ld a, [wEnemyMoveEffect]
 	ld hl, ResidualEffects1
 	ld de, $1
@@ -8133,6 +8155,105 @@ ApplyStatUpEffectToCurrentMonNoAnim:
 	ld [hl], a
 	pop af
 	jr ApplyStatUpEffectToCurrentMon
+
+; SP-5.62.34: If player Sucker Punch is about to execute first against a
+; trainer, resolve the trainer's one AI action decision before checking the
+; target's intent. This prevents an item/switch action from being mistaken for
+; the selected attack.
+PrepareSuckerPunchTrainerAI:
+	call GetCurrentMoveID
+	cp SUCKER_PUNCH
+	ret nz
+	ld a, [wEnemyWentFirst]
+	and a
+	ret nz
+	ld a, [wSuckerPunchAIState]
+	and a
+	ret nz
+	ld a, [wIsInBattle]
+	cp 2
+	ret nz
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	ret z
+	ld a, 1
+	ld [H_WHOSETURN], a
+	callab TrainerAI
+	ld a, 1
+	jr nc, .storeState
+	inc a
+.storeState
+	ld [wSuckerPunchAIState], a
+	xor a
+	ld [H_WHOSETURN], a
+	ret
+
+; SP-5.62.34: Carry = Sucker Punch failed. Non-Sucker Punch moves and valid
+; ambushes return with carry clear. A valid target must not have acted/recharged
+; and must be committed to a Physical or Special move rather than a Status or
+; non-move action.
+CheckSuckerPunchSuccess:
+	call GetCurrentMoveID
+	cp SUCKER_PUNCH
+	jr z, .suckerPunch
+	and a
+	ret
+.suckerPunch
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemySuckerPunch
+
+.playerSuckerPunch
+	ld a, [wEnemyWentFirst]
+	and a
+	jr nz, .failed
+	ld a, [wSuckerPunchAIState]
+	cp 2
+	jr z, .failed
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr nz, .playerCheckRecharge
+	ld a, [wSerialExchangeNybbleReceiveData]
+	cp LINKBATTLE_NO_ACTION
+	jr nc, .playerCheckRecharge
+	cp 4
+	jr nc, .failed
+.playerCheckRecharge
+	ld a, [wEnemyBattleStatus2]
+	bit NeedsToRecharge, a
+	jr nz, .failed
+	ld a, [wEnemySelectedMove]
+	jr .checkTargetMove
+
+.enemySuckerPunch
+	ld a, [wActionResultOrTookBattleTurn]
+	and a
+	jr nz, .failed
+	ld a, [wEnemyWentFirst]
+	and a
+	jr z, .failed
+	ld a, [wPlayerBattleStatus2]
+	bit NeedsToRecharge, a
+	jr nz, .failed
+	ld a, [wFlags_D733]
+	bit BIT_TEST_BATTLE, a
+	ld a, [wTestBattlePlayerSelectedMove]
+	jr nz, .checkTargetMove
+	ld a, [wPlayerSelectedMove]
+
+.checkTargetMove
+	and a
+	jr z, .failed
+	cp $ff
+	jr z, .failed
+	call PhysicalSpecialSplit
+	cp OTHER_M
+	jr z, .failed
+	and a
+	ret
+.failed
+	scf
+	ret
 
 ; Return a compact move-priority tier used by MainInBattleLoop.
 ; 2 = priority move, 1 = normal move, 0 = Counter.
