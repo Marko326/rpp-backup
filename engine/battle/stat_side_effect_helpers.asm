@@ -6,6 +6,7 @@
 ; automated Test Battle, the dedicated slot stores the root test move; once
 ; Metronome or a direct Mirror Move copy has selected a child, the real child
 ; lives in wPlayerSelectedMove instead.
+GetDamageSideEffectMoveID:
 GetStatSideEffectMoveID:
 	ld a, [H_WHOSETURN]
 	and a
@@ -28,10 +29,13 @@ GetStatSideEffectMoveID:
 	ld a, [wEnemySelectedMove]
 	ret
 
-; Apply user-side damaging stat effects before the target-KO early return.
+; Apply damaging user-side effects before the target-KO early return.
+; RCL-5.62.40: recoil+status moves resolve recoil here before normal status processing.
 ; The stock stat-up helpers temporarily replace the move effect and clear the
 ; animation ID, so preserve both fields across the far call back into Bank F.
 HandleSelfStatAfterDamageEffect:
+	call HandlePreKORecoil
+
 	; Resolve by real Move ID, not the mutable move-effect byte. Breaking a
 	; Substitute can clear that byte before this point, but user-side effects
 	; (including Draco Meteor's self-drop) must still resolve after a hit.

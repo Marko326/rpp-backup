@@ -2272,8 +2272,7 @@ MoveDexDescFireFang1:
 
 ; #190 Flare Blitz
 MoveDexDescFlareBlitzPages:
-	; 当前 move effect 只有 RECOIL_EFFECT；没有现代版烧伤追加，但 FrozenCheck 特判可自行解冻。
-	dw MoveDexDescFlareBlitz1, MoveDexDescEffectCRecoil25, MoveDexDescEffectCSelfThaw, 0
+	dw MoveDexDescFlareBlitz1, MoveDexDescEffectCRecoil33, MoveDexDescEffectCBurn10Fire, MoveDexDescEffectCBurnFireImmune, MoveDexDescEffectCSelfThaw, 0
 MoveDexDescFlareBlitz1:
 	db   "Charges in cloaked"
 	next "in raging flames.@"
@@ -2514,6 +2513,10 @@ MoveDexDescEffectCRecoil25:
 	db   "User takes 25", $d9, " of"
 	next "damage as recoil.@"
 
+MoveDexDescEffectCRecoil33:
+	db   "User takes 1/3 of"
+	next "damage as recoil.@"
+
 MoveDexDescEffectCSelfThaw:
 	db   "Thaws frozen user"
 	next "before attacking.@"
@@ -2645,8 +2648,7 @@ MoveDexDescDischarge1:
 
 ; #213 Volt Tackle
 MoveDexDescVoltTacklePages:
-	; VOLT_TACKLE_EFFECT = 25% recoil + 独立约 10% 麻痹追加。
-	dw MoveDexDescVoltTackle1, MoveDexDescEffectDRecoil25, MoveDexDescEffectDParalyze10Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
+	dw MoveDexDescVoltTackle1, MoveDexDescEffectDRecoil33, MoveDexDescEffectDParalyze10Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
 MoveDexDescVoltTackle1:
 	db   "Charges the foe"
 	next "wrapped in sparks.@"
@@ -2689,7 +2691,7 @@ MoveDexDescLeafBlade1:
 
 ; #219 Wood Hammer
 MoveDexDescWoodHammerPages:
-	dw MoveDexDescWoodHammer1, MoveDexDescEffectDRecoil25, 0
+	dw MoveDexDescWoodHammer1, MoveDexDescEffectDRecoil33, 0
 MoveDexDescWoodHammer1:
 	db   "Slams the foe with"
 	next "a wooden body.@"
@@ -3005,6 +3007,10 @@ MoveDexDescEffectDParalyzeElectricImmune:
 
 MoveDexDescEffectDRecoil25:
 	db   "User takes 25", $d9, " of"
+	next "damage as recoil.@"
+
+MoveDexDescEffectDRecoil33:
+	db   "User takes 1/3 of"
 	next "damage as recoil.@"
 
 MoveDexDescEffectDAccuracyDown30:
