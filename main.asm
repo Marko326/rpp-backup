@@ -3019,3 +3019,7 @@ INCLUDE "engine/battle/gunk_shot_animation.asm"
 ; HUR-5.62.32: Hurricane uses bank $38 instead of adding more pressure to bank $3D.
 SECTION "Polished Crystal Hurricane Animation", ROMX, BANK[$38]
 INCLUDE "engine/battle/hurricane_animation.asm"
+
+; SP-5.62.33: Night Slash-inspired Sucker Punch animation-only renderer in Bank $38.
+SECTION "Polished Crystal Sucker Punch Animation", ROMX, BANK[$38]
+INCLUDE "engine/battle/sucker_punch_animation.asm"

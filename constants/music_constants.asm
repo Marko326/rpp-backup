@@ -369,3 +369,5 @@ const_value = 1
 	const GSSFX_SHINE        ; ANM-5.62.07: exact Gold Metallic SFX
 	const GSSFX_BUBBLE_BEAM  ; ANM-5.62.10: Polished Crystal Gunk Shot barrage SFX
 	const GSSFX_THUNDER      ; HUR-5.62.32: Polished Crystal Hurricane loop SFX
+	const GSSFX_COMET_PUNCH  ; SP-5.62.33: Sucker Punch pass SFX
+	const GSSFX_KARATE_CHOP  ; SP-5.62.33: Sucker Punch impact SFX

@@ -176,3 +176,7 @@ RedSfxHeaderPointers:
 
 	; HUR-5.62.32: Hurricane reuses the existing Gen II Thunder SFX data.
 	dbw BANK(Sfx_Thunder), Sfx_Thunder
+
+	; SP-5.62.33: Sucker Punch reuses existing Gen II Comet Punch / Karate Chop data.
+	dbw BANK(Sfx_CometPunch), Sfx_CometPunch
+	dbw BANK(Sfx_KarateChop), Sfx_KarateChop

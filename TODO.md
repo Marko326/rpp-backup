@@ -17,18 +17,18 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 更新本看板和相应详细记录 → 编写提交日志并单独 Git 提交 → 才开始下一条。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**① 暴风已移植，用户反馈已测试、暂未发现明显问题；本次提交日志已准备，Git 提交仍需在用户的仓库执行。下一条为②；②～⑩均未在这次上传的主线中合并。**
+> 当前情况：**① 暴风、② Sucker Punch 动画均已移植；用户反馈运行测试暂未发现明显问题。② 的提交日志已准备，实际 Git 提交由用户完成。③～⑩尚未移植。下一步单独处理③现代失败判定。**
 
 ### 动画类（Animation）
 
 - [x] **① `HUR-5.62.32` / `32b5022c` — Hurricane（暴风）**：独立风柱、持续风线、Thunder 音效、双向演出和受击反馈已移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08）。尚无逐项测试清单，不把各测试场景写成分别通过；以后若复现异常再重开。
-- [ ] **② `2c3b12a8` — Sucker Punch 专属动画与 Dark 命中配色**：未移植；**下一条**，需要独立移植、审查、用户测试、TODO 和提交日志。
+- [x] **② `SP-5.62.33` / `2c3b12a8` — Sucker Punch 专属动画与 Dark 命中配色**：仅动画、音效与配色的独立移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08），未提供逐场景测试清单，不推定各项均独立通过。② 提交日志已准备；是否完成 Git 提交，以用户自己的仓库为准。现代失败判定仍属于③。
 - [ ] **⑥ `75ac4ff2` — Steel Wing 金银版动画**：未移植；按顺序在⑤完成之后处理。
 - [ ] **⑩ `c0cf8a93` — Volt Tackle 五道电流及受击反馈**：未移植；最后处理共享动画/音效入口，低血量音效遗留问题需另行核查。
 
 ### 战斗功能 / 结算类（Battle logic）
 
-- [ ] **③ `5ca3afb3` — Sucker Punch 现代失败判定**：未移植，衔接②。
+- [ ] **③ `5ca3afb3` — Sucker Punch 现代失败判定**：未移植；②验收收口后下一项。
 - [ ] **④ `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：未移植，衔接③。
 - [ ] **⑦ `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：未移植，涉及公共战斗结算。
 - [ ] **⑧ `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：未移植，依赖⑦的帮助函数。
@@ -72,6 +72,7 @@ Status legend:
 
 ### User-tested — Independently imported battle animations
 
+- [x] SP-5.62.33 — Sucker Punch animation-only: two purple punch passes, Dark HIT_BIG palette and new sound events, integrated without the separate modern success/failure gate. User reports testing the move without noticing obvious problems (2026-10-08); do not interpret this as confirmation of each player/enemy/repeated-use case. The ③ battle-logic patch is still pending, and the actual Git commit remains user-controlled.
 - [x] HUR-5.62.32 — Hurricane: Polished Crystal wind-column renderer, five persistent high-speed streak sets, Thunder timing, bilateral animation support and normal post-hit feedback imported in isolation from Energy Ball branch `32b5022c`. The user reports having tested this move and observed no obvious problem (2026-10-08). This closes the previously pending general runtime check based on user feedback; individual player/enemy, palette/WX restoration and follow-up move/menu cases were **not separately documented as passed**. Reopen if a reproducible issue appears. Commit message prepared; actual Git commit must be made in the user's repository.
 
 ### Completed — Evolution / Items

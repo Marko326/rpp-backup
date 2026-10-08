@@ -157,7 +157,11 @@ PlayExtendedOrbProjectile:
 	cp BULLET_PUNCH
 	jp z,SetHorizontalHitFeedback
 	cp SUCKER_PUNCH
-	jp z,SetHorizontalHitFeedback
+	jr nz,.notSuckerPunch
+	; SP-5.62.33: animation-only renderer; battle effect unchanged.
+	callba PlayPolishedCrystalSuckerPunchAnimation
+	ret
+.notSuckerPunch
 	cp METAL_CLAW
 	jp z,PlayClawThrashStyleShake
 	cp DRAGON_CLAW
@@ -1417,16 +1421,8 @@ FrenzyPlantExtAnimEnd:
 SuckerPunchExtAnim:
 	db SuckerPunchExtAnimEnd - SuckerPunchExtAnimData
 SuckerPunchExtAnimData:
-	; Ambush/Quick profile: same speed language as Bullet Punch, but Dark color.
-	; Use the Gen1 horizontal damage-feedback shake instead of the light blink.
-	db SE_SLIDE_MON_OFF,$61
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
-	db $46,$04,$05
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
-	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
-	db SE_SHOW_MON_PIC,$FF
+	; SP-5.62.33: animation-only renderer; success/failure battle logic is separate.
+	db EXT_ANIM_SUCKER_PUNCH_PC
 	db $FF
 SuckerPunchExtAnimEnd:
 	IF SuckerPunchExtAnimEnd - SuckerPunchExtAnimData > 30
