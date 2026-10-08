@@ -17,13 +17,13 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 单独交付该补丁的验收 TODO 和提交日志 → 用户确认并提交 → 再单独交付下一项功能。** **不得把上一项验收与下一项功能补丁打包交付。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**①～⑤：已移植，用户在已报告的测试范围内暂未发现明显问题；⑤ `AUR-5.62.36` 波导弹已完成本轮用户验收并准备提交日志，特殊伤害数值与升级学习表未实机验证（源码静态核对通过）；⑥～⑩未移植。**
+> 当前情况：**①～⑥已完成本轮用户验收（仅按报告场景记录）；⑥ `SW-5.62.37` Steel Wing 金属翼已通过用户本轮三组场景测试，暂未发现异常；⑦～⑩未移植。⑤特殊伤害数值与升级学习表未实机验证（源码已静态核对）。⑥验收提交日志已准备，实际 Git 提交由用户完成。**
 
 ### 动画类（Animation）
 
 - [x] **① `HUR-5.62.32` / `32b5022c` — Hurricane（暴风）**：独立风柱、持续风线、Thunder 音效、双向演出和受击反馈已移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08）。尚无逐项测试清单，不把各测试场景写成分别通过；以后若复现异常再重开。
 - [x] **② `SP-5.62.33` / `2c3b12a8` — Sucker Punch 专属动画与 Dark 命中配色**：仅动画、音效与配色的独立移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08），未提供逐场景测试清单，不推定各项均独立通过。② 提交日志已准备；是否完成 Git 提交，以用户自己的仓库为准。现代失败判定仍属于③。
-- [ ] **⑥ `75ac4ff2` — Steel Wing 金银版动画**：未移植；按顺序在⑤完成之后处理。
+- [x] **⑥ `SW-5.62.37` / `75ac4ff2` — Steel Wing（金属翼）金银版动画**：已单独移植并完成本轮用户验收（2026-10-08）。复用 Iron Tail 的 Gold/Crystal Metallic 开场，跳过铁尾 Wobble/HIT_BIG 后半段，恢复场景后接 Wing Attack 的三组 closing pairs；使用钢系配色。增加敌方出招后的竖震反馈及 BG0 顶行预清理；保留原铁尾、翅膀攻击及招式数据。**用户反馈三组建议场景均已测试、暂未发现异常**：我方金属翼演出，敌方金属翼受击竖震与顶部残影，连续使用金属翼／铁尾／翅膀攻击后的画面恢复；未提供额外的逐帧或全部边界条件验证，不扩大实测结论。⑥提交日志已准备，正式 Git 提交由用户完成。
 - [ ] **⑩ `c0cf8a93` — Volt Tackle 五道电流及受击反馈**：未移植；最后处理共享动画/音效入口，低血量音效遗留问题需另行核查。
 
 ### 战斗功能 / 结算类（Battle logic）
@@ -82,6 +82,10 @@ Status legend:
 ### User-tested — Priority / Battle logic
 
 - [x] PRI-5.62.35 — Move priority tiers imported independently from `ddddb20e`: +7 offset, ExtremeSpeed +2 > priority +1 moves > normal 0 > Counter -5. Same-tier Speed/tie logic unchanged; Roar/Whirlwind/Teleport/Bide keep priority 0 pending a full action/mechanics review. **User reports runtime testing without obvious problems (2026-10-08)**; individual edge cases are not separately certified. Source review found no definite blocking issue; Trainer AI item/switch decision timing remains a broader architectural limitation. ④ acceptance log prepared; no ROM build or Git commit by assistant.
+
+### User-tested — Steel Wing animation
+
+- [x] SW-5.62.37 — Steel Wing Gold/Crystal animation from `75ac4ff2`; reuse Iron Tail Metallic intro, restore display and call Wing Attack closing pairs; Steel type palette; enemy-side vertical shake and BG0 top-row cleanup. **User reports all three requested test scenarios completed without obvious problems (2026-10-08): player use, enemy use including vertical shake/top-row residue, and alternating Steel Wing / Iron Tail / Wing Attack with display restoration.** No additional frame-by-frame or rare edge-case certification is implied; acceptance log prepared, no assistant ROM build or Git commit.
 
 ### User-tested — Moves / animation
 

@@ -60,6 +60,14 @@ PlayGoldIronTailAnimation::
 	ld a, GSSFX_SHINE
 	call PlaySound
 	call .PlayMetallic
+	call GetCurrentMoveID
+	cp STEEL_WING
+	jr nz,.ironTailRearHalf
+	call .RestoreAfterMetallic
+	callba PlayWingAttackClosingPairs
+	ret
+
+.ironTailRearHalf
 	call .WaitAndHandoffProtectedTarget
 
 	; Gold loads HIT gfx after the four-frame pause. Keep the stationary target
@@ -812,6 +820,32 @@ PlayGoldIronTailAnimation::
 	coord hl, 0, 0
 	lb bc, 4, 12
 	jp ClearScreenArea
+
+.RestoreAfterMetallic
+	; Steel Wing has no Iron Tail four-frame pause or wobble. Match Gold's
+	; ShowMon_0 cadence: one frame before restoring the normal Window/BG state,
+	; then six more frames before Wing Attack loads HIT graphics. The protected
+	; target row was never masked on this path, so no BG-to-OBJ handoff is needed.
+	call DelayFrame
+	call .RestoreOBP0
+	call .RestoreUserHUD
+	call .RestoreMetallicPalette
+	ld a, LOW(vBGMap1)
+	ld [H_AUTOBGTRANSFERDEST], a
+	ld a, HIGH(vBGMap1)
+	ld [H_AUTOBGTRANSFERDEST + 1], a
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call .RestoreOBP1
+	xor a
+	ld [hWY], a
+	; Enemy Steel Wing is followed by vertical damage feedback. As with Iron Tail,
+	; stage a blank BG0 top row before that shake can expose the hidden 8-pixel row.
+	call .StageBlankBG0TopRowForEnemyFeedback
+	call ClearSprites
+	ld c, 6
+	call DelayFrames
+	ret
 
 .RestoreGoldWobbleDisplay
 	; Keep Gold's stationary target protection row present through the VBlank in

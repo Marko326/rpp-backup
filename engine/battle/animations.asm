@@ -1518,6 +1518,7 @@ DamageFeedbackOverrides:
 	db SPARK, 4, 1 ; ANM-5.61.72: Gold-style hit reaction, matching Shadow Ball.
 	db ICY_WIND, 4, 1 ; ANM-5.61.81: player hit blinks target; enemy hit shakes player vertically.
 	db IRON_TAIL, 0, 1 ; ANM-5.62.07: keep player feedback; enemy hit shakes the player vertically.
+	db STEEL_WING, 0, 1 ; SW-5.62.37: keep player feedback; enemy hit shakes the player vertically.
 	db EARTH_POWER, 4, 1 ; ANM-5.61.102: avoid a redundant post-eruption side-effect shake.
 	db SHADOW_PUNCH, 0, 1
 	db FLAME_WHEEL, 0, 1

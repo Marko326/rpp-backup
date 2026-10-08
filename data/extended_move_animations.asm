@@ -184,8 +184,12 @@ PlayExtendedOrbProjectile:
 	ret
 .notDragonPulse
 	cp IRON_TAIL
+	jr z,.playGoldMetallicAttack
+	cp STEEL_WING
 	jr nz,.notIronTail
-	; ANM-5.62.07: Iron Tail's complete Gold/Crystal timeline lives in bank $3D.
+.playGoldMetallicAttack
+	; Iron Tail owns the shared Gold/Crystal Metallic opening in bank $3D.
+	; Steel Wing branches there after Metallic and finishes with Wing Attack.
 	callba PlayGoldIronTailAnimation
 	ret
 .notIronTail
@@ -1313,11 +1317,11 @@ ShadowClawExtAnimEnd:
 SteelWingExtAnim:
 	db SteelWingExtAnimEnd - SteelWingExtAnimData
 SteelWingExtAnimData:
-	db $46,$10,$04
-	; Cut's slash component normally includes a preceding impact flash.
-	db SE_DARK_SCREEN_FLASH,$0E
-	db $04,$FF,$16
-	db $46,$FF,$05
+	; Gold/Crystal Steel Wing = Iron Tail's Metallic opening + Wing Attack.
+	; Keep only the Wing Attack closing pairs on the move's Steel type palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 SteelWingExtAnimEnd:
 	IF SteelWingExtAnimEnd - SteelWingExtAnimData > 30
