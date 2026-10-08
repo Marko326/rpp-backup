@@ -2799,17 +2799,23 @@ _PPMaxedOutText::
 	TX_RAM wcf4b
 	text "'s PP"
 	line "is maxed out."
-	prompt
+	done
 
 _PPIncreasedText::
 	TX_RAM wcf4b
 	text "'s PP"
 	line "increased."
-	prompt
+	done
 
 _PPRestoredText::
 	text "PP was restored."
-	prompt
+	done
+
+; MENU-5.62.31: PP submenu failure returns to move selection without a prompt.
+_PPNoEffectText::
+	text "It won't have any"
+	line "effect."
+	done
 
 _BootedUpTMText::
 	text "Booted up a TM!"

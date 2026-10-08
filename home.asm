@@ -511,6 +511,14 @@ GoBackToPartyMenu::
 	call RedrawPartyMenu
 	jp HandlePartyMenuInput
 
+GoBackToPartyMenuClean::
+	; MENU-5.62.31: remove overlaid move/TM windows before the light Party redraw.
+	; Keep BG transfer disabled until RedrawPartyMenu finishes the new tilemap.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call ClearScreen
+	jp GoBackToPartyMenu
+
 PartyMenuInit::
 	ld a, 1 ; hardcoded bank
 	call BankswitchHome

@@ -2641,14 +2641,15 @@ MoveSelectionMenu:
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
 	call .loadmoves
-	coord hl, 4, 7
+	; MENU-5.62.31: the PP window ends at row 11, directly above the text box.
+	coord hl, 4, 6
 	ld b, 4
 	ld c, 14
 	call TextBoxBorder
-	coord hl, 6, 8
+	coord hl, 6, 7
 	call .writemoves
 	ld b, $5
-	ld a, $7
+	ld a, $6
 .menuset
 	ld hl, wTopMenuItemY
 	ld [hli], a ; wTopMenuItemY

@@ -2428,13 +2428,10 @@ ItemUsePPRestore:
 	sub a,ELIXER
 	cp a,2 ; Elixir and Max Elixir are consecutive item IDs
 	jp c,.useElixir
-	; A newly selected Party member starts on move 1. Repeat use on the same
-	; member jumps to .chooseMoveKeepCursor and preserves wPlayerMoveListIndex.
+	; A newly selected Party member starts on move 1. Repeat uses enter
+	; .resumeMoveSelection directly and retain wPlayerMoveListIndex.
 	xor a
 	ld [wPlayerMoveListIndex],a
-.chooseMoveKeepCursor
-	ld a,$02
-	ld [wMoveMenuType],a
 	ld hl,RaisePPWhichTechniqueText
 	ld a,[wPPRestoreItem]
 	cp a,ETHER ; is it a PP Up?
@@ -2442,8 +2439,16 @@ ItemUsePPRestore:
 	ld hl,RestorePPWhichTechniqueText ; otherwise, print the restore PP message
 .printWhichTechniqueMessage
 	call PrintText
+.resumeMoveSelection
+	; MENU-5.62.31: retain the last result instead of reprinting the question.
+	ld a,$02
+	ld [wMoveMenuType],a
 	callab MoveSelectionMenu ; move selection menu
-	jr nz,.chooseMon
+	jr z,.moveSelected
+	; MENU-5.62.31: B exits only the move overlay, not the Party selector.
+	; The Bag-slot backup on the stack must not be pushed a second time.
+	jp .returnToPartyFromMove
+.moveSelected
 	ld hl,wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
 	call GetSelectedMoveOffset
@@ -2464,16 +2469,16 @@ ItemUsePPRestore:
 	jr c,.PPNotMaxedOut
 	ld hl,PPMaxedOutText
 	call PrintText
-	jr .chooseMoveKeepCursor
+	jr .resumeMoveSelection
 .PPNotMaxedOut
 	ld a,[hl]
 	add a,1 << 6 ; increase PP Up count by 1
 	ld [hl],a
-	ld a,1 ; 1 PP Up used
-	ld [wd11e],a
+	ld a,1 ; apply only this PP Up bonus
+	ld [wUsingPPUp],a
 	call RestoreBonusPP ; add the bonus PP to current PP
 	ld hl,PPIncreasedText
-	call PrintText
+	jp .playPPSuccessSound
 .done
 	; wWhichPokemon is the selected Party slot here, while the stack still holds
 	; the original Bag slot. Preserve the Party slot across RemoveUsedItem so a
@@ -2501,19 +2506,22 @@ ItemUsePPRestore:
 	push af ; restore the Bag-slot backup expected by the next successful use
 	ld a,b
 	ld [wWhichPokemon],a
-	jp .chooseMoveKeepCursor
+	jp .resumeMoveSelection
 .returnToPartyAfterPPUse
 	; Elixir / Max Elixir affect every move at once, so their repeat unit is the
 	; Pokémon rather than a move. Return one level to the Party selector.
 	ld a,[wWhichPokemon]
 	push af
+.returnToPartyFromMove
 	ld a,USE_ITEM_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID],a
-	call GoBackToPartyMenu
+	call GoBackToPartyMenuClean
 	jp nc,.chooseMove
 	jp .itemNotUsed
 .finishUsedItemDropPartySlot
 	pop bc
+	; MENU-5.62.31: keep the final result readable when the item stack runs out.
+	call WaitForTextScrollButtonPress
 .finishUsedItem
 	call GBPalWhiteOut
 	call RunDefaultPaletteCommand
@@ -2531,16 +2539,19 @@ ItemUsePPRestore:
 	ld bc,4
 	call CopyData ; copy party data to in-battle data
 .skipUpdatingInBattleData
+	ld hl,PPRestoredText
+.playPPSuccessSound
+	; MENU-5.62.31: PP Up and PP restore share the success-only sound path.
 	ld a,SFX_HEAL_AILMENT
 	call PlaySound
-	ld hl,PPRestoredText
 	call PrintText
 	jr .done
 .useEther
 	call .restorePP
 	jr nz,.afterRestoringPP
-	call ItemUseNoEffect
-	jp .chooseMoveKeepCursor
+	ld hl,PPNoEffectText
+	call PrintText
+	jp .resumeMoveSelection
 ; unsets zero flag if PP was restored, sets zero flag if not
 .restorePP
 	xor a ; PLAYER_PARTY_DATA
@@ -2644,6 +2655,10 @@ PPRestoredText:
 	TX_FAR _PPRestoredText
 	db "@"
 
+PPNoEffectText:
+	TX_FAR _PPNoEffectText
+	db "@"
+
 ; for items that can't be used from the Item menu
 UnusableItem:
 	jp ItemUseNotTime
@@ -2693,21 +2708,28 @@ ItemUseTMHM:
 	push af
 	ld a,[wcf91]
 	push af
+	xor a ; the first Party entry still needs its full graphics initialization
 .chooseMon
-	ld hl,wcf4b
-	ld de,wTempMoveNameBuffer
-	ld bc,14
-	call CopyData ; save the move name because DisplayPartyMenu will overwrite it
+	push af
 	ld a,$ff
 	ld [wUpdateSpritesEnabled],a
 	ld a,TMHM_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID],a
+	pop af
+	jr c,.redrawParty
 	call DisplayPartyMenu
+	jr .partyDisplayed
+.redrawParty
+	; MENU-5.62.31: retrying TM/HM choices does not need another whiteout.
+	call GoBackToPartyMenuClean
+.partyDisplayed
 	push af
-	ld hl,wTempMoveNameBuffer
-	ld de,wcf4b
-	ld bc,14
-	call CopyData
+	; Rebuild the taught move name from its stable ID. wTempMoveNameBuffer
+	; aliases wLearnMoveMonName and can be clobbered by LearnMove.
+	ld a,[wMoveNum]
+	ld [wd11e],a
+	call GetMoveName
+	call CopyStringToCF4B
 	pop af
 	jr nc,.checkIfAbleToLearnMove
 ; if the player canceled teaching the move
@@ -2717,6 +2739,9 @@ ItemUseTMHM:
 	; Party-to-Bag restore. Do not first spend three frames restoring the pre-Party
 	; Bag buffer only to replace it again on return.
 	ret
+.chooseAnotherMon
+	scf ; carry selects a light redraw; initial xor a selects the full draw
+	jr .chooseMon
 .checkIfAbleToLearnMove
 	predef CanLearnTM ; check if the pokemon can learn the move
 	push bc
@@ -2732,10 +2757,10 @@ ItemUseTMHM:
 	call PlaySoundWaitForCurrent
 	ld hl,MonCannotLearnMachineMoveText
 	call PrintText
-	jr .chooseMon
+	jr .chooseAnotherMon
 .checkIfAlreadyLearnedMove
 	callab CheckIfMoveIsKnown ; check if the pokemon already knows the move
-	jr c,.chooseMon
+	jr c,.chooseAnotherMon
 	predef LearnMove ; teach move
 	ld a,b
 	and a
@@ -2746,7 +2771,7 @@ ItemUseTMHM:
 	ld [wd11e],a
 	call GetMoveName
 	call CopyStringToCF4B
-	jp .chooseMon
+	jp .chooseAnotherMon
 .machineLearned
 	pop af
 	ld [wcf91],a
