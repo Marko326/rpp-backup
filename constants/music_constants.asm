@@ -368,3 +368,4 @@ const_value = 1
 	const GSSFX_RAGE         ; ANM-5.62.07: exact Gold Iron Tail opening SFX
 	const GSSFX_SHINE        ; ANM-5.62.07: exact Gold Metallic SFX
 	const GSSFX_BUBBLE_BEAM  ; ANM-5.62.10: Polished Crystal Gunk Shot barrage SFX
+	const GSSFX_THUNDER      ; HUR-5.62.32: Polished Crystal Hurricane loop SFX

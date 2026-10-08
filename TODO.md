@@ -6,10 +6,62 @@ Reusable development failures and prevention rules are kept in `RPP_DEVELOPMENT_
 
 Status legend:
 
-- `[x]` completed / already present in the current project
-- `[~]` partially present or still needs a focused audit
-- `[ ]` not completed / planned
-- `[?]` undecided, or the old note is too broad to close without defining the exact behavior first
+- `[x]` implemented / already present; **runtime test is confirmed only when the entry explicitly says so**
+- `[~]` imported but still awaiting runtime validation, or partially present / pending audit
+- `[ ]` not imported / not implemented / planned
+- `[?]` undecided, or the task needs a more precise definition
+
+## 分类任务看板（从 HUR-5.62.32 开始逐补丁维护）
+
+> 用途：以后新窗口先看这里，就能按**类型 + 状态 + 顺序**判断哪些已移植、哪些还没改。下面的 `Current RPP Roadmap` 和 `Legacy Upstream Wishlist` 保留原来的详细背景；旧条目的 `[x]` 仅表示原文所述功能已存在，不自动代表本次用户实机测试过。
+>
+> **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 更新本看板和相应详细记录 → 编写提交日志并单独 Git 提交 → 才开始下一条。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
+>
+> 当前情况：**① 暴风已移植，用户反馈已测试、暂未发现明显问题；本次提交日志已准备，Git 提交仍需在用户的仓库执行。下一条为②；②～⑩均未在这次上传的主线中合并。**
+
+### 动画类（Animation）
+
+- [x] **① `HUR-5.62.32` / `32b5022c` — Hurricane（暴风）**：独立风柱、持续风线、Thunder 音效、双向演出和受击反馈已移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08）。尚无逐项测试清单，不把各测试场景写成分别通过；以后若复现异常再重开。
+- [ ] **② `2c3b12a8` — Sucker Punch 专属动画与 Dark 命中配色**：未移植；**下一条**，需要独立移植、审查、用户测试、TODO 和提交日志。
+- [ ] **⑥ `75ac4ff2` — Steel Wing 金银版动画**：未移植；按顺序在⑤完成之后处理。
+- [ ] **⑩ `c0cf8a93` — Volt Tackle 五道电流及受击反馈**：未移植；最后处理共享动画/音效入口，低血量音效遗留问题需另行核查。
+
+### 战斗功能 / 结算类（Battle logic）
+
+- [ ] **③ `5ca3afb3` — Sucker Punch 现代失败判定**：未移植，衔接②。
+- [ ] **④ `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：未移植，衔接③。
+- [ ] **⑦ `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：未移植，涉及公共战斗结算。
+- [ ] **⑧ `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：未移植，依赖⑦的帮助函数。
+- [ ] **⑨ `d41f0048` — Substitute 多段攻击与反伤结算时序**：未移植，依赖⑦、⑧。
+
+### 招式 / 数据类（Moves & data）
+
+- [ ] **⑤ `e630f377` — Rolling Kick → Aura Sphere**：未移植，包含招式定义、说明和动画；需要人工融合公共动画入口和招式数据。
+
+### 菜单 / UI 类（Menu & UI）
+
+- [~] **`MENU-5.62.31` 菜单显示与返回流程**：源码已记录完成与静态检查；原 TODO 中仍有运行验证事项，不能因暴风通过而自动关闭。
+- [ ] **PP 道具招式列表显示 `当前PP/最大PP`**：原 TODO 明确列为后续任务，暂不改。
+
+### 道具 / 进化类（Items & evolution）
+
+- [x] **`EVO-5.62.27`**：进化石等级门槛提示和冰之石；沿用原 TODO 的已实现记录，本次未重新测试。
+- [x] **`ITEM-5.62.28`**：队伍消耗道具连续使用；沿用原 TODO 的已实现记录，本次未重新测试。
+
+### 形态 / 培育 / 系统类（Forms, breeding & systems）
+
+- [x] **`FORM-5.62.13`～`FORM-5.62.25`、`BRD-5.62.26`**：沿用原 TODO 已实现记录，本次未重新测试。
+- [ ] **Day Care 增设 PC、满队伍时转存到 PC**：原 TODO 的待办，暂不改。
+
+### 修复 / 审核类（Bugfix & audit）
+
+- [ ] **Leech Seed/Toxic、OHKO/Counter、连续攻击等遗留问题**：原 TODO 的候选修复；具体范围详见下方 `Legacy bugfix candidates still worth auditing`，本次不改动。
+- [~] **Mimic/Disable 与 Substitute 状态防护**：原 TODO 为部分实现/待审查，本次不更改结论。
+
+### 长期规划 / 待决定（Backlog & design）
+
+- [?] **TM 是否恢复消耗制**：仍待设计决定，不因本次提交改变。
+- [ ] **地区扩展、天气、特性、性格、长期 UI/引擎计划等**：见下方 `Legacy Upstream Wishlist — Audited Against Current Project`，保留原始状态和细节，暂不集中修改。
 
 ## Current RPP Roadmap
 
@@ -17,6 +69,10 @@ Status legend:
 
 - [x] FORM-5.62.13 through FORM-5.62.25 — regional-form instance identity work: Link Trade, Hall of Fame, Transform, Capture, Trainer/Gift/NPC Trade/Evolution, random wild encounters, Starter, Fishing, Headbutt, Static Wild/Ghost Marowak, and persistent-marker compile-time guards.
 - [x] BRD-5.62.26 — Day Care / Breeding producer uses the stored parent's persistent form marker and gives the baby the same registered runtime Form when supported; otherwise it explicitly falls back to `FORM_NORMAL`.
+
+### User-tested — Independently imported battle animations
+
+- [x] HUR-5.62.32 — Hurricane: Polished Crystal wind-column renderer, five persistent high-speed streak sets, Thunder timing, bilateral animation support and normal post-hit feedback imported in isolation from Energy Ball branch `32b5022c`. The user reports having tested this move and observed no obvious problem (2026-10-08). This closes the previously pending general runtime check based on user feedback; individual player/enemy, palette/WX restoration and follow-up move/menu cases were **not separately documented as passed**. Reopen if a reproducible issue appears. Commit message prepared; actual Git commit must be made in the user's repository.
 
 ### Completed — Evolution / Items
 

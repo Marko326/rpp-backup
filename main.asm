@@ -3015,3 +3015,7 @@ INCLUDE "engine/battle/energy_ball_animation.asm"
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
 SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/gunk_shot_animation.asm"
+
+; HUR-5.62.32: Hurricane uses bank $38 instead of adding more pressure to bank $3D.
+SECTION "Polished Crystal Hurricane Animation", ROMX, BANK[$38]
+INCLUDE "engine/battle/hurricane_animation.asm"

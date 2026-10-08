@@ -173,3 +173,6 @@ RedSfxHeaderPointers:
 
 	; ANM-5.62.10: Gunk Shot reuses the existing Gen II Bubble Beam SFX data.
 	dbw BANK(Sfx_Bubblebeam), Sfx_Bubblebeam
+
+	; HUR-5.62.32: Hurricane reuses the existing Gen II Thunder SFX data.
+	dbw BANK(Sfx_Thunder), Sfx_Thunder

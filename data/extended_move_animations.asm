@@ -252,6 +252,12 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldSacredFireAnimation
 	ret
 .notSacredFire
+	cp HURRICANE
+	jr nz,.notHurricane
+	; HUR-5.62.32: full Polished Crystal Hurricane renderer lives in bank $38.
+	callba PlayPolishedCrystalHurricaneAnimation
+	ret
+.notHurricane
 	cp GUNK_SHOT
 	jr nz,.notGunkShot
 	; ANM-5.62.10: Gunk Shot owns its full Polished Crystal timeline in bank $3D.
@@ -2011,10 +2017,8 @@ LowSweepExtAnimEnd:
 HurricaneExtAnim:
 	db HurricaneExtAnimEnd - HurricaneExtAnimData
 HurricaneExtAnimData:
-	db $46,$0F,$10
-	db $46,$2D,$15
-	db SE_WAVY_SCREEN,$FF
-	db SE_SHAKE_SCREEN,$FF
+	; HUR-5.62.32: C2 dispatches HURRICANE to the full Polished Crystal renderer.
+	db EXT_ANIM_HURRICANE_PC
 	db $FF
 HurricaneExtAnimEnd:
 	IF HurricaneExtAnimEnd - HurricaneExtAnimData > 30
