@@ -29,13 +29,11 @@ GetStatSideEffectMoveID:
 	ld a, [wEnemySelectedMove]
 	ret
 
-; Apply damaging user-side effects before the target-KO early return.
-; RCL-5.62.40: recoil+status moves resolve recoil here before normal status processing.
+; SUB-5.62.42: apply damaging user-side stat effects before target-KO exit.
+; Recoil is now resolved separately before the attacker's Substitute returns.
 ; The stock stat-up helpers temporarily replace the move effect and clear the
 ; animation ID, so preserve both fields across the far call back into Bank F.
 HandleSelfStatAfterDamageEffect:
-	call HandlePreKORecoil
-
 	; Resolve by real Move ID, not the mutable move-effect byte. Breaking a
 	; Substitute can clear that byte before this point, but user-side effects
 	; (including Draco Meteor's self-drop) must still resolve after a hit.

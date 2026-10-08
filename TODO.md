@@ -17,7 +17,7 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 单独交付该补丁的验收 TODO 和提交日志 → 用户确认并提交 → 再单独交付下一项功能。** **不得把上一项验收与下一项功能补丁打包交付。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**①～⑦已根据用户报告完成验收；⑧ `RCL-5.62.41` 反伤比例与火推／电推状态效果已移植、待用户实机验证，⑨～⑩未移植。⑦仍为 `BSE-5.62.38`，缩小 +2 回避不变，Stomp / Body Slam 反制列为未来独立专项，本版⑧不做。⑤特殊伤害数值与升级学习表未实测（源码已核对）。⑧尚无提交日志；⑦的正式 Git 提交由用户自行完成。**
+> 当前情况：**①～⑨已根据用户反馈完成本轮验收；⑨ `SUB-5.62.42` 替身／多段攻击及反伤时序已由用户运行测试，暂未反馈明显异常，未提供每一项边界场景的逐项结果；⑩ Volt Tackle 专属动画仍未移植。⑦ `BSE-5.62.38` 缩小 +2 回避保持不变，Stomp / Body Slam 对缩小的反制是后续独立专项，不在下一项⑩内实现。⑧ `RCL-5.62.41` 已补记验收，双方闪焰冲锋烧伤曾触发，但伏特攻击麻痹、反伤比例及少见边界未获完整逐项实测记录；Bank `$34` → `$3E` 的 Red Bedroom PC 区段迁移仍保留。⑤特殊伤害数值与升级学习表未实测（源码已核对）。⑨正式日志已准备，实际 Git 提交由用户自行完成。**
 
 ### 动画类（Animation）
 
@@ -31,9 +31,9 @@ Status legend:
 - [x] **③ `SP-5.62.34` / `5ca3afb3` — Sucker Punch 现代失败判定**：先手且目标选择伤害招式时方能成功；变化招式、后手、Recharge、换人及道具行为有专门失败检查；失败显示 `But it failed!`，我方进入判定前扣 PP。包含 Trainer AI 单次提前判定、Mirror Move 实际招式 ID、MoveDex 和 `$CCE0` WRAM 状态。**用户反馈已实机测试，暂未发现明显问题（2026-10-08）**；进一步代码逻辑复审未发现明确阻断问题。未提供各边界场景逐项结果；Trainer 道具/换人的全局排序仍为旧架构限制。③提交日志已准备，实际提交由用户完成。④已移植并获用户测试反馈。
 - [x] **④ `PRI-5.62.35` / `ddddb20e` — 多级技能优先度及 ExtremeSpeed 区分**：源码已单独移植；**用户反馈已运行测试，暂未发现明显问题（2026-10-08），后续源码逻辑复审未发现明确阻断问题**。优先度以 `+7` 偏移编码：ExtremeSpeed `+2`、Sucker Punch/Baby-Doll Eyes/Ice Shard/Bullet Punch/Quick Attack `+1`、普通 `0`、Counter `-5`；同优先度仍按 Speed / 同速随机决定顺序。Roar、Whirlwind、Teleport、Bide 暂保持 `0`，不提前升级效果机制。未提供逐项边界测试记录，不将联机、AI 道具/换人等特殊场景标记为全部通过；旧架构中训练家道具/换人决策时序仍待以后复查。**未调整③失败判定或已验收动画，④验收提交日志已单独准备；是否 Git 提交以用户仓库为准。**
 - [x] **⑦ `BSE-5.62.38` / `ff4fec55` — 伤害型能力副作用、Gen I Special 平衡**：已单独移植；**用户反馈已运行测试，其他效果暂未发现明显异常（2026-10-08），但未逐项提交所有概率、双侧、替身／击倒、能力极限等边界测试结果**。共享 Move ID 概率表统一伤害附加能力变化（10% / 20% / 30% / 命中后必定）；Metal Claw / Meteor Mash / Steel Wing / Silver Wind / AncientPower / Mind Blast 的自身能力提升及 Draco Meteor 的自身 Special 下降在目标被击倒前处理。Gen I 共用 Special 平衡及 MoveDex 说明保持本次移植内容；吐丝降速度2级、瞬间失忆提升 Special 1级、**缩小每次提升回避2级（10 PP）**。经讨论确认维持缩小 +2，不应用此前尚未验收的 `BSE-5.62.39`（+1）试验修正。⑦验收只更新 TODO，不再改游戏代码；实际提交由用户完成。
-- [~] **⑧ `RCL-5.62.41` / `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：已单独移植，**待用户实机测试**。按真实 Move ID 分配反伤：Struggle 1/2，Flare Blitz／Volt Tackle／Wood Hammer 1/3，其他原有 RECOIL_EFFECT 招式保持 1/4；火推命中后的约10%烧伤、电推约10%麻痹使用普通状态副作用路径。火推／电推在目标直接倒下前也结算反伤；替身场景反伤保留、状态不可穿透（待测试）。MoveDex 已同步，VOLT_TACKLE_EFFECT 原编号保留为 legacy/reserved。只移植⑧，⑨替身多段攻击时序尚未处理；需验证双方回合、直接击倒、未命中、免疫、替身击破及反伤致使用者倒下。**未执行 ROM 编译；⑧测试通过后再另行更新 TODO 与编写提交日志。** **⑧链接空间修复（RCL-5.62.41）：** BSE 阶段 MAP 显示 Bank `$34` 仅余 `$000D` 字节；本轮新增 MoveDex C 说明导致 `Red Bedroom PC` 区段无法放入。将该独立区段迁至 Bank `$3E`，原 Home 调用使用 `BANK(OpenRedBedroomPC)` 自动寻址；仅做静态检查，待用户重新构建确认链接及卧室 PC 交互。
-- [ ] **⑨ `d41f0048` — Substitute 多段攻击与反伤结算时序**：未移植，依赖⑦、⑧。
-- [ ] **缩小的后世代反制（后续独立专项，非下一版）**：以后再考虑为 Stomp（踩踏）和 Body Slam（泰山压顶）增加“目标实际使用过 Minimize 时，跳过一般命中／回避判定并使伤害×2”的特殊规则；Fly / Dig 无敌阶段和正常属性免疫仍应保留，单纯 Double Team 不触发。需单独审查双方判定、状态清除和伤害结算。**当前未实现，本轮⑦及下一版⑧均不加入。**
+- [x] **⑧ `RCL-5.62.41` / `7ecf21ce` — 反伤比例及 Flare Blitz / Volt Tackle 状态效果**：已独立移植并按用户反馈完成本轮验收（2026-10-08），**目前所测场景未发现明显异常**。按真实 Move ID 分配反伤：Struggle 1/2，Flare Blitz／Volt Tackle／Wood Hammer 1/3，原有其他 RECOIL_EFFECT 招式保持 1/4；火推约10%烧伤、电推约10%麻痹接入普通状态副作用路径。目标直接被击倒时先结算使用者反伤，目标 HP 归零后不再附加异常状态；替身不能被附加状态穿透（源码路径已检查，边界待实测）。**用户实测记录**：己方、敌方分别使用闪焰冲锋，均观察到对方至少一次烧伤；约十余次共观察到两次烧伤，样本不足以验证精确触发率。**未逐项确认**：伏特攻击麻痹概率、各招式反伤数值、直接击倒后反伤、未命中／属性免疫、替身及双倒等特殊场景。⑧附带链接空间修复：首次构建遇到 Bank `$34` 的 `Red Bedroom PC` 无法放置，将该独立区段迁至 Bank `$3E`，入口仍通过 `BANK(OpenRedBedroomPC)` 动态选择 Bank；用户随后继续运行测试，但未报告卧室 PC 专项检查／新版 MAP 数据。⑨替身多段结算另在 SUB-5.62.42 实现，⑩电推专属动画仍未移植；本段保留⑧验收记录。
+- [x] **⑨ `SUB-5.62.42` / `d41f0048` — Substitute 多段攻击与反伤结算时序**：已在⑧验收后源码上独立移植；**用户已运行测试并反馈可以继续，暂未报告明显问题（2026-10-08）**。多段攻击击破目标替身时，本次命中只作用于替身，其余段数可继续命中本体；攻击者自身替身在多段攻击期间避免每段重复切换，目标承伤与反伤结算后再恢复，反伤致使用者濒死则不重画替身。反伤继续使用⑧的比例及状态结算规则。**验收范围限制**：用户未提供双方替身、多段击破、双倒、替身状态穿透等场景的逐项结果，不将这些情况分别记为通过；源码已静态检查双方入口、跨 Bank helper 与 KO 返回路径，仍需遇到问题时再复查。本轮仅更新 TODO 和⑨提交日志，不改游戏代码／版本、不自行编译 ROM、不包含⑩。
+- [ ] **缩小的后世代反制（后续独立专项，非下一版）**：以后再考虑为 Stomp（踩踏）和 Body Slam（泰山压顶）增加“目标实际使用过 Minimize 时，跳过一般命中／回避判定并使伤害×2”的特殊规则；Fly / Dig 无敌阶段和正常属性免疫仍应保留，单纯 Double Team 不触发。需单独审查双方判定、状态清除和伤害结算。**当前未实现，后续独立处理；下一项⑨也不加入。**
 
 ### 招式 / 数据类（Moves & data）
 
@@ -91,6 +91,14 @@ Status legend:
 ### User-tested — Battle stat effects
 
 - [x] BSE-5.62.38 — damage-triggered stat side effects and Gen I Special balance from `ff4fec55`. User reports runtime testing with no obvious issues in the tested scenarios (2026-10-08); individual edge cases were not independently certified. **Minimize remains +2 evasion / 10 PP** by user balance decision; String Shot remains -2 Speed, Amnesia +1 Special. The experimental BSE-5.62.39 +1 change is **not** applied. Future, not-next-version standalone task: Stomp and Body Slam deal 2× damage and bypass ordinary accuracy/evasion against a target that used Minimize, while keeping Fly/Dig and type-immunity exceptions; not implemented here. ⑦ acceptance log prepared; no assistant ROM build or Git commit.
+
+### User-tested — Recoil and secondary status
+
+- [x] RCL-5.62.41 — imported `7ecf21ce` as ⑧ recoil and Flare Blitz / Volt Tackle side effects, plus isolated Bank $34 placement repair. **User reports testing Flare Blitz from both sides and observing burn once on each side without obvious problems (2026-10-08)**. Approximately two burns across a dozen-plus attempts is observational only, not an accuracy test for the roughly 10% status chance. Recoil fraction values, Volt Tackle paralysis, direct-KO and Substitute boundaries, and Red bedroom PC interaction have no separately reported complete runtime verification. The Bank move retains the dynamic `BANK(OpenRedBedroomPC)` lookup; no new MAP/ROM build was performed by the assistant. Recoil logic and game version remain unchanged during this TODO-only acceptance. Commit message prepared; actual Git commit belongs to the user.
+
+### User-tested — Substitute / multi-hit / recoil timing
+
+- [x] SUB-5.62.42 — imported ⑨ (`d41f0048`) after RCL-5.62.41. **User reports having tested the feature and asks to proceed (2026-10-08), without reporting obvious problems.** No itemized pass report was supplied for both-side Substitute, multi-hit break, recoil double-KO or status penetration; do not infer that every edge case was verified. Source audit covered substitute restoration, post-damage recoil timing, both actor branches, and Bank helper symbols. ⑦/⑧ acceptance status has been reconciled in the category board; Minimize remains +2, and the Stomp / Body Slam counterplay is a future standalone item. No assistant ROM build or Git commit. ⑨ acceptance message prepared; ⑩ remains unported.
 
 ### User-tested — Moves / animation
 

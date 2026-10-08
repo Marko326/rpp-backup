@@ -94,7 +94,7 @@ const_value = 0
 	const FIRE_FANG_EFFECT           ; $57
 	const ICE_FANG_EFFECT            ; $58
 	const THUNDER_FANG_EFFECT        ; $59
-	const VOLT_TACKLE_EFFECT         ; $5A legacy composite recoil/paralysis effect (reserved)
+	const VOLT_TACKLE_EFFECT         ; $5A SUB-5.62.42: legacy paralysis-only fallback (ID reserved)
 	const POISON_FANG_EFFECT         ; $5B
 	const GROWTH_EFFECT              ; $5C
 	const HONE_CLAWS_EFFECT          ; $5D

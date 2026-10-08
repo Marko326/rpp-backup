@@ -3033,6 +3033,10 @@ INCLUDE "engine/battle/aura_sphere_animation.asm"
 SECTION "Stat Side Effect Helpers", ROMX, BANK[$3E]
 INCLUDE "engine/battle/stat_side_effect_helpers.asm"
 
-; RCL-5.62.40: move-specific recoil fractions and pre-KO handling in Bank $3E.
+; RCL-5.62.40: move-specific recoil fractions in Bank $3E.
 SECTION "Recoil Side Effect Helpers", ROMX, BANK[$3E]
 INCLUDE "engine/battle/recoil_side_effect_helpers.asm"
+
+; SUB-5.62.42: Substitute/multi-hit sprite and damage-resolution helpers.
+SECTION "Substitute Multi-Hit Helpers", ROMX, BANK[$3E]
+INCLUDE "engine/battle/substitute_multihit_helpers.asm"

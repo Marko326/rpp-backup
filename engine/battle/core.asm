@@ -67,8 +67,8 @@ AlwaysHappenSideEffects:
 	db TWO_TO_FIVE_ATTACKS_EFFECT
 	db HYPER_BEAM_EFFECT
 	db ATTACK_TWICE_EFFECT
-	db RECOIL_EFFECT
-	db VOLT_TACKLE_EFFECT
+	; SUB-5.62.42: RECOIL_EFFECT is resolved immediately after damage, before
+	; the attacker's Substitute can be restored.
 	db TWINEEDLE_EFFECT
 	db RAGE_EFFECT
 	db -1
@@ -91,7 +91,6 @@ SpecialEffects:
 	db ATTACK_TWICE_EFFECT
 	db JUMP_KICK_EFFECT
 	db RECOIL_EFFECT
-	db VOLT_TACKLE_EFFECT
 	db SILVER_WIND_EFFECT
 	db ATTACK_UP1_SIDE_EFFECT
 	db DEFENSE_UP1_SIDE_EFFECT
@@ -3316,11 +3315,9 @@ getPlayerAnimationType:
 	ld a,5 ; move has effect
 playPlayerMoveAnimation:
 	push af
-	ld a,[wPlayerBattleStatus2]
-	bit HasSubstituteUp,a
-	ld hl,HideSubstituteShowMonAnim
-	ld b,BANK(HideSubstituteShowMonAnim)
-	call nz,Bankswitch
+	; SUB-5.62.42: keep a Substitute user visible until damage resolution;
+	; multi-hit moves reuse the same revealed sprite across all hits.
+	callab PrepareAttackerSubstituteForMoveAnimation
 	pop af
 	ld [wAnimationType],a
 	callab PrepareCurrentMoveAnimation
@@ -3328,11 +3325,6 @@ playPlayerMoveAnimation:
 	call PlayMoveAnimation
 	call HandleExplodingAnimation
 	call DrawPlayerHUDAndHPBar
-	ld a,[wPlayerBattleStatus2]
-	bit HasSubstituteUp,a
-	ld hl,ReshowSubstituteAnim
-	ld b,BANK(ReshowSubstituteAnim)
-	call nz,Bankswitch
 	jr MirrorMoveCheck
 playerCheckIfFlyOrChargeEffect:
 	ld c,30
@@ -3379,12 +3371,20 @@ MirrorMoveCheck:
 	ld a,[wPlayerMoveEffect]
 	cp a,EXPLODE_EFFECT ; even if Explosion or Selfdestruct missed, its effect still needs to be activated
 	jr z,.notDone
-	jr ExecutePlayerMoveDone ; otherwise, we're done if the move missed
+	jp ExecutePlayerMoveDone ; otherwise, we're done if the move missed
 .moveDidNotMiss
 	call ApplyAttackToEnemyPokemon
 	call PrintAttackResultText
 	ld a,1
 	ld [wMoveDidntMiss],a
+
+	; SUB-5.62.42: recoil resolves while the real attacker is still visible.
+	; A recoil-fainted user remains visible, but the successful hit still completes
+	; its normal post-hit processing before the existing faint dispatcher runs.
+	callab HandlePostDamageRecoil
+	; Restore only after target damage and recoil have both visibly resolved.
+	; The helper skips a 0-HP attacker and keeps multi-hit intermediate hits visible.
+	callab FinishAttackerSubstituteAfterDamage
 .notDone
 	ld a,[wPlayerMoveEffect]
 	ld hl,AlwaysHappenSideEffects
@@ -3396,7 +3396,16 @@ MirrorMoveCheck:
 	ld a,[hli]
 	ld b,[hl]
 	or b
-	ret z ; don't do anything else if the enemy fainted
+	jr nz,.targetStillAlive
+	; A multi-hit move can end early because the target fainted. Its damage
+	; has resolved already, so restore the attacker's Substitute before leaving.
+	callab RestoreAttackerSubstituteIfMultiHitActive
+	; SUB-5.62.42: callab/Bankswitch clobbers B, but the battle loop uses
+	; B = 0 as the target-fainted return contract from Execute*Move.
+	xor a
+	ld b, a
+	ret
+.targetStillAlive
 	call HandleBuildingRage
 
 	ld hl,wPlayerBattleStatus1
@@ -3407,6 +3416,7 @@ MirrorMoveCheck:
 	ld [wPlayerNumAttacksLeft],a
 	jp nz,getPlayerAnimationType ; for multi-hit moves, apply attack until PlayerNumAttacksLeft hits 0 or the enemy faints.
 	                             ; damage calculation and accuracy tests only happen for the first hit
+	ld hl,wPlayerBattleStatus1
 	res AttackingMultipleTimes,[hl] ; clear attacking multiple times status when all attacks are over
 	ld hl,MultiHitText
 	call PrintText
@@ -5126,7 +5136,11 @@ AttackSubstitute:
 	jr z, .done
 	cp RECOIL_EFFECT
 	jr z, .done
-	cp VOLT_TACKLE_EFFECT
+	cp TWO_TO_FIVE_ATTACKS_EFFECT
+	jr z, .done
+	cp ATTACK_TWICE_EFFECT
+	jr z, .done
+	cp TWINEEDLE_EFFECT
 	jr z, .done
 	; if it wasn't one of those, nullify the effect
 	xor a
@@ -5593,11 +5607,8 @@ handleExplosionMiss:
 	xor a
 playEnemyMoveAnimation:
 	push af
-	ld a, [wEnemyBattleStatus2]
-	bit HasSubstituteUp, a ; does mon have a substitute?
-	ld hl, HideSubstituteShowMonAnim
-	ld b, BANK(HideSubstituteShowMonAnim)
-	call nz, Bankswitch
+	; SUB-5.62.42: mirror the player-side Substitute timing.
+	callab PrepareAttackerSubstituteForMoveAnimation
 	pop af
 	ld [wAnimationType], a
 	callab PrepareCurrentMoveAnimation
@@ -5605,11 +5616,6 @@ playEnemyMoveAnimation:
 	call PlayMoveAnimation
 	call HandleExplodingAnimation
 	call DrawEnemyHUDAndHPBar
-	ld a, [wEnemyBattleStatus2]
-	bit HasSubstituteUp, a ; does mon have a substitute?
-	ld hl, ReshowSubstituteAnim
-	ld b, BANK(ReshowSubstituteAnim)
-	call nz, Bankswitch ; slide the substitute's sprite out
 	jr EnemyCheckIfMirrorMoveEffect
 
 EnemyCheckIfFlyOrChargeEffect:
@@ -5652,12 +5658,18 @@ EnemyCheckIfMirrorMoveEffect:
 	ld a, [wEnemyMoveEffect]
 	cp EXPLODE_EFFECT
 	jr z, .handleExplosionMiss
-	jr ExecuteEnemyMoveDone
+	jp ExecuteEnemyMoveDone
 .moveDidNotMiss
 	call ApplyAttackToPlayerPokemon
 	call PrintAttackResultText
 	ld a, 1
 	ld [wMoveDidntMiss], a
+
+	; SUB-5.62.42: mirror the player-side post-damage recoil ordering.
+	; A recoil-fainted user stays revealed while the successful hit finishes its
+	; normal post-hit processing; Finish... only reshows a surviving attacker.
+	callab HandlePostDamageRecoil
+	callab FinishAttackerSubstituteAfterDamage
 .handleExplosionMiss
 	ld a, [wEnemyMoveEffect]
 	ld hl, AlwaysHappenSideEffects
@@ -5669,7 +5681,13 @@ EnemyCheckIfMirrorMoveEffect:
 	ld a, [hli]
 	ld b, [hl]
 	or b
-	ret z
+	jr nz, .targetStillAlive
+	callab RestoreAttackerSubstituteIfMultiHitActive
+	; SUB-5.62.42: mirror the player-side target-fainted return contract.
+	xor a
+	ld b, a
+	ret
+.targetStillAlive
 	call HandleBuildingRage
 	ld hl, wEnemyBattleStatus1
 	bit AttackingMultipleTimes, [hl] ; is mon hitting multiple times? (example: double kick)
@@ -5679,6 +5697,7 @@ EnemyCheckIfMirrorMoveEffect:
 	dec [hl]
 	pop hl
 	jp nz, GetEnemyAnimationType
+	ld hl, wEnemyBattleStatus1
 	res AttackingMultipleTimes, [hl] ; mon is no longer hitting multiple times
 	ld hl, HitXTimesText
 	call PrintText
@@ -8119,7 +8138,8 @@ FangAttacks:
 	jp FreezeBurnParalyzeEffect
 
 VoltTackleEffect:
-	call RecoilEffect
+	; SUB-5.62.42: recoil is owned by HandlePostDamageRecoil. Keep this legacy
+	; reserved effect as the paralysis half only, so stale data cannot double-recoil.
 	jp FreezeBurnParalyzeEffect
 
 SilverWindEffect:

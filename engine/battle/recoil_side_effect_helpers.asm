@@ -43,23 +43,25 @@ RecoilDivisorTable:
 	db WOOD_HAMMER, 3
 	db -1
 
-; RCL-5.62.40: recoil+status moves apply recoil before the target-faint early
-; return, while their ordinary status effect stays on the normal post-KO path.
-; This also lets Substitute suppress the target status without suppressing recoil.
-HandlePreKORecoil:
+; SUB-5.62.42: all normal damaging recoil resolves immediately after damage,
+; before any attacker Substitute sprite is restored. The ordinary effect-based
+; recoil uses RECOIL_EFFECT; burn/paralysis recoil moves use real Move ID.
+HandlePostDamageRecoil:
+	ld hl, wPlayerMoveEffect
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .checkEffect
+	ld hl, wEnemyMoveEffect
+.checkEffect
+	ld a, [hl]
+	cp RECOIL_EFFECT
+	jr z, .applyRecoil
+
 	call GetDamageSideEffectMoveID
-	ld c, a
-	ld hl, PreKORecoilMoveTable
-.findMove
-	ld a, [hli]
-	cp -1
-	ret z
-	cp c
-	jr nz, .findMove
+	cp FLARE_BLITZ
+	jr z, .applyRecoil
+	cp VOLT_TACKLE
+	ret nz
+.applyRecoil
 	callab RecoilEffect_
 	ret
-
-PreKORecoilMoveTable:
-	db FLARE_BLITZ
-	db VOLT_TACKLE
-	db -1
