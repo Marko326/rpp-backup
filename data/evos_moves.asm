@@ -417,6 +417,7 @@ Mon009_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
+	level_move 1,AURA_SPHERE
 	level_move 1,FLASH_CANNON ; Evolution Move
 	level_move 1,OUTRAGE ; HGSS Tutor Move
 	level_move 1,TACKLE
@@ -2742,7 +2743,6 @@ Mon106_EvosMoves:
 	level_move 1,DOUBLE_KICK
 	level_move 1,RAGE ; Revenge → Tyrogue Move
 	level_move 5,MEDITATE
-	level_move 9,ROLLING_KICK
 	level_move 13,JUMP_KICK
 	level_move 17,STOMP ; Brick Break → new move
 	level_move 21,FOCUS_ENERGY
@@ -3796,10 +3796,11 @@ Mon150_EvosMoves:
 	level_move 19,SWIFT
 	level_move 28,EXTRASENSORY ; Future Sight → new move
 	level_move 37,MIST ; Psych Up → Mist
+	level_move 40,AURA_SPHERE
 	level_move 46,RECOVER
 	level_move 55,PSYCHIC_M
 	level_move 64,BARRIER
-	level_move 73,SHADOW_BALL ; Aura Sphere → TM move
+	level_move 73,SHADOW_BALL
 	level_move 82,AMNESIA
 	level_move 91,DARK_PULSE ; Mist → TM move
 	level_move 100,MIND_BLAST ; Psystrike → Custom Move. Always Crits, 10% chance to raise all stats.
@@ -3822,8 +3823,9 @@ Mon151_EvosMoves:
 	level_move 60,AMNESIA
 	level_move 70,MIST ; Me First → Mewtwo move
 	level_move 80,DAZZLINGLEAM ; Baton Pass → TM move
+	level_move 90,AURA_SPHERE
 	level_move 90,DARK_PULSE ; Nasty Plot → TM move
-	level_move 100,MIND_BLAST ; Aura Sphere → Custom Move. Always Crits, 10% chance to raise all stats.
+	level_move 100,MIND_BLAST ; Custom Move. Always Crits, 10% chance to raise all stats.
 	packed_learnset_end
 
 Mon152_EvosMoves: 
@@ -4528,6 +4530,7 @@ Mon181_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
+	level_move 1,AURA_SPHERE
 	level_move 1,HURRICANE
 	level_move 1,SKY_ATTACK
 	level_move 1,EXTREMESPEED
@@ -4841,6 +4844,7 @@ Mon193_EvosMoves:
 	level_move 35,LUSTER_PURGE ; Mist Ball → Latios Move
 	level_move 40,ZEN_HEADBUTT
 	level_move 45,RECOVER
+	level_move 50,AURA_SPHERE
 	level_move 50,HAZE ; Psycho Shift → similar move
 	level_move 55,DRAGON_PULSE ; Charm → Dragon Pulse
 	level_move 60,LIGHT_SCREEN ; healing wish → TM move
@@ -4864,6 +4868,7 @@ Mon194_EvosMoves:
 	level_move 35,LUSTER_PURGE
 	level_move 40,ZEN_HEADBUTT
 	level_move 45,RECOVER
+	level_move 50,AURA_SPHERE
 	level_move 50,HAZE ; Psycho Shift → similar move
 	level_move 55,DRAGON_PULSE ; Dragon Dance → Dragon Pulse
 	level_move 60,LIGHT_SCREEN ; Memento → TM move
@@ -4877,10 +4882,9 @@ Mon195_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
-	level_move 1,LOW_KICK ; Rolling Kick → HGSS tutor move
+	level_move 1,LOW_KICK ; HGSS tutor move
 	level_move 1,RAGE ; Revenge → Tyrogue move
 	level_move 6,FOCUS_ENERGY
-	level_move 10,ROLLING_KICK ; Pursuit → Rolling Kick
 	level_move 15,QUICK_ATTACK
 	level_move 19,JUMP_KICK ; Rapid Spin → Hitmonlee move
 	level_move 24,FEINT_ATTACK ; Feint → new move

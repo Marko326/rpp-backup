@@ -3023,3 +3023,7 @@ INCLUDE "engine/battle/hurricane_animation.asm"
 ; SP-5.62.33: Night Slash-inspired Sucker Punch animation-only renderer in Bank $38.
 SECTION "Polished Crystal Sucker Punch Animation", ROMX, BANK[$38]
 INCLUDE "engine/battle/sucker_punch_animation.asm"
+
+; AUR-5.62.36: Aura Sphere renderer in bank $3E, not tightly packed bank $3D.
+SECTION "Polished Crystal Aura Sphere Animation", ROMX, BANK[$3E]
+INCLUDE "engine/battle/aura_sphere_animation.asm"

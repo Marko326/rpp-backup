@@ -268,6 +268,12 @@ PlayExtendedOrbProjectile:
 	callba PlayPolishedCrystalGunkShotAnimation
 	ret
 .notGunkShot
+	cp AURA_SPHERE
+	jr nz,.notAuraSphere
+	; AUR-5.62.36: Aura Sphere owns its Polished Crystal renderer in roomy bank $3E.
+	callba PlayPolishedCrystalAuraSphereAnimation
+	ret
+.notAuraSphere
 	cp ENERGY_BALL
 	jr nz,.notEnergyBall
 	; ANM-5.62.05: Energy Ball owns its full Polished Crystal timeline in bank $3D.
@@ -520,6 +526,8 @@ StageDedicatedMoveAnimation:
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID
 ; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
 LegacyMoveAnimationOverrides:
+	db AURA_SPHERE
+	dw AuraSphereDedicatedAnim
 	db SPARK
 	dw SparkGoldDedicatedAnim
 	db COMET_PUNCH
@@ -636,6 +644,17 @@ ExtendedMoveAnimationPointersEnd:
 		fail "extended move animation pointer table size mismatch"
 	ENDC
 
+
+AuraSphereDedicatedAnim:
+	db AuraSphereDedicatedAnimEnd - AuraSphereDedicatedAnimData
+AuraSphereDedicatedAnimData:
+	; AUR-5.62.36: original move #027 stages its dedicated renderer through the C2 gateway.
+	db EXT_ANIM_AURA_SPHERE_PC
+	db $FF
+AuraSphereDedicatedAnimEnd:
+	IF AuraSphereDedicatedAnimEnd - AuraSphereDedicatedAnimData > 30
+		fail "Aura Sphere animation recipe exceeds wBuffer"
+	ENDC
 
 SparkGoldDedicatedAnim:
 	db SparkGoldDedicatedAnimEnd - SparkGoldDedicatedAnimData

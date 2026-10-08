@@ -29,7 +29,7 @@ MoveNames::
 	db "Double Kick@"
 	db "Mega Kick@"
 	db "Jump Kick@"
-	db "Rolling Kick@"
+	db "Aura Sphere@"
 	db "Sand Attack@"
 	db "Headbutt@"
 	db "Horn Attack@"

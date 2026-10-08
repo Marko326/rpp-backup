@@ -180,3 +180,7 @@ RedSfxHeaderPointers:
 	; SP-5.62.33: Sucker Punch reuses existing Gen II Comet Punch / Karate Chop data.
 	dbw BANK(Sfx_CometPunch), Sfx_CometPunch
 	dbw BANK(Sfx_KarateChop), Sfx_KarateChop
+
+	; AUR-5.62.36: Aura Sphere charge/launch use existing Gen II SFX.
+	dbw BANK(Sfx_Outrage), Sfx_Outrage
+	dbw BANK(Sfx_MegaPunch), Sfx_MegaPunch

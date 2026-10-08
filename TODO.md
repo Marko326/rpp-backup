@@ -17,7 +17,7 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 单独交付该补丁的验收 TODO 和提交日志 → 用户确认并提交 → 再单独交付下一项功能。** **不得把上一项验收与下一项功能补丁打包交付。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**①～④：用户已测试，暂未发现明显问题；④ 多级技能优先度的源码逻辑复审未发现明确阻断问题，本次只收口验收记录，实际 Git 提交由用户自行完成；⑤～⑩均未移植，本次不处理新功能。**
+> 当前情况：**①～⑤：已移植，用户在已报告的测试范围内暂未发现明显问题；⑤ `AUR-5.62.36` 波导弹已完成本轮用户验收并准备提交日志，特殊伤害数值与升级学习表未实机验证（源码静态核对通过）；⑥～⑩未移植。**
 
 ### 动画类（Animation）
 
@@ -36,7 +36,7 @@ Status legend:
 
 ### 招式 / 数据类（Moves & data）
 
-- [ ] **⑤ `e630f377` — Rolling Kick → Aura Sphere**：未移植，包含招式定义、说明和动画；需要人工融合公共动画入口和招式数据。
+- [x] **⑤ `AUR-5.62.36` / `e630f377` — Rolling Kick → Aura Sphere（波导弹）**：源码已移植并完成本轮用户验收（2026-10-08），用户分别测试了我方/敌方使用、目标处于无敌状态时使用，以及动画结束后的画面残留，反馈**暂未发现明显问题**。招式沿用 `$1B` ID，威力80／格斗系／特殊／20 PP，使用 Swift 必中效果；Fly/Dig 无敌交互沿用当前战斗机制。特殊攻击的实机伤害数值、6处升级学习表及对高闪避目标的普通必中场景**未由用户实测**；对应招式数据、分类表和学习条目已静态核对，不将其写为运行通过。⑤提交日志已准备，正式 Git 提交由用户完成。
 
 ### 菜单 / UI 类（Menu & UI）
 
@@ -82,6 +82,10 @@ Status legend:
 ### User-tested — Priority / Battle logic
 
 - [x] PRI-5.62.35 — Move priority tiers imported independently from `ddddb20e`: +7 offset, ExtremeSpeed +2 > priority +1 moves > normal 0 > Counter -5. Same-tier Speed/tie logic unchanged; Roar/Whirlwind/Teleport/Bide keep priority 0 pending a full action/mechanics review. **User reports runtime testing without obvious problems (2026-10-08)**; individual edge cases are not separately certified. Source review found no definite blocking issue; Trainer AI item/switch decision timing remains a broader architectural limitation. ④ acceptance log prepared; no ROM build or Git commit by assistant.
+
+### User-tested — Moves / animation
+
+- [x] AUR-5.62.36 — Aura Sphere from `e630f377`; replaced Rolling Kick at ID $1B, Special Fighting 80 power, 20 PP, Swift-style hit effect, MoveDex, six level-up entries, and separate animation/SFX. **User reports having tested both sides using the move, use against an invulnerable target, and post-animation visual residue, with no obvious problems (2026-10-08).** Special damage output, level-up learnset in gameplay, and a high-evasion accuracy case were **not tested at runtime**; source data/classification/learnset entries were statically reviewed. ⑤ acceptance log prepared; no assistant ROM compilation or Git commit.
 
 ### Completed — Evolution / Items
 

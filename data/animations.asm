@@ -25,7 +25,7 @@ AttackAnimationPointers:
 	dw DoubleKickAnim
 	dw MegaKickAnim
 	dw JumpKickAnim
-	dw RollingKickAnim
+	dw AuraSphereAnim
 	dw SandAttackAnim
 	dw HeatButtAnim
 	dw HornAttackAnim
@@ -340,9 +340,11 @@ JumpKickAnim:
 	db $46,$19,$04
 	db $FF
 
-RollingKickAnim:
-	db SE_DARK_SCREEN_FLASH, $1A
-	db $46,$FF,$04
+AuraSphereAnim:
+	; AUR-5.62.36: real move use stages the dedicated Polished Crystal recipe by move ID.
+	; Keep a compact orb fallback for synthetic animation-ID callers.
+	db $44,$1B,$41
+	db $44,$1B,$42
 	db $FF
 
 SandAttackAnim:

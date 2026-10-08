@@ -371,3 +371,5 @@ const_value = 1
 	const GSSFX_THUNDER      ; HUR-5.62.32: Polished Crystal Hurricane loop SFX
 	const GSSFX_COMET_PUNCH  ; SP-5.62.33: Sucker Punch pass SFX
 	const GSSFX_KARATE_CHOP  ; SP-5.62.33: Sucker Punch impact SFX
+	const GSSFX_OUTRAGE      ; AUR-5.62.36: Aura Sphere charge SFX
+	const GSSFX_MEGA_PUNCH   ; AUR-5.62.36: Aura Sphere launch SFX

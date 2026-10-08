@@ -1512,6 +1512,7 @@ GetDamageFeedbackOverride:
 DamageFeedbackOverrides:
 	db SHADOW_BALL, 4, 1
 	db ENERGY_BALL, 4, 1 ; ANM-5.62.05: custom impact is followed by standard blink/vertical hit feedback.
+	db AURA_SPHERE, 4, 1 ; AUR-5.62.36: standard post-impact feedback
 	db GUNK_SHOT, 0, 1 ; ANM-5.62.10: keep player feedback; enemy hit shakes the player vertically.
 	db HURRICANE, 4, 1 ; HUR-5.62.32: avoid a redundant side-effect shake after the storm renderer.
 	db SPARK, 4, 1 ; ANM-5.61.72: Gold-style hit reaction, matching Shadow Ball.
@@ -3775,7 +3776,7 @@ MoveSoundTable:
 	db SFX_BATTLE_17,         $f0,$40 ; DOUBLE_KICK
 	db SFX_SUPER_EFFECTIVE,   $00,$80 ; MEGA_KICK
 	db SFX_BATTLE_17,         $00,$80 ; JUMP_KICK
-	db SFX_BATTLE_21,         $10,$80 ; ROLLING_KICK
+	db SFX_BATTLE_21,         $10,$80 ; AURA_SPHERE (legacy profile only)
 	db SFX_BATTLE_1B,         $01,$a0 ; SAND_ATTACK
 	db SFX_BATTLE_18,         $00,$80 ; HEADBUTT
 	db SFX_BATTLE_1E,         $00,$60 ; HORN_ATTACK

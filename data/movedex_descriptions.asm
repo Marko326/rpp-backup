@@ -40,7 +40,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescDoubleKickPages ; DOUBLE_KICK
 	movedex_desc_ptr MoveDexDescMegaKickPages ; MEGA_KICK
 	movedex_desc_ptr MoveDexDescJumpKickPages ; JUMP_KICK
-	movedex_desc_ptr MoveDexDescRollingKickPages ; ROLLING_KICK
+	movedex_desc_ptr MoveDexDescAuraSpherePages ; AURA_SPHERE
 	movedex_desc_ptr MoveDexDescSandAttackPages ; SAND_ATTACK
 	movedex_desc_ptr MoveDexDescHeadbuttPages ; HEADBUTT
 	movedex_desc_ptr MoveDexDescHornAttackPages ; HORN_ATTACK
@@ -476,12 +476,12 @@ MoveDexDescJumpKick1:
 	db   "Leaps up to land"
 	next "a jumping kick.@"
 
-; #027 Rolling Kick
-MoveDexDescRollingKickPages:
-	dw MoveDexDescRollingKick1, MoveDexDescEffectFlinch30, 0
-MoveDexDescRollingKick1:
-	db   "Rolls into the foe"
-	next "with a hard kick.@"
+; #027 Aura Sphere
+MoveDexDescAuraSpherePages:
+	dw MoveDexDescAuraSphere1, MoveDexDescEffectBSwift, 0
+MoveDexDescAuraSphere1:
+	db   "Fires a sphere of"
+	next "aura at the foe.@"
 
 ; #028 Sand-Attack
 MoveDexDescSandAttackPages:
