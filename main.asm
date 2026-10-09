@@ -3093,3 +3093,13 @@ GoldIconJellyfish:
 	INCBIN "gfx/party_icon_imports/jellyfish_gs.2bpp"
 GoldIconFighter:
 	INCBIN "gfx/party_icon_imports/fighter_gs.2bpp"
+
+; ICO-5.62.61: refined shell/caterpillar/moth/blob Gold menu icons.
+GoldIconShell:
+	INCBIN "gfx/party_icon_imports/shell_gs.2bpp"
+GoldIconCaterpillar:
+	INCBIN "gfx/party_icon_imports/caterpillar_gs.2bpp"
+GoldIconMoth:
+	INCBIN "gfx/party_icon_imports/moth_gs.2bpp"
+GoldIconBlob:
+	INCBIN "gfx/party_icon_imports/blob_gs.2bpp"

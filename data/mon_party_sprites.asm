@@ -5,9 +5,9 @@ MonPartyData:
 	db SPRITE_BULBASAUR_GS   , SPRITE_CHARMANDER_GS    ;Venusaur/Charmander
 	db SPRITE_CHARMANDER_GS  , SPRITE_BIGMON_GS        ;Charmeleon/Charizard
 	db SPRITE_SQUIRTLE_GS    , SPRITE_SQUIRTLE_GS      ;Squirtle/Wartortle
-	db SPRITE_SQUIRTLE_GS    , SPRITE_BUG              ;Blastoise/Caterpie
-	db SPRITE_BUG            , SPRITE_BUG              ;Metapod/Butterfree
-	db SPRITE_BUG            , SPRITE_BUG              ;Weedle/Kakuna
+	db SPRITE_SQUIRTLE_GS    , SPRITE_CATERPILLAR_GS   ;Blastoise/Caterpie
+	db SPRITE_CATERPILLAR_GS , SPRITE_MOTH_GS          ;Metapod/Butterfree
+	db SPRITE_CATERPILLAR_GS , SPRITE_CATERPILLAR_GS   ;Weedle/Kakuna
 	db SPRITE_BUG            , SPRITE_BIRD_M           ;Beedrill/Pidgey
 	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Pidgeotto/Pidgeot
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Rattata/Raticate
@@ -24,8 +24,8 @@ MonPartyData:
 	db SPRITE_BAT_GS         , SPRITE_BAT_GS           ;Zubat/Golbat
 	db SPRITE_GRASS          , SPRITE_GRASS            ;Oddish/Gloom
 	db SPRITE_GRASS          , SPRITE_BUG              ;Vileplume/Paras
-	db SPRITE_BUG            , SPRITE_BUG              ;Parasect/Venonat
-	db SPRITE_BUG            , SPRITE_DIGLETT_GS       ;Venomoth/Diglett
+	db SPRITE_BUG            , SPRITE_CATERPILLAR_GS   ;Parasect/Venonat
+	db SPRITE_MOTH_GS        , SPRITE_DIGLETT_GS       ;Venomoth/Diglett
 	db SPRITE_DIGLETT_GS     , SPRITE_MON              ;Dugtrio/Meowth
 	db SPRITE_MON            , SPRITE_MON              ;Persian/Psyduck
 	db SPRITE_MON            , SPRITE_FIGHTER_GS       ;Golduck/Mankey
@@ -44,9 +44,9 @@ MonPartyData:
 	db SPRITE_BALL_M         , SPRITE_BALL_M           ;Magnemite/Magneton
 	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Farfetch'd/Doduo
 	db SPRITE_BIRD_M         , SPRITE_WATER            ;Dodrio/Seel
-	db SPRITE_WATER          , SPRITE_MON              ;Dewgong/Grimer
-	db SPRITE_MON            , SPRITE_HELIX            ;Muk/Shellder
-	db SPRITE_HELIX          , SPRITE_GHOST_GS         ;Cloyster/Gastly
+	db SPRITE_WATER          , SPRITE_BLOB_GS          ;Dewgong/Grimer
+	db SPRITE_BLOB_GS        , SPRITE_SHELL_GS         ;Muk/Shellder
+	db SPRITE_SHELL_GS       , SPRITE_GHOST_GS         ;Cloyster/Gastly
 	db SPRITE_GHOST_GS       , SPRITE_GHOST_GS         ;Haunter/Gengar
 	db SPRITE_SNAKE          , SPRITE_MON              ;Onix/Drowzee
 	db SPRITE_MON            , SPRITE_WATER            ;Hypno/Krabby
@@ -55,7 +55,7 @@ MonPartyData:
 	db SPRITE_GRASS          , SPRITE_MON              ;Exeggutor/Cubone
 	db SPRITE_MON            , SPRITE_FIGHTER_GS       ;Marowak/Hitmonlee
 	db SPRITE_FIGHTER_GS     , SPRITE_MON              ;Hitmonchan/Lickitung
-	db SPRITE_MON            , SPRITE_MON              ;Koffing/Weezing
+	db SPRITE_BLOB_GS        , SPRITE_BLOB_GS          ;Koffing/Weezing
 	db SPRITE_QUADRUPED      , SPRITE_MON              ;Rhyhorn/Rhydon
 	db SPRITE_FAIRY          , SPRITE_GRASS            ;Chansey/Tangela
 	db SPRITE_MON            , SPRITE_WATER            ;Kangaskhan/Horsea
@@ -66,7 +66,7 @@ MonPartyData:
 	db SPRITE_MON            , SPRITE_MON              ;Electabuzz/Magmar
 	db SPRITE_BUG            , SPRITE_QUADRUPED        ;Pinsir/Tauros
 	db SPRITE_WATER          , SPRITE_GYARADOS_GS      ;Magikarp/Gyarados
-	db SPRITE_LAPRAS_GS      , SPRITE_MON              ;Lapras/Ditto
+	db SPRITE_LAPRAS_GS      , SPRITE_BLOB_GS          ;Lapras/Ditto
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Eevee/Vaporeon
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Jolteon/Flareon
 	db SPRITE_MON            , SPRITE_HELIX            ;Porygon/Omanyte
