@@ -41,13 +41,15 @@ Status legend:
 
 ### 菜单 / UI 类（Menu & UI）
 
+- [x] **`ICO-5.62.58` — 第二批金版队伍小图标：洛奇亚／凤王（用户测试后收口）**：沿用 `ICO-5.62.57` 已验收的动态加载引擎，为 Lugia、Ho-Oh 各增加 1 类图标（`$0E`、`$0F`），使现有图标从 14 类增至 **16 类**；使用金版原始 16×32 双帧 PNG、跨 Bank 素材指针，仅改变洛奇亚与凤王两只的图标映射。其他物种、原 14 类、无白闪的普通／SELECT 换位引擎均保持不变；两张新素材以非镜像四图块显示。**用户实测反馈**：“测过了，没什么问题”，据此完成本轮验收；反馈未逐项列出独立动画、混搭队伍、普通／快捷换位、摘要返回、命名／通信交换和黄／红 HP 帧速的逐项结果，不能写为这些边界全部分别通过。**验收清理仅更新 `TODO.md`**，不修改引擎、映射、PNG、ROM Bank 或游戏版本（仍为 `ICO-5.62.58`）；AI 不编译 ROM、不执行 Git 提交。
+
 - [x] **`ICO-5.62.57` — 动态图标引擎换位白闪修复（用户复测收口）**：在 `ICO-5.62.56` 实机测试中，普通换位和 SELECT 快捷换位均出现旧版 `5.62.55` 没有的短暂白闪；原因为换位后重载队伍图标时关闭 LCD。最终 `5.62.57` 在换位时只交换六项“队伍位置 → VRAM 原图块槽位”的 WRAM 映射，OAM 通过映射选图，取消这两条换位路径上的 LCD 关闭与重复 VRAM 加载；首次进菜单／摘要返回仍沿原入口正确刷新图块及映射。**用户已对修复补丁复测并反馈“没问题”，本轮据此收口**；没有逐场景视频或子项测量，不将所有极端边界写成分别通过。验收清理仅改 `TODO.md`，保持 `ICO-5.62.57` 游戏版本、源码与素材不变，AI 未编译 ROM 或执行 Git 提交。
 
 - [x] **`ICO-5.62.56` — 队伍小图标按成员动态加载框架（已并入 `ICO-5.62.57` 验收）**：借鉴 Yellow Legacy 的按队伍成员加载机制，以每物种 1 字节图标类别映射和 ROM 内 3 字节跨 Bank 素材指针替代固定 4-bit 类别槽位；队伍最多六只，每只两帧共 8 Tile，按队伍位置加载到 VRAM，而非预载所有类别。保留原 14 类与全部物种映射、双帧外观以及精灵球／螺旋特殊抖动、黄版皮卡丘绘制；原始 PNG 不改，只新增运行图集和交换圆圈素材。用户表示已测试此前要求的五组主要场景，`5.62.56` 唯一明确报告的回归是普通／快捷换位白闪，已在 `5.62.57` 修复并获复测反馈；**最终采用 `5.62.57`，不单独验收含闪白的 `5.62.56`**。当前仍只含 14 类，约 28～30 类是后续逐批规划，并非本轮已实现。
 
 - [x] **`ICO-5.62.55` — 第一批4类队伍小图标融合（本轮用户测试后收口）**：以 `VTC-5.62.51` 为功能基线，`ICO-5.62.53` 首次导入4类、覆盖13只宝可梦：黄版 Pikachu（Pikachu／Raichu／Pichu）、金银 Staryu（Staryu／Starmie）、Ghost（Gastly／Haunter／Gengar／Misdreavus／Mismagius）、Bat（Zubat／Golbat／Crobat）；保留原10类及其余物种映射，总计14类，仍在4-bit类别上限内。沿用既有HP切帧速度，四类图标均加载16×16双帧（每帧4 Tile），继续使用现有VRAM布局空位；原10类及导入素材安置于 Bank `$38` 以缓解 Bank `$1C` 空间压力。**最终修正**：`ICO-5.62.55` 恢复皮卡丘家族按黄版原始方式水平镜像左侧图块，身体与尾巴在两帧中一同变化；Staryu／Ghost／Bat 和既有 Helix 继续采用非对称四图块绘制。`ICO-5.62.54` 的仅微调第二帧图案方案已被55版取代，**不是正式验收版本**。**已确认范围**：用户此前反馈另三类图标已测试、未见明显异常；皮卡丘家族最初有踏步感，后提供黄版和55版运行录像，对照后两帧轮廓与切换节奏相符，本轮决定收口。**未逐项报告**：红血／黄血各档速度、命名、交换、混搭队伍全部排列、连续进入／返回及残留等场景，不能写成全部实测通过。本次验收仅修改 `TODO.md`，不再改图像、OAM逻辑、Bank布局或游戏版本号（仍为 `ICO-5.62.55`）；AI未编译ROM或执行Git提交。
 
-- [?] **后续队伍小图标选择（未定案，非本次功能）**：`ICO-5.62.57` 已用动态按队伍加载和 1 字节类别 ID 替换旧 4-bit／最多16类的固定图块机制，后续可按需扩展到计划中约 28～30 类，但必须逐批检查新增素材、ROM Bank 空间、指针表／类别映射及菜单、交换相关入口；**不是已新增 28～30 类或已验证全部容量**。洛奇亚、凤王、御三家等仍为候选，名单须单独确认；不计划给 RPP 全部 208 只宝可梦逐一移植独立图标。此前提过的“剩余2个固定类别名额”已不适用于当前引擎。已验收皮卡丘 PNG 的右半边与运行镜像成图不一致属于后续素材规范化任务，不混入本次框架验收。
+- [?] **后续队伍小图标选择（未定案，非本次功能）**：`ICO-5.62.57` 已用动态按队伍加载和 1 字节类别 ID 替换旧 4-bit／最多16类的固定图块机制，后续可按需扩展到计划中约 28～30 类，但必须逐批检查新增素材、ROM Bank 空间、指针表／类别映射及菜单、交换相关入口；**不是已新增 28～30 类或已验证全部容量**。洛奇亚／凤王已在 `ICO-5.62.58` 导入并按本轮用户反馈收口，当前共 16 类；御三家等后续名单尚未确定；不计划给 RPP 全部 208 只宝可梦逐一移植独立图标。此前提过的“剩余2个固定类别名额”已不适用于当前引擎。已验收皮卡丘 PNG 的右半边与运行镜像成图不一致属于后续素材规范化任务，不混入本次框架验收。
 
 - [~] **`MENU-5.62.31` 菜单显示与返回流程**：源码已记录完成与静态检查；原 TODO 中仍有运行验证事项，不能因暴风通过而自动关闭。
 - [ ] **PP 道具招式列表显示 `当前PP/最大PP`**：原 TODO 明确列为后续任务，暂不改。
@@ -112,6 +114,10 @@ Status legend:
 ### User-tested — Volt Tackle animation / dynamic impact center
 
 - [x] VTC-5.62.51 — ⑩ Volt Tackle animation from `c0cf8a93` plus three-size target center, first sweep from user center, middle three screen-wide alternate sweeps, and fifth sweep ending at the target center. User supplied runtime videos of both actor directions and a 51-versus-52 comparison; 52 only increased dwell by six frames (~0.1 s), with little visible gain, and user reports reverting it. **51 is the selected acceptance baseline; 52 is not included.** No new ROM build or Git commit by the assistant. Low-HP hit SFX conflict remains a separate unresolved issue, possibly cross-move; not every size/form/recoil or audio edge case has an individual pass result.
+
+### User-tested — Gold legendary Party icon imports (second batch)
+
+- [x] ICO-5.62.58 — imported separate Gold two-frame Party icons for Lugia and Ho-Oh, extending the existing dynamic-load icon table from 14 to 16 classes. Only these two species mappings changed; existing atlas, Pikachu/Gold icon assets and the 5.62.57 swap-no-flash engine remained unchanged. After applying and testing 5.62.58, the user reported “测过了，没什么问题” (tested; no obvious issues), so this batch is closed on that feedback. Individual pass reports were not supplied for both animations, party mixes, ordinary/SELECT swaps, summary returns, naming/trade or yellow/red HP animation speeds; do not imply independent full coverage. The acceptance cleanup changes **TODO.md only**, keeps game version `ICO-5.62.58`, and involves no assistant ROM build or Git commit. Later optional icon batches and PNG normalization remain separate.
 
 ### User-tested — Dynamic Party icon engine and swap regression
 

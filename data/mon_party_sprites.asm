@@ -76,7 +76,7 @@ MonPartyData:
 	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Zapdos/Moltres
 	db SPRITE_SNAKE, SPRITE_SNAKE           ;Dratini/Dragonair
 	db SPRITE_SNAKE, SPRITE_MON             ;Dragonite/Mewtwo
-	db SPRITE_MON, SPRITE_BIRD_M            ;Mew/Lugia
+	db SPRITE_MON, SPRITE_LUGIA_GS          ;Mew/Lugia
 	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Houndour/Houndoom
 	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Murkrow/Honchkrow
 	db SPRITE_BUG, SPRITE_QUADRUPED         ;Heracross/Espeon
@@ -104,7 +104,7 @@ MonPartyData:
 	db SPRITE_MON, SPRITE_MON               ;Elekid/Magby
 	db SPRITE_MON, SPRITE_FAIRY             ;Mime Jr/Happiny
 	db SPRITE_MON, SPRITE_QUADRUPED         ;Munchlax/Zigzagoon
-	db SPRITE_QUADRUPED, SPRITE_BIRD_M      ;Linoone/Ho-oh
+	db SPRITE_QUADRUPED, SPRITE_HO_OH_GS      ;Linoone/Ho-oh
 
 MonPartyDataEnd:
 IF MonPartyDataEnd - MonPartyData != 208

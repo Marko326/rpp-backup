@@ -267,9 +267,14 @@ PartyIconSourcePointers:
 	db BANK(PartyIconRuntimeAtlas)
 	dw PartyIconRuntimeAtlas + $680 ; 13 BAT_GS
 	db BANK(PartyIconRuntimeAtlas)
+	; ICO-5.62.58: Gen II legendary icons use full, asymmetric frames.
+	dw LugiaGoldPartyIcon          ; 14 LUGIA_GS
+	db BANK(LugiaGoldPartyIcon)
+	dw HoOhGoldPartyIcon           ; 15 HO_OH_GS
+	db BANK(HoOhGoldPartyIcon)
 PartyIconSourcePointersEnd:
 PARTY_ICON_CLASS_COUNT EQU (PartyIconSourcePointersEnd - PartyIconSourcePointers) / 3
-IF PARTY_ICON_CLASS_COUNT < SPRITE_BAT_GS + 1
+IF PARTY_ICON_CLASS_COUNT < SPRITE_HO_OH_GS + 1
 	fail "Party icon source table is missing a shipped class"
 ENDC
 

@@ -3054,3 +3054,10 @@ PartyIconRuntimeAtlas:
 ; Stock trade circle/oval animation uses sprite tiles $38-$3b and $78-$7b.
 PartyIconTradeCircleGfx:
 	INCBIN "gfx/party_icon_imports/trade_circle_runtime.2bpp"
+
+; ICO-5.62.58: Gold's two-frame Lugia and Ho-Oh party icons. Their complete
+; left/right halves remain unmirrored; loader selects by banked source ID.
+LugiaGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/lugia_gs.2bpp"
+HoOhGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/ho_oh_gs.2bpp"
