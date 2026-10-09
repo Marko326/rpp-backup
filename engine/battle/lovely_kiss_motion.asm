@@ -1,18 +1,13 @@
-; ANIM-5.62.75: Lovely Kiss's nine authored FrameBlock anchors stay intact.
-; The nine entries each use six existing DelayFrame waits; the regular OAM
-; cleanup/next-frame redraw supplies the remaining interval between anchors.
-; For each wait, X advances by 2px (or -2px when screen-flipped). Y uses a
-; fixed signed six-step lookup table; it is NOT runtime cubic interpolation.
-; At the next keyframe, the original base coordinate is redrawn exactly,
-; so the per-keyframe Y difference can include a final correction of up to
-; 3px. This is a step-table approximation, not zero-velocity Hermite motion.
-;
-; This is the base motion stage only; later tempo and wave refinements have
-; not been merged. Ordinary LOVELY_KISS + Subanimation $12 + mode-0 only;
-; other users of shared $12 keep the original animation and audio path.
-; Nine authored draw/cleanup points and the original delay-6 timing stay.
-; The final drawn heart continues at +/-3px X and +/-1px Y per frame.
-; No extra WRAM or changes to battle move attributes / damage processing.
+; Lovely Kiss-only OAM tempo pass: keep the nine authored FrameBlock
+; anchors, shared Subanimation $12, and the same six waits per entry.
+; Each entry now uses six signed (Y,X) delta pairs, not runtime physics or
+; continuous Hermite interpolation. The horizontal pace changes by entry;
+; the equal-height upper anchors gain a shallow 3px vertical micro-arc.
+; The next FrameBlock redraws its authored anchor exactly: any final X/Y
+; correction (up to 3px in these eight intervals) remains a visible risk.
+; The last entry still moves +/-3px X and +/-1px Y per wait to exit.
+; No new WRAM, timing frames, SFX, battle properties or shared-$12 edits.
+; This tempo pass is not the subsequent near/far wave visual finalization.
 PlayLovelyKissCurvedMotion::
 	ld a,[wSubAnimCounter]
 	cp 1
@@ -24,60 +19,43 @@ PlayLovelyKissCurvedMotion::
 	sub e                            ; 0..8 in playback order
 	ld e,a
 	add a
-	add e                            ; three times the entry index
-	add a                            ; six signed Y steps per entry
+	add e                            ; 3 times the entry index
+	add a
+	add a                            ; 12 bytes per entry
 	ld e,a
 	ld d,0
-	ld hl,.ySteps
+	ld hl,.steps
 	add hl,de
 
-	; For this authored $69 Subanimation the player uses transform 0,
-	; the enemy uses transform 3. Also honor the other screen X flips.
-	ld e,2
-	ld a,[wSubAnimTransform]
-	cp 1
-	jr z,.reverseX
-	cp 2
-	jr z,.reverseX
-	cp 3
-	jr nz,.xReady
-.reverseX:
-	ld e,-2
-.xReady:
-	ld a,[wSubAnimCounter]
-	cp 1
-	jr nz,.move
-	; A slightly faster continuation of the last leg (not an abrupt stop).
-	ld a,e
-	bit 7,a
-	jr nz,.exitLeft
-	ld e,3
-	jr .move
-.exitLeft:
-	ld e,-3
-.move:
 	ld b,6
 .frame:
 	push bc
-	push de
 	push hl
 	call DelayFrame
 	pop hl
-	pop de
 	pop bc
 	ld a,[hli]
-	ld d,a                           ; signed curved Y displacement
+	ld d,a                           ; signed wave Y displacement
+	ld a,[hli]
+	ld e,a                           ; re-timed X (always positive before flip)
 	ld a,[wSubAnimTransform]
 	cp 1
-	jr z,.reverseY
+	jr z,.reverseBoth
 	cp 3
-	jr nz,.readyY
-.reverseY:
+	jr z,.reverseBoth
+	cp 2
+	jr z,.reverseX
+	jr .ready
+.reverseBoth:
 	xor a
 	sub d
 	ld d,a
-.readyY:
-	; Translate the four tiles of the already drawn heart in OAM.
+.reverseX:
+	xor a
+	sub e
+	ld e,a
+.ready:
+	; Modify the tiles of the currently displayed heart in OAM only.
 	push hl
 	ld a,[wFBDestAddr + 1]
 	ld l,a
@@ -88,11 +66,11 @@ PlayLovelyKissCurvedMotion::
 .tile:
 	ld a,[hl]
 	add d
-	ld [hli],a                     ; Y
+	ld [hli],a                    ; Y
 	ld a,[hl]
 	add e
-	ld [hli],a                     ; X
-	inc hl                           ; tile and attributes stay unchanged
+	ld [hli],a                    ; X
+	inc hl                          ; tile and attributes unchanged
 	inc hl
 	dec c
 	jr nz,.tile
@@ -106,13 +84,13 @@ PlayLovelyKissCurvedMotion::
 	ld c,a
 	jp DelayFrames
 
-.ySteps:
-	db  -3, -4, -3, -3, -4, -2 ; key 1: Y 88 -> 66
-	db  -2, -2, -2, -2, -1, -1 ; key 2: Y 66 -> 56
-	db   0,  1,  1,  2,  1,  2 ; key 3: Y 56 -> 64
-	db   1,  2,  1,  2,  1,  1 ; key 4: Y 64 -> 72
-	db   0, -1, -1, -2, -2, -2 ; key 5: Y 72 -> 62
-	db  -3, -4, -4, -4, -4, -2 ; key 6: Y 62 -> 40
-	db   0,  0,  0,  0,  0,  0 ; key 7: Y 40 -> 40
-	db   0,  1,  1,  2,  1,  2 ; key 8: Y 40 -> 48
-	db   1,  1,  1,  1,  1,  1 ; key 9: follow outgoing velocity; exit OAM edge
+.steps:
+	db -5,  3, -3,  2, -4,  2, -3,  2, -3,  2, -3,  2 ; key 1: Y 88 -> 66
+	db -1,  1, -2,  2, -2,  2, -3,  3, -1,  3, -1,  2 ; key 2: Y 66 -> 56
+	db  0,  1,  1,  2,  1,  2,  1,  2,  1,  2,  2,  2 ; key 3: Y 56 -> 64
+	db  2,  3,  2,  2,  1,  2,  1,  2,  1,  2,  1,  2 ; key 4: Y 64 -> 72
+	db  0,  1, -1,  2, -1,  2, -1,  2, -2,  2, -2,  2 ; key 5: Y 72 -> 62
+	db -4,  2, -4,  2, -4,  2, -3,  2, -3,  2, -2,  2 ; key 6: Y 62 -> 40
+	db -1,  2, -1,  2, -1,  3,  0,  2,  1,  2,  1,  1 ; key 7: Y 40 -> 40; shallow upper arc
+	db  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2 ; key 8: Y 40 -> 48
+	db  1,  3,  1,  3,  1,  3,  1,  3,  1,  3,  1,  3 ; key 9: exit +3 X, +1 Y per VBlank
