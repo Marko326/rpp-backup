@@ -3083,3 +3083,13 @@ GoldIconGeodude:
 	INCBIN "gfx/party_icon_imports/geodude_gs.2bpp"
 GoldIconPoliwag:
 	INCBIN "gfx/party_icon_imports/poliwag_gs.2bpp"
+
+; ICO-5.62.60: four original Gold 16x32 two-frame menu-icon templates.
+GoldIconJigglypuff:
+	INCBIN "gfx/party_icon_imports/jigglypuff_gs.2bpp"
+GoldIconDiglett:
+	INCBIN "gfx/party_icon_imports/diglett_gs.2bpp"
+GoldIconJellyfish:
+	INCBIN "gfx/party_icon_imports/jellyfish_gs.2bpp"
+GoldIconFighter:
+	INCBIN "gfx/party_icon_imports/fighter_gs.2bpp"

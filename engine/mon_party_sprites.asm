@@ -294,9 +294,19 @@ PartyIconSourcePointers:
 	db BANK(GoldIconGeodude)
 	dw GoldIconPoliwag               ; 25 POLIWAG_GS
 	db BANK(GoldIconPoliwag)
+
+	; ICO-5.62.60: distinct Gold menu icons, 16x32 double frame.
+	dw GoldIconJigglypuff           ; 26 JIGGLYPUFF_GS
+	db BANK(GoldIconJigglypuff)
+	dw GoldIconDiglett              ; 27 DIGLETT_GS
+	db BANK(GoldIconDiglett)
+	dw GoldIconJellyfish            ; 28 JELLYFISH_GS
+	db BANK(GoldIconJellyfish)
+	dw GoldIconFighter              ; 29 FIGHTER_GS
+	db BANK(GoldIconFighter)
 PartyIconSourcePointersEnd:
 PARTY_ICON_CLASS_COUNT EQU (PartyIconSourcePointersEnd - PartyIconSourcePointers) / 3
-IF PARTY_ICON_CLASS_COUNT != SPRITE_POLIWAG_GS + 1
+IF PARTY_ICON_CLASS_COUNT != SPRITE_FIGHTER_GS + 1
 	fail "Party icon source table is missing a shipped class"
 ENDC
 
