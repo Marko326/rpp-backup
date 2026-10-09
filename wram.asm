@@ -3721,6 +3721,10 @@ wEXPBarCurEXP::       ds 3
 wEXPBarNeededEXP::    ds 3
 wEXPBarKeepFullFlag:: ds 1
 
+; ICO-5.62.57: six loaded Party icon VRAM slots follow members across swaps.
+; Stored beyond wBoxDataEnd so save/box structure sizes do not change.
+wPartyIconSlotMap:: ds PARTY_LENGTH
+
 
 SECTION "Stack", WRAMX[$df00], BANK[1]
 	ds $ff

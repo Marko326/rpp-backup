@@ -408,6 +408,9 @@ Trade_ShowEnemyMon:
 
 Trade_AnimLeftToRight:
 ; Animates the mon moving from the left GB to the right one.
+	; ICO-5.62.56: the single-icon loader now needs the species before init.
+	ld a, [wLeftGBMonSpecies]
+	ld [wcf91], a
 	call Trade_InitGameboyTransferGfx_ColorHook
 	ld a, $1
 	ld [wTradedMonMovingRight], a
@@ -442,6 +445,8 @@ Trade_AnimLeftToRight:
 
 Trade_AnimRightToLeft:
 ; Animates the mon moving from the right GB to the left one.
+	ld a, [wRightGBMonSpecies]
+	ld [wcf91], a
 	call Trade_InitGameboyTransferGfx_ColorHook
 	xor a
 	ld [wTradedMonMovingRight], a

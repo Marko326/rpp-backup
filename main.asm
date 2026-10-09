@@ -3045,16 +3045,12 @@ INCLUDE "engine/battle/substitute_multihit_helpers.asm"
 SECTION "Ruby-style Volt Tackle Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/volt_tackle_animation.asm"
 
-; ICO-5.62.53: preserve Gen I party icons and import Yellow/Gold templates.
-; Move graphics out of packed Bank $1C; copy records use BANK(label).
+; ICO-5.62.56: runtime-normalized 16x32 party icons, one ROM entry per
+; icon template. VRAM holds only the current six party slots, not the atlas.
+; Original source PNGs are retained unchanged for future asset curation.
 SECTION "Menu Party Icon Graphics", ROMX, BANK[$38]
-MonPartySprites:
-	INCBIN "gfx/mon_ow_sprites.2bpp"
-PikachuYellowPartyIcon:
-	INCBIN "gfx/party_icon_imports/pikachu_yellow.2bpp"
-StaryuGoldPartyIcon:
-	INCBIN "gfx/party_icon_imports/staryu_gs.2bpp"
-GhostGoldPartyIcon:
-	INCBIN "gfx/party_icon_imports/ghost_gs.2bpp"
-BatGoldPartyIcon:
-	INCBIN "gfx/party_icon_imports/bat_gs.2bpp"
+PartyIconRuntimeAtlas:
+	INCBIN "gfx/party_icon_imports/dynamic_runtime_atlas.2bpp"
+; Stock trade circle/oval animation uses sprite tiles $38-$3b and $78-$7b.
+PartyIconTradeCircleGfx:
+	INCBIN "gfx/party_icon_imports/trade_circle_runtime.2bpp"

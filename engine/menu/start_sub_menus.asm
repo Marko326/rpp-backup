@@ -810,6 +810,9 @@ SwitchPartyMon:
 	call SwitchPartyMon_ClearGfx
 	ld a, [wCurrentMenuItem]
 	call SwitchPartyMon_ClearGfx
+	; Swap only the slot-to-tile mapping: the two icons are already in VRAM.
+	; Avoid disabling LCD during normal and SELECT party swaps.
+	callba SwapPartyIconSlots
 	jp RedrawPartyMenu_
 
 SwitchPartyMon_ClearGfx:

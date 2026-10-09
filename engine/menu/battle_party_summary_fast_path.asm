@@ -63,6 +63,10 @@ Summary_BattlePartyRestoreCommonTilesAndEnableLCD::
 	cp SUMMARY_PARTY_CALLER_BATTLE
 	jr nz, .enableLCD
 	call LoadHpBarAndStatusTilePatterns
+	; ICO-5.62.56: Summary may replace OBJ tiles. Restore each party
+	; slot's icon while LCD is off before the fast Party redraw.
+	callba LoadMonPartySpriteGfxLCDOff
+	ret ; the shared icon loader has already re-enabled the LCD
 .enableLCD
 	jp EnableLCD
 
