@@ -154,6 +154,12 @@ PlayExtendedOrbProjectile:
 	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
 	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
+	cp VOLT_TACKLE
+	jr nz,.notVoltTackle
+	; VTA-5.62.43: Ruby-inspired Volt Tackle timeline lives in bank $3E.
+	callba PlayRubyVoltTackleAnimation
+	ret
+.notVoltTackle
 	cp BULLET_PUNCH
 	jp z,SetHorizontalHitFeedback
 	cp SUCKER_PUNCH

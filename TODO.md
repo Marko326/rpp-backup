@@ -17,14 +17,14 @@ Status legend:
 >
 > **固定流程：一次只处理一条补丁 → 静态审查 → 用户运行测试 → 单独交付该补丁的验收 TODO 和提交日志 → 用户确认并提交 → 再单独交付下一项功能。** **不得把上一项验收与下一项功能补丁打包交付。** 分类用于查找，合并仍按①～⑩执行，不能按分类随意调整依赖顺序。
 >
-> 当前情况：**①～⑨已根据用户反馈完成本轮验收；⑨ `SUB-5.62.42` 替身／多段攻击及反伤时序已由用户运行测试，暂未反馈明显异常，未提供每一项边界场景的逐项结果；⑩ Volt Tackle 专属动画仍未移植。⑦ `BSE-5.62.38` 缩小 +2 回避保持不变，Stomp / Body Slam 对缩小的反制是后续独立专项，不在下一项⑩内实现。⑧ `RCL-5.62.41` 已补记验收，双方闪焰冲锋烧伤曾触发，但伏特攻击麻痹、反伤比例及少见边界未获完整逐项实测记录；Bank `$34` → `$3E` 的 Red Bedroom PC 区段迁移仍保留。⑤特殊伤害数值与升级学习表未实测（源码已核对）。⑨正式日志已准备，实际 Git 提交由用户自行完成。**
+> 当前情况：**①～⑩已依照用户反馈完成本轮移植与验收；⑩最终保留 `VTC-5.62.51`（原始移植 `c0cf8a93`，从 `SUB-5.62.42` 进入伏特攻击动画专项），保留5×5／6×6／7×7动态目标中心、第一道中心释放、中间三道全屏横扫、第五道中心收束以及双方镜像高度。用户提供51版与52版对比视频，认为延长首尾停顿改善不明显，明确选择51版并确认已撤销52版；52版仅是临时对照，不纳入正式版本或本次补丁。⑦缩小 +2 回避仍保持，Stomp／Body Slam 反制另列长期待办；⑧电推麻痹概率等少见边界未逐项确认；⑤部分数据项目仍只有静态核对。低血量 `Danger` 报警后最后命中音效异常已由用户指出，可能影响多个技能，保留后续公共音效专项，本次不修复。此次仅更新 TODO 和准备提交日志，不改动画代码／版本、不编译 ROM；Git 提交由用户自行完成。**
 
 ### 动画类（Animation）
 
 - [x] **① `HUR-5.62.32` / `32b5022c` — Hurricane（暴风）**：独立风柱、持续风线、Thunder 音效、双向演出和受击反馈已移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08）。尚无逐项测试清单，不把各测试场景写成分别通过；以后若复现异常再重开。
 - [x] **② `SP-5.62.33` / `2c3b12a8` — Sucker Punch 专属动画与 Dark 命中配色**：仅动画、音效与配色的独立移植；**用户反馈已运行测试，暂未发现明显问题**（2026-10-08），未提供逐场景测试清单，不推定各项均独立通过。② 提交日志已准备；是否完成 Git 提交，以用户自己的仓库为准。现代失败判定仍属于③。
 - [x] **⑥ `SW-5.62.37` / `75ac4ff2` — Steel Wing（金属翼）金银版动画**：已单独移植并完成本轮用户验收（2026-10-08）。复用 Iron Tail 的 Gold/Crystal Metallic 开场，跳过铁尾 Wobble/HIT_BIG 后半段，恢复场景后接 Wing Attack 的三组 closing pairs；使用钢系配色。增加敌方出招后的竖震反馈及 BG0 顶行预清理；保留原铁尾、翅膀攻击及招式数据。**用户反馈三组建议场景均已测试、暂未发现异常**：我方金属翼演出，敌方金属翼受击竖震与顶部残影，连续使用金属翼／铁尾／翅膀攻击后的画面恢复；未提供额外的逐帧或全部边界条件验证，不扩大实测结论。⑥提交日志已准备，正式 Git 提交由用户完成。
-- [ ] **⑩ `c0cf8a93` — Volt Tackle 五道电流及受击反馈**：未移植；最后处理共享动画/音效入口，低血量音效遗留问题需另行核查。
+- [x] **⑩ `VTC-5.62.51` / `c0cf8a93` — Volt Tackle 五道电流、三档动态中心及受击反馈**：在⑨ `SUB-5.62.42` 之上独立移植伏特攻击专属动画。复用 Spark 的 Thunder Wave 充电演出及 Quick Attack 速度线消失，接5道电流（每道8姿态、通常每姿态2帧）：**第一道由施放者中心向外扫出；第二～四道保持全屏交替横扫；第五道收束在对方中心**，随后显示电击爆发与受击反馈并恢复宝可梦。敌方前图按5×5／6×6／7×7尺寸选择几何中心，电流五道高度依次在88～52／88～48／88～44之间均匀分布，双方用同一高度组正序／倒序、X方向镜像；5×5／6×6／7×7的敌方中心分别为OAM `(132,52)`／`(136,48)`／`(132,44)`，我方后图使用 `(48,88)`。**用户已提供51版双方演出视频并核对起点、全屏扫线、末端收束；与52版视频比较后认为额外首尾停留效果不明显，明确选择保留51版且已撤销52版**。早期50版“全部五道中心到中心”方案已否决，49版三档中心思路保留在51实现中。原⑧反伤／麻痹和⑨替身逻辑未改；正常攻击受击反馈、Bank `$3E` 渲染器继续保留。**验收范围**：视频检查与用户选择支持本次动画方案，不代表已逐项验证所有姿态的视觉中心、地区形态、连续使用／颜色恢复、低血量声音及全部结算边界。低血量报警音效问题转后续独立专项；本次仅改 TODO，不修改动画或游戏版本，不编译 ROM。
 
 ### 战斗功能 / 结算类（Battle logic）
 
@@ -56,6 +56,7 @@ Status legend:
 
 ### 修复 / 审核类（Bugfix & audit）
 
+- [ ] **低血量 `Danger` 报警／通用命中音效异常（后续独立专项，非⑩验收修复）**：用户已观察到伏特攻击在低血量警报后**最后电击命中音效异常**，并指出其他招式也存在类似问题；其他具体技能和各触发条件尚未逐项复现。共享路径的 `WaitForSoundToFinish` 在 `Danger` 状态可能提前返回，`PlayApplyingAttackSound` 因而可能与自定义动画尾音重叠；该路径仅是待验证的源码线索，不应把所有技能或根因视为已确认。后续比较双方施放、正常／低血量、最后命中声、警报节奏及 Spark 等招式；不得直接静音警报或引入无界等待。本次保留问题，**不修改公共音频引擎、不声称已修复**。
 - [ ] **Leech Seed/Toxic、OHKO/Counter、连续攻击等遗留问题**：原 TODO 的候选修复；具体范围详见下方 `Legacy bugfix candidates still worth auditing`，本次不改动。
 - [~] **Mimic/Disable 与 Substitute 状态防护**：原 TODO 为部分实现/待审查，本次不更改结论。
 
@@ -99,6 +100,10 @@ Status legend:
 ### User-tested — Substitute / multi-hit / recoil timing
 
 - [x] SUB-5.62.42 — imported ⑨ (`d41f0048`) after RCL-5.62.41. **User reports having tested the feature and asks to proceed (2026-10-08), without reporting obvious problems.** No itemized pass report was supplied for both-side Substitute, multi-hit break, recoil double-KO or status penetration; do not infer that every edge case was verified. Source audit covered substitute restoration, post-damage recoil timing, both actor branches, and Bank helper symbols. ⑦/⑧ acceptance status has been reconciled in the category board; Minimize remains +2, and the Stomp / Body Slam counterplay is a future standalone item. No assistant ROM build or Git commit. ⑨ acceptance message prepared; ⑩ remains unported.
+
+### User-tested — Volt Tackle animation / dynamic impact center
+
+- [x] VTC-5.62.51 — ⑩ Volt Tackle animation from `c0cf8a93` plus three-size target center, first sweep from user center, middle three screen-wide alternate sweeps, and fifth sweep ending at the target center. User supplied runtime videos of both actor directions and a 51-versus-52 comparison; 52 only increased dwell by six frames (~0.1 s), with little visible gain, and user reports reverting it. **51 is the selected acceptance baseline; 52 is not included.** No new ROM build or Git commit by the assistant. Low-HP hit SFX conflict remains a separate unresolved issue, possibly cross-move; not every size/form/recoil or audio edge case has an individual pass result.
 
 ### User-tested — Moves / animation
 

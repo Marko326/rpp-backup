@@ -17,6 +17,8 @@ PlayGoldQuickAttackPhase::
 	jr z,.prepare
 	cp GOLD_QUICK_ATTACK_APPROACH
 	jr z,.approach
+	cp GOLD_QUICK_ATTACK_VOLT_APPROACH
+	jr z,.voltApproach
 
 .returnUser
 	; AnimationShowMonPic contains the stock 3-frame redraw delay.  Add 13 to
@@ -24,6 +26,36 @@ PlayGoldQuickAttackPhase::
 	callba AnimationShowMonPic
 	ld c,13
 	jp DelayFrames
+
+.voltApproach
+	; Volt Tackle wants Gold's same disappear language, but not Quick Attack's
+	; nine blank VBlanks after the three visible speed-line poses. Keep one
+	; cleanup VBlank only so the first electric sweep can follow immediately.
+	ld a,GSSFX_MENU
+	call PlaySound
+	callba AnimationHideMonPic
+	xor a
+	ld [wSubAnimCounter],a
+.voltSpeedLoop
+	ld a,[wSubAnimCounter]
+	cp 3
+	jr nc,.voltNoSpeedLines
+	ld de,wOAMBuffer
+	call .DrawSpeedFrame
+.voltNoSpeedLines
+	call DelayFrame
+	call ClearSprites
+	ld hl,wSubAnimCounter
+	inc [hl]
+	ld a,[hl]
+	cp 4
+	jr c,.voltSpeedLoop
+	; No seamless marker is needed: Volt Tackle restores the one overwritten
+	; Spark tile and enters its own renderer immediately.
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	ret
 
 .prepare
 	; Prepare the exact tileset used by the following $46 fist while the user is
@@ -35,24 +67,7 @@ PlayGoldQuickAttackPhase::
 
 	; SPEED_LINE only needs one Gold tile.  It lives away from the fist override,
 	; so both the approach and the hit can coexist in VRAM.
-	ld hl,vSprites + SHADOW_PUNCH_SPEED_TILE_BASE * 16
-	ld de,GoldQuickAttackSpeedTile
-	ld b,BANK(GoldQuickAttackSpeedTile)
-	ld c,1
-	call CopyVideoData
-
-	; Gold SPEED_LINE uses PAL_BATTLE_OB_GRAY.  Keep only this private tile gray;
-	; the preloaded fist remains on Shadow Punch's dynamic Ghost palette.
-	ld a,2
-	ld [rSVBK],a
-	ld hl,W2_SpritePaletteMap + SHADOW_PUNCH_SPEED_TILE_BASE
-	xor a ; ATK_PAL_GREY
-	ld [hl],a
-	ld a,1
-	ld [W2_ForceOBPUpdate],a
-	xor a
-	ld [rSVBK],a
-	ret
+	jp LoadGoldQuickAttackSpeedLine
 
 .approach
 	ld a,GSSFX_MENU
@@ -203,6 +218,27 @@ PlayGoldQuickAttackPhase::
 	inc de
 	dec c
 	jr nz,.drawSprite
+	ret
+
+; VTA-5.62.43: public lightweight loader for other dedicated renderers that
+; want Gold Quick Attack's vanish without preloading PunchBattleTiles.
+LoadGoldQuickAttackSpeedLine::
+	ld hl,vSprites + SHADOW_PUNCH_SPEED_TILE_BASE * 16
+	ld de,GoldQuickAttackSpeedTile
+	ld b,BANK(GoldQuickAttackSpeedTile)
+	ld c,1
+	call CopyVideoData
+
+	; Gold SPEED_LINE uses PAL_BATTLE_OB_GRAY.
+	ld a,2
+	ld [rSVBK],a
+	ld hl,W2_SpritePaletteMap + SHADOW_PUNCH_SPEED_TILE_BASE
+	xor a ; ATK_PAL_GREY
+	ld [hl],a
+	ld a,1
+	ld [W2_ForceOBPUpdate],a
+	xor a
+	ld [rSVBK],a
 	ret
 
 ; Gold OAMData_a0, converted from dbsprite coordinates.  A0/A1/A2 use the

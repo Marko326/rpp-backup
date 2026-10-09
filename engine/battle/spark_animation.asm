@@ -405,3 +405,68 @@ GoldSparkCoreTilesEnd:
 	IF GoldSparkCoreTilesEnd - GoldSparkCoreTiles != SPARK_CORE_TILE_COUNT * 16
 		fail "Gold Spark core data must contain exactly 4 tiles"
 	ENDC
+
+; ANM-5.62.29: public asset-only bridge for Volt Tackle. This intentionally
+; loads the exact already-verified Gold Spark lightning/core tiles and Electric
+; palette without playing Spark's own aura/tackle/impact timeline.
+LoadGoldSparkElectricAssets::
+	xor a
+	ld [wWhichBattleAnimTileset], a
+	callba LoadAnimationTileset
+
+	ld hl, vSprites + SPARK_LIGHTNING_TILE_BASE * 16
+	ld de, GoldSparkLightningTiles
+	ld b, BANK(GoldSparkLightningTiles)
+	ld c, SPARK_LIGHTNING_TILE_COUNT
+	call CopyVideoData
+	ld hl, vSprites + SPARK_CORE_TILE_BASE * 16
+	ld de, GoldSparkCoreTiles
+	ld b, BANK(GoldSparkCoreTiles)
+	ld c, SPARK_CORE_TILE_COUNT
+	call CopyVideoData
+
+	ld d, ELECTRIC
+	ld e, BATTLE_TYPE_PAL_TILESET1
+	callba LoadBattleAnimTypePalette_Sprite
+	ld a, 2
+	ld [rSVBK], a
+	ld hl, W2_SpritePaletteMap + SPARK_LIGHTNING_TILE_BASE
+	ld b, SPARK_LIGHTNING_TILE_COUNT
+	ld a, BATTLE_TYPE_PAL_TILESET1
+.paletteLightning
+	ld [hli], a
+	dec b
+	jr nz, .paletteLightning
+	ld b, SPARK_CORE_TILE_COUNT
+	ld a, ATK_PAL_GREY
+.paletteCore
+	ld [hli], a
+	dec b
+	jr nz, .paletteCore
+	ld a, 1
+	ld [W2_ForceOBPUpdate], a
+	xor a
+	ld [rSVBK], a
+	ret
+
+; VTA-5.62.43: Volt Tackle reuses the real first 24 frames of Gold Spark's
+; Thunder Wave charge before Quick Attack vanishes. No inverted BG flash here:
+; the project's prior artificial pre-vanish flicker is intentionally gone.
+; Caller must have loaded Gold Spark assets and palette before entering.
+PlayGoldSparkVoltTackleCharge::
+	ld a,GSSFX_ZAP_CANNON
+	call PlaySound
+	xor a
+	ld [wSubAnimCounter],a
+.chargeLoop
+	call PlayGoldSparkAnimation.DrawThunderWave
+	call DelayFrame
+	call ClearSprites
+	ld hl,wSubAnimCounter
+	inc [hl]
+	ld a,[hl]
+	cp 24
+	jr c,.chargeLoop
+	xor a
+	ld [wSubAnimCounter],a
+	ret

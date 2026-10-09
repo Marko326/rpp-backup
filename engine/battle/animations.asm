@@ -1511,6 +1511,7 @@ GetDamageFeedbackOverride:
 ; 4 = BlinkEnemyMonSprite, 1 = ShakeScreenVertically, 0 = keep stock type.
 DamageFeedbackOverrides:
 	db SHADOW_BALL, 4, 1
+	db VOLT_TACKLE, 0, 1 ; VTA-5.62.43: player stock; enemy vertical hit feedback.
 	db ENERGY_BALL, 4, 1 ; ANM-5.62.05: custom impact is followed by standard blink/vertical hit feedback.
 	db AURA_SPHERE, 4, 1 ; AUR-5.62.36: standard post-impact feedback
 	db GUNK_SHOT, 0, 1 ; ANM-5.62.10: keep player feedback; enemy hit shakes the player vertically.
