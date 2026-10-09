@@ -45,11 +45,9 @@ EnterMapAnim:
 	jr .done
 .flyAnimation
 	pop hl
-	ld de, BirdSprite
-	ld hl, vNPCSprites
-	lb bc, BANK(BirdSprite), $0c
-	call CopyVideoData
-	call LoadBirdSpriteGraphics
+	; FLY-5.62.73: reuse the Gold two-frame party icon in the original
+	; Red flying trajectory (including the automatic horizontal flip).
+	callab LoadFlyMonOverworldGraphics
 	ld a, SFX_FLY
 	call PlaySound
 	ld hl, wFlyAnimUsingCoordList
@@ -62,6 +60,8 @@ EnterMapAnim:
 	ld de, FlyAnimationEnterScreenCoords
 	call DoFlyAnimation
 	call LoadPlayerSpriteGraphics
+	xor a
+	ld [wFlyAnimationActive], a ; clear Fly animation state after restoring player graphics
 	jr .restoreDefaultMusic
 
 FlyAnimationEnterScreenCoords:
@@ -164,7 +164,7 @@ _LeaveMapAnim:
 	call PlayerSpinInPlace
 	jr .spinWhileMovingUp
 .flyAnimation
-	call LoadBirdSpriteGraphics
+	callab LoadFlyMonOverworldGraphics
 	ld hl, wFlyAnimUsingCoordList
 	ld a, $ff ; is not using coord list (flap in place)
 	ld [hli], a ; wFlyAnimUsingCoordList
@@ -194,6 +194,8 @@ _LeaveMapAnim:
 	ld de, FlyAnimationScreenCoords2
 	call DoFlyAnimation
 	call GBFadeOutToWhite
+	xor a
+	ld [wFlyAnimationActive], a ; clear Fly animation state before exit
 	jp RestoreFacingDirectionAndYScreenPos
 
 FlyAnimationScreenCoords1:
@@ -340,15 +342,29 @@ DoFlyAnimation:
 	pop af
 	ret
 
-LoadBirdSpriteGraphics:
-	ld de, BirdSprite
-	ld hl, vNPCSprites
-	lb bc, BANK(BirdSprite), $0c
-	call CopyVideoData
-	ld de, BirdSprite + $c0 ; moving animation sprite
-	ld hl, vNPCSprites2
-	lb bc, BANK(BirdSprite), $0c
-	jp CopyVideoData
+GetSelectedFlyIconSource::
+; FLY-5.62.73: return DE = icon data, H = icon bank, L = icon class.
+; H and L survive CALLBA, but B is restored to the caller's bank.
+	ld a, [wFlySelectedSpecies]
+	call GetPartyMonSpriteID
+	push af ; keep icon class for the Fly runtime's bird-only graphics path
+	ld e, a
+	ld d, 0
+	ld l, a
+	ld h, d
+	add hl, de
+	add hl, de
+	ld de, PartyIconSourcePointers
+	add hl, de
+	ld a, [hli]
+	ld e, a
+	ld a, [hli]
+	ld d, a
+	ld a, [hl]
+	ld h, a
+	pop af
+	ld l, a ; icon class in L, source bank in H, graphics pointer in DE
+	ret
 
 InitFacingDirectionList:
 	ld a, [wSpriteStateData1 + 2] ; player's sprite facing direction (image index is locked to standing images)

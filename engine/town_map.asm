@@ -169,6 +169,15 @@ NestText:
 	db "Nest@"
 
 LoadTownMap_Fly:
+	; FLY-5.62.73: capture the party-menu choice before the Fly Map starts
+	; using shared menu scratch. Preserve species, not the transient slot index.
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wPartySpecies
+	add hl, de
+	ld a, [hl]
+	ld [wFlySelectedSpecies], a
 	ld a, [hTilesetType]
 	push af
 	xor a
@@ -179,10 +188,9 @@ LoadTownMap_Fly:
 	; Surf needs a Town Map-specific path because hTilesetType is temporarily 0.
 	callab LoadPlayerSpriteGraphicsForFlyTownMap
 	call LoadFontTilePatterns
-	ld de, BirdSprite
-	ld hl, vSprites + $40
-	lb bc, BANK(BirdSprite), $c
-	call CopyVideoData
+	; FLY-5.62.73: display the selected Fly user's 16x16 party icon.
+	; Tiles 0-3 remain reserved for the player's current-location marker.
+	callab LoadFlyTownMapIcon
 	xor a
 	ld [wFlyLocationsAxis], a ; 0 = city axis (Up/Down), 1 = special axis (Left/Right)
 	call BuildFlyLocationsList
@@ -659,6 +667,8 @@ WriteTownMapSpriteOAM:
 	ld [hli], a
 	inc a
 	ld [wOAMBaseTile], a
+	; FLY-5.62.73: Fly cursor and ordinary map markers use the same
+	; local player gender palette (boy red, girl green).
 	ld a, [wPlayerGender]
 	and a ; Are you a boy? Or a girl?
 	ld a, PAL_OW_GREEN

@@ -2940,6 +2940,13 @@ INCLUDE "engine/menu/options_menu.asm"
 SECTION "Menu Shortcut Helpers", ROMX, BANK[$3D]
 INCLUDE "engine/menu/menu_shortcuts.asm"
 
+SECTION "Fly Icon Runtime Helpers", ROMX, BANK[$3D]
+INCLUDE "engine/fly_icon_runtime_helpers.asm"
+
+; FLY-5.62.73: Party OBJ palette helper stays outside crowded gameplay banks.
+SECTION "Party Gender Sprite Palettes", ROMX, BANK[$3D]
+INCLUDE "color/party_gender_palettes.asm"
+
 SECTION "Map Name Sign", ROMX, BANK[$3D]
 ; Crystal-style overworld location popup lives in a fully empty expansion bank.
 INCLUDE "engine/overworld/map_name_sign.asm"

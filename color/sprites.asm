@@ -100,6 +100,8 @@ ColorOverworldSprite:
 	jr .continue
 
 .playerSprite
+	; FLY-5.62.73: flying sprites share the local player's gender palette.
+	; The bird animation uses this same sprite slot, not a neutral palette.
 	ld a, [wPlayerGender]
 	and a
 	ld a, PAL_OW_RED

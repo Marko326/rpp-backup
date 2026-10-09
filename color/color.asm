@@ -941,9 +941,9 @@ SetPal_PartyMenu:
 	ld a,2
 	ld [rSVBK],a
 
-	; DUAL-5.19.30: party-menu Pokémon icons intentionally keep the existing
-	; OBJ palette behavior in both versions; version theming applies to menu UI only.
-	CALL_INDIRECT LoadOverworldSpritePalettes
+	; FLY-5.62.73: Party icons use the player gender palette (boy red,
+	; girl green); HP bars retain their independent BG palettes.
+	CALL_INDIRECT LoadPartyGenderSpritePalettes
 
 	ld d,PAL_GREENBAR	; Filler for palette 0 (technically, green)
 	ld e,0

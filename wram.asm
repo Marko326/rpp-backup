@@ -3425,10 +3425,14 @@ wSurfingLaprasFlag:: ; d7ad
 ; The existing wd728 bit 2 continues to identify Surfing Pikachu.
 	ds 1
 
-; unused
+wFlySelectedSpecies:: ; d7ae
+; FLY-5.62.73: species chosen for Fly, retained across the map transition.
+; Reuses an existing unused WRAM byte; no change to the WRAM layout.
 	ds 1
 
-; unused
+wFlyAnimationActive:: ; d7af
+; FLY-5.62.73: Fly animation state flag; reset at the end of the flight.
+; Names an existing unused byte, without changing WRAM size or addresses.
 	ds 1
 
 wd72c:: ; d7b0
