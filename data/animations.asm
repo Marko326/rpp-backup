@@ -2055,11 +2055,17 @@ Subanimation2d:
 	subentry $47, $66, 0
 	subentry $47, $66, 0
 
-; Reserved unused subanimation slot $39: currently has no runtime references.
-; Safe to replace with a future custom subanimation; keep this pointer ID stable.
+; Draining Kiss owns subanimation $39: seven heart anchors.
+; The final wave is adjusted in the dedicated OAM renderer before Absorb.
 Subanimation39:
-	db $61
-	subentry $47, $67, 0
+	db $67
+	subentry $17, $30, 0
+	subentry $17, $39, 0
+	subentry $17, $3a, 0
+	subentry $17, $3b, 0
+	subentry $17, $3c, 0
+	subentry $17, $3d, 0
+	subentry $17, $3e, 0
 
 Subanimation4e:
 	db $41

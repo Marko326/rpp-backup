@@ -395,14 +395,23 @@ SmoothBattleAnimDelayFrames::
 	jr .motionAllowed
 
 .checkStandardWhitelist
-	; ANIM-5.62.75: Lovely Kiss gets its own per-VBlank OAM path;
-	; VBlank profile. Growl, Sing, Screech and script-based aliases stay legacy.
+	; Ordinary Lovely Kiss alone uses the $12 curve; scripted Draining
+	; Kiss uses $39. Other script aliases use the legacy delay.
+	; Other $12 aliases and all unrelated $39 callers retain legacy timing.
 	ld a,c
 	cp $12
+	jr z,.checkHeartScript
+	cp $39
 	jr nz,.checkWhitelistTable
+	ld a,[wMoveAnimScriptLoaded]
+	cp 1
+	jp nz,.legacyDelay
+	jr .checkHeartIdentity
+.checkHeartScript
 	ld a,[wMoveAnimScriptLoaded]
 	and a
 	jp nz,.legacyDelay
+.checkHeartIdentity
 	ld a,[wAnimationID]
 	cp LOVELY_KISS
 	jp nz,.legacyDelay

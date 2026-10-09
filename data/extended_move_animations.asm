@@ -994,9 +994,15 @@ FlashCannonExtAnimEnd:
 DrainingKissExtAnim:
 	db DrainingKissExtAnimEnd - DrainingKissExtAnimData
 DrainingKissExtAnimData:
-	db $06,$8D,$12
-	db SE_SPIRAL_BALLS_INWARD,$FF
+	; Draining Kiss heart uses Fairy type palette and the original Absorb
+	; contraction/return phases ($21, $22) after seven anchors.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$8D,$39
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $06,$FF,$21
 	db $06,$FF,$22
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
 	db $FF
 DrainingKissExtAnimEnd:
 	IF DrainingKissExtAnimEnd - DrainingKissExtAnimData > 30
