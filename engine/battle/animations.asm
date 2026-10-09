@@ -395,6 +395,23 @@ SmoothBattleAnimDelayFrames::
 	jr .motionAllowed
 
 .checkStandardWhitelist
+	; ANIM-5.62.75: Lovely Kiss gets its own per-VBlank OAM path;
+	; VBlank profile. Growl, Sing, Screech and script-based aliases stay legacy.
+	ld a,c
+	cp $12
+	jr nz,.checkWhitelistTable
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jp nz,.legacyDelay
+	ld a,[wAnimationID]
+	cp LOVELY_KISS
+	jp nz,.legacyDelay
+	ld a,[wBattleAnimSeamlessStage]
+	and a
+	jp nz,.legacyDelay               ; this renderer is for ordinary OAM only
+	callba PlayLovelyKissCurvedMotion
+	jp .doneSmoothDelay
+.checkWhitelistTable
 	ld hl,SmoothBattleAnimSubanimationIDs
 .checkWhitelist
 	ld a,[hli]
@@ -508,8 +525,8 @@ SmoothBattleAnimDelayFrames::
 	jp .applyTransform
 
 .tryMotionTail
-	; Swift uses this to leave the screen. ANM-5.61.27 applies the same final
-	; velocity extrapolation only to Acid / Sludge $14 impact droplets.
+	; Swift uses its own final velocity tail. ANM-5.61.27 also applies
+	; this only to Acid / Sludge $14 droplets, not to Lovely Kiss.
 	call SmoothBattleAnimIsSwift
 	jr z,.tailEligible
 	call SmoothBattleAnimIsSubanimation14

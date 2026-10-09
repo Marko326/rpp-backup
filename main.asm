@@ -3036,6 +3036,10 @@ INCLUDE "engine/battle/sucker_punch_animation.asm"
 SECTION "Ruby-style Hyper Voice Animation", ROMX, BANK[$38]
 INCLUDE "engine/battle/hyper_voice_animation.asm"
 
+; ANIM-5.62.75: Lovely Kiss-only OAM step-table motion; floating ROMX.
+SECTION "Lovely Kiss Curved Motion", ROMX
+INCLUDE "engine/battle/lovely_kiss_motion.asm"
+
 ; AUR-5.62.36: Aura Sphere renderer in bank $3E, not tightly packed bank $3D.
 SECTION "Polished Crystal Aura Sphere Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/aura_sphere_animation.asm"
