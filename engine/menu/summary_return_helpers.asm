@@ -325,22 +325,9 @@ Summary_LoadPlayerSpriteGraphicsLCDOff:
 	jr .copySheet
 
 .surf
-	; Preserve GetSurfPlayerSpriteGraphics' Pikachu-validity contract. Bankswitch
-	; preserves carry across the far call, which is all this test needs.
-	ld a, [wd728]
-	bit 2, a
-	jr z, .surfSeel
-	callba FindSurfingPikachuInParty
-	jr c, .surfPikachu
-	ld hl, wd728
-	res 2, [hl]
-.surfSeel
-	ld de, SeelSprite
-	ld a, BANK(SeelSprite)
-	jr .copySheet
-.surfPikachu
-	ld de, SurfingPikachu
-	ld a, BANK(SurfingPikachu)
+	; SRF-5.62.64: The far call restores B, so the helper returns its bank in H.
+	callba GetSurfPlayerSpriteGraphics
+	ld a, h
 
 .copySheet
 	; The normal player loader copies 12 tiles to vNPCSprites and the following

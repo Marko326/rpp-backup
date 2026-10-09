@@ -3420,7 +3420,9 @@ wd728:: ; d7ac
 ; TODO: Move some of these into normal event flags, and others into like an EngineFlags array
 	ds 1
 
-; unused?
+wSurfingLaprasFlag:: ; d7ad
+; SRF-5.62.64: 1 = selected Surf mount is Lapras; 0 = otherwise.
+; The existing wd728 bit 2 continues to identify Surfing Pikachu.
 	ds 1
 
 ; unused

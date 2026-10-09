@@ -37,48 +37,71 @@ LoadSurfingPlayerSpriteGraphicsByUser::
 	set 3, h
 	jp CopyVideoData
 
-GetSurfPlayerSpriteGraphics:
-; wd728 bit 2 records whether the most recently selected Surf user was Pikachu.
-; Forced Surf may reuse that identity, but only while a Surf-capable Pikachu
-; still exists in the current party.
+GetSurfPlayerSpriteGraphics::
+; SRF-5.62.64: Return DE = sheet, B = bank for local callers, H = bank for
+; callers using callba (Bankswitch restores B on return).
+; A removed/non-Surf-capable mount falls back to the ordinary Seel sheet.
 	ld a, [wd728]
 	bit 2, a
-	jr z, .useSeel
+	jr z, .checkLapras
 	call FindSurfingPikachuInParty
 	jr c, .usePikachu
 	ld hl, wd728
 	res 2, [hl]
+.checkLapras
+	ld a, [wSurfingLaprasFlag]
+	cp 1
+	jr nz, .useSeel
+	call FindSurfingLaprasInParty
+	jr c, .useLapras
+	xor a
+	ld [wSurfingLaprasFlag], a
 .useSeel
 	ld de, SeelSprite
 	ld b, BANK(SeelSprite)
-	ret
+	jr .returnBank
 .usePikachu
 	ld de, SurfingPikachu
 	ld b, BANK(SurfingPikachu)
+	jr .returnBank
+.useLapras
+	ld de, LaprasOverworldSprite
+	ld b, BANK(LaprasOverworldSprite)
+.returnBank
+	ld h, b
 	ret
 
-PreferSurfingPikachuForFieldSurf::
-; Automatic water interaction prefers a Pikachu that actually knows Surf.
-; Manual party-menu Surf does not call this, so it keeps the selected Pokemon.
+PreferSurfingPokemonForFieldSurf::
+; SRF-5.62.64: Water interaction prefers Surf Pikachu, then Surf Lapras.
+; Manual party-menu Surf retains the exact Pokemon chosen by the player.
 	call FindSurfingPikachuInParty
+	jr c, .found
+	call FindSurfingLaprasInParty
 	ret nc
+.found
 	ld [wWhichPokemon], a
 	ret
 
 FindSurfingPikachuInParty:
-; Find the first Pikachu in the current party that actually knows Surf.
+	ld b, PIKACHU
+	jr FindSurfingPokemonInParty
+
+FindSurfingLaprasInParty:
+	ld b, LAPRAS
+
+FindSurfingPokemonInParty:
+; Find the first party member of species B that actually knows Surf.
 ; out: carry set and A = party index if found; carry clear if not found.
 	ld a, [wPartyCount]
 	and a
 	ret z
-	ld b, a
 	ld c, 0
 	ld de, wPartySpecies
 	ld hl, wPartyMon1Moves
 .checkPokemon
 	ld a, [de]
 	inc de
-	cp PIKACHU
+	cp b
 	jr nz, .skipMoves
 	ld a, [hli]
 	cp SURF
@@ -103,7 +126,8 @@ FindSurfingPikachuInParty:
 	adc h
 	ld h, a
 	inc c
-	dec b
+	ld a, [wPartyCount]
+	cp c
 	jr nz, .checkPokemon
 	and a
 	ret
@@ -113,7 +137,9 @@ FindSurfingPikachuInParty:
 	ret
 
 StartSurfingWithSelectedPokemon::
-; wWhichPokemon is the exact Surf user selected by the active entry path.
+; SRF-5.62.64: Record the selected mount, independent of party order.
+	xor a
+	ld [wSurfingLaprasFlag], a
 	ld hl, wd728
 	res 2, [hl]
 	ld a, [wWhichPokemon]
@@ -123,7 +149,13 @@ StartSurfingWithSelectedPokemon::
 	add hl, de
 	ld a, [hl]
 	cp PIKACHU
+	jr z, .pikachu
+	cp LAPRAS
 	jr nz, .gotSurfUser
+	ld a, 1
+	ld [wSurfingLaprasFlag], a
+	jr .gotSurfUser
+.pikachu
 	ld hl, wd728
 	set 2, [hl]
 .gotSurfUser
