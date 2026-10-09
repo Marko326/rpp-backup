@@ -320,9 +320,15 @@ PartyIconSourcePointers:
 	db BANK(GoldIconOddish)
 	dw GoldIconFish                 ; 35 FISH_GS
 	db BANK(GoldIconFish)
+
+	; ICO-5.62.63: selective icons from the 208-species workbook.
+	dw GoldIconFox                  ; 36 FOX_GS
+	db BANK(GoldIconFox)
+	dw GoldIconHumanshape           ; 37 HUMANSHAPE_GS
+	db BANK(GoldIconHumanshape)
 PartyIconSourcePointersEnd:
 PARTY_ICON_CLASS_COUNT EQU (PartyIconSourcePointersEnd - PartyIconSourcePointers) / 3
-IF PARTY_ICON_CLASS_COUNT != SPRITE_FISH_GS + 1
+IF PARTY_ICON_CLASS_COUNT != SPRITE_HUMANSHAPE_GS + 1
 	fail "Party icon source table is missing a shipped class"
 ENDC
 

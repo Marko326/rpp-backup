@@ -3109,3 +3109,9 @@ GoldIconOddish:
 	INCBIN "gfx/party_icon_imports/oddish_gs.2bpp"
 GoldIconFish:
 	INCBIN "gfx/party_icon_imports/fish_gs.2bpp"
+
+; ICO-5.62.63: two selected original Gold icon templates from the user sheet.
+GoldIconFox:
+	INCBIN "gfx/party_icon_imports/fox_gs.2bpp"
+GoldIconHumanshape:
+	INCBIN "gfx/party_icon_imports/humanshape_gs.2bpp"
