@@ -22,8 +22,8 @@ MonPartyData:
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Vulpix/Ninetales
 	db SPRITE_JIGGLYPUFF_GS  , SPRITE_JIGGLYPUFF_GS    ;Jigglypuff/Wigglytuff
 	db SPRITE_BAT_GS         , SPRITE_BAT_GS           ;Zubat/Golbat
-	db SPRITE_GRASS          , SPRITE_GRASS            ;Oddish/Gloom
-	db SPRITE_GRASS          , SPRITE_BUG              ;Vileplume/Paras
+	db SPRITE_ODDISH_GS      , SPRITE_ODDISH_GS        ;Oddish/Gloom
+	db SPRITE_ODDISH_GS      , SPRITE_BUG              ;Vileplume/Paras
 	db SPRITE_BUG            , SPRITE_CATERPILLAR_GS   ;Parasect/Venonat
 	db SPRITE_MOTH_GS        , SPRITE_DIGLETT_GS       ;Venomoth/Diglett
 	db SPRITE_DIGLETT_GS     , SPRITE_MON              ;Dugtrio/Meowth
@@ -58,14 +58,14 @@ MonPartyData:
 	db SPRITE_BLOB_GS        , SPRITE_BLOB_GS          ;Koffing/Weezing
 	db SPRITE_QUADRUPED      , SPRITE_MON              ;Rhyhorn/Rhydon
 	db SPRITE_FAIRY          , SPRITE_GRASS            ;Chansey/Tangela
-	db SPRITE_MON            , SPRITE_WATER            ;Kangaskhan/Horsea
-	db SPRITE_WATER          , SPRITE_WATER            ;Seadra/Goldeen
-	db SPRITE_WATER          , SPRITE_STARYU_GS        ;Seaking/Staryu
+	db SPRITE_MON            , SPRITE_SNAKE            ;Kangaskhan/Horsea
+	db SPRITE_SNAKE          , SPRITE_FISH_GS          ;Seadra/Goldeen
+	db SPRITE_FISH_GS        , SPRITE_STARYU_GS        ;Seaking/Staryu
 	db SPRITE_STARYU_GS      , SPRITE_MON              ;Starmie/Mr.Mime
 	db SPRITE_BUG            , SPRITE_MON              ;Scyther/Jynx
 	db SPRITE_MON            , SPRITE_MON              ;Electabuzz/Magmar
 	db SPRITE_BUG            , SPRITE_QUADRUPED        ;Pinsir/Tauros
-	db SPRITE_WATER          , SPRITE_GYARADOS_GS      ;Magikarp/Gyarados
+	db SPRITE_FISH_GS        , SPRITE_GYARADOS_GS      ;Magikarp/Gyarados
 	db SPRITE_LAPRAS_GS      , SPRITE_BLOB_GS          ;Lapras/Ditto
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Eevee/Vaporeon
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Jolteon/Flareon
@@ -84,8 +84,8 @@ MonPartyData:
 	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Leafeon/Sylveon
 	db SPRITE_BUG            , SPRITE_SNAKE            ;Scizor/Steelix
 	db SPRITE_BAT_GS         , SPRITE_POLIWAG_GS       ;Crobat/Politoed
-	db SPRITE_SLOWPOKE_GS    , SPRITE_GRASS            ;Slowking/Bellossom
-	db SPRITE_WATER          , SPRITE_FAIRY            ;Kingdra/Blissey
+	db SPRITE_SLOWPOKE_GS    , SPRITE_ODDISH_GS        ;Slowking/Bellossom
+	db SPRITE_SNAKE          , SPRITE_FAIRY            ;Kingdra/Blissey
 	db SPRITE_BALL_M         , SPRITE_BALL_M           ;Porygon 2/Porygon Z
 	db SPRITE_MON            , SPRITE_MON              ;Magmortar/Electivire
 	db SPRITE_BALL_M         , SPRITE_MON              ;Magnezone/Rhyperior

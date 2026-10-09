@@ -314,9 +314,15 @@ PartyIconSourcePointers:
 	db BANK(GoldIconMoth)
 	dw GoldIconBlob                 ; 33 BLOB_GS
 	db BANK(GoldIconBlob)
+
+	; ICO-5.62.62: selected Oddish/Fish sprites; Clefairy reuses Gen I Fairy.
+	dw GoldIconOddish               ; 34 ODDISH_GS
+	db BANK(GoldIconOddish)
+	dw GoldIconFish                 ; 35 FISH_GS
+	db BANK(GoldIconFish)
 PartyIconSourcePointersEnd:
 PARTY_ICON_CLASS_COUNT EQU (PartyIconSourcePointersEnd - PartyIconSourcePointers) / 3
-IF PARTY_ICON_CLASS_COUNT != SPRITE_BLOB_GS + 1
+IF PARTY_ICON_CLASS_COUNT != SPRITE_FISH_GS + 1
 	fail "Party icon source table is missing a shipped class"
 ENDC
 

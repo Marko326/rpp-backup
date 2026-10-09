@@ -35,6 +35,8 @@ const_value = 0
 	const SPRITE_CATERPILLAR_GS         ; $1f
 	const SPRITE_MOTH_GS                ; $20
 	const SPRITE_BLOB_GS                ; $21
+	const SPRITE_ODDISH_GS              ; $22
+	const SPRITE_FISH_GS                ; $23
 
 ; Bit 0 of a SpriteSheetPointerTable byte-count marks a sheet with no separate
 ; walking block. Sprite graphics lengths are multiples of 16 bytes, so this bit

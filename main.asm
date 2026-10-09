@@ -3103,3 +3103,9 @@ GoldIconMoth:
 	INCBIN "gfx/party_icon_imports/moth_gs.2bpp"
 GoldIconBlob:
 	INCBIN "gfx/party_icon_imports/blob_gs.2bpp"
+
+; ICO-5.62.62: narrowed Gold icon refinements; original two-frame art.
+GoldIconOddish:
+	INCBIN "gfx/party_icon_imports/oddish_gs.2bpp"
+GoldIconFish:
+	INCBIN "gfx/party_icon_imports/fish_gs.2bpp"
