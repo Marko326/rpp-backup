@@ -3044,3 +3044,17 @@ INCLUDE "engine/battle/substitute_multihit_helpers.asm"
 ; VTA-5.62.43: Ruby-inspired Volt Tackle five-sweep renderer in Bank $3E.
 SECTION "Ruby-style Volt Tackle Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/volt_tackle_animation.asm"
+
+; ICO-5.62.53: preserve Gen I party icons and import Yellow/Gold templates.
+; Move graphics out of packed Bank $1C; copy records use BANK(label).
+SECTION "Menu Party Icon Graphics", ROMX, BANK[$38]
+MonPartySprites:
+	INCBIN "gfx/mon_ow_sprites.2bpp"
+PikachuYellowPartyIcon:
+	INCBIN "gfx/party_icon_imports/pikachu_yellow.2bpp"
+StaryuGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/staryu_gs.2bpp"
+GhostGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/ghost_gs.2bpp"
+BatGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/bat_gs.2bpp"

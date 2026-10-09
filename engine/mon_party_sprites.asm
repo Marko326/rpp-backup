@@ -91,7 +91,7 @@ PartyMonSpeeds:
 LoadMonPartySpriteGfx:
 ; Load mon party sprite tile patterns into VRAM during V-blank.
 	ld hl, MonPartySpritePointers
-	ld a, $1c
+	ld a, MON_PARTY_SPRITE_POINTER_COUNT
 
 LoadAnimSpriteGfx:
 ; Load animated sprite tile patterns into VRAM during V-blank. hl is the address
@@ -133,7 +133,7 @@ LoadMonPartySpriteGfxLCDOff::
 ; Alternate entry for callers that already disabled the LCD. This label adds no
 ; bytes; the shared tail still enables the LCD before returning.
 	ld hl, MonPartySpritePointers
-	ld a, $1c
+	ld a, MON_PARTY_SPRITE_POINTER_COUNT
 	ld bc, $0
 .loop
 	push af
@@ -306,6 +306,47 @@ MonPartySpritePointers:
 	db BANK(MonPartySprites)
 	dw vSprites + $780
 
+; ICO-5.62.53: tile ranges $28-$37 and $68-$77 were unused by legacy icons.
+; Imported 16x16 frames occupy 4 tiles each, with frame 2 at +$40 tile IDs.
+	dw PikachuYellowPartyIcon
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(PikachuYellowPartyIcon)
+	dw vSprites + $280
+	dw PikachuYellowPartyIcon + $40
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(PikachuYellowPartyIcon)
+	dw vSprites + $680
+	dw StaryuGoldPartyIcon
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(StaryuGoldPartyIcon)
+	dw vSprites + $2c0
+	dw StaryuGoldPartyIcon + $40
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(StaryuGoldPartyIcon)
+	dw vSprites + $6c0
+	dw GhostGoldPartyIcon
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(GhostGoldPartyIcon)
+	dw vSprites + $300
+	dw GhostGoldPartyIcon + $40
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(GhostGoldPartyIcon)
+	dw vSprites + $700
+	dw BatGoldPartyIcon
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(BatGoldPartyIcon)
+	dw vSprites + $340
+	dw BatGoldPartyIcon + $40
+	db $40 / $10 ; four 8x8 tiles
+	db BANK(BatGoldPartyIcon)
+	dw vSprites + $740
+
+MonPartySpritePointersEnd:
+MON_PARTY_SPRITE_POINTER_COUNT EQU (MonPartySpritePointersEnd - MonPartySpritePointers) / 6
+IF MON_PARTY_SPRITE_POINTER_COUNT != $24
+	fail "Party icon copy table must contain 36 records"
+ENDC
+
 WriteMonPartySpriteOAMByPartyIndex:
 ; Write OAM blocks for the party mon in [hPartyMonIndex].
 	push hl
@@ -385,11 +426,15 @@ WriteMonPartySpriteOAM:
 	add $10
 	ld b, a
 	pop af
+	; ICO-5.62.55: Yellow Pikachu mirrors its left tiles like the original.
+	; Staryu/Ghost/Bat and the legacy Helix still use asymmetric OAM.
+	cp SPRITE_STARYU_GS << 2
+	jr nc, .asymmetric
 	cp SPRITE_HELIX << 2
-	jr z, .helix
+	jr z, .asymmetric
 	call WriteSymmetricMonPartySpriteOAM
 	jr .makeCopy
-.helix
+.asymmetric
 	call WriteAsymmetricMonPartySpriteOAM
 ; Make a copy of the OAM buffer with the first animation frame written so that
 ; we can flip back to it from the second frame by copying it back.
@@ -421,6 +466,3 @@ GetPartyMonSpriteID:
 	ret
 
 INCLUDE "data/mon_party_sprites.asm"
-
-MonPartySprites:
-	INCBIN "gfx/mon_ow_sprites.2bpp"

@@ -11,7 +11,7 @@ MonPartyData:
 	dn SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Rattata/Raticate
 	dn SPRITE_BIRD_M, SPRITE_BIRD_M         ;Spearow/Fearow
 	dn SPRITE_SNAKE, SPRITE_SNAKE           ;Ekans/Arbok
-	dn SPRITE_FAIRY, SPRITE_FAIRY           ;Pikachu/Raichu
+	dn SPRITE_PIKACHU_YELLOW,         SPRITE_PIKACHU_YELLOW          ;Pikachu/Raichu
 	dn SPRITE_MON, SPRITE_MON               ;Sandshrew/Sandslash
 	dn SPRITE_MON, SPRITE_MON               ;NidoranF/Nidorina
 	dn SPRITE_MON, SPRITE_MON               ;Nidoqueen/NidoranM
@@ -19,7 +19,7 @@ MonPartyData:
 	dn SPRITE_FAIRY, SPRITE_FAIRY           ;Clefairy/Clefable
 	dn SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Vulpix/Ninetales
 	dn SPRITE_FAIRY, SPRITE_FAIRY           ;Jigglypuff/Wigglytuff
-	dn SPRITE_MON, SPRITE_MON               ;Zubat/Golbat
+	dn SPRITE_BAT_GS,                 SPRITE_BAT_GS                  ;Zubat/Golbat
 	dn SPRITE_GRASS, SPRITE_GRASS           ;Oddish/Gloom
 	dn SPRITE_GRASS, SPRITE_BUG             ;Vileplume/Paras
 	dn SPRITE_BUG, SPRITE_BUG               ;Parasect/Venonat
@@ -44,8 +44,8 @@ MonPartyData:
 	dn SPRITE_BIRD_M, SPRITE_WATER          ;Dodrio/Seel
 	dn SPRITE_WATER, SPRITE_MON             ;Dewgong/Grimer
 	dn SPRITE_MON, SPRITE_HELIX             ;Muk/Shellder
-	dn SPRITE_HELIX, SPRITE_MON             ;Cloyster/Gastly
-	dn SPRITE_MON, SPRITE_MON               ;Haunter/Gengar
+	dn SPRITE_HELIX,                  SPRITE_GHOST_GS                ;Cloyster/Gastly
+	dn SPRITE_GHOST_GS,               SPRITE_GHOST_GS                ;Haunter/Gengar
 	dn SPRITE_SNAKE, SPRITE_MON             ;Onix/Drowzee
 	dn SPRITE_MON, SPRITE_WATER             ;Hypno/Krabby
 	dn SPRITE_WATER, SPRITE_BALL_M          ;Kingler/Voltorb
@@ -58,8 +58,8 @@ MonPartyData:
 	dn SPRITE_FAIRY, SPRITE_GRASS           ;Chansey/Tangela
 	dn SPRITE_MON, SPRITE_WATER             ;Kangaskhan/Horsea
 	dn SPRITE_WATER, SPRITE_WATER           ;Seadra/Goldeen
-	dn SPRITE_WATER, SPRITE_HELIX           ;Seaking/Staryu
-	dn SPRITE_HELIX, SPRITE_MON             ;Starmie/Mr.Mime
+	dn SPRITE_WATER,                  SPRITE_STARYU_GS               ;Seaking/Staryu
+	dn SPRITE_STARYU_GS,              SPRITE_MON                     ;Starmie/Mr.Mime
 	dn SPRITE_BUG, SPRITE_MON               ;Scyther/Jynx
 	dn SPRITE_MON, SPRITE_MON               ;Electabuzz/Magmar
 	dn SPRITE_BUG, SPRITE_QUADRUPED         ;Pinsir/Tauros
@@ -81,7 +81,7 @@ MonPartyData:
 	dn SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Umbreon/Glaceon
 	dn SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Leafeon/Sylveon
 	dn SPRITE_BUG, SPRITE_SNAKE             ;Scizor/Steelix
-	dn SPRITE_MON, SPRITE_MON               ;Crobat/Politoed
+	dn SPRITE_BAT_GS,                 SPRITE_MON                     ;Crobat/Politoed
 	dn SPRITE_MON, SPRITE_GRASS             ;Slowking/Bellossom
 	dn SPRITE_WATER, SPRITE_FAIRY           ;Kingdra/Blissey
 	dn SPRITE_BALL_M, SPRITE_BALL_M         ;Porygon 2/Porygon Z
@@ -91,13 +91,13 @@ MonPartyData:
 	dn SPRITE_FAIRY, SPRITE_FAIRY           ;Togepi/Togetic
 	dn SPRITE_BIRD_M, SPRITE_MON            ;Togekiss/Sneasel
 	dn SPRITE_MON, SPRITE_BIRD_M            ;Weavile/Skarmory
-	dn SPRITE_MON, SPRITE_MON               ;Misdreavus/Mismagius
+	dn SPRITE_GHOST_GS,               SPRITE_GHOST_GS                ;Misdreavus/Mismagius
 	dn SPRITE_QUADRUPED, SPRITE_WATER       ;Miltank/Chinchou
 	dn SPRITE_WATER, SPRITE_SNAKE           ;Lanturn/Slugma
 	dn SPRITE_SNAKE, SPRITE_QUADRUPED       ;Magcargo/Torkoal
 	dn SPRITE_BIRD_M, SPRITE_BIRD_M         ;Latias/Latios
 	dn SPRITE_MON, SPRITE_MON               ;Hitmontop/Tyrogue
-	dn SPRITE_FAIRY, SPRITE_FAIRY           ;Pichu/Cleffa
+	dn SPRITE_PIKACHU_YELLOW,         SPRITE_FAIRY                   ;Pichu/Cleffa
 	dn SPRITE_FAIRY, SPRITE_FAIRY           ;Igglybuff/Smoochum
 	dn SPRITE_MON, SPRITE_MON               ;Elekid/Magby
 	dn SPRITE_MON, SPRITE_FAIRY             ;Mime Jr/Happiny

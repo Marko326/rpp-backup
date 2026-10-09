@@ -41,6 +41,10 @@ Status legend:
 
 ### 菜单 / UI 类（Menu & UI）
 
+- [x] **`ICO-5.62.55` — 第一批4类队伍小图标融合（本轮用户测试后收口）**：以 `VTC-5.62.51` 为功能基线，`ICO-5.62.53` 首次导入4类、覆盖13只宝可梦：黄版 Pikachu（Pikachu／Raichu／Pichu）、金银 Staryu（Staryu／Starmie）、Ghost（Gastly／Haunter／Gengar／Misdreavus／Mismagius）、Bat（Zubat／Golbat／Crobat）；保留原10类及其余物种映射，总计14类，仍在4-bit类别上限内。沿用既有HP切帧速度，四类图标均加载16×16双帧（每帧4 Tile），继续使用现有VRAM布局空位；原10类及导入素材安置于 Bank `$38` 以缓解 Bank `$1C` 空间压力。**最终修正**：`ICO-5.62.55` 恢复皮卡丘家族按黄版原始方式水平镜像左侧图块，身体与尾巴在两帧中一同变化；Staryu／Ghost／Bat 和既有 Helix 继续采用非对称四图块绘制。`ICO-5.62.54` 的仅微调第二帧图案方案已被55版取代，**不是正式验收版本**。**已确认范围**：用户此前反馈另三类图标已测试、未见明显异常；皮卡丘家族最初有踏步感，后提供黄版和55版运行录像，对照后两帧轮廓与切换节奏相符，本轮决定收口。**未逐项报告**：红血／黄血各档速度、命名、交换、混搭队伍全部排列、连续进入／返回及残留等场景，不能写成全部实测通过。本次验收仅修改 `TODO.md`，不再改图像、OAM逻辑、Bank布局或游戏版本号（仍为 `ICO-5.62.55`）；AI未编译ROM或执行Git提交。
+
+- [?] **后续队伍小图标选择（未定案，非本次功能）**：不以金银版38类或RPP全部208只宝可梦逐个换图为目标，优先保留现有14类，只在辨识度确有提升时单独讨论增加模板；洛奇亚、凤王等仅为候选，**尚未决定第二批名单**。4-bit图标类别理论上余2个编号，但新增前仍须复核素材、VRAM、ROM Bank与关联菜单路径；当前不导入任何第二批图标。
+
 - [~] **`MENU-5.62.31` 菜单显示与返回流程**：源码已记录完成与静态检查；原 TODO 中仍有运行验证事项，不能因暴风通过而自动关闭。
 - [ ] **PP 道具招式列表显示 `当前PP/最大PP`**：原 TODO 明确列为后续任务，暂不改。
 
@@ -104,6 +108,10 @@ Status legend:
 ### User-tested — Volt Tackle animation / dynamic impact center
 
 - [x] VTC-5.62.51 — ⑩ Volt Tackle animation from `c0cf8a93` plus three-size target center, first sweep from user center, middle three screen-wide alternate sweeps, and fifth sweep ending at the target center. User supplied runtime videos of both actor directions and a 51-versus-52 comparison; 52 only increased dwell by six frames (~0.1 s), with little visible gain, and user reports reverting it. **51 is the selected acceptance baseline; 52 is not included.** No new ROM build or Git commit by the assistant. Low-HP hit SFX conflict remains a separate unresolved issue, possibly cross-move; not every size/form/recoil or audio edge case has an individual pass result.
+
+### User-tested — Party menu icon imports (first batch)
+
+- [x] ICO-5.62.55 — accepted first batch of four icon templates mapped to 13 Pokémon species: Yellow Pikachu for Pikachu, Raichu, Pichu; Gold/Crystal Staryu, Ghost, and Bat for the mapped species. The user reported the three non-Pikachu templates looked fine in runtime tests. Pikachu initially looked like walking in ICO-5.62.53; the interim ICO-5.62.54 frame-only adjustment was superseded. ICO-5.62.55 restores Yellow's mirrored-left-half OAM composition while keeping Staryu/Ghost/Bat/Helix asymmetric; later Yellow and 55 runtime videos were compared for both poses and animation rhythm. This acceptance is limited to the observed footage and prior feedback; low-HP speed, trade, nickname, repeated menu transitions, sprite residue and all mixed-party cases have no separately documented complete pass. **Cleanup changes TODO only**, leaves game version `ICO-5.62.55` and source/assets untouched, with no assistant ROM build or Git commit. Later batches remain undecided; all-species icon replacement is not planned.
 
 ### User-tested — Moves / animation
 
