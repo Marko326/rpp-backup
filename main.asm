@@ -3032,6 +3032,10 @@ INCLUDE "engine/battle/hurricane_animation.asm"
 SECTION "Polished Crystal Sucker Punch Animation", ROMX, BANK[$38]
 INCLUDE "engine/battle/sucker_punch_animation.asm"
 
+; ANIM-5.62.74: selected dual ring renderer and softened hit response; ROMX $38.
+SECTION "Ruby-style Hyper Voice Animation", ROMX, BANK[$38]
+INCLUDE "engine/battle/hyper_voice_animation.asm"
+
 ; AUR-5.62.36: Aura Sphere renderer in bank $3E, not tightly packed bank $3D.
 SECTION "Polished Crystal Aura Sphere Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/aura_sphere_animation.asm"

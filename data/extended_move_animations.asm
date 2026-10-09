@@ -272,6 +272,12 @@ PlayExtendedOrbProjectile:
 	callba PlayPolishedCrystalHurricaneAnimation
 	ret
 .notHurricane
+	cp HYPER_VOICE
+	jr nz,.notHyperVoice
+	; ANIM-5.62.74: original dual wave + echo renderer in bank $38.
+	callba PlayRubyHyperVoiceAnimation
+	ret
+.notHyperVoice
 	cp GUNK_SHOT
 	jr nz,.notGunkShot
 	; ANM-5.62.10: Gunk Shot owns its full Polished Crystal timeline in bank $3D.
@@ -1699,12 +1705,9 @@ GunkShotExtAnimEnd:
 HyperVoiceExtAnim:
 	db HyperVoiceExtAnimEnd - HyperVoiceExtAnimData
 HyperVoiceExtAnimData:
-	; Play the attacker's actual cry using ROAR's pitch/tempo profile, then layer
-	; the old sound-wave components without relying on wAnimationID == ROAR.
-	db EXT_ANIM_PLAY_USER_CRY,ROAR
-	db $46,$FF,$12
-	db $46,$2D,$15
-	db $50,$FF,$40
+	; ANIM-5.62.74: the bank-$38 renderer plays both cries and double rings.
+	; The C2 gateway is a single animation command, not two damage hits.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
 	db $FF
 HyperVoiceExtAnimEnd:
 	IF HyperVoiceExtAnimEnd - HyperVoiceExtAnimData > 30
