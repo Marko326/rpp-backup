@@ -1,110 +1,110 @@
 ; ICO-5.62.56: one byte per Pokédex entry (not packed nibbles).
 ; New shared or exclusive icon classes can exceed $0f without rearranging VRAM.
 MonPartyData:
-	db SPRITE_GRASS, SPRITE_GRASS           ;Bulbasaur/Ivysaur
-	db SPRITE_GRASS, SPRITE_MON             ;Venusaur/Charmander
-	db SPRITE_MON, SPRITE_MON               ;Charmeleon/Charizard
-	db SPRITE_WATER, SPRITE_WATER           ;Squirtle/Wartortle
-	db SPRITE_WATER, SPRITE_BUG             ;Blastoise/Caterpie
-	db SPRITE_BUG, SPRITE_BUG               ;Metapod/Butterfree
-	db SPRITE_BUG, SPRITE_BUG               ;Weedle/Kakuna
-	db SPRITE_BUG, SPRITE_BIRD_M            ;Beedrill/Pidgey
-	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Pidgeotto/Pidgeot
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Rattata/Raticate
-	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Spearow/Fearow
-	db SPRITE_SNAKE, SPRITE_SNAKE           ;Ekans/Arbok
-	db SPRITE_PIKACHU_YELLOW,         SPRITE_PIKACHU_YELLOW          ;Pikachu/Raichu
-	db SPRITE_MON, SPRITE_MON               ;Sandshrew/Sandslash
-	db SPRITE_MON, SPRITE_MON               ;NidoranF/Nidorina
-	db SPRITE_MON, SPRITE_MON               ;Nidoqueen/NidoranM
-	db SPRITE_MON, SPRITE_MON               ;Nidorino/Nidoking
-	db SPRITE_FAIRY, SPRITE_FAIRY           ;Clefairy/Clefable
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Vulpix/Ninetales
-	db SPRITE_FAIRY, SPRITE_FAIRY           ;Jigglypuff/Wigglytuff
-	db SPRITE_BAT_GS,                 SPRITE_BAT_GS                  ;Zubat/Golbat
-	db SPRITE_GRASS, SPRITE_GRASS           ;Oddish/Gloom
-	db SPRITE_GRASS, SPRITE_BUG             ;Vileplume/Paras
-	db SPRITE_BUG, SPRITE_BUG               ;Parasect/Venonat
-	db SPRITE_BUG, SPRITE_MON               ;Venomoth/Diglett
-	db SPRITE_MON, SPRITE_MON               ;Dugtrio/Meowth
-	db SPRITE_MON, SPRITE_MON               ;Persian/Psyduck
-	db SPRITE_MON, SPRITE_MON               ;Golduck/Mankey
-	db SPRITE_MON, SPRITE_QUADRUPED         ;Primeape/Growlithe
-	db SPRITE_QUADRUPED, SPRITE_MON         ;Arcanine/Poliwag
-	db SPRITE_MON, SPRITE_MON               ;Poliwhirl/Poliwrath
-	db SPRITE_MON, SPRITE_MON               ;Abra/Kadabra
-	db SPRITE_MON, SPRITE_MON               ;Alakazam/Machop
-	db SPRITE_MON, SPRITE_MON               ;Machoke/Machamp
-	db SPRITE_GRASS, SPRITE_GRASS           ;Bellsprout/Weepinbell
-	db SPRITE_GRASS, SPRITE_WATER           ;Victreebel/Tentacool
-	db SPRITE_WATER, SPRITE_MON             ;Tentacruel/Geodude
-	db SPRITE_MON, SPRITE_MON               ;Graveler/Golem
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Ponyta/Rapidash
-	db SPRITE_QUADRUPED, SPRITE_MON         ;Slowpoke/Slowbro
-	db SPRITE_BALL_M, SPRITE_BALL_M         ;Magnemite/Magneton
-	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Farfetch'd/Doduo
-	db SPRITE_BIRD_M, SPRITE_WATER          ;Dodrio/Seel
-	db SPRITE_WATER, SPRITE_MON             ;Dewgong/Grimer
-	db SPRITE_MON, SPRITE_HELIX             ;Muk/Shellder
-	db SPRITE_HELIX,                  SPRITE_GHOST_GS                ;Cloyster/Gastly
-	db SPRITE_GHOST_GS,               SPRITE_GHOST_GS                ;Haunter/Gengar
-	db SPRITE_SNAKE, SPRITE_MON             ;Onix/Drowzee
-	db SPRITE_MON, SPRITE_WATER             ;Hypno/Krabby
-	db SPRITE_WATER, SPRITE_BALL_M          ;Kingler/Voltorb
-	db SPRITE_BALL_M, SPRITE_GRASS          ;Electrode/Exeggcute
-	db SPRITE_GRASS, SPRITE_MON             ;Exeggutor/Cubone
-	db SPRITE_MON, SPRITE_MON               ;Marowak/Hitmonlee
-	db SPRITE_MON, SPRITE_MON               ;Hitmonchan/Lickitung
-	db SPRITE_MON, SPRITE_MON               ;Koffing/Weezing
-	db SPRITE_QUADRUPED, SPRITE_MON         ;Rhyhorn/Rhydon
-	db SPRITE_FAIRY, SPRITE_GRASS           ;Chansey/Tangela
-	db SPRITE_MON, SPRITE_WATER             ;Kangaskhan/Horsea
-	db SPRITE_WATER, SPRITE_WATER           ;Seadra/Goldeen
-	db SPRITE_WATER,                  SPRITE_STARYU_GS               ;Seaking/Staryu
-	db SPRITE_STARYU_GS,              SPRITE_MON                     ;Starmie/Mr.Mime
-	db SPRITE_BUG, SPRITE_MON               ;Scyther/Jynx
-	db SPRITE_MON, SPRITE_MON               ;Electabuzz/Magmar
-	db SPRITE_BUG, SPRITE_QUADRUPED         ;Pinsir/Tauros
-	db SPRITE_WATER, SPRITE_SNAKE           ;Magikarp/Gyarados
-	db SPRITE_WATER, SPRITE_MON             ;Lapras/Ditto
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Eevee/Vaporeon
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Jolteon/Flareon
-	db SPRITE_MON, SPRITE_HELIX             ;Porygon/Omanyte
-	db SPRITE_HELIX, SPRITE_HELIX           ;Omastar/Kabuto
-	db SPRITE_HELIX, SPRITE_BIRD_M          ;Kabutops/Aerodactyl
-	db SPRITE_MON, SPRITE_BIRD_M            ;Snorlax/Articuno
-	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Zapdos/Moltres
-	db SPRITE_SNAKE, SPRITE_SNAKE           ;Dratini/Dragonair
-	db SPRITE_SNAKE, SPRITE_MON             ;Dragonite/Mewtwo
-	db SPRITE_MON, SPRITE_LUGIA_GS          ;Mew/Lugia
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Houndour/Houndoom
-	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Murkrow/Honchkrow
-	db SPRITE_BUG, SPRITE_QUADRUPED         ;Heracross/Espeon
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Umbreon/Glaceon
-	db SPRITE_QUADRUPED, SPRITE_QUADRUPED   ;Leafeon/Sylveon
-	db SPRITE_BUG, SPRITE_SNAKE             ;Scizor/Steelix
-	db SPRITE_BAT_GS,                 SPRITE_MON                     ;Crobat/Politoed
-	db SPRITE_MON, SPRITE_GRASS             ;Slowking/Bellossom
-	db SPRITE_WATER, SPRITE_FAIRY           ;Kingdra/Blissey
-	db SPRITE_BALL_M, SPRITE_BALL_M         ;Porygon 2/Porygon Z
-	db SPRITE_MON, SPRITE_MON               ;Magmortar/Electivire
-	db SPRITE_BALL_M, SPRITE_MON            ;Magnezone/Rhyperior
-	db SPRITE_GRASS, SPRITE_MON             ;Tangrowth/Lickilicky
-	db SPRITE_FAIRY, SPRITE_FAIRY           ;Togepi/Togetic
-	db SPRITE_BIRD_M, SPRITE_MON            ;Togekiss/Sneasel
-	db SPRITE_MON, SPRITE_BIRD_M            ;Weavile/Skarmory
-	db SPRITE_GHOST_GS,               SPRITE_GHOST_GS                ;Misdreavus/Mismagius
-	db SPRITE_QUADRUPED, SPRITE_WATER       ;Miltank/Chinchou
-	db SPRITE_WATER, SPRITE_SNAKE           ;Lanturn/Slugma
-	db SPRITE_SNAKE, SPRITE_QUADRUPED       ;Magcargo/Torkoal
-	db SPRITE_BIRD_M, SPRITE_BIRD_M         ;Latias/Latios
-	db SPRITE_MON, SPRITE_MON               ;Hitmontop/Tyrogue
-	db SPRITE_PIKACHU_YELLOW,         SPRITE_FAIRY                   ;Pichu/Cleffa
-	db SPRITE_FAIRY, SPRITE_FAIRY           ;Igglybuff/Smoochum
-	db SPRITE_MON, SPRITE_MON               ;Elekid/Magby
-	db SPRITE_MON, SPRITE_FAIRY             ;Mime Jr/Happiny
-	db SPRITE_MON, SPRITE_QUADRUPED         ;Munchlax/Zigzagoon
-	db SPRITE_QUADRUPED, SPRITE_HO_OH_GS      ;Linoone/Ho-oh
+	db SPRITE_BULBASAUR_GS   , SPRITE_BULBASAUR_GS     ;Bulbasaur/Ivysaur
+	db SPRITE_BULBASAUR_GS   , SPRITE_CHARMANDER_GS    ;Venusaur/Charmander
+	db SPRITE_CHARMANDER_GS  , SPRITE_BIGMON_GS        ;Charmeleon/Charizard
+	db SPRITE_SQUIRTLE_GS    , SPRITE_SQUIRTLE_GS      ;Squirtle/Wartortle
+	db SPRITE_SQUIRTLE_GS    , SPRITE_BUG              ;Blastoise/Caterpie
+	db SPRITE_BUG            , SPRITE_BUG              ;Metapod/Butterfree
+	db SPRITE_BUG            , SPRITE_BUG              ;Weedle/Kakuna
+	db SPRITE_BUG            , SPRITE_BIRD_M           ;Beedrill/Pidgey
+	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Pidgeotto/Pidgeot
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Rattata/Raticate
+	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Spearow/Fearow
+	db SPRITE_SNAKE          , SPRITE_SNAKE            ;Ekans/Arbok
+	db SPRITE_PIKACHU_YELLOW , SPRITE_PIKACHU_YELLOW   ;Pikachu/Raichu
+	db SPRITE_MON            , SPRITE_MON              ;Sandshrew/Sandslash
+	db SPRITE_MON            , SPRITE_MON              ;NidoranF/Nidorina
+	db SPRITE_MON            , SPRITE_MON              ;Nidoqueen/NidoranM
+	db SPRITE_MON            , SPRITE_MON              ;Nidorino/Nidoking
+	db SPRITE_FAIRY          , SPRITE_FAIRY            ;Clefairy/Clefable
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Vulpix/Ninetales
+	db SPRITE_FAIRY          , SPRITE_FAIRY            ;Jigglypuff/Wigglytuff
+	db SPRITE_BAT_GS         , SPRITE_BAT_GS           ;Zubat/Golbat
+	db SPRITE_GRASS          , SPRITE_GRASS            ;Oddish/Gloom
+	db SPRITE_GRASS          , SPRITE_BUG              ;Vileplume/Paras
+	db SPRITE_BUG            , SPRITE_BUG              ;Parasect/Venonat
+	db SPRITE_BUG            , SPRITE_MON              ;Venomoth/Diglett
+	db SPRITE_MON            , SPRITE_MON              ;Dugtrio/Meowth
+	db SPRITE_MON            , SPRITE_MON              ;Persian/Psyduck
+	db SPRITE_MON            , SPRITE_MON              ;Golduck/Mankey
+	db SPRITE_MON            , SPRITE_QUADRUPED        ;Primeape/Growlithe
+	db SPRITE_QUADRUPED      , SPRITE_POLIWAG_GS       ;Arcanine/Poliwag
+	db SPRITE_POLIWAG_GS     , SPRITE_POLIWAG_GS       ;Poliwhirl/Poliwrath
+	db SPRITE_MON            , SPRITE_MON              ;Abra/Kadabra
+	db SPRITE_MON            , SPRITE_MON              ;Alakazam/Machop
+	db SPRITE_MON            , SPRITE_MON              ;Machoke/Machamp
+	db SPRITE_GRASS          , SPRITE_GRASS            ;Bellsprout/Weepinbell
+	db SPRITE_GRASS          , SPRITE_WATER            ;Victreebel/Tentacool
+	db SPRITE_WATER          , SPRITE_GEODUDE_GS       ;Tentacruel/Geodude
+	db SPRITE_GEODUDE_GS     , SPRITE_GEODUDE_GS       ;Graveler/Golem
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Ponyta/Rapidash
+	db SPRITE_SLOWPOKE_GS    , SPRITE_SLOWPOKE_GS      ;Slowpoke/Slowbro
+	db SPRITE_BALL_M         , SPRITE_BALL_M           ;Magnemite/Magneton
+	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Farfetch'd/Doduo
+	db SPRITE_BIRD_M         , SPRITE_WATER            ;Dodrio/Seel
+	db SPRITE_WATER          , SPRITE_MON              ;Dewgong/Grimer
+	db SPRITE_MON            , SPRITE_HELIX            ;Muk/Shellder
+	db SPRITE_HELIX          , SPRITE_GHOST_GS         ;Cloyster/Gastly
+	db SPRITE_GHOST_GS       , SPRITE_GHOST_GS         ;Haunter/Gengar
+	db SPRITE_SNAKE          , SPRITE_MON              ;Onix/Drowzee
+	db SPRITE_MON            , SPRITE_WATER            ;Hypno/Krabby
+	db SPRITE_WATER          , SPRITE_BALL_M           ;Kingler/Voltorb
+	db SPRITE_BALL_M         , SPRITE_GRASS            ;Electrode/Exeggcute
+	db SPRITE_GRASS          , SPRITE_MON              ;Exeggutor/Cubone
+	db SPRITE_MON            , SPRITE_MON              ;Marowak/Hitmonlee
+	db SPRITE_MON            , SPRITE_MON              ;Hitmonchan/Lickitung
+	db SPRITE_MON            , SPRITE_MON              ;Koffing/Weezing
+	db SPRITE_QUADRUPED      , SPRITE_MON              ;Rhyhorn/Rhydon
+	db SPRITE_FAIRY          , SPRITE_GRASS            ;Chansey/Tangela
+	db SPRITE_MON            , SPRITE_WATER            ;Kangaskhan/Horsea
+	db SPRITE_WATER          , SPRITE_WATER            ;Seadra/Goldeen
+	db SPRITE_WATER          , SPRITE_STARYU_GS        ;Seaking/Staryu
+	db SPRITE_STARYU_GS      , SPRITE_MON              ;Starmie/Mr.Mime
+	db SPRITE_BUG            , SPRITE_MON              ;Scyther/Jynx
+	db SPRITE_MON            , SPRITE_MON              ;Electabuzz/Magmar
+	db SPRITE_BUG            , SPRITE_QUADRUPED        ;Pinsir/Tauros
+	db SPRITE_WATER          , SPRITE_GYARADOS_GS      ;Magikarp/Gyarados
+	db SPRITE_LAPRAS_GS      , SPRITE_MON              ;Lapras/Ditto
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Eevee/Vaporeon
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Jolteon/Flareon
+	db SPRITE_MON            , SPRITE_HELIX            ;Porygon/Omanyte
+	db SPRITE_HELIX          , SPRITE_HELIX            ;Omastar/Kabuto
+	db SPRITE_HELIX          , SPRITE_BIRD_M           ;Kabutops/Aerodactyl
+	db SPRITE_SNORLAX_GS     , SPRITE_BIRD_M           ;Snorlax/Articuno
+	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Zapdos/Moltres
+	db SPRITE_SNAKE          , SPRITE_SNAKE            ;Dratini/Dragonair
+	db SPRITE_BIGMON_GS      , SPRITE_MON              ;Dragonite/Mewtwo
+	db SPRITE_MON            , SPRITE_LUGIA_GS         ;Mew/Lugia
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Houndour/Houndoom
+	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Murkrow/Honchkrow
+	db SPRITE_BUG            , SPRITE_QUADRUPED        ;Heracross/Espeon
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Umbreon/Glaceon
+	db SPRITE_QUADRUPED      , SPRITE_QUADRUPED        ;Leafeon/Sylveon
+	db SPRITE_BUG            , SPRITE_SNAKE            ;Scizor/Steelix
+	db SPRITE_BAT_GS         , SPRITE_POLIWAG_GS       ;Crobat/Politoed
+	db SPRITE_SLOWPOKE_GS    , SPRITE_GRASS            ;Slowking/Bellossom
+	db SPRITE_WATER          , SPRITE_FAIRY            ;Kingdra/Blissey
+	db SPRITE_BALL_M         , SPRITE_BALL_M           ;Porygon 2/Porygon Z
+	db SPRITE_MON            , SPRITE_MON              ;Magmortar/Electivire
+	db SPRITE_BALL_M         , SPRITE_MON              ;Magnezone/Rhyperior
+	db SPRITE_GRASS          , SPRITE_MON              ;Tangrowth/Lickilicky
+	db SPRITE_FAIRY          , SPRITE_FAIRY            ;Togepi/Togetic
+	db SPRITE_BIRD_M         , SPRITE_MON              ;Togekiss/Sneasel
+	db SPRITE_MON            , SPRITE_BIRD_M           ;Weavile/Skarmory
+	db SPRITE_GHOST_GS       , SPRITE_GHOST_GS         ;Misdreavus/Mismagius
+	db SPRITE_QUADRUPED      , SPRITE_WATER            ;Miltank/Chinchou
+	db SPRITE_WATER          , SPRITE_SNAKE            ;Lanturn/Slugma
+	db SPRITE_SNAKE          , SPRITE_QUADRUPED        ;Magcargo/Torkoal
+	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Latias/Latios
+	db SPRITE_MON            , SPRITE_MON              ;Hitmontop/Tyrogue
+	db SPRITE_PIKACHU_YELLOW , SPRITE_FAIRY            ;Pichu/Cleffa
+	db SPRITE_FAIRY          , SPRITE_FAIRY            ;Igglybuff/Smoochum
+	db SPRITE_MON            , SPRITE_MON              ;Elekid/Magby
+	db SPRITE_MON            , SPRITE_FAIRY            ;Mime Jr/Happiny
+	db SPRITE_SNORLAX_GS     , SPRITE_QUADRUPED        ;Munchlax/Zigzagoon
+	db SPRITE_QUADRUPED      , SPRITE_HO_OH_GS         ;Linoone/Ho-oh
 
 MonPartyDataEnd:
 IF MonPartyDataEnd - MonPartyData != 208

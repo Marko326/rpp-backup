@@ -272,9 +272,31 @@ PartyIconSourcePointers:
 	db BANK(LugiaGoldPartyIcon)
 	dw HoOhGoldPartyIcon           ; 15 HO_OH_GS
 	db BANK(HoOhGoldPartyIcon)
+
+	; ICO-5.62.59: targeted Gold icons, source from each original 16x32 double frame.
+	dw GoldIconBulbasaur             ; 16 BULBASAUR_GS
+	db BANK(GoldIconBulbasaur)
+	dw GoldIconCharmander            ; 17 CHARMANDER_GS
+	db BANK(GoldIconCharmander)
+	dw GoldIconBigmon                ; 18 BIGMON_GS
+	db BANK(GoldIconBigmon)
+	dw GoldIconSquirtle              ; 19 SQUIRTLE_GS
+	db BANK(GoldIconSquirtle)
+	dw GoldIconGyarados              ; 20 GYARADOS_GS
+	db BANK(GoldIconGyarados)
+	dw GoldIconSnorlax               ; 21 SNORLAX_GS
+	db BANK(GoldIconSnorlax)
+	dw GoldIconSlowpoke              ; 22 SLOWPOKE_GS
+	db BANK(GoldIconSlowpoke)
+	dw GoldIconLapras                ; 23 LAPRAS_GS
+	db BANK(GoldIconLapras)
+	dw GoldIconGeodude               ; 24 GEODUDE_GS
+	db BANK(GoldIconGeodude)
+	dw GoldIconPoliwag               ; 25 POLIWAG_GS
+	db BANK(GoldIconPoliwag)
 PartyIconSourcePointersEnd:
 PARTY_ICON_CLASS_COUNT EQU (PartyIconSourcePointersEnd - PartyIconSourcePointers) / 3
-IF PARTY_ICON_CLASS_COUNT < SPRITE_HO_OH_GS + 1
+IF PARTY_ICON_CLASS_COUNT != SPRITE_POLIWAG_GS + 1
 	fail "Party icon source table is missing a shipped class"
 ENDC
 

@@ -3061,3 +3061,25 @@ LugiaGoldPartyIcon:
 	INCBIN "gfx/party_icon_imports/lugia_gs.2bpp"
 HoOhGoldPartyIcon:
 	INCBIN "gfx/party_icon_imports/ho_oh_gs.2bpp"
+
+; ICO-5.62.59: recognizable Gold templates, unchanged 16x32 two-frame art.
+GoldIconBulbasaur:
+	INCBIN "gfx/party_icon_imports/bulbasaur_gs.2bpp"
+GoldIconCharmander:
+	INCBIN "gfx/party_icon_imports/charmander_gs.2bpp"
+GoldIconBigmon:
+	INCBIN "gfx/party_icon_imports/bigmon_gs.2bpp"
+GoldIconSquirtle:
+	INCBIN "gfx/party_icon_imports/squirtle_gs.2bpp"
+GoldIconGyarados:
+	INCBIN "gfx/party_icon_imports/gyarados_gs.2bpp"
+GoldIconSnorlax:
+	INCBIN "gfx/party_icon_imports/snorlax_gs.2bpp"
+GoldIconSlowpoke:
+	INCBIN "gfx/party_icon_imports/slowpoke_gs.2bpp"
+GoldIconLapras:
+	INCBIN "gfx/party_icon_imports/lapras_gs.2bpp"
+GoldIconGeodude:
+	INCBIN "gfx/party_icon_imports/geodude_gs.2bpp"
+GoldIconPoliwag:
+	INCBIN "gfx/party_icon_imports/poliwag_gs.2bpp"

@@ -41,6 +41,8 @@ Status legend:
 
 ### 菜单 / UI 类（Menu & UI）
 
+- [x] **`ICO-5.62.59` — 第三批金版队伍图标：高辨识度模板（用户实测后收口）**：在已验收的 `ICO-5.62.58` 动态加载引擎上新增10类、覆盖24只宝可梦，总类别由16增至26，保持208只映射完整。按金版原始物种归类，三条初代御三家中 Bulbasaur／Ivysaur／Venusaur 用 BULBASAUR，Charmander／Charmeleon 用 CHARMANDER，Charizard 和 Dragonite 用 BIGMON，Squirtle／Wartortle／Blastoise 用 SQUIRTLE；另加入 GYARADOS、SNORLAX（含RPP额外的小卡比兽）、SLOWPOKE（含呆呆王）、LAPRAS（仅乘龙）、GEODUDE、POLIWAG（含蚊香蛙皇）。所有新素材均为上传金版源码的原始16×32双帧PNG，不镜像，不修改旧素材、引擎／换位映射；普通鸟／虫／鱼／四足等广覆盖模板暂缓。**用户本轮反馈**：已检查前四组（御三家、六只混搭、普通／SELECT换位、摘要及菜单返回），第五组的血量动画也已查看／测试，未报告明显异常；**通信交换明确未测试**，命名入口及其他未单独报告的细节不记为逐项通过。此次按反馈验收收口；清理仅修正 `data/mon_party_sprites.asm` 的列间排版、更新 `TODO.md` 和根目录 `RPP_DEVELOPMENT_PITFALLS.md` 的永久规则，不改任何图标映射、素材、动态引擎或游戏版本号（仍为 `ICO-5.62.59`）；AI未编译ROM或执行Git提交。
+
 - [x] **`ICO-5.62.58` — 第二批金版队伍小图标：洛奇亚／凤王（用户测试后收口）**：沿用 `ICO-5.62.57` 已验收的动态加载引擎，为 Lugia、Ho-Oh 各增加 1 类图标（`$0E`、`$0F`），使现有图标从 14 类增至 **16 类**；使用金版原始 16×32 双帧 PNG、跨 Bank 素材指针，仅改变洛奇亚与凤王两只的图标映射。其他物种、原 14 类、无白闪的普通／SELECT 换位引擎均保持不变；两张新素材以非镜像四图块显示。**用户实测反馈**：“测过了，没什么问题”，据此完成本轮验收；反馈未逐项列出独立动画、混搭队伍、普通／快捷换位、摘要返回、命名／通信交换和黄／红 HP 帧速的逐项结果，不能写为这些边界全部分别通过。**验收清理仅更新 `TODO.md`**，不修改引擎、映射、PNG、ROM Bank 或游戏版本（仍为 `ICO-5.62.58`）；AI 不编译 ROM、不执行 Git 提交。
 
 - [x] **`ICO-5.62.57` — 动态图标引擎换位白闪修复（用户复测收口）**：在 `ICO-5.62.56` 实机测试中，普通换位和 SELECT 快捷换位均出现旧版 `5.62.55` 没有的短暂白闪；原因为换位后重载队伍图标时关闭 LCD。最终 `5.62.57` 在换位时只交换六项“队伍位置 → VRAM 原图块槽位”的 WRAM 映射，OAM 通过映射选图，取消这两条换位路径上的 LCD 关闭与重复 VRAM 加载；首次进菜单／摘要返回仍沿原入口正确刷新图块及映射。**用户已对修复补丁复测并反馈“没问题”，本轮据此收口**；没有逐场景视频或子项测量，不将所有极端边界写成分别通过。验收清理仅改 `TODO.md`，保持 `ICO-5.62.57` 游戏版本、源码与素材不变，AI 未编译 ROM 或执行 Git 提交。
@@ -49,7 +51,7 @@ Status legend:
 
 - [x] **`ICO-5.62.55` — 第一批4类队伍小图标融合（本轮用户测试后收口）**：以 `VTC-5.62.51` 为功能基线，`ICO-5.62.53` 首次导入4类、覆盖13只宝可梦：黄版 Pikachu（Pikachu／Raichu／Pichu）、金银 Staryu（Staryu／Starmie）、Ghost（Gastly／Haunter／Gengar／Misdreavus／Mismagius）、Bat（Zubat／Golbat／Crobat）；保留原10类及其余物种映射，总计14类，仍在4-bit类别上限内。沿用既有HP切帧速度，四类图标均加载16×16双帧（每帧4 Tile），继续使用现有VRAM布局空位；原10类及导入素材安置于 Bank `$38` 以缓解 Bank `$1C` 空间压力。**最终修正**：`ICO-5.62.55` 恢复皮卡丘家族按黄版原始方式水平镜像左侧图块，身体与尾巴在两帧中一同变化；Staryu／Ghost／Bat 和既有 Helix 继续采用非对称四图块绘制。`ICO-5.62.54` 的仅微调第二帧图案方案已被55版取代，**不是正式验收版本**。**已确认范围**：用户此前反馈另三类图标已测试、未见明显异常；皮卡丘家族最初有踏步感，后提供黄版和55版运行录像，对照后两帧轮廓与切换节奏相符，本轮决定收口。**未逐项报告**：红血／黄血各档速度、命名、交换、混搭队伍全部排列、连续进入／返回及残留等场景，不能写成全部实测通过。本次验收仅修改 `TODO.md`，不再改图像、OAM逻辑、Bank布局或游戏版本号（仍为 `ICO-5.62.55`）；AI未编译ROM或执行Git提交。
 
-- [?] **后续队伍小图标选择（未定案，非本次功能）**：`ICO-5.62.57` 已用动态按队伍加载和 1 字节类别 ID 替换旧 4-bit／最多16类的固定图块机制，后续可按需扩展到计划中约 28～30 类，但必须逐批检查新增素材、ROM Bank 空间、指针表／类别映射及菜单、交换相关入口；**不是已新增 28～30 类或已验证全部容量**。洛奇亚／凤王已在 `ICO-5.62.58` 导入并按本轮用户反馈收口，当前共 16 类；御三家等后续名单尚未确定；不计划给 RPP 全部 208 只宝可梦逐一移植独立图标。此前提过的“剩余2个固定类别名额”已不适用于当前引擎。已验收皮卡丘 PNG 的右半边与运行镜像成图不一致属于后续素材规范化任务，不混入本次框架验收。
+- [?] **后续队伍小图标选择（未定案，非本次功能）**：`ICO-5.62.57` 已用动态按队伍加载和 1 字节类别 ID 替换旧 4-bit／最多16类的固定图块机制，后续可按需扩展到计划中约 28～30 类，但必须逐批检查新增素材、ROM Bank 空间、指针表／类别映射及菜单、交换相关入口；**不是已新增 28～30 类或已验证全部容量**。洛奇亚／凤王已在 `ICO-5.62.58` 导入并按本轮用户反馈收口，当前共 16 类；第三批在 `ICO-5.62.59` 新增10类并按用户本轮反馈收口，现合计26类，其他大范围通用模板尚未定案；不计划给 RPP 全部 208 只宝可梦逐一移植独立图标。此前提过的“剩余2个固定类别名额”已不适用于当前引擎。已验收皮卡丘 PNG 的右半边与运行镜像成图不一致属于后续素材规范化任务；用户提到游戏里可能已有蚊香蛙皇、胖丁等可复用的小图标资源，待后续核对实际素材与引用后再判断是否去重，不在本次未经核查地删改。
 
 - [~] **`MENU-5.62.31` 菜单显示与返回流程**：源码已记录完成与静态检查；原 TODO 中仍有运行验证事项，不能因暴风通过而自动关闭。
 - [ ] **PP 道具招式列表显示 `当前PP/最大PP`**：原 TODO 明确列为后续任务，暂不改。
@@ -114,6 +116,10 @@ Status legend:
 ### User-tested — Volt Tackle animation / dynamic impact center
 
 - [x] VTC-5.62.51 — ⑩ Volt Tackle animation from `c0cf8a93` plus three-size target center, first sweep from user center, middle three screen-wide alternate sweeps, and fifth sweep ending at the target center. User supplied runtime videos of both actor directions and a 51-versus-52 comparison; 52 only increased dwell by six frames (~0.1 s), with little visible gain, and user reports reverting it. **51 is the selected acceptance baseline; 52 is not included.** No new ROM build or Git commit by the assistant. Low-HP hit SFX conflict remains a separate unresolved issue, possibly cross-move; not every size/form/recoil or audio edge case has an individual pass result.
+
+### User-tested — Curated Gold Party icon imports (third batch)
+
+- [x] ICO-5.62.59 — ten additional distinct Gold two-frame Party icon classes for 24 Pokémon (26 total classes across the project), preserving the remaining 184 species mappings and the dynamic-load/no-flash swap engine. User reports testing scenarios 1–4 (starter families, mixed six-member party, normal/SELECT swaps, and summary/menu returns) and checking the HP-related animation subset of scenario 5 without an apparent issue. **Link trading was explicitly not tested**; do not imply naming and every other edge case were independently validated. Closeout changes only TODO.md, column whitespace in data/mon_party_sprites.asm, and the durable root development pitfalls note; unchanged icon IDs, art, engine and game version ICO-5.62.59. No AI ROM build or Git commit.
 
 ### User-tested — Gold legendary Party icon imports (second batch)
 
