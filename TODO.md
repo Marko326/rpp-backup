@@ -12,6 +12,11 @@ Status legend:
 - `[?]` undecided, or the task needs a more precise definition
 - `[-]` intentionally deferred / not planned after an explicit user decision
 
+## 地图快捷定位：已验收与后续计划
+
+- [x] **飞行地图 START／SELECT 快捷定位（FLY-5.62.79）**：SELECT 定位真新镇，START 按 Teleport／黑屏返回共用的 `wLastBlackoutMap` 定位最近登记的恢复地点；只切换地图选中项，不立即传送。用户已在普通城市及特殊地点的宝可梦中心恢复后验证 START 定位正常；按一下或持续按住 START／SELECT 均只响应一次；在当前位置或其他目的地按 A 可正常飞行，按 B 可正常返回，未观察到花屏；通关后的恢复点处理也已测试。恢复地点必须通过宝可梦中心恢复等现有事件更新，不以最近路过的城镇为准。未解锁和异常存档标记不计入本次实测通过范围。
+- [ ] **普通 Town Map 的 START／SELECT 快捷键统一（后续独立修改）**：沿用已验收飞行地图语义：SELECT 定位真新镇，START 定位 Teleport 使用的最近恢复地点，长按只响应一次。普通地图只能浏览，不能因此直接飞行；设计时应确认地图列表与特殊恢复地点的对应关系及无对应项时的处理。此项与 FLY-5.62.79 分开开发和验收，本次不更改普通 Town Map 的按键行为。
+
 ## 游戏功能状态与后续计划
 
 > 本节集中记录当前分支各项游戏功能的现状和后续处理方式。`[x]` 包括已实现及采用当前简化方案的项目；未特别注明的条目不代表所有场景均已实机验证。与下方历史看板、Legacy Wishlist 重合的事项，以这里写明的具体目标和剩余工作为准，避免重复开发。

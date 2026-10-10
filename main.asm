@@ -2929,6 +2929,10 @@ INCLUDE "engine/menu/bag_pockets.asm"
 SECTION "Fly Town Map Helpers", ROMX, BANK[$35]
 INCLUDE "engine/fly_town_map_helpers.asm"
 
+; FLY-5.62.79: keep Teleport shortcut lookup outside the nearly full Fly Map bank.
+SECTION "Fly Town Map Teleport Shortcut", ROMX
+INCLUDE "engine/fly_town_map_shortcut.asm"
+
 SECTION "Warp Destination Helpers", ROMX, BANK[$35]
 INCLUDE "engine/overworld/warp_destination.asm"
 

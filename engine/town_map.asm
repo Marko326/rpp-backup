@@ -259,24 +259,23 @@ LoadTownMap_Fly:
 	jp nz, .pressedDown
 	jr .pressedB
 .pressedStart
-	xor a
-	ld [wFlyLocationsAxis], a ; START always returns to the city axis
-	call BuildFlyLocationsList
-	; Pallet Town is the first visited city in a normal save. Reuse the existing
-	; availability scan so malformed/unusual visit flags never select a $fe entry.
-	jr .selectFirstAvailable
-.pressedSelect
-	; SELECT jumps directly to Vermilion City only after its normal Fly flag is set.
-	; Check the visit bit before rebuilding the list so an unavailable shortcut
-	; leaves the current city/special selection untouched.
-	ld a, [wKantoTownVisitedFlag]
-	bit VERMILION_CITY, a
+	; FLY-5.62.79: locate the same last-heal destination used by Teleport.
+	; The helper leaves the existing selection intact when Fly cannot reach it.
+	push hl
+	callab FindFlyTeleportShortcut
+	pop hl
+	ld a, d
+	or e
 	jp z, .townMapFlyLoop
+	ld h, d
+	ld l, e
+	jp .townMapFlyLoop
+.pressedSelect
+	; FLY-5.62.79: Pallet Town is the first city-axis Fly destination.
 	xor a
 	ld [wFlyLocationsAxis], a
 	call BuildFlyLocationsList
-	ld hl, wBuffer + 1 + VERMILION_CITY
-	jp .townMapFlyLoop
+	jp .selectFirstAvailable
 .pressedA
 	ld a, SFX_HEAL_AILMENT
 	call PlaySound
