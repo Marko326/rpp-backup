@@ -2354,7 +2354,14 @@ FishingInit:
 	ld a,[wWalkBikeSurfState]
 	cp a,2 ; Surfing?
 	jr z,.surfing
+	; A repeated cast already has the overworld and a text window open.
+	; Redrawing the map here exposes map tiles through the Yes/No window
+	; for a frame before the next "used the rod" text is drawn.
+	ld a, [wRepeatFishingRod]
+	rlca ; carry = temporary retry handoff bit 7
+	jr c, .alreadyShowingOverworld
 	call ItemUseReloadOverworldData
+.alreadyShowingOverworld
 	ld hl,ItemUseText00
 	call PrintText
 	ld a,SFX_HEAL_AILMENT

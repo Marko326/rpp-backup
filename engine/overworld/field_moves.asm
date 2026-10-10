@@ -438,7 +438,21 @@ CheckRepeatFishingRod::
 	ld a, b
 	ld [wcf91], a
 	ld [wPseudoItemID], a
+	; The retry prompt is still on screen. Bit 7 is a temporary handoff
+	; to FishingInit: do not redraw the whole overworld under that window.
+	; Rod item IDs themselves never have bit 7 set.
+	ld a, b
+	set 7, a
+	ld [wRepeatFishingRod], a
 	call UseItem
+	; FishingInit normally replaces the handoff with the real rod ID.
+	; If the item was rejected before that point, discard the marker.
+	ld a, [wRepeatFishingRod]
+	bit 7, a
+	jr z, .closeRetryText
+	xor a
+	ld [wRepeatFishingRod], a
+.closeRetryText
 	call Text3_DrakesDeception
 	ret
 .done
