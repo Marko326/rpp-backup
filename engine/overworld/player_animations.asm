@@ -528,7 +528,7 @@ FishingAnim:
 	ld de, wOAMBuffer + $9c
 	ld bc, $4
 	call CopyData
-	ld c, 100
+	ld c, 84 ; restored rod-pose timing from archived P034
 	call DelayFrames
 	ld a, [wRodResponse]
 	and a

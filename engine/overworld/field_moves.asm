@@ -415,10 +415,11 @@ CheckRepeatFishingRodOverworld::
 	ret
 
 CheckRepeatFishingRod::
+.retry
 ; Consume first. A retry that also gets no bite will set it again itself.
 	ld a, [wRepeatFishingRod]
 	and a
-	ret z
+	jr z, .clearPseudoItem
 	ld b, a
 	xor a
 	ld [wRepeatFishingRod], a
@@ -454,10 +455,13 @@ CheckRepeatFishingRod::
 	ld [wRepeatFishingRod], a
 .closeRetryText
 	call Text3_DrakesDeception
-	ret
+	jr .retry ; consecutive misses are handled without recursive calls
 .done
 	pop bc
 	call Text3_DrakesDeception
+.clearPseudoItem
+	xor a
+	ld [wPseudoItemID], a
 	ret
 
 UseRodAgainText:

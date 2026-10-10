@@ -2366,7 +2366,7 @@ FishingInit:
 	call PrintText
 	ld a,SFX_HEAL_AILMENT
 	call PlaySound
-	ld c,80
+	ld c,48 ; restored shorter fishing lead-in from archived P034
 	call DelayFrames
 	and a
 	ret

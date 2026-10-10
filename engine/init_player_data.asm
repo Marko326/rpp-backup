@@ -43,6 +43,9 @@ START_MONEY EQU $3000
 	ld [hl], a
 
 	ld [wMonDataLocation], a
+	; FIS-5.62.83: a new game has no Bag-selected fishing rod yet.
+	ld [wLastUsedFishingRod], a
+	ld [wLastUsedFishingRodMagic], a
 
 ; Obtained badges
 	ld hl, wObtainedKantoBadges
