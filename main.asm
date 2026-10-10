@@ -3134,3 +3134,7 @@ GoldIconFox:
 	INCBIN "gfx/party_icon_imports/fox_gs.2bpp"
 GoldIconHumanshape:
 	INCBIN "gfx/party_icon_imports/humanshape_gs.2bpp"
+
+; ICO-5.62.81: PureRGB OG+ HUMANOID_INSECT, two 16x16 frames for three species.
+PureRGBHumanoidInsectPartyIcon:
+	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"
