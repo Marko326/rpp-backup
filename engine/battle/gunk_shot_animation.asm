@@ -1,8 +1,9 @@
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer for GUNK_SHOT.
 ;
-; Reproduce PC's two-stage sequence in RPP's existing animation framework:
-;   1) a poison mass forms beside the user on the normal battlefield while Toxic
-;      bubbles radiate outward; RPP intentionally omits BattleAnimSub_AgilityMinor;
+; Adapt PC's two-stage sequence in RPP's existing animation framework:
+;   1) a poison mass beside the user grows as Toxic bubbles converge inward,
+;      ending with Gen II Absorb-style short blinks of the full-size mass;
+;      RPP intentionally omits BattleAnimSub_AgilityMinor;
 ;   2) only the barrage stage switches to the dark screen palette, while repeated
 ;      Mud Shot-style poison projectiles cross the field and Ink Splash particles
 ;      burst at the target during a VBlank-latched horizontal shake.
@@ -14,14 +15,27 @@
 GUNK_SHOT_POISON_TILE_BASE EQU $74 ; PC poison.png source tile 7
 GUNK_SHOT_TILE_COUNT       EQU 12  ; $74-$7f
 GUNK_SHOT_OBJ_PAL          EQU ATK_PAL_PURPLE
-GUNK_SHOT_CHARGE_FRAMES    EQU 68
+GUNK_SHOT_CHARGE_FRAMES    EQU 100
 GUNK_SHOT_BARRAGE_FRAMES   EQU 100
 GUNK_SHOT_SHAKE_FRAMES     EQU 96
+; ANIM-5.62.80: 3 original motion steps per 4 VBlanks (no dropped VBlanks).
+GUNK_SHOT_SLOW_CHARGE      EQU 134 ; ceil(100 * 4 / 3)
+GUNK_SHOT_SLOW_BARRAGE     EQU 134 ; ceil(100 * 4 / 3)
+; ANIM-5.62.81: the final four-bubble group brings the total to 28.
+GUNK_SHOT_CHARGE_BUBBLES  EQU 28
+; Small dot -> medium 2x2 -> large 3x3, then three full-size blinks.
+GUNK_SHOT_CHARGE_SMALL_END  EQU 26
+GUNK_SHOT_CHARGE_MEDIUM_END EQU 50
+GUNK_SHOT_CHARGE_GROW_END   EQU 76
+; ANIM-5.62.87: the full-size blinks hand off directly to the barrage.
 
 PlayPolishedCrystalGunkShotAnimation::
 	call .LoadTiles
 	call .InstallPurplePalette
 	call .PlayCharge
+
+	; After the final blink, transition without replaying Toxic or
+	; adding any extra DelayFrames pause.
 
 	; PC changes BGP to $1b only after the charge objects are cleared. Keep the
 	; charge on the normal battlefield, then darken the screen for the barrage.
@@ -79,11 +93,19 @@ PlayPolishedCrystalGunkShotAnimation::
 	xor a
 	ld [wSubAnimCounter],a
 .chargeLoop
-	; PC plays Toxic once per four-particle burst: frames 4,12,...,44 here.
+	ld a,[wSubAnimCounter] ; physical VBlank count
+	push af
+	call .GetStretchedFrame
+	; Toxic accents accompany buildup, not the final blinks.
+	; Nine repeats at logical ticks 4,12,...,68, ending before blinks.
+	; Ignore the repeated logical tick to avoid replaying the same SFX.
+	ld a,[wBaseCoordY]
+	cp 1
+	jr z,.chargeSoundDone
 	ld a,[wSubAnimCounter]
 	cp 4
 	jr c,.chargeSoundDone
-	cp 52
+	cp 76
 	jr nc,.chargeSoundDone
 	sub 4
 	and 7
@@ -94,35 +116,65 @@ PlayPolishedCrystalGunkShotAnimation::
 
 	ld de,wOAMBuffer
 	call .DrawChargeMass
+	; The 3x3 charge sprite uses wBaseCoordY; restore the subframe phase.
+	pop af
+	push af
+	and 3
+	ld [wBaseCoordY],a
 	call .DrawChargeBubbles
 	call DelayFrame
 	call ClearSprites
-	ld hl,wSubAnimCounter
-	inc [hl]
-	ld a,[hl]
-	cp GUNK_SHOT_CHARGE_FRAMES
+	pop af
+	inc a
+	ld [wSubAnimCounter],a
+	cp GUNK_SHOT_SLOW_CHARGE
 	jp c,.chargeLoop
 	ret
 
+.GetStretchedFrame
+	; A = actual VBlank, wSubAnimCounter = floor(A * 3 / 4).
+	; Phase 0,1,2,3 corresponds to 0,3/4,1/2,1/4 logical ticks.
+	ld b,a
+	add 3
+	srl a
+	srl a
+	ld c,a
+	ld a,b
+	sub c
+	ld [wSubAnimCounter],a
+	ld a,b
+	and 3
+	ld [wBaseCoordY],a
+	ret
+
 .DrawChargeMass
-	; PC ANIM_OBJ_GUNK_SHOT at (48,96), fixY=$90.
+	; Inward droplets build a small dot into a full-size 3x3 poison mass.
 	ld a,[wSubAnimCounter]
-	cp 20
-	ret c
+	cp GUNK_SHOT_CHARGE_GROW_END
+	jr nc,.chargeFlashTail
 	call .GetChargeMassCenter
 	ld a,[wSubAnimCounter]
-	cp 40
+	cp GUNK_SHOT_CHARGE_SMALL_END
 	jr c,.smallMass
-	cp 60
+	cp GUNK_SHOT_CHARGE_MEDIUM_END
 	jr c,.mediumMass
-	; Script clears the object at frame 68, while the 3x3 frame is still active.
-	jp .DrawNineUnique ; source tiles 10-18
+	jr .largeMass
+.chargeFlashTail
+	; Gold/Silver Absorb rhythm: 4 blank + 4 large-mass frames, three times.
+	sub GUNK_SHOT_CHARGE_GROW_END
+	and 7
+	cp 4
+	ret c
+	call .GetChargeMassCenter
+	jr .largeMass
 .smallMass
 	ld h,GUNK_SHOT_POISON_TILE_BASE ; source tile 7
 	jp .DrawDot
 .mediumMass
 	ld h,GUNK_SHOT_POISON_TILE_BASE + 2 ; source tile 9
 	jp .DrawMirroredSquare
+.largeMass
+	jp .DrawNineUnique ; source tiles 10-18
 
 .GetChargeMassCenter
 	ld a,[H_WHOSETURN]
@@ -137,10 +189,9 @@ PlayPolishedCrystalGunkShotAnimation::
 	ret
 
 .DrawChargeBubbles
-	; PC creates 24 single-sprite GUNK_SHOT_BUBBLES objects, one every 2 frames
-	; from frame 4 through frame 50. Their motion is the same four Bubble Splash
-	; params already represented by EnergyBallBurstOffsets.
-	xor a ; particle index 0..23
+	; Use the 28 spawn times introduced in 81; reverse each Bubble Splash path.
+	; The last droplets feed the enlarged mass before its Absorb blinks.
+	xor a ; particle index 0..27
 .chargeBubbleLoop
 	push af
 	add a
@@ -156,7 +207,7 @@ PlayPolishedCrystalGunkShotAnimation::
 	push af
 	and 3
 	ld c,a ; param family 0..3
-	call .GetBubbleOffset
+	call .GetInwardBubbleOffset
 	push bc ; signed dx/dy
 	call .GetChargeBubbleOrigin
 	pop hl ; H=dx, L=dy
@@ -180,22 +231,13 @@ PlayPolishedCrystalGunkShotAnimation::
 .chargeBubbleSkip
 	pop af
 	inc a
-	cp 24
+	cp GUNK_SHOT_CHARGE_BUBBLES
 	jr c,.chargeBubbleLoop
 	ret
 
 .GetChargeBubbleOrigin
-	; PC GUNK_SHOT_BUBBLES at (48,88), fixY=$8c.
-	ld a,[H_WHOSETURN]
-	and a
-	jr nz,.chargeBubbleOriginEnemy
-	ld b,48
-	ld c,88
-	ret
-.chargeBubbleOriginEnemy
-	ld b,132
-	ld c,52
-	ret
+	; Converge on the exact charge-mass center, on either attacker's side.
+	jp .GetChargeMassCenter
 
 .GetBubbleOffset
 	; B=age 0..16, C=param family 0..3. Return signed dx/dy in B/C.
@@ -217,6 +259,97 @@ PlayPolishedCrystalGunkShotAnimation::
 	ld c,a
 	ret
 
+.GetSmoothBubbleOffset
+	; Interpolate between adjacent PC samples instead of repeating a frame.
+	; B=age 0..16, C=family 0..3; preserve the next OAM pointer DE.
+	ld a,[wBaseCoordY]
+	and a
+	jp z,.GetBubbleOffset
+	ld a,b
+	cp 16 ; last defined sample has no successor
+	jp z,.GetBubbleOffset
+	push de
+	push bc ; original age/family
+	call .GetBubbleOffset
+	pop hl ; original age/family (H/L)
+	push bc ; preserve current dx/dy across the second lookup
+	ld b,h
+	ld c,l
+	inc b
+	call .GetBubbleOffset ; B/C = next signed dx/dy
+	pop hl ; H/L = current signed dx/dy
+	ld a,h
+	add b
+	sra a
+	ld d,a ; halfway dx
+	ld a,l
+	add c
+	sra a
+	ld e,a ; halfway dy
+	ld a,[wBaseCoordY]
+	cp 2
+	jr z,.smoothHalf
+	cp 1
+	jr nz,.smoothQuarter
+	; Phase 1 is three quarters of the way to the next PC sample.
+	ld a,d
+	add b
+	sra a
+	ld b,a
+	ld a,e
+	add c
+	sra a
+	ld c,a
+	pop de
+	ret
+.smoothQuarter
+	; Phase 3 is one quarter of the way to the next PC sample.
+	ld a,d
+	add h
+	sra a
+	ld b,a
+	ld a,e
+	add l
+	sra a
+	ld c,a
+	pop de
+	ret
+.smoothHalf
+	ld b,d
+	ld c,e
+	pop de
+	ret
+
+.GetInwardBubbleOffset
+	; B=age 0..16; play the 17 Bubble Splash positions in reverse order.
+	; Fractional interpolation must reverse too, or droplets jitter outward.
+	ld a,[wBaseCoordY]
+	and a
+	jr nz,.inwardFraction
+	ld a,16
+	sub b
+	ld b,a
+	jp .GetBubbleOffset
+.inwardFraction
+	ld a,b
+	cp 16
+	jr z,.inwardFinal
+	ld a,15
+	sub b
+	ld b,a
+	ld a,[wBaseCoordY]
+	push af
+	cpl
+	add 5 ; reverse subframe phase: 1->3, 2->2, 3->1
+	ld [wBaseCoordY],a
+	call .GetSmoothBubbleOffset
+	pop af
+	ld [wBaseCoordY],a
+	ret
+.inwardFinal
+	ld b,0
+	jp .GetBubbleOffset
+
 .PlayBarrage
 	; PC starts a 96-frame, 4-pixel horizontal shake here. Its shake phase flips
 	; every two frames; d=2 in the shared RPP helper reproduces that cadence.
@@ -224,6 +357,9 @@ PlayPolishedCrystalGunkShotAnimation::
 	xor a
 	ld [wSubAnimCounter],a
 .barrageLoop
+	ld a,[wSubAnimCounter] ; physical VBlank count
+	push af
+	call .GetStretchedFrame
 	ld a,[wSubAnimCounter]
 	cp GUNK_SHOT_SHAKE_FRAMES
 	jr nc,.shakeBase
@@ -238,7 +374,11 @@ PlayPolishedCrystalGunkShotAnimation::
 	ld [wBattleAnimWX],a
 .shakeDone
 
-	; Bubble Beam SFX at the start and midpoint of each 16-frame barrage cycle.
+	; Bubble Beam SFX at the start and midpoint of each 16-tick barrage cycle.
+	; Do not retrigger sounds on duplicated logical ticks.
+	ld a,[wBaseCoordY]
+	cp 1
+	jr z,.barrageSoundDone
 	ld a,[wSubAnimCounter]
 	cp 64
 	jr nc,.barrageSoundDone
@@ -253,14 +393,14 @@ PlayPolishedCrystalGunkShotAnimation::
 	call .DrawInkBursts
 	call DelayFrame
 	call ClearSprites
-	ld hl,wSubAnimCounter
-	inc [hl]
-	ld a,[hl]
-	cp GUNK_SHOT_BARRAGE_FRAMES
+	pop af
+	inc a
+	ld [wSubAnimCounter],a
+	cp GUNK_SHOT_SLOW_BARRAGE
 	jp c,.barrageLoop
 
-	; The last four frames presented neutral WX=7 through VBlank. Now disarm the
-	; latch and clear the shared $CD3D scratch so nothing leaks into overworld UI.
+	; The last six VBlanks presented neutral WX=7. Now disarm the latch and
+	; clear the shared $CD3D scratch so nothing leaks into overworld UI.
 	call GoldBattleHorizontalShakeEnd
 	xor a
 	ld [wBattleAnimWX],a
@@ -287,10 +427,31 @@ PlayPolishedCrystalGunkShotAnimation::
 	add a
 	add 64
 	ld h,a
-	; logical Y = 92 - 2*step
+	; logical Y = 92 - 2*step. Fractional movement fills every VBlank.
 	ld a,b
 	add a
 	ld l,a
+	ld a,[wBaseCoordY]
+	and a
+	jr z,.projectileFractionDone
+	cp 1
+	jr nz,.projectileNotThreeQuarters
+	inc h
+	inc h
+	inc h
+	inc l
+	inc l
+	jr .projectileFractionDone
+.projectileNotThreeQuarters
+	cp 2
+	jr nz,.projectileQuarter
+	inc h
+	inc h
+	inc l
+	jr .projectileFractionDone
+.projectileQuarter
+	inc h
+.projectileFractionDone
 	ld a,92
 	sub l
 	ld c,a
@@ -334,7 +495,7 @@ PlayPolishedCrystalGunkShotAnimation::
 	ld c,a
 	ld a,[wBaseCoordX]
 	ld b,a
-	call .GetBubbleOffset
+	call .GetSmoothBubbleOffset
 	push bc
 	call .GetImpactOrigin
 	pop hl ; H=dx, L=dy
