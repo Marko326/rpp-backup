@@ -154,6 +154,12 @@ PlayExtendedOrbProjectile:
 	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
 	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
+	cp PAY_DAY
+	jr nz,.notPayDay
+	; ANIM-5.62.85: size-aware rotating throw and centred hit, then $52 bounce.
+	callba PlayPayDayCoinTossAnimation
+	ret
+.notPayDay
 	cp VOLT_TACKLE
 	jr nz,.notVoltTackle
 	; VTA-5.62.43: Ruby-inspired Volt Tackle timeline lives in bank $3E.
@@ -542,6 +548,8 @@ StageDedicatedMoveAnimation:
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID
 ; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
 LegacyMoveAnimationOverrides:
+	db PAY_DAY
+	dw PayDayDedicatedAnim
 	db AURA_SPHERE
 	dw AuraSphereDedicatedAnim
 	db SPARK
@@ -660,6 +668,19 @@ ExtendedMoveAnimationPointersEnd:
 		fail "extended move animation pointer table size mismatch"
 	ENDC
 
+
+; ANIM-5.62.85: size-aware rotating throw and a single centred Gold-like
+; hit (both via C2), then untouched smoothed $52 bounce with NO sound.
+PayDayDedicatedAnim:
+	db PayDayDedicatedAnimEnd - PayDayDedicatedAnimData
+PayDayDedicatedAnimData:
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $04,$FF,$52
+	db $FF
+PayDayDedicatedAnimEnd:
+	IF PayDayDedicatedAnimEnd - PayDayDedicatedAnimData > 30
+		fail "Pay Day animation recipe exceeds wBuffer"
+	ENDC
 
 AuraSphereDedicatedAnim:
 	db AuraSphereDedicatedAnimEnd - AuraSphereDedicatedAnimData

@@ -2930,6 +2930,10 @@ INCLUDE "data/fishing_guru_repeat_text.asm"
 SECTION "Surf SELECT Fishing", ROMX, BANK[$3B]
 INCLUDE "engine/overworld/surf_select_fishing.asm"
 
+; ANIM-5.62.85: dedicated Pay Day coin throw, kept out of HOME/bank $1E.
+SECTION "Pay Day Coin Toss Animation", ROMX, BANK[$3B]
+INCLUDE "engine/battle/pay_day_animation.asm"
+
 ; Categorized player Bag helpers live in the roomy expansion bank.
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"

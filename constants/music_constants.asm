@@ -373,3 +373,6 @@ const_value = 1
 	const GSSFX_KARATE_CHOP  ; SP-5.62.33: Sucker Punch impact SFX
 	const GSSFX_OUTRAGE      ; AUR-5.62.36: Aura Sphere charge SFX
 	const GSSFX_MEGA_PUNCH   ; AUR-5.62.36: Aura Sphere launch SFX
+	; Pay Day: reuse existing Gold whoosh and two-channel coin jingle.
+	const GSSFX_PAY_DAY_RAZOR_WIND
+	const GSSFX_PAY_DAY_COIN

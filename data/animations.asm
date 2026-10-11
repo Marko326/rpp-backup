@@ -2505,6 +2505,9 @@ Subanimation51:
 	subentry $76, $1b, 0
 	subentry $34, $1b, 0
 
+; ANIM-5.62.85: Ruby-like screen-plane spinning is applied per displayed
+; frame by UpdatePayDayBounceCoinSpin. Keep the stock $52 bounce keys and
+; four-frame delays intact so the smoothed path remains backwards-compatible.
 Subanimation52:
 	db $47
 	subentry $77, $25, 0
