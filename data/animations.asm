@@ -138,7 +138,7 @@ AttackAnimationPointers:
 	dw GlareAnim
 	dw DreamEaterAnim
 	dw PoisonGasAnim
-	dw BarrageAnim
+	dw BulletSeedAnim
 	dw LeechLifeAnim
 	dw LovelyKissAnim
 	dw SkyAttackAnim
@@ -1003,9 +1003,10 @@ PoisonGasAnim:
 	db $46,$8A,$19
 	db $FF
 
-BarrageAnim:
-	db $43,$8B,$41
-	db $05,$FF,$55
+BulletSeedAnim:
+	; ANIM-5.62.96: fallback seed toss if the real-move helper is bypassed.
+	db $46,$8B,$1B
+	db $55,$4D,$1C
 	db $FF
 
 LeechLifeAnim:

@@ -150,7 +150,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db OTHER_M ;GLARE        EQU $89
 	db SPECIAL ;DREAM_EATER  EQU $8A
 	db OTHER_M ;POISON_GAS   EQU $8B
-	db PHYSICAL;BARRAGE      EQU $8C
+	db PHYSICAL;BULLET_SEED  EQU $8C
 	db PHYSICAL;LEECH_LIFE   EQU $8D
 	db OTHER_M ;LOVELY_KISS  EQU $8E
 	db PHYSICAL;SKY_ATTACK   EQU $8F

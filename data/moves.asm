@@ -152,7 +152,7 @@ MoveEnd:
 	move GLARE,        PARALYZE_EFFECT,              0, NORMAL,   100, 30
 	move DREAM_EATER,  DREAM_EATER_EFFECT,         100, PSYCHIC,  100, 15
 	move POISON_GAS,   POISON_EFFECT,                0, POISON,    90, 40
-	move BARRAGE,      TWO_TO_FIVE_ATTACKS_EFFECT,  15, NORMAL,    85, 20
+	move BULLET_SEED,  TWO_TO_FIVE_ATTACKS_EFFECT,  25, GRASS,    100, 30
 	move LEECH_LIFE,   DRAIN_HP_EFFECT,             80, BUG,      100, 10
 	move LOVELY_KISS,  SLEEP_EFFECT,                 0, NORMAL,    75, 10
 	move SKY_ATTACK,   CHARGE_EFFECT,              200, FLYING,    90,  5
@@ -211,7 +211,7 @@ MoveEnd:
 	move AURORA_BEAM,  HYPER_BEAM_EFFECT,          150, WATER,     90,  5 ; Hydro Cannon
 	move VINE_WHIP,    HYPER_BEAM_EFFECT,          150, GRASS,     90,  5 ; Frenzy Plant
 	move MEGA_PUNCH,   NO_ADDITIONAL_EFFECT,        70, DARK,     100,  5 ; Sucker Punch
-	move BARRAGE,      SPECIAL_DOWN_SIDE_EFFECT,    80, GHOST,    100, 15 ; Shadow Ball
+	move BULLET_SEED,  SPECIAL_DOWN_SIDE_EFFECT,    80, GHOST,    100, 15 ; Shadow Ball
 	move EMBER,        BURN_SIDE_EFFECT1,           60, FIRE,     100, 25 ; Flame Wheel
 	move FOCUS_ENERGY, HEAL_EFFECT,                  0, FAIRY,    100, 20 ; Moonlight
 	move PSYCHIC_M,    NO_ADDITIONAL_EFFECT,        65, GHOST,    100, 10 ; Hex
@@ -251,7 +251,7 @@ MoveEnd:
 	move QUICK_ATTACK, NO_ADDITIONAL_EFFECT,        80, NORMAL,   100,  5 ; Extremespeed
 	move SLAM,         HYPER_BEAM_EFFECT,          150, NORMAL,    90,  5 ; Giga Impact
 	move KINESIS,      NO_ADDITIONAL_EFFECT,        80, ROCK,     100, 20 ; Power Gem
-	move BARRAGE,      TWO_TO_FIVE_ATTACKS_EFFECT,  25, ROCK,      95, 10 ; Rock Blast
+	move BULLET_SEED,  TWO_TO_FIVE_ATTACKS_EFFECT,  25, ROCK,      95, 10 ; Rock Blast
 	move HARDEN,       SPEED_UP2_EFFECT,             0, ROCK,     100, 20 ; Rock Polish
 	move ROCK_SLIDE,   SPEED_DOWN_SIDE_EFFECT,      60, ROCK,      95, 15 ; Rock Tomb
 	move MEGA_PUNCH,   DYNAMIC_PUNCH_EFFECT,       100, FIGHTING,  50,  5 ; Dynamicpunch

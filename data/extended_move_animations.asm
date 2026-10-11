@@ -160,6 +160,12 @@ PlayExtendedOrbProjectile:
 	callba PlayPayDayCoinTossAnimation
 	ret
 .notPayDay
+	cp BULLET_SEED
+	jr nz,.notBulletSeed
+	; ANIM-5.62.96: one seed volley per actual multi-hit strike.
+	callba PlayBulletSeedAnimation
+	ret
+.notBulletSeed
 	cp VOLT_TACKLE
 	jr nz,.notVoltTackle
 	; VTA-5.62.43: Ruby-inspired Volt Tackle timeline lives in bank $3E.
@@ -550,6 +556,8 @@ StageDedicatedMoveAnimation:
 LegacyMoveAnimationOverrides:
 	db PAY_DAY
 	dw PayDayDedicatedAnim
+	db BULLET_SEED
+	dw BulletSeedDedicatedAnim
 	db AURA_SPHERE
 	dw AuraSphereDedicatedAnim
 	db SPARK
@@ -571,6 +579,19 @@ LegacyMoveAnimationOverrides:
 	db EGG_BOMB
 	dw EggBombDedicatedAnim
 	db $FF
+
+; ANIM-5.62.96: Barrage slot $8C becomes a Grass-type multi-hit seed volley.
+; Kept as a sparse real-move recipe so Shadow Ball and Rock Blast can continue
+; using the old animation byte as a legacy compatibility ID.
+BulletSeedDedicatedAnim:
+	db BulletSeedDedicatedAnimEnd - BulletSeedDedicatedAnimData
+BulletSeedDedicatedAnimData:
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+BulletSeedDedicatedAnimEnd:
+	IF BulletSeedDedicatedAnimEnd - BulletSeedDedicatedAnimData > 30
+		fail "Bullet Seed animation recipe exceeds wBuffer"
+	ENDC
 
 ; Full contiguous table for expanded move IDs $A6-$FE.
 ExtendedMoveAnimationPointers:
