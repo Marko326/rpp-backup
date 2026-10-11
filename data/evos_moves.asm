@@ -2645,11 +2645,11 @@ Mon102_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
-	level_move 1,BARRAGE
+	level_move 1,BULLET_SEED
 	level_move 1,HYPNOSIS
 	level_move 7,REFLECT
 	level_move 11,LEECH_SEED
-	level_move 17,SELFDESTRUCT ; Bullet Seed → RBY TM move
+	level_move 17,SELFDESTRUCT ; Bullet Seed now starts at level 1
 	level_move 19,STUN_SPORE
 	level_move 21,POISONPOWDER
 	level_move 23,SLEEP_POWDER
@@ -2668,7 +2668,7 @@ Mon103_EvosMoves:
 	db 0
 ;Learnset
 	packed_learnset_start
-	level_move 1,BARRAGE
+	level_move 1,BULLET_SEED
 	level_move 1,HYPNOSIS
 	level_move 1,CONFUSION
 	level_move 1,STOMP ; evolution move

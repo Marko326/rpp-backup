@@ -3917,7 +3917,7 @@ MoveSoundTable:
 	db SFX_NOT_VERY_EFFECTIVE,$09,$ff ; GLARE
 	db SFX_BATTLE_35,         $42,$01 ; DREAM_EATER
 	db SFX_BATTLE_1C,         $00,$ff ; POISON_GAS
-	db SFX_BATTLE_32,         $08,$e0 ; BARRAGE
+	db SFX_BATTLE_1B,         $03,$60 ; BULLET_SEED
 	db SFX_BATTLE_24,         $00,$80 ; LEECH_LIFE
 	db SFX_BATTLE_09,         $88,$10 ; LOVELY_KISS
 	db SFX_BATTLE_25,         $48,$ff ; SKY_ATTACK

@@ -3024,6 +3024,10 @@ INCLUDE "engine/battle/earth_power_animation.asm"
 SECTION "Polished Crystal Energy Ball Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/energy_ball_animation.asm"
 
+; ANIM-5.62.92: floating banked sprite renderer; no extra HOME allocation.
+SECTION "Bullet Seed Animation", ROMX
+INCLUDE "engine/battle/bullet_seed_animation.asm"
+
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
 SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/gunk_shot_animation.asm"

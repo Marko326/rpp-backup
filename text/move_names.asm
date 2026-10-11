@@ -142,7 +142,7 @@ MoveNames::
 	db "Glare@"
 	db "Dream Eater@"
 	db "Poison Gas@"
-	db "Barrage@"
+	db "Bullet Seed@"
 	db "Leech Life@"
 	db "Lovely Kiss@"
 	db "Sky Attack@"

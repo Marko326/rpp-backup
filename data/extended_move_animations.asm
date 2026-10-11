@@ -154,6 +154,12 @@ PlayExtendedOrbProjectile:
 	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
 	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
+	cp BULLET_SEED
+	jr nz,.notBulletSeed
+	; ANIM-5.62.92: one seed volley per actual multi-hit strike.
+	callba PlayBulletSeedAnimation
+	ret
+.notBulletSeed
 	cp VOLT_TACKLE
 	jr nz,.notVoltTackle
 	; VTA-5.62.43: Ruby-inspired Volt Tackle timeline lives in bank $3E.
@@ -542,6 +548,8 @@ StageDedicatedMoveAnimation:
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID
 ; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
 LegacyMoveAnimationOverrides:
+	db BULLET_SEED
+	dw BulletSeedDedicatedAnim
 	db AURA_SPHERE
 	dw AuraSphereDedicatedAnim
 	db SPARK
@@ -563,6 +571,19 @@ LegacyMoveAnimationOverrides:
 	db EGG_BOMB
 	dw EggBombDedicatedAnim
 	db $FF
+
+; ANIM-5.62.92: Barrage slot $8C becomes a Grass-type multi-hit seed volley.
+; Kept as a sparse real-move recipe so Shadow Ball and Rock Blast can continue
+; using the old animation byte as a legacy compatibility ID.
+BulletSeedDedicatedAnim:
+	db BulletSeedDedicatedAnimEnd - BulletSeedDedicatedAnimData
+BulletSeedDedicatedAnimData:
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+BulletSeedDedicatedAnimEnd:
+	IF BulletSeedDedicatedAnimEnd - BulletSeedDedicatedAnimData > 30
+		fail "Bullet Seed animation recipe exceeds wBuffer"
+	ENDC
 
 ; Full contiguous table for expanded move IDs $A6-$FE.
 ExtendedMoveAnimationPointers:

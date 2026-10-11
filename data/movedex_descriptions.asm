@@ -153,7 +153,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescGlarePages ; GLARE
 	movedex_desc_ptr MoveDexDescDreamEaterPages ; DREAM_EATER
 	movedex_desc_ptr MoveDexDescPoisonGasPages ; POISON_GAS
-	movedex_desc_ptr MoveDexDescBarragePages ; BARRAGE
+	movedex_desc_ptr MoveDexDescBulletSeedPages ; BULLET_SEED
 	movedex_desc_ptr MoveDexDescLeechLifePages ; LEECH_LIFE
 	movedex_desc_ptr MoveDexDescLovelyKissPages ; LOVELY_KISS
 	movedex_desc_ptr MoveDexDescSkyAttackPages ; SKY_ATTACK
@@ -1573,12 +1573,12 @@ MoveDexDescPoisonGas1:
 	db   "Releases a cloud"
 	next "of poisonous gas.@"
 
-; #140 Barrage
-MoveDexDescBarragePages:
-	dw MoveDexDescBarrage1, MoveDexDescEffectBHits2To5, 0
-MoveDexDescBarrage1:
-	db   "Pelts the foe with"
-	next "round objects.@"
+; #140 Bullet Seed
+MoveDexDescBulletSeedPages:
+	dw MoveDexDescBulletSeed1, MoveDexDescEffectBHits2To5, 0
+MoveDexDescBulletSeed1:
+	db   "Shoots seeds in"
+	next "rapid succession.@"
 
 ; #141 Leech Life
 MoveDexDescLeechLifePages:
