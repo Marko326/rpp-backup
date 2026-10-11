@@ -5,7 +5,8 @@ db 150 ; base speed
 db 80 ; base special
 db ELECTRIC ; species type 1
 db ELECTRIC ; species type 2
-db 60 ; catch rate
+ELECTRODE_CATCH_RATE EQU 60
+db ELECTRODE_CATCH_RATE ; catch rate
 db 150 ; base exp yield
 INCBIN "pic/bmon/electrode.pic",0,1 ; 55, sprite dimensions
 dw ElectrodePicFront

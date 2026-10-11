@@ -6,7 +6,8 @@ db 30 ; base speed
 db 110 ; base special
 db WATER ; species type 1
 db PSYCHIC ; species type 2
-db 70 ; catch rate
+SLOWKING_CATCH_RATE EQU 70
+db SLOWKING_CATCH_RATE ; catch rate
 db 164 ; base exp yield
 INCBIN "pic/bmon/slowking.pic",0,1 ; 77, sprite dimensions
 dw SlowkingPicFront

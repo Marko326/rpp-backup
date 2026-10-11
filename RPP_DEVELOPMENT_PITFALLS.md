@@ -26,7 +26,19 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Previously seen: `engine/menu/main_menu.asm(440): Unknown symbol "PrintNumOwnedMons"`. Run symbol/reference completeness checks after relocation or deletion.
 - If changing vertical shake behavior, review `.StageBlankBG0TopRowForEnemyFeedback`; Iron Tail/Steel Wing previously left display residue around this path.
 
+## Regional sprites require live data references (FORM-5.62.111)
+
+- Adding `pic/bmon/*_hisui.png` and matching back PNGs does not register a usable form. Verify the entire chain: `FORM_*` + marker → 16-byte `RegionalFormDescriptors` record → full `MonBaseStats` header (including `.pic` size, both sprite pointers and `BANK(...)`) → independent graphics `INCBIN` → form-producing encounter/party logic. Without this chain, the PNGs are inert files and must not be called an in-game feature.
+- Bind wild forms by map and exact slot only after verifying both Normal/Hard encounter tables and `data/wild_mons.asm` map mapping (Safari West uses `ZoneMons3`, not East). Keep stock and Alolan assets and descriptors intact. A source-only review cannot certify bank capacity or runtime graphics.
+- `regional_form_guard` 的第四参须引用该普通物种在 `data/baseStats/*.asm` 声明的 `*_CATCH_RATE` 常量。新增描述符前逐一核查符号是否已定义；未定义时保持原 `db` 数值，补同值 `EQU`，不可删掉防冲突断言。通过断言只说明 marker 与普通捕获率没有冲突，**不代表新地区形态捕获率已经定稿**。
+- `ANIM-5.62.111` 新增九种地区形态的全部数值、招式、进化、调色板、图鉴及遭遇配置均为占位；正式调整须后续统一处理，不在没有 ROM／实机验收时把表驱动数据登记误称为正式定稿。
+
 ## ROM bank placement
+
+- **ANIM-5.62.111 地区形态 bank $34 拥塞**：撤销地区形态提交后的 5.62.110 自带 `patches/rppred.map` 显示 bank #52（`$34`）仅剩 `$37` 字节。新增 9 组完整形态资料与 9 条描述符不可直接追加至 `$34`；链接器先报 `Slot Machine Tiles 2` 无法放置只是受害段。
+- **按 map 迁移、保持 bank-aware ABI**：`Battle Type Effectiveness`（`$274`）、`Slot Machine Tiles 2`（`$180`）、`Poke Flute Party Wake`（`$68`）、`Fly Town Map Route20 Classifier`（`$DA`）已有 `callab`/`callba`/`BANK(...)` 调用约定，候选改为固定 `$30`；不要把 `RegionalFormDescriptors` 和扩展头数据拆开，现有描述符仅保存同 bank 16 位指针。
+- **实际链接是最终验收**：旧 map 的空余字节和手工计算不能代替 `make map`，且 Red/Hard 都要复测。构建环境未安装 `.rgbds-version` 要求的 RGBDS 0.5.2 时必须标记为未编译，不能先做正式提交。
+
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.
 - A linker error naming the section that finally fails to place does not prove that section caused the growth. Find the section that actually expanded first.

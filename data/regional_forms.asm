@@ -190,6 +190,96 @@ RegionalFormDescriptors::
 	dw AlolanMarowakShinyPalette
 	db BANK(AlolanMarowakDexMetrics)
 	dw AlolanMarowakDexMetrics
+; ANIM-5.62.111: registered Hisui/Galar/Paldea forms; sprite pointers in independent graphics section.
+	regional_form_guard GROWLITHE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, GROWLITHE_CATCH_RATE
+	db GROWLITHE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiGrowlitheBaseStats
+	dw HisuiGrowlitheLevelMoves
+	dw HisuiGrowlitheEvolutions
+	dw HisuiGrowlithePreviewPalette
+	dw HisuiGrowlitheShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard ARCANINE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, ARCANINE_CATCH_RATE
+	db ARCANINE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiArcanineBaseStats
+	dw HisuiArcanineLevelMoves
+	dw HisuiArcanineEvolutions
+	dw HisuiArcaninePreviewPalette
+	dw HisuiArcanineShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard VOLTORB, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, VOLTORB_CATCH_RATE
+	db VOLTORB, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiVoltorbBaseStats
+	dw HisuiVoltorbLevelMoves
+	dw HisuiVoltorbEvolutions
+	dw HisuiVoltorbPreviewPalette
+	dw HisuiVoltorbShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard ELECTRODE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, ELECTRODE_CATCH_RATE
+	db ELECTRODE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiElectrodeBaseStats
+	dw HisuiElectrodeLevelMoves
+	dw HisuiElectrodeEvolutions
+	dw HisuiElectrodePreviewPalette
+	dw HisuiElectrodeShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard ZIGZAGOON, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, ZIGZAGOON_CATCH_RATE
+	db ZIGZAGOON, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarZigzagoonBaseStats
+	dw GalarZigzagoonLevelMoves
+	dw GalarZigzagoonEvolutions
+	dw GalarZigzagoonPreviewPalette
+	dw GalarZigzagoonShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard LINOONE, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, LINOONE_CATCH_RATE
+	db LINOONE, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarLinooneBaseStats
+	dw GalarLinooneLevelMoves
+	dw GalarLinooneEvolutions
+	dw GalarLinoonePreviewPalette
+	dw GalarLinooneShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard WEEZING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, WEEZING_CATCH_RATE
+	db WEEZING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarWeezingBaseStats
+	dw GalarWeezingLevelMoves
+	dw GalarWeezingEvolutions
+	dw GalarWeezingPreviewPalette
+	dw GalarWeezingShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard SLOWKING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, SLOWKING_CATCH_RATE
+	db SLOWKING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarSlowkingBaseStats
+	dw GalarSlowkingLevelMoves
+	dw GalarSlowkingEvolutions
+	dw GalarSlowkingPreviewPalette
+	dw GalarSlowkingShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard TAUROS, FORM_PALDEA_BLAZE, REGIONAL_FORM_MARKER_PALDEA_BLAZE, TAUROS_CATCH_RATE
+	db TAUROS, FORM_PALDEA_BLAZE, REGIONAL_FORM_MARKER_PALDEA_BLAZE
+	dw PaldeaBlazeTaurosBaseStats
+	dw PaldeaBlazeTaurosLevelMoves
+	dw PaldeaBlazeTaurosEvolutions
+	dw PaldeaBlazeTaurosPreviewPalette
+	dw PaldeaBlazeTaurosShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
 RegionalFormDescriptorsTerminator::
 	db 0 ; terminator: species 0 is never a valid descriptor
 ASSERT RegionalFormDescriptorsTerminator - RegionalFormDescriptors == RF_DESCRIPTOR_GUARD_COUNT * 16
@@ -1198,6 +1288,9 @@ AlolanMarowakShinyPalette::
 	RGB 18, 21, 15
 	RGB 14, 15, 04
 
+
+; Extra regional data lives in the same bank as descriptors for 16-bit pointers.
+INCLUDE "data/regional_forms_expansion.asm"
 
 ; Graphics are a separate section on purpose. Future forms can put their sprites
 ; in another roomy bank without changing the descriptor engine.

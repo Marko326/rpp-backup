@@ -5,7 +5,8 @@ db 60 ; base speed
 db 85 ; base special
 db POISON ; species type 1
 db POISON ; species type 2
-db 60 ; catch rate
+WEEZING_CATCH_RATE EQU 60
+db WEEZING_CATCH_RATE ; catch rate
 db 173 ; base exp yield
 INCBIN "pic/bmon/weezing.pic",0,1 ; 77, sprite dimensions
 dw WeezingPicFront

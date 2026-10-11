@@ -2604,7 +2604,9 @@ InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
 ; Type effectiveness/STAB logic is kept out of capacity-constrained Bank F.
 ; Battle damage and trainer AI share the same routines and TypeEffects table.
-SECTION "Battle Type Effectiveness", ROMX, BANK[$34]
+; ANIM-5.62.111: bank $34 has only $37 free in the 5.62.110 map;
+; callers use callab and BANK(...) so move the whole section to bank $30.
+SECTION "Battle Type Effectiveness", ROMX, BANK[$30]
 INCLUDE "engine/battle/type_effectiveness.asm"
 
 ; Relocatable battle helpers live in roomy bank $34 so Bank F only pays the
@@ -2636,13 +2638,15 @@ SECTION "Red Bedroom PC", ROMX, BANK[$3E]
 INCLUDE "engine/menu/red_bedroom_pc.asm"
 
 ; Shared Poké Flute party wake-up logic is kept out of the capacity-constrained
-; item-use bank. Battle and field callers both use the same helper.
-SECTION "Poke Flute Party Wake", ROMX, BANK[$34]
+; item-use bank. ANIM-5.62.111: its entry points are called through callba,
+; allowing relocation from packed bank $34 to bank $30. Battle and field callers both use the same helper.
+SECTION "Poke Flute Party Wake", ROMX, BANK[$30]
 INCLUDE "engine/items/pokeflute_party.asm"
 
-; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.
-; BANK $35 is capacity-constrained, so keep the larger F23.12n geography logic here.
-SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$34]
+; Route 20 / Seafoam Town Map classifier and Pokédex location builder use
+; callba entry points; move together to bank $30 to release bank $34 space.
+; Bank $35 remains capacity-constrained.
+SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$30]
 INCLUDE "engine/fly_town_map_route20.asm"
 
 ; F23.15fix: build the Pokédex habitat list in the same logical Town Map selector
@@ -2711,7 +2715,8 @@ BuildPokedexTownMapLocations::
 
 ; Keep non-battle slot-machine graphics out of the capacity-constrained
 ; battle-animation bank. Slot-machine loaders already use BANK(SlotMachineTiles2).
-SECTION "Slot Machine Tiles 2", ROMX, BANK[$34]
+; ANIM-5.62.111: move to bank $30; keep the original $180 tile data intact.
+SECTION "Slot Machine Tiles 2", ROMX, BANK[$30]
 SlotMachineTiles2:
 IF DEF(_RED)
 	INCBIN "gfx/red/slotmachine2.2bpp"
