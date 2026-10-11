@@ -3032,6 +3032,10 @@ INCLUDE "engine/battle/bullet_seed_animation.asm"
 SECTION "Global Multi-Hit Damage Feedback", ROMX
 INCLUDE "engine/battle/global_multihit_feedback.asm"
 
+; ANIM-5.62.94: Twineedle per-hit poison hook; keep body out of Bank $F.
+SECTION "Twineedle Per-Hit Poison", ROMX
+INCLUDE "engine/battle/twineedle_per_hit_poison.asm"
+
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
 SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/gunk_shot_animation.asm"
