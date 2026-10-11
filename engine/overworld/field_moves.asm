@@ -415,16 +415,22 @@ CheckRepeatFishingRodOverworld::
 	ret
 
 CheckRepeatFishingRod::
+; FIS-5.62.90: reuse the no-bite textbox throughout consecutive retries.
+; FishingAnim/PresentFishingResultR2 already printed the result.
+; Do not call DisplayTextIDInit again before asking the next question.
+; The remaining A/B-to-question delay has not been confirmed resolved.
+	ld a, [wRepeatFishingRod]
+	and a
+	jr z, .clearPseudoItem
 .retry
 ; Consume first. A retry that also gets no bite will set it again itself.
 	ld a, [wRepeatFishingRod]
 	and a
-	jr z, .clearPseudoItem
+	jr z, .finish
 	ld b, a
 	xor a
 	ld [wRepeatFishingRod], a
 	push bc
-	call Text2_EnterTheText
 	ld hl, UseRodAgainText
 	call PrintTextAndYesNoChoice
 	jr nz, .done
@@ -454,10 +460,13 @@ CheckRepeatFishingRod::
 	xor a
 	ld [wRepeatFishingRod], a
 .closeRetryText
-	call Text3_DrakesDeception
+	; Keep the text window open while the next cast is still eligible.
+	; FishingInit's bit-7 handoff still suppresses a full map redraw.
 	jr .retry ; consecutive misses are handled without recursive calls
 .done
 	pop bc
+.finish
+	; No, a bite, no retry or rejected cast: close exactly once.
 	call Text3_DrakesDeception
 .clearPseudoItem
 	xor a

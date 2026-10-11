@@ -2329,7 +2329,7 @@ RodResponse:
 	ld [wCurOpponent], a
 
 .next
-	; FIS-5.62.86: keep the packed item Bank small; Surf SELECT uses
+	; FIS-5.62.87: keep the packed item Bank small; Surf SELECT uses
 	; the same result codes without loading a rod sprite or changing Surf.
 	callba PresentFishingResultR2
 	ret

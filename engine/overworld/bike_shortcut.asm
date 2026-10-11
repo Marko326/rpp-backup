@@ -1,4 +1,4 @@
-; FIS-5.62.86: R2 extends the proven R1 SELECT router to Surf. While
+; FIS-5.62.87: Surf extends the proven R1 SELECT router to Surf. While
 ; surfing, use the last Bag rod without a facing-tile check; other land tiles
 ; still fall back to the original bicycle shortcut.
 TryFishOrRideBike::

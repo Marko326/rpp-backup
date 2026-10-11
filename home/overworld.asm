@@ -83,7 +83,7 @@ OverworldLoopLessDelay::
 	bit 2,a ; select button
 	jr z,.selectButtonNotPressed
 ; if SELECT is pressed
-	farcall TryFishOrRideBike ; FIS-5.62.83: shore fishing, otherwise original bike shortcut
+	farcall TryFishOrRideBike ; FIS-5.62.84: shore fishing, otherwise original bike shortcut
 	jp c, OverworldLoop ; shortcut text/cast consumed this frame's buttons
 .selectButtonNotPressed
 	bit 3,a ; start button

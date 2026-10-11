@@ -486,7 +486,7 @@ StartMenu_Item:
 	ld a,[wActionResultOrTookBattleTurn]
 	and a
 	jp z,ItemMenuLoop
-	; FIS-5.62.83: record only a successful, deliberate Bag rod use.
+	; FIS-5.62.84: record only a successful, deliberate Bag rod use.
 	callab RememberBagFishingRod
 	jp CloseStartMenu
 .useItem_partyMenu

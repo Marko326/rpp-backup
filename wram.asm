@@ -3306,7 +3306,7 @@ wWalkBikeSurfState:: ; d784
 ; $02 = surfing
 	ds 1
 
-; FIS-5.62.83: persistent last rod deliberately used from the Bag.
+; FIS-5.62.84: persistent last rod deliberately used from the Bag.
 ; These two bytes reuse the old d785-d78c reserved save space;
 ; the marker prevents stale bytes in pre-existing saves from acting as a rod.
 wLastUsedFishingRod:: ; d785
