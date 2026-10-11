@@ -3373,6 +3373,10 @@ MirrorMoveCheck:
 	jr z,.notDone
 	jp ExecutePlayerMoveDone ; otherwise, we're done if the move missed
 .moveDidNotMiss
+	; ANIM-5.62.98: remember whether this hit struck a Substitute. If it
+	; breaks, the substitute bit is already gone when poison is considered.
+	ld a, [wEnemyBattleStatus2]
+	push af
 	call ApplyAttackToEnemyPokemon
 	call PrintAttackResultText
 	ld a,1
@@ -3385,6 +3389,13 @@ MirrorMoveCheck:
 	; Restore only after target damage and recoil have both visibly resolved.
 	; The helper skips a 0-HP attacker and keeps multi-hit intermediate hits visible.
 	callab FinishAttackerSubstituteAfterDamage
+	pop af
+	bit HasSubstituteUp, a
+	jr nz, .notDone
+	call GetCurrentMoveID
+	cp TWINEEDLE
+	jr nz, .notDone
+	callab TryTwineedlePoisonAfterHit
 .notDone
 	ld a,[wPlayerMoveEffect]
 	ld hl,AlwaysHappenSideEffects
@@ -3423,6 +3434,11 @@ MirrorMoveCheck:
 	xor a
 	ld [wPlayerNumHits],a
 .executeOtherEffects
+	; ANIM-5.62.98: each Twineedle hit has already checked poison.
+	; Do not run its legacy end-of-move poison roll a third time.
+	call GetCurrentMoveID
+	cp TWINEEDLE
+	jp z, ExecutePlayerMoveDone
 	ld a,[wPlayerMoveEffect]
 	and a
 	jp z,ExecutePlayerMoveDone
@@ -3432,7 +3448,7 @@ MirrorMoveCheck:
 	call nc,JumpMoveEffect ; move effects not included in SpecialEffects or in either of the ResidualEffect arrays,
 	; which are the effects not covered yet. Rage effect will be executed for a second time (though it's irrelevant).
 	; Includes side effects that only need to be called if the target didn't faint.
-	; Responsible for executing Twineedle's second side effect (poison).
+	; Twineedle's poison is handled per hit above, not here.
 	jp ExecutePlayerMoveDone
 
 MultiHitText:
@@ -5660,6 +5676,10 @@ EnemyCheckIfMirrorMoveEffect:
 	jr z, .handleExplosionMiss
 	jp ExecuteEnemyMoveDone
 .moveDidNotMiss
+	; ANIM-5.62.98: preserve the pre-damage Substitute state across
+	; damage, including when this very hit breaks the Substitute.
+	ld a, [wPlayerBattleStatus2]
+	push af
 	call ApplyAttackToPlayerPokemon
 	call PrintAttackResultText
 	ld a, 1
@@ -5670,6 +5690,13 @@ EnemyCheckIfMirrorMoveEffect:
 	; normal post-hit processing; Finish... only reshows a surviving attacker.
 	callab HandlePostDamageRecoil
 	callab FinishAttackerSubstituteAfterDamage
+	pop af
+	bit HasSubstituteUp, a
+	jr nz, .handleExplosionMiss
+	call GetCurrentMoveID
+	cp TWINEEDLE
+	jr nz, .handleExplosionMiss
+	callab TryTwineedlePoisonAfterHit
 .handleExplosionMiss
 	ld a, [wEnemyMoveEffect]
 	ld hl, AlwaysHappenSideEffects
@@ -5704,6 +5731,10 @@ EnemyCheckIfMirrorMoveEffect:
 	xor a
 	ld [wEnemyNumHits], a
 .notMultiHitMove
+	; ANIM-5.62.98: the two hits already received independent rolls.
+	call GetCurrentMoveID
+	cp TWINEEDLE
+	jr z, ExecuteEnemyMoveDone
 	ld a, [wEnemyMoveEffect]
 	and a
 	jr z, ExecuteEnemyMoveDone
