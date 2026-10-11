@@ -3040,6 +3040,10 @@ INCLUDE "engine/battle/energy_ball_animation.asm"
 SECTION "Bullet Seed Animation", ROMX
 INCLUDE "engine/battle/bullet_seed_animation.asm"
 
+; ANIM-5.62.97: global enemy multi-hit feedback and original move overrides.
+SECTION "Global Multi-Hit Damage Feedback", ROMX
+INCLUDE "engine/battle/global_multihit_feedback.asm"
+
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
 SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/gunk_shot_animation.asm"
