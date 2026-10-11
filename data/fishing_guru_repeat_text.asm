@@ -1,6 +1,6 @@
 ; FIS-5.62.85: repeat-only advice for the three Fishing Gurus.
 ; The original first meeting, gift, refusal, and full-BAG texts stay unchanged.
-; R2 Surf SELECT fishing is not implemented, so do not teach it here.
+; Surf fishing is taught separately by the Safari Secret House HM03 giver.
 
 FishingGuruOldRodRepeatText::
 	text "Hello there,"
@@ -81,4 +81,38 @@ FishingGuruGoodRodRepeatText::
 	para "Away from water,"
 	line "SELECT still uses"
 	cont "your BICYCLE."
+	done
+
+; FIS-5.62.88: repeat talk only for the Safari Secret House HM03 giver.
+; Preserve the original explanation before introducing Surf fishing.
+SafariSecretHouseSurfRepeatText::
+	text "HM03 is Surf!"
+
+	para "#mon will be"
+	line "able to ferry you"
+	cont "across water!"
+
+	para "And, this HM isn't"
+	line "disposable! You"
+	cont "can use it over"
+	cont "and over!"
+
+	para "You're super lucky"
+	line "for winning this"
+	cont "fabulous prize!"
+
+	para "You can fish while"
+	line "Surfing, too!"
+
+	para "Use a rod from"
+	line "your BAG while"
+	cont "Surfing."
+
+	para "Then press SELECT"
+	line "to use your last"
+	cont "rod on the water!"
+
+	para "To switch rods,"
+	line "use another rod"
+	cont "from your BAG."
 	done

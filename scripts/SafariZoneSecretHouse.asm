@@ -34,7 +34,9 @@ ReceivedHM03Text:
 	db "@"
 
 HM03ExplanationText:
-	TX_FAR _HM03ExplanationText
+	; Post-award repeat: original Surf explanation plus Surf fishing tip.
+	; First gift and Bag-full branches are unchanged.
+	TX_FAR SafariSecretHouseSurfRepeatText
 	db "@"
 
 HM03NoRoomText:

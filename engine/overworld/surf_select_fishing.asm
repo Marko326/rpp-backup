@@ -29,8 +29,9 @@ CheckFishingEligibleR2::
 	scf
 	ret
 
-; Only the Surf result display is different: retain text and 10+84
-; frames of normal pacing, never touch player Surf sprite/OAM/state.
+; Surf keeps the same result text and 10+84-frame initial pacing.
+; On a bite, bob the Surf sprite and show the exclamation bubble; never
+; load land rod pose tiles, reserve rod OAM or change the Surf state.
 PresentFishingResultR2::
 	ld a, [wWalkBikeSurfState]
 	cp 2
@@ -56,6 +57,22 @@ PresentFishingResultR2::
 	cp 2
 	ld hl, .nothingHere
 	jr z, .showText
+	; A bite: shake only the current Surf sprite (including its mount).
+	; No rod tiles/OAM reservation: the Surf graphics stay loaded.
+	ld b, 10
+.shakeSurf
+	ld hl, wSpriteStateData1 + 4 ; player's Surf sprite screen Y
+	ld a, [hl]
+	xor 1
+	ld [hl], a
+	call Delay3
+	dec b
+	jr nz, .shakeSurf ; even toggles restore the exact original Y
+	; The bubble predef updates OAM and restores normal sprite updates.
+	xor a
+	ld [wEmotionBubbleSpriteIndex], a ; player / Surf mount
+	ld [wWhichEmotionBubble], a ; exclamation
+	predef EmotionBubble
 	ld hl, .aBite
 .showText
 	call PrintText
