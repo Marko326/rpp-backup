@@ -2922,6 +2922,10 @@ SECTION "Wild Form Producers", ROMX, BANK[$3B]
 INCLUDE "data/wild_form_producers.asm"
 INCLUDE "engine/wild_form_producers.asm"
 
+; FIS-5.62.85: post-gift Fishing Guru tips live outside crowded map text banks.
+SECTION "Fishing Guru Repeat Tips", ROMX, BANK[$3B]
+INCLUDE "data/fishing_guru_repeat_text.asm"
+
 ; Categorized player Bag helpers live in the roomy expansion bank.
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"

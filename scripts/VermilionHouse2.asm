@@ -42,7 +42,8 @@ VermilionHouse2Text_560c0:
 	db "@"
 
 VermilionHouse2Text_560c5:
-	TX_FAR _VermilionHouse2Text_560c5
+	; FIS-5.62.85: only repeat talk after the rod was gifted.
+	TX_FAR FishingGuruOldRodRepeatText
 	db "@"
 
 VermilionHouse2Text_560ca:
