@@ -1466,7 +1466,7 @@ PlayApplyingAttackAnimation:
 ; Different animation depending on whether the move has an additional effect and on whose turn it is
 	; ANM-5.61.69: keep RPP's stock effect-based feedback as the default. Only
 	; real moves whose restored behavior intentionally differs from that default
-	; are listed in DamageFeedbackOverrides below. This avoids teaching every
+	; are listed in the floating DamageFeedbackOverrides table. This avoids teaching every
 	; Gold/Crystal renderer about wAnimationType while preserving ordinary side-
 	; effect horizontal shakes for moves that still use them.
 	ld a,[wAnimationType]
@@ -1476,11 +1476,11 @@ PlayApplyingAttackAnimation:
 	jr z,.useStoredType ; enemy non-damaging animation
 	cp 6
 	jr z,.useStoredType ; player non-damaging animation
-	call GetDamageFeedbackOverride
-	jr c,.gotType
+	; ANIM-5.62.93: resolve normal overrides and all enemy multi-hit damage
+	; in a floating bank. Bankswitch clobbers A; load the selected type back.
+	callba SelectGlobalDamageFeedbackType
 .useStoredType
 	ld a,[wAnimationType]
-.gotType
 	and a
 	ret z
 	dec a
@@ -1501,57 +1501,6 @@ AnimationTypePointerTable:
 	dw BlinkEnemyMonSprite ; player mon has used a damaging move without a side effect
 	dw ShakeScreenHorizontallyLight ; player mon has used a damaging move with a side effect
 	dw ShakeScreenHorizontallySlow2 ; player mon has used a non-damaging move
-
-; Return carry with A = replacement animation type only when this real move/side
-; is an explicit exception to the stock effect-based table above. A zero override
-; means "keep the stored wAnimationType for this side".
-GetDamageFeedbackOverride:
-	call GetCurrentMoveID
-	ld b,a
-	ld hl,DamageFeedbackOverrides
-.loop
-	ld a,[hli]
-	and a
-	ret z ; terminator; AND clears carry
-	cp b
-	jr z,.found
-	inc hl ; skip player override
-	inc hl ; skip enemy override
-	jr .loop
-.found
-	ld a,[H_WHOSETURN]
-	and a
-	jr nz,.enemy
-	ld a,[hli]
-	jr .finish
-.enemy
-	inc hl
-	ld a,[hl]
-.finish
-	and a
-	ret z ; zero = use stock feedback; AND clears carry
-	scf
-	ret
-
-; move, player-side override, enemy-side override
-; 4 = BlinkEnemyMonSprite, 1 = ShakeScreenVertically, 0 = keep stock type.
-DamageFeedbackOverrides:
-	db SHADOW_BALL, 4, 1
-	db VOLT_TACKLE, 0, 1 ; VTA-5.62.43: player stock; enemy vertical hit feedback.
-	db ENERGY_BALL, 4, 1 ; ANM-5.62.05: custom impact is followed by standard blink/vertical hit feedback.
-	db AURA_SPHERE, 4, 1 ; AUR-5.62.36: standard post-impact feedback
-	db GUNK_SHOT, 0, 1 ; ANM-5.62.10: keep player feedback; enemy hit shakes the player vertically.
-	db HURRICANE, 4, 1 ; HUR-5.62.32: avoid a redundant side-effect shake after the storm renderer.
-	db SPARK, 4, 1 ; ANM-5.61.72: Gold-style hit reaction, matching Shadow Ball.
-	db ICY_WIND, 4, 1 ; ANM-5.61.81: player hit blinks target; enemy hit shakes player vertically.
-	db IRON_TAIL, 0, 1 ; ANM-5.62.07: keep player feedback; enemy hit shakes the player vertically.
-	db STEEL_WING, 0, 1 ; SW-5.62.37: keep player feedback; enemy hit shakes the player vertically.
-	db EARTH_POWER, 4, 1 ; ANM-5.61.102: avoid a redundant post-eruption side-effect shake.
-	db SHADOW_PUNCH, 0, 1
-	db FLAME_WHEEL, 0, 1
-	db CRUNCH, 4, 1
-	db EGG_BOMB, 0, 1 ; EGG-A4-5.61.75: enemy use shakes the player vertically.
-	db 0
 
 ShakeScreenVertically:
 	call PlayApplyingAttackSound
