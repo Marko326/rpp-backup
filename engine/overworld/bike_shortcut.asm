@@ -1,14 +1,14 @@
-; FIS-5.62.83: the SELECT shortcut fishes only while on land, facing a
-; tile accepted by the existing fishing test. All other SELECT presses retain
-; the old TryRideBike path (including Surf and Cycling Road restrictions).
+; FIS-5.62.86: R2 extends the proven R1 SELECT router to Surf. While
+; surfing, use the last Bag rod without a facing-tile check; other land tiles
+; still fall back to the original bicycle shortcut.
 TryFishOrRideBike::
 	ld a, [wWalkBikeSurfState]
-	cp 2 ; R2 will handle surfing independently
-	jp z, .rideBike
-	predef GetTileAndCoordsInFrontOfPlayer ; refresh, never trust a stale tile
+	cp 2
+	jr z, .checkRod
+	predef GetTileAndCoordsInFrontOfPlayer ; refresh only on overworld land
 	callba IsNextTileShoreOrWater
 	jp c, .rideBike
-
+.checkRod
 	; Old saves may contain arbitrary values in the formerly unused bytes.
 	ld a, [wLastUsedFishingRodMagic]
 	cp $a7
@@ -32,7 +32,7 @@ TryFishOrRideBike::
 	call CopyStringToCF4B
 	call EnableBikeShortcutText
 	; An overworld SELECT cast already has the map in place. Reuse the
-	; existing R0 redraw-skip handoff, without changing FishingInit.
+	; existing R0 redraw-skip handoff for both land and Surf.
 	ld a, $80
 	ld [wRepeatFishingRod], a
 	call UseItem ; original rod encounter, text, sound and animation

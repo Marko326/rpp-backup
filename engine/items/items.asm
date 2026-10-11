@@ -2329,15 +2329,9 @@ RodResponse:
 	ld [wCurOpponent], a
 
 .next
-	ld hl, wWalkBikeSurfState
-	ld a, [hl] ; store the value in a
-	push af
-	push hl
-	ld [hl], 0
-	callba FishingAnim
-	pop hl
-	pop af
-	ld [hl], a
+	; FIS-5.62.86: keep the packed item Bank small; Surf SELECT uses
+	; the same result codes without loading a rod sprite or changing Surf.
+	callba PresentFishingResultR2
 	ret
 
 ; checks if fishing is possible and if so, runs initialization code common to all rods
@@ -2349,11 +2343,10 @@ FishingInit:
 	scf ; can't fish during battle
 	ret
 .notInBattle
-	call IsNextTileShoreOrWater
+	; FIS-5.62.87: Surf accepts both Bag rods and SELECT/repeat casts;
+	; land keeps the original tile validator in the Bank $3B helper.
+	callba CheckFishingEligibleR2
 	ret c
-	ld a,[wWalkBikeSurfState]
-	cp a,2 ; Surfing?
-	jr z,.surfing
 	; A repeated cast already has the overworld and a text window open.
 	; Redrawing the map here exposes map tiles through the Yes/No window
 	; for a frame before the next "used the rod" text is drawn.
@@ -2369,9 +2362,6 @@ FishingInit:
 	ld c,48 ; restored shorter fishing lead-in from archived P034
 	call DelayFrames
 	and a
-	ret
-.surfing
-	scf ; can't fish when surfing
 	ret
 
 ItemUseOaksParcel:
