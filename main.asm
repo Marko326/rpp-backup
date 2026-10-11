@@ -3048,6 +3048,10 @@ INCLUDE "engine/battle/global_multihit_feedback.asm"
 SECTION "Twineedle Per-Hit Poison", ROMX
 INCLUDE "engine/battle/twineedle_per_hit_poison.asm"
 
+; ANIM-5.62.109: floating bank for private, symmetric Horn-style needles.
+SECTION "Twineedle Symmetric Projectile Animation", ROMX
+INCLUDE "engine/battle/twineedle_animation.asm"
+
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
 SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/gunk_shot_animation.asm"

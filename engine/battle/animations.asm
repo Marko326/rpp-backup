@@ -1455,6 +1455,14 @@ MoveAnimation:
 	ld a,[wOptions]
 	bit 7,a
 	jr nz, .animationsDisabled
+	; ANIM-5.62.109: separate mirrored-axis twin projectiles; keep the
+	; shared generic damage reaction for each hit via .next4.
+	ld a,[wAnimationID]
+	cp TWINEEDLE
+	jr nz,.regularMoveAnimation
+	callba PlaySymmetricTwineedleAnimation
+	jr .next4
+.regularMoveAnimation
 	call ShareMoveAnimations
 	call PlayAnimation
 	jr .next4
