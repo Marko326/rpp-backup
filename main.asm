@@ -3199,6 +3199,14 @@ NewBarkTownBlocks: INCBIN "maps/NewBarkTown.blk"
 SECTION "Johto Region Map Header Tables", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/johto_map_headers.asm"
 
+; HOME-5.62.122: moved legacy Kanto header pointer table out of ROM0.
+; Keep pointer data in expansion ROM and access through a far-call helper.
+SECTION "Kanto Region Map Header Tables", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/map_header_pointers.asm"
+
+SECTION "Kanto Region Map Header Pointer Resolver", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "engine/overworld/kanto_header_lookup.asm"
+
 SECTION "Johto Region Map Key Resolver", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "engine/overworld/region_map_lookup.asm"
 

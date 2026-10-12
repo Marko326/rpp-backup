@@ -10,6 +10,9 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - `EVO-5.62.271` passed a Party-menu tilemap pointer through `HL` across `CALLBA`. The helper then treated the far target address as the UI destination, so `Able`/`Not able`/`LvXX+` disappeared and writes could hit ROM/MBC control addresses, disturbing the active bank. Pass such pointers in a verified register or save/restore them explicitly.
 - The wild/fishing producer work already proved the same class of ABI issue: do not return critical form/source identity through `A` across `CALLBA`; protect live `BC`/`HL` when required.
 
+- **HOME-5.62.121（失败版本，勿提交）**：将 `MapHeaderPointers` 搬到 ROMX 后，`LoadMapHeader` 先把旧地图 ID 装入 `A` 再 `callab GetKantoMapHeaderPointer`；实际上 `Bankswitch` 会用目标 Bank 和原 Bank 覆盖 `A`，导致指针索引错乱。用户报告进入房屋以及 Fly 后乱码／死机。**HOME-5.62.122 修复约定**：旧地图 ID 放入 `E`，远调用目标从 `E` 查表；原地图 ROM Bank 由 `Bankswitch` 恢复，`HL` 作为返回指针使用。修改此类路径必须同时检查每一个远调用的参数寄存器、返回寄存器与读表时激活的 ROM Bank；静态检查不等于运行验证。
+- **HOME-5.62.122 验收与空间边界**：用户已对关都主流城镇、进出房屋、宝可梦中心、港口、山洞、道馆、Fly、城都入口及存读档复测，未发现 `.121` 的死机；不是逐张全地图测试。用户红版 MAP 报告 ROM0 余量从 375 B 升至 879 B（+504 B），Bank `$40` 余量相应降低约 503 B。后续 Home 瘦身不要只看源代码行数或忘记查 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 和本文件的既有 `callab` ABI 规则；优化数据表时保持索引顺序、固定表长和未来新增条目的可维护性。
+
 ## WRAM scratch and bank boundaries
 
 - Unnamed WRAM is not automatically free. Check symbols, raw address spans, string/buffer copies, unions, stack use, and WRAM-bank lifetime before borrowing scratch.

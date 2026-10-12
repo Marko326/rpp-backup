@@ -1951,20 +1951,9 @@ LoadMapHeader::
 	ld [MBC1RomBank], a
 	jr .mapHeaderReady
 .legacyMapHeader
-	ld hl,MapHeaderPointers
-	ld a,[wCurMap]
-	sla a
-	jr nc,.noCarry1
-	inc h
-.noCarry1
-	add l
-	ld l,a
-	jr nc,.noCarry2
-	inc h
-.noCarry2
-	ld a,[hli]
-	ld h,[hl]
-	ld l,a ; hl = base of map header
+	ld a, [wCurMap]
+	ld e, a ; HOME-5.62.122: E survives callab, A does not
+	callab GetKantoMapHeaderPointer ; HL = base of map header
 .mapHeaderReady
 ; copy the first 10 bytes (the fixed area) of the map data to D367-D370
 	ld de,wCurMapTileset

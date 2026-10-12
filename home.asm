@@ -313,7 +313,6 @@ Start::
 
 
 INCLUDE "home/joypad.asm"
-INCLUDE "data/map_header_pointers.asm"
 INCLUDE "home/overworld.asm"
 
 CheckForUserInterruption::

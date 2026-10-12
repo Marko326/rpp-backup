@@ -14,14 +14,8 @@ ResolveRegionMapHeader::
 	ld a, e
 	cp NUM_LEGACY_MAPS
 	jr nc, .invalid
-	ld l, e
-	ld h, 0
-	add hl, hl
-	ld bc, MapHeaderPointers
-	add hl, bc
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
+	; HOME-5.62.122: E survives callab; A is overwritten by Bankswitch.
+	callab GetKantoMapHeaderPointer
 	push hl
 	ld a, e
 	call GetKantoMapHeaderBank
