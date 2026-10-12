@@ -57,6 +57,8 @@ This file is the persistent, Git-tracked record of repeatable development failur
 
 ## Explicit region-key ferry Warp (REG-5.62.120)
 
+- **REG-5.62.123 bidirectional escape**: the ferry menu now emits `$FE` for both New Bark and `GO_HOME`. Never distinguish these targets by the escape byte alone: the selected destination warp ID is `0` for New Bark and `2` for Vermilion, distinct from `wWarpedFromWhichWarp` (zero-based source tile 0/1). Match `(source map, source warp slot, destination warp ID)` in Bank `$40`, compare the warp ID in the ferry menu's AlreadyThere branch, and let the cursor recognize `$FE + warp 0` as New Bark only. Old ferry saves may still contain `$E7` or `VERMILION_FERRY_DOCK` directly; both remain valid and require compatibility checks when this path changes. The user has tested the REG-5.62.123 suggested ferry/menu scenarios with no reported issue, but has not supplied separate per-byte memory evidence or an exhaustive special-Warp edge-case report. This avoids new Home code or any change to the 4-byte map-object Warp structure.
+
 - `$FE` 是显式 Warp **目的地转义值**，只允许已在 Bank `$40` 的 `ExplicitWarpRegionTargets` 登记的来源地图和零基 Warp 槽使用。渡轮两出口槽指向 `(JOHTO, local $00)`；普通 Warp 在写入 `wCurMap` 前解析，仍回写 `$E7` 兼容旧代码。不能把 `$FE` 直接塞到未登记的地图对象中。
 - 远调用 `callab` 破坏 `A/BC/HL`，因此必须先将零基 Warp 槽保存到 `wWarpedFromWhichWarp`，目标别名从 `E` 读取，不从 `A` 读取。找不到映射时安全回退枯叶渡轮码头，绝不能将 `$FE` 写入 `wCurMap`。
 - 渡轮 UI 的目的地读取同样要兼容旧存档 `$E7` 和新 `$FE`。本版仍通过旧地图别名工作，`.119` 的地区字段在 LoadMapHeader 时照旧同步；这不是无需别名的原生双地区系统。

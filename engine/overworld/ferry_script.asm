@@ -111,10 +111,15 @@ SetFerryMenuCursorToCurrentStop:
 	cp NAVEL_ROCK_FERRY_DOCK
 	ld b, MYSTIC_TICKET
 	jr z, .findTicket
-	; REG-5.62.120: accept both an old saved $E7 target and the
-	; opt-in region-key escape installed by the ferry menu.
+	; REG-5.62.123: $FE now serves both Johto and Kanto ferry targets.
+	; Warp ID 0 targets New Bark; Warp ID 2 returns to Vermilion.
 	cp REGION_WARP_ESCAPE
-	jr z, .newBark
+	jr nz, .legacyNewBark
+	ld a, [wWarpEntries + 2]
+	and a
+	ret nz ; Vermilion keeps the original default cursor
+	jr .newBark
+.legacyNewBark
 	cp NEW_BARK_TOWN
 	ret nz
 .newBark
@@ -185,8 +190,9 @@ DoIslandMenu:
 	jr z, .choseNewBark
 
 ;choseVermilion
+	; REG-5.62.123: use the explicit Kanto region key on the return leg.
 	ld b, 2
-	ld c, VERMILION_FERRY_DOCK
+	ld c, REGION_WARP_ESCAPE
 	jr .islandSelected
 
 .choseFarawayIsland
@@ -210,15 +216,25 @@ DoIslandMenu:
 	; fallthrough
 
 .islandSelected
-; First, see if we need to update the warps
+; First, see if we need to update the warps.
 	ld a, [wWarpEntries + 3] ; Map ID or explicit region escape
-	; Old ferry saves can still have the legacy $E7 destination.
+	; REG-5.62.123: normalize both old targets; compare the destination
+	; warp ID as well when $FE denotes two different regions.
 	cp NEW_BARK_TOWN
+	jr z, .legacyRegionTarget
+	cp VERMILION_FERRY_DOCK
 	jr nz, .compareDestination
+.legacyRegionTarget
 	ld a, REGION_WARP_ESCAPE
 .compareDestination
-	cp c ; see if we're already at the place we tried to go
+	cp c
+	jr nz, .depart
+	cp REGION_WARP_ESCAPE
+	jr nz, .alreadyThere
+	ld a, [wWarpEntries + 2]
+	cp b
 	jr z, .alreadyThere
+.depart
 
 ; Hold onto the warp entry we selected
 	push bc

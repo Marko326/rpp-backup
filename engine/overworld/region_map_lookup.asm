@@ -90,10 +90,11 @@ SyncLegacyMapRegions::
 	ld [wRegionStateMagic1], a
 	ret
 
-; REG-5.62.120: opt-in region-key route for the ordinary warp escape.
-; The ferry menu writes $FE only for New Bark, not for old Kanto/island
-; destinations. Input: current legacy source map and zero-based warp slot
-; in wWarpedFromWhichWarp. Output: E = legacy destination alias.
+; REG-5.62.123: bidirectional ferry region-key route for the $FE escape.
+; The source map / zero-based source warp slot AND the destination warp ID
+; select the region target. This lets the same boat exit address both
+; (JOHTO, New Bark local $00) and (KANTO, Vermilion Ferry Dock).
+; Other islands keep legacy targets. Output: E = legacy destination alias.
 ; The far-call destroys A/BC/HL; return the alias in E instead of A.
 ; An invalid $FE entry returns the safe Vermilion ferry dock, never $FE.
 ResolveExplicitRegionWarp::
@@ -110,7 +111,12 @@ ResolveExplicitRegionWarp::
 	jr nz, .skipWarp
 	ld a, [hli]
 	cp c
-	jr nz, .skipTarget
+	jr nz, .skipThree
+	ld a, [hli]
+	ld d, a
+	ld a, [wDestinationWarpID]
+	cp d
+	jr nz, .skipTwo
 	ld d, [hl]
 	inc hl
 	ld e, [hl]
@@ -121,7 +127,9 @@ ResolveExplicitRegionWarp::
 	ret
 .skipWarp
 	inc hl
-.skipTarget
+.skipThree
+	inc hl
+.skipTwo
 	inc hl
 	inc hl
 	jr .loop
@@ -167,11 +175,15 @@ RegionMapKeyToLegacyID::
 	scf
 	ret
 
-; Source map, zero-based source warp slot, destination region, local ID.
-; New Bark's ferry boat has two source warp tiles; both target the same map.
+; Source map, zero-based source warp slot, destination warp ID,
+; destination region, local ID. Destination warp 0 = New Bark;
+; destination warp 2 = Vermilion dock. Both boat exit tiles are registered.
 ; No legacy mapObjects format or $FF LAST_MAP meaning is changed.
 ExplicitWarpRegionTargets::
-	db INSIDE_FERRY, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
-	db INSIDE_FERRY, 1, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
+	db INSIDE_FERRY, 0, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
+	db INSIDE_FERRY, 1, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
+	db INSIDE_FERRY, 0, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
+	db INSIDE_FERRY, 1, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
 	db $ff
 ASSERT JOHTO_NEW_BARK_LOCAL_ID < NUM_JOHTO_MAPS
+ASSERT VERMILION_FERRY_DOCK < NUM_LEGACY_MAPS
