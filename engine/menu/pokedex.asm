@@ -639,6 +639,9 @@ ShowPokedexDataCommon:
 	call ClearScreen
 	ld a,[wd11e] ; pokemon ID
 	ld [wcf91],a
+	; DEX-5.62.117: the first frame must use the actual Seen form.
+	callba PokedexData_SelectFirstSeenForm
+	ld a,[wcf91]
 	push af
 	ld b, SET_PAL_POKEDEX
 	call RunPaletteCommand
@@ -716,8 +719,22 @@ ShowPokedexDataCommon:
 	lb bc, LEADING_ZEROES | 1, 3
 	call PrintNumber ; print pokedex number
 
+	; Use the current form's independent Owned permission for height,
+	; weight and description. Preserve the stock data pointer and DE.
 	ld hl,wPokedexOwned
-	call IsPokemonBitSet
+	push hl
+	push de
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	callba RegionalDexPokedexOwnedTest
+	pop de
+	pop hl
+	ld c,0
+	jr z,.initialNotOwned
+	inc c
+.initialNotOwned
 	pop af
 	ld [wd11e],a
 	ld a,[wcf91]

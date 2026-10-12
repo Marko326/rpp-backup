@@ -40,6 +40,59 @@ PokedexData_SelectCurrentListEntry:
 	ld [wLastMenuItem],a
 	ret
 
+; Choose the first genuinely Seen form if the current view has not been Seen.
+; This runs only after wcf91 is set to the selected internal species. Ordinary
+; species outside the fixed regional identity table keep the normal view.
+PokedexData_SelectFirstSeenForm:
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	push de
+	callba RegionalDexSeenTest
+	pop de
+	ret nz
+	xor a ; next visible registered form (including normal on wrap)
+	call PokedexData_StepSeenForm
+	ret nc
+	ld [wPokedexViewForm],a
+	ret
+
+; Input: D=internal species, E=current form, A=0 next / nonzero previous.
+; Output: carry/A=next genuinely Seen form, carry clear if no registered
+; reachable identity is Seen. Explicit bound survives descriptor helper calls
+; and allows forms to be appended without changing the navigation code.
+PokedexData_StepSeenForm:
+	ld b,a
+	ld c,REGIONAL_DEX_REGION_COUNT + 1
+.loop
+	push bc
+	ld a,b
+	and a
+	jr nz,.previous
+	call RegionalFormGetNextPokedexForm
+	jr .candidate
+.previous
+	call RegionalFormGetPreviousPokedexForm
+.candidate
+	pop bc
+	ret nc
+	ld e,a
+	push bc
+	push de
+	callba RegionalDexSeenTest
+	pop de
+	pop bc
+	jr nz,.found
+	dec c
+	jr nz,.loop
+	and a
+	ret
+.found
+	ld a,e
+	scf
+	ret
+
 PokedexData_BeginSessionVolume:
 	; FORM-5.62.12: E is the caller mode (0 external one-shot, nonzero internal
 	; list browsing). Internal/ordinary external pages start on NORMAL. A successful
@@ -162,14 +215,14 @@ PokedexData_RunInternalInputLoop:
 	; receive carry clear from the generic lookup and these buttons do nothing.
 	ld a,b
 	and START
-	jr nz,.nextForm
+	jp nz,.nextForm
 	ld a,b
 	and SELECT
-	jr nz,.previousForm
+	jp nz,.previousForm
 
 	ld a,b
 	and A_BUTTON
-	jr nz,.advanceSubpage
+	jp nz,.advanceSubpage
 
 	ld a,b
 	and D_LEFT | D_RIGHT
@@ -206,8 +259,14 @@ PokedexData_RunInternalInputLoop:
 	ld d,a
 	ld a,[wPokedexViewForm]
 	ld e,a
-	call RegionalFormGetNextPokedexForm
+	xor a
+	call PokedexData_StepSeenForm
 	jp nc,.loop
+	ld c,a
+	ld a,[wPokedexViewForm]
+	cp c
+	jp z,.loop
+	ld a,c
 	ld [wPokedexViewForm],a
 	jr .redrawForm
 
@@ -216,8 +275,14 @@ PokedexData_RunInternalInputLoop:
 	ld d,a
 	ld a,[wPokedexViewForm]
 	ld e,a
-	call RegionalFormGetPreviousPokedexForm
+	ld a,1
+	call PokedexData_StepSeenForm
 	jp nc,.loop
+	ld c,a
+	ld a,[wPokedexViewForm]
+	cp c
+	jp z,.loop
+	ld a,c
 	ld [wPokedexViewForm],a
 
 .redrawForm
@@ -348,6 +413,10 @@ PokedexData_RenderSwitchedEntry:
 
 	ld a,[wd11e]
 	ld [wcf91],a
+	; DEX-5.62.117: species stepping starts on a Seen form, never on an
+	; unseen ordinary identity that shares the species Pokédex entry.
+	call PokedexData_SelectFirstSeenForm
+	ld a,[wcf91]
 	ld [wd0b5],a
 	push af
 	ld b,SET_PAL_POKEDEX
@@ -588,19 +657,19 @@ PokedexData_ForceBgPaletteUpdate:
 	ld [rSVBK],a
 	ret
 
-; Return Z when the current Pokédex entry is Seen but not Owned, matching the
-; original detail-screen rule that hides height/weight/description until caught.
+; Detail authorization follows the currently viewed form, not just the
+; species's shared Owned bit. Legacy species without regional slots fall back
+; to the original species authorization in the floating helper.
 PokedexData_CurrentMonOwned:
 	ld a,[wcf91]
-	ld [wd11e],a
-	predef IndexToPokedex
-	ld hl,wPokedexOwned
-	call PokedexData_TestPokemonBit
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	callba RegionalDexPokedexOwnedTest
 	push af
 	ld a,[wcf91]
 	ld [wd11e],a
 	pop af
-	and a
 	ret
 
 ; Input: E = 0 for the first description half, 1 for the second.

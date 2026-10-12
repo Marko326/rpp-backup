@@ -77,6 +77,14 @@ RegionalFormReloadWildEnemyMonData:
 	call RegionalFormClearNewMonForm
 	ret
 
+; Only the successful ball-capture code calls this wrapper. Unlike the
+; Pokémon Tower reload, it marks the caught form Owned before the first-capture
+; Pokédex one-shot and before choosing party versus full-box storage.
+RegionalFormReloadCapturedWildEnemyMonData::
+	call RegionalFormReloadWildEnemyMonData
+	callba RegionalDexMarkCapturedWildOwned
+	ret
+
 ; wcf91 = species, E = runtime form. Match the tested branch contract so
 ; ReadTrainer and script producers do not depend on D surviving unrelated setup.
 RegionalFormAddPartyMonWithForm:

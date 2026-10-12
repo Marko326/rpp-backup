@@ -690,7 +690,9 @@ BallAnyway:
 	ld [wcf91],a
 	ld a,[wEnemyMonLevel]
 	ld [wCurEnemyLVL],a
-	callba RegionalFormReloadWildEnemyMonData
+	; DEX-5.62.117: capture-only reload marks this exact form Owned.
+	; The call footprint stays identical in the capacity-full item bank.
+	callba RegionalFormReloadCapturedWildEnemyMonData
 	pop af
 	ld [wcf91],a
 	pop hl
@@ -708,8 +710,10 @@ BallAnyway:
 	ld hl,ItemUseBallText05
 	call PrintText
 
-; Add the caught Pokémon to the Pokédex. FORM-5.20.03 deliberately uses the
-; shared species entry; regional forms do not create separate Pokédex entries.
+; DEX-5.62.117: the capture-only reload above has marked form Owned,
+; before the first-capture Pokédex one-shot and party/full-box split.
+; Add the caught Pokémon to the Pokédex. Regional forms continue sharing the
+; species row; independent Owned lives in RegionalDex storage.
 	predef IndexToPokedex
 	ld a,[wd11e]
 	dec a

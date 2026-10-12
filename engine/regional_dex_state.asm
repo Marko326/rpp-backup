@@ -20,6 +20,43 @@ RegionalDexMarkBattleEnemySeen::
 	ld e,a
 	jp RegionalDexSeenSet ; no slot -> no mutation, flag set is idempotent
 
+; DEX-5.62.117: a successful wild capture has already been confirmed by the
+; ball handler. The original enemy Species2/Form are still resident here, even
+; after Transform; gifts, previews and opponents must never call this entry.
+RegionalDexMarkCapturedWildOwned::
+	ld a,[wIsInBattle]
+	cp 1
+	ret nz
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	ld a,[wEnemyMonForm]
+	ld e,a
+	jp RegionalDexOwnedSet ; Owned also writes Seen; no extra species row
+
+; Pokédex detail authorization for the selected Species + Form. Registered
+; identities use ONLY their own Owned bit. Species without any regional slot
+; retain the stock shared-species Pokédex behavior. Z = not owned.
+; Input: D=internal species, E=view form. Both registers preserved.
+RegionalDexPokedexOwnedTest::
+	push de
+	call RegionalDexFindSlot
+	pop de
+	jr c,.tracked
+	ld a,d
+	ld [wd11e],a
+	predef IndexToPokedex
+	ld a,[wd11e]
+	dec a
+	ld c,a
+	ld b,FLAG_TEST
+	ld hl,wPokedexOwned
+	predef FlagActionPredef
+	ld a,c
+	and a
+	ret
+.tracked
+	jp RegionalDexOwnedTest
+
 RegionalDexFindSlot::
 	ld hl,RegionalDexSlots
 	ld c,0
