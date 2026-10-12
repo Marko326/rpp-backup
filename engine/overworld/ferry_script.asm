@@ -111,9 +111,14 @@ SetFerryMenuCursorToCurrentStop:
 	cp NAVEL_ROCK_FERRY_DOCK
 	ld b, MYSTIC_TICKET
 	jr z, .findTicket
+	; REG-5.62.120: accept both an old saved $E7 target and the
+	; opt-in region-key escape installed by the ferry menu.
+	cp REGION_WARP_ESCAPE
+	jr z, .newBark
 	cp NEW_BARK_TOWN
-	ld b, NEW_BARK_PASS
 	ret nz
+.newBark
+	ld b, NEW_BARK_PASS
 .findTicket
 	ld hl, wFilteredBagItems
 	ld c, 0
@@ -201,12 +206,17 @@ DoIslandMenu:
 
 .choseNewBark
 	ld b, 0
-	ld c, NEW_BARK_TOWN
+	ld c, REGION_WARP_ESCAPE ; (JOHTO, NEW_BARK local $00) via explicit warp table
 	; fallthrough
 
 .islandSelected
 ; First, see if we need to update the warps
-	ld a, [wWarpEntries + 3] ; Map ID of first warp
+	ld a, [wWarpEntries + 3] ; Map ID or explicit region escape
+	; Old ferry saves can still have the legacy $E7 destination.
+	cp NEW_BARK_TOWN
+	jr nz, .compareDestination
+	ld a, REGION_WARP_ESCAPE
+.compareDestination
 	cp c ; see if we're already at the place we tried to go
 	jr z, .alreadyThere
 

@@ -95,3 +95,89 @@ SyncLegacyMapRegions::
 	ld a, REGION_STATE_MAGIC1
 	ld [wRegionStateMagic1], a
 	ret
+
+; REG-5.62.120: opt-in region-key route for the ordinary warp escape.
+; The ferry menu writes $FE only for New Bark, not for old Kanto/island
+; destinations. Input: current legacy source map and zero-based warp slot
+; in wWarpedFromWhichWarp. Output: E = legacy destination alias.
+; The far-call destroys A/BC/HL; return the alias in E instead of A.
+; An invalid $FE entry returns the safe Vermilion ferry dock, never $FE.
+ResolveExplicitRegionWarp::
+	ld a, [wCurMap]
+	ld b, a
+	ld a, [wWarpedFromWhichWarp]
+	ld c, a
+	ld hl, ExplicitWarpRegionTargets
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .invalid
+	cp b
+	jr nz, .skipWarp
+	ld a, [hli]
+	cp c
+	jr nz, .skipTarget
+	ld d, [hl]
+	inc hl
+	ld e, [hl]
+	call RegionMapKeyToLegacyID
+	jr c, .invalid
+	ld a, d
+	ld [wCurRegion], a
+	ret
+.skipWarp
+	inc hl
+.skipTarget
+	inc hl
+	inc hl
+	jr .loop
+.invalid
+	ld d, MAP_REGION_KANTO
+	ld e, VERMILION_FERRY_DOCK
+	ld a, d
+	ld [wCurRegion], a
+	ret
+
+; Input DE = physical region/local ID. Return E = compatible old map ID,
+; carry clear when registered. Do not convert Town Map or Fly indices here.
+; Additional Johto local IDs must be registered with a distinct legacy alias
+; until every other old-map-ID consumer has been migrated.
+RegionMapKeyToLegacyID::
+	ld a, d
+	cp MAP_REGION_KANTO
+	jr z, .kanto
+	cp MAP_REGION_JOHTO
+	jr nz, .invalid
+	ld a, e
+	cp NUM_JOHTO_MAPS
+	jr nc, .invalid
+	ld l, e
+	ld h, 0
+	ld bc, JohtoMapLegacyAliases
+	add hl, bc
+	ld e, [hl]
+	ld a, e
+	cp $ff ; no old-engine alias available yet
+	jr z, .invalid
+	and a
+	ret
+.kanto
+	ld a, e
+	cp NUM_LEGACY_MAPS
+	jr nc, .invalid
+	cp NEW_BARK_TOWN ; $E7 is the reserved Johto compatibility alias
+	jr z, .invalid
+	and a
+	ret
+.invalid
+	scf
+	ret
+
+; Source map, zero-based source warp slot, destination region, local ID.
+; New Bark's ferry boat has two source warp tiles; both target the same map.
+; No legacy mapObjects format or $FF LAST_MAP meaning is changed.
+ExplicitWarpRegionTargets::
+	db INSIDE_FERRY, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
+	db INSIDE_FERRY, 1, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
+	db $ff
+ASSERT JOHTO_NEW_BARK_LOCAL_ID < NUM_JOHTO_MAPS

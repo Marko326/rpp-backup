@@ -13,3 +13,10 @@ DEF NUM_JOHTO_MAPS EQU 1
 ; not checked; legacy map IDs populate the compatibility fields on map load.
 DEF REGION_STATE_MAGIC0 EQU $52
 DEF REGION_STATE_MAGIC1 EQU $4a
+
+; REG-5.62.120: opt-in escape in an ordinary warp destination byte.
+; Only routes explicitly registered in ExplicitWarpRegionTargets may use it.
+; $FF remains LAST_MAP; $FE is outside the existing legacy map table.
+DEF REGION_WARP_ESCAPE EQU $fe
+ASSERT REGION_WARP_ESCAPE >= NUM_LEGACY_MAPS
+ASSERT REGION_WARP_ESCAPE != $ff

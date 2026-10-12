@@ -52,6 +52,13 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - This synchronization deliberately **overwrites** the persisted regions on each map entry. Before permitting a Johto-local ID that overlaps a Kanto ID, replace this compatibility-only projection with explicit region-aware warp/connection assignment and save-load validation; otherwise a real region key would be lost on transition. No new Fly, Teleport, blackout, indoor, or `$FF` destination semantics are implemented in this step.
 - `engine/save.asm` resides in essentially full fixed Bank `$1C`; do not insert migration code there just because it copies the save. The first actual `LoadMapHeader` provides a small ROM0 far-call hook, with all synchronization logic in Bank `$40`. Without a fresh MAP/ROM, linker free space and runtime compatibility remain unverified.
 
+## Explicit region-key ferry Warp (REG-5.62.120)
+
+- `$FE` 是显式 Warp **目的地转义值**，只允许已在 Bank `$40` 的 `ExplicitWarpRegionTargets` 登记的来源地图和零基 Warp 槽使用。渡轮两出口槽指向 `(JOHTO, local $00)`；普通 Warp 在写入 `wCurMap` 前解析，仍回写 `$E7` 兼容旧代码。不能把 `$FE` 直接塞到未登记的地图对象中。
+- 远调用 `callab` 破坏 `A/BC/HL`，因此必须先将零基 Warp 槽保存到 `wWarpedFromWhichWarp`，目标别名从 `E` 读取，不从 `A` 读取。找不到映射时安全回退枯叶渡轮码头，绝不能将 `$FE` 写入 `wCurMap`。
+- 渡轮 UI 的目的地读取同样要兼容旧存档 `$E7` 和新 `$FE`。本版仍通过旧地图别名工作，`.119` 的地区字段在 LoadMapHeader 时照旧同步；这不是无需别名的原生双地区系统。
+- `.120` 在 `home/overworld.asm` 的 `WarpFound2` 新增了目的地转义判断和跨 Bank 调用；该版已由用户运行基本场景，未报告明显问题，本次提交前不改变其游戏逻辑。用户报告目前 ROM0/Home 只剩约 300 余字节，尚无本次 ROM/MAP 实测文件可量化新增字节开销。下一版需专项审计 Bank0 空间、优先搬迁可迁移逻辑到 Bank `$40` 等扩展 Bank，并在不破坏跨 Bank ABI、Warp 返回值及后续扩展性的条件下压缩 Home；不要把“代码行数”误当作“字节占用”。
+
 ## ROM bank placement
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.

@@ -8,6 +8,14 @@ JohtoMapHeaderBanks::
 	db BANK(NewBarkTown_h)
 JohtoMapHeaderBanksEnd::
 
+; REG-5.62.120: old-engine aliases for registered Johto local IDs.
+; Keep in local-ID order; new Johto maps need an unused unique legacy
+; alias until the rest of the overworld has native region-aware map IDs.
+JohtoMapLegacyAliases::
+	db NEW_BARK_TOWN
+JohtoMapLegacyAliasesEnd::
+
+ASSERT JohtoMapLegacyAliasesEnd - JohtoMapLegacyAliases == NUM_JOHTO_MAPS
 ASSERT JohtoMapHeaderPointersEnd - JohtoMapHeaderPointers == NUM_JOHTO_MAPS * 2
 ASSERT JohtoMapHeaderBanksEnd - JohtoMapHeaderBanks == NUM_JOHTO_MAPS
 ASSERT NEW_BARK_TOWN == $E7

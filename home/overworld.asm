@@ -536,6 +536,15 @@ WarpFound2::
 	ld a,[wNumberOfWarps]
 	sub c
 	ld [wWarpedFromWhichWarp],a ; save ID of used warp
+	; REG-5.62.120: the escape opts in to a (region, local map ID) target.
+	; Keep the one-byte legacy alias for all remaining overworld consumers.
+	ld a,[hWarpDestinationMap]
+	cp REGION_WARP_ESCAPE
+	jr nz,.legacyWarpTarget
+	callab ResolveExplicitRegionWarp
+	ld a,e ; callab's bank restore cannot return a reliable value in A
+	ld [hWarpDestinationMap],a
+.legacyWarpTarget
 	ld a,[wCurMap]
 	ld [wWarpedFromWhichMap],a
 	call CheckIfInOutsideMap
