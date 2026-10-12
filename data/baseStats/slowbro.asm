@@ -5,7 +5,8 @@ db 30 ; base speed
 db 80 ; base special
 db WATER ; species type 1
 db PSYCHIC ; species type 2
-db 75 ; catch rate
+SLOWBRO_CATCH_RATE EQU 75 ; existing normal species catch rate, form guard only
+db SLOWBRO_CATCH_RATE ; catch rate
 db 164 ; base exp yield
 INCBIN "pic/bmon/slowbro.pic",0,1 ; 77, sprite dimensions
 dw SlowbroPicFront

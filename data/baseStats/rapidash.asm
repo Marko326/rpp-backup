@@ -5,7 +5,8 @@ db 105 ; base speed
 db 80 ; base special
 db FIRE ; species type 1
 db FIRE ; species type 2
-db 60 ; catch rate
+RAPIDASH_CATCH_RATE EQU 60 ; existing normal species catch rate, form guard only
+db RAPIDASH_CATCH_RATE ; catch rate
 db 192 ; base exp yield
 INCBIN "pic/bmon/rapidash.pic",0,1 ; 77, sprite dimensions
 dw RapidashPicFront

@@ -69,7 +69,7 @@ RegionalFormDescriptors::
 	dw AlolanVulpixPreviewPalette
 	dw AlolanVulpixShinyPalette
 	db 0
-	dw 0 ; height/weight match normal Vulpix
+	dw 0 ; match ordinary species measurements (Bulbapedia verified)
 
 	regional_form_guard NINETALES, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, NINETALES_CATCH_RATE
 	db NINETALES, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
@@ -79,7 +79,7 @@ RegionalFormDescriptors::
 	dw AlolanNinetalesPreviewPalette
 	dw AlolanNinetalesShinyPalette
 	db 0
-	dw 0 ; height/weight match normal Ninetales
+	dw 0 ; match ordinary species measurements (Bulbapedia verified)
 
 	regional_form_guard RAICHU, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, RAICHU_CATCH_RATE
 	db RAICHU, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
@@ -190,6 +190,297 @@ RegionalFormDescriptors::
 	dw AlolanMarowakShinyPalette
 	db BANK(AlolanMarowakDexMetrics)
 	dw AlolanMarowakDexMetrics
+; ANIM-5.62.111: registered Hisui/Galar/Paldea forms; sprite pointers in independent graphics section.
+	regional_form_guard GROWLITHE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, GROWLITHE_CATCH_RATE
+	db GROWLITHE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiGrowlitheBaseStats
+	dw HisuiGrowlitheLevelMoves
+	dw HisuiGrowlitheEvolutions
+	dw HisuiGrowlithePreviewPalette
+	dw HisuiGrowlitheShinyPalette
+	db BANK(HisuiGrowlitheDexMetrics)
+	dw HisuiGrowlitheDexMetrics ; regional Pokédex height/weight
+
+	regional_form_guard ARCANINE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, ARCANINE_CATCH_RATE
+	db ARCANINE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiArcanineBaseStats
+	dw HisuiArcanineLevelMoves
+	dw HisuiArcanineEvolutions
+	dw HisuiArcaninePreviewPalette
+	dw HisuiArcanineShinyPalette
+	db BANK(HisuiArcanineDexMetrics)
+	dw HisuiArcanineDexMetrics ; regional Pokédex height/weight
+
+	regional_form_guard VOLTORB, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, VOLTORB_CATCH_RATE
+	db VOLTORB, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiVoltorbBaseStats
+	dw HisuiVoltorbLevelMoves
+	dw HisuiVoltorbEvolutions
+	dw HisuiVoltorbPreviewPalette
+	dw HisuiVoltorbShinyPalette
+	db BANK(HisuiVoltorbDexMetrics)
+	dw HisuiVoltorbDexMetrics ; regional Pokédex height/weight
+
+	regional_form_guard ELECTRODE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, ELECTRODE_CATCH_RATE
+	db ELECTRODE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiElectrodeBaseStats
+	dw HisuiElectrodeLevelMoves
+	dw HisuiElectrodeEvolutions
+	dw HisuiElectrodePreviewPalette
+	dw HisuiElectrodeShinyPalette
+	db BANK(HisuiElectrodeDexMetrics)
+	dw HisuiElectrodeDexMetrics ; regional Pokédex height/weight
+
+	regional_form_guard ZIGZAGOON, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, ZIGZAGOON_CATCH_RATE
+	db ZIGZAGOON, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarZigzagoonBaseStats
+	dw GalarZigzagoonLevelMoves
+	dw GalarZigzagoonEvolutions
+	dw GalarZigzagoonPreviewPalette
+	dw GalarZigzagoonShinyPalette
+	db 0
+	dw 0 ; inherits species Pokédex metrics
+
+	regional_form_guard LINOONE, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, LINOONE_CATCH_RATE
+	db LINOONE, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarLinooneBaseStats
+	dw GalarLinooneLevelMoves
+	dw GalarLinooneEvolutions
+	dw GalarLinoonePreviewPalette
+	dw GalarLinooneShinyPalette
+	db 0
+	dw 0 ; match ordinary species measurements (Bulbapedia verified)
+
+	regional_form_guard WEEZING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, WEEZING_CATCH_RATE
+	db WEEZING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarWeezingBaseStats
+	dw GalarWeezingLevelMoves
+	dw GalarWeezingEvolutions
+	dw GalarWeezingPreviewPalette
+	dw GalarWeezingShinyPalette
+	db BANK(GalarWeezingDexMetrics)
+	dw GalarWeezingDexMetrics ; regional Pokédex height/weight
+
+	regional_form_guard SLOWKING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, SLOWKING_CATCH_RATE
+	db SLOWKING, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarSlowkingBaseStats
+	dw GalarSlowkingLevelMoves
+	dw GalarSlowkingEvolutions
+	dw GalarSlowkingPreviewPalette
+	dw GalarSlowkingShinyPalette
+	db BANK(GalarSlowkingDexMetrics)
+	dw GalarSlowkingDexMetrics ; regional Pokédex height/weight
+
+; PC regional batch: forms registered without replacing ordinary/older regions.
+; PC source meowth_alolan; existing Species
+	regional_form_guard MEOWTH, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, MEOWTH_CATCH_RATE
+	db MEOWTH, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
+	dw AlolaMeowthBaseStats
+	dw AlolaMeowthLevelMoves
+	dw AlolaMeowthEvolutions
+	dw AlolaMeowthPreviewPalette
+	dw AlolaMeowthShinyPalette
+	db 0
+	dw 0 ; match ordinary species measurements (Bulbapedia verified)
+
+; PC source persian_alolan; existing Species
+	regional_form_guard PERSIAN, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, PERSIAN_CATCH_RATE
+	db PERSIAN, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
+	dw AlolaPersianBaseStats
+	dw AlolaPersianLevelMoves
+	dw AlolaPersianEvolutions
+	dw AlolaPersianPreviewPalette
+	dw AlolaPersianShinyPalette
+	db BANK(AlolaPersianDexMetrics)
+	dw AlolaPersianDexMetrics ; regional Pokédex height/weight
+
+; PC source exeggutor_alolan; existing Species
+	regional_form_guard EXEGGUTOR, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA, EXEGGUTOR_CATCH_RATE
+	db EXEGGUTOR, FORM_ALOLA, REGIONAL_FORM_MARKER_ALOLA
+	dw AlolaExeggutorBaseStats
+	dw AlolaExeggutorLevelMoves
+	dw AlolaExeggutorEvolutions
+	dw AlolaExeggutorPreviewPalette
+	dw AlolaExeggutorShinyPalette
+	db BANK(AlolaExeggutorDexMetrics)
+	dw AlolaExeggutorDexMetrics ; regional Pokédex height/weight
+
+; PC source meowth_galarian; existing Species
+	regional_form_guard MEOWTH, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, MEOWTH_CATCH_RATE
+	db MEOWTH, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarMeowthBaseStats
+	dw GalarMeowthLevelMoves
+	dw GalarMeowthEvolutions
+	dw GalarMeowthPreviewPalette
+	dw GalarMeowthShinyPalette
+	db BANK(GalarMeowthDexMetrics)
+	dw GalarMeowthDexMetrics ; regional Pokédex height/weight
+
+; PC source ponyta_galarian; existing Species
+	regional_form_guard PONYTA, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, PONYTA_CATCH_RATE
+	db PONYTA, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarPonytaBaseStats
+	dw GalarPonytaLevelMoves
+	dw GalarPonytaEvolutions
+	dw GalarPonytaPreviewPalette
+	dw GalarPonytaShinyPalette
+	db BANK(GalarPonytaDexMetrics)
+	dw GalarPonytaDexMetrics ; regional Pokédex height/weight
+
+; PC source rapidash_galarian; existing Species
+	regional_form_guard RAPIDASH, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, RAPIDASH_CATCH_RATE
+	db RAPIDASH, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarRapidashBaseStats
+	dw GalarRapidashLevelMoves
+	dw GalarRapidashEvolutions
+	dw GalarRapidashPreviewPalette
+	dw GalarRapidashShinyPalette
+	db BANK(GalarRapidashDexMetrics)
+	dw GalarRapidashDexMetrics ; regional Pokédex height/weight
+
+; PC source slowpoke_galarian; existing Species
+	regional_form_guard SLOWPOKE, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, SLOWPOKE_CATCH_RATE
+	db SLOWPOKE, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarSlowpokeBaseStats
+	dw GalarSlowpokeLevelMoves
+	dw GalarSlowpokeEvolutions
+	dw GalarSlowpokePreviewPalette
+	dw GalarSlowpokeShinyPalette
+	db 0
+	dw 0 ; match ordinary species measurements (Bulbapedia verified)
+
+; PC source slowbro_galarian; existing Species
+	regional_form_guard SLOWBRO, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, SLOWBRO_CATCH_RATE
+	db SLOWBRO, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarSlowbroBaseStats
+	dw GalarSlowbroLevelMoves
+	dw GalarSlowbroEvolutions
+	dw GalarSlowbroPreviewPalette
+	dw GalarSlowbroShinyPalette
+	db BANK(GalarSlowbroDexMetrics)
+	dw GalarSlowbroDexMetrics ; regional Pokédex height/weight
+
+; PC source farfetch_d_galarian; existing Species
+	regional_form_guard FARFETCHD, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, FARFETCHD_CATCH_RATE
+	db FARFETCHD, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarFarfetchdBaseStats
+	dw GalarFarfetchdLevelMoves
+	dw GalarFarfetchdEvolutions
+	dw GalarFarfetchdPreviewPalette
+	dw GalarFarfetchdShinyPalette
+	db BANK(GalarFarfetchdDexMetrics)
+	dw GalarFarfetchdDexMetrics ; regional Pokédex height/weight
+
+; PC source mr__mime_galarian; existing Species
+	regional_form_guard MR_MIME, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, MR_MIME_CATCH_RATE
+	db MR_MIME, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarMrmimeBaseStats
+	dw GalarMrmimeLevelMoves
+	dw GalarMrmimeEvolutions
+	dw GalarMrmimePreviewPalette
+	dw GalarMrmimeShinyPalette
+	db BANK(GalarMrmimeDexMetrics)
+	dw GalarMrmimeDexMetrics ; regional Pokédex height/weight
+
+; PC source articuno_galarian; existing Species
+	regional_form_guard ARTICUNO, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, ARTICUNO_CATCH_RATE
+	db ARTICUNO, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarArticunoBaseStats
+	dw GalarArticunoLevelMoves
+	dw GalarArticunoEvolutions
+	dw GalarArticunoPreviewPalette
+	dw GalarArticunoShinyPalette
+	db BANK(GalarArticunoDexMetrics)
+	dw GalarArticunoDexMetrics ; regional Pokédex height/weight
+
+; PC source zapdos_galarian; existing Species
+	regional_form_guard ZAPDOS, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, ZAPDOS_CATCH_RATE
+	db ZAPDOS, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarZapdosBaseStats
+	dw GalarZapdosLevelMoves
+	dw GalarZapdosEvolutions
+	dw GalarZapdosPreviewPalette
+	dw GalarZapdosShinyPalette
+	db BANK(GalarZapdosDexMetrics)
+	dw GalarZapdosDexMetrics ; regional Pokédex height/weight
+
+; PC source moltres_galarian; existing Species
+	regional_form_guard MOLTRES, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, MOLTRES_CATCH_RATE
+	db MOLTRES, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarMoltresBaseStats
+	dw GalarMoltresLevelMoves
+	dw GalarMoltresEvolutions
+	dw GalarMoltresPreviewPalette
+	dw GalarMoltresShinyPalette
+	db BANK(GalarMoltresDexMetrics)
+	dw GalarMoltresDexMetrics ; regional Pokédex height/weight
+
+; PC source sneasel_hisuian; existing Species
+	regional_form_guard SNEASEL, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, SNEASEL_CATCH_RATE
+	db SNEASEL, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiSneaselBaseStats
+	dw HisuiSneaselLevelMoves
+	dw HisuiSneaselEvolutions
+	dw HisuiSneaselPreviewPalette
+	dw HisuiSneaselShinyPalette
+	db BANK(HisuiSneaselDexMetrics)
+	dw HisuiSneaselDexMetrics ; regional Pokédex height/weight
+
+; PC source tauros_paldean; existing Species
+	regional_form_guard TAUROS, FORM_PALDEA_COMBAT, REGIONAL_FORM_MARKER_PALDEA_COMBAT, TAUROS_CATCH_RATE
+	db TAUROS, FORM_PALDEA_COMBAT, REGIONAL_FORM_MARKER_PALDEA_COMBAT
+	dw PaldeaTaurosCombatBaseStats
+	dw PaldeaTaurosCombatLevelMoves
+	dw PaldeaTaurosCombatEvolutions
+	dw PaldeaTaurosCombatPreviewPalette
+	dw PaldeaTaurosCombatShinyPalette
+	db BANK(PaldeaTaurosCombatDexMetrics)
+	dw PaldeaTaurosCombatDexMetrics
+
+; Paldean Tauros official breed order: Combat, Blaze, Aqua.
+	regional_form_guard TAUROS, FORM_PALDEA_BLAZE, REGIONAL_FORM_MARKER_PALDEA_BLAZE, TAUROS_CATCH_RATE
+	db TAUROS, FORM_PALDEA_BLAZE, REGIONAL_FORM_MARKER_PALDEA_BLAZE
+	dw PaldeaBlazeTaurosBaseStats
+	dw PaldeaBlazeTaurosLevelMoves
+	dw PaldeaBlazeTaurosEvolutions
+	dw PaldeaBlazeTaurosPreviewPalette
+	dw PaldeaBlazeTaurosShinyPalette
+	db BANK(PaldeaBlazeTaurosDexMetrics)
+	dw PaldeaBlazeTaurosDexMetrics
+
+; PC source tauros_paldean_water; existing Species
+	regional_form_guard TAUROS, FORM_PALDEA_AQUA, REGIONAL_FORM_MARKER_PALDEA_AQUA, TAUROS_CATCH_RATE
+	db TAUROS, FORM_PALDEA_AQUA, REGIONAL_FORM_MARKER_PALDEA_AQUA
+	dw PaldeaTaurosAquaBaseStats
+	dw PaldeaTaurosAquaLevelMoves
+	dw PaldeaTaurosAquaEvolutions
+	dw PaldeaTaurosAquaPreviewPalette
+	dw PaldeaTaurosAquaShinyPalette
+	db BANK(PaldeaTaurosAquaDexMetrics)
+	dw PaldeaTaurosAquaDexMetrics
+
+; PC source perrserker; custom evolution: PERRSERKER->PERSIAN
+	regional_form_guard PERSIAN, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR, PERSIAN_CATCH_RATE
+	db PERSIAN, FORM_GALAR, REGIONAL_FORM_MARKER_GALAR
+	dw GalarPersianPerrserkerBaseStats
+	dw GalarPersianPerrserkerLevelMoves
+	dw GalarPersianPerrserkerEvolutions
+	dw GalarPersianPerrserkerPreviewPalette
+	dw GalarPersianPerrserkerShinyPalette
+	db BANK(GalarPersianPerrserkerDexMetrics)
+	dw GalarPersianPerrserkerDexMetrics ; regional Pokédex height/weight
+
+; PC source sneasler; custom evolution: SNEASLER->WEAVILE
+	regional_form_guard WEAVILE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI, WEAVILE_CATCH_RATE
+	db WEAVILE, FORM_HISUI, REGIONAL_FORM_MARKER_HISUI
+	dw HisuiWeavileSneaslerBaseStats
+	dw HisuiWeavileSneaslerLevelMoves
+	dw HisuiWeavileSneaslerEvolutions
+	dw HisuiWeavileSneaslerPreviewPalette
+	dw HisuiWeavileSneaslerShinyPalette
+	db BANK(HisuiWeavileSneaslerDexMetrics)
+	dw HisuiWeavileSneaslerDexMetrics ; regional Pokédex height/weight
+
 RegionalFormDescriptorsTerminator::
 	db 0 ; terminator: species 0 is never a valid descriptor
 ASSERT RegionalFormDescriptorsTerminator - RegionalFormDescriptors == RF_DESCRIPTOR_GUARD_COUNT * 16
@@ -1199,6 +1490,10 @@ AlolanMarowakShinyPalette::
 	RGB 14, 15, 04
 
 
+; Extra regional data lives in the same bank as descriptors for 16-bit pointers.
+INCLUDE "data/regional_forms_expansion.asm"
+INCLUDE "data/regional_forms_pc_batch.asm"
+
 ; Graphics are a separate section on purpose. Future forms can put their sprites
 ; in another roomy bank without changing the descriptor engine.
 SECTION "Regional Form Graphics - Alolan Rattata Family", ROMX, BANK[$3E]
@@ -1304,3 +1599,177 @@ AlolanMukDexMetrics::
 AlolanMarowakDexMetrics::
 	db 0,0 ; height matches normal -> inherit
 	dw 750 ; 75.0 lb
+
+; All three Paldean Tauros breeds are 1.4m tall like ordinary Tauros.
+; Source: official Pokémon Pokédex; only their weight differs.
+; Weights are stored as tenths of a pound (rounded to one decimal).
+PaldeaTaurosCombatDexMetrics::
+	db 0,0 ; same 4'07" height as ordinary Tauros
+	dw 2535 ; 253.5 lb = 115 kg
+
+PaldeaBlazeTaurosDexMetrics::
+	db 0,0 ; same 4'07" height as ordinary Tauros
+	dw 1874 ; 187.4 lb = 85 kg
+
+PaldeaTaurosAquaDexMetrics::
+	db 0,0 ; same 4'07" height as ordinary Tauros
+	dw 2425 ; 242.5 lb = 110 kg
+
+; ANIM-5.62.112: region metrics cross-checked with Polished Crystal / Bulbapedia.
+; RF_DEX_HEIGHT uses feet, inches; RF_DEX_WEIGHT uses 0.1 lb.
+; A zero height/weight field inherits the original Species value.
+; Source: https://pokemondb.net/pokedex/stats/height-weight
+; Two custom mappings use Perrserker / Sneasler measurements, not Persian / Weavile.
+
+HisuiGrowlitheDexMetrics::
+	db 2,7 ; 0.8m -> 2′07″; form height
+	dw 500 ; 22.7kg -> 50.0 lb; form weight
+
+HisuiArcanineDexMetrics::
+	db 6,7 ; 2.0m -> 6′07″; form height
+	dw 3704 ; 168.0kg -> 370.4 lb; form weight
+
+HisuiVoltorbDexMetrics::
+	db 0,0 ; 0.5m -> 1′08″; inherit species height
+	dw 287 ; 13.0kg -> 28.7 lb; form weight
+
+HisuiElectrodeDexMetrics::
+	db 0,0 ; 1.2m -> 3′11″; inherit species height
+	dw 1565 ; 71.0kg -> 156.5 lb; form weight
+
+GalarWeezingDexMetrics::
+	db 9,10 ; 3.0m -> 9′10″; form height
+	dw 353 ; 16.0kg -> 35.3 lb; form weight
+
+GalarSlowkingDexMetrics::
+	db 5,11 ; 1.8m -> 5′11″; form height
+	dw 0 ; 79.5kg -> 175.3 lb; inherit species weight
+
+AlolaPersianDexMetrics::
+	db 3,7 ; 1.1m -> 3′07″; form height
+	dw 728 ; 33.0kg -> 72.8 lb; form weight
+
+AlolaExeggutorDexMetrics::
+	db 35,9 ; 10.9m -> 35′09″; form height
+	dw 9162 ; 415.6kg -> 916.2 lb; form weight
+
+GalarMeowthDexMetrics::
+	db 0,0 ; 0.4m -> 1′04″; inherit species height
+	dw 165 ; 7.5kg -> 16.5 lb; form weight
+
+GalarPonytaDexMetrics::
+	db 2,7 ; 0.8m -> 2′07″; form height
+	dw 529 ; 24.0kg -> 52.9 lb; form weight
+
+GalarRapidashDexMetrics::
+	db 0,0 ; 1.7m -> 5′07″; inherit species height
+	dw 1764 ; 80.0kg -> 176.4 lb; form weight
+
+GalarSlowbroDexMetrics::
+	db 0,0 ; 1.6m -> 5′03″; inherit species height
+	dw 1554 ; 70.5kg -> 155.4 lb; form weight
+
+GalarFarfetchdDexMetrics::
+	db 0,0 ; 0.8m -> 2′07″; inherit species height
+	dw 926 ; 42.0kg -> 92.6 lb; form weight
+
+GalarMrmimeDexMetrics::
+	db 4,7 ; 1.4m -> 4′07″; form height
+	dw 1252 ; 56.8kg -> 125.2 lb; form weight
+
+GalarArticunoDexMetrics::
+	db 0,0 ; 1.7m -> 5′07″; inherit species height
+	dw 1122 ; 50.9kg -> 112.2 lb; form weight
+
+GalarZapdosDexMetrics::
+	db 0,0 ; 1.6m -> 5′03″; inherit species height
+	dw 1283 ; 58.2kg -> 128.3 lb; form weight
+
+GalarMoltresDexMetrics::
+	db 0,0 ; 2.0m -> 6′07″; inherit species height
+	dw 1455 ; 66.0kg -> 145.5 lb; form weight
+
+HisuiSneaselDexMetrics::
+	db 0,0 ; 0.9m -> 2′11″; inherit species height
+	dw 595 ; 27.0kg -> 59.5 lb; form weight
+
+GalarPersianPerrserkerDexMetrics::
+	db 2,7 ; 0.8m -> 2′07″; form height
+	dw 617 ; 28.0kg -> 61.7 lb; form weight
+
+HisuiWeavileSneaslerDexMetrics::
+	db 4,3 ; 1.3m -> 4′03″; form height
+	dw 948 ; 43.0kg -> 94.8 lb; form weight
+
+; PC regional batch: separate floating sprite sections, bank stored in the header.
+SECTION "PC AlolaMeowth Sprites", ROMX
+AlolaMeowthPicFront:: INCBIN "pic/bmon/meowth_alola.pic"
+AlolaMeowthPicBack:: INCBIN "pic/monback/meowth_alolab.pic"
+
+SECTION "PC AlolaPersian Sprites", ROMX
+AlolaPersianPicFront:: INCBIN "pic/bmon/persian_alola.pic"
+AlolaPersianPicBack:: INCBIN "pic/monback/persian_alolab.pic"
+
+SECTION "PC AlolaExeggutor Sprites", ROMX
+AlolaExeggutorPicFront:: INCBIN "pic/bmon/exeggutor_alola.pic"
+AlolaExeggutorPicBack:: INCBIN "pic/monback/exeggutor_alolab.pic"
+
+SECTION "PC GalarMeowth Sprites", ROMX
+GalarMeowthPicFront:: INCBIN "pic/bmon/meowth_galar.pic"
+GalarMeowthPicBack:: INCBIN "pic/monback/meowth_galarb.pic"
+
+SECTION "PC GalarPonyta Sprites", ROMX
+GalarPonytaPicFront:: INCBIN "pic/bmon/ponyta_galar.pic"
+GalarPonytaPicBack:: INCBIN "pic/monback/ponyta_galarb.pic"
+
+SECTION "PC GalarRapidash Sprites", ROMX
+GalarRapidashPicFront:: INCBIN "pic/bmon/rapidash_galar.pic"
+GalarRapidashPicBack:: INCBIN "pic/monback/rapidash_galarb.pic"
+
+SECTION "PC GalarSlowpoke Sprites", ROMX
+GalarSlowpokePicFront:: INCBIN "pic/bmon/slowpoke_galar.pic"
+GalarSlowpokePicBack:: INCBIN "pic/monback/slowpoke_galarb.pic"
+
+SECTION "PC GalarSlowbro Sprites", ROMX
+GalarSlowbroPicFront:: INCBIN "pic/bmon/slowbro_galar.pic"
+GalarSlowbroPicBack:: INCBIN "pic/monback/slowbro_galarb.pic"
+
+SECTION "PC GalarFarfetchd Sprites", ROMX
+GalarFarfetchdPicFront:: INCBIN "pic/bmon/farfetchd_galar.pic"
+GalarFarfetchdPicBack:: INCBIN "pic/monback/farfetchd_galarb.pic"
+
+SECTION "PC GalarMrmime Sprites", ROMX
+GalarMrmimePicFront:: INCBIN "pic/bmon/mr_mime_galar.pic"
+GalarMrmimePicBack:: INCBIN "pic/monback/mr_mime_galarb.pic"
+
+SECTION "PC GalarArticuno Sprites", ROMX
+GalarArticunoPicFront:: INCBIN "pic/bmon/articuno_galar.pic"
+GalarArticunoPicBack:: INCBIN "pic/monback/articuno_galarb.pic"
+
+SECTION "PC GalarZapdos Sprites", ROMX
+GalarZapdosPicFront:: INCBIN "pic/bmon/zapdos_galar.pic"
+GalarZapdosPicBack:: INCBIN "pic/monback/zapdos_galarb.pic"
+
+SECTION "PC GalarMoltres Sprites", ROMX
+GalarMoltresPicFront:: INCBIN "pic/bmon/moltres_galar.pic"
+GalarMoltresPicBack:: INCBIN "pic/monback/moltres_galarb.pic"
+
+SECTION "PC HisuiSneasel Sprites", ROMX
+HisuiSneaselPicFront:: INCBIN "pic/bmon/sneasel_hisui.pic"
+HisuiSneaselPicBack:: INCBIN "pic/monback/sneasel_hisuib.pic"
+
+SECTION "PC PaldeaTaurosCombat Sprites", ROMX
+PaldeaTaurosCombatPicFront:: INCBIN "pic/bmon/tauros_paldea_combat.pic"
+PaldeaTaurosCombatPicBack:: INCBIN "pic/monback/tauros_paldea_combatb.pic"
+
+SECTION "PC PaldeaTaurosAqua Sprites", ROMX
+PaldeaTaurosAquaPicFront:: INCBIN "pic/bmon/tauros_paldea_aqua.pic"
+PaldeaTaurosAquaPicBack:: INCBIN "pic/monback/tauros_paldea_aquab.pic"
+
+SECTION "PC GalarPersianPerrserker Sprites", ROMX
+GalarPersianPerrserkerPicFront:: INCBIN "pic/bmon/persian_galar.pic"
+GalarPersianPerrserkerPicBack:: INCBIN "pic/monback/persian_galarb.pic"
+
+SECTION "PC HisuiWeavileSneasler Sprites", ROMX
+HisuiWeavileSneaslerPicFront:: INCBIN "pic/bmon/weavile_hisui.pic"
+HisuiWeavileSneaslerPicBack:: INCBIN "pic/monback/weavile_hisuib.pic"

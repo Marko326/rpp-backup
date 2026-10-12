@@ -17,4 +17,13 @@ RegionalFormWildEncounters::
 	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 4, FORM_ALOLA
 	regional_wild_slot ROUTE_7, REGIONAL_WILD_GRASS, 6, FORM_ALOLA
 
+	; ANIM-5.62.111: only selected existing wild slots create regional instances.
+	regional_wild_slot ROUTE_8, REGIONAL_WILD_GRASS, 6, FORM_HISUI ; GROWLITHE
+	regional_wild_slot MANSION_3, REGIONAL_WILD_GRASS, 8, FORM_HISUI ; ARCANINE
+	regional_wild_slot POWER_PLANT, REGIONAL_WILD_GRASS, 0, FORM_HISUI ; VOLTORB
+	regional_wild_slot POWER_PLANT, REGIONAL_WILD_GRASS, 4, FORM_HISUI ; ELECTRODE
+	regional_wild_slot ROUTE_1, REGIONAL_WILD_GRASS, 3, FORM_GALAR ; ZIGZAGOON
+	regional_wild_slot MANSION_3, REGIONAL_WILD_GRASS, 5, FORM_GALAR ; WEEZING
+	regional_wild_slot SEAFOAM_ISLANDS_3, REGIONAL_WILD_GRASS, 9, FORM_GALAR ; SLOWKING
+	regional_wild_slot SAFARI_ZONE_WEST, REGIONAL_WILD_GRASS, 1, FORM_PALDEA_BLAZE ; TAUROS
 	db $ff

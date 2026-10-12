@@ -6,7 +6,8 @@ db 115 ; base speed
 db 75 ; base special
 db DARK ; species type 1
 db ICE ; species type 2
-db 60 ; catch rate
+SNEASEL_CATCH_RATE EQU 60 ; existing normal species catch rate, form guard only
+db SNEASEL_CATCH_RATE ; catch rate
 db 132 ; base exp yield
 INCBIN "pic/bmon/sneasel.pic",0,1 ; sprite dimensions
 dw SneaselPicFront

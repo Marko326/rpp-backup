@@ -52,7 +52,8 @@ FuchsiaHouse3Text_56212:
 	db "@"
 
 FuchsiaHouse3Text_56217:
-	TX_FAR _FuchsiaHouse3Text_56217
+	; FIS-5.62.85: only repeat talk after the rod was gifted.
+	TX_FAR FishingGuruGoodRodRepeatText
 	db "@"
 
 FuchsiaHouse3Text_5621c:

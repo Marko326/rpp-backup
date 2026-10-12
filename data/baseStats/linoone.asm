@@ -5,7 +5,8 @@ db 100 ; base speed
 db 61  ; base special
 db NORMAL ; species type 1
 db NORMAL ; species type 2
-db 90 ; catch rate
+LINOONE_CATCH_RATE EQU 90
+db LINOONE_CATCH_RATE ; catch rate
 db 147 ; base exp yield
 INCBIN "pic/bmon/linoone.pic",0,1 ; sprite dimensions
 dw LinoonePicFront

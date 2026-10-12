@@ -1134,8 +1134,8 @@ PokemonPaletteTable:
 	RGB 03, 20, 00
 
 ; PAL_SYLVEON
-	RGB 31, 17, 20
-	RGB 06, 19, 25
+	RGB 08, 23, 29
+	RGB 30, 16, 20
 
 ; PAL_SCIZOR
 	RGB 26, 08, 08
@@ -1170,8 +1170,8 @@ PokemonPaletteTable:
 	RGB 18, 05, 08
 
 ; PAL_PORYGON2
-	RGB 24, 09, 04
-	RGB 12, 11, 25
+	RGB 10, 12, 24
+	RGB 25, 09, 10
 
 ; PAL_PORYGONZ
 	RGB 24, 09, 04
@@ -1186,8 +1186,8 @@ PokemonPaletteTable:
 	RGB 25, 16, 05
 
 ; PAL_MAGNEZONE
-	RGB 14, 17, 24
-	RGB 31, 15, 00
+	RGB 13, 17, 24
+	RGB 30, 16, 00
 
 ; PAL_RHYPERIOR
 	RGB 31, 13, 00
@@ -1206,7 +1206,7 @@ PokemonPaletteTable:
 	RGB 31, 06, 17
 
 ; PAL_TOGETIC
-	RGB 23, 20, 30
+	RGB 31, 24, 08
 	RGB 28, 07, 06
 
 ; PAL_TOGEKISS
@@ -1969,8 +1969,8 @@ ShinyPokemonPaletteTable:
 	RGB 03, 23, 19
 
 ; PAL_SHINY_SYLVEON
-	RGB 12, 19, 26
-	RGB 31, 17, 20
+	RGB 30, 16, 20
+	RGB 10, 21, 26
 
 ; PAL_SHINY_SCIZOR
 	RGB 22, 22, 08

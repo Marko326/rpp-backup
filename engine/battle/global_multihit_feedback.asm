@@ -1,4 +1,4 @@
-; ANIM-5.62.93: global short horizontal hit feedback for enemy multi-hit moves.
+; ANIM-5.62.97: global short horizontal hit feedback for enemy multi-hit moves.
 ; Lives in floating ROMX to avoid growing fixed animation bank $1E.
 ; The first strike has no AttackingMultipleTimes flag yet, so check its effect.
 ; Later strikes have the flag; Twineedle rewrites its effect after hit one.
@@ -74,4 +74,3 @@ DamageFeedbackOverrides:
 	db CRUNCH, 4, 1
 	db EGG_BOMB, 0, 1 ; EGG-A4-5.61.75: enemy use shakes the player vertically.
 	db 0
-

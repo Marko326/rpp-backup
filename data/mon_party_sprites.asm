@@ -62,16 +62,16 @@ MonPartyData:
 	db SPRITE_SNAKE          , SPRITE_FISH_GS          ;Seadra/Goldeen
 	db SPRITE_FISH_GS        , SPRITE_STARYU_GS        ;Seaking/Staryu
 	db SPRITE_STARYU_GS      , SPRITE_MON              ;Starmie/Mr.Mime
-	db SPRITE_BUG            , SPRITE_MON              ;Scyther/Jynx
+	db SPRITE_HUMANOID_INSECT, SPRITE_MON              ;Scyther/Jynx
 	db SPRITE_MON            , SPRITE_MON              ;Electabuzz/Magmar
-	db SPRITE_BUG            , SPRITE_QUADRUPED        ;Pinsir/Tauros
+	db SPRITE_HUMANOID_INSECT, SPRITE_QUADRUPED        ;Pinsir/Tauros
 	db SPRITE_FISH_GS        , SPRITE_GYARADOS_GS      ;Magikarp/Gyarados
 	db SPRITE_LAPRAS_GS      , SPRITE_BLOB_GS          ;Lapras/Ditto
 	db SPRITE_FOX_GS         , SPRITE_FOX_GS           ;Eevee/Vaporeon
 	db SPRITE_FOX_GS         , SPRITE_FOX_GS           ;Jolteon/Flareon
 	db SPRITE_BALL_M         , SPRITE_HELIX            ;Porygon/Omanyte
 	db SPRITE_HELIX          , SPRITE_SHELL_GS         ;Omastar/Kabuto
-	db SPRITE_SHELL_GS       , SPRITE_BIRD_M           ;Kabutops/Aerodactyl
+	db SPRITE_HUMANOID_INSECT, SPRITE_BIRD_M           ;Kabutops/Aerodactyl
 	db SPRITE_SNORLAX_GS     , SPRITE_BIRD_M           ;Snorlax/Articuno
 	db SPRITE_BIRD_M         , SPRITE_BIRD_M           ;Zapdos/Moltres
 	db SPRITE_SNAKE          , SPRITE_SNAKE            ;Dratini/Dragonair

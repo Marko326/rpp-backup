@@ -1,4 +1,4 @@
-; ANIM-5.62.92: Ruby-style Bullet Seed for the narrower GB battle field.
+; ANIM-5.62.96: Ruby-style Bullet Seed for the narrower GB battle field.
 ; Reuse Energy Ball's 8x8 green charge-ring tile 6 and OAM/palette helpers.
 ; Every registered damage hit plays ten overlapping seeds at 5-frame gaps.
 ; Each seed flies 20 frames, sounds and briefly shakes on impact, then scatters

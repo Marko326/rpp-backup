@@ -212,6 +212,13 @@ const_value = 1
 ; FORM-5.21.00: regional form IDs are instance metadata, not extra species IDs.
 FORM_NORMAL EQU 0
 FORM_ALOLA  EQU 1
+FORM_HISUI  EQU 2
+FORM_GALAR  EQU 3
+; Official Pokédex browse order: Combat, Blaze, Aqua. Numeric IDs are kept
+; unchanged to preserve saved instances and existing wild-form routing.
+FORM_PALDEA_COMBAT EQU 5
+FORM_PALDEA_BLAZE EQU 4
+FORM_PALDEA_AQUA EQU 6
 
 ; WLD-5.62.24: wild-form overrides bind to the exact producer slot.
 ; The high nybble identifies the source and the low nybble is the 0-based slot.
@@ -243,6 +250,11 @@ BIT_REGIONAL_FORM_NEW_MON_OVERRIDE EQU 7
 ; FORM-5.62.25: descriptor guards also verify that the marker cannot alias the
 ; corresponding Species' stock Catch Rate.
 REGIONAL_FORM_MARKER_ALOLA EQU $fe
+REGIONAL_FORM_MARKER_HISUI EQU $fd
+REGIONAL_FORM_MARKER_GALAR EQU $fc
+REGIONAL_FORM_MARKER_PALDEA_COMBAT EQU $fa
+REGIONAL_FORM_MARKER_PALDEA_BLAZE EQU $fb
+REGIONAL_FORM_MARKER_PALDEA_AQUA EQU $f9
 ASSERT REGIONAL_FORM_MARKER_ALOLA != 0
 
 MON_GHOST           EQU 252

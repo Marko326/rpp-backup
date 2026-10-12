@@ -26,7 +26,27 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Previously seen: `engine/menu/main_menu.asm(440): Unknown symbol "PrintNumOwnedMons"`. Run symbol/reference completeness checks after relocation or deletion.
 - If changing vertical shake behavior, review `.StageBlankBG0TopRowForEnemyFeedback`; Iron Tail/Steel Wing previously left display residue around this path.
 
+## Regional sprites require live data references (FORM-5.62.111)
+
+- Adding `pic/bmon/*_hisui.png` and matching back PNGs does not register a usable form. Verify the entire chain: `FORM_*` + marker → 16-byte `RegionalFormDescriptors` record → full `MonBaseStats` header (including `.pic` size, both sprite pointers and `BANK(...)`) → independent graphics `INCBIN` → form-producing encounter/party logic. Without this chain, the PNGs are inert files and must not be called an in-game feature.
+- Bind wild forms by map and exact slot only after verifying both Normal/Hard encounter tables and `data/wild_mons.asm` map mapping (Safari West uses `ZoneMons3`, not East). Keep stock and Alolan assets and descriptors intact. A source-only review cannot certify bank capacity or runtime graphics.
+- `regional_form_guard` 的第四参须引用该普通物种在 `data/baseStats/*.asm` 声明的 `*_CATCH_RATE` 常量。新增描述符前逐一核查符号是否已定义；未定义时保持原 `db` 数值，补同值 `EQU`，不可删掉防冲突断言。通过断言只说明 marker 与普通捕获率没有冲突，**不代表新地区形态捕获率已经定稿**。
+- `ANIM-5.62.111` 新增九种地区形态的全部数值、招式、进化、调色板、图鉴及遭遇配置均为占位；正式调整须后续统一处理，不在没有 ROM／实机验收时把表驱动数据登记误称为正式定稿。
+
+
+## 历史 PNG 与 PAL 成套恢复（ANIM-5.62.113）
+
+- **先比对图片的真实身份，再迁移颜色**：正背 PNG 的文件名一致不代表像素相同。保留原始提交中的图片与 PAL 对应关系，按当前 PNG 的 Git Blob／像素证明它来自旧版的换图前或换图后，避免把另一版本验证过的 PAL 错套到已恢复的图片上；普通与地区形态独立核对。
+- **逐组最小更新**：只有当前 RGB555 与匹配图片的旧版已验证 PAL 不一致时才修改；分别检查普通与异色，已相同的组原样保留。修复仙子伊布（普通／异色）、多边兽Ⅱ、波克基古、自爆磁怪（普通）及 8 种首批地区形态（普通／异色），累计 12 种、21 组 PAL；不复制未变的值，不动 PNG／Species/Form。
+- **蛇纹熊特例**：旧版替换前四张普通 Zigzagoon／Linoone 图片配棕色系；旧版替换后的图片对应当前 Galar Zigzagoon／Linoone，配紫红／灰色系。只恢复**伽勒尔**形态旧 PAL，不改普通形态；PC18 的 18 组源 `.pal` 也不批量覆盖。伽勒尔呆呆王未找到该旧版同图成套 PAL，不凭相似配色臆造“已验证”。
+- **审查边界**：用户确认配色观感可以标记视觉方案定版；源码／符号／补丁检查不等于已测试所有 ROM、前后图、异色战斗／图鉴或读取存档路径。需要代码变动时应另起版本并复核 PAL 表排列、RGB 0～31、原有 100755／100644 文件权限。
+
 ## ROM bank placement
+
+- **ANIM-5.62.111 地区形态 bank $34 拥塞**：撤销地区形态提交后的 5.62.110 自带 `patches/rppred.map` 显示 bank #52（`$34`）仅剩 `$37` 字节。新增 9 组完整形态资料与 9 条描述符不可直接追加至 `$34`；链接器先报 `Slot Machine Tiles 2` 无法放置只是受害段。
+- **按 map 迁移、保持 bank-aware ABI**：`Battle Type Effectiveness`（`$274`）、`Slot Machine Tiles 2`（`$180`）、`Poke Flute Party Wake`（`$68`）、`Fly Town Map Route20 Classifier`（`$DA`）已有 `callab`/`callba`/`BANK(...)` 调用约定，候选改为固定 `$30`；不要把 `RegionalFormDescriptors` 和扩展头数据拆开，现有描述符仅保存同 bank 16 位指针。
+- **实际链接是最终验收**：旧 map 的空余字节和手工计算不能代替 `make map`，且 Red/Hard 都要复测。构建环境未安装 `.rgbds-version` 要求的 RGBDS 0.5.2 时必须标记为未编译，不能先做正式提交。
+
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.
 - A linker error naming the section that finally fails to place does not prove that section caused the growth. Find the section that actually expanded first.
@@ -49,6 +69,17 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - PP Up sets the one-use flag through `wUsingPPUp`, which is an exact WRAM alias of `wd11e` at `$D121` (see `wram.asm`); assigning either symbol writes the same byte. Do not flag the legacy `ld [wd11e],a` sequence as a missing flag without checking symbol aliases and the complete call path. `MENU-5.62.31` uses the semantic alias name in this one call site without changing the stored address or calculation.
 - TM/HM `wTempMoveNameBuffer` aliases `wLearnMoveMonName` (`$D039`); `LearnMove` overwrites this temporary. When retrying the Party selector after abandoning teaching, reconstruct the original move name from `wMoveNum` rather than trusting the scratch buffer.
 - `RedrawPartyMenu` does not erase overlaid move/TM window borders on its own. A light return from such a window should clear the tilemap while auto BG transfer is disabled, then redraw the Party before re-enabling transfer. Do not replace the initial Bag→Party icon-graphics load or Party→Bag graphics restore with a light return.
+
+## Fishing entry, retry and dialogue contracts (FIS-5.62.90)
+
+- **Result routing:** `wRodResponse=0` means no bite and may offer another cast; `1` enters battle; `2` reports no fish and exits. Keep the original rod encounter data, sounds and battle entry. Land setup waits 48 frames and retains the 84-frame fishing pose; Surf result uses a 94-frame delay without land fishing sprite/OAM.
+- **Window lifetime:** the original fishing-result `prompt` handles the A/B confirmation. `CheckRepeatFishingRod` uses the existing visible textbox for `PrintTextAndYesNoChoice`, repeats Yes in a non-recursive loop, and closes once on No/bite/no retry/error. Do not reintroduce `Text2_EnterTheText` / `DisplayTextIDInit` into the first pass or close/recreate the textbox between consecutive Yes casts. The perceived delay between the no-bite A/B confirmation and the next question has not been proven eliminated.
+- **Redraw guard:** a retry sets `wRepeatFishingRod` bit7 only while calling `UseItem`; `FishingInit` skips `ItemUseReloadOverworldData` for this synchronous handoff. Clear the marker on rejected uses. Ordinary BAG entry must still redraw, and the runtime-only marker is not the saved last-rod value.
+- **SELECT routing:** land SELECT checks the refreshed facing tile via `GetTileAndCoordsInFrontOfPlayer` / `IsNextTileShoreOrWater`; a non-water tile still uses the bicycle path. Surf SELECT does not require a facing-tile test. Consume the shortcut's button state to prevent double actions. Persist the last deliberately used BAG rod in reserved save bytes `wLastUsedFishingRod` and `wLastUsedFishingRodMagic` (`$a7`); validate old-save data, rod ID and Bag ownership before casting.
+- **BAG vs shortcut:** a deliberate Surf BAG item use normally has `wPseudoItemID=0`; SELECT and retry use the matching rod ID. `CheckFishingEligibleR2` accepts both legal values for Surf and keeps the original land-water validator. BAG switching updates the saved last rod, but repeated and SELECT casts do not.
+- **Repeat dialogues:** the Vermilion, Route 12 and Fuchsia rod givers replace only the post-gift `TX_FAR` text with shared Bank $3B teaching. Safari Secret House HM03 uses a different post-gift `TX_FAR` target with the original Surf explanation and new fishing guidance. Leave first-gift, refusal, Bag-full and `EVENT_GOT_HM03` checks/award intact; never include `ResetEvent EVENT_GOT_HM03` test-only code.
+- **Surf bite feedback:** only a bite applies 10 Y-coordinate toggles separated by 3-frame delays and then `predef EmotionBubble`, without loading a land rod pose, altering the Surf state or reserving fishing OAM slots. Even toggles restore the original Y. Missing fish and no-bite display only their result text.
+- **Test boundaries:** user reports normal BAG/shore/Surf rod switching and retry behavior, and approves Surf bobbing. Full-Bag gift, individual Surf mounts, unusual saves, BG/OAM stress and the remaining A/B question-transition delay are not certified by these reports. Static source inspection does not replace ROM execution.
 
 ## Low-HP warning / battle SFX timing (VTA-5.62.43, unresolved)
 
@@ -82,3 +113,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Test-only data, re-arm logic, temporary species/evolution edits, and intermediate version suffixes must be removed before a formal version.
 - Keep the real game version changing in test builds so the user can confirm the patch is applied, but keep source comments on the formal feature version rather than rewriting comments for every test suffix.
 - Before delivery: static symbol/label/bank/register review, `git diff --check`, incremental `git apply --check`, actual apply, reverse-check, and file-mode comparison. Do not compile the user's project unless explicitly requested.
+
+
+## Regional-form Pokédex metrics: inherit when identical (ANIM-5.62.112)
+
+- Always compare a regional form against **the actual stock Pokédex feet/inches and tenths-of-pound values**, not just unrounded metric conversions. When public metric values match but the stored stock weight differs by 0.1 lb, first check whether the stock Pokédex value needs correction (notably Galarian Linoone versus regular Linoone).
+- In `data/regional_forms.asm`, descriptor `db 0` / `dw 0` means full stock-data inheritance. An allocated metrics record uses `db 0,0` to inherit stock height and `dw 0` to inherit stock weight **independently**; only write a nonzero field when it actually differs. Do not allocate redundant 4-byte metric records for fully identical forms.
+- Verify form identities via `Species + Form`, and treat special custom mappings (`PERSIAN + FORM_GALAR` for Perrserker; `WEAVILE + FORM_HISUI` for Sneasler) as their source Pokémon's measurements, not those of ordinary Persian / Weavile. Compare with Polished Crystal body data and Bulbapedia display values when the former lacks a form.
+- Keep metric inheritance cleanup separate from unresolved battle-stats / evolution / learnset placeholder work. Validate all descriptors and in-bank symbols, all effective display values, patch apply/reverse checks and file modes. Runtime ROM/link/map/saves remain user-side acceptance work under the current project rules.

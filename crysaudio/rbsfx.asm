@@ -184,3 +184,7 @@ RedSfxHeaderPointers:
 	; AUR-5.62.36: Aura Sphere charge/launch use existing Gen II SFX.
 	dbw BANK(Sfx_Outrage), Sfx_Outrage
 	dbw BANK(Sfx_MegaPunch), Sfx_MegaPunch
+
+	; Pay Day only: reuse embedded Gold sound sequences without copying SFX data.
+	dbw BANK(Sfx_RazorWind), Sfx_RazorWind
+	dbw BANK(Sfx_PayDay), Sfx_PayDay

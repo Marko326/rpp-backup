@@ -3373,7 +3373,7 @@ MirrorMoveCheck:
 	jr z,.notDone
 	jp ExecutePlayerMoveDone ; otherwise, we're done if the move missed
 .moveDidNotMiss
-	; ANIM-5.62.94: remember whether this hit struck a Substitute. If it
+	; ANIM-5.62.98: remember whether this hit struck a Substitute. If it
 	; breaks, the substitute bit is already gone when poison is considered.
 	ld a, [wEnemyBattleStatus2]
 	push af
@@ -3434,7 +3434,7 @@ MirrorMoveCheck:
 	xor a
 	ld [wPlayerNumHits],a
 .executeOtherEffects
-	; ANIM-5.62.94: each Twineedle hit has already checked poison.
+	; ANIM-5.62.98: each Twineedle hit has already checked poison.
 	; Do not run its legacy end-of-move poison roll a third time.
 	call GetCurrentMoveID
 	cp TWINEEDLE
@@ -5676,7 +5676,7 @@ EnemyCheckIfMirrorMoveEffect:
 	jr z, .handleExplosionMiss
 	jp ExecuteEnemyMoveDone
 .moveDidNotMiss
-	; ANIM-5.62.94: preserve the pre-damage Substitute state across
+	; ANIM-5.62.98: preserve the pre-damage Substitute state across
 	; damage, including when this very hit breaks the Substitute.
 	ld a, [wPlayerBattleStatus2]
 	push af
@@ -5731,7 +5731,7 @@ EnemyCheckIfMirrorMoveEffect:
 	xor a
 	ld [wEnemyNumHits], a
 .notMultiHitMove
-	; ANIM-5.62.94: the two hits already received independent rolls.
+	; ANIM-5.62.98: the two hits already received independent rolls.
 	call GetCurrentMoveID
 	cp TWINEEDLE
 	jr z, ExecuteEnemyMoveDone

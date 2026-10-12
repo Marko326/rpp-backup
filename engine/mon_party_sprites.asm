@@ -326,9 +326,13 @@ PartyIconSourcePointers:
 	db BANK(GoldIconFox)
 	dw GoldIconHumanshape           ; 37 HUMANSHAPE_GS
 	db BANK(GoldIconHumanshape)
+
+	; ICO-5.62.81: independent PureRGB OG+ icon; keep the existing 38 IDs.
+	dw PureRGBHumanoidInsectPartyIcon ; 38 HUMANOID_INSECT
+	db BANK(PureRGBHumanoidInsectPartyIcon)
 PartyIconSourcePointersEnd:
 PARTY_ICON_CLASS_COUNT EQU (PartyIconSourcePointersEnd - PartyIconSourcePointers) / 3
-IF PARTY_ICON_CLASS_COUNT != SPRITE_HUMANSHAPE_GS + 1
+IF PARTY_ICON_CLASS_COUNT != SPRITE_HUMANOID_INSECT + 1
 	fail "Party icon source table is missing a shipped class"
 ENDC
 

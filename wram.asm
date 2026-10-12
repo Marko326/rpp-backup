@@ -3306,8 +3306,16 @@ wWalkBikeSurfState:: ; d784
 ; $02 = surfing
 	ds 1
 
-; unused?
-	ds 8
+; FIS-5.62.84: persistent last rod deliberately used from the Bag.
+; These two bytes reuse the old d785-d78c reserved save space;
+; the marker prevents stale bytes in pre-existing saves from acting as a rod.
+wLastUsedFishingRod:: ; d785
+	ds 1
+wLastUsedFishingRodMagic:: ; d786
+	ds 1
+
+; unused, d787-d78c
+	ds 6
 
 ; Second saved byte for special Fly destinations. It consumes another byte from
 ; the same pre-existing unused save area, so wKantoTownVisitedFlag and every

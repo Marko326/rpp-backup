@@ -2604,7 +2604,9 @@ InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
 ; Type effectiveness/STAB logic is kept out of capacity-constrained Bank F.
 ; Battle damage and trainer AI share the same routines and TypeEffects table.
-SECTION "Battle Type Effectiveness", ROMX, BANK[$34]
+; ANIM-5.62.111: bank $34 has only $37 free in the 5.62.110 map;
+; callers use callab and BANK(...) so move the whole section to bank $30.
+SECTION "Battle Type Effectiveness", ROMX, BANK[$30]
 INCLUDE "engine/battle/type_effectiveness.asm"
 
 ; Relocatable battle helpers live in roomy bank $34 so Bank F only pays the
@@ -2636,13 +2638,15 @@ SECTION "Red Bedroom PC", ROMX, BANK[$3E]
 INCLUDE "engine/menu/red_bedroom_pc.asm"
 
 ; Shared Poké Flute party wake-up logic is kept out of the capacity-constrained
-; item-use bank. Battle and field callers both use the same helper.
-SECTION "Poke Flute Party Wake", ROMX, BANK[$34]
+; item-use bank. ANIM-5.62.111: its entry points are called through callba,
+; allowing relocation from packed bank $34 to bank $30. Battle and field callers both use the same helper.
+SECTION "Poke Flute Party Wake", ROMX, BANK[$30]
 INCLUDE "engine/items/pokeflute_party.asm"
 
-; Route 20 / Seafoam Town Map classifier lives in roomy bank $34.
-; BANK $35 is capacity-constrained, so keep the larger F23.12n geography logic here.
-SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$34]
+; Route 20 / Seafoam Town Map classifier and Pokédex location builder use
+; callba entry points; move together to bank $30 to release bank $34 space.
+; Bank $35 remains capacity-constrained.
+SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$30]
 INCLUDE "engine/fly_town_map_route20.asm"
 
 ; F23.15fix: build the Pokédex habitat list in the same logical Town Map selector
@@ -2711,7 +2715,8 @@ BuildPokedexTownMapLocations::
 
 ; Keep non-battle slot-machine graphics out of the capacity-constrained
 ; battle-animation bank. Slot-machine loaders already use BANK(SlotMachineTiles2).
-SECTION "Slot Machine Tiles 2", ROMX, BANK[$34]
+; ANIM-5.62.111: move to bank $30; keep the original $180 tile data intact.
+SECTION "Slot Machine Tiles 2", ROMX, BANK[$30]
 SlotMachineTiles2:
 IF DEF(_RED)
 	INCBIN "gfx/red/slotmachine2.2bpp"
@@ -2922,6 +2927,18 @@ SECTION "Wild Form Producers", ROMX, BANK[$3B]
 INCLUDE "data/wild_form_producers.asm"
 INCLUDE "engine/wild_form_producers.asm"
 
+; FIS-5.62.85: post-gift Fishing Guru tips live outside crowded map text banks.
+SECTION "Fishing Guru Repeat Tips", ROMX, BANK[$3B]
+INCLUDE "data/fishing_guru_repeat_text.asm"
+
+; FIS-5.62.87: Surf SELECT fishing helpers live in roomy Bank $3B.
+SECTION "Surf SELECT Fishing", ROMX, BANK[$3B]
+INCLUDE "engine/overworld/surf_select_fishing.asm"
+
+; ANIM-5.62.85: dedicated Pay Day coin throw, kept out of HOME/bank $1E.
+SECTION "Pay Day Coin Toss Animation", ROMX, BANK[$3B]
+INCLUDE "engine/battle/pay_day_animation.asm"
+
 ; Categorized player Bag helpers live in the roomy expansion bank.
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"
@@ -3024,17 +3041,21 @@ INCLUDE "engine/battle/earth_power_animation.asm"
 SECTION "Polished Crystal Energy Ball Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/energy_ball_animation.asm"
 
-; ANIM-5.62.92: floating banked sprite renderer; no extra HOME allocation.
+; ANIM-5.62.96: floating banked sprite renderer; no extra HOME allocation.
 SECTION "Bullet Seed Animation", ROMX
 INCLUDE "engine/battle/bullet_seed_animation.asm"
 
-; ANIM-5.62.93: global enemy multi-hit feedback and original move overrides.
+; ANIM-5.62.97: global enemy multi-hit feedback and original move overrides.
 SECTION "Global Multi-Hit Damage Feedback", ROMX
 INCLUDE "engine/battle/global_multihit_feedback.asm"
 
-; ANIM-5.62.94: Twineedle per-hit poison hook; keep body out of Bank $F.
+; ANIM-5.62.98: Twineedle per-hit poison hook; keep body out of Bank $F.
 SECTION "Twineedle Per-Hit Poison", ROMX
 INCLUDE "engine/battle/twineedle_per_hit_poison.asm"
+
+; ANIM-5.62.109: floating bank for private, symmetric Horn-style needles.
+SECTION "Twineedle Symmetric Projectile Animation", ROMX
+INCLUDE "engine/battle/twineedle_animation.asm"
 
 ; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
 SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
@@ -3146,3 +3167,7 @@ GoldIconFox:
 	INCBIN "gfx/party_icon_imports/fox_gs.2bpp"
 GoldIconHumanshape:
 	INCBIN "gfx/party_icon_imports/humanshape_gs.2bpp"
+
+; ICO-5.62.81: PureRGB OG+ HUMANOID_INSECT, two 16x16 frames for three species.
+PureRGBHumanoidInsectPartyIcon:
+	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"

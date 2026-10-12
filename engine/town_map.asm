@@ -103,11 +103,27 @@ DisplayTownMap:
 	call ExitTownMap
 	ret
 .pressedStart
-	xor a ; TownMapOrder index 0 = Pallet Town
-	ld [wWhichTownMapLocation], a
+	; MAP-5.62.80: use Teleport's last recovery map, not the last town walked through.
+	ld a, [wLastBlackoutMap]
+	cp ROUTE_4 ; Mt. Moon Pokemon Center returns to Route 4
+	jr z, .startMtMoon
+	cp ROUTE_10 ; Rock Tunnel Pokemon Center returns to Route 10
+	jr z, .startRockTunnel
+	cp SAFFRON_CITY + 1 ; other supported recovery destinations are city IDs 0..10
+	jp nc, .inputLoop ; keep selection on unknown/corrupt recovery map
+	ld e, a
+	jr .startLocate
+.startMtMoon
+	ld e, MT_MOON_1 ; normal Town Map's anchor for the Mt. Moon Fly shortcut
+	jr .startLocate
+.startRockTunnel
+	ld e, ROCK_TUNNEL_POKECENTER ; normal Town Map anchor for Rock Tunnel
+.startLocate
+	callab InitTownMapLocationFromPlayerMap
 	jp .townMapLoop
 .pressedSelect
-	ld a, TOWN_MAP_ORDER_VERMILION_INDEX
+	; SELECT always returns the browse cursor to Pallet Town.
+	xor a
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 .pressedUp

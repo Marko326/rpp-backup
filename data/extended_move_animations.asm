@@ -154,9 +154,15 @@ PlayExtendedOrbProjectile:
 	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
 	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
+	cp PAY_DAY
+	jr nz,.notPayDay
+	; ANIM-5.62.85: size-aware rotating throw and centred hit, then $52 bounce.
+	callba PlayPayDayCoinTossAnimation
+	ret
+.notPayDay
 	cp BULLET_SEED
 	jr nz,.notBulletSeed
-	; ANIM-5.62.92: one seed volley per actual multi-hit strike.
+	; ANIM-5.62.96: one seed volley per actual multi-hit strike.
 	callba PlayBulletSeedAnimation
 	ret
 .notBulletSeed
@@ -548,6 +554,8 @@ StageDedicatedMoveAnimation:
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID
 ; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
 LegacyMoveAnimationOverrides:
+	db PAY_DAY
+	dw PayDayDedicatedAnim
 	db BULLET_SEED
 	dw BulletSeedDedicatedAnim
 	db AURA_SPHERE
@@ -572,7 +580,7 @@ LegacyMoveAnimationOverrides:
 	dw EggBombDedicatedAnim
 	db $FF
 
-; ANIM-5.62.92: Barrage slot $8C becomes a Grass-type multi-hit seed volley.
+; ANIM-5.62.96: Barrage slot $8C becomes a Grass-type multi-hit seed volley.
 ; Kept as a sparse real-move recipe so Shadow Ball and Rock Blast can continue
 ; using the old animation byte as a legacy compatibility ID.
 BulletSeedDedicatedAnim:
@@ -681,6 +689,19 @@ ExtendedMoveAnimationPointersEnd:
 		fail "extended move animation pointer table size mismatch"
 	ENDC
 
+
+; ANIM-5.62.85: size-aware rotating throw and a single centred Gold-like
+; hit (both via C2), then untouched smoothed $52 bounce with NO sound.
+PayDayDedicatedAnim:
+	db PayDayDedicatedAnimEnd - PayDayDedicatedAnimData
+PayDayDedicatedAnimData:
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $04,$FF,$52
+	db $FF
+PayDayDedicatedAnimEnd:
+	IF PayDayDedicatedAnimEnd - PayDayDedicatedAnimData > 30
+		fail "Pay Day animation recipe exceeds wBuffer"
+	ENDC
 
 AuraSphereDedicatedAnim:
 	db AuraSphereDedicatedAnimEnd - AuraSphereDedicatedAnimData

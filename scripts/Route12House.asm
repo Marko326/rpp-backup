@@ -42,7 +42,8 @@ Route12HouseText_564cf:
 	db "@"
 
 Route12HouseText_564d4:
-	TX_FAR _Route12HouseText_564d4
+	; FIS-5.62.85: only repeat talk after the rod was gifted.
+	TX_FAR FishingGuruSuperRodRepeatText
 	db "@"
 
 Route12HouseText_564d9:

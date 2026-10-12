@@ -429,6 +429,9 @@ SmoothBattleAnimDelayFrames::
 	cp c
 	jr nz,.checkWhitelist
 .motionAllowed
+	; ANIM-5.62.85: refresh the Pay Day $52 planar-rotation pose without
+	; disturbing the original bounced/smoothed coordinates.
+	call MaybeUpdatePayDayBounceSpin
 
 	; Swift and Acid / Sludge $14 may use a final velocity tail: continue the
 	; previous segment during existing hold frames before OAM cleanup.
@@ -534,6 +537,25 @@ SmoothBattleAnimDelayFrames::
 	jp .applyTransform
 
 .tryMotionTail
+	; The final $52 keyframe has no next travel anchor. Keep its ordinary
+	; four-frame hold, but continue cycling the coin pose throughout it.
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $52)
+	jr nz,.otherMotionTail
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $52)
+	jr nz,.otherMotionTail
+	ld a,[wSubAnimFrameDelay]
+	ld b,a
+.spinFinalHold
+	push bc
+	call BattleAnimDelayFrameMaybeCarry
+	call MaybeUpdatePayDayBounceSpin
+	pop bc
+	dec b
+	jr nz,.spinFinalHold
+	jp .doneSmoothDelay
+.otherMotionTail
 	; Swift uses its own final velocity tail. ANM-5.61.27 also applies
 	; this only to Acid / Sludge $14 droplets, not to Lovely Kiss.
 	call SmoothBattleAnimIsSwift
@@ -796,6 +818,9 @@ SmoothBattleAnimDelayFrames::
 	jr .xConsume
 
 .finishSmoothStep
+	; Redraw the next coin pose after this frame's smooth X/Y movement.
+	; Non-$52 subanimations return without a far call.
+	call MaybeUpdatePayDayBounceSpin
 	dec b
 	jp nz,.smoothFrameLoop
 	jr .doneSmoothDelay
@@ -811,6 +836,31 @@ SmoothBattleAnimDelayFrames::
 	pop bc
 	; DelayFrames leaves C at zero. Preserve that caller-visible detail.
 	ld c,0
+	ret
+
+; ANIM-5.62.85: keep Pay Day's original $52 smooth path and frame timing;
+; only its four coin OAM tile IDs/flags receive the Ruby-style planar spin.
+; The larger pose table/render routine stays in bank $3B, not bank $1E.
+MaybeUpdatePayDayBounceSpin:
+	push af
+	ld a,[wAnimationID]
+	cp PAY_DAY
+	jr nz,.done
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $52)
+	jr nz,.done
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $52)
+	jr nz,.done
+	push bc
+	push de
+	push hl
+	callba UpdatePayDayBounceCoinSpin
+	pop hl
+	pop de
+	pop bc
+.done
+	pop af
 	ret
 
 ; ANM-5.61.10: return the number of DelayFrame waits that should actively
@@ -1405,6 +1455,14 @@ MoveAnimation:
 	ld a,[wOptions]
 	bit 7,a
 	jr nz, .animationsDisabled
+	; ANIM-5.62.109: separate mirrored-axis twin projectiles; keep the
+	; shared generic damage reaction for each hit via .next4.
+	ld a,[wAnimationID]
+	cp TWINEEDLE
+	jr nz,.regularMoveAnimation
+	callba PlaySymmetricTwineedleAnimation
+	jr .next4
+.regularMoveAnimation
 	call ShareMoveAnimations
 	call PlayAnimation
 	jr .next4
@@ -1476,7 +1534,7 @@ PlayApplyingAttackAnimation:
 	jr z,.useStoredType ; enemy non-damaging animation
 	cp 6
 	jr z,.useStoredType ; player non-damaging animation
-	; ANIM-5.62.93: resolve normal overrides and all enemy multi-hit damage
+	; ANIM-5.62.97: resolve normal overrides and all enemy multi-hit damage
 	; in a floating bank. Bankswitch clobbers A; load the selected type back.
 	callba SelectGlobalDamageFeedbackType
 .useStoredType

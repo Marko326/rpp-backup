@@ -415,15 +415,22 @@ CheckRepeatFishingRodOverworld::
 	ret
 
 CheckRepeatFishingRod::
+; FIS-5.62.90: reuse the no-bite textbox throughout consecutive retries.
+; FishingAnim/PresentFishingResultR2 already printed the result.
+; Do not call DisplayTextIDInit again before asking the next question.
+; The remaining A/B-to-question delay has not been confirmed resolved.
+	ld a, [wRepeatFishingRod]
+	and a
+	jr z, .clearPseudoItem
+.retry
 ; Consume first. A retry that also gets no bite will set it again itself.
 	ld a, [wRepeatFishingRod]
 	and a
-	ret z
+	jr z, .finish
 	ld b, a
 	xor a
 	ld [wRepeatFishingRod], a
 	push bc
-	call Text2_EnterTheText
 	ld hl, UseRodAgainText
 	call PrintTextAndYesNoChoice
 	jr nz, .done
@@ -438,12 +445,32 @@ CheckRepeatFishingRod::
 	ld a, b
 	ld [wcf91], a
 	ld [wPseudoItemID], a
+	; The retry prompt is still on screen. Bit 7 is a temporary handoff
+	; to FishingInit: do not redraw the whole overworld under that window.
+	; Rod item IDs themselves never have bit 7 set.
+	ld a, b
+	set 7, a
+	ld [wRepeatFishingRod], a
 	call UseItem
-	call Text3_DrakesDeception
-	ret
+	; FishingInit normally replaces the handoff with the real rod ID.
+	; If the item was rejected before that point, discard the marker.
+	ld a, [wRepeatFishingRod]
+	bit 7, a
+	jr z, .closeRetryText
+	xor a
+	ld [wRepeatFishingRod], a
+.closeRetryText
+	; Keep the text window open while the next cast is still eligible.
+	; FishingInit's bit-7 handoff still suppresses a full map redraw.
+	jr .retry ; consecutive misses are handled without recursive calls
 .done
 	pop bc
+.finish
+	; No, a bite, no retry or rejected cast: close exactly once.
 	call Text3_DrakesDeception
+.clearPseudoItem
+	xor a
+	ld [wPseudoItemID], a
 	ret
 
 UseRodAgainText:

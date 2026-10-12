@@ -5,7 +5,8 @@ db 60 ; base speed
 db 41 ; base special
 db NORMAL ; species type 1
 db NORMAL ; species type 2
-db 255 ; catch rate
+ZIGZAGOON_CATCH_RATE EQU 255
+db ZIGZAGOON_CATCH_RATE ; catch rate
 db 60 ; base exp yield
 INCBIN "pic/bmon/zigzagoon.pic",0,1 ; sprite dimensions
 dw ZigzagoonPicFront

@@ -1004,7 +1004,7 @@ PoisonGasAnim:
 	db $FF
 
 BulletSeedAnim:
-	; ANIM-5.62.92: fallback seed toss if the real-move helper is bypassed.
+	; ANIM-5.62.96: fallback seed toss if the real-move helper is bypassed.
 	db $46,$8B,$1B
 	db $55,$4D,$1C
 	db $FF
@@ -2506,6 +2506,9 @@ Subanimation51:
 	subentry $76, $1b, 0
 	subentry $34, $1b, 0
 
+; ANIM-5.62.85: Ruby-like screen-plane spinning is applied per displayed
+; frame by UpdatePayDayBounceCoinSpin. Keep the stock $52 bounce keys and
+; four-frame delays intact so the smoothed path remains backwards-compatible.
 Subanimation52:
 	db $47
 	subentry $77, $25, 0

@@ -1,4 +1,4 @@
-; ANIM-5.62.94: two independent poison rolls for Twineedle.
+; ANIM-5.62.98: two independent poison rolls for Twineedle.
 ; Called after a successful non-Substitute hit only. The battle loop retains
 ; Twineedle's original TWO-HIT effect setup, and skips its old final poison roll.
 ; The current move ID is checked by both callers before banking here.
