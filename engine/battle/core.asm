@@ -3391,7 +3391,13 @@ MirrorMoveCheck:
 	callab FinishAttackerSubstituteAfterDamage
 	pop af
 	bit HasSubstituteUp, a
-	jr nz, .notDone
+	jr z, .checkTwineedle
+	; MOVE-5.62.114: a just-broken Substitute still blocks Nuzzle's status.
+	ld a, [wMoveDidntMiss]
+	or $80
+	ld [wMoveDidntMiss], a
+	jr .notDone
+.checkTwineedle
 	call GetCurrentMoveID
 	cp TWINEEDLE
 	jr nz, .notDone
@@ -5122,6 +5128,8 @@ AttackSubstitute:
 	ld a,[de]
 	sub [hl]
 	ld [de],a
+	; Exact lethal damage also breaks the Substitute (Z is preserved by LD).
+	jr z,.substituteBroke
 	ret nc
 .substituteBroke
 ; If the target's Substitute breaks, wDamage isn't updated with the amount of HP
@@ -5692,7 +5700,13 @@ EnemyCheckIfMirrorMoveEffect:
 	callab FinishAttackerSubstituteAfterDamage
 	pop af
 	bit HasSubstituteUp, a
-	jr nz, .handleExplosionMiss
+	jr z, .checkTwineedle
+	; MOVE-5.62.114: mirror the pre-hit Substitute marker for Nuzzle.
+	ld a, [wMoveDidntMiss]
+	or $80
+	ld [wMoveDidntMiss], a
+	jr .handleExplosionMiss
+.checkTwineedle
 	call GetCurrentMoveID
 	cp TWINEEDLE
 	jr nz, .handleExplosionMiss
@@ -7172,8 +7186,12 @@ FreezeBurnParalyzeEffect:
 	ld a, [wEnemyMonStatus]
 	and a
 	jp nz, CheckDefrost ; can't inflict status if opponent is already statused
+	; Preserve the original move type in E across the bank switch.
+	; Resolve actual derived moves for Test Battle / Mirror Move as well.
 	ld a, [wPlayerMoveType]
-	ld b, a
+	ld e, a
+	callab GetStatusImmunityTypeFar
+	ld b, e
 	ld a, [wEnemyMonType1]
 	cp b ; do target type 1 and move type match?
 	ret z  ; return if they match (an ice move can't freeze an ice-type, body slam can't paralyze a normal-type, etc.)
@@ -7216,7 +7234,9 @@ opponentAttacker:
 	and a
 	jp nz, CheckDefrost
 	ld a, [wEnemyMoveType]
-	ld b, a
+	ld e, a
+	callab GetStatusImmunityTypeFar
+	ld b, e
 	ld a, [wBattleMonType1]
 	cp b
 	ret z
@@ -7252,32 +7272,10 @@ opponentAttacker:
 ; Normalize burn/freeze/paralyze side-effect IDs and perform their shared
 ; probability roll. Returns the normalized effect in A with carry set on success.
 RollStatusSideEffect:
-	; MOV-5.61.53: Sacred Fire uses an exact 128/256 (50%) burn roll, then
-	; normalizes to the ordinary burn ID so the shared immunity/status code stays intact.
-	cp SACRED_FIRE_EFFECT
-	jr nz, .standardStatusRoll
-	ld b, $80
-	ld a, BURN_SIDE_EFFECT1
-	jr .roll
-.standardStatusRoll
-	cp PARALYZE_SIDE_EFFECT1 + 1
-	ld b, $1a ; ~10% effects
-	jr c, .roll
-	cp PARALYZE_SIDE_EFFECT2 + 1
-	jr c, .effect2
-	; Fang-style effects map back to their base burn/freeze/paralyze effect IDs.
-	sub $53
-	ld b, $1a
-	jr .roll
-.effect2
-	ld b, $4d ; ~30% effects
-	sub $1e
-.roll
-	push af
-	call BattleRandom
-	cp b
-	pop bc ; B = normalized effect; POP preserves the result flags from CP
-	ld a, b
+	; MOVE-5.62.114: carry survives the bank switch; E carries the
+	; normalized effect, since Bankswitch restores A to the previous bank.
+	callab RollStatusSideEffectFar
+	ld a, e
 	ret
 
 BurnedText:
@@ -7937,8 +7935,8 @@ RecoilEffect:
 	jpab RecoilEffect_
 
 ConfusionSideEffect:
-	call BattleRandom
-	cp $19 ; ~10% chance
+	; MOVE-5.62.114: Water Pulse 20%, Hurricane 30%; Gen I stays 10%.
+	callab RollConfusionSideEffectFar
 	ret nc
 	jr ConfusionSideEffectSuccess
 

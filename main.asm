@@ -1322,7 +1322,6 @@ INCLUDE "data/mapObjects/Mansion4.asm"
 Mansion4Blocks: INCBIN "maps/Mansion4.blk"
 
 INCLUDE "engine/battle/init_battle_variables.asm"
-INCLUDE "engine/battle/moveEffects/paralyze_effect.asm"
 
 INCLUDE "engine/overworld/card_key.asm"
 
@@ -3084,6 +3083,12 @@ INCLUDE "engine/battle/aura_sphere_animation.asm"
 ; BSE-5.62.38: damaging stat side effects, pre-KO self changes.
 SECTION "Stat Side Effect Helpers", ROMX, BANK[$3E]
 INCLUDE "engine/battle/stat_side_effect_helpers.asm"
+
+; MOVE-5.62.114: modern move-specific status/drain rolls and Nuzzle immunity.
+; The full paralysis body is relocated from full Bank $14 to roomy Bank $3E.
+SECTION "Move Effect Balance Helpers", ROMX, BANK[$3E]
+INCLUDE "engine/battle/move_effect_balance_helpers.asm"
+INCLUDE "engine/battle/moveEffects/paralyze_effect.asm"
 
 ; RCL-5.62.40: move-specific recoil fractions in Bank $3E.
 SECTION "Recoil Side Effect Helpers", ROMX, BANK[$3E]

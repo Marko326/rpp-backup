@@ -41,6 +41,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **蛇纹熊特例**：旧版替换前四张普通 Zigzagoon／Linoone 图片配棕色系；旧版替换后的图片对应当前 Galar Zigzagoon／Linoone，配紫红／灰色系。只恢复**伽勒尔**形态旧 PAL，不改普通形态；PC18 的 18 组源 `.pal` 也不批量覆盖。伽勒尔呆呆王未找到该旧版同图成套 PAL，不凭相似配色臆造“已验证”。
 - **审查边界**：用户确认配色观感可以标记视觉方案定版；源码／符号／补丁检查不等于已测试所有 ROM、前后图、异色战斗／图鉴或读取存档路径。需要代码变动时应另起版本并复核 PAL 表排列、RGB 0～31、原有 100755／100644 文件权限。
 
+## Substitute boundary and derived move identity (MOVE-5.62.115)
+
+- In shared `AttackSubstitute`, `SUB` sets the zero flag when damage exactly equals the Substitute HP; `ret nc` alone misses this break. Check both zero and borrow before retaining a Substitute. Regression-test both attackers and multi-hit moves.
+- In automated Test Battles, `GetCurrentMoveID` can return the root test move while Metronome/Mirror Move have already selected a derived move. Use `GetStatSideEffectMoveID` consistently for derived-move probability and type-immunity decisions. That helper lives in Bank `$3E`; Bank `$0F` callers must use `callab` and preserve any return value in `DE`, since `Bankswitch` clobbers `A/BC/HL`.
+
 ## ROM bank placement
 
 - **ANIM-5.62.111 地区形态 bank $34 拥塞**：撤销地区形态提交后的 5.62.110 自带 `patches/rppred.map` 显示 bank #52（`$34`）仅剩 `$37` 字节。新增 9 组完整形态资料与 9 条描述符不可直接追加至 `$34`；链接器先报 `Slot Machine Tiles 2` 无法放置只是受害段。

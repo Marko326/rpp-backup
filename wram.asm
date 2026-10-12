@@ -786,6 +786,8 @@ wEnemyUsedMove:: ds 1 ; ccf2
 
 wEnemyMonMinimized:: ds 1 ; ccf3
 
+; MOVE-5.62.114: bit 7 marks a hit on the pre-damage target Substitute;
+; all existing success checks treat this byte as nonzero/zero.
 wMoveDidntMiss:: ds 1 ; ccf4
 
 wPartyFoughtCurrentEnemyFlags:: ; ccf5

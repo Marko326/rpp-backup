@@ -1,16 +1,7 @@
 DrainHPEffect_:
-	ld hl, wDamage
-	ld a, [hl]
-	srl a ; divide damage by 2
-	ld [hli], a
-	ld a, [hl]
-	rr a
-	ld [hld], a
-	or [hl] ; is damage 0?
-	jr nz, .getAttackerHP
-; if damage is 0, increase to 1 so that the attacker gains at least 1 HP
-	inc hl
-	inc [hl]
+	; MOVE-5.62.114: only Draining Kiss heals 75%; the original drain
+	; moves and Dream Eater keep their 50% recovery and minimum 1 HP.
+	callab CalculateDrainRecovery
 .getAttackerHP
 	ld hl, wBattleMonHP
 	ld de, wBattleMonMaxHP

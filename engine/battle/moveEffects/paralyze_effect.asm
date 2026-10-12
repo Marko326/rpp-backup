@@ -1,8 +1,7 @@
 ParalyzeEffect_:
 	ld hl, wEnemyMonStatus
-	; BAT-5.61.01: keep DE on the current move effect first. Move type is the
-	; second byte after it, so the Nuzzle special case does not need another
-	; H_WHOSETURN dispatch and bank 14 only grows minimally.
+	; MOVE-5.62.114: the former Bank $14 body lives alongside the other
+	; move-specific helpers in Bank $3E. Keep DE at the current move effect.
 	ld de, wPlayerMoveEffect
 	ld a, [H_WHOSETURN]
 	and a
@@ -10,6 +9,31 @@ ParalyzeEffect_:
 	ld hl, wBattleMonStatus
 	ld de, wEnemyMoveEffect
 .next
+	ld a, [de]
+	cp NUZZLE_EFFECT
+	jr nz, .checkStatus
+	; MOVE-5.62.114: wMoveDidntMiss bit 7 records the Substitute
+	; before damage, including the hit that breaks it. Never paralyze
+	; the real target after striking a Substitute.
+	ld a, [wMoveDidntMiss]
+	bit 7, a
+	ret nz
+	; Electric Pokemon are immune to paralysis even when Nuzzle
+	; successfully deals damage (ordinary Thunder Wave is unchanged).
+	push hl
+	inc hl ; target type 1 follows target status
+	ld a, [hli]
+	cp ELECTRIC
+	jr z, .nuzzleImmune
+	ld a, [hl]
+	cp ELECTRIC
+	jr z, .nuzzleImmune
+	pop hl
+	jr .checkStatus
+.nuzzleImmune
+	pop hl
+	ret
+.checkStatus
 	ld a, [hl]
 	and a ; does the target already have a status ailment?
 	jr nz, .alreadyStatused
@@ -32,6 +56,9 @@ ParalyzeEffect_:
 .hitTest
 	dec de
 	dec de ; restore the current MoveEffect pointer across MoveHitTest
+	ld a, [de]
+	cp NUZZLE_EFFECT
+	jr z, .alreadyHit ; damaging Nuzzle already passed its accuracy test
 	push de
 	push hl
 	callab MoveHitTest
@@ -40,6 +67,7 @@ ParalyzeEffect_:
 	ld a, [wMoveMissed]
 	and a
 	jr nz, .didntAffect
+.alreadyHit
 	set PAR, [hl]
 	callab HalveSpeedDueToParalysis
 	; Damaging Nuzzle already played its hit animation. Only standalone

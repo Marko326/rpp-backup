@@ -258,7 +258,7 @@ MoveEnd:
 	move COUNTER,      NO_ADDITIONAL_EFFECT,        60, FIGHTING,  90, 10 ; Storm Throw
 	move KARATE_CHOP,  NO_ADDITIONAL_EFFECT,       100, FIGHTING,  85,  5 ; Cross Chop
 	move MEGA_KICK,    SPEED_DOWN_SIDE_EFFECT,      65, FIGHTING, 100, 20 ; Low Sweep
-	move SONICBOOM,    CONFUSION_SIDE_EFFECT,      110, FLYING,    85, 10 ; Hurricane
+	move SONICBOOM,    CONFUSION_SIDE_EFFECT,      110, FLYING,    70, 10 ; Hurricane
 	move TAIL_WHIP,    ATTACK_DOWN1_EFFECT,          0, FAIRY,    100, 30 ; Baby Doll Eyes
 	move FIRE_BLAST,   SACRED_FIRE_EFFECT,         100, FIRE,      95,  5 ; Sacred Fire ; MOV-5.61.53: Gen II Sacred Fire: 100 power / 95% / 5 PP / 50% burn.
 	move AURORA_BEAM,  NO_ADDITIONAL_EFFECT,       100, FLYING,   100,  5 ; Aeroblast
