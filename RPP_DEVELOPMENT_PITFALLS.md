@@ -45,6 +45,13 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - A ROMX routine cannot directly switch to Bank `$03` and keep executing ROMX instructions. Use the tiny ROM0 adapter to perform the switch/read/restore entirely while executing ROM0, then resume the resolver in Bank `$40`. Save the old bank on the stack rather than overwriting the shared `BankswitchHome` scratch; preserve the caller's stack bank.
 - `NEW_BARK_TOWN=$E7` remains a legacy one-byte save/Warp alias and the original Kanto tables retain every old index. The new `(JOHTO, $00)` Header path is opt-in until `wCurRegion`, old-save migration, and cross-region Warp semantics are implemented. Do not reinterpret `$FF` special Warp targets or use the temporary Town Map selection scratch as persisted region state.
 
+## Saved region-state compatibility (REG-5.62.119)
+
+- Region state currently occupies reserved bytes `$D7A4`–`$D7A7` in the **existing saved main-data block**: `wCurRegion`, `wLastRegion`, and two magic bytes. Neither `wMainDataEnd` nor any downstream WRAM/SRAM address moves. Do **not** reuse `wUnusedD71F` (`$D7A3`): despite its name, the item-use code writes there.
+- As long as legacy one-byte map IDs are the active Warp format, `LoadMapHeader` synchronizes both regions from `wCurMap`/`wLastMap` via Bank `$40`. This initializes compatible region bytes even for older saves on the first map load: `$E7` is Johto, all other existing IDs Kanto. The two magic bytes are written but not checked on load; this is **not** independent region-state save migration. The header resolver for New Bark now takes `wCurRegion`, but other maps keep their original lookup behavior.
+- This synchronization deliberately **overwrites** the persisted regions on each map entry. Before permitting a Johto-local ID that overlaps a Kanto ID, replace this compatibility-only projection with explicit region-aware warp/connection assignment and save-load validation; otherwise a real region key would be lost on transition. No new Fly, Teleport, blackout, indoor, or `$FF` destination semantics are implemented in this step.
+- `engine/save.asm` resides in essentially full fixed Bank `$1C`; do not insert migration code there just because it copies the save. The first actual `LoadMapHeader` provides a small ROM0 far-call hook, with all synchronization logic in Bank `$40`. Without a fresh MAP/ROM, linker free space and runtime compatibility remain unverified.
+
 ## ROM bank placement
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.

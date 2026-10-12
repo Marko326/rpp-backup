@@ -1912,6 +1912,9 @@ LoadPlayerSpriteGraphicsCommon::
 
 ; function to load data from the map header
 LoadMapHeader::
+	; REG-5.62.119: migrate old saves and follow legacy warp/connection IDs.
+	; Runs for normal EnterMap and direct connected-map transitions.
+	callab SyncLegacyMapRegions
 	callba MarkTownVisitedAndLoadMissableObjects
 	ld a,[wCurMapTileset]
 	ld [wUnusedD119],a
@@ -1929,7 +1932,9 @@ LoadMapHeader::
 	ld a, [wCurMap]
 	cp NEW_BARK_TOWN
 	jr nz, .legacyMapHeader
-	ld de, MAP_REGION_JOHTO << 8 | JOHTO_NEW_BARK_LOCAL_ID
+	ld a, [wCurRegion]
+	ld d, a
+	ld e, JOHTO_NEW_BARK_LOCAL_ID
 	callab ResolveRegionMapHeader
 	; D is the returned bank; the far-call restores its original bank.
 	ld a, d

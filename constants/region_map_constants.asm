@@ -7,3 +7,9 @@ DEF MAP_REGION_JOHTO EQU 1
 ; NEW_BARK_TOWN ($E7) remains the legacy save/warp alias for now.
 DEF JOHTO_NEW_BARK_LOCAL_ID EQU 0
 DEF NUM_JOHTO_MAPS EQU 1
+
+; REG-5.62.119: signature written beside the saved region bytes.
+; Old saves have no defined region state. These markers are currently written,
+; not checked; legacy map IDs populate the compatibility fields on map load.
+DEF REGION_STATE_MAGIC0 EQU $52
+DEF REGION_STATE_MAGIC1 EQU $4a

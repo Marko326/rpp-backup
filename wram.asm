@@ -3413,8 +3413,19 @@ wWhichDungeonWarp:: ; d7a2
 wUnusedD71F:: ; d7a3
 	ds 1
 
-; unused
-	ds 8
+; REG-5.62.119: saved region state in four previously unused bytes.
+; The original save block size and all later addresses stay unchanged.
+; Legacy wCurMap/wLastMap remain the authority until region-aware warps.
+wCurRegion:: ; d7a4
+	ds 1
+wLastRegion:: ; d7a5
+	ds 1
+wRegionStateMagic0:: ; d7a6
+	ds 1
+wRegionStateMagic1:: ; d7a7
+	ds 1
+; still unused
+	ds 4
 
 wd728:: ; d7ac
 ; bit 0: using Strength outside of battle

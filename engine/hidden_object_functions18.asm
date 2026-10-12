@@ -3,7 +3,7 @@ GymStatues:
 ; if in a gym and don’t have the corresponding badge, a = GymStatueText1_id and jp PrintPredefTextID
 ; else ret
 ; TODO: Update this with a second table for Johto badges
-; load BadgeFlags table based on wCurRegion, which isn't in yet
+; Future Johto gyms need region-aware badge tables; wCurRegion exists, but this lookup is Kanto-only.
 	call EnableAutoTextBoxDrawing
 	ld a, [wSpriteStateData1 + 9]
 	cp SPRITE_FACING_UP
