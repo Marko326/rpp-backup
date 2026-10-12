@@ -2484,6 +2484,11 @@ INCLUDE "data/regional_forms.asm"
 SECTION "Regional Form Initial Pokedex Helpers", ROMX
 INCLUDE "engine/menu/pokedex_initial_form.asm"
 
+; DEX-5.62.114: independent form identity table and storage API, floating ROMX.
+SECTION "Regional Dex State Helpers", ROMX
+INCLUDE "data/regional_dex_slots.asm"
+INCLUDE "engine/regional_dex_state.asm"
+
 ; FORM-5.62.20: producer/staging and map-specific evolution override logic stay
 ; floating so fixed bank $34 only grows by small descriptor-facing entry points.
 SECTION "Regional Form Producers", ROMX

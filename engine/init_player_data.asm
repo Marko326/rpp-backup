@@ -46,6 +46,14 @@ START_MONEY EQU $3000
 	; FIS-5.62.84: a new game has no Bag-selected fishing rod yet.
 	ld [wLastUsedFishingRod], a
 	ld [wLastUsedFishingRodMagic], a
+	; DEX-5.62.114: empty form Seen/Owned records for each fresh save.
+	ld hl,wRegionalDexSeen
+	ld bc,18
+	call FillMemory
+	xor a
+	ld hl,wRegionalDexOwnedTail
+	ld [hli],a
+	ld [hl],a
 
 ; Obtained badges
 	ld hl, wObtainedKantoBadges

@@ -2828,7 +2828,10 @@ wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
 wMusicStyle:: ds 1
 wMusicStyleMagic0:: ds 1
 wMusicStyleMagic1:: ds 1
-	ds 18 ; 保持原 unused 区总长度仍为 128 bytes
+; DEX-5.62.114: saved, independent 80-slot form bits (10 Seen + 10 Owned).
+; These first 18 bytes reuse the MoveDex reserved tail.
+wRegionalDexSeen:: ds 10
+wRegionalDexOwned:: ds 8
 
 wNumSigns:: ; d561
 ; number of signs in the current map (up to 16)
@@ -3314,8 +3317,9 @@ wLastUsedFishingRod:: ; d785
 wLastUsedFishingRodMagic:: ; d786
 	ds 1
 
-; unused, d787-d78c
-	ds 6
+; DEX-5.62.114: last 2 Owned bytes; remaining 4 stay reserved.
+wRegionalDexOwnedTail:: ds 2
+	ds 4
 
 ; Second saved byte for special Fly destinations. It consumes another byte from
 ; the same pre-existing unused save area, so wKantoTownVisitedFlag and every

@@ -1,5 +1,7 @@
 # Pokémon Red++ v3
 
+> **本分支项目协作约定：**交付每轮补丁时，固定提供增量补丁、基于项目 ZIP 的全量补丁、包含两者的合集 ZIP，**并同时附上可直接使用的 Git 提交日志**。详细要求、基线确认及校验规则见 [PROJECT_DELIVERY_RULES.md](PROJECT_DELIVERY_RULES.md)。该要求跨新会话持续生效，Git Commit/Push 由项目所有者操作。
+
 This is based on the [**Pokémon Red Disassembly**][pokered]
 
 Red++ serves as an updated version of Pokémon Red.
