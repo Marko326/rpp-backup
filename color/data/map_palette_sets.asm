@@ -279,3 +279,13 @@ MapPaletteSets:
 	db INDOOR_BROWN
 	db INDOOR_LIGHT_BLUE
 	db ALT_TEXTBOX_PAL ; Uses variant of textbox palette for skeleton pokemon
+
+; JOHTO (JHT-5.62.110): use the existing outdoor palette family.
+	db OUTDOOR_GRAY
+	db OUTDOOR_RED
+	db OUTDOOR_GREEN
+	db OUTDOOR_BLUE
+	db OUTDOOR_YELLOW
+	db OUTDOOR_BROWN
+	db OUTDOOR_ROOF
+	db CRYS_TEXTBOX

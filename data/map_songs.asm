@@ -230,7 +230,7 @@ MapSongBanks:
 	db MUSIC_DUNGEON1, 0 ; UnknownDungeon1
 	db MUSIC_CITIES2, 0 ; NameRater
 	db MUSIC_CITIES1, 0 ; CeruleanHouse2
-	db MUSIC_CINNABAR, 0
+	db MUSIC_PALLET_TOWN, 0 ; New Bark Town: temporary town theme
 	db MUSIC_DUNGEON3, 0 ; RockTunnel2
 	db MUSIC_SILPH_CO, 0 ; SilphCo9
 	db MUSIC_SILPH_CO, 0 ; SilphCo10

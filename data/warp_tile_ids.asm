@@ -27,6 +27,7 @@ WarpTileIDPointers:
 	dw FerryWarpTileIDs
 	dw CavernWarpTileIDs
 	dw MuseumWarpTileIDs
+	dw NewBarkWarpTileIDs
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -74,3 +75,7 @@ FerryWarpTileIDs:
 	db 16,48,$FF
 MuseumWarpTileIDs:
 	db $16,$1E,$FF
+
+; JHT-5.62.110: shore boarding tile on the Johto outdoor tileset.
+NewBarkWarpTileIDs:
+	db $06,$FF

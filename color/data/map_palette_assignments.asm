@@ -37,3 +37,4 @@ INCLUDE "color/tilesets/facility.asm" ; FACILITY
 INCLUDE "color/tilesets/ferry.asm" ; FERRY
 INCLUDE "color/tilesets/ice_cavern.asm" ; ICE_CAVERN
 INCLUDE "color/tilesets/museum2.asm" ; MUSEUM_2
+INCLUDE "color/tilesets/johto.asm" ; JOHTO

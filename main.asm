@@ -3166,3 +3166,16 @@ GoldIconHumanshape:
 ; ICO-5.62.81: PureRGB OG+ HUMANOID_INSECT, two 16x16 frames for three species.
 PureRGBHumanoidInsectPartyIcon:
 	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"
+
+; JHT-5.62.110: separate, floating Johto proof-of-concept sections.
+; Tileset header bank covers graphics, metatiles and collision together.
+SECTION "Johto New Bark Tileset", ROMX
+NewBark_GFX:   INCBIN "gfx/tilesets/johto.2bpp"
+NewBark_Block: INCBIN "gfx/blocksets/johto.bst"
+NewBark_Coll:  INCBIN "gfx/tilesets/johto.tilecoll"
+
+SECTION "Johto New Bark Map", ROMX
+INCLUDE "data/mapHeaders/NewBarkTown.asm"
+INCLUDE "data/mapObjects/NewBarkTown.asm"
+INCLUDE "scripts/NewBarkTown.asm"
+NewBarkTownBlocks: INCBIN "maps/NewBarkTown.blk"

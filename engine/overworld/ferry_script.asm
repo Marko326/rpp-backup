@@ -48,16 +48,17 @@ GetFerryTickets:
 	pop hl
 	jr .loop
 .done
+	; JHT-5.62.110: New Bark is a regular ferry stop, not a ticket item.
+	; Always offer a way back to Vermilion, including from a ticketless visit.
 	ld hl, wFilteredBagItemsCount
-	ld a, [hl]
-	and a
-	jr z, .endList ; if no items are in the pack, don't add "Go Home" option
-
-	; add Vermilion to the list if there is one, to get back home
-	ld a, GO_HOME
-	ld [de],a
+	ld a, NEW_BARK_PASS
+	ld [de], a
 	inc de
-	inc [hl] ; increase item count so GO HOME shows up
+	inc [hl]
+	ld a, GO_HOME
+	ld [de], a
+	inc de
+	inc [hl]
 
 .endList
 	ld a, $ff ; End of list
@@ -109,6 +110,9 @@ SetFerryMenuCursorToCurrentStop:
 	jr z, .findTicket
 	cp NAVEL_ROCK_FERRY_DOCK
 	ld b, MYSTIC_TICKET
+	jr z, .findTicket
+	cp NEW_BARK_TOWN
+	ld b, NEW_BARK_PASS
 	ret nz
 .findTicket
 	ld hl, wFilteredBagItems
@@ -172,6 +176,8 @@ DoIslandMenu:
 	jr z, .choseSouthernIsland
 	cp MYSTIC_TICKET
 	jr z, .choseNavelRock
+	cp NEW_BARK_PASS
+	jr z, .choseNewBark
 
 ;choseVermilion
 	ld b, 2
@@ -191,6 +197,11 @@ DoIslandMenu:
 .choseNavelRock
 	ld b, 2
 	ld c, NAVEL_ROCK_FERRY_DOCK
+	jr .islandSelected
+
+.choseNewBark
+	ld b, 0
+	ld c, NEW_BARK_TOWN
 	; fallthrough
 
 .islandSelected
