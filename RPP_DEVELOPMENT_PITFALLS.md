@@ -39,6 +39,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Putting any data only in Bank `$40` would require padding past 65 banks to obtain a valid power-of-two ROM size; a single byte at `$7F:$7FFF` establishes a full 128-bank 2MB boundary. Keep the existing `rgbfix -p 0`, MBC3 type and SRAM configuration. The user-supplied red ROM is 2,097,152 bytes and has header $0147=$13, $0148=$06; the blue ROM and emulator/save tests remain unverified.
 - Use `BANK(symbol)` banked loaders for Johto's map graphics, Town Map graphics and map headers; preserve unbanked `NewBark_Coll` in ROM0. Floating sections elsewhere are not automatically restricted to the original 1MB, and the user-supplied red MAP confirms the present Johto assets in bank $40, boundary in $7F. It also shows only 6 bytes of slack in fixed bank $1C (Town Map code) and $01C4 bytes in ROM0; do not extend those hot sections casually.
 
+## Region-map key rollout (REG-5.62.118)
+
+- The first region resolver accepts `DE = (region, local_map_id)` and returns `D = map header ROM bank`, `HL = map header pointer` plus carry status. `callab`/`callba` destroys `A`/`BC` and initially reuses `HL`, so callers must not pass the map key in those registers or expect its return bank in `A`. The resolver does not leave the target bank selected.
+- A ROMX routine cannot directly switch to Bank `$03` and keep executing ROMX instructions. Use the tiny ROM0 adapter to perform the switch/read/restore entirely while executing ROM0, then resume the resolver in Bank `$40`. Save the old bank on the stack rather than overwriting the shared `BankswitchHome` scratch; preserve the caller's stack bank.
+- `NEW_BARK_TOWN=$E7` remains a legacy one-byte save/Warp alias and the original Kanto tables retain every old index. The new `(JOHTO, $00)` Header path is opt-in until `wCurRegion`, old-save migration, and cross-region Warp semantics are implemented. Do not reinterpret `$FF` special Warp targets or use the temporary Town Map selection scratch as persisted region state.
+
 ## ROM bank placement
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.

@@ -12,6 +12,7 @@ PICS_4 EQU $C
 PICS_5 EQU $D
 
 INCLUDE "home.asm"
+INCLUDE "home/region_map_bank.asm"
 INCLUDE "data/game_version.asm"
 
 
@@ -3193,6 +3194,13 @@ INCLUDE "data/mapHeaders/NewBarkTown.asm"
 INCLUDE "data/mapObjects/NewBarkTown.asm"
 INCLUDE "scripts/NewBarkTown.asm"
 NewBarkTownBlocks: INCBIN "maps/NewBarkTown.blk"
+
+; REG-5.62.118: independent region-key Header and Bank indices in expansion ROM.
+SECTION "Johto Region Map Header Tables", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/johto_map_headers.asm"
+
+SECTION "Johto Region Map Key Resolver", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "engine/overworld/region_map_lookup.asm"
 
 ; ROM-5.62.117: a byte at the last address of bank $7F forces a complete
 ; 128-bank (2MB) ROM, rather than merely opening bank $40 (65 banks).

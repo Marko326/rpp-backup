@@ -253,3 +253,6 @@ ENDM
 	mapconst LORELEIS_ROOM,               6,  5 ; $F5
 	mapconst BRUNOS_ROOM,                 6,  5 ; $F6
 	mapconst AGATHAS_ROOM,                6,  5 ; $F7
+
+; REG-5.62.118: bound legacy lookups without changing any existing map ID.
+DEF NUM_LEGACY_MAPS EQU const_value

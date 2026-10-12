@@ -1924,6 +1924,19 @@ LoadMapHeader::
 	ld [hPreviousTileset],a
 	bit 7,b
 	ret nz
+	; REG-5.62.118: $E7 remains the save/warp alias, but its header
+	; now comes from the Johto local-ID index.  Other maps stay unchanged.
+	ld a, [wCurMap]
+	cp NEW_BARK_TOWN
+	jr nz, .legacyMapHeader
+	ld de, MAP_REGION_JOHTO << 8 | JOHTO_NEW_BARK_LOCAL_ID
+	callab ResolveRegionMapHeader
+	; D is the returned bank; the far-call restores its original bank.
+	ld a, d
+	ld [H_LOADEDROMBANK], a
+	ld [MBC1RomBank], a
+	jr .mapHeaderReady
+.legacyMapHeader
 	ld hl,MapHeaderPointers
 	ld a,[wCurMap]
 	sla a
@@ -1938,6 +1951,7 @@ LoadMapHeader::
 	ld a,[hli]
 	ld h,[hl]
 	ld l,a ; hl = base of map header
+.mapHeaderReady
 ; copy the first 10 bytes (the fixed area) of the map data to D367-D370
 	ld de,wCurMapTileset
 	ld c,$0a
