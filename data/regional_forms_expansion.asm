@@ -60,11 +60,11 @@ HisuiGrowlitheEvolutions::
 	db 0
 
 HisuiGrowlithePreviewPalette::
-	RGB 24, 13, 9
-	RGB 11, 7, 5
+	RGB 26, 25, 24
+	RGB 18, 05, 04
 HisuiGrowlitheShinyPalette::
-	RGB 18, 19, 22
-	RGB 9, 11, 15
+	RGB 18, 20, 23
+	RGB 03, 13, 18
 
 ; HisuiArcanine: registered hisui form. Header uses current project ABI.
 HisuiArcanineBaseStats::
@@ -123,11 +123,11 @@ HisuiArcanineEvolutions::
 	db 0
 
 HisuiArcaninePreviewPalette::
-	RGB 25, 14, 11
-	RGB 10, 8, 7
+	RGB 12, 12, 11
+	RGB 26, 09, 05
 HisuiArcanineShinyPalette::
-	RGB 19, 21, 22
-	RGB 9, 11, 12
+	RGB 12, 12, 11
+	RGB 30, 27, 01
 
 ; HisuiVoltorb: registered hisui form. Header uses current project ABI.
 HisuiVoltorbBaseStats::
@@ -183,11 +183,11 @@ HisuiVoltorbEvolutions::
 	db 0
 
 HisuiVoltorbPreviewPalette::
-	RGB 24, 18, 10
-	RGB 10, 13, 7
+	RGB 21, 17, 13
+	RGB 17, 09, 09
 HisuiVoltorbShinyPalette::
-	RGB 12, 19, 24
-	RGB 8, 11, 16
+	RGB 31, 22, 04
+	RGB 09, 08, 08
 
 ; HisuiElectrode: registered hisui form. Header uses current project ABI.
 HisuiElectrodeBaseStats::
@@ -242,11 +242,11 @@ HisuiElectrodeEvolutions::
 	db 0
 
 HisuiElectrodePreviewPalette::
-	RGB 23, 18, 12
-	RGB 11, 12, 6
+	RGB 31, 21, 03
+	RGB 31, 07, 03
 HisuiElectrodeShinyPalette::
-	RGB 12, 21, 25
-	RGB 6, 12, 16
+	RGB 31, 21, 03
+	RGB 09, 08, 08
 
 ; GalarZigzagoon: registered galar form. Header uses current project ABI.
 GalarZigzagoonBaseStats::
@@ -301,11 +301,11 @@ GalarZigzagoonEvolutions::
 	db 0
 
 GalarZigzagoonPreviewPalette::
-	RGB 23, 23, 23
-	RGB 6, 6, 6
+	RGB 26, 11, 17
+	RGB 12, 12, 12
 GalarZigzagoonShinyPalette::
-	RGB 22, 12, 17
-	RGB 11, 6, 9
+	RGB 04, 27, 29
+	RGB 30, 05, 12
 
 ; GalarLinoone: registered galar form. Header uses current project ABI.
 GalarLinooneBaseStats::
@@ -359,11 +359,11 @@ GalarLinooneEvolutions::
 	db 0
 
 GalarLinoonePreviewPalette::
-	RGB 24, 24, 24
-	RGB 7, 7, 7
+	RGB 26, 11, 17
+	RGB 12, 12, 12
 GalarLinooneShinyPalette::
-	RGB 23, 13, 18
-	RGB 9, 6, 9
+	RGB 27, 26, 22
+	RGB 24, 12, 08
 
 ; GalarWeezing: registered galar form. Header uses current project ABI.
 GalarWeezingBaseStats::
@@ -417,11 +417,11 @@ GalarWeezingEvolutions::
 	db 0
 
 GalarWeezingPreviewPalette::
-	RGB 23, 22, 21
-	RGB 9, 10, 12
+	RGB 13, 23, 08
+	RGB 12, 12, 11
 GalarWeezingShinyPalette::
-	RGB 17, 22, 15
-	RGB 8, 13, 9
+	RGB 16, 28, 09
+	RGB 19, 08, 05
 
 ; GalarSlowking: registered galar form. Header uses current project ABI.
 GalarSlowkingBaseStats::
@@ -535,11 +535,11 @@ PaldeaBlazeTaurosEvolutions::
 	db 0
 
 PaldeaBlazeTaurosPreviewPalette::
-	RGB 23, 13, 10
-	RGB 8, 7, 7
+	RGB 24, 06, 05
+	RGB 09, 09, 09
 PaldeaBlazeTaurosShinyPalette::
-	RGB 22, 22, 16
-	RGB 10, 11, 7
+	RGB 31, 16, 00
+	RGB 15, 01, 01
 
 
 SECTION "Regional Expansion Sprite Graphics", ROMX
