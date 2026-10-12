@@ -33,6 +33,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - The Kanto map-name scratch buffer is shorter than some Johto location names. Display long Johto names directly from the ROM strings with explicit line breaks, and bound the new Johto selection index to its 10-entry table; do not write unbounded names into the legacy short buffer.
 - Keep the region-aware Town Map selector separate from the existing Fly and Pokédex nest pages until those screens receive explicit region support; no early 2MB migration is implied by completing the first Johto page. Static patch checks do not substitute for movement and menu exit tests.
 
+## Johto 2MB ROM layout (ROM-5.62.117)
+
+- The Makefile links source sections without `-l pokered.link`; editing that legacy layout file alone does not constrain the current ROMX allocator. Explicit `BANK[...]` in the actual `main.asm` sections is required to pin Johto data into `$40` and above.
+- Putting any data only in Bank `$40` would require padding past 65 banks to obtain a valid power-of-two ROM size; a single byte at `$7F:$7FFF` establishes a full 128-bank 2MB boundary. Keep the existing `rgbfix -p 0`, MBC3 type and SRAM configuration. The user-supplied red ROM is 2,097,152 bytes and has header $0147=$13, $0148=$06; the blue ROM and emulator/save tests remain unverified.
+- Use `BANK(symbol)` banked loaders for Johto's map graphics, Town Map graphics and map headers; preserve unbanked `NewBark_Coll` in ROM0. Floating sections elsewhere are not automatically restricted to the original 1MB, and the user-supplied red MAP confirms the present Johto assets in bank $40, boundary in $7F. It also shows only 6 bytes of slack in fixed bank $1C (Town Map code) and $01C4 bytes in ROM0; do not extend those hot sections casually.
+
 ## ROM bank placement
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.

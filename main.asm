@@ -3167,14 +3167,20 @@ GoldIconHumanshape:
 PureRGBHumanoidInsectPartyIcon:
 	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"
 
-; JHT-5.62.110: separate, floating Johto proof-of-concept sections.
-; Tileset header bank covers graphics, metatiles and collision together.
-SECTION "Johto New Bark Tileset", ROMX
+; ROM-5.62.117: keep new Johto ROMX resources in the expansion half.
+; Collision data stays in ROM0 because the walking code reads it unbanked.
+; Add later Johto ROMX data to an explicitly assigned bank $40-$7E.
+; Keep bank $7F's final byte reserved to establish the 2MB ROM size.
+DEF JOHTO_ROM_BANK EQU $40
+
+; JHT-5.62.110: separate Johto proof-of-concept resources.
+; Tileset header bank covers graphics and metatiles; collision stays in ROM0.
+SECTION "Johto New Bark Tileset", ROMX, BANK[JOHTO_ROM_BANK]
 NewBark_GFX:   INCBIN "gfx/tilesets/johto.2bpp"
 NewBark_Block: INCBIN "gfx/blocksets/johto.bst"
 
-SECTION "Johto Town Map Artwork", ROMX
-; MAP-5.62.116: artwork/data are floating to avoid consuming bank $1C.
+SECTION "Johto Town Map Artwork", ROMX, BANK[JOHTO_ROM_BANK]
+; ROM-5.62.117: keep this artwork in the expansion bank, not bank $1C.
 JohtoTownMapTileGraphics:
 	INCBIN "gfx/town_map_johto.2bpp"
 JohtoTownMapTileGraphicsEnd:
@@ -3182,8 +3188,14 @@ JohtoTownMapTilemap:
 	INCBIN "gfx/tilemaps/johto_map.kmp"
 JohtoTownMapTilemapEnd:
 
-SECTION "Johto New Bark Map", ROMX
+SECTION "Johto New Bark Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/NewBarkTown.asm"
 INCLUDE "data/mapObjects/NewBarkTown.asm"
 INCLUDE "scripts/NewBarkTown.asm"
 NewBarkTownBlocks: INCBIN "maps/NewBarkTown.blk"
+
+; ROM-5.62.117: a byte at the last address of bank $7F forces a complete
+; 128-bank (2MB) ROM, rather than merely opening bank $40 (65 banks).
+; rgbfix -p 0 in the existing Makefile pads the intervening unused space.
+SECTION "Johto 2MB ROM Boundary", ROMX[$7FFF], BANK[$7F]
+	db $00
