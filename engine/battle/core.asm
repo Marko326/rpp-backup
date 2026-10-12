@@ -7873,23 +7873,19 @@ TwoToFiveAttacksEffect:
 FlinchSideEffect:
 	call CheckTargetSubstitute
 	ret nz
+	; MOVE-5.62.116: per-move odds, preserving Gen I shared-effect chances.
+	call BattleRandom
+	push af
+	callab GetFlinchChanceFar
+	pop af
+	cp e
+	ret nc
 	ld hl, wEnemyBattleStatus1
-	ld de, wPlayerMoveEffect
 	ld a, [H_WHOSETURN]
 	and a
 	jr z, .flinchSideEffect
 	ld hl, wPlayerBattleStatus1
-	ld de, wEnemyMoveEffect
 .flinchSideEffect
-	ld a, [de]
-	cp FLINCH_SIDE_EFFECT1
-	ld b, $1a ; ~10% chance of flinch
-	jr z, .gotEffectChance
-	ld b, $4d ; ~30% chance of flinch
-.gotEffectChance
-	call BattleRandom
-	cp b
-	ret nc
 	set Flinched, [hl] ; set mon's status to flinching
 	call ClearHyperBeam
 	ret

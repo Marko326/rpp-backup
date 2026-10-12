@@ -59,6 +59,40 @@ GetStatusImmunityTypeFar:
 	ld e, ELECTRIC
 	ret
 
+; MOVE-5.62.116: flinch chance by actual move ID (including derived moves).
+; Returns threshold in E for caller's 0..255 roll; CALLAB preserves DE.
+; Fang status odds are handled separately by FreezeBurnParalyzeEffect.
+GetFlinchChanceFar:
+	call GetStatSideEffectMoveID
+	cp FIRE_FANG
+	jr z, .twenty
+	cp ICE_FANG
+	jr z, .twenty
+	cp THUNDER_FANG
+	jr z, .twenty
+	cp DARK_PULSE
+	jr z, .twenty
+	cp TWISTER
+	jr z, .twenty
+	cp ZEN_HEADBUTT
+	jr z, .twenty
+	; Preserve the legacy shared-effect chances for other moves.
+	ld hl, wPlayerMoveEffect
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .legacy
+	ld hl, wEnemyMoveEffect
+.legacy
+	ld a, [hl]
+	cp FLINCH_SIDE_EFFECT1
+	ld e, $1a ; 26/256 (~10%)
+	ret z
+	ld e, $4d ; 77/256 (~30%)
+	ret
+.twenty
+	ld e, $33 ; 51/256 (~20%)
+	ret
+
 ; Input A = move effect, output E = normalized burn/freeze/paralyze effect,
 ; carry set only when the random side effect activates. The caller in Bank F
 ; copies E back to A after the bank switch (which overwrites A).
