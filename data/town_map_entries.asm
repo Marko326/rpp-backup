@@ -101,7 +101,7 @@ InternalMapEntries:
 	IMAP UNKNOWN_DUNGEON_1,         108,  52, CeruleanCaveName
 	IMAP NAME_RATERS_HOUSE,         148,  76, LavenderTownName
 	IMAP CERULEAN_HOUSE_2,          116,  60, CeruleanCityName
-	IMAP NEW_BARK_TOWN,             116,  94, AreaUnknownText ; JHT-5.62.110
+	IMAP NEW_BARK_TOWN,             116,  94, JohtoNewBarkName ; UI-5.62.124: Save / map-name sign
 	IMAP ROCK_TUNNEL_2,             148,  60, RockTunnelName
 	IMAP SILPH_CO_ELEVATOR,         116,  76, SilphCoName
 	IMAP NAVEL_ROCK_LUGIA_ROOM,     116,  94, AreaUnknownText

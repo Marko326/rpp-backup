@@ -64,6 +64,8 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 渡轮 UI 的目的地读取同样要兼容旧存档 `$E7` 和新 `$FE`。本版仍通过旧地图别名工作，`.119` 的地区字段在 LoadMapHeader 时照旧同步；这不是无需别名的原生双地区系统。
 - `.120` 在 `home/overworld.asm` 的 `WarpFound2` 新增了目的地转义判断和跨 Bank 调用；该版已由用户运行基本场景，未报告明显问题，本次提交前不改变其游戏逻辑。用户报告目前 ROM0/Home 只剩约 300 余字节，尚无本次 ROM/MAP 实测文件可量化新增字节开销。下一版需专项审计 Bank0 空间、优先搬迁可迁移逻辑到 Bank `$40` 等扩展 Bank，并在不破坏跨 Bank ABI、Warp 返回值及后续扩展性的条件下压缩 Home；不要把“代码行数”误当作“字节占用”。
 
+- **UI-5.62.124 Johto name alias**: `InternalMapEntries` lives in fixed Bank `$1C` and provides `HL` pointers that both the save/continue formatter and the map-name sign dereference while Bank `$1C` is active (the sign uses a far copy). The existing `JohtoNewBarkName` is already in the same bank; map `NEW_BARK_TOWN` to that pointer rather than `AreaUnknownText`. Do not point this entry directly to a label stored only in Bank `$40`; such a pointer would look valid but dereference data from the wrong bank. Keep Bank `$1C` nearly full section unchanged in size and avoid extra Home logic. User runtime feedback for UI-5.62.124: location names appear on Save/Continue pages; the lower name sign appears when the location changes but not immediately on Continue, consistent with Kanto. No change was made to that timing behavior. This confirms the tested name-display paths, not every map entry or every loading edge case.
+
 ## ROM bank placement
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.

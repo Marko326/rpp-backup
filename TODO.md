@@ -52,6 +52,12 @@ Status legend:
 - [ ] **后续原生双地区寻址**：渡轮双向基本路线已通过用户测试，但显式目标仍转换回旧全局地图别名，`SyncLegacyMapRegions` 仍按旧编号重写地区字节。下一阶段应优先接入第二张真实城都地图和可验证的地图连接／重复 local ID 场景；Fly／Teleport、黑屏恢复等地区化入口按依赖顺序推进。不再将同一渡轮路线拆成多个只改变内部实现的小版本。
 
 
+## 城都地点名称接入（`UI-5.62.124`）
+
+- [x] **若叶镇存档／Continue 地点名（已实测）**：把旧 `InternalMapEntries` 中 `NEW_BARK_TOWN` 的 `AreaUnknownText` 替换为已经存在于 Bank `$1C` 的 `JohtoNewBarkName`（`New Bark_Town@`）。`GetMapNameForSaveScreen` 原有的 `_` → 空格处理可显示 `New Bark Town`；无需修改 Save/Continue 渲染函数、存档结构或 Bank `$1C` 的大小。用户已确认在若叶镇的 Save／Continue 页面可以正确看到地点名，关都地区的地点名显示保持正常；AI 未编译或运行 ROM。
+- [x] **若叶镇下方地点提示（已实测）**：复用同一个名字指针，现有 `UpdateMapNameSign` 原本会压制 `AreaUnknownText`，改名后可在从渡轮进入若叶镇时显示 `New Bark Town`。用户已确认切换地点时会弹出地点名称；Continue 直接进入游戏时不弹出，关都地区也遵循相同规则。该行为沿用原地点提示时机，不能视为故障；Save／Continue 页面名称均已正常显示。未据此认定所有地图的名称映射已逐张验收。
+- [ ] **下一阶段城都可游玩地图**：`MAP-5.62.125` 优先制作并连接 29 号道路，作为若叶镇之外的第二张真实城都地图；需要确认原地形、美术、碰撞、双向连接、Header 与旧 ID 别名，不能把现有 Town Map 上已有名称算作可游玩地图。完成后再安排桔梗／吉花等城镇场景与更多室内内容。
+
 ## 钓鱼与赠竿教学（`FIS-5.62.90`）
 
 - [x] **背包连续投竿**：水域未咬钩时显示“Use the rod again?”，Yes 可以连续投竿，No 结束本次投竿；上钩进入战斗、无鱼地点直接退出。通过 `wRepeatFishingRod` bit7 防止重试时重绘地图导致文字窗口闪烁；用户在 `FUI-5.62.82` 连续测试约 20～30 次未见原有闪帧。
