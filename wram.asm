@@ -2828,10 +2828,12 @@ wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
 wMusicStyle:: ds 1
 wMusicStyleMagic0:: ds 1
 wMusicStyleMagic1:: ds 1
-; DEX-5.62.114: saved, independent 80-slot form bits (10 Seen + 10 Owned).
-; These first 18 bytes reuse the MoveDex reserved tail.
-wRegionalDexSeen:: ds 10
-wRegionalDexOwned:: ds 8
+; DEX-5.62.115: 128-slot storage capacity, 80 IDs currently populated.
+; Keep the first 18 saved bytes at their original positions and bit offsets.
+; Seen: 10 bytes here + 6 at $D7A4. Owned: 8 here + 6 at $D787
+; + 2 at $D7AA. All save addresses following these fields are unchanged.
+wRegionalDexSeen:: ds 10   ; identity IDs 0..79
+wRegionalDexOwned:: ds 8   ; identity IDs 0..63
 
 wNumSigns:: ; d561
 ; number of signs in the current map (up to 16)
@@ -3317,9 +3319,10 @@ wLastUsedFishingRod:: ; d785
 wLastUsedFishingRodMagic:: ; d786
 	ds 1
 
-; DEX-5.62.114: last 2 Owned bytes; remaining 4 stay reserved.
-wRegionalDexOwnedTail:: ds 2
-	ds 4
+; DEX-5.62.115: expand existing 2-byte Owned tail into its four unused
+; neighbors at $D789-$D78C. This is bank-1 saved WRAM; the identically
+; numbered CGB palette fields in color/wram.asm refer to bank 2 instead.
+wRegionalDexOwnedTail:: ds 6 ; identity IDs 64..111, $D787-$D78C
 
 ; Second saved byte for special Fly destinations. It consumes another byte from
 ; the same pre-existing unused save area, so wKantoTownVisitedFlag and every
@@ -3417,8 +3420,10 @@ wWhichDungeonWarp:: ; d7a2
 wUnusedD71F:: ; d7a3
 	ds 1
 
-; unused
-	ds 8
+; DEX-5.62.115: eight previously unused save-backed bytes $D7A4-$D7AB.
+; Do not absorb the preceding $D7A3 scratch byte (wUnusedD71F).
+wRegionalDexSeenExtra:: ds 6 ; identity IDs 80..127, $D7A4-$D7A9
+wRegionalDexOwnedLast:: ds 2 ; identity IDs 112..127, $D7AA-$D7AB
 
 wd728:: ; d7ac
 ; bit 0: using Strength outside of battle

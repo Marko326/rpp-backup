@@ -1,10 +1,13 @@
-; DEX-5.62.114: persistent form IDs; do not reorder existing entries.
-; 0..37: normal identity of each region-capable species.
-; 38..79: separate identities for all 42 registered regional forms.
-; New forms must append IDs, not reuse existing IDs.
+; DEX-5.62.115: persistent form IDs; never reorder/reuse slot numbers.
+; 0..37: ordinary identity of each currently region-capable species.
+; 38..79: all 42 currently registered regional identities.
+; Future species/forms append after 79; stored capacity is 128 slots.
+; Capacity is NOT the number of registered forms nor the Pokédex species count.
+REGIONAL_DEX_CAPACITY EQU 128
 REGIONAL_DEX_NORMAL_COUNT EQU 38
 REGIONAL_DEX_REGION_COUNT EQU 42
 REGIONAL_DEX_SLOT_COUNT EQU REGIONAL_DEX_NORMAL_COUNT + REGIONAL_DEX_REGION_COUNT
+ASSERT REGIONAL_DEX_SLOT_COUNT <= REGIONAL_DEX_CAPACITY
 ASSERT REGIONAL_DEX_REGION_COUNT == RF_DESCRIPTOR_GUARD_COUNT
 
 RegionalDexSlots::

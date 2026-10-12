@@ -46,14 +46,20 @@ START_MONEY EQU $3000
 	; FIS-5.62.84: a new game has no Bag-selected fishing rod yet.
 	ld [wLastUsedFishingRod], a
 	ld [wLastUsedFishingRodMagic], a
-	; DEX-5.62.114: empty form Seen/Owned records for each fresh save.
+	; DEX-5.62.115: clear all 128 capacity slots on a new game only.
+	; Original Seen/Owned blocks are adjacent (10 + 8 bytes).
+	xor a
 	ld hl,wRegionalDexSeen
 	ld bc,18
 	call FillMemory
 	xor a
 	ld hl,wRegionalDexOwnedTail
-	ld [hli],a
-	ld [hl],a
+	ld bc,6
+	call FillMemory
+	xor a
+	ld hl,wRegionalDexSeenExtra
+	ld bc,8 ; six Seen extension + two Owned extension bytes
+	call FillMemory
 
 ; Obtained badges
 	ld hl, wObtainedKantoBadges

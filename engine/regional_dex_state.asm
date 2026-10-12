@@ -1,8 +1,7 @@
-; DEX-5.62.114: only the independent form-bit storage helpers.
-; Species Pokédex Seen/Owned remain authoritative for the 208-entry totals.
-; These helpers do not register encounters or change Pokédex rendering yet.
-; D = species, E = runtime form. Carry indicates a registered identity;
-; on success C is its permanent bit ID (0..79).
+; DEX-5.62.115: storage for up to 128 independent form identities.
+; Species Pokédex Seen/Owned still control 208-entry totals; nothing yet
+; registers encounters or modifies Pokédex UI. D=species, E=runtime form.
+; Carry indicates a registered identity, C=permanent ID (currently 0..79).
 RegionalDexFindSlot::
 	ld hl,RegionalDexSlots
 	ld c,0
@@ -35,14 +34,23 @@ RegionalDexSeenSet::
 RegionalDexSeenAction:
 	call RegionalDexFindSlot
 	jr nc,.missing
-	ld hl,wRegionalDexSeen
+	ld a,c
+	cp 80
+	jr c,.first80
+	sub 80
+	ld c,a
+	ld hl,wRegionalDexSeenExtra ; 80..127: 6 bytes at $D7A4
+	jr RegionalDexRunFlag
+.first80
+	ld hl,wRegionalDexSeen ; 0..79: original 10 bytes
 	jr RegionalDexRunFlag
 .missing
 	xor a
 	ret
 
-; Owned implies Seen. The 10 Owned bytes are split across two existing
-; saved reserve ranges (8 + 2), without shifting any original save offsets.
+; Owned implies Seen. The fixed-address storage is 8 + 6 + 2 bytes.
+; 0..63 remain in the original block; 64..111 use the expanded tail;
+; 112..127 live after the Seen extension. All 0..79 bit IDs are unchanged.
 RegionalDexOwnedTest::
 	ld b,FLAG_TEST
 	jr RegionalDexOwnedAction
@@ -55,14 +63,21 @@ RegionalDexOwnedAction:
 	call RegionalDexFindSlot
 	jr nc,.missing
 	ld a,c
+	cp 112
+	jr nc,.last16
 	cp 64
 	jr c,.first64
 	sub 64
 	ld c,a
-	ld hl,wRegionalDexOwnedTail
+	ld hl,wRegionalDexOwnedTail ; 64..111, 6 saved bytes
+	jr RegionalDexRunFlag
+.last16
+	sub 112
+	ld c,a
+	ld hl,wRegionalDexOwnedLast ; 112..127, 2 saved bytes
 	jr RegionalDexRunFlag
 .first64
-	ld hl,wRegionalDexOwned
+	ld hl,wRegionalDexOwned ; 0..63, original 8 bytes
 	jr RegionalDexRunFlag
 .missing
 	xor a
