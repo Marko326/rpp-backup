@@ -2,6 +2,24 @@
 ; Species Pokédex Seen/Owned still control 208-entry totals; nothing yet
 ; registers encounters or modifies Pokédex UI. D=species, E=runtime form.
 ; Carry indicates a registered identity, C=permanent ID (currently 0..79).
+;
+; DEX-5.62.116/S2A: call only after LoadEnemyMonData has resolved the
+; untransformed encounter/party header. It is also called from non-battle
+; materialization (e.g. direct-to-box gifts), which must NOT count as an
+; actual encounter here; S2B will register successfully obtained gifts.
+RegionalDexMarkBattleEnemySeen::
+	ld a,[wIsInBattle]
+	cp 1 ; wild encounter
+	jr z,.register
+	cp 2 ; trainer opponent
+	ret nz ; previews, gifts, unrelated materializations
+.register
+	ld a,[wEnemyMonSpecies2] ; source identity, not Transform's display Species
+	ld d,a
+	ld a,[wEnemyMonForm] ; resolved original form from header
+	ld e,a
+	jp RegionalDexSeenSet ; no slot -> no mutation, flag set is idempotent
+
 RegionalDexFindSlot::
 	ld hl,RegionalDexSlots
 	ld c,0

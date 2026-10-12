@@ -6261,6 +6261,9 @@ LoadEnemyMonData:
 	ld b, FLAG_SET
 	ld hl, wPokedexSeen
 	predef FlagActionPredef ; mark this mon as seen in the pokedex
+	; DEX-5.62.116/S2A: also mark the actual enemy form in real battles.
+	; The form state is independent and does not add another species count.
+	callab RegionalDexMarkBattleEnemySeen
 	ld hl, wEnemyMonLevel
 	ld de, wEnemyMonUnmodifiedLevel
 	ld bc, 1 + NUM_STATS * 2
