@@ -11,7 +11,7 @@ HisuiGrowlitheBaseStats::
 	db 75
 	db 45
 	db 55
-	db 65
+	db 45
 	db FIRE
 	db ROCK
 	db 190 ; stock catch rate
@@ -73,7 +73,7 @@ HisuiArcanineBaseStats::
 	db 115
 	db 80
 	db 90
-	db 80
+	db 75
 	db FIRE
 	db ROCK
 	db 75 ; stock catch rate
@@ -430,7 +430,7 @@ GalarSlowkingBaseStats::
 	db 65
 	db 80
 	db 30
-	db 110
+	db 120
 	db POISON
 	db PSYCHIC
 	db 70 ; stock catch rate
@@ -490,7 +490,7 @@ PaldeaBlazeTaurosBaseStats::
 	db 110
 	db 105
 	db 100
-	db 70
+	db 60
 	db FIGHTING
 	db FIRE
 	db 45 ; stock catch rate

@@ -5,7 +5,8 @@ db 90 ; base speed
 db 65 ; base special
 db FIRE ; species type 1
 db FIRE ; species type 2
-db 190 ; catch rate
+PONYTA_CATCH_RATE EQU 190 ; existing normal species catch rate, form guard only
+db PONYTA_CATCH_RATE ; catch rate
 db 152 ; base exp yield
 INCBIN "pic/bmon/ponyta.pic",0,1 ; 66, sprite dimensions
 dw PonytaPicFront

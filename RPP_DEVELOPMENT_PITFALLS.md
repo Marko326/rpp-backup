@@ -105,3 +105,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Test-only data, re-arm logic, temporary species/evolution edits, and intermediate version suffixes must be removed before a formal version.
 - Keep the real game version changing in test builds so the user can confirm the patch is applied, but keep source comments on the formal feature version rather than rewriting comments for every test suffix.
 - Before delivery: static symbol/label/bank/register review, `git diff --check`, incremental `git apply --check`, actual apply, reverse-check, and file-mode comparison. Do not compile the user's project unless explicitly requested.
+
+
+## Regional-form Pokédex metrics: inherit when identical (ANIM-5.62.112)
+
+- Always compare a regional form against **the actual stock Pokédex feet/inches and tenths-of-pound values**, not just unrounded metric conversions. When public metric values match but the stored stock weight differs by 0.1 lb, first check whether the stock Pokédex value needs correction (notably Galarian Linoone versus regular Linoone).
+- In `data/regional_forms.asm`, descriptor `db 0` / `dw 0` means full stock-data inheritance. An allocated metrics record uses `db 0,0` to inherit stock height and `dw 0` to inherit stock weight **independently**; only write a nonzero field when it actually differs. Do not allocate redundant 4-byte metric records for fully identical forms.
+- Verify form identities via `Species + Form`, and treat special custom mappings (`PERSIAN + FORM_GALAR` for Perrserker; `WEAVILE + FORM_HISUI` for Sneasler) as their source Pokémon's measurements, not those of ordinary Persian / Weavile. Compare with Polished Crystal body data and Bulbapedia display values when the former lacks a form.
+- Keep metric inheritance cleanup separate from unresolved battle-stats / evolution / learnset placeholder work. Validate all descriptors and in-bank symbols, all effective display values, patch apply/reverse checks and file modes. Runtime ROM/link/map/saves remain user-side acceptance work under the current project rules.

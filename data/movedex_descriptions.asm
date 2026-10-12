@@ -1977,7 +1977,8 @@ MoveDexDescEffectBWildEscape2:
 ; 本 bank 的 page-list 只引用本 bank 页面，避免二级跨 bank 指针。
 ; ---------------------------------------------------------------------------
 
-SECTION "MoveDex Descriptions C", ROMX, BANK[$34]
+; PC forms relocation: description pointer table stores BANK, safe to move to $30.
+SECTION "MoveDex Descriptions C", ROMX, BANK[$30]
 
 ; #151 Acid Armor
 MoveDexDescAcidArmorPages:

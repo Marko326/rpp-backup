@@ -455,7 +455,7 @@ PidgeyDexEntry:
 SlowpokeDexEntry:
 	db "Dopey@"
 	db 3,11
-	dw 790
+	dw 794
 	TX_FAR _SlowpokeDexEntry
 	db "@"
 
@@ -595,7 +595,7 @@ DiglettDexEntry:
 TaurosDexEntry:
 	db "Wild Bull@"
 	db 4,7
-	dw 1950
+	dw 1949
 	TX_FAR _TaurosDexEntry
 	db "@"
 
@@ -672,7 +672,7 @@ DittoDexEntry:
 MeowthDexEntry:
 	db "ScratchCat@"
 	db 1,4
-	dw 90
+	dw 93
 	TX_FAR _MeowthDexEntry
 	db "@"
 
@@ -686,14 +686,14 @@ KrabbyDexEntry:
 VulpixDexEntry:
 	db "Fox@"
 	db 2,0
-	dw 220
+	dw 218
 	TX_FAR _VulpixDexEntry
 	db "@"
 
 NinetalesDexEntry:
 	db "Fox@"
 	db 3,7
-	dw 440
+	dw 439
 	TX_FAR _NinetalesDexEntry
 	db "@"
 
@@ -1659,7 +1659,7 @@ ZigzagoonDexEntry:
 LinooneDexEntry:
 	db "Rushing@"
 	db 1,8
-	dw 716
+	dw 717
 	TX_FAR _LinooneDexEntry
 	db "@"
 

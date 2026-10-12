@@ -6,7 +6,8 @@ db 125 ; base speed
 db 85 ; base special
 db DARK ; species type 1
 db ICE ; species type 2
-db 45 ; catch rate
+WEAVILE_CATCH_RATE EQU 45 ; existing normal species catch rate, form guard only
+db WEAVILE_CATCH_RATE ; catch rate
 db 199 ; base exp yield
 INCBIN "pic/bmon/weavile.pic",0,1 ; sprite dimensions
 dw WeavilePicFront

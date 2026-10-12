@@ -5,7 +5,8 @@ db 85 ; base speed
 db 125 ; base special
 db ICE ; species type 1
 db FLYING ; species type 2
-db 3 ; catch rate
+ARTICUNO_CATCH_RATE EQU 3 ; existing normal species catch rate, form guard only
+db ARTICUNO_CATCH_RATE ; catch rate
 db 215 ; base exp yield
 INCBIN "pic/bmon/articuno.pic",0,1 ; 77, sprite dimensions
 dw ArticunoPicFront

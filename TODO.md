@@ -546,3 +546,14 @@ This section preserves the original author's roadmap. Status markers reflect the
 - [ ] If Natures are disabled in intro, do not display on status screens, and use a neutral nature always
 - [ ] If Abilities are disabled in intro, do not display on status screens, and use a blank ability for everyone
 - [ ] EXP on catch is annoying, since a lot of variables are reused during the EXP Gain process. Will require a lot of testing.
+
+### 地区形态追加移植（Polished Crystal）
+- [~] **Polished Crystal 地区形态追加移植 18 项（未提交、待 ROM 编译）**：以 5.62.111 工作区为基础，为 16 条原已存在 Species 的缺失地区形态与 2 条自定义进化映射准备数据、正背图、指针及进化形态继承；目前仅静态审计，尚未验收 ROM/link/map/实机。完整清单在 `docs/REGIONAL_FORMS_111_INTEGRATION.md` 的“Polished Crystal 18 项追加移植”章节。
+- [ ] **地区形态其余占位资料后续统一定稿**：42 条形态的 Special 五项总和及身高体重已静态复核，其他属性、捕获率、经验、成长率、升级／TM／HM／导师招式、进化条件、调色板、图鉴分类与描述、野外分布仍需按最终设计核定；保留伽勒尔猫老大=喵头目、洗翠玛狃拉=大狃拉的自定义进化映射，后续另行验证运行行为。
+- [ ] **缺失 Species / 专属进化后续规划**：`CORSOLA`、`TYPHLOSION`、`QWILFISH`、`WOOPER` 基础物种不存在；`SIRFETCH_D`、`MR__RIME`、`CURSOLA`、`OVERQWIL`、`CLODSIRE` 无可复用的普通进化型，暂不移植，绝不只放图片冒充可用物种。
+
+### 地区形态 Special 与图鉴体型校正（当前 42 条；等待 ROM 验收）
+- [~] **地区形态五项总和守恒（静态完成）**：42 条中修正 18 条 Special、保留原本合规的 24 条，均遵守 `普通五项总和 - 地区形态 HP/攻击/防御/速度`；尚待游戏实际链接及对战／存档验收，不得标为运行测试通过。
+- [~] **地区形态体型数据完成源码收口（Bulbapedia × Polished Crystal）**：本次实际工作区补丁包含 42 条形态，逐项重新比对其最终显示值：40 条符合 Polished Crystal 原始公制值，伽勒尔蛇纹熊／直冲熊按 Bulbapedia 验证。36 条独立体型记录各字段只覆盖与普通形态不同的值；六尾、九尾、阿罗拉喵喵、伽勒尔呆呆兽、伽勒尔蛇纹熊／直冲熊 6 条完整继承。原有六尾、九尾、喵喵、呆呆兽、直冲熊及肯泰罗共六份普通图鉴重量已精准修订；没有重复体型字段需要再次删除。静态数据校核完成，ROM／实机显示仍待验收。
+- [ ] **后续验收**：运行与项目匹配的 RGBDS `make map`，检查 `$34` 描述符和 `$3E` 体型表 ROMX 容量；在 Pokédex 逐条确认 42 条地区身高／体重、Special 与形态标记、存取档及进化路径。
+- [ ] **其他占位数据仍需统一定稿**：属性、捕获率／经验、成长曲线、招式／TM／导师、进化和获取方式本轮均未改动，不能因本次修正 Special/体型而视为已完成。
