@@ -1,4 +1,16 @@
+DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 10
+
 DisplayTownMap:
+	; MAP-5.62.116: ordinary Town Map region is derived from the CURRENT map.
+	; This is Fly-only scratch, not saved progress, so the ferry needs no flag.
+	; Register later Johto exterior/interior map IDs here when they are added.
+	ld a, [wCurMap]
+	cp NEW_BARK_TOWN
+	ld a, 0
+	jr nz, .regionSelected
+	inc a
+.regionSelected
+	ld [wFlyLocationsAxis], a
 	ld a, [hTilesetType]
 	push af
 	xor a
@@ -14,8 +26,18 @@ DisplayTownMap:
 	callab GetFlyTownMapPlayerMap
 	ld a, d
 	push af
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .kantoPlayerMarker
+	xor a ; only New Bark is accessible in the first Johto map phase
+	call LoadJohtoTownMapEntry
+	call DrawJohtoTownMapPlayerMarker
+	jr .playerMarkerReady
+.kantoPlayerMarker
+	ld a, d
 	ld b, $0
 	call DrawPlayerOrBirdSprite ; player sprite
+.playerMarkerReady
 	coord hl, 0, 0
 	ld a, $3f ; up/down arrow tile
 	ld [hl], a
@@ -36,14 +58,34 @@ DisplayTownMap:
 	pop af
 	push af
 	ld e, a ; callab clobbers A, so pass the displayed selector through E
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .initJohtoSelection
 	callab InitTownMapLocationFromPlayerMap
 	pop af
 	jr .enterLoop
+.initJohtoSelection
+	pop af
+	xor a ; New Bark's index on the new Johto browse page
+	ld [wWhichTownMapLocation], a
+	jp .townMapLoop
 
 .townMapLoop
 	coord hl, 1, 0
 	lb bc, 2, 11
 	call ClearScreenArea
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .kantoBrowse
+	ld a, [wWhichTownMapLocation]
+	cp NUM_JOHTO_TOWNMAP_ENTRIES
+	jr c, .johtoIndexReady
+	xor a ; MAP-5.62.116: reject a corrupt/overrun cursor index
+	ld [wWhichTownMapLocation], a
+.johtoIndexReady
+	call LoadJohtoTownMapEntry
+	jr .drawCursor
+.kantoBrowse
 	ld hl, TownMapOrder
 	ld a, [wWhichTownMapLocation]
 	ld c, a
@@ -53,6 +95,7 @@ DisplayTownMap:
 
 .enterLoop:
 	call LoadTownMapEntry
+.drawCursor
 	push hl
 	call TownMapCoordsToOAMCoords
 	ld a, $4
@@ -60,9 +103,19 @@ DisplayTownMap:
 	ld hl, wOAMBuffer + $10
 	call WriteTownMapSpriteOAM ; town map cursor sprite
 	pop hl
+	; MAP-5.62.116: print Johto's long labels from ROM instead of
+	; overflowing the short wcd6d scratch buffer. Keep Kanto unchanged.
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .kantoMapName
+	ld d, h
+	ld e, l
+	jr .placeMapName
+.kantoMapName
 	call CopyTownMapDisplayName
-	coord hl, 1, 0
 	ld de, wcd6d
+.placeMapName
+	coord hl, 1, 0
 	call PlaceString
 	ld hl, wOAMBuffer + $10
 	ld de, wTileMapBackup + 16
@@ -90,7 +143,7 @@ DisplayTownMap:
 	bit 6, b
 	jr nz, .pressedUp
 	bit 7, b
-	jr nz, .pressedDown
+	jp nz, .pressedDown ; MAP-5.62.116: keep branch in range as handlers grow
 	xor a
 	ld [wTownMapSpriteBlinkingEnabled], a
 	ld [hJoy7], a
@@ -103,6 +156,10 @@ DisplayTownMap:
 	call ExitTownMap
 	ret
 .pressedStart
+	; MAP-5.62.116: Johto START selects the only currently reachable town.
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .johtoStart
 	; MAP-5.62.80: use Teleport's last recovery map, not the last town walked through.
 	ld a, [wLastBlackoutMap]
 	cp ROUTE_4 ; Mt. Moon Pokemon Center returns to Route 4
@@ -121,15 +178,37 @@ DisplayTownMap:
 .startLocate
 	callab InitTownMapLocationFromPlayerMap
 	jp .townMapLoop
+.johtoStart
+	xor a
+	ld [wWhichTownMapLocation], a
+	jp .townMapLoop
 .pressedSelect
-	; SELECT always returns the browse cursor to Pallet Town.
+	; SELECT returns to Pallet Town in Kanto, or New Bark in Johto.
 	xor a
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 .pressedUp
 	ld a, [wWhichTownMapLocation]
+	; MAP-5.62.116: sanitize before navigation in either region.
+	ld c, a
+	ld a, [wFlyLocationsAxis]
+	and a
+	ld a, c
+	jr z, .upIndexReady
+	cp NUM_JOHTO_TOWNMAP_ENTRIES
+	jr c, .upIndexReady
+	xor a
+.upIndexReady
 	inc a
-	cp TownMapOrderEnd - TownMapOrder ; number of list items + 1
+	ld c, a
+	ld b, TownMapOrderEnd - TownMapOrder
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .upLimitReady
+	ld b, NUM_JOHTO_TOWNMAP_ENTRIES
+.upLimitReady
+	ld a, c
+	cp b
 	jr nz, .noOverflow
 	xor a
 .noOverflow
@@ -137,17 +216,104 @@ DisplayTownMap:
 	jp .townMapLoop
 .pressedDown
 	ld a, [wWhichTownMapLocation]
+	; MAP-5.62.116: stale out-of-range indices wrap safely.
+	ld c, a
+	ld a, [wFlyLocationsAxis]
+	and a
+	ld a, c
+	jr z, .downIndexReady
+	cp NUM_JOHTO_TOWNMAP_ENTRIES
+	jr c, .downIndexReady
+	xor a
+.downIndexReady
 	dec a
 	cp -1
 	jr nz, .noUnderflow
-	ld a, TownMapOrderEnd - TownMapOrder - 1 ; number of list items
+	ld a, [wFlyLocationsAxis]
+	and a
+	ld a, TownMapOrderEnd - TownMapOrder - 1 ; Kanto's last item
+	jr z, .noUnderflow
+	ld a, NUM_JOHTO_TOWNMAP_ENTRIES - 1
 .noUnderflow
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 
 INCLUDE "data/town_map_order.asm"
 
+; MAP-5.62.116: Johto landmarks are independent from global Gen 1 map IDs.
+; Later city maps need only a region test and their original landmark entry.
+JohtoTownMapEntries:
+	db 116, 148
+	dw JohtoNewBarkName
+	db 116, 108
+	dw JohtoCherrygroveName
+	db  76,  92
+	dw JohtoVioletName
+	db 140,  76
+	dw JohtoAzaleaName
+	db 108,  60
+	dw JohtoGoldenrodName
+	db  60,  76
+	dw JohtoEcruteakName
+	db  76,  44
+	dw JohtoOlivineName
+	db 116,  28
+	dw JohtoCianwoodName
+	db  60, 116
+	dw JohtoMahoganyName
+	db  60, 140
+	dw JohtoBlackthornName
+JohtoTownMapEntriesEnd:
+ASSERT JohtoTownMapEntriesEnd - JohtoTownMapEntries == 4 * NUM_JOHTO_TOWNMAP_ENTRIES
+
+JohtoNewBarkName:        db "New Bark_Town@"
+JohtoCherrygroveName:    db "Cherrygrove_City@"
+JohtoVioletName:         db "Violet City@"
+JohtoAzaleaName:         db "Azalea Town@"
+JohtoGoldenrodName:      db "Goldenrod_City@"
+JohtoEcruteakName:       db "Ecruteak_City@"
+JohtoOlivineName:        db "Olivine_City@"
+JohtoCianwoodName:       db "Cianwood_City@"
+JohtoMahoganyName:       db "Mahogany_Town@"
+JohtoBlackthornName:     db "Blackthorn_City@"
+
+LoadJohtoTownMapEntry:
+; in A = valid town index, out B = y, C = x, HL = localized name.
+	; MAP-5.62.116: keep the 10-record table bounded, even on stale WRAM.
+	cp NUM_JOHTO_TOWNMAP_ENTRIES
+	jr c, .inRange
+	xor a
+.inRange
+	add a
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, JohtoTownMapEntries
+	add hl, bc
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	ret
+
+DrawJohtoTownMapPlayerMarker:
+; B/C/HL came from LoadJohtoTownMapEntry, as with LoadTownMapEntry.
+	; MAP-5.62.116: the regular browse loop prints the location from ROM.
+	; The marker never needs to copy a long label to wcd6d.
+	xor a
+	ld [wOAMBaseTile], a
+	call WritePlayerOrBirdSpriteOAM
+	ld hl, wOAMBuffer
+	ld de, wTileMapBackup
+	ld bc, $a0
+	jp CopyData
+
 LoadTownMap_Nest:
+	xor a
+	ld [wFlyLocationsAxis], a ; the Pokédex still uses Kanto's nest page
 	ld a, [hTilesetType]
 	push af
 	xor a
@@ -185,6 +351,8 @@ NestText:
 	db "Nest@"
 
 LoadTownMap_Fly:
+	xor a
+	ld [wFlyLocationsAxis], a ; existing Fly destinations stay on Kanto
 	; FLY-5.62.73: capture the party-menu choice before the Fly Map starts
 	; using shared menu scratch. Preserve species, not the transient slot index.
 	ld a, [wWhichPokemon]
@@ -497,10 +665,19 @@ LoadTownMap:
 	ld c, $12
 	call TextBoxBorder
 	call DisableLCD
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .loadKantoArt
+	ld hl, JohtoTownMapTileGraphics
+	ld bc, JohtoTownMapTileGraphicsEnd - JohtoTownMapTileGraphics
+	ld a, BANK(JohtoTownMapTileGraphics)
+	jr .copyMapArt
+.loadKantoArt
 	ld hl, WorldMapTileGraphics
-    ld de, vChars2
 	ld bc, WorldMapTileGraphicsEnd - WorldMapTileGraphics
 	ld a, BANK(WorldMapTileGraphics)
+.copyMapArt
+	ld de, vChars2
 	call FarCopyData2
 	ld hl, MonNestIcon
 	ld de, vSprites + $40
@@ -508,11 +685,21 @@ LoadTownMap:
 	ld a, BANK(MonNestIcon)
 	call FarCopyData2
 	
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .loadKantoTiles
+	ld hl, JohtoTownMapTilemap
+	ld bc, JohtoTownMapTilemapEnd - JohtoTownMapTilemap
+	ld a, BANK(JohtoTownMapTilemap)
+	ld de, wTileMap
+	call FarCopyData2
+	jr .mapTilesReady
+.loadKantoTiles
 	ld hl, UncompressedMap
 	ld de, wTileMap
 	ld bc, UncompressedMapEnd - UncompressedMap
 	call CopyData
-
+.mapTilesReady
 	call EnableLCD
 	ld b, SET_PAL_TOWN_MAP
 	call RunPaletteCommand
@@ -527,7 +714,7 @@ LoadTownMap:
 UncompressedMap: ; Uses the Gen 2 format
     INCBIN "gfx/tilemaps/kanto_map.kmp"
 UncompressedMapEnd:
-; TODO: Add the map for Johto and Shamouti later
+; MAP-5.62.116: Johto completed; Shamouti remains a future map page.
 
 ExitTownMap:
 ; clear town map graphics data and load usual graphics data

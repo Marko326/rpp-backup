@@ -24,3 +24,7 @@ Club_Coll::         INCBIN  "gfx/tilesets/club.tilecoll"
 Facility_Coll::     INCBIN  "gfx/tilesets/facility.tilecoll"
 Plateau_Coll::      INCBIN  "gfx/tilesets/plateau.tilecoll"
 Ferry_Coll::        INCBIN  "gfx/tilesets/ferry.tilecoll"
+
+; MAP-5.62.116: movement reads this pointer without bank switching.
+; Keep Johto passable tiles in ROM0 alongside the other collision tables.
+NewBark_Coll::     INCBIN  "gfx/tilesets/johto.tilecoll"

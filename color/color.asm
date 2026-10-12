@@ -417,16 +417,28 @@ SetPal_TownMap:
 	ld a,2
 	ld [rSVBK],a
 
-	; Load all town map pals at once
+	; MAP-5.62.116: select the full matching region palette, not just tile IDs.
 	ld hl, TownMapPals
-	ld de, W2_BgPaletteData
 	ld bc, TownMapPalsEnd - TownMapPals
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .paletteDataReady
+	ld hl, JohtoTownMapPals
+	ld bc, JohtoTownMapPalsEnd - JohtoTownMapPals
+.paletteDataReady
+	ld de, W2_BgPaletteData
 	call CopyData
 
 	ld a,1
 	ld [W2_TileBasedPalettes],a
 
+	; MAP-5.62.116: region-aware palettes for ordinary Town Map only.
 	ld de, TownMapPalAssignments
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .paletteSelected
+	ld de, JohtoTownMapPalAssignments
+.paletteSelected
 	ld hl, W2_TilesetPaletteMap
 	ld b, $40
 .copyLoop

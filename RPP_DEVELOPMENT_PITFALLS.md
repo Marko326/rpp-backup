@@ -26,6 +26,13 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Previously seen: `engine/menu/main_menu.asm(440): Unknown symbol "PrintNumOwnedMons"`. Run symbol/reference completeness checks after relocation or deletion.
 - If changing vertical shake behavior, review `.StageBlankBG0TopRowForEnemyFeedback`; Iron Tail/Steel Wing previously left display residue around this path.
 
+## Johto map and Town Map integration (MAP-5.62.116)
+
+- `CanWalkOntoTile` reads the collision-table pointer without switching ROM Bank. Do not put a new map's `.tilecoll` list into a floating ROMX section when that read path expects ROM0: New Bark initially treated walkable tiles as walls until `NewBark_Coll` was moved beside the other ROM0 collision tables. Keep the outdoor block graphics in ROMX; distinguish their loading path from the collision lookup path.
+- The Gold Town Map graphics, per-tile palette assignments, and actual RGB palettes must be migrated as a set. The RPP inset corner is a grey UI tile rather than an interchangeable Gold terrain tile. Misusing a Kanto coast tile under the grey UI palette can appear as a white semicircle. Compare the final 8x8 source tile, tilemap index, and palette together before changing frame art.
+- The Kanto map-name scratch buffer is shorter than some Johto location names. Display long Johto names directly from the ROM strings with explicit line breaks, and bound the new Johto selection index to its 10-entry table; do not write unbounded names into the legacy short buffer.
+- Keep the region-aware Town Map selector separate from the existing Fly and Pokédex nest pages until those screens receive explicit region support; no early 2MB migration is implied by completing the first Johto page. Static patch checks do not substitute for movement and menu exit tests.
+
 ## ROM bank placement
 
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.

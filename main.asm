@@ -3172,7 +3172,15 @@ PureRGBHumanoidInsectPartyIcon:
 SECTION "Johto New Bark Tileset", ROMX
 NewBark_GFX:   INCBIN "gfx/tilesets/johto.2bpp"
 NewBark_Block: INCBIN "gfx/blocksets/johto.bst"
-NewBark_Coll:  INCBIN "gfx/tilesets/johto.tilecoll"
+
+SECTION "Johto Town Map Artwork", ROMX
+; MAP-5.62.116: artwork/data are floating to avoid consuming bank $1C.
+JohtoTownMapTileGraphics:
+	INCBIN "gfx/town_map_johto.2bpp"
+JohtoTownMapTileGraphicsEnd:
+JohtoTownMapTilemap:
+	INCBIN "gfx/tilemaps/johto_map.kmp"
+JohtoTownMapTilemapEnd:
 
 SECTION "Johto New Bark Map", ROMX
 INCLUDE "data/mapHeaders/NewBarkTown.asm"
