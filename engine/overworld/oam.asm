@@ -171,10 +171,14 @@ PrepareOAMData:
 
 .clear
 	cp l
-	ret z
+	jr z, .cleared
 	ld [hl], b
 	add hl, de
 	jr .clear
+.cleared
+	; MAP-5.62.129: remove the experimental rustle OBJ overlay. The
+	; original terrain mask (wGrassTile=$04) remains enabled for Johto.
+	ret
 
 GetSpriteScreenXY:
 	inc e

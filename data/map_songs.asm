@@ -243,7 +243,7 @@ MapSongBanks:
 	db MUSIC_SILPH_CO, 0
 	db MUSIC_SILPH_CO, 0
 	db MUSIC_SILPH_CO, 0
-	db MUSIC_SILPH_CO, 0
+	db MUSIC_ROUTES1, 0 ; MAP-5.62.126: Route 29 at former $F4
 	db MUSIC_GYM, 0 ; Lorelei
 	db MUSIC_DUNGEON1, 0 ; Bruno
 	db MUSIC_POKEMON_TOWER, 0 ; Agatha

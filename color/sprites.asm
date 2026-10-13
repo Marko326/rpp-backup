@@ -89,6 +89,7 @@ ColorOverworldSprite:
 	jr z, .playerSprite ; only the real local SPRITE_RED uses local gender
 	inc a
 .regularSprite
+	ld c, a ; preserve the resolved picture ID for Johto-only palette mapping
 	dec a
 	ld de, SpritePaletteAssignments
 	add e
@@ -113,6 +114,28 @@ ColorOverworldSprite:
 	cp PAL_OW_RANDOM
 	jr nz,.norandomColor
 
+	; These Gen 1 stand-in sprites are used in Johto. The Kanto 'random'
+	; policy can tint hair bright green; use stable, character-specific
+	; colors here without altering any existing Kanto NPC palette.
+	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr nz, .legacyRandomColor
+	ld a, c
+	cp SPRITE_GAMBLER
+	jr z, .johtoBlue
+	cp SPRITE_FISHER
+	jr z, .johtoBlue
+	cp SPRITE_LASS
+	jr z, .johtoRed
+	ld a, PAL_OW_BROWN ; bug catcher and other Johto stand-ins
+	jr .norandomColor
+.johtoBlue
+	ld a, PAL_OW_BLUE
+	jr .norandomColor
+.johtoRed
+	ld a, PAL_OW_RED
+	jr .norandomColor
+.legacyRandomColor
 	; This is a (somewhat) random but consistent color
 	; (cannot be PAL_OW_PURPLE)
 	ld a,[hSpriteOffset2]

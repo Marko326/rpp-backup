@@ -25,9 +25,9 @@ NewBarkTownTeacherText:
 	db "@"
 
 NewBarkTownFisherText:
-	text "The routes out of"
-	line "town are closed"
-	cont "for now."
+	text "Route 29 is open"
+	line "to the west!"
+	cont "Take care!"
 	done
 	db "@"
 

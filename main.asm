@@ -3195,6 +3195,20 @@ INCLUDE "data/mapObjects/NewBarkTown.asm"
 INCLUDE "scripts/NewBarkTown.asm"
 NewBarkTownBlocks: INCBIN "maps/NewBarkTown.blk"
 
+; MAP-5.62.126: Gold Route 29 layout (30 x 9), changing only the
+; west exit block until Cherrygrove exists. Share the authentic Gold
+; Johto metatiles and keep connected maps in the same ROM bank.
+SECTION "Johto Route 29 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute29.asm"
+INCLUDE "data/mapObjects/JohtoRoute29.asm"
+INCLUDE "scripts/JohtoRoute29.asm"
+JohtoRoute29Blocks: INCBIN "maps/JohtoRoute29.blk"
+
+; The save / location name may be dereferenced with bank $1C active;
+; keep its nine-byte literal in ROM0 rather than overflowing that bank.
+SECTION "Johto Route 29 Display Name", ROM0
+JohtoRoute29Name:: db "Route 29@"
+
 ; REG-5.62.118: independent region-key Header and Bank indices in expansion ROM.
 SECTION "Johto Region Map Header Tables", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/johto_map_headers.asm"

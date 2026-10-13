@@ -33,7 +33,7 @@ LoadMapSpriteTilePatterns:
 	ld a,[wNumSprites]
 	and a ; are there any sprites?
 	jr nz,.spritesExist
-	ret
+	ret ; MAP-5.62.129: no additional grass OBJ graphics
 .spritesExist
 	ld c,a ; c = [wNumSprites]
 	ld b,$10 ; number of sprite slots

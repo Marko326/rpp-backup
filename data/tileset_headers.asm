@@ -27,4 +27,4 @@ Tilesets:
 	tileset Ferry_Block,       Ferry_GFX,       Ferry_Coll,       255,255,255, 19, OUTDOOR
 	tileset Cavern_Block,      Ice_Cavern_GFX,  Cavern_Coll,      $FF,$FF,$FF, $FF, CAVE
 	tileset Museum2_Block,     Museum2_GFX,     Museum_Coll,	  64,81,255, 255, 0
-	tileset NewBark_Block,     NewBark_GFX,     NewBark_Coll,     255,255,255, 255, OUTDOOR
+	tileset NewBark_Block,     NewBark_GFX,     NewBark_Coll,     255,255,255, $04, OUTDOOR ; MAP-5.62.127: Gold tall grass

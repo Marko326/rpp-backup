@@ -3,10 +3,11 @@
 DEF MAP_REGION_KANTO EQU 0
 DEF MAP_REGION_JOHTO EQU 1
 
-; Only New Bark is registered in this first Johto region index.
-; NEW_BARK_TOWN ($E7) remains the legacy save/warp alias for now.
+; Registered Johto maps use local IDs with distinct old-engine aliases.
+; NEW_BARK_TOWN ($E7) and JOHTO_ROUTE_29 ($F4) are compatibility aliases.
 DEF JOHTO_NEW_BARK_LOCAL_ID EQU 0
-DEF NUM_JOHTO_MAPS EQU 1
+DEF JOHTO_ROUTE_29_LOCAL_ID EQU 1
+DEF NUM_JOHTO_MAPS EQU 2
 
 ; REG-5.62.119: signature written beside the saved region bytes.
 ; Old saves have no defined region state. These markers are currently written,

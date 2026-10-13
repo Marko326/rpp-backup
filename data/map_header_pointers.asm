@@ -244,7 +244,7 @@ MapHeaderPointers::
 	dw SilphCo2_h ; unused
 	dw SilphCo2_h ; unused
 	dw SilphCo2_h ; unused
-	dw SilphCo2_h ; unused
+	dw JohtoRoute29_h ; MAP-5.62.126: former unused $F4
 	dw Lorelei_h
 	dw Bruno_h
 	dw Agatha_h ;247

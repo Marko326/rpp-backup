@@ -6,8 +6,11 @@ DisplayTownMap:
 	; Register later Johto exterior/interior map IDs here when they are added.
 	ld a, [wCurMap]
 	cp NEW_BARK_TOWN
+	jr z, .johtoRegion
+	cp JOHTO_ROUTE_29
 	ld a, 0
 	jr nz, .regionSelected
+.johtoRegion
 	inc a
 .regionSelected
 	ld [wFlyLocationsAxis], a

@@ -244,7 +244,7 @@ MapHeaderBanks:
 	db $11
 	db $11
 	db $11
-	db $11
+	db BANK(JohtoRoute29_h) ; MAP-5.62.126: former unused $F4
 	db BANK(Lorelei_h)
 	db BANK(Bruno_h)
 	db BANK(Agatha_h)

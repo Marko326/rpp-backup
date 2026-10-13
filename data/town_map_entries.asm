@@ -105,5 +105,6 @@ InternalMapEntries:
 	IMAP ROCK_TUNNEL_2,             148,  60, RockTunnelName
 	IMAP SILPH_CO_ELEVATOR,         116,  76, SilphCoName
 	IMAP NAVEL_ROCK_LUGIA_ROOM,     116,  94, AreaUnknownText
+	IMAP JOHTO_ROUTE_29,             116,  94, JohtoRoute29Name
 	IMAP AGATHAS_ROOM,               36,  92, PokemonLeagueName
 	db $FF

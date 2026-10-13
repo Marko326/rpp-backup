@@ -1299,6 +1299,35 @@ IsSpriteInFrontOfPlayer2::
 ; function to check if the player will jump down a ledge and check if the tile ahead is passable (when not surfing)
 ; sets the carry flag if there is a collision, and unsets it if there isn't a collision
 CollisionCheckOnLand::
+	; MAP-5.62.130: Route 29 has an EAST connection only. Gold's bottom
+	; grass cells can be passable even at the last map row; in this Red
+	; engine walking beyond an unconnected edge risks reading outside the
+	; loaded map. Guard only unconnected edges, before jump/simulation
+	; collision shortcuts (which must not bypass the edge fence).
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_29
+	jr nz, .checkLandCollision
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .notSouthEdge
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_29_HEIGHT * 2 - 1
+	jp nc, .collision
+	jr .checkLandCollision
+.notSouthEdge
+	cp PLAYER_DIR_UP
+	jr nz, .notNorthEdge
+	ld a, [wYCoord]
+	and a
+	jp z, .collision
+	jr .checkLandCollision
+.notNorthEdge
+	cp PLAYER_DIR_LEFT
+	jr nz, .checkLandCollision ; east edge is connected to New Bark
+	ld a, [wXCoord]
+	and a
+	jp z, .collision ; west Cherrygrove exit is not implemented
+.checkLandCollision
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?
 	jr nz,.noCollision
@@ -1380,6 +1409,17 @@ CheckForJumpingAndTilePairCollisions::
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?
 	ret nz
+; MAP-5.62.128: the reverse-ledge helper is Route 29-only.
+; The previous unconditional callba clobbered HL, the caller's collision
+; table pointer, making old Kanto saves collide with executable bytes.
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_29
+	jr nz, .skipJohtoReverseLedge
+	push hl
+	callba CheckJohtoReverseLedgeCollision
+	pop hl ; restore land/water collision table; flags (carry) unchanged
+	ret c
+.skipJohtoReverseLedge
 ; if not jumping
 
 CheckForTilePairCollisions2::
@@ -1935,7 +1975,16 @@ LoadMapHeader::
 	ld [wCurMapTileset],a
 	ld [hPreviousTileset],a
 	bit 7,b
-	ret nz
+	jr z, .readMapHeader
+	; MAP-5.62.129: Continue retains saved coordinates and map object state,
+	; but the old save also holds absolute ROM pointers for the tileset's
+	; walkable-tile list and block/GFX tables. Those pointers can shift when
+	; a newer ROM is linked; all four directions then report a collision.
+	; Fly works because a full map load refreshes this header. Rebuild only
+	; the tileset header here, preserving the Continue-only map/save path.
+	predef LoadTilesetHeader
+	ret
+.readMapHeader
 	; REG-5.62.118: $E7 remains the save/warp alias, but its header
 	; now comes from the Johto local-ID index.  Other maps stay unchanged.
 	ld a, [wCurMap]

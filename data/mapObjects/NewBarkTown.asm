@@ -1,4 +1,4 @@
-; JHT-5.62.110: keep all four building doors closed, and block Route 29.
+; MAP-5.62.126: keep buildings closed; west path now reaches Route 29.
 NewBarkTownObject:
 	db $05 ; Gold Johto forest border block
 
@@ -11,8 +11,10 @@ NewBarkTownObject:
 	db $03, $03, $07 ; Elm's lab sign
 	db $0d, $09, $08 ; Elm's house sign
 
-	db $04 ; people
-	object SPRITE_SAILOR,      $10, $07, STAY, RIGHT, $01 ; ferry
-	object SPRITE_LASS,        $06, $08, STAY, LEFT,  $02 ; teacher
-	object SPRITE_FISHER,      $0c, $09, STAY, DOWN,  $03 ; fisher
-	object SPRITE_BUG_CATCHER, $03, $02, STAY, RIGHT, $04 ; visitor near Elm's lab
+	db $04 ; people: MAP-5.62.130 temporary Route 29 NPC side-by-side test
+	object SPRITE_SAILOR,      $10, $07, STAY, RIGHT, $01 ; ferry, unchanged
+	object SPRITE_GAMBLER,     $06, $08, STAY, DOWN,  $02 ; Route 29 guide graphic test
+	object SPRITE_BUG_CATCHER, $0c, $09, STAY, DOWN,  $03 ; Route 29 youngster graphic test
+	object SPRITE_LASS,        $03, $02, STAY, DOWN,  $04 ; Route 29 teacher graphic test
+; Testing only: dialogues keep their existing town text IDs. Route 29
+; NPC objects remain untouched for same-ROM scenery comparison.

@@ -58,7 +58,13 @@ LegacyMapIDToRegionKey::
 	ld d, MAP_REGION_KANTO
 	ld a, e
 	cp NEW_BARK_TOWN
+	jr z, .newBark
+	cp JOHTO_ROUTE_29
 	ret nz
+	ld d, MAP_REGION_JOHTO
+	ld e, JOHTO_ROUTE_29_LOCAL_ID
+	ret
+.newBark
 	ld d, MAP_REGION_JOHTO
 	ld e, JOHTO_NEW_BARK_LOCAL_ID
 	ret
@@ -67,20 +73,26 @@ LegacyMapIDToRegionKey::
 ; derive both saved region fields from those IDs at every map-header load.
 ; This fills the compatible region fields for older saves at map load.
 ; Both fields are overwritten, not restored as independent saved-region keys.
-; $E7 is Johto local $00; all other legacy IDs are Kanto for this phase.
+; $E7 and $F4 are Johto locals $00/$01; other aliases are Kanto.
 ; Do not replace this with an unconditional reset once region-aware warps land.
 SyncLegacyMapRegions::
 	ld a, [wCurMap]
 	cp NEW_BARK_TOWN
+	jr z, .currentJohto
+	cp JOHTO_ROUTE_29
 	ld a, MAP_REGION_KANTO
 	jr nz, .currentReady
+.currentJohto
 	ld a, MAP_REGION_JOHTO
 .currentReady
 	ld [wCurRegion], a
 	ld a, [wLastMap]
 	cp NEW_BARK_TOWN
+	jr z, .lastJohto
+	cp JOHTO_ROUTE_29
 	ld a, MAP_REGION_KANTO
 	jr nz, .lastReady
+.lastJohto
 	ld a, MAP_REGION_JOHTO
 .lastReady
 	ld [wLastRegion], a
@@ -167,7 +179,9 @@ RegionMapKeyToLegacyID::
 	ld a, e
 	cp NUM_LEGACY_MAPS
 	jr nc, .invalid
-	cp NEW_BARK_TOWN ; $E7 is the reserved Johto compatibility alias
+	cp NEW_BARK_TOWN ; $E7 is a Johto compatibility alias
+	jr z, .invalid
+	cp JOHTO_ROUTE_29 ; $F4 is reserved for Route 29
 	jr z, .invalid
 	and a
 	ret
