@@ -1248,8 +1248,7 @@ INCLUDE "scripts/Colosseum.asm"
 INCLUDE "data/mapObjects/Colosseum.asm"
 ColosseumBlocks: INCBIN "maps/Colosseum.blk"
 
-INCLUDE "engine/give_pokemon.asm"
-
+; Gift handling lives in a floating bank with the other form acquisition hooks.
 INCLUDE "engine/predefs.asm"
 
 
@@ -2491,6 +2490,12 @@ INCLUDE "engine/regional_dex_state.asm"
 
 ; FORM-5.62.20: producer/staging and map-specific evolution override logic stay
 ; floating so fixed bank $34 only grows by small descriptor-facing entry points.
+SECTION "Regional Gift Acquisition", ROMX
+INCLUDE "engine/give_pokemon.asm"
+
+SECTION "Regional Trade Receipt Helpers", ROMX
+INCLUDE "engine/regional_trade_receipt.asm"
+
 SECTION "Regional Form Producers", ROMX
 INCLUDE "data/regional_form_producers.asm"
 INCLUDE "engine/regional_form_producers.asm"

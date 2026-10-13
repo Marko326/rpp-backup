@@ -103,7 +103,7 @@ InGameTrade_DoTrade:
 	ld a,[wcf91]
 	cp b
 	ld a,$2
-	jr nz,.tradeFailed ; jump if the selected mon's species is not the required one
+	jp nz,.tradeFailed ; jump if the selected mon's species is not the required one
 	ld a,[wWhichPokemon]
 	ld hl,wPartyMon1Level
 	ld bc, wPartyMon2 - wPartyMon1
@@ -141,7 +141,8 @@ InGameTrade_DoTrade:
 	ld a,[wTradedEnemyMonFormMarker]
 	ld e,a
 	callba RegionalFormAddPartyMonWithMarker
-	call InGameTrade_CopyDataToReceivedMon
+	callba InGameTrade_CopyDataToReceivedMon
+	callba RegionalDexMarkReceivedTradeOwned
 	callab EvolveTradeMon
 	call ClearScreen
 	call InGameTrade_RestoreScreen
@@ -226,36 +227,6 @@ InGameTrade_CopyData:
 	call CopyData
 	pop bc
 	pop hl
-	ret
-
-InGameTrade_CopyDataToReceivedMon:
-	ld hl, wPartyMonNicks
-	ld bc, NAME_LENGTH
-	call InGameTrade_GetReceivedMonPointer
-	ld hl, wInGameTradeMonNick
-	ld bc, NAME_LENGTH
-	call CopyData
-	ld hl, wPartyMonOT
-	ld bc, NAME_LENGTH
-	call InGameTrade_GetReceivedMonPointer
-	ld hl, wCurTrainerName;InGameTrade_TrainerString
-	ld bc, NAME_LENGTH
-	call CopyData
-	ld hl, wPartyMon1OTID
-	ld bc, wPartyMon2 - wPartyMon1
-	call InGameTrade_GetReceivedMonPointer
-	ld hl, wTradedEnemyMonOTID
-	ld bc, $2
-	jp CopyData
-
-; the received mon's index is (partyCount - 1),
-; so this adds bc to hl (partyCount - 1) times and moves the result to de
-InGameTrade_GetReceivedMonPointer:
-	ld a, [wPartyCount]
-	dec a
-	call AddNTimes
-	ld e, l
-	ld d, h
 	ret
 
 ;InGameTrade_TrainerString:

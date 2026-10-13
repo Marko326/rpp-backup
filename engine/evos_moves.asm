@@ -304,17 +304,8 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, [wIsInBattle]
 	and a
 	call z, Evolution_ReloadTilesetTilePatterns
-	predef IndexToPokedex
-	ld a, [wd11e]
-	dec a
-	ld c, a
-	ld b, FLAG_SET
-	ld hl, wPokedexOwned
-	push bc
-	call Evolution_FlagAction
-	pop bc
-	ld hl, wPokedexSeen
-	call Evolution_FlagAction
+	; Species flags and exact newly evolved form now share one success-only hook.
+	callba RegionalDexMarkEvolvedMonOwned
 	pop de
 	pop hl
 	ld a, [wLoadedMonSpecies]

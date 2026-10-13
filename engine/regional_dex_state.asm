@@ -83,6 +83,81 @@ RegionalDexWildHUDOwnedTest::
 .checkOwned
 	jp RegionalDexPokedexOwnedTest ; untracked ordinary species use stock bit
 
+; Real acquisitions only. D = final Species, E = persistent stored marker.
+; The descriptor decoder returns runtime Form in D. Ordinary stored catch-rate
+; bytes do not match a regional marker and retain FORM_NORMAL as intended.
+RegionalDexMarkStoredMonOwned::
+	push de
+	callba RegionalFormGetFormBySpeciesMarker
+	jr nc,.normal
+	ld a,d
+	pop de
+	ld e,a
+	jp RegionalDexOwnedSet
+.normal
+	pop de
+	ld e,FORM_NORMAL
+	jp RegionalDexOwnedSet
+
+; Successful Party insertion (gift or starter). Read the LAST STORED party
+; record rather than any preview or the current enemy's temporary header.
+RegionalDexMarkNewestPartyOwned::
+	ld a,[wPartyCount]
+	and a
+	ret z
+	dec a
+	ld hl,wPartyMon1
+	ld bc,wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a,[hl]
+	ld d,a
+	ld bc,wPartyMon1CatchRate - wPartyMon1
+	add hl,bc
+	ld e,[hl]
+	jp RegionalDexMarkStoredMonOwned
+
+; Full-party gift: only after SendNewMonToBox succeeds. The sender prepared
+; this species/marker in the same header it copied to the new box record.
+RegionalDexMarkGiftBoxOwned::
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	ld a,[wEnemyMonCatchRate_NotReferenced]
+	ld e,a
+	jp RegionalDexMarkStoredMonOwned
+
+; Evolution: invoked only after the target has been committed and copied to
+; Party. A cancellation never reaches this point.
+RegionalDexMarkEvolvedMonOwned::
+	; Retain the original Species-level Seen/Owned path for the 208 count.
+	ld a,[wEvoNewSpecies]
+	ld [wd11e],a
+	predef IndexToPokedex
+	ld a,[wd11e]
+	dec a
+	ld c,a
+	ld b,FLAG_SET
+	ld hl,wPokedexOwned
+	push bc
+	predef FlagActionPredef
+	pop bc
+	ld hl,wPokedexSeen
+	predef FlagActionPredef
+	; Read the materialized evolution target, not the source's temporary header.
+	ld a,[wEvoNewSpecies]
+	ld d,a
+	ld a,[wLoadedMonCatchRate]
+	ld e,a
+	jp RegionalDexMarkStoredMonOwned
+
+; NPC/link trade: only the RECEIVED instance, after successful insertion.
+; Both trade paths already latch its marker before removing the outgoing mon.
+RegionalDexMarkReceivedTradeOwned::
+	ld a,[wTradedEnemyMonSpecies]
+	ld d,a
+	ld a,[wTradedEnemyMonFormMarker]
+	ld e,a
+	jp RegionalDexMarkStoredMonOwned
+
 RegionalDexFindSlot::
 	ld hl,RegionalDexSlots
 	ld c,0

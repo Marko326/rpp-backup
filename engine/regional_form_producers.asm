@@ -178,6 +178,10 @@ RegionalFormShowStarterDex:
 RegionalFormAddStarter:
 	call RegionalFormGetStarterForm
 	call RegionalFormAddPartyMonWithForm
+	ret nc
+	push af
+	callba RegionalDexMarkNewestPartyOwned
+	pop af
 	ret
 
 ; Resolve source form, then apply the first exact location/source/target override.

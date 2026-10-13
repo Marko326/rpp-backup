@@ -689,23 +689,6 @@ TradeCenter_PrintPartyListNames:
 	inc c
 	jr .loop
 
-; FORM-5.62.13: preserve the selected stored instances' form-marker bytes before
-; RemovePokemon shifts the local party and the received structure is appended.
-TradeCenter_CaptureRegionalFormMarkers:
-	ld a, [wTradingWhichPlayerMon]
-	ld hl, wPartyMon1CatchRate
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
-	ld a, [hl]
-	ld [wTradedPlayerMonFormMarker], a
-	ld a, [wTradingWhichEnemyMon]
-	ld hl, wEnemyMon1CatchRate
-	ld bc, wEnemyMon2 - wEnemyMon1
-	call AddNTimes
-	ld a, [hl]
-	ld [wTradedEnemyMonFormMarker], a
-	ret
-
 TradeCenter_Trade:
 	ld c, 100
 	call DelayFrames
@@ -784,7 +767,7 @@ TradeCenter_Trade:
 .doTrade
 	; FORM-5.62.13: capture both instance markers while the selected party slots
 	; still refer to the pre-trade parties.
-	call TradeCenter_CaptureRegionalFormMarkers
+	callba TradeCenter_CaptureRegionalFormMarkers
 	ld a, [wTradingWhichPlayerMon]
 	ld hl, wPartyMonOT
 	call SkipFixedLengthTextEntries
@@ -837,6 +820,8 @@ TradeCenter_Trade:
 	add hl, de
 	ld a, [hl]
 	ld [wcf91], a
+	; Latch the actually received species before the successful add/Owned hook.
+	ld [wTradedEnemyMonSpecies], a
 	ld hl, wEnemyMons
 	ld a, c
 	ld bc, wEnemyMon2 - wEnemyMon1
@@ -845,18 +830,14 @@ TradeCenter_Trade:
 	ld bc, wEnemyMon2 - wEnemyMon1
 	call CopyData
 	call AddEnemyMonToPlayerParty
+	jr c,.receivedMonNotAdded
+	callab RegionalDexMarkReceivedTradeOwned
+.receivedMonNotAdded
 	ld a, [wPartyCount]
 	dec a
 	ld [wWhichPokemon], a
 	ld a, $1
 	ld [wForceEvolution], a
-	ld a, [wTradingWhichEnemyMon]
-	ld hl, wEnemyPartyMons
-	ld b, 0
-	ld c, a
-	add hl, bc
-	ld a, [hl]
-	ld [wTradedEnemyMonSpecies], a
 	ld a, 10
 	ld [wAudioFadeOutControl], a
 	ld a, $2

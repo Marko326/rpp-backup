@@ -121,3 +121,13 @@
 - **WRAM 审核**：保留一个新 `wTemporaryViewerFacing` 字节专用于 Party／PC，放在原栈前非 SRAM 区；StatusScreen 每次进入清零。`wPokedexFacingPreference` 仍属于内部图鉴，并在退出、重进时保留朝向，两者职责分开。
 - **用户验收与剩余边界**：125 的 Party、战斗 Party、PC 存取 SELECT 可切换已实测，但用户曾报告撕裂；126 的修复未收到明确的“撕裂消失”反馈，不能写作完全通过。用户要求撤销新捕获弹窗的正背实验并保留 Party／PC，属于功能范围变更，不代表 128 ROM 已链接或用户实际运行通过。PC 丢弃不进入详情不用测试；先前已验收的变身、野外小球、捕获登记、灰／彩球不需要重复测试。
 - **交付口径**：增量以已应用 S8-003 的准确 `DEX-5.62.127` 源码为前置；全量以最新已确认干净 `DEX-5.62.121 / 0ce0b967` 为原始 Git 基线，累计 122～124 内部图鉴、125～126 Party／PC 和 128 捕获回退、维护文档。三件套含增量、全量、合集 ZIP 与正式可复制提交日志；AI 不代编译、不提交、不 Push。
+
+
+## S9：获得渠道 Seen／Owned 补全（DEX-5.62.129，核心场景实测通过）
+
+- 共用浮动 ROMX 内 `RegionalDexMarkStoredMonOwned`：把实际持久 Species + marker 解码为运行时形态，并使用既有 `RegionalDexOwnedSet`（Owned 同步 Seen）。普通 catch-rate 无匹配地区 marker 时按 `FORM_NORMAL` 处理；不改固定身份、容量、存档布局或 208 物种数。
+- 赠送普通／显式形态成功入队后读取 Party 最后一个实际存储记录；满队成功赠送入箱后读取已物化敌方待存记录；箱满未完成不调用。Starter 的成功入队入口单独接同一个 Party 查询，而不是给实验室预览直接置位。
+- 成功进化完成最终头部提交、Party 数据复制与原物种图鉴置位后，从 `wEvoNewSpecies` + `wLoadedMonCatchRate` 记录目标形态。取消进化的早退不登记。
+- NPC 与 Link 交换分别在接收宝可梦实际加入 Party 后，读取事先锁定的 `wTradedEnemyMonSpecies`／`wTradedEnemyMonFormMarker`；发送、取消、交换前选择没有登记副作用。后续通信进化另走成功进化入口。
+- 用户已实测赠送／领取、成功进化、NPC 收到地区形态三类场景均正常；TEST-002 和 TEST-003 两份临时补丁均已撤销。通信交换双端尚未专项实测，不把收到 NPC 交换结果外推。
+- 此次收口仅更新验收文档，不改 ASM、游戏版本或存档；野外捕获、变身、颜色、图鉴详情、Party／PC、208 物种计数未修改，不重复要求回归。
