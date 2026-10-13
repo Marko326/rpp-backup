@@ -154,6 +154,8 @@ PlayExtendedOrbProjectile:
 	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
 	; new command branch. Legacy animation-ID semantics remain untouched.
 	call GetCurrentMoveID
+	cp POISON_JAB
+	jp z,PlayPoisonJabQuickHit
 	cp PAY_DAY
 	jr nz,.notPayDay
 	; ANIM-5.62.85: size-aware rotating throw and centred hit, then $52 bounce.
@@ -1801,13 +1803,15 @@ WoodHammerExtAnimEnd:
 PoisonJabExtAnim:
 	db PoisonJabExtAnimEnd - PoisonJabExtAnimData
 PoisonJabExtAnimData:
-	; ANM-5.61.39: keep the restored $00/$14 two-stage material. DARK preserves
-	; the normal Poison light/dark pair and remaps only source color 3 from black
-	; to the Poison type-dark color.
-	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE_DARK
-	db $08,$27,$00
-	db $46,$5B,$14
+	; ANIM-5.62.123: Quick Attack vanish/speed/return surround one native
+	; 16x16 Drill Peck HIT and the untouched $14 poison/liquid sequence.
+	; Both stages use their stock palette indices, never the dynamic type map.
 	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_PREPARE
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_APPROACH
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; Poison Jab's private small HIT + stab SFX
+	db $46,$5B,$14
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_RETURN
 	db $FF
 PoisonJabExtAnimEnd:
 	IF PoisonJabExtAnimEnd - PoisonJabExtAnimData > 30
@@ -2295,6 +2299,110 @@ SetClawThrashStyleFeedback::
 .enemy
 	callba ShakeScreenHorizontallySlow  ; enemy pre-attack: b=6,c=2
 	jp SetHorizontalHitFeedback         ; final hit: type 2 fast/heavy
+
+; ---------------------------------------------------------------------------
+; ANIM-5.62.123 - Poison Jab's preloaded native small HIT
+; ---------------------------------------------------------------------------
+; Preserve the complete poison AnimationTileset2 in $31-$7F. Only the one
+; Drill Peck tile ($44 of AnimationTileset1) is copied into the private $61
+; slot, never over the $75/$76 poison tiles used by Subanimation14.
+; ANIM-5.62.123: borrow only the graphic, not the source ICE palette 6.
+; The private HIT uses the ordinary GREY palette 0; poison stays unchanged.
+POISON_JAB_HIT_TILE EQU $61
+POISON_JAB_HIT_PALETTE EQU ATK_PAL_GREY ; neutral HIT, not Drill Peck's blue/ICE palette
+
+PreloadPoisonJabQuickHit::
+	ld hl,vSprites + POISON_JAB_HIT_TILE * 16
+	ld de,AnimationTileset1 + $44 * 16
+	ld b,BANK(AnimationTileset1)
+	ld c,1
+	call CopyVideoData
+	ld a,2
+	ld [rSVBK],a
+	ld a,POISON_JAB_HIT_PALETTE
+	ld [W2_SpritePaletteMap + POISON_JAB_HIT_TILE],a
+	ld a,1
+	ld [W2_ForceOBPUpdate],a
+	xor a
+	ld [rSVBK],a
+	ret
+
+PlayPoisonJabQuickHit::
+	; Match the first stage of $08,$27,$00: Poison Sting SFX, pitch $00,
+	; tempo $80. PlaySFX reads E (not A); the marker is temporary.
+	xor a
+	ld [wFrequencyModifier],a
+	ld a,$80
+	ld [wTempoModifier],a
+	ld a,2
+	ld [wSFXDontWait],a
+	ld e,SFX_BATTLE_1B
+	ld d,0
+	call PlaySFX
+	xor a
+	ld [wSFXDontWait],a
+
+	; Subanimation14's first FrameBlock30 is at BaseCoord $10:
+	; (Y=$20,X=$78). Enemy type-2 transform mirrors about X=168 and adds 40Y.
+	; Four H/V-mirrored quadrants form the original Drill Peck 16x16 HIT.
+	ld b,$20
+	ld c,$78
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.draw
+	ld b,$48
+	ld c,$28
+.draw
+	ld hl,DrillPeckSmallHitOAM
+	ld de,wOAMBuffer
+	ld a,4
+.drawQuad
+	push af
+	ld a,b
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,POISON_JAB_HIT_TILE
+	ld [de],a
+	inc de
+	ld a,[hli]
+	ld [de],a
+	inc de
+	pop af
+	dec a
+	jr nz,.drawQuad
+
+	; Original 117 $08,$27,$00: 8 VBlanks showing HIT and 1 cleanup.
+	; Its next $46,$5B,$14 used to reload 79 poison tiles via
+	; CopyVideoData (8 tiles/VBlank = 10 additional blank VBlanks).
+	; Preloading skips the original copy, so preserve that pause explicitly.
+	; Keep the 117 HIT duration and restore ONLY the missing transition,
+	; without reloading VRAM or changing Subanimation14's trajectory.
+	ld b,8
+.holdHit
+	push bc
+	call DelayFrame
+	pop bc
+	dec b
+	jr nz,.holdHit
+	call ClearSprites
+	call DelayFrame
+	ld c,10
+	call DelayFrames
+
+	; The following $14 uses the preloaded complete AnimationTileset2.
+	; The existing zero-lifetime $FD -> $14 pair skips only the reload.
+	ld a,$FE
+	ld [wBattleAnimSeamlessStage],a
+	xor a
+	ld [wBattleAnimStageCarryTimer],a
+	ret
 
 ; ---------------------------------------------------------------------------
 ; ANM-5.61.26 - Gold-style Drill Peck using only Gen1 animation graphics
@@ -2975,6 +3083,7 @@ SeamlessBattleAnimStagePairs:
 	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
 	db SLUDGE,       $13, $14, 0      ; same two-stage poison animation as Acid
 	db SHADOW_PUNCH, $FD, $05, 0      ; ANM-5.61.59: prepared Quick Attack handoff; skip fist gfx reload
+	db POISON_JAB,    $FD, $14, 0     ; ANIM-5.62.123: prepared poison tiles; no redraw gap
 	db SHADOW_PUNCH, $05, SEAMLESS_CUSTOM_TARGET, 12 ; 9-sprite fist through 4x3-frame poof
 	; ANM-5.61.48: Gold starts Explosion2 four VBlanks before PunchShake disappears.
 	db DYNAMICPUNCH,  $05, SEAMLESS_CUSTOM_TARGET, 4  ; carry final fist into first explosion

@@ -126,3 +126,21 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - In `data/regional_forms.asm`, descriptor `db 0` / `dw 0` means full stock-data inheritance. An allocated metrics record uses `db 0,0` to inherit stock height and `dw 0` to inherit stock weight **independently**; only write a nonzero field when it actually differs. Do not allocate redundant 4-byte metric records for fully identical forms.
 - Verify form identities via `Species + Form`, and treat special custom mappings (`PERSIAN + FORM_GALAR` for Perrserker; `WEAVILE + FORM_HISUI` for Sneasler) as their source Pokémon's measurements, not those of ordinary Persian / Weavile. Compare with Polished Crystal body data and Bulbapedia display values when the former lacks a form.
 - Keep metric inheritance cleanup separate from unresolved battle-stats / evolution / learnset placeholder work. Validate all descriptors and in-bank symbols, all effective display values, patch apply/reverse checks and file modes. Runtime ROM/link/map/saves remain user-side acceptance work under the current project rules.
+
+## Poison Jab native HIT preload and first-hit SFX (ANIM-5.62.121)
+
+- The Gold Quick Attack preparation in `shadow_punch_quick_attack.asm` must call the ROM0 `GetCurrentMoveID` normally; `callba` destroys return A. Leave Shadow Punch's usual setup unchanged.
+- Poison Jab's HIT and poison use different tilesets. Prepare the original poison tileset (index 1), place the Drill Peck HIT source tile `$44` into a *separate* OBJ slot `$61`, and use the first tileset's per-tile palette for this private sprite. Do not overwrite `$75/$76` used by `Subanimation14` and skip redundant reload only via the exact `$FD->$14` seamless marker.
+- `PlaySFX` uses E as its identifier. The Poison Sting stab is `SFX_BATTLE_1B` with `$00/$80` pitch/tempo; put E/D and `wSFXDontWait=2` in place only for the call. Preserve 8 visible HIT VBlanks followed by one blank cleanup VBlank. Do not re-author or retime Subanimation14's poison/droplet trajectory.
+- Static symbol/patch checks do not certify bank placement or real game playback. Do not mark 121 complete without enemy/player, low-HP sound and Shadow Punch regression checks.
+
+## Poison Jab preloaded tileset removes a legacy pause (ANIM-5.62.122)
+
+- The 117 $08,$27,$00 HIT has **one** frame-block at delay 8, then a cleanup VBlank. The following $46,$5B,$14 reloads AnimationTileset2 (79 tiles) with `CopyVideoData`, which copies up to 8 per VBlank, i.e. **10 more blank VBlanks** between the stab and poison. This is not additional HIT lifetime.
+- The 121 Quick Attack preload correctly avoids the VRAM copy but accidentally also removes those 10 VBlanks, making the two stages feel too close. Preserve the approved preloading and add the equivalent 10-frame pause **after HIT cleanup and before $14**; do not change the original 8-frame HIT or the $14 keyframes, SFX, palette, and OAM path.
+- A static timing argument is not a runtime stopwatch. Compare the 117 and 122 timing in game for both attack directions before closing this issue; do not build ROM as part of this patch-only workflow.
+
+## Poison Jab HIT tile graphics and palette are separate (ANIM-5.62.123)
+
+- Loading Drill Peck's native small-HIT tile `$44` as Poison Jab's private `$61` graphic does **not** mean inheriting its palette: `AnimationTileset1Palettes[$44] = 6` means `ATK_PAL_ICE`, making the hit cyan/blue. A standard neutral HIT uses `ATK_PAL_GREY = 0`; set Poison Jab's `$61` `W2_SpritePaletteMap` entry separately after preloading. Do not change the global Drill Peck palette table or poison tileset palette.
+- Historical 117 Poison Jab used a Poison-type dynamically recolored palette; standard Poison Sting instead uses fixed red tiles. Name the visual target explicitly when making later revisions. This version uses neutral grey for the dedicated small HIT and remains subject to user visual acceptance.
