@@ -2495,6 +2495,10 @@ SECTION "Regional Form Producers", ROMX
 INCLUDE "data/regional_form_producers.asm"
 INCLUDE "engine/regional_form_producers.asm"
 
+; DEX-5.62.122: front/back viewer body stays out of fixed Pokédex bank $34.
+SECTION "Regional Pokedex Facing Viewer", ROMX
+INCLUDE "engine/menu/pokedex_facing.asm"
+
 SECTION "Evolution Stone UI Helpers", ROMX
 INCLUDE "engine/evolution_stone_ui.asm"
 

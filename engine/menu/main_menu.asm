@@ -7,6 +7,8 @@ MainMenu:
 	xor a
 	ld [wStartMenuSavedMenuItem], a
 	ld [wPokedexSavedSelection], a
+	; New-game / Continue / title-boundary resets the session-only facing choice.
+	ld [wPokedexFacingPreference], a
 	ld [wMoveDexSavedSelection], a
 	ld [wStartPartySavedMenuItem], a
 	ld [wRepeatFishingRod], a

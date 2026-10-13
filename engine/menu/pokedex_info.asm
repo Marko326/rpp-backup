@@ -94,6 +94,19 @@ PokedexData_StepSeenForm:
 	ret
 
 PokedexData_BeginSessionVolume:
+	; Bit 7 gates the HOME initial-pic interception strictly to internal Info.
+	; External capture one-shot pages keep their original front-only behavior;
+	; bit 0 (the player's session preference) is never reset here.
+	ld a,[wPokedexFacingPreference]
+	res 7,a
+	ld b,a
+	ld a,e
+	and a
+	jr z,.facingModeReady
+	set 7,b
+.facingModeReady
+	ld a,b
+	ld [wPokedexFacingPreference],a
 	; FORM-5.62.12: E is the caller mode (0 external one-shot, nonzero internal
 	; list browsing). Internal/ordinary external pages start on NORMAL. A successful
 	; capture still has wCapturedMonSpecies set, so only that one-shot inherits the
@@ -133,6 +146,9 @@ PokedexData_EndSession:
 	; FORM-5.62.12: form selection is session-local; never leak a captured/viewed
 	; form into a later one-shot Pokédex display.
 	ld [wPokedexViewForm],a
+	ld a,[wPokedexFacingPreference]
+	res 7,a ; keep orientation, but never redirect non-Info front loaders
+	ld [wPokedexFacingPreference],a
 	call GBPalWhiteOut
 	; Internal Info swaps between the two Window BG maps so a prepared text page can
 	; appear atomically. Restore the project's normal map 1 ownership while the
@@ -199,6 +215,8 @@ PokedexData_ReadInternalInput:
 ; category, LEFT/RIGHT switches category, and UP/DOWN changes species.
 
 PokedexData_RunInternalInputLoop:
+	; The session's facing preference lives in dedicated WRAMX, not CD37. Only
+	; the 1..4 page state is kept on the input-loop stack.
 	ld a,1
 	push af
 .loop
@@ -210,15 +228,15 @@ PokedexData_RunInternalInputLoop:
 	and B_BUTTON
 	jp nz,.exit
 
-	; START/SELECT are form navigation only for species that actually have at
-	; least one registered regional descriptor. Species with no regional forms
-	; receive carry clear from the generic lookup and these buttons do nothing.
+	; START advances to the next Seen identity, never to an unseen form.
+	; SELECT toggles the current form's actual front/back graphics. Neither
+	; button changes the Pokédex list's separate START/SELECT bindings.
 	ld a,b
 	and START
 	jp nz,.nextForm
 	ld a,b
 	and SELECT
-	jp nz,.previousForm
+	jp nz,.toggleFacing
 
 	ld a,b
 	and A_BUTTON
@@ -234,8 +252,7 @@ PokedexData_RunInternalInputLoop:
 	ld e,a
 	call PokedexData_TryStepSeen
 	jp nc,.loop
-	; A different species always starts from its normal form. This prevents a form
-	; selected on one Pokédex entry from leaking into the next species.
+	; New species chooses its first Seen form, but retains the current facing.
 	xor a
 	ld [wPokedexViewForm],a
 	; Species changes preserve the category but return to that category's home.
@@ -251,6 +268,23 @@ PokedexData_RunInternalInputLoop:
 .keepBrowseCategory
 	push af
 	ld e,a
+	call PokedexData_RenderSwitchedEntry
+	jp .loop
+
+.toggleFacing
+	; SELECT uses the same atomic full-page/picture replacement as START/UP/DOWN.
+	; Bit 7 in E asks the renderer to skip an unrelated repeated cry. Its low
+	; bits preserve the current 1..4 description/stats subpage unchanged.
+	ld hl,wPokedexFacingPreference
+	ld a,[hl]
+	xor 1
+	ld [hl],a
+	pop af
+	push af
+	or $80
+	ld e,a
+	ld a,[wcf91]
+	ld [wd11e],a
 	call PokedexData_RenderSwitchedEntry
 	jp .loop
 
@@ -270,22 +304,8 @@ PokedexData_RunInternalInputLoop:
 	ld [wPokedexViewForm],a
 	jr .redrawForm
 
-.previousForm
-	ld a,[wcf91]
-	ld d,a
-	ld a,[wPokedexViewForm]
-	ld e,a
-	ld a,1
-	call PokedexData_StepSeenForm
-	jp nc,.loop
-	ld c,a
-	ld a,[wPokedexViewForm]
-	cp c
-	jp z,.loop
-	ld a,c
-	ld [wPokedexViewForm],a
-
 .redrawForm
+	; Keep the chosen facing across a form switch; no forced front reset.
 	; Keep the selected category, but normalize to that category's home page just
 	; like an UP/DOWN species change.
 	pop af
@@ -363,7 +383,7 @@ PokedexData_RunInternalInputLoop:
 	jp .loop
 
 .exit
-	pop af
+	pop af ; discard selected page state; facing remains for the next opening
 	ret
 
 PokedexData_TickDescriptionArrow:
@@ -392,22 +412,23 @@ PokedexData_ArmDescriptionArrow:
 ; made white so the frontpic alone disappears in one palette commit. The complete
 ; new text page is transferred to the hidden Window BG map and exposed with one
 ; LCDC map flip, then the final Pokémon palette reveals the complete new picture.
-; Input: wd11e = newly selected internal species, E = desired internal page state
-; (1 = description page 1, 3 = Base Stats home). Seen-only entries keep the category
-; but render the stock limited page because detailed data is Owned-only.
+; Input: wd11e = selected internal species; E low bits = desired page 1..4.
+; S7-003: the white picture palette must be the LAST palette written before
+; uploading vFrontPic; never call RunPaletteCommand again until the upload ends.
+; E bit 7 suppresses a redundant cry when SELECT changes facing only. The
+; chosen orientation is persistent across Info visits, but not game restarts.
 PokedexData_RenderSwitchedEntry:
+	push de ; keep page + no-cry flag safe across scratch/bank calls
 	ld a,e
-	ld [wBuffer + 18],a ; preserve page state across the refresh helpers
+	and $7f
+	ld [wBuffer + 18],a ; temporary page selector during text preparation
 	; Stop the previous page's ▼ phase while a new entry is prepared. Owned Page 1
 	; will re-arm it after the coherent page has been committed; Seen-only stays off.
 	xor a
 	ld [hDownArrowBlinkActive],a
-	; Hide only the frontpic through palette 0. Keeping its 7x7 tilemap references
-	; intact avoids the two AutoBG thirds that otherwise reveal the new picture in
-	; separate frames. Wait until the white palette is really resident in hardware
-	; before any vFrontPic tile is replaced.
-	call PokedexData_HideFrontPicPalette0
-	callba StatusScreen_WaitForBgPaletteCommit
+	; Stage the next entry's text while the old complete sprite remains visible.
+	; Do not white out palette 0 yet: the following text/palette preparation takes
+	; several frames and otherwise creates an unnecessary long blank picture.
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
 
@@ -416,18 +437,12 @@ PokedexData_RenderSwitchedEntry:
 	; DEX-5.62.117: species stepping starts on a Seen form, never on an
 	; unseen ordinary identity that shares the species Pokédex entry.
 	call PokedexData_SelectFirstSeenForm
+	; Keep the current hardware sprite palette untouched while staging the
+	; text. The final palette must be built only AFTER the entire new picture is
+	; in VRAM, otherwise VBlank restores its colors mid-49-tile transfer.
 	ld a,[wcf91]
 	ld [wd0b5],a
-	push af
-	ld b,SET_PAL_POKEDEX
-	call RunPaletteCommand
-	pop af
 	ld [wd11e],a
-	ld a,[wcf91]
-	ld d,a
-	ld a,[wPokedexViewForm]
-	ld e,a
-	call RegionalFormOverridePokedexPalette
 
 	; Name and species are the only variable strings above the divider. Clear their
 	; exact 10-column fields in WRAM so shorter replacements cannot leave old glyphs.
@@ -516,16 +531,26 @@ PokedexData_RenderSwitchedEntry:
 	ld a,[wBuffer + 18]
 	cp 3
 	jr nc,.renderBaseStats
-	ld e,0
+	; Page 2 is kept when SELECT changes facing; normal species/form navigation
+	; passes Page 1 and continues using the previous navigation policy.
+	dec a ; input 1 -> description half 0, input 2 -> half 1
+	ld e,a
 	call PokedexData_DrawDescriptionPageNoWait
-	; SUMMARY26 does not show the page arrow until after the picture/cry path has
-	; completed. Keep the prepared Page 1 text, but expose the ▼ separately later.
+	; Re-arm the first-page ▼ only after the new picture is committed.
 	coord hl,18,16
+	ld a,[wBuffer + 18]
+	cp 1
+	jr nz,.commitText
 	ld [hl]," "
 	jr .commitText
 
 .renderBaseStats
+	cp 4
+	jr z,.renderBaseStatsDelta
 	call PokedexData_DrawBaseStatsPageNoWait
+	jr .commitText
+.renderBaseStatsDelta
+	call PokedexData_DrawBaseStatsDeltaPageNoWait
 	jr .commitText
 
 .notOwned
@@ -535,35 +560,55 @@ PokedexData_RenderSwitchedEntry:
 	call ClearScreenArea
 
 .commitText
-	; Transfer the completely prepared page to the currently hidden Window BG map,
-	; then flip maps in VBlank. This makes name/number/Ht/Wt and all description lines
-	; change on the same displayed frame instead of leaking AutoBG's three thirds.
-	call PokedexData_CommitPreparedInfoPage
-
-	; Hide palette 0 while the stock loader copies its 49 graphics tiles over seven
-	; VBlanks. Its final tilemap write is the same 0..48 layout already resident on
-	; screen, so AutoBG can stay disabled and no partial picture is ever exposed.
+	; S7-003: 123 prepared the new palette BEFORE uploading 49 sprite tiles.
+	; A VBlank could commit those nonwhite colors partway through the 7-frame
+	; upload, exposing the broken partial sprite seen in the 123 recording.
+	; Now do all text work first, then hide palette 0 and wait until the hardware
+	; palette is fully white. Keep it white THROUGH the entire graphic upload.
+	call PokedexData_HideFrontPicPalette0
+	callba StatusScreen_WaitForBgPaletteCommit
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
+
 	ld a,[wcf91]
 	ld d,a
 	ld a,[wPokedexViewForm]
 	ld e,a
 	call RegionalFormLoadPokedexHeader
-	coord hl,1,1
-	call LoadFlippedFrontSpriteByMonIndex
+	callba PokedexData_LoadFacingPic
 
-	; SetPal_Pokedex prepared the new source palette before the graphics upload.
-	; Commit it only now: changing palette 0 from all-white to the new Pokémon's
-	; colors reveals the fully resident frontpic in one hardware palette update.
+	; Only after all 49 tiles are resident, build and publish the new palette.
+	; This also prevents the 123 early palette command from undoing the white
+	; curtain while CopyVideoData is still using successive VBlanks.
+	ld a,[wcf91]
+	ld [wd0b5],a
+	push af
+	ld b,SET_PAL_POKEDEX
+	call RunPaletteCommand
+	pop af
+	ld [wd11e],a
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	call RegionalFormOverridePokedexPalette
+
+	; All of the text, graphic tile IDs and picture pixels are now complete.
+	; Flip the hidden BG map first, then reveal the new sprite palette after
+	; the final graphics and attribute-map commits.
+	call PokedexData_CommitPreparedInfoPage
 	call PokedexData_ForceBgPaletteUpdate
 	callba StatusScreen_WaitForBgPaletteCommit
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a
+	pop de ; original page/facing-only marker from entry
+	bit 7,e
+	jr nz,.noCry
 	ld a,[wcf91]
 	call PlayCry
+.noCry
 
-	; LoadFlippedFrontSpriteByMonIndex uses H_SPRITEWIDTH/H_SPRITEHEIGHT, which are
+	; The picture loaders use H_SPRITEWIDTH/H_SPRITEHEIGHT, which are
 	; the same physical $FF8B/$FF8C bytes as the stock arrow Active/Timer. Discard
 	; those scratch values now, after the last renderer that can overwrite them.
 	xor a
@@ -572,7 +617,8 @@ PokedexData_RenderSwitchedEntry:
 	; The original SUMMARY26 path reaches Char49 only for an Owned description. Its
 	; ▼ is transferred by ProtectedDelay3 before the 42-frame timer is armed. Base
 	; Stats has no description arrow, and Seen-only entries never expose Page 1 text.
-	ld a,[wBuffer + 18]
+	ld a,e ; original page survives stats scratch (wBuffer + 18 is reused)
+	and $7f
 	cp 1
 	ret nz
 	call PokedexData_CurrentMonOwned

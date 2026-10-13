@@ -927,6 +927,7 @@ wNPCMovementDirections2Index:: ; cd37
 
 wUnusedCD37:: ; cd37
 
+; CD37 remains shared event/BAG scratch; Pokédex facing is no longer stored here.
 wFilteredBagItemsCount:: ; cd37
 ; number of items in wFilteredBagItems list
 	ds 1
@@ -3747,6 +3748,12 @@ wEXPBarKeepFullFlag:: ds 1
 ; ICO-5.62.57: six loaded Party icon VRAM slots follow members across swaps.
 ; Stored beyond wBoxDataEnd so save/box structure sizes do not change.
 wPartyIconSlotMap:: ds PARTY_LENGTH
+
+; DEX-5.62.123: runtime-only viewer preference, outside the saved box region.
+; Uses one of the three previously free WRAMX bytes before the fixed stack.
+; bit 0: 0 front / 1 back. bit 7: internal Pokédex Info is currently active.
+; The main menu resets both bits on new game/Continue; no SRAM layout change.
+wPokedexFacingPreference:: ds 1
 
 
 SECTION "Stack", WRAMX[$df00], BANK[1]

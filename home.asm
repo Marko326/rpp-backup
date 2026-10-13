@@ -446,6 +446,15 @@ OverwritewMoves::
 	ret
 
 LoadFlippedFrontSpriteByMonIndex::
+	; Only the internal Pokédex Info viewer (bit 7) may replace this initial
+	; front picture with the remembered back. External capture pages, battles,
+	; trading, evolution, and other uses keep the stock front loader.
+	ld a,[wPokedexFacingPreference]
+	and $81
+	cp $81
+	jr nz,.front
+	jpba PokedexData_LoadBackPic
+.front
 	ld a, 1
 	ld [wSpriteFlipped], a
 

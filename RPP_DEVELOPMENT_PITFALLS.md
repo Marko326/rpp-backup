@@ -129,3 +129,10 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - For wild enemy HUD, `wEnemyMonForm` can change after Transform. Use unchanged `wEnemyMonSpecies2` plus the per-encounter latched `wWildEncounterFormMarker`; resolve a nonzero marker with `RegionalFormGetFormBySpeciesMarker`. Restore original D (species) after that descriptor lookup, which returns the form in D.
 - Cross-bank `callab`/`callba` return through `Bankswitch`: the return A is replaced with the saved bank, but the Owned test's Z flag survives. Branch on Z **immediately after the far call** (before `ld`/`and` instructions that would change flags); do not interpret A as the boolean return.
 - Repaint the small HUD marker cell on both outcomes so previously owned wild enemies cannot leave a stale ball when the next form is unowned. Do not replace the existing small `$E9` tile or borrow the list's three-state palette logic.
+
+
+## Pokédex facing switch: do not publish a half-uploaded sprite (DEX-5.62.124)
+
+- `vFrontPic` is overwritten in multiple VBlanks (49 tiles). Whitening BG palette 0 and then calling `RunPaletteCommand` / `RegionalFormOverridePokedexPalette` **before** tile upload completes can prematurely expose partially replaced tile graphics, seen as broken frames on SELECT/front-back and cross-species switching.
+- Keep one `PokedexData_RenderSwitchedEntry` path for SELECT, START, UP/DOWN. Prepare text offscreen; white the picture-only palette and wait until the palette consumer has committed it; finish `PokedexData_LoadFacingPic`/tile upload; **only then** construct and commit the new PAL and prepared BG page. A brief white picture curtain is not the same as fragmented graphics, and is not evidence that VRAM double buffering was implemented.
+- The facing preference is one runtime WRAMX byte (bit0 facing, bit7 internal-only initial-load gate). Never reuse shared CD37 or redirect ordinary battle/evolution/capture front-sprite loads. Record tested and untested transitions separately.
