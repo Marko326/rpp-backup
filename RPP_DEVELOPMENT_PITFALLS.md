@@ -1,4 +1,12 @@
+## MAP-5.62.134: Convert Gold HOP art to native RPP tile pairs, no coordinate ledge interpreter
+
+- For Gold Johto Route 29, the original tile graphics alone are insufficient for rightward cliffs: the front tile is `$05`, indistinguishable from ordinary walkable floor, and the down cliff `$4c` also occurs where no hop is allowed. Do **not** match `($05,$05)` globally or add an in-game per-coordinate hop table to compensate.
+- Reuse RPP's established `HandleLedges` table comparison, action animation, sound, `wSimulatedJoypadStatesIndex=2` and `TilePairCollisionsLand` / `CheckTilePassable`. Generate dedicated *pixel-identical, blocked* Johto tile IDs `$20` (copy `$05`) / `$21` (copy `$4c`) in previously unused image slots; copy tile palettes and clone only the affected route block variants, not shared Johto blocks used by New Bark. Hop pairs are left `$05,$3b`, right `$05,$20`, down `$05,$21`.
+- The old Route 29 coordinate ledge/anti-reverse collision engine and `.133` Johto-only movement count override were experimental, not validated, and have been removed. Below historical `.131`–`.133` notes describe retired implementations; do not reintroduce them. Validate generated map collisions against both ordinary transitions and Gold HOP source cells. Do not make a runtime claim from static checks alone.
+
 # RPP Development Pitfalls
+
+**MAP-5.62.134 提交清理边界（用户反馈后补记，文档-only）**：用户已体验 `.134`，明确认为原生 RPP 跳崖比先前城都专用运行时代码更好；并未逐个证明全部交叉角/边界回归完成。下方 `.131`～`.133` 的模拟计数、坐标判定结论是历史实验记录，不得当成当前有效实现。`.129` Continue 重读碰撞表及原有高草遮挡已由用户实测，必须保留。若叶镇临时 NPC 对照与野外 NPC 花屏仍待独立专项；城都批量生成器 V1 不属于 `.134` 的提交内容。下一轮只调整数据生成，不要再次重写 `HandleLedges`。
 
 This file is the persistent, Git-tracked record of repeatable development failures and prevention rules for this branch.
 

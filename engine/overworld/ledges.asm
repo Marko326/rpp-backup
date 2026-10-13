@@ -7,6 +7,17 @@ HandleLedges:
 	jr z, .johto
 	and a ; Kanto OVERWORLD
 	ret nz
+	ld hl, LedgeTiles
+	jr .checkPairs
+.johto
+	; Route 29's Gold cliff cells have been converted to dedicated
+	; RPP collision tile IDs. Use the same tile-pair matching as Kanto.
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_29
+	ret nz
+	ld hl, JohtoRoute29LedgeTiles
+.checkPairs
+	push hl ; predef may overwrite the selected tile-pair table pointer
 	predef GetTileAndCoordsInFrontOfPlayer
 	ld a, [wSpriteStateData1 + 9]
 	ld b, a
@@ -14,7 +25,7 @@ HandleLedges:
 	ld c, a
 	ld a, [wTileInFrontOfPlayer]
 	ld d, a
-	ld hl, LedgeTiles
+	pop hl
 .loop
 	ld a, [hli]
 	cp $ff
@@ -38,39 +49,6 @@ HandleLedges:
 	inc hl
 	jr .loop
 
-; Gold's HOP_* label belongs to the safe cliff-lip (launch) cell.
-; RPP checks the front tile; converter records the middle barrier cell.
-; Use the same .foundMatch and two-step jump used by Kanto.
-.johto
-	ld a, [wCurMap]
-	cp JOHTO_ROUTE_29
-	ret nz
-	predef GetTileAndCoordsInFrontOfPlayer ; D=y, E=x, next cell
-	ld a, [wSpriteStateData1 + 9]
-	ld b, a
-	ld hl, JohtoRoute29LedgeRules
-.johtoLoop
-	ld a, [hli] ; barrier x
-	cp $ff
-	ret z
-	cp e
-	jr nz, .skipX
-	ld a, [hli] ; barrier y
-	cp d
-	jr nz, .skipY
-	ld a, [hli] ; required facing
-	cp b
-	jr nz, .skipFacing
-	ld a, [hli] ; required joypad input
-	ld e, a
-	jr .foundMatch
-.skipX
-	inc hl ; y
-.skipY
-	inc hl ; facing
-.skipFacing
-	inc hl ; input
-	jr .johtoLoop
 .foundMatch
 	ld a, [hJoyHeld]
 	and e
@@ -83,17 +61,7 @@ HandleLedges:
 	ld a, e
 	ld [wSimulatedJoypadStatesEnd], a
 	ld [wSimulatedJoypadStatesEnd + 1], a
-	; MAP-5.62.133: this initial real direction press already starts
-	; the first step in CollisionCheckOnLand. Kanto's original pair
-	; rules keep two ADDITIONAL simulated steps. The Johto converter
-	; records a one-cell barrier and a landing TWO cells from launch:
-	; simulate only ONE additional step there (total = initial + 1).
-	ld a, [wCurMapTileset]
-	cp JOHTO
-	ld a, $2
-	jr nz, .setJumpStepCount
-	dec a
-.setJumpStepCount
+	ld a, $2 ; Kanto original hopping simulation for both regions
 	ld [wSimulatedJoypadStatesIndex], a
 	call LoadHoppingShadowOAM
 	ld a, SFX_LEDGE
@@ -112,42 +80,15 @@ LedgeTiles:
 	db SPRITE_FACING_RIGHT,$39,$0D,D_RIGHT
 	db $FF
 
-; Route 29 bridge: Gold marks the safe cliff lip as HOP_*; its NEXT
-; 16x16 cell is the intermediary barrier. Many right-facing barriers are
-; visually $05 in Red and would otherwise be freely walkable backwards.
-; Only HandleLedges can cross this cell, via the existing Kanto hop action.
-; Block any normal step into a listed barrier (reverse OR sideways).
-; Return carry on collision; preserve the caller's tile-pair HL externally.
-CheckJohtoReverseLedgeCollision:
-	ld a, [wCurMap]
-	cp JOHTO_ROUTE_29
-	jr nz, .pass
-	predef GetTileAndCoordsInFrontOfPlayer ; D = front y, E = front x
-	ld hl, JohtoRoute29LedgeRules
-.loop
-	ld a, [hli] ; barrier x
-	cp $ff
-	jr z, .pass
-	cp e
-	jr nz, .skipX
-	ld a, [hli] ; barrier y
-	cp d
-	jr nz, .skipY
-	; The allowed approach was handled by HandleLedges first: its
-	; bit 6 causes CheckForJumpingAndTilePairCollisions to return early.
-	scf
-	ret
-.skipX
-	inc hl ; y
-.skipY
-	inc hl ; facing
-	inc hl ; input
-	jr .loop
-.pass
-	and a
-	ret
-
-INCLUDE "data/generated/johto_route29_ledges.asm"
+; The Johto map converter reserves $20/$21 as pixel-identical copies
+; of $05/$4c for right/down cliff barriers. $3b is already blocked.
+; Normal entry into these tiles fails through the RPP passability table,
+; while HandleLedges uses the same action/step count as Kanto.
+JohtoRoute29LedgeTiles:
+	db SPRITE_FACING_LEFT,  $05,$3B,D_LEFT
+	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
+	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
+	db $FF
 
 LoadHoppingShadowOAM:
 	ld hl, vChars1 + $7f0

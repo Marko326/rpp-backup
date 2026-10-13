@@ -1409,17 +1409,9 @@ CheckForJumpingAndTilePairCollisions::
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?
 	ret nz
-; MAP-5.62.128: the reverse-ledge helper is Route 29-only.
-; The previous unconditional callba clobbered HL, the caller's collision
-; table pointer, making old Kanto saves collide with executable bytes.
-	ld a, [wCurMap]
-	cp JOHTO_ROUTE_29
-	jr nz, .skipJohtoReverseLedge
-	push hl
-	callba CheckJohtoReverseLedgeCollision
-	pop hl ; restore land/water collision table; flags (carry) unchanged
-	ret c
-.skipJohtoReverseLedge
+; MAP-5.62.134: Route 29 uses dedicated collision tiles instead of a
+; runtime map-coordinate reverse-ledge table. Continue through the original
+; RPP TilePairCollisionsLand / CheckTilePassable checks below.
 ; if not jumping
 
 CheckForTilePairCollisions2::
@@ -1477,6 +1469,11 @@ CheckForTilePairCollisions::
 ; it's mainly used to simulate differences in elevation
 
 TilePairCollisionsLand::
+	; Route 29's special cliff barriers use the original RPP tile-pair
+	; and passability checks, not a separate coordinate collision engine.
+	db JOHTO, $05, $20
+	db JOHTO, $05, $21
+	db JOHTO, $05, $3B
 	db CAVERN, $20, $05
 	db CAVERN, $41, $05
 	db CAVERN, $2A, $05
