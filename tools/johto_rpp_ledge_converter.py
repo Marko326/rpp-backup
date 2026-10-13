@@ -177,10 +177,26 @@ def clone_tiles_and_palettes(png_path, pal_path):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--gold-collision', type=Path, required=True,
+    p.add_argument('--gold-collision', type=Path,
                    help='Local pokegold/data/tilesets/johto_collision.asm')
     p.add_argument('--project', type=Path, default=Path('.'))
+    p.add_argument('--batch-preview', action='store_true',
+                   help='Scan and stage all Johto maps without changing the project')
+    p.add_argument('--gold-root', type=Path,
+                   help='Local pokegold root (batch preview only)')
+    p.add_argument('--output', type=Path,
+                   help='Batch preview output folder')
     args = p.parse_args()
+    if args.batch_preview:
+        if not args.gold_root or not args.output:
+            p.error('--batch-preview requires --gold-root and --output')
+        from johto_rpp_batch import batch
+        import json
+        print(json.dumps(batch(args.gold_root, args.project, args.output),
+                         ensure_ascii=False, indent=2))
+        return
+    if args.gold_collision is None:
+        p.error('single-Route29 conversion requires --gold-collision')
     root = args.project
     gold = parse_gold_collisions(args.gold_collision)
     mappath = root / 'maps/JohtoRoute29.blk'

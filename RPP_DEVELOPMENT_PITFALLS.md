@@ -1,3 +1,10 @@
+## TOOL-5.62.135 → TOOL-5.62.136: Gold 离线地图索引和提交边界
+
+- **离线资源解析不等于地图移植完成**：`tools/johto_rpp_batch.py`、`tools/johto_rpp_pipeline.py`、`tools/johto_rpp_validate.py` 为候选生成和静态检查器，不写回项目 `maps/`/`data/`/`engine/`。工具可单独阶段性提交、后续逐步迭代；`OFFLINE_REVIEW_ONLY` 不是 ROM 可用、碰撞正确或游戏实测通过的含义。
+- **不能用地图名推导 `.blk` 文件名**：Gold 大量商店、宝可梦中心和民居共用布局；必须解析 `data/maps/blocks.asm` 中连续 `*_Blocks:` 标签到 `INCBIN` 的真实来源（`tools/johto_gold_sources.py`）。共享 `.blk` 并不意味着共享 NPC、事件、Warp、Header 或 RPP 的素材/碰撞。文件缺失、非法路径、尺寸不匹配应报错，不得猜测补齐或因共享关系误报缺失。
+- **静态报告的界限**：本轮在用户提供的 Gold 源码上识别 368 张注册地图、239 份布局（22 组共享、151 张地图参与共享）；20 张静态通过、348 张待适配、0 张确定性静态失败。数字只适用于本次输入与当前转换器；不能由此声称剩余 348 张已经转换好，非 Johto 图块集的视觉、碰撞、调色板及剧情仍须单独审查。
+- **回归及交付纪律**：保持已验收若叶镇、29 号道路与 `.134` RPP 原生跳崖不变；29 张既有候选输出应维持逐字节一致。运行 `python -m unittest discover -s tools/tests -v`，真实 Gold 源码下运行只读 pipeline，并确保输出目录位于 RPP/Gold 两套源码之外。不要将生成报告、Gold 参考源码、RPP_PROJECT_CONTEXT 导出上下文、测试缓存纳入 Git。提交日志需注明 `.134→.136` 和“工具静态验证通过，未编译/未实机”。
+
 ## MAP-5.62.134: Convert Gold HOP art to native RPP tile pairs, no coordinate ledge interpreter
 
 - For Gold Johto Route 29, the original tile graphics alone are insufficient for rightward cliffs: the front tile is `$05`, indistinguishable from ordinary walkable floor, and the down cliff `$4c` also occurs where no hop is allowed. Do **not** match `($05,$05)` globally or add an in-game per-coordinate hop table to compensate.
