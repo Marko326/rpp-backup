@@ -175,3 +175,50 @@ RollConfusionSideEffectFar:
 	pop de
 	cp d
 	ret
+
+; POISON-5.62.117: later poison moves use their own chances without changing
+; the shared Gen I effects. Return the 0..255 roll threshold in E, not A.
+; This helper runs in Bank $3E beside GetStatSideEffectMoveID, so copied moves
+; and automated Test Battle children are identified correctly.
+GetPoisonSideEffectChanceFar:
+	call GetStatSideEffectMoveID
+	cp POISON_JAB
+	jr z, .thirty
+	cp GUNK_SHOT
+	jr z, .thirty
+	cp SLUDGE_BOMB
+	jr z, .thirty
+	cp POISON_FANG
+	jr z, .fifty
+	; Preserve Poison Sting / Twineedle and Smog / Sludge shared odds.
+	ld hl, wPlayerMoveEffect
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .legacy
+	ld hl, wEnemyMoveEffect
+.legacy
+	ld a, [hl]
+	cp POISON_SIDE_EFFECT1
+	ld e, $34 ; 52/256 (Gen I ~20%)
+	ret z
+	ld e, $67 ; 103/256 (Gen I ~40%)
+	ret
+.thirty
+	ld e, $4d ; 77/256 (~30%)
+	ret
+.fifty
+	ld e, $80 ; 128/256 (50%)
+	ret
+
+; Return E=1 for Toxic/Poison Fang, E=0 for ordinary poison.
+; In particular, an automatic Test Battle may derive Poison Fang from another
+; move: GetCurrentMoveID would otherwise identify the test's root move.
+IsBadlyPoisoningMoveFar:
+	call GetStatSideEffectMoveID
+	ld e, 1
+	cp POISON_FANG
+	ret z
+	cp TOXIC
+	ret z
+	dec e
+	ret
