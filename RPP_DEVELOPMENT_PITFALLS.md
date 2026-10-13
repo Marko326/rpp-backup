@@ -24,6 +24,8 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **Hyper Voice 局部标签复核（ANIM-5.62.74）**：源分支早期曾把两个 `.draw` 放入 `PlayRubyHyperVoiceAnimation` 的同一全局作用域，导致 RGBDS `already defined`。当前以 `.drawWaveLayout`、`.drawImpactLayout` 区分；新改动须按全局标签作用域查重，同时检查 INCLUDE 路径，而不能只检查文件 INCLUDE 次数。
 - Previously seen: `'UpdateMapNameSign.gameCorner' already defined at main.asm(2892)`. Check global/local ownership before introducing similarly named labels.
 - Previously seen: `engine/menu/main_menu.asm(440): Unknown symbol "PrintNumOwnedMons"`. Run symbol/reference completeness checks after relocation or deletion.
+- **DEX-5.62.118 / S4-001 failed link (`RegionalDexOwnedAction.missing`)**: inserting the global `RegionalDexOwnedSlotAction:` between `jr nc,.missing` and `.missing` silently changed the latter local label owner. S4-002 keeps the slot entry under `RegionalDexOwnedAction.slot` and calls it by a fully qualified local label. Before delivery, resolve every new/modified local branch against the *nearest global label*, including targets below the insertion point; token-presence grep and `git apply` replay are insufficient.
+- **S4-001 additional static fault**: `callba IsPokemonBitSet` overwrote HL even though that function takes its bitfield pointer in HL. S4-002 invokes `FlagActionPredef` with the bitfield address and dex bit index explicitly. Review all `callab`/`callba` argument registers before a cross-bank call.
 - If changing vertical shake behavior, review `.StageBlankBG0TopRowForEnemyFeedback`; Iron Tail/Steel Wing previously left display residue around this path.
 
 ## Regional sprites require live data references (FORM-5.62.111)

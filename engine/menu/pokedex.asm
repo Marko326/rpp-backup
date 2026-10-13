@@ -55,6 +55,8 @@ ENDC
 IF DEF(_RED)
 	callab LoadPokedexTilePatterns
 ENDC
+	; DEX-5.62.118: neutral palette 2 is reserved for partly owned forms.
+	callab RegionalDexLoadPartialBallPalette
 .doPokemonListMenu
 	ld hl,wTopMenuItemY
 	ld a,3
@@ -317,14 +319,10 @@ HandlePokedexListMenu:
 	add hl,de
 	dec hl
 	push hl
-	ld hl,wPokedexOwned
-	call IsPokemonBitSet
+	ld d,h
+	ld e,l
+	callab RegionalDexDrawPokedexListBall
 	pop hl
-	ld a," "
-	jr z,.writeTile
-	ld a,$72 ; pokeball tile
-.writeTile
-	ld [hl],a ; put a pokeball next to pokemon that the player has owned
 	push hl
 	ld hl,wPokedexSeen
 	call IsPokemonBitSet

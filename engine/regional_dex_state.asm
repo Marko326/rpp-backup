@@ -117,6 +117,7 @@ RegionalDexOwnedSet::
 RegionalDexOwnedAction:
 	call RegionalDexFindSlot
 	jr nc,.missing
+.slot:
 	ld a,c
 	cp 112
 	jr nc,.last16
@@ -143,3 +144,141 @@ RegionalDexRunFlag:
 	ld a,c ; FlagAction returns its result in C, not in A.
 	and a
 	ret
+
+; DEX-5.62.118: read a known persistent slot without searching the identity
+; table again. C is the immutable slot number; only the list scanner calls this.
+RegionalDexOwnedTestSlot:
+	ld b,FLAG_TEST
+	jr RegionalDexOwnedAction.slot
+
+; Pokédex list marker state: 0 = no form Owned, 1 = some but not all,
+; 2 = complete. Species not present in RegionalDexSlots retain the original
+; shared-species Owned bit. The table is scanned by actual registered entries,
+; never by capacity, so multiple regional forms and later appended IDs work.
+RegionalDexPokedexListBallState:
+	ld a,[wd11e]
+	push af
+	callba PokedexToIndex
+	ld a,[wd11e]
+	ld d,a
+	pop af
+	ld [wd11e],a
+	ld hl,RegionalDexSlots
+	ld c,0
+	ld e,0 ; bit 0 matched, bit 1 any Owned, bit 2 any missing
+.scan
+	ld a,[hli]
+	cp d
+	jr nz,.next
+	set 0,e
+	push hl
+	push bc
+	push de
+	call RegionalDexOwnedTestSlot
+	pop de
+	pop bc
+	pop hl
+	and a
+	jr z,.unowned
+	set 1,e
+	jr .next
+.unowned
+	set 2,e
+.next
+	inc hl
+	inc c
+	ld a,c
+	cp REGIONAL_DEX_SLOT_COUNT
+	jr nz,.scan
+	bit 0,e
+	jr nz,.registered
+	; Ordinary species: test the original dex-number bit directly.
+	; callba would overwrite HL, which IsPokemonBitSet expects as data.
+	ld a,[wd11e]
+	dec a
+	ld c,a
+	ld b,FLAG_TEST
+	ld hl,wPokedexOwned
+	predef FlagActionPredef
+	ld a,c
+	and a
+	jr z,.none
+	jr .complete
+.registered
+	bit 1,e
+	jr z,.none
+	bit 2,e
+	jr z,.complete
+	ld a,1
+	ret
+.complete
+	ld a,2
+	ret
+.none
+	xor a
+	ret
+
+; Input DE = wTileMap address of this row's Poké Ball. This is the only
+; position whose palette is changed; the tile remains the stock $72.
+; A new attribute is written on every redraw, including empty/complete rows,
+; so list scrolling and returns from Info cannot retain a stale gray marker.
+RegionalDexDrawPokedexListBall::
+	push de
+	call RegionalDexPokedexListBallState
+	pop de
+	push af
+	ld h,d
+	ld l,e
+	and a
+	ld a," "
+	jr z,.writeTile
+	ld a,$72
+.writeTile
+	ld [hl],a
+	pop af
+	cp 1
+	ld b,1 ; PAL_REDBAR in both Red++ and Blue++ generic menus
+	jr nz,.writePalette
+	inc b ; neutral palette 2 for partial form ownership
+.writePalette
+	ld hl,W2_TilesetPaletteMap - wTileMap
+	add hl,de
+	; Never push/call while WRAM bank 2 is selected: the stack is banked.
+	ld a,[rSVBK]
+	ld c,a
+	ld a,2
+	ld [rSVBK],a
+	ld a,b
+	ld [hl],a
+	ld a,3
+	ld [W2_StaticPaletteMapChanged],a
+	ld a,c
+	ld [rSVBK],a
+	ret
+
+; Palette 2 is local to Pokédex list sessions. Do not alter PAL_REDBAR or
+; shared tile graphics: MoveDex and all other generic menus keep their colors.
+RegionalDexLoadPartialBallPalette::
+	ld a,[rSVBK]
+	ld b,a
+	ld a,2
+	ld [rSVBK],a
+	ld hl,.neutralGray
+	ld de,W2_BgPaletteData + 2 * 8
+	ld c,8
+.copy
+	ld a,[hli]
+	ld [de],a
+	inc de
+	dec c
+	jr nz,.copy
+	ld a,1
+	ld [W2_ForceBGPUpdate],a
+	ld a,b
+	ld [rSVBK],a
+	ret
+.neutralGray
+	RGB 31,31,31
+	RGB 23,23,23
+	RGB 12,12,12
+	RGB 0,0,0
