@@ -710,28 +710,10 @@ BallAnyway:
 	ld hl,ItemUseBallText05
 	call PrintText
 
-; DEX-5.62.117: the capture-only reload above has marked form Owned,
-; before the first-capture Pokédex one-shot and party/full-box split.
-; Add the caught Pokémon to the Pokédex. Regional forms continue sharing the
-; species row; independent Owned lives in RegionalDex storage.
-	predef IndexToPokedex
-	ld a,[wd11e]
-	dec a
-	ld c,a
-	ld b,FLAG_TEST
-	ld hl,wPokedexOwned
-	predef FlagActionPredef
-	ld a,c
-	push af
-	ld a,[wd11e]
-	dec a
-	ld c,a
-	ld b,FLAG_SET
-	predef FlagActionPredef
-	pop af
-
-	and a ; was the Pokémon already in the Pokédex?
-	jr nz,.skipShowingPokedexData ; if so, don't show the Pokédex data
+; The capture wrapper saved whether THIS form was previously Owned.
+; Keep the 208-species Owned bit separate from first-time form disclosure.
+	callba RegionalDexFinalizeCapturedPokedexOwned
+	jr nz,.skipShowingPokedexData ; skip only if this exact form was already Owned
 
 	ld hl,ItemUseBallText06
 	call PrintText

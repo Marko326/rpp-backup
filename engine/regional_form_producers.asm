@@ -81,6 +81,16 @@ RegionalFormReloadWildEnemyMonData:
 ; Pokémon Tower reload, it marks the caught form Owned before the first-capture
 ; Pokédex one-shot and before choosing party versus full-box storage.
 RegionalFormReloadCapturedWildEnemyMonData::
+	; Check the original encounter identity BEFORE marking it Owned. Preserve a
+	; one-shot yes/no flag in Pokédex scratch; the renderer resets this byte.
+	callba RegionalDexWildHUDOwnedTest
+	jr z,.firstOwned
+	ld a,1
+	jr .savePreviousOwned
+.firstOwned
+	xor a
+.savePreviousOwned
+	ld [wPokedexViewForm],a
 	call RegionalFormReloadWildEnemyMonData
 	callba RegionalDexMarkCapturedWildOwned
 	ret

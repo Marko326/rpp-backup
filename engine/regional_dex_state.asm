@@ -57,6 +57,32 @@ RegionalDexPokedexOwnedTest::
 .tracked
 	jp RegionalDexOwnedTest
 
+; Wild battle HUD: the latched original marker survives Transform whereas
+; wEnemyMonForm can become the transformed appearance. Z = not Owned.
+; An invalid nonzero marker must not silently fall back to ordinary Owned.
+RegionalDexWildHUDOwnedTest::
+	ld a,[wEnemyMonSpecies2]
+	ld d,a
+	ld a,[wWildEncounterFormMarker]
+	and a
+	jr z,.normal
+	ld e,a
+	push de
+	callba RegionalFormGetFormBySpeciesMarker ; D = resolved runtime form
+	jr nc,.invalidMarker
+	ld a,d
+	pop de ; restore original species
+	ld e,a
+	jr .checkOwned
+.invalidMarker
+	pop de
+	xor a
+	ret
+.normal
+	ld e,FORM_NORMAL
+.checkOwned
+	jp RegionalDexPokedexOwnedTest ; untracked ordinary species use stock bit
+
 RegionalDexFindSlot::
 	ld hl,RegionalDexSlots
 	ld c,0
@@ -282,3 +308,27 @@ RegionalDexLoadPartialBallPalette::
 	RGB 23,23,23
 	RGB 12,12,12
 	RGB 0,0,0
+
+; Successful ball capture: preserve stock 208-species Pokédex Owned counting,
+; but decide the automatic one-shot by the pre-capture Species+Form Owned bit.
+; The capture-only reload saved 0=first Owned / 1=already Owned in the view
+; scratch; clear it before showing the one-shot, which initializes its own form.
+; Z = new form (show); NZ = previously Owned (skip). The external Info page
+; already chooses wEnemyMonForm from the reloaded ORIGINAL caught Pokémon.
+RegionalDexFinalizeCapturedPokedexOwned::
+	ld a,[wEnemyMonSpecies]
+	ld [wd11e],a
+	predef IndexToPokedex
+	ld a,[wd11e]
+	dec a
+	ld c,a
+	ld b,FLAG_SET
+	ld hl,wPokedexOwned
+	predef FlagActionPredef
+	ld a,[wPokedexViewForm]
+	push af
+	xor a
+	ld [wPokedexViewForm],a
+	pop af
+	and a
+	ret
