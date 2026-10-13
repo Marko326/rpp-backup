@@ -368,8 +368,10 @@ StatusScreen_UpdatePictureAttributesVBlank:
 	add a
 	add a ; table index = batch * 8
 	ld e, a
-	ld d, 0
+	; Both front and back now use the same right-to-left tilemap. VBlank
+	; never switches attribute order while a 49-tile wipe is in progress.
 	ld hl, StatusScreenPictureAttrOffsets
+	ld d, 0
 	add hl, de
 	ld a, b
 	cp 6

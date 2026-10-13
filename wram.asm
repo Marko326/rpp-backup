@@ -3755,6 +3755,10 @@ wPartyIconSlotMap:: ds PARTY_LENGTH
 ; The main menu resets both bits on new game/Continue; no SRAM layout change.
 wPokedexFacingPreference:: ds 1
 
+; Temporary Party/PC StatusScreen orientation only (0 front, bit0=back).
+; Initialized on entry; not part of the Pokédex or SRAM save data.
+wTemporaryViewerFacing:: ds 1
+
 
 SECTION "Stack", WRAMX[$df00], BANK[1]
 	ds $ff

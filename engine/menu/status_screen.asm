@@ -88,6 +88,7 @@ StatusScreen:
 	ld [wStatusScreenPage], a
 	xor a
 	ld [wStatusScreenDeferPaletteUpdate], a
+	ld [wTemporaryViewerFacing], a ; new Party/Box Summary always starts front
 	call StatusScreen_LoadCurrentMon
 	ld hl, wd72c
 	set 1, [hl]
@@ -791,7 +792,7 @@ StatusScreen_InputLoop:
 	; that contract while the summary owns input itself.
 	predef CableClub_Run
 	ld a, [hJoy5]
-	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON
+	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON | SELECT
 	jr z, StatusScreen_InputLoop
 	bit BIT_B_BUTTON, a
 	jp nz, StatusScreen_Exit
@@ -804,7 +805,19 @@ StatusScreen_InputLoop:
 	jr nz, StatusScreen_InputLoop
 
 	ld a, [hJoy5]
-	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON
+	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON | SELECT
+	bit BIT_SELECT, a
+	jr z, .checkPageKeys
+	; One temporary orientation is shared across live UP/DOWN changes.
+	; Reuse the established dual-palette 49-tile transfer, not a second
+	; SELECT-only copy path that could expose partially uploaded picture data.
+	ld hl, wTemporaryViewerFacing
+	ld a, [hl]
+	xor 1
+	ld [hl], a
+	call StatusScreen_RebuildSwitchedPartyMon
+	jr StatusScreen_InputLoop
+.checkPageKeys
 	bit BIT_D_LEFT, a
 	jr nz, .PreviousPage
 	bit BIT_D_RIGHT, a
@@ -859,7 +872,7 @@ StatusScreen_InputLoop:
 .ShowPage2
 	call StatusScreen_PreparePage2IfDirty
 	call StatusScreen_ShowPage2
-	jr StatusScreen_InputLoop
+	jp StatusScreen_InputLoop
 
 StatusScreen_TrySwitchPartyMon:
 	; A = D_UP / D_DOWN. Carry is set only when the selection actually changes.
@@ -993,16 +1006,27 @@ StatusScreen_UpdateShinyFlag:
 	ret
 
 StatusScreen_PrepareFlippedFrontPicDualPalette:
-	; Live-switch helper. StatusScreen_LoadCurrentMon has already loaded a valid
-	; Pokémon header from Party or Box, so reuse the original Home decompression and
-	; alignment helpers while replacing only the final CopyVideoData stage.
-	ld a, 1
-	ld [wSpriteFlipped], a
-	ld hl, wMonHFrontSprite - wMonHeader
+	; Party and Box share one offscreen SRAM preparation / dual-palette VRAM
+	; upload regardless of facing. The back resource is 6x6 and unflipped;
+	; the front retains the project's stock horizontally flipped layout.
+	ld a,[wTemporaryViewerFacing]
+	and 1
+	jr nz,.back
+	ld a,1
+	ld [wSpriteFlipped],a
+	ld hl,wMonHFrontSprite - wMonHeader
 	call UncompressMonSprite
-	ld hl, wMonHSpriteDim
-	ld a, [hli]
-	ld c, a
+	ld hl,wMonHSpriteDim
+	ld a,[hl]
+	jr .sizeReady
+.back
+	xor a
+	ld [wSpriteFlipped],a
+	ld hl,wMonHBackSprite - wMonHeader
+	call UncompressMonSprite
+	ld a,$66
+.sizeReady
+	ld c,a
 
 	and $f
 	ld [H_SPRITEWIDTH], a
@@ -1073,6 +1097,15 @@ StatusScreen_PrepareFlippedFrontPicDualPalette:
 	dec a
 	ld [H_SPRITEINTERLACECOUNTER], a
 	jr nz, .interlaceLoop
+	; Front nibble swap matches the stock reversed display arrangement. For
+	; back pictures, reverse the seven 112-byte column blocks IN SRAM instead
+	; of reversing the visible BG tilemap. Otherwise old front tile IDs change
+	; meaning before their new 49 tiles have arrived over seven VBlanks, causing
+	; the broken intermediate image seen on SELECT. UP/DOWN never needed that
+	; tilemap change and already rendered smoothly.
+	ld a,[wTemporaryViewerFacing]
+	and 1
+	jr nz,.reorderBackColumns
 	ld bc, 2 * SPRITEBUFFERSIZE
 	ld hl, sSpriteBuffer1
 .flipLoop
@@ -1082,6 +1115,36 @@ StatusScreen_PrepareFlippedFrontPicDualPalette:
 	ld a, b
 	or c
 	jr nz, .flipLoop
+	jr .spriteReady
+.reorderBackColumns
+	; 7 tiles * 16 bytes per column; swap 0<->6, 1<->5, 2<->4.
+	; 2bpp image occupies two contiguous SPRITEBUFFERSIZE work buffers.
+	; The middle column remains in place. The result is in the same order as
+	; the stock front tile IDs so the visible tilemap NEVER needs reshuffling.
+	ld hl,sSpriteBuffer1
+	ld de,sSpriteBuffer1 + 6 * 7 * 16
+	call .swapColumns
+	ld hl,sSpriteBuffer1 + 7 * 16
+	ld de,sSpriteBuffer1 + 5 * 7 * 16
+	call .swapColumns
+	ld hl,sSpriteBuffer1 + 2 * 7 * 16
+	ld de,sSpriteBuffer1 + 4 * 7 * 16
+	call .swapColumns
+	jr .spriteReady
+.swapColumns
+	ld b,7 * 16
+.swapByte
+	ld a,[de]
+	ld c,a
+	ld a,[hl]
+	ld [de],a
+	ld a,c
+	ld [hli],a
+	inc de
+	dec b
+	jr nz,.swapByte
+	ret
+.spriteReady
 	; Stop here: the prepared pixels live only in SRAM. Do not touch vFrontPic or
 	; the visible tilemap until the ordinary text/data transfer has fully completed.
 	ret
@@ -1102,9 +1165,11 @@ StatusScreen_DrawFlippedFrontPicTileMap:
 	; banked call: tile 0 begins at coord(7,0), IDs run downward, then columns move
 	; left. The visible VRAM map already has this layout during the wipe; rebuilding
 	; it here only restores the cleared WRAM page for the later normal transfer.
-	coord hl, 7, 0
+	; The on-screen tile IDs must have one stable right-to-left order. The
+	; prepared back pixels are reversed by columns in SRAM above.
+	coord hl,7,0
 	xor a
-	ld b, 7
+	ld b,7
 .columnLoop
 	push bc
 	push hl
@@ -1120,7 +1185,7 @@ StatusScreen_DrawFlippedFrontPicTileMap:
 	dec hl
 	pop bc
 	dec b
-	jr nz, .columnLoop
+	jr nz,.columnLoop
 	ret
 
 StatusScreen_CopyFrontPicDualPalette:
