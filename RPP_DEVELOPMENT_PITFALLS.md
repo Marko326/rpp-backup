@@ -28,6 +28,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **S4-001 additional static fault**: `callba IsPokemonBitSet` overwrote HL even though that function takes its bitfield pointer in HL. S4-002 invokes `FlagActionPredef` with the bitfield address and dex bit index explicitly. Review all `callab`/`callba` argument registers before a cross-bank call.
 - If changing vertical shake behavior, review `.StageBlankBG0TopRowForEnemyFeedback`; Iron Tail/Steel Wing previously left display residue around this path.
 
+## Text command boundaries after inline numbers (DEX-5.62.131)
+
+- `TX_NUM` 是顶层文本命令（由 `TextCommandProcessor` 派发），结束后会回到“读取下一条顶层命令”的状态；`para`／`done` 的 `$51`／`$57` 则是正在进行的 `PlaceString` **字符串内**控制码。二者不能在 `TX_NUM` 后直接相接。
+- `DEX-5.62.130` 地区研究页曾显示 `Seen: 0/42` 后卡住：紧随数字的 `para` 被误当作顶层命令；结尾的 `done` 也存在同样错误。`DEX-5.62.131` 在这两处先写 `text ""`（生成 `$00` 顶层文本入口）再写 `para`／`done`；它重新进入字符串解析，不需要改统计逻辑。静态修复已完成，但**该版本的修复后实机表现仍待用户确认**。
+- 每次使用 `TX_NUM`、`TX_RAM` 等可结束字符串处理的宏时，核对后续是顶层命令还是字符串内控制符；使用已有原生文本宏写法，不把源码逐行顺序误认为解释器状态连续。字节增量及 MAP 余量最终以用户运行链接器结果为准。
+
 ## Regional sprites require live data references (FORM-5.62.111)
 
 - Adding `pic/bmon/*_hisui.png` and matching back PNGs does not register a usable form. Verify the entire chain: `FORM_*` + marker → 16-byte `RegionalFormDescriptors` record → full `MonBaseStats` header (including `.pic` size, both sprite pointers and `BANK(...)`) → independent graphics `INCBIN` → form-producing encounter/party logic. Without this chain, the PNGs are inert files and must not be called an in-game feature.

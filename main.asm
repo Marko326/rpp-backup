@@ -895,7 +895,7 @@ SafariZoneRestHouse4Blocks: INCBIN "maps/SafariZoneRestHouse1.blk"
 
 INCLUDE "scripts/LavenderTown.asm"
 
-INCLUDE "engine/pokedex_rating.asm"
+; Oak rating implementation moved to floating ROMX (bank $11 has no slack).
 
 INCLUDE "data/mapHeaders/Mansion1.asm"
 INCLUDE "scripts/Mansion1.asm"
@@ -2487,6 +2487,14 @@ INCLUDE "engine/menu/pokedex_initial_form.asm"
 SECTION "Regional Dex State Helpers", ROMX
 INCLUDE "data/regional_dex_slots.asm"
 INCLUDE "engine/regional_dex_state.asm"
+
+; Regional research reads registered form identities; no extra save fields.
+INCLUDE "engine/regional_dex_research.asm"
+
+; Fixed bank $11 has only four spare bytes. Retain the original Oak rating
+; routines as a separate floating section; predef resolves their new bank.
+SECTION "Regional Oak Rating", ROMX
+INCLUDE "engine/pokedex_rating.asm"
 
 ; FORM-5.62.20: producer/staging and map-specific evolution override logic stay
 ; floating so fixed bank $34 only grows by small descriptor-facing entry points.

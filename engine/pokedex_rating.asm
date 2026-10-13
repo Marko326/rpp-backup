@@ -31,7 +31,11 @@ DisplayDexRating:
 	pop hl
 	call PrintText
 	callba PlayPokedexRatingSfx
-	jp WaitForTextScrollButtonPress
+	call WaitForTextScrollButtonPress
+	; Append regional research only to normal Oak ratings. Hall of Fame
+	; keeps its original species-only summary and text buffer.
+	callab RegionalDexShowOakResearch
+	ret
 .hallOfFame
 	ld de, wDexRatingNumMonsSeen
 	ld a, [hDexRatingNumMonsSeen]

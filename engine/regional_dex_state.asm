@@ -190,6 +190,7 @@ RegionalDexSeenSet::
 RegionalDexSeenAction:
 	call RegionalDexFindSlot
 	jr nc,.missing
+.slot:
 	ld a,c
 	cp 80
 	jr c,.first80

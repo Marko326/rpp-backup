@@ -3759,6 +3759,10 @@ wPokedexFacingPreference:: ds 1
 ; Initialized on entry; not part of the Pokédex or SRAM save data.
 wTemporaryViewerFacing:: ds 1
 
+; Runtime-only denominator for Oak's regional-form research text.
+; Uses the final free WRAMX byte before the fixed stack; not saved.
+wRegionalDexResearchTotal:: ds 1
+
 
 SECTION "Stack", WRAMX[$df00], BANK[1]
 	ds $ff
