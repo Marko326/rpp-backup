@@ -1,3 +1,12 @@
+## FIX-5.62.139: 城都道路地点栏不能混用 ROM0 名称指针与 Bank $1C 读取路径
+
+- **用户实测定位（从 `.138` 正常与 `.139` 回归开始）**：最初 `.139` 在若叶镇／29 号道路／吉花市的无缝切换中会出现地点栏不显示或一闪而过；30 号道路一度错显关都 Saffron City。此前只修 Window/计时的后续实验未解决首个回归；不可把那些试验性版本的代码当作本次基线。
+- **真正的数据读取约束**：`engine/overworld/map_name_sign.asm` 的 `.CopyMapNameToBuffer` 通过 `ld a, BANK(MapNames)` + `FarCopyData2` 复制名称，期待收到与 `MapNames` 一样位于 ROMX Bank `$1C` 的有效指针。旧 `.139` 的两条道路使用 `main.asm` 浮动 ROM0 的 `JohtoRoute29Name`／`JohtoRoute30Name` 或 `$0B` 的错误 Saffron 名称；仅改变地名指针目标后，用户确认原本异常的边界切换恢复。可验证的修复措施是**改用已存在于 Bank `$1C` 的 `JohtoRoute29TownMapName` 与 `JohtoRoute30TownMapName`**，无需新增字符串、Bank、ROM0 代码或运行时特判。
+- **严禁再犯：地点表不能靠增删条目“试修”**。`ExternalMapEntries[$0B]` 只把旧占位 `SaffronCityName` 指针改成 `JohtoRoute30TownMapName`；`InternalMapEntries` 中 `JOHTO_ROUTE_29` 只把 `JohtoRoute29Name` 改成 `JohtoRoute29TownMapName`。不改原坐标和 4 字节 EMAP / IMAP 项格式、不更改条目数量、不移动后续索引、不碰相邻地图连接/地图名牌计时与 Window 刷新。先前试验性补丁曾删掉 Route 30 的内部表项，用户回报原本正常的吉花市 ↔ Route 30 因此异常；不得再套用它。
+- **根因证据边界**：用户在 `.139` + 两处指针替换后实测若叶镇 ↔ Route 29 ↔ 吉花市 ↔ Route 30 的主要双向切换通过，录像中 Route 29、吉花市、Route 30 正确显示。地点栏源码另以 `wMapNameSignNamePtr + 1 == 0` 判断未初始化，这是一个脆弱设计；目前 `139.zip` 两份 `.sym` 只显示 `MapNames` 等主标签，不足以证明旧 ROM0 字符串的确切链接地址，因此**不能断言 `$00xx` 是唯一根因**。
+- **留下单独审计的历史表项**：`.139` 新加的 `IMAP JOHTO_ROUTE_30` 仍位于 `InternalMapEntries` 中非升序的位置，且仍含旧 ROM0 指针；这次用户验证的是两处定点改动。不要为了“顺便清理”重新排列内部表或删除条目；另开兼容性审计后再处理。普通 Town Map、存档显示、地点栏与飞行目的地虽然共用一些名称/数据，也不代表各自已全面验收。
+- **收口边界**：仅修改两处名称指针（加一个 `FIX-5.62.139` 注释）、`data/game_version.asm` 前缀和清理文档。用户实测不等于本助手重新编译 ROM；所有新增地图、飞行、NPC 贴图和其它分支后续实验都不包含在本次提交中。避免把已提交 `MAP-5.62.139` 的地图内容重复提交。
+
 ## TOOL-5.62.135 → TOOL-5.62.136: Gold 离线地图索引和提交边界
 
 - **离线资源解析不等于地图移植完成**：`tools/johto_rpp_batch.py`、`tools/johto_rpp_pipeline.py`、`tools/johto_rpp_validate.py` 为候选生成和静态检查器，不写回项目 `maps/`/`data/`/`engine/`。工具可单独阶段性提交、后续逐步迭代；`OFFLINE_REVIEW_ONLY` 不是 ROM 可用、碰撞正确或游戏实测通过的含义。

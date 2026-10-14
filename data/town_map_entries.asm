@@ -10,7 +10,7 @@ ExternalMapEntries:
 	EMAP  60, 148, CinnabarIslandName
 	EMAP  36,  52, IndigoPlateauName
 	EMAP 116,  76, SaffronCityName
-	EMAP 116,  76, SaffronCityName ; unused
+	EMAP 116,  76, JohtoRoute30TownMapName ; FIX-5.62.139: name sign uses bank $1c
 	EMAP  60, 104, Route1Name
 	EMAP  60,  84, Route2Name
 	EMAP  72,  60, Route3Name
@@ -107,6 +107,6 @@ InternalMapEntries:
 	IMAP ROCK_TUNNEL_2,             148,  60, RockTunnelName
 	IMAP SILPH_CO_ELEVATOR,         116,  76, SilphCoName
 	IMAP NAVEL_ROCK_LUGIA_ROOM,     116,  94, AreaUnknownText
-	IMAP JOHTO_ROUTE_29,             116,  94, JohtoRoute29Name
+	IMAP JOHTO_ROUTE_29,             116,  94, JohtoRoute29TownMapName
 	IMAP AGATHAS_ROOM,               36,  92, PokemonLeagueName
 	db $FF
