@@ -55,6 +55,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **蛇纹熊特例**：旧版替换前四张普通 Zigzagoon／Linoone 图片配棕色系；旧版替换后的图片对应当前 Galar Zigzagoon／Linoone，配紫红／灰色系。只恢复**伽勒尔**形态旧 PAL，不改普通形态；PC18 的 18 组源 `.pal` 也不批量覆盖。伽勒尔呆呆王未找到该旧版同图成套 PAL，不凭相似配色臆造“已验证”。
 - **审查边界**：用户确认配色观感可以标记视觉方案定版；源码／符号／补丁检查不等于已测试所有 ROM、前后图、异色战斗／图鉴或读取存档路径。需要代码变动时应另起版本并复核 PAL 表排列、RGB 0～31、原有 100755／100644 文件权限。
 
+## Substitute boundary and derived move identity (MOVE-5.62.147)
+
+- In shared `AttackSubstitute`, `SUB` sets the zero flag when damage exactly equals the Substitute HP; `ret nc` alone misses this break. Check both zero and borrow before retaining a Substitute. Regression-test both attackers and multi-hit moves.
+- In automated Test Battles, `GetCurrentMoveID` can return the root test move while Metronome/Mirror Move have already selected a derived move. Use `GetStatSideEffectMoveID` consistently for derived-move probability and type-immunity decisions. That helper lives in Bank `$3E`; Bank `$0F` callers must use `callab` and preserve any return value in `DE`, since `Bankswitch` clobbers `A/BC/HL`.
+- **MOVE-5.62.148 Draining Kiss Substitute 实伤**：共享 `AttackSubstitute` 击破替身后会清除吸血效果，且保留攻击预计算 `wDamage`。Draining Kiss 击破替身时通过余下的替身 HP 与 `wDamage` 还原替身受击前 HP，只为本招保留回复效果并将其回复依据设置为实际被替身吸收的伤害；未击破时原伤害本就小于替身 HP，无需额外处理。其他 Absorb/Mega Drain/Giga Drain 等吸收招式仍保持原规则。静态检查不代表 ROM 实测。
+
 ## ROM bank placement
 
 - **ANIM-5.62.111 地区形态 bank $34 拥塞**：撤销地区形态提交后的 5.62.110 自带 `patches/rppred.map` 显示 bank #52（`$34`）仅剩 `$37` 字节。新增 9 组完整形态资料与 9 条描述符不可直接追加至 `$34`；链接器先报 `Slot Machine Tiles 2` 无法放置只是受害段。
@@ -65,6 +71,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Treat fixed Bank `$03` and `$34` as effectively frozen for new body logic. Keep only minimal hooks there and place larger new helpers in floating/roomy ROMX sections.
 - A linker error naming the section that finally fails to place does not prove that section caused the growth. Find the section that actually expanded first.
 - MAP slack is advisory, especially with floating sections; the linker result is the final authority.
+
+## Substitute damage and drain effects (MOVE-5.62.148)
+
+- `AttackSubstitute` treats exact-zero HP as a real Substitute break; check the equality boundary, not just overkill. The shared break path can clear the drain effect even when a move-specific rule must keep it.
+- For Draining Kiss only, use `min(calculated_damage, substitute_hp_before_hit)` as actual Substitute HP loss, then apply its 75% drain (minimum 1 HP) even if Substitute breaks. Keep other drain moves on their existing 50% path; do not generalize move-specific behavior into the common routine.
+- Review and numerical simulation are not ROM/link or in-game validation; preserve that distinction in `TODO.md`.
 
 ## Shared state and semantic aliases
 

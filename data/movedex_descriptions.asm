@@ -2173,7 +2173,7 @@ MoveDexDescMoonblast1:
 
 ; #176 Draining Kiss
 MoveDexDescDrainingKissPages:
-	dw MoveDexDescDrainingKiss1, MoveDexDescEffectCDrainHalf, 0
+	dw MoveDexDescDrainingKiss1, MoveDexDescEffectCDrain75, 0
 MoveDexDescDrainingKiss1:
 	db   "Steals energy with"
 	next "a draining kiss.@"
@@ -2201,8 +2201,8 @@ MoveDexDescDracoMeteor1:
 
 ; #180 Dragonbreath
 MoveDexDescDragonbreathPages:
-	; 通用状态追加按“招式属性 = 目标属性”阻止，因此这里是 Dragon 目标免疫追加麻痹。
-	dw MoveDexDescDragonbreath1, MoveDexDescEffectCParalyze10Dragon, MoveDexDescEffectCParalyzeDragonImmune, 0
+	; MOVE-5.62.147: 30% paralysis; Electric, not Dragon, is immune.
+	dw MoveDexDescDragonbreath1, MoveDexDescEffectCParalyze30Dragon, MoveDexDescEffectCParalyzeElectricImmune, 0
 MoveDexDescDragonbreath1:
 	db   "Breathes a blast"
 	next "of dragon energy.@"
@@ -2301,8 +2301,8 @@ MoveDexDescThunderFang1:
 
 ; #194 Water Pulse
 MoveDexDescWaterPulsePages:
-	; CONFUSION_SIDE_EFFECT 在当前 RPP 为约 10%，不是现代常见的 20%。
-	dw MoveDexDescWaterPulse1, MoveDexDescEffectCConfuse10, MoveDexDescEffectCConfusionDuration, 0
+	; MOVE-5.62.147: Water Pulse's own confusion chance is ~20%.
+	dw MoveDexDescWaterPulse1, MoveDexDescEffectCConfuse20, MoveDexDescEffectCConfusionDuration, 0
 MoveDexDescWaterPulse1:
 	db   "Fires a pulsing"
 	next "blast of water.@"
@@ -2471,14 +2471,13 @@ MoveDexDescEffectCDrainHalf:
 	db   "Heals half of the"
 	next "damage it deals.@"
 
-MoveDexDescEffectCParalyze10Dragon:
-	db   "10", $d9, " chance to"
-	next "paralyze the foe.@"
+MoveDexDescEffectCDrain75:
+	db   "Heals 75", $d9, " of the"
+	next "damage it deals.@"
 
-MoveDexDescEffectCParalyzeDragonImmune:
-	; Dragonbreath 的追加麻痹按招式属性同属性免疫，因此 Dragon 目标不会被该追加效果麻痹。
-	db   "Cannot paralyze a"
-	next "Dragon-type foe.@"
+MoveDexDescEffectCParalyze30Dragon:
+	db   "30", $d9, " chance to"
+	next "paralyze the foe.@"
 
 MoveDexDescEffectCThrashTurns:
 	db   "Lasts 3-4 turns."
@@ -2544,6 +2543,10 @@ MoveDexDescEffectCParalyzeElectricImmune:
 
 MoveDexDescEffectCConfuse10:
 	db   "10", $d9, " chance to"
+	next "confuse the foe.@"
+
+MoveDexDescEffectCConfuse20:
+	db   "20", $d9, " chance to"
 	next "confuse the foe.@"
 
 SECTION "MoveDex Descriptions D", ROMX, BANK[$38]
@@ -2633,16 +2636,16 @@ MoveDexDescElectroBall2:
 
 ; #211 Nuzzle
 MoveDexDescNuzzlePages:
-	; NUZZLE_EFFECT 走 ParalyzeEffect：命中必定麻痹；Electric 招式会检查 Ground 免疫。
-	dw MoveDexDescNuzzle1, MoveDexDescEffectDNuzzle, MoveDexDescEffectDGroundImmune, 0
+	; MOVE-5.62.147: Electric-type immunity also blocks the paralysis.
+	dw MoveDexDescNuzzle1, MoveDexDescEffectDNuzzle, MoveDexDescEffectDGroundImmune, MoveDexDescEffectDParalyzeElectricImmune, 0
 MoveDexDescNuzzle1:
 	db   "Nuzzles the foe"
 	next "with electricity.@"
 
 ; #212 Discharge
 MoveDexDescDischargePages:
-	; 当前为 PARALYZE_SIDE_EFFECT1，约 10%；通用追加状态会让 Electric 目标免疫。
-	dw MoveDexDescDischarge1, MoveDexDescEffectDParalyze10Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
+	; MOVE-5.62.147: Discharge gets ~30%; Volt Tackle keeps ~10%.
+	dw MoveDexDescDischarge1, MoveDexDescEffectDParalyze30Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
 MoveDexDescDischarge1:
 	db   "Releases a burst"
 	next "of electricity.@"
@@ -2884,8 +2887,8 @@ MoveDexDescLowSweep1:
 
 ; #246 Hurricane
 MoveDexDescHurricanePages:
-	; 当前 CONFUSION_SIDE_EFFECT 为约 10%，不是现代版 30%。
-	dw MoveDexDescHurricane1, MoveDexDescEffectDConfuse10, MoveDexDescEffectDConfusionDuration, 0
+	; MOVE-5.62.147: ~30% confusion, 70% accuracy in move data.
+	dw MoveDexDescHurricane1, MoveDexDescEffectDConfuse30, MoveDexDescEffectDConfusionDuration, 0
 MoveDexDescHurricane1:
 	db   "Engulfs the foe"
 	next "in a hurricane.@"
@@ -3001,6 +3004,10 @@ MoveDexDescEffectDParalyze10Electric:
 	db   "10", $d9, " chance to"
 	next "paralyze the foe.@"
 
+MoveDexDescEffectDParalyze30Electric:
+	db   "30", $d9, " chance to"
+	next "paralyze the foe.@"
+
 MoveDexDescEffectDParalyzeElectricImmune:
 	; 这里只描述追加麻痹；并非说明 Electric 招式整体对 Electric 属性无效。
 	db   "Cannot paralyze an"
@@ -3083,6 +3090,10 @@ MoveDexDescEffectDSpecialDown30:
 
 MoveDexDescEffectDConfuse10:
 	db   "10", $d9, " chance to"
+	next "confuse the foe.@"
+
+MoveDexDescEffectDConfuse30:
+	db   "30", $d9, " chance to"
 	next "confuse the foe.@"
 
 MoveDexDescEffectDConfusionDuration:
