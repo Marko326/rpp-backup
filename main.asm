@@ -134,6 +134,10 @@ INCLUDE "color/update_hp_bar.asm"
 SECTION "Battle Move SFX Wait", ROMX
 INCLUDE "engine/battle/battle_sfx_wait.asm"
 
+; SFX-5.62.143: trainer faint fall wait stays out of fixed battle Bank $0F.
+SECTION "Trainer Faint Fall SFX Wait", ROMX
+INCLUDE "engine/battle/trainer_faint_sfx_wait.asm"
+
 SECTION "Battle Damage HP Animation", ROMX
 INCLUDE "engine/battle/damage_hp_animation.asm"
 
@@ -3129,6 +3133,10 @@ INCLUDE "engine/battle/volt_tackle_animation.asm"
 ; SFX-5.62.140: opening skip sound cleanup stays in floating ROMX, not HOME.
 SECTION "Interrupted Intro SFX Cleanup", ROMX
 INCLUDE "engine/intro_sfx_stop.asm"
+
+; SFX-5.62.142: elevator end-cue wait is also movable, not fixed Bank $1E.
+SECTION "Elevator End SFX Wait", ROMX
+INCLUDE "engine/overworld/elevator_sfx_wait.asm"
 
 SECTION "Menu Party Icon Graphics", ROMX, BANK[$38]
 PartyIconRuntimeAtlas:

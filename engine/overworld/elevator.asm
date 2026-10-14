@@ -35,10 +35,8 @@ ShakeElevatorWithLoopCount:
 	ld c, 0 ; BANK(SFX_Safari_Zone_PA)
 	ld a, SFX_SAFARI_ZONE_PA
 	call PlaySound
-.musicLoop
-	ld a, [wChannelSoundIDs + Ch4]
-	cp SFX_SAFARI_ZONE_PA
-	jr z, .musicLoop
+	; SFX-5.62.142: Crysaudio uses CH5 for this cue, not the old sound ID.
+	callba WaitForElevatorSFX
 	call UpdateSprites
 	jp PlayDefaultMusic
 

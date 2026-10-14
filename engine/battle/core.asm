@@ -940,10 +940,8 @@ FaintEnemyPokemon:
 	ld [wTempoModifier], a
 	ld a, SFX_FAINT_FALL
 	call PlaySoundWaitForCurrent
-.sfxwait
-	ld a, [wChannelSoundIDs + Ch4]
-	cp SFX_FAINT_FALL
-	jr z, .sfxwait
+	; SFX-5.62.143: wait for the actual CH5 fall cue before the thud.
+	callba WaitForTrainerFaintFallSFX
 	ld a, SFX_FAINT_THUD
 	call PlaySound
 	call WaitForSoundToFinish
