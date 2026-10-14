@@ -302,6 +302,7 @@ LoadIntroGraphics:
 	jp FarCopyData2
 
 PlayShootingStar:
+; MENU-5.62.139: always show Mateo Presents, with or without Continue.
 ; load Meowth palette to screen and call Mateo Presents instead of Nintendo Creatures Gamefreak
 	ld a, MEOWTH
 	ld [wWholeScreenPaletteMonSpecies],a

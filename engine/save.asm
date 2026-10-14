@@ -1,10 +1,8 @@
 LoadSAV:
 ;(if carry -> write
 ;"the file data is destroyed")
-	call ClearScreen
-	call LoadFontTilePatterns
-	call LoadTextBoxTilePatterns
-
+	; MENU-5.62.138: normal loads do not draw UI. The main menu will
+	; load its own font and border, so defer this work to the error path.
 	ld a, 1
 	ld [wHaltAudio], a
 
@@ -17,6 +15,10 @@ LoadSAV:
 	ld a, $2 ; good checksum
 	jr .goodsum
 .badsum
+	; Keep the original damaged-save warning fully initialized.
+	call ClearScreen
+	call LoadFontTilePatterns
+	call LoadTextBoxTilePatterns
 	ld hl, wd730
 	push hl
 	set 6, [hl]

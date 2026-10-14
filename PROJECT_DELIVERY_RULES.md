@@ -148,3 +148,36 @@
 - 增量补丁从**上一轮已交付并应用 `S10-002` 的 131 工作区**出发，仅包含上述定版文档变化。累计全量从**本轮上传的真实 `DEX-5.62.130` Worktree ZIP** 出发，包括 130→131 的文本修复、版本号和 S10 文档记录，再加本轮清理。两者二选一，不叠加。
 - 拟提交 Git 日志覆盖导出信息记录的最新 HEAD `88853cab9961eef6a37f08cfdfe8e898a52da14a`（`DEX-5.62.129`）到最终 `DEX-5.62.131`，包括 130 地区研究统计、131 文本修复及维护记录，而不只写 `131→131` 的文档增量。上传 ZIP 已含 130 未提交修改；**ZIP 基线与 Git HEAD 基线不同**。仅用户之后确认完成 Git Commit 并提供新提交点，才更新未来的 Git 基线。
 - 合集 ZIP 必须包含本次增量补丁、累计全量补丁及 `commit-message.txt`，提交日志也提供独立文件和聊天内可复制正文；补丁需验证正反向、逐字节、路径、权限及差异范围。不由 AI 编译 ROM，不执行 Git Commit/Push，静态验证不能冒充 ROM 链接与实机验收。
+
+
+## INT-5.62.133 / INTRO-DOC-003 定稿验收清理（2026-10-14）
+
+- 以用户这次上传的 `DEX-5.62.131` 干净项目 ZIP／导出 HEAD `ac1612cea3ca0fb9e8c8383ee8ce4d9e4994f15f` 为本次累计全量及拟提交日志起点。先前的 `INT-5.62.132` 与 `INT-5.62.133` 补丁均未获“已 Git Commit”确认，不能擅自转移最近已提交基线。
+- 用户明确实测：新游戏前（无 Continue）显示 Mateo 首页；已有 Continue 则跳过 Mateo 首页并保留其他开场。这两条主路径按测试反馈验收；损坏存档、软重启和其他 ROM 模式未经单独实测，不能越界称通过。
+- 审查确认：`PlayShootingStar` 只跳过 Mateo 分支；只读存档判断复用玩家名标记和主存档校验和；音频更新期间使用 `wHaltAudio` 防止 SRAM Bank 0 切换，并恢复原值；Bank-switch 返回 Carry 供分支使用。未发现本次已验收主路径需要新增运行逻辑的确定性问题。用户测试不等于本环境执行 ROM 编译或链接。
+- 本次 `INTRO-DOC-003` 只清理 `TODO.md`、`docs/INTRO_MATEO_CONTINUE.md`、`RPP_DEVELOPMENT_PITFALLS.md`、本文件及该功能两处 132→133 注释。**未改变功能指令、存档布局或游戏内版本 `INT-5.62.133`**。不顺带实现 START 直接 Continue。
+- 正式增量从已应用 `intro-5.62.133-002` 的 133 文件状态出发；正式累计全量从本次 131 ZIP 出发包含 132／133 功能修复及本轮清理；两份择一应用，不叠加。合集 ZIP 内附两补丁及 `commit-message.txt`。拟提交日志覆盖已确认的 131 HEAD → 定稿 133，简述最终保留功能与实际验收／未覆盖边界。用户自行 Commit/Push。
+- 补丁应分别正反回放并核验逐字节一致性、权限、路径、汇编符号及逻辑；ZIP 没有 MAP，因此没有实际链接空间结论。AI 不编译 ROM。
+
+
+## MENU-5.62.137 / MENU-FULL-010 针对用户重新上传 131 ZIP 的基线说明（待游戏验收）
+
+- 当前用户明确撤销旧工作区并重新上传干净 `DEX-5.62.131` 项目 ZIP／导出 HEAD `ac1612cea3ca0fb9e8c8383ee8ce4d9e4994f15f`；上轮 `009` 错误地从 `INT-5.62.133` 起算，不适用于本 ZIP。本次 `010` 累计全量直接从真实 131 文件状态到 `MENU-5.62.137`，补齐 133 Mateo 条件首页功能与 137 菜单优化；新建 `engine/intro_save_check.asm` 和 `docs/INTRO_MATEO_CONTINUE.md`。
+- 完整还原 `engine/titlescreen.asm` 原样，保留完整叫声、标题音乐、调色板与轮播时序；菜单按 B 走原 `DisplayTitleScreen`。只加快菜单白屏阶段并缓存 Continue 信息页以减少按 B 闪烁，不加入意外的 `engine/battle/core.asm` 战斗转场试验或导出用的 `RPP_PROJECT_CONTEXT` 元数据。
+- 本版只完成静态源码与补丁适用性验证，尚未编译、链接或实机测试 137。没有 MAP 文件，不能宣称链接空间验证通过；目前不生成待提交日志，不执行 Git Commit/Push。
+
+
+## MENU-5.62.138 / MENU-012 功能开发补丁（待游戏验收）
+
+- 用户将优化时间明确限定为宝可梦完整叫声结束后至主菜单出现的白屏，不要求缩短或删除音效。视频中 137 白屏约 1.25 秒只作为实测基准；代码节省帧数是静态估计，不得写成 138 已实测的秒数。
+- 本轮只在 `engine/save.asm` 将 `LoadSAV` 的 `ClearScreen`、`LoadFontTilePatterns`、`LoadTextBoxTilePatterns` 移入 `.badsum`，避免正常有存档时在主菜单必然重载同一套 VRAM 资源。所有 SRAM 校验、加载路径和损坏数据告警保留。`engine/titlescreen.asm` 严格不变；`engine/menu/main_menu.asm` 的 137 Continue B 无闪缓存同样不变。
+- 本轮增量以已应用 MENU-5.62.137（011／010，直接来自 131）的工作区为准确前置；累计全量来自用户 3476 文件 `DEX-5.62.131` ZIP／HEAD `ac1612ce`，包含 133 Mateo 与 137 菜单功能及 138 优化，两者择一、不叠加。仍不编译 ROM，不执行 Commit/Push，当前没有 MAP 文件；先待游戏验收，不提交日志。
+
+
+## MENU-5.62.139 / INTRO-013 正式收口（2026-10-14；准备用户自行 Git 提交）
+
+- 这次用户明确决定 **Mateo Presents 每次启动均显示**，不再针对有 Continue 的存档跳过。该最新选择覆盖 `INT-5.62.133` 的历史条件显示方案；撤销 `PlayShootingStar` 的 `IntroHasContinueSave` 远调用和条件标签，删除无人使用的 `engine/intro_save_check.asm`，同时删除 `main.asm` 对该 ROMX 例程的包含段。标题轮播 `engine/titlescreen.asm`、流星和耿鬼／尼多力诺音效／跳过按键、完整 `PlayCry` 均不更改；不新增 HOME、ROMX 或存档字段。
+- 保留 `MENU-5.62.137` 主菜单后台绘制／Continue 信息页返回缓存、防 B 键穿透，和 `MENU-5.62.138` 正常存档路径去除重复图形传输的优化；用户对 138 的白屏加载表示明显改善，但本次 139 恢复 Mateo 尚待重新实测。此前视频对白屏约 1.25→0.83 秒的测量属录屏近似估计，不含宝可梦叫声。损坏存档警告、软复位、跨版本 ROM 等未单独验收。
+- 用户指出 GAME FREAK 流星与耿鬼／尼多力诺对战按 A 时偶发音量／声音切换异常，本次**不猜测性修改音频**，仅列下一版单独排查。不得将先前 Crysaudio 通道重叠的静态推断写作已经复现并确认的根因。
+- 上次 `138` 为尚未确认 Git 提交的工作区功能补丁；最新可核实干净提交基线仍是用户上传 `DEX-5.62.131` ZIP／HEAD `ac1612cea3ca0fb9e8c8383ee8ce4d9e4994f15f`。本次正式**增量从已应用 `MENU-5.62.138/012` 起**，**累计全量从该干净 131 项目 ZIP 起**；两者择一。ZIP 内应有两份补丁与 `commit-message.txt`，提交日志描述 131→139 的最终实际保留修改，而不是只写 138→139。
+- 本轮按“验收清理三件套”更新原生 `TODO.md`、此文件和 `docs/INTRO_MATEO_CONTINUE.md` 后重生补丁并验证；源码 ZIP 无 MAP，本环境不编译、不执行 Commit/Push。139 的 Mateo 常驻及其与主菜单的组合仍须用户完成最小运行检查。

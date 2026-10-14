@@ -10,6 +10,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - `EVO-5.62.271` passed a Party-menu tilemap pointer through `HL` across `CALLBA`. The helper then treated the far target address as the UI destination, so `Able`/`Not able`/`LvXX+` disappeared and writes could hit ROM/MBC control addresses, disturbing the active bank. Pass such pointers in a verified register or save/restore them explicitly.
 - The wild/fishing producer work already proved the same class of ABI issue: do not return critical form/source identity through `A` across `CALLBA`; protect live `BC`/`HL` when required.
 
+## Intro SRAM checksum vs. VBlank audio SRAM bank switching (INT-5.62.133)
+
+- At boot, `LoadStartupMusicOption` reads the saved settings using a short interrupt-disabled SRAM Bank 1 section; the later intro save gate scans thousands of bytes and can be interrupted. The audio update calls `OpenSRAMForSound`, selecting SRAM Bank 0. Checking Bank 1 without a guard can therefore falsely report no Continue despite a valid save.
+- When reading Bank 1 over many frames, guard the whole name/checksum check with `wHaltAudio=1` and **restore its previous value on every exit**, as `IntroHasContinueSave` now does. Do not assume a single initial `MBC1SRamBank` write persists across VBlank. Ensure SRAM mode and enable are restored, and return Carry unchanged to the distant caller.
+- Compare the intended Continue predicate with the main menu's `CheckForPlayerNameInSRAM` and `LoadSAV` path. The intro gate is read-only and does not replace actual save validation/loading at the menu. Code inspection and patch checks alone are not runtime validation.
+
 ## WRAM scratch and bank boundaries
 
 - Unnamed WRAM is not automatically free. Check symbols, raw address spans, string/buffer copies, unions, stack use, and WRAM-bank lifetime before borrowing scratch.
