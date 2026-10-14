@@ -92,20 +92,14 @@ ENDC
 	; Ruby hits hard on the fifth pass, shakes the target, and overlays animated
 	; electricity. The target is BG-backed in this engine, so use the existing
 	; full-frame WX latch for a short +/-2 px impact while the electric OBJ stays
-	; centered on the victim. Only player use keeps this horizontal impact shake:
-	; enemy use gets the standard vertical hit feedback after the move.
+	; centered on the victim. Enable the same impact shake for either attacker;
+	; the normal post-move hit feedback remains unchanged.
 	ld a,GSSFX_THUNDERSHOCK
 	call PlaySound
 	ld a,7
 	ld [wBattleAnimWX],a
-	xor a
-	ld [wBattleAnimWXEnabled],a
-	ld a,[H_WHOSETURN]
-	and a
-	jr nz,.impactReady
 	ld a,1
 	ld [wBattleAnimWXEnabled],a
-.impactReady
 	xor a
 	ld [wSubAnimCounter],a
 .impactLoop
@@ -373,11 +367,8 @@ ENDC
 	ret
 
 .SetImpactShake
-	; The enemy's horizontal impact latch stays disabled. Its damage feedback
-	; later uses the stock vertical shake, with no second horizontal wobble.
-	ld a,[H_WHOSETURN]
-	and a
-	ret nz
+	; The same 18-frame WX oscillation now applies to both attack directions.
+	; Frames 18..23 return to WX=7 before the latch is disabled.
 	ld a,[wSubAnimCounter]
 	cp VOLT_TACKLE_IMPACT_SHAKE_END
 	jr nc,.impactBase

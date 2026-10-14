@@ -1,3 +1,10 @@
+## ANIM-5.62.146 — Volt Tackle 双向横震定版（用户确认满意；提交收口）
+
+- [x] **Fly 游戏侧 PASS／模拟器专项另查**：同一 143 ROM 在 My OldBoy 与另一款 GB/GBA 模拟器未听到起飞、落地尾部 click，GBPocket 的现场与录屏均有 click。已撤销 144/145 两次游戏音频试验的运行时代码；Game Fly 恢复 143 实现。模拟器根因尚未锁定，保留研究于 `docs/FLY_CLICK_PLATFORM_DIAGNOSIS.md`，不将有限平台测试外推为所有硬件均正常。
+- [x] **Volt Tackle 敌方命中横震定版**：146 在 `engine/battle/volt_tackle_animation.asm` 去掉两处 `H_WHOSETURN` 限制，敌我双方共用命中阶段前 18 帧 WX=5/9（±2px）高频横震，后 6 帧回到 WX=7 并关闭 latch。用户提供《145伏特攻击.mp4》和《146伏特攻击高频短横震.mp4》比较敌方施放效果，明确表示“这版满意了”，决定保留 146；玩家侧原动画及普通受击反馈未修改。见 `docs/VOLT_TACKLE_146_ACCEPTANCE.md`。
+- [ ] **尚未逐项覆盖的边界**：敌方连续施放两次、全部对战显示模式／ROM 变体、异常中断时的画面复位，以及更多技能的敌我视角反馈审计。本轮用户已批准当前观感，不把这些补充回归写成必须完成才能定版的阻断项。未由 AI 编译 ROM，无 MAP 链接空间结果。
+- [-] **后续可选优化留到新版本**：146 的 WX 影响整幅战斗画面（含 HUD），不等同于《绿宝石》针对 `ANIM_TARGET` 宝可梦的局部晃动。若将来尝试目标局部横震，必须在 146 已验收基础上开新编号，提供独立可撤销补丁；不倒改此版。
+
 ## SFX-5.62.143 — 训练师战斗倒下声衔接（用户提供录像，基础场景验收收口）
 
 - [x] **清理 FAINT_FALL → FAINT_THUD 之间的旧声道等待**：`engine/battle/core.asm` 不再读取旧 `wChannelSoundIDs + Ch4` 标志；浮动 ROMX `WaitForTrainerFaintFallSFX` 仅在 Crysaudio CH5 实际播放 `SFX_FAINT_FALL` 时逐帧等待，最长 180 帧。原 `PlaySoundWaitForCurrent`、`SFX_FAINT_THUD` 和后续 `WaitForSoundToFinish` 不变；不改玩家倒下叫声、胜负／换人流程及全局音频引擎。这属于兼容等待清理，不宣称已复现并修好某个可辨认的旧版听觉缺陷。
