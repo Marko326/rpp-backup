@@ -14,6 +14,12 @@ MarkTownVisitedAndLoadMissableObjects:
 	set EVENT_JOHTO_FLY_CHERRYGROVE % 8, [hl]
 .notJohtoCherrygrove
 	ld a, [wCurMap]
+	cp JOHTO_VIOLET_CITY
+	jr nz, .notJohtoViolet
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_VIOLET / 8
+	set EVENT_JOHTO_FLY_VIOLET % 8, [hl]
+.notJohtoViolet
+	ld a, [wCurMap]
 	cp ROUTE_1
 	jr nc, .notInTown
 	ld c, a

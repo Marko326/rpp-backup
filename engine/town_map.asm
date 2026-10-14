@@ -15,6 +15,8 @@ DisplayTownMap:
 	jr z, .johtoRegion
 	cp JOHTO_ROUTE_31
 	jr z, .johtoRegion
+	cp JOHTO_VIOLET_CITY
+	jr nc, .johtoRegion ; F9 city / FA indoor gate
 	xor a
 	jr .regionSelected
 .johtoRegion
@@ -315,6 +317,8 @@ GetJohtoTownMapCurrentIndex:
 	jr z, .route30
 	cp JOHTO_ROUTE_31
 	jr z, .route31
+	cp JOHTO_VIOLET_CITY
+	jr nc, .violet ; indoor gate shares city's map marker
 	xor a ; current supported Johto fallback: New Bark Town
 	ret
 .route29
@@ -328,6 +332,9 @@ GetJohtoTownMapCurrentIndex:
 	ret
 .route31
 	ld a, 4
+	ret
+.violet
+	ld a, 5
 	ret
 
 LoadJohtoTownMapEntry:

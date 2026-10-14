@@ -1,3 +1,13 @@
+## GT-5.62.156｜桔梗市飞空专项（.153 基线；源码候选，待游戏实测）
+
+- [x] **本次有效范围**：用户否决 `.155` 的关卡进出与室内修改，重新以用户完整工程 ZIP 中的 `GT-5.62.153@` 为基线制作 `.156`。`.156` 只修改 `constants/event_constants.asm`、`data/game_version.asm`、`engine/fly_town_map_helpers.asm`、`engine/johto_fly_town_map.asm`、`engine/overworld/missable_objects.asm`、`engine/special_warps.asm` 六个飞空／版本文件；没有继承 `.155` 的门口方向检查、Gold 室内素材或地图连接试验。
+- [x] **新增目的地（源码实现）**：进入桔梗市 `JOHTO_VIOLET_CITY` 后，在已保存的 `wEventFlags` 中设置 `EVENT_JOHTO_FLY_VIOLET = $455`；城都 Fly 菜单由两城扩为若叶镇、吉花市、桔梗市三城，只允许选已解锁城市，不改关都 Fly、普通 Town Map 及 Teleport/Dig。飞空落点按 Gold `spawn VIOLET_CITY, 31, 26` 设置为 **X=31、Y=26**；`FLYWARP_DATA` 的参数顺序是 **Y=26、X=31**。直飞后切换为 `JOHTO` 室外图块集。
+- [x] **静态验证，不等于游戏验收**：Gold/RPP 落点及索引、持久事件位、菜单目的地与 JOHTO 图块集静态检查通过；先前 `.156` 交付的 48 项工具测试与补丁正反应用通过，未编译 ROM、未检查最终链接 Bank 容量、未运行模拟器。用户尚未提供 `.156` 的飞空运行验收反馈，暂不标记为“已实测完成”。
+- [ ] **最小运行验收**：到达桔梗市后菜单解锁；若叶镇／吉花市／桔梗市三城间来回选择与取消；飞抵桔梗市的落点、碰撞及画面；保存退出并 Continue 后解锁仍在；关都旧 Fly 与既有 30↔31 道路切换不回归。
+- [ ] **关卡进出专项（当前沿用 `.153`，不属于 `.156`）**：31号道路与桔梗市两侧建筑旁／门口上下经过会误进门；进门后返回有时需要移动站位。以后核对 RPP Route15 原生 Warp 触发路径、图块 `$40`、入口精确坐标、进入方向与双向出口落点，逐项修复并实测。
+- [ ] **关卡室内专项（当前沿用 `.153`，不属于 `.156`）**：临时室内墙体、地板和家具拼接不完整，尚不满足 Gold 原版外观。后续以 Gold 为最终样式，RPP 已有像素相同素材优先复用，不同素材再单独移植；必须配套检查图块、碰撞、调色、Warp，禁止再整体套用失败的 `.154/.155` 室内实现。
+- [x] **本轮清理三件套（文档-only）**：只追加本 `TODO.md`、`RPP_DEVELOPMENT_PITFALLS.md` 与独立 Git 提交日志；游戏源码与版本号保持 `GT-5.62.156@` 不变，不调整旧 `.148` 安全边界登记表和 CSV（本轮没有地图/封路更改），不包含导出时生成的 `RPP_PROJECT_CONTEXT/`。Git commit/Push 由用户自行决定。
+
 ## TOOL-R31-148｜城都北南连接安全检查器（独立工具提交，游戏源码保持 `.148`）
 
 - [x] **新增只读工具**：`tools/johto_rpp_connection_guard.py`、`tools/tests/test_johto_rpp_connection_guard.py`、`tools/JOHTO_CONNECTION_GUARD_zh.md`。依据Gold相邻关系和RPP地图头/尺寸，核算NORTH/SOUTH连接的3行源与目的有效范围、重叠宽度和玩家坐标；错误退出非零，不会改动ROM/地图文件。

@@ -1,3 +1,19 @@
+## GT-5.62.156：飞空单独收口；禁止夹带关卡与室内试验（尚待用户实测）
+
+- **基线纪律**：`.155` 已被用户否决，不在其上继续叠补丁；`.156` 只从完整 ZIP 的 `GT-5.62.153@` 还原并单独加入飞空功能。若本地仍是 `.155`，须先核对并回退到 `.153` 再应用 `.156`；不能将 `.155` 的门口 Warp 方向补丁、室内图块或调色资产混回。`RPP_PROJECT_CONTEXT/` 为导出资料，不应作为 Git 补丁的必要文件。
+- **目的地与落点不能混淆**：普通 Town Map 有桔梗市不代表 Johto Fly 已解锁。飞空目的地必须同时具备存档事件位 `$455`、城市进入时置位、独立 Fly 菜单三项索引／已访问筛选、对应 `SpecialFlyWarpData`。Gold 原版 `spawn VIOLET_CITY, 31, 26` 为 **X=31、Y=26**；RPP `FLYWARP_DATA JOHTO_VIOLET_CITY_WIDTH, 26, 31` 为先 Y 后 X，切勿颠倒。地图 18×20 是 32×32 块维度，不可拿来直接检查 16×16 落点范围。
+- **直飞图块集**：飞空特殊 Warp 不完全等同于步行切图；`engine/special_warps.asm` 必须对 Violet 选择 `JOHTO`，不能落到默认 `OVERWORLD`，也不能为了飞行改动室外地图块、Gate Warp、地图连接或全局图块配置。
+- **验证不能越级**：`.156` 已有静态 Gold/RPP 落点、事件位、菜单索引和图块集检查，48 项既有工具测试及补丁正反应用检查通过；这不证明汇编链接 Bank 空间、存档旧档兼容或用户实际飞行画面。等待用户运行反馈后再决定是否把专项标为“已验收”；文档清理本身不构成验收。
+- **遗留的两个独立故障**：`.153` 的关卡入口 `$40` 图块／Warp 坐标与方向可能存在误触发，室内返回落点也不稳定；室内为临时手工布局，不是 Gold 最终样式。先从 Route15 的既有门进出逻辑审查，最终室内要对照 Gold `EastWestGate` 素材，RPP 只有完全相同的资源才复用。`.154/.155` 失败方案不能当作可回归的稳定基线。这两项不随飞行专项的文档清理而关闭。
+- **收口文件边界**：本轮只加 `TODO.md` 与 `RPP_DEVELOPMENT_PITFALLS.md` 两处 Git 跟踪文档及独立提交日志。`docs/JOHTO_OUTDOOR_BLOCKER_REGISTER_zh.md` 和对应 CSV 保持原样，因为无地图边界变更；以后修门时再定点更新登记并核对 Gold/RPP 原始入口与安全 Fence。保持文件权限、不编译 ROM、不代用户提交或推送。
+
+## SRC-PREFLIGHT-151：RPP＋Gold 双源码强制准入（最高优先级）
+
+- **每次开始修改前**，实际打开本窗口/工作区的完整 RPP 工程压缩包和 pokegold 原版参考工程压缩包（或解压出的完整源码树），核对版本、必要 map/warp/tileset/引擎文件都可读。必须两套都在、不能仅根据文件名猜测内容。
+- **只要任意一套源码缺失、不可读、内容残缺、版本不符或必要文件不存在，立即告知用户具体缺项并停止涉及该项目的代码、补丁、转换、核验。** 不从旧窗口摘要、失效链接、GitHub 网页或历史补丁猜测替代；不得声称已经通过核验。
+- 原版地图数据与 RPP 引擎语义分别核查，不能把 Gold 宏参数、地图块编号或脚本命令直接照搬。明确区分 Gold 对照一致的部分与有意简化的 NPC/美术；没有 ROM 构建和游戏实测不得宣称可运行已验收。
+- 修改必须以**实际收到的可读完整工程 ZIP 的文件内容**生成并检验补丁；提供明确前置版本和文件哈希检查、正反应用检查。严格保留原有 100755/100644 权限，不额外执行 Commit/Push。
+
 ## TOOL-R31-148：连接条带检查应自动拒绝越界，不能只检查素材
 
 - **检查器职责**：`tools/johto_rpp_connection_guard.py` 从Gold `attributes.asm`和RPP尺寸/地图Header构造并比对北/南连接的实际3行条带，检查源地图边界、目标缓存边界、重叠宽度、地图方向标志与角色落点。以只读/显式失败方式对使用者选择的两向连接逐条审计；不能仅靠宏拼写或渲染静态截图。
@@ -238,3 +254,11 @@ In pokegold `engine/overworld/player_movement.asm` `.ledge_table`, `HOP_DOWN_LEF
 ### MAP-5.62.133: RPP ledge input count includes the first physical step
 
 `CollisionCheckOnLand` calls `CheckForJumpingAndTilePairCollisions`, which invokes `HandleLedges`, **then** on no collision immediately starts the current physical movement (`wWalkCounter=$10`). `HandleLedges`'s `StartSimulatingJoypadStates` only schedules *additional* movements for subsequent overworld loops. Therefore `wSimulatedJoypadStatesIndex=$02` means **one physical step plus two extra simulated steps = three map cells total** (not two). Previous `.131/.132` Gold converter assumed a two-cell route (launch -> front barrier -> landing), explaining the overshoot observed at a right compound corner; the old static checks never tested actual three-step movement. Set extra count to 1 **only for JOHTO** in `HandleLedges`, preserving Kanto's original count of 2. Validate total jump movement and destination from actual input flow when changing these tables. Do not confuse a continued physical direction hold *after* the forced hop with the internal forced step count. User-visible runtime confirmation still pending.
+
+
+### GT-5.62.152：31号道路关卡入口双层拦截（用户视频复现）
+
+- `.151` 虽登记正确门口 Warp 坐标，但城都室外关卡通道图块 `$40` 既不在 `gfx/tilesets/johto.tilecoll` 可通行表，又不在 `data/warp_tile_ids.asm` 的 `NewBarkWarpTileIDs`，导致不能踏上入口／踏上后不一定切图。`.152` 两处同时增加 `$40`，而不删除 `JohtoRoute31CollisionFence` 的未开放边缘保护；门口在 x=4，不是被保护的西边界 x=0。
+- `$40` 的安全范围已核对：RPP 城都块集仅4个门口块含 `$40`；本阶段实际用到该块的只有 Route31 和 VioletCity 各1处，其他现有城都室外图不使用。后续增加地图时必须重新检查该范围，不可假设全地图所有 `$40` 都应通行。
+- 上版 `.151` 补丁包含 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 变更，导致目标 Git 工作树不跟踪该导出上下文文件时 `git apply` 失败。**导出 ZIP 有文件，不代表当前仓库管理它**；以后正式增量补丁不得强行修改 `RPP_PROJECT_CONTEXT/` 导出目录。以仓库 `RPP_DEVELOPMENT_PITFALLS.md` 作为长期规则载体；RPP/GOLD 完整源码文件检查依旧强制，但不把导出上下文目录当成必需代码。
+- `.152` 仅静态校验；未编译 ROM / 未确认 Bank 容量 / 未在游戏内测试。需重点验证 Route31→关卡→VioletCity 双向往返、门口上下擦过、撞墙声、区域地点显示及继续存档。

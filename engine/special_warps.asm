@@ -165,6 +165,9 @@ LoadSpecialWarpData:
 	jr z, .johtoTileset
 	cp JOHTO_CHERRYGROVE_CITY
 	jr z, .johtoTileset
+	; FLY-5.62.156: Violet City also uses JOHTO after a direct Fly warp.
+	cp JOHTO_VIOLET_CITY
+	jr z, .johtoTileset
 	xor a ; OVERWORLD
 	jr .storeTileset
 .johtoTileset

@@ -113,10 +113,108 @@ class JohtoConnectionGuardTest(unittest.TestCase):
         with self.assertRaisesRegex(ConnectionError,'Gold map sizes'):
             self.check_north()
 
-    def test_unsupported_direction_fails_closed(self):
-        with self.assertRaisesRegex(ConnectionError,'Only north/south'):
+    def test_nonexistent_edge_fails_closed(self):
+        with self.assertRaisesRegex(ConnectionError,'Gold expected one'):
             audit(self.rpp,self.gold,'JohtoRoute30','JohtoRoute31',
                   'Route30','Route31','east')
+
+
+    def setup_east_west(self):
+        # City 20x18; Route31 20x9. Geometry is taken from Gold attributes.
+        # This is an isolated synthetic test, NOT a change to the live maps.
+        constants=self.rpp/'constants/map_constants.asm'
+        constants.write_text(constants.read_text()+'\n\tmapconst JOHTO_VIOLET_CITY, 18, 20\n')
+        city=self.rpp/'data/mapHeaders/JohtoVioletCity.asm'
+        city.write_text('JohtoVioletCity_h:\n\tdb JOHTO\n\tdb JOHTO_VIOLET_CITY_HEIGHT, JOHTO_VIOLET_CITY_WIDTH\n\tdw JohtoVioletCityBlocks, Texts, Auto\n\tdb EAST\n\tdb JOHTO_ROUTE_31\n\tdw JohtoRoute31Blocks + 0\n\tdw wOverworldMap + 335\n\tdb 9\n\tdb JOHTO_ROUTE_31_WIDTH\n\tdb -18\n\tdb 0\n\tdw wOverworldMap + 27\n\tdw JohtoVioletObject\n')
+        route=self.rpp/'data/mapHeaders/JohtoRoute31.asm'
+        route.write_text('JohtoRoute31_h:\n\tdb JOHTO\n\tdb JOHTO_ROUTE_31_HEIGHT, JOHTO_ROUTE_31_WIDTH\n\tdw JohtoRoute31Blocks, Texts, Auto\n\tdb WEST | SOUTH\n\tdb JOHTO_VIOLET_CITY\n\tdw JohtoVioletCityBlocks + 197\n\tdw wOverworldMap + 78\n\tdb 9\n\tdb JOHTO_VIOLET_CITY_WIDTH\n\tdb 18\n\tdb 39\n\tdw wOverworldMap + 46\n\tdw JohtoRoute31Object\n')
+        (self.rpp/'maps/JohtoVioletCity.blk').write_bytes(bytes(20*18))
+        attrib=self.gold/'data/maps/attributes.asm'
+        attrib.write_text(attrib.read_text()+
+            'map_attributes VioletCity, VIOLET_CITY, $05, EAST\n'
+            'connection east, Route31, ROUTE_31, 9\n')
+        attrib.write_text(attrib.read_text().replace(
+            'connection south, Route30, ROUTE_30, 10',
+            'connection south, Route30, ROUTE_30, 10\nconnection west, VioletCity, VIOLET_CITY, -9'))
+        gold_consts=self.gold/'constants/map_constants.asm'
+        gold_consts.write_text(gold_consts.read_text()+
+                               'map_const VIOLET_CITY, 20, 18\n')
+
+    def check_east(self):
+        return audit(self.rpp,self.gold,'JohtoVioletCity','JohtoRoute31',
+                     'VioletCity','Route31','east')
+
+    def check_west(self):
+        return audit(self.rpp,self.gold,'JohtoRoute31','JohtoVioletCity',
+                     'Route31','VioletCity','west')
+
+    def test_east_west_gold_strip_geometry_pass(self):
+        self.setup_east_west()
+        a,b=self.check_east(),self.check_west()
+        self.assertEqual(a['status'],'PASS',a)
+        self.assertEqual(b['status'],'PASS',b)
+        self.assertEqual(a['expected']['height'],9)
+        self.assertEqual(b['expected']['source_start'],197)
+
+    def test_east_negative_dest_shift_fails(self):
+        self.setup_east_west()
+        self.modify('data/mapHeaders/JohtoVioletCity.asm',
+                    'wOverworldMap + 335', 'wOverworldMap - 7')
+        self.assertEqual(self.check_east()['status'],'FAIL')
+
+    def test_west_wrong_copy_height_fails(self):
+        self.setup_east_west()
+        self.modify('data/mapHeaders/JohtoRoute31.asm','\tdb 9\n\tdb JOHTO_VIOLET_CITY_WIDTH','\tdb 23\n\tdb JOHTO_VIOLET_CITY_WIDTH')
+        self.assertEqual(self.check_west()['status'],'FAIL')
+
+    def test_east_legacy_positive_shift_is_safe(self):
+        # Do not treat all nonzero legacy macro parameters as unsafe:
+        # Gold City EAST -> Route31 +9 is a real 9-row overlap.
+        self.setup_east_west()
+        h=self.rpp/'data/mapHeaders/JohtoVioletCity.asm'
+        s=h.read_text().replace('\tdb JOHTO_ROUTE_31\n',
+                    '\tEAST_MAP_CONNECTION JOHTO_VIOLET_CITY, JOHTO_ROUTE_31, 9, 0, JohtoRoute31Blocks\n')
+        s=s[:s.index('\tdw JohtoRoute31Blocks + 0')]+s[s.index('\tdw JohtoVioletObject'):]
+        h.write_text(s)
+        result=self.check_east()
+        self.assertEqual(result['status'],'PASS',result)
+        self.assertEqual(result['actual']['format'],'legacy_macro')
+
+    def test_west_legacy_height_extra_three_is_unsafe(self):
+        # Reverse Route31 WEST -> VioletCity -9 with legacy macro calculates
+        # 12 rows (extra +3), while the actual overlap is 9 rows.
+        self.setup_east_west()
+        h=self.rpp/'data/mapHeaders/JohtoRoute31.asm'
+        s=h.read_text().replace('\tdb JOHTO_VIOLET_CITY\n',
+                    '\tWEST_MAP_CONNECTION JOHTO_ROUTE_31, JOHTO_VIOLET_CITY, 0, 9, JohtoVioletCityBlocks\n')
+        s=s[:s.index('\tdw JohtoVioletCityBlocks + 197')]+s[s.index('\tdw JohtoRoute31Object'):]
+        h.write_text(s)
+        result=self.check_west()
+        self.assertEqual(result['status'],'FAIL',result)
+        self.assertEqual(result['actual']['height'],12)
+        self.assertEqual(result['expected']['height'],9)
+
+    def test_east_gold_offset_mismatch_fails(self):
+        self.setup_east_west()
+        self.modify_gold('connection east, Route31, ROUTE_31, 9',
+                         'connection east, Route31, ROUTE_31, 8')
+        self.assertEqual(self.check_east()['status'],'FAIL')
+
+    def test_west_flag_missing_fails(self):
+        self.setup_east_west()
+        self.modify('data/mapHeaders/JohtoRoute31.asm','\tdb WEST | SOUTH','\tdb SOUTH')
+        with self.assertRaisesRegex(ConnectionError,'does not enable'):
+            self.check_west()
+
+    def test_east_legacy_wrong_move_fails(self):
+        self.setup_east_west()
+        h=self.rpp/'data/mapHeaders/JohtoVioletCity.asm'
+        s=h.read_text()
+        s=s.replace('\tdb JOHTO_ROUTE_31\n',
+                    '\tEAST_MAP_CONNECTION JOHTO_VIOLET_CITY, JOHTO_ROUTE_31, -9, 0, JohtoRoute31Blocks\n')
+        s=s[:s.index('\tdw JohtoRoute31Blocks + 0')]+s[s.index('\tdw JohtoVioletObject'):]
+        h.write_text(s)
+        self.assertEqual(self.check_east()['status'],'FAIL')
 
     def test_unsafe_expression_rejected(self):
         with self.assertRaises(ConnectionError):

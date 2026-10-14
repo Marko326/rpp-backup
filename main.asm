@@ -3234,6 +3234,21 @@ INCLUDE "data/mapObjects/JohtoRoute31.asm"
 INCLUDE "scripts/JohtoRoute31.asm"
 JohtoRoute31Blocks: INCBIN "maps/JohtoRoute31.blk"
 
+; Gate-5.62.151: Gold-size independent gate between Route 31 and Violet City.
+SECTION "Johto Violet City Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoVioletCity.asm"
+INCLUDE "data/mapObjects/JohtoVioletCity.asm"
+INCLUDE "scripts/JohtoVioletCity.asm"
+JohtoVioletCityBlocks: INCBIN "maps/JohtoVioletCity.blk"
+
+; Gold EastWestGate is 5x4 blocks; the RPP GATE blockset is an art adapter.
+; Keep the two horizontal exits and original Gold map geometry.
+SECTION "Johto Route31 Violet Gate Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute31VioletGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute31VioletGate.asm"
+INCLUDE "scripts/JohtoRoute31VioletGate.asm"
+JohtoRoute31VioletGateBlocks: INCBIN "maps/JohtoRoute31VioletGate.blk"
+
 ; R31: expanded-ROM-only edge policy keeps the nearly full ROM0 unchanged
 ; except for the small far-call. Carry = block move; clear = proceed with
 ; the ordinary sprite/tile collision path. No Gold engine code imported.
@@ -3256,6 +3271,13 @@ JohtoRoute30NorthFence::
 
 SECTION "Johto Route 31 Edge Guard", ROMX, BANK[JOHTO_ROM_BANK]
 JohtoRoute31CollisionFence::
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE31_VIOLET_GATE
+	jp z, .gate
+	cp JOHTO_VIOLET_CITY
+	jp z, JohtoVioletCityCollisionFence
+	cp JOHTO_ROUTE_31
+	jp nz, .blocked ; keep unknown high map aliases closed
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
 	jr z, .south
@@ -3293,6 +3315,46 @@ JohtoRoute31CollisionFence::
 	ret
 .blocked
 	scf
+	ret
+.gate
+	; Indoor GATE tile collision, matching the existing Route11 gate exits.
+	and a
+	ret
+
+; Standalone city: no neighboring map is registered in this stage.
+JohtoVioletCityCollisionFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .allowed
+	ld a, [wXCoord]
+	cp JOHTO_VIOLET_CITY_WIDTH * 2 - 1
+	jr nc, .blocked
+	jr .allowed
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.south
+	ld a, [wYCoord]
+	cp JOHTO_VIOLET_CITY_HEIGHT * 2 - 1
+	jr c, .allowed
+.blocked
+	scf
+	ret
+.allowed
+	and a
 	ret
 
 ; The save / location name may be dereferenced with bank $1C active;

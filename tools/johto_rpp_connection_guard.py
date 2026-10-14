@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Fail-closed Gold -> RPP north/south connection geometry audit (source-only).
+"""Fail-closed Gold -> RPP map connection geometry audit (source-only).
 
 The Gold `connection` macro and RPP's legacy *_MAP_CONNECTION macros do NOT
 interpret negative offsets in the same way. This deliberately audits the
 emitted strip fields, not merely the macro's spelling or Gold's offset.
 
-No ROM compilation, no files modified. For EAST/WEST, implement and test an
-additional model before enabling that direction: unsupported == FAIL.
+No ROM compilation, no files modified. Audits all four directions using
+RPP strip-copy machinery, including 3-column vertical borders for east/west.
 """
 import argparse
 import ast
@@ -70,8 +70,8 @@ def constant_expr(expr, names):
 
 
 def strip_entry(project, current, target, direction, current_id, target_id, w1, h1, w2, h2):
-    if direction not in ('north', 'south'):
-        raise ConnectionError('Only north/south modeled: east/west must not silently pass')
+    if direction not in ('north', 'south', 'east', 'west'):
+        raise ConnectionError('Invalid connection direction: ' + direction)
     path = project / 'data/mapHeaders' / (current + '.asm')
     lines = [line.split(';', 1)[0].strip() for line in path.read_text(encoding='utf-8').splitlines()]
     direction_macro = direction.upper() + '_MAP_CONNECTION'
@@ -98,15 +98,30 @@ def strip_entry(project, current, target, direction, current_id, target_id, w1, 
                 width = (w1 - move + 3) if w1 < w2 else (w2-source_offset)
                 y = 2*h2-1
                 window = 1+h2*(w2+6)
-            else:
+            elif direction == 'south':
                 source_start = source_offset
                 dest_start = 3+(h1+3)*(w1+6)+move
                 width = (w1 - move + (3 if len(args) == 6 else 0)) if w1 < w2 else (w2-source_offset)
                 y = 0
                 window = 7+w2
-            candidates.append(dict(format='legacy_macro', source_start=source_start, dest_start=dest_start,
-                                   width=width, map_width=w2, arrive_y=y, arrive_x=-2*(move-source_offset),
-                                   window=window))
+            else:
+                # East/west copy exactly 3 columns for each of `height` rows.
+                # The legacy macro calls its third/fourth parameters a
+                # strip-row move and a source-row offset, NOT Gold offsets.
+                source_start = w2*source_offset + (w2-3 if direction=='west' else 0)
+                dest_start = (w1+6)*(move+3) + (0 if direction=='west' else w1+3)
+                width = ((h1-move+(3 if direction=='west' or len(args)==6 else 0))
+                         if h1 < h2 else h2-source_offset)
+                y = -2*(move-source_offset)
+                window = 6+2*w2 if direction=='west' else 7+w2
+            entry=dict(format='legacy_macro', source_start=source_start, dest_start=dest_start,
+                       map_width=w2, window=window)
+            if direction in ('north','south'):
+                entry.update(width=width, arrive_y=y, arrive_x=-2*(move-source_offset))
+            else:
+                entry.update(height=width, arrive_y=y,
+                             arrive_x=2*w2-1 if direction=='west' else 0)
+            candidates.append(entry)
     return candidates, lines, names
 
 
@@ -136,9 +151,10 @@ def read_connection(project, current, target, direction, current_id, target_id, 
         if len(next_fields) != 7 or [x[0] for x in next_fields] != ['dw','dw','db','db','db','db','dw']:
             raise ConnectionError('Malformed custom edge record after db ' + target_id)
         values = [constant_expr(expr, names) for kind, expr in next_fields]
-        candidates.append(dict(format='bounded_custom', source_start=values[0], dest_start=values[1],
-                               width=values[2], map_width=values[3], arrive_y=values[4],
-                               arrive_x=values[5], window=values[6]))
+        entry=dict(format='bounded_custom', source_start=values[0], dest_start=values[1],
+                   map_width=values[3], arrive_y=values[4], arrive_x=values[5], window=values[6])
+        entry['width' if direction in ('north','south') else 'height']=values[2]
+        candidates.append(entry)
     if len(candidates) != 1:
         raise ConnectionError(f'Need exactly one {direction} connection {current}->{target}; found {len(candidates)}')
     return candidates[0]
@@ -146,8 +162,8 @@ def read_connection(project, current, target, direction, current_id, target_id, 
 
 def audit(project, gold, current, target, gold_current, gold_target, direction):
     direction = direction.lower()
-    if direction not in ('north', 'south'):
-        raise ConnectionError('Only north/south modeled; east/west fail closed until implemented')
+    if direction not in ('north', 'south', 'east', 'west'):
+        raise ConnectionError('Invalid direction: ' + direction)
     all_dims = dimensions(project)
     # Convert header CamelCase names to the constant referenced in the RPP map header.
     def map_id(camel):
@@ -163,7 +179,7 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
         raise ConnectionError('Unknown RPP map dimensions')
     w1,h1=all_dims[id1]
     w2,h2=all_dims[id2]
-    if min(w1,h1,w2,h2) <= 0 or min(h1,h2) < 3:
+    if min(w1,h1,w2,h2) <= 0 or (min(h1,h2) < 3 if direction in ('north','south') else min(w1,w2)<3):
         raise ConnectionError('Bad source or target dimensions')
     blocks=project/'maps'/f'{target}.blk'
     if len(blocks.read_bytes()) != w2*h2:
@@ -181,42 +197,76 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
         raise ConnectionError(f'Gold map sizes do not match RPP: {g1}={gold_dims.get(g1)} vs {(w1,h1)}; '+
                               f'{g2}={gold_dims.get(g2)} vs {(w2,h2)}')
     offset=gold_offset(gold, gold_current, gold_target, direction)
-    src_col=max(0,-offset)
-    dst_col=max(0,offset)
-    overlap=min(w1-dst_col, w2-src_col)
-    if overlap<=0:
-        raise ConnectionError('Gold connection has no horizontal overlap')
     stride=w1+6
-    start_row=(h2-3) if direction=='north' else 0
-    dest_row=0 if direction=='north' else (h1+3)
-    expected=dict(source_start=start_row*w2+src_col,
-                  dest_start=dest_row*stride+3+dst_col,
-                  width=overlap, map_width=w2,
-                  arrive_y=2*h2-1 if direction=='north' else 0,
-                  arrive_x=-2*offset,
-                  window=1+h2*(w2+6) if direction=='north' else 7+w2)
+    if direction in ('north','south'):
+        src_col=max(0,-offset)
+        dst_col=max(0,offset)
+        overlap=min(w1-dst_col, w2-src_col)
+        if overlap<=0:
+            raise ConnectionError('Gold connection has no horizontal overlap')
+        start_row=(h2-3) if direction=='north' else 0
+        dest_row=0 if direction=='north' else (h1+3)
+        expected=dict(source_start=start_row*w2+src_col,
+                      dest_start=dest_row*stride+3+dst_col,
+                      width=overlap, map_width=w2,
+                      arrive_y=2*h2-1 if direction=='north' else 0,
+                      arrive_x=-2*offset,
+                      window=1+h2*(w2+6) if direction=='north' else 7+w2)
+        overlap_info=dict(source_columns=[src_col,src_col+overlap-1],
+                          dest_columns=[dst_col,dst_col+overlap-1], rows=3)
+    else:
+        # Gold's east/west offset is the target map's TOP relative to the
+        # current map's TOP. Positive => target starts farther south.
+        src_row=max(0,-offset)
+        dst_row=max(0,offset)
+        overlap=min(h1-dst_row, h2-src_row)
+        if overlap<=0:
+            raise ConnectionError('Gold connection has no vertical overlap')
+        src_col=w2-3 if direction=='west' else 0
+        dst_col=0 if direction=='west' else w1+3
+        expected=dict(source_start=src_row*w2+src_col,
+                      dest_start=(dst_row+3)*stride+dst_col,
+                      height=overlap, map_width=w2,
+                      arrive_y=-2*offset,
+                      arrive_x=2*w2-1 if direction=='west' else 0,
+                      window=6+2*w2 if direction=='west' else 7+w2)
+        overlap_info=dict(source_rows=[src_row,src_row+overlap-1],
+                          dest_rows=[dst_row,dst_row+overlap-1], columns=3)
     actual=read_connection(project,current,target,direction,id1,id2,w1,h1,w2,h2)
     issues=[]
     for name, want in expected.items():
         if actual[name]!=want:
             issues.append(f'{name}: actual={actual[name]}, expected={want}')
-    # Independently check every row against both real .blk dimensions and
-    # the current overworld buffer row, rather than assuming named constants
-    # or macro expansion always imply safety.
-    for i in range(3):
-        sr = actual['source_start']+i*w2
-        dr = actual['dest_start']+i*stride
-        if sr < 0 or sr//w2 != start_row+i or (sr+actual['width']-1)//w2 != start_row+i or sr+actual['width'] > w2*h2:
-            issues.append(f'source_row_{i}: read crosses target .blk row or bounds')
-        if dr < 0 or dr//stride != dest_row+i or (dr+actual['width']-1)//stride != dest_row+i:
-            issues.append(f'dest_row_{i}: write crosses overworld buffer row or starts negative')
-        if dr % stride < 3 or (dr+actual['width']-1)%stride > w1+2:
-            issues.append(f'dest_row_{i}: writes outside current map/canonical border')
+    if direction in ('north','south'):
+        # Independently check every row against the real .blk and buffer.
+        for i in range(3):
+            sr = actual['source_start']+i*w2
+            dr = actual['dest_start']+i*stride
+            if sr < 0 or sr//w2 != start_row+i or (sr+actual['width']-1)//w2 != start_row+i or sr+actual['width'] > w2*h2:
+                issues.append(f'source_row_{i}: read crosses target .blk row or bounds')
+            if dr < 0 or dr//stride != dest_row+i or (dr+actual['width']-1)//stride != dest_row+i:
+                issues.append(f'dest_row_{i}: write crosses overworld buffer row or starts negative')
+            if dr % stride < 3 or (dr+actual['width']-1)%stride > w1+2:
+                issues.append(f'dest_row_{i}: writes outside current map/canonical border')
+    else:
+        # LoadEastWestConnectionsTileMap copies 3 columns per iteration.
+        # Validate EACH source/destination row separately (not only endpoints).
+        height=actual['height']
+        if height <= 0 or height > min(h1,h2):
+            issues.append('height: nonpositive or exceeds map height')
+        for i in range(max(0,min(height,max(h1,h2)+6))):
+            sr=actual['source_start']+i*w2
+            dr=actual['dest_start']+i*stride
+            if sr<0 or sr//w2 != src_row+i or (sr+2)//w2 != src_row+i or sr+2>=w2*h2:
+                issues.append(f'source_row_{i}: 3-column read crosses target .blk or row')
+            if dr<0 or dr//stride != dst_row+i+3 or (dr+2)//stride != dst_row+i+3 or dr+2>=(h1+6)*stride:
+                issues.append(f'dest_row_{i}: 3-column write crosses overworld buffer or row')
+            if dr%stride != dst_col:
+                issues.append(f'dest_row_{i}: wrong edge column (expected {dst_col})')
     return dict(status='PASS' if not issues else 'FAIL', current=current, target=target,
                 gold_offset=offset, direction=direction,
                 current_size=[w1,h1], target_size=[w2,h2],
-                overlap=dict(source_columns=[src_col,src_col+overlap-1],
-                             dest_columns=[dst_col,dst_col+overlap-1], rows=3),
+                overlap=overlap_info,
                 actual=actual, expected=expected, issues=issues)
 
 
@@ -226,7 +276,7 @@ def main():
     parser.add_argument('--gold-root',type=Path,required=True)
     parser.add_argument('--edge',nargs=5,action='append',required=True,
                         metavar=('RPP_CURRENT','RPP_TARGET','GOLD_CURRENT','GOLD_TARGET','DIRECTION'),
-                        help='Repeat per NEW connection; only north/south supported until extended')
+                        help='Repeat per NEW connection (north/south/east/west)')
     parser.add_argument('--json-out',type=Path,default=None)
     args=parser.parse_args()
     result=[]

@@ -6,6 +6,8 @@ JohtoMapHeaderPointers::
 	dw JohtoCherrygroveCity_h ; local $02 (legacy $CE)
 	dw JohtoRoute30_h ; local $03 (legacy $0B)
 	dw JohtoRoute31_h ; local $04 (legacy $F8)
+	dw JohtoVioletCity_h ; local $05 (legacy $F9)
+	dw JohtoRoute31VioletGate_h ; local $06 (legacy $FA)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -14,6 +16,8 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoCherrygroveCity_h)
 	db BANK(JohtoRoute30_h)
 	db BANK(JohtoRoute31_h)
+	db BANK(JohtoVioletCity_h)
+	db BANK(JohtoRoute31VioletGate_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -25,6 +29,8 @@ JohtoMapLegacyAliases::
 	db JOHTO_CHERRYGROVE_CITY
 	db JOHTO_ROUTE_30
 	db JOHTO_ROUTE_31
+	db JOHTO_VIOLET_CITY
+	db JOHTO_ROUTE31_VIOLET_GATE
 JohtoMapLegacyAliasesEnd::
 
 ASSERT JohtoMapLegacyAliasesEnd - JohtoMapLegacyAliases == NUM_JOHTO_MAPS
@@ -39,3 +45,9 @@ ASSERT JOHTO_ROUTE_30_LOCAL_ID == 3
 ASSERT JOHTO_ROUTE_30 == $0B
 ASSERT JOHTO_ROUTE_31_LOCAL_ID == 4
 ASSERT JOHTO_ROUTE_31 == $F8
+ASSERT JOHTO_VIOLET_CITY_LOCAL_ID == 5
+ASSERT JOHTO_VIOLET_CITY == $F9
+ASSERT JOHTO_VIOLET_CITY < REGION_WARP_ESCAPE
+ASSERT JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID == 6
+ASSERT JOHTO_ROUTE31_VIOLET_GATE == $FA
+ASSERT JOHTO_ROUTE31_VIOLET_GATE < REGION_WARP_ESCAPE

@@ -66,7 +66,19 @@ LegacyMapIDToRegionKey::
 	cp JOHTO_ROUTE_30
 	jr z, .route30
 	cp JOHTO_ROUTE_31
+	jr z, .route31
+	cp JOHTO_ROUTE31_VIOLET_GATE
+	jr z, .violetGate
+	cp JOHTO_VIOLET_CITY
 	ret nz
+	ld d, MAP_REGION_JOHTO
+	ld e, JOHTO_VIOLET_CITY_LOCAL_ID
+	ret
+.violetGate
+	ld d, MAP_REGION_JOHTO
+	ld e, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+	ret
+.route31
 	ld d, MAP_REGION_JOHTO
 	ld e, JOHTO_ROUTE_31_LOCAL_ID
 	ret
@@ -103,6 +115,8 @@ SyncLegacyMapRegions::
 	jr z, .currentJohto
 	cp JOHTO_ROUTE_31
 	jr z, .currentJohto
+	cp JOHTO_VIOLET_CITY
+	jr nc, .currentJohto ; F9 city / FA gate; other high IDs blocked
 	cp JOHTO_CHERRYGROVE_CITY
 	ld a, MAP_REGION_KANTO
 	jr nz, .currentReady
@@ -119,6 +133,8 @@ SyncLegacyMapRegions::
 	jr z, .lastJohto
 	cp JOHTO_ROUTE_31
 	jr z, .lastJohto
+	cp JOHTO_VIOLET_CITY
+	jr nc, .lastJohto ; F9 city / FA gate
 	cp JOHTO_CHERRYGROVE_CITY
 	ld a, MAP_REGION_KANTO
 	jr nz, .lastReady
@@ -219,6 +235,8 @@ RegionMapKeyToLegacyID::
 	jr z, .invalid
 	cp JOHTO_ROUTE_31 ; $F8 Route 31 is not a Kanto alias
 	jr z, .invalid
+	cp JOHTO_VIOLET_CITY ; $F9/$FA reserved for Violet and indoor gate
+	jr nc, .invalid
 	and a
 	ret
 .invalid

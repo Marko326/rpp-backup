@@ -85,7 +85,7 @@ LoadJohtoFlyTownMap::
 .next
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 2
+	cp 3
 	jr c, .nextReady
 	xor a
 .nextReady
@@ -97,7 +97,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jp nz, .previousReady
-	ld a, 1
+	ld a, 2
 .previousReady
 	ld [wWhichTownMapLocation], a
 	call .findBackward
@@ -133,10 +133,9 @@ LoadJohtoFlyTownMap::
 	ld [hTilesetType], a
 	ret
 
-; In A: compact Fly city index 0=New Bark, 1=Cherrygrove.
+; In A: compact Fly city index 0=New Bark, 1=Cherrygrove, 2=Violet.
 ; Out: A=legacy map alias; B=y C=x DE=ROM string.
 .loadEntry
-	and 1
 	add a
 	add a
 	ld e, a
@@ -154,7 +153,6 @@ LoadJohtoFlyTownMap::
 	; destination IDs are in a separate tiny table to keep 4-byte entry format
 	push bc
 	ld a, [wWhichTownMapLocation]
-	and 1
 	ld l, a
 	ld h, 0
 	ld bc, .destinations
@@ -167,28 +165,57 @@ LoadJohtoFlyTownMap::
 	dw .newBarkName
 	db 116, 108
 	dw .cherrygroveName
+	db  76,  92
+	dw .violetName
 .destinations
-	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY
+	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY
 .newBarkName
 	db "New Bark_Town@"
 .cherrygroveName
 	db "Cherrygrove_City@"
+.violetName
+	db "Violet City@"
 
 .findForward
-	; Two entries, so checking the current and then the other is bounded.
+	ld b, 3
+.forwardLoop
 	call .isCurrentUnlocked
 	ret nz
 	ld a, [wWhichTownMapLocation]
-	xor 1
+	inc a
+	cp 3
+	jr c, .forwardStore
+	xor a
+.forwardStore
 	ld [wWhichTownMapLocation], a
+	dec b
+	jr nz, .forwardLoop
 	ret
 .findBackward
-	call .findForward
+	ld b, 3
+.backwardLoop
+	call .isCurrentUnlocked
+	ret nz
+	ld a, [wWhichTownMapLocation]
+	dec a
+	cp $ff
+	jr nz, .backwardStore
+	ld a, 2
+.backwardStore
+	ld [wWhichTownMapLocation], a
+	dec b
+	jr nz, .backwardLoop
 	ret
 .isCurrentUnlocked
 	ld a, [wWhichTownMapLocation]
 	and a
-	jr nz, .testCherrygrove
+	jr z, .testNewBark
+	cp 1
+	jr z, .testCherrygrove
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_VIOLET / 8
+	bit EVENT_JOHTO_FLY_VIOLET % 8, [hl]
+	ret
+.testNewBark
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_NEW_BARK / 8
 	bit EVENT_JOHTO_FLY_NEW_BARK % 8, [hl]
 	ret

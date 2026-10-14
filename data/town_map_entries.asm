@@ -109,5 +109,7 @@ InternalMapEntries:
 	IMAP NAVEL_ROCK_LUGIA_ROOM,     116,  94, AreaUnknownText
 	IMAP JOHTO_ROUTE_29,             116,  94, JohtoRoute29TownMapName
 	IMAP JOHTO_ROUTE_31,             116,  94, JohtoRoute31TownMapName ; $F8; bank $1c sign-safe
+	IMAP JOHTO_VIOLET_CITY,          116,  94, JohtoVioletName ; $F9, Town Map bank-safe
+	IMAP JOHTO_ROUTE31_VIOLET_GATE,  116,  94, JohtoVioletName ; $FA, use Violet name
 	IMAP AGATHAS_ROOM,               36,  92, PokemonLeagueName
 	db $FF

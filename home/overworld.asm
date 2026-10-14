@@ -1309,7 +1309,7 @@ CollisionCheckOnLand::
 	cp JOHTO_ROUTE_30
 	jp z, .route30EdgeFence
 	cp JOHTO_ROUTE_31
-	jp z, .route31EdgeFence
+	jp nc, .route31EdgeFence ; F8+ aliases handled in ROMX, no extra ROM0 bytes
 	jp .checkLandCollision
 .cherrygroveEdgeFence
 	ld a, [wPlayerDirection]
