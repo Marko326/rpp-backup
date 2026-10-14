@@ -16,7 +16,7 @@ ENDM
 	mapconst CINNABAR_ISLAND,             9, 10 ; $08
 	mapconst INDIGO_PLATEAU,              9, 10 ; $09
 	mapconst SAFFRON_CITY,               18, 20 ; $0A
-	mapconst UNUSED_MAP_0B,               0,  0 ; $0B
+	mapconst JOHTO_ROUTE_30,              27, 10 ; $0B ; unused legacy slot, MAP-5.62.139
 	mapconst ROUTE_1,                    18, 10 ; $0C
 	mapconst ROUTE_2,                    36, 10 ; $0D
 	mapconst ROUTE_3,                     9, 35 ; $0E

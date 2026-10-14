@@ -10,11 +10,14 @@ HandleLedges:
 	ld hl, LedgeTiles
 	jr .checkPairs
 .johto
-	; Route 29's Gold cliff cells have been converted to dedicated
+	; Routes 29/30 convert Gold cliffs into dedicated
 	; RPP collision tile IDs. Use the same tile-pair matching as Kanto.
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_29
+	jr z, .johtoLedgePairs
+	cp JOHTO_ROUTE_30
 	ret nz
+.johtoLedgePairs
 	ld hl, JohtoRoute29LedgeTiles
 .checkPairs
 	push hl ; predef may overwrite the selected tile-pair table pointer
@@ -84,10 +87,12 @@ LedgeTiles:
 ; of $05/$4c for right/down cliff barriers. $3b is already blocked.
 ; Normal entry into these tiles fails through the RPP passability table,
 ; while HandleLedges uses the same action/step count as Kanto.
+; Shared by Route 29 and Route 30 (including $06 downhill takeoffs).
 JohtoRoute29LedgeTiles:
 	db SPRITE_FACING_LEFT,  $05,$3B,D_LEFT
 	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
 	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
+	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN ; Route 30 Gold HOP_DOWN
 	db $FF
 
 LoadHoppingShadowOAM:

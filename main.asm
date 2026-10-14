@@ -3212,10 +3212,19 @@ INCLUDE "data/mapObjects/JohtoCherrygroveCity.asm"
 INCLUDE "scripts/JohtoCherrygroveCity.asm"
 JohtoCherrygroveCityBlocks: INCBIN "maps/JohtoCherrygroveCity.blk"
 
+; MAP-5.62.139 P2-2: Route 30 shares the current Johto graphics and collision bank.
+; The Route 31 north exit and both building interiors remain disabled.
+SECTION "Johto Route 30 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute30.asm"
+INCLUDE "data/mapObjects/JohtoRoute30.asm"
+INCLUDE "scripts/JohtoRoute30.asm"
+JohtoRoute30Blocks: INCBIN "maps/JohtoRoute30.blk"
+
 ; The save / location name may be dereferenced with bank $1C active;
 ; keep its nine-byte literal in ROM0 rather than overflowing that bank.
 SECTION "Johto Route 29 Display Name", ROM0
 JohtoRoute29Name:: db "Route 29@"
+JohtoRoute30Name:: db "Route 30@"
 
 ; REG-5.62.118: independent region-key Header and Bank indices in expansion ROM.
 SECTION "Johto Region Map Header Tables", ROMX, BANK[JOHTO_ROM_BANK]

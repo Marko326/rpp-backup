@@ -1,4 +1,4 @@
-DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 11
+DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 12
 
 DisplayTownMap:
 	; MAP-5.62.116: ordinary Town Map region is derived from the CURRENT map.
@@ -10,6 +10,8 @@ DisplayTownMap:
 	cp JOHTO_ROUTE_29
 	jr z, .johtoRegion
 	cp JOHTO_CHERRYGROVE_CITY
+	jr z, .johtoRegion
+	cp JOHTO_ROUTE_30
 	jr z, .johtoRegion
 	xor a
 	jr .regionSelected
@@ -259,6 +261,9 @@ JohtoTownMapEntries:
 	dw JohtoRoute29TownMapName
 	db 116, 108
 	dw JohtoCherrygroveName
+	; MAP-5.62.139: Gold Route 30 landmark = (100+8, 80+16), store (y, x).
+	db  96, 108
+	dw JohtoRoute30TownMapName
 	db  76,  92
 	dw JohtoVioletName
 	db 140,  76
@@ -281,6 +286,7 @@ ASSERT JohtoTownMapEntriesEnd - JohtoTownMapEntries == 4 * NUM_JOHTO_TOWNMAP_ENT
 JohtoNewBarkName:        db "New Bark_Town@"
 JohtoRoute29TownMapName: db "Route 29@"
 JohtoCherrygroveName:    db "Cherrygrove_City@"
+JohtoRoute30TownMapName: db "Route 30@"
 JohtoVioletName:         db "Violet City@"
 JohtoAzaleaName:         db "Azalea Town@"
 JohtoGoldenrodName:      db "Goldenrod_City@"
@@ -299,6 +305,8 @@ GetJohtoTownMapCurrentIndex:
 	jr z, .route29
 	cp JOHTO_CHERRYGROVE_CITY
 	jr z, .cherrygrove
+	cp JOHTO_ROUTE_30
+	jr z, .route30
 	xor a ; current supported Johto fallback: New Bark Town
 	ret
 .route29
@@ -306,6 +314,9 @@ GetJohtoTownMapCurrentIndex:
 	ret
 .cherrygrove
 	ld a, 2
+	ret
+.route30
+	ld a, 3
 	ret
 
 LoadJohtoTownMapEntry:

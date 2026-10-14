@@ -11,7 +11,7 @@ MapHeaderBanks:
 	db BANK(CinnabarIsland_h) ; CINNABAR_ISLAND
 	db BANK(IndigoPlateau_h) ; INDIGO_PLATEAU
 	db BANK(SaffronCity_h) ; SAFFRON_CITY
-	db BANK(SaffronCity_h) ; unused
+	db BANK(JohtoRoute30_h) ; MAP-5.62.139: former UNUSED_MAP_0B
 	db BANK(Route1_h) ; ROUTE_1
 	db BANK(Route2_h) ; ROUTE_2
 	db BANK(Route3_h) ; ROUTE_3

@@ -11,7 +11,7 @@ MapHeaderPointers::
 	dw CinnabarIsland_h
 	dw IndigoPlateau_h
 	dw SaffronCity_h
-	dw SaffronCity_h
+	dw JohtoRoute30_h ; MAP-5.62.139: former UNUSED_MAP_0B
 	dw Route1_h
 	dw Route2_h
 	dw Route3_h

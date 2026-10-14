@@ -1299,35 +1299,44 @@ IsSpriteInFrontOfPlayer2::
 ; function to check if the player will jump down a ledge and check if the tile ahead is passable (when not surfing)
 ; sets the carry flag if there is a collision, and unsets it if there isn't a collision
 CollisionCheckOnLand::
-	; P2-1: border fence before collision shortcuts. Route 29 now has
-	; both east and west links; keep north/south closed until Route 46.
-	; Cherrygrove's east link is active, other borders stay closed.
+	; MAP-5.62.139 P2-2: only the authentic Route 30 corridor is open north of
+	; Cherrygrove. Preserve Route 29's separate north/south guards.
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_29
 	jr z, .route29EdgeFence
 	cp JOHTO_CHERRYGROVE_CITY
-	jr nz, .checkLandCollision
+	jr z, .cherrygroveEdgeFence
+	cp JOHTO_ROUTE_30
+	jp nz, .checkLandCollision
+	jp .route30EdgeFence
+.cherrygroveEdgeFence
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_LEFT
 	jr z, .cityWestEdge
 	cp PLAYER_DIR_UP
 	jr z, .cityNorthEdge
 	cp PLAYER_DIR_DOWN
-	jr nz, .checkLandCollision
+	jp nz, .checkLandCollision
 	ld a, [wYCoord]
 	cp JOHTO_CHERRYGROVE_CITY_HEIGHT * 2 - 1
 	jp nc, .collision
-	jr .checkLandCollision
+	jp .checkLandCollision
 .cityWestEdge
 	ld a, [wXCoord]
 	and a
 	jp z, .collision
-	jr .checkLandCollision
+	jp .checkLandCollision
 .cityNorthEdge
 	ld a, [wYCoord]
 	and a
-	jp z, .collision
-	jr .checkLandCollision
+	jp nz, .checkLandCollision
+	; Gold connects city block x=8 to Route 30 block x=3.
+	ld a, [wXCoord]
+	cp 8 * 2
+	jp c, .collision
+	cp 9 * 2
+	jp nc, .collision
+	jp .checkLandCollision
 .route29EdgeFence
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
@@ -1335,16 +1344,51 @@ CollisionCheckOnLand::
 	ld a, [wYCoord]
 	cp JOHTO_ROUTE_29_HEIGHT * 2 - 1
 	jp nc, .collision
-	jr .checkLandCollision
+	jp .checkLandCollision
 .notSouthEdge
 	cp PLAYER_DIR_UP
 	jr nz, .notNorthEdge
 	ld a, [wYCoord]
 	and a
 	jp z, .collision
-	jr .checkLandCollision
+	jp .checkLandCollision
 .notNorthEdge
-	; Both Route 29 horizontal exits are now connected.
+	jp .checkLandCollision ; Route 29 east and west are connected.
+.route30EdgeFence
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .route30North
+	cp PLAYER_DIR_LEFT
+	jr z, .route30West
+	cp PLAYER_DIR_RIGHT
+	jr z, .route30East
+	cp PLAYER_DIR_DOWN
+	jp nz, .checkLandCollision
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_30_HEIGHT * 2 - 1
+	jp c, .checkLandCollision
+	; Only Route 30 block x=3 leads south into Cherrygrove x=8.
+	ld a, [wXCoord]
+	cp 3 * 2
+	jp c, .collision
+	cp 4 * 2
+	jp nc, .collision
+	jp .checkLandCollision
+.route30North
+	ld a, [wYCoord]
+	and a
+	jp z, .collision ; Route 31 is not present yet.
+	jp .checkLandCollision
+.route30West
+	ld a, [wXCoord]
+	and a
+	jp z, .collision
+	jp .checkLandCollision
+.route30East
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_30_WIDTH * 2 - 1
+	jp nc, .collision
+	; Route 30 has no east/west neighbor maps.
 .checkLandCollision
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?
@@ -1487,10 +1531,11 @@ CheckForTilePairCollisions::
 ; it's mainly used to simulate differences in elevation
 
 TilePairCollisionsLand::
-	; Route 29's special cliff barriers use the original RPP tile-pair
+	; Johto cliff barriers use the original RPP tile-pair
 	; and passability checks, not a separate coordinate collision engine.
 	db JOHTO, $05, $20
 	db JOHTO, $05, $21
+	db JOHTO, $06, $21 ; Route 30 downhill ledge (tile $06)
 	db JOHTO, $05, $3B
 	db CAVERN, $20, $05
 	db CAVERN, $41, $05
