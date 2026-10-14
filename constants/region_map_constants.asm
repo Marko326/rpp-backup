@@ -9,7 +9,8 @@ DEF JOHTO_NEW_BARK_LOCAL_ID EQU 0
 DEF JOHTO_ROUTE_29_LOCAL_ID EQU 1
 DEF JOHTO_CHERRYGROVE_LOCAL_ID EQU 2
 DEF JOHTO_ROUTE_30_LOCAL_ID EQU 3
-DEF NUM_JOHTO_MAPS EQU 4
+DEF JOHTO_ROUTE_31_LOCAL_ID EQU 4
+DEF NUM_JOHTO_MAPS EQU 5
 
 ; REG-5.62.119: signature written beside the saved region bytes.
 ; Old saves have no defined region state. These markers are currently written,

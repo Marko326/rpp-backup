@@ -1307,8 +1307,10 @@ CollisionCheckOnLand::
 	cp JOHTO_CHERRYGROVE_CITY
 	jr z, .cherrygroveEdgeFence
 	cp JOHTO_ROUTE_30
-	jp nz, .checkLandCollision
-	jp .route30EdgeFence
+	jp z, .route30EdgeFence
+	cp JOHTO_ROUTE_31
+	jp z, .route31EdgeFence
+	jp .checkLandCollision
 .cherrygroveEdgeFence
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_LEFT
@@ -1375,9 +1377,9 @@ CollisionCheckOnLand::
 	jp nc, .collision
 	jp .checkLandCollision
 .route30North
-	ld a, [wYCoord]
-	and a
-	jp z, .collision ; Route 31 is not present yet.
+	; ROMX helper preserves Gold's x=4..7 exit, no other top-edge movement.
+	callba JohtoRoute30NorthFence
+	jp c, .collision
 	jp .checkLandCollision
 .route30West
 	ld a, [wXCoord]
@@ -1389,6 +1391,13 @@ CollisionCheckOnLand::
 	cp JOHTO_ROUTE_30_WIDTH * 2 - 1
 	jp nc, .collision
 	; Route 30 has no east/west neighbor maps.
+	jp .checkLandCollision
+.route31EdgeFence
+	; R31: let only the new map use its precise ROMX boundary guard.
+	; callba preserves the carry returned by JohtoRoute31CollisionFence.
+	callba JohtoRoute31CollisionFence
+	jp c, .collision
+	jp .checkLandCollision
 .checkLandCollision
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?

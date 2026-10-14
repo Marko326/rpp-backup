@@ -108,5 +108,6 @@ InternalMapEntries:
 	IMAP SILPH_CO_ELEVATOR,         116,  76, SilphCoName
 	IMAP NAVEL_ROCK_LUGIA_ROOM,     116,  94, AreaUnknownText
 	IMAP JOHTO_ROUTE_29,             116,  94, JohtoRoute29TownMapName
+	IMAP JOHTO_ROUTE_31,             116,  94, JohtoRoute31TownMapName ; $F8; bank $1c sign-safe
 	IMAP AGATHAS_ROOM,               36,  92, PokemonLeagueName
 	db $FF

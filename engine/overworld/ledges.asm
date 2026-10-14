@@ -16,7 +16,11 @@ HandleLedges:
 	cp JOHTO_ROUTE_29
 	jr z, .johtoLedgePairs
 	cp JOHTO_ROUTE_30
+	jr z, .johtoLedgePairs
+	cp JOHTO_ROUTE_31
 	ret nz
+	ld hl, JohtoRoute31LedgeTiles
+	jr .checkPairs
 .johtoLedgePairs
 	ld hl, JohtoRoute29LedgeTiles
 .checkPairs
@@ -93,6 +97,15 @@ JohtoRoute29LedgeTiles:
 	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
 	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
 	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN ; Route 30 Gold HOP_DOWN
+	db $FF
+
+; Route31 adds $06->$30 right hops. The other four pairs are identical.
+JohtoRoute31LedgeTiles:
+	db SPRITE_FACING_LEFT,  $05,$3B,D_LEFT
+	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
+	db SPRITE_FACING_RIGHT, $06,$30,D_RIGHT
+	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
+	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN
 	db $FF
 
 LoadHoppingShadowOAM:

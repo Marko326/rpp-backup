@@ -64,7 +64,13 @@ LegacyMapIDToRegionKey::
 	cp JOHTO_CHERRYGROVE_CITY
 	jr z, .cherrygrove
 	cp JOHTO_ROUTE_30
+	jr z, .route30
+	cp JOHTO_ROUTE_31
 	ret nz
+	ld d, MAP_REGION_JOHTO
+	ld e, JOHTO_ROUTE_31_LOCAL_ID
+	ret
+.route30
 	ld d, MAP_REGION_JOHTO
 	ld e, JOHTO_ROUTE_30_LOCAL_ID
 	ret
@@ -95,6 +101,8 @@ SyncLegacyMapRegions::
 	jr z, .currentJohto
 	cp JOHTO_ROUTE_30
 	jr z, .currentJohto
+	cp JOHTO_ROUTE_31
+	jr z, .currentJohto
 	cp JOHTO_CHERRYGROVE_CITY
 	ld a, MAP_REGION_KANTO
 	jr nz, .currentReady
@@ -108,6 +116,8 @@ SyncLegacyMapRegions::
 	cp JOHTO_ROUTE_29
 	jr z, .lastJohto
 	cp JOHTO_ROUTE_30
+	jr z, .lastJohto
+	cp JOHTO_ROUTE_31
 	jr z, .lastJohto
 	cp JOHTO_CHERRYGROVE_CITY
 	ld a, MAP_REGION_KANTO
@@ -206,6 +216,8 @@ RegionMapKeyToLegacyID::
 	cp JOHTO_CHERRYGROVE_CITY ; $CE is the pilot Cherrygrove alias
 	jr z, .invalid
 	cp JOHTO_ROUTE_30 ; $0B is the P2-2 Route 30 alias
+	jr z, .invalid
+	cp JOHTO_ROUTE_31 ; $F8 Route 31 is not a Kanto alias
 	jr z, .invalid
 	and a
 	ret

@@ -1,5 +1,7 @@
-# 城都室外地图｜临时封路与必须保留障碍登记（P2-2 MAP-5.62.139 验收更新）
+# 城都室外地图｜临时封路与必须保留障碍登记（最新补记 R31-5.62.148）
 
+> **当前说明（R31-5.62.148）**：30号道路北口已按31号道路单图移植开放，用户实测树残留消失。以下P2-1/P2-2旧记录保留当时语境，当前有效状态以文末`.148`增量与CSV状态为准。
+>
 > **用途**：每次把下一张室外地图接入 RPP 之前、之后，都要核对这张表。此表用来避免把旧的临时封路留下，也避免误删 Gold 原版树林、RPP 跳崖碰撞或必要边界。当前 `.139` 以已提交 `.138` 为功能基线；此前已在 `.138` 定点清树。本轮验收收口不修改地图字节、不编译 ROM、不替代全部运行回归。
 >
 > **基线**：最新 ZIP 导出 HEAD `0fb87348`（`MAP-5.62.138`）+ `.139` P2-2 功能补丁，Gold 比较基准为用户上传的 `pokegold-master(1).zip`。CSV 同目录，可作为后续逐项清理检查表。
@@ -71,7 +73,7 @@
 |---|---|---|---|
 | `TMP-CITY-EDGE-004` | `TEMP_EDGE_GUARD` | `home/overworld.asm .cityNorthEdge`：原先北边界全部禁止 → 仅允许 `wYCoord=0` 且 `wXCoord=16,17` 向北 | **`RELEASED_USER_REPORTED_OK`**；接图后定向放行，用户反馈通行测试未见异常；不是删除全城边界 |
 | `KEEP-R30-LEDGE-012` | `ENGINE_REQUIRED` | `maps/JohtoRoute30.blk` 的 11 个 32×32 区块引用；阻挡格 `$4C` 图形保留，以 `$21` 同图形碰撞身份表现 21 个向下跳崖（起跳格 `$05` 或 `$06`） | **`PRESERVE_USER_REPORTED_OK`**；用户抽测未见异常，仍不准全图恢复 Gold 原版而覆盖跳崖机制 |
-| `TMP-R30-NORTH-013` | `TEMP_EDGE_GUARD` | `home/overworld.asm .route30North`；`JohtoRoute30_h` 只连 SOUTH | **`KEEP_UNTIL_ROUTE31`**；用户边界测试未见异常；30↔31 号道路实际连通后才能定点开放 |
+| `TMP-R30-NORTH-013` | `TEMP_EDGE_GUARD` | `home/overworld.asm .route30North` 通过 `JohtoRoute30NorthFence` 只放行上边界 x=4..7；`JohtoRoute30_h` 已注册 NORTH/SOUTH | **`RELEASED_USER_REPORTED_OK`**；30↔31已连通，用户确认 `.148` 往返未见树残留；其他北边界仍封闭 |
 | `SAFE-R30-SIDES-014` | `SAFETY_EDGE_GUARD` | `home/overworld.asm .route30West/.route30East`；无东西邻接 | **`PRESERVE`**；用户边界抽测未见异常，继续保护未连接边缘 |
 | `SAFE-R30-SOUTH-015` | `SAFETY_EDGE_GUARD` | `home/overworld.asm .route30EdgeFence`：南口仅 `wXCoord=6,7` 能走过 `wYCoord=53` | **`PRESERVE_USER_REPORTED_OK`**；用户返回吉花市的测试未见异常，其余南边界继续封锁 |
 | `TMP-R30-INDOOR-016` | `DEFERRED_INDOORS` | `data/mapObjects/JohtoRoute30.asm` warp count=`0`；Gold (7,39)、(17,5) 两座建筑入口暂未实现 | **`KEEP_UNTIL_INDOOR_PHASE`**；室外阶段不接 Warp |
@@ -80,3 +82,18 @@
 **用户反馈补记（2026-10-14）**：用户表示已完成上轮建议的地图通行、Town Map、骑车、跳崖、边界、Continue 及前置地图抽测，暂未观察明显问题。`TMP-CITY-EDGE-004` 北口与 `SAFE-R30-SOUTH-015` 南口可由原先待游戏状态升级为「用户报告正常」；`KEEP-R30-LEDGE-012` 的抽测同样未报告问题。由于未提供逐格或专项录像，不应声称 21 处跳崖均被逐点实际操作。30 号道路的北出口、侧边缘仍保持封锁，不能因本轮验收删除；事件与室内仍是主动延期项。上述审计还核对了 Gold/RPP 的所有静态地形 8×8 源像素及四处路牌坐标；注意静态树木与 Gold 树果对象不同，**两棵动态树果树尚未移植**。
 
 **静态风险边界**：别名 `$0B` 来自原先未引用的 `UNUSED_MAP_0B`，通过本轮源码符号检查确认无该符号的游戏用途；`$F1/$F2/$F3` 在关都 Town Map 有实际用途，保持原样。没有构建 ROM 或运行游戏；双向通过、碰撞、骑车、Town Map、存档/Continue、渡轮与关都行为全部仍须实测。
+
+## R31-5.62.148 · 31号道路单图开放后的有效边界（覆盖上述历史北口状态）
+
+本次仅开放30号道路北口↔31号道路南口；`.147` 的北口直接使用Gold `-10` 导致条带越界，`.148` 改成10×3显式复制后用户确认残树消失，走过的路线/跳崖未见明显异常。两种结论分别是**源码计算**与**用户实测反馈**，不是全地图逐格验收。
+
+| 登记 ID | 分类 | 实现与差异 | 目前状态 / 后续条件 |
+|---|---|---|---|
+| `TMP-R30-NORTH-013` | `TEMP_EDGE_GUARD` | `JohtoRoute30NorthFence`仅开放Route30上边界16×16坐标x=4..7，其他格挡住；Header的北向显式10×3复制只覆盖合法相邻列 | **`RELEASED_USER_REPORTED_OK`**；旧P2-2章节“仍封锁”是历史叙述，非当前状态 |
+| `KEEP-R31-LEDGE-018` | `ENGINE_REQUIRED` | `maps/JohtoRoute31.blk` 的原生RPP跳崖变体与Johto图块复制身份，对应Gold静态地形；180/180块外观静态匹配 | **`PRESERVE_USER_REPORTED_OK`**；用户抽测未见跳崖障碍，禁止整图用Gold原blk替换 |
+| `OPEN-R30-R31-019` | `FUNCTIONAL_MAP_EDIT` | Route30 NORTH与Route31 SOUTH互联；Route31南边缘只开放16×16 x=24..27通路，其他边缘保持碰撞；北向读取Route31最末三行的列10..19 | **`RELEASED_USER_REPORTED_OK`**；`.148`已修复`.147`残树，保留双向连接与精确边界，后续回归保存/骑车/飞空 |
+| `SAFE-R31-EDGE-020` | `SAFETY_EDGE_GUARD` | `JohtoRoute31CollisionFence`挡住北/西/东未连区域及南边缘非通路格 | **`PRESERVE`**；开放桔梗市或其他邻图时只按坐标解除对应方向 |
+| `TMP-R31-WARP-021` | `DEFERRED_INDOORS` | `JohtoRoute31Object`=0个Warp；Gold有2个桔梗市关卡+1个黑暗洞穴入口 | **`KEEP_UNTIL_INDOOR_PHASE`**；不新增室外直达VioletCity临时Warp |
+| `TMP-R31-EVENT-022` | `DEFERRED_EVENTS` | 当前保留两块路牌的阶段性说明，暂不注册Gold的7个动态对象和脚本 | **`KEEP_UNTIL_EVENT_PHASE`**；不得宣称含完整Gold NPC/剧情 |
+
+**今后的验收要求**：除了Gold布局像素和跳崖检查，必须在地图Header及其连接宏展开后逐行核算源/目标边界；对不同尺寸/负偏移尤须专项检查。先后分别保留功能和纯工具提交，不把工具尚未应用的状态当作完成提交。

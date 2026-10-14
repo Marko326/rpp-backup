@@ -3227,6 +3227,74 @@ INCLUDE "data/mapObjects/JohtoRoute30.asm"
 INCLUDE "scripts/JohtoRoute30.asm"
 JohtoRoute30Blocks: INCBIN "maps/JohtoRoute30.blk"
 
+; R31-5.62.147: standalone Route 31, no VioletCity map/gate or temporary warps.
+SECTION "Johto Route 31 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute31.asm"
+INCLUDE "data/mapObjects/JohtoRoute31.asm"
+INCLUDE "scripts/JohtoRoute31.asm"
+JohtoRoute31Blocks: INCBIN "maps/JohtoRoute31.blk"
+
+; R31: expanded-ROM-only edge policy keeps the nearly full ROM0 unchanged
+; except for the small far-call. Carry = block move; clear = proceed with
+; the ordinary sprite/tile collision path. No Gold engine code imported.
+SECTION "Johto Route 30 North Guard", ROMX, BANK[JOHTO_ROM_BANK]
+JohtoRoute30NorthFence::
+	ld a, [wYCoord]
+	and a
+	jr nz, .allowed
+	ld a, [wXCoord]
+	cp 4
+	jr c, .blocked
+	cp 8
+	jr nc, .blocked
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+SECTION "Johto Route 31 Edge Guard", ROMX, BANK[JOHTO_ROM_BANK]
+JohtoRoute31CollisionFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .allowed
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_31_WIDTH * 2 - 1
+	jr nc, .blocked
+	jr .allowed
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.south
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_31_HEIGHT * 2 - 1
+	jr c, .allowed
+	ld a, [wXCoord]
+	cp 24
+	jr c, .blocked
+	cp 28
+	jr nc, .blocked
+.allowed
+	and a ; clear carry
+	ret
+.blocked
+	scf
+	ret
+
 ; The save / location name may be dereferenced with bank $1C active;
 ; keep its nine-byte literal in ROM0 rather than overflowing that bank.
 SECTION "Johto Route 29 Display Name", ROM0

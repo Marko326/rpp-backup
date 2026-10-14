@@ -248,3 +248,4 @@ MapHeaderBanks:
 	db BANK(Lorelei_h)
 	db BANK(Bruno_h)
 	db BANK(Agatha_h)
+	db BANK(JohtoRoute31_h) ; $F8, Route31

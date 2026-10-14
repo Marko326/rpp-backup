@@ -248,3 +248,4 @@ MapHeaderPointers::
 	dw Lorelei_h
 	dw Bruno_h
 	dw Agatha_h ;247
+	dw JohtoRoute31_h ; $F8: isolated Route31
