@@ -341,6 +341,22 @@ LoadJohtoTownMapEntry:
 	ld l, a
 	ret
 
+DrawJohtoFlyCurrentPlayerMarker::
+	; FLY-5.62.140: far-call trampoline.  Bankswitch clobbers A/BC/HL,
+	; so compute and draw both entirely inside the Town Map bank.
+	call GetJohtoTownMapCurrentIndex
+	call LoadJohtoTownMapEntry
+	jp DrawJohtoTownMapPlayerMarker
+
+DrawJohtoFlyCursor::
+	; DE alone survives the far-call switch; put coords back in BC here.
+	ld b, d
+	ld c, e
+	ld a, $4
+	ld [wOAMBaseTile], a
+	ld hl, wOAMBuffer + $10
+	jp WriteTownMapSpriteOAM
+
 DrawJohtoTownMapPlayerMarker:
 ; B/C/HL came from LoadJohtoTownMapEntry, as with LoadTownMapEntry.
 	; MAP-5.62.116: the regular browse loop prints the location from ROM.
@@ -393,6 +409,14 @@ NestText:
 	db "Nest@"
 
 LoadTownMap_Fly:
+	; FLY-5.62.140: two-region UI dispatch.  wFlyLocationsAxis is
+	; overloaded by Kanto Fly's city/special axis, so keep that UI intact.
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .kantoFly
+	callab LoadJohtoFlyTownMap
+	ret
+.kantoFly
 	xor a
 	ld [wFlyLocationsAxis], a ; existing Fly destinations stay on Kanto
 	; FLY-5.62.73: capture the party-menu choice before the Fly Map starts

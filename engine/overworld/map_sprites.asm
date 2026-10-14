@@ -260,8 +260,17 @@ ReadSpriteSheetData:
 ; Loads sprite set for outside maps (cities and routes) and sets VRAM slots.
 ; sets carry if the map is a city or route, unsets carry if not
 InitOutsideMapSprites:
+	; FIX-5.62.141: Johto's legacy aliases are not contiguous with the
+	; Kanto outdoor IDs (New Bark=$E7, Route 29=$F4, Cherrygrove=$CE,
+	; Route 30=$0B). Use tileset identity to choose ONE shared outdoor
+	; sprite sheet before the old Kanto map-ID lookup. Connected-map
+	; transitions run InitMapSprites with LCD on: keeping one sprite set
+	; prevents unsafe per-map graphics writes and stale VRAM slots.
+	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr z, .johtoSprites
 	ld a,[wCurMap]
-	cp a,REDS_HOUSE_1F ; is the map a city or a route (map ID less than $25)?
+	cp a,REDS_HOUSE_1F ; original Kanto outdoor map-ID range
 	ret nc ; if not, return
 	ld hl,MapSpriteSets
 	add l
@@ -270,6 +279,10 @@ InitOutsideMapSprites:
 	inc h
 .noCarry
 	ld a,[hl] ; a = spriteSetID
+	jr .spriteSetReady
+.johtoSprites
+	ld a, $0b ; dedicated shared Johto sprite set, appended to SpriteSets
+.spriteSetReady
 	cp a,$f0 ; does the map have 2 sprite sets?
 	call nc,GetSplitMapSpriteSetID ; if so, choose the appropriate one
 	ld b,a ; b = spriteSetID

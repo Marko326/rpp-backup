@@ -2946,7 +2946,14 @@ INCLUDE "engine/fly_town_map_helpers.asm"
 SECTION "Fly Town Map Teleport Shortcut", ROMX
 INCLUDE "engine/fly_town_map_shortcut.asm"
 
-SECTION "Warp Destination Helpers", ROMX, BANK[$35]
+; FLY-5.62.140: separate Johto Fly selector, outside tight Town Map ROM bank.
+SECTION "Johto Fly Town Map", ROMX
+INCLUDE "engine/johto_fly_town_map.asm"
+
+; BANK-5.62.142: this helper is called only through ROM0 jpba, so its
+; bank is resolved through BANK(label), not a hard-coded $35 address.
+; Keep it floating to avoid displacing the nearly full fixed bank $35.
+SECTION "Warp Destination Helpers", ROMX
 INCLUDE "engine/overworld/warp_destination.asm"
 
 ; Bank 1 已接近满载，把完整 Options 菜单搬到空余更大的扩展 Bank $35。

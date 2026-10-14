@@ -189,6 +189,24 @@ SpriteSets:
 	db SPRITE_BALL
 	db SPRITE_OMANYTE
 
+; FIX-5.62.141: shared outdoor set for all currently registered Johto maps.
+; Keep the 4-tile ball/berry sheets in the last two positions, exactly as
+; Kanto's sets do. New Bark and Route 29 use all five named NPC sheets here;
+; Cherrygrove and Route 30 currently have no ordinary NPC objects.
+; When adding Johto NPCs, validate them against these 11 entries first.
+; sprite set $0b
+	db SPRITE_SAILOR
+	db SPRITE_GAMBLER
+	db SPRITE_BUG_CATCHER
+	db SPRITE_LASS
+	db SPRITE_FISHER
+	db SPRITE_FISHER2
+	db SPRITE_GIRL
+	db SPRITE_HIKER
+	db SPRITE_BLACK_HAIR_BOY_1
+	db SPRITE_BALL
+	db SPRITE_BERRY_TREE
+
 SpriteSheetPointerTable:
 	; SPRITE_RED
 	dw RedSprite

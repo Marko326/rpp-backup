@@ -170,6 +170,11 @@ StartMenu_Pokemon:
 	jr z, .canFly
 	cp CELADON_MART_ROOF
 	jr z, .canFly
+	; FLY-5.62.140: Fly is allowed on the dedicated Johto outdoor tileset.
+	; Do not widen CheckIfInOutsideMap: Teleport/Dig recovery is not region-safe yet.
+	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr z, .canFly
 	call CheckIfInOutsideMap
 	jr z,.canFly
 	ld a,[wWhichPokemon]

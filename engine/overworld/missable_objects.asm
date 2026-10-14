@@ -1,4 +1,18 @@
 MarkTownVisitedAndLoadMissableObjects:
+	; FLY-5.62.140: keep Johto Fly unlocks in persistent, unused event bits.
+	; Do not mix city unlocks with Kanto's first eleven visited bits.
+	ld a, [wCurMap]
+	cp NEW_BARK_TOWN
+	jr nz, .notJohtoNewBark
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_NEW_BARK / 8
+	set EVENT_JOHTO_FLY_NEW_BARK % 8, [hl]
+.notJohtoNewBark
+	ld a, [wCurMap]
+	cp JOHTO_CHERRYGROVE_CITY
+	jr nz, .notJohtoCherrygrove
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_CHERRYGROVE / 8
+	set EVENT_JOHTO_FLY_CHERRYGROVE % 8, [hl]
+.notJohtoCherrygrove
 	ld a, [wCurMap]
 	cp ROUTE_1
 	jr nc, .notInTown

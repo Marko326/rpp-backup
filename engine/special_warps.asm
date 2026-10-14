@@ -80,7 +80,7 @@ LoadSpecialWarpData:
 	ld a, [hli]
 	ld [wCurMapTileset], a
 	xor a
-	jr .done
+	jp .done
 .notFirstMap
 	ld a, [wLastMap] ; this value is overwritten before it's ever read
 	ld hl, wd732
@@ -159,7 +159,17 @@ LoadSpecialWarpData:
 	dec c
 	jr nz, .copyWarpDataLoop2
 .finishSpecialWarp
+	; FLY-5.62.140: old warps use OVERWORLD; Johto aliases load JOHTO.
+	ld a, [wCurMap]
+	cp NEW_BARK_TOWN
+	jr z, .johtoTileset
+	cp JOHTO_CHERRYGROVE_CITY
+	jr z, .johtoTileset
 	xor a ; OVERWORLD
+	jr .storeTileset
+.johtoTileset
+	ld a, JOHTO
+.storeTileset
 	ld [wCurMapTileset], a
 .done
 	ld [wYOffsetSinceLastSpecialWarp], a

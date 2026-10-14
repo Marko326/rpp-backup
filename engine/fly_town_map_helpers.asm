@@ -801,6 +801,11 @@ TryLoadSpecialFlyWarpData::
 
 SpecialFlyWarpData:
 	; selector map, actual destination map, six-byte FLYWARP_DATA record
+	; FLY-5.62.140: Gold outdoor spawn coordinates, verified walkable.
+	db NEW_BARK_TOWN, NEW_BARK_TOWN
+	FLYWARP_DATA NEW_BARK_TOWN_WIDTH, 6, 13
+	db JOHTO_CHERRYGROVE_CITY, JOHTO_CHERRYGROVE_CITY
+	FLYWARP_DATA JOHTO_CHERRYGROVE_CITY_WIDTH, 4, 29
 	db MT_MOON_3, ROUTE_4
 	FLYWARP_DATA ROUTE_4_WIDTH, 6, 11
 	db MT_MOON_SQUARE, MT_MOON_SQUARE
