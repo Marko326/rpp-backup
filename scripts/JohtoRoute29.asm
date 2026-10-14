@@ -20,8 +20,8 @@ JohtoRoute29GuideText:
 JohtoRoute29YoungsterText:
 	text "This road goes to"
 	line "CHERRYGROVE CITY."
-	para "The city exit is"
-	line "closed for now."
+	para "The city is now"
+	line "open to the west!"
 	done
 	db "@"
 

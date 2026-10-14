@@ -206,7 +206,7 @@ MapHeaderBanks:
 	db BANK(RocketHideoutElevator_h)
 	db BANK(Route19Gate_h)
 	db Bank(BeachHouse_h)
-	db $01
+	db BANK(JohtoCherrygroveCity_h) ; P2 pilot: former UNUSED_MAP_CE
 	db BANK(SilphCo2_h)
 	db BANK(SilphCo3_h)
 	db BANK(SilphCo4_h)

@@ -3204,6 +3204,14 @@ INCLUDE "data/mapObjects/JohtoRoute29.asm"
 INCLUDE "scripts/JohtoRoute29.asm"
 JohtoRoute29Blocks: INCBIN "maps/JohtoRoute29.blk"
 
+; P2-1: first new Johto outdoor map, with all building warps disabled.
+; No Gold scripting engine, no new graphic blocks, no interior maps.
+SECTION "Johto Cherrygrove City Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoCherrygroveCity.asm"
+INCLUDE "data/mapObjects/JohtoCherrygroveCity.asm"
+INCLUDE "scripts/JohtoCherrygroveCity.asm"
+JohtoCherrygroveCityBlocks: INCBIN "maps/JohtoCherrygroveCity.blk"
+
 ; The save / location name may be dereferenced with bank $1C active;
 ; keep its nine-byte literal in ROM0 rather than overflowing that bank.
 SECTION "Johto Route 29 Display Name", ROM0

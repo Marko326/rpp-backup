@@ -205,7 +205,7 @@ MapSongBanks:
 	db MUSIC_DUNGEON1, 0 ; RocketHideoutElevator
 	db MUSIC_ROUTES3, 0 ; ROUTE_19_GATE
 	db MUSIC_ROUTES3, 0 ; BeachHouse
-	db MUSIC_DUNGEON1, 0
+	db MUSIC_CITIES1, 0 ; Johto Cherrygrove City: former $CE
 	db MUSIC_SILPH_CO, 0 ; SilphCo2
 	db MUSIC_SILPH_CO, 0 ; SilphCo3
 	db MUSIC_SILPH_CO, 0 ; SilphCo4

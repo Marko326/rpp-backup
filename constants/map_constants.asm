@@ -211,7 +211,7 @@ ENDM
 	mapconst ROCKET_HIDEOUT_ELEVATOR,     4,  3 ; $CB
 	mapconst ROUTE_19_GATE,               3,  4 ; $CC
 	mapconst BEACH_HOUSE,                 4,  7 ; $CD
-	mapconst UNUSED_MAP_CE,               0,  0 ; $CE
+	mapconst JOHTO_CHERRYGROVE_CITY,     9, 20 ; $CE ; formerly unused (pilot only)
 	mapconst SILPH_CO_2F,                 9, 15 ; $CF
 	mapconst SILPH_CO_3F,                 9, 15 ; $D0
 	mapconst SILPH_CO_4F,                 9, 15 ; $D1

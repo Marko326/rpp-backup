@@ -1299,14 +1299,36 @@ IsSpriteInFrontOfPlayer2::
 ; function to check if the player will jump down a ledge and check if the tile ahead is passable (when not surfing)
 ; sets the carry flag if there is a collision, and unsets it if there isn't a collision
 CollisionCheckOnLand::
-	; MAP-5.62.130: Route 29 has an EAST connection only. Gold's bottom
-	; grass cells can be passable even at the last map row; in this Red
-	; engine walking beyond an unconnected edge risks reading outside the
-	; loaded map. Guard only unconnected edges, before jump/simulation
-	; collision shortcuts (which must not bypass the edge fence).
+	; P2-1: border fence before collision shortcuts. Route 29 now has
+	; both east and west links; keep north/south closed until Route 46.
+	; Cherrygrove's east link is active, other borders stay closed.
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_29
+	jr z, .route29EdgeFence
+	cp JOHTO_CHERRYGROVE_CITY
 	jr nz, .checkLandCollision
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .cityWestEdge
+	cp PLAYER_DIR_UP
+	jr z, .cityNorthEdge
+	cp PLAYER_DIR_DOWN
+	jr nz, .checkLandCollision
+	ld a, [wYCoord]
+	cp JOHTO_CHERRYGROVE_CITY_HEIGHT * 2 - 1
+	jp nc, .collision
+	jr .checkLandCollision
+.cityWestEdge
+	ld a, [wXCoord]
+	and a
+	jp z, .collision
+	jr .checkLandCollision
+.cityNorthEdge
+	ld a, [wYCoord]
+	and a
+	jp z, .collision
+	jr .checkLandCollision
+.route29EdgeFence
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
 	jr nz, .notSouthEdge
@@ -1322,11 +1344,7 @@ CollisionCheckOnLand::
 	jp z, .collision
 	jr .checkLandCollision
 .notNorthEdge
-	cp PLAYER_DIR_LEFT
-	jr nz, .checkLandCollision ; east edge is connected to New Bark
-	ld a, [wXCoord]
-	and a
-	jp z, .collision ; west Cherrygrove exit is not implemented
+	; Both Route 29 horizontal exits are now connected.
 .checkLandCollision
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?

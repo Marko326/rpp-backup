@@ -206,7 +206,7 @@ MapHeaderPointers::
 	dw RocketHideoutElevator_h
 	dw Route19Gate_h ; originally unused
 	dw BeachHouse_h ; originally unused
-	dw RocketHideoutElevator_h ; unused
+	dw JohtoCherrygroveCity_h ; P2 pilot: former UNUSED_MAP_CE
 	dw SilphCo2_h
 	dw SilphCo3_h
 	dw SilphCo4_h

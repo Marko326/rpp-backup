@@ -1,4 +1,4 @@
-DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 10
+DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 11
 
 DisplayTownMap:
 	; MAP-5.62.116: ordinary Town Map region is derived from the CURRENT map.
@@ -8,10 +8,13 @@ DisplayTownMap:
 	cp NEW_BARK_TOWN
 	jr z, .johtoRegion
 	cp JOHTO_ROUTE_29
-	ld a, 0
-	jr nz, .regionSelected
+	jr z, .johtoRegion
+	cp JOHTO_CHERRYGROVE_CITY
+	jr z, .johtoRegion
+	xor a
+	jr .regionSelected
 .johtoRegion
-	inc a
+	ld a, 1
 .regionSelected
 	ld [wFlyLocationsAxis], a
 	ld a, [hTilesetType]
@@ -32,7 +35,8 @@ DisplayTownMap:
 	ld a, [wFlyLocationsAxis]
 	and a
 	jr z, .kantoPlayerMarker
-	xor a ; only New Bark is accessible in the first Johto map phase
+	call GetJohtoTownMapCurrentIndex
+.johtoPlayerMarkerReady
 	call LoadJohtoTownMapEntry
 	call DrawJohtoTownMapPlayerMarker
 	jr .playerMarkerReady
@@ -69,7 +73,8 @@ DisplayTownMap:
 	jr .enterLoop
 .initJohtoSelection
 	pop af
-	xor a ; New Bark's index on the new Johto browse page
+	call GetJohtoTownMapCurrentIndex
+.johtoSelectionReady
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 
@@ -248,6 +253,10 @@ INCLUDE "data/town_map_order.asm"
 JohtoTownMapEntries:
 	db 116, 148
 	dw JohtoNewBarkName
+	; Gold data/maps/landmarks.asm: Route 29 = (128+8, 100+16).
+	; Table stores Y first, then X; this is between New Bark and Cherrygrove.
+	db 116, 136
+	dw JohtoRoute29TownMapName
 	db 116, 108
 	dw JohtoCherrygroveName
 	db  76,  92
@@ -270,6 +279,7 @@ JohtoTownMapEntriesEnd:
 ASSERT JohtoTownMapEntriesEnd - JohtoTownMapEntries == 4 * NUM_JOHTO_TOWNMAP_ENTRIES
 
 JohtoNewBarkName:        db "New Bark_Town@"
+JohtoRoute29TownMapName: db "Route 29@"
 JohtoCherrygroveName:    db "Cherrygrove_City@"
 JohtoVioletName:         db "Violet City@"
 JohtoAzaleaName:         db "Azalea Town@"
@@ -280,9 +290,27 @@ JohtoCianwoodName:       db "Cianwood_City@"
 JohtoMahoganyName:       db "Mahogany_Town@"
 JohtoBlackthornName:     db "Blackthorn_City@"
 
+; MAP-5.62.137 P2-1 Town Map follow-up: use the true route landmark.
+; Both the blinking player marker and browse starting point use the same ID
+; mapping. Keep the list independent of Fly destinations.
+GetJohtoTownMapCurrentIndex:
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_29
+	jr z, .route29
+	cp JOHTO_CHERRYGROVE_CITY
+	jr z, .cherrygrove
+	xor a ; current supported Johto fallback: New Bark Town
+	ret
+.route29
+	ld a, 1
+	ret
+.cherrygrove
+	ld a, 2
+	ret
+
 LoadJohtoTownMapEntry:
 ; in A = valid town index, out B = y, C = x, HL = localized name.
-	; MAP-5.62.116: keep the 10-record table bounded, even on stale WRAM.
+	; MAP-5.62.116: keep the 11-record table bounded, even on stale WRAM.
 	cp NUM_JOHTO_TOWNMAP_ENTRIES
 	jr c, .inRange
 	xor a
