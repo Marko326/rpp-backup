@@ -1437,7 +1437,7 @@ MoveAnimation:
 	push de
 	push bc
 	push af
-	call WaitForSoundToFinish
+	callba WaitForBattleAnimationSFX
 	call SetAnimationPalette
 	ld a,[wAnimationID]
 	and a
@@ -1477,7 +1477,7 @@ MoveAnimation:
 	ld [wMoveAnimScriptLoaded],a
 	call PlayApplyingAttackAnimation ; shake the screen or flash the pic in and out (to show damage)
 .animationFinished
-	call WaitForSoundToFinish
+	callba WaitForBattleAnimationSFX
 	xor a
 	ld [wSubAnimSubEntryAddr],a
 	ld [wExtendedAnimFrameEffect],a
@@ -4435,7 +4435,7 @@ TossBallAnimation:
 PlayApplyingAttackSound:
 ; play a different sound depending if move is not very effective, neutral, or super-effective
 ; don't play any sound at all if move is ineffective
-	call WaitForSoundToFinish
+	callba WaitForBattleAnimationSFX
 	ld a, [wDamageMultipliers] ; effectiveness
 	and $7f
 	cp $7f

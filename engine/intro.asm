@@ -9,6 +9,10 @@ PlayIntro:
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call PlayShootingStar
 	call PlayIntroScene
+	jr nc, .finishIntroScene
+	; SFX-5.62.140: an A/START skip must not carry battle SFX into the title.
+	callba StopInterruptedIntroSFX
+.finishIntroScene
 	call GBFadeOutToWhite
 	xor a
 	ld [hSCX], a
@@ -332,9 +336,11 @@ PlayShootingStar:
 	ld c, 64
 	call DelayFrames
 	callba AnimateShootingStar
-	push af
-	pop af
-	jr c, .next ; skip the delay if the user interrupted the animation
+	jr nc, .starCompleted
+	; SFX-5.62.140: cut the shooting-star effect before starting battle BGM.
+	callba StopInterruptedIntroSFX
+	jr .next
+.starCompleted
 	ld c, 40
 	call DelayFrames
 .next

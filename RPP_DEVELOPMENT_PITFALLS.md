@@ -155,3 +155,10 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - The external one-shot `ShowPokedexData` description uses `TextCommandProcessor` and its embedded `page` A/B wait. Appending an extra SELECT loop *after* it cannot intercept input already consumed by that text engine. Redirecting its whole render entry on SELECT also clears/repaints the whole screen, as seen in the abandoned 125/126 capture-view prototypes.
 - Per user decision, the 128 external first-capture page deliberately uses only the original description A/B/front-image path. **Never reintroduce** the external `PokedexData_ExternalPageInput` / `ExternalAdvanceToBack` helpers or a temporary facing hook in HOME unless a later explicit request changes the requirement. The separate 121 per-form first-capture unlock and real captured-form header must survive the rollback.
 - Party and Box share a **different** `StatusScreen` with a private temporary facing flag and 49-tile staged upload; do not delete its state, copy loop or VBlank ordering when removing external capture-view experiments. The internal Pokédex uses its own persistent runtime preference. Keep these three lifecycles separate.
+
+
+### SFX-5.62.141 — 低血量 Danger 不是战斗音效播放完成信号
+
+- `WaitForSoundToFinish` 遇 `wDanger != 0` 会直接返回，因此即使 Crysaudio 的 SFX 活动标志仍为 1，也不能据此推定动画尾音播放完毕。新增／多段招式的尾音可能与之后的通用命中声在不同音效声道中叠加。
+- 不要无差别删除 `Danger` 检查或把所有音乐切换改成强制停止效果通道；若只需修改战斗动画的声音衔接，在局部按 CH5～CH8 标志逐帧等待并设置上限，同时遵守 `wSFXDontWait`。等待期间需要 VBlank 正常更新声音，而不是在禁用中断的情况下忙等。
+- 141 已由用户对照旧版完成伏特攻击、电光、撞击及双方招式的核心实测，确认低血量下的音效残留问题在测试范围内消失；十万伏特、动画关闭、免疫／未命中、静音与 180 帧上限等仍未专项确认。AI 未编译 ROM，没有 MAP／实际链接空间结论。

@@ -1,3 +1,9 @@
+## SFX-5.62.140 — 开场按 A／START 跳过残留音效（用户反馈通过）
+
+- [x] **流星与对战跳过音效收尾**：对照用户的原版／RPP 开场录屏与源码，发现 RPP `PlayMusic` 只切换 BGM，不像原版 `PlaySound` 在启动下段音乐前清理 CH5～CH8。因此仅在 GAME FREAK 流星与耿鬼／尼多力诺动画提前被打断时调用浮动 ROMX 的 `StopInterruptedIntroSFX`，停止仍活动的效果通道并立即关闭对应 APU DAC，避免尾音进入下一段；正常演出完成不额外截断音效。
+- [x] **不改变已提交 139**：Mateo 每次显示、完整标题宝可梦叫声、标题轮播、菜单白屏优化及 Continue B 返回无闪均保持。未改 Crysaudio 全局 `PlayMusic`／`PlaySFX`、BGM 音量或存档格式。中断检查保留正常 carry 分支与原 40 帧等待。
+- [x] **140 核心验收反馈**：用户在比较原版与 RPP 后确认流星按 A 提前跳过的残留音效问题已解决，并在进入下一轮时明确反馈 140“没问题”。未分别提供 A／START、两段自然播放、静音与 BGM 音量 0 等完整测试结果，不扩大验收范围；AI 未编译 ROM，未确认链接空间。
+
 # Todo List
 
 This file is the working roadmap for the current RPP branch.
@@ -13,13 +19,13 @@ Status legend:
 - `[?]` undecided, or the task needs a more precise definition
 - `[-]` intentionally deferred / not planned after an explicit user decision
 
-## MENU-5.62.139 — 启动 Mateo 首页与主菜单优化定稿（准备提交）
+## MENU-5.62.139 — 启动 Mateo 首页与主菜单优化（用户确认已提交）
 
 - [x] **Mateo Presents 每次启动显示**：按用户最新决定，无论是否存在 Continue 存档，都显示 Mateo 首页约 180 帧；之后沿用 GAME FREAK 流星、耿鬼／尼多力诺开场、标题动画与主菜单流程。不再在开场读取 SRAM 来决定跳过 Mateo，移除无用 `IntroHasContinueSave`、ROMX 包含段；不修改存档格式。
 - [x] **138 的主菜单加载优化保留**：不缩短／删除标题按 A 的完整宝可梦叫声，只压缩其后白屏；用户提供 138 视频并表示加载体验明显变轻。前次同口径视频估算：137 约 1.25 秒、138 约 0.83 秒（仅白屏，非按键到完成的全程；录屏近似值）。
 - [~] **Continue 存档信息页按 B 防闪烁处理保留**：仍采用主菜单 TileMap 缓存恢复，主菜单退回标题仍走原 `DisplayTitleScreen`。本次未更改该代码，未收到该路径在 139 的单独实测反馈。
 - [ ] **139 的最小回归**：有／无 Continue 启动均能看到 Mateo，后续流星／对战／标题和完整叫声正常；有存档标题→主菜单仍快，Continue 信息页按 B 返回无闪，读档和 Options 正常。其余 ROM 模式、损坏存档／软复位仍待专项检查。本环境不编译／链接 ROM。
-- [ ] **下一版单独处理开场跳过时音频偶发异常**：流星划过或耿鬼／尼多力诺对战时按 A，有时听到音乐／音效响度或衔接异常；比较原版 `PlaySound` 与本项目 Crysaudio 的 `PlayMusic`／`PlaySFX`、音效收尾和独立 BGM 音量。当前只记录复现方向，未经音频实测不能将重叠推断当作已确认根因；139 不修改音频引擎或开场跳过节奏。
+- [x] **开场按 A 跳过时音效残留**：139 阶段留给后续音频专项，已在 `SFX-5.62.140` 用局部声道清理修复；用户确认 140 的异常已消失。此记录只说明 139 不修改该问题，不是 139 自身已包含修复。
 
 ## 标题叫声结束后的白屏时间（`MENU-5.62.138`，待实测）
 
@@ -375,7 +381,7 @@ Status legend:
 
 ### 修复 / 审核类（Bugfix & audit）
 
-- [ ] **低血量 `Danger` 报警／通用命中音效异常（后续独立专项，非⑩验收修复）**：用户已观察到伏特攻击在低血量警报后**最后电击命中音效异常**，并指出其他招式也存在类似问题；其他具体技能和各触发条件尚未逐项复现。共享路径的 `WaitForSoundToFinish` 在 `Danger` 状态可能提前返回，`PlayApplyingAttackSound` 因而可能与自定义动画尾音重叠；该路径仅是待验证的源码线索，不应把所有技能或根因视为已确认。后续比较双方施放、正常／低血量、最后命中声、警报节奏及 Spark 等招式；不得直接静音警报或引入无界等待。本次保留问题，**不修改公共音频引擎、不声称已修复**。
+- [x] **低血量 `Danger`／通用命中音效衔接（`SFX-5.62.141`，核心场景已实测通过）**：公共 `WaitForSoundToFinish` 遇 `Danger` 提前返回，已仅在 `MoveAnimation` 开始／结束及 `PlayApplyingAttackSound` 前的三个等待入口改为 `WaitForBattleAnimationSFX`，红血按实际 CH5～CH8 状态等待，上限 180 帧并保留 `wSFXDontWait`；正常 HP 使用原有等待，不修改 Crysaudio 全局音频接口。**用户实测**：与上一版对照确认此前确有尾音残留，141 中伏特攻击、电光和撞击等普通招式音效已恢复正常，且玩家和敌方均测过；不虚构测试次数或逐条命中结果。**仍未专项确认**：十万伏特、连续多段招式、命中／未命中／免疫、战斗动画关闭、静音与 BGM 音量 0、180 帧上限触发等。与三声渐弱低 HP 警报 TODO 不同。详见 `docs/BATTLE_DANGER_SFX.md` 和 `docs/AUDIO_HANDOFF_141.md`。
 - [ ] **Leech Seed/Toxic、OHKO/Counter、连续攻击等遗留问题**：原 TODO 的候选修复；具体范围详见下方 `Legacy bugfix candidates still worth auditing`，本次不改动。
 - [~] **Mimic/Disable 与 Substitute 状态防护**：沿用旧综合条目的部分实现／待审查状态；**Disable 仍未限制为只禁用目标上一回合实际使用的招式**，不应将整体的部分审查状态视为这一机制已经完成。
 

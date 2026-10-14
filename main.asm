@@ -130,6 +130,10 @@ INCLUDE "color/update_hp_bar.asm"
 
 ; BATTLE-5.19.6: attack-only HP animation policy. Keep it relocatable so the
 ; tight fixed battle/HP-bar banks only pay for their far-call hooks.
+; SFX-5.62.141: bounded move SFX waits live outside the tight animation bank.
+SECTION "Battle Move SFX Wait", ROMX
+INCLUDE "engine/battle/battle_sfx_wait.asm"
+
 SECTION "Battle Damage HP Animation", ROMX
 INCLUDE "engine/battle/damage_hp_animation.asm"
 
@@ -3122,6 +3126,10 @@ INCLUDE "engine/battle/volt_tackle_animation.asm"
 ; ICO-5.62.56: runtime-normalized 16x32 party icons, one ROM entry per
 ; icon template. VRAM holds only the current six party slots, not the atlas.
 ; Original source PNGs are retained unchanged for future asset curation.
+; SFX-5.62.140: opening skip sound cleanup stays in floating ROMX, not HOME.
+SECTION "Interrupted Intro SFX Cleanup", ROMX
+INCLUDE "engine/intro_sfx_stop.asm"
+
 SECTION "Menu Party Icon Graphics", ROMX, BANK[$38]
 PartyIconRuntimeAtlas:
 	INCBIN "gfx/party_icon_imports/dynamic_runtime_atlas.2bpp"

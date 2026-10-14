@@ -48,3 +48,9 @@
 
 - 正常有 Continue 存档时，`LoadSAV` 在成功路径不再清屏、重传字体和文本框；损坏存档的 `.badsum` 仍初始化错误提示图形。
 - 不更改完整 `PlayCry`、标题轮播代码、流星／对战开场以及主菜单按 B 返回的原标题路径。用户 138 视频中的纯白屏较 137 明显缩短，用户认同体验改善。
+
+## SFX-5.62.140 — 开场动画中断音效收尾（待实测）
+
+- 用户提交了原版红与 RPP 两段开场视频，指出流星途中按 A 时原版会停止旧流星音效，而 RPP 有残留尾音。源码支持该差异：原版 `PlaySound` 在启动下一段音乐前清掉 SFX 通道的音源；RPP `PlayMusic` 负责 BGM，不清除独立 CH5～CH8。
+- 本轮仅在 `AnimateShootingStar` 或 `PlayIntroScene` 返回 Carry（实际被 A／START 或其他既有跳过组合打断）时调用 `StopInterruptedIntroSFX`。该函数在 SRAM Bank 0 清除活动效果通道标志、静音对应物理 APU DAC，并重置 SFX 优先级／Noise sample，保留 BGM 与静音选项。不改正常播放路径、GAME FREAK/标题图形、Mateo 时长及主菜单加载。
+- 源码对比和补丁应用静态检查不等同于 ROM 音频实测；是否完全达到原版瞬断、是否出现噪点、Music Off／BGM Volume 0 是否正确，待用户运行核验。139 已按用户反馈自行提交，140 为下一版待验收改动，未生成提交日志。
