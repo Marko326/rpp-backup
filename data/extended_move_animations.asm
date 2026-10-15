@@ -37,6 +37,19 @@ PrepareCurrentMoveAnimation::
 	cp NUM_ATTACKS
 	ret nc
 	ld e, a
+	; MOVE-5.62.156: AGILITY can stage Rock Polish's existing animation
+	; for the ordinary learnset users, without changing the real move ID.
+	ld a, e
+	cp AGILITY
+	jr nz, .normalAnimation
+	push de ; the shared species predicate uses IsInArray (clobbers DE).
+	callab IsRockPolishActingUser
+	pop de
+	jr nc, .normalAnimation
+	ld hl, RockPolishExtAnim
+	jp StageDedicatedMoveAnimation
+.normalAnimation
+	ld a, e
 	; ANM-5.61.33: selected legacy-project animations live beside the interpreter
 	; in bank $1E and execute directly from ROM. This restores their original
 	; command streams without inventing compression-only animation commands.

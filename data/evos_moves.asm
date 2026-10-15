@@ -1940,7 +1940,7 @@ Mon074_EvosMoves:
 	level_move 1,TACKLE
 	level_move 1,DEFENSE_CURL
 	level_move 4,MUD_SLAP ; Mud Sport → TM Move
-	level_move 6,ROCK_POLISH
+	level_move 6,AGILITY ; Rock Polish via battle alias
 	level_move 10,MEGA_PUNCH ; Rollout → RBY TM Move
 	level_move 12,COUNTER ; Magnitude → TM move
 	level_move 16,ROCK_THROW
@@ -1966,7 +1966,7 @@ Mon075_EvosMoves:
 	level_move 1,TACKLE
 	level_move 1,DEFENSE_CURL
 	level_move 4,MUD_SLAP ; Mud Sport → TM Move
-	level_move 6,ROCK_POLISH
+	level_move 6,AGILITY ; Rock Polish via battle alias
 	level_move 10,MEGA_PUNCH ; Rollout → RBY TM Move
 	level_move 12,COUNTER ; Magnitude → TM move
 	level_move 16,ROCK_THROW
@@ -1990,7 +1990,7 @@ Mon076_EvosMoves:
 	level_move 1,TACKLE
 	level_move 1,DEFENSE_CURL
 	level_move 4,MUD_SLAP ; Mud Sport → TM Move
-	level_move 6,ROCK_POLISH
+	level_move 6,AGILITY ; Rock Polish via battle alias
 	level_move 10,MEGA_PUNCH ; Rollout → RBY TM Move
 	level_move 12,COUNTER ; Magnitude → TM move
 	level_move 16,ROCK_THROW
@@ -2476,7 +2476,7 @@ Mon095_EvosMoves:
 	level_move 10,ROCK_TOMB
 	level_move 13,RAGE
 	level_move 16,BODY_SLAM ; Stealth Rock → TM move
-	level_move 19,ROCK_POLISH
+	level_move 19,AGILITY ; Rock Polish via battle alias
 	level_move 20,IRON_DEFENSE ; Gyro Ball → new move
 	level_move 22,ANCIENTPOWER ; Smack Down → HGSS tutor move
 	level_move 25,DRAGONBREATH

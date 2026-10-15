@@ -20,6 +20,8 @@ ApplyCurrentMovePrimaryTypeOverride::
 ApplyEnemyCandidatePrimaryTypeOverride::
 	; MOVE-5.62.155: evaluate mapped Bite as BUG for enemy AI.
 	ld a, c
+	cp AGILITY
+	jr z, .rockPolish
 	cp BITE
 	jr nz, .primaryType
 	push bc ; IsInArray overwrites B/C, including the candidate move ID.
@@ -31,6 +33,15 @@ ApplyEnemyCandidatePrimaryTypeOverride::
 	ld [wEnemyMoveType], a
 	xor a
 	ld [wEnemyMoveEffect], a
+	ret
+.rockPolish
+	push bc
+	ld a, [wEnemyMonSpecies]
+	call IsRockPolishSpecies
+	pop bc
+	jr nc, .primaryType
+	ld a, ROCK
+	ld [wEnemyMoveType], a
 	ret
 .primaryType
 	ld a, c
@@ -54,6 +65,7 @@ PrimaryTypeMoveIDs:
 FinalizeCurrentMoveLoad::
 	call ApplyCurrentMovePrimaryTypeOverride
 	call ApplyCurrentBugBiteOverride
+	call ApplyCurrentRockPolishTypeOverride
 	ld a, BANK(MoveNames)
 	ld [wPredefBank], a
 	ld a, MOVE_NAME
@@ -67,6 +79,7 @@ FinalizeCurrentMoveLoad::
 FinalizeReloadedMoveData::
 	call ApplyCurrentMovePrimaryTypeOverride
 	call ApplyCurrentBugBiteOverride
+	call ApplyCurrentRockPolishTypeOverride
 	call GetMoveName
 	call GetCurrentBattleMoveNamePointer
 	call CopyStringToCF4B
@@ -99,6 +112,26 @@ ApplyCurrentBugBiteOverride:
 	ld [wEnemyMoveEffect], a
 	ret
 
+; Mapped AGILITY keeps its +2 Speed effect and 30 PP, but uses ROCK during
+; battle for the Rock Polish family. Never alter the shared move record.
+ApplyCurrentRockPolishTypeOverride:
+	call GetCurrentMoveID
+	cp AGILITY
+	ret nz
+	call GetActingBattleSpecies
+	call IsRockPolishSpecies
+	ret nc
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, ROCK
+	ld [wPlayerMoveType], a
+	ret
+.enemy
+	ld a, ROCK
+	ld [wEnemyMoveType], a
+	ret
+
 ; Input: none; output A=the currently acting species. Transform already
 ; updates the runtime species, so copied moves follow the current user.
 GetActingBattleSpecies:
@@ -129,7 +162,15 @@ BugBiteSpeciesIDs:
 GetCurrentBattleMoveNamePointer:
 	call GetCurrentMoveID
 	cp BITE
+	jr z, .bugBite
+	cp AGILITY
 	jr nz, .normal
+	call GetActingBattleSpecies
+	call IsRockPolishSpecies
+	jr nc, .normal
+	ld de, RockPolishBattleName
+	ret
+.bugBite
 	call GetActingBattleSpecies
 	call IsBugBiteSpecies
 	jr nc, .normal
@@ -139,8 +180,27 @@ GetCurrentBattleMoveNamePointer:
 	ld de, wcd6d ; IsInArray overwrites DE, so set it last.
 	ret
 
+; Only AGILITY is reinterpreted. Preserve ROCK_POLISH ($F0) for old saves
+; and the separately maintained regional learnsets during this trial.
+IsRockPolishSpecies:
+	ld hl, RockPolishSpeciesIDs
+	ld de, 1
+	jp IsInArray
+
+RockPolishSpeciesIDs:
+	db GEODUDE, GRAVELER, GOLEM, ONIX, STEELIX
+	db $ff
+
+; Used by the animation bank through callab; the result is a carry flag.
+IsRockPolishActingUser::
+	call GetActingBattleSpecies
+	jp IsRockPolishSpecies
+
 BugBiteBattleName:
 	db "Bug Bite@"
+
+RockPolishBattleName:
+	db "Rock Polish@"
 
 ; Only the regular in-battle Fight menu calls this entry. Mimic, relearn,
 ; Party/PC, and all other FormatMovesString callers stay stock.
@@ -151,10 +211,14 @@ FormatBugBiteBattleMovesString::
 .moveLoop
 	ld a, [hli]
 	and a
-	jr z, .dashLoop
+	jp z, .dashLoop
 	push hl
 	cp BITE
-	jr nz, .normalMove
+	jr z, .checkBite
+	cp AGILITY
+	jr z, .checkPolish
+	jr .normalMove
+.checkBite
 	push bc
 	push de ; IsInArray uses DE as its stride and B/C as scratch.
 	ld a, [wBattleMonSpecies]
@@ -166,6 +230,19 @@ FormatBugBiteBattleMovesString::
 	jr .copyName
 .ordinaryBite
 	ld a, BITE
+	jr .normalMove
+.checkPolish
+	push bc
+	push de
+	ld a, [wBattleMonSpecies]
+	call IsRockPolishSpecies
+	pop de
+	pop bc
+	jr nc, .ordinaryAgility
+	ld hl, RockPolishBattleName
+	jr .copyName
+.ordinaryAgility
+	ld a, AGILITY
 .normalMove
 	ld [wd0b5], a
 	ld a, BANK(MoveNames)
@@ -192,7 +269,7 @@ FormatBugBiteBattleMovesString::
 	ld a, b
 	cp NUM_MOVES
 	jr z, .done
-	jr .moveLoop
+	jp .moveLoop
 .dashLoop
 	ld a, "-"
 	ld [de], a
