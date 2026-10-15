@@ -1,3 +1,10 @@
+## TOOL-JOHTO-INDOOR-006-CLEAN：工具测试跳过不能算“提交审核通过”
+
+- **复现条件**：原脚本 `johto_indoor_release_audit.py` 接受独立 `--gold`，但 `tools/tests/test_johto*.py` 中的 Gold 集成测试硬编码读取 `RPP/pokegold-master`。当两份源码按要求分别解压时，实际复现 `Ran 84 tests ... OK (skipped=22)`，即使跳过集成测试仍能显示 `TOOL_ONLY_READY_FOR_GIT_REVIEW`。此前“112 项测试”结论依赖临时将 Gold 提供在测试约定位置，**不能等同于独立 Gold 布局下本次审核已经全覆盖**。
+- **修补边界**：仅在 `tools/` 的审核器、七个集成测试文件传递/读取环境变量 `JOHTO_GOLD_SOURCE`；审核器新增 `skipped_count` 判定，有跳过就拒绝提交闸门通过。新增负向测试覆盖“退出码为 0 但有 skip”的伪 PASS。两套真实源码分开存放时，复测 `113 tests, OK, skipped_count=0`，源码指纹前后保持不变。
+- **正确解释工具报告**：`warp_graph=PASS` 仅表示静态目的地／回门编号配对，不证明门口停留、反向出入与碰撞/方向；两种 Route 15/11 参考均是同一张 Gold Gate 的对照。Gold 已使用 13 个区块、22 个 8×8 图块只能生成隔离候选；`ART_UNMAPPED`、`COLLISION_NOT_PROVEN`、`RESOURCE_BUDGET_UNVERIFIED`、`PALETTE_VRAM_UNVERIFIED`、`GAMEPLAY_NOT_TESTED` 等阻断仍在。未经实机测试不允许正式导入或标成修复完成。
+- **补丁/提交范围**：用户提供的 `.156` 工作区补丁只新增 22 个 `tools/` 文件；清理修补只更新工具审核相关文件与 `TODO.md`、本文件。游戏代码、地图、Warp、飞空、图块、ROM 版本、室外安全护栏及历史 `.154/.155` 都不触碰。补丁须按真实前置状态二选一应用、正反校验，权限维持原值；不得代用户 Commit/Push。
+
 ## GT-5.62.156：飞空单独收口；禁止夹带关卡与室内试验（尚待用户实测）
 
 - **基线纪律**：`.155` 已被用户否决，不在其上继续叠补丁；`.156` 只从完整 ZIP 的 `GT-5.62.153@` 还原并单独加入飞空功能。若本地仍是 `.155`，须先核对并回退到 `.153` 再应用 `.156`；不能将 `.155` 的门口 Warp 方向补丁、室内图块或调色资产混回。`RPP_PROJECT_CONTEXT/` 为导出资料，不应作为 Git 补丁的必要文件。

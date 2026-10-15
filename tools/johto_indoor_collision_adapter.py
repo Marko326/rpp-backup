@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Offline Gold 16x16 collision -> RPP 8x8 walkability evidence.
+
+This module deliberately does not infer RPP warp/door or runtime collision from
+matching art. Per-quadrant disagreements are reported; none is auto-approved.
+"""
+from __future__ import annotations
+import argparse
+from pathlib import Path
+from johto_rpp_asset_audit import collision_labels, gold_resource_aliases
+from johto_indoor_common import ConversionError, dump, safe_roots
+from johto_indoor_tiles_converter import build_mapping
+
+
+GOLD_BLOCKED = frozenset(('WALL', 'COUNTER'))
+GOLD_FLOOR = frozenset(('FLOOR',))
+
+
+def classify_gold(label: str) -> str:
+    if label in GOLD_FLOOR:
+        return 'PASSABLE'
+    if label in GOLD_BLOCKED:
+        return 'BLOCKED'
+    return 'SPECIAL'
+
+
+def quadrant_evidence(block: bytes, passable: set[int]) -> list[str]:
+    """For four 16x16 quadrants, inspect all four RPP 8x8 IDs."""
+    if len(block) != 16:
+        raise ConversionError('RPP metatile 必须恰好 16 字节')
+    evidence = []
+    for y in range(2):
+        for x in range(2):
+            quadrant = [block[(y*2+dy)*4+x*2+dx]
+                        for dy in range(2) for dx in range(2)]
+            status = ('PASSABLE' if all(i in passable for i in quadrant)
+                      else 'BLOCKED' if all(i not in passable for i in quadrant)
+                      else 'MIXED')
+            evidence.append(status)
+    return evidence
+
+
+def compare_quadrants(gold_labels: list[str], rpp_quads: list[str]) -> list[dict]:
+    if len(gold_labels) != 4 or len(rpp_quads) != 4:
+        raise ConversionError('Gold/RPP 每个 metatile 必须有 4 个碰撞象限')
+    compared = []
+    for index, (gold_label, actual) in enumerate(zip(gold_labels, rpp_quads)):
+        expected = classify_gold(gold_label)
+        match = 'SPECIAL_REVIEW' if expected == 'SPECIAL' else (
+            'MIXED_REVIEW' if actual == 'MIXED' else
+            'MATCH' if expected == actual else 'MISMATCH')
+        compared.append({'quadrant': index, 'gold_label': gold_label,
+                         'gold_class': expected, 'rpp_evidence': actual,
+                         'comparison': match})
+    return compared
+
+
+def check(rpp: Path, gold: Path, graphics: dict, rpp_set='gate'):
+    labels, location = collision_labels(gold, graphics['gold_tileset'], gold_resource_aliases(gold))
+    if not labels:
+        raise ConversionError('Gold collision 源缺失')
+    data = (rpp/'gfx/blocksets'/f'{rpp_set}.bst').read_bytes()
+    collision_file = rpp/'gfx/tilesets'/f'{rpp_set}.tilecoll'
+    whitelist = collision_file.read_bytes()
+    if len(data) % 16 or not whitelist or whitelist[-1] != 255 or 255 in whitelist[:-1]:
+        raise ConversionError('RPP blockset/tilecoll 结构不合法或存在提前终止符')
+    passable = set(whitelist[:-1])
+    if not passable:
+        raise ConversionError('RPP 可通行表为空')
+    table, issues = [], []
+    for entry in graphics['mapping']:
+        gid = entry['gold_block_id']
+        if gid >= len(labels):
+            raise ConversionError('Gold collision 数量与 metatile 不匹配')
+        gold_coll = [v.strip() for v in labels[gid].split(',')]
+        if len(gold_coll) != 4:
+            raise ConversionError(f'Gold {gid} 碰撞不是四象限')
+        choices = []
+        if not entry['rpp_candidates']:
+            issues.append({'gold_block_id': gid, 'code': 'NO_PIXEL_EXACT_RPP_CANDIDATE'})
+        for target in entry['rpp_candidates']:
+            if not isinstance(target, int) or target < 0 or (target+1)*16 > len(data):
+                raise ConversionError('RPP 目标区块 ID 越界')
+            block = data[target*16:(target+1)*16]
+            actual = quadrant_evidence(block, passable)
+            compared = compare_quadrants(gold_coll, actual)
+            mismatches = [q['quadrant'] for q in compared if q['comparison'] == 'MISMATCH']
+            special = [q['quadrant'] for q in compared if q['comparison'] == 'SPECIAL_REVIEW']
+            mixed = [q['quadrant'] for q in compared if q['comparison'] == 'MIXED_REVIEW']
+            choices.append({'rpp_block_id': target, 'quadrant_comparisons': compared,
+                            'mismatching_quadrants': mismatches,
+                            'special_quadrants': special, 'mixed_quadrants': mixed,
+                            'all_ordinary_quadrants_match': not (mismatches or special or mixed)})
+            for code, group in (('COLLISION_CLASS_MISMATCH', mismatches),
+                                ('SPECIAL_SEMANTICS_UNVERIFIED', special),
+                                ('MIXED_8X8_TILE_WALKABILITY', mixed)):
+                if group:
+                    issues.append({'gold_block_id': gid, 'rpp_block_id': target,
+                                   'code': code, 'quadrants': group})
+        # Gold `DOOR` and other specials require engine-specific checks even
+        # when RPP's whitelist happens to classify the 8x8 tiles as passable.
+        if any(classify_gold(label) == 'SPECIAL' for label in gold_coll):
+            issues.append({'gold_block_id': gid, 'code': 'GOLD_SPECIAL_NEEDS_RUNTIME_MAPPING'})
+        table.append({'gold_block_id': gid, 'gold_collision': gold_coll,
+                      'rpp_candidates': choices, 'review_required': True})
+    counts = {code: sum(x['code'] == code for x in issues)
+              for code in sorted({i['code'] for i in issues})}
+    return {'schema': 'johto-indoor-collision-v2',
+            'gold_collision_file': location,
+            'rpp_tilecoll_file': str(collision_file.relative_to(rpp)),
+            'rpp_passable_tile_ids': sorted(passable),
+            'blocks': table, 'issues': issues, 'issue_counts': counts,
+            'status': 'COLLISION_REVIEW_REQUIRED', 'auto_approve': False,
+            'reason': 'Tile-ID whitelist evidence cannot certify door/warp triggers, NPC collision or in-game behavior'}
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__)
+    for name in ('rpp', 'gold', 'output'):
+        ap.add_argument('--'+name, required=True, type=Path)
+    args = ap.parse_args(argv)
+    rpp, gold, out = safe_roots(args.rpp, args.gold, args.output)
+    art, _ = build_mapping(rpp, gold)
+    result = check(rpp, gold, art)
+    dump(out, 'indoor_collision.json', result)
+    print('collision:', result['status'], 'issues:', len(result['issues']))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -1,3 +1,12 @@
+## TOOL-JOHTO-INDOOR-006-CLEAN｜室内外离线转换工具链收口（纯工具／可供 Git 审核）
+
+- [x] **工作区补丁复核**：对照用户导出的 `GT-5.62.156.patch`（标注分支“金银”、导出 BASE `2af5ab56a37670b3a135d5f2f4233d03b3198521`），22 个路径全部位于 `tools/`，与此前 TOOLS.006 纯工具交付的文件内容一致；从完整 `.156` 工程 ZIP 正向应用成功。导出头只是补丁元数据，**未在手机 Git 仓库核实 HEAD**。
+- [x] **离线功能核验**：使用完整 `.156` RPP 与独立完整 Gold 源码，Route15Gate1F/Route11Gate1F 两套参考对同一个 Gold 31 号道路关卡分别运行两轮，转换产物指纹一致；Warp 双向结构检查 PASS、地图注册结构有证据，报告和源文件篡改检测生效。**两轮参考不是两张 Gold 房间的转换验收，也不代表进出门游戏行为通过。**
+- [x] **提交闸门修补**：原 `johto_indoor_release_audit.py` 会在 Gold 放于 RPP 工程外时让部分集成测试 `skip`，仍错误判 `TOOL_ONLY_READY_FOR_GIT_REVIEW`（复现：84 项、22 skip）。已在审核器透传 `JOHTO_GOLD_SOURCE` 给测试、将跳过计数作为失败条件，并添加独立负例。最新复跑 **113 项、0 跳过、全部通过**，审核器返回 `TOOL_ONLY_READY_FOR_GIT_REVIEW`；仅代表纯工具源码可审核 Git 提交。
+- [x] **隔离限制**：所有候选产物写入源码目录以外，`import_allowed=false`、`gameplay_integration_ready=false`；不编译 ROM，不注册新地图／新 Tileset，不自动写 ASM、Warp、图块、碰撞、调色或游戏版本（保留 `GT-5.62.156@`）。补丁只涉及 `tools/` 和这两份清理文档。
+- [ ] **后续功能专项**：依旧存在门外提前传送、进出门立即反向卡住、Gold 室内美术／碰撞／调色未完成，飞空用户实测及旧功能回归仍需另做；`.154/.155` 失败实现不得回接。ROM Bank/显存占用/实机效果未验收。
+- [x] **清理三件套**：本 `TODO.md`、`RPP_DEVELOPMENT_PITFALLS.md` 及独立 `Git提交日志.md`。不改地图安全边界登记或 CSV（本轮无地形变更）。Git commit、Push 留给用户自行执行；增量以用户给的 `.156` 工作区脚本补丁应用完成后为前置，全量以原始 `.156` ZIP 为前置，不能叠加。
+
 ## GT-5.62.156｜桔梗市飞空专项（.153 基线；源码候选，待游戏实测）
 
 - [x] **本次有效范围**：用户否决 `.155` 的关卡进出与室内修改，重新以用户完整工程 ZIP 中的 `GT-5.62.153@` 为基线制作 `.156`。`.156` 只修改 `constants/event_constants.asm`、`data/game_version.asm`、`engine/fly_town_map_helpers.asm`、`engine/johto_fly_town_map.asm`、`engine/overworld/missable_objects.asm`、`engine/special_warps.asm` 六个飞空／版本文件；没有继承 `.155` 的门口方向检查、Gold 室内素材或地图连接试验。
