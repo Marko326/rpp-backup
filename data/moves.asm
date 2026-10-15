@@ -245,7 +245,7 @@ MoveEnd:
 	move SAND_ATTACK,  ACCURACY_DOWN_SIDE_EFFECT,   20, GROUND,   100, 10 ; Mud-Slap
 	move SAND_ATTACK,  ACCURACY_DOWN_SIDE_EFFECT,   65, GROUND,    85, 10 ; Mud Bomb
 	move CONFUSION,    FLINCH_SIDE_EFFECT1,         80, PSYCHIC,  100, 20 ; Extrasensory
-	move HEADBUTT,     FLINCH_SIDE_EFFECT2,         80, PSYCHIC,  100, 15 ; Zen Headbutt
+	move HEADBUTT,     FLINCH_SIDE_EFFECT2,         80, PSYCHIC,   90, 15 ; Zen Headbutt
 	move CUT,          NO_ADDITIONAL_EFFECT,        70, PSYCHIC,  100, 20 ; Psycho Cut
 	move SING,         NO_ADDITIONAL_EFFECT,        90, NORMAL,   100, 10 ; Hyper Voice
 	move QUICK_ATTACK, NO_ADDITIONAL_EFFECT,        80, NORMAL,   100,  5 ; Extremespeed

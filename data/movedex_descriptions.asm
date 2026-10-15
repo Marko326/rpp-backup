@@ -2145,7 +2145,7 @@ MoveDexDescCrunch1:
 
 ; #172 Dark Pulse
 MoveDexDescDarkPulsePages:
-	dw MoveDexDescDarkPulse1, MoveDexDescEffectCFlinch10, 0
+	dw MoveDexDescDarkPulse1, MoveDexDescEffectCFlinch20, 0
 MoveDexDescDarkPulse1:
 	db   "Sends dark power"
 	next "in a pulsing wave.@"
@@ -2223,7 +2223,7 @@ MoveDexDescDragonPulse1:
 
 ; #183 Twister
 MoveDexDescTwisterPages:
-	dw MoveDexDescTwister1, MoveDexDescEffectCFlinch10, 0
+	dw MoveDexDescTwister1, MoveDexDescEffectCFlinch20, 0
 MoveDexDescTwister1:
 	db   "Whips up a fierce"
 	next "dragon tornado.@"
@@ -2265,8 +2265,8 @@ MoveDexDescAirSlash1:
 
 ; #189 Fire Fang
 MoveDexDescFireFangPages:
-	; FangAttacks 先走 FlinchSideEffect；非 FLINCH_SIDE_EFFECT1 因而实际约 30% 畏缩，再独立约 10% 状态。
-	dw MoveDexDescFireFang1, MoveDexDescEffectCFlinch30, MoveDexDescEffectCBurn10Fire, MoveDexDescEffectCBurnFireImmune, 0
+	; MOVE-5.62.149: 20% flinch, independently of the unchanged ~10% burn.
+	dw MoveDexDescFireFang1, MoveDexDescEffectCFlinch20, MoveDexDescEffectCBurn10Fire, MoveDexDescEffectCBurnFireImmune, 0
 MoveDexDescFireFang1:
 	db   "Bites with fangs"
 	next "wrapped in flame.@"
@@ -2287,14 +2287,14 @@ MoveDexDescBlastBurn1:
 
 ; #192 Ice Fang
 MoveDexDescIceFangPages:
-	dw MoveDexDescIceFang1, MoveDexDescEffectCFlinch30, MoveDexDescEffectCFreeze10Ice, MoveDexDescEffectCFreezeIceImmune, 0
+	dw MoveDexDescIceFang1, MoveDexDescEffectCFlinch20, MoveDexDescEffectCFreeze10Ice, MoveDexDescEffectCFreezeIceImmune, 0
 MoveDexDescIceFang1:
 	db   "Bites with fangs"
 	next "covered in frost.@"
 
 ; #193 Thunder Fang
 MoveDexDescThunderFangPages:
-	dw MoveDexDescThunderFang1, MoveDexDescEffectCFlinch30, MoveDexDescEffectCParalyze10Electric, MoveDexDescEffectCParalyzeElectricImmune, 0
+	dw MoveDexDescThunderFang1, MoveDexDescEffectCFlinch20, MoveDexDescEffectCParalyze10Electric, MoveDexDescEffectCParalyzeElectricImmune, 0
 MoveDexDescThunderFang1:
 	db   "Bites with charged"
 	next "electric fangs.@"
@@ -2385,6 +2385,10 @@ MoveDexDescEffectCHitsTwice:
 
 MoveDexDescEffectCFlinch10:
 	db   "10", $d9, " chance to make"
+	next "the foe flinch.@"
+
+MoveDexDescEffectCFlinch20:
+	db   "20", $d9, " chance to make"
 	next "the foe flinch.@"
 
 MoveDexDescEffectCHoneClaws:
@@ -2795,7 +2799,7 @@ MoveDexDescExtrasensory1:
 
 ; #233 Zen Headbutt
 MoveDexDescZenHeadbuttPages:
-	dw MoveDexDescZenHeadbutt1, MoveDexDescEffectDFlinch30, 0
+	dw MoveDexDescZenHeadbutt1, MoveDexDescEffectDFlinch20, 0
 MoveDexDescZenHeadbutt1:
 	db   "Focuses its will"
 	next "then rams the foe.@"
@@ -3102,6 +3106,10 @@ MoveDexDescEffectDConfusionDuration:
 
 MoveDexDescEffectDFlinch10:
 	db   "10", $d9, " chance to make"
+	next "the foe flinch.@"
+
+MoveDexDescEffectDFlinch20:
+	db   "20", $d9, " chance to make"
 	next "the foe flinch.@"
 
 MoveDexDescEffectDFlinch30:
