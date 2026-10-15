@@ -33,7 +33,8 @@ class TestDualSource(unittest.TestCase):
         self.assertNotIn('db $06,$40,$FF',src)
 
     def test_gold_expected_geometry(self):
-        self.assertEqual(len(m.RPP_GATE_ART_ADAPTER),20)
+        self.assertEqual(m.GOLD_GATE_SOURCE_BLOCKS,13)
+        self.assertEqual(m.GOLD_GATE_SOURCE_TILES,22)
         self.assertEqual(m.GOLD_GATE,[(0,4,'VIOLET_CITY',8),(0,5,'VIOLET_CITY',9),(9,4,'ROUTE_31',1),(9,5,'ROUTE_31',2)])
     def test_warp_mapping_symmetric(self):
         obj=m.RPP_EXPECTED

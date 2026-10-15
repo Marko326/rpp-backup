@@ -128,13 +128,18 @@ def stage_dedicated_gold_tileset(gold: Path, output: Path, map_name='Route31Viol
     # Compact *both* 32x32 metatiles and 8x8 graphics references. Gold tile IDs
     # are not portable directly into a newly registered RPP tileset.
     source_tile_ids = sorted({tile for bid in ids for tile in blocks[bid*16:(bid+1)*16]})
-    if len(source_tile_ids) > 256:
-        raise ConversionError('候选图形 tile ID 超出 byte 索引')
+    if len(source_tile_ids) >= fixed_slots or len(ids) >= 255:
+        raise ConversionError('候选室内没有额外的独立外围区块/图块槽位')
     new_ids = {old: i for i, old in enumerate(ids)}
     tile_ids = {old: i for i, old in enumerate(source_tile_ids)}
     candidate_layout = bytes(new_ids[b] for b in layout)
+    # The room layout and the out-of-bounds border have independent block IDs.
+    # Reserving a black border at the conversion stage prevents accidentally
+    # re-using a valid wall/floor block as the RPP object's filler.
+    border_block_id = len(ids)
+    border_tile_id = len(source_tile_ids)
     candidate_blockset = bytes(tile_ids[t] for src_id in ids
-                               for t in blocks[src_id*16:(src_id+1)*16])
+                               for t in blocks[src_id*16:(src_id+1)*16]) + bytes([border_tile_id] * 16)
     for i in range(len(layout)):
         original_cells = blocks[layout[i]*16:(layout[i]+1)*16]
         mapped_cells = candidate_blockset[candidate_layout[i]*16:(candidate_layout[i]+1)*16]
@@ -146,7 +151,7 @@ def stage_dedicated_gold_tileset(gold: Path, output: Path, map_name='Route31Viol
     with Image.open(png) as source_image:
         image = source_image.copy()
     columns = 8
-    rows = (len(source_tile_ids)+columns-1)//columns
+    rows = (len(source_tile_ids)+1+columns-1)//columns
     background = image.getpixel((0, 0))
     compact_image = Image.new(image.mode, (columns*8, rows*8), background)
     source_cols = image.width//8
@@ -155,6 +160,10 @@ def stage_dedicated_gold_tileset(gold: Path, output: Path, map_name='Route31Viol
         dst_x, dst_y = (new_id % columns)*8, (new_id // columns)*8
         compact_image.paste(image.crop((src_x, src_y, src_x+8, src_y+8)),
                             (dst_x, dst_y))
+    # Dedicated void tile is solid black; Gold may use a different entry for
+    # the out-of-bounds filler than any block inside the room.
+    compact_image.paste(0, ((border_tile_id%columns)*8, (border_tile_id//columns)*8,
+                            (border_tile_id%columns+1)*8, (border_tile_id//columns+1)*8))
     # Verify pixel identity, not just remapped numeric IDs.
     for old_id, new_id in tile_ids.items():
         sx, sy = (old_id % source_cols)*8, (old_id // source_cols)*8
@@ -182,9 +191,14 @@ def stage_dedicated_gold_tileset(gold: Path, output: Path, map_name='Route31Viol
             'compacted_tile_ids':len(source_tile_ids),
             'source_tile_ids':source_tile_ids,
             'source_block_ids':ids,'source_layout_sha256':sha(layout),
+            'reserved_black_border_block_id': border_block_id,
+            'reserved_black_border_tile_id': border_tile_id,
+            'border_block_uses_black_only': True,
+            'warning_border_collision_not_mapped': True,
             'status':'PIXEL_ASSET_CANDIDATE_ONLY',
             'warnings':['独立候选专用 tileset，不可覆盖原 RPP gate',
                         'PNG 含 padding；隔离 2bpp 已填充到现有 96 tile 固定窗口，但未注册',
+                        '黑色外围预留区块只供未来的 RPP 对象表引用；必须映射到不可通行的 RPP tile ID',
                         '未适配碰撞、VRAM 注册、色板、动画或 ROM Bank',
                         '候选图形未经运行时验证，禁止直接导入 ROM']}
 

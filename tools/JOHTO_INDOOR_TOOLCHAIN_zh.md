@@ -129,3 +129,12 @@ python -B tools/johto_indoor_release_audit.py \
 ```
 
 提交前还须复核**补丁范围仅 tools/**、原文件权限、增量/全量正反应用，并确认游戏版本 `GT-5.62.156` 没变。通关后仅建议独立的**纯脚本提交**，不把现实关卡的问题标成修复完成。
+
+## 重要：地图外围区块与室内 `.blk` 是两套编号（TOOLS.BORDER）
+
+- 原 `JohtoRoute31VioletGateObject` 的 `db $0a` 来自旧 RPP GATE，不能在 Gold 区块重编号后继续沿用。否则地图边缘会重复显示墙面/地板。
+- `johto_indoor_tiles_converter.py` 现在在隔离候选里额外分配纯黑背景 metatile 和独立 tile ID，报告 `reserved_black_border_block_id`、`reserved_black_border_tile_id`。原室内 `used_compacted_blocks` 统计不变，外围不计入 Gold 房间自身的区块数。
+- 已注册的 RPP Tileset 须用 `johto_indoor_border_adapter.py` 执行二阶段适配；会检查目标 `tilecoll`、调色图块窗口、全部内部纹理/碰撞编号，并且将黑色填充块放在现有 `.bst` **末尾**，不重排室内已验收的区块。
+- 工具只往隔离目录输出 3 个源文件和包含外围的预览/报告；不会直接修改 RPP、不会生成被 `.gitignore` 排除的 `.2bpp`，也不会声称游戏内已经验收。
+- 用法：`python tools/johto_indoor_border_adapter.py --rpp /path/to/rpp159 --output /path/to/new_empty_output`
+- 未来扩展到其他房间必须传对应 `--room`、`--tileset`、`--collision`、`--map-width`；不可假设所有房间的 border ID、白名单相同。

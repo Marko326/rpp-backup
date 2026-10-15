@@ -60,7 +60,7 @@ class IndoorToolchainTests(unittest.TestCase):
             result=stage_dedicated_gold_tileset(GOLD,Path(path))
             self.assertEqual(result['used_compacted_blocks'],13)
             self.assertEqual(len((Path(path)/result['layout']).read_bytes()),20)
-            self.assertEqual(len((Path(path)/result['blockset']).read_bytes()),13*16)
+            self.assertEqual(len((Path(path)/result['blockset']).read_bytes()),14*16)
             self.assertEqual(result['status'],'PIXEL_ASSET_CANDIDATE_ONLY')
 
     def test_collision_requires_explicit_review(self):

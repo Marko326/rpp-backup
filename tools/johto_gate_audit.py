@@ -26,6 +26,8 @@ RPP_REQUIRED = (
     'data/warp_tile_ids.asm', 'gfx/blocksets/johto.bst',
     'gfx/tilesets/johto.tilecoll', 'maps/JohtoRoute31.blk', 'maps/JohtoVioletCity.blk',
     'RPP_DEVELOPMENT_PITFALLS.md',
+    'gfx/tilesets/johto_gate.png',
+    'gfx/blocksets/johto_gate.bst', 'color/tilesets/johto_gate.asm',
 )
 GOLD_REQUIRED = (
     'Makefile', 'main.asm', 'includes.asm',
@@ -43,12 +45,9 @@ RPP_EXPECTED = {
 }
 GOLD_GATE = [(0,4,'VIOLET_CITY',8),(0,5,'VIOLET_CITY',9),
              (9,4,'ROUTE_31',1),(9,5,'ROUTE_31',2)]
-RPP_GATE_ART_ADAPTER = bytes([
-    0x04,0x02,0x02,0x02,0x05,
-    0x1a,0x16,0x16,0x16,0x1c,
-    0x18,0x01,0x01,0x01,0x19,
-    0x01,0x01,0x20,0x01,0x01,
-])
+# GATE-5.62.159: original Gold 5x4 artwork, no temporary Kanto gate adapter.
+GOLD_GATE_SOURCE_BLOCKS = 13
+GOLD_GATE_SOURCE_TILES = 22
 
 
 def text(root, rel):
@@ -78,12 +77,104 @@ def preflight(rpp, gold):
     return problems
 
 
+def verify_gold_gate_art(rpp, gold):
+    """Compare actual room pixels and 16x16 collision evidence against Gold.
+
+    Unlike the former art-adapter check, this validates the 159 imported
+    resources without presuming numeric tile ID equivalence across engines.
+    """
+    from PIL import Image
+    from johto_gold_sources import gold_block_sources
+    from johto_rpp_asset_audit import blocks_for, gold_resource_aliases, collision_labels
+
+    errors = []
+    aliases = gold_resource_aliases(gold)
+    src_layout = (gold/gold_block_sources(gold)['Route31VioletGate']).read_bytes()
+    dst_layout = (rpp/'maps/JohtoRoute31VioletGate.blk').read_bytes()
+    original_ids = sorted(set(src_layout))
+    if len(src_layout)!=20 or len(dst_layout)!=20 or len(original_ids)!=GOLD_GATE_SOURCE_BLOCKS:
+        return ['GOLD GATE layout/unique metatiles differ from reviewed 5x4 source']
+    if dst_layout!=bytes(original_ids.index(v) for v in src_layout):
+        errors.append('RPP room layout no longer remaps Gold original metatiles exactly')
+        return errors
+    source_blocks,_,_ = blocks_for(gold,'gate','gold', aliases)
+    target_blocks=(rpp/'gfx/blocksets/johto_gate.bst').read_bytes()
+    is_border_fixed = 'GATE-5.62.160@' in text(rpp,'data/game_version.asm')
+    expected_count = len(original_ids) + int(is_border_fixed)
+    if len(target_blocks)!=expected_count*16:
+        return [f'JOHTO_GATE .bst is not {expected_count} complete 32x32 metatiles']
+    gold_labels,_ = collision_labels(gold,'gate', aliases)
+    allowed=set((rpp/'gfx/tilesets/gate.tilecoll').read_bytes()[:-1])
+    tiles_used=set()
+    with Image.open(gold/'gfx/tilesets/gate.png') as src, Image.open(rpp/'gfx/tilesets/johto_gate.png') as dest:
+        src=src.convert('RGBA'); dest=dest.convert('RGBA')
+        if dest.size!=(128,48): errors.append('JOHTO_GATE artwork must have 96 8x8 slots')
+        for compact,source_id in enumerate(original_ids):
+            qlabels = [x.strip() for x in gold_labels[source_id].split(',')]
+            for cell in range(16):
+                source_tile=source_blocks[source_id*16+cell]
+                target_tile=target_blocks[compact*16+cell]
+                tiles_used.add(source_tile)
+                source_box=(source_tile%16*8, source_tile//16*8, source_tile%16*8+8, source_tile//16*8+8)
+                target_box=(target_tile%16*8, target_tile//16*8, target_tile%16*8+8, target_tile//16*8+8)
+                if src.crop(source_box).tobytes()!=dest.crop(target_box).tobytes():
+                    errors.append(f'GOLD pixel mismatch: block {source_id}, cell {cell}')
+                quadrant=(cell//4//2)*2+(cell%4//2)
+                label=qlabels[quadrant]
+                passable=label=='FLOOR' or label.startswith('WARP_CARPET_')
+                if (target_tile in allowed)!=passable:
+                    errors.append(f'GOLD/RPP walkability mismatch: block {source_id}, cell {cell}')
+    if len(tiles_used)!=GOLD_GATE_SOURCE_TILES:
+        errors.append('Gold source no longer uses 22 referenced tiles')
+    if is_border_fixed:
+        # Verify the out-of-bounds metatile independently of the 5x4 room.
+        # The old GATE object border $0a now means a *wall* in JOHTO_GATE.
+        from johto_indoor_border_adapter import _load_palette_entries, _parse_border
+        object_source = text(rpp,'data/mapObjects/JohtoRoute31VioletGate.asm')
+        border_id,_ = _parse_border(object_source,'JohtoRoute31VioletGate')
+        if border_id != len(original_ids):
+            errors.append(f'JOHTO_GATE border must be independent metatile {len(original_ids)}, got {border_id}')
+        elif border_id*16+16 > len(target_blocks):
+            errors.append('Border metatile index exceeds .bst')
+        else:
+            border_tiles=set(target_blocks[border_id*16:(border_id+1)*16])
+            if len(border_tiles)!=1 or any(tile in allowed for tile in border_tiles):
+                errors.append('Border metatile must reference one impassable tile ID only')
+            else:
+                only=next(iter(border_tiles))
+                pal=_load_palette_entries(rpp/'color/tilesets/johto_gate.asm')
+                with Image.open(rpp/'gfx/tilesets/johto_gate.png') as atlas:
+                    tile=atlas.convert('RGB').crop(((only%16)*8,(only//16)*8,
+                                                    (only%16+1)*8,(only//16+1)*8))
+                    if tile.getbbox() is not None or pal[only]!='GRAY':
+                        errors.append('Border must render solid black in GRAY palette')
+    from johto_indoor_tiles_converter import strict_2bpp
+    makefile = text(rpp, 'Makefile')
+    if not re.search(r'(?m)^gfx/tilesets/johto_gate\.2bpp:\s+gfx/tilesets/johto_gate\.png\s*\n\s+\$\(RGBGFX\) -o \$@ \$<', makefile):
+        errors.append('Missing dedicated non-trimming 96-tile 2bpp build rule')
+    with Image.open(rpp/'gfx/tilesets/johto_gate.png') as graphic:
+        expected = strict_2bpp(graphic,96)
+    if len(expected) != 96*16:
+        errors.append('PNG does not encode a fixed 96-slot graphics window')
+    generated = rpp/'gfx/tilesets/johto_gate.2bpp'
+    if generated.exists() and expected != generated.read_bytes():
+        errors.append('Generated 2bpp does not match the PNG (stale or trimmed artifact)')
+    hdr=text(rpp,'data/mapHeaders/JohtoRoute31VioletGate.asm')
+    if not re.search(r'^\s*db JOHTO_GATE\b',hdr,re.M): errors.append('Room not registered to its own tileset')
+    if 'cp JOHTO_GATE' not in text(rpp,'home/overworld.asm').split('ExtraWarpCheck::',1)[1].split('MapEntryAfterBattle::',1)[0]:
+        errors.append('Missing map-edge Warp check for JOHTO_GATE')
+    if 'dw JohtoGateWarpTileIDs' not in text(rpp,'data/warp_tile_ids.asm'):
+        errors.append('JOHTO_GATE WarpTile pointer missing')
+    return errors
+
+
 def audit(rpp, gold):
     rpp, gold = Path(rpp), Path(gold)
     problems = preflight(rpp, gold)
     if problems: return problems  # hard-stop, no extrapolation on partial sources
-    if 'GT-5.62.158@' not in text(rpp,'data/game_version.asm'):
-        problems.append('WRONG RPP BASE: expected GT-5.62.158 with gate fix')
+    if not any(v in text(rpp,'data/game_version.asm') for v in
+               ('GATE-5.62.159@','GATE-5.62.160@')):
+        problems.append('WRONG RPP BASE: expected GATE-5.62.159/160 Gold gate')
     # GATE-5.62.157: the portal remains walkable, but stepping on it must
     # never auto-warp. The second outward input collides and uses native Warp.
     # The outdoor entrance 16x16 cells still contain four $40 subtiles.
@@ -135,15 +226,16 @@ def audit(rpp, gold):
     for name,expected in RPP_EXPECTED.items():
         got=[(int(y),int(x),int(i),m) for y,x,i,m in WARP_RPP.findall(text(rpp,'data/mapObjects/'+name))]
         if got!=expected: problems.append(f'RPP WARPS {name}: {got!r} expected {expected!r}')
-    actual=(rpp/'maps/JohtoRoute31VioletGate.blk').read_bytes()
-    if actual!=RPP_GATE_ART_ADAPTER:
-        problems.append('RPP indoor 5x4 20-block GATE art adapter differs from reviewed layout')
+    try:
+        problems.extend(verify_gold_gate_art(rpp, gold))
+    except (ValueError, OSError, IndexError, KeyError) as ex:
+        problems.append(f'Original Gold gate art check failed: {ex}')
     refs={
         'constants/region_map_constants.asm':['JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID EQU 6','NUM_JOHTO_MAPS EQU 7'],
         'data/johto_map_headers.asm':['dw JohtoRoute31VioletGate_h','db BANK(JohtoRoute31VioletGate_h)','db JOHTO_ROUTE31_VIOLET_GATE'],
         'data/map_header_banks.asm':['db BANK(JohtoRoute31VioletGate_h)'],
         'data/map_header_pointers.asm':['dw JohtoRoute31VioletGate_h'],
-        'data/mapHeaders/JohtoRoute31VioletGate.asm':['db GATE','JOHTO_ROUTE31_VIOLET_GATE_HEIGHT, JOHTO_ROUTE31_VIOLET_GATE_WIDTH'],
+        'data/mapHeaders/JohtoRoute31VioletGate.asm':['db JOHTO_GATE','JOHTO_ROUTE31_VIOLET_GATE_HEIGHT, JOHTO_ROUTE31_VIOLET_GATE_WIDTH'],
         'main.asm':['INCLUDE "data/mapHeaders/JohtoRoute31VioletGate.asm"','INCLUDE "data/mapObjects/JohtoRoute31VioletGate.asm"', 'JohtoRoute31VioletGateBlocks: INCBIN "maps/JohtoRoute31VioletGate.blk"'],
         'RPP_DEVELOPMENT_PITFALLS.md':['SRC-PREFLIGHT-151','Gold 双源码'],
         }

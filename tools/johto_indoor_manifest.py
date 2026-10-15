@@ -37,7 +37,8 @@ def input_paths(rpp: Path, gold: Path, gold_room: str, rpp_room: str,
                  'johto_indoor_tiles_converter', 'johto_indoor_collision_adapter',
                  'johto_indoor_registration_generator', 'johto_indoor_resource_budget',
                  'johto_indoor_palette_vram_audit', 'johto_indoor_conversion_plan',
-                 'johto_indoor_batch', 'johto_indoor_release_audit', 'johto_rpp_asset_audit',
+                 'johto_indoor_batch', 'johto_indoor_border_adapter',
+                 'johto_indoor_release_audit', 'johto_rpp_asset_audit',
                  'johto_gold_sources'):
         rpp_files.append(f'tools/{name}.py')
     # Tools-only release: tests must be fingerprinted too; old reports cannot

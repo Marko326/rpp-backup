@@ -58,16 +58,17 @@ class Route31VioletNativeGate(unittest.TestCase):
         # ExtraWarpCheck already calls IsPlayerFacingEdgeOfMap for JOHTO.
         extra = (ROOT/'home/overworld.asm').read_text().split('ExtraWarpCheck::', 1)[1].split('MapEntryAfterBattle::', 1)[0]
         self.assertIn('ld hl, IsPlayerFacingEdgeOfMap', extra)
-        self.assertNotIn('cp JOHTO', extra)  # no global direction override
+        self.assertNotIn('cp JOHTO\n', extra)  # no global JOHTO outdoor override
+        self.assertIn('cp JOHTO_GATE', extra)  # map-specific indoor edge behavior
 
     def test_existing_route15_and_indoor_collision_remain_unchanged(self):
-        self.assertEqual(rpp_tileset(ROOT, 'JohtoRoute31VioletGate'), 'GATE')
+        self.assertEqual(rpp_tileset(ROOT, 'JohtoRoute31VioletGate'), 'JOHTO_GATE')
         self.assertEqual([(w['x'], w['y']) for w in rpp_warps(ROOT, 'Route15Gate1F')[:4]],
                          [(0, 4), (0, 5), (7, 4), (7, 5)])
         self.assertEqual(rpp_tileset(ROOT, 'Route15Gate1F'), 'GATE')
 
     def test_version_is_a_new_game_function_version(self):
-        self.assertIn('GT-5.62.158@', (ROOT/'data/game_version.asm').read_text())
+        self.assertIn('GATE-5.62.160@', (ROOT/'data/game_version.asm').read_text())
 
 
 if __name__ == '__main__':
