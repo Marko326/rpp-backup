@@ -236,6 +236,12 @@ PrintListMenuEntries_::
 	jr .placeNameString
 .movesMenu
 	call GetMoveName
+	; Relearner/Deleter menus carry their chosen species separately from
+	; wWhichPokemon, which is overwritten by the list's row iterator.
+	; Restore HL: PlaceString requires the current screen destination.
+	push hl
+	callab MaybeRenameRockPolishNPCListMoveName
+	pop hl
 .placeNameString
 	call PlaceString
 	pop de

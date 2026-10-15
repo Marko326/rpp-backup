@@ -67,7 +67,15 @@ MoveRelearnerText1:
 	ld [hl], d
 	xor a
 	ld [wPrintItemPrices], a ; don't print prices
+	; The list renderer changes wWhichPokemon to a row index. Cache the
+	; selected species during this menu only, then restore the prior mode.
+	ld a, [wMoveMenuType]
+	push af
+	callab SetRockPolishNPCMoveListSpecies
 	call DisplayListMenuID
+	pop bc ; B = previous move-menu mode; carry still means Cancel.
+	ld a, b
+	ld [wMoveMenuType], a
 	pop bc
 	jp c, .chooseMon ; B/Cancel backs out one level to the Pokémon list
 	; MENU-5.61.06: keep the absolute move-list index across LearnMove so an
@@ -80,11 +88,12 @@ MoveRelearnerText1:
 	ld [wMoveNum], a
 	ld [wd11e],a
 	call GetMoveName
-	call CopyStringToCF4B ; copy name to wcf4b
 	pop bc
 	ld a, b
 	ld [wWhichPokemon], a
 	push bc ; preserve the Party index while LearnMove returns its result in B
+	callab MaybeRenameRockPolishLearningMoveName
+	call CopyStringToCF4B ; LearnMove consumes the species-aware wcf4b name.
 	ld a, [wLetterPrintingDelayFlags]
 	push af
 	xor a

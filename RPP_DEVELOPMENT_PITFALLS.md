@@ -208,3 +208,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 旧 `engine/battle/volt_tackle_animation.asm` 的英文注释明确要求只在玩家施放时启用命中段横震，敌方留给通常的竖向命中反馈，因此是有意做出的方向差异；**缺少原作者进一步解释这种美术取舍的证据**。不能凭猜测写成「当初为了避免晃 HUD」等已知事实。
 - 146 在用户对比 145/146 敌方攻击录像后选为最终观感，不应在“整理代码”时再次加回 `H_WHOSETURN` 限制。当前通用 WX 震动会影响完整画面与 HUD，不等于《绿宝石》`ANIM_TARGET` 局部摇动；可选目标局部震动须在后续新版本独立 A/B 试验，不污染已验收的 146。
 - 全局命中反馈表中的玩家／敌方差异可能是 BG、背图及敌方前图各自显示方式造成的适配。审计其他招式时先区分「主体动画阶段被跳过」和「命中反应方式不同」，不得一概改成方向对称。
+
+
+### MOVE-5.62.159～161 — 同一真实招式 ID 的战斗外别名必须携带物种上下文
+
+- `AGILITY` `$61` 对指定物种在战斗中表现为 `Rock Polish`，不代表 `GetMoveName` 能在所有界面全局改名；MoveDex／普通 Agility 仍依赖原名。Party／PC 详情使用已载入的 `wLoadedMonSpecies`，升级及学习替换使用选中 Party 槽 `wWhichPokemon` 读取 `wPartySpecies`。**不要把战斗专用物种判断和没有物种上下文的菜单混为一谈。**
+- `CopyString` 的参数为 `DE=来源`、`HL=目标`。`PrintListMenuEntries_` 的 `HL` 是 `PlaceString` 绘制坐标，任何 `callab` 名称助手前后必须按现场 ABI 保护；NPC 列表绘制会把 `wWhichPokemon` 改为行索引。161 仅在 NPC 列表绘制期间借用 `wMoveMenuType` 暂存所选物种，调用结束立即恢复旧值，防止影响通常代表普通／模仿／PP 文字类型的其他上下文；同时按 `wListPointer == wRelearnableMoves` 限制别名生效范围。
+- `wMovesString` 有 56 字节，修改名称长度时需要重新格式化包含换行和终止符的四招列表，不能对既有短名称就地替换导致后续名称错位。当前 `FormatRockPolishStatusMovesString` 与 `FormatRockPolishLearningMovesString` 各复制了类似的四行格式化循环，**这是已识别的维护性重复，不是已复现功能错误**；未来若拟合并，必须先审查不同物种来源、跨 Bank ABI／寄存器、列表返回和最长名称长度，且作为新功能版本独立验证。本次验收清理不改已通过的 ASM 指令，仅统一三处源码注释中的中间版本号。
+- 157 曾出现反向复制与空白列表，158 详情分流未生效，最终分别在 159、160、161 收口。用户实测范围见 `docs/ROCK_POLISH_161_ACCEPTANCE.md`。PP 道具与 MoveDex Seen/Use、旧 `$F0` 编号释放、学习后对话框残留均未在 161 实现或解决，不应在未来交接中写为已验收。

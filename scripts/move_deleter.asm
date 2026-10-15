@@ -52,7 +52,15 @@ MoveDeleterText1:
 	ld [hl], d
 	xor a
 	ld [wPrintItemPrices], a ; don't print prices
+	; The list renderer reuses wWhichPokemon as a row. Cache the selected
+	; species only for this menu, restoring the old move-menu mode afterward.
+	ld a, [wMoveMenuType]
+	push af
+	callab SetRockPolishNPCMoveListSpecies
 	call DisplayListMenuID
+	pop bc ; B = previous move-menu mode; preserve the menu's carry flag.
+	ld a, b
+	ld [wMoveMenuType], a
 	pop bc
 	jp c, .chooseMon ; B/Cancel backs out one level to the Pokémon list
 	; DisplayListMenuID leaves the selected absolute move-list index in
@@ -68,13 +76,14 @@ MoveDeleterText1:
 	ld [wMoveNum], a
 	ld [wd11e],a
 	call GetMoveName
-	call CopyStringToCF4B ; copy move name to wcf4b
-	; DisplayListMenuID 会把 wWhichPokemon 改成技能列表索引。
-	; 从栈中恢复所选宝可梦索引，再获取正确的昵称。
+	; DisplayListMenuID reused wWhichPokemon for the move-list index.
+	; Restore the party slot before aliasing the confirmation/result name.
 	pop bc
 	push bc
 	ld a, b
 	ld [wWhichPokemon], a
+	callab MaybeRenameRockPolishLearningMoveName
+	call CopyStringToCF4B ; wcf4b survives the nickname lookup below.
 	call GetPartyMonName2 ; wcd6d = 当前选择的宝可梦昵称
 	ld hl, MoveDeleterConfirmText
 	call PrintText

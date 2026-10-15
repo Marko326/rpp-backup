@@ -31,6 +31,8 @@ DontAbandonLearning:
 	push de
 	ld [wd11e], a
 	call GetMoveName
+	; The forgotten move's text is stored in wcd6d, separate from wcf4b.
+	callab MaybeRenameRockPolishLearningMoveName
 	ld hl, OneTwoAndText
 	call PrintText
 	pop de
@@ -114,7 +116,7 @@ TryingToLearn:
 	ld de, wMoves
 	ld bc, NUM_MOVES
 	call CopyData
-	callab FormatMovesString
+	callab FormatRockPolishLearningMovesString
 	pop hl
 .loop
 	push hl

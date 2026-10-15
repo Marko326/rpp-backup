@@ -550,6 +550,8 @@ LearnMoveFromLevelUp:
 	ld [wMoveNum], a
 	ld [wd11e], a
 	call GetMoveName
+	; Only the selected party member's mapped AGILITY uses the display alias.
+	callab MaybeRenameRockPolishLearningMoveName
 	call CopyStringToCF4B
 	predef LearnMove
 .has_move

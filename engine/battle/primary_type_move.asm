@@ -286,3 +286,210 @@ FormatBugBiteBattleMovesString::
 	ld a, "@"
 	ld [de], a
 	ret
+
+; MOVE-5.62.161: Party/PC StatusScreen Page 2 only. Handle each stored
+; AGILITY using the currently loaded mon species, within this same ROM bank.
+; All other IDs use the stock GetName path. Rebuild wMovesString to keep
+; the longer alias from shifting adjacent lines; do not alter MoveDex.
+FormatRockPolishStatusMovesString::
+	ld hl, wMoves
+	ld de, wMovesString
+	ld b, 0
+.moveLoop
+	ld a, [hli]
+	and a
+	jp z, .dashLoop
+	push hl
+	cp AGILITY
+	jr nz, .normalMove
+	; StatusScreen_LoadCurrentMon has already copied the selected
+	; party/box member into wLoadedMon. Use its actual species byte.
+	ld a, [wLoadedMonSpecies]
+	cp GEODUDE
+	jr z, .mappedAgility
+	cp GRAVELER
+	jr z, .mappedAgility
+	cp GOLEM
+	jr z, .mappedAgility
+	cp ONIX
+	jr z, .mappedAgility
+	cp STEELIX
+	jr z, .mappedAgility
+	ld a, AGILITY
+	jr .normalMove
+.mappedAgility
+	ld hl, RockPolishBattleName
+	jr .copyName
+.normalMove
+	ld [wd0b5], a
+	ld a, BANK(MoveNames)
+	ld [wPredefBank], a
+	ld a, MOVE_NAME
+	ld [wNameListType], a
+	call GetName
+	ld hl, wcd6d
+.copyName
+	ld a, [hli]
+	cp "@"
+	jr z, .endName
+	ld [de], a
+	inc de
+	jr .copyName
+.endName
+	ld a, b
+	ld [wNumMovesMinusOne], a
+	inc b
+	ld a, $4e ; line break
+	ld [de], a
+	inc de
+	pop hl
+	ld a, b
+	cp NUM_MOVES
+	jr z, .done
+	jp .moveLoop
+.dashLoop
+	ld a, "-"
+	ld [de], a
+	inc de
+	inc b
+	ld a, b
+	cp NUM_MOVES
+	jr z, .done
+	ld a, $4e
+	ld [de], a
+	inc de
+	jr .dashLoop
+.done
+	ld a, "@"
+	ld [de], a
+	ret
+
+; MOVE-5.62.161: learn-move prompts and replacement text only. GetMoveName
+; has already put the base name in wcd6d. Its input wd11e is the REAL move ID;
+; wWhichPokemon is the selected 0-based party slot, not a list row.
+; Return DE = wcd6d as GetMoveName does; do not change the global MoveNames.
+MaybeRenameRockPolishLearningMoveName::
+	ld a, [wd11e]
+	cp AGILITY
+	jr nz, .original
+	call GetRockPolishLearningSpecies
+	call IsRockPolishSpecies
+	jr nc, .original
+	ld de, RockPolishBattleName
+	ld hl, wcd6d
+	call CopyString ; DE = source and HL = destination, never reversed.
+.original
+	ld de, wcd6d
+	ret
+
+; Input: wWhichPokemon = selected party index. Returns species in A.
+; No scratch WRAM or menu-row state is introduced.
+GetRockPolishLearningSpecies:
+	ld a, [wWhichPokemon]
+	ld c, a
+	ld b, 0
+	ld hl, wPartySpecies
+	add hl, bc
+	ld a, [hl]
+	ret
+
+; Move-forget four-row list only. The learned move prompt retains wcf4b;
+; all old-move names are built afresh, including the longer Rock Polish.
+; This is NOT the relearner/deleter list or the shared FormatMovesString.
+FormatRockPolishLearningMovesString::
+	ld hl, wMoves
+	ld de, wMovesString
+	ld b, 0
+.moveLoop
+	ld a, [hli]
+	and a
+	jp z, .dashLoop
+	push hl
+	cp AGILITY
+	jr nz, .normalMove
+	; Preserve renderer loop index and output pointer across species check.
+	push bc
+	push de
+	call GetRockPolishLearningSpecies
+	call IsRockPolishSpecies
+	pop de
+	pop bc
+	jr nc, .ordinaryAgility
+	ld hl, RockPolishBattleName
+	jr .copyName
+.ordinaryAgility
+	ld a, AGILITY
+.normalMove
+	ld [wd0b5], a
+	ld a, BANK(MoveNames)
+	ld [wPredefBank], a
+	ld a, MOVE_NAME
+	ld [wNameListType], a
+	call GetName
+	ld hl, wcd6d
+.copyName
+	ld a, [hli]
+	cp "@"
+	jr z, .endName
+	ld [de], a
+	inc de
+	jr .copyName
+.endName
+	ld a, b
+	ld [wNumMovesMinusOne], a
+	inc b
+	ld a, $4e ; line break
+	ld [de], a
+	inc de
+	pop hl
+	ld a, b
+	cp NUM_MOVES
+	jr z, .done
+	jp .moveLoop
+.dashLoop
+	ld a, "-"
+	ld [de], a
+	inc de
+	inc b
+	ld a, b
+	cp NUM_MOVES
+	jr z, .done
+	ld a, $4e ; line break
+	ld [de], a
+	inc de
+	jr .dashLoop
+.done
+	ld a, "@"
+	ld [de], a
+	ret
+
+; MOVE-5.62.161: the NPC move lists reuse wWhichPokemon as a menu row.
+; Temporarily use wMoveMenuType for the selected Party species while one
+; Move Deleter/Relearner list is open; each caller saves/restores its value.
+SetRockPolishNPCMoveListSpecies::
+	call GetRockPolishLearningSpecies
+	ld [wMoveMenuType], a
+	ret
+
+; Called only by the generic MOVESLISTMENU renderer. Keep its draw pointer
+; intact at the call site, return DE=wcd6d as GetMoveName does, and scope the
+; alias to the NPC shared list so other list menus remain unchanged.
+MaybeRenameRockPolishNPCListMoveName::
+	ld a, [wd11e]
+	cp AGILITY
+	jr nz, .original
+	ld a, [wListPointer]
+	cp LOW(wRelearnableMoves)
+	jr nz, .original
+	ld a, [wListPointer + 1]
+	cp HIGH(wRelearnableMoves)
+	jr nz, .original
+	ld a, [wMoveMenuType]
+	call IsRockPolishSpecies
+	jr nc, .original
+	ld de, RockPolishBattleName
+	ld hl, wcd6d
+	call CopyString ; source DE -> destination HL.
+.original
+	ld de, wcd6d
+	ret

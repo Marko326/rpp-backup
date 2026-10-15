@@ -651,7 +651,11 @@ StatusScreen_BuildPage2:
 	ld de, wMoves
 	ld bc, NUM_MOVES
 	call CopyData
-	callab FormatMovesString
+	; MOVE-5.62.161: always use the summary-only formatter. It checks
+	; the loaded party/box species locally for each AGILITY entry instead
+	; of selecting a formatter through a separate far-call carry flag.
+	; No global move names or battle behavior are changed.
+	callab FormatRockPolishStatusMovesString
 	coord hl, 9, 2
 	lb bc, 5, 10
 	call ClearScreenArea ; Clear under name
