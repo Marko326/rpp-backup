@@ -99,7 +99,7 @@ def verify_gold_gate_art(rpp, gold):
         return errors
     source_blocks,_,_ = blocks_for(gold,'gate','gold', aliases)
     target_blocks=(rpp/'gfx/blocksets/johto_gate.bst').read_bytes()
-    is_border_fixed = 'GATE-5.62.160@' in text(rpp,'data/game_version.asm')
+    is_border_fixed = 'GATE-5.62.159@' not in text(rpp,'data/game_version.asm')
     expected_count = len(original_ids) + int(is_border_fixed)
     if len(target_blocks)!=expected_count*16:
         return [f'JOHTO_GATE .bst is not {expected_count} complete 32x32 metatiles']
@@ -173,8 +173,8 @@ def audit(rpp, gold):
     problems = preflight(rpp, gold)
     if problems: return problems  # hard-stop, no extrapolation on partial sources
     if not any(v in text(rpp,'data/game_version.asm') for v in
-               ('GATE-5.62.159@','GATE-5.62.160@')):
-        problems.append('WRONG RPP BASE: expected GATE-5.62.159/160 Gold gate')
+               ('GATE-5.62.159@','GATE-5.62.160@','MUS-5.62.161@','MUS-5.62.162@')):
+        problems.append('WRONG RPP BASE: expected GATE-5.62.159/160 or MUS-5.62.161/162 Gold gate')
     # GATE-5.62.157: the portal remains walkable, but stepping on it must
     # never auto-warp. The second outward input collides and uses native Warp.
     # The outdoor entrance 16x16 cells still contain four $40 subtiles.

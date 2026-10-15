@@ -37,7 +37,7 @@ class Route31VioletTransitSign(unittest.TestCase):
         self.assertRegex(self.maps, r'(?m)^\s*IMAP JOHTO_VIOLET_CITY,\s*116,\s*94,\s*JohtoVioletName')
 
     def test_legacy_gate_warp_and_fly_sources_unchanged(self):
-        self.assertIn('GATE-5.62.160@', (ROOT/'data/game_version.asm').read_text())
+        self.assertIn('MUS-5.62.162@', (ROOT/'data/game_version.asm').read_text())
         self.assertIn('JOHTO_ROUTE31_VIOLET_GATE', (ROOT/'data/mapObjects/JohtoRoute31.asm').read_text())
         self.assertIn('JOHTO_ROUTE31_VIOLET_GATE', (ROOT/'data/mapObjects/JohtoVioletCity.asm').read_text())
 

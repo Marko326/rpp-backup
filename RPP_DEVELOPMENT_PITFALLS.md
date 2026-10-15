@@ -1,3 +1,10 @@
+### MUS-5.62.161–162：双地区场景音乐不能只根据 RBY 曲目编号或 `wLastMap` 选曲
+
+- 关都不同地点可共享 RBY 曲目 ID，但对应的金银城都原曲不同。城都普通地图音乐应由**实际地图场景 + 现有 RBY/GSC/RND 风格**解析；C 自定义只在有对应曲目时启用，RND 从有效候选中抽取。骑车、冲浪、战斗和事件音乐保留原先优先级，不硬套普通地图映射。
+- 新增地图后必须同时补 `data/map_songs.asm`，检查地图 ID 是否在表内，并断言条目总数；`.161` 补齐 `$F8～$FA`，`LoadMapHeader` 保护越界索引。仅仅在地图 Header 登记并不能保证地图歌曲表完整。
+- `wLastMap` 只在被旧引擎识别的室外 Tileset 更新；城都 `JOHTO` 室外地图不一定刷新它。门房 RBY 基础曲目与 GSC 场景曲目**必须使用同一个 Warp 来源函数**，优先 `wWarpedFromWhichMap`，且未知来源要有确定回退，不得无条件改写历史 `wLastMap`。
+- 静态测试和补丁正反应用≠声音验收。`.162` 复审确认已修复 `.161` 的入口侧错误，但读档、异常传送、相同 RBY ID 跨场景音乐重播、RND/C 和战斗/骑车/冲浪恢复仍需 ROM 构建与游戏内复测；不能据此声称第二阶段完成。
+
 ## TOOL-JOHTO-INDOOR-006-CLEAN：工具测试跳过不能算“提交审核通过”
 
 - **复现条件**：原脚本 `johto_indoor_release_audit.py` 接受独立 `--gold`，但 `tools/tests/test_johto*.py` 中的 Gold 集成测试硬编码读取 `RPP/pokegold-master`。当两份源码按要求分别解压时，实际复现 `Ran 84 tests ... OK (skipped=22)`，即使跳过集成测试仍能显示 `TOOL_ONLY_READY_FOR_GIT_REVIEW`。此前“112 项测试”结论依赖临时将 Gold 提供在测试约定位置，**不能等同于独立 Gold 布局下本次审核已经全覆盖**。

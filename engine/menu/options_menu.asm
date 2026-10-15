@@ -882,11 +882,74 @@ ResolveMusicStyle::
 	ret nc
 	call ReadMusicStyleState
 	ld b,a
+	; MUS-5.62.161: only ordinary Johto map BGM gets the local GSC
+	; counterpart. Bike/surf, battles and explicit event songs keep the
+	; existing global style resolver and priority rules unchanged.
+	ld a,[wWalkBikeSurfState]
+	and a
+	jp nz,.legacyStyle
+	ld a,[wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz,.legacyStyle
+	ld a,[wMapMusicSoundID]
+	cp e
+	jp nz,.legacyStyle
+	call LookupJohtoMapGSCMusic
+	and a
+	jp z,.legacyStyle
+	ld c,a ; one scene-specific Gold/Silver counterpart
+	ld a,b
+	and MUSIC_STYLE_BASE_MASK
+	cp MUSIC_STYLE_GSC
+	jr z,.johtoGSC
+	cp MUSIC_STYLE_RND
+	jr z,.johtoRND
+	jr .rbyFamily
+.johtoGSC
+	; GSC+C keeps the existing custom-first preference when available.
+	bit MUSIC_STYLE_GSC_CUSTOM_BIT,b
+	jr z,.johtoUseGSC
+	ld hl,MusicStyleCSTMMap
+	call LookupMusicStyleMap
+	and a
+	jr z,.johtoUseGSC
+	ld e,a
+	ret
+.johtoUseGSC
+	ld e,c
+	ret
+.johtoRND
+	; Pick once from the scene's RBY, Gold/Silver, and optional custom
+	; counterpart. No unrelated town/road extras from other locations.
+	ld hl,MusicStyleCSTMMap
+	call LookupMusicStyleMap
+	and a
+	jr z,.johtoRNDTwice
+	ld b,a
+.johtoRNDThree
+	call Random
+	and 3
+	cp 3
+	jr z,.johtoRNDThree
+	and a
+	ret z
+	cp 1
+	jr z,.johtoUseGSC
+	ld e,b
+	ret
+.johtoRNDTwice
+	call Random
+	and 1
+	ret z
+	jr .johtoUseGSC
+.legacyStyle
+	ld a,b
 	and MUSIC_STYLE_BASE_MASK
 	cp MUSIC_STYLE_RND
 	jr z,.random
 	cp MUSIC_STYLE_GSC
 	jr z,.gsc
+.rbyFamily
 
 	; RBY family. Custom is an independent preference bit remembered only here.
 	bit MUSIC_STYLE_RBY_CUSTOM_BIT,b
@@ -1024,6 +1087,43 @@ LookupMusicStyleRandomExtras:
 .found
 	ld a,[hli]
 	ret
+
+; MUS-5.62.162: use the physical Johto map, not the RBY song ID.
+; Cherrygrove and Violet share MUSIC_CITIES1 in RBY but have distinct
+; Gold/Silver themes. The Route31 gate uses the shared real Warp source.
+; INPUT: E=RBY song, B=packed style. OUTPUT: A=GSC music ID or zero.
+; Preserves B and E; C/HL/A are scratch.
+LookupJohtoMapGSCMusic:
+	ld a,[wCurMap]
+	cp JOHTO_ROUTE31_VIOLET_GATE
+	jr nz,.haveMap
+	call GetJohtoGateMusicSourceMap ; same source as LoadMapHeader BGM
+.haveMap
+	ld c,a
+	ld hl,JohtoSceneGSCMap
+.loop
+	ld a,[hli]
+	cp $ff
+	jr z,.missing
+	cp c
+	jr z,.found
+	inc hl
+	jr .loop
+.found
+	ld a,[hl]
+	ret
+.missing
+	xor a
+	ret
+
+JohtoSceneGSCMap:
+	db NEW_BARK_TOWN,             MUSIC_GBP_GSC_NEW_BARK_TOWN
+	db JOHTO_ROUTE_29,            MUSIC_GBP_GSC_ROUTE29
+	db JOHTO_CHERRYGROVE_CITY,    MUSIC_GBP_GSC_CHERRYGROVE_CITY
+	db JOHTO_ROUTE_30,            MUSIC_GBP_GSC_ROUTE30
+	db JOHTO_ROUTE_31,            MUSIC_GBP_GSC_ROUTE30
+	db JOHTO_VIOLET_CITY,         MUSIC_GBP_GSC_VIOLET_CITY
+	db $ff
 
 ; Legacy RBY ID -> corresponding GSC direct-select ID.
 ; Shared RBY tracks without one clean GSC counterpart are deliberately omitted.

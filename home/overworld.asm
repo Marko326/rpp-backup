@@ -780,6 +780,20 @@ CheckIfInOutsideMap::
 	cp PLATEAU ; Route 23 / Indigo Plateau
 	ret
 
+; MUS-5.62.162: ordinary gate Warp records the real source map in
+; wWarpedFromWhichMap. wLastMap is only updated for legacy outdoor tilesets
+; and can be stale for JOHTO. Leave its old $FF return behavior untouched.
+; Input: none. Output: A=Johto Route 31 or Violet City; preserves BC/DE/HL.
+GetJohtoGateMusicSourceMap::
+	ld a,[wWarpedFromWhichMap]
+	cp JOHTO_ROUTE_31
+	ret z
+	cp JOHTO_VIOLET_CITY
+	ret z
+	; Unknown source (e.g. Continue/direct transfer): deterministic city fallback.
+	ld a,JOHTO_VIOLET_CITY
+	ret
+
 ; this function is an extra check that sometimes has to pass in order to warp, beyond just standing on a warp
 ; the "sometimes" qualification is necessary because of CheckWarpsNoCollision's behavior
 ; depending on the map, either "function 1" or "function 2" is used for the check
@@ -2314,6 +2328,11 @@ LoadMapHeader::
 	add a ; double it
 	ld [wCurrentMapWidth2],a ; map width in 2x2 tile blocks
 	ld a,[wCurMap]
+	; MUS-5.62.161: never index beyond the registered map song table.
+	cp NUM_LEGACY_MAPS
+	jr c,.validMusicMap
+	xor a ; safe Pallet theme for an invalid alias
+.validMusicMap
 	ld c,a
 	ld b,$00
 	ld a,[H_LOADEDROMBANK]
@@ -2325,6 +2344,18 @@ LoadMapHeader::
 	add hl,bc
 	add hl,bc
 	ld a,[hli]
+	ld b,a
+	; MUS-5.62.162: base RBY song and GSC style use the same actual
+	; ordinary-Warp source, independent of stale legacy wLastMap.
+	ld a,[wCurMap]
+	cp JOHTO_ROUTE31_VIOLET_GATE
+	jr nz,.storeMapSong
+	call GetJohtoGateMusicSourceMap
+	cp JOHTO_ROUTE_31
+	jr nz,.storeMapSong
+	ld b,MUSIC_ROUTES3
+.storeMapSong
+	ld a,b
 	ld [wMapMusicSoundID],a ; music 1
 	ld a,[hl]
 	ld [wMapMusicROMBank],a ; music 2

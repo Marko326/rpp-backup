@@ -247,3 +247,11 @@ MapSongBanks:
 	db MUSIC_GYM, 0 ; Lorelei
 	db MUSIC_DUNGEON1, 0 ; Bruno
 	db MUSIC_POKEMON_TOWER, 0 ; Agatha
+	; MUS-5.62.161: complete the legacy table for all registered Johto maps.
+	; These are RBY scene counterparts. Johto GSC tracks are selected by
+	; the region-aware resolver, not by hardcoding GSC IDs into this table.
+	db MUSIC_ROUTES3, 0 ; JOHTO_ROUTE_31 ($F8), Route 30 family
+	db MUSIC_CITIES1, 0 ; JOHTO_VIOLET_CITY ($F9), Pewter family
+	db MUSIC_CITIES1, 0 ; JOHTO_ROUTE31_VIOLET_GATE ($FA), entrance side can override
+MapSongBanksEnd:
+	ASSERT (MapSongBanksEnd - MapSongBanks) == NUM_LEGACY_MAPS * 2
