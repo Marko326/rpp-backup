@@ -28,6 +28,7 @@ WarpTileIDPointers:
 	dw CavernWarpTileIDs
 	dw MuseumWarpTileIDs
 	dw NewBarkWarpTileIDs
+	dw JohtoGateWarpTileIDs ; GATE-5.62.159: edge collision triggers, never step-on warp
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -81,3 +82,7 @@ MuseumWarpTileIDs:
 ; $06 remains the Johto warp-pad tile; $40 must not teleport on entry.
 NewBarkWarpTileIDs:
 	db $06,$FF
+
+; GATE-5.62.159: walking onto an indoor border Warp arms return without auto-teleport.
+JohtoGateWarpTileIDs:
+	db $FF

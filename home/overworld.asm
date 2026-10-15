@@ -809,6 +809,8 @@ ExtraWarpCheck::
 	jr z, .useFunction2
 	cp FERRY ; Ferry and Island tileset
 	jr z, .useFunction2
+	cp JOHTO_GATE ; GATE-5.62.159: Gold gate exits are at the map edge
+	jr z, .useFunction1
 .useFunction1
 	ld hl, IsPlayerFacingEdgeOfMap
 	jr .doBankswitch

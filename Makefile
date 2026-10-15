@@ -94,6 +94,12 @@ gfx/game_boy.norepeat.2bpp: tools/gfx += --remove-duplicates
 gfx/theend.interleave.2bpp: tools/gfx += --interleave --png=$<
 gfx/tilesets/%.2bpp: tools/gfx += --trim-whitespace
 
+# GATE-5.62.159: johto_gate uses collision-sensitive absolute 8x8 IDs.
+# Never trim the trailing blank tiles: keep the entire 96-slot ($600 byte) atlas.
+# .2bpp is a generated file ignored by Git; the patch only carries its PNG source.
+gfx/tilesets/johto_gate.2bpp: gfx/tilesets/johto_gate.png
+	$(RGBGFX) -o $@ $<
+
 %.png: ;
 
 %.2bpp: %.png

@@ -3175,6 +3175,12 @@ GoldIconHumanshape:
 PureRGBHumanoidInsectPartyIcon:
 	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"
 
+; GATE-5.62.159: dedicated original-Gold indoor graphics, kept out of
+; existing Kanto Gate and the heavily used Johto outdoor resource bank.
+SECTION "Johto Route31 Gate Tileset", ROMX, BANK[$41]
+JohtoGate_GFX:   INCBIN "gfx/tilesets/johto_gate.2bpp"
+JohtoGate_Block: INCBIN "gfx/blocksets/johto_gate.bst"
+
 ; ROM-5.62.117: keep new Johto ROMX resources in the expansion half.
 ; Collision data stays in ROM0 because the walking code reads it unbanked.
 ; Add later Johto ROMX data to an explicitly assigned bank $40-$7E.
@@ -3241,8 +3247,7 @@ INCLUDE "data/mapObjects/JohtoVioletCity.asm"
 INCLUDE "scripts/JohtoVioletCity.asm"
 JohtoVioletCityBlocks: INCBIN "maps/JohtoVioletCity.blk"
 
-; Gold EastWestGate is 5x4 blocks; the RPP GATE blockset is an art adapter.
-; Keep the two horizontal exits and original Gold map geometry.
+; GATE-5.62.159: original Gold EastWestGate artwork; keep existing Warp geometry.
 SECTION "Johto Route31 Violet Gate Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute31VioletGate.asm"
 INCLUDE "data/mapObjects/JohtoRoute31VioletGate.asm"

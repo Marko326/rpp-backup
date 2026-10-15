@@ -29,3 +29,4 @@ const_value = 0
 	const ICE_CAVERN   ; 26
 	const MUSEUM_2     ; 27
 	const JOHTO        ; 28 ; JHT-5.62.110: isolated Gen 2 outdoor tileset
+	const JOHTO_GATE   ; 29 ; GATE-5.62.159: original Gold indoor gate only

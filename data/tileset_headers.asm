@@ -28,3 +28,4 @@ Tilesets:
 	tileset Cavern_Block,      Ice_Cavern_GFX,  Cavern_Coll,      $FF,$FF,$FF, $FF, CAVE
 	tileset Museum2_Block,     Museum2_GFX,     Museum_Coll,	  64,81,255, 255, 0
 	tileset NewBark_Block,     NewBark_GFX,     NewBark_Coll,     255,255,255, $04, OUTDOOR ; MAP-5.62.127: Gold tall grass
+	tileset JohtoGate_Block,   JohtoGate_GFX,   Gate_Coll,        $FF,$FF,$FF, $FF, 0 ; GATE-5.62.159: original art, Kanto Gate collision rules
