@@ -58,6 +58,9 @@ SelectGlobalDamageFeedbackType::
 ; move, player-side override, enemy-side override
 ; 4 = BlinkEnemyMonSprite, 1 = ShakeScreenVertically, 0 = keep stock type.
 DamageFeedbackOverrides:
+	; MOVE-5.62.155: Bug Bite keeps Bite horizontal feedback without flinch.
+	; Normal Bite already uses the same feedback in both directions.
+	db BITE, 5, 2
 	db SHADOW_BALL, 4, 1
 	db VOLT_TACKLE, 0, 1 ; VTA-5.62.43: player stock; enemy vertical hit feedback.
 	db ENERGY_BALL, 4, 1 ; ANM-5.62.05: custom impact is followed by standard blink/vertical hit feedback.

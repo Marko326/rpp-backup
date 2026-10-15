@@ -605,10 +605,16 @@ MoveDexDescLeer1:
 
 ; #044 Bite
 MoveDexDescBitePages:
-	dw MoveDexDescBite1, MoveDexDescEffectFlinch10, 0
+	dw MoveDexDescBite1, MoveDexDescEffectFlinch10, MoveDexDescBiteBugBite, 0
 MoveDexDescBite1:
 	db   "Bites the foe with"
 	next "sharp teeth.@"
+MoveDexDescBiteBugBite:
+	; MOVE-5.62.155: describe the battle-only alias under the base Bite entry.
+	db   "Certain Pokémon"
+	next "use Bug Bite in"
+	next "battle: BUG-type,"
+	next "no flinch effect.@"
 
 ; #045 Growl
 MoveDexDescGrowlPages:

@@ -2615,7 +2615,11 @@ MoveSelectionMenu:
 	call AnyMoveToSelect
 	ret z
 	ld hl, wBattleMonMoves
-	call .loadmoves
+	ld de, wMoves
+	ld bc, NUM_MOVES
+	call CopyData
+	; MOVE-5.62.155: change only the in-battle Fight menu names.
+	callab FormatBugBiteBattleMovesString
 	coord hl, 4, 12
 	ld b, 4
 	ld c, 14

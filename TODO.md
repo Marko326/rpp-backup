@@ -44,6 +44,13 @@ Status legend:
 - `[?]` undecided, or the task needs a more precise definition
 - `[-]` intentionally deferred / not planned after an explicit user decision
 
+## MOVE-5.62.155 — 虫咬家族战斗映射（收口准备；运行待验）
+
+- [x] **家族映射已接入源码**：绿毛虫／铁甲蛹／巴大蝶、独角虫／铁壳蛹／大针蜂、派拉斯／派拉斯特共八只，战斗中按实际 `BITE` ID 和当前使用者物种解释为 `Bug Bite`；不追踪学习来源。真实伤害为虫属性、物理、威力 60、命中 100%、25 PP，移除畏缩；普通物种的 Bite 仍是恶属性并保留原效果。未新增招式 ID 或修改存档、升级学习表（包括九级／十七级安排）。
+- [x] **显示与受击反馈按简化方案实现**：只映射战斗 Fight 菜单和实际出招名称；升级学习／回忆／Party／PC 等战斗外入口继续显示 Bite。MoveDex 的 Bite 条目增加特殊说明而不新增图鉴编号。复用 `DamageFeedbackOverrides` 中的 `BITE, 5, 2`，预期玩家横向轻震、敌方横向重震，且不恢复畏缩；复制招式按当前使用者重新解释。
+- [~] **Bank 与静态检查**：152 曾报 `Fly Icon Runtime Helpers` 无法放入 `$3D`，后续将 `Primary-Type Move Overrides` 改为浮动 ROMX；155 的补丁已做正反回放与符号／调用路径静态检查。**尚未收到 153～155 链接成功、MAP 或 155 ROM 游戏实测反馈**；本轮清理不表示链接与运行已通过。用户要求准备提交日志，不等于 Git Commit／Push 已完成。
+- [ ] **最小运行回归**：八只映射宝可梦中至少分别覆盖派拉斯与派拉斯特、一个旧家族及敌我双方；检查战斗选招／出招文本、虫属性克制与 STAB、无畏缩、横向轻／重震；用普通 Bite 确认恶属性和畏缩不变；核对 MoveDex、战斗外 Bite 显示，以及模仿／挥指等派生招式。通信战、变身及特殊反馈边界未有单独实测记录。
+
 ## MENU-5.62.139 — 启动 Mateo 首页与主菜单优化（用户确认已提交）
 
 - [x] **Mateo Presents 每次启动显示**：按用户最新决定，无论是否存在 Continue 存档，都显示 Mateo 首页约 180 帧；之后沿用 GAME FREAK 流星、耿鬼／尼多力诺开场、标题动画与主菜单流程。不再在开场读取 SRAM 来决定跳过 Mateo，移除无用 `IntroHasContinueSave`、ROMX 包含段；不修改存档格式。

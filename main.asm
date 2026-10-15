@@ -3019,7 +3019,8 @@ SECTION "Gold DynamicPunch Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/dynamic_punch_animation.asm"
 
 ; EGG-A4-5.61.75: table-driven primary-type move overrides and move-load finalizers.
-SECTION "Primary-Type Move Overrides", ROMX, BANK[$3D]
+; MOVE-5.62.155: use floating ROMX to avoid filling fixed bank $3D.
+SECTION "Primary-Type Move Overrides", ROMX
 INCLUDE "engine/battle/primary_type_move.asm"
 
 ; EGG-A4-5.61.75: Gold Egg Bomb projectile reuses DynamicPunch's explosion core.
