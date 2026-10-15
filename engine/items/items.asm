@@ -2439,6 +2439,9 @@ ItemUsePPRestore:
 	ld a,[hl]
 	ld [wd11e],a
 	call GetMoveName
+	; PP-item result text uses wcf4b, not the selected-move list.
+	; Keep the real move ID and use the selected Party species for its alias.
+	callab MaybeRenameRockPolishLearningMoveName
 	call CopyStringToCF4B ; copy name to wcf4b
 	pop hl
 	ld a,[wPPRestoreItem]

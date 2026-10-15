@@ -2653,7 +2653,12 @@ MoveSelectionMenu:
 	ld hl, wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
-	call .loadmoves
+	ld de, wMoves
+	ld bc, NUM_MOVES
+	call CopyData
+	; PP-item menu only: use the selected Party species to display mapped
+	; AGILITY as Rock Polish without changing Mimic or battle move lists.
+	callab FormatRockPolishLearningMovesString
 	; MENU-5.62.31: the PP window ends at row 11, directly above the text box.
 	coord hl, 4, 6
 	ld b, 4

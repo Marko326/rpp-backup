@@ -44,12 +44,20 @@ Status legend:
 - `[?]` undecided, or the task needs a more precise definition
 - `[-]` intentionally deferred / not planned after an explicit user decision
 
+## MOVE-5.62.162 — 岩石打磨 PP 道具名称显示（用户已测正常；战斗 PP 道具回合问题另案）
+
+- [x] **162 名称显示实测反馈**：PP Up、Ether、Max Ether、Leppa Berry 共用的单招选择列表按当前队伍物种把 AGILITY `$61` 显示为 `Rock Polish`；普通 Agility 保持原名。Elixir／Max Elixir 继续走原全招式恢复入口。用户反馈 162 已测试，目前没有观察到异常；这并不等于每种道具与全部边界都分别实测。
+- [x] **提示文字的实际覆盖范围**：`text.asm` 的 `_PPIncreasedText` 与 `_PPMaxedOutText` 读取 `wcf4b`，会显示具体招式名，162 已在 PP Up 结果文字装载前进行物种名称映射。`_PPRestoredText` 仅提示 “PP was restored.”，`_PPNoEffectText` 也不含技能名；Ether／Elixir 的成功／无效提示无需改名。这一差异已从源码核对，不应误记为“全部 PP 道具提示都包含招式名称”。
+- [ ] **战斗中 PP 恢复道具须一次成功使用＝消耗一件＋立即占用一个回合**（用户报告现状可在选择列表反复使用，且可不消耗回合；待单独修复和实测）：适用于允许使用背包的野外战斗中 Ether、Max Ether、Elixir、Max Elixir、Leppa Berry 等；成功后应立即退出道具／招式／队伍选择，进入该回合对战结算，不允许同回合继续给其他招式或宝可梦重复使用。训练师战仍按现有规则禁用背包；PP Up 在 `ItemUsePPUp` 已主动禁止战斗使用，不要为了此项意外开放。
+- [ ] **已定位的源码审查线索／下一版修复约束**：`engine/items/items.asm` 的 `ItemUsePPRestore .done` 成功扣道具并置 `wActionResultOrTookBattleTurn = 1` 后，只根据库存是否剩余就回到 `.resumeMoveSelection`／`.returnToPartyAfterPPUse`，没有区分 `wIsInBattle`；若之后从重复选择链取消，`.itemNotUsed` 又会将该结果置零。`engine/battle/core.asm` 的 `UseBagItem` 则在结果为零时返回背包，结果成功时才退出道具阶段。因此存在“已实际使用道具，之后取消使本回合不结算”的明确逻辑风险。修复只限制**战斗中成功使用**的重入；场外 ITEM-5.62.28 已验收的连续使用、光标续选以及无效果／取消不耗道具与不耗回合必须保留。
+- [ ] **未来最小测试**：野外战斗中对单招 Ether／Max Ether／Leppa Berry 和全招 Elixir／Max Elixir 各成功使用一次，核对只扣一件、只生效一次、立即交由对方行动并消耗本回合；库存多件、满 PP 无效、按 B 取消、最后一件、非当前上场宝可梦、战斗结束返回菜单；场外连续使用与原返回路径正常。用户此次只要求登记 TODO，**162 没有修复战斗道具回合机制**。
+
 ## MOVE-5.62.161 — 岩石打磨战斗外名称显示（用户实测验收；准备 Git 提交）
 
 - [x] **本专项已通过的显示入口**：`159` 修复 Party 详情、Bill's PC 存入与取出详情的 `Rock Polish` 名称；`160` 覆盖战斗／经验道具升级的直接学习、已有四招时的替换列表及相关学习文本；`161` 覆盖遗忘师、回忆师的候选列表和流程文字。用户在 `161` 明确复测回忆／遗忘流程及列表，并复测两种升级来源、直接习得与四招替换，均反馈正常。此前失败的 `157` 实验与 `158` 详情页分流均不是当前最终实现。
 - [x] **161 验收清理审查**：逐点复核 `wLoadedMonSpecies`（详情）、`wPartySpecies` + `wWhichPokemon`（学习）、NPC 列表临时借用且恢复的 `wMoveMenuType`、列表的 `wListPointer` 作用域、`CopyString` 的 `DE` 来源／`HL` 目标、绘制前 `HL` 保存，以及 `wMovesString` 缓冲长度。当前受测路径未发现必须立即修复的确定性逻辑错误；不存在可安全断言为死代码的 157/158 实验分支。清理时只将两处 ASM 文件中三行 159/160 版本注释归一为最终 161，不改任何指令。`FormatRockPolishStatusMovesString` 和 `FormatRockPolishLearningMovesString` 存在重复格式化循环，因用户要求暂停功能变更，本次不冒险合并或改动 ASM。详见 `docs/ROCK_POLISH_161_ACCEPTANCE.md`。
 - [~] **仍需区分的回归边界**：不同物种的普通 `Agility` 与特殊复制／变身、特殊取消／滚动组合、大岩蛇→大钢蛇等未获得与上述场景同级别的逐项实测；静态条件设计不等于全部场景用户已验证。`161` 的游戏源码状态已实测，不等于 Git Commit/Push 已确认。
-- [ ] **后续独立专项（本次不改）**：PP 回复／PP Up／PP Max 等道具的招式名称；先独立复现升级／道具连续使用后的对话框残留；MoveDex 对映射后 Rock Polish 不记录 AGILITY Seen/Use（已选方案 B），必须再另立版本。原 `$F0` `ROCK_POLISH` 与地区形态表不回收、不修改。
+- [ ] **161 时的后续规划（按最新 162 状态更新）**：PP 回复／PP Up 的名称已在 162 独立实现并获用户总体测试反馈，项目无独立 PP Max 道具 ID；战斗 PP 恢复类道具的回合问题另列上方 TODO。升级／道具连续使用后的对话框残留仍需独立复现；MoveDex 对映射后 Rock Polish 不记录 AGILITY Seen/Use（已选方案 B），必须再另立版本。原 `$F0` `ROCK_POLISH` 与地区形态表不回收、不修改。
 
 ## MOVE-5.62.156 — 岩石打磨复用高速移动 ID（战斗核心收口；显示另案）
 
