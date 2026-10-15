@@ -1,3 +1,34 @@
+### CLN-5.62.178：未提交备注边界、过时测试与不可删的 Warp 安全机制
+
+- **范围规则（用户明确限定）**：仅处理 `.169` 已提交基线之后、`.170～.177` 尚未提交工作中的**过时源码版本备注**；不批量擦除其他年份、旧版本、历史事故说明、测试文件名，也不修改已经提交的 `.169` 或更早功能注释。正式提交日志列出已提交基线→当前定稿版本，游戏版本字串按项目约定提升为 `CLN-5.62.178@`。
+- **本轮证据**：对照 Gold `maps/Route32.asm` 的 `(6,79)`、`maps/UnionCave1F.asm` 的 `(17,3)` 和 RPP 现有表，确认当前洞口坐标已对齐；`.177` 手机录像的进/出与侧向保护已通过。Gold 地图 Warp 与 RPP 引擎触发方式不同，不能因为坐标对齐便删除关都式碰撞触发或洞外安全落位。
+- **实际清理**：有效 `.asm` 中旧 `CAVE-5.62.173`、`CAVE-5.62.174`、本阶段 `WARP-5.62.177` 的*注释*改为无版本的稳定功能描述。运行时除可见版本字串外，不更改任何汇编指令、标签、数据、资源或宏。修正 `test_johto_union_cave171.py` 仍断言已被废弃的 `db 0,$FF` 的旧检查，改为验证碰撞式洞口白名单为空；当前版本断言同步。测试文件名及历史失败案例保持以便追溯。
+- **不因代码行数少就擅删**：`GetJohtoWarpArrivalStep` 的方向表是扩展点，`JohtoRoute32CaveEntranceCheck`、`JohtoRoute32CaveWarpTileCheck`、洞穴向下碰撞判断与 `GetJohtoCaveMapChangeSFX` 均仍有代码调用，不属于已证实的死代码；等新增第二个洞穴样本并实测后再考虑公共配置表或移除特例。
+- **回归纪律**：在 Gold ZIP 真实存在的测试环境运行，跳过不能作为成功；使用真实 `.176` ZIP 重建到 `.178` 的全量补丁，及 `.177`+地图规则的增量补丁，均验证应用、撤销、文件内容、执行权限。没有 ROM 编译、硬件 `.178` 实测、Git Commit/Push，后续继续跟进自行车、水域/冲浪、挖洞/逃洞绳、普通地图以及飞行地点能力。
+
+## JOHTO-MAP-ONBOARDING｜每张新地图的全功能接入关卡（待各功能逐项验收）
+
+这是一套**长期防重犯规则**，不是宣布所有城都地图与野外技能已完成。适用新城镇、道路、洞穴、门房、建筑、水域，以及**每一种新图块集**。每次开发必须先打开实际工作区与 Gold 原版源码；当前只读静态审核可以先做，但缺 Gold 对照或手机实测时，不得将图像、技能或进出行为记为已验收。
+
+1. **建立每张地图的接入矩阵，逐项标出 `ALLOWED / FORBIDDEN / DEFERRED / NOT_APPLICABLE` 及对应 Gold 证据**：地区+本地地图 ID、Header/Bank、对象及脚本、地图连接／边界护栏、地图音乐及场景恢复、图块/动画/碰撞/调色、NPC/事件、路牌/存档、普通 Town Map、飞空、门房/洞穴 Warp，以及骑车、冲浪、砍树、怪力、撞树、挖洞、逃洞绳。没有填表≠原版禁止；未开放场景应显式登记 deferred，并设置安全阻断。
+2. **地图索引不是单一登记**：新增城都局部地图，核对 `constants/region_map_constants.asm`、`data/johto_map_headers.asm`、`data/mapHeaders`/`data/mapObjects`、`engine/town_map.asm` 的 `JohtoNativeTownMapIndices` 和 `JohtoNativeTownMapEntries`、`engine/menu/options_menu.asm` 音乐、地图名称及 `JohtoNativeCollisionFence`。`REGION_NATIVE_MAP_SLOT` 是句柄，不能拿它当全球唯一 Map ID；老地图/旧存档、`$FE/$FF` 语义和表长保持不变。地图和飞空不能只凭名称“已注册”判定完成。
+3. **普通 Town Map 要同时检查地标数据和静态底图**：`engine/town_map.asm` 的名称/坐标/当前地图索引与 `gfx/tilemaps/johto_map.kmp`、`gfx/town_map_johto.png` 属于不同层。新增路线、洞口、城市后，要用**真实 Gold 地标与地图画面**逐点复核，不能只加 `dw Name` 就宣布地图上已经画出道路。`data/town_map_entries.asm` 的老 Kanto/兼容映射也不能用增删条目试修。普通地图允许道路/洞穴地标；**只有城市类符合设计的地点**才考虑 Johto Fly 解锁。
+4. **飞空是单独的功能合同**：对新飞行城市核对 `engine/johto_fly_town_map.asm` 目的地、解锁事件位及进城置位、`engine/fly_town_map_helpers.asm` 的 `SpecialFlyWarpData`（Y/X 顺序）、`engine/special_warps.asm` 直接切图的 tileset 恢复、旧存档及 Kanto Fly；道路和洞穴不得因出现在普通 Town Map 就自动变成可飞空地点。未接城市、空格落点和事件位冲突必须阻断。
+5. **入口行为优先复用关东共享机制，分开审核四层**：①地图对象 Warp 的起点/目标/方向，②碰撞与 `DoorTileIDPointers` / `WarpTileIDPointers`，③到达落点及 `PlayerStepOutFromDoor` 模拟按键，④声音及地图场景。胜利之路、已验收 31 号道路门房是回归样板。不得为每个新山洞再复制一套“站上去就传送/自动多迈一步”的坐标补丁；也不得全局删除原生门房出门步。至少测试进、出、立即反向、侧向擦过、连走、Continue、音效。`.177` 联合洞穴进出已获用户手机反馈修复，不能由此推定所有洞穴通用。
+6. **新图块集必须审核各能力表，不能只登记 `DungeonTilesets`**：骑车 `data/bike_riding_tilesets.asm` / `IsBikeRidingAllowed`；逃洞绳/挖洞 `engine/items/items.asm` 中 `EscapeRopeTilesets` / `CanUseEscapeRope`；冲浪 `engine/overworld/field_moves.asm` 中 `WaterTilesets2` / `IsSurfTile`、前方水块及 `TilePairCollisionsWater`；地形类别、`data/force_bike_surf.asm` 与骑行/冲浪 Sprite/音效。每张地图的期望许可必须对照 Gold 明确为允许或不允许；**不能为了修一个地图而把所有洞穴、室内或水面全局放行**。
+7. **Field Moves 的前置条件和返回地点必须与图块许可分别验收**：当前 Surf/Cut/Strength 复用关都已有队伍招式/徽章条件，不等同城都徽章事件已适配；新增城都冲浪要查训练师能否用、岸边上下水、状态与坐骑、切图/存读档、音乐、边缘护栏和是否有有效水上碰撞。Dig/Escape Rope 与 Teleport/blackout 的返回地点及地区状态特别敏感，`engine/menu/start_sub_menus.asm` 已明确警告不要随意拓宽 `CheckIfInOutsideMap`；在双地区入口/回退已静态和实机验证前，不可仅加图块集白名单就开放，避免返回关都错误地点或卡死。
+8. **把历史失误变成自动测试，不以清理代码为前提**：新增/修改图块集后扫描能力表与地图能力矩阵的漏项；新增地标后检查每个局部 ID 的 Town Map 对应、真实底图审计状态；新增城市后检查 Fly 三方数据和事件位；新增门/洞口检查 Warp 对称、碰撞、落点/模拟步与侧向负例。测试必须区分 `STATIC_PASS / GOLD_REFERENCE_PENDING / PHONE_PENDING / USER_ACCEPTED`，并在新增地图提交前阻断“未知却声称已完成”。旧 `.138` 城都骑车、`.157` 门房、`.177` 联合洞穴这三类回归应保留。
+9. **顺序与提交纪律**：先接功能→各自源码与手机回归→再考虑共享化、重复代码与 ROM 空间优化→用户确认后再做 TODO、开发踩坑记录、Git 提交日志“三件套”正式收口。不可把未验收的 Field Moves、未来地图或工具测试写成已完成，不擅自编译 ROM、Commit/Push；每个正式功能补丁独立验证增量/全量应用撤销和文件权限。
+
+**截至 `WARP-5.62.177` 的专门待核对项目（不是许可声明）**：`JOHTO_UNION_CAVE` 已在 `DungeonTilesets`，但不在 `BikeRidingTilesets`、`EscapeRopeTilesets`、`WaterTilesets2`；联合洞穴的水面/骑车、逃洞绳、挖洞必须按原版行为与双地区返回链路分别论证。普通 Johto Town Map 已有 Route 29～32、Union Cave 地标索引，但静态背景图的道路形状/地标匹配仍需对照原版复核；城都 Fly 当前为若叶镇、吉花市、桔梗市三个城市。**这些项目没有随本文档自动修复，旧许可和地图显示保持原状。**
+
+### WARP-5.62.177：联合洞穴定稿边界与中间版本备注清理纪律
+
+- **当前有效功能与证据等级**：联合洞穴1F双向洞口在用户 `.177` 录像中可正常进、出、再次进入；不强制洞内 `D_UP`，朝出口方向碰撞出洞，侧向路过不触发。与 Route31 门房、关东胜利之路共享的 Warp 处理优先复用；现存针对 Route32/Union Cave 的坐标适配不等于所有洞穴都自动获得通用支持。仅限上述手机实测范围，不扩大到旧档、其余楼层、Field Moves 和全部关东地图回归。
+- **当前不能误删的功能**：保留 Route32 洞外安全迈步、洞口碰撞方向/站位、已审核入口与进出音效；洞内不能恢复 `.175/.176` 的自动 `D_UP` 或踩格侧向误触发。运行时代码删除必须另行实证；本次 `.178` 只做有效备注与旧断言清理，不更改已验收的 Warp 汇编指令。
+- **正式定稿与版本备注**：`RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 规定增量开发不反复改源码版本注释，游戏内有效版本必须可见；正式提交日志写明有效起始→最终版本，不能把 `.171～.176` 试验节点当作正式代码版本。最终有效源码中若有已过时中间版标签（已发现 `CAVE-5.62.173`、`CAVE-5.62.174`），已在 `.178` 限定范围内替换为稳定说明；有历史价值的 TODO/踩坑文档及 Git 版本沿革不应被抹除。
+- **本次三件套边界**：TODO、踩坑、障碍登记和独立提交日志只记录已验收、未完成与提交范围；当时只提交文档，不改变 `.177` 的地图与游戏行为；随后 `.178` 已另行清理未提交备注和过时断言。`.170` 地区编号扩容与洞穴/入口是不同的逻辑提交，不能用一次 `git add -A` 混交。截至该历史文档草案时缺 Gold；`.178` 已获得 Gold 完整 ZIP 并重新执行静态验证，不等于 ROM 构建或手机验收。
+
 ### MUS-5.62.163：第三阶段音乐防回归工具的审计边界
 
 - 七张现有城都地图（门房算一张）的 RBY/GSC 对应必须使用**独立期望表**核对，不能只数 `JohtoSceneGSCMap` 条目或检查音乐常量是否合法；关键 `MUSIC_GBP_GSC_*` 必须同时检查 `tbp Music_*` 指针身份。

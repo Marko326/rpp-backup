@@ -3255,12 +3255,23 @@ INCLUDE "scripts/JohtoRoute31VioletGate.asm"
 JohtoRoute31VioletGateBlocks: INCBIN "maps/JohtoRoute31VioletGate.blk"
 
 ; R32-5.62.165: Route32 terrain and one safe connection to Violet City.
-; Gold indoor Warps and the unbuilt Route33 exit remain disabled.
+; Only Union Cave is accessible; Route33, PC and Ruins remain closed.
 SECTION "Johto Route 32 Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute32.asm"
 INCLUDE "data/mapObjects/JohtoRoute32.asm"
 INCLUDE "scripts/JohtoRoute32.asm"
 JohtoRoute32Blocks: INCBIN "maps/JohtoRoute32.blk"
+
+; Union Cave 1F: Gold-isolated art and collision variants (no Kanto cave reuse).
+SECTION "Johto Union Cave Tileset", ROMX, BANK[$42]
+JohtoUnionCave_GFX: INCBIN "gfx/tilesets/johto_union_cave.2bpp"
+JohtoUnionCave_Block: INCBIN "gfx/blocksets/johto_union_cave.bst"
+
+SECTION "Johto Union Cave 1F Map", ROMX, BANK[$42]
+INCLUDE "data/mapHeaders/JohtoUnionCave1F.asm"
+INCLUDE "data/mapObjects/JohtoUnionCave1F.asm"
+INCLUDE "scripts/JohtoUnionCave1F.asm"
+JohtoUnionCave1FBlocks: INCBIN "maps/JohtoUnionCave1F.blk"
 
 ; R31: expanded-ROM-only edge policy keeps the nearly full ROM0 unchanged
 ; except for the small far-call. Carry = block move; clear = proceed with

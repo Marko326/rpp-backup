@@ -782,6 +782,13 @@ CheckMapConnections::
 
 ; function to play a sound when changing maps
 PlayMapChangeSound::
+	; Existing indoor/outdoor SFX also apply to the
+	; native Union Cave Warp; the old $0B tile rule remains the fallback.
+	; Keep region/local checks in ROMX to avoid using extra HOME space.
+	callab GetJohtoCaveMapChangeSFX
+	ld a, e ; callab preserves E, but can replace A on bank restore
+	and a
+	jr nz, .playSound
 	aCoord 8, 8 ; upper left tile of the 4x4 square the player's sprite is standing on
 	cp $0b ; door tile in tileset 0
 	jr nz,.didNotGoThroughDoor
@@ -1469,6 +1476,14 @@ CollisionCheckOnLand::
 	ld hl,TilePairCollisionsLand
 	call CheckForJumpingAndTilePairCollisions
 	jr c,.collision
+	; Gold's Route32 cave mouth is entered by stepping onto (6,79).
+	; Its wall-like pixel tiles remain blocked everywhere else.
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
+	jr nz, .normalTileCollision
+	callba JohtoRoute32CaveEntranceCheck
+	jr c, .noCollision
+.normalTileCollision
 	call CheckTilePassable
 	jr nc,.noCollision
 .collision

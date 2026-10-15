@@ -1139,6 +1139,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_VIOLET_CITY
 	db 0 ; source-dependent gate; legacy compatibility only
 	db MUSIC_GBP_GSC_ROUTE30
+	db MUSIC_GBP_GSC_UNION_CAVE
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

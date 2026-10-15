@@ -100,6 +100,11 @@ gfx/tilesets/%.2bpp: tools/gfx += --trim-whitespace
 gfx/tilesets/johto_gate.2bpp: gfx/tilesets/johto_gate.png
 	$(RGBGFX) -o $@ $<
 
+# Gold Union Cave uses fixed IDs, including collision-distinct image copies.
+# Keep all 96 slots; otherwise trimmed generated 2bpp breaks ROM tile pointers.
+gfx/tilesets/johto_union_cave.2bpp: gfx/tilesets/johto_union_cave.png
+	$(RGBGFX) -o $@ $<
+
 %.png: ;
 
 %.2bpp: %.png

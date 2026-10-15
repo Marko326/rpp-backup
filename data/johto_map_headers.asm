@@ -9,6 +9,7 @@ JohtoMapHeaderPointers::
 	dw JohtoVioletCity_h ; local $05 (legacy $F9)
 	dw JohtoRoute31VioletGate_h ; local $06 (legacy $FA)
 	dw JohtoRoute32_h ; local $07 (legacy $FB)
+	dw JohtoUnionCave1F_h ; local $08 (native $FC)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -20,6 +21,7 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoVioletCity_h)
 	db BANK(JohtoRoute31VioletGate_h)
 	db BANK(JohtoRoute32_h)
+	db BANK(JohtoUnionCave1F_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -35,6 +37,7 @@ JohtoMapLegacyAliases::
 	db JOHTO_VIOLET_CITY
 	db JOHTO_ROUTE31_VIOLET_GATE
 	db JOHTO_ROUTE_32
+	db REGION_NATIVE_MAP_SLOT
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -48,6 +51,7 @@ JohtoNativeMapSongBanks::
 	db MUSIC_CITIES1, 0 ; Violet
 	db MUSIC_CITIES1, 0 ; Route31 gate, source-dependent in the legacy path
 	db MUSIC_ROUTES3, 0 ; Route32
+	db MUSIC_DUNGEON2, 0 ; Union Cave 1F
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

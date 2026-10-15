@@ -21,8 +21,7 @@ JohtoRoute32RuinsText:
 
 JohtoRoute32CaveText:
 	text "UNION CAVE"
-	para "Entrance closed"
-	line "for now."
+	para "Entrance ahead."
 	done
 	db "@"
 

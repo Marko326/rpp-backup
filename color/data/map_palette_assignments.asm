@@ -39,3 +39,4 @@ INCLUDE "color/tilesets/ice_cavern.asm" ; ICE_CAVERN
 INCLUDE "color/tilesets/museum2.asm" ; MUSEUM_2
 INCLUDE "color/tilesets/johto.asm" ; JOHTO
 INCLUDE "color/tilesets/johto_gate.asm" ; JOHTO_GATE
+INCLUDE "color/tilesets/johto_union_cave.asm" ; JOHTO_UNION_CAVE

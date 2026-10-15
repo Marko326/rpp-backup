@@ -29,6 +29,7 @@ WarpTileIDPointers:
 	dw MuseumWarpTileIDs
 	dw NewBarkWarpTileIDs
 	dw JohtoGateWarpTileIDs ; GATE-5.62.159: edge collision triggers, never step-on warp
+	dw JohtoUnionCaveWarpTileIDs
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -85,4 +86,10 @@ NewBarkWarpTileIDs:
 
 ; GATE-5.62.159: walking onto an indoor border Warp arms return without auto-teleport.
 JohtoGateWarpTileIDs:
+	db $FF
+
+; Union Cave exits through a DOWN collision while standing
+; on its registered (17,3) Warp, not by stepping onto a generic floor tile.
+; Keep this list empty like other native collision-only entrances.
+JohtoUnionCaveWarpTileIDs:
 	db $FF

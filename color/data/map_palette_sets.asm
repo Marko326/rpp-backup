@@ -299,3 +299,13 @@ MapPaletteSets:
 	db INDOOR_BROWN
 	db INDOOR_LIGHT_BLUE
 	db CRYS_TEXTBOX
+
+; Gold Union Cave 1F uses the indoor cave palette family.
+	db INDOOR_GRAY
+	db INDOOR_RED
+	db INDOOR_GREEN
+	db INDOOR_BLUE
+	db INDOOR_YELLOW
+	db INDOOR_BROWN
+	db INDOOR_LIGHT_BLUE
+	db CRYS_TEXTBOX

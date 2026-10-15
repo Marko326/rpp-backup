@@ -1,5 +1,5 @@
 ; R32-5.62.165: original Gold Route32, Violet City north passage only.
-; Unbuilt Route33, indoor maps, and all other exterior edges remain closed.
+; Route33 and every exterior edge except Violet City remain closed.
 JohtoRoute32_h:
 	db JOHTO
 	db JOHTO_ROUTE_32_HEIGHT, JOHTO_ROUTE_32_WIDTH

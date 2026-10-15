@@ -1,0 +1,87 @@
+"""Kanto-style cave collision return regression contracts.
+
+Historical filename kept for discovery compatibility; old automatic cave-step
+assertions were an implementation detail, not an accepted gameplay behavior.
+"""
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import os
+import shutil
+import sys
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tools'))
+from johto_warp_arrival_audit import INPUTS, audit, profiles, walkable  # noqa: E402
+
+
+class JohtoWarpArrivalContract(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        raw = os.environ.get('JOHTO_GOLD_SOURCE')
+        cls.gold = Path(raw) if raw else None
+
+    def test_only_outdoor_step_remains(self):
+        self.assertEqual(audit(ROOT, self.gold), [])
+        src = (ROOT / INPUTS[0]).read_text()
+        self.assertEqual(profiles(src), [
+            ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
+        self.assertTrue(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3))
+        self.assertFalse(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4))
+        self.assertTrue(walkable(ROOT, 'JohtoRoute32', 'johto', 10, 6, 80))
+
+    def mutate(self, name, before, after, expected):
+        with TemporaryDirectory() as td:
+            root = Path(td)
+            for rel in INPUTS:
+                target = root / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / rel, target)
+            p = root / name
+            src = p.read_text()
+            self.assertIn(before, src)
+            p.write_text(src.replace(before, after, 1))
+            errors = audit(root, self.gold)
+            self.assertTrue(any(expected in value for value in errors), errors)
+
+    def test_reintroducing_cave_auto_step_fails(self):
+        self.mutate('engine/overworld/region_map_lookup.asm',
+                    '\tdb $ff\n\n; Native cave entrances use',
+                    ('\tdb REGION_NATIVE_MAP_SLOT, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, 17, '
+                     'JOHTO_ROUTE_32, D_UP\n\tdb $ff\n\n; Native cave entrances use'),
+                    'cave cannot auto-step')
+
+    def test_wrong_outdoor_direction_fails(self):
+        self.mutate('engine/overworld/region_map_lookup.asm',
+                    '79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN',
+                    '79, 6, REGION_NATIVE_MAP_SLOT, D_UP',
+                    'only Route32 needs a southward arrival step')
+
+    def test_unregistered_cave_warp_fails(self):
+        self.mutate('data/mapObjects/JohtoUnionCave1F.asm',
+                    'db 3, 17, 0, REGION_WARP_ESCAPE',
+                    'db 3, 16, 0, REGION_WARP_ESCAPE',
+                    'original Gold cave and Route32 Warp coordinates')
+
+    def test_cave_floor_step_on_returns_fails(self):
+        self.mutate('data/warp_tile_ids.asm',
+                    'JohtoUnionCaveWarpTileIDs:\n\tdb $FF',
+                    'JohtoUnionCaveWarpTileIDs:\n\tdb 0,$FF',
+                    'floor must not be a step-on Warp')
+
+    def test_missing_cave_collision_coordinate_fails(self):
+        self.mutate('engine/overworld/player_state.asm',
+                    '\tcp 17\n\tjr nz, .normalDownEdge',
+                    '\tcp 16\n\tjr nz, .normalDownEdge',
+                    'exact x=17,y=3')
+
+    def test_cave_collision_wrong_map_guard_fails(self):
+        self.mutate('engine/overworld/player_state.asm',
+                    '\tcp JOHTO_UNION_CAVE_1F_LOCAL_ID\n\tjr nz, .normalDownEdge',
+                    '\tcp JOHTO_ROUTE_32_LOCAL_ID\n\tjr nz, .normalDownEdge',
+                    'missing targeted Union Cave DOWN collision guard')
+
+
+if __name__ == '__main__':
+    unittest.main()

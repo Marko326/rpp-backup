@@ -48,12 +48,12 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoRoute32TownMapName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoUnionCaveTownMapName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_ROUTE30\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_UNION_CAVE\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_save_local_byte_is_fatal(self):
@@ -62,16 +62,16 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_future_native_map_must_register_all_local_tables(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 8', 'DEF NUM_JOHTO_MAPS EQU 9',
+                    'DEF NUM_JOHTO_MAPS EQU 9', 'DEF NUM_JOHTO_MAPS EQU 10',
                     'local map IDs')
 
-    def test_native_handle_cannot_take_a_physical_legacy_map_id(self):
-        self.assertIn('REGION_NATIVE_MAP_SLOT',
-                      (ROOT / 'constants/map_constants.asm').read_text())
-        self.assertIn('ASSERT REGION_NATIVE_MAP_SLOT == $fc',
-                      (ROOT / 'constants/region_map_constants.asm').read_text())
+    def test_virtual_map_cannot_consume_new_real_legacy_id(self):
+        self.mutate('data/johto_map_headers.asm',
+                    'db REGION_NATIVE_MAP_SLOT\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31\nJohtoMapLegacyAliasesEnd::',
+                    'local 8 must use the shared virtual handle')
 
-    def test_fixture_can_register_a_ninth_local_without_consuming_old_id(self):
+    def test_fixture_can_register_a_tenth_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             for name in INPUTS:
@@ -80,19 +80,19 @@ class NativeMapIDExpansion(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dst)
             edits = {
                 'constants/region_map_constants.asm': [
-                    ('DEF NUM_JOHTO_MAPS EQU 8',
-                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 8\nDEF NUM_JOHTO_MAPS EQU 9')],
+                    ('DEF NUM_JOHTO_MAPS EQU 9',
+                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 9\nDEF NUM_JOHTO_MAPS EQU 10')],
                 'data/johto_map_headers.asm': [
-                    ('JohtoMapHeaderPointersEnd::', '\tdw JohtoRoute32_h ; fixture\nJohtoMapHeaderPointersEnd::'),
-                    ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoRoute32_h)\nJohtoMapHeaderBanksEnd::'),
+                    ('JohtoMapHeaderPointersEnd::', '\tdw JohtoUnionCave1F_h ; fixture\nJohtoMapHeaderPointersEnd::'),
+                    ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoUnionCave1F_h)\nJohtoMapHeaderBanksEnd::'),
                     ('JohtoMapLegacyAliasesEnd::', '\tdb REGION_NATIVE_MAP_SLOT\nJohtoMapLegacyAliasesEnd::'),
-                    ('JohtoNativeMapSongBanksEnd::', '\tdb MUSIC_ROUTES3, 0 ; fixture\nJohtoNativeMapSongBanksEnd::')],
+                    ('JohtoNativeMapSongBanksEnd::', '\tdb MUSIC_DUNGEON2, 0 ; fixture\nJohtoNativeMapSongBanksEnd::')],
                 'engine/menu/options_menu.asm': [
-                    ('JohtoNativeGSCMusicEnd::', '\tdb MUSIC_GBP_GSC_ROUTE30 ; fixture\nJohtoNativeGSCMusicEnd::')],
+                    ('JohtoNativeGSCMusicEnd::', '\tdb MUSIC_GBP_GSC_UNION_CAVE ; fixture\nJohtoNativeGSCMusicEnd::')],
                 'engine/town_map.asm': [
-                    ('db 0, 1, 2, 3, 4, 5, 5, 13', 'db 0, 1, 2, 3, 4, 5, 5, 13, 13'),
+                    ('db 0, 1, 2, 3, 4, 5, 5, 13, 14', 'db 0, 1, 2, 3, 4, 5, 5, 13, 14, 14'),
                     ('JohtoNativeTownMapEntriesEnd::',
-                     '\tdb 124, 84\n\tdw JohtoRoute32TownMapName\nJohtoNativeTownMapEntriesEnd::')],
+                     '\tdb 124, 84\n\tdw JohtoUnionCaveTownMapName\nJohtoNativeTownMapEntriesEnd::')],
             }
             for rel, pairs in edits.items():
                 path = root / rel
@@ -107,7 +107,7 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_no_map_creation_inside_engine_expansion(self):
         self.assertFalse((ROOT / 'maps/JohtoRoute33.blk').exists())
-        self.assertFalse((ROOT / 'maps/JohtoUnionCave1F.blk').exists())
+        self.assertTrue((ROOT / 'maps/JohtoUnionCave1F.blk').exists())
 
 
 if __name__ == '__main__':

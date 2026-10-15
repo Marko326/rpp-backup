@@ -30,3 +30,4 @@ Ferry_Coll::        INCBIN  "gfx/tilesets/ferry.tilecoll"
 ; R32-5.62.166: passable $5B is a pixel/palette duplicate of Gold LADDER $07.
 ; Only metatile $06 references it; original $07 stays blocked on wall blocks.
 NewBark_Coll::     INCBIN  "gfx/tilesets/johto.tilecoll"
+JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"

@@ -30,3 +30,4 @@ const_value = 0
 	const MUSEUM_2     ; 27
 	const JOHTO        ; 28 ; JHT-5.62.110: isolated Gen 2 outdoor tileset
 	const JOHTO_GATE   ; 29 ; GATE-5.62.159: original Gold indoor gate only
+	const JOHTO_UNION_CAVE ; 30 ; dedicated Gold Union Cave 1F graphics/collision

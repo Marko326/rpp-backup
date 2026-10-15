@@ -290,6 +290,9 @@ JohtoTownMapEntries:
 	; Gold Route32 landmark is (X=84, Y=92); append without shifting 0..12.
 	db  92,  84
 	dw JohtoRoute32TownMapName
+	; Gold landmark Union Cave: (X=84, Y=124), separate from Route32.
+	db 124,  84
+	dw JohtoUnionCaveTownMapName
 JohtoTownMapEntriesEnd:
 ASSERT JohtoTownMapEntriesEnd - JohtoTownMapEntries == 4 * NUM_JOHTO_TOWNMAP_ENTRIES
 
@@ -299,6 +302,7 @@ JohtoCherrygroveName:    db "Cherrygrove_City@"
 JohtoRoute30TownMapName: db "Route 30@"
 JohtoRoute31TownMapName: db "Route 31@"
 JohtoRoute32TownMapName: db "Route 32@"
+JohtoUnionCaveTownMapName: db "Union Cave@"
 JohtoVioletName:         db "Violet City@"
 JohtoAzaleaName:         db "Azalea Town@"
 JohtoGoldenrodName:      db "Goldenrod_City@"
@@ -312,7 +316,7 @@ JohtoBlackthornName:     db "Blackthorn_City@"
 ; Both the blinking player marker and browse starting point use the same ID
 ; mapping. Keep the list independent of Fly destinations.
 JohtoNativeTownMapIndices::
-	db 0, 1, 2, 3, 4, 5, 5, 13
+	db 0, 1, 2, 3, 4, 5, 5, 13, 14
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 
@@ -1126,6 +1130,8 @@ JohtoNativeTownMapEntries::
 	dw JohtoVioletName
 	db 92, 84
 	dw JohtoRoute32TownMapName
+	db 124, 84
+	dw JohtoUnionCaveTownMapName
 JohtoNativeTownMapEntriesEnd::
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
 

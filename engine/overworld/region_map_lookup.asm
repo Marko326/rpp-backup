@@ -282,6 +282,7 @@ ExplicitWarpRegionTargets::
 	db INSIDE_FERRY, 1, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
 	db INSIDE_FERRY, 0, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
 	db INSIDE_FERRY, 1, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
+	db JOHTO_ROUTE_32, 0, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
 	db $ff
 ASSERT JOHTO_NEW_BARK_LOCAL_ID < NUM_JOHTO_MAPS
 ASSERT VERMILION_FERRY_DOCK < NUM_LEGACY_MAPS
@@ -349,6 +350,8 @@ ResolveNativeRegionWarp::
 	ret
 
 NativeRegionWarpTargets::
+	; Cave warp 0 returns to the original Route32 cave-mouth warp 0.
+	db JOHTO_UNION_CAVE_1F_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
 	db $ff
 
 ; Native connection lookup: source Johto local / direction / destination
@@ -397,3 +400,129 @@ SelectNativeMapConnection::
 NativeRegionConnectionTargets::
 	; Only enable after auditing each direction's border and alignment.
 	db $ff
+
+; Route32's original Gold cave tile (6,79) is solid to generic RPP
+; movement. Allow the one northward step from (6,80), then transfer on
+; the actual (6,79) tile, not at the approach (6,80).
+; This is independent of Kanto door tiles and native map-edge guards.
+JohtoRoute32CaveEntranceCheck::
+	ld a, [wXCoord]
+	cp 6
+	jr nz, .blocked
+	ld a, [wYCoord]
+	cp 80
+	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .blocked
+	scf
+	ret
+.blocked
+	and a
+	ret
+
+; Only the actual Gold doorway tile may complete a step-on Route32 warp.
+JohtoRoute32CaveWarpTileCheck::
+	ld a, [wXCoord]
+	cp 6
+	jr nz, .blocked
+	ld a, [wYCoord]
+	cp 79
+	jr nz, .blocked
+	scf
+	ret
+.blocked
+	and a
+	ret
+
+; Only arrivals that must leave an impassable doorway use
+; simulated movement. Cave interiors stay on their Warp tile like Kanto's
+; Victory Road; pressing toward the wall exits through a collision Warp.
+; Data: destination handle/local/Y/X, incoming source handle, auto-step key.
+; Source matching prevents a saved position or unrelated transfer from stepping.
+; Input: current map state. Output E=joypad direction, or 0 for native fallback.
+GetJohtoWarpArrivalStep::
+	ld e, 0
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurMap]
+	ld b, a
+	ld a, [wCurLocalMapID]
+	ld c, a
+	ld hl, .profiles
+.loop
+	ld a, [hli]
+	cp $ff
+	ret z
+	cp b
+	jr nz, .skipFive
+	ld a, [hli]
+	cp c
+	jr nz, .skipFour
+	ld a, [hli]
+	ld d, a
+	ld a, [wYCoord]
+	cp d
+	jr nz, .skipThree
+	ld a, [hli]
+	ld d, a
+	ld a, [wXCoord]
+	cp d
+	jr nz, .skipTwo
+	ld a, [hli]
+	ld d, a
+	ld a, [wWarpedFromWhichMap]
+	cp d
+	jr nz, .skipOne
+	ld e, [hl]
+	ret
+.skipFive
+	inc hl
+.skipFour
+	inc hl
+.skipThree
+	inc hl
+.skipTwo
+	inc hl
+.skipOne
+	inc hl
+	jr .loop
+.profiles
+	; Route32's solid cave-mouth art requires one step south after returning.
+	db JOHTO_ROUTE_32, JOHTO_ROUTE_32_LOCAL_ID, 79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN
+	db $ff
+
+; Native cave entrances use the existing map transition SFX, not new audio.
+; Input: current source/target warp state. Output E = SFX ID, or 0 for
+; regular RPP Kanto/Johto door-tile processing in PlayMapChangeSound.
+GetJohtoCaveMapChangeSFX::
+	ld e, 0
+	ld a, [wWarpedFromWhichMap]
+	cp JOHTO_ROUTE_32
+	jr nz, .checkExit
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+	ret nz
+	ld e, SFX_GO_INSIDE
+	ret
+.checkExit
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	ret nz
+	ld e, SFX_GO_OUTSIDE
+	ret

@@ -51,7 +51,7 @@ class Route32ConnectionTests(unittest.TestCase):
         self.assertIn('db JOHTO_ROUTE_31', violet)
         self.assertIn('db NORTH', route32)
         self.assertNotIn('JOHTO_ROUTE_33', route32)
-        self.assertIn('db $00 ; all four indoor Warps disabled', objects)
+        self.assertIn('db $01 ; the original cave-mouth Warp only', objects)
 
 
 if __name__ == '__main__':

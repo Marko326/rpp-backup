@@ -1,15 +1,25 @@
 PlayerStepOutFromDoor:
 	ld hl, wd730
 	res 1, [hl]
+	; Native cave arrivals keep the Warp coordinates.
+	; Only the outdoor Route32 cave mouth uses a simulated safety step;
+	; otherwise retain RPP's original door-tile behavior.
+	callab GetJohtoWarpArrivalStep
+	ld a, e
+	and a
+	jr nz, .stepFromProfile
 	call IsPlayerStandingOnDoorTile
 	jr nc, .notStandingOnDoor
+	ld a, D_DOWN
+.stepFromProfile
+	push af
 	ld a, $fc
 	ld [wJoyIgnore], a
 	ld hl, wd736
 	set 1, [hl]
 	ld a, $1
 	ld [wSimulatedJoypadStatesIndex], a
-	ld a, D_DOWN
+	pop af
 	ld [wSimulatedJoypadStatesEnd], a
 	xor a
 	ld [wSpriteStateData1 + 2], a

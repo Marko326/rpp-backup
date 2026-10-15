@@ -33,7 +33,7 @@ class Route32StagingTests(unittest.TestCase):
         objects = self.src('data/mapObjects/JohtoRoute32.asm')
         self.assertRegex(header, r'(?m)^\s*db NORTH$')
         self.assertRegex(violet, r'(?m)^\s*db SOUTH \| EAST$')
-        self.assertRegex(objects, r'(?m)^\s*db \$00 ; all four indoor Warps disabled')
+        self.assertRegex(objects, r'(?m)^\s*db \$01 ; the original cave-mouth Warp only')
         self.assertNotIn('SOUTH_MAP_CONNECTION', header)
         self.assertIn('jp z, JohtoRoute32CollisionFence', self.src('main.asm'))
 
@@ -44,7 +44,7 @@ class Route32StagingTests(unittest.TestCase):
         self.assertIn('cp JOHTO_ROUTE_32', self.src('engine/overworld/ledges.asm'))
         self.assertIn('JohtoRoute32TownMapName: db "Route 32@"', self.src('engine/town_map.asm'))
         self.assertIn('JOHTO_ROUTE_32,            MUSIC_GBP_GSC_ROUTE30', self.src('engine/menu/options_menu.asm'))
-        self.assertIn('db "REG-5.62.170@"', self.src('data/game_version.asm'))
+        self.assertIn('db "CLN-5.62.178@"', self.src('data/game_version.asm'))
 
     def test_hide_show_table_is_bounded(self):
         s = self.src('data/hide_show_data.asm')

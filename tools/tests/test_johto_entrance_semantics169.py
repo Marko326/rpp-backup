@@ -42,8 +42,8 @@ class JohtoEntranceAuditTest(unittest.TestCase):
             self.assertEqual(review[0]['by_label'], {'DOOR': 1, 'CAVE': 2})
             self.assertEqual(review[0]['gold_warp_count'], 4)
             self.assertEqual(route['status'], 'review_required')
-            self.assertEqual((ROOT/'data/mapObjects/JohtoRoute32.asm').read_text().splitlines()[5].strip(),
-                             'db $00 ; all four indoor Warps disabled')
+            self.assertIn('db $01 ; the original cave-mouth Warp only; PC and Ruins remain closed',
+                          (ROOT/'data/mapObjects/JohtoRoute32.asm').read_text())
             # Tampering with the entrance review must fail independent audit.
             route['findings'].remove(review[0])
             (stage/'manifest.json').write_text(json.dumps(manifest))

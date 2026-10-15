@@ -117,6 +117,25 @@ IsPlayerFacingEdgeOfMap:
 	dw .facingRight
 
 .facingDown
+	; As with the Route31 gate, a doorway need not be
+	; on the physical map edge. Only Union Cave's (17,3) Warp may exit
+	; by pressing DOWN against its blocked south neighbor (17,4).
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .normalDownEdge
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .normalDownEdge
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+	jr nz, .normalDownEdge
+	ld a, c
+	cp 17
+	jr nz, .normalDownEdge
+	ld a, b
+	cp 3
+	jr z, .setCarry
+.normalDownEdge
 	ld a, [wCurMapHeight]
 	add a
 	dec a
@@ -224,6 +243,13 @@ IsPlayerStandingOnDoorTileOrWarpTile:
 	push hl
 	push de
 	push bc
+	; Route32 uses a precise Gold cave doorway tile, not the outdoor $06 pad.
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
+	jr nz, .normalWarpTile
+	callba JohtoRoute32CaveWarpTileCheck
+	jr .done
+.normalWarpTile
 	callba IsPlayerStandingOnDoorTile
 	jr c, .done
 	ld a, [wCurMapTileset]
@@ -239,8 +265,11 @@ IsPlayerStandingOnDoorTileOrWarpTile:
 	aCoord 8, 9
 	call IsInArray
 	jr nc, .done
+	; Cave floor is not a step-on Warp. Preserve the
+	; standing-on-warp flag there for the native DOWN collision exit.
 	ld hl, wd736
 	res 2, [hl]
+	scf ; accepted normal step-on Warp
 .done
 	pop bc
 	pop de
