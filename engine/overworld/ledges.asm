@@ -20,7 +20,10 @@ HandleLedges:
 	cp JOHTO_VIOLET_CITY
 	jr z, .johtoLedgePairs ; Gold Violet has three HOP_DOWN ($06->$21)
 	cp JOHTO_ROUTE_31
+	jr z, .route31And32
+	cp JOHTO_ROUTE_32
 	ret nz
+.route31And32
 	ld hl, JohtoRoute31LedgeTiles
 	jr .checkPairs
 .johtoLedgePairs

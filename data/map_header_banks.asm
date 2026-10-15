@@ -251,3 +251,4 @@ MapHeaderBanks:
 	db BANK(JohtoRoute31_h) ; $F8, Route31
 	db BANK(JohtoVioletCity_h) ; $F9, Violet City
 	db BANK(JohtoRoute31VioletGate_h) ; $FA, indoor gate
+	db BANK(JohtoRoute32_h) ; $FB, Route 32

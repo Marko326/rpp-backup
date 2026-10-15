@@ -112,4 +112,5 @@ InternalMapEntries:
 	IMAP JOHTO_VIOLET_CITY,          116,  94, JohtoVioletName ; $F9, Town Map bank-safe
 	IMAP JOHTO_ROUTE31_VIOLET_GATE,  116,  94, JohtoVioletName ; $FA, use Violet name
 	IMAP AGATHAS_ROOM,               36,  92, PokemonLeagueName
+	IMAP JOHTO_ROUTE_32,             92,  84, JohtoRoute32TownMapName ; $FB, real Gold landmark
 	db $FF

@@ -1170,6 +1170,7 @@ JohtoSceneGSCMap:
 	db JOHTO_ROUTE_30,            MUSIC_GBP_GSC_ROUTE30
 	db JOHTO_ROUTE_31,            MUSIC_GBP_GSC_ROUTE30
 	db JOHTO_VIOLET_CITY,         MUSIC_GBP_GSC_VIOLET_CITY
+	db JOHTO_ROUTE_32,            MUSIC_GBP_GSC_ROUTE30
 	db $ff
 
 ; Legacy RBY ID -> corresponding GSC direct-select ID.

@@ -253,5 +253,6 @@ MapSongBanks:
 	db MUSIC_ROUTES3, 0 ; JOHTO_ROUTE_31 ($F8), Route 30 family
 	db MUSIC_CITIES1, 0 ; JOHTO_VIOLET_CITY ($F9), Pewter family
 	db MUSIC_CITIES1, 0 ; JOHTO_ROUTE31_VIOLET_GATE ($FA), entrance side can override
+	db MUSIC_ROUTES3, 0 ; JOHTO_ROUTE_32 ($FB), Route 30 family
 MapSongBanksEnd:
 	ASSERT (MapSongBanksEnd - MapSongBanks) == NUM_LEGACY_MAPS * 2

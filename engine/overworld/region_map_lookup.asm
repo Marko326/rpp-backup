@@ -69,10 +69,16 @@ LegacyMapIDToRegionKey::
 	jr z, .route31
 	cp JOHTO_ROUTE31_VIOLET_GATE
 	jr z, .violetGate
+	cp JOHTO_ROUTE_32
+	jr z, .route32
 	cp JOHTO_VIOLET_CITY
 	ret nz
 	ld d, MAP_REGION_JOHTO
 	ld e, JOHTO_VIOLET_CITY_LOCAL_ID
+	ret
+.route32:
+	ld d, MAP_REGION_JOHTO
+	ld e, JOHTO_ROUTE_32_LOCAL_ID
 	ret
 .violetGate
 	ld d, MAP_REGION_JOHTO
@@ -235,7 +241,7 @@ RegionMapKeyToLegacyID::
 	jr z, .invalid
 	cp JOHTO_ROUTE_31 ; $F8 Route 31 is not a Kanto alias
 	jr z, .invalid
-	cp JOHTO_VIOLET_CITY ; $F9/$FA reserved for Violet and indoor gate
+	cp JOHTO_VIOLET_CITY ; $F9-$FB are Johto, never Kanto aliases
 	jr nc, .invalid
 	and a
 	ret

@@ -3254,6 +3254,14 @@ INCLUDE "data/mapObjects/JohtoRoute31VioletGate.asm"
 INCLUDE "scripts/JohtoRoute31VioletGate.asm"
 JohtoRoute31VioletGateBlocks: INCBIN "maps/JohtoRoute31VioletGate.blk"
 
+; R32-5.62.165: Route32 terrain and one safe connection to Violet City.
+; Gold indoor Warps and the unbuilt Route33 exit remain disabled.
+SECTION "Johto Route 32 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute32.asm"
+INCLUDE "data/mapObjects/JohtoRoute32.asm"
+INCLUDE "scripts/JohtoRoute32.asm"
+JohtoRoute32Blocks: INCBIN "maps/JohtoRoute32.blk"
+
 ; R31: expanded-ROM-only edge policy keeps the nearly full ROM0 unchanged
 ; except for the small far-call. Carry = block move; clear = proceed with
 ; the ordinary sprite/tile collision path. No Gold engine code imported.
@@ -3279,6 +3287,8 @@ JohtoRoute31CollisionFence::
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE31_VIOLET_GATE
 	jp z, .gate
+	cp JOHTO_ROUTE_32
+	jp z, JohtoRoute32CollisionFence
 	cp JOHTO_VIOLET_CITY
 	jp z, JohtoVioletCityCollisionFence
 	cp JOHTO_ROUTE_31
@@ -3326,7 +3336,8 @@ JohtoRoute31CollisionFence::
 	and a
 	ret
 
-; Standalone city: no neighboring map is registered in this stage.
+; Violet City's south exit only permits Gold's x=14/15 walkable columns.
+; The existing Route31 gate connection and other boundary rules are unchanged.
 JohtoVioletCityCollisionFence::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
@@ -3354,6 +3365,55 @@ JohtoVioletCityCollisionFence::
 .south
 	ld a, [wYCoord]
 	cp JOHTO_VIOLET_CITY_HEIGHT * 2 - 1
+	jr c, .allowed
+	ld a, [wXCoord]
+	cp 14
+	jr c, .blocked
+	cp 16
+	jr nc, .blocked
+	jr .allowed
+.blocked
+	scf
+	ret
+.allowed
+	and a
+	ret
+
+; R32-5.62.165: Route32 north only permits x=14/15 to Violet City.
+; Other three edges remain fail-closed until their real neighbors exist.
+SECTION "Johto Route 32 Edge Guard", ROMX, BANK[JOHTO_ROM_BANK]
+JohtoRoute32CollisionFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .allowed
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_32_WIDTH * 2 - 1
+	jr nc, .blocked
+	jr .allowed
+.north
+	ld a, [wYCoord]
+	and a
+	jr nz, .allowed
+	ld a, [wXCoord]
+	cp 14
+	jr c, .blocked
+	cp 16
+	jr nc, .blocked
+	jr .allowed
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.south
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_32_HEIGHT * 2 - 1
 	jr c, .allowed
 .blocked
 	scf

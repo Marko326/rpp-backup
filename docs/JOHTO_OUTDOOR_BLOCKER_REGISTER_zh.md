@@ -97,3 +97,23 @@
 | `TMP-R31-EVENT-022` | `DEFERRED_EVENTS` | 当前保留两块路牌的阶段性说明，暂不注册Gold的7个动态对象和脚本 | **`KEEP_UNTIL_EVENT_PHASE`**；不得宣称含完整Gold NPC/剧情 |
 
 **今后的验收要求**：除了Gold布局像素和跳崖检查，必须在地图Header及其连接宏展开后逐行核算源/目标边界；对不同尺寸/负偏移尤须专项检查。先后分别保留功能和纯工具提交，不把工具尚未应用的状态当作完成提交。
+
+## R32-5.62.165 P1-B/C｜32号道路与桔梗市南口双向连接（待手机验收）
+
+Gold `Route32.blk` 10×45 原版地形以当前共用 Johto 图块集转换，5 处引用调整以保留 RPP 的跳崖碰撞规则，新增共享区块 `$88`；原版动态事件尚未移植。**已通过南北双向 Header 静态核算并精确开放 x=14/15 通路；仍待手机运行确认。**
+
+| ID | 分类 | 位置 / 变化 | 状态与解除条件 |
+|---|---|---|---|
+| `KEEP-R32-LEDGE-023` | `ENGINE_REQUIRED` | `maps/JohtoRoute32.blk` 5 处跳崖区块 `$83/$84/$86/$88`；图形来自 Gold、碰撞方向采用现有 RPP 跳崖处理 | `PRESERVE_STATIC`；手机抽测前不得宣称通过 |
+| `OPEN-VIOLET-R32-024` | `FUNCTIONAL_MAP_EDIT` | `JohtoVioletCity_h` SOUTH 和 `JohtoRoute32_h` NORTH 使用 Gold 偏移 0，精确 10×3 行块复制；两侧边界只开放16×16 x=14/15；桔梗市 EAST 门房可视连接不动 | `STATIC_PASS_PHONE_PENDING`；不得扩开其他边界 |
+| `SAFE-R32-WARP-025` | `DEFERRED_INDOORS` | Gold PC `(11,73)`、遗迹门房 `(4,2)/(4,3)`、联合洞穴 `(6,79)`；RPP Warp 数保持 0 | `KEEP_UNTIL_TARGET_EXISTS`；禁止临时链接随机现有地图 |
+| `SAFE-R32-EVENT-026` | `DEFERRED_EVENTS` / `ORIGINAL_OBSTACLE` | Gold 赠种子/徽章阻拦、训练家、物品、遇敌和剧情未接入；地形障碍原样保留 | `DEFERRED`；不能声称已实现原版通关脚本 |
+| `SAFE-R32-SOUTH-027` | `SAFETY_EDGE_GUARD` | Gold 向 Route33 的南连接尚未注册；南边界保持关闭 | `KEEP_UNTIL_LATER_ROUTE_PHASE`；核对联合洞穴路径后方可启用 |
+
+Route32 西、东、南侧和桔梗市南侧其余列保持封闭。静态自动测试不等于 ROM 构建或手机操作确认；用户未要求清理三件套，因此 `TODO.md`、`RPP_DEVELOPMENT_PITFALLS.md` 未修改。
+
+## MAP-5.62.169｜Route32 用户反馈与 Gold 门／洞穴风险补记
+
+- **路线反馈**：`.166` 定点修复阶梯空气墙后，用户明确报告阶梯已能通过、整段道路粗略走过未发现明显问题；将 `OPEN-VIOLET-R32-024` 标记为 `USER_REPORTED_ACCESS`，新增 `KEEP-R32-LADDER-028` 标记为 `USER_REPORTED_PASS`。这**不是**阶梯全部12处使用位置逐格验收，也不是全图调色／跳崖逐格验证。
+- **刻意未开放**：`SAFE-R32-WARP-025` 继续保持。Gold Route32 碰撞标签含 `DOOR`×1、`CAVE`×2，另有4个原版室内 Warp；RPP 现在注册0个 Warp。门的显示图案与走路碰撞和实际传送是不同层，不能为了“看起来能进”直接开放没有目标的房门或洞口。
+- **工具预防**：`.169` 转换器/独立校验器主动提示、复核全部 `DOOR/CAVE` 风险；未来接入室内时必须核对 RPP 的门口识别、16×16站位、8×8行走和真实双向 Warp；维持已有门房、关都和继续读档行为。已同步新增/更新对应 CSV 记录。

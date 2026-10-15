@@ -253,6 +253,13 @@ MapHSPointers:
 	dw MapHSXX
 	dw MapHSXX
 	dw MapHSXX
+	; R32-5.62.165: $F8-$FB have no hide/show records, but need valid pointers.
+	dw MapHSXX ; $F8 Route31
+	dw MapHSXX ; $F9 Violet
+	dw MapHSXX ; $FA Gate
+	dw MapHSXX ; $FB Route32
+MapHSPointersEnd:
+	ASSERT MapHSPointersEnd - MapHSPointers == NUM_LEGACY_MAPS * 2
 	dw $FFFF
 
 ; Structure:

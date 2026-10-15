@@ -1,4 +1,4 @@
-DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 13
+DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 14
 
 DisplayTownMap:
 	; MAP-5.62.116: ordinary Town Map region is derived from the CURRENT map.
@@ -287,6 +287,9 @@ JohtoTownMapEntries:
 	dw JohtoMahoganyName
 	db  60, 140
 	dw JohtoBlackthornName
+	; Gold Route32 landmark is (X=84, Y=92); append without shifting 0..12.
+	db  92,  84
+	dw JohtoRoute32TownMapName
 JohtoTownMapEntriesEnd:
 ASSERT JohtoTownMapEntriesEnd - JohtoTownMapEntries == 4 * NUM_JOHTO_TOWNMAP_ENTRIES
 
@@ -295,6 +298,7 @@ JohtoRoute29TownMapName: db "Route 29@"
 JohtoCherrygroveName:    db "Cherrygrove_City@"
 JohtoRoute30TownMapName: db "Route 30@"
 JohtoRoute31TownMapName: db "Route 31@"
+JohtoRoute32TownMapName: db "Route 32@"
 JohtoVioletName:         db "Violet City@"
 JohtoAzaleaName:         db "Azalea Town@"
 JohtoGoldenrodName:      db "Goldenrod_City@"
@@ -317,6 +321,8 @@ GetJohtoTownMapCurrentIndex:
 	jr z, .route30
 	cp JOHTO_ROUTE_31
 	jr z, .route31
+	cp JOHTO_ROUTE_32
+	jr z, .route32
 	cp JOHTO_VIOLET_CITY
 	jr nc, .violet ; indoor gate shares city's map marker
 	xor a ; current supported Johto fallback: New Bark Town
@@ -332,6 +338,9 @@ GetJohtoTownMapCurrentIndex:
 	ret
 .route31
 	ld a, 4
+	ret
+.route32:
+	ld a, 13
 	ret
 .violet
 	ld a, 5

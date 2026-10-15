@@ -6,7 +6,17 @@ JohtoVioletCity_h:
 	db JOHTO
 	db JOHTO_VIOLET_CITY_HEIGHT, JOHTO_VIOLET_CITY_WIDTH
 	dw JohtoVioletCityBlocks, JohtoVioletCityTextPointers, EnableAutoTextBoxDrawing
-	db EAST
+	db SOUTH | EAST
+	; R32-5.62.165: Gold south offset 0, Route32 is 10 columns wide.
+	; Copy exactly 10 blocks across each of the three top Route32 rows.
+	db JOHTO_ROUTE_32
+	dw JohtoRoute32Blocks
+	dw wOverworldMap + (JOHTO_VIOLET_CITY_HEIGHT + 3) * (JOHTO_VIOLET_CITY_WIDTH + 6) + 3
+	db JOHTO_ROUTE_32_WIDTH
+	db JOHTO_ROUTE_32_WIDTH
+	db 0 ; arrive at Route32's north edge
+	db 0 ; Gold offset 0, X unchanged
+	dw wOverworldMap + 7 + JOHTO_ROUTE_32_WIDTH
 	; EAST: current Violet City (20x18), neighbor Route31 (20x9).
 	; Gold offset = +9: Route31 rows 0..8 overlap Violet rows 9..17.
 	; Copy only the westernmost 3 block columns of each overlapping row.

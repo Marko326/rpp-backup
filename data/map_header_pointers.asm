@@ -251,3 +251,4 @@ MapHeaderPointers::
 	dw JohtoRoute31_h ; $F8: isolated Route31
 	dw JohtoVioletCity_h ; $F9: isolated Violet City exterior
 	dw JohtoRoute31VioletGate_h ; $FA: indoor Route31/Violet gate
+	dw JohtoRoute32_h ; $FB: Route 32 outdoor, no connections yet
