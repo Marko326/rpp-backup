@@ -560,6 +560,10 @@ WarpFound2::
 ; this is for handling "outside" maps that can't have the 0xFF destination map
 	ld a,[wCurMap]
 	ld [wLastMap],a
+	ld a,[wCurRegion]
+	ld [wLastRegion],a
+	ld a,[wCurLocalMapID]
+	ld [wLastLocalMapID],a
 	; d366 used to receive wCurMapWidth here, but the value was never read.
 	; It is now persistent BGM volume storage, so do not overwrite it on warps.
 	ld a,[hWarpDestinationMap]
@@ -600,6 +604,10 @@ WarpFound2::
 .goBackOutside
 	ld a,[wLastMap]
 	ld [wCurMap],a
+	ld a,[wLastRegion]
+	ld [wCurRegion],a
+	ld a,[wLastLocalMapID]
+	ld [wCurLocalMapID],a
 	call PlayMapChangeSound
 	xor a
 	ld [wMapPalOffset],a
@@ -621,6 +629,10 @@ CheckMapConnections::
 	cp $ff
 	jr nz,.checkEastMap
 	ld a,[wMapConn3Ptr]
+	ld e,a
+	ld d,2
+	callab SelectNativeMapConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wWestConnectedMapXAlignment] ; new X coordinate upon entering west map
 	ld [wXCoord],a
@@ -658,6 +670,10 @@ CheckMapConnections::
 	cp b
 	jr nz,.checkNorthMap
 	ld a,[wMapConn4Ptr]
+	ld e,a
+	ld d,3
+	callab SelectNativeMapConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wEastConnectedMapXAlignment] ; new X coordinate upon entering east map
 	ld [wXCoord],a
@@ -694,6 +710,10 @@ CheckMapConnections::
 	cp $ff
 	jr nz,.checkSouthMap
 	ld a,[wMapConn1Ptr]
+	ld e,a
+	ld d,0
+	callab SelectNativeMapConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wNorthConnectedMapYAlignment] ; new Y coordinate upon entering north map
 	ld [wYCoord],a
@@ -722,6 +742,10 @@ CheckMapConnections::
 	cp b
 	jr nz,.didNotEnterConnectedMap
 	ld a,[wMapConn2Ptr]
+	ld e,a
+	ld d,1
+	callab SelectNativeMapConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wSouthConnectedMapYAlignment] ; new Y coordinate upon entering south map
 	ld [wYCoord],a
@@ -2081,11 +2105,20 @@ LoadMapHeader::
 	; REG-5.62.118: $E7 remains the save/warp alias, but its header
 	; now comes from the Johto local-ID index.  Other maps stay unchanged.
 	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr z, .nativeMapHeader
 	cp NEW_BARK_TOWN
 	jr nz, .legacyMapHeader
 	ld a, [wCurRegion]
 	ld d, a
 	ld e, JOHTO_NEW_BARK_LOCAL_ID
+	jr .resolveNativeMapHeader
+.nativeMapHeader
+	ld a, [wCurRegion]
+	ld d, a
+	ld a, [wCurLocalMapID]
+	ld e, a
+.resolveNativeMapHeader
 	callab ResolveRegionMapHeader
 	; D is the returned bank; the far-call restores its original bank.
 	ld a, d
@@ -2362,6 +2395,12 @@ LoadMapHeader::
 	pop af
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a
+	; The legacy $FC placeholder must never choose music for native maps.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .nativeSongDone
+	callab GetJohtoNativeMapSong
+.nativeSongDone
 	; MUS-5.62.163: refresh Johto BGM continuity before the next default
 	; music request. The unchanged RBY song ID alone is not a scene key.
 	callba CheckJohtoMusicSceneTransition
@@ -2435,6 +2474,8 @@ endr
 SwitchToMapRomBank::
 	push hl
 	push bc
+	cp REGION_NATIVE_MAP_SLOT
+	jr z, .nativeBank
 	ld c,a
 	ld b,$00
 	ld a,Bank(MapHeaderBanks)
@@ -2445,6 +2486,17 @@ SwitchToMapRomBank::
 	ld [$ffe8],a ; save map ROM bank
 	call BankswitchBack
 	ld a,[$ffe8]
+	jr .switchReady
+.nativeBank
+	push de
+	ld a, [wCurRegion]
+	ld d, a
+	ld a, [wCurLocalMapID]
+	ld e, a
+	callab ResolveRegionMapHeader
+	ld a, d
+	pop de
+.switchReady
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a ; switch to map ROM bank
 	pop bc

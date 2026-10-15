@@ -1,4 +1,4 @@
-DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 14
+DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 15
 
 DisplayTownMap:
 	; MAP-5.62.116: ordinary Town Map region is derived from the CURRENT map.
@@ -311,8 +311,23 @@ JohtoBlackthornName:     db "Blackthorn_City@"
 ; MAP-5.62.137 P2-1 Town Map follow-up: use the true route landmark.
 ; Both the blinking player marker and browse starting point use the same ID
 ; mapping. Keep the list independent of Fly destinations.
+JohtoNativeTownMapIndices::
+	db 0, 1, 2, 3, 4, 5, 5, 13
+JohtoNativeTownMapIndicesEnd::
+ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
+
 GetJohtoTownMapCurrentIndex:
 	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .legacyID
+	ld a, [wCurLocalMapID]
+	ld c, a
+	ld b, 0
+	ld hl, JohtoNativeTownMapIndices
+	add hl, bc
+	ld a, [hl]
+	ret
+.legacyID
 	cp JOHTO_ROUTE_29
 	jr z, .route29
 	cp JOHTO_CHERRYGROVE_CITY
@@ -1094,11 +1109,33 @@ LoadTownMapEntryFromE::
 	ld e, c ; x
 	ret
 
+JohtoNativeTownMapEntries::
+	db 116, 94
+	dw JohtoNewBarkName
+	db 116, 94
+	dw JohtoRoute29TownMapName
+	db 116, 94
+	dw JohtoCherrygroveName
+	db 116, 94
+	dw JohtoRoute30TownMapName
+	db 116, 94
+	dw JohtoRoute31TownMapName
+	db 116, 94
+	dw JohtoVioletName
+	db 116, 94
+	dw JohtoVioletName
+	db 92, 84
+	dw JohtoRoute32TownMapName
+JohtoNativeTownMapEntriesEnd::
+ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
+
 LoadTownMapEntry:
 ; in: a = map number
 ; out: b = y, c = x, hl = address of name
 ; Selector-only/entrance points are exact-matched in expansion bank $35 so they
 ; do not alter InternalMapEntries' interval semantics.
+	cp REGION_NATIVE_MAP_SLOT
+	jr z, .native
 	push af
 	push de
 	ld e, a
@@ -1128,6 +1165,22 @@ LoadTownMapEntry:
 	add hl, bc
 	add hl, bc
 .readEntry
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	ret
+.native
+	ld a, [wCurLocalMapID]
+	add a
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, JohtoNativeTownMapEntries
+	add hl, bc
 	ld a, [hli]
 	ld b, a
 	ld a, [hli]

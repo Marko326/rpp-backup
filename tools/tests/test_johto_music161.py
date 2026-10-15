@@ -19,7 +19,7 @@ class JohtoMusicScenes(unittest.TestCase):
     def test_map_table_fully_covers_registered_legacy_map_ids(self):
         song_body = self.maps.split('MapSongBanks:', 1)[1].split('MapSongBanksEnd:', 1)[0]
         songs = re.findall(r'^\s*db\s+(MUSIC_[A-Z0-9_]+)\s*,\s*(\d+)', song_body, re.M)
-        self.assertEqual(len(songs), 252)
+        self.assertEqual(len(songs), 253)
         self.assertTrue(all(bank == '0' for _, bank in songs))
         self.assertIn('ASSERT (MapSongBanksEnd - MapSongBanks) == NUM_LEGACY_MAPS * 2', self.maps)
         self.assertEqual(songs[0][0], 'MUSIC_PALLET_TOWN')
@@ -98,7 +98,7 @@ class JohtoMusicScenes(unittest.TestCase):
         self.assertNotIn('MUSIC_STYLE_MAGIC0', asm('data/map_songs.asm'))
 
     def test_version_only_and_no_gate_or_fly_changes(self):
-        self.assertIn('MAP-5.62.169@', asm('data/game_version.asm'))
+        self.assertIn('REG-5.62.170@', asm('data/game_version.asm'))
         self.assertIn('db $0d', asm('data/mapObjects/JohtoRoute31VioletGate.asm'))
         self.assertIn('db $06,$FF', asm('data/warp_tile_ids.asm'))
 

@@ -257,6 +257,7 @@ ENDM
 	mapconst JOHTO_VIOLET_CITY,            18, 20 ; $F9 ; Violet exterior / indoor Gate Warp
 	mapconst JOHTO_ROUTE31_VIOLET_GATE,     4,  5 ; $FA ; Gold geometry: 5 blocks x 4 blocks
 	mapconst JOHTO_ROUTE_32,              45, 10 ; $FB ; Gold Route 32 (10 x 45)
+	mapconst REGION_NATIVE_MAP_SLOT,        0,  0 ; $FC ; shared virtual map handle, never a physical map
 
 ; REG-5.62.118: bound legacy lookups without changing any existing map ID.
 DEF NUM_LEGACY_MAPS EQU const_value

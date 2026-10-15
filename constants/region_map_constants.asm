@@ -15,6 +15,10 @@ DEF JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID EQU 6
 DEF JOHTO_ROUTE_32_LOCAL_ID EQU 7
 DEF NUM_JOHTO_MAPS EQU 8
 
+; Native Johto local IDs >= 8 share one runtime compatibility handle.
+; They must never consume more legacy bytes or reuse an old Kanto map ID.
+ASSERT REGION_NATIVE_MAP_SLOT == $fc
+
 ; REG-5.62.119: signature written beside the saved region bytes.
 ; Old saves have no defined region state. These markers are currently written,
 ; not checked; legacy map IDs populate the compatibility fields on map load.
@@ -27,3 +31,4 @@ DEF REGION_STATE_MAGIC1 EQU $4a
 DEF REGION_WARP_ESCAPE EQU $fe
 ASSERT REGION_WARP_ESCAPE >= NUM_LEGACY_MAPS
 ASSERT REGION_WARP_ESCAPE != $ff
+

@@ -77,7 +77,7 @@ class JohtoMusicContinuation(unittest.TestCase):
         self.assertFalse(should_restart(cherrygrove, violet, 'CITIES1', 'CITIES1', 'GSC', walking=False))
 
     def test_version_no_warp_or_graphics_changes(self):
-        self.assertIn('MAP-5.62.169@', source('data/game_version.asm'))
+        self.assertIn('REG-5.62.170@', source('data/game_version.asm'))
         self.assertIn('db $0d', source('data/mapObjects/JohtoRoute31VioletGate.asm'))
         self.assertIn('GetJohtoGateMusicSourceMap::', self.overworld)
 

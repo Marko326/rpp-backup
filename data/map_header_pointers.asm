@@ -252,3 +252,4 @@ MapHeaderPointers::
 	dw JohtoVioletCity_h ; $F9: isolated Violet City exterior
 	dw JohtoRoute31VioletGate_h ; $FA: indoor Route31/Violet gate
 	dw JohtoRoute32_h ; $FB: Route 32 outdoor, no connections yet
+	dw JohtoRoute32_h ; $FC: fail-closed compatibility fallback; native path resolves real header

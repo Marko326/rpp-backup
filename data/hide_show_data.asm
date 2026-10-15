@@ -258,6 +258,7 @@ MapHSPointers:
 	dw MapHSXX ; $F9 Violet
 	dw MapHSXX ; $FA Gate
 	dw MapHSXX ; $FB Route32
+	dw MapHSXX ; $FC virtual native map; no legacy missable objects
 MapHSPointersEnd:
 	ASSERT MapHSPointersEnd - MapHSPointers == NUM_LEGACY_MAPS * 2
 	dw $FFFF

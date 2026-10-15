@@ -1095,6 +1095,18 @@ LookupMusicStyleRandomExtras:
 ; Preserves B and E; C/HL/A are scratch.
 LookupJohtoMapGSCMusic:
 	ld a,[wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz,.legacyScene
+	push bc
+	ld a,[wCurLocalMapID]
+	ld c,a
+	ld b,0
+	ld hl,JohtoNativeGSCMusic
+	add hl,bc
+	ld a,[hl]
+	pop bc
+	ret
+.legacyScene
 	cp JOHTO_ROUTE31_VIOLET_GATE
 	jr nz,.haveMap
 	call GetJohtoGateMusicSourceMap ; same source as LoadMapHeader BGM
@@ -1115,6 +1127,21 @@ LookupJohtoMapGSCMusic:
 .missing
 	xor a
 	ret
+
+; $00 means unresolved: new local maps must register a Gold theme before
+; their connection is enabled. This table is the native scene identity.
+JohtoNativeGSCMusic::
+	db MUSIC_GBP_GSC_NEW_BARK_TOWN
+	db MUSIC_GBP_GSC_ROUTE29
+	db MUSIC_GBP_GSC_CHERRYGROVE_CITY
+	db MUSIC_GBP_GSC_ROUTE30
+	db MUSIC_GBP_GSC_ROUTE30
+	db MUSIC_GBP_GSC_VIOLET_CITY
+	db 0 ; source-dependent gate; legacy compatibility only
+	db MUSIC_GBP_GSC_ROUTE30
+JohtoNativeGSCMusicEnd::
+
+ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS
 
 ; MUS-5.62.163: after loading a different Johto scene, the same legacy
 ; RBY song ID may now resolve to another GSC song (e.g. two CITIES1 towns).

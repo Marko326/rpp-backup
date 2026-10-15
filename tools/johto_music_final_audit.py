@@ -106,8 +106,13 @@ def audit(root: Path) -> tuple[list[str], list[dict[str, str]]]:
                                   'JohtoMapHeaderPointersEnd::'), 'dw')
     except IndexError:
         return errors + ['Johto header/alias registry missing'], []
-    if not aliases or len(aliases) != len(set(aliases)):
-        errors.append('Johto aliases missing or duplicate')
+    if len(aliases) < 8 or len(set(aliases[:8])) != 8:
+        errors.append('Johto legacy aliases missing or duplicate')
+    # From local 8 onward all physical maps intentionally reuse the same $FC
+    # handle.  This is NOT a GSC music scene: native music uses local-ID rows.
+    if any(alias != 'REGION_NATIVE_MAP_SLOT' for alias in aliases[8:]):
+        errors.append('native locals must share the virtual map handle')
+    legacy_aliases = aliases[:8]
     if len(aliases) != len(headers):
         errors.append('Johto aliases and header pointer counts differ')
 
@@ -122,10 +127,10 @@ def audit(root: Path) -> tuple[list[str], list[dict[str, str]]]:
     except IndexError:
         return errors + ['JohtoSceneGSCMap missing/unterminated'], []
     gate = 'JOHTO_ROUTE31_VIOLET_GATE'
-    unexpected = sorted(set(scene_map) - (set(aliases) - {gate}))
+    unexpected = sorted(set(scene_map) - (set(legacy_aliases) - {gate}))
     if unexpected:
         errors.append('scene mapping references unregistered/non-physical Johto maps: ' + ', '.join(unexpected))
-    missing = sorted((set(aliases) - {gate}) - set(scene_map))
+    missing = sorted((set(legacy_aliases) - {gate}) - set(scene_map))
     if missing:
         errors.append('registered Johto scene missing GSC counterpart: ' + ', '.join(missing))
     if gate not in aliases:
@@ -166,7 +171,7 @@ def audit(root: Path) -> tuple[list[str], list[dict[str, str]]]:
             errors.append(f'{m}: GSC music {track} has no GBP audio pointer')
 
     result: list[dict[str, str]] = []
-    for alias in aliases:
+    for alias in legacy_aliases:
         if alias not in maps:
             errors.append(f'Johto alias missing mapconst: {alias}')
             continue

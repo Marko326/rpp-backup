@@ -136,7 +136,7 @@ class JohtoGoldGateArtwork(unittest.TestCase):
         for symbol in ('JohtoGate_GFX:', 'JohtoGate_Block:'):
             self.assertEqual(src.count(symbol),1)
         self.assertNotIn('JohtoGate_Coll:',source('data/collision.asm'))
-        self.assertIn('MAP-5.62.169@',source('data/game_version.asm'))
+        self.assertIn('REG-5.62.170@',source('data/game_version.asm'))
 
 
 if __name__=='__main__':

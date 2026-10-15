@@ -23,8 +23,9 @@ JohtoMapHeaderBanks::
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
-; Keep in local-ID order; new Johto maps need an unused unique legacy
-; alias until the rest of the overworld has native region-aware map IDs.
+; Keep in local-ID order. New Johto physical maps use
+; REGION_NATIVE_MAP_SLOT (shared), never new sequential legacy IDs.
+; A table row equal to $ff remains INVALID, not a map.
 JohtoMapLegacyAliases::
 	db NEW_BARK_TOWN
 	db JOHTO_ROUTE_29
@@ -36,9 +37,36 @@ JohtoMapLegacyAliases::
 	db JOHTO_ROUTE_32
 JohtoMapLegacyAliasesEnd::
 
+; Song map indexed by Johto local ID rather than the shared $FC slot.
+; Do not assume adjacent routes share a GSC theme.
+JohtoNativeMapSongBanks::
+	db MUSIC_PALLET_TOWN, 0 ; New Bark
+	db MUSIC_ROUTES1, 0 ; Route29
+	db MUSIC_CITIES1, 0 ; Cherrygrove
+	db MUSIC_ROUTES3, 0 ; Route30
+	db MUSIC_ROUTES3, 0 ; Route31
+	db MUSIC_CITIES1, 0 ; Violet
+	db MUSIC_CITIES1, 0 ; Route31 gate, source-dependent in the legacy path
+	db MUSIC_ROUTES3, 0 ; Route32
+JohtoNativeMapSongBanksEnd::
+
+GetJohtoNativeMapSong::
+	ld a, [wCurLocalMapID]
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, JohtoNativeMapSongBanks
+	add hl, bc
+	ld a, [hli]
+	ld [wMapMusicSoundID], a
+	ld a, [hl]
+	ld [wMapMusicROMBank], a
+	ret
+
 ASSERT JohtoMapLegacyAliasesEnd - JohtoMapLegacyAliases == NUM_JOHTO_MAPS
 ASSERT JohtoMapHeaderPointersEnd - JohtoMapHeaderPointers == NUM_JOHTO_MAPS * 2
 ASSERT JohtoMapHeaderBanksEnd - JohtoMapHeaderBanks == NUM_JOHTO_MAPS
+ASSERT JohtoNativeMapSongBanksEnd - JohtoNativeMapSongBanks == NUM_JOHTO_MAPS * 2
 ASSERT NEW_BARK_TOWN == $E7
 ASSERT JOHTO_ROUTE_29 == $F4
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1

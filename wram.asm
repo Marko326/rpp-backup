@@ -3420,7 +3420,8 @@ wUnusedD71F:: ; d7a3
 
 ; REG-5.62.119: saved region state in four previously unused bytes.
 ; The original save block size and all later addresses stay unchanged.
-; Legacy wCurMap/wLastMap remain the authority until region-aware warps.
+; Legacy wCurMap/wLastMap stay authoritative for old maps; $FC instead
+; relies on the region/local key when both magic bytes are valid.
 wCurRegion:: ; d7a4
 	ds 1
 wLastRegion:: ; d7a5
@@ -3429,8 +3430,15 @@ wRegionStateMagic0:: ; d7a6
 	ds 1
 wRegionStateMagic1:: ; d7a7
 	ds 1
+; Native keys occupy only existing unused saved bytes; no save layout shift.
+wCurLocalMapID:: ; d7a8
+	ds 1
+wLastLocalMapID:: ; d7a9
+	ds 1
+wMapNameSignLastNativeLocalID:: ; d7aa, not used as map identity in saves
+	ds 1
 ; still unused
-	ds 4
+	ds 1
 
 wd728:: ; d7ac
 ; bit 0: using Strength outside of battle

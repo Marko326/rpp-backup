@@ -3289,6 +3289,8 @@ JohtoRoute31CollisionFence::
 	jp z, .gate
 	cp JOHTO_ROUTE_32
 	jp z, JohtoRoute32CollisionFence
+	cp REGION_NATIVE_MAP_SLOT
+	jp z, JohtoNativeCollisionFence
 	cp JOHTO_VIOLET_CITY
 	jp z, JohtoVioletCityCollisionFence
 	cp JOHTO_ROUTE_31
@@ -3420,6 +3422,51 @@ JohtoRoute32CollisionFence::
 	ret
 .allowed
 	and a
+	ret
+
+
+; Native local-ID maps have no default open edges. Each real map's gate,
+; direction, and coordinates must be audited before opening a border.
+; Interior movement still follows the normal tileset collision logic.
+JohtoNativeCollisionFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .allowed
+	ld a, [wCurrentMapWidth2]
+	dec a
+	ld b, a
+	ld a, [wXCoord]
+	cp b
+	jr nc, .blocked
+	jr .allowed
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.south
+	ld a, [wCurrentMapHeight2]
+	dec a
+	ld b, a
+	ld a, [wYCoord]
+	cp b
+	jr nc, .blocked
+	jr .allowed
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+.allowed
+	and a
+	ret
+.blocked
+	scf
 	ret
 
 ; The save / location name may be dereferenced with bank $1C active;

@@ -83,6 +83,15 @@ UpdateMapNameSign::
 	jr z, .mapChanged ; WRAM starts at 0, so initialize even if the first map ID is 0
 
 	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .compareLegacyMap
+	ld a, [wCurLocalMapID]
+	ld b, a
+	ld a, [wMapNameSignLastNativeLocalID]
+	cp b
+	jr nz, .mapChanged
+.compareLegacyMap
+	ld a, [wCurMap]
 	ld b, a
 	ld a, [wMapNameSignLastMap]
 	cp b
@@ -125,6 +134,8 @@ UpdateMapNameSign::
 	; matches Crystal's continuous frame behavior when crossing landmarks.
 	ld a, [wCurMap]
 	ld [wMapNameSignLastMap], a
+	ld a, [wCurLocalMapID]
+	ld [wMapNameSignLastNativeLocalID], a
 
 	; MAPSIGN-5.19.40: transit maps inherit the previous effective landmark.
 	; This prevents same-route gates (Route 12/15/16/18, etc.) from forcing a

@@ -67,7 +67,7 @@ class JohtoMusicFinalAudit(unittest.TestCase):
         self.mutation('data/johto_map_headers.asm',
                       'db JOHTO_ROUTE_32\nJohtoMapLegacyAliasesEnd::',
                       'db JOHTO_ROUTE_32\n\tdb PALLET_TOWN\nJohtoMapLegacyAliasesEnd::',
-                      'registered Johto scene missing GSC counterpart')
+                      'native locals must share the virtual map handle')
 
     def test_audio_special_priority_cannot_disappear(self):
         self.mutation('home/audio.asm', 'MUSIC_SURFING', 'MUSIC_UNUSED_SURF',

@@ -3,7 +3,8 @@
 ; On success: D = ROM bank, HL = map header address, carry clear.
 ; On failure: D = 0, HL = 0, carry set.  A/BC are not preserved.
 ; The returned bank is metadata: this routine does not leave it selected.
-; Existing warp/save users still use wCurMap until later REG phases.
+; Existing map IDs stay stable; aliasless future Johto locals share $FC,
+; with current/last region/local saved in the existing reserved WRAM bytes.
 ResolveRegionMapHeader::
 	ld a, d
 	cp MAP_REGION_JOHTO
@@ -12,6 +13,8 @@ ResolveRegionMapHeader::
 	jr nz, .invalid
 .kanto
 	ld a, e
+	cp REGION_NATIVE_MAP_SLOT
+	jr z, .invalid ; pseudo handle is never a Kanto physical map
 	cp NUM_LEGACY_MAPS
 	jr nc, .invalid
 	; HOME-5.62.122: E survives callab; A is overwritten by Bankswitch.
@@ -112,42 +115,63 @@ LegacyMapIDToRegionKey::
 ; $E7 and $F4 are Johto locals $00/$01; other aliases are Kanto.
 ; Do not replace this with an unconditional reset once region-aware warps land.
 SyncLegacyMapRegions::
+	; A virtual map is keyed by the saved (region, local) pair. Legacy
+	; map IDs remain authoritative for every pre-existing map/save.
 	ld a, [wCurMap]
-	cp NEW_BARK_TOWN
-	jr z, .currentJohto
-	cp JOHTO_ROUTE_29
-	jr z, .currentJohto
-	cp JOHTO_ROUTE_30
-	jr z, .currentJohto
-	cp JOHTO_ROUTE_31
-	jr z, .currentJohto
-	cp JOHTO_VIOLET_CITY
-	jr nc, .currentJohto ; F9 city / FA gate; other high IDs blocked
-	cp JOHTO_CHERRYGROVE_CITY
-	ld a, MAP_REGION_KANTO
-	jr nz, .currentReady
-.currentJohto
-	ld a, MAP_REGION_JOHTO
-.currentReady
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .currentLegacy
+	ld a, [wRegionStateMagic0]
+	cp REGION_STATE_MAGIC0
+	jr nz, .badNative
+	ld a, [wRegionStateMagic1]
+	cp REGION_STATE_MAGIC1
+	jr nz, .badNative
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .badNative
+	ld a, [wCurLocalMapID]
+	cp NUM_JOHTO_MAPS
+	jr c, .lastMap
+.badNative
+	; Invalid or pre-migration $FC save: never use a random ROM pointer.
+	ld a, JOHTO_VIOLET_CITY
+	ld [wCurMap], a
+.currentLegacy
+	ld a, [wCurMap]
+	ld e, a
+	call LegacyMapIDToRegionKey
+	ld a, d
 	ld [wCurRegion], a
+	ld a, e
+	ld [wCurLocalMapID], a
+.lastMap
 	ld a, [wLastMap]
-	cp NEW_BARK_TOWN
-	jr z, .lastJohto
-	cp JOHTO_ROUTE_29
-	jr z, .lastJohto
-	cp JOHTO_ROUTE_30
-	jr z, .lastJohto
-	cp JOHTO_ROUTE_31
-	jr z, .lastJohto
-	cp JOHTO_VIOLET_CITY
-	jr nc, .lastJohto ; F9 city / FA gate
-	cp JOHTO_CHERRYGROVE_CITY
-	ld a, MAP_REGION_KANTO
-	jr nz, .lastReady
-.lastJohto
-	ld a, MAP_REGION_JOHTO
-.lastReady
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .lastLegacy
+	ld a, [wRegionStateMagic0]
+	cp REGION_STATE_MAGIC0
+	jr nz, .badLast
+	ld a, [wRegionStateMagic1]
+	cp REGION_STATE_MAGIC1
+	jr nz, .badLast
+	ld a, [wLastRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .badLast
+	ld a, [wLastLocalMapID]
+	cp NUM_JOHTO_MAPS
+	jr c, .magic
+.badLast
+	ld a, JOHTO_VIOLET_CITY
+	ld [wLastMap], a
+.lastLegacy
+	ld a, [wLastMap]
+	ld e, a
+	call LegacyMapIDToRegionKey
+	ld a, d
 	ld [wLastRegion], a
+	ld a, e
+	ld [wLastLocalMapID], a
+.magic
 	ld a, REGION_STATE_MAGIC0
 	ld [wRegionStateMagic0], a
 	ld a, REGION_STATE_MAGIC1
@@ -162,6 +186,9 @@ SyncLegacyMapRegions::
 ; The far-call destroys A/BC/HL; return the alias in E instead of A.
 ; An invalid $FE entry returns the safe Vermilion ferry dock, never $FE.
 ResolveExplicitRegionWarp::
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jp z, ResolveNativeRegionWarp
 	ld a, [wCurMap]
 	ld b, a
 	ld a, [wWarpedFromWhichWarp]
@@ -184,10 +211,8 @@ ResolveExplicitRegionWarp::
 	ld d, [hl]
 	inc hl
 	ld e, [hl]
-	call RegionMapKeyToLegacyID
+	call StoreNativeWarpTarget
 	jr c, .invalid
-	ld a, d
-	ld [wCurRegion], a
 	ret
 .skipWarp
 	inc hl
@@ -200,14 +225,13 @@ ResolveExplicitRegionWarp::
 .invalid
 	ld d, MAP_REGION_KANTO
 	ld e, VERMILION_FERRY_DOCK
-	ld a, d
-	ld [wCurRegion], a
+	call StoreNativeWarpTarget
 	ret
 
 ; Input DE = physical region/local ID. Return E = compatible old map ID,
 ; carry clear when registered. Do not convert Town Map or Fly indices here.
-; Additional Johto local IDs must be registered with a distinct legacy alias
-; until every other old-map-ID consumer has been migrated.
+; New Johto local IDs explicitly register REGION_NATIVE_MAP_SLOT in the
+; compatibility column; never reuse old map IDs or $FE/$FF.
 RegionMapKeyToLegacyID::
 	ld a, d
 	cp MAP_REGION_KANTO
@@ -223,7 +247,7 @@ RegionMapKeyToLegacyID::
 	add hl, bc
 	ld e, [hl]
 	ld a, e
-	cp $ff ; no old-engine alias available yet
+	cp $ff ; unregistered keys must never become writable destinations
 	jr z, .invalid
 	and a
 	ret
@@ -261,3 +285,115 @@ ExplicitWarpRegionTargets::
 	db $ff
 ASSERT JOHTO_NEW_BARK_LOCAL_ID < NUM_JOHTO_MAPS
 ASSERT VERMILION_FERRY_DOCK < NUM_LEGACY_MAPS
+
+; Input DE = validated region/local warp target. Output E = map handle.
+; Do not overwrite the saved native key with the compatibility handle.
+StoreNativeWarpTarget::
+	push de
+	call RegionMapKeyToLegacyID
+	jr c, .invalid
+	pop bc
+	ld a, b
+	ld [wCurRegion], a
+	ld a, c
+	ld [wCurLocalMapID], a
+	and a
+	ret
+.invalid
+	pop bc
+	scf
+	ret
+
+; A native interior may use the same $FE warp escape as the ferry.
+; Table key: source local ID, zero-based source warp, target warp,
+; destination region, destination local ID. The caller is in Johto.
+ResolveNativeRegionWarp::
+	ld a, [wCurLocalMapID]
+	ld b, a
+	ld a, [wWarpedFromWhichWarp]
+	ld c, a
+	ld hl, NativeRegionWarpTargets
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .invalid
+	cp b
+	jr nz, .skipFour
+	ld a, [hli]
+	cp c
+	jr nz, .skipThree
+	ld a, [hli]
+	ld d, a
+	ld a, [wDestinationWarpID]
+	cp d
+	jr nz, .skipTwo
+	ld d, [hl]
+	inc hl
+	ld e, [hl]
+	call StoreNativeWarpTarget
+	ret nc
+	jr .invalid
+.skipFour
+	inc hl
+.skipThree
+	inc hl
+.skipTwo
+	inc hl
+	inc hl
+	jr .loop
+.invalid
+	; Fail closed: a malformed warp cannot jump to an arbitrary ID.
+	ld d, MAP_REGION_JOHTO
+	ld e, JOHTO_ROUTE_32_LOCAL_ID
+	call StoreNativeWarpTarget
+	ret
+
+NativeRegionWarpTargets::
+	db $ff
+
+; Native connection lookup: source Johto local / direction / destination
+; region / destination local. Direction index: north=0, south=1,
+; west=2, east=3. Input D=direction, E=legacy connection-byte target.
+; Output E=compatibility map handle. The updated native key is saved only
+; if the connection explicitly names REGION_NATIVE_MAP_SLOT.
+SelectNativeMapConnection::
+	ld a, e
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .invalid
+	ld a, [wCurLocalMapID]
+	ld b, a
+	ld c, d
+	ld hl, NativeRegionConnectionTargets
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .invalid
+	cp b
+	jr nz, .skipThree
+	ld a, [hli]
+	cp c
+	jr nz, .skipTwo
+	ld d, [hl]
+	inc hl
+	ld e, [hl]
+	call StoreNativeWarpTarget
+	ret nc
+	jr .invalid
+.skipThree
+	inc hl
+.skipTwo
+	inc hl
+	inc hl
+	jr .loop
+.invalid
+	; Fence must prevent reaching an unregistered edge. Never load $FC
+	; with a stale key if an entry is accidentally left out.
+	ld e, JOHTO_ROUTE_32
+	ret
+
+NativeRegionConnectionTargets::
+	; Only enable after auditing each direction's border and alignment.
+	db $ff

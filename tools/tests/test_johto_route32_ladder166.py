@@ -28,7 +28,7 @@ class Route32LadderCollisionTests(unittest.TestCase):
         b = (ROOT / 'maps/JohtoRoute32.blk').read_bytes()
         self.assertEqual(len(b), 450)
         self.assertEqual(b.count(6), 12)
-        self.assertIn('db "MAP-5.62.169@"', (ROOT / 'data/game_version.asm').read_text())
+        self.assertIn('db "REG-5.62.170@"', (ROOT / 'data/game_version.asm').read_text())
 
 if __name__ == '__main__':
     unittest.main()

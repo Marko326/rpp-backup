@@ -252,3 +252,4 @@ MapHeaderBanks:
 	db BANK(JohtoVioletCity_h) ; $F9, Violet City
 	db BANK(JohtoRoute31VioletGate_h) ; $FA, indoor gate
 	db BANK(JohtoRoute32_h) ; $FB, Route 32
+	db BANK(JohtoRoute32_h) ; $FC compatibility fallback; native path uses local bank
