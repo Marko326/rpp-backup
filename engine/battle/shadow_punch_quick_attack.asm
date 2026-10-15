@@ -65,6 +65,14 @@ PlayGoldQuickAttackPhase::
 	ld [wWhichBattleAnimTileset],a
 	callba LoadAnimationTileset
 
+	; Poison Jab reuses this loaded tileset for its original $14 poison path.
+	; Preload its one native HIT tile in a separate slot before disappearance.
+	; GetCurrentMoveID lives in ROM0; CALLBA would clobber the returned A.
+	call GetCurrentMoveID
+	cp POISON_JAB
+	jr nz,.speedReady
+	callba PreloadPoisonJabQuickHit
+.speedReady
 	; SPEED_LINE only needs one Gold tile.  It lives away from the fist override,
 	; so both the approach and the hit can coexist in VRAM.
 	jp LoadGoldQuickAttackSpeedLine

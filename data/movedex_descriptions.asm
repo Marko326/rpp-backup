@@ -2706,22 +2706,22 @@ MoveDexDescWoodHammer1:
 
 ; #220 Poison Jab
 MoveDexDescPoisonJabPages:
-	dw MoveDexDescPoisonJab1, MoveDexDescEffectDPoison40, MoveDexDescEffectDPoisonImmune, 0
+	dw MoveDexDescPoisonJab1, MoveDexDescEffectDPoison30, MoveDexDescEffectDPoisonImmune, 0
 MoveDexDescPoisonJab1:
 	db   "Stabs the foe with"
 	next "a poisoned limb.@"
 
 ; #221 Gunk Shot
 MoveDexDescGunkShotPages:
-	dw MoveDexDescGunkShot1, MoveDexDescEffectDPoison40, MoveDexDescEffectDPoisonImmune, 0
+	dw MoveDexDescGunkShot1, MoveDexDescEffectDPoison30, MoveDexDescEffectDPoisonImmune, 0
 MoveDexDescGunkShot1:
 	db   "Hurls toxic sludge"
 	next "right at the foe.@"
 
 ; #222 Poison Fang
 MoveDexDescPoisonFangPages:
-	; POISON_FANG_EFFECT 约 40%；Bite 动画 ID 特判会设置 BadlyPoisoned。
-	dw MoveDexDescPoisonFang1, MoveDexDescEffectDBadPoison40, MoveDexDescEffectDPoisonImmune, 0
+	; POISON-5.62.150: Poison Fang has 50% chance to badly poison.
+	dw MoveDexDescPoisonFang1, MoveDexDescEffectDBadPoison50, MoveDexDescEffectDPoisonImmune, 0
 MoveDexDescPoisonFang1:
 	db   "Bites the foe with"
 	next "toxic fangs.@"
@@ -3062,8 +3062,8 @@ MoveDexDescEffectDPoison30:
 	db   "30", $d9, " chance to"
 	next "poison the foe.@"
 
-MoveDexDescEffectDBadPoison40:
-	db   "40", $d9, " chance to"
+MoveDexDescEffectDBadPoison50:
+	db   "50", $d9, " chance to"
 	next "badly poison"
 	next "the foe.@"
 

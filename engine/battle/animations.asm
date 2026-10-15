@@ -935,12 +935,16 @@ SmoothBattleAnimIsSubanimation14:
 	cp HIGH(SubanimationPointers + 2 * $14)
 	ret
 
-; ANM-5.61.27: $14 is shared widely, so smooth/tail handling is restricted to
-; ordinary Acid / Sludge command streams rather than every move that reuses it.
+; ANM-5.61.27: $14 is shared widely. ANIM-5.62.151 also allows Poison Jab's
+; unchanged $14 droplets to reuse the approved Acid / Sludge smooth motion.
 SmoothBattleAnimIsAcidSludgeImpact:
 	ld a,[wMoveAnimScriptLoaded]
 	and a
-	ret nz
+	jr z,.legacy
+	call GetCurrentMoveID
+	cp POISON_JAB
+	ret
+.legacy
 	ld a,[wAnimationID]
 	cp ACID
 	ret z
