@@ -77,6 +77,7 @@ MuseumWarpTileIDs:
 	db $16,$1E,$FF
 
 ; JHT-5.62.110: shore boarding tile on the Johto outdoor tileset.
-; GT-5.62.152: Gold gate portal adapts to Johto tile $40 on Route31/VioletCity.
+; GATE-5.62.157: keep $40 walkable, but use native collision Warp at the gate.
+; $06 remains the Johto warp-pad tile; $40 must not teleport on entry.
 NewBarkWarpTileIDs:
-	db $06,$40,$FF
+	db $06,$FF

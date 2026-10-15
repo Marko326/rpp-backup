@@ -35,17 +35,18 @@ class IndoorToolchainTests(unittest.TestCase):
         self.assertEqual([(q['x'],q['y']) for q in gold_warps(GOLD,'Route31VioletGate')],
                          [(0,4),(0,5),(9,4),(9,5)])
 
-    def test_native_tile_40_not_silent(self):
+    def test_native_tile_40_walkable_not_auto_warp(self):
         plan=analyze(ROOT,GOLD)
         self.assertEqual(len(plan['outside_warps']),4)
-        self.assertTrue(all(w['potential_standing_trigger'] for w in plan['outside_warps']))
-        self.assertIn(0x40,warp_tile_ids(ROOT,'NewBarkWarpTileIDs'))
+        self.assertFalse(any(w['potential_standing_trigger'] for w in plan['outside_warps']))
+        self.assertNotIn(0x40,warp_tile_ids(ROOT,'NewBarkWarpTileIDs'))
+        self.assertTrue(plan['engine']['extra_warp_checks_johto_explicit'])
 
     def test_bidirectional_static_graph_is_not_gameplay_approval(self):
         result=validate(ROOT,analyze(ROOT,GOLD))
         self.assertEqual(result['graph_check'],'PASS')
         self.assertFalse(result['gameplay_accepted'])
-        self.assertTrue(any(x['code']=='OUTDOOR_STANDING_TRIGGER_RISK' for x in result['findings']))
+        self.assertFalse(any(x['code']=='OUTDOOR_STANDING_TRIGGER_RISK' for x in result['findings']))
 
     def test_gold_art_is_not_assumed_compatible(self):
         report,staged=build_mapping(ROOT,GOLD)

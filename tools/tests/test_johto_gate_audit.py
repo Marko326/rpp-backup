@@ -26,9 +26,11 @@ class TestDualSource(unittest.TestCase):
     def test_export_context_not_required_for_actual_repository(self):
         self.assertNotIn('RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt',m.RPP_REQUIRED)
 
-    def test_gate_requires_collision_and_warp_tile(self):
+    def test_gate_requires_walkable_tile_without_auto_warp(self):
         self.assertEqual((ROOT/'gfx/tilesets/johto.tilecoll').read_bytes(),bytes([3,4,5,6,64,255]))
-        self.assertIn('db $06,$40,$FF',(ROOT/'data/warp_tile_ids.asm').read_text())
+        src = (ROOT/'data/warp_tile_ids.asm').read_text()
+        self.assertIn('db $06,$FF',src)
+        self.assertNotIn('db $06,$40,$FF',src)
 
     def test_gold_expected_geometry(self):
         self.assertEqual(len(m.RPP_GATE_ART_ADAPTER),20)

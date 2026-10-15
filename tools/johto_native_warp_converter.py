@@ -58,7 +58,10 @@ def analyze(rpp: Path, gold: Path, room='Route31VioletGate',
             'native_gate_tiles':warp_tile_ids(rpp, 'GateWarpTileIDs'),
             'native_overworld_tiles':warp_tile_ids(rpp, 'OverworldWarpTileIDs'),
             'johto_tiles':warp_tile_ids(rpp, 'NewBarkWarpTileIDs'),
-            'extra_warp_checks_johto_explicit':'cp JOHTO' in src[src.index('ExtraWarpCheck::'):src.index('MapEntryAfterBattle::')]}
+            'extra_warp_checks_johto_explicit':(
+                'cp JOHTO' in src[src.index('ExtraWarpCheck::'):src.index('MapEntryAfterBattle::')]
+                or ('cp JOHTO_ROUTE_31' in state[state.index('IsPlayerFacingEdgeOfMap:'):state.index('IsWarpTileInFrontOfPlayer:')]
+                    and 'cp JOHTO_ROUTE31_VIOLET_GATE' in src[src.index('CheckWarpsNoCollisionLoop::'):src.index('CheckWarpsCollision::')]))}
     if not all(engine[key] for key in ('collision_path','standing_path','facing_warp_tiles')):
         warnings.append('RPP 引擎 Warp 入口与预期不同，必须重新审查')
     if not engine['extra_warp_checks_johto_explicit']:

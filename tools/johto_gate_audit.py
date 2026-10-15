@@ -47,7 +47,7 @@ RPP_GATE_ART_ADAPTER = bytes([
     0x04,0x02,0x02,0x02,0x05,
     0x1a,0x16,0x16,0x16,0x1c,
     0x18,0x01,0x01,0x01,0x19,
-    0x1b,0x17,0x1e,0x1e,0x1f,
+    0x01,0x01,0x20,0x01,0x01,
 ])
 
 
@@ -82,16 +82,22 @@ def audit(rpp, gold):
     rpp, gold = Path(rpp), Path(gold)
     problems = preflight(rpp, gold)
     if problems: return problems  # hard-stop, no extrapolation on partial sources
-    if 'GT-5.62.152@' not in text(rpp,'data/game_version.asm'):
-        problems.append('WRONG RPP BASE: expected GT-5.62.152 candidate')
-    # Gate $40 was missing in the first GT-151 version: passability AND
-    # warp tile recognition must both contain it. Source-of-truth on the two
-    # outdoor entrance 16x16 cells: their four 8x8 tiles are all $40.
+    if 'GT-5.62.158@' not in text(rpp,'data/game_version.asm'):
+        problems.append('WRONG RPP BASE: expected GT-5.62.158 with gate fix')
+    # GATE-5.62.157: the portal remains walkable, but stepping on it must
+    # never auto-warp. The second outward input collides and uses native Warp.
+    # The outdoor entrance 16x16 cells still contain four $40 subtiles.
     coll=(rpp/'gfx/tilesets/johto.tilecoll').read_bytes()
     if coll != bytes((3,4,5,6,0x40,0xff)):
         problems.append('RPP JOHTO COLLISION must allow gate portal tile $40')
-    if not re.search(r'NewBarkWarpTileIDs:\s*db\s+\$06,\$40,\$FF',text(rpp,'data/warp_tile_ids.asm')):
-        problems.append('RPP JOHTO WARP TILES must include $40')
+    if not re.search(r'NewBarkWarpTileIDs:\s*db\s+\$06,\$FF',text(rpp,'data/warp_tile_ids.asm')):
+        problems.append('RPP JOHTO WARP TILES must exclude $40 (no standing auto-warp)')
+    src = text(rpp,'home/overworld.asm')
+    facing = text(rpp,'engine/overworld/player_state.asm')
+    if 'cp JOHTO_ROUTE31_VIOLET_GATE' not in src[src.index('CheckWarpsNoCollisionLoop::'):src.index('CheckWarpsCollision::')]:
+        problems.append('RPP missing gate on-step Warp suppression')
+    if 'cp JOHTO_ROUTE_31' not in facing[facing.index('IsPlayerFacingEdgeOfMap:'):facing.index('IsWarpTileInFrontOfPlayer:')]:
+        problems.append('RPP missing Route31 pseudo-edge facing check')
     bst=(rpp/'gfx/blocksets/johto.bst').read_bytes()
     for basename,width,points in (('JohtoRoute31',20,[(4,6),(4,7)]),
                                   ('JohtoVioletCity',20,[(39,24),(39,25)])):
@@ -147,7 +153,7 @@ def audit(rpp, gold):
             if marker not in data: problems.append(f'RPP MISSING REGISTRATION {rel}: {marker}')
     for name in ('JohtoRoute31.asm','JohtoVioletCity.asm'):
         src=text(rpp, 'data/mapHeaders/'+name)
-        if 'WEST_MAP_CONNECTION' in src or 'EAST_MAP_CONNECTION' in src:
+        if re.search(r'^\s*(WEST_MAP_CONNECTION|EAST_MAP_CONNECTION)\b', src, re.M):
             problems.append(f'RPP FORBIDDEN outdoor straight crossing: {name}')
     return problems
 

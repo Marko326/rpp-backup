@@ -131,6 +131,22 @@ IsPlayerFacingEdgeOfMap:
 	jr .resetCarry
 
 .facingLeft
+	; GATE-5.62.157: Route31 gate opens west at (4,6)/(4,7),
+	; not at the map edge. The normal Route15 edge check still applies
+	; everywhere else. This only runs for a player already on a Warp.
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_31
+	jr nz, .normalLeftEdge
+	ld a, c
+	cp 4
+	jr nz, .normalLeftEdge
+	ld a, b
+	cp 6
+	jr z, .setCarry
+	cp 7
+	jr z, .setCarry
+	jr .resetCarry
+.normalLeftEdge
 	ld a, c
 	and a
 	jr z, .setCarry

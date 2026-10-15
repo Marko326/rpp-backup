@@ -469,6 +469,14 @@ CheckWarpsNoCollisionLoop::
 	pop bc
 	pop hl
 	jr c,WarpFound1 ; jump if standing on door or warp
+	; GATE-5.62.157: stepping onto a Johto gate Warp only arms bit 2.
+	; Transfer after the next collision toward its doorway (Route15 style).
+	push hl
+	inc hl ; destination map follows the destination Warp index
+	ld a,[hl]
+	pop hl
+	cp JOHTO_ROUTE31_VIOLET_GATE
+	jp z,CheckWarpsNoCollisionRetry2
 	push hl
 	push bc
 	call ExtraWarpCheck
