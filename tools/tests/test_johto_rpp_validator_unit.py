@@ -8,7 +8,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from johto_gold_sources import gold_block_sources
 from johto_rpp_validate import (checked_file, compare_graphics,
-                                diagnostic, make_result, verify, write_reports)
+                                diagnostic, make_result, staged_walkability_errors,
+                                verify, write_reports)
 
 
 class JohtoValidatorUnitTest(unittest.TestCase):
@@ -35,6 +36,19 @@ class JohtoValidatorUnitTest(unittest.TestCase):
 
     def test_changed_graphics_fail(self):
         self.assertEqual(compare_graphics(b'\0', b'\0', bytes(16), bytes([2]+[0]*15)), [0])
+
+    def test_independent_validator_checks_exported_variant(self):
+        # Original Gold LADDER block remains walkable in the installed prefix;
+        # only the exported variant's tile has regressed to an impassable wall.
+        labels = [('WALL',) * 4 for _ in range(128)]
+        labels[6] = ('LADDER',) * 4
+        blocks = bytearray(128 * 16)
+        blocks[6*16:7*16] = bytes([0x5b]) * 16
+        blocks.extend(bytes([7]) * 16)
+        self.assertEqual(staged_walkability_errors(b'\x06', b'\x06', 1, 1,
+                                                   labels, blocks, {0x5b}), [])
+        self.assertEqual(len(staged_walkability_errors(b'\x06', b'\x80', 1, 1,
+                                                       labels, blocks, {0x5b})), 4)
 
     def test_disallow_path_traversal(self):
         with tempfile.TemporaryDirectory() as tmp:

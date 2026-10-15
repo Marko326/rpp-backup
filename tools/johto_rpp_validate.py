@@ -13,8 +13,9 @@ import json
 from pathlib import Path
 import re
 from johto_gold_sources import gold_block_sources
+from johto_rpp_tileset_contract import matches_gold_prefix, check_runtime_contract
 
-CLONE_TO_SOURCE = {0x20: 0x05, 0x21: 0x4c, 0x30: 0x06}
+CLONE_TO_SOURCE = {0x20: 0x05, 0x21: 0x4c, 0x30: 0x06, 0x5b: 0x07}
 SAFE_NAME = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
 REFERENCE = {'Route29': 'maps/JohtoRoute29.blk',
              'NewBarkTown': 'maps/NewBarkTown.blk'}
@@ -63,6 +64,42 @@ def compare_graphics(gold_layout, staged_layout, gold_metatiles, shared):
     return bad
 
 
+
+def gold_collision_labels(path):
+    """Parse the original 16x16 Gold labels independently of the converter."""
+    labels = []
+    for line in path.read_text().splitlines():
+        match = re.search(r'\btilecoll\s+([^;]+)\s*;', line)
+        if match:
+            labels.append(tuple(part.strip() for part in match.group(1).split(',')))
+    if len(labels) != 128 or any(len(row) != 4 for row in labels):
+        raise ValueError('invalid Gold Johto collision labels')
+    return labels
+
+
+def staged_walkability_errors(gold_map, candidate, width, height,
+                              labels, blocks, passable):
+    """Check the FINAL candidate bytes, never the source metatile indices."""
+    must_walk = {'LADDER', 'TALL_GRASS', 'WARP_CARPET_LEFT',
+                 'WARP_CARPET_RIGHT', 'WARP_CARPET_DOWN'}
+    if (len(gold_map) != width * height or len(candidate) != width * height
+            or len(blocks) % 16 or
+            any(b >= len(blocks) // 16 for b in candidate)):
+        raise ValueError('invalid candidate dimensions or metatile indices')
+    bad = []
+    for y in range(height * 2):
+        for x in range(width * 2):
+            pos = (y // 2) * width + x // 2
+            quadrant = (y % 2) * 2 + (x % 2)
+            if labels[gold_map[pos]][quadrant] not in must_walk:
+                continue
+            off = (y % 2) * 8 + (x % 2) * 2 + 4
+            tile = blocks[candidate[pos] * 16 + off]
+            if tile not in passable:
+                bad.append((x, y, tile))
+    return bad
+
+
 def verify(output, gold, project):
     problems = []
     manifest = load_json(output, 'manifest.json', problems)
@@ -91,9 +128,19 @@ def verify(output, gold, project):
         return make_result([], problems, {}, {})
     if (len(shared) % 16 or not 128 <= len(shared)//16 <= 256 or
             len(gold_tiles) != 2048 or not shared.startswith(rpp_tiles) or
-            not rpp_tiles.startswith(gold_tiles)):
+            not matches_gold_prefix(gold_tiles, rpp_tiles)):
         problems.append(diagnostic('shared_tileset_incompatible',
                                    f'{len(shared)} bytes staged'))
+    try:
+        check_runtime_contract(gold_tiles, project)
+    except (ValueError, OSError) as ex:
+        problems.append(diagnostic('johto_runtime_collision_or_palette_incompatible', ex))
+    try:
+        johto_labels = gold_collision_labels(gold / 'data/tilesets/johto_collision.asm')
+        passable = set(checked_file(project, 'gfx/tilesets/johto.tilecoll')[:-1])
+    except (OSError, ValueError) as ex:
+        johto_labels, passable = None, set()
+        problems.append(diagnostic('gold_collision_or_runtime_walkability_unreadable', ex))
     count = len(shared)//16
     if count != manifest.get('shared_block_count'):
         problems.append(diagnostic('shared_block_count_mismatch'))
@@ -176,6 +223,31 @@ def verify(output, gold, project):
             entry = staged[name]
             status = entry.get('status')
             report['stage_status'] = status
+            # Independent source-level entrance audit. The candidate only
+            # stages scenery: Gold DOOR/CAVE do not prove that an RPP door
+            # tile, destination Warp, or return path exists.
+            if (name not in REFERENCE and entry.get('status') != 'blocked' and
+                    johto_labels is not None and
+                    original is not None and len(original) == w * h and
+                    max(original, default=0) < len(johto_labels)):
+                entrances = {'DOOR': 0, 'CAVE': 0}
+                for pos in original:
+                    for label in johto_labels[pos]:
+                        if label in entrances:
+                            entrances[label] += 1
+                entrances = {label: num for label, num in entrances.items() if num}
+                if entrances:
+                    listed = [item for item in entry.get('findings', [])
+                              if isinstance(item, dict) and
+                              item.get('code') == 'entrance_requires_warp_and_engine_review']
+                    expected_warps = len(events.get(name, {}).get('warps', []))
+                    if (len(listed) != 1 or
+                            listed[0].get('count') != sum(entrances.values()) or
+                            listed[0].get('by_label') != entrances or
+                            listed[0].get('gold_warp_count') != expected_warps):
+                        issues.append(diagnostic('entrance_review_manifest_missing_or_mismatched'))
+                    if entry.get('status') == 'candidate':
+                        issues.append(diagnostic('entrance_candidate_claimed_ready'))
             if entry.get('source_sha256') != row.get('source_sha256'):
                 issues.append(diagnostic('manifest_source_hash_mismatch'))
             if [entry.get('width'), entry.get('height')] != [w, h]:
@@ -199,6 +271,18 @@ def verify(output, gold, project):
                     issues.append(diagnostic('candidate_size_mismatch', f'{len(candidate)} vs {w*h}'))
                 if candidate and max(candidate) >= count:
                     issues.append(diagnostic('candidate_block_index_overflow', f'{max(candidate)}>={count}'))
+                if (johto_labels is not None and original is not None and
+                        len(candidate) == len(original) == w * h and
+                        max(original, default=0) < 128 and
+                        max(candidate, default=0) < count):
+                    try:
+                        missing = staged_walkability_errors(
+                            original, candidate, w, h, johto_labels, shared, passable)
+                        if missing:
+                            issues.append(diagnostic('candidate_walkability_regression',
+                                                     f'{len(missing)} cells; examples {missing[:8]}'))
+                    except (ValueError, IndexError) as ex:
+                        issues.append(diagnostic('candidate_walkability_audit_failed', ex))
                 if name in REFERENCE:
                     try:
                         preserved = checked_file(project, REFERENCE[name])

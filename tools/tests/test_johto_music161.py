@@ -19,13 +19,14 @@ class JohtoMusicScenes(unittest.TestCase):
     def test_map_table_fully_covers_registered_legacy_map_ids(self):
         song_body = self.maps.split('MapSongBanks:', 1)[1].split('MapSongBanksEnd:', 1)[0]
         songs = re.findall(r'^\s*db\s+(MUSIC_[A-Z0-9_]+)\s*,\s*(\d+)', song_body, re.M)
-        self.assertEqual(len(songs), 251)
+        self.assertEqual(len(songs), 252)
         self.assertTrue(all(bank == '0' for _, bank in songs))
         self.assertIn('ASSERT (MapSongBanksEnd - MapSongBanks) == NUM_LEGACY_MAPS * 2', self.maps)
         self.assertEqual(songs[0][0], 'MUSIC_PALLET_TOWN')
         self.assertEqual(songs[0xF8][0], 'MUSIC_ROUTES3')
         self.assertEqual(songs[0xF9][0], 'MUSIC_CITIES1')
         self.assertEqual(songs[0xFA][0], 'MUSIC_CITIES1')
+        self.assertEqual(songs[0xFB][0], 'MUSIC_ROUTES3')
 
     def test_scene_table_has_exact_johto_city_and_route_mapping(self):
         table = self.style.split('JohtoSceneGSCMap:', 1)[1].split('\tdb $ff', 1)[0]
@@ -37,6 +38,7 @@ class JohtoMusicScenes(unittest.TestCase):
             'JOHTO_ROUTE_30': 'MUSIC_GBP_GSC_ROUTE30',
             'JOHTO_ROUTE_31': 'MUSIC_GBP_GSC_ROUTE30',
             'JOHTO_VIOLET_CITY': 'MUSIC_GBP_GSC_VIOLET_CITY',
+            'JOHTO_ROUTE_32': 'MUSIC_GBP_GSC_ROUTE30',
         })
         constants = asm('constants/music_constants.asm')
         for symbol in pairs.values():
@@ -96,7 +98,7 @@ class JohtoMusicScenes(unittest.TestCase):
         self.assertNotIn('MUSIC_STYLE_MAGIC0', asm('data/map_songs.asm'))
 
     def test_version_only_and_no_gate_or_fly_changes(self):
-        self.assertIn('MUS-5.62.163@', asm('data/game_version.asm'))
+        self.assertIn('MAP-5.62.169@', asm('data/game_version.asm'))
         self.assertIn('db $0d', asm('data/mapObjects/JohtoRoute31VioletGate.asm'))
         self.assertIn('db $06,$FF', asm('data/warp_tile_ids.asm'))
 

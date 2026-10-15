@@ -27,7 +27,7 @@ class TestDualSource(unittest.TestCase):
         self.assertNotIn('RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt',m.RPP_REQUIRED)
 
     def test_gate_requires_walkable_tile_without_auto_warp(self):
-        self.assertEqual((ROOT/'gfx/tilesets/johto.tilecoll').read_bytes(),bytes([3,4,5,6,64,255]))
+        self.assertEqual((ROOT/'gfx/tilesets/johto.tilecoll').read_bytes(),bytes([3,4,5,6,64,0x5b,255]))
         src = (ROOT/'data/warp_tile_ids.asm').read_text()
         self.assertIn('db $06,$FF',src)
         self.assertNotIn('db $06,$40,$FF',src)

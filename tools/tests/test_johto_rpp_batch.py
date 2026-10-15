@@ -56,8 +56,9 @@ class JohtoBatchInventoryTest(unittest.TestCase):
             (gold / 'data/maps/attributes.asm').write_text(
                 '\tmap_attributes Route30, ROUTE_30, $00, 0\n'
                 '\tconnection east, Route29, ROUTE_29, 0\n')
-            (gold / 'data/tilesets/johto_metatiles.bin').write_bytes(
-                (project / 'gfx/blocksets/johto.bst').read_bytes()[:2048])
+            reference_blocks = bytearray((project / 'gfx/blocksets/johto.bst').read_bytes()[:2048])
+            reference_blocks[6*16:7*16] = bytes([7])*16
+            (gold / 'data/tilesets/johto_metatiles.bin').write_bytes(reference_blocks)
             (gold / 'data/tilesets/johto_collision.asm').write_text(
                 '\n'.join(['\ttilecoll FLOOR, FLOOR, FLOOR, FLOOR ; 0'] * 128))
             (gold / 'data/tilesets/house_metatiles.bin').write_bytes(

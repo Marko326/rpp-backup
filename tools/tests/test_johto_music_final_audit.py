@@ -15,13 +15,13 @@ class JohtoMusicFinalAudit(unittest.TestCase):
     def setUpClass(cls):
         cls.errors, cls.rows = audit(ROOT)
 
-    def test_current_registry_has_six_scenes_and_source_inheriting_gate(self):
+    def test_current_registry_has_seven_scenes_and_source_inheriting_gate(self):
         self.assertEqual(self.errors, [])
-        self.assertEqual(len(self.rows), 7)
+        self.assertEqual(len(self.rows), 8)
         gate, = (v for v in self.rows if v['map'] == 'JOHTO_ROUTE31_VIOLET_GATE')
         self.assertEqual(gate['legacy_id'], '$FA')
         self.assertEqual(gate['gsc'], 'INHERIT_FROM_WARP_SOURCE')
-        self.assertEqual(sum(v['gsc'].startswith('MUSIC_GBP_GSC_') for v in self.rows), 6)
+        self.assertEqual(sum(v['gsc'].startswith('MUSIC_GBP_GSC_') for v in self.rows), 7)
 
     def mutation(self, rel, before, after, expected):
         # Copy only the ten read-only inputs; never mutate the real RPP sources.
@@ -65,8 +65,8 @@ class JohtoMusicFinalAudit(unittest.TestCase):
 
     def test_unknown_future_map_requires_scene_mapping(self):
         self.mutation('data/johto_map_headers.asm',
-                      'db JOHTO_ROUTE31_VIOLET_GATE\nJohtoMapLegacyAliasesEnd::',
-                      'db JOHTO_ROUTE31_VIOLET_GATE\n\tdb PALLET_TOWN\nJohtoMapLegacyAliasesEnd::',
+                      'db JOHTO_ROUTE_32\nJohtoMapLegacyAliasesEnd::',
+                      'db JOHTO_ROUTE_32\n\tdb PALLET_TOWN\nJohtoMapLegacyAliasesEnd::',
                       'registered Johto scene missing GSC counterpart')
 
     def test_audio_special_priority_cannot_disappear(self):

@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import re
 from johto_gold_sources import gold_block_sources
+from johto_rpp_tileset_contract import check_runtime_contract, matches_gold_prefix
 
 # All directions are handled by RPP's *existing* ledge action, not a Gold
 # movement interpreter. Composite HOP labels expand into ordinary RPP pairs.
@@ -141,6 +142,78 @@ def gold_connections(gold, name):
     return matches
 
 
+def audit_land_collisions(gold_layout, candidate_layout, width, height,
+                          gold_blocks, candidate_blocks, labels, passable):
+    """Audit Gold walkability against the ACTUAL staged .blk and metatiles.
+
+    Gold supplies a 16x16 semantic label at each coordinate; the RPP runtime
+    walks using an 8x8 tile whitelist. Never infer RPP collision from the
+    original Gold layout after a ledge or other block variant is generated.
+    """
+    if (len(gold_layout) != width * height or
+            len(candidate_layout) != width * height or
+            len(gold_blocks) < 128 * 16 or
+            len(candidate_blocks) % 16 or len(labels) < 128 or
+            any(b >= len(candidate_blocks) // 16 for b in candidate_layout)):
+        raise ValueError('invalid staged geometry or blockset in collision audit')
+    dangerous = []
+    ambiguous_floor = []
+    must_walk = {'LADDER', 'TALL_GRASS', 'WARP_CARPET_LEFT',
+                 'WARP_CARPET_RIGHT', 'WARP_CARPET_DOWN'}
+    for y in range(2 * height):
+        for x in range(2 * width):
+            quadrant = (y % 2) * 2 + x % 2
+            gold_bid = gold_layout[(y // 2) * width + x // 2]
+            label = labels[gold_bid][quadrant]
+            bid = candidate_layout[(y // 2) * width + x // 2]
+            offset = (y % 2) * 8 + (x % 2) * 2 + 4
+            rpp_tile = candidate_blocks[bid * 16 + offset]
+            if label in must_walk and rpp_tile not in passable:
+                dangerous.append((x, y, label, rpp_tile))
+            elif label == 'FLOOR' and rpp_tile not in passable:
+                ambiguous_floor.append((x, y, rpp_tile))
+    issues = []
+    if dangerous:
+        issues.append({'code': 'missing_walkable_collision_mapping',
+                       'count': len(dangerous),
+                       'examples': [{'at': [x, y], 'label': label, 'tile': f'{tile:02X}'}
+                                    for x, y, label, tile in dangerous[:12]]})
+    if ambiguous_floor:
+        # Original FLOOR may include cliffs/roofs: review locations, do not
+        # globally make an ambiguous shared tile passable.
+        issues.append({'code': 'floor_collision_requires_spatial_review',
+                       'count': len(ambiguous_floor),
+                       'examples': [{'at': [x, y], 'tile': f'{tile:02X}'}
+                                    for x, y, tile in ambiguous_floor[:8]]})
+    return issues
+
+
+
+def audit_entrance_semantics(gold_layout, width, height, labels, gold_warp_count):
+    """Require manual Warp/engine review for Gold DOOR/CAVE cells.
+
+    A Gold 16x16 collision label is not an RPP 8x8 door-tile/warp rule.
+    Do not make shared wall tiles globally passable or synthesize warps to
+    missing indoor destinations. Gold warp count is context, not proof that
+    a particular visual entrance has a valid destination.
+    """
+    locations = []
+    for y in range(height * 2):
+        for x in range(width * 2):
+            pos = (y // 2) * width + x // 2
+            label = labels[gold_layout[pos]][(y % 2) * 2 + x % 2]
+            if label in ('DOOR', 'CAVE'):
+                locations.append((x, y, label))
+    if not locations:
+        return []
+    return [{'code': 'entrance_requires_warp_and_engine_review',
+             'count': len(locations),
+             'by_label': {label: sum(t == label for _, _, t in locations)
+                          for label in ('DOOR', 'CAVE') if any(t == label for _, _, t in locations)},
+             'gold_warp_count': gold_warp_count,
+             'examples': [{'at': [x, y], 'label': label}
+                          for x, y, label in locations[:10]]}]
+
 def convert_one(name, data, w, h, original, labels, shared, intern):
     # Stage locally; do not commit variants if a map is blocked.
     additions = {}
@@ -198,7 +271,9 @@ def convert_one(name, data, w, h, original, labels, shared, intern):
     for (bx, by), edits in sorted(additions.items()):
         pos = by*w+bx
         bid = out[pos]
-        buf = bytearray(original[bid*16:bid*16+16])
+        # Start with the installed RPP equivalent, not untouched Gold bytes:
+        # block $06 must keep its walkable $5B LADDER clone in variants.
+        buf = bytearray(shared[bid*16:bid*16+16])
         for off, tile in edits.items():
             buf[off] = tile
         sig = bytes(buf)
@@ -318,7 +393,9 @@ def inventory_all_gold_maps(gold, project, output, staged_records):
             exact_prefix = bool(source and target and
                                 len(source) % 16 == 0 and
                                 len(target) % 16 == 0 and
-                                target.startswith(source))
+                                (matches_gold_prefix(source, target)
+                                 if tileset == 'TILESET_JOHTO'
+                                 else target.startswith(source)))
             tileset_checks[tileset] = {
                 'gold_metatiles': str(metatiles.relative_to(gold)),
                 'gold_metatiles_present': bool(source),
@@ -481,8 +558,9 @@ def batch(gold, project, output):
     maps,labels=read_metadata(gold)
     source=(gold/'data/tilesets/johto_metatiles.bin').read_bytes()
     existing=(project/'gfx/blocksets/johto.bst').read_bytes()
-    if len(source)!=128*16 or existing[:len(source)]!=source or len(existing)%16:
-        raise ValueError('project tileset is not a .134-compatible Johto metatiles prefix')
+    # Fail closed if a previous hand-fix changed Gold geometry, shared art,
+    # colors or collision semantics. Preserve the already-playtested LADDER.
+    check_runtime_contract(source, project)
     if len(existing)//16 < 133:
         raise ValueError('Expected .134 Route29 base with 5 extra block variants')
     for t in CLONES.values():
@@ -507,7 +585,9 @@ def batch(gold, project, output):
                 candidate.unlink()
     pairs={(existing[i:i+16]):i//16 for i in range(0,len(existing),16)}
     shared=bytearray(existing)
+    passable = set((project/'gfx/tilesets/johto.tilecoll').read_bytes()[:-1])
     records=[]
+    semantic_by_map={}
     events_catalog={}
     candidate=output/'candidate_maps'
     candidate.mkdir(exist_ok=True)
@@ -523,6 +603,7 @@ def batch(gold, project, output):
         ev=gold_events(gold,n)
         events_catalog[n]=gold_event_records(gold,n,w,h)
         if n in ('Route29','NewBarkTown'):
+            stage = None
             out=golden29 if n=='Route29' else golden_town
             hops={'note':'Existing RPP modified map is preserved verbatim'}
             collision={}
@@ -532,16 +613,39 @@ def batch(gold, project, output):
         else:
             out, stage, hops, collision, issues, triggers=convert_one(n,data,w,h,source,labels,shared,pairs)
             hop_count=len(triggers)
-            if out is None:
-                status='blocked'
-            else:
-                shared,pairs=stage
-                status='review_required' if issues else 'candidate'
-        if out is not None:
-            (candidate/f'{n}.blk').write_bytes(out)
+            status = ('blocked' if out is None else
+                      'review_required' if issues else 'candidate')
+        # Use the staged variant set, not the pre-conversion blockset.
+        # Already integrated references keep their own game-tested layout.
+        staged_layout = out if out is not None else data
+        staged_blocks = stage[0] if out is not None and stage is not None else shared
+        semantic_issues = audit_land_collisions(
+            data, staged_layout, w, h, source, staged_blocks, labels, passable)
+        issues.extend(semantic_issues)
+        # Gold DOOR/CAVE labels are not equivalent to RPP door tile IDs.
+        # Report their presence even when the graphics and ordinary collision
+        # look correct; entering requires a real registered destination Warp.
+        if n not in ('Route29', 'NewBarkTown') and out is not None:
+            entrance_issues = audit_entrance_semantics(
+                data, w, h, labels, len(events_catalog[n]['warps']))
+            issues.extend(entrance_issues)
+            if entrance_issues and status == 'candidate':
+                status = 'review_required'
+        if any(item['code'] == 'missing_walkable_collision_mapping' for item in semantic_issues):
+            # A candidate must not silently omit a Gold walkable terrain type.
+            status = 'blocked'
+            out = None
+        elif semantic_issues and status == 'candidate':
+            status = 'review_required'
         if entry['environment'] not in ('TOWN','ROUTE'):
             issues.append({'code':'non_outdoor_environment','environment':entry['environment']})
             if status=='candidate':status='review_required'
+        if out is not None:
+            semantic_by_map[n] = semantic_issues
+            if n not in ('Route29','NewBarkTown'):
+                # A blocked conversion must never poison the shared blockset.
+                shared,pairs=stage
+            (candidate/f'{n}.blk').write_bytes(out)
         records.append(dict(name=n,environment=entry['environment'],width=w,height=h,
                             source_sha256=hashlib.sha256(data).hexdigest(),status=status,
                             block_bytes=w*h,hop_directions=hop_count,hop_types=hops,
@@ -551,9 +655,22 @@ def batch(gold, project, output):
     if (candidate/'Route29.blk').read_bytes()!=golden29 or (candidate/'NewBarkTown.blk').read_bytes()!=golden_town:
         raise AssertionError('existing RPP map regression')
     (output/'johto_blockset_candidate.bst').write_bytes(shared)
+    # Fail closed on the actual exported artifacts, including variants from
+    # later maps. A conversion must not pass solely on its intermediate state.
+    exported_blocks = (output/'johto_blockset_candidate.bst').read_bytes()
+    for entry in order:
+        n, w, h, data = (entry[k] for k in ('name', 'width', 'height', 'source'))
+        path = candidate / (n + '.blk')
+        if not path.exists():
+            continue
+        exported = audit_land_collisions(
+            data, path.read_bytes(), w, h, source, exported_blocks, labels, passable)
+        if exported != semantic_by_map[n]:
+            raise ValueError(f'{n}: exported candidate collision audit drift')
     make_gfx_preview(project,output)
     # Original Gold -> staged visual equivalence, factoring in the three cloned 8x8 graphics slots.
     clone_reverse={v:k for k,v in CLONES.items()}
+    clone_reverse[0x5b]=0x07
     for e in records:
         name=e['name']; path=candidate/(name+'.blk')
         if not path.exists() or name in ('Route29','NewBarkTown'):continue
@@ -604,6 +721,8 @@ def batch(gold, project, output):
               '- `johto_ledge_pairs_candidate.asm` 仅提供兼容表草案；RPP 原跳崖动作不变。',
               '- 已批量提取 NPC / 果树 / 道具球 / Warp / 路牌坐标到 `events_locations.json`，但不自动生成游戏脚本、不自动加入 ROM。',
               '- `review_required` 包含金银原版多级跳崖连续格，需要实机前复查落点；`blocked` 无候选。',
+              '- `floor_collision_requires_spatial_review` 为原版 FLOOR / RPP 共用墙面瓦片差异，须按坐标检查，不会自动放开整类墙块。',
+              '- `missing_walkable_collision_mapping` 按最终候选 .blk 与合并图块集检查，未适配通行区块会阻止生成。',
               '', '## 分类警告', '']
     overview += [f'- {k}: {v}' for k,v in issue_counts.most_common()] or ['- 暂无']
     overview+=['','## 下一步接入时必须检查','','- 新地图的地区＋地图编号 / map header Bank / 存档 / 跨图连接。',
