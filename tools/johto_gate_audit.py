@@ -173,8 +173,8 @@ def audit(rpp, gold):
     problems = preflight(rpp, gold)
     if problems: return problems  # hard-stop, no extrapolation on partial sources
     if not any(v in text(rpp,'data/game_version.asm') for v in
-               ('GATE-5.62.159@','GATE-5.62.160@','MUS-5.62.161@','MUS-5.62.162@')):
-        problems.append('WRONG RPP BASE: expected GATE-5.62.159/160 or MUS-5.62.161/162 Gold gate')
+               ('GATE-5.62.159@','GATE-5.62.160@','MUS-5.62.161@','MUS-5.62.162@','MUS-5.62.163@')):
+        problems.append('WRONG RPP BASE: expected GATE-5.62.159/160 or MUS-5.62.161-163 Gold gate')
     # GATE-5.62.157: the portal remains walkable, but stepping on it must
     # never auto-warp. The second outward input collides and uses native Warp.
     # The outdoor entrance 16x16 cells still contain four $40 subtiles.

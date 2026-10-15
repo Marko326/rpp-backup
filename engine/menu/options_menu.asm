@@ -1116,6 +1116,53 @@ LookupJohtoMapGSCMusic:
 	xor a
 	ret
 
+; MUS-5.62.163: after loading a different Johto scene, the same legacy
+; RBY song ID may now resolve to another GSC song (e.g. two CITIES1 towns).
+; Keep the audio engine's legacy song cache intact for unchanged scenes and
+; for RBY/RBY+C. In GSC/GSC+C/RND, invalidate it only if the actual mapped
+; GSC scene changes. No random choice is made here: the normal player rolls
+; once when it starts the requested BGM.
+; Called once after LoadMapHeader has loaded the ordinary map-song entry.
+CheckJohtoMusicSceneTransition::
+	ld a,[wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr z,.johto
+	xor a
+	ld [wJohtoMusicSceneMagic],a ; Kanto music may share an RBY ID
+	ret
+.johto
+	call LookupJohtoMapGSCMusic
+	and a
+	jr nz,.recognized
+	ld [wJohtoMusicSceneMagic],a ; unregistered music is not a cached scene
+	ret
+.recognized
+	ld c,a
+	ld a,[wJohtoMusicSceneMagic]
+	cp $a7
+	jr nz,.changed
+	ld a,[wLastJohtoMusicSceneID]
+	cp c
+	ret z
+.changed
+	ld a,c
+	ld [wLastJohtoMusicSceneID],a
+	ld a,$a7
+	ld [wJohtoMusicSceneMagic],a
+	call ReadMusicStyleState
+	and MUSIC_STYLE_BASE_MASK
+	cp MUSIC_STYLE_GSC
+	jr z,.checkWalking
+	cp MUSIC_STYLE_RND
+	ret nz
+.checkWalking
+	ld a,[wWalkBikeSurfState]
+	and a
+	ret nz ; bike/surf have their own song IDs
+	xor a
+	ld [wLastMusicSoundID],a ; same RBY ID may no longer mean same GSC song
+	ret
+
 JohtoSceneGSCMap:
 	db NEW_BARK_TOWN,             MUSIC_GBP_GSC_NEW_BARK_TOWN
 	db JOHTO_ROUTE_29,            MUSIC_GBP_GSC_ROUTE29

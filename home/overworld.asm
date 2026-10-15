@@ -2362,6 +2362,9 @@ LoadMapHeader::
 	pop af
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a
+	; MUS-5.62.163: refresh Johto BGM continuity before the next default
+	; music request. The unchanged RBY song ID alone is not a scene key.
+	callba CheckJohtoMusicSceneTransition
 	ret
 
 ; function to copy map connection data from ROM to WRAM

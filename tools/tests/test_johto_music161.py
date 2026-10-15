@@ -96,7 +96,7 @@ class JohtoMusicScenes(unittest.TestCase):
         self.assertNotIn('MUSIC_STYLE_MAGIC0', asm('data/map_songs.asm'))
 
     def test_version_only_and_no_gate_or_fly_changes(self):
-        self.assertIn('MUS-5.62.162@', asm('data/game_version.asm'))
+        self.assertIn('MUS-5.62.163@', asm('data/game_version.asm'))
         self.assertIn('db $0d', asm('data/mapObjects/JohtoRoute31VioletGate.asm'))
         self.assertIn('db $06,$FF', asm('data/warp_tile_ids.asm'))
 

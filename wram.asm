@@ -2828,7 +2828,12 @@ wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
 wMusicStyle:: ds 1
 wMusicStyleMagic0:: ds 1
 wMusicStyleMagic1:: ds 1
-	ds 18 ; 保持原 unused 区总长度仍为 128 bytes
+; MUS-5.62.163: last GSC scene ID and signature live in the remaining saved-
+; unused bytes; the old 128-byte reserve and subsequent WRAM offsets stay fixed.
+; This cache is only for selecting the next map BGM, never the active song ID.
+wLastJohtoMusicSceneID:: ds 1
+wJohtoMusicSceneMagic:: ds 1
+	ds 16 ; 保持原 unused 区总长度仍为 128 bytes
 
 wNumSigns:: ; d561
 ; number of signs in the current map (up to 16)
