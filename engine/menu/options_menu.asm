@@ -1140,6 +1140,7 @@ JohtoNativeGSCMusic::
 	db 0 ; source-dependent gate; legacy compatibility only
 	db MUSIC_GBP_GSC_ROUTE30
 	db MUSIC_GBP_GSC_UNION_CAVE
+	db MUSIC_GBP_GSC_ROUTE30 ; Route33
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

@@ -30,3 +30,5 @@ Tilesets:
 	tileset NewBark_Block,     NewBark_GFX,     NewBark_Coll,     255,255,255, $04, OUTDOOR ; MAP-5.62.127: Gold tall grass
 	tileset JohtoGate_Block,   JohtoGate_GFX,   Gate_Coll,        $FF,$FF,$FF, $FF, 0 ; GATE-5.62.159: original art, Kanto Gate collision rules
 	tileset JohtoUnionCave_Block, JohtoUnionCave_GFX, JohtoUnionCave_Coll, $FF,$FF,$FF, $FF, CAVE
+	; R33-5.62.191: position-mask land collision; tile ID list intentionally empty.
+	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR ; R33-5.62.193: Gold Route33 TALL_GRASS uses graphic $04

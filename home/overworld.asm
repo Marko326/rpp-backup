@@ -767,6 +767,38 @@ CheckMapConnections::
 	ld a,h
 	ld [wCurrentTileBlockMapViewPointer + 1],a
 .loadNewMap ; load the connected map that was entered
+	; R33-5.62.191: Route32 JOHTO <-> Route33 JOHTO_MODERN changes
+	; the *entire* 96-tile VRAM graphics set. Ordinary neighboring-map
+	; fast path only reloads headers/blocks and is unsafe for this seam.
+	; Use the existing LCD-off whole-map entry, on both directions only.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .route33ModernExit
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .ordinaryConnection
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jp z, .route33TilesetReload
+	jr .ordinaryConnection
+.route33ModernExit
+	cp JOHTO_ROUTE_32
+	jr nz, .ordinaryConnection
+	ld a, [wCurMapTileset] ; previous map's tileset still loaded
+	cp JOHTO_MODERN
+	jp z, .route33TilesetReload
+	; MAP-5.62.194: Violet City and other JOHTO neighbors must keep the
+	; seamless fast path. Without this jump, even a failed cp falls
+	; through to EnterMap, causing a visible white flash on entry to R32.
+	jr .ordinaryConnection
+.route33TilesetReload
+	; This was a map *connection*, never a Warp. Prevent the tileset
+	; loader from interpreting a stale cave wDestinationWarpID as a new
+	; destination when the old and new tilesets differ.
+	ld a, $ff
+	ld [wDestinationWarpID], a
+	jp EnterMap
+.ordinaryConnection
 	call LoadMapHeader
 	call PlayDefaultMusicFadeOutCurrent
 	ld b, SET_PAL_OVERWORLD
@@ -1508,6 +1540,33 @@ CollisionCheckOnLand::
 ; function that checks if the tile in front of the player is passable
 ; clears carry if it is, sets carry if not
 CheckTilePassable::
+	; R33-5.62.191: Gold modern 16x16 roles, not global tile IDs.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .route32Seam
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .normal
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr nz, .normal
+	callba JohtoRoute33CanStepAhead
+	ret
+.route32Seam
+	cp JOHTO_ROUTE_32
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_32_HEIGHT * 2 - 1
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 15
+	jr nc, .normal
+	and a ; Gold source and destination seam roles audited FLOOR.
+	ret
+.normal
 	predef GetTileAndCoordsInFrontOfPlayer ; get tile in front of player
 	ld a,[wTileInFrontOfPlayer] ; tile in front of player
 	ld c,a

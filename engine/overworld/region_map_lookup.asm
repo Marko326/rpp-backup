@@ -211,6 +211,7 @@ ResolveExplicitRegionWarp::
 	ld d, [hl]
 	inc hl
 	ld e, [hl]
+	call RecordJohtoCaveEscapeSource
 	call StoreNativeWarpTarget
 	jr c, .invalid
 	ret
@@ -305,6 +306,57 @@ StoreNativeWarpTarget::
 	scf
 	ret
 
+; MAP-5.62.192: remember only a verified outdoor-to-Union-Cave entrance.
+; Reuse the existing saved (wLastMap, region, local) triple; no SRAM layout
+; extension. DE is the resolved destination key; preserve it for caller.
+; Importantly this runs BEFORE StoreNativeWarpTarget replaces source local ID.
+RecordJohtoCaveEscapeSource::
+	push de
+	ld a, d
+	cp MAP_REGION_JOHTO
+	jp nz, .done
+	ld a, e
+	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+	jp nz, .done
+	ld a, [wWarpedFromWhichWarp]
+	and a ; both outdoor entrances use source warp zero
+	jp nz, .done
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .done
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
+	jr z, .route32
+	cp REGION_NATIVE_MAP_SLOT
+	jp nz, .done
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jp nz, .done
+	ld a, [wDestinationWarpID]
+	cp 1 ; Gold cave third warp, registered as RPP second warp
+	jp nz, .done
+	ld a, REGION_NATIVE_MAP_SLOT
+	ld [wLastMap], a
+	ld a, JOHTO_ROUTE_33_LOCAL_ID
+	jr .saveLocal
+.route32
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jp nz, .done
+	ld a, [wDestinationWarpID]
+	and a
+	jp nz, .done
+	ld a, JOHTO_ROUTE_32
+	ld [wLastMap], a
+	ld a, JOHTO_ROUTE_32_LOCAL_ID
+.saveLocal
+	ld [wLastLocalMapID], a
+	ld a, MAP_REGION_JOHTO
+	ld [wLastRegion], a
+.done
+	pop de
+	ret
+
 ; A native interior may use the same $FE warp escape as the ferry.
 ; Table key: source local ID, zero-based source warp, target warp,
 ; destination region, destination local ID. The caller is in Johto.
@@ -331,6 +383,7 @@ ResolveNativeRegionWarp::
 	ld d, [hl]
 	inc hl
 	ld e, [hl]
+	call RecordJohtoCaveEscapeSource
 	call StoreNativeWarpTarget
 	ret nc
 	jr .invalid
@@ -352,6 +405,10 @@ ResolveNativeRegionWarp::
 NativeRegionWarpTargets::
 	; Cave warp 0 returns to the original Route32 cave-mouth warp 0.
 	db JOHTO_UNION_CAVE_1F_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+	; Gold cave third warp to Route33 (RPP zero-based warp 1).
+	db JOHTO_UNION_CAVE_1F_LOCAL_ID, 1, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
+	; Route33 cave Warp enters at cave (17,31), index 1 of two registered.
+	db JOHTO_ROUTE_33_LOCAL_ID, 0, 1, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
 	db $ff
 
 ; Native connection lookup: source Johto local / direction / destination
@@ -398,7 +455,8 @@ SelectNativeMapConnection::
 	ret
 
 NativeRegionConnectionTargets::
-	; Only enable after auditing each direction's border and alignment.
+	; R33-5.62.191: Route32 SOUTH(1) reaches native Route33 local 9.
+	db JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
 	db $ff
 
 ; Route32's original Gold cave tile (6,79) is solid to generic RPP
@@ -491,6 +549,8 @@ GetJohtoWarpArrivalStep::
 .profiles
 	; Route32's solid cave-mouth art requires one step south after returning.
 	db JOHTO_ROUTE_32, JOHTO_ROUTE_32_LOCAL_ID, 79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN
+	; Route33's Gold cave warp is a solid north-wall doorway too.
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_33_LOCAL_ID, 9, 11, REGION_NATIVE_MAP_SLOT, D_DOWN
 	db $ff
 
 ; Native cave entrances use the existing map transition SFX, not new audio.
@@ -500,7 +560,21 @@ GetJohtoCaveMapChangeSFX::
 	ld e, 0
 	ld a, [wWarpedFromWhichMap]
 	cp JOHTO_ROUTE_32
+	jr z, .checkCaveEntry
+	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .checkExit
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .checkExit
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .checkExit
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+	jr nz, .checkExit
+	ld e, SFX_GO_INSIDE
+	ret
+.checkCaveEntry
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
 	ret nz
@@ -517,12 +591,39 @@ GetJohtoCaveMapChangeSFX::
 	ret nz
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_32
+	jr z, .confirmExit
+	cp REGION_NATIVE_MAP_SLOT
 	ret nz
+.confirmExit
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	ret nz
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr z, .playExit
+	cp JOHTO_ROUTE_33_LOCAL_ID
 	ret nz
+.playExit
 	ld e, SFX_GO_OUTSIDE
+	ret
+
+; Route33's warp tile must only fire at its real Gold (11,9) coordinate.
+; Called only on native Route33; no generic JOHTO_MODERN warp permission.
+JohtoRoute33CaveWarpTileCheck::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .reject
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr nz, .reject
+	ld a, [wYCoord]
+	cp 9
+	jr nz, .reject
+	ld a, [wXCoord]
+	cp 11
+	jr nz, .reject
+	scf
+	ret
+.reject
+	and a
 	ret

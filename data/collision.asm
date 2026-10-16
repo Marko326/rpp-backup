@@ -31,3 +31,5 @@ Ferry_Coll::        INCBIN  "gfx/tilesets/ferry.tilecoll"
 ; Only metatile $06 references it; original $07 stays blocked on wall blocks.
 NewBark_Coll::     INCBIN  "gfx/tilesets/johto.tilecoll"
 JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"
+; Route33 Gold 16x16 role mask governs movement, not ambiguous 8x8 IDs.
+JohtoModern_Coll:: INCBIN "gfx/tilesets/johto_modern.tilecoll"

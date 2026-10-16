@@ -175,6 +175,10 @@ StartMenu_Pokemon:
 	ld a, [wCurMapTileset]
 	cp JOHTO
 	jr z, .canFly
+	; R33-5.62.193: Route33 uses the outdoor JOHTO_MODERN graphics.
+	; Keep route eligibility separate from Johto Fly destination unlocks.
+	cp JOHTO_MODERN
+	jr z, .canFly
 	call CheckIfInOutsideMap
 	jr z,.canFly
 	ld a,[wWhichPokemon]

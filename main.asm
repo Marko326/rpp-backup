@@ -3255,12 +3255,27 @@ INCLUDE "scripts/JohtoRoute31VioletGate.asm"
 JohtoRoute31VioletGateBlocks: INCBIN "maps/JohtoRoute31VioletGate.blk"
 
 ; R32-5.62.165: Route32 terrain and one safe connection to Violet City.
-; Only Union Cave is accessible; Route33, PC and Ruins remain closed.
+; Union Cave and Route33 are accessible; Route32 PC and Ruins remain closed.
 SECTION "Johto Route 32 Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute32.asm"
 INCLUDE "data/mapObjects/JohtoRoute32.asm"
 INCLUDE "scripts/JohtoRoute32.asm"
 JohtoRoute32Blocks: INCBIN "maps/JohtoRoute32.blk"
+
+; R33-5.62.191: Route33's genuine modern graphics and map in a separate ROMX bank.
+; Never put 16x16 FLOOR/WALL ambiguous tile IDs in the global passable list.
+SECTION "Johto Route33 Modern Tileset", ROMX, BANK[$43]
+JohtoModern_GFX: INCBIN "gfx/tilesets/johto_modern.2bpp"
+JohtoModern_Block: INCBIN "gfx/blocksets/johto_modern.bst"
+
+SECTION "Johto Route33 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute33.asm"
+INCLUDE "data/mapObjects/JohtoRoute33.asm"
+INCLUDE "scripts/JohtoRoute33.asm"
+JohtoRoute33Blocks: INCBIN "maps/JohtoRoute33.blk"
+
+SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]
+INCLUDE "engine/overworld/johto_route33_collision.asm"
 
 ; Union Cave 1F: Gold-isolated art and collision variants (no Kanto cave reuse).
 SECTION "Johto Union Cave Tileset", ROMX, BANK[$42]
@@ -3429,6 +3444,9 @@ JohtoRoute32CollisionFence::
 	ld a, [wYCoord]
 	cp JOHTO_ROUTE_32_HEIGHT * 2 - 1
 	jr c, .allowed
+	ld a, [wXCoord]
+	cp 15 ; Gold Route32->Route33 seam: x=0..14 only
+	jr c, .allowed
 .blocked
 	scf
 	ret
@@ -3441,6 +3459,15 @@ JohtoRoute32CollisionFence::
 ; direction, and coordinates must be audited before opening a border.
 ; Interior movement still follows the normal tileset collision logic.
 JohtoNativeCollisionFence::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyNative
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr nz, .legacyNative
+	callba JohtoRoute33EdgeFence ; helper lives in the Route33 resource bank
+	ret
+.legacyNative
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_UP
 	jr z, .north

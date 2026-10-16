@@ -3,6 +3,8 @@ HandleLedges:
 	bit 6, a ; already jumping down ledge
 	ret nz
 	ld a, [wCurMapTileset]
+	cp JOHTO_MODERN
+	jp z, .route33
 	cp JOHTO
 	jr z, .johto
 	and a ; Kanto OVERWORLD
@@ -60,6 +62,65 @@ HandleLedges:
 .nextLedgeTile3
 	inc hl
 	jr .loop
+
+.route33
+	; Only seven Gold HOP directions; no global modern tile whitelist.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	ret nz
+	ld a, [wXCoord]
+	ld b, a
+	ld a, [wYCoord]
+	ld c, a
+	ld a, [wPlayerDirection]
+	ld d, a
+	ld hl, .route33Hops
+.hopLoop
+	ld a, [hli]
+	cp $ff
+	ret z
+	cp b
+	jr nz, .skipHopY
+	ld a, [hli]
+	cp c
+	jr nz, .skipHopDirection
+	ld a, [hl]
+	cp d
+	jr z, .matchHop
+	inc hl
+	jr .hopLoop
+.skipHopY
+	inc hl
+.skipHopDirection
+	inc hl
+	jr .hopLoop
+.matchHop
+	; PLAYER_DIR_* is an overworld facing bit (LEFT=$02, DOWN=$04),
+	; whereas .foundMatch expects the JOYPAD D_* held mask
+	; (LEFT=$20, DOWN=$80). Using PLAYER_DIR_* here makes hops inert.
+	ld a, d
+	cp PLAYER_DIR_LEFT
+	ld e, D_LEFT
+	jr z, .route33HopReady
+	ld e, D_DOWN
+.route33HopReady
+	jp .foundMatch
+
+.route33Hops
+	db 9, 10, PLAYER_DIR_LEFT
+	db 9, 11, PLAYER_DIR_LEFT
+	db 9, 12, PLAYER_DIR_LEFT
+	db 9, 12, PLAYER_DIR_DOWN
+	db 10, 12, PLAYER_DIR_DOWN
+	db 11, 12, PLAYER_DIR_DOWN
+	db 12, 12, PLAYER_DIR_DOWN
+	db $ff
 
 .foundMatch
 	ld a, [hJoyHeld]

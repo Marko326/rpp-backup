@@ -1,3 +1,18 @@
+## MAP-5.62.193｜小地图转换后必须检查草地标记和 Fly 野外许可
+
+- `.192` 的 Route33 `JOHTO_MODERN` 虽标记 `OUTDOOR`，却在 `data/tileset_headers.asm` 把草地 ID 设成 `$FF`，而 Gold Route33 的 12 个 `TALL_GRASS` 16×16 象限四张 8×8 图像均为 `$04`。RPP `UpdatePlayerSprite` / `UpdateNPCSprite` 原本按 `wGrassTile` 设置下半身 OAM 优先级；只要登记 `$04` 就能复用，**不必重画图像或另造草地特效**。这不会自动导入野怪概率/遭遇数据。
+- RPP `.fly` 使用者判断只识别 `JOHTO`/关东 `OVERWORLD`，遗漏新 `JOHTO_MODERN`。为独立 Johto 室外 tileset 新增精确分支即可，不能把 `CheckIfInOutsideMap` 全局宽放，更不能把所有 Johto 地标注册为可飞目的地。飞空许可、目的地到访和两地区恢复是独立问题。
+- 下次接新的 Gold 地图先运行现成 pipeline，并检查最低限度运行时清单：可走/阻挡、草地精灵遮挡及野怪标志、Fly 使用许可与 Fly 目的地、骑行、Surf、Warp 正反、门口落点、音乐及 Continue。**地图规模小不代表可省略这些既有功能对照。**
+
+## MAP-5.62.192｜Route33 第二洞口必须同时核对 Warp 配对和技能返程
+
+- 不能因存在 Route33 运行时地图就默认联合洞穴南口能出：`.191` 曾在 `JohtoUnionCave1FObject` 留 1 个 Warp、`JohtoRoute33Object` 留 0 个 Warp，而静态门禁把「保持关闭」当正确，用户实测实际出不了洞。**开放双向入口要先核对 Gold Warp 坐标与 RPP 重编号后的索引**，再核对落点、方向、反向出入和 Dig／逃洞绳回去的来源。
+- Gold Union Cave1F 第三个原版 Warp `(17,31)` 与 Route33 第一个 Warp `(11,9)` 对应，RPP 仅启用原版洞穴 Warp 3、4，因而 RPP 目标索引为南口 1、北口 0；不可照搬 Gold 原始索引 2、3，也不可全局开放 `$FC`。
+- Gold `JOHTO_MODERN` CAVE 碰撞 `(11,9)` 为不可走，进入前必须在精确 `(11,10)` 朝北放行，并在 Warp 格识别精确 native 位置。洞内返回 Route33 的模拟步仅作用在 `(11,9)` 且来自洞穴 `$FC`，其他普通 Warp 不要多走一步；洞内出口仍为站在 Warp 格朝下碰撞，不能改成通用地板踩格 Warp。
+- 动态 Dig／逃洞绳入口来源必须在 `$FE` 的 `StoreNativeWarpTarget` 改写 `wCurLocalMapID` **之前**捕获。只在核对来源 Warp index+目的地图 key 后写已有 `wLastMap/wLastRegion/wLastLocalMapID` 三元组；不借 `wLastBlackoutMap`，不改关东黑屏。当前特例是一侧道路一个入口，并不存储 Gold 任意 Warp 编号。
+- 门禁必须在旧测试仍然执行的前提下，把已过时的封锁断言升级为双向合同，同时新增负向用例；静态门禁仍不是 ROM 编译和手机验收。
+
+
 ## DIG-5.62.188｜单入口洞穴 Dig／逃洞绳的安全返回与未来多入口陷阱（已用户验收）
 
 - **当前真实能力界限**：只允许 Johto `Union Cave 1F` 的 Dig／逃洞绳专用路径，安全落点是 `Route32 (X=6,Y=80)`。玩家确认实际能从洞内回洞口，其他测试反馈未列出逐项记录；Gold/RPP 双源码严格门禁 `298 PASS / 0 skip`。不可因为用户验收一个入口就写成 Gold 动态返回已整体移植。

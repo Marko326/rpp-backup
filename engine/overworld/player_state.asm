@@ -135,6 +135,10 @@ IsPlayerFacingEdgeOfMap:
 	ld a, b
 	cp 3
 	jr z, .setCarry
+	; MAP-5.62.192: southern Union Cave exit, same DOWN collision
+	; semantics as the already accepted northern exit.
+	cp 31
+	jr z, .setCarry
 .normalDownEdge
 	ld a, [wCurMapHeight]
 	add a
@@ -246,7 +250,18 @@ IsPlayerStandingOnDoorTileOrWarpTile:
 	; Route32 uses a precise Gold cave doorway tile, not the outdoor $06 pad.
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_32
+	jr z, .route32Warp
+	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .normalWarpTile
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .normalWarpTile
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr nz, .normalWarpTile
+	callba JohtoRoute33CaveWarpTileCheck
+	jr .done
+.route32Warp
 	callba JohtoRoute32CaveWarpTileCheck
 	jr .done
 .normalWarpTile

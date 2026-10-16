@@ -1,9 +1,8 @@
-; DIG-5.62.188: narrow native Johto Dig / Escape Rope pilot.
-; Gold saves the most recent outdoor-to-indoor source map/group/warp.
-; Union Cave 1F currently has exactly one enabled outside entrance: Route32.
-; This fixed (region, local, safe approach) destination therefore needs no
-; additional saved byte and remains deterministic across Continue / old saves.
-; A second entrance or cave floor MUST replace this single-entry contract.
+; MAP-5.62.192: Union Cave 1F Dig/Escape Rope follows the last verified
+; entering outdoor mouth (Route32 or Route33), like Gold's entry-Warp return.
+; Recorded in the existing saved wLastMap/region/local triple before $FE
+; resolver changes source identity. No SRAM extension or other cave enable.
+; Old/unidentified entry state safely falls back to vetted Route32 approach.
 
 ; Called only after the original battle / Agatha guards. Carry = allowed.
 ; Never use the cave tileset as a global eligibility wildcard.
@@ -44,31 +43,54 @@ TryLoadJohtoUnionCaveEscapeWarp::
 	jr nz, .notOurWarp
 	call CanUseJohtoUnionCaveEscape
 	jr nc, .notOurWarp
-	; Only this fully identified and validated cave can be routed here.
-	; A field move cannot escape to the stale Kanto healing destination.
+	; Only a validated cave can intercept this field move. Blackout
+	; remains on the original wLastBlackoutMap branch, untouched here.
 	ld hl, wd732
 	res 6, [hl]
+	; Exact saved physical key is necessary: $FC alone is shared by maps.
+	ld a, [wLastMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .route32
+	ld a, [wLastRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .route32
+	ld a, [wLastLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr nz, .route32
+	ld a, REGION_NATIVE_MAP_SLOT
+	ld [wCurMap], a
+	ld [wDestinationMap], a
+	ld a, JOHTO_ROUTE_33_LOCAL_ID
+	ld [wCurLocalMapID], a
+	ld a, JOHTO_MODERN
+	ld [wCurMapTileset], a
+	ld hl, .route33ReturnWarpData
+	jr .finish
+.route32
+	; Pre-.192 Continue/unknown source: approved Route32 approach.
 	ld a, JOHTO_ROUTE_32
 	ld [wCurMap], a
 	ld [wDestinationMap], a
-	ld a, MAP_REGION_JOHTO
-	ld [wCurRegion], a
 	ld a, JOHTO_ROUTE_32_LOCAL_ID
 	ld [wCurLocalMapID], a
-	ld hl, .returnWarpData
+	ld a, JOHTO
+	ld [wCurMapTileset], a
+	ld hl, .route32ReturnWarpData
+.finish
+	ld a, MAP_REGION_JOHTO
+	ld [wCurRegion], a
 	ld de, wCurrentTileBlockMapViewPointer
 	ld bc, 6
 	call CopyData
-	ld a, JOHTO
-	ld [wCurMapTileset], a
-	ld e, 0 ; carry still signals handled; special-warp offsets need A=0
+	ld e, 0 ; carry indicates handled; A=0 restored by special-warp caller
 	scf
 	ret
 .notOurWarp
 	and a
 	ret
-.returnWarpData
-	; Gold Route32 cave Warp: (x=6, y=79), approved RPP exit step
-	; reaches the walkable approach (x=6, y=80). Special Warp lands there
-	; directly to avoid re-entering the solid doorway or an extra auto-step.
+.route32ReturnWarpData
+	; Original approved 32 cave approach, not solid Gold doorway (6,79).
 	FLYWARP_DATA JOHTO_ROUTE_32_WIDTH, 80, 6
+.route33ReturnWarpData
+	; Gold Route33 (11,9) is solid CAVE art. Safely land at (11,10).
+	FLYWARP_DATA JOHTO_ROUTE_33_WIDTH, 10, 11

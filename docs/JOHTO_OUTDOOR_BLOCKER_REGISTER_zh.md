@@ -1,3 +1,20 @@
+## MAP-5.62.192｜最新洞口／封路覆盖登记（开发候选）
+
+- `CAVE-UNION1F-WARP-030`：已为本候选**定点开放** Union Cave 1F `(17,31)` ↔ Route33 `(11,9)`，同时保留原32号道路洞口、B1F 两个楼梯口封闭；动态返回选路按最后实际进洞道路32／33，各自安全落点 `(6,80)`／`(11,10)`。严格静态通过、**手机待验收**。
+- `SAFE-R32-SOUTH-027`：继续允许已审计的 Route32 南 ↔ Route33 北 x=0..14，x=15..19不开放。
+- `SAFE-R33-WEST-031`：继续关闭桧皮镇侧边界；Route33 的洞口开放不代表桧皮镇或NPC已移植。
+- 历史 `.189～.191` 段落只记录各自当时的禁入安排，不能覆盖此最新有效状态。
+
+
+## MAP-5.62.191｜Route33 当前有效封路登记（候选待手机验收）
+
+- `SAFE-R32-SOUTH-027`：**按审核定点开放**。Route32 南 ↔ Route33 北，仅 x=0～14；x=15～19、东西未登记边缘继续阻挡；跨两种 tileset 要完整重载图像、清理遗留 Warp ID。
+- `SAFE-R33-WEST-031`：**继续关闭**，桧皮镇尚未接入。
+- `CAVE-UNION1F-WARP-030`：**继续关闭 Route33 第二洞口**，需先升级 `.188` 固定 Dig/逃洞绳为动态来源 Warp；B1F 同样不开放。
+- `SAFE-R33-TILESET-032`：本轮已提供精确的 `JOHTO_MODERN` 16×16 格碰撞和七组定向跳崖；静态门禁不等于手机验收，接缝美术可能仍有少数区块不能逐像素对应，需实测。
+
+以下 `.189` 段落保留历史阶段事实，不适用于最新 `.191` 源码。
+
 # 城都室外地图｜临时封路与必须保留障碍登记（最新补记 R31-5.62.148）
 
 > **当前说明（R31-5.62.148）**：30号道路北口已按31号道路单图移植开放，用户实测树残留消失。以下P2-1/P2-2旧记录保留当时语境，当前有效状态以文末`.148`增量与CSV状态为准。
@@ -161,3 +178,15 @@ Route32 西、东、南侧和桔梗市南侧其余列保持封闭。静态自动
 ## CLN-5.62.178｜定稿备注与回归测试清理说明
 
 本版不改地图对象、Warp、碰撞、地形、音效、B1F 或 Route33 封闭状态。`WARP-5.62.177` 的联合洞穴1F进/出/侧向防误触发验收仍是有效功能基准；`.178` 仅更新有效代码的未提交阶段过时版本注释与旧测试断言。上文 `.171～.176` 的历史记录保留用于追溯，不应被当作当前入口实现。
+
+
+## R33S-5.62.189｜Route33 暂存阶段阻断确认（2026-10-16；仍未开放）
+
+| ID | 分类 | 原版／现行事实 | 当前状态与解除条件 |
+|---|---|---|---|
+| `SAFE-R32-SOUTH-027` | `SAFETY_EDGE_GUARD` | Gold Route32 south ↔ Route33 north，偏移 0；RPP `JohtoRoute32_h` 仍仅 `NORTH`，`JohtoRoute32CollisionFence` 仍禁止南边越界 | **`PRESERVE_STATIC`**；待 Route33 独立 `JOHTO_MODERN` 图块／碰撞／南北连接审计后才能定点开放 |
+| `SAFE-R33-WEST-031` | `SAFETY_EDGE_GUARD` | Gold Route33 west ↔ AzaleaTown east，偏移 0；RPP 尚未接桧皮镇 | **`KEEP_UNTIL_AZALEA_EXISTS`**；禁止凭空连接其它地点 |
+| `CAVE-UNION1F-WARP-030` | `DEFERRED_INDOORS` | Gold Union Cave 1F `(17,31)` ↔ Route33 `(11,9)`；RPP 洞穴仅注册 Route32 的单一 Warp | **`KEEP_UNTIL_DYNAMIC_ESCAPE`**；`.188` 固定 Route32 的 Dig／逃洞绳返程未升级前不得打开第二入口 |
+| `SAFE-R33-TILESET-032` | `ENGINE_REQUIRED` | Gold Route33 使用专用 `JOHTO_MODERN`；其 8×8 tile `$3C` 同时有 FLOOR/WALL/UP_WALL，`$05` 同时有 FLOOR/HOP | **`REQUIRES_CONVERSION`**；不能直接借用 Route32 的 `JOHTO` 图块与全局可通行列表 |
+
+当前仅暂存源资料与负向审计，**没有实际地图运行、出入口开放、ROM 编译或手机验收**；以上条目并不表示已经移植 Route33。
