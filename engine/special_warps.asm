@@ -13,7 +13,7 @@ SpecialWarpIn:
 	jr z,.next3
 	call EmptyFunc
 .next3
-	ld a,0
+	xor a ; equal zero, save one byte in near-full bank $01
 .next2
 	ld b,a
 	ld a,[wd72d]
@@ -82,7 +82,11 @@ LoadSpecialWarpData:
 	xor a
 	jp .done
 .notFirstMap
-	ld a, [wLastMap] ; this value is overwritten before it's ever read
+	; DIG-5.62.188: only a field-move escape from native Union Cave
+	; gets its vetted Route32 entrance; blackout still uses healing map.
+	callba TryLoadJohtoUnionCaveEscapeWarp
+	ld a, e ; bank-restore destroys A; success returns zero in E
+	jp c, .done ; branch exceeds JR range across the legacy warp tables
 	ld hl, wd732
 	bit 4, [hl] ; used dungeon warp (jumped down hole/waterfall)?
 	jr nz, .usedDunegonWarp

@@ -3502,6 +3502,10 @@ INCLUDE "engine/overworld/kanto_header_lookup.asm"
 SECTION "Johto Region Map Key Resolver", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "engine/overworld/region_map_lookup.asm"
 
+; DIG-5.62.188: region-safe cave escape without changing SRAM layout.
+SECTION "Johto Union Cave Escape", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "engine/overworld/johto_cave_escape.asm"
+
 ; ROM-5.62.117: a byte at the last address of bank $7F forces a complete
 ; 128-bank (2MB) ROM, rather than merely opening bank $40 (65 banks).
 ; rgbfix -p 0 in the existing Makefile pads the intervening unused space.

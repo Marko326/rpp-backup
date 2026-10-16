@@ -1878,6 +1878,14 @@ CanUseEscapeRope::
 	ld a,[wCurMap]
 	cp a,AGATHAS_ROOM
 	jr z,.cannotUse
+	; DIG-5.62.188: native Johto cave return needs a region-keyed source.
+	; Kanto tileset eligibility and blackout targets remain unchanged.
+	ld a,[wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz,.legacyTileset
+	callba CanUseJohtoUnionCaveEscape
+	ret
+.legacyTileset
 	ld a,[wCurMapTileset]
 	ld b,a
 	ld hl,EscapeRopeTilesets
