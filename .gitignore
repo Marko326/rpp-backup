@@ -27,6 +27,9 @@
 
 # no data from extras/
 *.json
+# These two reviewed contracts are required for the Johto static release gate.
+!tools/johto_native_maps.json
+!tools/johto_door_contracts.json
 
 # for any of the poor souls with save game files in their working directory
 *.sgm

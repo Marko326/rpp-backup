@@ -1,0 +1,41 @@
+{
+  "schema": "rpp-native-door-onboarding-v1",
+  "notes": "Every Johto map with an enabled Warp must appear here, and its associated static behavior tests must actually run. Static checks alone do not prove phone behavior.",
+  "active_warp_maps": [
+    {
+      "rpp_map": "JohtoRoute31",
+      "gold_map": "Route31",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 2,
+      "required_test_ids": ["test_johto_gate157_collision.Route31VioletNativeGate.test_gate_warp_graph_keeps_all_four_pairs", "test_johto_gate157_collision.Route31VioletNativeGate.test_walkable_gate_portal_does_not_auto_warp"]
+    },
+    {
+      "rpp_map": "JohtoVioletCity",
+      "gold_map": "VioletCity",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 2,
+      "required_test_ids": ["test_johto_gate157_collision.Route31VioletNativeGate.test_gate_warp_graph_keeps_all_four_pairs"]
+    },
+    {
+      "rpp_map": "JohtoRoute31VioletGate",
+      "gold_map": "Route31VioletGate",
+      "family": "GATE_INDOOR",
+      "warp_count": 4,
+      "required_test_ids": ["test_johto_warp_topology.WarpTopologyTests.test_swapped_doors_must_fail_not_silently_pass", "test_johto_gate157_collision.Route31VioletNativeGate.test_outdoor_gate_warps_require_a_second_collision_input"]
+    },
+    {
+      "rpp_map": "JohtoRoute32",
+      "gold_map": "Route32",
+      "family": "CAVE_OUTDOOR",
+      "warp_count": 1,
+      "required_test_ids": ["test_johto_warp_arrival175.JohtoWarpArrivalContract.test_unconditional_reject_after_correct_direction_fails", "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_only_outdoor_step_remains"]
+    },
+    {
+      "rpp_map": "JohtoUnionCave1F",
+      "gold_map": "UnionCave1F",
+      "family": "CAVE_INDOOR",
+      "warp_count": 1,
+      "required_test_ids": ["test_johto_warp_approach176.UnionCaveApproach.test_collision_exit_and_sideways_safety", "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_reintroducing_cave_auto_step_fails"]
+    }
+  ]
+}

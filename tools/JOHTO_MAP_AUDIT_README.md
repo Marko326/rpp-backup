@@ -1,4 +1,4 @@
-# Native Johto map audit — RBK-5.62.184 closeout
+# Native Johto map audit — SRF-5.62.187 Surf stage
 
 ## Run (no ROM build)
 
@@ -7,7 +7,7 @@ From the RPP project root, with a complete Gold source tree:
 ```sh
 make johto-map-audit JOHTO_GOLD_SOURCE=/path/to/pokegold-master
 # equivalent:
-python3 tools/johto_map_release_audit.py --rpp . --gold /path/to/pokegold-master --expect-version RBK-5.62.184
+python3 tools/johto_map_release_audit.py --rpp . --gold /path/to/pokegold-master --expect-version SRF-5.62.187
 ```
 
 Exit 0 means: explicit per-local map identity, Route32/Union Cave static Warp
@@ -16,6 +16,21 @@ manifest and negative regressions, and zero skipped tests all passed.
 **This is not ROM compilation, a frame-accurate engine interpreter, or phone acceptance.**
 If Gold is missing, any test is skipped, the suite fails or returns no tests,
 the gate fails closed. Run it before applying a new map patch for review.
+
+## Required source contracts and Field Moves preflight
+
+`tools/johto_native_maps.json` and `tools/johto_door_contracts.json` must be
+tracked in Git and included in any clean source export. The root `.gitignore`
+now exempts these two specific files from its general `*.json` rule. Verify
+with `git ls-files -- tools/johto_native_maps.json tools/johto_door_contracts.json`;
+if either is missing from Git, explicitly stage the reviewed original with
+`git add -f`, then inspect its diff before a separate tool commit.
+
+The strict map gate also runs `tools/johto_field_moves_preflight.py`. Its PASS
+means **only** Union Cave 1F and Route32 Surf have reviewed runtime water classification; Dig/Escape Rope and other Johto water are **DEFERRED**. The
+preflight rejects accidental allow-list insertions until the complete Gold
+water/collision/badge/return contract has been verified. See
+`docs/JOHTO_FIELD_MOVES_PREFLIGHT_zh.md`.
 
 ## Adding a native map
 

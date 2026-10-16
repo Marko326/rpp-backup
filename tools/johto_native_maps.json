@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "notes": "Explicit local-ID identity and staged capability status. DEFERRED is not approval. Identity is validated statically; features need separate gameplay audit.",
+  "maps": [
+    {
+      "local_id": 0,
+      "local_symbol": "JOHTO_NEW_BARK_LOCAL_ID",
+      "header": "NewBarkTown_h",
+      "bank": "BANK(NewBarkTown_h)",
+      "legacy_alias": "NEW_BARK_TOWN",
+      "rby_music": [
+        "MUSIC_PALLET_TOWN",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_NEW_BARK_TOWN",
+      "town_map_index": 0,
+      "town_map_name": "JohtoNewBarkName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 1,
+      "local_symbol": "JOHTO_ROUTE_29_LOCAL_ID",
+      "header": "JohtoRoute29_h",
+      "bank": "BANK(JohtoRoute29_h)",
+      "legacy_alias": "JOHTO_ROUTE_29",
+      "rby_music": [
+        "MUSIC_ROUTES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE29",
+      "town_map_index": 1,
+      "town_map_name": "JohtoRoute29TownMapName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 2,
+      "local_symbol": "JOHTO_CHERRYGROVE_LOCAL_ID",
+      "header": "JohtoCherrygroveCity_h",
+      "bank": "BANK(JohtoCherrygroveCity_h)",
+      "legacy_alias": "JOHTO_CHERRYGROVE_CITY",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_CHERRYGROVE_CITY",
+      "town_map_index": 2,
+      "town_map_name": "JohtoCherrygroveName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 3,
+      "local_symbol": "JOHTO_ROUTE_30_LOCAL_ID",
+      "header": "JohtoRoute30_h",
+      "bank": "BANK(JohtoRoute30_h)",
+      "legacy_alias": "JOHTO_ROUTE_30",
+      "rby_music": [
+        "MUSIC_ROUTES3",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE30",
+      "town_map_index": 3,
+      "town_map_name": "JohtoRoute30TownMapName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 4,
+      "local_symbol": "JOHTO_ROUTE_31_LOCAL_ID",
+      "header": "JohtoRoute31_h",
+      "bank": "BANK(JohtoRoute31_h)",
+      "legacy_alias": "JOHTO_ROUTE_31",
+      "rby_music": [
+        "MUSIC_ROUTES3",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE30",
+      "town_map_index": 4,
+      "town_map_name": "JohtoRoute31TownMapName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 5,
+      "local_symbol": "JOHTO_VIOLET_CITY_LOCAL_ID",
+      "header": "JohtoVioletCity_h",
+      "bank": "BANK(JohtoVioletCity_h)",
+      "legacy_alias": "JOHTO_VIOLET_CITY",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_VIOLET_CITY",
+      "town_map_index": 5,
+      "town_map_name": "JohtoVioletName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 6,
+      "local_symbol": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID",
+      "header": "JohtoRoute31VioletGate_h",
+      "bank": "BANK(JohtoRoute31VioletGate_h)",
+      "legacy_alias": "JOHTO_ROUTE31_VIOLET_GATE",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "0",
+      "town_map_index": 5,
+      "town_map_name": "JohtoVioletName",
+      "town_map_xy": [
+        116,
+        94
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 7,
+      "local_symbol": "JOHTO_ROUTE_32_LOCAL_ID",
+      "header": "JohtoRoute32_h",
+      "bank": "BANK(JohtoRoute32_h)",
+      "legacy_alias": "JOHTO_ROUTE_32",
+      "rby_music": [
+        "MUSIC_ROUTES3",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE30",
+      "town_map_index": 7,
+      "town_map_name": "JohtoRoute32TownMapName",
+      "town_map_xy": [
+        108,
+        92
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 8,
+      "local_symbol": "JOHTO_UNION_CAVE_1F_LOCAL_ID",
+      "header": "JohtoUnionCave1F_h",
+      "bank": "BANK(JohtoUnionCave1F_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_DUNGEON2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_UNION_CAVE",
+      "town_map_index": 9,
+      "town_map_name": "JohtoUnionCaveTownMapName",
+      "town_map_xy": [
+        140,
+        92
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "ALLOWED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    }
+  ]
+}

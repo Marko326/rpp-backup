@@ -17,11 +17,15 @@ from johto_door_onboarding_audit import audit as door_onboarding_audit
 from johto_region_id_audit import audit as region_audit
 from johto_warp_arrival_audit import audit as warp_audit
 from johto_town_map_bike_audit import audit as town_bike_audit
+from johto_field_moves_preflight import audit as field_move_audit
+from johto_surf_geometry_audit import inspect as surf_geometry_inspect
+from johto_surf_runtime_audit import audit as surf_runtime_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
                  'data/maps/landmarks.asm', 'engine/events/overworld.asm',
-                 'gfx/pokegear/johto.bin')
+                 'gfx/pokegear/johto.bin',
+                 'data/tilesets/cave_collision.asm')
 
 # Explicitly pinned modules: a deleted test file must NEVER make this gate greener.
 # To retire/rename a test, change this list in the same reviewed tool commit.
@@ -43,7 +47,9 @@ test_johto_union_cave172 test_johto_union_cave173
 test_johto_union_cave174 test_johto_warp_approach176
 test_johto_warp_arrival175 test_johto_warp_topology
 test_johto_gold_door_audit test_johto_door_onboarding_audit
-test_johto_town_map_bike181 test_johto_full_town_map182
+test_johto_town_map_bike181 test_johto_full_town_map182 test_johto_field_moves_preflight185
+test_johto_surf_geometry186 test_johto_surf_runtime187
+test_johto_route32_surf188
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
@@ -66,6 +72,20 @@ test_johto_town_map_bike181.JohtoTownMapBike181.test_missing_union_cave_bike_whi
 test_johto_town_map_bike181.JohtoTownMapBike181.test_map_geography_change_outside_ui_panels_must_fail
 test_johto_full_town_map182.JohtoFullTownMap182.test_all_45_gold_landmarks_in_original_order
 test_johto_full_town_map182.JohtoFullTownMap182.test_a_different_unsupported_gold_landmark_cannot_move
+test_johto_field_moves_preflight185.FieldMovePreflight185.test_incorrect_escape_permission_is_rejected
+test_johto_field_moves_preflight185.FieldMovePreflight185.test_incorrect_surf_permission_is_rejected
+test_johto_surf_geometry186.JohtoSurfGeometry186.test_real_gold_water_geometry_and_wall_aliases
+test_johto_surf_geometry186.JohtoSurfGeometry186.test_relabelled_gold_water_is_detected
+test_johto_surf_geometry186.JohtoSurfGeometry186.test_accidentally_walkable_water_is_detected
+test_johto_surf_runtime187.CaveSurfRuntime187.test_all_64_gold_cells_exact
+test_johto_surf_runtime187.CaveSurfRuntime187.test_reversing_surf_movement_water_branch_fails
+test_johto_surf_runtime187.CaveSurfRuntime187.test_missing_party_surf_permission_check_fails
+ test_johto_surf_runtime187.CaveSurfRuntime187.test_reintroduced_fog_badge_requirement_fails
+ test_johto_surf_runtime187.CaveSurfRuntime187.test_kanto_soul_badge_rule_cannot_change
+test_johto_route32_surf188.Route32Surf188.test_gold_route32_water_bitset_exact
+test_johto_route32_surf188.Route32Surf188.test_water_map_mutation_must_fail
+test_johto_route32_surf188.Route32Surf188.test_route32_map_guard_mutation_must_fail
+test_johto_route32_surf188.Route32Surf188.test_route32_dispatch_mutation_must_fail
 '''.split())
 
 
@@ -123,6 +143,10 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
             errors.append('cannot read game version from game_version.asm')
         elif expected_version is not None and match.group(1) != expected_version:
             errors.append(f'wrong RPP baseline version: {match.group(1)} != {expected_version}')
+    for relative in ('tools/johto_native_maps.json',
+                     'tools/johto_door_contracts.json'):
+        if not (root / relative).is_file():
+            errors.append(f'required tracked Johto audit contract missing: {relative}')
     additional_required_ids = set()
     if not errors:
         onboard_errors, additional_required_ids = door_onboarding_audit(root, gold)
@@ -131,6 +155,9 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.extend('REGION: ' + e for e in region_audit(root))
         errors.extend('WARP: ' + e for e in warp_audit(root, gold))
         errors.extend('TOWN_BIKE: ' + e for e in town_bike_audit(root, gold))
+        errors.extend('FIELD_MOVES: ' + e for e in field_move_audit(root, gold))
+        errors.extend('SURF_GEOMETRY: ' + e for e in surf_geometry_inspect(root, gold)['errors'])
+        errors.extend('SURF_RUNTIME: ' + e for e in surf_runtime_audit(root, gold))
     test_count = 0
     skipped = None
     if not errors and run_tests:
