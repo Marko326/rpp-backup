@@ -53,7 +53,10 @@ def audit(root: Path, gold: Path) -> list[str]:
         for entry in identities['maps']:
             features = entry.get('feature_status', {})
             for name in ('surf', 'dig', 'escape_rope'):
-                expected = 'ALLOWED' if name == 'surf' and entry.get('local_id') in (7, 8) else 'DEFERRED'
+                local_id = entry.get('local_id')
+                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8))
+                            or (name in ('dig', 'escape_rope') and local_id == 8)
+                            else 'DEFERRED')
                 if features.get(name) != expected:
                     errors.append(f'Johto local {entry.get("local_id")}: {name} must be {expected}; no other runtime permission reviewed')
 
@@ -93,7 +96,7 @@ def main() -> int:
     errors = audit(args.rpp, args.gold)
     print(json.dumps({'status': 'FAIL' if errors else 'PASS',
                       'errors': errors, 'surf_enabled_maps': ['JOHTO_ROUTE_32', 'JOHTO_UNION_CAVE_1F'],
-                      'dig_escape_rope_enabled': False,
+                      'dig_escape_rope_enabled': ['JOHTO_UNION_CAVE_1F'],
                       'phone_verified': False}, ensure_ascii=False, indent=2))
     return bool(errors)
 

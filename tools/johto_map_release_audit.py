@@ -18,6 +18,7 @@ from johto_region_id_audit import audit as region_audit
 from johto_warp_arrival_audit import audit as warp_audit
 from johto_town_map_bike_audit import audit as town_bike_audit
 from johto_field_moves_preflight import audit as field_move_audit
+from johto_cave_escape_audit import audit as cave_escape_audit
 from johto_surf_geometry_audit import inspect as surf_geometry_inspect
 from johto_surf_runtime_audit import audit as surf_runtime_audit
 
@@ -48,7 +49,7 @@ test_johto_union_cave174 test_johto_warp_approach176
 test_johto_warp_arrival175 test_johto_warp_topology
 test_johto_gold_door_audit test_johto_door_onboarding_audit
 test_johto_town_map_bike181 test_johto_full_town_map182 test_johto_field_moves_preflight185
-test_johto_surf_geometry186 test_johto_surf_runtime187
+test_johto_cave_escape188 test_johto_surf_geometry186 test_johto_surf_runtime187
 test_johto_route32_surf188
 '''.split())
 
@@ -73,6 +74,10 @@ test_johto_town_map_bike181.JohtoTownMapBike181.test_map_geography_change_outsid
 test_johto_full_town_map182.JohtoFullTownMap182.test_all_45_gold_landmarks_in_original_order
 test_johto_full_town_map182.JohtoFullTownMap182.test_a_different_unsupported_gold_landmark_cannot_move
 test_johto_field_moves_preflight185.FieldMovePreflight185.test_incorrect_escape_permission_is_rejected
+test_johto_cave_escape188.CaveEscape188.test_gold_single_entrance_contract
+test_johto_cave_escape188.CaveEscape188.test_blackout_is_not_misrouted
+test_johto_cave_escape188.CaveEscape188.test_wrong_region_cannot_dig
+test_johto_cave_escape188.CaveEscape188.test_bad_cave_return_landing_cannot_ship
 test_johto_field_moves_preflight185.FieldMovePreflight185.test_incorrect_surf_permission_is_rejected
 test_johto_surf_geometry186.JohtoSurfGeometry186.test_real_gold_water_geometry_and_wall_aliases
 test_johto_surf_geometry186.JohtoSurfGeometry186.test_relabelled_gold_water_is_detected
@@ -156,6 +161,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.extend('WARP: ' + e for e in warp_audit(root, gold))
         errors.extend('TOWN_BIKE: ' + e for e in town_bike_audit(root, gold))
         errors.extend('FIELD_MOVES: ' + e for e in field_move_audit(root, gold))
+        errors.extend('CAVE_ESCAPE: ' + e for e in cave_escape_audit(root, gold))
         errors.extend('SURF_GEOMETRY: ' + e for e in surf_geometry_inspect(root, gold)['errors'])
         errors.extend('SURF_RUNTIME: ' + e for e in surf_runtime_audit(root, gold))
     test_count = 0

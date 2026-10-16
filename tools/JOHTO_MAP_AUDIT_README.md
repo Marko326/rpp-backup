@@ -1,4 +1,4 @@
-# Native Johto map audit — SRF-5.62.187 Surf stage
+# Native Johto map audit — DIG-5.62.188 cave escape accepted stage
 
 ## Run (no ROM build)
 
@@ -7,7 +7,7 @@ From the RPP project root, with a complete Gold source tree:
 ```sh
 make johto-map-audit JOHTO_GOLD_SOURCE=/path/to/pokegold-master
 # equivalent:
-python3 tools/johto_map_release_audit.py --rpp . --gold /path/to/pokegold-master --expect-version SRF-5.62.187
+python3 tools/johto_map_release_audit.py --rpp . --gold /path/to/pokegold-master --expect-version DIG-5.62.188
 ```
 
 Exit 0 means: explicit per-local map identity, Route32/Union Cave static Warp
@@ -27,9 +27,10 @@ if either is missing from Git, explicitly stage the reviewed original with
 `git add -f`, then inspect its diff before a separate tool commit.
 
 The strict map gate also runs `tools/johto_field_moves_preflight.py`. Its PASS
-means **only** Union Cave 1F and Route32 Surf have reviewed runtime water classification; Dig/Escape Rope and other Johto water are **DEFERRED**. The
-preflight rejects accidental allow-list insertions until the complete Gold
-water/collision/badge/return contract has been verified. See
+means **only** Union Cave 1F and Route32 Surf have reviewed runtime water classification, **and only Union Cave 1F** has reviewed Dig/Escape Rope eligibility. Other Johto cave escapes and water remain **DEFERRED**. The
+preflight rejects unexpected allow-list insertions or cave-return widening. Gold
+source auditing and phone acceptance are independent: current `.188` has user-reported
+Union Cave return acceptance, not a claim of exhaustive all-map runtime coverage. See
 `docs/JOHTO_FIELD_MOVES_PREFLIGHT_zh.md`.
 
 ## Adding a native map
@@ -50,15 +51,18 @@ water/collision/badge/return contract has been verified. See
 
 Fields use `ALLOWED`, `FORBIDDEN`, `DEFERRED`, `NOT_APPLICABLE`; identity evidence
 uses `STATIC_PASS`, `GOLD_REFERENCE_PENDING`, `PHONE_PENDING`, `USER_ACCEPTED`.
-The 9 native-map identity records originated from `.178`; no run-time ASM routing has
-been changed. The explicit identity registry is a reviewed snapshot of the
-current baseline, **not independently validated against Gold map geometry**.
+The 9 native-map identity records originated from `.178`; the `.188` Dig/Rope
+routing is a narrow *new* runtime exception for Union Cave 1F only. The
+identity registry is reviewed audit metadata, **not** an engine permission gate or
+proof that every map geometry has been independently tested on a phone.
 
 ## Deliberately retained tools
 
 `johto_rpp_*` tile/connection and `johto_indoor_*` interior tools have distinct
 roles and are not deleted. Historical `johto_rpp_ledge_converter.py` remains a
 manual/legacy utility; do not run it against an already-converted tileset.
-This release only consolidates the *review entrypoint*, and improves two
-confirmed false-green branches. It does not claim all field-move hooks or
-all future maps have executable coverage yet.
+This audit also includes the Gold-backed `.188` single-entrance cave escape
+contract and mutation regressions (`test_johto_cave_escape188.py`). The `.188`
+strict gate expects **298 tests, 0 errors, 0 skips** with complete Gold sources;
+no build is performed and the report does not itself verify phone behavior.
+It does not claim all future field-move hooks or maps have executable coverage.
