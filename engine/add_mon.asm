@@ -16,6 +16,26 @@ _AddPartyMon:
 	ld [de], a
 	ld a, [de]
 	ld [hNewPartyLength], a
+	; A newly created Party member owns only legacy generated moves.
+	; Never inherit a stale sidecar from a vacated party slot.
+	push af
+	push de
+	push hl
+	ld a, [wMonDataLocation]
+	and $0f
+	jr nz, .skipExtendedNewPartyFlag
+	ld a, [hNewPartyLength]
+	dec a
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	xor a
+	ld [hl], a
+.skipExtendedNewPartyFlag
+	pop hl
+	pop de
+	pop af
 	add e
 	ld e, a
 	jr nc, .noCarry
@@ -273,6 +293,11 @@ AddPartyMon_WriteMovePP:
 	ld a, [hli]     ; read move ID
 	and a
 	jr z, .empty
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .stockMove
+	ld a, 10 ; independent Power Whip max PP in the second move table
+	jr .empty
+.stockMove
 	dec a
 	push hl
 	push de

@@ -83,11 +83,38 @@ MoveRelearnerText1:
 	ld a, [wWhichPokemon]
 	push af
 	push bc
-	; Save the selected move id.
+	; The $ff menu placeholders are not stored move IDs. Look up
+	; the selected row's expanded identity and hand LearnMove the
+	; nonzero low byte plus its explicit ordinal.
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedNPCListMoveOrdinals
+	add hl, de
+	ld a, [hl]
+	ld [wExtendedLearningMoveOrdinal], a
+	and a
+	jr z, .ordinarySelected
+	ld [wMoveNum], a ; 1=Power Whip, 2=Play Rough
+	ld [wd11e], a
+	cp 1
+	jr z, .relearnerWhipName
+	callba LoadExperimentalPlayRoughNameToCD6D
+	jr .relearnerNameReady
+.relearnerWhipName
+	callba LoadExperimentalPowerWhipNameToCD6D
+	jr .relearnerNameReady
+.ordinarySelected
 	ld a, [wcf91]
 	ld [wMoveNum], a
-	ld [wd11e],a
+	ld [wd11e], a
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .stockRelearnerName
+	callba LoadExperimentalPowerWhipNameToCD6D
+	jr .relearnerNameReady
+.stockRelearnerName
 	call GetMoveName
+.relearnerNameReady
 	pop bc
 	ld a, b
 	ld [wWhichPokemon], a
@@ -99,6 +126,8 @@ MoveRelearnerText1:
 	xor a
 	ld [wLetterPrintingDelayFlags], a
 	predef LearnMove
+	xor a
+	ld [wExtendedLearningMoveOrdinal], a
 	pop af
 	ld [wLetterPrintingDelayFlags], a
 	ld a, b

@@ -436,9 +436,21 @@ MoveDexRecordPlayerMove:
 	; 玩家真正进入技能执行流程：至少 Seen。
 	; 直接选择/正常派生执行的技能记 Use；Metronome 随机链中的技能只记 Seen。
 	call MoveDexEnsureStateInitialized
+	; Until MoveDex has a separate extended record, never attribute
+	; an expanded slot's attack to Pound / Karate Chop.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr z, .notExtended
+	ld b, a
+	ld a, [wPlayerSelectedMove]
+	cp b
+	ret z
+.notExtended
 	; wPlayerMoveNum 是 Moves 表第 1 byte 的兼容动画 ID；
 	; 扩展技能必须按真实 selected move ID 记录。
 	ld a,[wPlayerSelectedMove]
+	cp EXT_MOVE_SLOT_ESCAPE
+	ret z ; MOVE-5.62.169: MoveDex extended Seen/Use is future work; avoid overflow.
 	push af
 	ld hl,wMoveDexSeen
 	call MoveDexSetMoveFlag
@@ -464,6 +476,8 @@ MoveDexRecordEnemyMove:
 	call MoveDexEnsureStateInitialized
 	; 敌方同样使用真实技能 ID，避免 Gunk Shot 等被记成兼容动画技能。
 	ld a,[wEnemySelectedMove]
+	cp EXT_MOVE_SLOT_ESCAPE
+	ret z ; Never pass the experimental escape into a 254-bit flag array.
 	ld hl,wMoveDexSeen
 	jp MoveDexSetMoveFlag
 

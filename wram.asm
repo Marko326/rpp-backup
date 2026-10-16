@@ -204,7 +204,16 @@ wFrequencyModifier:: ; c0f1
 wTempoModifier:: ; c0f2
 	ds 1
 
-	ds 11
+; MOVE-5.62.169: use eight bytes of the existing eleven-byte
+; unused WRAM0 gap; the audio state that follows keeps its original address.
+; One bit per move slot per party member. No live gameplay reader yet.
+wExtendedPartyMoveFlags:: ds PARTY_LENGTH
+wExtendedBattleMoveFlags:: ds 1
+wExtendedMoveFlagsScratch:: ds 1
+; MOVE-5.62.169: scoped learning, status and active battle identity.
+wExtendedLearningMoveOrdinal:: ds 1 ; 0=ordinary, 1=Power Whip, 2=Play Rough
+wExtendedStatusMoveFlags:: ds 1
+wExtendedActiveMoveOrdinal:: ds 1
 
 wHaltAudio:: ds 1
 wSFXDontWait:: ds 1
@@ -1607,7 +1616,12 @@ wGymLeaderName:: ; cf70
 	ds NAME_LENGTH
 
 wItemList:: ; cf7b
-	ds 16
+	ds 1
+; MOVE-5.62.169: NPC move menus use wRelearnableMoves as their
+; source, so these eight existing item-list scratch bytes can temporarily
+; map menu rows to extended move ordinals. Never overlap with item menus.
+wExtendedNPCListMoveOrdinals:: ds 8
+	ds 7 ; keep wListPointer at its original $CF8B address
 
 wListPointer:: ; cf8b
 	ds 2

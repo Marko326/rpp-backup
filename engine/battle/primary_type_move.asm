@@ -63,15 +63,34 @@ PrimaryTypeMoveIDs:
 ; GetCurrentMove loads a real selected move into the side-specific six-byte move
 ; buffer, then tail-calls here. Keep its original name-loading behavior intact.
 FinalizeCurrentMoveLoad::
+	callba MaybeLoadExperimentalMoveBattleStats
 	call ApplyCurrentMovePrimaryTypeOverride
 	call ApplyCurrentBugBiteOverride
 	call ApplyCurrentRockPolishTypeOverride
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .ordinaryName
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp 1
+	jr z, .powerWhipName
+	cp 2
+	jr z, .playRoughName
+.ordinaryName
+	call GetCurrentMoveID
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr z, .powerWhipName
 	ld a, BANK(MoveNames)
 	ld [wPredefBank], a
 	ld a, MOVE_NAME
 	ld [wNameListType], a
 	call GetName
 	call GetCurrentBattleMoveNamePointer
+	jp CopyStringToCF4B
+.powerWhipName
+	ld de, PowerWhipExperimentName
+	jp CopyStringToCF4B
+.playRoughName
+	ld de, PlayRoughExperimentName
 	jp CopyStringToCF4B
 
 ; Metronome / Mirror Move / Mimic reload an already-selected child move. Their
@@ -202,6 +221,54 @@ BugBiteBattleName:
 RockPolishBattleName:
 	db "Rock Polish@"
 
+; MOVE-5.62.169: duplicate only this literal in the rendering bank; no new legacy ID.
+PowerWhipExperimentName:
+	db "Power Whip@"
+
+PlayRoughExperimentName:
+	db "Play Rough@"
+
+GetExtendedRenderedSlotName:
+	push bc
+	push de
+	ld d, a
+	ld a, b
+	ld e, a
+	ld a, c
+.shift
+	ld c, a
+	ld a, e
+	and a
+	ld a, c
+	jr z, .bit
+	srl a
+	dec e
+	jr .shift
+.bit
+	and 1
+	jr z, .ordinary
+	ld a, d
+	cp EXT_MOVE_LOW_POWER_WHIP
+	jr z, .powerWhip
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .ordinary
+	ld hl, PlayRoughExperimentName
+	jr .expanded
+.powerWhip
+	ld hl, PowerWhipExperimentName
+.expanded
+	ld a, d
+	pop de
+	pop bc
+	scf
+	ret
+.ordinary
+	ld a, d
+	pop de
+	pop bc
+	and a
+	ret
+
 ; Only the regular in-battle Fight menu calls this entry. Mimic, relearn,
 ; Party/PC, and all other FormatMovesString callers stay stock.
 FormatBugBiteBattleMovesString::
@@ -213,6 +280,17 @@ FormatBugBiteBattleMovesString::
 	and a
 	jp z, .dashLoop
 	push hl
+	push af
+	ld a, [wExtendedBattleMoveFlags]
+	ld c, a
+	pop af
+	call GetExtendedRenderedSlotName
+	jr c, .copyName
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .checkNormalMove
+	ld hl, PowerWhipExperimentName
+	jr .copyName
+.checkNormalMove
 	cp BITE
 	jr z, .checkBite
 	cp AGILITY
@@ -300,6 +378,17 @@ FormatRockPolishStatusMovesString::
 	and a
 	jp z, .dashLoop
 	push hl
+	push af
+	ld a, [wExtendedStatusMoveFlags]
+	ld c, a
+	pop af
+	call GetExtendedRenderedSlotName
+	jr c, .copyName
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .checkAgility
+	ld hl, PowerWhipExperimentName
+	jr .copyName
+.checkAgility
 	cp AGILITY
 	jr nz, .normalMove
 	; StatusScreen_LoadCurrentMon has already copied the selected
@@ -405,6 +494,20 @@ FormatRockPolishLearningMovesString::
 	and a
 	jp z, .dashLoop
 	push hl
+	push af
+	push bc
+	callab GetCurrentPartyExtendedMoveMask
+	pop bc
+	ld a, [wExtendedMoveFlagsScratch]
+	ld c, a
+	pop af
+	call GetExtendedRenderedSlotName
+	jr c, .copyName
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .checkAgility
+	ld hl, PowerWhipExperimentName
+	jr .copyName
+.checkAgility
 	cp AGILITY
 	jr nz, .normalMove
 	; Preserve renderer loop index and output pointer across species check.
@@ -474,6 +577,15 @@ SetRockPolishNPCMoveListSpecies::
 ; Called only by the generic MOVESLISTMENU renderer. Keep its draw pointer
 ; intact at the call site, return DE=wcd6d as GetMoveName does, and scope the
 ; alias to the NPC shared list so other list menus remain unchanged.
+; Move Deleter/Relearner can display the $ff experiment without indexing the
+; legacy MoveNames array. This does not change ordinary global GetMoveName.
+CopyPowerWhipExperimentToCD6D::
+	ld de, PowerWhipExperimentName
+	ld hl, wcd6d
+	call CopyString
+	ld de, wcd6d
+	ret
+
 MaybeRenameRockPolishNPCListMoveName::
 	ld a, [wd11e]
 	cp AGILITY

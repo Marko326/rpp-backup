@@ -258,6 +258,22 @@ const_value = 1
 	const IRON_HEAD    ; fe
 
 NUM_ATTACKS EQU const_value
+
+; MOVE-5.62.169: 16-bit identity for the separate experimental move table.
+; Do not reuse a legacy 8-bit move ID or enlarge existing party/box structs.
+EXT_MOVE_POWER_WHIP EQU $0100
+EXT_MOVE_PLAY_ROUGH EQU $0101
+NUM_EXTENDED_MOVES EQU 2
+EXT_MOVE_MAX_PILOT_CAPACITY EQU 64
+; Stored one-byte extended slot values are 1..64 (never 0 = empty).
+; A sidecar bit discriminates these from old IDs of the same byte value.
+EXT_MOVE_LOW_POWER_WHIP EQU 1
+EXT_MOVE_LOW_PLAY_ROUGH EQU 2
+ASSERT NUM_EXTENDED_MOVES <= EXT_MOVE_MAX_PILOT_CAPACITY
+; MOVE-5.62.169: reserved escape byte, *only* for the first experimental
+; extended move.  It is NOT an additional legacy Moves-table entry.
+EXT_MOVE_SLOT_ESCAPE EQU $ff
+ASSERT NUM_ATTACKS == EXT_MOVE_SLOT_ESCAPE
 const_value = STRUGGLE + 1
 
 ; 必定暴击技能的单一身份来源。战斗核心和 MoveDex 都引用这两个别名，

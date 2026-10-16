@@ -240,9 +240,11 @@ BillsPCDeposit:
 	ld a, PARTY_TO_BOX
 	ld [wMoveMonType], a
 	call MoveMon
+	callba ExtendedPCDepositFlag
 	xor a
 	ld [wRemoveMonFromBox], a
 	call RemovePokemon
+	callba ExtendedPCRemovePartyFlag
 	call NormalizeBillsPCListCursorAfterRemoval
 	call WaitForSoundToFinish
 	ld hl, wBoxNumString
@@ -295,9 +297,11 @@ BillsPCWithdraw:
 	xor a ; BOX_TO_PARTY
 	ld [wMoveMonType], a
 	call MoveMon
+	callba ExtendedPCWithdrawFlag
 	ld a, 1
 	ld [wRemoveMonFromBox], a
 	call RemovePokemon
+	callba ExtendedPCRemoveBoxFlag
 	call NormalizeBillsPCListCursorAfterRemoval
 	call WaitForSoundToFinish
 	ld hl, MonIsTakenOutText
@@ -353,6 +357,7 @@ BillsPCRelease:
 	inc a
 	ld [wRemoveMonFromBox], a
 	call RemovePokemon
+	callba ExtendedPCRemoveBoxFlag
 	call NormalizeBillsPCListCursorAfterRemoval
 	call WaitForSoundToFinish
 	ld a, [wcf91]

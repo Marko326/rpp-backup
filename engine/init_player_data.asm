@@ -13,6 +13,17 @@ InitPlayerData2:
 	ld a, $ff
 	ld [wUnusedD71B], a
 
+; MOVE-5.62.169: a new game has no extended move identities.
+	xor a
+	ld hl, wExtendedPartyMoveFlags
+	ld bc, PARTY_LENGTH
+	call FillMemory
+	xor a
+	ld [wExtendedLearningMoveOrdinal], a
+	ld [wExtendedStatusMoveFlags], a
+	ld [wExtendedActiveMoveOrdinal], a
+	callba ResetExtendedCurrentBoxFlags
+
 ; Initialize the party, bag, PC, etc.
 	ld hl, wPartyCount
 	call InitializeEmptyList

@@ -124,6 +124,9 @@ LoadSAV2:
 	ld de, wPartyDataStart
 	ld bc, wPartyDataEnd - wPartyDataStart
 	call CopyData
+	; MOVE-5.62.169: legacy SAVs load all-zero extension flags.
+	; SRAM bank 1 is still enabled here, and the legacy checksum passed.
+	call LoadExtendedPartyFlagsFromSRAM
 	ld hl, sMainData
 	ld de, wPokedexOwned
 	ld bc, wPokedexSeenEnd - wPokedexOwned
@@ -256,6 +259,9 @@ SaveSAVtoSRAM2:
 	ld de, sPartyData
 	ld bc, wPartyDataEnd - wPartyDataStart
 	call CopyData
+	; MOVE-5.62.169: separate versioned sidecar, after Party bytes.
+	; Does not enter the original sMainDataCheckSum calculation.
+	call SaveExtendedPartyFlagsToSRAM
 	ld hl, wPokedexOwned ; pokédex only
 	ld de, sMainData
 	ld bc, wPokedexSeenEnd - wPokedexOwned
@@ -367,12 +373,14 @@ ChangeBox::
 	ld d, h
 	ld hl, wBoxDataStart
 	call CopyBoxToOrFromSRAM ; copy old box from WRAM to SRAM
+	call SaveExtendedCurrentBoxToStoredBox
 	ld a, [wCurrentMenuItem]
 	set 7, a
 	ld [wCurrentBoxNum], a
 	call GetBoxSRAMLocation
 	ld de, wBoxDataStart
 	call CopyBoxToOrFromSRAM ; copy new box from SRAM to WRAM
+	call LoadExtendedStoredBoxToCurrentBox
 	ld hl, wMapTextPtr
 	ld de, wChangeBoxSavedMapTextPointer
 	ld a, [hli]
@@ -558,6 +566,18 @@ EmptySRAMBoxesInBank:
 	call EmptySRAMBox
 	ld hl, sBox6 ; sBox12
 	call EmptySRAMBox
+	; MOVE-5.62.169: invalidate sidecars in this newly initialized bank.
+	ld hl, sStoredBox1MoveFlags + MONS_PER_BOX + 1
+	ld de, MONS_PER_BOX + 3
+	ld b, NUM_BOXES / 2
+	xor a
+.clearExtensionMagic
+	ld [hli], a
+	ld [hl], a
+	dec hl
+	add hl, de
+	dec b
+	jr nz, .clearExtensionMagic
 	ld hl, sBox1 ; sBox7
 	ld bc, sBank2AllBoxesChecksum - sBox1
 	call SAVCheckSum

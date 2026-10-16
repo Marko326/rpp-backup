@@ -2987,6 +2987,77 @@ AddBonusPP:
 ; [wCurrentMenuItem] = move index
 ; OUTPUT:
 ; [wMaxPP] = max PP
+; MOVE-5.62.169: test the *slot* flag, not just the raw ID;
+; ordinary Pound/Karate Chop must retain their stock PP.
+; Input HL = selected stored move; result A=1 if extended, 0 otherwise.
+; BC/DE preserved. Only Party, loaded Box summary and BattleMon are
+; eligible; all other contexts remain ordinary during the pilot.
+IsCurrentSelectedMoveExtendedPP:
+	push bc
+	push de
+	push hl
+	ld a, [hl]
+	ld [wTempMoveID], a
+	ld a, [wMonDataLocation]
+	and a
+	jr z, .party
+	cp BOX_DATA
+	jr z, .box
+	cp BATTLE_MON_DATA
+	jr z, .battle
+	jr .none
+.party
+	ld a, [wWhichPokemon]
+	cp PARTY_LENGTH
+	jr nc, .none
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld b, a
+	jr .getByte
+.box
+	ld a, [wExtendedStatusMoveFlags]
+	ld b, a
+	jr .getByte
+.battle
+	ld a, [wExtendedBattleMoveFlags]
+	ld b, a
+.getByte
+	ld a, [wCurrentMenuItem]
+	cp NUM_MOVES
+	jr nc, .none
+	ld e, a
+	ld a, b
+.shift
+	ld c, a
+	ld a, e
+	and a
+	ld a, c
+	jr z, .bit
+	srl a
+	dec e
+	jr .shift
+.bit
+	and 1
+	jr z, .none
+	ld a, [wTempMoveID]
+	cp EXT_MOVE_LOW_POWER_WHIP
+	jr z, .yes
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .none
+.yes
+	ld a, 1
+	jr .finish
+.none
+	xor a
+.finish
+	pop hl
+	pop de
+	pop bc
+	ret
+
 GetMaxPP:
 	ld a,[wMonDataLocation]
 	and a
@@ -3010,7 +3081,14 @@ GetMaxPP:
 .sourceWithMultipleMon
 	call GetSelectedMoveOffset
 .next
+	push hl
+	call IsCurrentSelectedMoveExtendedPP
+	pop hl
+	and a
+	jr nz, .extendedPP
 	ld a,[hl]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr z, .extendedPP
 	dec a
 	push hl
 	ld hl,Moves
@@ -3023,6 +3101,11 @@ GetMaxPP:
 	ld a,[de]
 	ld b,a ; b = normal max PP
 	pop hl
+	jr .haveBasePP
+.extendedPP
+	ld b,10 ; Power Whip's max PP before PP Up bonuses
+	ld de,wcd6d + 5 ; shared bonus-PP scratch pointer
+.haveBasePP
 	push bc
 	ld bc,wPartyMon1PP - wPartyMon1Moves ; PP offset if not player's in-battle pokemon data
 	ld a,[wMonDataLocation]

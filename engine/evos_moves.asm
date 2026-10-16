@@ -504,6 +504,9 @@ ReadPackedLevelMove:
 	ret
 
 LearnMoveFromLevelUp:
+	; The extended-learning ordinal is local to this synchronous level-up.
+	xor a
+	ld [wExtendedLearningMoveOrdinal], a
 	ld a, [wd11e] ; species
 	ld [wcf91], a
 	dec a
@@ -560,6 +563,38 @@ LearnMoveFromLevelUp:
 	jr .learnSetLoop
 	
 .done
+	; MOVE-5.62.169: Bellsprout-specific extended learning experiment.
+	; Packed learnsets, initial/wild moves and other species keep old byte IDs.
+	; New learned moves use low bytes + sidecar; old $ff remains legacy-only.
+	ld a, [wcf91]
+	cp BELLSPROUT
+	jr nz, .restoreSpecies
+	ld a, [wCurEnemyLVL]
+	cp 19
+	jr z, .powerWhip
+	cp 20
+	jr nz, .restoreSpecies
+	; MOVE-5.62.169: a second independent ID; the same Party member can
+	; acquire both in successive levels without using a second $ff sentinel.
+	ld a, EXT_MOVE_LOW_PLAY_ROUGH
+	ld [wMoveNum], a
+	ld a, 2
+	ld [wExtendedLearningMoveOrdinal], a
+	callba LoadExperimentalPlayRoughNameToCD6D
+	jr .offerExtended
+.powerWhip
+	ld a, EXT_MOVE_LOW_POWER_WHIP
+	ld [wMoveNum], a
+	ld a, 1
+	ld [wExtendedLearningMoveOrdinal], a
+	callba LoadExperimentalPowerWhipNameToCD6D
+.offerExtended
+	ld de, wcd6d
+	call CopyStringToCF4B
+	predef LearnMove
+.restoreSpecies
+	xor a
+	ld [wExtendedLearningMoveOrdinal], a
 	ld a, [wcf91]
 	ld [wd11e], a
 	ret
@@ -765,6 +800,12 @@ GetMonDVs:
 PrepareRelearnableMoveList:
 ; Loads relearnable move list to wRelearnableMoves.
 ; Input: party mon index = [wWhichPokemon]
+	; Clear the parallel extended identities before either ordinary or
+	; regional list construction. The item list is not active in this NPC.
+	xor a
+	ld hl, wExtendedNPCListMoveOrdinals
+	ld bc, 8
+	call FillMemory
 	callba RegionalFormPrepareRelearnableMoveList
 	ret c
 	ld a, [wWhichPokemon]
@@ -801,6 +842,19 @@ PrepareRelearnableMoveList:
 	call AddNTimes
 	ld d, h
 	ld e, l
+	; MOVE-5.62.169: the learnset cursor was ALREADY pushed before loading the
+	; party move pointer. Only DE needs temporary protection here.
+	; A second push hl left an extra word on the stack, so the final ret
+	; jumped into packed learnset data instead of returning to the NPC.
+	push de
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld [wExtendedMoveFlagsScratch], a
+	pop de
 	pop hl
 	xor a
 	ld [wRelearnableMoves],a ; running output count
@@ -819,12 +873,21 @@ PrepareRelearnableMoveList:
 	ld b,a ; move ID
 	; Check if move is already known by our mon.
 	push de
-	ld c,NUM_MOVES
+	ld a, [wExtendedMoveFlagsScratch]
+	ld [wExtendedActiveMoveOrdinal], a ; synchronous NPC-only bit iterator
+	ld c, NUM_MOVES
 .knowsMoveLoop
 	ld a,[de]
 	inc de
 	cp b
-	jr z,.knowsMove
+	jr nz, .nextKnownSlot
+	ld a, [wExtendedActiveMoveOrdinal]
+	and 1
+	jr z, .knowsMove ; same old-table identity, not an expanded slot
+.nextKnownSlot
+	ld a, [wExtendedActiveMoveOrdinal]
+	srl a
+	ld [wExtendedActiveMoveOrdinal], a
 	dec c
 	jr nz,.knowsMoveLoop
 	pop de
@@ -851,12 +914,118 @@ PrepareRelearnableMoveList:
 .pastCurrentLevel
 	pop af
 .done
+	; MOVE-5.62.169: append missing extended moves using the
+	; shared $ff list-row placeholder and per-row ordinals. The final
+	; sentinel remains a separate $ff after the count.
+	call AppendExperimentalRelearnerMoves
+
+.terminateList
 	ld a,[wRelearnableMoves]
 	ld c,a
 	ld b,0
 	ld hl,wRelearnableMoves + 1
 	add hl,bc
 	ld [hl],$ff
+	ret
+
+; Only Bellsprout's MOVE-5.62.169 learning experiment uses these extra offers.
+; A candidate is excluded only if that *identity* is already known,
+; not because its low byte matches ordinary Pound or Karate Chop.
+AppendExperimentalRelearnerMoves:
+	ld a, [wWhichPokemon]
+	ld c, a
+	ld b, 0
+	ld hl, wPartySpecies
+	add hl, bc
+	ld a, [hl]
+	cp BELLSPROUT
+	ret nz
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1Level
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	cp 19
+	ret c
+	ld a, EXT_MOVE_LOW_POWER_WHIP
+	call .checkAndAppend
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1Level
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	cp 20
+	ret c
+	ld a, EXT_MOVE_LOW_PLAY_ROUGH
+.checkAndAppend
+	push af
+	call .alreadyKnown
+	jr c, .alreadyPresent
+	pop af
+	ld b, a
+	ld a, [wRelearnableMoves]
+	cp 8
+	ret nc
+	ld e, a
+	ld d, 0
+	ld hl, wRelearnableMoves + 1
+	add hl, de
+	ld [hl], EXT_MOVE_SLOT_ESCAPE ; menu-only placeholder, NOT stored move
+	ld hl, wExtendedNPCListMoveOrdinals
+	add hl, de
+	ld [hl], b
+	ld hl, wRelearnableMoves
+	inc [hl]
+	ret
+.alreadyPresent
+	pop af
+	ret
+.alreadyKnown
+	; A = one-based extended ordinal. Carry means already known.
+	push bc
+	push de
+	push hl
+	push af ; retain the requested ordinal across AddNTimes
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld d, [hl] ; four slot identity bits
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1Moves
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	pop af
+	ld b, a
+	ld e, NUM_MOVES
+	ld c, 1
+.knownLoop
+	ld a, [hli]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .newEncoding
+	ld a, b
+	cp EXT_MOVE_LOW_POWER_WHIP
+	jr z, .found ; legacy 168 experimental Power Whip
+	jr .nextSlot
+.newEncoding
+	cp b
+	jr nz, .nextSlot
+	ld a, d
+	and c
+	jr nz, .found
+.nextSlot
+	sla c
+	dec e
+	jr nz, .knownLoop
+	and a
+	jr .knownDone
+.found
+	scf
+.knownDone
+	pop hl
+	pop de
+	pop bc
 	ret
 
 INCLUDE "data/evos_moves.asm"

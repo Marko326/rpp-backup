@@ -30,9 +30,20 @@ DontAbandonLearning:
 	push hl
 	push de
 	ld [wd11e], a
+	; A previously stored expanded slot needs its real name, not the
+	; legacy name associated with the same low byte.
+	call MaybeNameForgottenExtendedMove
+	jr c, .forgottenNameReady
+	ld a, [wd11e]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .normalForgottenName
+	callba LoadExperimentalPowerWhipNameToCD6D
+	jr .forgottenNameReady
+.normalForgottenName
 	call GetMoveName
 	; The forgotten move's text is stored in wcd6d, separate from wcf4b.
 	callab MaybeRenameRockPolishLearningMoveName
+.forgottenNameReady
 	ld hl, OneTwoAndText
 	call PrintText
 	pop de
@@ -40,10 +51,38 @@ DontAbandonLearning:
 .next
 	ld a, [wMoveNum]
 	ld [hl], a
+	; Tag precisely the slot replaced / appended. Low IDs 1 and 2
+	; remain ordinary Pound/Karate Chop when this flag is absent.
+	push hl
+	push de
+	push bc
+	ld a, l
+	sub e
+	ld c, a
+	ld a, h
+	sbc d
+	jr nz, .badExtendedSlot
+	ld a, c
+	ld [wExtendedMoveFlagsScratch], a
+	callba SetPartyExtendedMoveSlot
+.badExtendedSlot
+	pop bc
+	pop de
+	pop hl
 	ld bc, wPartyMon1PP - wPartyMon1Moves
 	add hl, bc
 	push hl
 	push de
+	ld a, [wExtendedLearningMoveOrdinal]
+	and a
+	jr nz, .experimentalPP
+	ld a, [wMoveNum]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .stockMovePP
+.experimentalPP
+	ld a, 10 ; both two-table pilot moves have 10 starting PP
+	jr .gotMovePP
+.stockMovePP
 	dec a
 	ld hl, Moves
 	ld bc, MoveEnd - Moves
@@ -51,7 +90,8 @@ DontAbandonLearning:
 	ld de, wBuffer
 	ld a, BANK(Moves)
 	call FarCopyData
-	ld a, [wBuffer + 5] ; a = move's max PP
+	ld a, [wBuffer + 5]
+.gotMovePP
 	pop de
 	pop hl
 	ld [hl], a
@@ -74,6 +114,66 @@ DontAbandonLearning:
 	ld bc, NUM_MOVES
 	call CopyData
 	jp PrintLearnedMove
+
+; Input: HL = chosen move slot, DE = first move slot, wd11e = old ID.
+; Return carry set and wcd6d filled if the old move is an expanded ID.
+; Return carry clear for every ordinary slot and the legacy $ff pilot.
+; BC, DE and HL are preserved.
+MaybeNameForgottenExtendedMove:
+	push bc
+	push de
+	push hl
+	ld a, l
+	sub e
+	ld c, a
+	ld a, h
+	sbc d
+	jr nz, .stock
+	ld a, c
+	cp NUM_MOVES
+	jr nc, .stock
+	ld b, a
+	ld a, [wWhichPokemon]
+	cp PARTY_LENGTH
+	jr nc, .stock
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld e, b
+.test
+	ld b, e
+	inc b
+	dec b
+	jr z, .bit
+	srl a
+	dec e
+	jr .test
+.bit
+	and 1
+	jr z, .stock
+	ld a, [wd11e]
+	cp EXT_MOVE_LOW_POWER_WHIP
+	jr z, .whip
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .stock
+	callba LoadExperimentalPlayRoughNameToCD6D
+	jr .extended
+.whip
+	callba LoadExperimentalPowerWhipNameToCD6D
+.extended
+	pop hl
+	pop de
+	pop bc
+	scf
+	ret
+.stock
+	pop hl
+	pop de
+	pop bc
+	and a ; clear carry
+	ret
 
 AbandonLearning:
 	ld hl, AbandonLearningText

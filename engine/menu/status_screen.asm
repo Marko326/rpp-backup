@@ -64,6 +64,9 @@ DrawHP_:
 
 StatusScreen_LoadCurrentMon:
 	call LoadMonData
+	; Status detail receives its own scoped sidecar; normal GetMoveName
+	; remains untouched for unrelated consumers.
+	callba LoadExtendedStatusMoveMask
 	ld a, [wMonDataLocation]
 	cp BOX_DATA
 	ret c

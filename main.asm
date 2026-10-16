@@ -2025,6 +2025,9 @@ INCLUDE "engine/in_game_trades.asm"
 INCLUDE "engine/palettes.asm"
 
 INCLUDE "engine/save.asm"
+; Sidecar SRAM helpers must share SaveSAV bank while SRAM banking mode is 1.
+INCLUDE "engine/battle/extended_party_flags.asm"
+INCLUDE "engine/battle/extended_pc_flags.asm"
  
 BlackTile:
 	REPT 16
@@ -3143,6 +3146,11 @@ INCLUDE "engine/intro_sfx_stop.asm"
 ; SFX-5.62.142: elevator end-cue wait is also movable, not fixed Bank $1E.
 SECTION "Elevator End SFX Wait", ROMX
 INCLUDE "engine/overworld/elevator_sfx_wait.asm"
+
+SECTION "Experimental Extended Move Prototype", ROMX
+INCLUDE "data/extended_moves.asm"
+INCLUDE "engine/battle/extended_move_loader.asm"
+INCLUDE "engine/battle/extended_move_slot_codec.asm"
 
 SECTION "Menu Party Icon Graphics", ROMX, BANK[$38]
 PartyIconRuntimeAtlas:

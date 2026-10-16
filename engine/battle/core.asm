@@ -1767,6 +1767,13 @@ LoadBattleMonFromParty:
 	ld de, wBattleMonLevel
 	ld bc, wBattleMonPP - wBattleMonLevel
 	call CopyData
+	; Every battle-mon load must refresh the sidecar to prevent previous
+	; Party members' extended move identities leaking into this one.
+	callba GetCurrentPartyExtendedMoveMask
+	ld a, [wExtendedMoveFlagsScratch]
+	ld [wExtendedBattleMoveFlags], a
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
 	ld a, [wBattleMonSpecies2]
 	ld [wd0b5], a
 	callba RegionalFormLoadBattleMonHeader ; FORM-5.21.00 descriptor-backed persistent form
@@ -2796,6 +2803,9 @@ SelectMenuItem:
 	add hl, bc
 	ld a, [hl]
 	ld [wPlayerSelectedMove], a
+	ld a, [wCurrentMenuItem]
+	ld [wExtendedMoveFlagsScratch], a
+	callba GetPlayerBattleExtendedOrdinal
 	xor a
 	ret
 .disabled
@@ -2897,6 +2907,8 @@ SwapMovesInMenu:
 	call .swapBytes ; swap moves
 	ld hl, wBattleMonPP
 	call .swapBytes ; swap move PP
+	; The two corresponding sidecar bits must follow the same swap.
+	callba SwapExtendedBattleMenuFlags
 ; update the index of the disabled move if necessary
 	ld hl, wPlayerDisabledMove
 	ld a, [hl]
@@ -2998,6 +3010,9 @@ PrintMenuItem:
 	ld a, [hl]
 	ld [wPlayerSelectedMove], a ; update wPlayerSelectedMove even if the move
 	                            ; isn't actually selected (just pointed to by the cursor)
+	ld a, [wCurrentMenuItem]
+	ld [wExtendedMoveFlagsScratch], a
+	callba GetPlayerBattleExtendedOrdinal
 	ld a, [wPlayerMonNumber]
 	ld [wWhichPokemon], a
 	ld a, BATTLE_MON_DATA
@@ -3212,7 +3227,25 @@ ExecutePlayerMove:
 	ld [wMoveDexPlayerMetronomeDerived], a
 	ld a, [wPlayerSelectedMove]
 	inc a
-	jp z, ExecutePlayerMoveDone ; for selected move = FF, skip most of player's turn
+	jr nz, .chosenMoveReady
+	; MOVE-5.62.169: $ff may also be the Power Whip pilot move.
+	; An enemy trapping move still cancels the player's action as before.
+	ld a, [wEnemyBattleStatus1]
+	bit UsingTrappingMove, a
+	jp nz, ExecutePlayerMoveDone
+	; Only accept $ff when the actual selected move slot holds it. Other
+	; $ff no-action cases must keep the existing skip-turn behavior.
+	ld a, [wPlayerMoveListIndex]
+	cp NUM_MOVES
+	jp nc, ExecutePlayerMoveDone
+	ld c, a
+	ld b, 0
+	ld hl, wBattleMonMoves
+	add hl, bc
+	ld a, [hl]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jp nz, ExecutePlayerMoveDone
+.chosenMoveReady
 	xor a
 	ld [wMoveMissed], a
 	ld [wMonIsDisobedient], a
@@ -4256,7 +4289,7 @@ CheckForDisobedience:
 	ld hl, IgnoredOrdersText
 .printText
 	call PrintText
-	jr .cannotUseMove
+	jp .cannotUseMove
 .useRandomMove
 	ld a, [wBattleMonMoves + 1]
 	and a ; is the second move slot empty?
@@ -4324,6 +4357,9 @@ CheckForDisobedience:
 	add hl, bc
 	ld a, [hl]
 	ld [wPlayerSelectedMove], a
+	ld a, [wCurrentMenuItem]
+	ld [wExtendedMoveFlagsScratch], a
+	callba GetPlayerBattleExtendedOrdinal
 	call GetCurrentMove
 .canUseMove
 	ld a, $1
@@ -6114,6 +6150,22 @@ GetCurrentMove:
 	jr nz, .selected
 	ld a, [wPlayerSelectedMove]
 .selected
+	; An active expanded identity always loads a safe stock record first;
+	; the full $0100/$0101 data is overlaid by FinalizeCurrentMoveLoad.
+	ld b, a
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .checkOldEscape
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr nz, .safeProxy
+.checkOldEscape
+	ld a, b
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .ordinaryMove
+.safeProxy
+	ld a, VINE_WHIP
+.ordinaryMove
 	ld [wd0b5], a
 	dec a
 	ld hl, Moves
@@ -8389,6 +8441,28 @@ MovePriorityTable:
 ; INPUT: Move ID in register a
 ; OUTPUT: Move Physical/Special/Status type in register a
 PhysicalSpecialSplit:
+	; Scoped identity: the battle menu selected an actual second-table slot.
+	; Do not reinterpret ordinary low IDs 1/2 when the sidecar is absent.
+	ld b, a
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .noExtended
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr z, .noExtended
+	cp b
+	jr nz, .noExtended
+	ld a, PHYSICAL
+	ret
+.noExtended
+	ld a, b
+	; MOVE-5.62.169: $ff has no legacy split-table entry. The pilot
+	; Power Whip is a physical Grass attack, not a new class index.
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .stockSplit
+	ld a, PHYSICAL
+	ret
+.stockSplit
 	ld [wTempMoveID], a
 	callba _PhysicalSpecialSplit
 	ld a, [wTempMoveID]

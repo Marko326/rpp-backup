@@ -950,6 +950,24 @@ SwitchPartyMon_InitVarOrSwapData:
 	ld hl, wSwitchPartyMonTempBuffer
 	ld bc, NAME_LENGTH
 	call CopyData
+	; MOVE-5.62.169: keep each mon's four-slot extension mask
+	; paired with its original party data when positions are exchanged.
+	ld a, [wCurrentMenuItem]
+	ld c, a
+	ld b, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, bc
+	ld d, h
+	ld e, l
+	ld a, [wMenuItemToSwap]
+	ld c, a
+	ld hl, wExtendedPartyMoveFlags
+	add hl, bc
+	ld a, [de]
+	ld c, a
+	ld a, [hl]
+	ld [de], a
+	ld [hl], c
 	ld a, [wMenuItemToSwap]
 	ld [wSwappedMenuItem], a
 	xor a

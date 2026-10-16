@@ -68,6 +68,14 @@ MoveDeleterText1:
 	; return to the same move without adding another WRAM cursor variable.
 	ld a, [wWhichPokemon]
 	push af
+	; Capture the selected row's full identity before confirming.
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedNPCListMoveOrdinals
+	add hl, de
+	ld a, [hl]
+	ld [wExtendedActiveMoveOrdinal], a
 	; Save the selected move id.
 	ld a, [wcf91]
 	ld d, a
@@ -75,7 +83,23 @@ MoveDeleterText1:
 	push bc
 	ld [wMoveNum], a
 	ld [wd11e],a
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp 1
+	jr z, .confirmationWhip
+	cp 2
+	jr z, .confirmationRough
+	ld a, [wd11e]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .stockConfirmationName
+.confirmationWhip
+	callba LoadExperimentalPowerWhipNameToCD6D
+	jr .confirmationNameReady
+.confirmationRough
+	callba LoadExperimentalPlayRoughNameToCD6D
+	jr .confirmationNameReady
+.stockConfirmationName
 	call GetMoveName
+.confirmationNameReady
 	; DisplayListMenuID reused wWhichPokemon for the move-list index.
 	; Restore the party slot before aliasing the confirmation/result name.
 	pop bc
@@ -103,11 +127,13 @@ MoveDeleterText1:
 	pop bc
 	ld a, b
 	ld [wWhichPokemon], a
-	jr .chooseMove
+	jp .chooseMove
 .forgetMove
-	pop af ; discard the saved move-list index
+	pop af ; absolute position in the compact move list
+	ld [wExtendedMoveFlagsScratch], a
 	push de
 	ld a, b ; a = mon index
+	ld [wWhichPokemon], a
 	ld hl, wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
@@ -115,6 +141,9 @@ MoveDeleterText1:
 	; Search for the move, and set it to 0.
 	pop de ; d = move id
 	call DeleteMove
+	; DeleteMove stored the actual slot index; its move/PP compaction
+	; must be matched by the same shift of the identity-mask bits.
+	callba ShiftExtendedPartyMoveFlagsOnDelete
 	ld hl, MoveDeleterForgotText
 	call PrintText
 .exit
@@ -122,15 +151,30 @@ MoveDeleterText1:
 	jp PrintTextAndTextScriptEnd
 
 DeleteMove:
-; d = move id
-	ld b, 0
+; HL = first move slot. The selected MOVESLISTMENU row is a compact
+; nonempty-slot ordinal in wExtendedMoveFlagsScratch, not a move ID:
+; ordinary Pound and expanded Power Whip may share the same raw byte.
+	ld b, 0 ; raw slot index
+	ld a, [wExtendedMoveFlagsScratch]
+	ld c, a ; nonempty list row index
 .searchLoop
 	ld a, [hli]
-	cp d
+	and a
+	jr z, .nextSlot
+	ld a, c
+	and a
 	jr z, .foundMoveLoop
+	dec c
+.nextSlot
 	inc b
-	jr .searchLoop
+	ld a, b
+	cp NUM_MOVES
+	jr c, .searchLoop
+	ret ; defensive guard against an invalid list index
 .foundMoveLoop
+	ld a, b
+	ld [wExtendedMoveFlagsScratch], a
+.shiftRemaining
 	ld a, b
 	cp 3
 	jr z, .zeroLastMove
@@ -145,7 +189,7 @@ DeleteMove:
 	pop hl
 	inc hl
 	inc b
-	jr .foundMoveLoop
+	jr .shiftRemaining
 .zeroLastMove
 	dec hl
 	xor a
@@ -157,7 +201,8 @@ DeleteMove:
 
 PrepareDeletableMoveList:
 ; Places a list of the selected pokemon's moves at wDeletableMoves.
-; First byte is count, and last byte is $ff.
+; First byte is count, and last byte is $ff. The renderer now uses the
+; count to distinguish an actual pilot $ff move from this terminator.
 ; Input: party mon index = [wWhichPokemon]
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1Moves
@@ -182,6 +227,50 @@ PrepareDeletableMoveList:
 	ld [de], a
 	ld a, b  ; store number of moves
 	ld [wDeletableMoves], a
+	xor a
+	ld hl, wExtendedNPCListMoveOrdinals
+	ld bc, 8
+	call FillMemory
+	; Build a parallel identity for the compact list rows. A normal low
+	; byte $01/$02 remains normal unless its original slot bit is set.
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld [wExtendedMoveFlagsScratch], a
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1Moves
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld de, wExtendedNPCListMoveOrdinals
+	ld b, NUM_MOVES
+.identityLoop
+	ld a, [hli]
+	and a
+	jr z, .skipIdentity
+	ld c, a
+	ld a, [wExtendedMoveFlagsScratch]
+	and 1
+	jr z, .normalIdentity
+	ld a, c
+	and a
+	jr z, .normalIdentity
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .normalIdentity
+	jr .storeIdentity
+.normalIdentity
+	xor a
+.storeIdentity
+	ld [de], a
+	inc de
+.skipIdentity
+	ld a, [wExtendedMoveFlagsScratch]
+	srl a
+	ld [wExtendedMoveFlagsScratch], a
+	dec b
+	jr nz, .identityLoop
 	ret
 
 MoveDeleterGreetingText:

@@ -222,3 +222,16 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - `CopyString` 的参数为 `DE=来源`、`HL=目标`。`PrintListMenuEntries_` 的 `HL` 是 `PlaceString` 绘制坐标，任何 `callab` 名称助手前后必须按现场 ABI 保护；NPC 列表绘制会把 `wWhichPokemon` 改为行索引。161 仅在 NPC 列表绘制期间借用 `wMoveMenuType` 暂存所选物种，调用结束立即恢复旧值，防止影响通常代表普通／模仿／PP 文字类型的其他上下文；同时按 `wListPointer == wRelearnableMoves` 限制别名生效范围。
 - `wMovesString` 有 56 字节，修改名称长度时需要重新格式化包含换行和终止符的四招列表，不能对既有短名称就地替换导致后续名称错位。当前 `FormatRockPolishStatusMovesString` 与 `FormatRockPolishLearningMovesString` 各复制了类似的四行格式化循环，**这是已识别的维护性重复，不是已复现功能错误**；未来若拟合并，必须先审查不同物种来源、跨 Bank ABI／寄存器、列表返回和最长名称长度，且作为新功能版本独立验证。本次验收清理不改已通过的 ASM 指令，仅统一三处源码注释中的中间版本号。
 - 157 曾出现反向复制与空白列表，158 详情分流未生效，最终分别在 159、160、161 收口。用户实测范围见 `docs/ROCK_POLISH_161_ACCEPTANCE.md`。PP 道具与 MoveDex Seen/Use、旧 `$F0` 编号释放、学习后对话框残留均未在 161 实现或解决，不应在未来交接中写为已验收。
+
+## MOVE-5.62.169 P3-D — 扩展身份的字节与远调用 ABI
+
+- **低字节 0 永远不能表示一个可持有招式**：旧数据与列表用零表示空槽。扩展表从 `$0100` 起时，Party/Box 槽位编码须偏移 +1，再根据 sidecar 恢复完整 16 位身份。
+- `callab/callba` 经 `Bankswitch` 会改写 A/B/HL；不能用 A 或 B 直接传入或返回动态技能槽下标／扩展序号。先写入明确的 WRAM 参数，结果也由被调方写入 WRAM；调用方重新读取。
+- 只读原始技能字节 `1/2` 会把新招误认为 Pound/Karate Chop；每一个用于可见名称、战斗执行、PP、技能交换或存档的入口都必须获得该槽的 sidecar 位。未接通的 NPC、派生招式和联机路径不能默认为兼容。
+
+
+## MOVE-5.62.169 — 遗忘／回忆列表身份与栈平衡；P3-G 撤销边界
+
+- `PrepareRelearnableMoveList` 保留 packed learnset 指针到栈后，再经 `HL` 找 Party 招式和 sidecar；不能重复 `push hl` 再只 `pop` 一次。P3-E 的回忆师异常退回正是返回地址被旧数据指针覆盖，P3-F 删除多余压栈后用户反馈正常。查 NPC 流程必须核算每条分支 push/pop 成对数量。
+- NPC 列表的低字节 `1/2` 既可能是真正 Pound／Karate Chop，也可能是在 sidecar 位标记下的 Power Whip／Play Rough。列表每行身份、删除时 PP 与 mask 压紧、回忆候选去重、`callba` 的返回寄存器必须一并核查；不能只修文字而不修删除行为。
+- 用户决定**先验证扩容数量、后集中加固**，因此未实测的培育屋 P3-G 已撤回；当前 `wDayCareInUse` 高位不得当作已实现的扩展身份持久化机制。数量扩展以后再单独设计和验证寄养、交换、变身与派生招式。

@@ -201,7 +201,24 @@ PrintListMenuEntries_::
 	ld a,[de]
 	ld [wd11e],a
 	cp $ff
+	jr nz,.realEntry
+	ld a,[wListMenuID]
+	cp MOVESLISTMENU
+	jp nz,.printCancelMenuItem
+	; In move lists, $ff is also the experimental Power Whip ID.
+	; The count in the first byte distinguishes an actual slot from Cancel.
+	push bc
+	ld a,4
+	sub b
+	ld c,a
+	ld a,[wListScrollOffset]
+	add c
+	ld c,a
+	ld a,[wListCount]
+	cp c
+	pop bc
 	jp z,.printCancelMenuItem
+.realEntry
 	push bc
 	push de
 	push hl
@@ -235,6 +252,45 @@ PrintListMenuEntries_::
 	pop hl
 	jr .placeNameString
 .movesMenu
+	; MOVESLISTMENU's row has a companion full-identity ordinal.
+	; It is valid for either the Relearner or Deleter list and remains
+	; independent of the low 8-bit move ID and the Cancel sentinel.
+	push bc
+	push de
+	push hl
+	ld a, 4
+	sub b
+	ld c, a
+	ld a, [wListScrollOffset]
+	add c
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedNPCListMoveOrdinals
+	add hl, de
+	ld a, [hl]
+	pop hl
+	pop de
+	pop bc
+	cp 1
+	jr z, .extendedWhip
+	cp 2
+	jr z, .extendedRough
+	ld a, [wd11e]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .ordinaryMoveName
+.extendedWhip
+	push hl
+	callba LoadExperimentalPowerWhipNameToCD6D
+	ld de, wcd6d
+	pop hl
+	jr .placeNameString
+.extendedRough
+	push hl
+	callba LoadExperimentalPlayRoughNameToCD6D
+	ld de, wcd6d
+	pop hl
+	jr .placeNameString
+.ordinaryMoveName
 	call GetMoveName
 	; Relearner/Deleter menus carry their chosen species separately from
 	; wWhichPokemon, which is overwritten by the list's row iterator.
