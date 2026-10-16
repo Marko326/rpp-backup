@@ -206,12 +206,13 @@ wTempoModifier:: ; c0f2
 
 ; MOVE-5.62.169: use eight bytes of the existing eleven-byte
 ; unused WRAM0 gap; the audio state that follows keeps its original address.
-; One bit per move slot per party member. No live gameplay reader yet.
+; One bit per move slot per party member; the ten-entry pilot reads these flags
+; to distinguish expanded ordinals from ordinary low-byte move IDs.
 wExtendedPartyMoveFlags:: ds PARTY_LENGTH
 wExtendedBattleMoveFlags:: ds 1
 wExtendedMoveFlagsScratch:: ds 1
-; MOVE-5.62.169: scoped learning, status and active battle identity.
-wExtendedLearningMoveOrdinal:: ds 1 ; 0=ordinary, 1=Power Whip, 2=Play Rough
+; MOVE-5.62.171: scoped learning, status and active battle identity.
+wExtendedLearningMoveOrdinal:: ds 1 ; 0=ordinary, 1..NUM_EXTENDED_MOVES expanded
 wExtendedStatusMoveFlags:: ds 1
 wExtendedActiveMoveOrdinal:: ds 1
 
@@ -672,9 +673,10 @@ wShinyMonFlag::
 ; Bit 0 is set if the mon should be Shiny.
 ; Bit 1 is set for enemy mon animation, reset for player mon animation
 wRelearnableMoves::
-; List of move ids that can be re-learend (Move Relearner)
-; First byte is the number of moves in this list.
-; List is terminated with $ff
+; MOVE-5.62.171: Relearner list uses count + at most 32 IDs + $ff.
+; This NPC-only list continues into otherwise inactive overworld-movement
+; scratch after the old ten bytes. No WRAM addresses or save offsets move.
+; The overworld movement decoder must not run while this NPC list is live.
 wDeletableMoves::
 ; List of move ids that can be deleted (Move Deleter)
 ; First byte is the number of moves in this list.
@@ -687,6 +689,8 @@ wGenderTemp::
 wNumStepsToTake:: ; cca1
 ; used in Pallet Town scripted movement
 	ds 49
+; The scratch union beginning at wRelearnableMoves ends before $CCD2.
+ASSERT wRelearnableMoves + MOVE_RELEARNER_MAX_MOVES + 2 <= wNumStepsToTake + 49
 
 wRLEByteCount:: ; ccd2
 	ds 1
@@ -1617,10 +1621,10 @@ wGymLeaderName:: ; cf70
 
 wItemList:: ; cf7b
 	ds 1
-; MOVE-5.62.169: NPC move menus use wRelearnableMoves as their
-; source, so these eight existing item-list scratch bytes can temporarily
-; map menu rows to extended move ordinals. Never overlap with item menus.
-wExtendedNPCListMoveOrdinals:: ds 8
+; MOVE-5.62.171: the expanded NPC ordinal scratch now aliases a 32-byte
+; MoveDex-only font buffer, rather than the eight-item temporary array here.
+; Retain the old memory gap so wListPointer never shifts.
+	ds 8
 	ds 7 ; keep wListPointer at its original $CF8B address
 
 wListPointer:: ; cf8b
@@ -2829,7 +2833,11 @@ wMoveDexStateEnd::
 ; MoveDex 详情页小字标签的 32-byte 临时 1bpp 合成缓冲。
 ; 复用原 128-byte saved-unused 区剩余空间，不改变后续 WRAM/SRAM 地址。
 wMoveDexLearnSourceBuffer::
+; MOVE-5.62.171: the 32-byte MoveDex font scratch is never live during a
+; Move Relearner / Deleter NPC list; reuse it for per-row extended ordinals.
+wExtendedNPCListMoveOrdinals::
 	ds 32
+ASSERT MOVE_RELEARNER_MAX_MOVES <= 32
 wMoveDexSmallFontShift:: ds 1
 wMoveDexSmallFontLeftShift:: ds 1
 ; 玩家当前行动是否已经进入 Metronome 随机派生链。

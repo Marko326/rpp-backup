@@ -235,3 +235,9 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - `PrepareRelearnableMoveList` 保留 packed learnset 指针到栈后，再经 `HL` 找 Party 招式和 sidecar；不能重复 `push hl` 再只 `pop` 一次。P3-E 的回忆师异常退回正是返回地址被旧数据指针覆盖，P3-F 删除多余压栈后用户反馈正常。查 NPC 流程必须核算每条分支 push/pop 成对数量。
 - NPC 列表的低字节 `1/2` 既可能是真正 Pound／Karate Chop，也可能是在 sidecar 位标记下的 Power Whip／Play Rough。列表每行身份、删除时 PP 与 mask 压紧、回忆候选去重、`callba` 的返回寄存器必须一并核查；不能只修文字而不修删除行为。
 - 用户决定**先验证扩容数量、后集中加固**，因此未实测的培育屋 P3-G 已撤回；当前 `wDayCareInUse` 高位不得当作已实现的扩展身份持久化机制。数量扩展以后再单独设计和验证寄养、交换、变身与派生招式。
+
+
+## MOVE-5.62.170～171 — 扩展招式表的 RGBDS 标签域与回忆候选容量
+
+- 在招式名称指针表前后添加全局标签（`::`）会改变其后 `.local` 的隶属范围；170 首个补丁曾报 10 个 `ExtendedMoveNamePointers.*` 未定义，`HealParty.extBit` 也漏定义。任何新技能批量扩表，都要对**全部新增局部符号**做完整域检查；PP 标记循环同时核对各槽位右移，而不是只补链接标签。
+- `wRelearnableMoves` 原先仅按 8 条候选分配，旧普通学习表遍历还未检查容量；扩展到 10 招后需要让普通／地区／扩展候选遵守同一个计数、`$ff` 终止符和逐行 ordinal 的 32 条上限。NPC 操作期借用的 movement scratch 与 MoveDex 字体临时缓冲只能在生命周期互斥时复用；不能把物理容量修复等同于所有候选过滤错误的根因已经确定。171 用户测试扩展回忆主路径恢复，满 32 条及全部边界未专项实测。

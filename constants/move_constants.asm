@@ -259,11 +259,12 @@ const_value = 1
 
 NUM_ATTACKS EQU const_value
 
-; MOVE-5.62.169: 16-bit identity for the separate experimental move table.
+; MOVE-5.62.171: 16-bit identity for the separate experimental move table.
 ; Do not reuse a legacy 8-bit move ID or enlarge existing party/box structs.
-EXT_MOVE_POWER_WHIP EQU $0100
-EXT_MOVE_PLAY_ROUGH EQU $0101
-NUM_EXTENDED_MOVES EQU 2
+EXT_MOVE_BASE_ID EQU $0100
+EXT_MOVE_POWER_WHIP EQU EXT_MOVE_BASE_ID
+EXT_MOVE_PLAY_ROUGH EQU EXT_MOVE_BASE_ID + 1
+NUM_EXTENDED_MOVES EQU 10
 EXT_MOVE_MAX_PILOT_CAPACITY EQU 64
 ; Stored one-byte extended slot values are 1..64 (never 0 = empty).
 ; A sidecar bit discriminates these from old IDs of the same byte value.

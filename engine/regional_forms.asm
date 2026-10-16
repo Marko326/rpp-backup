@@ -925,9 +925,9 @@ RegionalFormPrepareRelearnableMoveList:
 	jr nz,.checkKnown
 	pop de
 	pop bc
-	; wRelearnableMoves is 10 bytes total: count + up to 8 moves + $ff.
+	; MOVE-5.62.171: count + up to 32 moves + $ff in the NPC scratch union.
 	ld a,c
-	cp 8
+	cp MOVE_RELEARNER_MAX_MOVES
 	jr nc,.discardCandidate
 	pop af ; candidate move
 	push hl

@@ -1,4 +1,4 @@
-; MOVE-5.62.169: per-slot extended identity decoder.
+; MOVE-5.62.171: per-slot extended identity decoder.
 ; A low byte alone is never a complete extended identity; use the
 ; slot's own saved mask bit before choosing either ROM move table.
 ;
@@ -8,8 +8,8 @@
 ;         Carry set on invalid slot, a legacy $ff sentinel, or an undefined
 ;         extended ID. A and B are clobbered; C and DE are preserved.
 ; For an ordinary empty slot (low byte $00, flag clear), HL is $0000.
-; For new Power Whip (low byte $01, flag set), HL is $0100.
-; For new Play Rough (low byte $02, flag set), HL is $0101.
+; For any extended ordinal 1..N (low byte equals the one-based ordinal,
+; flag set), HL is $0100 + ordinal - 1.
 ;
 ; The old 168 $ff experiment deliberately returns invalid here: a future
 ; explicit migration must convert it, not silently mistake it for another ID.
@@ -256,7 +256,7 @@ SwapExtendedBattleMenuFlags::
 .bits
 	db 1, 2, 4, 8
 
-; MOVE-5.62.169: shift only the four extension-identity bits
+; MOVE-5.62.171: shift only the four extension-identity bits
 ; after DeleteMove compacts the move/PP bytes. Nothing else in the Party
 ; structure is changed. Input wWhichPokemon = party slot,
 ; wExtendedMoveFlagsScratch = deleted raw move slot 0..3.

@@ -73,20 +73,24 @@ HealParty:
 	and 1
 	jr z, .ordinaryBit
 	pop af
-	cp EXT_MOVE_LOW_POWER_WHIP - 1
-	jr z, .extendedPP
-	cp EXT_MOVE_LOW_PLAY_ROUGH - 1
-	jr z, .extendedPP
-	jr .oldEscapeCheck
+	inc a ; one-based extended ordinal
+	ld [wTempMoveID], a
+	ld e, a
+	callba LoadExtendedMoveStatsByOrdinalToCD6D
+	jr c, .flaggedExtendedInvalid
+	ld a, [wcd6d + 5]
+	jr .haveBasePP
+.flaggedExtendedInvalid
+	ld a, [wTempMoveID]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .ordinaryMove
+	ld a, 10 ; legacy $ff Power Whip compatibility only
+	jr .haveBasePP
 .ordinaryBit
 	pop af
-.oldEscapeCheck
 	cp EXT_MOVE_SLOT_ESCAPE - 1 ; already decremented in this loop
 	jr nz, .ordinaryMove
-	ld a, 10 ; both second-table pilot moves use ten base PP
-	jr .haveBasePP
-.extendedPP
-	ld a, 10
+	ld a, 10 ; legacy $ff Power Whip compatibility only
 	jr .haveBasePP
 .ordinaryMove
 	ld hl, Moves

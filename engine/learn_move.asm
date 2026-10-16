@@ -80,7 +80,14 @@ DontAbandonLearning:
 	cp EXT_MOVE_SLOT_ESCAPE
 	jr nz, .stockMovePP
 .experimentalPP
-	ld a, 10 ; both two-table pilot moves have 10 starting PP
+	ld a, [wExtendedLearningMoveOrdinal]
+	ld e, a
+	callba LoadExtendedMoveStatsByOrdinalToCD6D
+	jr c, .oldEscapePP
+	ld a, [wcd6d + 5]
+	jr .gotMovePP
+.oldEscapePP
+	ld a, 10 ; legacy $ff Power Whip compatibility only
 	jr .gotMovePP
 .stockMovePP
 	dec a
@@ -154,15 +161,9 @@ MaybeNameForgottenExtendedMove:
 	and 1
 	jr z, .stock
 	ld a, [wd11e]
-	cp EXT_MOVE_LOW_POWER_WHIP
-	jr z, .whip
-	cp EXT_MOVE_LOW_PLAY_ROUGH
-	jr nz, .stock
-	callba LoadExperimentalPlayRoughNameToCD6D
-	jr .extended
-.whip
-	callba LoadExperimentalPowerWhipNameToCD6D
-.extended
+	ld e, a ; one-based extended ordinal
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	jr c, .stock
 	pop hl
 	pop de
 	pop bc

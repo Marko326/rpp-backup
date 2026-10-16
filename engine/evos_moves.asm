@@ -536,59 +536,87 @@ LearnMoveFromLevelUp:
 
 	push hl
 	push bc ; preserve packed iterator state across move-learning code
+
+	push de ; preserve the packed move ID while loading the party flag mask
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld [wExtendedMoveFlagsScratch], a
 	ld hl, wPartyMon1Moves
 	ld a, [wWhichPokemon]
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
-
+	pop de
 	ld b, NUM_MOVES
+	ld c, 0
 .checkCurrentMovesLoop ; check if the move to learn is already known
 	ld a, [hli]
 	cp d
-	jr z, .has_move ; if already known, jump
+	jr nz, .nextKnownMove
+	ld a, [wExtendedLearningMoveOrdinal]
+	and a
+	jr z, .has_move ; ordinary learnset move matches an ordinary slot
+	; Extended learning is a distinct identity. A matching low byte in an
+	; already-flagged slot is NOT the same ordinary move.
+	push bc
+	ld b, c ; current zero-based move slot
+	ld a, [wExtendedMoveFlagsScratch]
+.extendedKnownFlagShift:
+	inc b
+	dec b
+	jr z, .extendedKnownFlagBit
+	srl a
+	dec b
+	jr .extendedKnownFlagShift
+.extendedKnownFlagBit:
+	and 1
+	pop bc
+	jr nz, .nextKnownMove
+	jr .has_move
+.nextKnownMove:
+	inc c
 	dec b
 	jr nz, .checkCurrentMovesLoop
-;learn move
-	ld a, d
-	ld [wMoveNum], a
-	ld [wd11e], a
-	call GetMoveName
-	; Only the selected party member's mapped AGILITY uses the display alias.
-	callab MaybeRenameRockPolishLearningMoveName
-	call CopyStringToCF4B
-	predef LearnMove
 .has_move
 	pop bc
 	pop hl
 	jr .learnSetLoop
 	
 .done
-	; MOVE-5.62.169: Bellsprout-specific extended learning experiment.
-	; Packed learnsets, initial/wild moves and other species keep old byte IDs.
-	; New learned moves use low bytes + sidecar; old $ff remains legacy-only.
+	; MOVE-5.62.171: the Bellsprout line is the capacity-test carrier.
+	; Bellsprout levels 19-20 offer ordinals 1-2; Weepinbell/Victreebel
+	; levels 22-29 offer ordinals 3-10. The production learnset stays untouched.
 	ld a, [wcf91]
 	cp BELLSPROUT
+	jr z, .bellsproutExtended
+	cp WEEPINBELL
+	jr z, .evolvedExtended
+	cp VICTREEBEL
 	jr nz, .restoreSpecies
+.evolvedExtended
+	ld a, [wCurEnemyLVL]
+	cp 22
+	jr c, .restoreSpecies
+	sub 19 ; level 22 -> ordinal 3
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .restoreSpecies
+	jr .offerExtended
+.bellsproutExtended
 	ld a, [wCurEnemyLVL]
 	cp 19
-	jr z, .powerWhip
-	cp 20
-	jr nz, .restoreSpecies
-	; MOVE-5.62.169: a second independent ID; the same Party member can
-	; acquire both in successive levels without using a second $ff sentinel.
-	ld a, EXT_MOVE_LOW_PLAY_ROUGH
-	ld [wMoveNum], a
-	ld a, 2
-	ld [wExtendedLearningMoveOrdinal], a
-	callba LoadExperimentalPlayRoughNameToCD6D
-	jr .offerExtended
-.powerWhip
-	ld a, EXT_MOVE_LOW_POWER_WHIP
-	ld [wMoveNum], a
-	ld a, 1
-	ld [wExtendedLearningMoveOrdinal], a
-	callba LoadExperimentalPowerWhipNameToCD6D
+	jr c, .restoreSpecies
+	cp 21
+	jr nc, .restoreSpecies
+	sub 18 ; level 19 -> ordinal 1, level 20 -> ordinal 2
 .offerExtended
+	ld [wExtendedLearningMoveOrdinal], a
+	ld [wMoveNum], a
+	ld e, a ; ordinal survives CALLBA
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	jr c, .restoreSpecies
 	ld de, wcd6d
 	call CopyStringToCF4B
 	predef LearnMove
@@ -804,7 +832,7 @@ PrepareRelearnableMoveList:
 	; regional list construction. The item list is not active in this NPC.
 	xor a
 	ld hl, wExtendedNPCListMoveOrdinals
-	ld bc, 8
+	ld bc, MOVE_RELEARNER_MAX_MOVES
 	call FillMemory
 	callba RegionalFormPrepareRelearnableMoveList
 	ret c
@@ -892,8 +920,12 @@ PrepareRelearnableMoveList:
 	jr nz,.knowsMoveLoop
 	pop de
 
-	; Append move to the relearnable list.
-	ld a,[wRelearnableMoves]
+	; MOVE-5.62.171: bound the *ordinary* learnset too; it previously
+	; appended without checking the fixed 8-row WRAM scratch and could
+	; overwrite unrelated state before extended candidates were considered.
+	ld a, [wRelearnableMoves]
+	cp MOVE_RELEARNER_MAX_MOVES
+	jr nc, .nextEntry
 	ld c,a
 	ld a,b
 	ld b,0
@@ -928,7 +960,7 @@ PrepareRelearnableMoveList:
 	ld [hl],$ff
 	ret
 
-; Only Bellsprout's MOVE-5.62.169 learning experiment uses these extra offers.
+; Only Bellsprout's MOVE-5.62.171 capacity experiment uses these extra offers.
 ; A candidate is excluded only if that *identity* is already known,
 ; not because its low byte matches ordinary Pound or Karate Chop.
 AppendExperimentalRelearnerMoves:
@@ -939,7 +971,22 @@ AppendExperimentalRelearnerMoves:
 	add hl, bc
 	ld a, [hl]
 	cp BELLSPROUT
+	jr z, .bellsproutStage
+	cp WEEPINBELL
+	jr z, .evolvedStage
+	cp VICTREEBEL
 	ret nz
+.evolvedStage
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1Level
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	cp 22
+	ret c
+	sub 18 ; level 22 -> next exclusive bound 4
+	jr .capOrdinal
+.bellsproutStage
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1Level
 	ld bc, wPartyMon2 - wPartyMon1
@@ -947,16 +994,24 @@ AppendExperimentalRelearnerMoves:
 	ld a, [hl]
 	cp 19
 	ret c
-	ld a, EXT_MOVE_LOW_POWER_WHIP
+	sub 17 ; level 19 -> next exclusive bound 2
+.capOrdinal
+	cp NUM_EXTENDED_MOVES + 1
+	jr c, .haveBound
+	ld a, NUM_EXTENDED_MOVES + 1
+.haveBound
+	ld b, a ; exclusive upper bound for one-based ordinals
+	ld c, 1
+.loop
+	ld a, c
+	cp b
+	ret nc
+	push bc
+	ld a, c
 	call .checkAndAppend
-	ld a, [wWhichPokemon]
-	ld hl, wPartyMon1Level
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
-	ld a, [hl]
-	cp 20
-	ret c
-	ld a, EXT_MOVE_LOW_PLAY_ROUGH
+	pop bc
+	inc c
+	jr .loop
 .checkAndAppend
 	push af
 	call .alreadyKnown
@@ -964,7 +1019,7 @@ AppendExperimentalRelearnerMoves:
 	pop af
 	ld b, a
 	ld a, [wRelearnableMoves]
-	cp 8
+	cp MOVE_RELEARNER_MAX_MOVES
 	ret nc
 	ld e, a
 	ld d, 0

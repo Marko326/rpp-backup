@@ -84,18 +84,16 @@ MoveDeleterText1:
 	ld [wMoveNum], a
 	ld [wd11e],a
 	ld a, [wExtendedActiveMoveOrdinal]
-	cp 1
-	jr z, .confirmationWhip
-	cp 2
-	jr z, .confirmationRough
+	and a
+	jr z, .checkLegacyConfirmation
+	ld e, a ; one-based extended ordinal
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	jr .confirmationNameReady
+.checkLegacyConfirmation
 	ld a, [wd11e]
 	cp EXT_MOVE_SLOT_ESCAPE
 	jr nz, .stockConfirmationName
-.confirmationWhip
 	callba LoadExperimentalPowerWhipNameToCD6D
-	jr .confirmationNameReady
-.confirmationRough
-	callba LoadExperimentalPlayRoughNameToCD6D
 	jr .confirmationNameReady
 .stockConfirmationName
 	call GetMoveName
@@ -229,7 +227,7 @@ PrepareDeletableMoveList:
 	ld [wDeletableMoves], a
 	xor a
 	ld hl, wExtendedNPCListMoveOrdinals
-	ld bc, 8
+	ld bc, MOVE_RELEARNER_MAX_MOVES
 	call FillMemory
 	; Build a parallel identity for the compact list rows. A normal low
 	; byte $01/$02 remains normal unless its original slot bit is set.

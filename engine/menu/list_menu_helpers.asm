@@ -271,22 +271,29 @@ PrintListMenuEntries_::
 	pop hl
 	pop de
 	pop bc
-	cp 1
-	jr z, .extendedWhip
-	cp 2
-	jr z, .extendedRough
+	and a
+	jr z,.checkLegacyMove
+	push bc
+	push de
+	push hl
+	ld e, a ; one-based extended ordinal
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	jr c,.extendedNameInvalid
+	pop hl
+	pop de
+	pop bc
+	ld de, wcd6d
+	jr .placeNameString
+.extendedNameInvalid
+	pop hl
+	pop de
+	pop bc
+.checkLegacyMove
 	ld a, [wd11e]
 	cp EXT_MOVE_SLOT_ESCAPE
-	jr nz, .ordinaryMoveName
-.extendedWhip
+	jr nz,.ordinaryMoveName
 	push hl
 	callba LoadExperimentalPowerWhipNameToCD6D
-	ld de, wcd6d
-	pop hl
-	jr .placeNameString
-.extendedRough
-	push hl
-	callba LoadExperimentalPlayRoughNameToCD6D
 	ld de, wcd6d
 	pop hl
 	jr .placeNameString

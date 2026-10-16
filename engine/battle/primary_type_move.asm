@@ -71,10 +71,13 @@ FinalizeCurrentMoveLoad::
 	and a
 	jr nz, .ordinaryName
 	ld a, [wExtendedActiveMoveOrdinal]
-	cp 1
-	jr z, .powerWhipName
-	cp 2
-	jr z, .playRoughName
+	and a
+	jr z, .ordinaryName
+	ld e, a ; ordinal survives CALLBA in DE
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	jr c, .ordinaryName
+	ld de, wcd6d
+	jp CopyStringToCF4B
 .ordinaryName
 	call GetCurrentMoveID
 	cp EXT_MOVE_SLOT_ESCAPE
@@ -88,9 +91,6 @@ FinalizeCurrentMoveLoad::
 	jp CopyStringToCF4B
 .powerWhipName
 	ld de, PowerWhipExperimentName
-	jp CopyStringToCF4B
-.playRoughName
-	ld de, PlayRoughExperimentName
 	jp CopyStringToCF4B
 
 ; Metronome / Mirror Move / Mimic reload an already-selected child move. Their
@@ -221,7 +221,8 @@ BugBiteBattleName:
 RockPolishBattleName:
 	db "Rock Polish@"
 
-; MOVE-5.62.169: duplicate only this literal in the rendering bank; no new legacy ID.
+; MOVE-5.62.171: legacy aliases retained only as local rendering fallbacks;
+; the generic extended name loader is now the identity source for all ordinals.
 PowerWhipExperimentName:
 	db "Power Whip@"
 
@@ -231,6 +232,7 @@ PlayRoughExperimentName:
 GetExtendedRenderedSlotName:
 	push bc
 	push de
+	push af
 	ld d, a
 	ld a, b
 	ld e, a
@@ -247,23 +249,17 @@ GetExtendedRenderedSlotName:
 .bit
 	and 1
 	jr z, .ordinary
-	ld a, d
-	cp EXT_MOVE_LOW_POWER_WHIP
-	jr z, .powerWhip
-	cp EXT_MOVE_LOW_PLAY_ROUGH
-	jr nz, .ordinary
-	ld hl, PlayRoughExperimentName
-	jr .expanded
-.powerWhip
-	ld hl, PowerWhipExperimentName
-.expanded
-	ld a, d
+	ld e, d ; one-based ordinal survives CALLBA in DE
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	jr c, .ordinary
+	ld hl, wcd6d
+	pop af
 	pop de
 	pop bc
 	scf
 	ret
 .ordinary
-	ld a, d
+	pop af
 	pop de
 	pop bc
 	and a

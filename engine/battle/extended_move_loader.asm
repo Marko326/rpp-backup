@@ -1,5 +1,5 @@
-; MOVE-5.62.169: second-table 16-bit readers for the current two-move
-; experiment. The legacy $ff Power Whip escape remains for compatibility;
+; MOVE-5.62.171: second-table 16-bit readers for the ten-move
+; capacity experiment. The legacy $ff Power Whip escape remains for compatibility;
 ; durable multi-move identity uses one-based slot bytes and sidecar flags.
 ; Call while banked into this section, or via a proper banked wrapper.
 ; HL = full 16-bit move ID ($0100...), DE = destination buffer.
@@ -32,21 +32,51 @@ CopyExtendedMoveStats::
 	scf
 	ret
 
+; MOVE-5.62.171: generic six-byte reader. E carries the one-based ordinal
+; across CALLBA; the record is copied to wcd6d for PP/status callers.
+LoadExtendedMoveStatsByOrdinalToCD6D::
+	ld a, e
+	cp 1
+	jr c, .invalid
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .invalid
+	dec a
+	ld l, a
+	ld h, HIGH(EXT_MOVE_BASE_ID)
+	ld de, wcd6d
+	jp CopyExtendedMoveStats
+.invalid
+	scf
+	ret
+
 ; HL = full 16-bit move ID, DE = destination text buffer.
 ; Copies the @-terminated name; never uses the legacy MoveNames index.
 ; MOVE-5.62.169: prepare full ID inside the far-called bank, not before
 ; callba (which uses HL for its routine target). The caller receives wcd6d.
-LoadExperimentalPowerWhipNameToCD6D::
-	ld hl, EXT_MOVE_POWER_WHIP
+; MOVE-5.62.171: generic name reader. E carries the one-based extended ordinal
+; across CALLBA because Bankswitch owns A/BC/HL. The result is written to wcd6d.
+LoadExtendedMoveNameByOrdinalToCD6D::
+	ld a, e
+	cp 1
+	jr c, .invalid
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .invalid
+	dec a
+	ld l, a
+	ld h, HIGH(EXT_MOVE_BASE_ID)
 	ld de, wcd6d
 	jp CopyExtendedMoveName
+.invalid
+	scf
+	ret
 
-; MOVE-5.62.169: direct name reader for the second full move ID.
-; Sidecar slot identity, not the old $ff escape, distinguishes Play Rough.
+LoadExperimentalPowerWhipNameToCD6D::
+	ld e, EXT_MOVE_LOW_POWER_WHIP
+	jr LoadExtendedMoveNameByOrdinalToCD6D
+
 LoadExperimentalPlayRoughNameToCD6D::
-	ld hl, EXT_MOVE_PLAY_ROUGH
-	ld de, wcd6d
-	jp CopyExtendedMoveName
+	ld e, EXT_MOVE_LOW_PLAY_ROUGH
+	jr LoadExtendedMoveNameByOrdinalToCD6D
 
 CopyExtendedMoveName::
 	ld a, h
@@ -79,8 +109,8 @@ CopyExtendedMoveName::
 	scf
 	ret
 
-; MOVE-5.62.169: called from the usual FinalizeCurrentMoveLoad only.
-; Overlay second-table combat data after the stock accessor safely loaded
+; MOVE-5.62.171: called from the usual FinalizeCurrentMoveLoad only.
+; Overlay any second-table combat data after the stock accessor safely loaded
 ; VINE_WHIP rather than indexing Moves with the reserved $FF escape.
 MaybeLoadExperimentalMoveBattleStats::
 	ldh a, [H_WHOSETURN]

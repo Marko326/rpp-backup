@@ -3043,10 +3043,10 @@ IsCurrentSelectedMoveExtendedPP:
 	and 1
 	jr z, .none
 	ld a, [wTempMoveID]
-	cp EXT_MOVE_LOW_POWER_WHIP
-	jr z, .yes
-	cp EXT_MOVE_LOW_PLAY_ROUGH
-	jr nz, .none
+	and a
+	jr z, .none
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .none
 .yes
 	ld a, 1
 	jr .finish
@@ -3103,7 +3103,19 @@ GetMaxPP:
 	pop hl
 	jr .haveBasePP
 .extendedPP
-	ld b,10 ; Power Whip's max PP before PP Up bonuses
+	push hl
+	ld a,[wTempMoveID]
+	ld e,a
+	callba LoadExtendedMoveStatsByOrdinalToCD6D
+	jr c,.legacyExtendedPP
+	ld a,[wcd6d + 5]
+	ld b,a
+	ld de,wcd6d + 5 ; shared bonus-PP scratch pointer
+	pop hl
+	jr .haveBasePP
+.legacyExtendedPP
+	pop hl
+	ld b,10 ; legacy $ff Power Whip compatibility only
 	ld de,wcd6d + 5 ; shared bonus-PP scratch pointer
 .haveBasePP
 	push bc

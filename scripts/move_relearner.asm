@@ -95,14 +95,10 @@ MoveRelearnerText1:
 	ld [wExtendedLearningMoveOrdinal], a
 	and a
 	jr z, .ordinarySelected
-	ld [wMoveNum], a ; 1=Power Whip, 2=Play Rough
+	ld [wMoveNum], a ; one-based extended ordinal
 	ld [wd11e], a
-	cp 1
-	jr z, .relearnerWhipName
-	callba LoadExperimentalPlayRoughNameToCD6D
-	jr .relearnerNameReady
-.relearnerWhipName
-	callba LoadExperimentalPowerWhipNameToCD6D
+	ld e, a ; ordinal survives CALLBA
+	callba LoadExtendedMoveNameByOrdinalToCD6D
 	jr .relearnerNameReady
 .ordinarySelected
 	ld a, [wcf91]
