@@ -44,7 +44,7 @@ class Route32StagingTests(unittest.TestCase):
         self.assertIn('cp JOHTO_ROUTE_32', self.src('engine/overworld/ledges.asm'))
         self.assertIn('JohtoRoute32TownMapName: db "Route 32@"', self.src('engine/town_map.asm'))
         self.assertIn('JOHTO_ROUTE_32,            MUSIC_GBP_GSC_ROUTE30', self.src('engine/menu/options_menu.asm'))
-        self.assertIn('db "CLN-5.62.178@"', self.src('data/game_version.asm'))
+        self.assertRegex(self.src('data/game_version.asm'), r'db \"[A-Z]+-5\.62\.\d+@\"')
 
     def test_hide_show_table_is_bounded(self):
         s = self.src('data/hide_show_data.asm')

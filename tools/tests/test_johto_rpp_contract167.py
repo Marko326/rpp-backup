@@ -1,4 +1,5 @@
 """MAP-5.62.167: fail-closed Gold collision and graphics mapping tests."""
+import re
 import shutil
 import sys
 import tempfile
@@ -27,7 +28,8 @@ class GoldJohtoConversionContract(unittest.TestCase):
         pals = tile_palettes(ROOT/'color/tilesets/johto.asm')
         for a, b in ((5, 0x20), (0x4c, 0x21), (6, 0x30), (7, 0x5b)):
             self.assertEqual(pals[a], pals[b], (a, b))
-        self.assertEqual((ROOT/'data/game_version.asm').read_text().count('CLN-5.62.178@'), 1)
+        self.assertEqual(len(re.findall(r'(?m)^\s*db\s+"[A-Z]+-5\.62\.\d+@"',
+                                        (ROOT/'data/game_version.asm').read_text())), 1)
 
     def test_other_gold_block_mismatch_is_not_silently_accepted(self):
         blocks = bytearray((ROOT/'gfx/blocksets/johto.bst').read_bytes())

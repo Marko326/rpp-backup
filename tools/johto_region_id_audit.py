@@ -5,6 +5,7 @@ This is not an RGBDS compile or a substitute for an in-game connection test.
 A new Johto local map must be added to all key tables before being exposed.
 """
 from pathlib import Path
+import json
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,12 +16,88 @@ INPUTS = (
     'data/johto_map_headers.asm', 'engine/overworld/region_map_lookup.asm',
     'home/overworld.asm', 'engine/town_map.asm', 'engine/menu/options_menu.asm',
     'engine/overworld/map_name_sign.asm', 'wram.asm', 'main.asm',
+    'tools/johto_native_maps.json',
 )
 
 
 def entries(text, start, end, prefix):
     block = text.split(start, 1)[1].split(end, 1)[0]
     return re.findall(rf'^\s*{prefix}\s+([^;\n]+)', block, re.M)
+
+
+
+FEATURES = ('town_map_background', 'fly', 'bike', 'surf', 'dig',
+            'escape_rope', 'cut', 'strength', 'npc', 'warp')
+FEATURE_STATES = {'ALLOWED', 'FORBIDDEN', 'DEFERRED', 'NOT_APPLICABLE'}
+EVIDENCE = {'STATIC_PASS', 'GOLD_REFERENCE_PENDING', 'PHONE_PENDING', 'USER_ACCEPTED'}
+
+
+def _asm_rows(source, begin, end, directive):
+    return [v.split(';', 1)[0].strip() for v in entries(source, begin, end, directive)]
+
+
+def check_native_identity(sources, local_symbols, count, tables, gsc):
+    """Check EACH local against an explicit registry, not just table lengths.
+
+    The registry is an independent, reviewed expectation. A new map must
+    register its identity and staged capabilities before release auditing.
+    """
+    errors = []
+    try:
+        manifest = json.loads(sources['tools/johto_native_maps.json'])
+    except (ValueError, TypeError) as exc:
+        return ['invalid Johto map identity contract: ' + str(exc)]
+    if manifest.get('schema_version') != 1 or not isinstance(manifest.get('maps'), list):
+        return ['invalid Johto map identity contract schema']
+    maps = manifest['maps']
+    if len(maps) != count:
+        errors.append(f'Johto identity contract count {len(maps)} != {count}; register new map')
+    town = sources['engine/town_map.asm']
+    town_indices = [v.strip() for row in _asm_rows(town, 'JohtoNativeTownMapIndices::',
+                            'JohtoNativeTownMapIndicesEnd::', 'db') for v in row.split(',')]
+    block = town.split('JohtoNativeTownMapEntries::', 1)[-1].split('JohtoNativeTownMapEntriesEnd::', 1)[0]
+    positions = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*(?:;[^\n]*)?$', block)
+    names = _asm_rows(town, 'JohtoNativeTownMapEntries::', 'JohtoNativeTownMapEntriesEnd::', 'dw')
+    observed = {
+        'header': [v.split(';', 1)[0].strip() for v in tables['header pointers']],
+        'bank': [v.split(';', 1)[0].strip() for v in tables['header banks']],
+        'legacy_alias': [v.split(';', 1)[0].strip() for v in tables['legacy aliases']],
+        'rby_music': [v.split(';', 1)[0].strip() for v in tables['RBY map songs']],
+        'gsc_music': [v.split(';', 1)[0].strip() for v in gsc],
+        'town_map_index': town_indices,
+        'town_map_name': names,
+        'town_map_xy': positions,
+    }
+    for i, spec in enumerate(maps):
+        if not isinstance(spec, dict):
+            errors.append(f'Johto local {i} has no valid identity contract')
+            continue
+        if spec.get('local_id') != i or i >= len(local_symbols) or spec.get('local_symbol') != local_symbols[i][0]:
+            errors.append(f'Johto local {i} ID/symbol mismatch in identity contract')
+        flags = spec.get('feature_status')
+        if (not isinstance(flags, dict) or set(flags) != set(FEATURES)
+                or any(status not in FEATURE_STATES for status in flags.values())):
+            errors.append(f'Johto local {i} has incomplete/invalid feature review statuses')
+        if spec.get('identity_evidence') not in EVIDENCE:
+            errors.append(f'Johto local {i} missing identity review evidence')
+        for name, rows in observed.items():
+            if i >= len(rows):
+                continue  # A separate count check reports truncated tables.
+            actual = rows[i]
+            if name == 'rby_music':
+                actual = [v.strip() for v in actual.split(',')]
+            elif name == 'town_map_index':
+                try:
+                    actual = int(actual, 0)
+                except ValueError:
+                    errors.append(f'Johto local {i} has invalid Town Map index: {actual}')
+                    continue
+            elif name == 'town_map_xy':
+                actual = [int(v) for v in actual]
+            if actual != spec.get(name):
+                errors.append(f'Johto local {i} {name} identity mismatch: '
+                              f'expected {spec.get(name)!r}, found {actual!r}')
+    return errors
 
 
 def audit(root=ROOT):
@@ -82,6 +159,7 @@ def audit(root=ROOT):
                           'JohtoNativeTownMapEntriesEnd::', r'dw')
     if len(map_entries) != count:
         errors.append(f'native Town Map name count {len(map_entries)} != {count}')
+    errors.extend(check_native_identity(sources, locals_, count, records, gsc))
 
     for rel, start, end, kind in [
         ('data/map_header_pointers.asm', 'MapHeaderPointers::', 'MapHeaderPointersEnd:', 'dw'),

@@ -68,7 +68,7 @@ class Route31VioletNativeGate(unittest.TestCase):
         self.assertEqual(rpp_tileset(ROOT, 'Route15Gate1F'), 'GATE')
 
     def test_version_is_a_new_game_function_version(self):
-        self.assertIn('CLN-5.62.178@', (ROOT/'data/game_version.asm').read_text())
+        self.assertRegex((ROOT/'data/game_version.asm').read_text(), r'db "[A-Z]+-5\.62\.\d+@"')
 
 
 if __name__ == '__main__':

@@ -45,6 +45,18 @@ class JohtoWarpArrivalContract(unittest.TestCase):
             errors = audit(root, self.gold)
             self.assertTrue(any(expected in value for value in errors), errors)
 
+    def test_unconditional_reject_after_correct_direction_fails(self):
+        self.mutate('engine/overworld/region_map_lookup.asm',
+                    'cp PLAYER_DIR_UP\n\tjr nz, .blocked\n\tscf',
+                    'cp PLAYER_DIR_UP\n\tjr nz, .blocked\n\tjr .blocked\n\tscf',
+                    'Route32 cave entrance branch')
+
+    def test_unconditional_accept_after_x_guard_fails(self):
+        self.mutate('engine/overworld/region_map_lookup.asm',
+                    'cp 6\n\tjr nz, .blocked\n\tld a, [wYCoord]',
+                    'cp 6\n\tjr nz, .blocked\n\tscf\n\tret\n\tld a, [wYCoord]',
+                    'Route32 cave entrance branch')
+
     def test_reintroducing_cave_auto_step_fails(self):
         self.mutate('engine/overworld/region_map_lookup.asm',
                     '\tdb $ff\n\n; Native cave entrances use',

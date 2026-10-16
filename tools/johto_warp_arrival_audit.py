@@ -99,6 +99,118 @@ def gold_warps(gold: Path, name: str) -> set[tuple[int, int]]:
             re.findall(r'(?m)^\s*warp_event\s+(\d+)\s*,\s*(\d+)\s*,', src)}
 
 
+def _doorway_program(source: str, start: str, end: str) -> tuple[list[str], dict[str, int]]:
+    """Parse the small, deliberate subset used by Route32's collision guards.
+
+    Do not treat a preserved string as evidence that the branch can be reached.
+    Any new opcode must be explicitly modelled before this audit can pass.
+    """
+    if source.count(start + '::') != 1 or source.count(end + '::') != 1:
+        raise ValueError('ambiguous/missing doorway routine: ' + start)
+    body = source.split(start + '::', 1)[1].split(end + '::', 1)[0]
+    instructions: list[str] = []
+    labels: dict[str, int] = {}
+    for raw in body.splitlines():
+        code = raw.split(';', 1)[0].strip()
+        if not code:
+            continue
+        if re.fullmatch(r'\.[A-Za-z_][A-Za-z_0-9]*', code):
+            if code in labels:
+                raise ValueError('duplicate doorway branch label: ' + code)
+            labels[code] = len(instructions)
+        elif re.fullmatch(r'[a-z][a-z0-9]*::?', code, re.I):
+            raise ValueError('unexpected global label in doorway routine: ' + code)
+        else:
+            instructions.append(re.sub(r'\s+', ' ', code))
+    return instructions, labels
+
+
+def _simulate_doorway(source: str, name: str, end: str,
+                      x: int, y: int, direction: str) -> bool:
+    instructions, labels = _doorway_program(source, name, end)
+    registers = {'[wXCoord]': x, '[wYCoord]': y,
+                 '[wPlayerDirection]': direction}
+    a = None
+    zero = False
+    carry = False
+    pc = 0
+    for _ in range(80):
+        if pc >= len(instructions):
+            raise ValueError(name + ' falls through without returning')
+        opcode = instructions[pc]
+        pc += 1
+        if opcode.startswith('ld a, '):
+            operand = opcode[6:].strip()
+            if operand not in registers:
+                raise ValueError(name + ' has unmodelled load: ' + opcode)
+            a = registers[operand]
+        elif opcode.startswith('cp '):
+            operand = opcode[3:]
+            value = int(operand) if operand.isdecimal() else operand
+            zero = a == value
+        elif opcode.startswith('jr '):
+            parts = [p.strip() for p in opcode[3:].split(',')]
+            if len(parts) == 1:
+                jump = True
+                target = parts[0]
+            elif len(parts) == 2 and parts[0] in {'z', 'nz'}:
+                jump = zero if parts[0] == 'z' else not zero
+                target = parts[1]
+            else:
+                raise ValueError(name + ' has unmodelled jump: ' + opcode)
+            if target not in labels:
+                raise ValueError(name + ' jumps outside routine: ' + target)
+            if jump:
+                pc = labels[target]
+        elif opcode == 'scf':
+            carry = True
+        elif opcode == 'and a':
+            carry = False
+            zero = a == 0
+        elif opcode == 'ret':
+            return carry
+        else:
+            raise ValueError(name + ' has unmodelled opcode: ' + opcode)
+    raise ValueError(name + ' does not terminate in 80 steps')
+
+
+def check_route32_doorway(source: str) -> list[str]:
+    """Exercise both returns for canonical and adversarial doorway inputs."""
+    failures = []
+    cases = (
+        (6, 80, 'PLAYER_DIR_UP', True),
+        (6, 80, 'PLAYER_DIR_DOWN', False),
+        (6, 80, 'PLAYER_DIR_LEFT', False),
+        (6, 80, 'PLAYER_DIR_RIGHT', False),
+        (5, 80, 'PLAYER_DIR_UP', False),
+        (7, 80, 'PLAYER_DIR_UP', False),
+        (6, 79, 'PLAYER_DIR_UP', False),
+        (6, 81, 'PLAYER_DIR_UP', False),
+    )
+    for x, y, direction, expected in cases:
+        try:
+            actual = _simulate_doorway(source, 'JohtoRoute32CaveEntranceCheck',
+                                       'JohtoRoute32CaveWarpTileCheck', x, y, direction)
+        except ValueError as exc:
+            failures.append(str(exc))
+            break
+        if actual != expected:
+            failures.append(f'Route32 cave entrance branch rejects/allows wrong input: '
+                            f'({x},{y}) {direction}: expected {expected}, got {actual}')
+    for x, y, expected in ((6, 79, True), (6, 80, False), (5, 79, False),
+                           (7, 79, False), (6, 78, False)):
+        try:
+            actual = _simulate_doorway(source, 'JohtoRoute32CaveWarpTileCheck',
+                                       'GetJohtoWarpArrivalStep', x, y, 'PLAYER_DIR_UP')
+        except ValueError as exc:
+            failures.append(str(exc))
+            break
+        if actual != expected:
+            failures.append(f'Route32 cave Warp tile branch mismatch: ({x},{y}) '
+                            f'expected {expected}, got {actual}')
+    return failures
+
+
 def audit(root: Path, gold: Path | None = None) -> list[str]:
     """Verify Kanto-style collision exit plus the one necessary outdoor step.
 
@@ -116,6 +228,8 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         cave = (root / 'data/mapObjects/JohtoUnionCave1F.asm').read_text()
     except (ValueError, OSError) as exc:
         return [str(exc)]
+
+    errors.extend(check_route32_doorway(runtime))
 
     expected = ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID',
                 79, 6, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')

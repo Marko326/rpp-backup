@@ -17,7 +17,7 @@ pokeblue_obj := audio_blue.o main_blue.o text_blue.o wram_blue.o
 .SECONDEXPANSION:
 # Suppress annoying intermediate file deletion messages.
 .PRECIOUS: %.2bpp
-.PHONY: all clean cleanpic map red blue compare tools
+.PHONY: all clean cleanpic map red blue compare tools johto-map-audit
 
 roms := patches/rppred.gbc patches/rppblue.gbc
 maps := $(roms:.gbc=.map)
@@ -43,10 +43,14 @@ cleanpic: clean
 tools:
 	$(MAKE) -C tools/
 
+# Static-only gate; requires full Gold source. Does not build tools or ROM.
+johto-map-audit:
+	python3 tools/johto_map_release_audit.py --rpp . --gold "$(JOHTO_GOLD_SOURCE)"
+
 
 # Build tools when building the rom.
 # This has to happen before the rules are processed, since that's when scan_includes is run.
-ifeq (,$(filter clean cleanpic tools,$(MAKECMDGOALS)))
+ifeq (,$(filter clean cleanpic tools johto-map-audit,$(MAKECMDGOALS)))
 $(info $(shell $(MAKE) -C tools))
 endif
 
