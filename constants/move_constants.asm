@@ -264,7 +264,7 @@ NUM_ATTACKS EQU const_value
 EXT_MOVE_BASE_ID EQU $0100
 EXT_MOVE_POWER_WHIP EQU EXT_MOVE_BASE_ID
 EXT_MOVE_PLAY_ROUGH EQU EXT_MOVE_BASE_ID + 1
-NUM_EXTENDED_MOVES EQU 10
+NUM_EXTENDED_MOVES EQU 20
 EXT_MOVE_MAX_PILOT_CAPACITY EQU 64
 ; Stored one-byte extended slot values are 1..64 (never 0 = empty).
 ; A sidecar bit discriminates these from old IDs of the same byte value.

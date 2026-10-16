@@ -586,9 +586,8 @@ LearnMoveFromLevelUp:
 	jr .learnSetLoop
 	
 .done
-	; MOVE-5.62.171: the Bellsprout line is the capacity-test carrier.
-	; Bellsprout levels 19-20 offer ordinals 1-2; Weepinbell/Victreebel
-	; levels 22-29 offer ordinals 3-10. The production learnset stays untouched.
+	; MOVE-5.62.172: capacity-test carrier: Bellsprout at 19/20 gets 1/2;
+	; Weepinbell/Victreebel at 22-39 get 3-20 without per-move branches.
 	ld a, [wcf91]
 	cp BELLSPROUT
 	jr z, .bellsproutExtended
@@ -960,7 +959,7 @@ PrepareRelearnableMoveList:
 	ld [hl],$ff
 	ret
 
-; Only Bellsprout's MOVE-5.62.171 capacity experiment uses these extra offers.
+; MOVE-5.62.172: the Bellsprout evolution line uses these extra capacity-test offers.
 ; A candidate is excluded only if that *identity* is already known,
 ; not because its low byte matches ordinary Pound or Karate Chop.
 AppendExperimentalRelearnerMoves:

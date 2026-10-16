@@ -1,4 +1,4 @@
-; MOVE-5.62.171: second-table 16-bit readers for the ten-move
+; MOVE-5.62.171: second-table 16-bit readers using NUM_EXTENDED_MOVES
 ; capacity experiment. The legacy $ff Power Whip escape remains for compatibility;
 ; durable multi-move identity uses one-based slot bytes and sidecar flags.
 ; Call while banked into this section, or via a proper banked wrapper.
