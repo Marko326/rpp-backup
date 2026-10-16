@@ -1,4 +1,4 @@
-DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 15
+DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 45
 
 DisplayTownMap:
 	; MAP-5.62.116: ordinary Town Map region is derived from the CURRENT map.
@@ -254,48 +254,101 @@ DisplayTownMap:
 
 INCLUDE "data/town_map_order.asm"
 
-; MAP-5.62.116: Johto landmarks are independent from global Gen 1 map IDs.
-; Later city maps need only a region test and their original landmark entry.
+; Gold original browse order (45 landmarks, independently of map unlocks). All Johto landmarks remain visible,
+; independently of visited flags, Fly registrations, and unfinished maps.
 JohtoTownMapEntries:
-	db 116, 148
+	db 116, 148 ; NewBarkTownName
 	dw JohtoNewBarkName
-	; Gold data/maps/landmarks.asm: Route 29 = (128+8, 100+16).
-	; Table stores Y first, then X; this is between New Bark and Cherrygrove.
-	db 116, 136
+	db 116, 136 ; Route29Name
 	dw JohtoRoute29TownMapName
-	db 116, 108
+	db 116, 108 ; CherrygroveCityName
 	dw JohtoCherrygroveName
-	; MAP-5.62.139: Gold Route 30 landmark = (100+8, 80+16), store (y, x).
-	db  96, 108
+	db  96, 108 ; Route30Name
 	dw JohtoRoute30TownMapName
-	; Route31 Gold landmark sits between Route30 and Violet City.
-	db  76, 100
+	db  76, 104 ; Route31Name
 	dw JohtoRoute31TownMapName
-	db  76,  92
+	db  76,  92 ; VioletCityName
 	dw JohtoVioletName
-	db 140,  76
-	dw JohtoAzaleaName
-	db 108,  60
-	dw JohtoGoldenrodName
-	db  60,  76
-	dw JohtoEcruteakName
-	db  76,  44
-	dw JohtoOlivineName
-	db 116,  28
-	dw JohtoCianwoodName
-	db  60, 116
-	dw JohtoMahoganyName
-	db  60, 140
-	dw JohtoBlackthornName
-	; Gold Route32 landmark is (X=84, Y=92); append without shifting 0..12.
-	db  92,  84
+	db  74,  93 ; SproutTowerName
+	dw JohtoBrowseSproutTowerName
+	db 108,  92 ; Route32Name
 	dw JohtoRoute32TownMapName
-	; Gold landmark Union Cave: (X=84, Y=124), separate from Route32.
-	db 124,  84
+	db  92,  84 ; RuinsOfAlphName
+	dw JohtoBrowseRuinsOfAlphName
+	db 140,  92 ; UnionCaveName
 	dw JohtoUnionCaveTownMapName
+	db 140,  90 ; Route33Name
+	dw JohtoBrowseRoute33Name
+	db 140,  76 ; AzaleaTownName
+	dw JohtoAzaleaName
+	db 138,  78 ; SlowpokeWellName
+	dw JohtoBrowseSlowpokeWellName
+	db 136,  60 ; IlexForestName
+	dw JohtoBrowseIlexForestName
+	db 128,  60 ; Route34Name
+	dw JohtoBrowseRoute34Name
+	db 108,  60 ; GoldenrodCityName
+	dw JohtoGoldenrodName
+	db 108,  58 ; RadioTowerName
+	dw JohtoBrowseRadioTowerName
+	db  92,  60 ; Route35Name
+	dw JohtoBrowseRoute35Name
+	db  76,  60 ; NationalParkName
+	dw JohtoBrowseNationalParkName
+	db  76,  72 ; Route36Name
+	dw JohtoBrowseRoute36Name
+	db  68,  76 ; Route37Name
+	dw JohtoBrowseRoute37Name
+	db  60,  76 ; EcruteakCityName
+	dw JohtoEcruteakName
+	db  58,  78 ; TinTowerName
+	dw JohtoBrowseTinTowerName
+	db  58,  74 ; BurnedTowerName
+	dw JohtoBrowseBurnedTowerName
+	db  60,  60 ; Route38Name
+	dw JohtoBrowseRoute38Name
+	db  64,  44 ; Route39Name
+	dw JohtoBrowseRoute39Name
+	db  76,  44 ; OlivineCityName
+	dw JohtoOlivineName
+	db  78,  46 ; LighthouseName
+	dw JohtoBrowseLighthouseName
+	db  80,  36 ; Route40Name
+	dw JohtoBrowseRoute40Name
+	db 108,  36 ; WhirlIslandsName
+	dw JohtoBrowseWhirlIslandsName
+	db 116,  36 ; Route41Name
+	dw JohtoBrowseRoute41Name
+	db 116,  28 ; CianwoodCityName
+	dw JohtoCianwoodName
+	db  60, 100 ; Route42Name
+	dw JohtoBrowseRoute42Name
+	db  60,  92 ; MtMortarName
+	dw JohtoBrowseMtMortarName
+	db  60, 116 ; MahoganyTownName
+	dw JohtoMahoganyName
+	db  52, 116 ; Route43Name
+	dw JohtoBrowseRoute43Name
+	db  44, 116 ; LakeOfRageName
+	dw JohtoBrowseLakeOfRageName
+	db  60, 128 ; Route44Name
+	dw JohtoBrowseRoute44Name
+	db  54, 138 ; IcePathName
+	dw JohtoBrowseIcePathName
+	db  60, 140 ; BlackthornCityName
+	dw JohtoBlackthornName
+	db  52, 140 ; DragonsDenName
+	dw JohtoBrowseDragonsDenName
+	db  80, 140 ; Route45Name
+	dw JohtoBrowseRoute45Name
+	db  88, 120 ; DarkCaveName
+	dw JohtoBrowseDarkCaveName
+	db 104, 132 ; Route46Name
+	dw JohtoBrowseRoute46Name
+	db  84, 156 ; SilverCaveName
+	dw JohtoBrowseSilverCaveName
 JohtoTownMapEntriesEnd:
 ASSERT JohtoTownMapEntriesEnd - JohtoTownMapEntries == 4 * NUM_JOHTO_TOWNMAP_ENTRIES
-
 JohtoNewBarkName:        db "New Bark_Town@"
 JohtoRoute29TownMapName: db "Route 29@"
 JohtoCherrygroveName:    db "Cherrygrove_City@"
@@ -312,11 +365,42 @@ JohtoCianwoodName:       db "Cianwood_City@"
 JohtoMahoganyName:       db "Mahogany_Town@"
 JohtoBlackthornName:     db "Blackthorn_City@"
 
+JohtoBrowseSproutTowerName: db "Sprout_Tower@"
+JohtoBrowseRuinsOfAlphName: db "Ruins_Of Alph@"
+JohtoBrowseRoute33Name: db "Route 33@"
+JohtoBrowseSlowpokeWellName: db "Slowpoke_Well@"
+JohtoBrowseIlexForestName: db "Ilex_Forest@"
+JohtoBrowseRoute34Name: db "Route 34@"
+JohtoBrowseRadioTowerName: db "Radio Tower@"
+JohtoBrowseRoute35Name: db "Route 35@"
+JohtoBrowseNationalParkName: db "National_Park@"
+JohtoBrowseRoute36Name: db "Route 36@"
+JohtoBrowseRoute37Name: db "Route 37@"
+JohtoBrowseTinTowerName: db "Tin Tower@"
+JohtoBrowseBurnedTowerName: db "Burned_Tower@"
+JohtoBrowseRoute38Name: db "Route 38@"
+JohtoBrowseRoute39Name: db "Route 39@"
+JohtoBrowseLighthouseName: db "Lighthouse@"
+JohtoBrowseRoute40Name: db "Route 40@"
+JohtoBrowseWhirlIslandsName: db "Whirl_Islands@"
+JohtoBrowseRoute41Name: db "Route 41@"
+JohtoBrowseRoute42Name: db "Route 42@"
+JohtoBrowseMtMortarName: db "Mt.Mortar@"
+JohtoBrowseRoute43Name: db "Route 43@"
+JohtoBrowseLakeOfRageName: db "Lake Of_Rage@"
+JohtoBrowseRoute44Name: db "Route 44@"
+JohtoBrowseIcePathName: db "Ice Path@"
+JohtoBrowseDragonsDenName: db "Dragon's_Den@"
+JohtoBrowseRoute45Name: db "Route 45@"
+JohtoBrowseDarkCaveName: db "Dark Cave@"
+JohtoBrowseRoute46Name: db "Route 46@"
+JohtoBrowseSilverCaveName: db "Silver Cave@"
+
 ; MAP-5.62.137 P2-1 Town Map follow-up: use the true route landmark.
 ; Both the blinking player marker and browse starting point use the same ID
 ; mapping. Keep the list independent of Fly destinations.
 JohtoNativeTownMapIndices::
-	db 0, 1, 2, 3, 4, 5, 5, 13, 14
+	db 0, 1, 2, 3, 4, 5, 5, 7, 9
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 
@@ -359,7 +443,7 @@ GetJohtoTownMapCurrentIndex:
 	ld a, 4
 	ret
 .route32:
-	ld a, 13
+	ld a, 7
 	ret
 .violet
 	ld a, 5
@@ -367,7 +451,7 @@ GetJohtoTownMapCurrentIndex:
 
 LoadJohtoTownMapEntry:
 ; in A = valid town index, out B = y, C = x, HL = localized name.
-	; MAP-5.62.116: keep the 11-record table bounded, even on stale WRAM.
+	; Keep the complete Gold landmark table bounded, even on stale WRAM.
 	cp NUM_JOHTO_TOWNMAP_ENTRIES
 	jr c, .inRange
 	xor a
@@ -1128,9 +1212,9 @@ JohtoNativeTownMapEntries::
 	dw JohtoVioletName
 	db 116, 94
 	dw JohtoVioletName
-	db 92, 84
+	db 108, 92
 	dw JohtoRoute32TownMapName
-	db 124, 84
+	db 140, 92
 	dw JohtoUnionCaveTownMapName
 JohtoNativeTownMapEntriesEnd::
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
