@@ -1064,7 +1064,8 @@ ItemUseMedicine:
 	ld [wPartyMenuTypeOrMessageID],a
 	ld a,$ff
 	ld [wUpdateSpritesEnabled],a
-	call GoBackToPartyMenu
+	; TEXT-5.62.165: redraw the Party background after level-up overlays.
+	call GoBackToPartyMenuClean
 .getPartyMonDataAddress
 	jp c,.canceledItemUse
 	ld hl,wPartyMons
@@ -2477,6 +2478,11 @@ ItemUsePPRestore:
 	ld a,1
 	ld [wActionResultOrTookBattleTurn],a
 	call RemoveUsedItem
+	; TEXT-5.62.165: one successful PP restore ends the battle item action.
+	; Keep the field-only repeat selection when another item remains.
+	ld a,[wIsInBattle]
+	and a
+	jr nz,.finishUsedItemDropPartySlot
 	ld a,[wMaxItemQuantity]
 	and a
 	jr z,.finishUsedItemDropPartySlot

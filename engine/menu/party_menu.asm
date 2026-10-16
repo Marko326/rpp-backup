@@ -160,10 +160,10 @@ RedrawPartyMenu_:
 	ld a,[hl]
 	push af
 	push hl
-	set 6,[hl] ; turn off letter printing delay
 	ld a,[wPartyMenuTypeOrMessageID] ; message ID
 	cp a,$F0
 	jr nc,.printItemUseMessage
+	set 6,[hl] ; fixed menu prompts do not use the letter printing delay
 	add a
 	ld hl,PartyMenuMessagePointers
 	ld b,0
@@ -182,6 +182,9 @@ RedrawPartyMenu_:
 	call Delay3
 	jp GBPalNormal
 .printItemUseMessage
+	; TEXT-5.62.165: item results follow the selected text speed.
+	; Make each letter visible instead of waiting for the entire redraw.
+	res 6,[hl]
 	and a,$0F
 	ld hl,PartyMenuItemUseMessagePointers
 	add a
@@ -196,6 +199,8 @@ RedrawPartyMenu_:
 	ld hl,wPartyMonNicks
 	call GetPartyMonName
 	pop hl
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
 	call PrintText
 	jr .done
 

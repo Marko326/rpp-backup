@@ -44,13 +44,20 @@ Status legend:
 - `[?]` undecided, or the task needs a more precise definition
 - `[-]` intentionally deferred / not planned after an explicit user decision
 
+## TEXT-5.62.165 — PP 战斗回合、连续道具升级界面及结果文字速度正式验收（163～165 累计提交）
+
+- [x] **163：战斗 PP 恢复一次成功使用即结束道具动作**：`ItemUsePPRestore .done` 已扣除一件并写入 `wActionResultOrTookBattleTurn = 1` 后，先看 `wIsInBattle`；战斗中走既有完成出口，不再在库存有余量时重入队伍／技能列表，避免后续取消把已成功使用的回合标志清零。场外库存充足时仍允许连续使用。用户在 164 回归反馈中确认先前要求的相关战斗 PP 场景没有问题；并非所有道具／物种边界均逐项有独立测试报告。
+- [x] **164：升级后能力值窗口边框不再残留**：在 `ItemUseMedicine .returnToParty` 通过既有 `GoBackToPartyMenuClean` 重新绘制被升级能力值窗口覆盖的队伍背景，保留场外连续使用。用户确认修复有效，并测试了返回、取消及后续道具使用场景，反馈无异常。底部 `Use item on which Pokémon?` 是正常提示，不能误删。
+- [x] **165：结果文字按所选速度逐字显示**：`RedrawPartyMenu_` 只对 `$F0`～`$F8` 道具结果消息清除 `wd730` bit6 的无延迟标志，并在 `PrintText` 前启用 `H_AUTOBGTRANSFERENABLED`；普通菜单固定提示仍即时绘制，公共退出恢复原 `wd730` 值。用户明确在 Fast／Normal／Slow 三档测试成功，结果先逐字出现，然后正常弹出升级能力值面板，观感正常。
+- [~] **验收边界／静态检查**：尚未收到所有回复 HP／解除异常道具在三档速度下、所有满 PP／连续取消边界逐项测试的报告。无 MAP，本环境禁止编译／链接 ROM；静态源码与补丁回放不能证明所有运行路径。163～165 清理仅改注释与项目文档，执行指令维持用户已测状态。完整结论在 `docs/ITEM_MENU_TEXT_165_ACCEPTANCE.md`。
+- [ ] **后续独立事项**：MoveDex 映射 Rock Polish 对 AGILITY Seen／Use 的过滤（用户已决定方案 B）、旧 `$F0` 是否回收、重复名称格式化的去重优化等均继续另案；不要在本次已验收的菜单功能上为优化冒险重构。
+
 ## MOVE-5.62.162 — 岩石打磨 PP 道具名称显示（用户已测正常；战斗 PP 道具回合问题另案）
 
 - [x] **162 名称显示实测反馈**：PP Up、Ether、Max Ether、Leppa Berry 共用的单招选择列表按当前队伍物种把 AGILITY `$61` 显示为 `Rock Polish`；普通 Agility 保持原名。Elixir／Max Elixir 继续走原全招式恢复入口。用户反馈 162 已测试，目前没有观察到异常；这并不等于每种道具与全部边界都分别实测。
 - [x] **提示文字的实际覆盖范围**：`text.asm` 的 `_PPIncreasedText` 与 `_PPMaxedOutText` 读取 `wcf4b`，会显示具体招式名，162 已在 PP Up 结果文字装载前进行物种名称映射。`_PPRestoredText` 仅提示 “PP was restored.”，`_PPNoEffectText` 也不含技能名；Ether／Elixir 的成功／无效提示无需改名。这一差异已从源码核对，不应误记为“全部 PP 道具提示都包含招式名称”。
-- [ ] **战斗中 PP 恢复道具须一次成功使用＝消耗一件＋立即占用一个回合**（用户报告现状可在选择列表反复使用，且可不消耗回合；待单独修复和实测）：适用于允许使用背包的野外战斗中 Ether、Max Ether、Elixir、Max Elixir、Leppa Berry 等；成功后应立即退出道具／招式／队伍选择，进入该回合对战结算，不允许同回合继续给其他招式或宝可梦重复使用。训练师战仍按现有规则禁用背包；PP Up 在 `ItemUsePPUp` 已主动禁止战斗使用，不要为了此项意外开放。
-- [ ] **已定位的源码审查线索／下一版修复约束**：`engine/items/items.asm` 的 `ItemUsePPRestore .done` 成功扣道具并置 `wActionResultOrTookBattleTurn = 1` 后，只根据库存是否剩余就回到 `.resumeMoveSelection`／`.returnToPartyAfterPPUse`，没有区分 `wIsInBattle`；若之后从重复选择链取消，`.itemNotUsed` 又会将该结果置零。`engine/battle/core.asm` 的 `UseBagItem` 则在结果为零时返回背包，结果成功时才退出道具阶段。因此存在“已实际使用道具，之后取消使本回合不结算”的明确逻辑风险。修复只限制**战斗中成功使用**的重入；场外 ITEM-5.62.28 已验收的连续使用、光标续选以及无效果／取消不耗道具与不耗回合必须保留。
-- [ ] **未来最小测试**：野外战斗中对单招 Ether／Max Ether／Leppa Berry 和全招 Elixir／Max Elixir 各成功使用一次，核对只扣一件、只生效一次、立即交由对方行动并消耗本回合；库存多件、满 PP 无效、按 B 取消、最后一件、非当前上场宝可梦、战斗结束返回菜单；场外连续使用与原返回路径正常。用户此次只要求登记 TODO，**162 没有修复战斗道具回合机制**。
+- [x] **162 当时记录的战斗 PP 回合问题已于 163 单独修复**：原先成功使用后仍可按库存进入下一轮选择，取消又可能清零已成功使用的回合标志；最终在 163 的成功出口加入战斗状态判断，用户随后确认相关回归未见问题。162 本身没有实施这一修复，历史版本边界保持不变。
+- [x] **162 当时记录的升级能力值框残留已于 164 单独修复**，之后 165 让道具结果文字依设置逐字显示；本段保留为 162 的历史问题来源，不再把它们标成当前未解决的 TODO。
 
 ## MOVE-5.62.161 — 岩石打磨战斗外名称显示（用户实测验收；准备 Git 提交）
 
