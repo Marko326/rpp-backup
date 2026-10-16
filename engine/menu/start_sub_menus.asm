@@ -201,8 +201,9 @@ StartMenu_Pokemon:
 	jp z,.loop
 	jp CloseTextDisplay
 .surf
-	bit 4,a ; does the player have the Soul Badge?
-	jp z,.newBadgeRequired
+	; SRF-5.62.187: Route32 and cave bypass Johto badges; Kanto Soul preserved.
+	callba JohtoSurfBadgeAllowed
+	jp nc, .newBadgeRequired
 	callba IsSurfingAllowed
 	ld hl,wd728
 	bit 1,[hl]

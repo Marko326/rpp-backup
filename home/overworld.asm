@@ -1978,6 +1978,19 @@ CollisionCheckOnWater::
 	call CheckForJumpingAndTilePairCollisions
 	jr c,.collision
 	predef GetTileAndCoordsInFrontOfPlayer ; get tile in front of player (puts it in c and [wTileInFrontOfPlayer])
+	; SRF-5.62.187: approved Route32 and cave water uses Gold 16x16 cells.
+	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr z, .johtoWater
+	cp JOHTO_UNION_CAVE
+	jr nz, .legacyWater
+.johtoWater
+	callba IsJohtoSurfWaterAhead
+	jr c, .noCollision ; water: keep surfing, despite 8x8 wall-ID aliases
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a ; preserve the tile for the existing walkable shore test
+	jr .checkIfNextTileIsPassable
+.legacyWater
 	ld a,[wTileInFrontOfPlayer] ; tile in front of player
 	cp a,$14 ; water tile
 	jr z,.noCollision ; keep surfing if it's a water tile

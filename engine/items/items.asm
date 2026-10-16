@@ -3343,7 +3343,16 @@ SendNewMonToBox:
 ; used for surfing and fishing
 ; unsets carry if it is, sets carry if not
 IsNextTileShoreOrWater:
+	; SRF-5.62.187: Route32 and cave share the validated Gold water query.
 	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr z, .johtoWater
+	cp JOHTO_UNION_CAVE
+	jr nz, .legacyWater
+.johtoWater
+	callba JohtoSurfStartOnWater ; carry CLEAR = approved water ahead
+	ret
+.legacyWater
 	ld hl, WaterTilesets
 	ld de,1
 	call IsInArray

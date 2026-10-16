@@ -3272,6 +3272,7 @@ INCLUDE "data/mapHeaders/JohtoUnionCave1F.asm"
 INCLUDE "data/mapObjects/JohtoUnionCave1F.asm"
 INCLUDE "scripts/JohtoUnionCave1F.asm"
 JohtoUnionCave1FBlocks: INCBIN "maps/JohtoUnionCave1F.blk"
+INCLUDE "engine/overworld/johto_union_cave_surf.asm"
 
 ; R31: expanded-ROM-only edge policy keeps the nearly full ROM0 unchanged
 ; except for the small far-call. Carry = block move; clear = proceed with

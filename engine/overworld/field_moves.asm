@@ -27,14 +27,15 @@ TrySurf:
 	call CheckForTilePairCollisions2
 	jr c, .no
 
-; First check whether a party Pokemon knows SURF and the player has the proper badge.
+; Require SURF in the party; the map-specific badge policy follows.
 	ld d, SURF
 	call HasPartyMove
 	jr nz, .cannotSurf
 
-	ld a, [wObtainedKantoBadges]
-	bit 4, a ; SOUL_BADGE
-	jr z, .cannotSurf
+	; SRF-5.62.187: Route32 and cave use the temporary badge-free policy;
+	; retain Kanto Soul Badge outside these two reviewed maps.
+	callba JohtoSurfBadgeAllowed
+	jr nc, .cannotSurf
 
 ; If SURF can be used, check whether surfing is allowed on the current map.
 	call Text2_EnterTheText
@@ -276,6 +277,16 @@ IsHeadbuttTile:
 
 
 IsSurfTile:
+	; SRF-5.62.187: two approved maps share Gold water, not 8x8 wall IDs.
+	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr z, .johtoWater
+	cp JOHTO_UNION_CAVE
+	jr nz, .legacyWater
+.johtoWater
+	callba IsJohtoSurfWaterAhead
+	ret
+.legacyWater
 	ld a, [wCurMapTileset]
 	ld hl, WaterTilesets2
 	ld de,1
