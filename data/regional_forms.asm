@@ -545,6 +545,7 @@ AlolanRattataLevelMoves::
 	db 31,DOUBLE_EDGE
 	db 34,COUNTER
 	db 0
+	regional_learnset_capacity_guard AlolanRattataLevelMoves
 
 AlolanRattataEvolutions::
 	; No time-of-day system: use the canonical level threshold without night.
@@ -615,6 +616,7 @@ AlolanRaticateLevelMoves::
 	db 39,DOUBLE_EDGE
 	db 44,COUNTER
 	db 0
+	regional_learnset_capacity_guard AlolanRaticateLevelMoves
 AlolanRaticateEvolutions::
 	db 0
 AlolanRaticatePreviewPalette::
@@ -676,6 +678,7 @@ AlolanVulpixLevelMoves::
 	db 46,ICE_BEAM
 	db 50,DAZZLINGLEAM
 	db 0
+	regional_learnset_capacity_guard AlolanVulpixLevelMoves
 
 AlolanVulpixEvolutions::
 	db EV_ITEM,ICE_STONE,30,NINETALES
@@ -741,6 +744,7 @@ AlolanNinetalesLevelMoves::
 	; FLEUR_CANNON move constant. Do not silently substitute another move.
 	db 75,AMNESIA
 	db 0
+	regional_learnset_capacity_guard AlolanNinetalesLevelMoves
 
 AlolanNinetalesEvolutions::
 	db 0
@@ -807,6 +811,7 @@ AlolanRaichuLevelMoves::
 	db 45,PSYCHIC_M
 	db 52,THUNDER
 	db 0
+	regional_learnset_capacity_guard AlolanRaichuLevelMoves
 
 AlolanRaichuEvolutions::
 	db 0
@@ -873,6 +878,7 @@ AlolanSandshrewLevelMoves::
 	db 45,X_SCISSOR
 	db 55,EARTHQUAKE
 	db 0
+	regional_learnset_capacity_guard AlolanSandshrewLevelMoves
 
 AlolanSandshrewEvolutions::
 	db EV_LEVEL,22,SANDSLASH
@@ -938,6 +944,7 @@ AlolanSandslashLevelMoves::
 	db 55,EARTHQUAKE
 	db 66,GUILLOTINE
 	db 0
+	regional_learnset_capacity_guard AlolanSandslashLevelMoves
 
 AlolanSandslashEvolutions::
 	db 0
@@ -1000,6 +1007,7 @@ AlolanDiglettLevelMoves::
 	db 30,EARTHQUAKE
 	db 35,NIGHT_SLASH
 	db 0
+	regional_learnset_capacity_guard AlolanDiglettLevelMoves
 
 AlolanDiglettEvolutions::
 	db EV_LEVEL,26,DUGTRIO
@@ -1067,6 +1075,7 @@ AlolanDugtrioLevelMoves::
 	db 45,METEOR_MASH
 	db 53,SKULL_BASH
 	db 0
+	regional_learnset_capacity_guard AlolanDugtrioLevelMoves
 
 AlolanDugtrioEvolutions::
 	db 0
@@ -1134,6 +1143,7 @@ AlolanGeodudeLevelMoves::
 	db 47,ROCK_SLIDE
 	db 51,EXPLOSION
 	db 0
+	regional_learnset_capacity_guard AlolanGeodudeLevelMoves
 
 AlolanGeodudeEvolutions::
 	db EV_LEVEL,25,GRAVELER
@@ -1202,6 +1212,7 @@ AlolanGravelerLevelMoves::
 	db 53,ROCK_SLIDE
 	db 57,EXPLOSION
 	db 0
+	regional_learnset_capacity_guard AlolanGravelerLevelMoves
 
 AlolanGravelerEvolutions::
 	db EV_TRADE,1,GOLEM
@@ -1274,6 +1285,7 @@ AlolanGolemLevelMoves::
 	db 61,SKULL_BASH
 	db 75,EXPLOSION
 	db 0
+	regional_learnset_capacity_guard AlolanGolemLevelMoves
 
 AlolanGolemEvolutions::
 	db 0
@@ -1340,6 +1352,7 @@ AlolanGrimerLevelMoves::
 	db 38,GUNK_SHOT
 	db 42,ACID_ARMOR
 	db 0
+	regional_learnset_capacity_guard AlolanGrimerLevelMoves
 
 AlolanGrimerEvolutions::
 	db EV_LEVEL,38,MUK
@@ -1408,6 +1421,7 @@ AlolanMukLevelMoves::
 	db 47,GUNK_SHOT
 	db 50,ACID_ARMOR
 	db 0
+	regional_learnset_capacity_guard AlolanMukLevelMoves
 
 AlolanMukEvolutions::
 	db 0
@@ -1478,6 +1492,7 @@ AlolanMarowakLevelMoves::
 	db 58,DOUBLE_EDGE
 	db 62,OUTRAGE
 	db 0
+	regional_learnset_capacity_guard AlolanMarowakLevelMoves
 
 AlolanMarowakEvolutions::
 	db 0

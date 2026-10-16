@@ -37,6 +37,7 @@ AlolaMeowthLevelMoves::
 	db 49,NIGHT_SLASH
 	db 55,DARK_PULSE
 	db 0
+	regional_learnset_capacity_guard AlolaMeowthLevelMoves
 
 AlolaMeowthEvolutions::
 	db EV_LEVEL,28,PERSIAN
@@ -86,6 +87,7 @@ AlolaPersianLevelMoves::
 	db 61,NIGHT_SLASH
 	db 65,DARK_PULSE
 	db 0
+	regional_learnset_capacity_guard AlolaPersianLevelMoves
 
 AlolaPersianEvolutions::
 	db 0
@@ -131,6 +133,7 @@ AlolaExeggutorLevelMoves::
 	db 27,ZEN_HEADBUTT
 	db 47,OUTRAGE
 	db 0
+	regional_learnset_capacity_guard AlolaExeggutorLevelMoves
 
 AlolaExeggutorEvolutions::
 	db 0
@@ -178,6 +181,7 @@ GalarMeowthLevelMoves::
 	db 40,CRUNCH
 	db 44,THRASH
 	db 0
+	regional_learnset_capacity_guard GalarMeowthLevelMoves
 
 GalarMeowthEvolutions::
 	db EV_LEVEL,28,PERSIAN
@@ -231,6 +235,7 @@ GalarPonytaLevelMoves::
 	db 45,EXTREMESPEED
 	db 49,MOONBLAST
 	db 0
+	regional_learnset_capacity_guard GalarPonytaLevelMoves
 
 GalarPonytaEvolutions::
 	db EV_LEVEL,40,RAPIDASH
@@ -285,6 +290,7 @@ GalarRapidashLevelMoves::
 	db 45,EXTREMESPEED
 	db 49,MOONBLAST
 	db 0
+	regional_learnset_capacity_guard GalarRapidashLevelMoves
 
 GalarRapidashEvolutions::
 	db 0
@@ -334,6 +340,7 @@ GalarSlowpokeLevelMoves::
 	db 45,PSYCHIC_M
 	db 58,RECOVER
 	db 0
+	regional_learnset_capacity_guard GalarSlowpokeLevelMoves
 
 GalarSlowpokeEvolutions::
 	db EV_ITEM,MOON_STONE,1,SLOWKING
@@ -386,6 +393,7 @@ GalarSlowbroLevelMoves::
 	db 49,PSYCHIC_M
 	db 68,RECOVER
 	db 0
+	regional_learnset_capacity_guard GalarSlowbroLevelMoves
 
 GalarSlowbroEvolutions::
 	db 0
@@ -434,6 +442,7 @@ GalarFarfetchdLevelMoves::
 	db 50,BODY_SLAM
 	db 55,POISON_JAB
 	db 0
+	regional_learnset_capacity_guard GalarFarfetchdLevelMoves
 
 GalarFarfetchdEvolutions::
 	db 0
@@ -488,6 +497,7 @@ GalarMrmimeLevelMoves::
 	db 48,PSYCHIC_M
 	db 52,CONFUSE_RAY
 	db 0
+	regional_learnset_capacity_guard GalarMrmimeLevelMoves
 
 GalarMrmimeEvolutions::
 	db 0
@@ -540,6 +550,7 @@ GalarArticunoLevelMoves::
 	db 92,HURRICANE
 	db 99,AEROBLAST
 	db 0
+	regional_learnset_capacity_guard GalarArticunoLevelMoves
 
 GalarArticunoEvolutions::
 	db 0
@@ -589,6 +600,7 @@ GalarZapdosLevelMoves::
 	db 85,HI_JUMP_KICK
 	db 92,HURRICANE
 	db 0
+	regional_learnset_capacity_guard GalarZapdosLevelMoves
 
 GalarZapdosEvolutions::
 	db 0
@@ -639,6 +651,7 @@ GalarMoltresLevelMoves::
 	db 92,HURRICANE
 	db 99,NIGHT_SLASH
 	db 0
+	regional_learnset_capacity_guard GalarMoltresLevelMoves
 
 GalarMoltresEvolutions::
 	db 0
@@ -692,6 +705,7 @@ HisuiSneaselLevelMoves::
 	db 44,X_SCISSOR
 	db 50,GUNK_SHOT
 	db 0
+	regional_learnset_capacity_guard HisuiSneaselLevelMoves
 
 HisuiSneaselEvolutions::
 	db EV_ITEM,MOON_STONE,1,WEAVILE
@@ -743,6 +757,7 @@ PaldeaTaurosCombatLevelMoves::
 	db 63,DOUBLE_EDGE
 	db 80,OUTRAGE
 	db 0
+	regional_learnset_capacity_guard PaldeaTaurosCombatLevelMoves
 
 PaldeaTaurosCombatEvolutions::
 	db 0
@@ -793,6 +808,7 @@ PaldeaTaurosAquaLevelMoves::
 	db 63,AQUA_TAIL
 	db 80,OUTRAGE
 	db 0
+	regional_learnset_capacity_guard PaldeaTaurosAquaLevelMoves
 
 PaldeaTaurosAquaEvolutions::
 	db 0
@@ -842,6 +858,7 @@ GalarPersianPerrserkerLevelMoves::
 	db 48,CRUNCH
 	db 54,THRASH
 	db 0
+	regional_learnset_capacity_guard GalarPersianPerrserkerLevelMoves
 
 GalarPersianPerrserkerEvolutions::
 	db 0
@@ -895,6 +912,7 @@ HisuiWeavileSneaslerLevelMoves::
 	db 44,X_SCISSOR
 	db 50,GUNK_SHOT
 	db 0
+	regional_learnset_capacity_guard HisuiWeavileSneaslerLevelMoves
 
 HisuiWeavileSneaslerEvolutions::
 	db 0

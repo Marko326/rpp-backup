@@ -300,13 +300,23 @@ PackedLearnsetDelta = 0
 PackedLearnsetFirstCode = 0
 PackedLearnsetSecondCode = 0
 PackedLearnsetDeclarationCount = 0
+PackedLearnsetEntryCount = 0
 PackedLearnsetActive = 0
+
+; NPC relearner currently allocates 32 rows, counting duplicates and every
+; level-up entry (not just unique moves). The regional form tables below use
+; uncompressed level,move pairs and a 1-byte zero sentinel.
+regional_learnset_capacity_guard: MACRO
+	ASSERT ((@ - \1 - 1) % 2) == 0
+	ASSERT ((@ - \1 - 1) / 2) + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
+ENDM
 
 packed_learnset_start: MACRO
 	ASSERT PackedLearnsetActive == 0
 	ASSERT PackedLearnsetPending == 0
 PackedLearnsetActive = 1
 PackedLearnsetDeclarationCount = PackedLearnsetDeclarationCount + 1
+PackedLearnsetEntryCount = 0
 PackedLearnsetPreviousLevel = 0
 ENDM
 
@@ -316,6 +326,9 @@ level_move: MACRO
 	ASSERT \1 <= MAX_LEVEL
 	ASSERT \1 >= PackedLearnsetPreviousLevel
 	ASSERT \2 != 0
+; Guard every ordinary learnset at assembly time; duplicates count as rows.
+PackedLearnsetEntryCount = PackedLearnsetEntryCount + 1
+	ASSERT PackedLearnsetEntryCount + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
 PackedLearnsetDelta = \1 - PackedLearnsetPreviousLevel
 	ASSERT PackedLearnsetDelta <= $ff
 IF PackedLearnsetPending == 0
@@ -347,6 +360,7 @@ ENDM
 
 packed_learnset_end: MACRO
 	ASSERT PackedLearnsetActive == 1
+	ASSERT PackedLearnsetEntryCount + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
 IF PackedLearnsetPending != 0
 PackedLearnsetFirstCode = PackedLearnsetPendingDelta
 IF PackedLearnsetFirstCode >= $f
@@ -364,5 +378,6 @@ ELSE
 ENDC
 PackedLearnsetPending = 0
 PackedLearnsetPreviousLevel = 0
+PackedLearnsetEntryCount = 0
 PackedLearnsetActive = 0
 ENDM

@@ -54,6 +54,7 @@ HisuiGrowlitheLevelMoves::
 	db 43,OUTRAGE
 	db 45,FLARE_BLITZ
 	db 0
+	regional_learnset_capacity_guard HisuiGrowlitheLevelMoves
 
 HisuiGrowlitheEvolutions::
 	db EV_ITEM,FIRE_STONE,30,ARCANINE
@@ -118,6 +119,7 @@ HisuiArcanineLevelMoves::
 	db 43,OUTRAGE
 	db 45,FLARE_BLITZ
 	db 0
+	regional_learnset_capacity_guard HisuiArcanineLevelMoves
 
 HisuiArcanineEvolutions::
 	db 0
@@ -177,6 +179,7 @@ HisuiVoltorbLevelMoves::
 	db 46,THUNDER
 	db 48,SUBSTITUTE
 	db 0
+	regional_learnset_capacity_guard HisuiVoltorbLevelMoves
 
 HisuiVoltorbEvolutions::
 	db EV_LEVEL,30,ELECTRODE
@@ -237,6 +240,7 @@ HisuiElectrodeLevelMoves::
 	db 54,THUNDER
 	db 58,SUBSTITUTE
 	db 0
+	regional_learnset_capacity_guard HisuiElectrodeLevelMoves
 
 HisuiElectrodeEvolutions::
 	db 0
@@ -295,6 +299,7 @@ GalarZigzagoonLevelMoves::
 	db 37,SUBSTITUTE
 	db 41,EXTREMESPEED
 	db 0
+	regional_learnset_capacity_guard GalarZigzagoonLevelMoves
 
 GalarZigzagoonEvolutions::
 	db EV_LEVEL,20,LINOONE
@@ -354,6 +359,7 @@ GalarLinooneLevelMoves::
 	db 43,SUBSTITUTE
 	db 48,EXTREMESPEED
 	db 0
+	regional_learnset_capacity_guard GalarLinooneLevelMoves
 
 GalarLinooneEvolutions::
 	db 0
@@ -412,6 +418,7 @@ GalarWeezingLevelMoves::
 	db 51,GUNK_SHOT
 	db 57,EXPLOSION
 	db 0
+	regional_learnset_capacity_guard GalarWeezingLevelMoves
 
 GalarWeezingEvolutions::
 	db 0
@@ -472,6 +479,7 @@ GalarSlowkingLevelMoves::
 	db 54,HEX
 	db 58,RECOVER
 	db 0
+	regional_learnset_capacity_guard GalarSlowkingLevelMoves
 
 GalarSlowkingEvolutions::
 	db 0
@@ -530,6 +538,7 @@ PaldeaBlazeTaurosLevelMoves::
 	db 71,GIGA_IMPACT
 	db 80,OUTRAGE
 	db 0
+	regional_learnset_capacity_guard PaldeaBlazeTaurosLevelMoves
 
 PaldeaBlazeTaurosEvolutions::
 	db 0

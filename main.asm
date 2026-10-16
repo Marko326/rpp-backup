@@ -3147,7 +3147,7 @@ INCLUDE "engine/intro_sfx_stop.asm"
 SECTION "Elevator End SFX Wait", ROMX
 INCLUDE "engine/overworld/elevator_sfx_wait.asm"
 
-; MOVE-5.62.171: ten-entry capacity experiment; keep the table/reader isolated so the next 20-entry expansion can reuse the same section.
+; MOVE-5.62.173: forty-entry second-table experiment; keep the ROMX table/reader isolated.
 SECTION "Experimental Extended Move Prototype", ROMX
 INCLUDE "data/extended_moves.asm"
 INCLUDE "engine/battle/extended_move_loader.asm"

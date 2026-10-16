@@ -586,40 +586,9 @@ LearnMoveFromLevelUp:
 	jr .learnSetLoop
 	
 .done
-	; MOVE-5.62.172: capacity-test carrier: Bellsprout at 19/20 gets 1/2;
-	; Weepinbell/Victreebel at 22-39 get 3-20 without per-move branches.
-	ld a, [wcf91]
-	cp BELLSPROUT
-	jr z, .bellsproutExtended
-	cp WEEPINBELL
-	jr z, .evolvedExtended
-	cp VICTREEBEL
-	jr nz, .restoreSpecies
-.evolvedExtended
-	ld a, [wCurEnemyLVL]
-	cp 22
-	jr c, .restoreSpecies
-	sub 19 ; level 22 -> ordinal 3
-	cp NUM_EXTENDED_MOVES + 1
-	jr nc, .restoreSpecies
-	jr .offerExtended
-.bellsproutExtended
-	ld a, [wCurEnemyLVL]
-	cp 19
-	jr c, .restoreSpecies
-	cp 21
-	jr nc, .restoreSpecies
-	sub 18 ; level 19 -> ordinal 1, level 20 -> ordinal 2
-.offerExtended
-	ld [wExtendedLearningMoveOrdinal], a
-	ld [wMoveNum], a
-	ld e, a ; ordinal survives CALLBA
-	callba LoadExtendedMoveNameByOrdinalToCD6D
-	jr c, .restoreSpecies
-	ld de, wcd6d
-	call CopyStringToCF4B
-	predef LearnMove
-.restoreSpecies
+	; MOVE-5.62.173: capacity-test level 19/20 assignments are removed.
+	; Keep the expanded identity machinery; future real level-up sources
+	; must explicitly supply a valid extended ordinal for LearnMove.
 	xor a
 	ld [wExtendedLearningMoveOrdinal], a
 	ld a, [wcf91]
@@ -945,10 +914,9 @@ PrepareRelearnableMoveList:
 .pastCurrentLevel
 	pop af
 .done
-	; MOVE-5.62.169: append missing extended moves using the
-	; shared $ff list-row placeholder and per-row ordinals. The final
-	; sentinel remains a separate $ff after the count.
-	call AppendExperimentalRelearnerMoves
+	; MOVE-5.62.173: no extended relearn candidates are assigned in the
+	; accepted build. The 1-40 family table was test-only and is removed.
+	; Ordinary and regional relearner behavior remains unchanged.
 
 .terminateList
 	ld a,[wRelearnableMoves]
@@ -957,129 +925,6 @@ PrepareRelearnableMoveList:
 	ld hl,wRelearnableMoves + 1
 	add hl,bc
 	ld [hl],$ff
-	ret
-
-; MOVE-5.62.172: the Bellsprout evolution line uses these extra capacity-test offers.
-; A candidate is excluded only if that *identity* is already known,
-; not because its low byte matches ordinary Pound or Karate Chop.
-AppendExperimentalRelearnerMoves:
-	ld a, [wWhichPokemon]
-	ld c, a
-	ld b, 0
-	ld hl, wPartySpecies
-	add hl, bc
-	ld a, [hl]
-	cp BELLSPROUT
-	jr z, .bellsproutStage
-	cp WEEPINBELL
-	jr z, .evolvedStage
-	cp VICTREEBEL
-	ret nz
-.evolvedStage
-	ld a, [wWhichPokemon]
-	ld hl, wPartyMon1Level
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
-	ld a, [hl]
-	cp 22
-	ret c
-	sub 18 ; level 22 -> next exclusive bound 4
-	jr .capOrdinal
-.bellsproutStage
-	ld a, [wWhichPokemon]
-	ld hl, wPartyMon1Level
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
-	ld a, [hl]
-	cp 19
-	ret c
-	sub 17 ; level 19 -> next exclusive bound 2
-.capOrdinal
-	cp NUM_EXTENDED_MOVES + 1
-	jr c, .haveBound
-	ld a, NUM_EXTENDED_MOVES + 1
-.haveBound
-	ld b, a ; exclusive upper bound for one-based ordinals
-	ld c, 1
-.loop
-	ld a, c
-	cp b
-	ret nc
-	push bc
-	ld a, c
-	call .checkAndAppend
-	pop bc
-	inc c
-	jr .loop
-.checkAndAppend
-	push af
-	call .alreadyKnown
-	jr c, .alreadyPresent
-	pop af
-	ld b, a
-	ld a, [wRelearnableMoves]
-	cp MOVE_RELEARNER_MAX_MOVES
-	ret nc
-	ld e, a
-	ld d, 0
-	ld hl, wRelearnableMoves + 1
-	add hl, de
-	ld [hl], EXT_MOVE_SLOT_ESCAPE ; menu-only placeholder, NOT stored move
-	ld hl, wExtendedNPCListMoveOrdinals
-	add hl, de
-	ld [hl], b
-	ld hl, wRelearnableMoves
-	inc [hl]
-	ret
-.alreadyPresent
-	pop af
-	ret
-.alreadyKnown
-	; A = one-based extended ordinal. Carry means already known.
-	push bc
-	push de
-	push hl
-	push af ; retain the requested ordinal across AddNTimes
-	ld a, [wWhichPokemon]
-	ld e, a
-	ld d, 0
-	ld hl, wExtendedPartyMoveFlags
-	add hl, de
-	ld d, [hl] ; four slot identity bits
-	ld a, [wWhichPokemon]
-	ld hl, wPartyMon1Moves
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
-	pop af
-	ld b, a
-	ld e, NUM_MOVES
-	ld c, 1
-.knownLoop
-	ld a, [hli]
-	cp EXT_MOVE_SLOT_ESCAPE
-	jr nz, .newEncoding
-	ld a, b
-	cp EXT_MOVE_LOW_POWER_WHIP
-	jr z, .found ; legacy 168 experimental Power Whip
-	jr .nextSlot
-.newEncoding
-	cp b
-	jr nz, .nextSlot
-	ld a, d
-	and c
-	jr nz, .found
-.nextSlot
-	sla c
-	dec e
-	jr nz, .knownLoop
-	and a
-	jr .knownDone
-.found
-	scf
-.knownDone
-	pop hl
-	pop de
-	pop bc
 	ret
 
 INCLUDE "data/evos_moves.asm"

@@ -264,13 +264,18 @@ NUM_ATTACKS EQU const_value
 EXT_MOVE_BASE_ID EQU $0100
 EXT_MOVE_POWER_WHIP EQU EXT_MOVE_BASE_ID
 EXT_MOVE_PLAY_ROUGH EQU EXT_MOVE_BASE_ID + 1
-NUM_EXTENDED_MOVES EQU 20
+NUM_EXTENDED_MOVES EQU 40
 EXT_MOVE_MAX_PILOT_CAPACITY EQU 64
 ; Stored one-byte extended slot values are 1..64 (never 0 = empty).
 ; A sidecar bit discriminates these from old IDs of the same byte value.
 EXT_MOVE_LOW_POWER_WHIP EQU 1
 EXT_MOVE_LOW_PLAY_ROUGH EQU 2
 ASSERT NUM_EXTENDED_MOVES <= EXT_MOVE_MAX_PILOT_CAPACITY
+; MOVE-5.62.173: keep a conservative per-species budget for future real
+; distribution, even though all 1-40 temporary test learnsets are removed.
+; Later allocations must not exceed two relearnable extended moves per mon
+; without increasing this compile-time reserve and auditing NPC capacity.
+EXT_MOVE_MAX_PER_SPECIES EQU 2
 ; MOVE-5.62.169: reserved escape byte, *only* for the first experimental
 ; extended move.  It is NOT an additional legacy Moves-table entry.
 EXT_MOVE_SLOT_ESCAPE EQU $ff
