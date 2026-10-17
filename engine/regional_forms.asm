@@ -716,25 +716,13 @@ RegionalFormTryLearnLevelMove:
 	cp b
 	jr nz,.loop
 
+	; MOVE-5.62.178: regional learnsets still use their own row parser.
+	; Their ordinary candidate joins the shared learner after that parser.
 	push hl
-	ld hl,wPartyMon1Moves
-	ld a,[wWhichPokemon]
-	ld bc,wPartyMon2 - wPartyMon1
-	call AddNTimes
-	ld b,NUM_MOVES
-.checkCurrentMovesLoop
-	ld a,[hli]
-	cp d
-	jr z,.hasMove
-	dec b
-	jr nz,.checkCurrentMovesLoop
-	ld a,d
-	ld [wMoveNum],a
-	ld [wd11e],a
-	call GetMoveName
-	call CopyStringToCF4B
-	predef LearnMove
-.hasMove
+	push de
+	ld e,0
+	callba TryLearnPartyLevelMove
+	pop de
 	pop hl
 	jr .loop
 
@@ -901,6 +889,19 @@ RegionalFormPrepareRelearnableMoveList:
 	ld e,l ; DE = current moves
 	pop bc ; restore B=current level
 	pop hl ; HL = regional learnset
+	; MOVE-5.62.177: candidate rows are ordinary IDs. Snapshot the
+	; party sidecar for every candidate's four-slot identity comparison.
+	push hl
+	push de
+	ld a,[wWhichPokemon]
+	ld e,a
+	ld d,0
+	ld hl,wExtendedPartyMoveFlags
+	add hl,de
+	ld a,[hl]
+	ld [wExtendedMoveFlagsScratch],a
+	pop de
+	pop hl
 	ld c,0 ; relearnable count
 .loop
 	ld a,[hli]
@@ -915,12 +916,21 @@ RegionalFormPrepareRelearnableMoveList:
 	push bc ; B = current level, C = relearnable count
 	ld b,a
 	push de
+	ld a,[wExtendedMoveFlagsScratch]
+	ld [wExtendedActiveMoveOrdinal],a ; temporary NPC bit iterator
 	ld c,NUM_MOVES
 .checkKnown
 	ld a,[de]
 	cp b
+	jr nz,.nextKnownSlot
+	ld a,[wExtendedActiveMoveOrdinal]
+	and 1
 	jr z,.known
+.nextKnownSlot
 	inc de
+	ld a,[wExtendedActiveMoveOrdinal]
+	srl a
+	ld [wExtendedActiveMoveOrdinal],a
 	dec c
 	jr nz,.checkKnown
 	pop de

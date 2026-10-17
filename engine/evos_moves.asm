@@ -534,58 +534,15 @@ LearnMoveFromLevelUp:
 	cp b ; is the move learnt at the mon's current level?
 	jr nz,.learnSetLoop
 
+	; MOVE-5.62.178: packed rows are ordinary IDs. The shared learner
+	; owns complete-identity filtering, name preparation and LearnMove.
+	; Preserve parser cursor, packed iterator state and original DE.
 	push hl
-	push bc ; preserve packed iterator state across move-learning code
-
-	push de ; preserve the packed move ID while loading the party flag mask
-	ld a, [wWhichPokemon]
-	ld e, a
-	ld d, 0
-	ld hl, wExtendedPartyMoveFlags
-	add hl, de
-	ld a, [hl]
-	ld [wExtendedMoveFlagsScratch], a
-	ld hl, wPartyMon1Moves
-	ld a, [wWhichPokemon]
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
-	pop de
-	ld b, NUM_MOVES
-	ld c, 0
-.checkCurrentMovesLoop ; check if the ordinary move is already known
-	ld a, [hli]
-	cp d
-	jr nz, .nextKnownMove
-	; MOVE-5.62.176: same low byte in a flagged extended slot is not
-	; the ordinary move from the packed learnset.
 	push bc
-	ld b, c ; zero-based party move slot
-	ld a, [wExtendedMoveFlagsScratch]
-.checkOrdinarySlotFlag:
-	inc b
-	dec b
-	jr z, .ordinarySlotFlagReady
-	srl a
-	dec b
-	jr .checkOrdinarySlotFlag
-.ordinarySlotFlagReady:
-	and 1
-	pop bc
-	jr z, .has_move
-.nextKnownMove:
-	inc c
-	dec b
-	jr nz, .checkCurrentMovesLoop
-	; MOVE-5.62.176: restore the stock learning call accidentally removed
-	; during 171 extended-identity expansion. Packed rows are ordinary IDs.
-	ld a, d
-	ld [wMoveNum], a
-	ld [wd11e], a
-	call GetMoveName
-	callab MaybeRenameRockPolishLearningMoveName
-	call CopyStringToCF4B
-	predef LearnMove
-.has_move
+	push de
+	ld e,0
+	callba TryLearnPartyLevelMove
+	pop de
 	pop bc
 	pop hl
 	jr .learnSetLoop
