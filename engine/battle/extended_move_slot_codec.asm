@@ -197,14 +197,16 @@ LoadExtendedStatusMoveMask::
 	ld [wExtendedStatusMoveFlags], a
 	ret
 
-; Fight menu keeps selected and pending positions one-based with different
-; offsets; update both live battle and saved Party flags after the move/PP swap.
+; Fight menu uses one-based selected/pending positions; the same index
+; conversion must apply to battle/Party mask bits and stock move/PP bytes.
 SwapExtendedBattleMenuFlags::
 	push bc
 	push de
 	push hl
+	; MOVE-5.62.176: both menu indices are one-based, exactly as
+	; SwapMovesInMenu.swapBytes uses them for the move and PP bytes.
 	ld a, [wMenuItemToSwap]
-	sub 2
+	dec a
 	cp NUM_MOVES
 	jr nc, .done
 	ld e, a
@@ -226,6 +228,10 @@ SwapExtendedBattleMenuFlags::
 	cp PARTY_LENGTH
 	jr nc, .done
 	ld e, a
+	; MOVE-5.62.176: .swap stores the previous flag mask in D.
+	; Clear D before forming the Party WRAM address; otherwise the
+	; high byte redirects the write outside wExtendedPartyMoveFlags.
+	ld d, 0
 	ld hl, wExtendedPartyMoveFlags
 	add hl, de
 	call .swap

@@ -552,34 +552,39 @@ LearnMoveFromLevelUp:
 	pop de
 	ld b, NUM_MOVES
 	ld c, 0
-.checkCurrentMovesLoop ; check if the move to learn is already known
+.checkCurrentMovesLoop ; check if the ordinary move is already known
 	ld a, [hli]
 	cp d
 	jr nz, .nextKnownMove
-	ld a, [wExtendedLearningMoveOrdinal]
-	and a
-	jr z, .has_move ; ordinary learnset move matches an ordinary slot
-	; Extended learning is a distinct identity. A matching low byte in an
-	; already-flagged slot is NOT the same ordinary move.
+	; MOVE-5.62.176: same low byte in a flagged extended slot is not
+	; the ordinary move from the packed learnset.
 	push bc
-	ld b, c ; current zero-based move slot
+	ld b, c ; zero-based party move slot
 	ld a, [wExtendedMoveFlagsScratch]
-.extendedKnownFlagShift:
+.checkOrdinarySlotFlag:
 	inc b
 	dec b
-	jr z, .extendedKnownFlagBit
+	jr z, .ordinarySlotFlagReady
 	srl a
 	dec b
-	jr .extendedKnownFlagShift
-.extendedKnownFlagBit:
+	jr .checkOrdinarySlotFlag
+.ordinarySlotFlagReady:
 	and 1
 	pop bc
-	jr nz, .nextKnownMove
-	jr .has_move
+	jr z, .has_move
 .nextKnownMove:
 	inc c
 	dec b
 	jr nz, .checkCurrentMovesLoop
+	; MOVE-5.62.176: restore the stock learning call accidentally removed
+	; during 171 extended-identity expansion. Packed rows are ordinary IDs.
+	ld a, d
+	ld [wMoveNum], a
+	ld [wd11e], a
+	call GetMoveName
+	callab MaybeRenameRockPolishLearningMoveName
+	call CopyStringToCF4B
+	predef LearnMove
 .has_move
 	pop bc
 	pop hl

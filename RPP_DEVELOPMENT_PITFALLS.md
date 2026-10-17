@@ -247,3 +247,24 @@ This file is the persistent, Git-tracked record of repeatable development failur
 
 - 扩展 ROM 数据表的 40 个 ordinal、名称／战斗数据占位不等于任何物种应在 19／20 级学会它们。容量试验曾用 20 个家族的特殊学习／回忆映射；**正式定版须删除这些测试分配，不能只清理负向测试的 19 条学习记录**。旧测试档持有已学扩展技能时，清理后不再通过已删除的家族测试表回忆。
 - 普通／地区表的 RGBDS `ASSERT` 使用最坏情况预留 `EXT_MOVE_MAX_PER_SPECIES = 2`，不是自动数出所有未来新技能来源。设计正式扩展学习配置时，须明确每只宝可梦的普通＋扩展回忆总候选不会超过 32；如改变分配上限，要连带更新静态保护。移除测试入口并不等于已经验证了永久保存、PC 盒子及特殊派生招式。
+
+
+## MOVE-5.62.174 — 171 普通升级学习调用误删（历史补丁 008）
+
+- 在 `LearnMoveFromLevelUp` 中增加“已持有技能身份／sidecar”判断时，**不能删除匹配失败后的原 `wMoveNum` → `GetMoveName` → `predef LearnMove` 调用**。171 历史补丁 008 曾把整段删掉，只剩下 `pop bc`／`pop hl` 返回学习表循环；因此普通招式在正确等级被找到后仍不会学习。173 用户通过升级糖果发现。修复时对照旧补丁的删除区块和最新循环，两条分支（已学会跳过／未学会调用学习）都必须保留。
+- 同低字节的旧技能与扩展技能不是同一身份：若普通学习表 ID 匹配已持有技能槽，仍须检查该槽 sidecar 位，只有未标记的普通槽才算已经学会。未来修改循环应同时覆盖 1～40 普通招式与同低字节扩展身份共存；`ASSERT` 成功和 40 招测试学习成功并不能证明普通学习路径通过。
+
+
+## MOVE-5.62.175 — 不能仅凭活动扩展 ordinal 判定当前招式身份
+
+- `wExtendedActiveMoveOrdinal` 只对应玩家原本选中的扩展槽；Struggle、状态强制改招等路径会改写 `wPlayerSelectedMove`。使用该 ordinal 作为安全代理或名称选择前，必须至少验证它与当前选中 ID 一致；强制 Struggle 进入时应主动清零。此前 `GetCurrentMove` 仅判断 ordinal 非零，即使 `MaybeLoadExperimentalMoveBattleStats` 拒绝覆盖，仍可能保留藤鞭代理与旧扩展名称。
+- 本次 175 仅修复明显的不一致身份和强制 Struggle；原 `$FF` 历史哨兵、派生技能恰好与扩展 ordinal 低字节相等、Link／Transform／Metronome 等不因本修复自动标记已验收。固定 `bankF` 173 MAP 余 14B，要留意补丁体积及最终链接，不用静态检查冒充 ROM PASS。
+
+- 战斗 Fight 菜单 `wMenuItemToSwap` 和 `wCurrentMenuItem` **都是 1-based**。原字节/PP 的 `.swapBytes` 对二者均 `dec a`；扩展 sidecar 的 `SwapExtendedBattleMenuFlags` 曾错误地对前者 `sub 2`，造成首槽交换跳过、其他槽错位。修改并行身份时要与原数据路径逐条比对索引变换；不要仅测试四招会显示，要测试带同低字节旧招、扩展招的六种换位组合。
+
+
+## MOVE-5.62.176 — 一次 `.swap` 调用复用 D 后，不得直接用 DE 计算 WRAM 地址
+
+- `SwapExtendedBattleMenuFlags` 在计算 `wExtendedBattleMoveFlags` 的换位后，局部 `.swap` 会执行 `ld d, [hl]` 保存原 flags；紧接着再 `ld e, [wPlayerMonNumber]`、`add hl, de` 形成 `wExtendedPartyMoveFlags + index` 时若忘记 `ld d, 0`，会以原掩码作为地址高字节，写入错误 WRAM。此缺陷与菜单 `sub 2` 错一位不是同一问题，175 改对索引仍无法修复地址错误。176 补显式高字节清零；用户 176 视频已对受测混合换位和 Party 查看做针对性正向验证。
+- **176 测试视频与最终回归边界**：用户《176测试.mp4》证实受测 SELECT 混合扩展／普通换位后，Party 详情不再将 Play Rough 当作 Karate Chop；撤销 053 临时家族等级入口后，又报告普通升级学习与战斗技能交换抽查正常。**这只是针对性回归，并非完整内存安全或各类升级／保存路径证明**。移除 053 仅限临时学习／回忆入口，不得再次破坏 174 普通 `LearnMove` 分支与 175/176 战斗读表、换位 WRAM 修复。
+- 凡局部函数把 B/C/D/E 等寄存器当暂存变量，再用于 16 位地址偏移、指针或 Bank 参数时，必须重新建立寄存器不变量；要同时比较**战斗数据、Party 持久副本、sidecar 标记**三者在换位/回存后的关系，并用同低字节的旧新招式做回归。单独看到战斗菜单名称正确，不构成保存端正确的证据。

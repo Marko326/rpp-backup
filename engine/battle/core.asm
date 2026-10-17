@@ -2888,6 +2888,9 @@ AnyMoveToSelect:
 	and $3f ; ignore PP ups
 	ret nz
 .noMovesLeft
+	; MOVE-5.62.176: forced Struggle has no extended-slot identity.
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
 	ld hl, NoMovesLeftText
 	call PrintText
 	ld c, 60
@@ -6151,14 +6154,20 @@ GetCurrentMove:
 	ld a, [wPlayerSelectedMove]
 .selected
 	; An active expanded identity always loads a safe stock record first;
-	; the full $0100/$0101 data is overlaid by FinalizeCurrentMoveLoad.
+	; the valid second-table data is overlaid by FinalizeCurrentMoveLoad.
 	ld b, a
 	ldh a, [H_WHOSETURN]
 	and a
 	jr nz, .checkOldEscape
 	ld a, [wExtendedActiveMoveOrdinal]
 	and a
-	jr nz, .safeProxy
+	jr z, .checkOldEscape
+	; MOVE-5.62.176: a forced move (e.g. Struggle) is not the
+	; previously selected extended slot. Do not use its proxy or name.
+	cp b
+	jr z, .safeProxy
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
 .checkOldEscape
 	ld a, b
 	cp EXT_MOVE_SLOT_ESCAPE
