@@ -51,7 +51,12 @@ class AzaleaRuntime195(unittest.TestCase):
 
     def test_unopened_interior_warps_stay_closed(self):
         data=(ROOT/'data/mapObjects/JohtoAzaleaTown.asm').read_text()
-        self.assertIn('db $00 ; no interior/Well/forest Warps opened',data)
+        self.assertIn('db $02 ; (2,10)/(2,11), native gate east slots 0/1',data)
+        self.assertIn('db 10, 2, 0, REGION_WARP_ESCAPE',data)
+        self.assertIn('db 11, 2, 1, REGION_WARP_ESCAPE',data)
+        from johto_indoor_common import rpp_warps
+        self.assertEqual([(v['x'],v['y']) for v in rpp_warps(ROOT,'JohtoAzaleaTown')],
+                         [(2,10),(2,11)])
         geo,_=plan_gold_quadrant_collision(self.gold,'AzaleaTown','johto_modern')
         specials={(s['x'],s['y'],s['role']) for s in geo['special_cells']}
         self.assertIn((31,7,'CAVE'),specials)

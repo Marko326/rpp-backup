@@ -1,5 +1,7 @@
 # Pokémon Red++ v3
 
+> **RPP 金银地图开发必读**：新增或修改门房之前，先读 [门房专用防重犯清单](docs/JOHTO_GATEHOUSE_READ_FIRST.md)；入口合同由 `tools/johto_door_onboarding_audit.py` 强制检查。项目总规范见实际 ZIP 的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`（自动导出资料可能不入 Git）。
+
 This is based on the [**Pokémon Red Disassembly**][pokered]
 
 Red++ serves as an updated version of Pokémon Red.

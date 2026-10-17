@@ -1,3 +1,8 @@
+## 门房专项必读（正式收口 GATE-5.62.202）
+
+若开发对象是**门房/双格 Gate**，除本通用 Warp 分类文档外，还必须先阅读 **`docs/JOHTO_GATEHOUSE_READ_FIRST.md`**。新旧 `GATE_INDOOR` 的必读路径、8 类测试证明与手机验收级别由 `tools/johto_door_onboarding_audit.py` 按 `tools/johto_door_contracts.json` 强制审查；这不是可选建议。文件丢失、证据漏登记、测试未执行时统一门禁 FAIL。
+
+
 # Gold 入口分类与防卡门门禁（GAT-5.62.180）
 
 ## GAT-5.62.180 — Gold 全入口语义与地图严格审计门禁

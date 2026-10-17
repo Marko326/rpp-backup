@@ -1,3 +1,49 @@
+## GATE-5.62.202｜P16 南门房正式收口（用户视觉/进出验收）
+
+- [x] **玩家已确认**：南门房双格进出与立即反向操作正常；进入时不再误弹 Route34；桧皮镇边缘房屋经修复后在多次截图中外观正常。P16F 版本同地点 Gold/RPP 160×144 截图经对照，半圆下沿过亮的问题已消失；用户明确接受正常的微小配色差异，不要求所有关卡整幅像素严格一致。
+- [x] **最终保留**：Gold 门房双格 Warp（仅东侧），正确碰撞方向/上下门垫、neutral 地点提示、两条地图加载路径的室外西边界补绘、真实 source→compact 图块对应、`JOHTO_GATE` 独立 Gold GREEN/BROWN RGB 与关东 palette 隔离；GATE 版本仍 `GATE-5.62.202`。南门房西侧的桐树林仍封闭；森林剧情/北侧门房不在本次验收。
+- [x] **专项长期必读**：`docs/JOHTO_GATEHOUSE_READ_FIRST.md`；`tools/johto_door_onboarding_audit.py` 强制登记八项有执行证据的门房测试、必读指南和视觉/门口手机验收状态，缺项即 FAIL；新增错误注入验证。不得再次用静态 PASS 宣称 ROM 链接或新门房手机已验收。
+- [ ] **仍未逐项确认**：所有旧存档 Continue/Fly/全关东门房和所有行为边界未逐一提供新的实机证据；ROM MAP/Bank 余量未经本轮 AI 链接验证。下轮先完成可玩桐树林独立图块/碰撞/双向返回与剧情护栏，不要重新改已验收门房配色。
+- **历史阶段说明**：下方 P16A–P16F 条目记录当时的候选与失败/待验，不代表目前的最终状态；P16D 的整房变绿属于已回退的错误试验，不是最终有效功能。
+
+
+## GATE-5.62.202：JOHTO_GATE Gold RGB 精确隔离候选
+
+- [x] 恢复 Gold 原版色值与 RPP 实际运行时 palette set 的逐项映射；不再改图块标签。
+- [x] `JOHTO_GATE` 专用第0色（GREEN/BROWN），使用预留索引，关东 GATE 保持原有调色。
+- [ ] **手机实机确认半圆装饰浅色竖纹已经变为原版深绿色**；进出门与路线告示、第一座城都门房、关东门房保持原样。若 ROM 编译/链接不通过须停下核实而非称成功。
+
+## P16E｜原版门房视频对照与 P16D 调色排序误判修复 `GATE-5.62.201`（手机待验）
+
+- [x] 用户两段视频确认 `.200` 门房的地板、顶栏和装饰发生整室颜色异常；P16D 错将 Gold 22 个已使用图块按数值排序顺序假定为 RPP compact 0..21，实际存在置换（Gold 1→RPP 2、Gold 7→RPP 0、Gold 16→RPP 7），导致 10 个 tilepal 错误修改。
+- [x] 恢复 P16C 已经按真实 blockset 逐格对应正确的 `JOHTO_GATE` 标签；保留 P16D 地点提示免弹窗及 P16B/C 正常门房机制与边界补绘，不涉及其他地图、精灵或保存结构。
+- [x] 通用审计从 Gold `.blk` + `gate_metatiles.bin` 与 RPP `.blk` + `.bst` **逐格解析真实 source→compact 映射**；新增原 P16D 假设回归、标签破坏和图块对应关系破坏三种失败注入，不再误判排序相等。
+- [ ] 手机检查第一座与桐树林南门房的地板/顶栏恢复 P16C 效果、进出/地点提示；原版半圆浅色与本项目仍可能存在小幅运行时调色差异，未做 ROM 编译或像素级手机验收，禁止据静态测试宣称视觉完全一致。
+
+## P16D｜南门房地点提示与 Gold 调色源码核对 `GATE-5.62.200`（待手机验收）
+
+- [x] `JohtoIlexAzaleaGate` 加入 native Johto neutral map-name 判定；不改原版 Route34 Town Map landmark，也不放宽其它共享 `$FC` 地图的地点提示。
+- [x] 完整 Gold gate 使用的 22 个紧凑图块，在源调色标签上 11 处与 Gold 不一致，现按 Gold `gate_palette_map.asm` 实际原始图块 ID 修正；通用审计新增逐图块精确审计及标签篡改反向测试。
+- [x] Gate door contract 强制具备地点弹窗测试、Gold 调色来源测试、明确手机调色验收状态；不存在时停止通过。旧门房与新门房均要登记，不再只验证 Warp 配对。
+- [ ] **截图里拱形装饰的白色/黄绿差异尚未通过手机复核**：原版与 RPP 有运行时色差，不能仅凭源 palette label 全绿宣称已修复；P16D 编译后需要验证。如果仍有亮绿色，先排查 runtime CGB palette0/VRAM attr 的实际值再下手，不做全局颜色硬改。
+- [ ] 继续验证：进南门房不弹 Route34；旧 Route31 门房仍不弹提示；既有门口、桧皮镇西侧房屋外观不回退。桐树林仍封闭。
+
+## P16B｜修复南门房卡门候选 `GATE-5.62.198`（待实机验证）
+
+- [x] 根据用户报告，修复 P16A 室内/室外踩上 Warp 就传送的错误；统一按 Route31 已实测的「站稳门垫、面向门框碰撞才触发」模式，两个原生 local ID 单独校验。
+- [x] 桧皮镇入口 `(2,10)/(2,11)` 两格纵向允许互走，其余墙格和森林入口依然封闭；回程方向及立即反向合同补上错误注入。
+- [x] 完整 Gold 静态门禁 399 PASS / 0 FAIL / 0 SKIP；不代表链接或用户实际通过。
+- [x] **外观定位补绘候选**：仅对桧皮镇西部两处图外缓冲格补绘同源建筑区块，避免在半栋房旁直接显示树林。不修改全局 `$05`、原版 180 字节地图或碰撞；**仍待手机实机确认显示**。状态 `STATIC_CANDIDATE_PHONE_PENDING`。
+- [ ] 用户需 Termux 构建并实测：外侧两格上下互走、进门停留与立即反向、室内同样操作、两组出口、边缘误触、存读档；抽测 Route31 门房原行为未被破坏。
+
+## P16A｜桐树林南门房运行时首批候选 `GATE-5.62.197`
+
+- [x] 完整 Gold 原版对照桧皮镇 `(2,10)/(2,11)` ↔ 南门房 `(9,4)/(9,5)` 原版 Warp 两格，建立独立 local ID 11、Header/Object/Script、`JOHTO_GATE` 门房图形复用、路线音乐和地区/局部精确双向 Warp；旧 Fly、Route33 出入口及未开放建筑保持不变。
+- [x] 以精确站位/朝向豁免桧皮镇西口原来封住的两格，新增 native Warp 识别，不用 tileset 相似性广泛放行；门房西出口前往桐树林继续封闭，Cut/大葱鸭/祠堂/北侧 Route34 没有开放。
+- [x] 金银双源码静态门禁及错误注入合计 **391 PASS / 0 FAIL / 0 SKIP**；这不是 ROM 编译/链接或手机验收。详见 `docs/JOHTO_ILEX_P16_SOUTH_GATE_RUNTIME.md`。
+- [ ] **待 Termux 构建及手机实测**：桧皮镇两格入门、门房两格回程、音乐与地图渲染、自动下车、门房西口封闭、存读档及原 Fly/Route33 最小回归。
+- [ ] **下一步**：独立 Ilex Forest 图块集/碰撞/调色/空间确认、安全落点与双向 Warp 以及剧情必要护栏后，才能正式打开门房西口并登记森林地图。
+
 ## ILEX-P15｜桐树林与南门房原版离线前置（本轮候选，未开放游戏地图）
 
 - [x] 采用最新干净 HEAD `2f08f49a` / `FLY-5.62.196` 与完整 Gold 源码，确认下一段是桧皮镇 → `IlexForestAzaleaGate` 南门房 → `IlexForest`，不能越过门房直接连接森林。上一轮 P13 已由用户正式提交，不重放 P13 补丁；旧 TODO 中的 `118d5e38` 均是当时的历史状态。
@@ -960,3 +1006,5 @@ This section preserves the original author's roadmap. Status markers reflect the
 - [ ] If Natures are disabled in intro, do not display on status screens, and use a neutral nature always
 - [ ] If Abilities are disabled in intro, do not display on status screens, and use a blank ability for everyone
 - [ ] EXP on catch is annoying, since a lot of variables are reused during the EXP Gain process. Will require a lot of testing.
+
+- [ ] **P16C 桧皮镇南门房外观待实机验收**：P16B 用户截图显示从33号道路首次进镇左侧仍是树，门房 Warp 返回后复制右半栋。P16C 修正边界图块为 Gold `$08/$1c`（对应室内 `$09/$1e`）并使地图完整重载与相邻地图快速进入两条路径一致。静态验证不等于手机验收。

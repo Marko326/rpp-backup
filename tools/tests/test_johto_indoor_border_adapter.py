@@ -56,7 +56,15 @@ class BorderAdapterTests(unittest.TestCase):
         report=build(self.rpp,self.out)
         self.assertEqual(report['original_border_metatile'],10)
         self.assertEqual(report['new_border_metatile'],13)
-        self.assertEqual(report['new_black_tile_slot'],21)
+        # Slot availability depends on the verified Gold palette mapping.
+        # Do not pin the former gray-tagged slot 21 after a palette correction.
+        from johto_indoor_border_adapter import _load_palette_entries
+        palette = _load_palette_entries(self.rpp/'color/tilesets/johto_gate.asm')
+        used=set((self.rpp/'gfx/blocksets/johto_gate.bst').read_bytes())
+        walkable=set((self.rpp/'gfx/tilesets/gate.tilecoll').read_bytes()[:-1])
+        expected=min(i for i in range(96)
+                     if i not in used and i not in walkable and palette[i]=='GRAY')
+        self.assertEqual(report['new_black_tile_slot'],expected)
         self.assertTrue(report['interior_pixel_identical'])
         self.assertTrue(report['border_all_black'])
         self.assertTrue(report['non_walkable'])

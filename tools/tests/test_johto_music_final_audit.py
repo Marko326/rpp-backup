@@ -65,8 +65,8 @@ class JohtoMusicFinalAudit(unittest.TestCase):
 
     def test_unknown_future_map_requires_scene_mapping(self):
         self.mutation('data/johto_map_headers.asm',
-                      'db REGION_NATIVE_MAP_SLOT ; Azalea Town has no legacy alias\nJohtoMapLegacyAliasesEnd::',
-                      'db PALLET_TOWN ; Azalea Town has no legacy alias\nJohtoMapLegacyAliasesEnd::',
+                      'db REGION_NATIVE_MAP_SLOT ; Ilex south gate, native only\nJohtoMapLegacyAliasesEnd::',
+                      'db PALLET_TOWN ; Ilex south gate, native only\nJohtoMapLegacyAliasesEnd::',
                       'native locals must share the virtual map handle')
 
     def test_audio_special_priority_cannot_disappear(self):

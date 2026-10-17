@@ -1,3 +1,36 @@
+## 门房开发永久入口｜正式收口 GATE-5.62.202
+
+**以后新增／改造任何门房，先读 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`，不能只读这份踩坑记录。** 该专项文档强制列出已验收的老门房参考、两格 Warp 的站位与碰撞、立即回程、地图边框普通/快速两条路径、neutral 地点名、source→compact 的真实图块排列、实际 RGB 与关东隔离、反向审计和手机最小验收。`tools/johto_door_contracts.json` 现必须为每个室外/室内 Gate 登记必读文件，并为 `GATE_INDOOR` 登记 8 类实际执行的证明 ID，并保留手机验收状态；新门房缺项或专项手册遗失时 Gold 严格门禁 FAIL。此规则适用于今后的桐树林北口、34号道路等门房，而不只是本次南门房。
+
+用户对 GATE-5.62.202 南门房已反馈：双格进出修复、色彩正常、半圆过亮消失；Gold 对照截图背景可接受。之前 P16D 的排序误判导致整房变绿属错误方案，已由 P16E/F 纠正。**不得以现有旧门房通过代替新门房手机验收，不得把 Gold RGB 静态一致推导成全部 ROM 链接与显示行为验证。**
+
+
+## GATE-5.62.202｜半圆装饰亮纹的真正原因：Gold GREEN/BROWN 第0色未隔离
+
+- 用户 P16E 实机验收：房间整体颜色恢复，但半圆下沿浅色竖纹仍与 Gold 原版不一致。原图块像素、tilepal 标签和 source↔compact 映射原本均正确；P16D 错乱颜色标签的处理是误修，应避免再次出现。
+- 原版 `gfx/tilesets/bg_tiles.pal` 的 indoor GREEN palette[0]=(18,24,9)、BROWN palette[0]=(26,24,17)，而 RPP `color/data/map_palettes.asm` 的通用室内两组第0色都是 (30,28,26)。离线按真实 `.blk`/`.bst`/图块/颜色重建，Gold/RPP 门房画面差异仅为 GREEN 第0色666像素、BROWN 第0色24像素；原版中半圆底部是深绿色，RPP 之前呈浅色。
+- 不能修改全局 `INDOOR_GREEN`/`INDOOR_BROWN`，关东已有房间也会变色。应只为 `JOHTO_GATE` 从预留 `0x28/0x29` 索引使用两组 Gold 室内色，其它 tileset（特别 `GATE`）的 palette slot 不变，palette 表仍维持64组。覆盖源颜色值、palette set 索引、关东未污染、破坏注入测试，静态通过不算用户 ROM 实机验收。
+
+## GATE-5.62.201｜门房调色排序误判事故：禁止按已用 Gold Tile ID 排序套目标索引
+
+- P16D 的静态调色检查 `sorted(set(Gold_tile_IDs))` 再按序枚举 compact RPP tile，**忽略了压缩图块重编号顺序**。具体 Gold tile 1→RPP 2、Gold 7→RPP 0；它把 22 项中 10 项正确 palette label 改错，让此前正常的门房地板、顶栏整体变成亮绿色。用户 P16D 手机视频证实画面异常。
+- **必须从两侧 `maps/*.blk`、源 `gate_metatiles.bin`、目标 `johto_gate.bst` 的同一个 metatile/cell 恢复图块的实际双向映射**，然后核对 palette label；不得用排序、集合或位置推测顺序。强制失败注入使用 P16D 的错误排列复现，证明会被审计阻止。
+- 静态像素/标签相同不代表 CGB 实机调色完全相同；新贴图必须先与旧实测画面、Gold 对照验证全房重点位置后再宣称视觉已验收。**一个审计新规则改变已有验收资源时，它本身也要接受画面回归**。修完测试应同时检查第一座共享 JOHTO_GATE 门房；本轮不修改稳定的双向 Warp、地点名修复。
+
+## GATE-5.62.198｜重复卡门根因：代码复用不完整且测试证明了错误行为
+
+- P16A 静态 391 PASS 后用户报告桧皮镇外侧入口踩格自动传送、两格上下走不动、门内外需要先退一步才能重新触发。原因是新增的 `JohtoAzaleaGateWarpTileCheck` 只按站位返回 carry，**违反已实测的 .157 Route15 风格碰撞入门约定**；又因原延迟 Warp 对 `JOHTO_ROUTE31_VIOLET_GATE` 只按单字节目的地图判断，新 `$FC` 门房未被涵盖。不能因 Gold 坐标对就称操作正确。
+- P16B 在旧引擎 `CheckWarpsNoCollisionLoop` 中用来源三元组精确跳过两端门房 Warp 的即刻传送，只置站立位；碰撞路径在方向、来源地区、local ID 均正确时才走旧 `WarpFound2`。室外 `(2,10)/(2,11)` 虽是 Gold Warp carpet，但旧 mask 视为不可进入；特许门格互相纵向移动，不放开真正的上下墙。保留 Route31 已实测路径。
+- 外观独立：Gold 原版地图和相关 metatile 正确，但 RPP 西边界统一树林 `$05`，门房紧靠左边界造成看似半屋半树林。不能改全图 border fill 解决局部外观。P16B 在 `LoadTileBlockMap` 后仅针对 `(JOHTO, Azalea local 10)` 的西侧两处屏外缓存块补绘同源屋顶 `$09` 与墙体 `$1e`，不改 `.blk` 或碰撞。静态像素预览通过，`STATIC_CANDIDATE_PHONE_PENDING`，尚未手机确认实际图像。
+- 通用审计必须有**负向触发、步行方向、立刻反向、共享 `$FC` 来源 map key、垂直门格与边界视觉**的准入/留档，不能把自造的异常 Warp 检查函数“存在”当作验收通过。
+
+## GATE-5.62.197｜Ilex 南门房两格 Warp 不可只改对象表
+
+- 桧皮镇西门 Gold 原版有 `(2,10)/(2,11)` 两格 Warp；此前城市的碰撞掩码严格封锁所有未接建筑。单纯在对象表写 Warp 而不在精确 `(3,10)/(3,11)` 左向移动前放行，会出现「地图有 Warp，玩家却走不到」。且 Warp 站位识别曾有仅朝墙碰撞才触发的分支，新门应同时核实移动放行、精确站位 Warp 识别以及目的地别名地区/局部 ID。
+- 当前 `$FC` 在多张城都地图间共享；Warp 必须带地图地区+local ID，不能把 `$FC` 用作全局唯一身份。门房东口 Gold Warp #3/#4 在 RPP 保留为 0-based slot 0/1；西口通往尚未登记的 Ilex Forest 的 Warp #1/#2 暂不写入，防止非法跳图。
+- 复用已审核的 `JOHTO_GATE` 资源不代表能复用旧门房对象、内部脚本或地图 ID。新门房虽注册运行时，但**森林仍未注册**。门房 Bike、Fly、Surf、Dig 和逃洞绳与城市 outdoor 功能分开审核。
+- `patches/rppred.map` 是上一次已构建版本留下的 MAP，不是这次 P16 ROM 链接结果。源审计 391 项通过后仍必须由用户 Termux 构建并在手机验证两门入口、两门出口、封闭森林西口、存读档和原 Fly；禁止把静态通过写成用户实机通过。
+
 ## ILEX-P15｜Gold 图形区块数与碰撞定义数不能假设相等
 
 - 完整 Gold 桐树林 `forest_metatiles.bin` 是 **40 个图形区块**，但 `forest_collision.asm` 提供 **64 条碰撞定义**。原 `stage_preserved_gold_tileset` 与 `plan_gold_quadrant_collision` 都曾错误要求两表等长，新地图离线候选因此在实际开发时失败，尽管此前统一 380 项门禁全绿。应允许原版多出的碰撞定义，**但每个图形区块仍必须有碰撞项**；回归测试故意把 64 条截为 39 条，必须拒绝。
@@ -420,3 +453,14 @@ In pokegold `engine/overworld/player_movement.asm` `.ledge_table`, `HOP_DOWN_LEF
 - **音乐后续独立处理**：项目已有金银音乐资料，但地图音乐绑定与室内外切曲需要对照 `data/map_songs.asm` 和地图元数据另开功能专项；本次 `.160` 不包含音乐文件或映射修改。
 - **提交与补丁基线**：用户 `.160` 工作区导出相对已提交 `.158`，不是脚本 A/B 两批均已 Git 提交。清理只追加根目录 TODO/踩坑记录和独立 Git 日志；工作区已应用 `.160` 时只能用文档增量，**不要再叠加 .160 功能补丁**。若按纯脚本与功能分两次 Git 提交，应先暂存 `tools/` 更改，再暂存非工具功能与清理文档，并在合并后执行完整回归；脚本单独暂存时仍可能依赖随后才注册的 `JOHTO_GATE`。
 
+
+### P16C 地图西侧边界绘制二路径遗漏和复制右半栋
+
+P16B 只在 Warp 完整加载 `LoadMapData` 后补边；从 33 号道路直接进镇走 `.ordinaryConnection`，只调用 `LoadTileBlockMap`，因此左侧第一次仍是全局树背景。且原补边错误复制 `$09/$1e` 右半栋，正确应取同一 Gold 图块集的 `$08/$1c` 左半栋。今后凡补绘 WRAM 地图缓存，须审核所有实际 `LoadTileBlockMap` 路径（至少全图与快速连接），验证图形拼接方向而不只比较块 ID；故障注入须能抓漏任一路径和左右半用错。
+
+### P16D 门房视觉/地点两种重复遗漏（GATE-5.62.200，手机待验）
+
+- **不能将 Gold `EastWestGate` 的 13/13 block、22/22 像素一致等同于 CGB 调色一致**。原 `JOHTO_GATE` 紧凑图块 `tilepal` 中 11 个标签与 Gold `gfx/tilesets/gate_palette_map.asm` 不同。导入图块时先确认原始 tile ID -> 紧凑 tile ID 的重映射，再逐个比较 palette tag 与实际 `map_palette_sets`、RGB；静态源归属匹配也不等于模拟器 VRAM palette 已验收。
+- **门房可能复用 `$FC`，地图名中性判断必须同时检查原生地区+局部 ID**：Route31 第一门房早用旧地图 ID 检查，而新南门房之前未加入 `engine/overworld/map_name_sign.asm` 的中性注册，错误弹 Route34。保留原版 Route34 Town Map 地标供地图定位，不靠篡改 landmark 或广泛屏蔽 `$FC` 掩盖弹窗。
+- **新增 Gate 最低准入条件是行为链，而非文件存在**：`tools/johto_door_contracts.json` 的每个 `GATE_INDOOR` 必须登记真实执行的 `(1) neutral_name_sign_test_id`、`(2) gold_palette_test_id`、`(3) runtime_palette_status`（PHONE_PENDING 或 PHONE_ACCEPTED）；缺项硬失败。配套测试故意去除属性或执行测试登记必须失败。室外相邻边框、门内两格步行、朝向、反向 Warp、地图加载两路径及调色表现仍有独立验收要求。
+- **本轮截图差异并非实机已解决**：截图里拱形装饰仅颜色0从 Gold 米白偏到 RPP 黄绿，其他深色接近；源码逐图块标签修正不证明现场调色索引或加载路径正确。手机仍出现差异时，优先检查 CGB palette slot 和 attr 映射，再做局部修复，禁止盲改整套室内绿色 RGB。

@@ -10,7 +10,8 @@
       "required_test_ids": [
         "test_johto_gate157_collision.Route31VioletNativeGate.test_gate_warp_graph_keeps_all_four_pairs",
         "test_johto_gate157_collision.Route31VioletNativeGate.test_walkable_gate_portal_does_not_auto_warp"
-      ]
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     },
     {
       "rpp_map": "JohtoVioletCity",
@@ -19,7 +20,8 @@
       "warp_count": 2,
       "required_test_ids": [
         "test_johto_gate157_collision.Route31VioletNativeGate.test_gate_warp_graph_keeps_all_four_pairs"
-      ]
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     },
     {
       "rpp_map": "JohtoRoute31VioletGate",
@@ -28,8 +30,31 @@
       "warp_count": 4,
       "required_test_ids": [
         "test_johto_warp_topology.WarpTopologyTests.test_swapped_doors_must_fail_not_silently_pass",
-        "test_johto_gate157_collision.Route31VioletNativeGate.test_outdoor_gate_warps_require_a_second_collision_input"
-      ]
+        "test_johto_gate157_collision.Route31VioletNativeGate.test_outdoor_gate_warps_require_a_second_collision_input",
+        "test_johto_mapname158.Route31VioletTransitSign.test_gate_is_neutral_like_kanto_gates",
+        "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source",
+        "test_johto_gate157_collision.Route31VioletNativeGate.test_gate_warp_graph_keeps_all_four_pairs",
+        "test_johto_gate157_collision.Route31VioletNativeGate.test_walkable_gate_portal_does_not_auto_warp",
+        "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_outside_black_border_is_distinct_from_gold_interior",
+        "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_gold_gate_runtime_rgb_exact_with_kanto_isolation",
+        "test_johto_gate157_collision.Route31VioletNativeGate.test_existing_route15_and_indoor_collision_remain_unchanged"
+      ],
+      "neutral_name_sign_test_id": "test_johto_mapname158.Route31VioletTransitSign.test_gate_is_neutral_like_kanto_gates",
+      "gold_palette_test_id": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source",
+      "runtime_palette_status": "PHONE_PENDING",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_gate157_collision.Route31VioletNativeGate.test_gate_warp_graph_keeps_all_four_pairs",
+        "directional_collision": "test_johto_gate157_collision.Route31VioletNativeGate.test_outdoor_gate_warps_require_a_second_collision_input",
+        "immediate_return": "test_johto_gate157_collision.Route31VioletNativeGate.test_walkable_gate_portal_does_not_auto_warp",
+        "exterior_border_loads": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_outside_black_border_is_distinct_from_gold_interior",
+        "neutral_map_name": "test_johto_mapname158.Route31VioletTransitSign.test_gate_is_neutral_like_kanto_gates",
+        "gold_art_tile_palette": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source",
+        "runtime_rgb_kanto_isolation": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_gold_gate_runtime_rgb_exact_with_kanto_isolation",
+        "legacy_gate_regression": "test_johto_gate157_collision.Route31VioletNativeGate.test_existing_route15_and_indoor_collision_remain_unchanged"
+      },
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED"
     },
     {
       "rpp_map": "JohtoRoute32",
@@ -61,6 +86,63 @@
         "test_johto_union_cave_exit192.UnionCaveExit192.test_two_mouths_gold_matched",
         "test_johto_union_cave_exit192.UnionCaveExit192.test_route33_entry_requires_north_from_11_10"
       ]
+    },
+    {
+      "rpp_map": "JohtoAzaleaTown",
+      "gold_map": "AzaleaTown",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_gold_exact_two_way_registered_warps",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_collision_wrong_direction_outside_fails",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_no_vertical_pair_walk_fails"
+      ],
+      "visual_border_status": "STATIC_CANDIDATE_PHONE_PENDING",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
+    },
+    {
+      "rpp_map": "JohtoIlexAzaleaGate",
+      "gold_map": "IlexForestAzaleaGate",
+      "family": "GATE_INDOOR",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_gold_exact_two_way_registered_warps",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_forest_west_exit_remains_sealed",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_collision_wrong_direction_inside_fails",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_exact_entry_check_fails",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_native_gate_neutral_name_sign_and_route34_townmap_unchanged",
+        "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_connected_map_border_refresh_fails",
+        "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_gold_gate_runtime_rgb_exact_with_kanto_isolation",
+        "test_johto_gate157_collision.Route31VioletNativeGate.test_existing_route15_and_indoor_collision_remain_unchanged"
+      ],
+      "neutral_name_sign_test_id": "test_johto_ilex_south_gate197.IlexSouthGate197.test_native_gate_neutral_name_sign_and_route34_townmap_unchanged",
+      "gold_palette_test_id": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source",
+      "runtime_palette_status": "PHONE_ACCEPTED",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_ilex_south_gate197.IlexSouthGate197.test_gold_exact_two_way_registered_warps",
+        "directional_collision": "test_johto_ilex_south_gate197.IlexSouthGate197.test_collision_wrong_direction_inside_fails",
+        "immediate_return": "test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_exact_entry_check_fails",
+        "exterior_border_loads": "test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_connected_map_border_refresh_fails",
+        "neutral_map_name": "test_johto_ilex_south_gate197.IlexSouthGate197.test_native_gate_neutral_name_sign_and_route34_townmap_unchanged",
+        "gold_art_tile_palette": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source",
+        "runtime_rgb_kanto_isolation": "test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_gold_gate_runtime_rgb_exact_with_kanto_isolation",
+        "legacy_gate_regression": "test_johto_gate157_collision.Route31VioletNativeGate.test_existing_route15_and_indoor_collision_remain_unchanged"
+      },
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED"
     }
+  ],
+  "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+  "gatehouse_proof_categories": [
+    "two_lane_warps",
+    "directional_collision",
+    "immediate_return",
+    "exterior_border_loads",
+    "neutral_map_name",
+    "gold_art_tile_palette",
+    "runtime_rgb_kanto_isolation",
+    "legacy_gate_regression"
   ]
 }

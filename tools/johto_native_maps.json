@@ -353,6 +353,38 @@
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": "AZALEA_TOWN"
+    },
+    {
+      "local_id": 11,
+      "local_symbol": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+      "header": "JohtoIlexAzaleaGate_h",
+      "bank": "BANK(JohtoIlexAzaleaGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 14,
+      "town_map_name": "JohtoBrowseRoute34Name",
+      "town_map_xy": [
+        128,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     }
   ]
 }

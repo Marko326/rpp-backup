@@ -33,7 +33,7 @@ GOLD_REQUIRED = (
     'Makefile', 'main.asm', 'includes.asm',
     'maps/Route31.asm', 'maps/VioletCity.asm', 'maps/Route31VioletGate.asm',
     'maps/EastWestGate.blk', 'data/maps/blocks.asm', 'data/maps/maps.asm',
-    'data/tilesets/gate_metatiles.bin', 'gfx/tilesets/gate.png',
+    'data/tilesets/gate_metatiles.bin', 'gfx/tilesets/gate.png', 'gfx/tilesets/gate_palette_map.asm',
 )
 WARP_RPP = re.compile(r'^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*(JOHTO_[A-Z_0-9]+)\s*$', re.M)
 WARP_GOLD = re.compile(r'^\s*warp_event\s+(\d+),\s*(\d+),\s*([A-Z_0-9]+),\s*(\d+)\s*$', re.M)
@@ -75,6 +75,61 @@ def preflight(rpp, gold):
                 except OSError as ex:
                     problems.append(f'{label} UNREADABLE {name}: {ex}')
     return problems
+
+
+def gold_gate_source_to_compact_tiles(rpp, gold):
+    """Resolve *actual* 8x8 tile IDs using paired Gold/RPP metatile cells.
+
+    RPP remaps the graphics (e.g. Gold tile 1 -> compact tile 2 and Gold
+    tile 7 -> compact tile 0). Sorting Gold tile IDs does NOT give the RPP
+    compact tile order. This broke P16D and recolored the entire gate.
+    """
+    original_layout = (gold / 'maps/EastWestGate.blk').read_bytes()
+    original_ids = sorted(set(original_layout))
+    if len(original_layout) != 20 or len(original_ids) != GOLD_GATE_SOURCE_BLOCKS:
+        raise ValueError('invalid Gold gate geometry for source palette mapping')
+    compact_layout = (rpp / 'maps/JohtoRoute31VioletGate.blk').read_bytes()
+    if compact_layout != bytes(original_ids.index(x) for x in original_layout):
+        raise ValueError('RPP/Gold gate layout mismatch: no reliable palette mapping')
+    source_blocks = (gold / 'data/tilesets/gate_metatiles.bin').read_bytes()
+    compact_blocks = (rpp / 'gfx/blocksets/johto_gate.bst').read_bytes()
+    if len(source_blocks) % 16 or len(compact_blocks) < GOLD_GATE_SOURCE_BLOCKS * 16:
+        raise ValueError('incomplete source or compact gate metatiles')
+    source_to_compact, compact_to_source = {}, {}
+    for compact_block, source_block in enumerate(original_ids):
+        if (source_block + 1) * 16 > len(source_blocks):
+            raise ValueError('Gold gate metatile index outside table')
+        source_cells = source_blocks[source_block*16:(source_block+1)*16]
+        compact_cells = compact_blocks[compact_block*16:(compact_block+1)*16]
+        for source_id, compact_id in zip(source_cells, compact_cells):
+            if (source_id in source_to_compact and source_to_compact[source_id] != compact_id
+                or compact_id in compact_to_source and compact_to_source[compact_id] != source_id):
+                raise ValueError('gate tile reuse mismatch between Gold and compact graphics')
+            source_to_compact[source_id] = compact_id
+            compact_to_source[compact_id] = source_id
+    if len(source_to_compact) != GOLD_GATE_SOURCE_TILES or len(compact_to_source) != GOLD_GATE_SOURCE_TILES:
+        raise ValueError('gate 8x8 source/compact correspondence is incomplete')
+    return compact_to_source
+
+
+def verify_gold_gate_palette_map(rpp, gold):
+    """Compare palettes for matching graphic IDs, NOT sorted tile positions."""
+    def attrs(path):
+        return [v.strip() for line in path.read_text().splitlines()
+                if 'tilepal 0,' in line
+                for v in line.split('tilepal 0,', 1)[1].split(';', 1)[0].split(',')]
+    try:
+        compact_to_source = gold_gate_source_to_compact_tiles(rpp, gold)
+        source = attrs(gold / 'gfx/tilesets/gate_palette_map.asm')
+        dest = attrs(rpp / 'color/tilesets/johto_gate.asm')
+    except (ValueError, OSError, IndexError) as exc:
+        return [f'Gold gate palette mapping cannot be established: {exc}']
+    if len(source) != 96 or len(dest) != 96:
+        return ['Gold gate palette assignment must have 96 tiles on both sides']
+    return [f'GOLD GATE palette mismatch: compact tile {compact:02x} from Gold tile {orig:02x}: '
+            f'{dest[compact]} != {source[orig]}'
+            for compact, orig in sorted(compact_to_source.items())
+            if compact >= len(dest) or orig >= len(source) or dest[compact] != source[orig]]
 
 
 def verify_gold_gate_art(rpp, gold):
@@ -124,6 +179,9 @@ def verify_gold_gate_art(rpp, gold):
                 passable=label=='FLOOR' or label.startswith('WARP_CARPET_')
                 if (target_tile in allowed)!=passable:
                     errors.append(f'GOLD/RPP walkability mismatch: block {source_id}, cell {cell}')
+    errors.extend(verify_gold_gate_palette_map(rpp, gold))
+    from johto_gate_rgb_audit import verify as verify_gold_gate_rgb
+    errors.extend(verify_gold_gate_rgb(rpp, gold))
     if len(tiles_used)!=GOLD_GATE_SOURCE_TILES:
         errors.append('Gold source no longer uses 22 referenced tiles')
     if is_border_fixed:

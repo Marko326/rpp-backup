@@ -1,3 +1,8 @@
+## 新做门房的强制入口（GATE-5.62.202 正式收口）
+
+**先读 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`**，再维护 `tools/johto_door_contracts.json`。`GATE_INDOOR` 必须登记 8 类实际执行的源码回归测试、地点提示/Gold RGB/关东隔离，以及手机进出与视觉状态；缺项门禁 FAIL。已验收图块不得因错误的排序来源测试误改。详见 `docs/JOHTO_GOLD_DOOR_GATE_POLICY.md`。
+
+
 ## ILEX-P15｜Gold Collision 长表处理与桐树林离线候选
 
 Gold 图形区块数量与碰撞条目数量不必相等（`TILESET_FOREST` 是 40 个 metatile / 64 条碰撞规则）。`johto_rpp_pipeline.py --gold-map IlexForest` 已使用通用转换器处理这一合法输入，仍然对缺失碰撞规则、图块索引越界和超过96图像槽位保持失败；这不产生可玩地图，也不会自动放行 Forest 特殊 Warp、Jump、Cut、Surf 或剧情。新强制 Gold 测试中包含将 64 条截成 39 条的错误注入；Gold 南门房与桧皮镇/森林两端原版 Warp 编号的精确核对见 `docs/JOHTO_ILEX_P15_GOLD_STAGING.md`。

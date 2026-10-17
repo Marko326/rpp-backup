@@ -4,6 +4,13 @@ from pathlib import Path
 import json
 import re
 
+GATEHOUSE_GUIDE = 'docs/JOHTO_GATEHOUSE_READ_FIRST.md'
+GATEHOUSE_PROOFS = ('two_lane_warps', 'directional_collision', 'immediate_return',
+                    'exterior_border_loads', 'neutral_map_name',
+                    'gold_art_tile_palette', 'runtime_rgb_kanto_isolation',
+                    'legacy_gate_regression')
+GATEHOUSE_REVIEW_STATES = ('PHONE_PENDING', 'PHONE_ACCEPTED')
+
 FAMILIES = frozenset(('GATE_OUTDOOR', 'GATE_INDOOR', 'CAVE_OUTDOOR',
                       'CAVE_INDOOR', 'BUILDING', 'LADDER_STAIRS',
                       'DIRECTIONAL', 'PANEL', 'PIT', 'SCRIPTED'))
@@ -59,6 +66,19 @@ def audit(root: Path, gold: Path) -> tuple[list[str], set[str]]:
         contracts = data['active_warp_maps']
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return [f'door contract unreadable: {exc}'], required_ids
+    # The handbook is a source-controlled requirement, not a conversation memory.
+    guide = root / GATEHOUSE_GUIDE
+    try:
+        prose = guide.read_text(encoding='utf-8')
+        if not all(marker in prose for marker in (
+            '## A. 两格门口的行为合同', '## B. 外面建筑完整',
+            '## C. 室内素材与调色', '## D. 地图提示',
+            '## E. 强制准入', '## F. P16 的失败样本')):
+            errors.append(f'gatehouse mandatory guide incomplete: {GATEHOUSE_GUIDE}')
+    except OSError:
+        errors.append(f'gatehouse mandatory guide missing: {GATEHOUSE_GUIDE}')
+    if data.get('gatehouse_guide') != GATEHOUSE_GUIDE or data.get('gatehouse_proof_categories') != list(GATEHOUSE_PROOFS):
+        errors.append('gatehouse global onboarding contract/guide missing or outdated')
     seen = set()
     for entry in contracts:
         try:
@@ -78,6 +98,30 @@ def audit(root: Path, gold: Path) -> tuple[list[str], set[str]]:
                 errors.append(f'no static proof test ids for {name}')
             else:
                 required_ids.update(tests)
+            if family in ('GATE_INDOOR', 'GATE_OUTDOOR') and entry.get('gatehouse_guide') != GATEHOUSE_GUIDE:
+                errors.append(f'{name} gate missing mandatory gatehouse_guide')
+            if family == 'GATE_INDOOR':
+                # Review the complete gate, not only the Warp pair. A copied gate
+                # must explicitly prove neutral-sign and Gold palette coverage.
+                for key in ('neutral_name_sign_test_id', 'gold_palette_test_id'):
+                    proof = entry.get(key)
+                    if not isinstance(proof, str) or not proof.startswith('test_') or proof not in tests:
+                        errors.append(f'{name} gate lacks required {key} in executed tests')
+                proofs = entry.get('gatehouse_proof_ids')
+                if not isinstance(proofs, dict) or set(proofs) != set(GATEHOUSE_PROOFS):
+                    errors.append(f'{name} gate missing mandatory gatehouse proof categories')
+                else:
+                    ids = list(proofs.values())
+                    if any(not isinstance(v, str) or not v.startswith('test_') or v not in tests for v in ids) or len(set(ids)) != len(ids):
+                        errors.append(f'{name} gate proof ids missing from executed test list / duplicated')
+                    else:
+                        required_ids.update(ids)
+                for status_name in ('phone_door_status', 'phone_visual_status'):
+                    if entry.get(status_name) not in GATEHOUSE_REVIEW_STATES:
+                        errors.append(f'{name} gate missing reviewed {status_name}')
+                palette_status = entry.get('runtime_palette_status')
+                if palette_status not in ('PHONE_PENDING', 'PHONE_ACCEPTED'):
+                    errors.append(f'{name} gate lacks reviewed runtime palette status')
             if not (gold / 'maps' / f'{gold_map}.asm').is_file():
                 errors.append(f'Gold entrance map missing for {name}: {gold_map}')
         except (TypeError, KeyError) as exc:
