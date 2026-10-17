@@ -28,6 +28,28 @@ def warp_count(path: Path) -> int:
     raise ValueError(f'mapObject missing Warp count: {path.name}')
 
 
+def audit_warp_capabilities(root: Path) -> list[str]:
+    """Reject explicitly forbidden Warps that are enabled in real map objects.
+
+    DEFERRED has historically been used for unreviewed metadata, so do not
+    globally relabel it. Only a direct FORBIDDEN/active contradiction is fatal.
+    """
+    path = root / 'tools/johto_native_maps.json'
+    try:
+        maps = json.loads(path.read_text())['maps']
+        errors = []
+        for spec in maps:
+            if spec['feature_status']['warp'] != 'FORBIDDEN':
+                continue
+            stem = spec['header'].removesuffix('_h')
+            objects = root / 'data/mapObjects' / (stem + '.asm')
+            if objects.is_file() and warp_count(objects):
+                errors.append(f'{stem} has active Warp but native map status is FORBIDDEN')
+        return errors
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return [f'native Warp capability contract unreadable: {exc}']
+
+
 def audit(root: Path, gold: Path) -> tuple[list[str], set[str]]:
     errors, required_ids = [], set()
     try:
@@ -79,4 +101,5 @@ def audit(root: Path, gold: Path) -> tuple[list[str], set[str]]:
         if actual != entry['warp_count']:
             errors.append(f'Johto Warp count/contract mismatch {entry["rpp_map"]}: '
                           f'RPP={actual}, declared={entry["warp_count"]}')
+    errors.extend(audit_warp_capabilities(root))
     return errors, required_ids

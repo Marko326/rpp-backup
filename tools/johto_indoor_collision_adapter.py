@@ -114,6 +114,146 @@ def check(rpp: Path, gold: Path, graphics: dict, rpp_set='gate'):
             'reason': 'Tile-ID whitelist evidence cannot certify door/warp triggers, NPC collision or in-game behavior'}
 
 
+def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
+                                 *, walkable_roles=None, graphic_slots=96):
+    """Generic 16x16 Gold collision plan; DOES NOT register runtime logic.
+
+    All geometry is derived from Gold source and one explicit per-tileset
+    walkable-role policy, never from the completed RPP map or audit outputs.
+    """
+    from collections import Counter, defaultdict
+    from johto_gold_sources import gold_block_sources
+    from johto_rpp_asset_audit import blocks_for, collision_labels, gold_resource_aliases
+    from johto_indoor_common import gold_dimensions
+    if walkable_roles is None:
+        walkable_roles = {'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT','HOP_DOWN_LEFT'}
+    walkable_roles = set(walkable_roles)
+    aliases = gold_resource_aliases(gold)
+    w,h = gold_dimensions(gold,map_name)
+    layout_source = gold_block_sources(gold).get(map_name)
+    if layout_source is None:
+        raise ConversionError('Missing Gold blocks source for map')
+    layout = (gold/layout_source).read_bytes()
+    blocks,_,_ = blocks_for(gold,gold_set,'gold',aliases)
+    collision,_ = collision_labels(gold,gold_set,aliases)
+    block_count=len(blocks)//16
+    if (len(layout)!=w*h or not blocks or len(blocks)%16 or block_count>256 or
+            not collision or len(collision)!=block_count):
+        raise ConversionError('Gold collision/layout sources do not match dimensions')
+    collision_rows=[tuple(x.strip() for x in c.split(',')) for c in collision]
+    if any(len(row)!=4 or not all(row) for row in collision_rows):
+        raise ConversionError('Gold collision has malformed quadrant definitions')
+    width,height=w*2,h*2
+    cells=[]
+    for y in range(height):
+        for x in range(width):
+            block=layout[(y//2)*w + x//2]
+            if block >= block_count:
+                raise ConversionError('Out-of-range Gold block ID')
+            quadrant=(y%2)*2+(x%2)
+            base=block*16+(y%2)*8+(x%2)*2
+            gfx=(blocks[base],blocks[base+1],blocks[base+4],blocks[base+5])
+            if max(gfx)>=graphic_slots:
+                raise ConversionError('Gold map references graphics beyond runtime window')
+            cells.append({'x':x,'y':y,'role':collision_rows[block][quadrant],
+                          'graphics':gfx,'image_id':gfx[2]})
+    blocked=bytearray()
+    for y in range(height):
+        for byteidx in range((width+7)//8):
+            value=0
+            for bit in range(8):
+                x=byteidx*8+bit
+                if x<width and cells[y*width+x]['role'] not in walkable_roles:
+                    value|=1<<bit
+            blocked.append(value)
+    hops=[]
+    unsafe_hops=[]
+    directions={'HOP_DOWN':((0,1),),'HOP_LEFT':((-1,0),),
+                'HOP_DOWN_LEFT':((0,1),(-1,0)),
+                'HOP_UP':((0,-1),),'HOP_RIGHT':((1,0),)}
+    for c in cells:
+        for dx,dy in directions.get(c['role'],()):
+            points=[(c['x']+n*dx,c['y']+n*dy) for n in (1,2,3)]
+            safe=all(0<=xx<width and 0<=yy<height for xx,yy in points)
+            if safe:
+                behind, landing, nextstep=(cells[yy*width+xx] for xx,yy in points)
+                safe=(behind['role'] in {'WALL','UP_WALL'} and
+                      landing['role'] in {'FLOOR','TALL_GRASS'} and
+                      nextstep['role'] in {'FLOOR','TALL_GRASS'})
+            if not safe:
+                unsafe_hops.append({'x':c['x'],'y':c['y'],'dx':dx,'dy':dy,
+                                    'reason':'landing/solid/out-of-bounds needs manual review'})
+                continue
+            hops.append({'x':c['x'],'y':c['y'],'dx':dx,'dy':dy,
+                         'from_tile':c['image_id'],'edge_tile':behind['image_id'],
+                         'landing':[points[1][0],points[1][1]]})
+    aliases_by_image=defaultdict(set)
+    for c in cells: aliases_by_image[c['image_id']].add(c['role'])
+    report={'schema':'gold-quadrant-candidate-v1','map':map_name,'tileset':gold_set,
+            'width_cells':width,'height_cells':height,
+            'mask_row_bytes':(width+7)//8,'mask_size_bytes':len(blocked),
+            'blocked_count':sum(c['role'] not in walkable_roles for c in cells),
+            'walkable_count':sum(c['role'] in walkable_roles for c in cells),
+            'collision_roles':dict(sorted(Counter(c['role'] for c in cells).items())),
+            'ambiguous_visual_ids':{f'{i:02X}':sorted(roles)
+                                    for i,roles in aliases_by_image.items() if len(roles)>1},
+            'walkable_roles':sorted(walkable_roles), 'hops':hops,
+            'unsafe_hop_candidates':unsafe_hops,
+            'special_cells':[{'x':c['x'],'y':c['y'],'role':c['role']}
+                             for c in cells if c['role'] in {'CAVE','DOOR','STAIRCASE','LADDER'}],
+            'runtime_ready':False,
+            'notes':'Gold collision evidence only; engine entry exceptions and map connections require separate review'}
+    return report,bytes(blocked)
+
+
+
+def audit_reviewed_geometry(rpp: Path, gold: Path) -> list[str]:
+    """Compare reviewed map data with Gold using the shared converter.
+
+    The JSON is a *regression expectation*, not a gameplay permission table.
+    Keep executable mask bytes under maps/, not inside tools/ or test staging.
+    """
+    import hashlib
+    import json
+    errors = []
+    try:
+        root = Path(rpp)
+        catalog = json.loads((root / 'tools/johto_gold_geometry_contracts.json').read_text())
+        if catalog.get('schema') != 'rpp-reviewed-gold-geometry-v1' or not catalog.get('maps'):
+            raise ConversionError('invalid reviewed geometry catalog')
+        seen = set()
+        for spec in catalog['maps']:
+            name, tileset = spec['gold_map'], spec['gold_tileset']
+            if name in seen or spec.get('review_only') is not True:
+                raise ConversionError(f'unsafe or repeated reviewed map: {name}')
+            seen.add(name)
+            path = Path(spec['rpp_blocked_mask'])
+            if path.is_absolute() or '..' in path.parts or path.parts[0] != 'maps':
+                raise ConversionError(f'unsafe runtime geometry path: {path}')
+            report, expected = plan_gold_quadrant_collision(Path(gold), name, tileset)
+            actual = (root/path).read_bytes()
+            if (actual != expected or hashlib.sha256(actual).hexdigest() != spec['mask_sha256']):
+                errors.append(f'{name}: Gold geometry mask or reviewed SHA differs')
+            for field in ('width_cells','height_cells','blocked_count','walkable_count','collision_roles'):
+                if report[field] != spec[field]:
+                    errors.append(f'{name}: reviewed {field} differs from Gold')
+            if sorted(report['ambiguous_visual_ids']) != spec['ambiguous_visual_ids']:
+                errors.append(f'{name}: reviewed visual-role aliases changed')
+            hops = [[h[k] for k in ('x','y','dx','dy')] for h in report['hops']]
+            if report['unsafe_hop_candidates'] or hops != spec['hops']:
+                errors.append(f'{name}: directional hops differ or are unsafe')
+            blocked = {(c['x'],c['y'],c['role']) for c in report['special_cells']}
+            stride = report['mask_row_bytes']
+            for x,y,role in spec['required_blocked_special_cells']:
+                if ((x,y,role) not in blocked or not (0 <= x < report['width_cells'] and
+                        0 <= y < report['height_cells']) or
+                        not (expected[y*stride+x//8] & (1 << (x % 8)))):
+                    errors.append(f'{name}: reviewed blocked special cell differs: {x},{y},{role}')
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        errors.append(f'reviewed Gold geometry incomplete: {exc}')
+    return errors
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     for name in ('rpp', 'gold', 'output'):

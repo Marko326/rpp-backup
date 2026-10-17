@@ -12,7 +12,8 @@ from johto_field_moves_preflight import audit  # noqa: E402
 
 FILES = ('engine/overworld/field_moves.asm', 'engine/items/items.asm',
          'home/overworld.asm', 'engine/special_warps.asm',
-         'engine/menu/start_sub_menus.asm', 'tools/johto_native_maps.json')
+         'engine/menu/start_sub_menus.asm', 'tools/johto_native_maps.json',
+         'constants/tilesets.asm')
 
 
 class FieldMovePreflight185(unittest.TestCase):
@@ -54,6 +55,35 @@ class FieldMovePreflight185(unittest.TestCase):
         self.mutate('engine/items/items.asm', 'db OVERWORLD,FOREST,GYM',
                     'db JOHTO,OVERWORLD,FOREST,GYM')
         self.assertIn('WaterTilesets', ' '.join(audit(self.root, self.gold)))
+
+    def test_modern_tileset_surf_global_enable_is_rejected(self):
+        self.mutate('engine/overworld/field_moves.asm', 'db OVERWORLD\n',
+                    'db JOHTO_MODERN\n\tdb OVERWORLD\n')
+        self.assertIn('JOHTO_MODERN', ' '.join(audit(self.root, self.gold)))
+
+    def test_modern_tileset_escape_global_enable_is_rejected(self):
+        self.mutate('engine/items/items.asm', 'db FOREST,CEMETERY',
+                    'db JOHTO_MODERN,FOREST,CEMETERY')
+        self.assertIn('JOHTO_MODERN', ' '.join(audit(self.root, self.gold)))
+
+    def test_new_johto_tileset_is_not_silently_surf_enabled(self):
+        p = self.root / 'constants/tilesets.asm'
+        p.write_text(p.read_text() + '\n\tconst JOHTO_COAST ; future water map\n')
+        self.mutate('engine/overworld/field_moves.asm', 'db OVERWORLD\n',
+                    'db JOHTO_COAST\n\tdb OVERWORLD\n')
+        self.assertIn('JOHTO_COAST', ' '.join(audit(self.root, self.gold)))
+
+    def test_non_prefixed_native_tileset_also_checked(self):
+        p = self.root / 'constants/tilesets.asm'
+        p.write_text(p.read_text() + '\n\tconst COASTAL ; native Johto suffix\n')
+        self.mutate('engine/items/items.asm', 'db FOREST,CEMETERY',
+                    'db COASTAL,FOREST,CEMETERY')
+        self.assertIn('COASTAL', ' '.join(audit(self.root, self.gold)))
+
+    def test_missing_johto_registry_fails_closed(self):
+        self.mutate('constants/tilesets.asm', 'const JOHTO        ;',
+                    'const NOT_JOHTO  ;')
+        self.assertIn('tileset registry', ' '.join(audit(self.root, self.gold)))
 
     def test_unsupported_capability_cannot_be_marked_allowed(self):
         self.mutate('tools/johto_native_maps.json', '"surf": "DEFERRED"',

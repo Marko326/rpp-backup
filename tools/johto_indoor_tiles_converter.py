@@ -59,6 +59,56 @@ def build_mapping(rpp: Path, gold: Path, map_name='Route31VioletGate',
     return result,converted
 
 
+def stage_preserved_gold_tileset(gold: Path, output: Path, map_name: str,
+                                 gold_set: str, fixed_slots: int = 96) -> dict:
+    """Emit a *read-only* full-ID Gold map/art candidate, not ROM integration.
+
+    Unlike the existing compact candidate, source block/tile IDs are kept.
+    No RPP assets or any map-specific script are read to create the result.
+    """
+    from johto_rpp_asset_audit import collision_labels
+    w, h = gold_dimensions(gold, map_name)
+    source = gold_block_sources(gold).get(map_name)
+    if source is None:
+        raise ConversionError('Gold source map has no unique blocks location')
+    layout = (gold / source).read_bytes()
+    blocks, source_blocks, _ = blocks_for(gold, gold_set, 'gold', gold_resource_aliases(gold))
+    image_path = gold / 'gfx/tilesets' / (gold_set + '.png')
+    tiles = load_png_tiles(image_path)
+    collision, collision_file = collision_labels(gold, gold_set, gold_resource_aliases(gold))
+    block_count = len(blocks)//16
+    if (not blocks or len(blocks)%16 or block_count > 256 or not tiles
+            or not collision or len(collision) != block_count):
+        raise ConversionError('Gold tileset art/collision incomplete or unexpected block count')
+    if len(layout) != w*h or any(b >= block_count for b in layout):
+        raise ConversionError('Gold map width/height or layout indices invalid')
+    # Gold's unreferenced border tiles may use 0xff, which must never be
+    # silently used as a real image ID by the staged map.
+    used = sorted(set(layout))
+    used_image_ids = {i for b in used for i in blocks[b*16:(b+1)*16]}
+    if max(used_image_ids) >= fixed_slots or max(used_image_ids) >= len(tiles):
+        raise ConversionError('Used Gold graphics exceed RPP candidate tile window')
+    folder = output/'preserved_gold_art_candidate'
+    if folder.exists():
+        raise ConversionError('candidate already exists')
+    folder.mkdir(parents=True)
+    (folder/(map_name+'.blk')).write_bytes(layout)
+    (folder/(gold_set+'.bst')).write_bytes(blocks)
+    import shutil
+    shutil.copyfile(image_path, folder/(gold_set+'.png'))  # preserve Gold PNG bytes
+    return {'schema':'gold-full-id-candidate-v1', 'map':map_name,
+            'tileset':gold_set, 'width':w, 'height':h,
+            'used_block_count':len(used), 'used_graphic_count':len(used_image_ids),
+            'tile_slots':fixed_slots, 'source_layout':source,
+            'source_blockset':source_blocks, 'source_collision':collision_file,
+            'layout_sha256':sha(layout), 'blockset_sha256':sha(blocks),
+            'source_png_sha256':sha(image_path.read_bytes()),
+            'candidate_only':True, 'engine_implementation':False,
+            'needs_runtime_review':['palette','VRAM','tileset registry',
+                'map header','warp and connection safety','special movement',
+                'Surf/Fly/Dig permits','bank space']}
+
+
 def strict_2bpp(tile_image: Image.Image, width_slots: int) -> bytes:
     """Encode isolated grayscale candidates to exactly the RPP loader window.
 

@@ -75,6 +75,35 @@ class IndoorToolchainTests(unittest.TestCase):
         self.assertTrue(out['components']['map_header'])
         self.assertIn('status',out)
 
+    def test_native_route33_and_cave_registration_use_local_id_not_shared_fc(self):
+        self.assertEqual(rpp_dimensions(ROOT, 'JohtoRoute33'), (10, 9))
+        self.assertEqual(rpp_dimensions(ROOT, 'JohtoUnionCave1F'), (10, 18))
+        for name in ('JohtoRoute33', 'JohtoUnionCave1F'):
+            result = generate(ROOT, name)
+            self.assertEqual(result['registration_strategy'], 'native')
+            self.assertEqual(result['failed_checks'], [])
+            self.assertFalse(result['status'] == 'GAMEPLAY_ACCEPTED')
+
+    def test_native_dimension_mismatch_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            fixture=Path(td)
+            (fixture/'data/mapHeaders').mkdir(parents=True)
+            (fixture/'constants').mkdir()
+            (fixture/'data/mapHeaders/FakeRoad.asm').write_text(
+                'FakeRoad_h:\n db FAKE_ROAD_HEIGHT, FAKE_ROAD_WIDTH\n')
+            (fixture/'constants/map_constants.asm').write_text(
+                'mapconst FAKE_ROAD, 9, 10\n')
+            (fixture/'constants/region_map_constants.asm').write_text(
+                'DEF FAKE_ROAD_WIDTH EQU 11\nDEF FAKE_ROAD_HEIGHT EQU 9\n')
+            with self.assertRaises(ConversionError):
+                rpp_dimensions(fixture, 'FakeRoad')
+            (fixture/'constants/map_constants.asm').write_text('')
+            self.assertEqual(rpp_dimensions(fixture, 'FakeRoad'), (11, 9))
+            (fixture/'constants/region_map_constants.asm').write_text(
+                'DEF FAKE_ROAD_WIDTH EQU 11\n')
+            with self.assertRaises(ConversionError):
+                rpp_dimensions(fixture, 'FakeRoad')
+
     def test_safe_output_blocks_project_and_gold(self):
         with self.assertRaises(ConversionError):safe_roots(ROOT,GOLD,ROOT/'reports')
         with self.assertRaises(ConversionError):safe_roots(ROOT,GOLD,GOLD/'reports')

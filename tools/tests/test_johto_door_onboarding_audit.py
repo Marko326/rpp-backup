@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
-from johto_door_onboarding_audit import audit  # noqa: E402
+from johto_door_onboarding_audit import audit, audit_warp_capabilities  # noqa: E402
 
 
 class DoorOnboardingTests(unittest.TestCase):
@@ -48,3 +48,23 @@ class DoorOnboardingTests(unittest.TestCase):
             errors, _ = audit(fake, self.gold)
             self.assertTrue(any('Johto Warp count/contract mismatch JohtoRoute32' in e
                                 for e in errors), errors)
+
+
+class WarpCapabilityStatusTests(unittest.TestCase):
+    def test_native_warp_status_matches_active_route33(self):
+        self.assertEqual(audit_warp_capabilities(ROOT), [])
+
+    def test_forbidden_active_route33_warp_is_rejected(self):
+        with TemporaryDirectory() as tmp:
+            fake = Path(tmp)
+            (fake / 'tools').mkdir()
+            (fake / 'data/mapObjects').mkdir(parents=True)
+            source = (ROOT / 'tools/johto_native_maps.json').read_text()
+            import json
+            manifest = json.loads(source)
+            route = next(m for m in manifest['maps'] if m['local_id'] == 9)
+            route['feature_status']['warp'] = 'FORBIDDEN'
+            (fake / 'tools/johto_native_maps.json').write_text(json.dumps(manifest))
+            shutil.copy2(ROOT / 'data/mapObjects/JohtoRoute33.asm', fake / 'data/mapObjects')
+            self.assertTrue(any('JohtoRoute33 has active Warp' in e
+                                for e in audit_warp_capabilities(fake)))

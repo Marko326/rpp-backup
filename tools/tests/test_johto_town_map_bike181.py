@@ -84,7 +84,7 @@ class JohtoTownMapBike181(unittest.TestCase):
                     'native local 8')
 
     def test_missing_union_cave_bike_whitelist_must_fail(self):
-        self.mutate('data/bike_riding_tilesets.asm', ',JOHTO_UNION_CAVE,$FF', ',$FF',
+        self.mutate('data/bike_riding_tilesets.asm', ',JOHTO_UNION_CAVE,JOHTO_MODERN,$FF', ',JOHTO_MODERN,$FF',
                     'Union Cave tileset must appear')
 
     def test_wrong_union_cave_header_tileset_must_fail(self):

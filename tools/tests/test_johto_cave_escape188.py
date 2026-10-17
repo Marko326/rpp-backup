@@ -13,7 +13,9 @@ from johto_cave_escape_audit import audit  # noqa: E402
 INPUTS = ('engine/items/items.asm', 'engine/special_warps.asm',
           'engine/overworld/johto_cave_escape.asm', 'main.asm',
           'tools/johto_native_maps.json',
-          'data/mapObjects/JohtoRoute32.asm', 'data/mapObjects/JohtoUnionCave1F.asm')
+          'data/mapObjects/JohtoRoute32.asm', 'data/mapObjects/JohtoRoute33.asm',
+          'data/mapObjects/JohtoUnionCave1F.asm',
+          'engine/overworld/region_map_lookup.asm')
 
 
 class CaveEscape188(unittest.TestCase):

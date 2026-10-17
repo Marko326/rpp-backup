@@ -233,17 +233,24 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
 
     expected = ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID',
                 79, 6, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
-    if arrivals != [expected]:
-        errors.append('only Route32 needs a southward arrival step; cave cannot auto-step')
-    if not registered_warp(outside, 6, 79) or not registered_warp(cave, 17, 3):
+    expected33 = ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID',
+                  9, 11, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
+    if arrivals != [expected, expected33]:
+        errors.append('Route32 and Route33 each require exact outdoor arrival step, cave cannot auto-step')
+    if (not registered_warp(outside, 6, 79)
+            or not registered_warp(cave, 17, 3)
+            or not registered_warp(cave, 17, 31)):
         errors.append('original Gold cave and Route32 Warp coordinates must remain registered')
     if not walkable(root, 'JohtoRoute32', 'johto', 10, 6, 80):
         errors.append('Route32 automatic step destination is not walkable')
     if (not walkable(root, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3)
-            or walkable(root, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4)):
+            or walkable(root, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4)
+            or not walkable(root, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 31)
+            or walkable(root, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 32)):
         errors.append('cave must have walkable Warp (17,3) with a solid south wall (17,4)')
     if gold is not None:
-        for name, pos in (('Route32', (6, 79)), ('UnionCave1F', (17, 3))):
+        for name, pos in (('Route32', (6, 79)), ('UnionCave1F', (17, 3)),
+                          ('UnionCave1F', (17, 31)), ('Route33', (11, 9))):
             try:
                 if pos not in gold_warps(gold, name):
                     errors.append(name + ': Warp not found in original Gold map')
@@ -265,18 +272,19 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         errors.append('old cave direction-filtered step-on Warp path remains')
     warp_step = player.split('IsPlayerStandingOnDoorTileOrWarpTile:', 1)[-1].split('INCLUDE "data/warp_tile_ids.asm"', 1)[0]
     if ('callba JohtoRoute32CaveWarpTileCheck' not in warp_step
+            or 'callba JohtoRoute33CaveWarpTileCheck' not in warp_step
             or not re.search(r'call IsInArray\s+jr nc, \.done[\s\S]*?ld hl, wd736\s+res 2, \[hl\]\s+scf', warp_step)):
         errors.append('Route32 must step onto exact Warp; standard Warp floor check must remain')
 
     face = player.split('IsPlayerFacingEdgeOfMap:', 1)[-1].split('IsWarpTileInFrontOfPlayer:', 1)[0]
     down = face.split('\n.facingDown\n', 1)[-1].split('\n.facingUp\n', 1)[0]
     for token in ('cp REGION_NATIVE_MAP_SLOT', 'cp MAP_REGION_JOHTO',
-                  'cp JOHTO_UNION_CAVE_1F_LOCAL_ID', 'cp 17', 'cp 3',
+                  'cp JOHTO_UNION_CAVE_1F_LOCAL_ID', 'cp 17', 'cp 3', 'cp 31',
                   'jr z, .setCarry', '.normalDownEdge', 'ld a, [wCurMapHeight]'):
         if token not in down:
             errors.append('missing targeted Union Cave DOWN collision guard: ' + token)
-    if not re.search(r'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\s+jr nz, \.normalDownEdge\s+ld a, c\s+cp 17\s+jr nz, \.normalDownEdge\s+ld a, b\s+cp 3\s+jr z, \.setCarry', down):
-        errors.append('cave DOWN collision Warp must require exact x=17,y=3')
+    if not re.search(r'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\s+jr nz, \.normalDownEdge\s+ld a, c\s+cp 17\s+jr nz, \.normalDownEdge\s+ld a, b\s+cp 3\s+jr z, \.setCarry[\s\S]*?cp 31\s+jr z, \.setCarry', down):
+        errors.append('cave DOWN collision Warp must require exact x=17,y=3/31')
     extra = overworld.split('ExtraWarpCheck::', 1)[-1].split('MapEntryAfterBattle::', 1)[0]
     if 'ld hl, IsPlayerFacingEdgeOfMap' not in extra or 'cp JOHTO_UNION_CAVE' in extra:
         errors.append('cave must use original RPP facing-edge collision check')

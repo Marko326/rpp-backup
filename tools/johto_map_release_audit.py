@@ -19,6 +19,9 @@ from johto_warp_arrival_audit import audit as warp_audit
 from johto_town_map_bike_audit import audit as town_bike_audit
 from johto_field_moves_preflight import audit as field_move_audit
 from johto_cave_escape_audit import audit as cave_escape_audit
+from johto_indoor_collision_adapter import audit_reviewed_geometry
+from johto_route33_runtime191 import audit as route33_runtime_audit
+from johto_union_cave_exit192_audit import audit as cave_exit192_audit
 from johto_surf_geometry_audit import inspect as surf_geometry_inspect
 from johto_surf_runtime_audit import audit as surf_runtime_audit
 
@@ -26,7 +29,11 @@ GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
                  'data/maps/landmarks.asm', 'engine/events/overworld.asm',
                  'gfx/pokegear/johto.bin',
-                 'data/tilesets/cave_collision.asm')
+                 'data/tilesets/cave_collision.asm',
+                 'maps/Route33.blk', 'maps/Route33.asm',
+                 'data/tilesets/johto_modern_collision.asm',
+                 'data/tilesets/johto_modern_metatiles.bin',
+                 'gfx/tilesets/johto_modern.png')
 
 # Explicitly pinned modules: a deleted test file must NEVER make this gate greener.
 # To retire/rename a test, change this list in the same reviewed tool commit.
@@ -36,7 +43,7 @@ test_johto_gate159_gold_art test_johto_gate_audit
 test_johto_indoor_border_adapter test_johto_indoor_manifest
 test_johto_indoor_stage3 test_johto_indoor_stage4
 test_johto_indoor_stage5 test_johto_indoor_stage6
-test_johto_indoor_toolchain test_johto_map_release_audit
+test_johto_indoor_toolchain test_johto_gold_cells test_johto_map_release_audit
 test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170
 test_johto_route32_ladder166 test_johto_route32_p1b
@@ -51,6 +58,8 @@ test_johto_gold_door_audit test_johto_door_onboarding_audit
 test_johto_town_map_bike181 test_johto_full_town_map182 test_johto_field_moves_preflight185
 test_johto_cave_escape188 test_johto_surf_geometry186 test_johto_surf_runtime187
 test_johto_route32_surf188
+test_johto_route33_runtime191
+test_johto_union_cave_exit192
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
@@ -65,6 +74,9 @@ test_johto_gate157_collision.Route31VioletNativeGate.test_walkable_gate_portal_d
 test_johto_region_id170.NativeMapIDExpansion.test_same_length_wrong_header_identity_is_rejected
 test_johto_gold_door_audit.GoldDoorReferenceTests.test_bad_destination_index_is_rejected
 test_johto_gold_door_audit.GoldDoorReferenceTests.test_gold_baseline_inventory
+test_johto_door_onboarding_audit.WarpCapabilityStatusTests.test_forbidden_active_route33_warp_is_rejected
+test_johto_gold_cells.GoldQuadrantDecoder.test_missing_tilecoll_quadrant_fails
+test_johto_gold_cells.GoldQuadrantDecoder.test_any_graphic_exceeding_slot_limit_fails
 test_johto_door_onboarding_audit.DoorOnboardingTests.test_unregistered_new_map_warp_is_rejected
 test_johto_door_onboarding_audit.DoorOnboardingTests.test_existing_contract_count_drift_is_rejected
 test_johto_town_map_bike181.JohtoTownMapBike181.test_gold_landmarks_and_cave_bike_match
@@ -91,6 +103,19 @@ test_johto_route32_surf188.Route32Surf188.test_gold_route32_water_bitset_exact
 test_johto_route32_surf188.Route32Surf188.test_water_map_mutation_must_fail
 test_johto_route32_surf188.Route32Surf188.test_route32_map_guard_mutation_must_fail
 test_johto_route32_surf188.Route32Surf188.test_route32_dispatch_mutation_must_fail
+test_johto_rpp_batch.ReviewedGoldGeometryTests.test_mask_bit_mutation_is_rejected
+test_johto_rpp_batch.ReviewedGoldGeometryTests.test_wrong_hop_landing_mutation_is_rejected
+test_johto_rpp_batch.ReviewedGoldGeometryTests.test_fake_runtime_approval_is_rejected
+test_johto_route33_runtime191.Route33Runtime191.test_wrong_route32_seam_is_rejected
+test_johto_route33_runtime191.Route33Runtime191.test_route33_sign_cannot_disappear
+test_johto_route33_runtime191.Route33Runtime191.test_gold_source_metadata_mutation_is_rejected
+test_johto_route33_runtime191.Route33Runtime191.test_violet_to_route32_does_not_white_flash
+test_johto_route33_runtime191.Route33Runtime191.test_wrong_route33_grass_tile_is_rejected
+test_johto_route33_runtime191.Route33Runtime191.test_route33_fly_permission_missing_is_rejected
+test_johto_route33_runtime191.Route33Runtime191.test_fly_other_outdoor_check_must_remain
+test_johto_union_cave_exit192.UnionCaveExit192.test_two_mouths_gold_matched
+test_johto_union_cave_exit192.UnionCaveExit192.test_wrong_southern_exit_y_is_rejected
+test_johto_union_cave_exit192.UnionCaveExit192.test_wrong_return_route33_safe_point_is_rejected
 '''.split())
 
 
@@ -162,6 +187,9 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.extend('TOWN_BIKE: ' + e for e in town_bike_audit(root, gold))
         errors.extend('FIELD_MOVES: ' + e for e in field_move_audit(root, gold))
         errors.extend('CAVE_ESCAPE: ' + e for e in cave_escape_audit(root, gold))
+        errors.extend('CAVE_EXIT192: ' + e for e in cave_exit192_audit(root, gold))
+        errors.extend('REVIEWED_GEOMETRY: ' + e for e in audit_reviewed_geometry(root, gold))
+        errors.extend('ROUTE33_RUNTIME: ' + e for e in route33_runtime_audit(root, gold))
         errors.extend('SURF_GEOMETRY: ' + e for e in surf_geometry_inspect(root, gold)['errors'])
         errors.extend('SURF_RUNTIME: ' + e for e in surf_runtime_audit(root, gold))
     test_count = 0

@@ -167,5 +167,210 @@ class JohtoBatchInventoryTest(unittest.TestCase):
             self.assertEqual(before, after)
 
 
+
+
+class ReusableMapRuntimeReview(unittest.TestCase):
+    def test_native_map_runtime_review_is_structural_only(self):
+        from johto_rpp_pipeline import review_rpp_integration
+        root = Path(__file__).resolve().parents[2]
+        check = review_rpp_integration(root, 'JohtoRoute33',
+                                        {'map': 'Route33', 'evidence': {'warp_events': 1}})
+        self.assertEqual(check['errors'], [])
+        self.assertEqual(check['rpp_active_warps'], 1)
+        self.assertTrue(check['warp_contract_present'])
+        self.assertEqual(check['registration']['registration_strategy'], 'native')
+        self.assertEqual(check['native_feature_metadata']['fly'], 'FORBIDDEN')
+        self.assertTrue(check['fly_destination_is_not_fly_use'])
+        self.assertFalse(check['runtime_approved'])
+
+    def test_warp_contract_mismatch_is_a_blocker(self):
+        from johto_rpp_pipeline import review_rpp_integration
+        from unittest.mock import patch
+        root = Path(__file__).resolve().parents[2]
+        info = {'map': 'Route33', 'evidence': {'warp_events': 1}}
+        with patch('johto_rpp_pipeline.rpp_warps', return_value=[]):
+            result = review_rpp_integration(root, 'JohtoRoute33', info)
+        self.assertIn('active Warp count differs from existing door contract', result['errors'])
+        self.assertEqual(result['status'], 'STRUCTURAL_ERRORS')
+        self.assertFalse(result['runtime_approved'])
+
+    def test_registration_failure_cannot_be_reported_as_ready(self):
+        from johto_rpp_pipeline import review_rpp_integration
+        from unittest.mock import patch
+        root = Path(__file__).resolve().parents[2]
+        info = {'map': 'Route33', 'evidence': {'warp_events': 1}}
+        with patch('johto_rpp_pipeline.audit_registration',
+                   return_value={'failed_checks':['MAIN_HEADER_INCLUDE']}):
+            result = review_rpp_integration(root, 'JohtoRoute33', info)
+        self.assertIn('MAIN_HEADER_INCLUDE', result['errors'])
+        self.assertEqual(result['status'], 'STRUCTURAL_ERRORS')
+
+
+
+class SharedProjectGateNotMapApproval(unittest.TestCase):
+    def test_shared_gate_is_reused_and_does_not_approve_field_moves(self):
+        from johto_rpp_pipeline import run_project_static_gate
+        from unittest.mock import patch
+        with patch('johto_map_release_audit.audit_project', return_value={
+            'status': 'PASS', 'errors': [], 'tests': 349, 'skipped': 0,
+            'build_performed': False}) as audit:
+            result = run_project_static_gate(Path('/rpp'), Path('/gold'),
+                                             {'errors': [], 'status': 'STATIC_STRUCTURE_PRESENT_REVIEW_RUNTIME'})
+        audit.assert_called_once_with(Path('/rpp'), Path('/gold'),
+                                      expected_version=None, run_tests=True)
+        self.assertEqual(result['status'], 'PROJECT_STATIC_PASS_MAP_RUNTIME_PENDING')
+        self.assertFalse(result['map_specific_runtime_verified'])
+        self.assertFalse(result['field_moves_approved'])
+        self.assertFalse(result['phone_accepted'])
+
+    def test_shared_pass_cannot_hide_map_structure_error(self):
+        from johto_rpp_pipeline import run_project_static_gate
+        from unittest.mock import patch
+        with patch('johto_map_release_audit.audit_project', return_value={
+            'status': 'PASS', 'errors': [], 'tests': 349, 'skipped': 0,
+            'build_performed': False}):
+            result = run_project_static_gate(Path('/rpp'), Path('/gold'),
+                                             {'errors': ['bad Warp']})
+        self.assertEqual(result['status'], 'STATIC_FAIL')
+        self.assertIn('MAP_STRUCTURE: bad Warp', result['errors'])
+
+    def test_failed_project_gate_cannot_be_called_runtime_ready(self):
+        from johto_rpp_pipeline import run_project_static_gate
+        from unittest.mock import patch
+        with patch('johto_map_release_audit.audit_project', return_value={
+            'status': 'FAIL', 'errors': ['Gold missing'], 'tests': 0, 'skipped': 0,
+            'build_performed': False}):
+            result = run_project_static_gate(Path('/rpp'), Path('/gold'), None)
+        self.assertEqual(result['status'], 'STATIC_FAIL')
+        self.assertIn('Gold missing', result['errors'])
+
+
+
+class GoldMapOnboardingSignals(unittest.TestCase):
+    def test_field_moves_are_distinct_and_never_automatically_approved(self):
+        from johto_rpp_pipeline import make_map_onboarding
+        with tempfile.TemporaryDirectory() as td:
+            gold = Path(td)
+            (gold/'data/maps').mkdir(parents=True)
+            (gold/'maps').mkdir()
+            (gold/'data/maps/maps.asm').write_text(
+                'map ExampleRoad, TILESET_JOHTO_MODERN, ROUTE, LANDMARK_A\n'
+                'map ExampleCave, TILESET_CAVE, CAVE, LANDMARK_B\n'
+                'map ExampleCity, TILESET_JOHTO_MODERN, TOWN, LANDMARK_C\n')
+            for name in ('ExampleRoad', 'ExampleCave', 'ExampleCity'):
+                (gold/'maps'/f'{name}.asm').write_text(
+                    'warp_event 1, 2, TARGET, 1\nobject_event 1, 1, SPRITE, DATA\n')
+            art = {'width': 10, 'height': 9, 'tileset': 'johto_modern'}
+            geometry = {'collision_roles': {'FLOOR': 120}, 'special_cells': [],
+                        'hops': [], 'unsafe_hop_candidates': []}
+            def statuses(name, labels):
+                result = make_map_onboarding(gold, name, art, {**geometry, 'collision_roles': labels})
+                self.assertFalse(result['runtime_approved'])
+                return {x['id']: x for x in result['checks']}
+            road = statuses('ExampleRoad', {'FLOOR': 120})
+            self.assertEqual(road['fly_use']['status'], 'REVIEW_REQUIRED')
+            self.assertEqual(road['fly_destination']['status'], 'NOT_APPLICABLE')
+            self.assertEqual(road['surf']['status'], 'NOT_APPLICABLE')
+            self.assertEqual(road['dig_escape_rope']['status'], 'NOT_APPLICABLE')
+            cave = statuses('ExampleCave', {'FLOOR': 50, 'WATER': 70})
+            self.assertEqual(cave['fly_use']['status'], 'NOT_APPLICABLE')
+            self.assertEqual(cave['surf']['status'], 'REVIEW_REQUIRED')
+            self.assertEqual(cave['dig_escape_rope']['status'], 'REVIEW_REQUIRED')
+            city = statuses('ExampleCity', {'FLOOR': 120})
+            self.assertEqual(city['fly_destination']['status'], 'REVIEW_REQUIRED')
+            self.assertFalse(any(x['runtime_approved'] for x in city.values()))
+
+    def test_unregistered_gold_environment_fails_closed(self):
+        from johto_rpp_pipeline import make_map_onboarding
+        with tempfile.TemporaryDirectory() as td:
+            gold=Path(td)
+            (gold/'data/maps').mkdir(parents=True)
+            (gold/'data/maps/maps.asm').write_text('')
+            with self.assertRaises(ValueError):
+                make_map_onboarding(gold, 'FakeRoad',
+                    {'width': 1, 'height': 1, 'tileset': 'johto_modern'},
+                    {'collision_roles': {}, 'special_cells': [], 'hops': [],
+                     'unsafe_hop_candidates': []})
+
+
+
+
+class ReviewedGoldGeometryTests(unittest.TestCase):
+    """Map-independent regression contract: Gold inputs, runtime mask and safe hops."""
+    @classmethod
+    def setUpClass(cls):
+        import os
+        cls.gold = Path(os.environ.get('JOHTO_GOLD_SOURCE', '/missing-gold'))
+        if not (cls.gold/'maps/Route33.blk').is_file():
+            raise AssertionError('full Gold source required')
+
+    def setUp(self):
+        import shutil
+        from johto_indoor_collision_adapter import audit_reviewed_geometry
+        self.audit = audit_reviewed_geometry
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        for rel in ('tools/johto_gold_geometry_contracts.json',
+                    'maps/JohtoRoute33.blocked_mask.bin'):
+            dst = self.root/rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(Path(__file__).resolve().parents[2]/rel, dst)
+        self.specfile = self.root/'tools/johto_gold_geometry_contracts.json'
+        self.maskfile = self.root/'maps/JohtoRoute33.blocked_mask.bin'
+
+    def _mutate(self, change):
+        data = json.loads(self.specfile.read_text())
+        change(data['maps'][0])
+        self.specfile.write_text(json.dumps(data))
+        self.assertTrue(self.audit(self.root,self.gold))
+
+    def test_gold_exact_mask_and_reviewed_role_counts(self):
+        self.assertEqual(self.audit(self.root,self.gold), [])
+        spec = json.loads(self.specfile.read_text())['maps'][0]
+        self.assertEqual((spec['width_cells'],spec['height_cells']), (20,18))
+        self.assertEqual((spec['blocked_count'],spec['walkable_count']), (182,178))
+        self.assertEqual(sum(spec['collision_roles'].values()), 360)
+
+    def test_all_seven_safe_hops_are_preserved(self):
+        spec = json.loads(self.specfile.read_text())['maps'][0]
+        self.assertEqual({tuple(h) for h in spec['hops']},
+                         {(9,10,-1,0),(9,11,-1,0),(9,12,-1,0),
+                          (9,12,0,1),(10,12,0,1),(11,12,0,1),(12,12,0,1)})
+        self.assertEqual(self.audit(self.root,self.gold), [])
+
+    def test_image_collision_aliases_require_coordinate_guard(self):
+        spec = json.loads(self.specfile.read_text())['maps'][0]
+        self.assertEqual(spec['ambiguous_visual_ids'], ['05','3C','3E'])
+        self.assertEqual(self.audit(self.root,self.gold), [])
+
+    def test_blocked_cave_cell_cannot_be_approved(self):
+        spec = json.loads(self.specfile.read_text())['maps'][0]
+        self.assertEqual(spec['required_blocked_special_cells'], [[11,9,'CAVE']])
+        self.assertEqual(self.audit(self.root,self.gold), [])
+
+    def test_mask_bit_mutation_is_rejected(self):
+        raw = bytearray(self.maskfile.read_bytes())
+        raw[20] ^= 4
+        self.maskfile.write_bytes(raw)
+        self.assertTrue(self.audit(self.root,self.gold))
+
+    def test_wrong_hop_landing_mutation_is_rejected(self):
+        self._mutate(lambda s: s['hops'][0].__setitem__(0, s['hops'][0][0]+1))
+
+    def test_removed_collision_role_is_rejected(self):
+        self._mutate(lambda s: s['collision_roles'].pop('UP_WALL'))
+
+    def test_fake_runtime_approval_is_rejected(self):
+        self._mutate(lambda s: s.__setitem__('review_only', False))
+
+    def test_unregistered_map_mask_cannot_silently_disappear(self):
+        self.maskfile.unlink()
+        self.assertTrue(self.audit(self.root,self.gold))
+
+    def test_runtime_asset_must_not_live_under_tools(self):
+        self._mutate(lambda s: s.__setitem__('rpp_blocked_mask',
+                                            'tools/geometry/Route33.blocked_mask.bin'))
+
 if __name__ == '__main__':
     unittest.main()

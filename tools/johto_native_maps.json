@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "notes": "Explicit local-ID identity and staged capability status. DEFERRED is not approval. Identity is validated statically; features need separate gameplay audit.",
+  "notes": "Explicit local-ID identity and audited capability scope. DEFERRED is not approval; warp=ALLOWED means reviewed active Warp, not every exit or cave floor. fly is destination status, not outdoor Fly use permission. Identity is validated statically; features need separate gameplay audit.",
   "maps": [
     {
       "local_id": 0,
@@ -274,6 +274,37 @@
         "surf": "ALLOWED",
         "dig": "ALLOWED",
         "escape_rope": "ALLOWED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS"
+    },
+    {
+      "local_id": 9,
+      "local_symbol": "JOHTO_ROUTE_33_LOCAL_ID",
+      "header": "JohtoRoute33_h",
+      "bank": "BANK(JohtoRoute33_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES3",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE30",
+      "town_map_index": 10,
+      "town_map_name": "JohtoBrowseRoute33Name",
+      "town_map_xy": [
+        140,
+        90
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "ALLOWED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
         "cut": "DEFERRED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",

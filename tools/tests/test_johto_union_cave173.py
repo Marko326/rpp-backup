@@ -16,7 +16,8 @@ class Cave173RuntimePath(unittest.TestCase):
         cave=read('data/mapObjects/JohtoUnionCave1F.asm')
         self.assertEqual(re.findall(r'^\s*db\s+(\d+),\s*(\d+),\s*0,\s*REGION_WARP_ESCAPE',src,re.M), [('79','6')])
         self.assertIn('db 3, 17, 0, REGION_WARP_ESCAPE',cave)
-        self.assertIn('db $01',cave)  # B1F and Route33 exits stay sealed
+        self.assertIn('db $02',cave)  # two Gold exits; B1F stays sealed
+        self.assertIn('db 31, 17, 0, REGION_WARP_ESCAPE',cave)
 
     def test_step_before_transfer_and_no_other_global_walls_open(self):
         state=read('engine/overworld/player_state.asm')

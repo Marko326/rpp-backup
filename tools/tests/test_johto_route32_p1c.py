@@ -50,7 +50,8 @@ class Route32ConnectionTests(unittest.TestCase):
         self.assertIn('db SOUTH | EAST', violet)
         self.assertIn('db JOHTO_ROUTE_31', violet)
         self.assertIn('db NORTH', route32)
-        self.assertNotIn('JOHTO_ROUTE_33', route32)
+        self.assertIn('JOHTO_ROUTE_33_WIDTH', route32)
+        self.assertNotIn('JOHTO_AZALEA_TOWN', route32)
         self.assertIn('db $01 ; the original cave-mouth Warp only', objects)
 
 

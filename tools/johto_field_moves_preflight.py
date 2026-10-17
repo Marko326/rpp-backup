@@ -11,7 +11,17 @@ import argparse
 import json
 import re
 
-JOHTO_TILESETS = frozenset({'JOHTO', 'JOHTO_GATE', 'JOHTO_UNION_CAVE'})
+def registered_johto_tilesets(root: Path) -> frozenset[str]:
+    """Use the actual tileset registry, not a map-by-map hardcoded whitelist.
+
+    This project appends native Johto tilesets from the JOHTO entry onward.
+    Reject missing/ambiguous registries instead of silently skipping new types.
+    """
+    registry = (root / 'constants/tilesets.asm').read_text(encoding='utf-8')
+    names = re.findall(r'(?m)^\s*const\s+([A-Z][A-Z0-9_]*)\b', registry)
+    if names.count('JOHTO') != 1 or len(names) != len(set(names)):
+        raise ValueError('tileset registry lacks a unique JOHTO boundary or has duplicate names')
+    return frozenset(names[names.index('JOHTO'):])
 
 
 def section(source: str, label: str, stop: str = '$FF') -> list[str]:
@@ -42,6 +52,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         start = (root / 'engine/menu/start_sub_menus.asm').read_text()
         identities = json.loads((root / 'tools/johto_native_maps.json').read_text())
         gold_cave = (gold / 'data/tilesets/cave_collision.asm').read_text()
+        johto_tilesets = registered_johto_tilesets(root)
     except (OSError, ValueError) as exc:
         return [f'Field Move sources/contract unavailable: {exc}']
 
@@ -68,7 +79,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         except ValueError as exc:
             errors.append(str(exc))
             continue
-        enabled = JOHTO_TILESETS.intersection(names)
+        enabled = johto_tilesets.intersection(names)
         if enabled:
             errors.append(f'{purpose}: unreviewed Johto tileset(s) enabled in {label}: '
                           + ', '.join(sorted(enabled)))

@@ -25,6 +25,23 @@ def dimensions(project):
     found = {}
     for name, height, width in re.findall(r'^\s*mapconst\s+(\w+),\s*(\d+),\s*(\d+)', text, re.M):
         found[name] = (int(width), int(height))
+    # Native Johto maps use two-part (region, local_id) identities and
+    # separate *_WIDTH/HEIGHT EQU declarations; a shared $FC byte is not a
+    # unique map dimension. Parse both groups, reject inconsistent pairs.
+    native_file = project / 'constants/region_map_constants.asm'
+    if native_file.is_file():
+        native = native_file.read_text(encoding='utf-8')
+        widths = dict((key, int(value)) for key,value in re.findall(
+            r'^\s*DEF\s+(JOHTO_[A-Z0-9_]+)_WIDTH\s+EQU\s+(\d+)',native,re.M))
+        heights = dict((key, int(value)) for key,value in re.findall(
+            r'^\s*DEF\s+(JOHTO_[A-Z0-9_]+)_HEIGHT\s+EQU\s+(\d+)',native,re.M))
+        for key in sorted(set(widths) | set(heights)):
+            if key not in widths or key not in heights:
+                raise ConnectionError('Incomplete native dimension pair: '+key)
+            pair=(widths[key],heights[key])
+            if key in found and found[key]!=pair:
+                raise ConnectionError('Inconsistent native vs legacy dimensions: '+key)
+            found[key]=pair
     return found
 
 
@@ -125,6 +142,34 @@ def strip_entry(project, current, target, direction, current_id, target_id, w1, 
     return candidates, lines, names
 
 
+def registered_native_alias(project, target, target_id):
+    """Allow the shared $FC handle only for maps registered to that slot."""
+    source = project/'data/johto_map_headers.asm'
+    if not source.is_file():
+        return False
+    text = source.read_text(encoding='utf-8')
+    def section(start, end):
+        match = re.search(re.escape(start)+r'(.*?)'+re.escape(end), text, re.S)
+        if not match:
+            raise ConnectionError('Missing native Johto header/alias table')
+        return match.group(1)
+    pointer_table = section('JohtoMapHeaderPointers::','JohtoMapHeaderPointersEnd::')
+    alias_table = section('JohtoMapLegacyAliases::','JohtoMapLegacyAliasesEnd::')
+    pointers = re.findall(r'^\s*dw\s+(\w+)_h\b', pointer_table, re.M)
+    aliases = re.findall(r'^\s*db\s+([A-Z0-9_]+)\b', alias_table, re.M)
+    if not pointers or len(pointers)!=len(aliases) or pointers.count(target)!=1:
+        return False
+    idx = pointers.index(target)
+    if aliases[idx] != 'REGION_NATIVE_MAP_SLOT':
+        return False
+    native = project/'constants/region_map_constants.asm'
+    if not native.is_file():
+        return False
+    local = re.search(r'^\s*DEF\s+'+re.escape(target_id)+r'_LOCAL_ID\s+EQU\s+(\d+)',
+                      native.read_text(encoding='utf-8'), re.M)
+    return local is not None and int(local.group(1))==idx
+
+
 def read_connection(project, current, target, direction, current_id, target_id, w1, h1, w2, h2):
     candidates, lines, names = strip_entry(project, current, target, direction, current_id, target_id, w1, h1, w2, h2)
     # A correct strip is still inert if the header does not set its direction bit.
@@ -135,8 +180,11 @@ def read_connection(project, current, target, direction, current_id, target_id, 
             direction_flags.extend(part.strip().lower() for part in m.group(1).split('|'))
     if direction not in direction_flags:
         raise ConnectionError('Header does not enable connection direction '+direction)
+    expected_target_lines = {'db ' + target_id}
+    if registered_native_alias(project,target,target_id):
+        expected_target_lines.add('db REGION_NATIVE_MAP_SLOT')
     for i, line in enumerate(lines):
-        if line != 'db ' + target_id:
+        if line not in expected_target_lines:
             continue
         next_fields = []
         for item in lines[i+1:]:

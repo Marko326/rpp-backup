@@ -139,4 +139,4 @@ JohtoRoute33CanStepAhead::
 
 ; Audited against Gold Route33 20x18 16x16 collision map.
 JohtoRoute33BlockedRows::
-	INCBIN "tools/johto_route33_staging/geometry190/Route33.blocked_mask.bin"
+	INCBIN "maps/JohtoRoute33.blocked_mask.bin"

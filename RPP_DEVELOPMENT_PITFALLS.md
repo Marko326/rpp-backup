@@ -1,3 +1,11 @@
+## TOOL-LAYOUT-P10｜正式地图运行资源不得藏在工具阶段暂存目录
+
+- `tools/` 放转换、审计、生成器与配置；`tools/tests/` 放反向测试；`maps/` 放地图相关运行时数据，`gfx/` 放图像/图块，`engine/` 放汇编执行逻辑。
+- 以前 Route33 的54字节掩码被 ASM `INCBIN` 引用却存于 `tools/johto_route33_staging/geometry190/`。已迁到 `maps/JohtoRoute33.blocked_mask.bin`，不能误删或恢复旧路径；改动需同时核查 ASM 的引用。
+- 地图碰撞和跳崖转换应复用 `johto_indoor_collision_adapter.py`，地图审核差异存在 `tools/johto_gold_geometry_contracts.json`，不得再按地图编号复制 `geometryXXX.py` 算法。
+- 移动/删除测试模块时同步调整 `johto_map_release_audit.py` 的强制发现清单及最少负向测试；不要因为删了测试让门禁假绿。
+- 这属于源文件依赖关系及静态审计变更，不代表编译/链接已验证，也不改变游戏版本 `MAP-5.62.194`。
+
 ## MAP-5.62.193｜小地图转换后必须检查草地标记和 Fly 野外许可
 
 - `.192` 的 Route33 `JOHTO_MODERN` 虽标记 `OUTDOOR`，却在 `data/tileset_headers.asm` 把草地 ID 设成 `$FF`，而 Gold Route33 的 12 个 `TALL_GRASS` 16×16 象限四张 8×8 图像均为 `$04`。RPP `UpdatePlayerSprite` / `UpdateNPCSprite` 原本按 `wGrassTile` 设置下半身 OAM 优先级；只要登记 `$04` 就能复用，**不必重画图像或另造草地特效**。这不会自动导入野怪概率/遭遇数据。

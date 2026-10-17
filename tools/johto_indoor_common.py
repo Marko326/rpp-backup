@@ -97,11 +97,39 @@ def rpp_map_symbol(rpp: Path, map_name: str):
     return match[1]
 
 def rpp_dimensions(rpp: Path, map_name: str):
-    symbol = re.escape(rpp_map_symbol(rpp,map_name))
-    constants = read(rpp, 'constants/map_constants.asm')
-    m = re.search(r'^\s*mapconst\s+'+symbol+r'\s*,\s*(\d+)\s*,\s*(\d+)', constants, re.M)
-    if not m: raise ConversionError(f'RPP 未登记尺寸: {map_name}')
-    return int(m[2]), int(m[1])  # width, height in 32x32 blocks
+    """Resolve both legacy mapconst and native (region, local_id) dimensions.
+
+    Native width/height come from region_map_constants.asm; never infer a map
+    identity from the shared $FC compatibility byte. Conflicting declarations
+    fail closed rather than arbitrarily preferring one representation.
+    """
+    symbol = re.escape(rpp_map_symbol(rpp, map_name))
+    legacy = read(rpp, 'constants/map_constants.asm')
+    pairs = []
+    for height, width in re.findall(
+            r'^\s*mapconst\s+' + symbol + r'\s*,\s*(\d+)\s*,\s*(\d+)',
+            legacy, re.M):
+        pairs.append((int(width), int(height)))
+    native_file = rpp / 'constants/region_map_constants.asm'
+    if native_file.is_file():
+        native = native_file.read_text(encoding='utf-8')
+        native_values = {}
+        for dimension in ('WIDTH', 'HEIGHT'):
+            found = re.findall(r'^\s*DEF\s+' + symbol + '_' + dimension +
+                               r'\s+EQU\s+(\d+)\b', native, re.M)
+            if len(found) > 1:
+                raise ConversionError(f'{map_name} 重复的原生 {dimension} 定义')
+            if found:
+                native_values[dimension] = int(found[0])
+        if native_values:
+            if set(native_values) != {'WIDTH', 'HEIGHT'}:
+                raise ConversionError(f'{map_name} 原生宽高常量不完整')
+            pairs.append((native_values['WIDTH'], native_values['HEIGHT']))
+    if not pairs:
+        raise ConversionError(f'RPP 未登记尺寸: {map_name}')
+    if any(pair != pairs[0] for pair in pairs[1:]) or min(pairs[0]) <= 0:
+        raise ConversionError(f'{map_name} 新旧宽高定义不一致或无效: {pairs}')
+    return pairs[0]
 
 
 def gold_dimensions(gold: Path, map_name: str):

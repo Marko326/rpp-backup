@@ -26,6 +26,8 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         src = (ROOT / INPUTS[0]).read_text()
         self.assertEqual(profiles(src), [
             ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
         self.assertTrue(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3))
         self.assertFalse(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4))
@@ -68,7 +70,7 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         self.mutate('engine/overworld/region_map_lookup.asm',
                     '79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN',
                     '79, 6, REGION_NATIVE_MAP_SLOT, D_UP',
-                    'only Route32 needs a southward arrival step')
+                    'Route32 and Route33 each require exact outdoor arrival step')
 
     def test_unregistered_cave_warp_fails(self):
         self.mutate('data/mapObjects/JohtoUnionCave1F.asm',

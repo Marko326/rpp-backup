@@ -37,6 +37,7 @@ def generate(rpp: Path, map_name='JohtoRoute31VioletGate'):
                   'script': (rpp/path_script).is_file(),
                   'layout': (rpp/path_blk).is_file()}
     checks = []
+    native_defs = texts['constants/region_map_constants.asm']
 
     def add(code, passed, detail):
         checks.append({'code': code, 'pass': bool(passed), 'detail': detail})
@@ -46,7 +47,13 @@ def generate(rpp: Path, map_name='JohtoRoute31VioletGate'):
         symbol_match = re.search(r'^\s*db\s+([A-Z_0-9]+)_HEIGHT\s*,\s*\1_WIDTH\b',
                                  _lines(header), re.M)
         symbol = symbol_match[1] if symbol_match else None
-        width, height = rpp_dimensions(rpp, map_name) if symbol else (None, None)
+        if symbol:
+            try:
+                width, height = rpp_dimensions(rpp, map_name)
+            except ConversionError:
+                width, height = None, None
+        else:
+            width, height = None, None
         add('MAP_HEADER_DIMENSIONS_DECLARED', bool(symbol), path_header)
         add('MAP_HEADER_OBJECT_TABLE_REF',
             bool(re.search(r'\bdw\s+'+re.escape(map_name)+r'Object\b',_lines(header))), path_header)
@@ -80,32 +87,41 @@ def generate(rpp: Path, map_name='JohtoRoute31VioletGate'):
         _matches(main,r'^\s*'+re.escape(map_name)+r'Blocks\s*:\s*INCBIN\s+"'
                  +re.escape(path_blk)+r'"\s*$')==1, path_blk)
 
-    add('MAPCONST_REGISTRATION', bool(symbol) and _matches(texts['constants/map_constants.asm'],
-         r'^\s*mapconst\s+'+re.escape(symbol)+r'\s*,')==1, symbol or 'unknown')
-    add('REGION_LOCAL_ID_SYMBOL', bool(symbol) and _matches(texts['constants/region_map_constants.asm'],
-         r'^\s*DEF\s+'+re.escape(symbol)+r'_LOCAL_ID\s+EQU\s+')==1, symbol or 'unknown')
-    add('JOHTO_LOCAL_MAP_POINTER',
-        _matches(texts['data/johto_map_headers.asm'],
-                 r'^\s*dw\s+'+re.escape(map_name)+r'_h\b')==1,
-        'data/johto_map_headers.asm')
-    add('JOHTO_LOCAL_MAP_BANK',
-        _matches(texts['data/johto_map_headers.asm'],
-                 r'^\s*db\s+BANK\('+re.escape(map_name)+r'_h\)')==1,
-        'data/johto_map_headers.asm')
-    add('GLOBAL_MAP_POINTER',
-        _matches(texts['data/map_header_pointers.asm'],
-                 r'^\s*dw\s+'+re.escape(map_name)+r'_h\b')==1,
-        'data/map_header_pointers.asm')
-    add('GLOBAL_MAP_BANK',
-        _matches(texts['data/map_header_banks.asm'],
-                 r'^\s*db\s+BANK\('+re.escape(map_name)+r'_h\)')==1,
-        'data/map_header_banks.asm')
+    # An existing Johto map may be native-only (local ID), legacy-only
+    # (mapconst), or carry both registrations. Do not require every map to
+    # register in BOTH incompatible lookup tables.
+    has_native = bool(symbol and _matches(native_defs,
+        r'^\s*DEF\s+'+re.escape(symbol)+r'_LOCAL_ID\s+EQU\s+') == 1)
+    has_legacy = bool(symbol and _matches(texts['constants/map_constants.asm'],
+        r'^\s*mapconst\s+'+re.escape(symbol)+r'\s*,') == 1)
+    strategy = 'native' if has_native else 'legacy'
+    add('MAP_ID_REGISTRATION', has_native or has_legacy,
+        f'{symbol}: native={has_native}, legacy={has_legacy}')
+    if has_native:
+        add('JOHTO_LOCAL_MAP_POINTER',
+            _matches(texts['data/johto_map_headers.asm'],
+                     r'^\s*dw\s+'+re.escape(map_name)+r'_h\b') == 1,
+            'data/johto_map_headers.asm')
+        add('JOHTO_LOCAL_MAP_BANK',
+            _matches(texts['data/johto_map_headers.asm'],
+                     r'^\s*db\s+BANK\('+re.escape(map_name)+r'_h\)') == 1,
+            'data/johto_map_headers.asm')
+    else:
+        add('GLOBAL_MAP_POINTER',
+            _matches(texts['data/map_header_pointers.asm'],
+                     r'^\s*dw\s+'+re.escape(map_name)+r'_h\b') == 1,
+            'data/map_header_pointers.asm')
+        add('GLOBAL_MAP_BANK',
+            _matches(texts['data/map_header_banks.asm'],
+                     r'^\s*db\s+BANK\('+re.escape(map_name)+r'_h\)') == 1,
+            'data/map_header_banks.asm')
 
     incomplete = [c['code'] for c in checks if not c['pass']]
     refs = {rel:{'has_map_reference': (map_name in _lines(src) or
                                      bool(symbol and symbol in _lines(src)))}
             for rel,src in texts.items()}
-    return {'schema': 'johto-registration-plan-v2', 'map': map_name,
+    return {'schema': 'johto-registration-plan-v3', 'map': map_name,
+            'registration_strategy': strategy,
             'files':refs, 'components':components, 'dimensions':dims,
             'structural_checks':checks, 'failed_checks':incomplete,
             'status': 'REGISTRATION_REQUIRED' if incomplete else 'PRESENT_REVIEW_DEPENDENCIES',
