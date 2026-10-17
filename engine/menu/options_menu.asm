@@ -1142,6 +1142,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_UNION_CAVE
 	db MUSIC_GBP_GSC_ROUTE30 ; Route33
 	db MUSIC_GBP_GSC_AZALEA_TOWN ; Azalea Town
+	db MUSIC_GBP_GSC_ROUTE36 ; Ilex south gate, Gold MUSIC_ROUTE_36
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

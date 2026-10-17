@@ -3281,6 +3281,14 @@ INCLUDE "data/mapObjects/JohtoAzaleaTown.asm"
 INCLUDE "scripts/JohtoAzaleaTown.asm"
 JohtoAzaleaTownBlocks: INCBIN "maps/JohtoAzaleaTown.blk"
 
+; GATE-5.62.202: Gold south gate art reuses the already audited JOHTO_GATE set.
+; Native-only region key; the west (Forest) exit is not enabled.
+SECTION "Johto Ilex South Gate Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoIlexAzaleaGate.asm"
+INCLUDE "data/mapObjects/JohtoIlexAzaleaGate.asm"
+INCLUDE "scripts/JohtoIlexAzaleaGate.asm"
+JohtoIlexAzaleaGateBlocks: INCBIN "maps/JohtoIlexAzaleaGate.blk"
+
 SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_route33_collision.asm"
 

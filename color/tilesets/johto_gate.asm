@@ -1,3 +1,5 @@
+; GATE-5.62.202: Gold original tilepal via .bst per-cell source->target ID mapping.
+; Never assign sorted Gold palette tags by sorted source IDs: compact IDs differ.
 ; GATE-5.62.159: Gold original Gate 8x8 palette indices after collision-safe RPP remapping.
 	tilepal 0, GREEN, GREEN, GRAY, GRAY, GREEN, GREEN, GREEN, WATER
 	tilepal 0, BROWN, BROWN, GREEN, GREEN, GREEN, GREEN, GREEN, GREEN

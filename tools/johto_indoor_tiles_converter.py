@@ -77,8 +77,11 @@ def stage_preserved_gold_tileset(gold: Path, output: Path, map_name: str,
     tiles = load_png_tiles(image_path)
     collision, collision_file = collision_labels(gold, gold_set, gold_resource_aliases(gold))
     block_count = len(blocks)//16
+    # Gold collision tables may cover a wider ID range than the metatile art.
+    # For example, Forest has 40 graphical blocks but 64 collision entries.
+    # Reject missing collision data; extra source entries are not an error.
     if (not blocks or len(blocks)%16 or block_count > 256 or not tiles
-            or not collision or len(collision) != block_count):
+            or len(collision) < block_count):
         raise ConversionError('Gold tileset art/collision incomplete or unexpected block count')
     if len(layout) != w*h or any(b >= block_count for b in layout):
         raise ConversionError('Gold map width/height or layout indices invalid')

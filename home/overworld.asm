@@ -456,15 +456,23 @@ CheckWarpsNoCollision::
 CheckWarpsNoCollisionLoop::
 	ld a,[hli] ; check if the warp's Y position matches
 	cp d
-	jr nz,CheckWarpsNoCollisionRetry1
+	jp nz,CheckWarpsNoCollisionRetry1
 	ld a,[hli] ; check if the warp's X position matches
 	cp e
-	jr nz,CheckWarpsNoCollisionRetry2
+	jp nz,CheckWarpsNoCollisionRetry2
 ; if a match was found
 	push hl
 	push bc
 	ld hl,wd736
 	set 2,[hl] ; standing on warp flag
+	; GATE-5.62.202: both native Ilex gate mouths are collision-only.
+	; Arm the standing bit but do not transfer on entry or sideways movement.
+	call IsJohtoSouthGatePortal
+	jr nc, .checkOrdinaryWarpTile
+	pop bc
+	pop hl
+	jp CheckWarpsNoCollisionRetry2
+.checkOrdinaryWarpTile
 	callba IsPlayerStandingOnDoorTileOrWarpTile
 	pop bc
 	pop hl
@@ -513,6 +521,21 @@ CheckWarpsCollision::
 	ld a,[wXCoord]
 	cp b
 	jr nz,.retry2
+	; GATE-5.62.202: a blocked sideways/vertical step must not warp.
+	; Azalea exits WEST, while the gate interior returns EAST.
+	call IsJohtoSouthGatePortal
+	jr nc, .collisionWarpAllowed
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	ld a, [wPlayerDirection]
+	jr nz, .gateReturnsEast
+	cp PLAYER_DIR_LEFT
+	jr nz, .retry2
+	jr .collisionWarpAllowed
+.gateReturnsEast
+	cp PLAYER_DIR_RIGHT
+	jr nz, .retry2
+.collisionWarpAllowed
 	ld a,[hli]
 	ld [wDestinationWarpID],a
 	ld a,[hl]
@@ -813,6 +836,8 @@ CheckMapConnections::
 ; $C2XE without loading any tile patterns.
 	callba InitMapSprites
 	call LoadTileBlockMap
+	; GATE-5.62.202: connected-map fast path skips LoadMapData.
+	callba PatchJohtoAzaleaWestGateBorder
 	jp OverworldLoopLessDelay
 
 .didNotEnterConnectedMap
@@ -902,6 +927,28 @@ ExtraWarpCheck::
 .doBankswitch
 	ld b, BANK(IsWarpTileInFrontOfPlayer)
 	jp Bankswitch
+
+; GATE-5.62.202: shared source identity for two collision-only gate maps.
+; No single-byte $FC comparison can distinguish native maps. A/flags only;
+; the warp loop relies on BC/DE/HL surviving this test.
+IsJohtoSouthGatePortal::
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notGate
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notGate
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	jr z, .yes
+.notGate
+	and a
+	ret
+.yes
+	scf
+	ret
 
 MapEntryAfterBattle::
 	callba IsPlayerStandingOnWarp ; for enabling warp testing after collisions
@@ -2536,6 +2583,9 @@ LoadMapData::
 	call LoadMapHeader
 	callba InitMapSprites ; load tile pattern data for sprites
 	call LoadTileBlockMap
+	; GATE-5.62.202: the matching seamless-map hook must also run
+	; after LoadTileBlockMap, before the visible map view is built.
+	callba PatchJohtoAzaleaWestGateBorder
 	call LoadTilesetTilePatternData
 	call LoadCurrentMapView
 

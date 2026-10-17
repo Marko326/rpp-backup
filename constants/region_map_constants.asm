@@ -16,7 +16,8 @@ DEF JOHTO_ROUTE_32_LOCAL_ID EQU 7
 DEF JOHTO_UNION_CAVE_1F_LOCAL_ID EQU 8
 DEF JOHTO_ROUTE_33_LOCAL_ID EQU 9
 DEF JOHTO_AZALEA_TOWN_LOCAL_ID EQU 10
-DEF NUM_JOHTO_MAPS EQU 11
+DEF JOHTO_ILEX_AZALEA_GATE_LOCAL_ID EQU 11
+DEF NUM_JOHTO_MAPS EQU 12
 
 ; Native Johto local IDs >= 8 share one runtime compatibility handle.
 ; They must never consume more legacy bytes or reuse an old Kanto map ID.

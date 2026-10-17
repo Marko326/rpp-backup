@@ -159,7 +159,25 @@ IsPlayerFacingEdgeOfMap:
 	; everywhere else. This only runs for a player already on a Warp.
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_31
+	jr z, .route31LeftGate
+	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .normalLeftEdge
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .normalLeftEdge
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr nz, .normalLeftEdge
+	ld a, c
+	cp 2
+	jr nz, .normalLeftEdge
+	ld a, b
+	cp 10
+	jr z, .setCarry
+	cp 11
+	jr z, .setCarry
+	jr .resetCarry
+.route31LeftGate
 	ld a, c
 	cp 4
 	jr nz, .normalLeftEdge

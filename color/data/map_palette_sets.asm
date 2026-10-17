@@ -290,13 +290,14 @@ MapPaletteSets:
 	db OUTDOOR_ROOF
 	db CRYS_TEXTBOX
 
-; JOHTO_GATE (GATE-5.62.159): Gold visual palette, indoor family.
+; JOHTO_GATE (GATE-5.62.202): Gold indoor RGB values in isolated spare palette slots.
+; 2bpp art/tilepal assignments remain unchanged; Kanto's GATE remains untouched.
 	db INDOOR_GRAY
 	db INDOOR_RED
-	db INDOOR_GREEN
+	db JOHTO_GATE_GOLD_GREEN
 	db INDOOR_BLUE
 	db INDOOR_YELLOW
-	db INDOOR_BROWN
+	db JOHTO_GATE_GOLD_BROWN
 	db INDOOR_LIGHT_BLUE
 	db CRYS_TEXTBOX
 

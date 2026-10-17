@@ -149,6 +149,40 @@ JohtoAzaleaCanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr nz, .blocked
+	; GATE-5.62.202: the two Gold doorway carpet cells are a single
+	; vertically walkable pair, although their Gold collision role is WARP.
+	; Do not open north of y=10 or south of y=11 (both remain WALL).
+	ld a, [wXCoord]
+	cp 2
+	jr nz, .enterGate
+	ld a, [wYCoord]
+	cp 10
+	jr z, .upperCarpet
+	cp 11
+	jr nz, .enterGate
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .enterGate
+.upperCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+.enterGate
+	; Reuse the existing Gold path from x=3 towards the west doorway.
+	; Other Gold doors/well remain blocked by the unchanged binary mask.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .eastConnection
+	ld a, [wXCoord]
+	cp 3
+	jr nz, .eastConnection
+	ld a, [wYCoord]
+	cp 10
+	jr z, .allowed
+	cp 11
+	jr z, .allowed
+.eastConnection
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_RIGHT
 	jr nz, .normal
@@ -170,6 +204,27 @@ JohtoAzaleaCanStepAhead::
 	ret
 .blocked
 	scf
+	ret
+
+ ; GATE-5.62.202: render-only Azalea west border continuation. The Gold
+; 20x9 in-map layout is untouched, as are collision and Warp coordinates.
+; LoadTileBlockMap has filled the 3-block border. Only the west neighbor
+; of Gold blocks (0,4) and (0,5) needs LEFT roof/wall halves, not clones.
+; If the map header or dimensions change, revisit both offsets.
+PatchJohtoAzaleaWestGateBorder::
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	ret nz
+	ld hl, wOverworldMap + (MAP_BORDER + 4) * (JOHTO_AZALEA_TOWN_WIDTH + 2 * MAP_BORDER) + MAP_BORDER - 1
+	ld [hl], $08 ; Gold LEFT roof half, paired with (0,4) $09
+	ld hl, wOverworldMap + (MAP_BORDER + 5) * (JOHTO_AZALEA_TOWN_WIDTH + 2 * MAP_BORDER) + MAP_BORDER - 1
+	ld [hl], $1c ; Gold LEFT facade half, paired with (0,5) $1e
 	ret
 
 ; Shared 16x16 Gold block mask lookup; HL=mask, D=width cells, E=row bytes.

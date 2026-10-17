@@ -36,7 +36,12 @@ GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_modern_metatiles.bin',
                  'gfx/tilesets/johto_modern.png',
                  'data/maps/flypoints.asm', 'data/maps/spawn_points.asm',
-                 'maps/AzaleaTown.blk')
+                 'maps/AzaleaTown.blk',
+                 'maps/IlexForest.blk', 'maps/IlexForest.asm',
+                 'maps/IlexForestAzaleaGate.asm',
+                 'data/tilesets/forest_metatiles.bin',
+                 'data/tilesets/forest_collision.asm',
+                 'gfx/tilesets/forest.png')
 
 # Explicitly pinned modules: a deleted test file must NEVER make this gate greener.
 # To retire/rename a test, change this list in the same reviewed tool commit.
@@ -63,11 +68,17 @@ test_johto_cave_escape188 test_johto_surf_geometry186 test_johto_surf_runtime187
 test_johto_route32_surf188
 test_johto_route33_runtime191
 test_johto_fly_destinations196
+test_johto_gold_collision_cardinality test_johto_ilex_gold_reference
 test_johto_union_cave_exit192
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_gold_collision_cardinality.GoldSurplusCollisionEntries.test_extra_gold_collision_entries_do_not_block_candidate
+ test_johto_gold_collision_cardinality.GoldSurplusCollisionEntries.test_missing_collision_for_a_graphical_block_is_rejected
+ test_johto_gold_collision_cardinality.GoldSurplusCollisionEntries.test_surplus_unreferenced_collision_entries_do_not_change_geometry
+ test_johto_ilex_gold_reference.GoldIlexEntryReferences.test_gold_azalea_gate_and_forest_have_bidirectional_pairs
+ test_johto_ilex_gold_reference.GoldIlexEntryReferences.test_gold_gate_exact_art_reuses_existing_johto_gate_candidate
 test_johto_full_town_map182.JohtoFullTownMap182.test_options_scoped_labels_unique_and_mutation_is_caught
 test_johto_warp_arrival175.JohtoWarpArrivalContract.test_unconditional_reject_after_correct_direction_fails
 test_johto_warp_arrival175.JohtoWarpArrivalContract.test_unconditional_accept_after_x_guard_fails

@@ -1,5 +1,5 @@
-; MAP-5.62.195: Gold Azalea Town terrain; only Route33 east entrance is open.
-; Route34 west, all building/Well/forest-gate Warps remain closed.
+; GATE-5.62.202: terrain and Route33 east unchanged; open exact Ilex south
+; gate x=2/y=10,11 Warp only. Route34 and all other buildings/Well remain shut.
 JohtoAzaleaTown_h:
 	db JOHTO_MODERN
 	db JOHTO_AZALEA_TOWN_HEIGHT, JOHTO_AZALEA_TOWN_WIDTH

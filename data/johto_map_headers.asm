@@ -12,6 +12,7 @@ JohtoMapHeaderPointers::
 	dw JohtoUnionCave1F_h ; local $08 (native $FC)
 	dw JohtoRoute33_h ; local $09 (native $FC)
 	dw JohtoAzaleaTown_h ; local $0A (native $FC)
+	dw JohtoIlexAzaleaGate_h ; local $0B (native $FC)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -26,6 +27,7 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoUnionCave1F_h)
 	db BANK(JohtoRoute33_h)
 	db BANK(JohtoAzaleaTown_h)
+	db BANK(JohtoIlexAzaleaGate_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -44,6 +46,7 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT
 	db REGION_NATIVE_MAP_SLOT ; Route33 has no legacy alias
 	db REGION_NATIVE_MAP_SLOT ; Azalea Town has no legacy alias
+	db REGION_NATIVE_MAP_SLOT ; Ilex south gate, native only
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -60,6 +63,7 @@ JohtoNativeMapSongBanks::
 	db MUSIC_DUNGEON2, 0 ; Union Cave 1F
 	db MUSIC_ROUTES3, 0 ; Route33, Gold Route30 theme family
 	db MUSIC_CITIES2, 0 ; Azalea Town, existing compatible city family
+	db MUSIC_ROUTES2, 0 ; Ilex south gate, Gold Route36 music family
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

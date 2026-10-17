@@ -1,3 +1,10 @@
+## ILEX-P15｜Gold 图形区块数与碰撞定义数不能假设相等
+
+- 完整 Gold 桐树林 `forest_metatiles.bin` 是 **40 个图形区块**，但 `forest_collision.asm` 提供 **64 条碰撞定义**。原 `stage_preserved_gold_tileset` 与 `plan_gold_quadrant_collision` 都曾错误要求两表等长，新地图离线候选因此在实际开发时失败，尽管此前统一 380 项门禁全绿。应允许原版多出的碰撞定义，**但每个图形区块仍必须有碰撞项**；回归测试故意把 64 条截为 39 条，必须拒绝。
+- 桧皮镇到桐树林中间是 Gold `IlexForestAzaleaGate` 门房，不是地图连接条带。它可复用现有 `JOHTO_GATE` 13/13 个像素匹配区块，但不等于能直接复用已注册的门房 ID/Warp；森林 RPP 原有 `forest` 图块集对 Gold 使用区块只有 0/39 精确映射，不可错用关东森林资源。
+- 森林的 `WARP_CARPET_RIGHT`、Cut/Headbutt、水面、危险跳崖和赶鸭剧情须分开审核。Gold 本身为 CAVE 环境并使用 Union Cave 音乐，但不能据此自动把 RPP 的 Dig／逃洞绳/Surf 或 Fly 等技能对整套 tileset 开绿灯。北侧 Route34 未接入时务必维持封闭。
+- 本轮仅补正通用 Gold 离线审计及 Gold 来源两端事件索引验证，不修改 RPP 运行地图或游戏版本，不宣称新地图可玩。见 `docs/JOHTO_ILEX_P15_GOLD_STAGING.md`。
+
 ## FLY-5.62.196｜新地图“全绿但漏功能”的根源和强制对照
 
 - P12 已将桧皮镇地形与地图入口接通，但静态门禁只检查已有 Fly 野外资格/图块与既有 3 城目的地，没有以 Gold `data/maps/flypoints.asm` **反查每个已注册的新城镇** 的到访位、菜单、原版落点。365 PASS 仍可漏整项功能，属于测试覆盖空白，不等于当时的 Fly 已实现。

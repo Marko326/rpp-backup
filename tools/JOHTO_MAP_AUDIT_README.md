@@ -1,3 +1,7 @@
+## ILEX-P15｜Gold Collision 长表处理与桐树林离线候选
+
+Gold 图形区块数量与碰撞条目数量不必相等（`TILESET_FOREST` 是 40 个 metatile / 64 条碰撞规则）。`johto_rpp_pipeline.py --gold-map IlexForest` 已使用通用转换器处理这一合法输入，仍然对缺失碰撞规则、图块索引越界和超过96图像槽位保持失败；这不产生可玩地图，也不会自动放行 Forest 特殊 Warp、Jump、Cut、Surf 或剧情。新强制 Gold 测试中包含将 64 条截成 39 条的错误注入；Gold 南门房与桧皮镇/森林两端原版 Warp 编号的精确核对见 `docs/JOHTO_ILEX_P15_GOLD_STAGING.md`。
+
 ## MAP-5.62.194 工具收口 P10｜当前有效目录与通用几何检查
 
 - 游戏用的 Route33 54 字节逐格碰撞掩码现在位于 `maps/JohtoRoute33.blocked_mask.bin`，

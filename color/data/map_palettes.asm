@@ -244,17 +244,18 @@ MapPalettes:
 	RGB 10,17,28
 	RGB 7,7,7
 
-; 0x28: MAP_PALETTE_28
-	RGB 0,0,0
-	RGB 0,0,0
-	RGB 0,0,0
-	RGB 0,0,0
+; 0x28: JOHTO_GATE_GOLD_GREEN -- Gold gfx/tilesets/bg_tiles.pal indoor GREEN
+; Dedicated palette: changing INDOOR_GREEN would recolor existing Kanto rooms.
+	RGB 18,24,9
+	RGB 15,20,1
+	RGB 9,13,0
+	RGB 7,7,7
 
-; 0x29: MAP_PALETTE_29
-	RGB 0,0,0
-	RGB 0,0,0
-	RGB 0,0,0
-	RGB 0,0,0
+; 0x29: JOHTO_GATE_GOLD_BROWN -- Gold indoor BROWN
+	RGB 26,24,17
+	RGB 21,17,7
+	RGB 16,13,3
+	RGB 7,7,7
 
 ; 0x2a: MAP_PALETTE_2A
 	RGB 0,0,0

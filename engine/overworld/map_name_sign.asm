@@ -539,10 +539,24 @@ UpdateMapNameSign::
 	db $ff
 
 .IsNeutralMap
+; GATE-5.62.202: native Johto doors share $FC with routes/towns. The
+; Gold Route34 landmark is correct for Town Map, but this south gate is
+; only a transit room: keep Azalea's existing effective map-name sign.
+; Do not blanket-suppress all native $FC maps.
 ; Z = set for maps that must not become a new effective map-sign landmark.
 ; Safari rest/secret houses inherit the outdoor Safari area. Once Center/East/North/West
 ; have separate identities, treating the rooms as normal maps would incorrectly fall
 ; back to the generic Safari Zone name every time the player enters one.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .legacyMap
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyMap
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	ret z
+.legacyMap
 	ld a, [wCurMap]
 	ld c, a
 	ld hl, .NeutralMapList

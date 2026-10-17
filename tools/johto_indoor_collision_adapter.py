@@ -137,8 +137,11 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
     blocks,_,_ = blocks_for(gold,gold_set,'gold',aliases)
     collision,_ = collision_labels(gold,gold_set,aliases)
     block_count=len(blocks)//16
+    # Gold collision tables sometimes reserve more IDs than the graphical
+    # metatile set (e.g. Forest: 40 metatiles, 64 collision entries).
+    # Every graphical ID must have collision data; surplus entries are valid.
     if (len(layout)!=w*h or not blocks or len(blocks)%16 or block_count>256 or
-            not collision or len(collision)!=block_count):
+            len(collision)<block_count):
         raise ConversionError('Gold collision/layout sources do not match dimensions')
     collision_rows=[tuple(x.strip() for x in c.split(',')) for c in collision]
     if any(len(row)!=4 or not all(row) for row in collision_rows):
