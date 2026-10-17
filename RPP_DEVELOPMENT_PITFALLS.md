@@ -293,3 +293,10 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 178T3 在 `MoveRelearnerText1` 生成候选后，临时调用 `callba TestBothRattataPowerWhipRelearnCandidate`。此处原本寄存器 B 保存所选 Party 槽位；`callba` 会改写 B 以载入目标 ROM Bank。回忆列表仍可正常显示，但之后的 `wWhichPokemon` 读写使用了错误索引，出现昵称乱码与潜在错误成员写入风险。073 临时测试修复通过 `push bc`／`pop bc` 保护选中槽位；用户随后反馈测试版回忆、战斗、详情与 Party/PC 存取读回正常。
 - **正式 178 已彻底移除上述临时远调用及临时回忆候选，不得为了保留 073 修改而重新引入它们。** 本例可复用的教训是：跨 Bank 调用前明确列出 B、HL 等寄存器的现场用途，逐条审查从候选生成到 LearnMove 的 Party 索引传递；标签、编译期容量和表结构检查不能代替动态数据索引验证。
 - 双形态升级测试原先的 `Power Whip` 来自临时等级钩子、回忆候选来自独立测试追加，**获得来源与回忆来源不是同一张历史学习记录**。清理临时来源之后，旧存档持有的招式可继续显示／使用，但遗忘后无法用该临时候选找回；将来正式分配须同时设计学习与回忆规则。
+
+
+## MOVE-5.62.180 — Transform 复制技能字节时必须同步“仅战斗中”的身份位
+
+- 玩家用 Transform 复制敌方普通技能字节以后，`wBattleMonMoves` 已不是 Party 原来的四招。若继续保留 `wExtendedBattleMoveFlags`，同低字节技能就可能错误读取扩展表／名称；成功复制之后只清玩家的**战斗临时 mask 与 active ordinal**，不要清 `wExtendedPartyMoveFlags`，更不能把变身后的字节回存为 Party 原招。失败变身不执行该清理。
+- `SetPartyExtendedMoveSlot` 在战斗升级学招时通常会把新 Party mask 同步给战斗四槽；但活跃对象如果已有 `wPlayerBattleStatus3.Transformed`，四槽是临时复制内容，必须阻止反灌。这是源码保护，并非用户已跑过的战斗升级场景。
+- 用户《180变身.mp4》确认持扩展 07 的喷火龙变身成野生猴怪后正常显示／使用复制的普通技能；视频结束时仍在战斗，不能据此推定战斗结束、换人或失败分支已验。扩展身份后续进入 Mimic／Metronome 和敌方变身时要分别审计，不能只复用清零逻辑当成完整身份复制。

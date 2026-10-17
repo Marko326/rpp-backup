@@ -147,6 +147,12 @@ SetPartyExtendedMoveSlot::
 	ld a, [wWhichPokemon]
 	cp e
 	jr nz, .done
+	; MOVE-5.62.180: a transformed battler has a temporary copied
+	; move list, not the party member's real slots. Do not restore the
+	; party sidecar during a battle-time level-up.
+	ld a, [wPlayerBattleStatus3]
+	bit Transformed, a
+	jr nz, .done
 	ld a, [hl]
 	ld [wExtendedBattleMoveFlags], a
 .done
