@@ -163,7 +163,19 @@ LoadSpecialWarpData:
 	dec c
 	jr nz, .copyWarpDataLoop2
 .finishSpecialWarp
-	; FLY-5.62.140: old warps use OVERWORLD; Johto aliases load JOHTO.
+	; FLY-5.62.196: Azalea loads JOHTO_MODERN; legacy Johto aliases use JOHTO.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .legacyFlyTileset
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyFlyTileset
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr nz, .legacyFlyTileset
+	ld a, JOHTO_MODERN
+	jr .storeTileset
+.legacyFlyTileset
 	ld a, [wCurMap]
 	cp NEW_BARK_TOWN
 	jr z, .johtoTileset
@@ -178,6 +190,8 @@ LoadSpecialWarpData:
 	ld a, JOHTO
 .storeTileset
 	ld [wCurMapTileset], a
+	; Tileset enum is not a warp screen offset (JOHTO_MODERN != 0).
+	xor a
 .done
 	ld [wYOffsetSinceLastSpecialWarp], a
 	ld [wXOffsetSinceLastSpecialWarp], a

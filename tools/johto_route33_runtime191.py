@@ -57,7 +57,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         if mask != blob('maps/JohtoRoute33.blocked_mask.bin'):
             errors.append('Route33 movement mask differs from Gold audited map')
         constants = text('constants/region_map_constants.asm')
-        if not re.search(r'DEF JOHTO_ROUTE_33_LOCAL_ID EQU 9\b.*DEF NUM_JOHTO_MAPS EQU 10\b', constants, re.S):
+        if not re.search(r'DEF JOHTO_ROUTE_33_LOCAL_ID EQU 9\b', constants):
             errors.append('Route33 native identity missing or shifted')
         hdr32 = text('data/mapHeaders/JohtoRoute32.asm')
         hdr33 = text('data/mapHeaders/JohtoRoute33.asm')
@@ -65,8 +65,32 @@ def audit(root: Path, gold: Path) -> list[str]:
                            (hdr33,('db JOHTO_MODERN','db NORTH','db JOHTO_ROUTE_32','dw JohtoRoute32Blocks + JOHTO_ROUTE_32_WIDTH * (JOHTO_ROUTE_32_HEIGHT - 3)'))):
             if any(key not in part for key in keys):
                 errors.append('Route32/33 connection header contract incomplete')
-        if 'WEST' in hdr33 or 'db NORTH | WEST' in hdr33:
-            errors.append('Route33 Azalea west exit released prematurely')
+        if 'db NORTH | WEST' in hdr33:
+            # A reviewed Azalea map may open the formerly sealed edge, but
+            # only if the existing generic strip verifier accepts BOTH ways.
+            from johto_rpp_connection_guard import audit as connection_audit
+            for source, target, gold_source, gold_target, direction in (
+                    ('JohtoRoute33','JohtoAzaleaTown','Route33','AzaleaTown','west'),
+                    ('JohtoAzaleaTown','JohtoRoute33','AzaleaTown','Route33','east')):
+                try:
+                    seam = connection_audit(root,gold,source,target,gold_source,gold_target,direction)
+                    if seam['status'] != 'PASS':
+                        errors.append('Azalea connection strip mismatch: '+str(seam['issues']))
+                except (OSError, ValueError) as exc:
+                    errors.append('Azalea connection requires review: '+str(exc))
+            resolver = text('engine/overworld/region_map_lookup.asm')
+            if not all(line in resolver for line in (
+                    'db JOHTO_ROUTE_33_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID',
+                    'db JOHTO_AZALEA_TOWN_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID')):
+                errors.append('Azalea west/east native target table incomplete')
+            fences = text('engine/overworld/johto_route33_collision.asm')
+            west = fences.split('JohtoRoute33EdgeFence::',1)[-1].split('JohtoAzaleaEdgeFence::',1)[0]
+            east = fences.split('JohtoAzaleaEdgeFence::',1)[-1].split('JohtoRoute33CanStepAhead::',1)[0]
+            for label, span in (('Route33 west',west),('Azalea east',east)):
+                if not all(t in span for t in ('cp 14','cp 16','.block','.clear')):
+                    errors.append(label+' passage must be limited to y14/15')
+        elif 'WEST' in hdr33:
+            errors.append('Route33 west opened without registered Azalea connection')
         mapping = text('engine/overworld/region_map_lookup.asm')
         if 'db JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID' not in mapping:
             errors.append('Route32 south $FC target not resolved as native Route33')

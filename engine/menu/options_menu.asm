@@ -1141,6 +1141,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_ROUTE30
 	db MUSIC_GBP_GSC_UNION_CAVE
 	db MUSIC_GBP_GSC_ROUTE30 ; Route33
+	db MUSIC_GBP_GSC_AZALEA_TOWN ; Azalea Town
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

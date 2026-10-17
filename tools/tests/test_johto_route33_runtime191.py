@@ -5,7 +5,8 @@ from tempfile import TemporaryDirectory
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools'))
 from johto_route33_runtime191 import audit
-FILES=('maps/JohtoRoute33.blk','gfx/blocksets/johto_modern.bst',
+FILES=('data/johto_map_headers.asm','constants/map_constants.asm','data/mapHeaders/JohtoAzaleaTown.asm',
+       'maps/JohtoAzaleaTown.blk', 'maps/JohtoRoute33.blk','gfx/blocksets/johto_modern.bst',
        'gfx/tilesets/johto_modern.png','gfx/tilesets/johto_modern.tilecoll',
        'color/tilesets/johto_modern.asm','constants/region_map_constants.asm',
        'data/mapHeaders/JohtoRoute32.asm','data/mapHeaders/JohtoRoute33.asm',

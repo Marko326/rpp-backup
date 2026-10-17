@@ -182,3 +182,24 @@ Warp、地图连接与 Field Moves 的专门审计和错误注入。`--rpp-map` 
 - 没有 `PROJECT_DELIVERY_RULES.md` 的本次 ZIP 以实际提供的
   `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 为交付规范依据，
   不补造不存在的规则文件。
+
+## Gold 飞空目的地通用强制准入（FLY-5.62.196 / P13）
+
+统一 `make johto-map-audit JOHTO_GOLD_SOURCE=/完整/pokegold-master` 现包括
+`johto_fly_destination_audit.py` 和对应 15 个反向/正向用例。它同时读取
+Gold `data/maps/flypoints.asm`、`data/maps/spawn_points.asm`、`data/maps/landmarks.asm`，
+不再只认 Fly 的室外使用许可或 Town Map 地标。`tools/johto_native_maps.json`
+每张地图有 `gold_fly_landmark` 字段（不能遗漏），Gold 提供飞空点的已注册
+实体需要 `fly=ALLOWED` 及真实菜单、wEventFlags 到访、目标 selector/地区与
+局部地图编号、实际落点和图块集恢复。城市局部 ID 扩充后必须扩展统一审计的
+`REVIEWED` 合同，不能在新城市图块完成后仍靠老测试的 PASS 视作功能齐全。
+独立运行：
+
+```sh
+python3 tools/johto_fly_destination_audit.py --rpp . --gold /完整/pokegold-master
+```
+
+这属于静态、按当前引擎写法检查的合同，不是模拟器/链接器。P13 收口重跑
+380 PASS / 0 FAIL / 0 SKIP，15 项 Fly 独立反向测试全通过。用户仅提供
+「看过了，没啥问题」整体反馈，尚无逐项游戏测试记录；未执行 ROM 构建或
+Git 提交，跨地区异常、旧档全量恢复等仍需实测时保留观察。

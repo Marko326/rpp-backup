@@ -1,4 +1,4 @@
-; FLY-5.62.140: Johto-only Fly selector.  Kanto city/special Fly stays
+; FLY-5.62.196: Johto Fly selector now covers four visited towns; Kanto Fly stays
 ; untouched; the regular Town Map still has its independent Johto landmark list.
 ; One-time unlock bits are stored in existing saved wEventFlags unused slots.
 ; Routes are never Fly destinations; interiors and Teleport are not enabled.
@@ -85,7 +85,7 @@ LoadJohtoFlyTownMap::
 .next
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 3
+	cp 4
 	jr c, .nextReady
 	xor a
 .nextReady
@@ -97,7 +97,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jp nz, .previousReady
-	ld a, 2
+	ld a, 3
 .previousReady
 	ld [wWhichTownMapLocation], a
 	call .findBackward
@@ -111,7 +111,7 @@ LoadJohtoFlyTownMap::
 	jp .render
 .accept
 	call .isCurrentUnlocked
-	jp z, .inputLoop ; no persisted flypoint for an old save until next town visit
+	jp z, .inputLoop ; locked destinations cannot be selected
 	; Same confirmation SFX as Kanto Fly; only play for unlocked destinations.
 	ld a, SFX_HEAL_AILMENT
 	call PlaySound
@@ -133,7 +133,7 @@ LoadJohtoFlyTownMap::
 	ld [hTilesetType], a
 	ret
 
-; In A: compact Fly city index 0=New Bark, 1=Cherrygrove, 2=Violet.
+; In A: Fly city index 0=New Bark, 1=Cherrygrove, 2=Violet, 3=Azalea.
 ; Out: A=legacy map alias; B=y C=x DE=ROM string.
 .loadEntry
 	add a
@@ -167,23 +167,28 @@ LoadJohtoFlyTownMap::
 	dw .cherrygroveName
 	db  76,  92
 	dw .violetName
+	db 140,  76
+	dw .azaleaName
 .destinations
-	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY
+	; FLY-5.62.196: $FD selector resolves separately to (JOHTO, local 10).
+	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR
 .newBarkName
 	db "New Bark_Town@"
 .cherrygroveName
 	db "Cherrygrove_City@"
 .violetName
 	db "Violet City@"
+.azaleaName
+	db "Azalea Town@"
 
 .findForward
-	ld b, 3
+	ld b, 4
 .forwardLoop
 	call .isCurrentUnlocked
 	ret nz
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 3
+	cp 4
 	jr c, .forwardStore
 	xor a
 .forwardStore
@@ -192,7 +197,7 @@ LoadJohtoFlyTownMap::
 	jr nz, .forwardLoop
 	ret
 .findBackward
-	ld b, 3
+	ld b, 4
 .backwardLoop
 	call .isCurrentUnlocked
 	ret nz
@@ -200,7 +205,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jr nz, .backwardStore
-	ld a, 2
+	ld a, 3
 .backwardStore
 	ld [wWhichTownMapLocation], a
 	dec b
@@ -212,6 +217,12 @@ LoadJohtoFlyTownMap::
 	jr z, .testNewBark
 	cp 1
 	jr z, .testCherrygrove
+	cp 2
+	jr z, .testViolet
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_AZALEA / 8
+	bit EVENT_JOHTO_FLY_AZALEA % 8, [hl]
+	ret
+.testViolet
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_VIOLET / 8
 	bit EVENT_JOHTO_FLY_VIOLET % 8, [hl]
 	ret

@@ -18,6 +18,7 @@ from johto_region_id_audit import audit as region_audit
 from johto_warp_arrival_audit import audit as warp_audit
 from johto_town_map_bike_audit import audit as town_bike_audit
 from johto_field_moves_preflight import audit as field_move_audit
+from johto_fly_destination_audit import audit as fly_destination_audit
 from johto_cave_escape_audit import audit as cave_escape_audit
 from johto_indoor_collision_adapter import audit_reviewed_geometry
 from johto_route33_runtime191 import audit as route33_runtime_audit
@@ -33,7 +34,9 @@ GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'maps/Route33.blk', 'maps/Route33.asm',
                  'data/tilesets/johto_modern_collision.asm',
                  'data/tilesets/johto_modern_metatiles.bin',
-                 'gfx/tilesets/johto_modern.png')
+                 'gfx/tilesets/johto_modern.png',
+                 'data/maps/flypoints.asm', 'data/maps/spawn_points.asm',
+                 'maps/AzaleaTown.blk')
 
 # Explicitly pinned modules: a deleted test file must NEVER make this gate greener.
 # To retire/rename a test, change this list in the same reviewed tool commit.
@@ -59,6 +62,7 @@ test_johto_town_map_bike181 test_johto_full_town_map182 test_johto_field_moves_p
 test_johto_cave_escape188 test_johto_surf_geometry186 test_johto_surf_runtime187
 test_johto_route32_surf188
 test_johto_route33_runtime191
+test_johto_fly_destinations196
 test_johto_union_cave_exit192
 '''.split())
 
@@ -111,7 +115,13 @@ test_johto_route33_runtime191.Route33Runtime191.test_route33_sign_cannot_disappe
 test_johto_route33_runtime191.Route33Runtime191.test_gold_source_metadata_mutation_is_rejected
 test_johto_route33_runtime191.Route33Runtime191.test_violet_to_route32_does_not_white_flash
 test_johto_route33_runtime191.Route33Runtime191.test_wrong_route33_grass_tile_is_rejected
-test_johto_route33_runtime191.Route33Runtime191.test_route33_fly_permission_missing_is_rejected
+test_johto_fly_destinations196.JohtoFlyDestinations196.test_missing_fly_registration_fails
+ test_johto_fly_destinations196.JohtoFlyDestinations196.test_new_gold_city_cannot_be_deferred
+ test_johto_fly_destinations196.JohtoFlyDestinations196.test_shared_native_slot_is_not_fly_selector
+ test_johto_fly_destinations196.JohtoFlyDestinations196.test_unvisited_destination_cannot_be_selected
+ test_johto_fly_destinations196.JohtoFlyDestinations196.test_unsafe_landing_must_fail
+ test_johto_fly_destinations196.JohtoFlyDestinations196.test_missing_gold_source_fails_closed
+ test_johto_route33_runtime191.Route33Runtime191.test_route33_fly_permission_missing_is_rejected
 test_johto_route33_runtime191.Route33Runtime191.test_fly_other_outdoor_check_must_remain
 test_johto_union_cave_exit192.UnionCaveExit192.test_two_mouths_gold_matched
 test_johto_union_cave_exit192.UnionCaveExit192.test_wrong_southern_exit_y_is_rejected
@@ -186,6 +196,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.extend('WARP: ' + e for e in warp_audit(root, gold))
         errors.extend('TOWN_BIKE: ' + e for e in town_bike_audit(root, gold))
         errors.extend('FIELD_MOVES: ' + e for e in field_move_audit(root, gold))
+        errors.extend('FLY_DESTINATION: ' + e for e in fly_destination_audit(root, gold))
         errors.extend('CAVE_ESCAPE: ' + e for e in cave_escape_audit(root, gold))
         errors.extend('CAVE_EXIT192: ' + e for e in cave_exit192_audit(root, gold))
         errors.extend('REVIEWED_GEOMETRY: ' + e for e in audit_reviewed_geometry(root, gold))

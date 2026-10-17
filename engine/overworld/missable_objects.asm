@@ -19,6 +19,20 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_VIOLET / 8
 	set EVENT_JOHTO_FLY_VIOLET % 8, [hl]
 .notJohtoViolet
+	; FLY-5.62.196: Continue on an old save in Azalea also runs this map-load hook.
+	; $FC alone is insufficient: require both Johto and physical local ID.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notJohtoAzalea
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notJohtoAzalea
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr nz, .notJohtoAzalea
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_AZALEA / 8
+	set EVENT_JOHTO_FLY_AZALEA % 8, [hl]
+.notJohtoAzalea
 	ld a, [wCurMap]
 	cp ROUTE_1
 	jr nc, .notInTown

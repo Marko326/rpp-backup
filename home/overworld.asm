@@ -740,7 +740,7 @@ CheckMapConnections::
 	ld b,a
 	ld a,[wCurrentMapHeight2]
 	cp b
-	jr nz,.didNotEnterConnectedMap
+	jp nz,.didNotEnterConnectedMap
 	ld a,[wMapConn2Ptr]
 	ld e,a
 	ld d,1
@@ -777,6 +777,12 @@ CheckMapConnections::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	jr nz, .ordinaryConnection
+	; MAP-5.62.195: Azalea and Route33 both use JOHTO_MODERN.
+	; Preserve the existing fast path on their shared border; reload only
+	; when entering Route33 from an older JOHTO graphics set.
+	ld a, [wCurMapTileset]
+	cp JOHTO_MODERN
+	jr z, .ordinaryConnection
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jp z, .route33TilesetReload
@@ -1549,7 +1555,12 @@ CheckTilePassable::
 	jr nz, .normal
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr z, .modernRoute33
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr nz, .normal
+	callba JohtoAzaleaCanStepAhead
+	ret
+.modernRoute33
 	callba JohtoRoute33CanStepAhead
 	ret
 .route32Seam

@@ -43,8 +43,8 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_a_future_local_requires_explicit_contract(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 10',
-                    'DEF JOHTO_FIXTURE_LOCAL_ID EQU 10\nDEF NUM_JOHTO_MAPS EQU 11',
+                    'DEF NUM_JOHTO_MAPS EQU 11',
+                    'DEF JOHTO_FIXTURE_LOCAL_ID EQU 11\nDEF NUM_JOHTO_MAPS EQU 12',
                     'identity contract count')
 
     def test_native_slot_is_not_a_kanto_map(self):
@@ -67,12 +67,12 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRoute33Name\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoAzaleaName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_ROUTE30 ; Route33\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_AZALEA_TOWN ; Azalea Town\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_save_local_byte_is_fatal(self):
@@ -81,16 +81,16 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_future_native_map_must_register_all_local_tables(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 10', 'DEF NUM_JOHTO_MAPS EQU 11',
+                    'DEF NUM_JOHTO_MAPS EQU 11', 'DEF NUM_JOHTO_MAPS EQU 12',
                     'local map IDs')
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; Route33 has no legacy alias\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; Route33 has no legacy alias\nJohtoMapLegacyAliasesEnd::',
-                    'local 9 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; Azalea Town has no legacy alias\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; Azalea Town has no legacy alias\nJohtoMapLegacyAliasesEnd::',
+                    'local 10 must use the shared virtual handle')
 
-    def test_fixture_can_register_an_eleventh_local_without_consuming_old_id(self):
+    def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             for name in INPUTS:
@@ -99,8 +99,8 @@ class NativeMapIDExpansion(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dst)
             edits = {
                 'constants/region_map_constants.asm': [
-                    ('DEF NUM_JOHTO_MAPS EQU 10',
-                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 10\nDEF NUM_JOHTO_MAPS EQU 11')],
+                    ('DEF NUM_JOHTO_MAPS EQU 11',
+                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 11\nDEF NUM_JOHTO_MAPS EQU 12')],
                 'data/johto_map_headers.asm': [
                     ('JohtoMapHeaderPointersEnd::', '\tdw JohtoRoute33_h ; fixture\nJohtoMapHeaderPointersEnd::'),
                     ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoRoute33_h)\nJohtoMapHeaderBanksEnd::'),
@@ -109,9 +109,9 @@ class NativeMapIDExpansion(unittest.TestCase):
                 'engine/menu/options_menu.asm': [
                     ('JohtoNativeGSCMusicEnd::', '\tdb MUSIC_GBP_GSC_ROUTE30 ; fixture\nJohtoNativeGSCMusicEnd::')],
                 'engine/town_map.asm': [
-                    ('db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10', 'db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 10'),
+                    ('db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11', 'db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 11'),
                     ('JohtoNativeTownMapEntriesEnd::',
-                     '\tdb 140, 90\n\tdw JohtoBrowseRoute33Name\nJohtoNativeTownMapEntriesEnd::')],
+                     '\tdb 140, 76\n\tdw JohtoAzaleaName\nJohtoNativeTownMapEntriesEnd::')],
             }
             for rel, pairs in edits.items():
                 path = root / rel
@@ -124,7 +124,12 @@ class NativeMapIDExpansion(unittest.TestCase):
             manifest_path = root / 'tools/johto_native_maps.json'
             manifest = json.loads(manifest_path.read_text())
             fixture = dict(manifest['maps'][-1])
-            fixture.update(local_id=10, local_symbol='JOHTO_FIXTURE_LOCAL_ID')
+            fixture.update(local_id=11, local_symbol='JOHTO_FIXTURE_LOCAL_ID',
+                           header='JohtoRoute33_h', bank='BANK(JohtoRoute33_h)',
+                           rby_music=['MUSIC_ROUTES3','0'],
+                           gsc_music='MUSIC_GBP_GSC_ROUTE30',
+                           town_map_index=11, town_map_name='JohtoAzaleaName',
+                           town_map_xy=[140,76])
             fixture['feature_status'] = {key: 'DEFERRED' for key in fixture['feature_status']}
             manifest['maps'].append(fixture)
             manifest_path.write_text(json.dumps(manifest))

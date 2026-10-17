@@ -1,0 +1,83 @@
+{
+  "schema": "rpp-reviewed-gold-geometry-v1",
+  "maps": [
+    {
+      "gold_map": "Route33",
+      "gold_tileset": "johto_modern",
+      "rpp_blocked_mask": "maps/JohtoRoute33.blocked_mask.bin",
+      "mask_sha256": "fab086e49902e2750762ab945fe910b4dca82cb9a278988737d309450c83bc31",
+      "width_cells": 20,
+      "height_cells": 18,
+      "blocked_count": 182,
+      "walkable_count": 178,
+      "collision_roles": {
+        "CAVE": 1,
+        "FLOOR": 160,
+        "HEADBUTT_TREE": 2,
+        "HOP_DOWN": 3,
+        "HOP_DOWN_LEFT": 1,
+        "HOP_LEFT": 2,
+        "TALL_GRASS": 12,
+        "UP_WALL": 4,
+        "WALL": 175
+      },
+      "ambiguous_visual_ids": [
+        "05",
+        "3C",
+        "3E"
+      ],
+      "hops": [
+        [
+          9,
+          10,
+          -1,
+          0
+        ],
+        [
+          9,
+          11,
+          -1,
+          0
+        ],
+        [
+          9,
+          12,
+          0,
+          1
+        ],
+        [
+          9,
+          12,
+          -1,
+          0
+        ],
+        [
+          10,
+          12,
+          0,
+          1
+        ],
+        [
+          11,
+          12,
+          0,
+          1
+        ],
+        [
+          12,
+          12,
+          0,
+          1
+        ]
+      ],
+      "required_blocked_special_cells": [
+        [
+          11,
+          9,
+          "CAVE"
+        ]
+      ],
+      "review_only": true
+    }
+  ]
+}

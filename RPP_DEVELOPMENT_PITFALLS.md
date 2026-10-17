@@ -1,3 +1,11 @@
+## FLY-5.62.196｜新地图“全绿但漏功能”的根源和强制对照
+
+- P12 已将桧皮镇地形与地图入口接通，但静态门禁只检查已有 Fly 野外资格/图块与既有 3 城目的地，没有以 Gold `data/maps/flypoints.asm` **反查每个已注册的新城镇** 的到访位、菜单、原版落点。365 PASS 仍可漏整项功能，属于测试覆盖空白，不等于当时的 Fly 已实现。
+- 新增统一 `tools/johto_fly_destination_audit.py` 并接 `johto_map_release_audit.py` 严格发现列表；登记每张 native 城都地图时明确 Gold Fly landmark (没有为 null)，不能以 `feature_status: DEFERRED` 冒充已完成。对应原版 Fly 点的地图必须有 ALLOWED + 实际读取/写入持久位、菜单前后循环、特殊 warp 落位、地区/局部 ID 与图块恢复。未接的道路和洞穴不得强行允许。
+- 新的 `$FC` 只是一条共享句柄，Fly 使用独立 `$FD` selector，只有特殊 Warp 将它变成 (JOHTO, Azalea local 10)，不能用 `$FC` 判断任何城市已到访。特殊落地切换 tileset 后必须清除屏幕偏移，不能把 `JOHTO_MODERN` 枚举值当作 X/Y 偏移。
+- Fly 使用许可、目的地是否已到访、普通 Town Map 地标浏览和 Teleport/Dig/黑屏治疗点是不同逻辑。强制静态 PASS 不证明 ROM 链接容量、Continue/存档迁移的全部极端路径及用户实机效果；用户反馈 P13「看过了，没啥问题」后进行了提交收口，但没有逐项手机测试记录，仍保留最小 Fly 回归清单。
+- **P13 正式收口基线教训**：有未提交 P11R/P12 的工程 ZIP，必须以其实际 Worktree 做全量补丁；不能因为 ZIP 报告 HEAD 是 `118d5e38` 就从 HEAD 制作全量。增量可针对已经安装的 P13 候选，二者最终字节内容及文件模式必须一致。
+
 ## TOOL-LAYOUT-P10｜正式地图运行资源不得藏在工具阶段暂存目录
 
 - `tools/` 放转换、审计、生成器与配置；`tools/tests/` 放反向测试；`maps/` 放地图相关运行时数据，`gfx/` 放图像/图块，`engine/` 放汇编执行逻辑。

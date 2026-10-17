@@ -372,5 +372,45 @@ class ReviewedGoldGeometryTests(unittest.TestCase):
         self._mutate(lambda s: s.__setitem__('rpp_blocked_mask',
                                             'tools/geometry/Route33.blocked_mask.bin'))
 
+
+
+class AzaleaGoldCandidateTests(unittest.TestCase):
+    """Next-map source regression, using the shared converter; no runtime approval."""
+    @classmethod
+    def setUpClass(cls):
+        import os
+        from johto_indoor_tiles_converter import stage_preserved_gold_tileset
+        from johto_indoor_collision_adapter import plan_gold_quadrant_collision
+        cls.stage = staticmethod(stage_preserved_gold_tileset)
+        cls.geometry = staticmethod(plan_gold_quadrant_collision)
+        cls.gold = Path(os.environ.get('JOHTO_GOLD_SOURCE', '/missing-gold'))
+        cls.rpp = Path(__file__).resolve().parents[2]
+        if not (cls.gold / 'maps/AzaleaTown.blk').is_file():
+            raise AssertionError('full Gold source required for Azalea candidate')
+
+    def test_staged_map_matches_gold_without_new_tileset(self):
+        with tempfile.TemporaryDirectory() as td:
+            art = self.stage(self.gold, Path(td), 'AzaleaTown', 'johto_modern')
+            candidate = self.rpp / 'maps/JohtoAzaleaTown.blk'
+            self.assertEqual(candidate.read_bytes(),
+                             (self.gold / 'maps/AzaleaTown.blk').read_bytes())
+            self.assertEqual(candidate.read_bytes(),
+                             (Path(td) / 'preserved_gold_art_candidate/AzaleaTown.blk').read_bytes())
+            self.assertEqual((art['width'], art['height']), (20, 9))
+            self.assertTrue(art['candidate_only'])
+            self.assertFalse(art['engine_implementation'])
+            self.assertEqual((self.rpp / 'gfx/blocksets/johto_modern.bst').read_bytes(),
+                             (Path(td) / 'preserved_gold_art_candidate/johto_modern.bst').read_bytes())
+
+    def test_unsafe_hop_keeps_town_offline(self):
+        geometry, mask = self.geometry(self.gold, 'AzaleaTown', 'johto_modern')
+        self.assertEqual((geometry['width_cells'], geometry['height_cells']), (40, 18))
+        self.assertEqual(len(mask), 90)
+        self.assertEqual((geometry['blocked_count'], geometry['walkable_count']), (447, 273))
+        self.assertEqual(len(geometry['hops']), 9)
+        self.assertIn((10, 6), {(h['x'], h['y']) for h in geometry['unsafe_hop_candidates']})
+        self.assertFalse(geometry['runtime_ready'])
+
+
 if __name__ == '__main__':
     unittest.main()

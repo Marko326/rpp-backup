@@ -788,6 +788,17 @@ TryLoadSpecialFlyWarpData::
 	ld a, [hli]
 	ld [wDestinationMap], a
 	ld [wCurMap], a
+	; FLY-5.62.196: only the reviewed Fly selector uses the shared native handle.
+	; Synchronize both saved physical keys: SpecialWarpIn resets wLastMap.
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .copyFlyWarp
+	ld a, MAP_REGION_JOHTO
+	ld [wCurRegion], a
+	ld [wLastRegion], a
+	ld a, JOHTO_AZALEA_TOWN_LOCAL_ID
+	ld [wCurLocalMapID], a
+	ld [wLastLocalMapID], a
+.copyFlyWarp
 	ld de, wCurrentTileBlockMapViewPointer
 	ld c, 6
 .copyWarpData
@@ -808,6 +819,9 @@ SpecialFlyWarpData:
 	FLYWARP_DATA JOHTO_CHERRYGROVE_CITY_WIDTH, 4, 29
 	db JOHTO_VIOLET_CITY, JOHTO_VIOLET_CITY
 	FLYWARP_DATA JOHTO_VIOLET_CITY_WIDTH, 26, 31
+	; FLY-5.62.196: Gold SPAWN_AZALEA is X=15,Y=10; macro takes (Y,X).
+	db JOHTO_AZALEA_FLY_SELECTOR, REGION_NATIVE_MAP_SLOT
+	FLYWARP_DATA JOHTO_AZALEA_TOWN_WIDTH, 10, 15
 	db MT_MOON_3, ROUTE_4
 	FLYWARP_DATA ROUTE_4_WIDTH, 6, 11
 	db MT_MOON_SQUARE, MT_MOON_SQUARE

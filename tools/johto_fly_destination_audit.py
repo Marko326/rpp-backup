@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""Gold-sourced region/local Fly destination gate; not a ROM or gameplay test."""
+import argparse
+import json
+from pathlib import Path
+import re
+
+# Current approved rollout; any newly registered original Gold Fly landmark
+# must get a new reviewed menu/flag/landing entry before this gate can pass.
+REVIEWED = (
+ ('NEW_BARK_TOWN', 'JOHTO_NEW_BARK_LOCAL_ID', 'NEW_BARK_TOWN', 'NEW_BARK_TOWN_WIDTH', 'NEW_BARK', (13,6), 'newBarkName'),
+ ('CHERRYGROVE_CITY', 'JOHTO_CHERRYGROVE_LOCAL_ID', 'JOHTO_CHERRYGROVE_CITY', 'JOHTO_CHERRYGROVE_CITY_WIDTH', 'CHERRYGROVE', (29,4), 'cherrygroveName'),
+ ('VIOLET_CITY', 'JOHTO_VIOLET_CITY_LOCAL_ID', 'JOHTO_VIOLET_CITY', 'JOHTO_VIOLET_CITY_WIDTH', 'VIOLET', (31,26), 'violetName'),
+ ('AZALEA_TOWN', 'JOHTO_AZALEA_TOWN_LOCAL_ID', 'JOHTO_AZALEA_FLY_SELECTOR', 'JOHTO_AZALEA_TOWN_WIDTH', 'AZALEA', (15,10), 'azaleaName'),
+)
+FILES=('tools/johto_native_maps.json','engine/johto_fly_town_map.asm',
+'engine/overworld/missable_objects.asm','engine/fly_town_map_helpers.asm',
+'engine/special_warps.asm','constants/region_map_constants.asm',
+'constants/event_constants.asm','home/overworld.asm','wram.asm')
+GOLD_FILES=('data/maps/flypoints.asm','data/maps/spawn_points.asm','data/maps/landmarks.asm')
+GOLD_ROM_NAMES=('NewBarkTownName','CherrygroveCityName','VioletCityName','AzaleaTownName')
+
+
+def section(text, start, finish):
+    # Anchor at labels. A string reference to .entries must not masquerade as
+    # its definition. Take the first closing label after the opening label.
+    def positions(s):
+        return list(re.finditer(r'(?m)^[ \t]*'+re.escape(s)+r'[ \t]*$',text))
+    beginnings=positions(start)
+    if len(beginnings)!=1: raise ValueError('Fly ASM label missing/duplicate: '+start)
+    endings=[m for m in positions(finish) if m.start()>beginnings[0].end()]
+    if not endings: raise ValueError('Fly ASM closing label missing: '+finish)
+    return text[beginnings[0].end():endings[0].start()]
+
+
+def gold_native_key(local, fly):
+    if not local.startswith('JOHTO_') or not local.endswith('_LOCAL_ID'): return None
+    stem=local[6:-9]
+    return next((x for x in (stem,stem+'_TOWN',stem+'_CITY') if x in fly),None)
+
+
+def audit(root:Path,gold:Path)->list[str]:
+    errs=[]
+    try:
+        s={f:(root/f).read_text(encoding='utf8') for f in FILES}
+        g={f:(gold/f).read_text(encoding='utf8') for f in GOLD_FILES}
+        maps=json.loads(s[FILES[0]])['maps']
+    except (OSError,ValueError,TypeError,KeyError) as ex:
+        return ['Fly data or original Gold missing; gate fails closed: '+str(ex)]
+    flyrows=re.findall(r'^\s*db\s+LANDMARK_([A-Z0-9_]+)\s*,\s*SPAWN_([A-Z0-9_]+)',g[GOLD_FILES[0]],re.M)
+    fly=dict(flyrows)
+    if len(fly)!=len(flyrows) or 'AZALEA_TOWN' not in fly:
+        errs.append('Gold flypoint inventory incomplete or duplicated')
+    active=[]
+    for m in maps:
+        try:
+            local=m['local_symbol']; expected=gold_native_key(local,fly)
+            declared=m.get('gold_fly_landmark','MISSING')
+            state=m['feature_status']['fly']
+            if declared!=expected: errs.append(f'{local}: missing/wrong original Gold Fly landmark')
+            if expected:
+                active.append(m)
+                if state!='ALLOWED': errs.append(f'{local}: registered Gold Fly city has no approved destination')
+            elif state not in ('DEFERRED','FORBIDDEN'):
+                errs.append(f'{local}: road/cave is not a valid Fly destination')
+        except (KeyError,TypeError): errs.append('corrupt native Fly registry entry')
+    if len(active)!=len(REVIEWED) or {m.get('gold_fly_landmark') for m in active}!={x[0] for x in REVIEWED}:
+        errs.append('new/missing registered Gold Fly city requires reviewed full integration')
+    menu=s['engine/johto_fly_town_map.asm']; miss=s['engine/overworld/missable_objects.asm']
+    helper=s['engine/fly_town_map_helpers.asm']; warp=s['engine/special_warps.asm']
+    events=s['constants/event_constants.asm']; region=s['constants/region_map_constants.asm']
+    try:
+        entries=section(menu,'.entries','.destinations')
+        dest=section(menu,'.destinations','.newBarkName')
+        special=section(helper,'SpecialFlyWarpData:','db $ff')
+        copy=section(helper.split('TryLoadSpecialFlyWarpData::',1)[1],'.found','.copyFlyWarp')
+    except (ValueError,IndexError) as ex:
+        return errs+[str(ex)]
+    names=re.findall(r'^\s*db\s+(\d+)\s*,\s*(\d+)\s*\n\s*dw\s+\.([A-Za-z]+Name)',entries,re.M)
+    destrows=re.findall(r'^\s*db\s+([A-Z0-9_, ]+)\s*$',dest,re.M)
+    selectors=[x.strip() for x in destrows[0].split(',')] if len(destrows)==1 else []
+    if len(names)!=4 or len(selectors)!=4: errs.append('Fly selector/menu count mismatch')
+    for i,(landmark,local,selector,width,spawn,xy,menu_name) in enumerate(REVIEWED):
+        match=[m for m in active if m.get('gold_fly_landmark')==landmark]
+        if len(match)!=1 or match[0].get('local_symbol')!=local:
+            errs.append(landmark+': wrong physical Johto map identity')
+        if fly.get(landmark)!=spawn: errs.append(landmark+': missing/changed Gold flypoint')
+        gold_spawns=re.findall(r'^\s*spawn\s+'+landmark+r'\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*$',g[GOLD_FILES[1]],re.M)
+        if gold_spawns!=[(str(xy[0]),str(xy[1]))]:
+            errs.append(landmark+': wrong Gold original landing')
+        coords=re.findall(r'^\s*landmark\s+(-?\d+)\s*,\s*(-?\d+)\s*,\s*'+GOLD_ROM_NAMES[i]+r'\s*$',g[GOLD_FILES[2]],re.M)
+        if len(coords)!=1 or i>=len(names) or names[i]!=(str(int(coords[0][1])+16),str(int(coords[0][0])+8),menu_name):
+            errs.append(landmark+': menu cursor does not match Gold town map')
+        if i>=len(selectors) or selectors[i]!=selector:
+            errs.append(landmark+': Fly menu selector mismatch')
+        destmap='REGION_NATIVE_MAP_SLOT' if i==3 else selector
+        pattern=r'^\s*db\s+'+selector+r'\s*,\s*'+destmap+r'\s*\n\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])+r'\s*$'
+        if not re.search(pattern,special,re.M): errs.append(landmark+': missing/unsafe fly warp')
+        flag='EVENT_JOHTO_FLY_'+('NEW_BARK','CHERRYGROVE','VIOLET','AZALEA')[i]
+        for text,kind,operand in ((menu,'read','bit'),(miss,'write','set')):
+            pattern=r'ld hl, wEventFlags \+ '+flag+r' / 8\s+'+operand+' '+flag+r' % 8, \[hl\]'
+            if not re.search(pattern,text): errs.append(landmark+': missing persistent '+kind)
+        if not re.search(r'^\s*ASSERT '+flag+r' == \$'+format(0x453+i,'x')+r'\s*$',events,re.M):
+            errs.append(landmark+': save layout changed')
+    # Transition semantics, not only textual presence of the destination.
+    required=(
+     (menu,r'\.next\s+ld a, \[wWhichTownMapLocation\]\s+inc a\s+cp 4'),
+     (menu,r'\.previous\s+.*?ld a, 3\s+\.previousReady'),
+     (menu,r'\.findForward\s+ld b, 4\s+\.forwardLoop.*?inc a\s+cp 4'),
+     (menu,r'\.findBackward\s+ld b, 4\s+\.backwardLoop.*?ld a, 3'),
+     (menu,r'\.accept\s+call \.isCurrentUnlocked\s+jp z, \.inputLoop'),
+     (menu,r'\.findForward.*?call \.isCurrentUnlocked.*?\.findBackward.*?call \.isCurrentUnlocked'),
+     (miss,r'cp REGION_NATIVE_MAP_SLOT\s+jr nz, \.notJohtoAzalea\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.notJohtoAzalea\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_AZALEA_TOWN_LOCAL_ID'),
+     (s['home/overworld.asm'],r'LoadMapHeader::.*?callab SyncLegacyMapRegions\s+callba MarkTownVisitedAndLoadMissableObjects'),
+     (warp,r'cp REGION_NATIVE_MAP_SLOT\s+jr nz, \.legacyFlyTileset\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.legacyFlyTileset\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_AZALEA_TOWN_LOCAL_ID\s+jr nz, \.legacyFlyTileset\s+ld a, JOHTO_MODERN'),
+     (warp,r'\.storeTileset\s+ld \[wCurMapTileset\], a\s+.*?xor a\s+\.done\s+ld \[wYOffsetSinceLastSpecialWarp\], a\s+ld \[wXOffsetSinceLastSpecialWarp\], a'),
+     (region,r'DEF JOHTO_AZALEA_FLY_SELECTOR EQU \$fd'),
+     (events,r'ASSERT EVENT_JOHTO_FLY_AZALEA < 139 \* 8'),
+     (warp,r'callab TryLoadSpecialFlyWarpData'),
+     (warp,r'ld a, \[wLastBlackoutMap\]'),
+    )
+    for text,pattern in required:
+        if not re.search(pattern,text,re.S): errs.append('Fly runtime path removed/changed: '+pattern[:60])
+    for piece in ('cp REGION_NATIVE_MAP_SLOT','ld [wCurRegion], a','ld [wCurLocalMapID], a',
+                  'ld [wLastRegion], a','ld [wLastLocalMapID], a','JOHTO_AZALEA_TOWN_LOCAL_ID'):
+        if piece not in copy: errs.append('native Fly region/local restoration missing: '+piece)
+    if len(re.findall(r'^\s*db\s+\w+\s*,\s*REGION_NATIVE_MAP_SLOT\b',special,re.M))!=1:
+        errs.append('shared $FC must resolve from only one unique Fly selector')
+    if 'wEventFlags::' not in s['wram.asm']:
+        errs.append('no original persistent event bit storage')
+    try:
+        mask=(root/'maps/JohtoAzaleaTown.blocked_mask.bin').read_bytes()
+        def blocked(x,y): return bool(mask[y*5+x//8]&(1<<(x%8)))
+        if len(mask)!=90 or any(blocked(x,10) for x in (14,15,16)):
+            errs.append('Azalea Fly spawn or walking neighbors blocked')
+    except (OSError,IndexError) as ex: errs.append('Fly arrival mask missing/broken: '+str(ex))
+    return errs
+
+if __name__=='__main__':
+    a=argparse.ArgumentParser();a.add_argument('--rpp',type=Path,required=True);a.add_argument('--gold',type=Path,required=True)
+    args=a.parse_args();errors=audit(args.rpp,args.gold)
+    print(json.dumps({'status':'FAIL' if errors else 'PASS','errors':errors,'built_rom':False,'phone_verified':False},indent=2,ensure_ascii=False))
+    raise SystemExit(bool(errors))

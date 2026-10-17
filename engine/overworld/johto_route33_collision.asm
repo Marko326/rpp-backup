@@ -26,12 +26,59 @@ JohtoRoute33EdgeFence::
 .west
 	ld a, [wXCoord]
 	and a
-	jr z, .block ; AzaleaTown not installed
-	jr .clear
+	jr nz, .clear
+	ld a, [wYCoord]
+	cp 14
+	jr c, .block
+	cp 16
+	jr c, .clear
+	jr .block
 .south
 	ld a, [wYCoord]
 	cp JOHTO_ROUTE_33_HEIGHT * 2 - 1
 	jr c, .clear
+.block
+	scf
+	ret
+.clear
+	and a
+	ret
+
+; MAP-5.62.195: all Azalea borders closed except Gold's Route33 east road.
+JohtoAzaleaEdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr z, .east
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_DOWN
+	jr nz, .clear
+	ld a, [wYCoord]
+	cp JOHTO_AZALEA_TOWN_HEIGHT * 2 - 1
+	jr nc, .block
+	jr .clear
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .block
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .block ; Route34 remains closed
+	jr .clear
+.east
+	ld a, [wXCoord]
+	cp JOHTO_AZALEA_TOWN_WIDTH * 2 - 1
+	jr c, .clear
+	ld a, [wYCoord]
+	cp 14
+	jr c, .block
+	cp 16
+	jr nc, .block
+	jr .clear
 .block
 	scf
 	ret
@@ -48,9 +95,8 @@ JohtoRoute33CanStepAhead::
 	jp nz, .blocked
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
-	jr nz, .blocked
-	; MAP-5.62.192: Gold CAVE role at (11,9) is solid in the
-	; precise mask. Only entering from (11,10), facing north may step in.
+	jp nz, .blocked
+	; Preserve the already accepted Gold cave mouth and north connection.
 	ld a, [wXCoord]
 	cp 11
 	jr nz, .normalStep
@@ -61,6 +107,74 @@ JohtoRoute33CanStepAhead::
 	cp PLAYER_DIR_UP
 	jp z, .allowed
 .normalStep
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .northSeam
+	ld a, [wXCoord]
+	and a
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp 14
+	jr c, .normal
+	cp 16
+	jr c, .allowed
+.northSeam
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .normal
+	ld a, [wYCoord]
+	and a
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 15
+	jr c, .allowed
+.normal
+	ld hl, JohtoRoute33BlockedRows
+	ld d, JOHTO_ROUTE_33_WIDTH * 2
+	ld e, 3
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+; The second map reuses exactly the same Gold position-mask logic.
+; Its six DOOR/CAVE cells remain blocked because destination interiors are absent.
+JohtoAzaleaCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp JOHTO_AZALEA_TOWN_WIDTH * 2 - 1
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp 14
+	jr c, .normal
+	cp 16
+	jr c, .allowed
+.normal
+	ld hl, JohtoAzaleaBlockedRows
+	ld d, JOHTO_AZALEA_TOWN_WIDTH * 2
+	ld e, 5
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+; Shared 16x16 Gold block mask lookup; HL=mask, D=width cells, E=row bytes.
+; Both current maps are 9 blocks (18 quadrants) high. The caller verifies map key.
+JohtoModernMaskedStep::
 	ld a, [wXCoord]
 	ld c, a
 	ld a, [wYCoord]
@@ -85,23 +199,14 @@ JohtoRoute33CanStepAhead::
 .up
 	dec b
 .position
-	; Approved upper seam uses the Route32 Gold floor at x=0..14.
 	ld a, b
-	cp $ff
-	jr nz, .inBoundsY
-	ld a, c
-	cp 15
-	jr c, .allowed
-	jr .blocked
-.inBoundsY
 	cp JOHTO_ROUTE_33_HEIGHT * 2
 	jr nc, .blocked
 	ld a, c
-	cp JOHTO_ROUTE_33_WIDTH * 2
+	cp d
 	jr nc, .blocked
 	ld a, b
-	ld hl, JohtoRoute33BlockedRows
-	ld de, 3
+	ld d, 0
 	and a
 	jr z, .column
 .row
@@ -110,7 +215,7 @@ JohtoRoute33CanStepAhead::
 	jr nz, .row
 .column
 	ld a, c
-	ld b, a ; save x for within-byte bit
+	ld b, a
 	srl a
 	srl a
 	srl a
@@ -130,7 +235,6 @@ JohtoRoute33CanStepAhead::
 .maskReady
 	and c
 	jr nz, .blocked
-.allowed
 	and a
 	ret
 .blocked
@@ -140,3 +244,7 @@ JohtoRoute33CanStepAhead::
 ; Audited against Gold Route33 20x18 16x16 collision map.
 JohtoRoute33BlockedRows::
 	INCBIN "maps/JohtoRoute33.blocked_mask.bin"
+
+; MAP-5.62.195: same Gold modern data-driven collision, 40x18 cells.
+JohtoAzaleaBlockedRows::
+	INCBIN "maps/JohtoAzaleaTown.blocked_mask.bin"

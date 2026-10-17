@@ -21,7 +21,7 @@
       ],
       "feature_status": {
         "town_map_background": "DEFERRED",
-        "fly": "DEFERRED",
+        "fly": "ALLOWED",
         "bike": "DEFERRED",
         "surf": "DEFERRED",
         "dig": "DEFERRED",
@@ -31,7 +31,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "NEW_BARK_TOWN"
     },
     {
       "local_id": 1,
@@ -62,7 +63,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     },
     {
       "local_id": 2,
@@ -83,7 +85,7 @@
       ],
       "feature_status": {
         "town_map_background": "DEFERRED",
-        "fly": "DEFERRED",
+        "fly": "ALLOWED",
         "bike": "DEFERRED",
         "surf": "DEFERRED",
         "dig": "DEFERRED",
@@ -93,7 +95,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "CHERRYGROVE_CITY"
     },
     {
       "local_id": 3,
@@ -124,7 +127,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     },
     {
       "local_id": 4,
@@ -155,7 +159,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     },
     {
       "local_id": 5,
@@ -176,7 +181,7 @@
       ],
       "feature_status": {
         "town_map_background": "DEFERRED",
-        "fly": "DEFERRED",
+        "fly": "ALLOWED",
         "bike": "DEFERRED",
         "surf": "DEFERRED",
         "dig": "DEFERRED",
@@ -186,7 +191,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "VIOLET_CITY"
     },
     {
       "local_id": 6,
@@ -217,7 +223,8 @@
         "npc": "DEFERRED",
         "warp": "DEFERRED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     },
     {
       "local_id": 7,
@@ -248,7 +255,8 @@
         "npc": "DEFERRED",
         "warp": "ALLOWED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     },
     {
       "local_id": 8,
@@ -279,7 +287,8 @@
         "npc": "DEFERRED",
         "warp": "ALLOWED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     },
     {
       "local_id": 9,
@@ -310,7 +319,40 @@
         "npc": "DEFERRED",
         "warp": "ALLOWED"
       },
-      "identity_evidence": "STATIC_PASS"
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 10,
+      "local_symbol": "JOHTO_AZALEA_TOWN_LOCAL_ID",
+      "header": "JohtoAzaleaTown_h",
+      "bank": "BANK(JohtoAzaleaTown_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_AZALEA_TOWN",
+      "town_map_index": 11,
+      "town_map_name": "JohtoAzaleaName",
+      "town_map_xy": [
+        140,
+        76
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "ALLOWED",
+        "bike": "ALLOWED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "AZALEA_TOWN"
     }
   ]
 }

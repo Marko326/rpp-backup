@@ -54,7 +54,7 @@ HandleLedges:
 	jr nz, .nextLedgeTile3
 	ld a, [hl]
 	ld e, a
-	jr .foundMatch
+	jp .foundMatch
 .nextLedgeTile1
 	inc hl
 .nextLedgeTile2
@@ -73,14 +73,20 @@ HandleLedges:
 	ret nz
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr z, .route33HopTable
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	ret nz
+	ld hl, .azaleaHops
+	jr .modernHopLookup
+.route33HopTable
+	ld hl, .route33Hops
+.modernHopLookup
 	ld a, [wXCoord]
 	ld b, a
 	ld a, [wYCoord]
 	ld c, a
 	ld a, [wPlayerDirection]
 	ld d, a
-	ld hl, .route33Hops
 .hopLoop
 	ld a, [hli]
 	cp $ff
@@ -120,6 +126,20 @@ HandleLedges:
 	db 10, 12, PLAYER_DIR_DOWN
 	db 11, 12, PLAYER_DIR_DOWN
 	db 12, 12, PLAYER_DIR_DOWN
+	db $ff
+
+; MAP-5.62.195: nine independently verified Gold HOP_DOWN positions.
+; (10,6) excluded: landing is clear but continuation hits wall; review later.
+.azaleaHops
+	db 6, 6, PLAYER_DIR_DOWN
+	db 7, 6, PLAYER_DIR_DOWN
+	db 8, 6, PLAYER_DIR_DOWN
+	db 11, 6, PLAYER_DIR_DOWN
+	db 28, 10, PLAYER_DIR_DOWN
+	db 29, 10, PLAYER_DIR_DOWN
+	db 30, 10, PLAYER_DIR_DOWN
+	db 32, 10, PLAYER_DIR_DOWN
+	db 33, 10, PLAYER_DIR_DOWN
 	db $ff
 
 .foundMatch

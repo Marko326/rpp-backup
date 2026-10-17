@@ -3274,6 +3274,13 @@ INCLUDE "data/mapObjects/JohtoRoute33.asm"
 INCLUDE "scripts/JohtoRoute33.asm"
 JohtoRoute33Blocks: INCBIN "maps/JohtoRoute33.blk"
 
+; MAP-5.62.195: same JOHTO_MODERN art; no duplicate image/blockset assets.
+SECTION "Johto Azalea Town Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoAzaleaTown.asm"
+INCLUDE "data/mapObjects/JohtoAzaleaTown.asm"
+INCLUDE "scripts/JohtoAzaleaTown.asm"
+JohtoAzaleaTownBlocks: INCBIN "maps/JohtoAzaleaTown.blk"
+
 SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_route33_collision.asm"
 
@@ -3464,7 +3471,12 @@ JohtoNativeCollisionFence::
 	jr nz, .legacyNative
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr z, .route33Native
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr nz, .legacyNative
+	callba JohtoAzaleaEdgeFence
+	ret
+.route33Native
 	callba JohtoRoute33EdgeFence ; helper lives in the Route33 resource bank
 	ret
 .legacyNative
