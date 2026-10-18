@@ -91,17 +91,18 @@ TransformEffect_:
 	inc bc
 	inc bc
 	call CopyData
+	; MOVE-5.62.184: the four copied move bytes must travel together
+	; with their slot identity bits. The banked helper updates only the
+	; acting side's nibble. Preserve the CopyData source/destination
+	; pointers: the following DV copy still depends on both.
+	push hl
+	push de
+	callba CopyTransformBattleMoveMask
+	pop de
+	pop hl
 	ld a, [H_WHOSETURN]
 	and a
 	jr nz, .saveEnemyDVs
-	; MOVE-5.62.182: Transform currently copies ordinary enemy move bytes.
-	; Clear only the player's live nibble; preserve enemy identity and the
-	; original Party sidecar until switching or battle end.
-	ld a, [wExtendedBattleMoveFlags]
-	and $f0
-	ld [wExtendedBattleMoveFlags], a
-	xor a
-	ld [wExtendedActiveMoveOrdinal], a
 	jr .next
 .saveEnemyDVs
 ; save enemy mon DVs at wTransformedEnemyMonOriginalDVs

@@ -1,3 +1,93 @@
+; MOVE-5.62.183: battle-aware classification, shared by both acting sides.
+; wTempMoveID contains the queried low-byte ID. The one-byte active ordinal
+; is only valid for the currently acting move, NOT arbitrary target queries
+; (Counter / Sucker Punch). Require that the queried ID is also the selected
+; move on the acting side before using the extended class table.
+; Output classification is returned in wTempMoveID (CALLBA clobbers A).
+_BattlePhysicalSpecialSplit::
+	ld a, [wTempMoveID]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr z, .escape
+	ld c, a
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr z, .ordinary
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .ordinary
+	cp c
+	jr nz, .ordinary
+	ldh a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerSelectedMove]
+	jr z, .selected
+	ld a, [wEnemySelectedMove]
+.selected
+	cp c
+	jr nz, .ordinary
+	ld a, [wExtendedActiveMoveOrdinal]
+	dec a
+	ld c, a
+	ld b, 0
+	ld hl, .extendedClasses
+	add hl, bc
+	ld a, [hl]
+	ld [wTempMoveID], a
+	ret
+.escape
+	ld a, PHYSICAL ; preserve pre-existing $ff escape classification
+	ld [wTempMoveID], a
+	ret
+.ordinary
+	jp _PhysicalSpecialSplit
+
+; One class per complete extended identity (one-based ordinals 1..40).
+; Current prototype moves are damaging physical moves as in the old player
+; shortcut. Do NOT derive the class from the reused legacy low byte; future
+; special/status extended moves must update their own entry here.
+.extendedClasses
+	db PHYSICAL ; EXT 01: Power Whip
+	db PHYSICAL ; EXT 02: Play Rough
+	db PHYSICAL ; EXT 03: POUND
+	db PHYSICAL ; EXT 04: TACKLE
+	db PHYSICAL ; EXT 05: MEGA_PUNCH
+	db PHYSICAL ; EXT 06: CUT
+	db PHYSICAL ; EXT 07: GUST
+	db PHYSICAL ; EXT 08: PECK
+	db PHYSICAL ; EXT 09: VICEGRIP
+	db PHYSICAL ; EXT 10: STRENGTH
+	db PHYSICAL ; EXT 11: SCRATCH
+	db PHYSICAL ; EXT 12: HORN_ATTACK
+	db PHYSICAL ; EXT 13: WING_ATTACK
+	db PHYSICAL ; EXT 14: POUND
+	db PHYSICAL ; EXT 15: VICEGRIP
+	db PHYSICAL ; EXT 16: GUST
+	db PHYSICAL ; EXT 17: PECK
+	db PHYSICAL ; EXT 18: TACKLE
+	db PHYSICAL ; EXT 19: MEGA_PUNCH
+	db PHYSICAL ; EXT 20: STRENGTH
+	db PHYSICAL ; EXT 21: SCRATCH
+	db PHYSICAL ; EXT 22: HORN_ATTACK
+	db PHYSICAL ; EXT 23: PECK
+	db PHYSICAL ; EXT 24: GUST
+	db PHYSICAL ; EXT 25: TACKLE
+	db PHYSICAL ; EXT 26: VICEGRIP
+	db PHYSICAL ; EXT 27: WING_ATTACK
+	db PHYSICAL ; EXT 28: MEGA_PUNCH
+	db PHYSICAL ; EXT 29: STRENGTH
+	db PHYSICAL ; EXT 30: CUT
+	db PHYSICAL ; EXT 31: POUND
+	db PHYSICAL ; EXT 32: GUST
+	db PHYSICAL ; EXT 33: PECK
+	db PHYSICAL ; EXT 34: HORN_ATTACK
+	db PHYSICAL ; EXT 35: TACKLE
+	db PHYSICAL ; EXT 36: WING_ATTACK
+	db PHYSICAL ; EXT 37: SCRATCH
+	db PHYSICAL ; EXT 38: STRENGTH
+	db PHYSICAL ; EXT 39: VICEGRIP
+	db PHYSICAL ; EXT 40: MEGA_PUNCH
+.extendedClassesEnd
+ASSERT .extendedClassesEnd - .extendedClasses == NUM_EXTENDED_MOVES
+
 _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	ld a, [wTempMoveID]
 	ld c,a

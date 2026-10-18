@@ -2906,6 +2906,15 @@ NoMovesLeftText:
 	db "@"
 
 SwapMovesInMenu:
+	; MOVE-5.62.184G3: Transform uses temporary battle moves. The stock
+	; SELECT path also swaps permanent Party moves/PP; reject it here.
+	ld a, [wPlayerBattleStatus3]
+	bit Transformed, a
+	jr z, .normalSwap
+	xor a
+	ld [wMenuItemToSwap], a
+	jp MoveSelectionMenu
+.normalSwap
 	ld a, [wMenuItemToSwap]
 	and a
 	jr z, .noMenuItemSelected
@@ -8458,30 +8467,11 @@ MovePriorityTable:
 ; INPUT: Move ID in register a
 ; OUTPUT: Move Physical/Special/Status type in register a
 PhysicalSpecialSplit:
-	; Scoped identity: the battle menu selected an actual second-table slot.
-	; Do not reinterpret ordinary low IDs 1/2 when the sidecar is absent.
-	ld b, a
-	ldh a, [H_WHOSETURN]
-	and a
-	jr nz, .noExtended
-	ld a, [wExtendedActiveMoveOrdinal]
-	and a
-	jr z, .noExtended
-	cp b
-	jr nz, .noExtended
-	ld a, PHYSICAL
-	ret
-.noExtended
-	ld a, b
-	; MOVE-5.62.169: $ff has no legacy split-table entry. The pilot
-	; Power Whip is a physical Grass attack, not a new class index.
-	cp EXT_MOVE_SLOT_ESCAPE
-	jr nz, .stockSplit
-	ld a, PHYSICAL
-	ret
-.stockSplit
+	; MOVE-5.62.183: resolve the actual battle actor's full move identity
+	; in the banked classifier. Other-side queries remain ordinary unless
+	; they really match the acting extended move; keep legacy $ff behavior.
 	ld [wTempMoveID], a
-	callba _PhysicalSpecialSplit
+	callba _BattlePhysicalSpecialSplit
 	ld a, [wTempMoveID]
 	ret
 

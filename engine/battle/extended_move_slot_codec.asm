@@ -170,6 +170,42 @@ SetBattleSideExtendedMoveMask::
 	pop bc
 	ret
 
+; MOVE-5.62.184: Transform copies the opponent's four move bytes.
+; Copy the opponent's four identity bits to the transforming battler as
+; part of the same successful operation, leaving the target and Party
+; masks untouched. $C0F9: player slots = bits 0..3, enemy = bits 4..7.
+; H_WHOSETURN = 0 player user / nonzero enemy user.
+; Call via CALLBA. A/BC/flags clobbered; DE/HL preserved.
+CopyTransformBattleMoveMask::
+	ld a, [wExtendedBattleMoveFlags]
+	ld c, a
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyUser
+	; Player transformed: high nibble (enemy) becomes low nibble.
+	ld a, c
+	swap a
+	and $0f
+	ld b, a
+	ld a, c
+	and $f0
+	or b
+	jr .done
+.enemyUser
+	; Enemy transformed: low nibble (player) becomes high nibble.
+	ld a, c
+	swap a
+	and $f0
+	ld b, a
+	ld a, c
+	and $0f
+	or b
+.done
+	ld [wExtendedBattleMoveFlags], a
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
+	ret
+
 ; MOVE-5.62.169: translate a live player's battle slot to an ordinal.
 ; Input wExtendedMoveFlagsScratch = zero-based move slot;
 ; writes wExtendedActiveMoveOrdinal = 0 for legacy / 1..N expanded.
