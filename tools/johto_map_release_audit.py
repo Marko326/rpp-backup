@@ -25,7 +25,7 @@ from johto_route33_runtime191 import audit as route33_runtime_audit
 from johto_union_cave_exit192_audit import audit as cave_exit192_audit
 from johto_surf_geometry_audit import inspect as surf_geometry_inspect
 from johto_surf_runtime_audit import audit as surf_runtime_audit
-from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit
+from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
@@ -52,7 +52,7 @@ test_johto_gate159_gold_art test_johto_gate_audit
 test_johto_indoor_border_adapter test_johto_indoor_manifest
 test_johto_indoor_stage3 test_johto_indoor_stage4
 test_johto_indoor_stage5 test_johto_indoor_stage6
-test_johto_indoor_toolchain test_johto_gold_cells test_johto_map_release_audit
+test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
 test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170
 test_johto_route32_ladder166 test_johto_route32_p1b
@@ -70,20 +70,35 @@ test_johto_route32_surf188
 test_johto_route33_runtime191
 test_johto_fly_destinations196
 test_johto_gold_collision_cardinality test_johto_ilex_gold_reference test_johto_ilex_south_gate197
-test_johto_union_cave_exit192
+test_johto_union_cave_exit192 test_johto_ilex_forest_p17
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_ordinary_floor_down_to_carpet_is_allowed
+ test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_missing_north_rule_mutation_caught_by_branch_execution
+ test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_north_approach_is_exact_and_lower_wall_remains_blocked
+test_johto_masked_step_audit.SharedMaskedSourceAudit.test_unknown_opcode_is_not_silently_accepted
+test_johto_tileset_index_audit.TilesetIndexAudit.test_all_registered_ids_and_future_arithmetic_are_traced
+test_johto_tileset_index_audit.TilesetIndexAudit.test_high_byte_carry_mutation_is_rejected
+test_johto_tileset_index_audit.TilesetIndexAudit.test_missing_palette_assignment_include_is_rejected
+test_johto_tileset_index_audit.TilesetIndexAudit.test_wrong_assignment_stride_is_rejected
 test_johto_gold_collision_cardinality.GoldSurplusCollisionEntries.test_extra_gold_collision_entries_do_not_block_candidate
  test_johto_gold_collision_cardinality.GoldSurplusCollisionEntries.test_missing_collision_for_a_graphical_block_is_rejected
  test_johto_gold_collision_cardinality.GoldSurplusCollisionEntries.test_surplus_unreferenced_collision_entries_do_not_change_geometry
  test_johto_ilex_gold_reference.GoldIlexEntryReferences.test_gold_azalea_gate_and_forest_have_bidirectional_pairs
  test_johto_ilex_gold_reference.GoldIlexEntryReferences.test_gold_gate_exact_art_reuses_existing_johto_gate_candidate
  test_johto_ilex_south_gate197.IlexSouthGate197.test_gold_exact_two_way_registered_warps
- test_johto_ilex_south_gate197.IlexSouthGate197.test_forest_west_exit_remains_sealed
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_gold_resources_are_from_general_pipeline
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_bidirectional_double_warp_preserves_east
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_negative_wrong_direction_rejected
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_tileset_32_header_and_palette_indices
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_negative_tileset_32_header_overflow_rejected
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_negative_tileset_32_palette_overflow_rejected
+ test_johto_ilex_forest_p17.ForestRuntimeP17.test_negative_forest_right_facing_return_rejected
+ test_johto_ilex_south_gate197.IlexSouthGate197.test_original_east_pair_stays_in_front
  test_johto_ilex_south_gate197.IlexSouthGate197.test_swapped_gold_gate_pair_is_rejected
- test_johto_ilex_south_gate197.IlexSouthGate197.test_forest_west_open_warp_fails
+ test_johto_ilex_south_gate197.IlexSouthGate197.test_east_warp_count_removal_fails
  test_johto_ilex_south_gate197.IlexSouthGate197.test_wrong_native_region_mapping_rejected
  test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_exact_entry_check_fails
 test_johto_full_town_map182.JohtoFullTownMap182.test_options_scoped_labels_unique_and_mutation_is_caught
@@ -204,6 +219,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     root, gold = root.resolve(), gold.resolve()
     errors.extend(verify_gold(gold))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
+    errors.extend('ILEX_FOREST_P17: '+v for v in forest_p17_audit(root,gold))
     if not (root / 'data/game_version.asm').is_file():
         errors.append('RPP game_version.asm is missing')
     else:
@@ -249,7 +265,33 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
                                           additional_required_ids=additional_required_ids))
         if errors:
             print(output[-5000:], file=sys.stderr)
+    resource_indexes = None
+    try:
+        from johto_tileset_index_audit import audit as tileset_index_audit
+        resource_indexes = tileset_index_audit(root)
+    except (OSError, ValueError) as exc:
+        errors.append('TILESET_INDEX_ALL_IDS: '+str(exc))
+    eligible_for_full_source_check = not errors
+    from johto_masked_step_audit import audit as masked_step_audit
+    runtime_step = None
+    if eligible_for_full_source_check:
+        try:
+            runtime_step = masked_step_audit(root, gold)
+            errors.extend('MASKED_STEP: '+err for err in runtime_step['failures'])
+        except (OSError, ValueError, KeyError) as exc:
+            errors.append('MASKED_STEP: source execution unsupported: '+str(exc))
+    corpus_summary = None
+    if eligible_for_full_source_check:
+        import tempfile
+        from johto_rpp_pipeline import full_gold_corpus
+        with tempfile.TemporaryDirectory(prefix='rpp_gold_corpus_') as tmp:
+            corpus_summary = full_gold_corpus(root, gold, Path(tmp)/'source_audit')
+        errors.extend('GOLD_FULL_CORPUS: '+item['map']+': '+item['error']
+                      for item in corpus_summary['errors'])
     return {'status': 'FAIL' if errors else 'PASS', 'errors': errors,
+            'full_gold_corpus': corpus_summary,
+            'masked_step_source_audit': runtime_step,
+            'tileset_index_all_ids': resource_indexes,
             'tests': test_count, 'skipped': skipped,
             'build_performed': False, 'phone_accepted_by_this_gate': False}
 

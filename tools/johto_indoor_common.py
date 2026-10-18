@@ -132,13 +132,32 @@ def rpp_dimensions(rpp: Path, map_name: str):
     return pairs[0]
 
 
-def gold_dimensions(gold: Path, map_name: str):
+def gold_dimensions_catalog(gold: Path):
+    """One fail-closed name normalization for Gold map dimensions.
+
+    Both registered CamelCase names and map_const UPPER_UNDERSCORE names use
+    this exact key. Duplicate keys and invalid sizes are rejected globally.
+    """
     text = read(gold, 'constants/map_constants.asm')
-    snake = re.sub(r'(?<!^)(?=[A-Z])','_',map_name).upper()
     raw = re.findall(r'^\s*map_const\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)', text, re.M)
-    matches = [(int(w),int(h)) for name,w,h in raw if name.replace('_','').lower() == map_name.lower()]
-    if len(matches) != 1: raise ConversionError(f'Gold 未找到唯一尺寸: {map_name}')
-    return matches[0]
+    catalog = {}
+    for name, w, h in raw:
+        key = re.sub(r'[^a-z0-9]', '', name.lower())
+        dims = (int(w), int(h))
+        if key in catalog or min(dims) <= 0:
+            raise ConversionError(f'Gold 地图尺寸名称重复或尺寸无效: {name}')
+        catalog[key] = dims
+    if not catalog:
+        raise ConversionError('Gold 没有地图尺寸常量')
+    return catalog
+
+
+def gold_dimensions(gold: Path, map_name: str):
+    key = re.sub(r'[^a-z0-9]', '', map_name.lower())
+    try:
+        return gold_dimensions_catalog(gold)[key]
+    except KeyError as exc:
+        raise ConversionError(f'Gold 未找到唯一尺寸: {map_name}') from exc
 
 
 def tile_at(rpp: Path, name: str, x: int, y: int, tileset: str):

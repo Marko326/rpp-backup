@@ -15,6 +15,53 @@ from johto_indoor_tiles_converter import build_mapping
 GOLD_BLOCKED = frozenset(('WALL', 'COUNTER'))
 GOLD_FLOOR = frozenset(('FLOOR',))
 
+# Corpus labels checked against the COMPLETE Gold source, not a map-specific
+# whitelist. Adding a new collision role requires explicitly reviewing it.
+PORTAL_ROLES = frozenset({'CAVE', 'DOOR', 'STAIRCASE', 'LADDER',
+                          'WARP_PANEL', 'WARP_CARPET_DOWN',
+                          'WARP_CARPET_LEFT', 'WARP_CARPET_RIGHT',
+                          'WARP_CARPET_UP'})
+ORDINARY_ROLES = frozenset({'FLOOR', 'TALL_GRASS', 'LONG_GRASS'})
+DIRECTIONAL_ROLES = frozenset({'HOP_DOWN', 'HOP_DOWN_LEFT', 'HOP_DOWN_RIGHT',
+                                'HOP_LEFT', 'HOP_RIGHT'})
+FIELD_MOVE_ROLES = frozenset({'CUT_TREE', 'HEADBUTT_TREE', 'WATER',
+                              'WATER_21', 'WATERFALL', 'WHIRLPOOL'})
+SOLID_ROLES = frozenset({'WALL', 'UP_WALL', 'COUNTER', 'BUOY', 'PIT'})
+INTERACT_ROLES = frozenset({'BOOKSHELF', 'ICE', 'INCENSE_BURNER', 'MART_SHELF',
+                             'PC', 'RADIO', 'TOWN_MAP', 'TV', 'WINDOW'})
+ROLE_SEMANTICS = {role: group for group, roles in (
+    ('portal', PORTAL_ROLES), ('ordinary', ORDINARY_ROLES),
+    ('directional', DIRECTIONAL_ROLES), ('field_move', FIELD_MOVE_ROLES),
+    ('solid', SOLID_ROLES), ('interact', INTERACT_ROLES)) for role in roles}
+
+
+def portal_approach_edges(cells, width, height):
+    """Enumerate all 4-direction source -> portal edges, not allowed steps.
+
+    An approach from a solid Gold tile is still evidence to test BLOCKING.
+    The direction and source role remain explicit for future runtime auditing.
+    """
+    directions = ((0, -1, 'UP'), (0, 1, 'DOWN'),
+                  (-1, 0, 'LEFT'), (1, 0, 'RIGHT'))
+    edges = []
+    for target in cells:
+        if target['role'] not in PORTAL_ROLES:
+            continue
+        x, y = target['x'], target['y']
+        for dx, dy, direction in directions:
+            sx, sy = x-dx, y-dy
+            if 0 <= sx < width and 0 <= sy < height:
+                src = cells[sy*width+sx]
+                semantic = ROLE_SEMANTICS[src['role']]
+                edges.append({'from_x': sx, 'from_y': sy,
+                              'from_role': src['role'], 'to_x': x, 'to_y': y,
+                              'to_role': target['role'], 'direction': direction,
+                              'source_semantics': semantic,
+                              'review_priority': ('TRAVERSAL_CANDIDATE' if semantic in
+                                  ('ordinary', 'portal') else 'CHECK_BLOCKED_OR_SPECIAL'),
+                              'rpp_runtime_verified': False})
+    return edges
+
 
 def classify_gold(label: str) -> str:
     if label in GOLD_FLOOR:
@@ -126,7 +173,7 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
     from johto_rpp_asset_audit import blocks_for, collision_labels, gold_resource_aliases
     from johto_indoor_common import gold_dimensions
     if walkable_roles is None:
-        walkable_roles = {'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT','HOP_DOWN_LEFT'}
+        walkable_roles = {'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT','HOP_DOWN_LEFT','HOP_DOWN_RIGHT'}
     walkable_roles = set(walkable_roles)
     aliases = gold_resource_aliases(gold)
     w,h = gold_dimensions(gold,map_name)
@@ -158,7 +205,10 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
             gfx=(blocks[base],blocks[base+1],blocks[base+4],blocks[base+5])
             if max(gfx)>=graphic_slots:
                 raise ConversionError('Gold map references graphics beyond runtime window')
-            cells.append({'x':x,'y':y,'role':collision_rows[block][quadrant],
+            role = collision_rows[block][quadrant]
+            if role not in ROLE_SEMANTICS:
+                raise ConversionError(f'Gold 未分类碰撞语义: {map_name} ({x},{y}) {role}')
+            cells.append({'x':x,'y':y,'role':role,
                           'graphics':gfx,'image_id':gfx[2]})
     blocked=bytearray()
     for y in range(height):
@@ -173,6 +223,7 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
     unsafe_hops=[]
     directions={'HOP_DOWN':((0,1),),'HOP_LEFT':((-1,0),),
                 'HOP_DOWN_LEFT':((0,1),(-1,0)),
+                'HOP_DOWN_RIGHT':((0,1),(1,0)),
                 'HOP_UP':((0,-1),),'HOP_RIGHT':((1,0),)}
     for c in cells:
         for dx,dy in directions.get(c['role'],()):
@@ -203,7 +254,8 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
             'walkable_roles':sorted(walkable_roles), 'hops':hops,
             'unsafe_hop_candidates':unsafe_hops,
             'special_cells':[{'x':c['x'],'y':c['y'],'role':c['role']}
-                             for c in cells if c['role'] in {'CAVE','DOOR','STAIRCASE','LADDER'}],
+                             for c in cells if c['role'] in PORTAL_ROLES],
+            'portal_edges': portal_approach_edges(cells, width, height),
             'runtime_ready':False,
             'notes':'Gold collision evidence only; engine entry exceptions and map connections require separate review'}
     return report,bytes(blocked)

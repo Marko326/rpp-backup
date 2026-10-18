@@ -105,12 +105,8 @@ def layout_inventory(gold):
     definitions = MAP_REG.findall(read_text(gold / 'data/maps/maps.asm'))
     if not definitions:
         raise AuditError('无法读取 Gold maps.asm 中的地图注册')
-    sizes = {}
-    for name, width, height in MAP_DIM.findall(read_text(gold / 'constants/map_constants.asm')):
-        key = name.replace('_', '').lower()
-        if key in sizes:
-            raise AuditError(f'Gold 地图尺寸键重复: {name}')
-        sizes[key] = (int(width), int(height))
+    from johto_indoor_common import gold_dimensions_catalog
+    sizes = gold_dimensions_catalog(gold)
     mapping = gold_block_sources(gold)
     maps = []
     names = set()
@@ -118,7 +114,7 @@ def layout_inventory(gold):
         if name in names:
             raise AuditError(f'重复 Gold 地图: {name}')
         names.add(name)
-        dims = sizes.get(name.replace('_', '').lower())
+        dims = sizes.get(re.sub(r'[^a-z0-9]', '', name.lower()))
         if dims is None:
             raise AuditError(f'缺少地图宽高: {name}')
         src = mapping.get(name)

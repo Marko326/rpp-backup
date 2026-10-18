@@ -385,6 +385,38 @@
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 12,
+      "local_symbol": "JOHTO_ILEX_FOREST_LOCAL_ID",
+      "header": "JohtoIlexForest_h",
+      "bank": "BANK(JohtoIlexForest_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_DUNGEON2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_UNION_CAVE",
+      "town_map_index": 13,
+      "town_map_name": "JohtoBrowseIlexForestName",
+      "town_map_xy": [
+        136,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
     }
   ]
 }

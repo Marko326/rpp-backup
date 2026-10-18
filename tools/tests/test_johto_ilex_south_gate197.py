@@ -17,10 +17,11 @@ class IlexSouthGate197(unittest.TestCase):
             raise AssertionError('Gold full source required')
     def test_gold_exact_two_way_registered_warps(self):
         self.assertEqual(audit(ROOT,GOLD),[])
-    def test_forest_west_exit_remains_sealed(self):
-        self.assertNotIn('JohtoIlexForest_h', (ROOT/'data/johto_map_headers.asm').read_text())
-        self.assertNotIn('db 4, 0,', (ROOT/'data/mapObjects/JohtoIlexAzaleaGate.asm').read_text())
-        self.assertIn('db $02', (ROOT/'data/mapObjects/JohtoIlexAzaleaGate.asm').read_text())
+    def test_original_east_pair_stays_in_front(self):
+        from johto_indoor_common import rpp_warps
+        gate=rpp_warps(ROOT,'JohtoIlexAzaleaGate')
+        self.assertEqual([(x['x'], x['y']) for x in gate[:2]], [(9,4),(9,5)])
+        self.assertEqual(len(gate),4)
     def mutation(self, path,old,new,reason):
         with TemporaryDirectory() as tmp:
             p=Path(tmp)
@@ -47,9 +48,9 @@ class IlexSouthGate197(unittest.TestCase):
         self.mutation('data/mapObjects/JohtoAzaleaTown.asm',
                       'db 11, 2, 1, REGION_WARP_ESCAPE',
                       'db 11, 2, 0, REGION_WARP_ESCAPE', 'town gate Warp')
-    def test_forest_west_open_warp_fails(self):
+    def test_east_warp_count_removal_fails(self):
         self.mutation('data/mapObjects/JohtoIlexAzaleaGate.asm',
-                      'db $02\n\tdb 4, 9', 'db $03\n\tdb 4, 9', 'gate return Warp')
+                      'db $04\n\tdb 4, 9', 'db $01\n\tdb 4, 9', 'gate return Warp')
     def test_wrong_native_region_mapping_rejected(self):
         self.mutation('engine/overworld/region_map_lookup.asm',
                       'JOHTO_AZALEA_TOWN_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID',
@@ -67,8 +68,8 @@ class IlexSouthGate197(unittest.TestCase):
                       'collision Warp')
     def test_collision_wrong_direction_inside_fails(self):
         self.mutation('home/overworld.asm',
-                      '.gateReturnsEast\n\tcp PLAYER_DIR_RIGHT',
-                      '.gateReturnsEast\n\tcp PLAYER_DIR_LEFT',
+                      '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_RIGHT',
+                      '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_LEFT',
                       'collision Warp')
     def test_no_vertical_pair_walk_fails(self):
         self.mutation('engine/overworld/johto_route33_collision.asm',

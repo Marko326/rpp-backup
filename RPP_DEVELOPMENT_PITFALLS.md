@@ -1,3 +1,12 @@
+## ILEX-5.62.212｜桐树林地图与 Cut 的长期维护约定（已收口）
+
+- **切分项目阶段**：P17 当前只扩展 Gold 桐树林地图与地形技能，不接入大葱鸭追逐、HM01 发放或城都徽章剧情。后续实际开发顺序为北口门房 → Route34 → 后续地图；新门房必须先遵守 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`。不能用“剧情没做”否决本阶段的 Cut 可用性。
+- **地形图块与技能授权是两层约束**：Gold 原版桐树林 `(8,25)` `CUT_TREE` 位于 32×32 metatile `$0f` 左下象限；`(9,25)` 是 `HEADBUTT_TREE`。复用 RPP `Cut2/AnimCut` 时只替换左下四块 8×8 图形成 `$2d`，再由 live block 和 Gold 阻挡 mask 配合放行；不能把整个 32×32 block 清空。A 键和宝可梦菜单都用 `JohtoCutBadgeAllowed`：仅精确 JOHTO Ilex Forest 免 Hive Badge、队伍仍须会 Cut；关东保留 Cascade Badge。离图恢复原树，不创设额外剧情/存档标志。
+- **图形相同≠颜色相同**：关东 Cut 动画的四块 8×8 树图与 Gold 桐树林树图像素一致，但 Cut OBJ palette 6 与 BG palette 互不等同。新 `JOHTO_ILEX_FOREST` 必须加入 `LoadOverworldSpritePalettes` 的 `SpritePalettesNite` 分支，不能改全局 OBJ palette 6；用户 `.212` 视频与反馈确认突兀亮绿色已改善。菜单 Cut、更多 OBJ 组合仍按独立场景核对。
+- **禁止用静态模型掩盖失败 HOP**：`.205～.208` 的 Forest 两格 HOP 跳崖均未获手机通过。RPP 旧三格跳跃与 Gold 原版 `STEP_LEDGE` 不同，不能靠缩减模拟步数或动画等待模型证明真实移动成功。最终 `HandleLedges:.ilexForest` 立即返回并保持 Gold 墙壁 mask，编号 `ILEX-LEDGE-001` 保留 DEFERRED；原关东/Route29～32 执行器不动。以后重启必须 CPU/RAM 逐帧和其它地图回归，不能把 `95` 静态匹配当作实机通过。
+- **收口纪律与证据分层**：本轮最近已确认 HEAD 为 `057e9fbf / GATE-5.62.202`，最终候选 `ILEX-5.62.212`；中间 `.203～.211` 仅为未提交开发轨迹，正式修改段版本注释统一 `.212`，旧历史证据仍保留在 `docs/`。用户 `.212` 视频支持 A 键动画与底色改善，不自动代表菜单 Cut、所有碰撞/Warp/关东回归逐项通过；AI 不编译/链接、不替用户 Git Commit/Push。完整提交与后续界限见 `docs/ILEX_212_CLOSEOUT_AND_ROUTE34_HANDOVER.md`。
+
+
 ## 门房开发永久入口｜正式收口 GATE-5.62.202
 
 **以后新增／改造任何门房，先读 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`，不能只读这份踩坑记录。** 该专项文档强制列出已验收的老门房参考、两格 Warp 的站位与碰撞、立即回程、地图边框普通/快速两条路径、neutral 地点名、source→compact 的真实图块排列、实际 RGB 与关东隔离、反向审计和手机最小验收。`tools/johto_door_contracts.json` 现必须为每个室外/室内 Gate 登记必读文件，并为 `GATE_INDOOR` 登记 8 类实际执行的证明 ID，并保留手机验收状态；新门房缺项或专项手册遗失时 Gold 严格门禁 FAIL。此规则适用于今后的桐树林北口、34号道路等门房，而不只是本次南门房。
@@ -464,3 +473,8 @@ P16B 只在 Warp 完整加载 `LoadMapData` 后补边；从 33 号道路直接�
 - **门房可能复用 `$FC`，地图名中性判断必须同时检查原生地区+局部 ID**：Route31 第一门房早用旧地图 ID 检查，而新南门房之前未加入 `engine/overworld/map_name_sign.asm` 的中性注册，错误弹 Route34。保留原版 Route34 Town Map 地标供地图定位，不靠篡改 landmark 或广泛屏蔽 `$FC` 掩盖弹窗。
 - **新增 Gate 最低准入条件是行为链，而非文件存在**：`tools/johto_door_contracts.json` 的每个 `GATE_INDOOR` 必须登记真实执行的 `(1) neutral_name_sign_test_id`、`(2) gold_palette_test_id`、`(3) runtime_palette_status`（PHONE_PENDING 或 PHONE_ACCEPTED）；缺项硬失败。配套测试故意去除属性或执行测试登记必须失败。室外相邻边框、门内两格步行、朝向、反向 Warp、地图加载两路径及调色表现仍有独立验收要求。
 - **本轮截图差异并非实机已解决**：截图里拱形装饰仅颜色0从 Gold 米白偏到 RPP 黄绿，其他深色接近；源码逐图块标签修正不证明现场调色索引或加载路径正确。手机仍出现差异时，优先检查 CGB palette slot 和 attr 映射，再做局部修复，禁止盲改整套室内绿色 RGB。
+
+
+## LEDGE-5.62.208：强制移动队列和落地动画必须共同收尾
+
+`.207` 实机显示 Ilex Forest 跳跃可能停在障碍格。根因候选是 `_HandleMidJump` 在一格走完的 `wWalkCounter=0` 边界，未检查 `wSimulatedJoypadStatesIndex>0` 就清掉 `wd730.7`，使下一格模拟输入无法执行。`.208` 已在 ROM0 公共 `HandleMidJump` 包装器补“队列尚有输入则不得落地”，并为所有跳崖统一补“队列耗尽但动画未完则不接受新方向”，撤销 `.207` 的 Forest 专用队列清零。森林还是两格，旧 Route29 等还是三格。新增 `tools/tests/test_ledge_regression_208.py` 测试格间零计数与强制输入的不同帧时序。状态仅源码候选／静态测试通过，ROM/实机仍未验收；严禁把其称作已修复。详见 `docs/LEDGE_RUNTIME_CONTRACT_208.md`。

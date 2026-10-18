@@ -9,11 +9,11 @@ TOOLS=Path(__file__).resolve().parents[1]
 ROOT=TOOLS.parent
 sys.path.insert(0,str(TOOLS))
 from johto_indoor_common import (ConversionError, safe_roots, rpp_warps, gold_warps,
-                                 gold_dimensions,rpp_dimensions, warp_tile_ids)
+                                 gold_dimensions,gold_dimensions_catalog,rpp_dimensions, warp_tile_ids)
 from johto_native_warp_converter import analyze
 from johto_bidirectional_warp_validator import validate
 from johto_indoor_tiles_converter import build_mapping, stage_dedicated_gold_tileset
-from johto_indoor_collision_adapter import check
+from johto_indoor_collision_adapter import check, plan_gold_quadrant_collision
 from johto_indoor_registration_generator import generate
 from johto_indoor_pipeline import pipeline
 
@@ -34,6 +34,30 @@ class IndoorToolchainTests(unittest.TestCase):
         self.assertEqual(gold_dimensions(GOLD,'Route31VioletGate'),(5,4))
         self.assertEqual([(q['x'],q['y']) for q in gold_warps(GOLD,'Route31VioletGate')],
                          [(0,4),(0,5),(9,4),(9,5)])
+
+    def test_corpus_dimension_parser_handles_underscored_ship_cabins(self):
+        self.assertEqual(gold_dimensions(GOLD,'FastShipCabins_NNW_NNE_NE'), (4,16))
+        self.assertEqual(gold_dimensions(GOLD,'FastShipCabins_SW_SSW_NW'), (4,16))
+        self.assertEqual(gold_dimensions(GOLD,'FastShipCabins_SE_SSE_CaptainsCabin'), (5,17))
+
+    def test_forest_carpet_approach_is_enumerated_not_runtime_approved(self):
+        geometry, _ = plan_gold_quadrant_collision(GOLD, 'IlexForest', 'forest')
+        edges = geometry['portal_edges']
+        matches = [e for e in edges if (e['from_x'],e['from_y'],
+                   e['to_x'],e['to_y'],e['direction']) == (3,41,3,42,'DOWN')]
+        self.assertEqual(len(matches),1)
+        self.assertEqual(matches[0]['to_role'],'WARP_CARPET_RIGHT')
+        self.assertFalse(matches[0]['rpp_runtime_verified'])
+
+    def test_full_corpus_fails_closed_and_does_not_claim_runtime(self):
+        from johto_rpp_pipeline import full_gold_corpus
+        with tempfile.TemporaryDirectory() as td:
+            result = full_gold_corpus(ROOT, GOLD, Path(td)/'corpus')
+            self.assertEqual(result['registered_maps'],368)
+            self.assertEqual(result['source_ok'],367)
+            self.assertEqual(result['source_failed'],1)
+            self.assertEqual(result['errors'][0]['map'],'SafariZoneBeta')
+            self.assertEqual(result['runtime_maps_verified'],0)
 
     def test_native_tile_40_walkable_not_auto_warp(self):
         plan=analyze(ROOT,GOLD)

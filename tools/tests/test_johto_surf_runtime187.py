@@ -58,8 +58,8 @@ class CaveSurfRuntime187(unittest.TestCase):
 
     def test_missing_party_surf_permission_check_fails(self):
         self.mutation('engine/menu/start_sub_menus.asm',
-                      '\tjp nc, .newBadgeRequired',
-                      '\tjp c, .newBadgeRequired',
+                      'callba JohtoSurfBadgeAllowed\n\tjp nc, .newBadgeRequired',
+                      'callba JohtoSurfBadgeAllowed\n\tjp c, .newBadgeRequired',
                       'party menu shared permission check')
 
     def test_reintroduced_fog_badge_requirement_fails(self):

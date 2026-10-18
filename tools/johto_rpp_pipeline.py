@@ -193,6 +193,61 @@ def run_project_static_gate(rpp: Path, gold: Path, integration: dict | None) -> 
                     'bank layout, compilation, or phone behavior.'),
     }
 
+def full_gold_corpus(rpp: Path, gold: Path, output: Path) -> dict:
+    """Scan every registered Gold map; errors never become runtime approvals."""
+    import csv
+    from collections import Counter
+    from johto_indoor_common import gold_dimensions
+    from johto_indoor_collision_adapter import portal_approach_edges
+    rpp, gold, output = safe_roots(rpp, gold, output)
+    registered = layout_inventory(gold)
+    rows, edges, failures = [], [], []
+    for item in registered:
+        name, tileset = item['name'], tileset_key(item['tileset'])
+        row = {'map': name, 'gold_tileset': item['tileset'],
+               'width_blocks': item['width'], 'height_blocks': item['height'],
+               'source_status': 'SOURCE_FAILED', 'source_error': '',
+               'special_entrance_cells': 0, 'directional_cells': 0,
+               'portal_approach_edges': 0, 'warp_events': 0,
+               'collision_roles': '', 'runtime_status': 'NOT_TESTED',
+               'phone_status': 'NOT_TESTED'}
+        try:
+            geometry, _ = plan_gold_quadrant_collision(gold, name, tileset)
+            events = gold_event_records(gold, name, item['width'], item['height'])
+            if events['warnings']:
+                raise ConversionError('Gold 事件异常: ' + ','.join(events['warnings']))
+            row.update(source_status='SOURCE_GEOMETRY_OK_RUNTIME_UNVERIFIED',
+                       special_entrance_cells=len(geometry['special_cells']),
+                       directional_cells=sum(x['role'].startswith('HOP_')
+                                             for x in geometry['special_cells']),
+                       portal_approach_edges=len(geometry['portal_edges']),
+                       warp_events=len(events['warps']),
+                       collision_roles=','.join(sorted(geometry['collision_roles'])))
+            edges.extend({'map': name, **edge} for edge in geometry['portal_edges'])
+        except (ConversionError, ValueError, OSError, KeyError) as exc:
+            row['source_error'] = str(exc)
+            failures.append({'map': name, 'error': str(exc)})
+        rows.append(row)
+    output.mkdir(parents=True, exist_ok=True)
+    for filename, records, fields in (
+        ('full_gold_corpus_preflight.csv', rows, list(rows[0])),
+        ('full_gold_portal_edges.csv', edges,
+         ['map', 'from_x', 'from_y', 'from_role', 'to_x', 'to_y', 'to_role',
+          'direction', 'source_semantics', 'review_priority', 'rpp_runtime_verified'])):
+        with (output/filename).open('w', encoding='utf-8', newline='') as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(records)
+    summary = {'registered_maps': len(rows), 'source_ok': len(rows)-len(failures),
+               'source_failed': len(failures), 'errors': failures,
+               'special_entrance_cells': sum(x['special_entrance_cells'] for x in rows),
+               'portal_approach_edges': len(edges), 'runtime_maps_verified': 0,
+               'phone_maps_verified': 0,
+               'status': 'FAIL' if failures else 'SOURCE_ONLY_RUNTIME_UNVERIFIED'}
+    dump(output, 'full_gold_corpus_summary.json', summary)
+    return summary
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--gold-root', type=Path, required=True)
@@ -200,6 +255,7 @@ def main():
     ap.add_argument('--output', type=Path, required=True)
     ap.add_argument('--preview-limit', type=int, default=12, help='preview maps; 0 disables')
     ap.add_argument('--audit-only', action='store_true', help='validate existing staged output')
+    ap.add_argument('--full-gold-corpus', action='store_true', help='fail-closed scan of EVERY Gold map')
     ap.add_argument('--gold-map', default=None, help='single Gold map candidate using its own tileset')
     ap.add_argument('--gold-tileset', default=None, help='Optional cross-check; inferred from Gold registration if omitted')
     ap.add_argument('--rpp-map', default=None, help='When already wired, review the existing RPP map registration and Warp contract')
@@ -221,6 +277,12 @@ def main():
         ap.error('--rpp-map requires --gold-map')
     if args.runtime_gate and (not args.gold_map or args.audit_only):
         ap.error('--runtime-gate requires --gold-map and cannot be used with --audit-only')
+    if args.full_gold_corpus:
+        if args.gold_map or args.audit_only or args.runtime_gate or args.rpp_map:
+            ap.error('--full-gold-corpus cannot combine with single-map modes')
+        summary = full_gold_corpus(project, gold, output)
+        print('full_gold_corpus:', json.dumps(summary, ensure_ascii=False))
+        return 2 if summary['source_failed'] else 0
     if args.gold_map is not None:
         if args.audit_only:
             ap.error('--gold-map cannot use --audit-only')

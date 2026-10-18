@@ -1,3 +1,19 @@
+## Gold 全编号图块集资源索引前置审核（P3 工具候选，未收口）
+
+在现有 `johto_map_release_audit.py` 中接入 `johto_tileset_index_audit.py`：
+从 `constants/tilesets.asm` 和真实 `tileset` 宏审查所有已登记图块集（本阶段 33 个 ID）。
+确认 Header 12B、MapPaletteSets 8B、MapPaletteAssignments 96B 三种表项数量及宏展开宽度，
+并对相应 `LoadTilesetHeader` / `LoadTilesetPalette` 汇编的受支持指令逐步模拟索引。
+所有当前 ID 0–32 均须与预期偏移一致，额外计算较高 ID 63/127/255 的**纯算术**，
+以拦截高字节进位丢失，不假定这些未来编号存在实际美术资源。
+
+此审计会在删除表项、意外更改宏展开长度、破坏索引进位或 96B 调色布局时 FAIL；
+遇到不支持的新汇编指令会拒绝，而非默认通过。当前完整 Gold 全集仍有
+`SafariZoneBeta` `$FF` 图形问题，所以**457 项 unittest PASS，整体门禁 FAIL**。
+这只是源码算术和数据形状检查，**不证明运行时 VRAM/Bank 余量、ROM 链接或手机画面**。
+工具层改动不改变游戏版本 `ILEX-5.62.204`、地图素材及玩家行为；
+待完整准入与必要的用户验收后再进行 TODO/踩坑/提交日志“三件套”正式收口。
+
 ## 新做门房的强制入口（GATE-5.62.202 正式收口）
 
 **先读 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`**，再维护 `tools/johto_door_contracts.json`。`GATE_INDOOR` 必须登记 8 类实际执行的源码回归测试、地点提示/Gold RGB/关东隔离，以及手机进出与视觉状态；缺项门禁 FAIL。已验收图块不得因错误的排序来源测试误改。详见 `docs/JOHTO_GOLD_DOOR_GATE_POLICY.md`。
@@ -212,3 +228,11 @@ python3 tools/johto_fly_destination_audit.py --rpp . --gold /完整/pokegold-mas
 380 PASS / 0 FAIL / 0 SKIP，15 项 Fly 独立反向测试全通过。用户仅提供
 「看过了，没啥问题」整体反馈，尚无逐项游戏测试记录；未执行 ROM 构建或
 Git 提交，跨地区异常、旧档全量恢复等仍需实测时保留观察。
+
+## Reconstructed full-source coverage gate (source-only; no ROM build)
+
+`python3 tools/johto_rpp_pipeline.py --project . --gold-root /path/to/pokegold-master --output /tmp/gold-full-check --full-gold-corpus` enumerates **all** registered Gold maps and portal-adjacent candidate movement edges. A returned `SOURCE_GEOMETRY_OK_RUNTIME_UNVERIFIED` status is not gameplay approval. The strict `johto_map_release_audit.py` now refuses release while any Gold map has an unresolved source data conversion failure.
+
+### Reconstructed P2: masked movement source-branch check
+
+`tools/johto_masked_step_audit.py` executes a small, explicitly supported subset of the existing RPP ASM caller branch operations and checks their shared bit mask. Unknown opcodes fail. Only 3 already connected native maps and 11 source movement edges are currently in scope; the other maps are **not tested**. The known Forest `(3,41) DOWN -> (3,42)` is blocked and correctly makes the strict gate fail. The special directional cave requires review rather than forced bidirectional passage. This is source-level branch tracing, **not** an RGBDS/GB runtime interpreter or actual gameplay proof.

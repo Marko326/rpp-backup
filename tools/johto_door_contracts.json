@@ -104,10 +104,10 @@
       "rpp_map": "JohtoIlexAzaleaGate",
       "gold_map": "IlexForestAzaleaGate",
       "family": "GATE_INDOOR",
-      "warp_count": 2,
+      "warp_count": 4,
       "required_test_ids": [
         "test_johto_ilex_south_gate197.IlexSouthGate197.test_gold_exact_two_way_registered_warps",
-        "test_johto_ilex_south_gate197.IlexSouthGate197.test_forest_west_exit_remains_sealed",
+        "test_johto_ilex_south_gate197.IlexSouthGate197.test_original_east_pair_stays_in_front",
         "test_johto_ilex_south_gate197.IlexSouthGate197.test_collision_wrong_direction_inside_fails",
         "test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_exact_entry_check_fails",
         "test_johto_ilex_south_gate197.IlexSouthGate197.test_native_gate_neutral_name_sign_and_route34_townmap_unchanged",
@@ -132,6 +132,19 @@
       },
       "phone_door_status": "PHONE_ACCEPTED",
       "phone_visual_status": "PHONE_ACCEPTED"
+    },
+    {
+      "rpp_map": "JohtoIlexForest",
+      "gold_map": "IlexForest",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_ilex_forest_p17.ForestRuntimeP17.test_gold_resources_are_from_general_pipeline",
+        "test_johto_ilex_forest_p17.ForestRuntimeP17.test_bidirectional_double_warp_preserves_east",
+        "test_johto_ilex_forest_p17.ForestRuntimeP17.test_standing_has_no_autowarp",
+        "test_johto_ilex_forest_p17.ForestRuntimeP17.test_negative_wrong_direction_rejected"
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     }
   ],
   "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",

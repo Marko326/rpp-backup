@@ -53,8 +53,11 @@ def verify(rpp:Path,gold:Path):
         for symbol,index in (('JOHTO_GATE_GOLD_GREEN',0x28),('JOHTO_GATE_GOLD_BROWN',0x29)):
             if not re.search(r'(?m)^\s*const\s+'+symbol+r'\s*;\s*'+f'{index:02X}',const):
                 errors.append(f'{symbol} missing or wrong spare slot')
-        if len(slots)!=32:errors.append('tileset palette sets count changed')
-        elif slots[29]!=GATE_BASE:errors.append('JOHTO_GATE must use isolated Gold palettes')
+        # Keep all 32 original slots intact; P17 adds one appended forest set.
+        ilex_base=('CAVE_GRAY','CAVE_RED','CAVE_GREEN','CAVE_BLUE',
+                   'CAVE_YELLOW','CAVE_BROWN','CAVE_LIGHT_BLUE','CRYS_TEXTBOX')
+        if len(slots)!=33 or slots[32]!=ilex_base:errors.append('tileset palette sets count changed')
+        if len(slots)>29 and slots[29]!=GATE_BASE:errors.append('JOHTO_GATE must use isolated Gold palettes')
         if len(slots)>12 and slots[12]!=KANTO_GATE:errors.append('Kanto GATE palette set was changed')
         for label,pid in (('GRAY',0x09),('RED',0x0a),('GREEN',0x28),('WATER',0x0c),('YELLOW',0x0d),('BROWN',0x29),('ROOF',0x0f)):
             if rpp_colors[pid]!=gold_colors[label]:errors.append(f'Gold gate actual RGB mismatch: {label} at {pid:02x}: {rpp_colors[pid]} != {gold_colors[label]}')
