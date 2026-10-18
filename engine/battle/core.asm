@@ -2607,7 +2607,9 @@ MoveSelectionMenu:
 	ld de, wMoves
 	ld bc, NUM_MOVES
 	call CopyData
-	callab FormatMovesString
+	; MOVE-5.62.187: Mimic's target menu must display the actual
+	; enemy-side extended identity (bank F cannot grow here).
+	callab FormatMimicTargetMovesString
 	ret
 
 .writemoves
@@ -3294,6 +3296,8 @@ ExecutePlayerMove:
 	; obedience checks. A disobedient random move has already replaced SelectedMove.
 	ld a, [wPlayerSelectedMove]
 	ld [wPlayerLastSelectedMove], a
+	; MOVE-5.62.187: remember the root move's EXT identity too.
+	callab RecordMirrorMoveLastSelectedIdentity
 
 CheckIfPlayerNeedsToChargeUp:
 	; MoveDex Seen/Use：到达这里说明状态/服从检查已经允许本次技能真正执行。
@@ -5269,7 +5273,8 @@ HandleBuildingRage:
 MirrorMoveCopyMove:
 	jpab MirrorMoveCopyMove_
 
-; function used to reload move data for moves like Mirror Move and Metronome
+; Historical ordinary child reloader retained for compatibility. Since
+; MOVE-5.62.187, Metronome uses MetronomePickFullIdentity_ instead.
 ReloadMoveData:
 	ld [wd11e],a
 	dec a
@@ -5283,36 +5288,16 @@ ReloadMoveData:
 	; in roomy bank $3D so Metronome children stay consistent.
 	jpba FinalizeReloadedMoveData
 
-; function that picks a random move for metronome
+; MOVE-5.62.187: select full ordinary/EXT identity in a floating bank;
+; Bank F cannot fit a two-table random selector here. The selector reloads
+; the child data, restores the root PP, and returns with the existing ABI.
 MetronomePickMove:
 	xor a
-	ld [wAnimationType],a
-	ld a,METRONOME
-	call PlayMoveAnimation ; play Metronome's animation
-	; A random Metronome child is not a direct Mirror Move copy.
+	ld [wAnimationType], a
+	ld a, METRONOME
+	call PlayMoveAnimation
 	callab ClearMirrorMoveBoost
-; values for player turn
-	ld de,wPlayerMoveNum
-	ld hl,wPlayerSelectedMove
-	ld a,[H_WHOSETURN]
-	and a
-	jr z,.pickMoveLoop
-; values for enemy turn
-	ld de,wEnemyMoveNum
-	ld hl,wEnemySelectedMove
-; loop to pick a random number in the range [1, $a5) to be the move used by Metronome
-.pickMoveLoop
-	call BattleRandom
-	and a
-	jr z,.pickMoveLoop
-	cp a,STRUGGLE
-	jr z,.pickMoveLoop
-	cp a,METRONOME
-	jr z,.pickMoveLoop
-	cp a,DIVE ; Dive is the last move, and currently unused
-	jr nc,.pickMoveLoop
-	ld [hl],a
-	jr ReloadMoveData
+	jpab MetronomePickFullIdentity_
 
 ; this function increments the current move's PP
 ; it's used to prevent moves that run another move within the same turn
@@ -5613,6 +5598,8 @@ ExecuteEnemyMove:
 	; Automatic charge continuations keep the caller that originally started them.
 	ld a, [wEnemySelectedMove]
 	ld [wEnemyLastSelectedMove], a
+	; MOVE-5.62.187: record identity only for executable root moves.
+	callab RecordMirrorMoveLastSelectedIdentity
 	call GetCurrentMove
 
 CheckIfEnemyNeedsToChargeUp:

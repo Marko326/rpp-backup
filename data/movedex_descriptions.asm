@@ -1401,10 +1401,10 @@ MoveDexDescMetronome1:
 	next "then uses a random"
 	next "move.@"
 MoveDexDescMetronome2:
-	; MetronomePickMove 排除 Metronome、Struggle，以及从 Dive 起的 #251-#254。
-	db   "Won't call itself,"
-	next "Struggle, Dive or"
-	next "later moves.@"
+	; MOVE-5.62.187: normal IDs still stop before Dive; EXT01..40 join the pool.
+	db   "Won't call itself"
+	next "or Struggle. May"
+	next "call ext moves.@"
 
 ; #119 Mirror Move
 MoveDexDescMirrorMovePages:

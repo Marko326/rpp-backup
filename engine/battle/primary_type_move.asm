@@ -66,6 +66,22 @@ FinalizeCurrentMoveLoad::
 	; Recompute for *this* acting side; do not inherit the other battler's
 	; active ordinal or a prior move with the same one-byte ID.
 	callba ResolveActingBattleMoveOrdinal
+	jp FinalizeMoveDataWithResolvedOrdinal
+
+; MOVE-5.62.187: Mirror Move and Metronome both execute temporary child
+; identities that are NOT stored in the actor's root slot. Their ordinal
+; was resolved at child selection time; never decode it from the root slot.
+; Preserve the nonzero return expected by both derived-move callers.
+FinalizeMirroredMoveData::
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jp z, FinalizeReloadedMoveData
+	call FinalizeMoveDataWithResolvedOrdinal
+	ld a, 1
+	and a
+	ret
+
+FinalizeMoveDataWithResolvedOrdinal:
 	callba MaybeLoadExperimentalMoveBattleStats
 	; Mapped ordinary moves may share an expanded low byte. Do not let
 	; their species-based reinterpretations overwrite second-table stats.
@@ -99,14 +115,22 @@ FinalizeCurrentMoveLoad::
 	ld de, PowerWhipExperimentName
 	jp CopyStringToCF4B
 
-; Metronome / Mirror Move / Mimic reload an already-selected child move. Their
-; historical return contract is NZ on success, so preserve it here.
+; MOVE-5.62.187: after Mimic has replaced both its live move byte and
+; its actor-side slot identity, the normal current-move finalizer can resolve
+; the FULL selected identity and overlay extended stats and the true name.
+; Preserve the derived-move reload contract: NZ on successful return.
+FinalizeMimicCopiedMoveData::
+	call FinalizeCurrentMoveLoad
+	ld a, 1
+	and a
+	ret
+
+; The legacy ordinary-child reload has an NZ-on-success return contract.
+; 187 Metronome and 186 Mirror Move now use FinalizeMirroredMoveData for
+; complete identities; ordinary children still arrive here from that entry.
 FinalizeReloadedMoveData::
-	; The stock callers (Metronome, Mimic, Mirror Move) currently pass
-	; an ordinary child byte without its sidecar identity. Clear the root
-	; ordinal here so a prior expanded root cannot leak into the child.
-	; 182C must introduce an explicit complete-identity reload API before
-	; enabling copied extended children; never guess identity by low byte.
+	; Clear transient extended identity only for an ordinary child.
+	; Mimic uses FinalizeMimicCopiedMoveData instead.
 	xor a
 	ld [wExtendedActiveMoveOrdinal], a
 	call ApplyCurrentMovePrimaryTypeOverride
@@ -276,6 +300,68 @@ GetExtendedRenderedSlotName:
 	pop de
 	pop bc
 	and a
+	ret
+
+; MOVE-5.62.187: Mimic's choice list views the OPPONENT's four slots.
+; Render the high-nibble enemy mask, not the player's battle or Party mask.
+; It shares the stock four-row text layout and does not alter target selection.
+FormatMimicTargetMovesString::
+	ld hl, wMoves
+	ld de, wMovesString
+	ld b, 0
+.moveLoop
+	ld a, [hli]
+	and a
+	jr z, .dashLoop
+	push hl
+	push af
+	ld a, [wExtendedBattleMoveFlags]
+	swap a
+	ld c, a
+	pop af
+	call GetExtendedRenderedSlotName
+	jr c, .copyName
+	ld [wd0b5], a
+	ld a, BANK(MoveNames)
+	ld [wPredefBank], a
+	ld a, MOVE_NAME
+	ld [wNameListType], a
+	call GetName
+	ld hl, wcd6d
+.copyName
+	ld a, [hli]
+	cp "@"
+	jr z, .endName
+	ld [de], a
+	inc de
+	jr .copyName
+.endName
+	ld a, b
+	ld [wNumMovesMinusOne], a
+	inc b
+	ld a, $4e
+	ld [de], a
+	inc de
+	pop hl
+	ld a, b
+	cp NUM_MOVES
+	jr z, .done
+	jr .moveLoop
+.dashLoop
+	ld a, "-"
+	ld [de], a
+	inc de
+	inc b
+	ld a, b
+	cp NUM_MOVES
+	jr z, .done
+	ld a, $4e
+	ld [de], a
+	inc de
+	jr .dashLoop
+.done
+	ld a, "@"
+	ld [de], a
 	ret
 
 ; Only the regular in-battle Fight menu calls this entry. Mimic, relearn,

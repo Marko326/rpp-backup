@@ -3228,3 +3228,6 @@ GoldIconHumanshape:
 ; ICO-5.62.81: PureRGB OG+ HUMANOID_INSECT, two 16x16 frames for three species.
 PureRGBHumanoidInsectPartyIcon:
 	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"
+
+; MOVE-5.62.187: floating selector is independent of the fixed map banks.
+INCLUDE "engine/battle/metronome_extended.asm"

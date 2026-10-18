@@ -136,7 +136,38 @@ InitMirrorMoveMemoryAndPlayBattleMusic:
 	xor a
 	ld [wPlayerLastSelectedMove], a
 	ld [wEnemyLastSelectedMove], a
+	ld [wMirrorMoveLastSelectedExtendedFlags], a
 	callab PlayBattleMusic
+	ret
+
+; MOVE-5.62.187: snapshot the matching root-slot identity beside Mirror
+; Move's old byte memory. Read from the ACTOR's current slot, never the
+; opponent's latest transient ordinal; continuous/derived moves do not get
+; remembered here. The bit persists across switches like the old byte.
+RecordMirrorMoveLastSelectedIdentity:
+	callba ResolveActingBattleMoveOrdinal
+	ld a, [wExtendedActiveMoveOrdinal]
+	ld b, a
+	ld hl, wMirrorMoveLastSelectedExtendedFlags
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, b
+	and a
+	jr z, .clearPlayer
+	set 0, [hl]
+	ret
+.clearPlayer
+	res 0, [hl]
+	ret
+.enemy
+	ld a, b
+	and a
+	jr z, .clearEnemy
+	set 1, [hl]
+	ret
+.clearEnemy
+	res 1, [hl]
 	ret
 
 ; Clear the copied-move damage marker for the acting side. Used when a
@@ -197,6 +228,31 @@ MirrorMoveCopyMove_:
 	set MirrorMoveBoost, [hl]
 	pop af
 
+	; MOVE-5.62.187: the other battler's recorded bit decides which move
+	; table this child uses. Do NOT alter the acting battler's four slot bits:
+	; Mirror Move is a temporary call, not a learned / replaced move.
+	push af
+	ld a, [wMirrorMoveLastSelectedExtendedFlags]
+	ld b, a
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyCopy
+	bit 1, b ; player copies the ENEMY's last executable move
+	jr .chooseIdentity
+.enemyCopy
+	bit 0, b ; enemy copies the PLAYER's last executable move
+.chooseIdentity
+	jr z, .ordinaryChild
+	pop af
+	push af
+	; The bit was recorded only after full slot identity validation.
+	ld [wExtendedActiveMoveOrdinal], a
+	jr .identityReady
+.ordinaryChild
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
+.identityReady
+	pop af
 	; ReloadMoveData lives in Bank F. Reproduce its small body here instead of
 	; passing the move ID through Bankswitch, which overwrites A with the bank ID.
 	ld [wd11e], a
@@ -207,8 +263,9 @@ MirrorMoveCopyMove_:
 	ld a, BANK(Moves)
 	call FarCopyData
 	callab IncrementMovePP
-	; EGG-A4-5.61.75: copied Egg Bomb inherits the acting mon's primary type too.
-	jpba FinalizeReloadedMoveData
+	; Reuse the existing resolved-ordinal stats/name path for an EXT child;
+	; the ordinary case keeps Egg Bomb/Bug Bite/Rock Polish overrides intact.
+	jpba FinalizeMirroredMoveData
 
 .failed
 	ld hl, MirrorMoveFailedText

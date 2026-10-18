@@ -821,7 +821,11 @@ wPlayerMonMinimized:: ; ccf7
 ; battle-runtime gap and are not saved. Each entry stores one absolute filtered
 ; index for ITEM / BALL / BERRY / KEY during the current battle session.
 wBattleBagSavedPositions:: ds 4
-	ds 9
+	; MOVE-5.62.187: two unsaved Mirror Move memory identity bits share one
+	; byte of the existing battle-runtime gap. 0 = player, 1 = enemy.
+	; This does not move any WRAM address or use saved Party/box storage.
+wMirrorMoveLastSelectedExtendedFlags:: ds 1
+	ds 8
 
 wLuckySlotHiddenObjectIndex:: ; cd05
 

@@ -34,6 +34,9 @@ MimicEffect_:
 	and a
 	jr z, .getRandomMove
 	ld d, a
+	; MOVE-5.62.187: decode the target slot BEFORE choosing the
+	; actor's own Mimic slot; a low byte alone is not the full identity.
+	call .readTargetOrdinal
 	ld a, [H_WHOSETURN]
 	and a
 	ld hl, wBattleMonMoves
@@ -62,6 +65,7 @@ MimicEffect_:
 	ld b, $0
 	add hl, bc
 	ld d, [hl]
+	call .readTargetOrdinal
 	pop af
 	ld hl, wBattleMonMoves
 .playerTurn
@@ -71,26 +75,32 @@ MimicEffect_:
 	; MIMIC-5.19.17: keep Gen I target selection intact.  The selected/random
 	; candidate is judged only after Mimic's animation, so an invalid attempt
 	; still consumes Mimic's PP and fails normally instead of being re-rolled.
-	push hl ; preserve the Mimic slot that will be replaced only on success
-	ld a, d
-	push af ; PlayCurrentMoveAnimation may clobber A, keep the candidate move ID
+	push hl ; preserve the Mimic slot to replace only on success
+	push de ; animation may clobber both candidate byte and ordinal
 	callab PlayCurrentMoveAnimation
-	pop af
+	pop de
+	ld a, d
 	call .isCopyAllowed
 	pop hl
 	jp nc, .mimicMissed
 	ld a, d
 	ld [hl], a
-	; Copied enemy moves use ordinary identity. Update the player's LIVE
-	; slot flag without altering the permanent Party sidecar.
-	push af
-	ld a, [H_WHOSETURN]
-	and a
-	call z, .clearCopiedPlayerSlotFlag
-	pop af
-	push af ; keep the copied move ID across the learned-move message
+	; Change only the live actor's matching sidecar bit, never Party/SRAM.
+	call .setCopiedActorSlotFlag
+	ld a, d
+	push af ; keep the copied move byte across the learned message
 	ld [wd11e], a
+	ld a, e
+	and a
+	jr z, .ordinaryCopiedName
+	push de
+	callba LoadExtendedMoveNameByOrdinalToCD6D
+	pop de
+	jr .copiedNameReady
+.ordinaryCopiedName
+	ld a, d
 	call GetMoveName
+.copiedNameReady
 	ld hl, MimicLearnedMoveText
 	call PrintText
 	ld a, [H_WHOSETURN]
@@ -118,38 +128,72 @@ MimicEffect_:
 	ld hl, CheckIfEnemyNeedsToChargeUp
 	ret
 
+.readTargetOrdinal
+	; C = target's zero-based slot, D = low byte; E returns ordinal
+	; (0 = ordinary, $ff = invalid flagged identity). D/HL preserved.
+	ldh a, [H_WHOSETURN]
+	and a
+	ld a, [wExtendedBattleMoveFlags]
+	jr nz, .targetPlayer
+	swap a ; player is copying from the enemy's high nibble
+.targetPlayer
+	and $0f
+	ld b, c
+	ld c, a
+	ld a, b
+	and a
+	jr z, .targetFlag
+.targetShift
+	srl c
+	dec b
+	jr nz, .targetShift
+.targetFlag
+	ld e, 0
+	bit 0, c
+	ret z
+	ld e, $ff
+	ld a, d
+	and a
+	ret z
+	cp NUM_EXTENDED_MOVES + 1
+	ret nc
+	ld e, a
+	ret
+
 .isCopyAllowed
-	; Immediate-use Mimic must never execute these candidates.  MIMIC is the
-	; direct recursion guard, TRANSFORM is reserved for its future immediate-
-	; action behavior, and STRUGGLE remains uncopyable as in Gen I.
-	ld d, a
+	; MOVE-5.62.187: reject invalid identity and duplicate FULL identity.
+	; Equal bytes with opposite extended bits are different moves.
+	ld a, e
+	cp $ff
+	jr z, .copyRejected
+	ld a, d
 	cp MIMIC
 	jr z, .copyRejected
 	cp TRANSFORM
 	jr z, .copyRejected
 	cp STRUGGLE
 	jr z, .copyRejected
-
-	; Second guard: Mimic fails if the acting battler already has the candidate
-	; in its current battle move list.  This also catches recursive paths even
-	; when Mimic itself was invoked indirectly by another move.
 	ld hl, wBattleMonMoves
-	ld c, 0 ; the enemy currently has only ordinary move identities
-	ld a, [H_WHOSETURN]
-	and a
-	jr nz, .enemyKnownMoves
 	ld a, [wExtendedBattleMoveFlags]
 	ld c, a
-	jr .checkKnownMoves
-.enemyKnownMoves
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .checkKnownMoves
 	ld hl, wEnemyMonMoves
+	swap c
 .checkKnownMoves
 	ld b, NUM_MOVES
 .checkKnownMoveLoop
 	ld a, [hli]
 	cp d
 	jr nz, .nextKnownSlot
-	; Equal byte in an extended slot does not equal the ordinary move.
+	ld a, e
+	and a
+	jr z, .candidateOrdinary
+	bit 0, c
+	jr nz, .copyRejected
+	jr .nextKnownSlot
+.candidateOrdinary
 	bit 0, c
 	jr z, .copyRejected
 .nextKnownSlot
@@ -162,32 +206,59 @@ MimicEffect_:
 	and a ; clear carry: candidate is not legal to copy
 	ret
 
-.clearCopiedPlayerSlotFlag
+.setCopiedActorSlotFlag
+	; MOVE-5.62.187: replace only Mimic's live slot identity.
+	; E is 0 ordinary or 1..40 extended; BC/DE/HL are preserved.
 	push bc
-	ld a, [wPlayerMoveListIndex]
-	cp NUM_MOVES
-	jr nc, .flagDone
-	ld b, a
-	ld c, 1
-.flagShift
-	ld a, b
+	push de
+	push hl
+	ld a, e
+	push af
+	ldh a, [H_WHOSETURN]
 	and a
-	jr z, .flagReady
-	sla c
-	dec b
-	jr .flagShift
-.flagReady
+	ld a, [wPlayerMoveListIndex]
+	jr z, .gotActingSlot
+	ld a, [wEnemyMoveListIndex]
+.gotActingSlot
+	cp NUM_MOVES
+	jr nc, .invalidActorSlot
+	ld e, a
+	ld d, 0
+	ld hl, .slotBits
+	add hl, de
+	ld c, [hl]
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .sideBitReady
+	swap c
+.sideBitReady
+	ld a, [wExtendedBattleMoveFlags]
+	ld b, a
 	ld a, c
 	cpl
-	ld c, a
-	ld a, [wExtendedBattleMoveFlags]
-	and c
+	and b
+	ld b, a
+	pop af ; original copied ordinal, independent of slot-index E
+	and a
+	jr z, .writeFlag
+	ld a, b
+	or c
+	ld b, a
+.writeFlag
+	ld a, b
 	ld [wExtendedBattleMoveFlags], a
 	xor a
 	ld [wExtendedActiveMoveOrdinal], a
-.flagDone
+	jr .slotFlagDone
+.invalidActorSlot
+	pop af
+.slotFlagDone
+	pop hl
+	pop de
 	pop bc
 	ret
+.slotBits
+	db 1, 2, 4, 8
 
 .reloadCopiedMoveData
 	ld [wd11e], a
@@ -199,8 +270,9 @@ MimicEffect_:
 	call FarCopyData
 	; IncrementMovePP does not consume A, so it is safe to call across banks.
 	callab IncrementMovePP
-	; EGG-A4-5.61.75: immediate-use Mimic shares the same runtime type finalizer.
-	jpba FinalizeReloadedMoveData
+	; The copied slot now has its own identity. Re-resolve that full
+	; identity before the immediate-use child executes.
+	jpba FinalizeMimicCopiedMoveData
 
 .mimicMissed
 	callab PrintButItFailedText_
