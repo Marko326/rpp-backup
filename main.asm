@@ -3301,6 +3301,21 @@ INCLUDE "data/mapObjects/JohtoIlexForest.asm"
 INCLUDE "scripts/JohtoIlexForest.asm"
 JohtoIlexForestBlocks: INCBIN "maps/JohtoIlexForest.blk"
 
+; P18-5.62.213: NorthSouthGate uses the EXACT already approved JOHTO_GATE
+; compact tileset with six additional previously-unused 8x8 graphics slots.
+SECTION "Johto Route34 North Gate Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoRoute34IlexForestGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute34IlexForestGate.asm"
+INCLUDE "scripts/JohtoRoute34IlexForestGate.asm"
+JohtoRoute34IlexForestGateBlocks: INCBIN "maps/JohtoRoute34IlexForestGate.blk"
+
+; Gold Route34 uses the same modern graphics / blockset as Route33 and Azalea.
+SECTION "Johto Route34 Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoRoute34.asm"
+INCLUDE "data/mapObjects/JohtoRoute34.asm"
+INCLUDE "scripts/JohtoRoute34.asm"
+JohtoRoute34Blocks: INCBIN "maps/JohtoRoute34.blk"
+
 SECTION "Johto Ilex Forest Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_ilex_forest_collision.asm"
 

@@ -479,8 +479,14 @@ CheckWarpsNoCollisionLoop::
 	; Arm the standing bit but do not transfer on entry or sideways movement.
 	call IsJohtoSouthGatePortal
 	jr nc, .checkOrdinaryWarpTile
+	; Only P18's north/south Gold doorways warp on the approach step.
+	; Legacy east/west gates still require their original collision input.
+	push de
+	callba JohtoNorthGateStepWarpAllowed
+	pop de
 	pop bc
 	pop hl
+	jp c, WarpFound1
 	jp CheckWarpsNoCollisionRetry2
 .checkOrdinaryWarpTile
 	callba IsPlayerStandingOnDoorTileOrWarpTile
@@ -531,29 +537,19 @@ CheckWarpsCollision::
 	ld a,[wXCoord]
 	cp b
 	jr nz,.retry2
-	; GATE-5.62.202: a blocked sideways/vertical step must not warp.
-	; Azalea exits WEST, while the gate interior returns EAST.
+	; ILEX-5.62.215: preserve the historical collision-only Warp executor.
+	; Special portal directions are handled in the existing Johto collision bank,
+	; not in ROM0 (which has little free space). Keep BC/DE/HL for Warp loop.
 	call IsJohtoSouthGatePortal
 	jr nc, .collisionWarpAllowed
-	ld a, [wCurLocalMapID]
-	cp JOHTO_AZALEA_TOWN_LOCAL_ID
-	jr z, .gateGoesWest
-	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .gateReturnsEast
-	; Same gate map: west x=0 goes to Forest, east x=9 to town.
-	ld a, [wXCoord]
-	and a
-	jr z, .gateGoesWest
-	jr .gateReturnsEast
-.gateGoesWest
-	ld a, [wPlayerDirection]
-	cp PLAYER_DIR_LEFT
-	jr nz, .retry2
-	jr .collisionWarpAllowed
-.gateReturnsEast
-	ld a, [wPlayerDirection]
-	cp PLAYER_DIR_RIGHT
-	jr nz, .retry2
+	push bc
+	push de
+	push hl
+	callba JohtoGateCollisionDirectionAllowed
+	pop hl
+	pop de
+	pop bc
+	jr nc, .retry2
 .collisionWarpAllowed
 	ld a,[hli]
 	ld [wDestinationWarpID],a
@@ -914,9 +910,8 @@ GetJohtoGateMusicSourceMap::
 ; "function 2" passes when the the tile in front of the player is among a certain set
 ; sets carry if the check passes, otherwise clears carry
 ExtraWarpCheck::
-	; ILEX-5.62.212: Forest south-door carpet is inside the map, not its east edge.
-	; Grant the same collision-only, exact-key exception as the first gate;
-	; do not add bytes to fixed ROMX bank $03 (old MAP has 1 B free).
+	; ILEX-5.62.215: the two internal outdoor doorways need an exact
+	; (region,local,position,direction) check; no universal warp bypass.
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .ordinaryCheck
@@ -925,21 +920,12 @@ ExtraWarpCheck::
 	jr nz, .ordinaryCheck
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .nativeDoor
+	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr nz, .ordinaryCheck
-	ld a, [wPlayerDirection]
-	cp PLAYER_DIR_RIGHT
-	jr nz, .ordinaryCheck
-	ld a, [wXCoord]
-	cp 3
-	jr nz, .ordinaryCheck
-	ld a, [wYCoord]
-	cp 42
-	jr z, .forestReturns
-	cp 43
-	jr nz, .ordinaryCheck
-.forestReturns
-	scf
-	ret
+.nativeDoor
+	callba JohtoInternalDoorFacingCheck
+	ret c
 .ordinaryCheck
 	ld a, [wCurMap]
 	cp SS_ANNE_3
@@ -990,6 +976,10 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr z, .yes
 .notGate
 	and a
@@ -1654,8 +1644,18 @@ CheckTilePassable::
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr z, .modernAzalea
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .forestMask
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .northGateMask
+	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr nz, .normal
+	callba JohtoRoute34CanStepAhead
+	ret
+.forestMask
 	callba JohtoIlexForestCanStepAhead
+	ret
+.northGateMask
+	callba JohtoRoute34GateCanStepAhead
 	ret
 .modernAzalea
 	callba JohtoAzaleaCanStepAhead

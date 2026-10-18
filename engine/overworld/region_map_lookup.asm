@@ -420,6 +420,15 @@ NativeRegionWarpTargets::
 	db JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 3, 1, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
 	db JOHTO_ILEX_FOREST_LOCAL_ID, 0, 2, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	db JOHTO_ILEX_FOREST_LOCAL_ID, 1, 3, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	; North Forest one-to-two gate entrance, both gate bottom mouths return to the single Forest slot 2.
+	db JOHTO_ILEX_FOREST_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	db JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+	db JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 3, 2, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+	; North gate top two mouths and Route34 bottom two mouths are bidirectional.
+	db JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
+	db JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
+	db JOHTO_ROUTE_34_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	db JOHTO_ROUTE_34_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	db $ff
 
 ; Native connection lookup: source Johto local / direction / destination
@@ -565,6 +574,12 @@ GetJohtoWarpArrivalStep::
 	db JOHTO_ROUTE_32, JOHTO_ROUTE_32_LOCAL_ID, 79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN
 	; Route33's Gold cave warp is a solid north-wall doorway too.
 	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_33_LOCAL_ID, 9, 11, REGION_NATIVE_MAP_SLOT, D_DOWN
+	; ILEX-5.62.215: only DOWN arrivals need an extra step away from the door.
+	; UP arrivals already stand on the correct destination tile; do not move.
+	; Keep the original RPP warp/step executor and match the exact source map.
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 0, 4, REGION_NATIVE_MAP_SLOT, D_DOWN
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 0, 5, REGION_NATIVE_MAP_SLOT, D_DOWN
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ILEX_FOREST_LOCAL_ID, 5, 1, REGION_NATIVE_MAP_SLOT, D_DOWN
 	db $ff
 
 ; Native cave entrances use the existing map transition SFX, not new audio.

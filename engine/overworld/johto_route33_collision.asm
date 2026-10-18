@@ -306,3 +306,291 @@ JohtoRoute33BlockedRows::
 ; MAP-5.62.195: same Gold modern data-driven collision, 40x18 cells.
 JohtoAzaleaBlockedRows::
 	INCBIN "maps/JohtoAzaleaTown.blocked_mask.bin"
+
+; ILEX-5.62.215: Route34 only uses the existing Gold 16x16 masked-step engine.
+; Nonexistent Goldenrod and unfinished Azalea west-side connections stay closed.
+JohtoRoute34CanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jp nz, .blocked
+	; Gold (13,37)/(14,37) are WARP_CARPET_DOWN (blocked in mask).
+	; Admit just the two approaches from the north, and lateral lane shift.
+	ld a, [wYCoord]
+	cp 36
+	jp nz, .atCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp nz, .normal
+	ld a, [wXCoord]
+	cp 13
+	jp z, .allowed
+	cp 14
+	jp z, .allowed
+	jp .normal
+.atCarpet
+	cp 37
+	jp nz, .normal
+	ld a, [wXCoord]
+	cp 13
+	jp z, .leftLane
+	cp 14
+	jp nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jp .normal
+.leftLane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+.normal
+	ld hl, JohtoRoute34BlockedRows
+	ld d, JOHTO_ROUTE_34_WIDTH * 2
+	ld e, 3
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute34BlockedRows::
+	INCBIN "maps/JohtoRoute34.blocked_mask.bin"
+
+; ILEX-5.62.215: only the new NorthSouthGate uses this Gold 16x16 role mask.
+; Existing JOHTO_GATE / Kanto Gate_Coll and two accepted gate rooms unchanged.
+JohtoRoute34GateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jp nz, .blocked
+	; Gold lower warp carpet permits entry from the left/right floor cells
+	; as well as moving between the two carpet lanes. Upper DOOR is stricter.
+	ld a, [wYCoord]
+	cp 7
+	jp z, .bottomCarpet
+	ld a, [wXCoord]
+	cp 4
+	jp z, .lane
+	cp 5
+	jp nz, .normal
+.lane
+	ld a, [wYCoord]
+	cp 1
+	jp nz, .bottomApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+	jp .normal
+.bottomApproach
+	cp 6
+	jp nz, .edgeLanes
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+	jp .normal
+.edgeLanes
+	and a
+	jp nz, .normal
+	; Upper door: lane change only, no sideways entry through its walls.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp nz, .topRight
+	ld a, [wXCoord]
+	cp 5
+	jp z, .allowed
+	jp .normal
+.topRight
+	cp PLAYER_DIR_RIGHT
+	jp nz, .normal
+	ld a, [wXCoord]
+	cp 4
+	jp z, .allowed
+	jp .normal
+.bottomCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp nz, .bottomRight
+	ld a, [wXCoord]
+	cp 5
+	jp z, .allowed
+	cp 6
+	jp z, .allowed
+	jp .normal
+.bottomRight
+	cp PLAYER_DIR_RIGHT
+	jp nz, .normal
+	ld a, [wXCoord]
+	cp 3
+	jp z, .allowed
+	cp 4
+	jp z, .allowed
+.normal
+	ld hl, JohtoRoute34GateBlockedRows
+	ld d, 10
+	ld e, 2
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute34GateBlockedRows::
+	INCBIN "maps/JohtoRoute34IlexForestGate.blocked_mask.bin"
+
+; ILEX-5.62.215: Reuse existing RPP step-on Warp executor for Gold's vertical
+; north gate. Called ONLY after CheckWarpsNoCollisionLoop has matched an actual
+; Warp record and armed the standing bit. A sideways approach never triggers;
+; historical east/west gates remain collision-only. Carry = valid approach.
+JohtoNorthGateStepWarpAllowed::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .deny
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .forest
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr z, .route34
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr nz, .deny
+	ld a, [wYCoord]
+	and a
+	jr z, .up
+	cp 7
+	jr z, .down
+	jr .deny
+.forest
+	ld a, [wYCoord]
+	cp 5
+	jr z, .up
+	jr .deny
+.route34
+	ld a, [wYCoord]
+	cp 37
+	jr z, .down
+	jr .deny
+.up
+	ld a, PLAYER_DIR_UP
+	jr .match
+.down
+	ld a, PLAYER_DIR_DOWN
+.match
+	ld b, a
+	ld a, [wPlayerDirection]
+	cp b
+	jr nz, .deny
+	scf
+	ret
+.deny
+	and a
+	ret
+
+; ILEX-5.62.215: share one collision-only Warp rule across accepted old
+; south gate and new north/south gate. Called only for registered Warp cells,
+; with preserved region-local identity. carry = correct approach.
+JohtoGateCollisionDirectionAllowed::
+	ld a, [wCurLocalMapID]
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .left
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .forest
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr z, .down
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .northGate
+	; Historical south gate west x0, east x9.
+	ld a, [wXCoord]
+	and a
+	jr z, .left
+	jr .right
+.forest
+	ld a, [wYCoord]
+	cp 5
+	jr z, .up
+	jr .right
+.northGate
+	ld a, [wYCoord]
+	and a
+	jr z, .up
+	jr .down
+.left
+	ld a, PLAYER_DIR_LEFT
+	jr .compare
+.right
+	ld a, PLAYER_DIR_RIGHT
+	jr .compare
+.up
+	ld a, PLAYER_DIR_UP
+	jr .compare
+.down
+	ld a, PLAYER_DIR_DOWN
+.compare
+	ld b, a
+	ld a, [wPlayerDirection]
+	cp b
+	jr nz, .denied
+	scf
+	ret
+.denied
+	and a
+	ret
+
+; Gold Forest x1/y5 is one north door, unlike the historical south double
+; mouth x3/y42-43. Route34 bottom entrance x13/14/y37 is also interior.
+JohtoInternalDoorFacingCheck::
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .forest
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr nz, .denied
+	ld a, [wYCoord]
+	cp 37
+	jr nz, .denied
+	ld a, [wXCoord]
+	cp 13
+	jr z, .routeDirection
+	cp 14
+	jr nz, .denied
+.routeDirection
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+	jr .denied
+.forest
+	ld a, [wXCoord]
+	cp 1
+	jr nz, .southForest
+	ld a, [wYCoord]
+	cp 5
+	jr nz, .southForest
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .denied
+.southForest
+	ld a, [wXCoord]
+	cp 3
+	jr nz, .denied
+	ld a, [wYCoord]
+	cp 42
+	jr z, .southDirection
+	cp 43
+	jr nz, .denied
+.southDirection
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .denied
+.allowed
+	scf
+	ret
+.denied
+	and a
+	ret

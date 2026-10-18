@@ -556,6 +556,8 @@ UpdateMapNameSign::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	ret z
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	ret z
 .legacyMap
 	ld a, [wCurMap]
 	ld c, a

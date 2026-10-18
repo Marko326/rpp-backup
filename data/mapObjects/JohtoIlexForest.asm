@@ -2,8 +2,10 @@
 ; RPP rows are Y,X,0-based destination warp index, escape destination.
 JohtoIlexForestObject:
 	db $00 ; Gold forest blocking border metatile, not a new Warp
-	db $02
+	db $03
 	db 42, 3, 2, REGION_WARP_ESCAPE
 	db 43, 3, 3, REGION_WARP_ESCAPE
+	; Gold north x1/y5 single door -> gate southern left warp (RPP slot 2).
+	db 5, 1, 2, REGION_WARP_ESCAPE
 	db $00 ; Gold signs/hidden items deferred
 	db $00 ; Gold Farfetch'd, Cut and other NPCs deferred

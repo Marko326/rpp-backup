@@ -5,13 +5,13 @@
 JohtoIlexForestCanStepAhead::
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr nz, .blocked
+	jp nz, .blocked
 	; On the south double carpet one may switch lanes, without Warp.
 	ld a, [wXCoord]
 	cp 3
@@ -37,26 +37,51 @@ JohtoIlexForestCanStepAhead::
 	jr nz, .fromNorth
 	ld a, [wXCoord]
 	cp 2
-	jr nz, .normal
+	jr nz, .northDoorCheck
 	ld a, [wYCoord]
 	cp 42
 	jr z, .allowed
 	cp 43
 	jr z, .allowed
-	jr .normal
+	jr .northDoorCheck
 .fromNorth
 	; The ordinary floor at (3,41) must enter the upper carpet by DOWN.
 	; Do not open other north approaches or the wall below (3,43).
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
-	jr nz, .normal
+	jr nz, .northDoorCheck
 	ld a, [wXCoord]
 	cp 3
-	jr nz, .normal
+	jr nz, .northDoorCheck
 	ld a, [wYCoord]
 	cp 41
 	jr z, .allowed
-.normal
+.northDoorCheck
+	; The single Gold north door is a blocked DOOR cell in the source mask.
+	; Only allow UP from the immediately southern floor onto (1,5), so a
+	; second UP collision activates the already existing Warp executor.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .northDoorDown
+	ld a, [wXCoord]
+	cp 1
+	jr nz, .maskCheck
+	ld a, [wYCoord]
+	cp 6
+	jr z, .allowed
+	jr .maskCheck
+.northDoorDown
+	; Allow the player to leave the one-cell carpet without auto-Warp.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .maskCheck
+	ld a, [wXCoord]
+	cp 1
+	jr nz, .maskCheck
+	ld a, [wYCoord]
+	cp 5
+	jr z, .allowed
+.maskCheck
 	; Gold CUT_TREE (8,25) stays blocked until its live block is cut.
 	; Only that one quadrant is opened; the adjacent HEADBUTT_TREE
 	; at (9,25) continues to use the unchanged Gold position mask.
