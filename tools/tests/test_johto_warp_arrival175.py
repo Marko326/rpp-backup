@@ -21,14 +21,17 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         raw = os.environ.get('JOHTO_GOLD_SOURCE')
         cls.gold = Path(raw) if raw else None
 
-    def test_only_outdoor_step_remains(self):
+    def test_cave_no_auto_step_and_north_gate_safe_profiles(self):
         self.assertEqual(audit(ROOT, self.gold), [])
         src = (ROOT / INPUTS[0]).read_text()
-        self.assertEqual(profiles(src), [
+        actual=profiles(src)
+        self.assertEqual(actual[:2], [
             ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
+        self.assertEqual(len(actual), 5)
+        self.assertFalse(any('JOHTO_UNION_CAVE_1F_LOCAL_ID' in row for row in actual))
         self.assertTrue(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3))
         self.assertFalse(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4))
         self.assertTrue(walkable(ROOT, 'JohtoRoute32', 'johto', 10, 6, 80))
@@ -64,13 +67,13 @@ class JohtoWarpArrivalContract(unittest.TestCase):
                     '\tdb $ff\n\n; Native cave entrances use',
                     ('\tdb REGION_NATIVE_MAP_SLOT, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, 17, '
                      'JOHTO_ROUTE_32, D_UP\n\tdb $ff\n\n; Native cave entrances use'),
-                    'cave cannot auto-step')
+                    'Only north-gate DOWN arrivals')
 
     def test_wrong_outdoor_direction_fails(self):
         self.mutate('engine/overworld/region_map_lookup.asm',
                     '79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN',
                     '79, 6, REGION_NATIVE_MAP_SLOT, D_UP',
-                    'Route32 and Route33 each require exact outdoor arrival step')
+                    'Only north-gate DOWN arrivals')
 
     def test_unregistered_cave_warp_fails(self):
         self.mutate('data/mapObjects/JohtoUnionCave1F.asm',

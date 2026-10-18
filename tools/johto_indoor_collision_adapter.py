@@ -7,6 +7,7 @@ matching art. Per-quadrant disagreements are reported; none is auto-approved.
 from __future__ import annotations
 import argparse
 from pathlib import Path
+import re
 from johto_rpp_asset_audit import collision_labels, gold_resource_aliases
 from johto_indoor_common import ConversionError, dump, safe_roots
 from johto_indoor_tiles_converter import build_mapping
@@ -107,7 +108,21 @@ def check(rpp: Path, gold: Path, graphics: dict, rpp_set='gate'):
     if not labels:
         raise ConversionError('Gold collision 源缺失')
     data = (rpp/'gfx/blocksets'/f'{rpp_set}.bst').read_bytes()
-    collision_file = rpp/'gfx/tilesets'/f'{rpp_set}.tilecoll'
+    # The selected RPP tileset may reuse another tileset's collision list.
+    # JOHTO_GATE explicitly refers to Gate_Coll; selecting johto_gate.tilecoll
+    # by filename would invent a resource that the runtime never loads.
+    symbol=''.join(part.capitalize() for part in rpp_set.split('_'))
+    header=(rpp/'data/tileset_headers.asm').read_text(encoding='utf-8')
+    found=re.search(r'^\s*tileset\s+'+re.escape(symbol)+
+                    r'_Block\s*,\s*\w+\s*,\s*(\w+)\s*,', header, re.M)
+    if not found:
+        raise ConversionError(f'RPP tileset header lacks collision symbol: {rpp_set}')
+    decl=(rpp/'data/collision.asm').read_text(encoding='utf-8')
+    resolved=re.search(r'^'+re.escape(found[1])+r'::\s*INCBIN\s+"(gfx/tilesets/[^"\n]+\.tilecoll)"',
+                       decl, re.M)
+    if not resolved:
+        raise ConversionError(f'RPP collision symbol unresolved: {found[1]}')
+    collision_file = rpp/resolved[1]
     whitelist = collision_file.read_bytes()
     if len(data) % 16 or not whitelist or whitelist[-1] != 255 or 255 in whitelist[:-1]:
         raise ConversionError('RPP blockset/tilecoll 结构不合法或存在提前终止符')

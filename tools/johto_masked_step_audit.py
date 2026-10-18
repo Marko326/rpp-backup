@@ -96,6 +96,18 @@ def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
         if op == 'scf':
             carry = True
             continue
+        if op == 'call JohtoIlexForestCutTreeCleared':
+            # The real helper consults a mutable live block at Forest (8,25).
+            # It can only return carry for a player directly facing that tree.
+            # Portals elsewhere cannot hit it; do not invent a RAM state for
+            # the dynamic Cut target, or silently allow arbitrary calls.
+            dx,dy=DIRECTIONS[direction]
+            if local_symbol != 'JOHTO_ILEX_FOREST_LOCAL_ID':
+                raise ConversionError('Cut helper called outside its forest scope')
+            if (x+dx,y+dy)==(8,25):
+                raise ConversionError('Dynamic live Cut block requires runtime state')
+            carry = False
+            continue
         m = re.fullmatch(r'(jr|jp)\s+(?:(z|nz|c|nc)\s*,\s*)?([.\w]+)', op)
         if m:
             _, cond, dest = m.groups()
@@ -138,15 +150,21 @@ def audit(rpp: Path, gold: Path) -> dict:
         local = [m for m in native if m.get('header')==rpp_name+'_h']
         if len(local)!=1 or gold_name not in registered:
             continue  # Other map types handled by existing independent audits.
-        symbol_base = rpp_name
+        symbol_base = 'JohtoRoute34Gate' if rpp_name == 'JohtoRoute34IlexForestGate' else rpp_name
         matching_sources=[]
         for source_path in sorted((root/'engine/overworld').glob('johto_*collision.asm')):
             src=source_path.read_text()
             for symbol in re.findall(r'(?m)^(Johto\w+CanStepAhead)::',src):
                 if symbol_base.startswith(symbol[:-len('CanStepAhead')]):
                     matching_sources.append((symbol,src))
+        # Prefer the most specific existing masked caller: the new Gate name
+        # shares the Route34 prefix, but must NOT be audited as the road.
+        if matching_sources:
+            longest=max(len(symbol) for symbol,_ in matching_sources)
+            matching_sources=[(symbol,src) for symbol,src in matching_sources
+                              if len(symbol)==longest]
         if len(matching_sources)!=1:
-            continue  # No shared masked-step caller; not falsely certified.
+            continue  # No uniquely attributable caller; not falsely certified.
         caller,source=matching_sources[0]
         if 'jp JohtoModernMaskedStep' not in source:
             continue

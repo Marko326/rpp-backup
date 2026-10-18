@@ -16,11 +16,13 @@ class SharedMaskedSourceAudit(unittest.TestCase):
         if not GOLD.is_dir():
             raise unittest.SkipTest('Gold source required')
 
-    def test_active_masked_maps_have_exact_eleven_source_edges(self):
+    def test_active_masked_maps_include_new_route34_edges(self):
         result = audit(ROOT, GOLD)
-        self.assertEqual(result['masked_caller_maps_checked'], 3)
-        self.assertEqual(result['movement_edges_executed'], 11)
-        self.assertEqual(result['movement_edges_required_allow'], 9)
+        self.assertEqual(result['masked_caller_maps_checked'], 5)
+        self.assertEqual(result['movement_edges_executed'], 26)
+        self.assertEqual(result['movement_edges_required_allow'], 19)
+        self.assertEqual(result['status'], 'SOURCE_BRANCH_CHECK_ONLY')
+        self.assertEqual(result['failures'], [])
         self.assertFalse(result['phone_verified'])
 
     def test_forest_ordinary_floor_down_to_carpet_is_allowed(self):
@@ -80,6 +82,24 @@ class SharedMaskedSourceAudit(unittest.TestCase):
         with self.assertRaises(ConversionError):
             trace_masked_step(['mul a'], {}, bytes(54), 20, 18,
                 'JOHTO_ROUTE_33_LOCAL_ID', 11, 10, 'UP')
+
+    def test_dynamic_cut_cell_is_not_falsely_simulated(self):
+        source=(ROOT/'engine/overworld/johto_ilex_forest_collision.asm').read_text()
+        program,labels=parse_caller(source,'JohtoIlexForestCanStepAhead')
+        mask=(ROOT/'maps/JohtoIlexForest.blocked_mask.bin').read_bytes()
+        with self.assertRaisesRegex(ConversionError,'Dynamic live Cut block'):
+            trace_masked_step(program,labels,mask,30,54,
+                'JOHTO_ILEX_FOREST_LOCAL_ID',8,24,'DOWN')
+
+    def test_unrecognized_call_still_fails_closed(self):
+        source=(ROOT/'engine/overworld/johto_ilex_forest_collision.asm').read_text()
+        program,labels=parse_caller(source,'JohtoIlexForestCanStepAhead')
+        mutated=[op.replace('call JohtoIlexForestCutTreeCleared',
+                            'call UnknownRuntimeHelper') for op in program]
+        mask=(ROOT/'maps/JohtoIlexForest.blocked_mask.bin').read_bytes()
+        with self.assertRaisesRegex(ConversionError,'Unsupported ASM operation'):
+            trace_masked_step(mutated,labels,mask,30,54,
+                'JOHTO_ILEX_FOREST_LOCAL_ID',3,42,'UP')
 
     def test_forest_wrong_direction_mutation_is_detected(self):
         source=(ROOT/'engine/overworld/johto_ilex_forest_collision.asm').read_text()

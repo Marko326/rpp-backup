@@ -6,9 +6,17 @@
 
 1. **先读来源**：Gold `maps/*Gate.asm` 的入口对、Gold 入口碰撞类型、RPP `data/mapObjects/` 的 0-based Warp 索引。室外、室内、未开放的另一侧逐一列出；未开放出口不能留误触发的空 Warp。
 2. **地图身份**：原生城都地图复用 `$FC`，所以判断地图必须是 `REGION_NATIVE_MAP_SLOT + MAP_REGION_JOHTO + local ID`，不能只按 `$FC`、图块集或城镇地标判断。
-3. **站格与撞门分离**：进入 Warp carpet 时可站立、可上下走动，**不得站上去立刻自动 Warp**；面向门框正确方向发生碰撞才触发。室外/室内方向必须分别检查，侧向掠过、门垫上下移动、墙角都不能误传送。
+3. **Warp 触发与到达步行分开审核**：已验收的 31 号道路和桐树林南门房使用碰撞触发，门垫上站立或上下切换不自动 Warp；**北口 `.215` 是另一个已验收的“正确方向走上门口格触发”类型**，不能强迫新门房都按前者套用。每座门房必须按 Gold 原版门垫与 RPP 已有处理分支登记触发类型；错误方向/侧擦不可传送。切图后是否走一步独立登记，绝不由触发方式推断。
 4. **立即反向复入**：两格分别反复“进→立刻出→再进”，不准要求先退一步；跨图后角色控制、落点、方向、步进状态必须正确。对照现有 `CheckWarpsNoCollisionLoop`、`CheckWarpsCollision`、`IsPlayerFacingEdgeOfMap`，不得新造专用踩格自动传送。
 5. **旧地图保全**：31号道路—桔梗市门房、关东 Route15 等原有门房、已开放洞穴、Fly、保存/读取不能因新的门房坐标特判回退；门房和洞穴的碰撞机制不能混用。
+
+### A2. 竖向门房到达步行不能靠方向默认（ILEX-5.62.215 后强制）
+
+- 门房 Warp **触发方式** 和 **切图后自动走一步** 是两项不同设置。不能把“禁止踩格传送”理解成“禁止切图后一步”，也不能以“南北门房”为理由让上下两边都走一步。
+- 每个新增 `GATE_INDOOR` 必须在 `tools/johto_door_contracts.json` 记录 `arrival_step_review`：`layout`、每侧 `by_gate_side`（`NONE` / `D_UP` / `D_DOWN` / `D_LEFT` / `D_RIGHT`）及 `basis`。`johto_door_onboarding_audit.py` 缺少字段必须失败。复杂的 VictoryRoadGate 先走人工专项，不能伪装普通双格门房。
+- Gold 原版 `warp_event` 只证明位置/目标，**不能证明** RPP 自动模拟移动。运行时继续用 `GetJohtoWarpArrivalStep` / `PlayerStepOutFromDoor`，必须先核对目标格及一步后碰撞与可回程性。独立检查起始侧两条 Lane、四个方向、错误来源、菜单/读档状态。
+- `.215` 北门房：**抵达北侧 y0，自动向下 1 格；抵达南侧 y7，不额外走**；森林 `(1,5)` 作为目的地的向下 1 格仍由精确规则控制。不要恢复 `.214` 的双向自动步行。
+- 未来门房开工先运行现有 `tools/johto_warp_reference_profiles.py --inventory-gold-gates`，查看 Gold 全门房拓扑及 `SCRIPTED_ACCESS_OR_MOVEMENT` / `TWO_LANES_TO_ONE_DESTINATION` 标记，不能机械照抄。
 
 ## B. 外面建筑完整：两条地图加载路径都要查
 

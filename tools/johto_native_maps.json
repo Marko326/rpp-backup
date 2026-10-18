@@ -417,6 +417,70 @@
       },
       "identity_evidence": "PHONE_PENDING",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 13,
+      "local_symbol": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+      "header": "JohtoRoute34IlexForestGate_h",
+      "bank": "BANK(JohtoRoute34IlexForestGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 14,
+      "town_map_name": "JohtoBrowseRoute34Name",
+      "town_map_xy": [
+        128,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 14,
+      "local_symbol": "JOHTO_ROUTE_34_LOCAL_ID",
+      "header": "JohtoRoute34_h",
+      "bank": "BANK(JohtoRoute34_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 14,
+      "town_map_name": "JohtoBrowseRoute34Name",
+      "town_map_xy": [
+        128,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
     }
   ]
 }

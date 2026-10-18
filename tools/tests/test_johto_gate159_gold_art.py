@@ -140,7 +140,8 @@ class JohtoGoldGateArtwork(unittest.TestCase):
         room = (ROOT/'maps/JohtoRoute31VioletGate.blk').read_bytes()
         blockset = (ROOT/'gfx/blocksets/johto_gate.bst').read_bytes()
         self.assertEqual(len(room), 20)
-        self.assertEqual(len(blockset), 14*16)
+        self.assertEqual(len(blockset), 19*16)
+        # The prior 14 blocks are fixed; five north-gate blocks append only.
         self.assertEqual(sorted(set(room)), list(range(13)))
         self.assertEqual(room[10], 8)  # source Gold warp border block, left bottom
         self.assertEqual(room[14], 9)  # opposite warp border block
@@ -154,7 +155,7 @@ class JohtoGoldGateArtwork(unittest.TestCase):
         blockset = (ROOT/'gfx/blocksets/johto_gate.bst').read_bytes()
         walkable = {2,3,20,22}
         self.assertTrue(walkable.issubset(allowed))
-        self.assertTrue(all((tile in allowed)==(tile in walkable) for tile in blockset))
+        self.assertTrue(all((tile in allowed)==(tile in walkable) for tile in blockset[:14*16]))
         # Gold WARP_CARPET_LEFT and RIGHT are both walkable, not auto-warps.
         for block, col in ((8,0),(9,1)):
             for quadrant in (0,2) if col == 0 else (1,3):

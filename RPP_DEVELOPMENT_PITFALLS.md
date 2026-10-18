@@ -1,6 +1,15 @@
+## ILEX-5.62.215｜P18 北门房及未来所有 Gold Gate 的防复发规则（当前有效）
+
+- **同为竖向门房，Warp 触发与落点自动步行也不可混为一谈**：`.213` 踏门后仍需补按方向是遗漏 `PlayerStepOutFromDoor` 目的地规则；`.214` 把 `D_UP/D_DOWN` 全部放开又产生用户不接受的双向自动行走。最终 `.215` **向上抵达不追加步行**，**向下抵达**仅按精确目标增加一步。执行仍复用 `CheckWarpsNoCollisionLoop`、`GetJohtoWarpArrivalStep`、`PlayerStepOutFromDoor`，不新增通用“所有竖门房自动走”的引擎。
+- **按目的地独立验两端**：Route34 北门房顶部 `(4/5,0)` 目的地补 `D_DOWN`，桐树林单格北口 `(1,5)` 目的地补 `D_DOWN`；向上到门房南端 `(4/5,7)` 和 Route34 `(13/14,37)` 不补步。严格检查方向、来源三元组、站位、一步后的 Gold 地形、持续按方向键与 B、立刻反向；不能拿 `.213` 和 `.214` 候选文档替代最终状态。
+- **接入原则是复用历史工具**：`johto_indoor_pipeline.py`、`johto_indoor_tiles_converter.py` 负责原版图块及 compact 映射；原 `JOHTO_GATE` 旧 4 组区块可复用、扩 5 组，Route34 继续用 `JOHTO_MODERN`；按真实 Gold source→compact、CGB 色值、两条地图加载路径审计，禁止重写门房转换器、放开关东碰撞或改全局 palette。
+- **24 座门房普查不是通用自动行动推断**：Gold `warp_event` 只能证明位置和目标，不能直接决定 RPP `PlayerStepOutFromDoor` 是否补一步。现有 `johto_warp_reference_profiles.py --inventory-gold-gates` 只读列出 11 东西、12 南北、1 多出口 Gate，其中 11 个尚未登记的城都候选。`tools/johto_door_contracts.json` 的每个 `GATE_INDOOR` 必填按门侧独立的 `arrival_step_review`，缺项/无依据由 `johto_door_onboarding_audit.py` 强制 FAIL。两格汇一格、多出口、剧情（自行车/捕虫大会/火箭队）要先标专用异常，不能强行当普通一一对应门房。
+- **实机与测试边界**：玩家对 `.215` 北门房往返和道路通行反馈正常；`.213`、`.214` 两轮失效是实际反例。源码 508 项（功能候选）/513 项（含门房普查）通过并不证明 ROM 构建或所有门房可玩；旧 `SafariZoneBeta` Gold 全量图形窗口问题仍属独立未解项。保留 `ILEX-LEDGE-001` 森林跳崖禁用/未修复；剧情开发不在当前扩图交付内。
+- **提交规则**：基线 `287522e5` (`ILEX-5.62.212`)，最终功能版 `ILEX-5.62.215`。`feat(johto)` 先提交功能与地图资源，`test(tool)` 后提交脚本、审计、文档和三件套；在 Git 确认前仍属未提交。代码段内本轮 P18 实质修改备注统一 `.215`，不修改已经提交的无关旧注释。
+
 ## ILEX-5.62.212｜桐树林地图与 Cut 的长期维护约定（已收口）
 
-- **切分项目阶段**：P17 当前只扩展 Gold 桐树林地图与地形技能，不接入大葱鸭追逐、HM01 发放或城都徽章剧情。后续实际开发顺序为北口门房 → Route34 → 后续地图；新门房必须先遵守 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`。不能用“剧情没做”否决本阶段的 Cut 可用性。
+- **切分项目阶段**：P17 当前只扩展 Gold 桐树林地图与地形技能，不接入大葱鸭追逐、HM01 发放或城都徽章剧情。当时后续开发顺序为北口门房 → Route34 → 后续地图（已由上方 `.215` 记录取代）；新门房必须先遵守 `docs/JOHTO_GATEHOUSE_READ_FIRST.md`。不能用“剧情没做”否决本阶段的 Cut 可用性。
 - **地形图块与技能授权是两层约束**：Gold 原版桐树林 `(8,25)` `CUT_TREE` 位于 32×32 metatile `$0f` 左下象限；`(9,25)` 是 `HEADBUTT_TREE`。复用 RPP `Cut2/AnimCut` 时只替换左下四块 8×8 图形成 `$2d`，再由 live block 和 Gold 阻挡 mask 配合放行；不能把整个 32×32 block 清空。A 键和宝可梦菜单都用 `JohtoCutBadgeAllowed`：仅精确 JOHTO Ilex Forest 免 Hive Badge、队伍仍须会 Cut；关东保留 Cascade Badge。离图恢复原树，不创设额外剧情/存档标志。
 - **图形相同≠颜色相同**：关东 Cut 动画的四块 8×8 树图与 Gold 桐树林树图像素一致，但 Cut OBJ palette 6 与 BG palette 互不等同。新 `JOHTO_ILEX_FOREST` 必须加入 `LoadOverworldSpritePalettes` 的 `SpritePalettesNite` 分支，不能改全局 OBJ palette 6；用户 `.212` 视频与反馈确认突兀亮绿色已改善。菜单 Cut、更多 OBJ 组合仍按独立场景核对。
 - **禁止用静态模型掩盖失败 HOP**：`.205～.208` 的 Forest 两格 HOP 跳崖均未获手机通过。RPP 旧三格跳跃与 Gold 原版 `STEP_LEDGE` 不同，不能靠缩减模拟步数或动画等待模型证明真实移动成功。最终 `HandleLedges:.ilexForest` 立即返回并保持 Gold 墙壁 mask，编号 `ILEX-LEDGE-001` 保留 DEFERRED；原关东/Route29～32 执行器不动。以后重启必须 CPU/RAM 逐帧和其它地图回归，不能把 `95` 静态匹配当作实机通过。

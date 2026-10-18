@@ -62,14 +62,14 @@ class IlexSouthGate197(unittest.TestCase):
                       'and a\n\tjr nc, .checkOrdinaryWarpTile',
                       'step-on auto-warp')
     def test_collision_wrong_direction_outside_fails(self):
-        self.mutation('home/overworld.asm',
-                      'cp PLAYER_DIR_LEFT\n\tjr nz, .retry2',
-                      'cp PLAYER_DIR_RIGHT\n\tjr nz, .retry2',
+        self.mutation('engine/overworld/johto_route33_collision.asm',
+                      '.left\n\tld a, PLAYER_DIR_LEFT',
+                      '.left\n\tld a, PLAYER_DIR_RIGHT',
                       'collision Warp')
     def test_collision_wrong_direction_inside_fails(self):
-        self.mutation('home/overworld.asm',
-                      '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_RIGHT',
-                      '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_LEFT',
+        self.mutation('engine/overworld/johto_route33_collision.asm',
+                      '.right\n\tld a, PLAYER_DIR_RIGHT',
+                      '.right\n\tld a, PLAYER_DIR_LEFT',
                       'collision Warp')
     def test_no_vertical_pair_walk_fails(self):
         self.mutation('engine/overworld/johto_route33_collision.asm',

@@ -63,7 +63,7 @@ def audit(rpp: Path, gold: Path):
     expect(all(regionrows.count(r)==1 for r in required), 'P16 native two-way warp mapping missing/wrong')
     keys=(rpp/'constants/region_map_constants.asm').read_text()
     expect('DEF JOHTO_ILEX_AZALEA_GATE_LOCAL_ID EQU 11' in keys and
-           'DEF NUM_JOHTO_MAPS EQU 13' in keys, 'P16 gate local id invalid')
+           'DEF NUM_JOHTO_MAPS EQU 15' in keys, 'P16 gate local id invalid')
     maphead=(rpp/'data/mapHeaders/JohtoIlexAzaleaGate.asm').read_text()
     expect('db JOHTO_GATE' in maphead and 'db 4, 5' in maphead and
            'db $00 ; indoor gate' in maphead, 'P16 gate header/tileset wrong')
@@ -98,11 +98,15 @@ def audit(rpp: Path, gold: Path):
            entry.index('call IsJohtoSouthGatePortal') <
            entry.index('callba IsPlayerStandingOnDoorTileOrWarpTile'),
            'P16 step-on auto-warp must be suppressed before normal tile detection')
+    direction=(rpp/'engine/overworld/johto_route33_collision.asm').read_text()
+    direction=direction.split('JohtoGateCollisionDirectionAllowed::',1)[-1].split('JohtoInternalDoorFacingCheck::',1)[0]
     expect(all(v in exit for v in ('call IsJohtoSouthGatePortal',
-                                  'cp JOHTO_AZALEA_TOWN_LOCAL_ID',
-                                  'cp PLAYER_DIR_LEFT', 'cp PLAYER_DIR_RIGHT',
-                                  'jr nz, .retry2')) and
-           exit.index('call IsJohtoSouthGatePortal') < exit.index('ld [wDestinationWarpID],a'),
+                                   'callba JohtoGateCollisionDirectionAllowed',
+                                   'jr nc, .retry2')) and
+           exit.index('call IsJohtoSouthGatePortal') < exit.index('ld [wDestinationWarpID],a') and
+           all(v in direction for v in ('cp JOHTO_AZALEA_TOWN_LOCAL_ID',
+                                       'ld a, PLAYER_DIR_LEFT', 'ld a, PLAYER_DIR_RIGHT',
+                                       'ld a, [wPlayerDirection]', 'cp b', 'jr nz, .denied')),
            'P16 collision Warp must require west outdoors/east indoors')
     expect(all(v in helper for v in ('cp REGION_NATIVE_MAP_SLOT',
                                     'cp MAP_REGION_JOHTO',
@@ -213,16 +217,18 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
     # is necessary even with perfectly registered two-way Warp objects.
     overworld=(rpp/'home/overworld.asm').read_text()
     extra=overworld.split('ExtraWarpCheck::',1)[-1].split('IsJohtoSouthGatePortal::',1)[0]
+    internal=(rpp/'engine/overworld/johto_route33_collision.asm').read_text()
+    internal=internal.split('JohtoInternalDoorFacingCheck::',1)[-1]
     require(all(v in extra for v in (
         'cp REGION_NATIVE_MAP_SLOT', 'cp MAP_REGION_JOHTO',
         'cp JOHTO_ILEX_FOREST_LOCAL_ID',
-        'cp PLAYER_DIR_RIGHT',
-        'cp 3\n\tjr nz, .ordinaryCheck',
-        'cp 42\n\tjr z, .forestReturns',
-        'cp 43\n\tjr nz, .ordinaryCheck',
-        '.forestReturns\n\tscf\n\tret',
-        '.ordinaryCheck\n\tld a, [wCurMap]'
-    )), 'Forest x3/y42,43 right-facing ExtraWarpCheck required for safe return')
+        'callba JohtoInternalDoorFacingCheck',
+        '.ordinaryCheck\n\tld a, [wCurMap]')) and
+        all(v in internal for v in (
+        '.southForest', 'cp 3', 'cp 42\n\tjr z, .southDirection\n\tcp 43',
+        'cp PLAYER_DIR_RIGHT', 'cp PLAYER_DIR_UP',
+        'cp JOHTO_ILEX_FOREST_LOCAL_ID')),
+        'Forest x3/y42,43 right-facing ExtraWarpCheck required for safe return')
 
     # Forest HOP-only block variants reuse the tested Route29 native tile-pair
     # conversion; the converted blockset and art are intentionally no longer
@@ -242,8 +248,16 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
             mapbytes,blockbytes,tuples)
         require((rpp/'maps/JohtoIlexForest.blk').read_bytes()==exp_map,
                 'native Forest ledge map variants differ from Gold conversion')
-        require((rpp/'gfx/blocksets/johto_ilex_forest.bst').read_bytes()==exp_blocks,
-                'native Forest ledge block variants differ from Gold conversion')
+        # .211 Cut adds one cloned 32x32 metatile after the five HOP variants.
+        # Validate its exact four 8x8 FLOOR replacements; keep every other
+        # source byte (notably the adjacent HEADBUTT quadrant) unchanged.
+        actual_blocks=(rpp/'gfx/blocksets/johto_ilex_forest.bst').read_bytes()
+        cut_source=exp_blocks[0x0f*16:0x0f*16+16]
+        cut_expected=bytearray(cut_source)
+        for cell in (8,9,12,13):
+            cut_expected[cell]=0x05
+        require(actual_blocks==exp_blocks+bytes(cut_expected),
+                'native Forest ledge block variants differ from Gold conversion (Cut clone must alter only left-bottom quadrant)')
         image_path=gold/'gfx/tilesets/forest.png'
         palette_path=gold/'gfx/tilesets/forest_palette_map.asm'
         clone_image,clone_palette=clone_forest_tiles_and_palettes(image_path,palette_path)
@@ -268,7 +282,7 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
         (9,4,0,'REGION_WARP_ESCAPE'),(9,5,1,'REGION_WARP_ESCAPE'),
         (0,4,0,'REGION_WARP_ESCAPE'),(0,5,1,'REGION_WARP_ESCAPE')],
         'west/east two-lane gate Warp positions or dest changed')
-    require(len(forest)==2 and [(v['x'],v['y'],v['dest_id'],v['dest_map']) for v in forest] == [
+    require(len(forest)==3 and [(v['x'],v['y'],v['dest_id'],v['dest_map']) for v in forest[:2]] == [
         (3,42,2,'REGION_WARP_ESCAPE'),(3,43,3,'REGION_WARP_ESCAPE')],
         'south forest double return Warp positions or dest changed')
     require([(v['x'],v['y'],v['dest_map'],v['dest_id']) for v in gold_gate[:2]] == [
@@ -296,12 +310,13 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
     require(all(x in portal for x in ('cp REGION_NATIVE_MAP_SLOT','cp MAP_REGION_JOHTO',
             'cp JOHTO_AZALEA_TOWN_LOCAL_ID','cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID',
             'cp JOHTO_ILEX_FOREST_LOCAL_ID')), 'three-region exact portal identity lost')
-    require(all(x in coll for x in (
-        'cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .gateReturnsEast',
-        'ld a, [wXCoord]\n\tand a\n\tjr z, .gateGoesWest',
-        '.gateGoesWest\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_LEFT',
-        '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_RIGHT',
-        'jr nz, .retry2')), 'wrong-direction Warp not blocked')
+    dircheck=(rpp/'engine/overworld/johto_route33_collision.asm').read_text().split('JohtoGateCollisionDirectionAllowed::',1)[-1].split('JohtoInternalDoorFacingCheck::',1)[0]
+    require(all(x in coll for x in ('callba JohtoGateCollisionDirectionAllowed', 'jr nc, .retry2')) and
+            all(x in dircheck for x in ('cp JOHTO_ILEX_FOREST_LOCAL_ID',
+                     'cp JOHTO_AZALEA_TOWN_LOCAL_ID', 'ld a, PLAYER_DIR_LEFT',
+                     'ld a, PLAYER_DIR_RIGHT', 'ld a, PLAYER_DIR_UP', 'ld a, PLAYER_DIR_DOWN',
+                     'ld a, [wPlayerDirection]', 'cp b', 'jr nz, .denied')),
+            'wrong-direction Warp not blocked')
     step=home.split('CheckTilePassable::',1)[-1].split('predef GetTileAndCoordsInFrontOfPlayer',1)[0]
     require('cp JOHTO_ILEX_FOREST_LOCAL_ID' in step and
             'callba JohtoIlexForestCanStepAhead' in step,
@@ -347,13 +362,18 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
         ledges = (rpp/'engine/overworld/ledges.asm').read_text()
         require(all(code in ledges for code in (
             'cp JOHTO_ILEX_FOREST\n\tjp z, .ilexForest',
-            '.ilexForest\n\t; ILEX-5.62.206',
-            'cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tret nz\n\tld hl, JohtoIlexForestLedgeTiles\n\tjp .checkPairs',
+            '.ilexForest\n\t; ILEX-5.62.212: Forest jump dispatch remains DISABLED (205-208 phone FAIL).',
             'JohtoIlexForestLedgeTiles:\n\tdb SPRITE_FACING_DOWN,  $05,$40,D_DOWN',
             '\tdb SPRITE_FACING_LEFT,  $05,$41,D_LEFT',
             '\tdb SPRITE_FACING_RIGHT, $05,$42,D_RIGHT',
             'cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tdec a',
-        )), 'native Forest ledge tile-pair trigger/facing/two-cell scope missing')
+        )), 'native Forest dormant tile-pair inventory changed')
+        # The .209 safety decision is an actual control-flow contract, not
+        # merely a text comment: return before ever entering the HOP executor.
+        ilex_branch=ledges.split('\n.ilexForest\n',1)[-1].split('\n.route33\n',1)[0]
+        active=[line.strip() for line in ilex_branch.splitlines()
+                if line.strip() and not line.lstrip().startswith(';')]
+        require(active==['ret'], 'native Forest HOP dispatch must remain disabled')
         require('.ilexHops' not in ledges and 'ld hl, .ilexHops' not in ledges,
                 'retired Forest coordinate HOP interpreter reintroduced')
         home=(rpp/'home/overworld.asm').read_text()

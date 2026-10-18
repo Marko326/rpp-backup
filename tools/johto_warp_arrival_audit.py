@@ -235,8 +235,35 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
                 79, 6, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
     expected33 = ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID',
                   9, 11, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
-    if arrivals != [expected, expected33]:
-        errors.append('Route32 and Route33 each require exact outdoor arrival step, cave cannot auto-step')
+    # ILEX-5.62.215: preserve only the three DOWN-arrival steps.
+    # Forest -> gate bottom and gate -> Route34 should KEEP their warp coordinates.
+    # Existing Route32/Route33 cave exits remain unchanged.
+    north_steps = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ILEX_FOREST_LOCAL_ID', 5, 1, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+    ]
+    if arrivals != [expected, expected33] + north_steps:
+        errors.append('Only north-gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
+    # Destination masks: the auto step must not put the player inside walls,
+    # including when ordinary simulated-button collision is bypassed.
+    mask_desc = {
+        'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': ('JohtoRoute34IlexForestGate', 10, 8),
+        'JOHTO_ILEX_FOREST_LOCAL_ID': ('JohtoIlexForest', 30, 54),
+        'JOHTO_ROUTE_34_LOCAL_ID': ('JohtoRoute34', 20, 54),
+    }
+    for alias, local, y, x, source, direction in north_steps:
+        name, width, height = mask_desc[local]
+        dx, dy = MOVE[direction]
+        tx, ty = x + dx, y + dy
+        try:
+            mask = (root/'maps'/f'{name}.blocked_mask.bin').read_bytes()
+            stride = (width+7)//8
+            assert len(mask) == stride*height
+            assert 0 <= tx < width and 0 <= ty < height
+            assert not (mask[ty*stride+tx//8] & (1 << (tx%8)))
+        except (AssertionError, OSError):
+            errors.append(f'north-gate automatic step enters blocked/invalid cell: {name} ({tx},{ty})')
     if (not registered_warp(outside, 6, 79)
             or not registered_warp(cave, 17, 3)
             or not registered_warp(cave, 17, 31)):

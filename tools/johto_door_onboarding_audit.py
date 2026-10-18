@@ -10,6 +10,34 @@ GATEHOUSE_PROOFS = ('two_lane_warps', 'directional_collision', 'immediate_return
                     'gold_art_tile_palette', 'runtime_rgb_kanto_isolation',
                     'legacy_gate_regression')
 GATEHOUSE_REVIEW_STATES = ('PHONE_PENDING', 'PHONE_ACCEPTED')
+# The north-gate .213/.214 regression came from assuming BOTH entrance ends
+# should auto-step. Explicitly review each side of every indoor gate; compass
+# orientation does not determine the post-warp movement by itself.
+GATE_LAYOUT_SIDES = {
+    'EAST_WEST_PAIR': frozenset(('west', 'east')),
+    'NORTH_SOUTH_PAIR': frozenset(('north', 'south')),
+}
+ARRIVAL_STEP_OPTIONS = frozenset(('NONE', 'D_UP', 'D_DOWN', 'D_LEFT', 'D_RIGHT'))
+
+
+def validate_gate_arrival_policy(spec: dict) -> list[str]:
+    name = spec.get('rpp_map', 'unknown')
+    policy = spec.get('arrival_step_review')
+    if not isinstance(policy, dict):
+        return [f'{name} missing arrival_step_review; cannot default to both sides auto-step']
+    layout = policy.get('layout')
+    sides = GATE_LAYOUT_SIDES.get(layout)
+    if not sides:
+        return [f'{name} unsupported arrival layout (custom multi-exit must be separately reviewed): {layout}']
+    observed = policy.get('by_gate_side')
+    if not isinstance(observed, dict) or set(observed) != sides:
+        return [f'{name} arrival_step_review must specify each side: {sorted(sides)}']
+    if any(step not in ARRIVAL_STEP_OPTIONS for step in observed.values()):
+        return [f'{name} has unreviewed arrival auto-step mode: {observed}']
+    if not isinstance(policy.get('basis'), str) or len(policy['basis'].strip()) < 25:
+        return [f'{name} missing arrival-step evidence (Gold destination, collision and source route)']
+    return []
+
 
 FAMILIES = frozenset(('GATE_OUTDOOR', 'GATE_INDOOR', 'CAVE_OUTDOOR',
                       'CAVE_INDOOR', 'BUILDING', 'LADDER_STAIRS',
@@ -101,6 +129,7 @@ def audit(root: Path, gold: Path) -> tuple[list[str], set[str]]:
             if family in ('GATE_INDOOR', 'GATE_OUTDOOR') and entry.get('gatehouse_guide') != GATEHOUSE_GUIDE:
                 errors.append(f'{name} gate missing mandatory gatehouse_guide')
             if family == 'GATE_INDOOR':
+                errors.extend(validate_gate_arrival_policy(entry))
                 # Review the complete gate, not only the Warp pair. A copied gate
                 # must explicitly prove neutral-sign and Gold palette coverage.
                 for key in ('neutral_name_sign_test_id', 'gold_palette_test_id'):

@@ -41,7 +41,12 @@ class ForestRuntimeP17(unittest.TestCase):
             expected_map,expected_blocks,actions,variants=build_forest_native_pairs(
                 srcmap,srcblocks,rows)
             self.assertEqual((ROOT/'maps/JohtoIlexForest.blk').read_bytes(),expected_map)
-            self.assertEqual((ROOT/'gfx/blocksets/johto_ilex_forest.bst').read_bytes(),expected_blocks)
+            # Since .211 the sole Cut-tree 16x16 quadrant is locally
+            # swapped using a new last block; Gold/HOP prefix is untouched.
+            from_here=(ROOT/'gfx/blocksets/johto_ilex_forest.bst').read_bytes()
+            cut_expected=bytearray(expected_blocks[0x0f*16:0x0f*16+16])
+            for i in (8,9,12,13): cut_expected[i]=0x05
+            self.assertEqual(from_here,expected_blocks+bytes(cut_expected))
             self.assertEqual((len(actions),variants),(10,5))
             converted,expected_pal=clone_forest_tiles_and_palettes(
                 GOLD/'gfx/tilesets/forest.png',GOLD/'gfx/tilesets/forest_palette_map.asm')
@@ -75,9 +80,9 @@ class ForestRuntimeP17(unittest.TestCase):
     def test_negative_forest_right_facing_return_rejected(self):
         # Warp object plus collision permission is not enough: ExtraWarpCheck
         # refuses an inner-map coordinate without this narrowly scoped rule.
-        self.mutate('home/overworld.asm',
-            'cp 42\n\tjr z, .forestReturns\n\tcp 43\n\tjr nz, .ordinaryCheck',
-            'cp 42\n\tjr nz, .ordinaryCheck\n\tcp 43\n\tjr nz, .ordinaryCheck',
+        self.mutate('engine/overworld/johto_route33_collision.asm',
+            'cp 42\n\tjr z, .southDirection\n\tcp 43',
+            'cp 42\n\tjr nz, .denied\n\tcp 43',
             'Forest x3/y42,43 right-facing ExtraWarpCheck')
 
     def test_bidirectional_double_warp_preserves_east(self):
@@ -85,8 +90,9 @@ class ForestRuntimeP17(unittest.TestCase):
         gate=rpp_warps(ROOT,'JohtoIlexAzaleaGate')
         forest=rpp_warps(ROOT,'JohtoIlexForest')
         self.assertEqual([(v['x'],v['y']) for v in gate],[(9,4),(9,5),(0,4),(0,5)])
-        self.assertEqual([(v['x'],v['y']) for v in forest],[(3,42),(3,43)])
-        self.assertEqual((len(gold_warps(GOLD,'IlexForest')),len(forest)),(3,2))
+        self.assertEqual([(v['x'],v['y']) for v in forest[:2]],[(3,42),(3,43)])
+        self.assertEqual((forest[2]['x'],forest[2]['y']),(1,5))
+        self.assertEqual((len(gold_warps(GOLD,'IlexForest')),len(forest)),(3,3))
 
     def test_standing_has_no_autowarp(self):
         self.assertEqual(audit_ilex_forest(ROOT,GOLD),[])
@@ -112,13 +118,13 @@ class ForestRuntimeP17(unittest.TestCase):
             self.assertTrue(any(error in i for i in issues),issues)
 
     def test_negative_wrong_direction_rejected(self):
-        self.mutate('home/overworld.asm',
-           '.gateGoesWest\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_LEFT',
-           '.gateGoesWest\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_RIGHT',
+        self.mutate('engine/overworld/johto_route33_collision.asm',
+           '.left\n\tld a, PLAYER_DIR_LEFT',
+           '.left\n\tld a, PLAYER_DIR_RIGHT',
            'wrong-direction Warp')
-        self.mutate('home/overworld.asm',
-           '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_RIGHT',
-           '.gateReturnsEast\n\tld a, [wPlayerDirection]\n\tcp PLAYER_DIR_LEFT',
+        self.mutate('engine/overworld/johto_route33_collision.asm',
+           '.right\n\tld a, PLAYER_DIR_RIGHT',
+           '.right\n\tld a, PLAYER_DIR_LEFT',
            'wrong-direction Warp')
 
     def test_negative_auto_step_warp_rejected(self):
@@ -204,13 +210,16 @@ class ForestRuntimeP17(unittest.TestCase):
         self.assertEqual(sum(role(x+3*dx,y+3*dy)=='HEADBUTT_TREE'
                              for x,y,dx,dy in actual),7)
 
-    def test_gold_forest_only_leap_count_and_legacy_tables_kept(self):
+    def test_gold_forest_hop_disabled_and_legacy_tables_kept(self):
         src=(ROOT/'engine/overworld/ledges.asm').read_text()
         original_end='ld [wSimulatedJoypadStatesIndex], a'
         forest_scope='cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tdec a'
         self.assertIn(forest_scope,src)
         self.assertNotIn('.ilexHops',src)
         self.assertIn('JohtoIlexForestLedgeTiles:',src)
+        branch=src.split('\n.ilexForest\n',1)[-1].split('\n.route33\n',1)[0]
+        self.assertEqual([line.strip() for line in branch.splitlines()
+                          if line.strip() and not line.lstrip().startswith(';')],['ret'])
         self.assertIn('db SPRITE_FACING_RIGHT, $05,$42,D_RIGHT',src)
         home=(ROOT/'home/overworld.asm').read_text()
         self.assertIn('jr nz, .checkRunningButton',home)
@@ -227,11 +236,17 @@ class ForestRuntimeP17(unittest.TestCase):
         self.mutate('maps/JohtoIlexForest.blocked_mask.bin',bytes(raw),bytes(corrupt),
                     'Gold forest ledge wall must remain blocked')
 
+    def test_negative_ledge_unsealed_rejected(self):
+        self.mutate('engine/overworld/ledges.asm',
+                    '\t; Keep matching table and artwork for later diagnosis; no jump execution.\n\tret',
+                    '\t; Keep matching table and artwork for later diagnosis; no jump execution.\n\tjp .checkPairs',
+                    'native Forest HOP dispatch must remain disabled')
+
     def test_negative_ledge_missing_corner_direction_rejected(self):
         self.mutate('engine/overworld/ledges.asm',
                     'db SPRITE_FACING_RIGHT, $05,$42,D_RIGHT',
                     'db SPRITE_FACING_RIGHT, $05,$41,D_RIGHT',
-                    'native Forest ledge tile-pair trigger/facing/two-cell scope missing')
+                    'native Forest dormant tile-pair inventory changed')
 
     def test_negative_native_barrier_tile_rejected(self):
         p=ROOT/'gfx/blocksets/johto_ilex_forest.bst';original=p.read_bytes()
@@ -250,7 +265,7 @@ class ForestRuntimeP17(unittest.TestCase):
         self.mutate('engine/overworld/ledges.asm',
                     'cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tdec a',
                     'cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tnop',
-                    'native Forest ledge tile-pair trigger/facing/two-cell scope missing')
+                    'native Forest dormant tile-pair inventory changed')
 
 
 if __name__=='__main__':

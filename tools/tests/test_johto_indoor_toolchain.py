@@ -15,7 +15,7 @@ from johto_bidirectional_warp_validator import validate
 from johto_indoor_tiles_converter import build_mapping, stage_dedicated_gold_tileset
 from johto_indoor_collision_adapter import check, plan_gold_quadrant_collision
 from johto_indoor_registration_generator import generate
-from johto_indoor_pipeline import pipeline
+from johto_indoor_pipeline import pipeline, prestage_unregistered
 
 GOLD = Path(os.environ.get('JOHTO_GOLD_SOURCE', str(ROOT / 'pokegold-master')))  # local test fixture; skip when Gold source not provided
 
@@ -87,6 +87,13 @@ class IndoorToolchainTests(unittest.TestCase):
             self.assertEqual(len((Path(path)/result['blockset']).read_bytes()),14*16)
             self.assertEqual(result['status'],'PIXEL_ASSET_CANDIDATE_ONLY')
 
+    def test_dedicated_johto_gate_collision_alias_is_derived_from_runtime_header(self):
+        artwork,_=build_mapping(ROOT,GOLD,'Route34IlexForestGate','gate','johto_gate')
+        result=check(ROOT,GOLD,artwork,'johto_gate')
+        self.assertEqual(result['rpp_tilecoll_file'],'gfx/tilesets/gate.tilecoll')
+        self.assertFalse(result['auto_approve'])
+        self.assertEqual(result['status'],'COLLISION_REVIEW_REQUIRED')
+
     def test_collision_requires_explicit_review(self):
         artwork,_=build_mapping(ROOT,GOLD)
         result=check(ROOT,GOLD,artwork)
@@ -131,6 +138,22 @@ class IndoorToolchainTests(unittest.TestCase):
     def test_safe_output_blocks_project_and_gold(self):
         with self.assertRaises(ConversionError):safe_roots(ROOT,GOLD,ROOT/'reports')
         with self.assertRaises(ConversionError):safe_roots(ROOT,GOLD,GOLD/'reports')
+
+    def test_registered_north_gate_must_not_use_preflight_bypass(self):
+        # P18 integration requires full runtime Warp audit, never offline-only preflight.
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaisesRegex(ConversionError, '已登记'):
+                prestage_unregistered(ROOT, GOLD, Path(td)/'north',
+                    gold_room='Route34IlexForestGate',
+                    rpp_room='JohtoRoute34IlexForestGate',
+                    rpp_tileset='johto_gate')
+
+    def test_prestage_must_reject_existing_gate_to_prevent_skipping_warp_audit(self):
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaisesRegex(ConversionError,'已登记'):
+                prestage_unregistered(ROOT,GOLD,Path(td)/'stage',
+                    gold_room='Route31VioletGate',
+                    rpp_room='JohtoRoute31VioletGate')
 
     def test_pipeline_generates_only_external_reports(self):
         with tempfile.TemporaryDirectory() as path:
