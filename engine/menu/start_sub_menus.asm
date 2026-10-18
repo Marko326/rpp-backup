@@ -197,8 +197,11 @@ StartMenu_Pokemon:
 	set 1,[hl]
 	jp StartMenu_Pokemon
 .cut
-	bit 1,a ; does the player have the Cascade Badge?
-	jp z,.newBadgeRequired
+	; ILEX-5.62.212: match A-button Cut and the existing Johto Surf policy.
+	; Forest needs a CUT-capable party member, but no story badge yet.
+	; Kanto still requires Cascade Badge; the shared helper owns this rule.
+	callba JohtoCutBadgeAllowed
+	jp nc, .newBadgeRequired
 	predef UsedCut
 	ld a,[wActionResultOrTookBattleTurn]
 	and a

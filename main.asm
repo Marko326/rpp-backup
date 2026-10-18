@@ -3289,6 +3289,21 @@ INCLUDE "data/mapObjects/JohtoIlexAzaleaGate.asm"
 INCLUDE "scripts/JohtoIlexAzaleaGate.asm"
 JohtoIlexAzaleaGateBlocks: INCBIN "maps/JohtoIlexAzaleaGate.blk"
 
+; P17: Gold source artwork from the existing generic IlexForest staging pipeline.
+; The baseline MAP has bank $44 completely unused; no ROM0 graphics added.
+SECTION "Johto Ilex Forest Tileset", ROMX, BANK[$44]
+JohtoIlexForest_GFX: INCBIN "gfx/tilesets/johto_ilex_forest.2bpp"
+JohtoIlexForest_Block: INCBIN "gfx/blocksets/johto_ilex_forest.bst"
+
+SECTION "Johto Ilex Forest Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoIlexForest.asm"
+INCLUDE "data/mapObjects/JohtoIlexForest.asm"
+INCLUDE "scripts/JohtoIlexForest.asm"
+JohtoIlexForestBlocks: INCBIN "maps/JohtoIlexForest.blk"
+
+SECTION "Johto Ilex Forest Collision Mask", ROMX, BANK[$43]
+INCLUDE "engine/overworld/johto_ilex_forest_collision.asm"
+
 SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_route33_collision.asm"
 

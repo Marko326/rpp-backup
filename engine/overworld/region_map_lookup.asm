@@ -409,12 +409,17 @@ NativeRegionWarpTargets::
 	db JOHTO_UNION_CAVE_1F_LOCAL_ID, 1, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
 	; Route33 cave Warp enters at cave (17,31), index 1 of two registered.
 	db JOHTO_ROUTE_33_LOCAL_ID, 0, 1, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
-	; GATE-5.62.202: only Gold Azalea x=2/y=10,11 and south gate east x=9/y=4,5.
-	; Unregistered west exit/Forest has no Warp row and stays sealed.
+	; ILEX-5.62.212: keep Gold Azalea x=2/y=10,11 and the south gate east x=9/y=4,5 unchanged.
+	; Forest west of the gate now has separate audited twin Warp slots.
 	db JOHTO_AZALEA_TOWN_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	db JOHTO_AZALEA_TOWN_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	db JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
 	db JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+	; ILEX-5.62.212: Gold south gate west two lanes and matching Forest south return.
+	db JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 2, 0, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+	db JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 3, 1, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+	db JOHTO_ILEX_FOREST_LOCAL_ID, 0, 2, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	db JOHTO_ILEX_FOREST_LOCAL_ID, 1, 3, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	db $ff
 
 ; Native connection lookup: source Johto local / direction / destination

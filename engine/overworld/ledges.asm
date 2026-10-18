@@ -3,6 +3,8 @@ HandleLedges:
 	bit 6, a ; already jumping down ledge
 	ret nz
 	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jp z, .ilexForest
 	cp JOHTO_MODERN
 	jp z, .route33
 	cp JOHTO
@@ -63,6 +65,12 @@ HandleLedges:
 	inc hl
 	jr .loop
 
+.ilexForest
+	; ILEX-5.62.212: Forest jump dispatch remains DISABLED (205-208 phone FAIL).
+	; Gold HOP barriers remain blocked by the existing forest role mask.
+	; Keep matching table and artwork for later diagnosis; no jump execution.
+	ret
+
 .route33
 	; Only seven Gold HOP directions; no global modern tile whitelist.
 	ld a, [wCurMap]
@@ -107,14 +115,18 @@ HandleLedges:
 	inc hl
 	jr .hopLoop
 .matchHop
-	; PLAYER_DIR_* is an overworld facing bit (LEFT=$02, DOWN=$04),
-	; whereas .foundMatch expects the JOYPAD D_* held mask
-	; (LEFT=$20, DOWN=$80). Using PLAYER_DIR_* here makes hops inert.
+	; PLAYER_DIR_* is an overworld facing bit, whereas .foundMatch
+	; expects the JOYPAD D_* held mask; never mix these two bitfields.
 	ld a, d
 	cp PLAYER_DIR_LEFT
 	ld e, D_LEFT
 	jr z, .route33HopReady
+	cp PLAYER_DIR_RIGHT
+	ld e, D_RIGHT
+	jr z, .route33HopReady
+	cp PLAYER_DIR_DOWN
 	ld e, D_DOWN
+	ret nz
 .route33HopReady
 	jp .foundMatch
 
@@ -154,7 +166,15 @@ HandleLedges:
 	ld a, e
 	ld [wSimulatedJoypadStatesEnd], a
 	ld [wSimulatedJoypadStatesEnd + 1], a
-	ld a, $2 ; Kanto original hopping simulation for both regions
+	; ILEX-5.62.212: keep the old two-cell Forest count as dormant
+	; diagnostic code only; Forest never reaches this entry while its
+	; HOP dispatch is disabled. Other RPP maps retain two extra steps.
+	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	ld a, $2
+	jr nz, .hopCountReady
+	dec a
+.hopCountReady
 	ld [wSimulatedJoypadStatesIndex], a
 	call LoadHoppingShadowOAM
 	ld a, SFX_LEDGE
@@ -162,6 +182,14 @@ HandleLedges:
 	ret
 
 	; (player direction) (tile player standing on) (ledge tile) (input required)
+; ILEX-5.62.212: dormant front-tile clones preserve Forest's pixels/palette;
+; only the ten Gold HOP approaches have these collision tile IDs.
+JohtoIlexForestLedgeTiles:
+	db SPRITE_FACING_DOWN,  $05,$40,D_DOWN
+	db SPRITE_FACING_LEFT,  $05,$41,D_LEFT
+	db SPRITE_FACING_RIGHT, $05,$42,D_RIGHT
+	db $FF
+
 LedgeTiles:
 	db SPRITE_FACING_DOWN, $2C,$37,D_DOWN
 	db SPRITE_FACING_DOWN, $39,$36,D_DOWN

@@ -1,18 +1,18 @@
 LoadTilesetHeader:
 	call GetPredefRegisters
 	push hl
-	ld d, 0
+	; The tileset header is 12 bytes. Use a full 16-bit index:
+	; tileset 32 begins at $180, not $080 (8-bit carry was lost).
 	ld a, [wCurMapTileset]
-	add a
-	add a
-	ld b, a
-	add a
-	add b ; a = tileset * 12
-	jr nc, .noCarry
-	inc d
-.noCarry
-	ld e, a
-	ld hl, Tilesets
+	ld l, a
+	ld h, 0
+	add hl, hl ; id * 2
+	add hl, hl ; id * 4
+	ld d, h
+	ld e, l
+	add hl, hl ; id * 8
+	add hl, de ; id * 12
+	ld de, Tilesets
 	add hl, de
 	ld de, wTilesetBank
 	ld c, $b

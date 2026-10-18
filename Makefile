@@ -109,6 +109,10 @@ gfx/tilesets/johto_gate.2bpp: gfx/tilesets/johto_gate.png
 gfx/tilesets/johto_union_cave.2bpp: gfx/tilesets/johto_union_cave.png
 	$(RGBGFX) -o $@ $<
 
+# ILEX-5.62.212: Gold Forest uses all 96 tile slots including absolute IDs.
+gfx/tilesets/johto_ilex_forest.2bpp: gfx/tilesets/johto_ilex_forest.png
+	$(RGBGFX) -o $@ $<
+
 %.png: ;
 
 %.2bpp: %.png

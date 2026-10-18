@@ -23,11 +23,16 @@ LoadTilesetPalette:
 
 	ld a,b ; Get wCurMapTileset
 	push af
+	; Eight palette entries per tileset: preserve high-byte carries.
+	; tileset 32 selects offset $100, not tileset 0 at $000.
 	ld d,0
 	ld e,a
 	sla e
+	rl d
 	sla e
+	rl d
 	sla e
+	rl d
 	ld hl, MapPaletteSets
 	add hl,de
 	ld d,h

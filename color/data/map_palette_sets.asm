@@ -320,3 +320,13 @@ MapPaletteSets:
 	db OUTDOOR_BROWN
 	db OUTDOOR_ROOF
 	db CRYS_TEXTBOX
+
+; ILEX-5.62.212 Gold Ilex Forest: CAVE/PALETTE_NITE candidate uses the existing cave family.
+	db CAVE_GRAY
+	db CAVE_RED
+	db CAVE_GREEN
+	db CAVE_BLUE
+	db CAVE_YELLOW
+	db CAVE_BROWN
+	db CAVE_LIGHT_BLUE
+	db CRYS_TEXTBOX

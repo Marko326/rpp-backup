@@ -41,3 +41,4 @@ INCLUDE "color/tilesets/johto.asm" ; JOHTO
 INCLUDE "color/tilesets/johto_gate.asm" ; JOHTO_GATE
 INCLUDE "color/tilesets/johto_union_cave.asm" ; JOHTO_UNION_CAVE
 INCLUDE "color/tilesets/johto_modern.asm" ; JOHTO_MODERN
+INCLUDE "color/tilesets/johto_ilex_forest.asm" ; JOHTO_ILEX_FOREST

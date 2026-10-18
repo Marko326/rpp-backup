@@ -254,9 +254,12 @@ JohtoModernMaskedStep::
 .up
 	dec b
 .position
-	ld a, b
-	cp JOHTO_ROUTE_33_HEIGHT * 2
-	jr nc, .blocked
+	; ILEX-5.62.212: shared mask lookup takes the loaded map's actual cell height.
+	; Route33/Azalea are 18 cells; Ilex Forest is 54 cells.
+	ld a, [wCurrentMapHeight2]
+	cp b
+	jr z, .blocked
+	jr c, .blocked
 	ld a, c
 	cp d
 	jr nc, .blocked

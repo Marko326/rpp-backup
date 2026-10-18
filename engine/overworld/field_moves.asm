@@ -88,9 +88,12 @@ TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by
 	call HasPartyMove
 	jr nz, .cannotCut
 
-	ld a, [wObtainedKantoBadges]
-	bit 1, a ; CASCADE_BADGE
-	jr z, .cannotCut
+	; ILEX-5.62.212: same map-expansion permission policy as Johto Surf.
+	; Forest: party knows CUT -> no Johto badge required during map expansion.
+	; Other maps: preserve Kanto Cascade Badge requirement.
+	; This permission helper is also used by the party-menu Cut path.
+	callba JohtoCutBadgeAllowed
+	jr nc, .cannotCut
 
 	; If CUT can be used, skip "This tree can be Cut!" and ask immediately.
 	call Text2_EnterTheText
@@ -98,8 +101,15 @@ TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by
 	call PrintTextAndYesNoChoice
 	jr nz, .no2
 
-	; Calls the CUT routine if they said Yes.
+	; The shared Cut2 routine now handles Forest's live block replacement
+	; for both A-button interaction and the party-menu Cut command.
 	call GetPartyMonName2
+	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jr nz, .useCut
+	ld a, $3d ; Forest uses the existing tree animation
+	ld [wCutTile], a
+.useCut
 	farcall Cut2
 	call Text3_DrakesDeception
 
@@ -329,6 +339,13 @@ WaterTilesets2: ; Renamed from what Yenatch called it, since that had overlap er
 
 IsCutTile:
 	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jr nz, .legacyTilesets
+	; A dedicated Gold CUT_TREE collision quadrant, not a global 8x8 tile.
+	; The far helper also rejects the tree once the live block was swapped.
+	callba JohtoIlexForestCutTreeInFront
+	ret
+.legacyTilesets
 	and a ; OVERWORLD
 	jr z, .overworld
 

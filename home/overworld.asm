@@ -321,6 +321,16 @@ OverworldLoopLessDelay::
 	ld a,[wWalkBikeSurfState]
 	cp a, $02
 	jr z, .surfFaster
+	; ILEX-5.62.212: preserve the dormant Forest jump-speed guard.
+	; Forest HOP is disabled at HandleLedges, so no faulty jump is started;
+	; keeping this precise-map guard changes no ordinary B-button walking.
+	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jr nz, .checkRunningButton
+	ld a, [wd736]
+	bit 6, a
+	jr nz, .notRunning
+.checkRunningButton
 	; Add running shoes
 	ld a, [hJoyHeld] ; Check what buttons are being pressed
 	and B_BUTTON ; Are you holding B?
@@ -527,12 +537,21 @@ CheckWarpsCollision::
 	jr nc, .collisionWarpAllowed
 	ld a, [wCurLocalMapID]
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .gateGoesWest
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .gateReturnsEast
+	; Same gate map: west x=0 goes to Forest, east x=9 to town.
+	ld a, [wXCoord]
+	and a
+	jr z, .gateGoesWest
+	jr .gateReturnsEast
+.gateGoesWest
 	ld a, [wPlayerDirection]
-	jr nz, .gateReturnsEast
 	cp PLAYER_DIR_LEFT
 	jr nz, .retry2
 	jr .collisionWarpAllowed
 .gateReturnsEast
+	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_RIGHT
 	jr nz, .retry2
 .collisionWarpAllowed
@@ -895,6 +914,33 @@ GetJohtoGateMusicSourceMap::
 ; "function 2" passes when the the tile in front of the player is among a certain set
 ; sets carry if the check passes, otherwise clears carry
 ExtraWarpCheck::
+	; ILEX-5.62.212: Forest south-door carpet is inside the map, not its east edge.
+	; Grant the same collision-only, exact-key exception as the first gate;
+	; do not add bytes to fixed ROMX bank $03 (old MAP has 1 B free).
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .ordinaryCheck
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .ordinaryCheck
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr nz, .ordinaryCheck
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .ordinaryCheck
+	ld a, [wXCoord]
+	cp 3
+	jr nz, .ordinaryCheck
+	ld a, [wYCoord]
+	cp 42
+	jr z, .forestReturns
+	cp 43
+	jr nz, .ordinaryCheck
+.forestReturns
+	scf
+	ret
+.ordinaryCheck
 	ld a, [wCurMap]
 	cp SS_ANNE_3
 	jr z, .useFunction1
@@ -942,6 +988,8 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .yes
 .notGate
 	and a
@@ -1604,7 +1652,12 @@ CheckTilePassable::
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .modernRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .modernAzalea
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr nz, .normal
+	callba JohtoIlexForestCanStepAhead
+	ret
+.modernAzalea
 	callba JohtoAzaleaCanStepAhead
 	ret
 .modernRoute33

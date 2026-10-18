@@ -17,6 +17,10 @@ LoadOverworldSpritePalettes:
 	jr z, .gotPaletteList
 	cp FOREST
 	jr z, .gotPaletteList
+	; ILEX-5.62.212: use the existing night tree OBJ colors in Gold Forest.
+	; Its Cut animation uses palette 6; the daytime tree flashes bright green.
+	cp JOHTO_ILEX_FOREST
+	jr z, .gotPaletteList
 	; If it is the Pokemon Center, load different pals for the Heal Machine to flash
 	ld hl,SpritePalettesPokecenter
 	cp POKECENTER

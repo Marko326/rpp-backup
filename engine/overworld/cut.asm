@@ -2,6 +2,8 @@ UsedCut:
 	xor a
 	ld [wActionResultOrTookBattleTurn], a ; initialise to failure value
 	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jr z, .ilexForest
 	and a ; OVERWORLD
 	jr z, .overworld
 	cp GYM
@@ -9,6 +11,11 @@ UsedCut:
 	ld a, [wTileInFrontOfPlayer]
 	cp $50 ; gym cut tree
 	jr nz, .nothingToCut
+	jr .canCut
+.ilexForest
+	callba JohtoIlexForestCutTreeInFront
+	jr nc, .nothingToCut
+	ld a, $3d ; reuse the existing tree-cut animation
 	jr .canCut
 .overworld
 	dec a
@@ -57,8 +64,17 @@ Cut2:: ; added for Field Move hack
 	ld a, $ff
 	ld [wUpdateSpritesEnabled], a
 	call InitCutAnimOAM
+	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jr nz, .legacyCutBlock
+	; The Gold 16x16 CUT_TREE is only one quadrant of block $0f.
+	; Swap the live forest block $0f->$2d without altering its neighbor.
+	callba JohtoIlexForestRemoveCutTree
+	jr .blockReady
+.legacyCutBlock
 	ld de, CutTreeBlockSwaps
 	call ReplaceTreeTileBlock
+.blockReady
 	call RedrawMapView
 	callba AnimCut
 	ld a, $1

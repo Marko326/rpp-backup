@@ -32,3 +32,4 @@ const_value = 0
 	const JOHTO_GATE   ; 29 ; GATE-5.62.159: original Gold indoor gate only
 	const JOHTO_UNION_CAVE ; 30 ; dedicated Gold Union Cave 1F graphics/collision
 	const JOHTO_MODERN ; 31 ; Route33 only; Gold 96-tile modern graphics
+	const JOHTO_ILEX_FOREST ; 32 ; P17 Gold forest, distinct from Kanto FOREST

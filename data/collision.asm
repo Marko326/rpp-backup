@@ -33,3 +33,5 @@ NewBark_Coll::     INCBIN  "gfx/tilesets/johto.tilecoll"
 JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"
 ; Route33 Gold 16x16 role mask governs movement, not ambiguous 8x8 IDs.
 JohtoModern_Coll:: INCBIN "gfx/tilesets/johto_modern.tilecoll"
+; ILEX-5.62.212: use Gold Forest position mask, not global 8x8 passability.
+JohtoIlexForest_Coll:: INCBIN "gfx/tilesets/johto_ilex_forest.tilecoll"

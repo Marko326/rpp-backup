@@ -32,3 +32,5 @@ Tilesets:
 	tileset JohtoUnionCave_Block, JohtoUnionCave_GFX, JohtoUnionCave_Coll, $FF,$FF,$FF, $FF, CAVE
 	; R33-5.62.191: position-mask land collision; tile ID list intentionally empty.
 	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR ; R33-5.62.193: Gold Route33 TALL_GRASS uses graphic $04
+	; ILEX-5.62.212: Forest walkability is decided by its 30x54 Gold position mask.
+	tileset JohtoIlexForest_Block, JohtoIlexForest_GFX, JohtoIlexForest_Coll, $FF,$FF,$FF, $FF, CAVE
