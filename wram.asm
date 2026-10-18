@@ -209,6 +209,8 @@ wTempoModifier:: ; c0f2
 ; One bit per move slot per party member; the ten-entry pilot reads these flags
 ; to distinguish expanded ordinals from ordinary low-byte move IDs.
 wExtendedPartyMoveFlags:: ds PARTY_LENGTH
+; MOVE-5.62.182: low nibble = player's four live battle slots;
+; high nibble = enemy's four live battle slots. Not saved to SRAM.
 wExtendedBattleMoveFlags:: ds 1
 wExtendedMoveFlagsScratch:: ds 1
 ; MOVE-5.62.171: scoped learning, status and active battle identity.

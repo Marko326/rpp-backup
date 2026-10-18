@@ -1770,8 +1770,11 @@ LoadBattleMonFromParty:
 	; Every battle-mon load must refresh the sidecar to prevent previous
 	; Party members' extended move identities leaking into this one.
 	callba GetCurrentPartyExtendedMoveMask
+	; MOVE-5.62.182: a party switch must not erase enemy identity bits.
 	ld a, [wExtendedMoveFlagsScratch]
-	ld [wExtendedBattleMoveFlags], a
+	ld e, a
+	ld d, 0
+	callba SetBattleSideExtendedMoveMask
 	xor a
 	ld [wExtendedActiveMoveOrdinal], a
 	ld a, [wBattleMonSpecies2]
@@ -3060,7 +3063,16 @@ PrintMenuItem:
 	ld de, wMaxPP
 	lb bc, 1, 2
 	call PrintNumber
+	; The menu cursor previews a slot without changing the selected battle move.
+	; Resolve the preview using that slot, then restore the battle PP index.
+	ld a, [wPlayerMoveListIndex]
+	push af
+	ld a, [wCurrentMenuItem] ; restored to 1-based after GetMaxPP
+	dec a
+	ld [wPlayerMoveListIndex], a
 	call GetCurrentMove
+	pop af
+	ld [wPlayerMoveListIndex], a
 	coord hl, 2, 10
 	predef PrintMoveType
 .moveDisabled
@@ -4360,10 +4372,15 @@ CheckForDisobedience:
 	add hl, bc
 	ld a, [hl]
 	ld [wPlayerSelectedMove], a
+	; Obedience chose another move, but the original command slot remains
+	; the PP index. Only use the random slot while loading battle move data.
+	ld a, [wPlayerMoveListIndex]
+	push af
 	ld a, [wCurrentMenuItem]
-	ld [wExtendedMoveFlagsScratch], a
-	callba GetPlayerBattleExtendedOrdinal
+	ld [wPlayerMoveListIndex], a
 	call GetCurrentMove
+	pop af
+	ld [wPlayerMoveListIndex], a
 .canUseMove
 	ld a, $1
 	and a; clear Z flag
@@ -6153,27 +6170,13 @@ GetCurrentMove:
 	jr nz, .selected
 	ld a, [wPlayerSelectedMove]
 .selected
-	; An active expanded identity always loads a safe stock record first;
-	; the valid second-table data is overlaid by FinalizeCurrentMoveLoad.
-	ld b, a
-	ldh a, [H_WHOSETURN]
-	and a
-	jr nz, .checkOldEscape
-	ld a, [wExtendedActiveMoveOrdinal]
-	and a
-	jr z, .checkOldEscape
-	; MOVE-5.62.176: a forced move (e.g. Struggle) is not the
-	; previously selected extended slot. Do not use its proxy or name.
-	cp b
-	jr z, .safeProxy
-	xor a
-	ld [wExtendedActiveMoveOrdinal], a
-.checkOldEscape
-	ld a, b
+	; MOVE-5.62.182B: expanded slot ordinals 1..N are safe stock IDs
+	; to index here. Resolve the acting side's FULL identity only after
+	; copying the stock record, in the movable battle-data finalizer.
+	; Never use a previous turn's ordinal as a proxy for a new move.
 	cp EXT_MOVE_SLOT_ESCAPE
 	jr nz, .ordinaryMove
-.safeProxy
-	ld a, VINE_WHIP
+	ld a, VINE_WHIP ; legacy $ff pilot only
 .ordinaryMove
 	ld [wd0b5], a
 	dec a
@@ -6187,6 +6190,11 @@ GetCurrentMove:
 	jpba FinalizeCurrentMoveLoad
 
 LoadEnemyMonData:
+	; MOVE-5.62.182: a newly loaded enemy starts with ordinary move
+	; identities. Never inherit the preceding enemy's upper four bits.
+	ld a, [wExtendedBattleMoveFlags]
+	and $0f
+	ld [wExtendedBattleMoveFlags], a
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
 	jp z, LoadEnemyMonFromParty

@@ -63,13 +63,19 @@ PrimaryTypeMoveIDs:
 ; GetCurrentMove loads a real selected move into the side-specific six-byte move
 ; buffer, then tail-calls here. Keep its original name-loading behavior intact.
 FinalizeCurrentMoveLoad::
+	; Recompute for *this* acting side; do not inherit the other battler's
+	; active ordinal or a prior move with the same one-byte ID.
+	callba ResolveActingBattleMoveOrdinal
 	callba MaybeLoadExperimentalMoveBattleStats
+	; Mapped ordinary moves may share an expanded low byte. Do not let
+	; their species-based reinterpretations overwrite second-table stats.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr nz, .skipOrdinaryOverrides
 	call ApplyCurrentMovePrimaryTypeOverride
 	call ApplyCurrentBugBiteOverride
 	call ApplyCurrentRockPolishTypeOverride
-	ldh a, [H_WHOSETURN]
-	and a
-	jr nz, .ordinaryName
+.skipOrdinaryOverrides
 	ld a, [wExtendedActiveMoveOrdinal]
 	and a
 	jr z, .ordinaryName
@@ -96,6 +102,13 @@ FinalizeCurrentMoveLoad::
 ; Metronome / Mirror Move / Mimic reload an already-selected child move. Their
 ; historical return contract is NZ on success, so preserve it here.
 FinalizeReloadedMoveData::
+	; The stock callers (Metronome, Mimic, Mirror Move) currently pass
+	; an ordinary child byte without its sidecar identity. Clear the root
+	; ordinal here so a prior expanded root cannot leak into the child.
+	; 182C must introduce an explicit complete-identity reload API before
+	; enabling copied extended children; never guess identity by low byte.
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
 	call ApplyCurrentMovePrimaryTypeOverride
 	call ApplyCurrentBugBiteOverride
 	call ApplyCurrentRockPolishTypeOverride

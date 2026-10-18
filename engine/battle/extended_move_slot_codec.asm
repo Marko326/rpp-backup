@@ -50,6 +50,126 @@ DecodeExperimentalMoveSlotID::
 	scf
 	ret
 
+; MOVE-5.62.182B: resolve an actor's selected battle slot to a
+; one-based extended ordinal (or zero) on *every current-move load*.
+; The bit alone is never enough: the selected byte must still match the
+; byte stored in this very slot. This rejects forced Struggle, derived
+; moves and stale indices, and prevents the previous actor's ordinal from
+; contaminating the next actor. Test battles are always ordinary here.
+; CALLBA result is wExtendedActiveMoveOrdinal; BC/DE/HL preserved.
+ResolveActingBattleMoveOrdinal::
+	push bc
+	push de
+	push hl
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, [wFlags_D733]
+	bit BIT_TEST_BATTLE, a
+	jr nz, .zero
+	ld a, [wPlayerMoveListIndex]
+	ld b, a
+	ld hl, wBattleMonMoves
+	ld a, [wPlayerSelectedMove]
+	ld d, a
+	ld a, [wExtendedBattleMoveFlags]
+	and $0f
+	jr .slot
+.enemy
+	ld a, [wEnemyMoveListIndex]
+	ld b, a
+	ld hl, wEnemyMonMoves
+	ld a, [wEnemySelectedMove]
+	ld d, a
+	ld a, [wExtendedBattleMoveFlags]
+	swap a
+	and $0f
+.slot
+	ld c, a
+	ld a, b
+	cp NUM_MOVES
+	jr nc, .zero
+	push de
+	ld e, b
+	ld d, 0
+	add hl, de
+	ld a, [hl]
+	pop de
+	cp d
+	jr nz, .zero
+	ld a, d
+	call DecodeExperimentalMoveSlotID
+	jr c, .zero
+	ld a, h
+	cp HIGH(EXT_MOVE_POWER_WHIP)
+	jr nz, .zero
+	ld a, l
+	inc a
+	jr .done
+.zero
+	xor a
+.done
+	ld [wExtendedActiveMoveOrdinal], a
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; MOVE-5.62.182: shared battle-side identity-mask accessors.
+; Battle-local $C0F9 has player bits 0..3 and enemy bits 4..7.
+; Read: D = 0 player / 1 enemy, returns 0..15 in A and scratch.
+; Invalid D writes $ff to scratch. CALLBA callers read scratch, not A.
+; Write: D = 0 player / 1 enemy; E = new 4-bit mask.
+; Invalid D leaves both sides unchanged. No persistent Party changes.
+; Both preserve BC/DE/HL; A/flags are clobbered.
+GetBattleSideExtendedMoveMask::
+	ld a, d
+	and a
+	jr z, .player
+	cp 1
+	jr nz, .invalid
+	ld a, [wExtendedBattleMoveFlags]
+	swap a
+	and $0f
+	jr .done
+.player
+	ld a, [wExtendedBattleMoveFlags]
+	and $0f
+	jr .done
+.invalid
+	ld a, $ff
+.done
+	ld [wExtendedMoveFlagsScratch], a
+	ret
+
+SetBattleSideExtendedMoveMask::
+	ld a, d
+	and a
+	jr z, .player
+	cp 1
+	ret nz
+	push bc
+	ld a, e
+	and $0f
+	swap a
+	ld b, a
+	ld a, [wExtendedBattleMoveFlags]
+	and $0f
+	or b
+	jr .store
+.player
+	push bc
+	ld a, e
+	and $0f
+	ld b, a
+	ld a, [wExtendedBattleMoveFlags]
+	and $f0
+	or b
+.store
+	ld [wExtendedBattleMoveFlags], a
+	pop bc
+	ret
+
 ; MOVE-5.62.169: translate a live player's battle slot to an ordinal.
 ; Input wExtendedMoveFlagsScratch = zero-based move slot;
 ; writes wExtendedActiveMoveOrdinal = 0 for legacy / 1..N expanded.
@@ -153,8 +273,10 @@ SetPartyExtendedMoveSlot::
 	ld a, [wPlayerBattleStatus3]
 	bit Transformed, a
 	jr nz, .done
-	ld a, [hl]
-	ld [wExtendedBattleMoveFlags], a
+	; MOVE-5.62.182: refresh only the player's nibble.
+	ld e, [hl]
+	ld d, 0
+	call SetBattleSideExtendedMoveMask
 .done
 	pop hl
 	pop de

@@ -109,24 +109,23 @@ CopyExtendedMoveName::
 	scf
 	ret
 
-; MOVE-5.62.171: called from the usual FinalizeCurrentMoveLoad only.
-; Overlay any second-table combat data after the stock accessor safely loaded
-; VINE_WHIP rather than indexing Moves with the reserved $FF escape.
+; MOVE-5.62.182B: current-move finalizer has already resolved
+; the acting side's matching slot and full identity. Overlay the second
+; table for either side. A forced/derived ordinary move has ordinal zero.
 MaybeLoadExperimentalMoveBattleStats::
-	ldh a, [H_WHOSETURN]
-	and a
-	jr nz, .legacy
 	ld a, [wExtendedActiveMoveOrdinal]
 	and a
 	jr z, .legacy
 	ld c, a
-	ld a, [wPlayerSelectedMove]
-	cp c ; a scoped ext selected-slot ID, not just matching low bytes
-	jr nz, .legacy
+	ldh a, [H_WHOSETURN]
+	and a
+	ld de, wPlayerMoveNum
+	jr z, .selected
+	ld de, wEnemyMoveNum
+.selected
 	dec c
 	ld l, c
 	ld h, HIGH(EXT_MOVE_POWER_WHIP)
-	ld de, wPlayerMoveNum
 	jp CopyExtendedMoveStats
 .legacy
 	call GetCurrentMoveID

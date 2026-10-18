@@ -46,7 +46,9 @@ MimicEffect_:
 	ld a, [wEnemyBattleStatus1]
 	bit Invulnerable, a
 	jp nz, .mimicMissed
-	ld a, [wCurrentMenuItem]
+	; Save the slot actually USING Mimic, not the menu cursor that the
+	; opponent move picker changes.
+	ld a, [wPlayerMoveListIndex]
 	push af
 	ld a, $1
 	ld [wMoveMenuType], a
@@ -79,6 +81,13 @@ MimicEffect_:
 	jp nc, .mimicMissed
 	ld a, d
 	ld [hl], a
+	; Copied enemy moves use ordinary identity. Update the player's LIVE
+	; slot flag without altering the permanent Party sidecar.
+	push af
+	ld a, [H_WHOSETURN]
+	and a
+	call z, .clearCopiedPlayerSlotFlag
+	pop af
 	push af ; keep the copied move ID across the learned-move message
 	ld [wd11e], a
 	call GetMoveName
@@ -125,22 +134,59 @@ MimicEffect_:
 	; in its current battle move list.  This also catches recursive paths even
 	; when Mimic itself was invoked indirectly by another move.
 	ld hl, wBattleMonMoves
+	ld c, 0 ; the enemy currently has only ordinary move identities
 	ld a, [H_WHOSETURN]
 	and a
-	jr z, .checkKnownMoves
+	jr nz, .enemyKnownMoves
+	ld a, [wExtendedBattleMoveFlags]
+	ld c, a
+	jr .checkKnownMoves
+.enemyKnownMoves
 	ld hl, wEnemyMonMoves
 .checkKnownMoves
 	ld b, NUM_MOVES
 .checkKnownMoveLoop
 	ld a, [hli]
 	cp d
+	jr nz, .nextKnownSlot
+	; Equal byte in an extended slot does not equal the ordinary move.
+	bit 0, c
 	jr z, .copyRejected
+.nextKnownSlot
+	srl c
 	dec b
 	jr nz, .checkKnownMoveLoop
 	scf
 	ret
 .copyRejected
 	and a ; clear carry: candidate is not legal to copy
+	ret
+
+.clearCopiedPlayerSlotFlag
+	push bc
+	ld a, [wPlayerMoveListIndex]
+	cp NUM_MOVES
+	jr nc, .flagDone
+	ld b, a
+	ld c, 1
+.flagShift
+	ld a, b
+	and a
+	jr z, .flagReady
+	sla c
+	dec b
+	jr .flagShift
+.flagReady
+	ld a, c
+	cpl
+	ld c, a
+	ld a, [wExtendedBattleMoveFlags]
+	and c
+	ld [wExtendedBattleMoveFlags], a
+	xor a
+	ld [wExtendedActiveMoveOrdinal], a
+.flagDone
+	pop bc
 	ret
 
 .reloadCopiedMoveData

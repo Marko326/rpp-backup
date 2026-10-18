@@ -94,11 +94,13 @@ TransformEffect_:
 	ld a, [H_WHOSETURN]
 	and a
 	jr nz, .saveEnemyDVs
-	; MOVE-5.62.180: the player's live Transform copy contains ordinary
-	; enemy move bytes. Clear only the battle-local extension bits; the
-	; original party mask must survive until switching or battle end.
-	xor a
+	; MOVE-5.62.182: Transform currently copies ordinary enemy move bytes.
+	; Clear only the player's live nibble; preserve enemy identity and the
+	; original Party sidecar until switching or battle end.
+	ld a, [wExtendedBattleMoveFlags]
+	and $f0
 	ld [wExtendedBattleMoveFlags], a
+	xor a
 	ld [wExtendedActiveMoveOrdinal], a
 	jr .next
 .saveEnemyDVs
