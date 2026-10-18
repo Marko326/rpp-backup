@@ -3231,3 +3231,6 @@ PureRGBHumanoidInsectPartyIcon:
 
 ; MOVE-5.62.187: floating selector is independent of the fixed map banks.
 INCLUDE "engine/battle/metronome_extended.asm"
+
+; MOVE-5.62.189: source-driven enemy full move identity (floating ROMX).
+INCLUDE "engine/battle/enemy_native_extended.asm"

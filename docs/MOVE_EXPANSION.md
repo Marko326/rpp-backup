@@ -1,10 +1,18 @@
+## 敌方 EXT 来源与 MoveDex 撞号 Seen 防护（189 已本地提交）
+
+- **188 MoveDex**：敌方执行 EXT 时 `MoveDexRecordEnemyMove` 检查当次活动 ordinal，跳过普通同低字节 Seen；普通 Fire Punch 仍正常登记。用户《188T-004 Dex.mp4》两种对照受测通过；未建立独立 EXT MoveDex Seen/Use 存档。
+- **189 敌方原生来源**：`ApplyNativeEnemyMoveSource` 根据野生物种＋形态／训练家类别＋编号＋队伍位置读取显式四槽配表，写技能低字节和敌方高四位身份，`LoadNativeEnemyExtendedMovePP` 修正扩展槽 PP；用户野生与训练家 EXT07 实战主路径反馈正常（训练家 EXT07 动画与伤害由用户补充确认）。该机制不等于训练师 AI 已根据 EXT 表评价候选。
+- **测试清理**：正式 `WildNativeExtendedMoveSources`、`TrainerNativeExtendedMoveSources` 均仅含 `$ff`，不保留 7 号道路全小拉达、测试技能分配、Markus 复战或任何 189T 辅助脚本。已用测试 SAV 请恢复备份。游戏版本为 `MOVE-5.62.189`，不改变 Party/PC/SRAM 格式。
+- **不在本次修复**：独立审查 F01 共用追加状态跨 Bank 参数错误（普通 Fire Punch 可能误触发麻痹，曾在 189 测试暴露，用户已撤销外部热修）；F02 EXT02 与 Karate Chop 会心撞号、F03 AI 候选读取普通表、F05 EXT16 与 Gust 的 Fly 规则撞号，另有 F04 Lv.1 Psywave 死循环。均单独留作后续阶段，不把尚未修复项视作验收通过。
+- **验收边界**：受测录屏／用户反馈支持 188 对照及 189 两种原生来源核心路径，不证明敌方换人全部边界、捕获后 EXT 持久化、Daycare、联机、红蓝／困难双版链接、新 MAP、AI 评分或真实新增来源数据已完结。
+
 # RPP 扩展招式：40 招容量结构与正式阶段验收
 
-> **当前专项收口：`MOVE-5.62.187`（185～187 派生招式身份同组）。**
+> **当前已提交基线：`MOVE-5.62.189` / `9cfd1f68`（本地 Commit，尚未 Push）；上一版 187 的 HEAD 为 `ea163ba9`。188～189 的实测边界与待办见本页。**
 
 > 历史 180 交接／基线记录保留在下方，不代表当前提交基线。
 
-## 185～187 同类功能正式验收收口（MOVE-5.62.187；本次准备一起提交）
+## 185～187 同类功能正式验收记录（已于 HEAD ea163ba9 提交；历史）
 
 - **统一设计**：四槽中仍存一字节旧招号，扩展身份由并行 sidecar 保存；派生执行的 `wExtendedActiveMoveOrdinal` 与永久四槽身份分开。`Mimic` 需要替换本场战斗的技能槽和相应标记；`Mirror Move` 与 `Metronome` 只派生临时执行，不改学习列表。普通 Fire Punch `$07` 与 EXT07 同字节但不同身份，**不得**用低字节相等替代完整身份判断。
 - **185 Mimic**：目标四槽选择／随机选择读取对应的玩家低半字节、敌方高半字节扩展 mask，检查完整身份去重后只更新使用者的战斗临时技能槽与 mask；按完整身份加载子招名称／数据。受测《185MIMIC.mp4》双方复制并使用 EXT07；《交换Mimic.mp4》显示复制后 SELECT 调换 EXT07／普通 Fire Punch 并使用，战后原 Party 技能仍在。未做全部排列或保存重开专项测试。

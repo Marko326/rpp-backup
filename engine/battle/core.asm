@@ -6318,9 +6318,15 @@ LoadEnemyMonData:
 	predef WriteMonMoves ; get moves based on current level
 .regionalMovesReady
 .loadMovePPs
+	; MOVE-5.62.189: only explicit wild/trainer producers may install
+	; enemy-side extended identities; link battles bypass this loader.
+	callab ApplyNativeEnemyMoveSource
 	ld hl, wEnemyMonMoves
 	ld de, wEnemyMonPP - 1
 	predef LoadMovePPs
+	; The stock PP loader indexes ordinary IDs. Correct explicitly
+	; flagged second-table slots without touching ordinary same-byte PP.
+	callab LoadNativeEnemyExtendedMovePP
 	ld hl, wMonHBaseStats
 	ld de, wEnemyMonBaseStats
 	ld b, NUM_STATS

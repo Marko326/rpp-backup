@@ -474,6 +474,12 @@ MoveDexRecordEnemyMove:
 	ret nz
 	; 敌方真正进入技能执行流程：只 Seen。
 	call MoveDexEnsureStateInitialized
+	; MOVE-5.62.188: a nonzero active EXT ordinal is a second-table
+	; identity, not the ordinary move with the same selected byte.
+	; Until MoveDex can record EXT identities separately, skip it.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	ret nz
 	; 敌方同样使用真实技能 ID，避免 Gunk Shot 等被记成兼容动画技能。
 	ld a,[wEnemySelectedMove]
 	cp EXT_MOVE_SLOT_ESCAPE

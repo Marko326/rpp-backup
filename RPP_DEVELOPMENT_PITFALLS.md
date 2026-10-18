@@ -307,3 +307,12 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 玩家用 Transform 复制敌方普通技能字节以后，`wBattleMonMoves` 已不是 Party 原来的四招。若继续保留 `wExtendedBattleMoveFlags`，同低字节技能就可能错误读取扩展表／名称；成功复制之后只清玩家的**战斗临时 mask 与 active ordinal**，不要清 `wExtendedPartyMoveFlags`，更不能把变身后的字节回存为 Party 原招。失败变身不执行该清理。
 - `SetPartyExtendedMoveSlot` 在战斗升级学招时通常会把新 Party mask 同步给战斗四槽；但活跃对象如果已有 `wPlayerBattleStatus3.Transformed`，四槽是临时复制内容，必须阻止反灌。这是源码保护，并非用户已跑过的战斗升级场景。
 - 用户《180变身.mp4》确认持扩展 07 的喷火龙变身成野生猴怪后正常显示／使用复制的普通技能；视频结束时仍在战斗，不能据此推定战斗结束、换人或失败分支已验。扩展身份后续进入 Mimic／Metronome 和敌方变身时要分别审计，不能只复用清零逻辑当成完整身份复制。
+
+
+## MOVE-5.62.188～189 敌方原生 EXT 验收与清理陷阱（2026-10-18）
+
+- 当训练家来源匹配器以 `wTrainerClass` 作键时，表项必须写内部 `SUPER_NERD` 等训练家类别，**不能**使用地图出场 ID `OPP_SUPER_NERD`。第二键 `wTrainerNo`、第三键 `wWhichPokemon` 是零起始队伍槽；已战败训练家能否复战与配置匹配是否成功是两件事，临时复战脚本不进入正式版本。
+- 来源表中未标记的普通招和标记的 EXT 可以共享一个低字节，例如普通 Fire Punch `$07` 与 EXT07。匹配命中后同步写 `wEnemyMonMoves` 和敌方高四位标记；读取第二表 PP 的 `callba` 会覆盖 BC，须保护循环槽索引，不能把普通同号 PP 当作 EXT PP。
+- **189T 清理检查清单**：恢复 `data/wildPokemon/route7.asm` 的正式野生表；将 `WildNativeExtendedMoveSources` 与 `TrainerNativeExtendedMoveSources` 清回仅 `$ff`；恢复 `scripts/Route8.asm` 原对话；移除 `scripts/189T_route8_rematch.asm` 与 `main.asm` 中的临时 INCLUDE。测试中改动的 SAV 由用户恢复，不是源码清理补丁能够撤销。
+- 录屏里敌方 `Ext Move 07` 正常出现、动画／伤害正确只能说明**执行侧**载入成功，不能证明 `trainer_ai.asm` 的候选招式评分正确：AI `_ReadMove` 依候选低字节读取普通 `Moves` 表的缺口应在下一轮独立修复。188 的 `NOT SEEN/SEEN` 对照也不代表现有 MoveDex 有独立 EXT 收集位。
+- 独立审查确证的 `RollStatusSideEffect` 远调用 A 参数丢失是共用战斗效果问题：189T 的普通 Fire Punch 出现麻痹曾暴露该缺陷，外部修复曾用于讨论但用户本次明确撤销；188～189 收口**不得**顺带改变效果函数，须未来独立修复并测试玩家／敌方 Fire Punch、Ice Punch、ThunderPunch 和相关状态效果。EXT02 会心、EXT16 对 Fly 特判、Lv.1 Psywave 边界亦另列待办。
