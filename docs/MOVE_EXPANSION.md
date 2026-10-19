@@ -1,10 +1,20 @@
-## 191 — EXT 同低字节的会心与 Fly 规则（用户专项验收通过；待提交）
+## 192 — 训练师 AI 的 EXT 候选基础正确性（2026-10-19 收口）
+
+- **本版最终保留**：AI 根据敌方技能槽的 EXT 身份位读取普通 `Moves` 或扩展 `ExtendedMoves` 六字节数据，按正确的威力／属性／效果参与基础评分；普通招式专属属性覆盖／招式 ID 偏好不误套 EXT 候选，跨 Bank 和嵌套候选比较保持槽位来源。
+- **已修明确错误**：`IsEnemyAIExtendedCandidate` 用 AF 保护输入招式编号，只通过 Carry 返回是否 EXT；`AIMoveChoiceModification3` 将中性属性判定改为十进制 10（`$0a`）而非 `$10`。`wTypeEffectiveness` 与 `wd11e` 为同址别名，并非第三个缺陷。没有修改训练师换人、道具、预测伤害等高阶策略。
+- **Hard 用户实测范围**：8 号道路 Markus 第一只 EXT02 Play Rough／普通 Karate Chop 的同字节对照已做；第二只是 Magneton（三合一磁怪），多次使用 EXT01 Power Whip，并有少量 AI 换人；用户在本轮最后反馈主要没有观察到异常。上述观察支持受测基础读取／战斗行为，不能用来证明所有评分公式或最优选招。
+- **正式提交清理**：移除 `TrainerNativeExtendedMoveSources` 的两条 192T 测试队伍，以及 Route8 临时复战钩子；正式 `WildNativeExtendedMoveSources`／`TrainerNativeExtendedMoveSources` 只保留 `$ff`。不会把测试用招式分配带入正式训练师；测试前 SAV 需由用户自行恢复。
+- **留待 AI 专项升级**：训练师换人、道具、预期伤害、状态／强化／恢复招式偏好、战术及随机决策；不为了本阶段基础正确性重写。对普通招式列表、双属性抵抗／免疫、所有槽位组合、AI 修正器 3（Hard 默认列表不包含）仍缺少逐项运行验收。
+- **其他扩展招式长期项**：正式敌方 EXT 来源表未投放；EXT03～40 为容量实验占位；新特殊／变化类招式需核实分类；复杂 Mimic／Mirror Move／Metronome 派生、存档／联机／培育屋及多种战斗边界尚待分批回归。三重攻击约 20% 异常状态目标仍在项目 TODO 中；Lv.1 精神波仅是目前实际遭遇不可达的理论边界。均不作为 192 收口阻断项。
+- **验收／Git 边界**：用户 Hard 主要测试无明显异常；未逐项验证正式来源投放、Red／Hard 两模式独立链接及 MAP，AI 未在本环境编译 ROM 或执行 Git Commit。最近已提交基线为 191 HEAD `8f9265ccba58f3e307a1246363ab1cf1ee88f6e9`，本轮预备 192 提交。
+
+## 191 — EXT 同低字节的会心与 Fly 规则（用户专项验收通过；后续导出已记录提交）
 
 - **正式修复**：`CriticalHitTest_` 在普通高会心／必会心表前确认当前攻击者的 `wExtendedActiveMoveOrdinal`；EXT02 Play Rough 不再错误继承 Karate Chop 的高会心，而是保留普通随机会心概率，普通 Karate Chop 仍保持原高会心。`GetSemiInvulnerableMoveInteraction` 先排除活动 EXT；EXT16 不再继承 Gust 对 Fly 的特殊命中／加成，普通 Gust 等规则不变。
 - **191T 实测**：用户逐项反馈小拉达 EXT02、喵喵 Karate Chop、波波 EXT16 对 Fly、六尾 Gust 对 Fly，四项全部通过。会心 0%／100% 是 **191T 人为固定的比较阈值**，并非正式版规则，也不能据此确认真实概率分布。普通 Gust 对 Fly 的倍伤数值未经独立测量。
 - **清理状态**：用户明确确认已撤销 191T；正式工作副本未残留临时 7 号道路草丛表、敌方 EXT 测试来源和固定会心阈值。测试前 SAV 是否恢复、无 191T 的正常 ROM 是否重新构建以及双 ROM／MAP 均尚无单独核实，不能虚构为已验收。
 - **提交状态**：190 已由用户报告本地提交，尚无最新 SHA 的新项目导出；191 在本轮准备清理三件套及拟提交日志，**尚无已提交 191 的确认**。191 收口不改正式 ASM、PP、招式数据、来源分配或存档结构；后续 192 训练师 AI 候选招式读表另开版本。
-- **仍待专项核对**：正式随机会心与 Focus Energy 概率统计、Fly/Dig 其他交互和倍伤数字、玩家／敌方及派生身份极端组合、Normal/Hard 的独立编译链接。详见 `docs/MOVE_192_AI_CANDIDATE_PLAN.md` 中后续 AI 研究范围（非本次修复代码）。
+- **仍待专项核对**：正式随机会心与 Focus Energy 概率统计、Fly/Dig 其他交互和倍伤数字、玩家／敌方及派生身份极端组合、Normal/Hard 的独立编译链接。后续 AI 研究范围见本文件 192 章节。
 
 ## MOVE-5.62.190 — 追加异常状态跨 Bank 修复：游戏内专项验收（2026-10-18）
 

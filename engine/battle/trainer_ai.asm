@@ -296,9 +296,20 @@ SmartAI: ; originally by Dabomstew
 	push hl
 	push bc
 	push de
+	; Move-specific type overrides belong to ordinary identities only.
+	; Both calls inspect this slot, not the last executed attack.
 	dec de
-	ld a, [de] ; candidate move ID for move-specific type overrides
+	push de
+	inc de
+	call IsEnemyAIExtendedCandidate
+	pop de
+	jr c, .extendedCandidateType
+	ld a, [de]
 	ld d, a
+	jr .typeReady
+.extendedCandidateType
+	ld d, 0 ; no ordinary move-ID override
+.typeReady
 	callab AIGetTypeEffectiveness
 	pop de
 	pop bc
@@ -429,7 +440,7 @@ StatusOnlyMoves:
 	db $FF
 	
 AlterMovePriority:
-; [wAIBuffer1] = move
+; [wAIBuffer1] = ordinary move ID
 ; b = priority change
 	ld hl, wBuffer - 1
 	ld de, wEnemyMonMoves
@@ -442,6 +453,8 @@ AlterMovePriority:
 	and a
 	ret z
 	inc de
+	call IsEnemyAIExtendedCandidate
+	jr c, .moveLoop
 	push bc
 	ld b, a
 	ld a, [wAIBuffer1]
@@ -454,7 +467,7 @@ AlterMovePriority:
 	ret
 	
 AlterMovePriorityArray:
-; hl = move array
+; hl = ordinary move-ID array
 ; b = priority change
 	ld a, h
 	ld [wAIBuffer1], a
@@ -471,6 +484,8 @@ AlterMovePriorityArray:
 	and a
 	ret z
 	inc de
+	call IsEnemyAIExtendedCandidate
+	jr c, .moveLoop
 	push hl
 	push de
 	push bc
@@ -543,15 +558,26 @@ AIMoveChoiceModification3:
 	push hl
 	push bc
 	push de
+	; Move-specific type overrides belong to ordinary identities only.
+	; Both calls inspect this slot, not the last executed attack.
 	dec de
-	ld a, [de] ; candidate move ID for move-specific type overrides
+	push de
+	inc de
+	call IsEnemyAIExtendedCandidate
+	pop de
+	jr c, .extendedCandidateType
+	ld a, [de]
 	ld d, a
+	jr .typeReady
+.extendedCandidateType
+	ld d, 0 ; no ordinary move-ID override
+.typeReady
 	callab AIGetTypeEffectiveness
 	pop de
 	pop bc
 	pop hl
 	ld a, [wTypeEffectiveness]
-	cp $10
+	cp 10 ; neutral effectiveness is decimal 10 ($0a), not $10
 	jr z, .nextMove
 	jr c, .notEffectiveMove
 	dec [hl] ; slightly encourage this move
@@ -571,7 +597,13 @@ AIMoveChoiceModification3:
 	ld a, [hli]
 	and a
 	jr z, .done
+	; The nested comparison iterates HL, unlike the other AI loops (DE).
+	; Give ReadMove the address *after* this particular candidate slot.
+	push de
+	ld d, h
+	ld e, l
 	call ReadMove
+	pop de
 	ld a, [wEnemyMoveEffect]
 	cp SUPER_FANG_EFFECT
 	jr z, .betterMoveFound ; Super Fang is considered to be a better move
@@ -602,12 +634,67 @@ AIMoveChoiceModification3:
 ; AIMoveChoiceModification4:
 ;	ret
 
+; DE must point one byte AFTER the candidate in wEnemyMonMoves.
+; The slot flag belongs to the candidate, never to wEnemyMoveListIndex or
+; wExtendedActiveMoveOrdinal (both refer to actual executed moves).
+; Carry set only for a valid EXT candidate, all pointers/registers preserved.
+IsEnemyAIExtendedCandidate:
+	push af ; preserve the candidate move ID for ordinary-ID AI lists
+	push bc
+	ld a, e
+	sub LOW(wEnemyMonMoves + 1)
+	cp NUM_MOVES
+	jr nc, .ordinary
+	ld b, a
+	ld a, [wExtendedBattleMoveFlags]
+	swap a
+	and $0f
+	ld c, a
+	ld a, b
+	and a
+	ld a, c
+	jr z, .bitReady
+.shift
+	srl a
+	dec b
+	jr nz, .shift
+.bitReady
+	and 1
+	jr z, .ordinary
+	push de
+	dec de
+	ld a, [de]
+	pop de
+	and a
+	jr z, .ordinary
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .ordinary
+	pop bc
+	pop af
+	scf ; EXT slot, preserving original move ID in A
+	ret
+.ordinary
+	pop bc
+	pop af
+	and a ; ordinary slot, clear carry with original move ID intact
+	ret
+
 ReadMove:
 	push hl
 	push de
 	push bc
-	dec a
+	ld c, a ; preserve candidate low byte; helper returns carry
+	call IsEnemyAIExtendedCandidate
+	jr nc, .ordinary
+	ld e, c ; one-based EXT ordinal
+	ld d, 1 ; full-identity selector
+	jr .load
+.ordinary
+	ld a, c
+	dec a   ; ordinary record index
 	ld e, a
+	ld d, 0
+.load
 	callba _ReadMove
 	pop bc
 	pop de
