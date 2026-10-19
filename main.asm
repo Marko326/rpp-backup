@@ -869,6 +869,10 @@ INCLUDE "engine/battle/moveEffects/transform_effect.asm"
 INCLUDE "engine/battle/moveEffects/reflect_light_screen_effect.asm"
 INCLUDE "color/draw_hud_pokeball_gfx.asm"
 
+PUSHS
+SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+ExtendedLevelUpSources::
+POPS
 INCLUDE "engine/evos_moves.asm"
 
 
@@ -3151,6 +3155,9 @@ INCLUDE "engine/overworld/elevator_sfx_wait.asm"
 ; MOVE-5.62.178: both ordinary and regional level-up parsers use this banked learner.
 SECTION "Shared Party Level Move Learner", ROMX
 INCLUDE "engine/party_level_move_learner.asm"
+
+SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+INCLUDE "engine/extended_level_up_sources.asm"
 
 SECTION "Experimental Extended Move Prototype", ROMX
 INCLUDE "data/extended_moves.asm"

@@ -5161,5 +5161,10 @@ Mon208_EvosMoves:
 	packed_learnset_end
 
 	ASSERT PackedLearnsetDeclarationCount == NUM_POKEMON
+	PUSHS
+	SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+	db $ff ; end of (species, level, ordinal) EXT-only source rows
+ExtendedLevelUpSourcesEnd::
+	POPS
 	ASSERT PackedLearnsetPending == 0
 	ASSERT PackedLearnsetActive == 0

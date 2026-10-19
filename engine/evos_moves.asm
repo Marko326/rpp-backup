@@ -548,14 +548,9 @@ LearnMoveFromLevelUp:
 	jr .learnSetLoop
 	
 .done
-	; MOVE-5.62.173: capacity-test level 19/20 assignments are removed.
-	; Keep the expanded identity machinery; future real level-up sources
-	; must explicitly supply a valid extended ordinal for LearnMove.
-	xor a
-	ld [wExtendedLearningMoveOrdinal], a
-	ld a, [wcf91]
-	ld [wd11e], a
-	ret
+	; Normal packed data has ended. EXT-only supplemental rows are
+	; handled in floating ROMX, without changing stock packing or readers.
+	jpba TryLearnExtendedLevelUpSources
 
 ; writes the moves a mon has at level [wCurEnemyLVL] to [de]
 ; move slots are being filled up sequentially and shifted if all slots are full
@@ -876,17 +871,8 @@ PrepareRelearnableMoveList:
 .pastCurrentLevel
 	pop af
 .done
-	; MOVE-5.62.173: no extended relearn candidates are assigned in the
-	; accepted build. The 1-40 family table was test-only and is removed.
-	; Ordinary and regional relearner behavior remains unchanged.
-
-.terminateList
-	ld a,[wRelearnableMoves]
-	ld c,a
-	ld b,0
-	ld hl,wRelearnableMoves + 1
-	add hl,bc
-	ld [hl],$ff
-	ret
+	; The extended source list is separate; append true EXT rows with
+	; per-row ordinals, then write the normal $ff list terminator.
+	jpba AppendExtendedLevelUpRelearnMoves
 
 INCLUDE "data/evos_moves.asm"

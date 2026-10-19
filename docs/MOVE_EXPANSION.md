@@ -1,3 +1,11 @@
+## 193 — 普通物种 EXT 升级学习与回忆来源（用户主路径验收通过；准备提交）
+
+- **正式填写接口**：普通物种仍在 `data/evos_moves.asm` 的原 `packed_learnset_start` / `packed_learnset_end` 内填写。普通招式保持 `level_move 7,FOCUS_ENERGY`；扩展招式新增 `level_ext_move 6,EXT_MOVE_POWER_WHIP`。宏按等级顺序验证合法 EXT ID、等级 1～100、每物种最多 2 条 EXT 来源与现有回忆候选 32 行预算。正式 193 **没有给任何物种实际分配 EXT 升级招式**，将来按需求再填。
+- **数据与兼容边界**：EXT 行登记为独立 `(species,level,ordinal)` 来源，不改变旧 packed 普通招式表字节格式；旧版初始配招、培育屋、原生野生／训练师读取器不会把 EXT ordinal 当成普通 Pound。队伍中已有的**普通形态**升级时使用共享 `TryLearnPartyLevelMove`；回忆师补充带 ordinal 的候选并按完整身份过滤。地区形态专有升级表、高等级直接生成初始招式、培育屋和敌方的正式 EXT 来源尚未接通到本接口；这不是本轮遗漏的测试配置。
+- **193 编译问题及定稿修复**：第一版 `level_ext_move` 多次展开时重复定义 `Extended Level-Up Sources` Section，用户编译报 `Section already defined`。修复为 `SECTION FRAGMENT "Extended Level-Up Lookup", ROMX`，将来源表与读取函数放在同一可浮动 Bank；将两条过远风险 `jr` 改为 `jp`。这三项正式修复均保留，未回退到最初失败的实现。
+- **用户游戏内最小验收**：用户确认升级可以学习 EXT01，能在遗忘流程删除、在回忆师处重新回忆，并能在战斗中使用；额外确认普通 Pound 与其他正常升级招式也可以学习、正常使用。在这组受测低字节碰撞路径中未发现串号或使用异常。该反馈不等于全部四槽排列、满槽取消、所有等级／物种、两种 ROM 构建或其他生产入口逐一通过。
+- **测试清理／提交边界**：`193T` 只为普通小拉达临时追加 6 级 EXT01、7 级 Pound 和 `193T` 版本文本；用户明确报告已经撤销。正式收口副本经源码检查保留 `MOVE-5.62.193`、原小拉达升级表、全部正式 193 功能与 Section/Bank 修复；不带临时测试来源。测试 SAV 恢复及撤销 193T 后重新生成正式 ROM 未单独核实。AI 未自行编译／链接 ROM，也未执行 Git Commit／Push；最新核实已提交基线为 192 HEAD `5fccba737114c5074433737b05b94d4933168aa1`。
+
 ## 192 — 训练师 AI 的 EXT 候选基础正确性（2026-10-19 收口）
 
 - **本版最终保留**：AI 根据敌方技能槽的 EXT 身份位读取普通 `Moves` 或扩展 `ExtendedMoves` 六字节数据，按正确的威力／属性／效果参与基础评分；普通招式专属属性覆盖／招式 ID 偏好不误套 EXT 候选，跨 Bank 和嵌套候选比较保持槽位来源。

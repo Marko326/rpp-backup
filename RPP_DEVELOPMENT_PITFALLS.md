@@ -329,3 +329,10 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 191T 可用临时来源表创建 EXT02/普通 Karate Chop 与 EXT16/普通 Gust 对照，真正的 Fly 无敌回合需要受击者已进入空中状态。测试强制会心比较值和阈值不代表正式 6.25%／高会心等概率验证；测试结束须撤销野生数据及调试概率。
 
 - **验收与概率区分**：用户反馈 191T 四组实测全部通过，并明确已撤销测试补丁。191T 使用 0%／100% 确定性会心只验证身份分流，**正式 EXT 仍有普通随机会心**。普通 Gust 在 Fly 空中命中只验证可命中，不代表其倍伤倍率已经数值验证。正式源码中绝不可遗留 191T 的草丛来源与会心固定值。
+
+## MOVE-5.62.193 — 升级表宏重复 SECTION 与 ROM Bank 一致性
+
+- `level_ext_move` 在每条实际学招来源处展开；在 `MACRO` 中用普通 `SECTION "...", ROMX` 会在第二次定义时触发 `Section already defined`，`PUSHS`／`POPS` 只能恢复之前的 Section 上下文，**不能把重复的 SECTION 声明变成合法定义**。可累积数据须用与 RGBDS 版本兼容的 `SECTION FRAGMENT` 并保证名称一致。
+- 读取表使用 `ld hl,ExtendedLevelUpSources` 直接访问 ROM。即使符号可链接，只把来源表和读取函数各放入独立、可浮动的 ROMX Section，也可能因为 Bank 不同而读取错误数据。最终把 `ExtendedLevelUpSources`、全部宏展开的三字节表项、终止 `$ff`、读取函数统一放在 `SECTION FRAGMENT "Extended Level-Up Lookup", ROMX`，同时保留现有 far-call 接口。未来变更该 Section 时复查 Bank-aware ABI。
+- 增加宏生成的数据和查询例程后，复查循环中 `jr` 的 8 位有符号距离；193 同批将两处有超距风险的 `jr` 改为 `jp`。仅通过 `git apply --check` 不代表 ASM 汇编、Bank 链接通过。用户反馈的正常学招、遗忘、回忆和战斗释放只支持对应受测主路径。
+- 正式源中的 `data/evos_moves.asm` 不应留 `level_ext_move 6,EXT_MOVE_POWER_WHIP` 等仅供 193T 的临时小拉达分配，普通 Pound 对照也必须随 193T 撤销；真实投放需要未来另按物种／等级确认。

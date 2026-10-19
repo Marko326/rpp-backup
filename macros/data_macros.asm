@@ -301,6 +301,8 @@ PackedLearnsetFirstCode = 0
 PackedLearnsetSecondCode = 0
 PackedLearnsetDeclarationCount = 0
 PackedLearnsetEntryCount = 0
+PackedLearnsetExtendedCount = 0
+PackedLearnsetLastDeclaredLevel = 0
 PackedLearnsetActive = 0
 
 ; NPC relearner currently allocates 32 rows, counting duplicates and every
@@ -317,7 +319,31 @@ packed_learnset_start: MACRO
 PackedLearnsetActive = 1
 PackedLearnsetDeclarationCount = PackedLearnsetDeclarationCount + 1
 PackedLearnsetEntryCount = 0
+PackedLearnsetExtendedCount = 0
+PackedLearnsetLastDeclaredLevel = 0
 PackedLearnsetPreviousLevel = 0
+ENDM
+
+; Supplementary EXT sources are emitted into a floating ROMX list, not
+; into the legacy packed byte stream. Old readers remain byte-compatible.
+; Syntax (inside a normal species learnset):
+;   level_ext_move 6, EXT_MOVE_POWER_WHIP
+; Max two per species under the current 32-row relearner budget.
+level_ext_move: MACRO
+	ASSERT PackedLearnsetActive == 1
+	ASSERT \1 > 0
+	ASSERT \1 <= MAX_LEVEL
+	ASSERT \1 >= PackedLearnsetLastDeclaredLevel
+	ASSERT \2 >= EXT_MOVE_BASE_ID
+	ASSERT \2 < EXT_MOVE_BASE_ID + NUM_EXTENDED_MOVES
+PackedLearnsetExtendedCount = PackedLearnsetExtendedCount + 1
+	ASSERT PackedLearnsetExtendedCount <= EXT_MOVE_MAX_PER_SPECIES
+	ASSERT PackedLearnsetEntryCount + PackedLearnsetExtendedCount <= MOVE_RELEARNER_MAX_MOVES
+PackedLearnsetLastDeclaredLevel = \1
+	PUSHS
+	SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+	db PackedLearnsetDeclarationCount, \1, (\2 - EXT_MOVE_BASE_ID + 1)
+	POPS
 ENDM
 
 level_move: MACRO
@@ -325,7 +351,9 @@ level_move: MACRO
 	ASSERT \1 > 0
 	ASSERT \1 <= MAX_LEVEL
 	ASSERT \1 >= PackedLearnsetPreviousLevel
-	ASSERT \2 != 0
+	ASSERT \1 >= PackedLearnsetLastDeclaredLevel
+	ASSERT \2 > 0
+	ASSERT \2 < EXT_MOVE_SLOT_ESCAPE
 ; Guard every ordinary learnset at assembly time; duplicates count as rows.
 PackedLearnsetEntryCount = PackedLearnsetEntryCount + 1
 	ASSERT PackedLearnsetEntryCount + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
@@ -356,11 +384,13 @@ ENDC
 PackedLearnsetPending = 0
 ENDC
 PackedLearnsetPreviousLevel = \1
+PackedLearnsetLastDeclaredLevel = \1
 ENDM
 
 packed_learnset_end: MACRO
 	ASSERT PackedLearnsetActive == 1
 	ASSERT PackedLearnsetEntryCount + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
+	ASSERT PackedLearnsetExtendedCount <= EXT_MOVE_MAX_PER_SPECIES
 IF PackedLearnsetPending != 0
 PackedLearnsetFirstCode = PackedLearnsetPendingDelta
 IF PackedLearnsetFirstCode >= $f
@@ -379,5 +409,7 @@ ENDC
 PackedLearnsetPending = 0
 PackedLearnsetPreviousLevel = 0
 PackedLearnsetEntryCount = 0
+PackedLearnsetExtendedCount = 0
+PackedLearnsetLastDeclaredLevel = 0
 PackedLearnsetActive = 0
 ENDM
