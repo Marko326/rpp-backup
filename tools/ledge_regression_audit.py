@@ -56,7 +56,7 @@ def registration_errors(src):
     expected_tables = {'JohtoRoute29LedgeTiles', 'JohtoRoute31LedgeTiles',
                        'JohtoIlexForestLedgeTiles'}
     coord = set(re.findall(r'(?m)^\.(\w+Hops)\s*$', src))
-    expected_coord = {'route33Hops', 'azaleaHops'}
+    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops'}
     errors = []
     for label, actual_set, expected_set in (
             ('native router', actual, expected),
@@ -78,6 +78,8 @@ def registration_errors(src):
         'ld hl, .azaleaHops\n\tjr .modernHopLookup',
         'ld hl, .route33Hops',
         'jp .foundMatch',
+        'cp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tret nz',
+        'ld hl, .ruinsHops\n\tjp .modernHopLookup',
     )
     for snippet in contract:
         if snippet not in src:
@@ -121,9 +123,15 @@ def expected_gold_hops(gold, map_name, tileset):
     """
     from johto_indoor_collision_adapter import plan_gold_quadrant_collision
     plan, _ = plan_gold_quadrant_collision(gold, map_name, tileset)
-    if plan['unsafe_hop_candidates']:
+    rejected={(h['x'],h['y'],h['dx'],h['dy'])
+              for h in plan['unsafe_hop_candidates']}
+    # Gold Ruins has a cliff-tip marked HOP_DOWN that would land in WALL.
+    # Pin *exactly* this physical exception, rather than ignoring all bad
+    # landings or inventing a runtime action at the unsafe tile.
+    reviewed_unsafe={(9,30,0,1)} if map_name=='RuinsOfAlphOutside' else set()
+    if rejected != reviewed_unsafe:
         raise AssertionError(f'{map_name}: Gold HOP barrier/landing invalid: '
-                             f"{plan['unsafe_hop_candidates']}")
+                             f"{plan['unsafe_hop_candidates']} (reviewed={sorted(reviewed_unsafe)})")
     return {(h['x'], h['y'], h['dx'], h['dy']) for h in plan['hops']}
 
 
@@ -215,12 +223,14 @@ def audit(root=ROOT, gold=None):
     # Inventory all those authored rules; geometry acceptance still needs Gold.
     for label, map_name, width, height, expected in (
             ('.route33Hops', 'JohtoRoute33', 20, 18, 7),
-            ('.azaleaHops', 'JohtoAzaleaTown', 40, 18, 10)):
+            ('.azaleaHops', 'JohtoAzaleaTown', 40, 18, 10),
+            ('.ruinsHops', 'JohtoRuinsOfAlphOutside', 20, 36, 16)):
         part = src.split('\n' + label + '\n', 1)[1].split('\tdb $ff', 1)[0]
         actions = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*PLAYER_DIR_(\w+)', part)
         try:
             actual_actions = coordinate_hops(src, label)
-            reference = expected_gold_hops(gold, map_name[5:], 'johto_modern')
+            reference = expected_gold_hops(gold, map_name[5:],
+                        'johto' if map_name=='JohtoRuinsOfAlphOutside' else 'johto_modern')
             if actual_actions != reference:
                 report['errors'].append(f'{map_name}: Gold HOP missing={sorted(reference-actual_actions)} '
                                         f'extra={sorted(actual_actions-reference)}')
@@ -251,6 +261,7 @@ def audit(root=ROOT, gold=None):
         report['modern_coordinate_maps'][map_name] = {
             'actions': len(actions), 'third_cell_passable': third_cells_passable,
             'runtime_extra_simulated_inputs': 2,
+            'tileset': 'johto' if map_name=='JohtoRuinsOfAlphOutside' else 'johto_modern',
         }
         if len(actions) != expected:
             report['errors'].append(f'{map_name}: coordinate HOP count drift')
@@ -262,7 +273,7 @@ def audit(root=ROOT, gold=None):
     # ledges. Future maps with Gold HOP roles must have a reviewed runtime
     # dispatcher and join this exact per-position/dir audit, not silently
     # inherit a zero-rule default just because the old roster was complete.
-    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown'}
+    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside'}
     registered = json.loads((root / 'tools/johto_native_maps.json').read_text())['maps']
     for entry in registered:
         name = entry['header'].removesuffix('_h')
@@ -316,6 +327,7 @@ def audit(root=ROOT, gold=None):
         report['kanto_overworld'][path.stem] = len(kanto)
     report['totals'] = {'johto_native_pair_approaches': sum(counts.values()),
                         'modern_coordinate_rules': 17,
+                        'ruins_coordinate_rules': len(coordinate_hops(src,'.ruinsHops')),
                         'kanto_overworld_maps_checked': len(report['kanto_overworld']),
                         'kanto_pair_approaches': sum(report['kanto_overworld'].values())}
     return report

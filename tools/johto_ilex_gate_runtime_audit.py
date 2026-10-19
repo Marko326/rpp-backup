@@ -224,7 +224,6 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
     internal=internal.split('JohtoInternalDoorFacingCheck::',1)[-1]
     require(all(v in extra for v in (
         'cp REGION_NATIVE_MAP_SLOT', 'cp MAP_REGION_JOHTO',
-        'cp JOHTO_ILEX_FOREST_LOCAL_ID',
         'callba JohtoInternalDoorFacingCheck',
         '.ordinaryCheck\n\tld a, [wCurMap]')) and
         all(v in internal for v in (

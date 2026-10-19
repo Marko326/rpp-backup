@@ -122,7 +122,9 @@ class Route32ConnectionTests(unittest.TestCase):
         objects = (ROOT / 'data/mapObjects/JohtoRoute36.asm').read_text()
         header = (ROOT / 'data/mapHeaders/JohtoRoute36.asm').read_text()
         collision = (ROOT / 'engine/overworld/johto_route33_collision.asm').read_text()
-        self.assertIn('db $00 ; National Park / Ruins of Alph gates are not yet registered', objects)
+        self.assertIn('db $02 ; Route36 -> Ruins gate two lane Warp; National Park deferred', objects)
+        self.assertIn('db 13, 47, 0, REGION_WARP_ESCAPE', objects)
+        self.assertIn('db 13, 48, 1, REGION_WARP_ESCAPE', objects)
         self.assertIn('db $00 ; no NPC objects; Sudowoodo event deferred for free passage', objects)
         self.assertNotIn('object SPRITE_SUDOWOODO', objects)
         scripts = (ROOT / 'scripts/JohtoRoute36.asm').read_text()
@@ -183,7 +185,7 @@ class Route32ConnectionTests(unittest.TestCase):
                          {(y,x) for y in range(24,32) for x in range(4,8)})
         original = (GOLD/'data/tilesets/johto_metatiles.bin').read_bytes()
         blocks = (ROOT/'gfx/blocksets/johto.bst').read_bytes()
-        self.assertEqual(len(blocks), 138*16)
+        self.assertEqual(len(blocks), 139*16)  # Ruins outside cliff metatile $8A
         old = original[0x5b*16:(0x5b+1)*16]
         clone = bytearray(old)
         for pos in (2,3,6,7):

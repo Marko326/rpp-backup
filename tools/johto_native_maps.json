@@ -553,7 +553,7 @@
         "cut": "DEFERRED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",
-        "warp": "DEFERRED"
+        "warp": "ALLOWED"
       },
       "identity_evidence": "PHONE_PENDING",
       "gold_fly_landmark": null
@@ -624,6 +624,70 @@
         "warp": "ALLOWED"
       },
       "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 19,
+      "local_symbol": "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID",
+      "header": "JohtoRoute36RuinsGate_h",
+      "bank": "BANK(JohtoRoute36RuinsGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 19,
+      "town_map_name": "JohtoBrowseRoute36Name",
+      "town_map_xy": [
+        76,
+        72
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "USER_ACCEPTED",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 20,
+      "local_symbol": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "header": "JohtoRuinsOfAlphOutside_h",
+      "bank": "BANK(JohtoRuinsOfAlphOutside_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_DUNGEON2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_UNION_CAVE",
+      "town_map_index": 8,
+      "town_map_name": "JohtoBrowseRuinsOfAlphName",
+      "town_map_xy": [
+        92,
+        84
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "USER_ACCEPTED",
       "gold_fly_landmark": null
     }
   ]

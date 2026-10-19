@@ -246,6 +246,9 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         # GATE video regression: the bottom door must walk INTO Goldenrod.
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_GOLDENROD_CITY_LOCAL_ID', 1, 19, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ILEX_FOREST_LOCAL_ID', 5, 1, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID', 5, 7, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
     if arrivals != [expected, expected33] + north_steps:
         errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
@@ -257,6 +260,8 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         'JOHTO_ILEX_FOREST_LOCAL_ID': ('JohtoIlexForest', 30, 54),
         'JOHTO_GOLDENROD_CITY_LOCAL_ID': ('JohtoGoldenrodCity', 40, 36),
         'JOHTO_ROUTE_34_LOCAL_ID': ('JohtoRoute34', 20, 54),
+        'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID': ('JohtoRoute36RuinsGate', 10, 8),
+        'JOHTO_RUINS_OF_ALPH_LOCAL_ID': ('JohtoRuinsOfAlphOutside', 20, 36),
     }
     for alias, local, y, x, source, direction in north_steps:
         name, width, height = mask_desc[local]

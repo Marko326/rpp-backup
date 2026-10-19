@@ -86,12 +86,14 @@ class GateOneStepContract(unittest.TestCase):
 
     def test_only_down_arrivals_auto_step_and_land_on_floor(self):
         actual=self.arrival[2:]
-        self.assertEqual(len(actual),6)
+        self.assertEqual(len(actual),9)
         expected_by_map={
             'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
             'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
             'JOHTO_ILEX_FOREST_LOCAL_ID':{(5,1,'D_DOWN')},
             'JOHTO_GOLDENROD_CITY_LOCAL_ID':{(1,19,'D_DOWN')},
+            'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
+            'JOHTO_RUINS_OF_ALPH_LOCAL_ID':{(5,7,'D_DOWN')},
             'JOHTO_ROUTE_34_LOCAL_ID':set()}
         actual_by_map={key:set((y,x,d) for _,local,y,x,source,d in actual if local==key)
                        for key in expected_by_map}

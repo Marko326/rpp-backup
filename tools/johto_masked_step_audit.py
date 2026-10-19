@@ -42,7 +42,7 @@ def parse_caller(source: str, symbol: str):
     return program, labels
 
 
-def compare_literal(expr: str, width: int, local_symbol: str):
+def compare_literal(expr: str, width: int, local_symbol: str, height: int):
     expr = expr.strip()
     if expr == 'REGION_NATIVE_MAP_SLOT' or expr == 'MAP_REGION_JOHTO' or expr == local_symbol:
         return expr
@@ -58,6 +58,8 @@ def compare_literal(expr: str, width: int, local_symbol: str):
         return width-1
     if re.fullmatch(r'JOHTO_[A-Z0-9_]+_WIDTH\s*\*\s*2', expr):
         return width
+    if re.fullmatch(r'JOHTO_[A-Z0-9_]+_HEIGHT\s*\*\s*2\s*-\s*1', expr):
+        return height - 1
     raise ConversionError(f'Unsupported ASM compare/operand: {expr}')
 
 
@@ -87,7 +89,7 @@ def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
             raise ConversionError('Unsupported ASM load: '+op)
         m = re.fullmatch(r'cp\s+(.+)', op)
         if m:
-            val = compare_literal(m[1],width,local_symbol)
+            val = compare_literal(m[1],width,local_symbol,height)
             if isinstance(a,int) != isinstance(val,int):
                 raise ConversionError('Symbol-vs-number ASM compare: '+op)
             zero = (a == val)
@@ -155,7 +157,7 @@ def audit(rpp: Path, gold: Path) -> dict:
         if len(local)!=1 or gold_name not in registered:
             continue  # Other map types handled by existing independent audits.
         symbol_base = ('JohtoRoute34Gate' if rpp_name in
-                       ('JohtoRoute34IlexForestGate','JohtoRoute35GoldenrodGate') else rpp_name)
+                       ('JohtoRoute34IlexForestGate','JohtoRoute35GoldenrodGate') else 'JohtoRuinsGate' if rpp_name=='JohtoRoute36RuinsGate' else 'JohtoRuinsOfAlph' if rpp_name=='JohtoRuinsOfAlphOutside' else rpp_name)
         matching_sources=[]
         for source_path in sorted((root/'engine/overworld').glob('johto_*collision.asm')):
             src=source_path.read_text()

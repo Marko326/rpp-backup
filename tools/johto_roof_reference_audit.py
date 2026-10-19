@@ -175,7 +175,10 @@ def audit(root: Path, gold: Path):
                 raise ValueError(f'{gold_name} is not a Gold Johto exterior')
             family=roof_names.get(number)
             if not family:
-                raise ValueError(f'{gold_name} Gold mapgroup {number} has no roof art')
+                # Some Gold outdoor mapgroups (e.g. Ruins) intentionally have
+                # no roof PNG. Require the executable tables to use $ff.
+                expected.append(None)
+                continue
             if number not in observed_groups:
                 observed_groups.append(number)
                 families.append(family)

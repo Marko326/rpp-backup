@@ -56,8 +56,8 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_a_future_local_requires_explicit_contract(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 19',
-                    'DEF JOHTO_FIXTURE_LOCAL_ID EQU 19\nDEF NUM_JOHTO_MAPS EQU 20',
+                    'DEF NUM_JOHTO_MAPS EQU 21',
+                    'DEF JOHTO_FIXTURE_LOCAL_ID EQU 21\nDEF NUM_JOHTO_MAPS EQU 22',
                     'identity contract count')
 
     def test_native_slot_is_not_a_kanto_map(self):
@@ -80,12 +80,12 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRoute35Name\n\tdb 92, 60 ; Route35GoldenrodGate: neutral town-map waypoint\n\tdw JohtoBrowseRoute35Name\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRuinsOfAlphName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_ROUTE36 ; Route35-Goldenrod indoor gate, Gold Route36 theme\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_UNION_CAVE ; Ruins of Alph Outside\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_save_local_byte_is_fatal(self):
@@ -94,14 +94,14 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_future_native_map_must_register_all_local_tables(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 19', 'DEF NUM_JOHTO_MAPS EQU 20',
+                    'DEF NUM_JOHTO_MAPS EQU 21', 'DEF NUM_JOHTO_MAPS EQU 22',
                     'local map IDs')
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; Route35 Goldenrod north/south Gate\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; Route35 gate\nJohtoMapLegacyAliasesEnd::',
-                    'local 18 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; Ruins of Alph Outside\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; Ruins outside\nJohtoMapLegacyAliasesEnd::',
+                    'local 20 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
@@ -112,8 +112,8 @@ class NativeMapIDExpansion(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dst)
             edits = {
                 'constants/region_map_constants.asm': [
-                    ('DEF NUM_JOHTO_MAPS EQU 19',
-                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 19\nDEF NUM_JOHTO_MAPS EQU 20')],
+                    ('DEF NUM_JOHTO_MAPS EQU 21',
+                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 21\nDEF NUM_JOHTO_MAPS EQU 22')],
                 'data/johto_map_headers.asm': [
                     ('JohtoMapHeaderPointersEnd::', '\tdw JohtoRoute33_h ; fixture\nJohtoMapHeaderPointersEnd::'),
                     ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoRoute33_h)\nJohtoMapHeaderBanksEnd::'),
@@ -137,7 +137,7 @@ class NativeMapIDExpansion(unittest.TestCase):
             manifest_path = root / 'tools/johto_native_maps.json'
             manifest = json.loads(manifest_path.read_text())
             fixture = dict(manifest['maps'][-1])
-            fixture.update(local_id=19, local_symbol='JOHTO_FIXTURE_LOCAL_ID',
+            fixture.update(local_id=21, local_symbol='JOHTO_FIXTURE_LOCAL_ID',
                            header='JohtoRoute33_h', bank='BANK(JohtoRoute33_h)',
                            rby_music=['MUSIC_ROUTES3','0'],
                            gsc_music='MUSIC_GBP_GSC_ROUTE30',

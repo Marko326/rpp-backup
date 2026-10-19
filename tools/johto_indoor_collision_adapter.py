@@ -250,8 +250,23 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
             safe=all(0<=xx<width and 0<=yy<height for xx,yy in points)
             if safe:
                 behind, landing=(cells[yy*width+xx] for xx,yy in points)
+                ordinary_landing = landing['role'] in {'FLOOR','TALL_GRASS'}
+                # A *second* ledge may start at the landing tile. Allow
+                # chaining only if its own barrier and two-cell landing
+                # also form a valid downhill jump; a HOP role alone is
+                # never enough (Ruins Outside (9,30) lands on WALL).
+                chained_landing = False
+                if (dy == 1 and dx == 0 and
+                        landing['role'] in {'HOP_DOWN','HOP_DOWN_LEFT','HOP_DOWN_RIGHT'}):
+                    nx,ny=c['x']+3*dx,c['y']+3*dy
+                    lx,ly=c['x']+4*dx,c['y']+4*dy
+                    if 0<=nx<width and 0<=ny<height and 0<=lx<width and 0<=ly<height:
+                        next_barrier=cells[ny*width+nx]
+                        next_landing=cells[ly*width+lx]
+                        chained_landing=(next_barrier['role'] in {'WALL','UP_WALL'}
+                                         and next_landing['role'] in {'FLOOR','TALL_GRASS'})
                 safe=(behind['role'] in {'WALL','UP_WALL'} and
-                      landing['role'] in {'FLOOR','TALL_GRASS'})
+                      (ordinary_landing or chained_landing))
             if not safe:
                 unsafe_hops.append({'x':c['x'],'y':c['y'],'dx':dx,'dy':dy,
                                     'reason':'barrier/landing/out-of-bounds needs manual review'})

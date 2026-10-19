@@ -14,7 +14,7 @@ SCOPE = (
  ('NewBarkTown',0), ('Route29',0), ('CherrygroveCity',1), ('Route30',1),
  ('Route31',1), ('VioletCity',2), (None,None), ('Route32',2),
  (None,None), ('Route33',3), ('AzaleaTown',3), (None,None),
- (None,None), (None,None), ('Route34',4), ('GoldenrodCity',4), ('Route36',2), ('Route35',2), (None,None),
+ (None,None), (None,None), ('Route34',4), ('GoldenrodCity',4), ('Route36',2), ('Route35',2), (None,None), (None,None), (None,None),
 )
 GROUP_NAME = ('NewBark','Cherrygrove','Violet','Azalea','Goldenrod')
 GOLD_MAP_GROUP = (24,26,10,8,11)

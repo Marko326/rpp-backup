@@ -95,8 +95,8 @@ def gate_dispatch_errors(root: Path, overrides=None):
     neutral=source(root,'engine/overworld/map_name_sign.asm',overrides)
     tables=source(root,'data/johto_map_headers.asm',overrides)
     constants=source(root,'constants/region_map_constants.asm',overrides)
-    if 'DEF '+NEW+' EQU 18' not in constants or 'DEF NUM_JOHTO_MAPS EQU 19' not in constants:
-        problems.append('native local gate ID must append at 18 with 19 total maps')
+    if 'DEF '+NEW+' EQU 18' not in constants or not __import__('re').search(r'DEF NUM_JOHTO_MAPS EQU (\d+)', constants) or int(__import__('re').search(r'DEF NUM_JOHTO_MAPS EQU (\d+)', constants)[1]) < 19:
+        problems.append('native Goldenrod gate must remain local ID 18 with at least 19 total maps')
     for label in ('JohtoRoute35GoldenrodGate_h', 'BANK(JohtoRoute35GoldenrodGate_h)'):
         if label not in tables:problems.append('native map pointers and banks missing '+label)
     for label in ('IsJohtoSouthGatePortal::','ExtraWarpCheck::','CheckTilePassable::'):
@@ -294,7 +294,7 @@ def gate_carpet_trigger_errors(root: Path, overrides=None):
         'jr nc, .retry2' not in collided):
         errors.append('Route35 collision-only Warp guard not in collision path')
     if ('callba JohtoInternalDoorFacingCheck' not in extra or
-        'cp JOHTO_ROUTE_35_LOCAL_ID' not in extra):
+        'cp JOHTO_ROUTE_35_LOCAL_ID' not in facing):
         errors.append('Route35 collision doorway facing check not dispatched by ExtraWarpCheck')
     route35_collision = collision.split('\n.route35South\n',1)[1].split('\n.northGate\n',1)[0] if '\n.route35South\n' in collision and '\n.northGate\n' in collision else ''
     if (not re.search(r'(?s)cp 33.*?cp 9.*?jr z, \.down.*?cp 10.*?jr z, \.down',route35_collision) or

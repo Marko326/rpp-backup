@@ -88,7 +88,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         (items, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba JohtoSurfStartOnWater ; carry CLEAR = approved water ahead\n\tret', 'bag/party Surf inverse-carry Surf entry'),
         (home, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba IsJohtoSurfWaterAhead\n\tjr c, .noCollision', 'Surf movement water branch'),
         (home, '\tld c, a ; preserve the tile for the existing walkable shore test\n\tjr .checkIfNextTileIsPassable', 'Surf shore dismount'),
-        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
+        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
         (runtime, 'ld a, [wObtainedKantoBadges]\n\tbit 4, a ; SOUL_BADGE\n\tjr z, .denied', 'Kanto Soul Badge preserved'),
         (field, 'callba JohtoSurfBadgeAllowed\n\tjr nc, .cannotSurf', 'water interaction shared permission check'),
         (menu, 'callba JohtoSurfBadgeAllowed\n\tjp nc, .newBadgeRequired', 'party menu shared permission check'),
@@ -108,11 +108,77 @@ def audit(root: Path, gold: Path) -> list[str]:
         'cp SPRITE_FACING_RIGHT\n\tjr nz, .notWater\n\tinc e',
         'cp 24\n\tjr c, .notWater\n\tcp 32\n\tjr nc, .notWater',
         'cp 4\n\tjr c, .notWater\n\tcp 8\n\tjr nc, .notWater',
-        'cp REGION_NATIVE_MAP_SLOT\n\tjp z, IsJohtoRoute35WaterAhead',
+        'cp REGION_NATIVE_MAP_SLOT\n\tjp z, IsJohtoNativeOutdoorWaterAhead',
     )
     for token in route35_must:
         if token not in runtime:
             errors.append('Route35 Surf runtime missing/changed: '+token[:50])
+    # RUINS-5.62.224: independently derive Gold 16x16 WATER cells and
+    # require precisely the two original rectangles. This is not a blanket
+    # JOHTO-tileset enable; all other native outdoor maps remain excluded.
+    try:
+        gold_blocks = (gold / 'maps/RuinsOfAlphOutside.blk').read_bytes()
+        rpp_blocks = (root / 'maps/JohtoRuinsOfAlphOutside.blk').read_bytes()
+        art = (root / 'gfx/blocksets/johto.bst').read_bytes()
+        walkable = set((root / 'gfx/tilesets/johto.tilecoll').read_bytes()[:-1])
+        labels = []
+        for line in (gold / 'data/tilesets/johto_collision.asm').read_text().splitlines():
+            m = re.search(r'\btilecoll\s+([^;]+)', line)
+            if m:
+                fields = tuple(v.strip() for v in m[1].split(','))
+                if len(fields) != 4:
+                    raise ValueError('invalid Gold JOHTO collision quartet')
+                labels.append(fields)
+        if len(gold_blocks) != 180 or len(rpp_blocks) != 180 or len(art) % 16 or not walkable:
+            raise ValueError('unexpected Ruins map/art dimensions')
+        # RUINS-5.62.224: the map references $8A at block (2,15).  During
+        # the cross-branch merge, the last 16-byte JOHTO block was omitted:
+        # Surf-only water checks missed it because it is a dry cliff edge.
+        # Reject ALL block IDs outside the actual loaded blockset, even when
+        # the corresponding area is inaccessible without debug movement.
+        max_block = max(rpp_blocks)
+        if max_block >= len(art) // 16:
+            errors.append(f'Ruins metatile ${max_block:02X} out of range: '
+                          f'JOHTO blockset has {len(art) // 16} definitions')
+        elif 0x8A in rpp_blocks and art[0x8A*16:0x8B*16] != bytes.fromhex(
+                '3b0606063b0606063b0606064b4c214c'):
+            errors.append('Ruins metatile $8A differs from reviewed backup branch')
+        gold_water = {(2 * (i // 10) + q // 2, 2 * (i % 10) + q % 2)
+                      for i, block in enumerate(gold_blocks)
+                      for q, role in enumerate(labels[block]) if role == 'WATER'}
+        expected_ruins = ({(y, x) for y in range(6, 14) for x in range(2, 6)}
+                          | {(y, x) for y in range(26, 30) for x in range(12, 16)})
+        if gold_water != expected_ruins or len(gold_water) != 48:
+            errors.append('Ruins Surf original Gold WATER 48-cell geometry mismatch')
+        for y, x in gold_water:
+            offset = rpp_blocks[(y // 2) * 10 + x // 2] * 16
+            pixel_y, pixel_x = (y % 2) * 2, (x % 2) * 2
+            ids = {art[offset + (pixel_y + dy) * 4 + pixel_x + dx]
+                   for dy in range(2) for dx in range(2)}
+            if ids & walkable:
+                errors.append(f'Ruins Surf WATER ({x},{y}) erroneously walkable on land')
+                break
+    except (ValueError, OSError, IndexError) as exc:
+        errors.append(f'Ruins Surf Gold/RPP geometry unavailable: {exc}')
+    native_dispatch = (
+        'cp REGION_NATIVE_MAP_SLOT\n\tjp z, IsJohtoNativeOutdoorWaterAhead',
+        'IsJohtoNativeOutdoorWaterAhead::\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO',
+        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjp z, IsJohtoRoute35WaterAhead',
+        'cp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjp z, IsJohtoRuinsWaterAhead',
+        'IsJohtoRuinsWaterAhead::',
+        'cp SPRITE_FACING_DOWN\n\tjr nz, .up\n\tinc d',
+        'cp SPRITE_FACING_UP\n\tjr nz, .left\n\tdec d',
+        'cp SPRITE_FACING_LEFT\n\tjr nz, .right\n\tdec e',
+        'cp SPRITE_FACING_RIGHT\n\tjr nz, .notWater\n\tinc e',
+        'cp 6\n\tjr c, .notWater\n\tcp 14\n\tjr nc, .lower',
+        'cp 2\n\tjr c, .notWater\n\tcp 6\n\tjr nc, .notWater',
+        'cp 26\n\tjr c, .notWater\n\tcp 30\n\tjr nc, .notWater',
+        'cp 12\n\tjr c, .notWater\n\tcp 16\n\tjr nc, .notWater',
+        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr nz, .kanto',
+    )
+    for token in native_dispatch:
+        if token not in runtime:
+            errors.append('Ruins Surf runtime missing/changed: ' + token[:70])
     # This is intentionally a temporary policy: no hidden Johto badge gate
     # may be reintroduced in either of the two shared cave Surf entry points.
     badge_handlers = runtime.split('JohtoSurfBadgeAllowed::', 1)[-1]
@@ -122,7 +188,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         errors.append('no native map capabilities for Surf')
     else:
         for entry in identities['maps']:
-            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17) else 'DEFERRED'
+            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20) else 'DEFERRED'
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):
