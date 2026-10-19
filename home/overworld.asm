@@ -1644,61 +1644,19 @@ CollisionCheckOnLand::
 ; function that checks if the tile in front of the player is passable
 ; clears carry if it is, sets carry if not
 CheckTilePassable::
-	; R33-5.62.191: Gold modern 16x16 roles, not global tile IDs.
+	; ROM0 relief: ROMX bank $43 owns the exact Johto map-ID dispatch.
+	; E=1 means a native predicate ran; Carry still means blocked.
+	; E=0 means use the original generic passability check below.
+	; Keep the Route32 legacy seam and all non-Johto maps unchanged.
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .route32Seam
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jp nz, .normal
-	ld a, [wCurLocalMapID]
-	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr z, .route35Mask
-	cp JOHTO_ROUTE_36_LOCAL_ID
-	jr z, .route36Mask
-	cp JOHTO_ROUTE_33_LOCAL_ID
-	jr z, .modernRoute33
-	cp JOHTO_AZALEA_TOWN_LOCAL_ID
-	jr z, .modernAzalea
-	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .forestMask
-	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jr z, .northGateMask
-	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
-	jr z, .northGateMask
-	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-	jr z, .ruinsMask
-	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-	jr z, .ruinsMask
-	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .modernRoute34
-	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr nz, .normal
-	callba JohtoGoldenrodCanStepAhead
-	ret
-.modernRoute34
-	callba JohtoRoute34CanStepAhead
-	ret
-.forestMask
-	callba JohtoIlexForestCanStepAhead
-	ret
-.route36Mask
-	callba JohtoRoute36CanStepAhead
-	ret
-.route35Mask
-	callba JohtoRoute35CanStepAhead
-	ret
-.ruinsMask
-	callba JohtoRuinsCanStepAhead
-	ret
-.northGateMask
-	callba JohtoRoute34GateCanStepAhead
-	ret
-.modernAzalea
-	callba JohtoAzaleaCanStepAhead
-	ret
-.modernRoute33
-	callba JohtoRoute33CanStepAhead
+	callba JohtoNativeCanStepAhead
+	bit 0, e ; BIT preserves Carry returned by the ROMX collision predicate.
+	jr z, .normal
 	ret
 .route32Seam
 	cp JOHTO_ROUTE_32

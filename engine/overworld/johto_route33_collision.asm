@@ -1435,3 +1435,66 @@ JohtoRuinsGateCanStepAhead::
 
 JohtoRuinsGateBlockedRows::
 	INCBIN "maps/JohtoRoute36RuinsGate.blocked_mask.bin"
+
+; ROM0-5.62.224: one banked entry for every native Johto land mask.
+; Called from HOME only for (wCurMap=$FC, wCurRegion=Johto).
+; E=1 for an exact recognized local ID; Carry=blocked, Carry clear=walkable.
+; E=0 for an unrecognized local ID; HOME must run its unchanged generic mask.
+; Each branch calls the ORIGINAL predicate (do not broaden its region/ID test).
+; The last LD E does not change flags, so Carry survives through Bankswitch.
+JohtoNativeCanStepAhead::
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .route35
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jr z, .route36
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	jr z, .route33
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .azalea
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jr z, .forest
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .gate
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jr z, .gate
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	jr z, .ruins
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr z, .ruins
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr z, .route34
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr z, .goldenrod
+	ld e, 0
+	ret
+.route35
+	call JohtoRoute35CanStepAhead
+	jr .handled
+.route36
+	call JohtoRoute36CanStepAhead
+	jr .handled
+.route33
+	call JohtoRoute33CanStepAhead
+	jr .handled
+.azalea
+	call JohtoAzaleaCanStepAhead
+	jr .handled
+.forest
+	call JohtoIlexForestCanStepAhead
+	jr .handled
+.gate
+	call JohtoRoute34GateCanStepAhead
+	jr .handled
+.ruins
+	call JohtoRuinsCanStepAhead
+	jr .handled
+.route34
+	call JohtoRoute34CanStepAhead
+	jr .handled
+.goldenrod
+	call JohtoGoldenrodCanStepAhead
+.handled
+	ld e, 1
+	ret
+
