@@ -132,6 +132,8 @@ GetFlinchChanceFar:
 ; carry set only when the random side effect activates. The caller in Bank F
 ; copies E back to A after the bank switch (which overwrites A).
 RollStatusSideEffectFar:
+	; Restore the input effect from E after the bank switch clobbers A.
+	ld a, e
 	cp SACRED_FIRE_EFFECT
 	jr nz, .standard
 	ld d, $80 ; Sacred Fire: 50% burn (unchanged)

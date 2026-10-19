@@ -316,3 +316,8 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **189T 清理检查清单**：恢复 `data/wildPokemon/route7.asm` 的正式野生表；将 `WildNativeExtendedMoveSources` 与 `TrainerNativeExtendedMoveSources` 清回仅 `$ff`；恢复 `scripts/Route8.asm` 原对话；移除 `scripts/189T_route8_rematch.asm` 与 `main.asm` 中的临时 INCLUDE。测试中改动的 SAV 由用户恢复，不是源码清理补丁能够撤销。
 - 录屏里敌方 `Ext Move 07` 正常出现、动画／伤害正确只能说明**执行侧**载入成功，不能证明 `trainer_ai.asm` 的候选招式评分正确：AI `_ReadMove` 依候选低字节读取普通 `Moves` 表的缺口应在下一轮独立修复。188 的 `NOT SEEN/SEEN` 对照也不代表现有 MoveDex 有独立 EXT 收集位。
 - 独立审查确证的 `RollStatusSideEffect` 远调用 A 参数丢失是共用战斗效果问题：189T 的普通 Fire Punch 出现麻痹曾暴露该缺陷，外部修复曾用于讨论但用户本次明确撤销；188～189 收口**不得**顺带改变效果函数，须未来独立修复并测试玩家／敌方 Fire Punch、Ice Punch、ThunderPunch 和相关状态效果。EXT02 会心、EXT16 对 Fly 特判、Lv.1 Psywave 边界亦另列待办。
+
+## MOVE-5.62.190 共用追加状态远调用寄存器约定（2026-10-18 验收补记）
+
+- `callab RollStatusSideEffectFar` 经 `Bankswitch` 会覆盖 A；仅依靠 Carry 或远端入口直接使用 A，会将 Fire Punch 的 `BURN_SIDE_EFFECT1` 误解释成麻痹等类别。输入效果先由 `ld e,a` 传递，在远端先执行 `ld a,e`；返回前既有 E 用于传回归一化类别、Carry 表示触发与否。后续修改跨 Bank 效果判定时，不得重新依赖 A 跨 `callab` 保值。
+- 190T 强制判定仅证明 Fire Punch/BRN、Ice Punch/FRZ、ThunderPunch/PAR 三项效果归属；正式概率统计、免疫和替身边界不由该录像覆盖。用户已反馈撤销 190T，正式源码不保留临时测试场景；测试 SAV 与撤销后新 ROM 构建需用户自行确认。

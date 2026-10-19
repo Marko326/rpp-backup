@@ -1,3 +1,10 @@
+## MOVE-5.62.190 — 追加异常状态跨 Bank 修复：游戏内专项验收（2026-10-18）
+
+- **根因及修复**：`RollStatusSideEffect` 的 `callab` 切换 ROM Bank 时 A 被覆盖，使灼伤／冰冻／麻痹等共用追加效果读取到错误的效果编号。调用前通过 E 保存输入 A，远端 `RollStatusSideEffectFar` 先从 E 还原 A；除这两处外不改变既有状态概率、技能数据及 EXT sidecar 协议。
+- **用户录像**：《190三拳.mp4》展示约 9 秒 Fire Punch → BRN、约 19 秒 Ice Punch → FRZ、约 30 秒 ThunderPunch → PAR，按 **190T 强制追加效果**专项测试三项全部通过。并非正式概率 10%／其他档位的统计验证，也不代表所有战斗状态、双 ROM 编译／链接已经验收。
+- **测试清理与正式代码**：用户反馈已撤销 190T，随后提供的 `MOVE-5.62.190` 工作区 ZIP 仅包含 `TODO.md`、`data/game_version.asm`、`engine/battle/core.asm`、`engine/battle/move_effect_balance_helpers.asm` 的正式改动；不含 190T 的地图遭遇、强制概率临时代码。SAV 恢复及撤销后新 ROM 构建尚未独立确认，不能伪称源码 ZIP 能证明存档状态。
+- **提交边界**：导出元数据当前仍是已提交的 189 HEAD `60e8832b8b08283bf135518ef79af7f847098f30`，190 尚无 Git Commit 证明。正式提交应覆盖 189 HEAD → 190 修复及本轮文档收口，不能仅提交文档增量，也不把 191 高会心、EXT16/Fly、AI 或其他待办夹入。游戏可见版本保持 `MOVE-5.62.190`。
+
 ## 敌方 EXT 来源与 MoveDex 撞号 Seen 防护（189 已本地提交）
 
 - **188 MoveDex**：敌方执行 EXT 时 `MoveDexRecordEnemyMove` 检查当次活动 ordinal，跳过普通同低字节 Seen；普通 Fire Punch 仍正常登记。用户《188T-004 Dex.mp4》两种对照受测通过；未建立独立 EXT MoveDex Seen/Use 存档。
@@ -8,7 +15,7 @@
 
 # RPP 扩展招式：40 招容量结构与正式阶段验收
 
-> **当前已提交基线：`MOVE-5.62.189` / `9cfd1f68`（本地 Commit，尚未 Push）；上一版 187 的 HEAD 为 `ea163ba9`。188～189 的实测边界与待办见本页。**
+> **当前可核实的已提交基线：`MOVE-5.62.189` / `60e8832b`（由旧 `9cfd1f68` amend；导出时未 Push）。190 为未提交工作区，191 尚未进入本次源码。上一版 187 HEAD `ea163ba9`；188～189 的历史实测记录见下方。**
 
 > 历史 180 交接／基线记录保留在下方，不代表当前提交基线。
 

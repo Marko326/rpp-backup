@@ -7361,6 +7361,8 @@ opponentAttacker:
 RollStatusSideEffect:
 	; MOVE-5.62.147: carry survives the bank switch; E carries the
 	; normalized effect, since Bankswitch restores A to the previous bank.
+	; A is overwritten on callab entry: E carries the input effect.
+	ld e, a
 	callab RollStatusSideEffectFar
 	ld a, e
 	ret
