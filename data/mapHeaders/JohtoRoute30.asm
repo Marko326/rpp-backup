@@ -18,5 +18,14 @@ JohtoRoute30_h:
 	db JOHTO_ROUTE_31_HEIGHT * 2 - 1 ; arrival Y = 17
 	db 20 ; arrival X = Route30 X + 20 (Gold -10 block offset)
 	dw wOverworldMap + 1 + JOHTO_ROUTE_31_HEIGHT * (JOHTO_ROUTE_31_WIDTH + 6)
-	SOUTH_MAP_CONNECTION JOHTO_ROUTE_30, JOHTO_CHERRYGROVE_CITY, -5, 0, JohtoCherrygroveCityBlocks
+	; CONN-5.62.223: Gold -5 moves the target five source columns east;
+	; the legacy SOUTH macro copies 15 columns from the wrong start.
+	db JOHTO_CHERRYGROVE_CITY
+	dw JohtoCherrygroveCityBlocks + 5
+	dw wOverworldMap + (JOHTO_ROUTE_30_HEIGHT + 3) * (JOHTO_ROUTE_30_WIDTH + 6) + 3
+	db JOHTO_ROUTE_30_WIDTH
+	db JOHTO_CHERRYGROVE_CITY_WIDTH
+	db 0
+	db 10 ; arrival X = Route30 X + 10 (Gold -5 offset)
+	dw wOverworldMap + 7 + JOHTO_CHERRYGROVE_CITY_WIDTH
 	dw JohtoRoute30Object
