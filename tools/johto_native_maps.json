@@ -256,7 +256,12 @@
         "warp": "ALLOWED"
       },
       "identity_evidence": "STATIC_PASS",
-      "gold_fly_landmark": null
+      "gold_fly_landmark": null,
+      "north_connection_exit_x_tiles": [
+        14,
+        15
+      ],
+      "north_connection_visual_right_border": 3
     },
     {
       "local_id": 8,
@@ -480,7 +485,14 @@
         "warp": "ALLOWED"
       },
       "identity_evidence": "PHONE_PENDING",
-      "gold_fly_landmark": null
+      "gold_fly_landmark": null,
+      "north_connection_exit_x_tiles": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "north_connection_visual_right_border": 0
     },
     {
       "local_id": 15,
@@ -513,6 +525,74 @@
       },
       "identity_evidence": "GOLD_REFERENCE_PENDING",
       "gold_fly_landmark": "GOLDENROD_CITY"
+    },
+    {
+      "local_id": 16,
+      "local_symbol": "JOHTO_ROUTE_36_LOCAL_ID",
+      "header": "JohtoRoute36_h",
+      "bank": "BANK(JohtoRoute36_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 19,
+      "town_map_name": "JohtoBrowseRoute36Name",
+      "town_map_xy": [
+        76,
+        72
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 17,
+      "local_symbol": "JOHTO_ROUTE_35_LOCAL_ID",
+      "header": "JohtoRoute35_h",
+      "north_connection_exit_x_tiles": [
+        17
+      ],
+      "north_connection_visual_right_border": 3,
+      "bank": "BANK(JohtoRoute35_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 17,
+      "town_map_name": "JohtoBrowseRoute35Name",
+      "town_map_xy": [
+        92,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "ALLOWED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
     }
   ]
 }

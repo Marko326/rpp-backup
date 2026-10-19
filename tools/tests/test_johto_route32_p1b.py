@@ -14,7 +14,7 @@ class Route32StagingTests(unittest.TestCase):
         blocks = (ROOT / 'maps/JohtoRoute32.blk').read_bytes()
         shared = (ROOT / 'gfx/blocksets/johto.bst').read_bytes()
         self.assertEqual(len(blocks), 450)
-        self.assertEqual(len(shared), 137 * 16)
+        self.assertEqual(len(shared), 138 * 16)  # Route35 Cut clone $89 appended; original 137 unchanged
         self.assertLess(max(blocks), 137)
         self.assertEqual(blocks[68], 0x83)
         self.assertEqual(blocks[404], 0x88)
@@ -32,7 +32,7 @@ class Route32StagingTests(unittest.TestCase):
         violet = self.src('data/mapHeaders/JohtoVioletCity.asm')
         objects = self.src('data/mapObjects/JohtoRoute32.asm')
         self.assertRegex(header, r'(?m)^\s*db NORTH \| SOUTH$')
-        self.assertRegex(violet, r'(?m)^\s*db SOUTH \| EAST$')
+        self.assertRegex(violet, r'(?m)^\s*db SOUTH \| WEST \| EAST$')
         self.assertRegex(objects, r'(?m)^\s*db \$01 ; the original cave-mouth Warp only')
         self.assertIn('dw JohtoRoute33Blocks', header) ; self.assertNotIn('SOUTH_MAP_CONNECTION', header)
         self.assertIn('jp z, JohtoRoute32CollisionFence', self.src('main.asm'))

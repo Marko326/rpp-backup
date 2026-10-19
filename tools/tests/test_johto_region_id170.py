@@ -29,6 +29,19 @@ class NativeMapIDExpansion(unittest.TestCase):
             issues = audit(root)
             self.assertTrue(any(expected in issue for issue in issues), issues)
 
+    def test_combined_goldenrod_and_new_road_ids_are_unique(self):
+        # Cross-branch guard: .217 Goldenrod and .223 road locals must coexist.
+        manifest=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps']
+        targets={'JOHTO_GOLDENROD_CITY_LOCAL_ID':15,
+                 'JOHTO_ROUTE_36_LOCAL_ID':16,
+                 'JOHTO_ROUTE_35_LOCAL_ID':17}
+        for symbol, local in targets.items():
+            matched=[m for m in manifest if m['local_symbol']==symbol]
+            self.assertEqual(len(matched),1)
+            self.assertEqual(matched[0]['local_id'],local)
+        self.assertEqual(len({m['local_id'] for m in manifest}),len(manifest))
+        self.assertEqual(audit(ROOT),[])
+
     def test_same_length_wrong_header_identity_is_rejected(self):
         self.mutate('data/johto_map_headers.asm',
                     'dw JohtoRoute29_h ; local $01',
@@ -43,8 +56,8 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_a_future_local_requires_explicit_contract(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 16',
-                    'DEF JOHTO_FIXTURE_LOCAL_ID EQU 16\nDEF NUM_JOHTO_MAPS EQU 17',
+                    'DEF NUM_JOHTO_MAPS EQU 18',
+                    'DEF JOHTO_FIXTURE_LOCAL_ID EQU 18\nDEF NUM_JOHTO_MAPS EQU 19',
                     'identity contract count')
 
     def test_native_slot_is_not_a_kanto_map(self):
@@ -67,12 +80,12 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoGoldenrodName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRoute35Name\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_GOLDENROD_CITY ; P19 Goldenrod\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_ROUTE36 ; Route35\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_save_local_byte_is_fatal(self):
@@ -81,14 +94,14 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_future_native_map_must_register_all_local_tables(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 16', 'DEF NUM_JOHTO_MAPS EQU 17',
+                    'DEF NUM_JOHTO_MAPS EQU 18', 'DEF NUM_JOHTO_MAPS EQU 19',
                     'local map IDs')
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; Goldenrod City\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; Goldenrod City\nJohtoMapLegacyAliasesEnd::',
-                    'local 15 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; Route35\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; Route35\nJohtoMapLegacyAliasesEnd::',
+                    'local 17 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
@@ -99,8 +112,8 @@ class NativeMapIDExpansion(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dst)
             edits = {
                 'constants/region_map_constants.asm': [
-                    ('DEF NUM_JOHTO_MAPS EQU 16',
-                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 16\nDEF NUM_JOHTO_MAPS EQU 17')],
+                    ('DEF NUM_JOHTO_MAPS EQU 18',
+                     'DEF JOHTO_FIXTURE_LOCAL_ID EQU 18\nDEF NUM_JOHTO_MAPS EQU 19')],
                 'data/johto_map_headers.asm': [
                     ('JohtoMapHeaderPointersEnd::', '\tdw JohtoRoute33_h ; fixture\nJohtoMapHeaderPointersEnd::'),
                     ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoRoute33_h)\nJohtoMapHeaderBanksEnd::'),
@@ -124,7 +137,7 @@ class NativeMapIDExpansion(unittest.TestCase):
             manifest_path = root / 'tools/johto_native_maps.json'
             manifest = json.loads(manifest_path.read_text())
             fixture = dict(manifest['maps'][-1])
-            fixture.update(local_id=16, local_symbol='JOHTO_FIXTURE_LOCAL_ID',
+            fixture.update(local_id=18, local_symbol='JOHTO_FIXTURE_LOCAL_ID',
                            header='JohtoRoute33_h', bank='BANK(JohtoRoute33_h)',
                            rby_music=['MUSIC_ROUTES3','0'],
                            gsc_music='MUSIC_GBP_GSC_ROUTE30',

@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 
 from johto_surf_geometry_audit import inspect as geometry_inspect
-from johto_route32_surf_geometry import check as route32_check
+from johto_route32_surf_geometry import check as route32_check, gold_cells as johto_water_cells
 
 TABLE = re.compile(r'(?m)^JohtoUnionCaveWaterCells::\s*\n((?:\s*db\s+[^\n]+\n)+)')
 PAIR = re.compile(r'^\s*db\s+(\d+)\s*,\s*(\d+)\s*$')
@@ -31,6 +31,16 @@ def audit(root: Path, gold: Path) -> list[str]:
         return [f'Surf runtime source missing/invalid: {exc}']
 
     errors.extend(route32_check(root, gold))
+    # R35-5.62.220: audit the full rectangle against Gold, not an
+    # assumption that every similarly-looking JOHTO graphic is water.
+    try:
+        route35 = johto_water_cells(gold, 'Route35')
+        if route35 != {(y,x) for y in range(24,32) for x in range(4,8)}:
+            errors.append('Route35 Surf Gold 32-cell rectangle mismatch')
+        if (root/'maps/JohtoRoute35.blk').read_bytes() != (gold/'maps/Route35.blk').read_bytes():
+            errors.append('Route35 Surf source blocks drift from Gold')
+    except (OSError, ValueError) as exc:
+        errors.append(f'Route35 Surf reference missing: {exc}')
     geometry = geometry_inspect(root, gold)
     errors.extend(geometry['errors'])
     expected = {(y, x) for x, y, _ in geometry.get('water_cells', [])}
@@ -73,12 +83,12 @@ def audit(root: Path, gold: Path) -> list[str]:
         (runtime, 'cp JOHTO_UNION_CAVE_1F_HEIGHT * 2\n\tjr nc, .notWater', 'Y bound'),
         (runtime, 'cp JOHTO_UNION_CAVE_1F_WIDTH * 2\n\tjr nc, .notWater', 'X bound'),
         (runtime, '.water\n\tscf\n\tjr .done\n.notWater\n\tand a', 'water flag polarity'),
-        (runtime, 'IsJohtoSurfWaterAhead::\n\tld a, [wCurMapTileset]\n\tcp JOHTO_UNION_CAVE\n\tjp z, IsJohtoUnionCaveWaterAhead\n\tcp JOHTO\n\tjp z, IsJohtoRoute32WaterAhead', 'shared Johto Surf dispatch'),
+        (runtime, 'IsJohtoSurfWaterAhead::\n\tld a, [wCurMapTileset]\n\tcp JOHTO_UNION_CAVE\n\tjp z, IsJohtoUnionCaveWaterAhead\n\tcp JOHTO\n\tjr nz, .noWater\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjp z, IsJohtoRoute32WaterAhead', 'shared Johto Surf dispatch'),
         (field, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba IsJohtoSurfWaterAhead\n\tret', 'facing Surf helper'),
         (items, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba JohtoSurfStartOnWater ; carry CLEAR = approved water ahead\n\tret', 'bag/party Surf inverse-carry Surf entry'),
         (home, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba IsJohtoSurfWaterAhead\n\tjr c, .noCollision', 'Surf movement water branch'),
         (home, '\tld c, a ; preserve the tile for the existing walkable shore test\n\tjr .checkIfNextTileIsPassable', 'Surf shore dismount'),
-        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr nz, .kanto\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged two-map badge-free Surf permission'),
+        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
         (runtime, 'ld a, [wObtainedKantoBadges]\n\tbit 4, a ; SOUL_BADGE\n\tjr z, .denied', 'Kanto Soul Badge preserved'),
         (field, 'callba JohtoSurfBadgeAllowed\n\tjr nc, .cannotSurf', 'water interaction shared permission check'),
         (menu, 'callba JohtoSurfBadgeAllowed\n\tjp nc, .newBadgeRequired', 'party menu shared permission check'),
@@ -87,6 +97,22 @@ def audit(root: Path, gold: Path) -> list[str]:
     for source, token, name in must_have:
         if token not in source:
             errors.append(f'cave Surf runtime contract missing/broken: {name}')
+    # Exact native map, bounds and facing checks are required on Route35.
+    route35_must = (
+        'IsJohtoRoute35WaterAhead::',
+        'cp REGION_NATIVE_MAP_SLOT\n\tjr nz, .notWater',
+        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr nz, .notWater',
+        'cp SPRITE_FACING_DOWN\n\tjr nz, .up\n\tinc d',
+        'cp SPRITE_FACING_UP\n\tjr nz, .left\n\tdec d',
+        'cp SPRITE_FACING_LEFT\n\tjr nz, .right\n\tdec e',
+        'cp SPRITE_FACING_RIGHT\n\tjr nz, .notWater\n\tinc e',
+        'cp 24\n\tjr c, .notWater\n\tcp 32\n\tjr nc, .notWater',
+        'cp 4\n\tjr c, .notWater\n\tcp 8\n\tjr nc, .notWater',
+        'cp REGION_NATIVE_MAP_SLOT\n\tjp z, IsJohtoRoute35WaterAhead',
+    )
+    for token in route35_must:
+        if token not in runtime:
+            errors.append('Route35 Surf runtime missing/changed: '+token[:50])
     # This is intentionally a temporary policy: no hidden Johto badge gate
     # may be reintroduced in either of the two shared cave Surf entry points.
     badge_handlers = runtime.split('JohtoSurfBadgeAllowed::', 1)[-1]
@@ -96,7 +122,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         errors.append('no native map capabilities for Surf')
     else:
         for entry in identities['maps']:
-            expect = 'ALLOWED' if entry['local_id'] in (7, 8) else 'DEFERRED'
+            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17) else 'DEFERRED'
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):

@@ -9,10 +9,13 @@ import re
 ROW = re.compile(r'^\s*db\s+\$([0-9a-fA-F]{2}),\s*\$([0-9a-fA-F]{2}),\s*\$([0-9a-fA-F]{2})\s*;\s*y=(\d{2})\s*$')
 
 
-def gold_cells(gold: Path) -> set[tuple[int, int]]:
-    blocks = (gold / 'maps/Route32.blk').read_bytes()
-    if len(blocks) != 450:
-        raise ValueError('Gold Route32 must have 10x45 blocks')
+def gold_cells(gold: Path, map_name='Route32') -> set[tuple[int, int]]:
+    if map_name not in ('Route32', 'Route35'):
+        raise ValueError('only reviewed routes may be checked')
+    blocks = (gold / f'maps/{map_name}.blk').read_bytes()
+    expected_blocks = 450 if map_name == 'Route32' else 180
+    if len(blocks) != expected_blocks:
+        raise ValueError(f'Gold {map_name} has unexpected dimensions')
     labels = []
     for line in (gold / 'data/tilesets/johto_collision.asm').read_text().splitlines():
         match = re.search(r'\btilecoll\s+([^;]+)', line)

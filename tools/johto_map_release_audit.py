@@ -25,6 +25,7 @@ from johto_route33_runtime191 import audit as route33_runtime_audit
 from johto_union_cave_exit192_audit import audit as cave_exit192_audit
 from johto_surf_geometry_audit import inspect as surf_geometry_inspect
 from johto_surf_runtime_audit import audit as surf_runtime_audit
+from johto_rpp_connection_guard import audit_all_active
 from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
 from johto_roof_reference_audit import audit as roof_audit
 
@@ -95,6 +96,16 @@ test_johto_roof_reference_audit.RoofGoldReferenceGate.test_swapping_violet_and_a
 test_johto_roof_reference_audit.RoofGoldReferenceGate.test_wrong_roof_source_bank_is_rejected
 test_johto_roof_reference_audit.RoofGoldReferenceGate.test_wrong_group_dispatch_branch_is_rejected
 test_johto_roof_reference_audit.RoofGoldReferenceGate.test_wrong_base_roof_tile_offset_is_rejected
+test_johto_rpp_connection_guard.RealConnectionCoverage.test_all_active_connections_must_match_gold
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_route35_north_preview_reaches_three_visual_border_columns
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_route32_reachable_north_preview_matches_gold_and_runtime_fence
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_route32_missing_preview_fails_global_guard
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_route32_fake_or_missing_reachable_gate_is_rejected
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_short_visual_strip_is_rejected_by_full_guard
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_bad_legacy_connection_is_rejected_globally
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_cross_bank_map_is_rejected_before_delivery
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_enabled_connection_cannot_be_omitted_from_discovery
+ test_johto_map_release_audit.MapReleaseGateTest.test_actual_connection_failure_blocks_release_before_unittests
 test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_ordinary_floor_down_to_carpet_is_allowed
  test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_missing_north_rule_mutation_caught_by_branch_execution
  test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_north_approach_is_exact_and_lower_wall_remains_blocked
@@ -261,6 +272,16 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
                      'tools/johto_door_contracts.json'):
         if not (root / relative).is_file():
             errors.append(f'required tracked Johto audit contract missing: {relative}')
+    # CONN-5.62.221: audit real headers, NOT just tests of the guard itself.
+    # Run before unittest discovery so any broken registered edge blocks release.
+    connections = audit_all_active(root, gold) if not errors else None
+    if connections is not None:
+        errors.extend('CONNECTION_DISCOVERY: ' + issue for issue in connections['issues'])
+        for edge in connections['edges']:
+            if edge['status']!='PASS':
+                label = (edge.get('current','?')+' '+edge.get('direction','?')+' -> '+edge.get('target','?')
+                         if 'current' in edge else str(edge.get('edge')))
+                errors.extend('CONNECTION: '+label+': '+err for err in edge['issues'])
     additional_required_ids = set()
     if not errors:
         onboard_errors, additional_required_ids = door_onboarding_audit(root, gold)
@@ -317,6 +338,8 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.extend('GOLD_FULL_CORPUS: '+item['map']+': '+item['error']
                       for item in corpus_summary['errors'])
     return {'status': 'FAIL' if errors else 'PASS', 'errors': errors,
+            'active_connections': {'status': connections['status'],
+                                   'checked': len(connections['edges'])} if connections else None,
             'full_gold_corpus': corpus_summary,
             'masked_step_source_audit': runtime_step,
             'tileset_index_all_ids': resource_indexes,

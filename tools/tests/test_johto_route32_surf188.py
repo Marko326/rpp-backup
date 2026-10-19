@@ -15,7 +15,7 @@ FILES = ('engine/overworld/johto_union_cave_surf.asm',
          'engine/overworld/field_moves.asm', 'engine/items/items.asm',
          'home/overworld.asm', 'engine/menu/start_sub_menus.asm',
          'tools/johto_native_maps.json', 'main.asm',
-         'maps/JohtoRoute32.blk', 'gfx/blocksets/johto.bst',
+         'maps/JohtoRoute32.blk', 'maps/JohtoRoute35.blk', 'gfx/blocksets/johto.bst',
          'gfx/tilesets/johto.tilecoll',
          'maps/JohtoUnionCave1F.blk',
          'gfx/blocksets/johto_union_cave.bst',
@@ -75,15 +75,27 @@ class Route32Surf188(unittest.TestCase):
 
     def test_route32_badge_policy_must_not_leak_other_maps(self):
         self.mutate('engine/overworld/johto_union_cave_surf.asm',
-                    '\tcp JOHTO_ROUTE_32\n\tjr nz, .kanto',
-                    '\tcp JOHTO_ROUTE_32\n\tjr z, .kanto',
-                    'staged two-map badge-free Surf permission')
+                    '\tcp JOHTO_ROUTE_32\n\tjr z, .route32',
+                    '\tcp JOHTO_ROUTE_32\n\tjr nz, .route32',
+                    'staged Route35/Route32/cave badge-free Surf permission')
 
     def test_bits_over_top_edge_fail(self):
         self.mutate('engine/overworld/johto_union_cave_surf.asm',
                     'db $00, $00, $00 ; y=86',
                     'db $00, $00, $10 ; y=86',
                     'out-of-map bits')
+
+    def test_route35_water_edge_must_stay_bounded(self):
+        self.mutate('engine/overworld/johto_union_cave_surf.asm',
+                    'cp 24\n\tjr c, .notWater\n\tcp 32',
+                    'cp 23\n\tjr c, .notWater\n\tcp 32',
+                    'Route35 Surf runtime missing/changed')
+
+    def test_route35_native_id_must_not_alias_any_other_route(self):
+        self.mutate('engine/overworld/johto_union_cave_surf.asm',
+                    'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr nz, .notWater',
+                    'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr nz, .notWater',
+                    'Route35 Surf runtime missing/changed')
 
     def test_map_features_reject_other_route_surf(self):
         self.mutate('tools/johto_native_maps.json',

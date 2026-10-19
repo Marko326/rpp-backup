@@ -21,6 +21,21 @@ class MapReleaseGateTest(unittest.TestCase):
             self.assertEqual(report['status'], 'FAIL')
             self.assertEqual(report['tests'], 0)
 
+    def test_actual_connection_failure_blocks_release_before_unittests(self):
+        gold=Path(os.environ.get('JOHTO_GOLD_SOURCE','/missing-gold-source'))
+        if not gold.is_dir():
+            self.skipTest('Gold fixture not mounted')
+        fake={'status':'FAIL','issues':[],
+              'edges':[{'status':'FAIL','current':'JohtoRoute30',
+                        'direction':'south','target':'JohtoCherrygroveCity',
+                        'issues':['source_start incorrect']} ]}
+        with patch('johto_map_release_audit.audit_all_active',return_value=fake):
+            report=audit_project(ROOT,gold,run_tests=False)
+        self.assertEqual(report['status'],'FAIL')
+        self.assertTrue(any('CONNECTION:' in v and 'source_start incorrect' in v
+                            for v in report['errors']),report['errors'])
+        self.assertEqual(report['tests'],0)
+
     def test_skips_are_fatal_even_with_exit_zero(self):
         done = subprocess.CompletedProcess([], 0, '',
                                            'Ran 237 tests in 0.3s\n\nOK (skipped=28)')

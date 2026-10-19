@@ -1,3 +1,32 @@
+## ILEX-5.62.223 正式工具交接｜连接条带与可达视野必须同时审核
+
+本轮完整说明见 `docs/JOHTO_CONNECTION_VISUAL_223_CLOSEOUT.md`。以项目最新被确认的 `.218/396d2ce1` 为 Git 基线，本次 `.219～.223` 仍待用户提交；当前工具仅做离线验证，不编译 ROM。
+
+**正式门禁命令（从项目根目录执行，并指向完整原版 Gold）：**
+
+```sh
+python3 tools/johto_rpp_connection_guard.py --project . --gold-root /path/to/pokegold-master --all-active
+JOHTO_GOLD_SOURCE=/path/to/pokegold-master JOHTO_GOLD_ROOT=/path/to/pokegold-master python3 tools/johto_map_release_audit.py --rpp . --gold /path/to/pokegold-master --expect-version ILEX-5.62.223
+```
+
+**不能只跑连接检查器的 unittest，也不能只指定一条 `--edge`**。当前真实激活 Header 20 个连接方向全量检查：Gold 方向和 offset、3行条带实际源/WRAM读写范围、落点、Bank。未解析/未登记/越界一律 FAIL。单测中的负向注入只是证明检查器会拒绝坏配置，不替代实际工程的 `--all-active`。
+
+**本次最重要的误区**：Gold 通行重叠的10列正确，仍可能因为玩家在窄地图右边可达的入口看到邻图第11～13列而显示默认 `$05` 树林。只有真实可到达的出口+Gold碰撞+RPP边界fence支持的北向右侧视野缺口，才登记 `north_connection_visual_right_border`（0～3）；多复制的列纯显示、不放开碰撞。Route35 north→Route36、Route32 north→Violet City 各需要3列；对其它连接不要机械添加。
+
+**覆盖边界**：当前北向右侧显示合同不是南向／东西向／左侧／镜头偏移／特殊 Warp 的完整证明；对未来 Route37 等新图仍须重新计算合法入口与屏幕可见范围。Gold 全量素材 `SafariZoneBeta` 的旧失败按用户指示保留，不能误称发布门禁 PASS。此次重跑 `534/534 unittest PASS, 0 skip`、启用连接 `20/20 PASS`，用户视频反馈仅支持已观察范围的画面改善，没有 .223 ROM/MAP 空间安全证明。
+
+---
+
+## CONN-5.62.222｜南北地图交界画面额外列
+
+`--all-active` 除可通行 Gold 重叠外，还从 `tools/johto_native_maps.json` 读取每图可选的 `north_connection_visual_right_border`（0～3）。当窄图合法出口靠近右边、视野能看到宽邻图的右侧额外图块时，允许在现成 WRAM 右侧三列缓存补绘真实来源，**不增加可走的边界格**。工具逐行验证来源、目标均在各自范围，少拷贝、过度扩宽或漏登记都会 FAIL。Route35 north → Route36 本轮检查 10+3=13；其它已启用连接按原合同保留。
+
+## CONN-5.62.221｜地图连接全量强制门禁（开发候选）
+
+**必须运行** `python tools/johto_rpp_connection_guard.py --project . --gold-root /path/to/pokegold-master --all-active`。它由当前 `tools/johto_native_maps.json` 注册地图 Header 自动发现全部启用的方向，不再依赖人工枚举 `--edge`。Gold offset 与 RPP 的宏/自定义连接记录分别还原实际读写，验证每条记录、边界、双向已启用的方向和运行时相邻地图的 ROM Bank；发现遗漏、解析失败或任意 FAIL 时退出码为 2。`--edge` 只用于局部定位，不可替代全量检查。
+
+`make johto-map-audit JOHTO_GOLD_SOURCE=/path/to/pokegold-master` / `tools/johto_map_release_audit.py` 同样在执行测试前强制调用 `audit_all_active()`；测试正确不代表实际工程连接正确。此检查**不编译 ROM、不证明上下滚屏 VRAM 逐帧效果**。`.220` 用户视频所示 35↔36 纵向残影仍须实机验证及进一步定位。
+
 ## Gold 全编号图块集资源索引前置审核（P3 工具候选，未收口）
 
 在现有 `johto_map_release_audit.py` 中接入 `johto_tileset_index_audit.py`：

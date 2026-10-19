@@ -208,6 +208,107 @@ def read_connection(project, current, target, direction, current_id, target_id, 
     return candidates[0]
 
 
+def map_header_bank(project, name):
+    """Source-level BANK for a registered map's header (not tileset art)."""
+    main = (project/'main.asm').read_text(encoding='utf-8')
+    marker = 'INCLUDE "data/mapHeaders/' + name + '.asm"'
+    if main.count(marker)!=1:
+        raise ConnectionError('Missing/duplicate main.asm header INCLUDE: ' + name)
+    prefix=main.split(marker,1)[0]
+    sections=re.findall(r'^\s*SECTION\s+"[^"]+"\s*,\s*ROMX\s*,\s*BANK\[([^]]+)\]',prefix,re.M)
+    if not sections:
+        raise ConnectionError('Cannot determine ROMX BANK for header: ' + name)
+    bank=sections[-1].strip()
+    declarations=dict(re.findall(r'^\s*DEF\s+(\w+)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)',main,re.M))
+    resolved=constant_expr(bank,{key:int(val[1:],16) if val.startswith('$') else int(val)
+                                  for key,val in declarations.items()})
+    return resolved
+
+
+def north_visual_right_border(project, gold, current, gold_current, direction,
+                              w1, w2, src_col, dst_col, overlap):
+    """Derive needed preview from REVIEWED reachable exits, not map width alone.
+
+    A 20-tile-wide screen has roughly five 16px tiles to the player's right.
+    When a legal crossing can expose past the eastern edge of a narrow map,
+    keep the existing three 32px WRAM border columns filled defensively.
+    The Gold overlap still determines movement and arrival; extra is DISPLAY ONLY.
+    """
+    if direction != 'north' or dst_col + overlap != w1 or src_col + overlap >= w2:
+        return 0
+    manifest = project / 'tools/johto_native_maps.json'
+    if not manifest.is_file():  # Minimal legacy synthetic fixtures.
+        return 0
+    entries = json.loads(manifest.read_text(encoding='utf-8'))['maps']
+    matches = [m for m in entries if m.get('header') == current + '_h']
+    if len(matches) != 1:
+        raise ConnectionError('Missing/duplicate north seam registration for ' + current)
+    item = matches[0]
+    exits = item.get('north_connection_exit_x_tiles')
+    if not isinstance(exits, list) or not exits or any(
+            type(x) is not int or not 0 <= x < 2*w1 for x in exits) or len(set(exits)) != len(exits):
+        raise ConnectionError('Unreviewed north crossing reachability for ' + current)
+    # Confirm exit cells exist on the actual Gold border, not arbitrary
+    # assumed walkable positions. RPP runtime fence must agree as well.
+    from johto_indoor_collision_adapter import plan_gold_quadrant_collision
+    geom, mask = plan_gold_quadrant_collision(gold, gold_current, 'johto')
+    stride = geom['mask_row_bytes']
+    for x in exits:
+        if mask[x // 8] & (1 << (x % 8)):
+            raise ConnectionError(f'{current} north exit x={x} is blocked in Gold')
+    # Guard against a manifest that silently omits legal crossing positions.
+    # Only audited code patterns are accepted, so future fence shapes fail
+    # closed until the auditor is taught to interpret them.
+    sources = [project/'main.asm',
+               project/'engine/overworld/johto_route33_collision.asm']
+    # Route34 has a dedicated north-only fence on the .216/.217 branch.
+    if current == 'JohtoRoute32':
+        fence_name = current + 'CollisionFence::'
+    elif current == 'JohtoRoute34':
+        fence_name = current + 'NorthEdgeFence::'
+    else:
+        fence_name = current + 'EdgeFence::'
+    fence = '\n'.join(f.read_text(encoding='utf-8') for f in sources if f.is_file())
+    match = re.search(re.escape(fence_name) + r'(.*?)(?=^\w+(?:::|:)|\Z)',
+                      fence, re.S | re.M)
+    if not match:
+        raise ConnectionError('Missing runtime north boundary fence for '+current)
+    if current == 'JohtoRoute34':
+        # .216's dedicated fence checks x>=8 && x<12 directly before
+        # .otherEdges. This is an independent audited shape, not a guess.
+        branch = re.search(r'^\s*cp\s+PLAYER_DIR_UP.*?^\.otherEdges\s*$', match.group(1), re.S|re.M)
+    else:
+        branch = re.search(r'^\.north\s*\n(.*?)(?=^\.[a-zA-Z]+\s*$|\Z)', match.group(1), re.S|re.M)
+    if not branch:
+        raise ConnectionError('Cannot prove north crossing reachability for '+current)
+    code = branch.group(0) if current == 'JohtoRoute34' else branch.group(1)
+    bounded = re.search(r'cp\s+(\d+)\s*\n\s*jr c, \.blocked\s*\n\s*cp\s+(\d+)\s*\n\s*jr nc, \.blocked',code)
+    single = re.search(r'cp\s+(\d+)\s*\n\s*jr z, \.clear\s*\n\s*jr \.block',code)
+    if bounded:
+        legal = list(range(int(bounded.group(1)),int(bounded.group(2))))
+    elif current == 'JohtoRoute34':
+        guard = re.search(r'cp\s+(\d+)\s*\n\s*jr c, \.blocked\s*\n\s*cp\s+(\d+)\s*\n\s*jr nc, \.blocked', code)
+        if not guard:
+            raise ConnectionError('Unhandled runtime north fence pattern for '+current)
+        legal = list(range(int(guard.group(1)),int(guard.group(2))))
+    elif single:
+        legal = [int(single.group(1))]
+    else:
+        raise ConnectionError('Unhandled runtime north fence pattern for '+current)
+    if sorted(exits) != legal:
+        raise ConnectionError(f'{current} manifest exits {sorted(exits)} differ from runtime fence {legal}')
+    # 5 tiles reaches a 160px screen's right half; a matching border band
+    # is copied in full (up to MAP_BORDER=3 blocks) for streaming safety.
+    visible = max(exits) + 5 >= 2*w1
+    needed = min(3, w2-(src_col+overlap)) if visible else 0
+    recorded = item.get('north_connection_visual_right_border', 0)
+    if type(recorded) is not int or recorded != needed:
+        raise ConnectionError(f'{current} visible north margin: recorded={recorded}, needed={needed}')
+    if 3 + dst_col + overlap + needed > w1 + 6:
+        raise ConnectionError('North preview exceeds three-column WRAM margin')
+    return needed
+
+
 def audit(project, gold, current, target, gold_current, gold_target, direction):
     direction = direction.lower()
     if direction not in ('north', 'south', 'east', 'west'):
@@ -218,7 +319,7 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
         head = project/'data/mapHeaders'/f'{camel}.asm'
         source = head.read_text(encoding='utf-8')
         # The first db JOHTO is a region byte; following dimensions identify the map.
-        m = re.search(r'^\s*db\s+(JOHTO_[A-Z0-9_]+)_HEIGHT\s*,\s*\1_WIDTH', source, re.M)
+        m = re.search(r'^\s*db\s+([A-Z0-9_]+)_HEIGHT\s*,\s*\1_WIDTH\b', source, re.M)
         if m is None:
             raise ConnectionError('Cannot resolve RPP width and height constants for '+camel)
         return m.group(1)
@@ -254,14 +355,21 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
             raise ConnectionError('Gold connection has no horizontal overlap')
         start_row=(h2-3) if direction=='north' else 0
         dest_row=0 if direction=='north' else (h1+3)
+        visual_extra = north_visual_right_border(project, gold, current, gold_current,
+                                                 direction, w1, w2, src_col, dst_col, overlap)
+        if visual_extra and (dst_col + overlap != w1 or
+                             src_col + overlap + visual_extra > w2 or
+                             3 + dst_col + overlap + visual_extra > stride):
+            raise ConnectionError('Visual-only north extension exceeds source or WRAM border')
         expected=dict(source_start=start_row*w2+src_col,
                       dest_start=dest_row*stride+3+dst_col,
-                      width=overlap, map_width=w2,
+                      width=overlap + visual_extra, map_width=w2,
                       arrive_y=2*h2-1 if direction=='north' else 0,
                       arrive_x=-2*offset,
                       window=1+h2*(w2+6) if direction=='north' else 7+w2)
         overlap_info=dict(source_columns=[src_col,src_col+overlap-1],
-                          dest_columns=[dst_col,dst_col+overlap-1], rows=3)
+                          dest_columns=[dst_col,dst_col+overlap-1], rows=3,
+                          visual_right_border=visual_extra)
     else:
         # Gold's east/west offset is the target map's TOP relative to the
         # current map's TOP. Positive => target starts farther south.
@@ -294,8 +402,10 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
                 issues.append(f'source_row_{i}: read crosses target .blk row or bounds')
             if dr < 0 or dr//stride != dest_row+i or (dr+actual['width']-1)//stride != dest_row+i:
                 issues.append(f'dest_row_{i}: write crosses overworld buffer row or starts negative')
-            if dr % stride < 3 or (dr+actual['width']-1)%stride > w1+2:
-                issues.append(f'dest_row_{i}: writes outside current map/canonical border')
+            if dr % stride < 3 or (dr+actual['width']-1)%stride > w1+2+visual_extra:
+                issues.append(f'dest_row_{i}: writes outside approved map/visual border')
+            if dr + actual['width'] > (h1+6)*stride:
+                issues.append(f'dest_row_{i}: write exceeds entire WRAM block map')
     else:
         # LoadEastWestConnectionsTileMap copies 3 columns per iteration.
         # Validate EACH source/destination row separately (not only endpoints).
@@ -317,16 +427,116 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
                 overlap=overlap_info,
                 actual=actual, expected=expected, issues=issues)
 
+def discover_active_edges(project):
+    """Read the registered Johto headers and enumerate every enabled edge.
+
+    Reject incomplete records rather than allowing an omitted --edge to pass.
+    This is a discovery layer for the existing audit(), not a map generator.
+    """
+    manifest = json.loads((project/'tools/johto_native_maps.json').read_text(encoding='utf-8'))
+    entries = manifest['maps']
+    registered = []
+    for entry in entries:
+        header = entry['header']
+        if not header.endswith('_h'):
+            raise ConnectionError('Unrecognized registered map header: '+str(header))
+        registered.append(header[:-2])
+    if len(registered)!=len(set(registered)) or not registered:
+        raise ConnectionError('Duplicate/empty Johto native map registrations')
+    active = []
+    for current in registered:
+        path = project/'data/mapHeaders'/f'{current}.asm'
+        source = path.read_text(encoding='utf-8')
+        # The single direction mask lives after the dimensions + data pointers.
+        m = re.search(r'^\s*'+re.escape(current)+r'_h:\s*\n'
+                      r'(?:[^\n]*\n)*?\s*db\s+((?:NORTH|SOUTH|EAST|WEST)(?:\s*\|\s*(?:NORTH|SOUTH|EAST|WEST))*)\s*(?:;[^\n]*)?$',
+                      source, re.M)
+        if not m:
+            # Headers without map connections have a numeric 0 direction mask.
+            # Verify such a mask exists; missing/parsing-failed masks are fatal.
+            if not re.search(r'^\s*db\s+(?:\$00|0)\s*(?:;[^\n]*)?$', source, re.M):
+                raise ConnectionError('Missing/unreadable direction mask in '+current)
+            continue
+        directions = [x.strip().lower() for x in m.group(1).split('|')]
+        if not directions or len(set(directions))!=len(directions) or any(
+                d not in ('north','south','east','west') for d in directions):
+            raise ConnectionError('Bad connection mask in '+current)
+        tail = [line.split(';',1)[0].strip() for line in source[m.end():].splitlines()]
+        targets=[]
+        for i,line in enumerate(tail):
+            if line.startswith('dw '+current+'Object'):
+                break
+            macro = re.fullmatch(r'(NORTH|SOUTH|WEST|EAST)_MAP_CONNECTION\s+.*?,\s*(\w+)Blocks\s*',line)
+            if macro:
+                targets.append((macro.group(1).lower(),macro.group(2)))
+                continue
+            # A native bounded record starts with its one-byte map key
+            # followed IMMEDIATELY by the neighbor block pointer. Numeric
+            # width/arrival fields must never be mistaken for additional edges.
+            if re.fullmatch(r'db\s+[A-Z_][A-Z0-9_]*',line):
+                following=next((other for other in tail[i+1:] if other), '')
+                block=re.fullmatch(r'dw\s+(\w+)Blocks(?:\s*\+.*)?', following)
+                if block:
+                    targets.append((None,block.group(1)))
+        if len(targets)!=len(directions) or any(t is None for _,t in targets):
+            raise ConnectionError(f'Cannot enumerate all active edges of {current}: '
+                                  f'mask={directions} records={targets}')
+        for direction,(macro_dir,target) in zip(directions,targets):
+            if macro_dir is not None and macro_dir!=direction:
+                raise ConnectionError(f'{current} direction order mismatch: {macro_dir} vs {direction}')
+            if target not in registered:
+                raise ConnectionError(f'{current} {direction}: unregistered Johto target {target}')
+            def goldname(n):
+                return n[5:] if n.startswith('Johto') else n
+            active.append((current,target,goldname(current),goldname(target),direction))
+    if not active:
+        raise ConnectionError('No active native Johto connections discovered')
+    return active
+
+
+def audit_all_active(project, gold):
+    """Fail closed on any missing, unparseable, or unsafe enabled connection."""
+    try:
+        edges = discover_active_edges(project)
+    except (ConnectionError, OSError, ValueError, KeyError) as ex:
+        return {'status':'FAIL', 'edges':[], 'issues':['DISCOVERY: '+str(ex)]}
+    result = []
+    for edge in edges:
+        try:
+            item=audit(project,gold,*edge)
+            if map_header_bank(project,edge[0])!=map_header_bank(project,edge[1]):
+                item['issues'].append('ROM bank mismatch: cross-map connection loads strips in CURRENT map bank')
+                item['status']='FAIL'
+            result.append(item)
+        except (ConnectionError,OSError,ValueError,KeyError) as ex:
+            result.append({'status':'FAIL','edge':edge,'issues':[str(ex)]})
+    return {'status':'PASS' if all(e['status']=='PASS' for e in result) else 'FAIL',
+            'edges':result,'issues':[],
+            'scope':'All enabled registered native Johto connections; source-only'}
+
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project',type=Path,required=True)
     parser.add_argument('--gold-root',type=Path,required=True)
-    parser.add_argument('--edge',nargs=5,action='append',required=True,
+    parser.add_argument('--all-active',action='store_true',
+                        help='Automatically check EVERY enabled registered native Johto connection')
+    parser.add_argument('--edge',nargs=5,action='append',
                         metavar=('RPP_CURRENT','RPP_TARGET','GOLD_CURRENT','GOLD_TARGET','DIRECTION'),
                         help='Repeat per NEW connection (north/south/east/west)')
     parser.add_argument('--json-out',type=Path,default=None)
     args=parser.parse_args()
+    if args.all_active and args.edge:
+        parser.error('Use --all-active or explicit --edge, not both')
+    if not args.all_active and not args.edge:
+        parser.error('Use --all-active or at least one --edge')
+    if args.all_active:
+        output = audit_all_active(args.project,args.gold_root)
+        serialized = json.dumps(output,ensure_ascii=False,indent=2)
+        print(serialized)
+        if args.json_out:
+            args.json_out.write_text(serialized+'\n',encoding='utf-8')
+        return 0 if output['status']=='PASS' else 2
     result=[]
     for edge in args.edge:
         try:

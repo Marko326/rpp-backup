@@ -65,7 +65,7 @@ def audit(root: Path, gold: Path) -> list[str]:
             features = entry.get('feature_status', {})
             for name in ('surf', 'dig', 'escape_rope'):
                 local_id = entry.get('local_id')
-                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8))
+                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8, 17))
                             or (name in ('dig', 'escape_rope') and local_id == 8)
                             else 'DEFERRED')
                 if features.get(name) != expected:
@@ -106,7 +106,7 @@ def main() -> int:
     args = parser.parse_args()
     errors = audit(args.rpp, args.gold)
     print(json.dumps({'status': 'FAIL' if errors else 'PASS',
-                      'errors': errors, 'surf_enabled_maps': ['JOHTO_ROUTE_32', 'JOHTO_UNION_CAVE_1F'],
+                      'errors': errors, 'surf_enabled_maps': ['JOHTO_ROUTE_32', 'JOHTO_UNION_CAVE_1F', 'JOHTO_ROUTE_35'],
                       'dig_escape_rope_enabled': ['JOHTO_UNION_CAVE_1F'],
                       'phone_verified': False}, ensure_ascii=False, indent=2))
     return bool(errors)
