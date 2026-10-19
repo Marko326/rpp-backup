@@ -94,6 +94,46 @@ class RoofGoldReferenceGate(unittest.TestCase):
         hdr.write_text('JohtoRoute35_h:\n\tdb JOHTO_MODERN\n')
         self.assert_rejected('roof local-ID table')
 
+    def mutate_selector(self, old, new):
+        path=self.path/'engine/overworld/johto_goldenrod_roof_gfx.asm'
+        src=path.read_text()
+        self.assertEqual(src.count(old),1,old)
+        path.write_text(src.replace(old,new))
+        self.assert_rejected('roof runtime selector source/BANK/group dispatch mismatch')
+
+    def test_swapping_violet_and_azalea_roof_sources_is_rejected(self):
+        # Both labels still exist and both PNGs match Gold, but the displayed
+        # art would be wrong. This regression was missed by the old gate.
+        path=self.path/'engine/overworld/johto_goldenrod_roof_gfx.asm'
+        src=path.read_text()
+        violet='ld hl,JohtoVioletRoofs_GFX'
+        azalea='ld hl,JohtoAzaleaRoofs_GFX'
+        self.assertEqual(src.count(violet),1)
+        self.assertEqual(src.count(azalea),1)
+        path.write_text(src.replace(violet,'ld hl,__TEMP_ROOF__')
+                            .replace(azalea,violet)
+                            .replace('ld hl,__TEMP_ROOF__',azalea))
+        self.assert_rejected('roof runtime selector source/BANK/group dispatch mismatch')
+
+    def test_wrong_roof_source_bank_is_rejected(self):
+        self.mutate_selector('ld a,BANK(JohtoVioletRoofs_GFX)',
+                             'ld a,BANK(JohtoAzaleaRoofs_GFX)')
+
+    def test_wrong_group_dispatch_branch_is_rejected(self):
+        self.mutate_selector('jr z,.violet', 'jr z,.azalea')
+
+    def test_wrong_base_roof_tile_offset_is_rejected(self):
+        self.mutate_selector('ld hl,NewBark_GFX + $0a * $10',
+                             'ld hl,NewBark_GFX + $0b * $10')
+
+    def test_selector_comments_and_whitespace_do_not_change_contract(self):
+        path=self.path/'engine/overworld/johto_goldenrod_roof_gfx.asm'
+        src=path.read_text()
+        self.assertIn('ld hl,JohtoVioletRoofs_GFX',src)
+        path.write_text(src.replace('ld hl,JohtoVioletRoofs_GFX',
+                                    'ld   hl, JohtoVioletRoofs_GFX ; Gold art'))
+        self.assertEqual(audit(self.path,GOLD),[])
+
     def test_missing_connection_hook_is_rejected(self):
         path=self.path/'home/overworld.asm'
         src=path.read_text()

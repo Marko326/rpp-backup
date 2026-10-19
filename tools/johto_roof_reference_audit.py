@@ -82,6 +82,69 @@ def roof_table(src, start, end):
     return parsed
 
 
+
+def roof_selector_contract(src, families):
+    """Fail closed on changes to the *executed* roof source/BANK selection.
+
+    Families are in RPP local map-group order, but come from Gold roofs.asm.
+    Unlike a label-presence search, this checks every dispatch branch, the two
+    base-tileset fallbacks, matching source/BANK operands and success/failure
+    exits. The accepted assembly shape is intentionally narrow: a refactor of
+    this low-level routine must review/update the contract, not silently pass.
+    """
+    label = 'SelectGoldenrodRoofSource:'
+    if src.count(label) != 1:
+        return ['roof runtime selector missing or defined more than once']
+    if 'new_bark' not in families:
+        return ['roof runtime selector has no Gold new_bark base group']
+
+    body = src.split(label, 1)[1]
+    # Stop at the next global assembler label, if a future file adds one.
+    next_global = re.search(r'(?m)^\s*[A-Za-z_]\w*::?\s*(?:;[^\n]*)?$', body)
+    if next_global:
+        body = body[:next_global.start()]
+    # Strip comments and insignificant spacing, never instructions or labels.
+    actual = [re.sub(r'\s+', '', line.split(';', 1)[0]).lower()
+              for line in body.splitlines()]
+    actual = [line for line in actual if line]
+
+    expected = [
+        'ld a,[wCurMapTileset]', 'cp JOHTO', 'jr z,.johtoTileset',
+        'cp JOHTO_MODERN', 'jr nz,.no', '.johtoTileset',
+        'ld a,[wCurRegion]', 'cp MAP_REGION_JOHTO', 'jr nz,.no',
+        'ld a,[wCurLocalMapID]', 'cp NUM_JOHTO_MAPS', 'jr nc,.no',
+        'ld e,a', 'ld d,0', 'ld hl,JohtoRoofGroupForLocalMap',
+        'add hl,de', 'ld a,[hl]', 'cp $ff', 'jr z,.no',
+    ]
+    non_base = [(group, family) for group, family in enumerate(families)
+                if family != 'new_bark']
+    for group, family in non_base:
+        expected += [f'cp {group}', f'jr z,.{family}']
+    expected += [
+        'ld a,[wCurMapTileset]', 'cp JOHTO_MODERN', 'jr z,.modernBase',
+        'ld hl,NewBark_GFX + $0a * $10', 'ld a,BANK(NewBark_GFX)',
+        'jr .yes', '.modernBase',
+        'ld hl,JohtoModern_GFX + $0a * $10',
+        'ld a,BANK(JohtoModern_GFX)', 'jr .yes',
+    ]
+    # Several Gold mapgroups may share one art family and jump to one label.
+    unique_families = list(dict.fromkeys(family for _, family in non_base))
+    for index, family in enumerate(unique_families):
+        symbol = f'Johto{family.title().replace("_", "")}Roofs_GFX'
+        expected += [f'.{family}', f'ld hl,{symbol}', f'ld a,BANK({symbol})']
+        if index != len(unique_families) - 1:
+            expected.append('jr .yes')
+    expected += ['.yes', 'scf', 'ret', '.no', 'and a', 'ret']
+    expected = [re.sub(r'\s+', '', line).lower() for line in expected]
+    for i in range(max(len(actual), len(expected))):
+        got = actual[i] if i < len(actual) else '<missing>'
+        want = expected[i] if i < len(expected) else '<end-of-selector>'
+        if got != want:
+            return [f'roof runtime selector source/BANK/group dispatch mismatch at '
+                    f'instruction {i + 1}: expected {want}, got {got}']
+    return []
+
+
 def audit(root: Path, gold: Path):
     errors=[]
     try:
@@ -119,6 +182,7 @@ def audit(root: Path, gold: Path):
             expected.append(observed_groups.index(number))
         color_src=read(root/'color/loadpalettes.asm')
         gfx_src=read(root/'engine/overworld/johto_goldenrod_roof_gfx.asm')
+        errors.extend(roof_selector_contract(gfx_src, families))
         for name,source,begin,end in (
             ('palette',color_src,'JohtoGoldDayRoofGroups','JohtoGoldDayRoofGroupsEnd'),
             ('graphics',gfx_src,'JohtoRoofGroupForLocalMap','JohtoRoofGroupForLocalMapEnd')):
