@@ -242,16 +242,19 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
                 'HOP_UP':((0,-1),),'HOP_RIGHT':((1,0),)}
     for c in cells:
         for dx,dy in directions.get(c['role'],()):
-            points=[(c['x']+n*dx,c['y']+n*dy) for n in (1,2,3)]
+            # A ledge is one barrier cell and a landing cell beyond it.
+            # The third cell is unrelated to landing validity (Azalea 10,6;
+            # Forest also has third-cell trees). Do not silently drop a Gold
+            # HOP because the terrain AFTER the landing is solid.
+            points=[(c['x']+n*dx,c['y']+n*dy) for n in (1,2)]
             safe=all(0<=xx<width and 0<=yy<height for xx,yy in points)
             if safe:
-                behind, landing, nextstep=(cells[yy*width+xx] for xx,yy in points)
+                behind, landing=(cells[yy*width+xx] for xx,yy in points)
                 safe=(behind['role'] in {'WALL','UP_WALL'} and
-                      landing['role'] in {'FLOOR','TALL_GRASS'} and
-                      nextstep['role'] in {'FLOOR','TALL_GRASS'})
+                      landing['role'] in {'FLOOR','TALL_GRASS'})
             if not safe:
                 unsafe_hops.append({'x':c['x'],'y':c['y'],'dx':dx,'dy':dy,
-                                    'reason':'landing/solid/out-of-bounds needs manual review'})
+                                    'reason':'barrier/landing/out-of-bounds needs manual review'})
                 continue
             hops.append({'x':c['x'],'y':c['y'],'dx':dx,'dy':dy,
                          'from_tile':c['image_id'],'edge_tile':behind['image_id'],

@@ -210,16 +210,17 @@ class ForestRuntimeP17(unittest.TestCase):
         self.assertEqual(sum(role(x+3*dx,y+3*dy)=='HEADBUTT_TREE'
                              for x,y,dx,dy in actual),7)
 
-    def test_gold_forest_hop_disabled_and_legacy_tables_kept(self):
+    def test_gold_forest_hop_uses_common_executor_and_legacy_tables(self):
         src=(ROOT/'engine/overworld/ledges.asm').read_text()
         original_end='ld [wSimulatedJoypadStatesIndex], a'
-        forest_scope='cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tdec a'
-        self.assertIn(forest_scope,src)
+        self.assertIn('ld a, $2\n\tld [wSimulatedJoypadStatesIndex], a',src)
+        self.assertNotIn('.hopCountReady',src)
         self.assertNotIn('.ilexHops',src)
         self.assertIn('JohtoIlexForestLedgeTiles:',src)
         branch=src.split('\n.ilexForest\n',1)[-1].split('\n.route33\n',1)[0]
         self.assertEqual([line.strip() for line in branch.splitlines()
-                          if line.strip() and not line.lstrip().startswith(';')],['ret'])
+                          if line.strip() and not line.lstrip().startswith(';')],
+                         ['ld hl, JohtoIlexForestLedgeTiles','jp .checkPairs'])
         self.assertIn('db SPRITE_FACING_RIGHT, $05,$42,D_RIGHT',src)
         home=(ROOT/'home/overworld.asm').read_text()
         self.assertIn('jr nz, .checkRunningButton',home)
@@ -236,17 +237,17 @@ class ForestRuntimeP17(unittest.TestCase):
         self.mutate('maps/JohtoIlexForest.blocked_mask.bin',bytes(raw),bytes(corrupt),
                     'Gold forest ledge wall must remain blocked')
 
-    def test_negative_ledge_unsealed_rejected(self):
+    def test_negative_ledge_repaused_rejected(self):
         self.mutate('engine/overworld/ledges.asm',
-                    '\t; Keep matching table and artwork for later diagnosis; no jump execution.\n\tret',
-                    '\t; Keep matching table and artwork for later diagnosis; no jump execution.\n\tjp .checkPairs',
-                    'native Forest HOP dispatch must remain disabled')
+                    'ld hl, JohtoIlexForestLedgeTiles\n\tjp .checkPairs',
+                    'ld hl, JohtoIlexForestLedgeTiles\n\tret',
+                    'native Forest common HOP dispatch must use tile pairs')
 
     def test_negative_ledge_missing_corner_direction_rejected(self):
         self.mutate('engine/overworld/ledges.asm',
                     'db SPRITE_FACING_RIGHT, $05,$42,D_RIGHT',
                     'db SPRITE_FACING_RIGHT, $05,$41,D_RIGHT',
-                    'native Forest dormant tile-pair inventory changed')
+                    'native Forest common tile-pair inventory changed')
 
     def test_negative_native_barrier_tile_rejected(self):
         p=ROOT/'gfx/blocksets/johto_ilex_forest.bst';original=p.read_bytes()
@@ -263,9 +264,9 @@ class ForestRuntimeP17(unittest.TestCase):
 
     def test_negative_ledge_wrong_jump_count_rejected(self):
         self.mutate('engine/overworld/ledges.asm',
-                    'cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tdec a',
-                    'cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tnop',
-                    'native Forest dormant tile-pair inventory changed')
+                    'ld a, $2\n\tld [wSimulatedJoypadStatesIndex], a',
+                    'ld a, $1\n\tld [wSimulatedJoypadStatesIndex], a',
+                    'common ledge forced-input count must remain the same')
 
 
 if __name__=='__main__':

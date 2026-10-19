@@ -44,7 +44,7 @@ class IlexCutSurfParity(unittest.TestCase):
         self.assertRegex(s,r'(?s)\.kanto\n\tld a, \[wObtainedKantoBadges\]\n\tbit 1, a ; CASCADE_BADGE.*?jr z, \.denied')
         self.assertTrue(s.rstrip().endswith('and a\n\tret'))
 
-    def test_forest_collision_cut_target_and_ledge_pause_preserved(self):
+    def test_forest_collision_cut_target_and_common_ledge_preserved(self):
         cut=(ROOT/'engine/overworld/cut.asm').read_text()
         ledges=(ROOT/'engine/overworld/ledges.asm').read_text()
         self.assertIn('callba JohtoIlexForestRemoveCutTree',cut)
@@ -53,7 +53,7 @@ class IlexCutSurfParity(unittest.TestCase):
         self.assertIn('INCBIN "maps/JohtoIlexForest.blocked_mask.bin"',self.forest)
         branch=ledges.split('\n.ilexForest\n',1)[1].split('\n.route33\n',1)[0]
         instructions=[s.strip() for s in branch.splitlines() if s.strip() and not s.lstrip().startswith(';')]
-        self.assertEqual(instructions,['ret'])
+        self.assertEqual(instructions,['ld hl, JohtoIlexForestLedgeTiles','jp .checkPairs'])
 
     def test_doc_only_requires_map_playtest_not_farfetchd_story(self):
         doc=(ROOT/'docs/ILEX_CUT_211_MAP_EXPANSION_CONTRACT.md').read_text()

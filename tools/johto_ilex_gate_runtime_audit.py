@@ -362,18 +362,23 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
         ledges = (rpp/'engine/overworld/ledges.asm').read_text()
         require(all(code in ledges for code in (
             'cp JOHTO_ILEX_FOREST\n\tjp z, .ilexForest',
-            '.ilexForest\n\t; ILEX-5.62.212: Forest jump dispatch remains DISABLED (205-208 phone FAIL).',
             'JohtoIlexForestLedgeTiles:\n\tdb SPRITE_FACING_DOWN,  $05,$40,D_DOWN',
             '\tdb SPRITE_FACING_LEFT,  $05,$41,D_LEFT',
             '\tdb SPRITE_FACING_RIGHT, $05,$42,D_RIGHT',
-            'cp JOHTO_ILEX_FOREST\n\tld a, $2\n\tjr nz, .hopCountReady\n\tdec a',
-        )), 'native Forest dormant tile-pair inventory changed')
-        # The .209 safety decision is an actual control-flow contract, not
-        # merely a text comment: return before ever entering the HOP executor.
+        )), 'native Forest common tile-pair inventory changed')
+        # Forest's only map-specific jump behavior is tile-pair selection;
+        # the dispatch must not return early or bypass the original matcher.
         ilex_branch=ledges.split('\n.ilexForest\n',1)[-1].split('\n.route33\n',1)[0]
         active=[line.strip() for line in ilex_branch.splitlines()
                 if line.strip() and not line.lstrip().startswith(';')]
-        require(active==['ret'], 'native Forest HOP dispatch must remain disabled')
+        require(active==['ld hl, JohtoIlexForestLedgeTiles','jp .checkPairs'],
+                'native Forest common HOP dispatch must use tile pairs')
+        queue=ledges.split('\n.foundMatch\n',1)[-1].split('\nJohtoIlexForestLedgeTiles:',1)[0]
+        require('ld a, $2\n\tld [wSimulatedJoypadStatesIndex], a' in queue
+                and 'cp JOHTO_ILEX_FOREST' not in queue
+                and '.hopCountReady' not in ledges
+                and 'call StartSimulatingJoypadStates' in queue,
+                'common ledge forced-input count must remain the same')
         require('.ilexHops' not in ledges and 'ld hl, .ilexHops' not in ledges,
                 'retired Forest coordinate HOP interpreter reintroduced')
         home=(rpp/'home/overworld.asm').read_text()

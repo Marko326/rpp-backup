@@ -30,8 +30,9 @@ class AzaleaRuntime195(unittest.TestCase):
         self.assertEqual((r['width_cells'], r['height_cells'], len(mask)),(40,18,90))
         self.assertEqual((r['blocked_count'],r['walkable_count']),(447,273))
         self.assertEqual(mask, (ROOT / 'maps/JohtoAzaleaTown.blocked_mask.bin').read_bytes())
-        self.assertEqual(len(r['hops']),9)
-        self.assertEqual([(v['x'],v['y']) for v in r['unsafe_hop_candidates']],[(10,6)])
+        self.assertEqual(len(r['hops']),10)
+        self.assertEqual(r['unsafe_hop_candidates'],[])
+        self.assertIn((10,6,0,1), {(v['x'],v['y'],v['dx'],v['dy']) for v in r['hops']})
 
     def test_both_gold_edges_and_registered_targets(self):
         for edge in [('JohtoRoute33','JohtoAzaleaTown','Route33','AzaleaTown','west'),
@@ -73,8 +74,8 @@ class AzaleaRuntime195(unittest.TestCase):
         self.assertIn('JohtoAzaleaBlockedRows::\n\tINCBIN "maps/JohtoAzaleaTown.blocked_mask.bin"',code)
         ledges=(ROOT/'engine/overworld/ledges.asm').read_text()
         rows=ledges.split('\n.azaleaHops\n',1)[1].split('db $ff',1)[0]
-        self.assertEqual(rows.count('PLAYER_DIR_DOWN'),9)
-        self.assertNotIn('db 10, 6, PLAYER_DIR_DOWN',rows)
+        self.assertEqual(rows.count('PLAYER_DIR_DOWN'),10)
+        self.assertIn('db 10, 6, PLAYER_DIR_DOWN',rows)
 
     def test_bad_east_connection_width_rejected(self):
         with tempfile.TemporaryDirectory() as folder:

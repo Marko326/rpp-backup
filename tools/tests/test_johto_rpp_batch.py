@@ -402,13 +402,14 @@ class AzaleaGoldCandidateTests(unittest.TestCase):
             self.assertEqual((self.rpp / 'gfx/blocksets/johto_modern.bst').read_bytes(),
                              (Path(td) / 'preserved_gold_art_candidate/johto_modern.bst').read_bytes())
 
-    def test_unsafe_hop_keeps_town_offline(self):
+    def test_two_cell_gold_hops_are_not_rejected_by_third_wall(self):
         geometry, mask = self.geometry(self.gold, 'AzaleaTown', 'johto_modern')
         self.assertEqual((geometry['width_cells'], geometry['height_cells']), (40, 18))
         self.assertEqual(len(mask), 90)
         self.assertEqual((geometry['blocked_count'], geometry['walkable_count']), (447, 273))
-        self.assertEqual(len(geometry['hops']), 9)
-        self.assertIn((10, 6), {(h['x'], h['y']) for h in geometry['unsafe_hop_candidates']})
+        self.assertEqual(len(geometry['hops']), 10)
+        self.assertEqual(geometry['unsafe_hop_candidates'], [])
+        self.assertIn((10, 6), {(h['x'], h['y']) for h in geometry['hops']})
         self.assertFalse(geometry['runtime_ready'])
 
 

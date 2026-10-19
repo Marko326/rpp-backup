@@ -46,13 +46,13 @@ class ForestCutNightPaletteContract(unittest.TestCase):
             with self.subTest(kanto=hex(aa),forest=hex(bb)):
                 self.assertEqual(tile(a,aa),tile(b,bb))
 
-    def test_both_cut_entry_points_and_ledge_pause_still_present(self):
+    def test_both_cut_entry_points_and_common_ledge_still_present(self):
         field=(ROOT/'engine/overworld/field_moves.asm').read_text()
         menu=(ROOT/'engine/menu/start_sub_menus.asm').read_text()
         ledges=(ROOT/'engine/overworld/ledges.asm').read_text()
         self.assertIn('callba JohtoCutBadgeAllowed',field)
         self.assertIn('callba JohtoCutBadgeAllowed',menu)
-        self.assertEqual([x.strip() for x in ledges.split('\n.ilexForest\n',1)[1].split('\n.route33\n',1)[0].splitlines() if x.strip() and not x.lstrip().startswith(';')],['ret'])
+        self.assertEqual([x.strip() for x in ledges.split('\n.ilexForest\n',1)[1].split('\n.route33\n',1)[0].splitlines() if x.strip() and not x.lstrip().startswith(';')],['ld hl, JohtoIlexForestLedgeTiles','jp .checkPairs'])
 
 if __name__ == '__main__':
     unittest.main()

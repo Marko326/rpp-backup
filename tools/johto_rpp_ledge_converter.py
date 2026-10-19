@@ -75,15 +75,12 @@ def build(mapdata, blocks, labels):
             for dx, dy in DIRS[t]:
                 bx, by = x + dx, y + dy
                 lx, ly = x + 2 * dx, y + 2 * dy
-                x3, y3 = x + 3 * dx, y + 3 * dy
+                # Gold jump distance is two collision cells. Never require
+                # the third cell to be walkable: it is not the jump landing.
                 if not (0 <= lx < WORLD_W and 0 <= ly < WORLD_H):
                     raise ValueError('Jump target outside map')
-                if not (0 <= x3 < WORLD_W and 0 <= y3 < WORLD_H):
-                    raise ValueError('Original RPP simulated step would exit map')
                 if get_cell(lx, ly)[0] not in ('FLOOR', 'TALL_GRASS'):
                     raise ValueError(f'Gold two-cell landing blocked: {(lx, ly)}')
-                if get_cell(x3, y3)[0] not in ('FLOOR', 'TALL_GRASS'):
-                    raise ValueError(f'RPP third-cell fallback blocked: {(x3, y3)}')
                 barrier, front_tile = get_cell(bx, by)
                 # Left uses existing blocked $3b and never needs cloning.
                 if (dx, dy) == (-1, 0):

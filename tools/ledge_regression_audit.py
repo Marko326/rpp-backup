@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Read-only inventory for every *registered* RPP ledge implementation.
 
-Counts front-tile/facing matches in installed maps and checks Forest's Gold
-2-cell landing against the shipped mask. A terrain audit is NOT a ROM test.
+Cross-checks every registered Johto HOP position+direction against independent
+Gold collision roles and validates the two-cell landing. Kanto is inventoried
+by tile pairs only. A source audit is NOT a ROM or real-device test.
 """
 from collections import Counter
 import json
+import os
 from pathlib import Path
 import re
 
@@ -15,7 +17,7 @@ FACING = {'SPRITE_FACING_DOWN': (0, 1), 'SPRITE_FACING_LEFT': (-1, 0),
 NATIVE = {
     'JohtoRoute29': (30, 'johto', 'JohtoRoute29LedgeTiles'),
     'JohtoRoute30': (10, 'johto', 'JohtoRoute29LedgeTiles'),
-    'JohtoRoute31': (10, 'johto', 'JohtoRoute31LedgeTiles'),
+    'JohtoRoute31': (20, 'johto', 'JohtoRoute31LedgeTiles'),
     'JohtoRoute32': (10, 'johto', 'JohtoRoute31LedgeTiles'),
     'JohtoVioletCity': (20, 'johto', 'JohtoRoute29LedgeTiles'),
     'JohtoIlexForest': (15, 'johto_ilex_forest', 'JohtoIlexForestLedgeTiles'),
@@ -62,6 +64,24 @@ def registration_errors(src):
             ('coordinate HOP router', coord, expected_coord)):
         if actual_set != expected_set:
             errors.append(f'{label} registration changed: got={sorted(actual_set)}, expected={sorted(expected_set)}; update audit + geometry contract')
+    # A perfect coordinate inventory is worthless if the dispatcher routes
+    # the map to the wrong table. Lock the executable entry chain as well.
+    contract = (
+        'cp JOHTO_MODERN\n\tjp z, .route33',
+        'cp JOHTO_ILEX_FOREST\n\tjp z, .ilexForest',
+        'cp JOHTO_ROUTE_31\n\tjr z, .route31And32',
+        'cp JOHTO_ROUTE_32\n\tret nz',
+        'cp REGION_NATIVE_MAP_SLOT\n\tret nz',
+        'cp MAP_REGION_JOHTO\n\tret nz',
+        'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjr z, .route33HopTable',
+        'cp JOHTO_AZALEA_TOWN_LOCAL_ID\n\tret nz',
+        'ld hl, .azaleaHops\n\tjr .modernHopLookup',
+        'ld hl, .route33Hops',
+        'jp .foundMatch',
+    )
+    for snippet in contract:
+        if snippet not in src:
+            errors.append(f'ledge runtime dispatcher changed: missing {snippet!r}')
     return errors
 
 
@@ -92,21 +112,73 @@ def decode(root, map_name, width, tileset, rules):
     return matches
 
 
+def expected_gold_hops(gold, map_name, tileset):
+    """Use actual Gold HOP role/direction, not counts or RPP trigger tables.
+
+    A solid third cell is deliberate in some Gold maps and is NOT a reason
+    to reject the valid two-cell jump. The general collision converter checks
+    the barrier and landing geometry with the same source labels.
+    """
+    from johto_indoor_collision_adapter import plan_gold_quadrant_collision
+    plan, _ = plan_gold_quadrant_collision(gold, map_name, tileset)
+    if plan['unsafe_hop_candidates']:
+        raise AssertionError(f'{map_name}: Gold HOP barrier/landing invalid: '
+                             f"{plan['unsafe_hop_candidates']}")
+    return {(h['x'], h['y'], h['dx'], h['dy']) for h in plan['hops']}
+
+
+def coordinate_hops(src, label):
+    section = src.split('\n' + label + '\n', 1)[1].split('\tdb $ff', 1)[0]
+    actions = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*PLAYER_DIR_(\w+)', section)
+    steps = {'DOWN': (0, 1), 'LEFT': (-1, 0),
+             'RIGHT': (1, 0), 'UP': (0, -1)}
+    if any(direction not in steps for _, _, direction in actions):
+        raise AssertionError(f'{label}: invalid direction')
+    parsed = [(int(x), int(y), *steps[direction]) for x, y, direction in actions]
+    if len(parsed) != len(set(parsed)):
+        raise AssertionError(f'{label}: duplicate jump actions')
+    return set(parsed)
+
+
 def mask_blocked(mask, x, y, width=30):
     if not 0 <= x < width or not 0 <= y < 54:
         return True
     return bool(mask[y * ((width + 7) // 8) + x // 8] & (1 << (x % 8)))
 
 
-def audit(root=ROOT):
+def audit(root=ROOT, gold=None):
     root = Path(root)
+    gold = Path(gold or os.environ.get('JOHTO_GOLD_SOURCE', '/missing-gold'))
     src = (root / 'engine/overworld/ledges.asm').read_text()
     report = {'native_pair_maps': {}, 'kanto_overworld': {}, 'modern_coordinate_maps': {},
               'errors': registration_errors(src), 'warnings': []}
     counts = {}
+    constants = (root / 'constants/map_constants.asm').read_text()
     for name, (width, tileset, label) in NATIVE.items():
+        constant = re.search(r'(?m)^\s*mapconst\s+' +
+                             re.escape({'JohtoVioletCity': 'JOHTO_VIOLET_CITY', 'JohtoIlexForest': 'JOHTO_ILEX_FOREST'}.get(name, 'JOHTO_ROUTE_' + name.removeprefix('JohtoRoute'))) +
+                             r',\s*(\d+),\s*(\d+)\b', constants)
+        actual_width = (int(constant[2]) if constant else
+                        15 if name == 'JohtoIlexForest' and
+                        'DEF JOHTO_ILEX_FOREST_WIDTH EQU 15' in
+                        (root / 'constants/region_map_constants.asm').read_text() else None)
+        if actual_width != width:
+            report['errors'].append(f'{name}: ledge-audit width {width} disagrees with registered map width')
+            continue
         matches = decode(root, name, width, tileset, pairs(src, label))
         counts[name] = len(matches)
+        if not (gold / 'maps' / (name[5:] + '.blk')).is_file():
+            report['errors'].append(name + ': complete Gold source is required for ledge coverage')
+        else:
+            try:
+                expected = expected_gold_hops(gold, name[5:],
+                                              'forest' if tileset == 'johto_ilex_forest' else 'johto')
+                observed = {(x, y, dx, dy) for x, y, dx, dy, *_ in matches}
+                if expected != observed:
+                    report['errors'].append(f'{name}: Gold HOP missing={sorted(expected-observed)} '
+                                            f'extra={sorted(observed-expected)}')
+            except (AssertionError, OSError, ValueError, KeyError) as exc:
+                report['errors'].append(f'{name}: Gold ledge contract: {exc}')
         report['native_pair_maps'][name] = {
             'matches': len(matches),
             'by_direction': dict(Counter({'down': sum((dx, dy) == (0, 1) for x, y, dx, dy, *_ in matches),
@@ -143,9 +215,17 @@ def audit(root=ROOT):
     # Inventory all those authored rules; geometry acceptance still needs Gold.
     for label, map_name, width, height, expected in (
             ('.route33Hops', 'JohtoRoute33', 20, 18, 7),
-            ('.azaleaHops', 'JohtoAzaleaTown', 40, 18, 9)):
+            ('.azaleaHops', 'JohtoAzaleaTown', 40, 18, 10)):
         part = src.split('\n' + label + '\n', 1)[1].split('\tdb $ff', 1)[0]
         actions = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*PLAYER_DIR_(\w+)', part)
+        try:
+            actual_actions = coordinate_hops(src, label)
+            reference = expected_gold_hops(gold, map_name[5:], 'johto_modern')
+            if actual_actions != reference:
+                report['errors'].append(f'{map_name}: Gold HOP missing={sorted(reference-actual_actions)} '
+                                        f'extra={sorted(actual_actions-reference)}')
+        except (AssertionError, OSError, ValueError, KeyError, IndexError) as exc:
+            report['errors'].append(f'{map_name}: Gold coordinate HOP contract: {exc}')
         mask = (root / f'maps/{map_name}.blocked_mask.bin').read_bytes()
         stride = (width + 7) // 8
         if len(mask) != stride * height:
@@ -174,9 +254,38 @@ def audit(root=ROOT):
         }
         if len(actions) != expected:
             report['errors'].append(f'{map_name}: coordinate HOP count drift')
-    report['warnings'].append('Modern Route33/Azalea HOPs still use coordinate triggers and '
-                              'the legacy two-simulated-input path; a potential third-cell '
-                              'overshoot needs CPU/gameplay review (mask check alone is insufficient).')
+    report['warnings'].append('All registered Johto Gold HOP directions are checked against original '
+                              'collision roles; static comparison does not prove final runtime landing '
+                              'or Kanto emulator behavior. Modern HOPs still use coordinate triggers.')
+
+    # Every currently registered Johto outdoor map must be considered for
+    # ledges. Future maps with Gold HOP roles must have a reviewed runtime
+    # dispatcher and join this exact per-position/dir audit, not silently
+    # inherit a zero-rule default just because the old roster was complete.
+    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown'}
+    registered = json.loads((root / 'tools/johto_native_maps.json').read_text())['maps']
+    for entry in registered:
+        name = entry['header'].removesuffix('_h')
+        header = root / 'data/mapHeaders' / (name + '.asm')
+        if not header.exists():
+            report['errors'].append(f'{name}: registered Johto header missing')
+            continue
+        tileset = re.search(r'(?m)^\s*db\s+(JOHTO(?:_MODERN|_ILEX_FOREST)?)\b',
+                            header.read_text())
+        if not tileset:
+            continue  # Gate, cave and other explicitly different movement sets
+        key = tileset[1]
+        gold_name = name.removeprefix('Johto')
+        source_tileset = 'forest' if key == 'JOHTO_ILEX_FOREST' else (
+                         'johto_modern' if key == 'JOHTO_MODERN' else 'johto')
+        try:
+            gold_hops = expected_gold_hops(gold, gold_name, source_tileset)
+        except (AssertionError, OSError, ValueError, KeyError) as exc:
+            report['errors'].append(f'{name}: cannot inventory registered Gold map: {exc}')
+            continue
+        if gold_hops and name not in known:
+            report['errors'].append(f'{name}: Gold has {len(gold_hops)} HOP directions '
+                                    'but this new map has no registered ledge audit')
 
     # Discover every Kanto map using the overworld tileset, including headers
     # with a literal 00 instead of OVERWORLD. No assumptions about Gold here.
@@ -206,7 +315,7 @@ def audit(root=ROOT):
             continue
         report['kanto_overworld'][path.stem] = len(kanto)
     report['totals'] = {'johto_native_pair_approaches': sum(counts.values()),
-                        'modern_coordinate_rules': 16,
+                        'modern_coordinate_rules': 17,
                         'kanto_overworld_maps_checked': len(report['kanto_overworld']),
                         'kanto_pair_approaches': sum(report['kanto_overworld'].values())}
     return report
