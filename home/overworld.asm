@@ -321,9 +321,9 @@ OverworldLoopLessDelay::
 	ld a,[wWalkBikeSurfState]
 	cp a, $02
 	jr z, .surfFaster
-	; ILEX-5.62.212: preserve the dormant Forest jump-speed guard.
-	; Forest HOP is disabled at HandleLedges, so no faulty jump is started;
-	; keeping this precise-map guard changes no ordinary B-button walking.
+	; ILEX-5.62.217: keep the exact-map Forest ledge B-button speed guard.
+	; When jumping, use normal sprite advancement; do not accelerate midair.
+	; This does not alter ordinary Forest B-button walking.
 	ld a, [wCurMapTileset]
 	cp JOHTO_ILEX_FOREST
 	jr nz, .checkRunningButton

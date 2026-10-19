@@ -66,10 +66,11 @@ HandleLedges:
 	jr .loop
 
 .ilexForest
-	; ILEX-5.62.212: Forest jump dispatch remains DISABLED (205-208 phone FAIL).
-	; Gold HOP barriers remain blocked by the existing forest role mask.
-	; Keep matching table and artwork for later diagnosis; no jump execution.
-	ret
+	; ILEX-5.62.217: Forest's HOP tile pairs use the original shared dispatcher.
+	; User verified all Forest jumps on phone; the .205-.208 failed trials
+	; remain recorded in the historical issue, not in active runtime behavior.
+	ld hl, JohtoIlexForestLedgeTiles
+	jp .checkPairs
 
 .route33
 	; Only seven Gold HOP directions; no global modern tile whitelist.
@@ -140,12 +141,14 @@ HandleLedges:
 	db 12, 12, PLAYER_DIR_DOWN
 	db $ff
 
-; MAP-5.62.195: nine independently verified Gold HOP_DOWN positions.
-; (10,6) excluded: landing is clear but continuation hits wall; review later.
+; ILEX-5.62.217: all ten Gold Azalea HOP_DOWN takeoffs, including (10,6).
+; The jump ends on the SECOND cell. A blocked third cell is not a reason
+; to disable a legal jump; the shared ledge executor owns its finish.
 .azaleaHops
 	db 6, 6, PLAYER_DIR_DOWN
 	db 7, 6, PLAYER_DIR_DOWN
 	db 8, 6, PLAYER_DIR_DOWN
+	db 10, 6, PLAYER_DIR_DOWN
 	db 11, 6, PLAYER_DIR_DOWN
 	db 28, 10, PLAYER_DIR_DOWN
 	db 29, 10, PLAYER_DIR_DOWN
@@ -166,15 +169,10 @@ HandleLedges:
 	ld a, e
 	ld [wSimulatedJoypadStatesEnd], a
 	ld [wSimulatedJoypadStatesEnd + 1], a
-	; ILEX-5.62.212: keep the old two-cell Forest count as dormant
-	; diagnostic code only; Forest never reaches this entry while its
-	; HOP dispatch is disabled. Other RPP maps retain two extra steps.
-	ld a, [wCurMapTileset]
-	cp JOHTO_ILEX_FOREST
+	; ILEX-5.62.217: share the original RPP queue with all ledge maps.
+	; Queued inputs are not a tile-distance formula; use Gold's two-cell
+	; takeoff/landing geometry and the user's phone checks for acceptance.
 	ld a, $2
-	jr nz, .hopCountReady
-	dec a
-.hopCountReady
 	ld [wSimulatedJoypadStatesIndex], a
 	call LoadHoppingShadowOAM
 	ld a, SFX_LEDGE
@@ -182,7 +180,7 @@ HandleLedges:
 	ret
 
 	; (player direction) (tile player standing on) (ledge tile) (input required)
-; ILEX-5.62.212: dormant front-tile clones preserve Forest's pixels/palette;
+; Forest's original front-tile clones preserve its pixels/palette;
 ; only the ten Gold HOP approaches have these collision tile IDs.
 JohtoIlexForestLedgeTiles:
 	db SPRITE_FACING_DOWN,  $05,$40,D_DOWN

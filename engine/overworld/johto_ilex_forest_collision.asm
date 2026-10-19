@@ -1,7 +1,9 @@
 ; ILEX-5.62.212: Forest 16x16 collision delegates to the existing
 ; JohtoModernMaskedStep (same routine used by Route33/Azalea).
-; ILEX-5.62.212: Gold HOP front WALL cells remain blocked by this mask.
-; Forest jump dispatch is explicitly disabled (ILEX-LEDGE-001).
+; Gold HOP front WALL cells remain blocked for ordinary walking; the
+; common HandleLedges path sets wd736.6 before checking tile passability.
+; ILEX-5.62.217: shared ledge dispatch restored; user phone-tested all
+; Forest HOP routes. The old ILEX-LEDGE-001 failure stays in historical docs.
 JohtoIlexForestCanStepAhead::
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
