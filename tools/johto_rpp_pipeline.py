@@ -59,6 +59,13 @@ def make_map_onboarding(gold: Path, map_name: str, art: dict, geometry: dict) ->
         item('outdoor_connections', outside,
              '确认Gold连接方向、连接条带、反向、越界与跨tileset重载；没有自动放行',
              ['data/mapHeaders/','home/overworld.asm','tools/johto_rpp_connection_guard.py']),
+        item('roof_mapgroup_gold_reference', outside,
+             '按 Gold data/maps/maps.asm 的 mapgroup 反查 roofs.asm 专属9 tile、roofs.pal RGB5；'
+             '每张道路与所属城市共用原版屋顶组，且 full-load 与连接热替换均必需。'
+             '必须通过 johto_roof_reference_audit，不允许手调近似颜色或只核对 .blk。',
+             ['tools/johto_roof_reference_audit.py','data/maps/roofs.asm',
+              'gfx/tilesets/roofs.pal','color/loadpalettes.asm',
+              'engine/overworld/johto_goldenrod_roof_gfx.asm']),
         item('warp_entrances', bool(events['warps'] or special),
              f'Gold Warp {len(events["warps"])} 个，特殊入口 {len(special)} 格；逐一核对双向、方向及落点',
              ['data/mapObjects/','tools/johto_door_contracts.json',

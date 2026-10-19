@@ -481,6 +481,38 @@
       },
       "identity_evidence": "PHONE_PENDING",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 15,
+      "local_symbol": "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+      "header": "JohtoGoldenrodCity_h",
+      "bank": "BANK(JohtoGoldenrodCity_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_GOLDENROD_CITY",
+      "town_map_index": 15,
+      "town_map_name": "JohtoGoldenrodName",
+      "town_map_xy": [
+        108,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "ALLOWED",
+        "bike": "ALLOWED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "FORBIDDEN"
+      },
+      "identity_evidence": "GOLD_REFERENCE_PENDING",
+      "gold_fly_landmark": "GOLDENROD_CITY"
     }
   ]
 }

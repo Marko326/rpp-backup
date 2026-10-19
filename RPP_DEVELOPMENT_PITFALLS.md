@@ -1,3 +1,18 @@
+## ILEX-5.62.216｜有脚本时必须按反向补丁分两次提交（P19 正式收口）
+
+- **两次提交不可混交**：以原始 `.215` 干净 HEAD 为 Git 实际基线。第一笔 `feat(johto)` 只收地图/引擎/资源等运行时功能；第二笔 `test(tool)` 收**整个本轮尚未提交的** `tools/`、测试、工具配置、`TODO.md`、本踩坑记录、专项 `docs/` 以及项目根目录 `commit-message.txt`。不能只排除最后新增的一两个脚本，而遗漏此前几轮累计工具差异。
+- **反向补丁要独立交付**：工作树达到本轮最终 `.216` 状态后，在真实完整目录执行 `git apply --check <第二笔反向屏蔽补丁>`，再 `git apply <第二笔反向屏蔽补丁>`；这会把第二笔全部内容**暂时还原到已提交 .215 基线**，保留第一笔运行时差异。先核对 `git status` 与 staged 文件，提交 `feat(johto)`。
+- **第一笔提交后撤销屏蔽**：执行 `git apply --reverse --check <第二笔反向屏蔽补丁>` 和 `git apply --reverse <第二笔反向屏蔽补丁>`，恢复第二笔脚本和文档到最终版；核对差异后再单独提交 `test(tool)`。不能把屏蔽补丁的应用称作永久删除工具，也不能把补丁作者临时 Git 验证提交 Hash 冒充用户仓库 Commit。
+- **校验要求**：反向屏蔽以及随后反向恢复均需完整工程执行 `git apply --check`、实际 apply、SHA-256 字节/可执行权限恢复；还要验证完成两次本地模拟提交的最终文件等于目标终态。此前 P19C 基线错用已修改目录的事故不得重犯。原始工程有额外手工改动或 HEAD 不同则先停止核对，不加 `--reject` 硬打补丁。
+
+## ILEX-5.62.216｜城都道路屋顶色防回归：转换数据正确≠游戏运行时正确（已手机视觉巡检）
+
+- 本项目 `johto_rpp_pipeline.py` 转换出的 Gold `.blk`、`JOHTO_MODERN` 源图像与 tilepal 标签没有证据显示转换错误。真正遗漏的是 Gold `data/maps/roofs.asm` 根据 **mapgroup** 选择 9 个屋顶图块，`gfx/tilesets/roofs.pal` 按 **mapgroup** 选择屋顶 RGB5；城镇和同组道路必须一致。P19C 只对满金市局部 ID 生效，导致 Route34 的房屋仍绿；P19D 才按全部已开放 11 张室外地图恢复原版色与图案。
+- **不可**仅用 `wCurMap == $FC` 判断具体城市；必须结合 Johto region + local ID 反查 Gold mapgroup。两处 local ID 表（`color/loadpalettes.asm` 和 `engine/overworld/johto_goldenrod_roof_gfx.asm`）及 `NUM_JOHTO_MAPS` 数量必须吻合，不得给新道路默认继承绿色屋顶。新地图 full-load 与 seamless connection 两条素材装载路径都需要覆盖。
+- 新工具 `tools/johto_roof_reference_audit.py` 从当前 Gold `data/maps/maps.asm` 分组注册、`roofs.asm` 屋顶图案、`roofs.pal` 精确白天 RGB5、Gold PNG 到 RPP 的实际 2bpp 与两张本地组表逐项验证；当新增室外本地地图遗漏一项时 fail-closed。已经加入统一 Gold 发布审计，并在地图转换入口增加单独屋顶复核项。`tools/tests/test_johto_roof_reference_audit.py` 负例针对新增地图漏登记、Route34 错组、RGB 变化、屋顶像素损坏和切图钩子删除；禁止删测试换全绿。
+- 用户视频 `216房屋颜色.mp4` 和用户巡检反馈只支持当时已显示屋顶外观认可；原版 Gold **昼间** RGB、像素与注册表匹配为静态证据，不代表晨/夜动态光照规则、全部地图边缘、ROM 编译或 Bank 已验收。新增 P19/P19C/P19D 不得顺手修改旧关东颜色、W2/VRAM 时序或既有 Cut/Surf/Fly/骑行。
+- **交付教训**：早期 P19C 误把已被热修改过的开发树当原始 `.216` 做反向补丁测试，用户真实工程无法应用。未来增量补丁必须从上轮**真实可复现**的完整 Worktree 重建；全量以原始上传 ZIP 文件字节为准；两者各自正向、反向并核对二进制/文件权限，不能只在干净的试验目录自我验证。
+
 ## ILEX-5.62.215｜P18 北门房及未来所有 Gold Gate 的防复发规则（当前有效）
 
 - **同为竖向门房，Warp 触发与落点自动步行也不可混为一谈**：`.213` 踏门后仍需补按方向是遗漏 `PlayerStepOutFromDoor` 目的地规则；`.214` 把 `D_UP/D_DOWN` 全部放开又产生用户不接受的双向自动行走。最终 `.215` **向上抵达不追加步行**，**向下抵达**仅按精确目标增加一步。执行仍复用 `CheckWarpsNoCollisionLoop`、`GetJohtoWarpArrivalStep`、`PlayerStepOutFromDoor`，不新增通用“所有竖门房自动走”的引擎。

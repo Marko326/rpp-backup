@@ -98,13 +98,13 @@ class IlexSouthGate197(unittest.TestCase):
                       'west gate border')
     def test_missing_connected_map_border_refresh_fails(self):
         self.mutation('home/overworld.asm',
-                      'callba PatchJohtoAzaleaWestGateBorder\n\tjp OverworldLoopLessDelay',
-                      'callba InitMapSprites\n\tjp OverworldLoopLessDelay',
+                      'callba PatchJohtoAzaleaWestGateBorder\n\tcallba PatchJohtoGoldenrodNorthBorder',
+                      'callba InitMapSprites\n\tcallba PatchJohtoGoldenrodNorthBorder',
                       'BOTH full Warp and seamless connected-map')
     def test_missing_full_map_border_refresh_fails(self):
         self.mutation('home/overworld.asm',
-                      'callba PatchJohtoAzaleaWestGateBorder\n\tcall LoadTilesetTilePatternData',
-                      'callba InitMapSprites\n\tcall LoadTilesetTilePatternData',
+                      'callba PatchJohtoAzaleaWestGateBorder\n\tcallba PatchJohtoGoldenrodNorthBorder',
+                      'callba InitMapSprites\n\tcallba PatchJohtoGoldenrodNorthBorder',
                       'BOTH full Warp and seamless connected-map')
     def test_duplicate_house_right_roof_detected(self):
         self.mutation('engine/overworld/johto_route33_collision.asm',

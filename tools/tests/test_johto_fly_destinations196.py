@@ -21,7 +21,7 @@ class JohtoFlyDestinations196(unittest.TestCase):
     def setUp(self):
         self.t=TemporaryDirectory();self.addCleanup(self.t.cleanup)
         self.root=Path(self.t.name)
-        for name in (*FILES,'maps/JohtoAzaleaTown.blocked_mask.bin'):
+        for name in (*FILES,'maps/JohtoAzaleaTown.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin'):
             f=self.root/name;f.parent.mkdir(parents=True,exist_ok=True)
             shutil.copy2(ROOT/name,f)
 
@@ -30,7 +30,7 @@ class JohtoFlyDestinations196(unittest.TestCase):
         p.write_text(text.replace(old,new,1))
         self.assertTrue(audit(self.root,self.gold))
 
-    def test_four_city_gold_fly_chain_complete(self):
+    def test_five_city_gold_fly_chain_complete(self):
         self.assertEqual(audit(self.root,self.gold),[])
 
     def test_missing_fly_registration_fails(self):
@@ -38,10 +38,10 @@ class JohtoFlyDestinations196(unittest.TestCase):
 
     def test_new_gold_city_cannot_be_deferred(self):
         p=self.root/'tools/johto_native_maps.json';d=json.loads(p.read_text())
-        m=dict(d['maps'][10],local_id=11,local_symbol='JOHTO_GOLDENROD_CITY_LOCAL_ID',gold_fly_landmark=None)
+        m=dict(d['maps'][10],local_id=11,local_symbol='JOHTO_ECRUTEAK_CITY_LOCAL_ID',gold_fly_landmark=None)
         m['feature_status']=dict(m['feature_status'],fly='DEFERRED');d['maps'].append(m)
         p.write_text(json.dumps(d))
-        self.assertTrue(any('GOLDENROD' in e or 'new/missing' in e for e in audit(self.root,self.gold)))
+        self.assertTrue(any('ECRUTEAK' in e or 'new/missing' in e for e in audit(self.root,self.gold)))
 
     def test_shared_native_slot_is_not_fly_selector(self):
         self.mutation('engine/johto_fly_town_map.asm',
@@ -58,10 +58,10 @@ class JohtoFlyDestinations196(unittest.TestCase):
                       'jp z, .inputLoop ; locked destinations cannot be selected',
                       'jp nz, .inputLoop ; accept locked destination')
 
-    def test_fourth_menu_slot_must_be_reachable(self):
+    def test_fifth_menu_slot_must_be_reachable(self):
         self.mutation('engine/johto_fly_town_map.asm',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 4',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 3')
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 5',
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 4')
 
     def test_unsafe_landing_must_fail(self):
         self.mutation('engine/fly_town_map_helpers.asm',
@@ -70,8 +70,8 @@ class JohtoFlyDestinations196(unittest.TestCase):
 
     def test_incorrect_native_map_restoration_must_fail(self):
         self.mutation('engine/fly_town_map_helpers.asm',
-                      'ld a, JOHTO_AZALEA_TOWN_LOCAL_ID\n\tld [wCurLocalMapID], a',
-                      'ld a, JOHTO_ROUTE_33_LOCAL_ID\n\tld [wCurLocalMapID], a')
+                      'cp JOHTO_GOLDENROD_FLY_SELECTOR',
+                      'cp JOHTO_ROUTE_33_LOCAL_ID')
 
     def test_wrong_arrival_tileset_must_fail(self):
         self.mutation('engine/special_warps.asm',
@@ -82,6 +82,26 @@ class JohtoFlyDestinations196(unittest.TestCase):
         self.mutation('engine/special_warps.asm',
                       'xor a\n.done\n\tld [wYOffsetSinceLastSpecialWarp], a',
                       'nop\n.done\n\tld [wYOffsetSinceLastSpecialWarp], a')
+
+    def test_goldenrod_spot_cannot_be_blocked(self):
+        p=self.root/'maps/JohtoGoldenrodCity.blocked_mask.bin'
+        data=bytearray(p.read_bytes());data[28*5+15//8] |= 1<<(15%8);p.write_bytes(data)
+        self.assertTrue(any('Goldenrod Fly spawn' in e for e in audit(self.root,self.gold)))
+
+    def test_fifth_city_event_cannot_be_removed(self):
+        self.mutation('engine/overworld/missable_objects.asm',
+                      'set EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]',
+                      'set EVENT_JOHTO_FLY_AZALEA % 8, [hl]')
+
+    def test_goldenrod_spot_cannot_be_blocked(self):
+        p=self.root/'maps/JohtoGoldenrodCity.blocked_mask.bin'
+        data=bytearray(p.read_bytes());data[28*5+15//8] |= 1<<(15%8);p.write_bytes(data)
+        self.assertTrue(any('Goldenrod Fly spawn' in e for e in audit(self.root,self.gold)))
+
+    def test_fifth_city_event_cannot_be_removed(self):
+        self.mutation('engine/overworld/missable_objects.asm',
+                      'set EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]',
+                      'set EVENT_JOHTO_FLY_AZALEA % 8, [hl]')
 
     def test_event_bit_layout_stable_for_old_saves(self):
         self.mutation('constants/event_constants.asm',

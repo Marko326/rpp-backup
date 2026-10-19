@@ -1,13 +1,30 @@
-test(tool): 固化全门房方向合同与P18扩图防回归审计
+feat(johto): 接入满金市并按 Gold 地图组恢复城都建筑屋顶
 
-- 延用已提交城都 Gold 地图与门房工具链，增强未注册 NorthSouthGate 的离线转换预检；对北门房/Route34 的 Warp、Gold 地形掩码、图块映射、双向复入及向下单步/向上零步合同加入源码测试与负例审计。
-- 对照 Gold `maps/*Gate*.asm` 普查24座 Gate：11东西、12南北、1多出口；11座尚未登记的城都门房候选需逐端检查 Warp 和到达动作，不按方向猜测自动步行。
-- 在现有 `johto_door_contracts.json` 对 GATE_INDOOR 强制 `arrival_step_review`（两侧动作与依据），门房审计工具对漏项、不合法方向及异常候选提供失败门禁；标记两格合流、多出口、自行车、捕虫大会和火箭队脚本等特殊风险。
-- 清理 `TODO.md`、`RPP_DEVELOPMENT_PITFALLS.md`、`commit-message.txt` 与本次新增段过时备注；保留历史失败证据和未解 ILEX-LEDGE-001，不误称已修复跳崖；下一阶段继续扩图，不做 HM01/徽章剧情。
-- 仅恢复第二笔范围的 `tools/`、测试、审计数据、`docs/` 与三件套，不更改第一笔已经验收的 ROM 功能指令、版本、贴图或调色。
+- 在 .215 金银基线上接入满金市 20x18 原版室外地图、原版逐格阻挡、Route34 北口双向连接及北端安全预览；35号道路、建筑内部、NPC 与剧情仍保持封闭。
+- 复用已存在的到访 Fly 机制登记满金市为第五座城都目的地，维持队伍需学会 Fly、关东既有徽章条件；自行车店外招牌一次性领取 Bicycle，背包满可稍后再领。
+- 修复满金市边框块并复用 Gold 原版 9 个屋顶图块与精确白天 RGB5；按 Gold mapgroup 同时覆盖若叶/29、吉花/30/31、桔梗/32、桧皮/33、满金/34 五组，消除相邻道路退回绿色的问题。
+- 不改变先前门房上下到达动作、原始道路/森林碰撞、旧关东颜色规则、存档位及未开放出口。仅统一此次实际修改的运行代码段版本备注到 .216，不改验收后的指令、RGB、地图和图块字节。
 
 Verification:
-- `.215` 功能候选回归 508 项；加入未来门房普查后现有513项单元测试通过。已知 Gold 全量 `SafariZoneBeta` 图形窗口问题尚未排除，不能写成 Gold 全门禁通过。
-- 用户报告 `.215` 门房进出/道路无明显异常；没有新 ROM 构建、完整 Bank MAP、全门房逐项实机或 AI 自行 Git 提交的证明。
+- 用户已巡检已开放城镇并提供约 69 秒的 `216房屋颜色.mp4`；所见屋顶效果未发现明显异常，用户认可；不将其扩大成昼夜全部画面、全部行为或存档实测。
+- 现阶段 Gold 原版 RGB5/屋顶 2bpp 精确静态比对通过；完整 Python 回归后续为 535 项全部通过。统一 Gold 发布门禁仍因历史 SafariZoneBeta 图像窗口问题 FAIL。
+- 未由 AI 编译/链接 ROM，未取得新版 MAP/Bank 安全证据，不代用户 Commit/Push。Git 提交前需核对工作区实际 HEAD 和所有未提交差异。
 
-Version: ILEX-5.62.215 -> ILEX-5.62.215
+Version: ILEX-5.62.215 -> ILEX-5.62.216
+
+---
+
+test(tool): 固化 Gold 屋顶地图组防回归审计并完成 P19 收口
+
+- 补正先前工具门禁中四处过期证明测试 ID 的引用、统一 Gold 源码环境变量调用，保留之前门房/Field Move 静态负例和 Gold 全量门禁。
+- 新增 johto_roof_reference_audit.py，从 Gold 原版 maps.asm、roofs.asm、roofs.pal、roofs PNG 与 RPP 实际 local-ID/tileset 自动比对屋顶颜色和图案，避免未来增加道路/城市时遗漏图组。
+- 将屋顶 Gold 对照放进新地图离线 onboarding 和统一发布审计；固定故障注入测试，故意错改 Route34 分组、RGB、屋顶图块、连接装载钩子、漏添新道路时必须失败。
+- 同步 TODO、开发踩坑及 P19 专项验收文档，清理 P19C/P19D 开发临时版号；保留历史失败、森林 ILEX-LEDGE-001 冻结和未验证的手机/存档场景。
+- 工具/文档收口不改游戏行为、不升级版本，不改变用户已确认的屋顶效果，不移动关东现有调色。
+
+Verification:
+- 全量 Python unittest 535 tests / OK / 0 skipped，屋顶六项正常/错误注入测试通过。
+- Gold 统一发布审计剩唯一已知 SafariZoneBeta: Gold map references graphics beyond runtime window（367/368 金版素材地图通过），不能称全门禁 PASS。
+- 增量/全量补丁在各自确定基线执行 git apply 正反向检查与文件内容/可执行权限校验；没有 ROM 编译/链接、新版 MAP 或新的自动化实机测试。用户自行核验 Git 状态并提交/Push。
+
+Version: ILEX-5.62.216 -> ILEX-5.62.216

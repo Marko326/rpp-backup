@@ -63,7 +63,7 @@ def audit(rpp: Path, gold: Path):
     expect(all(regionrows.count(r)==1 for r in required), 'P16 native two-way warp mapping missing/wrong')
     keys=(rpp/'constants/region_map_constants.asm').read_text()
     expect('DEF JOHTO_ILEX_AZALEA_GATE_LOCAL_ID EQU 11' in keys and
-           'DEF NUM_JOHTO_MAPS EQU 15' in keys, 'P16 gate local id invalid')
+           'DEF NUM_JOHTO_MAPS EQU 16' in keys, 'P16 gate local id invalid')
     maphead=(rpp/'data/mapHeaders/JohtoIlexAzaleaGate.asm').read_text()
     expect('db JOHTO_GATE' in maphead and 'db 4, 5' in maphead and
            'db $00 ; indoor gate' in maphead, 'P16 gate header/tileset wrong')

@@ -26,6 +26,7 @@ from johto_union_cave_exit192_audit import audit as cave_exit192_audit
 from johto_surf_geometry_audit import inspect as surf_geometry_inspect
 from johto_surf_runtime_audit import audit as surf_runtime_audit
 from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
+from johto_roof_reference_audit import audit as roof_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
@@ -42,7 +43,9 @@ GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'maps/IlexForestAzaleaGate.asm',
                  'data/tilesets/forest_metatiles.bin',
                  'data/tilesets/forest_collision.asm',
-                 'gfx/tilesets/forest.png')
+                 'gfx/tilesets/forest.png',
+                 'data/maps/roofs.asm', 'gfx/tilesets/roofs.pal',
+                 'gfx/tilesets/roofs/new_bark.png')
 
 # Explicitly pinned modules: a deleted test file must NEVER make this gate greener.
 # To retire/rename a test, change this list in the same reviewed tool commit.
@@ -68,13 +71,18 @@ test_johto_town_map_bike181 test_johto_full_town_map182 test_johto_field_moves_p
 test_johto_cave_escape188 test_johto_surf_geometry186 test_johto_surf_runtime187
 test_johto_route32_surf188
 test_johto_route33_runtime191
-test_johto_fly_destinations196
+test_johto_fly_destinations196 test_johto_goldenrod_p19
+test_johto_roof_reference_audit test_johto_roof_mapgroups_p19d test_johto_goldenrod_visual_p19c
 test_johto_gold_collision_cardinality test_johto_ilex_gold_reference test_johto_ilex_south_gate197
 test_johto_union_cave_exit192 test_johto_ilex_forest_p17
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_roof_reference_audit.RoofGoldReferenceGate.test_new_outdoor_map_without_a_roof_group_fails_closed
+test_johto_roof_reference_audit.RoofGoldReferenceGate.test_route34_going_green_again_is_rejected
+test_johto_roof_reference_audit.RoofGoldReferenceGate.test_one_wrong_original_roof_rgb_is_rejected
+test_johto_roof_reference_audit.RoofGoldReferenceGate.test_corrupted_original_roof_tiles_are_rejected
 test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_ordinary_floor_down_to_carpet_is_allowed
  test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_missing_north_rule_mutation_caught_by_branch_execution
  test_johto_masked_step_audit.SharedMaskedSourceAudit.test_forest_north_approach_is_exact_and_lower_wall_remains_blocked
@@ -111,6 +119,7 @@ test_johto_gate157_collision.Route31VioletNativeGate.test_walkable_gate_portal_d
  test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_compact_gate_palette_exactly_matches_gold_source
  test_johto_gate159_gold_art.JohtoGoldGateArtwork.test_palette_tag_mutation_is_detected
  test_johto_ilex_south_gate197.IlexSouthGate197.test_missing_gate_neutral_sign_fails
+test_johto_goldenrod_p19.GoldenrodP19.test_gold_two_way_connection_offsets
 test_johto_region_id170.NativeMapIDExpansion.test_same_length_wrong_header_identity_is_rejected
 test_johto_gold_door_audit.GoldDoorReferenceTests.test_bad_destination_index_is_rejected
 test_johto_gold_door_audit.GoldDoorReferenceTests.test_gold_baseline_inventory
@@ -219,6 +228,8 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     root, gold = root.resolve(), gold.resolve()
     errors.extend(verify_gold(gold))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
+    if not any(e.startswith('Gold source missing:') for e in errors):
+        errors.extend('ROOF: '+v for v in roof_audit(root,gold))
     errors.extend('ILEX_FOREST_P17: '+v for v in forest_p17_audit(root,gold))
     if not (root / 'data/game_version.asm').is_file():
         errors.append('RPP game_version.asm is missing')
@@ -252,7 +263,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     test_count = 0
     skipped = None
     if not errors and run_tests:
-        env = dict(os.environ, JOHTO_GOLD_SOURCE=str(gold), PYTHONDONTWRITEBYTECODE='1')
+        env = dict(os.environ, JOHTO_GOLD_SOURCE=str(gold), JOHTO_GOLD_ROOT=str(gold), PYTHONDONTWRITEBYTECODE='1')
         result = subprocess.run([sys.executable, '-m', 'unittest', 'discover',
                                  '-s', 'tools/tests', '-v'], cwd=root, env=env,
                                 capture_output=True, text=True, check=False)

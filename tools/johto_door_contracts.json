@@ -71,7 +71,7 @@
       "warp_count": 1,
       "required_test_ids": [
         "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_unconditional_reject_after_correct_direction_fails",
-        "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_only_outdoor_step_remains"
+        "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_cave_no_auto_step_and_north_gate_safe_profiles"
       ]
     },
     {
@@ -171,7 +171,7 @@
       "required_test_ids": [
         "test_johto_route34_gate_p18.NorthGateP18.test_gold_warp_pair_graph",
         "test_johto_route34_gate_p18.NorthGateP18.test_collision_direction_only",
-        "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_no_auto_step",
+        "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_exact_one_step_after_warp",
         "test_johto_route34_gate_p18.NorthGateP18.test_loading_and_terrain_preserved",
         "test_johto_route34_gate_p18.NorthGateP18.test_gate_neutral_only",
         "test_johto_route34_gate_p18.NorthGateP18.test_source_pixel_palette_exact",
@@ -185,7 +185,7 @@
       "gatehouse_proof_ids": {
         "two_lane_warps": "test_johto_route34_gate_p18.NorthGateP18.test_gold_warp_pair_graph",
         "directional_collision": "test_johto_route34_gate_p18.NorthGateP18.test_collision_direction_only",
-        "immediate_return": "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_no_auto_step",
+        "immediate_return": "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_exact_one_step_after_warp",
         "exterior_border_loads": "test_johto_route34_gate_p18.NorthGateP18.test_loading_and_terrain_preserved",
         "neutral_map_name": "test_johto_route34_gate_p18.NorthGateP18.test_gate_neutral_only",
         "gold_art_tile_palette": "test_johto_route34_gate_p18.NorthGateP18.test_source_pixel_palette_exact",
@@ -211,7 +211,7 @@
       "required_test_ids": [
         "test_johto_route34_gate_p18.NorthGateP18.test_gold_warp_pair_graph",
         "test_johto_route34_gate_p18.NorthGateP18.test_collision_direction_only",
-        "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_no_auto_step"
+        "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_exact_one_step_after_warp"
       ],
       "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     }

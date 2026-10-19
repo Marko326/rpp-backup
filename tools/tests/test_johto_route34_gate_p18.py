@@ -81,7 +81,9 @@ class NorthGateP18(unittest.TestCase):
         _,m=plan_gold_quadrant_collision(GOLD,'Route34IlexForestGate','gate')
         self.assertEqual((ROOT/'maps/JohtoRoute34IlexForestGate.blocked_mask.bin').read_bytes(),m)
         h=source('data/mapHeaders/JohtoRoute34.asm')
-        self.assertIn('db $00',h) # Goldenrod, Azalea connections NOT opened
+        self.assertIn('db NORTH',h) # Goldenrod north open; unfinished eastern edge remains sealed
+        self.assertIn('dw JohtoGoldenrodCityBlocks',h)
+        self.assertNotIn('db NORTH | EAST',h)
 
     def test_gate_neutral_only(self):
         a=source('engine/overworld/map_name_sign.asm').rsplit('.IsNeutralMap\n',1)[1].split('.NeutralMapList')[0]
