@@ -29,6 +29,7 @@ from johto_surf_runtime_audit import audit as surf_runtime_audit
 from johto_rpp_connection_guard import audit_all_active
 from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
 from johto_roof_reference_audit import audit as roof_audit
+from johto_rom0_collision_audit import audit as rom0_collision_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
@@ -77,11 +78,22 @@ test_johto_fly_destinations196 test_johto_goldenrod_p19
 test_johto_roof_reference_audit test_johto_roof_mapgroups_p19d test_johto_goldenrod_visual_p19c
 test_johto_gold_collision_cardinality test_johto_ilex_gold_reference test_johto_ilex_south_gate197
 test_johto_union_cave_exit192 test_johto_ilex_forest_p17 test_ledge_pause_209
+test_johto_rom0_collision_dispatch224
 test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod_gate224
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_original_all_11_native_ids_dispatch_and_generic_fallback
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_removing_single_rom0_farcall_is_rejected
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_carry_bit_abi_cannot_be_replaced_with_and
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_unknown_native_map_must_fall_back_to_generic_collision
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_no_native_map_can_use_wrong_collision_mask
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_missing_ruins_exact_id_must_fail
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_unconditional_native_branch_must_fail
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_legacy_map_32_seam_must_remain
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_moving_romx_dispatch_to_unrelated_bank_is_rejected
+test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_rom0_new_per_map_chain_is_rejected
 test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_route35_carpet_step_on_bug_is_rejected
  test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_route35_warp_collision_direction_mutation_fails
  test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_old_route34_step_on_branch_mutation_fails
@@ -288,6 +300,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     errors = []
     root, gold = root.resolve(), gold.resolve()
     errors.extend(verify_gold(gold))
+    errors.extend('ROM0_COLLISION: '+e for e in rom0_collision_audit(root))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
     if not any(e.startswith('Gold source missing:') for e in errors):
         errors.extend('ROOF: '+v for v in roof_audit(root,gold))

@@ -108,7 +108,8 @@ class NorthGateP18(unittest.TestCase):
                   'gfx/blocksets/gate.bst','color/tilesets/gate.asm','color/data/map_palettes.asm'):
             self.assertTrue((ROOT/f).is_file())
         self.assertIn('JohtoGate_Block,   JohtoGate_GFX,   Gate_Coll',source('data/tileset_headers.asm'))
-        self.assertIn('JohtoRoute34GateCanStepAhead',source('home/overworld.asm'))
+        self.assertIn('callba JohtoNativeCanStepAhead',source('home/overworld.asm'))
+        self.assertIn('call JohtoRoute34GateCanStepAhead',source('engine/overworld/johto_route33_collision.asm'))
 
     def test_old_gate_and_ledges_unchanged(self):
         a=source('engine/overworld/ledges.asm')

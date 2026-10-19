@@ -115,7 +115,8 @@ def audit(root: Path, gold: Path) -> list[str]:
             errors.append('Route33 mask not linked to Gold-reviewed source')
         if 'cp 15' not in runtime or 'jr z, .west' not in runtime or 'jr c, .allowed' not in runtime:
             errors.append('Route33 edge restrictions missing')
-        if 'callba JohtoRoute33CanStepAhead' not in home or 'cp JOHTO_ROUTE_33_LOCAL_ID' not in home:
+        from johto_rom0_collision_audit import audit as native_collision_audit
+        if native_collision_audit(root):
             errors.append('Route33 precise collision not routed through land movement')
         # A header-only seamless map connection preserves the previous VRAM
         # tiles, which is invalid when moving between JOHTO and JOHTO_MODERN.

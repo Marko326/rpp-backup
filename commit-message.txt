@@ -1,3 +1,17 @@
+# ROM0-5.62.224 第一轮正式清理｜本文件是提交范围索引，不要直接整文件 git commit -F
+# Git 基线：金银 / 3d7903bb82448703125d64ae8ed41e77d9eb97ad；Version: ILEX-5.62.224 -> ILEX-5.62.224
+# 本轮实际存在游戏 ASM 与 tools/ 审计/测试的累计未提交改动，故按模式 A 双提交。
+# 具体两笔 Git 正文以 ZIP 内两份独立 TXT 日志为准；不要直接把本文件当作提交正文。
+# 第一笔：refactor(rom0): 将城都陆地碰撞分派迁至 ROMX Bank $43
+#   只含 home/overworld.asm 和 engine/overworld/johto_route33_collision.asm。
+# 第二笔：test(tool): 固化 ROM0 碰撞派发等价性与实机收口证据
+#   只含本轮累计修改的 tools/、tools/tests/、TODO.md、RPP_DEVELOPMENT_PITFALLS.md、本文件。
+# 清理顺序：当前开发候选 -> 清理增量；工具反向隔离（只回退第二笔）；
+#   用户自行提交功能；git apply -R 工具隔离补丁；用户自行提交工具。
+# 全量补丁只供 HEAD 干净状态恢复；不能与清理增量叠加。
+# 当前用户 MAP：ROM0 127 B 空余，+100 B；实机已报告相关已开发地图无异常。
+# 下面旧阿鲁夫遗迹和历史门房提交文本原样保留，仅用于追溯，不作为本轮提交。
+
 # 阿鲁夫遗迹 .224 正式收口：本轮两笔提交（以单独 TXT 日志为准）
 # Git 基线：金银 / b1007c89fcf09a60130261958fd5a039cc3f0822；显示版本 .224 -> .224。
 # ① feat(johto): 接通阿鲁夫遗迹门房和室外地图并修复 Surf、图块、双层跳崖

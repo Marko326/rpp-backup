@@ -99,11 +99,14 @@ def gate_dispatch_errors(root: Path, overrides=None):
         problems.append('native Goldenrod gate must remain local ID 18 with at least 19 total maps')
     for label in ('JohtoRoute35GoldenrodGate_h', 'BANK(JohtoRoute35GoldenrodGate_h)'):
         if label not in tables:problems.append('native map pointers and banks missing '+label)
-    for label in ('IsJohtoSouthGatePortal::','ExtraWarpCheck::','CheckTilePassable::'):
+    for label in ('IsJohtoSouthGatePortal::','ExtraWarpCheck::'):
         section=home.split(label,1)[1].split('\n\n',1)[0]
         if NEW not in section and label!='ExtraWarpCheck::':
             # The latter routes outdoor maps, not the indoor map itself.
             problems.append(f'home warp/movement dispatch omits {label}')
+    from johto_rom0_collision_audit import audit as native_collision_audit
+    if native_collision_audit(root,overrides):
+        problems.append('home warp/movement dispatch omits CheckTilePassable::')
     for label in ('JohtoNorthGateStepWarpAllowed::','JohtoGateCollisionDirectionAllowed::','JohtoRoute34GateCanStepAhead::'):
         section=collision.split(label,1)[1].split('\n\n',1)[0]
         if NEW not in section:problems.append('collision/warp dispatch omits '+label)

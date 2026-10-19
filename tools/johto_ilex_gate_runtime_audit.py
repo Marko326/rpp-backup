@@ -319,9 +319,8 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
                      'ld a, PLAYER_DIR_RIGHT', 'ld a, PLAYER_DIR_UP', 'ld a, PLAYER_DIR_DOWN',
                      'ld a, [wPlayerDirection]', 'cp b', 'jp nz, .denied')),
             'wrong-direction Warp not blocked')
-    step=home.split('CheckTilePassable::',1)[-1].split('predef GetTileAndCoordsInFrontOfPlayer',1)[0]
-    require('cp JOHTO_ILEX_FOREST_LOCAL_ID' in step and
-            'callba JohtoIlexForestCanStepAhead' in step,
+    from johto_rom0_collision_audit import audit as native_collision_audit
+    require(not native_collision_audit(rpp),
             'forest must use precise Gold quadrant collision mask')
     source=(rpp/'engine/overworld/johto_ilex_forest_collision.asm').read_text()
     for token in ('cp JOHTO_ILEX_FOREST_LOCAL_ID','cp 42','cp 43',
