@@ -107,7 +107,7 @@ def audit(rpp: Path, gold: Path):
            exit.index('call IsJohtoSouthGatePortal') < exit.index('ld [wDestinationWarpID],a') and
            all(v in direction for v in ('cp JOHTO_AZALEA_TOWN_LOCAL_ID',
                                        'ld a, PLAYER_DIR_LEFT', 'ld a, PLAYER_DIR_RIGHT',
-                                       'ld a, [wPlayerDirection]', 'cp b', 'jr nz, .denied')),
+                                       'ld a, [wPlayerDirection]', 'cp b', 'jp nz, .denied')),
            'P16 collision Warp must require west outdoors/east indoors')
     expect(all(v in helper for v in ('cp REGION_NATIVE_MAP_SLOT',
                                     'cp MAP_REGION_JOHTO',
@@ -128,7 +128,9 @@ def audit(rpp: Path, gold: Path):
     render=asm.split('PatchJohtoAzaleaWestGateBorder::',1)[-1].split('JohtoModernMaskedStep::',1)[0]
     full=home.split('LoadMapData::',1)[-1].split('; HAX: Padding',1)[0]
     connected=home.split('.ordinaryConnection\n',1)[-1].split('.didNotEnterConnectedMap',1)[0]
-    hook='callba PatchJohtoAzaleaWestGateBorder'
+    hook='callba PatchJohtoMapBordersAfterBlockLoad'
+    expect('call PatchJohtoAzaleaWestGateBorder' in asm.split('PatchJohtoMapBordersAfterBlockLoad::',1)[-1].split('PatchJohtoAzaleaWestGateBorder::',1)[0],
+           'P16 shared ROMX border dispatcher must still include Azalea west border')
     expect(home.count(hook)==2 and
            all(path.count('call LoadTileBlockMap')==1 and path.count(hook)==1 and
                path.index('call LoadTileBlockMap') < path.index(hook) for path in (full, connected)) and
@@ -316,7 +318,7 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
             all(x in dircheck for x in ('cp JOHTO_ILEX_FOREST_LOCAL_ID',
                      'cp JOHTO_AZALEA_TOWN_LOCAL_ID', 'ld a, PLAYER_DIR_LEFT',
                      'ld a, PLAYER_DIR_RIGHT', 'ld a, PLAYER_DIR_UP', 'ld a, PLAYER_DIR_DOWN',
-                     'ld a, [wPlayerDirection]', 'cp b', 'jr nz, .denied')),
+                     'ld a, [wPlayerDirection]', 'cp b', 'jp nz, .denied')),
             'wrong-direction Warp not blocked')
     step=home.split('CheckTilePassable::',1)[-1].split('predef GetTileAndCoordsInFrontOfPlayer',1)[0]
     require('cp JOHTO_ILEX_FOREST_LOCAL_ID' in step and

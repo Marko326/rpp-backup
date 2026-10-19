@@ -58,7 +58,8 @@ class GoldenrodP19CVisual(unittest.TestCase):
         self.assertIn('JohtoGoldenrodEdgeFence::', code2)
         self.assertIn('cp JOHTO_GOLDENROD_CITY_LOCAL_ID',section)
         world=(ROOT/'home/overworld.asm').read_text()
-        self.assertEqual(world.count('callba PatchJohtoGoldenrodNorthBorder'),2)
+        self.assertEqual(world.count('callba PatchJohtoMapBordersAfterBlockLoad'),2)
+        self.assertIn('call PatchJohtoGoldenrodNorthBorder',code)
 
     def test_exact_gold_day_rgb_and_green_unmodified(self):
         bg=multi_rgb_rows((GOLD/'gfx/tilesets/bg_tiles.pal').read_text())
@@ -80,7 +81,7 @@ class GoldenrodP19CVisual(unittest.TestCase):
         green=regular.split('; 0x03: OUTDOOR_GREEN',1)[1].split('; 0x04:',1)[0]
         self.assertEqual(rgb_values(green),gold_day[2])
         self.assertIn('JohtoGoldDayRoofGroups:',s)
-        self.assertRegex(s,r'(?m)^\s*db 0,0,1,1,1,2,\$ff,2,\$ff,3,3,\$ff,\$ff,\$ff,4,4,2,2$')
+        self.assertRegex(s,r'(?m)^\s*db 0,0,1,1,1,2,\$ff,2,\$ff,3,3,\$ff,\$ff,\$ff,4,4,2,2,\$ff$')
 
     def test_exact_gold_roof_pixels_both_live_and_full_load(self):
         src=gold_roof_pixels(ROOT/'gfx/tilesets/johto_goldenrod_roofs.png')

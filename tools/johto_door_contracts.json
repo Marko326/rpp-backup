@@ -62,6 +62,128 @@
           "east": "NONE"
         },
         "basis": "Existing approved Route31 gate: no extra GetJohtoWarpArrivalStep entries; preserve original collision Warp behavior"
+      },
+      "gatehouse_runtime": {
+        "mode": "LEGACY_COLLISION",
+        "warp_sides": {
+          "west": [
+            [
+              4,
+              0,
+              0,
+              "JOHTO_VIOLET_CITY"
+            ],
+            [
+              5,
+              0,
+              1,
+              "JOHTO_VIOLET_CITY"
+            ]
+          ],
+          "east": [
+            [
+              4,
+              9,
+              0,
+              "JOHTO_ROUTE_31"
+            ],
+            [
+              5,
+              9,
+              1,
+              "JOHTO_ROUTE_31"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 4,
+            "direction": "LEFT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 5,
+            "direction": "LEFT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 4,
+            "direction": "RIGHT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 5,
+            "direction": "RIGHT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_31_LOCAL_ID",
+            "x": 4,
+            "y": 6,
+            "direction": "LEFT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_31_LOCAL_ID",
+            "x": 4,
+            "y": 7,
+            "direction": "LEFT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_VIOLET_CITY_LOCAL_ID",
+            "x": 39,
+            "y": 24,
+            "direction": "RIGHT",
+            "trigger": "LEGACY_COLLISION"
+          },
+          {
+            "map_local": "JOHTO_VIOLET_CITY_LOCAL_ID",
+            "x": 39,
+            "y": 25,
+            "direction": "RIGHT",
+            "trigger": "LEGACY_COLLISION"
+          }
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                4,
+                0,
+                "NONE"
+              ],
+              [
+                5,
+                0,
+                "NONE"
+              ],
+              [
+                4,
+                9,
+                "NONE"
+              ],
+              [
+                5,
+                9,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          }
+        ],
+        "border_policy": "APPROVED_NORMAL"
       }
     },
     {
@@ -147,6 +269,181 @@
           "east": "NONE"
         },
         "basis": "Existing south gate: east/west collision Warp + no extra native simulated arrival step"
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+        "warp_sides": {
+          "east": [
+            [
+              4,
+              9,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              5,
+              9,
+              1,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "west": [
+            [
+              4,
+              0,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              5,
+              0,
+              1,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_AZALEA_TOWN_LOCAL_ID",
+            "x": 2,
+            "y": 10,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_AZALEA_TOWN_LOCAL_ID",
+            "x": 2,
+            "y": 11,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ILEX_FOREST_LOCAL_ID",
+            "x": 3,
+            "y": 42,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ILEX_FOREST_LOCAL_ID",
+            "x": 3,
+            "y": 43,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 4,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 5,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 4,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 5,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY"
+          }
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                4,
+                0,
+                "NONE"
+              ],
+              [
+                5,
+                0,
+                "NONE"
+              ],
+              [
+                4,
+                9,
+                "NONE"
+              ],
+              [
+                5,
+                9,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_AZALEA_TOWN_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_AZALEA_TOWN_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_AZALEA_TOWN_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_AZALEA_TOWN_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            2,
+            0,
+            "JOHTO_ILEX_FOREST_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+            3,
+            1,
+            "JOHTO_ILEX_FOREST_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ILEX_FOREST_LOCAL_ID",
+            0,
+            2,
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ILEX_FOREST_LOCAL_ID",
+            1,
+            3,
+            "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID"
+          ]
+        ],
+        "border_policy": "AZALEA_WEST_PATCH"
       }
     },
     {
@@ -201,6 +498,200 @@
           "south": "NONE"
         },
         "basis": "User-accepted ILEX-5.62.215: arrival at gate north edge y0 steps down once; arrival at gate south edge y7 does not step"
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+        "warp_sides": {
+          "north": [
+            [
+              0,
+              4,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              0,
+              5,
+              1,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "south": [
+            [
+              7,
+              4,
+              2,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              7,
+              5,
+              2,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_ILEX_FOREST_LOCAL_ID",
+            "x": 1,
+            "y": 5,
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_34_LOCAL_ID",
+            "x": 13,
+            "y": 37,
+            "direction": "DOWN",
+            "trigger": "STEP_ON",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_34_LOCAL_ID",
+            "x": 14,
+            "y": 37,
+            "direction": "DOWN",
+            "trigger": "STEP_ON",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            "x": 5,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            "x": 5,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "STEP_ON"
+          }
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                0,
+                4,
+                "D_DOWN"
+              ],
+              [
+                0,
+                5,
+                "D_DOWN"
+              ],
+              [
+                7,
+                4,
+                "NONE"
+              ],
+              [
+                7,
+                5,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ILEX_FOREST_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                5,
+                1,
+                "D_DOWN"
+              ]
+            ],
+            "exact_map_profiles": false
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_34_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                37,
+                13,
+                "NONE"
+              ],
+              [
+                37,
+                14,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_ILEX_FOREST_LOCAL_ID",
+            2,
+            2,
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            2,
+            2,
+            "JOHTO_ILEX_FOREST_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            3,
+            2,
+            "JOHTO_ILEX_FOREST_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE_34_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE_34_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_34_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_34_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID"
+          ]
+        ],
+        "border_policy": "APPROVED_NORMAL"
       }
     },
     {
@@ -214,6 +705,268 @@
         "test_johto_route34_gate_p18.NorthGateP18.test_immediate_return_and_exact_one_step_after_warp"
       ],
       "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
+    },
+    {
+      "rpp_map": "JohtoGoldenrodCity",
+      "gold_map": "GoldenrodCity",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 1,
+      "required_test_ids": [
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_original_gold_graph_and_native_escape_target_mapping",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_entry_direction_contract_and_runtime_dispatch",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_arrival_and_immediate_reverse_regression"
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
+    },
+    {
+      "rpp_map": "JohtoRoute35",
+      "gold_map": "Route35",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_original_gold_graph_and_native_escape_target_mapping",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_entry_direction_contract_and_runtime_dispatch",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_arrival_and_immediate_reverse_regression"
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
+    },
+    {
+      "rpp_map": "JohtoRoute35GoldenrodGate",
+      "gold_map": "Route35GoldenrodGate",
+      "family": "GATE_INDOOR",
+      "warp_count": 4,
+      "required_test_ids": [
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_original_gold_graph_and_native_escape_target_mapping",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_entry_direction_contract_and_runtime_dispatch",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_arrival_and_immediate_reverse_regression",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_both_outdoor_gate_facades_and_fences_remain_gold",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_gate_neutral_without_suppressing_roads_or_city",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_gold_north_south_gate_art_is_exact",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_approved_gate_rgb_and_kanto_resource_unchanged",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_old_gate_and_ledge_paths_are_still_registered",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_wrong_route35_lane_target_fails",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_city_warp_removal_fails",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_wrong_native_branch_fails",
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_unknown_gate_door_step_rejected"
+      ],
+      "neutral_name_sign_test_id": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_gate_neutral_without_suppressing_roads_or_city",
+      "gold_palette_test_id": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_gold_north_south_gate_art_is_exact",
+      "runtime_palette_status": "PHONE_PENDING",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_original_gold_graph_and_native_escape_target_mapping",
+        "directional_collision": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_entry_direction_contract_and_runtime_dispatch",
+        "immediate_return": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_arrival_and_immediate_reverse_regression",
+        "exterior_border_loads": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_both_outdoor_gate_facades_and_fences_remain_gold",
+        "neutral_map_name": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_gate_neutral_without_suppressing_roads_or_city",
+        "gold_art_tile_palette": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_gold_north_south_gate_art_is_exact",
+        "runtime_rgb_kanto_isolation": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_approved_gate_rgb_and_kanto_resource_unchanged",
+        "legacy_gate_regression": "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_old_gate_and_ledge_paths_are_still_registered"
+      },
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED",
+      "arrival_step_review": {
+        "layout": "NORTH_SOUTH_PAIR",
+        "by_gate_side": {
+          "north": "D_DOWN",
+          "south": "NONE"
+        },
+        "basis": "Gold Route35GoldenrodGate maps north y0/x4-5 to Route35 and south y7/x4-5 to single Goldenrod x19/y1; reuse previously accepted north-gate approach only; confirm two-sided movement on phone."
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+        "warp_sides": {
+          "north": [
+            [
+              0,
+              4,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              0,
+              5,
+              1,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "south": [
+            [
+              7,
+              4,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              7,
+              5,
+              0,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_ROUTE_35_LOCAL_ID",
+            "x": 9,
+            "y": 33,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_35_LOCAL_ID",
+            "x": 10,
+            "y": 33,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+            "x": 19,
+            "y": 1,
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            "x": 5,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            "x": 5,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "STEP_ON"
+          }
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                0,
+                4,
+                "D_DOWN"
+              ],
+              [
+                0,
+                5,
+                "D_DOWN"
+              ],
+              [
+                7,
+                4,
+                "NONE"
+              ],
+              [
+                7,
+                5,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_35_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                33,
+                9,
+                "NONE"
+              ],
+              [
+                33,
+                10,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                1,
+                19,
+                "D_DOWN"
+              ]
+            ],
+            "exact_map_profiles": false
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_ROUTE_35_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_35_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+            0,
+            2,
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE_35_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE_35_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            2,
+            0,
+            "JOHTO_GOLDENROD_CITY_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+            3,
+            0,
+            "JOHTO_GOLDENROD_CITY_LOCAL_ID"
+          ]
+        ],
+        "border_policy": "GOLDENROD_ROUTE35_PAIR"
+      }
     }
   ],
   "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",

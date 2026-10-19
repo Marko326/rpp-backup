@@ -1,0 +1,417 @@
+#!/usr/bin/env python3
+"""Fail-closed gatehouse *execution-path* contracts for all enabled Johto gates.
+
+Not a GB emulator. Evaluates the supported actual ASM predicate instructions,
+not simply the presence of string tokens, on every declared gate mouth in all
+four directions. A changed instruction we cannot interpret is a failure, never
+an implicit PASS. Runtime animation/VRAM still requires built-ROM verification.
+"""
+from __future__ import annotations
+import argparse
+import json
+import re
+from pathlib import Path
+from johto_gate_rgb_audit import verify as verify_gate_rgb
+from johto_gate_audit import verify_gold_gate_palette_map
+from johto_indoor_tiles_converter import build_mapping
+from johto_warp_arrival_audit import profiles as parse_arrival_profiles
+
+MANIFEST = 'tools/johto_door_contracts.json'
+ASM = 'engine/overworld/johto_route33_collision.asm'
+LOOKUP = 'engine/overworld/region_map_lookup.asm'
+HOME = 'home/overworld.asm'
+MODES = {'STEP_ON', 'COLLISION_ONLY', 'LEGACY_COLLISION'}
+DIRECTIONS = ('UP', 'DOWN', 'LEFT', 'RIGHT')
+
+
+def get_text(root: Path, path: str, overrides: dict | None) -> str:
+    return (overrides[path] if overrides and path in overrides
+            else (root / path).read_text(encoding='utf-8'))
+
+
+def predicate(source: str, name: str, map_id: str, x: int, y: int, direction: str) -> bool:
+    """Small strict executor for ASM gate direction predicates; returns carry.
+
+    No arbitrary calls/branch targets, numbers-as-symbols or opcode fallthrough.
+    Keeps exactly the runtime map-local and direction inputs; trace both allowed
+    and denied examples to reject a reversed conditional branch.
+    """
+    m = re.search(r'(?m)^' + re.escape(name) + r'::\s*$', source)
+    if not m:
+        raise ValueError('runtime gate predicate missing: ' + name)
+    remainder = source[m.end():]
+    nxt = re.search(r'(?m)^[A-Za-z]\w*::\s*$', remainder)
+    if nxt:
+        remainder = remainder[:nxt.start()]
+    prog: list[str] = []
+    labels = {'.entry': 0}
+    for raw in remainder.splitlines():
+        stmt = raw.split(';', 1)[0].strip()
+        if not stmt:
+            continue
+        if re.fullmatch(r'\.[A-Za-z]\w*:?', stmt):
+            label = stmt.removesuffix(':')
+            if label in labels:
+                raise ValueError('duplicate ASM branch label: ' + label)
+            labels[label] = len(prog)
+        elif re.fullmatch(r'[A-Za-z]\w*:', stmt):
+            break
+        else:
+            prog.append(stmt)
+    ram = {'wCurRegion': 'MAP_REGION_JOHTO', 'wCurLocalMapID': map_id,
+           'wXCoord': x, 'wYCoord': y, 'wPlayerDirection': 'PLAYER_DIR_' + direction}
+    a, b, z, c, pc = None, None, False, False, 0
+    for _ in range(220):
+        if not 0 <= pc < len(prog):
+            raise ValueError(f'{name} ran past subroutine without RET')
+        op = prog[pc]
+        pc += 1
+        m = re.fullmatch(r'ld a, \[(w\w+)\]', op)
+        if m:
+            if m[1] not in ram:
+                raise ValueError('unmodeled ASM RAM access: '+op)
+            a = ram[m[1]]
+            continue
+        if op == 'ld b, a':
+            b = a
+            continue
+        m = re.fullmatch(r'ld a, (PLAYER_DIR_(?:UP|DOWN|LEFT|RIGHT))', op)
+        if m:
+            a = m[1]
+            continue
+        m = re.fullmatch(r'cp\s+([\w$]+)', op)
+        if m:
+            target = b if m[1] == 'b' else (int(m[1], 16) if m[1].startswith('$')
+                       else int(m[1]) if m[1].isdecimal() else m[1])
+            if a is None or target is None or (isinstance(a, int) != isinstance(target, int)):
+                raise ValueError('invalid symbolic ASM comparison: ' + op)
+            z = a == target
+            c = a < target
+            continue
+        if op == 'and a':
+            c = False
+            z = a == 0
+            continue
+        if op == 'scf':
+            c = True
+            continue
+        m = re.fullmatch(r'(?:jr|jp)\s+(?:(z|nz|c|nc),\s*)?(\.\w+)', op)
+        if m:
+            flag, dest = m.groups()
+            take = (flag is None or (flag == 'z' and z) or (flag == 'nz' and not z)
+                    or (flag == 'c' and c) or (flag == 'nc' and not c))
+            if take:
+                if dest not in labels:
+                    raise ValueError('unknown ASM gate jump: ' + dest)
+                pc = labels[dest]
+            continue
+        if op == 'ret':
+            return c
+        if op in ('ret z', 'ret nz', 'ret c', 'ret nc'):
+            flag = op[4:]
+            if (flag == 'z' and z) or (flag == 'nz' and not z) or (flag == 'c' and c) or (flag == 'nc' and not c):
+                return c
+            continue
+        raise ValueError('unsupported ASM gate predicate instruction: '+op)
+    raise ValueError('ASM predicate execution did not terminate: ' + name)
+
+
+
+def object_warps(text: str, name: str) -> list[tuple[int, int, int, str]]:
+    """All registered Y/X/slot/destination cells, including overwritten tests."""
+    lines = [row.split(';', 1)[0].strip() for row in text.splitlines()]
+    lines = [row for row in lines if row]
+    label = name + 'Object:'
+    if label not in lines:
+        raise ValueError('missing RPP object label: '+label)
+    rows=lines[lines.index(label)+1:]
+    if len(rows)<2:
+        raise ValueError('incomplete RPP warp header '+name)
+    length=rows[1]
+    if not re.fullmatch(r'db\s+(?:\$[0-9a-fA-F]+|\d+)',length):
+        raise ValueError('bad Warp count: '+length)
+    count=int(length.split()[-1].replace('$','0x'),0)
+    records=[]
+    for row in rows[2:2+count]:
+        found=re.fullmatch(r'db\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([A-Z0-9_]+)',row)
+        if not found:
+            raise ValueError('malformed Warp entry '+name+': '+row)
+        records.append((int(found[1]),int(found[2]),int(found[3]),found[4]))
+    if len(records)!=count or len({(y,x) for y,x,_,_ in records})!=count:
+        raise ValueError('incomplete or duplicate Warp entry '+name)
+    return records
+
+
+def landing_mask_errors(root: Path, destinations: list, id_to_stem: dict,
+                        overrides: dict | None = None) -> list[str]:
+    """Read actual masks: one forced step must stay on valid floor in bounds."""
+    errors=[]
+    width_definitions=get_text(root,'constants/region_map_constants.asm',overrides)
+    constants={name:int(value) for name,value in re.findall(
+        r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+)\s+EQU\s+(\d+)\s*$',width_definitions)}
+    for d in destinations:
+        if all(item[2]=='NONE' for item in d['points']):
+            continue
+        stem=id_to_stem.get(d['local'])
+        if stem is None:
+            # Legacy alias route31 does not use the native arrival executor.
+            if d['local'].startswith('JOHTO_ROUTE31_VIOLET_GATE'):
+                continue
+            errors.append('no registered destination identity '+d['local'])
+            continue
+        header=get_text(root,'data/mapHeaders/'+stem+'.asm',overrides)
+        dims=re.search(r'(?m)^\s*db\s+([A-Z0-9_]+|\d+)\s*,\s*([A-Z0-9_]+|\d+)\s*$',header)
+        if not dims:
+            errors.append('cannot determine map dimensions '+stem)
+            continue
+        def get_size(x):
+            return int(x) if x.isdecimal() else constants[x]
+        height_blocks,width_blocks=map(get_size,dims.groups())
+        width,height=width_blocks*2,height_blocks*2
+        stride=(width+7)//8
+        mask_path='maps/'+stem+'.blocked_mask.bin'
+        mask=(overrides[mask_path] if overrides and mask_path in overrides
+              else (root/mask_path).read_bytes())
+        if len(mask)!=stride*height:
+            errors.append(stem+' blocked mask does not match map dimensions')
+            continue
+        offsets={'D_UP':(0,-1),'D_DOWN':(0,1),'D_LEFT':(-1,0),'D_RIGHT':(1,0)}
+        for y,x,direction in d['points']:
+            if direction=='NONE':
+                continue
+            dx,dy=offsets[direction]
+            tx,ty=int(x)+dx,int(y)+dy
+            if not (0<=tx<width and 0<=ty<height):
+                errors.append(stem+f' forced arrival step goes out of bounds ({tx},{ty})')
+            elif mask[ty*stride+tx//8] & (1<<(tx%8)):
+                errors.append(stem+f' forced arrival step lands in blocked terrain ({tx},{ty})')
+    return errors
+
+
+def valid_contract(spec: dict) -> list[str]:
+    name = spec.get('rpp_map', '?')
+    runtime = spec.get('gatehouse_runtime')
+    if not isinstance(runtime, dict):
+        return [name + ' missing mandatory executable gatehouse_runtime contract']
+    errors = []
+    layout = spec.get('arrival_step_review', {}).get('layout')
+    expected_sides = ({'NORTH_SOUTH_PAIR': {'north', 'south'},
+                       'EAST_WEST_PAIR': {'west', 'east'}}).get(layout)
+    if not expected_sides or set(runtime.get('warp_sides', {})) != expected_sides:
+        errors.append(name + ' warp-side layout does not match the reviewed orientation')
+    if runtime.get('border_policy') not in ('APPROVED_NORMAL', 'AZALEA_WEST_PATCH', 'GOLDENROD_ROUTE35_PAIR'):
+        errors.append(name+' missing mandatory outdoor border render policy')
+    if runtime.get('mode') not in ('NATIVE_GATE', 'LEGACY_COLLISION'):
+        errors.append(name + ' missing reviewed runtime execution mode')
+    if not isinstance(runtime.get('approaches'), list) or not runtime['approaches']:
+        errors.append(name + ' missing outdoor and indoor direction/trigger contract')
+    if not isinstance(runtime.get('arrivals'), list) or not runtime['arrivals']:
+        errors.append(name + ' missing arrival-step contract for both sides')
+    if runtime.get('mode') == 'NATIVE_GATE' and (not isinstance(runtime.get('native_routes'), list) or not runtime['native_routes']):
+        errors.append(name + ' missing exact bidirectional native Warp routes')
+    return errors
+
+
+def audit(root: Path, gold: Path, overrides: dict | None = None,
+          manifest: dict | None = None) -> list[str]:
+    root = Path(root)
+    errors = []
+    try:
+        doc = (manifest if manifest is not None else
+               json.loads(get_text(root, MANIFEST, overrides)))
+        gates = [v for v in doc['active_warp_maps'] if v.get('family') == 'GATE_INDOOR']
+        if not gates:
+            return ['no enabled indoor gates discovered; refusing vacuous PASS']
+        collisions = get_text(root, ASM, overrides)
+        lookup = get_text(root, LOOKUP, overrides)
+        home = get_text(root, HOME, overrides)
+        profiles = parse_arrival_profiles(lookup)
+        raw_routes = lookup.split('NativeRegionWarpTargets::',1)[1].split('SelectNativeMapConnection::',1)[0]
+        route_rows = re.findall(r'(?m)^\s*db\s+([A-Z0-9_]+),\s*(\d+),\s*(\d+),\s*MAP_REGION_JOHTO,\s*([A-Z0-9_]+)\s*$', raw_routes)
+        native_routes = {(src,int(i),int(target),dst) for src,i,target,dst in route_rows}
+    except (ValueError, KeyError, OSError, TypeError) as e:
+        return ['gatehouse behavior prerequisite unreadable: ' + str(e)]
+    actual = {(alias, local, y, x, source): direction
+              for alias, local, y, x, source, direction in profiles}
+    if len(actual) != len(profiles):
+        errors.append('duplicate arrival profiles could shadow each other')
+    for entry in gates:
+        errors.extend(valid_contract(entry))
+        if not isinstance(entry.get('gatehouse_runtime'), dict):
+            continue
+        name = entry['rpp_map']
+        contract = entry['gatehouse_runtime']
+        try:
+            # Compare ACTUAL registered indoor Warp cell + target slot multiset,
+            # rather than only checking a warp count or declared shape.
+            records = object_warps(get_text(root,'data/mapObjects/'+name+'.asm',overrides),name)
+            exp = [(int(y), int(x), int(slot), alias)
+                   for points in contract['warp_sides'].values()
+                   for y, x, slot, alias in points]
+            if sorted(records) != sorted(exp):
+                errors.append(name + ' actual Warp coordinate/slot/target differs from reviewed contract')
+            # Original Gold coordinates are independent of the reviewed RPP
+            # JSON. A manifest rewritten to match a corrupt Warp file is not
+            # sufficient: the original source must still agree.
+            original = (gold/'maps'/(entry['gold_map']+'.asm')).read_text(encoding='utf-8')
+            gold_cells = {(int(y),int(x)) for x,y in re.findall(
+                r'(?m)^\s*warp_event\s+(\d+),\s*(\d+),',original)}
+            if {(y,x) for y,x,_,_ in exp} != gold_cells:
+                errors.append(name + ' indoor Warp geometry differs from independent original Gold')
+            # Verify all four room block layouts against Gold through the
+            # independently validated source-to-compact metatile converter.
+            mapping, gold_blocks = build_mapping(root, Path(gold), entry['gold_map'], 'gate','johto_gate')
+            actual_blocks = (root/'maps'/(name+'.blk')).read_bytes()
+            if mapping['exact_mapped'] != mapping['used_unique_blocks'] or actual_blocks != gold_blocks:
+                errors.append(name+' actual gate house metatile layout differs from Gold reference')
+            if contract.get('mode') == 'NATIVE_GATE':
+                gate_id = contract['local_id']
+                expected_routes = {tuple([v[0],int(v[1]),int(v[2]),v[3]])
+                                   for v in contract['native_routes']}
+                actual_gate_routes = {v for v in native_routes if v[0] == gate_id or v[3] == gate_id}
+                if actual_gate_routes != expected_routes:
+                    errors.append(name + ' native Warp routes changed (missing, extra or redirected)')
+                # Every listed source slot must refer to a real matching
+                # source-object Warp. This catches phantom routes through an
+                # otherwise plausible table row.
+                local_maps = {v['local_symbol']:v['header'].removesuffix('_h')
+                              for v in json.loads(get_text(root,'tools/johto_native_maps.json',overrides))['maps']}
+                for source_id, slot, target_slot, dest_id in expected_routes:
+                    stem = local_maps.get(source_id)
+                    if not stem:
+                        raise ValueError('unregistered native source map: '+source_id)
+                    actual_warps = object_warps(
+                        get_text(root,'data/mapObjects/'+stem+'.asm',overrides),stem)
+                    if slot >= len(actual_warps):
+                        errors.append(name + ' routed source Warp index outside '+stem)
+                    elif actual_warps[slot][2] != target_slot:
+                        errors.append(name+' source Warp destination slot inconsistent '+stem)
+                    if dest_id == gate_id and source_id != gate_id and slot < len(actual_warps):
+                        y0,x0,_,_ = actual_warps[slot]
+                        matching=[v for v in contract['approaches'] if
+                                  v['map_local']==source_id and (v['y'],v['x'])==(y0,x0)]
+                        if len(matching)!=1:
+                            errors.append(name+' missing exactly one outside approach for '+stem+f' ({x0},{y0})')
+            sides = contract['warp_sides']
+            if sum(len(v) for v in sides.values()) != len(records) or any(len(v) != 2 for v in sides.values()):
+                errors.append(name + ' must have two reviewed Warp lanes on each side')
+            if contract.get('mode') == 'NATIVE_GATE':
+                indoor_approaches={(v['y'],v['x']) for v in contract['approaches']
+                                   if v['map_local']==contract['local_id']}
+                if indoor_approaches != {(y,x) for y,x,_,_ in exp}:
+                    errors.append(name+' indoor Warp tiles not fully covered by directional probes')
+            if contract.get('mode') == 'LEGACY_COLLISION' and name != 'JohtoRoute31VioletGate':
+                errors.append(name + ' cannot claim legacy collision engine without manual code review')
+            for approach in contract['approaches']:
+                local, x, y = approach['map_local'], int(approach['x']), int(approach['y'])
+                wanted = approach['direction']
+                mode = approach['trigger']
+                if wanted not in DIRECTIONS or mode not in MODES:
+                    raise ValueError(name+' bad direction/trigger mode')
+                if mode == 'LEGACY_COLLISION':
+                    if contract.get('mode') != 'LEGACY_COLLISION':
+                        errors.append(name + ' legacy approach in native gate')
+                    continue
+                if not re.fullmatch(r'JOHTO_[A-Z0-9_]+_LOCAL_ID', local):
+                    raise ValueError(name+' invalid map-local identity '+local)
+                for direction in DIRECTIONS:
+                    step = predicate(collisions, 'JohtoNorthGateStepWarpAllowed',local,x,y,direction)
+                    coll = predicate(collisions, 'JohtoGateCollisionDirectionAllowed',local,x,y,direction)
+                    desired_step = mode == 'STEP_ON' and direction == wanted
+                    desired_coll = direction == wanted
+                    if step != desired_step:
+                        errors.append(f'{name} {local} ({x},{y}) {direction} STEP_ON actual={step} wanted={desired_step}')
+                    if coll != desired_coll:
+                        errors.append(f'{name} {local} ({x},{y}) {direction} COLLISION actual={coll} wanted={desired_coll}')
+                    if approach.get('outside_guard'):
+                        checked = predicate(collisions, 'JohtoInternalDoorFacingCheck',local,x,y,direction)
+                        if checked != desired_coll:
+                            errors.append(f'{name} {local} ({x},{y}) {direction} EXTRA_WARP actual={checked} wanted={desired_coll}')
+            # An arrival includes every mouth on both sides; NONE must mean
+            # absence of an executable table row, not just a prose statement.
+            for destination in contract['arrivals']:
+                alias = destination['alias']
+                local = destination['local']
+                source_alias = destination['from']
+                expected_points = {(int(y),int(x)): direction for y,x,direction in destination['points']}
+                seen = {(y,x):direction for a,l,y,x,s,direction in profiles
+                        if (a,l,s)==(alias,local,source_alias) and (y,x) in expected_points}
+                actual_for_map = {(y,x):direction for a,l,y,x,s,direction in profiles
+                                  if (a,l,s)==(alias,local,source_alias)}
+                for point,direction in expected_points.items():
+                    active_dir = seen.get(point, 'NONE')
+                    if active_dir != direction:
+                        errors.append(f'{name} {local} arrival {point} actual={active_dir} wanted={direction}')
+                if destination.get('exact_map_profiles'):
+                    should = {p:d for p,d in expected_points.items() if d!='NONE'}
+                    if actual_for_map != should:
+                        errors.append(name+' arrival profile table contains unexpected/omitted rows for '+local)
+            # Cross-check arrival_step_review: the prose metadata cannot
+            # claim one side is NONE while executable profiles move it.
+            if contract.get('mode')=='NATIVE_GATE':
+                side_decisions = entry['arrival_step_review']['by_gate_side']
+                for side, cells in sides.items():
+                    for y,x,_,_ in cells:
+                        found = next((t for t in contract['arrivals'] if t['local']==contract['local_id']),None)
+                        rows = {(int(yy),int(xx)):move for yy,xx,move in found['points']} if found else {}
+                        if rows.get((y,x))!=side_decisions[side]:
+                            errors.append(name+' reviewed arrival direction disagrees with its '+side+' side')
+            errors.extend(landing_mask_errors(root,contract['arrivals'],
+                           {v['local_symbol']:v['header'].removesuffix('_h') for v in
+                            json.loads(get_text(root,'tools/johto_native_maps.json',overrides))['maps']},overrides))
+            # Prevent the manifest being used to silently neutralize a new
+            # side: each indoor warp tile must have an arrival decision.
+            indoor = next((e for e in contract['arrivals'] if e['local']==contract.get('local_id')), None)
+            if contract['mode'] == 'NATIVE_GATE' and (indoor is None or
+                 {(int(y),int(x)) for y,x,d in indoor['points']} !=
+                 {(y,x) for y,x,_,_ in exp}):
+                errors.append(name + ' arrival-step contract omits an indoor Warp tile')
+        except (OSError, ValueError, KeyError, IndexError, StopIteration, TypeError) as exc:
+            errors.append(name+' gate behavior cannot be verified: '+str(exc))
+    # The same gate asset pipeline is shared across all enabled indoor gates.
+    # Do not pass a corrupted tile/palette bank just because the door acts right.
+    if not overrides:
+        try:
+            errors.extend('GOLD_GATE_RGB: '+v for v in verify_gate_rgb(root,Path(gold)))
+            errors.extend('GOLD_GATE_PALETTE: '+v for v in verify_gold_gate_palette_map(root,Path(gold)))
+        except (OSError, ValueError, KeyError, IndexError) as exc:
+            errors.append('gate Gold art source cannot be verified: '+str(exc))
+    # Verify the real runtime executors actually consume the predicates and
+    # arrival profiles; a correct unused helper must never score PASS.
+    standing=home.split('CheckWarpsNoCollisionLoop::',1)[-1].split('CheckWarpsCollision::',1)[0]
+    collided=home.split('CheckWarpsCollision::',1)[-1].split('CheckWarpsNoCollisionRetry1::',1)[0]
+    extra=home.split('ExtraWarpCheck::',1)[-1].split('IsJohtoSouthGatePortal::',1)[0]
+    npc=get_text(root,'engine/overworld/npc_movement.asm',overrides)
+    for flag,okay in (
+        ('step-on Warp executor', all(t in standing for t in ('callba JohtoNorthGateStepWarpAllowed','jp c, WarpFound1'))),
+        ('collision Warp executor', all(t in collided for t in ('callba JohtoGateCollisionDirectionAllowed','jr nc, .retry2'))),
+        ('outside doorway facing executor', 'callba JohtoInternalDoorFacingCheck' in extra),
+        ('post-Warp step executor', all(t in npc for t in ('callab GetJohtoWarpArrivalStep','call StartSimulatingJoypadStates'))),
+    ):
+        if not okay:errors.append('shared gate runtime missing '+flag)
+    # The two loading paths MUST both perform the shared ROMX border patch
+    # after the metatile buffer is filled. This checks the actual call sites.
+    hook = 'callba PatchJohtoMapBordersAfterBlockLoad'
+    before_load = home.split('LoadMapData::',1)[-1].split('; HAX: Padding',1)[0]
+    connected = home.split('.ordinaryConnection\n',1)[-1].split('.didNotEnterConnectedMap',1)[0]
+    if any(part.count(hook)!=1 or 'call LoadTileBlockMap' not in part or
+           part.index('call LoadTileBlockMap')>part.index(hook)
+           for part in (before_load,connected)) or home.count(hook)!=2:
+        errors.append('gate exterior preview must run after block load on BOTH load paths')
+    section = collisions.split('PatchJohtoMapBordersAfterBlockLoad::',1)[-1].split('PatchJohtoAzaleaWestGateBorder::',1)[0]
+    if not (re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder',section)):
+        errors.append('shared exterior border renderer lost one side or changed call order')
+    if 'SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]' not in get_text(root,'main.asm',overrides):
+        errors.append('gate border render routines must remain in ROMX Bank 43')
+    return errors
+
+
+if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--rpp',type=Path,default=Path('.'))
+    parser.add_argument('--gold',type=Path,required=True)
+    ns=parser.parse_args()
+    issues=audit(ns.rpp,ns.gold)
+    for issue in issues:print('FAIL',issue)
+    if issues:raise SystemExit(1)
+    print('PASS: all enabled gatehouse runtime selectors, Warp cells, arrival profiles and both border load paths (STATIC ASM EXECUTION)')

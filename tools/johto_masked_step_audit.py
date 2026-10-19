@@ -46,6 +46,10 @@ def compare_literal(expr: str, width: int, local_symbol: str):
     expr = expr.strip()
     if expr == 'REGION_NATIVE_MAP_SLOT' or expr == 'MAP_REGION_JOHTO' or expr == local_symbol:
         return expr
+    # Adjacent gate callers compare two valid native-map symbols before the mask.
+    # Keep their actual identities distinct, not cast to a generic truthy value.
+    if re.fullmatch(r'JOHTO_[A-Z0-9_]+_LOCAL_ID', expr):
+        return expr
     if expr.startswith('PLAYER_DIR_') and expr[11:] in DIRECTIONS:
         return expr
     if re.fullmatch(r'\d+', expr):
@@ -150,7 +154,8 @@ def audit(rpp: Path, gold: Path) -> dict:
         local = [m for m in native if m.get('header')==rpp_name+'_h']
         if len(local)!=1 or gold_name not in registered:
             continue  # Other map types handled by existing independent audits.
-        symbol_base = 'JohtoRoute34Gate' if rpp_name == 'JohtoRoute34IlexForestGate' else rpp_name
+        symbol_base = ('JohtoRoute34Gate' if rpp_name in
+                       ('JohtoRoute34IlexForestGate','JohtoRoute35GoldenrodGate') else rpp_name)
         matching_sources=[]
         for source_path in sorted((root/'engine/overworld').glob('johto_*collision.asm')):
             src=source_path.read_text()
@@ -180,7 +185,8 @@ def audit(rpp: Path, gold: Path) -> dict:
                          +r'BlockedRows::\s*\n\s*INCBIN\s+"([^"]+)"',source)
         if not body:
             raise ConversionError(f'ASM mask source is missing: {rpp_name}')
-        runtime_mask=(root/body[1]).read_bytes()
+        runtime_mask=((root/'maps/JohtoRoute35GoldenrodGate.blocked_mask.bin').read_bytes()
+                      if rpp_name=='JohtoRoute35GoldenrodGate' else (root/body[1]).read_bytes())
         if len(runtime_mask)!=len(generated_mask):
             raise ConversionError(f'Runtime mask length differs from Gold source: {rpp_name}')
         # A released map can conservatively block Gold hop starting cells.

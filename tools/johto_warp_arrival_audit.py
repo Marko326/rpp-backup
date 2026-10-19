@@ -235,21 +235,27 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
                 79, 6, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
     expected33 = ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID',
                   9, 11, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
-    # ILEX-5.62.215: preserve only the three DOWN-arrival steps.
-    # Forest -> gate bottom and gate -> Route34 should KEEP their warp coordinates.
+    # GATE-5.62.224 video correction: additionally require GoldenrodCity north
+    # landing to step DOWN; gate south y7 and Route34 south keep coordinates.
     # Existing Route32/Route33 cave exits remain unchanged.
     north_steps = [
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        # GATE video regression: the bottom door must walk INTO Goldenrod.
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_GOLDENROD_CITY_LOCAL_ID', 1, 19, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ILEX_FOREST_LOCAL_ID', 5, 1, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
     if arrivals != [expected, expected33] + north_steps:
-        errors.append('Only north-gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
+        errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
     # Destination masks: the auto step must not put the player inside walls,
     # including when ordinary simulated-button collision is bypassed.
     mask_desc = {
         'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': ('JohtoRoute34IlexForestGate', 10, 8),
+        'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID': ('JohtoRoute35GoldenrodGate', 10, 8),
         'JOHTO_ILEX_FOREST_LOCAL_ID': ('JohtoIlexForest', 30, 54),
+        'JOHTO_GOLDENROD_CITY_LOCAL_ID': ('JohtoGoldenrodCity', 40, 36),
         'JOHTO_ROUTE_34_LOCAL_ID': ('JohtoRoute34', 20, 54),
     }
     for alias, local, y, x, source, direction in north_steps:

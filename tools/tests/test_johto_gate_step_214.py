@@ -17,7 +17,8 @@ from johto_warp_arrival_audit import profiles, audit
 from johto_indoor_common import rpp_warps
 
 KEYS={'JOHTO_ILEX_FOREST_LOCAL_ID':'forest','JOHTO_ROUTE_34_LOCAL_ID':'route',
-      'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':'gate'}
+      'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':'gate',
+      'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID':'north_gate'}
 
 
 def step_warp_exec(source, map_id, y, direction):
@@ -44,7 +45,7 @@ def step_warp_exec(source, map_id, y, direction):
             z=(a==q)
         elif op=='and a':carry=False;z=(a==0)
         elif op=='scf':carry=True
-        elif op.startswith('jr '):
+        elif op.startswith(('jr ', 'jp ')):
             parts=[x.strip() for x in op[3:].split(',')]
             if len(parts)==1 or (parts[0]=='z' and z) or (parts[0]=='nz' and not z):
                 pc=labels[parts[-1]]
@@ -64,6 +65,9 @@ class GateOneStepContract(unittest.TestCase):
                   'JohtoRoute34': ('JOHTO_ROUTE_34_LOCAL_ID', {(13,37):'PLAYER_DIR_DOWN',(14,37):'PLAYER_DIR_DOWN'}),
                   'JohtoRoute34IlexForestGate': ('JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID',{
                       (4,0):'PLAYER_DIR_UP',(5,0):'PLAYER_DIR_UP',
+                      (4,7):'PLAYER_DIR_DOWN',(5,7):'PLAYER_DIR_DOWN'}),
+                  'JohtoRoute35GoldenrodGate': ('JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID',{
+                      (4,0):'PLAYER_DIR_UP',(5,0):'PLAYER_DIR_UP',
                       (4,7):'PLAYER_DIR_DOWN',(5,7):'PLAYER_DIR_DOWN'})}
         for name,(key,valid) in expected.items():
             for w in rpp_warps(ROOT,name):
@@ -82,10 +86,12 @@ class GateOneStepContract(unittest.TestCase):
 
     def test_only_down_arrivals_auto_step_and_land_on_floor(self):
         actual=self.arrival[2:]
-        self.assertEqual(len(actual),3)
+        self.assertEqual(len(actual),6)
         expected_by_map={
             'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
+            'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
             'JOHTO_ILEX_FOREST_LOCAL_ID':{(5,1,'D_DOWN')},
+            'JOHTO_GOLDENROD_CITY_LOCAL_ID':{(1,19,'D_DOWN')},
             'JOHTO_ROUTE_34_LOCAL_ID':set()}
         actual_by_map={key:set((y,x,d) for _,local,y,x,source,d in actual if local==key)
                        for key in expected_by_map}
@@ -98,6 +104,7 @@ class GateOneStepContract(unittest.TestCase):
         for local,coords in (
             ('JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID',[(7,4),(7,5)]),
             ('JOHTO_ROUTE_34_LOCAL_ID',[(37,13),(37,14)]),
+            ('JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID',[(7,4),(7,5)]),
         ):
             for y,x in coords:
                 self.assertNotIn((local,y,x,'REGION_NATIVE_MAP_SLOT'),all_profiles)

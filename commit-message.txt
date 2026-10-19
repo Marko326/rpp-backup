@@ -1,7 +1,26 @@
-# 金银 .217 → 跨分支 .223 移植：三笔独立提交建议（未由 AI 提交）
-# 以正式交付 ZIP 的三个 message 文件为 Git commit -F 的唯一详细正文。
-# ① feat(johto): 从金币分支移植 Gold 36/35号路与 Field Moves
-# ② fix(map): 修复 Route30 连接偏移与 32/35号路可达视野欠填
-# ③ test(tool): 固化 Gold 全连接与可达视野门禁并整理跨分支交接
-# 主线保留 .217 满金市、屋顶审计、Gold 112条跳崖合同；对应代码移植测试见 docs/JOHTO_CONNECTION_VISUAL_223_CLOSEOUT.md。
-# 游戏版本 ILEX-5.62.217 -> ILEX-5.62.223；统一审计仍有既存 SafariZoneBeta 失败。
+# `.224` 正式收口｜提交方案（本文件保留两笔日志，实际 git commit -F 使用单独 txt）
+# 不重复提交此前已 Push 的 `.223` 三笔跨分支内容；游戏可见版本仅 ILEX-5.62.224。
+# 若当前本地已有 `.224` 提交，先核对 git log/status，按实际差异选用，不按说明盲目 reset。
+
+第一笔（运行时及地图）：
+fix(johto): 完成35号道路至满金市北门房并修复双向门口行为
+
+- 基于已推送的 .223 金银主线，接入 Gold Route35GoldenrodGate 双格 Warp 与城市单口合流，保持既有地图 local ID；复用 JOHTO_GATE 图块、调色、Warp 执行器及旧门房，而非增设第二套传送系统。
+- 修复 Route35 南端外景默认树林边框和门房南口到达满金市后缺少 D_DOWN 的实际实机问题；两条 LoadTileBlockMap 路径同样刷新边界缓冲。
+- 修复 Route35 外侧门毯 STEP_ON 提前触发：可先站上、侧移，再 DOWN 碰撞入门；到达 Gate 北口按精确目标向下一格，Gate 南口和回 Route35 不追加错误步进。保留 Route34/桐树林门房已验收踏格规则。
+- 将两条地图装载路径边界补绘封装在 Bank $43 一次远调用里，减少 ROM0 额外开销；未大规模迁移旧 HOME 碰撞或存档逻辑。
+- 旧失败试验属于同一个 .224 候选开发过程，保留在随后工具收口文档，不另外创建 .225 或重复提交 .223 Route35/36。
+
+Verification: 用户报告 .224 定稿手机走门和画面无异常，`224定稿.mp4` 展示城市—门房—35号道路往返；617项 Python 测试与门房专项静态 PASS（在包含所有后续工具的最终源码状态）；用户此前 MAP 表明一次 ROM 成功链接，ROM0 用 $3fe0、余32B，仍须以后专项瘦身。SafariZoneBeta 旧错误不屏蔽。本轮不执行 Git commit/push。
+Version: ILEX-5.62.223 -> ILEX-5.62.224
+
+------------------ 第二笔（工具与三件套） ------------------
+test(tool): 强制Gold门房执行合同并完成.224用户验收收口
+
+- 为四座已启用城都门房加入 gatehouse_runtime 强制行为合同：独立登记每侧两条 Warp、Gold 原版坐标/图块、所有方向、STEP_ON/COLLISION_ONLY 与到达 D_DOWN/NONE；严格拒绝跨门房套错行为。
+- 加入 johto_gatehouse_behavior_audit：沿受支持的 ASM 指令执行真实分支，核查原生 Warp/0-based slot、到达落点阻挡、两条边界装载调用以及历史兼容；不识别指令 fail-closed，避免字符串存在就 PASS。
+- 纳入统一门禁和20项门房专项测试，故障注入覆盖踩毯即传送、错误方向/目标、走步缺失/越界、伪合同、Gold 图块及删除边界钩子；保留旧门房和关东资源隔离。
+- 更新 johto_door_contracts.json 中 Route35GoldenrodGate 的手机门口和画面反馈为 PHONE_ACCEPTED；更新 TODO、开发踩坑、门房必读、专项收口文档。完整记录先前多轮错误与测试漏检，避免形成第一次就完美的假历史。
+
+Verification: 完整 Gold 原版源下 617/617 unittest PASS，门房强制审计单独 PASS；统一 Gold 全量仅既存 SafariZoneBeta 错误按用户约定搁置但不关闭；未自行执行完整 Game Boy CPU 自动化或新一轮 ROM 链接。工具本身不会改 ROM 游戏指令。
+Version: ILEX-5.62.224 -> ILEX-5.62.224

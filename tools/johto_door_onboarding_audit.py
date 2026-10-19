@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import re
+from johto_gatehouse_behavior_audit import valid_contract
 
 GATEHOUSE_GUIDE = 'docs/JOHTO_GATEHOUSE_READ_FIRST.md'
 GATEHOUSE_PROOFS = ('two_lane_warps', 'directional_collision', 'immediate_return',
@@ -130,6 +131,7 @@ def audit(root: Path, gold: Path) -> tuple[list[str], set[str]]:
                 errors.append(f'{name} gate missing mandatory gatehouse_guide')
             if family == 'GATE_INDOOR':
                 errors.extend(validate_gate_arrival_policy(entry))
+                errors.extend(valid_contract(entry))
                 # Review the complete gate, not only the Warp pair. A copied gate
                 # must explicitly prove neutral-sign and Gold palette coverage.
                 for key in ('neutral_name_sign_test_id', 'gold_palette_test_id'):

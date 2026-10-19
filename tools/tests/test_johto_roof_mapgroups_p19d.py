@@ -14,7 +14,7 @@ SCOPE = (
  ('NewBarkTown',0), ('Route29',0), ('CherrygroveCity',1), ('Route30',1),
  ('Route31',1), ('VioletCity',2), (None,None), ('Route32',2),
  (None,None), ('Route33',3), ('AzaleaTown',3), (None,None),
- (None,None), (None,None), ('Route34',4), ('GoldenrodCity',4), ('Route36',2), ('Route35',2),
+ (None,None), (None,None), ('Route34',4), ('GoldenrodCity',4), ('Route36',2), ('Route35',2), (None,None),
 )
 GROUP_NAME = ('NewBark','Cherrygrove','Violet','Azalea','Goldenrod')
 GOLD_MAP_GROUP = (24,26,10,8,11)
@@ -65,7 +65,7 @@ class GoldRoofMapgroupsP19D(unittest.TestCase):
             self.assertEqual(len(line),1,(groupidx,line))
             self.assertIn('db '+const,line[0])
 
-    def test_gfx_and_palette_same_group_for_all_18_local_maps(self):
+    def test_gfx_and_palette_same_group_for_all_19_local_maps(self):
         color=(ROOT/'color/loadpalettes.asm').read_text()
         graphics=(ROOT/'engine/overworld/johto_goldenrod_roof_gfx.asm').read_text()
         expected=[index for _,index in SCOPE]

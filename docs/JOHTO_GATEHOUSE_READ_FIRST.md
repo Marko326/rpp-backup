@@ -13,6 +13,7 @@
 ### A2. 竖向门房到达步行不能靠方向默认（ILEX-5.62.215 后强制）
 
 - 门房 Warp **触发方式** 和 **切图后自动走一步** 是两项不同设置。不能把“禁止踩格传送”理解成“禁止切图后一步”，也不能以“南北门房”为理由让上下两边都走一步。
+- **35号道路南端入口（`.224` 用户验收的正式规则）**：外侧 Warp 位于 `(9/10,33)`，先从 `(9/10,32)` 向下走上门毯**必须允许停留**，毯上左右换 Lane 不能传送；再次朝下碰撞 `(9/10,34)` 时才通过既有 `ExtraWarpCheck → CheckWarpsCollision` 进入门房。这个外侧入口改为 P16 风格 collision-only，但**已验收的 Route34↔桐树林北门房踏格触发仍保留原状**。进门后是否向下自动走一格属于独立目的地规则，不得为了阻止踩毯即传送删掉 `GetJohtoWarpArrivalStep`。此行为用户已于 `.224` 终态反馈手机实测无异常；未来修改仍需重新实机复核，不能以静态 PASS 替代。
 - 每个新增 `GATE_INDOOR` 必须在 `tools/johto_door_contracts.json` 记录 `arrival_step_review`：`layout`、每侧 `by_gate_side`（`NONE` / `D_UP` / `D_DOWN` / `D_LEFT` / `D_RIGHT`）及 `basis`。`johto_door_onboarding_audit.py` 缺少字段必须失败。复杂的 VictoryRoadGate 先走人工专项，不能伪装普通双格门房。
 - Gold 原版 `warp_event` 只证明位置/目标，**不能证明** RPP 自动模拟移动。运行时继续用 `GetJohtoWarpArrivalStep` / `PlayerStepOutFromDoor`，必须先核对目标格及一步后碰撞与可回程性。独立检查起始侧两条 Lane、四个方向、错误来源、菜单/读档状态。
 - `.215` 北门房：**抵达北侧 y0，自动向下 1 格；抵达南侧 y7，不额外走**；森林 `(1,5)` 作为目的地的向下 1 格仍由精确规则控制。不要恢复 `.214` 的双向自动步行。
@@ -54,3 +55,9 @@
 - **P16F**：按真实图块对应修正并隔离 Gold GREEN/BROWN 第0色；用户提供 P16F 实机截图与 Gold 同地点 160×144 比对，半圆亮纹及门房背景获视觉确认。允许其它不影响观感的小幅配色差异。
 
 下一张门房动手前必读资料：`docs/JOHTO_GOLD_DOOR_GATE_POLICY.md`、`docs/JOHTO_ILEX_P16_SOUTH_GATE_RUNTIME.md`、`RPP_DEVELOPMENT_PITFALLS.md`；核心自动入口：`tools/johto_door_onboarding_audit.py`，统一静态门禁：`tools/johto_map_release_audit.py`。
+
+## G. 必须通过可执行分支合同门禁（ILEX-5.62.224）
+
+本项目的门房行为不是靠“必须读懂说明”来保证，而是靠 `tools/johto_gatehouse_behavior_audit.py` 运行时规则静态执行检查：`tools/johto_door_contracts.json` 的每个 `GATE_INDOOR` 都需要填写 `gatehouse_runtime`，完整的入口坐标和四方向期望、每侧的 step-on/collision-only、真实的目标 Warp slot、上下/左右分组、入门步进与 `NONE`、以及边界补绘策略。脚本解释执行 ASM 的分支、独立比对 Gold 原始入口和图块、执行负向故障注入；缺项和陌生指令均拒绝通过。详见 `docs/JOHTO_GATEHOUSE_EXECUTABLE_CONTRACT_224.md`。
+
+门房测试**只允许一次功能和审计合并补丁**，实机确认前不拆提交、不抹去旧失败历史；新 ROM 必须先确认真实链接和 ROM0 MAP，静态测试不能代替编译或手机录像。

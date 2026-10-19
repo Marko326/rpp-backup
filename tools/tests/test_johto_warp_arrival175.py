@@ -30,7 +30,7 @@ class JohtoWarpArrivalContract(unittest.TestCase):
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
-        self.assertEqual(len(actual), 5)
+        self.assertEqual(len(actual), 8)
         self.assertFalse(any('JOHTO_UNION_CAVE_1F_LOCAL_ID' in row for row in actual))
         self.assertTrue(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3))
         self.assertFalse(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4))
@@ -67,13 +67,13 @@ class JohtoWarpArrivalContract(unittest.TestCase):
                     '\tdb $ff\n\n; Native cave entrances use',
                     ('\tdb REGION_NATIVE_MAP_SLOT, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, 17, '
                      'JOHTO_ROUTE_32, D_UP\n\tdb $ff\n\n; Native cave entrances use'),
-                    'Only north-gate DOWN arrivals')
+                    'Only reviewed gate DOWN arrivals')
 
     def test_wrong_outdoor_direction_fails(self):
         self.mutate('engine/overworld/region_map_lookup.asm',
                     '79, 6, REGION_NATIVE_MAP_SLOT, D_DOWN',
                     '79, 6, REGION_NATIVE_MAP_SLOT, D_UP',
-                    'Only north-gate DOWN arrivals')
+                    'Only reviewed gate DOWN arrivals')
 
     def test_unregistered_cave_warp_fails(self):
         self.mutate('data/mapObjects/JohtoUnionCave1F.asm',

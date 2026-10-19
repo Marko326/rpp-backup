@@ -521,7 +521,7 @@
         "cut": "DEFERRED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",
-        "warp": "FORBIDDEN"
+        "warp": "ALLOWED"
       },
       "identity_evidence": "GOLD_REFERENCE_PENDING",
       "gold_fly_landmark": "GOLDENROD_CITY"
@@ -589,9 +589,41 @@
         "cut": "ALLOWED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",
-        "warp": "DEFERRED"
+        "warp": "ALLOWED"
       },
       "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 18,
+      "local_symbol": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+      "header": "JohtoRoute35GoldenrodGate_h",
+      "bank": "BANK(JohtoRoute35GoldenrodGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 18,
+      "town_map_name": "JohtoBrowseRoute35Name",
+      "town_map_xy": [
+        92,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null
     }
   ]
