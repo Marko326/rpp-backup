@@ -220,18 +220,50 @@ JohtoRoute35EdgeFence::
 JohtoRoute35CanStepAhead::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_UP
-	jr nz, .normal
+	jr nz, .checkSouthGate
 	ld a, [wYCoord]
 	and a
-	jr nz, .normal
+	jr nz, .checkSouthGate
 	ld a, [wXCoord]
 	cp 17
+	jr z, .allowed
+.checkSouthGate
+	; GATE-5.62.224: only the two Gold south gate carpet cells are
+	; permitted from the north (and permit lane changing on the carpet).
+	; Do not unblock the National Park entrance (3,5).
+	ld a, [wYCoord]
+	cp 32
+	jr z, .southGateApproach
+	cp 33
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 9
+	jr z, .southGateLaneLeft
+	cp 10
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .allowed
+	jr .normal
+.southGateLaneLeft
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr z, .allowed
+	jr .normal
+.southGateApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 9
+	jr z, .allowed
+	cp 10
 	jr z, .allowed
 .normal
 	; R35-5.62.223: the one CUT_TREE cell opens only after its live
@@ -471,7 +503,16 @@ JohtoAzaleaCanStepAhead::
 	scf
 	ret
 
- ; GATE-5.62.202: render-only Azalea west border continuation. The Gold
+ ; ROM0 relief (.224): all three previews live in the SAME ROMX Bank $43.
+; One far-call from either map-load path replaces three far-calls, while
+; preserving exactly their original order. Do not fold roof updates into
+; this entry: connected-map roof graphics have a separate VRAM timing path.
+PatchJohtoMapBordersAfterBlockLoad::
+	call PatchJohtoAzaleaWestGateBorder
+	call PatchJohtoGoldenrodNorthBorder
+	jp PatchJohtoRoute35SouthBorder
+
+; GATE-5.62.202: render-only Azalea west border continuation. The Gold
 ; 20x9 in-map layout is untouched, as are collision and Warp coordinates.
 ; LoadTileBlockMap has filled the 3-block border. Only the west neighbor
 ; of Gold blocks (0,4) and (0,5) needs LEFT roof/wall halves, not clones.
@@ -527,6 +568,49 @@ PatchJohtoGoldenrodNorthBorder::
 	db $41, $41, $41, $42, $0c, $0d, $40, $41, $41, $41
 .row2
 	db $01, $01, $01, $46, $08, $09, $44, $01, $01, $01
+
+; GATE-5.62.224 video correction: Gold Route35 has a SOUTH connection to
+; GoldenrodCity at offset -5. The playable edge remains Warp-only here, but
+; its three south OUT-OF-BOUNDS display rows must show the adjacent town, not
+; Route35's default $05 forest border. The original city tileset is
+; JOHTO_MODERN, whereas Route35 uses JOHTO: crosswalk their exact matching
+; metatile layouts; the two unavailable modern-only IDs ($06 pavement and
+; $67 building edge) use benign JOHTO ground/$12 roof approximations, never
+; unsafe same-number JOHTO metatiles. This changes display WRAM ONLY; no
+; in-map .blk, collision, connections, or Warp is changed.
+PatchJohtoRoute35SouthBorder::
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	ret nz
+	ld de, .row0
+	ld hl, wOverworldMap + (MAP_BORDER + JOHTO_ROUTE_35_HEIGHT) * (JOHTO_ROUTE_35_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+	call .copyRow
+	ld de, .row1
+	ld hl, wOverworldMap + (MAP_BORDER + JOHTO_ROUTE_35_HEIGHT + 1) * (JOHTO_ROUTE_35_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+	call .copyRow
+	ld de, .row2
+	ld hl, wOverworldMap + (MAP_BORDER + JOHTO_ROUTE_35_HEIGHT + 2) * (JOHTO_ROUTE_35_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+.copyRow
+	ld b, JOHTO_ROUTE_35_WIDTH
+.loop
+	ld a, [de]
+	inc de
+	ld [hli], a
+	dec b
+	jr nz, .loop
+	ret
+.row0
+	db $12, $15, $01, $46, $16, $1e, $44, $01, $01, $12
+.row1
+	db $01, $12, $15, $46, $01, $01, $44, $01, $01, $04
+.row2
+	db $15, $12, $18, $19, $01, $01, $18, $1f, $19, $02
 
 ; Shared 16x16 Gold block mask lookup; HL=mask, D=width cells, E=row bytes.
 ; Both current maps are 9 blocks (18 quadrants) high. The caller verifies map key.
@@ -764,6 +848,24 @@ JohtoGoldenrodCanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr nz, .blocked
+	; City warp #13 is the ONLY open north building door at (19,1).
+	ld a, [wXCoord]
+	cp 19
+	jr nz, .southEdge
+	ld a, [wYCoord]
+	cp 2
+	jr nz, .northCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .southEdge
+.northCarpet
+	cp 1
+	jr nz, .southEdge
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+.southEdge
 	ld a, [wYCoord]
 	cp JOHTO_GOLDENROD_CITY_HEIGHT * 2 - 1
 	jr nz, .normal
@@ -801,7 +903,10 @@ JohtoRoute34GateCanStepAhead::
 	jp nz, .blocked
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .gateOk
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jp nz, .blocked
+.gateOk
 	; Gold lower warp carpet permits entry from the left/right floor cells
 	; as well as moving between the two carpet lanes. Upper DOOR is stricter.
 	ld a, [wYCoord]
@@ -877,6 +982,7 @@ JohtoRoute34GateCanStepAhead::
 
 JohtoRoute34GateBlockedRows::
 	INCBIN "maps/JohtoRoute34IlexForestGate.blocked_mask.bin"
+; New gate uses the byte-identical Gold NorthSouthGate collision role bitmap.
 
 ; ILEX-5.62.215: Reuse existing RPP step-on Warp executor for Gold's vertical
 ; north gate. Called ONLY after CheckWarpsNoCollisionLoop has matched an actual
@@ -885,30 +991,48 @@ JohtoRoute34GateBlockedRows::
 JohtoNorthGateStepWarpAllowed::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .deny
+	jp nz, .deny
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr z, .route34
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jr nz, .deny
+	jr z, .gateVertical
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jr z, .gateVertical
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr z, .cityNorthDoor
+	; GATE-5.62.224 carpet correction: do NOT accept Route 35 in this
+	; step-on executor. The outdoor mat (9/10,33) is standable; only the
+	; subsequent southward collision from the mat may enter the gate.
+	; Preserve the accepted Route 34 / Forest north-gate step-on path.
+	jp .deny
+.gateVertical
 	ld a, [wYCoord]
 	and a
 	jr z, .up
 	cp 7
 	jr z, .down
-	jr .deny
+	jp .deny
+.cityNorthDoor
+	ld a, [wXCoord]
+	cp 19
+	jp nz, .deny
+	ld a, [wYCoord]
+	cp 1
+	jr z, .up
+	jp .deny
 .forest
 	ld a, [wYCoord]
 	cp 5
 	jr z, .up
-	jr .deny
+	jp .deny
 .route34
 	ld a, [wYCoord]
 	cp 37
 	jr z, .down
-	jr .deny
+	jp .deny
 .up
 	ld a, PLAYER_DIR_UP
 	jr .match
@@ -918,7 +1042,7 @@ JohtoNorthGateStepWarpAllowed::
 	ld b, a
 	ld a, [wPlayerDirection]
 	cp b
-	jr nz, .deny
+	jp nz, .deny
 	scf
 	ret
 .deny
@@ -938,6 +1062,12 @@ JohtoGateCollisionDirectionAllowed::
 	jr z, .down
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .northGate
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jr z, .northGate
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr z, .cityNorth
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .route35South
 	; Historical south gate west x0, east x9.
 	ld a, [wXCoord]
 	and a
@@ -948,6 +1078,24 @@ JohtoGateCollisionDirectionAllowed::
 	cp 5
 	jr z, .up
 	jr .right
+.cityNorth
+	ld a, [wYCoord]
+	cp 1
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 19
+	jp nz, .denied
+	jr .up
+.route35South
+	ld a, [wYCoord]
+	cp 33
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 9
+	jr z, .down
+	cp 10
+	jr z, .down
+	jp .denied
 .northGate
 	ld a, [wYCoord]
 	and a
@@ -968,7 +1116,7 @@ JohtoGateCollisionDirectionAllowed::
 	ld b, a
 	ld a, [wPlayerDirection]
 	cp b
-	jr nz, .denied
+	jp nz, .denied
 	scf
 	ret
 .denied
@@ -982,20 +1130,51 @@ JohtoInternalDoorFacingCheck::
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr nz, .denied
+	jr z, .route34Interior
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr z, .cityNorthInterior
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .route35SouthInterior
+	jp .denied
+.cityNorthInterior
+	ld a, [wXCoord]
+	cp 19
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 1
+	jp nz, .denied
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jp .denied
+.route35SouthInterior
+	ld a, [wYCoord]
+	cp 33
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 9
+	jr z, .route35Down
+	cp 10
+	jp nz, .denied
+.route35Down
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+	jp .denied
+.route34Interior
 	ld a, [wYCoord]
 	cp 37
-	jr nz, .denied
+	jp nz, .denied
 	ld a, [wXCoord]
 	cp 13
 	jr z, .routeDirection
 	cp 14
-	jr nz, .denied
+	jp nz, .denied
 .routeDirection
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
 	jr z, .allowed
-	jr .denied
+	jp .denied
 .forest
 	ld a, [wXCoord]
 	cp 1
@@ -1006,20 +1185,20 @@ JohtoInternalDoorFacingCheck::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_UP
 	jr z, .allowed
-	jr .denied
+	jp .denied
 .southForest
 	ld a, [wXCoord]
 	cp 3
-	jr nz, .denied
+	jp nz, .denied
 	ld a, [wYCoord]
 	cp 42
 	jr z, .southDirection
 	cp 43
-	jr nz, .denied
+	jp nz, .denied
 .southDirection
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_RIGHT
-	jr nz, .denied
+	jp nz, .denied
 .allowed
 	scf
 	ret

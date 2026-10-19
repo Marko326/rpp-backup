@@ -1149,6 +1149,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_GOLDENROD_CITY ; Goldenrod
 	db MUSIC_GBP_GSC_ROUTE36 ; Route36
 	db MUSIC_GBP_GSC_ROUTE36 ; Route35
+	db MUSIC_GBP_GSC_ROUTE36 ; Route35-Goldenrod indoor gate, Gold Route36 theme
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

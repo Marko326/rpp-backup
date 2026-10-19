@@ -46,6 +46,7 @@ JohtoRoofGroupForLocalMap:
 	db 4 ; 0f GoldenrodCity, Gold group 11
 	db 2 ; 10 Route36, Gold Violet group 10
 	db 2 ; 11 Route35, Gold Violet group 10
+	db $ff ; 12 Route35GoldenrodGate, indoor, no roof group
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

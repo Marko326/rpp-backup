@@ -3342,6 +3342,14 @@ INCLUDE "data/mapObjects/JohtoRoute35.asm"
 INCLUDE "scripts/JohtoRoute35.asm"
 JohtoRoute35Blocks: INCBIN "maps/JohtoRoute35.blk"
 
+; GATE-5.62.224: Route35/Goldenrod transit gate; accepted JOHTO_GATE art,
+; original Gold NorthSouthGate block layout and isolated native map key.
+SECTION "Johto Route35 Goldenrod Gate Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoRoute35GoldenrodGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute35GoldenrodGate.asm"
+INCLUDE "scripts/JohtoRoute35GoldenrodGate.asm"
+JohtoRoute35GoldenrodGateBlocks: INCBIN "maps/JohtoRoute35GoldenrodGate.blk"
+
 SECTION "Johto Ilex Forest Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_ilex_forest_collision.asm"
 

@@ -19,6 +19,7 @@ JohtoMapHeaderPointers::
 	dw JohtoGoldenrodCity_h ; local $0F (native $FC)
 	dw JohtoRoute36_h ; local $10 (native $FC)
 	dw JohtoRoute35_h ; local $11 (native $FC)
+	dw JohtoRoute35GoldenrodGate_h ; local $12 (native $FC)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -40,6 +41,7 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoGoldenrodCity_h)
 	db BANK(JohtoRoute36_h)
 	db BANK(JohtoRoute35_h)
+	db BANK(JohtoRoute35GoldenrodGate_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -65,6 +67,7 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; Goldenrod City
 	db REGION_NATIVE_MAP_SLOT ; Route36
 	db REGION_NATIVE_MAP_SLOT ; Route35
+	db REGION_NATIVE_MAP_SLOT ; Route35 Goldenrod north/south Gate
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -88,6 +91,7 @@ JohtoNativeMapSongBanks::
 	db MUSIC_CITIES1, 0 ; Goldenrod
 	db MUSIC_ROUTES2, 0 ; Route36
 	db MUSIC_ROUTES2, 0 ; Route35
+	db MUSIC_ROUTES2, 0 ; Route35 Goldenrod gate (Gold Route36 theme)
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

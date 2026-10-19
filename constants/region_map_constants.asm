@@ -23,7 +23,8 @@ DEF JOHTO_ROUTE_34_LOCAL_ID EQU 14
 DEF JOHTO_GOLDENROD_CITY_LOCAL_ID EQU 15
 DEF JOHTO_ROUTE_36_LOCAL_ID EQU 16
 DEF JOHTO_ROUTE_35_LOCAL_ID EQU 17
-DEF NUM_JOHTO_MAPS EQU 18
+DEF JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID EQU 18
+DEF NUM_JOHTO_MAPS EQU 19
 
 ; Native Johto local IDs >= 8 share one runtime compatibility handle.
 ; They must never consume more legacy bytes or reuse an old Kanto map ID.

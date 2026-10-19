@@ -852,8 +852,7 @@ CheckMapConnections::
 	callba InitMapSprites
 	call LoadTileBlockMap
 	; GATE-5.62.202: connected-map fast path skips LoadMapData.
-	callba PatchJohtoAzaleaWestGateBorder
-	callba PatchJohtoGoldenrodNorthBorder
+	callba PatchJohtoMapBordersAfterBlockLoad
 	; Gold town/route transitions require their mapgroup roof pixels.
 	callba PatchGoldenrodRoofOnConnection
 	jp OverworldLoopLessDelay
@@ -925,6 +924,10 @@ ExtraWarpCheck::
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .nativeDoor
 	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr z, .nativeDoor
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr z, .nativeDoor
+	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr nz, .ordinaryCheck
 .nativeDoor
 	callba JohtoInternalDoorFacingCheck
@@ -981,6 +984,12 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr z, .yes
@@ -1656,6 +1665,8 @@ CheckTilePassable::
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .forestMask
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jr z, .northGateMask
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jr z, .northGateMask
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr z, .modernRoute34
@@ -2659,8 +2670,7 @@ LoadMapData::
 	call LoadTileBlockMap
 	; GATE-5.62.202: the matching seamless-map hook must also run
 	; after LoadTileBlockMap, before the visible map view is built.
-	callba PatchJohtoAzaleaWestGateBorder
-	callba PatchJohtoGoldenrodNorthBorder
+	callba PatchJohtoMapBordersAfterBlockLoad
 	call LoadTilesetTilePatternData
 	call LoadCurrentMapView
 
