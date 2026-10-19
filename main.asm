@@ -60,6 +60,8 @@ INCLUDE "engine/oak_speech2.asm"
 INCLUDE "engine/subtract_paid_money.asm"
 
 INCLUDE "engine/menu/swap_items.asm"
+; Bank $01 is already selected by HOME DisplayListMenuID before this loop.
+INCLUDE "engine/menu/list_menu_main.asm"
 
 INCLUDE "engine/overworld/pokemart.asm"
 
