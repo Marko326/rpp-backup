@@ -321,3 +321,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 
 - `callab RollStatusSideEffectFar` 经 `Bankswitch` 会覆盖 A；仅依靠 Carry 或远端入口直接使用 A，会将 Fire Punch 的 `BURN_SIDE_EFFECT1` 误解释成麻痹等类别。输入效果先由 `ld e,a` 传递，在远端先执行 `ld a,e`；返回前既有 E 用于传回归一化类别、Carry 表示触发与否。后续修改跨 Bank 效果判定时，不得重新依赖 A 跨 `callab` 保值。
 - 190T 强制判定仅证明 Fire Punch/BRN、Ice Punch/FRZ、ThunderPunch/PAR 三项效果归属；正式概率统计、免疫和替身边界不由该录像覆盖。用户已反馈撤销 190T，正式源码不保留临时测试场景；测试 SAV 与撤销后新 ROM 构建需用户自行确认。
+
+
+## 191 低字节碰撞不能继承旧招式特判（四项专项反馈通过）
+
+- 扩展槽仍存 1..40 ordinal，与普通技能低字节可能相同；`CriticalHitTest_` 的普通高会心／必会心表及 `GetSemiInvulnerableMoveInteraction` 的普通 Fly/Dig 相互作用表都必须先核对**当次主动攻击者**的 `wExtendedActiveMoveOrdinal`，不能把 EXT02 当 Karate Chop 或 EXT16 当 Gust。
+- 191T 可用临时来源表创建 EXT02/普通 Karate Chop 与 EXT16/普通 Gust 对照，真正的 Fly 无敌回合需要受击者已进入空中状态。测试强制会心比较值和阈值不代表正式 6.25%／高会心等概率验证；测试结束须撤销野生数据及调试概率。
+
+- **验收与概率区分**：用户反馈 191T 四组实测全部通过，并明确已撤销测试补丁。191T 使用 0%／100% 确定性会心只验证身份分流，**正式 EXT 仍有普通随机会心**。普通 Gust 在 Fly 空中命中只验证可命中，不代表其倍伤倍率已经数值验证。正式源码中绝不可遗留 191T 的草丛来源与会心固定值。

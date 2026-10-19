@@ -344,7 +344,13 @@ GetSemiInvulnerableMoveInteraction::
 .gotTargetMove
 	ld b,a                           ; target's active Fly / Dig move ID
 	call GetCurrentMoveID
-	ld c,a                           ; real attacking move ID
+	ld c,a                           ; ordinary low byte or EXT ordinal
+	; MOVE-5.62.191: only actual ordinary moves may inherit the
+	; legacy Fly/Dig special-hit / doubled-damage table. In particular,
+	; EXT16 has low byte GUST but is a separate full move identity.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr nz, .noInteraction
 	ld hl,SemiInvulnerableMoveInteractions
 .loop
 	ld a,[hli]                       ; target semi-invulnerable move
@@ -437,6 +443,13 @@ CriticalHitTest_:
 	ld a, [wPlayerSelectedMove]
 	ld b, a
 .checkAlwaysCrit
+	; MOVE-5.62.191: an active EXT ordinal is a different full identity
+	; even when its saved low byte matches Karate Chop or an always-crit move.
+	; Cover both root slot moves and Metronome / Mirror Move children.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr nz, .skipHighCritical
+	ld a, b
 	cp ALWAYS_CRIT_MOVE_1
 	jr z, .critSuccess
 	cp ALWAYS_CRIT_MOVE_2
