@@ -1,3 +1,13 @@
+## BANK-5.62.225｜ROM0 第二轮主列表迁 Bank `$01`：HOME 回收 705 B 不等于另一个 Bank 安全
+
+- **动机与有效收益**：在 ROM0 第一轮碰撞分派回收 100 B 后，`home.asm` 的 `DisplayListMenuID` 及主输入循环仍占 HOME 大段指令。第二轮把菜单主体放入本来就运行物品交换代码的 ROMX Bank `$01`，HOME 留银行入口和固定返回跳板。用户提供的审查日志对比新旧 MAP：ROM0 空余 **127 → 832 B（净增 705 B）**，但本轮没有可供 AI 独立解析的新 MAP 原件，也没有新版 `BANK-5.62.225` 的 RGBDS 链接证据。
+- **跨 Bank 指令流必须正确落回 HOME**：成功选择经 `jp BankswitchBack`，取消先 `jp ExitListMenuReturnHome`（ROM0）再返回原调用 Bank；绝不能恢复其他 Bank 后继续执行原来属于 Bank `$01` 的指令。沿用 `BankswitchHome` 保存调用方原 Bank，保留菜单返回 Carry/取消语义、物品 SELECT 交换后的 `$01` 同 Bank 回跳和 PC/分类背包列表边界。迁移的 12 项故障注入必须能打断错 Bank、漏保存、坏取消与缺失回跳；第一轮 10 项碰撞审计仍必须通过。仅比较函数存在/文本相似不等于真正 CPU 逐帧执行。
+- **释放 HOME 可能压满 ROMX**：虽然 ROM0 多出 705 B，审查日志显示 Bank `$01` 只剩 **11 B**；任何后续改动若继续占用该 Bank，可能触发错误链接或音乐数据重新分配。后续新扩图不继续往 `$01` 堆菜单/音频代码；检查各 Bank 最大连续块、已分配固定 Section 与音乐指针/Bank 指针，而非只看 ROM0 总余量。
+- **音乐是本轮非预期触及的风险域**：审查日志记录 `Music_JohtoTrainerBattle` 移到 Bank `$03`，`PlayBattleMusic` 在 `$04`，Bank `$01` 包含 `Music_RBYTitleScreen`。MAP 无地址冲突不是播放正常的充分证据；用户最低实机复测须包含标题、城都训练家战斗音效/音乐以及退出战斗恢复，不能只测试背包打开无死机。
+- **手机反馈的粒度不能升级**：用户仅反馈“在游戏里面大致看了一下，没有看特别细，没有看出什么问题”；必须继续标记菜单交换/合并、空口袋 START、PC 删除后 Cancel 边界、商店存售、战斗道具取消和 SELECT 禁止交换为**专项待确认**，不得拿第一轮全图走动、门房/碰撞手机 PASS 自动充当第二轮菜单 PASS。
+- **清理与版本要求**：本次因用户允许更改版本前缀，在正式清理中将 `ILEX-5.62.224` 改为 `BANK-5.62.225`；字符总长度相同，仅更换 `data/game_version.asm` 的显示字符串，不改游戏菜单机器指令和原有地图。新版本仍需用户编译生成 MAP 并确认。功能 ASM/版本归第一笔，`tools/` 新检查与配套 TODO、踩坑、提交索引归第二笔，反向隔离只撤第二笔；AI 不执行用户仓库 Git Commit/Push。
+- **审计独立性与遗留**：本轮完整 Gold 源下 `python -m unittest discover -s tools/tests -p "test*.py" -q` 实跑 **676/676 PASS、0 skipped**；原强制入口 `python tools/johto_map_release_audit.py --rpp . --gold <Gold路径> --expect-version BANK-5.62.225` 实跑 **status=FAIL、tests=676、skipped=0、active connections=22/22 PASS**，唯一错误 `GOLD_FULL_CORPUS: SafariZoneBeta: Gold map references graphics beyond runtime window`。不能只报审查日志的 22 项子集或将该旧失败屏蔽。未验证的未来地图、旧档、全部战斗菜单/音乐组合继续留为明确风险。
+
 ## ROM0-5.62.224｜固定 Bank 碰撞分派外迁：回收 100 B 也必须手机测
 
 - **历史空间优化仍在，不是重做旧优化**：`CalcStats`、菜单辅助、Bill's PC、分段 HOME 与数字格式化拆分等旧优化已存在于本轮金银源码。新的 ROM0 压力来自持续积累的地图专用 HOME 派发，不可把整套 Gold Bank 布局复制到当前红版底座。

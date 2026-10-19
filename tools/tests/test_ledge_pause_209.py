@@ -70,7 +70,7 @@ class ForestCommonLedgeCandidate(unittest.TestCase):
         self.assertIn('ILEX-LEDGE-001',issue)
         self.assertIn('CUT',issue)
         self.assertIn('ROM 和实机待验',issue)
-        self.assertRegex((ROOT/'data/game_version.asm').read_text(), r'ILEX-5\.62\.(?:209|210|211|212|213|214|215|216|217|218|219|220|221|222|223|224)@')
+        self.assertIn('BANK-5.62.225@', (ROOT/'data/game_version.asm').read_text())
 
     def test_map_audit_retains_geometry_inventory_without_claiming_runtime(self):
         data=audit(ROOT)

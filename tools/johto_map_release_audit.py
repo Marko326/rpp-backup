@@ -30,6 +30,7 @@ from johto_rpp_connection_guard import audit_all_active
 from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
 from johto_roof_reference_audit import audit as roof_audit
 from johto_rom0_collision_audit import audit as rom0_collision_audit
+from rom0_list_menu_bank_audit import audit as rom0_list_menu_bank_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
@@ -78,12 +79,17 @@ test_johto_fly_destinations196 test_johto_goldenrod_p19
 test_johto_roof_reference_audit test_johto_roof_mapgroups_p19d test_johto_goldenrod_visual_p19c
 test_johto_gold_collision_cardinality test_johto_ilex_gold_reference test_johto_ilex_south_gate197
 test_johto_union_cave_exit192 test_johto_ilex_forest_p17 test_ledge_pause_209
-test_johto_rom0_collision_dispatch224
+test_johto_rom0_collision_dispatch224 test_rom0_list_menu_bank225
 test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod_gate224
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_original_menu_stream_and_bank_exit_graph
+test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_wrong_entry_bank_is_blocked
+test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_restoring_bank_inside_romx_is_blocked
+test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_cancel_carry_flag_must_not_be_lost
+test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_bank1_swap_jumps_must_stay_connected
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_original_all_11_native_ids_dispatch_and_generic_fallback
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_removing_single_rom0_farcall_is_rejected
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_carry_bit_abi_cannot_be_replaced_with_and
@@ -301,6 +307,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     root, gold = root.resolve(), gold.resolve()
     errors.extend(verify_gold(gold))
     errors.extend('ROM0_COLLISION: '+e for e in rom0_collision_audit(root))
+    errors.extend('ROM0_LIST_MENU: '+e for e in rom0_list_menu_bank_audit(root))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
     if not any(e.startswith('Gold source missing:') for e in errors):
         errors.extend('ROOF: '+v for v in roof_audit(root,gold))

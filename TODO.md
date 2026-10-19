@@ -1,3 +1,15 @@
+## BANK-5.62.225｜第二轮 ROM0 列表菜单迁移：正式清理候选（当前最新状态）
+
+- [x] **来源与范围**：基线为金银分支导出记录的干净 HEAD `57be89a7cc70aee42178c953ce01fd5e1146e8a3`，第一轮 ROM0 两笔提交已经包含。本轮增量迁移涉及 `home.asm`、`main.asm`、`engine/menu/list_menu_main.asm` 和 `tools/` 下 5 个离线审计/测试文件；没有删除或改变已有地图、门房、Surf、屋顶、遗迹图块、跳崖和连接资源。
+- [x] **菜单迁移**：将 HOME 中的 `DisplayListMenuID_` / `DisplayListMenuIDLoop` 与列表输入、卷动、交换控制流迁入 ROMX Bank `$01`，HOME 保留 `DisplayListMenuID` Bank 入口和 `ExitListMenuReturnHome` 恢复跳板。成功选择、取消、`Carry` 与交换后回到同 Bank 循环的约定有静态故障注入保护；运行时未做其它逻辑功能变更。
+- [x] **空间证据**：用户提供的《ILEX-5.62.224 工作区补丁审查日志》记录优化前 ROM0 空余 127 B，优化后 **832 B，净回收 705 B**；Bank `$01` **仅余 11 B**。该日志还记录菜单位于 `$01:$65DF` / `$01:$66C6`，返回 HOME 在 `$2CE5`。本次 AI 未收到对应优化后 MAP 原文件，未独立重新计算最大连续空闲块；修改显示版本至 `BANK-5.62.225` 后仍须用户重新编译/链接并导出 MAP 复核。
+- [x] **审查与手机证据分开**：已收到代码审查日志：菜单/返回静态审查 PASS，12 项第二轮专项和 10 项第一轮回归共 22/22 PASS；用户已在游戏内大致检查、未发现异常。但**背包交换与分类口袋、PC 边界滚动、商店存取、战斗道具取消、标题音乐/城都训练家音乐**仍缺逐项手机确认，不写成完整 PHONE_ACCEPTED。
+- [x] **发布交付纪律**：本轮存在运行时 ASM、游戏显示版本更新及 `tools/` 累计改动，所以模式 A 双提交：第一笔为 3 个游戏 ASM + `data/game_version.asm`；第二笔为 5 个工具/测试文件（其中两项修订历史测试的过期版本字面量）及本 TODO、`RPP_DEVELOPMENT_PITFALLS.md`、`commit-message.txt`。只在用户确定当前开发候选与本补丁一致后应用清理增量；反向隔离仅撤第二笔，不撤 ASM 和版本。本次 AI 不编译 ROM、不操作用户仓库 Commit/Push。
+- [ ] **维护风险/回归**：Bank `$01` 仅余 11 B，不再往该 Bank 添加功能；MAP 显示的 `Music_JohtoTrainerBattle` → `$03`、`PlayBattleMusic` → `$04`、`Music_RBYTitleScreen` 在 `$01` 属重新布局，须实机听标题/战斗音乐与音效；新版链接后核对 ROM0 的**总空余和最大连续空余**以及所有 Bank 余量。
+- [x] **本轮重新复验**：完整 Gold 源下 Python `676/676 PASS`、0 skipped；统一发布审计实跑 `--expect-version BANK-5.62.225`，**status=FAIL**、tests=676、skipped=0、active connections=22/22 PASS，唯一错误为既存 `GOLD_FULL_CORPUS: SafariZoneBeta: Gold map references graphics beyond runtime window`；未屏蔽检查器，旧历史保留。这里不意味着新版编译链接或手机专项通过。
+
+> 本节优先于下方 ROM0 第一轮待办。第一轮 127 B 是旧链接状态，当前第二轮审查日志记录 832 B；后续正式准入以用户新构建的 MAP 和手机测试为证据。
+
 ## ROM0-5.62.224｜第一轮碰撞分派迁移：用户手机回归已通过（当前最新状态）
 
 - [x] **基线与分支**：以本轮开始时金银分支干净 HEAD `3d7903bb82448703125d64ae8ed41e77d9eb97ad` 为基线；可见游戏版本仍是 `ILEX-5.62.224`。本轮为独立 ROM0 优化，不重做遗迹地图、Surf、`$8A` 或跳崖。

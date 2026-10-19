@@ -1,3 +1,20 @@
+# BANK-5.62.225｜ROM0 第二轮 Bank $01 列表菜单外迁：正式清理提交索引（当前最新状态）
+# 此文件只列提交范围，不可整文件 git commit -F；ZIP 内两份 TXT 才是完整提交正文。
+# Git 基线：金银 / 57be89a7cc70aee42178c953ce01fd5e1146e8a3（导出记录为干净 HEAD）。
+# Version: ILEX-5.62.224 -> BANK-5.62.225；本轮同时修改游戏 ASM 和 tools/，按模式 A 双提交。
+# 第一笔 refactor(rom0): 将通用列表菜单主循环迁至 ROMX Bank $01
+#   仅 home.asm、main.asm、engine/menu/list_menu_main.asm、data/game_version.asm。
+# 第二笔 test(tool): 固化 Bank $01 菜单返回契约并记录 ROM0 第二轮风险
+#   仅 tools/rom0_list_menu_bank_audit.py、tools/tests/test_rom0_list_menu_bank225.py、
+#   tools/johto_map_release_audit.py、tools/tests/test_ilex_cut_210.py、
+#   tools/tests/test_ledge_pause_209.py、本 TODO.md、RPP_DEVELOPMENT_PITFALLS.md、commit-message.txt。
+# 应用顺序：开发候选 -> 清理增量；应用工具反向隔离；第一笔提交；
+#   git apply -R 该隔离补丁恢复工具；第二笔提交。全量补丁只给干净 57be89a7 HEAD 备用。
+# 用户审查日志记录 ROM0 832 B 空余、Bank $01 11 B 空余；最新 MAP 原件及新版本 LINK 待复核。
+# 完整 Gold 单测 676/676 PASS、0 skipped，统一门禁 status=FAIL（仅既存 SafariZoneBeta），连接 22/22 PASS。
+# 用户报告当前 ROM 粗略玩过未见异常，菜单/音乐最小专项仍待确认；SafariZoneBeta 不屏蔽。
+# 以下为此前已提交第一轮与遗迹等历史日志索引，不重复构成本轮 Git 提交。
+
 # ROM0-5.62.224 第一轮正式清理｜本文件是提交范围索引，不要直接整文件 git commit -F
 # Git 基线：金银 / 3d7903bb82448703125d64ae8ed41e77d9eb97ad；Version: ILEX-5.62.224 -> ILEX-5.62.224
 # 本轮实际存在游戏 ASM 与 tools/ 审计/测试的累计未提交改动，故按模式 A 双提交。
