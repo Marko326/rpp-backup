@@ -202,6 +202,7 @@ JohtoIlexForestCutTreeFacingTarget:
 ; ReplaceTreeTileBlock in engine/overworld/cut.asm (bank $03).
 ; Duplicate this tiny pointer calculation in Forest's bank $43,
 ; not the bank-$03 code, because the older bank is effectively full.
+JohtoCutFacingBlockPointer::
 JohtoIlexForestGetFacingBlockPointer:
 	ld a, [wCurMapWidth]
 	add 6
@@ -257,14 +258,28 @@ JohtoIlexForestGetFacingBlockPointer:
 	add hl, de
 	ret
 
-; ILEX-5.62.212: mirror SRF-5.62.187's temporary, map-scoped badge-free
-; permission policy. A-button and party-menu Cut MUST share this routine.
+; R35-5.62.223: forest and Route35 share the map-scoped Cut policy;
+; retain legacy Kanto Cascade Badge elsewhere. A-button and party-menu Cut MUST share this routine.
 ; Carry SET = permitted; carry CLEAR = denied.
 ; Cut move availability is checked by each caller separately.
 JohtoCutBadgeAllowed::
 	ld a, [wCurMapTileset]
 	cp JOHTO_ILEX_FOREST
+	jr z, .nativeCheck
+	cp JOHTO
 	jr nz, .kanto
+	; R35-5.62.223: temporary map-scoped Cut permission, no Hive Badge.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .kanto
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .kanto
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .johtoAllowed
+	jr .kanto
+.nativeCheck
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .kanto
@@ -274,7 +289,8 @@ JohtoCutBadgeAllowed::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr nz, .kanto
-	; Forest has no live badge-award story during map expansion.
+.johtoAllowed
+	; Forest/Route35 have no live badge-award story during map expansion.
 	scf
 	ret
 .kanto

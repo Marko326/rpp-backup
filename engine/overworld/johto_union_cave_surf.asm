@@ -142,15 +142,23 @@ JohtoUnionCaveWaterCells::
 	db $FF
 
 
-; SRF-5.62.187: Return carry for water directly in front on the two
-; independently reviewed Johto maps. Other maps fail closed. BC/DE/HL
+; SRF-5.62.187: Return carry for water directly in front on the
+; independently reviewed Johto maps, including Route35 with its Gold-reviewed water mask. Other maps fail closed. BC/DE/HL
 ; follow the original cave helper register-preservation contract.
 IsJohtoSurfWaterAhead::
 	ld a, [wCurMapTileset]
 	cp JOHTO_UNION_CAVE
 	jp z, IsJohtoUnionCaveWaterAhead
 	cp JOHTO
+	jr nz, .noWater
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
 	jp z, IsJohtoRoute32WaterAhead
+	; R35-5.62.223: other JOHTO maps also share native handle $FC;
+	; the Route35 helper independently checks the exact local ID.
+	cp REGION_NATIVE_MAP_SLOT
+	jp z, IsJohtoRoute35WaterAhead
+.noWater
 	and a
 	ret
 
@@ -332,8 +340,68 @@ JohtoRoute32WaterRows::
 	db $00, $00, $00 ; y=88
 	db $00, $00, $00 ; y=89
 
-; SRF-5.62.187: Until dual-region story badge policy exists, Surf on
-; Route32 and Union Cave 1F needs no badge. Other maps retain the Kanto
+; R35-5.62.223: Gold Route35 10x18 has exactly 32 WATER quadrants:
+; rectangle x=4..7, y=24..31. Check region/local ID and facing coords;
+; never widen JOHTO's shared 8x8 tile water whitelist.
+IsJohtoRoute35WaterAhead::
+	push bc
+	push de
+	push hl
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notWater
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notWater
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr nz, .notWater
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .check
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .check
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .check
+.right
+	cp SPRITE_FACING_RIGHT
+	jr nz, .notWater
+	inc e
+.check
+	ld a, d
+	cp 24
+	jr c, .notWater
+	cp 32
+	jr nc, .notWater
+	ld a, e
+	cp 4
+	jr c, .notWater
+	cp 8
+	jr nc, .notWater
+	scf
+	jr .done
+.notWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; R35-5.62.223: Until dual-region story badge policy exists, Surf on
+; Route32, Route35 and Union Cave 1F needs no badge. Other maps retain the Kanto
 ; Soul Badge check. The field and party-menu paths share this policy.
 ; Carry = permission granted.
 JohtoSurfBadgeAllowed::
@@ -344,7 +412,13 @@ JohtoSurfBadgeAllowed::
 	jr nz, .kanto
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_32
+	jr z, .route32
+	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .kanto
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr nz, .kanto
+.route32
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	jr nz, .kanto
@@ -361,7 +435,7 @@ JohtoSurfBadgeAllowed::
 	and a
 	ret
 
-; SRF-5.62.187: On the two approved Johto maps, Surfboard/party
+; R35-5.62.223: On the approved Johto maps, Surfboard/party
 ; water eligibility uses Gold collision geometry with no Johto badge.
 ; Carry CLEAR = water ahead; carry SET = reject. Other maps retain
 ; the existing RPP Surfboard / item rules.

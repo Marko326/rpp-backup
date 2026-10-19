@@ -3326,6 +3326,21 @@ JohtoGoldenrodCityBlocks: INCBIN "maps/JohtoGoldenrodCity.blk"
 JohtoGoldenrodRoofs_GFX: INCBIN "gfx/tilesets/johto_goldenrod_roofs.2bpp"
 JohtoVioletRoofs_GFX: INCBIN "gfx/tilesets/johto_violet_roofs.2bpp"
 JohtoAzaleaRoofs_GFX: INCBIN "gfx/tilesets/johto_azalea_roofs.2bpp"
+; R36-5.62.218: Violet City and Route36 connection strips must live
+; in the same ROM bank: LoadTileBlockMap reads strips in the CURRENT bank.
+; Route35 south is open; Route37 and the unfinished gates remain sealed.
+SECTION "Johto Route36 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute36.asm"
+INCLUDE "data/mapObjects/JohtoRoute36.asm"
+INCLUDE "scripts/JohtoRoute36.asm"
+JohtoRoute36Blocks: INCBIN "maps/JohtoRoute36.blk"
+
+; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
+SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute35.asm"
+INCLUDE "data/mapObjects/JohtoRoute35.asm"
+INCLUDE "scripts/JohtoRoute35.asm"
+JohtoRoute35Blocks: INCBIN "maps/JohtoRoute35.blk"
 
 SECTION "Johto Ilex Forest Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_ilex_forest_collision.asm"
@@ -3446,8 +3461,14 @@ JohtoVioletCityCollisionFence::
 .west
 	ld a, [wXCoord]
 	and a
-	jr z, .blocked
-	jr .allowed
+	jr nz, .allowed
+	; R36-5.62.218: only Gold y8/9 open to Route36.
+	ld a, [wYCoord]
+	cp 8
+	jr z, .allowed
+	cp 9
+	jr z, .allowed
+	jr .blocked
 .south
 	ld a, [wYCoord]
 	cp JOHTO_VIOLET_CITY_HEIGHT * 2 - 1
@@ -3520,6 +3541,10 @@ JohtoNativeCollisionFence::
 	cp MAP_REGION_JOHTO
 	jr nz, .legacyNative
 	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .route35Native
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jr z, .route36Native
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33Native
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -3538,6 +3563,12 @@ JohtoNativeCollisionFence::
 	ret
 .route33Native
 	callba JohtoRoute33EdgeFence ; helper lives in the Route33 resource bank
+	ret
+.route36Native
+	callba JohtoRoute36EdgeFence
+	ret
+.route35Native
+	callba JohtoRoute35EdgeFence
 	ret
 .legacyNative
 	ld a, [wPlayerDirection]

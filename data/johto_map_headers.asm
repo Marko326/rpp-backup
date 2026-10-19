@@ -17,6 +17,8 @@ JohtoMapHeaderPointers::
 	dw JohtoRoute34IlexForestGate_h ; local $0D (native $FC)
 	dw JohtoRoute34_h ; local $0E (native $FC)
 	dw JohtoGoldenrodCity_h ; local $0F (native $FC)
+	dw JohtoRoute36_h ; local $10 (native $FC)
+	dw JohtoRoute35_h ; local $11 (native $FC)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -36,6 +38,8 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoRoute34IlexForestGate_h)
 	db BANK(JohtoRoute34_h)
 	db BANK(JohtoGoldenrodCity_h)
+	db BANK(JohtoRoute36_h)
+	db BANK(JohtoRoute35_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -59,6 +63,8 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; North gate
 	db REGION_NATIVE_MAP_SLOT ; Route34
 	db REGION_NATIVE_MAP_SLOT ; Goldenrod City
+	db REGION_NATIVE_MAP_SLOT ; Route36
+	db REGION_NATIVE_MAP_SLOT ; Route35
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -79,7 +85,9 @@ JohtoNativeMapSongBanks::
 	db MUSIC_DUNGEON2, 0 ; Ilex Forest, compatible Union Cave music family
 	db MUSIC_ROUTES2, 0 ; Route34 north gate, existing Route36 family
 	db MUSIC_ROUTES2, 0 ; Route34, existing Route36 family
-	db MUSIC_CITIES1, 0 ; Goldenrod, compatible city music family
+	db MUSIC_CITIES1, 0 ; Goldenrod
+	db MUSIC_ROUTES2, 0 ; Route36
+	db MUSIC_ROUTES2, 0 ; Route35
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

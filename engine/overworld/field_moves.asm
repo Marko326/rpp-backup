@@ -106,8 +106,12 @@ TryCut: ; yenatch's code originally checked for the SOUL_BADGE like SURF does by
 	call GetPartyMonName2
 	ld a, [wCurMapTileset]
 	cp JOHTO_ILEX_FOREST
+	jr z, .treeAnimation
+	cp JOHTO
 	jr nz, .useCut
-	ld a, $3d ; Forest uses the existing tree animation
+	; R35-5.62.223: other JOHTO maps fail closed at IsCutTile.
+.treeAnimation
+	ld a, $3d ; reuse the existing tree animation
 	ld [wCutTile], a
 .useCut
 	farcall Cut2
@@ -340,9 +344,13 @@ WaterTilesets2: ; Renamed from what Yenatch called it, since that had overlap er
 IsCutTile:
 	ld a, [wCurMapTileset]
 	cp JOHTO_ILEX_FOREST
+	jr z, .forestTree
+	cp JOHTO
 	jr nz, .legacyTilesets
-	; A dedicated Gold CUT_TREE collision quadrant, not a global 8x8 tile.
-	; The far helper also rejects the tree once the live block was swapped.
+	; R35-5.62.223: accept only the exact native Route35 Cut quadrant.
+	callba JohtoRoute35CutTreeInFront
+	ret
+.forestTree
 	callba JohtoIlexForestCutTreeInFront
 	ret
 .legacyTilesets

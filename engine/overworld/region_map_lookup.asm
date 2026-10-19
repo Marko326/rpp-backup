@@ -475,6 +475,11 @@ SelectNativeMapConnection::
 	ret
 
 NativeRegionConnectionTargets::
+	; R35-5.62.223: Route36 south <-> Route35 north; native/local IDs disambiguate $FC.
+	db JOHTO_ROUTE_36_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+	db JOHTO_ROUTE_35_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
+	; R36-5.62.218: legacy Violet City west -> native Route36.
+	db JOHTO_VIOLET_CITY_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
 	; R33-5.62.191: Route32 SOUTH(1) reaches native Route33 local 9.
 	db JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
 	; MAP-5.62.195: modern Route33 west <-> modern AzaleaTown east.

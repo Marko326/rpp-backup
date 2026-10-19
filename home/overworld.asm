@@ -1645,6 +1645,10 @@ CheckTilePassable::
 	cp MAP_REGION_JOHTO
 	jr nz, .normal
 	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .route35Mask
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jr z, .route36Mask
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .modernRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1664,6 +1668,12 @@ CheckTilePassable::
 	ret
 .forestMask
 	callba JohtoIlexForestCanStepAhead
+	ret
+.route36Mask
+	callba JohtoRoute36CanStepAhead
+	ret
+.route35Mask
+	callba JohtoRoute35CanStepAhead
 	ret
 .northGateMask
 	callba JohtoRoute34GateCanStepAhead

@@ -86,6 +86,271 @@ JohtoAzaleaEdgeFence::
 	and a
 	ret
 
+; R35-5.62.223: Route36 east y8/9 remains open, south x17 reaches Route35.
+; Route37 north and all other borders are still closed.
+JohtoRoute36EdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr z, .east
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_DOWN
+	jr nz, .clear
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_36_HEIGHT * 2 - 1
+	jr c, .clear
+	ld a, [wXCoord]
+	cp 17
+	jr z, .clear
+	jr .block
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .block
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .block
+	jr .clear
+.east
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_36_WIDTH * 2 - 1
+	jr c, .clear
+	ld a, [wYCoord]
+	cp 8
+	jr z, .clear
+	cp 9
+	jr z, .clear
+.block
+	scf
+	ret
+.clear
+	and a
+	ret
+
+; R36-5.62.218: reuse Gold 16x16 masked-step executor for Route36.
+; Entrance carpets stay blocked pending gate implementations; no Sudowoodo
+; object is spawned in this open-passage map stage (Gold battle deferred).
+JohtoRoute36CanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .checkEast
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_36_HEIGHT * 2 - 1
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 17
+	jr z, .allowed
+.checkEast
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_36_WIDTH * 2 - 1
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp 8
+	jr z, .allowed
+	cp 9
+	jr z, .allowed
+.normal
+	ld hl, JohtoRoute36BlockedRows
+	ld d, JOHTO_ROUTE_36_WIDTH * 2
+	ld e, 8
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute36BlockedRows::
+	INCBIN "maps/JohtoRoute36.blocked_mask.bin"
+
+; R35-5.62.223: Gold 20x36 collision mask, no HOP cells.
+; North x17 is the only active border; unfinished gates are sealed.
+JohtoRoute35EdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_35_WIDTH * 2 - 1
+	jr nc, .block
+	jr .clear
+.north
+	ld a, [wYCoord]
+	and a
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp 17
+	jr z, .clear
+	jr .block
+.south
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_35_HEIGHT * 2 - 1
+	jr nc, .block
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .block
+.clear
+	and a
+	ret
+.block
+	scf
+	ret
+
+JohtoRoute35CanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .normal
+	ld a, [wYCoord]
+	and a
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 17
+	jr z, .allowed
+.normal
+	; R35-5.62.223: the one CUT_TREE cell opens only after its live
+	; metatile was replaced; the Gold mask remains unchanged on disk.
+	call JohtoRoute35CutTreeCleared
+	jr c, .allowed
+	ld hl, JohtoRoute35BlockedRows
+	ld d, JOHTO_ROUTE_35_WIDTH * 2
+	ld e, 3
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute35BlockedRows::
+	INCBIN "maps/JohtoRoute35.blocked_mask.bin"
+
+; R35-5.62.223: Gold Route35 CUT_TREE is the TOP-RIGHT quadrant
+; (17,6) of metatile $5b at block coordinate (8,3).  New block $89 is
+; $5b with only that 16x16 quadrant rendered as FLOOR ($05).
+; Other quadrants, source .blk, headbutt trees and map connections persist.
+; This uses the established Ilex Forest live-view Cut pointer (bank $43).
+JohtoRoute35CutTreeInFront::
+	call JohtoRoute35CutTreeFacing
+	ret nc
+	call JohtoCutFacingBlockPointer
+	ld a, [hl]
+	cp $5b
+	jr z, .yes
+	and a
+	ret
+.yes
+	scf
+	ret
+
+JohtoRoute35CutTreeCleared::
+	call JohtoRoute35CutTreeFacing
+	ret nc
+	call JohtoCutFacingBlockPointer
+	ld a, [hl]
+	cp $89
+	jr z, .yes
+	and a
+	ret
+.yes
+	scf
+	ret
+
+JohtoRoute35RemoveCutTree::
+	call JohtoRoute35CutTreeFacing
+	ret nc
+	call JohtoCutFacingBlockPointer
+	ld a, [hl]
+	cp $5b
+	ret nz
+	ld a, $89
+	ld [hl], a
+	ret
+
+JohtoRoute35CutTreeFacing:
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jp nz, .no
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .no
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jp nz, .no
+	ld a, [wXCoord]
+	cp 17
+	jr z, .sameX
+	cp 16
+	jr z, .left
+	cp 18
+	jr z, .right
+	jr .no
+.sameX
+	ld a, [wYCoord]
+	cp 5
+	jr z, .fromAbove
+	cp 7
+	jr z, .fromBelow
+	jr .no
+.fromAbove
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .yes
+	jr .no
+.fromBelow
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .yes
+	jr .no
+.left
+	ld a, [wYCoord]
+	cp 6
+	jr nz, .no
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr z, .yes
+	jr .no
+.right
+	ld a, [wYCoord]
+	cp 6
+	jr nz, .no
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .yes
+.no
+	and a
+	ret
+.yes
+	scf
+	ret
+
 ; R33-5.62.191: can enter the precise Gold collision quadrant ahead.
 ; Input: wCurMap $FC / Johto local 9. Result: carry=blocked, clear=allowed.
 ; Call via callba; do not enter if not on the exact native Route33 map.

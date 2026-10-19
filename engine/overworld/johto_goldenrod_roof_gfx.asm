@@ -44,6 +44,8 @@ JohtoRoofGroupForLocalMap:
 	db $ff ; 0d Route34/Ilex indoor gate
 	db 4 ; 0e Route34, Gold group 11
 	db 4 ; 0f GoldenrodCity, Gold group 11
+	db 2 ; 10 Route36, Gold Violet group 10
+	db 2 ; 11 Route35, Gold Violet group 10
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

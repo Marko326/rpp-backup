@@ -4,6 +4,8 @@ UsedCut:
 	ld a, [wCurMapTileset]
 	cp JOHTO_ILEX_FOREST
 	jr z, .ilexForest
+	cp JOHTO
+	jr z, .route35
 	and a ; OVERWORLD
 	jr z, .overworld
 	cp GYM
@@ -11,6 +13,11 @@ UsedCut:
 	ld a, [wTileInFrontOfPlayer]
 	cp $50 ; gym cut tree
 	jr nz, .nothingToCut
+	jr .canCut
+.route35
+	callba JohtoRoute35CutTreeInFront
+	jr nc, .nothingToCut
+	ld a, $3d ; reuse forest / Kanto tree-cut animation
 	jr .canCut
 .ilexForest
 	callba JohtoIlexForestCutTreeInFront
@@ -66,9 +73,13 @@ Cut2:: ; added for Field Move hack
 	call InitCutAnimOAM
 	ld a, [wCurMapTileset]
 	cp JOHTO_ILEX_FOREST
+	jr z, .forestBlock
+	cp JOHTO
 	jr nz, .legacyCutBlock
-	; The Gold 16x16 CUT_TREE is only one quadrant of block $0f.
-	; Swap the live forest block $0f->$2d without altering its neighbor.
+	; R35-5.62.223: only Route35's one Gold tree changes $5b -> $89.
+	callba JohtoRoute35RemoveCutTree
+	jr .blockReady
+.forestBlock
 	callba JohtoIlexForestRemoveCutTree
 	jr .blockReady
 .legacyCutBlock
