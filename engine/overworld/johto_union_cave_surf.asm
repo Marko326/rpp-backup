@@ -157,7 +157,7 @@ IsJohtoSurfWaterAhead::
 	; R35-5.62.223: other JOHTO maps also share native handle $FC;
 	; the Route35 helper independently checks the exact local ID.
 	cp REGION_NATIVE_MAP_SLOT
-	jp z, IsJohtoRoute35WaterAhead
+	jp z, IsJohtoNativeOutdoorWaterAhead
 .noWater
 	and a
 	ret
@@ -340,6 +340,82 @@ JohtoRoute32WaterRows::
 	db $00, $00, $00 ; y=88
 	db $00, $00, $00 ; y=89
 
+; Dispatch shared native $FC by local map ID; never allow ruins water on other maps.
+IsJohtoNativeOutdoorWaterAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .noWater
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jp z, IsJohtoRoute35WaterAhead
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jp z, IsJohtoRuinsWaterAhead
+.noWater
+	and a
+	ret
+
+; Ruins water: Gold x2..5,y6..13 plus x12..15,y26..29, 48 cells.
+IsJohtoRuinsWaterAhead::
+	push bc
+	push de
+	push hl
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .check
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .check
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .check
+.right
+	cp SPRITE_FACING_RIGHT
+	jr nz, .notWater
+	inc e
+.check
+	ld a, d
+	cp 6
+	jr c, .notWater
+	cp 14
+	jr nc, .lower
+	ld a, e
+	cp 2
+	jr c, .notWater
+	cp 6
+	jr nc, .notWater
+	jr .water
+.lower
+	ld a, d
+	cp 26
+	jr c, .notWater
+	cp 30
+	jr nc, .notWater
+	ld a, e
+	cp 12
+	jr c, .notWater
+	cp 16
+	jr nc, .notWater
+.water
+	scf
+	jr .done
+.notWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
 ; R35-5.62.223: Gold Route35 10x18 has exactly 32 WATER quadrants:
 ; rectangle x=4..7, y=24..31. Check region/local ID and facing coords;
 ; never widen JOHTO's shared 8x8 tile water whitelist.
@@ -417,6 +493,8 @@ JohtoSurfBadgeAllowed::
 	jr nz, .kanto
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
+	jr z, .route32
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr nz, .kanto
 .route32
 	ld a, [wCurRegion]

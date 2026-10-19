@@ -3350,6 +3350,19 @@ INCLUDE "data/mapObjects/JohtoRoute35GoldenrodGate.asm"
 INCLUDE "scripts/JohtoRoute35GoldenrodGate.asm"
 JohtoRoute35GoldenrodGateBlocks: INCBIN "maps/JohtoRoute35GoldenrodGate.blk"
 
+; RUINS-5.62.224: isolated NorthSouthGate shares validated JOHTO_GATE tiles.
+SECTION "Johto Route36 Ruins Gate Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoRoute36RuinsGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute36RuinsGate.asm"
+INCLUDE "scripts/JohtoRoute36RuinsGate.asm"
+JohtoRoute36RuinsGateBlocks: INCBIN "maps/JohtoRoute36RuinsGate.blk"
+
+SECTION "Johto Ruins of Alph Outside Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRuinsOfAlphOutside.asm"
+INCLUDE "data/mapObjects/JohtoRuinsOfAlphOutside.asm"
+INCLUDE "scripts/JohtoRuinsOfAlphOutside.asm"
+JohtoRuinsOfAlphOutsideBlocks: INCBIN "maps/JohtoRuinsOfAlphOutside.blk"
+
 SECTION "Johto Ilex Forest Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_ilex_forest_collision.asm"
 

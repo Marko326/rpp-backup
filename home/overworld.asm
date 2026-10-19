@@ -912,24 +912,18 @@ GetJohtoGateMusicSourceMap::
 ; "function 2" passes when the the tile in front of the player is among a certain set
 ; sets carry if the check passes, otherwise clears carry
 ExtraWarpCheck::
-	; ILEX-5.62.215: the two internal outdoor doorways need an exact
-	; (region,local,position,direction) check; no universal warp bypass.
+	; Johto outdoor doorways require exact region/local/position/facing.
+	; Keep the exact local identity check inside the ROMX predicate.
 	ld a, [wCurMap]
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .ordinaryCheck
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	jr nz, .ordinaryCheck
-	ld a, [wCurLocalMapID]
-	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .nativeDoor
-	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .nativeDoor
-	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr z, .nativeDoor
-	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr nz, .ordinaryCheck
-.nativeDoor
+	; HOME-5.62.224: no per-map ID list in scarce ROM0.
+	; The ROMX predicate has a fail-closed exact local-ID/XY/facing table.
+	; New Johto doorways must be registered in that predicate, not here.
+	; Do not treat other native Johto maps as doorways.
 	callba JohtoInternalDoorFacingCheck
 	ret c
 .ordinaryCheck
@@ -986,6 +980,10 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .yes
@@ -1652,7 +1650,7 @@ CheckTilePassable::
 	jr nz, .route32Seam
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .normal
+	jp nz, .normal
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr z, .route35Mask
@@ -1668,6 +1666,10 @@ CheckTilePassable::
 	jr z, .northGateMask
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jr z, .northGateMask
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	jr z, .ruinsMask
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr z, .ruinsMask
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr z, .modernRoute34
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
@@ -1685,6 +1687,9 @@ CheckTilePassable::
 	ret
 .route35Mask
 	callba JohtoRoute35CanStepAhead
+	ret
+.ruinsMask
+	callba JohtoRuinsCanStepAhead
 	ret
 .northGateMask
 	callba JohtoRoute34GateCanStepAhead

@@ -400,7 +400,7 @@ JohtoBrowseSilverCaveName: db "Silver Cave@"
 ; Both the blinking player marker and browse starting point use the same ID
 ; mapping. Keep the list independent of Fly destinations.
 JohtoNativeTownMapIndices::
-	db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 14, 13, 14, 14, 15, 19, 17, 18 ; Goldenrod, Route36, Route35, Goldenrod gate
+	db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 14, 13, 14, 14, 15, 19, 17, 18, 19, 8 ; Goldenrod, Route36, Route35, Goldenrod gate, Ruins gate, Ruins outside
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 
@@ -1236,6 +1236,10 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute35Name
 	db 92, 60 ; Route35GoldenrodGate: neutral town-map waypoint
 	dw JohtoBrowseRoute35Name
+	db 76, 72 ; Route36 Ruins gate (neutral Route36 waypoint)
+	dw JohtoBrowseRoute36Name
+	db 92, 84 ; Ruins of Alph outside
+	dw JohtoBrowseRuinsOfAlphName
 JohtoNativeTownMapEntriesEnd::
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
 

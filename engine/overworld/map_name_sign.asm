@@ -560,6 +560,8 @@ UpdateMapNameSign::
 	ret z
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	ret z
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	ret z
 .legacyMap
 	ld a, [wCurMap]
 	ld c, a

@@ -20,6 +20,8 @@ JohtoMapHeaderPointers::
 	dw JohtoRoute36_h ; local $10 (native $FC)
 	dw JohtoRoute35_h ; local $11 (native $FC)
 	dw JohtoRoute35GoldenrodGate_h ; local $12 (native $FC)
+	dw JohtoRoute36RuinsGate_h ; local $13 (native $FC)
+	dw JohtoRuinsOfAlphOutside_h ; local $14 (native $FC)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -42,6 +44,8 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoRoute36_h)
 	db BANK(JohtoRoute35_h)
 	db BANK(JohtoRoute35GoldenrodGate_h)
+	db BANK(JohtoRoute36RuinsGate_h)
+	db BANK(JohtoRuinsOfAlphOutside_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -68,6 +72,8 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; Route36
 	db REGION_NATIVE_MAP_SLOT ; Route35
 	db REGION_NATIVE_MAP_SLOT ; Route35 Goldenrod north/south Gate
+	db REGION_NATIVE_MAP_SLOT ; Route36 Ruins gate
+	db REGION_NATIVE_MAP_SLOT ; Ruins of Alph Outside
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -92,6 +98,8 @@ JohtoNativeMapSongBanks::
 	db MUSIC_ROUTES2, 0 ; Route36
 	db MUSIC_ROUTES2, 0 ; Route35
 	db MUSIC_ROUTES2, 0 ; Route35 Goldenrod gate (Gold Route36 theme)
+	db MUSIC_ROUTES2, 0 ; Route36 Ruins gate
+	db MUSIC_DUNGEON2, 0 ; Ruins of Alph Outside
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

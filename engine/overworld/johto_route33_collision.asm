@@ -163,6 +163,37 @@ JohtoRoute36CanStepAhead::
 	cp 9
 	jr z, .allowed
 .normal
+	; Open Gold's Route36->Ruins double downward carpets, not NPC gates.
+	ld a, [wXCoord]
+	cp 47
+	jr z, .gateX
+	cp 48
+	jr nz, .maskRoute36
+.gateX
+	ld a, [wYCoord]
+	cp 12
+	jr nz, .gateLane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+.gateLane
+	ld a, [wYCoord]
+	cp 13
+	jr nz, .maskRoute36
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .rightGateLane
+	ld a, [wXCoord]
+	cp 48
+	jr z, .allowed
+	jr .maskRoute36
+.rightGateLane
+	cp PLAYER_DIR_RIGHT
+	jr nz, .maskRoute36
+	ld a, [wXCoord]
+	cp 47
+	jr z, .allowed
+.maskRoute36
 	ld hl, JohtoRoute36BlockedRows
 	ld d, JOHTO_ROUTE_36_WIDTH * 2
 	ld e, 8
@@ -1001,12 +1032,24 @@ JohtoNorthGateStepWarpAllowed::
 	jr z, .gateVertical
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jr z, .gateVertical
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	jr z, .gateVertical
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .cityNorthDoor
 	; GATE-5.62.224 carpet correction: do NOT accept Route 35 in this
 	; step-on executor. The outdoor mat (9/10,33) is standable; only the
 	; subsequent southward collision from the mat may enter the gate.
 	; Preserve the accepted Route 34 / Forest north-gate step-on path.
+	jp .deny
+.ruinsOutside
+	ld a, [wXCoord]
+	cp 7
+	jp nz, .deny
+	ld a, [wYCoord]
+	cp 5
+	jr z, .up
 	jp .deny
 .gateVertical
 	ld a, [wYCoord]
@@ -1055,15 +1098,21 @@ JohtoNorthGateStepWarpAllowed::
 JohtoGateCollisionDirectionAllowed::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
-	jr z, .left
+	jp z, .left
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .down
+	jp z, .down
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .northGate
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jr z, .northGate
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	jr z, .northGate
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jp z, .ruinsRoute36
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jp z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .cityNorth
 	cp JOHTO_ROUTE_35_LOCAL_ID
@@ -1101,6 +1150,24 @@ JohtoGateCollisionDirectionAllowed::
 	and a
 	jr z, .up
 	jr .down
+.ruinsRoute36
+	ld a, [wYCoord]
+	cp 13
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 47
+	jr z, .down
+	cp 48
+	jr z, .down
+	jp .denied
+.ruinsOutside
+	ld a, [wYCoord]
+	cp 5
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 7
+	jr z, .up
+	jp .denied
 .left
 	ld a, PLAYER_DIR_LEFT
 	jr .compare
@@ -1128,13 +1195,42 @@ JohtoGateCollisionDirectionAllowed::
 JohtoInternalDoorFacingCheck::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .forest
+	jp z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .route34Interior
+	jp z, .route34Interior
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .cityNorthInterior
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr z, .route35SouthInterior
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jp z, .ruinsRoute36
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jp z, .ruinsOutside
+	jp .denied
+.ruinsRoute36
+	ld a, [wYCoord]
+	cp 13
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 47
+	jr z, .ruinsDown
+	cp 48
+	jp nz, .denied
+.ruinsDown
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+	jp .denied
+.ruinsOutside
+	ld a, [wXCoord]
+	cp 7
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 5
+	jp nz, .denied
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
 	jp .denied
 .cityNorthInterior
 	ld a, [wXCoord]
@@ -1205,3 +1301,137 @@ JohtoInternalDoorFacingCheck::
 .denied
 	and a
 	ret
+
+; RUINS-5.62.224: dispatch both new map masks inside ROMX.
+JohtoRuinsCanStepAhead::
+	ld a, [wCurLocalMapID]
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jp z, JohtoRuinsOfAlphCanStepAhead
+	jp JohtoRuinsGateCanStepAhead
+
+; RUINS-5.62.224: dedicated Gold 20x36 spatial collision mask.
+; Water remains mask-blocked on LAND; position-based Surf checks govern water.
+; All ten unopened chamber/cave/research/east-gate doors remain blocked.
+JohtoRuinsOfAlphCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr nz, .blocked
+	; The unique northern DOOR tile (x7,y5) must be entered from
+	; (7,6) facing UP. Afterwards next UP collision initiates Warp.
+	ld a, [wXCoord]
+	cp 7
+	jr nz, .mask
+	ld a, [wYCoord]
+	cp 6
+	jr nz, .exitDoor
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .mask
+.exitDoor
+	cp 5
+	jr nz, .mask
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+.mask
+	ld hl, JohtoRuinsOfAlphBlockedRows
+	ld d, JOHTO_RUINS_OF_ALPH_WIDTH * 2
+	ld e, 3
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+JohtoRuinsOfAlphBlockedRows::
+	INCBIN "maps/JohtoRuinsOfAlphOutside.blocked_mask.bin"
+
+; Exact duplicate Gold NorthSouthGate collision mask, with its own map key.
+; Route36 gate and Route34 gate share the same approved art and topology.
+JohtoRuinsGateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	jp nz, .blocked
+	; Gold lower warp carpet permits entry from the left/right floor cells
+	; as well as moving between the two carpet lanes. Upper DOOR is stricter.
+	ld a, [wYCoord]
+	cp 7
+	jp z, .bottomCarpet
+	ld a, [wXCoord]
+	cp 4
+	jp z, .lane
+	cp 5
+	jp nz, .normal
+.lane
+	ld a, [wYCoord]
+	cp 1
+	jp nz, .bottomApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+	jp .normal
+.bottomApproach
+	cp 6
+	jp nz, .edgeLanes
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+	jp .normal
+.edgeLanes
+	and a
+	jp nz, .normal
+	; Upper door: lane change only, no sideways entry through its walls.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp nz, .topRight
+	ld a, [wXCoord]
+	cp 5
+	jp z, .allowed
+	jp .normal
+.topRight
+	cp PLAYER_DIR_RIGHT
+	jp nz, .normal
+	ld a, [wXCoord]
+	cp 4
+	jp z, .allowed
+	jp .normal
+.bottomCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp nz, .bottomRight
+	ld a, [wXCoord]
+	cp 5
+	jp z, .allowed
+	cp 6
+	jp z, .allowed
+	jp .normal
+.bottomRight
+	cp PLAYER_DIR_RIGHT
+	jp nz, .normal
+	ld a, [wXCoord]
+	cp 3
+	jp z, .allowed
+	cp 4
+	jp z, .allowed
+.normal
+	ld hl, JohtoRuinsGateBlockedRows
+	ld d, 10
+	ld e, 2
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRuinsGateBlockedRows::
+	INCBIN "maps/JohtoRoute36RuinsGate.blocked_mask.bin"

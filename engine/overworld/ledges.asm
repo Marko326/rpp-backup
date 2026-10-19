@@ -14,6 +14,22 @@ HandleLedges:
 	ld hl, LedgeTiles
 	jr .checkPairs
 .johto
+	; RUINS-5.62.224: original Johto tileset also serves Ruins Outside.
+	; Its cliff-top graphic $06 is shared with normal terrain, so only
+	; reviewed Gold coordinates can trigger a jump. Keep old routes and
+	; the original shared HandleLedges executor/animation unchanged.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .johtoLegacy
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	ret nz
+	ld hl, .ruinsHops
+	jp .modernHopLookup
+.johtoLegacy
 	; Routes 29/30 convert Gold cliffs into dedicated
 	; RPP collision tile IDs. Use the same tile-pair matching as Kanto.
 	ld a, [wCurMap]
@@ -155,6 +171,30 @@ HandleLedges:
 	db 30, 10, PLAYER_DIR_DOWN
 	db 32, 10, PLAYER_DIR_DOWN
 	db 33, 10, PLAYER_DIR_DOWN
+	db $ff
+
+; Ruins Outside: 16 physically valid Gold directed jumps. The upper
+; southern cliff (y30) lands on the lower cliff's HOP top (y32), and
+; can chain into the second jump (y34 landing). Gold also labels (9,30)
+; HOP_DOWN, but its two-cell landing (9,32) is WALL: deliberately DO NOT
+; trigger that unsafe candidate. Normal collision blocks the front tile.
+.ruinsHops
+	db 2, 18, PLAYER_DIR_DOWN
+	db 5, 30, PLAYER_DIR_DOWN
+	db 5, 30, PLAYER_DIR_LEFT
+	db 6, 30, PLAYER_DIR_DOWN
+	db 7, 30, PLAYER_DIR_DOWN
+	db 8, 30, PLAYER_DIR_DOWN
+	db 10, 30, PLAYER_DIR_DOWN
+	db 10, 30, PLAYER_DIR_RIGHT
+	db 2, 32, PLAYER_DIR_DOWN
+	db 3, 32, PLAYER_DIR_DOWN
+	db 4, 32, PLAYER_DIR_DOWN
+	db 5, 32, PLAYER_DIR_DOWN
+	db 6, 32, PLAYER_DIR_DOWN
+	db 7, 32, PLAYER_DIR_DOWN
+	db 8, 32, PLAYER_DIR_DOWN
+	db 8, 32, PLAYER_DIR_RIGHT
 	db $ff
 
 .foundMatch
