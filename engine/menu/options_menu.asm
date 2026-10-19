@@ -1146,6 +1146,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_UNION_CAVE ; Ilex Forest, Gold Union Cave music
 	db MUSIC_GBP_GSC_ROUTE36 ; North gate, Gold Route36 music
 	db MUSIC_GBP_GSC_ROUTE36 ; Route34
+	db MUSIC_GBP_GSC_GOLDENROD_CITY ; P19 Goldenrod
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

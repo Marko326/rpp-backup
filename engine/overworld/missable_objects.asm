@@ -33,6 +33,19 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_AZALEA / 8
 	set EVENT_JOHTO_FLY_AZALEA % 8, [hl]
 .notJohtoAzalea
+	; P19-5.62.216: unlock only on the physical native Goldenrod map.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notJohtoGoldenrod
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notJohtoGoldenrod
+	ld a, [wCurLocalMapID]
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr nz, .notJohtoGoldenrod
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_GOLDENROD / 8
+	set EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]
+.notJohtoGoldenrod
 	ld a, [wCurMap]
 	cp ROUTE_1
 	jr nc, .notInTown

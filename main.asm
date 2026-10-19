@@ -3316,11 +3316,23 @@ INCLUDE "data/mapObjects/JohtoRoute34.asm"
 INCLUDE "scripts/JohtoRoute34.asm"
 JohtoRoute34Blocks: INCBIN "maps/JohtoRoute34.blk"
 
+; ILEX-5.62.216: one Gold city, shared JOHTO_MODERN tileset and bounded Route34 edge.
+SECTION "Johto Goldenrod City Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoGoldenrodCity.asm"
+INCLUDE "data/mapObjects/JohtoGoldenrodCity.asm"
+INCLUDE "scripts/JohtoGoldenrodCity.asm"
+JohtoGoldenrodCityBlocks: INCBIN "maps/JohtoGoldenrodCity.blk"
+; Gold mapgroup 11 roof graphics: converted from the original 24x24 PNG.
+JohtoGoldenrodRoofs_GFX: INCBIN "gfx/tilesets/johto_goldenrod_roofs.2bpp"
+JohtoVioletRoofs_GFX: INCBIN "gfx/tilesets/johto_violet_roofs.2bpp"
+JohtoAzaleaRoofs_GFX: INCBIN "gfx/tilesets/johto_azalea_roofs.2bpp"
+
 SECTION "Johto Ilex Forest Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_ilex_forest_collision.asm"
 
 SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]
 INCLUDE "engine/overworld/johto_route33_collision.asm"
+INCLUDE "engine/overworld/johto_goldenrod_roof_gfx.asm"
 
 ; Union Cave 1F: Gold-isolated art and collision variants (no Kanto cave reuse).
 SECTION "Johto Union Cave Tileset", ROMX, BANK[$42]
@@ -3511,7 +3523,17 @@ JohtoNativeCollisionFence::
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33Native
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .azaleaNative
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr z, .route34Native
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr nz, .legacyNative
+	callba JohtoGoldenrodEdgeFence
+	ret
+.route34Native
+	callba JohtoRoute34NorthEdgeFence
+	ret
+.azaleaNative
 	callba JohtoAzaleaEdgeFence
 	ret
 .route33Native

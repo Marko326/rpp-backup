@@ -1,4 +1,4 @@
-; FLY-5.62.196: Johto Fly selector now covers four visited towns; Kanto Fly stays
+; ILEX-5.62.216: Johto Fly selector covers five visited towns; Kanto Fly stays
 ; untouched; the regular Town Map still has its independent Johto landmark list.
 ; One-time unlock bits are stored in existing saved wEventFlags unused slots.
 ; Routes are never Fly destinations; interiors and Teleport are not enabled.
@@ -85,7 +85,7 @@ LoadJohtoFlyTownMap::
 .next
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 4
+	cp 5
 	jr c, .nextReady
 	xor a
 .nextReady
@@ -97,7 +97,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jp nz, .previousReady
-	ld a, 3
+	ld a, 4
 .previousReady
 	ld [wWhichTownMapLocation], a
 	call .findBackward
@@ -133,7 +133,7 @@ LoadJohtoFlyTownMap::
 	ld [hTilesetType], a
 	ret
 
-; In A: Fly city index 0=New Bark, 1=Cherrygrove, 2=Violet, 3=Azalea.
+; In A: Fly city index 0=New Bark, 1=Cherrygrove, 2=Violet, 3=Azalea, 4=Goldenrod.
 ; Out: A=legacy map alias; B=y C=x DE=ROM string.
 .loadEntry
 	add a
@@ -169,9 +169,11 @@ LoadJohtoFlyTownMap::
 	dw .violetName
 	db 140,  76
 	dw .azaleaName
+	db 108, 60
+	dw .goldenrodName
 .destinations
 	; FLY-5.62.196: $FD selector resolves separately to (JOHTO, local 10).
-	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR
+	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
 .newBarkName
 	db "New Bark_Town@"
 .cherrygroveName
@@ -180,15 +182,17 @@ LoadJohtoFlyTownMap::
 	db "Violet City@"
 .azaleaName
 	db "Azalea Town@"
+.goldenrodName
+	db "Goldenrod_City@"
 
 .findForward
-	ld b, 4
+	ld b, 5
 .forwardLoop
 	call .isCurrentUnlocked
 	ret nz
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 4
+	cp 5
 	jr c, .forwardStore
 	xor a
 .forwardStore
@@ -197,7 +201,7 @@ LoadJohtoFlyTownMap::
 	jr nz, .forwardLoop
 	ret
 .findBackward
-	ld b, 4
+	ld b, 5
 .backwardLoop
 	call .isCurrentUnlocked
 	ret nz
@@ -205,7 +209,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jr nz, .backwardStore
-	ld a, 3
+	ld a, 4
 .backwardStore
 	ld [wWhichTownMapLocation], a
 	dec b
@@ -219,6 +223,12 @@ LoadJohtoFlyTownMap::
 	jr z, .testCherrygrove
 	cp 2
 	jr z, .testViolet
+	cp 3
+	jr z, .testAzalea
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_GOLDENROD / 8
+	bit EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]
+	ret
+.testAzalea
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_AZALEA / 8
 	bit EVENT_JOHTO_FLY_AZALEA % 8, [hl]
 	ret
@@ -234,3 +244,4 @@ LoadJohtoFlyTownMap::
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_CHERRYGROVE / 8
 	bit EVENT_JOHTO_FLY_CHERRYGROVE % 8, [hl]
 	ret
+

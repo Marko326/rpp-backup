@@ -2530,7 +2530,7 @@ const_value = 0
 	const EVENT_JOHTO_FLY_CHERRYGROVE                ; current 454, (D855, bit 4)
 	const EVENT_JOHTO_FLY_VIOLET                     ; current 455, (D855, bit 5)
 	const EVENT_JOHTO_FLY_AZALEA                     ; current 456, (D855, bit 6), formerly unused EVENT_9DE
-	const EVENT_9DF                                  ; current 457, (D855, bit 7)
+	const EVENT_JOHTO_FLY_GOLDENROD                 ; current 457, (D855, bit 7), formerly unused EVENT_9DF
 	;const EVENT_9E0                                  ; inactive legacy 9E0; no current event slot
 	;const EVENT_9E1                                  ; inactive legacy 9E1; no current event slot
 	;const EVENT_9E2                                  ; inactive legacy 9E2; no current event slot
@@ -2569,4 +2569,6 @@ ASSERT EVENT_JOHTO_FLY_NEW_BARK == $453
 ASSERT EVENT_JOHTO_FLY_CHERRYGROVE == $454
 ASSERT EVENT_JOHTO_FLY_VIOLET == $455
 ASSERT EVENT_JOHTO_FLY_AZALEA == $456
+ASSERT EVENT_JOHTO_FLY_GOLDENROD == $457
+ASSERT EVENT_JOHTO_FLY_GOLDENROD < 139 * 8
 ASSERT EVENT_JOHTO_FLY_AZALEA < 139 * 8

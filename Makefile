@@ -96,6 +96,13 @@ gfx/red/intro_nido_3.6x6.2bpp: rgbgfx += -h
 
 gfx/game_boy.norepeat.2bpp: tools/gfx += --remove-duplicates
 gfx/theend.interleave.2bpp: tools/gfx += --interleave --png=$<
+# ILEX-5.62.216 roof sources: keep all nine (3x3) original Gold tiles.
+# PNG is tracked; 2bpp is generated during the normal build. Do NOT run the
+# generic tileset whitespace trimmer on these compact roof atlases.
+gfx/tilesets/johto_%_roofs.2bpp: gfx/tilesets/johto_%_roofs.png
+	$(RGBGFX) -o $@ $<
+	@test "$$(wc -c < "$@")" -eq 144 || { echo "Roof atlas must contain exactly 9 tiles: $@" >&2; exit 1; }
+
 gfx/tilesets/%.2bpp: tools/gfx += --trim-whitespace
 
 # GATE-5.62.159: johto_gate uses collision-sensitive absolute 8x8 IDs.

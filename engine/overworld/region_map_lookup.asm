@@ -480,6 +480,9 @@ NativeRegionConnectionTargets::
 	; MAP-5.62.195: modern Route33 west <-> modern AzaleaTown east.
 	db JOHTO_ROUTE_33_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
 	db JOHTO_AZALEA_TOWN_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
+	; P19-5.62.216: only Route34 north <-> Goldenrod south.
+	db JOHTO_ROUTE_34_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
+	db JOHTO_GOLDENROD_CITY_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
 	db $ff
 
 ; Route32's original Gold cave tile (6,79) is solid to generic RPP

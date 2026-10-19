@@ -20,13 +20,18 @@ DEF JOHTO_ILEX_AZALEA_GATE_LOCAL_ID EQU 11
 DEF JOHTO_ILEX_FOREST_LOCAL_ID EQU 12
 DEF JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID EQU 13
 DEF JOHTO_ROUTE_34_LOCAL_ID EQU 14
-DEF NUM_JOHTO_MAPS EQU 15
+DEF JOHTO_GOLDENROD_CITY_LOCAL_ID EQU 15
+DEF NUM_JOHTO_MAPS EQU 16
 
 ; Native Johto local IDs >= 8 share one runtime compatibility handle.
 ; They must never consume more legacy bytes or reuse an old Kanto map ID.
 ASSERT REGION_NATIVE_MAP_SLOT == $fc
 ; FLY-5.62.196: Fly selector only; $FC is a shared native map handle.
+; P19-5.62.216: selector bytes are fly-menu-only identifiers. The $FE value
+; already used by warp records is safe here only because TryLoadSpecialFlyWarpData
+; resolves it to ($FC, Johto local 15) before the ordinary warp executor.
 DEF JOHTO_AZALEA_FLY_SELECTOR EQU $fd
+DEF JOHTO_GOLDENROD_FLY_SELECTOR EQU $fe
 ASSERT JOHTO_AZALEA_FLY_SELECTOR == REGION_NATIVE_MAP_SLOT + 1
 
 ; REG-5.62.119: signature written beside the saved region bytes.
@@ -53,3 +58,5 @@ DEF JOHTO_ILEX_FOREST_WIDTH EQU 15
 DEF JOHTO_ILEX_FOREST_HEIGHT EQU 27
 DEF JOHTO_ROUTE_34_WIDTH EQU 10
 DEF JOHTO_ROUTE_34_HEIGHT EQU 27
+DEF JOHTO_GOLDENROD_CITY_WIDTH EQU 20
+DEF JOHTO_GOLDENROD_CITY_HEIGHT EQU 18

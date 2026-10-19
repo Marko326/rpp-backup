@@ -161,8 +161,15 @@ StartMenu_Pokemon:
 	dw .softboiled
 	dw .headbutt
 .fly
-	bit 2,a ; does the player have the Thunder Badge?
-	jp z,.newBadgeRequired
+	; P19-5.62.216: Johto outdoor Fly during gradual map expansion does
+	; not require Kanto's Thunder Badge. Kanto retains its original rule.
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr z, .checkFlyLocation
+	ld a, [wObtainedKantoBadges]
+	bit 2, a
+	jp z, .newBadgeRequired
+.checkFlyLocation
 	ld a, [wCurMap]
 	cp MT_MOON_SQUARE
 	jr z, .canFly

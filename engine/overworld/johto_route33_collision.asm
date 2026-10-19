@@ -227,6 +227,42 @@ PatchJohtoAzaleaWestGateBorder::
 	ld [hl], $1c ; Gold LEFT facade half, paired with (0,5) $1e
 	ret
 
+; ILEX-5.62.216: Gold Goldenrod north edge preview from original
+; Route35 bottom three block rows. Display ONLY: Route35 remains unopened.
+PatchJohtoGoldenrodNorthBorder::
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	ret nz
+	ld de, .row0
+	ld hl, wOverworldMap + MAP_BORDER + 5
+	call .copyRow
+	ld de, .row1
+	ld hl, wOverworldMap + (JOHTO_GOLDENROD_CITY_WIDTH + 2 * MAP_BORDER) + MAP_BORDER + 5
+	call .copyRow
+	ld de, .row2
+	ld hl, wOverworldMap + 2 * (JOHTO_GOLDENROD_CITY_WIDTH + 2 * MAP_BORDER) + MAP_BORDER + 5
+.copyRow
+	ld b, 10
+.loop
+	ld a, [de]
+	inc de
+	ld [hli], a
+	dec b
+	jr nz, .loop
+	ret
+.row0
+	db $05, $05, $58, $59, $01, $78, $44, $05, $05, $05
+.row1
+	db $41, $41, $41, $42, $0c, $0d, $40, $41, $41, $41
+.row2
+	db $01, $01, $01, $46, $08, $09, $44, $01, $01, $01
+
 ; Shared 16x16 Gold block mask lookup; HL=mask, D=width cells, E=row bytes.
 ; Both current maps are 9 blocks (18 quadrants) high. The caller verifies map key.
 JohtoModernMaskedStep::
@@ -307,6 +343,88 @@ JohtoRoute33BlockedRows::
 JohtoAzaleaBlockedRows::
 	INCBIN "maps/JohtoAzaleaTown.blocked_mask.bin"
 
+; ILEX-5.62.216: only central four Gold FLOOR columns have a safe
+; two-way Route34 <-> Goldenrod boundary. Every other outdoor edge is closed.
+JohtoRoute34NorthEdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .otherEdges
+	ld a, [wYCoord]
+	and a
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp 8
+	jr c, .blocked
+	cp 12
+	jr nc, .blocked
+	jr .clear
+.otherEdges
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_34_WIDTH * 2 - 1
+	jr nc, .blocked
+	jr .clear
+.south
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_34_HEIGHT * 2 - 1
+	jr nc, .blocked
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+.clear
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoGoldenrodEdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp JOHTO_GOLDENROD_CITY_WIDTH * 2 - 1
+	jr nc, .blocked
+	jr .clear
+.south
+	ld a, [wYCoord]
+	cp JOHTO_GOLDENROD_CITY_HEIGHT * 2 - 1
+	jr c, .clear
+	ld a, [wXCoord]
+	cp 18
+	jr c, .blocked
+	cp 22
+	jr nc, .blocked
+	jr .clear
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .blocked
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+.clear
+	and a
+	ret
+.blocked
+	scf
+	ret
+
 ; ILEX-5.62.215: Route34 only uses the existing Gold 16x16 masked-step engine.
 ; Nonexistent Goldenrod and unfinished Azalea west-side connections stay closed.
 JohtoRoute34CanStepAhead::
@@ -316,6 +434,20 @@ JohtoRoute34CanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jp nz, .blocked
+	; ILEX-5.62.216: central north seam uses the approved Gold floor
+	; cells, despite the mask lookup seeing one step outside the map.
+	ld a, [wYCoord]
+	and a
+	jr nz, .gate
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .gate
+	ld a, [wXCoord]
+	cp 8
+	jr c, .gate
+	cp 12
+	jp c, .allowed
+.gate
 	; Gold (13,37)/(14,37) are WARP_CARPET_DOWN (blocked in mask).
 	; Admit just the two approaches from the north, and lateral lane shift.
 	ld a, [wYCoord]
@@ -357,6 +489,41 @@ JohtoRoute34CanStepAhead::
 .blocked
 	scf
 	ret
+
+; ILEX-5.62.216: exact Gold city blocked positions, 40x36 cells.
+; Keep its 15 unimplemented door tiles solid; do not import their Warps.
+JohtoGoldenrodCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wYCoord]
+	cp JOHTO_GOLDENROD_CITY_HEIGHT * 2 - 1
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 18
+	jr c, .normal
+	cp 22
+	jr c, .allowed
+.normal
+	ld hl, JohtoGoldenrodBlockedRows
+	ld d, JOHTO_GOLDENROD_CITY_WIDTH * 2
+	ld e, 5
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoGoldenrodBlockedRows::
+	INCBIN "maps/JohtoGoldenrodCity.blocked_mask.bin"
 
 JohtoRoute34BlockedRows::
 	INCBIN "maps/JohtoRoute34.blocked_mask.bin"

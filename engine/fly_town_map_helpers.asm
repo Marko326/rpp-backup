@@ -795,7 +795,14 @@ TryLoadSpecialFlyWarpData::
 	ld a, MAP_REGION_JOHTO
 	ld [wCurRegion], a
 	ld [wLastRegion], a
+	ld a, d ; source selector, not shared $FC destination map byte
+	cp JOHTO_GOLDENROD_FLY_SELECTOR
+	jr z, .goldenrodLocal
 	ld a, JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr .storeNativeLocal
+.goldenrodLocal
+	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
+.storeNativeLocal
 	ld [wCurLocalMapID], a
 	ld [wLastLocalMapID], a
 .copyFlyWarp
@@ -822,6 +829,9 @@ SpecialFlyWarpData:
 	; FLY-5.62.196: Gold SPAWN_AZALEA is X=15,Y=10; macro takes (Y,X).
 	db JOHTO_AZALEA_FLY_SELECTOR, REGION_NATIVE_MAP_SLOT
 	FLYWARP_DATA JOHTO_AZALEA_TOWN_WIDTH, 10, 15
+	; ILEX-5.62.216: Gold SPAWN_GOLDENROD x=15,y=28, mask plus walkable neighbors.
+	db JOHTO_GOLDENROD_FLY_SELECTOR, REGION_NATIVE_MAP_SLOT
+	FLYWARP_DATA JOHTO_GOLDENROD_CITY_WIDTH, 28, 15
 	db MT_MOON_3, ROUTE_4
 	FLYWARP_DATA ROUTE_4_WIDTH, 6, 11
 	db MT_MOON_SQUARE, MT_MOON_SQUARE

@@ -172,7 +172,10 @@ LoadSpecialWarpData:
 	jr nz, .legacyFlyTileset
 	ld a, [wCurLocalMapID]
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jr z, .nativeModern
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr nz, .legacyFlyTileset
+.nativeModern
 	ld a, JOHTO_MODERN
 	jr .storeTileset
 .legacyFlyTileset

@@ -853,6 +853,9 @@ CheckMapConnections::
 	call LoadTileBlockMap
 	; GATE-5.62.202: connected-map fast path skips LoadMapData.
 	callba PatchJohtoAzaleaWestGateBorder
+	callba PatchJohtoGoldenrodNorthBorder
+	; Gold town/route transitions require their mapgroup roof pixels.
+	callba PatchGoldenrodRoofOnConnection
 	jp OverworldLoopLessDelay
 
 .didNotEnterConnectedMap
@@ -1136,6 +1139,9 @@ LoadTilesetTilePatternData::
 	call FarCopyData2
 	; Snowy 以普通 tileset 为基础，只覆盖原补丁中真正变化的图块。
 	callba ApplySnowTilesetGfxPatch
+	; Gold roof graphics are selected by town/map group, not the base tileset.
+	; Full-load screen is LCD-off: raw VRAM copy rather than VBlank copier.
+	callba PatchGoldenrodRoofAfterTilesetLoad
 	ret
 
 ; this loads the current maps complete tile map (which references blocks, not individual tiles) to C6E8
@@ -1648,7 +1654,12 @@ CheckTilePassable::
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .northGateMask
 	cp JOHTO_ROUTE_34_LOCAL_ID
+	jr z, .modernRoute34
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr nz, .normal
+	callba JohtoGoldenrodCanStepAhead
+	ret
+.modernRoute34
 	callba JohtoRoute34CanStepAhead
 	ret
 .forestMask
@@ -2639,6 +2650,7 @@ LoadMapData::
 	; GATE-5.62.202: the matching seamless-map hook must also run
 	; after LoadTileBlockMap, before the visible map view is built.
 	callba PatchJohtoAzaleaWestGateBorder
+	callba PatchJohtoGoldenrodNorthBorder
 	call LoadTilesetTilePatternData
 	call LoadCurrentMapView
 
