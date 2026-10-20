@@ -97,6 +97,140 @@ def _parse_gold_source(gold_root: Path) -> list[dict[str, str]]:
     return result
 
 
+def check_active_slot_mapping(headers: str, active: list[dict]) -> list[str]:
+    """Check the actual ROM-indexed 256-byte sparse router, not merely a flag.
+
+    Registry order is the dense slot order. A stable ID is allowed to be far
+    away (e.g. 62, 101 or 221), but two IDs must never alias the same slot.
+    Also reject spoofing a not-yet-registered ID as active, including $ff.
+    """
+    errors: list[str] = []
+    try:
+        body = headers.split('JohtoStableIDToActiveSlot::', 1)[1].split(
+            'JohtoStableIDToActiveSlotEnd::', 1)[0]
+    except IndexError:
+        return ['stable ID to active slot runtime table missing']
+    values: list[int] = []
+    for row in body.splitlines():
+        statement = row.split(';', 1)[0].strip()
+        if not statement:
+            continue
+        if not statement.startswith('db '):
+            return [f'active slot table has nonliteral assembler statement: {statement}']
+        try:
+            values.extend(int(v.strip().replace('$', '0x'), 0)
+                          for v in statement[3:].split(','))
+        except ValueError:
+            return ['active slot table contains nonliteral or invalid bytes']
+    if len(values) != 256 or any(not 0 <= v <= 255 for v in values):
+        return [f'active slot table requires exactly 256 bytes, got {len(values)}']
+    if len(active) >= 255:
+        errors.append('active slot $ff is reserved; compact table too large')
+    expected = [255] * 256
+    for slot, row in enumerate(active):
+        if not isinstance(row, dict) or not isinstance(row.get('local_id'), int):
+            continue  # registry schema has a separate check
+        id_ = row['local_id']
+        if id_ == 255:
+            errors.append('invalid $ff stable ID activated')
+        elif 0 <= id_ < 255:
+            if expected[id_] != 255:
+                errors.append(f'duplicate stable ID {id_} among active slots')
+            expected[id_] = slot
+    if values != expected:
+        for i, (actual, want) in enumerate(zip(values, expected)):
+            if actual != want:
+                errors.append(f'active slot table mismatch at stable ID {i}: '
+                              f'found {actual}, expected {want if want != 255 else "INACTIVE"}')
+                if len(errors) >= 12:
+                    break
+    if not all(x in headers for x in (
+            'GetJohtoActiveSlot::', 'ld hl, JohtoStableIDToActiveSlot',
+            'add hl, bc', 'ld e, [hl]', 'cp NUM_JOHTO_ACTIVE_MAPS',
+            'ld e, JOHTO_INVALID_ACTIVE_SLOT',
+            'ASSERT JohtoStableIDToActiveSlotEnd - JohtoStableIDToActiveSlot == 256')):
+        errors.append('runtime active slot lookup is missing or not table-backed')
+    return errors
+
+
+def check_sparse_runtime_paths(root: Path, overrides: dict[str, str]) -> list[str]:
+    """Protect the *consumers*, not just the 256-byte routing data.
+
+    This fails closed if a refactor reintroduces direct local-ID indexing,
+    removes overflow-safe arithmetic, or uses an arbitrary-map fallback.
+    """
+    errors = []
+    def source(rel: str) -> str:
+        return _read(root, rel, overrides)
+    def section(rel: str, start: str, stop: str) -> str:
+        text = source(rel)
+        if start not in text or stop not in text.split(start, 1)[1]:
+            errors.append(f'sparse runtime segment missing in {rel}: {start}')
+            return ''
+        return text.split(start, 1)[1].split(stop, 1)[0]
+    def needs(label: str, body: str, fragments: tuple[str, ...]):
+        for frag in fragments:
+            if frag not in body:
+                errors.append(f'sparse runtime {label} missing mandatory {frag.strip()}')
+
+    lookup = 'engine/overworld/region_map_lookup.asm'
+    needs('header', section(lookup, '\n.johto\n', '\n.invalid\n'),
+          ('call GetJohtoActiveSlot', 'cp JOHTO_INVALID_ACTIVE_SLOT',
+           'jr z, .invalid', 'add hl, hl'))
+    needs('legacy alias', section(lookup, 'RegionMapKeyToLegacyID::', '; Source map,'),
+          ('call GetJohtoActiveSlot', 'cp JOHTO_INVALID_ACTIVE_SLOT',
+           'jr z, .invalid'))
+    needs('native Continue', section(lookup, 'SyncLegacyMapRegions::',
+                                     '; REG-5.62.123:'),
+          ('call GetJohtoActiveSlot', 'ld a, [wCurLocalMapID]',
+           'ld a, [wLastLocalMapID]', 'jp SoftReset', 'ld a, $ff ; legacy LAST_MAP sentinel'))
+    needs('native Warp reject', section(lookup, 'ResolveNativeRegionWarp::',
+                                        'NativeRegionWarpTargets::'),
+          ('call StoreNativeWarpTarget', 'jp SoftReset'))
+    needs('native connection reject', section(lookup, 'SelectNativeMapConnection::',
+                                               'NativeRegionConnectionTargets::'),
+          ('call StoreNativeWarpTarget', 'jp SoftReset'))
+    headers = source(HEADERS)
+    needs('RBY music', section(HEADERS, 'GetJohtoNativeMapSong::',
+                              'ASSERT JohtoMapLegacyAliasesEnd'),
+          ('call GetJohtoActiveSlot', 'cp JOHTO_INVALID_ACTIVE_SLOT',
+           'add hl, hl', 'ld bc, JohtoNativeMapSongBanks'))
+    needs('GSC music', section('engine/menu/options_menu.asm',
+                               'LookupJohtoMapGSCMusic:', 'JohtoNativeGSCMusic::'),
+          ('push de', 'callab GetJohtoActiveSlot', 'pop de',
+           'cp JOHTO_INVALID_ACTIVE_SLOT'))
+    needs('Town Map name', section('engine/town_map.asm',
+                                  'LoadTownMapEntry:', 'GetMapNameForSaveScreen:'),
+          ('callab GetJohtoActiveSlot', 'cp JOHTO_INVALID_ACTIVE_SLOT',
+           'add hl, hl', 'JohtoInactiveMapName'))
+    town_name_segment = section('engine/town_map.asm', 'LoadTownMapEntry:',
+                                'GetMapNameForSaveScreen:')
+    if town_name_segment.count('add hl, hl') != 2:
+        errors.append('sparse runtime Town Map name requires two 16-bit shifts for 4-byte stride')
+    needs('Town Map ROMX marker', source('engine/overworld/johto_town_map_helpers.asm'),
+          ('JohtoNativeTownMapIndices::', 'GetJohtoTownMapCurrentIndexFar::',
+           'GetJohtoTownMapCurrentIndexCore:', 'call GetJohtoActiveSlot',
+           'cp JOHTO_INVALID_ACTIVE_SLOT', 'ld e, a',
+           'TownMapSpriteBlinkingAnimation:'))
+    needs('Town Map ROM0 protection', source('main.asm'),
+          ('SECTION "Johto Town Map Common ROMX", ROMX, BANK[JOHTO_ROM_BANK]',
+           'INCLUDE "engine/overworld/johto_town_map_helpers.asm"'))
+    town_calls = source('engine/town_map.asm')
+    if (town_calls.count('call GetJohtoTownMapCurrentIndex') != 3 or
+            town_calls.count('callab TownMapSpriteBlinkingAnimation') != 1 or
+            'GetJohtoTownMapCurrentIndex:\n\tpush de\n\tcallab GetJohtoTownMapCurrentIndexFar\n\tld a, e' not in town_calls):
+        errors.append('sparse Town Map ROMX far-call ABI/DE restoration mismatch')
+    needs('ROM0 blinking caller', source('home.asm'),
+          ('callab TownMapSpriteBlinkingAnimation',))
+    needs('roof palettes', source('color/loadpalettes.asm'),
+          ('callab GetJohtoActiveSlot', 'cp JOHTO_INVALID_ACTIVE_SLOT',
+           'ld hl,JohtoGoldDayRoofGroups'))
+    needs('roof artwork', source('engine/overworld/johto_goldenrod_roof_gfx.asm'),
+          ('callab GetJohtoActiveSlot', 'cp JOHTO_INVALID_ACTIVE_SLOT',
+           'ld hl,JohtoRoofGroupForLocalMap'))
+    return errors
+
+
 def audit(root: Path = ROOT, overrides: dict[str, str] | None = None,
           gold_root: Path | None = None) -> list[str]:
     """Return blocking errors; no Gold input or ROM compile is required."""
@@ -230,11 +364,10 @@ def audit(root: Path = ROOT, overrides: dict[str, str] | None = None,
     elif int(count_match.group(1)) != len(active):
         errors.append('NUM_JOHTO_MAPS count disagrees with actual active registry')
 
-    # The original engine uses local ID directly as an array offset.  Until C
-    # ships a COMPLETE, independently tested sparse lookup, a high ID with gaps
-    # cannot be activated, even though it is reserved for the right branch.
-    if len(active) > 23:
-        errors.append('sparse-ID runtime not implemented/accepted: no expansion past 21,22')
+    # Every dense slot must have exactly one frozen stable physical identity.
+    # The 256-entry ROM table rejects invalid targets and phantom headers.
+    errors.extend(check_active_slot_mapping(raw[HEADERS], active))
+    errors.extend(check_sparse_runtime_paths(Path(root), overrides))
     symbols = dict((key, int(value)) for key, value in re.findall(
         r'(?m)^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\d+)\s*$', const))
     if len(symbols) != len(re.findall(
@@ -253,8 +386,8 @@ def audit(root: Path = ROOT, overrides: dict[str, str] | None = None,
             errors.append(f'active map #{slot}: local ID {id_} not in frozen roster')
             continue
         row = rows[id_]
-        if id_ != slot:
-            errors.append(f'active map #{slot}: sparse ID {id_} forbidden until runtime migration')
+        if slot < 23 and id_ != slot:
+            errors.append(f'active map #{slot}: historical stable ID {slot} moved/reused as {id_}')
         sym = spec.get('local_symbol')
         if not isinstance(sym, str) or not sym.endswith('_LOCAL_ID'):
             errors.append(f'active map #{slot}: bad local ASM symbol')
@@ -315,11 +448,11 @@ def main() -> int:
         return 1
     if args.gold is None:
         print('PASS: 222 RPP stable IDs frozen in ASM + CSV; 368-entry Gold reference CSV integrity checked; '
-              'external Gold source comparison NOT RUN; sparse activation blocked')
+              'external Gold source comparison NOT RUN; sparse routing validated (ROM/phone PENDING)')
     else:
         print('PASS: 222 RPP stable IDs frozen in ASM + CSV; '
               '368 original Gold maps cross-checked against supplied Gold source; '
-              'sparse activation blocked')
+              'sparse routing validated (ROM/phone PENDING)')
     return 0
 
 

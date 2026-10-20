@@ -1,3 +1,19 @@
+# SPID-5.62.227｜ROM0 回收修正：本地已提交、尚未 Push 的两笔提交需重整（本文件是索引）
+# 当前工作区输入 HEAD f01fde2c2892f1b3eb50389a781c8007ae588b4d；上一笔功能 be38fc38；两笔之前基线 94258110feca88b9f905c792faa61e121bf9b55c。
+# 建议第一笔 refactor(johto): 引入稀疏地图ID兼容层并回收Town Map的ROM0占用；第二笔 test(tool): 固化稀疏ID、ROMX远调用ABI和ROM0空间防回归检查。
+# 增量 Patch 从 f01fde2c 当前干净 HEAD 使用；若重写本地历史须先创建安全备份分支，切回 94258110 后拆成游戏功能与工具审计两笔。
+# 当前 ROM/MAP 能运行反馈针对旧 ROM0 布局；新布局需要用户重编译、新 MAP 和最小手机复测。没有执行 AI ROM 构建或 Git 操作。
+# Version: ECRU-5.62.226 -> SPID-5.62.227（本次修正保持 SPID-5.62.227）。
+
+# SPID-5.62.227｜共用 C 稀疏 ID 兼容层：本轮正式清理提交索引（非提交正文）
+# 分支：金银；正式基线（导出记录）94258110feca88b9f905c792faa61e121bf9b55c；Version: ECRU-5.62.226 -> SPID-5.62.227。
+# 模式 A 两笔提交：第一笔 refactor(johto): 引入稀疏地图ID与安全活动槽位映射（运行时 ASM + game_version）；
+# 第二笔 test(tool): 固化稀疏ID越界与表索引防回归审计（tools/、测试、TODO、踩坑、分线文档和本索引）。
+# ZIP 中的清理增量从用户当前已应用最终 .227 热修复状态出发；基线全量仅供从正式 .226 HEAD 恢复，两者禁止叠加。
+# 提交顺序：清理增量（如适用）-> 工具反向隔离 -> 功能 Commit -> git apply -R 恢复工具 -> 工具 Commit。
+# 记录：Gold 单测与静态审计通过；用户确认修正版可编译、手机简测未见异常，但未提供本次 MAP 和精确逐项回归记录。
+# 正式 HEAD 由用户提交后重新核实；本条不得当作实际 Git Commit Hash 或 ECRUTEAK_SPLIT_HEAD。
+
 # ECRU-5.62.226｜缘朱市(ID22) 与 Fly/Field Moves 审计：本轮正式清理提交索引
 # Git 基线：金银 / ef651561163ff9502469444a2edcf050f70cf5c5（干净 HEAD）。
 # Version: BANK-5.62.225 -> ECRU-5.62.226；模式 A 双提交。

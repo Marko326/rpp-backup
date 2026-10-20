@@ -1,4 +1,11 @@
-- **ECRU-5.62.226 防复发（缘朱市功能阶段最终版本；原为 BANK-5.62.225）**：Gold EcruteakCity 20×18 与 Route37 北邻。两条运行时选择表必须精确对应北(0)/南(1)，实际边缘仅放行已验收的南口两格。第一轮把 Fly 标为 `DEFERRED`、遗漏全部 7 个原版标志、未开放实际 20 水格 Surf、左门口直接树林外观；本轮改为访问城市解锁 Fly、精确 Surf/50 Headbutt、不存在 Cut 树不得乱开放、7 标志和 4 格封闭门房立面。特别注意 `$FE` 飞空选择器由 Goldenrod 与 Ecruteak 共享，必须按菜单 index 5 区分并手机回归；门房未开发不能伪造可达性。现有发布审计对新图检查 Gold 事件牌及适用 Field Moves，但测试 PASS 不等于 ROM 可链接、Fly/Headbutt 实机已通过。Gold 旧 SafariZoneBeta 按用户指令仅从全量源码扫描精确排除，汇总必须注明 367/368，不能伪称全查。
+## SPID-5.62.227｜稀疏 ID 与 Town Map ROM0 占用回归（新布局待用户 ROM/MAP/手机验收）
+
+- 老引擎把 `wCurLocalMapID` 直接当 Header、Bank、音乐、Town Map、屋顶数组行号。固定 ID62 虽已在 CSV/ASM 冻结，但不能在只有 23 项的运行表上当第 62 行。共用 C 候选加了 256B 显式稳定 ID→紧凑槽位，所有未启用目标一律 `$FF`；A/B 不能单独修改该映射表、公共 Header 或旧缘朱市。
+- 旧的 `cp NUM_JOHTO_MAPS` 比较不能挡未来合法跳号；不要改成 `cp 222` 造成越界。Far-call ABI 中 A/BC/HL 可能丢失，`GetJohtoActiveSlot` 的返回值通过 E 传递。音乐两个字节步长和 Town Map 四字节步长须用 16 位 `HL`，否则 slot64/128 有 8-bit 回绕。
+- Bank `$1C` 在 `.226` 的 MAP 余量 0B。`.227` 将两段 Town Map 例程迁至 ROM0；用户报告使用最终 `LAST_MAP` 热修复后已编译成功并在手机简测无明显问题，但尚未提供这次编译的原始 MAP 来复核 ROM0 与 `$1C` 最大连续空隙。非法 native Warp/连接或坏存档的安全软复位仅有静态故障注入；用户未明确逐项验证异常场景，不能推断全部通过。
+- 历史 ECRU 段落对 Fly 的旧暂存 index=5 说法已经过期：当前提交版在菜单确认时冻结稳定目的地，Fly 不能再读取容易复用的 `$cd3d` 来区分同 `$FE` 的满金与缘朱。
+
+- **ECRU-5.62.226 防复发（缘朱市功能阶段最终版本；原为 BANK-5.62.225）**：Gold EcruteakCity 20×18 与 Route37 北邻。两条运行时选择表必须精确对应北(0)/南(1)，实际边缘仅放行已验收的南口两格。第一轮把 Fly 标为 `DEFERRED`、遗漏全部 7 个原版标志、未开放实际 20 水格 Surf、左门口直接树林外观；本轮改为访问城市解锁 Fly、精确 Surf/50 Headbutt、不存在 Cut 树不得乱开放、7 标志并恢复 Gold 城市主体；未接入的 Route38 邻图仍会在西侧呈现临时树林，不能冒充真实门房。特别注意 `$FE` 飞空选择器由 Goldenrod 与 Ecruteak 共享，必须在菜单确认时冻结目标稳定 ID 并按其分流，不能依赖易被覆盖的菜单 index 5；门房未开发不能伪造可达性。现有发布审计对新图检查 Gold 事件牌及适用 Field Moves，但测试 PASS 不等于 ROM 可链接、Fly/Headbutt 实机已通过。Gold 旧 SafariZoneBeta 按用户指令仅从全量源码扫描精确排除，汇总必须注明 367/368，不能伪称全查。
 ## ROUTE37-5.62.225｜地图条带审计 PASS 不等于运行时目的地正确
 
 - **用户真实遇到过的故障**：初版 Route37 的 `NativeRegionConnectionTargets` 将向南（编号 1）误填为向北（编号 0）；Gold 图块连接几何和边界都可通过，却因运行时选择表没有正确命中，回退到了 Route32。用户手机视频确认走错地图且人物动作异常。最后修复的记录为 `JOHTO_ROUTE_37_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID`。不能把初版 24/24 静态 PASS 记录成手机通过。

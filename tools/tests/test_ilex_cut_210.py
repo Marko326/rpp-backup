@@ -80,7 +80,7 @@ class IlexCutContract(unittest.TestCase):
         issue = (ROOT / "docs/ISSUE_ILEX_FOREST_LEDGE_DEFERRED_209.md").read_text()
         self.assertIn("DEFERRED", issue)
         self.assertIn("ILEX-LEDGE-001", issue)
-        self.assertIn("ECRU-5.62.226@", (ROOT / "data/game_version.asm").read_text())
+        self.assertIn("SPID-5.62.227@", (ROOT / "data/game_version.asm").read_text())
 
 
 if __name__ == "__main__":

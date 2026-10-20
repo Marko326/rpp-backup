@@ -1,8 +1,11 @@
 # 城都东西双线开发：全量固定地图ID、统一入口和无冲突合并规范（v1.1；已核 Gold 源码）
 
-> **文档类型：固定编号的可执行审计合同与分线规范。项目引擎仍未实现 sparse ID；不是游戏运行时代码修改，也不是手机验收报告。**
+> **SPID-5.62.227 本轮清理状态（2026-10-20）**：共用 C 已在未提交工作区实现 `JohtoStableIDToActiveSlot` 256B 表、调用点判活和索引迁移。Gold 源下 744 项测试及主要静态审计已有通过记录；用户确认热修复后可编译、手机简测未发现问题，尚未提供此次链接的 MAP 和逐项手机回归明细。**运行地图仍仅激活 ID0–22；A/B 不得自行上线 ID23/62，分叉点须待用户完成 Git 提交并核实新 HEAD 后登记。** 本文后续原 `.225/.226` 时间线及“尚未实现”表述是历史基线，不代表 `.227` 当前源码。
+
+
+> **文档类型：固定编号的审计合同与分线规范。`.227` 工作区已具备稀疏映射基础；本文件不是 ROM 链接、MAP 空间或逐项手机验收报告。**
 >
-> **核对基线：** 金银分支，Git HEAD `47915e4e3a536e7cfefee870254feefbaede99ac`，显示版本 `BANK-5.62.225`，用户 ZIP 表明源码干净、无未提交 Patch。依据：ZIP 的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`、`02_EXPORT_INFO.txt`、当前 ASM/工具 JSON、`patches/rppred.map`，以及随附 `BANK-5.62.225_Johto_Handoff(1).md` 和用户新提供的 `pokegold-master(1).zip`。
+> **历史核对基线（`.225` 阶段，非本轮 HEAD）：** 金银分支，Git HEAD `47915e4e3a536e7cfefee870254feefbaede99ac`，显示版本 `BANK-5.62.225`，当时用户 ZIP 表明源码干净、无未提交 Patch。依据：ZIP 的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`、`02_EXPORT_INFO.txt`、当前 ASM/工具 JSON、`patches/rppred.map`，以及随附 `BANK-5.62.225_Johto_Handoff(1).md` 和用户新提供的 `pokegold-master(1).zip`。
 >
 **Gold 源码交叉核验已完成：** 上传 `pokegold-master(1).zip` 的 SHA-256 为 `06c3724bb859b6f7946a528ab0b19ef03ae688959b3761e65cac8f633ed87d0c`；读取 `data/maps/maps.asm` 的 MapGroupPointers / MapGroup 表和 `constants/map_constants.asm` 的原版组号、组内号、宽高，得到 26 个组、368 张原始地图；与本规范 222 张 RPP 城都计划逐项对照，地图名及组名均相符，新增 Gold 原始编号和尺寸无错配。原版所有地形、Warp、脚本、碰撞及技能逻辑仍必须按地图单项审查，不能因此声称全部移植完成。
 

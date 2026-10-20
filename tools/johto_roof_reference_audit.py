@@ -112,7 +112,9 @@ def roof_selector_contract(src, families):
         'ld a,[wCurMapTileset]', 'cp JOHTO', 'jr z,.johtoTileset',
         'cp JOHTO_MODERN', 'jr nz,.no', '.johtoTileset',
         'ld a,[wCurRegion]', 'cp MAP_REGION_JOHTO', 'jr nz,.no',
-        'ld a,[wCurLocalMapID]', 'cp NUM_JOHTO_MAPS', 'jr nc,.no',
+        'ld a,[wCurLocalMapID]', 'push de', 'ld e,a',
+        'callab GetJohtoActiveSlot', 'ld a,e', 'pop de',
+        'cp JOHTO_INVALID_ACTIVE_SLOT', 'jr z,.no',
         'ld e,a', 'ld d,0', 'ld hl,JohtoRoofGroupForLocalMap',
         'add hl,de', 'ld a,[hl]', 'cp $ff', 'jr z,.no',
     ]
@@ -150,12 +152,13 @@ def audit(root: Path, gold: Path):
     try:
         groups, roof_names, rgb = parse_gold(gold)
         maps = json.loads(read(root/'tools/johto_native_maps.json'))['maps']
-        if not maps or sorted(row['local_id'] for row in maps) != list(range(len(maps))):
-            raise ValueError('native map local IDs are not unique contiguous zero-based IDs')
+        if (not maps or len({row['local_id'] for row in maps}) != len(maps)
+                or [row['local_id'] for row in maps[:23]] != list(range(23))):
+            raise ValueError('native map active slots contain duplicated/moved stable IDs')
         expected=[]
         observed_groups=[]
         families=[]
-        for row in sorted(maps,key=lambda m: m['local_id']):
+        for row in maps:  # compact active slot order
             header=row['header']
             if not re.fullmatch(r'[A-Za-z0-9_]+_h',header):
                 raise ValueError('native map header syntax invalid: '+str(header))
@@ -247,7 +250,8 @@ def audit(root: Path, gold: Path):
         for hook in ('PatchGoldenrodRoofOnConnection','PatchGoldenrodRoofAfterTilesetLoad'):
             if world.count('callba '+hook)!=1:
                 errors.append(f'roof full-load or connection hook missing/duplicated: {hook}')
-        for critical in ('cp MAP_REGION_JOHTO','cp NUM_JOHTO_MAPS','cp $ff'):
+        for critical in ('cp MAP_REGION_JOHTO', 'callab GetJohtoActiveSlot',
+                         'cp JOHTO_INVALID_ACTIVE_SLOT', 'cp $ff'):
             if critical not in gfx_src or critical not in color_src:
                 errors.append('roof map safety guard missing: '+critical)
         if 'CopyVideoData' not in gfx_src or 'FarCopyData2' not in gfx_src:

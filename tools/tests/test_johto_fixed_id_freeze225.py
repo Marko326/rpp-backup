@@ -59,16 +59,16 @@ class FixedIdFreeze225(unittest.TestCase):
         data = json.loads((ROOT / REGISTRY).read_text())
         data['maps'][20]['local_id'] = 19
         failures = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('sparse ID' in e for e in failures), failures)
+        self.assertTrue(any('duplicate stable ID' in e or 'active slot table mismatch' in e or 'historical stable ID' in e for e in failures), failures)
 
-    def test_east_62_cannot_activate_before_sparse_migration(self):
+    def test_east_62_cannot_activate_without_registered_assets_and_router(self):
         data = json.loads((ROOT / REGISTRY).read_text())
         data['maps'].append({
             'local_id': 62, 'local_symbol': 'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
             'header': 'JohtoRoute42EcruteakGate_h',
             'bank': 'BANK(JohtoRoute42EcruteakGate_h)'})
         errors = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('sparse ID 62' in e for e in errors), errors)
+        self.assertTrue(any('active slot table mismatch at stable ID 62' in e for e in errors), errors)
         self.assertTrue(any('missing actual map asset' in e for e in errors), errors)
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):

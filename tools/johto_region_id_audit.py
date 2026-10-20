@@ -15,7 +15,8 @@ INPUTS = (
     'data/map_header_pointers.asm', 'data/map_header_banks.asm',
     'data/map_songs.asm', 'data/hide_show_data.asm',
     'data/johto_map_headers.asm', 'engine/overworld/region_map_lookup.asm',
-    'home/overworld.asm', 'engine/town_map.asm', 'engine/menu/options_menu.asm',
+    'home/overworld.asm', 'engine/town_map.asm',
+    'engine/overworld/johto_town_map_helpers.asm', 'engine/menu/options_menu.asm',
     'engine/overworld/map_name_sign.asm', 'wram.asm', 'main.asm',
     'tools/johto_native_maps.json',
 )
@@ -54,7 +55,7 @@ def check_native_identity(sources, local_symbols, count, tables, gsc):
     if len(maps) != count:
         errors.append(f'Johto identity contract count {len(maps)} != {count}; register new map')
     town = sources['engine/town_map.asm']
-    town_indices = [v.strip() for row in _asm_rows(town, 'JohtoNativeTownMapIndices::',
+    town_indices = [v.strip() for row in _asm_rows(sources['engine/overworld/johto_town_map_helpers.asm'], 'JohtoNativeTownMapIndices::',
                             'JohtoNativeTownMapIndicesEnd::', 'db') for v in row.split(',')]
     block = town.split('JohtoNativeTownMapEntries::', 1)[-1].split('JohtoNativeTownMapEntriesEnd::', 1)[0]
     positions = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*(?:;[^\n]*)?$', block)
@@ -125,9 +126,15 @@ def audit(root=ROOT):
         return errors + ['missing Johto local ID count']
     count = int(n.group(1))
     indices = [int(x) for _, x in locals_]
-    active_locals = [row for row in locals_ if int(row[1]) < count and not row[0].startswith(('JOHTO_RESERVED_', 'JOHTO_UNASSIGNED_'))]
-    if [int(x) for _, x in active_locals] != list(range(count)):
-        errors.append('Johto local map IDs are not contiguous and unique')
+    manifest = json.loads(sources['tools/johto_native_maps.json'])
+    by_name = {name: int(id_) for name, id_ in locals_}
+    active_locals = [(item.get('local_symbol'), str(item.get('local_id')))
+                     for item in manifest.get('maps', []) if isinstance(item, dict)]
+    if (len(active_locals) != count
+            or len({int(i) for _, i in active_locals}) != count
+            or any(by_name.get(name) != int(i) for name, i in active_locals)
+            or [int(i) for _, i in active_locals[:23]] != list(range(23))):
+        errors.append('Johto active slot registry has duplicate, missing, or moved stable IDs')
 
     johto_sets = {
         'header pointers': ('JohtoMapHeaderPointers::', 'JohtoMapHeaderPointersEnd::', r'dw'),
@@ -152,7 +159,7 @@ def audit(root=ROOT):
                   'JohtoNativeGSCMusicEnd::', r'db')
     if len(gsc) != count:
         errors.append(f'native GSC music table count {len(gsc)} != {count}')
-    indices_table = entries(sources['engine/town_map.asm'], 'JohtoNativeTownMapIndices::',
+    indices_table = entries(sources['engine/overworld/johto_town_map_helpers.asm'], 'JohtoNativeTownMapIndices::',
                             'JohtoNativeTownMapIndicesEnd::', r'db')
     # One db row may hold several comma-separated indices.
     nindices = sum(len(row.split(',')) for row in indices_table)
