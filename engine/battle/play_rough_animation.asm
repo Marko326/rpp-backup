@@ -307,30 +307,33 @@ PlayPolishedCrystalPlayRoughAnimation::
 	ret
 
 .PlayScheduledSound
-	; PC uses Bone Club / Double Slap / Sludge Bomb / Karate Chop;
-	; choose closest already-defined Red++ IDs, preserving original 2x cycle.
+	; Match PC's two-pass 0/9/18/24 and 30/39/48/54 audio schedule.
+	; The underlying Gen II SFX tracks are already in crysaudio/sfx.asm.
 	ld a, [wSubAnimCounter]
 	cp 0
-	jr z, .heavy
+	jr z, .boneClub
 	cp 30
-	jr z, .heavy
+	jr z, .boneClub
 	cp 9
-	jr z, .slap
+	jr z, .doubleSlap
 	cp 39
-	jr z, .slap
+	jr z, .doubleSlap
 	cp 18
 	jr z, .sludge
 	cp 48
 	jr z, .sludge
 	cp 24
-	jr z, .heavy
+	jr z, .karateChop
 	cp 54
 	ret nz
-.heavy
+.karateChop
 	ld a, GSSFX_KARATE_CHOP
 	jp PlaySound
-.slap
-	ld a, GSSFX_COMET_PUNCH
+.boneClub
+	ld a, GSSFX_BONE_CLUB
+	jp PlaySound
+.doubleSlap
+	ld a, GSSFX_DOUBLE_SLAP
 	jp PlaySound
 .sludge
 	ld a, GSSFX_SLUDGE_BOMB

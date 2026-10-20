@@ -78,7 +78,16 @@ PlayGoldQuickAttackPhase::
 	jp LoadGoldQuickAttackSpeedLine
 
 .approach
-	ld a,GSSFX_MENU
+	; EXT02 Play Rough uses the PC opening Throw Ball SFX. All other
+	; Quick Attack users keep their original Gold Menu SFX.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .defaultApproachSFX
+	ld a, GSSFX_THROW_BALL
+	jr .playApproachSFX
+.defaultApproachSFX
+	ld a, GSSFX_MENU
+.playApproachSFX
 	call PlaySound
 	callba AnimationHideMonPic
 

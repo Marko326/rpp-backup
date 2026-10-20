@@ -376,3 +376,7 @@ const_value = 1
 	; Pay Day: reuse existing Gold whoosh and two-channel coin jingle.
 	const GSSFX_PAY_DAY_RAZOR_WIND
 	const GSSFX_PAY_DAY_COIN
+	; ANIM-5.62.195: Play Rough reuses three Gold/Crystal SFX already present.
+	const GSSFX_THROW_BALL
+	const GSSFX_BONE_CLUB
+	const GSSFX_DOUBLE_SLAP

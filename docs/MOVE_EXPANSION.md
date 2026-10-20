@@ -1,3 +1,10 @@
+## 195 — EXT02 Play Rough 嬉闹音效复用（正式收口）
+
+- **音效来源与调用**：复用项目内 `Sfx_ThrowBall`、`Sfx_BoneClub`、`Sfx_Doubleslap` 已有轨道，并在 `constants/music_constants.asm`、`crysaudio/rbsfx.asm` 按同序加入可播放入口。共享的 Gold Quick Attack 接近阶段只在当前活动 EXT02 身份下改用 Throw Ball；普通 Quick Attack 等仍播放既有 Menu 音。
+- **两轮节奏**：`engine/battle/play_rough_animation.asm` 按 `0/9/18/24` 与 `30/39/48/54` 帧分别播放 Bone Club、Double Slap、Sludge Bomb、Karate Chop；未改变 194 正式定稿的星星、爱心、HIT、飞散、站位恢复和全套打击事件。
+- **验收依据及边界**：用户提供《195A嬉闹.mp4》与 PC 参考视频，并请求此音效补丁独立收口；对应声音可播放，录像比较未发现需立即恢复旧替代音的阻断问题。PC `anim_sound` 的声像／声道参数尚未映射到本项目 `PlaySound`，两段录像的左右声道结构不同，不能把“相同声音数据及触发帧”误写成“完全还原 PC 混音”；声音表现未来如需微调另开专项。
+- **正式版本与基线**：定稿 `ANIM-5.62.195`，从最新 RPP 导出的 194 干净 HEAD `73aad942ddf339a9b7739edd2c15b4bb8110fd13` 出发。收口阶段只改版本号／注释和长期资料，不增加临时测试学招；Red/Hard 双模式独立链接、新 MAP 与复杂派生声效仍不视为已全面验收。
+
 ## 194 — EXT02 Play Rough 嬉闹专属动画（正式收口）
 
 - **正式效果**：EXT02 通过完整扩展身份使用独立 `PlayRoughExtAnim`，而不借用普通 Karate Chop 的动画；Quick Attack 突进／返回与项目已有 FrameBlock、OAM 和 Cross Chop 画面横震负责执行，星星、爱心及 HIT 采用 Polished Crystal 对应的原始图块。两轮连击和持续飞散的事件组成在 `engine/battle/play_rough_animation.asm`。

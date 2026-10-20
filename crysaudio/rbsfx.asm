@@ -188,3 +188,8 @@ RedSfxHeaderPointers:
 	; Pay Day only: reuse embedded Gold sound sequences without copying SFX data.
 	dbw BANK(Sfx_RazorWind), Sfx_RazorWind
 	dbw BANK(Sfx_PayDay), Sfx_PayDay
+
+	; Play Rough: point to existing Gen II audio data; no copied SFX tracks.
+	dbw BANK(Sfx_ThrowBall), Sfx_ThrowBall
+	dbw BANK(Sfx_BoneClub), Sfx_BoneClub
+	dbw BANK(Sfx_Doubleslap), Sfx_Doubleslap

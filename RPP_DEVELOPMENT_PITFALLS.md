@@ -342,3 +342,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - `FrameBlock` 是图块编号／排列，不保证 VRAM 正好载入相应素材。复用帧块时同步核对 Tileset、复制槽位、完整 8×8 图块拼合、PAL 和 OAM 镜像，否则可能把星星／爱心误显示为冰块或碎片。
 - 多对象动画优先复用本项目 Quick Attack、Energy Ball／Gunk Shot 飞散、DynamicPunch 生命周期、Cross Chop VBlank 横震和原生 `DrawFrameBlock`；HIT 要使用事件变换后的 X/Y（不是上次对象残留的 `wBaseCoordX/Y`）。同时检查每帧 OAM 上限和同扫描线优先级，不靠盲目更换素材修复遮挡。
 - 改动局部标签和主循环前，检查同一全局标签下的重名、局部调用可达性、`ret` 分支及寄存器／栈保存。194C 已由用户选择为最终视觉版本；194D 的额外命中反馈被撤销，清理时不要带回。
+
+## ANIM-5.62.195 — 已有原音效≠已注册为可播放音效；音色、事件节奏和声像要分层核对
+
+- **先查项目全量音效库**：194 嬉闹起初用 Menu、Karate Chop、Comet Punch 近似替代 PC 的 Throw Ball、Bone Club、Double Slap，后来核实 `crysaudio/sfx.asm` 其实已有对应的 `Sfx_ThrowBall`、`Sfx_BoneClub`、`Sfx_Doubleslap` 轨道。今后迁移动画音效时，先同时检索原 SFX 数据、`GSSFX_*` 编号、`crysaudio/rbsfx.asm` 的 Bank+地址指针和现有播放例程；不要把“没有公共音效编号”误判成“没有素材”，也不要先选近似音效。
+- **编号／指针同序**：新增 `GSSFX_*` 常量必须与音效指针表严格一一对应；多声道音效指针指向原始 Sfx 序列，不复制原音轨也不在播放时猜 Bank。加入 3 项会增加指针表 9 字节，不能仅根据旧版 MAP 推定可链接，需查实际新 MAP。不要为了腾位置重构无关代码。
+- **共享阶段局部替换**：Gold Quick Attack 接近／返回被多个招式复用，改开场音需要按当前完整 EXT 身份限制到 EXT02；不应让普通 Quick Attack、其他扩展技能和普通同低字节招式跟着变音。变更前检查 `wExtendedActiveMoveOrdinal` 的来源和清理路径。
+- **区分声音数据、节奏、混音**：PC 的 `anim_sound`/`PlayStereoSFX` 包含声像／立体声位置参数；Red++ 嬉闹现用 `PlaySound`，虽保留 `0/9/18/24`、`30/39/48/54` 的触发时刻和对应音效数据，**不保证**声道控制或声音重叠与 PC 一致。用户 195A/PC 录像提取音轨呈现不同左右声道结构，也可能受到录制路径影响，不能把单个录像的双声道相同误判为游戏全局无立体声。PC 听感略慢不意味着应擅自延长已验收的主动画帧表。
+- **验收与收口**：195A 用户提供了游戏录屏并要求独立清理；正式 195 只保留原声音复用和时序，复用 194 画面定稿，不叠加已撤销的 194D 横震或新的声像实验。用户验收的音效可播放并不等价于全平台所有声道与 Red/Hard 双链接通过。

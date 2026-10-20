@@ -1,3 +1,12 @@
+## ANIM-5.62.195 — EXT02 嬉闹复用 Polished Crystal 对应音效（正式收口）
+
+- [x] **原音效资料复用**：`crysaudio/sfx.asm` 已有 `Sfx_ThrowBall`、`Sfx_BoneClub`、`Sfx_Doubleslap`，此次只新增 `constants/music_constants.asm` 可播放 GSSFX 编号和 `crysaudio/rbsfx.asm` 指针，不重复制作音轨。两表条目必须保持相同顺序。
+- [x] **仅作用于嬉闹 EXT02**：共享快速突进的开场音由 Menu 换为 Throw Ball 时检查活动扩展身份；其他使用 Quick Attack 突进的招式保持原音。嬉闹两轮连击在相对帧 `0/9/18/24` 与 `30/39/48/54` 使用 Bone Club、Double Slap、Sludge Bomb、Karate Chop。194 的星星、爱心、HIT、OAM、横震、伤害、PP 以及学招机制不变。
+- [x] **用户录屏范围**：已提供《195A嬉闹.mp4》与《PC版嬉闹.mp4》并进行了视频／音轨对照，说明 195A 在受测游戏中能正常播放对应流程；用户此轮要求单独收口。**不宣称** PC 原版立体声声像及逐声道混音已经等价，也不宣称全平台、Red/Hard 双 ROM 或更多派生路径完成专项验收。
+- [x] **最终定稿**：开发版本 `ANIM-5.62.195A` 去掉字母，正式版本为 `ANIM-5.62.195`。本次收口只整理版本文本、文档与源码注释，不改变已经录像确认能执行的 195A 音效调用指令。没有新增／遗留临时授招或测试入口。
+- [ ] **记录但不阻断本轮**：PC `anim_sound`／`PlayStereoSFX` 含声像控制，而此处仍为 Red++ `PlaySound`；录像中的双声道一致不能单独判定全局引擎没有立体声。开场听感略快不等于 60 帧主连击事件表需要修改；如以后专项调音，另起版本。链接器对新增 9 字节音效指针的实际 Bank 布局与新 MAP 尚未由本环境独立核验。
+- **正式 Git 基线**：最新 RPP 导出记录为分支 `常规功能备份`、干净 HEAD `73aad942ddf339a9b7739edd2c15b4bb8110fd13`（`ANIM-5.62.194`）。本轮三件套为 194→195 的拟提交内容；不代表已经 Git Commit 或 Push。
+
 ## ANIM-5.62.194 — EXT02 嬉闹专属战斗动画（正式收口）
 
 - [x] **EXT 身份专用动画**：EXT02 Play Rough 根据当次活动扩展序号走 `PlayRoughExtAnim`；普通同低字节 Karate Chop 保持原动画。复用现有 Quick Attack 突进／返回、FrameBlock/OAM、跨 Bank 入口及 Cross Chop 横震机制，不改招式威力、PP 或永久四槽。
