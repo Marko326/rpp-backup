@@ -7091,6 +7091,12 @@ JumpMoveEffect:
 	ld b, $1
 	ret
 
+; ANIM-5.62.197: seven-byte gateway fits old Bank $0F's 7-byte
+; tail slack. The dual-effect body stays in existing roomy Bank $3E.
+PlayRoughDualEffectGateway:
+	callab ResolvePlayRoughDualAttackEffect
+	ret
+
 _JumpMoveEffect:
 	ld a, [H_WHOSETURN]
 	and a
@@ -7177,7 +7183,7 @@ MoveEffectPointerTable:
 	 dw ReflectLightScreenEffect  ; REFLECT_EFFECT
 	 dw PoisonEffect              ; POISON_EFFECT
 	 dw ParalyzeEffect            ; PARALYZE_EFFECT
-	 dw StatModifierDownEffect    ; ATTACK_DOWN_SIDE_EFFECT
+	 dw PlayRoughDualEffectGateway ; ATTACK_DOWN_SIDE_EFFECT
 	 dw StatModifierDownEffect    ; DEFENSE_DOWN_SIDE_EFFECT
 	 dw StatModifierDownEffect    ; SPEED_DOWN_SIDE_EFFECT
 	 dw StatModifierDownEffect    ; SPECIAL_DOWN_SIDE_EFFECT

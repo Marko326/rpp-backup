@@ -97,6 +97,21 @@ SelfStatAfterDamageMoveEffects:
 ; encoding probability into the effect ID. A zero table value means guaranteed;
 ; unlisted legacy users retain Red's old 85/256 (~33%) fallback. Carry = success.
 RollStatSideEffectChance:
+	; EXT02 shares BITE's legacy animation ID, NOT Karate Chop's move
+	; effect odds. Its primary Attack-down effect has its own 10% roll.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .legacyMove
+	; Damage to an intact or just-broken Substitute cannot lower Attack.
+	ld a, [wMoveDidntMiss]
+	bit 7, a
+	jr nz, .blockedBySubstitute
+	ld a, $1a ; 26/256 (~10%); same threshold as other modern effects
+	jr .roll
+.blockedBySubstitute
+	and a ; carry clear, so the primary effect fails without changing stats
+	ret
+.legacyMove
 	call GetStatSideEffectMoveID
 	ld c, a
 	ld hl, StatSideEffectChanceTable

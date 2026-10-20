@@ -5,6 +5,22 @@
 ; Store the choice in wAnimationType because the bank-switch trampoline
 ; does not preserve returned A. Status/miss reactions are filtered by the caller.
 SelectGlobalDamageFeedbackType::
+	; ANIM-5.62.197: the new ATTACK_DOWN_SIDE_EFFECT changes the generic
+	; feedback type, but EXT02's approved 194C/196A visual must stay intact.
+	; Keep its original no-side-effect hit reaction; the dedicated renderer
+	; already includes its own horizontal shake. Do not bring back 194D.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .otherMoves
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, 4 ; player: blink target, as with old NO_ADDITIONAL_EFFECT
+	jr z, .keepPlayRoughFeedback
+	ld a, 1 ; enemy: normal vertical reaction
+.keepPlayRoughFeedback
+	ld [wAnimationType], a
+	ret
+.otherMoves
 	ld a,[H_WHOSETURN]
 	and a
 	jr z,.regular

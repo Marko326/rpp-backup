@@ -184,8 +184,55 @@ RollStatusSideEffectFar:
 	cp d ; keep carry for the Bank F caller
 	ret
 
+; ANIM-5.62.197: the Bank F effect pointer for ATTACK_DOWN_SIDE_EFFECT
+; lands here via a seven-byte cross-bank gateway. Resolve the standard stat
+; drop for every legacy user first; only EXT02 adds a *separate* confusion
+; roll. Do not modify a general-purpose status/FX engine or move slot data.
+ResolvePlayRoughDualAttackEffect::
+	callab StatModifierDownEffect
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	ret nz
+	; A substitute that was up when damage landed blocks both effects,
+	; even if the attack broke it and cleared the current Substitute bit.
+	ld a, [wMoveDidntMiss]
+	bit 7, a
+	ret nz
+	ld hl, wPlayerMoveEffect
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .checkEffect
+	ld hl, wEnemyMoveEffect
+.checkEffect
+	ld a, [hl]
+	cp ATTACK_DOWN_SIDE_EFFECT
+	ret nz
+	push af
+	ld a, CONFUSION_SIDE_EFFECT
+	ld [hl], a
+	; Uses the existing confusion handler and a new independent RNG draw.
+	callab ConfusionSideEffect
+	; Cross-bank sound/text routines may overwrite HL; rebuild the pointer.
+	ld hl, wPlayerMoveEffect
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .restoreEffect
+	ld hl, wEnemyMoveEffect
+.restoreEffect
+	pop af
+	ld [hl], a
+	ret
+
 ; Carry set when the confusion side effect succeeds. A is not returned.
 RollConfusionSideEffectFar:
+	; EXT02 has a separate 10% confusion roll, independent from
+	; its Attack-down roll. Reuse the shared confusion effect handler.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .legacyMove
+	ld d, $1a ; 26/256 (~10%)
+	jr .modernHit ; includes broken-Substitute guard
+.legacyMove
 	call GetStatSideEffectMoveID
 	ld d, $19 ; unchanged ~10% for Gen I moves / other callers
 	cp WATER_PULSE

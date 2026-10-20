@@ -1,3 +1,9 @@
+## ANIM-5.62.197 — EXT 多重追加效果与固定 Bank 余量
+
+- 单一 `MoveEffectPointerTable` 效果字段不足以表达两个独立判定：EXT02 先复用攻击下降通用处理，再按完整 `wExtendedActiveMoveOrdinal` 执行独立混乱判定；保留效果字段，不允许普通低字节同号招式串入。
+- Bank `$0F` 旧 195 MAP 仅余 7 字节，入口用 7 字节 `callab` 网关，主体在 `$3E`；**旧 MAP 不证明 197 已链接**。注意 `wMoveDidntMiss` 的替身命中标记及远调用可能改写 HL／A。
+- 增加 stat-down 效果可能改变普通伤害反馈类型，EXT02 必须保留原动画的受击反馈和既有横震，不重引 194D。
+
 # RPP Development Pitfalls
 
 This file is the persistent, Git-tracked record of repeatable development failures and prevention rules for this branch.

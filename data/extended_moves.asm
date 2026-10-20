@@ -4,7 +4,8 @@
 ExtendedMoves::
 	move VINE_WHIP, NO_ADDITIONAL_EFFECT, 120, GRASS, 85, 10
 	; MOVE-5.62.173: second distinct identity; pilot Bellsprout learnset removed.
-	move BITE, NO_ADDITIONAL_EFFECT, 90, FAIRY, 90, 10
+	; ANIM-5.62.197: EXT02 Play Rough: 10% Attack -1 plus independent 10% confusion.
+	move BITE, ATTACK_DOWN_SIDE_EFFECT, 90, FAIRY, 90, 10
 	; MOVE-5.62.171: placeholder identities 03-10. They deliberately reuse
 	; simple legacy animation IDs and NO_ADDITIONAL_EFFECT; final balance is
 	; outside this capacity experiment.
