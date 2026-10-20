@@ -26,6 +26,11 @@ DEF JOHTO_ROUTE_35_LOCAL_ID EQU 17
 DEF JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID EQU 18
 DEF JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID EQU 19
 DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
+
+; Frozen stable local IDs for EVERY remaining planned Gold/Johto map.
+; This only declares symbols; current active maps remain 0..20.
+INCLUDE "constants/johto_fixed_map_ids.asm"
+
 DEF NUM_JOHTO_MAPS EQU 21
 
 ; Native Johto local IDs >= 8 share one runtime compatibility handle.
