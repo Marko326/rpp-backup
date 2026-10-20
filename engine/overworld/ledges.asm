@@ -25,9 +25,14 @@ HandleLedges:
 	cp MAP_REGION_JOHTO
 	ret nz
 	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jr z, .route37HopTable
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	ret nz
 	ld hl, .ruinsHops
+	jp .modernHopLookup
+.route37HopTable
+	ld hl, .route37Hops
 	jp .modernHopLookup
 .johtoLegacy
 	; Routes 29/30 convert Gold cliffs into dedicated
@@ -171,6 +176,16 @@ HandleLedges:
 	db 30, 10, PLAYER_DIR_DOWN
 	db 32, 10, PLAYER_DIR_DOWN
 	db 33, 10, PLAYER_DIR_DOWN
+	db $ff
+
+; Route37 has six Gold HOP_DOWN takeoffs and safe two-cell landings.
+.route37Hops
+	db 12, 2, PLAYER_DIR_DOWN
+	db 13, 2, PLAYER_DIR_DOWN
+	db 4, 6, PLAYER_DIR_DOWN
+	db 5, 6, PLAYER_DIR_DOWN
+	db 8, 6, PLAYER_DIR_DOWN
+	db 9, 6, PLAYER_DIR_DOWN
 	db $ff
 
 ; Ruins Outside: 16 physically valid Gold directed jumps. The upper

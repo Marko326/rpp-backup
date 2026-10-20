@@ -28,10 +28,10 @@ DEF JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID EQU 19
 DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
 
 ; Frozen stable local IDs for EVERY remaining planned Gold/Johto map.
-; This only declares symbols; current active maps remain 0..20.
+; Frozen IDs 22+ are not activated; Route37 ID21 is now registered.
 INCLUDE "constants/johto_fixed_map_ids.asm"
 
-DEF NUM_JOHTO_MAPS EQU 21
+DEF NUM_JOHTO_MAPS EQU 22
 
 ; Native Johto local IDs >= 8 share one runtime compatibility handle.
 ; They must never consume more legacy bytes or reuse an old Kanto map ID.
@@ -72,6 +72,8 @@ DEF JOHTO_GOLDENROD_CITY_WIDTH EQU 20
 DEF JOHTO_GOLDENROD_CITY_HEIGHT EQU 18
 DEF JOHTO_ROUTE_36_WIDTH EQU 30
 DEF JOHTO_ROUTE_36_HEIGHT EQU 9
+DEF JOHTO_ROUTE_37_WIDTH EQU 10
+DEF JOHTO_ROUTE_37_HEIGHT EQU 9
 DEF JOHTO_ROUTE_35_WIDTH EQU 10
 DEF JOHTO_ROUTE_35_HEIGHT EQU 18
 

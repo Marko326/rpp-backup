@@ -3330,12 +3330,19 @@ JohtoVioletRoofs_GFX: INCBIN "gfx/tilesets/johto_violet_roofs.2bpp"
 JohtoAzaleaRoofs_GFX: INCBIN "gfx/tilesets/johto_azalea_roofs.2bpp"
 ; R36-5.62.218: Violet City and Route36 connection strips must live
 ; in the same ROM bank: LoadTileBlockMap reads strips in the CURRENT bank.
-; Route35 south is open; Route37 and the unfinished gates remain sealed.
+; Route35 south and Route37 north open; unfinished gates remain sealed.
 SECTION "Johto Route36 Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute36.asm"
 INCLUDE "data/mapObjects/JohtoRoute36.asm"
 INCLUDE "scripts/JohtoRoute36.asm"
 JohtoRoute36Blocks: INCBIN "maps/JohtoRoute36.blk"
+
+; Route37 must share JOHTO_ROM_BANK with Route36 for border tile copying.
+SECTION "Johto Route37 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute37.asm"
+INCLUDE "data/mapObjects/JohtoRoute37.asm"
+INCLUDE "scripts/JohtoRoute37.asm"
+JohtoRoute37Blocks: INCBIN "maps/JohtoRoute37.blk"
 
 ; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
@@ -3568,6 +3575,8 @@ JohtoNativeCollisionFence::
 	jr z, .route35Native
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jr z, .route36Native
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jr z, .route37Native
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33Native
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -3589,6 +3598,9 @@ JohtoNativeCollisionFence::
 	ret
 .route36Native
 	callba JohtoRoute36EdgeFence
+	ret
+.route37Native
+	callba JohtoRoute37EdgeFence
 	ret
 .route35Native
 	callba JohtoRoute35EdgeFence

@@ -1152,6 +1152,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_ROUTE36 ; Route35-Goldenrod indoor gate, Gold Route36 theme
 	db MUSIC_GBP_GSC_ROUTE36 ; Route36 Ruins gate
 	db MUSIC_GBP_GSC_UNION_CAVE ; Ruins of Alph Outside
+	db MUSIC_GBP_GSC_ROUTE37 ; Route37
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

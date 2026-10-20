@@ -87,7 +87,7 @@ JohtoAzaleaEdgeFence::
 	ret
 
 ; R35-5.62.223: Route36 east y8/9 remains open, south x17 reaches Route35.
-; Route37 north and all other borders are still closed.
+; Route37 north only x25..32; all other unbuilt borders sealed.
 JohtoRoute36EdgeFence::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_RIGHT
@@ -108,7 +108,12 @@ JohtoRoute36EdgeFence::
 .north
 	ld a, [wYCoord]
 	and a
-	jr z, .block
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp 25
+	jr c, .block
+	cp 33
+	jr nc, .block
 	jr .clear
 .west
 	ld a, [wXCoord]
@@ -137,11 +142,23 @@ JohtoRoute36EdgeFence::
 JohtoRoute36CanStepAhead::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_36_LOCAL_ID
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .checkDown
+	ld a, [wYCoord]
+	and a
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 25
+	jr c, .normal
+	cp 33
+	jr c, .allowed
+	jr .normal
+.checkDown
 	cp PLAYER_DIR_DOWN
 	jr nz, .checkEast
 	ld a, [wYCoord]
@@ -207,6 +224,80 @@ JohtoRoute36CanStepAhead::
 
 JohtoRoute36BlockedRows::
 	INCBIN "maps/JohtoRoute36.blocked_mask.bin"
+
+; Route37 Gold 20x18 per-quadrant mask; north Ecruteak stays closed.
+JohtoRoute37EdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_37_WIDTH * 2 - 1
+	jr nc, .block
+	jr .clear
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .block
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .block
+	jr .clear
+.south
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_37_HEIGHT * 2 - 1
+	jr c, .clear
+	ld a, [wXCoord]
+	cp 5
+	jr c, .block
+	cp 13
+	jr nc, .block
+.clear
+	and a
+	ret
+.block
+	scf
+	ret
+
+JohtoRoute37CanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_37_HEIGHT * 2 - 1
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 5
+	jr c, .normal
+	cp 13
+	jr c, .allowed
+.normal
+	ld hl, JohtoRoute37BlockedRows
+	ld d, JOHTO_ROUTE_37_WIDTH * 2
+	ld e, 3
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute37BlockedRows::
+	INCBIN "maps/JohtoRoute37.blocked_mask.bin"
 
 ; R35-5.62.223: Gold 20x36 collision mask, no HOP cells.
 ; North x17 is the only active border; unfinished gates are sealed.
@@ -1448,6 +1539,8 @@ JohtoNativeCanStepAhead::
 	jr z, .route35
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jr z, .route36
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jr z, .route37
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1473,6 +1566,9 @@ JohtoNativeCanStepAhead::
 	jr .handled
 .route36
 	call JohtoRoute36CanStepAhead
+	jr .handled
+.route37
+	call JohtoRoute37CanStepAhead
 	jr .handled
 .route33
 	call JohtoRoute33CanStepAhead

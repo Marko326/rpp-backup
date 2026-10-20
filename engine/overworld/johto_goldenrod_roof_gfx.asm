@@ -49,6 +49,7 @@ JohtoRoofGroupForLocalMap:
 	db $ff ; 12 Route35GoldenrodGate, indoor, no roof group
 	db $ff ; 13 Ruins gate, indoor
 	db $ff ; 14 Ruins outside, outdoor map with no roof sprites
+	db 2 ; 15 Route37, Gold Violet group 10
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

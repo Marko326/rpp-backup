@@ -491,6 +491,9 @@ SelectNativeMapConnection::
 	ret
 
 NativeRegionConnectionTargets::
+	; Gold Route36 north(0) <-> Route37 south(1), stable local IDs 16 and 21.
+	db JOHTO_ROUTE_36_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_37_LOCAL_ID
+	db JOHTO_ROUTE_37_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
 	; R35-5.62.223: Route36 south <-> Route35 north; native/local IDs disambiguate $FC.
 	db JOHTO_ROUTE_36_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
 	db JOHTO_ROUTE_35_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
