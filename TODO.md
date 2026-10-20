@@ -1,3 +1,11 @@
+## ANIM-5.62.196 — EXT02 嬉闹慢速动画（正式收口）
+
+- [x] 嬉闹主体沿用 Gunk Shot 的 3/4 逻辑帧推进：73 逻辑帧映射至 98 VBlank，粒子轨迹插值，音效仅按逻辑事件播放一次；开场突进与返回不变。
+- [x] 保留 194C 星星、爱心、HIT、OAM 次序、横震和 195 原音效，不恢复 194D 额外命中反馈；不修改 Gunk Shot。
+- [x] 用户提供 195A／196A 双方向录像用于对照，196A 的慢速动画已进入后续 196B 实机测试；无新的异常反馈。
+- [ ] Red/Hard 独立链接、新 MAP、极端 OAM/同扫描线与复杂派生使用仍未逐项核实。
+- **拟提交基线**：已导出干净 HEAD `550e6cd5`（195）；196 与后续双追加效果分开提交，AI 未执行 Git 操作。
+
 ## ANIM-5.62.195 — EXT02 嬉闹复用 Polished Crystal 对应音效（正式收口）
 
 - [x] **原音效资料复用**：`crysaudio/sfx.asm` 已有 `Sfx_ThrowBall`、`Sfx_BoneClub`、`Sfx_Doubleslap`，此次只新增 `constants/music_constants.asm` 可播放 GSSFX 编号和 `crysaudio/rbsfx.asm` 指针，不重复制作音轨。两表条目必须保持相同顺序。

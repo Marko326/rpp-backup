@@ -16,7 +16,10 @@ PLAY_ROUGH_EVENT_SIZE EQU 5
 PLAY_ROUGH_PARTICLE_LIFE EQU 16 ; PC Rock Smash 0x40 -> 0x30
 PLAY_ROUGH_FRESH_FRAMES EQU 3 ; one PC birth every three frames
 PLAY_ROUGH_HIT_LIFE EQU 6 ; PC Frameset_01: six displayed frames
-PLAY_ROUGH_TOTAL_FRAMES EQU 73 ; last object at f57, 16-frame life
+PLAY_ROUGH_TOTAL_FRAMES EQU 73 ; last object at f57, 16 logical frames
+; ANIM-5.62.196: reuse Gunk Shot's 3 logical frames / 4 VBlanks pacing.
+; Keep all original event births, lifetimes and PC motion samples in logical time.
+PLAY_ROUGH_SLOW_TOTAL_FRAMES EQU (PLAY_ROUGH_TOTAL_FRAMES * 4 + 2) / 3 ; 98
 
 PlayPolishedCrystalPlayRoughAnimation::
 	xor a
@@ -62,8 +65,10 @@ PlayPolishedCrystalPlayRoughAnimation::
 	; Reuse Cross Chop's stable VBlank-latched whole-screen shake.
 	callba GoldBattleHorizontalShakeBegin
 	xor a
-	ld [wSubAnimCounter], a
+	ld [wBattleAnimStageCarryTimer], a ; physical VBlank within this renderer
 .frameLoop
+	ld a, [wBattleAnimStageCarryTimer]
+	call .GetStretchedFrame ; wSubAnimCounter = logical animation time
 	call .PlayScheduledSound
 	call .SetShake
 
@@ -83,25 +88,42 @@ PlayPolishedCrystalPlayRoughAnimation::
 
 	call DelayFrame
 	call ClearSprites
-	ld hl, wSubAnimCounter
+	ld hl, wBattleAnimStageCarryTimer
 	inc [hl]
 	ld a, [hl]
-	cp PLAY_ROUGH_TOTAL_FRAMES
+	cp PLAY_ROUGH_SLOW_TOTAL_FRAMES
 	jp c, .frameLoop
 
 	callba GoldBattleHorizontalShakeEnd
+	; This scratch is shared with the staged-animation runner. Do not let the
+	; physical-time value leak into the following Quick Attack RETURN phase.
+	xor a
+	ld [wBattleAnimStageCarryTimer], a
 	xor a
 	ld [wFBMode], a
 	callba _LoadAnimationTilesetPalettes
 	ret
 
+.GetStretchedFrame
+	; Gunk Shot's floor(physical * 3 / 4), with no dropped VBlanks.
+	; physical 4k..4k+3 maps to logical 3k,3k,3k+1,3k+2.
+	ld b, a
+	add 3
+	srl a
+	srl a
+	ld c, a
+	ld a, b
+	sub c
+	ld [wSubAnimCounter], a
+	ret
+
 .SetShake
 	; Cross Chop / Aeroblast VBlank-latched Window shake already enabled.
-	ld a, [wSubAnimCounter]
+	ld a, [wBattleAnimStageCarryTimer]
 	; PC's horizontal-shake effect continues beyond the 60-frame
 	; spawn loop. Keep it active through the late flying particles,
 	; then stage a neutral WX for two VBlanks before disarming.
-	cp PLAY_ROUGH_TOTAL_FRAMES - 2
+	cp PLAY_ROUGH_SLOW_TOTAL_FRAMES - 2
 	jr nc, .neutralShake
 	and 1
 	jr nz, .rightShake
@@ -241,6 +263,7 @@ PlayPolishedCrystalPlayRoughAnimation::
 	add hl, hl ; 16
 	add hl, hl ; 32 bytes per trajectory
 	ld a, e
+	push af ; retain logical age to guard the last source sample
 	add a ; two bytes per sample
 	ld e, a
 	ld d, 0
@@ -249,7 +272,60 @@ PlayPolishedCrystalPlayRoughAnimation::
 	add hl, de
 	ld a, [hli] ; signed X delta
 	ld b, a
-	ld c, [hl] ; signed Y delta
+	ld a, [hli] ; signed Y delta; HL now points to next sample
+	ld c, a
+	pop af ; logical age 0..15
+	cp PLAY_ROUGH_PARTICLE_LIFE - 1
+	jr z, .motionReady ; no sample at age 16
+	ld a, [wBattleAnimStageCarryTimer]
+	and 3
+	jr z, .motionReady ; exact source sample every fourth VBlank
+
+	; Same interpolation fractions as Gunk Shot: phase 1 = 3/4 to next
+	; sample, phase 2 = 1/2, phase 3 = 1/4. No new motion table.
+	ld a, [hli]
+	ld d, a ; next signed dx
+	ld a, [hl]
+	ld e, a ; next signed dy
+	ld a, b
+	add d
+	sra a
+	ld h, a ; mid dx
+	ld a, c
+	add e
+	sra a
+	ld l, a ; mid dy
+	ld a, [wBattleAnimStageCarryTimer]
+	and 3
+	cp 2
+	jr z, .halfMotion
+	cp 1
+	jr z, .threeQuarterMotion
+	; Phase 3: average current and midpoint (1/4 toward next).
+	ld a, b
+	add h
+	sra a
+	ld b, a
+	ld a, c
+	add l
+	sra a
+	ld c, a
+	jr .motionReady
+.threeQuarterMotion
+	; Phase 1: average midpoint and next (3/4 toward next).
+	ld a, d
+	add h
+	sra a
+	ld b, a
+	ld a, e
+	add l
+	sra a
+	ld c, a
+	jr .motionReady
+.halfMotion
+	ld b, h
+	ld c, l
+.motionReady
 	ld a, [wBaseCoordX]
 	ld d, a
 	ld a, [wBaseCoordY]
@@ -307,8 +383,13 @@ PlayPolishedCrystalPlayRoughAnimation::
 	ret
 
 .PlayScheduledSound
-	; Match PC's two-pass 0/9/18/24 and 30/39/48/54 audio schedule.
-	; The underlying Gen II SFX tracks are already in crysaudio/sfx.asm.
+	; Preserve the same eight logical hit events while stretching real time.
+	; Phase 1 repeats the preceding logical tick (4k+1 == 4k).
+	; Skip it to prevent replaying an identical SFX a second time.
+	ld a, [wBattleAnimStageCarryTimer]
+	and 3
+	cp 1
+	ret z
 	ld a, [wSubAnimCounter]
 	cp 0
 	jr z, .boneClub

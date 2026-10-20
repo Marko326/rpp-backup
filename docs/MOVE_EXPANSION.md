@@ -1,3 +1,8 @@
+## ANIM-5.62.196 — EXT02 嬉闹慢速动画
+
+- 复用 Gunk Shot 的每 4 VBlank 推进 3 逻辑帧，主体 73→98 帧；轨迹插值与音效去重，开场突进／返回不变。
+- 保留原 20 条粒子事件、10 条 HIT、194C 优先级／横震与 195 原音效。用户提供双方动画录像对照；全量 ROM／MAP 仍待独立核验。
+
 ## 195 — EXT02 Play Rough 嬉闹音效复用（正式收口）
 
 - **音效来源与调用**：复用项目内 `Sfx_ThrowBall`、`Sfx_BoneClub`、`Sfx_Doubleslap` 已有轨道，并在 `constants/music_constants.asm`、`crysaudio/rbsfx.asm` 按同序加入可播放入口。共享的 Gold Quick Attack 接近阶段只在当前活动 EXT02 身份下改用 Throw Ball；普通 Quick Attack 等仍播放既有 Menu 音。
