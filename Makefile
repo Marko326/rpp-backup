@@ -17,7 +17,7 @@ pokeblue_obj := audio_blue.o main_blue.o text_blue.o wram_blue.o
 .SECONDEXPANSION:
 # Suppress annoying intermediate file deletion messages.
 .PRECIOUS: %.2bpp
-.PHONY: all clean cleanpic map red blue compare tools johto-map-audit
+.PHONY: all clean cleanpic map red blue compare tools johto-map-audit johto-id-preflight
 
 roms := patches/rppred.gbc patches/rppblue.gbc
 maps := $(roms:.gbc=.map)
@@ -48,15 +48,22 @@ johto-map-audit:
 	python3 tools/johto_map_release_audit.py --rpp . --gold "$(JOHTO_GOLD_SOURCE)"
 
 
+# Local-ID preflight needs no external Gold checkout and does not build a ROM.
+johto-id-preflight:
+	python3 tools/johto_fixed_id_audit.py --project .
+
 # Build tools when building the rom.
 # This has to happen before the rules are processed, since that's when scan_includes is run.
-ifeq (,$(filter clean cleanpic tools johto-map-audit,$(MAKECMDGOALS)))
+ifeq (,$(filter clean cleanpic tools johto-map-audit johto-id-preflight,$(MAKECMDGOALS)))
 $(info $(shell $(MAKE) -C tools))
 endif
 
 
 
 %.asm: ;
+
+# All ROM object compilation must wait for the fixed-ID ownership gate.
+$(pokered_obj) $(pokeblue_obj): | johto-id-preflight
 
 %_red.o: dep = $(shell tools/scan_includes $(@D)/$*.asm)
 $(pokered_obj): %_red.o: %.asm $$(dep)

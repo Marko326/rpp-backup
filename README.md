@@ -2,7 +2,9 @@
 
 > **RPP 金银地图开发必读**：新增或修改门房之前，先读 [门房专用防重犯清单](docs/JOHTO_GATEHOUSE_READ_FIRST.md)；入口合同由 `tools/johto_door_onboarding_audit.py` 强制检查。项目总规范见实际 ZIP 的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`（自动导出资料可能不入 Git）。
 
-This is based on the [**Pokémon Red Disassembly**][pokered]
+> **城都东西双线固定编号（必读）**：游戏源码 `constants/region_map_constants.asm` 已 `INCLUDE "constants/johto_fixed_map_ids.asm"`，在源码中预留 ID `21～221`，既有 `0～20` 不改。编号／Gold 对照／归属清单：`tools/johto_fixed_ids.csv`、`tools/johto_gold_map_reference.csv`；实施规范：`docs/JOHTO_FIXED_IDS_AND_BRANCH_POLICY_zh.md`。A/B 不得改公用编号文件；激活任何地图前执行 `make johto-id-preflight`，构建前也有自动门禁。**预留 ≠ 地图上线；高 ID 目前仍不能跳号启用。**
+
+This is based the [**Pokémon Red Disassembly**][pokered]
 
 Red++ serves as an updated version of Pokémon Red.
 

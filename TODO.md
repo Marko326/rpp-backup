@@ -1170,3 +1170,18 @@ This section preserves the original author's roadmap. Status markers reflect the
 - [x] 将 Gold 原始 Warp/紧凑 block 映射、双向注册及自动步进后 mask 落点加入静态门禁；地图边框两条加载路径、色板隔离保持既有门禁。
 - [ ] 有 RGBDS 0.5.2 环境时编译并留存新的 `rppred.map`，核对 ROM0 余量；静态 PASS 不等于 ROM 构建 PASS。
 - [ ] 用户确认下一座新开发门房后，再按完整的进入/离开/立即掉头/侧擦/画面加载等实机证据收口；禁止把本次工具加固登记成新功能已实机通过。
+
+### 城都固定 ID 已固化到 ASM（基线 BANK-5.62.225，未启用新地图）
+
+- [x] 在 `constants/johto_fixed_map_ids.asm` 固定 Route37=21、EcruteakCity=22、西线 A=23..61、东线 B=62..101、共用 C=102..191、后期 C=192..221；原始 0..20 不改。`constants/region_map_constants.asm` 已 INCLUDE，ASM 与 `tools/johto_fixed_ids.csv` 一一审计。
+- [x] 正常 Makefile ROM 对象编译前执行 `johto-id-preflight`；统一发布审计和负向测试检查抢号、取消 INCLUDE、绕过构建门禁等。仅声明符号，不新增 ROM 数据、不增加有效地图数量。
+- [ ] 接入下一张 Route37（21），随后 EcruteakCity（22），保留未开放路口封闭；由用户编译 ROM/MAP 并手机验收。
+- [ ] **东西分线前必须做** stable local ID 到 compact active slot 稀疏映射和所有相关表/调用者迁移，解决 64/128 偏移越界及无效 ID 判活；未完成前东线 62 不得作为真实已登记地图上线。不要把 `NUM_JOHTO_MAPS=21` 直接改为 222。
+- [ ] 原 BANK-5.62.225 菜单迁 Bank $01 后的背包交换、PC、商店、战斗道具和音乐手机专项仍待完整验收；历史 SafariZoneBeta 统一审计 FAIL 保留。
+
+### 固定 ID 双提交清理完成范围（BANK-5.62.225，不改变地图实现）
+
+- [x] 222 个固定 local ID 的 ASM 预留及源内枚举；0–20 不变。统一审核、Gold 368 原始编号表和分线文件归属检查均在仓库中。
+- [x] 清理误导性审计成功提示：无 Gold 参数时仅核对冻结参考表；实际原版交叉验证须提供 `--gold`。专项测试和统一审计必选测试清单保持同步。
+- [ ] 下一张开发地图仍为 Route37(ID21)，随后 EcruteakCity(ID22)；分线前完成 active-slot 兼容层，东线 ID62 不得提前启用。
+- [ ] 用户 ROM/MAP + 手机专项未验收；历史 SafariZoneBeta 统一审计 FAIL 不屏蔽。

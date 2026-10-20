@@ -618,3 +618,17 @@ P16B 只在 Warp 完整加载 `LoadMapData` 后补边；从 33 号道路直接�
 - 从 `.224` 两段新旧视频不能得出全部逐帧操作等价。室内图块布局可以比 Gold、到达步进 mask 可静态检查，角色是否偶发卡门仍要真实 ROM/模拟器按键测试。
 - 顶部/底部树林残留发生在外部 map border 的 **full load + ordinary connection** 两条路径；缺任何一条必须失败，不能只检查图块素材存在。
 - ROM0 新增需求是独立硬限制；门房开发不得凭 Python 绿灯直接发 ROM 候选，RGBDS 链接与 MAP 证据必须有，缺少构建环境则明确标记未编译。本轮门房审计工具只修改 Python/JSON/文档，游戏指令没有变化。
+
+### 城都固定 ID 预留与活跃地图切勿混用（ASM 硬合同）
+
+- `constants/johto_fixed_map_ids.asm` 已由 `constants/region_map_constants.asm` INCLUDED，集中声明 21..221 的 **永久预留** local ID。原来 0..20 的 `JOHTO_*_LOCAL_ID` 保持原定义；不要在区域支线或另一文件重复 DEF，也不要按照开发顺序重排。
+- `DEF JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID EQU 62` 只表示编号属东线，并不表示地图已经安装。`NUM_JOHTO_MAPS`、Johto Header/Bank/别名/音乐表当前仍是紧凑 21 行；只改 ID 常量绝不能直接允许跳号进地图。任何新增 Warp、Save/Continue 或 Town Map 行都必须走 C 的正式登记与稀疏映射审计。
+- 正常 `make` ROM 对象编译前依赖 `johto-id-preflight`；离线可执行 `make johto-id-preflight`。Gold 368 项对照在 `tools/johto_gold_map_reference.csv`；不能把 Gold (mapgroup,map number) 或 `$FC` 兼容句柄拿来做固定 local ID。
+- 动态读取 active table 的 `LoadTownMapEntry` (4-byte stride) 和 `GetJohtoNativeMapSong` (2-byte stride) 在未来活跃槽达到 64/128 时分别有 8 位偏移回绕风险；完成稀疏映射的前置任务时统一处理。当前变更没有迁移任何运行时数组，不是实机验收报告。
+
+
+### 固定 ID 清理后的防误报约定（BANK-5.62.225）
+
+- `johto_fixed_id_audit.py` 未提供 `--gold` 时只验证仓库内 Gold 368 项 CSV 的冻结完整性，绝不写“外部 Gold 源码已再次核对”。正式原版复核带 `--gold`。两条路径有不同成功输出和负向测试。
+- 固定 ID 常量属于编译源码，但不是注册表项；不要为了让 Route42(ID62) 被加载而把未开发 23..61 伪装成空 Header，也不得擅改 `$FC/$FE/$FF` 兼容句柄。所有 runtime 稀疏索引改造须先做独立功能补丁和手机回归。
+- A/B 文件白名单校验要对实际改动清单显式运行；正常 Makefile 预检只保证编号合同，不会自动检测 Git 分支角色。提交前由 C 验证每次增量的文件归属。

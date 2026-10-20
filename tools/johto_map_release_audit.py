@@ -16,6 +16,7 @@ from johto_gold_door_audit import inspect as gold_door_inspect
 from johto_door_onboarding_audit import audit as door_onboarding_audit
 from johto_gatehouse_behavior_audit import audit as gatehouse_behavior_audit
 from johto_region_id_audit import audit as region_audit
+from johto_fixed_id_audit import audit as fixed_id_audit
 from johto_warp_arrival_audit import audit as warp_audit
 from johto_town_map_bike_audit import audit as town_bike_audit
 from johto_field_moves_preflight import audit as field_move_audit
@@ -61,7 +62,7 @@ test_johto_indoor_stage3 test_johto_indoor_stage4
 test_johto_indoor_stage5 test_johto_indoor_stage6
 test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
 test_johto_mapname158 test_johto_music161 test_johto_music163
-test_johto_music_final_audit test_johto_region_id170
+test_johto_music_final_audit test_johto_region_id170 test_johto_fixed_id_freeze225
 test_johto_route32_ladder166 test_johto_route32_p1b
 test_johto_route32_p1c test_johto_rpp_asset_audit
 test_johto_rpp_batch test_johto_rpp_connection_guard
@@ -90,6 +91,8 @@ test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_wrong_entry_bank_is_blocked
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_restoring_bank_inside_romx_is_blocked
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_cancel_carry_flag_must_not_be_lost
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_bank1_swap_jumps_must_stay_connected
+test_johto_fixed_id_freeze225.FixedIdFreeze225.test_baseline_and_all_222_roster_entries
+test_johto_fixed_id_freeze225.FixedIdFreeze225.test_east_62_cannot_activate_before_sparse_migration
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_original_all_11_native_ids_dispatch_and_generic_fallback
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_removing_single_rom0_farcall_is_rejected
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_carry_bit_abi_cannot_be_replaced_with_and
@@ -306,6 +309,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     errors = []
     root, gold = root.resolve(), gold.resolve()
     errors.extend(verify_gold(gold))
+    errors.extend('FIXED_ID: '+e for e in fixed_id_audit(root, gold_root=gold))
     errors.extend('ROM0_COLLISION: '+e for e in rom0_collision_audit(root))
     errors.extend('ROM0_LIST_MENU: '+e for e in rom0_list_menu_bank_audit(root))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
