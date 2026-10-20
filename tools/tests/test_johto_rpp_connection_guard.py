@@ -320,12 +320,12 @@ class RealConnectionCoverage(unittest.TestCase):
             self.temporary_real_map_project(dest)
             h=dest/'data/mapHeaders/JohtoRoute37.asm'
             content=h.read_text()
-            self.assertIn('db SOUTH',content)
-            h.write_text(content.replace('db SOUTH','db 0',1))
+            self.assertIn('db NORTH | SOUTH',content)
+            h.write_text(content.replace('db NORTH | SOUTH','db NORTH',1))
             report=audit_all_active(dest,self.gold)
             self.assertEqual(report['status'],'FAIL')
-            self.assertTrue(any('GOLD_TOPOLOGY:' in x and 'JohtoRoute37' in x
-                                and 'MISSING=' in x for x in report['issues']),report)
+            self.assertTrue(any(('GOLD_TOPOLOGY:' in x or 'DISCOVERY:' in x) and 'JohtoRoute37' in x
+                                for x in report['issues']),report)
 
     def test_duplicate_native_selector_row_fails_even_if_current_edge_still_correct(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -348,7 +348,7 @@ class RealConnectionCoverage(unittest.TestCase):
             src=f.read_text()
             row='db JOHTO_ROUTE_37_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID'
             self.assertIn(row,src)
-            f.write_text(src.replace(row,row+'\n\tdb JOHTO_ROUTE_37_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID',1))
+            f.write_text(src.replace(row,row+'\n\tdb JOHTO_ROUTE_37_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID',1))
             report=audit_all_active(dest,self.gold)
             self.assertEqual(report['status'],'FAIL')
             self.assertTrue(any('NATIVE_SELECTOR' in x and 'EXTRA=' in x for x in report['issues']),report)

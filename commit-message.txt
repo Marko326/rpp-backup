@@ -1,3 +1,11 @@
+# ECRU-5.62.226｜缘朱市(ID22) 与 Fly/Field Moves 审计：本轮正式清理提交索引
+# Git 基线：金银 / ef651561163ff9502469444a2edcf050f70cf5c5（干净 HEAD）。
+# Version: BANK-5.62.225 -> ECRU-5.62.226；模式 A 双提交。
+# 第一笔 feat(johto): 接入缘朱市并修复Fly目的地映射（包含 data/game_version.asm）。
+# 第二笔 test(tool): 加固缘朱Fly与Field Moves审计并维护Gold排除范围。
+# 清理增量（最新缘朱候选）和基线全量（HEAD ef651561）二选一；随后应用工具反向隔离、提交功能；反向撤回隔离、提交工具。
+# Fly 目的地用户已反馈正确；其余实机专项及新 ROM/MAP 待确认；稀疏 ID62 尚未实现。
+
 # BANK-5.62.225｜Route37(ID21) 与 Gold 固定连接审计：本轮正式清理提交索引
 # 本文件只列提交范围；实际 git commit -F 使用正式 ZIP 内两份独立 TXT 日志。
 # 基线：金银 / 95cf71c7092c71f43535dec1c7887e1f6999c086（用户导出为干净 HEAD）。

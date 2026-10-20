@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from johto_surf_geometry_audit import inspect as geometry_inspect
+from johto_gold_cells import decode_cells
 from johto_route32_surf_geometry import check as route32_check, gold_cells as johto_water_cells
 
 TABLE = re.compile(r'(?m)^JohtoUnionCaveWaterCells::\s*\n((?:\s*db\s+[^\n]+\n)+)')
@@ -88,7 +89,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         (items, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba JohtoSurfStartOnWater ; carry CLEAR = approved water ahead\n\tret', 'bag/party Surf inverse-carry Surf entry'),
         (home, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba IsJohtoSurfWaterAhead\n\tjr c, .noCollision', 'Surf movement water branch'),
         (home, '\tld c, a ; preserve the tile for the existing walkable shore test\n\tjr .checkIfNextTileIsPassable', 'Surf shore dismount'),
-        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
+        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
         (runtime, 'ld a, [wObtainedKantoBadges]\n\tbit 4, a ; SOUL_BADGE\n\tjr z, .denied', 'Kanto Soul Badge preserved'),
         (field, 'callba JohtoSurfBadgeAllowed\n\tjr nc, .cannotSurf', 'water interaction shared permission check'),
         (menu, 'callba JohtoSurfBadgeAllowed\n\tjp nc, .newBadgeRequired', 'party menu shared permission check'),
@@ -174,11 +175,34 @@ def audit(root: Path, gold: Path) -> list[str]:
         'cp 2\n\tjr c, .notWater\n\tcp 6\n\tjr nc, .notWater',
         'cp 26\n\tjr c, .notWater\n\tcp 30\n\tjr nc, .notWater',
         'cp 12\n\tjr c, .notWater\n\tcp 16\n\tjr nc, .notWater',
-        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr nz, .kanto',
+        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr nz, .kanto',
     )
     for token in native_dispatch:
         if token not in runtime:
             errors.append('Ruins Surf runtime missing/changed: ' + token[:70])
+    # Ecruteak's exact pond is an asymmetric 20-cell Gold WATER shape;
+    # negative tests must reject broad 8x8 water permission or one wrong row.
+    try:
+        city = {(cell['y'],cell['x']) for cell in decode_cells(
+            (gold/'maps/EcruteakCity.blk').read_bytes(),
+            (gold/'data/tilesets/johto_metatiles.bin').read_bytes(),
+            (gold/'data/tilesets/johto_collision.asm').read_text(), 20, 18)
+            if cell['role']=='WATER'}
+        expected_city = {(y,x) for y in (12,13) for x in range(22,28)} | {(y,x) for y in (14,15) for x in range(24,28)}
+        if city != expected_city or len(city)!=20:
+            errors.append('EcruteakCity Gold WATER 20-cell pond geometry mismatch')
+        cells=(root/'maps/JohtoEcruteakCity.blk').read_bytes()
+        goldblocks=(gold/'maps/EcruteakCity.blk').read_bytes()
+        if cells != goldblocks:
+            errors.append('EcruteakCity must use Gold west road art; unfinished gate must not be drawn as a house')
+    except (OSError, ValueError) as exc:
+        errors.append('EcruteakCity Surf geometry missing: '+str(exc))
+    for token in ('cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjp z, IsJohtoEcruteakWaterAhead',
+                  'IsJohtoEcruteakWaterAhead::', 'cp 12\n\tjr c, .notWater',
+                  'cp 16\n\tjr nc, .notWater', 'cp 14\n\tjr nc, .lower',
+                  'cp 22\n\tjr c, .notWater', 'cp 28\n\tjr nc, .notWater',
+                  'cp 24\n\tjr c, .notWater'):
+        if token not in runtime: errors.append('EcruteakCity Surf runtime check missing: '+token[:58])
     # This is intentionally a temporary policy: no hidden Johto badge gate
     # may be reintroduced in either of the two shared cave Surf entry points.
     badge_handlers = runtime.split('JohtoSurfBadgeAllowed::', 1)[-1]
@@ -188,7 +212,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         errors.append('no native map capabilities for Surf')
     else:
         for entry in identities['maps']:
-            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20) else 'DEFERRED'
+            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22) else 'DEFERRED'
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):

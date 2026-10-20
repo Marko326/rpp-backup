@@ -120,7 +120,7 @@ class RoofGoldReferenceGate(unittest.TestCase):
                              'ld a,BANK(JohtoAzaleaRoofs_GFX)')
 
     def test_wrong_group_dispatch_branch_is_rejected(self):
-        self.mutate_selector('jr z,.violet', 'jr z,.azalea')
+        self.mutate_selector('cp 5', 'cp 4')
 
     def test_wrong_base_roof_tile_offset_is_rejected(self):
         self.mutate_selector('ld hl,NewBark_GFX + $0a * $10',

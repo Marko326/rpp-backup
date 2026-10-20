@@ -13,7 +13,7 @@ from johto_field_moves_preflight import audit as preflight
 
 FILES = (
     'engine/overworld/johto_union_cave_surf.asm',
-    'engine/overworld/field_moves.asm',
+    'engine/overworld/field_moves.asm', 'engine/overworld/headbutt.asm',
     'engine/items/items.asm',
     'engine/menu/start_sub_menus.asm',
     'home/overworld.asm',
@@ -22,7 +22,7 @@ FILES = (
     'engine/special_warps.asm',
     'main.asm',
     'maps/JohtoRoute32.blk', 'maps/JohtoRoute35.blk',
-    'maps/JohtoRuinsOfAlphOutside.blk',
+    'maps/JohtoRuinsOfAlphOutside.blk', 'maps/JohtoEcruteakCity.blk',
     'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll',
     'maps/JohtoUnionCave1F.blk',
     'gfx/blocksets/johto_union_cave.bst',
@@ -62,13 +62,14 @@ class RuinsSurf224(unittest.TestCase):
 
     def test_badge_gate_ruins_removed_fails(self):
         self.mutate('engine/overworld/johto_union_cave_surf.asm',
-            'cp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr nz, .kanto',
-            'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr nz, .kanto',
+            'cp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32',
+            'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr z, .route32',
             'Ruins Surf runtime missing/changed')
 
     def test_ruins_water_upper_bound_fails(self):
         self.mutate('engine/overworld/johto_union_cave_surf.asm',
-            'cp 14\n\tjr nc, .lower', 'cp 15\n\tjr nc, .lower',
+            'cp 6\n\tjr c, .notWater\n\tcp 14\n\tjr nc, .lower',
+            'cp 6\n\tjr c, .notWater\n\tcp 15\n\tjr nc, .lower',
             'Ruins Surf runtime missing/changed')
 
     def test_ruins_water_land_collision_fails(self):

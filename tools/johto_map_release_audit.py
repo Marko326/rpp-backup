@@ -5,6 +5,8 @@ This gate requires a complete Gold checkout and zero skipped tests. It checks
 static contracts only; no ROM is built and no phone acceptance is implied.
 """
 import argparse
+import csv
+from johto_gold_cells import decode_cells
 import json
 import os
 from pathlib import Path
@@ -251,7 +253,7 @@ test_johto_route33_runtime191.Route33Runtime191.test_gold_source_metadata_mutati
 test_johto_route33_runtime191.Route33Runtime191.test_violet_to_route32_does_not_white_flash
 test_johto_route33_runtime191.Route33Runtime191.test_wrong_route33_grass_tile_is_rejected
 test_johto_fly_destinations196.JohtoFlyDestinations196.test_missing_fly_registration_fails
- test_johto_fly_destinations196.JohtoFlyDestinations196.test_new_gold_city_cannot_be_deferred
+ test_johto_fly_destinations196.JohtoFlyDestinations196.test_deferred_ecruteak_must_not_claim_fly_allowed
  test_johto_fly_destinations196.JohtoFlyDestinations196.test_shared_native_slot_is_not_fly_selector
  test_johto_fly_destinations196.JohtoFlyDestinations196.test_unvisited_destination_cannot_be_selected
  test_johto_fly_destinations196.JohtoFlyDestinations196.test_unsafe_landing_must_fail
@@ -304,6 +306,119 @@ def inspect_test_output(result: subprocess.CompletedProcess,
     return errors
 
 
+def audit_new_native_map_signs(root: Path, gold: Path) -> list[str]:
+    """Enforce complete Gold read-sign coverage for newly onboarded local IDs >=22.
+
+    Gold BG_EVENT_ITEM is not a sign. Indoor/door events use independent audits.
+    This is a source inspection: it cannot claim that a ROM displays the text.
+    """
+    errors = []
+    try:
+        entries = json.loads((root / 'tools/johto_native_maps.json').read_text())['maps']
+    except (OSError, ValueError, KeyError) as exc:
+        return [f'cannot load native map registry for Gold signs: {exc}']
+    for entry in entries:
+        if entry['local_id'] < 22:
+            continue  # historical native maps have their own reviewed stage contracts
+        mapname = entry['header'].removeprefix('Johto').removesuffix('_h')
+        goldfile = gold / 'maps' / (mapname + '.asm')
+        if not goldfile.is_file():
+            errors.append(f'{mapname}: missing Gold sign-event source')
+            continue
+        goldtext = goldfile.read_text()
+        coords = [(int(x), int(y)) for x, y in re.findall(
+            r'(?m)^\s*bg_event\s+(\d+),\s*(\d+),\s*BGEVENT_READ\b', goldtext)]
+        if not coords:
+            continue
+        objfile = root / 'data/mapObjects' / f'Johto{mapname}.asm'
+        scriptfile = root / 'scripts' / f'Johto{mapname}.asm'
+        if not objfile.is_file() or not scriptfile.is_file():
+            errors.append(f'{mapname}: Gold sign object/script missing')
+            continue
+        obj = objfile.read_text()
+        asm = scriptfile.read_text()
+        # A native object header holds tileset ID, warp count, text count,
+        # followed by exactly that many (y,x,text ID) records.
+        lines = obj.splitlines()
+        heads = [(i, int(m.group(1), 16)) for i, line in enumerate(lines)
+                 if (m := re.match(r'\s*db\s+\$([\da-fA-F]{2})\s*(?:;.*)?$', line))]
+        if len(heads) < 3:
+            errors.append(f'{mapname}: cannot inspect native object sign count')
+            continue
+        sign_count = heads[2][1]
+        startline = heads[2][0] + 1
+        found = []
+        for line in lines[startline:startline + sign_count]:
+            m = re.match(r'\s*db\s+(\d+),\s*(\d+),\s*(\d+)\b', line)
+            if m:
+                found.append(tuple(map(int, m.groups())))
+        gold_coords = [(y,x,i+1) for i,(x,y) in enumerate(coords)]
+        if sign_count != len(coords) or found != gold_coords:
+            errors.append(f'{mapname}: Gold BGEVENT_READ signs differ: '
+                          f'{len(coords)} expected at {gold_coords}, got {found}')
+        pointer_block = re.search(rf'Johto{re.escape(mapname)}TextPointers:\s*([\s\S]*?)(?:\n\S|\Z)', asm)
+        pointers = re.findall(r'(?m)^\s*dw\s+([A-Za-z_0-9]+)',
+                              pointer_block[1] if pointer_block else '')
+        if len(pointers) != len(coords) or any(p + ':' not in asm for p in pointers):
+            errors.append(f'{mapname}: Gold sign text pointers missing/incomplete')
+    return errors
+
+
+def audit_new_native_field_move_roles(root: Path, gold: Path) -> list[str]:
+    """For new maps, compare actual Gold quadrant roles with declared abilities.
+
+    An ID reservation is not a playable map. Existing IDs <22 follow earlier
+    reviewed contracts. Unknown future tilesets fail closed for explicit review.
+    """
+    errors=[]
+    try:
+        entries=json.loads((root/'tools/johto_native_maps.json').read_text())['maps']
+        with (root/'tools/johto_fixed_ids.csv').open(newline='') as f:
+            rows={row['gold_name']: row for row in csv.DictReader(f)}
+        runtime=(root/'engine/overworld/johto_union_cave_surf.asm').read_text()
+    except (OSError, ValueError, KeyError) as exc:
+        return [f'native Gold capability audit cannot load sources: {exc}']
+    for entry in entries:
+        if entry['local_id']<22:
+            continue
+        name=entry['header'].removeprefix('Johto').removesuffix('_h')
+        try:
+            original=rows[name]
+            header=(root/f'data/mapHeaders/Johto{name}.asm').read_text()
+            match=re.search(r'(?m)^\s*db\s+(JOHTO(?:_MODERN|_UNION_CAVE|_ILEX_FOREST)?)\s*$',header)
+            if not match:
+                # Indoor/gate specialist audits handle field-move eligibility.
+                # For an outdoor map, unknown tileset cannot be silently ignored.
+                if 'db SOUTH' in header or 'db NORTH' in header or 'db EAST' in header or 'db WEST' in header:
+                    errors.append(f'{name}: outdoor tileset needs reviewed Field Moves decoder')
+                continue
+            tileset=match[1]
+            if tileset != 'JOHTO':
+                errors.append(f'{name}: new {tileset} native map needs explicit Gold Field Moves review')
+                continue
+            width,height=int(original['width_blocks']),int(original['height_blocks'])
+            cells=decode_cells((gold/f'maps/{name}.blk').read_bytes(),
+                 (gold/'data/tilesets/johto_metatiles.bin').read_bytes(),
+                 (gold/'data/tilesets/johto_collision.asm').read_text(),width,height)
+            roles={c['role'] for c in cells}
+            status=entry['feature_status']
+            for move,role in (('surf','WATER'),('cut','CUT_TREE')):
+                expected='ALLOWED' if role in roles else 'DEFERRED'
+                if status.get(move)!=expected:
+                    errors.append(f'{name}: Gold {role} requires {move}={expected}, not {status.get(move)}')
+            if 'HEADBUTT_TREE' in roles and not any(
+                f'IsJohto{stem}HeadbuttTreeAhead::' in runtime
+                for stem in (name, name.removesuffix('City'))):
+                errors.append(f'{name}: Gold HEADBUTT_TREE requires exact native handler')
+            gold_events=(gold/f'maps/{name}.asm').read_text()
+            if re.search(r'(?m)^\s*callback\s+MAPCALLBACK_NEWMAP\s*,\s*\w*Flypoint\w*',gold_events):
+                if status.get('fly')!='ALLOWED':
+                    errors.append(f'{name}: Gold Flypoint callback requires visited Fly destination')
+        except (OSError, ValueError, KeyError) as exc:
+            errors.append(f'{name}: cannot verify Gold Field Moves: {exc}')
+    return errors
+
+
 def audit_project(root: Path, gold: Path, expected_version: str | None = None,
                   run_tests: bool = True) -> dict:
     errors = []
@@ -349,6 +464,8 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.extend('WARP: ' + e for e in warp_audit(root, gold))
         errors.extend('TOWN_BIKE: ' + e for e in town_bike_audit(root, gold))
         errors.extend('FIELD_MOVES: ' + e for e in field_move_audit(root, gold))
+        errors.extend('MAP_SIGNS: ' + e for e in audit_new_native_map_signs(root, gold))
+        errors.extend('NEW_MAP_MOVES: ' + e for e in audit_new_native_field_move_roles(root, gold))
         errors.extend('FLY_DESTINATION: ' + e for e in fly_destination_audit(root, gold))
         errors.extend('CAVE_ESCAPE: ' + e for e in cave_escape_audit(root, gold))
         errors.extend('CAVE_EXIT192: ' + e for e in cave_exit192_audit(root, gold))

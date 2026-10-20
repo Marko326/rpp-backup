@@ -13,7 +13,8 @@ from johto_field_moves_preflight import audit  # noqa: E402
 FILES = ('engine/overworld/field_moves.asm', 'engine/items/items.asm',
          'home/overworld.asm', 'engine/special_warps.asm',
          'engine/menu/start_sub_menus.asm', 'tools/johto_native_maps.json',
-         'constants/tilesets.asm')
+         'constants/tilesets.asm',
+         'engine/overworld/headbutt.asm', 'engine/overworld/johto_union_cave_surf.asm')
 
 
 class FieldMovePreflight185(unittest.TestCase):
@@ -89,6 +90,25 @@ class FieldMovePreflight185(unittest.TestCase):
         self.mutate('tools/johto_native_maps.json', '"surf": "DEFERRED"',
                     '"surf": "ALLOWED"')
         self.assertIn('no other runtime permission reviewed', ' '.join(audit(self.root, self.gold)))
+
+    def test_ecruteak_tree_location_mutation_is_rejected(self):
+        self.mutate('engine/overworld/johto_union_cave_surf.asm',
+                    '\tdb 0, 4\n', '\tdb 0, 3\n')
+        self.assertIn('Gold 50 cells', ' '.join(audit(self.root,self.gold)))
+
+    def test_ecruteak_headbutt_party_menu_cannot_be_omitted(self):
+        self.mutate('engine/overworld/headbutt.asm',
+                    'callba IsJohtoEcruteakHeadbuttTreeAhead',
+                    'callba IsJohtoRuinsWaterAhead')
+        self.assertIn('party-menu Headbutt', ' '.join(audit(self.root,self.gold)))
+
+    def test_ecruteak_cut_cannot_be_claimed_without_cut_trees(self):
+        import json
+        p=self.root/'tools/johto_native_maps.json'
+        data=json.loads(p.read_text())
+        data['maps'][22]['feature_status']['cut']='ALLOWED'
+        p.write_text(json.dumps(data))
+        self.assertIn('Cut status', ' '.join(audit(self.root,self.gold)))
 
     def test_wrong_dig_return_chain_is_not_silently_accepted(self):
         self.mutate('engine/special_warps.asm', 'ld a, [wLastBlackoutMap]',

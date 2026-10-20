@@ -49,14 +49,17 @@ class IndoorToolchainTests(unittest.TestCase):
         self.assertEqual(matches[0]['to_role'],'WARP_CARPET_RIGHT')
         self.assertFalse(matches[0]['rpp_runtime_verified'])
 
-    def test_full_corpus_fails_closed_and_does_not_claim_runtime(self):
+    def test_full_corpus_skips_only_user_excluded_beta_map(self):
         from johto_rpp_pipeline import full_gold_corpus
         with tempfile.TemporaryDirectory() as td:
             result = full_gold_corpus(ROOT, GOLD, Path(td)/'corpus')
             self.assertEqual(result['registered_maps'],368)
+            self.assertEqual(result['scanned_maps'],367)
             self.assertEqual(result['source_ok'],367)
-            self.assertEqual(result['source_failed'],1)
-            self.assertEqual(result['errors'][0]['map'],'SafariZoneBeta')
+            self.assertEqual(result['source_failed'],0)
+            self.assertEqual(result['excluded_count'],1)
+            self.assertEqual(result['excluded_maps'], [
+                {'map': 'SafariZoneBeta', 'reason': 'USER_EXCLUDED_BETA_MAP'}])
             self.assertEqual(result['runtime_maps_verified'],0)
 
     def test_native_tile_40_walkable_not_auto_warp(self):

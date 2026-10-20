@@ -17,7 +17,7 @@ FILES = ('engine/overworld/johto_union_cave_surf.asm',
          'maps/JohtoUnionCave1F.blk',
          'gfx/blocksets/johto_union_cave.bst',
          'gfx/tilesets/johto_union_cave.tilecoll',
-         'maps/JohtoRoute32.blk', 'maps/JohtoRoute35.blk', 'maps/JohtoRuinsOfAlphOutside.blk', 'gfx/blocksets/johto.bst',
+         'maps/JohtoRoute32.blk', 'maps/JohtoRoute35.blk', 'maps/JohtoRuinsOfAlphOutside.blk', 'maps/JohtoEcruteakCity.blk', 'gfx/blocksets/johto.bst',
          'gfx/tilesets/johto.tilecoll')
 
 

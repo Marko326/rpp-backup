@@ -71,14 +71,14 @@ class FixedIdFreeze225(unittest.TestCase):
         self.assertTrue(any('sparse ID 62' in e for e in errors), errors)
         self.assertTrue(any('missing actual map asset' in e for e in errors), errors)
 
-    def test_route37_active_but_ecruteak_not_active_just_because_reserved(self):
+    def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(22, len(data['maps']))
-        self.assertEqual(21, data['maps'][-1]['local_id'])
+        self.assertEqual(23, len(data['maps']))
+        self.assertEqual(22, data['maps'][-1]['local_id'])
         self.assertIn('DEF JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22',
                       (ROOT / RESERVED_ASM).read_text(encoding='utf8'))
         self.assertIn('JohtoRoute37_h', (ROOT / HEADERS).read_text(encoding='utf8'))
-        self.assertNotIn('JohtoEcruteakCity_h', (ROOT / HEADERS).read_text(encoding='utf8'))
+        self.assertIn('JohtoEcruteakCity_h', (ROOT / HEADERS).read_text(encoding='utf8'))
         self.assertEqual([], audit(ROOT))
 
     def test_all_reserved_ids_exist_in_assembler_input(self):
@@ -129,13 +129,13 @@ class FixedIdFreeze225(unittest.TestCase):
         failures = audit(ROOT, {CONSTANTS: src})
         self.assertTrue(any('defined twice' in e for e in failures), failures)
 
-    def test_fake_ecruteak_header_not_sufficient_for_activation(self):
+    def test_fake_next_gate_header_not_sufficient_for_activation(self):
         data = json.loads((ROOT / REGISTRY).read_text())
         data['maps'].append({
-            'local_id': 22, 'local_symbol': 'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
-            'header': 'JohtoEcruteakCity_h', 'bank': 'BANK(JohtoEcruteakCity_h)'})
+            'local_id': 23, 'local_symbol': 'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
+            'header': 'JohtoRoute38EcruteakGate_h', 'bank': 'BANK(JohtoRoute38EcruteakGate_h)'})
         failures = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('missing actual map asset maps/JohtoEcruteakCity.blk' in e
+        self.assertTrue(any('missing actual map asset maps/JohtoRoute38EcruteakGate.blk' in e
                             for e in failures), failures)
 
     def test_wrong_live_header_is_rejected(self):

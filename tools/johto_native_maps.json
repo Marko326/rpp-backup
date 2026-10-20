@@ -720,7 +720,44 @@
         "warp": "DEFERRED"
       },
       "identity_evidence": "STATIC_PASS",
-      "gold_fly_landmark": null
+      "gold_fly_landmark": null,
+      "north_connection_exit_x_tiles": [
+        7,
+        8
+      ],
+      "north_connection_visual_right_border": 0
+    },
+    {
+      "local_id": 22,
+      "local_symbol": "JOHTO_ECRUTEAK_CITY_LOCAL_ID",
+      "header": "JohtoEcruteakCity_h",
+      "bank": "BANK(JohtoEcruteakCity_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ECRUTEAK_CITY",
+      "town_map_index": 21,
+      "town_map_name": "JohtoEcruteakName",
+      "town_map_xy": [
+        60,
+        76
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "ALLOWED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "ECRUTEAK_CITY"
     }
   ]
 }

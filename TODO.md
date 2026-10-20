@@ -1,10 +1,23 @@
+## ECRU-5.62.226｜缘朱市（ID22）阶段清理（Fly 目的地用户已复测，其余待验收）
+
+- [x] **本次正式版本更新**：已提交的 ROM0 空间阶段版本为 `BANK-5.62.225`；本轮接入缘朱市 ID22，定稿版本改为 `ECRU-5.62.226`（`data/game_version.asm` 唯一运行时显示值，字符串长度不变）。旧阶段记录中的 `BANK` 为历史证据，不得整体替换。ROM 链接和新版 MAP 仍由用户完成。
+
+- [x] Gold 原版 EcruteakCity 20×18 `.blk` 与撞墙遮罩；Route37↔缘朱市南侧有效双向连接，西、东门房和室内 Warp 封闭；Gold 屋顶地图组独立调色，6 处跳崖按原版。
+- [x] 城都固定 ID22、Fly 到访持久标志（event 位 `$450`）、第 6 个城都 Fly 菜单选项及 Gold x23/y28 安全落点接入。保留旧 Fly-only `$FE` 选择器，但**菜单确认时把目标 local ID 冻结到专用 `$d7ab`**，实际 Warp 由稳定 ID 解析，不再依赖可被覆盖的 `$cd3d` 菜单暂存编号；不扩展存档长度。用户已反馈上一版错飞问题修正后“飞行地点对了”，此反馈不替代取消、旧存档与所有城镇的逐项实测。
+- [x] 缘朱市 Gold 池塘严格 20 个 WATER 格加入 Surf；原版 50 个 HEADBUTT_TREE 格按 (x,y) 精确准入，支持已有 A 键／队伍菜单 Headbutt；此图原版没有 CUT_TREE，因此 Cut 保持 DEFERRED，不能把普通树当砍树。
+- [x] 原版 7 个固定 BGEVENT_READ 路牌/场所标志已按坐标登记和接入文字。**已撤销西口借用其他建筑的 4 个错误图块**，恢复缘朱市本体 Gold 原版 `.blk`；当前西侧屏幕边缘仍会显示未接入 Route38 邻图的默认树林，用户已知晓并接受延后处理。西、东尚无门房 Warp，开发 Route38/Route42 门房时必须连同 Gold 邻图可见边缘、双向入口一起验收，不能把当前树林写作已还原 Gold 门房。
+- [x] 现有统一发布审计新增新接入地图（ID≥22）的 Gold 标志位置及 JOHTO 碰撞能力源检查；用户要求后续新地图默认完整实现适用的 Fly、Surf、Cut、Headbutt 标志，不能只注册地形。无法按现有引擎安全接入的特殊 tileset 需要单独审核并明确阻断，不允许静默忽略。
+- [x] 用户指定 `SafariZoneBeta` 为废弃地图：仅 Gold 全量素材扫描跳过此图，368 张登记、367 张实际扫描、1 张排除；其他地图继续审计。
+- [ ] 用户编译最终候选 ROM、提供与**最终候选匹配**的新 MAP；手机补测 Route36↔Route37↔缘朱市往返、南口双格、安全围栏、昼夜屋顶、跳崖、存档恢复、Fly 取消及存档继续、20 水格 Surf 入水/上岸、Headbutt 和 7 路牌。**Fly 目的地正确为用户已观察通过项**；西侧 Route38 邻图树林及两侧门房外观/进出另随相应门房地图开发验收，当前不能标 PHONE_ACCEPTED。
+- [ ] 验收后再定分叉 HEAD；东/西尚未开放，稀疏 ID62 兼容层仍待单独验收。
+
 ## ROUTE37-5.62.225｜Route37(ID21) 候选定稿清理（待 ROM/MAP 和手机最终验收）
 
-- [x] **开发与错误修复**：按 Gold 原版接入 Route37 10×9、地形/碰撞、6 处向下跳崖和 Route36↔Route37 两条直连；南下运行时目标严格为 Route36，不再误走 Route32；Route37 北接缘朱市的出口继续封闭。固定 ID21，现有 0–20 不重排。
+- [x] **开发与错误修复**：按 Gold 原版接入 Route37 10×9、地形/碰撞、6 处向下跳崖和 Route36↔Route37 两条直连；南下运行时目标严格为 Route36，不再误走 Route32；Route37 北接缘朱市出口已在 EcruteakCity ID22 候选中开放（待用户 ROM/MAP/手机验收）。固定 ID21，现有 0–20 不重排。
 - [x] **防回归审计**：在项目原 `johto_rpp_connection_guard.py` 中核对 Gold 368 张图的 142 条有向直连（包含关都参考），并强制检查当前已启用的 Header、运行时方向选择表、目标、重复/漏接和错误偏移；Warp/门房仍由已有专项审计管理，不误判为直接连接。
 - [x] **真实失败史**：初版 Route37 南出口在运行时选择表把 south=1 错写成 north=0，原连接审计仍报 24/24 PASS；用户视频显示返回 Route32 且行走异常。修复代码与负向故障注入后，静态连接审计能够拒绝同样的错误。
 - [ ] **用户最终验收**：用户已反馈修复后暂未看出问题，但尚无本轮新 ROM/MAP 或 36↔37 两向、6 处跳崖、旧存档/关都回归的完整手机测试记录；不能标为全项 PHONE_ACCEPTED。编译、链接和 Git Commit/Push 由用户自行执行。
-- [ ] **下一阶段**：先做 EcruteakCity(ID22)，待 36↔37↔缘朱市回归、ROM/MAP 和手机验收后，再处理稀疏 ID 运行映射、正式东西分线。切图短暂停顿作为下方 MAP-SEAM 可选 TODO，当前未作性能改动。
+- [ ] **下一阶段**：EcruteakCity(ID22) 地形候选已完成，待 36↔37↔缘朱市回归、ROM/MAP 和手机验收后，再处理稀疏 ID 运行映射、正式东西分线。切图短暂停顿作为下方 MAP-SEAM 可选 TODO，当前未作性能改动。
 
 ## MAP-SEAM｜步行／骑行相邻地图切换短暂停顿（用户视频，延期优化）
 
@@ -1190,7 +1203,7 @@ This section preserves the original author's roadmap. Status markers reflect the
 
 - [x] 在 `constants/johto_fixed_map_ids.asm` 固定 Route37=21、EcruteakCity=22、西线 A=23..61、东线 B=62..101、共用 C=102..191、后期 C=192..221；原始 0..20 不改。`constants/region_map_constants.asm` 已 INCLUDE，ASM 与 `tools/johto_fixed_ids.csv` 一一审计。
 - [x] 正常 Makefile ROM 对象编译前执行 `johto-id-preflight`；统一发布审计和负向测试检查抢号、取消 INCLUDE、绕过构建门禁等。仅声明符号，不新增 ROM 数据、不增加有效地图数量。
-- [x] Route37（21）源码候选已接入；[ ] 待用户编译 ROM/MAP、完成手机验收；下一张 EcruteakCity（22），其余未开放入口继续封闭。
+- [x] Route37（21）源码候选已接入；[ ] 待用户编译 ROM/MAP、完成手机验收；本轮 EcruteakCity（22）候选待手机验收，其余未开放入口继续封闭。
 - [ ] **东西分线前必须做** stable local ID 到 compact active slot 稀疏映射和所有相关表/调用者迁移，解决 64/128 偏移越界及无效 ID 判活；未完成前东线 62 不得作为真实已登记地图上线。不要把 `NUM_JOHTO_MAPS=21` 直接改为 222。
 - [ ] 原 BANK-5.62.225 菜单迁 Bank $01 后的背包交换、PC、商店、战斗道具和音乐手机专项仍待完整验收；历史 SafariZoneBeta 统一审计 FAIL 保留。
 
@@ -1198,5 +1211,10 @@ This section preserves the original author's roadmap. Status markers reflect the
 
 - [x] 222 个固定 local ID 的 ASM 预留及源内枚举；0–20 不变。统一审核、Gold 368 原始编号表和分线文件归属检查均在仓库中。
 - [x] 清理误导性审计成功提示：无 Gold 参数时仅核对冻结参考表；实际原版交叉验证须提供 `--gold`。专项测试和统一审计必选测试清单保持同步。
-- [x] Route37(ID21) 候选已开发；[ ] 下一张 EcruteakCity(ID22)，分线前完成 active-slot 兼容层，东线 ID62 不得提前启用。
+- [x] Route37(ID21) 候选已开发；[ ] EcruteakCity(ID22) 候选待实测，分线前完成 active-slot 兼容层，东线 ID62 不得提前启用。
 - [ ] 用户 ROM/MAP + 手机专项未验收；历史 SafariZoneBeta 统一审计 FAIL 不屏蔽。
+
+### Ecruteak Fly / 西侧出口修复候选（待用户 ROM + 手机验收）
+
+- [ ] Gold 缘朱西端是道路通往独立 `Route38EcruteakGate` 的入口，当前门房还没接入；撤销错用屋顶拼出的四块住宅图形，恢复 Gold 原版 `.blk` 和碰撞遮罩，并保持西边界封闭。门房完成时按 Gold Warp/外观单独接入，不能用城镇房屋冒充。
+- [ ] 缘朱 Fly 与满金共用 legacy `$FE`，但旧代码在飞行动画后仍读取通用 `$cd3d` (`wWhichTownMapLocation`)，会串扰实际落点。本轮改为菜单确认时存固定 local ID 到既有空闲 `$d7ab`，SpecialWarp 使用稳定 local ID 选目标与落点；用户实机验证缘朱↔满金、Kanto 金黄市不被串线、取消 Fly、存档继续。静态 PASS 不代表已经链接和手机验收。

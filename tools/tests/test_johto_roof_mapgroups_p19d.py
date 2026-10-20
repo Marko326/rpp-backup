@@ -14,13 +14,13 @@ SCOPE = (
  ('NewBarkTown',0), ('Route29',0), ('CherrygroveCity',1), ('Route30',1),
  ('Route31',1), ('VioletCity',2), (None,None), ('Route32',2),
  (None,None), ('Route33',3), ('AzaleaTown',3), (None,None),
- (None,None), (None,None), ('Route34',4), ('GoldenrodCity',4), ('Route36',2), ('Route35',2), (None,None), (None,None), (None,None), ('Route37',2),
+ (None,None), (None,None), ('Route34',4), ('GoldenrodCity',4), ('Route36',2), ('Route35',2), (None,None), (None,None), (None,None), ('Route37',2), ('EcruteakCity',5),
 )
-GROUP_NAME = ('NewBark','Cherrygrove','Violet','Azalea','Goldenrod')
-GOLD_MAP_GROUP = (24,26,10,8,11)
-ROOF_ART_NAME = ('new_bark','new_bark','violet','azalea','goldenrod')
+GROUP_NAME = ('NewBark','Cherrygrove','Violet','Azalea','Goldenrod','Ecruteak')
+GOLD_MAP_GROUP = (24,26,10,8,11,4)
+ROOF_ART_NAME = ('new_bark','new_bark','violet','azalea','goldenrod','violet')
 PAL_LABEL = ('JohtoNewBarkGoldDayRoofPalette','JohtoCherrygroveGoldDayRoofPalette',
-             'JohtoVioletGoldDayRoofPalette','JohtoAzaleaGoldDayRoofPalette','GoldenrodGoldDayRoofPalette')
+             'JohtoVioletGoldDayRoofPalette','JohtoAzaleaGoldDayRoofPalette','GoldenrodGoldDayRoofPalette','EcruteakGoldDayRoofPalette')
 
 def bytes_from_png(path):
     im=Image.open(path).convert('L')
@@ -98,12 +98,12 @@ class GoldRoofMapgroupsP19D(unittest.TestCase):
         self.assertEqual(rgb_palette(src,PAL_LABEL[1])[1:3],[(31,14,28),(31,5,21)])
         self.assertEqual(rgb_palette(src,PAL_LABEL[4])[1:3],[(25,25,0),(20,17,8)])
         body=src.split('JohtoGoldDayRoofPalettes:',1)[1].split('JohtoGoldDayRoofPalettesEnd:',1)[0]
-        self.assertEqual(len(re.findall(r'(?m)^\s*RGB\s+',body)),5*4)
-        self.assertIn('ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 5 * 8',src)
+        self.assertEqual(len(re.findall(r'(?m)^\s*RGB\s+',body)),6*4)
+        self.assertIn('ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 6 * 8',src)
 
     def test_all_9_roof_tiles_match_gold_original_png(self):
         # Input PNGs, not ignored build-time .2bpp artifacts, are the source of truth.
-        for group in ('violet','azalea','goldenrod'):
+        for group in ('violet','azalea','goldenrod','violet'):
             actual=bytes_from_png(ROOT/f'gfx/tilesets/johto_{group}_roofs.png')
             gold=bytes_from_png(GOLD/f'gfx/tilesets/roofs/{group}.png')
             self.assertEqual(len(actual),144)

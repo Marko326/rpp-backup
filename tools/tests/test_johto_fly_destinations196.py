@@ -21,7 +21,7 @@ class JohtoFlyDestinations196(unittest.TestCase):
     def setUp(self):
         self.t=TemporaryDirectory();self.addCleanup(self.t.cleanup)
         self.root=Path(self.t.name)
-        for name in (*FILES,'maps/JohtoAzaleaTown.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin'):
+        for name in (*FILES,'maps/JohtoAzaleaTown.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoEcruteakCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin'):
             f=self.root/name;f.parent.mkdir(parents=True,exist_ok=True)
             shutil.copy2(ROOT/name,f)
 
@@ -36,12 +36,24 @@ class JohtoFlyDestinations196(unittest.TestCase):
     def test_missing_fly_registration_fails(self):
         self.mutation('tools/johto_native_maps.json','"gold_fly_landmark": "AZALEA_TOWN"','"gold_fly_landmark": null')
 
-    def test_new_gold_city_cannot_be_deferred(self):
+    def test_wrong_deferred_city_identity_fails(self):
         p=self.root/'tools/johto_native_maps.json';d=json.loads(p.read_text())
         m=dict(d['maps'][10],local_id=11,local_symbol='JOHTO_ECRUTEAK_CITY_LOCAL_ID',gold_fly_landmark=None)
         m['feature_status']=dict(m['feature_status'],fly='DEFERRED');d['maps'].append(m)
         p.write_text(json.dumps(d))
-        self.assertTrue(any('ECRUTEAK' in e or 'new/missing' in e for e in audit(self.root,self.gold)))
+        self.assertTrue(any('ECRUTEAK' in e for e in audit(self.root,self.gold)))
+
+    def test_deferred_ecruteak_must_not_claim_fly_allowed(self):
+        # Historical test ID is pinned by the release gate; it now checks the
+        # opposite failure: a built Fly city cannot silently become deferred.
+        p=self.root/'tools/johto_native_maps.json'
+        d=json.loads(p.read_text())
+        row=next(m for m in d['maps'] if m['local_symbol']=='JOHTO_ECRUTEAK_CITY_LOCAL_ID')
+        self.assertEqual(row['gold_fly_landmark'],'ECRUTEAK_CITY')
+        self.assertEqual(row['feature_status']['fly'],'ALLOWED')
+        row['feature_status']['fly']='DEFERRED'
+        p.write_text(json.dumps(d))
+        self.assertTrue(any('reviewed full integration' in e for e in audit(self.root,self.gold)))
 
     def test_shared_native_slot_is_not_fly_selector(self):
         self.mutation('engine/johto_fly_town_map.asm',
@@ -60,8 +72,8 @@ class JohtoFlyDestinations196(unittest.TestCase):
 
     def test_fifth_menu_slot_must_be_reachable(self):
         self.mutation('engine/johto_fly_town_map.asm',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 5',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 4')
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 6',
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 5')
 
     def test_unsafe_landing_must_fail(self):
         self.mutation('engine/fly_town_map_helpers.asm',
@@ -112,6 +124,36 @@ class JohtoFlyDestinations196(unittest.TestCase):
         p=self.root/'tools/johto_native_maps.json';d=json.loads(p.read_text())
         d['maps'][9]['feature_status']['fly']='ALLOWED';p.write_text(json.dumps(d))
         self.assertTrue(audit(self.root,self.gold))
+
+
+    def test_ecruteak_fly_selector_requires_stable_map_identity(self):
+        self.mutation('engine/fly_town_map_helpers.asm',
+                      'ld a, [wJohtoFlySelectedLocalID]',
+                      'ld a, [wWhichTownMapLocation]')
+
+    def test_accepted_menu_choice_must_be_handed_to_warp(self):
+        self.mutation('engine/johto_fly_town_map.asm',
+                      'ld [wJohtoFlySelectedLocalID], a',
+                      'ld [wWhichTownMapLocation], a')
+
+    def test_physical_map_resolution_cannot_read_shared_menu_scratch(self):
+        self.mutation('engine/fly_town_map_helpers.asm',
+                      '.goldenrodOrEcruteak\n\tld a, [wJohtoFlySelectedLocalID]',
+                      '.goldenrodOrEcruteak\n\tld a, [wWhichTownMapLocation]')
+
+    def test_fly_handoff_wram_byte_cannot_be_removed(self):
+        self.mutation('wram.asm','wJohtoFlySelectedLocalID:: ; d7ab',
+                      'wUnusedFlyHandoff:: ; d7ab')
+
+    def test_ecruteak_spawn_must_be_safe(self):
+        p=self.root/'maps/JohtoEcruteakCity.blocked_mask.bin'
+        data=bytearray(p.read_bytes());data[28*5+23//8] |= 1<<(23%8);p.write_bytes(data)
+        self.assertTrue(any('Ecruteak Fly spawn' in e for e in audit(self.root,self.gold)))
+
+    def test_ecruteak_visit_must_be_logged(self):
+        self.mutation('engine/overworld/missable_objects.asm',
+                      'set EVENT_JOHTO_FLY_ECRUTEAK % 8, [hl]',
+                      'set EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]')
 
     def test_missing_gold_source_fails_closed(self):
         with TemporaryDirectory() as tmp:

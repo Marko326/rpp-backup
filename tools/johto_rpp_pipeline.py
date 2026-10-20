@@ -200,16 +200,25 @@ def run_project_static_gate(rpp: Path, gold: Path, integration: dict | None) -> 
                     'bank layout, compilation, or phone behavior.'),
     }
 
+# User-requested, explicitly scoped source-corpus exclusion. This abandoned
+# Gold beta Safari map is NOT scanned or counted as passed. Do not broaden this
+# list to working Johto maps or silently change the excluded name.
+GOLD_CORPUS_SOURCE_EXCLUSIONS = frozenset({'SafariZoneBeta'})
+
+
 def full_gold_corpus(rpp: Path, gold: Path, output: Path) -> dict:
-    """Scan every registered Gold map; errors never become runtime approvals."""
+    """Source-audit all Gold maps except explicitly documented beta exclusions."""
     import csv
     from collections import Counter
     from johto_indoor_common import gold_dimensions
     from johto_indoor_collision_adapter import portal_approach_edges
     rpp, gold, output = safe_roots(rpp, gold, output)
     registered = layout_inventory(gold)
-    rows, edges, failures = [], [], []
+    rows, edges, failures, excluded = [], [], [], []
     for item in registered:
+        if item['name'] in GOLD_CORPUS_SOURCE_EXCLUSIONS:
+            excluded.append({'map': item['name'], 'reason': 'USER_EXCLUDED_BETA_MAP'})
+            continue  # no asset, geometry, or event scan of this excluded map
         name, tileset = item['name'], tileset_key(item['tileset'])
         row = {'map': name, 'gold_tileset': item['tileset'],
                'width_blocks': item['width'], 'height_blocks': item['height'],
@@ -245,7 +254,9 @@ def full_gold_corpus(rpp: Path, gold: Path, output: Path) -> dict:
             writer = csv.DictWriter(stream, fieldnames=fields)
             writer.writeheader()
             writer.writerows(records)
-    summary = {'registered_maps': len(rows), 'source_ok': len(rows)-len(failures),
+    summary = {'registered_maps': len(registered), 'scanned_maps': len(rows),
+               'excluded_maps': excluded, 'excluded_count': len(excluded),
+               'source_ok': len(rows)-len(failures),
                'source_failed': len(failures), 'errors': failures,
                'special_entrance_cells': sum(x['special_entrance_cells'] for x in rows),
                'portal_approach_edges': len(edges), 'runtime_maps_verified': 0,
@@ -262,7 +273,7 @@ def main():
     ap.add_argument('--output', type=Path, required=True)
     ap.add_argument('--preview-limit', type=int, default=12, help='preview maps; 0 disables')
     ap.add_argument('--audit-only', action='store_true', help='validate existing staged output')
-    ap.add_argument('--full-gold-corpus', action='store_true', help='fail-closed scan of EVERY Gold map')
+    ap.add_argument('--full-gold-corpus', action='store_true', help='source scan of all Gold maps except explicitly excluded beta maps')
     ap.add_argument('--gold-map', default=None, help='single Gold map candidate using its own tileset')
     ap.add_argument('--gold-tileset', default=None, help='Optional cross-check; inferred from Gold registration if omitted')
     ap.add_argument('--rpp-map', default=None, help='When already wired, review the existing RPP map registration and Warp contract')
