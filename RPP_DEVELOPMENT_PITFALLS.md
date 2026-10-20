@@ -336,3 +336,9 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 读取表使用 `ld hl,ExtendedLevelUpSources` 直接访问 ROM。即使符号可链接，只把来源表和读取函数各放入独立、可浮动的 ROMX Section，也可能因为 Bank 不同而读取错误数据。最终把 `ExtendedLevelUpSources`、全部宏展开的三字节表项、终止 `$ff`、读取函数统一放在 `SECTION FRAGMENT "Extended Level-Up Lookup", ROMX`，同时保留现有 far-call 接口。未来变更该 Section 时复查 Bank-aware ABI。
 - 增加宏生成的数据和查询例程后，复查循环中 `jr` 的 8 位有符号距离；193 同批将两处有超距风险的 `jr` 改为 `jp`。仅通过 `git apply --check` 不代表 ASM 汇编、Bank 链接通过。用户反馈的正常学招、遗忘、回忆和战斗释放只支持对应受测主路径。
 - 正式源中的 `data/evos_moves.asm` 不应留 `level_ext_move 6,EXT_MOVE_POWER_WHIP` 等仅供 193T 的临时小拉达分配，普通 Pound 对照也必须随 193T 撤销；真实投放需要未来另按物种／等级确认。
+
+## 嬉闹专属动画：图块、OAM 与分帧复用（ANIM-5.62.194）
+
+- `FrameBlock` 是图块编号／排列，不保证 VRAM 正好载入相应素材。复用帧块时同步核对 Tileset、复制槽位、完整 8×8 图块拼合、PAL 和 OAM 镜像，否则可能把星星／爱心误显示为冰块或碎片。
+- 多对象动画优先复用本项目 Quick Attack、Energy Ball／Gunk Shot 飞散、DynamicPunch 生命周期、Cross Chop VBlank 横震和原生 `DrawFrameBlock`；HIT 要使用事件变换后的 X/Y（不是上次对象残留的 `wBaseCoordX/Y`）。同时检查每帧 OAM 上限和同扫描线优先级，不靠盲目更换素材修复遮挡。
+- 改动局部标签和主循环前，检查同一全局标签下的重名、局部调用可达性、`ret` 分支及寄存器／栈保存。194C 已由用户选择为最终视觉版本；194D 的额外命中反馈被撤销，清理时不要带回。

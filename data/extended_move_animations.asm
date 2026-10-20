@@ -33,6 +33,17 @@ PrepareCurrentMoveAnimation::
 	ret z
 	cp ANIM_AF
 	ret z
+	; ANIM-5.62.194: EXT02 is the second identity in the 40-slot sidecar
+	; table, not ordinary Karate Chop ($02). Its legacy animation byte is
+	; BITE, so route by the active full identity before the old-ID table.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .notPlayRough
+	; Metronome/Mimic may keep the originating move as SelectedMove.
+	; The resolved active EXT ordinal is the animation identity.
+	ld hl, PlayRoughExtAnim
+	jp StageDedicatedMoveAnimation
+.notPlayRough
 	call GetCurrentMoveID
 	cp NUM_ATTACKS
 	ret nc
@@ -163,9 +174,14 @@ PlayHealingMoveAnimation::
 ; label is the direction for later reuse by Moonblast / Energy Ball / etc.
 PlayExtendedShadowBallProjectile:
 PlayExtendedOrbProjectile:
-	; C2 is a compact banked-helper gateway. Shadow Ball remains the default;
-	; compact move-specific helpers reuse it by real Move ID so BANK1E needs no
-	; new command branch. Legacy animation-ID semantics remain untouched.
+	; C2 is a compact banked-helper gateway. EXT02 has its own complete
+	; identity, so test its sidecar ordinal before interpreting legacy IDs.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .notPlayRough
+	callba PlayPolishedCrystalPlayRoughAnimation
+	ret
+.notPlayRough
 	call GetCurrentMoveID
 	cp POISON_JAB
 	jp z,PlayPoisonJabQuickHit
@@ -564,6 +580,20 @@ StageDedicatedMoveAnimation:
 	ld a, 1
 	ld [wMoveAnimScriptLoaded], a
 	ret
+
+; ANIM-5.62.194: Polished Crystal Play Rough art and event timing on
+; Red++ Quick Attack's speed-line bridge and existing FrameBlock/OAM display.
+; EXT02 only; ordinary Karate Chop keeps its original animation.
+PlayRoughExtAnim:
+	db PlayRoughExtAnimEnd - PlayRoughExtAnimData
+PlayRoughExtAnimData:
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE, GOLD_QUICK_ATTACK_PREPARE
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE, GOLD_QUICK_ATTACK_APPROACH
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; dispatch by full EXT identity
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE, GOLD_QUICK_ATTACK_RETURN
+	db $FF
+PlayRoughExtAnimEnd:
+	ASSERT PlayRoughExtAnimEnd - PlayRoughExtAnimData <= 30
 
 ; Sparse dedicated recipes for original Gen 1 real move IDs.  These are the
 ; elemental Punch-family members used by Contact V1.  The terminator is an ID

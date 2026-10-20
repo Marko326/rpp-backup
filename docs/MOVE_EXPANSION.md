@@ -1,4 +1,11 @@
-## 193 — 普通物种 EXT 升级学习与回忆来源（用户主路径验收通过；准备提交）
+## 194 — EXT02 Play Rough 嬉闹专属动画（正式收口）
+
+- **正式效果**：EXT02 通过完整扩展身份使用独立 `PlayRoughExtAnim`，而不借用普通 Karate Chop 的动画；Quick Attack 突进／返回与项目已有 FrameBlock、OAM 和 Cross Chop 画面横震负责执行，星星、爱心及 HIT 采用 Polished Crystal 对应的原始图块。两轮连击和持续飞散的事件组成在 `engine/battle/play_rough_animation.asm`。
+- **定稿版本**：`ANIM-5.62.194`。6 帧 HIT、16 帧飞散粒子及“新粒子 → HIT → 旧粒子”的同帧绘制顺序保留。用户对 194C 的录像效果表示满意，不要求与 PC 参考逐帧一致；其后 194D 的额外命中横震已由用户撤销，不纳入正式版。
+- **收口清理**：移除小拉达 6 级嬉闹及 7 级普通 Pound 两条临时等级来源；正式普通物种升级表没有额外分配 EXT 招式。动画执行、伤害、PP、四槽和其他招式行为不因收口改变。
+- **验收边界**：录像支持受测攻击方向、命中及动画恢复的可见表现，不替代独立的 Red／Hard 链接、MAP 空间、全部派生嵌套与极端 OAM 限制核验。交付基线为已提交 193 HEAD `103679501f794b420b7b3ad3ccd3ed355ef230db`（RPP 导出记录）。
+
+## 193 — 普通物种 EXT 升级学习与回忆来源（已提交基线）
 
 - **正式填写接口**：普通物种仍在 `data/evos_moves.asm` 的原 `packed_learnset_start` / `packed_learnset_end` 内填写。普通招式保持 `level_move 7,FOCUS_ENERGY`；扩展招式新增 `level_ext_move 6,EXT_MOVE_POWER_WHIP`。宏按等级顺序验证合法 EXT ID、等级 1～100、每物种最多 2 条 EXT 来源与现有回忆候选 32 行预算。正式 193 **没有给任何物种实际分配 EXT 升级招式**，将来按需求再填。
 - **数据与兼容边界**：EXT 行登记为独立 `(species,level,ordinal)` 来源，不改变旧 packed 普通招式表字节格式；旧版初始配招、培育屋、原生野生／训练师读取器不会把 EXT ordinal 当成普通 Pound。队伍中已有的**普通形态**升级时使用共享 `TryLearnPartyLevelMove`；回忆师补充带 ordinal 的候选并按完整身份过滤。地区形态专有升级表、高等级直接生成初始招式、培育屋和敌方的正式 EXT 来源尚未接通到本接口；这不是本轮遗漏的测试配置。

@@ -2945,6 +2945,50 @@ INCLUDE "engine/overworld/bike_shortcut.asm"
 ; Phase-1 dedicated recipes for representative expanded moves.
 INCLUDE "data/extended_move_animations.asm"
 
+; ANIM-5.62.194: Play Rough EXT02 impact sprites live in roomy bank $3B.
+; The speed-line opening reuses the Gold Quick Attack renderer in bank $3D.
+; A small ROM0 bridge keeps BC (the native FrameBlock pointer) intact.
+; RPP's callba changes BC to its bank-return address, so it cannot pass a
+; FrameBlock directly to DrawFrameBlock in bank $1E. The stock homecall
+; mechanism is safe here because this bridge itself executes in ROM0.
+SECTION "Play Rough Native Frame Bridge", ROM0
+PlayRoughNativeDrawFrame::
+	homecall DrawFrameBlock
+	ret
+
+; The source PC Play Rough uses four graphics tiles for each 16x16
+; star/heart, and four mirrored tiles for the nine-sprite HIT_YFIX.
+; These are ROM0 frame *data*, consumed unchanged by stock DrawFrameBlock
+; in ROMX $1E.  Native tile numbers are $31 + each frame entry.
+PlayRoughPCStarFrame:
+	db 4
+	db  0, 0, $2f, 0
+	db  0, 8, $30, 0
+	db  8, 0, $31, 0
+	db  8, 8, $32, 0
+
+PlayRoughPCHeartFrame:
+	db 4
+	db  0, 0, $33, 0
+	db  0, 8, $34, 0
+	db  8, 0, $35, 0
+	db  8, 8, $36, 0
+
+PlayRoughPCHitFrame:
+	db 9
+	db  0, 0, $37, 0
+	db  0, 8, $38, 0
+	db  0,16, $37, OAM_HFLIP
+	db  8, 0, $39, 0
+	db  8, 8, $3a, 0
+	db  8,16, $39, OAM_HFLIP | OAM_VFLIP
+	db 16, 0, $37, OAM_VFLIP
+	db 16, 8, $38, OAM_HFLIP | OAM_VFLIP
+	db 16,16, $37, OAM_HFLIP | OAM_VFLIP
+
+SECTION "Polished Crystal Play Rough Animation", ROMX, BANK[$3B]
+INCLUDE "engine/battle/play_rough_animation.asm"
+
 SECTION "Trainer Parties", ROMX,BANK[$3B]
 INCLUDE "engine/battle/read_trainer_party.asm"
 INCLUDE "engine/overworld/advance_player_sprite.asm"
