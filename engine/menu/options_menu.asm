@@ -1098,13 +1098,24 @@ LookupJohtoMapGSCMusic:
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz,.legacyScene
 	push bc
+	push de ; E carries the RBY song ID for the caller
 	ld a,[wCurLocalMapID]
+	ld e,a
+	callab GetJohtoActiveSlot
+	ld a,e
+	pop de
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z,.invalidNative
 	ld c,a
 	ld b,0
 	ld hl,JohtoNativeGSCMusic
 	add hl,bc
 	ld a,[hl]
 	pop bc
+	ret
+.invalidNative
+	pop bc
+	xor a ; unresolved music, never read past the compact table
 	ret
 .legacyScene
 	cp JOHTO_ROUTE31_VIOLET_GATE

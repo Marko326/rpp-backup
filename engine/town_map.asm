@@ -136,7 +136,7 @@ DisplayTownMap:
 	ld bc, $10
 	call CopyData
 .inputLoop
-	call TownMapSpriteBlinkingAnimation
+	callab TownMapSpriteBlinkingAnimation
 	call JoypadLowSensitivity
 	; Keep directional/menu repeat from JoypadLowSensitivity, but START/SELECT are
 	; edge-triggered so held shortcut buttons cannot repeatedly jump the cursor.
@@ -396,57 +396,14 @@ JohtoBrowseDarkCaveName: db "Dark Cave@"
 JohtoBrowseRoute46Name: db "Route 46@"
 JohtoBrowseSilverCaveName: db "Silver Cave@"
 
-; MAP-5.62.137 P2-1 Town Map follow-up: use the true route landmark.
-; Both the blinking player marker and browse starting point use the same ID
-; mapping. Keep the list independent of Fly destinations.
-JohtoNativeTownMapIndices::
-	db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 14, 13, 14, 14, 15, 19, 17, 18, 19, 8, 20, 21 ; Route37, EcruteakCity
-JohtoNativeTownMapIndicesEnd::
-ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
-
+; SPID: the 23-byte JohtoNativeTownMapIndices table and index core now
+; live together in Bank $40. Keep the old Bank $1C A/DE caller ABI through
+; one near-call trampoline, instead of enlarging all three caller sites.
 GetJohtoTownMapCurrentIndex:
-	ld a, [wCurMap]
-	cp REGION_NATIVE_MAP_SLOT
-	jr nz, .legacyID
-	ld a, [wCurLocalMapID]
-	ld c, a
-	ld b, 0
-	ld hl, JohtoNativeTownMapIndices
-	add hl, bc
-	ld a, [hl]
-	ret
-.legacyID
-	cp JOHTO_ROUTE_29
-	jr z, .route29
-	cp JOHTO_CHERRYGROVE_CITY
-	jr z, .cherrygrove
-	cp JOHTO_ROUTE_30
-	jr z, .route30
-	cp JOHTO_ROUTE_31
-	jr z, .route31
-	cp JOHTO_ROUTE_32
-	jr z, .route32
-	cp JOHTO_VIOLET_CITY
-	jr nc, .violet ; indoor gate shares city's map marker
-	xor a ; current supported Johto fallback: New Bark Town
-	ret
-.route29
-	ld a, 1
-	ret
-.cherrygrove
-	ld a, 2
-	ret
-.route30
-	ld a, 3
-	ret
-.route31
-	ld a, 4
-	ret
-.route32:
-	ld a, 7
-	ret
-.violet
-	ld a, 5
+	push de
+	callab GetJohtoTownMapCurrentIndexFar
+	ld a, e ; Bankswitch restores A to bank number; E is the real return
+	pop de
 	ret
 
 LoadJohtoTownMapEntry:
@@ -1197,6 +1154,8 @@ LoadTownMapEntryFromE::
 	ld e, c ; x
 	ret
 
+JohtoInactiveMapName: db "Unavailable@"
+
 JohtoNativeTownMapEntries::
 	db 116, 94
 	dw JohtoNewBarkName
@@ -1293,11 +1252,18 @@ LoadTownMapEntry:
 	ret
 .native
 	ld a, [wCurLocalMapID]
-	add a
-	add a
-	ld c, a
-	ld b, 0
-	ld hl, JohtoNativeTownMapEntries
+	push de
+	ld e, a
+	callab GetJohtoActiveSlot
+	ld a, e
+	pop de
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z, .inactiveNative
+	ld l, a
+	ld h, 0
+	add hl, hl
+	add hl, hl ; 16-bit slot * 4, safe past slot 63
+	ld bc, JohtoNativeTownMapEntries
 	add hl, bc
 	ld a, [hli]
 	ld b, a
@@ -1306,6 +1272,11 @@ LoadTownMapEntry:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
+	ret
+.inactiveNative
+	ld b, 0
+	ld c, 0
+	ld hl, JohtoInactiveMapName ; no arbitrary fallback to a real map name
 	ret
 .specialEntry
 	ld b, d
@@ -1339,30 +1310,4 @@ INCLUDE "data/town_map_entries.asm"
 
 INCLUDE "text/map_names.asm"
 
-TownMapSpriteBlinkingAnimation:
-	ld a, [wAnimCounter]
-	inc a
-	cp 25
-	jr z, .hideSprites
-	cp 50
-	jr nz, .done
-; show sprites when the counter reaches 50
-	ld hl, wTileMapBackup
-	ld de, wOAMBuffer
-	ld bc, $90
-	call CopyData
-	xor a
-	jr .done
-.hideSprites
-	ld hl, wOAMBuffer
-	ld b, $24
-	ld de, $4
-.hideSpritesLoop
-	ld [hl], $a0
-	add hl, de
-	dec b
-	jr nz, .hideSpritesLoop
-	ld a, 25
-.done
-	ld [wAnimCounter], a
-	jp DelayFrame
+; TownMapSpriteBlinkingAnimation now runs in Bank $40 via callab.

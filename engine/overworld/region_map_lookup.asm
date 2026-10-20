@@ -27,9 +27,10 @@ ResolveRegionMapHeader::
 	and a
 	ret
 .johto
+	call GetJohtoActiveSlot
 	ld a, e
-	cp NUM_JOHTO_MAPS
-	jr nc, .invalid
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z, .invalid
 	ld l, e
 	ld h, 0
 	add hl, hl
@@ -130,12 +131,16 @@ SyncLegacyMapRegions::
 	cp MAP_REGION_JOHTO
 	jr nz, .badNative
 	ld a, [wCurLocalMapID]
-	cp NUM_JOHTO_MAPS
-	jr c, .lastMap
+	ld e, a
+	call GetJohtoActiveSlot
+	ld a, e
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr nz, .lastMap
 .badNative
-	; Invalid or pre-migration $FC save: never use a random ROM pointer.
-	ld a, JOHTO_VIOLET_CITY
-	ld [wCurMap], a
+	; Corrupted/unsupported native save: refuse to load a random Header.
+	; Do not silently teleport to Violet/Route32. Reset to title instead;
+	; the save on disk is not overwritten by this rejection.
+	jp SoftReset
 .currentLegacy
 	ld a, [wCurMap]
 	ld e, a
@@ -158,11 +163,19 @@ SyncLegacyMapRegions::
 	cp MAP_REGION_JOHTO
 	jr nz, .badLast
 	ld a, [wLastLocalMapID]
-	cp NUM_JOHTO_MAPS
-	jr c, .magic
+	ld e, a
+	call GetJohtoActiveSlot
+	ld a, e
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr nz, .magic
 .badLast
-	ld a, JOHTO_VIOLET_CITY
+	; Invalid return identity must never masquerade as a real city.
+	ld a, $ff ; legacy LAST_MAP sentinel (no LAST_MAP EQU symbol)
 	ld [wLastMap], a
+	xor a
+	ld [wLastRegion], a
+	ld [wLastLocalMapID], a
+	jr .magic
 .lastLegacy
 	ld a, [wLastMap]
 	ld e, a
@@ -239,9 +252,10 @@ RegionMapKeyToLegacyID::
 	jr z, .kanto
 	cp MAP_REGION_JOHTO
 	jr nz, .invalid
+	call GetJohtoActiveSlot
 	ld a, e
-	cp NUM_JOHTO_MAPS
-	jr nc, .invalid
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z, .invalid
 	ld l, e
 	ld h, 0
 	ld bc, JohtoMapLegacyAliases
@@ -396,11 +410,9 @@ ResolveNativeRegionWarp::
 	inc hl
 	jr .loop
 .invalid
-	; Fail closed: a malformed warp cannot jump to an arbitrary ID.
-	ld d, MAP_REGION_JOHTO
-	ld e, JOHTO_ROUTE_32_LOCAL_ID
-	call StoreNativeWarpTarget
-	ret
+	; Malformed native warp is not a license to send player to Route32.
+	; Abort the session without changing the saved game on disk.
+	jp SoftReset
 
 NativeRegionWarpTargets::
 	; Cave warp 0 returns to the original Route32 cave-mouth warp 0.
@@ -485,10 +497,10 @@ SelectNativeMapConnection::
 	inc hl
 	jr .loop
 .invalid
-	; Fence must prevent reaching an unregistered edge. Never load $FC
-	; with a stale key if an entry is accidentally left out.
-	ld e, JOHTO_ROUTE_32
-	ret
+	; A missing/invalid connection can otherwise load an unrelated map.
+	; The collision fence normally prevents this path; fail closed if it
+	; is reached after corrupted header/connection data.
+	jp SoftReset
 
 NativeRegionConnectionTargets::
 	; Gold Route36 north(0) <-> Route37 south(1), stable local IDs 16 and 21.

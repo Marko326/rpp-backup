@@ -3666,6 +3666,11 @@ SECTION "Johto Route 29 Display Name", ROM0
 JohtoRoute29Name:: db "Route 29@"
 JohtoRoute30Name:: db "Route 30@"
 
+; SPID ROM0 recovery: place Town Map common helpers and landmark index data
+; in the Johto expansion bank. All ROM0/$1C callers use callab.
+SECTION "Johto Town Map Common ROMX", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "engine/overworld/johto_town_map_helpers.asm"
+
 ; REG-5.62.118: independent region-key Header and Bank indices in expansion ROM.
 SECTION "Johto Region Map Header Tables", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/johto_map_headers.asm"

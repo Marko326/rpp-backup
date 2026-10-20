@@ -138,8 +138,13 @@ LoadTilesetPalette:
 	jr nz,.johtoRoofsDone
 .outdoorRoof
 	ld a,[wCurLocalMapID]
-	cp NUM_JOHTO_MAPS
-	jr nc,.johtoRoofsDone
+	push de
+	ld e,a
+	callab GetJohtoActiveSlot
+	ld a,e
+	pop de
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z,.johtoRoofsDone
 	ld e,a
 	ld d,0
 	ld hl,JohtoGoldDayRoofGroups

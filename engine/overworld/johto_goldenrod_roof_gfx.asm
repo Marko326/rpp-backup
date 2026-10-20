@@ -65,8 +65,13 @@ SelectGoldenrodRoofSource:
 	cp MAP_REGION_JOHTO
 	jr nz,.no
 	ld a,[wCurLocalMapID]
-	cp NUM_JOHTO_MAPS
-	jr nc,.no
+	push de
+	ld e,a
+	callab GetJohtoActiveSlot
+	ld a,e
+	pop de
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z,.no
 	ld e,a
 	ld d,0
 	ld hl,JohtoRoofGroupForLocalMap

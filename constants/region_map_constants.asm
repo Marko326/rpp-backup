@@ -31,7 +31,11 @@ DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
 ; IDs 23+ remain reserved; Route37 ID21 and EcruteakCity ID22 are registered.
 INCLUDE "constants/johto_fixed_map_ids.asm"
 
+; Compact row count; not the highest stable ID or frozen roster size.
 DEF NUM_JOHTO_MAPS EQU 23
+DEF NUM_JOHTO_ACTIVE_MAPS EQU NUM_JOHTO_MAPS
+DEF JOHTO_STABLE_ID_TABLE_SIZE EQU 256
+DEF JOHTO_INVALID_ACTIVE_SLOT EQU $ff
 
 ; Native Johto local IDs >= 8 share one runtime compatibility handle.
 ; They must never consume more legacy bytes or reuse an old Kanto map ID.

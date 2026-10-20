@@ -3205,7 +3205,7 @@ WaitForTextScrollButtonPress::
 	ld a, [wTownMapSpriteBlinkingEnabled]
 	and a
 	jr z, .skipAnimation
-	call TownMapSpriteBlinkingAnimation
+	callab TownMapSpriteBlinkingAnimation
 .skipAnimation
 	coord hl, 18, 16
 	call HandleDownArrowBlinkTiming

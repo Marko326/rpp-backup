@@ -1,3 +1,49 @@
+; SPID: stable Johto physical local ID -> dense registered runtime slot.
+; $ff means inactive/illegal, never an implicit default map or a header.
+; C alone changes this 256-byte table when a real map is integrated.
+JohtoStableIDToActiveSlot::
+	db $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0a, $0b, $0c, $0d, $0e, $0f ; $00-$0f
+	db $10, $11, $12, $13, $14, $15, $16, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $10-$1f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $30-$3f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $60-$6f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $70-$7f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $80-$8f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $90-$9f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $a0-$af
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $b0-$bf
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $c0-$cf
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $d0-$df
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $e0-$ef
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $f0-$ff
+JohtoStableIDToActiveSlotEnd::
+ASSERT JohtoStableIDToActiveSlotEnd - JohtoStableIDToActiveSlot == 256
+ASSERT NUM_JOHTO_MAPS < $ff ; $ff is the invalid active slot sentinel
+
+; Input E=stable physical Johto ID; output E=active slot or $ff.
+; Preserve BC/HL/D for same-bank calls. Far callers use callab and read E,
+; not A or carry (bank restoration may overwrite A/flags).
+GetJohtoActiveSlot::
+	push bc
+	push hl
+	ld c, e
+	ld b, 0
+	ld hl, JohtoStableIDToActiveSlot
+	add hl, bc
+	ld e, [hl]
+	; Defend against a damaged/misregistered table even at runtime.  No
+	; out-of-range dense slot may index an arbitrary Bank/Header pointer.
+	ld a, e
+	cp NUM_JOHTO_ACTIVE_MAPS
+	jr c, .valid
+	ld e, JOHTO_INVALID_ACTIVE_SLOT
+.valid
+	pop hl
+	pop bc
+	ret
+
 ; REG-5.62.118: Johto's independent local-ID tables, in Bank $40.
 ; Keep the pointer and bank entries in exactly the same local-ID order.
 JohtoMapHeaderPointers::
@@ -112,16 +158,24 @@ JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::
 	ld a, [wCurLocalMapID]
-	add a
-	ld c, a
-	ld b, 0
-	ld hl, JohtoNativeMapSongBanks
+	ld e, a
+	call GetJohtoActiveSlot
+	ld a, e
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	ret z ; no out-of-bounds music lookup for a bad physical ID
+	ld l, e
+	ld h, 0
+	add hl, hl ; 16-bit slot * 2, safe beyond slot 127
+	ld bc, JohtoNativeMapSongBanks
 	add hl, bc
 	ld a, [hli]
 	ld [wMapMusicSoundID], a
 	ld a, [hl]
 	ld [wMapMusicROMBank], a
 	ret
+
+; Kept above the table-count assertions to catch all future registrations.
+; End of safe song lookup.
 
 ASSERT JohtoMapLegacyAliasesEnd - JohtoMapLegacyAliases == NUM_JOHTO_MAPS
 ASSERT JohtoMapHeaderPointersEnd - JohtoMapHeaderPointers == NUM_JOHTO_MAPS * 2
