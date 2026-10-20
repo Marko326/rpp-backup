@@ -65,7 +65,7 @@ class JohtoMusicFinalAudit(unittest.TestCase):
 
     def test_unknown_future_map_requires_scene_mapping(self):
         self.mutation('data/johto_map_headers.asm',
-                      'db REGION_NATIVE_MAP_SLOT ; Ruins of Alph Outside\nJohtoMapLegacyAliasesEnd::',
+                      'db REGION_NATIVE_MAP_SLOT ; Route37\nJohtoMapLegacyAliasesEnd::',
                       'db PALLET_TOWN ; Ruins outside, native only\nJohtoMapLegacyAliasesEnd::',
                       'native locals must share the virtual map handle')
 

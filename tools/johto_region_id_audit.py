@@ -11,6 +11,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 INPUTS = (
     'constants/map_constants.asm', 'constants/region_map_constants.asm',
+    'constants/johto_fixed_map_ids.asm',
     'data/map_header_pointers.asm', 'data/map_header_banks.asm',
     'data/map_songs.asm', 'data/hide_show_data.asm',
     'data/johto_map_headers.asm', 'engine/overworld/region_map_lookup.asm',
@@ -117,13 +118,15 @@ def audit(root=ROOT):
         errors.append('legacy table bound missing')
     if not re.search(r'\bmapconst\s+JOHTO_ROUTE_32,\s*45,\s*10\s*;\s*\$FB', const):
         errors.append('existing Route32 legacy alias has moved')
-    locals_ = re.findall(r'^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\d+)\s*$', keys, re.M)
+    local_defs = keys + '\n' + sources['constants/johto_fixed_map_ids.asm']
+    locals_ = re.findall(r'^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\d+)(?:\s*;[^\n]*)?$', local_defs, re.M)
     n = re.search(r'\bDEF NUM_JOHTO_MAPS EQU (\d+)', keys)
     if not n:
         return errors + ['missing Johto local ID count']
     count = int(n.group(1))
     indices = [int(x) for _, x in locals_]
-    if indices != list(range(count)):
+    active_locals = [row for row in locals_ if int(row[1]) < count and not row[0].startswith(('JOHTO_RESERVED_', 'JOHTO_UNASSIGNED_'))]
+    if [int(x) for _, x in active_locals] != list(range(count)):
         errors.append('Johto local map IDs are not contiguous and unique')
 
     johto_sets = {
@@ -159,7 +162,7 @@ def audit(root=ROOT):
                           'JohtoNativeTownMapEntriesEnd::', r'dw')
     if len(map_entries) != count:
         errors.append(f'native Town Map name count {len(map_entries)} != {count}')
-    errors.extend(check_native_identity(sources, locals_, count, records, gsc))
+    errors.extend(check_native_identity(sources, active_locals, count, records, gsc))
 
     for rel, start, end, kind in [
         ('data/map_header_pointers.asm', 'MapHeaderPointers::', 'MapHeaderPointersEnd:', 'dw'),

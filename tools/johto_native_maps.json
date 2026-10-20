@@ -689,6 +689,38 @@
       },
       "identity_evidence": "USER_ACCEPTED",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 21,
+      "local_symbol": "JOHTO_ROUTE_37_LOCAL_ID",
+      "header": "JohtoRoute37_h",
+      "bank": "BANK(JohtoRoute37_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE37",
+      "town_map_index": 20,
+      "town_map_name": "JohtoBrowseRoute37Name",
+      "town_map_xy": [
+        68,
+        76
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     }
   ]
 }

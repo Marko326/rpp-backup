@@ -10,7 +10,11 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from johto_rpp_connection_guard import audit, ConnectionError, constant_expr, audit_all_active, discover_active_edges
+from johto_rpp_connection_guard import (
+    audit, ConnectionError, constant_expr, audit_all_active, discover_active_edges,
+    frozen_gold_direct_seams, check_frozen_gold_source, check_all_native_selectors,
+    require_registered_gold_seams,
+)
 
 
 class JohtoConnectionGuardTest(unittest.TestCase):
@@ -256,10 +260,124 @@ class RealConnectionCoverage(unittest.TestCase):
 
     def test_all_active_connections_must_match_gold(self):
         edges=discover_active_edges(self.rpp)
-        self.assertEqual(len(edges),22)  # .223 roads plus .217 Goldenrod/Route34 bidirectional seam
+        self.assertGreaterEqual(len(edges),24)  # historical minimum, never freeze future map count
         result=audit_all_active(self.rpp,self.gold)
         self.assertEqual(result['status'],'PASS',result)
         self.assertEqual(len(result['edges']),len(edges))
+
+    def test_native_south_selector_wrong_direction_is_rejected(self):
+        # Route37 SOUTH is direction 1; direction 0 used to route it to
+        # the legacy Route32 fallback even when strip geometry was correct.
+        with tempfile.TemporaryDirectory() as tmp:
+            dest=Path(tmp)
+            shutil.copytree(self.rpp/'data/mapHeaders',dest/'data/mapHeaders')
+            shutil.copytree(self.rpp/'constants',dest/'constants')
+            shutil.copytree(self.rpp/'maps',dest/'maps')
+            shutil.copy2(self.rpp/'main.asm',dest/'main.asm')
+            shutil.copy2(self.rpp/'data/johto_map_headers.asm',dest/'data/johto_map_headers.asm')
+            (dest/'engine/overworld').mkdir(parents=True)
+            shutil.copy2(self.rpp/'engine/overworld/johto_route33_collision.asm',
+                         dest/'engine/overworld/johto_route33_collision.asm')
+            selector=dest/'engine/overworld/region_map_lookup.asm'
+            shutil.copy2(self.rpp/'engine/overworld/region_map_lookup.asm',selector)
+            good='db JOHTO_ROUTE_37_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID'
+            bad='db JOHTO_ROUTE_37_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID'
+            text=selector.read_text()
+            self.assertEqual(text.count(good),1)
+            selector.write_text(text.replace(good,bad,1))
+            (dest/'tools').mkdir()
+            shutil.copy2(self.rpp/'tools/johto_native_maps.json',
+                         dest/'tools/johto_native_maps.json')
+            result=audit_all_active(dest,self.gold)
+            self.assertEqual(result['status'],'FAIL')
+            self.assertTrue(any('JohtoRoute37 south->JohtoRoute36: runtime native selector'
+                                in issue for entry in result['edges']
+                                for issue in entry.get('issues',[])),result)
+
+    def temporary_real_map_project(self, dest):
+        """Minimal existing-project fixture; no independent conversion tools."""
+        for rel in ('data/mapHeaders', 'constants', 'maps'):
+            shutil.copytree(self.rpp/rel, dest/rel)
+        for rel in ('main.asm', 'data/johto_map_headers.asm',
+                    'tools/johto_native_maps.json',
+                    'engine/overworld/johto_route33_collision.asm',
+                    'engine/overworld/region_map_lookup.asm'):
+            f = dest/rel
+            f.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(self.rpp/rel, f)
+
+    def test_gold_full_frozen_adjacency_matches_368_maps_and_142_edges(self):
+        self.assertEqual(len(frozen_gold_direct_seams()), 142)
+        self.assertEqual(check_frozen_gold_source(self.gold), frozen_gold_direct_seams())
+        edges=discover_active_edges(self.rpp)
+        self.assertIsNone(require_registered_gold_seams(self.rpp,edges,frozen_gold_direct_seams()))
+        check_all_native_selectors(self.rpp,edges)
+
+    def test_disabling_both_halves_of_registered_route36_37_seam_fails(self):
+        # Earlier --all-active only audited edges that it happened to find.
+        with tempfile.TemporaryDirectory() as tmp:
+            dest=Path(tmp)
+            self.temporary_real_map_project(dest)
+            h=dest/'data/mapHeaders/JohtoRoute37.asm'
+            content=h.read_text()
+            self.assertIn('db SOUTH',content)
+            h.write_text(content.replace('db SOUTH','db 0',1))
+            report=audit_all_active(dest,self.gold)
+            self.assertEqual(report['status'],'FAIL')
+            self.assertTrue(any('GOLD_TOPOLOGY:' in x and 'JohtoRoute37' in x
+                                and 'MISSING=' in x for x in report['issues']),report)
+
+    def test_duplicate_native_selector_row_fails_even_if_current_edge_still_correct(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest=Path(tmp)
+            self.temporary_real_map_project(dest)
+            f=dest/'engine/overworld/region_map_lookup.asm'
+            src=f.read_text()
+            row='db JOHTO_ROUTE_37_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID'
+            self.assertIn(row,src)
+            f.write_text(src.replace(row,row+'\n\t'+row,1))
+            report=audit_all_active(dest,self.gold)
+            self.assertEqual(report['status'],'FAIL')
+            self.assertTrue(any('Duplicate native selector' in x for x in report['issues']),report)
+
+    def test_orphan_native_selector_fails_and_does_not_silently_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest=Path(tmp)
+            self.temporary_real_map_project(dest)
+            f=dest/'engine/overworld/region_map_lookup.asm'
+            src=f.read_text()
+            row='db JOHTO_ROUTE_37_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID'
+            self.assertIn(row,src)
+            f.write_text(src.replace(row,row+'\n\tdb JOHTO_ROUTE_37_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID',1))
+            report=audit_all_active(dest,self.gold)
+            self.assertEqual(report['status'],'FAIL')
+            self.assertTrue(any('NATIVE_SELECTOR' in x and 'EXTRA=' in x for x in report['issues']),report)
+
+    def test_changed_frozen_gold_offset_fails_before_release(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest=Path(tmp)
+            f=dest/'data/maps/attributes.asm'
+            f.parent.mkdir(parents=True)
+            data=(self.gold/'data/maps/attributes.asm').read_text()
+            needle='connection south, Route36, ROUTE_36, -10'
+            self.assertIn(needle,data)
+            f.write_text(data.replace(needle,'connection south, Route36, ROUTE_36, -9',1))
+            with self.assertRaisesRegex(ConnectionError,'Gold direct connection contract mismatch'):
+                check_frozen_gold_source(dest)
+
+    def test_native_selector_trailing_record_after_sentinel_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest=Path(tmp)
+            self.temporary_real_map_project(dest)
+            f=dest/'engine/overworld/region_map_lookup.asm'
+            src=f.read_text()
+            start=src.index('NativeRegionConnectionTargets::')
+            i=src.index('db $ff',start)
+            f.write_text(src[:i]+src[i:].replace('db $ff',
+                'db $ff\n\tdb JOHTO_ROUTE_37_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID',1))
+            report=audit_all_active(dest,self.gold)
+            self.assertEqual(report['status'],'FAIL')
+            self.assertTrue(any('after $ff' in x for x in report['issues']),report)
 
     def test_merged_route34_goldenrod_seam_must_remain_audited(self):
         import json
@@ -332,6 +450,8 @@ class RealConnectionCoverage(unittest.TestCase):
             (dest/'tools').mkdir()
             shutil.copy2(self.rpp/'tools/johto_native_maps.json',dest/'tools/johto_native_maps.json')
             h=dest/'data/mapHeaders/JohtoRoute35.asm'
+            shutil.copy2(self.rpp/'engine/overworld/region_map_lookup.asm',
+                         dest/'engine/overworld/region_map_lookup.asm')
             text=h.read_text()
             self.assertIn('db JOHTO_ROUTE_35_WIDTH + 3', text)
             h.write_text(text.replace('db JOHTO_ROUTE_35_WIDTH + 3',
@@ -447,6 +567,9 @@ class RealConnectionCoverage(unittest.TestCase):
             shutil.copy2(self.rpp/'data/johto_map_headers.asm',dest/'data/johto_map_headers.asm')
             (dest/'tools').mkdir()
             shutil.copy2(self.rpp/'tools/johto_native_maps.json',dest/'tools/johto_native_maps.json')
+            (dest/'engine/overworld').mkdir(parents=True)
+            shutil.copy2(self.rpp/'engine/overworld/region_map_lookup.asm',
+                         dest/'engine/overworld/region_map_lookup.asm')
             main=dest/'main.asm'
             source=main.read_text()
             original='SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]'

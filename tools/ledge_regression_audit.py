@@ -56,7 +56,7 @@ def registration_errors(src):
     expected_tables = {'JohtoRoute29LedgeTiles', 'JohtoRoute31LedgeTiles',
                        'JohtoIlexForestLedgeTiles'}
     coord = set(re.findall(r'(?m)^\.(\w+Hops)\s*$', src))
-    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops'}
+    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops', 'route37Hops'}
     errors = []
     for label, actual_set, expected_set in (
             ('native router', actual, expected),
@@ -80,6 +80,8 @@ def registration_errors(src):
         'jp .foundMatch',
         'cp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tret nz',
         'ld hl, .ruinsHops\n\tjp .modernHopLookup',
+        'cp JOHTO_ROUTE_37_LOCAL_ID\n\tjr z, .route37HopTable',
+        'ld hl, .route37Hops\n\tjp .modernHopLookup',
     )
     for snippet in contract:
         if snippet not in src:
@@ -224,13 +226,14 @@ def audit(root=ROOT, gold=None):
     for label, map_name, width, height, expected in (
             ('.route33Hops', 'JohtoRoute33', 20, 18, 7),
             ('.azaleaHops', 'JohtoAzaleaTown', 40, 18, 10),
-            ('.ruinsHops', 'JohtoRuinsOfAlphOutside', 20, 36, 16)):
+            ('.ruinsHops', 'JohtoRuinsOfAlphOutside', 20, 36, 16),
+            ('.route37Hops', 'JohtoRoute37', 20, 18, 6)):
         part = src.split('\n' + label + '\n', 1)[1].split('\tdb $ff', 1)[0]
         actions = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*PLAYER_DIR_(\w+)', part)
         try:
             actual_actions = coordinate_hops(src, label)
             reference = expected_gold_hops(gold, map_name[5:],
-                        'johto' if map_name=='JohtoRuinsOfAlphOutside' else 'johto_modern')
+                        'johto' if map_name in ('JohtoRuinsOfAlphOutside', 'JohtoRoute37') else 'johto_modern')
             if actual_actions != reference:
                 report['errors'].append(f'{map_name}: Gold HOP missing={sorted(reference-actual_actions)} '
                                         f'extra={sorted(actual_actions-reference)}')
@@ -261,7 +264,7 @@ def audit(root=ROOT, gold=None):
         report['modern_coordinate_maps'][map_name] = {
             'actions': len(actions), 'third_cell_passable': third_cells_passable,
             'runtime_extra_simulated_inputs': 2,
-            'tileset': 'johto' if map_name=='JohtoRuinsOfAlphOutside' else 'johto_modern',
+            'tileset': 'johto' if map_name in ('JohtoRuinsOfAlphOutside', 'JohtoRoute37') else 'johto_modern',
         }
         if len(actions) != expected:
             report['errors'].append(f'{map_name}: coordinate HOP count drift')
@@ -273,7 +276,7 @@ def audit(root=ROOT, gold=None):
     # ledges. Future maps with Gold HOP roles must have a reviewed runtime
     # dispatcher and join this exact per-position/dir audit, not silently
     # inherit a zero-rule default just because the old roster was complete.
-    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside'}
+    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside', 'JohtoRoute37'}
     registered = json.loads((root / 'tools/johto_native_maps.json').read_text())['maps']
     for entry in registered:
         name = entry['header'].removesuffix('_h')
@@ -327,6 +330,7 @@ def audit(root=ROOT, gold=None):
         report['kanto_overworld'][path.stem] = len(kanto)
     report['totals'] = {'johto_native_pair_approaches': sum(counts.values()),
                         'modern_coordinate_rules': 17,
+                        'route37_coordinate_rules': len(coordinate_hops(src, '.route37Hops')),
                         'ruins_coordinate_rules': len(coordinate_hops(src,'.ruinsHops')),
                         'kanto_overworld_maps_checked': len(report['kanto_overworld']),
                         'kanto_pair_approaches': sum(report['kanto_overworld'].values())}

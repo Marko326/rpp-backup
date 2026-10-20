@@ -1,3 +1,18 @@
+## ROUTE37-5.62.225｜Route37(ID21) 候选定稿清理（待 ROM/MAP 和手机最终验收）
+
+- [x] **开发与错误修复**：按 Gold 原版接入 Route37 10×9、地形/碰撞、6 处向下跳崖和 Route36↔Route37 两条直连；南下运行时目标严格为 Route36，不再误走 Route32；Route37 北接缘朱市的出口继续封闭。固定 ID21，现有 0–20 不重排。
+- [x] **防回归审计**：在项目原 `johto_rpp_connection_guard.py` 中核对 Gold 368 张图的 142 条有向直连（包含关都参考），并强制检查当前已启用的 Header、运行时方向选择表、目标、重复/漏接和错误偏移；Warp/门房仍由已有专项审计管理，不误判为直接连接。
+- [x] **真实失败史**：初版 Route37 南出口在运行时选择表把 south=1 错写成 north=0，原连接审计仍报 24/24 PASS；用户视频显示返回 Route32 且行走异常。修复代码与负向故障注入后，静态连接审计能够拒绝同样的错误。
+- [ ] **用户最终验收**：用户已反馈修复后暂未看出问题，但尚无本轮新 ROM/MAP 或 36↔37 两向、6 处跳崖、旧存档/关都回归的完整手机测试记录；不能标为全项 PHONE_ACCEPTED。编译、链接和 Git Commit/Push 由用户自行执行。
+- [ ] **下一阶段**：先做 EcruteakCity(ID22)，待 36↔37↔缘朱市回归、ROM/MAP 和手机验收后，再处理稀疏 ID 运行映射、正式东西分线。切图短暂停顿作为下方 MAP-SEAM 可选 TODO，当前未作性能改动。
+
+## MAP-SEAM｜步行／骑行相邻地图切换短暂停顿（用户视频，延期优化）
+
+- [ ] **体验问题**：用户提供 `BANK-5.62.225.mp4`，相邻城都道路步行／骑行跨边界时出现可感知的短暂停顿；当前只记录现象，**尚无逐帧 CPU／VRAM 性能测量，不宣称卡顿全部来自某一函数**。
+- [ ] **后续可选专项（不阻塞地图开发）**：先用用户编译的同版 ROM 做切图前后逐帧对比，核对 `home/overworld.asm` 的地图 Header／连接条带装载、NPC 初始化、音乐和调色板，以及 `PatchGoldenrodRoofOnConnection` / `CopyVideoData`；只研究同 tileset／屋顶不变时跳过重复复制的安全条件。
+- [ ] **验收门槛**：保持不同 tileset、门房、洞穴、昼夜切换的完整刷新；特别回归 Route32↔33、Route35↔36、Route36↔37、Save/Continue、逆向掉头与边界可见树林。仍由用户编译 ROM、提供新 MAP 与手机录像。若优化复杂、可能引入花屏/卡门或收益不明显，则保留现状并关闭该可选任务。
+- [x] **当前处理范围**：仅增强现有 `tools/johto_rpp_connection_guard.py` 的 Gold 固定连接拓扑和运行时选择表防错；**本轮不修改游戏切图引擎，不宣称卡顿已修复**。
+
 ## BANK-5.62.225｜第二轮 ROM0 列表菜单迁移：正式清理候选（当前最新状态）
 
 - [x] **来源与范围**：基线为金银分支导出记录的干净 HEAD `57be89a7cc70aee42178c953ce01fd5e1146e8a3`，第一轮 ROM0 两笔提交已经包含。本轮增量迁移涉及 `home.asm`、`main.asm`、`engine/menu/list_menu_main.asm` 和 `tools/` 下 5 个离线审计/测试文件；没有删除或改变已有地图、门房、Surf、屋顶、遗迹图块、跳崖和连接资源。
@@ -1175,7 +1190,7 @@ This section preserves the original author's roadmap. Status markers reflect the
 
 - [x] 在 `constants/johto_fixed_map_ids.asm` 固定 Route37=21、EcruteakCity=22、西线 A=23..61、东线 B=62..101、共用 C=102..191、后期 C=192..221；原始 0..20 不改。`constants/region_map_constants.asm` 已 INCLUDE，ASM 与 `tools/johto_fixed_ids.csv` 一一审计。
 - [x] 正常 Makefile ROM 对象编译前执行 `johto-id-preflight`；统一发布审计和负向测试检查抢号、取消 INCLUDE、绕过构建门禁等。仅声明符号，不新增 ROM 数据、不增加有效地图数量。
-- [ ] 接入下一张 Route37（21），随后 EcruteakCity（22），保留未开放路口封闭；由用户编译 ROM/MAP 并手机验收。
+- [x] Route37（21）源码候选已接入；[ ] 待用户编译 ROM/MAP、完成手机验收；下一张 EcruteakCity（22），其余未开放入口继续封闭。
 - [ ] **东西分线前必须做** stable local ID 到 compact active slot 稀疏映射和所有相关表/调用者迁移，解决 64/128 偏移越界及无效 ID 判活；未完成前东线 62 不得作为真实已登记地图上线。不要把 `NUM_JOHTO_MAPS=21` 直接改为 222。
 - [ ] 原 BANK-5.62.225 菜单迁 Bank $01 后的背包交换、PC、商店、战斗道具和音乐手机专项仍待完整验收；历史 SafariZoneBeta 统一审计 FAIL 保留。
 
@@ -1183,5 +1198,5 @@ This section preserves the original author's roadmap. Status markers reflect the
 
 - [x] 222 个固定 local ID 的 ASM 预留及源内枚举；0–20 不变。统一审核、Gold 368 原始编号表和分线文件归属检查均在仓库中。
 - [x] 清理误导性审计成功提示：无 Gold 参数时仅核对冻结参考表；实际原版交叉验证须提供 `--gold`。专项测试和统一审计必选测试清单保持同步。
-- [ ] 下一张开发地图仍为 Route37(ID21)，随后 EcruteakCity(ID22)；分线前完成 active-slot 兼容层，东线 ID62 不得提前启用。
+- [x] Route37(ID21) 候选已开发；[ ] 下一张 EcruteakCity(ID22)，分线前完成 active-slot 兼容层，东线 ID62 不得提前启用。
 - [ ] 用户 ROM/MAP + 手机专项未验收；历史 SafariZoneBeta 统一审计 FAIL 不屏蔽。

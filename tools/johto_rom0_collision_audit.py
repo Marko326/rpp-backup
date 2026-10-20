@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 
 MAPPINGS = {
+    'JOHTO_ROUTE_37_LOCAL_ID': 'JohtoRoute37CanStepAhead',
     'JOHTO_ROUTE_35_LOCAL_ID': 'JohtoRoute35CanStepAhead',
     'JOHTO_ROUTE_36_LOCAL_ID': 'JohtoRoute36CanStepAhead',
     'JOHTO_ROUTE_33_LOCAL_ID': 'JohtoRoute33CanStepAhead',

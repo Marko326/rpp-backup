@@ -1,4 +1,19 @@
-# BANK-5.62.225｜ROM0 第二轮 Bank $01 列表菜单外迁：正式清理提交索引（当前最新状态）
+# BANK-5.62.225｜Route37(ID21) 与 Gold 固定连接审计：本轮正式清理提交索引
+# 本文件只列提交范围；实际 git commit -F 使用正式 ZIP 内两份独立 TXT 日志。
+# 基线：金银 / 95cf71c7092c71f43535dec1c7887e1f6999c086（用户导出为干净 HEAD）。
+# Version: BANK-5.62.225 -> BANK-5.62.225；本轮功能代码及 tools/ 累计改动按模式 A 双提交。
+# 第一笔 feat(johto): 接入37号道路并修正36号道路双向连接
+#   仅本轮变更的游戏 ASM、maps/JohtoRoute37.*、data/mapHeaders/、data/mapObjects/、scripts/ 等功能文件。
+# 第二笔 test(tool): 强化Gold固定地图邻接与运行时方向审计
+#   仅本轮变更的 tools/、tools/tests/、TODO.md、RPP_DEVELOPMENT_PITFALLS.md、本文件。
+# 应用顺序：当前 Route37 最新候选 -> 清理增量；工具反向隔离；第一笔提交；
+#   git apply -R 工具反向隔离补丁恢复；第二笔提交。HEAD 全量补丁仅供干净基线恢复，不能叠加。
+# 本轮实机用户反馈为「没看出什么问题」，但缺少修复后的新 MAP 和全部专项手机验收。
+# 连接审计/单元测试和统一发布审计的真实执行结果以 ZIP 两份提交日志为准；
+# 统一审计历史 SafariZoneBeta FAIL 保留；切图卡顿仅作为 TODO，不修改引擎。
+# 以下为已提交的固定ID、ROM0及早期开发历史日志索引，不属于本轮变更范围。
+
+# BANK-5.62.225｜ROM0 第二轮 Bank $01 列表菜单外迁：历史正式清理提交索引（已合入 HEAD）
 # 此文件只列提交范围，不可整文件 git commit -F；ZIP 内两份 TXT 才是完整提交正文。
 # Git 基线：金银 / 57be89a7cc70aee42178c953ce01fd5e1146e8a3（导出记录为干净 HEAD）。
 # Version: ILEX-5.62.224 -> BANK-5.62.225；本轮同时修改游戏 ASM 和 tools/，按模式 A 双提交。

@@ -10,9 +10,9 @@
 
 **编号区别**：RPP `stable_local_id` 为城都地图永久身份，**不是** Gold 原版 `GROUP_*` / `MAP_*` 二元组。项目原有 Kanto 地图不得重新分配 RPP local ID。Gold 一共 368 张，其中 222 张纳入当前城都新增/已有计划，另外 146 张未纳入本次 Johto local ID 池（包括 9 张交接文档的关都参考）。完整原版 368 张在 `tools/johto_gold_map_reference.csv`，其余地图保留原有系统，不自动启用。
 
-**源码实施状态（新增硬固化）**：固定编号已同时写入 `tools/johto_fixed_ids.csv` 与 `constants/johto_fixed_map_ids.asm`（后者已由 `constants/region_map_constants.asm` 正式 INCLUDE 到实际汇编入口），覆盖未来 201 张地图，已有 0–20 仍由原 ASM 常量维护；`Makefile` 的正常 ROM 对象编译带 `johto-id-preflight` 顺序门禁，统一发布审计同样强制检查。常量预留 **不改变** `NUM_JOHTO_MAPS=21`、表长度、Warp 或存档，不激活任何未开发地图。**稀疏 ID 运行时映射层尚未实施，东线 62 等跳号 ID 仍不得上线。**
+**源码实施状态（新增硬固化）**：固定编号已同时写入 `tools/johto_fixed_ids.csv` 与 `constants/johto_fixed_map_ids.asm`（后者已由 `constants/region_map_constants.asm` 正式 INCLUDE 到实际汇编入口），覆盖未来 201 张地图，已有 0–20 仍由原 ASM 常量维护；`Makefile` 的正常 ROM 对象编译带 `johto-id-preflight` 顺序门禁，统一发布审计同样强制检查。常量预留本身**不会扩容地图表、Warp 或存档**；现阶段 Route37 已独立注册，`NUM_JOHTO_MAPS=22`，其它未开发地图仍未激活。**稀疏 ID 运行时映射层尚未实施，东线 62 等跳号 ID 仍不得上线。**
 
-1. **从现在到分线之前：只由共用 C 推进。下一张地图是 `Route37` 固定 local ID `21 ($15)`；之后 `EcruteakCity` 固定 local ID `22 ($16)`。完成 **36↔37↔缘朱市** 双向通行、审计、用户编译及手机验收后，才创建东西两条线。不是等到浅葱、卡吉或烟墨才分。**
+1. **从现在到分线之前：只由共用 C 推进。`Route37` 固定 local ID `21 ($15)` 已接入候选并待用户完整实机验收；下一张是 `EcruteakCity` 固定 local ID `22 ($16)`。完成 **36↔37↔缘朱市** 双向通行、审计、用户编译及手机验收后，才创建东西两条线。不是等到浅葱、卡吉或烟墨才分。**
 2. **冻结 222 个可纳入城都计划的地图 ID**：现有 21 + 共同起步 2 + 西线 39 + 东线 40 + 共用剩余 90 + 后期 30；9 个纯关都参考不挤占城都 ID。每个地图唯一、永久固定，详见第 9 节完整表；还额外划出 222～254 未分配保留位，`$FF` 禁止作为地图 ID。
 3. **不能仅靠划号段就直接运行**：现在 ASM 是连续 local ID 索引表；为了允许东线 ID `62` 在西线 `23～61` 尚未上线时独立启用，分线前 C 必须落地第 2 节规定的“稳定 ID→紧凑活跃槽位”兼容层，连同越界保护/静态工具/实机测试全部验收。**此项当前未实现，不许在未改代码时直接启用高 ID。**
 4. **合并频率按验收单元，不按攒够多少天**：A/B 每完成 **1 张户外地图或 1 座门房/1 个洞穴楼层** 就向 C 提交一次；每线最多留 **1 个可测试且未集成的任务**，超过 **2 个工作日**仍未集成必须同步并说明阻塞。公共修复当天可独立推送到两线；要不要正式 Git Commit/Push 始终由用户决定。
@@ -36,7 +36,7 @@
 
 ### 2.1 为何直接分配 A=23、B=62 现在不能用
 
-当前 `ResolveRegionMapHeader` 用 `cp NUM_JOHTO_MAPS` 判断 local ID 是否在已登记连续表中，接着直接 `ID×2` 查 Header；Town Map、音乐、屋顶等也有直接以 local ID 取行的路径。现有 `NUM_JOHTO_MAPS=21`。给 B 写成 ID=62 而中间没有实际 23..61 表项，会被拒绝或者读错行；把空位虚构成“已注册地图”又可能使 Warp、读档指向无效 ROM 地址。
+当前 `ResolveRegionMapHeader` 用 `cp NUM_JOHTO_MAPS` 判断 local ID 是否在已登记连续表中，接着直接 `ID×2` 查 Header；Town Map、音乐、屋顶等也有直接以 local ID 取行的路径。现有 `NUM_JOHTO_MAPS=22`。给 B 写成 ID=62 而中间没有实际 23..61 表项，会被拒绝或者读错行；把空位虚构成“已注册地图”又可能使 Warp、读档指向无效 ROM 地址。
 
 ### 2.2 **固定采用：物理 stable ID + 运行时紧凑 active_slot**
 
@@ -199,7 +199,7 @@ python tools/johto_map_release_audit.py --rpp . --gold "$JOHTO_GOLD_SOURCE" --ex
 | 18 | `$12` | `Route35GoldenrodGate` | 既有 | Violet (10) | 14 | 5 × 4 | 已登记 |
 | 19 | `$13` | `Route36RuinsOfAlphGate` | 既有 | Violet (10) | 16 | 5 × 4 | 已登记 |
 | 20 | `$14` | `RuinsOfAlphOutside` | 既有 | Dungeons (3) | 22 | 10 × 18 | 已登记 |
-| 21 | `$15` | `Route37` | 共同起步 | Violet (10) | 4 | 10 × 9 | 规划 |
+| 21 | `$15` | `Route37` | 共同起步 | Violet (10) | 4 | 10 × 9 | 已接入候选，待用户最终验收 |
 | 22 | `$16` | `EcruteakCity` | 共同起步 | Ecruteak (4) | 9 | 20 × 18 | 规划 |
 | 23 | `$17` | `Route38EcruteakGate` | 西线A | Olivine (1) | 9 | 5 × 4 | 规划 |
 | 24 | `$18` | `Route38` | 西线A | Olivine (1) | 12 | 20 × 9 | 规划 |
@@ -408,14 +408,14 @@ python tools/johto_map_release_audit.py --rpp . --gold "$JOHTO_GOLD_SOURCE" --ex
 ## 10. 自查和下一次开工移交卡
 
 - **文档自检**：231 个 Gold 索引条目唯一；关都参考 9；城都稳定 ID `0..221` 无缺口、无重复；分布 21/2/39/40/90/30；旧 21 个数字和 `tools/johto_native_maps.json` 一致。**现已同时以原版 Gold 两个权威表独立验证 222 项原始组号/组内号和尺寸；仍未验证各图的 Warp/剧情或 sparse ID 引擎代码。**
-- 开发开始时只选 **Route37 (stable ID21)**，当前源码尚无 `Route37` 运行图，故不能提前写入运行时 `NUM_JOHTO_MAPS=222`。先从 `47915e4e3a536e7cfefee870254feefbaede99ac` 检查真实基线并开发下一单元。
+- **Route37 (stable ID21)** 已开发候选，当前 `NUM_JOHTO_MAPS=22`；尚未开放缘朱市，不能提前扩容到 222。下一单元 EcruteakCity(ID22) 仍需沿用已确认的 Git 基线和项目原审计。
 - 第二单元为 **EcruteakCity (ID22)**；分叉前完成 stable ID 兼容层及用户验收；只有拿到实际新 `ECRUTEAK_SPLIT_HEAD` 才启动 A/B。
 
 ```text
 PLAN_VERSION: Johto-DualLine-StableIDs-v1.0
-CURRENT_SOURCE_HEAD: 47915e4e3a536e7cfefee870254feefbaede99ac (only for this ZIP)
+CURRENT_SOURCE_HEAD: 95cf71c7092c71f43535dec1c7887e1f6999c086 (last verified formal HEAD, Route37 in uncommitted candidate)
 CURRENT_VERSION: BANK-5.62.225
-NEXT_TASK: C / Route37 / stable local ID 21 ($15)
+NEXT_TASK: C / EcruteakCity / stable local ID 22 ($16) (Route37 ID21 candidate pending final user acceptance)
 SECOND_TASK: C / EcruteakCity / stable local ID 22 ($16)
 PRE_FORK_GATE: 0..20 phone regression; stable ID -> active_slot support; safe invalid IDs; fresh MAP; Route37/Ecruteak phone acceptance
 SPLIT_HEAD: NOT_YET_CREATED
@@ -437,8 +437,8 @@ CODE_CHANGE_THIS_TURN: YES (ASM preallocation + audit/build/ownership gate; no n
 - **Gold 原版编号全图**：`tools/johto_gold_map_reference.csv`，原版 368 条的 `gold_group_id`、`gold_map_id`、原版符号和块尺寸；不是 368 个 RPP 城都新 ID。
 - **阻断器**：`tools/johto_fixed_id_audit.py --project . --gold "$JOHTO_GOLD_SOURCE"` 可重新解析 Gold 原版并逐行核对；不提供 Gold 时可进行本地冻结保护，但不声明这轮验证了外部源码。
 - **分线文件门禁**：`tools/johto_branch_file_guard.py --owner A|B --changed-list changed_paths.txt`；禁止 A/B 改公共表、私自修改另一线地图。某地图确实需要新公共素材时，由 C 审核并执行，不绕开白名单。
-- **当前运行状态**：`NUM_JOHTO_MAPS=21`、0–20 保持现状；21/22 和其余地图的 ID 目前只是**冻结的规划编号**，不是激活可访问的地图。完成 sparse ID 兼容、用户 ROM/MAP、手机回归前不开放 62 等跳号运行。
-- **本轮测试结果**（实际重跑，Gold 路径 `/mnt/data/goldsrc/pokegold-master`）：
+- **当前运行状态**：`NUM_JOHTO_MAPS=22`，0–20 不变，Route37 的 ID21 已注册为可运行候选，22 及以后仍未激活。Route37 尚待最终实机验收；完成 sparse ID 兼容、ROM/MAP 与用户手机回归前不得开放 62 等跳号运行。
+- **固定编号阶段历史测试结果**（当时实际重跑，Gold 路径 `/mnt/data/goldsrc/pokegold-master`）：
   - `JOHTO_GOLD_ROOT=<Gold目录> JOHTO_GOLD_SOURCE=<Gold目录> python -m unittest discover -s tools/tests -p 'test*.py' -q`：**703/703 PASS，0 skipped**，其中固定 ID / Gold 来源 / 分线文件专项见本次完整测试清单。
   - `python tools/johto_rpp_connection_guard.py --project . --gold-root <Gold目录> --all-active`：已启用连接 **22/22 PASS**。
   - `python tools/johto_fixed_id_audit.py --project . --gold <Gold目录>`：**PASS，222 张 RPP 固定 ID + 368 张原版 Gold 地图完整对照**。
@@ -446,11 +446,11 @@ CODE_CHANGE_THIS_TURN: YES (ASM preallocation + audit/build/ownership gate; no n
   - AI 未编译/链接 ROM，未修改运行时代码，MAP/手机验收均 PENDING；文件检查结果不代表运行时 sparse ID 已完成。
 
 
-## 12. 固定编号清理收口（正式提交准备，BANK-5.62.225）
+## 12. 固定编号清理收口（上一阶段历史记录，BANK-5.62.225）
 
 - **保留并纳入游戏常量提交**：`constants/johto_fixed_map_ids.asm` 和 `constants/region_map_constants.asm` 的单次 INCLUDE；只定义 21～221，不移动旧 0～20，不扩大 `NUM_JOHTO_MAPS`，不创建假地图。
 - **保留并纳入工具审计提交**：`tools/johto_fixed_ids.csv`（唯一分配表）、`tools/johto_gold_map_reference.csv`（原版对照）、`tools/johto_fixed_id_audit.py`、`tools/johto_branch_file_guard.py`、固定编号专项测试、统一发布审计接入、Makefile 前置门禁、README/TODO/踩坑及本规范。工具文件检查和分线白名单应在开发提交流程中执行，`make` 只自动执行编号门禁，不会凭空知道当前开发支线角色。
 - **不纳入正式补丁**：聊天导出用的外部 CSV/MD 副本、临时生成器、`__pycache__`、历史候选 ZIP、旧工作区日志与 MAP 重编产物；此类文件不属于源码累计差异。
-- **本轮未实现**：Route37 新图、EcruteakCity 新图、稀疏 ID/active-slot 运行时映射、Town Map 偏移改造、ROM 编译/MAP 更新、用户手机验收；不能因固定编号已申明而更改它们的状态。
+- **固定编号阶段未实现的部分（历史收口说明）**：当时 Route37 尚未开发；本次 Route37 已接入候选。EcruteakCity、稀疏 ID/active-slot 映射、Town Map 未来扩容、ROM 编译/MAP 更新及完整用户手机验收仍未完成。
 - **正式提交方法**：先做游戏源码常量提交，再做工具/审计/文档提交；正式增量以已经应用上一版固定编号候选的工作区为前置，全量以导出的干净 HEAD `47915e4e3a536e7cfefee870254feefbaede99ac` 为前置。Git Commit/Push 用户自行执行。项目规则以原始 RPP 项目要求为准，`RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 是自动导出资料，不打补丁。
 - **审计提示已消歧**：独立运行 `make johto-id-preflight` 只核查已冻结的 Gold 参考 CSV，不能宣称重新解析外部 Gold 源码；只有显式 `--gold <Gold根目录>` 并检查 PASS 时才能宣称原版 368 条再次比对成功。
