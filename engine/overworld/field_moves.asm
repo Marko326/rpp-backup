@@ -254,6 +254,14 @@ TryHeadbutt:
 	ret
 
 IsHeadbuttTile:
+	; Native JOHTO has shared 8x8 graphics for tree and wall: check the
+	; facing Gold quadrant, never unlock Headbutt by raw tile image ID.
+	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr nz, .legacyTileset
+	callba IsJohtoEcruteakHeadbuttTreeAhead
+	ret
+.legacyTileset
 	ld a, [wCurMapTileset]
 	and a ; OVERWORLD
 	jr z, .overworld

@@ -350,9 +350,200 @@ IsJohtoNativeOutdoorWaterAhead::
 	jp z, IsJohtoRoute35WaterAhead
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jp z, IsJohtoRuinsWaterAhead
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jp z, IsJohtoEcruteakWaterAhead
 .noWater
 	and a
 	ret
+
+; Gold EcruteakCity pond: exactly 20 WATER quadrants, no generic
+; JOHTO tile IDs. Rows y12/13 have x22..27, rows y14/15 x24..27.
+; Land, walls and the 50 HEADBUTT_TREE quadrants are not Surf water.
+IsJohtoEcruteakWaterAhead::
+	push bc
+	push de
+	push hl
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notWater
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notWater
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr nz, .notWater
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .check
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .check
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .check
+.right
+	cp SPRITE_FACING_RIGHT
+	jr nz, .notWater
+	inc e
+.check
+	ld a, d
+	cp 12
+	jr c, .notWater
+	cp 16
+	jr nc, .notWater
+	cp 14
+	jr nc, .lower
+	ld a, e
+	cp 22
+	jr c, .notWater
+	cp 28
+	jr nc, .notWater
+	jr .water
+.lower
+	ld a, e
+	cp 24
+	jr c, .notWater
+	cp 28
+	jr nc, .notWater
+.water
+	scf
+	jr .done
+.notWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; Ecruteak HEADBUTT_TREE 50 cells from Gold native JOHTO collision roles.
+; Reuse the exact facing-grid ABI as Surf; the raw JOHTO 8x8 image ID is
+; shared with walls and MUST NOT be a generic Headbutt whitelist.
+; Called from both A-button interaction and the existing party-menu routine.
+IsJohtoEcruteakHeadbuttTreeAhead::
+	push bc
+	push de
+	push hl
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notTree
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notTree
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr nz, .notTree
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .lookup
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .lookup
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .lookup
+.right
+	cp SPRITE_FACING_RIGHT
+	jr nz, .notTree
+	inc e
+.lookup
+	ld hl, JohtoEcruteakHeadbuttCells
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .notTree
+	cp d
+	jr nz, .skipX
+	ld a, [hli]
+	cp e
+	jr z, .tree
+	jr .loop
+.skipX
+	inc hl
+	jr .loop
+.tree
+	scf
+	jr .done
+.notTree
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+JohtoEcruteakHeadbuttCells::
+	db 0, 4
+	db 0, 5
+	db 0, 6
+	db 0, 7
+	db 0, 16
+	db 0, 17
+	db 0, 18
+	db 0, 19
+	db 8, 12
+	db 8, 13
+	db 8, 14
+	db 8, 15
+	db 8, 16
+	db 8, 17
+	db 8, 18
+	db 8, 19
+	db 8, 20
+	db 8, 21
+	db 14, 4
+	db 14, 5
+	db 14, 6
+	db 14, 7
+	db 14, 12
+	db 14, 13
+	db 14, 14
+	db 14, 15
+	db 18, 22
+	db 18, 23
+	db 18, 24
+	db 18, 25
+	db 24, 12
+	db 24, 13
+	db 24, 14
+	db 24, 15
+	db 24, 28
+	db 24, 29
+	db 24, 30
+	db 24, 31
+	db 30, 16
+	db 30, 19
+	db 31, 16
+	db 31, 19
+	db 32, 16
+	db 32, 19
+	db 33, 16
+	db 33, 19
+	db 34, 16
+	db 34, 19
+	db 35, 16
+	db 35, 19
+	db $ff
 
 ; Ruins water: Gold x2..5,y6..13 plus x12..15,y26..29, 48 cells.
 IsJohtoRuinsWaterAhead::
@@ -495,6 +686,8 @@ JohtoSurfBadgeAllowed::
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr z, .route32
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr z, .route32
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr nz, .kanto
 .route32
 	ld a, [wCurRegion]

@@ -3437,7 +3437,9 @@ wLastLocalMapID:: ; d7a9
 	ds 1
 wMapNameSignLastNativeLocalID:: ; d7aa, not used as map identity in saves
 	ds 1
-; still unused
+wJohtoFlySelectedLocalID:: ; d7ab, previously unused; dedicated Fly handoff
+; Last accepted physical Johto Fly destination, not a map identity or event flag.
+; Unlike wWhichTownMapLocation ($cd3d), this byte survives the Fly animation.
 	ds 1
 
 wd728:: ; d7ac

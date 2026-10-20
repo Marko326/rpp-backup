@@ -46,6 +46,20 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_GOLDENROD / 8
 	set EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]
 .notJohtoGoldenrod
+	; Ecruteak's local 22 shares $FC with all later Johto native maps.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notJohtoEcruteak
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notJohtoEcruteak
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr nz, .notJohtoEcruteak
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_ECRUTEAK / 8
+	set EVENT_JOHTO_FLY_ECRUTEAK % 8, [hl]
+.notJohtoEcruteak
+
 	ld a, [wCurMap]
 	cp ROUTE_1
 	jr nc, .notInTown

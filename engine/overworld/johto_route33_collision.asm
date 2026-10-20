@@ -225,8 +225,10 @@ JohtoRoute36CanStepAhead::
 JohtoRoute36BlockedRows::
 	INCBIN "maps/JohtoRoute36.blocked_mask.bin"
 
-; Route37 Gold 20x18 per-quadrant mask; north Ecruteak stays closed.
-JohtoRoute37EdgeFence::
+
+; EcruteakCity Gold 40x36 quadrants. Only the two physical south road
+; tiles (x17,18) can cross into Route37 (x7,8). West/east gates are sealed.
+JohtoEcruteakCityEdgeFence::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
 	jr z, .south
@@ -237,7 +239,7 @@ JohtoRoute37EdgeFence::
 	cp PLAYER_DIR_RIGHT
 	jr nz, .clear
 	ld a, [wXCoord]
-	cp JOHTO_ROUTE_37_WIDTH * 2 - 1
+	cp JOHTO_ECRUTEAK_CITY_WIDTH * 2 - 1
 	jr nc, .block
 	jr .clear
 .north
@@ -252,17 +254,96 @@ JohtoRoute37EdgeFence::
 	jr .clear
 .south
 	ld a, [wYCoord]
+	cp JOHTO_ECRUTEAK_CITY_HEIGHT * 2 - 1
+	jr c, .clear
+	ld a, [wXCoord]
+	cp 17
+	jr z, .clear
+	cp 18
+	jr z, .clear
+.block
+	scf
+	ret
+.clear
+	and a
+	ret
+
+JohtoEcruteakCityCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp JOHTO_ECRUTEAK_CITY_HEIGHT * 2 - 1
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 17
+	jr z, .allowed
+	cp 18
+	jr z, .allowed
+.normal
+	ld hl, JohtoEcruteakCityBlockedRows
+	ld d, JOHTO_ECRUTEAK_CITY_WIDTH * 2
+	ld e, 5
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoEcruteakCityBlockedRows::
+	INCBIN "maps/JohtoEcruteakCity.blocked_mask.bin"
+
+; Route37 Gold 20x18 per-quadrant mask; north to Ecruteak only x7/8.
+JohtoRoute37EdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .south
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_37_WIDTH * 2 - 1
+	jr nc, .blocked
+	jr .clear
+.north
+	ld a, [wYCoord]
+	and a
+	jr nz, .clear
+	ld a, [wXCoord]
+	cp 7
+	jr c, .blocked
+	cp 9
+	jr nc, .blocked
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+	jr .clear
+.south
+	ld a, [wYCoord]
 	cp JOHTO_ROUTE_37_HEIGHT * 2 - 1
 	jr c, .clear
 	ld a, [wXCoord]
 	cp 5
-	jr c, .block
+	jr c, .blocked
 	cp 13
-	jr nc, .block
+	jr nc, .blocked
 .clear
 	and a
 	ret
-.block
+.blocked
 	scf
 	ret
 
@@ -273,6 +354,18 @@ JohtoRoute37CanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr nz, .blocked
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .checkDown
+	ld a, [wYCoord]
+	and a
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 7
+	jr z, .allowed
+	cp 8
+	jr z, .allowed
+.checkDown
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
 	jr nz, .normal
@@ -1541,6 +1634,8 @@ JohtoNativeCanStepAhead::
 	jr z, .route36
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr z, .ecruteak
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1569,6 +1664,9 @@ JohtoNativeCanStepAhead::
 	jr .handled
 .route37
 	call JohtoRoute37CanStepAhead
+	jr .handled
+.ecruteak
+	call JohtoEcruteakCityCanStepAhead
 	jr .handled
 .route33
 	call JohtoRoute33CanStepAhead

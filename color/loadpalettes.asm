@@ -147,7 +147,7 @@ LoadTilesetPalette:
 	ld a,[hl]
 	cp $ff
 	jr z,.johtoRoofsDone
-	; Five 8-byte palettes are indexed by the verified Gold group table.
+	; Six 8-byte palettes are indexed by the verified Gold group table.
 	ld c,a
 	add a
 	add a
@@ -201,16 +201,16 @@ LoadTilesetPalette:
 	ret
 
 ; ILEX-5.62.216: Gold mapgroup roof group for each completed local Johto map.
-; 0 New Bark / 1 Cherrygrove / 2 Violet / 3 Azalea / 4 Goldenrod.
+; 0 New Bark / 1 Cherrygrove / 2 Violet / 3 Azalea / 4 Goldenrod / 5 Ecruteak.
 JohtoGoldDayRoofGroups:
-	db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2
+	db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5 ; Ecruteak palette is distinct
 JohtoGoldDayRoofGroupsEnd:
 ASSERT JohtoGoldDayRoofGroupsEnd - JohtoGoldDayRoofGroups == NUM_JOHTO_MAPS
 
-; Ordered 5 x 8-byte Gold day roof palettes, including shared white/dark.
+; Ordered 6 x 8-byte Gold day roof palettes, including shared white/dark.
 JohtoGoldDayRoofPalettes:
 ; Gold exact daytime roof palette for each completed Johto map group.
-; Values from Gold gfx/tilesets/roofs.pal, map groups 24,26,10,8,11.
+; Values from Gold gfx/tilesets/roofs.pal, map groups 24,26,10,8,11,4.
 JohtoNewBarkGoldDayRoofPalette:
 	RGB 27,31,27
 	RGB 20,31,14
@@ -241,9 +241,15 @@ GoldenrodGoldDayRoofPalette:
 	RGB 20,17,08
 	RGB 07,07,07
 
-; 5 groups x 8 B = 40 bytes, no executable code between the entries.
+; 6 groups x 8 B = 48 bytes, no executable code between the entries.
+EcruteakGoldDayRoofPalette:
+	RGB 27,31,27
+	RGB 31,19,00
+	RGB 27,10,05
+	RGB 07,07,07
+
 JohtoGoldDayRoofPalettesEnd:
-ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 5 * 8
+ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 6 * 8
 
 CopyGoldenrodEightPaletteBytes:
 	ld b, 8

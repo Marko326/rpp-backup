@@ -1,5 +1,5 @@
-; Fly-only helpers kept in expansion bank $35 so the capacity-constrained
-; overworld/Town Map/special-warp banks do not need to grow.
+; Fly/Town Map helpers share one floating ROMX section; external callers use
+; BANK(label) far calls. Do not fix this section in nearly-full bank $35.
 
 
 
@@ -774,6 +774,18 @@ TryLoadSpecialFlyWarpData::
 ; out: carry set if D is an extra Fly selector and its destination/warp data
 ;      have been copied; carry clear if the caller should use the original
 ;      town/blackout FlyWarpDataPtr table.
+	; $FE is a shared Fly-only selector. Do NOT consult the Fly menu
+	; cursor at $cd3d after LeaveMapAnim: other engines reuse that byte.
+	; The accepted physical local ID is preserved at $d7ab instead.
+	ld a, d
+	cp JOHTO_GOLDENROD_FLY_SELECTOR
+	jr nz, .regularScan
+	ld a, [wJohtoFlySelectedLocalID]
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr nz, .regularScan
+	ld hl, JohtoEcruteakFlyWarpData
+	jr .found
+.regularScan
 	ld hl, SpecialFlyWarpData
 .loop
 	ld a, [hli]
@@ -797,10 +809,14 @@ TryLoadSpecialFlyWarpData::
 	ld [wLastRegion], a
 	ld a, d ; source selector, not shared $FC destination map byte
 	cp JOHTO_GOLDENROD_FLY_SELECTOR
-	jr z, .goldenrodLocal
+	jr z, .goldenrodOrEcruteak
 	ld a, JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr .storeNativeLocal
-.goldenrodLocal
+.goldenrodOrEcruteak
+	ld a, [wJohtoFlySelectedLocalID]
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr z, .storeNativeLocal
+	; For the other valid $FE selection, resolve to Goldenrod.
 	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeNativeLocal
 	ld [wCurLocalMapID], a
@@ -816,6 +832,12 @@ TryLoadSpecialFlyWarpData::
 	jr nz, .copyWarpData
 	scf
 	ret
+
+; Native Ecruteak shares Goldenrod's Fly-only selector $FE. Destination
+; identity comes from wJohtoFlySelectedLocalID, never the recycled menu index.
+JohtoEcruteakFlyWarpData:
+	db REGION_NATIVE_MAP_SLOT
+	FLYWARP_DATA JOHTO_ECRUTEAK_CITY_WIDTH, 28, 23
 
 SpecialFlyWarpData:
 	; selector map, actual destination map, six-byte FLYWARP_DATA record

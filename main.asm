@@ -2941,7 +2941,9 @@ INCLUDE "engine/battle/pay_day_animation.asm"
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"
 
-SECTION "Fly Town Map Helpers", ROMX, BANK[$35]
+; FLY-5.62.225: all external callers use BANK(label) via callab/callba.
+; Do not pin to bank $35 (only $000e bytes free in the previous MAP).
+SECTION "Fly Town Map Helpers", ROMX
 INCLUDE "engine/fly_town_map_helpers.asm"
 
 ; FLY-5.62.79: keep Teleport shortcut lookup outside the nearly full Fly Map bank.
@@ -3344,6 +3346,13 @@ INCLUDE "data/mapObjects/JohtoRoute37.asm"
 INCLUDE "scripts/JohtoRoute37.asm"
 JohtoRoute37Blocks: INCBIN "maps/JohtoRoute37.blk"
 
+; The direct Route37/Ecruteak border copy requires the SAME bank $40.
+SECTION "Johto Ecruteak City Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoEcruteakCity.asm"
+INCLUDE "data/mapObjects/JohtoEcruteakCity.asm"
+INCLUDE "scripts/JohtoEcruteakCity.asm"
+JohtoEcruteakCityBlocks: INCBIN "maps/JohtoEcruteakCity.blk"
+
 ; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute35.asm"
@@ -3577,6 +3586,8 @@ JohtoNativeCollisionFence::
 	jr z, .route36Native
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37Native
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr z, .ecruteakNative
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33Native
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -3601,6 +3612,9 @@ JohtoNativeCollisionFence::
 	ret
 .route37Native
 	callba JohtoRoute37EdgeFence
+	ret
+.ecruteakNative
+	callba JohtoEcruteakCityEdgeFence
 	ret
 .route35Native
 	callba JohtoRoute35EdgeFence

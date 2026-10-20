@@ -4,6 +4,14 @@ UseHeadbuttOW::
 	xor a
 	ld [wActionResultOrTookBattleTurn], a
 	ld a, [wCurMapTileset]
+	cp JOHTO
+	jr nz, .legacyTileset
+	callba IsJohtoEcruteakHeadbuttTreeAhead
+	jr nc, .noHeadbutt
+	ld a, [wTileInFrontOfPlayer]
+	jr .useHeadbutt
+.legacyTileset
+	ld a, [wCurMapTileset]
 	and a ; OVERWORLD
 	jr z, .overworld
 	cp FOREST

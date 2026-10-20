@@ -1153,6 +1153,7 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_ROUTE36 ; Route36 Ruins gate
 	db MUSIC_GBP_GSC_UNION_CAVE ; Ruins of Alph Outside
 	db MUSIC_GBP_GSC_ROUTE37 ; Route37
+	db MUSIC_GBP_GSC_ECRUTEAK_CITY ; EcruteakCity
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

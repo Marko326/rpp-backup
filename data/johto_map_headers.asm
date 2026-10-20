@@ -23,6 +23,7 @@ JohtoMapHeaderPointers::
 	dw JohtoRoute36RuinsGate_h ; local $13 (native $FC)
 	dw JohtoRuinsOfAlphOutside_h ; local $14 (native $FC)
 	dw JohtoRoute37_h ; local $15 (native $FC)
+	dw JohtoEcruteakCity_h ; local $16 (native $FC)
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -48,6 +49,7 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoRoute36RuinsGate_h)
 	db BANK(JohtoRuinsOfAlphOutside_h)
 	db BANK(JohtoRoute37_h)
+	db BANK(JohtoEcruteakCity_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -77,6 +79,7 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; Route36 Ruins gate
 	db REGION_NATIVE_MAP_SLOT ; Ruins of Alph Outside
 	db REGION_NATIVE_MAP_SLOT ; Route37
+	db REGION_NATIVE_MAP_SLOT ; EcruteakCity
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -104,6 +107,7 @@ JohtoNativeMapSongBanks::
 	db MUSIC_ROUTES2, 0 ; Route36 Ruins gate
 	db MUSIC_DUNGEON2, 0 ; Ruins of Alph Outside
 	db MUSIC_ROUTES2, 0 ; Route37; GB Player selects GSC Route37
+	db MUSIC_CITIES1, 0 ; EcruteakCity; GB Player selects original GSC city theme
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

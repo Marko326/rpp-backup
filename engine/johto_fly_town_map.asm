@@ -1,4 +1,4 @@
-; ILEX-5.62.216: Johto Fly selector covers five visited towns; Kanto Fly stays
+; ILEX-5.62.216: Johto Fly selector covers six visited towns; Kanto Fly stays
 ; untouched; the regular Town Map still has its independent Johto landmark list.
 ; One-time unlock bits are stored in existing saved wEventFlags unused slots.
 ; Routes are never Fly destinations; interiors and Teleport are not enabled.
@@ -85,7 +85,7 @@ LoadJohtoFlyTownMap::
 .next
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 5
+	cp 6
 	jr c, .nextReady
 	xor a
 .nextReady
@@ -97,7 +97,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jp nz, .previousReady
-	ld a, 4
+	ld a, 5
 .previousReady
 	ld [wWhichTownMapLocation], a
 	call .findBackward
@@ -117,6 +117,25 @@ LoadJohtoFlyTownMap::
 	call PlaySound
 	ld a, [wWhichTownMapLocation]
 	call .loadEntry
+	push af
+	; Never carry the Fly list cursor in shared $cd3d across the flight.
+	; Goldenrod and Ecruteak share legacy selector $FE, but their frozen
+	; physical IDs are different. Store that choice in dedicated WRAM.
+	ld a, [wWhichTownMapLocation]
+	cp 5
+	jr z, .selectEcruteak
+	cp 4
+	jr z, .selectGoldenrod
+	ld a, $ff ; no native $FE selector on the other four destinations
+	jr .storeFlyLocal
+.selectEcruteak
+	ld a, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr .storeFlyLocal
+.selectGoldenrod
+	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
+.storeFlyLocal
+	ld [wJohtoFlySelectedLocalID], a
+	pop af
 	ld [wDestinationMap], a
 	ld hl, wd732
 	set 3, [hl]
@@ -133,7 +152,7 @@ LoadJohtoFlyTownMap::
 	ld [hTilesetType], a
 	ret
 
-; In A: Fly city index 0=New Bark, 1=Cherrygrove, 2=Violet, 3=Azalea, 4=Goldenrod.
+; In A: Fly city index 0..5 = New Bark, Cherrygrove, Violet, Azalea, Goldenrod, Ecruteak.
 ; Out: A=legacy map alias; B=y C=x DE=ROM string.
 .loadEntry
 	add a
@@ -171,9 +190,11 @@ LoadJohtoFlyTownMap::
 	dw .azaleaName
 	db 108, 60
 	dw .goldenrodName
+	db  60, 76
+	dw .ecruteakName
 .destinations
 	; FLY-5.62.196: $FD selector resolves separately to (JOHTO, local 10).
-	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
+	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
 .newBarkName
 	db "New Bark_Town@"
 .cherrygroveName
@@ -184,15 +205,17 @@ LoadJohtoFlyTownMap::
 	db "Azalea Town@"
 .goldenrodName
 	db "Goldenrod_City@"
+.ecruteakName
+	db "Ecruteak_City@"
 
 .findForward
-	ld b, 5
+	ld b, 6
 .forwardLoop
 	call .isCurrentUnlocked
 	ret nz
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 5
+	cp 6
 	jr c, .forwardStore
 	xor a
 .forwardStore
@@ -201,7 +224,7 @@ LoadJohtoFlyTownMap::
 	jr nz, .forwardLoop
 	ret
 .findBackward
-	ld b, 5
+	ld b, 6
 .backwardLoop
 	call .isCurrentUnlocked
 	ret nz
@@ -209,7 +232,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jr nz, .backwardStore
-	ld a, 4
+	ld a, 5
 .backwardStore
 	ld [wWhichTownMapLocation], a
 	dec b
@@ -225,6 +248,12 @@ LoadJohtoFlyTownMap::
 	jr z, .testViolet
 	cp 3
 	jr z, .testAzalea
+	cp 4
+	jr z, .testGoldenrod
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_ECRUTEAK / 8
+	bit EVENT_JOHTO_FLY_ECRUTEAK % 8, [hl]
+	ret
+.testGoldenrod
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_GOLDENROD / 8
 	bit EVENT_JOHTO_FLY_GOLDENROD % 8, [hl]
 	ret

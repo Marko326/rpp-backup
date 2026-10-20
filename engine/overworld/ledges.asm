@@ -27,12 +27,17 @@ HandleLedges:
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37HopTable
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr z, .ecruteakHopTable
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	ret nz
 	ld hl, .ruinsHops
 	jp .modernHopLookup
 .route37HopTable
 	ld hl, .route37Hops
+	jp .modernHopLookup
+.ecruteakHopTable
+	ld hl, .ecruteakHops
 	jp .modernHopLookup
 .johtoLegacy
 	; Routes 29/30 convert Gold cliffs into dedicated
@@ -176,6 +181,16 @@ HandleLedges:
 	db 30, 10, PLAYER_DIR_DOWN
 	db 32, 10, PLAYER_DIR_DOWN
 	db 33, 10, PLAYER_DIR_DOWN
+	db $ff
+
+; EcruteakCity 6 Gold-directed HOPs: 5 down and 1 right.
+.ecruteakHops
+	db 4, 10, PLAYER_DIR_DOWN
+	db 5, 10, PLAYER_DIR_DOWN
+	db 6, 10, PLAYER_DIR_DOWN
+	db 7, 10, PLAYER_DIR_DOWN
+	db 8, 10, PLAYER_DIR_DOWN
+	db 8, 10, PLAYER_DIR_RIGHT
 	db $ff
 
 ; Route37 has six Gold HOP_DOWN takeoffs and safe two-cell landings.
