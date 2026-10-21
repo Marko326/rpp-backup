@@ -1,9 +1,9 @@
 # 城都东西双线开发：全量固定地图ID、统一入口和无冲突合并规范（v1.1；已核 Gold 源码）
 
-> **SPID-5.62.227 本轮清理状态（2026-10-20）**：共用 C 已在未提交工作区实现 `JohtoStableIDToActiveSlot` 256B 表、调用点判活和索引迁移。Gold 源下 744 项测试及主要静态审计已有通过记录；用户确认热修复后可编译、手机简测未发现问题，尚未提供此次链接的 MAP 和逐项手机回归明细。**运行地图仍仅激活 ID0–22；A/B 不得自行上线 ID23/62，分叉点须待用户完成 Git 提交并核实新 HEAD 后登记。** 本文后续原 `.225/.226` 时间线及“尚未实现”表述是历史基线，不代表 `.227` 当前源码。
+> **SPID-5.62.227 共用 C 当前状态（2026-10-21 ZIP）**：RPP 导出为金银分支干净 HEAD `34886e10683daf0fed62272a67ab516311ad1fdc`（未带 `.git` 对象库，属于导出记录）。`JohtoStableIDToActiveSlot` 256B 表与各消费者判活已进入本地历史；最终 Town Map 例程位于 Bank `$40` 而不是 ROM0。附带的同版 `patches/rppred.map` 显示 ROM0 空余 **829 B**；历史 Gold 环境有 745 项 PASS 记录，但本 ZIP 不含 Gold 原版，需重新提供后独立复现。**运行地图仅激活 ID0–22；ID23/62 尚未实接。本轮用户已反馈最新候选上关都/Fly 和现有主要场景实测未发现明显问题，但未逐项确认 ROM/MAP 二进制对应、异常坏档等边界，故尚未登记 `ECRUTEAK_SPLIT_HEAD`。** 以下 `.225/.226` 阶段的“尚未实现”和旧 MAP 数字均属历史，不可作当前禁令或验收证据。
 
 
-> **文档类型：固定编号的审计合同与分线规范。`.227` 工作区已具备稀疏映射基础；本文件不是 ROM 链接、MAP 空间或逐项手机验收报告。**
+> **文档类型：固定编号的审计合同与分线规范。`.227` HEAD 已包含稀疏映射基础；MAP 只引用随附文件的布局证据，本文件不提供独立 ROM 构建或逐项手机验收。**
 >
 > **历史核对基线（`.225` 阶段，非本轮 HEAD）：** 金银分支，Git HEAD `47915e4e3a536e7cfefee870254feefbaede99ac`，显示版本 `BANK-5.62.225`，当时用户 ZIP 表明源码干净、无未提交 Patch。依据：ZIP 的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`、`02_EXPORT_INFO.txt`、当前 ASM/工具 JSON、`patches/rppred.map`，以及随附 `BANK-5.62.225_Johto_Handoff(1).md` 和用户新提供的 `pokegold-master(1).zip`。
 >
@@ -13,13 +13,13 @@
 
 **编号区别**：RPP `stable_local_id` 为城都地图永久身份，**不是** Gold 原版 `GROUP_*` / `MAP_*` 二元组。项目原有 Kanto 地图不得重新分配 RPP local ID。Gold 一共 368 张，其中 222 张纳入当前城都新增/已有计划，另外 146 张未纳入本次 Johto local ID 池（包括 9 张交接文档的关都参考）。完整原版 368 张在 `tools/johto_gold_map_reference.csv`，其余地图保留原有系统，不自动启用。
 
-**源码实施状态（新增硬固化）**：固定编号已同时写入 `tools/johto_fixed_ids.csv` 与 `constants/johto_fixed_map_ids.asm`（后者已由 `constants/region_map_constants.asm` 正式 INCLUDE 到实际汇编入口），覆盖未来 201 张地图，已有 0–20 仍由原 ASM 常量维护；`Makefile` 的正常 ROM 对象编译带 `johto-id-preflight` 顺序门禁，统一发布审计同样强制检查。常量预留本身**不会扩容地图表、Warp 或存档**；现阶段 Route37 和 EcruteakCity 均已接入源码候选，`NUM_JOHTO_MAPS=23`；需用户编译和手机验收，其它未开发地图仍未激活。**稀疏 ID 运行时映射层尚未实施，东线 62 等跳号 ID 仍不得上线。**
+**源码实施状态（当前 `.227`）**：固定编号已同时写入 `tools/johto_fixed_ids.csv` 与 `constants/johto_fixed_map_ids.asm`（后者由 `constants/region_map_constants.asm` INCLUDE），覆盖未来 201 张地图；已有 0–20 仍由原 ASM 常量维护。`Makefile` 的 ROM 对象编译有 `johto-id-preflight` 顺序门禁，统一发布审计也会检查。**稀疏 stable ID→active slot 运行时映射已经落地**，但 `NUM_JOHTO_MAPS=23` 仅代表 0–22 的紧凑运行表；预留 ID 不会自动注册地图、开放 Warp 或增加存档字段。**ID62 等跳号仍未实际激活，首张 A/B 地图需 C 登记全链并做新 ROM/MAP/手机验收。**
 
-**缘朱市 ID22 当前收口边界（ECRU-5.62.226，基线 BANK-5.62.225）：**用户反馈最新 Fly 目的地已正确；源码中 Fly 确认使用稳定目标 local ID，西口恢复 Gold 城市本体图块。但尚未接入 Route38 邻图及其门房，屏幕西缘暂显默认树林，不是原版门房外观验收通过；Surf、骑行、标志牌、存档及最新 MAP 仍需逐项用户复测。`SafariZoneBeta` 仅按用户指定从 Gold 素材扫描中明确排除（367/368 扫描），不能误报其已通过审计。稀疏 ID62 映射仍未实现，**本轮清理不等于东西线已经可以独立激活地图**。
+**缘朱市 ID22 历史功能收口边界（ECRU-5.62.226，基线 BANK-5.62.225）：**用户反馈最新 Fly 目的地已正确；源码中 Fly 确认使用稳定目标 local ID，西口恢复 Gold 城市本体图块。但尚未接入 Route38 邻图及其门房，屏幕西缘暂显默认树林，不是原版门房外观验收通过；Surf、骑行、标志牌、存档及最新 MAP 仍需逐项用户复测。`SafariZoneBeta` 仅按用户指定从 Gold 素材扫描中明确排除（367/368 扫描），不能误报其已通过审计。该 `.226` 时点稀疏 ID62 映射仍未实现；**当前 `.227` 底座已经实现判活，但 ID62 仍未真正激活，不能把底座静态通过写成东西线地图已上线**。
 
 1. **从现在到分线之前：只由共用 C 推进。`Route37` 固定 local ID `21 ($15)` 已接入候选并待用户完整实机验收；`EcruteakCity` 固定 local ID `22 ($16)` 也已接入源码候选，双方仍需用户 ROM/MAP 和实机验收。完成 **36↔37↔缘朱市** 双向通行、审计、用户编译及手机验收后，才创建东西两条线。不是等到浅葱、卡吉或烟墨才分。**
 2. **冻结 222 个可纳入城都计划的地图 ID**：现有 21 + 共同起步 2 + 西线 39 + 东线 40 + 共用剩余 90 + 后期 30；9 个纯关都参考不挤占城都 ID。每个地图唯一、永久固定，详见第 9 节完整表；还额外划出 222～254 未分配保留位，`$FF` 禁止作为地图 ID。
-3. **不能仅靠划号段就直接运行**：现在 ASM 是连续 local ID 索引表；为了允许东线 ID `62` 在西线 `23～61` 尚未上线时独立启用，分线前 C 必须落地第 2 节规定的“稳定 ID→紧凑活跃槽位”兼容层，连同越界保护/静态工具/实机测试全部验收。**此项当前未实现，不许在未改代码时直接启用高 ID。**
+3. **不能仅靠划号段就直接运行**：`.227` 已实现第 2 节的“稳定 ID→紧凑活跃槽位”基础和越界静态保护；但 ID `62` 仍映射 `$FF`，尚无实际 Header/Bank/音乐/Town Map/屋顶/Warp/Save 正向联调。**分线前仍必须完成现有 0–22 ROM/手机回归，新地图上线时由 C 逐项真实登记，不能仅因底座存在就直接启用高 ID。**
 4. **合并频率按验收单元，不按攒够多少天**：A/B 每完成 **1 张户外地图或 1 座门房/1 个洞穴楼层** 就向 C 提交一次；每线最多留 **1 个可测试且未集成的任务**，超过 **2 个工作日**仍未集成必须同步并说明阻塞。公共修复当天可独立推送到两线；要不要正式 Git Commit/Push 始终由用户决定。
 5. **公用代码只有 C 有最终写入权**。 A/B 不能为自己的地图自行补写共享表后互相覆盖。每次从相同验收过的 HEAD 创建短分支；集成顺序：公共修复 → 私有资源 → C 注册/开放接口 → 用户链接/MAP/手机。
 6. **ID 永远区分四件事**：Gold MapGroup/地图名、城都物理 local ID、RPP 的旧版兼容单字节地图句柄、Town Map 地标/Fly/Warp 槽位。不能拿其中任意一种冒充另一种。
@@ -34,14 +34,14 @@
 | 当前登记结构 | `JohtoMapHeaderPointers/Banks/LegacyAliases/NativeMapSongBanks`、`JohtoNativeTownMapIndices/Entries`、`JohtoNativeGSCMusic`、屋顶组以及多种按 local ID 比较的流程 | 引入活跃槽位后必须同步调整所有调用者，不可只改一张表 |
 | 已观察到的索引风险 | `LoadTownMapEntry` 原生 4 字节条目用 8 位 `add a; add a`；`GetJohtoNativeMapSong` 2 字节条目用 8 位 `add a` | 活跃槽位达到 64/128 时会有溢出风险；分线前一并改为正确 16 位偏移，并搜索其它同类路径 |
 | 地标编号 | `NUM_JOHTO_TOWNMAP_ENTRIES=45`；浏览地标表已有 45 项 | **45 不是地图 ID 上限**；新增室内不直接扩充 45 个浏览地标，按 Gold 地标映射 |
-| 容量 | 随附 MAP：ROM0 余量约 832B、最大连续约 818B；Bank `$01` 仅 11B；Bank `$40` 约 `$0E68`=3688B | Bank 不是永久固定编号池，新增 ROM 段需逐轮核 MAP；禁止向 `$01` 增代码 |
+| 容量（当前 `.227` ZIP 的 MAP） | ROM0 空余 **829 B**、最大连续 **829 B**；ROMX Bank `$01` 余 **5 B**、`$1C` 余 **2 B**、`$40` 余 **2,443 B** | 仅随附 MAP 证据，未单独证明用户 ROM 与 MAP 对应；禁止向 `$01` 增代码；未来运行时代码调整仍逐轮核真实新 MAP |
 | 现有审计 | 导出日志写 676/676 单测和 22/22 活动连接；统一审计历史状态 `FAIL`，既存 `SafariZoneBeta` | 不写成本次重跑 PASS；不能屏蔽该已知失败 |
 
 ## 2. 一次性技术底座：让“不同固定 ID”真正可并行
 
-### 2.1 为何直接分配 A=23、B=62 现在不能用
+### 2.1 历史障碍：旧版不能直接分配 A=23、B=62；当前仍须真实登记
 
-当前 `ResolveRegionMapHeader` 用 `cp NUM_JOHTO_MAPS` 判断 local ID 是否在已登记连续表中，接着直接 `ID×2` 查 Header；Town Map、音乐、屋顶等也有直接以 local ID 取行的路径。现有 `NUM_JOHTO_MAPS=23`。给 B 写成 ID=62 而中间没有实际 23..61 表项，会被拒绝或者读错行；把空位虚构成“已注册地图”又可能使 Warp、读档指向无效 ROM 地址。
+在 `.227` 以前，`ResolveRegionMapHeader` 以 `cp NUM_JOHTO_MAPS` 拒绝跳号，或者直接以 local ID 查 Header；Town Map、音乐和屋顶还有类似的越界风险。**此旧实现已由 `.227` 的 active slot 层替换**，现在 ID62 是合法但未激活的稳定编号，映射结果为 `$FF`，并不会读取第 62 行或虚构占位 Header。要上线 B 线地图，C 仍须添加真实地图并分配紧凑槽位、逐一审计入口和存档路径，不能仅把常量声明为 62。
 
 ### 2.2 **固定采用：物理 stable ID + 运行时紧凑 active_slot**
 
@@ -55,7 +55,7 @@
 
 **实现顺序（不可跳）**：先保持旧 0～20 地图行为完全等价 → C 做映射层及对应所有调用点审计 → 用户构建 ROM/MAP、手机回归旧地图 → 37 号路/缘朱市共同基线（或者先接入 21/22 后再做映射层并一并回归）→ 双线分叉。推荐日常执行次序是先接 21、22，再在分叉前完成映射层的独立小变更，避免正在开发 Route37 时同时大改所有引擎入口。
 
-**技术界限**：本文件是要实现的强制设计，不声称 ZIP 现有源码已经支持 sparse ID。实际改造须以真实源码审计和用户 ROM 测试来验收；如对存档兼容构成障碍，不得绕过检验直接采用虚假预留条目。
+**技术界限**：本文件是现行强制设计，`.227` 仅完成稀疏 ID 底座及静态审计，不代表用户 ROM/手机验收完成，也不代表东线 ID62 已激活。若真实地图集成或存档兼容仍有障碍，不得跳过审计或采用虚假预留表项。
 
 ## 3. 编号池、维护权与新增地图原则
 
@@ -103,10 +103,10 @@
 
 | 轮次 | 谁做 | 唯一验收出口/条件 |
 |---|---|---|
-| **T0**（目前 `.225`） | C | 核 ZIP/HEAD/历史 Patch；完成 Bank `$01` 列表菜单与音乐手机专项（未验证的不冒充完成），复核 ROM0/目标 Bank MAP |
+| **T0**（`.225` 历史，当前为 `.227`） | C | 核 ZIP/HEAD/历史 Patch；Bank `$01` 列表菜单及音乐专项未验证的仍须补测；本 ZIP 的 `.227` MAP 已记录 ROM0/目标 Bank 布局，但不等于实机通过 |
 | **T1：Route37 / ID21** | C | Route36↔Route37 双向、碰撞、跳崖、视野、Gold 几何、场景切换、存读档、关都旧图回归；不误开放 38/42 号路 |
 | **T2：EcruteakCity / ID22** | C | 37↔缘朱市双向；地标与音乐/屋顶；东西两门可独立封闭；外部剧情未做不标完成 |
-| **T3：固定 ID 底座** | C | 第 2 节的 stable ID→active_slot、所有表迁移和越界保护通过负例/强制审计、用户 ROM/MAP/手机回归，形成可继承的版本 |
+| **T3：固定 ID 底座** | C | stable ID→active_slot 与越界负例已入 `.227` 本地历史；仍需完整 Gold 发布审计复现和最新 ROM/MAP/手机确认，才能形成分线共用的已验收版本 |
 | **T4：正式分叉** | 用户确认后 C/A/B | 从同一个真实、已实测的 `ECRUTEAK_SPLIT_HEAD` 建 `johto-integration`/`johto-west`/`johto-east`，记录完整 hash，不凭空写 HEAD |
 | **T5：东西首轮** | A: ID23 `Route38EcruteakGate`；B: ID62 `Route42EcruteakGate` | 线路私有 map/gate 资产各自完成 → C 注册实际 active_slot/缘朱出口 → 用户双向验收；随后 A ID24 Route38，B ID63 Route42 |
 | **T6：后续** | A/B/C | 每轮 1 张图或 1 门房/洞穴层，已启用路径双向闭环；普通公园/遗迹补口由 C 并行穿插（编号见表） |
@@ -149,7 +149,7 @@ CHANGED_FILES_SHA256: <实际生成后计算>
 
 ## 7. 验收红线与正确命令
 
-1. 检查强制入口并且必须用 **实际 Gold 原版完整目录**，本轮收到的 `pokegold-master(1).zip` 已可用于真正源代码交叉核验；后续同样必须提供可用 Gold 源码。
+1. 检查强制入口必须使用 **实际 Gold 原版完整目录**。历史 `.225/.226/.227` 审计曾在 Gold 目录存在时通过，但 **2026-10-21 这次 RPP ZIP 本身没有 Gold 源**；重跑不得只凭历史日志算作全量 PASS，需另行提供相同原版源码。
 2. ZIP 里 `tools/johto_rpp_connection_guard.py` 实际要求两个必填参数；交接文档原来的单独 `--all-active` 命令不完整。
 
 ```bash
@@ -161,14 +161,17 @@ python tools/johto_fixed_id_audit.py --project . --gold "$JOHTO_GOLD_SOURCE"
 python tools/johto_branch_file_guard.py --owner A --changed maps/JohtoRoute38.blk
 python -m unittest discover -s tools/tests -p 'test*.py' -q
 python tools/johto_rpp_connection_guard.py --project . --gold-root "$JOHTO_GOLD_SOURCE" --all-active
-python tools/johto_map_release_audit.py --rpp . --gold "$JOHTO_GOLD_SOURCE" --expect-version ECRU-5.62.226
+python tools/johto_map_release_audit.py --rpp . --gold "$JOHTO_GOLD_SOURCE" --expect-version SPID-5.62.227
 ```
 
 版本递增后要同步调整 `--expect-version`。上面是应执行命令，**不是声称已在此轮运行**。新增 ID 架构时必须扩展 `tools/johto_region_id_audit.py` 和 `tools/johto_map_release_audit.py`，使其确实能拦截重复 stable ID、重复 active_slot、错误所有者、错误索引、跨线公用文件写入、假激活地图和 stale save。
 
-3. 每轮用户最小手机：新图两侧往返/门毯两 lane/反向马上出门/自动一步/碰撞与可见边缘/骑行/昼夜音乐/存档继续 + 至少一条关都旧图回归；技能、楼层、剧情根据任务另测。
+3. 每轮用户最小手机须按**该轮确实接入、可触发的功能**定范围：新增门房验证两侧往返、双 lane、立即反向、自动一步、碰撞与可见边缘；新增室外图验证已开放连接/骑行、适用 Field Moves、保存继续及至少一条关都旧图回归。**未实现的城都夜间效果和城都训练家对战均标 N/A，不列为当前清理门槛；将来开发出来再纳入对应最小测试。** 音乐仅对已存在且可触发的场景验证，技能、楼层、剧情按实际阶段另测。
+   - **本次纯离线工具/文档修补的适用性**：仅变更 `tools/tests/test_johto_region_id170.py` 和 4 个文档，不改变任何游戏编译输入、ROM0、ROMX 或 Save 布局。最小本轮验收是补丁应用/反向检查、专项正反例与原工具审计；**不因本补丁单独要求重新构建 ROM 或重新做手机测试**。不因此消除前一笔 `.227` 游戏运行时改造的待验收项。
+   - **`.227` 用户实测状态与分叉证据**：用户称最新已应用修订包下关都、Fly、已实现的城都路线等基本都测试过，暂未见明显问题；本轮纯工具清理认可此总体反馈，不强迫重复手机全套。未逐项明确的 Town Map 光标与取消、Fly 取消、Save/Continue 等只能写「用户总体反馈覆盖已实现路径、专项细节未逐项确认」，绝不补填独立 PASS。城都夜间、城都训练家对战当前 N/A；Bank `$01` 的历史标题/菜单/音乐只对实际可触发路径保留专项，不能要求不存在的城都训练家战斗。独立的 ROM/MAP 对应证明、异常坏档 SoftReset 仍待另案；不要用主存档进行破坏性测试。
+   - **实际新增门房时**：仍依 `docs/JOHTO_GATEHOUSE_READ_FIRST.md` 的双 lane、立即反向、触发时点/步进、首次边界画面等最小手机规则执行；不能套用上述无新门房的代表性清单缩减门房验收。
 4. 每轮真实新 MAP 核 ROM0 **总空余与最大连续空余**、目标 ROMX Bank/Section 安放、Bank `$01` 布局、跨 Bank ABI。禁止 AI 自行编译或链接 ROM；用户未给 MAP 时明确 PENDING。
-5. 保留既存 `GOLD_FULL_CORPUS: SafariZoneBeta`，除非后续用户明确要修并有新证据；整体审计 `FAIL` 不得因其它项目 PASS 而被篡改。
+5. Gold `SafariZoneBeta` 仅按用户已明确指定的 `USER_EXCLUDED_BETA_MAP` 从全量素材扫描排除：登记 368、扫描 367、排除 1；不等于该图 PASS，更不得扩展排除范围或把其它实际 FAIL 篡改成 PASS。
 
 ## 8. 项目正式补丁交付要求（适用于以后所有线）
 

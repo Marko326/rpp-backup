@@ -88,6 +88,14 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'db MUSIC_GBP_GSC_ECRUTEAK_CITY ; EcruteakCity\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
+    def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):
+        # Town Map index rows moved out of engine/town_map.asm in SPID .227.
+        # Reject a missing final landmark even while name/header tables are intact.
+        self.mutate('engine/overworld/johto_town_map_helpers.asm',
+                    ', 20, 21 ; Route37, EcruteakCity',
+                    ', 20 ; Route37, EcruteakCity',
+                    'native Town Map index count')
+
     def test_missing_save_local_byte_is_fatal(self):
         self.mutate('wram.asm', 'wLastLocalMapID::', 'wDeletedLastLocalMapID::',
                     'persistent current/last native local ID')
@@ -121,8 +129,9 @@ class NativeMapIDExpansion(unittest.TestCase):
                     ('JohtoNativeMapSongBanksEnd::', '\tdb MUSIC_ROUTES3, 0 ; fixture\nJohtoNativeMapSongBanksEnd::')],
                 'engine/menu/options_menu.asm': [
                     ('JohtoNativeGSCMusicEnd::', '\tdb MUSIC_GBP_GSC_ROUTE30 ; fixture\nJohtoNativeGSCMusicEnd::')],
+                'engine/overworld/johto_town_map_helpers.asm': [
+                    ('JohtoNativeTownMapIndicesEnd::', '\tdb 15\nJohtoNativeTownMapIndicesEnd::')],
                 'engine/town_map.asm': [
-                    ('JohtoNativeTownMapIndicesEnd::', '\tdb 15\nJohtoNativeTownMapIndicesEnd::'),
                     ('JohtoNativeTownMapEntriesEnd::',
                      '\tdb 140, 76\n\tdw JohtoAzaleaName\nJohtoNativeTownMapEntriesEnd::')],
             }

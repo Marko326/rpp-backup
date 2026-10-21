@@ -1,8 +1,11 @@
 ## SPID-5.62.227｜稀疏 ID 与 Town Map ROM0 占用回归（新布局待用户 ROM/MAP/手机验收）
 
+- **2026-10-21 共用 C 维护正式收口（纯离线，模式 B 单提交）**：修复 `tools/tests/test_johto_region_id170.py` 中 Town Map 索引迁到 `engine/overworld/johto_town_map_helpers.asm` 后旧测试仍改 `engine/town_map.asm` 的问题，并对迁移表缺项增加负向用例；其余为四份项目说明更新。没有 ASM/游戏资源/显示版本/存档结构改动，ROM0/ROMX 机器码新增 **0 B**，不要求仅为此补丁再次编译 ROM 或重跑手机游戏。随附 MAP 的 ROM0 829 B 是已有 `.227` 布局证据，不能写为本轮新回收。
+- **手机验收应按已实现能力决定 N/A**：用户报告已应用最新修订开发包，关都与 Fly 已测，现有城都主要可玩路径及其它已实现功能基本测过，未见明显问题；未提供逐项完整清单。**城都训练家对战与城都夜间当前未实现，均为 N/A**，不能列为本轮必测、测试失败或实测通过。真正待确认的仍包括同版 ROM/MAP 对应、部分特殊取消/旧存档/无效 ID 真实运行；首次 A/B 门房开发另走双向、门毯与首次视野专项。
+
 - 老引擎把 `wCurLocalMapID` 直接当 Header、Bank、音乐、Town Map、屋顶数组行号。固定 ID62 虽已在 CSV/ASM 冻结，但不能在只有 23 项的运行表上当第 62 行。共用 C 候选加了 256B 显式稳定 ID→紧凑槽位，所有未启用目标一律 `$FF`；A/B 不能单独修改该映射表、公共 Header 或旧缘朱市。
 - 旧的 `cp NUM_JOHTO_MAPS` 比较不能挡未来合法跳号；不要改成 `cp 222` 造成越界。Far-call ABI 中 A/BC/HL 可能丢失，`GetJohtoActiveSlot` 的返回值通过 E 传递。音乐两个字节步长和 Town Map 四字节步长须用 16 位 `HL`，否则 slot64/128 有 8-bit 回绕。
-- Bank `$1C` 在 `.226` 的 MAP 余量 0B。`.227` 将两段 Town Map 例程迁至 ROM0；用户报告使用最终 `LAST_MAP` 热修复后已编译成功并在手机简测无明显问题，但尚未提供这次编译的原始 MAP 来复核 ROM0 与 `$1C` 最大连续空隙。非法 native Warp/连接或坏存档的安全软复位仅有静态故障注入；用户未明确逐项验证异常场景，不能推断全部通过。
+- **注意 `.227` 曾有两个不同布局**：第一次把两段 Town Map 例程放在 ROM0，旧候选 MAP 见 ROM0 704B；最终 `.227` 已改为 ROMX Bank `$40` 的 `engine/overworld/johto_town_map_helpers.asm`，Bank `$1C` 的包装层须保护 DE 并以 E 回传，ROM0 和 `$1C` 的闪烁调用均须 `callab`。当前 ZIP 随附同版本 MAP 显示 ROM0 829B（最大连续 829B）、Bank `$01` 5B、`$1C` 2B、`$40` 2443B；这是 MAP 文件证据，不是本次独立重新链接或手机验收。用户先前手机简测是旧布局，不能继承为当前布局 PASS。非法 native Warp/连接及坏档 SoftReset 目前仍以静态合同为主，异常场景实机待测。
 - 历史 ECRU 段落对 Fly 的旧暂存 index=5 说法已经过期：当前提交版在菜单确认时冻结稳定目的地，Fly 不能再读取容易复用的 `$cd3d` 来区分同 `$FE` 的满金与缘朱。
 
 - **ECRU-5.62.226 防复发（缘朱市功能阶段最终版本；原为 BANK-5.62.225）**：Gold EcruteakCity 20×18 与 Route37 北邻。两条运行时选择表必须精确对应北(0)/南(1)，实际边缘仅放行已验收的南口两格。第一轮把 Fly 标为 `DEFERRED`、遗漏全部 7 个原版标志、未开放实际 20 水格 Surf、左门口直接树林外观；本轮改为访问城市解锁 Fly、精确 Surf/50 Headbutt、不存在 Cut 树不得乱开放、7 标志并恢复 Gold 城市主体；未接入的 Route38 邻图仍会在西侧呈现临时树林，不能冒充真实门房。特别注意 `$FE` 飞空选择器由 Goldenrod 与 Ecruteak 共享，必须在菜单确认时冻结目标稳定 ID 并按其分流，不能依赖易被覆盖的菜单 index 5；门房未开发不能伪造可达性。现有发布审计对新图检查 Gold 事件牌及适用 Field Moves，但测试 PASS 不等于 ROM 可链接、Fly/Headbutt 实机已通过。Gold 旧 SafariZoneBeta 按用户指令仅从全量源码扫描精确排除，汇总必须注明 367/368，不能伪称全查。
