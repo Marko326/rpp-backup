@@ -68,7 +68,7 @@ def audit(root: Path, gold: Path) -> list[str]:
             features = entry.get('feature_status', {})
             for name in ('surf', 'dig', 'escape_rope'):
                 local_id = entry.get('local_id')
-                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8, 17, 20, 22))
+                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8, 17, 20, 22, 63))
                             or (name in ('dig', 'escape_rope') and local_id == 8)
                             else 'DEFERRED')
                 if features.get(name) != expected:
@@ -86,6 +86,28 @@ def audit(root: Path, gold: Path) -> list[str]:
         if enabled:
             errors.append(f'{purpose}: unreviewed Johto tileset(s) enabled in {label}: '
                           + ', '.join(sorted(enabled)))
+
+    # Route42-only approved Surf/Cut must not widen old generic Johto
+    # allow-lists, nor imply optional Headbutt activation.
+    try:
+        route42 = next(v for v in identities['maps'] if v['local_id'] == 63)
+        if route42['feature_status'].get('surf') != 'ALLOWED' or route42['feature_status'].get('cut') != 'ALLOWED':
+            errors.append('Route42 must retain exact Gold Surf+Cut permissions')
+        script = (root / 'engine/overworld/johto_union_cave_surf.asm').read_text()
+        if ('IsJohtoRoute42WaterAhead::' not in script or
+                'INCBIN "maps/JohtoRoute42.water_mask.bin"' not in script):
+            errors.append('Route42 water requires its own 120-cell Gold mask')
+        deferred = json.loads((root/'tools/johto_deferred_field_moves.json').read_text())
+        coords = deferred['maps']['Route42']['headbutt']
+        cells42 = decode_cells((gold/'maps/Route42.blk').read_bytes(),
+            (gold/'data/tilesets/johto_metatiles.bin').read_bytes(),
+            (gold/'data/tilesets/johto_collision.asm').read_text(),30,9)
+        gold_headbutt = [[c['x'],c['y']] for c in cells42 if c['role']=='HEADBUTT_TREE']
+        if (coords.get('status') != 'DEFERRED' or coords.get('gold_xy') != gold_headbutt
+                or len(gold_headbutt)!=40 or 'IsJohtoRoute42HeadbuttTreeAhead::' in script):
+            errors.append('Route42 optional Headbutt must be explicitly deferred at all 40 Gold coordinates')
+    except (OSError, ValueError, KeyError, StopIteration) as exc:
+        errors.append(f'Route42 field move review missing: {exc}')
 
     # The Gold headbutt collision role is not the same as a Cut tree.
     # Both A-button and Pokemon-menu Headbutt must use the same reviewed
@@ -141,7 +163,7 @@ def main() -> int:
     args = parser.parse_args()
     errors = audit(args.rpp, args.gold)
     print(json.dumps({'status': 'FAIL' if errors else 'PASS',
-                      'errors': errors, 'surf_enabled_maps': ['JOHTO_ROUTE_32', 'JOHTO_UNION_CAVE_1F', 'JOHTO_ROUTE_35', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JOHTO_ECRUTEAK_CITY_LOCAL_ID'],
+                      'errors': errors, 'surf_enabled_maps': ['JOHTO_ROUTE_32', 'JOHTO_UNION_CAVE_1F', 'JOHTO_ROUTE_35', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JOHTO_ECRUTEAK_CITY_LOCAL_ID', 'JOHTO_ROUTE_42_LOCAL_ID'],
                       'dig_escape_rope_enabled': ['JOHTO_UNION_CAVE_1F'],
                       'phone_verified': False}, ensure_ascii=False, indent=2))
     return bool(errors)

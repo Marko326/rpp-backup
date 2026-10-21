@@ -80,7 +80,10 @@ class IlexCutContract(unittest.TestCase):
         issue = (ROOT / "docs/ISSUE_ILEX_FOREST_LEDGE_DEFERRED_209.md").read_text()
         self.assertIn("DEFERRED", issue)
         self.assertIn("ILEX-LEDGE-001", issue)
-        self.assertIn("SPID-5.62.230@", (ROOT / "data/game_version.asm").read_text())
+        current = (ROOT/'data/game_version.asm').read_text()
+        match = __import__('re').search(r'SPID-5\.62\.(\d+)@', current)
+        self.assertIsNotNone(match)
+        self.assertGreaterEqual(int(match[1]), 230)
 
 
 if __name__ == "__main__":

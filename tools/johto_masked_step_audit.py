@@ -114,6 +114,15 @@ def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
                 raise ConversionError('Dynamic live Cut block requires runtime state')
             carry = False
             continue
+        if op == 'call JohtoRoute42CutTreeCleared':
+            # Exact Gold Cut-target scope, not a blanket emulator stub.
+            if local_symbol != 'JOHTO_ROUTE_42_LOCAL_ID':
+                raise ConversionError('Route42 Cut helper outside Route42 scope')
+            dx,dy=DIRECTIONS[direction]
+            if (x+dx,y+dy)==(24,13):
+                raise ConversionError('Dynamic live Cut block requires runtime state')
+            carry = False
+            continue
         m = re.fullmatch(r'(jr|jp)\s+(?:(z|nz|c|nc)\s*,\s*)?([.\w]+)', op)
         if m:
             _, cond, dest = m.groups()
@@ -263,12 +272,12 @@ def audit(rpp: Path, gold: Path) -> dict:
         if len(local)!=1 or gold_name not in registered:
             continue  # Other map types handled by existing independent audits.
         symbol_base = ('JohtoRoute34Gate' if rpp_name in
-                       ('JohtoRoute34IlexForestGate','JohtoRoute35GoldenrodGate') else 'JohtoRuinsGate' if rpp_name=='JohtoRoute36RuinsGate' else 'JohtoRuinsOfAlph' if rpp_name=='JohtoRuinsOfAlphOutside' else rpp_name)
+                       ('JohtoRoute34IlexForestGate','JohtoRoute35GoldenrodGate') else 'JohtoRuinsGate' if rpp_name=='JohtoRoute36RuinsGate' else 'JohtoRuinsOfAlph' if rpp_name=='JohtoRuinsOfAlphOutside' else 'JohtoAzalea' if rpp_name=='JohtoAzaleaTown' else rpp_name)
         matching_sources=[]
         for source_path in sorted((root/'engine/overworld').glob('johto_*collision.asm')):
             src=source_path.read_text()
             for symbol in re.findall(r'(?m)^(Johto\w+CanStepAhead)::',src):
-                if symbol_base.startswith(symbol[:-len('CanStepAhead')]):
+                if symbol_base == symbol[:-len('CanStepAhead')]:
                     matching_sources.append((symbol,src))
         # Prefer the most specific existing masked caller: the new Gate name
         # shares the Route34 prefix, but must NOT be audited as the road.
@@ -310,13 +319,21 @@ def audit(rpp: Path, gold: Path) -> dict:
                    geom['hops']+geom['unsafe_hop_candidates']}
         width=geom['width_cells']
         stride=geom['mask_row_bytes']
+        # Gold walk-into-carpet is the authoritative exception where its
+        # generic collision raster marks a genuinely active warp tile solid.
+        # Only exact Gold portal cells with an active RPP warp can be opened.
+        gold_carpet_warps={(e['to_x'],e['to_y']) for e in geom['portal_edges']
+            if (e['to_x'],e['to_y']) in active and
+            e['to_role'].startswith('WARP_CARPET_') and
+            e['source_semantics'] in ('ordinary','portal')}
         for y in range(geom['height_cells']):
             for x in range(width):
                 bit=1 << (x%8)
                 idx=y*stride+x//8
                 was=bool(generated_mask[idx]&bit)
                 now=bool(runtime_mask[idx]&bit)
-                if was!=now and (was or (x,y) not in hop_sites):
+                if was!=now and not ((not was and now and (x,y) in hop_sites) or
+                    (was and not now and (x,y) in gold_carpet_warps)):
                     raise ConversionError(f'Unexplained Gold/runtime mask mismatch: {rpp_name} ({x},{y})')
         program,labels=parse_caller(source,caller)
         movement=[e for e in geom['portal_edges'] if

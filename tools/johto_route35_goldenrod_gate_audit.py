@@ -130,7 +130,7 @@ def gate_dispatch_errors(root: Path, overrides=None):
         ('JohtoNorthGateStepWarpAllowed::', 'JohtoGateCollisionDirectionAllowed::',
          rf'cp {NEW}\s+jr z, \.gateVertical'),
         ('JohtoGateCollisionDirectionAllowed::','JohtoInternalDoorFacingCheck::',
-         rf'cp {NEW}\s+jr z, \.northGate'),
+         rf'cp {NEW}\s+(?:jr|jp) z, \.northGate'),
         ('JohtoRoute34GateCanStepAhead::','JohtoRoute34GateBlockedRows::',
          rf'cp {NEW}\s+jp nz, \.blocked'),
     )

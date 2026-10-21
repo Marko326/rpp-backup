@@ -237,7 +237,8 @@ class JohtoGoldGateArtwork(unittest.TestCase):
         self.assertEqual(re.findall(r'(?m)^\s*dw JohtoGateWarpTileIDs\b',warp).__len__(),1)
         self.assertRegex(warp,r'JohtoGateWarpTileIDs:\s*\n\s*db \$FF')
         check=source('home/overworld.asm').split('ExtraWarpCheck::',1)[1].split('MapEntryAfterBattle::',1)[0]
-        self.assertRegex(check,r'cp JOHTO_GATE\s*;[^\n]*\n\s*jr z, \.useFunction1')
+        self.assertIn('.useFunction1\n\tld hl, IsPlayerFacingEdgeOfMap',check)
+        self.assertIn('.useFunction2\n\tld hl, IsWarpTileInFrontOfPlayer',check)
         self.assertIn('ld hl, IsPlayerFacingEdgeOfMap',check)
         self.assertIn('ld hl, IsWarpTileInFrontOfPlayer',check)
 

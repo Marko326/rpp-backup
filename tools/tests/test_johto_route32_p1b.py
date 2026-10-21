@@ -14,7 +14,7 @@ class Route32StagingTests(unittest.TestCase):
         blocks = (ROOT / 'maps/JohtoRoute32.blk').read_bytes()
         shared = (ROOT / 'gfx/blocksets/johto.bst').read_bytes()
         self.assertEqual(len(blocks), 450)
-        self.assertEqual(len(shared), 139 * 16)  # Route35 Cut $89 + Ruins cliff $8A; original 137 unchanged
+        self.assertEqual(len(shared), 140 * 16)  # Route35 Cut $89 + Ruins cliff $8A; original 137 unchanged
         self.assertLess(max(blocks), 137)
         self.assertEqual(blocks[68], 0x83)
         self.assertEqual(blocks[404], 0x88)

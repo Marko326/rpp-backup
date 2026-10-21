@@ -922,6 +922,234 @@
           ]
         ]
       }
+    },
+    {
+      "local_id": 62,
+      "local_symbol": "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",
+      "header": "JohtoRoute42EcruteakGate_h",
+      "bank": "BANK(JohtoRoute42EcruteakGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_LAKE_OF_RAGE",
+      "town_map_index": 32,
+      "town_map_name": "JohtoBrowseRoute42Name",
+      "town_map_xy": [
+        60,
+        100
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 63,
+      "local_symbol": "JOHTO_ROUTE_42_LOCAL_ID",
+      "header": "JohtoRoute42_h",
+      "bank": "BANK(JohtoRoute42_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_LAKE_OF_RAGE",
+      "town_map_index": 32,
+      "town_map_name": "JohtoBrowseRoute42Name",
+      "town_map_xy": [
+        60,
+        100
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "ALLOWED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": [
+          [
+            4,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            7,
+            2
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            10,
+            11
+          ],
+          [
+            11,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            8
+          ],
+          [
+            12,
+            9
+          ],
+          [
+            12,
+            29
+          ],
+          [
+            13,
+            8
+          ],
+          [
+            13,
+            9
+          ],
+          [
+            13,
+            22
+          ],
+          [
+            13,
+            23
+          ],
+          [
+            13,
+            25
+          ],
+          [
+            13,
+            26
+          ],
+          [
+            13,
+            27
+          ],
+          [
+            13,
+            28
+          ],
+          [
+            13,
+            29
+          ],
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            23
+          ],
+          [
+            14,
+            28
+          ],
+          [
+            14,
+            29
+          ],
+          [
+            14,
+            30
+          ],
+          [
+            14,
+            31
+          ],
+          [
+            15,
+            22
+          ],
+          [
+            15,
+            23
+          ],
+          [
+            15,
+            24
+          ],
+          [
+            15,
+            31
+          ],
+          [
+            16,
+            24
+          ],
+          [
+            16,
+            25
+          ],
+          [
+            16,
+            31
+          ],
+          [
+            17,
+            24
+          ],
+          [
+            17,
+            25
+          ],
+          [
+            17,
+            31
+          ]
+        ]
+      }
     }
   ]
 }

@@ -1,3 +1,12 @@
+## SPID-5.62.231｜双线合并与东门房编译修复：用户验收、正式收口（2026-10-21）
+
+- [x] **基线与范围**：金银 `f51e9cfab7b3995dd7210919d551b155afad4f6b`（`.230`）纳入金币东线截至 `58b86874a85a28654fdd8475c8a19414ad8807c0` 的三笔历史改动；本轮是补丁集成，不冒充 Git merge commit。游戏版本保持 `SPID-5.62.231`。
+- [x] **运行功能**：保留西门房 ID23、Route38 ID24（active slot 23/24）及 `.230` 立即复入修复；接入东门房 ID62、Route42 ID63（active slot 25/26）；缘朱市东西各两格入口的 Warp/碰撞、音乐、Town Map、图块及地图方向独立注册。Route42 的 Surf/Cut 按当前接入范围保留；Headbutt 40 个 Gold 坐标只登记 `DEFERRED`，不启用摇树；未开发的 Route42 东端继续封闭。
+- [x] **编译问题与修复**：初始 `.231` 合并候选编译时报 `Unknown symbol JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH`；已在 `constants/region_map_constants.asm` 补齐东门房 5×4 区块尺寸定义，地图 Header 统一引用，`tools/tests/test_johto_route42_east_gate.py` 增加删声明必须失败的回归测试。此次没有改变已经调通的双向门口行为。
+- [x] **验收反馈**：用户明确表示旧窗口、新窗口都测试过，目前未看出问题，作为本次 `.231` 合并修复候选的总体手机认可；不扩大为全部按键轨迹、坏档、存读档、天气/昼夜及每个 Field Move 的逐项证明。
+- [x] **静态审计与提交准备**：开发候选发布审计记录为 775/775 单测、0 skipped、30/30 活动连接通过；Gold 367/368，按既定范围仅排除 `SafariZoneBeta`。本轮清理重新运行完整审计发生超时，未取得新的完整退出码，不把历史 PASS 写成清理重跑 PASS。本轮含游戏功能和独立 `tools/` 改动，按两笔提交拆分：① `feat(johto)` 游戏 ASM/地图/资源/版本；② `test(tool)` 审计 JSON、Python、测试、TODO、踩坑及提交索引。交付 3 Patch + 2 独立 TXT 日志，清理增量和 HEAD 全量二选一，工具反向隔离供分笔提交使用。
+- [ ] **范围边界**：本轮 AI 未运行 RGBDS 编译/链接，尚未收到新 ROM 和对应 MAP；ROM0 实际余量及相关 Bank 空间待真实 MAP 核对。NPC/战斗/夜间等尚未接入能力不报 PASS；Git Commit/Push 仅由用户执行。
+
 ## SPID-5.62.230｜A 西线 ID23 门房 + ID24 Route38 手机复入反馈与三笔提交清理（2026-10-21）
 
 - [x] **实际基线和版本**：金银分支 RPP ZIP 导出记录的干净 Git HEAD `0f31e583c4e62f617b3af1dbd629318984b0642e`；`SPID-5.62.227 → SPID-5.62.230`。ZIP 无 `.git` 对象库，不能冒充用户本地实时 HEAD；若用户本地已有新提交/其它未提交修改，必须停止套用，先核真实状态。A 首图原有私有候选和 B ID62 私有候选**未纳入**本轮。

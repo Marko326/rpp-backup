@@ -13,7 +13,7 @@ from johto_field_moves_preflight import audit  # noqa: E402
 FILES = ('engine/overworld/field_moves.asm', 'engine/items/items.asm',
          'home/overworld.asm', 'engine/special_warps.asm',
          'engine/menu/start_sub_menus.asm', 'tools/johto_native_maps.json',
-         'constants/tilesets.asm',
+         'constants/tilesets.asm', 'tools/johto_deferred_field_moves.json', 'maps/JohtoRoute42.water_mask.bin',
          'engine/overworld/headbutt.asm', 'engine/overworld/johto_union_cave_surf.asm')
 
 

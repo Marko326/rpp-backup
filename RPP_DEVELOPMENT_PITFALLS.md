@@ -1,3 +1,14 @@
+## SPID-5.62.231｜合并时符号声明也属于硬门禁
+
+- **实际漏检**：初版 `.231` 虽通过 Gold/Python 静态审计，但 `engine/overworld/johto_route33_collision.asm` 引用 `JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH` 时，尺寸常量未定义，用户编译出现 `Unknown symbol`。东门房 Header 最初直接写尺寸数字，无法替碰撞例程提供同名常量。最终补齐 5×4 宽高常量、Header 统一引用，并给缺声明增加负向测试。**静态 PASS 不能代替 RGBDS 汇编/链接**；交付前无编译条件时必须标明缺口。
+- **双线合并不能整表覆盖**：共同城市两侧 Warp 编号、稀疏 stable ID→active slot、东西向门房的真实 HOME/ExtraWarp 路径需合并验证，西门房 `.230` 的立即复入保持回归基线；Route42 未启用 Headbutt，只准保留精确延期坐标。用户反馈 `.231` 在旧/新窗口测试未见问题，不等于完整 ROM/MAP 关联验证。
+
+## SPID-5.62.231｜双线门房合并避免再卡门
+
+- 双线不能直接覆盖公共 Header/连接/缘朱市 Warp；西门房原回程要保留，东门房在城市里的目的 Warp 必须指向新槽位 2/3。
+- 仅碰撞规则正确不等于能进门：HOME 的 `IsJohtoSouthGatePortal` 和 ROMX `ExtraWarpCheck` 都要包含正确地图身份、入口坐标和按键方向；静态测试应对入口条件做删改负例。
+- ROM0 紧张：新身份判断不可直接累加代码，应抵消冗余指令；ROM/MAP 关联由用户编译后验收。
+
 ## SPID-5.62.230｜Route38 两次卡门：门毯通行、碰撞 Warp 和非边缘 ExtraWarp 三关缺一不可
 
 - **事故真实过程**：`.228` 在东西向门房把门毯上下换格错误设为 `BLOCK`，因为审核把「错误方向不得传送」等同于「错误方向不得移动」，造成上下被卡；`.229` 修正移动和双向 Warp 表后，用户发现「从左门出去到 Route38 再朝右无法复入」；原因是 `(35,8)/(35,9)` 虽可作为碰撞门口，却不处于 Route38 最右图边，`ExtraWarpCheck` 实际调用的 `JohtoInternalDoorFacingCheck` 没放行它们。`.230` 在该独立门槛中按 ID、坐标和朝向精确放行右向动作，禁止错误方向、侧擦与旁边格子触发。

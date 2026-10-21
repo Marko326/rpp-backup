@@ -74,7 +74,7 @@ def check_native_identity(sources, local_symbols, count, tables, gsc):
         if not isinstance(spec, dict):
             errors.append(f'Johto local {i} has no valid identity contract')
             continue
-        if spec.get('local_id') != i or i >= len(local_symbols) or spec.get('local_symbol') != local_symbols[i][0]:
+        if (i >= len(local_symbols) or spec.get('local_id') != int(local_symbols[i][1]) or spec.get('local_symbol') != local_symbols[i][0]):
             errors.append(f'Johto local {i} ID/symbol mismatch in identity contract')
         flags = spec.get('feature_status')
         if (not isinstance(flags, dict) or set(flags) != set(FEATURES)

@@ -470,7 +470,22 @@ def registered_native_alias(project, target, target_id):
         # active local IDs remain defined in region_map_constants.asm.
     local = re.search(r'^\s*DEF\s+'+re.escape(target_id)+r'_LOCAL_ID\s+EQU\s+(\d+)',
                       constants, re.M)
-    return local is not None and int(local.group(1))==idx
+    if local is None:
+        return False
+    stable_id = int(local.group(1))
+    if stable_id == idx:
+        return True
+    # Sparse stable physical IDs (62, 63) must resolve to dense active slots
+    # through the exact 256-byte table, not by indexing header row 62.
+    table = re.search(r'JohtoStableIDToActiveSlot::(.*?)JohtoStableIDToActiveSlotEnd::',text,re.S)
+    if not table:
+        return False
+    slots=[]
+    for row in table.group(1).splitlines():
+        code=row.split(';',1)[0].strip()
+        if code.startswith('db '):
+            slots += [int(v.strip()[1:],16) for v in code[3:].split(',')]
+    return len(slots)==256 and 0<=stable_id<256 and slots[stable_id]==idx
 
 
 def read_connection(project, current, target, direction, current_id, target_id, w1, h1, w2, h2):

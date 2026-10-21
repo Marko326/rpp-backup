@@ -70,7 +70,10 @@ class ForestCommonLedgeCandidate(unittest.TestCase):
         self.assertIn('ILEX-LEDGE-001',issue)
         self.assertIn('CUT',issue)
         self.assertIn('ROM 和实机待验',issue)
-        self.assertIn('SPID-5.62.230@', (ROOT/'data/game_version.asm').read_text())
+        current = (ROOT/'data/game_version.asm').read_text()
+        match = __import__('re').search(r'SPID-5\.62\.(\d+)@', current)
+        self.assertIsNotNone(match)
+        self.assertGreaterEqual(int(match[1]), 230)
 
     def test_map_audit_retains_geometry_inventory_without_claiming_runtime(self):
         data=audit(ROOT)

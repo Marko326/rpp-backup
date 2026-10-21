@@ -322,13 +322,17 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                 if contract.get('mode') == 'NATIVE_GATE' and local in (
                         'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
                         'JOHTO_ROUTE_38_LOCAL_ID',
-                        'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID') and not predicate(
+                        'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
+                        'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
+                        'JOHTO_ROUTE_42_LOCAL_ID') and not predicate(
                         home, 'IsJohtoSouthGatePortal',local,x,y,'LEFT', ids):
                     errors.append(f'{name} {local} ({x},{y}) bypasses the HOME Warp selector')
                 if contract.get('mode') == 'NATIVE_GATE' and local in (
                         'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
                         'JOHTO_ROUTE_38_LOCAL_ID',
-                        'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID'):
+                        'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
+                        'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
+                        'JOHTO_ROUTE_42_LOCAL_ID'):
                     if predicate(home,'IsJohtoSouthGatePortal',local,x,y,'LEFT',ids,
                                  region='MAP_REGION_KANTO') or predicate(
                             home,'IsJohtoSouthGatePortal',local,x,y,'LEFT',ids,
@@ -407,7 +411,8 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
     # No unrelated stable IDs may enter the specialized gate Warp path.
     # This is intentionally a runtime predicate probe, not an ASM token search.
     for local in ('JOHTO_ROUTE_37_LOCAL_ID', 'JOHTO_ROUTE_39_LOCAL_ID',
-                  'JOHTO_UNION_CAVE_1F_LOCAL_ID'):
+                  'JOHTO_UNION_CAVE_1F_LOCAL_ID',
+                  'JOHTO_MAHOGANY_TOWN_LOCAL_ID'):
         try:
             if predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',ids):
                 errors.append('non-gate ID incorrectly selected by HOME Warp dispatcher: '+local)

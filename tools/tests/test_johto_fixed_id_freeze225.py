@@ -61,20 +61,17 @@ class FixedIdFreeze225(unittest.TestCase):
         failures = audit(ROOT, {REGISTRY: json.dumps(data)})
         self.assertTrue(any('duplicate stable ID' in e or 'active slot table mismatch' in e or 'historical stable ID' in e for e in failures), failures)
 
-    def test_east_62_cannot_activate_without_registered_assets_and_router(self):
+    def test_duplicate_east_62_registration_rejected(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        data['maps'].append({
-            'local_id': 62, 'local_symbol': 'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
-            'header': 'JohtoRoute42EcruteakGate_h',
-            'bank': 'BANK(JohtoRoute42EcruteakGate_h)'})
+        self.assertEqual([23,24,62,63], [m['local_id'] for m in data['maps'][-4:]])
+        data['maps'].append(dict(data['maps'][-2]))
         errors = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('active slot table mismatch at stable ID 62' in e for e in errors), errors)
-        self.assertTrue(any('missing actual map asset' in e for e in errors), errors)
+        self.assertTrue(any('duplicate stable ID' in e for e in errors), errors)
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(25, len(data['maps']))
-        self.assertEqual(24, data['maps'][-1]['local_id'])
+        self.assertEqual(27, len(data['maps']))
+        self.assertEqual([23,24,62,63], [m['local_id'] for m in data['maps'][-4:]])
         self.assertIn('DEF JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22',
                       (ROOT / RESERVED_ASM).read_text(encoding='utf8'))
         self.assertIn('JohtoRoute37_h', (ROOT / HEADERS).read_text(encoding='utf8'))
@@ -132,10 +129,10 @@ class FixedIdFreeze225(unittest.TestCase):
     def test_fake_next_gate_header_not_sufficient_for_activation(self):
         data = json.loads((ROOT / REGISTRY).read_text())
         data['maps'].append({
-            'local_id': 62, 'local_symbol': 'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
-            'header': 'JohtoRoute42EcruteakGate_h', 'bank': 'BANK(JohtoRoute42EcruteakGate_h)'})
+            'local_id': 64, 'local_symbol': 'JOHTO_MAHOGANY_TOWN_LOCAL_ID',
+            'header': 'JohtoMahoganyTown_h', 'bank': 'BANK(JohtoMahoganyTown_h)'})
         failures = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('missing actual map asset maps/JohtoRoute42EcruteakGate.blk' in e
+        self.assertTrue(any('missing actual map asset maps/JohtoMahoganyTown.blk' in e
                             for e in failures), failures)
 
     def test_wrong_live_header_is_rejected(self):

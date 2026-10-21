@@ -17,7 +17,8 @@ FILES = (
     'engine/items/items.asm',
     'engine/menu/start_sub_menus.asm',
     'home/overworld.asm',
-    'tools/johto_native_maps.json',
+    'tools/johto_native_maps.json', 'tools/johto_deferred_field_moves.json',
+    'maps/JohtoRoute42.water_mask.bin',
     'constants/tilesets.asm',
     'engine/special_warps.asm',
     'main.asm',
@@ -93,7 +94,7 @@ class RuinsSurf224(unittest.TestCase):
         cur = p.read_bytes()
         self.assertEqual(cur[0x8A*16:0x8B*16],
                          bytes.fromhex('3b0606063b0606063b0606064b4c214c'))
-        p.write_bytes(cur[:-16])
+        p.write_bytes(cur[:-32]) # remove both new $8b Cut clone and original $8a, truly out-of-range
         self.assertIn('Ruins metatile $8A out of range',
                       ' '.join(audit(self.root, self.gold)))
 

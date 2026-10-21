@@ -59,7 +59,8 @@ class Route31VioletNativeGate(unittest.TestCase):
         extra = (ROOT/'home/overworld.asm').read_text().split('ExtraWarpCheck::', 1)[1].split('MapEntryAfterBattle::', 1)[0]
         self.assertIn('ld hl, IsPlayerFacingEdgeOfMap', extra)
         self.assertNotIn('cp JOHTO\n', extra)  # no global JOHTO outdoor override
-        self.assertIn('cp JOHTO_GATE', extra)  # map-specific indoor edge behavior
+        self.assertIn('ld hl, IsWarpTileInFrontOfPlayer', extra)
+        self.assertIn('.useFunction1\n\tld hl, IsPlayerFacingEdgeOfMap', extra)  # JOHTO_GATE default
 
     def test_existing_route15_and_indoor_collision_remain_unchanged(self):
         self.assertEqual(rpp_tileset(ROOT, 'JohtoRoute31VioletGate'), 'JOHTO_GATE')

@@ -72,9 +72,10 @@ class Route37Stage(unittest.TestCase):
                      ('JohtoEcruteakCity','JohtoRoute37','EcruteakCity','Route37','south')):
             self.assertEqual(connection_audit(ROOT, GOLD, *args)['status'], 'PASS')
 
-    def test_22_registered_and_23_still_reserved(self):
+    def test_ecruteak_and_both_gate_ids_registered(self):
         registry = json.loads((ROOT / 'tools/johto_native_maps.json').read_text())
-        self.assertEqual(len(registry['maps']), 25)
+        self.assertEqual(len(registry['maps']), 27)
+        self.assertEqual([m['local_id'] for m in registry['maps'][-4:]], [23, 24, 62, 63])
         self.assertEqual(registry['maps'][21]['local_symbol'], 'JOHTO_ROUTE_37_LOCAL_ID')
         self.assertEqual(registry['maps'][21]['identity_evidence'], 'STATIC_PASS')
         self.assertEqual(registry['maps'][22]['local_symbol'], 'JOHTO_ECRUTEAK_CITY_LOCAL_ID')
@@ -97,7 +98,12 @@ class Route37Stage(unittest.TestCase):
             for dirname in ('data', 'constants'):
                 (temp / dirname).symlink_to(GOLD / dirname, target_is_directory=True)
             _, expected_mask = plan_gold_quadrant_collision(temp, 'EcruteakCity', 'johto')
-        self.assertEqual((ROOT / 'maps/JohtoEcruteakCity.blocked_mask.bin').read_bytes(), expected_mask)
+        # Gold's two Ecruteak east door tiles are now open, exactly as the west side was.
+        # Reject any other collision relaxation (especially houses and walls).
+        expected_mask = bytearray(expected_mask)
+        for y in (26, 27):
+            expected_mask[y * 5 + 35 // 8] &= ~(1 << (35 % 8))
+        self.assertEqual((ROOT / 'maps/JohtoEcruteakCity.blocked_mask.bin').read_bytes(), bytes(expected_mask))
         code=(ROOT / 'engine/overworld/ledges.asm').read_text()
         self.assertEqual(coordinate_hops(code, '.ecruteakHops'),
                          expected_gold_hops(GOLD,'EcruteakCity','johto'))
@@ -141,10 +147,10 @@ class Route37Stage(unittest.TestCase):
 
     def test_ecruteak_unfinished_exits_closed_and_visited_fly_enabled(self):
         city=(ROOT/'data/mapHeaders/JohtoEcruteakCity.asm').read_text()
-        self.assertIn('db SOUTH | WEST',city)
+        self.assertIn('db SOUTH | WEST | EAST',city)
         self.assertNotIn('db NORTH | SOUTH',city)
         obj=(ROOT/'data/mapObjects/JohtoEcruteakCity.asm').read_text()
-        self.assertIn('db $02 ; Gold west gate #14/#15 now opens via native Warp',obj)
+        self.assertIn('db $04 ; West gate lanes #14/#15 and east gate lanes #1/#2',obj)
         fence=(ROOT/'engine/overworld/johto_route33_collision.asm').read_text()
         src=fence.split('JohtoEcruteakCityEdgeFence::',1)[1].split('JohtoEcruteakCityCanStepAhead::',1)[0]
         self.assertIn('cp 17',src)

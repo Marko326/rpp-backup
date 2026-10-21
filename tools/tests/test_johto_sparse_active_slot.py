@@ -27,7 +27,8 @@ class SparseActiveSlotContract(unittest.TestCase):
 
     def test_0_through_22_identity_unchanged(self):
         self.assertEqual([], check_active_slot_mapping(self.headers, self.registry))
-        self.assertEqual(list(range(25)), [item['local_id'] for item in self.registry])
+        self.assertEqual(list(range(23)), [item['local_id'] for item in self.registry[:23]])
+        self.assertEqual([23,24,62,63], [item['local_id'] for item in self.registry[23:]])
 
     def test_id_25_is_inactive_before_registered(self):
         self.table_mutation('$18, $ff, $ff', '$18, $19, $ff',
@@ -37,7 +38,7 @@ class SparseActiveSlotContract(unittest.TestCase):
         line = ' ; $30-$3f'
         source_line = next(x for x in self.headers.splitlines() if x.endswith(line))
         fields = source_line.split(';')[0].strip()[3:].split(', ')
-        self.assertEqual('$ff', fields[14])
+        self.assertEqual('$19', fields[14])
         fields[14] = '$16'  # 62 decimal, a duplicate of slot 22
         self.table_mutation(source_line, 'db '+', '.join(fields)+line,
                             'active slot table mismatch at stable ID 62')
@@ -51,15 +52,16 @@ class SparseActiveSlotContract(unittest.TestCase):
             # Guarded independently by the 256-entry count and exact registry image.
             self.assertEqual('$ff', row.split(';')[0].strip()[3:].split(', ')[stable % 16])
 
-    def test_sparse_62_to_slot_23_can_be_represented_without_dummy_maps(self):
-        future = copy.deepcopy(self.registry)
-        future.append({'local_id': 62})
+    def test_sparse_62_to_slot_25_without_dummy_maps(self):
+        self.assertEqual([], check_active_slot_mapping(self.headers, self.registry))
+        self.assertEqual(25, [m['local_id'] for m in self.registry].index(62))
         row = next(x for x in self.headers.splitlines() if x.endswith(' ; $30-$3f'))
         fields = row.split(';')[0].strip()[3:].split(', ')
-        fields[14] = '$19'
-        augmented = self.headers.replace(row, '	db '+', '.join(fields)+' ; $30-$3f')
-        self.assertEqual([], check_active_slot_mapping(augmented, future))
-        # No fake 23..61 runtime entries were added; only the 256-byte router changed.
+        self.assertEqual(['$19','$1a'], fields[14:16])
+        fields[14] = '$17'  # duplicate west slot 23 must fail
+        corrupted = self.headers.replace(row,'	db '+', '.join(fields)+' ; $30-$3f')
+        self.assertTrue(any('active slot table mismatch at stable ID 62' in e
+                            for e in check_active_slot_mapping(corrupted,self.registry)))
 
     def test_duplicate_stable_id_is_detected(self):
         future = copy.deepcopy(self.registry)

@@ -219,7 +219,7 @@ def verify_gold_gate_art(rpp, gold):
         errors.append('Generated 2bpp does not match the PNG (stale or trimmed artifact)')
     hdr=text(rpp,'data/mapHeaders/JohtoRoute31VioletGate.asm')
     if not re.search(r'^\s*db JOHTO_GATE\b',hdr,re.M): errors.append('Room not registered to its own tileset')
-    if 'cp JOHTO_GATE' not in text(rpp,'home/overworld.asm').split('ExtraWarpCheck::',1)[1].split('MapEntryAfterBattle::',1)[0]:
+    if not all(t in text(rpp,'home/overworld.asm').split('ExtraWarpCheck::',1)[1].split('MapEntryAfterBattle::',1)[0] for t in ('ld hl, IsPlayerFacingEdgeOfMap', 'ld hl, IsWarpTileInFrontOfPlayer', 'ld b, BANK(IsWarpTileInFrontOfPlayer)')):
         errors.append('Missing map-edge Warp check for JOHTO_GATE')
     if 'dw JohtoGateWarpTileIDs' not in text(rpp,'data/warp_tile_ids.asm'):
         errors.append('JOHTO_GATE WarpTile pointer missing')

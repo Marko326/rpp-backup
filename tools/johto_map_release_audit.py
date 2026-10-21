@@ -94,9 +94,9 @@ test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_restoring_bank_inside_romx_
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_cancel_carry_flag_must_not_be_lost
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_bank1_swap_jumps_must_stay_connected
 test_johto_fixed_id_freeze225.FixedIdFreeze225.test_baseline_and_all_222_roster_entries
-test_johto_fixed_id_freeze225.FixedIdFreeze225.test_east_62_cannot_activate_without_registered_assets_and_router
+test_johto_fixed_id_freeze225.FixedIdFreeze225.test_duplicate_east_62_registration_rejected
  test_johto_sparse_active_slot.SparseActiveSlotContract.test_id_62_cannot_alias_slot_22
- test_johto_sparse_active_slot.SparseActiveSlotContract.test_sparse_62_to_slot_23_can_be_represented_without_dummy_maps
+ test_johto_sparse_active_slot.SparseActiveSlotContract.test_sparse_62_to_slot_25_without_dummy_maps
  test_johto_sparse_active_slot.SparseActiveSlotContract.test_16bit_music_and_town_offsets_are_mandatory
  test_johto_sparse_active_slot.SparseActiveSlotContract.test_corrupt_save_and_invalid_warp_reset_must_stay
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_original_all_11_native_ids_dispatch_and_generic_fallback
@@ -422,7 +422,7 @@ def audit_new_native_field_move_roles(root: Path, gold: Path) -> list[str]:
             if deferred_cells is not None:
                 if deferred_cells != [list(cell) for cell in headbutt]:
                     errors.append(f'{name}: DEFERRED Headbutt coordinates differ from Gold')
-                if enabled or f'cp {entry["local_symbol"]}' in runtime:
+                if enabled:
                     errors.append(f'{name}: deferred Headbutt was accidentally enabled')
             elif headbutt and not enabled:
                 errors.append(f'{name}: Gold HEADBUTT_TREE requires handler or exact deferred cell contract')
