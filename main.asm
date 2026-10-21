@@ -3122,6 +3122,10 @@ INCLUDE "engine/battle/earth_power_animation.asm"
 SECTION "Polished Crystal Energy Ball Animation", ROMX, BANK[$3D]
 INCLUDE "engine/battle/energy_ball_animation.asm"
 
+; ANIM-5.62.198: PC Power Gem arrangement, project Rock Throw stones only.
+SECTION "Polished Crystal Power Gem Animation", ROMX, BANK[$3E]
+INCLUDE "engine/battle/power_gem_animation.asm"
+
 ; ANIM-5.62.96: floating banked sprite renderer; no extra HOME allocation.
 SECTION "Bullet Seed Animation", ROMX
 INCLUDE "engine/battle/bullet_seed_animation.asm"

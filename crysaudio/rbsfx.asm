@@ -193,3 +193,6 @@ RedSfxHeaderPointers:
 	dbw BANK(Sfx_ThrowBall), Sfx_ThrowBall
 	dbw BANK(Sfx_BoneClub), Sfx_BoneClub
 	dbw BANK(Sfx_Doubleslap), Sfx_Doubleslap
+
+	; Power Gem: PC's opening Metronome sound already exists in sfx.asm.
+	dbw BANK(Sfx_Metronome), Sfx_Metronome

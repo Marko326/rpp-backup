@@ -259,6 +259,11 @@ PlayExtendedOrbProjectile:
 	callba PlayGoldEarthPowerAnimation
 	ret
 .notEarthPower
+	cp POWER_GEM
+	jr nz, .notPowerGem
+	callba PlayPolishedCrystalPowerGemAnimation
+	ret
+.notPowerGem
 	cp CRUNCH
 	jr nz,.notCrunch
 	; ANM-5.61.69: exact Gold/Crystal jaw, full-frame shake and double-impact timeline lives in bank $3D.
@@ -2028,11 +2033,8 @@ GigaImpactExtAnimEnd:
 PowerGemExtAnim:
 	db PowerGemExtAnimEnd - PowerGemExtAnimData
 PowerGemExtAnimData:
-	; ANM-5.61.40: send one rock/gem object along Swift's smooth Subanimation3F
-	; path, overriding its object with Rock Throw's FrameBlock23 material.
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $23
-	db $03,$80,$3F
-	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	; ANIM-5.62.198: eight hovering/firing stones from the project rock art.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; banked Power Gem renderer
 	db $FF
 PowerGemExtAnimEnd:
 	IF PowerGemExtAnimEnd - PowerGemExtAnimData > 30

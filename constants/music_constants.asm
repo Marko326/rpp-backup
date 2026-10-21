@@ -380,3 +380,4 @@ const_value = 1
 	const GSSFX_THROW_BALL
 	const GSSFX_BONE_CLUB
 	const GSSFX_DOUBLE_SLAP
+	const GSSFX_METRONOME    ; ANIM-5.62.198: Power Gem opening SFX
