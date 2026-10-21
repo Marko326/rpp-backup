@@ -118,8 +118,8 @@ class IlexSouthGate197(unittest.TestCase):
                       'LEFT Gold building halves')
     def test_bad_gate_map_identity_fails(self):
         self.mutation('home/overworld.asm',
-                      'cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID\n\tjr z, .yes',
-                      'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjr z, .yes',
+                      'cp JOHTO_AZALEA_TOWN_LOCAL_ID\n\tjr c, .notGate',
+                      'cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID\n\tjr c, .notGate',
                       'source identity')
 
 if __name__ == '__main__':

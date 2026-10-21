@@ -142,6 +142,112 @@ def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
     raise ConversionError('ASM caller loop exceeds static trace budget')
 
 
+def gate_mat_path_errors(rpp: Path, manifest: dict, overrides: dict | None = None) -> list[str]:
+    """Strict two-lane EAST/WEST gate carpet movement and collision checks.
+
+    Read each registered native gate's ACTUAL caller and blocked mask. Gold's
+    WARP_CARPET role must not be interpreted as a wall in the vertical lane,
+    but only an outward-facing collision is allowed to trigger a Warp. This
+    deliberately does not generalize to NORTH/SOUTH STEP_ON gates.
+    """
+    root = Path(rpp)
+    errors = []
+    sources = {p.name:p.read_text() for p in (root/'engine/overworld').glob('johto_*collision.asm')}
+    native = json.loads((root/'tools/johto_native_maps.json').read_text())['maps']
+    by_id = {row['local_symbol']:row['header'].removesuffix('_h') for row in native}
+    constants = {}
+    for source in ('constants/region_map_constants.asm','constants/johto_fixed_map_ids.asm'):
+        constants.update({name:int(value) for name,value in re.findall(
+            r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+)\s+EQU\s+(\d+)',
+            (root/source).read_text())})
+    for entry in manifest['active_warp_maps']:
+        if entry.get('family') != 'GATE_INDOOR' or entry.get('arrival_step_review',{}).get('layout') != 'EAST_WEST_PAIR':
+            continue
+        contract = entry.get('gatehouse_runtime',{})
+        if contract.get('mode') == 'LEGACY_COLLISION':
+            continue  # the accepted Route31 gate uses the separate old-engine executor
+        if contract.get('mode') != 'NATIVE_GATE':
+            errors.append(entry['rpp_map']+' has unrecognized east/west runtime')
+            continue
+        approaches = contract['approaches']
+        groups = {}
+        for row in approaches:
+            key = (row['map_local'], int(row['x']))
+            groups.setdefault(key,[]).append(row)
+        for (local,x), rows in groups.items():
+            name = by_id.get(local)
+            if not name:
+                errors.append(entry['rpp_map']+' unregistered gate carpet map '+local)
+                continue
+            mask_file = 'maps/'+name+'.blocked_mask.bin'
+            if not (root/mask_file).is_file():
+                # Accepted native Ilex-Azalea indoor gate uses generic engine
+                # rather than a JohtoModernMaskedStep special caller.
+                if name == 'JohtoIlexAzaleaGate':
+                    continue
+                errors.append('no real runtime carpet mask for '+name)
+                continue
+            symbol = ('JohtoAzaleaCanStepAhead' if name == 'JohtoAzaleaTown'
+                      else name+'CanStepAhead')
+            matching = [(path,text) for path,text in sources.items()
+                        if re.search(r'(?m)^'+re.escape(symbol)+r'::',text)]
+            if len(matching) != 1:
+                errors.append('missing unique executable masked-step caller '+symbol)
+                continue
+            srcpath, source = matching[0]
+            source = (overrides or {}).get('engine/overworld/'+srcpath, source)
+            if not re.search(r'(?m)^'+re.escape(symbol)+r'::',source):
+                errors.append('masked-step caller disappeared '+symbol)
+                continue
+            if mask_file not in source:
+                errors.append(symbol+' no longer references expected mask file')
+                continue
+            header = (root/('data/mapHeaders/'+name+'.asm')).read_text()
+            dim = re.search(r'(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+|\d+)\s*,\s*(JOHTO_[A-Z0-9_]+|\d+)\s*$',header)
+            if not dim:
+                errors.append('missing map dimensions '+name)
+                continue
+            def dimension(v):return int(v) if v.isdecimal() else constants[v]
+            height,width = dimension(dim[1])*2,dimension(dim[2])*2
+            mask=(overrides or {}).get(mask_file, (root/mask_file).read_bytes())
+            if len(mask) != height*((width+7)//8):
+                errors.append('invalid gate mask dimensions '+name)
+                continue
+            try:
+                program,labels=parse_caller(source,symbol)
+            except ConversionError as exc:
+                errors.append(name+' cannot decode real masked-step caller '+str(exc))
+                continue
+            rows=sorted(rows,key=lambda v:int(v['y']))
+            if len(rows)!=2 or int(rows[1]['y'])!=int(rows[0]['y'])+1 or rows[0]['direction']!=rows[1]['direction']:
+                errors.append(name+' east/west gate has no exact adjacent carpet pair at x'+str(x))
+                continue
+            upper,lower=(int(row['y']) for row in rows)
+            outward=rows[0]['direction']
+            if outward not in ('LEFT','RIGHT'):
+                errors.append(name+' east/west carpet must have horizontal exit facing')
+                continue
+            inward='RIGHT' if outward=='LEFT' else 'LEFT'
+            near_x=x+1 if outward=='LEFT' else x-1
+            # 2 vertical moves + both approaches from the room + both
+            # collision-only attempted exits. The collision must remain
+            # BLOCK so CheckWarpsCollision can process the Warp.
+            cases=[(x,upper,'DOWN',False),(x,lower,'UP',False)]
+            for y in (upper,lower):
+                cases += [(near_x,y,outward,False),(x,y,outward,True)]
+            for cx,cy,direction,expected_blocked in cases:
+                try:
+                    blocked,_=trace_masked_step(program,labels,mask,width,height,
+                                                 local,cx,cy,direction)
+                    if blocked!=expected_blocked:
+                        errors.append(f'{name} ({cx},{cy}) {direction}: carpet WALK/EDGE '
+                                      f'expected {"BLOCK" if expected_blocked else "ALLOW"}, '
+                                      f'actual {"BLOCK" if blocked else "ALLOW"}')
+                except ConversionError as exc:
+                    errors.append(name+' carpet executor unsupported: '+str(exc))
+    return errors
+
+
 def audit(rpp: Path, gold: Path) -> dict:
     """Cross-reference active Warp targets with registered Gold source and ASM."""
     root, gold = Path(rpp),Path(gold)
@@ -180,7 +286,13 @@ def audit(rpp: Path, gold: Path) -> dict:
             continue
         eligible_maps+=1
         gold_set=tileset_key(registered[gold_name]['tileset'])
-        geom, generated_mask = plan_gold_quadrant_collision(gold,gold_name,gold_set)
+        # Gold HOP_RIGHT sources on Route38 are walkable approach cells;
+        # this exact independently registered exception is never generalized.
+        roles = ({'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT',
+                  'HOP_DOWN_LEFT','HOP_DOWN_RIGHT','HOP_RIGHT'}
+                 if gold_name == 'Route38' else None)
+        geom, generated_mask = plan_gold_quadrant_collision(
+            gold,gold_name,gold_set,walkable_roles=roles)
         active={(w['x'],w['y']) for w in warps}
         # Require the ASM-referenced binary to match the Gold-derived mask.
         body = re.search(r'(?m)^'+re.escape(caller.split('CanStepAhead')[0])
@@ -217,6 +329,9 @@ def audit(rpp: Path, gold: Path) -> dict:
             # alone cannot prove how RPP should trigger its warp.
             expected = ('ALLOW' if role.startswith('WARP_CARPET_') else
                         'REVIEW_DIRECTION')
+            # Distinguish moving on a carpet from TRIGGERING its Warp.
+            # The latter is handled independently by the collision direction
+            # executor and must never change Gold WALK to expected BLOCK.
             try:
                 blocked, origin=trace_masked_step(program,labels,runtime_mask,
                     geom['width_cells'],geom['height_cells'], local[0]['local_symbol'],
@@ -226,7 +341,7 @@ def audit(rpp: Path, gold: Path) -> dict:
                       'to':[e['to_x'],e['to_y']],
                       'direction':e['direction'],'expected':expected,
                       'actual':'BLOCK' if blocked else 'ALLOW',
-                      'branch':origin,'status':('FAIL' if expected=='ALLOW' and blocked
+                      'branch':origin,'status':('FAIL' if (expected=='ALLOW' and blocked or expected=='BLOCK' and not blocked)
                             else 'REVIEW_REQUIRED' if expected=='REVIEW_DIRECTION' else 'PASS')}
             except ConversionError as exc:
                 row={'rpp_map':rpp_name,'gold_map':gold_name,
@@ -238,7 +353,8 @@ def audit(rpp: Path, gold: Path) -> dict:
             if row['status']=='FAIL':
                 errors.append(f"{rpp_name} {row['from']} {row['direction']} -> {row['to']}: "
                               + row.get('error', 'expected ALLOW, executed BLOCK'))
-    return {'schema':'rpp-masked-step-source-execution-v1',
+    errors.extend(gate_mat_path_errors(root, {'active_warp_maps':contracts}))
+    return {'schema':'rpp-masked-step-source-execution-v2',
             'masked_caller_maps_checked':eligible_maps,
             'movement_edges_executed':len(entries),
             'movement_edges_required_allow':sum(e['expected']=='ALLOW' for e in entries),

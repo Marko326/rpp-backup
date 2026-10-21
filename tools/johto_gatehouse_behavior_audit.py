@@ -15,6 +15,7 @@ from johto_gate_rgb_audit import verify as verify_gate_rgb
 from johto_gate_audit import verify_gold_gate_palette_map
 from johto_indoor_tiles_converter import build_mapping
 from johto_warp_arrival_audit import profiles as parse_arrival_profiles
+from johto_masked_step_audit import gate_mat_path_errors
 
 MANIFEST = 'tools/johto_door_contracts.json'
 ASM = 'engine/overworld/johto_route33_collision.asm'
@@ -29,7 +30,10 @@ def get_text(root: Path, path: str, overrides: dict | None) -> str:
             else (root / path).read_text(encoding='utf-8'))
 
 
-def predicate(source: str, name: str, map_id: str, x: int, y: int, direction: str) -> bool:
+def predicate(source: str, name: str, map_id: str, x: int, y: int, direction: str,
+              const_values: dict | None = None,
+              region: str = 'MAP_REGION_JOHTO',
+              alias: str = 'REGION_NATIVE_MAP_SLOT') -> bool:
     """Small strict executor for ASM gate direction predicates; returns carry.
 
     No arbitrary calls/branch targets, numbers-as-symbols or opcode fallthrough.
@@ -58,8 +62,10 @@ def predicate(source: str, name: str, map_id: str, x: int, y: int, direction: st
             break
         else:
             prog.append(stmt)
-    ram = {'wCurRegion': 'MAP_REGION_JOHTO', 'wCurLocalMapID': map_id,
+    ram = {'wCurMap': alias, 'wCurRegion': region, 'wCurLocalMapID': map_id,
            'wXCoord': x, 'wYCoord': y, 'wPlayerDirection': 'PLAYER_DIR_' + direction}
+    if const_values:
+        ram['wCurLocalMapID'] = const_values[map_id]
     a, b, z, c, pc = None, None, False, False, 0
     for _ in range(220):
         if not 0 <= pc < len(prog):
@@ -81,7 +87,8 @@ def predicate(source: str, name: str, map_id: str, x: int, y: int, direction: st
             continue
         m = re.fullmatch(r'cp\s+([\w$]+)', op)
         if m:
-            target = b if m[1] == 'b' else (int(m[1], 16) if m[1].startswith('$')
+            target = b if m[1] == 'b' else (const_values[m[1]] if const_values and m[1] in const_values
+                       else int(m[1], 16) if m[1].startswith('$')
                        else int(m[1]) if m[1].isdecimal() else m[1])
             if a is None or target is None or (isinstance(a, int) != isinstance(target, int)):
                 raise ValueError('invalid symbolic ASM comparison: ' + op)
@@ -225,6 +232,11 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
         collisions = get_text(root, ASM, overrides)
         lookup = get_text(root, LOOKUP, overrides)
         home = get_text(root, HOME, overrides)
+        ids = {}
+        for symbols in ('constants/region_map_constants.asm', 'constants/johto_fixed_map_ids.asm'):
+            ids.update({name:int(number) for name,number in re.findall(
+                r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\d+)',
+                get_text(root, symbols, overrides))})
         profiles = parse_arrival_profiles(lookup)
         raw_routes = lookup.split('NativeRegionWarpTargets::',1)[1].split('SelectNativeMapConnection::',1)[0]
         route_rows = re.findall(r'(?m)^\s*db\s+([A-Z0-9_]+),\s*(\d+),\s*(\d+),\s*MAP_REGION_JOHTO,\s*([A-Z0-9_]+)\s*$', raw_routes)
@@ -235,6 +247,9 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
               for alias, local, y, x, source, direction in profiles}
     if len(actual) != len(profiles):
         errors.append('duplicate arrival profiles could shadow each other')
+    # Distinguish moving on carpet (ordinary movement) from colliding with
+    # the edge (Warp trigger). The Gold gate guide explicitly requires both.
+    errors.extend(gate_mat_path_errors(root, doc, overrides))
     for entry in gates:
         errors.extend(valid_contract(entry))
         if not isinstance(entry.get('gatehouse_runtime'), dict):
@@ -304,6 +319,21 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                 errors.append(name + ' cannot claim legacy collision engine without manual code review')
             for approach in contract['approaches']:
                 local, x, y = approach['map_local'], int(approach['x']), int(approach['y'])
+                if contract.get('mode') == 'NATIVE_GATE' and local in (
+                        'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
+                        'JOHTO_ROUTE_38_LOCAL_ID',
+                        'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID') and not predicate(
+                        home, 'IsJohtoSouthGatePortal',local,x,y,'LEFT', ids):
+                    errors.append(f'{name} {local} ({x},{y}) bypasses the HOME Warp selector')
+                if contract.get('mode') == 'NATIVE_GATE' and local in (
+                        'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
+                        'JOHTO_ROUTE_38_LOCAL_ID',
+                        'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID'):
+                    if predicate(home,'IsJohtoSouthGatePortal',local,x,y,'LEFT',ids,
+                                 region='MAP_REGION_KANTO') or predicate(
+                            home,'IsJohtoSouthGatePortal',local,x,y,'LEFT',ids,
+                            alias='JOHTO_ROUTE_31'):
+                        errors.append(f'{name} {local} HOME gate selector leaks across region/map alias')
                 wanted = approach['direction']
                 mode = approach['trigger']
                 if wanted not in DIRECTIONS or mode not in MODES:
@@ -314,6 +344,12 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                     continue
                 if not re.fullmatch(r'JOHTO_[A-Z0-9_]+_LOCAL_ID', local):
                     raise ValueError(name+' invalid map-local identity '+local)
+                # A non-edge Route38 outside mouth must pass the real ROMX
+                # ExtraWarpCheck predicate, not merely HOME portal selection
+                # and the collision-direction check. Requiring the contract
+                # flag prevents a future patch from silently dropping probes.
+                if local == 'JOHTO_ROUTE_38_LOCAL_ID' and name == 'JohtoRoute38EcruteakGate' and not approach.get('outside_guard'):
+                    errors.append(name + f' Route38 interior outside mouth ({x},{y}) missing mandatory EXTRA_WARP proof')
                 for direction in DIRECTIONS:
                     step = predicate(collisions, 'JohtoNorthGateStepWarpAllowed',local,x,y,direction)
                     coll = predicate(collisions, 'JohtoGateCollisionDirectionAllowed',local,x,y,direction)
@@ -368,6 +404,15 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                 errors.append(name + ' arrival-step contract omits an indoor Warp tile')
         except (OSError, ValueError, KeyError, IndexError, StopIteration, TypeError) as exc:
             errors.append(name+' gate behavior cannot be verified: '+str(exc))
+    # No unrelated stable IDs may enter the specialized gate Warp path.
+    # This is intentionally a runtime predicate probe, not an ASM token search.
+    for local in ('JOHTO_ROUTE_37_LOCAL_ID', 'JOHTO_ROUTE_39_LOCAL_ID',
+                  'JOHTO_UNION_CAVE_1F_LOCAL_ID'):
+        try:
+            if predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',ids):
+                errors.append('non-gate ID incorrectly selected by HOME Warp dispatcher: '+local)
+        except (ValueError, KeyError) as exc:
+            errors.append('cannot interpret HOME gate selector: '+str(exc))
     # The same gate asset pipeline is shared across all enabled indoor gates.
     # Do not pass a corrupted tile/palette bank just because the door acts right.
     if not overrides:

@@ -61,3 +61,18 @@
 本项目的门房行为不是靠“必须读懂说明”来保证，而是靠 `tools/johto_gatehouse_behavior_audit.py` 运行时规则静态执行检查：`tools/johto_door_contracts.json` 的每个 `GATE_INDOOR` 都需要填写 `gatehouse_runtime`，完整的入口坐标和四方向期望、每侧的 step-on/collision-only、真实的目标 Warp slot、上下/左右分组、入门步进与 `NONE`、以及边界补绘策略。脚本解释执行 ASM 的分支、独立比对 Gold 原始入口和图块、执行负向故障注入；缺项和陌生指令均拒绝通过。详见 `docs/JOHTO_GATEHOUSE_EXECUTABLE_CONTRACT_224.md`。
 
 门房测试**只允许一次功能和审计合并补丁**，实机确认前不拆提交、不抹去旧失败历史；新 ROM 必须先确认真实链接和 ROM0 MAP，静态测试不能代替编译或手机录像。
+
+### .229 东西向双格门毯：移动与 Warp 分流必须分别运行验证
+
+- **按布局区别而非按 UP/DOWN 一刀切**：东西向双格门房的上、下两格门毯都属于可行走区域；合法的 `上格 DOWN→下格` / `下格 UP→上格`、从房间内走上门毯，以及 Gold 普通地板接近门毯的移动，均应 `ALLOW`。这与南北向 `STEP_ON` 门房的行为合同不同，不能互相套用。
+- **碰撞才触发**：门房左口必须站在门毯上朝 `LEFT` 撞边界，右口必须朝 `RIGHT` 撞边界；这一步必须由位置碰撞产生 `BLOCK`，交给 `CheckWarpsCollision` 的 Warp 方向过滤处理。门毯上下/室内侧移不等于 Warp 触发；不得为通过测试把合法走动误写成预期 `BLOCK`，也不得把出门一侧误写成普通 `ALLOW` 导致撞不到 Warp。
+- **室外也一样**：Route38 `(35,8/9)` 是 `RIGHT` 碰撞出口，缘朱市 `(0,18/19)` 是 `LEFT` 碰撞出口；两条上下相邻的 Warp 格必须互通，且只有实际向门外碰撞才进入。门毯相邻的普通 Gold FLOOR 移动也要实际逐格检查。
+- **发布自动强制**：`tools/johto_masked_step_audit.py` 中的 `gate_mat_path_errors` 逐格解释执行当前地图真实 `CanStepAhead` ASM 和 mask；`tools/johto_gatehouse_behavior_audit.py` 还解释执行 ROM0 的 `IsJohtoSouthGatePortal` 地图身份及 ROMX 的四向 Warp 判断。新增脚本 `test_johto_gatehouse_carpet_229.py` 对逐格上下走、向外碰撞、两格往返、错 ID、坏 mask 做真实故障注入。`tools/johto_map_release_audit.py` 必须收集这些测试 ID。脚本静态验收仍不能代替用户编译、ROM0 新 MAP 和手机录像。
+- **此处记录的是 `.228` 手机反馈的修复候选，不是 `.229` 的手机 PASS**；此前的 `.228` 卡门失败记录必须保留。
+
+
+### .230 Route38 室外回程漏检（`.229` 手机失败，禁止虚报验收）
+
+- **复现路径**：在 ID23 门房左口 (0,4/5) 朝 LEFT 出门，落到 Route38 `(35,8/9)`，原地朝 RIGHT 试图复入。`.229` 的 Gold 碰撞 mask 会在 `(36,8/9)` 阻挡，`CheckWarpsCollision` 的方向也正确；但真正的 `ExtraWarpCheck → JohtoInternalDoorFacingCheck` 没有登记 Route38 的这个非边界入口，因 x35 ≠ 最右边界 x39，旧 `IsPlayerFacingEdgeOfMap` 也不能触发 Warp。**这不是玩家操作问题，`.229` 不是实机 PASS。**
+- **必须分别验证所有碰撞门**：一是 `CanStepAhead` 真正碰撞；二是 standing-on-warp bit 已就绪；三是 `ExtraWarpCheck` 对合法来源/落点/方向返回 carry；四是 `CheckWarpsCollision` 目标图和方向核验；五是抵达后立即反向能再次通过同样的五步。只看 `JohtoGateCollisionDirectionAllowed` 不构成“可复入”证明。
+- **强制静态防回退**：`johto_gatehouse_behavior_audit.py` 为 Route38 的 `(35,8/9)` 强制 `outside_guard` + 解释执行 `JohtoInternalDoorFacingCheck` 四方向。`test_johto_gatehouse_carpet_229.py` 新增 Route38 两格具体判定和“删掉实际 ExtraWarpCheck 入口必须红灯”的负例。该检测不模拟真实按键时序和 ROM 执行，**手机测试仍为 PENDING**。

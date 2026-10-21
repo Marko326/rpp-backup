@@ -109,11 +109,24 @@ def audit(rpp: Path, gold: Path):
                                        'ld a, PLAYER_DIR_LEFT', 'ld a, PLAYER_DIR_RIGHT',
                                        'ld a, [wPlayerDirection]', 'cp b', 'jp nz, .denied')),
            'P16 collision Warp must require west outdoors/east indoors')
-    expect(all(v in helper for v in ('cp REGION_NATIVE_MAP_SLOT',
-                                    'cp MAP_REGION_JOHTO',
-                                    'cp JOHTO_AZALEA_TOWN_LOCAL_ID',
-                                    'cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID')),
-           'P16 gate source identity must distinguish both native maps')
+    # Gate dispatch may use an exact sparse range (ROM0 space relief), so
+    # exercise its real flags/branches instead of requiring one CP per ID.
+    from johto_gatehouse_behavior_audit import predicate
+    import re as _re
+    symbols = {}
+    for f in ('constants/region_map_constants.asm','constants/johto_fixed_map_ids.asm'):
+        symbols.update({k:int(v) for k,v in _re.findall(
+            r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\d+)',
+            ((rpp/f) if (rpp/f).exists() else (Path(__file__).resolve().parents[1]/f)).read_text())})
+    try:
+        selector_ok = (all(predicate(home,'IsJohtoSouthGatePortal',k,0,0,'LEFT',symbols)
+                        for k in ('JOHTO_AZALEA_TOWN_LOCAL_ID',
+                                  'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID')) and
+                       all(not predicate(home,'IsJohtoSouthGatePortal',k,0,0,'LEFT',symbols)
+                           for k in ('JOHTO_ROUTE_37_LOCAL_ID','JOHTO_UNION_CAVE_1F_LOCAL_ID')))
+    except (ValueError,KeyError):
+        selector_ok = False
+    expect(selector_ok, 'P16 gate source identity must distinguish both native maps')
     sign=(rpp/'engine/overworld/map_name_sign.asm').read_text()
     native_sign=sign.split('\n.IsNeutralMap\n',1)[-1].split('\n.NeutralMapList\n',1)[0]
     expect(all(v in native_sign for v in (
@@ -309,9 +322,23 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
             entry.index('call IsJohtoSouthGatePortal') < entry.index('callba IsPlayerStandingOnDoorTileOrWarpTile') and
             'jp CheckWarpsNoCollisionRetry2' in entry,
             'standing carpet must not instantly Warp')
-    require(all(x in portal for x in ('cp REGION_NATIVE_MAP_SLOT','cp MAP_REGION_JOHTO',
-            'cp JOHTO_AZALEA_TOWN_LOCAL_ID','cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID',
-            'cp JOHTO_ILEX_FOREST_LOCAL_ID')), 'three-region exact portal identity lost')
+    # Dispatch is a predicate, not a requirement for a particular CP sequence.
+    from johto_gatehouse_behavior_audit import predicate
+    symbols = {}
+    for f in ('constants/region_map_constants.asm','constants/johto_fixed_map_ids.asm'):
+        symbols.update({k:int(v) for k,v in re.findall(
+            r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\d+)',
+            ((rpp/f) if (rpp/f).exists() else (Path(__file__).resolve().parents[1]/f)).read_text())})
+    try:
+        selector_ok = (all(predicate(home,'IsJohtoSouthGatePortal',k,0,0,'LEFT',symbols)
+                        for k in ('JOHTO_AZALEA_TOWN_LOCAL_ID',
+                                  'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID',
+                                  'JOHTO_ILEX_FOREST_LOCAL_ID')) and
+                       all(not predicate(home,'IsJohtoSouthGatePortal',k,0,0,'LEFT',symbols)
+                           for k in ('JOHTO_ROUTE_37_LOCAL_ID','JOHTO_UNION_CAVE_1F_LOCAL_ID')))
+    except (ValueError,KeyError):
+        selector_ok = False
+    require(selector_ok, 'three-region exact portal identity lost')
     dircheck=(rpp/'engine/overworld/johto_route33_collision.asm').read_text().split('JohtoGateCollisionDirectionAllowed::',1)[-1].split('JohtoInternalDoorFacingCheck::',1)[0]
     require(all(x in coll for x in ('callba JohtoGateCollisionDirectionAllowed', 'jr nc, .retry2')) and
             all(x in dircheck for x in ('cp JOHTO_ILEX_FOREST_LOCAL_ID',

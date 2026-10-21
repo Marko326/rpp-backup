@@ -67,8 +67,18 @@ class NorthGateP18(unittest.TestCase):
         self.assertIn('jp c, WarpFound1',still)
         self.assertIn('jp CheckWarpsNoCollisionRetry2',still)
         self.assertNotIn('StartSimulatingJoypadStates',still)
+        # The small ROM0 selector may compare contiguous ID ranges rather
+        # than spelling out both IDs. Probe actual carry for each instead.
+        from johto_gatehouse_behavior_audit import predicate
+        import re
+        values={}
+        for p in ('constants/region_map_constants.asm','constants/johto_fixed_map_ids.asm'):
+            values.update({k:int(v) for k,v in re.findall(
+                r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\d+)',source(p))})
         for n in ['JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID','JOHTO_ROUTE_34_LOCAL_ID']:
-            self.assertIn('cp '+n,a.split('IsJohtoSouthGatePortal::')[1].split('MapEntryAfterBattle::')[0])
+            self.assertTrue(predicate(a,'IsJohtoSouthGatePortal',n,0,0,'LEFT',values))
+        self.assertFalse(predicate(a,'IsJohtoSouthGatePortal',
+                                   'JOHTO_ROUTE_37_LOCAL_ID',0,0,'LEFT',values))
         self.assertNotIn('GetJohtoWarpArrivalStep',a.split('WarpFound2::')[1].split('CheckMapConnections::')[0])
         self.assertIn('JohtoNorthGateStepWarpAllowed::',source('engine/overworld/johto_route33_collision.asm'))
         self.assertIn('callab GetJohtoWarpArrivalStep',source('engine/overworld/npc_movement.asm'))

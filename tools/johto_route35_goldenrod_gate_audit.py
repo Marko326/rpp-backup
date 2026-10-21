@@ -99,11 +99,26 @@ def gate_dispatch_errors(root: Path, overrides=None):
         problems.append('native Goldenrod gate must remain local ID 18 with at least 19 total maps')
     for label in ('JohtoRoute35GoldenrodGate_h', 'BANK(JohtoRoute35GoldenrodGate_h)'):
         if label not in tables:problems.append('native map pointers and banks missing '+label)
-    for label in ('IsJohtoSouthGatePortal::','ExtraWarpCheck::'):
-        section=home.split(label,1)[1].split('\n\n',1)[0]
-        if NEW not in section and label!='ExtraWarpCheck::':
-            # The latter routes outdoor maps, not the indoor map itself.
-            problems.append(f'home warp/movement dispatch omits {label}')
+    # HOME uses a compact sparse range instead of spelling out each ID.
+    # Test the executable carry predicate, including denied neighboring IDs.
+    from johto_gatehouse_behavior_audit import predicate
+    numbers = {}
+    for path in ('constants/region_map_constants.asm','constants/johto_fixed_map_ids.asm'):
+        numbers.update({k:int(v) for k,v in re.findall(
+            r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\d+)',
+            source(root,path,overrides))})
+    for local in (NEW,'JOHTO_ROUTE_35_LOCAL_ID','JOHTO_GOLDENROD_CITY_LOCAL_ID'):
+        try:
+            if not predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',numbers):
+                problems.append('HOME gate dispatch excludes exact local '+local)
+        except (ValueError,KeyError) as exc:
+            problems.append('HOME gate dispatch interpreter failed: '+str(exc))
+    for local in ('JOHTO_ROUTE_37_LOCAL_ID','JOHTO_ROUTE_39_LOCAL_ID'):
+        try:
+            if predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',numbers):
+                problems.append('HOME gate dispatch leaks to non-gate '+local)
+        except (ValueError,KeyError) as exc:
+            problems.append('HOME gate dispatch interpreter failed: '+str(exc))
     from johto_rom0_collision_audit import audit as native_collision_audit
     if native_collision_audit(root,overrides):
         problems.append('home warp/movement dispatch omits CheckTilePassable::')
@@ -125,9 +140,6 @@ def gate_dispatch_errors(root: Path, overrides=None):
             problems.append('wrong Gold gate dispatch direction/branch at '+first)
     if 'cp '+NEW not in neutral.split('.IsNeutralMap',1)[1].split('.NeutralMapList',1)[0]:
         problems.append('neutral gate name sign missing')
-    for needed in ('JOHTO_ROUTE_35_LOCAL_ID','JOHTO_GOLDENROD_CITY_LOCAL_ID'):
-        if needed not in home.split('IsJohtoSouthGatePortal::',1)[1].split('MapEntryAfterBattle::',1)[0]:
-            problems.append('missing outdoor exact local dispatch '+needed)
     return problems
 
 
