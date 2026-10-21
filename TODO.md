@@ -1,3 +1,13 @@
+## SPID-5.62.232｜金银主干合入卡吉镇(ID64)与 Gold 审计正式清理（2026-10-21）
+
+- [x] **本轮真实基线**：RPP 导出 `金银` 分支干净 HEAD `36cc2a8489219826e162a326acd09c729ef2335b`，游戏版本 `SPID-5.62.231`。将 `金币` 分支的卡吉镇功能 `9a2cb969` 和强制审计 `cd8face7` 选择性接入主干，不称 Git merge commit；最终候选 `SPID-5.62.232`。用户已使用本次 `.232` 开发双补丁，并回复“没啥问题”；仅表示用户测试覆盖到的范围，没有逐项列出所有按键和存读档路径。
+- [x] **身份与运行时**：保留西线 `Route38EcruteakGate` ID23 / `Route38` ID24（slot 23/24），东线 `Route42EcruteakGate` ID62 / `Route42` ID63（slot 25/26），新增 `MahoganyTown` ID64 为 slot 27；28 个真实 Header、没有假地图和 stable ID 复用。Gold `MahoganyTown` 10×9 地图块、运行时碰撞及 Route42↔卡吉镇西向/东向真实可步行路径已接入。`Route43` 和北门房仍未上线，Route42 既有 Surf/Cut、两座门房立即复入及旧关东地图规则不回退。
+- [x] **Town Map/Fly 与边界补绘**：同步 active slot、Town Map 地标 34、到访 Fly 旗标/落点、音乐与屋顶。修正历史 Town Map 注册编号被相同 JSON 镜像掩盖的问题（Route35 门房地标 17、Route42 地标 32、卡吉镇地标 34）。卡吉镇北缘采用 Gold `Route43` 最南三行局部预览补绘，既不把未开发 Route43 激活，也不改原市内 `.blk`；维持旧三项屋顶补绘及两条加载路径。
+- [x] **延期能力**：Route42 原有 Surf/Cut 继续保留；MahoganyTown Gold 4 处 Headbutt 坐标只登记 `DEFERRED`，不开放摇树。后续 Route43、卡吉镇未做室内、NPC、剧情和训练家均不能据此报完成。
+- [x] **统一静态发布门禁（最终清理）**：按原有 `python tools/johto_map_release_audit.py --rpp . --gold <pokegold-master> --expect-version SPID-5.62.232` 重跑，退出码 **0**，`status=PASS`；**789/789 unittest、0 skipped、32/32 活动连接 PASS**；Gold 全素材登记 368、扫描 367、源素材错误 0，仅按既定许可排除 `SafariZoneBeta`（不可称此图通过）。另外以原版 Gold 路径对卡吉镇与固定 ID 进行 `40/40` 专项复测，结果通过。该门禁是源码/静态合同检查，Gold 报告标记 `SOURCE_ONLY_RUNTIME_UNVERIFIED`，**不等于 ROM 编译/链接及手机全路径完成**。
+- [x] **清理交付**：相对于上述干净 HEAD 同时有游戏运行时代码与 `tools/` 脚本/测试改动，按模式 A 双提交：① `feat(johto)` 地图/游戏 ASM/资源/版本；② `test(tool)` 工具、JSON、测试及 `TODO.md`、`RPP_DEVELOPMENT_PITFALLS.md`、`commit-message.txt`。清理增量以已应用的 `.232` 开发候选为前置，全量以 `36cc2a84` HEAD 为前置，二选一不可叠加；工具反向隔离仅用于提交顺序。Git Commit/Push 用户执行。
+- [ ] **构建/手机留项**：AI 未执行 RGBDS 编译或链接；需要用户提供与 `.232` 精确对应的新 ROM/MAP 才能测 ROM0/Bank 余量。手机最小回归：Route42↔卡吉镇两向所有可行入口、卡吉镇 Fly 首到与返回、北屋顶显示（两条加载路径）、卡吉镇 12 条跳崖/北口仍封闭、旧存档 Continue、Route42 Surf/Cut、缘朱东西门房即时复入与关东旧图抽查；用户总体反馈“没啥问题”不等于逐项验收。
+
 ## SPID-5.62.231｜双线合并与东门房编译修复：用户验收、正式收口（2026-10-21）
 
 - [x] **基线与范围**：金银 `f51e9cfab7b3995dd7210919d551b155afad4f6b`（`.230`）纳入金币东线截至 `58b86874a85a28654fdd8475c8a19414ad8807c0` 的三笔历史改动；本轮是补丁集成，不冒充 Git merge commit。游戏版本保持 `SPID-5.62.231`。

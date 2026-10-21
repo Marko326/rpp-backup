@@ -36,7 +36,7 @@ class GatehouseBehaviorHardening224(unittest.TestCase):
           'Route35GoldenrodGate')
 
     def test_route35_warp_collision_direction_mutation_fails(self):
-        self.failed(ASM,'\tjr z, .route35South','\tjr nz, .route35South',
+        self.failed(ASM,'\tjp z, .route35South','\tjp nz, .route35South',
                     'Route35GoldenrodGate')
 
     def test_old_route34_step_on_branch_mutation_fails(self):

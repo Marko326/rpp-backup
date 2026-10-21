@@ -63,15 +63,15 @@ class FixedIdFreeze225(unittest.TestCase):
 
     def test_duplicate_east_62_registration_rejected(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual([23,24,62,63], [m['local_id'] for m in data['maps'][-4:]])
+        self.assertEqual([23,24,62,63,64], [m['local_id'] for m in data['maps'][-5:]])
         data['maps'].append(dict(data['maps'][-2]))
         errors = audit(ROOT, {REGISTRY: json.dumps(data)})
         self.assertTrue(any('duplicate stable ID' in e for e in errors), errors)
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(27, len(data['maps']))
-        self.assertEqual([23,24,62,63], [m['local_id'] for m in data['maps'][-4:]])
+        self.assertEqual(28, len(data['maps']))
+        self.assertEqual([23,24,62,63,64], [m['local_id'] for m in data['maps'][-5:]])
         self.assertIn('DEF JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22',
                       (ROOT / RESERVED_ASM).read_text(encoding='utf8'))
         self.assertIn('JohtoRoute37_h', (ROOT / HEADERS).read_text(encoding='utf8'))
@@ -129,10 +129,10 @@ class FixedIdFreeze225(unittest.TestCase):
     def test_fake_next_gate_header_not_sufficient_for_activation(self):
         data = json.loads((ROOT / REGISTRY).read_text())
         data['maps'].append({
-            'local_id': 64, 'local_symbol': 'JOHTO_MAHOGANY_TOWN_LOCAL_ID',
-            'header': 'JohtoMahoganyTown_h', 'bank': 'BANK(JohtoMahoganyTown_h)'})
+            'local_id': 65, 'local_symbol': 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID',
+            'header': 'JohtoRoute43MahoganyGate_h', 'bank': 'BANK(JohtoRoute43MahoganyGate_h)'})
         failures = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('missing actual map asset maps/JohtoMahoganyTown.blk' in e
+        self.assertTrue(any('missing actual map asset maps/JohtoRoute43MahoganyGate.blk' in e
                             for e in failures), failures)
 
     def test_wrong_live_header_is_rejected(self):

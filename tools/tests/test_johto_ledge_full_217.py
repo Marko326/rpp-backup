@@ -42,7 +42,7 @@ class JohtoLedgeGoldCoverage217(unittest.TestCase):
         result = audit(ROOT, GOLD)
         self.assertEqual(result['errors'], [], result['errors'])
         self.assertEqual(result['totals']['johto_native_pair_approaches'], 95)
-        self.assertEqual(result['totals']['modern_coordinate_rules'], 23)
+        self.assertEqual(result['totals']['modern_coordinate_rules'], 35)
         self.assertEqual(len(expected_gold_hops(GOLD, 'Route31', 'johto')), 14)
         self.assertEqual(len(expected_gold_hops(GOLD, 'AzaleaTown', 'johto_modern')), 10)
         self.assertEqual(coordinate_hops(self.src, '.azaleaHops'),

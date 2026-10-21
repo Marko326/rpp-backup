@@ -79,7 +79,7 @@ class ForestCommonLedgeCandidate(unittest.TestCase):
         data=audit(ROOT)
         self.assertEqual(data['errors'],[], data['errors'])
         self.assertEqual(data['totals']['johto_native_pair_approaches'],95)
-        self.assertEqual(data['totals']['modern_coordinate_rules'],23)
+        self.assertEqual(data['totals']['modern_coordinate_rules'],35)
         self.assertEqual(data['totals']['route38_coordinate_rules'],24)
 
 if __name__=='__main__':

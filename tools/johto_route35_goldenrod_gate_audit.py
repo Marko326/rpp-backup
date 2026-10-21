@@ -159,6 +159,7 @@ def border_refresh_hook_errors(root: Path, overrides=None):
     hook = 'callba ' + label
     expected = ('\tcall PatchJohtoAzaleaWestGateBorder\n'
                 '\tcall PatchJohtoGoldenrodNorthBorder\n'
+                '\tcall PatchJohtoMahoganyNorthBorder\n'
                 '\tjp PatchJohtoRoute35SouthBorder')
     if home.count(hook) != 2:
         problems.append('ROM0: exactly two shared border dispatcher far-calls required')
@@ -175,7 +176,7 @@ def border_refresh_hook_errors(root: Path, overrides=None):
         if 'callba '+old in home:
             problems.append('ROM0: redundant direct far-call to '+old)
     if col.count(label+'::') != 1 or expected not in col.split(label+'::',1)[-1].split('; GATE-5.62.202:',1)[0]:
-        problems.append('ROMX: border dispatcher must call west/north/south in the original order')
+        problems.append('ROMX: border dispatcher must call west/north/Mahogany/south in the registered order')
     try:
         sec = main.split('SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]',1)[1].split('SECTION ',1)[0]
     except IndexError:

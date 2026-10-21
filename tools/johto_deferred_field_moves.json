@@ -168,6 +168,42 @@
           ]
         ]
       }
+    },
+    "MahoganyTown": {
+      "headbutt": {
+        "status": "DEFERRED",
+        "reason": "User excluded shake trees (Headbutt); Gold 4 HEADBUTT_TREE quadrants cannot activate scripts without approval",
+        "gold_xy": [
+          [
+            14,
+            2
+          ],
+          [
+            15,
+            2
+          ],
+          [
+            15,
+            3
+          ],
+          [
+            15,
+            4
+          ]
+        ]
+      },
+      "surf": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Gold 0 WATER quadrants"
+      },
+      "cut": {
+        "status": "NOT_APPLICABLE",
+        "reason": "Gold 0 CUT_TREE quadrants"
+      },
+      "fly_destination": {
+        "status": "ALLOWED",
+        "reason": "Gold Flypoint unlocked by verified physical native ID64; existing free save-event bit $451; exact Gold spawn (15,14)"
+      }
     }
   }
 }

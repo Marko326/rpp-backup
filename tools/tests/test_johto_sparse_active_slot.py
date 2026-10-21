@@ -28,7 +28,7 @@ class SparseActiveSlotContract(unittest.TestCase):
     def test_0_through_22_identity_unchanged(self):
         self.assertEqual([], check_active_slot_mapping(self.headers, self.registry))
         self.assertEqual(list(range(23)), [item['local_id'] for item in self.registry[:23]])
-        self.assertEqual([23,24,62,63], [item['local_id'] for item in self.registry[23:]])
+        self.assertEqual([23,24,62,63,64], [item['local_id'] for item in self.registry[23:]])
 
     def test_id_25_is_inactive_before_registered(self):
         self.table_mutation('$18, $ff, $ff', '$18, $19, $ff',

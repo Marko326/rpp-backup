@@ -70,6 +70,31 @@ def check_native_identity(sources, local_symbols, count, tables, gsc):
         'town_map_name': names,
         'town_map_xy': positions,
     }
+    # A native map's current-position cursor uses JohtoNativeTownMapIndices,
+    # while the save/name path uses JohtoNativeTownMapEntries.  Matching both
+    # to the manifest separately is NOT enough: the manifest can repeat the
+    # same incorrect landmark index.  Compare the actual 45-entry browse row
+    # to each active native map name/XY.  Local 0..6 still use legacy aliases
+    # for their player marker; their native fallback coordinates are historical.
+    landmarks = town.split('JohtoTownMapEntries:', 1)[-1].split('JohtoTownMapEntriesEnd:', 1)[0]
+    browse = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*(?:;[^\n]*)?\n\s*dw\s+(\w+)', landmarks)
+    if len(browse) != 45:
+        errors.append('ordinary Johto Town Map landmark count != 45')
+    else:
+        for i in range(7, min(count, len(town_indices), len(names), len(positions))):
+            try:
+                index = int(town_indices[i], 0)
+            except ValueError:
+                errors.append(f'Johto local slot {i} current marker has invalid index')
+                continue
+            if not 0 <= index < len(browse):
+                errors.append(f'Johto local slot {i} current marker index out of range')
+                continue
+            native = (positions[i][0], positions[i][1], names[i])
+            if browse[index] != native:
+                errors.append(f'Johto local slot {i} current Town Map marker mismatch: '
+                              f'index {index} points to {browse[index]!r}, '
+                              f'native location is {native!r}')
     for i, spec in enumerate(maps):
         if not isinstance(spec, dict):
             errors.append(f'Johto local {i} has no valid identity contract')

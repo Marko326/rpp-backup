@@ -85,9 +85,11 @@ class EcruteakEastGate(unittest.TestCase):
         edges={(e.get('current'),e.get('target'),e.get('direction')) for e in summary['edges'] if e['status']=='PASS'}
         self.assertIn(('JohtoEcruteakCity','JohtoRoute42','east'),edges)
         self.assertIn(('JohtoRoute42','JohtoEcruteakCity','west'),edges)
-        # Route42 east is unbuilt; the actual boundary must remain sealed.
+        # Route42 east is now connected, but only reviewed y16/y17 may pass.
         self.assertIn('cp JOHTO_ROUTE_42_WIDTH * 2 - 1',self.collision)
-        self.assertNotIn('JOHTO_MAHOGANY_TOWN_LOCAL_ID', (ROOT/'engine/overworld/region_map_lookup.asm').read_text().split('NativeRegionConnectionTargets::')[-1].split('db $ff')[0])
+        self.assertIn('db JOHTO_ROUTE_42_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID', (ROOT/'engine/overworld/region_map_lookup.asm').read_text())
+        self.assertIn(('JohtoRoute42','JohtoMahoganyTown','east'),edges)
+        self.assertIn(('JohtoMahoganyTown','JohtoRoute42','west'),edges)
 
     def test_gate_name_is_neutral(self):
         # From BOTH Ecruteak and Route42, the transit gate must inherit the
@@ -128,7 +130,7 @@ class EcruteakEastGate(unittest.TestCase):
         self.assertIn('IsJohtoRoute42WaterAhead::',graph)
         self.assertIn('JohtoRoute42RemoveCutTree::',self.collision)
         self.assertNotIn('IsJohtoRoute42HeadbuttTreeAhead::',graph)
-        caps=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps'][-1]['feature_status']
+        caps=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps'][-2]['feature_status']
         self.assertEqual((caps['surf'],caps['cut'],caps['fly']),('ALLOWED','ALLOWED','DEFERRED'))
 
     def test_gate_5x4_dimensions_are_defined_for_assembly(self):

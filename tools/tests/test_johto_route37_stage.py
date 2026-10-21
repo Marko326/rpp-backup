@@ -74,8 +74,8 @@ class Route37Stage(unittest.TestCase):
 
     def test_ecruteak_and_both_gate_ids_registered(self):
         registry = json.loads((ROOT / 'tools/johto_native_maps.json').read_text())
-        self.assertEqual(len(registry['maps']), 27)
-        self.assertEqual([m['local_id'] for m in registry['maps'][-4:]], [23, 24, 62, 63])
+        self.assertEqual(len(registry['maps']), 28)
+        self.assertEqual([m['local_id'] for m in registry['maps'][-5:]], [23, 24, 62, 63, 64])
         self.assertEqual(registry['maps'][21]['local_symbol'], 'JOHTO_ROUTE_37_LOCAL_ID')
         self.assertEqual(registry['maps'][21]['identity_evidence'], 'STATIC_PASS')
         self.assertEqual(registry['maps'][22]['local_symbol'], 'JOHTO_ECRUTEAK_CITY_LOCAL_ID')

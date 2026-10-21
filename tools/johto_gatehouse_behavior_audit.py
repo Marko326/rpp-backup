@@ -449,7 +449,7 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
            for part in (before_load,connected)) or home.count(hook)!=2:
         errors.append('gate exterior preview must run after block load on BOTH load paths')
     section = collisions.split('PatchJohtoMapBordersAfterBlockLoad::',1)[-1].split('PatchJohtoAzaleaWestGateBorder::',1)[0]
-    if not (re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder',section)):
+    if not (re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+call PatchJohtoMahoganyNorthBorder\s+jp PatchJohtoRoute35SouthBorder',section)):
         errors.append('shared exterior border renderer lost one side or changed call order')
     if 'SECTION "Johto Route33 Collision Mask", ROMX, BANK[$43]' not in get_text(root,'main.asm',overrides):
         errors.append('gate border render routines must remain in ROMX Bank 43')

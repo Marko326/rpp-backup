@@ -605,7 +605,7 @@
         "0"
       ],
       "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
-      "town_map_index": 18,
+      "town_map_index": 17,
       "town_map_name": "JohtoBrowseRoute35Name",
       "town_map_xy": [
         92,
@@ -770,7 +770,7 @@
         "0"
       ],
       "gsc_music": "MUSIC_GBP_GSC_ROUTE37",
-      "town_map_index": 22,
+      "town_map_index": 24,
       "town_map_name": "JohtoBrowseRoute38Name",
       "town_map_xy": [
         60,
@@ -802,7 +802,7 @@
         "0"
       ],
       "gsc_music": "MUSIC_GBP_GSC_ROUTE37",
-      "town_map_index": 23,
+      "town_map_index": 24,
       "town_map_name": "JohtoBrowseRoute38Name",
       "town_map_xy": [
         60,
@@ -1147,6 +1147,58 @@
           [
             17,
             31
+          ]
+        ]
+      }
+    },
+    {
+      "local_id": 64,
+      "local_symbol": "JOHTO_MAHOGANY_TOWN_LOCAL_ID",
+      "header": "JohtoMahoganyTown_h",
+      "bank": "BANK(JohtoMahoganyTown_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_CHERRYGROVE_CITY",
+      "town_map_index": 34,
+      "town_map_name": "JohtoMahoganyName",
+      "town_map_xy": [
+        60,
+        116
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "ALLOWED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "MAHOGANY_TOWN",
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": [
+          [
+            2,
+            14
+          ],
+          [
+            2,
+            15
+          ],
+          [
+            3,
+            15
+          ],
+          [
+            4,
+            15
           ]
         ]
       }

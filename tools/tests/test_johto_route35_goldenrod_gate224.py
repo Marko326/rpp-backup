@@ -117,8 +117,8 @@ class GoldenrodNorthGate224(unittest.TestCase):
     def test_rom0_wrong_wrapper_order_and_bank_are_rejected(self):
         key='engine/overworld/johto_route33_collision.asm'
         base=txt(key)
-        bad=base.replace('\tcall PatchJohtoGoldenrodNorthBorder\n\tjp PatchJohtoRoute35SouthBorder',
-                         '\tjp PatchJohtoRoute35SouthBorder\n\tcall PatchJohtoGoldenrodNorthBorder',1)
+        bad=base.replace('\tcall PatchJohtoGoldenrodNorthBorder\n\tcall PatchJohtoMahoganyNorthBorder\n\tjp PatchJohtoRoute35SouthBorder',
+                         '\tjp PatchJohtoRoute35SouthBorder\n\tcall PatchJohtoGoldenrodNorthBorder\n\tcall PatchJohtoMahoganyNorthBorder',1)
         self.assertNotEqual(base,bad)
         self.assertTrue(border_refresh_hook_errors(ROOT,{key:bad}))
         key='main.asm';base=txt(key)
@@ -143,6 +143,22 @@ class GoldenrodNorthGate224(unittest.TestCase):
             self.assertIn(key,col)
         self.assertIn('callba JohtoGateCollisionDirectionAllowed',home)
         self.assertIn('callba JohtoInternalDoorFacingCheck',home)
+
+    def test_gate_dispatch_accepts_equivalent_jp_and_rejects_wrong_branch(self):
+        # The actual registered gate uses JP to reach a distant .northGate.
+        # A short JR or long JP is valid only when it targets the same branch.
+        key='engine/overworld/johto_route33_collision.asm'
+        raw=txt(key)
+        section_start=raw.index('JohtoGateCollisionDirectionAllowed::')
+        section_end=raw.index('JohtoInternalDoorFacingCheck::',section_start)
+        part=raw[section_start:section_end]
+        expected='cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID\n\tjp z, .northGate'
+        self.assertIn(expected,part)
+        self.assertEqual([],gate_dispatch_errors(ROOT,{key:raw[:section_start]+part.replace(expected,
+            expected.replace('jp z','jr z'),1)+raw[section_end:]}))
+        broken=raw[:section_start]+part.replace(expected,
+            expected.replace('.northGate','.route35South'),1)+raw[section_end:]
+        self.assertTrue(any('wrong Gold gate dispatch' in e for e in gate_dispatch_errors(ROOT,{key:broken})))
 
     def test_arrival_and_immediate_reverse_regression(self):
         step=section('engine/overworld/region_map_lookup.asm','GetJohtoWarpArrivalStep::','GetJohtoCaveMapChangeSFX::')

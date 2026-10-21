@@ -68,7 +68,7 @@ class GoldRoofMapgroupsP19D(unittest.TestCase):
     def test_gfx_and_palette_same_group_for_all_19_local_maps(self):
         color=(ROOT/'color/loadpalettes.asm').read_text()
         graphics=(ROOT/'engine/overworld/johto_goldenrod_roof_gfx.asm').read_text()
-        expected=[index for _,index in SCOPE]
+        expected=[index for _,index in SCOPE]+[7]  # MahoganyTown shares Route42 Gold group2/RGB7; group6 is Route38 Olivine
         self.assertEqual(current_roof_group_table(color,'JohtoGoldDayRoofGroups'),expected)
         self.assertEqual(current_roof_group_table(graphics,'JohtoRoofGroupForLocalMap'),expected)
         self.assertIn('cp JOHTO_MODERN',graphics)

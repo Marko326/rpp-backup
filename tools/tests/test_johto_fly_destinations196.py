@@ -21,7 +21,7 @@ class JohtoFlyDestinations196(unittest.TestCase):
     def setUp(self):
         self.t=TemporaryDirectory();self.addCleanup(self.t.cleanup)
         self.root=Path(self.t.name)
-        for name in (*FILES,'maps/JohtoAzaleaTown.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoEcruteakCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin'):
+        for name in (*FILES,'maps/JohtoAzaleaTown.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoEcruteakCity.blocked_mask.bin','maps/JohtoMahoganyTown.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin','maps/JohtoGoldenrodCity.blocked_mask.bin'):
             f=self.root/name;f.parent.mkdir(parents=True,exist_ok=True)
             shutil.copy2(ROOT/name,f)
 
@@ -72,8 +72,8 @@ class JohtoFlyDestinations196(unittest.TestCase):
 
     def test_fifth_menu_slot_must_be_reachable(self):
         self.mutation('engine/johto_fly_town_map.asm',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 6',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 5')
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 7',
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 6')
 
     def test_unsafe_landing_must_fail(self):
         self.mutation('engine/fly_town_map_helpers.asm',

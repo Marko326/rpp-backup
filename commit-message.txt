@@ -1,3 +1,12 @@
+# SPID-5.62.232｜卡吉镇两笔东线改动并入金银主干：正式双提交索引（本文件不是 git commit -F 正文）
+# Base: 金银 / 36cc2a8489219826e162a326acd09c729ef2335b（干净 HEAD，SPID-5.62.231）；来源：金币 feat 9a2cb969、test(tool) cd8face7。
+# 1) feat(johto): 合入卡吉镇与42号道路双向通路并修正Fly地标和北侧预览
+#    仅游戏 ASM/地图/图块/碰撞/运行时地图注册、Fly/屋顶/跳崖/版本；ID64 分配 slot27，保持 ID23/24/62/63 不变。
+# 2) test(tool): 固化卡吉镇双向可达、Fly地标和Gold邻图预览审计
+#    仅 tools/ JSON、Python、测试与 TODO/踩坑/本提交索引；保留 Gold 负例与 Headbutt DEFERRED。
+# 应用：已打 .232 候选用清理增量；干净 36cc2a84 HEAD 可用基线全量，二者不能叠加。先工具反向隔离提交功能，再 git apply -R 还原工具提交审计。
+# 正式内容以交付 ZIP 内两份独立 TXT 为准。Git Commit/Push 用户执行，本 ZIP 不产生真实新提交 Hash。
+
 # SPID-5.62.231｜双线合并正式收口索引（本文件不是 git commit -F 正文）
 # Base: 金银 / f51e9cfab7b3995dd7210919d551b155afad4f6b；东线来源截至 58b86874a85a28654fdd8475c8a19414ad8807c0。
 # 1) feat(johto): 合并缘朱双门房与42号道路并修复东门房尺寸常量
