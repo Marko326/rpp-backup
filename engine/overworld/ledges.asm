@@ -27,11 +27,16 @@ HandleLedges:
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37HopTable
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jr z, .route38HopTable
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakHopTable
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	ret nz
 	ld hl, .ruinsHops
+	jp .modernHopLookup
+.route38HopTable
+	ld hl, .route38Hops
 	jp .modernHopLookup
 .route37HopTable
 	ld hl, .route37Hops
@@ -191,6 +196,34 @@ HandleLedges:
 	db 7, 10, PLAYER_DIR_DOWN
 	db 8, 10, PLAYER_DIR_DOWN
 	db 8, 10, PLAYER_DIR_RIGHT
+	db $ff
+
+; Route38 original Gold directed HOP takeoffs; all landings checked by source tool.
+.route38Hops
+	db 11, 8, PLAYER_DIR_LEFT
+	db 11, 9, PLAYER_DIR_LEFT
+	db 6, 10, PLAYER_DIR_RIGHT
+	db 11, 10, PLAYER_DIR_LEFT
+	db 6, 11, PLAYER_DIR_RIGHT
+	db 11, 11, PLAYER_DIR_LEFT
+	db 6, 12, PLAYER_DIR_RIGHT
+	db 11, 12, PLAYER_DIR_DOWN
+	db 11, 12, PLAYER_DIR_LEFT
+	db 12, 12, PLAYER_DIR_DOWN
+	db 13, 12, PLAYER_DIR_DOWN
+	db 14, 12, PLAYER_DIR_DOWN
+	db 15, 12, PLAYER_DIR_DOWN
+	db 16, 12, PLAYER_DIR_DOWN
+	db 17, 12, PLAYER_DIR_DOWN
+	db 18, 12, PLAYER_DIR_DOWN
+	db 19, 12, PLAYER_DIR_DOWN
+	db 20, 12, PLAYER_DIR_DOWN
+	db 20, 12, PLAYER_DIR_RIGHT
+	db 6, 13, PLAYER_DIR_RIGHT
+	db 4, 14, PLAYER_DIR_DOWN
+	db 5, 14, PLAYER_DIR_DOWN
+	db 6, 14, PLAYER_DIR_DOWN
+	db 6, 14, PLAYER_DIR_RIGHT
 	db $ff
 
 ; Route37 has six Gold HOP_DOWN takeoffs and safe two-cell landings.

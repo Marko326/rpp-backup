@@ -3330,6 +3330,7 @@ JohtoGoldenrodCityBlocks: INCBIN "maps/JohtoGoldenrodCity.blk"
 JohtoGoldenrodRoofs_GFX: INCBIN "gfx/tilesets/johto_goldenrod_roofs.2bpp"
 JohtoVioletRoofs_GFX: INCBIN "gfx/tilesets/johto_violet_roofs.2bpp"
 JohtoAzaleaRoofs_GFX: INCBIN "gfx/tilesets/johto_azalea_roofs.2bpp"
+JohtoOlivineRoofs_GFX: INCBIN "gfx/tilesets/johto_olivine_roofs.2bpp"
 ; R36-5.62.218: Violet City and Route36 connection strips must live
 ; in the same ROM bank: LoadTileBlockMap reads strips in the CURRENT bank.
 ; Route35 south and Route37 north open; unfinished gates remain sealed.
@@ -3352,6 +3353,19 @@ INCLUDE "data/mapHeaders/JohtoEcruteakCity.asm"
 INCLUDE "data/mapObjects/JohtoEcruteakCity.asm"
 INCLUDE "scripts/JohtoEcruteakCity.asm"
 JohtoEcruteakCityBlocks: INCBIN "maps/JohtoEcruteakCity.blk"
+
+; West-line A: Route38 and Ecruteak share $40 for ordinary visual-strip copy.
+SECTION "Johto Route38 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute38.asm"
+INCLUDE "data/mapObjects/JohtoRoute38.asm"
+INCLUDE "scripts/JohtoRoute38.asm"
+JohtoRoute38Blocks: INCBIN "maps/JohtoRoute38.blk"
+
+SECTION "Johto Route38 Ecruteak Gate Map", ROMX, BANK[$44]
+INCLUDE "data/mapHeaders/JohtoRoute38EcruteakGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute38EcruteakGate.asm"
+INCLUDE "scripts/JohtoRoute38EcruteakGate.asm"
+JohtoRoute38EcruteakGateBlocks: INCBIN "maps/JohtoRoute38EcruteakGate.blk"
 
 ; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
@@ -3586,6 +3600,8 @@ JohtoNativeCollisionFence::
 	jr z, .route36Native
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37Native
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jr z, .route38Native
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakNative
 	cp JOHTO_ROUTE_33_LOCAL_ID
@@ -3612,6 +3628,9 @@ JohtoNativeCollisionFence::
 	ret
 .route37Native
 	callba JohtoRoute37EdgeFence
+	ret
+.route38Native
+	callba JohtoRoute38EdgeFence
 	ret
 .ecruteakNative
 	callba JohtoEcruteakCityEdgeFence

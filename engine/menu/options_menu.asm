@@ -1165,6 +1165,8 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_UNION_CAVE ; Ruins of Alph Outside
 	db MUSIC_GBP_GSC_ROUTE37 ; Route37
 	db MUSIC_GBP_GSC_ECRUTEAK_CITY ; EcruteakCity
+	db MUSIC_GBP_GSC_ROUTE37 ; Route38EcruteakGate, original Gold Route37 theme
+	db MUSIC_GBP_GSC_ROUTE37 ; Route38, original Gold Route37 theme
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

@@ -250,8 +250,14 @@ JohtoEcruteakCityEdgeFence::
 .west
 	ld a, [wXCoord]
 	and a
-	jr z, .block
-	jr .clear
+	jr nz, .clear
+	; Only the two Gold west gate tiles lead to Route38 gate.
+	ld a, [wYCoord]
+	cp 18
+	jr z, .clear
+	cp 19
+	jr z, .clear
+	jr .block
 .south
 	ld a, [wYCoord]
 	cp JOHTO_ECRUTEAK_CITY_HEIGHT * 2 - 1
@@ -287,6 +293,40 @@ JohtoEcruteakCityCanStepAhead::
 	cp 18
 	jr z, .allowed
 .normal
+	; Gold west doorway at x0,y18/19 is a WARP_CARPET_LEFT,
+	; not generic walkable FLOOR. Permit approaching from x1 only.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .checkMatVertical
+	ld a, [wXCoord]
+	cp 1
+	jr nz, .checkMatVertical
+	ld a, [wYCoord]
+	cp 18
+	jr z, .allowed
+	cp 19
+	jr z, .allowed
+	; An east-west gate's two stacked carpet cells are ordinary floor for
+	; vertical movement. Only facing LEFT from the carpet is a Warp attempt.
+	; The Gold collision bitmap marks warp carpets blocked by default.
+.checkMatVertical
+	ld a, [wXCoord]
+	and a
+	jr nz, .maskEcruteak
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .cityMatDown
+	cp PLAYER_DIR_UP
+	jr nz, .maskEcruteak
+	ld a, [wYCoord]
+	cp 19
+	jr z, .allowed
+	jr .maskEcruteak
+.cityMatDown
+	ld a, [wYCoord]
+	cp 18
+	jr z, .allowed
+.maskEcruteak
 	ld hl, JohtoEcruteakCityBlockedRows
 	ld d, JOHTO_ECRUTEAK_CITY_WIDTH * 2
 	ld e, 5
@@ -300,6 +340,172 @@ JohtoEcruteakCityCanStepAhead::
 
 JohtoEcruteakCityBlockedRows::
 	INCBIN "maps/JohtoEcruteakCity.blocked_mask.bin"
+
+; West-line A: Gold Route38 40x18 quadrant mask, no Surf/Cut to open.
+; Route39 is unregistered; the west edge is physically closed.
+; City side is visible but the road must pass through the paired gate Warp.
+JohtoRoute38EdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr z, .east
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_DOWN
+	jr nz, .allowed
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_38_HEIGHT * 2 - 1
+	jr nc, .blocked
+	jr .allowed
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .blocked
+	jr .allowed
+.east
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_38_WIDTH * 2 - 1
+	jr nc, .blocked
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute38CanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jr nz, .blocked
+	; Gold RIGHT_WARP_CARPET: enter from x34 y8/9 and then exit
+	; toward x36 through existing collision-based warp check.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 34
+	jr nz, .normal
+	ld a, [wYCoord]
+	cp 8
+	jr z, .allowed
+	cp 9
+	jr z, .allowed
+.normal
+	; The paired outside door mats permit y8 <-> y9 travel. Their
+	; outward RIGHT collision still enters the gate, never STEP_ON.
+	ld a, [wXCoord]
+	cp 35
+	jr nz, .maskRoute38
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .matDown
+	cp PLAYER_DIR_UP
+	jr nz, .maskRoute38
+	ld a, [wYCoord]
+	cp 9
+	jr z, .allowed
+	jr .maskRoute38
+.matDown
+	ld a, [wYCoord]
+	cp 8
+	jr z, .allowed
+	; Gold's floor above the upper carpet must be able to step DOWN
+	; onto the carpet without triggering a Warp.
+	cp 7
+	jr z, .allowed
+.maskRoute38
+	ld hl, JohtoRoute38BlockedRows
+	ld d, JOHTO_ROUTE_38_WIDTH * 2
+	ld e, 5
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute38BlockedRows::
+	INCBIN "maps/JohtoRoute38.blocked_mask.bin"
+
+; Same Gold EastWestGate 10x8 collision geometry as the accepted Violet gate.
+JohtoRoute38EcruteakGateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wYCoord]
+	cp 4
+	jr z, .lane
+	cp 5
+	jr nz, .normal
+.lane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .left
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 8
+	jr z, .allowed
+	jr .normal
+.left
+	ld a, [wXCoord]
+	cp 1
+	jr z, .allowed
+.normal
+	; Gold EastWestGate: both carpet lanes are walkable UP/DOWN. They
+	; trigger a Warp ONLY on the corresponding blocked LEFT/RIGHT exit.
+	ld a, [wXCoord]
+	and a
+	jr z, .matVertical
+	cp 9
+	jr nz, .maskGate
+.matVertical
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .matDown
+	cp PLAYER_DIR_UP
+	jr nz, .maskGate
+	ld a, [wYCoord]
+	cp 5
+	jr z, .allowed
+	; The Gold floor below the carpet is not a wall.
+	cp 6
+	jr z, .allowed
+	jr .maskGate
+.matDown
+	ld a, [wYCoord]
+	cp 4
+	jr z, .allowed
+	; Same for the floor immediately above the upper carpet.
+	cp 3
+	jr z, .allowed
+.maskGate
+	ld hl, JohtoRoute38EcruteakGateBlockedRows
+	ld d, JOHTO_ROUTE_38_ECRUTEAK_GATE_WIDTH * 2
+	ld e, 2
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute38EcruteakGateBlockedRows::
+	INCBIN "maps/JohtoRoute38EcruteakGate.blocked_mask.bin"
 
 ; Route37 Gold 20x18 per-quadrant mask; north to Ecruteak only x7/8.
 JohtoRoute37EdgeFence::
@@ -1301,11 +1507,24 @@ JohtoGateCollisionDirectionAllowed::
 	jr z, .cityNorth
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr z, .route35South
+	; East-west Route38 door: city faces LEFT, road RIGHT, gate uses
+	; its actual west/east mouth. Match native local ID, never shared $FC.
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jp z, .left
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jp z, .right
+	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+	jr z, .ecruteakGate
 	; Historical south gate west x0, east x9.
 	ld a, [wXCoord]
 	and a
 	jr z, .left
 	jr .right
+.ecruteakGate
+	ld a, [wXCoord]
+	and a
+	jp z, .left
+	jp .right
 .forest
 	ld a, [wYCoord]
 	cp 5
@@ -1385,11 +1604,30 @@ JohtoInternalDoorFacingCheck::
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .cityNorthInterior
 	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr z, .route35SouthInterior
+	jp z, .route35SouthInterior
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .ruinsRoute36
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jp z, .ruinsOutside
+	; R38-5.62.230: Route38 gate carpets are INSIDE the route map,
+	; x35 of 40, so the normal outside-map-edge fallback cannot open
+	; their collision-only Warp. Require the exact pair and RIGHT.
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jp z, .route38Door
+	jp .denied
+.route38Door
+	ld a, [wXCoord]
+	cp 35
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 8
+	jr z, .route38Right
+	cp 9
+	jp nz, .denied
+.route38Right
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
 	jp .denied
 .ruinsRoute36
 	ld a, [wYCoord]
@@ -1634,6 +1872,10 @@ JohtoNativeCanStepAhead::
 	jr z, .route36
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jr z, .route38
+	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+	jr z, .route38Gate
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteak
 	cp JOHTO_ROUTE_33_LOCAL_ID
@@ -1664,6 +1906,12 @@ JohtoNativeCanStepAhead::
 	jr .handled
 .route37
 	call JohtoRoute37CanStepAhead
+	jr .handled
+.route38
+	call JohtoRoute38CanStepAhead
+	jr .handled
+.route38Gate
+	call JohtoRoute38EcruteakGateCanStepAhead
 	jr .handled
 .ecruteak
 	call JohtoEcruteakCityCanStepAhead

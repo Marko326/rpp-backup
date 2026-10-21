@@ -51,6 +51,8 @@ JohtoRoofGroupForLocalMap:
 	db $ff ; 14 Ruins outside, outdoor map with no roof sprites
 	db 2 ; 15 Route37, Gold Violet group 10
 	db 5 ; 16 EcruteakCity, Gold mapgroup 4; Violet roof artwork family
+	db $ff ; 17 Route38 east-west gate: indoors
+	db 6 ; 18 Route38, Gold group 1 Olivine roof family
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 
@@ -87,6 +89,8 @@ SelectGoldenrodRoofSource:
 	jr z,.goldenrod
 	cp 5
 	jr z,.violet ; Gold Ecruteak group has Violet roof art, distinct RGB5
+	cp 6
+	jr z,.olivine
 	; Groups 0 and 1 both have Gold new_bark roof graphics.
 	ld a,[wCurMapTileset]
 	cp JOHTO_MODERN
@@ -109,6 +113,10 @@ SelectGoldenrodRoofSource:
 .goldenrod
 	ld hl,JohtoGoldenrodRoofs_GFX
 	ld a,BANK(JohtoGoldenrodRoofs_GFX)
+	jr .yes
+.olivine
+	ld hl,JohtoOlivineRoofs_GFX
+	ld a,BANK(JohtoOlivineRoofs_GFX)
 .yes
 	scf
 	ret

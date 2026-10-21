@@ -971,26 +971,20 @@ IsJohtoSouthGatePortal::
 	cp MAP_REGION_JOHTO
 	jr nz, .notGate
 	ld a, [wCurLocalMapID]
+	; All existing native collision gates occupy 10..20 except Route36
+	; at ID16. Stable ID21 Route37 is not a gate; the Route38 gate plus
+	; its two outdoor mouths occupy ID22..24. Keep this ROM0 selector
+	; SMALLER than the previous 10 individual comparisons.
+	cp JOHTO_ROUTE_36_LOCAL_ID
+	jr z, .notGate
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr z, .yes
-	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .yes
+	jr c, .notGate
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jr c, .yes
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr c, .notGate
+	cp JOHTO_ROUTE_39_LOCAL_ID
+	jr c, .yes
 .notGate
 	and a
 	ret

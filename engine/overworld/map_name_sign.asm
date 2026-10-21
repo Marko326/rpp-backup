@@ -562,6 +562,8 @@ UpdateMapNameSign::
 	ret z
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	ret z
+	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+	ret z
 .legacyMap
 	ld a, [wCurMap]
 	ld c, a

@@ -1203,6 +1203,10 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute37Name
 	db 60, 76 ; EcruteakCity, original Gold landmark
 	dw JohtoEcruteakName
+	db 60, 60 ; Route38 gate: neutral landmark
+	dw JohtoBrowseRoute38Name
+	db 60, 60 ; Route38: Gold original landmark
+	dw JohtoBrowseRoute38Name
 JohtoNativeTownMapEntriesEnd::
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
 
