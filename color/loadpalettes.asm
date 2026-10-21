@@ -208,7 +208,7 @@ LoadTilesetPalette:
 ; ILEX-5.62.216: Gold mapgroup roof group for each completed local Johto map.
 ; 0 New Bark / 1 Cherrygrove / 2 Violet / 3 Azalea / 4 Goldenrod / 5 Ecruteak.
 JohtoGoldDayRoofGroups:
-db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5,$ff,6,$ff,7 ; Route38 group6, Route42 group7
+db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5,$ff,6,$ff,7,7 ; Route38 group6, Route42/Mahogany group7
 JohtoGoldDayRoofGroupsEnd:
 ASSERT JohtoGoldDayRoofGroupsEnd - JohtoGoldDayRoofGroups == NUM_JOHTO_MAPS
 

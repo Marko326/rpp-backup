@@ -1212,6 +1212,8 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute42Name
 	db 60, 100
 	dw JohtoBrowseRoute42Name
+	db 60, 116 ; Gold MahoganyTown LANDMARK, pre-existing browse name
+	dw JohtoMahoganyName
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

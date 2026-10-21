@@ -31,6 +31,8 @@ HandleLedges:
 	jr z, .route38HopTable
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakHopTable
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .mahoganyHopTable
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	ret nz
 	ld hl, .ruinsHops
@@ -43,6 +45,9 @@ HandleLedges:
 	jp .modernHopLookup
 .ecruteakHopTable
 	ld hl, .ecruteakHops
+	jp .modernHopLookup
+.mahoganyHopTable
+	ld hl, .mahoganyHops
 	jp .modernHopLookup
 .johtoLegacy
 	; Routes 29/30 convert Gold cliffs into dedicated
@@ -189,6 +194,22 @@ HandleLedges:
 	db $ff
 
 ; EcruteakCity 6 Gold-directed HOPs: 5 down and 1 right.
+; MahoganyTown ID64: 12 original Gold safe directed HOP takeoffs.
+.mahoganyHops
+	db 5, 4, PLAYER_DIR_DOWN
+	db 5, 4, PLAYER_DIR_LEFT
+	db 6, 4, PLAYER_DIR_DOWN
+	db 8, 4, PLAYER_DIR_DOWN
+	db 9, 4, PLAYER_DIR_DOWN
+	db 14, 6, PLAYER_DIR_DOWN
+	db 15, 6, PLAYER_DIR_DOWN
+	db 2, 10, PLAYER_DIR_DOWN
+	db 3, 10, PLAYER_DIR_DOWN
+	db 10, 10, PLAYER_DIR_DOWN
+	db 12, 10, PLAYER_DIR_DOWN
+	db 13, 10, PLAYER_DIR_DOWN
+	db $ff
+
 .ecruteakHops
 	db 4, 10, PLAYER_DIR_DOWN
 	db 5, 10, PLAYER_DIR_DOWN

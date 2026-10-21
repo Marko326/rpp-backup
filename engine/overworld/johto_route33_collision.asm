@@ -226,9 +226,97 @@ JohtoRoute36BlockedRows::
 	INCBIN "maps/JohtoRoute36.blocked_mask.bin"
 
 
-; EAST-Route42: isolated physical edge fence; Gold west/east connections are
-; not activated without the corresponding full border/header audit. The two
-; genuine western gate tiles are INSIDE the map and use collision Warps.
+; EAST-Route42: west gate uses interior collision Warps; east seamless
+; connection to MahoganyTown (ID64) is active only on verified Gold corridors.
+; Other unimplemented exits remain fail-closed.
+; B-East: MahoganyTown west seam / Route42 east seam share Gold offset 0.
+; Gold Route42 east / MahoganyTown west has TWO interior-reachable seam
+; components: y4..7 (upper path into central town) and y9..17 (lower
+; path along town x0 to y16/17). Prior y14..17-only fence passed a
+; border-only test yet blocked both natural approaches on hardware.
+; y0..2 are disconnected border fragments; y8 is an actual Gold wall.
+; Do not open the unrelated north/east/south edges.
+JohtoMahoganyTownEdgeFence::
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr z, .west
+ cp PLAYER_DIR_RIGHT
+ jr z, .east
+ cp PLAYER_DIR_UP
+ jr z, .north
+ cp PLAYER_DIR_DOWN
+ jr nz, .clear
+ ld a, [wYCoord]
+ cp JOHTO_MAHOGANY_TOWN_HEIGHT * 2 - 1
+ jr nc, .block
+ jr .clear
+.north
+ ld a, [wYCoord]
+ and a
+ jr z, .block
+ jr .clear
+.east
+ ld a, [wXCoord]
+ cp JOHTO_MAHOGANY_TOWN_WIDTH * 2 - 1
+ jr nc, .block
+ jr .clear
+.west
+ ld a, [wXCoord]
+ and a
+ jr nz, .clear
+ ld a, [wYCoord]
+ cp 4
+ jr c, .block
+ cp 8
+ jr c, .clear
+ cp 9
+ jr c, .block
+ cp 18
+ jr c, .clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoMahoganyTownCanStepAhead::
+ ld a, [wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz, .block
+ ld a, [wCurLocalMapID]
+ cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+ jr nz, .block
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr nz, .mask
+ ld a, [wXCoord]
+ and a
+ jr nz, .mask
+ ld a, [wYCoord]
+ cp 4
+ jr c, .mask
+ cp 8
+ jr c, .clear
+ cp 9
+ jr c, .mask
+ cp 18
+ jr c, .clear
+.mask
+ ld hl, JohtoMahoganyTownBlockedRows
+ ld d, JOHTO_MAHOGANY_TOWN_WIDTH * 2
+ ld e, 3
+ jp JohtoModernMaskedStep
+.clear
+ and a
+ ret
+.block
+ scf
+ ret
+
+JohtoMahoganyTownBlockedRows::
+ INCBIN "maps/JohtoMahoganyTown.blocked_mask.bin"
+
 JohtoRoute42EdgeFence::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_LEFT
@@ -256,7 +344,17 @@ JohtoRoute42EdgeFence::
 .east
 	ld a, [wXCoord]
 	cp JOHTO_ROUTE_42_WIDTH * 2 - 1
-	jr nc, .block
+	jr c, .clear
+	ld a, [wYCoord]
+	cp 4
+	jr c, .block
+	cp 8
+	jr c, .clear
+	cp 9
+	jr c, .block
+	cp 18
+	jr c, .clear
+	jr .block
 .clear
 	and a
 	ret
@@ -271,6 +369,23 @@ JohtoRoute42CanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jr nz, .block
+	; Both Gold floor corridors must cross: y4..7 or y9..17.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .cutTree
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_42_WIDTH * 2 - 1
+	jr nz, .cutTree
+	ld a, [wYCoord]
+	cp 4
+	jr c, .cutTree
+	cp 8
+	jr c, .clear
+	cp 9
+	jr c, .cutTree
+	cp 18
+	jr c, .clear
+.cutTree
 	call JohtoRoute42CutTreeCleared
 	jr c, .clear
 	ld hl, JohtoRoute42BlockedRows
@@ -1155,6 +1270,7 @@ JohtoAzaleaCanStepAhead::
 PatchJohtoMapBordersAfterBlockLoad::
 	call PatchJohtoAzaleaWestGateBorder
 	call PatchJohtoGoldenrodNorthBorder
+	call PatchJohtoMahoganyNorthBorder
 	jp PatchJohtoRoute35SouthBorder
 
 ; GATE-5.62.202: render-only Azalea west border continuation. The Gold
@@ -1213,6 +1329,45 @@ PatchJohtoGoldenrodNorthBorder::
 	db $41, $41, $41, $42, $0c, $0d, $40, $41, $41, $41
 .row2
 	db $01, $01, $01, $46, $08, $09, $44, $01, $01, $01
+
+; EAST ID64 north display-only preview: Gold Route43 last three block rows.
+; Gold MahoganyTown <-> Route43 north/south offset 0 and shared JOHTO tileset.
+; Route43/ID67 and the ID65 indoor gate are NOT activated by this patch.
+; The border buffer is outside the 10x9 city .blk: no new collision/Warp.
+; Both LoadMapData and .ordinaryConnection call the shared border hook.
+PatchJohtoMahoganyNorthBorder::
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	ret nz
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	ret nz
+	ld de, .row0
+	ld hl, wOverworldMap + MAP_BORDER
+	call .copyRow
+	ld de, .row1
+	ld hl, wOverworldMap + (JOHTO_MAHOGANY_TOWN_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+	call .copyRow
+	ld de, .row2
+	ld hl, wOverworldMap + 2 * (JOHTO_MAHOGANY_TOWN_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+.copyRow
+	ld b, JOHTO_MAHOGANY_TOWN_WIDTH
+.loop
+	ld a, [de]
+	inc de
+	ld [hli], a
+	dec b
+	jr nz, .loop
+	ret
+.row0
+	db $71, $71, $71, $69, $01, $78, $05, $05, $6a, $71
+.row1
+	db $71, $71, $71, $69, $0c, $0d, $05, $05, $68, $71
+.row2
+	db $71, $71, $71, $69, $08, $09, $05, $05, $68, $71
 
 ; GATE-5.62.224 video correction: Gold Route35 has a SOUTH connection to
 ; GoldenrodCity at offset -5. The playable edge remains Warp-only here, but
@@ -2182,6 +2337,8 @@ JohtoNativeCanStepAhead::
 	jr z, .ecruteak
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jr z, .route42
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .mahogany
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -2225,6 +2382,9 @@ JohtoNativeCanStepAhead::
 	jr .handled
 .route42
 	call JohtoRoute42CanStepAhead
+	jr .handled
+.mahogany
+	call JohtoMahoganyTownCanStepAhead
 	jr .handled
 .route33
 	call JohtoRoute33CanStepAhead

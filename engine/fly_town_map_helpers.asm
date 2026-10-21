@@ -782,7 +782,12 @@ TryLoadSpecialFlyWarpData::
 	jr nz, .regularScan
 	ld a, [wJohtoFlySelectedLocalID]
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr z, .specialEcruteak
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jr nz, .regularScan
+	ld hl, JohtoMahoganyFlyWarpData
+	jr .found
+.specialEcruteak
 	ld hl, JohtoEcruteakFlyWarpData
 	jr .found
 .regularScan
@@ -816,6 +821,8 @@ TryLoadSpecialFlyWarpData::
 	ld a, [wJohtoFlySelectedLocalID]
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .storeNativeLocal
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .storeNativeLocal
 	; For the other valid $FE selection, resolve to Goldenrod.
 	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeNativeLocal
@@ -838,6 +845,11 @@ TryLoadSpecialFlyWarpData::
 JohtoEcruteakFlyWarpData:
 	db REGION_NATIVE_MAP_SLOT
 	FLYWARP_DATA JOHTO_ECRUTEAK_CITY_WIDTH, 28, 23
+
+; Gold SPAWN_MAHOGANY_TOWN X15/Y14; only the saved local ID distinguishes it.
+JohtoMahoganyFlyWarpData:
+	db REGION_NATIVE_MAP_SLOT
+	FLYWARP_DATA JOHTO_MAHOGANY_TOWN_WIDTH, 14, 15
 
 SpecialFlyWarpData:
 	; selector map, actual destination map, six-byte FLYWARP_DATA record

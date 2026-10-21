@@ -6,7 +6,7 @@ JohtoStableIDToActiveSlot::
 	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $10-$1f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $19, $1a ; $30-$3f
-	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
+	db $1b, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $60-$6f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $70-$7f
@@ -74,6 +74,7 @@ JohtoMapHeaderPointers::
 	dw JohtoRoute38_h ; stable ID $18 -> active slot 24
 	dw JohtoRoute42EcruteakGate_h ; stable $3E -> slot $19
 	dw JohtoRoute42_h ; stable $3F -> slot $1a
+	dw JohtoMahoganyTown_h ; stable $40 -> slot $1b
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -104,6 +105,7 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoRoute38_h)
 	db BANK(JohtoRoute42EcruteakGate_h)
 	db BANK(JohtoRoute42_h)
+	db BANK(JohtoMahoganyTown_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -138,6 +140,7 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; Route38
 	db REGION_NATIVE_MAP_SLOT ; Route42 Ecruteak gate
 	db REGION_NATIVE_MAP_SLOT ; Route42
+	db REGION_NATIVE_MAP_SLOT ; MahoganyTown
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -170,6 +173,7 @@ JohtoNativeMapSongBanks::
 	db MUSIC_ROUTES2, 0 ; Route38, Gold Route37 music family
 	db MUSIC_ROUTES2, 0 ; Gold gate LAKE_OF_RAGE compatible route family
 	db MUSIC_ROUTES2, 0 ; Gold Route42 LAKE_OF_RAGE compatible route family
+	db MUSIC_CITIES1, 0 ; Gold MahoganyTown CHERRYGROVE_CITY family
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

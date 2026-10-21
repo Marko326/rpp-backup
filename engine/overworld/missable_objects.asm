@@ -59,6 +59,19 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_ECRUTEAK / 8
 	set EVENT_JOHTO_FLY_ECRUTEAK % 8, [hl]
 .notJohtoEcruteak
+	; Native Mahogany physical stable ID64 only. The old save bit $451 was unused.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notJohtoMahogany
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notJohtoMahogany
+	ld a, [wCurLocalMapID]
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr nz, .notJohtoMahogany
+	ld hl, wEventFlags + EVENT_JOHTO_FLY_MAHOGANY / 8
+	set EVENT_JOHTO_FLY_MAHOGANY % 8, [hl]
+.notJohtoMahogany
 
 	ld a, [wCurMap]
 	cp ROUTE_1

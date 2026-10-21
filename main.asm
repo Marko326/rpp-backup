@@ -3368,7 +3368,7 @@ INCLUDE "scripts/JohtoRoute38EcruteakGate.asm"
 JohtoRoute38EcruteakGateBlocks: INCBIN "maps/JohtoRoute38EcruteakGate.blk"
 
 ; B East integrated: Gold east gate links native EcruteakCity (22) and Route42 (63).
-; No entry is created for unbuilt Mt Mortar or Mahogany Town.
+; No entry is created for unbuilt Mt Mortar; Mahogany Town ID64 is registered below.
 SECTION "Johto Route42 Ecruteak Gate Map", ROMX, BANK[$44]
 INCLUDE "data/mapHeaders/JohtoRoute42EcruteakGate.asm"
 INCLUDE "data/mapObjects/JohtoRoute42EcruteakGate.asm"
@@ -3380,6 +3380,13 @@ INCLUDE "data/mapHeaders/JohtoRoute42.asm"
 INCLUDE "data/mapObjects/JohtoRoute42.asm"
 INCLUDE "scripts/JohtoRoute42.asm"
 JohtoRoute42Blocks: INCBIN "maps/JohtoRoute42.blk"
+
+; B-East ID64 seamless connection must share JOHTO_ROM_BANK with Route42.
+SECTION "Johto Mahogany Town Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoMahoganyTown.asm"
+INCLUDE "data/mapObjects/JohtoMahoganyTown.asm"
+INCLUDE "scripts/JohtoMahoganyTown.asm"
+JohtoMahoganyTownBlocks: INCBIN "maps/JohtoMahoganyTown.blk"
 
 ; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
@@ -3620,6 +3627,8 @@ JohtoNativeCollisionFence::
 	jr z, .ecruteakNative
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jr z, .route42Native
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .mahoganyNative
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33Native
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -3653,6 +3662,9 @@ JohtoNativeCollisionFence::
 	ret
 .route42Native
 	callba JohtoRoute42EdgeFence
+	ret
+.mahoganyNative
+	callba JohtoMahoganyTownEdgeFence
 	ret
 .route35Native
 	callba JohtoRoute35EdgeFence

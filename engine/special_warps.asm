@@ -177,6 +177,8 @@ LoadSpecialWarpData:
 	jr z, .nativeModern
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .johtoTileset
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .johtoTileset
 	jr .legacyFlyTileset
 .nativeModern
 	ld a, JOHTO_MODERN
