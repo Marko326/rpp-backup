@@ -11,6 +11,8 @@ import re
 
 MAPPINGS = {
     'JOHTO_ROUTE_38_LOCAL_ID': 'JohtoRoute38CanStepAhead',
+    'JOHTO_ROUTE_39_LOCAL_ID': 'JohtoRoute39CanStepAhead',
+    'JOHTO_OLIVINE_CITY_LOCAL_ID': 'JohtoOlivineCityCanStepAhead',
     'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID': 'JohtoRoute38EcruteakGateCanStepAhead',
     'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID': 'JohtoRoute42EcruteakGateCanStepAhead',
     'JOHTO_ROUTE_37_LOCAL_ID': 'JohtoRoute37CanStepAhead',

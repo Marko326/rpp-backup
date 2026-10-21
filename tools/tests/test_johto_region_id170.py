@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 from johto_region_id_audit import INPUTS, audit  # noqa: E402
 
+REGISTERED_COUNT = len(json.loads((ROOT / "tools/johto_native_maps.json").read_text())["maps"])
+
 
 class NativeMapIDExpansion(unittest.TestCase):
     def test_registered_legacy_and_native_maps_remain_distinct(self):
@@ -56,8 +58,8 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_a_future_local_requires_explicit_contract(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 28',
-                    'DEF NUM_JOHTO_MAPS EQU 29',
+                    f'DEF NUM_JOHTO_MAPS EQU {REGISTERED_COUNT}',
+                    f'DEF NUM_JOHTO_MAPS EQU {REGISTERED_COUNT + 1}',
                     'identity contract count')
 
     def test_native_slot_is_not_a_kanto_map(self):
@@ -80,19 +82,19 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoMahoganyName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoOlivineName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; MahoganyTown, original Gold music\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Gold VioletCity theme\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):
         # Town Map index rows moved out of engine/town_map.asm in SPID .227.
         # Reject a missing final landmark even while name/header tables are intact.
         self.mutate('engine/overworld/johto_town_map_helpers.asm',
-                    ', 24, 24, 32, 32, 34 ; Route35 gate Gold landmark17; Mahogany landmark34',
+                    ', 24, 24, 32, 32, 34, 25, 26 ; Route35 gate Gold landmark17; Mahogany landmark34',
                     ', 22 ; Route38 gate and Route38',
                     'native Town Map index count')
 
@@ -102,14 +104,14 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_future_native_map_must_register_all_local_tables(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 28', 'DEF NUM_JOHTO_MAPS EQU 29',
+                    f'DEF NUM_JOHTO_MAPS EQU {REGISTERED_COUNT}', f'DEF NUM_JOHTO_MAPS EQU {REGISTERED_COUNT + 1}',
                     'header pointers table count')
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; MahoganyTown\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; MahoganyTown\nJohtoMapLegacyAliasesEnd::',
-                    'local 27 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; OlivineCity\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; OlivineCity\nJohtoMapLegacyAliasesEnd::',
+                    'local 29 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
@@ -120,8 +122,8 @@ class NativeMapIDExpansion(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dst)
             edits = {
                 'constants/region_map_constants.asm': [
-                    ('DEF NUM_JOHTO_MAPS EQU 28',
-                     'DEF NUM_JOHTO_MAPS EQU 29')],
+                    (f'DEF NUM_JOHTO_MAPS EQU {REGISTERED_COUNT}',
+                     f'DEF NUM_JOHTO_MAPS EQU {REGISTERED_COUNT + 1}')],
                 'data/johto_map_headers.asm': [
                     ('JohtoMapHeaderPointersEnd::', '\tdw JohtoRoute33_h ; fixture\nJohtoMapHeaderPointersEnd::'),
                     ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoRoute33_h)\nJohtoMapHeaderBanksEnd::'),
@@ -155,7 +157,7 @@ class NativeMapIDExpansion(unittest.TestCase):
             fixture['feature_status'] = {key: 'DEFERRED' for key in fixture['feature_status']}
             manifest['maps'].append(fixture)
             manifest_path.write_text(json.dumps(manifest))
-            # Future stable ID65 would use compact active slot28, not row65.
+            # Future stable ID65 must use the next dense active slot, not stable ID65.
             table_path = root / 'data/johto_map_headers.asm'
             table_source = table_path.read_text()
             marker = 'JohtoStableIDToActiveSlot::'
@@ -164,7 +166,7 @@ class NativeMapIDExpansion(unittest.TestCase):
             parts = tail.splitlines(keepends=True)
             rows = [i for i, line in enumerate(parts) if ' ; $40-$4f' in line.lower()]
             self.assertEqual(len(rows), 1, rows)
-            parts[rows[0]] = parts[rows[0]].replace('$ff', '$1c', 1)
+            parts[rows[0]] = parts[rows[0]].replace('$ff', f'${REGISTERED_COUNT:02x}', 1)
             table_path.write_text(head + marker + ''.join(parts))
             self.assertEqual(audit(root), [])
             self.assertNotIn('mapconst JOHTO_FIXTURE',

@@ -15,6 +15,7 @@ REVIEWED = (
  ('AZALEA_TOWN', 'JOHTO_AZALEA_TOWN_LOCAL_ID', 'JOHTO_AZALEA_FLY_SELECTOR', 'JOHTO_AZALEA_TOWN_WIDTH', 'AZALEA', (15,10), 'azaleaName'),
  ('GOLDENROD_CITY', 'JOHTO_GOLDENROD_CITY_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_GOLDENROD_CITY_WIDTH', 'GOLDENROD', (15,28), 'goldenrodName'),
  ('ECRUTEAK_CITY', 'JOHTO_ECRUTEAK_CITY_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_ECRUTEAK_CITY_WIDTH', 'ECRUTEAK', (23,28), 'ecruteakName'),
+ ('OLIVINE_CITY', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_OLIVINE_CITY_WIDTH', 'OLIVINE', (13,22), 'olivineName'),
  ('MAHOGANY_TOWN', 'JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_MAHOGANY_TOWN_WIDTH', 'MAHOGANY', (15,14), 'mahoganyName'),
 )
 FILES=('tools/johto_native_maps.json','engine/johto_fly_town_map.asm',
@@ -22,7 +23,7 @@ FILES=('tools/johto_native_maps.json','engine/johto_fly_town_map.asm',
 'engine/special_warps.asm','constants/region_map_constants.asm',
 'constants/event_constants.asm','home/overworld.asm','wram.asm')
 GOLD_FILES=('data/maps/flypoints.asm','data/maps/spawn_points.asm','data/maps/landmarks.asm')
-GOLD_ROM_NAMES=('NewBarkTownName','CherrygroveCityName','VioletCityName','AzaleaTownName','GoldenrodCityName','EcruteakCityName','MahoganyTownName')
+GOLD_ROM_NAMES=('NewBarkTownName','CherrygroveCityName','VioletCityName','AzaleaTownName','GoldenrodCityName','EcruteakCityName','OlivineCityName','MahoganyTownName')
 
 
 def section(text, start, finish):
@@ -102,29 +103,29 @@ def audit(root:Path,gold:Path)->list[str]:
         if i>=len(selectors) or selectors[i]!=selector:
             errs.append(landmark+': Fly menu selector mismatch')
         destmap='REGION_NATIVE_MAP_SLOT' if i>=3 else selector
-        if landmark in ('ECRUTEAK_CITY','MAHOGANY_TOWN'):
-            pattern=r'Johto'+('Ecruteak' if landmark=='ECRUTEAK_CITY' else 'Mahogany')+r'FlyWarpData:\s*db\s+REGION_NATIVE_MAP_SLOT\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])
+        if landmark in ('ECRUTEAK_CITY','OLIVINE_CITY','MAHOGANY_TOWN'):
+            pattern=r'Johto'+('Ecruteak' if landmark=='ECRUTEAK_CITY' else 'Olivine' if landmark=='OLIVINE_CITY' else 'Mahogany')+r'FlyWarpData:\s*db\s+REGION_NATIVE_MAP_SLOT\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])
             if not re.search(pattern,helper): errs.append(landmark+': missing dedicated Fly landing record')
         else:
             pattern=r'^\s*db\s+'+selector+r'\s*,\s*'+destmap+r'\s*\n\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])+r'\s*$'
             if not re.search(pattern,special,re.M): errs.append(landmark+': missing/unsafe fly warp')
-        flag='EVENT_JOHTO_FLY_'+('NEW_BARK','CHERRYGROVE','VIOLET','AZALEA','GOLDENROD','ECRUTEAK','MAHOGANY')[i]
+        flag='EVENT_JOHTO_FLY_'+('NEW_BARK','CHERRYGROVE','VIOLET','AZALEA','GOLDENROD','ECRUTEAK','OLIVINE','MAHOGANY')[i]
         for text,kind,operand in ((menu,'read','bit'),(miss,'write','set')):
             pattern=r'ld hl, wEventFlags \+ '+flag+r' / 8\s+'+operand+' '+flag+r' % 8, \[hl\]'
             if not re.search(pattern,text): errs.append(landmark+': missing persistent '+kind)
-        if not re.search(r'^\s*ASSERT '+flag+r' == \$'+format((0x451 if landmark=='MAHOGANY_TOWN' else 0x450 if landmark=='ECRUTEAK_CITY' else 0x453+i),'x')+r'\s*$',events,re.M):
+        if not re.search(r'^\s*ASSERT '+flag+r' == \$'+format({'MAHOGANY_TOWN':0x451,'OLIVINE_CITY':0x44a,'ECRUTEAK_CITY':0x450}.get(landmark,0x453+i),'x')+r'\s*$',events,re.M):
             errs.append(landmark+': save layout changed')
     # Transition semantics, not only textual presence of the destination.
     required=(
-     (menu,r'\.next\s+ld a, \[wWhichTownMapLocation\]\s+inc a\s+cp 7'),
-     (menu,r'\.previous\s+.*?ld a, 6\s+\.previousReady'),
-     (menu,r'\.findForward\s+ld b, 7\s+\.forwardLoop.*?inc a\s+cp 7'),
-     (menu,r'\.findBackward\s+ld b, 7\s+\.backwardLoop.*?ld a, 6'),
+     (menu,r'\.next\s+ld a, \[wWhichTownMapLocation\]\s+inc a\s+cp 8'),
+     (menu,r'\.previous\s+.*?ld a, 7\s+\.previousReady'),
+     (menu,r'\.findForward\s+ld b, 8\s+\.forwardLoop.*?inc a\s+cp 8'),
+     (menu,r'\.findBackward\s+ld b, 8\s+\.backwardLoop.*?ld a, 7'),
      (menu,r'\.accept\s+call \.isCurrentUnlocked\s+jp z, \.inputLoop'),
      (menu,r'\.findForward.*?call \.isCurrentUnlocked.*?\.findBackward.*?call \.isCurrentUnlocked'),
      (miss,r'cp REGION_NATIVE_MAP_SLOT\s+jr nz, \.notJohtoAzalea\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.notJohtoAzalea\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_AZALEA_TOWN_LOCAL_ID'),
      (s['home/overworld.asm'],r'LoadMapHeader::.*?callab SyncLegacyMapRegions\s+callba MarkTownVisitedAndLoadMissableObjects'),
-     (warp,r'cp REGION_NATIVE_MAP_SLOT\s+jr nz, \.legacyFlyTileset\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.legacyFlyTileset\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_AZALEA_TOWN_LOCAL_ID\s+jr z, \.nativeModern\s+cp JOHTO_GOLDENROD_CITY_LOCAL_ID\s+jr z, \.nativeModern\s+cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\s+jr z, \.johtoTileset\s+cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\s+jr z, \.johtoTileset\s+jr \.legacyFlyTileset\s+\.nativeModern\s+ld a, JOHTO_MODERN'),
+     (warp,r'cp REGION_NATIVE_MAP_SLOT\s+jr nz, \.legacyFlyTileset\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.legacyFlyTileset\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_AZALEA_TOWN_LOCAL_ID\s+jr z, \.nativeModern\s+cp JOHTO_GOLDENROD_CITY_LOCAL_ID\s+jr z, \.nativeModern\s+cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\s+jr z, \.johtoTileset\s+cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\s+jr z, \.johtoTileset\s+cp JOHTO_OLIVINE_CITY_LOCAL_ID\s+jr z, \.johtoTileset\s+jr \.legacyFlyTileset\s+\.nativeModern\s+ld a, JOHTO_MODERN'),
      (warp,r'\.storeTileset\s+ld \[wCurMapTileset\], a\s+.*?xor a\s+\.done\s+ld \[wYOffsetSinceLastSpecialWarp\], a\s+ld \[wXOffsetSinceLastSpecialWarp\], a'),
      (region,r'DEF JOHTO_AZALEA_FLY_SELECTOR EQU \$fd'),
      (events,r'ASSERT EVENT_JOHTO_FLY_AZALEA < 139 \* 8'),
@@ -135,7 +136,7 @@ def audit(root:Path,gold:Path)->list[str]:
     for text,pattern in required:
         if not re.search(pattern,text,re.S): errs.append('Fly runtime path removed/changed: '+pattern[:60])
     for piece in ('cp REGION_NATIVE_MAP_SLOT','ld [wCurRegion], a','ld [wCurLocalMapID], a',
-                  'ld [wLastRegion], a','ld [wLastLocalMapID], a','JOHTO_AZALEA_TOWN_LOCAL_ID','JOHTO_GOLDENROD_CITY_LOCAL_ID','JOHTO_ECRUTEAK_CITY_LOCAL_ID','cp JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_MAHOGANY_TOWN_LOCAL_ID'):
+                  'ld [wLastRegion], a','ld [wLastLocalMapID], a','JOHTO_AZALEA_TOWN_LOCAL_ID','JOHTO_GOLDENROD_CITY_LOCAL_ID','JOHTO_ECRUTEAK_CITY_LOCAL_ID','cp JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JOHTO_OLIVINE_CITY_LOCAL_ID'):
         if piece not in copy: errs.append('native Fly region/local restoration missing: '+piece)
     if len(re.findall(r'^\s*db\s+\w+\s*,\s*REGION_NATIVE_MAP_SLOT\b',special,re.M))!=2:
         errs.append('shared $FC must resolve from the two reviewed unique Fly selectors')
@@ -159,6 +160,9 @@ def audit(root:Path,gold:Path)->list[str]:
         (physical,'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID','Ecruteak landing map'),
         (physical,'cp JOHTO_MAHOGANY_TOWN_LOCAL_ID','Mahogany landing map'),
         (accepted,'ld a, JOHTO_MAHOGANY_TOWN_LOCAL_ID','Mahogany accept physical ID'),
+        (accepted,'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID','Olivine accept physical ID'),
+        (selector,'ld hl, JohtoOlivineFlyWarpData','Olivine warp data'),
+        (physical,'cp JOHTO_OLIVINE_CITY_LOCAL_ID','Olivine landing map'),
         (selector,'ld hl, JohtoMahoganyFlyWarpData','Mahogany warp data')):
         if token not in text: errs.append('Ecruteak Fly selection handoff missing '+context)
     if 'wWhichTownMapLocation' in selector or 'wWhichTownMapLocation' in physical:
@@ -189,6 +193,12 @@ def audit(root:Path,gold:Path)->list[str]:
         if len(mask)!=54 or any(blocked_m(x,y) for (x,y) in ((15,14),(14,14),(16,14),(15,15))):
             errs.append('Mahogany Fly spawn and walking neighbors blocked')
     except (OSError,IndexError) as ex: errs.append('Mahogany Fly arrival mask missing/broken: '+str(ex))
+    try:
+        mask=(root/'maps/JohtoOlivineCity.blocked_mask.bin').read_bytes()
+        def blocked_o(x,y): return bool(mask[y*5+x//8] & (1<<(x%8)))
+        if len(mask)!=180 or any(blocked_o(x,y) for x,y in ((13,22),(12,22),(14,22),(13,23))):
+            errs.append('Olivine Fly spawn and walking neighbors blocked')
+    except (OSError,IndexError) as ex: errs.append('Olivine Fly arrival mask missing/broken: '+str(ex))
     return errs
 
 if __name__=='__main__':

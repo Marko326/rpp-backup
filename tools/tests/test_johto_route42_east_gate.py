@@ -130,7 +130,7 @@ class EcruteakEastGate(unittest.TestCase):
         self.assertIn('IsJohtoRoute42WaterAhead::',graph)
         self.assertIn('JohtoRoute42RemoveCutTree::',self.collision)
         self.assertNotIn('IsJohtoRoute42HeadbuttTreeAhead::',graph)
-        caps=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps'][-2]['feature_status']
+        caps=next(m['feature_status'] for m in json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps'] if m['local_id']==63)
         self.assertEqual((caps['surf'],caps['cut'],caps['fly']),('ALLOWED','ALLOWED','DEFERRED'))
 
     def test_gate_5x4_dimensions_are_defined_for_assembly(self):

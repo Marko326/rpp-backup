@@ -4,6 +4,7 @@
 No game files are modified. Output is intentionally NOT importable into RPP.
 """
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -266,6 +267,111 @@ def full_gold_corpus(rpp: Path, gold: Path, output: Path) -> dict:
     return summary
 
 
+
+def stage_gold_map_candidate(rpp: Path, gold: Path, out: Path, map_name: str,
+                             tileset: str, rpp_map: str | None = None,
+                             runtime_gate: bool = False) -> dict:
+    """Stage exactly one Gold map using the existing converter and audit parts.
+
+    Shared by single-map and adjacent-pair mode.  This is *never* an RPP
+    runtime registration and cannot approve Surf, Fly or a Warp.
+    """
+    art = stage_preserved_gold_tileset(gold, out, map_name, tileset)
+    geometry, mask = plan_gold_quadrant_collision(gold, map_name, tileset)
+    (out/'gold_collision_mask.bin').write_bytes(mask)
+    dump(out, 'gold_art_candidate.json', art)
+    dump(out, 'gold_collision_candidate.json', geometry)
+    onboarding = make_map_onboarding(gold, map_name, art, geometry)
+    dump(out, 'map_onboarding.json', onboarding)
+    integration = None
+    if rpp_map:
+        integration = review_rpp_integration(rpp, rpp_map, onboarding)
+        dump(out, 'rpp_integration_review.json', integration)
+    runtime_review = None
+    if runtime_gate:
+        runtime_review = run_project_static_gate(rpp, gold, integration)
+        dump(out, 'rpp_runtime_preflight.json', runtime_review)
+    (out/'map_onboarding.md').write_text(
+        '# '+map_name+'｜地图接入与Field Moves核对清单\n\n'
+        + '> 来源：Gold离线数据。此表不代表ROM已注册或技能已开放。\n\n'
+        + '| 检查点 | 状态 | 原因 |\n|---|---|---|\n'
+        + ''.join('| '+x['id']+' | '+x['status']+' | '+x['reason']+' |\n'
+                  for x in onboarding['checks'])
+        + ('\n## 已有RPP接入的结构核查\n\n'
+           + ('发现待修复的结构错误：' + ', '.join(integration['errors'])
+              if integration['errors'] else '已找到地图登记和门口合同；技能运行状态仍待独立验证。')
+           + '\n\n' if integration else ''), encoding='utf-8')
+    errors = ((integration and integration['errors']) or
+              (runtime_review and runtime_review['errors']) or [])
+    return {'map': map_name, 'width': art['width'], 'height': art['height'],
+            'tileset': tileset, 'blocked': geometry['blocked_count'],
+            'hops': len(geometry['hops']),
+            'unsafe_hops': len(geometry['unsafe_hop_candidates']),
+            'gold_warps': onboarding['evidence']['warp_events'],
+            'water_cells': onboarding['evidence']['water_cells'],
+            'gold_blk_sha256': hashlib.sha256(
+                (gold/'maps'/f'{map_name}.blk').read_bytes()).hexdigest(),
+            'staged_blk_matches_gold': (out/'preserved_gold_art_candidate'/f'{map_name}.blk').read_bytes()
+                == (gold/'maps'/f'{map_name}.blk').read_bytes(),
+            'status': 'STATIC_REVIEW_FAILED' if errors else 'OFFLINE_REVIEW_REQUIRED',
+            'runtime_approved': False, 'build_performed': False,
+            'errors': errors}
+
+
+def stage_adjacent_pair(rpp: Path, gold: Path, output: Path, names: tuple[str, str]) -> dict:
+    """Conservatively prepare two *directly neighboring* Gold maps in one run.
+
+    The frozen source connection audit independently verifies original Gold's
+    two-way topology.  It intentionally does not generate speculative RPP ASM,
+    collision exceptions, offscreen preview strips, or gameplay permissions.
+    """
+    from johto_rpp_connection_guard import (check_frozen_gold_source,
+                                            GATE_REPLACED_DIRECT_SEAMS)
+    rpp, gold, output = safe_roots(rpp, gold, output)
+    first, second = names
+    if first == second or any(not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', n) for n in names):
+        raise ConversionError('Adjacent pair needs two different registered Gold map names')
+    inventory = {item['name']: item for item in layout_inventory(gold)}
+    if any(n not in inventory for n in names):
+        raise ConversionError('Both adjacent-pair maps must exist in Gold registration')
+    seams = check_frozen_gold_source(gold)
+    forward = [ (direction, offset) for (current, direction), (target, offset) in seams.items()
+                if current == first and target == second]
+    reverse = [ (direction, offset) for (current, direction), (target, offset) in seams.items()
+                if current == second and target == first]
+    if len(forward) != 1 or len(reverse) != 1:
+        raise ConversionError(f'{first} and {second} are not a direct bidirectional Gold connection')
+    direction, offset = forward[0]
+    direction_back, offset_back = reverse[0]
+    if ((first, direction, second) in GATE_REPLACED_DIRECT_SEAMS or
+        (second, direction_back, first) in GATE_REPLACED_DIRECT_SEAMS):
+        raise ConversionError('Gold pair uses an intentionally gate-replaced connection')
+    results = []
+    for name in names:
+        subdir = output/name
+        # Re-run safe_roots on the actual subdirectory to preserve both
+        # source separation and "empty output" semantics on subsequent runs.
+        safe_roots(rpp, gold, subdir)
+        key = tileset_key(inventory[name]['tileset'])
+        results.append(stage_gold_map_candidate(rpp, gold, subdir, name, key))
+    info = {'schema': 'johto-gold-adjacent-pair-source-v1',
+            'maps': results, 'source_adjacent': True,
+            'direct_seams': [
+                {'from': first, 'to': second, 'direction': direction,
+                 'gold_offset_blocks': offset},
+                {'from': second, 'to': first, 'direction': direction_back,
+                 'gold_offset_blocks': offset_back}],
+            'checked_gold_connection_contract': 'all_142_edges_match_source',
+            'source_geometry_verified': all(r['staged_blk_matches_gold'] for r in results),
+            'runtime_approved': False, 'build_performed': False,
+            'status': 'OFFLINE_PAIR_REVIEW_REQUIRED',
+            'outstanding': ['both directions of RPP connection and visible edge preview',
+                            'stable ID / active slot / headers / banks / audio / Town Map',
+                            'all applicable Surf, Fly, Warp, collision and ledge contracts',
+                            'release audit, real build and phone testing']}
+    dump(output, 'adjacent_pair_manifest.json', info)
+    return info
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--gold-root', type=Path, required=True)
@@ -275,6 +381,8 @@ def main():
     ap.add_argument('--audit-only', action='store_true', help='validate existing staged output')
     ap.add_argument('--full-gold-corpus', action='store_true', help='source scan of all Gold maps except explicitly excluded beta maps')
     ap.add_argument('--gold-map', default=None, help='single Gold map candidate using its own tileset')
+    ap.add_argument('--adjacent-pair', nargs=2, metavar=('FIRST', 'SECOND'),
+                    help='stage two directly adjacent Gold maps and audit their source topology')
     ap.add_argument('--gold-tileset', default=None, help='Optional cross-check; inferred from Gold registration if omitted')
     ap.add_argument('--rpp-map', default=None, help='When already wired, review the existing RPP map registration and Warp contract')
     ap.add_argument('--runtime-gate', action='store_true',
@@ -295,6 +403,13 @@ def main():
         ap.error('--rpp-map requires --gold-map')
     if args.runtime_gate and (not args.gold_map or args.audit_only):
         ap.error('--runtime-gate requires --gold-map and cannot be used with --audit-only')
+    if args.adjacent_pair:
+        if args.gold_map or args.audit_only or args.runtime_gate or args.rpp_map or args.full_gold_corpus or args.gold_tileset:
+            ap.error('--adjacent-pair cannot combine with other staging modes')
+        info = stage_adjacent_pair(project, gold, output, tuple(args.adjacent_pair))
+        print('Gold adjacent pair:', json.dumps({'maps': args.adjacent_pair,
+              'seams': info['direct_seams'], 'status': info['status']}, ensure_ascii=False))
+        return 0
     if args.full_gold_corpus:
         if args.gold_map or args.audit_only or args.runtime_gate or args.rpp_map:
             ap.error('--full-gold-corpus cannot combine with single-map modes')
@@ -311,38 +426,10 @@ def main():
         gold_set = tileset_key(matched[0]['tileset'])
         if args.gold_tileset and args.gold_tileset != gold_set:
             ap.error('--gold-tileset disagrees with Gold map registration')
-        art = stage_preserved_gold_tileset(gold,out,args.gold_map,gold_set)
-        geometry, mask = plan_gold_quadrant_collision(gold,args.gold_map,gold_set)
-        (out/'gold_collision_mask.bin').write_bytes(mask)
-        dump(out,'gold_art_candidate.json',art)
-        dump(out,'gold_collision_candidate.json',geometry)
-        onboarding = make_map_onboarding(gold,args.gold_map,art,geometry)
-        dump(out,'map_onboarding.json',onboarding)
-        integration = None
-        if args.rpp_map:
-            integration = review_rpp_integration(rpp,args.rpp_map,onboarding)
-            dump(out,'rpp_integration_review.json',integration)
-        runtime_review = None
-        if args.runtime_gate:
-            runtime_review = run_project_static_gate(rpp, gold, integration)
-            dump(out, 'rpp_runtime_preflight.json', runtime_review)
-        (out/'map_onboarding.md').write_text(
-            '# '+args.gold_map+'｜地图接入与Field Moves核对清单\n\n'
-            + '> 来源：Gold离线数据。此表不代表ROM已注册或技能已开放。\n\n'
-            + '| 检查点 | 状态 | 原因 |\n|---|---|---|\n'
-            + ''.join('| '+x['id']+' | '+x['status']+' | '+x['reason']+' |\n'
-                      for x in onboarding['checks'])
-            + ('\n## 已有RPP接入的结构核查\n\n'
-               + ('发现待修复的结构错误：' + ', '.join(integration['errors'])
-                  if integration['errors'] else '已找到地图登记和门口合同；技能运行状态仍待独立验证。')
-               + '\n\n' if integration else ''), encoding='utf-8')
-        print('Gold candidate:', json.dumps({'map':args.gold_map,
-            'blocks':art['width']*art['height'],
-            'blocked':geometry['blocked_count'], 'hops':len(geometry['hops']),
-            'unsafe_hops':len(geometry['unsafe_hop_candidates']),
-            'status':('OFFLINE_REVIEW_REQUIRED' if geometry['unsafe_hop_candidates']
-                      else 'OFFLINE_CANDIDATE_ONLY')},ensure_ascii=False))
-        return 2 if (integration and integration['errors']) or (runtime_review and runtime_review['errors']) else 0
+        item = stage_gold_map_candidate(rpp, gold, out, args.gold_map, gold_set,
+                                        args.rpp_map, args.runtime_gate)
+        print('Gold candidate:', json.dumps(item, ensure_ascii=False))
+        return 2 if item['errors'] else 0
     if not args.audit_only:
         outcome = batch(args.gold_root, args.project, args.output)
         print('stage:', json.dumps(outcome, ensure_ascii=False))

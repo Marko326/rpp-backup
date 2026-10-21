@@ -89,7 +89,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         (items, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba JohtoSurfStartOnWater ; carry CLEAR = approved water ahead\n\tret', 'bag/party Surf inverse-carry Surf entry'),
         (home, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba IsJohtoSurfWaterAhead\n\tjr c, .noCollision', 'Surf movement water branch'),
         (home, '\tld c, a ; preserve the tile for the existing walkable shore test\n\tjr .checkIfNextTileIsPassable', 'Surf shore dismount'),
-        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ROUTE_42_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
+        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ROUTE_42_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_OLIVINE_CITY_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
         (runtime, 'ld a, [wObtainedKantoBadges]\n\tbit 4, a ; SOUL_BADGE\n\tjr z, .denied', 'Kanto Soul Badge preserved'),
         (field, 'callba JohtoSurfBadgeAllowed\n\tjr nc, .cannotSurf', 'water interaction shared permission check'),
         (menu, 'callba JohtoSurfBadgeAllowed\n\tjp nc, .newBadgeRequired', 'party menu shared permission check'),
@@ -175,7 +175,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         'cp 2\n\tjr c, .notWater\n\tcp 6\n\tjr nc, .notWater',
         'cp 26\n\tjr c, .notWater\n\tcp 30\n\tjr nc, .notWater',
         'cp 12\n\tjr c, .notWater\n\tcp 16\n\tjr nc, .notWater',
-        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ROUTE_42_LOCAL_ID\n\tjr nz, .kanto',
+        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ROUTE_42_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_OLIVINE_CITY_LOCAL_ID\n\tjr nz, .kanto',
     )
     for token in native_dispatch:
         if token not in runtime:
@@ -212,7 +212,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         errors.append('no native map capabilities for Surf')
     else:
         for entry in identities['maps']:
-            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 63) else 'DEFERRED'
+            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 26, 63) else 'DEFERRED'
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):

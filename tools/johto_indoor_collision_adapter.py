@@ -176,6 +176,36 @@ def check(rpp: Path, gold: Path, graphics: dict, rpp_set='gate'):
             'reason': 'Tile-ID whitelist evidence cannot certify door/warp triggers, NPC collision or in-game behavior'}
 
 
+def validated_downhill_ledge_chain(cells, width: int, height: int,
+                                    start_x: int, start_y: int) -> int:
+    """Count additional Gold downhill HOP landings ending on real ground.
+
+    Called *only* after the first jump's intervening barrier was proven solid.
+    Each subsequent HOP landing must have a solid wall in front and another
+    in-bounds landing, until actual ordinary floor is reached. This supports
+    Route39's three-tier ledges without treating a landing on a wall, an
+    off-map landing, or merely an arbitrary HOP label as safe.
+
+    Returns -1 for unsafe; 0 for an ordinary landing, positive for proven
+    chained jumps. The engine's existing HOP handler still requires its own
+    executable map-specific registration and separate audit.
+    """
+    x, y = start_x, start_y
+    for chain in range(height // 2 + 1):
+        if not (0 <= x < width and 0 <= y < height):
+            return -1
+        role = cells[y * width + x]['role']
+        if role in {'FLOOR', 'TALL_GRASS'}:
+            return chain
+        if role not in {'HOP_DOWN', 'HOP_DOWN_LEFT', 'HOP_DOWN_RIGHT'}:
+            return -1
+        # Each extra tier must have its own impassable obstacle and landing.
+        if y + 2 >= height or cells[(y + 1) * width + x]['role'] not in {'WALL', 'UP_WALL'}:
+            return -1
+        y += 2
+    return -1  # cannot silently accept an unresolved chain
+
+
 def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
                                  *, walkable_roles=None, graphic_slots=96):
     """Generic 16x16 Gold collision plan; DOES NOT register runtime logic.
@@ -250,23 +280,16 @@ def plan_gold_quadrant_collision(gold: Path, map_name: str, gold_set: str,
             safe=all(0<=xx<width and 0<=yy<height for xx,yy in points)
             if safe:
                 behind, landing=(cells[yy*width+xx] for xx,yy in points)
-                ordinary_landing = landing['role'] in {'FLOOR','TALL_GRASS'}
-                # A *second* ledge may start at the landing tile. Allow
-                # chaining only if its own barrier and two-cell landing
-                # also form a valid downhill jump; a HOP role alone is
-                # never enough (Ruins Outside (9,30) lands on WALL).
-                chained_landing = False
-                if (dy == 1 and dx == 0 and
-                        landing['role'] in {'HOP_DOWN','HOP_DOWN_LEFT','HOP_DOWN_RIGHT'}):
-                    nx,ny=c['x']+3*dx,c['y']+3*dy
-                    lx,ly=c['x']+4*dx,c['y']+4*dy
-                    if 0<=nx<width and 0<=ny<height and 0<=lx<width and 0<=ly<height:
-                        next_barrier=cells[ny*width+nx]
-                        next_landing=cells[ly*width+lx]
-                        chained_landing=(next_barrier['role'] in {'WALL','UP_WALL'}
-                                         and next_landing['role'] in {'FLOOR','TALL_GRASS'})
-                safe=(behind['role'] in {'WALL','UP_WALL'} and
-                      (ordinary_landing or chained_landing))
+                # Source-only proof of arbitrarily long *finite* downhill
+                # chains. Route39 requires three tiers; prior code could see
+                # only one following hop and mislabeled five safe directions.
+                if dy == 1 and dx == 0:
+                    chain = validated_downhill_ledge_chain(
+                        cells, width, height, points[1][0], points[1][1])
+                    landing_valid = chain >= 0
+                else:
+                    landing_valid = landing['role'] in {'FLOOR', 'TALL_GRASS'}
+                safe = behind['role'] in {'WALL', 'UP_WALL'} and landing_valid
             if not safe:
                 unsafe_hops.append({'x':c['x'],'y':c['y'],'dx':dx,'dy':dy,
                                     'reason':'barrier/landing/out-of-bounds needs manual review'})

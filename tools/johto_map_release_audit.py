@@ -33,6 +33,7 @@ from johto_rpp_connection_guard import audit_all_active
 from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
 from johto_roof_reference_audit import audit as roof_audit
 from johto_rom0_collision_audit import audit as rom0_collision_audit
+from johto_adjacent_pair_runtime_audit import audit as adjacent_pair_runtime_audit
 from rom0_list_menu_bank_audit import audit as rom0_list_menu_bank_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
@@ -67,7 +68,7 @@ test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170 test_johto_fixed_id_freeze225
 test_johto_route32_ladder166 test_johto_route32_p1b
 test_johto_route32_p1c test_johto_rpp_asset_audit
-test_johto_rpp_batch test_johto_rpp_connection_guard
+test_johto_rpp_batch test_johto_adjacent_pair_pipeline_233 test_johto_rpp_connection_guard
 test_johto_rpp_contract167 test_johto_rpp_export_audit168
 test_johto_rpp_validator_unit test_johto_union_cave171
 test_johto_union_cave172 test_johto_union_cave173
@@ -153,7 +154,12 @@ test_johto_roof_reference_audit.RoofGoldReferenceGate.test_swapping_violet_and_a
 test_johto_roof_reference_audit.RoofGoldReferenceGate.test_wrong_roof_source_bank_is_rejected
 test_johto_roof_reference_audit.RoofGoldReferenceGate.test_wrong_group_dispatch_branch_is_rejected
 test_johto_roof_reference_audit.RoofGoldReferenceGate.test_wrong_base_roof_tile_offset_is_rejected
-test_johto_rpp_connection_guard.RealConnectionCoverage.test_all_active_connections_must_match_gold
+test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_route39_three_tier_downhill_is_proven_by_full_source_chain
+ test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_chained_ledge_negative_intermediate_wall_and_final_landing
+ test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_nonadjacent_pair_is_rejected_before_writing_files
+ test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_gold_seam_mutation_is_rejected_even_if_both_maps_exist
+ test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_staged_rpp_game_resources_match_gold_and_generated_masks
+ test_johto_rpp_connection_guard.RealConnectionCoverage.test_all_active_connections_must_match_gold
  test_johto_rpp_connection_guard.RealConnectionCoverage.test_route35_north_preview_reaches_three_visual_border_columns
  test_johto_rpp_connection_guard.RealConnectionCoverage.test_route32_reachable_north_preview_matches_gold_and_runtime_fence
  test_johto_rpp_connection_guard.RealConnectionCoverage.test_route32_missing_preview_fails_global_guard
@@ -442,6 +448,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     errors.extend(verify_gold(gold))
     errors.extend('FIXED_ID: '+e for e in fixed_id_audit(root, gold_root=gold))
     errors.extend('ROM0_COLLISION: '+e for e in rom0_collision_audit(root))
+    errors.extend('ADJACENT_PAIR_RUNTIME: '+e for e in adjacent_pair_runtime_audit(root,gold))
     errors.extend('ROM0_LIST_MENU: '+e for e in rom0_list_menu_bank_audit(root))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
     if not any(e.startswith('Gold source missing:') for e in errors):

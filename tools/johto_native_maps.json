@@ -1202,6 +1202,93 @@
           ]
         ]
       }
+    },
+    {
+      "local_id": 25,
+      "local_symbol": "JOHTO_ROUTE_39_LOCAL_ID",
+      "header": "JohtoRoute39_h",
+      "bank": "BANK(JohtoRoute39_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE37",
+      "town_map_index": 25,
+      "town_map_name": "JohtoBrowseRoute39Name",
+      "town_map_xy": [
+        64,
+        44
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": [
+          [
+            28,
+            2
+          ],
+          [
+            28,
+            3
+          ],
+          [
+            29,
+            2
+          ],
+          [
+            30,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "local_id": 26,
+      "local_symbol": "JOHTO_OLIVINE_CITY_LOCAL_ID",
+      "header": "JohtoOlivineCity_h",
+      "bank": "BANK(JohtoOlivineCity_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_VIOLET_CITY",
+      "town_map_index": 26,
+      "town_map_name": "JohtoOlivineName",
+      "town_map_xy": [
+        76,
+        44
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "ALLOWED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "OLIVINE_CITY",
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": []
+      }
     }
   ]
 }

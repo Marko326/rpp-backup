@@ -204,6 +204,30 @@
         "status": "ALLOWED",
         "reason": "Gold Flypoint unlocked by verified physical native ID64; existing free save-event bit $451; exact Gold spawn (15,14)"
       }
+    },
+    "Route39": {
+      "headbutt": {
+        "status": "DEFERRED",
+        "reason": "Optional Headbutt explicitly not enabled in this batch; Gold coordinates preserved, no runtime permit",
+        "gold_xy": [
+          [
+            2,
+            28
+          ],
+          [
+            3,
+            28
+          ],
+          [
+            2,
+            29
+          ],
+          [
+            2,
+            30
+          ]
+        ]
+      }
     }
   }
 }

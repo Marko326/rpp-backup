@@ -1,3 +1,13 @@
+## SPID-5.62.233｜Route39＋浅葱市双图完整功能与转换脚本正式清理（2026-10-21）
+
+- [x] **基线和已接入地图**：金银导出干净 HEAD `614b00924d80dfaa9d9f783644376fbdd824b724`（`.232`）上，把 `Route38 → Route39(ID25,slot28) → OlivineCity(ID26,slot29)` 连成双向运行地图；保留东线 ID62/63/64（slot25–27），共 30 个 active slot，显示版本 `SPID-5.62.233`，原有 stable ID 均不重排。
+- [x] **功能与脚本同时交付**：经项目原有 `johto_rpp_pipeline.py`/Gold 碰撞适配器生成 Route39 10×18、浅葱市 20×18 的 `.blk`、blocked/water 掩码；同批接入 4 条双向活动连接、Header/Bank、地图身份、Gold 20 条 Route39 安全跳崖、浅葱市 406 格 Surf、Fly 首达登记、Gold 路牌与屋顶。`--adjacent-pair` 按 Gold 142 条冻结邻接规则验证真相邻并输出双图审核清单；三级跳崖链逐级检验、危险落点不误放行。
+- [x] **未开发部分持续封闭**：Route39 两个农场建筑入口及浅葱市十一处室内入口保持不可进入；Route40、灯塔、码头、道馆、NPC/训练家/剧情及可选 Headbutt 均未声称上线，未用虚构 Header/Warp 凑数。
+- [x] **用户手机总体验收**：用户反馈 Route39 行走、跳崖、进出浅葱市并绕行，未发现卡住或不正常行为；不据此推断全部 Fly/Surf、旧存档、其他门房及全部 Gold 场景已逐项实测。
+- [x] **清理审计与旧测试收口**：第一次统一发布审计实际运行 802 项、15 FAIL（旧测试继续假定 28 张地图、卡吉镇最后一项、Route38 只能 EAST，或把 Route42 取成 `maps[-2]`）；逐项修正测试为登记身份／30 地图新增范围／Gold 屋顶长度／真实新路线与合法技能等断言，保留错误注入。补齐后使用 `python tools/johto_map_release_audit.py --rpp . --gold <pokegold-master> --expect-version SPID-5.62.233` 真实取得退出码 0、**802/802 单测 PASS、0 skipped、36/36 连接 PASS**；368 张 Gold 登记、扫描 367 张，`SafariZoneBeta` 依既有许可唯一排除，source_failed=0。该门禁仅为源码静态合同，未运行 ROM。
+- [x] **正式双提交收口**：本轮有游戏 ASM/地图素材和 `tools/` 转换器/审计/测试两类累计差异，按项目模式 A 准备 3 Patch + 2 TXT：先功能 `feat(johto)`，后工具 `test(tool)`；清理增量以已应用 `.233` 开发候选为前置，全量以干净 `614b0092` HEAD 为前置，二者不可叠加。Git Commit/Push 仅由用户执行。
+- [ ] **构建可复核证据待补**：用户已运行手机上的候选，但本次未提供与 `.233` 精确对应的 ROM/MAP、RGBDS `make` 退出码或 ROM0/ROMX 空间报告；AI 不编译 ROM。最低必要补测保留浅葱市 Fly 首到/返回、Surf 上岸/离岸、旧档 Continue、Route38/缘朱门房回归、城市边缘屋顶与未开发门口。
+
 ## SPID-5.62.232｜金银主干合入卡吉镇(ID64)与 Gold 审计正式清理（2026-10-21）
 
 - [x] **本轮真实基线**：RPP 导出 `金银` 分支干净 HEAD `36cc2a8489219826e162a326acd09c729ef2335b`，游戏版本 `SPID-5.62.231`。将 `金币` 分支的卡吉镇功能 `9a2cb969` 和强制审计 `cd8face7` 选择性接入主干，不称 Git merge commit；最终候选 `SPID-5.62.232`。用户已使用本次 `.232` 开发双补丁，并回复“没啥问题”；仅表示用户测试覆盖到的范围，没有逐项列出所有按键和存读档路径。
