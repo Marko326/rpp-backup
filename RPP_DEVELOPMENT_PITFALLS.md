@@ -362,3 +362,21 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **共享阶段局部替换**：Gold Quick Attack 接近／返回被多个招式复用，改开场音需要按当前完整 EXT 身份限制到 EXT02；不应让普通 Quick Attack、其他扩展技能和普通同低字节招式跟着变音。变更前检查 `wExtendedActiveMoveOrdinal` 的来源和清理路径。
 - **区分声音数据、节奏、混音**：PC 的 `anim_sound`/`PlayStereoSFX` 包含声像／立体声位置参数；Red++ 嬉闹现用 `PlaySound`，虽保留 `0/9/18/24`、`30/39/48/54` 的触发时刻和对应音效数据，**不保证**声道控制或声音重叠与 PC 一致。用户 195A/PC 录像提取音轨呈现不同左右声道结构，也可能受到录制路径影响，不能把单个录像的双声道相同误判为游戏全局无立体声。PC 听感略慢不意味着应擅自延长已验收的主动画帧表。
 - **验收与收口**：195A 用户提供了游戏录屏并要求独立清理；正式 195 只保留原声音复用和时序，复用 194 画面定稿，不叠加已撤销的 194D 横震或新的声像实验。用户验收的音效可播放并不等价于全平台所有声道与 Red/Hard 双链接通过。
+
+## MOVE-5.62.199B — INCLUDE 内禁止重复重建既有 SECTION
+
+- `main.asm` 已声明 `SECTION "pokecenters", ROMX, BANK[$35]`，并在其中 INCLUDE `engine/menu/movedex.asm`。199A 为迁出图形而在包含文件中重新写 `SECTION "pokecenters"`，会在汇编时直接报 `Section already defined`；补丁正反向校验无法发现。
+- 需要把图形移动到新 Bank 时，应在 `main.asm` 的独立位置声明新的 SECTION，保持包含文件处于原来的 SECTION。静态检查应展开父文件 INCLUDE 边界并检查 SECTION 重名、图形标签 BANK 及空间，不能把 git apply 视作汇编有效性验证。
+
+## MOVE-5.62.199C — 分类读取在战斗光标频繁刷新路径的副作用
+
+- 199B 的 `_BattlePhysicalSpecialSplit` 在 Spark 光标预览中执行两次跨 Bank 的 `RecalculateBattleStatFromModifier`，引入不必要的 Multiply/Divide 与共享 HRAM 工作区干扰风险；用户测试出现第二招跳选、上下移动花屏。该关联来自代码审查，仍须实机确认修复，不冒称已完全复现根因。
+- 战斗当前的 Attack/Special 本来已经包含能力等级；正常路径直接读取。只有烧伤曾改变 Attack 时才额外按原始 Attack 与当前能力等级重算，避免把烧伤当成分类切换原因。
+- MoveDex 的 `movedex_v1.0.1-v1.2.6` 历史提交提供现有分类黑底框与字模；不要用临时 3×5 字体替代。保持 4 个 8×8 tile、原宽度和来源标签图块边界。
+
+## MOVE-5.62.199 — Dynamic 判类验收收口注意事项
+
+- 动态类别的元数据、菜单预览和实际伤害结算分层：MoveDex 保留 `DYNAMIC`，Fight 菜单只预测，出招伤害入口重新判断；两阶段可以因先手能力下降产生不同类别。相等按 Special。
+- 普通战斗 WRAM 的 Attack/Special 已计入能力等级；不要在每次选招刷新都调用跨 Bank 乘除重算。烧伤时重算未减半 Attack，并跟随项目现有能力值上限 999；否则极端提升可能把相等误当成物理。
+- 199D／199E 的 Spark→Counter 两侧缓存与测试数据不属于正式 199。扩展序号可能与普通招式共用低字节；将来独立实现 Counter 前先追踪当次实际受击，不允许依赖长期缓存或只比较 `cp SPARK`。
+- 制作从已提交基线出发的全量补丁必须包含新图像资源、`DYNAMIC` 常量、MoveDex UI 迁移和描述；只检查 `git apply` 不能发现遗漏 PNG、SECTION/标签重复。保留 199C 的原字模、四 tile 框和可撤销迁移实现。

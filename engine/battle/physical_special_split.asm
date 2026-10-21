@@ -38,7 +38,13 @@ _BattlePhysicalSpecialSplit::
 	ld [wTempMoveID], a
 	ret
 .ordinary
-	jp _PhysicalSpecialSplit
+	call _PhysicalSpecialSplit
+	ld a, [wTempMoveID]
+	cp DYNAMIC
+	ret nz
+	call ResolveDynamicMoveCategory
+	ld [wTempMoveID], a
+	ret
 
 ; One class per complete extended identity (one-based ordinals 1..40).
 ; Current prototype moves are damaging physical moves as in the old player
@@ -113,7 +119,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;SCRATCH      EQU $0A
 	db PHYSICAL;VICEGRIP     EQU $0B
 	db PHYSICAL;GUILLOTINE   EQU $0C
-	db PHYSICAL;SPARK        EQU $0D
+	db DYNAMIC ;SPARK        EQU $0D
 	db OTHER_M ;SWORDS_DANCE EQU $0E
 	db PHYSICAL;CUT          EQU $0F
 	db SPECIAL ;GUST         EQU $10
@@ -357,4 +363,75 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
     db SPECIAL ;Psystrike
     ; MOV-5.61.31: Iron Head is a physical Steel attack.
     db PHYSICAL;Iron Head
-    
+
+; MOVE-5.62.199: Spark Dynamic category (not a Counter redesign).
+; Fight menu only previews the category; the damage path resolves it again.
+; Stage-adjusted battle Attack/Special are already available in WRAM.
+; Burn must not influence category selection, so only burned Attack is
+; reconstructed from the original stat and its stage, capped at 999.
+; Return PHYSICAL only when Attack > Special (a tie is SPECIAL).
+ResolveDynamicMoveCategory:
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyStats
+.playerStats
+	ld hl, wBattleMonAttack
+	ld de, wBattleMonSpecial
+	ld a, [wBattleMonStatus]
+	bit BRN, a
+	jr z, .compareLive
+	ld a, [wPlayerMonAttackMod]
+	ld de, wPlayerMonUnmodifiedAttack
+	jr .rebuildBurnedAttack
+.enemyStats
+	ld hl, wEnemyMonAttack
+	ld de, wEnemyMonSpecial
+	ld a, [wEnemyMonStatus]
+	bit BRN, a
+	jr z, .compareLive
+	ld a, [wEnemyMonAttackMod]
+	ld de, wEnemyMonUnmodifiedAttack
+.rebuildBurnedAttack
+	; Reuse existing stage calculator without modifying live damage stats.
+	ld b, a
+	ld c, 0 ; Attack
+	homecall RecalculateBattleStatFromModifier
+	; Match the core damage stat cap of 999 before class comparison.
+	ld a, [H_DIVIDEND + 3]
+	sub 999 % $100
+	ld a, [H_DIVIDEND + 2]
+	sbc 999 / $100
+	jr c, .withinLimit
+	lb bc, 999 / $100, 999 % $100
+	jr .chooseSpecial
+.withinLimit
+	ld a, [H_DIVIDEND + 2]
+	ld b, a
+	ld a, [H_DIVIDEND + 3]
+	ld c, a
+.chooseSpecial
+	ldh a, [H_WHOSETURN]
+	and a
+	ld de, wBattleMonSpecial
+	jr z, .compareBC
+	ld de, wEnemyMonSpecial
+	jr .compareBC
+.compareLive
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+.compareBC
+	ld a, [de]
+	cp b
+	jr c, .physical
+	jr nz, .special
+	inc de
+	ld a, [de]
+	cp c
+	jr c, .physical
+.special
+	ld a, SPECIAL
+	ret
+.physical
+	ld a, PHYSICAL
+	ret

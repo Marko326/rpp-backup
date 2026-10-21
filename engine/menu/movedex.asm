@@ -1170,8 +1170,23 @@ MoveDexClearDynamicData:
 MoveDexDrawDamageClass:
 	ld a,[wd11e]
 	ld [wTempMoveID],a
-	callba _PhysicalSpecialSplit
-	ld a,[wTempMoveID]
+	callba _PhysicalSpecialSplit ; fixed class metadata, not battle resolution
+	; Reuse $D1-$D4; $DA-$DD are reserved for TM/HM/Tutor labels.
+	; Restore the original PHYSICAL bitmap on every non-Dynamic move.
+	ld de, MoveDexUI + ($d1 - $c4) * 8
+	ld a, [wTempMoveID]
+	cp DYNAMIC
+	jr nz, .loadClassArt
+	ld de, MoveDexDynamicLabel
+.loadClassArt
+	ld hl, vChars1 + $510 ; tile $D1 (same four-tile category rectangle)
+	lb bc, BANK(MoveDexUI), 4
+	call CopyVideoDataDouble
+	ld a, [wTempMoveID]
+	cp DYNAMIC
+	ld a, $d1 ; DYNAMIC reuses the PHYSICAL rectangle temporarily
+	jr z, .draw
+	ld a, [wTempMoveID]
 	cp PHYSICAL
 	ld a,$d1 ; PHYSICAL
 	jr z,.draw
@@ -1947,9 +1962,8 @@ MoveDexTypePointers:
 
 ; MoveDex 第一阶段 UI 图形。
 ; 基础 UI 与初代类型图标来自 PureRGB 的 MoveDex 设计；Steel/Dark/Fairy 为 RPP 扩展类型补充图标。
-MoveDexUI:
-	INCBIN "gfx/movedex/movedex_ui.1bpp"
-MoveDexUIEnd:
+; MoveDexUI / Dynamic label artwork is defined in main.asm Bank $39.
+; Keep this file inside the caller's existing pokecenters section ($35).
 
 ; MoveDex 小型 UI 字模：A-Z + 0-9，共 36 个 8x8 1bpp glyph。
 ; 仓库只保存 learn_source_font.png；.1bpp 由通用 Makefile 规则生成，

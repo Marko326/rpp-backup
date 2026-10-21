@@ -23,3 +23,4 @@ FAIRY    EQU $1C
 PHYSICAL EQU $00
 SPECIAL  EQU $01
 OTHER_M  EQU $02
+DYNAMIC  EQU $03 ; MoveDex metadata; runtime resolves to PHYSICAL/SPECIAL

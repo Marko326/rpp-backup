@@ -366,10 +366,15 @@ MoveDexDescGuillotine1:
 
 ; #013 Spark
 MoveDexDescSparkPages:
-	dw MoveDexDescSpark1, 0
+	dw MoveDexDescSpark1, MoveDexDescSpark2, 0
 MoveDexDescSpark1:
-	db   "An attack that may"
-	next "cause paralysis.@"
+	db   "Uses the higher"
+	next "Attack or Special."
+	next "May paralyze.@"
+MoveDexDescSpark2:
+	db   "Boosts or drops"
+	next "can change class."
+	next "Ties use Special.@"
 
 ; #014 Swords Dance
 MoveDexDescSwordsDancePages:

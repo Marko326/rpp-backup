@@ -2923,6 +2923,16 @@ GiovanniGymPic:: INCBIN "pic/trainer/giovanni2.pic"
 ForestGate_GFX:      INCBIN "gfx/tilesets/forest_gate.2bpp"
 ForestGate_Block:    INCBIN "gfx/blocksets/forest_gate.bst"
 
+; MOVE-5.62.199B: MoveDex category artwork is in the graphics bank.
+; The included movedex.asm must stay in main.asm's existing $35 section.
+SECTION "MoveDex Category Art", ROMX, BANK[$39]
+MoveDexUI:
+	INCBIN "gfx/movedex/movedex_ui.1bpp"
+MoveDexUIEnd:
+MoveDexDynamicLabel:
+	INCBIN "gfx/movedex/dynamic_label.1bpp"
+MoveDexDynamicLabelEnd:
+ASSERT MoveDexDynamicLabelEnd - MoveDexDynamicLabel == 4 * 8
 
 SECTION "Calc Stats", ROMX
 INCLUDE "engine/pokemon/calc_stats.asm"
