@@ -825,7 +825,16 @@ wBattleBagSavedPositions:: ds 4
 	; byte of the existing battle-runtime gap. 0 = player, 1 = enemy.
 	; This does not move any WRAM address or use saved Party/box storage.
 wMirrorMoveLastSelectedExtendedFlags:: ds 1
-	ds 8
+; DYN-5.62.200: actual HP damage received in the current battle round.
+; The former eight-byte unused battle-runtime gap ($CCFD-$CD04) is shared
+; neither with save data nor Battle Bag's separate $CD07-$CD0E scratch.
+; Big-endian damage, then 1 only for an eligible physical attack.
+; Counter reads the RECEIVER's record, never the other side's move menu.
+wCounterDamageToPlayer:: ds 2
+wCounterDamageToPlayerValid:: ds 1
+wCounterDamageToEnemy:: ds 2
+wCounterDamageToEnemyValid:: ds 1
+	ds 2 ; preserve the existing offset of wLuckySlotHiddenObjectIndex
 
 wLuckySlotHiddenObjectIndex:: ; cd05
 
@@ -3448,7 +3457,7 @@ wWhichDungeonWarp:: ; d7a2
 ; which dungeon warp within the source map was used
 	ds 1
 
-wUnusedD71F:: ; d7a3
+wUnusedD71F::
 	ds 1
 
 ; DEX-5.62.115: eight previously unused save-backed bytes $D7A4-$D7AB.

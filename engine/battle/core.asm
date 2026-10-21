@@ -496,6 +496,11 @@ MainInBattleLoop:
 ; the link battle enemy has switched mons
 	callab SwitchEnemyMon
 .noLinkBattle
+	; DYN-5.62.200: only hits in THIS round may be Countered. The
+	; battle menu (including items and switches) has already finished.
+	xor a
+	ld [wCounterDamageToPlayerValid], a
+	ld [wCounterDamageToEnemyValid], a
 	ld a, [wPlayerSelectedMove]
 	call GetMovePriorityTier
 	push af
@@ -4943,68 +4948,108 @@ CriticalHitTest:
 	jpab CriticalHitTest_
 
 
-; function to determine if Counter hits and if so, how much damage it does
+; DYN-5.62.200: Counter uses this round's ACTUAL received HP damage.
+; Do not query the opponent's selected move, re-evaluate a Dynamic move
+; with Counter's own stats, or recycle the global wDamage from another hit.
+; Each received record has an eligibility flag and big-endian damage.
 HandleCounterMove:
-; The variables checked by Counter are updated whenever the cursor points to a new move in the battle selection menu.
-; This is irrelevant for the opponent's side outside of link battles, since the move selection is controlled by the AI.
-; However, in the scenario where the player switches out and the opponent uses Counter,
-; the outcome may be affected by the player's actions in the move selection menu prior to switching the Pokemon.
-; This might also lead to desync glitches in link battles.
-
-	ld a,[H_WHOSETURN] ; whose turn
+	ldh a, [H_WHOSETURN]
 	and a
-; player's turn
-	ld hl,wEnemySelectedMove
-	ld de,wEnemyMovePower
-	ld a,[wPlayerSelectedMove]
-	jr z,.next
-; enemy's turn
-	ld hl,wPlayerSelectedMove
-	ld de,wPlayerMovePower
-	ld a,[wEnemySelectedMove]
-.next
-	cp a,COUNTER
-	ret nz ; return if not using Counter
-	ld a,$01
-	ld [wMoveMissed],a ; initialize the move missed variable to true (it is set to false below if the move hits)
-	ld a,[hl]
-	cp a,COUNTER
-	ret z ; miss if the opponent's last selected move is Counter.
-	ld a,[de]
-	and a
-	ret z ; miss if the opponent's last selected move's Base Power is 0.
-; check if the move the target last selected was Physical
-	ld a,[hl]
-	call PhysicalSpecialSplit
-	cp a, PHYSICAL
-	jr z,.counterableType
-; if the move wasn't Normal or Fighting type, miss
+	ld a, [wPlayerSelectedMove]
+	ld hl, wCounterDamageToPlayer
+	jr z, .checkCounter
+	ld a, [wEnemySelectedMove]
+	ld hl, wCounterDamageToEnemy
+.checkCounter
+	cp COUNTER
+	ret nz ; not a Counter move; leave normal damage handling alone
+	; Counter returns fixed 2x received HP damage. The generic critical
+	; roll already ran, but must not display a bogus Critical hit! text.
 	xor a
-	ret
-.counterableType
-	ld hl,wDamage
-	ld a,[hli]
-	or [hl]
-	ret z ; If we made it here, Counter still misses if the last move used in battle did no damage to its target.
-	      ; wDamage is shared by both players, so Counter may strike back damage dealt by the Counter user itself
-	      ; if the conditions meet, even though 99% of the times damage will come from the target.
-; if it did damage, double it
-	ld a,[hl]
+	ld [wCriticalHitOrOHKO], a
+	inc a
+	ld [wMoveMissed], a ; default to failure
+	push hl
+	inc hl
+	inc hl
+	ld a, [hl] ; this side really took eligible physical HP damage
+	pop hl
+	and a
+	ret z
+	; Copy the recorded HP loss, not last used move's calculated damage.
+	ld a, [hli]
+	ld [wDamage], a
+	ld a, [hl]
+	ld [wDamage + 1], a
+	ld hl, wDamage + 1
+	ld a, [hl]
 	add a
-	ldd [hl],a
-	ld a,[hl]
+	ldd [hl], a
+	ld a, [hl]
 	adc a
-	ld [hl],a
-	jr nc,.noCarry
-; damage is capped at 0xFFFF
-	ld a,$ff
-	ld [hli],a
-	ld [hl],a
+	ld [hl], a
+	jr nc, .noCarry
+	ld a, $ff ; saturate 2x damage at $ffff
+	ld [hli], a
+	ld [hl], a
 .noCarry
 	xor a
-	ld [wMoveMissed],a
-	call MoveHitTest ; do the normal move hit test in addition to Counter's special rules
+	ld [wMoveMissed], a
+	call MoveHitTest
+	xor a ; Counter effect handled, success or accuracy failure
+	ret
+
+; Store only direct HP damage, after any target-HP cap. A hit on a
+; Substitute never reaches these recorders. Fixed/Special damage with
+; zero base power remains non-counterable as in the previous mechanism.
+; H_WHOSETURN must identify the OPPOSING attacker; this excludes self-
+; inflicted confusion/recoil paths that reuse ApplyDamageTo*Pokemon.
+RecordCounterHitOnEnemy:
 	xor a
+	ld [wCounterDamageToEnemyValid], a
+	ldh a, [H_WHOSETURN]
+	and a
+	ret nz
+	ld a, [wPlayerSelectedMove]
+	cp COUNTER
+	ret z ; Counter itself cannot be Countered
+	ld a, [wPlayerMovePower]
+	and a
+	ret z
+	ld a, [wPlayerSelectedMove]
+	call PhysicalSpecialSplit ; acting PLAYER's real category, including Dynamic
+	cp PHYSICAL
+	ret nz
+	ld a, [wDamage]
+	ld [wCounterDamageToEnemy], a
+	ld a, [wDamage + 1]
+	ld [wCounterDamageToEnemy + 1], a
+	ld a, 1
+	ld [wCounterDamageToEnemyValid], a
+	ret
+
+RecordCounterHitOnPlayer:
+	xor a
+	ld [wCounterDamageToPlayerValid], a
+	ldh a, [H_WHOSETURN]
+	and a
+	ret z
+	ld a, [wEnemySelectedMove]
+	cp COUNTER
+	ret z
+	ld a, [wEnemyMovePower]
+	and a
+	ret z
+	ld a, [wEnemySelectedMove]
+	call PhysicalSpecialSplit ; acting ENEMY's real category, including Dynamic
+	cp PHYSICAL
+	ret nz
+	ld a, [wDamage]
+	ld [wCounterDamageToPlayer], a
+	ld a, [wDamage + 1]
+	ld [wCounterDamageToPlayer + 1], a
+	ld a, 1
+	ld [wCounterDamageToPlayerValid], a
 	ret
 
 ApplyAttackToEnemyPokemon:
@@ -5063,6 +5108,7 @@ ApplyDamageToEnemyPokemon:
 	ld [hli],a
 	ld [hl],a
 .animateHpBar
+	call RecordCounterHitOnEnemy
 	ld hl,wEnemyMonMaxHP
 	ld a,[hli]
 	ld [wHPBarMaxHP+1],a
@@ -5141,6 +5187,7 @@ ApplyDamageToPlayerPokemon:
 	ld [hli],a
 	ld [hl],a
 .animateHpBar
+	call RecordCounterHitOnPlayer
 	ld hl,wBattleMonMaxHP
 	ld a,[hli]
 	ld [wHPBarMaxHP+1],a
@@ -6567,6 +6614,18 @@ HalveAttackDueToBurn:
 	ld hl, wEnemyMonAttack + 1
 	jr Halve16BitBattleStat
 
+; Only reapply the status penalty to the stat that was REBUILT from
+; its unmodified value. Applying burn for a Defense change, for example,
+; would halve an already-burned Attack a second time.
+; c = changed battle stat (0 Attack, 1 Defense, 2 Speed, 3 Special).
+ReapplyStatusPenaltyForChangedStat:
+	ld a, c
+	and a
+	jp z, HalveAttackDueToBurn
+	cp 2
+	jp z, HalveSpeedDueToParalysis
+	ret
+
 CalculateModifiedStats:
 	ld c, 0
 .loop
@@ -7501,6 +7560,15 @@ UpdateStat:
 	ld [hli], a
 	ld a, [H_PRODUCT + 3]
 	ld [hl], a
+	; Stat-up targets the acting mon; the legacy penalty helpers
+	; target its OPPONENT. Flip only for this synchronous call.
+	ldh a, [H_WHOSETURN]
+	xor 1
+	ldh [H_WHOSETURN], a
+	call ReapplyStatusPenaltyForChangedStat
+	ldh a, [H_WHOSETURN]
+	xor 1
+	ldh [H_WHOSETURN], a
 	pop hl
 UpdateStatDone:
 	ld b, c
@@ -7545,9 +7613,8 @@ UpdateStatDone:
 	ld hl, MonsStatsRoseText
 	call PrintText
 
-; these shouldn't be here
-	call HalveSpeedDueToParalysis ; apply speed penalty to the player whose turn is not, if it's paralyzed
-	jp HalveAttackDueToBurn ; apply attack penalty to the player whose turn is not, if it's burned
+; Status penalty was applied only if the affected stat was rebuilt.
+	ret
 
 RestoreOriginalStatModifier:
 	pop hl
@@ -7736,6 +7803,7 @@ UpdateLoweredStat:
 	ld [hli], a
 	ld a, [H_PRODUCT + 3]
 	ld [hl], a
+	call ReapplyStatusPenaltyForChangedStat
 	pop de
 	pop hl
 UpdateLoweredStatDone:
@@ -7754,11 +7822,8 @@ UpdateLoweredStatDone:
 	ld hl, MonsStatsFellText
 	call PrintText
 
-; These where probably added given that a stat-down move affecting speed or attack will override
-; the stat penalties from paralysis and burn respectively.
-; But they are always called regardless of the stat affected by the stat-down move.
-	call HalveSpeedDueToParalysis
-	jp HalveAttackDueToBurn
+; Status penalty was applied only if the affected stat was rebuilt.
+	ret
 .userStatFell
 	ld hl, UsersStatFellText
 	jp PrintText

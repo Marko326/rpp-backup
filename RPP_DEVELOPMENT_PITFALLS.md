@@ -376,7 +376,16 @@ This file is the persistent, Git-tracked record of repeatable development failur
 
 ## MOVE-5.62.199 — Dynamic 判类验收收口注意事项
 
-- 动态类别的元数据、菜单预览和实际伤害结算分层：MoveDex 保留 `DYNAMIC`，Fight 菜单只预测，出招伤害入口重新判断；两阶段可以因先手能力下降产生不同类别。相等按 Special。
-- 普通战斗 WRAM 的 Attack/Special 已计入能力等级；不要在每次选招刷新都调用跨 Bank 乘除重算。烧伤时重算未减半 Attack，并跟随项目现有能力值上限 999；否则极端提升可能把相等误当成物理。
+- 动态类别的元数据、菜单预览和实际伤害结算分层：MoveDex 保留 `DYNAMIC`，Fight 菜单只预测，出招伤害入口重新判断；两阶段可以因先手能力下降产生不同类别。相等按 Physical（200T-004 用户明确要求，保留 Spark 原本物理分类）。
+- 普通战斗 WRAM 的 Attack/Special 已计入能力等级；不要在每次选招刷新都调用跨 Bank 乘除重算。烧伤时重算未减半 Attack，并跟随项目现有能力值上限 999；否则极端提升可能把封顶后的比较结果判错。
 - 199D／199E 的 Spark→Counter 两侧缓存与测试数据不属于正式 199。扩展序号可能与普通招式共用低字节；将来独立实现 Counter 前先追踪当次实际受击，不允许依赖长期缓存或只比较 `cp SPARK`。
 - 制作从已提交基线出发的全量补丁必须包含新图像资源、`DYNAMIC` 常量、MoveDex UI 迁移和描述；只检查 `git apply` 不能发现遗漏 PNG、SECTION/标签重复。保留 199C 的原字模、四 tile 框和可撤销迁移实现。
+
+
+## BATTLE-5.62.200 — Counter 本体真实受击和测试代码清理
+
+- Counter 应读取**受击方本回合**的真实 HP 记录，而不是对手菜单／Counter 使用者能力或可被后续伤害覆盖的全局 `wDamage`。每段多段攻击若真正扣除本体 HP 应更新记录，反击只用最后一笔×2；替身和间接伤害的复杂路径必须专项验证，不要因主流程通过而标记所有边界通过。
+- Counter 的资格判断与 `MoveHitTest` 是两件事。资格失败可能显示原 Gen1 的 `Attack missed!`，是否改文案需用户单独确定；Counter 固定伤害不应继承无意义的会心文本。
+- 烧伤 Dynamic 菜单曾因高频刷新路径中的跨 Bank 计算触发死机反馈：不要在选招热路径无条件远调用能力重算。正常情形读已生效战斗能力；烧伤时使用同 Bank 能力等级重算并封顶999。平局归 **Physical** 是最新用户规则，不要回滚成199旧结论。
+- **三件套收口必须剥离测试设施**：玉虹大厦 5 对象覆盖、7 号道路全卡比兽遭遇、`InitWildBattle` 的 `Dyn200TConfigureWildEnemy` 远调用、`wDyn200TestScenario` 临时别名及文本、测试专用文档。项目文档同步更新；清理是完整提交的组成部分，不能只在打包 ZIP 时藏掉测试文件。正式功能保留 6 字节未存档 Counter 记录。
+- 当前没有由助手独立 ROM 编译/链接、MAP 检查或测试 SAV 恢复证据。第二轮复杂边界采用独立可撤销测试补丁先复现再定性，详见 `docs/BATTLE_200_FINAL_RULES_AND_ROUND2.md`。

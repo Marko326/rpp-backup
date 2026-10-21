@@ -369,7 +369,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 ; Stage-adjusted battle Attack/Special are already available in WRAM.
 ; Burn must not influence category selection, so only burned Attack is
 ; reconstructed from the original stat and its stage, capped at 999.
-; Return PHYSICAL only when Attack > Special (a tie is SPECIAL).
+; PHYSICAL when Attack >= Special (including ties), otherwise SPECIAL.
 ResolveDynamicMoveCategory:
 	ldh a, [H_WHOSETURN]
 	and a
@@ -392,10 +392,12 @@ ResolveDynamicMoveCategory:
 	ld a, [wEnemyMonAttackMod]
 	ld de, wEnemyMonUnmodifiedAttack
 .rebuildBurnedAttack
-	; Reuse existing stage calculator without modifying live damage stats.
-	ld b, a
-	ld c, 0 ; Attack
-	homecall RecalculateBattleStatFromModifier
+	; BATTLE-200.002: calculate the unburned stage-adjusted Attack
+	; entirely in this ROM bank. The Fight menu can query this while the
+	; player is burned; a nested ROM bank hop back into battle core used
+	; to make that menu path unsafe. Keep the same ratio table and cap as
+	; the normal stat calculator without writing live Attack.
+	call ResolveDynamicCalcStageAttack
 	; Match the core damage stat cap of 999 before class comparison.
 	ld a, [H_DIVIDEND + 3]
 	sub 999 % $100
@@ -429,9 +431,58 @@ ResolveDynamicMoveCategory:
 	ld a, [de]
 	cp c
 	jr c, .physical
+	jr z, .physical ; tie: restore Spark's original physical class
 .special
 	ld a, SPECIAL
 	ret
 .physical
 	ld a, PHYSICAL
 	ret
+
+
+; Exact local equivalent of RecalculateBattleStatFromModifier for Attack.
+; Input A=stage (1..13), DE=unmodified Attack (big-endian).
+; Output H_DIVIDEND+2/+3 = stage-adjusted value, before 999 cap.
+; No mutable battle-stat writes or nested ROM-bank call.
+ResolveDynamicCalcStageAttack:
+	; The normal battle initializer sets each stage to 7. Clamp an
+	; invalid test-save value to neutral rather than indexing outside ratios.
+	cp 1
+	jr nc, .atLeastOne
+	ld a, 7
+.atLeastOne
+	cp 14
+	jr c, .inRange
+	ld a, 7
+.inRange
+	dec a
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, .ratios
+	add hl, bc
+	ld a, [hli]
+	ld b, a ; numerator
+	ld c, [hl] ; denominator
+	push bc
+	xor a
+	ld [H_MULTIPLICAND], a
+	ld a, [de]
+	ld [H_MULTIPLICAND + 1], a
+	inc de
+	ld a, [de]
+	ld [H_MULTIPLICAND + 2], a
+	pop bc
+	ld a, b
+	ld [H_MULTIPLIER], a
+	push bc
+	call Multiply
+	pop bc
+	ld a, c
+	ld [H_DIVISOR], a
+	ld b, 4
+	call Divide
+	ret
+.ratios
+	db 25, 100, 28, 100, 33, 100, 40, 100, 50, 100, 66, 100
+	db 1, 1, 15, 10, 2, 1, 25, 10, 3, 1, 35, 10, 4, 1
