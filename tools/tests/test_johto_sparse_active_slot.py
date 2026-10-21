@@ -27,11 +27,11 @@ class SparseActiveSlotContract(unittest.TestCase):
 
     def test_0_through_22_identity_unchanged(self):
         self.assertEqual([], check_active_slot_mapping(self.headers, self.registry))
-        self.assertEqual(list(range(23)), [item['local_id'] for item in self.registry])
+        self.assertEqual(list(range(25)), [item['local_id'] for item in self.registry])
 
-    def test_id_23_is_inactive_before_registered(self):
-        self.table_mutation('$16, $ff, $ff', '$16, $17, $ff',
-                            'active slot table mismatch at stable ID 23')
+    def test_id_25_is_inactive_before_registered(self):
+        self.table_mutation('$18, $ff, $ff', '$18, $19, $ff',
+                            'active slot table mismatch at stable ID 25')
 
     def test_id_62_cannot_alias_slot_22(self):
         line = ' ; $30-$3f'
@@ -56,7 +56,7 @@ class SparseActiveSlotContract(unittest.TestCase):
         future.append({'local_id': 62})
         row = next(x for x in self.headers.splitlines() if x.endswith(' ; $30-$3f'))
         fields = row.split(';')[0].strip()[3:].split(', ')
-        fields[14] = '$17'
+        fields[14] = '$19'
         augmented = self.headers.replace(row, '	db '+', '.join(fields)+' ; $30-$3f')
         self.assertEqual([], check_active_slot_mapping(augmented, future))
         # No fake 23..61 runtime entries were added; only the 256-byte router changed.

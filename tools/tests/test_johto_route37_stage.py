@@ -74,7 +74,7 @@ class Route37Stage(unittest.TestCase):
 
     def test_22_registered_and_23_still_reserved(self):
         registry = json.loads((ROOT / 'tools/johto_native_maps.json').read_text())
-        self.assertEqual(len(registry['maps']), 23)
+        self.assertEqual(len(registry['maps']), 25)
         self.assertEqual(registry['maps'][21]['local_symbol'], 'JOHTO_ROUTE_37_LOCAL_ID')
         self.assertEqual(registry['maps'][21]['identity_evidence'], 'STATIC_PASS')
         self.assertEqual(registry['maps'][22]['local_symbol'], 'JOHTO_ECRUTEAK_CITY_LOCAL_ID')
@@ -141,10 +141,10 @@ class Route37Stage(unittest.TestCase):
 
     def test_ecruteak_unfinished_exits_closed_and_visited_fly_enabled(self):
         city=(ROOT/'data/mapHeaders/JohtoEcruteakCity.asm').read_text()
-        self.assertIn('db SOUTH',city)
+        self.assertIn('db SOUTH | WEST',city)
         self.assertNotIn('db NORTH | SOUTH',city)
         obj=(ROOT/'data/mapObjects/JohtoEcruteakCity.asm').read_text()
-        self.assertIn('db $00 ; no enabled Warp',obj)
+        self.assertIn('db $02 ; Gold west gate #14/#15 now opens via native Warp',obj)
         fence=(ROOT/'engine/overworld/johto_route33_collision.asm').read_text()
         src=fence.split('JohtoEcruteakCityEdgeFence::',1)[1].split('JohtoEcruteakCityCanStepAhead::',1)[0]
         self.assertIn('cp 17',src)
@@ -155,7 +155,7 @@ class Route37Stage(unittest.TestCase):
         self.assertEqual(city_row['feature_status']['fly'],'ALLOWED')
         self.assertEqual(city_row['feature_status']['surf'],'ALLOWED')
         self.assertIn('db $07 ; all 7 original city signs',obj)
-        self.assertEqual(city_row['feature_status']['warp'],'DEFERRED')
+        self.assertEqual(city_row['feature_status']['warp'],'ALLOWED')
 
 
 

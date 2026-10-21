@@ -78,6 +78,190 @@
         ]
       ],
       "review_only": true
+    },
+    {
+      "gold_map": "Route38",
+      "gold_tileset": "johto",
+      "rpp_blocked_mask": "maps/JohtoRoute38.blocked_mask.bin",
+      "mask_sha256": "31d12580a51ae3f01f8e033f5101388eba6bb4541a334f71cb33db413d329913",
+      "width_cells": 40,
+      "height_cells": 18,
+      "blocked_count": 423,
+      "walkable_count": 297,
+      "collision_roles": {
+        "FLOOR": 216,
+        "HEADBUTT_TREE": 24,
+        "HOP_DOWN": 10,
+        "HOP_DOWN_LEFT": 1,
+        "HOP_DOWN_RIGHT": 2,
+        "HOP_LEFT": 4,
+        "HOP_RIGHT": 4,
+        "TALL_GRASS": 60,
+        "WALL": 397,
+        "WARP_CARPET_RIGHT": 2
+      },
+      "ambiguous_visual_ids": [
+        "05",
+        "06",
+        "3E"
+      ],
+      "hops": [
+        [
+          11,
+          8,
+          -1,
+          0
+        ],
+        [
+          11,
+          9,
+          -1,
+          0
+        ],
+        [
+          6,
+          10,
+          1,
+          0
+        ],
+        [
+          11,
+          10,
+          -1,
+          0
+        ],
+        [
+          6,
+          11,
+          1,
+          0
+        ],
+        [
+          11,
+          11,
+          -1,
+          0
+        ],
+        [
+          6,
+          12,
+          1,
+          0
+        ],
+        [
+          11,
+          12,
+          0,
+          1
+        ],
+        [
+          11,
+          12,
+          -1,
+          0
+        ],
+        [
+          12,
+          12,
+          0,
+          1
+        ],
+        [
+          13,
+          12,
+          0,
+          1
+        ],
+        [
+          14,
+          12,
+          0,
+          1
+        ],
+        [
+          15,
+          12,
+          0,
+          1
+        ],
+        [
+          16,
+          12,
+          0,
+          1
+        ],
+        [
+          17,
+          12,
+          0,
+          1
+        ],
+        [
+          18,
+          12,
+          0,
+          1
+        ],
+        [
+          19,
+          12,
+          0,
+          1
+        ],
+        [
+          20,
+          12,
+          0,
+          1
+        ],
+        [
+          20,
+          12,
+          1,
+          0
+        ],
+        [
+          6,
+          13,
+          1,
+          0
+        ],
+        [
+          4,
+          14,
+          0,
+          1
+        ],
+        [
+          5,
+          14,
+          0,
+          1
+        ],
+        [
+          6,
+          14,
+          0,
+          1
+        ],
+        [
+          6,
+          14,
+          1,
+          0
+        ]
+      ],
+      "required_blocked_special_cells": [],
+      "review_only": true,
+      "walkable_roles": [
+        "FLOOR",
+        "HOP_DOWN",
+        "HOP_DOWN_LEFT",
+        "HOP_DOWN_RIGHT",
+        "HOP_LEFT",
+        "HOP_RIGHT",
+        "TALL_GRASS"
+      ]
     }
   ]
 }

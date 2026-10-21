@@ -81,7 +81,7 @@ class GoldenrodP19CVisual(unittest.TestCase):
         green=regular.split('; 0x03: OUTDOOR_GREEN',1)[1].split('; 0x04:',1)[0]
         self.assertEqual(rgb_values(green),gold_day[2])
         self.assertIn('JohtoGoldDayRoofGroups:',s)
-        self.assertRegex(s,r'(?m)^\s*db 0,0,1,1,1,2,\$ff,2,\$ff,3,3,\$ff,\$ff,\$ff,4,4,2,2,\$ff,\$ff,\$ff,2,5\s*;')
+        self.assertRegex(s,r'(?m)^\s*db 0,0,1,1,1,2,\$ff,2,\$ff,3,3,\$ff,\$ff,\$ff,4,4,2,2,\$ff,\$ff,\$ff,2,5,\$ff,6\s*;')
 
     def test_exact_gold_roof_pixels_both_live_and_full_load(self):
         src=gold_roof_pixels(ROOT/'gfx/tilesets/johto_goldenrod_roofs.png')

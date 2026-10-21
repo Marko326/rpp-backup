@@ -24,6 +24,7 @@ REQUIRED=(
     'gfx/tilesets/johto_azalea_roofs.png',
     'gfx/tilesets/johto_violet_roofs.png',
     'gfx/tilesets/johto_goldenrod_roofs.png',
+    'gfx/tilesets/johto_olivine_roofs.png',
 )
 
 class RoofGoldReferenceGate(unittest.TestCase):

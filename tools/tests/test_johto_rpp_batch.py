@@ -312,7 +312,8 @@ class ReviewedGoldGeometryTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         for rel in ('tools/johto_gold_geometry_contracts.json',
-                    'maps/JohtoRoute33.blocked_mask.bin'):
+                    'maps/JohtoRoute33.blocked_mask.bin',
+                    'maps/JohtoRoute38.blocked_mask.bin'):
             dst = self.root/rel
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(Path(__file__).resolve().parents[2]/rel, dst)

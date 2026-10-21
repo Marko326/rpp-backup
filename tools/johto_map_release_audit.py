@@ -410,10 +410,22 @@ def audit_new_native_field_move_roles(root: Path, gold: Path) -> list[str]:
                 expected='ALLOWED' if role in roles else 'DEFERRED'
                 if status.get(move)!=expected:
                     errors.append(f'{name}: Gold {role} requires {move}={expected}, not {status.get(move)}')
-            if 'HEADBUTT_TREE' in roles and not any(
+            # FIELD-MOVES-38: Headbutt is deliberately disabled for Route38
+            # at the user's request, but every Gold cell remains an exact,
+            # fail-closed deferred contract (not a blank capability check).
+            headbutt = [(c['y'],c['x']) for c in cells if c['role']=='HEADBUTT_TREE']
+            deferred = entry.get('deferred_gold_moves', {})
+            deferred_cells = deferred.get('headbutt_tree_yx')
+            enabled = any(
                 f'IsJohto{stem}HeadbuttTreeAhead::' in runtime
-                for stem in (name, name.removesuffix('City'))):
-                errors.append(f'{name}: Gold HEADBUTT_TREE requires exact native handler')
+                for stem in (name, name.removesuffix('City')))
+            if deferred_cells is not None:
+                if deferred_cells != [list(cell) for cell in headbutt]:
+                    errors.append(f'{name}: DEFERRED Headbutt coordinates differ from Gold')
+                if enabled or f'cp {entry["local_symbol"]}' in runtime:
+                    errors.append(f'{name}: deferred Headbutt was accidentally enabled')
+            elif headbutt and not enabled:
+                errors.append(f'{name}: Gold HEADBUTT_TREE requires handler or exact deferred cell contract')
             gold_events=(gold/f'maps/{name}.asm').read_text()
             if re.search(r'(?m)^\s*callback\s+MAPCALLBACK_NEWMAP\s*,\s*\w*Flypoint\w*',gold_events):
                 if status.get('fly')!='ALLOWED':

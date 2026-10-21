@@ -58,7 +58,7 @@ class JohtoFullTownMap182(unittest.TestCase):
         self.assertEqual(audit(ROOT,self.gold),[])
         text=(ROOT/'engine/town_map.asm').read_text()
         self.assertIn('DEF NUM_JOHTO_TOWNMAP_ENTRIES EQU 45',text)
-        self.assertIn('db 0, 1, 2, 3, 4, 5, 5, 7, 9',text)
+        self.assertIn('db 0, 1, 2, 3, 4, 5, 5, 7, 9', (ROOT/'engine/overworld/johto_town_map_helpers.asm').read_text())
 
     def test_a_different_unsupported_gold_landmark_cannot_move(self):
         with TemporaryDirectory() as tmp:

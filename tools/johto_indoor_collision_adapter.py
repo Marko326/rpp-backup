@@ -318,7 +318,17 @@ def audit_reviewed_geometry(rpp: Path, gold: Path) -> list[str]:
             path = Path(spec['rpp_blocked_mask'])
             if path.is_absolute() or '..' in path.parts or path.parts[0] != 'maps':
                 raise ConversionError(f'unsafe runtime geometry path: {path}')
-            report, expected = plan_gold_quadrant_collision(Path(gold), name, tileset)
+            roles = spec.get('walkable_roles')
+            # Only Gold Route38 contains the reviewed right-facing HOP
+            # source quadrants; they must be standable while their barrier
+            # remains blocked. Never let contracts self-authorize arbitrary
+            # extra walkable roles on another map.
+            route38_policy = {'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT',
+                              'HOP_DOWN_LEFT','HOP_DOWN_RIGHT','HOP_RIGHT'}
+            if roles is not None and (name != 'Route38' or set(roles) != route38_policy):
+                errors.append(f'{name}: unreviewed Gold mask passability override')
+            report, expected = plan_gold_quadrant_collision(
+                Path(gold), name, tileset, walkable_roles=roles)
             actual = (root/path).read_bytes()
             if (actual != expected or hashlib.sha256(actual).hexdigest() != spec['mask_sha256']):
                 errors.append(f'{name}: Gold geometry mask or reviewed SHA differs')

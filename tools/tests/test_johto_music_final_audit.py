@@ -65,8 +65,8 @@ class JohtoMusicFinalAudit(unittest.TestCase):
 
     def test_unknown_future_map_requires_scene_mapping(self):
         self.mutation('data/johto_map_headers.asm',
-                      'db REGION_NATIVE_MAP_SLOT ; EcruteakCity\nJohtoMapLegacyAliasesEnd::',
-                      'db PALLET_TOWN ; Ruins outside, native only\nJohtoMapLegacyAliasesEnd::',
+                      'db REGION_NATIVE_MAP_SLOT ; Route38\nJohtoMapLegacyAliasesEnd::',
+                      'db PALLET_TOWN ; Route38 incorrectly mapped legacy\nJohtoMapLegacyAliasesEnd::',
                       'native locals must share the virtual map handle')
 
     def test_audio_special_priority_cannot_disappear(self):

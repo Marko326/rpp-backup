@@ -70,13 +70,14 @@ class ForestCommonLedgeCandidate(unittest.TestCase):
         self.assertIn('ILEX-LEDGE-001',issue)
         self.assertIn('CUT',issue)
         self.assertIn('ROM 和实机待验',issue)
-        self.assertIn('SPID-5.62.227@', (ROOT/'data/game_version.asm').read_text())
+        self.assertIn('SPID-5.62.230@', (ROOT/'data/game_version.asm').read_text())
 
     def test_map_audit_retains_geometry_inventory_without_claiming_runtime(self):
         data=audit(ROOT)
         self.assertEqual(data['errors'],[], data['errors'])
         self.assertEqual(data['totals']['johto_native_pair_approaches'],95)
         self.assertEqual(data['totals']['modern_coordinate_rules'],23)
+        self.assertEqual(data['totals']['route38_coordinate_rules'],24)
 
 if __name__=='__main__':
     unittest.main()

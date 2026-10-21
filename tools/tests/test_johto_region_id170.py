@@ -56,8 +56,8 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_a_future_local_requires_explicit_contract(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 23',
-                    'DEF NUM_JOHTO_MAPS EQU 24',
+                    'DEF NUM_JOHTO_MAPS EQU 25',
+                    'DEF NUM_JOHTO_MAPS EQU 26',
                     'identity contract count')
 
     def test_native_slot_is_not_a_kanto_map(self):
@@ -80,20 +80,20 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoEcruteakName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRoute38Name\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_ECRUTEAK_CITY ; EcruteakCity\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_ROUTE37 ; Route38, original Gold Route37 theme\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):
         # Town Map index rows moved out of engine/town_map.asm in SPID .227.
         # Reject a missing final landmark even while name/header tables are intact.
         self.mutate('engine/overworld/johto_town_map_helpers.asm',
-                    ', 20, 21 ; Route37, EcruteakCity',
-                    ', 20 ; Route37, EcruteakCity',
+                    ', 22, 23 ; Route38 gate and Route38',
+                    ', 22 ; Route38 gate and Route38',
                     'native Town Map index count')
 
     def test_missing_save_local_byte_is_fatal(self):
@@ -102,14 +102,14 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_future_native_map_must_register_all_local_tables(self):
         self.mutate('constants/region_map_constants.asm',
-                    'DEF NUM_JOHTO_MAPS EQU 23', 'DEF NUM_JOHTO_MAPS EQU 24',
+                    'DEF NUM_JOHTO_MAPS EQU 25', 'DEF NUM_JOHTO_MAPS EQU 26',
                     'header pointers table count')
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; EcruteakCity\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; EcruteakCity\nJohtoMapLegacyAliasesEnd::',
-                    'local 22 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; Route38\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; Route38\nJohtoMapLegacyAliasesEnd::',
+                    'local 24 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
@@ -120,8 +120,8 @@ class NativeMapIDExpansion(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dst)
             edits = {
                 'constants/region_map_constants.asm': [
-                    ('DEF NUM_JOHTO_MAPS EQU 23',
-                     'DEF NUM_JOHTO_MAPS EQU 24')],
+                    ('DEF NUM_JOHTO_MAPS EQU 25',
+                     'DEF NUM_JOHTO_MAPS EQU 26')],
                 'data/johto_map_headers.asm': [
                     ('JohtoMapHeaderPointersEnd::', '\tdw JohtoRoute33_h ; fixture\nJohtoMapHeaderPointersEnd::'),
                     ('JohtoMapHeaderBanksEnd::', '\tdb BANK(JohtoRoute33_h)\nJohtoMapHeaderBanksEnd::'),
@@ -146,7 +146,7 @@ class NativeMapIDExpansion(unittest.TestCase):
             manifest_path = root / 'tools/johto_native_maps.json'
             manifest = json.loads(manifest_path.read_text())
             fixture = dict(manifest['maps'][-1])
-            fixture.update(local_id=23, local_symbol='JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
+            fixture.update(local_id=25, local_symbol='JOHTO_ROUTE_39_LOCAL_ID',
                            header='JohtoRoute33_h', bank='BANK(JohtoRoute33_h)',
                            rby_music=['MUSIC_ROUTES3','0'],
                            gsc_music='MUSIC_GBP_GSC_ROUTE30',

@@ -754,10 +754,174 @@
         "cut": "DEFERRED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",
-        "warp": "DEFERRED"
+        "warp": "ALLOWED"
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": "ECRUTEAK_CITY"
+    },
+    {
+      "local_id": 23,
+      "local_symbol": "JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",
+      "header": "JohtoRoute38EcruteakGate_h",
+      "bank": "BANK(JohtoRoute38EcruteakGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE37",
+      "town_map_index": 22,
+      "town_map_name": "JohtoBrowseRoute38Name",
+      "town_map_xy": [
+        60,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 24,
+      "local_symbol": "JOHTO_ROUTE_38_LOCAL_ID",
+      "header": "JohtoRoute38_h",
+      "bank": "BANK(JohtoRoute38_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE37",
+      "town_map_index": 23,
+      "town_map_name": "JohtoBrowseRoute38Name",
+      "town_map_xy": [
+        60,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": [
+          [
+            2,
+            16
+          ],
+          [
+            2,
+            17
+          ],
+          [
+            2,
+            18
+          ],
+          [
+            2,
+            19
+          ],
+          [
+            2,
+            20
+          ],
+          [
+            2,
+            21
+          ],
+          [
+            2,
+            22
+          ],
+          [
+            2,
+            23
+          ],
+          [
+            2,
+            24
+          ],
+          [
+            2,
+            25
+          ],
+          [
+            4,
+            26
+          ],
+          [
+            4,
+            27
+          ],
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ],
+          [
+            4,
+            30
+          ],
+          [
+            4,
+            31
+          ],
+          [
+            4,
+            32
+          ],
+          [
+            4,
+            33
+          ],
+          [
+            13,
+            24
+          ],
+          [
+            13,
+            25
+          ],
+          [
+            13,
+            26
+          ],
+          [
+            13,
+            27
+          ],
+          [
+            13,
+            28
+          ],
+          [
+            13,
+            29
+          ]
+        ]
+      }
     }
   ]
 }
