@@ -389,3 +389,8 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 烧伤 Dynamic 菜单曾因高频刷新路径中的跨 Bank 计算触发死机反馈：不要在选招热路径无条件远调用能力重算。正常情形读已生效战斗能力；烧伤时使用同 Bank 能力等级重算并封顶999。平局归 **Physical** 是最新用户规则，不要回滚成199旧结论。
 - **三件套收口必须剥离测试设施**：玉虹大厦 5 对象覆盖、7 号道路全卡比兽遭遇、`InitWildBattle` 的 `Dyn200TConfigureWildEnemy` 远调用、`wDyn200TestScenario` 临时别名及文本、测试专用文档。项目文档同步更新；清理是完整提交的组成部分，不能只在打包 ZIP 时藏掉测试文件。正式功能保留 6 字节未存档 Counter 记录。
 - 当前没有由助手独立 ROM 编译/链接、MAP 检查或测试 SAV 恢复证据。第二轮复杂边界采用独立可撤销测试补丁先复现再定性，详见 `docs/BATTLE_200_FINAL_RULES_AND_ROUND2.md`。
+
+## BATTLE-5.62.201 — 阶段值与属性值不可互相代替
+
+- 能力阶段的合法性只由 -6～+6 判断；不能因已钳位到 999／1 就阻止继续合法升／降级。攻击、防御、速度、Special 的重算结果再统一限幅 1～999。避免能力从 +6 降到 +5 仍封顶 999 时无法升回 +6。
+- Counter 资格不足的失败标记与真正命中判定失败须区分，改变失败文字时不要改动 `MoveHitTest`、-5 优先级或实际伤害记录。临时测试注入不得留在正式 ROM，验收后需成组撤销地图／战斗／WRAM／野怪改动。

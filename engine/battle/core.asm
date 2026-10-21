@@ -4063,6 +4063,14 @@ PrintMoveFailureText:
 	ld de, wEnemyMoveEffect
 .playersTurn
 	ld hl, DoesntAffectMonText
+	; BATTLE-201: Counter uses miss code 2 only when no eligible
+	; physical HP damage was received. Real accuracy misses remain 1.
+	ld a, [wMoveMissed]
+	cp 2
+	jr nz, .normalFailure
+	ld hl, ButItFailedText
+	jr .gotTextToPrint
+.normalFailure
 	ld a, [wDamageMultipliers]
 	cp $7f
 	jr z, .gotTextToPrint
@@ -4967,8 +4975,8 @@ HandleCounterMove:
 	; roll already ran, but must not display a bogus Critical hit! text.
 	xor a
 	ld [wCriticalHitOrOHKO], a
-	inc a
-	ld [wMoveMissed], a ; default to failure
+	ld a, 2
+	ld [wMoveMissed], a ; Counter condition failed (not accuracy)
 	push hl
 	inc hl
 	inc hl
@@ -6723,6 +6731,30 @@ RecalculateBattleStatFromModifier:
 	pop hl
 	ret
 
+; BATTLE-5.62.201: clamp the 16-bit battle stat produced by
+; RecalculateBattleStatFromModifier. HRAM DIVIDEND/PRODUCT/MULTIPLICAND
+; refer to the same result bytes at +2/+3. Preserve C (stat index).
+ClampModifiedBattleStatTo1To999:
+	ld a, [H_DIVIDEND + 3]
+	sub 999 % $100
+	ld a, [H_DIVIDEND + 2]
+	sbc 999 / $100
+	jr c, .checkMinimum
+	ld a, 999 / $100
+	ld [H_DIVIDEND + 2], a
+	ld a, 999 % $100
+	ld [H_DIVIDEND + 3], a
+	ret
+.checkMinimum
+	ld a, [H_DIVIDEND + 3]
+	ld b, a
+	ld a, [H_DIVIDEND + 2]
+	or b
+	ret nz
+	ld a, 1
+	ld [H_DIVIDEND + 3], a
+	ret
+
 ; CLEAN-5.27.03: _HARD is globally fixed, so the obsolete badge stat boost routine
 ; and all of its battle-time calls were removed. Badge ownership/permissions are unchanged.
 LoadHudAndHpBarAndStatusTilePatterns:
@@ -7535,25 +7567,11 @@ StatModifierUpEffect:
 	inc d ; de = unmodified (original) stat
 .checkIf999
 	pop bc
-	ld a, [hld]
-	sub 999 % $100 ; check if stat is already 999
-	jr nz, .recalculateStat
-	ld a, [hl]
-	sbc 999 / $100
-	jp z, RestoreOriginalStatModifier
-.recalculateStat ; recalculate affected stat
-                 ; paralysis and burn penalties, as well as badge boosts are ignored
+	; Stage has already been limited to +6 above. Rebuild even if
+	; current displayed value is 999: capped stats may still gain stages.
+	dec hl ; destination high byte (HL previously pointed to low byte)
 	call RecalculateBattleStatFromModifier
-; cap at 999
-	ld a, [H_PRODUCT + 3]
-	sub 999 % $100
-	ld a, [H_PRODUCT + 2]
-	sbc 999 / $100
-	jp c, UpdateStat
-	ld a, 999 / $100
-	ld [H_MULTIPLICAND + 1], a
-	ld a, 999 % $100
-	ld [H_MULTIPLICAND + 2], a
+	call ClampModifiedBattleStatTo1To999
 
 UpdateStat:
 	ld a, [H_PRODUCT + 2]
@@ -7615,10 +7633,6 @@ UpdateStatDone:
 
 ; Status penalty was applied only if the affected stat was rebuilt.
 	ret
-
-RestoreOriginalStatModifier:
-	pop hl
-	dec [hl]
 
 PrintNothingHappenedText:
 	ld b, c
@@ -7779,24 +7793,11 @@ StatModifierDownEffect:
 	inc d ; de = unmodified stat
 .noCarry
 	pop bc
-	ld a, [hld]
-	sub $1 ; can't lower stat below 1 (-6)
-	jr nz, .recalculateStat
-	ld a, [hl]
-	and a
-	jp z, CantLowerAnymore_Pop
-.recalculateStat
-; recalculate affected stat
-; paralysis and burn penalties, as well as badge boosts are ignored
+	; Stage has already been limited to -6 above. Value 1 cannot
+	; block another legal stage decrease, nor can >999 escape the cap.
+	dec hl
 	call RecalculateBattleStatFromModifier
-	ld a, [H_PRODUCT + 3]
-	ld b, a
-	ld a, [H_PRODUCT + 2]
-	or b
-	jp nz, UpdateLoweredStat
-	ld [H_MULTIPLICAND + 1], a
-	ld a, $1
-	ld [H_MULTIPLICAND + 2], a
+	call ClampModifiedBattleStatTo1To999
 
 UpdateLoweredStat:
 	ld a, [H_PRODUCT + 2]
@@ -7827,11 +7828,6 @@ UpdateLoweredStatDone:
 .userStatFell
 	ld hl, UsersStatFellText
 	jp PrintText
-
-CantLowerAnymore_Pop:
-	pop de
-	pop hl
-	inc [hl]
 
 CantLowerAnymore:
 	ld a, [de]
