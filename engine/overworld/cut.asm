@@ -16,7 +16,10 @@ UsedCut:
 	jr .canCut
 .route35
 	callba JohtoRoute35CutTreeInFront
+	jr c, .nativeTree
+	callba JohtoRoute42CutTreeInFront
 	jr nc, .nothingToCut
+.nativeTree
 	ld a, $3d ; reuse forest / Kanto tree-cut animation
 	jr .canCut
 .ilexForest
@@ -78,6 +81,7 @@ Cut2:: ; added for Field Move hack
 	jr nz, .legacyCutBlock
 	; R35-5.62.223: only Route35's one Gold tree changes $5b -> $89.
 	callba JohtoRoute35RemoveCutTree
+	callba JohtoRoute42RemoveCutTree
 	jr .blockReady
 .forestBlock
 	callba JohtoIlexForestRemoveCutTree

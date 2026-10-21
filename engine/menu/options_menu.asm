@@ -1167,6 +1167,8 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_ECRUTEAK_CITY ; EcruteakCity
 	db MUSIC_GBP_GSC_ROUTE37 ; Route38EcruteakGate, original Gold Route37 theme
 	db MUSIC_GBP_GSC_ROUTE37 ; Route38, original Gold Route37 theme
+	db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route42 Ecruteak Gate
+	db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route42
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

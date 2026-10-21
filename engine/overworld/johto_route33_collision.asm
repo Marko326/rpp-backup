@@ -226,8 +226,162 @@ JohtoRoute36BlockedRows::
 	INCBIN "maps/JohtoRoute36.blocked_mask.bin"
 
 
+; EAST-Route42: isolated physical edge fence; Gold west/east connections are
+; not activated without the corresponding full border/header audit. The two
+; genuine western gate tiles are INSIDE the map and use collision Warps.
+JohtoRoute42EdgeFence::
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .west
+	cp PLAYER_DIR_RIGHT
+	jr z, .east
+	cp PLAYER_DIR_UP
+	jr z, .north
+	cp PLAYER_DIR_DOWN
+	jr nz, .clear
+	ld a, [wYCoord]
+	cp JOHTO_ROUTE_42_HEIGHT * 2 - 1
+	jr nc, .block
+	jr .clear
+.north
+	ld a, [wYCoord]
+	and a
+	jr z, .block
+	jr .clear
+.west
+	ld a, [wXCoord]
+	and a
+	jr z, .block
+	jr .clear
+.east
+	ld a, [wXCoord]
+	cp JOHTO_ROUTE_42_WIDTH * 2 - 1
+	jr nc, .block
+.clear
+	and a
+	ret
+.block
+	scf
+	ret
+
+JohtoRoute42CanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .block
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jr nz, .block
+	call JohtoRoute42CutTreeCleared
+	jr c, .clear
+	ld hl, JohtoRoute42BlockedRows
+	ld d, JOHTO_ROUTE_42_WIDTH * 2
+	ld e, 8
+	jp JohtoModernMaskedStep
+.clear
+	and a
+	ret
+.block
+	scf
+	ret
+
+JohtoRoute42BlockedRows::
+	INCBIN "maps/JohtoRoute42.blocked_mask.bin"
+
+; A single Gold CUT_TREE quadrant at (24,13), inside source $63 BL.
+; The runtime replacement $8b preserves all other block graphics.
+JohtoRoute42CutTreeInFront::
+	call JohtoRoute42CutTreeFacing
+	ret nc
+	call JohtoCutFacingBlockPointer
+	ld a, [hl]
+	cp $63
+	jr z, .yes
+	and a
+	ret
+.yes
+	scf
+	ret
+JohtoRoute42CutTreeCleared::
+	call JohtoRoute42CutTreeFacing
+	ret nc
+	call JohtoCutFacingBlockPointer
+	ld a, [hl]
+	cp $8b
+	jr z, .yes
+	and a
+	ret
+.yes
+	scf
+	ret
+JohtoRoute42RemoveCutTree::
+	call JohtoRoute42CutTreeFacing
+	ret nc
+	call JohtoCutFacingBlockPointer
+	ld a, [hl]
+	cp $63
+	ret nz
+	ld a, $8b
+	ld [hl], a
+	ret
+JohtoRoute42CutTreeFacing:
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .no
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .no
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jr nz, .no
+	ld a, [wXCoord]
+	cp 24
+	jr z, .sameX
+	cp 23
+	jr z, .left
+	cp 25
+	jr z, .right
+	jr .no
+.sameX
+	ld a, [wYCoord]
+	cp 12
+	jr z, .above
+	cp 14
+	jr z, .below
+	jr .no
+.above
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .yes
+	jr .no
+.below
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .yes
+	jr .no
+.left
+	ld a, [wYCoord]
+	cp 13
+	jr nz, .no
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr z, .yes
+	jr .no
+.right
+	ld a, [wYCoord]
+	cp 13
+	jr nz, .no
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .yes
+.no
+	and a
+	ret
+.yes
+	scf
+	ret
+
 ; EcruteakCity Gold 40x36 quadrants. Only the two physical south road
-; tiles (x17,18) can cross into Route37 (x7,8). West/east gates are sealed.
+; tiles (x17,18) can cross into Route37 (x7,8). West/east gates use paired Warp carpets.
 JohtoEcruteakCityEdgeFence::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_DOWN
@@ -506,6 +660,76 @@ JohtoRoute38EcruteakGateCanStepAhead::
 
 JohtoRoute38EcruteakGateBlockedRows::
 	INCBIN "maps/JohtoRoute38EcruteakGate.blocked_mask.bin"
+
+; Same Gold EastWestGate 10x8 collision geometry as the accepted Violet gate.
+JohtoRoute42EcruteakGateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+	jr nz, .blocked
+	ld a, [wYCoord]
+	cp 4
+	jr z, .lane
+	cp 5
+	jr nz, .normal
+.lane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr z, .left
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 8
+	jr z, .allowed
+	jr .normal
+.left
+	ld a, [wXCoord]
+	cp 1
+	jr z, .allowed
+.normal
+	; Gold EastWestGate: both carpet lanes are walkable UP/DOWN. They
+	; trigger a Warp ONLY on the corresponding blocked LEFT/RIGHT exit.
+	ld a, [wXCoord]
+	and a
+	jr z, .matVertical
+	cp 9
+	jr nz, .maskGate
+.matVertical
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .matDown
+	cp PLAYER_DIR_UP
+	jr nz, .maskGate
+	ld a, [wYCoord]
+	cp 5
+	jr z, .allowed
+	; The Gold floor below the carpet is not a wall.
+	cp 6
+	jr z, .allowed
+	jr .maskGate
+.matDown
+	ld a, [wYCoord]
+	cp 4
+	jr z, .allowed
+	; Same for the floor immediately above the upper carpet.
+	cp 3
+	jr z, .allowed
+.maskGate
+	ld hl, JohtoRoute42EcruteakGateBlockedRows
+	ld d, JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH * 2
+	ld e, 2
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+JohtoRoute42EcruteakGateBlockedRows::
+	INCBIN "maps/JohtoRoute42EcruteakGate.blocked_mask.bin"
 
 ; Route37 Gold 20x18 per-quadrant mask; north to Ecruteak only x7/8.
 JohtoRoute37EdgeFence::
@@ -1490,41 +1714,86 @@ JohtoGateCollisionDirectionAllowed::
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jp z, .left
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .forest
+	jp z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jp z, .down
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jr z, .northGate
+	jp z, .northGate
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
-	jr z, .northGate
+	jp z, .northGate
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-	jr z, .northGate
+	jp z, .northGate
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .ruinsRoute36
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jp z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr z, .cityNorth
+	jp z, .cityNorth
 	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr z, .route35South
-	; East-west Route38 door: city faces LEFT, road RIGHT, gate uses
-	; its actual west/east mouth. Match native local ID, never shared $FC.
+	jp z, .route35South
+	; Both Ecruteak gates share one city ID; dispatch by exact portal lane.
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
-	jp z, .left
+	jp z, .ecruteakCityDoor
 	cp JOHTO_ROUTE_38_LOCAL_ID
 	jp z, .right
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
-	jr z, .ecruteakGate
+	jp z, .ecruteakGate
+	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+	jp z, .eastGate
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jp z, .route42WestDoor
 	; Historical south gate west x0, east x9.
 	ld a, [wXCoord]
 	and a
-	jr z, .left
-	jr .right
+	jp z, .left
+	jp .right
+.ecruteakCityDoor
+	ld a, [wXCoord]
+	and a
+	jr z, .ecruteakCityWest
+	cp 35
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 26
+	jp z, .right
+	cp 27
+	jp z, .right
+	jp .denied
+.ecruteakCityWest
+	ld a, [wYCoord]
+	cp 18
+	jp z, .left
+	cp 19
+	jp z, .left
+	jp .denied
 .ecruteakGate
 	ld a, [wXCoord]
 	and a
 	jp z, .left
 	jp .right
+.route42WestDoor
+	ld a, [wXCoord]
+	and a
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 8
+	jp z, .left
+	cp 9
+	jp z, .left
+	jp .denied
+.eastGate
+	ld a, [wYCoord]
+	cp 4
+	jr z, .eastGateY
+	cp 5
+	jp nz, .denied
+.eastGateY
+	ld a, [wXCoord]
+	and a
+	jp z, .left
+	cp 9
+	jp z, .right
+	jp .denied
 .forest
 	ld a, [wYCoord]
 	cp 5
@@ -1602,18 +1871,21 @@ JohtoInternalDoorFacingCheck::
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jp z, .route34Interior
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr z, .cityNorthInterior
+	jp z, .cityNorthInterior
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jp z, .route35SouthInterior
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .ruinsRoute36
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jp z, .ruinsOutside
-	; R38-5.62.230: Route38 gate carpets are INSIDE the route map,
-	; x35 of 40, so the normal outside-map-edge fallback cannot open
-	; their collision-only Warp. Require the exact pair and RIGHT.
+	; Keep west non-edge Route38 return exact as in .230.
 	cp JOHTO_ROUTE_38_LOCAL_ID
 	jp z, .route38Door
+	; New east door in city, and west edge of Route42.
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jp z, .ecruteakRight
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jp z, .route42Left
 	jp .denied
 .route38Door
 	ld a, [wXCoord]
@@ -1627,6 +1899,34 @@ JohtoInternalDoorFacingCheck::
 .route38Right
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+	jp .denied
+.ecruteakRight
+	ld a, [wXCoord]
+	cp 35
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 26
+	jr z, .checkRight
+	cp 27
+	jp nz, .denied
+.checkRight
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+	jp .denied
+.route42Left
+	ld a, [wXCoord]
+	and a
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 8
+	jr z, .checkLeft
+	cp 9
+	jp nz, .denied
+.checkLeft
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
 	jp z, .allowed
 	jp .denied
 .ruinsRoute36
@@ -1876,8 +2176,12 @@ JohtoNativeCanStepAhead::
 	jr z, .route38
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 	jr z, .route38Gate
+	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+	jr z, .route42Gate
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteak
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jr z, .route42
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1913,8 +2217,14 @@ JohtoNativeCanStepAhead::
 .route38Gate
 	call JohtoRoute38EcruteakGateCanStepAhead
 	jr .handled
+.route42Gate
+	call JohtoRoute42EcruteakGateCanStepAhead
+	jr .handled
 .ecruteak
 	call JohtoEcruteakCityCanStepAhead
+	jr .handled
+.route42
+	call JohtoRoute42CanStepAhead
 	jr .handled
 .route33
 	call JohtoRoute33CanStepAhead

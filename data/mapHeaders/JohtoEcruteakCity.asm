@@ -1,11 +1,10 @@
 ; ECR-5.62.225: Gold EcruteakCity 20x18, local 22, JOHTO tileset.
-; Only south -> Route37 is currently open. Gold west/east and indoor warps
-; await independently reviewed destinations; do not fake direct gate maps.
+; South Route37 and both west/east gatehouses are open; unbuilt side routes stay closed.
 JohtoEcruteakCity_h:
 	db JOHTO
 	db JOHTO_ECRUTEAK_CITY_HEIGHT, JOHTO_ECRUTEAK_CITY_WIDTH
 	dw JohtoEcruteakCityBlocks, JohtoEcruteakCityTextPointers, EnableAutoTextBoxDrawing
-	db SOUTH | WEST
+	db SOUTH | WEST | EAST
 	; Gold EcruteakCity south -> Route37 north, offset +5 blocks.
 	db REGION_NATIVE_MAP_SLOT
 	dw JohtoRoute37Blocks
@@ -24,4 +23,13 @@ JohtoEcruteakCity_h:
 	db -10 ; arrival Y = City Y - 10
 	db JOHTO_ROUTE_38_WIDTH * 2 - 1
 	dw wOverworldMap + 6 + 2 * JOHTO_ROUTE_38_WIDTH
+	; Gold EcruteakCity east -> Route42 west, +9 blocks, 9 matched rows.
+	db REGION_NATIVE_MAP_SLOT
+	dw JohtoRoute42Blocks
+	dw wOverworldMap + (9 + 3) * (JOHTO_ECRUTEAK_CITY_WIDTH + 6) + JOHTO_ECRUTEAK_CITY_WIDTH + 3
+	db JOHTO_ROUTE_42_HEIGHT
+	db JOHTO_ROUTE_42_WIDTH
+	db -18
+	db 0
+	dw wOverworldMap + 7 + JOHTO_ROUTE_42_WIDTH
 	dw JohtoEcruteakCityObject

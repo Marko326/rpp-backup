@@ -3,9 +3,11 @@
 ; Unfinished west/east gates are sealed by edge fences; no fake house facade.
 JohtoEcruteakCityObject:
 	db $05
-	db $02 ; Gold west gate #14/#15 now opens via native Warp
-	db 18, 0, 2, REGION_WARP_ESCAPE
-	db 19, 0, 3, REGION_WARP_ESCAPE
+	db $04 ; West gate lanes #14/#15 and east gate lanes #1/#2
+	db 18, 0, 2, REGION_WARP_ESCAPE ; West: Route38 gate #3
+	db 19, 0, 3, REGION_WARP_ESCAPE ; West: Route38 gate #4
+	db 26, 35, 0, REGION_WARP_ESCAPE ; East: Route42 gate #1
+	db 27, 35, 1, REGION_WARP_ESCAPE ; East: Route42 gate #2
 	db $07 ; all 7 original city signs
 	db 21, 15, 1 ; city: Gold (15,21), runtime (y,x)
 	db 10, 38, 2 ; Tin Tower

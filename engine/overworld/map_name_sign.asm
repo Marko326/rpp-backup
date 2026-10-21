@@ -564,6 +564,10 @@ UpdateMapNameSign::
 	ret z
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 	ret z
+	; Route42/Ecruteak east gate is a transit room from either side.
+	; Keep the prior city/route landmark; do not show Route42 inside.
+	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+	ret z
 .legacyMap
 	ld a, [wCurMap]
 	ld c, a

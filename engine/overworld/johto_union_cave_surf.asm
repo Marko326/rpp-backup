@@ -352,9 +352,94 @@ IsJohtoNativeOutdoorWaterAhead::
 	jp z, IsJohtoRuinsWaterAhead
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jp z, IsJohtoEcruteakWaterAhead
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jp z, IsJohtoRoute42WaterAhead
 .noWater
 	and a
 	ret
+
+; Gold Route42, 120 WATER quadrants, sparse 8-byte row mask.
+; Headbutt trees are never included in the water or Cut permissions.
+IsJohtoRoute42WaterAhead::
+	push bc
+	push de
+	push hl
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jp nz, .notWater
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .notWater
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jp nz, .notWater
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .bounded
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .bounded
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .bounded
+.right
+	cp SPRITE_FACING_RIGHT
+	jp nz, .notWater
+	inc e
+.bounded
+	ld a, d
+	cp JOHTO_ROUTE_42_HEIGHT * 2
+	jr nc, .notWater
+	ld a, e
+	cp JOHTO_ROUTE_42_WIDTH * 2
+	jr nc, .notWater
+	; Each row occupies eight bytes. Address y*8 using 16-bit offset.
+	ld l, d
+	ld h, 0
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld bc, JohtoRoute42WaterRows
+	add hl, bc
+	ld a, e
+	ld c, a
+	srl a
+	srl a
+	srl a
+	ld b, 0
+	ld c, a
+	add hl, bc
+	ld a, e
+	and 7
+	ld c, a
+	inc c
+	ld a, [hl]
+.shift
+	srl a
+	dec c
+	jr nz, .shift
+	jr nc, .notWater
+	scf
+	jr .done
+.notWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+JohtoRoute42WaterRows::
+	INCBIN "maps/JohtoRoute42.water_mask.bin"
 
 ; Gold EcruteakCity pond: exactly 20 WATER quadrants, no generic
 ; JOHTO tile IDs. Rows y12/13 have x22..27, rows y14/15 x24..27.
@@ -688,6 +773,8 @@ JohtoSurfBadgeAllowed::
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .route32
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jr z, .route32
+	cp JOHTO_ROUTE_42_LOCAL_ID
 	jr nz, .kanto
 .route32
 	ld a, [wCurRegion]

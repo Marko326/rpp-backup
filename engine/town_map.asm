@@ -1207,7 +1207,13 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute38Name
 	db 60, 60 ; Route38: Gold original landmark
 	dw JohtoBrowseRoute38Name
+	; The native entries below use the existing Route42 browse landmark, not a Fly destination.
+	db 60, 100
+	dw JohtoBrowseRoute42Name
+	db 60, 100
+	dw JohtoBrowseRoute42Name
 JohtoNativeTownMapEntriesEnd::
+
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
 
 LoadTownMapEntry:

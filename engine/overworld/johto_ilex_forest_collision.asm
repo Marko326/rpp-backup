@@ -278,6 +278,8 @@ JohtoCutBadgeAllowed::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jr z, .johtoAllowed
+	cp JOHTO_ROUTE_42_LOCAL_ID
+	jr z, .johtoAllowed
 	jr .kanto
 .nativeCheck
 	ld a, [wCurMap]

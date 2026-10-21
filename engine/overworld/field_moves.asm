@@ -357,6 +357,8 @@ IsCutTile:
 	jr nz, .legacyTilesets
 	; R35-5.62.223: accept only the exact native Route35 Cut quadrant.
 	callba JohtoRoute35CutTreeInFront
+	ret c
+	callba JohtoRoute42CutTreeInFront
 	ret
 .forestTree
 	callba JohtoIlexForestCutTreeInFront

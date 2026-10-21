@@ -949,8 +949,8 @@ ExtraWarpCheck::
 	jr z, .useFunction2
 	cp FERRY ; Ferry and Island tileset
 	jr z, .useFunction2
-	cp JOHTO_GATE ; GATE-5.62.159: Gold gate exits are at the map edge
-	jr z, .useFunction1
+	; All other tilesets (including JOHTO_GATE) use the map-edge check.
+	; The old CP/JR-to-next-instruction pair was redundant (4 ROM0 B).
 .useFunction1
 	ld hl, IsPlayerFacingEdgeOfMap
 	jr .doBankswitch
@@ -984,6 +984,11 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr c, .notGate
 	cp JOHTO_ROUTE_39_LOCAL_ID
+	jr c, .yes
+	; East gate/Route42 are sparse stable IDs 62/63, not active slots.
+	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+	jr c, .notGate
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jr c, .yes
 .notGate
 	and a
@@ -1581,8 +1586,8 @@ CollisionCheckOnLand::
 	; R31: let only the new map use its precise ROMX boundary guard.
 	; callba preserves the carry returned by JohtoRoute31CollisionFence.
 	callba JohtoRoute31CollisionFence
-	jp c, .collision
-	jp .checkLandCollision
+	jr c, .collision ; short branch saves 1 ROM0 B
+	; Fall through, saving 3 ROM0 B.
 .checkLandCollision
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?
