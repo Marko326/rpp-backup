@@ -2517,7 +2517,7 @@ const_value = 0
 	const EVENT_9CF                                  ; current 447, (D853, bit 7)
 	const EVENT_SEAFOAM4_BOULDER1_DOWN_HOLE          ; current 448, (D854, bit 0)
 	const EVENT_SEAFOAM4_BOULDER2_DOWN_HOLE          ; current 449, (D854, bit 1)
-	const EVENT_9D2                                  ; current 44A, (D854, bit 2)
+	const EVENT_JOHTO_FLY_OLIVINE                     ; current 44A, (D854, bit 2), previously unused
 	const EVENT_9D3                                  ; current 44B, (D854, bit 3)
 	const EVENT_9D4                                  ; current 44C, (D854, bit 4)
 	const EVENT_9D5                                  ; current 44D, (D854, bit 5)
@@ -2565,6 +2565,8 @@ const_value = 0
 	;const EVENT_9FF                                  ; inactive legacy 9FF; no current event slot
 
 ; FLY-5.62.140: indexes have always been in the existing 139-byte saved array.
+ASSERT EVENT_JOHTO_FLY_OLIVINE == $44a
+ASSERT EVENT_JOHTO_FLY_OLIVINE < 139 * 8
 ASSERT EVENT_JOHTO_FLY_MAHOGANY == $451
 ASSERT EVENT_JOHTO_FLY_MAHOGANY < 139 * 8
 ASSERT EVENT_JOHTO_FLY_ECRUTEAK == $450

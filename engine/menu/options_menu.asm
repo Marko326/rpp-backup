@@ -1170,6 +1170,8 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route42 Ecruteak Gate
 	db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route42
 	db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; MahoganyTown, original Gold music
+ db MUSIC_GBP_GSC_ROUTE37 ; Route39 Gold Route37 theme
+ db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Gold VioletCity theme
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

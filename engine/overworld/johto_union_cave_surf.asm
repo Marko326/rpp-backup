@@ -353,10 +353,96 @@ IsJohtoNativeOutdoorWaterAhead::
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jp z, IsJohtoEcruteakWaterAhead
 	cp JOHTO_ROUTE_42_LOCAL_ID
-	jp z, IsJohtoRoute42WaterAhead
+ jp z, IsJohtoRoute42WaterAhead
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jp z, IsJohtoOlivineWaterAhead
 .noWater
 	and a
 	ret
+
+; Gold OlivineCity has 406 WATER quadrants (not BUOY). All other
+; shoreline, buildings and future port remain blocked until their own maps exist.
+IsJohtoOlivineWaterAhead::
+ push bc
+ push de
+ push hl
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jp nz,.notWater
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jp nz,.notWater
+ ld a,[wCurLocalMapID]
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jp nz,.notWater
+ ld a,[wYCoord]
+ ld d,a
+ ld a,[wXCoord]
+ ld e,a
+ ld a,[wSpriteStateData1 + 9]
+ cp SPRITE_FACING_DOWN
+ jr nz,.up
+ inc d
+ jr .bounds
+.up
+ cp SPRITE_FACING_UP
+ jr nz,.left
+ dec d
+ jr .bounds
+.left
+ cp SPRITE_FACING_LEFT
+ jr nz,.right
+ dec e
+ jr .bounds
+.right
+ cp SPRITE_FACING_RIGHT
+ jp nz,.notWater
+ inc e
+.bounds
+ ld a,d
+ cp JOHTO_OLIVINE_CITY_HEIGHT * 2
+ jr nc,.notWater
+ ld a,e
+ cp JOHTO_OLIVINE_CITY_WIDTH * 2
+ jr nc,.notWater
+ ; 40 cells/row => 5 bytes/row; 16-bit offset avoids y*5 overflow.
+ ld l,d
+ ld h,0
+ add hl,hl
+ add hl,hl ; y*4
+ ld b,0
+ ld c,d
+ add hl,bc ; y*5
+ ld bc,JohtoOlivineWaterRows
+ add hl,bc
+ ld a,e
+ srl a
+ srl a
+ srl a
+ ld b,0
+ ld c,a
+ add hl,bc
+ ld a,e
+ and 7
+ ld c,a
+ inc c
+ ld a,[hl]
+.shift
+ srl a
+ dec c
+ jr nz,.shift
+ jr nc,.notWater
+ scf
+ jr .done
+.notWater
+ and a
+.done
+ pop hl
+ pop de
+ pop bc
+ ret
+JohtoOlivineWaterRows::
+ INCBIN "maps/JohtoOlivineCity.water_mask.bin"
 
 ; Gold Route42, 120 WATER quadrants, sparse 8-byte row mask.
 ; Headbutt trees are never included in the water or Cut permissions.
@@ -775,6 +861,8 @@ JohtoSurfBadgeAllowed::
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .route32
 	cp JOHTO_ROUTE_42_LOCAL_ID
+	jr z, .route32
+	cp JOHTO_OLIVINE_CITY_LOCAL_ID
 	jr nz, .kanto
 .route32
 	ld a, [wCurRegion]

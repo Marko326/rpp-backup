@@ -29,6 +29,8 @@ HandleLedges:
 	jr z, .route37HopTable
 	cp JOHTO_ROUTE_38_LOCAL_ID
 	jr z, .route38HopTable
+ cp JOHTO_ROUTE_39_LOCAL_ID
+	jr z, .route39HopTable
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakHopTable
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
@@ -39,6 +41,9 @@ HandleLedges:
 	jp .modernHopLookup
 .route38HopTable
 	ld hl, .route38Hops
+	jp .modernHopLookup
+.route39HopTable
+	ld hl, .route39Hops
 	jp .modernHopLookup
 .route37HopTable
 	ld hl, .route37Hops
@@ -245,6 +250,30 @@ HandleLedges:
 	db 5, 14, PLAYER_DIR_DOWN
 	db 6, 14, PLAYER_DIR_DOWN
 	db 6, 14, PLAYER_DIR_RIGHT
+	db $ff
+
+; Route39 has 20 source-proven directional ledges, including safe 3-stage down-chains.
+.route39Hops
+ db 7, 20, PLAYER_DIR_LEFT
+ db 7, 21, PLAYER_DIR_LEFT
+ db 7, 22, PLAYER_DIR_DOWN
+ db 7, 22, PLAYER_DIR_LEFT
+ db 10, 22, PLAYER_DIR_DOWN
+ db 11, 22, PLAYER_DIR_DOWN
+ db 12, 22, PLAYER_DIR_DOWN
+ db 13, 22, PLAYER_DIR_DOWN
+ db 7, 24, PLAYER_DIR_DOWN
+ db 7, 24, PLAYER_DIR_LEFT
+ db 10, 24, PLAYER_DIR_DOWN
+ db 11, 24, PLAYER_DIR_DOWN
+ db 12, 24, PLAYER_DIR_DOWN
+ db 13, 24, PLAYER_DIR_DOWN
+ db 7, 26, PLAYER_DIR_DOWN
+ db 7, 26, PLAYER_DIR_LEFT
+ db 10, 26, PLAYER_DIR_DOWN
+ db 11, 26, PLAYER_DIR_DOWN
+ db 12, 26, PLAYER_DIR_DOWN
+ db 13, 26, PLAYER_DIR_DOWN
 	db $ff
 
 ; Route37 has six Gold HOP_DOWN takeoffs and safe two-cell landings.

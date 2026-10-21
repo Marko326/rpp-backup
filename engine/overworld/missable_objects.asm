@@ -72,6 +72,19 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_MAHOGANY / 8
 	set EVENT_JOHTO_FLY_MAHOGANY % 8, [hl]
 .notJohtoMahogany
+ ; OlivineCity stable ID26, saved free event bit $44a.
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jr nz,.notJohtoOlivine
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.notJohtoOlivine
+ ld a,[wCurLocalMapID]
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr nz,.notJohtoOlivine
+ ld hl, wEventFlags + EVENT_JOHTO_FLY_OLIVINE / 8
+ set EVENT_JOHTO_FLY_OLIVINE % 8, [hl]
+.notJohtoOlivine
 
 	ld a, [wCurMap]
 	cp ROUTE_1

@@ -56,6 +56,8 @@ JohtoRoofGroupForLocalMap:
 	db $ff ; 19 Route42 east-west indoor gate
 	db 7 ; 1a Route42 Gold Mahogany group2
 	db 7 ; 1b MahoganyTown Gold mapgroup2; same palette as Route42
+ db 6 ; 1c Route39 Gold Olivine mapgroup1 roof
+ db 6 ; 1d OlivineCity Gold Olivine mapgroup1 roof
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

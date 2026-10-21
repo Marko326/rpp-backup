@@ -7,7 +7,7 @@
 
 ; Active-slot -> Town Map landmark; physical stable IDs are NOT row indices.
 JohtoNativeTownMapIndices::
-	db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 14, 13, 14, 14, 15, 19, 17, 17, 19, 8, 20, 21, 24, 24, 32, 32, 34 ; Route35 gate Gold landmark17; Mahogany landmark34
+	db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 14, 13, 14, 14, 15, 19, 17, 17, 19, 8, 20, 21, 24, 24, 32, 32, 34, 25, 26 ; Route35 gate Gold landmark17; Mahogany landmark34
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 

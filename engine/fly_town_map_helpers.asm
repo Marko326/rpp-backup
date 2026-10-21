@@ -784,7 +784,12 @@ TryLoadSpecialFlyWarpData::
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .specialEcruteak
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-	jr nz, .regularScan
+ jr z, .specialMahogany
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr nz, .regularScan
+ ld hl, JohtoOlivineFlyWarpData
+ jr .found
+.specialMahogany
 	ld hl, JohtoMahoganyFlyWarpData
 	jr .found
 .specialEcruteak
@@ -822,7 +827,9 @@ TryLoadSpecialFlyWarpData::
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .storeNativeLocal
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-	jr z, .storeNativeLocal
+ jr z, .storeNativeLocal
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr z, .storeNativeLocal
 	; For the other valid $FE selection, resolve to Goldenrod.
 	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeNativeLocal
@@ -847,6 +854,11 @@ JohtoEcruteakFlyWarpData:
 	FLYWARP_DATA JOHTO_ECRUTEAK_CITY_WIDTH, 28, 23
 
 ; Gold SPAWN_MAHOGANY_TOWN X15/Y14; only the saved local ID distinguishes it.
+; Gold SPAWN_OLIVINE x13/y22 on Gold original walkable city pavement.
+JohtoOlivineFlyWarpData:
+ db REGION_NATIVE_MAP_SLOT
+ FLYWARP_DATA JOHTO_OLIVINE_CITY_WIDTH, 22, 13
+
 JohtoMahoganyFlyWarpData:
 	db REGION_NATIVE_MAP_SLOT
 	FLYWARP_DATA JOHTO_MAHOGANY_TOWN_WIDTH, 14, 15

@@ -610,6 +610,169 @@ JohtoEcruteakCityCanStepAhead::
 JohtoEcruteakCityBlockedRows::
 	INCBIN "maps/JohtoEcruteakCity.blocked_mask.bin"
 
+; SPID.233 Gold exact physical seam permissions, not a generic open edge.
+JohtoRoute39EdgeFence::
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr z,.east
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ cp PLAYER_DIR_LEFT
+ jr z,.west
+ cp PLAYER_DIR_UP
+ jr nz,.clear
+ ld a,[wYCoord]
+ and a
+ jr z,.block
+ jr .clear
+.west
+ ld a,[wXCoord]
+ and a
+ jr z,.block
+ jr .clear
+.east
+ ld a,[wXCoord]
+ cp JOHTO_ROUTE_39_WIDTH * 2 - 1
+ jr c,.clear
+ ld a,[wYCoord]
+ cp 8
+ jr c,.block
+ cp 12
+ jr c,.clear
+ jr .block
+.south
+ ld a,[wYCoord]
+ cp JOHTO_ROUTE_39_HEIGHT * 2 - 1
+ jr c,.clear
+ ld a,[wXCoord]
+ cp 8
+ jr c,.block
+ cp 12
+ jr c,.clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoRoute39CanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.block
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_39_LOCAL_ID
+ jr nz,.block
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr nz,.south
+ ld a,[wXCoord]
+ cp JOHTO_ROUTE_39_WIDTH * 2 - 1
+ jr nz,.mask
+ ld a,[wYCoord]
+ cp 8
+ jr c,.mask
+ cp 12
+ jr c,.clear
+.south
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr nz,.mask
+ ld a,[wYCoord]
+ cp JOHTO_ROUTE_39_HEIGHT * 2 - 1
+ jr nz,.mask
+ ld a,[wXCoord]
+ cp 8
+ jr c,.mask
+ cp 12
+ jr c,.clear
+.mask
+ ld hl,JohtoRoute39BlockedRows
+ ld d,JOHTO_ROUTE_39_WIDTH * 2
+ ld e,3
+ jp JohtoModernMaskedStep
+.clear
+ and a
+ ret
+.block
+ scf
+ ret
+JohtoRoute39BlockedRows::
+ INCBIN "maps/JohtoRoute39.blocked_mask.bin"
+
+JohtoOlivineCityEdgeFence::
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr z,.north
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ cp PLAYER_DIR_LEFT
+ jr z,.west
+ cp PLAYER_DIR_RIGHT
+ jr nz,.clear
+ ld a,[wXCoord]
+ cp JOHTO_OLIVINE_CITY_WIDTH * 2 - 1
+ jr nc,.block
+ jr .clear
+.west
+ ld a,[wXCoord]
+ and a
+ jr z,.block ; Route40 not registered
+ jr .clear
+.south
+ ld a,[wYCoord]
+ cp JOHTO_OLIVINE_CITY_HEIGHT * 2 - 1
+ jr nc,.block ; Route40/sea are not developed
+ jr .clear
+.north
+ ld a,[wYCoord]
+ and a
+ jr nz,.clear
+ ld a,[wXCoord]
+ cp 18
+ jr c,.block
+ cp 22
+ jr c,.clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoOlivineCityCanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.block
+ ld a,[wCurLocalMapID]
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr nz,.block
+ ; The north connection can enter from the four Gold road cells only.
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz,.mask
+ ld a,[wYCoord]
+ and a
+ jr nz,.mask
+ ld a,[wXCoord]
+ cp 18
+ jr c,.mask
+ cp 22
+ jr c,.clear
+.mask
+ ld hl,JohtoOlivineCityBlockedRows
+ ld d,JOHTO_OLIVINE_CITY_WIDTH * 2
+ ld e,5
+ jp JohtoModernMaskedStep
+.clear
+ and a
+ ret
+.block
+ scf
+ ret
+JohtoOlivineCityBlockedRows::
+ INCBIN "maps/JohtoOlivineCity.blocked_mask.bin"
+
 ; West-line A: Gold Route38 40x18 quadrant mask, no Surf/Cut to open.
 ; Route39 is unregistered; the west edge is physically closed.
 ; City side is visible but the road must pass through the paired gate Warp.
@@ -634,9 +797,14 @@ JohtoRoute38EdgeFence::
 	jr .allowed
 .west
 	ld a, [wXCoord]
-	and a
-	jr z, .blocked
-	jr .allowed
+ and a
+ jr nz, .allowed
+ ld a, [wYCoord]
+ cp 8
+ jr c, .blocked
+ cp 12
+ jr nc, .blocked
+ jr .allowed
 .east
 	ld a, [wXCoord]
 	cp JOHTO_ROUTE_38_WIDTH * 2 - 1
@@ -655,6 +823,19 @@ JohtoRoute38CanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_38_LOCAL_ID
 	jr nz, .blocked
+ ; West boundary is an open 4-tile Gold lane into Route39.
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr nz, .checkRightGate
+ ld a, [wXCoord]
+ and a
+ jr nz, .checkRightGate
+ ld a, [wYCoord]
+ cp 8
+ jr c, .checkRightGate
+ cp 12
+ jp c, .allowed
+.checkRightGate
 	; Gold RIGHT_WARP_CARPET: enter from x34 y8/9 and then exit
 	; toward x36 through existing collision-based warp check.
 	ld a, [wPlayerDirection]
@@ -2328,7 +2509,11 @@ JohtoNativeCanStepAhead::
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37
 	cp JOHTO_ROUTE_38_LOCAL_ID
-	jr z, .route38
+ jr z, .route38
+ cp JOHTO_ROUTE_39_LOCAL_ID
+ jr z, .route39
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr z, .olivine
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 	jr z, .route38Gate
 	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
@@ -2369,8 +2554,14 @@ JohtoNativeCanStepAhead::
 	call JohtoRoute37CanStepAhead
 	jr .handled
 .route38
-	call JohtoRoute38CanStepAhead
-	jr .handled
+ call JohtoRoute38CanStepAhead
+ jr .handled
+.route39
+ call JohtoRoute39CanStepAhead
+ jr .handled
+.olivine
+ call JohtoOlivineCityCanStepAhead
+ jr .handled
 .route38Gate
 	call JohtoRoute38EcruteakGateCanStepAhead
 	jr .handled

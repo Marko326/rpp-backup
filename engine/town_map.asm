@@ -1214,6 +1214,10 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute42Name
 	db 60, 116 ; Gold MahoganyTown LANDMARK, pre-existing browse name
 	dw JohtoMahoganyName
+ db 64, 44 ; Route39 original Gold browse landmark25
+ dw JohtoBrowseRoute39Name
+ db 76, 44 ; OlivineCity original Gold browse landmark26
+ dw JohtoOlivineName
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

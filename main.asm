@@ -3361,6 +3361,19 @@ INCLUDE "data/mapObjects/JohtoRoute38.asm"
 INCLUDE "scripts/JohtoRoute38.asm"
 JohtoRoute38Blocks: INCBIN "maps/JohtoRoute38.blk"
 
+; West-line seamless pair uses the same JOHTO_ROM_BANK as Route38.
+SECTION "Johto Route39 Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoRoute39.asm"
+INCLUDE "data/mapObjects/JohtoRoute39.asm"
+INCLUDE "scripts/JohtoRoute39.asm"
+JohtoRoute39Blocks: INCBIN "maps/JohtoRoute39.blk"
+
+SECTION "Johto Olivine City Map", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/mapHeaders/JohtoOlivineCity.asm"
+INCLUDE "data/mapObjects/JohtoOlivineCity.asm"
+INCLUDE "scripts/JohtoOlivineCity.asm"
+JohtoOlivineCityBlocks: INCBIN "maps/JohtoOlivineCity.blk"
+
 SECTION "Johto Route38 Ecruteak Gate Map", ROMX, BANK[$44]
 INCLUDE "data/mapHeaders/JohtoRoute38EcruteakGate.asm"
 INCLUDE "data/mapObjects/JohtoRoute38EcruteakGate.asm"
@@ -3613,16 +3626,20 @@ JohtoRoute32CollisionFence::
 JohtoNativeCollisionFence::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .legacyNative
+	jp nz, .legacyNative
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr z, .route35Native
+	jp z, .route35Native
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jr z, .route36Native
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37Native
 	cp JOHTO_ROUTE_38_LOCAL_ID
-	jr z, .route38Native
+ jr z, .route38Native
+ cp JOHTO_ROUTE_39_LOCAL_ID
+ jr z, .route39Native
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr z, .olivineNative
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakNative
 	cp JOHTO_ROUTE_42_LOCAL_ID
@@ -3655,8 +3672,14 @@ JohtoNativeCollisionFence::
 	callba JohtoRoute37EdgeFence
 	ret
 .route38Native
-	callba JohtoRoute38EdgeFence
-	ret
+ callba JohtoRoute38EdgeFence
+ ret
+.route39Native
+ callba JohtoRoute39EdgeFence
+ ret
+.olivineNative
+ callba JohtoOlivineCityEdgeFence
+ ret
 .ecruteakNative
 	callba JohtoEcruteakCityEdgeFence
 	ret
