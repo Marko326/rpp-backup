@@ -11,7 +11,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 INPUTS = (
     'constants/map_constants.asm', 'constants/region_map_constants.asm',
-    'constants/johto_fixed_map_ids.asm',
+    'constants/johto_fixed_map_ids.asm', 'constants/music_constants.asm',
     'data/map_header_pointers.asm', 'data/map_header_banks.asm',
     'data/map_songs.asm', 'data/hide_show_data.asm',
     'data/johto_map_headers.asm', 'engine/overworld/region_map_lookup.asm',
@@ -184,6 +184,21 @@ def audit(root=ROOT):
                   'JohtoNativeGSCMusicEnd::', r'db')
     if len(gsc) != count:
         errors.append(f'native GSC music table count {len(gsc)} != {count}')
+    # ASM/JSON agreement does not prove that an RGBDS symbol exists.  An
+    # undeclared music ID is a link-time Unknown symbol even when both tables
+    # agree on the same typo.  Validate every active slot independently against
+    # the actual music ID declarations, not the manifest or a second copy.
+    declared_music = set(re.findall(
+        r'(?m)^\s*const\s+(MUSIC_[A-Za-z0-9_]+)\b',
+        sources['constants/music_constants.asm']))
+    for slot, value in enumerate(gsc):
+        token = value.split(';', 1)[0].strip()
+        if token == '0':  # The source-dependent legacy gate is deliberately unresolved.
+            continue
+        if not re.fullmatch(r'MUSIC_GBP_GSC_[A-Za-z0-9_]+', token):
+            errors.append(f'Johto local {slot} malformed native GSC music token: {token}')
+        elif token not in declared_music:
+            errors.append(f'Johto local {slot} undefined GSC music constant: {token}')
     indices_table = entries(sources['engine/overworld/johto_town_map_helpers.asm'], 'JohtoNativeTownMapIndices::',
                             'JohtoNativeTownMapIndicesEnd::', r'db')
     # One db row may hold several comma-separated indices.

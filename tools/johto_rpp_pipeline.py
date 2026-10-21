@@ -372,6 +372,53 @@ def stage_adjacent_pair(rpp: Path, gold: Path, output: Path, names: tuple[str, s
     dump(output, 'adjacent_pair_manifest.json', info)
     return info
 
+def stage_adjacent_chain(rpp: Path, gold: Path, output: Path,
+                         names: tuple[str, ...]) -> dict:
+    """Use Gold's existing converter to stage a strictly connected batch.
+
+    Each consecutive pair needs two reciprocal, frozen Gold connections;
+    do not equate numeric stable ID order with actual geographic adjacency.
+    All topology is checked *before* the first file is written.
+    """
+    from johto_rpp_connection_guard import (check_frozen_gold_source,
+                                            GATE_REPLACED_DIRECT_SEAMS)
+    rpp, gold, output = safe_roots(rpp, gold, output)
+    if not 2 <= len(names) <= 3 or len(names) != len(set(names)) or any(
+            not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', name) for name in names):
+        raise ConversionError('Adjacent chain requires 2-3 distinct Gold maps')
+    inventory = {item['name']: item for item in layout_inventory(gold)}
+    if any(name not in inventory for name in names):
+        raise ConversionError('Adjacent chain contains an unknown Gold map')
+    seams = check_frozen_gold_source(gold)
+    links=[]
+    for first,second in zip(names,names[1:]):
+        fwd=[(direction,offset) for (src,direction),(dst,offset) in seams.items()
+             if src==first and dst==second]
+        back=[(direction,offset) for (src,direction),(dst,offset) in seams.items()
+              if src==second and dst==first]
+        if len(fwd)!=1 or len(back)!=1 or any(
+            (a,b,c) in GATE_REPLACED_DIRECT_SEAMS for a,b,c in
+            ((first,fwd[0][0],second),(second,back[0][0],first))):
+            raise ConversionError(f'{first} and {second} are not a direct bidirectional Gold connection')
+        links.extend([{'from':first,'to':second,'direction':fwd[0][0],
+                       'gold_offset_blocks':fwd[0][1]},
+                      {'from':second,'to':first,'direction':back[0][0],
+                       'gold_offset_blocks':back[0][1]}])
+    results=[]
+    for name in names:
+        dest=output/name
+        safe_roots(rpp,gold,dest)
+        results.append(stage_gold_map_candidate(rpp,gold,dest,name,
+                       tileset_key(inventory[name]['tileset'])))
+    info={'schema':'johto-gold-adjacent-chain-source-v1',
+          'maps':results,'direct_seams':links,'source_adjacent':True,
+          'source_geometry_verified':all(r['staged_blk_matches_gold'] for r in results),
+          'runtime_approved':False,'build_performed':False,
+          'status':'OFFLINE_CHAIN_REVIEW_REQUIRED'}
+    dump(output,'adjacent_chain_manifest.json',info)
+    return info
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--gold-root', type=Path, required=True)
@@ -383,6 +430,8 @@ def main():
     ap.add_argument('--gold-map', default=None, help='single Gold map candidate using its own tileset')
     ap.add_argument('--adjacent-pair', nargs=2, metavar=('FIRST', 'SECOND'),
                     help='stage two directly adjacent Gold maps and audit their source topology')
+    ap.add_argument('--adjacent-chain', nargs='+', metavar='MAP',
+                    help='stage a Gold-connected sequence of 2-3 maps with reciprocal seams')
     ap.add_argument('--gold-tileset', default=None, help='Optional cross-check; inferred from Gold registration if omitted')
     ap.add_argument('--rpp-map', default=None, help='When already wired, review the existing RPP map registration and Warp contract')
     ap.add_argument('--runtime-gate', action='store_true',
@@ -403,6 +452,14 @@ def main():
         ap.error('--rpp-map requires --gold-map')
     if args.runtime_gate and (not args.gold_map or args.audit_only):
         ap.error('--runtime-gate requires --gold-map and cannot be used with --audit-only')
+    if args.adjacent_chain:
+        if (args.gold_map or args.audit_only or args.runtime_gate or args.rpp_map or
+            args.full_gold_corpus or args.gold_tileset or args.adjacent_pair):
+            ap.error('--adjacent-chain cannot combine with other modes')
+        info=stage_adjacent_chain(project,gold,output,tuple(args.adjacent_chain))
+        print('Gold adjacent chain:',json.dumps({'maps':args.adjacent_chain,
+              'seams':info['direct_seams'],'status':info['status']},ensure_ascii=False))
+        return 0
     if args.adjacent_pair:
         if args.gold_map or args.audit_only or args.runtime_gate or args.rpp_map or args.full_gold_corpus or args.gold_tileset:
             ap.error('--adjacent-pair cannot combine with other staging modes')

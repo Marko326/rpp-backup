@@ -89,7 +89,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         (items, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba JohtoSurfStartOnWater ; carry CLEAR = approved water ahead\n\tret', 'bag/party Surf inverse-carry Surf entry'),
         (home, 'cp JOHTO\n\tjr z, .johtoWater\n\tcp JOHTO_UNION_CAVE\n\tjr nz, .legacyWater\n.johtoWater\n\tcallba IsJohtoSurfWaterAhead\n\tjr c, .noCollision', 'Surf movement water branch'),
         (home, '\tld c, a ; preserve the tile for the existing walkable shore test\n\tjr .checkIfNextTileIsPassable', 'Surf shore dismount'),
-        (runtime, 'cp JOHTO_UNION_CAVE\n\tjr z, .johtoAllowed\n\tcp JOHTO\n\tjr nz, .kanto\n\tld a, [wCurMap]\n\tcp JOHTO_ROUTE_32\n\tjr z, .route32\n\tcp REGION_NATIVE_MAP_SLOT\n\tjr nz, .kanto\n\tld a, [wCurLocalMapID]\n\tcp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ROUTE_42_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_OLIVINE_CITY_LOCAL_ID\n\tjr nz, .kanto\n.route32\n\tld a, [wCurRegion]\n\tcp MAP_REGION_JOHTO\n\tjr nz, .kanto\n.johtoAllowed\n\tscf\n\tret\n.kanto', 'staged Route35/Route32/cave badge-free Surf permission'),
+
         (runtime, 'ld a, [wObtainedKantoBadges]\n\tbit 4, a ; SOUL_BADGE\n\tjr z, .denied', 'Kanto Soul Badge preserved'),
         (field, 'callba JohtoSurfBadgeAllowed\n\tjr nc, .cannotSurf', 'water interaction shared permission check'),
         (menu, 'callba JohtoSurfBadgeAllowed\n\tjp nc, .newBadgeRequired', 'party menu shared permission check'),
@@ -98,6 +98,19 @@ def audit(root: Path, gold: Path) -> list[str]:
     for source, token, name in must_have:
         if token not in source:
             errors.append(f'cave Surf runtime contract missing/broken: {name}')
+    if 'cp JOHTO_ROUTE_32\n\tjr z, .route32' not in runtime.split('JohtoSurfBadgeAllowed::',1)[-1]:
+        errors.append('staged Route35/Route32/cave badge-free Surf permission: Route32 branch polarity wrong')
+    # Permission must remain explicit per local map and preserve old Johto and
+    # Kanto cases. Require each approved ID in the executed badge handler.
+    badge=runtime.split('JohtoSurfBadgeAllowed::',1)[-1].split('\n.kanto\n',1)[0]
+    for local in ('JOHTO_ROUTE_35_LOCAL_ID','JOHTO_RUINS_OF_ALPH_LOCAL_ID',
+                  'JOHTO_ECRUTEAK_CITY_LOCAL_ID','JOHTO_ROUTE_42_LOCAL_ID',
+                  'JOHTO_OLIVINE_CITY_LOCAL_ID','JOHTO_ROUTE_40_LOCAL_ID',
+                  'JOHTO_ROUTE_41_LOCAL_ID','JOHTO_CIANWOOD_CITY_LOCAL_ID'):
+        if not re.search(r'cp '+local+r'\s+(?:jr|jp)\s+(?:z,\s*\.route32|nz,\s*\.kanto)', badge):
+            errors.append('Surf exact badge whitelist missing '+local)
+    if 'cp JOHTO_UNION_CAVE' not in badge or 'cp JOHTO_ROUTE_32' not in badge:
+        errors.append('legacy cave/Route32 Surf badge behavior removed')
     # Exact native map, bounds and facing checks are required on Route35.
     route35_must = (
         'IsJohtoRoute35WaterAhead::',
@@ -175,7 +188,8 @@ def audit(root: Path, gold: Path) -> list[str]:
         'cp 2\n\tjr c, .notWater\n\tcp 6\n\tjr nc, .notWater',
         'cp 26\n\tjr c, .notWater\n\tcp 30\n\tjr nc, .notWater',
         'cp 12\n\tjr c, .notWater\n\tcp 16\n\tjr nc, .notWater',
-        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_ROUTE_42_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_OLIVINE_CITY_LOCAL_ID\n\tjr nz, .kanto',
+        'cp JOHTO_ROUTE_35_LOCAL_ID\n\tjr z, .route32\n\tcp JOHTO_RUINS_OF_ALPH_LOCAL_ID\n\tjr z, .route32',
+
     )
     for token in native_dispatch:
         if token not in runtime:
@@ -212,7 +226,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         errors.append('no native map capabilities for Surf')
     else:
         for entry in identities['maps']:
-            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 26, 63) else 'DEFERRED'
+            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 26, 27, 28, 29, 63) else 'DEFERRED'
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):

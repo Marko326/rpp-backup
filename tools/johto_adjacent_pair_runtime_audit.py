@@ -33,8 +33,8 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
         objects = {n: content(f'data/mapObjects/Johto{n}.asm').decode()
                    for n in ('Route39', 'OlivineCity')}
         capabilities = json.loads(content('tools/johto_native_maps.json'))['maps']
-        if 'DEF NUM_JOHTO_MAPS EQU 30' not in constants:
-            errors.append('pair requires 30 physical active headers')
+        if 'DEF NUM_JOHTO_MAPS EQU 33' not in constants:
+            errors.append('pair requires 33 physical active headers')
         for name, stable, slot in (('Route39', 25, 28), ('OlivineCity', 26, 29)):
             if f'dw Johto{name}_h ; stable ID{stable} -> slot{slot}' not in registry:
                 errors.append(f'{name} stable ID -> dense active slot corrupted')
@@ -53,11 +53,9 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
             line=f'db {origin}, {direction}, MAP_REGION_JOHTO, {target}'
             if len(re.findall(r'^\s*'+re.escape(line)+r'\s*$',runtime,re.M)) != 1:
                 errors.append(f'missing/duplicate actual runtime connection {origin} -> {target}')
-        for name, flag in (('Route38','WEST | EAST'),('Route39','SOUTH | EAST'),('OlivineCity','NORTH')):
+        for name, flag in (('Route38','WEST | EAST'),('Route39','SOUTH | EAST'),('OlivineCity','NORTH | WEST')):
             if not re.search(r'(?m)^\s*db '+re.escape(flag)+r'\s*$',headers[name]):
                 errors.append(f'{name} live physical edge flag differs')
-        if re.search(r'(?m)^\s*db\s+(?:SOUTH|WEST|EAST)(?:\s|$)',headers['OlivineCity']):
-            errors.append('Olivine unfinished Route40 coastline opened')
 
         for name, width, height, expected_water in (('Route39',10,18,None),('OlivineCity',20,18,406)):
             base=f'maps/Johto{name}'
@@ -94,7 +92,8 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
                     errors.append(f'{name} Surf bitmap widened/drifted from Gold {expected_water} WATER cells')
                 if 'jp z, IsJohtoOlivineWaterAhead' not in surf or 'JohtoOlivineWaterRows::' not in surf:
                     errors.append('Olivine Surf runtime not connected')
-                if ('cp JOHTO_OLIVINE_CITY_LOCAL_ID\n\tjr nz, .kanto' not in surf):
+                if ('cp JOHTO_OLIVINE_CITY_LOCAL_ID' not in surf or
+                    'cp JOHTO_ROUTE_40_LOCAL_ID' not in surf):
                     errors.append('Olivine badge/SURF usage not permitted explicitly')
         gold_hops,_=plan_gold_quadrant_collision(gold,'Route39','johto')
         hop_section=re.split(r'(?m)^\.route39Hops\s*$',ledges,maxsplit=1)[-1].split('db $ff',1)[0]
@@ -103,7 +102,7 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
         expected={(str(h['x']),str(h['y']),dirset[(h['dx'],h['dy'])]) for h in gold_hops['hops']}
         if set(raw)!=expected or len(raw)!=len(expected) or len(raw)!=20:
             errors.append('Route39 executable 20 Gold jump directions missing/changed')
-        if 'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID' not in fly or 'cp 8\n\tjr c, .nextReady' not in fly:
+        if 'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID' not in fly or 'cp 9\n\tjr c, .nextReady' not in fly:
             errors.append('Olivine Fly cursor/physical ID not active')
     except (OSError,IndexError,KeyError,ValueError,TypeError) as exc:
         errors.append(f'adjacent runtime source audit failed closed: {exc}')

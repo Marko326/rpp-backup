@@ -10,6 +10,9 @@ from pathlib import Path
 import re
 
 MAPPINGS = {
+    'JOHTO_ROUTE_40_LOCAL_ID': 'JohtoRoute40CanStepAhead',
+    'JOHTO_ROUTE_41_LOCAL_ID': 'JohtoRoute41CanStepAhead',
+    'JOHTO_CIANWOOD_CITY_LOCAL_ID': 'JohtoCianwoodCityCanStepAhead',
     'JOHTO_ROUTE_38_LOCAL_ID': 'JohtoRoute38CanStepAhead',
     'JOHTO_ROUTE_39_LOCAL_ID': 'JohtoRoute39CanStepAhead',
     'JOHTO_OLIVINE_CITY_LOCAL_ID': 'JohtoOlivineCityCanStepAhead',
@@ -69,11 +72,11 @@ def audit(root, overrides=None):
         errors.append('native collision dispatcher / original callees must remain co-banked in ROMX $43')
     if not re.match(r'\s*ld a, \[wCurLocalMapID\]\s+', romx):
         errors.append('ROMX native collision dispatcher must load exact local map ID')
-    compare = re.findall(r'(?m)^\s*cp (JOHTO_\w+_LOCAL_ID)\s*\n\s*jr (\w+), (\.\w+)',
+    compare = re.findall(r'(?m)^\s*cp (JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) (\w+),\s*(\.\w+)',
                          romx.split('\n\tld e, 0\n', 1)[0])
     if len(compare) != len(MAPPINGS) or {x[0] for x in compare} != set(MAPPINGS) or any(cond != 'z' for _, cond, _ in compare):
         errors.append('ROMX native collision local-ID inventory / equality branches changed')
-    branches = re.findall(r'(?m)^(\.\w+)\n\s*call (Johto\w+CanStepAhead)\n(?=\s*(?:jr \.handled|\.handled))',romx)
+    branches = re.findall(r'(?m)^(\.\w+)\n\s*call (Johto\w+CanStepAhead)\n(?=\s*(?:(?:jr|jp) \.handled|\.handled))',romx)
     if len(branches) != len(set(MAPPINGS.values())) or len({b for b,_ in branches}) != len(branches):
         errors.append('ROMX native collision callee branches missing or duplicated')
     targets = dict(branches)

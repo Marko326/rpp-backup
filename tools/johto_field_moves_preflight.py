@@ -68,7 +68,7 @@ def audit(root: Path, gold: Path) -> list[str]:
             features = entry.get('feature_status', {})
             for name in ('surf', 'dig', 'escape_rope'):
                 local_id = entry.get('local_id')
-                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8, 17, 20, 22, 26, 63))
+                expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8, 17, 20, 22, 26, 27, 28, 29, 63))
                             or (name in ('dig', 'escape_rope') and local_id == 8)
                             else 'DEFERRED')
                 if features.get(name) != expected:

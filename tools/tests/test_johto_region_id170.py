@@ -82,19 +82,55 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoOlivineName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoCianwoodName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
+
+    def test_native_music_symbols_must_be_declared(self):
+        # A typo in a single ASM row must fail before RGBDS linking.
+        self.mutate('engine/menu/options_menu.asm',
+                    'db MUSIC_GBP_GSC_ROUTE36 ; Route40',
+                    'db MUSIC_GBP_GSC_ROUTE_36 ; Route40',
+                    'undefined GSC music constant: MUSIC_GBP_GSC_ROUTE_36')
+
+    def test_matching_asm_and_manifest_typos_still_fail(self):
+        # Previous audit only compared two tables; the same typo in both passed.
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in INPUTS:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            asm = root / 'engine/menu/options_menu.asm'
+            source = asm.read_text(encoding='utf-8')
+            self.assertIn('db MUSIC_GBP_GSC_ROUTE36 ; Route40', source)
+            asm.write_text(source.replace('db MUSIC_GBP_GSC_ROUTE36 ; Route40',
+                                          'db MUSIC_GBP_GSC_ROUTE_36 ; Route40', 1))
+            reg = root / 'tools/johto_native_maps.json'
+            contract = json.loads(reg.read_text(encoding='utf-8'))
+            route40, = (row for row in contract['maps']
+                        if row['local_symbol'] == 'JOHTO_ROUTE_40_LOCAL_ID')
+            route40['gsc_music'] = 'MUSIC_GBP_GSC_ROUTE_36'
+            reg.write_text(json.dumps(contract), encoding='utf-8')
+            self.assertTrue(any('undefined GSC music constant: MUSIC_GBP_GSC_ROUTE_36' in e
+                                for e in audit(root)))
+
+    def test_deleted_gsc_music_declaration_is_fatal(self):
+        # Detect a missing constant even when the ASM+JSON references are valid.
+        self.mutate('constants/music_constants.asm',
+                    'const MUSIC_GBP_GSC_ROUTE36',
+                    'const MUSIC_GBP_GSC_ROUTE_36',
+                    'undefined GSC music constant: MUSIC_GBP_GSC_ROUTE36')
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Gold VioletCity theme\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_ECRUTEAK_CITY ; Cianwood, matched map registry\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):
         # Town Map index rows moved out of engine/town_map.asm in SPID .227.
         # Reject a missing final landmark even while name/header tables are intact.
         self.mutate('engine/overworld/johto_town_map_helpers.asm',
-                    ', 24, 24, 32, 32, 34, 25, 26 ; Route35 gate Gold landmark17; Mahogany landmark34',
+                    ', 24, 24, 32, 32, 34, 25, 26, 28, 30, 31 ; completed Route40/41/Cianwood chain',
                     ', 22 ; Route38 gate and Route38',
                     'native Town Map index count')
 
@@ -109,9 +145,9 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; OlivineCity\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; OlivineCity\nJohtoMapLegacyAliasesEnd::',
-                    'local 29 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; CianwoodCity\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; CianwoodCity\nJohtoMapLegacyAliasesEnd::',
+                    'local 32 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:

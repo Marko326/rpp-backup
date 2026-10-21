@@ -851,6 +851,207 @@ def check_native_connection_selector(project, current, target, direction):
             f'{symbols[current]}/{direction_index} gives {matches}, expected {[wanted]}')
 
 
+def check_native_connection_preview_abi(project):
+    """Prove the edge-direction argument survives RPP's far-call ABI.
+
+    The $40/$45 seam once passed direction in A; Bankswitch overwrites A
+    with BANK(callee), so source-only geometry tests missed wrong-bank art.
+    This rule covers every cardinal preview, not just the current sea maps.
+    """
+    home = (project/'home/overworld.asm').read_text(encoding='utf-8')
+    resolver = (project/'engine/overworld/region_map_lookup.asm').read_text(encoding='utf-8')
+    macro = (project/'macros/asm_macros.asm').read_text(encoding='utf-8')
+    switch = (project/'home.asm').read_text(encoding='utf-8')
+    if not re.search(r'callab: MACRO.*?rst \$18', macro, re.S) or not re.search(
+            r'Bankswitch::.*?ld a,b.*?jp hl', switch, re.S):
+        raise ConnectionError('Cannot prove far-call ABI: direction register unknown')
+    if 'ResolveNativeConnectionPreviewBank::' not in resolver:
+        raise ConnectionError('Missing native connection preview bank resolver')
+    resolver_body = resolver.split('ResolveNativeConnectionPreviewBank::',1)[1].split(
+        'NativeRegionConnectionTargets::',1)[0]
+    if not re.search(r'^\s*ld c,e\s*$',resolver_body,re.M):
+        raise ConnectionError('Preview ABI: far call clobbers A; use E to pass direction to ld c,e')
+    block = home.split('.northConnection\n',1)[-1].split(
+        'LoadNorthSouthConnectionsTileMap::',1)[0]
+    sites = re.findall(r'ld ([ae]),([0-3])\s+callab ResolveNativeConnectionPreviewBank',block)
+    if sites != [('e',str(i)) for i in range(4)]:
+        raise ConnectionError('Preview ABI: all four far-call edge directions must use E, not A: '+str(sites))
+    if block.count('ld [MBC1RomBank],a')!=4 or block.count('ld [H_LOADEDROMBANK],a')!=4:
+        raise ConnectionError('Preview ABI: four destination bank switches required')
+    if not re.search(r'\bld e,\[hl\]',resolver_body):
+        raise ConnectionError('Preview ABI: neighbor bank must be returned in E')
+
+
+def check_sea_chain_surf_outer_edge(project, gold):
+    """Reject the executable Surf -> legacy-land fallthrough at a map edge.
+
+    Source-only contract plus independent Gold WATER connectivity: an ocean
+    preview is not a new connection, and a passable 8x8 tile outside the map
+    must never trigger a forced Surf dismount. Not a phone/CPU trace.
+    """
+    home=(project/'home/overworld.asm').read_text(encoding='utf-8')
+    source=(project/'engine/overworld/johto_union_cave_surf.asm').read_text(encoding='utf-8')
+    branch=home.split('CollisionCheckOnWater::',1)[-1].split('RunMapScript::',1)[0]
+    pattern=(r'callba IsJohtoSurfWaterAhead\s+jr c, \.noCollision[^\n]*\n'
+             r'(?:(?:\s*;[^\n]*\n)*)\s*callba IsJohtoSeaChainUnsafeSurfEdge\s+'
+             r'jr c, \.collision\s+ld a, \[wTileInFrontOfPlayer\]')
+    if not re.search(pattern,branch):
+        raise ConnectionError('Sea Surf edge guard must execute after WATER and before legacy shore fallback')
+    if 'IsJohtoSeaChainUnsafeSurfEdge::' not in source:
+        raise ConnectionError('Missing Surf outer-edge predicate')
+    body=source.split('IsJohtoSeaChainUnsafeSurfEdge::',1)[1].split('; Shared Gold WATER bitmap read',1)[0]
+    allowed=('JOHTO_OLIVINE_CITY_LOCAL_ID','JOHTO_ROUTE_40_LOCAL_ID',
+             'JOHTO_ROUTE_41_LOCAL_ID','JOHTO_CIANWOOD_CITY_LOCAL_ID')
+    for identity in allowed:
+        if 'cp '+identity not in body:
+            raise ConnectionError('Surf outer-edge map whitelist missing '+identity)
+    # Reject a helper which mistakenly claims a valid Gold seam is blocked:
+    # the water dispatch MUST run first, with carry immediately accepted.
+    for token in ('cp REGION_NATIVE_MAP_SLOT','cp MAP_REGION_JOHTO',
+                  'cp PLAYER_DIR_LEFT','cp PLAYER_DIR_UP',
+                  'cp PLAYER_DIR_RIGHT','cp PLAYER_DIR_DOWN',
+                  'ld a,[wCurrentMapHeight2]','ld a,[wCurrentMapWidth2]',
+                  'jr z,.blocked','.blocked\n scf\n pop bc\n ret',
+                  '.clear\n and a\n pop bc\n ret'):
+        if token not in body:
+            raise ConnectionError('Surf outer-edge predicate contract changed: '+token)
+    # Both Gold land-shapes and the runtime WATER masks are compared via the
+    # dedicated Gold sea-chain tests. Here we also freeze the real topology;
+    # the port lagoon is not a secret south connection into Route40.
+    if ('OlivineCity west Route40 9' not in GOLD_DIRECT_SEAMS or
+        re.search(r'(?m)^OlivineCity south ',GOLD_DIRECT_SEAMS)):
+        raise ConnectionError('Gold Olivine route topology was changed to invent a south exit')
+    return True
+
+
+def check_olivine_route40_walk_seam(project, gold, *, collision_source=None):
+    """Execute the restricted native collision ASM for every Gold coast seam cell.
+
+    Gold FLOOR/FLOOR must pass *both* edge and land-mask predicates. WATER
+    is a Surf-only exit. Any other role pair must block. Unknown opcodes fail
+    closed rather than silently accepting an unverified source-code shape.
+    """
+    from johto_gold_cells import decode_cells
+    root = Path(gold)
+    met = (root/'data/tilesets/johto_metatiles.bin').read_bytes()
+    coll = (root/'data/tilesets/johto_collision.asm').read_text()
+    def cells(name, width, height):
+        return {(c['x'],c['y']):c['role'] for c in decode_cells(
+            (root/'maps'/f'{name}.blk').read_bytes(),met,coll,width,height)}
+    olivine=cells('OlivineCity',20,18)
+    route=cells('Route40',10,18)
+    source=(collision_source if collision_source is not None else
+            (Path(project)/'engine/overworld/johto_route33_collision.asm').read_text())
+    width={'JOHTO_OLIVINE_CITY_WIDTH':20,'JOHTO_ROUTE_40_WIDTH':10}
+    def subroutine(name):
+        pattern=r'(?m)^'+re.escape(name)+r'::\s*$'
+        found=re.search(pattern,source)
+        if not found:
+            raise ConnectionError('Missing land seam predicate: '+name)
+        part=re.split(r'(?m)^\w+::\s*$',source[found.end():],maxsplit=1)[0]
+        lines=[]; labels={}
+        for raw in part.splitlines():
+            line=raw.split(';',1)[0].strip()
+            if not line:continue
+            if re.fullmatch(r'\.[a-zA-Z0-9_]+',line):
+                if line in labels:raise ConnectionError('Duplicate local collision label '+line)
+                labels[line]=len(lines)
+            elif re.fullmatch(r'\w+::',line):
+                break
+            else: lines.append(line)
+        return lines,labels
+    def run(name,x,y,direction):
+        instr,labels=subroutine(name)
+        a=0; zero=False; carry=False; hl=None; stride=None; rowbytes=None
+        def eval_cp(expr):
+            expr=expr.strip()
+            if expr in width:return width[expr]
+            if expr=='MAP_REGION_JOHTO':return 'MAP_REGION_JOHTO'
+            if expr.startswith('JOHTO_') and expr.endswith('_LOCAL_ID'):return expr
+            if expr.startswith('PLAYER_DIR_'):return expr
+            if expr in ('JOHTO_OLIVINE_CITY_WIDTH * 2 - 1','JOHTO_ROUTE_40_WIDTH * 2 - 1'):
+                return width[expr.split(' *')[0]]*2-1
+            if expr in ('JOHTO_OLIVINE_CITY_WIDTH * 2','JOHTO_ROUTE_40_WIDTH * 2'):
+                return width[expr.split(' *')[0]]*2
+            if expr.isdecimal():return int(expr)
+            raise ConnectionError('Unsupported collision comparison: '+expr)
+        env={'[wCurRegion]':'MAP_REGION_JOHTO',
+             '[wCurLocalMapID]':'JOHTO_OLIVINE_CITY_LOCAL_ID' if 'Olivine' in name else 'JOHTO_ROUTE_40_LOCAL_ID',
+             '[wXCoord]':x,'[wYCoord]':y,'[wPlayerDirection]':direction}
+        pos=0
+        for _ in range(100):
+            if pos<0 or pos>=len(instr):
+                raise ConnectionError('Collision routine fell through '+name)
+            line=instr[pos];pos+=1
+            m=re.fullmatch(r'ld\s+(a|hl|d|e),\s*(.+)',line)
+            if m:
+                reg,arg=m.groups()
+                if reg=='a':a=env[arg] if arg in env else eval_cp(arg)
+                elif reg=='hl':hl=arg
+                elif reg=='d':stride=eval_cp(arg)
+                else:rowbytes=eval_cp(arg)
+                continue
+            if line=='and a':zero=(a==0);carry=False;continue
+            if line=='scf':carry=True;continue
+            if line=='ret':return carry
+            m=re.fullmatch(r'cp\s+(.+)',line)
+            if m:
+                other=eval_cp(m.group(1));zero=(a==other)
+                carry=(a<other) if isinstance(a,int) and isinstance(other,int) else False
+                continue
+            m=re.fullmatch(r'(jr|jp)\s+(?:(z|nz|c|nc),\s*)?(\.\w+|JohtoModernMaskedStep)',line)
+            if m:
+                _,flag,target=m.groups()
+                take=(flag is None or {'z':zero,'nz':not zero,'c':carry,'nc':not carry}[flag])
+                if not take:continue
+                if target=='JohtoModernMaskedStep':
+                    src='JohtoOlivineCity' if 'Olivine' in name else 'JohtoRoute40'
+                    expect_width=40 if src.endswith('OlivineCity') else 20
+                    expect_bytes=5 if expect_width==40 else 3
+                    if (hl!=src+'BlockedRows' or stride!=expect_width or rowbytes!=expect_bytes):
+                        raise ConnectionError('Wrong land mask binding '+name)
+                    dx={'PLAYER_DIR_LEFT':-1,'PLAYER_DIR_RIGHT':1,
+                        'PLAYER_DIR_UP':0,'PLAYER_DIR_DOWN':0}[direction]
+                    dy={'PLAYER_DIR_LEFT':0,'PLAYER_DIR_RIGHT':0,
+                        'PLAYER_DIR_UP':-1,'PLAYER_DIR_DOWN':1}[direction]
+                    nx,ny=x+dx,y+dy
+                    if not (0<=nx<expect_width and 0<=ny<36):return True
+                    mask=(Path(project)/'maps'/f'{src}.blocked_mask.bin').read_bytes()
+                    return bool(mask[ny*expect_bytes+nx//8] & (1<<(nx%8)))
+                if target not in labels:raise ConnectionError('Unknown collision target: '+target)
+                pos=labels[target]
+                continue
+            raise ConnectionError('Unsupported collision instruction '+name+': '+line)
+        raise ConnectionError('Nonterminating collision predicate: '+name)
+    olivine_edge='JohtoOlivineCityEdgeFence'
+    olivine_land='JohtoOlivineCityCanStepAhead'
+    route_edge='JohtoRoute40EdgeFence'
+    route_land='JohtoRoute40CanStepAhead'
+    checked=[]
+    for y in range(36):
+        other=y-18
+        role1=olivine[(0,y)]
+        role2=route.get((19,other))
+        allow=role1==role2 and role1 in ('FLOOR','WATER')
+        walk=role1==role2=='FLOOR'
+        for name,step,yy,xx,dirn in ((olivine_edge,False,y,0,'PLAYER_DIR_LEFT'),
+                                       (olivine_land,True,y,0,'PLAYER_DIR_LEFT')):
+            actual=not run(name,xx,yy,dirn)
+            if actual!=(walk if step else allow):
+                raise ConnectionError(f'Gold walk seam mismatch {name} y={yy}: '
+                                      f'roles={role1}/{role2}, allowed={actual}')
+        if 0<=other<36:
+            for name,step in ((route_edge,False),(route_land,True)):
+                actual=not run(name,19,other,'PLAYER_DIR_RIGHT')
+                if actual!=(walk if step else allow):
+                    raise ConnectionError(f'Gold reverse walk seam mismatch {name} y={other}: '
+                                          f'roles={role2}/{role1}, allowed={actual}')
+        if walk:checked.append(y)
+    if checked != [20,22,23,24,25]:
+        raise ConnectionError('Gold land seam changed unexpectedly: '+str(checked))
+    return {'land_rows':checked,'water_rows':list(range(26,32))}
+
+
 def audit_all_active(project, gold):
     """Fail closed on any missing, unparseable, or unsafe enabled connection."""
     try:
@@ -858,6 +1059,14 @@ def audit_all_active(project, gold):
     except (ConnectionError, OSError, ValueError, KeyError) as ex:
         return {'status':'FAIL', 'edges':[], 'issues':['DISCOVERY: '+str(ex)]}
     global_issues=[]
+    try:
+        check_olivine_route40_walk_seam(project,gold)
+    except (ConnectionError,OSError,ValueError) as ex:
+        global_issues.append('COAST_WALK_SEAM: '+str(ex))
+    try:
+        check_sea_chain_surf_outer_edge(project,gold)
+    except (ConnectionError,OSError,ValueError) as ex:
+        global_issues.append('SURF_OUTER_EDGE: '+str(ex))
     try:
         frozen=check_frozen_gold_source(gold)
         require_registered_gold_seams(project,edges,frozen)
@@ -869,8 +1078,17 @@ def audit_all_active(project, gold):
             item=audit(project,gold,*edge)
             check_native_connection_selector(project,edge[0],edge[1],edge[4])
             if map_header_bank(project,edge[0])!=map_header_bank(project,edge[1]):
-                item['issues'].append('ROM bank mismatch: cross-map connection loads strips in CURRENT map bank')
-                item['status']='FAIL'
+                # Only the audited Olivine/Route40 seam is intentionally
+                # cross-bank in .234. A relocated unrelated map must not
+                # silently become an approved cross-bank preview.
+                if frozenset((edge[0],edge[1])) != frozenset(('JohtoOlivineCity','JohtoRoute40')):
+                    item['issues'].append('ROM bank mismatch: unregistered cross-bank map seam')
+                    item['status']='FAIL'
+                    result.append(item)
+                    continue
+                # Validate the *far-call ABI*, not merely the presence of
+                # four calls; a direction in A is destroyed by Bankswitch.
+                check_native_connection_preview_abi(project)
             result.append(item)
         except (ConnectionError,OSError,ValueError,KeyError) as ex:
             result.append({'status':'FAIL','edge':edge,'issues':[str(ex)]})

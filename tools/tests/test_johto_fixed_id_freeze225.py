@@ -63,15 +63,15 @@ class FixedIdFreeze225(unittest.TestCase):
 
     def test_duplicate_east_62_registration_rejected(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual([23,24,62,63,64,25,26], [m['local_id'] for m in data['maps'][-7:]])
+        self.assertEqual([63,64,25,26,27,28,29], [m['local_id'] for m in data['maps'][-7:]])
         data['maps'].append(dict(data['maps'][-4]))
         errors = audit(ROOT, {REGISTRY: json.dumps(data)})
         self.assertTrue(any('duplicate stable ID' in e for e in errors), errors)
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(30, len(data['maps']))
-        self.assertEqual([23,24,62,63,64,25,26], [m['local_id'] for m in data['maps'][-7:]])
+        self.assertEqual(33, len(data['maps']))
+        self.assertEqual([63,64,25,26,27,28,29], [m['local_id'] for m in data['maps'][-7:]])
         self.assertIn('DEF JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22',
                       (ROOT / RESERVED_ASM).read_text(encoding='utf8'))
         self.assertIn('JohtoRoute37_h', (ROOT / HEADERS).read_text(encoding='utf8'))

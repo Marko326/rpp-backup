@@ -249,7 +249,7 @@ class JohtoGoldGateArtwork(unittest.TestCase):
         for symbol in ('JohtoGate_GFX:', 'JohtoGate_Block:'):
             self.assertEqual(src.count(symbol),1)
         self.assertNotIn('JohtoGate_Coll:',source('data/collision.asm'))
-        self.assertRegex(source('data/game_version.asm'), r'db \"[A-Z]+-5\.62\.\d+@\"')
+        self.assertRegex(source('data/game_version.asm'), r'db \"[A-Z]+-5\.62\.\d+[A-Z]?@\"')
 
 
 if __name__=='__main__':

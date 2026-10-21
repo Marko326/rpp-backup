@@ -71,7 +71,7 @@ class ForestCommonLedgeCandidate(unittest.TestCase):
         self.assertIn('CUT',issue)
         self.assertIn('ROM 和实机待验',issue)
         current = (ROOT/'data/game_version.asm').read_text()
-        match = __import__('re').search(r'SPID-5\.62\.(\d+)@', current)
+        match = __import__('re').search(r'SPID-5\.62\.(\d+)[A-Z]?@', current)
         self.assertIsNotNone(match)
         self.assertGreaterEqual(int(match[1]), 230)
 

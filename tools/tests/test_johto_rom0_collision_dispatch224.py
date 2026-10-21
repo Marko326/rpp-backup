@@ -33,7 +33,7 @@ class Rom0CollisionDispatch224(unittest.TestCase):
                     'ld a, e\n\tand 1 ; BIT preserves Carry', 'Carry-preserving')
 
     def test_unknown_native_map_must_fall_back_to_generic_collision(self):
-        self.mutate(ROMX, '\tld e, 0\n\tret\n.route35',
+        self.mutate(ROMX, ' ld e, 0\n ret\n.route35',
                     '\tld e, 1\n\tret\n.route35', 'unknown local ID')
 
     def test_no_native_map_can_use_wrong_collision_mask(self):

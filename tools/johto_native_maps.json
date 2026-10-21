@@ -1289,6 +1289,111 @@
       "deferred_gold_moves": {
         "headbutt_tree_yx": []
       }
+    },
+    {
+      "local_id": 27,
+      "local_symbol": "JOHTO_ROUTE_40_LOCAL_ID",
+      "header": "JohtoRoute40_h",
+      "bank": "BANK(JohtoRoute40_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 28,
+      "town_map_name": "JohtoBrowseRoute40Name",
+      "town_map_xy": [
+        80,
+        36
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": []
+      }
+    },
+    {
+      "local_id": 28,
+      "local_symbol": "JOHTO_ROUTE_41_LOCAL_ID",
+      "header": "JohtoRoute41_h",
+      "bank": "BANK(JohtoRoute41_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 30,
+      "town_map_name": "JohtoBrowseRoute41Name",
+      "town_map_xy": [
+        116,
+        36
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "DEFERRED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": []
+      }
+    },
+    {
+      "local_id": 29,
+      "local_symbol": "JOHTO_CIANWOOD_CITY_LOCAL_ID",
+      "header": "JohtoCianwoodCity_h",
+      "bank": "BANK(JohtoCianwoodCity_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ECRUTEAK_CITY",
+      "town_map_index": 31,
+      "town_map_name": "JohtoCianwoodName",
+      "town_map_xy": [
+        116,
+        28
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "ALLOWED",
+        "bike": "DEFERRED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "DEFERRED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "CIANWOOD_CITY",
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": []
+      }
     }
   ]
 }

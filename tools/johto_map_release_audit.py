@@ -458,7 +458,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
         errors.append('RPP game_version.asm is missing')
     else:
         game_version = (root / 'data/game_version.asm').read_text(encoding='utf-8')
-        match = re.search(r'^\s*db\s+"([A-Z]+-\d+\.\d+\.\d+)@"', game_version, re.M)
+        match = re.search(r'^\s*db\s+"([A-Z]+-\d+\.\d+\.\d+[A-Z]?)@"', game_version, re.M)
         if not match:
             errors.append('cannot read game version from game_version.asm')
         elif expected_version is not None and match.group(1) != expected_version:

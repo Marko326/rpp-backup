@@ -14,7 +14,7 @@ class Mahogany228(unittest.TestCase):
     def test_exact_gold_city_tiles_and_twenty_eight_active_slots(self):
         self.assertEqual((ROOT/'maps/JohtoMahoganyTown.blk').read_bytes(),(GOLD/'maps/MahoganyTown.blk').read_bytes())
         maps=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps']
-        self.assertEqual(len(maps),30)
+        self.assertEqual(len(maps),33)
         self.assertEqual(maps[27]['local_id'],64)
         # JohtoActiveLocalIDs assigns compact slot 27 after the west 23/24 and east 62/63.
         index=(ROOT/'data/johto_map_headers.asm').read_text()
@@ -41,7 +41,7 @@ class Mahogany228(unittest.TestCase):
         indices=[int(n) for n in re.search(r'(?m)^\s*db\s+([\d, ]+)',
             (ROOT/'engine/overworld/johto_town_map_helpers.asm').read_text().split(
                 'JohtoNativeTownMapIndices::',1)[1]).group(1).split(',')]
-        self.assertEqual(len(indices),30)
+        self.assertEqual(len(indices),33)
         self.assertEqual(indices[18],17)  # older Route35 gate mistakenly National Park
         self.assertEqual(indices[27],34)  # Mahogany was mistakenly Mt. Mortar
         self.assertEqual(indices[26],32)  # Route42 must NOT be changed
@@ -57,8 +57,8 @@ class Mahogany228(unittest.TestCase):
                 shutil.copyfile(ROOT/rel,out)
             mapper=p/'engine/overworld/johto_town_map_helpers.asm'
             text=mapper.read_text()
-            self.assertIn(', 32, 32, 34, 25, 26 ;',text)
-            mapper.write_text(text.replace(', 32, 32, 34, 25, 26 ;',', 32, 32, 33, 25, 26 ;',1))
+            self.assertIn(', 32, 32, 34, 25, 26, 28, 30, 31 ;',text)
+            mapper.write_text(text.replace(', 32, 32, 34, 25, 26, 28, 30, 31 ;',', 32, 32, 33, 25, 26, 28, 30, 31 ;',1))
             manifest=p/'tools/johto_native_maps.json'
             data=json.loads(manifest.read_text())
             data['maps'][27]['town_map_index']=33
