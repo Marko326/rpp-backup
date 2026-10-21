@@ -520,12 +520,66 @@ SelectNativeMapConnection::
 	; is reached after corrupted header/connection data.
 	jp SoftReset
 
+; .234 continuous coastline, all six Gold reciprocal directed edges.
+; E=0..3 cardinal edge on entry; E=neighbor bank or $ff on return.
+; callab overwrites A with the callee ROM bank ($40), so A MUST NOT carry
+; the edge direction across the far-call. E survives bank restoration.
+ResolveNativeConnectionPreviewBank::
+ ld c,e
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jr nz,.invalid
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.invalid
+ ld a,[wCurLocalMapID]
+ ld b,a
+ ld hl,NativeRegionConnectionTargets
+.loop
+ ld a,[hli]
+ cp $ff
+ jr z,.invalid
+ cp b
+ jr nz,.skipThree
+ ld a,[hli]
+ cp c
+ jr nz,.skipTwo
+ ld a,[hli] ; target region
+ cp MAP_REGION_JOHTO
+ jr nz,.invalid
+ ld e,[hl] ; target stable ID
+ call GetJohtoActiveSlot
+ ld a,e
+ cp JOHTO_INVALID_ACTIVE_SLOT
+ jr z,.invalid
+ ld l,e
+ ld h,0
+ ld de,JohtoMapHeaderBanks
+ add hl,de
+ ld e,[hl]
+ ret
+.skipThree
+ inc hl
+.skipTwo
+ inc hl
+ inc hl
+ jr .loop
+.invalid
+ ld e,$ff
+ ret
+
 NativeRegionConnectionTargets::
  ; SPID.233: contiguous Route38 <-> Route39 <-> OlivineCity (Gold).
  db JOHTO_ROUTE_38_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_39_LOCAL_ID
  db JOHTO_ROUTE_39_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_38_LOCAL_ID
  db JOHTO_ROUTE_39_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
  db JOHTO_OLIVINE_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_39_LOCAL_ID
+ db JOHTO_OLIVINE_CITY_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_40_LOCAL_ID
+ db JOHTO_ROUTE_40_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
+ db JOHTO_ROUTE_40_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_41_LOCAL_ID
+ db JOHTO_ROUTE_41_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_40_LOCAL_ID
+ db JOHTO_ROUTE_41_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID
+ db JOHTO_CIANWOOD_CITY_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_41_LOCAL_ID
 	; Gold city east and Route42 west seamless preview, collision fence controls travel.
 	db JOHTO_ECRUTEAK_CITY_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID
 	db JOHTO_ROUTE_42_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID

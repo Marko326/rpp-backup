@@ -181,6 +181,8 @@ LoadSpecialWarpData:
  jr z, .johtoTileset
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr z, .johtoTileset
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr z, .johtoTileset
 	jr .legacyFlyTileset
 .nativeModern
 	ld a, JOHTO_MODERN

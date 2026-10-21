@@ -1218,6 +1218,12 @@ JohtoNativeTownMapEntries::
  dw JohtoBrowseRoute39Name
  db 76, 44 ; OlivineCity original Gold browse landmark26
  dw JohtoOlivineName
+ db 80, 36 ; Route40 Gold LANDMARK
+ dw JohtoBrowseRoute40Name
+ db 116, 36 ; Route41 Gold LANDMARK
+ dw JohtoBrowseRoute41Name
+ db 116, 28 ; CianwoodCity Gold LANDMARK
+ dw JohtoCianwoodName
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

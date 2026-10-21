@@ -717,12 +717,19 @@ JohtoOlivineCityEdgeFence::
 .west
  ld a,[wXCoord]
  and a
- jr z,.block ; Route40 not registered
- jr .clear
+ jr nz,.clear
+ ld a,[wYCoord]
+ cp 20
+ jr z,.clear ; Gold paired FLOOR land lane
+ cp 22
+ jr c,.block
+ cp 32
+ jr c,.clear ; y22..25 FLOOR plus y26..31 WATER
+ jr .block ; buoy/wall on the remaining shared sea border
 .south
  ld a,[wYCoord]
  cp JOHTO_OLIVINE_CITY_HEIGHT * 2 - 1
- jr nc,.block ; Route40/sea are not developed
+ jr nc,.block ; route south remains unconnected
  jr .clear
 .north
  ld a,[wYCoord]
@@ -747,6 +754,22 @@ JohtoOlivineCityCanStepAhead::
  ld a,[wCurLocalMapID]
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr nz,.block
+ ; West connection: land y20 and y22..25 in both Gold maps.
+ ; Do not open WATER y26..31 to walking; Surf owns those lanes.
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr nz,.northRoad
+ ld a,[wXCoord]
+ and a
+ jr nz,.northRoad
+ ld a,[wYCoord]
+ cp 20
+ jr z,.clear
+ cp 22
+ jr c,.northRoad
+ cp 26
+ jr c,.clear
+.northRoad
  ; The north connection can enter from the four Gold road cells only.
  ld a,[wPlayerDirection]
  cp PLAYER_DIR_UP
@@ -776,6 +799,134 @@ JohtoOlivineCityBlockedRows::
 ; West-line A: Gold Route38 40x18 quadrant mask, no Surf/Cut to open.
 ; Route39 is unregistered; the west edge is physically closed.
 ; City side is visible but the road must pass through the paired gate Warp.
+; SPID.234 source-verified ocean connections. Only shared WATER seam cells
+; open; BUOY / wall and all unbuilt edges stay blocked.
+JohtoRoute40EdgeFence::
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ cp PLAYER_DIR_RIGHT
+ jr z,.east
+ cp PLAYER_DIR_UP
+ jr z,.north
+ ld a,[wXCoord]
+ and a
+ jr z,.block
+ jr .clear
+.north
+ ld a,[wYCoord]
+ and a
+ jr z,.block
+ jr .clear
+.east
+ ld a,[wXCoord]
+ cp JOHTO_ROUTE_40_WIDTH * 2 - 1
+ jr c,.clear
+ ld a,[wYCoord]
+ cp 2
+ jr z,.clear ; Gold land pair y2
+ cp 4
+ jr c,.block
+ cp 14
+ jr c,.clear ; land y4..7 and water y8..13
+ jr .block
+.south
+ ld a,[wYCoord]
+ cp JOHTO_ROUTE_40_HEIGHT * 2 - 1
+ jr c,.clear
+ ld a,[wXCoord]
+ cp 2
+ jr c,.block
+ cp 19
+ jr c,.clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoRoute41EdgeFence::
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr z,.north
+ cp PLAYER_DIR_LEFT
+ jr z,.west
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ ld a,[wXCoord]
+ cp JOHTO_ROUTE_41_WIDTH * 2 - 1
+ jr nc,.block
+ jr .clear
+.south
+ ld a,[wYCoord]
+ cp JOHTO_ROUTE_41_HEIGHT * 2 - 1
+ jr nc,.block
+ jr .clear
+.north
+ ld a,[wYCoord]
+ and a
+ jr nz,.clear
+ ld a,[wXCoord]
+ cp 32
+ jr c,.block
+ cp 49
+ jr c,.clear
+ jr .block
+.west
+ ld a,[wXCoord]
+ and a
+ jr nz,.clear
+ ld a,[wYCoord]
+ and a
+ jr z,.block
+ cp 46
+ jr c,.clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoCianwoodCityEdgeFence::
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr z,.east
+ cp PLAYER_DIR_UP
+ jr z,.north
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ ld a,[wXCoord]
+ and a
+ jr z,.block
+ jr .clear
+.north
+ ld a,[wYCoord]
+ and a
+ jr z,.block
+ jr .clear
+.south
+ ld a,[wYCoord]
+ cp JOHTO_CIANWOOD_CITY_HEIGHT * 2 - 1
+ jr nc,.block
+ jr .clear
+.east
+ ld a,[wXCoord]
+ cp JOHTO_CIANWOOD_CITY_WIDTH * 2 - 1
+ jr c,.clear
+ ld a,[wYCoord]
+ and a
+ jr z,.block
+ cp 46
+ jr c,.clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
 JohtoRoute38EdgeFence::
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_LEFT
@@ -2500,6 +2651,77 @@ JohtoRuinsGateBlockedRows::
 ; E=0 for an unrecognized local ID; HOME must run its unchanged generic mask.
 ; Each branch calls the ORIGINAL predicate (do not broaden its region/ID test).
 ; The last LD E does not change flags, so Carry survives through Bankswitch.
+; Data-driven land collision for the new continuous sea maps.
+JohtoRoute40CanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.blocked
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jr nz,.blocked
+ ; EAST x19 has real Gold FLOOR lanes y2 and y4..7 toward Olivine.
+ ; Else use the converted mask, including WATER/B UOY and walls.
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr nz,.mask
+ ld a,[wXCoord]
+ cp JOHTO_ROUTE_40_WIDTH * 2 - 1
+ jr nz,.mask
+ ld a,[wYCoord]
+ cp 2
+ jr z,.allowed
+ cp 4
+ jr c,.mask
+ cp 8
+ jr c,.allowed
+.mask
+ ld hl,JohtoRoute40BlockedRows
+ ld d,JOHTO_ROUTE_40_WIDTH * 2
+ ld e,3
+ jp JohtoModernMaskedStep
+.allowed
+ and a
+ ret
+.blocked
+ scf
+ ret
+JohtoRoute40BlockedRows::
+ INCBIN "maps/JohtoRoute40.blocked_mask.bin"
+
+JohtoRoute41CanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.blocked
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jr nz,.blocked
+ ld hl,JohtoRoute41BlockedRows
+ ld d,JOHTO_ROUTE_41_WIDTH * 2
+ ld e,7
+ jp JohtoModernMaskedStep
+.blocked
+ scf
+ ret
+JohtoRoute41BlockedRows::
+ INCBIN "maps/JohtoRoute41.blocked_mask.bin"
+
+JohtoCianwoodCityCanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.blocked
+ ld a,[wCurLocalMapID]
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr nz,.blocked
+ ld hl,JohtoCianwoodCityBlockedRows
+ ld d,JOHTO_CIANWOOD_CITY_WIDTH * 2
+ ld e,4
+ jp JohtoModernMaskedStep
+.blocked
+ scf
+ ret
+JohtoCianwoodCityBlockedRows::
+ INCBIN "maps/JohtoCianwoodCity.blocked_mask.bin"
+
 JohtoNativeCanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
@@ -2542,62 +2764,78 @@ JohtoNativeCanStepAhead::
 	jr z, .route34
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .goldenrod
-	ld e, 0
-	ret
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jp z,.route40
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jp z,.route41
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jp z,.cianwood
+ ld e, 0
+ ret
 .route35
 	call JohtoRoute35CanStepAhead
-	jr .handled
+	jp .handled
 .route36
 	call JohtoRoute36CanStepAhead
-	jr .handled
+	jp .handled
 .route37
 	call JohtoRoute37CanStepAhead
-	jr .handled
+	jp .handled
 .route38
  call JohtoRoute38CanStepAhead
- jr .handled
+ jp .handled
 .route39
  call JohtoRoute39CanStepAhead
- jr .handled
+ jp .handled
 .olivine
  call JohtoOlivineCityCanStepAhead
- jr .handled
+ jp .handled
 .route38Gate
 	call JohtoRoute38EcruteakGateCanStepAhead
-	jr .handled
+	jp .handled
 .route42Gate
 	call JohtoRoute42EcruteakGateCanStepAhead
-	jr .handled
+	jp .handled
 .ecruteak
 	call JohtoEcruteakCityCanStepAhead
-	jr .handled
+	jp .handled
 .route42
 	call JohtoRoute42CanStepAhead
-	jr .handled
+	jp .handled
 .mahogany
 	call JohtoMahoganyTownCanStepAhead
-	jr .handled
+	jp .handled
 .route33
 	call JohtoRoute33CanStepAhead
-	jr .handled
+	jp .handled
 .azalea
 	call JohtoAzaleaCanStepAhead
-	jr .handled
+	jp .handled
 .forest
 	call JohtoIlexForestCanStepAhead
-	jr .handled
+	jp .handled
 .gate
 	call JohtoRoute34GateCanStepAhead
-	jr .handled
+	jp .handled
 .ruins
 	call JohtoRuinsCanStepAhead
-	jr .handled
+	jp .handled
 .route34
 	call JohtoRoute34CanStepAhead
-	jr .handled
+	jp .handled
 .goldenrod
 	call JohtoGoldenrodCanStepAhead
+ jp .handled
+.route40
+ call JohtoRoute40CanStepAhead
+ jp .handled
+.route41
+ call JohtoRoute41CanStepAhead
+ jp .handled
+.cianwood
+ call JohtoCianwoodCityCanStepAhead
+ jp .handled
 .handled
-	ld e, 1
-	ret
+ ld e, 1
+ ret
 

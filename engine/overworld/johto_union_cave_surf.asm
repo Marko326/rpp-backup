@@ -356,12 +356,296 @@ IsJohtoNativeOutdoorWaterAhead::
  jp z, IsJohtoRoute42WaterAhead
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jp z, IsJohtoOlivineWaterAhead
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jp z, IsJohtoSeaChainWaterAhead
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jp z, IsJohtoSeaChainWaterAhead
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jp z, IsJohtoSeaChainWaterAhead
 .noWater
 	and a
 	ret
 
 ; Gold OlivineCity has 406 WATER quadrants (not BUOY). All other
 ; shoreline, buildings and future port remain blocked until their own maps exist.
+; Return carry for the six verified reciprocal WATER-only edge lanes.
+; No extra player-action abilities or Whirlpool permission are granted.
+IsJohtoSeaChainSeamWaterAhead::
+ ld a,[wCurLocalMapID]
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr z,.olivine
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jr z,.route40
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jr z,.route41
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jp z,.cianwood
+ and a
+ ret
+.olivine
+ ld a,[wSpriteStateData1 + 9]
+ cp SPRITE_FACING_LEFT
+ jp nz,.no
+ ld a,[wXCoord]
+ and a
+ jp nz,.no
+ ld a,[wYCoord]
+ cp 26
+ jp c,.no
+ cp 32
+ jr c,.yes
+ jr .no
+.route40
+ ld a,[wSpriteStateData1 + 9]
+ cp SPRITE_FACING_RIGHT
+ jr z,.route40east
+ cp SPRITE_FACING_DOWN
+ jr nz,.no
+ ld a,[wYCoord]
+ cp JOHTO_ROUTE_40_HEIGHT * 2 - 1
+ jr nz,.no
+ ld a,[wXCoord]
+ cp 2
+ jr c,.no
+ cp 19
+ jr c,.yes
+ jr .no
+.route40east
+ ld a,[wXCoord]
+ cp JOHTO_ROUTE_40_WIDTH * 2 - 1
+ jr nz,.no
+ ld a,[wYCoord]
+ cp 8
+ jr c,.no
+ cp 14
+ jr c,.yes
+ jr .no
+.route41
+ ld a,[wSpriteStateData1 + 9]
+ cp SPRITE_FACING_UP
+ jr z,.route41north
+ cp SPRITE_FACING_LEFT
+ jr nz,.no
+ ld a,[wXCoord]
+ and a
+ jr nz,.no
+ ld a,[wYCoord]
+ and a
+ jr z,.no
+ cp 46
+ jr c,.yes
+ jr .no
+.route41north
+ ld a,[wYCoord]
+ and a
+ jr nz,.no
+ ld a,[wXCoord]
+ cp 32
+ jr c,.no
+ cp 49
+ jr c,.yes
+ jr .no
+.cianwood
+ ld a,[wSpriteStateData1 + 9]
+ cp SPRITE_FACING_RIGHT
+ jr nz,.no
+ ld a,[wXCoord]
+ cp JOHTO_CIANWOOD_CITY_WIDTH * 2 - 1
+ jr nz,.no
+ ld a,[wYCoord]
+ and a
+ jr z,.no
+ cp 46
+ jr c,.yes
+.no
+ and a
+ ret
+.yes
+ scf
+ ret
+
+; Surf on a native outdoor map takes the water-only path first. If that
+; lookup returns non-WATER, a genuinely walkable shore may end Surf, but an
+; out-of-bounds target must NEVER be treated as a shore tile simply because
+; the visible neighbor preview happens to use a passable RPP tile ID.
+; Legal Gold-to-Gold WATER seams are already accepted by
+; IsJohtoSeaChainSeamWaterAhead in the preceding water lookup.
+; Carry set = sea-chain outer boundary (block); carry clear = continue the
+; existing shore/land collision logic. BC/DE/HL are preserved.
+IsJohtoSeaChainUnsafeSurfEdge::
+ push bc
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jp nz,.clear
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jp nz,.clear
+ ld a,[wCurLocalMapID]
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr z,.check
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jr z,.check
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jr z,.check
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr nz,.clear
+.check
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr z,.left
+ cp PLAYER_DIR_UP
+ jr z,.up
+ cp PLAYER_DIR_RIGHT
+ jr z,.right
+ cp PLAYER_DIR_DOWN
+ jr nz,.clear
+ ld a,[wYCoord]
+ ld b,a
+ ld a,[wCurrentMapHeight2]
+ dec a
+ cp b
+ jr z,.blocked
+ jr c,.blocked
+ jr .clear
+.left
+ ld a,[wXCoord]
+ and a
+ jr z,.blocked
+ jr .clear
+.up
+ ld a,[wYCoord]
+ and a
+ jr z,.blocked
+ jr .clear
+.right
+ ld a,[wXCoord]
+ ld b,a
+ ld a,[wCurrentMapWidth2]
+ dec a
+ cp b
+ jr z,.blocked
+ jr c,.blocked
+.clear
+ and a
+ pop bc
+ ret
+.blocked
+ scf
+ pop bc
+ ret
+
+; Shared Gold WATER bitmap read for Route40 (3 bytes/row), Route41 (7),
+; Cianwood City (4). Uses actual current 16x16 dimensions, not fake tile IDs.
+IsJohtoSeaChainWaterAhead::
+ push bc
+ push de
+ push hl
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jp nz,.notWater
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jp nz,.notWater
+ call IsJohtoSeaChainSeamWaterAhead
+ jp c,.water
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jr z,.route40
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jr z,.route41
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jp nz,.notWater
+ ld hl,JohtoCianwoodCityWaterRows
+ ld b,4
+ jr .set
+.route40
+ ld hl,JohtoRoute40WaterRows
+ ld b,3
+ jr .set
+.route41
+ ld hl,JohtoRoute41WaterRows
+ ld b,7
+.set
+ ld a,[wYCoord]
+ ld d,a
+ ld a,[wXCoord]
+ ld e,a
+ ld a,[wSpriteStateData1 + 9]
+ cp SPRITE_FACING_DOWN
+ jr nz,.up
+ inc d
+ jr .bounds
+.up
+ cp SPRITE_FACING_UP
+ jr nz,.left
+ dec d
+ jr .bounds
+.left
+ cp SPRITE_FACING_LEFT
+ jr nz,.right
+ dec e
+ jr .bounds
+.right
+ cp SPRITE_FACING_RIGHT
+ jp nz,.notWater
+ inc e
+.bounds
+ ld a,[wCurrentMapHeight2]
+ cp d
+ jp z,.notWater
+ jp c,.notWater
+ ld a,[wCurrentMapWidth2]
+ cp e
+ jp z,.notWater
+ jp c,.notWater
+ ld a,d
+ and a
+ jr z,.column
+.row
+ push bc
+ ld c,b
+ ld b,0
+ add hl,bc
+ pop bc
+ dec a
+ jr nz,.row
+.column
+ ld a,e
+ srl a
+ srl a
+ srl a
+ ld c,a
+ push bc
+ ld b,0
+ add hl,bc
+ pop bc
+ ld a,e
+ and 7
+ ld c,a
+ inc c
+ ld a,[hl]
+.shift
+ srl a
+ dec c
+ jr nz,.shift
+ jr nc,.notWater
+.water
+ scf
+ jr .done
+.notWater
+ and a
+.done
+ pop hl
+ pop de
+ pop bc
+ ret
+JohtoRoute40WaterRows::
+ INCBIN "maps/JohtoRoute40.water_mask.bin"
+JohtoRoute41WaterRows::
+ INCBIN "maps/JohtoRoute41.water_mask.bin"
+JohtoCianwoodCityWaterRows::
+ INCBIN "maps/JohtoCianwoodCity.water_mask.bin"
+
 IsJohtoOlivineWaterAhead::
  push bc
  push de
@@ -375,6 +659,8 @@ IsJohtoOlivineWaterAhead::
  ld a,[wCurLocalMapID]
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jp nz,.notWater
+ call IsJohtoSeaChainSeamWaterAhead
+ jp c,.water
  ld a,[wYCoord]
  ld d,a
  ld a,[wXCoord]
@@ -432,6 +718,7 @@ IsJohtoOlivineWaterAhead::
  dec c
  jr nz,.shift
  jr nc,.notWater
+.water
  scf
  jr .done
 .notWater
@@ -862,8 +1149,14 @@ JohtoSurfBadgeAllowed::
 	jr z, .route32
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jr z, .route32
-	cp JOHTO_OLIVINE_CITY_LOCAL_ID
-	jr nz, .kanto
+ cp JOHTO_OLIVINE_CITY_LOCAL_ID
+ jr z,.route32
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jr z,.route32
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jr z,.route32
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr nz,.kanto
 .route32
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO

@@ -85,7 +85,7 @@ LoadJohtoFlyTownMap::
 .next
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 8
+	cp 9
 	jr c, .nextReady
 	xor a
 .nextReady
@@ -97,7 +97,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jp nz, .previousReady
-	ld a, 7
+	ld a, 8
 .previousReady
 	ld [wWhichTownMapLocation], a
 	call .findBackward
@@ -122,27 +122,32 @@ LoadJohtoFlyTownMap::
 	; Goldenrod and Ecruteak share legacy selector $FE, but their frozen
 	; physical IDs are different. Store that choice in dedicated WRAM.
 	ld a, [wWhichTownMapLocation]
-	cp 7
+ cp 8
+ jr z, .selectCianwood
+ cp 7
  jr z, .selectMahogany
  cp 6
  jr z, .selectOlivine
-	cp 5
-	jr z, .selectEcruteak
-	cp 4
-	jr z, .selectGoldenrod
-	ld a, $ff ; no native $FE selector on the other four destinations
-	jr .storeFlyLocal
+ cp 5
+ jr z, .selectEcruteak
+ cp 4
+ jr z, .selectGoldenrod
+ ld a, $ff ; first four destinations use legacy selector IDs
+ jr .storeFlyLocal
+.selectCianwood
+ ld a, JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr .storeFlyLocal
 .selectOlivine
  ld a, JOHTO_OLIVINE_CITY_LOCAL_ID
  jr .storeFlyLocal
 .selectMahogany
-	ld a, JOHTO_MAHOGANY_TOWN_LOCAL_ID
-	jr .storeFlyLocal
+ ld a, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+ jr .storeFlyLocal
 .selectEcruteak
-	ld a, JOHTO_ECRUTEAK_CITY_LOCAL_ID
-	jr .storeFlyLocal
+ ld a, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+ jr .storeFlyLocal
 .selectGoldenrod
-	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
+ ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeFlyLocal
 	ld [wJohtoFlySelectedLocalID], a
 	pop af
@@ -162,7 +167,7 @@ LoadJohtoFlyTownMap::
 	ld [hTilesetType], a
 	ret
 
-; In A: Fly city index 0..7 = New Bark, Cherrygrove, Violet, Azalea, Goldenrod, Ecruteak, Olivine, Mahogany.
+; In A: Fly city index 0..8 = New Bark, Cherrygrove, Violet, Azalea, Goldenrod, Ecruteak, Olivine, Mahogany, Cianwood.
 ; Out: A=legacy map alias; B=y C=x DE=ROM string.
 .loadEntry
 	add a
@@ -206,9 +211,11 @@ LoadJohtoFlyTownMap::
  dw .olivineName
  db 60, 116
 	dw .mahoganyName
+ db 116, 28
+ dw .cianwoodName
 .destinations
 	; FLY-5.62.196: $FD selector resolves separately to (JOHTO, local 10).
-	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
+	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
 .newBarkName
 	db "New Bark_Town@"
 .cherrygroveName
@@ -226,14 +233,16 @@ LoadJohtoFlyTownMap::
 .mahoganyName
 	db "Mahogany_Town@"
 
+.cianwoodName
+ db "Cianwood_City@"
 .findForward
-	ld b, 8
+	ld b, 9
 .forwardLoop
 	call .isCurrentUnlocked
 	ret nz
 	ld a, [wWhichTownMapLocation]
 	inc a
-	cp 8
+	cp 9
 	jr c, .forwardStore
 	xor a
 .forwardStore
@@ -242,7 +251,7 @@ LoadJohtoFlyTownMap::
 	jr nz, .forwardLoop
 	ret
 .findBackward
-	ld b, 8
+	ld b, 9
 .backwardLoop
 	call .isCurrentUnlocked
 	ret nz
@@ -250,7 +259,7 @@ LoadJohtoFlyTownMap::
 	dec a
 	cp $ff
 	jr nz, .backwardStore
-	ld a, 7
+	ld a, 8
 .backwardStore
 	ld [wWhichTownMapLocation], a
 	dec b
@@ -272,7 +281,13 @@ LoadJohtoFlyTownMap::
  jr z, .testEcruteak
  cp 6
  jr z, .testOlivine
-	ld hl, wEventFlags + EVENT_JOHTO_FLY_MAHOGANY / 8
+ cp 7
+ jr z,.testMahogany
+ ld hl,wEventFlags + EVENT_JOHTO_FLY_CIANWOOD / 8
+ bit EVENT_JOHTO_FLY_CIANWOOD % 8,[hl]
+ ret
+.testMahogany
+ ld hl, wEventFlags + EVENT_JOHTO_FLY_MAHOGANY / 8
 	bit EVENT_JOHTO_FLY_MAHOGANY % 8, [hl]
 	ret
 .testOlivine

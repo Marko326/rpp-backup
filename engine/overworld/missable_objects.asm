@@ -86,6 +86,20 @@ MarkTownVisitedAndLoadMissableObjects:
  set EVENT_JOHTO_FLY_OLIVINE % 8, [hl]
 .notJohtoOlivine
 
+ ; Cianwood physical stable ID29: saved unused bit $44B.
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jr nz,.notCianwood
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.notCianwood
+ ld a,[wCurLocalMapID]
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr nz,.notCianwood
+ ld hl,wEventFlags + EVENT_JOHTO_FLY_CIANWOOD / 8
+ set EVENT_JOHTO_FLY_CIANWOOD % 8,[hl]
+.notCianwood
+
 	ld a, [wCurMap]
 	cp ROUTE_1
 	jr nc, .notInTown

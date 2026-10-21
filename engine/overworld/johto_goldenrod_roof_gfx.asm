@@ -58,6 +58,9 @@ JohtoRoofGroupForLocalMap:
 	db 7 ; 1b MahoganyTown Gold mapgroup2; same palette as Route42
  db 6 ; 1c Route39 Gold Olivine mapgroup1 roof
  db 6 ; 1d OlivineCity Gold Olivine mapgroup1 roof
+ db 8 ; 1e Route40, Gold Cianwood group22 (Olivine art, separate palette)
+ db 8 ; 1f Route41, Gold Cianwood group22
+ db 8 ; 20 CianwoodCity, Gold Cianwood group22
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 
@@ -98,6 +101,8 @@ SelectGoldenrodRoofSource:
 	jr z,.olivine
 	cp 7
 	jr z,.azalea ; Route42 group2 graphics, own RGB7 palette
+ cp 8
+ jr z,.olivine
 	; Groups 0 and 1 both have Gold new_bark roof graphics.
 	ld a,[wCurMapTileset]
 	cp JOHTO_MODERN

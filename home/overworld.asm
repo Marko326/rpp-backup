@@ -1211,6 +1211,16 @@ LoadTileBlockMap::
 	cp $ff
 	jr z,.southConnection
 	call SwitchToMapRomBank
+ ; E carries the edge direction: callab overwrites A with its ROM bank.
+ ; Switch to adjacent map's bank, not the current map's bank.
+ ld e,0
+ callab ResolveNativeConnectionPreviewBank
+ ld a,e
+ cp $ff
+ jr z,.previewBankReady0
+ ld [H_LOADEDROMBANK],a
+ ld [MBC1RomBank],a
+.previewBankReady0
 	ld a,[wNorthConnectionStripSrc]
 	ld l,a
 	ld a,[wNorthConnectionStripSrc + 1]
@@ -1229,6 +1239,16 @@ LoadTileBlockMap::
 	cp $ff
 	jr z,.westConnection
 	call SwitchToMapRomBank
+ ; E carries the edge direction: callab overwrites A with its ROM bank.
+ ; Switch to adjacent map's bank, not the current map's bank.
+ ld e,1
+ callab ResolveNativeConnectionPreviewBank
+ ld a,e
+ cp $ff
+ jr z,.previewBankReady1
+ ld [H_LOADEDROMBANK],a
+ ld [MBC1RomBank],a
+.previewBankReady1
 	ld a,[wSouthConnectionStripSrc]
 	ld l,a
 	ld a,[wSouthConnectionStripSrc + 1]
@@ -1247,6 +1267,16 @@ LoadTileBlockMap::
 	cp $ff
 	jr z,.eastConnection
 	call SwitchToMapRomBank
+ ; E carries the edge direction: callab overwrites A with its ROM bank.
+ ; Switch to adjacent map's bank, not the current map's bank.
+ ld e,2
+ callab ResolveNativeConnectionPreviewBank
+ ld a,e
+ cp $ff
+ jr z,.previewBankReady2
+ ld [H_LOADEDROMBANK],a
+ ld [MBC1RomBank],a
+.previewBankReady2
 	ld a,[wWestConnectionStripSrc]
 	ld l,a
 	ld a,[wWestConnectionStripSrc + 1]
@@ -1265,6 +1295,15 @@ LoadTileBlockMap::
 	cp $ff
 	jr z,.done
 	call SwitchToMapRomBank
+ ; Gold reciprocal east-facing neighbor may be in another ROM bank.
+ ld e,3
+ callab ResolveNativeConnectionPreviewBank
+ ld a,e
+ cp $ff
+ jr z,.previewBankReady3
+ ld [H_LOADEDROMBANK],a
+ ld [MBC1RomBank],a
+.previewBankReady3
 	ld a,[wEastConnectionStripSrc]
 	ld l,a
 	ld a,[wEastConnectionStripSrc + 1]
@@ -2151,6 +2190,11 @@ CollisionCheckOnWater::
 .johtoWater
 	callba IsJohtoSurfWaterAhead
 	jr c, .noCollision ; water: keep surfing, despite 8x8 wall-ID aliases
+	; A failed water lookup is not proof of walkable shore. On the
+	; Gold sea chain, reject out-of-map moves before the legacy tile
+	; fallback can misread the connected-map preview as a landing.
+	callba IsJohtoSeaChainUnsafeSurfEdge
+	jr c, .collision
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a ; preserve the tile for the existing walkable shore test
 	jr .checkIfNextTileIsPassable

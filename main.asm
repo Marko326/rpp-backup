@@ -3374,6 +3374,27 @@ INCLUDE "data/mapObjects/JohtoOlivineCity.asm"
 INCLUDE "scripts/JohtoOlivineCity.asm"
 JohtoOlivineCityBlocks: INCBIN "maps/JohtoOlivineCity.blk"
 
+; New sea chain cannot fit bank $40 (only 313 bytes spare in .233 MAP).
+; All three new neighbors share $45. Cross-bank preview copies use
+; ResolveNativeConnectionPreviewBank before reading adjacent .blk strips.
+SECTION "Johto Route40 Map", ROMX, BANK[$45]
+INCLUDE "data/mapHeaders/JohtoRoute40.asm"
+INCLUDE "data/mapObjects/JohtoRoute40.asm"
+INCLUDE "scripts/JohtoRoute40.asm"
+JohtoRoute40Blocks: INCBIN "maps/JohtoRoute40.blk"
+
+SECTION "Johto Route41 Map", ROMX, BANK[$45]
+INCLUDE "data/mapHeaders/JohtoRoute41.asm"
+INCLUDE "data/mapObjects/JohtoRoute41.asm"
+INCLUDE "scripts/JohtoRoute41.asm"
+JohtoRoute41Blocks: INCBIN "maps/JohtoRoute41.blk"
+
+SECTION "Johto Cianwood City Map", ROMX, BANK[$45]
+INCLUDE "data/mapHeaders/JohtoCianwoodCity.asm"
+INCLUDE "data/mapObjects/JohtoCianwoodCity.asm"
+INCLUDE "scripts/JohtoCianwoodCity.asm"
+JohtoCianwoodCityBlocks: INCBIN "maps/JohtoCianwoodCity.blk"
+
 SECTION "Johto Route38 Ecruteak Gate Map", ROMX, BANK[$44]
 INCLUDE "data/mapHeaders/JohtoRoute38EcruteakGate.asm"
 INCLUDE "data/mapObjects/JohtoRoute38EcruteakGate.asm"
@@ -3640,6 +3661,12 @@ JohtoNativeCollisionFence::
  jr z, .route39Native
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr z, .olivineNative
+ cp JOHTO_ROUTE_40_LOCAL_ID
+ jp z,.route40Native
+ cp JOHTO_ROUTE_41_LOCAL_ID
+ jp z,.route41Native
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jp z,.cianwoodNative
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakNative
 	cp JOHTO_ROUTE_42_LOCAL_ID
@@ -3679,6 +3706,15 @@ JohtoNativeCollisionFence::
  ret
 .olivineNative
  callba JohtoOlivineCityEdgeFence
+ ret
+.route40Native
+ callba JohtoRoute40EdgeFence
+ ret
+.route41Native
+ callba JohtoRoute41EdgeFence
+ ret
+.cianwoodNative
+ callba JohtoCianwoodCityEdgeFence
  ret
 .ecruteakNative
 	callba JohtoEcruteakCityEdgeFence

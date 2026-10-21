@@ -3,7 +3,7 @@
 ; C alone changes this 256-byte table when a real map is integrated.
 JohtoStableIDToActiveSlot::
 	db $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0a, $0b, $0c, $0d, $0e, $0f ; $00-$0f
-	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $ff, $ff, $ff, $ff, $ff ; $10-$1f
+	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $1e, $1f, $20, $ff, $ff ; $10-$1f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $19, $1a ; $30-$3f
 	db $1b, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
@@ -77,6 +77,9 @@ JohtoMapHeaderPointers::
 	dw JohtoMahoganyTown_h ; stable $40 -> slot $1b
  dw JohtoRoute39_h ; stable ID25 -> slot28
  dw JohtoOlivineCity_h ; stable ID26 -> slot29
+ dw JohtoRoute40_h ; stable ID27 -> slot30
+ dw JohtoRoute41_h ; stable ID28 -> slot31
+ dw JohtoCianwoodCity_h ; stable ID29 -> slot32
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -110,6 +113,9 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoMahoganyTown_h)
  db BANK(JohtoRoute39_h)
  db BANK(JohtoOlivineCity_h)
+ db BANK(JohtoRoute40_h)
+ db BANK(JohtoRoute41_h)
+ db BANK(JohtoCianwoodCity_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -147,6 +153,9 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; MahoganyTown
  db REGION_NATIVE_MAP_SLOT ; Route39
  db REGION_NATIVE_MAP_SLOT ; OlivineCity
+ db REGION_NATIVE_MAP_SLOT ; Route40
+ db REGION_NATIVE_MAP_SLOT ; Route41
+ db REGION_NATIVE_MAP_SLOT ; CianwoodCity
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -182,6 +191,9 @@ JohtoNativeMapSongBanks::
 	db MUSIC_CITIES1, 0 ; Gold MahoganyTown CHERRYGROVE_CITY family
  db MUSIC_ROUTES2, 0 ; Gold Route39 MUSIC_ROUTE_37
  db MUSIC_CITIES1, 0 ; Gold OlivineCity MUSIC_VIOLET_CITY
+ db MUSIC_ROUTES2, 0 ; Route40 Gold MUSIC_ROUTE_36
+ db MUSIC_ROUTES2, 0 ; Route41 Gold MUSIC_ROUTE_36
+ db MUSIC_CITIES1, 0 ; Cianwood Gold MUSIC_ECRUTEAK_CITY
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

@@ -1172,6 +1172,9 @@ JohtoNativeGSCMusic::
 	db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; MahoganyTown, original Gold music
  db MUSIC_GBP_GSC_ROUTE37 ; Route39 Gold Route37 theme
  db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Gold VioletCity theme
+ db MUSIC_GBP_GSC_ROUTE36 ; Route40
+ db MUSIC_GBP_GSC_ROUTE36 ; Route41
+ db MUSIC_GBP_GSC_ECRUTEAK_CITY ; Cianwood, matched map registry
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

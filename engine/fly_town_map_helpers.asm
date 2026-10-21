@@ -786,7 +786,12 @@ TryLoadSpecialFlyWarpData::
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
  jr z, .specialMahogany
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
- jr nz, .regularScan
+ jr z,.olivineWarp
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr nz,.regularScan
+ ld hl,JohtoCianwoodFlyWarpData
+ jr .found
+.olivineWarp
  ld hl, JohtoOlivineFlyWarpData
  jr .found
 .specialMahogany
@@ -830,6 +835,8 @@ TryLoadSpecialFlyWarpData::
  jr z, .storeNativeLocal
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr z, .storeNativeLocal
+ cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr z, .storeNativeLocal
 	; For the other valid $FE selection, resolve to Goldenrod.
 	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeNativeLocal
@@ -858,6 +865,11 @@ JohtoEcruteakFlyWarpData:
 JohtoOlivineFlyWarpData:
  db REGION_NATIVE_MAP_SLOT
  FLYWARP_DATA JOHTO_OLIVINE_CITY_WIDTH, 22, 13
+
+; Gold SPAWN_CIANWOOD_CITY x23 y44, within the playable town surface.
+JohtoCianwoodFlyWarpData:
+ db REGION_NATIVE_MAP_SLOT
+ FLYWARP_DATA JOHTO_CIANWOOD_CITY_WIDTH, 44, 23
 
 JohtoMahoganyFlyWarpData:
 	db REGION_NATIVE_MAP_SLOT
