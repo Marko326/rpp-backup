@@ -25,12 +25,12 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         self.assertEqual(audit(ROOT, self.gold), [])
         src = (ROOT / INPUTS[0]).read_text()
         actual=profiles(src)
-        self.assertEqual(actual[:2], [
+        self.assertEqual(actual[6:8], [
             ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
-        self.assertEqual(len(actual), 11)
+        self.assertEqual(len(actual), 17)
         self.assertFalse(any('JOHTO_UNION_CAVE_1F_LOCAL_ID' in row for row in actual))
         self.assertTrue(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3))
         self.assertFalse(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4))

@@ -14,7 +14,7 @@ class Mahogany228(unittest.TestCase):
     def test_exact_gold_city_tiles_and_twenty_eight_active_slots(self):
         self.assertEqual((ROOT/'maps/JohtoMahoganyTown.blk').read_bytes(),(GOLD/'maps/MahoganyTown.blk').read_bytes())
         maps=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps']
-        self.assertEqual(len(maps),33)
+        self.assertEqual(len(maps),37)
         self.assertEqual(maps[27]['local_id'],64)
         # JohtoActiveLocalIDs assigns compact slot 27 after the west 23/24 and east 62/63.
         index=(ROOT/'data/johto_map_headers.asm').read_text()
@@ -38,10 +38,9 @@ class Mahogany228(unittest.TestCase):
         # This compares the actual 45-entry browse landmark against the
         # active-slot marker, not only two tables against the same wrong JSON.
         self.assertEqual(region_audit(ROOT), [])
-        indices=[int(n) for n in re.search(r'(?m)^\s*db\s+([\d, ]+)',
-            (ROOT/'engine/overworld/johto_town_map_helpers.asm').read_text().split(
-                'JohtoNativeTownMapIndices::',1)[1]).group(1).split(',')]
-        self.assertEqual(len(indices),33)
+        part=(ROOT/'engine/overworld/johto_town_map_helpers.asm').read_text().split('JohtoNativeTownMapIndices::',1)[1].split('JohtoNativeTownMapIndicesEnd::',1)[0]
+        indices=[int(n) for row in re.findall(r'(?m)^\s*db\s+([\d, ]+)',part) for n in row.split(',')]
+        self.assertEqual(len(indices),37)
         self.assertEqual(indices[18],17)  # older Route35 gate mistakenly National Park
         self.assertEqual(indices[27],34)  # Mahogany was mistakenly Mt. Mortar
         self.assertEqual(indices[26],32)  # Route42 must NOT be changed
@@ -229,8 +228,8 @@ class Mahogany228(unittest.TestCase):
             'PatchJohtoAzaleaWestGateBorder::',1)[0])
         # Rendering only: ID65/67 inactive and town north edge stays blocked.
         registered=(ROOT/'data/johto_map_headers.asm').read_text()
-        self.assertNotIn('dw JohtoRoute43_h',registered)
-        self.assertNotIn('dw JohtoRoute43MahoganyGate_h',registered)
+        self.assertIn('dw JohtoRoute43_h',registered)
+        self.assertIn('dw JohtoRoute43MahoganyGate_h',registered)
         self.assertIn('JohtoMahoganyTownEdgeFence::',source)
         self.assertEqual((ROOT/'maps/JohtoMahoganyTown.blk').read_bytes(),
                          (GOLD/'maps/MahoganyTown.blk').read_bytes())

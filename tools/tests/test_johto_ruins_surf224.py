@@ -94,7 +94,7 @@ class RuinsSurf224(unittest.TestCase):
         cur = p.read_bytes()
         self.assertEqual(cur[0x8A*16:0x8B*16],
                          bytes.fromhex('3b0606063b0606063b0606064b4c214c'))
-        p.write_bytes(cur[:-32]) # remove both new $8b Cut clone and original $8a, truly out-of-range
+        p.write_bytes(cur[:0x8A*16]) # trim actual $8A Ruins block, including the new $8C Cut clone
         self.assertIn('Ruins metatile $8A out of range',
                       ' '.join(audit(self.root, self.gold)))
 

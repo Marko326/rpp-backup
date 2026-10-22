@@ -39,10 +39,126 @@ class GatehouseBehaviorHardening224(unittest.TestCase):
         self.failed(ASM,'\tjp z, .route35South','\tjp nz, .route35South',
                     'Route35GoldenrodGate')
 
-    def test_old_route34_step_on_branch_mutation_fails(self):
-        self.failed(ASM,'cp JOHTO_ROUTE_34_LOCAL_ID\n\tjr z, .route34',
-                    'cp JOHTO_ROUTE_34_LOCAL_ID\n\tjr nz, .route34',
-                    'JohtoRoute34IlexForestGate')
+    def test_route34_gold_carpet_step_on_branch_mutation_fails(self):
+        # Gold Route34 (13/14,37) is WARP_CARPET_DOWN, not a solid DOOR.
+        # Reintroducing the old .215 step-on exception must fail the runtime
+        # predicate audit even though the old contract once documented it.
+        raw=self.source(ASM)
+        needle=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .forest\n'
+                '\tcp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID')
+        replacement=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .forest\n'
+                     '\tcp JOHTO_ROUTE_34_LOCAL_ID\n\tjr z, .route34StepOn\n'
+                     '\tcp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID')
+        self.assertIn(needle,raw)
+        damaged=raw.replace(needle,replacement,1)
+        label='JohtoNorthGateStepWarpAllowed::'
+        self.assertIn(label,damaged)
+        start=damaged.index('JohtoNorthGateStepWarpAllowed::')
+        end=damaged.index('\nJohtoGateCollisionDirectionAllowed::',start)
+        section=damaged[start:end].replace('\n.gateVertical\n',
+            '\n.route34StepOn\n'
+            '\tld a, [wYCoord]\n\tcp 37\n\tjp nz, .deny\n'
+            '\tld a, [wXCoord]\n\tcp 13\n\tjr z, .route34DownStep\n'
+            '\tcp 14\n\tjp nz, .deny\n'
+            '.route34DownStep\n\tld a, PLAYER_DIR_DOWN\n\tjr .match\n'
+            '\n.gateVertical\n',1)
+        damaged=damaged[:start]+section+damaged[end:]
+        self.assertNotEqual(raw,damaged)
+        errors=audit(ROOT,self.gold,{ASM:damaged})
+        self.assertTrue(any('JohtoRoute34IlexForestGate' in error and
+                            'STEP_ON actual=True wanted=False' in error
+                            for error in errors),errors)
+
+    def test_vertical_gate_south_carpet_step_on_self_consistency_fails_gold(self):
+        # Mutate both the declared contract and the runtime so a self-only
+        # checker would pass. Gold's WARP_CARPET_DOWN source must still reject it.
+        manifest=json.loads(self.source(MANIFEST))
+        gate=next(g for g in manifest['active_warp_maps']
+                  if g['rpp_map']=='JohtoRoute43Gate')
+        for approach in gate['gatehouse_runtime']['approaches']:
+            if approach['map_local']==gate['gatehouse_runtime']['local_id'] and approach['y']==7:
+                approach['trigger']='STEP_ON'
+        raw=self.source(ASM)
+        old='''\tld a, [wYCoord]
+\tand a
+\tjr z, .up
+\tjp .deny
+.cityNorthDoor'''
+        new='''\tld a, [wYCoord]
+\tand a
+\tjr z, .up
+\tcp 7
+\tjr z, .downStep
+\tjp .deny
+.cityNorthDoor'''
+        self.assertIn(old,raw)
+        damaged=raw.replace(old,new,1)
+        start=damaged.index('JohtoNorthGateStepWarpAllowed::')
+        end=damaged.index('\nJohtoGateCollisionDirectionAllowed::',start)
+        section=damaged[start:end].replace('.up\n\tld a, PLAYER_DIR_UP\n\tjr .match\n.match',
+            '.up\n\tld a, PLAYER_DIR_UP\n\tjr .match\n.downStep\n\tld a, PLAYER_DIR_DOWN\n\tjr .match\n.match',1)
+        damaged=damaged[:start]+section+damaged[end:]
+        errors=audit(ROOT,self.gold,{ASM:damaged},manifest=manifest)
+        self.assertTrue(any('Gold WARP_CARPET_DOWN at Route43Gate (4,7) must be COLLISION_ONLY'
+                            in error for error in errors),errors)
+
+    def test_route34_outdoor_carpet_step_on_self_consistency_fails_gold(self):
+        manifest=json.loads(self.source(MANIFEST))
+        gate=next(g for g in manifest['active_warp_maps']
+                  if g['rpp_map']=='JohtoRoute34IlexForestGate')
+        for approach in gate['gatehouse_runtime']['approaches']:
+            if approach['map_local']=='JOHTO_ROUTE_34_LOCAL_ID' and approach['y']==37:
+                approach['trigger']='STEP_ON'
+        raw=self.source(ASM)
+        needle=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .forest\n'
+                '\tcp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID')
+        replacement=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .forest\n'
+                     '\tcp JOHTO_ROUTE_34_LOCAL_ID\n\tjr z, .route34StepOn\n'
+                     '\tcp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID')
+        damaged=raw.replace(needle,replacement,1)
+        start=damaged.index('JohtoNorthGateStepWarpAllowed::')
+        end=damaged.index('\nJohtoGateCollisionDirectionAllowed::',start)
+        section=damaged[start:end].replace('\n.gateVertical\n',
+            '\n.route34StepOn\n\tld a, [wYCoord]\n\tcp 37\n\tjp nz, .deny\n'
+            '\tld a, [wXCoord]\n\tcp 13\n\tjr z, .route34DownStep\n\tcp 14\n\tjp nz, .deny\n'
+            '.route34DownStep\n\tld a, PLAYER_DIR_DOWN\n\tjr .match\n.gateVertical\n',1)
+        damaged=damaged[:start]+section+damaged[end:]
+        errors=audit(ROOT,self.gold,{ASM:damaged},manifest=manifest)
+        self.assertTrue(any('Gold WARP_CARPET_DOWN at Route34 (13,37) must be COLLISION_ONLY'
+                            in error for error in errors),errors)
+
+    def test_gold_carpet_direction_cannot_be_rewritten_with_manifest_and_asm(self):
+        manifest=json.loads(self.source(MANIFEST))
+        gate=next(g for g in manifest['active_warp_maps']
+                  if g['rpp_map']=='JohtoRoute43Gate')
+        for approach in gate['gatehouse_runtime']['approaches']:
+            if (approach['map_local']=='JOHTO_ROUTE_43_LOCAL_ID' and
+                approach['x']==17 and approach['y']==31):
+                approach['direction']='UP'
+        raw=self.source(ASM)
+        start=raw.index('.route43MiddleNorth\n')
+        end=raw.index('\n.mahoganyNorth',start)
+        section=raw[start:end]
+        self.assertIn('jp z,.down',section)
+        section=section.replace('jp z,.down','jp z,.up')
+        damaged=raw[:start]+section+raw[end:]
+        errors=audit(ROOT,self.gold,{ASM:damaged},manifest=manifest)
+        self.assertTrue(any('Gold WARP_CARPET_DOWN at Route43 (17,31) requires DOWN, not UP'
+                            in error for error in errors),errors)
+
+    def test_gold_arrival_carpet_never_receives_automatic_step(self):
+        from johto_gatehouse_behavior_audit import gold_arrival_step_errors
+        doc=json.loads(self.source(MANIFEST))
+        gate=next(g for g in doc['active_warp_maps']
+                  if g['rpp_map']=='JohtoRoute43Gate')
+        arrival=next(a for a in gate['gatehouse_runtime']['arrivals']
+                     if a['local']==gate['gatehouse_runtime']['local_id'])
+        for point in arrival['points']:
+            if point[0]==7 and point[1] in (4,5):
+                point[2]='D_DOWN'
+        errors=gold_arrival_step_errors(ROOT,self.gold,[gate])
+        self.assertTrue(any('Gold arrival Route43Gate (4,7) role=WARP_CARPET_DOWN '
+                            'requires NONE, not D_DOWN' in error for error in errors),errors)
 
     def test_azalea_horizontal_gate_wrong_direction_fails(self):
         self.failed(ASM,'\tld a, PLAYER_DIR_LEFT\n\tjr .compare',

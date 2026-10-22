@@ -14,6 +14,8 @@ from pathlib import Path
 
 from johto_indoor_common import (ConversionError, dump, rpp_dimensions,
                                  rpp_tileset, rpp_warps, safe_roots)
+from johto_gold_door_audit import (gold_collision_index, gold_gate_approach_rule,
+                                   gold_gate_arrival_step)
 
 
 def edge_of(warp: dict, width: int, height: int) -> str:
@@ -134,8 +136,9 @@ def _gate_edges(warps: list[dict]) -> tuple[str, dict]:
 def gold_gate_inventory(rpp: Path, gold: Path) -> dict:
     """Source-based audit of *all* Gold Gate maps, including the future ones.
 
-    Arrival-step need is NOT deducible from compass direction or target Warp
-    index. It remains a per-destination/per-direction reviewed gameplay rule.
+    Trigger mode is derived from the actual Gold collision quadrant. Arrival
+    movement is independently derived from the destination collision role and
+    checked against every currently active RPP gate contract.
     """
     gold_maps = gold / 'maps'
     if not gold_maps.is_dir():
@@ -143,13 +146,43 @@ def gold_gate_inventory(rpp: Path, gold: Path) -> dict:
     contracts = json.loads((rpp / 'tools/johto_door_contracts.json').read_text(encoding='utf-8'))
     active = {c['gold_map']: c for c in contracts['active_warp_maps']
               if c.get('family') == 'GATE_INDOOR'}
+    native_path = rpp / 'tools/johto_native_maps.json'
+    native = (json.loads(native_path.read_text(encoding='utf-8'))['maps']
+              if native_path.is_file() else [])
+    local_headers = {row['local_symbol']: row['header'].removesuffix('_h') for row in native}
+    collision_sources = (
+        gold / 'data/maps/attributes.asm',
+        gold / 'constants/map_constants.asm',
+        gold / 'data/maps/maps.asm',
+        gold / 'data/maps/blocks.asm',
+    )
+    collision_index = (gold_collision_index(gold)
+                       if all(path.is_file() for path in collision_sources) else None)
     gates = []
+    active_approach_errors = []
+    active_approaches_checked = 0
+    active_arrival_errors = []
+    active_arrivals_checked = 0
+    collision_role_counts = defaultdict(int)
     for f in sorted(gold_maps.glob('*Gate*.asm')):
         name = f.stem
         src = f.read_text(encoding='utf-8')
         warps = _gold_gate_endpoints(src)
         if not warps:
             raise ConversionError(name + ': no Gold warp events')
+        for warp in warps:
+            warp['collision_role'] = (collision_index.role_at(name, warp['x'], warp['y'])
+                                      if collision_index is not None else 'UNAVAILABLE')
+            role = warp['collision_role']
+            collision_role_counts[role] += 1
+            if role in ('DOOR', 'DOOR_79', 'DOOR_75', 'DOOR_7D'):
+                warp['trigger_contract'] = 'STEP_ON'
+            elif role in ('WARP_CARPET_DOWN', 'WARP_CARPET_LEFT',
+                          'WARP_CARPET_UP', 'WARP_CARPET_RIGHT'):
+                warp['trigger_contract'] = 'COLLISION_ONLY'
+                warp['collision_direction'] = role.removeprefix('WARP_CARPET_')
+            else:
+                warp['trigger_contract'] = 'REVIEW_SPECIAL_COLLISION'
         topology, sides = _gate_edges(warps)
         if name in active and active[name].get('arrival_step_review', {}).get('layout') != topology:
             raise ConversionError(name + ': RPP reviewed gate layout differs from Gold warp geometry')
@@ -190,37 +223,140 @@ def gold_gate_inventory(rpp: Path, gold: Path) -> dict:
                           coord_event_count=coord_events,
                           applymovement_player_count=player_movement_scripts,
                           arrival_step_contract='REVIEW_PER_DESTINATION_AND_DIRECTION',
+                          warp_collision_rows=warps,
                           **{'is_implemented_in_project': name in active}))
+    # Independently compare each active RPP approach to the actual Gold
+    # collision quadrant. This prevents a self-consistent but incorrect JSON
+    # + ASM contract from redefining a directional carpet as step-on.
+    for gold_name, gate in active.items():
+        runtime = gate.get('gatehouse_runtime', {})
+        if not isinstance(runtime, dict):
+            active_approach_errors.append(f'{gate["rpp_map"]}: missing gatehouse_runtime')
+            continue
+        mode = runtime.get('mode')
+        for approach in runtime.get('approaches', []):
+            active_approaches_checked += 1
+            local = approach.get('map_local')
+            if local == runtime.get('local_id'):
+                source_map = gold_name
+            else:
+                stem = local_headers.get(local)
+                source_map = stem.removeprefix('Johto') if stem else None
+            x, y = int(approach['x']), int(approach['y'])
+            if collision_index is None:
+                active_approach_errors.append('Gold collision source tables unavailable; '
+                                              'cannot validate active gate approaches')
+                break
+            if not source_map:
+                active_approach_errors.append(
+                    f'{gate["rpp_map"]}: cannot resolve Gold source for {local} ({x},{y})')
+                continue
+            try:
+                role = collision_index.role_at(source_map, x, y)
+            except (OSError, ValueError, KeyError, IndexError) as exc:
+                active_approach_errors.append(
+                    f'{gate["rpp_map"]}: cannot decode {source_map} ({x},{y}): {exc}')
+                continue
+            trigger, direction = approach.get('trigger'), approach.get('direction')
+            expected = gold_gate_approach_rule(role, mode)
+            if expected is None:
+                active_approach_errors.append(
+                    f'{gate["rpp_map"]}: unsupported Gold Warp collision {role} at {source_map} ({x},{y})')
+            elif (trigger, direction) != expected:
+                active_approach_errors.append(
+                    f'{gate["rpp_map"]}: Gold {role} {source_map} ({x},{y}) '
+                    f'requires {expected[0]}/{expected[1]}, got {trigger}/{direction}')
+        for arrival in runtime.get('arrivals', []):
+            local = arrival.get('local')
+            if local == runtime.get('local_id'):
+                target_map = gold_name
+            else:
+                stem = local_headers.get(local)
+                target_map = stem.removeprefix('Johto') if stem else None
+            if collision_index is None:
+                active_arrival_errors.append('Gold collision source tables unavailable; '
+                                             'cannot validate active gate arrivals')
+                break
+            if not target_map:
+                active_arrival_errors.append(
+                    f'{gate["rpp_map"]}: cannot resolve Gold arrival map for {local}')
+                continue
+            for y, x, step in arrival.get('points', []):
+                active_arrivals_checked += 1
+                try:
+                    role = collision_index.role_at(target_map, int(x), int(y))
+                except (OSError, ValueError, KeyError, IndexError) as exc:
+                    active_arrival_errors.append(
+                        f'{gate["rpp_map"]}: cannot decode arrival {target_map} ({x},{y}): {exc}')
+                    continue
+                expected_step = gold_gate_arrival_step(role)
+                if expected_step is None:
+                    active_arrival_errors.append(
+                        f'{gate["rpp_map"]}: unsupported Gold arrival role {role} at {target_map} ({x},{y})')
+                elif step != expected_step:
+                    active_arrival_errors.append(
+                        f'{gate["rpp_map"]}: Gold arrival {target_map} ({x},{y}) '
+                        f'role={role} requires {expected_step}, got {step}')
     families = {f: sum(g['layout'] == f for g in gates)
                 for f in ('EAST_WEST_PAIR', 'NORTH_SOUTH_PAIR', 'COMPLEX_MULTI_EXIT')}
-    return dict(schema='gold-gate-preflight-inventory-v1',
+    return dict(schema='gold-gate-preflight-inventory-v2',
                 source='Gold maps/*Gate*.asm and current RPP GATE_INDOOR contracts',
-                caveat=('Geometry/Gold scripts cannot prove whether an RPP arrival '
-                        'requires zero or one simulated step; review incoming map, '
-                        'direction, Gold destination and collision for each side.'),
+                caveat=('Gold collision data establishes the expected trigger and '
+                        'native destination step. RPP runtime still must pass the '
+                        'executable branch audit; this source audit cannot replace '
+                        'ROM linking or phone/emulator input validation.'),
                 totals=dict(gold_gates=len(gates), **families,
                             unregistered_johto=sum(g['status'] == 'NOT_REGISTERED_JOHTO_CANDIDATE' for g in gates),
                             scene_or_nonstandard=sum(bool(g['flags']) for g in gates)),
+                collision_role_counts=dict(sorted(collision_role_counts.items())),
+                active_approach_check=dict(status='PASS' if not active_approach_errors else 'FAIL',
+                                           checked=active_approaches_checked,
+                                           errors=active_approach_errors),
+                active_arrival_check=dict(status='PASS' if not active_arrival_errors else 'FAIL',
+                                          checked=active_arrivals_checked,
+                                          errors=active_arrival_errors),
                 gates=gates)
 
 
 def gate_inventory_markdown(report: dict) -> str:
     lines = ['# Gold 全门房预检（地图开发前使用）', '',
              '来源：Gold 原版 `maps/*Gate*.asm`，与项目当前 `GATE_INDOOR` 登记对照。',
-             '**不会根据南北/东西方向猜测自动走一步。** 下表的危险标志仅用于规划，'
-             '真实 Warp 落点和自动步行仍需逐端审核。', '',
+             '**不根据南北/东西方向猜测触发或自动步进。** 每个 Warp 坐标的 Gold collision role、'
+             '入口触发、方向和活动合同到达步进均逐格核对；ROM 链接及手机输入行为仍需另行验收。', '',
              f"Gold 门房：{report['totals']['gold_gates']}；横向：{report['totals']['EAST_WEST_PAIR']}；"
              f"纵向：{report['totals']['NORTH_SOUTH_PAIR']}；复杂：{report['totals']['COMPLEX_MULTI_EXIT']}；"
              f"未注册城都候选：{report['totals']['unregistered_johto']}。", '',
+             f"Gold Warp 碰撞角色：`{json.dumps(report['collision_role_counts'], ensure_ascii=False)}`。", '',
+             f"当前已接入门房入口逐格对照：**{report['active_approach_check']['status']}**，"
+             f"检查 {report['active_approach_check']['checked']} 个入口；"
+             f"到达格自动步进对照：**{report['active_arrival_check']['status']}**，"
+             f"检查 {report['active_arrival_check']['checked']} 个落点。", '']
+    if report['active_approach_check']['errors']:
+        lines += ['| 当前合同与 Gold 不一致 |', '|---|']
+        lines += [f'| {error} |' for error in report['active_approach_check']['errors']]
+        lines.append('')
+    if report['active_arrival_check']['errors']:
+        lines += ['| 到达步进与 Gold 碰撞不一致 |', '|---|']
+        lines += [f'| {error} |' for error in report['active_arrival_check']['errors']]
+        lines.append('')
+    lines += [
              '| Gold 门房 | 地图形态 | 状态 | 特殊风险 |',
              '|---|---|---|---|']
     labels = {'EAST_WEST_PAIR': '东西双格', 'NORTH_SOUTH_PAIR': '南北双格',
               'COMPLEX_MULTI_EXIT': '多方向特殊'}
     for g in report['gates']:
-        flags = ', '.join(g['flags']) or '普通 Warp 结构（仍需逐端核对）'
+        flags = ', '.join(g['flags']) or '普通 Warp 结构（Gold 碰撞角色已盘点）'
         if g['reviewed_arrival_step'] is not None:
             flags += '；现有到达配置 ' + str(g['reviewed_arrival_step'])
         lines.append(f"| `{g['gold_map']}` | {labels[g['layout']]} | {g['status']} | {flags} |")
+    lines += ['', '## Gold 原版每个 Warp 的碰撞规则', '',
+              '| Gold 门房 | 坐标 | 原版碰撞 | 预期触发 | 目标地图 | 目标 Warp |',
+              '|---|---:|---|---|---|---:|']
+    for gate in report['gates']:
+        for warp in gate.get('warp_collision_rows', []):
+            lines.append(f"| `{gate['gold_map']}` | ({warp['x']},{warp['y']}) | "
+                         f"`{warp['collision_role']}` | `{warp['trigger_contract']}` | "
+                         f"`{warp['destination']}` | {warp['warp_number']} |")
     lines += ['', '## 新门房必须先登记的动作合同', '',
               '每条入口单独核对：来源地图、出入口坐标与面向、Gold Warp 目标编号、'
               'RPP 0-based 目标编号、落点格以及前后两格 Gold 碰撞，切图后 `NONE`'
@@ -246,8 +382,17 @@ def main(argv=None):
         dump(output, 'gold_gate_inventory.json', report)
         (output / 'GOLD_ALL_GATE_PREFLIGHT_zh.md').write_text(
             gate_inventory_markdown(report), encoding='utf-8')
-        print('GOLD_GATE_INVENTORY_ONLY:', report['totals'])
-        return 0
+        print('GOLD_GATE_INVENTORY_ONLY:', report['totals'],
+              'ACTIVE_APPROACH_CHECK:', report['active_approach_check']['status'],
+              f"{report['active_approach_check']['checked']} checked",
+              'ACTIVE_ARRIVAL_CHECK:', report['active_arrival_check']['status'],
+              f"{report['active_arrival_check']['checked']} checked")
+        for error in report['active_approach_check']['errors']:
+            print('ERROR:', error)
+        for error in report['active_arrival_check']['errors']:
+            print('ERROR:', error)
+        return 0 if (report['active_approach_check']['status'] == 'PASS' and
+                     report['active_arrival_check']['status'] == 'PASS') else 1
     reference, target = profile(rpp, args.reference_room), profile(rpp, args.rpp_room)
     result = {'reference': reference, 'target': target, 'comparison': compare(reference, target)}
     dump(output, 'native_reference_profiles.json', result)

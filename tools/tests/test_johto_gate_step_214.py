@@ -62,13 +62,12 @@ class GateOneStepContract(unittest.TestCase):
 
     def test_four_directions_at_all_registered_warps(self):
         expected={'JohtoIlexForest': ('JOHTO_ILEX_FOREST_LOCAL_ID', {(1,5):'PLAYER_DIR_UP'}),
-                  'JohtoRoute34': ('JOHTO_ROUTE_34_LOCAL_ID', {(13,37):'PLAYER_DIR_DOWN',(14,37):'PLAYER_DIR_DOWN'}),
+                  # Gold Route34 (13/14,37) are WARP_CARPET_DOWN, not STEP_ON.
+                  'JohtoRoute34': ('JOHTO_ROUTE_34_LOCAL_ID', {}),
                   'JohtoRoute34IlexForestGate': ('JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID',{
-                      (4,0):'PLAYER_DIR_UP',(5,0):'PLAYER_DIR_UP',
-                      (4,7):'PLAYER_DIR_DOWN',(5,7):'PLAYER_DIR_DOWN'}),
+                      (4,0):'PLAYER_DIR_UP',(5,0):'PLAYER_DIR_UP'}),
                   'JohtoRoute35GoldenrodGate': ('JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID',{
-                      (4,0):'PLAYER_DIR_UP',(5,0):'PLAYER_DIR_UP',
-                      (4,7):'PLAYER_DIR_DOWN',(5,7):'PLAYER_DIR_DOWN'})}
+                      (4,0):'PLAYER_DIR_UP',(5,0):'PLAYER_DIR_UP'})}
         for name,(key,valid) in expected.items():
             for w in rpp_warps(ROOT,name):
                 coord=w['x'],w['y']
@@ -85,8 +84,8 @@ class GateOneStepContract(unittest.TestCase):
                     self.assertFalse(step_warp_exec(self.branch,k,y,d),(k,y,d))
 
     def test_only_down_arrivals_auto_step_and_land_on_floor(self):
-        actual=self.arrival[2:]
-        self.assertEqual(len(actual),9)
+        actual=self.arrival
+        self.assertEqual(len(actual),17)
         expected_by_map={
             'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
             'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
@@ -94,7 +93,11 @@ class GateOneStepContract(unittest.TestCase):
             'JOHTO_GOLDENROD_CITY_LOCAL_ID':{(1,19,'D_DOWN')},
             'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
             'JOHTO_RUINS_OF_ALPH_LOCAL_ID':{(5,7,'D_DOWN')},
-            'JOHTO_ROUTE_34_LOCAL_ID':set()}
+            'JOHTO_ROUTE_34_LOCAL_ID':set(),
+            'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
+            'JOHTO_MAHOGANY_TOWN_LOCAL_ID':{(1,9,'D_DOWN')},
+            'JOHTO_ROUTE_43_LOCAL_ID':{(35,17,'D_DOWN')},
+            'JOHTO_ROUTE_43_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')}}
         actual_by_map={key:set((y,x,d) for _,local,y,x,source,d in actual if local==key)
                        for key in expected_by_map}
         self.assertEqual(actual_by_map,expected_by_map)

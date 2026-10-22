@@ -31,8 +31,12 @@ class GoldenrodNorthGate224(unittest.TestCase):
         runtime=section('engine/overworld/johto_route33_collision.asm',
                         'JohtoNorthGateStepWarpAllowed::','JohtoGateCollisionDirectionAllowed::')
         self.assertNotIn('cp JOHTO_ROUTE_35_LOCAL_ID',runtime)
-        # Accepted Route34/Forest gate stays step-on; don't globally alter it.
-        self.assertIn('cp JOHTO_ROUTE_34_LOCAL_ID',runtime)
+        # Gold Route34 y37 is WARP_CARPET_DOWN too: it must not use step-on.
+        self.assertNotIn('cp JOHTO_ROUTE_34_LOCAL_ID',runtime)
+        collision=section('engine/overworld/johto_route33_collision.asm',
+                          'JohtoGateCollisionDirectionAllowed::','JohtoInternalDoorFacingCheck::')
+        self.assertIn('cp JOHTO_ROUTE_34_LOCAL_ID',collision)
+        self.assertIn('.route34Carpet',collision)
 
     def test_accidental_route35_step_on_warp_fails(self):
         key='engine/overworld/johto_route33_collision.asm'
@@ -45,11 +49,28 @@ class GoldenrodNorthGate224(unittest.TestCase):
     def test_route35_collision_direction_and_blocked_wall_mandatory(self):
         key='engine/overworld/johto_route33_collision.asm'
         raw=txt(key)
-        bad=raw.replace(
-                            'cp 10\n\tjr z, .down\n\tjp .denied\n.northGate',
-                            'cp 10\n\tjr z, .up\n\tjp .denied\n.northGate',1)
-        self.assertNotEqual(raw,bad)
-        self.assertTrue(gate_carpet_trigger_errors(ROOT,{key:bad}))
+        # The current source uses JP. The checker must also accept the
+        # equivalent JR spelling instead of coupling behavior to one opcode.
+        self.assertEqual([],gate_carpet_trigger_errors(ROOT))
+        start=raw.index('\n.route35South\n')
+        end=raw.index('\n.route34Carpet\n',start)
+        route35=raw[start:end]
+        self.assertEqual(2,route35.count('\tjp z, .down'))
+        jr_route35=route35.replace('\tjp z, .down','\tjr z, .down')
+        self.assertNotEqual(route35,jr_route35)
+        jr_source=raw[:start]+jr_route35+raw[end:]
+        self.assertEqual([],gate_carpet_trigger_errors(ROOT,{key:jr_source}))
+
+        # Negative injection must mutate the real JP DOWN branch exactly once.
+        target='cp 10\n\tjp z, .down\n\tjp .denied\n.route34Carpet'
+        self.assertEqual(1,raw.count(target),'fault injection anchor must match exactly once')
+        bad=raw.replace(target,
+                        'cp 10\n\tjp z, .up\n\tjp .denied\n.route34Carpet',1)
+        self.assertNotEqual(raw,bad,'fault injection must change the source')
+        errors=gate_carpet_trigger_errors(ROOT,{key:bad})
+        self.assertTrue(any('Route35 collision Warp must require y33, x9/10 and DOWN' in v
+                            for v in errors),errors)
+
         maskkey='maps/JohtoRoute35.blocked_mask.bin'
         mask=bytearray((ROOT/maskkey).read_bytes())
         mask[34*3+9//8]&=~(1<<(9%8))

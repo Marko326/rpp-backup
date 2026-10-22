@@ -6,17 +6,17 @@
 
 1. **先读来源**：Gold `maps/*Gate.asm` 的入口对、Gold 入口碰撞类型、RPP `data/mapObjects/` 的 0-based Warp 索引。室外、室内、未开放的另一侧逐一列出；未开放出口不能留误触发的空 Warp。
 2. **地图身份**：原生城都地图复用 `$FC`，所以判断地图必须是 `REGION_NATIVE_MAP_SLOT + MAP_REGION_JOHTO + local ID`，不能只按 `$FC`、图块集或城镇地标判断。
-3. **Warp 触发与到达步行分开审核**：已验收的 31 号道路和桐树林南门房使用碰撞触发，门垫上站立或上下切换不自动 Warp；**北口 `.215` 是另一个已验收的“正确方向走上门口格触发”类型**，不能强迫新门房都按前者套用。每座门房必须按 Gold 原版门垫与 RPP 已有处理分支登记触发类型；错误方向/侧擦不可传送。切图后是否走一步独立登记，绝不由触发方式推断。
+3. **Warp 触发与到达步行分开审核**：必须以 Gold 原始 `.blk` + `tilecoll` 的实际碰撞角色为准。`WARP_CARPET_DOWN/LEFT/UP/RIGHT` 都可站立，只有朝碰撞编码的方向尝试移动才 Warp；不得登记成 `STEP_ON`。Gold `DOOR` 是另一种实体门，按原版使用踏格触发。切图后是否走一步独立登记，按 **Warp 目标格** 的 Gold 碰撞类型审核，绝不能从源门毯或南北布局推断。
 4. **立即反向复入**：两格分别反复“进→立刻出→再进”，不准要求先退一步；跨图后角色控制、落点、方向、步进状态必须正确。对照现有 `CheckWarpsNoCollisionLoop`、`CheckWarpsCollision`、`IsPlayerFacingEdgeOfMap`，不得新造专用踩格自动传送。
 5. **旧地图保全**：31号道路—桔梗市门房、关东 Route15 等原有门房、已开放洞穴、Fly、保存/读取不能因新的门房坐标特判回退；门房和洞穴的碰撞机制不能混用。
 
 ### A2. 竖向门房到达步行不能靠方向默认（ILEX-5.62.215 后强制）
 
 - 门房 Warp **触发方式** 和 **切图后自动走一步** 是两项不同设置。不能把“禁止踩格传送”理解成“禁止切图后一步”，也不能以“南北门房”为理由让上下两边都走一步。
-- **35号道路南端入口（`.224` 用户验收的正式规则）**：外侧 Warp 位于 `(9/10,33)`，先从 `(9/10,32)` 向下走上门毯**必须允许停留**，毯上左右换 Lane 不能传送；再次朝下碰撞 `(9/10,34)` 时才通过既有 `ExtraWarpCheck → CheckWarpsCollision` 进入门房。这个外侧入口改为 P16 风格 collision-only，但**已验收的 Route34↔桐树林北门房踏格触发仍保留原状**。进门后是否向下自动走一格属于独立目的地规则，不得为了阻止踩毯即传送删掉 `GetJohtoWarpArrivalStep`。此行为用户已于 `.224` 终态反馈手机实测无异常；未来修改仍需重新实机复核，不能以静态 PASS 替代。
+- **35号道路南端入口（`.224` 用户验收的正式规则）**：外侧 Warp 位于 `(9/10,33)`，先从 `(9/10,32)` 向下走上门毯**必须允许停留**，毯上左右换 Lane 不能传送；再次朝下碰撞 `(9/10,34)` 时才通过既有 `ExtraWarpCheck → CheckWarpsCollision` 进入门房。Gold 全门房碰撞盘点还发现：Route34 `(13/14,37)` 原先保留的 `.215 STEP_ON` 例外实际是 `WARP_CARPET_DOWN`，与 Gold 原版矛盾，已由 `.237` 统一改为 collision-only。Route34 外侧与门房室内南侧 y7 都是方向门毯；只有室内北侧 y0 的 Gold `DOOR` 保持 STEP_ON。进门/出门后的自动一步仍独立按目标格规则处理，不能由门毯触发方式推断。
 - 每个新增 `GATE_INDOOR` 必须在 `tools/johto_door_contracts.json` 记录 `arrival_step_review`：`layout`、每侧 `by_gate_side`（`NONE` / `D_UP` / `D_DOWN` / `D_LEFT` / `D_RIGHT`）及 `basis`。`johto_door_onboarding_audit.py` 缺少字段必须失败。复杂的 VictoryRoadGate 先走人工专项，不能伪装普通双格门房。
 - Gold 原版 `warp_event` 只证明位置/目标，**不能证明** RPP 自动模拟移动。运行时继续用 `GetJohtoWarpArrivalStep` / `PlayerStepOutFromDoor`，必须先核对目标格及一步后碰撞与可回程性。独立检查起始侧两条 Lane、四个方向、错误来源、菜单/读档状态。
-- `.215` 北门房：**抵达北侧 y0，自动向下 1 格；抵达南侧 y7，不额外走**；森林 `(1,5)` 作为目的地的向下 1 格仍由精确规则控制。不要恢复 `.214` 的双向自动步行。
+- `.215` 北门房：**抵达北侧 y0 的 Gold `DOOR`，自动向下 1 格；抵达南侧 y7 的 `WARP_CARPET_DOWN`，不额外走**；森林 `(1,5)` 作为目的地的 Gold 实体 `DOOR`，向下 1 格仍由精确规则控制。这里的旧 `.215` STEP_ON 例外只适用于实体门格，不适用于 Route34 外侧 `(13/14,37)` 地毯。不要恢复 `.214` 的双向自动步行。
 - 未来门房开工先运行现有 `tools/johto_warp_reference_profiles.py --inventory-gold-gates`，查看 Gold 全门房拓扑及 `SCRIPTED_ACCESS_OR_MOVEMENT` / `TWO_LANES_TO_ONE_DESTINATION` 标记，不能机械照抄。
 
 ## B. 外面建筑完整：两条地图加载路径都要查
@@ -56,6 +56,20 @@
 
 下一张门房动手前必读资料：`docs/JOHTO_GOLD_DOOR_GATE_POLICY.md`、`docs/JOHTO_ILEX_P16_SOUTH_GATE_RUNTIME.md`、`RPP_DEVELOPMENT_PITFALLS.md`；核心自动入口：`tools/johto_door_onboarding_audit.py`，统一静态门禁：`tools/johto_map_release_audit.py`。
 
+## .235C 同包功能收口：禁止只交“会报错的脚本”
+
+- 先升级固化的 `johto_rpp_connection_guard.py` / `johto_gatehouse_behavior_audit.py`，再按其逐格和双格门毯合同调整真实 Header、Profile、登记；专项必须做到合法数据 PASS、退回坏数据 FAIL。不要因为静态地图 `.blk` 一致就认定屏幕 WRAM 邻图已经填满。
+- Route43 北口 `x0` 的左屏幕预览占用三列 WRAM border，不增加可通行区域；从外部进入门房返回 Route43 的 `(9/10,51)` 是碰撞门毯，目的地 NONE（不自动 UP），门房上口真正入内的 `(4/5,0)` 仍 D_DOWN。两类目的地不能因“上下门房”类别相同而合并动作。
+- 每批给出功能＋审计一起修的可回放补丁与新的候选版本，统一静态审计真实退出码单独报告；ROM/MAP 和手机验收只按用户后续 `make`/视频证据报告。
+
+## .235B 静态假绿审计补强（仅工具修复，不声称修复手机画面）
+
+- **地图树木残留**：以前 `johto_rpp_connection_guard.py` 可检查所有 46 条连接的 Gold 偏移/复制登记，同时漏掉 `home/overworld.asm` 的**真实** BLK 三行/三列复制循环。实测故障注入 `ld c,MAP_BORDER → MAP_BORDER - 1` 后仍为 `46/46 PASS`。现在 `check_native_connection_copy_executor` 在所有连接总审计前检查两套执行内核的每条实际指令及 `MAP_BORDER=3`；复制写入丢失、少复制一行/列都必须 FAIL。该检查不能替代动态镜头/VRAM 截图对照。
+- **真实预览道路发现**：过去 Route43 x0 的提前放行分支被原审计器的连续范围正则吞掉，人工 JSON 仅登记 x8..11 仍能放行。现在复用 `johto_masked_step_audit.py` 中原有逐格 ASM 执行器，从原版 Gold 两侧的 FLOOR/FLOOR 地形独立推导合法接缝，再和运行时边缘围栏、登记以及左右两侧的屏幕预览拷贝宽度交叉比对。原始 .235B 在 x0 和左补绘缺失时必须 FAIL。
+- **双格门毯行为**：对于成对 `COLLISION_ONLY` 入口，实际自动迈离 Warp 毯将导致第一次按反方向只回到门毯、不能复入。原始 .235B Route43 `(9/10,51) D_UP` 必须被此通用规则拒绝；Mahogany 的单格实心外门依然按旧门房专门合同审核。
+- **门房自动行走**：以前 `johto_gatehouse_behavior_audit.py` 只验证步进**数据行**，即使 `GetJohtoWarpArrivalStep` 把无匹配情况默认改成 `D_UP`，也会 `PASS`。现在检查完整到达查询器、`PlayerStepOutFromDoor` 回退分支与 `JOHTO_GATE` 是否被归入通用门砖自动 `D_DOWN` 表。`NONE` 必须是可证明的运行时默认不迈步，而不只是 JSON 自我声明。仍无法由源码静态审计证明逐帧输入的手感或视频中的具体自动走动。
+- 这些规则必须经 `test_johto_audit_kernel_hardening_235b.py` 故障注入并在 `johto_map_release_audit.py` 中逐个绑定真实 unittest ID。合法 ASM 内核重构须同期改进审计器并通过新的故障注入，不能为了绿灯直接放宽断言；新图还需要检查可视边框完整覆盖与手机验收。
+
 ## G. 必须通过可执行分支合同门禁（ILEX-5.62.224）
 
 本项目的门房行为不是靠“必须读懂说明”来保证，而是靠 `tools/johto_gatehouse_behavior_audit.py` 运行时规则静态执行检查：`tools/johto_door_contracts.json` 的每个 `GATE_INDOOR` 都需要填写 `gatehouse_runtime`，完整的入口坐标和四方向期望、每侧的 step-on/collision-only、真实的目标 Warp slot、上下/左右分组、入门步进与 `NONE`、以及边界补绘策略。脚本解释执行 ASM 的分支、独立比对 Gold 原始入口和图块、执行负向故障注入；缺项和陌生指令均拒绝通过。详见 `docs/JOHTO_GATEHOUSE_EXECUTABLE_CONTRACT_224.md`。
@@ -76,3 +90,17 @@
 - **复现路径**：在 ID23 门房左口 (0,4/5) 朝 LEFT 出门，落到 Route38 `(35,8/9)`，原地朝 RIGHT 试图复入。`.229` 的 Gold 碰撞 mask 会在 `(36,8/9)` 阻挡，`CheckWarpsCollision` 的方向也正确；但真正的 `ExtraWarpCheck → JohtoInternalDoorFacingCheck` 没有登记 Route38 的这个非边界入口，因 x35 ≠ 最右边界 x39，旧 `IsPlayerFacingEdgeOfMap` 也不能触发 Warp。**这不是玩家操作问题，`.229` 不是实机 PASS。**
 - **必须分别验证所有碰撞门**：一是 `CanStepAhead` 真正碰撞；二是 standing-on-warp bit 已就绪；三是 `ExtraWarpCheck` 对合法来源/落点/方向返回 carry；四是 `CheckWarpsCollision` 目标图和方向核验；五是抵达后立即反向能再次通过同样的五步。只看 `JohtoGateCollisionDirectionAllowed` 不构成“可复入”证明。
 - **强制静态防回退**：`johto_gatehouse_behavior_audit.py` 为 Route38 的 `(35,8/9)` 强制 `outside_guard` + 解释执行 `JohtoInternalDoorFacingCheck` 四方向。`test_johto_gatehouse_carpet_229.py` 新增 Route38 两格具体判定和“删掉实际 ExtraWarpCheck 入口必须红灯”的负例。该检测不模拟真实按键时序和 ROM 执行，**手机测试仍为 PENDING**。
+
+## .235D 新固定条款：Gold 单格实体 DOOR 与双格门毯不得混淆
+
+- Gold `JOHTO`/`JOHTO_MODERN` 的**单格北向 DOOR**（例如金黄市 `(19,1)`、卡吉镇 `(9,1)`）从南侧走上门砖立即触发 Warp，使用已有 `JohtoNorthGateStepWarpAllowed`。不能把房顶阻挡 mask 错当成需要**第二次** UP 的依据。
+- 双格 `WARP_CARPET_DOWN`（Route35、Route43 南端）可先站上毯，朝门口方向再碰撞 Warp，左右横移与立即反向按键不应误触发。两类行为分别审核出门一步与撞墙。
+- `johto_gatehouse_behavior_audit.py` 必须用 Gold 原始 `.blk`、metatiles、tilecoll 对入口单格实体门分类，拒绝 JSON 和 ASM 一起把 STEP_ON 改为 COLLISION_ONLY 的自洽假绿。负向故障注入不能只变更其中一份。
+
+## .237 全门房 Gold 碰撞规则定稿（覆盖旧的 `.215` Route34 例外）
+
+- 对 Gold `maps/*Gate*.asm` 全量盘点 **24 座门房、100 个 Warp 落点**：26 个 Warp 位于 `DOOR`，其余 74 个分别为 `WARP_CARPET_DOWN` 30 个、`WARP_CARPET_LEFT` 22 个、`WARP_CARPET_RIGHT` 22 个。所有这 100 个 Warp 位的碰撞都能由 Gold 原始 `.blk` 和对应 tileset `tilecoll` 直接解出；没有必要靠门房名字或方向猜测。
+- 规则固定为：`DOOR` → `STEP_ON/UP`；`WARP_CARPET_<DIR>` → `COLLISION_ONLY/<DIR>`（Route31 保留既有 `LEGACY_COLLISION` 执行器，但语义仍是碰撞触发）。方向必须与 Gold 碰撞后缀一致。单格/双格决定 Lane 数，不改变单格实体门与方向门毯的触发差异。
+- 到达步进按**目标格**固定：Gold `DOOR`、`DOOR_79`、`STAIRCASE`、`CAVE` 由原版移动引擎向下离开目标格；方向门毯不自动迈步。当前已接入门房的目标点因此必须逐一符合 `D_DOWN` 或 `NONE`，而不是“上下门房都走一步”。
+- 当前 9 座已接入 RPP 门房的 67 个入口、55 个到达点均由 `tools/johto_warp_reference_profiles.py --inventory-gold-gates` 独立对照 Gold。脚本现在输出每个 Gold Warp 的 collision role / trigger contract，并在任一入口类型、方向或到达步进不一致时以非零退出码结束。
+- 旧记录 `.215` 将 Route34 `(13/14,37)` 当作踏格例外的说法已被原版碰撞证据推翻；保留它作为历史记录，但不得再作为当前规范或测试预期。

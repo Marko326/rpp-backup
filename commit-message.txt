@@ -1,3 +1,15 @@
+# SPID-5.62.237｜Route43／愤怒之湖与 Gold 门房合同：正式双提交索引（本文件是索引，不是 git commit -F 正文）
+# 基线：金银 / 2442898bed3a28be9f9009eb4703c456b7ec3d65（导出确认 HEAD，SPID-5.62.234）；目标 SPID-5.62.237。
+# 1) feat(johto): 接入43号道路与愤怒之湖并修正门房碰撞行为
+#    仅游戏运行时 ASM、地图 Header／对象／脚本、地图块与碰撞／水格资源、图块集／屋顶／地图注册及 data/game_version.asm；Version: SPID-5.62.234 -> SPID-5.62.237。
+# 2) test(tool): 固化Gold门房合同与Route43接缝故障注入审计
+#    仅 tools/ 转换／审计／JSON／单测、门房合同与 Gold 清单文档、TODO.md、RPP_DEVELOPMENT_PITFALLS.md、本提交索引；保留 fail-closed 检查与负向用例。
+# ZIP 固定 5 个文件：清理增量、工具／审计反向隔离、基线全量、SPID-5.62.237_feat_johto_commit.txt、SPID-5.62.237_test_tool_commit.txt。
+# 已打当前 .237 候选（含 Route35／ROM0／Route43 测试修复）使用清理增量；干净的确认 HEAD 使用基线全量；两者二选一，不叠加。
+# 最终态后先应用工具反向隔离 -> 用户提交功能 -> git apply -R 恢复工具／文档 -> 用户提交工具；Commit/Push 仅由用户执行。
+# 验证：专项 53/53 PASS；统一发布门禁退出码 0、867/867 unittest、0 skipped、46/46 连接 PASS；Gold 368 登记/367 扫描、SafariZoneBeta 唯一排除；masked-step 17 地图/106 边、0 failures，但 18 条 REVIEW_REQUIRED 保留。
+# 用户确认门房功能已实测，本轮不要求重复功能回归；AI 未编译／链接 ROM，ROM/MAP 配对及 Bank／VRAM 空间未独立验证。
+
 # SPID-5.62.233｜Route39＋浅葱市双图与转换/审计脚本：正式双提交索引（此文件不是 git commit -F 正文）
 # Base: 金银 / 614b00924d80dfaa9d9f783644376fbdd824b724（干净 HEAD / SPID-5.62.232）；目标 SPID-5.62.233。
 # 1) feat(johto): 接通39号道路与浅葱市双向通行并加入Fly、Surf和跳崖

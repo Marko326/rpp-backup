@@ -270,8 +270,9 @@ def gate_carpet_trigger_errors(root: Path, overrides=None):
     """The outdoor Route 35 mat is occupiable, NOT a step-on warp trigger.
 
     A DOWN press *from* the carpet must hit the blocked doorway and then use
-    the existing collision-only Warp handler. The already accepted Forest
-    north-gate step-on policy is separate and must remain unchanged.
+    the existing collision-only Warp handler. The same Gold source audit now
+    applies to Route34's y37 carpets and every vertical gate's indoor south
+    carpet; only the solid north-facing DOOR stays step-on.
     """
     errors = []
     asm = source(root, 'engine/overworld/johto_route33_collision.asm', overrides)
@@ -294,11 +295,15 @@ def gate_carpet_trigger_errors(root: Path, overrides=None):
     # city, and Forest north-gate helpers are still recognized.
     if re.search(r'(?m)^\s*cp JOHTO_ROUTE_35_LOCAL_ID\s*$', step_on):
         errors.append('Route35 carpet accidentally uses immediate step-on Warp (must be collision-only)')
-    for term in ('cp JOHTO_ROUTE_34_LOCAL_ID',
-                 'cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID',
+    if re.search(r'(?m)^\s*cp JOHTO_ROUTE_34_LOCAL_ID\s*$', step_on):
+        errors.append('Route34 Gold WARP_CARPET_DOWN still uses immediate step-on Warp')
+    for term in ('cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID',
                  'cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID'):
         if term not in step_on:
-            errors.append('accepted Forest north-gate step-on branch missing: '+term)
+            errors.append('solid north DOOR step-on branch missing: '+term)
+    if ('cp JOHTO_ROUTE_34_LOCAL_ID' not in collision or
+        '.route34Carpet' not in collision):
+        errors.append('Route34 Gold WARP_CARPET_DOWN must be routed through collision-only guard')
     if ('set 2,[hl]' not in standing or
         'call IsJohtoSouthGatePortal' not in standing or
         'callba JohtoNorthGateStepWarpAllowed' not in standing or
@@ -312,9 +317,16 @@ def gate_carpet_trigger_errors(root: Path, overrides=None):
     if ('callba JohtoInternalDoorFacingCheck' not in extra or
         'cp JOHTO_ROUTE_35_LOCAL_ID' not in facing):
         errors.append('Route35 collision doorway facing check not dispatched by ExtraWarpCheck')
-    route35_collision = collision.split('\n.route35South\n',1)[1].split('\n.northGate\n',1)[0] if '\n.route35South\n' in collision and '\n.northGate\n' in collision else ''
-    if (not re.search(r'(?s)cp 33.*?cp 9.*?jr z, \.down.*?cp 10.*?jr z, \.down',route35_collision) or
-        '.up' in route35_collision):
+    route35_collision = collision.split('\n.route35South\n',1)[1].split('\n.route43South\n',1)[0] if '\n.route43South\n' in collision else collision.split('\n.route35South\n',1)[1].split('\n.northGate\n',1)[0] if '\n.route35South\n' in collision and '\n.northGate\n' in collision else ''
+    # RGBDS accepts both JR and JP conditional branches. Match the actual
+    # coordinate/direction guard rather than pinning the audit to one opcode;
+    # the previous JR-only expression rejected the valid JP implementation.
+    route35_down_guard = re.search(
+        r'(?s)ld a, \[wYCoord\]\s*cp 33\s*(?:jr|jp) nz, \.denied'
+        r'\s*ld a, \[wXCoord\]\s*cp 9\s*(?:jr|jp) z, \.down'
+        r'\s*cp 10\s*(?:jr|jp) z, \.down\s*(?:jr|jp) \.denied',
+        route35_collision)
+    if not route35_down_guard or '.up' in route35_collision:
         errors.append('Route35 collision Warp must require y33, x9/10 and DOWN')
     if not re.search(r'(?s)\.route35SouthInterior\s*\n.*?cp 33.*?cp 9.*?cp 10.*?\.route35Down\s*\n.*?cp PLAYER_DIR_DOWN', facing):
         errors.append('Route35 ExtraWarpCheck must require y33, x9/10 and DOWN')

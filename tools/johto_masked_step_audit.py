@@ -14,6 +14,7 @@ import re
 from johto_indoor_common import ConversionError, rpp_warps
 from johto_indoor_collision_adapter import plan_gold_quadrant_collision, ROLE_SEMANTICS
 from johto_rpp_asset_audit import tileset_key, layout_inventory
+from johto_gold_cells import decode_cells
 
 DIRECTIONS = {'UP': (0,-1), 'DOWN': (0,1), 'LEFT': (-1,0), 'RIGHT': (1,0)}
 
@@ -64,7 +65,7 @@ def compare_literal(expr: str, width: int, local_symbol: str, height: int):
 
 
 def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
-                      local_symbol: str, x: int, y: int, direction: str):
+                      local_symbol: str, x: int, y: int, direction: str, gold_cut_cells=None):
     registers = {'wCurMap': 'REGION_NATIVE_MAP_SLOT',
                  'wCurRegion': 'MAP_REGION_JOHTO',
                  'wCurLocalMapID': local_symbol,
@@ -122,6 +123,17 @@ def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
             if (x+dx,y+dy)==(24,13):
                 raise ConversionError('Dynamic live Cut block requires runtime state')
             carry = False
+            continue
+        if op == 'call JohtoRoute43LakeCutTreeCleared':
+            # Use the *current Gold source* rather than a special-case map
+            # list. The live Cut change can only affect authentic Gold Cut
+            # quadrants, so refuse to speculate on mutable RAM at those cells.
+            if gold_cut_cells is None:
+                raise ConversionError('Gold Cut cells required to trace shared Cut helper')
+            dx,dy=DIRECTIONS[direction]
+            if (x+dx,y+dy) in gold_cut_cells:
+                raise ConversionError('Dynamic live Gold Cut block requires runtime state')
+            carry=False
             continue
         m = re.fullmatch(r'(jr|jp)\s+(?:(z|nz|c|nc)\s*,\s*)?([.\w]+)', op)
         if m:
@@ -336,6 +348,16 @@ def audit(rpp: Path, gold: Path) -> dict:
                     (was and not now and (x,y) in gold_carpet_warps)):
                     raise ConversionError(f'Unexplained Gold/runtime mask mismatch: {rpp_name} ({x},{y})')
         program,labels=parse_caller(source,caller)
+        # Only the shared new Cut helper needs exact mutable Cut sites.
+        # Old callers retain their pre-existing strict execution model.
+        gold_cut_cells=None
+        if 'call JohtoRoute43LakeCutTreeCleared' in program:
+            gold_cut_cells={(c['x'],c['y']) for c in decode_cells(
+                (gold/'maps'/f'{gold_name}.blk').read_bytes(),
+                (gold/'data/tilesets'/f'{gold_set}_metatiles.bin').read_bytes(),
+                (gold/'data/tilesets'/f'{gold_set}_collision.asm').read_text(),
+                geom['width_cells']//2,geom['height_cells']//2)
+                if c['role']=='CUT_TREE'}
         movement=[e for e in geom['portal_edges'] if
                   (e['to_x'],e['to_y']) in active and
                   e['source_semantics'] in ('ordinary', 'portal')]
@@ -352,7 +374,7 @@ def audit(rpp: Path, gold: Path) -> dict:
             try:
                 blocked, origin=trace_masked_step(program,labels,runtime_mask,
                     geom['width_cells'],geom['height_cells'], local[0]['local_symbol'],
-                    e['from_x'],e['from_y'],e['direction'])
+                    e['from_x'],e['from_y'],e['direction'],gold_cut_cells=gold_cut_cells)
                 row={ 'rpp_map':rpp_name,'gold_map':gold_name,
                       'from':[e['from_x'],e['from_y']],
                       'to':[e['to_x'],e['to_y']],

@@ -33,7 +33,7 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
         objects = {n: content(f'data/mapObjects/Johto{n}.asm').decode()
                    for n in ('Route39', 'OlivineCity')}
         capabilities = json.loads(content('tools/johto_native_maps.json'))['maps']
-        if 'DEF NUM_JOHTO_MAPS EQU 33' not in constants:
+        if not re.search(r'(?m)^DEF NUM_JOHTO_MAPS EQU (\d+)$', constants) or int(re.search(r'(?m)^DEF NUM_JOHTO_MAPS EQU (\d+)$',constants).group(1)) != len(capabilities):
             errors.append('pair requires 33 physical active headers')
         for name, stable, slot in (('Route39', 25, 28), ('OlivineCity', 26, 29)):
             if f'dw Johto{name}_h ; stable ID{stable} -> slot{slot}' not in registry:
@@ -102,7 +102,7 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
         expected={(str(h['x']),str(h['y']),dirset[(h['dx'],h['dy'])]) for h in gold_hops['hops']}
         if set(raw)!=expected or len(raw)!=len(expected) or len(raw)!=20:
             errors.append('Route39 executable 20 Gold jump directions missing/changed')
-        if 'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID' not in fly or 'cp 9\n\tjr c, .nextReady' not in fly:
+        if 'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID' not in fly or not re.search(r'(?m)^\s*cp\s+10\s*\n\s*jr\s+c,\s*\.nextReady', fly):
             errors.append('Olivine Fly cursor/physical ID not active')
     except (OSError,IndexError,KeyError,ValueError,TypeError) as exc:
         errors.append(f'adjacent runtime source audit failed closed: {exc}')

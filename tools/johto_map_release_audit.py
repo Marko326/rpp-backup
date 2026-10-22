@@ -68,7 +68,7 @@ test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170 test_johto_fixed_id_freeze225
 test_johto_route32_ladder166 test_johto_route32_p1b
 test_johto_route32_p1c test_johto_rpp_asset_audit
-test_johto_rpp_batch test_johto_adjacent_pair_pipeline_233 test_johto_rpp_connection_guard
+test_johto_rpp_batch test_johto_adjacent_pair_pipeline_233 test_johto_route43_lake_235 test_johto_route43_gate_236 test_johto_audit_kernel_hardening_235b test_johto_rpp_connection_guard
 test_johto_rpp_contract167 test_johto_rpp_export_audit168
 test_johto_rpp_validator_unit test_johto_union_cave171
 test_johto_union_cave172 test_johto_union_cave173
@@ -89,6 +89,22 @@ test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_route43_lake_235.Route43Lake235.test_235d_single_gold_door_first_step_warps_without_second_up
+ test_johto_route43_lake_235.Route43Lake235.test_235d_self_consistent_wrong_door_contract_fails_gold_reference
+test_johto_route43_lake_235.Route43Lake235.test_235b_every_gold_floor_seam_lane_runs_both_collision_layers
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_closing_gold_west_path_and_rewriting_manifest_still_fails
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_235b_disjoint_west_footpath_is_not_silently_omitted
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_235b_paired_collision_only_carpet_cannot_auto_step_off
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_proposed_visual_strip_fix_passes_without_touching_project
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_proposed_no_auto_step_passes_without_touching_project
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_current_frozen_render_and_arrival_kernels_pass
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_reducing_connection_copy_to_two_rows_is_rejected
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_removing_actual_north_copy_write_is_rejected
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_east_west_copy_width_corruption_is_rejected
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_gate_default_up_step_without_profile_is_rejected
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_gate_arrival_lookup_was_disabled_is_rejected
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_gate_postwarp_fallback_control_flow_is_rejected
+test_johto_audit_kernel_hardening_235b.AuditKernelHardening235B.test_implicit_johto_gate_door_step_is_rejected
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_original_menu_stream_and_bank_exit_graph
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_wrong_entry_bank_is_blocked
 test_rom0_list_menu_bank225.Rom0ListMenuBank225.test_restoring_bank_inside_romx_is_blocked
@@ -112,7 +128,11 @@ test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_moving_romx_
 test_johto_rom0_collision_dispatch224.Rom0CollisionDispatch224.test_rom0_new_per_map_chain_is_rejected
 test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_route35_carpet_step_on_bug_is_rejected
  test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_route35_warp_collision_direction_mutation_fails
- test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_old_route34_step_on_branch_mutation_fails
+ test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_route34_gold_carpet_step_on_branch_mutation_fails
+ test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_vertical_gate_south_carpet_step_on_self_consistency_fails_gold
+ test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_route34_outdoor_carpet_step_on_self_consistency_fails_gold
+ test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_gold_carpet_direction_cannot_be_rewritten_with_manifest_and_asm
+ test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_gold_arrival_carpet_never_receives_automatic_step
  test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_azalea_horizontal_gate_wrong_direction_fails
  test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_north_gate_arrival_removed_fails
  test_johto_gatehouse_behavior_hardening224.GatehouseBehaviorHardening224.test_unexpected_south_gate_arrival_fails
@@ -129,6 +149,7 @@ test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_unknown_gate_doo
 test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_city_arrival_autostep_removed_is_detected
 test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_city_arrival_wrong_direction_is_detected
 test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_route35_default_forest_border_must_be_replaced
+test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_route35_collision_direction_and_blocked_wall_mandatory
 test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_route35_preview_wrong_row_or_wall_detected
 test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_route35_south_border_load_hooks_must_be_on_both_paths
 
@@ -214,6 +235,7 @@ test_johto_goldenrod_p19.GoldenrodP19.test_gold_two_way_connection_offsets
 test_johto_region_id170.NativeMapIDExpansion.test_same_length_wrong_header_identity_is_rejected
 test_johto_gold_door_audit.GoldDoorReferenceTests.test_bad_destination_index_is_rejected
 test_johto_gold_door_audit.GoldDoorReferenceTests.test_gold_baseline_inventory
+test_johto_gold_door_audit.GoldDoorReferenceTests.test_all_gold_gate_warps_have_collision_derived_trigger_rules
 test_johto_door_onboarding_audit.WarpCapabilityStatusTests.test_forbidden_active_route33_warp_is_rejected
 test_johto_gold_cells.GoldQuadrantDecoder.test_missing_tilecoll_quadrant_fails
 test_johto_gold_cells.GoldQuadrantDecoder.test_any_graphic_exceeding_slot_limit_fails
@@ -477,11 +499,15 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
                 label = (edge.get('current','?')+' '+edge.get('direction','?')+' -> '+edge.get('target','?')
                          if 'current' in edge else str(edge.get('edge')))
                 errors.extend('CONNECTION: '+label+': '+err for err in edge['issues'])
+    # Independent visual and gate checks must both report findings. Older
+    # releases skipped gate diagnostics as soon as a connection failed, which
+    # hid a second, unrelated .235B auto-step regression in one run.
+    if connections is not None:
+        errors.extend('GATEHOUSE_RUNTIME: ' + e for e in gatehouse_behavior_audit(root,gold))
     additional_required_ids = set()
     if not errors:
         onboard_errors, additional_required_ids = door_onboarding_audit(root, gold)
         errors.extend('DOOR_ONBOARDING: ' + e for e in onboard_errors)
-        errors.extend('GATEHOUSE_RUNTIME: ' + e for e in gatehouse_behavior_audit(root,gold))
         errors.extend('GOLD_DOOR: ' + e for e in gold_door_inspect(gold)['errors'])
         errors.extend('REGION: ' + e for e in region_audit(root))
         errors.extend('WARP: ' + e for e in warp_audit(root, gold))

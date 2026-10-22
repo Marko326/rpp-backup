@@ -1,3 +1,32 @@
+## SPID-5.62.237｜正式清理收口：Gold 门房合同、审计误报与双提交边界
+
+- **功能合同**：Gold 实体 `DOOR` 是 STEP_ON；`WARP_CARPET_<DIR>` 可站立，仅在对应方向碰撞时 Warp。切图后自动步进由目的地格的 Gold 碰撞类型决定，不能由入口方向或门房朝向推导。Gold 24 座门房共 100 个 Warp（26 个实体门、74 个方向门毯）；当前 9 座活动门房的 67 个入口与 55 个到达点逐项核对。
+- **Route35 检查器的漏检／误报根因**：实际 `.route35South` 使用 `jp z, .down`，旧检查器只匹配 `jr z, .down`，把等价且正确的汇编分支误判为失败。修复后同时接受 `jp`／`jr`，但仍严格要求 y=33、x=9/10、DOWN 分支与拒绝回退；不能通过放宽整个门房规则来消除误报。
+- **负向测试曾经失效的根因**：Route35 测试替换不存在的旧 `jr` 文本，未改变源码；ROM0 地图分派和 Route43／Lake 接缝也存在相同的过期指令锚点。现有测试先断言锚点恰好命中一次，再验证源码确实改变，并断言错误分支被审计器拒绝；关键用例已加入统一门禁的 `REQUIRED_TEST_IDS`。
+- **实测测试证据**：Route35、ROM0 分派、Route43／Lake 三个专项模块组合 53/53 PASS。统一 `johto_map_release_audit.py` 实际退出码 0、`status=PASS`：867/867 unittest、0 skipped、46/46 活动连接 PASS；Gold 登记 368、扫描 367、`source_failed=0`，`SafariZoneBeta` 按既有许可唯一排除。
+- **不得误读静态报告**：masked-step source audit 覆盖 17 张地图／106 条移动边，`failures=[]`，但有 18 条 `REVIEW_REQUIRED`，这些边不是逐边 PASS。Gold 报告为 `SOURCE_ONLY_RUNTIME_UNVERIFIED`；ROM Bank／VRAM 预算未验证。本项目禁止 AI 自行编译／链接 ROM。
+- **用户功能验收范围**：用户确认当前候选的门房功能已经实测。本次只清理工具、测试和收口记录，不改运行时门房逻辑，因此不要求重复测试。未取得本轮 ROM/MAP SHA-256 或链接报告，不据此声称二进制配对及空间余量已核实。
+- **提交隔离**：从金银分支正式基线 `2442898bed3a28be9f9009eb4703c456b7ec3d65`（`SPID-5.62.234`）到 `SPID-5.62.237` 同时存在游戏运行时／地图资源和离线工具／测试改动，必须按模式 A 双提交。第一笔只含运行时 ASM、地图／图块／碰撞／水格资源、注册与版本；第二笔含 `tools/`、测试、门房审计合同文档、TODO、踩坑与提交索引。反向隔离不得撤回 `scripts/*.asm` 游戏运行时脚本或 `data/game_version.asm`。
+
+## SPID-5.62.235D 候选｜卡吉镇单格实体门 STEP_ON 漏检与修复
+
+- **手机视频 .235C 真实失败**：卡吉镇 (9,1) 单格 Gold `DOOR` 只走到门砖后停留，再按一次 UP 才进门。源码的门房合同把它误写为 `COLLISION_ONLY`，实际 `JohtoNorthGateStepWarpAllowed` 漏登记卡吉镇；故 849/849 只证明同一个错误合同在脚本、ASM 两边自洽。Gold 原版 `DOOR` 与 Route43 (9/10,51) 的双格 `WARP_CARPET_DOWN` 不是一类。
+- **游戏修复**：只在现有 `JohtoNorthGateStepWarpAllowed` 中加入卡吉镇精确 (9,1)/UP 的 STEP_ON 分支；保留从 (9,2) 进入门格的既有最小 mask 例外、Gold 房顶不可走、出门到卡吉镇后的 `D_DOWN`、Route43 双门毯 `COLLISION_ONLY` 与 `NONE` 落点。HOME `IsJohtoSouthGatePortal` 原有门房分流仍承担通用入口，不另造传送器。
+- **审计修复**：既有 `johto_gatehouse_behavior_audit.py` 现在直接以 Gold `.blk`、图块集 metatiles、collision table 独立核对一格北向实体 `DOOR` 必须是 `STEP_ON`；双格 carpet 不同规则。`test_johto_route43_lake_235.py` 额外执行单次按上路径与负向故障注入（同时把 ASM/JSON 改回 `.235C` 错误值仍必须 FAIL）。不得再靠同一个 JSON 自证功能。继续保持 ROM 与手机状态独立于 STATIC_PASS。
+
+## SPID-5.62.235C 候选｜脚本、树林补绘与门房步进一体修复
+
+- **根因一（视野）**：Route43 的原版 Gold 北接缝虽有 x0 与 x8..11 两组可行走出口，但旧 `.235B` 仅复制愤怒湖 x5..14 的 10 列，左侧 x0 通道从镜头看向湖时西侧 WRAM 三列保持默认树图。只扩大**显示用**的北向加载条带为 Gold 湖 x2..14 共 13 列，写入 WRAM x0..12；真实接缝 10 列、5 条合法可走格、南向返回和 Gold `.blk` 都不动。`johto_rpp_connection_guard.py` 将 Gold 真实 FLOOR/FLOOR、边缘执行器、左/右预览宽度、三行拷贝源码作共同 fail-closed 审计，不能只检查 JSON。
+- **根因二（门房）**：门房返回 Route43 的双格 COLLISION_ONLY 门毯 `(9,51)/(10,51)` 不能追加 `D_UP`，否则刚出门人物被自动带离门垫，原地反向 DOWN 无法立即复入。删除这两条 Profile（实际 NONE 默认值），更新 `johto_door_contracts.json` 和到达审计；门房北侧入门后的 `D_DOWN`、卡吉镇实体门出口 `D_DOWN` 保留。执行器/门砖 fallback 和两个门垫各自双向规则仍由现有审计与故障注入守护。
+- **共同交付与静态验收**：必须同包修改游戏 Header/到达表、脚本检查器、登记表、单测。发布前实际运行统一 Gold 门禁，保留其返回码和 0 skipped 证据。ROM `make`、同版本新 MAP、运行时输入/镜头与旧存档必须由用户检查，静态 PASS 不等于 PHONE_ACCEPTED。Route43Gate 中段和愤怒湖两间室内仍为延期内容，不能为消除树林而开放它们。
+
+## SPID-5.62.235B 候选｜卡吉镇北门口与 Route43↔愤怒之湖左侧空气墙
+
+- **玩家反馈的两处真实故障（手机尚待重测）**：在卡吉镇北部实际 Gold 门口 `(9,1)`，虽然 Warp 表正确，但 `JohtoMahoganyTownCanStepAhead` 没有让 `(9,2)` 向上进入这格 DOOR（静态掩码 BLOCK）；ROM0 的 `IsJohtoSouthGatePortal` 也漏掉稳定 ID64，无法保证撞墙第二次按 UP 走 collision-only 路线。现两处一起修复：只放行 `(9,2)→(9,1)`，并让 ID64 进入已有碰撞方向检查；从 `(9,1)` 再次向上才传送，北侧其余 DOOR/墙维持封闭。
+- **重复的 Gold 多走廊空气墙**：Route43 北缘 `(x=0,y=0)` ↔ LakeOfRage 南缘 `(x=10,y=35)` **另有第 5 个合法 FLOOR/FLOOR 出口**；以 Gold `Route43.blk`/`LakeOfRage.blk` + 两张独立碰撞表为真相，它与原已开放 x8..11 ↔ x18..21 **不是同一个连续 4 格门**。旧 `.235A` 仅放行中间四格，左右两端各自的 `EdgeFence` 与 `CanStepAhead` 合计 4 层封死左侧出口，造成穿墙金手指才通。现四层只加左侧单格，不开放 x1↔x11（Route43 一侧是 HEADBUTT_TREE），也不开放其他无路的树墙。
+- **脚本全绿但实机空气墙的缺口**：`.235A` 的 831/831、46/46 只覆盖相邻方向/链接字段与部分 Warp 方向，不实际执行整个 Gold FLOOR/FLOOR 多组件出口和“走上门口”前一步。`.235B` 测试从 Gold 独立计算 5 格应开集合，遍历两端每格的 EdgeFence + CanStepAhead、Gold 内侧路径与南门两次输入，还按每一层和 HOME selector 故障注入。以前相同的五格海路修复教训必须延用到所有新直接接缝，禁止将 x8..11 单通道的通过等同于整个 Route43↔湖岸正确。
+- **静态验收边界**：本轮不改 Gold `.blk`、Surf、Cut、Headbutt 延期项，不自动开放 `Route43Gate`（Gold `Route43` 另有三个 Warp，目标门房尚未注册）及愤怒湖两幢未开发房屋。脚本解释执行部分 ASM 而不运行 ROM；是否真实解除用户截图处阻挡、链接预算、门房原地掉头与左侧走到湖畔仍必须由用户 `make` 和手机确认。
+
 ## SPID-5.62.234（`.234B` 已获用户实机认可）｜浅葱市→Route40 步行空气墙的真实根因
 
 - **问题不在 Surf**：`.234A` 只拦 Surf 地图外误上岸，用户重测“冲浪正常、陆地空气墙仍在”，不能再据此认定修好。

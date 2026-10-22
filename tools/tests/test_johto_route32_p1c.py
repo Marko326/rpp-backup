@@ -185,7 +185,7 @@ class Route32ConnectionTests(unittest.TestCase):
                          {(y,x) for y in range(24,32) for x in range(4,8)})
         original = (GOLD/'data/tilesets/johto_metatiles.bin').read_bytes()
         blocks = (ROOT/'gfx/blocksets/johto.bst').read_bytes()
-        self.assertEqual(len(blocks), 140*16)  # Ruins outside cliff metatile $8A
+        self.assertEqual(len(blocks), 141*16)  # Ruins outside cliff metatile $8A
         old = original[0x5b*16:(0x5b+1)*16]
         clone = bytearray(old)
         for pos in (2,3,6,7):

@@ -93,7 +93,7 @@ class SeaChain234(unittest.TestCase):
     def test_active_connections_and_cross_bank_preview_are_guarded(self):
         outcome=audit_all_active(ROOT,GOLD)
         self.assertEqual(outcome['status'],'PASS',outcome['issues']+[x for x in outcome['edges'] if x['status']!='PASS'])
-        self.assertEqual(len(outcome['edges']),42)
+        self.assertEqual(len(outcome['edges']),46)  # original 42 plus reciprocal Route43/Lake seam
         home=(ROOT/'home/overworld.asm').read_text()
         for direction in range(4):
             self.assertIn(f'ld e,{direction}\n callab ResolveNativeConnectionPreviewBank',home)

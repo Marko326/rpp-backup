@@ -8,7 +8,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
-from johto_gold_door_audit import inspect  # noqa: E402
+from johto_gold_door_audit import inspect, GoldCollisionIndex  # noqa: E402
+from johto_warp_reference_profiles import gold_gate_inventory  # noqa: E402
 
 
 class GoldDoorReferenceTests(unittest.TestCase):
@@ -25,6 +26,40 @@ class GoldDoorReferenceTests(unittest.TestCase):
         self.assertGreaterEqual(result['stats']['warp_events'], 1200)
         self.assertGreaterEqual(result['stats']['registered_maps'], 360)
         self.assertIn('directional_carpet', result['stats']['collision_families'])
+
+    def test_all_gold_gate_warps_have_collision_derived_trigger_rules(self):
+        index = GoldCollisionIndex(self.gold)
+        gates = index.gate_warp_inventory()
+        self.assertEqual(len(gates), 24)
+        warp_count = sum(len(gate['warps']) for gate in gates)
+        self.assertEqual(warp_count, 100)
+        roles = {}
+        for gate in gates:
+            for warp in gate['warps']:
+                role = warp['collision_role']
+                roles[role] = roles.get(role, 0) + 1
+                if role.startswith('WARP_CARPET_'):
+                    self.assertEqual(warp['trigger_contract'], 'COLLISION_ONLY',
+                                     (gate['gold_map'], warp))
+                    self.assertEqual(warp['collision_direction'], role.removeprefix('WARP_CARPET_'))
+                else:
+                    self.assertEqual(role, 'DOOR', (gate['gold_map'], warp))
+                    self.assertEqual(warp['trigger_contract'], 'STEP_ON',
+                                     (gate['gold_map'], warp))
+        self.assertEqual(roles, {
+            'DOOR': 26,
+            'WARP_CARPET_DOWN': 30,
+            'WARP_CARPET_LEFT': 22,
+            'WARP_CARPET_RIGHT': 22,
+        })
+        report = gold_gate_inventory(ROOT, self.gold)
+        self.assertEqual(report['totals']['gold_gates'], 24)
+        self.assertEqual(report['active_approach_check']['status'], 'PASS')
+        self.assertEqual(report['active_approach_check']['checked'], 67)
+        self.assertEqual(report['active_approach_check']['errors'], [])
+        self.assertEqual(report['active_arrival_check']['status'], 'PASS')
+        self.assertEqual(report['active_arrival_check']['checked'], 55)
+        self.assertEqual(report['active_arrival_check']['errors'], [])
 
     def make_gold_copy(self, tmp: str) -> Path:
         # Only the audit's relevant source files are required for mutation.

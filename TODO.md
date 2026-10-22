@@ -1,3 +1,15 @@
+## SPID-5.62.237｜正式清理收口：Gold 门房碰撞合同与 Route43／愤怒之湖审计（2026-10-22）
+- [x] **基线与版本**：金银分支导出确认的正式 Git 基线为 `2442898bed3a28be9f9009eb4703c456b7ec3d65`，基线版本 `SPID-5.62.234`；最终游戏版本保持本轮候选 `SPID-5.62.237`。交付按项目模式 A 拆为游戏功能与工具／审计两笔，Git Commit/Push 由用户执行。
+- [x] **游戏功能范围**：接入 Gold Route43、LakeOfRage 及相应门房／地图资源，维护地图身份、Header／Bank、碰撞与水格掩码、双向接缝、预览图块、屋顶调色与地图地标；统一门房实体 `DOOR` 的 STEP_ON 与方向门毯 `WARP_CARPET_<DIR>` 的方向碰撞规则。目标格自动步进仍独立于入口方向判断。
+- [x] **Gold 门房真值盘点**：直接读取 Gold 原始 `.blk` 与 tileset collision，检查 24 座 Gate 地图、100 个 Warp（26 个 `DOOR`、74 个方向门毯）；当前 9 座活动 RPP 门房的 67 个入口和 55 个到达点与碰撞合同核对一致。Route34 外侧 `(13/14,37)` 以 Gold `WARP_CARPET_DOWN` 为准，不保留旧 STEP_ON 例外。
+- [x] **审计／负向测试修复**：Route35 检查器兼容实际汇编中的 `jp`／`jr` 条件跳转；方向负例确认唯一锚点命中、真实改变 DOWN 分支并验证错误方向被拒绝。ROM0 分派与 Route43／Lake 接缝的过期注入也改为匹配真实指令并检查替换次数；关键负向用例登记到 `REQUIRED_TEST_IDS`，防止测试被删或漏执行后出现假绿。
+- [x] **专项回归**：`test_johto_route35_goldenrod_gate224`、`test_johto_rom0_collision_dispatch224`、`test_johto_route43_lake_235` 组合 **53/53 PASS**，覆盖方向跳转、碰撞边界、ROM0 分派与五格接缝故障注入。
+- [x] **完整统一发布门禁**：执行 `PYTHONPATH=tools JOHTO_GOLD_SOURCE=<pokegold-master> JOHTO_GOLD_ROOT=<pokegold-master> python tools/johto_map_release_audit.py --rpp . --gold <pokegold-master> --expect-version SPID-5.62.237`，退出码 `0`、`status=PASS`，**867/867 unittest、0 skipped、46/46 活动连接 PASS**。Gold 登记 368 张、扫描 367 张、`source_failed=0`；`SafariZoneBeta` 按既有许可唯一排除。
+- [x] **静态步进审计边界**：检查 17 张地图、106 条移动边、无 `failures`；其中 18 条仍明确标记 `REVIEW_REQUIRED`，不能将其写成逐边 PASS。Gold 报告为 `SOURCE_ONLY_RUNTIME_UNVERIFIED`，`runtime_maps_verified=0`、`phone_maps_verified=0`；tileset ROM Bank／VRAM 预算未由此门禁验证。
+- [x] **用户功能测试反馈**：用户确认当前候选的门房功能已经实测。本次清理不改变游戏运行时逻辑，不要求重复门房功能测试；该反馈按用户确认记录，不扩展为 AI 已编译 ROM、已核对 ROM/MAP 二进制配对或已验证 Bank 空间。
+- [x] **正式清理交付**：模式 A，共 3 份补丁 + 2 份 TXT 日志：清理增量、工具／审计反向隔离、基线全量，以及功能提交日志、工具／审计提交日志。反向隔离只撤回第二笔工具／测试／配套文档，不撤回运行时 ASM、地图资源或版本更新。
+- [ ] **保留事项**：本轮不编译／链接 ROM，遵守项目要求。用户已实测的功能不要求重复；后续若再修改运行时逻辑，应只对受影响路径进行必要回归。当前没有本轮 ROM/MAP SHA-256、链接报告或真实 Bank／VRAM 余量证据，不能据静态门禁声称这些项目已验证。
+
 ## SPID-5.62.234｜Route40、Route41、湛蓝市与海岸陆地接缝正式清理（2026-10-21）
 - [x] Route40、Route41、湛蓝市由 Gold 原版转换并接入；浅葱市 ↔ Route40 ↔ Route41 ↔ 湛蓝市双向连接，配套 Surf、湛蓝市 Fly、屋顶、地图身份和路牌。未完成的旋涡、洞穴、室内入口继续封闭。
 - [x] 修正新增音乐常量写错导致的 Unknown symbol；修复跨 Bank 预览方向被 `callab` 覆盖导致的乱码。

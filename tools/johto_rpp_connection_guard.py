@@ -548,7 +548,7 @@ def map_header_bank(project, name):
     return resolved
 
 
-def north_visual_right_border(project, gold, current, gold_current, direction,
+def north_visual_borders(project, gold, current, gold_current, direction,
                               w1, w2, src_col, dst_col, overlap):
     """Derive needed preview from REVIEWED reachable exits, not map width alone.
 
@@ -558,10 +558,10 @@ def north_visual_right_border(project, gold, current, gold_current, direction,
     The Gold overlap still determines movement and arrival; extra is DISPLAY ONLY.
     """
     if direction != 'north' or dst_col + overlap != w1 or src_col + overlap >= w2:
-        return 0
+        return 0, 0
     manifest = project / 'tools/johto_native_maps.json'
     if not manifest.is_file():  # Minimal legacy synthetic fixtures.
-        return 0
+        return 0, 0
     entries = json.loads(manifest.read_text(encoding='utf-8'))['maps']
     matches = [m for m in entries if m.get('header') == current + '_h']
     if len(matches) != 1:
@@ -618,18 +618,69 @@ def north_visual_right_border(project, gold, current, gold_current, direction,
         legal = [int(single.group(1))]
     else:
         raise ConnectionError('Unhandled runtime north fence pattern for '+current)
+    # Unlike extracting one cp-range, interpret the *whole* EdgeFence for
+    # every north tile, including an early disjoint branch (Route43 x0).
+    # This shares the existing fail-closed masked-step ASM interpreter; no
+    # Route43-only exception or hand-entered exit list can hide a second path.
+    if current not in ('JohtoRoute32', 'JohtoRoute34'):
+        from johto_masked_step_audit import parse_caller, trace_masked_step
+        matching_files = [file for file in sources if file.is_file() and
+                          re.search(r'(?m)^' + re.escape(fence_name) + r'\s*$',
+                                    file.read_text(encoding='utf-8'))]
+        if len(matching_files) != 1:
+            raise ConnectionError('Cannot uniquely execute north EdgeFence '+current)
+        source = matching_files[0].read_text(encoding='utf-8')
+        try:
+            program, labels = parse_caller(source, fence_name.removesuffix('::'))
+            mask = (project/'maps'/f'{current}.blocked_mask.bin').read_bytes()
+            trace_legal = [x for x in range(2*w1) if not trace_masked_step(
+                program, labels, mask, 2*w1, len(mask)//((2*w1+7)//8), item['local_symbol'], x, 0, 'UP')[0]]
+        except (ValueError, KeyError, OSError) as exc:
+            raise ConnectionError('Unsupported north EdgeFence execution '+current+': '+str(exc))
+        # A reviewer could otherwise delete the x0 branch AND silently
+        # rewrite the manifest to match. For ordinary EdgeFence north seams,
+        # cross-check *both* original Gold border masks independently.
+        # The older NorthEdgeFence/CollisionFence have specialized gate
+        # semantics and their original dedicated contracts remain in force.
+        from johto_indoor_collision_adapter import plan_gold_quadrant_collision
+        candidates = [e for e in discover_active_edges(project)
+                      if e[0] == current and e[4] == 'north']
+        if len(candidates) != 1:
+            raise ConnectionError('Cannot identify independent Gold north neighbor for '+current)
+        gtarget = candidates[0][3]
+        geom_target, target_mask = plan_gold_quadrant_collision(gold, gtarget, 'johto')
+        stride_target = geom_target['mask_row_bytes']
+        current_allowed = lambda tile: not (mask[tile//8] & (1 << (tile%8)))
+        def target_allowed(tile):
+            return not (target_mask[(len(target_mask)//stride_target-1)*stride_target+tile//8]
+                        & (1 << (tile%8)))
+        floor_crossings = []
+        for x in range(2*dst_col, 2*(dst_col+overlap)):
+            neighbor_x = x - 2*dst_col + 2*src_col
+            if current_allowed(x) and target_allowed(neighbor_x):
+                floor_crossings.append(x)
+        if trace_legal != floor_crossings:
+            raise ConnectionError(f'{current} executable north openings {trace_legal} '
+                                  f'differ from independent Gold FLOOR/FLOOR seam {floor_crossings}')
+        legal = trace_legal
     if sorted(exits) != legal:
         raise ConnectionError(f'{current} manifest exits {sorted(exits)} differ from runtime fence {legal}')
-    # 5 tiles reaches a 160px screen's right half; a matching border band
-    # is copied in full (up to MAP_BORDER=3 blocks) for streaming safety.
-    visible = max(exits) + 5 >= 2*w1
-    needed = min(3, w2-(src_col+overlap)) if visible else 0
-    recorded = item.get('north_connection_visual_right_border', 0)
-    if type(recorded) is not int or recorded != needed:
-        raise ConnectionError(f'{current} visible north margin: recorded={recorded}, needed={needed}')
-    if 3 + dst_col + overlap + needed > w1 + 6:
-        raise ConnectionError('North preview exceeds three-column WRAM margin')
-    return needed
+    # The camera also sees to the WEST of the first lane. Prior audits
+    # covered only the right margin; the west Route43->Lake path x0 exposed
+    # three default-tree columns despite a valid Gold neighboring blockset.
+    left = min(3, src_col) if dst_col == 0 and min(exits) < 5 else 0
+    right = (min(3, w2-(src_col+overlap))
+             if max(exits) + 5 >= 2*w1 else 0)
+    recorded_left = item.get('north_connection_visual_left_border', 0)
+    recorded_right = item.get('north_connection_visual_right_border', 0)
+    if type(recorded_left) is not int or recorded_left != left:
+        raise ConnectionError(f'{current} north LEFT visual margin: recorded={recorded_left}, needed={left}')
+    if type(recorded_right) is not int or recorded_right != right:
+        raise ConnectionError(f'{current} north RIGHT visual margin: recorded={recorded_right}, needed={right}')
+    if (src_col < left or src_col+overlap+right > w2 or
+            3+dst_col-left < 0 or 3+dst_col+overlap+right > w1+6):
+        raise ConnectionError('North display-only extension exceeds Gold source or WRAM margin')
+    return left, right
 
 
 def audit(project, gold, current, target, gold_current, gold_target, direction):
@@ -678,21 +729,22 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
             raise ConnectionError('Gold connection has no horizontal overlap')
         start_row=(h2-3) if direction=='north' else 0
         dest_row=0 if direction=='north' else (h1+3)
-        visual_extra = north_visual_right_border(project, gold, current, gold_current,
-                                                 direction, w1, w2, src_col, dst_col, overlap)
-        if visual_extra and (dst_col + overlap != w1 or
-                             src_col + overlap + visual_extra > w2 or
-                             3 + dst_col + overlap + visual_extra > stride):
+        visual_left, visual_right = north_visual_borders(project, gold, current, gold_current,
+                                                          direction, w1, w2, src_col, dst_col, overlap)
+        if (src_col < visual_left or src_col+overlap+visual_right > w2 or
+                3+dst_col-visual_left < 0 or
+                3+dst_col+overlap+visual_right > stride):
             raise ConnectionError('Visual-only north extension exceeds source or WRAM border')
-        expected=dict(source_start=start_row*w2+src_col,
-                      dest_start=dest_row*stride+3+dst_col,
-                      width=overlap + visual_extra, map_width=w2,
+        expected=dict(source_start=start_row*w2+src_col-visual_left,
+                      dest_start=dest_row*stride+3+dst_col-visual_left,
+                      width=overlap + visual_left + visual_right, map_width=w2,
                       arrive_y=2*h2-1 if direction=='north' else 0,
                       arrive_x=-2*offset,
                       window=1+h2*(w2+6) if direction=='north' else 7+w2)
         overlap_info=dict(source_columns=[src_col,src_col+overlap-1],
                           dest_columns=[dst_col,dst_col+overlap-1], rows=3,
-                          visual_right_border=visual_extra)
+                          visual_left_border=visual_left,
+                          visual_right_border=visual_right)
     else:
         # Gold's east/west offset is the target map's TOP relative to the
         # current map's TOP. Positive => target starts farther south.
@@ -725,7 +777,7 @@ def audit(project, gold, current, target, gold_current, gold_target, direction):
                 issues.append(f'source_row_{i}: read crosses target .blk row or bounds')
             if dr < 0 or dr//stride != dest_row+i or (dr+actual['width']-1)//stride != dest_row+i:
                 issues.append(f'dest_row_{i}: write crosses overworld buffer row or starts negative')
-            if dr % stride < 3 or (dr+actual['width']-1)%stride > w1+2+visual_extra:
+            if dr % stride < 3-visual_left or (dr+actual['width']-1)%stride > w1+2+visual_right:
                 issues.append(f'dest_row_{i}: writes outside approved map/visual border')
             if dr + actual['width'] > (h1+6)*stride:
                 issues.append(f'dest_row_{i}: write exceeds entire WRAM block map')
@@ -1052,6 +1104,109 @@ def check_olivine_route40_walk_seam(project, gold, *, collision_source=None):
     return {'land_rows':checked,'water_rows':list(range(26,32))}
 
 
+def check_native_connection_copy_executor(project):
+    """Fail closed if the actual three-strip renderer diverges from audited ASM.
+
+    A correct Header and Gold connection offset do *not* prove the renderer
+    fills all three WRAM rows/columns. This protects the small existing
+    north/south and east/west executors, ignoring only layout/comments.
+    A legitimate kernel rewrite requires separately reviewing this contract.
+    """
+    root = Path(project)
+    constants = (root/'constants/connection_constants.asm').read_text(encoding='utf-8')
+    if not re.search(r'(?m)^\s*MAP_BORDER\s+EQU\s+3\s*(?:;.*)?$', constants):
+        raise ConnectionError('BLK renderer requires reviewed MAP_BORDER=3')
+    source = (root/'home/overworld.asm').read_text(encoding='utf-8')
+    expected = {
+        'LoadNorthSouthConnectionsTileMap': """
+            ld c,MAP_BORDER
+            .loop
+            push de
+            push hl
+            ld a,[hNorthSouthConnectionStripWidth]
+            ld b,a
+            .innerLoop
+            ld a,[hli]
+            ld [de],a
+            inc de
+            dec b
+            jr nz,.innerLoop
+            pop hl
+            pop de
+            ld a,[hNorthSouthConnectedMapWidth]
+            add l
+            ld l,a
+            jr nc,.noCarry1
+            inc h
+            .noCarry1
+            ld a,[wCurMapWidth]
+            add MAP_BORDER * 2
+            add e
+            ld e,a
+            jr nc,.noCarry2
+            inc d
+            .noCarry2
+            dec c
+            jr nz,.loop
+            ret
+        """,
+        'LoadEastWestConnectionsTileMap': """
+            push hl
+            push de
+            ld c,MAP_BORDER
+            .innerLoop
+            ld a,[hli]
+            ld [de],a
+            inc de
+            dec c
+            jr nz,.innerLoop
+            pop de
+            pop hl
+            ld a,[hEastWestConnectedMapWidth]
+            add l
+            ld l,a
+            jr nc,.noCarry1
+            inc h
+            .noCarry1
+            ld a,[wCurMapWidth]
+            add MAP_BORDER * 2
+            add e
+            ld e,a
+            jr nc,.noCarry2
+            inc d
+            .noCarry2
+            dec b
+            jr nz,LoadEastWestConnectionsTileMap
+            ret
+        """,
+    }
+
+    def normalize(text):
+        # Never ignore an actual instruction or extra branch: only whitespace
+        # and semicolon-comments are irrelevant for this frozen RPP kernel.
+        return [re.sub(r'\s+', '', line.split(';', 1)[0])
+                for raw in text.splitlines()
+                if (line := raw.strip().split(';', 1)[0].strip())]
+
+    for label, desired in expected.items():
+        head = re.search(r'(?m)^' + label + r'::\s*$', source)
+        if not head or len(re.findall(r'(?m)^' + label + r'::\s*$', source)) != 1:
+            raise ConnectionError('BLK copy executor missing/duplicated: ' + label)
+        tail = source[head.end():]
+        next_label = re.search(r'(?m)^\w+::\s*$', tail)
+        if not next_label:
+            raise ConnectionError('BLK copy executor has no terminal label: '+label)
+        actual = normalize(tail[:next_label.start()])
+        want = normalize(desired)
+        if actual != want:
+            offset = next((i for i in range(min(len(actual),len(want)))
+                           if actual[i] != want[i]), min(len(actual),len(want)))
+            found = actual[offset] if offset < len(actual) else '<missing>'
+            requested = want[offset] if offset < len(want) else '<end>'
+            raise ConnectionError(f'BLK copy executor drift {label} opcode {offset}: '
+                                  f'actual={found}, reviewed={requested}')
+
+
 def audit_all_active(project, gold):
     """Fail closed on any missing, unparseable, or unsafe enabled connection."""
     try:
@@ -1059,6 +1214,10 @@ def audit_all_active(project, gold):
     except (ConnectionError, OSError, ValueError, KeyError) as ex:
         return {'status':'FAIL', 'edges':[], 'issues':['DISCOVERY: '+str(ex)]}
     global_issues=[]
+    try:
+        check_native_connection_copy_executor(project)
+    except (ConnectionError, OSError, ValueError) as ex:
+        global_issues.append('BLK_COPY_EXECUTOR: '+str(ex))
     try:
         check_olivine_route40_walk_seam(project,gold)
     except (ConnectionError,OSError,ValueError) as ex:
@@ -1078,10 +1237,15 @@ def audit_all_active(project, gold):
             item=audit(project,gold,*edge)
             check_native_connection_selector(project,edge[0],edge[1],edge[4])
             if map_header_bank(project,edge[0])!=map_header_bank(project,edge[1]):
-                # Only the audited Olivine/Route40 seam is intentionally
-                # cross-bank in .234. A relocated unrelated map must not
-                # silently become an approved cross-bank preview.
-                if frozenset((edge[0],edge[1])) != frozenset(('JohtoOlivineCity','JohtoRoute40')):
+                # Only reviewed native cross-bank seams are allowed. .235's
+                # MahoganyTown ($40) <-> Route43 ($45) uses the same preview
+                # bank resolver/ABI previously proved for Olivine/Route40.
+                # An unrelated relocation must still fail closed.
+                approved_cross_bank = {
+                    frozenset(('JohtoOlivineCity', 'JohtoRoute40')),
+                    frozenset(('JohtoMahoganyTown', 'JohtoRoute43')),
+                }
+                if frozenset((edge[0], edge[1])) not in approved_cross_bank:
                     item['issues'].append('ROM bank mismatch: unregistered cross-bank map seam')
                     item['status']='FAIL'
                     result.append(item)

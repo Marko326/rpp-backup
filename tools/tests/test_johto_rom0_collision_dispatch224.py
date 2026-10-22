@@ -21,6 +21,18 @@ class Rom0CollisionDispatch224(unittest.TestCase):
         problems = audit(ROOT, {name: changed})
         self.assertTrue(any(expected in err for err in problems), problems)
 
+    def mutate_any_opcode(self, name, variants, expected):
+        # Inject using the actual JR/JP spelling and require one exact anchor.
+        raw = (ROOT / name).read_text(encoding='utf8')
+        matches = [(before, after) for before, after in variants if raw.count(before) == 1]
+        self.assertEqual(1, len(matches),
+                         'exactly one JR/JP fault-injection anchor must match')
+        before, after = matches[0]
+        changed = raw.replace(before, after, 1)
+        self.assertNotEqual(raw, changed, 'fault injection must change the source')
+        problems = audit(ROOT, {name: changed})
+        self.assertTrue(any(expected in err for err in problems), problems)
+
     def test_original_all_11_native_ids_dispatch_and_generic_fallback(self):
         self.assertEqual([], audit(ROOT))
 
@@ -41,12 +53,20 @@ class Rom0CollisionDispatch224(unittest.TestCase):
                     '.route36\n\tcall JohtoRoute35CanStepAhead', 'wrong native map->collision predicate')
 
     def test_missing_ruins_exact_id_must_fail(self):
-        self.mutate(ROMX, 'cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n\tjr z, .ruins',
-                    'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjr z, .ruins', 'local-ID inventory')
+        self.mutate_any_opcode(ROMX, (
+            ('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n\tjr z, .ruins',
+             'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjr z, .ruins'),
+            ('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n\tjp z, .ruins',
+             'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjp z, .ruins'),
+        ), 'local-ID inventory')
 
     def test_unconditional_native_branch_must_fail(self):
-        self.mutate(ROMX, 'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr z, .route36',
-                    'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr nz, .route36', 'equality branches')
+        self.mutate_any_opcode(ROMX, (
+            ('cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr z, .route36',
+             'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjr nz, .route36'),
+            ('cp JOHTO_ROUTE_36_LOCAL_ID\n\tjp z, .route36',
+             'cp JOHTO_ROUTE_36_LOCAL_ID\n\tjp nz, .route36'),
+        ), 'equality branches')
 
     def test_legacy_map_32_seam_must_remain(self):
         self.mutate(HOME, 'cp JOHTO_ROUTE_32_HEIGHT * 2 - 1',

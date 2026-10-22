@@ -13,6 +13,9 @@ import re
 from pathlib import Path
 from johto_gate_rgb_audit import verify as verify_gate_rgb
 from johto_gate_audit import verify_gold_gate_palette_map
+from johto_gold_door_audit import (GATE_CARPETS,
+                                   GATE_SOLID_DOORS, gold_gate_approach_rule,
+                                   gold_gate_arrival_step, gold_collision_index)
 from johto_indoor_tiles_converter import build_mapping
 from johto_warp_arrival_audit import profiles as parse_arrival_profiles
 from johto_masked_step_audit import gate_mat_path_errors
@@ -195,6 +198,118 @@ def landing_mask_errors(root: Path, destinations: list, id_to_stem: dict,
     return errors
 
 
+def gold_approach_collision_errors(root: Path, gold: Path, gates: list,
+                                   overrides: dict | None = None) -> list[str]:
+    """Independently bind every approach trigger to Gold's actual collision.
+
+    Gold directional carpets are standable and trigger only when the player
+    collides toward their encoded direction. Solid DOOR tiles are the distinct
+    step-on/automatic-down family. This checks every active gate approach on
+    every side, including outdoor mouths, rather than only north-facing single
+    doors; a JSON+ASM change cannot redefine the Gold source semantics.
+    """
+    errors = []
+    native = json.loads(get_text(root, 'tools/johto_native_maps.json', overrides))['maps']
+    stems = {row['local_symbol']: row['header'].removesuffix('_h') for row in native}
+    index = gold_collision_index(Path(gold))
+    for gate in gates:
+        contract = gate.get('gatehouse_runtime', {})
+        if not isinstance(contract, dict):
+            continue
+        for entry in contract.get('approaches', []):
+            local = entry['map_local']
+            stem = stems.get(local)
+            if local == contract.get('local_id'):
+                gold_map = gate.get('gold_map')
+            elif stem:
+                # Native Johto outdoor headers mirror the Gold map name after
+                # the Johto prefix is removed (e.g. JohtoRoute34 -> Route34).
+                gold_map = stem.removeprefix('Johto')
+            else:
+                gold_map = None
+            x, y = int(entry['x']), int(entry['y'])
+            if not gold_map:
+                errors.append(f'{gate["rpp_map"]} cannot map {local} ({x},{y}) to Gold source')
+                continue
+            try:
+                role = index.role_at(gold_map, x, y)
+            except (OSError, ValueError, KeyError, IndexError) as exc:
+                errors.append(f'{gate["rpp_map"]} Gold collision role unavailable for '
+                              f'{gold_map} ({x},{y}): {exc}')
+                continue
+            trigger = entry.get('trigger')
+            mode = contract.get('mode')
+            expected = gold_gate_approach_rule(role, mode)
+            if expected is None:
+                errors.append(f'{gate["rpp_map"]} Warp approach {gold_map} '
+                              f'({x},{y}) has unsupported Gold collision role {role}; '
+                              'review as a special entrance instead of guessing STEP_ON')
+                continue
+            expected_trigger, expected_direction = expected
+            if trigger != expected_trigger:
+                detail = ('Gold carpets are standable and direction-collision triggered'
+                          if role in GATE_CARPETS else
+                          'Gold solid DOOR uses its distinct step-on behavior')
+                role_label = 'Gold single solid DOOR' if role == 'DOOR' else f'Gold {role}'
+                errors.append(f'{gate["rpp_map"]} {role_label} at {gold_map} '
+                              f'({x},{y}) must be {expected_trigger}, not {trigger}; {detail}')
+            if entry.get('direction') != expected_direction:
+                errors.append(f'{gate["rpp_map"]} Gold {role} at {gold_map} '
+                              f'({x},{y}) requires {expected_direction}, not '
+                              f'{entry.get("direction")}; direction is encoded by Gold collision')
+    return errors
+
+
+def gold_solid_north_door_errors(root: Path, gold: Path, gates: list,
+                                 overrides: dict | None = None) -> list[str]:
+    """Backward-compatible name; now checks every Gold-backed approach role."""
+    return gold_approach_collision_errors(root, gold, gates, overrides)
+
+
+def gold_arrival_step_errors(root: Path, gold: Path, gates: list,
+                             overrides: dict | None = None) -> list[str]:
+    """Check post-Warp simulated movement against the Gold destination tile.
+
+    Gold's ordinary DOOR/DOOR_79/STAIRCASE/CAVE destination tiles force one
+    step DOWN after map load. Directional carpets do not. This keeps that
+    movement on the destination side of the Warp, never on the source carpet.
+    """
+    errors = []
+    native = json.loads(get_text(root, 'tools/johto_native_maps.json', overrides))['maps']
+    stems = {row['local_symbol']: row['header'].removesuffix('_h') for row in native}
+    index = gold_collision_index(Path(gold))
+    for gate in gates:
+        contract = gate.get('gatehouse_runtime', {})
+        if not isinstance(contract, dict):
+            continue
+        for arrival in contract.get('arrivals', []):
+            local = arrival.get('local')
+            if local == contract.get('local_id'):
+                gold_map = gate.get('gold_map')
+            else:
+                stem = stems.get(local)
+                gold_map = stem.removeprefix('Johto') if stem else None
+            if not gold_map:
+                errors.append(f'{gate["rpp_map"]} cannot map arrival destination {local} to Gold source')
+                continue
+            for y, x, step in arrival.get('points', []):
+                try:
+                    role = index.role_at(gold_map, int(x), int(y))
+                except (OSError, ValueError, KeyError, IndexError) as exc:
+                    errors.append(f'{gate["rpp_map"]} Gold arrival collision role unavailable for '
+                                  f'{gold_map} ({x},{y}): {exc}')
+                    continue
+                expected = gold_gate_arrival_step(role)
+                if expected is None:
+                    errors.append(f'{gate["rpp_map"]} Warp arrival {gold_map} ({x},{y}) '
+                                  f'has unsupported Gold collision role {role}; review arrival movement')
+                    continue
+                if step != expected:
+                    errors.append(f'{gate["rpp_map"]} Gold arrival {gold_map} ({x},{y}) '
+                                  f'role={role} requires {expected}, not {step}')
+    return errors
+
+
 def valid_contract(spec: dict) -> list[str]:
     name = spec.get('rpp_map', '?')
     runtime = spec.get('gatehouse_runtime')
@@ -217,6 +332,138 @@ def valid_contract(spec: dict) -> list[str]:
     if runtime.get('mode') == 'NATIVE_GATE' and (not isinstance(runtime.get('native_routes'), list) or not runtime['native_routes']):
         errors.append(name + ' missing exact bidirectional native Warp routes')
     return errors
+
+
+def check_native_gate_arrival_executors(root, doc, overrides=None):
+    """Verify actual arrival decoding AND the post-Warp movement fallback.
+
+    Metadata/table matching alone had a demonstrated false PASS when the
+    default result of GetJohtoWarpArrivalStep was changed to D_UP. Freeze the
+    small, reviewed dispatch/control-flow kernels here; changes require an
+    explicit executable-contract review rather than a new self-declared JSON
+    expectation. Comments and formatting do not affect the opcode contract.
+    """
+    def normalized(source):
+        return [re.sub(r'\s+', '', code)
+                for line in source.splitlines()
+                if (code := line.split(';', 1)[0].strip())]
+
+    def check_kernel(path, start, stop, reference):
+        source = get_text(root, path, overrides)
+        if source.count(start) != 1 or source.count(stop) != 1:
+            raise ValueError('cannot isolate reviewed arrival executor: ' + start)
+        actual = normalized(source.split(start, 1)[1].split(stop, 1)[0])
+        wanted = normalized(reference)
+        if actual != wanted:
+            ix = next((i for i in range(min(len(actual), len(wanted)))
+                       if actual[i] != wanted[i]), min(len(actual), len(wanted)))
+            got = actual[ix] if ix < len(actual) else '<missing>'
+            want = wanted[ix] if ix < len(wanted) else '<end>'
+            raise ValueError(f'executable gate arrival kernel drift {start} '
+                             f'instruction {ix}: actual={got}, reviewed={want}')
+
+    check_kernel('engine/overworld/region_map_lookup.asm',
+                 'GetJohtoWarpArrivalStep::', '\n.profiles\n', """
+        ld e, 0
+        ld a, [wCurRegion]
+        cp MAP_REGION_JOHTO
+        ret nz
+        ld a, [wCurMap]
+        ld b, a
+        ld a, [wCurLocalMapID]
+        ld c, a
+        ld hl, .profiles
+        .loop
+        ld a, [hli]
+        cp $ff
+        ret z
+        cp b
+        jr nz, .skipFive
+        ld a, [hli]
+        cp c
+        jr nz, .skipFour
+        ld a, [hli]
+        ld d, a
+        ld a, [wYCoord]
+        cp d
+        jr nz, .skipThree
+        ld a, [hli]
+        ld d, a
+        ld a, [wXCoord]
+        cp d
+        jr nz, .skipTwo
+        ld a, [hli]
+        ld d, a
+        ld a, [wWarpedFromWhichMap]
+        cp d
+        jr nz, .skipOne
+        ld e, [hl]
+        ret
+        .skipFive
+        inc hl
+        .skipFour
+        inc hl
+        .skipThree
+        inc hl
+        .skipTwo
+        inc hl
+        .skipOne
+        inc hl
+        jr .loop
+    """)
+    check_kernel('engine/overworld/npc_movement.asm',
+                 'PlayerStepOutFromDoor:', '_EndNPCMovementScript:', """
+        ld hl, wd730
+        res 1, [hl]
+        callab GetJohtoWarpArrivalStep
+        ld a, e
+        and a
+        jr nz, .stepFromProfile
+        call IsPlayerStandingOnDoorTile
+        jr nc, .notStandingOnDoor
+        ld a, D_DOWN
+        .stepFromProfile
+        push af
+        ld a, $fc
+        ld [wJoyIgnore], a
+        ld hl, wd736
+        set 1, [hl]
+        ld a, $1
+        ld [wSimulatedJoypadStatesIndex], a
+        pop af
+        ld [wSimulatedJoypadStatesEnd], a
+        xor a
+        ld [wSpriteStateData1 + 2], a
+        call StartSimulatingJoypadStates
+        ret
+        .notStandingOnDoor
+        xor a
+        ld [wWastedByteCD3A], a
+        ld [wSimulatedJoypadStatesIndex], a
+        ld [wSimulatedJoypadStatesEnd], a
+        ld hl, wd736
+        res 0, [hl]
+        res 1, [hl]
+        ld hl, wd730
+        res 7, [hl]
+        ret
+    """)
+    # NONE only means no table row. Verify that the shared RPP door-tile
+    # fallback cannot silently turn it into D_DOWN for a Johto gate.
+    doors = get_text(root, 'engine/overworld/doors.asm', overrides)
+    try:
+        door_dispatch = doors.split('DoorTileIDPointers:', 1)[1].split('OverworldDoorTileIDs:', 1)[0]
+    except IndexError as e:
+        raise ValueError('missing door fallback tileset dispatch table') from e
+    if re.search(r'(?m)^\s*dbw\s+JOHTO_GATE\s*,', door_dispatch):
+        raise ValueError('JOHTO_GATE now uses implicit door D_DOWN fallback; review every NONE arrival')
+    for entry in doc['active_warp_maps']:
+        if entry.get('family') != 'GATE_INDOOR':
+            continue
+        name = entry['rpp_map']
+        header = get_text(root, 'data/mapHeaders/'+name+'.asm', overrides)
+        if not re.search(r'(?m)^\s*db\s+JOHTO_GATE\s*$', header):
+            raise ValueError(name+' no longer uses the reviewed no-fallback gate tileset')
 
 
 def audit(root: Path, gold: Path, overrides: dict | None = None,
@@ -247,9 +494,45 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
               for alias, local, y, x, source, direction in profiles}
     if len(actual) != len(profiles):
         errors.append('duplicate arrival profiles could shadow each other')
+    try:
+        check_native_gate_arrival_executors(root, doc, overrides)
+    except (ValueError, KeyError, OSError, TypeError) as exc:
+        errors.append('NATIVE_ARRIVAL_EXECUTOR: '+str(exc))
+    # Paired collision-only mats are already valid standing Warp positions.
+    # An automatic step OFF either mat breaks the established immediate
+    # reverse-entry contract: the first reverse key merely walks back onto
+    # the mat, without colliding through the doorway. A one-lane *solid*
+    # external door remains a separate reviewed case (e.g. Mahogany y1).
+    for gate in gates:
+        runtime = gate.get('gatehouse_runtime', {})
+        if not isinstance(runtime, dict):
+            continue
+        grouped = {}
+        for approach in runtime.get('approaches', []):
+            if approach.get('trigger') == 'COLLISION_ONLY':
+                key = (approach['map_local'], approach['direction'])
+                grouped.setdefault(key, []).append(approach)
+        for (local, direction), positions in grouped.items():
+            if len(positions) < 2:
+                continue
+            coords = {(int(row['y']), int(row['x'])) for row in positions}
+            if len(coords) < 2:
+                continue
+            for y, x in sorted(coords):
+                active_steps = [(a, src, move) for a, l, yy, xx, src, move in profiles
+                                if l == local and yy == y and xx == x]
+                for alias, source, move in active_steps:
+                    errors.append(f'{gate["rpp_map"]} {local} ({x},{y}) '
+                                  f'paired {direction} collision-only carpet has '
+                                  f'unexpected auto-step {move}; immediate reverse would only return to carpet')
     # Distinguish moving on carpet (ordinary movement) from colliding with
     # the edge (Warp trigger). The Gold gate guide explicitly requires both.
     errors.extend(gate_mat_path_errors(root, doc, overrides))
+    try:
+        errors.extend(gold_approach_collision_errors(root, Path(gold), gates, overrides))
+        errors.extend(gold_arrival_step_errors(root, Path(gold), gates, overrides))
+    except (ValueError, KeyError, OSError, TypeError) as exc:
+        errors.append('independent Gold gate collision/arrival classification failed: '+str(exc))
     for entry in gates:
         errors.extend(valid_contract(entry))
         if not isinstance(entry.get('gatehouse_runtime'), dict):
@@ -324,7 +607,10 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                         'JOHTO_ROUTE_38_LOCAL_ID',
                         'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
                         'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
-                        'JOHTO_ROUTE_42_LOCAL_ID') and not predicate(
+                        'JOHTO_ROUTE_42_LOCAL_ID',
+                        'JOHTO_MAHOGANY_TOWN_LOCAL_ID',
+                        'JOHTO_ROUTE_43_LOCAL_ID',
+                        'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID') and not predicate(
                         home, 'IsJohtoSouthGatePortal',local,x,y,'LEFT', ids):
                     errors.append(f'{name} {local} ({x},{y}) bypasses the HOME Warp selector')
                 if contract.get('mode') == 'NATIVE_GATE' and local in (
@@ -332,7 +618,10 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                         'JOHTO_ROUTE_38_LOCAL_ID',
                         'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
                         'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
-                        'JOHTO_ROUTE_42_LOCAL_ID'):
+                        'JOHTO_ROUTE_42_LOCAL_ID',
+                        'JOHTO_MAHOGANY_TOWN_LOCAL_ID',
+                        'JOHTO_ROUTE_43_LOCAL_ID',
+                        'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID'):
                     if predicate(home,'IsJohtoSouthGatePortal',local,x,y,'LEFT',ids,
                                  region='MAP_REGION_KANTO') or predicate(
                             home,'IsJohtoSouthGatePortal',local,x,y,'LEFT',ids,
@@ -412,7 +701,7 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
     # This is intentionally a runtime predicate probe, not an ASM token search.
     for local in ('JOHTO_ROUTE_37_LOCAL_ID', 'JOHTO_ROUTE_39_LOCAL_ID',
                   'JOHTO_UNION_CAVE_1F_LOCAL_ID',
-                  'JOHTO_MAHOGANY_TOWN_LOCAL_ID'):
+                  'JOHTO_LAKE_OF_RAGE_LOCAL_ID'):
         try:
             if predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',ids):
                 errors.append('non-gate ID incorrectly selected by HOME Warp dispatcher: '+local)

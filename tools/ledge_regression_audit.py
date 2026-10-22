@@ -56,7 +56,7 @@ def registration_errors(src):
     expected_tables = {'JohtoRoute29LedgeTiles', 'JohtoRoute31LedgeTiles',
                        'JohtoIlexForestLedgeTiles'}
     coord = set(re.findall(r'(?m)^\.(\w+Hops)\s*$', src))
-    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops', 'route37Hops', 'ecruteakHops', 'route38Hops', 'route39Hops', 'mahoganyHops'}
+    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops', 'route37Hops', 'ecruteakHops', 'route38Hops', 'route39Hops', 'mahoganyHops', 'route43Hops', 'lakeHops'}
     errors = []
     for label, actual_set, expected_set in (
             ('native router', actual, expected),
@@ -90,6 +90,10 @@ def registration_errors(src):
         'ld hl, .route38Hops\n\tjp .modernHopLookup',
         'cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\n\tjr z, .mahoganyHopTable',
         'ld hl, .mahoganyHops\n\tjp .modernHopLookup',
+        'cp JOHTO_ROUTE_43_LOCAL_ID\n\tjp z, .route43HopTable',
+        'cp JOHTO_LAKE_OF_RAGE_LOCAL_ID\n\tjp z, .lakeHopTable',
+        'ld hl, .route43Hops\n\tjp .modernHopLookup',
+        'ld hl, .lakeHops\n\tjp .modernHopLookup',
     )
     for snippet in contract:
         if snippet not in src:
@@ -239,13 +243,15 @@ def audit(root=ROOT, gold=None):
             ('.ecruteakHops', 'JohtoEcruteakCity', 40, 36, 6),
             ('.route38Hops', 'JohtoRoute38', 40, 18, 24),
             ('.route39Hops', 'JohtoRoute39', 20, 36, 20),
-             ('.mahoganyHops', 'JohtoMahoganyTown', 20, 18, 12)):
+             ('.mahoganyHops', 'JohtoMahoganyTown', 20, 18, 12),
+            ('.route43Hops', 'JohtoRoute43', 20, 54, 8),
+            ('.lakeHops', 'JohtoLakeOfRage', 40, 36, 6)):
         part = src.split('\n' + label + '\n', 1)[1].split('\tdb $ff', 1)[0]
         actions = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*PLAYER_DIR_(\w+)', part)
         try:
             actual_actions = coordinate_hops(src, label)
             reference = expected_gold_hops(gold, map_name[5:],
-                        'johto' if map_name in ('JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown') else 'johto_modern')
+                        'johto' if map_name in ('JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown', 'JohtoRoute43', 'JohtoLakeOfRage') else 'johto_modern')
             if actual_actions != reference:
                 report['errors'].append(f'{map_name}: Gold HOP missing={sorted(reference-actual_actions)} '
                                         f'extra={sorted(actual_actions-reference)}')
@@ -276,7 +282,7 @@ def audit(root=ROOT, gold=None):
         report['modern_coordinate_maps'][map_name] = {
             'actions': len(actions), 'third_cell_passable': third_cells_passable,
             'runtime_extra_simulated_inputs': 2,
-            'tileset': 'johto' if map_name in ('JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown') else 'johto_modern',
+            'tileset': 'johto' if map_name in ('JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown', 'JohtoRoute43', 'JohtoLakeOfRage') else 'johto_modern',
         }
         if len(actions) != expected:
             report['errors'].append(f'{map_name}: coordinate HOP count drift')
@@ -288,7 +294,7 @@ def audit(root=ROOT, gold=None):
     # ledges. Future maps with Gold HOP roles must have a reviewed runtime
     # dispatcher and join this exact per-position/dir audit, not silently
     # inherit a zero-rule default just because the old roster was complete.
-    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown'}
+    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown', 'JohtoRoute43', 'JohtoLakeOfRage'}
     registered = json.loads((root / 'tools/johto_native_maps.json').read_text())['maps']
     for entry in registered:
         name = entry['header'].removesuffix('_h')

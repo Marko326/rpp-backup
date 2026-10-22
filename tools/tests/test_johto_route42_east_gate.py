@@ -40,7 +40,7 @@ class EcruteakEastGate(unittest.TestCase):
             self.assertTrue(predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',values),local)
             self.assertFalse(predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',values,
                                        region='MAP_REGION_KANTO'))
-        for local in ('JOHTO_ROUTE_39_LOCAL_ID','JOHTO_MAHOGANY_TOWN_LOCAL_ID'):
+        for local in ('JOHTO_ROUTE_39_LOCAL_ID','JOHTO_LAKE_OF_RAGE_LOCAL_ID'):
             self.assertFalse(predicate(home,'IsJohtoSouthGatePortal',local,0,0,'LEFT',values),local)
         # Fault injection: deleting sparse-ID HOME branch must fail, even if
         # collision and ExtraWarpCheck helpers still contain the correct ID.

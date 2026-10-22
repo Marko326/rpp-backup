@@ -250,7 +250,17 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID', 5, 7, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
-    if arrivals != [expected, expected33] + north_steps:
+    route43_gate_steps = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_MAHOGANY_TOWN_LOCAL_ID', 1, 9, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+    ]
+    middle_gate_steps = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_LOCAL_ID', 35, 17, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+    ]
+    if arrivals != middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps:
         errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
     # Destination masks: the auto step must not put the player inside walls,
     # including when ordinary simulated-button collision is bypassed.
@@ -263,7 +273,13 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID': ('JohtoRoute36RuinsGate', 10, 8),
         'JOHTO_RUINS_OF_ALPH_LOCAL_ID': ('JohtoRuinsOfAlphOutside', 20, 36),
     }
-    for alias, local, y, x, source, direction in north_steps:
+    mask_desc.update({
+        'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': ('JohtoRoute43MahoganyGate', 10, 8),
+        'JOHTO_ROUTE_43_GATE_LOCAL_ID': ('JohtoRoute43Gate', 10, 8),
+        'JOHTO_ROUTE_43_LOCAL_ID': ('JohtoRoute43', 20, 54),
+        'JOHTO_MAHOGANY_TOWN_LOCAL_ID': ('JohtoMahoganyTown', 20, 18),
+    })
+    for alias, local, y, x, source, direction in north_steps + route43_gate_steps + middle_gate_steps:
         name, width, height = mask_desc[local]
         dx, dy = MOVE[direction]
         tx, ty = x + dx, y + dy

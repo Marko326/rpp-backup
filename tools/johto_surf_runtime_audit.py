@@ -226,7 +226,7 @@ def audit(root: Path, gold: Path) -> list[str]:
         errors.append('no native map capabilities for Surf')
     else:
         for entry in identities['maps']:
-            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 26, 27, 28, 29, 63) else 'DEFERRED'
+            expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 26, 27, 28, 29, 63, 67, 68) else 'DEFERRED'
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):

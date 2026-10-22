@@ -18,13 +18,14 @@ REVIEWED = (
  ('OLIVINE_CITY', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_OLIVINE_CITY_WIDTH', 'OLIVINE', (13,22), 'olivineName'),
  ('MAHOGANY_TOWN', 'JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_MAHOGANY_TOWN_WIDTH', 'MAHOGANY', (15,14), 'mahoganyName'),
  ('CIANWOOD_CITY', 'JOHTO_CIANWOOD_CITY_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_CIANWOOD_CITY_WIDTH', 'CIANWOOD', (23,44), 'cianwoodName'),
+ ('LAKE_OF_RAGE', 'JOHTO_LAKE_OF_RAGE_LOCAL_ID', 'JOHTO_GOLDENROD_FLY_SELECTOR', 'JOHTO_LAKE_OF_RAGE_WIDTH', 'LAKE_OF_RAGE', (21,29), 'lakeName'),
 )
 FILES=('tools/johto_native_maps.json','engine/johto_fly_town_map.asm',
 'engine/overworld/missable_objects.asm','engine/fly_town_map_helpers.asm',
 'engine/special_warps.asm','constants/region_map_constants.asm',
 'constants/event_constants.asm','home/overworld.asm','wram.asm')
 GOLD_FILES=('data/maps/flypoints.asm','data/maps/spawn_points.asm','data/maps/landmarks.asm')
-GOLD_ROM_NAMES=('NewBarkTownName','CherrygroveCityName','VioletCityName','AzaleaTownName','GoldenrodCityName','EcruteakCityName','OlivineCityName','MahoganyTownName','CianwoodCityName')
+GOLD_ROM_NAMES=('NewBarkTownName','CherrygroveCityName','VioletCityName','AzaleaTownName','GoldenrodCityName','EcruteakCityName','OlivineCityName','MahoganyTownName','CianwoodCityName','LakeOfRageName')
 
 
 def section(text, start, finish):
@@ -104,24 +105,24 @@ def audit(root:Path,gold:Path)->list[str]:
         if i>=len(selectors) or selectors[i]!=selector:
             errs.append(landmark+': Fly menu selector mismatch')
         destmap='REGION_NATIVE_MAP_SLOT' if i>=3 else selector
-        if landmark in ('ECRUTEAK_CITY','OLIVINE_CITY','MAHOGANY_TOWN','CIANWOOD_CITY'):
-            pattern=r'Johto'+('Ecruteak' if landmark=='ECRUTEAK_CITY' else 'Olivine' if landmark=='OLIVINE_CITY' else 'Mahogany' if landmark=='MAHOGANY_TOWN' else 'Cianwood')+r'FlyWarpData:\s*db\s+REGION_NATIVE_MAP_SLOT\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])
+        if landmark in ('ECRUTEAK_CITY','OLIVINE_CITY','MAHOGANY_TOWN','CIANWOOD_CITY','LAKE_OF_RAGE'):
+            pattern=r'Johto'+('Ecruteak' if landmark=='ECRUTEAK_CITY' else 'Olivine' if landmark=='OLIVINE_CITY' else 'Mahogany' if landmark=='MAHOGANY_TOWN' else 'Cianwood' if landmark=='CIANWOOD_CITY' else 'LakeOfRage')+r'FlyWarpData:\s*db\s+REGION_NATIVE_MAP_SLOT\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])
             if not re.search(pattern,helper): errs.append(landmark+': missing dedicated Fly landing record')
         else:
             pattern=r'^\s*db\s+'+selector+r'\s*,\s*'+destmap+r'\s*\n\s*FLYWARP_DATA\s+'+width+r'\s*,\s*'+str(xy[1])+r'\s*,\s*'+str(xy[0])+r'\s*$'
             if not re.search(pattern,special,re.M): errs.append(landmark+': missing/unsafe fly warp')
-        flag='EVENT_JOHTO_FLY_'+('NEW_BARK','CHERRYGROVE','VIOLET','AZALEA','GOLDENROD','ECRUTEAK','OLIVINE','MAHOGANY','CIANWOOD')[i]
+        flag='EVENT_JOHTO_FLY_'+('NEW_BARK','CHERRYGROVE','VIOLET','AZALEA','GOLDENROD','ECRUTEAK','OLIVINE','MAHOGANY','CIANWOOD','LAKE_OF_RAGE')[i]
         for text,kind,operand in ((menu,'read','bit'),(miss,'write','set')):
             pattern=r'ld hl,\s*wEventFlags \+ '+flag+r' / 8\s+'+operand+' '+flag+r' % 8,\s*\[hl\]'
             if not re.search(pattern,text): errs.append(landmark+': missing persistent '+kind)
-        if not re.search(r'^\s*ASSERT '+flag+r' == \$'+format({'CIANWOOD_CITY':0x44b,'MAHOGANY_TOWN':0x451,'OLIVINE_CITY':0x44a,'ECRUTEAK_CITY':0x450}.get(landmark,0x453+i),'x')+r'\s*$',events,re.M):
+        if not re.search(r'^\s*ASSERT '+flag+r' == \$'+format({'CIANWOOD_CITY':0x44b,'MAHOGANY_TOWN':0x451,'LAKE_OF_RAGE':0x44c,'OLIVINE_CITY':0x44a,'ECRUTEAK_CITY':0x450}.get(landmark,0x453+i),'x')+r'\s*$',events,re.M):
             errs.append(landmark+': save layout changed')
     # Transition semantics, not only textual presence of the destination.
     required=(
-     (menu,r'\.next\s+ld a, \[wWhichTownMapLocation\]\s+inc a\s+cp 9'),
-     (menu,r'\.previous\s+.*?ld a, 8\s+\.previousReady'),
-     (menu,r'\.findForward\s+ld b, 9\s+\.forwardLoop.*?inc a\s+cp 9'),
-     (menu,r'\.findBackward\s+ld b, 9\s+\.backwardLoop.*?ld a, 8'),
+     (menu,r'\.next\s+ld a, \[wWhichTownMapLocation\]\s+inc a\s+cp 10'),
+     (menu,r'\.previous\s+.*?ld a, 9\s+\.previousReady'),
+     (menu,r'\.findForward\s+ld b, 10\s+\.forwardLoop.*?inc a\s+cp 10'),
+     (menu,r'\.findBackward\s+ld b, 10\s+\.backwardLoop.*?ld a, 9'),
      (menu,r'\.accept\s+call \.isCurrentUnlocked\s+jp z, \.inputLoop'),
      (menu,r'\.findForward.*?call \.isCurrentUnlocked.*?\.findBackward.*?call \.isCurrentUnlocked'),
      (miss,r'cp REGION_NATIVE_MAP_SLOT\s+jr nz, \.notJohtoAzalea\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.notJohtoAzalea\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_AZALEA_TOWN_LOCAL_ID'),
