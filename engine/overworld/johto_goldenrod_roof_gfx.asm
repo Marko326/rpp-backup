@@ -65,6 +65,10 @@ JohtoRoofGroupForLocalMap:
  db 9 ; 22 LakeOfRage Gold group 9
  db 9 ; 23 Route43 Gold group 9
  db $ff ; 24 Route43Gate indoor: no roof group
+ db $ff ; 25 National Park has no roof sprite
+ db $ff ; 26 Route35 Park gate
+ db $ff ; 27 Route36 Park gate
+ db $ff ; 28 Route32 Ruins east/west gate, indoor
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

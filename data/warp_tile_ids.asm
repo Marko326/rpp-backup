@@ -30,6 +30,9 @@ WarpTileIDPointers:
 	dw NewBarkWarpTileIDs
 	dw JohtoGateWarpTileIDs ; GATE-5.62.159: edge collision triggers, never step-on warp
 	dw JohtoUnionCaveWarpTileIDs
+	dw JohtoParkWarpTileIDs
+	dw JohtoParkGateWarpTileIDs
+	dw JohtoRuinsGateWarpTileIDs
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -92,4 +95,14 @@ JohtoGateWarpTileIDs:
 ; on its registered (17,3) Warp, not by stepping onto a generic floor tile.
 ; Keep this list empty like other native collision-only entrances.
 JohtoUnionCaveWarpTileIDs:
+	db $FF
+
+; Park+both park gates use exact map+direction collision Warps, never generic step-on.
+JohtoParkWarpTileIDs:
+	db $FF
+JohtoParkGateWarpTileIDs:
+	db $FF
+
+; Exact source-map/direction collision only; never step on.
+JohtoRuinsGateWarpTileIDs:
 	db $FF

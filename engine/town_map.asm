@@ -367,6 +367,7 @@ JohtoBlackthornName:     db "Blackthorn_City@"
 
 JohtoBrowseSproutTowerName: db "Sprout_Tower@"
 JohtoBrowseRuinsOfAlphName: db "Ruins_Of Alph@"
+JohtoBrowseRoute32Name: db "Route 32@"
 JohtoBrowseRoute33Name: db "Route 33@"
 JohtoBrowseSlowpokeWellName: db "Slowpoke_Well@"
 JohtoBrowseIlexForestName: db "Ilex_Forest@"
@@ -1232,6 +1233,15 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute43Name
 	db 52, 116 ; middle Route43Gate belongs to Route43
 	dw JohtoBrowseRoute43Name
+	; Gold park and two neutral gate waypoints (slots 37..39).
+	db 76, 60
+	dw JohtoBrowseNationalParkName
+	db 92, 60
+	dw JohtoBrowseRoute35Name
+	db 76, 72
+	dw JohtoBrowseRoute36Name
+	db 108, 92 ; original Gold Route32 landmark browse index7
+	dw JohtoRoute32TownMapName
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

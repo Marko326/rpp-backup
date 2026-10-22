@@ -330,3 +330,33 @@ MapPaletteSets:
 	db CAVE_BROWN
 	db CAVE_LIGHT_BLUE
 	db CRYS_TEXTBOX
+
+; Gold NationalPark: full-ID art, outdoor Gold palette labels.
+	db OUTDOOR_GRAY
+	db OUTDOOR_RED
+	db OUTDOOR_GREEN
+	db OUTDOOR_BLUE
+	db OUTDOOR_YELLOW
+	db OUTDOOR_BROWN
+	db OUTDOOR_ROOF
+	db CRYS_TEXTBOX
+
+; Gold NationalParkGate: full-ID art, isolated Gold gate greens/browns.
+	db INDOOR_GRAY
+	db INDOOR_RED
+	db JOHTO_GATE_GOLD_GREEN
+	db INDOOR_BLUE
+	db INDOOR_YELLOW
+	db JOHTO_GATE_GOLD_BROWN
+	db INDOOR_LIGHT_BLUE
+	db CRYS_TEXTBOX
+
+; Gold EastWestGate preserved art (same Gold gate palette family as park east gate).
+	db INDOOR_GRAY
+	db INDOOR_RED
+	db JOHTO_GATE_GOLD_GREEN
+	db INDOOR_BLUE
+	db INDOOR_YELLOW
+	db JOHTO_GATE_GOLD_BROWN
+	db INDOOR_LIGHT_BLUE
+	db CRYS_TEXTBOX

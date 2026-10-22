@@ -127,6 +127,14 @@ gfx/tilesets/johto_union_cave.2bpp: gfx/tilesets/johto_union_cave.png
 gfx/tilesets/johto_ilex_forest.2bpp: gfx/tilesets/johto_ilex_forest.png
 	$(RGBGFX) -o $@ $<
 
+# Park full-Gold graphics: fixed 96 slots; never trim sparse tile indices.
+gfx/tilesets/johto_park.2bpp: gfx/tilesets/johto_park.png
+	$(RGBGFX) -o $@ $<
+gfx/tilesets/johto_park_gate.2bpp: gfx/tilesets/johto_park_gate.png
+	$(RGBGFX) -o $@ $<
+gfx/tilesets/johto_ruins_gate.2bpp: gfx/tilesets/johto_ruins_gate.png
+	$(RGBGFX) -o $@ $<
+
 %.png: ;
 
 %.2bpp: %.png

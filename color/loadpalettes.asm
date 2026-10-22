@@ -209,6 +209,8 @@ LoadTilesetPalette:
 ; 0 New Bark / 1 Cherrygrove / 2 Violet / 3 Azalea / 4 Goldenrod / 5 Ecruteak.
 JohtoGoldDayRoofGroups:
 db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5,$ff,6,$ff,7,7,6,6,8,8,8,$ff,9,9,$ff ; Route38 group6, Route42/Mahogany group7, Cianwood group8
+	db $ff, $ff, $ff ; Park and both gates, slots 37..39
+	db $ff ; Route32 ruins gate indoor
 JohtoGoldDayRoofGroupsEnd:
 ASSERT JohtoGoldDayRoofGroupsEnd - JohtoGoldDayRoofGroups == NUM_JOHTO_MAPS
 

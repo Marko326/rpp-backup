@@ -1179,6 +1179,10 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_LAKE_OF_RAGE ; LakeOfRage
  db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route43
  db MUSIC_GBP_GSC_LAKE_OF_RAGE ; middle Route43Gate, Gold Route43 area
+ db MUSIC_GBP_GSC_NATIONAL_PARK ; Gold National Park outdoor
+ db MUSIC_GBP_GSC_ROUTE36 ; Route35 National Park gate: Gold Route36
+ db MUSIC_GBP_GSC_ROUTE36 ; Route36 National Park gate: Gold Route36
+ db MUSIC_GBP_GSC_ROUTE30 ; Route32 ruins gate, inherits Route32
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

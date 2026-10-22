@@ -33,3 +33,6 @@ const_value = 0
 	const JOHTO_UNION_CAVE ; 30 ; dedicated Gold Union Cave 1F graphics/collision
 	const JOHTO_MODERN ; 31 ; Route33 only; Gold 96-tile modern graphics
 	const JOHTO_ILEX_FOREST ; 32 ; P17 Gold forest, distinct from Kanto FOREST
+	const JOHTO_PARK ; Gold natural park, separate outdoor 96-slot art
+	const JOHTO_PARK_GATE ; Gold gate variant, not the legacy compact JOHTO_GATE
+	const JOHTO_RUINS_GATE ; Gold EastWestGate original full-ID blockset

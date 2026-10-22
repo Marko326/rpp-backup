@@ -92,13 +92,37 @@ UpdatePlayerSprite:
 ; bit set by later logic.
 	ld a, [hTilePlayerStandingOn]
 	ld c, a
+	call GetGrassSpritePriority
+	ld [wSpriteStateData2 + 7], a
+	ret
+
+; Sprite foot occlusion: existing single-tile grass marker is still shared
+; across all outdoor tilesets. Park LONG_GRASS is four separate graphics IDs
+; ($3A,$3B,$4A,$4B), unique to that role in original Gold Park metatiles.
+; Only apply the four-ID extra rule in JOHTO_PARK, never in other maps.
+; Input: C=tile under the sprite. Output: A=$80 for bottom-half OAM
+; background priority, 0 otherwise. Preserves BC,DE,HL.
+GetGrassSpritePriority::
 	ld a, [wGrassTile]
 	cp c
-	ld a, $0
-	jr nz, .next2
+	jr z, .inGrass
+	ld a, [wCurMapTileset]
+	cp JOHTO_PARK
+	jr nz, .notInGrass
+	ld a, c
+	cp $3a
+	jr z, .inGrass
+	cp $3b
+	jr z, .inGrass
+	cp $4a
+	jr z, .inGrass
+	cp $4b
+	jr z, .inGrass
+.notInGrass
+	xor a
+	ret
+.inGrass
 	ld a, $80
-.next2
-	ld [wSpriteStateData2 + 7], a
 	ret
 
 UnusedReadSpriteDataFunction:
@@ -584,12 +608,7 @@ CheckSpriteAvailability:
 	ld a, [H_CURRENTSPRITEOFFSET]
 	add $7
 	ld l, a
-	ld a, [wGrassTile]
-	cp c
-	ld a, $0
-	jr nz, .notInGrass
-	ld a, $80
-.notInGrass
+	call GetGrassSpritePriority
 	ld [hl], a       ; c2x7
 	and a
 .done

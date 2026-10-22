@@ -156,7 +156,7 @@ JohtoRoute36CanStepAhead::
 	cp 25
 	jr c, .normal
 	cp 33
-	jr c, .allowed
+	jp c, .allowed
 	jr .normal
 .checkDown
 	cp PLAYER_DIR_DOWN
@@ -166,7 +166,7 @@ JohtoRoute36CanStepAhead::
 	jr nz, .normal
 	ld a, [wXCoord]
 	cp 17
-	jr z, .allowed
+	jp z, .allowed
 .checkEast
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_RIGHT
@@ -176,10 +176,41 @@ JohtoRoute36CanStepAhead::
 	jr nz, .normal
 	ld a, [wYCoord]
 	cp 8
-	jr z, .allowed
+	jp z, .allowed
 	cp 9
-	jr z, .allowed
+	jp z, .allowed
 .normal
+	; Park west-facing door carpets on Route36 (18,8/9).
+	ld a, [wXCoord]
+	cp 19
+	jr nz, .parkRoute36Lane
+	ld a, [wYCoord]
+	cp 8
+	jr z, .parkRoute36Approach
+	cp 9
+	jr nz, .parkRoute36Lane
+.parkRoute36Approach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+.parkRoute36Lane
+	ld a, [wXCoord]
+	cp 18
+	jr nz, .skipParkRoute36
+	ld a, [wYCoord]
+	cp 8
+	jr z, .parkLaneUpper
+	cp 9
+	jr nz, .skipParkRoute36
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+	jr .skipParkRoute36
+.parkLaneUpper
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+.skipParkRoute36
 	; Open Gold's Route36->Ruins double downward carpets, not NPC gates.
 	ld a, [wXCoord]
 	cp 47
@@ -1339,6 +1370,18 @@ JohtoRoute35CanStepAhead::
 	cp 17
 	jr z, .allowed
 .checkSouthGate
+	; At (3,6) approach the park entrance carpet (3,5) from the south.
+	; Warp triggers only on the NEXT upward collision from (3,5).
+	ld a, [wXCoord]
+	cp 3
+	jr nz, .checkOriginalSouthGate
+	ld a, [wYCoord]
+	cp 6
+	jr nz, .checkOriginalSouthGate
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+.checkOriginalSouthGate
 	; GATE-5.62.224: only the two Gold south gate carpet cells are
 	; permitted from the north (and permit lane changing on the carpet).
 	; Do not unblock the National Park entrance (3,5).
@@ -2143,7 +2186,7 @@ JohtoNorthGateStepWarpAllowed::
 	jp nz, .deny
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .forest
+	jp z, .forest
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .gateVertical
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -2154,6 +2197,10 @@ JohtoNorthGateStepWarpAllowed::
 	jr z, .gateVertical
 	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
 	jr z, .gateVertical
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jp z, .parkRoute35Door
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	jp z, .gateVertical
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
@@ -2167,6 +2214,14 @@ JohtoNorthGateStepWarpAllowed::
 	jr z, .route43MiddleDoor
 	; All remaining directional carpets (including Route34's Gold y37
 	; WARP_CARPET_DOWN and Route35's south mat) are collision-only.
+	jp .deny
+.parkRoute35Door
+	ld a, [wXCoord]
+	cp 3
+	jp nz, .deny
+	ld a, [wYCoord]
+	cp 5
+	jp z, .up
 	jp .deny
 .ruinsOutside
 	ld a, [wXCoord]
@@ -2242,6 +2297,16 @@ JohtoGateCollisionDirectionAllowed::
 	jp z, .northGate
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jp z, .northGate
+	cp JOHTO_NATIONAL_PARK_LOCAL_ID
+	jp z, .parkExterior
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	jp z, .parkSouthGate
+	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	jp z, .parkEastGate
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jp z, .route32RuinsGate
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jp z, .route32RuinsExterior
 	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
 	jp z, .northGate
 	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
@@ -2269,11 +2334,83 @@ JohtoGateCollisionDirectionAllowed::
 	jp z, .eastGate
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jp z, .route42WestDoor
+	; Park gates are reviewed by their exact local IDs, not an orientation-wide rule.
 	; Historical south gate west x0, east x9.
 	ld a, [wXCoord]
 	and a
 	jp z, .left
 	jp .right
+.route32RuinsGate
+	ld a, [wYCoord]
+	cp 4
+	jr z, .route32RuinsGateLane
+	cp 5
+	jp nz, .denied
+.route32RuinsGateLane
+	ld a, [wXCoord]
+	and a
+	jp z, .left
+	cp 9
+	jp z, .right
+	jp .denied
+.route32RuinsExterior
+	ld a, [wXCoord]
+	cp 4
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 2
+	jp z, .left
+	cp 3
+	jp z, .left
+	jp .denied
+
+.parkExterior
+	ld a, [wXCoord]
+	cp 33
+	jr z, .parkEastSide
+	cp 10
+	jr z, .parkSouthSide
+	cp 11
+	jp nz, .denied
+.parkSouthSide
+	ld a, [wYCoord]
+	cp 47
+	jp nz, .denied
+	jp .down
+.parkEastSide
+	ld a, [wYCoord]
+	cp 18
+	jp z, .right
+	cp 19
+	jp z, .right
+	jp .denied
+.parkSouthGate
+	ld a, [wXCoord]
+	cp 3
+	jr z, .parkSouthGateLane
+	cp 4
+	jp nz, .denied
+.parkSouthGateLane
+	ld a, [wYCoord]
+	and a
+	jp z, .up ; step-on handled earlier, retain exact direction fallback for collision
+	cp 7
+	jp z, .down
+	jp .denied
+.parkEastGate
+	ld a, [wYCoord]
+	cp 4
+	jr z, .parkEastGateLane
+	cp 5
+	jp nz, .denied
+.parkEastGateLane
+	ld a, [wXCoord]
+	and a
+	jp z, .left
+	cp 9
+	jp z, .right
+	jp .denied
+
 .ecruteakCityDoor
 	ld a, [wXCoord]
 	and a
@@ -2335,6 +2472,13 @@ JohtoGateCollisionDirectionAllowed::
 	jp nz, .denied
 	jp .up
 .route35South
+	ld a, [wXCoord]
+	cp 3
+	jr nz, .route35Goldenrod
+	ld a, [wYCoord]
+	cp 5
+	jp z, .up
+.route35Goldenrod
 	ld a, [wYCoord]
 	cp 33
 	jp nz, .denied
@@ -2364,9 +2508,9 @@ JohtoGateCollisionDirectionAllowed::
  jp nz,.denied
  ld a, [wXCoord]
  cp 9
- jr z,.down
+ jp z,.down
  cp 10
- jr z,.down
+ jp z,.down
  jp .denied
 .route43MiddleSouth
  ld a, [wXCoord]
@@ -2394,6 +2538,15 @@ JohtoGateCollisionDirectionAllowed::
 	jr z, .up
 	jr .down
 .ruinsRoute36
+	ld a, [wXCoord]
+	cp 18
+	jr nz, .ruinsRoute36Only
+	ld a, [wYCoord]
+	cp 8
+	jp z, .left
+	cp 9
+	jp z, .left
+.ruinsRoute36Only
 	ld a, [wYCoord]
 	cp 13
 	jp nz, .denied
@@ -2404,6 +2557,15 @@ JohtoGateCollisionDirectionAllowed::
 	jr z, .down
 	jp .denied
 .ruinsOutside
+	ld a, [wXCoord]
+	cp 13
+	jr nz, .ruinsNorthDoor
+	ld a, [wYCoord]
+	cp 20
+	jp z, .right
+	cp 21
+	jp z, .right
+.ruinsNorthDoor
 	ld a, [wYCoord]
 	cp 5
 	jp nz, .denied
@@ -2445,6 +2607,12 @@ JohtoInternalDoorFacingCheck::
 	jp z, .cityNorthInterior
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jp z, .route35SouthInterior
+	cp JOHTO_NATIONAL_PARK_LOCAL_ID
+	jp z, .parkInternalDoor
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jp z, .route32RuinsInterior
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jp z, .route32RuinsInteriorOutdoor
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .ruinsRoute36
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
@@ -2510,6 +2678,71 @@ JohtoInternalDoorFacingCheck::
  cp PLAYER_DIR_DOWN
  jp z,.allowed
  jp .denied
+.route32RuinsInterior
+	ld a, [wYCoord]
+	cp 4
+	jr z, .route32RuinsRoomLane
+	cp 5
+	jp nz, .denied
+.route32RuinsRoomLane
+	ld a, [wXCoord]
+	and a
+	jr z, .route32RuinsRoomLeft
+	cp 9
+	jp nz, .denied
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+	jp .denied
+.route32RuinsRoomLeft
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jp .denied
+.route32RuinsInteriorOutdoor
+	ld a, [wXCoord]
+	cp 4
+	jp nz, .denied
+	ld a, [wYCoord]
+	cp 2
+	jr z, .route32RuinsOutdoorLeft
+	cp 3
+	jp nz, .denied
+.route32RuinsOutdoorLeft
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jp .denied
+
+.parkInternalDoor
+	ld a, [wXCoord]
+	cp 33
+	jr z, .parkInternalEast
+	cp 10
+	jr z, .parkInternalSouth
+	cp 11
+	jp nz, .denied
+.parkInternalSouth
+	ld a, [wYCoord]
+	cp 47
+	jp nz, .denied
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+	jp .denied
+.parkInternalEast
+	ld a, [wYCoord]
+	cp 18
+	jr z, .parkInternalEastDirection
+	cp 19
+	jp nz, .denied
+.parkInternalEastDirection
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+	jp .denied
+
+
 .route38Door
 	ld a, [wXCoord]
 	cp 35
@@ -2553,6 +2786,15 @@ JohtoInternalDoorFacingCheck::
 	jp z, .allowed
 	jp .denied
 .ruinsRoute36
+	ld a, [wXCoord]
+	cp 18
+	jr nz, .ruinsOnly
+	ld a, [wYCoord]
+	cp 8
+	jr z, .parkRoute36Left
+	cp 9
+	jr z, .parkRoute36Left
+.ruinsOnly
 	ld a, [wYCoord]
 	cp 13
 	jp nz, .denied
@@ -2568,6 +2810,15 @@ JohtoInternalDoorFacingCheck::
 	jp .denied
 .ruinsOutside
 	ld a, [wXCoord]
+	cp 13
+	jr nz, .ruinsNorthOriginal
+	ld a, [wYCoord]
+	cp 20
+	jr z, .ruinsEastCarpet
+	cp 21
+	jr z, .ruinsEastCarpet
+.ruinsNorthOriginal
+	ld a, [wXCoord]
 	cp 7
 	jp nz, .denied
 	ld a, [wYCoord]
@@ -2577,6 +2828,17 @@ JohtoInternalDoorFacingCheck::
 	cp PLAYER_DIR_UP
 	jp z, .allowed
 	jp .denied
+.ruinsEastCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+	jp .denied
+.parkRoute36Left
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jp .denied
+
 .cityNorthInterior
 	ld a, [wXCoord]
 	cp 19
@@ -2586,9 +2848,19 @@ JohtoInternalDoorFacingCheck::
 	jp nz, .denied
 	ld a, [wPlayerDirection]
 	cp PLAYER_DIR_UP
-	jr z, .allowed
+	jp z, .allowed
 	jp .denied
 .route35SouthInterior
+	ld a, [wXCoord]
+	cp 3
+	jr nz, .route35GoldenrodInternal
+	ld a, [wYCoord]
+	cp 5
+	jr nz, .route35GoldenrodInternal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+.route35GoldenrodInternal
 	ld a, [wYCoord]
 	cp 33
 	jp nz, .denied
@@ -2660,10 +2932,60 @@ JohtoRuinsCanStepAhead::
 JohtoRuinsOfAlphCanStepAhead::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .blocked
+	jp nz, .blocked
 	ld a, [wCurLocalMapID]
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-	jr nz, .blocked
+	jp nz, .blocked
+	; Also permit vertical approaches onto both Gold east carpet cells.
+	; From (13,19) DOWN arrives (13,20), (13,22) UP arrives (13,21).
+	ld a, [wXCoord]
+	cp 13
+	jr nz, .ruinsGateHorizontal
+	ld a, [wYCoord]
+	cp 19
+	jr z, .ruinsGateFromNorth
+	cp 22
+	jr nz, .ruinsGateHorizontal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .ruinsGateHorizontal
+.ruinsGateFromNorth
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+.ruinsGateHorizontal
+	; Gold east ruins-gate carpets (13,20/21); enter right from x12,
+	; and change lane while standing on either carpet without a Warp.
+	ld a, [wXCoord]
+	cp 12
+	jr nz, .ruinsGateLane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .ruinsGateLane
+	ld a, [wYCoord]
+	cp 20
+	jr z, .allowed
+	cp 21
+	jr z, .allowed
+.ruinsGateLane
+	ld a, [wXCoord]
+	cp 13
+	jr nz, .ruinsOriginalDoor
+	ld a, [wYCoord]
+	cp 20
+	jr z, .ruinsUpperLane
+	cp 21
+	jr nz, .ruinsOriginalDoor
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .ruinsOriginalDoor
+.ruinsUpperLane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+.ruinsOriginalDoor
 	; The unique northern DOOR tile (x7,y5) must be entered from
 	; (7,6) facing UP. Afterwards next UP collision initiates Warp.
 	ld a, [wXCoord]
@@ -3215,8 +3537,425 @@ JohtoLakeOfRageCanStepAhead::
 JohtoLakeOfRageBlockedRows::
  INCBIN "maps/JohtoLakeOfRage.blocked_mask.bin"
 
+; Normal National Park: east x33/18-19, south x10-11/y47 Gold carpets.
+JohtoNationalParkCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_NATIONAL_PARK_LOCAL_ID
+	jp nz, .blocked
+	; Gold WARP_CARPET cells are walkable from the sides, not only
+	; from the main outward-facing entry. The Warp itself remains
+	; COLLISION_ONLY in the independent direction predicate.
+	ld a, [wXCoord]
+	cp 33
+	jr nz, .parkSouthSide
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .parkEastUp
+	ld a, [wYCoord]
+	cp 17
+	jp z, .allowed
+	jr .parkSouthSide
+.parkEastUp
+	cp PLAYER_DIR_UP
+	jr nz, .parkSouthSide
+	ld a, [wYCoord]
+	cp 20
+	jp z, .allowed
+.parkSouthSide
+	ld a, [wYCoord]
+	cp 47
+	jr nz, .parkMainApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .parkSouthLeft
+	ld a, [wXCoord]
+	cp 9
+	jp z, .allowed
+	jr .parkMainApproach
+.parkSouthLeft
+	cp PLAYER_DIR_LEFT
+	jr nz, .parkMainApproach
+	ld a, [wXCoord]
+	cp 12
+	jp z, .allowed
+.parkMainApproach
+	ld a, [wXCoord]
+	cp 32
+	jr nz, .eastLane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .eastLane
+	ld a, [wYCoord]
+	cp 18
+	jp z, .allowed
+	cp 19
+	jp z, .allowed
+.eastLane
+	ld a, [wXCoord]
+	cp 33
+	jr nz, .southApproach
+	ld a, [wYCoord]
+	cp 18
+	jr z, .eastUpper
+	cp 19
+	jr nz, .southApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+	jr .southApproach
+.eastUpper
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+.southApproach
+	ld a, [wYCoord]
+	cp 46
+	jr nz, .southLane
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .southLane
+	ld a, [wXCoord]
+	cp 10
+	jp z, .allowed
+	cp 11
+	jp z, .allowed
+.southLane
+	ld a, [wYCoord]
+	cp 47
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 10
+	jr z, .southLeft
+	cp 11
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jr .normal
+.southLeft
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+.normal
+	ld hl, JohtoNationalParkBlockedRows
+	ld d, JOHTO_NATIONAL_PARK_WIDTH * 2
+	ld e, 5
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+JohtoNationalParkBlockedRows::
+	INCBIN "maps/JohtoNationalPark.blocked_mask.bin"
+
+JohtoRoute35NationalParkGateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	jp nz, .blocked
+	; Gold carpet is walkable horizontally from (2,7) and (5,7).
+	ld a, [wYCoord]
+	cp 7
+	jr nz, .gate35Main
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jr nz, .gate35Left
+	ld a, [wXCoord]
+	cp 2
+	jp z, .allowed
+	jr .gate35Main
+.gate35Left
+	cp PLAYER_DIR_LEFT
+	jr nz, .gate35Main
+	ld a, [wXCoord]
+	cp 5
+	jp z, .allowed
+.gate35Main
+	ld a, [wXCoord]
+	cp 3
+	jr z, .lane
+	cp 4
+	jr nz, .normal
+.lane
+	ld a, [wYCoord]
+	cp 1
+	jr z, .northApproach
+	cp 6
+	jr z, .southApproach
+	and a
+	jr z, .northCarpet
+	cp 7
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .southRight
+	ld a, [wXCoord]
+	cp 4
+	jp z, .allowed
+	jr .normal
+.southRight
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 3
+	jp z, .allowed
+	jr .normal
+.northApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jp z, .allowed
+	jr .normal
+.southApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jp z, .allowed
+	jr .normal
+.northCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .northRight
+	ld a, [wXCoord]
+	cp 4
+	jp z, .allowed
+	jr .normal
+.northRight
+	cp PLAYER_DIR_RIGHT
+	jr nz, .normal
+	ld a, [wXCoord]
+	cp 3
+	jp z, .allowed
+.normal
+	ld hl, JohtoRoute35NationalParkGateBlockedRows
+	ld d, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_WIDTH * 2
+	ld e, 1
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+JohtoRoute35NationalParkGateBlockedRows::
+	INCBIN "maps/JohtoRoute35NationalParkGate.blocked_mask.bin"
+
+JohtoRoute36NationalParkGateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	jp nz, .blocked
+	; Gold both left and right boundary carpets allow normal
+	; vertical walking at (0|9,3/6) without triggering a Warp.
+	ld a, [wXCoord]
+	and a
+	jr z, .gate36Vertical
+	cp 9
+	jr nz, .gate36Main
+.gate36Vertical
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .gate36Up
+	ld a, [wYCoord]
+	cp 3
+	jp z, .allowed
+	jr .gate36Main
+.gate36Up
+	cp PLAYER_DIR_UP
+	jr nz, .gate36Main
+	ld a, [wYCoord]
+	cp 6
+	jp z, .allowed
+.gate36Main
+	ld a, [wYCoord]
+	cp 4
+	jr z, .lane
+	cp 5
+	jr nz, .normal
+.lane
+	ld a, [wXCoord]
+	cp 1
+	jr z, .westApproach
+	cp 8
+	jr z, .eastApproach
+	and a
+	jr z, .westCarpet
+	cp 9
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .eastUpper
+	cp PLAYER_DIR_UP
+	jr z, .eastLower
+	jr .normal
+.eastUpper
+	ld a, [wYCoord]
+	cp 4
+	jp z, .allowed
+	jr .normal
+.eastLower
+	ld a, [wYCoord]
+	cp 5
+	jp z, .allowed
+	jr .normal
+.westCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .westUpper
+	cp PLAYER_DIR_UP
+	jr z, .westLower
+	jr .normal
+.westUpper
+	ld a, [wYCoord]
+	cp 4
+	jp z, .allowed
+	jr .normal
+.westLower
+	ld a, [wYCoord]
+	cp 5
+	jp z, .allowed
+	jr .normal
+.westApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jr .normal
+.eastApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+.normal
+	ld hl, JohtoRoute36NationalParkGateBlockedRows
+	ld d, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_WIDTH * 2
+	ld e, 2
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+JohtoRoute36NationalParkGateBlockedRows::
+	INCBIN "maps/JohtoRoute36NationalParkGate.blocked_mask.bin"
+
+; Gold Route32-to-Ruins EastWestGate (identical art, own verified mask).
+JohtoRoute32RuinsOfAlphGateCanStepAhead::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .blocked
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jp nz, .blocked
+	; Gold both left and right boundary carpets allow normal
+	; vertical walking at (0|9,3/6) without triggering a Warp.
+	ld a, [wXCoord]
+	and a
+	jr z, .gate36Vertical
+	cp 9
+	jr nz, .gate36Main
+.gate36Vertical
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr nz, .gate36Up
+	ld a, [wYCoord]
+	cp 3
+	jp z, .allowed
+	jr .gate36Main
+.gate36Up
+	cp PLAYER_DIR_UP
+	jr nz, .gate36Main
+	ld a, [wYCoord]
+	cp 6
+	jp z, .allowed
+.gate36Main
+	ld a, [wYCoord]
+	cp 4
+	jr z, .lane
+	cp 5
+	jr nz, .normal
+.lane
+	ld a, [wXCoord]
+	cp 1
+	jr z, .westApproach
+	cp 8
+	jr z, .eastApproach
+	and a
+	jr z, .westCarpet
+	cp 9
+	jr nz, .normal
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .eastUpper
+	cp PLAYER_DIR_UP
+	jr z, .eastLower
+	jr .normal
+.eastUpper
+	ld a, [wYCoord]
+	cp 4
+	jp z, .allowed
+	jr .normal
+.eastLower
+	ld a, [wYCoord]
+	cp 5
+	jp z, .allowed
+	jr .normal
+.westCarpet
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .westUpper
+	cp PLAYER_DIR_UP
+	jr z, .westLower
+	jr .normal
+.westUpper
+	ld a, [wYCoord]
+	cp 4
+	jp z, .allowed
+	jr .normal
+.westLower
+	ld a, [wYCoord]
+	cp 5
+	jp z, .allowed
+	jr .normal
+.westApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jp z, .allowed
+	jr .normal
+.eastApproach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_RIGHT
+	jp z, .allowed
+.normal
+	ld hl, JohtoRoute32RuinsOfAlphGateBlockedRows
+	ld d, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_WIDTH * 2
+	ld e, 2
+	jp JohtoModernMaskedStep
+.allowed
+	and a
+	ret
+.blocked
+	scf
+	ret
+JohtoRoute32RuinsOfAlphGateBlockedRows::
+	INCBIN "maps/JohtoRoute32RuinsOfAlphGate.blocked_mask.bin"
+
 JohtoNativeCanStepAhead::
 	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jp z, .route32RuinsGate
+	cp JOHTO_NATIONAL_PARK_LOCAL_ID
+	jp z, .nationalPark
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	jp z, .parkSouthGate
+	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	jp z, .parkEastGate
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jp z, .route35
 	cp JOHTO_ROUTE_36_LOCAL_ID
@@ -3342,6 +4081,19 @@ JohtoNativeCanStepAhead::
 .lake
  call JohtoLakeOfRageCanStepAhead
  jp .handled
+.nationalPark
+ call JohtoNationalParkCanStepAhead
+ jp .handled
+.parkSouthGate
+ call JohtoRoute35NationalParkGateCanStepAhead
+ jp .handled
+.parkEastGate
+ call JohtoRoute36NationalParkGateCanStepAhead
+ jp .handled
+.route32RuinsGate
+ call JohtoRoute32RuinsOfAlphGateCanStepAhead
+ jp .handled
+
 .handled
  ld e, 1
  ret

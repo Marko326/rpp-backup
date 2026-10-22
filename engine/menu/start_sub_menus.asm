@@ -184,6 +184,8 @@ StartMenu_Pokemon:
 	jr z, .canFly
 	; R33-5.62.193: Route33 uses the outdoor JOHTO_MODERN graphics.
 	; Keep route eligibility separate from Johto Fly destination unlocks.
+	cp JOHTO_PARK ; Gold National Park is outdoors, but not a Fly destination
+	jr z, .canFly
 	cp JOHTO_MODERN
 	jr z, .canFly
 	call CheckIfInOutsideMap

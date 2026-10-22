@@ -34,3 +34,7 @@ Tilesets:
 	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR ; R33-5.62.193: Gold Route33 TALL_GRASS uses graphic $04
 	; ILEX-5.62.212: Forest walkability is decided by its 30x54 Gold position mask.
 	tileset JohtoIlexForest_Block, JohtoIlexForest_GFX, JohtoIlexForest_Coll, $FF,$FF,$FF, $FF, CAVE
+	; Gold full-ID source art, local step masks own all park/gate walkability.
+	tileset JohtoPark_Block, JohtoPark_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR ; Gold Park TALL_GRASS uses graphic $04
+	tileset JohtoParkGate_Block, JohtoParkGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, 0
+	tileset JohtoRuinsGate_Block, JohtoRuinsGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, 0

@@ -3185,6 +3185,15 @@ SECTION "Johto Route31 Gate Tileset", ROMX, BANK[$41]
 JohtoGate_GFX:   INCBIN "gfx/tilesets/johto_gate.2bpp"
 JohtoGate_Block: INCBIN "gfx/blocksets/johto_gate.bst"
 
+; Original Gold full-index art preserved, separate from previously accepted compact gate.
+SECTION "Johto National Park Tile Art", ROMX, BANK[$46]
+JohtoPark_GFX: INCBIN "gfx/tilesets/johto_park.2bpp"
+JohtoPark_Block: INCBIN "gfx/blocksets/johto_park.bst"
+JohtoParkGate_GFX: INCBIN "gfx/tilesets/johto_park_gate.2bpp"
+JohtoParkGate_Block: INCBIN "gfx/blocksets/johto_park_gate.bst"
+JohtoRuinsGate_GFX: INCBIN "gfx/tilesets/johto_ruins_gate.2bpp"
+JohtoRuinsGate_Block: INCBIN "gfx/blocksets/johto_ruins_gate.bst"
+
 ; ROM-5.62.117: keep new Johto ROMX resources in the expansion half.
 ; Collision data stays in ROM0 because the walking code reads it unbanked.
 ; Add later Johto ROMX data to an explicitly assigned bank $40-$7E.
@@ -3468,7 +3477,32 @@ INCLUDE "data/mapObjects/JohtoRoute35GoldenrodGate.asm"
 INCLUDE "scripts/JohtoRoute35GoldenrodGate.asm"
 JohtoRoute35GoldenrodGateBlocks: INCBIN "maps/JohtoRoute35GoldenrodGate.blk"
 
+; Gold normal park route: Route35 -> southern gate -> park -> eastern gate -> Route36.
+SECTION "Johto Natural Park Map", ROMX, BANK[$46]
+INCLUDE "data/mapHeaders/JohtoNationalPark.asm"
+INCLUDE "data/mapObjects/JohtoNationalPark.asm"
+INCLUDE "scripts/JohtoNationalPark.asm"
+JohtoNationalParkBlocks: INCBIN "maps/JohtoNationalPark.blk"
+
+SECTION "Johto Route35 Park Gate Map", ROMX, BANK[$46]
+INCLUDE "data/mapHeaders/JohtoRoute35NationalParkGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute35NationalParkGate.asm"
+INCLUDE "scripts/JohtoRoute35NationalParkGate.asm"
+JohtoRoute35NationalParkGateBlocks: INCBIN "maps/JohtoRoute35NationalParkGate.blk"
+
+SECTION "Johto Route36 Park Gate Map", ROMX, BANK[$46]
+INCLUDE "data/mapHeaders/JohtoRoute36NationalParkGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute36NationalParkGate.asm"
+INCLUDE "scripts/JohtoRoute36NationalParkGate.asm"
+JohtoRoute36NationalParkGateBlocks: INCBIN "maps/JohtoRoute36NationalParkGate.blk"
+
 ; RUINS-5.62.224: isolated NorthSouthGate shares validated JOHTO_GATE tiles.
+SECTION "Johto Route32 Ruins Gate Map", ROMX, BANK[$46]
+INCLUDE "data/mapHeaders/JohtoRoute32RuinsOfAlphGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute32RuinsOfAlphGate.asm"
+INCLUDE "scripts/JohtoRoute32RuinsOfAlphGate.asm"
+JohtoRoute32RuinsOfAlphGateBlocks: INCBIN "maps/JohtoRoute32RuinsOfAlphGate.blk"
+
 SECTION "Johto Route36 Ruins Gate Map", ROMX, BANK[$44]
 INCLUDE "data/mapHeaders/JohtoRoute36RuinsGate.asm"
 INCLUDE "data/mapObjects/JohtoRoute36RuinsGate.asm"

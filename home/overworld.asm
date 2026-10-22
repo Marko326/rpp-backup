@@ -912,6 +912,12 @@ GetJohtoGateMusicSourceMap::
 ; "function 2" passes when the the tile in front of the player is among a certain set
 ; sets carry if the check passes, otherwise clears carry
 ExtraWarpCheck::
+	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
+	jr nz, .nativeOrOrdinary
+	callba JohtoRoute32RuinsGateFacingCheck
+	ret c
+.nativeOrOrdinary
 	; Johto outdoor doorways require exact region/local/position/facing.
 	; Keep the exact local identity check inside the ROMX predicate.
 	ld a, [wCurMap]
@@ -965,6 +971,8 @@ ExtraWarpCheck::
 ; the warp loop relies on BC/DE/HL surviving this test.
 IsJohtoSouthGatePortal::
 	ld a, [wCurMap]
+	cp JOHTO_ROUTE_32
+	jr z, .legacyRuinsGate
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .notGate
 	ld a, [wCurRegion]
@@ -1000,7 +1008,32 @@ IsJohtoSouthGatePortal::
 	jr z, .yes
 	cp JOHTO_ROUTE_43_LOCAL_ID
 	jr z, .yes
+	cp JOHTO_NATIONAL_PARK_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jr z, .yes
 	jr .notGate
+.legacyRuinsGate
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notGate
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr nz, .notGate
+	ld a, [wXCoord]
+	cp 4
+	jr nz, .notGate
+	ld a, [wYCoord]
+	cp 2
+	jr z, .yes
+	cp 3
+	jr z, .yes
+	jr .notGate
+
 .notGate
 	and a
 	ret
@@ -1667,6 +1700,8 @@ CollisionCheckOnLand::
 	cp JOHTO_ROUTE_32
 	jr nz, .normalTileCollision
 	callba JohtoRoute32CaveEntranceCheck
+	jr c, .noCollision
+	callba JohtoRoute32RuinsGateCarpetStepCheck
 	jr c, .noCollision
 .normalTileCollision
 	call CheckTilePassable

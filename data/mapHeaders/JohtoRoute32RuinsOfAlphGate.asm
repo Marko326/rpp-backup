@@ -1,0 +1,7 @@
+; Gold Route32RuinsOfAlphGate 5x4 EastWestGate; directional carpets only.
+JohtoRoute32RuinsOfAlphGate_h:
+	db JOHTO_RUINS_GATE
+	db JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_HEIGHT, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_WIDTH
+	dw JohtoRoute32RuinsOfAlphGateBlocks, JohtoRoute32RuinsOfAlphGateTextPointers, EnableAutoTextBoxDrawing
+	db 0
+	dw JohtoRoute32RuinsOfAlphGateObject

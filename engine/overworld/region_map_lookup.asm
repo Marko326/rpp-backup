@@ -298,6 +298,10 @@ ExplicitWarpRegionTargets::
 	db INSIDE_FERRY, 0, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
 	db INSIDE_FERRY, 1, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
 	db JOHTO_ROUTE_32, 0, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
+	; Route32 is still legacy $FB. Its two added door carpets MUST use
+	; the explicit legacy-source dispatcher, not NativeRegionWarpTargets.
+	db JOHTO_ROUTE_32, 1, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	db JOHTO_ROUTE_32, 2, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
 	db $ff
 ASSERT JOHTO_NEW_BARK_LOCAL_ID < NUM_JOHTO_MAPS
 ASSERT VERMILION_FERRY_DOCK < NUM_LEGACY_MAPS
@@ -491,6 +495,31 @@ NativeRegionWarpTargets::
 	db JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 2, 0, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	db JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 3, 0, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	db JOHTO_RUINS_OF_ALPH_LOCAL_ID, 0, 2, MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	; National Park public walkthrough, preserving original Route36 ruins indices.
+	db JOHTO_ROUTE_35_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	db JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+	db JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 3, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+	db JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 0, 2, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+	db JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 1, 3, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+	db JOHTO_NATIONAL_PARK_LOCAL_ID, 2, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	db JOHTO_NATIONAL_PARK_LOCAL_ID, 3, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	db JOHTO_NATIONAL_PARK_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	db JOHTO_NATIONAL_PARK_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+	db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+	db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
+	db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 3, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
+	db JOHTO_ROUTE_36_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	db JOHTO_ROUTE_36_LOCAL_ID, 3, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	; Original Route32 ruins gate two-lane west/east travel. Keep Route32 cave warp0.
+	db JOHTO_ROUTE_32_LOCAL_ID, 1, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	db JOHTO_ROUTE_32_LOCAL_ID, 2, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	db JOHTO_RUINS_OF_ALPH_LOCAL_ID, 1, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	db JOHTO_RUINS_OF_ALPH_LOCAL_ID, 2, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	db JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 0, 1, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	db JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 1, 2, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	db JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 2, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+	db JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 3, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
 	db $ff
 
 ; Native connection lookup: source Johto local / direction / destination
@@ -754,6 +783,11 @@ GetJohtoWarpArrivalStep::
 	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 0, 4, REGION_NATIVE_MAP_SLOT, D_DOWN
 	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 0, 5, REGION_NATIVE_MAP_SLOT, D_DOWN
 	db REGION_NATIVE_MAP_SLOT, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 5, 7, REGION_NATIVE_MAP_SLOT, D_DOWN
+	; National Park south gate: entering from park south lands on a north-edge tile;
+	; this is the reviewed down-step side only, unlike park/gate return mats.
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 0, 3, REGION_NATIVE_MAP_SLOT, D_DOWN
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 0, 4, REGION_NATIVE_MAP_SLOT, D_DOWN
+	db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_35_LOCAL_ID, 5, 3, REGION_NATIVE_MAP_SLOT, D_DOWN ; Gold solid DOOR
 	db $ff
 
 ; Native cave entrances use the existing map transition SFX, not new audio.
@@ -830,3 +864,71 @@ JohtoRoute33CaveWarpTileCheck::
 .reject
 	and a
 	ret
+
+; Legacy Route32 uses its original $FB map handle; two Gold left-facing
+; carpets at (4,2/3) must be standable from (5,2/3) and permit vertical
+; lane change, but require a SECOND leftward collision for their Warp.
+JohtoRoute32RuinsGateCarpetStepCheck::
+	ld a, [wXCoord]
+	cp 5
+	jr z, .approach
+	cp 4
+	jr nz, .denied
+	ld a, [wYCoord]
+	cp 2
+	jr z, .upper
+	cp 3
+	jr nz, .denied
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .allowed
+	jr .denied
+.upper
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .allowed
+	jr .denied
+.approach
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .denied
+	ld a, [wYCoord]
+	cp 2
+	jr z, .allowed
+	cp 3
+	jr z, .allowed
+.denied
+	and a
+	ret
+.allowed
+	scf
+	ret
+
+
+; This same map's inner Warp carpets are not at the map edge; the generic
+; ExtraWarpCheck edge test is false, so the precise predicate is necessary.
+JohtoRoute32RuinsGateFacingCheck::
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .no
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr nz, .no
+	ld a, [wXCoord]
+	cp 4
+	jr nz, .no
+	ld a, [wYCoord]
+	cp 2
+	jr z, .direction
+	cp 3
+	jr nz, .no
+.direction
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_LEFT
+	jr nz, .no
+	scf
+	ret
+.no
+	and a
+	ret
+

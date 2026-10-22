@@ -564,6 +564,12 @@ UpdateMapNameSign::
 	ret z
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 	ret z
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	ret z
 	; Route42/Ecruteak east gate is a transit room from either side.
 	; Keep the prior city/route landmark; do not show Route42 inside.
 	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID

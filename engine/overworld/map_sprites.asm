@@ -271,6 +271,8 @@ InitOutsideMapSprites:
 	jr z, .johtoSprites
 	cp JOHTO_MODERN ; R33-5.62.191: keep the shared Johto outdoor sprite sheet
 	jr z, .johtoSprites
+	cp JOHTO_PARK ; outdoor park also reuses the dedicated Johto sprite sheet
+	jr z, .johtoSprites
 	ld a,[wCurMap]
 	cp a,REDS_HOUSE_1F ; original Kanto outdoor map-ID range
 	ret nc ; if not, return

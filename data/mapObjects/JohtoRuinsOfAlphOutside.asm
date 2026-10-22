@@ -2,8 +2,10 @@
 ; lab, Union Cave B1F and east Route32 gate) stay impassable, not fake warps.
 JohtoRuinsOfAlphOutsideObject:
 	db $05 ; outdoor border
-	db $01
-	db 5, 7, 2, REGION_WARP_ESCAPE ; north gate bottom-left warp #3 -> RPP 2
+	db $03
+	db 5, 7, 2, REGION_WARP_ESCAPE
+	db 20, 13, 0, REGION_WARP_ESCAPE ; Gold outside warp #10 west room #1
+	db 21, 13, 1, REGION_WARP_ESCAPE ; Gold outside warp #11 west room #2 ; north gate bottom-left warp #3 -> RPP 2
 	db $03 ; Gold original readable signs, no story triggers
 	db 8, 16, 1
 	db 16, 12, 2
