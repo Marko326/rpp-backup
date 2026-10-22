@@ -54,6 +54,8 @@ class Route37Stage(unittest.TestCase):
                 (project / directory).symlink_to(ROOT / directory, target_is_directory=True)
             target = project / 'engine/overworld/ledges.asm'
             target.parent.mkdir(parents=True)
+            (project / 'engine/overworld/johto_east_exterior.asm').symlink_to(
+                ROOT / 'engine/overworld/johto_east_exterior.asm')
             target.write_text(asm.replace(before, '', 1), encoding='utf8')
             self.assertTrue(any('JohtoRoute37: Gold HOP missing=' in message
                                 for message in ledge_audit(project, GOLD)['errors']))

@@ -195,7 +195,7 @@ FOREST_FILES = (
     'maps/JohtoIlexForest.blk', 'maps/JohtoIlexForest.blocked_mask.bin',
     'gfx/blocksets/johto_ilex_forest.bst', 'gfx/tilesets/johto_ilex_forest.png',
     'color/tilesets/johto_ilex_forest.asm',
-    'engine/overworld/johto_ilex_forest_collision.asm', 'engine/overworld/ledges.asm',
+    'engine/overworld/johto_ilex_forest_collision.asm', 'engine/overworld/johto_east_exterior.asm', 'engine/overworld/ledges.asm',
     'data/mapObjects/JohtoIlexAzaleaGate.asm', 'home/overworld.asm',
     'engine/overworld/region_map_lookup.asm', 'engine/overworld/johto_route33_collision.asm',
     'constants/region_map_constants.asm', 'data/johto_map_headers.asm',

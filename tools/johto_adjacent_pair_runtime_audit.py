@@ -102,7 +102,7 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
         expected={(str(h['x']),str(h['y']),dirset[(h['dx'],h['dy'])]) for h in gold_hops['hops']}
         if set(raw)!=expected or len(raw)!=len(expected) or len(raw)!=20:
             errors.append('Route39 executable 20 Gold jump directions missing/changed')
-        if 'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID' not in fly or not re.search(r'(?m)^\s*cp\s+10\s*\n\s*jr\s+c,\s*\.nextReady', fly):
+        if 'ld a, JOHTO_OLIVINE_CITY_LOCAL_ID' not in fly or not re.search(r'(?m)^\s*cp\s+11\s*\n\s*jr\s+c,\s*\.nextReady', fly):
             errors.append('Olivine Fly cursor/physical ID not active')
     except (OSError,IndexError,KeyError,ValueError,TypeError) as exc:
         errors.append(f'adjacent runtime source audit failed closed: {exc}')

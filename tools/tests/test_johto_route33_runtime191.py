@@ -11,7 +11,7 @@ FILES=('data/johto_map_headers.asm','constants/map_constants.asm','data/mapHeade
        'color/tilesets/johto_modern.asm','constants/region_map_constants.asm',
        'data/mapHeaders/JohtoRoute32.asm','data/mapHeaders/JohtoRoute33.asm',
        'engine/overworld/region_map_lookup.asm','main.asm',
-       'engine/overworld/johto_route33_collision.asm','home/overworld.asm',
+       'engine/overworld/johto_route33_collision.asm','engine/overworld/johto_east_exterior.asm','home/overworld.asm',
        'engine/overworld/ledges.asm','data/mapObjects/JohtoRoute33.asm',
        'data/tileset_headers.asm','data/collision.asm',
        'engine/menu/start_sub_menus.asm',

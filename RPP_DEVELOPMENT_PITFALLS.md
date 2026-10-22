@@ -1,4 +1,29 @@
-## SPID-5.62.239A｜正式收口：公园草丛、Field Move 与遗迹右口（2026-10-22）
+## SPID-5.62.239｜东线四图收口：Gold HOP_RIGHT 遮罩误封与旧测试硬编码（2026-10-22）
+
+- **门禁必须完整跑一遍**：仅 12 项新增专项测试通过并不代表完成。真实完整门禁首次返回 924 单测、11 FAIL／18 ERROR；多数由旧代码假定 41 活动图、46 条连接、临时拷贝不包含新 `engine/overworld/johto_east_exterior.asm` 导致，且 Gold 全量遮罩源证据当时尚未跑完。必须保留失败、逐个定位根因，不能用删除旧负向用例或只改数字绕过。
+- **真实漏接：HOP 起跳点不一定等同源碰撞遮罩中的普通 FLOOR**：Gold Route45 的 `(6,20/21)`、`(6,64/65)` 角色为 `HOP_RIGHT`；离线 blocked mask 将其置 1，运行时会阻止踏上起跳格。**仅修 `maps/JohtoRoute45.blocked_mask.bin` 的四个确定 bit**，原版 Gold `.blk` 和隔离的 Gold 审查 mask 维持逐字节原样。运行时审计用 Gold `plan_gold_quadrant_collision()` 独立证据核对确切四格，再从预审 mask 按这四格生成唯一合法的实时 mask；阻断任意第五格放行或四格再次封闭。Gold 实墙 `(7,20/21/64/65)` 仍必须 blocked、落点 `(8,...)` 不可 blocked。
+- **完整地图跳崖审计要跨 Bank47**：`HandleLedges` 的 `.eastHops` 分派调用 `JohtoEastHopDirection`；新路每张的列表位于 `johto_east_exterior.asm`，旧 `ledge_regression_audit.py` 只识别 `.route43Hops` 等老列表，所以新增合法地图会触发“未审计 Gold HOP”的硬阻断。修复时同时验证四图 21／47／88／20 个 Gold 精确坐标与方向、重复位置、实体墙、两格安全落点，并将四图登记为已审计；不能仅把新地图加入白名单。
+- **旧测试副本也有依赖**：Ruins、Forest、Route33 的故障注入会按旧文件清单构造临时源码树，ROM0 检查已依赖 Bank47 新文件后出现 `FileNotFoundError`。正确做法是同步临时镜像/符号链接文件，并继续验证被注入错误确实命中原有独立断言，不是为测试设置“缺文件即不检查”。Route42—卡吉镇西门 Gold 走廊不能被东门 Route44 合法 y16/17 造成的 `cp 16` 文本误伤；断言按真实分支执行路径限制范围。
+- **版本与提交**：用户正式展示 `SPID-5.62.239`，本轮不增加 A/B 字母。使用其实际导出快照而不是推测 HEAD，采用模式 A 两笔分别准备运行时功能和工具测试，反向隔离补丁只能去掉第二笔；本轮只收口，不提交、不推送、不另做交接。
+
+## 东线 SPID-5.62.239：预审通过不等于室外地图已接入
+
+- 原导出图 `Route44 / BlackthornCity / Route45 / Route46` 的 `.blk` 仅是离线材料。开启地图必须同时登记 active slot、原生头/Bank、Gold 定向连接、ROM0→Bank47 前缘 fence、位置遮罩、Surf 与跳崖 runtime，以及普通地图与 Fly 两套独立名字/坐标表。
+- 真实缺陷：初版普通地图表 `JohtoNativeTownMapIndices` 误把 Gold 索引写成 38/40/42/44，实际对应 Ice Path、Dragon's Den、Dark Cave、Silver Cave；正确索引为 37/39/41/43，且 `engine/town_map.asm::JohtoNativeTownMapEntries` 还必须增加同等数量的 4-byte 条目，否则索引越界。
+- Fly 菜单原有 10 个条目，Blackthorn 新增第 11 个后，`.next/.previous/.findForward/.findBackward` 循环上界应一致，并保障已访问 `$44D` 位及 Fly `$FE` 选择器跨动画实体 ID。修改菜单数量也必须同步保留历史前十条的反例测试。
+- Route45 北端 Gold 可穿行 X 区域是 `[0,1,8..13]`，不是一个统一矩形；Route46/Route29 边缘虽然有 Gold 视觉连接，但对应接缝实际撞墙，绝不可统一按方向放行。
+- Route44 Gold 有 22 个 `HEADBUTT_TREE` 检测位置，技能暂不启用时必须记录精确 Gold deferred 坐标；放宽 Field Moves 审计的所有地图白名单不可替代这个证据。
+- 遗迹、公园旧测试的固定活动图数 `41`、连接数 `46`、屋顶组 `10` 需要随新增地图改为 `45/56/11`，但原有实体目的地与负向篡改断言都要保留。Gold Ice Path 1F 未实现冰面与 B1F，缺其中任何一环不得启用洞口或宣布东线洞穴可玩。
+- 发布静态 `PASS` 不等于链接成功，银行容量/`JR` 距离和手机显示/进出仍须按项目纪律由用户编译及实机测试；禁止将未编译写为通过。
+
+## SPID-5.62.239｜正式版本订正与东线 Gold 先行审计（2026-10-22）
+
+- **正式版本纪律**：用户明确要求 `.239A` 仅作为当时测试候选标记，游戏最终版本为 `SPID-5.62.239`。只改 `data/game_version.asm` 的可见版本字串，已验收运行时函数不动；旧记录保留后缀用于准确指认曾交付的测试补丁。
+- **Gold 图块集审阅范围**：既有 RPP Johto `.bst` 曾为可走楼梯 `$06`、崖边等扩容/重映射，不能将整份 RPP 文件和 Gold 原版 2048 字节做全文件哈希等价检验；正确检查新地图实际用到的每个 metatile ID 16 字节定义。当前 Route44、BlackthornCity、Route45、Route46 使用到的 ID 定义逐项一致，未证明其他未来室内 tileset 可共用。
+- **地图连接与入口不能提前打开**：Gold 44 号道路向西连卡吉镇、向东连烟墨市，且 `(56,7)` 洞口通往 IcePath1F，后者 `(4,19)` 返回 44 号道路。不能只看到地形和 Gold 四方向边界匹配就加入活动图；应先完成本地图 Mask、Surf、水岸、21 条跳崖、封闭未开放洞口和实际出入来源的 Warp 解析。未接入的烟墨市 Fly 与所有室内入口不可提前启用。
+- **静态合同故障注入**：`johto_east_corridor_source_audit.py` 复用项目现有 Gold 事件/连接/区块解码器，检查稳定 ID、五张原始 `.blk` 哈希、8 条有向连接、Warp 双端及共享户外可见区块。单测错误注入覆盖改错冰雪通路门口目的地、改错连通偏移、损坏图块字节、伪造 source 摘要、擅自将 OFFLINE 改为 RUNTIME_APPROVED；这些均必须 FAIL。源码级 PASS 不替代屏幕图像、地图接缝、ROM Bank 或手机验收。
+
+## SPID-5.62.239｜正式收口：公园草丛、Field Move 与遗迹右口（2026-10-22）
 
 - **用户验收状态**：用户收到修订包后反馈“没问题了”并要求收口。此反馈覆盖本轮提出的公园草／长草遮挡、骑行与野外 Fly、普通地图地标及遗迹门房右侧入口；不代表未提及的旧存档、全部按键边界和全部地图都完成逐项实测。
 - **真实入口与遮挡修复已保留**：Route32 旧 `$FB` 句柄必须同时登记到实际被调用的 `ExplicitWarpRegionTargets`，不能只看 `NativeRegionWarpTargets`；公园普通草 `$04` 与长草 `$3A/$3B/$4A/$4B` 的脚部遮挡要分开核对；野外 Fly 使用许可和 Fly 落点名单是两套不同合同。
@@ -6,7 +31,7 @@
 - **功能状态与构建状态分开**：用户反馈已登记为本轮范围的 PHONE_ACCEPTED；这不等于本助手已编译／链接 ROM。当前没有对应 ROM/MAP 哈希或最新 Bank／VRAM 余量证据，本项目继续禁止 AI 自行编译／链接 ROM。
 - **三件套与双提交纪律**：正式收口同步 TODO、踩坑、`commit-message.txt` 索引；运行时 ASM、地图资源与 `data/game_version.asm` 属第一笔 `feat(johto)`，工具／测试／合同 JSON／收口文档及提交索引属第二笔 `test(tool)`。清理增量基于已应用 `.239A` 候选，全量基于 `.237` 导出快照；工具反向隔离仅用于分离提交，绝不撤回 `scripts/*.asm` 等游戏运行时逻辑。Git Commit／Push 由用户执行。
 
-## SPID-5.62.239A｜候选期故障记录（历史，后由用户验收收口）
+## SPID-5.62.239｜字母候选期故障记录（历史）
 
 - **入口真因**：旧句柄 `JOHTO_ROUTE_32` 与新 native 室内门房不能只检查 `NativeRegionWarpTargets`；从 Route32 右口进门的 `REGION_WARP_ESCAPE` 必经 `ResolveExplicitRegionWarp` 的 `ExplicitWarpRegionTargets`。`.239` 漏了源槽位 1/2，错误分支退到 Vermilion Ferry fallback；旧单元测试只断言 native 表映射，造成假绿。修订按 Gold 和现有 RPP Object 的真实编号补两条 legacy-source 显式映射，保留洞口槽位0。负向测试删除或错改任一入口必须 FAIL。
 - **草丛根因**：新 Park 图块集把 `wGrassTile` 设成 `$FF`，与 `.193` Route33 错误相同；还不能把 Gold Park 的 `LONG_GRASS` 简化为 `$04`，其真实四张图块是 `$3A,$3B,$4A,$4B`。只在 Park 限定实际人物/NPC 的下半身 OAM priority；原 Gold 176 格普通草及 176 格长草均必须交叉核验，不碰野怪概率。

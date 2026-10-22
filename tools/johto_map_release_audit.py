@@ -33,6 +33,7 @@ from johto_rpp_connection_guard import audit_all_active
 from johto_ilex_gate_runtime_audit import audit as ilex_gate_audit, audit_ilex_forest as forest_p17_audit
 from johto_roof_reference_audit import audit as roof_audit
 from johto_rom0_collision_audit import audit as rom0_collision_audit
+from johto_east_exterior_runtime_audit import audit as east_exterior_runtime_audit
 from johto_adjacent_pair_runtime_audit import audit as adjacent_pair_runtime_audit
 from rom0_list_menu_bank_audit import audit as rom0_list_menu_bank_audit
 
@@ -84,11 +85,24 @@ test_johto_roof_reference_audit test_johto_roof_mapgroups_p19d test_johto_golden
 test_johto_gold_collision_cardinality test_johto_ilex_gold_reference test_johto_ilex_south_gate197
 test_johto_union_cave_exit192 test_johto_ilex_forest_p17 test_ledge_pause_209
 test_johto_rom0_collision_dispatch224 test_rom0_list_menu_bank225
-test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod_gate224 test_johto_route37_stage
+test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod_gate224 test_johto_route37_stage test_johto_east_corridor_240 test_johto_east_exterior_runtime_239
 '''.split())
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_east_corridor_240.EastCorridorPreflight240.test_five_gold_sources_checked_ice_path_still_sealed
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_verified_runtime_and_all_gold_connections
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_modified_gold_route44_block_caught
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_corrupt_blocked_mask_caught
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_route44_fly_destination_cannot_be_enabled
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_blackthorn_fly_cannot_disappear
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_cliff_takeoff_missing_detected
+test_johto_east_exterior_runtime_239.EastLiveRuntime239.test_cave_cannot_falsely_activate
+test_johto_east_corridor_240.EastCorridorPreflight240.test_changing_gold_cave_destination_is_rejected
+test_johto_east_corridor_240.EastCorridorPreflight240.test_wrong_source_seam_offset_is_rejected
+test_johto_east_corridor_240.EastCorridorPreflight240.test_runtime_tileset_visual_drift_is_rejected
+test_johto_east_corridor_240.EastCorridorPreflight240.test_no_fake_runtime_approval_is_possible
+test_johto_east_corridor_240.EastCorridorPreflight240.test_corrupted_staged_collision_mask_is_rejected
 test_johto_park_portal_runtime_239a.ParkPortal239A.test_actual_source_matches
 test_johto_park_portal_runtime_239a.ParkPortal239A.test_missing_right_entrance_is_caught
 test_johto_park_portal_runtime_239a.ParkPortal239A.test_grass_marker_mutation
@@ -499,6 +513,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     errors.extend(verify_gold(gold))
     errors.extend('FIXED_ID: '+e for e in fixed_id_audit(root, gold_root=gold))
     errors.extend('ROM0_COLLISION: '+e for e in rom0_collision_audit(root))
+    errors.extend('EAST_RUNTIME: '+e for e in east_exterior_runtime_audit(root,gold,connections=False))
     errors.extend('ADJACENT_PAIR_RUNTIME: '+e for e in adjacent_pair_runtime_audit(root,gold))
     errors.extend('ROM0_LIST_MENU: '+e for e in rom0_list_menu_bank_audit(root))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))

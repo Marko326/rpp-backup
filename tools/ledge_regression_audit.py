@@ -56,7 +56,7 @@ def registration_errors(src):
     expected_tables = {'JohtoRoute29LedgeTiles', 'JohtoRoute31LedgeTiles',
                        'JohtoIlexForestLedgeTiles'}
     coord = set(re.findall(r'(?m)^\.(\w+Hops)\s*$', src))
-    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops', 'route37Hops', 'ecruteakHops', 'route38Hops', 'route39Hops', 'mahoganyHops', 'route43Hops', 'lakeHops'}
+    expected_coord = {'route33Hops', 'azaleaHops', 'ruinsHops', 'route37Hops', 'ecruteakHops', 'route38Hops', 'route39Hops', 'mahoganyHops', 'route43Hops', 'lakeHops', 'eastHops'}
     errors = []
     for label, actual_set, expected_set in (
             ('native router', actual, expected),
@@ -94,6 +94,11 @@ def registration_errors(src):
         'cp JOHTO_LAKE_OF_RAGE_LOCAL_ID\n\tjp z, .lakeHopTable',
         'ld hl, .route43Hops\n\tjp .modernHopLookup',
         'ld hl, .lakeHops\n\tjp .modernHopLookup',
+        'cp JOHTO_ROUTE_44_LOCAL_ID\n jp z,.eastHops',
+        'cp JOHTO_BLACKTHORN_CITY_LOCAL_ID\n jp z,.eastHops',
+        'cp JOHTO_ROUTE_45_LOCAL_ID\n jp z,.eastHops',
+        'cp JOHTO_ROUTE_46_LOCAL_ID\n jp z,.eastHops',
+        '.eastHops\n callab JohtoEastHopDirection\n ld a,e\n and a\n ret z\n jp .foundMatch',
     )
     for snippet in contract:
         if snippet not in src:
@@ -294,7 +299,7 @@ def audit(root=ROOT, gold=None):
     # ledges. Future maps with Gold HOP roles must have a reviewed runtime
     # dispatcher and join this exact per-position/dir audit, not silently
     # inherit a zero-rule default just because the old roster was complete.
-    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown', 'JohtoRoute43', 'JohtoLakeOfRage'}
+    known = set(NATIVE) | {'JohtoRoute33', 'JohtoAzaleaTown', 'JohtoRuinsOfAlphOutside', 'JohtoRoute37', 'JohtoEcruteakCity', 'JohtoRoute38', 'JohtoRoute39', 'JohtoMahoganyTown', 'JohtoRoute43', 'JohtoLakeOfRage', 'JohtoRoute44', 'JohtoBlackthornCity', 'JohtoRoute45', 'JohtoRoute46'}
     registered = json.loads((root / 'tools/johto_native_maps.json').read_text())['maps']
     for entry in registered:
         name = entry['header'].removesuffix('_h')
@@ -319,6 +324,42 @@ def audit(root=ROOT, gold=None):
             report['errors'].append(f'{name}: Gold has {len(gold_hops)} HOP directions '
                                     'but this new map has no registered ledge audit')
 
+    # East bank $47 is a different HOP implementation; parse the four live
+    # per-map lists and compare actual (x,y,dx,dy) sets against original Gold.
+    # Checking counts alone misses a wrong but equally sized takeoff list.
+    east_src = (root / 'engine/overworld/johto_east_exterior.asm').read_text()
+    for name, width, height, frozen_count in (
+            ('Route44', 60, 18, 21), ('BlackthornCity', 40, 36, 47),
+            ('Route45', 20, 90, 88), ('Route46', 20, 36, 20)):
+        full_name = 'Johto' + name
+        label = full_name + 'HopList::'
+        try:
+            part = east_src.split(label, 1)[1].split('db $ff', 1)[0]
+            rows = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*PLAYER_DIR_(\w+)\s*$', part)
+            directions = {'DOWN': (0, 1), 'LEFT': (-1, 0), 'RIGHT': (1, 0)}
+            if any(d not in directions for x,y,d in rows):
+                raise AssertionError('unexpected direction in east HOP list')
+            actions = {(int(x),int(y),*directions[d]) for x,y,d in rows}
+            gold_hops = expected_gold_hops(gold, name, 'johto')
+            if len(rows) != len(actions) or len(actions) != frozen_count:
+                report['errors'].append(full_name + ': duplicate/missing east Gold HOP entries')
+            if actions != gold_hops:
+                report['errors'].append(f'{full_name}: Gold HOP missing={sorted(gold_hops-actions)} extra={sorted(actions-gold_hops)}')
+            mask = (root / 'maps' / (full_name + '.blocked_mask.bin')).read_bytes()
+            stride = (width+7)//8
+            if len(mask) != height * stride:
+                raise AssertionError('blocked-mask dimension changed')
+            def blocked(x,y):
+                return not (0<=x<width and 0<=y<height) or bool(mask[y*stride+x//8] & (1 << (x%8)))
+            for x,y,dx,dy in actions:
+                if blocked(x,y) or not blocked(x+dx,y+dy) or blocked(x+2*dx,y+2*dy):
+                    report['errors'].append(f'{full_name}: unsafe two-cell east HOP {(x,y,dx,dy)}')
+            report['modern_coordinate_maps'][full_name] = {
+                'actions': len(actions), 'tileset': 'johto',
+                'bank47_live_list': True, 'gold_position_direction_verified': actions == gold_hops,
+            }
+        except (IndexError, ValueError, OSError, AssertionError) as exc:
+            report['errors'].append(f'{full_name}: east Gold HOP source missing/invalid: {exc}')
     # Discover every Kanto map using the overworld tileset, including headers
     # with a literal 00 instead of OVERWORLD. No assumptions about Gold here.
     dims = {}

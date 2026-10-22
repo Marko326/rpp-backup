@@ -82,7 +82,7 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoRoute32TownMapName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRoute46Name\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_native_music_symbols_must_be_declared(self):
@@ -123,7 +123,7 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_ROUTE30 ; Route32 ruins gate, inherits Route32\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_ROUTE36 ; Route46\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):
@@ -145,9 +145,9 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; Route32RuinsOfAlphGate\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; Route36NationalParkGate\nJohtoMapLegacyAliasesEnd::',
-                    'local 40 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; Route46\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; Route46\nJohtoMapLegacyAliasesEnd::',
+                    'local 44 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:
@@ -184,7 +184,7 @@ class NativeMapIDExpansion(unittest.TestCase):
             manifest_path = root / 'tools/johto_native_maps.json'
             manifest = json.loads(manifest_path.read_text())
             fixture = dict(manifest['maps'][-1])
-            fixture.update(local_id=69, local_symbol='JOHTO_ROUTE_44_LOCAL_ID',
+            fixture.update(local_id=70, local_symbol='JOHTO_ICE_PATH_1F_LOCAL_ID',
                            header='JohtoRoute33_h', bank='BANK(JohtoRoute33_h)',
                            rby_music=['MUSIC_ROUTES3','0'],
                            gsc_music='MUSIC_GBP_GSC_ROUTE30',
@@ -203,8 +203,8 @@ class NativeMapIDExpansion(unittest.TestCase):
             rows = [i for i, line in enumerate(parts) if ' ; $40-$4f' in line.lower()]
             self.assertEqual(len(rows), 1, rows)
             values = parts[rows[0]].split(';', 1)[0].split('db ',1)[1].strip().split(', ')
-            self.assertEqual(values[69-64], '$ff')
-            values[69-64] = f'${REGISTERED_COUNT:02x}'
+            self.assertEqual(values[70-64], '$ff')
+            values[70-64] = f'${REGISTERED_COUNT:02x}'
             parts[rows[0]] = '\tdb ' + ', '.join(values) + ' ; $40-$4f\n'
             table_path.write_text(head + marker + ''.join(parts))
             self.assertEqual(audit(root), [])

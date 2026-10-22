@@ -72,7 +72,7 @@ class JohtoFlyDestinations196(unittest.TestCase):
 
     def test_fifth_menu_slot_must_be_reachable(self):
         self.mutation('engine/johto_fly_town_map.asm',
-                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 10',
+                      '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 11',
                       '.forwardLoop\n\tcall .isCurrentUnlocked\n\tret nz\n\tld a, [wWhichTownMapLocation]\n\tinc a\n\tcp 6')
 
     def test_unsafe_landing_must_fail(self):

@@ -3087,6 +3087,246 @@
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null,
       "fly_use_status": "FORBIDDEN"
+    },
+    {
+      "local_id": 69,
+      "local_symbol": "JOHTO_ROUTE_44_LOCAL_ID",
+      "header": "JohtoRoute44_h",
+      "bank": "BANK(JohtoRoute44_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_LAKE_OF_RAGE",
+      "town_map_index": 37,
+      "town_map_name": "JohtoBrowseRoute44Name",
+      "town_map_xy": [
+        60,
+        128
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "ALLOWED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "FORBIDDEN"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "ALLOWED",
+      "deferred_gold_warps": "interiors, ICE_PATH_1F, ROUTE_29 remains closed; no fabricated targets",
+      "deferred_gold_moves": {
+        "headbutt_tree_yx": [
+          [
+            3,
+            24
+          ],
+          [
+            3,
+            25
+          ],
+          [
+            3,
+            26
+          ],
+          [
+            3,
+            27
+          ],
+          [
+            3,
+            28
+          ],
+          [
+            3,
+            29
+          ],
+          [
+            4,
+            17
+          ],
+          [
+            5,
+            17
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            8,
+            13
+          ],
+          [
+            8,
+            14
+          ],
+          [
+            8,
+            15
+          ],
+          [
+            9,
+            15
+          ],
+          [
+            10,
+            15
+          ],
+          [
+            10,
+            16
+          ],
+          [
+            10,
+            17
+          ],
+          [
+            10,
+            42
+          ],
+          [
+            10,
+            43
+          ],
+          [
+            11,
+            17
+          ],
+          [
+            12,
+            40
+          ],
+          [
+            12,
+            41
+          ],
+          [
+            13,
+            40
+          ]
+        ]
+      }
+    },
+    {
+      "local_id": 71,
+      "local_symbol": "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
+      "header": "JohtoBlackthornCity_h",
+      "bank": "BANK(JohtoBlackthornCity_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_AZALEA_TOWN",
+      "town_map_index": 39,
+      "town_map_name": "JohtoBlackthornName",
+      "town_map_xy": [
+        60,
+        140
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "ALLOWED",
+        "bike": "ALLOWED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "FORBIDDEN"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": "BLACKTHORN_CITY",
+      "fly_use_status": "ALLOWED",
+      "deferred_gold_warps": "interiors, ICE_PATH_1F, ROUTE_29 remains closed; no fabricated targets"
+    },
+    {
+      "local_id": 72,
+      "local_symbol": "JOHTO_ROUTE_45_LOCAL_ID",
+      "header": "JohtoRoute45_h",
+      "bank": "BANK(JohtoRoute45_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 41,
+      "town_map_name": "JohtoBrowseRoute45Name",
+      "town_map_xy": [
+        80,
+        140
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "ALLOWED",
+        "surf": "ALLOWED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "FORBIDDEN"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "ALLOWED",
+      "deferred_gold_warps": "interiors, ICE_PATH_1F, ROUTE_29 remains closed; no fabricated targets",
+      "north_connection_exit_x_tiles": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "north_connection_visual_left_border": 0,
+      "north_connection_visual_right_border": 0
+    },
+    {
+      "local_id": 73,
+      "local_symbol": "JOHTO_ROUTE_46_LOCAL_ID",
+      "header": "JohtoRoute46_h",
+      "bank": "BANK(JohtoRoute46_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 43,
+      "town_map_name": "JohtoBrowseRoute46Name",
+      "town_map_xy": [
+        104,
+        132
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "ALLOWED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "FORBIDDEN"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "ALLOWED",
+      "deferred_gold_warps": "interiors, ICE_PATH_1F, ROUTE_29 remains closed; no fabricated targets"
     }
   ]
 }

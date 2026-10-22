@@ -1,4 +1,26 @@
-# SPID-5.62.239A｜自然公园与遗迹门房正式收口索引（本文件是索引，不是 git commit -F 正文）
+# SPID-5.62.239｜东线四张室外地图与四处 Gold 跳崖起跳修复正式收口（独立提交索引，非 git commit -F 全文）
+# 已验收 `.239` 候选来源：用户上传的 `test(tool)__固化公园与遗迹门房合同并完成_239A_收口(1).zip` + 已实际可应用的 `SPID-5.62.239_east_runtime_from_uploaded_239_current.patch`；导出 ZIP 不含 .git，用户真实 HEAD 未由本环境证实。
+# 可见游戏版本只用 `SPID-5.62.239`，不增加候选字母。功能和工具/文档分两笔提交，不执行 Git Commit/Push。
+# 1) feat(johto): 完成 Route44、烟墨市、Route45、Route46 运行时并恢复 Route45 的四处 Gold HOP_RIGHT 起跳格。
+#    只含 engine/、home/、data/、constants/、color/、maps/、scripts/、main.asm 等实际游戏文件（工具目录不属于运行时代码）。
+# 2) test(tool): 完成东线 Gold 并表/Bank47 跳崖、门房、Town Map、Fly、冲浪与故障注入审计及三件套。
+#    只含 tools/、配套 docs/、TODO.md、RPP_DEVELOPMENT_PITFALLS.md 和本索引；保持 Gold 原始对照文件不被游戏自动引用。
+# ZIP 三份补丁：已应用修订候选到清理终态的 incremental、最终态撤回仅工具文档的 tool_reverse_isolation、原始用户导出源码到清理终态的 full；另有两份独立 git commit TXT。
+# 增量／全量二选一；完成清理后应用工具隔离，只提交 feat，再 `git apply -R` 还原工具文档并提交 test(tool)。先核实实际 Git 状态，避免把用户已提交过的旧改动重复提交。
+# 统一 Gold 发布门禁最终复测：PASS，927/927 项 Python 单测通过、0 skipped、56/56 活动连接 PASS；Gold 368 登记／367 扫描／367 来源 PASS／0 来源错误，SafariZoneBeta 唯一按项目白名单排除；masked-step 源码模拟 0 failures（非 ROM/手机证明）。不构建 ROM，不验证最新 Bank 空间或全部手机路线，也不另写阶段交接。
+
+# SPID-5.62.239 东线室外四图追加候选（保留正式版本号不加字母）
+# 仅提交说明，不能据此认定已 Git Commit/Push。历史记录在下方保持不变。
+# feat(johto): 接入 Gold Route44/BlackthornCity/Route45/Route46 四图地图运行时、双向边缘与方向碰撞，封闭未实现冰雪通路和室内 Warp；烟墨市 Fly 与 Gold Town Map 双目录单独登记。
+# test(tool): 固化四图 Gold 块文件/遮罩、银行 $47 分派、四图悬崖及 Surf、城都头表和飞空落点，并增加故障注入。仅静态验证，ROM/MAP 及手机待验收。
+# Game version: SPID-5.62.239（不要使用 239A）
+
+# SPID-5.62.239｜正式版本订正与东线离线预审（开发阶段，不是正式 Git 提交日志）
+# 用户要求最终公开游戏版本没有测试后缀：data/game_version.asm 由 SPID-5.62.239A@ 订正为 SPID-5.62.239@；已验收公园、门房、遗迹功能不变。
+# 下一阶段仅离线预审 Gold Route44 / BlackthornCity / Route45 / Route46 / IcePath1F；提供五图分离的 Gold 原始布局、碰撞候选遮罩与 Field Moves 清单，保留入口关闭，不申报为已接入的可玩地图。
+# 新增源码审计和负向检查，具体见 TODO.md、docs/JOHTO_EAST_CORRIDOR_239_SOURCE_REVIEW.md。本轮尚属开发阶段，不制作提交隔离包、不执行 Git Commit/Push。
+
+# SPID-5.62.239｜自然公园与遗迹门房候选期收口索引（历史）（本文件是索引，不是 git commit -F 正文）
 # 清理增量前置：用户当前已应用的 SPID-5.62.239A 候选源码快照；基线全量起点：SPID-5.62.237 导出工程快照。导出包无 .git，不声称核实当前真实 HEAD。
 # 游戏版本保持 SPID-5.62.239A；本次收口不改运行时代码，只更新工具合同验收状态与文档/提交材料。
 # 1) feat(johto): 接入自然公园及三座门房并修正草地、技能与遗迹右口

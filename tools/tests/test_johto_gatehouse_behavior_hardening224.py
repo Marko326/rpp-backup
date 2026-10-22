@@ -44,9 +44,9 @@ class GatehouseBehaviorHardening224(unittest.TestCase):
         # Reintroducing the old .215 step-on exception must fail the runtime
         # predicate audit even though the old contract once documented it.
         raw=self.source(ASM)
-        needle=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .forest\n'
+        needle=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjp z, .forest\n'
                 '\tcp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID')
-        replacement=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjr z, .forest\n'
+        replacement=('cp JOHTO_ILEX_FOREST_LOCAL_ID\n\tjp z, .forest\n'
                      '\tcp JOHTO_ROUTE_34_LOCAL_ID\n\tjr z, .route34StepOn\n'
                      '\tcp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID')
         self.assertIn(needle,raw)

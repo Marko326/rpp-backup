@@ -43,6 +43,8 @@ MAPPINGS = {
     'JOHTO_GOLDENROD_CITY_LOCAL_ID': 'JohtoGoldenrodCanStepAhead',
 }
 
+EAST_IDS = ('JOHTO_ROUTE_44_LOCAL_ID', 'JOHTO_BLACKTHORN_CITY_LOCAL_ID',
+            'JOHTO_ROUTE_45_LOCAL_ID', 'JOHTO_ROUTE_46_LOCAL_ID')
 
 def audit(root, overrides=None):
     root = Path(root)
@@ -82,15 +84,22 @@ def audit(root, overrides=None):
         errors.append('ROMX native collision dispatcher must load exact local map ID')
     compare = re.findall(r'(?m)^\s*cp (JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) (\w+),\s*(\.\w+)',
                          romx.split('\n\tld e, 0\n', 1)[0])
-    if len(compare) != len(MAPPINGS) or {x[0] for x in compare} != set(MAPPINGS) or any(cond != 'z' for _, cond, _ in compare):
+    if len(compare) != len(MAPPINGS) + len(EAST_IDS) or {x[0] for x in compare} != set(MAPPINGS) | set(EAST_IDS) or any(cond != 'z' for _, cond, _ in compare):
         errors.append('ROMX native collision local-ID inventory / equality branches changed')
     branches = re.findall(r'(?m)^(\.\w+)\n\s*call (Johto\w+CanStepAhead)\n(?=\s*(?:(?:jr|jp) \.handled|\.handled))',romx)
     if len(branches) != len(set(MAPPINGS.values())) or len({b for b,_ in branches}) != len(branches):
         errors.append('ROMX native collision callee branches missing or duplicated')
     targets = dict(branches)
     for mapid, _cond, label in compare:
+        if mapid in EAST_IDS:
+            if label != '.east': errors.append('wrong new exterior dispatch: ' + mapid)
+            continue
         if targets.get(label) != MAPPINGS.get(mapid):
             errors.append('ROMX wrong native map->collision predicate: '+mapid)
+    if (not re.search(r'(?m)^\.east\s*\n\s*callab JohtoEastCanStepAhead\s*\n\s*ld a,e\s*\n\s*and a\s*\n\s*(?:jr|jp) z,\.eastClear',romx)
+        or 'JohtoEastCanStepAhead::' not in src('engine/overworld/johto_east_exterior.asm')
+        or 'BANK[$47]' not in main or 'INCLUDE "engine/overworld/johto_east_exterior.asm"' not in main):
+        errors.append('new Gold exteriors must far-call common predicate in bank $47 and convert E to Carry')
     if not re.search(r'\n\s*ld e, 0\n\s*ret\n\.route35\n', romx):
         errors.append('ROMX unknown local ID must return E=0 for original generic collision')
     if not re.search(r'\.handled\n\s*ld e, 1\n\s*ret(?:\n|$)', romx):

@@ -1,14 +1,42 @@
-## SPID-5.62.239A｜自然公园与遗迹门房：正式清理收口（2026-10-22）
+## SPID-5.62.239｜东线四图运行时：用户验收后专项修补与正式清理（2026-10-22）
 
-- [x] **基线与版本**：以当前已应用的 `SPID-5.62.239A` 候选源码快照为清理增量前置；完整累计补丁以 `SPID-5.62.237` 导出工程快照为起点。导出目录不含 `.git`，因此不把历史上游 HEAD 记录冒称为当前源码快照的 Git HEAD。正式收口保持游戏显示版本 `SPID-5.62.239A`，不另升版。
+- [x] **正式版本锁定**：可见版本仍为 `SPID-5.62.239@`，**不带 239A 或其他测试字母**。本轮在用户上传的实际 `.239` 源码快照上重新应用 `SPID-5.62.239_east_runtime_from_uploaded_239_current.patch`，`git apply --check` 与实际应用通过；该导出 ZIP 无 `.git`，不能宣称已核实用户真实 HEAD、完成 Git Commit/Push。
+- [x] **本轮已验收功能的边界**：用户反馈“没看出有啥问题、这次改挺好”，据此记录四张新室外地图（Route44／BlackthornCity／Route45／Route46）在用户所体验范围内无明显异常。仍保持 **45 张活动地图与 56 条有向活动连接**，含真实烟墨市 Fly 目的地、四图 Town Map 地标与骑行／Surf／跳崖；道路不得成为 Fly 目的地。只记录用户反馈，不把未列出的全部水边、跳崖按键及旧存档当成逐项实机通过。
+- [x] **全量审计找出的真实遗漏**：第一次完整门禁执行 924 项测试，结果 **11 FAIL＋18 ERROR**，不能收口。除旧测试对 41 地图／46 连接及临时审计副本缺新 Bank47 源文件的失效假设外，独立 Gold 跳崖核查发现 `Route45` 的 `(6,20)`、`(6,21)`、`(6,64)`、`(6,65)` 四格为 Gold `HOP_RIGHT` 起跳点，而运行时 blocked mask 错将其四格封住。已仅清除 **实机运行遮罩**对应四个起跳位的 blocked 位，Gold 原件／原始预审遮罩不改，保留 `x7` 实墙和 `x8` 安全落点；新工具按 Gold 独立来源＋严格四位例外重新构建预期 mask，故障注入覆盖重新封堵和误开墙体。
+- [x] **工具负向测试与旧地图回归**：升级 `ledge_regression_audit.py`，将东线四图实际 Bank47 跳崖分派／每一个起跳坐标方向与 Gold 独立比对、测试真实前后方障碍／落点；维护旧森林、遗迹、Route33 的临时审计副本以包含新增依赖，避免 FileNotFoundError；修正旧 Route42／卡吉镇门边规则中误把东侧合法 y16/17 当回归错误的断言。没有删除故障注入或改变已验收地图运行时逻辑。
+- [x] **最终发布门禁**：`PYTHONPATH=tools JOHTO_GOLD_SOURCE=<pokegold-master> JOHTO_GOLD_ROOT=<pokegold-master> python tools/johto_map_release_audit.py --rpp . --gold <pokegold-master> --expect-version SPID-5.62.239`。结果：PASS，927/927 项 Python 单测通过、0 skipped、56/56 活动连接 PASS；Gold 368 登记／367 扫描／367 来源 PASS／0 来源错误，SafariZoneBeta 唯一按项目白名单排除；masked-step 源码模拟 0 failures（非 ROM/手机证明）。此为静态源码和 Gold 比对，非 ROM 链接/实机全路径证明。
+- [x] **清理三件套（模式 A）**：同步 `TODO.md`、`RPP_DEVELOPMENT_PITFALLS.md`、`commit-message.txt`；另附独立的功能提交 TXT 与工具审计提交 TXT。交付三份替代/隔离 Patch：①从用户已应用的东线 `.239` 修订候选到收口终态的增量；②只在拆分提交时暂时撤回工具／审计／文档、可 `git apply -R` 复原的反向隔离；③从用户上传的 `.239` 原始导出源码快照到最终收口的全量。增量和全量 **二选一，不能叠加**，反向隔离只供分笔提交。**不做交接文档**，不编译/链接 ROM，也不代替用户执行 Git Commit/Push。
+- [ ] **仍未完成且本轮不冒称上线**：IcePath1F、B1F 与冰面滑行、多层 Warp；烟墨市道馆／室内房屋与四路 NPC/剧情；新 `.239` ROM/MAP 余量、旧存档、所有新 Surf／Fly／跳崖组合的手机逐格复测。入口仍封闭，等待后续独立开发验收。
+
+## 东线四张 Gold 室外地图运行时接入（SPID-5.62.239，同版本追加功能）
+
+- [x] 原版 Gold Route44、BlackthornCity、Route45、Route46 的精确 `.blk`、高精度不可通行遮罩，按冻结 stable IDs 69/71/72/73 接入活动槽 41..44；地图总数 45，未挪动旧 ID。
+- [x] 卡吉镇↔44号道路、44号道路↔烟墨市、烟墨市↔45号道路、45号道路↔46号道路的双向边缘连接与 Gold 路面双边判定；46号道路→29号道路仅保留 Gold 相邻预览、不擅自穿过两端实体墙。
+- [x] 四张新地图 Gold 跳崖起跳三元组 21/47/88/20；44/烟墨/45 的 Gold Surf 水域、普通碰撞、室外自行车、城都屋顶组和全地图 Town Map 光标显示。草地及原有地图规则不换全局判定。
+- [x] 烟墨市作为原版城镇，加入实际 Fly 城镇列表、visited bit $44D、稳定实体 local ID 与原版落点 (21,30)；道路不产生飞行落点；普通地图地标按 Gold 37/39/41/43，防误指向冰雪通路/龙穴。
+- [x] 完整 Gold 原版文件、冻结 ID、45 活动地图/56 有向连接、ROM0 / Bank47 远调用、31 个原有碰撞分支及四色目录核对，新增独立负向测试；统一发布门禁仅源码审计 `PASS`，不表示 ROM 已编译或手机验收。
+- [ ] 冰雪通路 1F 及 B1F/冰面滑行、多层 Warp 未实现，Route44 入口继续封闭；烟墨市房屋、道馆与 Route45/46 可交互 NPC/道具也仍需逐座正式接入，禁止“有外景”即标为全地区剧情完成。
+- [ ] 用户依项目约束自行编译/查看 linker MAP，并在手机逐条检验东线四图实际能到达、显示位置、Surf/Bike/Fly/回程和异常门口；本轮没有 ROM 构建及实机证据，不宣称完整游戏验收。
+
+## SPID-5.62.239｜东线下一阶段：Gold 原版离线预审（2026-10-22）
+
+- [x] **明确版本**：原 `.239A` 仅是未正式验收时的候选修订；经用户确认“没问题了”并明确提出定格要求后，`data/game_version.asm` 已改为 `SPID-5.62.239@`。未修改任何已经验收的公园、门房和遗迹运行时行为；也没有擅自发布 `.240`。
+- [x] **实测开发顺序与五图素材**：沿 Gold 原版先审计 `MahoganyTown ↔ Route44 ↔ BlackthornCity`（东西 4 条有向连接），再审计 `BlackthornCity ↔ Route45 ↔ Route46`（另 4 条）。使用原项目 `johto_rpp_pipeline.py` 两次 `--adjacent-chain`，加一次 `--gold-map IcePath1F`，共获得 Route44、BlackthornCity、Route45、Route46、IcePath1F 五张待接入图的 Gold 源尺寸／Warp／碰撞候选、源 `.blk` 哈希和按图 Field Moves 清单；不自动导入运行时。
+- [x] **图块完整性及防假绿**：五图中共四张户外新图引用的所有 Gold 区块 ID，其现有 `gfx/blocksets/johto.bst` 同 ID 16 字节定义全部匹配 Gold；不把整个扩容后共享 blockset 的哈希不同误判为四张地图错图。新增 `tools/johto_east_corridor_source_contract.json`、源审计和 Gold 负向用例，显式验证稳定 ID69/70/71/72/73、8 条可回溯接缝、冰雪通路 1F 四个 Warp、44号道路 `(56,7)` 洞口回程、图块漂移及 `.239` 无字母的版本字符串。静态检查不得自动批准地图运行。
+- [ ] **未开放的游戏功能**：本轮只完成下一批地图的来源、拓扑和风险门槛；没有登记新的 Header/Bank/Active slot、没有打开卡吉镇东缘、44号道路东缘或新洞口，没有为烟墨市增设 Fly 目的地。Route44 的水格 120、跳崖 21 与 IcePath1F 的滑冰、四 Warp 仍需独立实现和行为检查；后续优先完整接通 44号道路与卡吉镇，必须同时审计 3 行预览图块、Gold 边缘开放点、Surf/跳崖、草丛前景、骑行/Fly使用与 Town Map，再考虑烟墨市。BlackthornCity 的 Fly 落点仅在其真正注册并验收后启用。
+- [ ] **构建及手机边界**：不自行编译/链接 ROM；当前无本轮新版 ROM/MAP 哈希及手机东线实测。离线 `SOURCE_CHECKED` 与未来可玩性不同，不声称东线任何新地图已进入 ROM。
+
+## SPID-5.62.239｜自然公园与遗迹门房：正式版本定格（2026-10-22）
+
+- [x] **基线与版本**：以当前已应用的 `SPID-5.62.239A` 候选源码快照为清理增量前置；完整累计补丁以 `SPID-5.62.237` 导出工程快照为起点。导出目录不含 `.git`，因此不把历史上游 HEAD 记录冒称为当前源码快照的 Git HEAD。用户本轮明确要求正式游戏显示版本订正为 `SPID-5.62.239`，不带临时测试字母后缀；功能与已验收的 `.239A` 候选一致，不另升版本。
 - [x] **功能范围**：Gold 自然公园、Route35 公园门房、Route36 公园门房及 Route32—阿鲁夫遗迹门房接入；保留 Gold `.blk` 与图块资源对应。普通草 `$04` 与长草 `$3A/$3B/$4A/$4B` 的角色脚部遮挡按公园专用规则处理；公园允许骑行和野外使用 Fly，但不是 Fly 目的地；三座门房禁止骑行／Fly。普通 Town Map 地标仍为公园 18、Route35 17、Route36 19、Route32 7，不把门房登记成飞空城镇。
 - [x] **遗迹右口修复**：补齐旧 Route32 `$FB` 句柄实际使用的 `ExplicitWarpRegionTargets` 槽位 1/2，分别映射到门房东侧两格；保留原洞穴 Warp 槽位 0 与门房西侧既有接线。原先错误兜底到 Vermilion Ferry 的路径由源码负向测试锁定。
 - [x] **用户验收**：用户在修订包交付后反馈“没问题了”，并要求正式收口。按用户反馈登记本轮提出的公园草／长草遮挡、骑行／飞空权限、Town Map 地标显示与遗迹门房右口问题已无明显异常；不扩大为所有按键时序、旧存档、所有昼夜与所有既有地图均已逐项实测。`tools/johto_door_contracts.json` 中三座新室内门房的 `phone_door_status`、`phone_visual_status` 与 `runtime_palette_status` 更新为 `PHONE_ACCEPTED`。
 - [x] **统一静态门禁与收口复测**：候选最终功能代码在收口前的完整统一门禁报告为 `status=PASS`、退出码 0、**902/902 unittest、0 skipped、46/46 活动连接 PASS**。收口只将三座新室内门房的合同状态由 `PHONE_PENDING` 更新为 `PHONE_ACCEPTED` 并整理文档；之后重跑源码级 Gold 发布审计为 `PASS`、0 errors，且门房准入／公园门房／遗迹门房相关 37/37 定向测试通过。再次重跑整个 unittest suite 时在执行限制内未结束，因此不冒称收口后又取得一份新的 902/902 完整运行记录。当前 Gold 语料 368 张登记、367 张扫描、367 张来源检查通过、0 个来源错误；`SafariZoneBeta` 仍按既有许可唯一排除。Masked-step 源码检查覆盖 21 张地图／162 条移动边，其中 139 条 PASS、23 条 `REVIEW_REQUIRED`、0 failures；不能把待审边写成全通过。图块集索引 36/36 已登记 ID 核对通过。
-- [x] **正式清理三件套**：同步本 `TODO.md`、根目录 `RPP_DEVELOPMENT_PITFALLS.md` 与 `commit-message.txt` 索引，并增加独立的 `docs/JOHTO_PARK_RUINS_GATE_CLOSEOUT_239A.md`。按模式 A 交付 3 Patch + 2 份独立 Git 提交 TXT：清理增量（已应用 `.239A` 候选 → 收口终态）、工具／审计反向隔离（只撤第二笔工具与文档改动，供先提交功能时使用）、基线全量（`.237` 导出快照 → 收口终态）。清理增量与基线全量是替代关系，不能叠加；工具反向隔离应用后，功能提交完成再以 `git apply -R` 恢复工具／文档，随后单独提交工具。
+- [x] **正式清理三件套**：同步本 `TODO.md`、根目录 `RPP_DEVELOPMENT_PITFALLS.md` 与 `commit-message.txt` 索引，并增加独立的 `docs/JOHTO_PARK_RUINS_GATE_CLOSEOUT_239.md`。按模式 A 交付 3 Patch + 2 份独立 Git 提交 TXT：清理增量（已应用 `.239A` 候选 → 收口终态）、工具／审计反向隔离（只撤第二笔工具与文档改动，供先提交功能时使用）、基线全量（`.237` 导出快照 → 收口终态）。清理增量与基线全量是替代关系，不能叠加；工具反向隔离应用后，功能提交完成再以 `git apply -R` 恢复工具／文档，随后单独提交工具。
 - [ ] **构建证据保留**：按项目规定，本助手未编译／链接 ROM；没有本轮 `.239A` 对应 ROM/MAP 哈希、真实 Bank／VRAM 余量或链接报告。用户反馈属于手机验收证据，统一发布门禁属于源码静态证据，两者不互相替代。Git Commit／Push 由用户在真实工作树核对后自行执行；本轮未创建或伪造 Git 提交哈希。
 
-## SPID-5.62.239A｜候选期故障与实现记录（历史，已由正式收口状态取代）
+## SPID-5.62.239｜候选字母版故障与实现记录（历史）
 
 - [x] 对照原版 Gold `park_metatiles.bin` / `park_collision.asm`，普通 `TALL_GRASS` 176 格统一为图块 `$04`；`LONG_GRASS` 176 格由 `$3A/$3B/$4A/$4B` 组成。修正 `JOHTO_PARK` 的草地优先级标记，给玩家和 NPC 共用的脚部 OAM 优先级增加仅限 Park 的长草四图块规则，不变更 Gold `.blk`、遭遇或全局图块。
 - [x] `JOHTO_PARK` 室外骑车许可、队伍菜单野外使用 Fly、共享 Johto 户外精灵表接入；园内不是 Fly 目的地，三座新门房均禁用骑车和 Fly。Gold 普通 Town Map 的 NationalPark=18、Route35=17、Route36=19、Route32=7 不变；门房仍保留前一张户外地点牌，不新建 Fly 城镇项。

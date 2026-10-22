@@ -14,7 +14,7 @@ class Mahogany228(unittest.TestCase):
     def test_exact_gold_city_tiles_and_twenty_eight_active_slots(self):
         self.assertEqual((ROOT/'maps/JohtoMahoganyTown.blk').read_bytes(),(GOLD/'maps/MahoganyTown.blk').read_bytes())
         maps=json.loads((ROOT/'tools/johto_native_maps.json').read_text())['maps']
-        self.assertEqual(len(maps),41)
+        self.assertEqual(len(maps),45)  # Gold east exteriors occupy slots 41..44
         self.assertEqual(maps[27]['local_id'],64)
         # JohtoActiveLocalIDs assigns compact slot 27 after the west 23/24 and east 62/63.
         index=(ROOT/'data/johto_map_headers.asm').read_text()
@@ -40,7 +40,7 @@ class Mahogany228(unittest.TestCase):
         self.assertEqual(region_audit(ROOT), [])
         part=(ROOT/'engine/overworld/johto_town_map_helpers.asm').read_text().split('JohtoNativeTownMapIndices::',1)[1].split('JohtoNativeTownMapIndicesEnd::',1)[0]
         indices=[int(n) for row in re.findall(r'(?m)^\s*db\s+([\d, ]+)',part) for n in row.split(',')]
-        self.assertEqual(len(indices),41)
+        self.assertEqual(len(indices),45)  # stable Mahogany slot 27, four new slots appended
         self.assertEqual(indices[18],17)  # older Route35 gate mistakenly National Park
         self.assertEqual(indices[27],34)  # Mahogany was mistakenly Mt. Mortar
         self.assertEqual(indices[26],32)  # Route42 must NOT be changed
@@ -76,7 +76,16 @@ class Mahogany228(unittest.TestCase):
             numbers=[int(n) for n in re.findall(r'(?m)^\s*cp (\d+)\s*$',body)]
             for threshold in (4,8,9,18):
                 self.assertIn(threshold,numbers,(name,threshold))
-            self.assertNotIn('cp 16\n',body,name)
+            if name.startswith('JohtoMahoganyTown'):
+                # The Route44 east seam legitimately has y16/17 lanes.
+                # This legacy check protects the old Route42 west seam only.
+                self.assertIn('cp 16\n', body)
+                label = '.west\n' if name.endswith('EdgeFence') else '.westSeam\n'
+                self.assertIn(label,body)
+                west=body.split(label,1)[1].split('\n.',1)[0]
+                self.assertNotIn('cp 16\n',west,name)
+            else:
+                self.assertNotIn('cp 16\n',body,name)
             self.assertEqual(set(range(14,18)),{14,15,16,17})
         metatiles=(GOLD/'data/tilesets/johto_metatiles.bin').read_bytes()
         tilecoll=(GOLD/'data/tilesets/johto_collision.asm').read_text()

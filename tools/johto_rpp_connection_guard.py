@@ -579,6 +579,44 @@ def north_visual_borders(project, gold, current, gold_current, direction,
     for x in exits:
         if mask[x // 8] & (1 << (x % 8)):
             raise ConnectionError(f'{current} north exit x={x} is blocked in Gold')
+    if current == 'JohtoRoute45':
+        # The new eastern maps use a shared ROMX $47 byte-table fence rather
+        # than a local EdgeFence. Verify table AND dispatch, then cross-check
+        # the two Gold border masks independently (not a guessed lane range).
+        east = (project/'engine/overworld/johto_east_exterior.asm').read_text(encoding='utf8')
+        main = (project/'main.asm').read_text(encoding='utf8')
+        dispatch = (project/'engine/overworld/johto_route33_collision.asm').read_text(encoding='utf8')
+        match = re.search(r'(?m)^\.route45uplist\s*\n\s*db\s+([^;\n]+)', east)
+        if (not match or 'jp z,.route45up' not in east or
+                'ld hl,.route45uplist' not in east or
+                'callba JohtoEastEdgeFence' not in main or
+                'callab JohtoEastCanStepAhead' not in dispatch):
+            raise ConnectionError('Route45 north shared fence dispatcher/table removed')
+        try:
+            legal = [int(x.strip()) for x in match.group(1).replace('$ff','255').split(',')][:-1]
+        except ValueError:
+            raise ConnectionError('Route45 Gold north table has nonliteral coordinates')
+        # Also require one walkable tile *inside* each side of the seam;
+        # a pair of visually FLOOR-looking edge cells behind a wall is not
+        # an actual walkable crossing (Gold north R45 has such fragments).
+        from johto_gold_cells import decode_cells
+        meta = (gold/'data/tilesets/johto_metatiles.bin').read_bytes()
+        coll = (gold/'data/tilesets/johto_collision.asm').read_text()
+        def roles(name, w, h):
+            decoded = decode_cells((gold/'maps'/(name+'.blk')).read_bytes(),meta,coll,w,h)
+            return {(c['x'],c['y']):c['role'] for c in decoded}
+        lower = roles('Route45',w1,45)
+        upper = roles('BlackthornCity',w2,18)
+        floors = {'FLOOR','TALL_GRASS'}
+        independent = [x for x in range(2*dst_col,2*(dst_col+overlap))
+                       if lower.get((x,0)) in floors and lower.get((x,1)) in floors
+                       and upper.get((x-2*dst_col+2*src_col,35)) in floors
+                       and upper.get((x-2*dst_col+2*src_col,34)) in floors]
+        if legal != independent or legal != sorted(exits):
+            raise ConnectionError(f'Route45 north shared fence openings {legal}, Gold {independent}, registry {exits}')
+        if item.get('north_connection_visual_left_border',0) != 0 or item.get('north_connection_visual_right_border',0) != 0:
+            raise ConnectionError('Route45 north visual border must stay zero for reviewed path')
+        return 0, 0
     # Guard against a manifest that silently omits legal crossing positions.
     # Only audited code patterns are accepted, so future fence shapes fail
     # closed until the auditor is taught to interpret them.
@@ -1244,6 +1282,8 @@ def audit_all_active(project, gold):
                 approved_cross_bank = {
                     frozenset(('JohtoOlivineCity', 'JohtoRoute40')),
                     frozenset(('JohtoMahoganyTown', 'JohtoRoute43')),
+                    frozenset(('JohtoMahoganyTown', 'JohtoRoute44')),
+                    frozenset(('JohtoRoute29', 'JohtoRoute46')),
                 }
                 if frozenset((edge[0], edge[1])) not in approved_cross_bank:
                     item['issues'].append('ROM bank mismatch: unregistered cross-bank map seam')

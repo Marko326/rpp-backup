@@ -35,6 +35,10 @@ class JohtoLedgeGoldCoverage217(unittest.TestCase):
             (tmp / 'tools').symlink_to(ROOT / 'tools', target_is_directory=True)
             path = tmp / 'engine/overworld/ledges.asm'
             path.parent.mkdir(parents=True)
+            # Bank47 eastern HOP source is required by the expanded audited
+            # inventory, even when mutating only a legacy ledge table.
+            (tmp / 'engine/overworld/johto_east_exterior.asm').symlink_to(
+                ROOT / 'engine/overworld/johto_east_exterior.asm')
             path.write_text(self.src.replace(original, altered, 1))
             return audit(tmp, GOLD)
 

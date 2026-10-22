@@ -150,7 +150,7 @@ class Route43Lake235(unittest.TestCase):
     def test_actual_46_gold_road_connections(self):
         result=audit_all_active(ROOT,GOLD)
         self.assertEqual(result['status'],'PASS',result)
-        self.assertEqual(len(result['edges']),46)
+        self.assertEqual(len(result['edges']),56)  # Four Gold exterior maps add ten directed joins
         actual={(e['current'],e['target'],e['direction'])
                  for e in result['edges'] if e['status']=='PASS'}
         self.assertTrue({('JohtoMahoganyTown','JohtoRoute43','north'),

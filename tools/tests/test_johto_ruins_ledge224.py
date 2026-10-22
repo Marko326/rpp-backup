@@ -83,6 +83,10 @@ class RuinsOutsideLedges224(unittest.TestCase):
                 (root/dirname).symlink_to(ROOT/dirname,target_is_directory=True)
             path=root/'engine/overworld/ledges.asm'
             path.parent.mkdir(parents=True)
+            # Preserve the bank47 east HOP implementation when mutating only
+            # the legacy ledge dispatch in this temporary audit fixture.
+            (root/'engine/overworld/johto_east_exterior.asm').symlink_to(
+                ROOT/'engine/overworld/johto_east_exterior.asm')
             path.write_text(self.src.replace(old,new,1))
             return audit(root,GOLD)['errors']
 

@@ -71,9 +71,9 @@ class FixedIdFreeze225(unittest.TestCase):
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(41, len(data['maps']))
-        self.assertEqual(102, data['maps'][-1]['local_id'])
-        self.assertEqual('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', data['maps'][-1]['local_symbol'])
+        self.assertEqual(45, len(data['maps']))
+        self.assertEqual(102, data['maps'][40]['local_id'])
+        self.assertEqual('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', data['maps'][40]['local_symbol'])
         self.assertEqual([63,64,25,26,27,28,29], [m['local_id'] for m in data['maps'][26:33]])
         self.assertEqual([103,104,105], [m['local_id'] for m in data['maps'][37:40]])
         self.assertIn('DEF JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22',
@@ -133,10 +133,10 @@ class FixedIdFreeze225(unittest.TestCase):
     def test_fake_next_gate_header_not_sufficient_for_activation(self):
         data = json.loads((ROOT / REGISTRY).read_text())
         data['maps'].append({
-            'local_id': 69, 'local_symbol': 'JOHTO_ROUTE_44_LOCAL_ID',
-            'header': 'JohtoRoute44_h', 'bank': 'BANK(JohtoRoute44_h)'})
+            'local_id': 70, 'local_symbol': 'JOHTO_ICE_PATH_1F_LOCAL_ID',
+            'header': 'JohtoIcePath1F_h', 'bank': 'BANK(JohtoIcePath1F_h)'})
         failures = audit(ROOT, {REGISTRY: json.dumps(data)})
-        self.assertTrue(any('missing actual map asset maps/JohtoRoute44.blk' in e
+        self.assertTrue(any('missing actual map asset maps/JohtoIcePath1F.blk' in e
                             for e in failures), failures)
 
     def test_wrong_live_header_is_rejected(self):

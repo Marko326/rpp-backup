@@ -68,7 +68,7 @@ class GoldRoofMapgroupsP19D(unittest.TestCase):
     def test_gfx_and_palette_same_group_for_all_19_local_maps(self):
         color=(ROOT/'color/loadpalettes.asm').read_text()
         graphics=(ROOT/'engine/overworld/johto_goldenrod_roof_gfx.asm').read_text()
-        expected=[index for _,index in SCOPE]+[7, 6, 6, 8, 8, 8, None, 9, 9, None, None, None, None, None]  # Mahogany 7; Route39/Olivine 6; Route40/41/Cianwood 8
+        expected=[index for _,index in SCOPE]+[7, 6, 6, 8, 8, 8, None, 9, 9, None, None, None, None, None, 7, 10, 10, 10]  # Mahogany 7; Route39/Olivine 6; Route40/41/Cianwood 8
         self.assertEqual(current_roof_group_table(color,'JohtoGoldDayRoofGroups'),expected)
         self.assertEqual(current_roof_group_table(graphics,'JohtoRoofGroupForLocalMap'),expected)
         self.assertIn('cp JOHTO_MODERN',graphics)
@@ -98,8 +98,8 @@ class GoldRoofMapgroupsP19D(unittest.TestCase):
         self.assertEqual(rgb_palette(src,PAL_LABEL[1])[1:3],[(31,14,28),(31,5,21)])
         self.assertEqual(rgb_palette(src,PAL_LABEL[4])[1:3],[(25,25,0),(20,17,8)])
         body=src.split('JohtoGoldDayRoofPalettes:',1)[1].split('JohtoGoldDayRoofPalettesEnd:',1)[0]
-        self.assertEqual(len(re.findall(r'(?m)^\s*RGB\s+',body)),10*4)
-        self.assertIn('ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 10 * 8',src)
+        self.assertEqual(len(re.findall(r'(?m)^\s*RGB\s+',body)),11*4)
+        self.assertIn('ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 11 * 8',src)
 
     def test_all_9_roof_tiles_match_gold_original_png(self):
         # Input PNGs, not ignored build-time .2bpp artifacts, are the source of truth.
