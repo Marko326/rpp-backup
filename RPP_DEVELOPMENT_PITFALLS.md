@@ -394,3 +394,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 
 - 能力阶段的合法性只由 -6～+6 判断；不能因已钳位到 999／1 就阻止继续合法升／降级。攻击、防御、速度、Special 的重算结果再统一限幅 1～999。避免能力从 +6 降到 +5 仍封顶 999 时无法升回 +6。
 - Counter 资格不足的失败标记与真正命中判定失败须区分，改变失败文字时不要改动 `MoveHitTest`、-5 优先级或实际伤害记录。临时测试注入不得留在正式 ROM，验收后需成组撤销地图／战斗／WRAM／野怪改动。
+
+
+## BATTLE-5.62.202 — 伤害除数保护、混乱自伤与 Counter 幽灵免疫
+
+- 公共 `CalculateDamage` 在 Defense/Special 经高能力值缩放（或 Explosion 折半）后，必须再次确保 C 至少为 1；只在未缩放的能力计算路径做下限保护并不够，因为除数可能在后续右移后变成 0。
+- 混乱自伤不是调用当前选择招式的普通伤害类别：必须使用自方 Attack 对自方 Defense、40 威力、无属性且不能会心。跨 Bank helper 要明确处理 10-bit 能力缩放，并将 B/C/D/E 恢复为 `CalculateDamage` 期望的输入。
+- Counter 的目标属性判断要在应用已记录伤害前执行；玩家使用时检查敌方当前类型，敌方使用时检查玩家当前类型。Ghost 免疫应走正常的无效提示路径，不改变 Counter 的 2×记录伤害、优先级、命中／闪避或资格规则。TEST 04 用户录像已见 `It doesn't affect Gastly!` 且目标 HP 不变。
+- 正式清理临时战斗测试时，必须成组恢复 Celadon Mansion NPC／导师脚本与文本、Route 7 Normal/Hard 野生表，删除 `InitWildBattle` 测试远调用和 WRAM 别名，并删除临时测试指南；不能只把测试文字隐藏起来。

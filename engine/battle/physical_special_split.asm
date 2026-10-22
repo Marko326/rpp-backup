@@ -411,6 +411,11 @@ ResolveDynamicMoveCategory:
 	ld b, a
 	ld a, [H_DIVIDEND + 3]
 	ld c, a
+	; BATTLE-5.62.202: Dynamic classification honors the minimum stat of 1, even when the -6 ratio rounds to 0.
+	; The burned Dynamic preview must match core stat recalculation.
+	or b
+	jr nz, .chooseSpecial
+	inc c
 .chooseSpecial
 	ldh a, [H_WHOSETURN]
 	and a
@@ -486,3 +491,71 @@ ResolveDynamicCalcStageAttack:
 .ratios
 	db 25, 100, 28, 100, 33, 100, 40, 100, 50, 100, 66, 100
 	db 1, 1, 15, 10, 2, 1, 25, 10, 3, 1, 35, 10, 4, 1
+
+
+; BATTLE-5.62.202 confusion self-hit setup, kept in this spare battle-helper bank
+; because battle core bank $0f is already full. This is not a move and must
+; not use PhysicalSpecialSplit, the target's defenses, screens or critical-hit
+; stat overrides. Input: H_WHOSETURN identifies the self-hitting side.
+; Output: H_PRODUCT+2=Attack, +3=own Defense, D=40 power, E=user level.
+; Bankswitch clobbers BC, so battle core reloads B/C from scratch bytes.
+; The caller sets the active move effect to 0 and the critical flag to 0.
+GetConfusionSelfDamageVars::
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld hl, wBattleMonAttack
+	ld de, wBattleMonDefense
+	ld a, [wBattleMonLevel]
+	jr .readStats
+.enemy
+	ld hl, wEnemyMonAttack
+	ld de, wEnemyMonDefense
+	ld a, [wEnemyMonLevel]
+.readStats
+	push af
+	ld a, [de]
+	ld b, a
+	inc de
+	ld a, [de]
+	ld c, a ; BC = own Defense
+	ld a, [hli]
+	ld d, a
+	ld e, [hl] ; DE = own Attack
+	; Match the core's 10-bit stat handling: divide both by four
+	; whenever either operand is wider than a byte.
+	ld a, b
+	or d
+	jr z, .lowBytes
+	srl b
+	rr c
+	srl b
+	rr c
+	srl d
+	rr e
+	srl d
+	rr e
+.lowBytes
+	; Damage division must never use a zero Defense. Likewise,
+	; the attacking stat is at least one after 10-bit scaling.
+	ld a, c
+	and a
+	jr nz, .defenseNonzero
+	inc c
+.defenseNonzero
+	ld a, e
+	and a
+	jr nz, .attackNonzero
+	inc e
+.attackNonzero
+	ld a, e
+	ld [H_PRODUCT + 2], a
+	ld a, c
+	ld [H_PRODUCT + 3], a
+	pop af
+	ld e, a ; user level, not doubled for a critical hit
+	ld d, 40 ; confusion self-hit base power
+	xor a
+	ld [wDamage], a
+	ld [wDamage + 1], a
+	ret

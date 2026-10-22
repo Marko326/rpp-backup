@@ -3967,15 +3967,8 @@ MoveIsDisabledText:
 HandleSelfConfusionDamage:
 	ld hl, HurtItselfText
 	call PrintText
-	ld hl, wEnemyMonDefense
-	ld a, [hli]
-	push af
-	ld a, [hld]
-	push af
-	ld a, [wBattleMonDefense]
-	ld [hli], a
-	ld a, [wBattleMonDefense + 1]
-	ld [hl], a
+	; Confusion is always a typeless physical self-hit. Do not borrow
+	; the selected move's Dynamic/Special damage category.
 	ld hl, wPlayerMoveEffect
 	push hl
 	ld a, [hl]
@@ -3987,16 +3980,16 @@ HandleSelfConfusionDamage:
 	ld [hli], a
 	xor a
 	ld [hl], a
-	call GetDamageVarsForPlayerAttack
-	call CalculateDamage ; ignores AdjustDamageForMoveType (type-less damage), RandomizeDamage,
-	                     ; and MoveHitTest (always hits)
+	callab GetConfusionSelfDamageVars
+	; Bankswitch restores the original bank through BC. The helper
+	; returns self Attack/Defense through two scratch bytes instead.
+	ld a, [H_PRODUCT + 2]
+	ld b, a
+	ld a, [H_PRODUCT + 3]
+	ld c, a
+	call CalculateDamage ; typeless, no randomization or accuracy test
 	pop af
 	pop hl
-	ld [hl], a
-	ld hl, wEnemyMonDefense + 1
-	pop af
-	ld [hld], a
-	pop af
 	ld [hl], a
 	xor a
 	ld [wAnimationType], a
@@ -4729,9 +4722,9 @@ GetDamageVarsForEnemyAttack:
 	jr z, .done
 	sla e ; double level if it was a critical hit
 .done
-	ld a, $1
-	and a
-	and a
+	; Equivalent to LD A,1 / AND A, with zero carry, two bytes shorter.
+	xor a
+	inc a
 	ret
 
 ; get stat c of enemy mon
@@ -4796,10 +4789,16 @@ CalculateDamage:
 
 ; EXPLODE_EFFECT halves defense.
 	cp a, EXPLODE_EFFECT
-	jr nz, .ok
+	jr nz, .checkDefenseDivisor
 	srl c
+.checkDefenseDivisor
+	; Stat scaling can also yield c=0 without Explosion (enemy Atk/Spc
+	; >=256 against player Def/Spc 1..3). Clamp every divisor to 1.
+	; INC/DEC checks zero without destroying A (the move effect).
+	inc c
+	dec c
 	jr nz, .ok
-	inc c ; ...with a minimum value of 1 (used as a divisor later on)
+	inc c
 .ok
 
 ; Multi-hit attacks may or may not have 0 bp.
@@ -4961,51 +4960,8 @@ CriticalHitTest:
 ; with Counter's own stats, or recycle the global wDamage from another hit.
 ; Each received record has an eligibility flag and big-endian damage.
 HandleCounterMove:
-	ldh a, [H_WHOSETURN]
-	and a
-	ld a, [wPlayerSelectedMove]
-	ld hl, wCounterDamageToPlayer
-	jr z, .checkCounter
-	ld a, [wEnemySelectedMove]
-	ld hl, wCounterDamageToEnemy
-.checkCounter
-	cp COUNTER
-	ret nz ; not a Counter move; leave normal damage handling alone
-	; Counter returns fixed 2x received HP damage. The generic critical
-	; roll already ran, but must not display a bogus Critical hit! text.
-	xor a
-	ld [wCriticalHitOrOHKO], a
-	ld a, 2
-	ld [wMoveMissed], a ; Counter condition failed (not accuracy)
-	push hl
-	inc hl
-	inc hl
-	ld a, [hl] ; this side really took eligible physical HP damage
-	pop hl
-	and a
-	ret z
-	; Copy the recorded HP loss, not last used move's calculated damage.
-	ld a, [hli]
-	ld [wDamage], a
-	ld a, [hl]
-	ld [wDamage + 1], a
-	ld hl, wDamage + 1
-	ld a, [hl]
-	add a
-	ldd [hl], a
-	ld a, [hl]
-	adc a
-	ld [hl], a
-	jr nc, .noCarry
-	ld a, $ff ; saturate 2x damage at $ffff
-	ld [hli], a
-	ld [hl], a
-.noCarry
-	xor a
-	ld [wMoveMissed], a
-	call MoveHitTest
-	xor a ; Counter effect handled, success or accuracy failure
-	ret
+	; Keep Bank F within its fixed capacity; Counter logic lives in bank $34.
+	jpab HandleCounterMove_
 
 ; Store only direct HP damage, after any target-HP cap. A hit on a
 ; Substitute never reaches these recorders. Fixed/Special damage with
@@ -6024,15 +5980,8 @@ CheckEnemyStatusConditions:
 	ld [hl], a
 	ld hl, HurtItselfText
 	call PrintText
-	ld hl, wBattleMonDefense
-	ld a, [hli]
-	push af
-	ld a, [hld]
-	push af
-	ld a, [wEnemyMonDefense]
-	ld [hli], a
-	ld a, [wEnemyMonDefense + 1]
-	ld [hl], a
+	; The foe also uses its own Attack against its own Defense,
+	; regardless of the category of the selected move.
 	ld hl, wEnemyMoveEffect
 	push hl
 	ld a, [hl]
@@ -6044,15 +5993,14 @@ CheckEnemyStatusConditions:
 	ld [hli], a
 	xor a
 	ld [hl], a
-	call GetDamageVarsForEnemyAttack
+	callab GetConfusionSelfDamageVars
+	ld a, [H_PRODUCT + 2]
+	ld b, a
+	ld a, [H_PRODUCT + 3]
+	ld c, a
 	call CalculateDamage
 	pop af
 	pop hl
-	ld [hl], a
-	ld hl, wBattleMonDefense + 1
-	pop af
-	ld [hld], a
-	pop af
 	ld [hl], a
 	xor a
 	ld [wAnimationType], a

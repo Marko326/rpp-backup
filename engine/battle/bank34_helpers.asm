@@ -544,3 +544,80 @@ CalculateSpecialMoveDamage_:
 	ld a, b
 	ld [hl], a
 	ret
+
+
+; BATTLE-5.62.202: Counter follows the project Ghost type-immunity rule.
+; Keep the reflected HP damage fixed: do not apply other Fighting-type multipliers.
+; Bank F calls this routine through the small HandleCounterMove wrapper.
+HandleCounterMove_::
+	ldh a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerSelectedMove]
+	ld hl, wCounterDamageToPlayer
+	jr z, .checkCounter
+	ld a, [wEnemySelectedMove]
+	ld hl, wCounterDamageToEnemy
+.checkCounter
+	cp COUNTER
+	ret nz ; not a Counter move; leave normal damage handling alone
+	; The generic critical roll already ran; Counter never gets a critical hit.
+	xor a
+	ld [wCriticalHitOrOHKO], a
+	; Counter is Fighting-type: a Ghost target is immune in the project's modern chart.
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .targetPlayer
+	ld a, [wEnemyMonType1]
+	cp GHOST
+	jr z, .ghostImmune
+	ld a, [wEnemyMonType2]
+	cp GHOST
+	jr z, .ghostImmune
+	jr .targetChecked
+.targetPlayer
+	ld a, [wBattleMonType1]
+	cp GHOST
+	jr z, .ghostImmune
+	ld a, [wBattleMonType2]
+	cp GHOST
+	jr nz, .targetChecked
+.ghostImmune
+	ld a, $7f
+	ld [wDamageMultipliers], a ; generic failure text prints "Doesn't affect"
+	ld a, 1
+	ld [wMoveMissed], a
+	xor a ; Counter was handled; caller branches to its normal miss path
+	ret
+.targetChecked
+	; Default Counter condition-failure code; real accuracy misses remain 1.
+	ld a, 2
+	ld [wMoveMissed], a
+	push hl
+	inc hl
+	inc hl
+	ld a, [hl] ; this side really took eligible physical HP damage
+	pop hl
+	and a
+	ret z
+	; Copy the recorded HP loss, not last used move's calculated damage.
+	ld a, [hli]
+	ld [wDamage], a
+	ld a, [hl]
+	ld [wDamage + 1], a
+	ld hl, wDamage + 1
+	ld a, [hl]
+	add a
+	ldd [hl], a
+	ld a, [hl]
+	adc a
+	ld [hl], a
+	jr nc, .noCarry
+	ld a, $ff ; saturate 2x damage at $ffff
+	ld [hli], a
+	ld [hl], a
+.noCarry
+	xor a
+	ld [wMoveMissed], a
+	callab MoveHitTest
+	xor a ; Counter effect handled, success or accuracy failure
+	ret
