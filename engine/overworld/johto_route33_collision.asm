@@ -286,11 +286,20 @@ JohtoMahoganyTownEdgeFence::
  and a
  jr z, .block
  jr .clear
-.east
- ld a, [wXCoord]
+ .east
+ ld a,[wXCoord]
  cp JOHTO_MAHOGANY_TOWN_WIDTH * 2 - 1
- jr nc, .block
- jr .clear
+ jr c,.clear
+ ld a,[wYCoord]
+ cp 8
+ jr z,.clear
+ cp 9
+ jr z,.clear
+ cp 16
+ jr z,.clear
+ cp 17
+ jr z,.clear
+ jr .block
 .west
  ld a, [wXCoord]
  and a
@@ -333,7 +342,7 @@ JohtoMahoganyTownCanStepAhead::
 .westSeam
  ld a, [wPlayerDirection]
  cp PLAYER_DIR_LEFT
- jr nz, .mask
+ jr nz,.eastSeam
  ld a, [wXCoord]
  and a
  jr nz, .mask
@@ -346,6 +355,22 @@ JohtoMahoganyTownCanStepAhead::
  jr c, .mask
  cp 18
  jr c, .clear
+.eastSeam
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr nz,.mask
+ ld a,[wXCoord]
+ cp JOHTO_MAHOGANY_TOWN_WIDTH * 2 - 1
+ jr nz,.mask
+ ld a,[wYCoord]
+ cp 8
+ jr z,.clear
+ cp 9
+ jr z,.clear
+ cp 16
+ jr z,.clear
+ cp 17
+ jr z,.clear
 .mask
  ld hl, JohtoMahoganyTownBlockedRows
  ld d, JOHTO_MAHOGANY_TOWN_WIDTH * 2
@@ -3947,7 +3972,15 @@ JohtoRoute32RuinsOfAlphGateBlockedRows::
 	INCBIN "maps/JohtoRoute32RuinsOfAlphGate.blocked_mask.bin"
 
 JohtoNativeCanStepAhead::
-	ld a, [wCurLocalMapID]
+ ld a, [wCurLocalMapID]
+ cp JOHTO_ROUTE_44_LOCAL_ID
+ jp z,.east
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jp z,.east
+ cp JOHTO_ROUTE_45_LOCAL_ID
+ jp z,.east
+ cp JOHTO_ROUTE_46_LOCAL_ID
+ jp z,.east
 	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
 	jp z, .route32RuinsGate
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
@@ -4094,6 +4127,16 @@ JohtoNativeCanStepAhead::
  call JohtoRoute32RuinsOfAlphGateCanStepAhead
  jp .handled
 
+.east
+ callab JohtoEastCanStepAhead
+ ld a,e
+ and a
+ jr z,.eastClear
+ scf
+ jp .handled
+.eastClear
+ and a
+ jp .handled
 .handled
  ld e, 1
  ret

@@ -553,6 +553,12 @@ IsJohtoSeaChainWaterAhead::
  call IsJohtoSeaChainSeamWaterAhead
  jp c,.water
  ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_44_LOCAL_ID
+ jp z,.route44
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jp z,.blackthorn
+ cp JOHTO_ROUTE_45_LOCAL_ID
+ jp z,.route45
  cp JOHTO_ROUTE_40_LOCAL_ID
  jr z,.route40
  cp JOHTO_ROUTE_41_LOCAL_ID
@@ -565,6 +571,18 @@ IsJohtoSeaChainWaterAhead::
  jp nz,.notWater
  ld hl,JohtoLakeOfRageWaterRows
  ld b,5
+ jr .set
+.route44
+ ld hl,JohtoRoute44WaterRows
+ ld b,8
+ jr .set
+.blackthorn
+ ld hl,JohtoBlackthornCityWaterRows
+ ld b,5
+ jr .set
+.route45
+ ld hl,JohtoRoute45WaterRows
+ ld b,3
  jr .set
 .route43
  ld hl,JohtoRoute43WaterRows
@@ -655,6 +673,12 @@ IsJohtoSeaChainWaterAhead::
  pop de
  pop bc
  ret
+JohtoRoute44WaterRows::
+ INCBIN "maps/JohtoRoute44.water_mask.bin"
+JohtoBlackthornCityWaterRows::
+ INCBIN "maps/JohtoBlackthornCity.water_mask.bin"
+JohtoRoute45WaterRows::
+ INCBIN "maps/JohtoRoute45.water_mask.bin"
 JohtoRoute40WaterRows::
  INCBIN "maps/JohtoRoute40.water_mask.bin"
 JohtoRoute41WaterRows::

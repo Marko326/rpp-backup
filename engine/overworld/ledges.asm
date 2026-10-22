@@ -12,7 +12,7 @@ HandleLedges:
 	and a ; Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
-	jr .checkPairs
+	jp .checkPairs
 .johto
 	; RUINS-5.62.224: original Johto tileset also serves Ruins Outside.
 	; Its cliff-top graphic $06 is shared with normal terrain, so only
@@ -25,6 +25,14 @@ HandleLedges:
 	cp MAP_REGION_JOHTO
 	ret nz
 	ld a, [wCurLocalMapID]
+ cp JOHTO_ROUTE_44_LOCAL_ID
+ jp z,.eastHops
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jp z,.eastHops
+ cp JOHTO_ROUTE_45_LOCAL_ID
+ jp z,.eastHops
+ cp JOHTO_ROUTE_46_LOCAL_ID
+ jp z,.eastHops
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jr z, .route37HopTable
 	cp JOHTO_ROUTE_38_LOCAL_ID
@@ -43,6 +51,12 @@ HandleLedges:
 	ret nz
 	ld hl, .ruinsHops
 	jp .modernHopLookup
+.eastHops
+ callab JohtoEastHopDirection
+ ld a,e
+ and a
+ ret z
+ jp .foundMatch
 .route38HopTable
 	ld hl, .route38Hops
 	jp .modernHopLookup

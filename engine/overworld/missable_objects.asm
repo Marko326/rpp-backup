@@ -72,6 +72,19 @@ MarkTownVisitedAndLoadMissableObjects:
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_MAHOGANY / 8
 	set EVENT_JOHTO_FLY_MAHOGANY % 8, [hl]
 .notJohtoMahogany
+ ; Gold Blackthorn City only: local ID 71, never all $FC maps.
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jr nz,.notBlackthorn
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.notBlackthorn
+ ld a,[wCurLocalMapID]
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jr nz,.notBlackthorn
+ ld hl,wEventFlags + EVENT_JOHTO_FLY_BLACKTHORN / 8
+ set EVENT_JOHTO_FLY_BLACKTHORN % 8,[hl]
+.notBlackthorn
  ; OlivineCity stable ID26, saved free event bit $44a.
  ld a,[wCurMap]
  cp REGION_NATIVE_MAP_SLOT

@@ -1242,6 +1242,14 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute36Name
 	db 108, 92 ; original Gold Route32 landmark browse index7
 	dw JohtoRoute32TownMapName
+	db 60, 128 ; Route44 Gold landmark 38
+	dw JohtoBrowseRoute44Name
+	db 60, 140 ; Blackthorn City Gold landmark 40
+	dw JohtoBlackthornName
+	db 80, 140 ; Route45 Gold landmark 42
+	dw JohtoBrowseRoute45Name
+	db 104, 132 ; Route46 Gold landmark 44
+	dw JohtoBrowseRoute46Name
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

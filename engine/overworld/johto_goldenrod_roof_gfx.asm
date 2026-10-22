@@ -69,6 +69,10 @@ JohtoRoofGroupForLocalMap:
  db $ff ; 26 Route35 Park gate
  db $ff ; 27 Route36 Park gate
  db $ff ; 28 Route32 Ruins east/west gate, indoor
+ db 7 ; 29 Route44, Gold Mahogany group2
+ db 10 ; 2a BlackthornCity, Gold group5
+ db 10 ; 2b Route45, Gold group5
+ db 10 ; 2c Route46, Gold group5
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 
@@ -112,6 +116,8 @@ SelectGoldenrodRoofSource:
  cp 8
  jr z,.olivine
  cp 9
+ jr z,.azalea
+ cp 10
  jr z,.azalea
 	; Groups 0 and 1 both have Gold new_bark roof graphics.
 	ld a,[wCurMapTileset]

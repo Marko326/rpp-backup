@@ -1183,6 +1183,10 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_ROUTE36 ; Route35 National Park gate: Gold Route36
  db MUSIC_GBP_GSC_ROUTE36 ; Route36 National Park gate: Gold Route36
  db MUSIC_GBP_GSC_ROUTE30 ; Route32 ruins gate, inherits Route32
+ db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route44
+ db MUSIC_GBP_GSC_AZALEA_TOWN ; BlackthornCity
+ db MUSIC_GBP_GSC_ROUTE36 ; Route45
+ db MUSIC_GBP_GSC_ROUTE36 ; Route46
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

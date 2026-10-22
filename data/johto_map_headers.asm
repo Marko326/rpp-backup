@@ -6,7 +6,7 @@ JohtoStableIDToActiveSlot::
 	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $1e, $1f, $20, $ff, $ff ; $10-$1f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $19, $1a ; $30-$3f
-	db $1b, $21, $24, $23, $22, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
+	db $1b, $21, $24, $23, $22, $29, $ff, $2a, $2b, $2c, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $28, $25, $26, $27, $ff, $ff, $ff, $ff, $ff, $ff ; $60-$6f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $70-$7f
@@ -88,6 +88,10 @@ JohtoMapHeaderPointers::
 	dw JohtoRoute35NationalParkGate_h ; stable ID 104 -> slot 38
 	dw JohtoRoute36NationalParkGate_h ; stable ID 105 -> slot 39
 	dw JohtoRoute32RuinsOfAlphGate_h ; stable ID102 -> slot40
+ dw JohtoRoute44_h ; stable ID69 -> slot41
+ dw JohtoBlackthornCity_h ; stable ID71 -> slot42
+ dw JohtoRoute45_h ; stable ID72 -> slot43
+ dw JohtoRoute46_h ; stable ID73 -> slot44
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -132,6 +136,10 @@ JohtoMapHeaderBanks::
 	db BANK(JohtoRoute35NationalParkGate_h)
 	db BANK(JohtoRoute36NationalParkGate_h)
 	db BANK(JohtoRoute32RuinsOfAlphGate_h)
+ db BANK(JohtoRoute44_h)
+ db BANK(JohtoBlackthornCity_h)
+ db BANK(JohtoRoute45_h)
+ db BANK(JohtoRoute46_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -180,6 +188,10 @@ JohtoMapLegacyAliases::
 	db REGION_NATIVE_MAP_SLOT ; Route35NationalParkGate
 	db REGION_NATIVE_MAP_SLOT ; Route36NationalParkGate
 	db REGION_NATIVE_MAP_SLOT ; Route32RuinsOfAlphGate
+ db REGION_NATIVE_MAP_SLOT ; Route44
+ db REGION_NATIVE_MAP_SLOT ; BlackthornCity
+ db REGION_NATIVE_MAP_SLOT ; Route45
+ db REGION_NATIVE_MAP_SLOT ; Route46
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -226,6 +238,10 @@ JohtoNativeMapSongBanks::
 	db MUSIC_ROUTES2, 0 ; Route35 Park Gate
 	db MUSIC_ROUTES2, 0 ; Route36 Park Gate
 	db MUSIC_ROUTES3, 0 ; Gold Route32 west ruins gate, neutral
+ db MUSIC_ROUTES2, 0 ; Route44 Gold Lake of Rage family
+ db MUSIC_CITIES2, 0 ; Blackthorn Gold Azalea family
+ db MUSIC_ROUTES2, 0 ; Route45 Gold Route36
+ db MUSIC_ROUTES2, 0 ; Route46 Gold Route36
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

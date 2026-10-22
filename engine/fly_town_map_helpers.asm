@@ -783,8 +783,10 @@ TryLoadSpecialFlyWarpData::
 	ld a, [wJohtoFlySelectedLocalID]
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .specialEcruteak
-	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+ cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
  jr z, .specialMahogany
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jr z,.specialBlackthorn
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr z,.olivineWarp
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
@@ -798,6 +800,9 @@ TryLoadSpecialFlyWarpData::
  jr .found
 .olivineWarp
  ld hl, JohtoOlivineFlyWarpData
+ jr .found
+.specialBlackthorn
+ ld hl,JohtoBlackthornFlyWarpData
  jr .found
 .specialMahogany
 	ld hl, JohtoMahoganyFlyWarpData
@@ -838,6 +843,8 @@ TryLoadSpecialFlyWarpData::
 	jr z, .storeNativeLocal
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
  jr z, .storeNativeLocal
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jr z,.storeNativeLocal
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr z, .storeNativeLocal
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
@@ -881,6 +888,10 @@ JohtoLakeOfRageFlyWarpData:
 JohtoCianwoodFlyWarpData:
  db REGION_NATIVE_MAP_SLOT
  FLYWARP_DATA JOHTO_CIANWOOD_CITY_WIDTH, 44, 23
+
+JohtoBlackthornFlyWarpData:
+ db REGION_NATIVE_MAP_SLOT
+ FLYWARP_DATA JOHTO_BLACKTHORN_CITY_WIDTH, 30, 21
 
 JohtoMahoganyFlyWarpData:
 	db REGION_NATIVE_MAP_SLOT

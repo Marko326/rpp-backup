@@ -11,6 +11,7 @@ JohtoNativeTownMapIndices::
 	db 35, 36, 35, 35 ; north gate, Lake, Route43, middle gate
  db 18, 17, 19 ; Gold National Park, Route35, Route36 landmarks
  db 7 ; Gold Route32 45-landmark browse slot, neutral gate
+ db 37, 39, 41, 43 ; Route44, BlackthornCity, Route45, Route46 (Gold browse indices)
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 

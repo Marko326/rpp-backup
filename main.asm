@@ -3463,6 +3463,35 @@ INCLUDE "scripts/JohtoLakeOfRage.asm"
 JohtoLakeOfRageBlocks: INCBIN "maps/JohtoLakeOfRage.blk"
 
 ; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
+; Eastern Gold exterior spine, shared bank for border preview and reciprocal map data.
+; Run-time field moves and cliff safety are mapped separately from these blocks.
+SECTION "Johto East Runtime Hooks", ROMX, BANK[$47]
+INCLUDE "engine/overworld/johto_east_exterior.asm"
+
+SECTION "Johto Route44 Map", ROMX, BANK[$47]
+INCLUDE "data/mapHeaders/JohtoRoute44.asm"
+INCLUDE "data/mapObjects/JohtoRoute44.asm"
+INCLUDE "scripts/JohtoRoute44.asm"
+JohtoRoute44Blocks: INCBIN "maps/JohtoRoute44.blk"
+
+SECTION "Johto BlackthornCity Map", ROMX, BANK[$47]
+INCLUDE "data/mapHeaders/JohtoBlackthornCity.asm"
+INCLUDE "data/mapObjects/JohtoBlackthornCity.asm"
+INCLUDE "scripts/JohtoBlackthornCity.asm"
+JohtoBlackthornCityBlocks: INCBIN "maps/JohtoBlackthornCity.blk"
+
+SECTION "Johto Route45 Map", ROMX, BANK[$47]
+INCLUDE "data/mapHeaders/JohtoRoute45.asm"
+INCLUDE "data/mapObjects/JohtoRoute45.asm"
+INCLUDE "scripts/JohtoRoute45.asm"
+JohtoRoute45Blocks: INCBIN "maps/JohtoRoute45.blk"
+
+SECTION "Johto Route46 Map", ROMX, BANK[$47]
+INCLUDE "data/mapHeaders/JohtoRoute46.asm"
+INCLUDE "data/mapObjects/JohtoRoute46.asm"
+INCLUDE "scripts/JohtoRoute46.asm"
+JohtoRoute46Blocks: INCBIN "maps/JohtoRoute46.blk"
+
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute35.asm"
 INCLUDE "data/mapObjects/JohtoRoute35.asm"
@@ -3714,6 +3743,14 @@ JohtoNativeCollisionFence::
 	cp MAP_REGION_JOHTO
 	jp nz, .legacyNative
 	ld a, [wCurLocalMapID]
+ cp JOHTO_ROUTE_44_LOCAL_ID
+ jp z,.eastExterior
+ cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+ jp z,.eastExterior
+ cp JOHTO_ROUTE_45_LOCAL_ID
+ jp z,.eastExterior
+ cp JOHTO_ROUTE_46_LOCAL_ID
+ jp z,.eastExterior
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jp z, .route35Native
 	cp JOHTO_ROUTE_36_LOCAL_ID
@@ -3749,7 +3786,7 @@ JohtoNativeCollisionFence::
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jr z, .route34Native
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr nz, .legacyNative
+	jp nz, .legacyNative
 	callba JohtoGoldenrodEdgeFence
 	ret
 .route34Native
@@ -3800,6 +3837,9 @@ JohtoNativeCollisionFence::
 .mahoganyNative
 	callba JohtoMahoganyTownEdgeFence
 	ret
+.eastExterior
+ callba JohtoEastEdgeFence
+ ret
 .route35Native
 	callba JohtoRoute35EdgeFence
 	ret

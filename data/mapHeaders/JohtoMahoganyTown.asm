@@ -4,7 +4,7 @@ JohtoMahoganyTown_h:
  db JOHTO
  db JOHTO_MAHOGANY_TOWN_HEIGHT, JOHTO_MAHOGANY_TOWN_WIDTH
  dw JohtoMahoganyTownBlocks, JohtoMahoganyTownTextPointers, EnableAutoTextBoxDrawing
- db NORTH | WEST
+ db NORTH | WEST | EAST
  ; Gold north preview and genuine paired seam; passage is via the original gate Warp.
  db REGION_NATIVE_MAP_SLOT
  dw JohtoRoute43Blocks + JOHTO_ROUTE_43_WIDTH * (JOHTO_ROUTE_43_HEIGHT - 3)
@@ -23,4 +23,13 @@ JohtoMahoganyTown_h:
  db 0 ; Gold offset 0: arrival Y at same row
  db JOHTO_ROUTE_42_WIDTH * 2 - 1
  dw wOverworldMap + 6 + 2 * JOHTO_ROUTE_42_WIDTH
+ ; Gold east -> Route44, offset zero.
+ db REGION_NATIVE_MAP_SLOT
+ dw JohtoRoute44Blocks
+ dw wOverworldMap + 3 * (JOHTO_MAHOGANY_TOWN_WIDTH + 6) + JOHTO_MAHOGANY_TOWN_WIDTH + 3
+ db JOHTO_MAHOGANY_TOWN_HEIGHT
+ db JOHTO_ROUTE_44_WIDTH
+ db 0
+ db 0
+ dw wOverworldMap + 7 + JOHTO_ROUTE_44_WIDTH
  dw JohtoMahoganyTownObject

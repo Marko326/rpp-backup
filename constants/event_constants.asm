@@ -2520,7 +2520,7 @@ const_value = 0
 	const EVENT_JOHTO_FLY_OLIVINE                     ; current 44A, (D854, bit 2), previously unused
 	const EVENT_JOHTO_FLY_CIANWOOD                     ; current 44B, (D854, bit 3)
 	const EVENT_JOHTO_FLY_LAKE_OF_RAGE                ; current 44C, (D854, bit 4), formerly unused EVENT_9D4
-	const EVENT_9D5                                  ; current 44D, (D854, bit 5)
+	const EVENT_JOHTO_FLY_BLACKTHORN                  ; current 44D, (D854, bit 5), formerly unused
 	const EVENT_9D6                                  ; current 44E, (D854, bit 6)
 	const EVENT_9D7                                  ; current 44F, (D854, bit 7)
 	const EVENT_JOHTO_FLY_ECRUTEAK                  ; current 450, (D855, bit 0), formerly unused EVENT_9D8
@@ -2565,6 +2565,8 @@ const_value = 0
 	;const EVENT_9FF                                  ; inactive legacy 9FF; no current event slot
 
 ; FLY-5.62.140: indexes have always been in the existing 139-byte saved array.
+ASSERT EVENT_JOHTO_FLY_BLACKTHORN == $44d
+ASSERT EVENT_JOHTO_FLY_BLACKTHORN < 139 * 8
 ASSERT EVENT_JOHTO_FLY_LAKE_OF_RAGE == $44c
 ASSERT EVENT_JOHTO_FLY_LAKE_OF_RAGE < 139 * 8
 ASSERT EVENT_JOHTO_FLY_CIANWOOD == $44b
