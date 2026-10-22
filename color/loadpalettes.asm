@@ -208,7 +208,7 @@ LoadTilesetPalette:
 ; ILEX-5.62.216: Gold mapgroup roof group for each completed local Johto map.
 ; 0 New Bark / 1 Cherrygrove / 2 Violet / 3 Azalea / 4 Goldenrod / 5 Ecruteak.
 JohtoGoldDayRoofGroups:
-db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5,$ff,6,$ff,7,7,6,6,8,8,8 ; Route38 group6, Route42/Mahogany group7, Cianwood group8
+db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5,$ff,6,$ff,7,7,6,6,8,8,8,$ff,9,9,$ff ; Route38 group6, Route42/Mahogany group7, Cianwood group8
 JohtoGoldDayRoofGroupsEnd:
 ASSERT JohtoGoldDayRoofGroupsEnd - JohtoGoldDayRoofGroups == NUM_JOHTO_MAPS
 
@@ -272,8 +272,14 @@ CianwoodGoldDayRoofPalette:
  RGB 7,5,15
  RGB 7,7,7
 
+LakeOfRageGoldDayRoofPalette:
+ RGB 27,31,27
+ RGB 31,8,4
+ RGB 9,9,8
+ RGB 7,7,7
+
 JohtoGoldDayRoofPalettesEnd:
-ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 9 * 8
+ASSERT JohtoGoldDayRoofPalettesEnd - JohtoGoldDayRoofPalettes == 10 * 8
 
 CopyGoldenrodEightPaletteBytes:
 	ld b, 8

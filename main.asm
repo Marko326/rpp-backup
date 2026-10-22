@@ -3197,7 +3197,9 @@ SECTION "Johto New Bark Tileset", ROMX, BANK[JOHTO_ROM_BANK]
 NewBark_GFX:   INCBIN "gfx/tilesets/johto.2bpp"
 NewBark_Block: INCBIN "gfx/blocksets/johto.bst"
 
-SECTION "Johto Town Map Artwork", ROMX, BANK[JOHTO_ROM_BANK]
+; BANK() is used by both Town Map FarCopyData2 callers. Keep the artwork
+; out of the near-full $40 map/control bank; $45 has ample ROMX room.
+SECTION "Johto Town Map Artwork", ROMX, BANK[$45]
 ; ROM-5.62.117: keep this artwork in the expansion bank, not bank $1C.
 JohtoTownMapTileGraphics:
 	INCBIN "gfx/town_map_johto.2bpp"
@@ -3421,6 +3423,35 @@ INCLUDE "data/mapHeaders/JohtoMahoganyTown.asm"
 INCLUDE "data/mapObjects/JohtoMahoganyTown.asm"
 INCLUDE "scripts/JohtoMahoganyTown.asm"
 JohtoMahoganyTownBlocks: INCBIN "maps/JohtoMahoganyTown.blk"
+
+; .235 northbound Gold chain: keep Route43 and Lake in the SAME $45 bank.
+; MahoganyTown remains in $40; existing native preview bank lookup switches
+; to BANK(destination header) for the two directions of that crossing.
+; Do not add new full maps to $40: it had only 156 free bytes at .234.
+SECTION "Johto Route43 Mahogany Gate Map", ROMX, BANK[$42]
+INCLUDE "data/mapHeaders/JohtoRoute43MahoganyGate.asm"
+INCLUDE "data/mapObjects/JohtoRoute43MahoganyGate.asm"
+INCLUDE "scripts/JohtoRoute43MahoganyGate.asm"
+JohtoRoute43MahoganyGateBlocks: INCBIN "maps/JohtoRoute43MahoganyGate.blk"
+
+; Gold Route43Gate indoor, uses already approved compact NorthSouthGate art.
+SECTION "Johto Route43 Middle Gate Map", ROMX, BANK[$42]
+INCLUDE "data/mapHeaders/JohtoRoute43Gate.asm"
+INCLUDE "data/mapObjects/JohtoRoute43Gate.asm"
+INCLUDE "scripts/JohtoRoute43Gate.asm"
+JohtoRoute43GateBlocks: INCBIN "maps/JohtoRoute43Gate.blk"
+
+SECTION "Johto Route43 Map", ROMX, BANK[$45]
+INCLUDE "data/mapHeaders/JohtoRoute43.asm"
+INCLUDE "data/mapObjects/JohtoRoute43.asm"
+INCLUDE "scripts/JohtoRoute43.asm"
+JohtoRoute43Blocks: INCBIN "maps/JohtoRoute43.blk"
+
+SECTION "Johto LakeOfRage Map", ROMX, BANK[$45]
+INCLUDE "data/mapHeaders/JohtoLakeOfRage.asm"
+INCLUDE "data/mapObjects/JohtoLakeOfRage.asm"
+INCLUDE "scripts/JohtoLakeOfRage.asm"
+JohtoLakeOfRageBlocks: INCBIN "maps/JohtoLakeOfRage.blk"
 
 ; R35-5.62.223: Route35 and Route36 must share a bank for neighbor border copies.
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
@@ -3667,12 +3698,16 @@ JohtoNativeCollisionFence::
  jp z,.route41Native
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
  jp z,.cianwoodNative
+ cp JOHTO_ROUTE_43_LOCAL_ID
+ jp z,.route43Native
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jp z,.lakeNative
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .ecruteakNative
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jr z, .route42Native
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-	jr z, .mahoganyNative
+	jp z, .mahoganyNative
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .route33Native
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -3715,6 +3750,12 @@ JohtoNativeCollisionFence::
  ret
 .cianwoodNative
  callba JohtoCianwoodCityEdgeFence
+ ret
+.route43Native
+ callba JohtoRoute43EdgeFence
+ ret
+.lakeNative
+ callba JohtoLakeOfRageEdgeFence
  ret
 .ecruteakNative
 	callba JohtoEcruteakCityEdgeFence

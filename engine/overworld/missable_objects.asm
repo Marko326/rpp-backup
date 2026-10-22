@@ -90,6 +90,19 @@ MarkTownVisitedAndLoadMissableObjects:
  ld a,[wCurMap]
  cp REGION_NATIVE_MAP_SLOT
  jr nz,.notCianwood
+ ; Gold LAKE_OF_RAGE Fly point becomes available on first visit.
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jr nz,.notLakeOfRage
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.notLakeOfRage
+ ld a,[wCurLocalMapID]
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jr nz,.notLakeOfRage
+ ld hl,wEventFlags + EVENT_JOHTO_FLY_LAKE_OF_RAGE / 8
+ set EVENT_JOHTO_FLY_LAKE_OF_RAGE % 8,[hl]
+.notLakeOfRage
  ld a,[wCurRegion]
  cp MAP_REGION_JOHTO
  jr nz,.notCianwood

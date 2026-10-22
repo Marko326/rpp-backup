@@ -1175,6 +1175,10 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_ROUTE36 ; Route40
  db MUSIC_GBP_GSC_ROUTE36 ; Route41
  db MUSIC_GBP_GSC_ECRUTEAK_CITY ; Cianwood, matched map registry
+ db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route43 Mahogany north gate
+ db MUSIC_GBP_GSC_LAKE_OF_RAGE ; LakeOfRage
+ db MUSIC_GBP_GSC_LAKE_OF_RAGE ; Route43
+ db MUSIC_GBP_GSC_LAKE_OF_RAGE ; middle Route43Gate, Gold Route43 area
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

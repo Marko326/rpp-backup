@@ -990,6 +990,17 @@ IsJohtoSouthGatePortal::
 	jr c, .notGate
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jr c, .yes
+	; .235D: Gold's single-tile Mahogany DOOR steps onto (9,1) then
+	; transfers via JohtoNorthGateStepWarpAllowed, not a second UP.
+	; This selector only arms/splits the proper Johto branch.
+	jr z, .yes
+	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_43_LOCAL_ID
+	jr z, .yes
+	jr .notGate
 .notGate
 	and a
 	ret

@@ -8,6 +8,7 @@
 ; Active-slot -> Town Map landmark; physical stable IDs are NOT row indices.
 JohtoNativeTownMapIndices::
 	db 0, 1, 2, 3, 4, 5, 5, 7, 9, 10, 11, 14, 13, 14, 14, 15, 19, 17, 17, 19, 8, 20, 21, 24, 24, 32, 32, 34, 25, 26, 28, 30, 31 ; completed Route40/41/Cianwood chain
+	db 35, 36, 35, 35 ; north gate, Lake, Route43, middle gate
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 

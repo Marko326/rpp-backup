@@ -362,6 +362,10 @@ IsJohtoNativeOutdoorWaterAhead::
  jp z, IsJohtoSeaChainWaterAhead
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
  jp z, IsJohtoSeaChainWaterAhead
+ cp JOHTO_ROUTE_43_LOCAL_ID
+ jp z, IsJohtoSeaChainWaterAhead
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jp z, IsJohtoSeaChainWaterAhead
 .noWater
 	and a
 	ret
@@ -554,7 +558,19 @@ IsJohtoSeaChainWaterAhead::
  cp JOHTO_ROUTE_41_LOCAL_ID
  jr z,.route41
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr z,.cianwood
+ cp JOHTO_ROUTE_43_LOCAL_ID
+ jr z,.route43
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
  jp nz,.notWater
+ ld hl,JohtoLakeOfRageWaterRows
+ ld b,5
+ jr .set
+.route43
+ ld hl,JohtoRoute43WaterRows
+ ld b,3
+ jr .set
+.cianwood
  ld hl,JohtoCianwoodCityWaterRows
  ld b,4
  jr .set
@@ -645,6 +661,10 @@ JohtoRoute41WaterRows::
  INCBIN "maps/JohtoRoute41.water_mask.bin"
 JohtoCianwoodCityWaterRows::
  INCBIN "maps/JohtoCianwoodCity.water_mask.bin"
+JohtoRoute43WaterRows::
+ INCBIN "maps/JohtoRoute43.water_mask.bin"
+JohtoLakeOfRageWaterRows::
+ INCBIN "maps/JohtoLakeOfRage.water_mask.bin"
 
 IsJohtoOlivineWaterAhead::
  push bc

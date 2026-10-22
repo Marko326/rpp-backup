@@ -287,6 +287,19 @@ JohtoMahoganyTownCanStepAhead::
  ld a, [wCurLocalMapID]
  cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
  jr nz, .block
+ ; .235D: Gold (9,1) is a DOOR with step-on Warp activation; allow
+ ; the approach from (9,2) despite the preserved solid-door mask.
+ ; The wall beyond the door remains blocked; do not open the whole roof.
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz, .westSeam
+ ld a, [wXCoord]
+ cp 9
+ jr nz, .westSeam
+ ld a, [wYCoord]
+ cp 2
+ jr z, .clear
+.westSeam
  ld a, [wPlayerDirection]
  cp PLAYER_DIR_LEFT
  jr nz, .mask
@@ -612,7 +625,7 @@ JohtoEcruteakCityBlockedRows::
 
 ; SPID.233 Gold exact physical seam permissions, not a generic open edge.
 JohtoRoute39EdgeFence::
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_RIGHT
  jr z,.east
  cp PLAYER_DIR_DOWN
@@ -621,30 +634,30 @@ JohtoRoute39EdgeFence::
  jr z,.west
  cp PLAYER_DIR_UP
  jr nz,.clear
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr z,.block
  jr .clear
 .west
- ld a,[wXCoord]
+ ld a, [wXCoord]
  and a
  jr z,.block
  jr .clear
 .east
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_ROUTE_39_WIDTH * 2 - 1
  jr c,.clear
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp 8
  jr c,.block
  cp 12
  jr c,.clear
  jr .block
 .south
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp JOHTO_ROUTE_39_HEIGHT * 2 - 1
  jr c,.clear
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp 8
  jr c,.block
  cp 12
@@ -663,25 +676,25 @@ JohtoRoute39CanStepAhead::
  ld a,[wCurLocalMapID]
  cp JOHTO_ROUTE_39_LOCAL_ID
  jr nz,.block
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_RIGHT
  jr nz,.south
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_ROUTE_39_WIDTH * 2 - 1
  jr nz,.mask
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp 8
  jr c,.mask
  cp 12
  jr c,.clear
 .south
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_DOWN
  jr nz,.mask
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp JOHTO_ROUTE_39_HEIGHT * 2 - 1
  jr nz,.mask
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp 8
  jr c,.mask
  cp 12
@@ -701,7 +714,7 @@ JohtoRoute39BlockedRows::
  INCBIN "maps/JohtoRoute39.blocked_mask.bin"
 
 JohtoOlivineCityEdgeFence::
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_UP
  jr z,.north
  cp PLAYER_DIR_DOWN
@@ -710,15 +723,15 @@ JohtoOlivineCityEdgeFence::
  jr z,.west
  cp PLAYER_DIR_RIGHT
  jr nz,.clear
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_OLIVINE_CITY_WIDTH * 2 - 1
  jr nc,.block
  jr .clear
 .west
- ld a,[wXCoord]
+ ld a, [wXCoord]
  and a
  jr nz,.clear
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp 20
  jr z,.clear ; Gold paired FLOOR land lane
  cp 22
@@ -727,15 +740,15 @@ JohtoOlivineCityEdgeFence::
  jr c,.clear ; y22..25 FLOOR plus y26..31 WATER
  jr .block ; buoy/wall on the remaining shared sea border
 .south
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp JOHTO_OLIVINE_CITY_HEIGHT * 2 - 1
  jr nc,.block ; route south remains unconnected
  jr .clear
 .north
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr nz,.clear
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp 18
  jr c,.block
  cp 22
@@ -756,13 +769,13 @@ JohtoOlivineCityCanStepAhead::
  jr nz,.block
  ; West connection: land y20 and y22..25 in both Gold maps.
  ; Do not open WATER y26..31 to walking; Surf owns those lanes.
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_LEFT
  jr nz,.northRoad
- ld a,[wXCoord]
+ ld a, [wXCoord]
  and a
  jr nz,.northRoad
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp 20
  jr z,.clear
  cp 22
@@ -771,13 +784,13 @@ JohtoOlivineCityCanStepAhead::
  jr c,.clear
 .northRoad
  ; The north connection can enter from the four Gold road cells only.
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_UP
  jr nz,.mask
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr nz,.mask
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp 18
  jr c,.mask
  cp 22
@@ -802,27 +815,27 @@ JohtoOlivineCityBlockedRows::
 ; SPID.234 source-verified ocean connections. Only shared WATER seam cells
 ; open; BUOY / wall and all unbuilt edges stay blocked.
 JohtoRoute40EdgeFence::
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_DOWN
  jr z,.south
  cp PLAYER_DIR_RIGHT
  jr z,.east
  cp PLAYER_DIR_UP
  jr z,.north
- ld a,[wXCoord]
+ ld a, [wXCoord]
  and a
  jr z,.block
  jr .clear
 .north
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr z,.block
  jr .clear
 .east
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_ROUTE_40_WIDTH * 2 - 1
  jr c,.clear
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp 2
  jr z,.clear ; Gold land pair y2
  cp 4
@@ -831,10 +844,10 @@ JohtoRoute40EdgeFence::
  jr c,.clear ; land y4..7 and water y8..13
  jr .block
 .south
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp JOHTO_ROUTE_40_HEIGHT * 2 - 1
  jr c,.clear
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp 2
  jr c,.block
  cp 19
@@ -847,37 +860,37 @@ JohtoRoute40EdgeFence::
  ret
 
 JohtoRoute41EdgeFence::
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_UP
  jr z,.north
  cp PLAYER_DIR_LEFT
  jr z,.west
  cp PLAYER_DIR_DOWN
  jr z,.south
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_ROUTE_41_WIDTH * 2 - 1
  jr nc,.block
  jr .clear
 .south
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp JOHTO_ROUTE_41_HEIGHT * 2 - 1
  jr nc,.block
  jr .clear
 .north
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr nz,.clear
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp 32
  jr c,.block
  cp 49
  jr c,.clear
  jr .block
 .west
- ld a,[wXCoord]
+ ld a, [wXCoord]
  and a
  jr nz,.clear
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr z,.block
  cp 46
@@ -890,32 +903,32 @@ JohtoRoute41EdgeFence::
  ret
 
 JohtoCianwoodCityEdgeFence::
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_RIGHT
  jr z,.east
  cp PLAYER_DIR_UP
  jr z,.north
  cp PLAYER_DIR_DOWN
  jr z,.south
- ld a,[wXCoord]
+ ld a, [wXCoord]
  and a
  jr z,.block
  jr .clear
 .north
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr z,.block
  jr .clear
 .south
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp JOHTO_CIANWOOD_CITY_HEIGHT * 2 - 1
  jr nc,.block
  jr .clear
 .east
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_CIANWOOD_CITY_WIDTH * 2 - 1
  jr c,.clear
- ld a,[wYCoord]
+ ld a, [wYCoord]
  and a
  jr z,.block
  cp 46
@@ -1664,7 +1677,7 @@ PatchJohtoGoldenrodNorthBorder::
 
 ; EAST ID64 north display-only preview: Gold Route43 last three block rows.
 ; Gold MahoganyTown <-> Route43 north/south offset 0 and shared JOHTO tileset.
-; Route43/ID67 and the ID65 indoor gate are NOT activated by this patch.
+; Route43/ID67 and the ID65 indoor gate are enabled by the .235 chain.
 ; The border buffer is outside the 10x9 city .blk: no new collision/Warp.
 ; Both LoadMapData and .ordinaryConnection call the shared border hook.
 PatchJohtoMahoganyNorthBorder::
@@ -2036,6 +2049,10 @@ JohtoRoute34GateCanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .gateOk
+	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+	jr z, .gateOk
+	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+	jr z, .gateOk
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jp nz, .blocked
 .gateOk
@@ -2116,10 +2133,10 @@ JohtoRoute34GateBlockedRows::
 	INCBIN "maps/JohtoRoute34IlexForestGate.blocked_mask.bin"
 ; New gate uses the byte-identical Gold NorthSouthGate collision role bitmap.
 
-; ILEX-5.62.215: Reuse existing RPP step-on Warp executor for Gold's vertical
-; north gate. Called ONLY after CheckWarpsNoCollisionLoop has matched an actual
-; Warp record and armed the standing bit. A sideways approach never triggers;
-; historical east/west gates remain collision-only. Carry = valid approach.
+; Gold collision audit: only a solid DOOR is STEP_ON. A WARP_CARPET_* cell is
+; standable and must wait for a correctly directed collision. Called ONLY after
+; CheckWarpsNoCollisionLoop matched an actual Warp record and armed the
+; standing bit. East/west gates remain collision-only. Carry = valid approach.
 JohtoNorthGateStepWarpAllowed::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
@@ -2127,22 +2144,29 @@ JohtoNorthGateStepWarpAllowed::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jr z, .forest
-	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .route34
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jr z, .gateVertical
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jr z, .gateVertical
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jr z, .gateVertical
+	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+	jr z, .gateVertical
+	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+	jr z, .gateVertical
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .cityNorthDoor
-	; GATE-5.62.224 carpet correction: do NOT accept Route 35 in this
-	; step-on executor. The outdoor mat (9/10,33) is standable; only the
-	; subsequent southward collision from the mat may enter the gate.
-	; Preserve the accepted Route 34 / Forest north-gate step-on path.
+	; .235D: Gold's one-cell Mahogany DOOR behaves like Goldenrod's
+	; north-facing solid door: stepping onto the Warp enters immediately.
+	; Route43's paired WARP_CARPET_DOWN stays collision-only.
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .mahoganyNorthDoor
+	cp JOHTO_ROUTE_43_LOCAL_ID
+	jr z, .route43MiddleDoor
+	; All remaining directional carpets (including Route34's Gold y37
+	; WARP_CARPET_DOWN and Route35's south mat) are collision-only.
 	jp .deny
 .ruinsOutside
 	ld a, [wXCoord]
@@ -2156,12 +2180,27 @@ JohtoNorthGateStepWarpAllowed::
 	ld a, [wYCoord]
 	and a
 	jr z, .up
-	cp 7
-	jr z, .down
 	jp .deny
 .cityNorthDoor
 	ld a, [wXCoord]
 	cp 19
+	jp nz, .deny
+	ld a, [wYCoord]
+	cp 1
+	jr z, .up
+	jp .deny
+; Gold Route43 single north-facing DOOR at (17,35) must STEP_ON.
+.route43MiddleDoor
+ ld a, [wXCoord]
+ cp 17
+ jp nz, .deny
+ ld a, [wYCoord]
+ cp 35
+ jr z, .up
+ jp .deny
+.mahoganyNorthDoor
+	ld a, [wXCoord]
+	cp 9
 	jp nz, .deny
 	ld a, [wYCoord]
 	cp 1
@@ -2172,16 +2211,9 @@ JohtoNorthGateStepWarpAllowed::
 	cp 5
 	jr z, .up
 	jp .deny
-.route34
-	ld a, [wYCoord]
-	cp 37
-	jr z, .down
-	jp .deny
 .up
 	ld a, PLAYER_DIR_UP
 	jr .match
-.down
-	ld a, PLAYER_DIR_DOWN
 .match
 	ld b, a
 	ld a, [wPlayerDirection]
@@ -2203,13 +2235,21 @@ JohtoGateCollisionDirectionAllowed::
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
-	jp z, .down
+	jp z, .route34Carpet
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jp z, .northGate
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jp z, .northGate
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jp z, .northGate
+	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+	jp z, .northGate
+	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+	jp z, .northGate
+	cp JOHTO_ROUTE_43_LOCAL_ID
+	jp z, .route43South
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jp z, .mahoganyNorth
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .ruinsRoute36
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
@@ -2284,8 +2324,8 @@ JohtoGateCollisionDirectionAllowed::
 .forest
 	ld a, [wYCoord]
 	cp 5
-	jr z, .up
-	jr .right
+	jp z, .up
+	jp .right
 .cityNorth
 	ld a, [wYCoord]
 	cp 1
@@ -2293,17 +2333,61 @@ JohtoGateCollisionDirectionAllowed::
 	ld a, [wXCoord]
 	cp 19
 	jp nz, .denied
-	jr .up
+	jp .up
 .route35South
 	ld a, [wYCoord]
 	cp 33
 	jp nz, .denied
 	ld a, [wXCoord]
 	cp 9
-	jr z, .down
+	jp z, .down
 	cp 10
-	jr z, .down
+	jp z, .down
 	jp .denied
+.route34Carpet
+	ld a, [wYCoord]
+	cp 37
+	jp nz, .denied
+	ld a, [wXCoord]
+	cp 13
+	jp z, .down
+	cp 14
+	jp z, .down
+	jp .denied
+.route43South
+ ld a, [wYCoord]
+ cp 35
+ jr z,.route43MiddleSouth
+ cp 31
+ jr z,.route43MiddleNorth
+ cp 51
+ jp nz,.denied
+ ld a, [wXCoord]
+ cp 9
+ jr z,.down
+ cp 10
+ jr z,.down
+ jp .denied
+.route43MiddleSouth
+ ld a, [wXCoord]
+ cp 17
+ jp nz,.denied
+ jp .up
+.route43MiddleNorth
+ ld a, [wXCoord]
+ cp 17
+ jp z,.down
+ cp 18
+ jp z,.down
+ jp .denied
+.mahoganyNorth
+ ld a, [wXCoord]
+ cp 9
+ jp nz,.denied
+ ld a, [wYCoord]
+ cp 1
+ jp z,.up
+ jp .denied
 .northGate
 	ld a, [wYCoord]
 	and a
@@ -2373,7 +2457,59 @@ JohtoInternalDoorFacingCheck::
 	jp z, .ecruteakRight
 	cp JOHTO_ROUTE_42_LOCAL_ID
 	jp z, .route42Left
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jp z, .mahoganyDoor
+	cp JOHTO_ROUTE_43_LOCAL_ID
+	jp z, .route43Door
 	jp .denied
+.mahoganyDoor
+ ld a, [wXCoord]
+ cp 9
+ jp nz,.denied
+ ld a, [wYCoord]
+ cp 1
+ jp nz,.denied
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jp z,.allowed
+ jp .denied
+.route43Door
+ ld a, [wYCoord]
+ cp 35
+ jr z,.route43MiddleSouthDoor
+ cp 31
+ jr z,.route43MiddleNorthMat
+ cp 51
+ jp nz,.denied
+ ld a, [wXCoord]
+ cp 9
+ jr z,.route43Down
+ cp 10
+ jp nz,.denied
+.route43Down
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jp z,.allowed
+ jp .denied
+.route43MiddleSouthDoor
+ ld a, [wXCoord]
+ cp 17
+ jp nz,.denied
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jp z,.allowed
+ jp .denied
+.route43MiddleNorthMat
+ ld a, [wXCoord]
+ cp 17
+ jr z,.route43MiddleNorthDown
+ cp 18
+ jp nz,.denied
+.route43MiddleNorthDown
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jp z,.allowed
+ jp .denied
 .route38Door
 	ld a, [wXCoord]
 	cp 35
@@ -2661,13 +2797,13 @@ JohtoRoute40CanStepAhead::
  jr nz,.blocked
  ; EAST x19 has real Gold FLOOR lanes y2 and y4..7 toward Olivine.
  ; Else use the converted mask, including WATER/B UOY and walls.
- ld a,[wPlayerDirection]
+ ld a, [wPlayerDirection]
  cp PLAYER_DIR_RIGHT
  jr nz,.mask
- ld a,[wXCoord]
+ ld a, [wXCoord]
  cp JOHTO_ROUTE_40_WIDTH * 2 - 1
  jr nz,.mask
- ld a,[wYCoord]
+ ld a, [wYCoord]
  cp 2
  jr z,.allowed
  cp 4
@@ -2722,54 +2858,419 @@ JohtoCianwoodCityCanStepAhead::
 JohtoCianwoodCityBlockedRows::
  INCBIN "maps/JohtoCianwoodCity.blocked_mask.bin"
 
+; .235: Gold northbound chain, fail closed on every non-connecting edge.
+; Native Gold Route43/Lake of Rage trees share one exact Cut implementation.
+; Source cells: Route43 (2,28); Lake (23,4), (18,9), (11,12),
+; (5,14), (6,21).  Metatiles $5b/$63 already have reviewed
+; position-preserving clones $89/$8b.  New $67->$8c changes only
+; its top-left Cut quadrant, retaining all neighboring Gold graphics.
+JohtoRoute43LakeCutTreeInFront::
+ call JohtoRoute43LakeCutTreeFacing
+ ret nc
+ ld a,[hl]
+ cp d
+ jr z,.yes
+ and a
+ ret
+.yes
+ scf
+ ret
+
+JohtoRoute43LakeCutTreeCleared::
+ call JohtoRoute43LakeCutTreeFacing
+ ret nc
+ ld a,[hl]
+ cp e
+ jr z,.yes
+ and a
+ ret
+.yes
+ scf
+ ret
+
+JohtoRoute43LakeRemoveCutTree::
+ call JohtoRoute43LakeCutTreeFacing
+ ret nc
+ ld a,[hl]
+ cp d
+ ret nz
+ ld a,e
+ ld [hl],a
+ ret
+
+; carry=1 exact Gold Cut quadrant ahead; HL=live metatile pointer,
+; D=Gold original metatile, E=precise cleared metatile.
+JohtoRoute43LakeCutTreeFacing:
+ ld a,[wCurMap]
+ cp REGION_NATIVE_MAP_SLOT
+ jr nz,.no
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.no
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_43_LOCAL_ID
+ jr z,.calculate
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jr nz,.no
+.calculate
+ ld a, [wXCoord]
+ ld b,a
+ ld a, [wYCoord]
+ ld c,a
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz,.tryDown
+ dec c
+ jr .scan
+.tryDown
+ cp PLAYER_DIR_DOWN
+ jr nz,.tryLeft
+ inc c
+ jr .scan
+.tryLeft
+ cp PLAYER_DIR_LEFT
+ jr nz,.tryRight
+ dec b
+ jr .scan
+.tryRight
+ cp PLAYER_DIR_RIGHT
+ jr nz,.no
+ inc b
+.scan
+ ld hl,.goldCutTreeCells
+.loop
+ ld a,[hli]
+ cp $ff
+ jr z,.no
+ ld d,a
+ ld a,[wCurLocalMapID]
+ cp d
+ jr nz,.skip
+ ld a,[hli]
+ cp b
+ jr nz,.skipThree
+ ld a,[hli]
+ cp c
+ jr nz,.skipTwo
+ ld a,[hli]
+ ld d,a
+ ld a,[hli]
+ ld e,a
+ push de
+ call JohtoCutFacingBlockPointer
+ pop de
+ scf
+ ret
+.skip
+ inc hl
+.skipThree
+ inc hl
+.skipTwo
+ inc hl
+ inc hl
+ jr .loop
+.no
+ and a
+ ret
+.goldCutTreeCells
+ db JOHTO_ROUTE_43_LOCAL_ID, 2, 28, $67, $8c
+ db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 23, 4, $5b, $89
+ db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 18, 9, $63, $8b
+ db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 11, 12, $5b, $89
+ db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 5, 14, $5b, $89
+ db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 6, 21, $63, $8b
+ db $ff
+
+JohtoRoute43EdgeFence::
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr z,.north
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ cp PLAYER_DIR_LEFT
+ jr z,.west
+ ld a, [wXCoord]
+ cp JOHTO_ROUTE_43_WIDTH * 2 - 1
+ jr nc,.block
+ jr .clear
+.west
+ ld a, [wXCoord]
+ and a
+ jr z,.block
+ jr .clear
+.north
+ ld a, [wYCoord]
+ and a
+ jr nz,.clear
+ ld a, [wXCoord]
+ ; Gold has two separate walkable seams: west x0 and center x8..11.
+ ; The west branch is the sole entrance to Lake of Rage's west shore.
+ and a
+ jr z, .clear
+ cp 8
+ jr c, .blocked
+ cp 12
+ jr nc, .blocked
+ jr .clear
+.south
+ ld a, [wYCoord]
+ cp JOHTO_ROUTE_43_HEIGHT * 2 - 1
+ jr nc,.block ; Southern Gold row is a gate carpet, NOT seamless walking.
+ jr .clear
+.blocked
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoLakeOfRageEdgeFence::
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr z,.south
+ cp PLAYER_DIR_LEFT
+ jr z,.west
+ cp PLAYER_DIR_UP
+ jr z,.north
+ ld a, [wXCoord]
+ cp JOHTO_LAKE_OF_RAGE_WIDTH * 2 - 1
+ jr nc,.block
+ jr .clear
+.west
+ ld a, [wXCoord]
+ and a
+ jr z,.block
+ jr .clear
+.north
+ ld a, [wYCoord]
+ and a
+ jr z,.block
+ jr .clear
+.south
+ ld a, [wYCoord]
+ cp JOHTO_LAKE_OF_RAGE_HEIGHT * 2 - 1
+ jr c,.clear
+ ld a, [wXCoord]
+ ; Lake Gold south x10 joins Route43 north x0; x18..21 form the
+ ; separate four-wide center exit. x11 faces a Headbutt tree: keep shut.
+ cp 10
+ jr z,.clear
+ cp 18
+ jr c,.block
+ cp 22
+ jr c,.clear
+.block
+ scf
+ ret
+.clear
+ and a
+ ret
+
+JohtoRoute43CanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jp nz,.blocked
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_43_LOCAL_ID
+ jp nz,.blocked
+ ; North seam: exact four reciprocal Gold FLOOR cells.
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz,.warpLane
+ ld a, [wYCoord]
+ and a
+ jr nz,.warpLane
+ ld a, [wXCoord]
+ ; Both Gold FLOOR/FLOOR exits must bypass the off-map mask boundary.
+ and a
+ jp z,.allowed
+ cp 8
+ jr c,.warpLane
+ cp 12
+ jp c,.allowed
+.warpLane
+ ; Gold middle gate: single DOOR at (17,35) requires one UP step,
+ ; paired WARP_CARPET_DOWN at (17/18,31) must allow stepping ON first.
+ ld a,[wYCoord]
+ cp 36
+ jr nz,.middleCarpetApproach
+ ld a,[wXCoord]
+ cp 17
+ jr nz,.middleCarpetApproach
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jp z,.allowed
+.middleCarpetApproach
+ ld a,[wYCoord]
+ cp 30
+ jr nz,.middleCarpetSide
+ ld a,[wXCoord]
+ cp 17
+ jr z,.middleCarpetDown
+ cp 18
+ jr nz,.middleCarpetSide
+.middleCarpetDown
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr z,.allowed
+.middleCarpetSide
+ ld a,[wYCoord]
+ cp 31
+ jr nz,.middleCarpetDone
+ ld a,[wXCoord]
+ cp 17
+ jr z,.middleCarpetRight
+ cp 18
+ jr nz,.middleCarpetDone
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr z,.allowed
+ jr .middleCarpetDone
+.middleCarpetRight
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr z,.allowed
+.middleCarpetDone
+ ; Paired Gold warp carpets at y51 permit lateral movement, but
+ ; southward edge exit remains a collision-only Warp into the gate.
+ ld a, [wYCoord]
+ cp 51
+ jr nz, .enterCarpet
+ ld a, [wXCoord]
+ cp 9
+ jr z, .carpetRight
+ cp 10
+ jr nz, .enterCarpet
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr z, .allowed
+ jr .enterCarpet
+.carpetRight
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr z, .allowed
+.enterCarpet
+ ; Gold carpets have blocked mask bits; entering from y50 is safe.
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr nz, .mask
+ ld a, [wYCoord]
+ cp 50
+ jr nz, .mask
+ ld a, [wXCoord]
+ cp 9
+ jr z, .allowed
+ cp 10
+ jr z, .allowed
+.mask
+ call JohtoRoute43LakeCutTreeCleared
+ jr c,.allowed
+ ld hl,JohtoRoute43BlockedRows
+ ld d,JOHTO_ROUTE_43_WIDTH * 2
+ ld e,3
+ jp JohtoModernMaskedStep
+.allowed
+ and a
+ ret
+.blocked
+ scf
+ ret
+JohtoRoute43BlockedRows::
+ INCBIN "maps/JohtoRoute43.blocked_mask.bin"
+
+JohtoLakeOfRageCanStepAhead::
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.blocked
+ ld a,[wCurLocalMapID]
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jr nz,.blocked
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr nz,.mask
+ ld a, [wYCoord]
+ cp JOHTO_LAKE_OF_RAGE_HEIGHT * 2 - 1
+ jr nz,.mask
+ ld a, [wXCoord]
+ cp 10
+ jr z,.allowed
+ cp 18
+ jr c,.mask
+ cp 22
+ jr c,.allowed
+.mask
+ call JohtoRoute43LakeCutTreeCleared
+ jr c,.allowed
+ ld hl,JohtoLakeOfRageBlockedRows
+ ld d,JOHTO_LAKE_OF_RAGE_WIDTH * 2
+ ld e,5
+ jp JohtoModernMaskedStep
+.allowed
+ and a
+ ret
+.blocked
+ scf
+ ret
+JohtoLakeOfRageBlockedRows::
+ INCBIN "maps/JohtoLakeOfRage.blocked_mask.bin"
+
 JohtoNativeCanStepAhead::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_35_LOCAL_ID
-	jr z, .route35
+	jp z, .route35
 	cp JOHTO_ROUTE_36_LOCAL_ID
-	jr z, .route36
+	jp z, .route36
 	cp JOHTO_ROUTE_37_LOCAL_ID
-	jr z, .route37
+	jp z, .route37
 	cp JOHTO_ROUTE_38_LOCAL_ID
- jr z, .route38
+ jp z, .route38
  cp JOHTO_ROUTE_39_LOCAL_ID
- jr z, .route39
+ jp z, .route39
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
- jr z, .olivine
+ jp z, .olivine
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
-	jr z, .route38Gate
+	jp z, .route38Gate
 	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
-	jr z, .route42Gate
+	jp z, .route42Gate
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
-	jr z, .ecruteak
+	jp z, .ecruteak
 	cp JOHTO_ROUTE_42_LOCAL_ID
-	jr z, .route42
+	jp z, .route42
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-	jr z, .mahogany
+	jp z, .mahogany
 	cp JOHTO_ROUTE_33_LOCAL_ID
-	jr z, .route33
+	jp z, .route33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
-	jr z, .azalea
+	jp z, .azalea
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
-	jr z, .forest
+	jp z, .forest
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jr z, .gate
+	jp z, .gate
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
-	jr z, .gate
+	jp z, .gate
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-	jr z, .ruins
+	jp z, .ruins
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-	jr z, .ruins
+	jp z, .ruins
 	cp JOHTO_ROUTE_34_LOCAL_ID
-	jr z, .route34
+	jp z, .route34
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr z, .goldenrod
+	jp z, .goldenrod
  cp JOHTO_ROUTE_40_LOCAL_ID
  jp z,.route40
  cp JOHTO_ROUTE_41_LOCAL_ID
  jp z,.route41
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
  jp z,.cianwood
+ cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+ jp z,.gate
+ cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+ jp z,.gate
+ cp JOHTO_ROUTE_43_LOCAL_ID
+ jp z,.route43
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jp z,.lake
  ld e, 0
  ret
 .route35
@@ -2834,6 +3335,12 @@ JohtoNativeCanStepAhead::
  jp .handled
 .cianwood
  call JohtoCianwoodCityCanStepAhead
+ jp .handled
+.route43
+ call JohtoRoute43CanStepAhead
+ jp .handled
+.lake
+ call JohtoLakeOfRageCanStepAhead
  jp .handled
 .handled
  ld e, 1

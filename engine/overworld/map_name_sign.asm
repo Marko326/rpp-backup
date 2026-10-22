@@ -568,6 +568,11 @@ UpdateMapNameSign::
 	; Keep the prior city/route landmark; do not show Route42 inside.
 	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
 	ret z
+	; The north Mahogany/Route43 gate retains the previous outdoor sign.
+	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+	ret z
 .legacyMap
 	ld a, [wCurMap]
 	ld c, a

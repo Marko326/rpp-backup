@@ -359,6 +359,8 @@ IsCutTile:
 	callba JohtoRoute35CutTreeInFront
 	ret c
 	callba JohtoRoute42CutTreeInFront
+	ret c
+	callba JohtoRoute43LakeCutTreeInFront
 	ret
 .forestTree
 	callba JohtoIlexForestCutTreeInFront

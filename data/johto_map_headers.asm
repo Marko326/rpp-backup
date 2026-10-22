@@ -6,7 +6,7 @@ JohtoStableIDToActiveSlot::
 	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $1e, $1f, $20, $ff, $ff ; $10-$1f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $19, $1a ; $30-$3f
-	db $1b, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
+	db $1b, $21, $24, $23, $22, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $60-$6f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $70-$7f
@@ -80,6 +80,10 @@ JohtoMapHeaderPointers::
  dw JohtoRoute40_h ; stable ID27 -> slot30
  dw JohtoRoute41_h ; stable ID28 -> slot31
  dw JohtoCianwoodCity_h ; stable ID29 -> slot32
+	dw JohtoRoute43MahoganyGate_h ; stable ID65 -> slot33
+	dw JohtoLakeOfRage_h ; stable ID68 -> slot34
+	dw JohtoRoute43_h ; stable ID67 -> slot35
+	dw JohtoRoute43Gate_h ; stable ID66 -> slot36
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -116,6 +120,10 @@ JohtoMapHeaderBanks::
  db BANK(JohtoRoute40_h)
  db BANK(JohtoRoute41_h)
  db BANK(JohtoCianwoodCity_h)
+	db BANK(JohtoRoute43MahoganyGate_h)
+	db BANK(JohtoLakeOfRage_h)
+	db BANK(JohtoRoute43_h)
+	db BANK(JohtoRoute43Gate_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -156,6 +164,10 @@ JohtoMapLegacyAliases::
  db REGION_NATIVE_MAP_SLOT ; Route40
  db REGION_NATIVE_MAP_SLOT ; Route41
  db REGION_NATIVE_MAP_SLOT ; CianwoodCity
+	db REGION_NATIVE_MAP_SLOT ; Route43MahoganyGate
+	db REGION_NATIVE_MAP_SLOT ; LakeOfRage
+	db REGION_NATIVE_MAP_SLOT ; Route43
+	db REGION_NATIVE_MAP_SLOT ; Route43Gate (new active slot36)
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -194,6 +206,10 @@ JohtoNativeMapSongBanks::
  db MUSIC_ROUTES2, 0 ; Route40 Gold MUSIC_ROUTE_36
  db MUSIC_ROUTES2, 0 ; Route41 Gold MUSIC_ROUTE_36
  db MUSIC_CITIES1, 0 ; Cianwood Gold MUSIC_ECRUTEAK_CITY
+	db MUSIC_ROUTES2, 0 ; Gold north gate
+	db MUSIC_ROUTES2, 0 ; Gold LakeOfRage
+	db MUSIC_ROUTES2, 0 ; Gold Route43
+	db MUSIC_ROUTES2, 0 ; Gold Route43Gate, Lake of Rage music family
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

@@ -35,6 +35,10 @@ HandleLedges:
 	jr z, .ecruteakHopTable
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jr z, .mahoganyHopTable
+	cp JOHTO_ROUTE_43_LOCAL_ID
+	jp z, .route43HopTable
+	cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+	jp z, .lakeHopTable
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	ret nz
 	ld hl, .ruinsHops
@@ -53,6 +57,12 @@ HandleLedges:
 	jp .modernHopLookup
 .mahoganyHopTable
 	ld hl, .mahoganyHops
+	jp .modernHopLookup
+.route43HopTable
+	ld hl, .route43Hops
+	jp .modernHopLookup
+.lakeHopTable
+	ld hl, .lakeHops
 	jp .modernHopLookup
 .johtoLegacy
 	; Routes 29/30 convert Gold cliffs into dedicated
@@ -180,6 +190,27 @@ HandleLedges:
 	db 10, 12, PLAYER_DIR_DOWN
 	db 11, 12, PLAYER_DIR_DOWN
 	db 12, 12, PLAYER_DIR_DOWN
+	db $ff
+
+; Gold Route43 and LakeOfRage directed HOP takeoffs, checked against the
+; original block collision roles by the common ledge audit.
+.route43Hops
+	db 12, 32, PLAYER_DIR_DOWN
+	db 13, 32, PLAYER_DIR_DOWN
+	db 14, 32, PLAYER_DIR_DOWN
+	db 15, 32, PLAYER_DIR_DOWN
+	db 12, 34, PLAYER_DIR_DOWN
+	db 13, 34, PLAYER_DIR_DOWN
+	db 14, 34, PLAYER_DIR_DOWN
+	db 15, 34, PLAYER_DIR_DOWN
+	db $ff
+.lakeHops
+	db 4, 28, PLAYER_DIR_DOWN
+	db 5, 28, PLAYER_DIR_DOWN
+	db 6, 28, PLAYER_DIR_DOWN
+	db 4, 30, PLAYER_DIR_DOWN
+	db 6, 30, PLAYER_DIR_DOWN
+	db 7, 30, PLAYER_DIR_DOWN
 	db $ff
 
 ; ILEX-5.62.217: all ten Gold Azalea HOP_DOWN takeoffs, including (10,6).

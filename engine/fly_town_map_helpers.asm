@@ -788,7 +788,12 @@ TryLoadSpecialFlyWarpData::
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr z,.olivineWarp
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+ jr z,.cianwoodWarp
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
  jr nz,.regularScan
+ ld hl,JohtoLakeOfRageFlyWarpData
+ jr .found
+.cianwoodWarp
  ld hl,JohtoCianwoodFlyWarpData
  jr .found
 .olivineWarp
@@ -837,6 +842,8 @@ TryLoadSpecialFlyWarpData::
  jr z, .storeNativeLocal
  cp JOHTO_CIANWOOD_CITY_LOCAL_ID
  jr z, .storeNativeLocal
+ cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+ jr z, .storeNativeLocal
 	; For the other valid $FE selection, resolve to Goldenrod.
 	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeNativeLocal
@@ -867,6 +874,10 @@ JohtoOlivineFlyWarpData:
  FLYWARP_DATA JOHTO_OLIVINE_CITY_WIDTH, 22, 13
 
 ; Gold SPAWN_CIANWOOD_CITY x23 y44, within the playable town surface.
+JohtoLakeOfRageFlyWarpData:
+ db REGION_NATIVE_MAP_SLOT
+ FLYWARP_DATA JOHTO_LAKE_OF_RAGE_WIDTH, 29, 21
+
 JohtoCianwoodFlyWarpData:
  db REGION_NATIVE_MAP_SLOT
  FLYWARP_DATA JOHTO_CIANWOOD_CITY_WIDTH, 44, 23

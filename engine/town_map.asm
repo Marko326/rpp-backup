@@ -1224,6 +1224,14 @@ JohtoNativeTownMapEntries::
  dw JohtoBrowseRoute41Name
  db 116, 28 ; CianwoodCity Gold LANDMARK
  dw JohtoCianwoodName
+	db 52, 116
+	dw JohtoBrowseRoute43Name
+	db 44, 116
+	dw JohtoBrowseLakeOfRageName
+	db 52, 116
+	dw JohtoBrowseRoute43Name
+	db 52, 116 ; middle Route43Gate belongs to Route43
+	dw JohtoBrowseRoute43Name
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4
