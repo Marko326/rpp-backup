@@ -53,7 +53,7 @@ class CaveEntranceMovement(unittest.TestCase):
 
     def test_other_gold_interiors_are_still_disabled(self):
         objects = (ROOT / 'data/mapObjects/JohtoRoute32.asm').read_text()
-        self.assertIn('db $01 ; the original cave-mouth Warp only',objects)
+        self.assertIn('db $03 ; cave slot0 unchanged; Route32 west carpets are slots1/2',objects)
         self.assertIn('db $02\n', (ROOT / 'data/mapObjects/JohtoUnionCave1F.asm').read_text())
         self.assertIn('db 31, 17, 0, REGION_WARP_ESCAPE', (ROOT / 'data/mapObjects/JohtoUnionCave1F.asm').read_text())
         self.assertNotIn('JOHTO_UNION_CAVE_1F', (ROOT / 'constants/map_constants.asm').read_text())

@@ -82,7 +82,7 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoBrowseRoute43Name\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoRoute32TownMapName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_native_music_symbols_must_be_declared(self):
@@ -123,7 +123,7 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_LAKE_OF_RAGE ; middle Route43Gate, Gold Route43 area\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_ROUTE30 ; Route32 ruins gate, inherits Route32\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):
@@ -145,9 +145,9 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_virtual_map_cannot_consume_new_real_legacy_id(self):
         self.mutate('data/johto_map_headers.asm',
-                    'db REGION_NATIVE_MAP_SLOT ; Route43Gate (new active slot36)\nJohtoMapLegacyAliasesEnd::',
-                    'db JOHTO_ROUTE_31 ; CianwoodCity\nJohtoMapLegacyAliasesEnd::',
-                    'local 36 must use the shared virtual handle')
+                    'db REGION_NATIVE_MAP_SLOT ; Route32RuinsOfAlphGate\nJohtoMapLegacyAliasesEnd::',
+                    'db JOHTO_ROUTE_31 ; Route36NationalParkGate\nJohtoMapLegacyAliasesEnd::',
+                    'local 40 must use the shared virtual handle')
 
     def test_fixture_can_register_a_future_native_local_without_consuming_old_id(self):
         with TemporaryDirectory() as tmp:

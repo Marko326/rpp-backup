@@ -58,7 +58,7 @@ class Route32ConnectionTests(unittest.TestCase):
         self.assertIn('db NORTH', route32)
         self.assertIn('JOHTO_ROUTE_33_WIDTH', route32)
         self.assertNotIn('JOHTO_AZALEA_TOWN', route32)
-        self.assertIn('db $01 ; the original cave-mouth Warp only', objects)
+        self.assertIn('db $03 ; cave slot0 unchanged; Route32 west carpets are slots1/2', objects)
 
     def test_route36_both_gold_connections_are_exact(self):
         if not GOLD.is_dir():
@@ -122,7 +122,9 @@ class Route32ConnectionTests(unittest.TestCase):
         objects = (ROOT / 'data/mapObjects/JohtoRoute36.asm').read_text()
         header = (ROOT / 'data/mapHeaders/JohtoRoute36.asm').read_text()
         collision = (ROOT / 'engine/overworld/johto_route33_collision.asm').read_text()
-        self.assertIn('db $02 ; Route36 -> Ruins gate two lane Warp; National Park deferred', objects)
+        self.assertIn('db $04 ; Gold park east two lanes plus existing ruins two lanes', objects)
+        self.assertIn('db 8, 18, 2, REGION_WARP_ESCAPE', objects)
+        self.assertIn('db 9, 18, 3, REGION_WARP_ESCAPE', objects)
         self.assertIn('db 13, 47, 0, REGION_WARP_ESCAPE', objects)
         self.assertIn('db 13, 48, 1, REGION_WARP_ESCAPE', objects)
         self.assertIn('db $00 ; no NPC objects; Sudowoodo event deferred for free passage', objects)
@@ -224,7 +226,8 @@ class Route32ConnectionTests(unittest.TestCase):
         self.assertIn('SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]', main)
         self.assertIn('db NORTH', header)
         self.assertNotIn('db SOUTH |', header)
-        self.assertIn('db $02 ; south Goldenrod gate #1/#2; National Park still deferred', objects)
+        self.assertIn('db $03 ; Gold original three entrances: south pair plus park north', objects)
+        self.assertIn('db 5, 3, 2, REGION_WARP_ESCAPE', objects)
         self.assertIn('db 33, 9, 0, REGION_WARP_ESCAPE', objects)
         self.assertIn('db 33, 10, 1, REGION_WARP_ESCAPE', objects)
         self.assertIn('db $00 ; do not spawn placeholder NPCs or blocking objects', objects)

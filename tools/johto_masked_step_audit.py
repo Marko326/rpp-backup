@@ -206,9 +206,26 @@ def gate_mat_path_errors(rpp: Path, manifest: dict, overrides: dict | None = Non
                 # rather than a JohtoModernMaskedStep special caller.
                 if name == 'JohtoIlexAzaleaGate':
                     continue
+                if name == 'JohtoRoute32':
+                    from johto_gold_door_audit import gold_collision_index
+                    from johto_gold_sources import gold_block_sources
+                    import os
+                    gpath = Path(os.environ.get('JOHTO_GOLD_SOURCE') or os.environ.get('JOHTO_GOLD_ROOT') or '/INVALID_GOLD_ROOT')
+                    home = (overrides or {}).get('home/overworld.asm',(root/'home/overworld.asm').read_text())
+                    collision = (overrides or {}).get('engine/overworld/johto_route33_collision.asm',(root/'engine/overworld/johto_route33_collision.asm').read_text())
+                    if (not (gpath/'data/maps/blocks.asm').exists() or
+                        'cp JOHTO_ROUTE_32\n\tjr z, .legacyRuinsGate' not in home or
+                        'callba JohtoRoute32RuinsGateFacingCheck' not in home or
+                        'callba JohtoGateCollisionDirectionAllowed' not in home or
+                        not (root/'maps/JohtoRoute32.blk').is_file() or
+                        'JohtoRoute32RuinsGateFacingCheck::' not in (root/'engine/overworld/region_map_lookup.asm').read_text() or
+                        not all(gold_collision_index(gpath).role_at('Route32',4,y) == 'WARP_CARPET_LEFT' for y in (2,3))):
+                        errors.append('legacy Route32 exact carpet engine/Gold source proof missing')
+                    continue
                 errors.append('no real runtime carpet mask for '+name)
                 continue
             symbol = ('JohtoAzaleaCanStepAhead' if name == 'JohtoAzaleaTown'
+                      else 'JohtoRuinsOfAlphCanStepAhead' if name == 'JohtoRuinsOfAlphOutside'
                       else name+'CanStepAhead')
             matching = [(path,text) for path,text in sources.items()
                         if re.search(r'(?m)^'+re.escape(symbol)+r'::',text)]
@@ -309,7 +326,13 @@ def audit(rpp: Path, gold: Path) -> dict:
         gold_set=tileset_key(registered[gold_name]['tileset'])
         # Gold HOP_RIGHT sources on Route38 are walkable approach cells;
         # this exact independently registered exception is never generalized.
-        roles = ({'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT',
+        # Gold's NationalPark tileset uses LONG_GRASS as genuine walkable
+        # grass, not a hard wall. This is a Park-only, source-derived role;
+        # adding it globally would weaken collision checks on other maps.
+        roles = ({'FLOOR','TALL_GRASS','LONG_GRASS','HOP_DOWN','HOP_LEFT',
+                  'HOP_DOWN_LEFT','HOP_DOWN_RIGHT'}
+                 if gold_name == 'NationalPark' else
+                 {'FLOOR','TALL_GRASS','HOP_DOWN','HOP_LEFT',
                   'HOP_DOWN_LEFT','HOP_DOWN_RIGHT','HOP_RIGHT'}
                  if gold_name == 'Route38' else None)
         geom, generated_mask = plan_gold_quadrant_collision(

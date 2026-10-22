@@ -462,8 +462,16 @@ def check_native_gate_arrival_executors(root, doc, overrides=None):
             continue
         name = entry['rpp_map']
         header = get_text(root, 'data/mapHeaders/'+name+'.asm', overrides)
-        if not re.search(r'(?m)^\s*db\s+JOHTO_GATE\s*$', header):
+        reviewed_tilesets = {
+            'JohtoRoute35NationalParkGate': 'JOHTO_PARK_GATE',
+            'JohtoRoute36NationalParkGate': 'JOHTO_PARK_GATE',
+            'JohtoRoute32RuinsOfAlphGate': 'JOHTO_RUINS_GATE',
+        }
+        expected = reviewed_tilesets.get(name, 'JOHTO_GATE')
+        if not re.search(r'(?m)^\s*db\s+'+expected+r'\s*$', header):
             raise ValueError(name+' no longer uses the reviewed no-fallback gate tileset')
+        if re.search(r'(?m)^\s*dbw\s+'+expected+r'\s*,', door_dispatch):
+            raise ValueError(name+' has implicit door D_DOWN fallback via '+expected)
 
 
 def audit(root: Path, gold: Path, overrides: dict | None = None,
@@ -558,10 +566,42 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                 errors.append(name + ' indoor Warp geometry differs from independent original Gold')
             # Verify all four room block layouts against Gold through the
             # independently validated source-to-compact metatile converter.
-            mapping, gold_blocks = build_mapping(root, Path(gold), entry['gold_map'], 'gate','johto_gate')
             actual_blocks = (root/'maps'/(name+'.blk')).read_bytes()
-            if mapping['exact_mapped'] != mapping['used_unique_blocks'] or actual_blocks != gold_blocks:
-                errors.append(name+' actual gate house metatile layout differs from Gold reference')
+            if name in ('JohtoRoute35NationalParkGate','JohtoRoute36NationalParkGate'):
+                # This is the Gold FULL-ID gate tileset, not the previously
+                # accepted compact JOHTO_GATE. Compare actual independent
+                # source pixels, 256 metatile quarters, carpet layout, and
+                # first 96 palette labels. Every mismatch is release-blocking.
+                source = Path(gold)
+                metatiles = (source/'data/tilesets/gate_metatiles.bin').read_bytes()
+                rpp_table = (root/'gfx/blocksets/johto_park_gate.bst').read_bytes()
+                if rpp_table[:1024] != metatiles or rpp_table[1024:] != bytes(16):
+                    errors.append(name+' Gold FULL-ID gate blockset/border differs from original')
+                if (root/'gfx/tilesets/johto_park_gate.png').read_bytes() != (source/'gfx/tilesets/gate.png').read_bytes():
+                    errors.append(name+' Gold full gate pixels differ from source')
+                source_pal = (source/'gfx/tilesets/gate_palette_map.asm').read_text().splitlines()[:12]
+                actual_pal = (root/'color/tilesets/johto_park_gate.asm').read_text().splitlines()
+                if actual_pal != source_pal:
+                    errors.append(name+' Gold FULL-ID gate source palette tags differ')
+                gold_blocks = (source/'maps'/(entry['gold_map']+'.blk')).read_bytes()
+                if actual_blocks != gold_blocks:
+                    errors.append(name+' Gold full gate map block positions differ from original')
+            elif name == 'JohtoRoute32RuinsOfAlphGate':
+                from johto_gold_sources import gold_block_sources
+                source = Path(gold)
+                if (root/'gfx/blocksets/johto_ruins_gate.bst').read_bytes() != (source/'data/tilesets/gate_metatiles.bin').read_bytes():
+                    errors.append(name+' Gold gate blockset differs from original')
+                if (root/'gfx/tilesets/johto_ruins_gate.png').read_bytes() != (source/'gfx/tilesets/gate.png').read_bytes():
+                    errors.append(name+' Gold gate pixels differ from original')
+                if (root/'color/tilesets/johto_ruins_gate.asm').read_text().splitlines() != (source/'gfx/tilesets/gate_palette_map.asm').read_text().splitlines()[:12]:
+                    errors.append(name+' Gold gate palette tags differ from original')
+                gold_blocks = (source/gold_block_sources(source)[entry['gold_map']]).read_bytes()
+                if actual_blocks != gold_blocks:
+                    errors.append(name+' original Gold shared EastWestGate layout differs')
+            else:
+                mapping, gold_blocks = build_mapping(root, Path(gold), entry['gold_map'], 'gate','johto_gate')
+                if mapping['exact_mapped'] != mapping['used_unique_blocks'] or actual_blocks != gold_blocks:
+                    errors.append(name+' actual gate house metatile layout differs from Gold reference')
             if contract.get('mode') == 'NATIVE_GATE':
                 gate_id = contract['local_id']
                 expected_routes = {tuple([v[0],int(v[1]),int(v[2]),v[3]])

@@ -1,3 +1,22 @@
+## SPID-5.62.239A｜自然公园与遗迹门房：正式清理收口（2026-10-22）
+
+- [x] **基线与版本**：以当前已应用的 `SPID-5.62.239A` 候选源码快照为清理增量前置；完整累计补丁以 `SPID-5.62.237` 导出工程快照为起点。导出目录不含 `.git`，因此不把历史上游 HEAD 记录冒称为当前源码快照的 Git HEAD。正式收口保持游戏显示版本 `SPID-5.62.239A`，不另升版。
+- [x] **功能范围**：Gold 自然公园、Route35 公园门房、Route36 公园门房及 Route32—阿鲁夫遗迹门房接入；保留 Gold `.blk` 与图块资源对应。普通草 `$04` 与长草 `$3A/$3B/$4A/$4B` 的角色脚部遮挡按公园专用规则处理；公园允许骑行和野外使用 Fly，但不是 Fly 目的地；三座门房禁止骑行／Fly。普通 Town Map 地标仍为公园 18、Route35 17、Route36 19、Route32 7，不把门房登记成飞空城镇。
+- [x] **遗迹右口修复**：补齐旧 Route32 `$FB` 句柄实际使用的 `ExplicitWarpRegionTargets` 槽位 1/2，分别映射到门房东侧两格；保留原洞穴 Warp 槽位 0 与门房西侧既有接线。原先错误兜底到 Vermilion Ferry 的路径由源码负向测试锁定。
+- [x] **用户验收**：用户在修订包交付后反馈“没问题了”，并要求正式收口。按用户反馈登记本轮提出的公园草／长草遮挡、骑行／飞空权限、Town Map 地标显示与遗迹门房右口问题已无明显异常；不扩大为所有按键时序、旧存档、所有昼夜与所有既有地图均已逐项实测。`tools/johto_door_contracts.json` 中三座新室内门房的 `phone_door_status`、`phone_visual_status` 与 `runtime_palette_status` 更新为 `PHONE_ACCEPTED`。
+- [x] **统一静态门禁与收口复测**：候选最终功能代码在收口前的完整统一门禁报告为 `status=PASS`、退出码 0、**902/902 unittest、0 skipped、46/46 活动连接 PASS**。收口只将三座新室内门房的合同状态由 `PHONE_PENDING` 更新为 `PHONE_ACCEPTED` 并整理文档；之后重跑源码级 Gold 发布审计为 `PASS`、0 errors，且门房准入／公园门房／遗迹门房相关 37/37 定向测试通过。再次重跑整个 unittest suite 时在执行限制内未结束，因此不冒称收口后又取得一份新的 902/902 完整运行记录。当前 Gold 语料 368 张登记、367 张扫描、367 张来源检查通过、0 个来源错误；`SafariZoneBeta` 仍按既有许可唯一排除。Masked-step 源码检查覆盖 21 张地图／162 条移动边，其中 139 条 PASS、23 条 `REVIEW_REQUIRED`、0 failures；不能把待审边写成全通过。图块集索引 36/36 已登记 ID 核对通过。
+- [x] **正式清理三件套**：同步本 `TODO.md`、根目录 `RPP_DEVELOPMENT_PITFALLS.md` 与 `commit-message.txt` 索引，并增加独立的 `docs/JOHTO_PARK_RUINS_GATE_CLOSEOUT_239A.md`。按模式 A 交付 3 Patch + 2 份独立 Git 提交 TXT：清理增量（已应用 `.239A` 候选 → 收口终态）、工具／审计反向隔离（只撤第二笔工具与文档改动，供先提交功能时使用）、基线全量（`.237` 导出快照 → 收口终态）。清理增量与基线全量是替代关系，不能叠加；工具反向隔离应用后，功能提交完成再以 `git apply -R` 恢复工具／文档，随后单独提交工具。
+- [ ] **构建证据保留**：按项目规定，本助手未编译／链接 ROM；没有本轮 `.239A` 对应 ROM/MAP 哈希、真实 Bank／VRAM 余量或链接报告。用户反馈属于手机验收证据，统一发布门禁属于源码静态证据，两者不互相替代。Git Commit／Push 由用户在真实工作树核对后自行执行；本轮未创建或伪造 Git 提交哈希。
+
+## SPID-5.62.239A｜候选期故障与实现记录（历史，已由正式收口状态取代）
+
+- [x] 对照原版 Gold `park_metatiles.bin` / `park_collision.asm`，普通 `TALL_GRASS` 176 格统一为图块 `$04`；`LONG_GRASS` 176 格由 `$3A/$3B/$4A/$4B` 组成。修正 `JOHTO_PARK` 的草地优先级标记，给玩家和 NPC 共用的脚部 OAM 优先级增加仅限 Park 的长草四图块规则，不变更 Gold `.blk`、遭遇或全局图块。
+- [x] `JOHTO_PARK` 室外骑车许可、队伍菜单野外使用 Fly、共享 Johto 户外精灵表接入；园内不是 Fly 目的地，三座新门房均禁用骑车和 Fly。Gold 普通 Town Map 的 NationalPark=18、Route35=17、Route36=19、Route32=7 不变；门房仍保留前一张户外地点牌，不新建 Fly 城镇项。
+- [x] 修复遗迹右口：Route32 是旧 `$FB` 句柄，原 `.239` 只在 `NativeRegionWarpTargets` 填了目的，却漏填真实入口用的 `ExplicitWarpRegionTargets` 槽位 1/2，错误匹配会掉进既存 Vermilion Ferry fallback。现加准确 `Route32 warp1→gate warp2`、`warp2→gate warp3`，保留 cave warp0 和门房左口既有 native 解析。
+- [x] 新增 Gold 独立比对与真实源码负向测试，明确只证明静态路径正确，不把脚本 PASS 冒充手机效果。当前项目禁止 AI 自行编译／链接 ROM；需用户重新 make，提供 MAP 和实测录像，覆盖遗迹右口上下两格进入/原地返回、公园普通草/长草、骑车/取消骑车、野外 Fly 的已到访目的地、Town Map 和旧关东门房。
+
+> 历史状态说明：以上末项记录的是用户验收前的候选状态。用户随后反馈“没问题了”并要求正式收口；最新验收范围与证据边界见本文件顶部 `.239A` 正式收口条目。
+
 ## SPID-5.62.237｜正式清理收口：Gold 门房碰撞合同与 Route43／愤怒之湖审计（2026-10-22）
 - [x] **基线与版本**：金银分支导出确认的正式 Git 基线为 `2442898bed3a28be9f9009eb4703c456b7ec3d65`，基线版本 `SPID-5.62.234`；最终游戏版本保持本轮候选 `SPID-5.62.237`。交付按项目模式 A 拆为游戏功能与工具／审计两笔，Git Commit/Push 由用户执行。
 - [x] **游戏功能范围**：接入 Gold Route43、LakeOfRage 及相应门房／地图资源，维护地图身份、Header／Bank、碰撞与水格掩码、双向接缝、预览图块、屋顶调色与地图地标；统一门房实体 `DOOR` 的 STEP_ON 与方向门毯 `WARP_CARPET_<DIR>` 的方向碰撞规则。目标格自动步进仍独立于入口方向判断。

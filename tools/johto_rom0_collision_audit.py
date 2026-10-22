@@ -10,6 +10,10 @@ from pathlib import Path
 import re
 
 MAPPINGS = {
+    'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID': 'JohtoRoute32RuinsOfAlphGateCanStepAhead',
+    'JOHTO_NATIONAL_PARK_LOCAL_ID': 'JohtoNationalParkCanStepAhead',
+    'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID': 'JohtoRoute35NationalParkGateCanStepAhead',
+    'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID': 'JohtoRoute36NationalParkGateCanStepAhead',
     'JOHTO_ROUTE_40_LOCAL_ID': 'JohtoRoute40CanStepAhead',
     'JOHTO_ROUTE_41_LOCAL_ID': 'JohtoRoute41CanStepAhead',
     'JOHTO_CIANWOOD_CITY_LOCAL_ID': 'JohtoCianwoodCityCanStepAhead',
@@ -85,7 +89,7 @@ def audit(root, overrides=None):
         errors.append('ROMX native collision callee branches missing or duplicated')
     targets = dict(branches)
     for mapid, _cond, label in compare:
-        if targets.get(label) != MAPPINGS[mapid]:
+        if targets.get(label) != MAPPINGS.get(mapid):
             errors.append('ROMX wrong native map->collision predicate: '+mapid)
     if not re.search(r'\n\s*ld e, 0\n\s*ret\n\.route35\n', romx):
         errors.append('ROMX unknown local ID must return E=0 for original generic collision')

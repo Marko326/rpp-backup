@@ -250,6 +250,10 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID', 5, 7, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
+    park_south_steps = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 0, 3, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+    ]
     route43_gate_steps = [
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
@@ -260,8 +264,25 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_43_LOCAL_ID', 35, 17, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
-    if arrivals != middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps:
+    park35_solid_door = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_35_LOCAL_ID', 5, 3, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+    ]
+    if arrivals != middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps + park_south_steps + park35_solid_door:
         errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
+    # Additional original Gold north door: Route35 (3,5) is solid DOOR,
+    # its arrival auto-step must enter (3,6); do not generalize to carpets.
+    route35_map_path = root/'data/mapObjects/JohtoRoute35.asm'
+    route35_mask_path = root/'maps/JohtoRoute35.blocked_mask.bin'
+    if route35_map_path.exists():
+        # Complete projects must provide the mask; old cave-only negative
+        # fixtures don't contain Route35 and cannot testify to its entrance.
+        if not route35_mask_path.is_file():
+            errors.append('Gold Route35 solid DOOR arrival D_DOWN mask missing')
+        else:
+            route35_mask = route35_mask_path.read_bytes()
+            if (len(route35_mask) != 36*3 or
+                route35_mask[6*3 + (3//8)] & (1 << (3%8))):
+                errors.append('Gold Route35 solid DOOR arrival D_DOWN lands on blocked cell (3,6)')
     # Destination masks: the auto step must not put the player inside walls,
     # including when ordinary simulated-button collision is bypassed.
     mask_desc = {
@@ -272,6 +293,7 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         'JOHTO_ROUTE_34_LOCAL_ID': ('JohtoRoute34', 20, 54),
         'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID': ('JohtoRoute36RuinsGate', 10, 8),
         'JOHTO_RUINS_OF_ALPH_LOCAL_ID': ('JohtoRuinsOfAlphOutside', 20, 36),
+        'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID': ('JohtoRoute35NationalParkGate', 8, 8),
     }
     mask_desc.update({
         'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': ('JohtoRoute43MahoganyGate', 10, 8),
@@ -279,7 +301,7 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         'JOHTO_ROUTE_43_LOCAL_ID': ('JohtoRoute43', 20, 54),
         'JOHTO_MAHOGANY_TOWN_LOCAL_ID': ('JohtoMahoganyTown', 20, 18),
     })
-    for alias, local, y, x, source, direction in north_steps + route43_gate_steps + middle_gate_steps:
+    for alias, local, y, x, source, direction in north_steps + route43_gate_steps + middle_gate_steps + park_south_steps:
         name, width, height = mask_desc[local]
         dx, dy = MOVE[direction]
         tx, ty = x + dx, y + dy

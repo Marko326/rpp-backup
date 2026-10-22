@@ -1,3 +1,15 @@
+# SPID-5.62.239A｜自然公园与遗迹门房正式收口索引（本文件是索引，不是 git commit -F 正文）
+# 清理增量前置：用户当前已应用的 SPID-5.62.239A 候选源码快照；基线全量起点：SPID-5.62.237 导出工程快照。导出包无 .git，不声称核实当前真实 HEAD。
+# 游戏版本保持 SPID-5.62.239A；本次收口不改运行时代码，只更新工具合同验收状态与文档/提交材料。
+# 1) feat(johto): 接入自然公园及三座门房并修正草地、技能与遗迹右口
+#    仅运行时 ASM、地图/图块/碰撞资源、地图注册、构建规则与 data/game_version.asm；Version: SPID-5.62.237 -> SPID-5.62.239A。
+# 2) test(tool): 固化公园与遗迹门房合同并完成 239A 收口
+#    仅 tools/、测试、门房合同 JSON、TODO、踩坑、收口文档及本索引；候选完整门禁 902/902、0 skipped；收口后源码审计 PASS、37 项定向测试 PASS。
+# ZIP 固定 5 个文件：清理增量、工具/审计反向隔离、基线全量、SPID-5.62.239A_feat_johto_commit.txt、SPID-5.62.239A_test_tool_commit.txt。
+# 应用：当前已打 .239A 候选用清理增量；.237 导出工程用基线全量；两者二选一，不叠加。随后应用工具反向隔离提交功能，再 git apply -R 恢复工具/文档并提交工具。
+# Gold 368 张登记/367 张扫描、source_failed=0，SafariZoneBeta 按既有许可唯一排除；masked-step 21 张/162 边，139 PASS、23 REVIEW_REQUIRED、0 failures。完整 unittest 的收口后复跑超时，不声明新的全量计数。
+# 用户反馈当前修订无明显问题；AI 未编译/链接 ROM，没有本轮 ROM/MAP 哈希或 Bank/VRAM 空间证明。Git Commit/Push 由用户执行。
+
 # SPID-5.62.237｜Route43／愤怒之湖与 Gold 门房合同：正式双提交索引（本文件是索引，不是 git commit -F 正文）
 # 基线：金银 / 2442898bed3a28be9f9009eb4703c456b7ec3d65（导出确认 HEAD，SPID-5.62.234）；目标 SPID-5.62.237。
 # 1) feat(johto): 接入43号道路与愤怒之湖并修正门房碰撞行为

@@ -2955,6 +2955,138 @@
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 103,
+      "local_symbol": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+      "header": "JohtoNationalPark_h",
+      "bank": "BANK(JohtoNationalPark_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_NATIONAL_PARK",
+      "town_map_index": 18,
+      "town_map_name": "JohtoBrowseNationalParkName",
+      "town_map_xy": [
+        76,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "ALLOWED",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "ALLOWED"
+    },
+    {
+      "local_id": 104,
+      "local_symbol": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+      "header": "JohtoRoute35NationalParkGate_h",
+      "bank": "BANK(JohtoRoute35NationalParkGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 17,
+      "town_map_name": "JohtoBrowseRoute35Name",
+      "town_map_xy": [
+        92,
+        60
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "FORBIDDEN"
+    },
+    {
+      "local_id": 105,
+      "local_symbol": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+      "header": "JohtoRoute36NationalParkGate_h",
+      "bank": "BANK(JohtoRoute36NationalParkGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES2",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE36",
+      "town_map_index": 19,
+      "town_map_name": "JohtoBrowseRoute36Name",
+      "town_map_xy": [
+        76,
+        72
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "FORBIDDEN"
+    },
+    {
+      "local_id": 102,
+      "local_symbol": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+      "header": "JohtoRoute32RuinsOfAlphGate_h",
+      "bank": "BANK(JohtoRoute32RuinsOfAlphGate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES3",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE30",
+      "town_map_index": 7,
+      "town_map_name": "JohtoRoute32TownMapName",
+      "town_map_xy": [
+        108,
+        92
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "DEFERRED",
+        "strength": "DEFERRED",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null,
+      "fly_use_status": "FORBIDDEN"
     }
   ]
 }

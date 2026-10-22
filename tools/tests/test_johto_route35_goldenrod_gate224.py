@@ -30,7 +30,10 @@ class GoldenrodNorthGate224(unittest.TestCase):
             self.assertTrue(blocked[34*3+x//8] & (1<<(x%8)))
         runtime=section('engine/overworld/johto_route33_collision.asm',
                         'JohtoNorthGateStepWarpAllowed::','JohtoGateCollisionDirectionAllowed::')
-        self.assertNotIn('cp JOHTO_ROUTE_35_LOCAL_ID',runtime)
+        # Gold north (3,5) is a real DOOR and legitimately steps on, while
+        # Gold south (9/10,33) remains exclusively collision-triggered.
+        self.assertIn('cp JOHTO_ROUTE_35_LOCAL_ID\n\tjp z, .parkRoute35Door',runtime)
+        self.assertIn('.parkRoute35Door\n\tld a, [wXCoord]\n\tcp 3',runtime)
         # Gold Route34 y37 is WARP_CARPET_DOWN too: it must not use step-on.
         self.assertNotIn('cp JOHTO_ROUTE_34_LOCAL_ID',runtime)
         collision=section('engine/overworld/johto_route33_collision.asm',
@@ -150,7 +153,7 @@ class GoldenrodNorthGate224(unittest.TestCase):
 
     def test_original_gold_graph_and_native_escape_target_mapping(self):
         self.assertEqual([],gate_graph_errors(ROOT))
-        self.assertEqual([(x['x'],x['y'],x['dest_id']) for x in rpp_warps(ROOT,'JohtoRoute35')],[(9,33,0),(10,33,1)])
+        self.assertEqual([(x['x'],x['y'],x['dest_id']) for x in rpp_warps(ROOT,'JohtoRoute35')],[(9,33,0),(10,33,1),(3,5,2)])
         self.assertEqual([(x['x'],x['y'],x['dest_id']) for x in rpp_warps(ROOT,'JohtoGoldenrodCity')],[(19,1,2)])
         self.assertEqual([(x['x'],x['y'],x['dest_id']) for x in rpp_warps(ROOT,'JohtoRoute35GoldenrodGate')],[(4,0,0),(5,0,1),(4,7,0),(5,7,0)])
 

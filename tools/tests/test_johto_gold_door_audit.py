@@ -55,10 +55,10 @@ class GoldDoorReferenceTests(unittest.TestCase):
         report = gold_gate_inventory(ROOT, self.gold)
         self.assertEqual(report['totals']['gold_gates'], 24)
         self.assertEqual(report['active_approach_check']['status'], 'PASS')
-        self.assertEqual(report['active_approach_check']['checked'], 67)
+        self.assertEqual(report['active_approach_check']['checked'], 90)
         self.assertEqual(report['active_approach_check']['errors'], [])
         self.assertEqual(report['active_arrival_check']['status'], 'PASS')
-        self.assertEqual(report['active_arrival_check']['checked'], 55)
+        self.assertEqual(report['active_arrival_check']['checked'], 78)
         self.assertEqual(report['active_arrival_check']['errors'], [])
 
     def make_gold_copy(self, tmp: str) -> Path:

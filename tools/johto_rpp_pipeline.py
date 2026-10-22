@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from johto_gold_sources import gold_block_sources
 from johto_rpp_batch import batch, gold_event_records
 from johto_rpp_validate import verify, write_reports, render_previews
 from johto_indoor_tiles_converter import stage_preserved_gold_tileset
@@ -309,10 +310,10 @@ def stage_gold_map_candidate(rpp: Path, gold: Path, out: Path, map_name: str,
             'unsafe_hops': len(geometry['unsafe_hop_candidates']),
             'gold_warps': onboarding['evidence']['warp_events'],
             'water_cells': onboarding['evidence']['water_cells'],
-            'gold_blk_sha256': hashlib.sha256(
-                (gold/'maps'/f'{map_name}.blk').read_bytes()).hexdigest(),
+            'gold_block_source': gold_block_sources(gold).get(map_name),
+            'gold_blk_sha256': hashlib.sha256((gold/gold_block_sources(gold)[map_name]).read_bytes()).hexdigest(),
             'staged_blk_matches_gold': (out/'preserved_gold_art_candidate'/f'{map_name}.blk').read_bytes()
-                == (gold/'maps'/f'{map_name}.blk').read_bytes(),
+                == (gold/gold_block_sources(gold)[map_name]).read_bytes(),
             'status': 'STATIC_REVIEW_FAILED' if errors else 'OFFLINE_REVIEW_REQUIRED',
             'runtime_approved': False, 'build_performed': False,
             'errors': errors}

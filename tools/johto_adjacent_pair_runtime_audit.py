@@ -34,7 +34,7 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
                    for n in ('Route39', 'OlivineCity')}
         capabilities = json.loads(content('tools/johto_native_maps.json'))['maps']
         if not re.search(r'(?m)^DEF NUM_JOHTO_MAPS EQU (\d+)$', constants) or int(re.search(r'(?m)^DEF NUM_JOHTO_MAPS EQU (\d+)$',constants).group(1)) != len(capabilities):
-            errors.append('pair requires 33 physical active headers')
+            errors.append('pair requires complete physical active headers (at least original 33)')
         for name, stable, slot in (('Route39', 25, 28), ('OlivineCity', 26, 29)):
             if f'dw Johto{name}_h ; stable ID{stable} -> slot{slot}' not in registry:
                 errors.append(f'{name} stable ID -> dense active slot corrupted')

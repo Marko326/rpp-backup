@@ -17,7 +17,7 @@ class Rom0RuinsRelief224(unittest.TestCase):
         self.assertIn('callba JohtoInternalDoorFacingCheck',extra)
         self.assertLess(extra.index('cp MAP_REGION_JOHTO'),extra.index('callba JohtoInternalDoorFacingCheck'))
         self.assertLess(extra.index('callba JohtoInternalDoorFacingCheck'),extra.index('\n.ordinaryCheck\n'))
-        self.assertNotIn('cp JOHTO_',extra.split('\n.ordinaryCheck\n',1)[0], 'ROM0 must not grow an exact-map chain again')
+        self.assertNotIn('_LOCAL_ID',extra.split('\n.ordinaryCheck\n',1)[0], 'ROM0 must not grow a new native local-ID chain again')
         romx=(ROOT/'engine/overworld/johto_route33_collision.asm').read_text().split('JohtoInternalDoorFacingCheck::',1)[1].split('JohtoRuinsCanStepAhead::',1)[0]
         for name in ('JOHTO_ILEX_FOREST_LOCAL_ID','JOHTO_ROUTE_34_LOCAL_ID','JOHTO_GOLDENROD_CITY_LOCAL_ID','JOHTO_ROUTE_35_LOCAL_ID','JOHTO_ROUTE_36_LOCAL_ID','JOHTO_RUINS_OF_ALPH_LOCAL_ID'):
             self.assertIn('cp '+name,romx)

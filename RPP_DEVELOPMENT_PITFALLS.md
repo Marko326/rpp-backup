@@ -1,3 +1,18 @@
+## SPID-5.62.239A｜正式收口：公园草丛、Field Move 与遗迹右口（2026-10-22）
+
+- **用户验收状态**：用户收到修订包后反馈“没问题了”并要求收口。此反馈覆盖本轮提出的公园草／长草遮挡、骑行与野外 Fly、普通地图地标及遗迹门房右侧入口；不代表未提及的旧存档、全部按键边界和全部地图都完成逐项实测。
+- **真实入口与遮挡修复已保留**：Route32 旧 `$FB` 句柄必须同时登记到实际被调用的 `ExplicitWarpRegionTargets`，不能只看 `NativeRegionWarpTargets`；公园普通草 `$04` 与长草 `$3A/$3B/$4A/$4B` 的脚部遮挡要分开核对；野外 Fly 使用许可和 Fly 落点名单是两套不同合同。
+- **统一静态证据与复测范围**：候选最终功能代码在收口前的完整门禁报告为 `PASS`，902/902 unittest、0 skipped、46/46 活动连接；Gold 登记 368、扫描 367、源错误 0，`SafariZoneBeta` 仍按既有许可唯一排除。收口后将三座门房的合同状态更新为 `PHONE_ACCEPTED`，重新运行源码级 Gold 审计仍为 `PASS`、0 errors，相关准入／公园门房／遗迹门房定向测试 37/37 通过。完整 unittest suite 的收口后复跑超过执行时限，不能将候选期 902/902 写成一次新的收口后运行。Masked-step 审计 21 张地图／162 条边：139 PASS、23 `REVIEW_REQUIRED`、0 failures；不能把 REVIEW_REQUIRED 当成逐边验收。36/36 图块集 ID 索引形状检查通过。
+- **功能状态与构建状态分开**：用户反馈已登记为本轮范围的 PHONE_ACCEPTED；这不等于本助手已编译／链接 ROM。当前没有对应 ROM/MAP 哈希或最新 Bank／VRAM 余量证据，本项目继续禁止 AI 自行编译／链接 ROM。
+- **三件套与双提交纪律**：正式收口同步 TODO、踩坑、`commit-message.txt` 索引；运行时 ASM、地图资源与 `data/game_version.asm` 属第一笔 `feat(johto)`，工具／测试／合同 JSON／收口文档及提交索引属第二笔 `test(tool)`。清理增量基于已应用 `.239A` 候选，全量基于 `.237` 导出快照；工具反向隔离仅用于分离提交，绝不撤回 `scripts/*.asm` 等游戏运行时逻辑。Git Commit／Push 由用户执行。
+
+## SPID-5.62.239A｜候选期故障记录（历史，后由用户验收收口）
+
+- **入口真因**：旧句柄 `JOHTO_ROUTE_32` 与新 native 室内门房不能只检查 `NativeRegionWarpTargets`；从 Route32 右口进门的 `REGION_WARP_ESCAPE` 必经 `ResolveExplicitRegionWarp` 的 `ExplicitWarpRegionTargets`。`.239` 漏了源槽位 1/2，错误分支退到 Vermilion Ferry fallback；旧单元测试只断言 native 表映射，造成假绿。修订按 Gold 和现有 RPP Object 的真实编号补两条 legacy-source 显式映射，保留洞口槽位0。负向测试删除或错改任一入口必须 FAIL。
+- **草丛根因**：新 Park 图块集把 `wGrassTile` 设成 `$FF`，与 `.193` Route33 错误相同；还不能把 Gold Park 的 `LONG_GRASS` 简化为 `$04`，其真实四张图块是 `$3A,$3B,$4A,$4B`。只在 Park 限定实际人物/NPC 的下半身 OAM priority；原 Gold 176 格普通草及 176 格长草均必须交叉核验，不碰野怪概率。
+- **技能与地标解耦**：Park 加 `BikeRidingTilesets` 和 `.fly` 野外许可，但 Fly 目的地仍 `FORBIDDEN`（Gold 无 Flypoint）；新门房不可骑车或 Fly。Town Map 的四个 Gold 地标 18/17/19/7 属普通浏览项；门房 neutral 地名牌与普通地图索引并不冲突，不得将它们变成 Fly 菜单项。默认独立室外精灵集也需登记 Park，不然图块切换后的角色资源可能残留。
+- **实测边界**：本次可从原版 Gold 证明入口/图块和源码分支；未经 ROM 编译、链接 MAP、手机画面/逐帧输入复核不得声称用户报告的问题已经全部实际消失。按项目规范 `.239` 尚未正式用户验收时修订后缀为 `.239A`，不提前递增 `.240`。
+
 ## SPID-5.62.237｜正式清理收口：Gold 门房合同、审计误报与双提交边界
 
 - **功能合同**：Gold 实体 `DOOR` 是 STEP_ON；`WARP_CARPET_<DIR>` 可站立，仅在对应方向碰撞时 Warp。切图后自动步进由目的地格的 Gold 碰撞类型决定，不能由入口方向或门房朝向推导。Gold 24 座门房共 100 个 Warp（26 个实体门、74 个方向门毯）；当前 9 座活动门房的 67 个入口与 55 个到达点逐项核对。

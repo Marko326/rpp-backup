@@ -139,9 +139,9 @@ class DoorOnboardingTests(unittest.TestCase):
                 shutil.copy2(f, fake / 'data/mapObjects')
             f = fake / 'data/mapObjects/JohtoRoute32.asm'
             t = f.read_text()
-            self.assertIn('\tdb $01 ; the original cave-mouth Warp', t)
-            f.write_text(t.replace('\tdb $01 ; the original cave-mouth Warp',
-                                   '\tdb $00 ; the original cave-mouth Warp', 1))
+            self.assertIn('\tdb $03 ; cave slot0 unchanged; Route32 west carpets are slots1/2', t)
+            f.write_text(t.replace('\tdb $03 ; cave slot0 unchanged; Route32 west carpets are slots1/2',
+                                   '\tdb $02 ; cave slot0 unchanged; Route32 west carpets are slots1/2', 1))
             errors, _ = audit(fake, self.gold)
             self.assertTrue(any('Johto Warp count/contract mismatch JohtoRoute32' in e
                                 for e in errors), errors)

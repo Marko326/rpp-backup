@@ -56,7 +56,8 @@ def verify(rpp:Path,gold:Path):
         # Keep all 32 original slots intact; P17 adds one appended forest set.
         ilex_base=('CAVE_GRAY','CAVE_RED','CAVE_GREEN','CAVE_BLUE',
                    'CAVE_YELLOW','CAVE_BROWN','CAVE_LIGHT_BLUE','CRYS_TEXTBOX')
-        if len(slots)!=33 or slots[32]!=ilex_base:errors.append('tileset palette sets count changed')
+        if len(slots)!=36 or slots[32]!=ilex_base or slots[33]!=('OUTDOOR_GRAY','OUTDOOR_RED','OUTDOOR_GREEN','OUTDOOR_BLUE','OUTDOOR_YELLOW','OUTDOOR_BROWN','OUTDOOR_ROOF','CRYS_TEXTBOX') or slots[34]!=GATE_BASE or slots[35]!=GATE_BASE:
+            errors.append('tileset palette sets changed or new park family mismatched Gold')
         if len(slots)>29 and slots[29]!=GATE_BASE:errors.append('JOHTO_GATE must use isolated Gold palettes')
         if len(slots)>12 and slots[12]!=KANTO_GATE:errors.append('Kanto GATE palette set was changed')
         for label,pid in (('GRAY',0x09),('RED',0x0a),('GREEN',0x28),('WATER',0x0c),('YELLOW',0x0d),('BROWN',0x29),('ROOF',0x0f)):

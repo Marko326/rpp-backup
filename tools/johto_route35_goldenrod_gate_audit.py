@@ -38,7 +38,7 @@ def gate_graph_errors(root: Path, overrides=None):
         raw=source(root,f'data/mapObjects/{stem}.asm',overrides)
         entries=[tuple(map(int,m)) for m in WARP_LINE.findall(raw)]
         by_map[stem]=entries
-        count_expected={'JohtoGoldenrodCity':1,'JohtoRoute35':2,'JohtoRoute35GoldenrodGate':4}[stem]
+        count_expected={'JohtoGoldenrodCity':1,'JohtoRoute35':3,'JohtoRoute35GoldenrodGate':4}[stem]
         if len(entries)!=count_expected:
             problems.append(f'{stem} expected {count_expected} native Warp entries; got {len(entries)}')
     actual_routes=set()
@@ -56,9 +56,14 @@ def gate_graph_errors(root: Path, overrides=None):
         actual_routes.add(route)
         if route not in registrations:
             problems.append(f'{stem} warp slot {index}: native routing missing/wrong {route}')
-    new_routes={entry for entry in registrations if entry[0] in SRC}
-    if new_routes!=actual_routes:
-        problems.append('new native Warp routes differ from exactly seven Gold source routes')
+    # Park doorway is an additive, separately reviewed Route35 Warp #2.
+    # Keep the original Goldenrod gate #0/#1 and all seven old routes exact.
+    park_new=('JOHTO_ROUTE_35_LOCAL_ID', 2, 2, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID')
+    if by_map['JohtoRoute35'][2] != (5,3,2) or park_new not in registrations:
+        problems.append('Route35 new park gate must use only Gold Warp #3 at (3,5)')
+    legacy_routes={entry for entry in registrations if entry[0] in SRC and entry!=park_new}
+    if legacy_routes!=actual_routes:
+        problems.append('original seven Goldenrod gate routes changed or duplicated')
     return problems
 
 
@@ -293,7 +298,18 @@ def gate_carpet_trigger_errors(root: Path, overrides=None):
     # A presence-only test missed the prior bug. This must verify the outdoor
     # route is not dispatched to the step-on helper, even while the valid gate,
     # city, and Forest north-gate helpers are still recognized.
-    if re.search(r'(?m)^\s*cp JOHTO_ROUTE_35_LOCAL_ID\s*$', step_on):
+    # Gold Route35 has two independent entrances: south carpet (9/10,33)
+    # collision-only, and north DOOR (3,5) genuine STEP_ON. Verify both the
+    # map dispatch target and the narrow coordinates so a blanket step-on
+    # branch cannot smuggle the southern carpet into the door executor.
+    route35_step_dispatch = re.search(
+        r'cp JOHTO_ROUTE_35_LOCAL_ID\s*(?:jp|jr) z, (\.\w+)', step_on)
+    route35_park_handler = re.search(
+        r'(?s)\.parkRoute35Door\s*\n\s*ld a, \[wXCoord\]\s*cp 3'
+        r'\s*(?:jr|jp) nz, \.deny\s*ld a, \[wYCoord\]\s*cp 5'
+        r'\s*(?:jr|jp) z, \.up\s*(?:jr|jp) \.deny', step_on)
+    if (not route35_step_dispatch or route35_step_dispatch.group(1) != '.parkRoute35Door'
+            or not route35_park_handler or step_on.count('cp JOHTO_ROUTE_35_LOCAL_ID') != 1):
         errors.append('Route35 carpet accidentally uses immediate step-on Warp (must be collision-only)')
     if re.search(r'(?m)^\s*cp JOHTO_ROUTE_34_LOCAL_ID\s*$', step_on):
         errors.append('Route34 Gold WARP_CARPET_DOWN still uses immediate step-on Warp')
@@ -317,7 +333,11 @@ def gate_carpet_trigger_errors(root: Path, overrides=None):
     if ('callba JohtoInternalDoorFacingCheck' not in extra or
         'cp JOHTO_ROUTE_35_LOCAL_ID' not in facing):
         errors.append('Route35 collision doorway facing check not dispatched by ExtraWarpCheck')
-    route35_collision = collision.split('\n.route35South\n',1)[1].split('\n.route43South\n',1)[0] if '\n.route43South\n' in collision else collision.split('\n.route35South\n',1)[1].split('\n.northGate\n',1)[0] if '\n.route35South\n' in collision and '\n.northGate\n' in collision else ''
+    # Route35 also has a real north park entrance; scope this check to the old
+    # Goldenrod branch so valid UP on the park door cannot mask regressions.
+    route35_collision = (collision.split('\n.route35Goldenrod\n', 1)[1]
+                         .split('\n.route34Carpet\n', 1)[0]
+                         if '\n.route35Goldenrod\n' in collision else '')
     # RGBDS accepts both JR and JP conditional branches. Match the actual
     # coordinate/direction guard rather than pinning the audit to one opcode;
     # the previous JR-only expression rejected the valid JP implementation.

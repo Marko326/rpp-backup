@@ -13,11 +13,11 @@ from johto_tileset_index_audit import audit, ResourceIndexError
 class TilesetIndexAudit(unittest.TestCase):
     def test_all_registered_ids_and_future_arithmetic_are_traced(self):
         report = audit(ROOT)
-        self.assertEqual(report['registered_tilesets'], 33)
-        self.assertEqual(report['registered_ids_verified'], 33)
-        self.assertEqual(report['last_registered']['header_offset'], 0x180)
-        self.assertEqual(report['last_registered']['palette_set_offset'], 0x100)
-        self.assertEqual(report['last_registered']['palette_assignment_offset'], 0xc00)
+        self.assertEqual(report['registered_tilesets'], 36)
+        self.assertEqual(report['registered_ids_verified'], 36)
+        self.assertEqual(report['last_registered']['header_offset'], 35 * 12)
+        self.assertEqual(report['last_registered']['palette_set_offset'], 35 * 8)
+        self.assertEqual(report['last_registered']['palette_assignment_offset'], 35 * 96)
         self.assertEqual(report['future_ids_arithmetic_only'], [63, 127, 255])
         self.assertFalse(report['rom_bank_layout_verified'])
         self.assertFalse(report['vram_budget_verified'])

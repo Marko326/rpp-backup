@@ -37,7 +37,10 @@ def generate(rpp: Path, map_name='JohtoRoute31VioletGate'):
                   'script': (rpp/path_script).is_file(),
                   'layout': (rpp/path_blk).is_file()}
     checks = []
-    native_defs = texts['constants/region_map_constants.asm']
+    # Stable physical local IDs may be frozen in the included fixed-ID roster;
+    # a native map need not define the numeric ID inline in region constants.
+    native_defs = (texts['constants/region_map_constants.asm'] + '\n' +
+                   (rpp/'constants/johto_fixed_map_ids.asm').read_text())
 
     def add(code, passed, detail):
         checks.append({'code': code, 'pass': bool(passed), 'detail': detail})

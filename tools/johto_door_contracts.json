@@ -190,10 +190,11 @@
       "rpp_map": "JohtoRoute32",
       "gold_map": "Route32",
       "family": "CAVE_OUTDOOR",
-      "warp_count": 1,
+      "warp_count": 3,
       "required_test_ids": [
         "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_unconditional_reject_after_correct_direction_fails",
-        "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_cave_no_auto_step_and_north_gate_safe_profiles"
+        "test_johto_warp_arrival175.JohtoWarpArrivalContract.test_cave_no_auto_step_and_north_gate_safe_profiles",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_two_lane_warps"
       ]
     },
     {
@@ -722,11 +723,12 @@
       "rpp_map": "JohtoRoute35",
       "gold_map": "Route35",
       "family": "GATE_OUTDOOR",
-      "warp_count": 2,
+      "warp_count": 3,
       "required_test_ids": [
         "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_original_gold_graph_and_native_escape_target_mapping",
         "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_entry_direction_contract_and_runtime_dispatch",
-        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_arrival_and_immediate_reverse_regression"
+        "test_johto_route35_goldenrod_gate224.GoldenrodNorthGate224.test_arrival_and_immediate_reverse_regression",
+        "test_johto_national_park_gates.StaticParkGates.test_35_two_lane_warps"
       ],
       "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     },
@@ -972,9 +974,10 @@
       "rpp_map": "JohtoRoute36",
       "gold_map": "Route36",
       "family": "GATE_OUTDOOR",
-      "warp_count": 2,
+      "warp_count": 4,
       "required_test_ids": [
-        "test_johto_ruins_gate_merge224.RuinsGateMerged224.test_gold_outdoor_geometry"
+        "test_johto_ruins_gate_merge224.RuinsGateMerged224.test_gold_outdoor_geometry",
+        "test_johto_national_park_gates.StaticParkGates.test_36_two_lane_warps"
       ],
       "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     },
@@ -1222,9 +1225,10 @@
       "rpp_map": "JohtoRuinsOfAlphOutside",
       "gold_map": "RuinsOfAlphOutside",
       "family": "GATE_OUTDOOR",
-      "warp_count": 1,
+      "warp_count": 3,
       "required_test_ids": [
-        "test_johto_ruins_gate_merge224.RuinsGateMerged224.test_gold_outdoor_geometry"
+        "test_johto_ruins_gate_merge224.RuinsGateMerged224.test_gold_outdoor_geometry",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_two_lane_warps"
       ],
       "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
     },
@@ -2214,6 +2218,756 @@
             "JOHTO_ROUTE_43_LOCAL_ID"
           ]
         ]
+      }
+    },
+    {
+      "rpp_map": "JohtoRoute35NationalParkGate",
+      "gold_map": "Route35NationalParkGate",
+      "family": "GATE_INDOOR",
+      "warp_count": 4,
+      "required_test_ids": [
+        "test_johto_national_park_gates.StaticParkGates.test_35_two_lane_warps",
+        "test_johto_national_park_gates.StaticParkGates.test_35_directional_collision",
+        "test_johto_national_park_gates.StaticParkGates.test_35_immediate_return",
+        "test_johto_national_park_gates.StaticParkGates.test_35_exterior_border_loads",
+        "test_johto_national_park_gates.StaticParkGates.test_35_neutral_map_name",
+        "test_johto_national_park_gates.StaticParkGates.test_35_gold_art_tile_palette",
+        "test_johto_national_park_gates.StaticParkGates.test_35_runtime_rgb_kanto_isolation",
+        "test_johto_national_park_gates.StaticParkGates.test_35_legacy_gate_regression"
+      ],
+      "neutral_name_sign_test_id": "test_johto_national_park_gates.StaticParkGates.test_35_neutral_map_name",
+      "gold_palette_test_id": "test_johto_national_park_gates.StaticParkGates.test_35_gold_art_tile_palette",
+      "runtime_palette_status": "PHONE_ACCEPTED",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_national_park_gates.StaticParkGates.test_35_two_lane_warps",
+        "directional_collision": "test_johto_national_park_gates.StaticParkGates.test_35_directional_collision",
+        "immediate_return": "test_johto_national_park_gates.StaticParkGates.test_35_immediate_return",
+        "exterior_border_loads": "test_johto_national_park_gates.StaticParkGates.test_35_exterior_border_loads",
+        "neutral_map_name": "test_johto_national_park_gates.StaticParkGates.test_35_neutral_map_name",
+        "gold_art_tile_palette": "test_johto_national_park_gates.StaticParkGates.test_35_gold_art_tile_palette",
+        "runtime_rgb_kanto_isolation": "test_johto_national_park_gates.StaticParkGates.test_35_runtime_rgb_kanto_isolation",
+        "legacy_gate_regression": "test_johto_national_park_gates.StaticParkGates.test_35_legacy_gate_regression"
+      },
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED",
+      "arrival_step_review": {
+        "layout": "NORTH_SOUTH_PAIR",
+        "by_gate_side": {
+          "north": "D_DOWN",
+          "south": "NONE"
+        },
+        "basis": "Gold independent collision roles: north gate y0 and Route35 (3,5) are DOOR/STEP_ON and require D_DOWN on arrival. Park/south are directional carpets, collision only, no arrival auto-step."
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+        "warp_sides": {
+          "north": [
+            [
+              0,
+              3,
+              2,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              0,
+              4,
+              3,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "south": [
+            [
+              7,
+              3,
+              2,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              7,
+              4,
+              2,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_ROUTE_35_LOCAL_ID",
+            "x": 3,
+            "y": 5,
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            "x": 10,
+            "y": 47,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            "x": 11,
+            "y": 47,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 3,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 3,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY"
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_ROUTE_35_LOCAL_ID",
+            2,
+            2,
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            2,
+            2,
+            "JOHTO_ROUTE_35_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            3,
+            2,
+            "JOHTO_ROUTE_35_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            0,
+            2,
+            "JOHTO_NATIONAL_PARK_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            1,
+            3,
+            "JOHTO_NATIONAL_PARK_LOCAL_ID"
+          ],
+          [
+            "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            2,
+            0,
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            3,
+            1,
+            "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID"
+          ]
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                0,
+                3,
+                "D_DOWN"
+              ],
+              [
+                0,
+                4,
+                "D_DOWN"
+              ],
+              [
+                7,
+                3,
+                "NONE"
+              ],
+              [
+                7,
+                4,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_35_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                5,
+                3,
+                "D_DOWN"
+              ]
+            ],
+            "exact_map_profiles": false
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                47,
+                10,
+                "NONE"
+              ],
+              [
+                47,
+                11,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          }
+        ],
+        "border_policy": "APPROVED_NORMAL"
+      }
+    },
+    {
+      "rpp_map": "JohtoRoute36NationalParkGate",
+      "gold_map": "Route36NationalParkGate",
+      "family": "GATE_INDOOR",
+      "warp_count": 4,
+      "required_test_ids": [
+        "test_johto_national_park_gates.StaticParkGates.test_36_two_lane_warps",
+        "test_johto_national_park_gates.StaticParkGates.test_36_directional_collision",
+        "test_johto_national_park_gates.StaticParkGates.test_36_immediate_return",
+        "test_johto_national_park_gates.StaticParkGates.test_36_exterior_border_loads",
+        "test_johto_national_park_gates.StaticParkGates.test_36_neutral_map_name",
+        "test_johto_national_park_gates.StaticParkGates.test_36_gold_art_tile_palette",
+        "test_johto_national_park_gates.StaticParkGates.test_36_runtime_rgb_kanto_isolation",
+        "test_johto_national_park_gates.StaticParkGates.test_36_legacy_gate_regression"
+      ],
+      "neutral_name_sign_test_id": "test_johto_national_park_gates.StaticParkGates.test_36_neutral_map_name",
+      "gold_palette_test_id": "test_johto_national_park_gates.StaticParkGates.test_36_gold_art_tile_palette",
+      "runtime_palette_status": "PHONE_ACCEPTED",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_national_park_gates.StaticParkGates.test_36_two_lane_warps",
+        "directional_collision": "test_johto_national_park_gates.StaticParkGates.test_36_directional_collision",
+        "immediate_return": "test_johto_national_park_gates.StaticParkGates.test_36_immediate_return",
+        "exterior_border_loads": "test_johto_national_park_gates.StaticParkGates.test_36_exterior_border_loads",
+        "neutral_map_name": "test_johto_national_park_gates.StaticParkGates.test_36_neutral_map_name",
+        "gold_art_tile_palette": "test_johto_national_park_gates.StaticParkGates.test_36_gold_art_tile_palette",
+        "runtime_rgb_kanto_isolation": "test_johto_national_park_gates.StaticParkGates.test_36_runtime_rgb_kanto_isolation",
+        "legacy_gate_regression": "test_johto_national_park_gates.StaticParkGates.test_36_legacy_gate_regression"
+      },
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED",
+      "arrival_step_review": {
+        "layout": "EAST_WEST_PAIR",
+        "by_gate_side": {
+          "west": "NONE",
+          "east": "NONE"
+        },
+        "basis": "Independent Gold Route36NationalParkGate gate east-west two lane graph; both sides return to an interior/park carpet without forced movement."
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+        "warp_sides": {
+          "west": [
+            [
+              4,
+              0,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              5,
+              0,
+              1,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "east": [
+            [
+              4,
+              9,
+              2,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              5,
+              9,
+              3,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            "x": 33,
+            "y": 18,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            "x": 33,
+            "y": 19,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_36_LOCAL_ID",
+            "x": 18,
+            "y": 8,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_36_LOCAL_ID",
+            "x": 18,
+            "y": 9,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 4,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 5,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 4,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 5,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY"
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_NATIONAL_PARK_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_NATIONAL_PARK_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            2,
+            2,
+            "JOHTO_ROUTE_36_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            3,
+            3,
+            "JOHTO_ROUTE_36_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_36_LOCAL_ID",
+            2,
+            2,
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_36_LOCAL_ID",
+            3,
+            3,
+            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"
+          ]
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                4,
+                0,
+                "NONE"
+              ],
+              [
+                5,
+                0,
+                "NONE"
+              ],
+              [
+                4,
+                9,
+                "NONE"
+              ],
+              [
+                5,
+                9,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_36_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                8,
+                18,
+                "NONE"
+              ],
+              [
+                9,
+                18,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                18,
+                33,
+                "NONE"
+              ],
+              [
+                19,
+                33,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          }
+        ],
+        "border_policy": "APPROVED_NORMAL"
+      }
+    },
+    {
+      "rpp_map": "JohtoNationalPark",
+      "gold_map": "NationalPark",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 4,
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "required_test_ids": [
+        "test_johto_national_park_gates.StaticParkGates.test_35_two_lane_warps"
+      ]
+    },
+    {
+      "rpp_map": "JohtoRoute32RuinsOfAlphGate",
+      "gold_map": "Route32RuinsOfAlphGate",
+      "family": "GATE_INDOOR",
+      "warp_count": 4,
+      "required_test_ids": [
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_two_lane_warps",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_directional_collision",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_immediate_return",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_exterior_border_loads",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_neutral_map_name",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_gold_art_tile_palette",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_runtime_rgb_kanto_isolation",
+        "test_johto_route32_ruins_gate_239.RuinsGate239.test_legacy_gate_regression"
+      ],
+      "neutral_name_sign_test_id": "test_johto_route32_ruins_gate_239.RuinsGate239.test_neutral_map_name",
+      "gold_palette_test_id": "test_johto_route32_ruins_gate_239.RuinsGate239.test_gold_art_tile_palette",
+      "runtime_palette_status": "PHONE_ACCEPTED",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_route32_ruins_gate_239.RuinsGate239.test_two_lane_warps",
+        "directional_collision": "test_johto_route32_ruins_gate_239.RuinsGate239.test_directional_collision",
+        "immediate_return": "test_johto_route32_ruins_gate_239.RuinsGate239.test_immediate_return",
+        "exterior_border_loads": "test_johto_route32_ruins_gate_239.RuinsGate239.test_exterior_border_loads",
+        "neutral_map_name": "test_johto_route32_ruins_gate_239.RuinsGate239.test_neutral_map_name",
+        "gold_art_tile_palette": "test_johto_route32_ruins_gate_239.RuinsGate239.test_gold_art_tile_palette",
+        "runtime_rgb_kanto_isolation": "test_johto_route32_ruins_gate_239.RuinsGate239.test_runtime_rgb_kanto_isolation",
+        "legacy_gate_regression": "test_johto_route32_ruins_gate_239.RuinsGate239.test_legacy_gate_regression"
+      },
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED",
+      "arrival_step_review": {
+        "layout": "EAST_WEST_PAIR",
+        "by_gate_side": {
+          "west": "NONE",
+          "east": "NONE"
+        },
+        "basis": "Gold all four indoor and all four exterior entrances are directional LEFT/RIGHT carpets; no arrival D_DOWN profiles"
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+        "warp_sides": {
+          "west": [
+            [
+              4,
+              0,
+              1,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              5,
+              0,
+              2,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "east": [
+            [
+              4,
+              9,
+              1,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              5,
+              9,
+              2,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+            "x": 13,
+            "y": 20,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+            "x": 13,
+            "y": 21,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_32_LOCAL_ID",
+            "x": 4,
+            "y": 2,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_32_LOCAL_ID",
+            "x": 4,
+            "y": 3,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 4,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            "x": 0,
+            "y": 5,
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 4,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            "x": 9,
+            "y": 5,
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY"
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_ROUTE_32_LOCAL_ID",
+            1,
+            2,
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_32_LOCAL_ID",
+            2,
+            3,
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+            1,
+            0,
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+            2,
+            1,
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            0,
+            1,
+            "JOHTO_RUINS_OF_ALPH_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            1,
+            2,
+            "JOHTO_RUINS_OF_ALPH_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            2,
+            1,
+            "JOHTO_ROUTE_32_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            3,
+            2,
+            "JOHTO_ROUTE_32_LOCAL_ID"
+          ]
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                4,
+                0,
+                "NONE"
+              ],
+              [
+                5,
+                0,
+                "NONE"
+              ],
+              [
+                4,
+                9,
+                "NONE"
+              ],
+              [
+                5,
+                9,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                20,
+                13,
+                "NONE"
+              ],
+              [
+                21,
+                13,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_32_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                2,
+                4,
+                "NONE"
+              ],
+              [
+                3,
+                4,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          }
+        ],
+        "border_policy": "APPROVED_NORMAL"
       }
     }
   ],

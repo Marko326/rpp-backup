@@ -42,9 +42,17 @@ class UnionCaveExit192(unittest.TestCase):
         self.assertEqual(audit(self.root, self.gold), [])
 
     def test_route33_entry_requires_north_from_11_10(self):
-        self.mutate('engine/overworld/johto_route33_collision.asm',
-                    'cp PLAYER_DIR_UP\n\tjp z, .allowed',
-                    'cp PLAYER_DIR_DOWN\n\tjp z, .allowed')
+        rel='engine/overworld/johto_route33_collision.asm'
+        path=self.root/rel
+        raw=path.read_text()
+        lead, section=raw.split('JohtoRoute33CanStepAhead::',1)
+        body, tail=section.split('JohtoRoute33BlockedRows::',1)
+        before='cp PLAYER_DIR_UP\n\tjp z, .allowed'
+        self.assertIn(before,body)
+        path.write_text(lead+'JohtoRoute33CanStepAhead::'+body.replace(
+            before, 'cp PLAYER_DIR_DOWN\n\tjp z, .allowed',1)
+            +'JohtoRoute33BlockedRows::'+tail)
+        self.assertNotEqual(audit(self.root,self.gold), [])
 
     def test_wrong_southern_exit_y_is_rejected(self):
         self.mutate('engine/overworld/player_state.asm',

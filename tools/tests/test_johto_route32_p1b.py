@@ -33,7 +33,7 @@ class Route32StagingTests(unittest.TestCase):
         objects = self.src('data/mapObjects/JohtoRoute32.asm')
         self.assertRegex(header, r'(?m)^\s*db NORTH \| SOUTH$')
         self.assertRegex(violet, r'(?m)^\s*db SOUTH \| WEST \| EAST$')
-        self.assertRegex(objects, r'(?m)^\s*db \$01 ; the original cave-mouth Warp only')
+        self.assertRegex(objects, r'(?m)^\s*db \$03 ; cave slot0 unchanged; Route32 west carpets are slots1/2')
         self.assertIn('dw JohtoRoute33Blocks', header) ; self.assertNotIn('SOUTH_MAP_CONNECTION', header)
         self.assertIn('jp z, JohtoRoute32CollisionFence', self.src('main.asm'))
 

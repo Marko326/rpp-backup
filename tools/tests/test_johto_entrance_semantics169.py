@@ -42,8 +42,12 @@ class JohtoEntranceAuditTest(unittest.TestCase):
             self.assertEqual(review[0]['by_label'], {'DOOR': 1, 'CAVE': 2})
             self.assertEqual(review[0]['gold_warp_count'], 4)
             self.assertEqual(route['status'], 'review_required')
-            self.assertIn('db $01 ; the original cave-mouth Warp only; PC and Ruins remain closed',
-                          (ROOT/'data/mapObjects/JohtoRoute32.asm').read_text())
+            objects = (ROOT/'data/mapObjects/JohtoRoute32.asm').read_text()
+            self.assertIn('db $03 ; cave slot0 unchanged; Route32 west carpets are slots1/2', objects)
+            self.assertIn('db 79, 6, 0, REGION_WARP_ESCAPE', objects)
+            self.assertIn('db 2, 4, 2, REGION_WARP_ESCAPE', objects)
+            self.assertIn('db 3, 4, 3, REGION_WARP_ESCAPE', objects)
+            self.assertNotIn('db 73, 11,', objects)  # Gold Pokemon Center remains deferred
             # Tampering with the entrance review must fail independent audit.
             route['findings'].remove(review[0])
             (stage/'manifest.json').write_text(json.dumps(manifest))
