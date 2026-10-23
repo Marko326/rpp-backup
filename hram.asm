@@ -340,3 +340,7 @@ hDelayFrameHookBank EQU $FFFA
 
 ; Used for convenience in color hack (in the _ColorOverworldSprite function)
 hColorHackTmp EQU $FFFB
+
+; TEXT-5.62.205: one-shot request for a bottom-third tilemap refresh.
+; Consumed by the LCD pre-VBlank palette preparation, not by the text caller.
+hTextBottomRefreshRequest EQU $FFFC

@@ -3689,6 +3689,32 @@ PrintLetterDelay::
 	push hl
 	push de
 	push bc
+
+	; TEXT-5.62.205: only prioritize actual glyphs in the bottom six
+	; tilemap rows. A text delay may also belong to a number or menu
+	; elsewhere on the screen; those must keep the ordinary refresh cycle.
+	ld a, h
+	cp HIGH(wTileMap + 12 * SCREEN_WIDTH)
+	jr c, .normalTransfer
+	jr nz, .checkTextEnd
+	ld a, l
+	cp LOW(wTileMap + 12 * SCREEN_WIDTH)
+	jr c, .normalTransfer
+.checkTextEnd
+	ld a, h
+	cp HIGH(wTileMap + SCREEN_HEIGHT * SCREEN_WIDTH)
+	jr c, .requestBottomRefresh
+	jr nz, .normalTransfer
+	ld a, l
+	cp LOW(wTileMap + SCREEN_HEIGHT * SCREEN_WIDTH)
+	jr nc, .normalTransfer
+.requestBottomRefresh
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	and a
+	jr z, .normalTransfer
+	ld a, 1
+	ld [hTextBottomRefreshRequest], a
+.normalTransfer
 	ld a,[wLetterPrintingDelayFlags]
 	bit 0,a
 	jr z,.waitOneFrame

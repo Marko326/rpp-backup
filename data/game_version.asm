@@ -4,9 +4,9 @@ SECTION "Game Version", ROM0
 ; 放在 ROM0 中，任何 ROMX bank 都可以直接读取，无需额外切换 ROM bank。
 GameVersionText::
 IF DEF(BATTLE_TEST_BUILD)
-	; Visible test build identity: 14 chars at options-screen X=6.
+	; Independent battle-test identity: 14 chars; keep the T09 label unchanged.
 	db "B-5.62.204-T09@"
 ELSE
-	; The new official release version; test code is compiled out.
-	db "BATTLE-5.62.204@"
+	; Ordinary Red/Blue text refresh release; battle test code is compiled out.
+	db "TEXT-5.62.205@"
 ENDC

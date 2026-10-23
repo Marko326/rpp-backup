@@ -961,3 +961,12 @@ This section preserves the original author's roadmap. Status markers reflect the
 
 - 200T-001～004 的过程、用户受测证据与未覆盖边界已合并至 `docs/BATTLE_200_FINAL_RULES_AND_ROUND2.md`；测试源代码与 7 号道路特殊遭遇均不属正式版本。
 - 200T-004 的平局归物理不是“只改测试数据”：它已成为正式 200 Dynamic Spark 判类规则；而其他尚未确认的反击体验改动仍留第二轮讨论。
+
+## TEXT-5.62.205 — 逐字显示优先刷新（205 验收清理）
+
+- [x] **保留 205 局部刷新优化**：`PrintLetterDelay` 仅在当前图块指针位于下方六行且 BG 自动传输开启时提出一次性请求；`GbcPrepareVBlank` 在预备窗口调色板之前选择下方区域，遇到待消费的调色板批次、静态全屏调色板重建或传输关闭则使用原刷新次序。没有导入 Polished Crystal 字库，也没有重写 `ScrollTextUpOneLine`。
+- [x] **文字速度与存档不变**：Fast=即时、Normal=1 帧、Slow=3 帧（沿用项目现有选项），未改变 `wOptions`、字库、滚行等待、SRAM。此前仅调整 Slow 为 2 帧的候选已由用户撤销，不属于正式 205。
+- [x] **用户实际录像范围**：用户提供 205 NPC 对话录像，并将 204 和 PC 的录屏用作观感对照；205 Normal 的逐字显示更连续，205 Slow 仍为原 3 帧节奏。录像未见明显 NPC 对话花屏；这不是战斗、菜单、两种 ROM 或全部显示场景的全面验收。
+- [x] **独立构建版本管理**：正式 Red/Blue 显示 `TEXT-5.62.205`；编译期可选战斗测试 ROM 仍显示 `B-5.62.204-T09`。常规功能版本升级不自动修改测试设施代号；`Makefile` 的独立测试对象和入口不变。
+- [ ] **本地剩余最小测试**：正式 Red/Blue 构建与链接、查看新 MAP；Normal/Slow 的普通 NPC 长对话，战斗文字与 HP/HUD 更新、对话结束返回地图时的调色板，以及必要时独立测试 ROM 的旧标签检查。特别观察其他屏幕区域短暂延后刷新的可能。AI 未构建 ROM、未进行 Git Commit/Push。
+- **准确 Git 基线**：最新用户提供的干净 `BATTLE-5.62.204` HEAD `6d87cab1c761adae4ff58d4fcaa997fd4a502296` → 当前清理 `TEXT-5.62.205`；清理增量以前次已应用的 `TEXT-205-001` 为前置，基线全量从 204 HEAD 出发，两者互斥。详见 `docs/TEXT_REFRESH_205_REVIEW.md`。

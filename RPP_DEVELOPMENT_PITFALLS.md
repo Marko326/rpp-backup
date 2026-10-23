@@ -429,3 +429,9 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - **对话框生命周期**：NPC 的 `TX_ASM` 内调用 Yes/No 和三选一菜单后，外层 `DisplayTextID` 可能额外等待按键。按项目现成 `DisableWaitingAfterTextDisplay` 让外层负责关闭，并先用操作提示替换旧警告，避免菜单 A/B 结束后遗留旧文字框。
 - **输入边界与 Bank**：菜单方框要按地图 20 tile 宽度（`TextBoxBorder` 有两侧边框）核对；连击测试固定次数的跨 Bank 回传用 E 等约定寄存器，不能假定 A 被 `callab` 保留。各多段内部打击不能推进完整回合计数。不要把人工命中、替身 HP、固定次数等测试输入当作正式随机流程的验证结果。
 - **缺口说明**：静态 `.patch` 正反应用、可选编译条件和可用 MAP 不能证明当前 204 Normal/Hard/测试 ROM 都已经重建并运行；由项目所有者本地检查，不重复此前录过的旧战斗场景。
+
+## TEXT-5.62.205 — 逐字显示与调色板预更新不能错帧
+
+- `PrintLetterDelay` 里直接强制 `H_AUTOBGTRANSFERPORTION=TRANSFERBOTTOM` 会让 BG 窗口图块更新与已经准备的对应调色板批次错位；正确做法是仅设置一次性 `hTextBottomRefreshRequest`，由 `GbcPrepareVBlank` 在 `RefreshWindowPalettesPreVBlank` **之前**统一判断是否可以优先选择底部六行。
+- 必须保留 `H_AUTOBGTRANSFERENABLED`、`W2_UpdatedWindowPortion`、`W2_StaticPaletteMapChanged` 和窗口目标变更保护；请求若不安全即回退原三段轮换。快速文字显示之外的菜单、战斗 HUD 和地图调色板仍需实测回归。
+- 本优化**不更改文字实际等待帧数**、`ScrollTextUpOneLine`、字体资源、`wOptions` 或存档。正式构建 205 的文字显示优化不代表独立测试 ROM 的 T09 版本号需要随之更新。旧 204 MAP 仅供空间基线参考，新增长度仍需本地链接后确认。

@@ -33,6 +33,39 @@ LoadBlackPalettesWhileLCDOff:
 GbcPrepareVBlank:
 	ld a,2
 	ld [rSVBK],a
+
+	; TEXT-5.62.205: choose the text region BEFORE staging its palettes.
+	; Never modify the transfer portion from PrintLetterDelay directly:
+	; doing so after the LCD preparation would desync tile IDs and colors.
+	ld a, [hTextBottomRefreshRequest]
+	and a
+	jr z, .normalWindowTransfer
+	xor a
+	ld [hTextBottomRefreshRequest], a ; consume one-shot request
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	and a
+	jr z, .normalWindowTransfer
+	ld a, [W2_UpdatedWindowPortion]
+	and a
+	jr nz, .normalWindowTransfer ; prior palette batch not consumed
+
+	; Static palettes need three different thirds after a palette change.
+	; Do not force the bottom third during that cycle or on a new map.
+	ld a, [W2_TileBasedPalettes]
+	and a
+	jr nz, .selectTextRegion
+	ld a, [W2_StaticPaletteMapChanged]
+	and a
+	jr nz, .normalWindowTransfer
+	ld a, [H_AUTOBGTRANSFERDEST + 1]
+	ld b, a
+	ld a, [W2_LastAutoCopyDest]
+	cp b
+	jr nz, .normalWindowTransfer
+.selectTextRegion
+	ld a, TRANSFERBOTTOM
+	ld [H_AUTOBGTRANSFERPORTION], a
+.normalWindowTransfer
 	call RefreshWindowPalettesPreVBlank
 	call RefreshPalettesPreVBlank
 	xor a
