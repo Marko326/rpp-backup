@@ -3661,7 +3661,7 @@ CheckPlayerStatusConditions:
 .HeldInPlaceCheck
 	ld a,[wEnemyBattleStatus1]
 	bit UsingTrappingMove,a ; is enemy using a mult-turn move like wrap?
-	jp z,.FlinchedCheck
+	jr z,.FlinchedCheck
 	ld hl,CantMoveText
 	call PrintText
 	ld hl,ExecutePlayerMoveDone ; player can't move this turn
@@ -3670,7 +3670,7 @@ CheckPlayerStatusConditions:
 .FlinchedCheck
 	ld hl,wPlayerBattleStatus1
 	bit Flinched,[hl]
-	jp z,.HyperBeamCheck
+	jr z,.HyperBeamCheck
 	res Flinched,[hl] ; reset player's flinch status
 	ld hl,FlinchedText
 	call PrintText
@@ -3849,7 +3849,7 @@ CheckPlayerStatusConditions:
 
 .MultiturnMoveCheck
 	bit UsingTrappingMove,[hl] ; is mon using multi-turn move?
-	jp z,.RageCheck
+	jr z,.RageCheck
 	ld hl,AttackContinuesText
 	call PrintText
 	ld a,[wPlayerNumAttacksLeft]
@@ -3999,7 +3999,10 @@ HandleSelfConfusionDamage:
 	call DrawPlayerHUDAndHPBar
 	xor a
 	ld [H_WHOSETURN], a
-	jp ApplyDamageToPlayerPokemon
+	; The direct real-HP entry requires the low-byte damage pointer.
+	; Confusion self-damage bypasses the opponent-directed Substitute gate.
+	ld hl, wDamage + 1
+	jp ApplyDamageToPlayerPokemon.realHP
 
 PrintMonName1Text:
 	ld hl, MonName1Text
@@ -4086,43 +4089,12 @@ PrintMoveFailureText:
 	cp JUMP_KICK_EFFECT
 	ret nz
 
-	; if you get here, the mon used jump kick or hi jump kick and missed
-	ld hl, wDamage ; since the move missed, wDamage will always contain 0 at this point.
-	                ; Thus, recoil damage will always be equal to 1
-	                ; even if it was intended to be potential damage/8.
-	ld a, [hli]
-	ld b, [hl]
-	srl a
-	rr b
-	srl a
-	rr b
-	srl a
-	rr b
-	ld [hl], b
-	dec hl
-	ld [hli], a
-	or b
-	jr nz, .applyRecoil
-	inc a
-	ld [hl], a
-.applyRecoil
-	ld hl, KeptGoingAndCrashedText
-	call PrintText
-	ld b, $4
-	predef PredefShakeScreenHorizontally
-	ld a, [H_WHOSETURN]
-	and a
-	jr nz, .enemyTurn
-	jp ApplyDamageToPlayerPokemon
-.enemyTurn
-	jp ApplyDamageToEnemyPokemon
+	; Jump Kick recoil is self-damage: never route it through the Substitute gate.
+	callab HandleJumpKickCrashRecoil
+	ret
 
 AttackMissedText:
 	TX_FAR _AttackMissedText
-	db "@"
-
-KeptGoingAndCrashedText:
-	TX_FAR _KeptGoingAndCrashedText
 	db "@"
 
 UnaffectedText:
@@ -5026,7 +4998,7 @@ ApplyAttackToEnemyPokemon:
 	jr z,.specialDamage
 	ld a,[wPlayerMovePower]
 	and a
-	jp z,ApplyAttackToEnemyPokemonDone ; no attack to apply if base power is 0
+	jr z,ApplyAttackToEnemyPokemonDone ; no attack to apply if base power is 0
 	jr ApplyDamageToEnemyPokemon
 .superFangEffect
 	ld hl, wEnemyMonHP
@@ -5046,6 +5018,7 @@ ApplyDamageToEnemyPokemon:
 	ld a,[wEnemyBattleStatus2]
 	bit HasSubstituteUp,a ; does the enemy have a substitute?
 	jp nz,AttackSubstitute
+.realHP
 ; subtract the damage from the pokemon's current HP
 ; also, save the current HP at wHPBarOldHP
 	ld a,[hld]
@@ -5091,6 +5064,15 @@ ApplyDamageToEnemyPokemon:
 ApplyAttackToEnemyPokemonDone:
 	jp DrawHUDsAndHPBars
 
+; Far callers cannot preserve HL across Bankswitch; initialize the damage
+; pointer here, close to both real-HP subtractors, before entering either one.
+ApplyDamageToActingPokemonRealHPWithDamagePointer::
+	ld hl, wDamage + 1
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, ApplyDamageToPlayerPokemon.realHP
+	jr ApplyDamageToEnemyPokemon.realHP
+
 ApplyAttackToPlayerPokemon:
 	ld a,[wEnemyMoveEffect]
 	cp a,OHKO_EFFECT
@@ -5101,7 +5083,7 @@ ApplyAttackToPlayerPokemon:
 	jr z,.specialDamage
 	ld a,[wEnemyMovePower]
 	and a
-	jp z,ApplyAttackToPlayerPokemonDone
+	jr z,ApplyAttackToPlayerPokemonDone
 	jr ApplyDamageToPlayerPokemon
 .superFangEffect
 	ld hl, wBattleMonHP
@@ -5120,7 +5102,8 @@ ApplyDamageToPlayerPokemon:
 	jr z,ApplyAttackToPlayerPokemonDone ; we're done if damage is 0
 	ld a,[wPlayerBattleStatus2]
 	bit HasSubstituteUp,a ; does the player have a substitute?
-	jp nz,AttackSubstitute
+	jr nz,AttackSubstitute
+.realHP
 ; subtract the damage from the pokemon's current HP
 ; also, save the current HP at wHPBarOldHP and the new HP at wHPBarNewHP
 	ld a,[hld]
@@ -5188,15 +5171,11 @@ CalculateSuperFangDamage:
 
 
 AttackSubstitute:
-; Unlike the two ApplyAttackToPokemon functions, Attack Substitute is shared by player and enemy.
-; Self-confusion damage as well as Hi-Jump Kick and Jump Kick recoil cause a momentary turn swap before being applied.
-; If the user has a Substitute up and would take damage because of that,
-; damage will be applied to the other player's Substitute.
-; Normal recoil such as from Double-Edge isn't affected by this glitch,
-; because this function is never called in that case.
-
-	ld hl,SubstituteTookDamageText
-	call PrintText
+; Shared Substitute receiver for normal opposing attacks. Self-confusion
+; and missed Jump Kick recoil enter the acting side's real-HP subtractor instead.
+; For multi-hit moves, show damage before a Substitute break, or defer the
+; generic damage line until the final hit if the Substitute survives.
+	callab MaybePrintSubstituteTookDamageText
 ; values for player turn
 	ld de,wEnemySubstituteHP
 	ld bc,wEnemyBattleStatus2
@@ -5264,10 +5243,6 @@ AttackSubstitute:
 	ld [hl],a ; zero the effect of the attacker's move
 .done
 	jp DrawHUDsAndHPBars
-
-SubstituteTookDamageText:
-	TX_FAR _SubstituteTookDamageText
-	db "@"
 
 SubstituteBrokeText:
 	TX_FAR _SubstituteBrokeText
@@ -6009,7 +5984,10 @@ CheckEnemyStatusConditions:
 	call PlayMoveAnimation
 	ld a, $1
 	ld [H_WHOSETURN], a
-	call ApplyDamageToEnemyPokemon
+	; Enemy self-damage also bypasses the Substitute gate, but the
+	; shared real-HP subtractor requires HL = wDamage + 1.
+	ld hl, wDamage + 1
+	call ApplyDamageToEnemyPokemon.realHP
 	jr .monHurtItselfOrFullyParalysed
 .checkIfTriedToUseDisabledMove
 ; prevents a disabled move that was selected before being disabled from being used

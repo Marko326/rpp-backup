@@ -3194,6 +3194,10 @@ INCLUDE "engine/battle/recoil_side_effect_helpers.asm"
 SECTION "Substitute Multi-Hit Helpers", ROMX, BANK[$3E]
 INCLUDE "engine/battle/substitute_multihit_helpers.asm"
 
+; Self-inflicted Jump Kick miss recoil is separate from Substitute hit routing.
+SECTION "Jump Kick Crash Recoil Helper", ROMX
+INCLUDE "engine/battle/jump_kick_recoil_helper.asm"
+
 ; VTA-5.62.43: Ruby-inspired Volt Tackle five-sweep renderer in Bank $3E.
 SECTION "Ruby-style Volt Tackle Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/volt_tackle_animation.asm"

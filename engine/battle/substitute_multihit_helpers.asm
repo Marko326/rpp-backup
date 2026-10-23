@@ -112,3 +112,68 @@ RestoreAttackerSubstituteIfMultiHitActive:
 	; restore the doll here before leaving the move.
 	callab ReshowSubstituteAnim
 	ret
+
+; Defer the generic Substitute damage message until the final
+; actual strike when the doll survives. If this strike will break the doll,
+; print the damage message first, then AttackSubstitute prints SubstituteBrokeText.
+; The first strike has no AttackingMultipleTimes flag yet, so identify it by
+; move effect. Later strikes use the remaining-hit counter.
+MaybePrintSubstituteTookDamageText::
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, [wPlayerBattleStatus1]
+	bit AttackingMultipleTimes, a
+	jr nz, .playerMultiHit
+	ld a, [wPlayerMoveEffect]
+	jr .checkFirstHitEffect
+.playerMultiHit
+	ld a, [wPlayerNumAttacksLeft]
+	cp 1
+	jr z, .show
+	jr .checkBreakingHit
+.enemy
+	ld a, [wEnemyBattleStatus1]
+	bit AttackingMultipleTimes, a
+	jr nz, .enemyMultiHit
+	ld a, [wEnemyMoveEffect]
+.checkFirstHitEffect
+	cp TWO_TO_FIVE_ATTACKS_EFFECT
+	jr z, .checkBreakingHit
+	cp ATTACK_TWICE_EFFECT
+	jr z, .checkBreakingHit
+	cp TWINEEDLE_EFFECT
+	jr z, .checkBreakingHit
+	jr .show
+.enemyMultiHit
+	ld a, [wEnemyNumAttacksLeft]
+	cp 1
+	jr z, .show
+.checkBreakingHit
+	; A non-final strike normally stays silent, unless its damage will break
+	; the Substitute. H_WHOSETURN identifies the attacker; the opposite side
+	; owns the Substitute being hit.
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .playerSubstitute
+	ld a, [wEnemySubstituteHP]
+	jr .compareDamage
+.playerSubstitute
+	ld a, [wPlayerSubstituteHP]
+.compareDamage
+	ld b, a
+	ld a, [wDamage]
+	and a
+	jr nz, .show ; high byte means damage > 255, so it certainly breaks
+	ld a, [wDamage + 1]
+	cp b
+	jr nc, .show ; damage >= remaining Substitute HP, including exact lethal
+	ret
+.show
+	ld hl, SubstituteTookDamageText
+	call PrintText
+	ret
+
+SubstituteTookDamageText:
+	TX_FAR _SubstituteTookDamageText
+	db "@"

@@ -442,3 +442,12 @@
 - **清理范围**：恢复玉虹大厦 NPC／导师对话、Route 7 Normal/Hard 野生遭遇表；删除临时 NPC 测试入口、短标签、`Battle203TConfigureWildEnemy` hook、WRAM 别名及两份临时测试指南。正式版本号从 201 更新为 202。
 - **三件套**：清理增量以 `BATTLE-5.62.206T` 工作区为前置；累计全量以已提交 `BATTLE-5.62.201` / HEAD `eba1a803a7791a74bd2706982345d2894e3f93e2` 为基线。合集包含两份补丁与同文 `commit-message.txt`；二者只能择一应用。
 - **验证边界**：补丁正反向与源码／临时符号检查可完成；本环境不编译 ROM、不生成新 MAP、不执行 Git Commit／Push。用户本地仍需构建 Normal/Hard 并核对新 MAP。
+
+## BATTLE-5.62.203 正式收口基线、源码与验收边界（最终清理记录）
+
+- 本轮导出工作区的最近确认 Git 提交仍是 `BATTLE-5.62.202` / `3595661a0c6857a583e74738293156f12cfac25f`，分支 `常规功能备份`。后续一系列后缀 T 开发候选均不视为提交；最终游戏对外只显示 **`BATTLE-5.62.203`**，不保留中间测试版号作为正式标签。
+- 最终正式差异是：混乱自伤直扣自身本体且正确重建 `HL=wDamage+1`、Jump Kick/Hi Jump Kick 自身反伤（浮动 ROMX Helper）、多段击中替身的承伤/破裂提示顺序和次数。不要变更 202 已提交的 Dynamic Spark、Counter 幽灵免疫与公共伤害低除数保护。
+- 历史早期录像及本窗口 `211T.mp4`/`212T测试视频.mp4` 的详细测试过程、双方覆盖、静态执行链、局限性和未覆盖项统一归档在 **`docs/BATTLE_203_FINAL_REVIEW.md`**，而**不是**反复复制到提交日志或把临时场景指南留在正式 ROM 项目中。`211T` 15 击属于已删除的测试夹具跨 Bank 返回错误；后续录像两侧均见 3 击，不要写成正式伤害错误。
+- 清理后恢复正式 Celadon Mansion 老太太/三导师/告示牌、Route 7 Normal/Hard 野生表和 `InitWildBattle` 既有 `RegionalFormClearNewMonForm`；删除测试场景脚本与文本、固定命中/击数/替身 HP 注入、WRAM 别名、测试 helper 与 `main.asm` INCLUDE，保持 WRAM 布局不变。
+- 最终验收的本地剩余工作只有 Normal/Hard 双构建、新 MAP 和清理后 NPC/普通野战简短烟雾检查；不再无理由重录已测战斗。旧 210T MAP 只是历史参考，不能当最终构建成功证据。本环境不编译 ROM、不 Git Commit/Push。
+- 交付按本文件顶部规范及 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 模式 B：**清理增量**（当前已应用的 212T 测试状态→最终203）、**基线全量**（已提交 202 HEAD→最终203）、**一份简明 commit-message.txt**，合为一个 ZIP；只选择增量或全量应用，不叠加。充分的技术原理与逐条受测记录始终写在专项文档，提交日志只摘要当前这笔实际变更。
