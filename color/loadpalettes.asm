@@ -212,6 +212,7 @@ db 0,0,1,1,1,2,$ff,2,$ff,3,3,$ff,$ff,$ff,4,4,2,2,$ff,$ff,$ff,2,5,$ff,6,$ff,7,7,6
 	db $ff, $ff, $ff ; Park and both gates, slots 37..39
 	db $ff ; Route32 ruins gate indoor
  db 7, 10, 10, 10 ; Route44 Mahogany, Blackthorn City and Routes45/46 Blackthorn
+ db $ff ; Route29/Route46 gate interior (active slot 45)
 JohtoGoldDayRoofGroupsEnd:
 ASSERT JohtoGoldDayRoofGroupsEnd - JohtoGoldDayRoofGroups == NUM_JOHTO_MAPS
 

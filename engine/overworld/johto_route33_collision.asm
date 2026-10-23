@@ -2110,6 +2110,32 @@ JohtoRoute34BlockedRows::
 
 ; ILEX-5.62.215: only the new NorthSouthGate uses this Gold 16x16 role mask.
 ; Existing JOHTO_GATE / Kanto Gate_Coll and two accepted gate rooms unchanged.
+; GATE-5.62.240A: legacy Route29 uses generic RBY tile passability,
+; unlike the native $FC maps. This single Gold DOOR step must bypass the
+; old generic wall tile ONLY from the floor below. Carry means ALLOW.
+; Called after ordinary ledges / sprite and tile-pair collision checks.
+JohtoRoute29GateStepAllowed::
+ ld a, [wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.deny
+ ld a, [wCurLocalMapID]
+ cp JOHTO_ROUTE_29_LOCAL_ID
+ jr nz,.deny
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz,.deny
+ ld a, [wXCoord]
+ cp 27
+ jr nz,.deny
+ ld a, [wYCoord]
+ cp 2
+ jr nz,.deny
+ scf
+ ret
+.deny
+ and a
+ ret
+
 JohtoRoute34GateCanStepAhead::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
@@ -2122,6 +2148,8 @@ JohtoRoute34GateCanStepAhead::
 	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
 	jr z, .gateOk
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jr z, .gateOk
+	cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
 	jp nz, .blocked
 .gateOk
 	; Gold lower warp carpet permits entry from the left/right floor cells
@@ -2216,6 +2244,8 @@ JohtoNorthGateStepWarpAllowed::
 	jr z, .gateVertical
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jr z, .gateVertical
+	cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+	jr z, .gateVertical
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jr z, .gateVertical
 	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
@@ -2235,6 +2265,8 @@ JohtoNorthGateStepWarpAllowed::
 	; Route43's paired WARP_CARPET_DOWN stays collision-only.
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jr z, .mahoganyNorthDoor
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	jr z, .route29NorthDoor
 	cp JOHTO_ROUTE_43_LOCAL_ID
 	jr z, .route43MiddleDoor
 	; All remaining directional carpets (including Route34's Gold y37
@@ -2276,6 +2308,14 @@ JohtoNorthGateStepWarpAllowed::
  jp nz, .deny
  ld a, [wYCoord]
  cp 35
+ jr z, .up
+ jp .deny
+.route29NorthDoor
+ ld a, [wXCoord]
+ cp 27
+ jp nz, .deny
+ ld a, [wYCoord]
+ cp 1
  jr z, .up
  jp .deny
 .mahoganyNorthDoor
@@ -2320,6 +2360,12 @@ JohtoGateCollisionDirectionAllowed::
 	jp z, .northGate
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
 	jp z, .northGate
+	cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+	jp z, .northGate
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	jp z, .route29North
+	cp JOHTO_ROUTE_46_LOCAL_ID
+	jp z, .route46South
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jp z, .northGate
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
@@ -2496,6 +2542,24 @@ JohtoGateCollisionDirectionAllowed::
 	cp 19
 	jp nz, .denied
 	jp .up
+.route29North
+ ld a, [wXCoord]
+ cp 27
+ jp nz, .denied
+ ld a, [wYCoord]
+ cp 1
+ jp z, .up
+ jp .denied
+.route46South
+ ld a, [wYCoord]
+ cp 33
+ jp nz, .denied
+ ld a, [wXCoord]
+ cp 7
+ jp z, .down
+ cp 8
+ jp z, .down
+ jp .denied
 .route35South
 	ld a, [wXCoord]
 	cp 3
@@ -2624,6 +2688,10 @@ JohtoGateCollisionDirectionAllowed::
 ; mouth x3/y42-43. Route34 bottom entrance x13/14/y37 is also interior.
 JohtoInternalDoorFacingCheck::
 	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	jp z, .route29Door
+	cp JOHTO_ROUTE_46_LOCAL_ID
+	jp z, .route46Door
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp z, .forest
 	cp JOHTO_ROUTE_34_LOCAL_ID
@@ -2655,6 +2723,31 @@ JohtoInternalDoorFacingCheck::
 	cp JOHTO_ROUTE_43_LOCAL_ID
 	jp z, .route43Door
 	jp .denied
+.route29Door
+ ld a, [wXCoord]
+ cp 27
+ jp nz, .denied
+ ld a, [wYCoord]
+ cp 1
+ jp nz, .denied
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jp z, .allowed
+ jp .denied
+.route46Door
+ ld a, [wYCoord]
+ cp 33
+ jp nz, .denied
+ ld a, [wXCoord]
+ cp 7
+ jr z, .route46Down
+ cp 8
+ jp nz, .denied
+.route46Down
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jp z, .allowed
+ jp .denied
 .mahoganyDoor
  ld a, [wXCoord]
  cp 9
@@ -4020,6 +4113,8 @@ JohtoNativeCanStepAhead::
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jp z, .gate
 	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	jp z, .gate
+	cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
 	jp z, .gate
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jp z, .ruins

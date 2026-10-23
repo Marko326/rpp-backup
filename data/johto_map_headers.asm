@@ -6,7 +6,7 @@ JohtoStableIDToActiveSlot::
 	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $1e, $1f, $20, $ff, $ff ; $10-$1f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $19, $1a ; $30-$3f
-	db $1b, $21, $24, $23, $22, $29, $ff, $2a, $2b, $2c, $ff, $ff, $ff, $ff, $ff, $ff ; $40-$4f
+	db $1b, $21, $24, $23, $22, $29, $ff, $2a, $2b, $2c, $2d, $ff, $ff, $ff, $ff, $ff ; $40-$4f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $28, $25, $26, $27, $ff, $ff, $ff, $ff, $ff, $ff ; $60-$6f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $70-$7f
@@ -92,6 +92,7 @@ JohtoMapHeaderPointers::
  dw JohtoBlackthornCity_h ; stable ID71 -> slot42
  dw JohtoRoute45_h ; stable ID72 -> slot43
  dw JohtoRoute46_h ; stable ID73 -> slot44
+ dw JohtoRoute29Route46Gate_h ; stable ID74 -> slot45
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -140,6 +141,7 @@ JohtoMapHeaderBanks::
  db BANK(JohtoBlackthornCity_h)
  db BANK(JohtoRoute45_h)
  db BANK(JohtoRoute46_h)
+ db BANK(JohtoRoute29Route46Gate_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -192,6 +194,7 @@ JohtoMapLegacyAliases::
  db REGION_NATIVE_MAP_SLOT ; BlackthornCity
  db REGION_NATIVE_MAP_SLOT ; Route45
  db REGION_NATIVE_MAP_SLOT ; Route46
+ db REGION_NATIVE_MAP_SLOT ; Route29Route46Gate
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -242,6 +245,7 @@ JohtoNativeMapSongBanks::
  db MUSIC_CITIES2, 0 ; Blackthorn Gold Azalea family
  db MUSIC_ROUTES2, 0 ; Route45 Gold Route36
  db MUSIC_ROUTES2, 0 ; Route46 Gold Route36
+ db MUSIC_ROUTES1, 0 ; Route29Route46Gate, original Route29 song family
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

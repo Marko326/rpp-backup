@@ -235,6 +235,40 @@ JohtoEastCanStepAhead::
  ld e,3
  jp JohtoEastMaskedStep
 .maskRoute46
+ ; Gold Route46 (7/8,33) is a standable pair of WARP_CARPET_DOWN.
+ ; Its Gold role mask marks the boundary solid; admit walking ON the mats
+ ; from y32 and side-shifting BETWEEN mats. Only the NEXT down input at
+ ; y33 must collide and trigger the directional Warp.
+ ld a,[wYCoord]
+ cp 32
+ jr z,.route46AboveCarpets
+ cp 33
+ jr nz,.route46Normal
+ ld a,[wXCoord]
+ cp 7
+ jr z,.route46LeftMat
+ cp 8
+ jr nz,.route46Normal
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_LEFT
+ jr z,.allowed
+ jr .route46Normal
+.route46LeftMat
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_RIGHT
+ jr z,.allowed
+ jr .route46Normal
+.route46AboveCarpets
+ ld a,[wXCoord]
+ cp 7
+ jr z,.route46AboveLane
+ cp 8
+ jr nz,.route46Normal
+.route46AboveLane
+ ld a,[wPlayerDirection]
+ cp PLAYER_DIR_DOWN
+ jr z,.allowed
+.route46Normal
  ld hl,JohtoRoute46BlockedRows
  ld d,20
  ld e,3

@@ -8,7 +8,6 @@ JohtoRoute29TextPointers:
 	dw JohtoRoute29FisherText
 	dw JohtoRoute29EastSignText
 	dw JohtoRoute29WestSignText
-	dw JohtoRoute29GateSignText
 
 JohtoRoute29GuideText:
 	text "This is Route 29."
@@ -33,7 +32,7 @@ JohtoRoute29TeacherText:
 
 JohtoRoute29FisherText:
 	text "The gate ahead"
-	line "is still closed."
+	line "leads to ROUTE 46."
 	done
 	db "@"
 
@@ -51,8 +50,3 @@ JohtoRoute29WestSignText:
 	done
 	db "@"
 
-JohtoRoute29GateSignText:
-	text "ROUTE 46 GATE"
-	para "Closed for now."
-	done
-	db "@"

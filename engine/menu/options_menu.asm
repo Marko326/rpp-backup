@@ -1187,6 +1187,7 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_AZALEA_TOWN ; BlackthornCity
  db MUSIC_GBP_GSC_ROUTE36 ; Route45
  db MUSIC_GBP_GSC_ROUTE36 ; Route46
+ db MUSIC_GBP_GSC_ROUTE29 ; Route29Route46Gate, same original Route29 song family
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

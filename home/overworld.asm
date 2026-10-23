@@ -973,18 +973,20 @@ IsJohtoSouthGatePortal::
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_32
 	jr z, .legacyRuinsGate
+	cp JOHTO_ROUTE_29
+	jr z, .legacyRoute29Door
 	cp REGION_NATIVE_MAP_SLOT
-	jr nz, .notGate
+	jp nz, .notGate
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .notGate
+	jp nz, .notGate
 	ld a, [wCurLocalMapID]
 	; All existing native collision gates occupy 10..20 except Route36
 	; at ID16. Stable ID21 Route37 is not a gate; the Route38 gate plus
 	; its two outdoor mouths occupy ID22..24. Keep this ROM0 selector
 	; SMALLER than the previous 10 individual comparisons.
 	cp JOHTO_ROUTE_36_LOCAL_ID
-	jr z, .notGate
+	jp z, .notGate
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr c, .notGate
 	cp JOHTO_ROUTE_37_LOCAL_ID
@@ -1015,6 +1017,24 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_46_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+	jr z, .yes
+	jr .notGate
+.legacyRoute29Door
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notGate
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	jr nz, .notGate
+	ld a, [wXCoord]
+	cp 27
+	jr nz, .notGate
+	ld a, [wYCoord]
+	cp 1
 	jr z, .yes
 	jr .notGate
 .legacyRuinsGate
@@ -1704,6 +1724,15 @@ CollisionCheckOnLand::
 	callba JohtoRoute32RuinsGateCarpetStepCheck
 	jr c, .noCollision
 .normalTileCollision
+	; GATE-5.62.240A: Route29 is legacy $F4 and skips the native
+	; collision adapter. Gold's (27,1) DOOR must be entered from (27,2)
+	; before the standing-on-Warp STEP_ON executor can run.
+	ld a,[wCurMap]
+	cp JOHTO_ROUTE_29
+	jr nz,.normalTilePassability
+	callba JohtoRoute29GateStepAllowed
+	jr c,.noCollision
+.normalTilePassability
 	call CheckTilePassable
 	jr nc,.noCollision
 .collision

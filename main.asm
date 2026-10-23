@@ -3492,6 +3492,13 @@ INCLUDE "data/mapObjects/JohtoRoute46.asm"
 INCLUDE "scripts/JohtoRoute46.asm"
 JohtoRoute46Blocks: INCBIN "maps/JohtoRoute46.blk"
 
+; GATE-5.62.240: Route29 / Route46 transition, no extra source maps opened.
+SECTION "Johto Route29 Route46 Gate Map", ROMX, BANK[$47]
+INCLUDE "data/mapHeaders/JohtoRoute29Route46Gate.asm"
+INCLUDE "data/mapObjects/JohtoRoute29Route46Gate.asm"
+INCLUDE "scripts/JohtoRoute29Route46Gate.asm"
+JohtoRoute29Route46GateBlocks: INCBIN "maps/JohtoRoute29Route46Gate.blk"
+
 SECTION "Johto Route35 Map", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "data/mapHeaders/JohtoRoute35.asm"
 INCLUDE "data/mapObjects/JohtoRoute35.asm"

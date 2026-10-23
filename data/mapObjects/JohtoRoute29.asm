@@ -3,12 +3,12 @@
 JohtoRoute29Object:
 	db $05 ; original Gold forest border block
 
-	db $00 ; no warps (Route 46 gate is not implemented)
+	db $01 ; Gold Route29 north single solid DOOR (27,1)
+	db 1, 27, 2, REGION_WARP_ESCAPE ; Gate bottom #3 (RPP 0-based #2)
 
-	db $03 ; two original Route 29 signs and one temporary gate notice
+	db $02 ; original Route29 road signs only
 	db $07, $33, $05 ; original eastern Route 29 sign (x=51, y=7)
 	db $05, $03, $06 ; original western Route 29 sign (x=3, y=5)
-	db $03, $1a, $07 ; near unimplemented Route 46 gate
 
 	db $04 ; existing Gen 1 stand-ins at original Gold NPC coordinates
 	object SPRITE_GAMBLER,     $32, $0c, STAY, DOWN,  $01 ; catching-tutorial guide

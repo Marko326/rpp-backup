@@ -298,6 +298,8 @@ ExplicitWarpRegionTargets::
 	db INSIDE_FERRY, 0, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
 	db INSIDE_FERRY, 1, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
 	db JOHTO_ROUTE_32, 0, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
+	; Route29 still uses its legacy $F4 alias, not native $FC as a source.
+	db JOHTO_ROUTE_29, 0, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
 	; Route32 is still legacy $FB. Its two added door carpets MUST use
 	; the explicit legacy-source dispatcher, not NativeRegionWarpTargets.
 	db JOHTO_ROUTE_32, 1, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -419,6 +421,14 @@ ResolveNativeRegionWarp::
 	jp SoftReset
 
 NativeRegionWarpTargets::
+ ; Route46 two south mats enter the gate north, then return lane-by-lane.
+ db JOHTO_ROUTE_46_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+ db JOHTO_ROUTE_46_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+ db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
+ db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
+ ; Gold indoor south two lanes both target the ONE Route29 outside DOOR.
+ db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 2, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
+ db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 3, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
 	; Mahogany's actual fifth Gold warp and the four Gold north gate exits.
 	; Middle Route43Gate: original Gold bottom single DOOR and top paired carpets.
 	db JOHTO_ROUTE_43_LOCAL_ID, 2, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID
@@ -572,6 +582,12 @@ SelectNativeMapConnection::
 ResolveNativeConnectionPreviewBank::
  ld c,e
  ld a,[wCurMap]
+ ; GATE-5.62.240A: legacy Route29 ($F4) north strip comes from the
+ ; registered Route46 block array in ROMX bank $47, NOT Route29's $40.
+ ; Native-only dispatch previously returned $ff, so LoadTileBlockMap
+ ; read a valid pointer from the wrong physical ROM bank into its border.
+ cp JOHTO_ROUTE_29
+ jp z,.legacyRoute29North
  cp REGION_NATIVE_MAP_SLOT
  jr nz,.invalid
  ld a,[wCurRegion]
@@ -609,6 +625,18 @@ ResolveNativeConnectionPreviewBank::
  inc hl
  inc hl
  jr .loop
+.legacyRoute29North
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.invalid
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_29_LOCAL_ID
+ jr nz,.invalid
+ ld a,c
+ and a ; north connection is edge 0; never bank-switch other edges
+ jr nz,.invalid
+ ld e,BANK(JohtoRoute46Blocks)
+ ret
 .invalid
  ld e,$ff
  ret
@@ -758,6 +786,11 @@ GetJohtoWarpArrivalStep::
 	inc hl
 	jr .loop
 .profiles
+ ; Route29/46 gate top Gold DOOR: move DOWN; bottom/outside carpet: NONE.
+ db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 0, 4, REGION_NATIVE_MAP_SLOT, D_DOWN
+ db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 0, 5, REGION_NATIVE_MAP_SLOT, D_DOWN
+ ; Legacy Route29 destination is solid DOOR; its one landing needs D_DOWN.
+ db JOHTO_ROUTE_29, JOHTO_ROUTE_29_LOCAL_ID, 1, 27, REGION_NATIVE_MAP_SLOT, D_DOWN
  ; Gate and road arrivals: resolved by destination + Gold landing cell.
  ; Middle gate north side gets DOWN on arrival; southern Gold solid DOOR
  ; returns to Route43 (17,35) and steps SOUTH off the roof entrance.
