@@ -996,8 +996,10 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ROUTE_39_LOCAL_ID
 	jr c, .yes
 	; East gate/Route42 are sparse stable IDs 62/63, not active slots.
+	; HOUSE DEV: IDs 26/34 use the same map-Warp selector, but cannot
+	; add 8 bytes here: earlier short jumps are close to the JR limit.
 	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
-	jr c, .notGate
+	jr c, .maybeHouse
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jr c, .yes
 	; .235D: Gold's single-tile Mahogany DOOR steps onto (9,1) then
@@ -1060,6 +1062,14 @@ IsJohtoSouthGatePortal::
 .yes
 	scf
 	ret
+.maybeHouse
+	; Jumped to only after a registered Warp cell was matched.  Put
+	; the sparse indoor cases after the returns to protect ROM0 JR ranges.
+	cp JOHTO_OLIVINE_CITY_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+	jr z, .yes
+	jr .notGate
 
 MapEntryAfterBattle::
 	callba IsPlayerStandingOnWarp ; for enabling warp testing after collisions

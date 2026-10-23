@@ -150,6 +150,9 @@ SPRITE_LEAF EQU SPRITE_GAMEBOY_KID_COPY ; unused duplicate slot for linked Green
 	const SPRITE_FOSSIL                    ; $60
 	const SPRITE_TOWN_MAP                  ; $61
 	const SPRITE_BENCH_GUY                 ; $62
+	; HOUSE-5.62.240 DEV: after old sprite IDs; original Gold Olivine house sprites
+	const SPRITE_JOHTO_POKEFAN_M           ; $64 (actual const_value, not stale prior comment)
+	const SPRITE_JOHTO_LASS                ; $65
 	
 	
 ; Variable Sprite IDs Here

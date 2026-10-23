@@ -74,6 +74,7 @@ JohtoRoofGroupForLocalMap:
  db 10 ; 2b Route45, Gold group5
  db 10 ; 2c Route46, Gold group5
  db $ff ; 2d Route29Route46Gate interior: no roof group
+ db $ff ; 2e OlivinePunishmentSpeechHouse indoor: no roof group
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

@@ -64,6 +64,21 @@ _MyReflectionText::
 	line "Lookin' good!"
 	done
 
+; Indoor House1 collision interactions (generic, not story events).
+; Gold's radio uses MapRadio specials; the static message is an interim
+; non-story response until a real broadcast system is ported.
+_JohtoIndoorTVText::
+	text "It's a TV."
+	done
+
+_JohtoIndoorRadioText::
+	text "It's the #MON"
+	line "RADIO!"
+	done
+
+_JohtoIndoorTownMapPrompt::
+	text "It's the TOWN MAP.@@"
+
 _BoulderText::
 	text "This requires"
 	line "Strength to move!"

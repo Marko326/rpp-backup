@@ -100,6 +100,12 @@ LoadMapSpriteTilePatterns:
 	jr c, .notVarSprite
 	call GetVarSpriteIDs
 .notVarSprite
+	; The Gold Olivine house sprites were appended after legacy 4-tile IDs
+	; to protect every existing sprite number. They are 12-tile NPCs.
+	cp a, SPRITE_JOHTO_POKEFAN_M
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_LASS
+	jr z, .notFourTileSprite
 	cp a,SPRITE_BALL ; is it a 4-tile sprite?
 	jr c,.notFourTileSprite
 	pop af
@@ -273,6 +279,8 @@ InitOutsideMapSprites:
 	jr z, .johtoSprites
 	cp JOHTO_PARK ; outdoor park also reuses the dedicated Johto sprite sheet
 	jr z, .johtoSprites
+	cp JOHTO_HOUSE ; Gold NPCs use their own stable sprite set
+	jr z, .johtoHouseSprites
 	ld a,[wCurMap]
 	cp a,REDS_HOUSE_1F ; original Kanto outdoor map-ID range
 	ret nc ; if not, return
@@ -285,7 +293,10 @@ InitOutsideMapSprites:
 	ld a,[hl] ; a = spriteSetID
 	jr .spriteSetReady
 .johtoSprites
-	ld a, $0b ; dedicated shared Johto sprite set, appended to SpriteSets
+	ld a, $0b ; dedicated shared Johto outdoor sprite set
+	jr .spriteSetReady
+.johtoHouseSprites
+	ld a, $0c ; preserves Gold Olivine NPC art without changing outdoor maps
 .spriteSetReady
 	cp a,$f0 ; does the map have 2 sprite sets?
 	call nc,GetSplitMapSpriteSetID ; if so, choose the appropriate one

@@ -1252,6 +1252,8 @@ JohtoNativeTownMapEntries::
 	dw JohtoBrowseRoute46Name
 	db 116, 136 ; Route29Route46Gate reuses authentic Route29 landmark #1
 	dw JohtoRoute29TownMapName
+ db 76, 44
+ dw JohtoOlivineName ; Olivine house, landmark #26
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

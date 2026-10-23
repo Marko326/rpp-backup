@@ -161,6 +161,14 @@ INCLUDE "engine/gym_leader_rewards.asm"
 SECTION "GB Player", ROMX
 INCLUDE "engine/menu/gb_player.asm"
 
+; Movable helper: do not grow the already tight fixed Bank $03 or ROM0.
+SECTION "Johto Indoor Furniture", ROMX
+INCLUDE "engine/overworld/johto_indoor_furniture.asm"
+
+SECTION "Johto Olivine House NPC Sprites", ROMX
+JohtoPokefanMSprite: INCBIN "gfx/sprites/johto_pokefan_m.2bpp"
+JohtoLassSprite:    INCBIN "gfx/sprites/johto_lass.2bpp"
+
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
 RocketFSprite:         INCBIN "gfx/sprites/rocketf.2bpp"
@@ -3491,6 +3499,17 @@ INCLUDE "data/mapHeaders/JohtoRoute46.asm"
 INCLUDE "data/mapObjects/JohtoRoute46.asm"
 INCLUDE "scripts/JohtoRoute46.asm"
 JohtoRoute46Blocks: INCBIN "maps/JohtoRoute46.blk"
+
+; HOUSE-5.62.240 DEV: dedicated Olivine home art. No shared Kanto HOUSE mutation.
+SECTION "Johto Gold House Tileset", ROMX, BANK[$47]
+JohtoHouse_GFX: INCBIN "gfx/tilesets/johto_house.2bpp"
+JohtoHouse_Block: INCBIN "gfx/blocksets/johto_house.bst"
+
+SECTION "Johto Olivine Punishment Speech House Map", ROMX, BANK[$47]
+INCLUDE "data/mapHeaders/JohtoOlivinePunishmentSpeechHouse.asm"
+INCLUDE "data/mapObjects/JohtoOlivinePunishmentSpeechHouse.asm"
+INCLUDE "scripts/JohtoOlivinePunishmentSpeechHouse.asm"
+JohtoOlivinePunishmentSpeechHouseBlocks: INCBIN "maps/JohtoOlivinePunishmentSpeechHouse.blk"
 
 ; GATE-5.62.240: Route29 / Route46 transition, no extra source maps opened.
 SECTION "Johto Route29 Route46 Gate Map", ROMX, BANK[$47]

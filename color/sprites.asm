@@ -775,6 +775,12 @@ SpritePaletteAssignments: ; Characters on the overworld
 	; 0x62: SPRITE_BENCH_GUY
 	db PAL_OW_BROWN
 
+	; 0x64: SPRITE_JOHTO_POKEFAN_M (Gold PAL_OW_BROWN)
+	db PAL_OW_BROWN
+
+	; 0x65: SPRITE_JOHTO_LASS (Gold PAL_OW_RED)
+	db PAL_OW_RED
+
 
 AnimationTileset1Palettes:
 	INCBIN "color/data/animtileset1palettes.bin"

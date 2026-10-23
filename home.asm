@@ -4177,6 +4177,10 @@ const_value = 1
 	; WTR-5.53.00: Wonder Trade was removed. Keep slot $43 reserved so later
 	; HOME entry offsets remain unchanged.
 UnusedPredefText43_id:: dw UnusedPredefText           ; 43 XXX unused/reserved
+	; INDOOR-5.62.240 DEV: append after reserved $43, preserve existing IDs.
+	add_tx_pre JohtoIndoorTownMapText               ; 44
+	add_tx_pre JohtoIndoorTVText                    ; 45
+	add_tx_pre JohtoIndoorRadioText                 ; 46
 	
 SetCustomName:
 ; INPUTS: hl = pointer to name

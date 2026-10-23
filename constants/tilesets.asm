@@ -36,3 +36,4 @@ const_value = 0
 	const JOHTO_PARK ; Gold natural park, separate outdoor 96-slot art
 	const JOHTO_PARK_GATE ; Gold gate variant, not the legacy compact JOHTO_GATE
 	const JOHTO_RUINS_GATE ; Gold EastWestGate original full-ID blockset
+	const JOHTO_HOUSE ; Gold ordinary house, independent from Kanto HOUSE

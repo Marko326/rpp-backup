@@ -207,6 +207,20 @@ SpriteSets:
 	db SPRITE_BALL
 	db SPRITE_BERRY_TREE
 
+; sprite set $0c: Gold Olivine house, not the outdoor Johto $0b sheet.
+; Preserve 11 fixed VRAM slots: 9 walking sprites + 2 four-tile objects.
+	db SPRITE_SAILOR
+	db SPRITE_GAMBLER
+	db SPRITE_BUG_CATCHER
+	db SPRITE_JOHTO_LASS
+	db SPRITE_JOHTO_POKEFAN_M
+	db SPRITE_FISHER2
+	db SPRITE_GIRL
+	db SPRITE_HIKER
+	db SPRITE_BLACK_HAIR_BOY_1
+	db SPRITE_BALL
+	db SPRITE_BERRY_TREE
+
 SpriteSheetPointerTable:
 	; SPRITE_RED
 	dw RedSprite
@@ -714,3 +728,13 @@ SpriteSheetPointerTable:
 	dw BenchGuySprite
 	db $40 ; byte count
 	db BANK(BenchGuySprite)
+
+	; SPRITE_JOHTO_POKEFAN_M - Gold 12-tile walking sprite
+	dw JohtoPokefanMSprite
+	db $c0
+	db BANK(JohtoPokefanMSprite)
+
+	; SPRITE_JOHTO_LASS - Gold 12-tile walking sprite
+	dw JohtoLassSprite
+	db $c0
+	db BANK(JohtoLassSprite)

@@ -421,6 +421,11 @@ ResolveNativeRegionWarp::
 	jp SoftReset
 
 NativeRegionWarpTargets::
+ ; HOUSE DEV: city Gold Warp #5 is RPP sole outdoor warp 0, entering
+ ; house warp 0. Two Gold house exits both return to that SAME outdoor #0.
+ db JOHTO_OLIVINE_CITY_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+ db JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
+ db JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID, 1, 0, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
  ; Route46 two south mats enter the gate north, then return lane-by-lane.
  db JOHTO_ROUTE_46_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
  db JOHTO_ROUTE_46_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
@@ -786,6 +791,10 @@ GetJohtoWarpArrivalStep::
 	inc hl
 	jr .loop
 .profiles
+ ; Olivine exterior solid DOOR landing (29,11) must step DOWN off roof.
+ db REGION_NATIVE_MAP_SLOT, JOHTO_OLIVINE_CITY_LOCAL_ID, 11, 29, REGION_NATIVE_MAP_SLOT, D_DOWN
+ ; Gold house landing on (2,7) remains on its WARP_CARPET_DOWN tile.
+ ; No automatic UP: all accepted native arrival profiles are DOWN-only.
  ; Route29/46 gate top Gold DOOR: move DOWN; bottom/outside carpet: NONE.
  db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 0, 4, REGION_NATIVE_MAP_SLOT, D_DOWN
  db REGION_NATIVE_MAP_SLOT, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 0, 5, REGION_NATIVE_MAP_SLOT, D_DOWN

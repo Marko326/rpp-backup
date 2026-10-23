@@ -38,3 +38,6 @@ Tilesets:
 	tileset JohtoPark_Block, JohtoPark_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR ; Gold Park TALL_GRASS uses graphic $04
 	tileset JohtoParkGate_Block, JohtoParkGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, 0
 	tileset JohtoRuinsGate_Block, JohtoRuinsGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, 0
+	; Olivine house: player still uses exact Gold-cell position mask; the
+	; isolated .tilecoll additionally allows NPCs onto floor/carpet tiles.
+	tileset JohtoHouse_Block, JohtoHouse_GFX, JohtoHouse_Coll, $FF,$FF,$FF, $FF, INDOOR

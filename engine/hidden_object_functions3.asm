@@ -1,5 +1,20 @@
 ; prints text for bookshelves in buildings without sign events
 PrintBookshelfText:
+	; INDOOR-5.62.240 DEV: query the exact Gold front cell only in the
+	; registered Johto house. The far lookup returns its predef text ID
+	; through $ffdb (Bankswitch does not preserve A). No global HOUSE IDs.
+	callba JohtoIndoorFurniturePredef
+	ld a, [$ffdb]
+	and a
+	jr z, .oldBookshelfPath
+	push af
+	call EnableAutoTextBoxDrawing
+	pop af
+	call PrintPredefTextID
+	xor a
+	ld [$ffdb], a ; A press handled; no sprite/sign check afterward
+	ret
+.oldBookshelfPath
 	ld a, [wCurMapTileset]
 	ld b, a
 	ld a, [wSpriteStateData1 + 9] ; player's sprite facing direction	
@@ -158,6 +173,7 @@ TownMapText:
 	TX_FAR _TownMapText
 	TX_BLINK
 	TX_ASM
+TownMapOpenScript: ; shared by Kanto's old map and this Johto furniture prompt
 	ld a, $1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ld hl, wd730
@@ -185,3 +201,20 @@ PokemonStuffText:
 MyReflectionText:
 	TX_FAR _MyReflectionText
 	db "@"
+
+; Gold collision_stdscript equivalents for ordinary House1 furniture.
+; These do not add any house-specific story flags or change BG bookshelf events.
+JohtoIndoorTVText:
+	TX_FAR _JohtoIndoorTVText
+	db "@"
+
+JohtoIndoorRadioText:
+	TX_FAR _JohtoIndoorRadioText
+	db "@"
+
+JohtoIndoorTownMapText:
+	TX_FAR _JohtoIndoorTownMapPrompt
+	TX_BLINK
+	TX_ASM
+	jp TownMapOpenScript
+

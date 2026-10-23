@@ -769,6 +769,25 @@ JohtoRoute39CanStepAhead::
 JohtoRoute39BlockedRows::
  INCBIN "maps/JohtoRoute39.blocked_mask.bin"
 
+; HOUSE-5.62.240 DEV: Gold 8x8 quadrant mask for the one-room interior.
+; Reuse existing position-only collision ABI: no Kanto HOUSE passlist changes.
+JohtoOlivinePunishmentSpeechHouseCanStepAhead::
+ ld a, [wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz, .blocked
+ ld a, [wCurLocalMapID]
+ cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+ jr nz, .blocked
+ ld hl, JohtoOlivinePunishmentSpeechHouseBlockedRows
+ ld d, JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_WIDTH * 2
+ ld e, 1 ; 8 Gold 16x16 cells per row = 1 packed byte
+ jp JohtoModernMaskedStep
+.blocked
+ scf
+ ret
+JohtoOlivinePunishmentSpeechHouseBlockedRows::
+ INCBIN "maps/JohtoOlivinePunishmentSpeechHouse.blocked_mask.bin"
+
 JohtoOlivineCityEdgeFence::
  ld a, [wPlayerDirection]
  cp PLAYER_DIR_UP
@@ -823,6 +842,18 @@ JohtoOlivineCityCanStepAhead::
  ld a,[wCurLocalMapID]
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
  jr nz,.block
+ ; HOUSE-5.62.240 DEV: only UP from below onto Gold's DOOR (29,11).
+ ; A registered Warp on its own does not bypass the blocked cell mask.
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz, .westConnection
+ ld a, [wXCoord]
+ cp 29
+ jr nz, .westConnection
+ ld a, [wYCoord]
+ cp 12
+ jp z, .clear
+.westConnection
  ; West connection: land y20 and y22..25 in both Gold maps.
  ; Do not open WATER y26..31 to walking; Surf owns those lanes.
  ld a, [wPlayerDirection]
@@ -2260,11 +2291,13 @@ JohtoNorthGateStepWarpAllowed::
 	jr z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jr z, .cityNorthDoor
+	cp JOHTO_OLIVINE_CITY_LOCAL_ID
+	jr z, .olivineHouseDoor
 	; .235D: Gold's one-cell Mahogany DOOR behaves like Goldenrod's
 	; north-facing solid door: stepping onto the Warp enters immediately.
 	; Route43's paired WARP_CARPET_DOWN stays collision-only.
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-	jr z, .mahoganyNorthDoor
+	jp z, .mahoganyNorthDoor ; sparse house check lengthened this route past JR +127
 	cp JOHTO_ROUTE_29_LOCAL_ID
 	jr z, .route29NorthDoor
 	cp JOHTO_ROUTE_43_LOCAL_ID
@@ -2293,6 +2326,14 @@ JohtoNorthGateStepWarpAllowed::
 	and a
 	jr z, .up
 	jp .deny
+.olivineHouseDoor
+ ld a, [wXCoord]
+ cp 29
+ jp nz, .deny
+ ld a, [wYCoord]
+ cp 11
+ jr z, .up
+ jp .deny
 .cityNorthDoor
 	ld a, [wXCoord]
 	cp 19
@@ -2350,6 +2391,8 @@ JohtoNorthGateStepWarpAllowed::
 ; with preserved region-local identity. carry = correct approach.
 JohtoGateCollisionDirectionAllowed::
 	ld a, [wCurLocalMapID]
+	cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+	jp z, .houseExitDown
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jp z, .left
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
@@ -2577,6 +2620,17 @@ JohtoGateCollisionDirectionAllowed::
 	cp 10
 	jp z, .down
 	jp .denied
+.houseExitDown
+ ld a, [wYCoord]
+ cp 7
+ jp nz, .denied
+ ld a, [wXCoord]
+ cp 2
+ jp z, .down
+ cp 3
+ jp z, .down
+ jp .denied
+
 .route34Carpet
 	ld a, [wYCoord]
 	cp 37
@@ -4066,6 +4120,8 @@ JohtoRoute32RuinsOfAlphGateBlockedRows::
 
 JohtoNativeCanStepAhead::
  ld a, [wCurLocalMapID]
+ cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+ jp z, .olivineHouse
  cp JOHTO_ROUTE_44_LOCAL_ID
  jp z,.east
  cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
@@ -4157,6 +4213,9 @@ JohtoNativeCanStepAhead::
  jp .handled
 .olivine
  call JohtoOlivineCityCanStepAhead
+ jp .handled
+.olivineHouse
+ call JohtoOlivinePunishmentSpeechHouseCanStepAhead
  jp .handled
 .route38Gate
 	call JohtoRoute38EcruteakGateCanStepAhead

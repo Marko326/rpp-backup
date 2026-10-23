@@ -360,3 +360,13 @@ MapPaletteSets:
 	db JOHTO_GATE_GOLD_BROWN
 	db INDOOR_LIGHT_BLUE
 	db CRYS_TEXTBOX
+
+	; JOHTO_HOUSE: separate Gold house palette family, never overwrite Kanto HOUSE.
+	db INDOOR_GRAY
+	db INDOOR_RED
+	db INDOOR_GREEN
+	db INDOOR_BLUE
+	db INDOOR_YELLOW
+	db INDOOR_BROWN
+	db INDOOR_LIGHT_BLUE
+	db CRYS_TEXTBOX
