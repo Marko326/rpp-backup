@@ -9,7 +9,7 @@ import argparse
 from pathlib import Path
 import re
 from johto_indoor_common import ConversionError, dump, safe_roots
-from johto_indoor_tiles_converter import build_mapping
+from johto_indoor_tiles_converter import build_mapping, resolve_rpp_tileset_atlas
 from johto_gold_sources import gold_block_sources
 from johto_rpp_asset_audit import blocks_for, gold_resource_aliases, load_png_tiles
 
@@ -33,9 +33,7 @@ def inspect(rpp: Path, gold: Path, artwork: dict) -> dict:
     atlas = load_png_tiles(png)
     if atlas is None or any(t >= len(atlas) for t in used_tile_ids):
         raise ConversionError('Gold 图集缺失或 tile ID 超出图集')
-    rpp_png = rpp/'gfx/tilesets'/f'{rpp_set}.png'
-    if not rpp_png.is_file():
-        rpp_png = rpp/'gfx/tilesets'/f'{rpp_set}.t1.png'
+    rpp_png = resolve_rpp_tileset_atlas(rpp, rpp_set)
     rpp_atlas = load_png_tiles(rpp_png)
     if rpp_atlas is None:
         raise ConversionError('RPP 当前 tileset 找不到 PNG 图集')

@@ -71,6 +71,10 @@ def audit(root: Path, gold: Path) -> list[str]:
                 expected = ('ALLOWED' if (name == 'surf' and local_id in (7, 8, 17, 20, 22, 26, 27, 28, 29, 63, 67, 68, 69, 71, 72))
                             or (name in ('dig', 'escape_rope') and local_id == 8)
                             else 'DEFERRED')
+                # The finished Olivine house explicitly forbids Surf; a
+                # FORBIDDEN permission is stricter than historic DEFERRED.
+                if name == 'surf' and local_id == 34:
+                    expected = 'FORBIDDEN'
                 if features.get(name) != expected:
                     errors.append(f'Johto local {entry.get("local_id")}: {name} must be {expected}; no other runtime permission reviewed')
 

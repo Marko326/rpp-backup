@@ -2,8 +2,8 @@
 
 The existing converter remains the source of map binaries.  This audits that
 those exact resources also have a real, bidirectional runtime registration;
-Gold warp doors stay sealed and the water bitmap is not enlarged by hand.
-New consecutive batches can add a data-driven spec, not relax this contract.
+unbuilt Gold indoor entrances remain sealed, apart from the one audited
+Olivine house at (29, 11). Water bitmaps may not be enlarged by hand.
 """
 import json
 from pathlib import Path
@@ -68,8 +68,10 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
             if len(blocked)!=height*2*stride:
                 errors.append(f'{name} impossible Gold mask dimensions')
                 continue
-            # No warp data points at an unimplemented room.  The original
-            # Gold Warp tile is solid in RPP until that room really exists.
+            # The original Gold door positions keep their collision mask;
+            # the sole completed Olivine house uses a narrowly scoped
+            # executable step exemption and one real Warp registration.
+            # Other Gold interior entrances must remain unopened.
             events=(gold/'maps'/f'{name}.asm').read_text()
             gold_warps=[tuple(map(int,z)) for z in re.findall(
                     r'(?m)^\s*warp_event\s+(\d+)\s*,\s*(\d+)\s*,',events)]
@@ -78,8 +80,15 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
             for x,y in gold_warps:
                 if not (0<=x<width*2 and 0<=y<height*2) or not blocked[y*stride+x//8] & (1<<(x%8)):
                     errors.append(f'{name} unbuilt Gold warp entrance opened at ({x},{y})')
-            obj=objects[name].splitlines()
-            if not re.search(r'(?m)^\s*db \$00\s*; no (?:dummy Warp|active Warp)',objects[name]):
+            if name == 'OlivineCity':
+                obj = objects[name]
+                # Gold outside Warp #5 alone is built.  Check exact count,
+                # destination slot and location; any extra Warp fails closed.
+                active = re.search(r'(?m)^\s*db \$01\s*; one audited home entrance', obj)
+                destination = re.findall(r'(?m)^\s*db\s+11,\s*29,\s*0,\s*REGION_WARP_ESCAPE\s*;', obj)
+                if not active or len(destination) != 1:
+                    errors.append('OlivineCity must retain one real Warp at Gold (29,11) only')
+            elif not re.search(r'(?m)^\s*db \$00\s*; no (?:dummy Warp|active Warp)',objects[name]):
                 errors.append(f'{name} unbuilt indoor warp has active dummy registration')
             if expected_water is not None:
                 cells=decode_cells((gold/'maps'/f'{name}.blk').read_bytes(),

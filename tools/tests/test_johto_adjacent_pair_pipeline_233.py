@@ -149,7 +149,27 @@ class AdjacentPairPipeline233(unittest.TestCase):
     def test_gold_indoor_warps_remain_sealed_in_generated_masks(self):
         from johto_adjacent_pair_runtime_audit import audit
         self.assertEqual(audit(ROOT,GOLD),[])
-        self.assertIn('db $00 ; no active Warp', (ROOT/'data/mapObjects/JohtoOlivineCity.asm').read_text())
+        city = (ROOT/'data/mapObjects/JohtoOlivineCity.asm').read_text()
+        self.assertIn('db $01 ; one audited home entrance', city)
+        self.assertIn('db 11, 29, 0, REGION_WARP_ESCAPE', city)
+
+    def test_unbuilt_olivine_warp_cannot_be_activated(self):
+        from johto_adjacent_pair_runtime_audit import audit
+        key='data/mapObjects/JohtoOlivineCity.asm'
+        city=(ROOT/key).read_text()
+        anchor='db $01 ; one audited home entrance'
+        self.assertEqual(city.count(anchor),1)
+        mutated=city.replace(anchor,'db $02 ; two accidentally opened entrances',1)
+        self.assertTrue(any('one real Warp' in x for x in audit(ROOT,GOLD,{key:mutated})))
+
+    def test_olivine_house_door_warp_cannot_be_retargeted(self):
+        from johto_adjacent_pair_runtime_audit import audit
+        key='data/mapObjects/JohtoOlivineCity.asm'
+        city=(ROOT/key).read_text()
+        anchor='db 11, 29, 0, REGION_WARP_ESCAPE'
+        self.assertEqual(city.count(anchor),1)
+        mutated=city.replace(anchor,'db 11, 30, 0, REGION_WARP_ESCAPE',1)
+        self.assertTrue(any('one real Warp' in x for x in audit(ROOT,GOLD,{key:mutated})))
 
     def test_legacy_single_map_staging_remains_available(self):
         with TemporaryDirectory() as temp:

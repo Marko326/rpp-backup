@@ -56,7 +56,11 @@ def verify(rpp:Path,gold:Path):
         # Keep all 32 original slots intact; P17 adds one appended forest set.
         ilex_base=('CAVE_GRAY','CAVE_RED','CAVE_GREEN','CAVE_BLUE',
                    'CAVE_YELLOW','CAVE_BROWN','CAVE_LIGHT_BLUE','CRYS_TEXTBOX')
-        if len(slots)!=36 or slots[32]!=ilex_base or slots[33]!=('OUTDOOR_GRAY','OUTDOOR_RED','OUTDOOR_GREEN','OUTDOOR_BLUE','OUTDOOR_YELLOW','OUTDOOR_BROWN','OUTDOOR_ROOF','CRYS_TEXTBOX') or slots[34]!=GATE_BASE or slots[35]!=GATE_BASE:
+        # The first 36 historical sets stay byte-for-byte conceptually intact;
+        # the new Johto house is appended in its own slot (36).
+        house_base=('INDOOR_GRAY','INDOOR_RED','INDOOR_GREEN','INDOOR_BLUE',
+                    'INDOOR_YELLOW','INDOOR_BROWN','INDOOR_LIGHT_BLUE','CRYS_TEXTBOX')
+        if len(slots)!=37 or slots[32]!=ilex_base or slots[33]!=('OUTDOOR_GRAY','OUTDOOR_RED','OUTDOOR_GREEN','OUTDOOR_BLUE','OUTDOOR_YELLOW','OUTDOOR_BROWN','OUTDOOR_ROOF','CRYS_TEXTBOX') or slots[34]!=GATE_BASE or slots[35]!=GATE_BASE or slots[36]!=house_base:
             errors.append('tileset palette sets changed or new park family mismatched Gold')
         if len(slots)>29 and slots[29]!=GATE_BASE:errors.append('JOHTO_GATE must use isolated Gold palettes')
         if len(slots)>12 and slots[12]!=KANTO_GATE:errors.append('Kanto GATE palette set was changed')

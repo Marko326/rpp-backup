@@ -64,6 +64,8 @@ test_johto_gate159_gold_art test_johto_gate_audit
 test_johto_indoor_border_adapter test_johto_indoor_manifest
 test_johto_indoor_stage3 test_johto_indoor_stage4
 test_johto_indoor_stage5 test_johto_indoor_stage6
+test_johto_olivine_house_240dev test_johto_olivine_house_npc_floor_240dev
+test_johto_olivine_house_sprite_parity_240dev test_johto_house_furniture_240dev
 test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
 test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170 test_johto_fixed_id_freeze225
@@ -90,6 +92,12 @@ test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_unbuilt_olivine_warp_cannot_be_activated
+test_johto_adjacent_pair_pipeline_233.AdjacentPairPipeline233.test_olivine_house_door_warp_cannot_be_retargeted
+test_johto_olivine_house_240dev.OlivineHouse240DEV.test_city_outdoor_warp_must_not_move
+test_johto_olivine_house_240dev.OlivineHouse240DEV.test_house_reverse_warp_and_sibling_exit_protected
+test_johto_house_furniture_240dev.TestGoldHouseFurniture.test_reject_room_guard_removed
+test_johto_house_furniture_240dev.TestGoldHouseFurniture.test_reject_attempt_to_unblock_right_bookshelf
 test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_real_legacy_step_into_gold_door
 test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_legacy_preview_reads_actual_route46_bank
 test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_wrong_runtime_steps_are_rejected
@@ -431,14 +439,18 @@ def audit_new_native_map_signs(root: Path, gold: Path) -> list[str]:
             m = re.match(r'\s*db\s+(\d+),\s*(\d+),\s*(\d+)\b', line)
             if m:
                 found.append(tuple(map(int, m.groups())))
-        gold_coords = [(y,x,i+1) for i,(x,y) in enumerate(coords)]
+        # This Gold room has two NPC text entries before its two bookshelf
+        # text entries.  RPP TextPredef IDs 3/4 are correct; do not force 1/2.
+        prefix = 2 if mapname == 'OlivinePunishmentSpeechHouse' else 0
+        gold_coords = [(y,x,prefix+i+1) for i,(x,y) in enumerate(coords)]
         if sign_count != len(coords) or found != gold_coords:
             errors.append(f'{mapname}: Gold BGEVENT_READ signs differ: '
                           f'{len(coords)} expected at {gold_coords}, got {found}')
         pointer_block = re.search(rf'Johto{re.escape(mapname)}TextPointers:\s*([\s\S]*?)(?:\n\S|\Z)', asm)
         pointers = re.findall(r'(?m)^\s*dw\s+([A-Za-z_0-9]+)',
                               pointer_block[1] if pointer_block else '')
-        if len(pointers) != len(coords) or any(p + ':' not in asm for p in pointers):
+        if (len(pointers) != prefix+len(coords)
+                or any(p + ':' not in asm for p in pointers[prefix:])):
             errors.append(f'{mapname}: Gold sign text pointers missing/incomplete')
     return errors
 

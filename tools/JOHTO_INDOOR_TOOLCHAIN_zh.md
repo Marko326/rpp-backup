@@ -138,3 +138,30 @@ python -B tools/johto_indoor_release_audit.py \
 - 工具只往隔离目录输出 3 个源文件和包含外围的预览/报告；不会直接修改 RPP、不会生成被 `.gitignore` 排除的 `.2bpp`，也不会声称游戏内已经验收。
 - 用法：`python tools/johto_indoor_border_adapter.py --rpp /path/to/rpp159 --output /path/to/new_empty_output`
 - 未来扩展到其他房间必须传对应 `--room`、`--tileset`、`--collision`、`--map-width`；不可假设所有房间的 border ID、白名单相同。
+
+
+## SPID-5.62.240 DEV：普通民宅「未注册预备」路径
+
+这是**已有离线转换工具链的扩展**，不是新增的可玩房屋。此前的 `--prestage-unregistered` 主要为 Route34 北门房编写，报告硬编码「Route34 未连接」，且图集选择只支持 `<tileset>.png` / `.t1.png`；浅葱市原版普通民宅需读取 RPP `house.t2.png`。本轮修改：
+
+- 根据唯一实际存在的 `.png` / `.t1.png` / `.t2.png` 定位 RPP 对照图集，拒绝不存在或多份互相冲突的图集；仍只做逐像素匹配，不自动导入。
+- 可指定 `--gold-outside-map`，交叉核验 Gold 城外入口、房内双出口和 **Gold 从 1 开始的 Warp 目标索引**；未指定则明确标记 `GOLD_OUTDOOR_RETURN_NOT_REVIEWED`，不猜位置。
+- 可指定 `--rpp-outside-map`，记录现有室外对象表和是否仍未开放；不为不存在的室内伪造 Warp。
+- 额外输出 `02_gold_outdoor_pairs.json` 与 `12_gold_interactions.json`，列出原版 NPC 与书架等脚本坐标；报告 `import_allowed=false`、`runtime_warp_enabled=false`；所有图像暂存于输出目录，不能覆盖 RPP 老 tileset。
+
+首间样板预备命令（两套源码外，**全新空目录**）：
+
+```sh
+python -B tools/johto_indoor_pipeline.py \
+  --rpp /path/to/rpp --gold /path/to/pokegold-master \
+  --output /path/to/new-empty-olivine-house-review \
+  --prestage-unregistered \
+  --gold-room OlivinePunishmentSpeechHouse \
+  --rpp-room JohtoOlivinePunishmentSpeechHouse \
+  --gold-tileset house --rpp-tileset house \
+  --gold-outside-map OlivineCity --rpp-outside-map JohtoOlivineCity
+```
+
+Gold 原版：城市 `(29,11)` Warp #5 入屋；房内 `(2,7)/(3,7)` 都回城第 #5 条。原版两名 NPC 与两处书架在 `maps/OlivinePunishmentSpeechHouse.asm`。`.240` 的 RPP `JohtoOlivineCityObject` 仍然登记 **0 条室外 Warp**。若图形无法像素精确复用，隔离候选只证明源资源可生成；阶段 B 必须另行审核新 tileset、门口碰撞、调色、ROM Bank 和 NPC 真正交互，再谈开门。
+
+具体实施顺序见 `docs/JOHTO_INDOOR_HOUSE_PLAN_240_DEV.md`。

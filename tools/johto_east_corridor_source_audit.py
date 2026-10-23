@@ -32,8 +32,8 @@ def audit(project, gold, *, contract=None, runtime_tileset=None,
     rows = []
     if spec.get('schema') != 'johto-east-corridor-source-v1':
         issues.append('manifest_schema')
-    if (project / 'data/game_version.asm').read_text().count('SPID-5.62.240@') != 1:
-        issues.append('formal_version_not_240')
+    if (project / 'data/game_version.asm').read_text().count('OLIV-5.62.241@') != 1:
+        issues.append('formal_version_not_241')
     ids = (project / 'constants/johto_fixed_map_ids.asm').read_text()
     header = (project / 'data/johto_map_headers.asm').read_text()
     rpp_tiles = runtime_tileset
@@ -141,7 +141,7 @@ def audit(project, gold, *, contract=None, runtime_tileset=None,
             issues.append(name + ':' + target + ':missing_reciprocal_manifest')
     if not spec.get('purpose') == 'OFFLINE_ONLY_NOT_RUNTIME_APPROVED':
         issues.append('unsafe_runtime_approval')
-    return {'status': 'PASS' if not issues else 'FAIL', 'version': 'SPID-5.62.240',
+    return {'status': 'PASS' if not issues else 'FAIL', 'version': 'OLIV-5.62.241',
             'scope': 'OFFLINE_SOURCE_ONLY', 'gameplay_ready': False,
             'maps_checked': len(rows), 'directed_seams_checked': len(seams),
             'errors': issues, 'maps': rows}

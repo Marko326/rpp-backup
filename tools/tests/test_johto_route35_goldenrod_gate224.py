@@ -56,7 +56,7 @@ class GoldenrodNorthGate224(unittest.TestCase):
         # equivalent JR spelling instead of coupling behavior to one opcode.
         self.assertEqual([],gate_carpet_trigger_errors(ROOT))
         start=raw.index('\n.route35South\n')
-        end=raw.index('\n.route34Carpet\n',start)
+        end=raw.index('\n.houseExitDown\n',start)
         route35=raw[start:end]
         self.assertEqual(2,route35.count('\tjp z, .down'))
         jr_route35=route35.replace('\tjp z, .down','\tjr z, .down')
@@ -65,10 +65,10 @@ class GoldenrodNorthGate224(unittest.TestCase):
         self.assertEqual([],gate_carpet_trigger_errors(ROOT,{key:jr_source}))
 
         # Negative injection must mutate the real JP DOWN branch exactly once.
-        target='cp 10\n\tjp z, .down\n\tjp .denied\n.route34Carpet'
+        target='cp 10\n\tjp z, .down\n\tjp .denied\n.houseExitDown'
         self.assertEqual(1,raw.count(target),'fault injection anchor must match exactly once')
         bad=raw.replace(target,
-                        'cp 10\n\tjp z, .up\n\tjp .denied\n.route34Carpet',1)
+                        'cp 10\n\tjp z, .up\n\tjp .denied\n.houseExitDown',1)
         self.assertNotEqual(raw,bad,'fault injection must change the source')
         errors=gate_carpet_trigger_errors(ROOT,{key:bad})
         self.assertTrue(any('Route35 collision Warp must require y33, x9/10 and DOWN' in v

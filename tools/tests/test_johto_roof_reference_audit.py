@@ -48,6 +48,31 @@ class RoofGoldReferenceGate(unittest.TestCase):
     def test_gold_registry_roofs_and_runtime_tables_match(self):
         self.assertEqual(audit(self.path,GOLD),[])
 
+    def test_last_indoor_house_has_no_roof_and_both_tables_have_47_slots(self):
+        from johto_roof_reference_audit import roof_table
+        tables = (
+            ('color/loadpalettes.asm', 'JohtoGoldDayRoofGroups', 'JohtoGoldDayRoofGroupsEnd'),
+            ('engine/overworld/johto_goldenrod_roof_gfx.asm',
+             'JohtoRoofGroupForLocalMap', 'JohtoRoofGroupForLocalMapEnd'),
+        )
+        for rel, start, end in tables:
+            values = roof_table((self.path/rel).read_text(), start, end)
+            self.assertEqual(len(values), 47, rel)
+            self.assertEqual(values[-2:], [None, None], rel)
+
+    def test_last_house_roof_row_missing_is_rejected(self):
+        for rel, last_row in (
+            ('color/loadpalettes.asm', ' db $ff ; Olivine Punishment Speech House, indoor (active slot 46)\n'),
+            ('engine/overworld/johto_goldenrod_roof_gfx.asm',
+             ' db $ff ; 2e OlivinePunishmentSpeechHouse indoor: no roof group\n'),
+        ):
+            target = self.path/rel
+            original = target.read_text()
+            self.assertEqual(original.count(last_row), 1)
+            target.write_text(original.replace(last_row, ''))
+            self.assert_rejected('roof local-ID table')
+            target.write_text(original)
+
     def test_route34_going_green_again_is_rejected(self):
         path=self.path/'engine/overworld/johto_goldenrod_roof_gfx.asm'
         src=path.read_text()

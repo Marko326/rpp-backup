@@ -3235,6 +3235,24 @@
           "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID"
         ]
       }
+    },
+    {
+      "rpp_map": "JohtoOlivineCity",
+      "gold_map": "OlivineCity",
+      "family": "BUILDING",
+      "warp_count": 1,
+      "required_test_ids": [
+        "test_johto_olivine_house_240dev.OlivineHouse240DEV.test_city_outdoor_warp_must_not_move"
+      ]
+    },
+    {
+      "rpp_map": "JohtoOlivinePunishmentSpeechHouse",
+      "gold_map": "OlivinePunishmentSpeechHouse",
+      "family": "BUILDING",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_olivine_house_240dev.OlivineHouse240DEV.test_house_reverse_warp_and_sibling_exit_protected"
+      ]
     }
   ],
   "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",

@@ -42,10 +42,14 @@ def audit(project, gold, *, connections=True, fly=True, overrides=None):
         names=read('engine/town_map.asm')
         idx=read('engine/overworld/johto_town_map_helpers.asm')
         spec={e['name']: e for e in contract['maps']}
-        assert read('data/game_version.asm').count('SPID-5.62.240@')==1
+        assert read('data/game_version.asm').count('OLIV-5.62.241@')==1
     except (OSError,ValueError,KeyError,AssertionError) as exc:
         return ['Gold eastern live sources unavailable or formal version drift: '+str(exc)]
-    if len(cfg['maps'])!=46: errors.append('East runtime must preserve four eastern active slots within 46 total maps')
+    # The four eastern slots must be unchanged. The newly registered room is
+    # appended in slot 46, not inserted into the historical 45-slot route set.
+    if (len(cfg['maps']) != 47 or cfg['maps'][-1].get('local_id') != 34 or
+            cfg['maps'][-1].get('local_symbol') != 'JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID'):
+        errors.append('East runtime must preserve four eastern slots and append only house stable ID34 at slot46')
     require(main, 'INCLUDE "engine/overworld/johto_east_exterior.asm"','Bank47 collision implementation not included')
     require(main, 'SECTION "Johto East Runtime Hooks", ROMX, BANK[$47]', 'Bank47 implementation not anchored')
     require(collision,'callab JohtoEastCanStepAhead', 'East movement must pass Gold mask via far-call')
@@ -127,7 +131,7 @@ def audit(project, gold, *, connections=True, fly=True, overrides=None):
         for line in words.group(1).splitlines():
             line=line.split(';',1)[0].strip()
             if line.startswith('db '):values.extend(int(x.strip()) for x in line[3:].split(','))
-        if len(values)!=46 or [values[slot] for _,_,slot,_,_,_ in MAPS]!=[landmark for _,_,_,landmark,_,_ in MAPS]:
+        if len(values)!=47 or values[-1]!=26 or [values[slot] for _,_,slot,_,_,_ in MAPS]!=[landmark for _,_,_,landmark,_,_ in MAPS]:
             errors.append('active slot -> Gold Town Map index drift')
     except (ValueError,AttributeError,IndexError) as e:errors.append('Town Map index table unparsable: '+str(e))
     for name,mid,slot,landmark,hops,s in MAPS:

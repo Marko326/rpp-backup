@@ -14,6 +14,23 @@ from johto_gold_sources import gold_block_sources
 from johto_rpp_asset_audit import load_png_tiles, metatile_entries, blocks_for, gold_resource_aliases
 from johto_indoor_common import ConversionError, dump, gold_dimensions, safe_roots, sha
 
+def resolve_rpp_tileset_atlas(rpp: Path, rpp_set: str) -> Path:
+    """Select an existing RPP PNG without guessing between t1/t2 variants.
+
+    RPP's HOUSE graphics are `house.t2.2bpp` / `house.t2.png` while
+    JOHTO_GATE is `johto_gate.png`. An ambiguous set of available PNGs
+    requires an explicit tool change, never silently taking the first.
+    """
+    folder = rpp / 'gfx/tilesets'
+    options = [folder / f'{rpp_set}{suffix}.png' for suffix in ('', '.t1', '.t2')]
+    matches = [file for file in options if file.is_file()]
+    if len(matches) != 1:
+        raise ConversionError(
+            f'RPP tileset {rpp_set}: expected one PNG atlas, found {len(matches)}: '
+            + ', '.join(str(x.relative_to(rpp)) for x in matches))
+    return matches[0]
+
+
 
 def build_mapping(rpp: Path, gold: Path, map_name='Route31VioletGate',
                   gold_set='gate', rpp_set='gate'):
@@ -26,8 +43,7 @@ def build_mapping(rpp: Path, gold: Path, map_name='Route31VioletGate',
     rblocks,_,_=blocks_for(rpp,rpp_set,'rpp')
     if not gblocks or not rblocks:raise ConversionError('Gold/RPP 目标区块集缺失')
     gtiles=load_png_tiles(gold/'gfx/tilesets'/f'{gold_set}.png')
-    rpp_png=rpp/'gfx/tilesets'/f'{rpp_set}.png'
-    if not rpp_png.is_file():rpp_png=rpp/'gfx/tilesets'/f'{rpp_set}.t1.png'
+    rpp_png=resolve_rpp_tileset_atlas(rpp,rpp_set)
     rtiles=load_png_tiles(rpp_png)
     gold_entries=metatile_entries(gblocks,gtiles)
     rpp_entries=metatile_entries(rblocks,rtiles)

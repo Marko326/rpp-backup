@@ -7,6 +7,7 @@ PASS is not gameplay PASS. Unmatched art and collision rules remain blockers.
 from __future__ import annotations
 import argparse
 import json
+import re
 from pathlib import Path
 from johto_indoor_common import ConversionError, dump, safe_roots, sha, gold_warps, gold_dimensions
 from johto_native_warp_converter import analyze
@@ -113,21 +114,89 @@ def pipeline(rpp: Path,gold: Path,out: Path, *, gold_room='Route31VioletGate',
     return overview
 
 
+def _gold_name_key(value: str) -> str:
+    return re.sub(r'[^a-z0-9]', '', value.lower())
+
+
+def _gold_interaction_inventory(gold: Path, room: str, width: int, height: int) -> dict:
+    """Read Gold dialogue/interactions, but do not imply RPP script support."""
+    source = (gold / 'maps' / f'{room}.asm').read_text(encoding='utf-8')
+    results = {'npcs': [], 'backgrounds': []}
+    for kind, target in (('object_event', 'npcs'), ('bg_event', 'backgrounds')):
+        for line in re.findall(r'^\s*' + kind + r'\s+([^;\n]+)', source, re.M):
+            parts = [p.strip() for p in line.split(',')]
+            if len(parts) < (12 if kind == 'object_event' else 4):
+                raise ConversionError(f'Gold {room} {kind} 字段不完整')
+            try:
+                x, y = int(parts[0]), int(parts[1])
+            except ValueError as exc:
+                raise ConversionError(f'Gold {room} {kind} 坐标不是数字') from exc
+            if not 0 <= x < 2 * width or not 0 <= y < 2 * height:
+                raise ConversionError(f'Gold {room} {kind} 坐标越界: ({x},{y})')
+            label = parts[-2] if kind == 'object_event' else parts[-1]
+            if not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', label) or not re.search(
+                    r'^' + re.escape(label) + r':', source, re.M):
+                raise ConversionError(f'Gold {room} {kind} 脚本标签缺失: {label}')
+            results[target].append({'x': x, 'y': y, 'script': label})
+    return results
+
+
+def _gold_outdoor_pairs(gold: Path, room: str, outside: str, indoor_warps: list) -> dict:
+    """Prove the one-outside-map house topology using independent Gold source.
+
+    This is only for a small house whose *every* indoor return points to one
+    outdoor map. Other interiors may connect many maps and must be reviewed
+    separately; do not generalize this into an automatic Warp converter.
+    """
+    out_warps = gold_warps(gold, outside)
+    linked = [w for w in out_warps if _gold_name_key(w['dest_map']) == _gold_name_key(room)]
+    if not linked:
+        raise ConversionError(f'Gold {outside} 未发现指向 {room} 的入口')
+    if any(w['dest_id'] > len(indoor_warps) or w['dest_id'] < 1 for w in linked):
+        raise ConversionError('Gold 城外 Warp 指向不存在的房内 1-based 索引')
+    linked_ids = {w['id'] for w in linked}
+    if any(_gold_name_key(w['dest_map']) != _gold_name_key(outside)
+           or w['dest_id'] not in linked_ids for w in indoor_warps):
+        raise ConversionError('Gold 室内出口并未全部回到指定室外入口，拒绝按简单民宅处理')
+    if any(indoor_warps[w['dest_id'] - 1]['dest_id'] != w['id'] for w in linked):
+        raise ConversionError('Gold 室外入口对应的房内回程索引不一致')
+    return {'outside_map': outside, 'outside_to_indoor_1_based': linked,
+            'inside_to_outside_1_based': indoor_warps,
+            'verified_single_outside_house_topology': True,
+            'rpp_destination_indices_0_based_review_only': [
+                {'outside_gold_warp_id': w['id'], 'indoor_destination_zero_based': w['dest_id'] - 1}
+                for w in linked],
+            'runtime_approved': False}
+
+
 def prestage_unregistered(rpp: Path, gold: Path, out: Path, *, gold_room: str,
                           rpp_room: str, gold_tileset: str = 'gate',
-                          rpp_tileset: str = 'gate'):
-    """Use the existing art/collision pipeline before an RPP room is registered.
+                          rpp_tileset: str = 'gate', gold_outside_map: str | None = None,
+                          rpp_outside_map: str | None = None):
+    """Use existing art/collision pipeline before an RPP room is registered.
 
-    Stage an isolated Gold art candidate, never an importable gate or Warp.
-    In particular, do NOT invent a destination for an unopened Route34.
+    Unregistered houses can be reviewed like gates but are never auto-imported.
+    Outdoor links are taken from real Gold source, not guessed from the room.
     """
     rpp, gold, out = safe_roots(rpp, gold, out)
     if (rpp/'data/mapHeaders'/f'{rpp_room}.asm').exists() or (rpp/'data/mapObjects'/f'{rpp_room}.asm').exists():
-        raise ConversionError('目标门房已登记，必须使用完整流水线，不能跳过运行时 Warp 审查')
+        raise ConversionError('目标室内已登记，必须使用完整流水线，不能跳过运行时 Warp 审查')
+    if rpp_outside_map and not gold_outside_map:
+        raise ConversionError('指定 RPP 室外地图时必须指定 Gold 对照室外地图')
     width, height = gold_dimensions(gold, gold_room)
     warps = gold_warps(gold, gold_room)
     if not warps or any(not (0 <= w['x'] < width*2 and 0 <= w['y'] < height*2) for w in warps):
-        raise ConversionError('Gold 门房 Warp 缺失或不在原始地图边界内')
+        raise ConversionError('Gold 室内 Warp 缺失或不在原始地图边界内')
+    pair = _gold_outdoor_pairs(gold, gold_room, gold_outside_map, warps) if gold_outside_map else None
+    outside_rpp = None
+    if rpp_outside_map:
+        from johto_indoor_common import rpp_warps
+        entries = rpp_warps(rpp, rpp_outside_map)
+        if any(_gold_name_key(w['dest_map']) == _gold_name_key(rpp_room) for w in entries):
+            raise ConversionError('目标室内未注册，但室外已有指向它的 Warp，必须先修复运行时')
+        outside_rpp = {'map': rpp_outside_map, 'existing_active_warps': entries,
+                       'new_warp_enabled': False}
+    interactions = _gold_interaction_inventory(gold, gold_room, width, height)
     artwork, candidate = build_mapping(rpp, gold, gold_room, gold_tileset, rpp_tileset)
     collision = check(rpp, gold, artwork, rpp_tileset)
     resources = inspect_resource_budget(rpp, gold, artwork)
@@ -139,34 +208,48 @@ def prestage_unregistered(rpp: Path, gold: Path, out: Path, *, gold_room: str,
             fixed_slots=palette['loader']['fixed_copy_8x8_slots'])
     else:
         (out/f'{gold_room}.pixel_candidate.blk').write_bytes(candidate)
-    # This mode is an *audit of Gold source*, not a future Warp implementation.
-    # Gold warp IDs are 1-based and RPP destination IDs are 0-based; retain
-    # the original records so callers cannot mistake them for installed data.
+    blockers = ['RPP_ROOM_NOT_REGISTERED', 'OUTDOOR_WARP_NOT_ENABLED',
+                'WARP_DIRECTION_AND_IMMEDIATE_RETURN_NOT_TESTED',
+                'NPC_AND_BG_SCRIPTS_NOT_PORTED', 'COLLISION_NOT_RUNTIME_CERTIFIED',
+                'PALETTE_RGB_NOT_PHONE_ACCEPTED', 'BANK_LAYOUT_NOT_LINKED']
+    if pair is None:
+        blockers.append('GOLD_OUTDOOR_RETURN_NOT_REVIEWED')
     overview = {
-        'schema': 'johto-indoor-prestage-v1',
+        'schema': 'johto-indoor-prestage-v2',
         'status': 'OFFLINE_UNREGISTERED_ONLY',
         'gold_room': gold_room, 'rpp_room_not_registered': rpp_room,
         'gold_dimensions_blocks': [width, height],
         'gold_warps_1_based': warps,
+        'gold_outdoor_pairs': pair,
+        'rpp_outdoor_state': outside_rpp,
+        'gold_interactions': interactions,
         'art_exact_blocks': artwork['exact_mapped'],
         'art_missing_gold_blocks': artwork['unmapped'],
         'isolated_candidate_only': isolated is not None,
         'runtime_warp_enabled': False, 'game_source_modified': False,
         'import_allowed': False, 'rom_compiled': False,
-        'blockers': ['RPP_ROOM_NOT_REGISTERED', 'ROUTE34_NOT_CONNECTED',
-                     'WARP_DIRECTION_AND_IMMEDIATE_RETURN_NOT_TESTED',
-                     'PALETTE_RGB_NOT_PHONE_ACCEPTED', 'BANK_LAYOUT_NOT_LINKED'],
+        'blockers': blockers,
     }
     for name, data in [('00_summary.json', overview), ('01_gold_native_warps.json', {'warps':warps}),
+                       ('02_gold_outdoor_pairs.json', pair or {'status':'NOT_REVIEWED'}),
                        ('03_indoor_art.json', artwork), ('04_collision.json', collision),
-                       ('08_resource_budget.json', resources), ('09_palette_vram.json', palette)]:
+                       ('08_resource_budget.json', resources), ('09_palette_vram.json', palette),
+                       ('12_gold_interactions.json', interactions)]:
         dump(out, name, data)
     if isolated is not None:
         dump(out, '06_isolated_original_art.json', isolated)
     (out/'REPORT_zh.md').write_text(
-        '# 未注册北门房：历史流水线离线预备\n\n'
-        '仅复用原始 Gold Warp、图块、碰撞、调色审查，不允许直接导入游戏。\n'
-        '34号道路未注册，不生成假 Warp；进门方向、双格立即返回和 RGB 必须另行验收。\n',
+        f'# {gold_room}：未注册室内离线预备\n\n'
+        f'- RPP 目标：`{rpp_room}`；**未注册，不得打开入口**。\n'
+        f'- Gold 尺寸：{width} × {height} block，室内 Warp {len(warps)} 条，'
+        f'NPC {len(interactions["npcs"])} 个，背景交互 {len(interactions["backgrounds"])} 个。\n'
+        f'- Gold 室外往返检查：{"已核对" if pair else "尚未指定室外地图"}；'
+        f'**Gold Warp # 从 1 开始，RPP 从 0 开始**。\n'
+        f'- 室外 RPP 地图：{rpp_outside_map or "未指定"}，不得替换尚未开放的其它入口。\n'
+        f'- 图块精确匹配：{artwork["exact_mapped"]}/{artwork["used_unique_blocks"]}；'
+        f'隔离 Gold 原图候选：{isolated is not None}。\n'
+        '- **碰撞／调色／ROM Bank／NPC 脚本与手机操作均未验收**。\n\n'
+        '该预备包是来源证据和候选素材，不生成或安装游戏 Warp。\n',
         encoding='utf-8')
     return overview
 
@@ -178,7 +261,9 @@ def main(argv=None):
     ap.add_argument('--output',required=True,type=Path)
     ap.add_argument('--gold-room',default='Route31VioletGate')
     ap.add_argument('--prestage-unregistered',action='store_true',
-                    help='reuse Gold art/collision toolchain when RPP gate is not registered; never open Warp')
+                    help='stage Gold indoor art and topology before a room is registered; never open Warp')
+    ap.add_argument('--gold-outside-map',help='Gold outdoor map for pre-stage reciprocal warp review')
+    ap.add_argument('--rpp-outside-map',help='RPP outdoor map for pre-stage closed-door inventory')
     ap.add_argument('--reference-room',default='Route15Gate1F')
     ap.add_argument('--allow-shared-landing',action='store_true')
     ap.add_argument('--rpp-room',default='JohtoRoute31VioletGate')
@@ -190,7 +275,8 @@ def main(argv=None):
         if args.prestage_unregistered:
             result=prestage_unregistered(args.rpp,args.gold,args.output,
                 gold_room=args.gold_room,rpp_room=args.rpp_room,
-                gold_tileset=args.gold_tileset,rpp_tileset=args.rpp_tileset)
+                gold_tileset=args.gold_tileset,rpp_tileset=args.rpp_tileset,
+                gold_outside_map=args.gold_outside_map,rpp_outside_map=args.rpp_outside_map)
             print(json.dumps(result,ensure_ascii=False,indent=2))
             return 0
         result=pipeline(args.rpp,args.gold,args.output,gold_room=args.gold_room,rpp_room=args.rpp_room,

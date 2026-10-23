@@ -227,6 +227,8 @@ def audit(root: Path, gold: Path) -> list[str]:
     else:
         for entry in identities['maps']:
             expect = 'ALLOWED' if entry['local_id'] in (7, 8, 17, 20, 22, 26, 27, 28, 29, 63, 67, 68, 69, 71, 72) else 'DEFERRED'
+            if entry['local_id'] == 34:
+                expect = 'FORBIDDEN'  # audited ordinary house, no Surf
             if entry['feature_status'].get('surf') != expect:
                 errors.append(f'Johto local {entry["local_id"]} Surf status must be {expect}')
     for source, name in ((field, 'WaterTilesets2'), (items, 'WaterTilesets')):

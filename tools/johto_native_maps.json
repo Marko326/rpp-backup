@@ -3359,6 +3359,38 @@
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 34,
+      "local_symbol": "JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID",
+      "header": "JohtoOlivinePunishmentSpeechHouse_h",
+      "bank": "BANK(JohtoOlivinePunishmentSpeechHouse_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_VIOLET_CITY",
+      "town_map_index": 26,
+      "town_map_name": "JohtoOlivineName",
+      "town_map_xy": [
+        76,
+        44
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "FORBIDDEN",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "ALLOWED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "USER_ACCEPTED",
+      "gold_fly_landmark": null
     }
   ]
 }

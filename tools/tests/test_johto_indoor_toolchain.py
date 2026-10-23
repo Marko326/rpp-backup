@@ -12,10 +12,11 @@ from johto_indoor_common import (ConversionError, safe_roots, rpp_warps, gold_wa
                                  gold_dimensions,gold_dimensions_catalog,rpp_dimensions, warp_tile_ids)
 from johto_native_warp_converter import analyze
 from johto_bidirectional_warp_validator import validate
-from johto_indoor_tiles_converter import build_mapping, stage_dedicated_gold_tileset
+from johto_indoor_tiles_converter import (
+    build_mapping, stage_dedicated_gold_tileset, resolve_rpp_tileset_atlas)
 from johto_indoor_collision_adapter import check, plan_gold_quadrant_collision
 from johto_indoor_registration_generator import generate
-from johto_indoor_pipeline import pipeline, prestage_unregistered
+from johto_indoor_pipeline import pipeline, prestage_unregistered, _gold_outdoor_pairs
 
 GOLD = Path(os.environ.get('JOHTO_GOLD_SOURCE', str(ROOT / 'pokegold-master')))  # local test fixture; skip when Gold source not provided
 
@@ -157,6 +158,70 @@ class IndoorToolchainTests(unittest.TestCase):
                 prestage_unregistered(ROOT,GOLD,Path(td)/'stage',
                     gold_room='Route31VioletGate',
                     rpp_room='JohtoRoute31VioletGate')
+
+    def test_house_atlas_t2_and_gate_atlas_are_resolved_without_guessing(self):
+        self.assertEqual(resolve_rpp_tileset_atlas(ROOT, 'house').name, 'house.t2.png')
+        self.assertEqual(resolve_rpp_tileset_atlas(ROOT, 'gate').name, 'gate.t1.png')
+        self.assertEqual(resolve_rpp_tileset_atlas(ROOT, 'johto_gate').name, 'johto_gate.png')
+        with tempfile.TemporaryDirectory() as td:
+            atlas = Path(td)/'gfx/tilesets'
+            atlas.mkdir(parents=True)
+            (atlas/'house.png').write_bytes(b'fake')
+            (atlas/'house.t2.png').write_bytes(b'fake')
+            with self.assertRaisesRegex(ConversionError, 'expected one PNG'):
+                resolve_rpp_tileset_atlas(Path(td), 'house')
+
+    def test_unregistered_olivine_house_preflight_keeps_warps_sealed(self):
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td)/'house'
+            result = prestage_unregistered(
+                ROOT, GOLD, target,
+                gold_room='OlivinePunishmentSpeechHouse',
+                rpp_room='JohtoOlivinePunishmentSpeechHousePrestageFixture',
+                gold_tileset='house', rpp_tileset='house',
+                gold_outside_map='OlivineCity', rpp_outside_map='JohtoOlivineCity')
+            pair = result['gold_outdoor_pairs']
+            self.assertTrue(pair['verified_single_outside_house_topology'])
+            self.assertEqual([(x['x'], x['y'], x['dest_id'])
+                              for x in pair['outside_to_indoor_1_based']], [(29, 11, 1)])
+            self.assertEqual([(x['x'], x['y'], x['dest_id'])
+                              for x in result['gold_warps_1_based']], [(2, 7, 5), (3, 7, 5)])
+            self.assertEqual(len(result['gold_interactions']['npcs']), 2)
+            self.assertEqual(len(result['gold_interactions']['backgrounds']), 2)
+            self.assertEqual(len(result['rpp_outdoor_state']['existing_active_warps']), 1)  # live house now registered
+            self.assertFalse(result['runtime_warp_enabled'])
+            self.assertFalse(result['import_allowed'])
+            self.assertEqual(result['art_exact_blocks'], 0)
+            self.assertTrue((target/'isolated_gold_art_candidate/house.fixed96.2bpp').exists())
+            self.assertIn('OUTDOOR_WARP_NOT_ENABLED', result['blockers'])
+            self.assertNotIn('ROUTE34_NOT_CONNECTED', result['blockers'])
+            self.assertTrue((target/'12_gold_interactions.json').exists())
+
+    def test_registered_house_cannot_be_prepared_as_unregistered(self):
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaisesRegex(ConversionError, '已登记'):
+                prestage_unregistered(ROOT, GOLD, Path(td)/'bad',
+                    gold_room='OlivinePunishmentSpeechHouse',
+                    rpp_room='JohtoOlivinePunishmentSpeechHouse',
+                    gold_tileset='house',rpp_tileset='house')
+
+    def test_preflight_refuses_false_house_outside_return(self):
+        original = gold_warps(GOLD, 'OlivinePunishmentSpeechHouse')
+        invalid = [dict(w) for w in original]
+        invalid[1]['dest_id'] = 4
+        with self.assertRaisesRegex(ConversionError, '室内出口'):
+            _gold_outdoor_pairs(GOLD, 'OlivinePunishmentSpeechHouse', 'OlivineCity', invalid)
+        with self.assertRaisesRegex(ConversionError, '未发现'):
+            _gold_outdoor_pairs(GOLD, 'OlivinePunishmentSpeechHouse', 'Route39', original)
+
+    def test_prestage_without_outside_is_explicitly_unreviewed(self):
+        with tempfile.TemporaryDirectory() as td:
+            result = prestage_unregistered(
+                ROOT, GOLD, Path(td)/'house', gold_room='OlivinePunishmentSpeechHouse',
+                rpp_room='JohtoOlivinePunishmentSpeechHousePrestageFixture',
+                gold_tileset='house', rpp_tileset='house')
+            self.assertIn('GOLD_OUTDOOR_RETURN_NOT_REVIEWED', result['blockers'])
+            self.assertIsNone(result['gold_outdoor_pairs'])
 
     def test_pipeline_generates_only_external_reports(self):
         with tempfile.TemporaryDirectory() as path:
