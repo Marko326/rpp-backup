@@ -419,3 +419,13 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 跨 Bank `callab` 返回会覆盖 A/BC/HL；测试阶段发生过“固定三击→画面显示 15 hits”，原因是错误地把返回 A 视为击数。临时夹具后来修正为按 E 返回并经双向录像验证，但**已从最终版完全删除**，不要保留其 Hook 和保存字节。
 - Jump Kick 自伤必须从 `PrintMoveFailureText` 进入使用者本人真实 HP 路径，并在目标 Bank 设置 `HL=wDamage+1`；固定 `$34` 放不下 helper 时改为浮动 ROMX，不是硬编码新 Bank。旧 MAP 不能代替新 Normal/Hard 链接结果。
 - 测试夹具含 WRAM 临时别名、玉虹大厦 NPC 入口、7 号道路野怪和 `InitWildBattle` 配置 Hook，清理时必须整体撤销并**恢复原先的 `RegionalFormClearNewMonForm`**；不要只删除 Hook 而丢失正式地区形态清理逻辑。正式覆盖证据详见 `docs/BATTLE_203_FINAL_REVIEW.md`。
+
+
+## BATTLE-5.62.204 — 常驻可选测试框架的隔离与菜单回归经验
+
+- **两类产物必须独立**：仅 `-D BATTLE_TEST_BUILD` 才引入测试 helper、Hook、两字节 WRAM 别名及 Pokey NPC；正式默认构建不应靠运行时 guard 来关闭测试。正式和测试对象文件不能同名，测试 SAV 与正式 SAV 不能共用。不可把“测试结束 disarm”误当成自动恢复被测试夹具改过的队伍。
+- **保留用户地图定稿**：测试 NPC 为工程确有常量/素材的 `SPRITE_POKEY`，测试版位置 `($00,$0A)`（用户手工调整）。不要恢复旧 `$5,$5`/`$4,$8` 候选，也不能在正式版增加这个 NPC；原老太太与三名导师始终保留。
+- **原生菜单栈纪律**：曾出现三选一菜单显示正常，但 A/B 退出均死机。原因是 `call .restore` 先压入返回地址，随后 `.restore` 中的 `pop af` 却弹走返回地址，导致 SP 和返回地址损坏。退出采用直落共享收尾，且只恢复自己实际 push 的寄存器。
+- **对话框生命周期**：NPC 的 `TX_ASM` 内调用 Yes/No 和三选一菜单后，外层 `DisplayTextID` 可能额外等待按键。按项目现成 `DisableWaitingAfterTextDisplay` 让外层负责关闭，并先用操作提示替换旧警告，避免菜单 A/B 结束后遗留旧文字框。
+- **输入边界与 Bank**：菜单方框要按地图 20 tile 宽度（`TextBoxBorder` 有两侧边框）核对；连击测试固定次数的跨 Bank 回传用 E 等约定寄存器，不能假定 A 被 `callab` 保留。各多段内部打击不能推进完整回合计数。不要把人工命中、替身 HP、固定次数等测试输入当作正式随机流程的验证结果。
+- **缺口说明**：静态 `.patch` 正反应用、可选编译条件和可用 MAP 不能证明当前 204 Normal/Hard/测试 ROM 都已经重建并运行；由项目所有者本地检查，不重复此前录过的旧战斗场景。

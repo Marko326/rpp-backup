@@ -3198,6 +3198,12 @@ INCLUDE "engine/battle/substitute_multihit_helpers.asm"
 SECTION "Jump Kick Crash Recoil Helper", ROMX
 INCLUDE "engine/battle/jump_kick_recoil_helper.asm"
 
+; Test harness is absent from the official ROM. Compile only with BATTLE_TEST_BUILD.
+IF DEF(BATTLE_TEST_BUILD)
+SECTION "RUN-001 Battle Test Suite", ROMX
+INCLUDE "engine/battle/test_suite_run001.asm"
+ENDC
+
 ; VTA-5.62.43: Ruby-inspired Volt Tackle five-sweep renderer in Bank $3E.
 SECTION "Ruby-style Volt Tackle Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/volt_tackle_animation.asm"

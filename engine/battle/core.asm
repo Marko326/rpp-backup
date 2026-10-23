@@ -419,6 +419,11 @@ EnemyRanText:
 	db "@"
 
 MainInBattleLoop:
+	; RUN-001: advance only at the BEGINNING of the next complete round.
+	; Never advance from an individual hit of Spike Cannon.
+IF DEF(BATTLE_TEST_BUILD)
+	callab TestSuite_OnRoundBoundary
+ENDC
 	call ReadPlayerMonCurHPAndStatus
 	ld hl, wBattleMonHP
 	ld a, [hli]
@@ -5171,6 +5176,10 @@ CalculateSuperFangDamage:
 
 
 AttackSubstitute:
+	; RUN-001: test-only input preparation BEFORE substitute text and damage.
+IF DEF(BATTLE_TEST_BUILD)
+	callab TestSuite_BeforeSubstituteHit
+ENDC
 ; Shared Substitute receiver for normal opposing attacks. Self-confusion
 ; and missed Jump Kick recoil enter the acting side's real-HP subtractor instead.
 ; For multi-hit moves, show damage before a Substitute break, or defer the
@@ -5403,6 +5412,16 @@ MoveHitTest:
 	bit UsingXAccuracy,a ; is the enemy using X Accuracy?
 	ret nz ; if so, always hit regardless of accuracy/evasion
 .calcHitChance
+IF DEF(BATTLE_TEST_BUILD)
+	; Controlled hit/miss only in the dedicated test-ROM build.
+	callab TestSuite_ResolveAccuracy
+	jr nc, .normalAccuracyRun001
+	ld a, e
+	and a
+	jr nz, .moveMissed
+	ret
+.normalAccuracyRun001
+ENDC
 	call CalcHitChance ; scale the move accuracy according to attacker's accuracy and target's evasion
 	ld a,[wPlayerMoveAccuracy]
 	ld b,a
@@ -6876,6 +6895,10 @@ InitWildBattle:
 	; before the first header load, then release the shared HP-bar scratch.
 	callba RegionalFormLatchWildEnemyMarker
 	call LoadEnemyMonData
+	; RUN-001: test-ROM-only input configuration after normal wild load.
+IF DEF(BATTLE_TEST_BUILD)
+	callab TestSuite_EnemyReady
+ENDC
 	callba RegionalFormClearNewMonForm
 	call DoBattleTransitionAndInitBattleVariables
 	ld a, [wCurOpponent]
@@ -7944,6 +7967,19 @@ TwoToFiveAttacksEffect:
 	inc a
 	inc a
 .saveNumberOfHits
+IF DEF(BATTLE_TEST_BUILD)
+	; RUN-001: fix both directions at three hits. E (not A) is the
+	; far-call return register; restore BC/DE/HL before writing counters.
+	push bc
+	push de
+	push hl
+	ld e, a
+	callab TestSuite_FixSpikeHitCount
+	ld a, e
+	pop hl
+	pop de
+	pop bc
+ENDC
 	ld [de], a
 	ld [bc], a
 	ret

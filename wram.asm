@@ -3603,10 +3603,18 @@ wCardKeyDoorX:: ; d7c4
 
 ; GYM-5.34.00: legacy random-switch slots retained to preserve WRAM layout.
 ; The fixed-switch puzzle no longer reads or writes either byte.
-wFirstLockTrashCanIndex:: ; d7c7
+; Optional test-only aliases. The two original bytes and offsets remain unchanged.
+; Default production assembly never defines the test aliases.
+IF DEF(BATTLE_TEST_BUILD)
+wTestSuiteGuard::
+ENDC
+wFirstLockTrashCanIndex:: ; d7c7, old unused index
 	ds 1
 
-wSecondLockTrashCanIndex:: ; d7c8
+IF DEF(BATTLE_TEST_BUILD)
+wTestSuitePhase::
+ENDC
+wSecondLockTrashCanIndex:: ; d7c8, old unused index
 	ds 1
 
 ; unused?

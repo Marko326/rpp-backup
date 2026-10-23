@@ -1,4 +1,8 @@
 EndOfBattle:
+	; RUN-001: never leave the test guard armed after a completed battle.
+IF DEF(BATTLE_TEST_BUILD)
+	callab TestSuite_Disarm
+ENDC
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
 	jr nz, .notLinkBattle
