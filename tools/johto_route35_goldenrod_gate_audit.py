@@ -137,7 +137,7 @@ def gate_dispatch_errors(root: Path, overrides=None):
         ('JohtoGateCollisionDirectionAllowed::','JohtoInternalDoorFacingCheck::',
          rf'cp {NEW}\s+(?:jr|jp) z, \.northGate'),
         ('JohtoRoute34GateCanStepAhead::','JohtoRoute34GateBlockedRows::',
-         rf'cp {NEW}\s+jp nz, \.blocked'),
+         rf'cp {NEW}\s+jr z, \.gateOk'),
     )
     for first,last,expression in branch_patterns:
         section=collision.split(first,1)[1].split(last,1)[0]

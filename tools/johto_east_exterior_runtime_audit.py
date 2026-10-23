@@ -42,10 +42,10 @@ def audit(project, gold, *, connections=True, fly=True, overrides=None):
         names=read('engine/town_map.asm')
         idx=read('engine/overworld/johto_town_map_helpers.asm')
         spec={e['name']: e for e in contract['maps']}
-        assert read('data/game_version.asm').count('SPID-5.62.239@')==1
+        assert read('data/game_version.asm').count('SPID-5.62.240@')==1
     except (OSError,ValueError,KeyError,AssertionError) as exc:
         return ['Gold eastern live sources unavailable or formal version drift: '+str(exc)]
-    if len(cfg['maps'])!=45: errors.append('East runtime must register exactly four new active slots (total 45)')
+    if len(cfg['maps'])!=46: errors.append('East runtime must preserve four eastern active slots within 46 total maps')
     require(main, 'INCLUDE "engine/overworld/johto_east_exterior.asm"','Bank47 collision implementation not included')
     require(main, 'SECTION "Johto East Runtime Hooks", ROMX, BANK[$47]', 'Bank47 implementation not anchored')
     require(collision,'callab JohtoEastCanStepAhead', 'East movement must pass Gold mask via far-call')
@@ -63,8 +63,12 @@ def audit(project, gold, *, connections=True, fly=True, overrides=None):
             errors.append(name+': bike permit missing')
         if row.get('feature_status',{}).get('surf')!=('ALLOWED' if can_surf else 'DEFERRED'):
             errors.append(name+': Surf permission must match reviewed Gold water')
-        if row.get('feature_status',{}).get('warp')!='FORBIDDEN':
-            errors.append(name+': unbuilt interiors/cave must remain sealed')
+        if row.get('feature_status',{}).get('warp')!=('ALLOWED' if name=='Route46' else 'FORBIDDEN'):
+            errors.append(name+': unreviewed interior/cave Warp status (Route46 south gate is enabled)')
+        if name=='Route46':
+            obj=read('data/mapObjects/JohtoRoute46.asm')
+            if 'db 33, 7, 0, REGION_WARP_ESCAPE' not in obj or 'db 33, 8, 1, REGION_WARP_ESCAPE' not in obj:
+                errors.append('Route46: south gate double Warp must remain enabled')
         if row.get('feature_status',{}).get('fly')!=('ALLOWED' if name=='BlackthornCity' else 'FORBIDDEN'):
             errors.append(name+': Fly destination only at original Gold city')
         if row.get('header')!='Johto'+name+'_h':
@@ -123,7 +127,7 @@ def audit(project, gold, *, connections=True, fly=True, overrides=None):
         for line in words.group(1).splitlines():
             line=line.split(';',1)[0].strip()
             if line.startswith('db '):values.extend(int(x.strip()) for x in line[3:].split(','))
-        if len(values)!=45 or [values[slot] for _,_,slot,_,_,_ in MAPS]!=[landmark for _,_,_,landmark,_,_ in MAPS]:
+        if len(values)!=46 or [values[slot] for _,_,slot,_,_,_ in MAPS]!=[landmark for _,_,_,landmark,_,_ in MAPS]:
             errors.append('active slot -> Gold Town Map index drift')
     except (ValueError,AttributeError,IndexError) as e:errors.append('Town Map index table unparsable: '+str(e))
     for name,mid,slot,landmark,hops,s in MAPS:

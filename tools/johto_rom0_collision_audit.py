@@ -19,6 +19,7 @@ MAPPINGS = {
     'JOHTO_CIANWOOD_CITY_LOCAL_ID': 'JohtoCianwoodCityCanStepAhead',
     'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': 'JohtoRoute34GateCanStepAhead',
     'JOHTO_ROUTE_43_GATE_LOCAL_ID': 'JohtoRoute34GateCanStepAhead',
+    'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID': 'JohtoRoute34GateCanStepAhead',
     'JOHTO_ROUTE_43_LOCAL_ID': 'JohtoRoute43CanStepAhead',
     'JOHTO_LAKE_OF_RAGE_LOCAL_ID': 'JohtoLakeOfRageCanStepAhead',
     'JOHTO_ROUTE_38_LOCAL_ID': 'JohtoRoute38CanStepAhead',

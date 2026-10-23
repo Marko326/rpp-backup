@@ -2969,6 +2969,272 @@
         ],
         "border_policy": "APPROVED_NORMAL"
       }
+    },
+    {
+      "rpp_map": "JohtoRoute29",
+      "gold_map": "Route29",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 1,
+      "required_test_ids": [
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_gold_warp_graph",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_trigger_and_direction",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_arrival_and_immediate_return"
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
+    },
+    {
+      "rpp_map": "JohtoRoute46",
+      "gold_map": "Route46",
+      "family": "GATE_OUTDOOR",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_gold_warp_graph",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_trigger_and_direction",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_arrival_and_immediate_return"
+      ],
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md"
+    },
+    {
+      "rpp_map": "JohtoRoute29Route46Gate",
+      "gold_map": "Route29Route46Gate",
+      "family": "GATE_INDOOR",
+      "warp_count": 4,
+      "required_test_ids": [
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_gold_warp_graph",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_trigger_and_direction",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_arrival_and_immediate_return",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_exteriors_and_border_loads",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_neutral_map_name",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_exact_gold_gate_art",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_palette_kanto_isolation",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_old_gate_and_seam_regression",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_wrong_warp_route_fails",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_missing_carpet_entry_fails",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_wrong_direction_fails",
+        "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_missing_arrival_step_fails",
+        "test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_real_legacy_step_into_gold_door",
+        "test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_legacy_preview_reads_actual_route46_bank",
+        "test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_wrong_runtime_steps_are_rejected",
+        "test_johto_route29_gate_runtime_240a.Route29GateRuntime240A.test_wrong_preview_bank_and_edge_are_rejected"
+      ],
+      "neutral_name_sign_test_id": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_neutral_map_name",
+      "gold_palette_test_id": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_exact_gold_gate_art",
+      "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+      "gatehouse_proof_ids": {
+        "two_lane_warps": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_gold_warp_graph",
+        "directional_collision": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_trigger_and_direction",
+        "immediate_return": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_arrival_and_immediate_return",
+        "exterior_border_loads": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_exteriors_and_border_loads",
+        "neutral_map_name": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_neutral_map_name",
+        "gold_art_tile_palette": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_exact_gold_gate_art",
+        "runtime_rgb_kanto_isolation": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_palette_kanto_isolation",
+        "legacy_gate_regression": "test_johto_route29_route46_gate_240.Route29Route46Gate240.test_old_gate_and_seam_regression"
+      },
+      "runtime_palette_status": "PHONE_PENDING",
+      "phone_door_status": "PHONE_ACCEPTED",
+      "phone_visual_status": "PHONE_ACCEPTED",
+      "arrival_step_review": {
+        "layout": "NORTH_SOUTH_PAIR",
+        "by_gate_side": {
+          "north": "D_DOWN",
+          "south": "NONE"
+        },
+        "basis": "Gold NorthSouthGate y0/x4-5 are DOOR, so arrival from Route46 needs D_DOWN into floor; y7/x4-5 carpets remain on tile. Gold Route29 (27,1) is one DOOR and gets D_DOWN; Route46 south (7/8,33) carpets get NONE."
+      },
+      "gatehouse_runtime": {
+        "mode": "NATIVE_GATE",
+        "local_id": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+        "border_policy": "APPROVED_NORMAL",
+        "warp_sides": {
+          "north": [
+            [
+              0,
+              4,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              0,
+              5,
+              1,
+              "REGION_WARP_ESCAPE"
+            ]
+          ],
+          "south": [
+            [
+              7,
+              4,
+              0,
+              "REGION_WARP_ESCAPE"
+            ],
+            [
+              7,
+              5,
+              0,
+              "REGION_WARP_ESCAPE"
+            ]
+          ]
+        },
+        "approaches": [
+          {
+            "map_local": "JOHTO_ROUTE_29_LOCAL_ID",
+            "x": 27,
+            "y": 1,
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_46_LOCAL_ID",
+            "x": 7,
+            "y": 33,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_46_LOCAL_ID",
+            "x": 8,
+            "y": 33,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "outside_guard": true
+          },
+          {
+            "map_local": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            "x": 5,
+            "y": 0,
+            "direction": "UP",
+            "trigger": "STEP_ON"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            "x": 4,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY"
+          },
+          {
+            "map_local": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            "x": 5,
+            "y": 7,
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY"
+          }
+        ],
+        "arrivals": [
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                0,
+                4,
+                "D_DOWN"
+              ],
+              [
+                0,
+                5,
+                "D_DOWN"
+              ],
+              [
+                7,
+                4,
+                "NONE"
+              ],
+              [
+                7,
+                5,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": true
+          },
+          {
+            "alias": "JOHTO_ROUTE_29",
+            "local": "JOHTO_ROUTE_29_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                1,
+                27,
+                "D_DOWN"
+              ]
+            ],
+            "exact_map_profiles": false
+          },
+          {
+            "alias": "REGION_NATIVE_MAP_SLOT",
+            "local": "JOHTO_ROUTE_46_LOCAL_ID",
+            "from": "REGION_NATIVE_MAP_SLOT",
+            "points": [
+              [
+                33,
+                7,
+                "NONE"
+              ],
+              [
+                33,
+                8,
+                "NONE"
+              ]
+            ],
+            "exact_map_profiles": false
+          }
+        ],
+        "native_routes": [
+          [
+            "JOHTO_ROUTE_46_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_46_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            0,
+            0,
+            "JOHTO_ROUTE_46_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            1,
+            1,
+            "JOHTO_ROUTE_46_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            2,
+            0,
+            "JOHTO_ROUTE_29_LOCAL_ID"
+          ],
+          [
+            "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+            3,
+            0,
+            "JOHTO_ROUTE_29_LOCAL_ID"
+          ]
+        ],
+        "legacy_route29_warp": [
+          "JOHTO_ROUTE_29",
+          0,
+          2,
+          "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID"
+        ]
+      }
     }
   ],
   "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",

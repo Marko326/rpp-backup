@@ -153,7 +153,7 @@ def object_warps(text: str, name: str) -> list[tuple[int, int, int, str]]:
 
 
 def landing_mask_errors(root: Path, destinations: list, id_to_stem: dict,
-                        overrides: dict | None = None) -> list[str]:
+                        overrides: dict | None = None, gold: Path | None = None) -> list[str]:
     """Read actual masks: one forced step must stay on valid floor in bounds."""
     errors=[]
     width_definitions=get_text(root,'constants/region_map_constants.asm',overrides)
@@ -161,6 +161,21 @@ def landing_mask_errors(root: Path, destinations: list, id_to_stem: dict,
         r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+)\s+EQU\s+(\d+)\s*$',width_definitions)}
     for d in destinations:
         if all(item[2]=='NONE' for item in d['points']):
+            continue
+        # Route29 still uses the original $F4 legacy map alias. Its
+        # movement path does not consume a Johto native blocked-mask BIN.
+        # Review the one forced step against Gold's REAL destination-floor
+        # collision instead of demanding a nonexistent native mask file.
+        if d['alias'] == 'JOHTO_ROUTE_29' and d['local'] == 'JOHTO_ROUTE_29_LOCAL_ID':
+            if gold is None:
+                errors.append('legacy Route29 step requires original Gold collision evidence')
+                continue
+            from johto_gold_door_audit import gold_collision_index
+            source = gold_collision_index(Path(gold))
+            for y,x,direction in d['points']:
+                if (y,x,direction) != (1,27,'D_DOWN') or (source.role_at('Route29',x,y) != 'DOOR'
+                    or source.role_at('Route29',x,y+1) != 'FLOOR'):
+                    errors.append(f'legacy Route29 landing/auto-step invalid: {(x,y,direction)}')
             continue
         stem=id_to_stem.get(d['local'])
         if stem is None:
@@ -727,7 +742,7 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                             errors.append(name+' reviewed arrival direction disagrees with its '+side+' side')
             errors.extend(landing_mask_errors(root,contract['arrivals'],
                            {v['local_symbol']:v['header'].removesuffix('_h') for v in
-                            json.loads(get_text(root,'tools/johto_native_maps.json',overrides))['maps']},overrides))
+                            json.loads(get_text(root,'tools/johto_native_maps.json',overrides))['maps']},overrides,gold))
             # Prevent the manifest being used to silently neutralize a new
             # side: each indoor warp tile must have an arrival decision.
             indoor = next((e for e in contract['arrivals'] if e['local']==contract.get('local_id')), None)

@@ -1,0 +1,301 @@
+{
+  "schema": "johto-east-corridor-source-v1",
+  "purpose": "OFFLINE_ONLY_NOT_RUNTIME_APPROVED",
+  "maps": [
+    {
+      "name": "Route44",
+      "stable_local_id": 69,
+      "dimensions_blocks": [
+        30,
+        9
+      ],
+      "tileset": "johto",
+      "gold_blk": "maps/Route44.blk",
+      "sha256": "3e84caab5c0ed1297558eee9158adf9300ecda4d3d2544e83064f33f3a1d3797",
+      "warps": [
+        {
+          "xy": [
+            56,
+            7
+          ],
+          "target": "ICE_PATH_1F",
+          "target_warp": 1
+        }
+      ],
+      "warp_count": 1,
+      "staged_assets": {
+        "layout": "docs/gold_east_source_239/Route44/Route44.gold_source.blk",
+        "mask": "docs/gold_east_source_239/Route44/Route44.gold_collision_review_mask.bin",
+        "onboarding": "docs/gold_east_source_239/Route44/map_onboarding.md",
+        "mask_sha256": "9b48074bea07d1d54aa015f2fcbb4b0937f6be0275ded998076b9d6c56c4b428",
+        "mask_bytes": 144
+      },
+      "water_cells": 120
+    },
+    {
+      "name": "BlackthornCity",
+      "stable_local_id": 71,
+      "dimensions_blocks": [
+        20,
+        18
+      ],
+      "tileset": "johto",
+      "gold_blk": "maps/BlackthornCity.blk",
+      "sha256": "f6460760a67901f6dce2b4df3f3c75c68e429a5c71bd907c725a955578e4676c",
+      "warps": [
+        {
+          "xy": [
+            18,
+            11
+          ],
+          "target": "BLACKTHORN_GYM_1F",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            13,
+            21
+          ],
+          "target": "BLACKTHORN_DRAGON_SPEECH_HOUSE",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            29,
+            23
+          ],
+          "target": "BLACKTHORN_EMYS_HOUSE",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            15,
+            29
+          ],
+          "target": "BLACKTHORN_MART",
+          "target_warp": 2
+        },
+        {
+          "xy": [
+            21,
+            29
+          ],
+          "target": "BLACKTHORN_POKECENTER_1F",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            9,
+            31
+          ],
+          "target": "MOVE_DELETERS_HOUSE",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            36,
+            9
+          ],
+          "target": "ICE_PATH_1F",
+          "target_warp": 2
+        },
+        {
+          "xy": [
+            20,
+            1
+          ],
+          "target": "DRAGONS_DEN_1F",
+          "target_warp": 1
+        }
+      ],
+      "warp_count": 8,
+      "staged_assets": {
+        "layout": "docs/gold_east_source_239/BlackthornCity/BlackthornCity.gold_source.blk",
+        "mask": "docs/gold_east_source_239/BlackthornCity/BlackthornCity.gold_collision_review_mask.bin",
+        "onboarding": "docs/gold_east_source_239/BlackthornCity/map_onboarding.md",
+        "mask_sha256": "f982edaf1fa369c7b024fa73e666d6d7ebaf226bdc050d4f4f653689447d2eeb",
+        "mask_bytes": 180
+      },
+      "water_cells": 80
+    },
+    {
+      "name": "Route45",
+      "stable_local_id": 72,
+      "dimensions_blocks": [
+        10,
+        45
+      ],
+      "tileset": "johto",
+      "gold_blk": "maps/Route45.blk",
+      "sha256": "fc47a6b79f86d911d64dba30568ae0b0e98ff2d9a65d8ed7bb5f718321290223",
+      "warps": [
+        {
+          "xy": [
+            2,
+            5
+          ],
+          "target": "DARK_CAVE_BLACKTHORN_ENTRANCE",
+          "target_warp": 1
+        }
+      ],
+      "warp_count": 1,
+      "staged_assets": {
+        "layout": "docs/gold_east_source_239/Route45/Route45.gold_source.blk",
+        "mask": "docs/gold_east_source_239/Route45/Route45.gold_collision_review_mask.bin",
+        "onboarding": "docs/gold_east_source_239/Route45/map_onboarding.md",
+        "mask_sha256": "46cc50175261630be12220cb0e574bf90ebfc38ea14e16664e2992016d6c8022",
+        "mask_bytes": 270
+      },
+      "water_cells": 16
+    },
+    {
+      "name": "Route46",
+      "stable_local_id": 73,
+      "dimensions_blocks": [
+        10,
+        18
+      ],
+      "tileset": "johto",
+      "gold_blk": "maps/Route46.blk",
+      "sha256": "bca26e100fde85b7fa6009900259cabb2886af653e7022bd6c92cd62490f31a2",
+      "warps": [
+        {
+          "xy": [
+            7,
+            33
+          ],
+          "target": "ROUTE_29_ROUTE_46_GATE",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            8,
+            33
+          ],
+          "target": "ROUTE_29_ROUTE_46_GATE",
+          "target_warp": 2
+        },
+        {
+          "xy": [
+            14,
+            5
+          ],
+          "target": "DARK_CAVE_VIOLET_ENTRANCE",
+          "target_warp": 3
+        }
+      ],
+      "warp_count": 3,
+      "staged_assets": {
+        "layout": "docs/gold_east_source_239/Route46/Route46.gold_source.blk",
+        "mask": "docs/gold_east_source_239/Route46/Route46.gold_collision_review_mask.bin",
+        "onboarding": "docs/gold_east_source_239/Route46/map_onboarding.md",
+        "mask_sha256": "befe028695f0beb75eb54afed8168cde94ad1243518726a6b1dbe6e2ff10bdfc",
+        "mask_bytes": 108
+      },
+      "water_cells": 0
+    },
+    {
+      "name": "IcePath1F",
+      "stable_local_id": 70,
+      "dimensions_blocks": [
+        20,
+        18
+      ],
+      "tileset": "ice_path",
+      "gold_blk": "maps/IcePath1F.blk",
+      "sha256": "148a84a2e3721a2d70fad4d5f7b881b95f59099f26b9fcea74ed9077be2e815f",
+      "warps": [
+        {
+          "xy": [
+            4,
+            19
+          ],
+          "target": "ROUTE_44",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            36,
+            27
+          ],
+          "target": "BLACKTHORN_CITY",
+          "target_warp": 7
+        },
+        {
+          "xy": [
+            37,
+            5
+          ],
+          "target": "ICE_PATH_B1F",
+          "target_warp": 1
+        },
+        {
+          "xy": [
+            37,
+            13
+          ],
+          "target": "ICE_PATH_B1F",
+          "target_warp": 7
+        }
+      ],
+      "warp_count": 4,
+      "staged_assets": {
+        "layout": "docs/gold_east_source_239/IcePath1F/IcePath1F.gold_source.blk",
+        "mask": "docs/gold_east_source_239/IcePath1F/IcePath1F.gold_collision_review_mask.bin",
+        "onboarding": "docs/gold_east_source_239/IcePath1F/map_onboarding.md",
+        "mask_sha256": "a1c63cf9f1980d42806c02d30bc3450f6f86247103acb9718b71ef0d742cb7f1",
+        "mask_bytes": 180
+      }
+    }
+  ],
+  "direct_seams": [
+    {
+      "from": "Route44",
+      "to": "BlackthornCity",
+      "direction": "east",
+      "gold_offset_blocks": -9
+    },
+    {
+      "from": "BlackthornCity",
+      "to": "Route45",
+      "direction": "south",
+      "gold_offset_blocks": 0
+    },
+    {
+      "from": "BlackthornCity",
+      "to": "Route44",
+      "direction": "west",
+      "gold_offset_blocks": 9
+    },
+    {
+      "from": "Route45",
+      "to": "BlackthornCity",
+      "direction": "north",
+      "gold_offset_blocks": 0
+    },
+    {
+      "from": "Route45",
+      "to": "Route46",
+      "direction": "west",
+      "gold_offset_blocks": 36
+    },
+    {
+      "from": "Route46",
+      "to": "Route45",
+      "direction": "east",
+      "gold_offset_blocks": -36
+    },
+    {
+      "from": "Route46",
+      "to": "Route29",
+      "direction": "south",
+      "gold_offset_blocks": -10
+    },
+    {
+      "from": "Route29",
+      "to": "Route46",
+      "direction": "north",
+      "gold_offset_blocks": 10
+    }
+  ]
+}

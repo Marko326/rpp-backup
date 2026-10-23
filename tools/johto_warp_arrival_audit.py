@@ -267,7 +267,12 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
     park35_solid_door = [
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_35_LOCAL_ID', 5, 3, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
-    if arrivals != middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps + park_south_steps + park35_solid_door:
+    route29_gate_steps = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 4, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('JOHTO_ROUTE_29', 'JOHTO_ROUTE_29_LOCAL_ID', 1, 27, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+    ]
+    if arrivals != route29_gate_steps + middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps + park_south_steps + park35_solid_door:
         errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
     # Additional original Gold north door: Route35 (3,5) is solid DOOR,
     # its arrival auto-step must enter (3,6); do not generalize to carpets.
@@ -298,10 +303,11 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
     mask_desc.update({
         'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': ('JohtoRoute43MahoganyGate', 10, 8),
         'JOHTO_ROUTE_43_GATE_LOCAL_ID': ('JohtoRoute43Gate', 10, 8),
+        'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID': ('JohtoRoute29Route46Gate', 10, 8),
         'JOHTO_ROUTE_43_LOCAL_ID': ('JohtoRoute43', 20, 54),
         'JOHTO_MAHOGANY_TOWN_LOCAL_ID': ('JohtoMahoganyTown', 20, 18),
     })
-    for alias, local, y, x, source, direction in north_steps + route43_gate_steps + middle_gate_steps + park_south_steps:
+    for alias, local, y, x, source, direction in route29_gate_steps[:2] + north_steps + route43_gate_steps + middle_gate_steps + park_south_steps:
         name, width, height = mask_desc[local]
         dx, dy = MOVE[direction]
         tx, ty = x + dx, y + dy

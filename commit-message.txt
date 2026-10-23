@@ -1,3 +1,13 @@
+# SPID-5.62.240｜29/46号道路门房，.240A 实机反馈修复后正式双提交索引（不是 git commit -F 全文）
+# 分支：金银；源码基线 HEAD：2df68ee3da214f87ee759068c29ae55f18490f75；基线显示 SPID-5.62.239；目标 SPID-5.62.240（.240A 只是候选标记）。
+# 本轮用户最新工作区已打 .240A 的前置状态由本环境按提供的 .240 用户补丁及 .240A 修复包复放构造；真实 .240A 工作树须在应用清理增量前执行 git apply --check。
+# 第一笔 feat(johto): Gold Route29/46 门房实体 DOOR/双格门毯、Warp/到达步进、legacy Route29 单格门通行与正确跨 Bank 邻图预览、地图注册/音乐/图块/版本；不含 tools/、TODO/踩坑/本索引。
+# 第二笔 test(tool): 固化 Route29/46 Gold 门房数据/负向测试、old alias $F4 的行走/预览故障注入、工具版本期望与可见范围 PHONE 状态；同步 TODO、踩坑、收口说明与本索引。独立提交正文见 ZIP 两份 TXT。
+# 交付模式 A：清理增量（已应用 .240A → .240 收口），工具反向隔离（最终 → 仅功能），基线全量（2df68ee3 .239 → .240 收口），加功能日志、工具日志；增量/全量不可叠加。
+# 用户完成初始补丁后用工具隔离暂撤工具，再只提交功能；之后 git apply -R 恢复工具再提交 test(tool)。禁止先后错乱或使用 git add -A 混提交。
+# 本轮重新执行统一 Gold 发布门禁 PASS、944/944 tests、0 skipped、56/56 active connections；Gold source 367/367 PASS，SafariZoneBeta 唯一排除；静态结果非 ROM 编译/用户手机全部场景证据。
+# Version: SPID-5.62.239 -> SPID-5.62.240
+
 # SPID-5.62.239｜东线四张室外地图与四处 Gold 跳崖起跳修复正式收口（独立提交索引，非 git commit -F 全文）
 # 已验收 `.239` 候选来源：用户上传的 `test(tool)__固化公园与遗迹门房合同并完成_239A_收口(1).zip` + 已实际可应用的 `SPID-5.62.239_east_runtime_from_uploaded_239_current.patch`；导出 ZIP 不含 .git，用户真实 HEAD 未由本环境证实。
 # 可见游戏版本只用 `SPID-5.62.239`，不增加候选字母。功能和工具/文档分两笔提交，不执行 Git Commit/Push。

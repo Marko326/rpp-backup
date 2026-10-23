@@ -25,12 +25,21 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         self.assertEqual(audit(ROOT, self.gold), [])
         src = (ROOT / INPUTS[0]).read_text()
         actual=profiles(src)
-        self.assertEqual(actual[6:8], [
+        self.assertEqual(actual[9:11], [
             ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
-        self.assertEqual(len(actual), 20)
+        self.assertEqual(len(actual), 23)
+        # New Route29/Route46 gate arrivals occupy three deliberately
+        # prepended rows; keep the old cave and north-gate rows unchanged.
+        self.assertEqual(actual[:3], [
+            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 4,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 5,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+            ('JOHTO_ROUTE_29', 'JOHTO_ROUTE_29_LOCAL_ID', 1, 27,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
         self.assertFalse(any('JOHTO_UNION_CAVE_1F_LOCAL_ID' in row for row in actual))
         self.assertTrue(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 3))
         self.assertFalse(walkable(ROOT, 'JohtoUnionCave1F', 'johto_union_cave', 10, 17, 4))

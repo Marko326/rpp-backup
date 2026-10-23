@@ -1,3 +1,18 @@
+## SPID-5.62.240｜门房正式清理与下一阶段旧/新地图执行链标准化（2026-10-23）
+
+- **失败记录不能被 944 PASS 掩盖**：`.240` 注册 Gold Warp、方向、门房合同却漏掉 legacy `$F4` 在通用 `CollisionCheckOnLand` 的真实行走放行；同时只核对 Header 连接，漏掉 29 号道路 `Bank $40` 预览 46 号道路 `Bank $47` 的 ROM Bank 选择，造成玩家卡在门前及北屏大面积粉红图块。后续 `.240A` 只修这两条入口与预览路径，保留真实障碍、Gold `.blk` 和 Route46 双门毯。原 Gold `DOOR` 从门前 `(27,2)` 向上踏入 `(27,1)` 应一次按键 STEP_ON，而非门框上再碰一次。
+- **审计补强必须解释失败的执行分支**：新增 legacy 入口调用与条件、跨 Bank 连接 Bank 选择的 4 项正/反例并加入发布门禁，保证故意错改门格坐标/UP/调用点、邻图 Bank/方向会失败。它们守护这次缺陷，不等于所有旧地图已完成统一审计；不能将 `johto_door_contracts.json` 的自我一致性当成 Gold 或真实 CPU 执行证据。
+- **用户手机反馈的边界**：`.240A` 实测视频与用户“没看出什么问题”支持所示门房进出/重进及 29 号道路上缘可见画面无明显异常。本门房 Door/Visual 标记只针对所见范围；独立精确颜色核对、其它门房、全部时段与旧存档仍待测。正式 `.240` 仅收口、版本标签与证据整理，不改行为；不声称 AI 已编译 ROM 或完成用户 Git 提交。
+- **先建立迁移对照再共享化**：所有已做旧道路/城镇按 `legacy map alias` vs `native region/local ID`、ROM Bank、Warp 类型、到达步进、实际碰撞入口、邻图两种加载路径、地区地标/Fly/音乐分组做可执行对照。先守护已验收实际路径，再针对一个最小重复点引入适配层；严禁把旧 `$F4/$FB` 统一硬改成 `$FC`、全图放行墙体、硬编码错误 Bank，或为新增地图无条件扩大所有邻图预览宽度。
+- **本次正式静态证据**：本次正式 `.240` 在实际用户 `.240.patch` + `.240A` 补丁复放后的源码上完整执行 `tools/johto_map_release_audit.py --expect-version SPID-5.62.240`：退出码 0、status=PASS、944/944 Python 测试通过、0 skipped，56/56 有向活动连接 PASS；Gold 368 张登记、367 张扫描、367 张来源 PASS、0 失败，`SafariZoneBeta` 按原白名单排除。masked-step 为源码级 21 图/162 移动边、139 条要求放行、0 failures；ROM 编译/链接和真实手机全部状态均不由此证明。
+- **清理提交纪律**：相对用户导出 HEAD `2df68ee3` 累计有运行时和 `tools/` 变更，模式 A 两笔。只在工具反向隔离时撤第二笔（含本 TODO、踩坑、提交索引、测试/JSON）；游戏功能和 `data/game_version.asm` 完整保留。反向隔离 `git apply -R` 可还原；未核对用户最新真实工作树时先 `git apply --check`，JSON 已存在冲突不能强制覆盖。
+
+## SPID-5.62.240A｜手机截图揭露 Route29 单格门与跨 Bank 顶栏假绿（PHONE_PENDING）
+
+- `.240` 在 `JOHTO_ROUTE_29_LOCAL_ID` 的方向 Warp 和 `STEP_ON` 静态合同上 PASS，却遗漏玩家真正的 `CheckTilePassable` 路径：Route29 旧别名 `$F4` 不走 `$FC` 的 `JohtoNativeCanStepAhead`。从 `(27,2)` 朝上进入 Gold `DOOR(27,1)` 被原 RBY 泛用墙碰撞拦住，因此未进入踏格执行器。只在精灵/ledge/tile-pair 检查后给准确 Route29 位置、方向放行，不改通用分派或把实体门改成 `COLLISION_ONLY`。
+- Route29 和 Route46 虽有正确的 NORTH Header 连接，`ResolveNativeConnectionPreviewBank` 当时只识别 native `$FC`，漏掉源图 `$F4`，导致把 BANK `$47` 的 Route46Blocks 指针用于 BANK `$40` 当前源图读取，产生上方整片粉红墙砖。强制审计必须校验跨 Bank 选择器的真实分支并注入错误 Bank 负例，不能只检查连接字段/`.blk`。
+- 新增运行分支解释执行及负向测试纳入统一门禁，原完整静态 PASS 不能作为手机行为证据。正式视觉与双向进出验收仍待用户用新 ROM 验证；不重新绘制 `.blk`，不更改已通过的 Route46 双格门毯。
+
 ## SPID-5.62.239｜东线四图收口：Gold HOP_RIGHT 遮罩误封与旧测试硬编码（2026-10-22）
 
 - **门禁必须完整跑一遍**：仅 12 项新增专项测试通过并不代表完成。真实完整门禁首次返回 924 单测、11 FAIL／18 ERROR；多数由旧代码假定 41 活动图、46 条连接、临时拷贝不包含新 `engine/overworld/johto_east_exterior.asm` 导致，且 Gold 全量遮罩源证据当时尚未跑完。必须保留失败、逐个定位根因，不能用删除旧负向用例或只改数字绕过。

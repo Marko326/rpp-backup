@@ -61,7 +61,7 @@
         "cut": "DEFERRED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",
-        "warp": "DEFERRED"
+        "warp": "ALLOWED"
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null
@@ -3321,12 +3321,44 @@
         "cut": "DEFERRED",
         "strength": "DEFERRED",
         "npc": "DEFERRED",
-        "warp": "FORBIDDEN"
+        "warp": "ALLOWED"
       },
       "identity_evidence": "STATIC_PASS",
       "gold_fly_landmark": null,
       "fly_use_status": "ALLOWED",
-      "deferred_gold_warps": "interiors, ICE_PATH_1F, ROUTE_29 remains closed; no fabricated targets"
+      "deferred_gold_warps": "Dark Cave (Gold Route46 warp #3) still deferred; Route29/46 gate north pair now active"
+    },
+    {
+      "local_id": 74,
+      "local_symbol": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+      "header": "JohtoRoute29Route46Gate_h",
+      "bank": "BANK(JohtoRoute29Route46Gate_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_ROUTES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_ROUTE29",
+      "town_map_index": 1,
+      "town_map_name": "JohtoRoute29TownMapName",
+      "town_map_xy": [
+        116,
+        136
+      ],
+      "feature_status": {
+        "town_map_background": "DEFERRED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
     }
   ]
 }
