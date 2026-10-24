@@ -153,6 +153,8 @@ SPRITE_LEAF EQU SPRITE_GAMEBOY_KID_COPY ; unused duplicate slot for linked Green
 	; HOUSE-5.62.240 DEV: after old sprite IDs; original Gold Olivine house sprites
 	const SPRITE_JOHTO_POKEFAN_M           ; $64 (actual const_value, not stale prior comment)
 	const SPRITE_JOHTO_LASS                ; $65
+	const SPRITE_JOHTO_FISHING_GURU_RED    ; $66 (Gold Fishing Guru / Tim PAL_NPC_RED)
+	const SPRITE_JOHTO_FISHING_GURU_GREEN  ; $67 (Gold Fishing Guru / Good Rod PAL_NPC_GREEN)
 	
 	
 ; Variable Sprite IDs Here

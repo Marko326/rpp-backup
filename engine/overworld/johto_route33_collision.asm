@@ -777,7 +777,12 @@ JohtoOlivinePunishmentSpeechHouseCanStepAhead::
  jr nz, .blocked
  ld a, [wCurLocalMapID]
  cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+ jr z, .house1
+ cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
+ jr z, .house1
+ cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
  jr nz, .blocked
+.house1
  ld hl, JohtoOlivinePunishmentSpeechHouseBlockedRows
  ld d, JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_WIDTH * 2
  ld e, 1 ; 8 Gold 16x16 cells per row = 1 packed byte
@@ -849,9 +854,18 @@ JohtoOlivineCityCanStepAhead::
  jr nz, .westConnection
  ld a, [wXCoord]
  cp 29
+ jr z, .firstHouseDoor
+ cp 25
+ jr z, .firstHouseDoor
+ cp 13
  jr nz, .westConnection
  ld a, [wYCoord]
- cp 12
+ cp 16 ; from (13,16) UP onto Good Rod door (13,15)
+ jp z, .clear
+ jr .westConnection
+.firstHouseDoor
+ ld a, [wYCoord]
+ cp 12 ; Gold north-facing doors at (29,11), (25,11)
  jp z, .clear
 .westConnection
  ; West connection: land y20 and y22..25 in both Gold maps.
@@ -2299,7 +2313,7 @@ JohtoNorthGateStepWarpAllowed::
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
 	jp z, .mahoganyNorthDoor ; sparse house check lengthened this route past JR +127
 	cp JOHTO_ROUTE_29_LOCAL_ID
-	jr z, .route29NorthDoor
+	jp z, .route29NorthDoor
 	cp JOHTO_ROUTE_43_LOCAL_ID
 	jr z, .route43MiddleDoor
 	; All remaining directional carpets (including Route34's Gold y37
@@ -2319,20 +2333,29 @@ JohtoNorthGateStepWarpAllowed::
 	jp nz, .deny
 	ld a, [wYCoord]
 	cp 5
-	jr z, .up
+	jp z, .up
 	jp .deny
 .gateVertical
 	ld a, [wYCoord]
 	and a
-	jr z, .up
+	jp z, .up
 	jp .deny
 .olivineHouseDoor
- ld a, [wXCoord]
- cp 29
- jp nz, .deny
  ld a, [wYCoord]
  cp 11
- jr z, .up
+ jr z, .olivineNorthDoors
+ cp 15
+ jp nz, .deny
+ ld a, [wXCoord]
+ cp 13 ; Good Rod house
+ jp z, .up
+ jp .deny
+.olivineNorthDoors
+ ld a, [wXCoord]
+ cp 29 ; first verified house
+ jp z, .up
+ cp 25 ; Tim house
+ jp z, .up
  jp .deny
 .cityNorthDoor
 	ld a, [wXCoord]
@@ -2340,7 +2363,7 @@ JohtoNorthGateStepWarpAllowed::
 	jp nz, .deny
 	ld a, [wYCoord]
 	cp 1
-	jr z, .up
+	jp z, .up
 	jp .deny
 ; Gold Route43 single north-facing DOOR at (17,35) must STEP_ON.
 .route43MiddleDoor
@@ -2349,7 +2372,7 @@ JohtoNorthGateStepWarpAllowed::
  jp nz, .deny
  ld a, [wYCoord]
  cp 35
- jr z, .up
+ jp z, .up
  jp .deny
 .route29NorthDoor
  ld a, [wXCoord]
@@ -2357,7 +2380,7 @@ JohtoNorthGateStepWarpAllowed::
  jp nz, .deny
  ld a, [wYCoord]
  cp 1
- jr z, .up
+ jp z, .up
  jp .deny
 .mahoganyNorthDoor
 	ld a, [wXCoord]
@@ -2365,12 +2388,12 @@ JohtoNorthGateStepWarpAllowed::
 	jp nz, .deny
 	ld a, [wYCoord]
 	cp 1
-	jr z, .up
+	jp z, .up
 	jp .deny
 .forest
 	ld a, [wYCoord]
 	cp 5
-	jr z, .up
+	jp z, .up
 	jp .deny
 .up
 	ld a, PLAYER_DIR_UP
@@ -2391,7 +2414,11 @@ JohtoNorthGateStepWarpAllowed::
 ; with preserved region-local identity. carry = correct approach.
 JohtoGateCollisionDirectionAllowed::
 	ld a, [wCurLocalMapID]
-	cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+ cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+	jp z, .houseExitDown
+	cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
+	jp z, .houseExitDown
+	cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
 	jp z, .houseExitDown
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jp z, .left
@@ -4121,6 +4148,10 @@ JohtoRoute32RuinsOfAlphGateBlockedRows::
 JohtoNativeCanStepAhead::
  ld a, [wCurLocalMapID]
  cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+ jp z, .olivineHouse
+ cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
+ jp z, .olivineHouse
+ cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
  jp z, .olivineHouse
  cp JOHTO_ROUTE_44_LOCAL_ID
  jp z,.east

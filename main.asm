@@ -165,9 +165,13 @@ INCLUDE "engine/menu/gb_player.asm"
 SECTION "Johto Indoor Furniture", ROMX
 INCLUDE "engine/overworld/johto_indoor_furniture.asm"
 
+SECTION "Johto Passive House NPC", ROMX
+INCLUDE "engine/overworld/johto_passive_house_npc.asm"
+
 SECTION "Johto Olivine House NPC Sprites", ROMX
 JohtoPokefanMSprite: INCBIN "gfx/sprites/johto_pokefan_m.2bpp"
 JohtoLassSprite:    INCBIN "gfx/sprites/johto_lass.2bpp"
+JohtoFishingGuruSprite: INCBIN "gfx/sprites/johto_fishing_guru.2bpp"
 
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
@@ -3510,6 +3514,14 @@ INCLUDE "data/mapHeaders/JohtoOlivinePunishmentSpeechHouse.asm"
 INCLUDE "data/mapObjects/JohtoOlivinePunishmentSpeechHouse.asm"
 INCLUDE "scripts/JohtoOlivinePunishmentSpeechHouse.asm"
 JohtoOlivinePunishmentSpeechHouseBlocks: INCBIN "maps/JohtoOlivinePunishmentSpeechHouse.blk"
+INCLUDE "data/mapHeaders/JohtoOlivineGoodRodHouse.asm"
+INCLUDE "data/mapObjects/JohtoOlivineGoodRodHouse.asm"
+INCLUDE "scripts/JohtoOlivineGoodRodHouse.asm"
+JohtoOlivineGoodRodHouseBlocks: INCBIN "maps/JohtoOlivineGoodRodHouse.blk"
+INCLUDE "data/mapHeaders/JohtoOlivineTimsHouse.asm"
+INCLUDE "data/mapObjects/JohtoOlivineTimsHouse.asm"
+INCLUDE "scripts/JohtoOlivineTimsHouse.asm"
+JohtoOlivineTimsHouseBlocks: INCBIN "maps/JohtoOlivineTimsHouse.blk"
 
 ; GATE-5.62.240: Route29 / Route46 transition, no extra source maps opened.
 SECTION "Johto Route29 Route46 Gate Map", ROMX, BANK[$47]

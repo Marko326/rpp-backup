@@ -214,9 +214,9 @@ SpriteSets:
 	db SPRITE_BUG_CATCHER
 	db SPRITE_JOHTO_LASS
 	db SPRITE_JOHTO_POKEFAN_M
-	db SPRITE_FISHER2
+	db SPRITE_JOHTO_FISHING_GURU_RED
 	db SPRITE_GIRL
-	db SPRITE_HIKER
+	db SPRITE_JOHTO_FISHING_GURU_GREEN
 	db SPRITE_BLACK_HAIR_BOY_1
 	db SPRITE_BALL
 	db SPRITE_BERRY_TREE
@@ -738,3 +738,14 @@ SpriteSheetPointerTable:
 	dw JohtoLassSprite
 	db $c0
 	db BANK(JohtoLassSprite)
+
+	; Gold Fishing Guru artwork shared; palette is selected by picture ID.
+	; SPRITE_JOHTO_FISHING_GURU_RED / Gold Tim
+	dw JohtoFishingGuruSprite
+	db $c0
+	db BANK(JohtoFishingGuruSprite)
+
+	; SPRITE_JOHTO_FISHING_GURU_GREEN / Gold Good Rod Guru
+	dw JohtoFishingGuruSprite
+	db $c0
+	db BANK(JohtoFishingGuruSprite)

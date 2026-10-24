@@ -17,7 +17,12 @@ JohtoIndoorFurniturePredef::
 	ret nz
 	ld a, [wCurLocalMapID]
 	cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+	jr z, .sharedHouse1
+	cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
+	jr z, .sharedHouse1
+	cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
 	ret nz
+.sharedHouse1
 	ld a, [wCurMapTileset]
 	cp JOHTO_HOUSE
 	ret nz

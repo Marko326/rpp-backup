@@ -110,6 +110,12 @@ OverworldLoopLessDelay::
 	and a
 	jr z, .tryBackgroundFieldMove
 
+	; Passive Gold NPCs: A is deliberately inert; do not start a textbox,
+	; dispatch trade/rod events or run the generic sprite text path.
+	; Only sprite #1 in the two specified native rooms is affected.
+	callba IsDeferredOlivineHouseNPC
+	jp c, OverworldLoop
+
 	; Boulder interaction owns its text lifecycle, like CUT and SURF.
 	; If the object is not a boulder, continue with its normal text script.
 	predef HandleBoulderInteraction
@@ -1068,6 +1074,10 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_OLIVINE_CITY_LOCAL_ID
 	jr z, .yes
 	cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
 	jr z, .yes
 	jr .notGate
 

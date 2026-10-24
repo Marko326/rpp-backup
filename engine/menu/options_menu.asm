@@ -1189,6 +1189,8 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_ROUTE36 ; Route46
  db MUSIC_GBP_GSC_ROUTE29 ; Route29Route46Gate, same original Route29 song family
  db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine house follows outdoor city
+ db MUSIC_GBP_GSC_VIOLET_CITY ; OlivineTimsHouse
+ db MUSIC_GBP_GSC_VIOLET_CITY ; OlivineGoodRodHouse
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

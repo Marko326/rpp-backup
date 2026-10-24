@@ -781,6 +781,12 @@ SpritePaletteAssignments: ; Characters on the overworld
 	; 0x65: SPRITE_JOHTO_LASS (Gold PAL_OW_RED)
 	db PAL_OW_RED
 
+	; 0x66: SPRITE_JOHTO_FISHING_GURU_RED (Gold PAL_NPC_RED)
+	db PAL_OW_RED
+
+	; 0x67: SPRITE_JOHTO_FISHING_GURU_GREEN (Gold PAL_NPC_GREEN)
+	db PAL_OW_GREEN
+
 
 AnimationTileset1Palettes:
 	INCBIN "color/data/animtileset1palettes.bin"

@@ -1254,6 +1254,10 @@ JohtoNativeTownMapEntries::
 	dw JohtoRoute29TownMapName
  db 76, 44
  dw JohtoOlivineName ; Olivine house, landmark #26
+ db 76, 44
+ dw JohtoOlivineName ; OlivineTimsHouse
+ db 76, 44
+ dw JohtoOlivineName ; OlivineGoodRodHouse
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

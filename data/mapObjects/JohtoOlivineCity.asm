@@ -1,9 +1,11 @@
-; Gold OlivineCity #5 ordinary house is open; other 10 remain sealed.
+; Gold OlivineCity has three unlocked ordinary houses; other entrances remain sealed.
 ; Rival scene and town NPCs are deferred rather than faked with global flags.
 JohtoOlivineCityObject:
  db $05
- db $01 ; one audited home entrance, never open the other ten
+ db $03 ; three Gold-proven ordinary houses; other entrances sealed
  db 11, 29, 0, REGION_WARP_ESCAPE ; Gold outside Warp #5 -> inside Warp #1
+ db 11, 25, 0, REGION_WARP_ESCAPE ; Gold OlivineTimsHouse entry -> indoor Warp #1
+ db 15, 13, 0, REGION_WARP_ESCAPE ; Gold OlivineGoodRodHouse entry -> indoor Warp #1
  db $06 ; six Gold BGEVENT_READ signs, runtime (y,x)
  db 11, 17, 1 ; OlivineCity sign
  db 24, 20, 2 ; Port sign
