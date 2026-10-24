@@ -1,13 +1,17 @@
 """Exact Gold house contract and targeted mutation rejection; not ROM proof."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import hashlib
+import re
 import shutil
 import sys
 import unittest
+from PIL import Image
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools'))
 from johto_olivine_house_runtime_audit import audit
+from johto_indoor_tiles_converter import strict_2bpp
 
 # At test time Gold is supplied by the project's original-source test environment.
 import os
@@ -22,7 +26,8 @@ RPP_PATHS = (
     'maps/JohtoOlivinePunishmentSpeechHouse.blocked_mask.bin',
     'maps/JohtoOlivinePunishmentSpeechHouse.blk',
     'gfx/blocksets/johto_house.bst',
-    'gfx/tilesets/johto_house.2bpp',
+    'gfx/tilesets/johto_house.png',
+    'Makefile',
     'home/overworld.asm', 'main.asm', 'scripts/JohtoOlivinePunishmentSpeechHouse.asm',
 )
 
@@ -34,6 +39,39 @@ class OlivineHouse240DEV(unittest.TestCase):
 
     def test_original_gold_source_and_runtime_contract(self):
         self.assertEqual(audit(ROOT,GOLD),[])
+
+    def test_house_png_is_the_reproducible_fixed_96_slot_source(self):
+        png=ROOT/'gfx/tilesets/johto_house.png'
+        with Image.open(png) as image:
+            self.assertEqual(image.mode,'L')
+            self.assertEqual(image.size,(64,96))
+            self.assertLessEqual(set(image.tobytes()),{0,85,170,255})
+            encoded=strict_2bpp(image,96)
+        self.assertEqual(len(encoded),1536)
+        self.assertEqual(hashlib.sha256(encoded).hexdigest(),
+                         '141ed8ac9fc3b774aca51d426212239e9175b1dc4aede9e491f331d97538b1a9')
+        built=ROOT/'gfx/tilesets/johto_house.2bpp'
+        if built.exists():
+            self.assertEqual(encoded,built.read_bytes())
+        rules=(ROOT/'Makefile').read_text()
+        self.assertRegex(rules,r'(?m)^gfx/tilesets/johto_house\.2bpp: gfx/tilesets/johto_house\.png\n\t\$\(RGBGFX\) -o \$@ \$<\n\t@test .*1536')
+
+    def test_all_direct_2bpp_and_1bpp_references_have_png_sources(self):
+        pattern=re.compile(r'INCBIN\s+["\']([^"\']+\.(?:2bpp|1bpp))["\']')
+        refs=[]
+        missing=[]
+        source_files=[*ROOT.rglob('*.asm'), *ROOT.rglob('*.inc')]
+        for source in source_files:
+            if 'RPP_PROJECT_CONTEXT' in source.parts:
+                continue
+            try: text=source.read_text()
+            except UnicodeDecodeError: continue
+            for asset in pattern.findall(text):
+                refs.append((source,asset))
+                png=ROOT/(asset.rsplit('.',1)[0]+'.png')
+                if not png.is_file(): missing.append(f'{source.relative_to(ROOT)} -> {asset} (missing {png.relative_to(ROOT)})')
+        self.assertGreaterEqual(len(refs),250,'graphics-source scan unexpectedly covered too few assembly references')
+        self.assertEqual(missing,[],'direct graphics includes must have tracked PNG sources: '+ '; '.join(missing))
 
     def mutate(self,path,old,new,error):
         with TemporaryDirectory() as folder:

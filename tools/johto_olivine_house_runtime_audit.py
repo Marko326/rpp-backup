@@ -6,8 +6,11 @@ from a syntactically valid Warp alone; mask, facing and landing need evidence.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 import re
 from pathlib import Path
+from PIL import Image
+from johto_indoor_tiles_converter import strict_2bpp
 
 HOUSE='JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID'
 CITY='JOHTO_OLIVINE_CITY_LOCAL_ID'
@@ -140,8 +143,24 @@ def audit(root: Path, gold: Path) -> list[str]:
             errors.append('house exit carpets must be walkable in exact 8x8 mask')
         if mask[:2]!=bytes([255,135]):
             errors.append('house north walls/furniture collision unexpected')
-        if len((root/'gfx/tilesets/johto_house.2bpp').read_bytes())!=1536 or len((root/'maps/JohtoOlivinePunishmentSpeechHouse.blk').read_bytes())!=16 or len((root/'gfx/blocksets/johto_house.bst').read_bytes())!=208:
-            errors.append('Gold house isolated art dimensions changed')
+        # .2bpp is intentionally ignored by Git and generated from the tracked PNG.
+        # Validate the PNG's fixed 96-slot encoding against the known-good historic asset;
+        # if a local build artifact exists, it must match byte-for-byte.
+        house_png=root/'gfx/tilesets/johto_house.png'
+        with Image.open(house_png) as image:
+            if image.mode!='L' or image.size!=(64,96) or not set(image.tobytes()) <= {0,85,170,255}:
+                errors.append('Gold house PNG must be a 4-shade grayscale 8x12 tile atlas')
+            encoded=strict_2bpp(image,96)
+        if len(encoded)!=1536 or hashlib.sha256(encoded).hexdigest()!='141ed8ac9fc3b774aca51d426212239e9175b1dc4aede9e491f331d97538b1a9':
+            errors.append('Gold house PNG no longer reproduces the historic fixed 96-slot 2bpp bytes')
+        built=root/'gfx/tilesets/johto_house.2bpp'
+        if built.exists() and built.read_bytes()!=encoded:
+            errors.append('generated Gold house .2bpp differs from its tracked PNG source')
+        makefile=(root/'Makefile').read_text()
+        if not re.search(r'(?m)^gfx/tilesets/johto_house\.2bpp: gfx/tilesets/johto_house\.png\n\t\$\(RGBGFX\) -o \$@ \$<\n\t@test .*1536',makefile):
+            errors.append('Gold house needs an explicit no-trim 96-slot PNG -> 2bpp Makefile rule')
+        if len((root/'maps/JohtoOlivinePunishmentSpeechHouse.blk').read_bytes())!=16 or len((root/'gfx/blocksets/johto_house.bst').read_bytes())!=208:
+            errors.append('Gold house isolated block/layout dimensions changed')
         if 'JohtoHouse_GFX: INCBIN "gfx/tilesets/johto_house.2bpp"' not in (root/'main.asm').read_text():
             errors.append('house gfx not included in ROM source')
         if len(re.findall(r'(?m)^\s*dw JohtoOlivinePunishmentSpeechHouseDadText\s*$',(root/'scripts/JohtoOlivinePunishmentSpeechHouse.asm').read_text()))!=1:
