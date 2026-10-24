@@ -82,7 +82,7 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoOlivineName ; Olivine house, landmark #26\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoOlivineName ; OlivineGoodRodHouse\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_native_music_symbols_must_be_declared(self):
@@ -123,7 +123,7 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine house follows outdoor city\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_VIOLET_CITY ; OlivineGoodRodHouse\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):

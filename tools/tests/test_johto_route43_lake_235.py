@@ -317,10 +317,11 @@ class Route43Lake235(unittest.TestCase):
                       if a['map_local']==TOWN)
         approach['trigger']='COLLISION_ONLY'
         src=self.collision
-        target=('\tcp JOHTO_MAHOGANY_TOWN_LOCAL_ID\n'
-                '\tjr z, .mahoganyNorthDoor\n')
-        self.assertEqual(src.count(target),1)
-        damaged=src.replace(target,'',1)
+        target=re.compile(r'(?m)^\s*cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\s*\n'
+                          r'\s*(?:jp|jr) z, \.mahoganyNorthDoor[^\n]*\n')
+        hits=list(target.finditer(src))
+        self.assertEqual(len(hits),1,'Must mutate the actual gate branch')
+        damaged=src[:hits[0].start()]+src[hits[0].end():]
         self.assertFalse(predicate(damaged,'JohtoNorthGateStepWarpAllowed',
                                    TOWN,9,1,'UP'))
         errors=gate_audit(ROOT,GOLD,

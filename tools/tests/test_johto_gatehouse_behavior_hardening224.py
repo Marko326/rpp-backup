@@ -81,16 +81,16 @@ class GatehouseBehaviorHardening224(unittest.TestCase):
         raw=self.source(ASM)
         old='''\tld a, [wYCoord]
 \tand a
-\tjr z, .up
+\tjp z, .up
 \tjp .deny
-.cityNorthDoor'''
+.olivineHouseDoor'''
         new='''\tld a, [wYCoord]
 \tand a
-\tjr z, .up
+\tjp z, .up
 \tcp 7
 \tjr z, .downStep
 \tjp .deny
-.cityNorthDoor'''
+.olivineHouseDoor'''
         self.assertIn(old,raw)
         damaged=raw.replace(old,new,1)
         start=damaged.index('JohtoNorthGateStepWarpAllowed::')

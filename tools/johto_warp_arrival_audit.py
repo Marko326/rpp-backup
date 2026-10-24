@@ -272,12 +272,16 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('JOHTO_ROUTE_29', 'JOHTO_ROUTE_29_LOCAL_ID', 1, 27, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
-    # HOUSE-5.62.240: original Gold Olivine City (29,11) is a solid DOOR.
-    # This one exact return arrival must step DOWN to walkable (29,12).
-    # Do not authorize any other new auto-step or UP profile.
+    # All three opened Gold Olivine House1 doors are solid DOOR landing cells.
+    # Keep this exact list (not a city-wide blanket auto-step); the indoor
+    # carpet arrivals must never receive automatic UP or DOWN movement.
+    olivine_house_doors = ((29, 11, 'OLIVINE_PUNISHMENT_SPEECH_HOUSE'),
+                           (25, 11, 'OLIVINE_TIMS_HOUSE'),
+                           (13, 15, 'OLIVINE_GOOD_ROD_HOUSE'))
     olivine_house_return = [
-        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 11, 29,
-         'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', y, x,
+         'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
+        for x, y, _ in olivine_house_doors
     ]
     if arrivals != olivine_house_return + route29_gate_steps + middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps + park_south_steps + park35_solid_door:
         errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
@@ -285,17 +289,30 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
     house_city_source = root/'data/mapObjects/JohtoOlivineCity.asm'
     house_map_source = root/'data/mapObjects/JohtoOlivinePunishmentSpeechHouse.asm'
     if house_map_source.exists():
-        # No additional city Warp destinations can be silently enabled.
-        if not house_city_source.is_file() or not registered_warp(house_city_source.read_text(), 29, 11):
-            errors.append('Olivine City Gold house doorway Warp (29,11) missing')
         try:
+            city_source = house_city_source.read_text()
             mask = house_city_mask.read_bytes()
             stride = (20 * 2 + 7)//8
-            if (len(mask) != stride * (18 * 2) or
-                mask[12 * stride + 29//8] & (1 << (29 % 8))):
-                errors.append('Olivine return automatic DOWN step blocked at (29,12)')
+            if len(mask) != stride * (18 * 2):
+                errors.append('Olivine exterior collision mask has wrong dimensions')
+            else:
+                for x, y, _ in olivine_house_doors:
+                    if not registered_warp(city_source, x, y):
+                        errors.append(f'Olivine City Gold house doorway Warp ({x},{y}) missing')
+                    if not (mask[y*stride + x//8] & (1 << (x%8))):
+                        errors.append(f'Olivine City door ({x},{y}) is not a solid landing')
+                    if mask[(y+1)*stride + x//8] & (1 << (x%8)):
+                        errors.append(f'Olivine return automatic DOWN step blocked at ({x},{y+1})')
         except OSError:
-            errors.append('Olivine exterior collision mask missing')
+            errors.append('Olivine exterior Warp source / collision mask missing')
+        if gold is not None:
+            try:
+                gold_city = (gold/'maps/OlivineCity.asm').read_text()
+                for x, y, room in olivine_house_doors:
+                    if not re.search(rf'(?m)^\s*warp_event\s+{x},\s*{y},\s*{room},\s*1\b',gold_city):
+                        errors.append(f'Olivine City Gold exterior Warp ({x},{y}) mismatch: {room}')
+            except OSError:
+                errors.append('Gold Olivine City Warp source unavailable')
     # Additional original Gold north door: Route35 (3,5) is solid DOOR,
     # its arrival auto-step must enter (3,6); do not generalize to carpets.
     route35_map_path = root/'data/mapObjects/JohtoRoute35.asm'

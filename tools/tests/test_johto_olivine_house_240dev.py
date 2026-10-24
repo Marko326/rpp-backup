@@ -121,9 +121,9 @@ class OlivineHouse240DEV(unittest.TestCase):
 
     def test_outside_exact_step_on_fence_protected(self):
         self.mutate('engine/overworld/johto_route33_collision.asm',
-                    'cp 12\n jp z, .clear\n.westConnection',
-                    'cp 13\n jp z, .clear\n.westConnection',
-                    'EXACT step-on')
+                    'cp 12 ; Gold north-facing doors at (29,11), (25,11)\n jp z, .clear',
+                    'cp 13 ; Gold north-facing doors at (29,11), (25,11)\n jp z, .clear',
+                    'door step mask missing')
 
     def test_house_double_exit_no_air_wall(self):
         with TemporaryDirectory() as folder:

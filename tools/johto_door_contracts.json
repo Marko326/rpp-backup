@@ -3240,7 +3240,7 @@
       "rpp_map": "JohtoOlivineCity",
       "gold_map": "OlivineCity",
       "family": "BUILDING",
-      "warp_count": 1,
+      "warp_count": 3,
       "required_test_ids": [
         "test_johto_olivine_house_240dev.OlivineHouse240DEV.test_city_outdoor_warp_must_not_move"
       ]
@@ -3252,6 +3252,24 @@
       "warp_count": 2,
       "required_test_ids": [
         "test_johto_olivine_house_240dev.OlivineHouse240DEV.test_house_reverse_warp_and_sibling_exit_protected"
+      ]
+    },
+    {
+      "rpp_map": "JohtoOlivineTimsHouse",
+      "gold_map": "OlivineTimsHouse",
+      "family": "BUILDING",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_olivine_house_batch_241dev.OlivineHouseBatch241DEV.test_two_house_batch_gold_warp_graph"
+      ]
+    },
+    {
+      "rpp_map": "JohtoOlivineGoodRodHouse",
+      "gold_map": "OlivineGoodRodHouse",
+      "family": "BUILDING",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_olivine_house_batch_241dev.OlivineHouseBatch241DEV.test_two_house_batch_gold_warp_graph"
       ]
     }
   ],

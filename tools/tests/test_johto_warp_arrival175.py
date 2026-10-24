@@ -25,16 +25,20 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         self.assertEqual(audit(ROOT, self.gold), [])
         src = (ROOT / INPUTS[0]).read_text()
         actual=profiles(src)
-        self.assertEqual(actual[10:12], [
+        self.assertEqual(actual[12:14], [
             ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
-        self.assertEqual(len(actual), 24)
+        self.assertEqual(len(actual), 26)
         # New Route29/Route46 gate arrivals occupy three deliberately
         # prepended rows; keep the old cave and north-gate rows unchanged.
-        self.assertEqual(actual[:4], [
+        self.assertEqual(actual[:6], [
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 11, 29,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 11, 25,
+             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 15, 13,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 4,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),

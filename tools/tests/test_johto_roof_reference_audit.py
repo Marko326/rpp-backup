@@ -48,7 +48,7 @@ class RoofGoldReferenceGate(unittest.TestCase):
     def test_gold_registry_roofs_and_runtime_tables_match(self):
         self.assertEqual(audit(self.path,GOLD),[])
 
-    def test_last_indoor_house_has_no_roof_and_both_tables_have_47_slots(self):
+    def test_batch_indoor_houses_have_no_roof_and_both_tables_have_49_slots(self):
         from johto_roof_reference_audit import roof_table
         tables = (
             ('color/loadpalettes.asm', 'JohtoGoldDayRoofGroups', 'JohtoGoldDayRoofGroupsEnd'),
@@ -57,8 +57,8 @@ class RoofGoldReferenceGate(unittest.TestCase):
         )
         for rel, start, end in tables:
             values = roof_table((self.path/rel).read_text(), start, end)
-            self.assertEqual(len(values), 47, rel)
-            self.assertEqual(values[-2:], [None, None], rel)
+            self.assertEqual(len(values), 49, rel)
+            self.assertEqual(values[-3:], [None, None, None], rel)
 
     def test_last_house_roof_row_missing_is_rejected(self):
         for rel, last_row in (

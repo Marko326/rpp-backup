@@ -96,7 +96,8 @@ class Route43Gate236(unittest.TestCase):
     def test_old_gate_still_registered(self):
         self.assertIn('dw JohtoRoute43MahoganyGate_h',(ROOT/'data/johto_map_headers.asm').read_text())
         self.assertIn('dw JohtoRoute43Gate_h',(ROOT/'data/johto_map_headers.asm').read_text())
-        self.assertEqual(len(self.manifest['active_warp_maps'][-1]['gatehouse_proof_ids']),8)
+        gate=next(x for x in self.manifest['active_warp_maps'] if x['rpp_map']=='JohtoRoute43Gate')
+        self.assertEqual(len(gate['required_test_ids']),8)
 
     def test_real_movement_executors_no_air_walls(self):
         program,labels=parse_caller(self.runtime,'JohtoRoute43CanStepAhead')

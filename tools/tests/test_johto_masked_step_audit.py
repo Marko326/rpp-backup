@@ -18,9 +18,9 @@ class SharedMaskedSourceAudit(unittest.TestCase):
 
     def test_active_masked_maps_include_new_route34_edges(self):
         result = audit(ROOT, GOLD)
-        self.assertEqual(result['masked_caller_maps_checked'], 21)
-        self.assertEqual(result['movement_edges_executed'], 162) ; # 5 new Route43 middle-gate movement probes
-        self.assertEqual(result['movement_edges_required_allow'], 139)
+        self.assertEqual(result['masked_caller_maps_checked'], 23)  # two new House1 maps
+        self.assertEqual(result['movement_edges_executed'], 171) ; # 5 new Route43 middle-gate movement probes
+        self.assertEqual(result['movement_edges_required_allow'], 145)
         self.assertEqual(result['status'], 'SOURCE_BRANCH_CHECK_ONLY')
         self.assertEqual(result['failures'], [])
         self.assertFalse(result['phone_verified'])

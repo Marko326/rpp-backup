@@ -52,11 +52,11 @@ def audit(root: Path, gold: Path) -> list[str]:
         pointer_names=re.findall(r'(?m)^\s*dw (\w+)\s*$',pointers)
         if len(pointer_names)!=len(declared):
             problems.append('SpriteSheetPointerTable must align exactly to real sprite constant count')
-        elif pointer_names[-2:]!=['JohtoPokefanMSprite','JohtoLassSprite']:
+        elif pointer_names[-4:]!=['JohtoPokefanMSprite','JohtoLassSprite','JohtoFishingGuruSprite','JohtoFishingGuruSprite']:
             problems.append('new Gold sprite pointers misindexed')
         col_rows=files['color/sprites.asm'].split('SpritePaletteAssignments:',1)[1].split('AnimationTileset1Palettes:',1)[0]
         pal_rows=re.findall(r'(?m)^\s*db (PAL_OW_\w+)',col_rows)
-        if len(pal_rows)!=len(declared) or pal_rows[-2:]!=['PAL_OW_BROWN','PAL_OW_RED']:
+        if len(pal_rows)!=len(declared) or pal_rows[-4:]!=['PAL_OW_BROWN','PAL_OW_RED','PAL_OW_RED','PAL_OW_GREEN']:
             problems.append('SpritePaletteAssignments rows must align to actual sprite indices')
         a=sets.split('; sprite set $0b',1)
         if len(a)!=2:
@@ -75,7 +75,7 @@ def audit(root: Path, gold: Path) -> list[str]:
             indoor=a[1].split('SpriteSheetPointerTable:',1)[0]
             have=re.findall(r'(?m)^\s*db (SPRITE_\w+)\s*$',indoor)
             wanted=['SPRITE_SAILOR','SPRITE_GAMBLER','SPRITE_BUG_CATCHER','SPRITE_JOHTO_LASS',
-                    'SPRITE_JOHTO_POKEFAN_M','SPRITE_FISHER2','SPRITE_GIRL','SPRITE_HIKER',
+                    'SPRITE_JOHTO_POKEFAN_M','SPRITE_JOHTO_FISHING_GURU_RED','SPRITE_GIRL','SPRITE_JOHTO_FISHING_GURU_GREEN',
                     'SPRITE_BLACK_HAIR_BOY_1','SPRITE_BALL','SPRITE_BERRY_TREE']
             if have!=wanted:problems.append('house $0c set must be 11 slots with Gold NPCs')
         for tag,asmname in [('POKEFAN_M','JohtoPokefanMSprite'),('LASS','JohtoLassSprite')]:

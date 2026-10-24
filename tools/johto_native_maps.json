@@ -3391,6 +3391,70 @@
       },
       "identity_evidence": "USER_ACCEPTED",
       "gold_fly_landmark": null
+    },
+    {
+      "local_id": 32,
+      "local_symbol": "JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID",
+      "header": "JohtoOlivineTimsHouse_h",
+      "bank": "BANK(JohtoOlivineTimsHouse_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_VIOLET_CITY",
+      "town_map_index": 26,
+      "town_map_name": "JohtoOlivineName",
+      "town_map_xy": [
+        76,
+        44
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "USER_ACCEPTED",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 35,
+      "local_symbol": "JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID",
+      "header": "JohtoOlivineGoodRodHouse_h",
+      "bank": "BANK(JohtoOlivineGoodRodHouse_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_VIOLET_CITY",
+      "town_map_index": 26,
+      "town_map_name": "JohtoOlivineName",
+      "town_map_xy": [
+        76,
+        44
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "DEFERRED",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "USER_ACCEPTED",
+      "gold_fly_landmark": null
     }
   ]
 }

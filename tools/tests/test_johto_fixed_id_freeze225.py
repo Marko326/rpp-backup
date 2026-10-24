@@ -71,7 +71,10 @@ class FixedIdFreeze225(unittest.TestCase):
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(47, len(data['maps']))
+        self.assertEqual(49, len(data['maps']))  # two new Olivine House1 rooms occupy slots 47..48
+        self.assertEqual([(32, 'JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID'),
+                          (35, 'JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID')],
+                         [(x['local_id'],x['local_symbol']) for x in data['maps'][47:49]])
         self.assertEqual((74, 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'),
                          (data['maps'][45]['local_id'], data['maps'][45]['local_symbol']))
         self.assertEqual((34, 'JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID'),

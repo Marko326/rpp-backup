@@ -36,6 +36,7 @@ from johto_rom0_collision_audit import audit as rom0_collision_audit
 from johto_east_exterior_runtime_audit import audit as east_exterior_runtime_audit
 from johto_adjacent_pair_runtime_audit import audit as adjacent_pair_runtime_audit
 from rom0_list_menu_bank_audit import audit as rom0_list_menu_bank_audit
+from johto_olivine_passive_npc_audit import audit as passive_npc_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
@@ -66,7 +67,7 @@ test_johto_indoor_stage3 test_johto_indoor_stage4
 test_johto_indoor_stage5 test_johto_indoor_stage6
 test_johto_olivine_house_240dev test_johto_olivine_house_npc_floor_240dev
 test_johto_olivine_house_sprite_parity_240dev test_johto_house_furniture_240dev
-test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
+test_johto_olivine_house_batch_241dev test_johto_olivine_passive_npc_241dev test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
 test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170 test_johto_fixed_id_freeze225
 test_johto_route32_ladder166 test_johto_route32_p1b
@@ -534,6 +535,7 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
     errors.extend('EAST_RUNTIME: '+e for e in east_exterior_runtime_audit(root,gold,connections=False))
     errors.extend('ADJACENT_PAIR_RUNTIME: '+e for e in adjacent_pair_runtime_audit(root,gold))
     errors.extend('ROM0_LIST_MENU: '+e for e in rom0_list_menu_bank_audit(root))
+    errors.extend('OLIVINE_PASSIVE_NPC: '+e for e in passive_npc_audit(root, gold))
     errors.extend('ILEX_GATE: '+v for v in ilex_gate_audit(root,gold))
     if not any(e.startswith('Gold source missing:') for e in errors):
         errors.extend('ROOF: '+v for v in roof_audit(root,gold))

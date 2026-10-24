@@ -82,12 +82,13 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
                     errors.append(f'{name} unbuilt Gold warp entrance opened at ({x},{y})')
             if name == 'OlivineCity':
                 obj = objects[name]
-                # Gold outside Warp #5 alone is built.  Check exact count,
-                # destination slot and location; any extra Warp fails closed.
-                active = re.search(r'(?m)^\s*db \$01\s*; one audited home entrance', obj)
-                destination = re.findall(r'(?m)^\s*db\s+11,\s*29,\s*0,\s*REGION_WARP_ESCAPE\s*;', obj)
-                if not active or len(destination) != 1:
-                    errors.append('OlivineCity must retain one real Warp at Gold (29,11) only')
+                # Three Gold exact entrances; old city Warp remains slot zero.
+                active = re.search(r'(?m)^\s*db \$03\s*; three Gold-proven ordinary houses', obj)
+                expected = [(11,29,0),(11,25,0),(15,13,0)]
+                found = [tuple(map(int,row)) for row in re.findall(
+                    r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*REGION_WARP_ESCAPE', obj)]
+                if not active or found != expected:
+                    errors.append('OlivineCity must expose exactly three original Gold House1 doors in audited order')
             elif not re.search(r'(?m)^\s*db \$00\s*; no (?:dummy Warp|active Warp)',objects[name]):
                 errors.append(f'{name} unbuilt indoor warp has active dummy registration')
             if expected_water is not None:

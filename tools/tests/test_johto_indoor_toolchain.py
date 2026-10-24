@@ -188,7 +188,7 @@ class IndoorToolchainTests(unittest.TestCase):
                               for x in result['gold_warps_1_based']], [(2, 7, 5), (3, 7, 5)])
             self.assertEqual(len(result['gold_interactions']['npcs']), 2)
             self.assertEqual(len(result['gold_interactions']['backgrounds']), 2)
-            self.assertEqual(len(result['rpp_outdoor_state']['existing_active_warps']), 1)  # live house now registered
+            self.assertEqual(len(result['rpp_outdoor_state']['existing_active_warps']), 3)  # three independently registered Olivine houses
             self.assertFalse(result['runtime_warp_enabled'])
             self.assertFalse(result['import_allowed'])
             self.assertEqual(result['art_exact_blocks'], 0)

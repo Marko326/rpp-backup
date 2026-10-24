@@ -45,10 +45,13 @@ class SparseActiveSlotContract(unittest.TestCase):
 
     def test_101_and_221_are_inactive_and_255_is_forbidden(self):
         for stable in (101, 221, 255):
+            # Only read the table range after the semicolon, not later
+            # notes such as "$20-$2f, house ID34 -> slot46".
+            import re
             row = next(x for x in self.headers.splitlines()
                        if x.lstrip().startswith('db ') and
-                       int(x.rsplit('$', 2)[-2].split('-',1)[0],16) <= stable <=
-                       int(x.rsplit('$', 1)[-1], 16))
+                       (match := re.search(r';\s*\$([0-9a-fA-F]{2})-\$([0-9a-fA-F]{2})', x))
+                       and int(match.group(1),16) <= stable <= int(match.group(2),16))
             # Guarded independently by the 256-entry count and exact registry image.
             self.assertEqual('$ff', row.split(';')[0].strip()[3:].split(', ')[stable % 16])
 
