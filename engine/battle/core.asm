@@ -1033,31 +1033,12 @@ EnemyMonFaintedText:
 	db "@"
 
 EndLowHealthAlarm:
-; This function is called when the player has the won the battle. It turns off
-; the low health alarm and prevents it from reactivating until the next battle.
-	xor a
-	ld [wDanger], a ; turn off low health alarm
-	ld [wChannelSoundIDs + Ch4], a
-	inc a
-	ld [wLowHealthAlarmDisabled], a ; prevent it from reactivating
-	ret
+	; IMP-5.62.206: infrequent routine relocated to make room for entry hooks.
+	jpab EndLowHealthAlarm_Impl
 
 AnyEnemyPokemonAliveCheck:
-	ld a, [wEnemyPartyCount]
-	ld b, a
-	xor a
-	ld hl, wEnemyMon1HP
-	ld de, wEnemyMon2 - wEnemyMon1
-.nextPokemon
-	or [hl]
-	inc hl
-	or [hl]
-	dec hl
-	add hl, de
-	dec b
-	jr nz, .nextPokemon
-	and a
-	ret
+	; IMP-5.62.206: preserve Z/non-Z semantics through the banked gateway.
+	jpab AnyEnemyPokemonAliveCheck_Impl
 
 ; stores whether enemy ran in Z flag
 ReplaceFaintedEnemyMon:
@@ -1579,7 +1560,8 @@ EnemySendOutFirstMon:
 	ld a,[wEnemyMonSpecies2]
 	call PlayCry
 	call DrawEnemyHUDAndHPBar
-	ret
+	; First trainer send-out waits until the player's active mon is ready.
+	jpab ImposterOnEnemySendOut
 
 TrainerSentOutText:
 	TX_FAR _TrainerSentOutText
@@ -1926,7 +1908,9 @@ SendOutMon:
 	ld a, [wcf91]
 	call PlayCry
 	call PrintEmptyString
-	jp SaveScreenTilesToBuffer1
+	call SaveScreenTilesToBuffer1
+	; Every player entry (lead, switch, faint replacement) shares this hook.
+	jpab ImposterOnPlayerSendOut
 
 ; show 2 stages of the player mon getting smaller before disappearing
 AnimateRetreatingPlayerMon:

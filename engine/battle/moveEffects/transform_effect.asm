@@ -1,3 +1,19 @@
+; Automatic entry passes E=0 for player, E=1 for enemy (Bankswitch
+; overwrites A). Preserve the caller's turn: an entry effect is not a move.
+ImposterTransformEffect_:
+	ld a, [H_WHOSETURN]
+	push af
+	ld a, e
+	ld [H_WHOSETURN], a
+	ld hl, wImposterEntryFlags
+	set 1, [hl]
+	call TransformEffect_
+	ld hl, wImposterEntryFlags
+	res 1, [hl]
+	pop af
+	ld [H_WHOSETURN], a
+	ret
+
 TransformEffect_:
 	ld hl, wBattleMonSpecies
 	ld de, wEnemyMonSpecies
@@ -54,15 +70,33 @@ TransformEffect_:
 	ld hl, HideSubstituteShowMonAnim
 	ld b, BANK(HideSubstituteShowMonAnim)
 	call nz, Bankswitch
+	; Entry-only Transform has no selected move. Play the actual stock
+	; Transform animation by its ID, without editing MoveNum or costing a turn.
+	; The stock TransformAnim already runs SE_TRANSFORM_MON at its end, so
+	; do NOT redraw the species a second time after the animation.
+	ld a, [wImposterEntryFlags]
+	bit 1, a
+	jr z, .manualTransformAnimation
 	ld a, [wOptions]
 	add a
+	jr c, .directTransformRedraw
+	; A send-out can interrupt a turn already holding an animation ID/type.
+	; Save both in the helper so that a switch does not change that move.
+	callba PlayImposterTransformAnimation
+	jr .animationComplete
+.manualTransformAnimation
+	ld a, [wOptions]
+	add a
+	jr c, .directTransformRedraw
 	ld hl, PlayCurrentMoveAnimation
 	ld b, BANK(PlayCurrentMoveAnimation)
-	jr nc, .gotAnimToPlay
+	jr .gotAnimToPlay
+.directTransformRedraw
 	ld hl, AnimationTransformMon
 	ld b, BANK(AnimationTransformMon)
 .gotAnimToPlay
 	call Bankswitch
+.animationComplete
 	ld hl, ReshowSubstituteAnim
 	ld b, BANK(ReshowSubstituteAnim)
 	pop af
@@ -204,12 +238,14 @@ TransformEffect_:
 	jp CopyData
 
 .failed
+	ld a, [wImposterEntryFlags]
+	bit 1, a
+	ret nz ; a failed entry effect must not print a move-failure message
 	; BTL-5.62.19: ResidualEffects1 skips the common post-move pause. Match
 	; other direct-failure effects so the move-use text remains readable first.
 	ld c, 50
 	call DelayFrames
-	ld hl, PrintButItFailedText_
-	jp BankswitchEtoF
+	jpba PrintButItFailedText_
 
 TransformedText:
 	TX_FAR _TransformedText

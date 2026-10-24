@@ -7,6 +7,6 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Independent battle-test identity: 14 chars; keep the T09 label unchanged.
 	db "B-5.62.204-T09@"
 ELSE
-	; Ordinary Red/Blue text refresh release; battle test code is compiled out.
-	db "TEXT-5.62.205@"
+	; Red/Blue build with entry-triggered Imposter; test code is compiled out.
+	db "IMP-5.62.207@"
 ENDC

@@ -865,7 +865,6 @@ INCLUDE "engine/battle/bank_e_misc.asm"
 INCLUDE "engine/battle/draw_hud_pokeball_gfx.asm"
 INCLUDE "engine/battle/moveEffects/rage_effect.asm"
 INCLUDE "engine/battle/moveEffects/heal_effect.asm"
-INCLUDE "engine/battle/moveEffects/transform_effect.asm"
 INCLUDE "engine/battle/moveEffects/reflect_light_screen_effect.asm"
 INCLUDE "color/draw_hud_pokeball_gfx.asm"
 
@@ -875,6 +874,17 @@ ExtendedLevelUpSources::
 POPS
 INCLUDE "engine/evos_moves.asm"
 
+
+; IMP-5.62.206: move the shared Transform routine out of the packed bank $0E.
+; Ordinary Transform keeps its original battle-core gateway; automatic entry
+; uses the exact same transform copy and failure checks.
+SECTION "Transform Effects", ROMX
+INCLUDE "engine/battle/moveEffects/transform_effect.asm"
+
+; These battle-entry helpers and two infrequent bank-$0F routines live in
+; relocatable ROMX, leaving the packed battle core within its original bank.
+SECTION "Imposter Entry Helpers", ROMX
+INCLUDE "engine/battle/imposter.asm"
 
 SECTION "bankF",ROMX,BANK[$F]
 

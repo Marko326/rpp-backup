@@ -3694,7 +3694,11 @@ wStatusScreenPartyCaller::
 wBattlePartySummaryEnemyPicDirty::
 	ds 1
 
-; still unused; total reserved footprint remains unchanged.
+; IMP-5.62.206: the last byte in this explicitly reserved runtime block.
+; Bit 0: player Ditto entry pending a double-faint enemy replacement.
+; Bit 1: automatic Transform in progress (direct redraw, silent failure).
+; It must survive battle drawing and wBuffer copies; not saved to Party/SRAM.
+wImposterEntryFlags::
 	ds 1
 
 wOpponentAfterWrongAnswer:: ; da07
