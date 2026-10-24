@@ -1,0 +1,6 @@
+JohtoOlivinePokecenter1F_h:
+	db JOHTO_OLIVINE_POKECENTER
+	db JOHTO_OLIVINE_POKECENTER_1F_HEIGHT, JOHTO_OLIVINE_POKECENTER_1F_WIDTH
+	dw JohtoOlivinePokecenter1FBlocks, JohtoOlivinePokecenter1FTextPointers, EnableAutoTextBoxDrawing
+	db $00
+	dw JohtoOlivinePokecenter1FObject

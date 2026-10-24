@@ -749,3 +749,38 @@ SpriteSheetPointerTable:
 	dw JohtoFishingGuruSprite
 	db $c0
 	db BANK(JohtoFishingGuruSprite)
+
+	; SPRITE_JOHTO_NURSE - Gold 12-tile walking/standing sheet
+	dw JohtoNurseSprite
+	db $c0
+	db BANK(JohtoNurseSprite)
+
+	; SPRITE_JOHTO_CLERK
+	dw JohtoClerkSprite
+	db $c0
+	db BANK(JohtoClerkSprite)
+
+	; SPRITE_JOHTO_COOLTRAINER_F
+	dw JohtoCooltrainerFSprite
+	db $c0
+	db BANK(JohtoCooltrainerFSprite)
+
+	; SPRITE_JOHTO_FISHER
+	dw JohtoFisherSprite
+	db $c0
+	db BANK(JohtoFisherSprite)
+
+	; SPRITE_JOHTO_TEACHER
+	dw JohtoTeacherSprite
+	db $c0
+	db BANK(JohtoTeacherSprite)
+
+	; SPRITE_JOHTO_SAILOR
+	dw JohtoSailorSprite
+	db $c0
+	db BANK(JohtoSailorSprite)
+
+	; SPRITE_JOHTO_FISHING_GURU_BLUE: identical Gold graphic, blue palette
+	dw JohtoFishingGuruSprite
+	db $c0
+	db BANK(JohtoFishingGuruSprite)

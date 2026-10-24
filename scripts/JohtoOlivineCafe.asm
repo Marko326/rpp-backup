@@ -1,0 +1,3 @@
+JohtoOlivineCafeTextPointers:
+	dw JohtoOlivinePublicNoText
+	dw JohtoOlivinePublicNoText

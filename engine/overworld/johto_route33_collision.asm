@@ -843,10 +843,10 @@ JohtoOlivineCityEdgeFence::
 JohtoOlivineCityCanStepAhead::
  ld a,[wCurRegion]
  cp MAP_REGION_JOHTO
- jr nz,.block
+ jp nz,.block
  ld a,[wCurLocalMapID]
  cp JOHTO_OLIVINE_CITY_LOCAL_ID
- jr nz,.block
+ jp nz,.block
  ; HOUSE-5.62.240 DEV: only UP from below onto Gold's DOOR (29,11).
  ; A registered Warp on its own does not bypass the blocked cell mask.
  ld a, [wPlayerDirection]
@@ -858,9 +858,27 @@ JohtoOlivineCityCanStepAhead::
  cp 25
  jr z, .firstHouseDoor
  cp 13
- jr nz, .westConnection
+ jr z, .olivinePCDoor
+ cp 7
+ jr z, .olivineCafeDoor
+ cp 19
+ jr z, .olivineMartDoor
+ jr .westConnection
+.olivinePCDoor
  ld a, [wYCoord]
  cp 16 ; from (13,16) UP onto Good Rod door (13,15)
+ jp z, .clear
+ cp 22 ; from (13,22) UP onto Pokecenter door (13,21)
+ jp z, .clear
+ jr .westConnection
+.olivineCafeDoor
+ ld a, [wYCoord]
+ cp 22 ; from (7,22) UP onto Cafe door (7,21)
+ jp z, .clear
+ jr .westConnection
+.olivineMartDoor
+ ld a, [wYCoord]
+ cp 18 ; from (19,18) UP onto Mart door (19,17)
  jp z, .clear
  jr .westConnection
 .firstHouseDoor
@@ -1872,6 +1890,13 @@ PatchJohtoRoute35SouthBorder::
 
 ; Shared 16x16 Gold block mask lookup; HL=mask, D=width cells, E=row bytes.
 ; Both current maps are 9 blocks (18 quadrants) high. The caller verifies map key.
+JohtoOlivinePokecenter1FBlockedRows::
+	INCBIN "maps/JohtoOlivinePokecenter1F.blocked_mask.bin"
+JohtoOlivineCafeBlockedRows::
+	INCBIN "maps/JohtoOlivineCafe.blocked_mask.bin"
+JohtoOlivineMartBlockedRows::
+	INCBIN "maps/JohtoOlivineMart.blocked_mask.bin"
+
 JohtoModernMaskedStep::
 	ld a, [wXCoord]
 	ld c, a
@@ -2304,7 +2329,7 @@ JohtoNorthGateStepWarpAllowed::
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsOutside
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
-	jr z, .cityNorthDoor
+	jp z, .cityNorthDoor
 	cp JOHTO_OLIVINE_CITY_LOCAL_ID
 	jr z, .olivineHouseDoor
 	; .235D: Gold's one-cell Mahogany DOOR behaves like Goldenrod's
@@ -2315,7 +2340,7 @@ JohtoNorthGateStepWarpAllowed::
 	cp JOHTO_ROUTE_29_LOCAL_ID
 	jp z, .route29NorthDoor
 	cp JOHTO_ROUTE_43_LOCAL_ID
-	jr z, .route43MiddleDoor
+	jp z, .route43MiddleDoor
 	; All remaining directional carpets (including Route34's Gold y37
 	; WARP_CARPET_DOWN and Route35's south mat) are collision-only.
 	jp .deny
@@ -2345,9 +2370,27 @@ JohtoNorthGateStepWarpAllowed::
  cp 11
  jr z, .olivineNorthDoors
  cp 15
- jp nz, .deny
+ jr z, .olivineGoodRodDoor
+ cp 21
+ jr z, .olivineSouthDoors
+ cp 17
+ jr z, .olivineMartDoor
+ jp .deny
+.olivineGoodRodDoor
  ld a, [wXCoord]
  cp 13 ; Good Rod house
+ jp z, .up
+ jp .deny
+.olivineSouthDoors
+ ld a, [wXCoord]
+ cp 13 ; Pokecenter
+ jp z, .up
+ cp 7 ; Cafe
+ jp z, .up
+ jp .deny
+.olivineMartDoor
+ ld a, [wXCoord]
+ cp 19
  jp z, .up
  jp .deny
 .olivineNorthDoors
@@ -2418,9 +2461,15 @@ JohtoGateCollisionDirectionAllowed::
 	jp z, .houseExitDown
 	cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
 	jp z, .houseExitDown
-	cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
-	jp z, .houseExitDown
-	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+ cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_OLIVINE_CAFE_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_OLIVINE_MART_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+ jp z, .pokecenterExitDown
+ cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jp z, .left
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp z, .forest
@@ -2655,6 +2704,17 @@ JohtoGateCollisionDirectionAllowed::
  cp 2
  jp z, .down
  cp 3
+ jp z, .down
+ jp .denied
+
+.pokecenterExitDown
+ ld a, [wYCoord]
+ cp 7
+ jp nz, .denied
+ ld a, [wXCoord]
+ cp 3
+ jp z, .down
+ cp 4
  jp z, .down
  jp .denied
 
@@ -4153,6 +4213,12 @@ JohtoNativeCanStepAhead::
  jp z, .olivineHouse
  cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
  jp z, .olivineHouse
+ cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+ jp z, .olivinePokecenter
+ cp JOHTO_OLIVINE_CAFE_LOCAL_ID
+ jp z, .olivineCafe
+ cp JOHTO_OLIVINE_MART_LOCAL_ID
+ jp z, .olivineMart
  cp JOHTO_ROUTE_44_LOCAL_ID
  jp z,.east
  cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
@@ -4247,6 +4313,24 @@ JohtoNativeCanStepAhead::
  jp .handled
 .olivineHouse
  call JohtoOlivinePunishmentSpeechHouseCanStepAhead
+ jp .handled
+.olivinePokecenter
+ ld hl, JohtoOlivinePokecenter1FBlockedRows
+ ld d, JOHTO_OLIVINE_POKECENTER_1F_WIDTH * 2
+ ld e, 2
+ call JohtoModernMaskedStep
+ jp .handled
+.olivineCafe
+ ld hl, JohtoOlivineCafeBlockedRows
+ ld d, JOHTO_OLIVINE_CAFE_WIDTH * 2
+ ld e, 1
+ call JohtoModernMaskedStep
+ jp .handled
+.olivineMart
+ ld hl, JohtoOlivineMartBlockedRows
+ ld d, JOHTO_OLIVINE_MART_WIDTH * 2
+ ld e, 2
+ call JohtoModernMaskedStep
  jp .handled
 .route38Gate
 	call JohtoRoute38EcruteakGateCanStepAhead

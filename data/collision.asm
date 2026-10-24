@@ -33,6 +33,9 @@ NewBark_Coll::     INCBIN  "gfx/tilesets/johto.tilecoll"
 JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"
 ; Masked JohtoHouse uses a deliberately empty general tile-pass list.
 JohtoHouse_Coll:: INCBIN "gfx/tilesets/johto_house.tilecoll"
+JohtoOlivinePokecenter_Coll:: INCBIN "gfx/tilesets/johto_olivine_pokecenter.tilecoll"
+JohtoOlivineMart_Coll:: INCBIN "gfx/tilesets/johto_olivine_mart.tilecoll"
+JohtoOlivineCafe_Coll:: INCBIN "gfx/tilesets/johto_olivine_cafe.tilecoll"
 ; Route33 Gold 16x16 role mask governs movement, not ambiguous 8x8 IDs.
 JohtoModern_Coll:: INCBIN "gfx/tilesets/johto_modern.tilecoll"
 ; ILEX-5.62.212: use Gold Forest position mask, not global 8x8 passability.

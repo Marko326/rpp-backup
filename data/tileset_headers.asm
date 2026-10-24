@@ -41,3 +41,6 @@ Tilesets:
 	; Olivine house: player still uses exact Gold-cell position mask; the
 	; isolated .tilecoll additionally allows NPCs onto floor/carpet tiles.
 	tileset JohtoHouse_Block, JohtoHouse_GFX, JohtoHouse_Coll, $FF,$FF,$FF, $FF, INDOOR
+	tileset JohtoOlivinePokecenter_Block, JohtoOlivinePokecenter_GFX, JohtoOlivinePokecenter_Coll, $ff, $ff, $ff, $ff, INDOOR
+	tileset JohtoOlivineMart_Block, JohtoOlivineMart_GFX, JohtoOlivineMart_Coll, $ff, $ff, $ff, $ff, INDOOR
+	tileset JohtoOlivineCafe_Block, JohtoOlivineCafe_GFX, JohtoOlivineCafe_Coll, $ff, $ff, $ff, $ff, INDOOR

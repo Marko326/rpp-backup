@@ -155,6 +155,13 @@ SPRITE_LEAF EQU SPRITE_GAMEBOY_KID_COPY ; unused duplicate slot for linked Green
 	const SPRITE_JOHTO_LASS                ; $65
 	const SPRITE_JOHTO_FISHING_GURU_RED    ; $66 (Gold Fishing Guru / Tim PAL_NPC_RED)
 	const SPRITE_JOHTO_FISHING_GURU_GREEN  ; $67 (Gold Fishing Guru / Good Rod PAL_NPC_GREEN)
+	const SPRITE_JOHTO_NURSE               ; $68 Gold Nurse
+	const SPRITE_JOHTO_CLERK               ; $69 Gold Mart Clerk
+	const SPRITE_JOHTO_COOLTRAINER_F        ; $6a Gold Cooltrainer F
+	const SPRITE_JOHTO_FISHER               ; $6b Gold Fisher
+	const SPRITE_JOHTO_TEACHER              ; $6c Gold Teacher
+	const SPRITE_JOHTO_SAILOR               ; $6d Gold Sailor
+	const SPRITE_JOHTO_FISHING_GURU_BLUE    ; $6e Gold blue Fishing Guru
 	
 	
 ; Variable Sprite IDs Here

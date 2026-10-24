@@ -106,9 +106,23 @@ LoadMapSpriteTilePatterns:
 	jr z, .notFourTileSprite
 	cp a, SPRITE_JOHTO_LASS
 	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_NURSE
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_CLERK
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_COOLTRAINER_F
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_FISHER
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_TEACHER
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_SAILOR
+	jr z, .notFourTileSprite
 	cp a, SPRITE_JOHTO_FISHING_GURU_RED
 	jr z, .notFourTileSprite
 	cp a, SPRITE_JOHTO_FISHING_GURU_GREEN
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_FISHING_GURU_BLUE
 	jr z, .notFourTileSprite
 	cp a,SPRITE_BALL ; is it a 4-tile sprite?
 	jr c,.notFourTileSprite

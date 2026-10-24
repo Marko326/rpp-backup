@@ -1079,6 +1079,9 @@ IsJohtoSouthGatePortal::
 	jr z, .yes
 	cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
 	jr z, .yes
+	; Gold Olivine Cafe south exit is a directional carpet, not STEP_ON.
+	cp JOHTO_OLIVINE_CAFE_LOCAL_ID
+	jr z, .yes
 	jr .notGate
 
 MapEntryAfterBattle::

@@ -1258,6 +1258,12 @@ JohtoNativeTownMapEntries::
  dw JohtoOlivineName ; OlivineTimsHouse
  db 76, 44
  dw JohtoOlivineName ; OlivineGoodRodHouse
+	db 76, 44 ; Olivine Pokecenter 1F uses city landmark26
+	dw JohtoOlivineName
+	db 76, 44 ; Olivine Cafe uses city landmark26
+	dw JohtoOlivineName
+	db 76, 44 ; Olivine Mart uses city landmark26
+	dw JohtoOlivineName
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

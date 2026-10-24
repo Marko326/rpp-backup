@@ -1191,6 +1191,9 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine house follows outdoor city
  db MUSIC_GBP_GSC_VIOLET_CITY ; OlivineTimsHouse
  db MUSIC_GBP_GSC_VIOLET_CITY ; OlivineGoodRodHouse
+ db MUSIC_GBP_GSC_POKEMON_CENTER ; Olivine Pokecenter 1F
+ db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Cafe
+ db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Mart
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS

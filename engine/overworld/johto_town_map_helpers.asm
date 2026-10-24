@@ -15,6 +15,9 @@ JohtoNativeTownMapIndices::
  db 26 ; Olivine house inherits Olivine City landmark
  db 26 ; OlivineTimsHouse inherits Olivine City landmark
  db 26 ; OlivineGoodRodHouse inherits Olivine City landmark
+ db 26 ; Olivine Pokecenter inherits Olivine City landmark
+ db 26 ; Olivine Cafe inherits Olivine City landmark
+ db 26 ; Olivine Mart inherits Olivine City landmark
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 

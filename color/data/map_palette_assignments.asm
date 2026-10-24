@@ -46,3 +46,6 @@ INCLUDE "color/tilesets/johto_park.asm" ; JOHTO_PARK
 INCLUDE "color/tilesets/johto_park_gate.asm" ; JOHTO_PARK_GATE
 INCLUDE "color/tilesets/johto_ruins_gate.asm" ; JOHTO_RUINS_GATE
 INCLUDE "color/tilesets/johto_house.asm" ; JOHTO_HOUSE
+INCLUDE "color/tilesets/johto_olivine_pokecenter.asm" ; JOHTO_OLIVINE_POKECENTER
+INCLUDE "color/tilesets/johto_olivine_mart.asm" ; JOHTO_OLIVINE_MART
+INCLUDE "color/tilesets/johto_olivine_cafe.asm" ; JOHTO_OLIVINE_CAFE

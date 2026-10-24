@@ -37,3 +37,6 @@ const_value = 0
 	const JOHTO_PARK_GATE ; Gold gate variant, not the legacy compact JOHTO_GATE
 	const JOHTO_RUINS_GATE ; Gold EastWestGate original full-ID blockset
 	const JOHTO_HOUSE ; Gold ordinary house, independent from Kanto HOUSE
+	const JOHTO_OLIVINE_POKECENTER ; 37, Gold Olivine Pokecenter 1F
+	const JOHTO_OLIVINE_MART ; 38, Gold Olivine Mart
+	const JOHTO_OLIVINE_CAFE ; 39, Gold Olivine Cafe

@@ -10,7 +10,23 @@ IsDeferredOlivineHouseNPC::
 	cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
 	jr z, .inHouse
 	cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
+	jr z, .inHouse
+	cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+	jr z, .publicNPC
+	cp JOHTO_OLIVINE_CAFE_LOCAL_ID
+	jr z, .publicNPC
+	cp JOHTO_OLIVINE_MART_LOCAL_ID
 	jr nz, .notPassive
+.publicNPC
+	; These three public-building object tables have zero BG/sign entries.
+	; A nonzero hSpriteIndexOrTextID therefore identifies a sprite, even
+	; after that sprite walks away from its original spawn coordinates.
+	; Keep normal face-player behavior from IsSpriteInFrontOfPlayer.
+	ld a, [hSpriteIndexOrTextID]
+	and a
+	jr z, .notPassive
+	scf
+	ret
 .inHouse
 	ld a, [hSpriteIndexOrTextID]
 	cp 1

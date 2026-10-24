@@ -77,6 +77,9 @@ JohtoRoofGroupForLocalMap:
  db $ff ; 2e OlivinePunishmentSpeechHouse indoor: no roof group
  db $ff ; 2f OlivineTimsHouse interior
  db $ff ; 30 OlivineGoodRodHouse interior
+ db $ff ; Olivine Pokecenter 1F interior
+ db $ff ; Olivine Cafe interior
+ db $ff ; Olivine Mart interior
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

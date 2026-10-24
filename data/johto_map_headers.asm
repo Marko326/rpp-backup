@@ -3,8 +3,8 @@
 ; C alone changes this 256-byte table when a real map is integrated.
 JohtoStableIDToActiveSlot::
 	db $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0a, $0b, $0c, $0d, $0e, $0f ; $00-$0f
-	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $1e, $1f, $20, $ff, $ff ; $10-$1f
-	db $2f, $ff, $2e, $30, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f, house ID34 -> slot46
+	db $10, $11, $12, $13, $14, $15, $16, $17, $18, $1c, $1d, $1e, $1f, $20, $31, $ff ; $10-$1f (Olivine Pokecenter -> slot 49)
+	db $2f, $ff, $2e, $30, $32, $33, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $20-$2f, Cafe -> slot50, Mart -> slot51
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $19, $1a ; $30-$3f
 	db $1b, $21, $24, $23, $22, $29, $ff, $2a, $2b, $2c, $2d, $ff, $ff, $ff, $ff, $ff ; $40-$4f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
@@ -96,6 +96,9 @@ JohtoMapHeaderPointers::
  dw JohtoOlivinePunishmentSpeechHouse_h ; stable ID34 -> slot46
  dw JohtoOlivineTimsHouse_h ; stable ID32 -> slot47
  dw JohtoOlivineGoodRodHouse_h ; stable ID35 -> slot48
+	dw JohtoOlivinePokecenter1F_h ; stable ID $1e -> active slot 49
+	dw JohtoOlivineCafe_h ; stable ID $24 -> active slot 50
+	dw JohtoOlivineMart_h ; stable ID $25 -> active slot 51
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -148,6 +151,9 @@ JohtoMapHeaderBanks::
  db BANK(JohtoOlivinePunishmentSpeechHouse_h)
  db BANK(JohtoOlivineTimsHouse_h)
  db BANK(JohtoOlivineGoodRodHouse_h)
+ db BANK(JohtoOlivinePokecenter1F_h)
+ db BANK(JohtoOlivineCafe_h)
+ db BANK(JohtoOlivineMart_h)
 JohtoMapHeaderBanksEnd::
 
 ; REG-5.62.120: old-engine aliases for registered Johto local IDs.
@@ -204,6 +210,9 @@ JohtoMapLegacyAliases::
  db REGION_NATIVE_MAP_SLOT ; Olivine ordinary house
  db REGION_NATIVE_MAP_SLOT ; OlivineTimsHouse
  db REGION_NATIVE_MAP_SLOT ; OlivineGoodRodHouse
+ db REGION_NATIVE_MAP_SLOT ; OlivinePokecenter1F
+ db REGION_NATIVE_MAP_SLOT ; OlivineCafe
+ db REGION_NATIVE_MAP_SLOT ; OlivineMart
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -258,6 +267,9 @@ JohtoNativeMapSongBanks::
  db MUSIC_CITIES1, 0 ; Olivine house follows its city theme
  db MUSIC_CITIES1, 0 ; OlivineTimsHouse follows Olivine
  db MUSIC_CITIES1, 0 ; OlivineGoodRodHouse follows Olivine
+ db MUSIC_POKECENTER, 0 ; Olivine Pokecenter uses its dedicated theme
+ db MUSIC_CITIES1, 0 ; Olivine Cafe follows Olivine city
+ db MUSIC_CITIES1, 0 ; Olivine Mart follows Olivine city
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

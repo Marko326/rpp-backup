@@ -25,6 +25,8 @@ LoadOverworldSpritePalettes:
 	ld hl,SpritePalettesPokecenter
 	cp POKECENTER
 	jr z, .gotPaletteList
+	cp JOHTO_OLIVINE_POKECENTER
+	jr z, .gotPaletteList
 	; If not, load the normal Object Pals
 	ld hl,SpritePalettes
 .gotPaletteList
@@ -786,6 +788,21 @@ SpritePaletteAssignments: ; Characters on the overworld
 
 	; 0x67: SPRITE_JOHTO_FISHING_GURU_GREEN (Gold PAL_NPC_GREEN)
 	db PAL_OW_GREEN
+
+	; 0x68: SPRITE_JOHTO_NURSE (Gold default NPC palette)
+	db PAL_OW_RED
+	; 0x69: SPRITE_JOHTO_CLERK (Gold default green)
+	db PAL_OW_GREEN
+	; 0x6a: SPRITE_JOHTO_COOLTRAINER_F
+	db PAL_OW_GREEN
+	; 0x6b: SPRITE_JOHTO_FISHER (Gold PAL_NPC_GREEN)
+	db PAL_OW_GREEN
+	; 0x6c: SPRITE_JOHTO_TEACHER
+	db PAL_OW_RED
+	; 0x6d: SPRITE_JOHTO_SAILOR (Gold default blue)
+	db PAL_OW_BLUE
+	; 0x6e: SPRITE_JOHTO_FISHING_GURU_BLUE (same Gold sheet, blue palette)
+	db PAL_OW_BLUE
 
 
 AnimationTileset1Palettes:

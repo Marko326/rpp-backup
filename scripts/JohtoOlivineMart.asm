@@ -1,0 +1,4 @@
+JohtoOlivineMartTextPointers:
+	dw JohtoOlivinePublicNoText
+	dw JohtoOlivinePublicNoText
+	dw JohtoOlivinePublicNoText
