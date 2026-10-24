@@ -1,7 +1,3 @@
-SafariZoneRestHouse4Script:
-	call EnableAutoTextBoxDrawing
-	ret
-
 SafariZoneRestHouse4TextPointers:
 	dw SafariZoneRestHouse4Text1
 	dw SafariZoneRestHouse4Text2

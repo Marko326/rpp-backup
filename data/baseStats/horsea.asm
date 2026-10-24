@@ -1,4 +1,3 @@
-db DEX_HORSEA ; pokedex id
 db 30 ; base hp
 db 40 ; base attack
 db 70 ; base defense
@@ -14,9 +13,6 @@ dw HorseaPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,11,12,13,14,16

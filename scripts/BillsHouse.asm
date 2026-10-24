@@ -127,10 +127,7 @@ BillsHouseText4:
 BillsHouseText1:
 	TX_ASM
 	ld hl, BillsHouseText_1e865
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_1e85a
 .asm_1e84d
 	ld hl, BillsHouseText_1e86a
@@ -206,8 +203,7 @@ BillsHouseText_1e8cb:
 BillsHouseText3:
 	TX_ASM
 	ld hl, BillsHouseText_1e8da
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 BillsHouseText_1e8da:
 	TX_FAR _BillsHouseText_1e8da

@@ -6,6 +6,11 @@ MainMenu:
 	; .sav and reset it when returning to the title/main-menu session boundary.
 	xor a
 	ld [wStartMenuSavedMenuItem], a
+	ld [wPokedexSavedSelection], a
+	; New-game / Continue / title-boundary resets the session-only facing choice.
+	ld [wPokedexFacingPreference], a
+	ld [wMoveDexSavedSelection], a
+	ld [wStartPartySavedMenuItem], a
 	ld [wRepeatFishingRod], a
 ; Check save file
 	call InitOptions
@@ -19,8 +24,15 @@ MainMenu:
 	predef LoadSAV
 
 .mainMenuLoop
-	ld c,20
-	call DelayFrames
+	; MENU-5.62.137: hold an actual CGB white frame before replacing
+	; the title's VRAM font, or the old tilemap briefly shows letters.
+	call GBPalWhiteOutWithDelay3
+	call ClearSprites
+	xor a
+	ld [hWY], a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ld a, vBGMap1 / $100
+	ld [H_AUTOBGTRANSFERDEST + 1], a
 	xor a ; LINK_STATE_NONE
 	ld [wLinkState],a
 	ld hl,wPartyAndBillsPCSavedMenuItem
@@ -31,7 +43,12 @@ MainMenu:
 	ld [wDefaultMap],a
 	ld hl,wd72e
 	res 6,[hl]
-	call ClearScreen
+	; Clear WRAM only: ClearScreen's three transfer frames are redundant
+	; while auto BG transfer is disabled for this complete redraw.
+	coord hl, 0, 0
+	ld bc, SCREEN_WIDTH * SCREEN_HEIGHT
+	ld a, " "
+	call FillMemory
 	call RunDefaultPaletteCommand
 	call LoadTextBoxTilePatterns
 	call LoadFontTilePatterns
@@ -64,6 +81,10 @@ MainMenu:
 	ld hl,wd730
 	res 6,[hl]
 	call UpdateSprites
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
+	call LoadGBPal
 	xor a
 	ld [wCurrentMenuItem],a
 	ld [wLastMenuItem],a
@@ -76,6 +97,7 @@ MainMenu:
 	ld [wMenuWatchedKeys],a
 	ld a,[wSaveFileStatus]
 	ld [wMaxMenuItem],a
+.mainMenuInput
 	call HandleMenuInput
 	bit 1,a ; pressed B?
 	jp nz,DisplayTitleScreen ; if so, go back to the title screen
@@ -102,6 +124,9 @@ MainMenu:
 	ld [wOptionsInitialized],a
 	jp .mainMenuLoop
 .choseContinue
+	; MENU-5.62.137: cache the complete menu before the info overlay.
+	; B can restore it without displaying an intermediate cleared frame.
+	call SaveScreenTilesToBuffer1
 	call DisplayContinueGameInfo
 	ld hl,wCurrentMapScriptFlags
 	set 5,[hl]
@@ -115,8 +140,27 @@ MainMenu:
 	bit 0,a
 	jr nz,.pressedA
 	bit 1,a
-	jp nz,.mainMenuLoop ; pressed B
+	jr nz,.returnFromContinueInfo ; pressed B
 	jr .inputLoop
+.returnFromContinueInfo
+	; Do not call .mainMenuLoop: its visible ClearScreen causes the flash.
+	; The info page has not replaced the menu font, palette or graphics.
+	call LoadScreenTilesFromBuffer1
+	call Delay3
+	; Prevent a held B from immediately closing the restored main menu.
+.waitABRelease
+	call Joypad
+	ld a,[hJoyHeld]
+	and A_BUTTON | B_BUTTON
+	jr z,.infoInputReleased
+	call DelayFrame
+	jr .waitABRelease
+.infoInputReleased
+	xor a
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	ld [wMenuJoypadPollCount],a
+	jp .mainMenuInput
 .pressedA
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
@@ -364,10 +408,11 @@ NewGameText:
 	db   "New Game"
 	next "Options@"
 
+; LNK-5.55.00: keep the Lv50 menu label consistent with its room name.
 CableClubOptionsText:
 	db   "Trade Center"
 	next "Colosseum"
-	next "Colosseum50@" ; third function; press B to cancel the Link Menu
+	next "Colosseum 50@" ; third function; press B to cancel the Link Menu
 
 DisplayContinueGameInfo:
 	xor a

@@ -1,12 +1,10 @@
 Mansion3Script:
 	call Mansion3Script_52204
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, Mansion3TrainerHeader0
 	ld de, Mansion3ScriptPointers
-	ld a, [wMansion3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMansion3CurScript], a
-	ret
+	ld bc, wMansion3CurScript
+	jp Bank14RunTrainerMapScript
 
 Mansion3Script_52204:
 	ld hl, wCurrentMapScriptFlags
@@ -97,7 +95,6 @@ Mansion3TrainerHeader0:
 	dw Mansion3BattleText1 ; TextBeforeBattle
 	dw Mansion3AfterBattleText1 ; TextAfterBattle
 	dw Mansion3EndBattleText1 ; TextEndBattle
-	dw Mansion3EndBattleText1 ; TextEndBattle
 
 Mansion3TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_MANSION_3_TRAINER_1
@@ -106,21 +103,14 @@ Mansion3TrainerHeader1:
 	dw Mansion3BattleText2 ; TextBeforeBattle
 	dw Mansion3AfterBattleText2 ; TextAfterBattle
 	dw Mansion3EndBattleText2 ; TextEndBattle
-	dw Mansion3EndBattleText2 ; TextEndBattle
 
 	db $ff
 
 Mansion3Text1:
-	TX_ASM
-	ld hl, Mansion3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion3TrainerHeader0
 
 Mansion3Text2:
-	TX_ASM
-	ld hl, Mansion3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion3TrainerHeader1
 
 Mansion3BattleText1:
 	TX_FAR _Mansion3BattleText1

@@ -1,4 +1,3 @@
-db DEX_TENTACRUEL ; pokedex id
 db 80 ; base hp
 db 70 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw TentacruelPicBack
 ; move tutor compatibility flags
 	m_tutor 5,8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 3,6
 	tmlearn 9,10,11,12,13,14,15

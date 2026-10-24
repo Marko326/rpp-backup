@@ -1,4 +1,3 @@
-db DEX_SLOWPOKE ; pokedex id
 db 90 ; base hp
 db 65 ; base attack
 db 65 ; base defense
@@ -6,7 +5,8 @@ db 15 ; base speed
 db 40 ; base special
 db WATER ; species type 1
 db PSYCHIC ; species type 2
-db 190 ; catch rate
+SLOWPOKE_CATCH_RATE EQU 190 ; existing normal species catch rate, form guard only
+db SLOWPOKE_CATCH_RATE ; catch rate
 db 99 ; base exp yield
 INCBIN "pic/bmon/slowpoke.pic",0,1 ; 55, sprite dimensions
 dw SlowpokePicFront
@@ -14,9 +14,6 @@ dw SlowpokePicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,16

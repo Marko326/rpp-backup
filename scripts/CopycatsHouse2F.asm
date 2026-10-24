@@ -1,6 +1,3 @@
-CopycatsHouse2FScript:
-	jp EnableAutoTextBoxDrawing
-
 CopycatsHouse2FTextPointers:
 	dw CopycatsHouse2FText1
 	dw CopycatsHouse2FText2
@@ -90,8 +87,7 @@ CopycatsHouse2FText7:
 	jr nz, .notUp
 	ld hl, CopycatsHouse2FText_5cd17
 .notUp
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CopycatsHouse2FText_5cd17:
 	TX_FAR _CopycatsHouse2FText_5cd17

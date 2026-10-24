@@ -3,7 +3,6 @@ CinnabarIslandScript:
 	ld hl, wCurrentMapScriptFlags
 	set 5, [hl]
 	ResetEvent EVENT_MANSION_SWITCH_ON
-	ResetEvent EVENT_LAB_STILL_REVIVING_FOSSIL
 	ld hl, CinnabarIslandScriptPointers
 	ld a, [wCinnabarIslandCurScript]
 	jp CallFunctionInTable

@@ -1,16 +1,8 @@
 Route21Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route21TrainerHeader0
-	ld de, Route21ScriptPointers
-	ld a, [wRoute21CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute21CurScript], a
-	ret
-
-Route21ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRoute21CurScript
+	jp Bank15RunStandardTrainerMapScript
 
 Route21TextPointers:
 	dw Route21Text1
@@ -30,7 +22,6 @@ Route21TrainerHeader0:
 	dw Route21BattleText1 ; TextBeforeBattle
 	dw Route21AfterBattleText1 ; TextAfterBattle
 	dw Route21EndBattleText1 ; TextEndBattle
-	dw Route21EndBattleText1 ; TextEndBattle
 
 Route21TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_1
@@ -38,7 +29,6 @@ Route21TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_1
 	dw Route21BattleText2 ; TextBeforeBattle
 	dw Route21AfterBattleText2 ; TextAfterBattle
-	dw Route21EndBattleText2 ; TextEndBattle
 	dw Route21EndBattleText2 ; TextEndBattle
 
 Route21TrainerHeader2:
@@ -48,7 +38,6 @@ Route21TrainerHeader2:
 	dw Route21BattleText3 ; TextBeforeBattle
 	dw Route21AfterBattleText3 ; TextAfterBattle
 	dw Route21EndBattleText3 ; TextEndBattle
-	dw Route21EndBattleText3 ; TextEndBattle
 
 Route21TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_3
@@ -56,7 +45,6 @@ Route21TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_3
 	dw Route21BattleText4 ; TextBeforeBattle
 	dw Route21AfterBattleText4 ; TextAfterBattle
-	dw Route21EndBattleText4 ; TextEndBattle
 	dw Route21EndBattleText4 ; TextEndBattle
 
 Route21TrainerHeader4:
@@ -66,7 +54,6 @@ Route21TrainerHeader4:
 	dw Route21BattleText5 ; TextBeforeBattle
 	dw Route21AfterBattleText5 ; TextAfterBattle
 	dw Route21EndBattleText5 ; TextEndBattle
-	dw Route21EndBattleText5 ; TextEndBattle
 
 Route21TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_5
@@ -74,7 +61,6 @@ Route21TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_5
 	dw Route21BattleText6 ; TextBeforeBattle
 	dw Route21AfterBattleText6 ; TextAfterBattle
-	dw Route21EndBattleText6 ; TextEndBattle
 	dw Route21EndBattleText6 ; TextEndBattle
 
 Route21TrainerHeader6:
@@ -84,7 +70,6 @@ Route21TrainerHeader6:
 	dw Route21BattleText7 ; TextBeforeBattle
 	dw Route21AfterBattleText7 ; TextAfterBattle
 	dw Route21EndBattleText7 ; TextEndBattle
-	dw Route21EndBattleText7 ; TextEndBattle
 
 Route21TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_21_TRAINER_7, 1
@@ -92,7 +77,6 @@ Route21TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_21_TRAINER_7, 1
 	dw Route21BattleText8 ; TextBeforeBattle
 	dw Route21AfterBattleText8 ; TextAfterBattle
-	dw Route21EndBattleText8 ; TextEndBattle
 	dw Route21EndBattleText8 ; TextEndBattle
 
 Route21TrainerHeader8:
@@ -102,63 +86,35 @@ Route21TrainerHeader8:
 	dw Route21BattleText9 ; TextBeforeBattle
 	dw Route21AfterBattleText9 ; TextAfterBattle
 	dw Route21EndBattleText9 ; TextEndBattle
-	dw Route21EndBattleText9 ; TextEndBattle
 
 	db $ff
 
 Route21Text1:
-	TX_ASM
-	ld hl, Route21TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader0
 
 Route21Text2:
-	TX_ASM
-	ld hl, Route21TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader1
 
 Route21Text3:
-	TX_ASM
-	ld hl, Route21TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader2
 
 Route21Text4:
-	TX_ASM
-	ld hl, Route21TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader3
 
 Route21Text5:
-	TX_ASM
-	ld hl, Route21TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader4
 
 Route21Text6:
-	TX_ASM
-	ld hl, Route21TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader5
 
 Route21Text7:
-	TX_ASM
-	ld hl, Route21TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader6
 
 Route21Text8:
-	TX_ASM
-	ld hl, Route21TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader7
 
 Route21Text9:
-	TX_ASM
-	ld hl, Route21TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route21TrainerHeader8
 
 Route21BattleText1:
 	TX_FAR _Route21BattleText1

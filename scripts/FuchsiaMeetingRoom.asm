@@ -1,7 +1,3 @@
-FuchsiaMeetingRoomScript:
-	call EnableAutoTextBoxDrawing
-	ret
-
 FuchsiaMeetingRoomTextPointers:
 	dw FuchsiaMeetingRoomText1
 	dw FuchsiaMeetingRoomText2

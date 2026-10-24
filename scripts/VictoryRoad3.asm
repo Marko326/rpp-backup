@@ -1,12 +1,10 @@
 VictoryRoad3Script:
 	call VictoryRoad3Script_44996
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, VictoryRoad3TrainerHeader0
 	ld de, VictoryRoad3ScriptPointers
-	ld a, [wVictoryRoad3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVictoryRoad3CurScript], a
-	ret
+	ld bc, wVictoryRoad3CurScript
+	jp Bank11RunTrainerMapScript
 
 VictoryRoad3Script_44996:
 	ld hl, wCurrentMapScriptFlags
@@ -93,7 +91,6 @@ VictoryRoad3TrainerHeader0:
 	dw VictoryRoad3BattleText2 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText2 ; TextAfterBattle
 	dw VictoryRoad3EndBattleText2 ; TextEndBattle
-	dw VictoryRoad3EndBattleText2 ; TextEndBattle
 
 VictoryRoad3TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_3_TRAINER_1
@@ -101,7 +98,6 @@ VictoryRoad3TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_VICTORY_ROAD_3_TRAINER_1
 	dw VictoryRoad3BattleText3 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText3 ; TextAfterBattle
-	dw VictoryRoad3EndBattleText3 ; TextEndBattle
 	dw VictoryRoad3EndBattleText3 ; TextEndBattle
 
 VictoryRoad3TrainerHeader2:
@@ -111,7 +107,6 @@ VictoryRoad3TrainerHeader2:
 	dw VictoryRoad3BattleText4 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText4 ; TextAfterBattle
 	dw VictoryRoad3EndBattleText4 ; TextEndBattle
-	dw VictoryRoad3EndBattleText4 ; TextEndBattle
 
 VictoryRoad3TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_3_TRAINER_3
@@ -120,33 +115,20 @@ VictoryRoad3TrainerHeader3:
 	dw VictoryRoad3BattleText5 ; TextBeforeBattle
 	dw VictoryRoad3AfterBattleText5 ; TextAfterBattle
 	dw VictoryRoad3EndBattleText5 ; TextEndBattle
-	dw VictoryRoad3EndBattleText5 ; TextEndBattle
 
 	db $ff
 
 VictoryRoad3Text1:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader0
 
 VictoryRoad3Text2:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader1
 
 VictoryRoad3Text3:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader2
 
 VictoryRoad3Text4:
-	TX_ASM
-	ld hl, VictoryRoad3TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad3TrainerHeader3
 
 VictoryRoad3BattleText2:
 	TX_FAR _VictoryRoad3BattleText2

@@ -1,12 +1,9 @@
 RocketHideout1Script:
 	call RocketHideout1Script_44be0
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, RocketHideout1TrainerHeader0
-	ld de, RocketHideout1ScriptPointers
-	ld a, [wRocketHideout1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRocketHideout1CurScript], a
-	ret
+	ld bc, wRocketHideout1CurScript
+	jp Bank11RunStandardTrainerMapScript
 
 RocketHideout1Script_44be0:
 	ld hl, wCurrentMapScriptFlags
@@ -30,11 +27,6 @@ RocketHideout1Script_44be0:
 	lb bc, 8, 12
 	predef_jump ReplaceTileBlock
 
-RocketHideout1ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
-
 RocketHideout1TextPointers:
 	dw RocketHideout1Text1
 	dw RocketHideout1Text2
@@ -51,7 +43,6 @@ RocketHideout1TrainerHeader0:
 	dw RocketHideout1BattleText2 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt2 ; TextAfterBattle
 	dw RocketHideout1EndBattleText2 ; TextEndBattle
-	dw RocketHideout1EndBattleText2 ; TextEndBattle
 
 RocketHideout1TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_1
@@ -59,7 +50,6 @@ RocketHideout1TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_1
 	dw RocketHideout1BattleText3 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt3 ; TextAfterBattle
-	dw RocketHideout1EndBattleText3 ; TextEndBattle
 	dw RocketHideout1EndBattleText3 ; TextEndBattle
 
 RocketHideout1TrainerHeader2:
@@ -69,7 +59,6 @@ RocketHideout1TrainerHeader2:
 	dw RocketHideout1BattleText4 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt4 ; TextAfterBattle
 	dw RocketHideout1EndBattleText4 ; TextEndBattle
-	dw RocketHideout1EndBattleText4 ; TextEndBattle
 
 RocketHideout1TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_3
@@ -77,7 +66,6 @@ RocketHideout1TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROCKET_HIDEOUT_1_TRAINER_3
 	dw RocketHideout1BattleText5 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt5 ; TextAfterBattle
-	dw RocketHideout1EndBattleText5 ; TextEndBattle
 	dw RocketHideout1EndBattleText5 ; TextEndBattle
 
 RocketHideout1TrainerHeader4:
@@ -87,39 +75,23 @@ RocketHideout1TrainerHeader4:
 	dw RocketHideout1BattleText6 ; TextBeforeBattle
 	dw RocketHideout1AfterBattleTxt6 ; TextAfterBattle
 	dw RocketHideout1EndBattleText6 ; TextEndBattle
-	dw RocketHideout1EndBattleText6 ; TextEndBattle
 
 	db $ff
 
 RocketHideout1Text1:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader0
 
 RocketHideout1Text2:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader1
 
 RocketHideout1Text3:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader2
 
 RocketHideout1Text4:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader3
 
 RocketHideout1Text5:
-	TX_ASM
-	ld hl, RocketHideout1TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout1TrainerHeader4
 
 RocketHideout1EndBattleText6:
 	TX_FAR _RocketHideout1EndBattleText6

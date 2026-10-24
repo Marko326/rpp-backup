@@ -1,7 +1,3 @@
-CeruleanHouseTrashedScript:
-	call EnableAutoTextBoxDrawing
-	ret
-
 CeruleanHouseTrashedTextPointers:
 	dw CeruleanHouseTrashedText1
 	dw CeruleanHouseTrashedText2

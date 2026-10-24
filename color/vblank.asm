@@ -33,6 +33,39 @@ LoadBlackPalettesWhileLCDOff:
 GbcPrepareVBlank:
 	ld a,2
 	ld [rSVBK],a
+
+	; TEXT-5.62.205: choose the text region BEFORE staging its palettes.
+	; Never modify the transfer portion from PrintLetterDelay directly:
+	; doing so after the LCD preparation would desync tile IDs and colors.
+	ld a, [hTextBottomRefreshRequest]
+	and a
+	jr z, .normalWindowTransfer
+	xor a
+	ld [hTextBottomRefreshRequest], a ; consume one-shot request
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	and a
+	jr z, .normalWindowTransfer
+	ld a, [W2_UpdatedWindowPortion]
+	and a
+	jr nz, .normalWindowTransfer ; prior palette batch not consumed
+
+	; Static palettes need three different thirds after a palette change.
+	; Do not force the bottom third during that cycle or on a new map.
+	ld a, [W2_TileBasedPalettes]
+	and a
+	jr nz, .selectTextRegion
+	ld a, [W2_StaticPaletteMapChanged]
+	and a
+	jr nz, .normalWindowTransfer
+	ld a, [H_AUTOBGTRANSFERDEST + 1]
+	ld b, a
+	ld a, [W2_LastAutoCopyDest]
+	cp b
+	jr nz, .normalWindowTransfer
+.selectTextRegion
+	ld a, TRANSFERBOTTOM
+	ld [H_AUTOBGTRANSFERPORTION], a
+.normalWindowTransfer
 	call RefreshWindowPalettesPreVBlank
 	call RefreshPalettesPreVBlank
 	xor a
@@ -296,6 +329,15 @@ ENDR
 
 ; This is the last vblank-timing-sensitive thing that's called
 GbcVBlankHook:
+	; ANM-5.61.67: battle animations that need full-frame horizontal Window
+	; movement stage the next WX in fixed WRAM. Commit it here, still inside
+	; VBlank, before any visible scanline can observe a half-updated frame.
+	ld a, [wBattleAnimRasterMode]
+	cp 1 ; mode 1 is the shared Aeroblast/Crunch/Cross Chop WX latch
+	jr nz, .battleAnimWXDone
+	ld a, [wBattleAnimWX]
+	ld [rWX], a
+.battleAnimWXDone
 	call UpdateMovingBgTiles ; Removed from caller to make space
 
 	; Use the hblank interrupt to get a head-start with vblank stuff
@@ -359,8 +401,10 @@ StatusScreen_UpdatePictureAttributesVBlank:
 	add a
 	add a ; table index = batch * 8
 	ld e, a
-	ld d, 0
+	; Both front and back now use the same right-to-left tilemap. VBlank
+	; never switches attribute order while a 49-tile wipe is in progress.
 	ld hl, StatusScreenPictureAttrOffsets
+	ld d, 0
 	add hl, de
 	ld a, b
 	cp 6

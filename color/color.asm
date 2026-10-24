@@ -5,6 +5,10 @@ SECTION "bank1C_extension",ROMX,BANK[$1C]
 SetPal_BattleBlack:
 	ld a,$02
 	ld [rSVBK],a
+	; TRN-5.62.18: staging is only meaningful inside one successful Transform.
+	; Clear the reused cache-state byte when a new battle palette session starts.
+	xor a
+	ld [W2_TransformPaletteStaging],a
 
 	ld d,PAL_BLACK
 	ld e,7
@@ -77,52 +81,110 @@ SetPal_Battle:
 .doneDelay
 	ret
 
+; TRN-5.62.18: snapshot the Transform user's currently displayed Pokémon palette.
+; H_WHOSETURN selects player slot 0 or enemy slot 1. The full 8 bytes are cached so
+; normal, regional and shiny palettes can all be restored exactly after menus/redraws.
+; Public far-call helper: caller must preserve any registers required across CALLBA.
+CacheTransformUserPalette:
+	; TRN-5.62.18: the stack itself lives in banked WRAM. Never push in one
+	; WRAM bank and pop after switching rSVBK; keep the old bank in C, then
+	; push/pop only after bank 2 is active.
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	push bc
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld a, [W2_TransformPaletteStaging]
+	set 0, a ; player staging active
+	set 2, a ; player Transform palette cache valid
+	ld [W2_TransformPaletteStaging], a
+	ld hl, W2_BgPaletteData
+	ld de, W2_TransformPlayerPalette
+	jr .copy
+.enemy
+	ld a, [W2_TransformPaletteStaging]
+	set 1, a ; enemy staging active
+	set 3, a ; enemy Transform palette cache valid
+	ld [W2_TransformPaletteStaging], a
+	ld hl, W2_BgPaletteData + 8
+	ld de, W2_TransformEnemyPalette
+.copy
+	ld bc, 8
+	call CopyData
+	pop bc
+	ld a, c
+	ld [rSVBK], a
+	ret
+
+; Clear only the in-animation staging bit. Once Transform finishes, the normal
+; battle-status Transformed bit keeps selecting the same cached palette.
+ClearTransformPaletteStaging:
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, W2_TransformPaletteStaging
+	jr nz, .enemy
+	res 0, [hl]
+	jr .done
+.enemy
+	res 1, [hl]
+.done
+	ld a, c
+	ld [rSVBK], a
+	ret
+
 SetPal_Battle_Common:
 	ld hl, wShinyMonFlag
 	res 0, [hl]
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_TransformPaletteStaging]
+	ld b, a
+	ld a, c
+	ld [rSVBK], a
+	ld a, [wPlayerBattleStatus3]
+	bit Transformed, a
+	jr z, .checkPlayerTransformStaging
+	; TRN-5.62.18 amendment: capture and a few legacy reload paths may use the
+	; Transformed status bit as a temporary data-preservation selector. Only treat
+	; it as a palette-cache identity when CacheTransformUserPalette actually ran.
+	bit 2, b
+	jr nz, .restoreTransformedPlayerPal
+	jr .playerPaletteStateReady
+.checkPlayerTransformStaging
+	bit 0, b
+	jr nz, .restoreTransformedPlayerPal
+.playerPaletteStateReady
+
 	ld a, [wBattleMonSpecies]
 	and a
-	jr z, .getPALID
+	jr z, .getBattleMonPal
 	; is mon shiny?
 	ld b, BANK(IsMonShiny)
 	ld hl, IsMonShiny
 	ld de, wBattleMonDVs
 	call Bankswitch
-	jr z, .getPALID
+	jr z, .getBattleMonPal
 	ld hl, wShinyMonFlag
 	set 0, [hl]
-.getPALID
- 	ld a, [wPlayerBattleStatus3]
-	bit Transformed,a
-	jr z,.getBattleMonPal
-
-	; If transformed, don't trust the "DeterminePaletteIDBack" function.
-	ld a,$02
-	ld [rSVBK],a
-	ld a,[W2_BattleMonPalette]
-	ld b,a
-	xor a
-	ld [rSVBK],a
-	jr .loadPlayerPal
-
 .getBattleMonPal
 	ld a, [wBattleMonSpecies]        ; player Pokemon ID
 	call DeterminePaletteIDBack
 	ld d, a
 
-.loadPlayerPal
-	; Save ID
+	; Player palette
 	ld a, [wBattleMonSpecies]
 	ld b, a
-
 	ld a,$02
 	ld [rSVBK],a
-
-	; Save the player mon's palette in case it transforms later
-	ld a,d
-	ld [W2_BattleMonPalette],a
-
-	; Player palette
 	ld a,b
 	ld e,0
 	and a
@@ -130,13 +192,24 @@ SetPal_Battle_Common:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
-	callba LoadShinyPokemonPalette
+	; FORM-5.20.03: shiny regional forms use the bank-$34 form-aware loader.
+	callba RegionalFormLoadBattleShinyPokemonPalette
 	jr .getEnemyMonPal
 .notShiny
-	callba LoadPokemonPalette
+	; FORM-5.20.03: use the bank-$34 form-aware battle palette path.
+	callba RegionalFormLoadBattlePokemonPalette
 	jr .getEnemyMonPal
 .loadTrainerPal
 	callba LoadTrainerPalette
+	jr .getEnemyMonPal
+
+.restoreTransformedPlayerPal
+	; TRN-5.62.18: Transform keeps the user's pre-transform palette. Restoring the
+	; exact cached bytes also preserves regional and shiny palettes without trying to
+	; recover the original form/DVs from the transformed battle struct.
+	ld hl, W2_TransformPlayerPalette
+	ld de, W2_BgPaletteData
+	call .restoreCachedTransformPalette
 
 .getEnemyMonPal
 	xor a
@@ -144,6 +217,28 @@ SetPal_Battle_Common:
 
 	ld hl, wShinyMonFlag
 	res 0, [hl]
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_TransformPaletteStaging]
+	ld b, a
+	ld a, c
+	ld [rSVBK], a
+	ld a, [wEnemyBattleStatus3]
+	bit Transformed, a
+	jr z, .checkEnemyTransformStaging
+	; TRN-5.62.18 amendment: a set battle-status bit alone does not prove that
+	; the full enemy Transform palette cache was populated. This matters during
+	; capture, which temporarily sets Transformed solely to preserve DVs on reload.
+	bit 3, b
+	jr nz, .restoreTransformedEnemyPal
+	jr .enemyPaletteStateReady
+.checkEnemyTransformStaging
+	bit 1, b
+	jr nz, .restoreTransformedEnemyPal
+.enemyPaletteStateReady
+
 	ld a, [wEnemyMonSpecies2]
 	and a
 	jr z, .getPALID2
@@ -176,13 +271,44 @@ SetPal_Battle_Common:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny2
-	callba LoadShinyPokemonPalette
+	; FORM-5.20.03: shiny regional forms use the bank-$34 form-aware loader.
+	callba RegionalFormLoadBattleShinyPokemonPalette
 	jr .loadLifebarPal
 .notShiny2
-	callba LoadPokemonPalette
+	; FORM-5.20.03: use the bank-$34 form-aware battle palette path.
+	callba RegionalFormLoadBattlePokemonPalette
 	jr .loadLifebarPal
 .loadTrainerPal2
 	callba LoadTrainerPalette
+	jr .loadLifebarPal
+
+.restoreTransformedEnemyPal
+	; Enemy Transform follows the same Gen-I/II rule: keep the user's original
+	; palette even though Species/Form/graphics now come from the opposing battler.
+	ld hl, W2_TransformEnemyPalette
+	ld de, W2_BgPaletteData + 8
+	call .restoreCachedTransformPalette
+	; TRN-5.62.18: enemy palette restoration returns to the caller's WRAM bank
+	; (normally bank 1). The shared lifebar/tile-palette tail below owns W2_* data
+	; and requires bank 2.
+	ld a, 2
+	ld [rSVBK], a
+	jr .loadLifebarPal
+
+.restoreCachedTransformPalette
+	; TRN-5.62.18: the stack is banked with rSVBK. Switch first, keep the old
+	; bank in C, and only push/pop while bank 2 is active. Restore before RET.
+	ld a, [rSVBK]
+	ld c, a
+	ld a, 2
+	ld [rSVBK], a
+	push bc
+	ld bc, 8
+	call CopyData
+	pop bc
+	ld a, c
+	ld [rSVBK], a
+	ret
 
 	; Player lifebar
 .loadLifebarPal
@@ -343,10 +469,12 @@ StatusScreen_PrepareNextPokemonPaletteScratch:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
-	callba LoadShinyPokemonPalette
+	; FORM-5.21.00: caught registered forms keep their descriptor shiny palette.
+	callba RegionalFormLoadStatusShinyPokemonPalette
 	jr .loaded
 .notShiny
-	callba LoadPokemonPalette
+	; FORM-5.20.03: status-screen palettes follow the stored form marker.
+	callba RegionalFormLoadStatusPokemonPalette
 .loaded
 	xor a
 	ld [rSVBK], a
@@ -424,10 +552,12 @@ SetPal_StatusScreen:
 	ld a, [wShinyMonFlag]
 	bit 0, a
 	jr z, .notShiny
-	callba LoadShinyPokemonPalette
+	; FORM-5.20.03: status screen uses the Alolan shiny palette when appropriate.
+	callba RegionalFormLoadStatusShinyPokemonPalette
 	jr .afterMon
 .notShiny
-	callba LoadPokemonPalette
+	; FORM-5.20.03: status screen uses the stored regional-form palette.
+	callba RegionalFormLoadStatusPokemonPalette
 .afterMon
 
 
@@ -489,7 +619,8 @@ SetPal_Pokedex:
 
 	callba LoadPokemonPalette
 
-	ld d,PAL_REDMON
+	; DUAL-5.19.27: keep the Pokemon picture on its own palette and theme the UI shell.
+	ld d,VERSION_UI_PALETTE
 	ld e,1
 	callba LoadSGBPalette
 
@@ -687,7 +818,12 @@ SetPal_NidorinoIntro:
 	ld a,2
 	ld [rSVBK],a
 
+IF DEF(_RED)
 	ld d, PAL_NIDORINO
+ENDC
+IF DEF(_BLUE)
+	ld d, PAL_JIGGLYPUFF
+ENDC
 	ld e,0
 	callba LoadPokemonPalette_Sprite
 
@@ -708,13 +844,28 @@ SetPal_Generic:
 	ld a,2
 	ld [rSVBK],a
 
-	ld d,PAL_REDBAR	; Red lifebar color (for pokeballs)
+	; DUAL-5.19.27: version theme for generic UI (Pokedex list, MoveDex, Diploma).
+IF DEF(_RED)
+	ld d,VERSION_BAR_PALETTE
 	ld e,0
 	push de
 	callba LoadSGBPalette
 	pop de
 	inc e
 	callba LoadSGBPalette ; Load it into the second slot as well. Prevents a minor glitch.
+ENDC
+IF DEF(_BLUE)
+	ld d,VERSION_BAR_PALETTE
+	ld e,0
+	callba LoadSGBPalette
+
+	; DUAL-5.19.28: keep palette 1 on the stock red-bar colors so Blue++
+	; Pokédex/MoveDex list Poké Balls can use their default coloring without
+	; recoloring the rest of the generic menu.
+	ld d,PAL_REDBAR
+	ld e,1
+	callba LoadSGBPalette
+ENDC
 
 	ld bc,20*18
 	ld hl,W2_TilesetPaletteMap
@@ -790,7 +941,9 @@ SetPal_PartyMenu:
 	ld a,2
 	ld [rSVBK],a
 
-	CALL_INDIRECT LoadOverworldSpritePalettes
+	; FLY-5.62.73: Party icons use the player gender palette (boy red,
+	; girl green); HP bars retain their independent BG palettes.
+	CALL_INDIRECT LoadPartyGenderSpritePalettes
 
 	ld d,PAL_GREENBAR	; Filler for palette 0 (technically, green)
 	ld e,0
@@ -1010,8 +1163,8 @@ SetPal_TrainerCard:
 	ld e,4
 	callba LoadTrainerPalette
 
-	; Palette for border tiles
-	ld d, PAL_REDMON
+	; DUAL-5.19.27: version-theme only the card border; badge palettes stay semantic.
+	ld d, VERSION_UI_PALETTE
 	ld e,5
 	callba LoadSGBPalette
 
@@ -1205,7 +1358,8 @@ SetPal_VersionScreen:
 	ld a,2
 	ld [rSVBK],a
 
-	ld d,PAL_CYANMON
+	; DUAL-5.19.27: the Red++ / Blue++ welcome screen follows the version theme.
+	ld d,VERSION_UI_PALETTE
 	ld e,0
 	callba LoadSGBPalette
 

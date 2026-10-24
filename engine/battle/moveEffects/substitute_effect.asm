@@ -48,6 +48,10 @@ SubstituteEffect_:
 	ld h, b
 	ld l, c
 	set HasSubstituteUp, [hl]
+	; RUN-001: record the real second Substitute only after real HP cost.
+IF DEF(BATTLE_TEST_BUILD)
+	callab TestSuite_AfterSubstituteCreated
+ENDC
 	ld a, [wOptions]
 	bit 7, a ; battle animation is enabled?
 	ld hl, PlayCurrentMoveAnimation

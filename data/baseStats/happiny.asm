@@ -1,5 +1,4 @@
 HappinyBaseStats:
-db DEX_HAPPINY ; pokedex id
 db 100 ; base hp
 db 5 ; base attack
 db 5 ; base defense
@@ -9,15 +8,12 @@ db NORMAL ; species type 1
 db NORMAL ; species type 2
 db 30 ; catch rate
 db 255 ; base exp yield
-INCBIN "pic/bmon/happiny.pic",0,1 ; 66, sprite dimensions
+INCBIN "pic/bmon/happiny.pic",0,1 ; sprite dimensions
 dw HappinyPicFront
 dw HappinyPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 4 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,13,14,16

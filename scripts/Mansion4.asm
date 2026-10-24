@@ -1,12 +1,9 @@
 Mansion4Script:
 	call Mansion4Script_523cf
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Mansion4TrainerHeader0
-	ld de, Mansion4ScriptPointers
-	ld a, [wMansion4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMansion4CurScript], a
-	ret
+	ld bc, wMansion4CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Mansion4Script_523cf:
 	ld hl, wCurrentMapScriptFlags
@@ -53,11 +50,6 @@ Mansion4Script_Switches:
 	ld [hSpriteIndexOrTextID], a
 	jp DisplayTextID
 
-Mansion4ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
-
 Mansion4TextPointers:
 	dw Mansion4Text1
 	dw Mansion4Text2
@@ -76,7 +68,6 @@ Mansion4TrainerHeader0:
 	dw Mansion4BattleText1 ; TextBeforeBattle
 	dw Mansion4AfterBattleText1 ; TextAfterBattle
 	dw Mansion4EndBattleText1 ; TextEndBattle
-	dw Mansion4EndBattleText1 ; TextEndBattle
 
 Mansion4TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_MANSION_4_TRAINER_1
@@ -85,21 +76,14 @@ Mansion4TrainerHeader1:
 	dw Mansion4BattleText2 ; TextBeforeBattle
 	dw Mansion4AfterBattleText2 ; TextAfterBattle
 	dw Mansion4EndBattleText2 ; TextEndBattle
-	dw Mansion4EndBattleText2 ; TextEndBattle
 
 	db $ff
 
 Mansion4Text1:
-	TX_ASM
-	ld hl, Mansion4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion4TrainerHeader0
 
 Mansion4Text2:
-	TX_ASM
-	ld hl, Mansion4TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion4TrainerHeader1
 
 Mansion4BattleText1:
 	TX_FAR _Mansion4BattleText1

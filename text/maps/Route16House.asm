@@ -17,6 +17,11 @@ _HM02ExplanationText::
 	line "It will take you"
 	cont "back to any town."
 
+	para "On the Town Map,"
+	line "press Left/Right"
+	cont "to fly to special"
+	cont "places you know."
+
 	para "Put it to good"
 	line "use!"
 	done

@@ -1,4 +1,3 @@
-db DEX_PIDGEOTTO ; pokedex id
 db 63 ; base hp
 db 60 ; base attack
 db 55 ; base defense
@@ -14,9 +13,6 @@ dw PidgeottoPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10

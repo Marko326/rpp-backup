@@ -1,3 +1,48 @@
+; Dedicated expanded-move recipe commands.  These occupy part of the otherwise
+; unused $C0-$D7 command range and are only accepted while a dedicated recipe
+; is staged.  Legacy animation streams still treat this range as invalid.
+EXT_ANIM_SET_FRAME_EFFECT EQU $C0 ; next byte: EXT_FRAME_* mode
+EXT_ANIM_PLAY_USER_CRY    EQU $C1 ; next byte: MoveSoundTable profile move ID
+EXT_ANIM_SHADOW_BALL_PROJECTILE EQU $C2 ; no operand; real-move gateway (Shadow Ball / Egg Bomb / Sludge Bomb / Aeroblast / Crunch / Flame Wheel / Cross Chop / Sacred Fire / Spark / Icy Wind / Gunk Shot / Dragon Pulse / Earth Power / compact helpers)
+EXT_ANIM_CRUNCH_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.69: Gold/Crystal Crunch timeline
+EXT_ANIM_SPARK_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.72: Gold/Crystal Spark timeline
+EXT_ANIM_ICY_WIND_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.81: Gold/Crystal Icy Wind renderer
+EXT_ANIM_GUNK_SHOT_PC EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.62.10: Polished Crystal Gunk Shot renderer
+EXT_ANIM_VOLT_TACKLE_RUBY EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; VTA-5.62.43: Ruby-inspired Volt Tackle renderer
+EXT_ANIM_AURA_SPHERE_PC EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; AUR-5.62.36: Polished Crystal Aura Sphere renderer
+EXT_ANIM_HURRICANE_PC EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; HUR-5.62.32: Polished Crystal Hurricane renderer
+EXT_ANIM_SUCKER_PUNCH_PC EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; SP-5.62.33: Night Slash-inspired Sucker Punch renderer
+EXT_ANIM_DRAGON_PULSE_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.97: Gold/Crystal Dragon Rage timeline for Dragon Pulse at 80% speed
+EXT_ANIM_DYNAMIC_PUNCH_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; same banked-helper gateway, real-Move dispatched
+EXT_ANIM_FLAME_WHEEL_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.62: Gold/Crystal Flame Wheel timeline
+EXT_ANIM_CROSS_CHOP_GOLD EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; ANM-5.61.67: Gold/Crystal Cross Chop timeline
+EXT_ANIM_PUNCH_HORIZONTAL_HIT EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Bullet/Sucker: restore Gen1 horizontal damage feedback
+EXT_ANIM_SHADOW_PUNCH_POOF EQU EXT_ANIM_SHADOW_BALL_PROJECTILE ; Shadow Punch: centered Shadow Ball poof
+EXT_ANIM_SET_PALETTE_MODE EQU $C3 ; next byte: EXT_PALETTE_MODE_* for the next subanimation(s)
+EXT_ANIM_GOLD_QUICK_ATTACK_PHASE EQU $C4 ; ANM-5.61.59: next byte = Shadow Punch preload/approach/return phase
+
+GOLD_QUICK_ATTACK_PREPARE  EQU 0
+GOLD_QUICK_ATTACK_APPROACH EQU 1
+GOLD_QUICK_ATTACK_RETURN   EQU 2
+GOLD_QUICK_ATTACK_VOLT_APPROACH EQU 3 ; VTA-5.62.43: fast vanish before five electric sweeps
+
+EXT_PALETTE_MODE_FIXED            EQU 0 ; use the legacy per-tile animation palette map
+EXT_PALETTE_MODE_MOVE_TYPE        EQU 1 ; use the dedicated 18-type dynamic OBJ palette
+EXT_PALETTE_MODE_MOVE_TYPE_DARK   EQU 2 ; use move type colors and map OBJ color 3 to type dark
+
+EXT_FRAME_NONE        EQU 0
+EXT_FRAME_FLASH_4     EQU 1
+EXT_FRAME_FLASH_8     EQU 2
+EXT_FRAME_BLIZZARD    EQU 3
+EXT_FRAME_ROCK_SLIDE  EQU 4
+EXT_FRAME_DUPLICATE_OFFSET_6 EQU 5 ; duplicate current FrameBlock at local (-6,-6)
+EXT_FRAME_DUPLICATE_MIRROR_X EQU 6 ; duplicate current FrameBlock mirrored across the battle target X center
+
+; When bit 7 is set, the C0 operand is not a per-frame effect.  Instead, the
+; low 7 bits force every entry of the next legacy subanimation to draw that
+; FrameBlock while preserving the original BaseCoord/mode sequence.
+EXT_FRAMEBLOCK_OVERRIDE EQU $80
+
 ; subanimations
 
 const_value = $D8

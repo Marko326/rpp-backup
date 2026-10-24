@@ -3,13 +3,11 @@ CeruleanGymScript:
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, CeruleanGymScript_5c6d0
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, CeruleanGymTrainerHeader0
 	ld de, CeruleanGymScriptPointers
-	ld a, [wCeruleanGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wCeruleanGymCurScript], a
-	ret
+	ld bc, wCeruleanGymCurScript
+	jp Bank17RunTrainerMapScript
 
 CeruleanGymScript_5c6d0:
 	ld hl, Gym2CityName
@@ -43,25 +41,9 @@ CeruleanGymScript3:
 	ld [wJoyIgnore], a
 
 CeruleanGymScript_5c70d:
-	ld a, $5
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_MISTY
-	lb bc, TM_11, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $6
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM11
-	jr .asm_5c736
-.BagFull
-	ld a, $7
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5c736
-	ld hl, wObtainedKantoBadges
-	set 1, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 1
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEvents EVENT_BEAT_CERULEAN_GYM_TRAINER_0, EVENT_BEAT_CERULEAN_GYM_TRAINER_1
@@ -84,7 +66,6 @@ CeruleanGymTrainerHeader0:
 	dw CeruleanGymBattleText1 ; TextBeforeBattle
 	dw CeruleanGymAfterBattleText1 ; TextAfterBattle
 	dw CeruleanGymEndBattleText1 ; TextEndBattle
-	dw CeruleanGymEndBattleText1 ; TextEndBattle
 
 CeruleanGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_CERULEAN_GYM_TRAINER_1
@@ -92,7 +73,6 @@ CeruleanGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_CERULEAN_GYM_TRAINER_1
 	dw CeruleanGymBattleText2 ; TextBeforeBattle
 	dw CeruleanGymAfterBattleText2 ; TextAfterBattle
-	dw CeruleanGymEndBattleText2 ; TextEndBattle
 	dw CeruleanGymEndBattleText2 ; TextEndBattle
 
 	db $ff
@@ -160,10 +140,7 @@ CeruleanGymText_5c7d8:
 	db "@"
 
 CeruleanGymText2:
-	TX_ASM
-	ld hl, CeruleanGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeruleanGymTrainerHeader0
 
 CeruleanGymBattleText1:
 	TX_FAR _CeruleanGymBattleText1
@@ -178,10 +155,7 @@ CeruleanGymAfterBattleText1:
 	db "@"
 
 CeruleanGymText3:
-	TX_ASM
-	ld hl, CeruleanGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER CeruleanGymTrainerHeader1
 
 CeruleanGymBattleText2:
 	TX_FAR _CeruleanGymBattleText2

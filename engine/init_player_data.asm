@@ -13,6 +13,17 @@ InitPlayerData2:
 	ld a, $ff
 	ld [wUnusedD71B], a
 
+; MOVE-5.62.169: a new game has no extended move identities.
+	xor a
+	ld hl, wExtendedPartyMoveFlags
+	ld bc, PARTY_LENGTH
+	call FillMemory
+	xor a
+	ld [wExtendedLearningMoveOrdinal], a
+	ld [wExtendedStatusMoveFlags], a
+	ld [wExtendedActiveMoveOrdinal], a
+	callba ResetExtendedCurrentBoxFlags
+
 ; Initialize the party, bag, PC, etc.
 	ld hl, wPartyCount
 	call InitializeEmptyList
@@ -22,6 +33,16 @@ InitPlayerData2:
 	call InitializeEmptyList
 	ld hl, wNumBoxItems
 	call InitializeEmptyList
+
+	; GBP-5.57.01: keep the initial policy of making GB Player available on new saves.
+	; The item ID is stable; a later patch can move acquisition to an NPC/reward
+	; without changing save/item numbering.
+	ld hl, wNumBagItems
+	ld a, GB_PLAYER
+	ld [wcf91], a
+	ld a, 1
+	ld [wItemQuantity], a
+	call AddItemToInventory
 
 START_MONEY EQU $3000
 	ld hl, wPlayerMoney + 1
@@ -33,6 +54,23 @@ START_MONEY EQU $3000
 	ld [hl], a
 
 	ld [wMonDataLocation], a
+	; FIS-5.62.84: a new game has no Bag-selected fishing rod yet.
+	ld [wLastUsedFishingRod], a
+	ld [wLastUsedFishingRodMagic], a
+	; DEX-5.62.115: clear all 128 capacity slots on a new game only.
+	; Original Seen/Owned blocks are adjacent (10 + 8 bytes).
+	xor a
+	ld hl,wRegionalDexSeen
+	ld bc,18
+	call FillMemory
+	xor a
+	ld hl,wRegionalDexOwnedTail
+	ld bc,6
+	call FillMemory
+	xor a
+	ld hl,wRegionalDexSeenExtra
+	ld bc,8 ; six Seen extension + two Owned extension bytes
+	call FillMemory
 
 ; Obtained badges
 	ld hl, wObtainedKantoBadges

@@ -28,10 +28,7 @@ _DisplayRepelWoreOffText::
 	call GetItemName
 	call CopyStringToCF4B
 	ld hl, UseAnotherText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .saidNo
 	pop bc ; get the item ID back so we can put it where it needs to be
 	ld a,b

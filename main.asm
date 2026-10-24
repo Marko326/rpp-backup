@@ -112,7 +112,6 @@ INCLUDE "engine/overworld/wild_mons.asm"
 
 INCLUDE "engine/items/items.asm"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-INCLUDE "engine/menu/draw_badges.asm"
 
 INCLUDE "engine/overworld/update_map.asm"
 INCLUDE "engine/overworld/cut.asm"
@@ -122,14 +121,50 @@ INCLUDE "engine/overworld/push_boulder.asm"
 INCLUDE "engine/add_mon.asm"
 INCLUDE "engine/flag_action.asm"
 INCLUDE "engine/heal_party.asm"
-INCLUDE "engine/bcd.asm"
 INCLUDE "engine/init_player_data.asm"
 INCLUDE "engine/get_bag_item_quantity.asm"
-INCLUDE "engine/pathfinding.asm"
 INCLUDE "engine/hp_bar.asm"
 INCLUDE "engine/hidden_object_functions3.asm"
 
 INCLUDE "color/update_hp_bar.asm"
+
+; BATTLE-5.19.6: attack-only HP animation policy. Keep it relocatable so the
+; tight fixed battle/HP-bar banks only pay for their far-call hooks.
+; SFX-5.62.141: bounded move SFX waits live outside the tight animation bank.
+SECTION "Battle Move SFX Wait", ROMX
+INCLUDE "engine/battle/battle_sfx_wait.asm"
+
+; SFX-5.62.143: trainer faint fall wait stays out of fixed battle Bank $0F.
+SECTION "Trainer Faint Fall SFX Wait", ROMX
+INCLUDE "engine/battle/trainer_faint_sfx_wait.asm"
+
+SECTION "Battle Damage HP Animation", ROMX
+INCLUDE "engine/battle/damage_hp_animation.asm"
+
+; Relocatable Bank 3 helpers. These routines are reached through predef tables,
+; so keeping them in floating ROMX sections preserves their APIs while freeing
+; fixed Bank $03 space for code that cannot move as easily.
+SECTION "Trainer Card Badges", ROMX
+INCLUDE "engine/menu/draw_badges.asm"
+
+SECTION "BCD Math", ROMX
+INCLUDE "engine/bcd.asm"
+
+SECTION "NPC Pathfinding", ROMX
+INCLUDE "engine/pathfinding.asm"
+
+SECTION "List Menu Helpers", ROMX
+INCLUDE "engine/menu/list_menu_helpers.asm"
+
+SECTION "Number Printing", ROMX
+INCLUDE "engine/number_printing.asm"
+
+SECTION "Gym Leader Rewards", ROMX
+INCLUDE "engine/gym_leader_rewards.asm"
+
+; GBP-5.57.01: relocatable GB Player UI and track library menu.
+SECTION "GB Player", ROMX
+INCLUDE "engine/menu/gb_player.asm"
 
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
@@ -245,7 +280,7 @@ GameboyKidSprite:     INCBIN "gfx/sprites/gameboy_kid.2bpp"
 AgathaSprite:         INCBIN "gfx/sprites/agatha.2bpp"
 BrunoSprite:          INCBIN "gfx/sprites/bruno.2bpp"
 LoreleiSprite:        INCBIN "gfx/sprites/lorelei.2bpp"
-SurfingLapras:        INCBIN "gfx/sprites/surf_lapras.2bpp"
+SeelSprite:           INCBIN "gfx/sprites/seel.2bpp"
 
 
 SECTION "Battle (bank 5)", ROMX, BANK[$5]
@@ -366,6 +401,10 @@ DiglettsCaveEntranceRoute11Blocks:
 DiglettsCaveRoute2Blocks: INCBIN "maps/DiglettsCaveExit.blk"
 
 INCLUDE "text/monster_names.asm"
+; NAME-5.29.01: Pokémon-name lookup lives beside the compressed table in bank 7.
+; The existing shared packed-name decoder stays in bank $34 so Move/Item/Trainer
+; name handling keeps its previous bank layout and call path unchanged.
+INCLUDE "engine/monster_name_lookup.asm"
 
 INCLUDE "engine/clear_save.asm"
 
@@ -830,6 +869,10 @@ INCLUDE "engine/battle/moveEffects/transform_effect.asm"
 INCLUDE "engine/battle/moveEffects/reflect_light_screen_effect.asm"
 INCLUDE "color/draw_hud_pokeball_gfx.asm"
 
+PUSHS
+SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+ExtendedLevelUpSources::
+POPS
 INCLUDE "engine/evos_moves.asm"
 
 
@@ -864,7 +907,7 @@ SafariZoneRestHouse4Blocks: INCBIN "maps/SafariZoneRestHouse1.blk"
 
 INCLUDE "scripts/LavenderTown.asm"
 
-INCLUDE "engine/pokedex_rating.asm"
+; Oak rating implementation moved to floating ROMX (bank $11 has no slack).
 
 INCLUDE "data/mapHeaders/Mansion1.asm"
 INCLUDE "scripts/Mansion1.asm"
@@ -1217,8 +1260,7 @@ INCLUDE "scripts/Colosseum.asm"
 INCLUDE "data/mapObjects/Colosseum.asm"
 ColosseumBlocks: INCBIN "maps/Colosseum.blk"
 
-INCLUDE "engine/give_pokemon.asm"
-
+; Gift handling lives in a floating bank with the other form acquisition hooks.
 INCLUDE "engine/predefs.asm"
 
 
@@ -1291,7 +1333,6 @@ INCLUDE "data/mapObjects/Mansion4.asm"
 Mansion4Blocks: INCBIN "maps/Mansion4.blk"
 
 INCLUDE "engine/battle/init_battle_variables.asm"
-INCLUDE "engine/battle/moveEffects/paralyze_effect.asm"
 
 INCLUDE "engine/overworld/card_key.asm"
 
@@ -1933,7 +1974,13 @@ SECTION "bank1A",ROMX,BANK[$1A]
 
 INCLUDE "engine/battle/decrement_pp.asm"
 
-Version_GFX:       INCBIN "gfx/red/redgreenversion.1bpp" ; 10 tiles
+Version_GFX:
+IF DEF(_RED)
+	INCBIN "gfx/red/redgreenversion.1bpp" ; 10 tiles
+ENDC
+IF DEF(_BLUE)
+	INCBIN "gfx/blue/blueversion.1bpp" ; 10 tiles
+ENDC
 Version_GFXEnd:
 
 OakTS_GFX:         INCBIN "gfx/tilesets/oakts.2bpp"
@@ -1982,6 +2029,9 @@ INCLUDE "engine/in_game_trades.asm"
 INCLUDE "engine/palettes.asm"
 
 INCLUDE "engine/save.asm"
+; Sidecar SRAM helpers must share SaveSAV bank while SRAM banking mode is 1.
+INCLUDE "engine/battle/extended_party_flags.asm"
+INCLUDE "engine/battle/extended_pc_flags.asm"
  
 BlackTile:
 	REPT 16
@@ -2262,7 +2312,6 @@ MissingnoPic::          INCBIN "pic/other/missingno.pic"
 
 RedPicBack::            INCBIN "pic/trainer/redb.pic"
 LeafPicBack::           INCBIN "pic/trainer/leafb.pic"
-OldManPic::             INCBIN "pic/trainer/oldman.pic"
 
 LeafFishingTilesFront:: INCBIN "gfx/leaf_fishing_tile_front.2bpp"
 LeafFishingTilesBack::  INCBIN "gfx/leaf_fishing_tile_back.2bpp"
@@ -2288,7 +2337,7 @@ SnorlaxSprite:         INCBIN "gfx/sprites/snorlax.2bpp"
 CelebiSprite:          INCBIN "gfx/sprites/celebi.2bpp"
 
 SurfingPikachu:        INCBIN "gfx/sprites/surfing_pikachu.2bpp"
-SeelSprite:            INCBIN "gfx/sprites/seel.2bpp"
+LaprasOverworldSprite: INCBIN "gfx/sprites/surf_lapras.2bpp"
 SlowbroSprite:         INCBIN "gfx/sprites/slowbro.2bpp"
 
 BirdSprite:            INCBIN "gfx/sprites/bird.2bpp"
@@ -2322,6 +2371,9 @@ BenchGuySprite:        INCBIN "gfx/sprites/bench_guy.2bpp"
 SECTION "bank30",ROMX,BANK[$30]
 
 BaseStats: INCLUDE "data/base_stats.asm"
+INCLUDE "data/base_stats_growth_rates.asm"
+INCLUDE "data/base_stats_tutor_extensions.asm"
+INCLUDE "engine/compact_mon_header.asm"
 
 
 SECTION "bank31",ROMX,BANK[$31]
@@ -2435,6 +2487,47 @@ LinoonePicBack::    INCBIN "pic/monback/linooneb.pic"
 HoohPicFront::      INCBIN "pic/bmon/hooh.pic"
 HoohPicBack::       INCBIN "pic/monback/hoohb.pic"
 
+; FORM-5.21.00: all species-specific regional-form descriptors, complete
+; headers, learnsets, graphics and palettes live together in data. That file owns
+; its data/graphics sections; the engine below remains species-agnostic.
+INCLUDE "data/regional_forms.asm"
+
+; FORM-5.62.12: capture-time Pokédex form rendering stays in a floating ROMX
+; section so fixed bank $34 keeps its expansion room.
+SECTION "Regional Form Initial Pokedex Helpers", ROMX
+INCLUDE "engine/menu/pokedex_initial_form.asm"
+
+; DEX-5.62.114: independent form identity table and storage API, floating ROMX.
+SECTION "Regional Dex State Helpers", ROMX
+INCLUDE "data/regional_dex_slots.asm"
+INCLUDE "engine/regional_dex_state.asm"
+
+; Regional research reads registered form identities; no extra save fields.
+INCLUDE "engine/regional_dex_research.asm"
+
+; Fixed bank $11 has only four spare bytes. Retain the original Oak rating
+; routines as a separate floating section; predef resolves their new bank.
+SECTION "Regional Oak Rating", ROMX
+INCLUDE "engine/pokedex_rating.asm"
+
+; FORM-5.62.20: producer/staging and map-specific evolution override logic stay
+; floating so fixed bank $34 only grows by small descriptor-facing entry points.
+SECTION "Regional Gift Acquisition", ROMX
+INCLUDE "engine/give_pokemon.asm"
+
+SECTION "Regional Trade Receipt Helpers", ROMX
+INCLUDE "engine/regional_trade_receipt.asm"
+
+SECTION "Regional Form Producers", ROMX
+INCLUDE "data/regional_form_producers.asm"
+INCLUDE "engine/regional_form_producers.asm"
+
+; DEX-5.62.122: front/back viewer body stays out of fixed Pokédex bank $34.
+SECTION "Regional Pokedex Facing Viewer", ROMX
+INCLUDE "engine/menu/pokedex_facing.asm"
+
+SECTION "Evolution Stone UI Helpers", ROMX
+INCLUDE "engine/evolution_stone_ui.asm"
 
 SECTION "bank34",ROMX,BANK[$34]
 
@@ -2442,6 +2535,28 @@ SECTION "bank34",ROMX,BANK[$34]
 ; so it does not need to remain in bank 1.
 INCLUDE "data/item_prices.asm"
 INCLUDE "text/item_names.asm"
+
+; Shared packed-name decoder/table live in roomy bank $34, not ROM0.
+INCLUDE "engine/name_compression.asm"
+
+; Shared conventional item-list state helpers live in roomy bank $34.
+INCLUDE "engine/menu/item_list_state.asm"
+
+; Keep the overworld BG0 cache/restore and Party -> START fast
+; path out of capacity-constrained bank $04.
+INCLUDE "engine/menu/summary_return_helpers.asm"
+
+; FORM-5.21.00: table-driven Species + Form runtime/persistence engine.
+; No separate Pokédex row, Seen/Owned state, numbering, or navigation is added.
+INCLUDE "engine/regional_forms.asm"
+
+; Pokédex Info browsing helpers and their direct-pre-evolution reverse index live
+; outside capacity-constrained bank $10 / evolution-data bank $0E.
+INCLUDE "engine/menu/pokedex_info.asm"
+INCLUDE "data/pokedex_pre_evos.asm"
+
+; Elevator floor-menu positioning is kept in the roomy expansion bank.
+INCLUDE "engine/overworld/elevator_cursor.asm"
 
 ; Mt Moon Square
 INCLUDE "data/mapHeaders/MtMoonSquare.asm"
@@ -2523,6 +2638,132 @@ INCLUDE "data/mapObjects/InsideFerry.asm"
 INCLUDE "scripts/InsideFerry.asm"
 InsideFerryBlocks: INCBIN "maps/InsideFerry.blk"
 
+; Type effectiveness/STAB logic is kept out of capacity-constrained Bank F.
+; Battle damage and trainer AI share the same routines and TypeEffects table.
+; ANIM-5.62.111: bank $34 has only $37 free in the 5.62.110 map;
+; callers use callab and BANK(...) so move the whole section to bank $30.
+SECTION "Battle Type Effectiveness", ROMX, BANK[$30]
+INCLUDE "engine/battle/type_effectiveness.asm"
+
+; Relocatable battle helpers live in roomy bank $34 so Bank F only pays the
+; small far-call entry cost. Their outputs are committed to memory/screen before return.
+SECTION "Battle Helpers (bank 34)", ROMX, BANK[$34]
+INCLUDE "engine/battle/bank34_helpers.asm"
+INCLUDE "engine/battle/moveEffects/poison_effect.asm"
+INCLUDE "engine/battle/moveEffects/switch_teleport_effect.asm"
+INCLUDE "engine/battle/moveEffects/mimic_effect.asm"
+INCLUDE "engine/battle/moveEffects/disable_effect.asm"
+INCLUDE "engine/battle/moveEffects/sleep_charge_effects.asm"
+
+; Battle Party <-> Summary fast path lives in its own floating section so bank
+; $34's fragmented free space can be used without growing the existing bank34 section.
+SECTION "Battle Party Summary Fast Path", ROMX, BANK[$34]
+INCLUDE "engine/menu/battle_party_summary_fast_path.asm"
+
+; Version-themed menu helpers live in roomy bank $34 so the packed Pokédex bank
+; does not grow. Blue++ only assigns palette 1 to list-page Poké Ball cells; the
+; Poké Ball graphics stay shared with Red++ and the surrounding UI remains blue.
+IF DEF(_BLUE)
+SECTION "Version Theme Helpers", ROMX, BANK[$34]
+INCLUDE "color/version_theme_helpers.asm"
+ENDC
+
+; RCL-5.62.41: relocate the independent Red bedroom PC gate out of packed Bank $34.
+; The home.asm caller selects BANK(OpenRedBedroomPC) dynamically, so no call ABI changes.
+SECTION "Red Bedroom PC", ROMX, BANK[$3E]
+INCLUDE "engine/menu/red_bedroom_pc.asm"
+
+; Shared Poké Flute party wake-up logic is kept out of the capacity-constrained
+; item-use bank. ANIM-5.62.111: its entry points are called through callba,
+; allowing relocation from packed bank $34 to bank $30. Battle and field callers both use the same helper.
+SECTION "Poke Flute Party Wake", ROMX, BANK[$30]
+INCLUDE "engine/items/pokeflute_party.asm"
+
+; Route 20 / Seafoam Town Map classifier and Pokédex location builder use
+; callba entry points; move together to bank $30 to release bank $34 space.
+; Bank $35 remains capacity-constrained.
+SECTION "Fly Town Map Route20 Classifier", ROMX, BANK[$30]
+INCLUDE "engine/fly_town_map_route20.asm"
+
+; F23.15fix: build the Pokédex habitat list in the same logical Town Map selector
+; space used by Town Map/Fly. Route 20 water represents both side lanes, while
+; the Seafoam interior represents both world-map island entrances.
+BuildPokedexTownMapLocations::
+	callba FindWildLocationsOfMon
+	ld hl, wBuffer
+	ld b, 0 ; bit 0 = Route 20 seen, bit 1 = Seafoam interior seen
+	ld c, 29 ; keep one of wBuffer's 30 bytes reserved for the final $ff
+.scan
+	ld a, [hl]
+	cp $ff
+	jr z, .appendLogicalLocations
+	cp ROUTE_20
+	jr z, .route20
+	cp SEAFOAM_ISLANDS_1
+	jr z, .seafoam
+	sub SEAFOAM_ISLANDS_2
+	cp SEAFOAM_ISLANDS_5 - SEAFOAM_ISLANDS_2 + 1
+	jr c, .seafoam
+.next
+	inc hl
+	dec c
+	jr .scan
+.route20
+	ld [hl], UNUSED_MAP_F2 ; Cinnabar-side SeaRoute 20
+	set 0, b
+	jr .next
+.seafoam
+	ld [hl], UNUSED_MAP_F1 ; west/upper Seafoam island
+	set 1, b
+	jr .next
+.appendLogicalLocations
+	; Never consume the final reserved byte: every optional append must leave
+	; room for the $ff terminator. If the original habitat list is already
+	; full, keep the existing logical nodes and terminate safely.
+	bit 0, b
+	jr z, .noRoute20East
+	ld a, c
+	and a
+	jr z, .terminate
+	ld [hl], UNUSED_MAP_F3 ; east/Fuchsia-side SeaRoute 19
+	inc hl
+	dec c
+.noRoute20East
+	bit 1, b
+	jr z, .terminate
+	ld a, c
+	and a
+	jr z, .terminate
+	ld [hl], SEAFOAM_ISLANDS_1 ; east/lower Seafoam island
+	inc hl
+	dec c
+.terminate
+	ld [hl], $ff
+
+	; The Pokédex player marker must use the exact same logical selector as the
+	; ordinary Town Map and Fly Map. wOAMBaseTile is temporary here and is not
+	; needed by the nest-icon loop, so use it to carry the selector without
+	; consuming habitat-list space or growing bank $1C.
+	callba GetFlyTownMapPlayerMap
+	ld a, d
+	ld [wOAMBaseTile], a
+	ret
+
+; Keep non-battle slot-machine graphics out of the capacity-constrained
+; battle-animation bank. Slot-machine loaders already use BANK(SlotMachineTiles2).
+; ANIM-5.62.111: move to bank $30; keep the original $180 tile data intact.
+SECTION "Slot Machine Tiles 2", ROMX, BANK[$30]
+SlotMachineTiles2:
+IF DEF(_RED)
+	INCBIN "gfx/red/slotmachine2.2bpp"
+ENDC
+IF DEF(_BLUE)
+	INCBIN "gfx/blue/slotmachine2.2bpp"
+ENDC
+SlotMachineTiles2End:
+	assert SlotMachineTiles2End - SlotMachineTiles2 == $180
+
+
 SECTION "pokecenters", ROMX,BANK[$35]
 
 ; Keep the optional Lv50 link-battle rule outside capacity-constrained bank 1.
@@ -2539,6 +2780,8 @@ PewterPokecenterBlocks:
 CeruleanPokecenterBlocks:
 CinnabarPokecenterBlocks:
 FuchsiaPokecenterBlocks:
+	; WTR-5.53.01: remove both halves of the retired Wonder Trade terminal
+	; from the shared Pokemon Center layout.
 	INCBIN "maps/Pokecenter.blk"
 
 INCLUDE "data/mapHeaders/ViridianPokecenter.asm"
@@ -2589,6 +2832,7 @@ INCLUDE "data/mapHeaders/IndigoPlateauLobby.asm"
 INCLUDE "scripts/IndigoPlateauLobby.asm"
 INCLUDE "data/mapObjects/IndigoPlateauLobby.asm"
 INCLUDE "data/martInventories/indigo_plateau.asm"
+; WTR-5.53.01: remove the same retired terminal from Indigo Plateau Lobby.
 IndigoPlateauLobbyBlocks: INCBIN "maps/IndigoPlateauLobby.blk"
 
 ; Start-menu drawing and MoveDex live in this roomy expansion bank.
@@ -2641,10 +2885,16 @@ INCLUDE "scripts/BeachHouse.asm"
 INCLUDE "data/mapObjects/BeachHouse.asm"
 BeachHouseBlocks: INCBIN "maps/BeachHouse.blk"
 
+; Raw battle-animation graphics are bank-independent at runtime: all consumers
+; use BANK(AnimationTileset*) with CopyVideoData.  Keep them in the graphics-heavy
+; Bank $37 instead of occupying the fixed Battle Animation Bank $1E.
+SECTION "Battle Animation Tilesets", ROMX, BANK[$37]
+INCLUDE "data/animation_tilesets.asm"
+
 SECTION "field moves", ROMX,BANK[$38]
 
 INCLUDE "engine/overworld/field_moves.asm"
-INCLUDE "engine/wonder_trade.asm"
+; WTR-5.53.00: offline Wonder Trade and its dedicated code were removed.
 INCLUDE "engine/overworld/automatic_repel.asm"
 INCLUDE "scripts/DayCareManScript.asm"
 INCLUDE "engine/overworld/ferry_script.asm"
@@ -2673,6 +2923,16 @@ GiovanniGymPic:: INCBIN "pic/trainer/giovanni2.pic"
 ForestGate_GFX:      INCBIN "gfx/tilesets/forest_gate.2bpp"
 ForestGate_Block:    INCBIN "gfx/blocksets/forest_gate.bst"
 
+; MOVE-5.62.199B: MoveDex category artwork is in the graphics bank.
+; The included movedex.asm must stay in main.asm's existing $35 section.
+SECTION "MoveDex Category Art", ROMX, BANK[$39]
+MoveDexUI:
+	INCBIN "gfx/movedex/movedex_ui.1bpp"
+MoveDexUIEnd:
+MoveDexDynamicLabel:
+	INCBIN "gfx/movedex/dynamic_label.1bpp"
+MoveDexDynamicLabelEnd:
+ASSERT MoveDexDynamicLabelEnd - MoveDexDynamicLabel == 4 * 8
 
 SECTION "Calc Stats", ROMX
 INCLUDE "engine/pokemon/calc_stats.asm"
@@ -2692,6 +2952,53 @@ INCLUDE "engine/overworld/headbutt.asm"
 INCLUDE "engine/sliding_tile_puzzle.asm"
 INCLUDE "engine/overworld/bike_shortcut.asm"
 
+; Phase-1 dedicated recipes for representative expanded moves.
+INCLUDE "data/extended_move_animations.asm"
+
+; ANIM-5.62.194: Play Rough EXT02 impact sprites live in roomy bank $3B.
+; The speed-line opening reuses the Gold Quick Attack renderer in bank $3D.
+; A small ROM0 bridge keeps BC (the native FrameBlock pointer) intact.
+; RPP's callba changes BC to its bank-return address, so it cannot pass a
+; FrameBlock directly to DrawFrameBlock in bank $1E. The stock homecall
+; mechanism is safe here because this bridge itself executes in ROM0.
+SECTION "Play Rough Native Frame Bridge", ROM0
+PlayRoughNativeDrawFrame::
+	homecall DrawFrameBlock
+	ret
+
+; The source PC Play Rough uses four graphics tiles for each 16x16
+; star/heart, and four mirrored tiles for the nine-sprite HIT_YFIX.
+; These are ROM0 frame *data*, consumed unchanged by stock DrawFrameBlock
+; in ROMX $1E.  Native tile numbers are $31 + each frame entry.
+PlayRoughPCStarFrame:
+	db 4
+	db  0, 0, $2f, 0
+	db  0, 8, $30, 0
+	db  8, 0, $31, 0
+	db  8, 8, $32, 0
+
+PlayRoughPCHeartFrame:
+	db 4
+	db  0, 0, $33, 0
+	db  0, 8, $34, 0
+	db  8, 0, $35, 0
+	db  8, 8, $36, 0
+
+PlayRoughPCHitFrame:
+	db 9
+	db  0, 0, $37, 0
+	db  0, 8, $38, 0
+	db  0,16, $37, OAM_HFLIP
+	db  8, 0, $39, 0
+	db  8, 8, $3a, 0
+	db  8,16, $39, OAM_HFLIP | OAM_VFLIP
+	db 16, 0, $37, OAM_VFLIP
+	db 16, 8, $38, OAM_HFLIP | OAM_VFLIP
+	db 16,16, $37, OAM_HFLIP | OAM_VFLIP
+
+SECTION "Polished Crystal Play Rough Animation", ROMX, BANK[$3B]
+INCLUDE "engine/battle/play_rough_animation.asm"
+
 SECTION "Trainer Parties", ROMX,BANK[$3B]
 INCLUDE "engine/battle/read_trainer_party.asm"
 INCLUDE "engine/overworld/advance_player_sprite.asm"
@@ -2704,10 +3011,301 @@ INCLUDE "data/movedex_descriptions.asm"
 ; 运行时 Normal/Snowy 切换所需的差分资源与辅助例程。
 INCLUDE "data/snowy_runtime.asm"
 
+; WLD-5.62.23: wild producer data/bridges and fishing-only support live in
+; roomy bank $3B. Current map has ample room; keep packed banks $03/$34 stable.
+SECTION "Wild Form Producers", ROMX, BANK[$3B]
+INCLUDE "data/wild_form_producers.asm"
+INCLUDE "engine/wild_form_producers.asm"
+
+; FIS-5.62.85: post-gift Fishing Guru tips live outside crowded map text banks.
+SECTION "Fishing Guru Repeat Tips", ROMX, BANK[$3B]
+INCLUDE "data/fishing_guru_repeat_text.asm"
+
+; FIS-5.62.87: Surf SELECT fishing helpers live in roomy Bank $3B.
+SECTION "Surf SELECT Fishing", ROMX, BANK[$3B]
+INCLUDE "engine/overworld/surf_select_fishing.asm"
+
+; ANIM-5.62.85: dedicated Pay Day coin throw, kept out of HOME/bank $1E.
+SECTION "Pay Day Coin Toss Animation", ROMX, BANK[$3B]
+INCLUDE "engine/battle/pay_day_animation.asm"
+
 ; Categorized player Bag helpers live in the roomy expansion bank.
 SECTION "Bag Pockets", ROMX, BANK[$35]
 INCLUDE "engine/menu/bag_pockets.asm"
 
+SECTION "Fly Town Map Helpers", ROMX, BANK[$35]
+INCLUDE "engine/fly_town_map_helpers.asm"
+
+; FLY-5.62.79: keep Teleport shortcut lookup outside the nearly full Fly Map bank.
+SECTION "Fly Town Map Teleport Shortcut", ROMX
+INCLUDE "engine/fly_town_map_shortcut.asm"
+
+SECTION "Warp Destination Helpers", ROMX, BANK[$35]
+INCLUDE "engine/overworld/warp_destination.asm"
+
 ; Bank 1 已接近满载，把完整 Options 菜单搬到空余更大的扩展 Bank $35。
 SECTION "Runtime Options Menu", ROMX, BANK[$35]
 INCLUDE "engine/menu/options_menu.asm"
+
+; MENU-5.61.17: keep Party/Bag shortcut executors out of crowded bank $35.
+SECTION "Menu Shortcut Helpers", ROMX, BANK[$3D]
+INCLUDE "engine/menu/menu_shortcuts.asm"
+
+SECTION "Fly Icon Runtime Helpers", ROMX, BANK[$3D]
+INCLUDE "engine/fly_icon_runtime_helpers.asm"
+
+; FLY-5.62.73: Party OBJ palette helper stays outside crowded gameplay banks.
+SECTION "Party Gender Sprite Palettes", ROMX, BANK[$3D]
+INCLUDE "color/party_gender_palettes.asm"
+
+SECTION "Map Name Sign", ROMX, BANK[$3D]
+; Crystal-style overworld location popup lives in a fully empty expansion bank.
+INCLUDE "engine/overworld/map_name_sign.asm"
+
+; MENU-5.62.11: START helpers have no fixed-bank dependency. Keep them floating so
+; future animation/UI growth does not pin both bank $3D and bank $34 near capacity.
+SECTION "START Menu Helpers", ROMX
+INCLUDE "engine/menu/start_menu_helpers.asm"
+
+; ANM-5.61.45: Gold Sludge Bomb renderer/data stay out of crowded animation bank $3A.
+SECTION "Gold Sludge Bomb Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/sludge_bomb_animation.asm"
+
+; ANM-5.61.46: Gold-style Aeroblast renderer/data share roomy expansion bank $3D.
+SECTION "Gold Aeroblast Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/aeroblast_animation.asm"
+
+; ANM-5.61.48: Gold/Crystal DynamicPunch explosion timeline/data stay in roomy bank $3D.
+SECTION "Gold DynamicPunch Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/dynamic_punch_animation.asm"
+
+; EGG-A4-5.61.75: table-driven primary-type move overrides and move-load finalizers.
+; MOVE-5.62.155: use floating ROMX to avoid filling fixed bank $3D.
+SECTION "Primary-Type Move Overrides", ROMX
+INCLUDE "engine/battle/primary_type_move.asm"
+
+; EGG-A4-5.61.75: Gold Egg Bomb projectile reuses DynamicPunch's explosion core.
+SECTION "Gold Egg Bomb Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/egg_bomb_animation.asm"
+
+; MOV-5.61.53: Gold-style Sacred Fire renderer/data also live in roomy bank $3D.
+SECTION "Gold Sacred Fire Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/sacred_fire_animation.asm"
+
+; ANM-5.61.59: Gold Quick Attack approach used by Shadow Punch stays in roomy bank $3D.
+SECTION "Gold Quick Attack Shadow Punch", ROMX, BANK[$3D]
+INCLUDE "engine/battle/shadow_punch_quick_attack.asm"
+
+; ANM-5.61.62: Gold/Crystal Flame Wheel reuses the shared Gold fire assets in bank $3D.
+SECTION "Gold Flame Wheel Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/flame_wheel_animation.asm"
+
+; ANM-5.61.97: Dragon Pulse uses a smooth 80%-speed Gold/Crystal Dragon Rage path and shared fire tiles.
+SECTION "Gold Dragon Pulse Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/dragon_pulse_animation.asm"
+
+; Gold/Crystal Iron Tail helper lives in roomy bank $3D.
+SECTION "Gold Iron Tail Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/iron_tail_animation.asm"
+
+; ANM-5.61.67: Gold/Crystal Cross Chop renderer/data stay in roomy bank $3D.
+SECTION "Gold Cross Chop Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/cross_chop_animation.asm"
+
+; ANM-5.61.69: Gold/Crystal Crunch reuses the shared full-frame WX shake in bank $3D.
+SECTION "Gold Crunch Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/crunch_animation.asm"
+
+; ANM-5.61.72: Gold/Crystal Spark renderer/data share the roomy animation expansion bank.
+SECTION "Gold Spark Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/spark_animation.asm"
+
+; ANM-5.61.81: Gold/Crystal Icy Wind renderer/data share animation bank $3D.
+SECTION "Gold Icy Wind Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/icy_wind_animation.asm"
+
+; ANM-5.61.102: lightweight Earth Power reuses Gen I Ember/Rock Throw assets.
+SECTION "Gold-like Earth Power Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/earth_power_animation.asm"
+
+; ANM-5.62.05: Polished Crystal Energy Ball renderer/data share animation bank $3D.
+SECTION "Polished Crystal Energy Ball Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/energy_ball_animation.asm"
+
+; ANIM-5.62.198: PC Power Gem arrangement, project Rock Throw stones only.
+SECTION "Polished Crystal Power Gem Animation", ROMX, BANK[$3E]
+INCLUDE "engine/battle/power_gem_animation.asm"
+
+; ANIM-5.62.96: floating banked sprite renderer; no extra HOME allocation.
+SECTION "Bullet Seed Animation", ROMX
+INCLUDE "engine/battle/bullet_seed_animation.asm"
+
+; ANIM-5.62.97: global enemy multi-hit feedback and original move overrides.
+SECTION "Global Multi-Hit Damage Feedback", ROMX
+INCLUDE "engine/battle/global_multihit_feedback.asm"
+
+; ANIM-5.62.98: Twineedle per-hit poison hook; keep body out of Bank $F.
+SECTION "Twineedle Per-Hit Poison", ROMX
+INCLUDE "engine/battle/twineedle_per_hit_poison.asm"
+
+; ANIM-5.62.109: floating bank for private, symmetric Horn-style needles.
+SECTION "Twineedle Symmetric Projectile Animation", ROMX
+INCLUDE "engine/battle/twineedle_animation.asm"
+
+; ANM-5.62.10: Polished Crystal Gunk Shot renderer/data share animation bank $3D.
+SECTION "Polished Crystal Gunk Shot Animation", ROMX, BANK[$3D]
+INCLUDE "engine/battle/gunk_shot_animation.asm"
+
+; HUR-5.62.32: Hurricane uses bank $38 instead of adding more pressure to bank $3D.
+SECTION "Polished Crystal Hurricane Animation", ROMX, BANK[$38]
+INCLUDE "engine/battle/hurricane_animation.asm"
+
+; SP-5.62.33: Night Slash-inspired Sucker Punch animation-only renderer in Bank $38.
+SECTION "Polished Crystal Sucker Punch Animation", ROMX, BANK[$38]
+INCLUDE "engine/battle/sucker_punch_animation.asm"
+
+; ANIM-5.62.74: selected dual ring renderer and softened hit response; ROMX $38.
+SECTION "Ruby-style Hyper Voice Animation", ROMX, BANK[$38]
+INCLUDE "engine/battle/hyper_voice_animation.asm"
+
+; ANIM-5.62.75: Lovely Kiss-only OAM step-table motion; floating ROMX.
+SECTION "Lovely Kiss Curved Motion", ROMX
+INCLUDE "engine/battle/lovely_kiss_motion.asm"
+
+; AUR-5.62.36: Aura Sphere renderer in bank $3E, not tightly packed bank $3D.
+SECTION "Polished Crystal Aura Sphere Animation", ROMX, BANK[$3E]
+INCLUDE "engine/battle/aura_sphere_animation.asm"
+
+; BSE-5.62.38: damaging stat side effects, pre-KO self changes.
+SECTION "Stat Side Effect Helpers", ROMX, BANK[$3E]
+INCLUDE "engine/battle/stat_side_effect_helpers.asm"
+
+; MOVE-5.62.147: modern move-specific status/drain rolls and Nuzzle immunity.
+; The full paralysis body is relocated from full Bank $14 to roomy Bank $3E.
+SECTION "Move Effect Balance Helpers", ROMX, BANK[$3E]
+INCLUDE "engine/battle/move_effect_balance_helpers.asm"
+INCLUDE "engine/battle/moveEffects/paralyze_effect.asm"
+
+; RCL-5.62.40: move-specific recoil fractions in Bank $3E.
+SECTION "Recoil Side Effect Helpers", ROMX, BANK[$3E]
+INCLUDE "engine/battle/recoil_side_effect_helpers.asm"
+
+; SUB-5.62.42: Substitute/multi-hit sprite and damage-resolution helpers.
+SECTION "Substitute Multi-Hit Helpers", ROMX, BANK[$3E]
+INCLUDE "engine/battle/substitute_multihit_helpers.asm"
+
+; Self-inflicted Jump Kick miss recoil is separate from Substitute hit routing.
+SECTION "Jump Kick Crash Recoil Helper", ROMX
+INCLUDE "engine/battle/jump_kick_recoil_helper.asm"
+
+; Test harness is absent from the official ROM. Compile only with BATTLE_TEST_BUILD.
+IF DEF(BATTLE_TEST_BUILD)
+SECTION "RUN-001 Battle Test Suite", ROMX
+INCLUDE "engine/battle/test_suite_run001.asm"
+ENDC
+
+; VTA-5.62.43: Ruby-inspired Volt Tackle five-sweep renderer in Bank $3E.
+SECTION "Ruby-style Volt Tackle Animation", ROMX, BANK[$3E]
+INCLUDE "engine/battle/volt_tackle_animation.asm"
+
+; ICO-5.62.56: runtime-normalized 16x32 party icons, one ROM entry per
+; icon template. VRAM holds only the current six party slots, not the atlas.
+; Original source PNGs are retained unchanged for future asset curation.
+; SFX-5.62.140: opening skip sound cleanup stays in floating ROMX, not HOME.
+SECTION "Interrupted Intro SFX Cleanup", ROMX
+INCLUDE "engine/intro_sfx_stop.asm"
+
+; SFX-5.62.142: elevator end-cue wait is also movable, not fixed Bank $1E.
+SECTION "Elevator End SFX Wait", ROMX
+INCLUDE "engine/overworld/elevator_sfx_wait.asm"
+
+; MOVE-5.62.173: forty-entry second-table experiment; keep the ROMX table/reader isolated.
+; MOVE-5.62.178: both ordinary and regional level-up parsers use this banked learner.
+SECTION "Shared Party Level Move Learner", ROMX
+INCLUDE "engine/party_level_move_learner.asm"
+
+SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+INCLUDE "engine/extended_level_up_sources.asm"
+
+SECTION "Experimental Extended Move Prototype", ROMX
+INCLUDE "data/extended_moves.asm"
+INCLUDE "engine/battle/extended_move_loader.asm"
+INCLUDE "engine/battle/extended_move_slot_codec.asm"
+
+SECTION "Menu Party Icon Graphics", ROMX, BANK[$38]
+PartyIconRuntimeAtlas:
+	INCBIN "gfx/party_icon_imports/dynamic_runtime_atlas.2bpp"
+; Stock trade circle/oval animation uses sprite tiles $38-$3b and $78-$7b.
+PartyIconTradeCircleGfx:
+	INCBIN "gfx/party_icon_imports/trade_circle_runtime.2bpp"
+
+; ICO-5.62.58: Gold's two-frame Lugia and Ho-Oh party icons. Their complete
+; left/right halves remain unmirrored; loader selects by banked source ID.
+LugiaGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/lugia_gs.2bpp"
+HoOhGoldPartyIcon:
+	INCBIN "gfx/party_icon_imports/ho_oh_gs.2bpp"
+
+; ICO-5.62.59: recognizable Gold templates, unchanged 16x32 two-frame art.
+GoldIconBulbasaur:
+	INCBIN "gfx/party_icon_imports/bulbasaur_gs.2bpp"
+GoldIconCharmander:
+	INCBIN "gfx/party_icon_imports/charmander_gs.2bpp"
+GoldIconBigmon:
+	INCBIN "gfx/party_icon_imports/bigmon_gs.2bpp"
+GoldIconSquirtle:
+	INCBIN "gfx/party_icon_imports/squirtle_gs.2bpp"
+GoldIconGyarados:
+	INCBIN "gfx/party_icon_imports/gyarados_gs.2bpp"
+GoldIconSnorlax:
+	INCBIN "gfx/party_icon_imports/snorlax_gs.2bpp"
+GoldIconSlowpoke:
+	INCBIN "gfx/party_icon_imports/slowpoke_gs.2bpp"
+GoldIconLapras:
+	INCBIN "gfx/party_icon_imports/lapras_gs.2bpp"
+GoldIconGeodude:
+	INCBIN "gfx/party_icon_imports/geodude_gs.2bpp"
+GoldIconPoliwag:
+	INCBIN "gfx/party_icon_imports/poliwag_gs.2bpp"
+
+; ICO-5.62.60: four original Gold 16x32 two-frame menu-icon templates.
+GoldIconJigglypuff:
+	INCBIN "gfx/party_icon_imports/jigglypuff_gs.2bpp"
+GoldIconDiglett:
+	INCBIN "gfx/party_icon_imports/diglett_gs.2bpp"
+GoldIconJellyfish:
+	INCBIN "gfx/party_icon_imports/jellyfish_gs.2bpp"
+GoldIconFighter:
+	INCBIN "gfx/party_icon_imports/fighter_gs.2bpp"
+
+; ICO-5.62.61: refined shell/caterpillar/moth/blob Gold menu icons.
+GoldIconShell:
+	INCBIN "gfx/party_icon_imports/shell_gs.2bpp"
+GoldIconCaterpillar:
+	INCBIN "gfx/party_icon_imports/caterpillar_gs.2bpp"
+GoldIconMoth:
+	INCBIN "gfx/party_icon_imports/moth_gs.2bpp"
+GoldIconBlob:
+	INCBIN "gfx/party_icon_imports/blob_gs.2bpp"
+
+; ICO-5.62.62: narrowed Gold icon refinements; original two-frame art.
+GoldIconOddish:
+	INCBIN "gfx/party_icon_imports/oddish_gs.2bpp"
+GoldIconFish:
+	INCBIN "gfx/party_icon_imports/fish_gs.2bpp"
+
+; ICO-5.62.63: two selected original Gold icon templates from the user sheet.
+GoldIconFox:
+	INCBIN "gfx/party_icon_imports/fox_gs.2bpp"
+GoldIconHumanshape:
+	INCBIN "gfx/party_icon_imports/humanshape_gs.2bpp"
+
+; ICO-5.62.81: PureRGB OG+ HUMANOID_INSECT, two 16x16 frames for three species.
+PureRGBHumanoidInsectPartyIcon:
+	INCBIN "gfx/party_icon_imports/humanoid_insect_purergb.2bpp"
+
+; MOVE-5.62.187: floating selector is independent of the fixed map banks.
+INCLUDE "engine/battle/metronome_extended.asm"
+
+; MOVE-5.62.189: source-driven enemy full move identity (floating ROMX).
+INCLUDE "engine/battle/enemy_native_extended.asm"

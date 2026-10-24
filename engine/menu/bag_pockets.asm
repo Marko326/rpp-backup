@@ -183,6 +183,7 @@ SwitchBagPocket::
 	cp d
 	ret z ; only the current Pocket was non-empty: true no-op
 	ld [wBagPocketCurrent], a
+	call UpdateBagPocketStartShortcutWatchedKey
 	call LoadBagPocketTitleTiles
 	call LoadCurrentBagPocketCursor
 	call UpdateCurrentBagPocketMenuLimits
@@ -259,6 +260,8 @@ SwitchBattleBagPocket:
 
 UpdateBattleBagMenuLimitsFromCount:
 	ld a, [wListCount]
+	; Fall through. Both START and Battle Bag use the same three-row menu limit.
+SetBagPocketMenuLimitsFromCount:
 	and a
 	jr z, .empty
 	cp 2
@@ -412,15 +415,18 @@ GetBattleBagSavedCursorAddress:
 	ret
 
 LoadBattleBagCursor:
-	; Restore this Pocket's absolute cursor and clamp it to the current filtered
-	; count. Reconstruct scroll+row using the same three-row selectable window.
+	; Resolve the Battle Pocket's saved absolute cursor, then share the clamp and
+	; scroll/row reconstruction with the START Bag.
 	call GetBattleBagPocketCount
-	ld a, [wListCount]
-	and a
-	jr z, .empty
 	ld b, a
 	ld a, [wBattleBagPocket]
 	call GetBattleBagSavedCursorAddress
+	ld a, b
+	; Fall through with A = item count and HL = saved absolute cursor byte.
+LoadBagPocketCursorFromSavedPosition:
+	and a
+	jr z, .empty
+	ld b, a
 	ld a, [hl]
 	cp b
 	jr c, .positionValid
@@ -523,58 +529,66 @@ GetCurrentBagPocketStart:
 UpdateCurrentBagPocketMenuLimits:
 	call GetCurrentBagPocketCount
 	ld [wListCount], a
-	and a
-	jr z, .empty
-	cp 2
-	ld a, 1
-	jr c, .store
-	inc a
-.store
-	ld [wMaxMenuItem], a
-	ret
-.empty
-	xor a
-	ld [wMaxMenuItem], a
-	ret
+	jp SetBagPocketMenuLimitsFromCount
 
 LoadCurrentBagPocketCursor:
 	call GetCurrentBagPocketCount
-	and a
-	jr z, .emptyPocket
-	ld b, a ; number of real items in this Pocket
+	ld b, a ; preserve count while resolving this Pocket's saved-position byte
 	ld a, [wBagPocketCurrent]
 	ld e, a
 	ld d, 0
 	ld hl, wBagPocketSavedPositions
 	add hl, de
-	ld a, [hl]
-	cp b
-	jr c, .positionValid
 	ld a, b
-	dec a ; old position became Cancel/out of range: use new last real item
-.positionValid
+	jp LoadBagPocketCursorFromSavedPosition
+
+UpdateBagPocketStartShortcutWatchedKey::
+	; MENU-5.61.17: START is scoped by menu mode, not by inventory pointer.
+	; Mart Sell and PC Deposit also point at wNumBagItems, so only the categorized
+	; START Bag may watch this shortcut; Battle and every other item list ignore it.
+	ld hl, wMenuWatchedKeys
+	res BIT_START, [hl]
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	ret nz
+	set BIT_START, [hl]
+	ret
+
+JumpBagPocketToHM01::
+	; START is a direct shortcut only inside the START Bag's TM/HM Pocket. Check
+	; the active mode defensively before touching its transient Slot Map, then scan
+	; actual owned entries so the shortcut is a no-op until HM01 really exists.
+	ld a, [wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	ret nz
+	ld a, [wBagPocketCurrent]
+	cp BAG_POCKET_TM_HM
+	ret nz
+	call GetCurrentBagPocketCount
+	ld b, a
+	call GetCurrentBagPocketStart
 	ld c, a
-	cp 3
-	jr c, .topRows
-	sub 2
-	ld [wListScrollOffset], a
-	ld a, 2
-	ld [wCurrentMenuItem], a
-	ld [wBagSavedMenuItem], a
-	ret
-.topRows
-	xor a
-	ld [wListScrollOffset], a
-	ld a, c
-	ld [wCurrentMenuItem], a
-	ld [wBagSavedMenuItem], a
-	ret
-.emptyPocket
-	xor a
-	ld [wListScrollOffset], a
-	ld [wCurrentMenuItem], a
-	ld [wBagSavedMenuItem], a
-	ret
+	xor a ; Pocket-local absolute index
+.scan
+	cp b
+	ret nc ; HM01 is not owned
+	push af
+	add c
+	ld e, a
+	ld d, 0
+	ld hl, wFilteredBagItems + BAG_POCKET_SLOT_MAP_OFFSET
+	add hl, de
+	ld a, [hl]
+	call GetBagItemAtRealSlot
+	cp HM_01
+	jr z, .found
+	pop af
+	inc a
+	jr .scan
+.found
+	pop af
+	call StoreCurrentBagPocketSavedPosition
+	jp LoadCurrentBagPocketCursor
 
 FinalizeBagPocketMenuResult::
 	; A-button handling already resolves the Pocket entry to a physical Bag slot.
@@ -1500,59 +1514,7 @@ UpdateBagPocketDescription::
 	ld a, $ff
 .haveItem
 	ld hl, wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET
-	cp [hl]
-	ret z
-	ld [hl], a
-
-	; Keep the old description hidden while replacing it. The Mart short
-	; descriptions only use the two dialogue text rows (y=14 and y=16), so clear
-	; only those 36 tiles instead of rebuilding the whole MESSAGE_BOX.
-	ld a, [H_AUTOBGTRANSFERENABLED]
-	push af
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
-	coord hl, 1, 14
-	ld b, 1
-	ld c, 18
-	call ClearScreenArea
-	coord hl, 1, 16
-	ld b, 1
-	ld c, 18
-	call ClearScreenArea
-
-	; Reuse the Pokemart's compact two-line description pointer table. Pointer
-	; arithmetic itself is bank-independent; the tiny bank-$15 helper switches
-	; to the table's bank before PrintText_NoCreatingTextBox reads it.
-	ld a, [wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET]
-	cp $ff
-	ld de, EmptyDescription
-	jr z, .printDescription
-	cp HM_01
-	jr c, .normalDescription
-	cp TM_50 + 1
-	jr nc, .normalDescription
-	ld d, a ; callab/Bankswitch clobbers A, so pass the machine item ID in D
-	callab DrawMachineItemDescription
-	jr .descriptionDone
-.normalDescription
-	dec a
-	ld hl, ItemDescriptionPointers_Mart
-	ld bc, 5
-.findDescriptionPointer
-	and a
-	jr z, .descriptionPointerReady
-	dec a
-	add hl, bc
-	jr .findDescriptionPointer
-.descriptionPointerReady
-	ld d, h
-	ld e, l
-.printDescription
-	callab PrintBagItemDescriptionText
-.descriptionDone
-	pop af
-	ld [H_AUTOBGTRANSFERENABLED], a
-	ret
+	jp UpdateBagPocketDescriptionFromItem
 
 UpdateBattleBagDescription:
 	call EnsureBattleBagPageCache
@@ -1580,9 +1542,14 @@ UpdateBattleBagDescription:
 	ld a, $ff
 .haveItem
 	ld hl, wBattleBagDescriptionCache
+	; Fall through with A = item ID ($ff for Cancel) and HL = mode-local cache.
+UpdateBagPocketDescriptionFromItem:
 	cp [hl]
 	ret z
 	ld [hl], a
+
+	; Both Bag views use the same compact two-line description renderer. Preserve
+	; the selected item and the caller's BG-transfer state across the two clears.
 	push af
 	ld a, [H_AUTOBGTRANSFERENABLED]
 	push af
@@ -1596,8 +1563,9 @@ UpdateBattleBagDescription:
 	ld b, 1
 	ld c, 18
 	call ClearScreenArea
-	pop bc
-	pop af
+	pop bc ; B = previous H_AUTOBGTRANSFERENABLED value
+	pop af ; A = selected item ID
+
 	cp $ff
 	ld de, EmptyDescription
 	jr z, .printDescription

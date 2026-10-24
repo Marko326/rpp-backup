@@ -280,6 +280,7 @@ hItemCounter EQU $FFDB
 
 hGymGateIndex EQU $FFDB
 
+; GYM-5.34.00: legacy alias retained; fixed switches no longer use RNG masking.
 hGymTrashCanRandNumMask EQU $FFDB
 
 hDexRatingNumMonsSeen  EQU $FFDB
@@ -318,6 +319,10 @@ hSpriteAnimFrameCounter EQU $FFEA
 
 H_WHOSETURN EQU $FFF3 ; 0 on player’s turn, 1 on enemy’s turn
 
+; HOOH-5.19.56: OAM-only scratch moved out of saved WRAM so the old byte can
+; extend wMissableObjectFlags without shifting any following save-data address.
+hOAMFacingAnim EQU $FFF5
+
 ; bit 0: draw HP fraction to the right of bar instead of below (for party menu)
 ; bit 1: menu is double spaced
 hFlags_0xFFF6 EQU $FFF6
@@ -335,3 +340,7 @@ hDelayFrameHookBank EQU $FFFA
 
 ; Used for convenience in color hack (in the _ColorOverworldSprite function)
 hColorHackTmp EQU $FFFB
+
+; TEXT-5.62.205: one-shot request for a bottom-third tilemap refresh.
+; Consumed by the LCD pre-VBlank palette preparation, not by the text caller.
+hTextBottomRefreshRequest EQU $FFFC

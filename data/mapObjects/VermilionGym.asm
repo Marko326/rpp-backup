@@ -13,7 +13,3 @@ VermilionGymObject:
 	object SPRITE_BRUNETTE_GIRL, $3, $8, STAY, LEFT, $3, OPP_ROCKER, $1
 	object SPRITE_SAILOR, $0, $a, STAY, RIGHT, $4, OPP_SAILOR, $8
 	object SPRITE_GYM_HELPER, $4, $e, STAY, DOWN, $5 ; person
-
-	; warp-to
-	EVENT_DISP VERMILION_GYM_WIDTH, $11, $4
-	EVENT_DISP VERMILION_GYM_WIDTH, $11, $5

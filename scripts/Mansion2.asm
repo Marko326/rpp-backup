@@ -1,12 +1,9 @@
 Mansion2Script:
 	call Mansion2Script_51fee
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Mansion2TrainerHeader0
-	ld de, Mansion2ScriptPointers
-	ld a, [wMansion2CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMansion2CurScript], a
-	ret
+	ld bc, wMansion2CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Mansion2Script_51fee:
 	ld hl, wCurrentMapScriptFlags
@@ -51,11 +48,6 @@ Mansion2Script_Switches:
 	ld [hSpriteIndexOrTextID], a
 	jp DisplayTextID
 
-Mansion2ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
-
 Mansion2TextPointers:
 	dw Mansion2Text1
 	dw PickUpItemText
@@ -70,15 +62,11 @@ Mansion2TrainerHeader0:
 	dw Mansion2BattleText1 ; TextBeforeBattle
 	dw Mansion2AfterBattleText1 ; TextAfterBattle
 	dw Mansion2EndBattleText1 ; TextEndBattle
-	dw Mansion2EndBattleText1 ; TextEndBattle
 
 	db $ff
 
 Mansion2Text1:
-	TX_ASM
-	ld hl, Mansion2TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion2TrainerHeader0
 
 Mansion2BattleText1:
 	TX_FAR _Mansion2BattleText1
@@ -104,10 +92,7 @@ Mansion3Text6:
 Mansion2Text5:
 	TX_ASM
 	ld hl, Mansion2Text_520c2
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_520b9
 	ld a, $1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a

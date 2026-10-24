@@ -11,7 +11,8 @@ DisplayTownMap:
 	push hl
 	ld a, $1
 	ld [hJoy7], a
-	ld a, [wCurMap]
+	callab GetFlyTownMapPlayerMap
+	ld a, d
 	push af
 	ld b, $0
 	call DrawPlayerOrBirdSprite ; player sprite
@@ -29,8 +30,13 @@ DisplayTownMap:
 	ld de, TownMapCursor
 	lb bc, BANK(TownMapCursor), (TownMapCursorEnd - TownMapCursor) / $8
 	call CopyVideoDataDouble
-	xor a
-	ld [wWhichTownMapLocation], a
+	; wWhichTownMapLocation shares scratch WRAM at $cd3d, so initialize it only
+	; after the Town Map/OAM setup above has finished using that scratch area.
+	; Preserve the displayed player selector across the far call for .enterLoop.
+	pop af
+	push af
+	ld e, a ; callab clobbers A, so pass the displayed selector through E
+	callab InitTownMapLocationFromPlayerMap
 	pop af
 	jr .enterLoop
 
@@ -54,13 +60,7 @@ DisplayTownMap:
 	ld hl, wOAMBuffer + $10
 	call WriteTownMapSpriteOAM ; town map cursor sprite
 	pop hl
-	ld de, wcd6d
-.copyMapName
-	ld a, [hli]
-	ld [de], a
-	inc de
-	cp "@"
-	jr nz, .copyMapName
+	call CopyTownMapDisplayName
 	coord hl, 1, 0
 	ld de, wcd6d
 	call PlaceString
@@ -71,12 +71,22 @@ DisplayTownMap:
 .inputLoop
 	call TownMapSpriteBlinkingAnimation
 	call JoypadLowSensitivity
+	; Keep directional/menu repeat from JoypadLowSensitivity, but START/SELECT are
+	; edge-triggered so held shortcut buttons cannot repeatedly jump the cursor.
 	ld a, [hJoy5]
-	ld b, a
 	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
+	ld b, a
+	ld a, [hJoyPressed]
+	and START | SELECT
+	or b
+	ld b, a
 	jr z, .inputLoop
 	ld a, SFX_TINK
 	call PlaySound
+	bit 3, b
+	jr nz, .pressedStart
+	bit 2, b
+	jr nz, .pressedSelect
 	bit 6, b
 	jr nz, .pressedUp
 	bit 7, b
@@ -85,13 +95,37 @@ DisplayTownMap:
 	ld [wTownMapSpriteBlinkingEnabled], a
 	ld [hJoy7], a
 	ld [wAnimCounter], a
-	call ExitTownMap
 	pop hl
 	pop af
 	ld [hl], a
 	pop af
 	ld [hTilesetType], a
+	call ExitTownMap
 	ret
+.pressedStart
+	; MAP-5.62.80: use Teleport's last recovery map, not the last town walked through.
+	ld a, [wLastBlackoutMap]
+	cp ROUTE_4 ; Mt. Moon Pokemon Center returns to Route 4
+	jr z, .startMtMoon
+	cp ROUTE_10 ; Rock Tunnel Pokemon Center returns to Route 10
+	jr z, .startRockTunnel
+	cp SAFFRON_CITY + 1 ; other supported recovery destinations are city IDs 0..10
+	jp nc, .inputLoop ; keep selection on unknown/corrupt recovery map
+	ld e, a
+	jr .startLocate
+.startMtMoon
+	ld e, MT_MOON_1 ; normal Town Map's anchor for the Mt. Moon Fly shortcut
+	jr .startLocate
+.startRockTunnel
+	ld e, ROCK_TUNNEL_POKECENTER ; normal Town Map anchor for Rock Tunnel
+.startLocate
+	callab InitTownMapLocationFromPlayerMap
+	jp .townMapLoop
+.pressedSelect
+	; SELECT always returns the browse cursor to Pallet Town.
+	xor a
+	ld [wWhichTownMapLocation], a
+	jp .townMapLoop
 .pressedUp
 	ld a, [wWhichTownMapLocation]
 	inc a
@@ -112,10 +146,6 @@ DisplayTownMap:
 	jp .townMapLoop
 
 INCLUDE "data/town_map_order.asm"
-
-TownMapCursor:
-	INCBIN "gfx/town_map_cursor.1bpp"
-TownMapCursorEnd:
 
 LoadTownMap_Nest:
 	ld a, [hTilesetType]
@@ -140,12 +170,12 @@ LoadTownMap_Nest:
 	ld de, NestText
 	call PlaceString
 	call WaitForTextScrollButtonPress
-	call ExitTownMap
 	pop hl
 	pop af
 	ld [hl], a
 	pop af
 	ld [hTilesetType], a
+	call ExitTownMap
 	ret
 
 MonsText:
@@ -155,22 +185,30 @@ NestText:
 	db "Nest@"
 
 LoadTownMap_Fly:
+	; FLY-5.62.73: capture the party-menu choice before the Fly Map starts
+	; using shared menu scratch. Preserve species, not the transient slot index.
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wPartySpecies
+	add hl, de
+	ld a, [hl]
+	ld [wFlySelectedSpecies], a
 	ld a, [hTilesetType]
 	push af
 	xor a
 	ld [hTilesetType], a
 	call ClearSprites
 	call LoadTownMap
-	call LoadPlayerSpriteGraphics
+	; Re-establish the four player tiles used by the current-location marker.
+	; Surf needs a Town Map-specific path because hTilesetType is temporarily 0.
+	callab LoadPlayerSpriteGraphicsForFlyTownMap
 	call LoadFontTilePatterns
-	ld de, BirdSprite
-	ld hl, vSprites + $40
-	lb bc, BANK(BirdSprite), $c
-	call CopyVideoData
-	ld de, TownMapUpArrow
-	ld hl, vChars1 + $6d0
-	lb bc, BANK(TownMapUpArrow), (TownMapUpArrowEnd - TownMapUpArrow) / $8
-	call CopyVideoDataDouble
+	; FLY-5.62.73: display the selected Fly user's 16x16 party icon.
+	; Tiles 0-3 remain reserved for the player's current-location marker.
+	callab LoadFlyTownMapIcon
+	xor a
+	ld [wFlyLocationsAxis], a ; 0 = city axis (Up/Down), 1 = special axis (Left/Right)
 	call BuildFlyLocationsList
 	ld hl, wUpdateSpritesEnabled
 	ld a, [hl]
@@ -180,10 +218,11 @@ LoadTownMap_Fly:
 	coord hl, 0, 0
 	ld a, $3f ; up/down arrow tile
 	ld [hl], a
-	ld a, [wCurMap]
+	callab GetFlyTownMapPlayerMap
+	ld a, d
 	ld b, $0
 	call DrawPlayerOrBirdSprite
-	ld hl, wFlyLocationsList
+	ld hl, wBuffer + 1 ; expanded Fly list; wBuffer holds the leading $ff sentinel
 ;	coord de, 18, 0;No longer sets the destination address for the top‑right tile
 .townMapFlyLoop
 ;	ld a, " ";No longer writes a blank tile to the top‑right corner
@@ -207,20 +246,52 @@ LoadTownMap_Fly:
 	push hl
 	call DelayFrame
 	call JoypadLowSensitivity
+	; Fly Map keeps held-direction repeat, while START/SELECT only react to
+	; newly-pressed edges so held shortcut buttons do not repeatedly retrigger.
 	ld a, [hJoy5]
+	and A_BUTTON | B_BUTTON | D_RIGHT | D_LEFT | D_UP | D_DOWN
+	ld b, a
+	ld a, [hJoyPressed]
+	and START | SELECT
+	or b
 	ld b, a
 	pop hl
-	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
 	jr z, .inputLoop
 	bit 0, b
 	jr nz, .pressedA
 	ld a, SFX_TINK
 	call PlaySound
+	bit 3, b
+	jr nz, .pressedStart
+	bit 2, b
+	jr nz, .pressedSelect
+	bit 4, b
+	jr nz, .pressedLeftOrRight
+	bit 5, b
+	jr nz, .pressedLeftOrRight
 	bit 6, b
-	jr nz, .pressedUp
+	jp nz, .pressedUp
 	bit 7, b
-	jr nz, .pressedDown
+	jp nz, .pressedDown
 	jr .pressedB
+.pressedStart
+	; FLY-5.62.79: locate the same last-heal destination used by Teleport.
+	; The helper leaves the existing selection intact when Fly cannot reach it.
+	push hl
+	callab FindFlyTeleportShortcut
+	pop hl
+	ld a, d
+	or e
+	jp z, .townMapFlyLoop
+	ld h, d
+	ld l, e
+	jp .townMapFlyLoop
+.pressedSelect
+	; FLY-5.62.79: Pallet Town is the first city-axis Fly destination.
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	jp .selectFirstAvailable
 .pressedA
 	ld a, SFX_HEAL_AILMENT
 	call PlaySound
@@ -240,58 +311,182 @@ LoadTownMap_Fly:
 	pop af
 	ld [hTilesetType], a
 	ret
+.pressedLeftOrRight
+; Left/Right owns the special-destination axis. The first horizontal press
+; enters that axis; further horizontal presses cycle only unlocked special
+; destinations. Up/Down always returns to the original city axis.
+	; Preserve B: it still holds hJoy5 and determines Left vs Right below.
+	ld a, [wSpecialFlyVisitedFlag]
+	ld c, a
+	ld a, [wSpecialFlyVisitedFlag2]
+	and %00111111 ; bits 0-5 are defined; bits 6-7 remain unused
+	or c
+	jp z, .townMapFlyLoop ; no defined special destinations unlocked yet
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .alreadyOnSpecialAxis
+	; Enter the special axis relative to the currently selected city. The helper
+	; uses TownMapOrder anchors, skips locked special destinations, and wraps only
+	; after reaching the corresponding geographic end.
+	ld e, [hl] ; current city selector
+	ld d, 0 ; Left = previous special destination
+	bit 4, b
+	jr z, .enterSpecialFromCity
+	inc d ; Right = next special destination
+.enterSpecialFromCity
+	ld a, 1
+	ld [wFlyLocationsAxis], a
+	callab BuildSpecialFlyLocationsListFromCityAnchor
+	ld h, d
+	ld l, e ; DE safely returns the geographic boundary across Bankswitch
+	jr c, .moveSpecialRight
+	jr .moveSpecialLeft
+.alreadyOnSpecialAxis
+	bit 4, b
+	jr nz, .moveSpecialRight
+	jr .moveSpecialLeft
+
+.selectFirstAvailable
+	ld hl, wBuffer + 1
+.findFirstAvailable
+	ld a, [hl]
+	cp $ff
+	jr z, .noSpecialAvailable
+	cp $fe
+	jp nz, .townMapFlyLoop
+	inc hl
+	jr .findFirstAvailable
+.noSpecialAvailable
+	; Defensive fallback: never let the end sentinel become a map selector.
+	; A valid save with any defined special bit cannot reach this branch.
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList
+	ld hl, wBuffer ; .moveCityUp increments before examining the first city entry
+	jr .moveCityUp
+
+.selectLastAvailable
+	call FindFlyListEnd
+	jr .moveSpecialLeft
+
+.moveSpecialRight
+	inc hl
+	ld a, [hl]
+	cp $ff
+	jr z, .wrapSpecialRight
+	cp $fe
+	jr z, .moveSpecialRight
+	jp .townMapFlyLoop
+.wrapSpecialRight
+	ld hl, wBuffer + 1
+	jr .findFirstAvailable
+
+.moveSpecialLeft
+	dec hl
+	ld a, [hl]
+	cp $ff
+	jr z, .wrapSpecialLeft
+	cp $fe
+	jr z, .moveSpecialLeft
+	jp .townMapFlyLoop
+.wrapSpecialLeft
+	call FindFlyListEnd
+	jr .moveSpecialLeft
+
 .pressedUp
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .moveCityUp
+	ld d, 1 ; Up = next city after the current special TownMapOrder anchor
+	jr .enterCityFromSpecial
+.moveCityUp
 ;	coord de, 18, 0;Prevents an extra blank write when the cursor moves upward, avoiding unnecessary overwrites
 	inc hl
 	ld a, [hl]
 	cp $ff
-	jr z, .wrapToStartOfList
+	jr z, .wrapCityUp
 	cp $fe
-	jr z, .pressedUp ; skip past unvisited towns
+	jr z, .moveCityUp ; skip past unvisited towns
 	jp .townMapFlyLoop
-.wrapToStartOfList
-	ld hl, wFlyLocationsList
-	jp .townMapFlyLoop
+.wrapCityUp
+	ld hl, wBuffer
+	jr .moveCityUp
+
 .pressedDown
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr z, .moveCityDown
+	ld d, 0 ; Down = previous city before the current special TownMapOrder anchor
+.enterCityFromSpecial
+	ld e, [hl] ; current special selector
+	push de
+	xor a
+	ld [wFlyLocationsAxis], a
+	call BuildFlyLocationsList ; rebuild wBuffer as the normal city Fly list
+	pop de
+	callab FindCityFlyLocationFromSpecialAnchor
+	ld h, d
+	ld l, e ; DE safely returns the selected city-list pointer across Bankswitch
+	jp .townMapFlyLoop
+.moveCityDown
 ;	coord de, 19, 0;Prevents an extra blank write one column further right when the cursor moves downward
 	dec hl
 	ld a, [hl]
 	cp $ff
-	jr z, .wrapToEndOfList
+	jr z, .wrapCityDown
 	cp $fe
-	jr z, .pressedDown ; skip past unvisited towns
+	jr z, .moveCityDown ; skip past unvisited towns
 	jp .townMapFlyLoop
-.wrapToEndOfList
-	ld hl, wFlyLocationsList + 11
-	jr .pressedDown
+.wrapCityDown
+	call FindFlyListEnd
+	jr .moveCityDown
+
+FindFlyListEnd:
+; Return HL pointing at the $ff end sentinel of the currently built Fly list.
+	ld hl, wBuffer + 1
+.loop
+	ld a, [hli]
+	cp $ff
+	jr nz, .loop
+	dec hl
+	ret
 
 BuildFlyLocationsList:
-	ld hl, wFlyLocationsList - 1
+; wBuffer is a 30-byte temporary area. Byte 0 is the leading sentinel and the
+; actual list starts at byte 1, leaving enough room for the expanded special list.
+	ld hl, wBuffer
 	ld [hl], $ff
 	inc hl
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .specialLocations
+
+	; Original city page: the 11 town flags/map IDs are unchanged.
 	ld a, [wKantoTownVisitedFlag]
 	ld e, a
 	ld a, [wKantoTownVisitedFlag + 1]
 	ld d, a
 	ld bc, SAFFRON_CITY + 1
-.loop
+.cityLoop
 	srl d
 	rr e
 	ld a, $fe ; store $fe if the town hasn't been visited
-	jr nc, .notVisited
+	jr nc, .storeCity
 	ld a, b ; store the map number of the town if it has been visited
-.notVisited
+.storeCity
 	ld [hl], a
 	inc hl
 	inc b
 	dec c
-	jr nz, .loop
+	jr nz, .cityLoop
 	ld [hl], $ff
 	ret
 
-TownMapUpArrow:
-	INCBIN "gfx/up_arrow.1bpp"
-TownMapUpArrowEnd:
+.specialLocations
+	; The special list and its second saved flag byte live in expansion bank $35.
+	callab BuildSpecialFlyLocationsList
+	ret
+
 
 LoadTownMap:
 	call GBPalWhiteOutWithDelay3
@@ -359,20 +554,14 @@ DrawPlayerOrBirdSprite:
 	call TownMapCoordsToOAMCoords
 	call WritePlayerOrBirdSpriteOAM
 	pop hl
-	ld de, wcd6d
-.loop
-	ld a, [hli]
-	ld [de], a
-	inc de
-	cp "@"
-	jr nz, .loop
+	call CopyTownMapDisplayName
 	ld hl, wOAMBuffer
 	ld de, wTileMapBackup
 	ld bc, $a0
 	jp CopyData
 
 DisplayWildLocations:
-	callba FindWildLocationsOfMon
+	callba BuildPokedexTownMapLocations
 	call ZeroOutDuplicatesInList
 	ld hl, wOAMBuffer
 	ld de, wBuffer
@@ -407,11 +596,11 @@ DisplayWildLocations:
 	ld c, 15
 	call TextBoxBorder
 	coord hl, 2, 9
-	ld de, AreaUnknownText
+	ld de, PokedexAreaUnknownText
 	call PlaceString
 	jr .done
 .drawPlayerSprite
-	ld a, [wCurMap]
+	ld a, [wOAMBaseTile] ; logical Town Map selector saved by BuildPokedexTownMapLocations
 	ld b, $0
 	call DrawPlayerOrBirdSprite
 .done
@@ -420,8 +609,39 @@ DisplayWildLocations:
 	ld bc, $a0
 	jp CopyData
 
+; MAP-5.61.03: preserve the original Pokédex alignment without making the
+; leading padding part of the shared map name. The Pokédex enters one byte
+; earlier, while save/continue and map-name users start at AreaUnknownText.
+PokedexAreaUnknownText:
+	db " "
 AreaUnknownText:
-	db " Area unknown@"
+	db "Area unknown@"
+
+; MAP-5.61.03: the regular/Fly Town Map legend only clears 11 columns, so keep
+; its compact spelling local to that narrow display.
+AreaUnknownTownMapText:
+	db "AreaUnknown@"
+
+CopyTownMapDisplayName:
+; in: hl = shared Town Map name
+; out: wcd6d = display name, using the compact unknown spelling when necessary
+	ld de, AreaUnknownText
+	ld a, l
+	cp e
+	jr nz, .copy
+	ld a, h
+	cp d
+	jr nz, .copy
+	ld hl, AreaUnknownTownMapText
+.copy
+	ld de, wcd6d
+.loop
+	ld a, [hli]
+	ld [de], a
+	inc de
+	cp "@"
+	jr nz, .loop
+	ret
 
 TownMapCoordsToOAMCoords:
 ; in: b = y, c = x
@@ -462,6 +682,8 @@ WriteTownMapSpriteOAM:
 	ld [hli], a
 	inc a
 	ld [wOAMBaseTile], a
+	; FLY-5.62.73: Fly cursor and ordinary map markers use the same
+	; local player gender palette (boy red, girl green).
 	ld a, [wPlayerGender]
 	and a ; Are you a boy? Or a girl?
 	ld a, PAL_OW_GREEN
@@ -582,9 +804,28 @@ ZeroOutDuplicatesInList:
 	inc hl
 	jr .zeroDuplicatesLoop
 
+LoadTownMapEntryFromE::
+; Far-call trampoline for callers that need to pass a map selector across Bankswitch.
+; callab/callba overwrite A/BC/HL while DE survives the switch, so return the
+; Town Map coordinates in D/E instead of relying on LoadTownMapEntry's B/C.
+	ld a, e
+	call LoadTownMapEntry
+	ld d, b ; y
+	ld e, c ; x
+	ret
+
 LoadTownMapEntry:
 ; in: a = map number
 ; out: b = y, c = x, hl = address of name
+; Selector-only/entrance points are exact-matched in expansion bank $35 so they
+; do not alter InternalMapEntries' interval semantics.
+	push af
+	push de
+	ld e, a
+	callab TryLoadSpecialTownMapEntry
+	jr c, .specialEntry
+	pop de
+	pop af
 	cp REDS_HOUSE_1F
 	jr c, .external
 	ld bc, 5
@@ -615,6 +856,12 @@ LoadTownMapEntry:
 	ld h, [hl]
 	ld l, a
 	ret
+.specialEntry
+	ld b, d
+	ld c, e
+	pop de ; preserve LoadTownMapEntry's original DE behavior
+	pop af ; discard saved selector
+	ret
 
 GetMapNameForSaveScreen:
 ; Copies the current Town Map legend to wBuffer for the Continue/Save info box.
@@ -640,10 +887,6 @@ GetMapNameForSaveScreen:
 INCLUDE "data/town_map_entries.asm"
 
 INCLUDE "text/map_names.asm"
-
-MonNestIcon:
-	INCBIN "gfx/mon_nest_icon.2bpp"
-MonNestIconEnd:
 
 TownMapSpriteBlinkingAnimation:
 	ld a, [wAnimCounter]

@@ -11,11 +11,7 @@ FuchsiaHouse3Text1:
 	jr nz, .after
 
 	ld hl, FuchsiaHouse3Text_561bd
-	call PrintText
-
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .refused
 
 	lb bc, GOOD_ROD, 1
@@ -40,8 +36,7 @@ FuchsiaHouse3Text1:
 	ld hl, FuchsiaHouse3Text_56217
 
 .talk
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 FuchsiaHouse3Text_561bd:
 	TX_FAR _FuchsiaHouse3Text_561bd
@@ -57,7 +52,8 @@ FuchsiaHouse3Text_56212:
 	db "@"
 
 FuchsiaHouse3Text_56217:
-	TX_FAR _FuchsiaHouse3Text_56217
+	; FIS-5.62.85: only repeat talk after the rod was gifted.
+	TX_FAR FishingGuruGoodRodRepeatText
 	db "@"
 
 FuchsiaHouse3Text_5621c:

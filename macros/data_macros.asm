@@ -27,6 +27,8 @@ ENDM
 coins equs "bcd2"
 money equs "bcd3"
 
+; WDP-5.49.00: normal map-object warp destinations are reconstructed at runtime.
+; EVENT_DISP remains for FLYWARP_DATA and other explicit special-warp records.
 ;\1 = Map Width
 ;\2 = Rows above (Y-blocks)
 ;\3 = X movement (X-blocks)
@@ -230,6 +232,14 @@ moveset: MACRO
 	db \1, \2, \3, \4
 ENDM
 
+; FORM-5.62.20: use in a trainer-party Species slot when that instance needs an
+; explicit regional form. Ordinary Species entries stay one byte wide.
+trainer_form_mon: MACRO
+	ASSERT \1 <= HO_OH
+	ASSERT \2 != FORM_NORMAL
+	db TRAINER_FORM_MON, \1, \2
+ENDM
+
 tilepal: MACRO
 ; vram bank, pals
 x = \1 << 3
@@ -244,8 +254,162 @@ endm
 db_high_critical_moves: MACRO
 	db KARATE_CHOP, RAZOR_LEAF, CRABHAMMER, SLASH, NIGHT_SLASH
 	db CROSS_CHOP, PSYCHO_CUT, LEAF_BLADE, AIR_CUTTER, AEROBLAST
+	db SHADOW_CLAW
 ENDM
 
 db_always_critical_moves: MACRO
 	db ALWAYS_CRIT_MOVE_1, ALWAYS_CRIT_MOVE_2
+ENDM
+
+; TRN-5.33.02: individual trainer names are stored with packed_names.
+; Callers pass the visible name without a terminator. Keep the packed charmap
+; local to this field so future strings added to trainer data remain in their
+; caller-selected encoding. wCurTrainerName is a 13-byte decoded buffer.
+trainer_party_name: MACRO
+	ASSERT STRIN(\1, "@") == 0
+	PUSHC
+	SETCHARMAP main
+	ASSERT CHARLEN(\1) + 1 <= 13
+	SETCHARMAP packed_names
+	db \1, "@"
+	POPC
+	rept _NARG +- 1
+		shift
+		db \1
+	endr
+ENDM
+
+; LEARN-5.31.02: compact level-up learnsets.
+; Source keeps absolute levels for readability. At assembly time adjacent level
+; deltas are packed two per header byte. Delta codes 0..14 are inline; code $f
+; stores the real delta in one following byte, so unusual/future level gaps keep
+; their full 8-bit range instead of becoming a format restriction.
+;
+; Pair layout:
+;   db move1
+;   db (delta1_code << 4) | delta2_code
+;   [db delta1] ; only when delta1 >= 15
+;   db move2    ; 0 marks an odd final entry / end
+;   [db delta2] ; only when delta2 >= 15
+; Even-length learnsets end with a single zero move byte.
+PackedLearnsetPreviousLevel = 0
+PackedLearnsetPending = 0
+PackedLearnsetPendingDelta = 0
+PackedLearnsetPendingMove = 0
+PackedLearnsetDelta = 0
+PackedLearnsetFirstCode = 0
+PackedLearnsetSecondCode = 0
+PackedLearnsetDeclarationCount = 0
+PackedLearnsetEntryCount = 0
+PackedLearnsetExtendedCount = 0
+PackedLearnsetLastDeclaredLevel = 0
+PackedLearnsetActive = 0
+
+; NPC relearner currently allocates 32 rows, counting duplicates and every
+; level-up entry (not just unique moves). The regional form tables below use
+; uncompressed level,move pairs and a 1-byte zero sentinel.
+regional_learnset_capacity_guard: MACRO
+	ASSERT ((@ - \1 - 1) % 2) == 0
+	ASSERT ((@ - \1 - 1) / 2) + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
+ENDM
+
+packed_learnset_start: MACRO
+	ASSERT PackedLearnsetActive == 0
+	ASSERT PackedLearnsetPending == 0
+PackedLearnsetActive = 1
+PackedLearnsetDeclarationCount = PackedLearnsetDeclarationCount + 1
+PackedLearnsetEntryCount = 0
+PackedLearnsetExtendedCount = 0
+PackedLearnsetLastDeclaredLevel = 0
+PackedLearnsetPreviousLevel = 0
+ENDM
+
+; Supplementary EXT sources are emitted into a floating ROMX list, not
+; into the legacy packed byte stream. Old readers remain byte-compatible.
+; Syntax (inside a normal species learnset):
+;   level_ext_move 6, EXT_MOVE_POWER_WHIP
+; Max two per species under the current 32-row relearner budget.
+level_ext_move: MACRO
+	ASSERT PackedLearnsetActive == 1
+	ASSERT \1 > 0
+	ASSERT \1 <= MAX_LEVEL
+	ASSERT \1 >= PackedLearnsetLastDeclaredLevel
+	ASSERT \2 >= EXT_MOVE_BASE_ID
+	ASSERT \2 < EXT_MOVE_BASE_ID + NUM_EXTENDED_MOVES
+PackedLearnsetExtendedCount = PackedLearnsetExtendedCount + 1
+	ASSERT PackedLearnsetExtendedCount <= EXT_MOVE_MAX_PER_SPECIES
+	ASSERT PackedLearnsetEntryCount + PackedLearnsetExtendedCount <= MOVE_RELEARNER_MAX_MOVES
+PackedLearnsetLastDeclaredLevel = \1
+	PUSHS
+	SECTION FRAGMENT "Extended Level-Up Lookup", ROMX
+	db PackedLearnsetDeclarationCount, \1, (\2 - EXT_MOVE_BASE_ID + 1)
+	POPS
+ENDM
+
+level_move: MACRO
+	ASSERT PackedLearnsetActive == 1
+	ASSERT \1 > 0
+	ASSERT \1 <= MAX_LEVEL
+	ASSERT \1 >= PackedLearnsetPreviousLevel
+	ASSERT \1 >= PackedLearnsetLastDeclaredLevel
+	ASSERT \2 > 0
+	ASSERT \2 < EXT_MOVE_SLOT_ESCAPE
+; Guard every ordinary learnset at assembly time; duplicates count as rows.
+PackedLearnsetEntryCount = PackedLearnsetEntryCount + 1
+	ASSERT PackedLearnsetEntryCount + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
+PackedLearnsetDelta = \1 - PackedLearnsetPreviousLevel
+	ASSERT PackedLearnsetDelta <= $ff
+IF PackedLearnsetPending == 0
+PackedLearnsetPending = 1
+PackedLearnsetPendingDelta = PackedLearnsetDelta
+PackedLearnsetPendingMove = \2
+ELSE
+PackedLearnsetFirstCode = PackedLearnsetPendingDelta
+IF PackedLearnsetFirstCode >= $f
+PackedLearnsetFirstCode = $f
+ENDC
+PackedLearnsetSecondCode = PackedLearnsetDelta
+IF PackedLearnsetSecondCode >= $f
+PackedLearnsetSecondCode = $f
+ENDC
+	db PackedLearnsetPendingMove
+	db (PackedLearnsetFirstCode << 4) | PackedLearnsetSecondCode
+IF PackedLearnsetPendingDelta >= $f
+	db PackedLearnsetPendingDelta
+ENDC
+	db \2
+IF PackedLearnsetDelta >= $f
+	db PackedLearnsetDelta
+ENDC
+PackedLearnsetPending = 0
+ENDC
+PackedLearnsetPreviousLevel = \1
+PackedLearnsetLastDeclaredLevel = \1
+ENDM
+
+packed_learnset_end: MACRO
+	ASSERT PackedLearnsetActive == 1
+	ASSERT PackedLearnsetEntryCount + EXT_MOVE_MAX_PER_SPECIES <= MOVE_RELEARNER_MAX_MOVES
+	ASSERT PackedLearnsetExtendedCount <= EXT_MOVE_MAX_PER_SPECIES
+IF PackedLearnsetPending != 0
+PackedLearnsetFirstCode = PackedLearnsetPendingDelta
+IF PackedLearnsetFirstCode >= $f
+PackedLearnsetFirstCode = $f
+ENDC
+	db PackedLearnsetPendingMove
+	db PackedLearnsetFirstCode << 4
+IF PackedLearnsetPendingDelta >= $f
+	db PackedLearnsetPendingDelta
+ENDC
+	db 0
+ELSE
+	; Full final pair: a zero move1 terminates iteration.
+	db 0
+ENDC
+PackedLearnsetPending = 0
+PackedLearnsetPreviousLevel = 0
+PackedLearnsetEntryCount = 0
+PackedLearnsetExtendedCount = 0
+PackedLearnsetLastDeclaredLevel = 0
+PackedLearnsetActive = 0
 ENDM

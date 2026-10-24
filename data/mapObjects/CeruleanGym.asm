@@ -12,7 +12,3 @@ CeruleanGymObject:
 	object SPRITE_BRUNETTE_GIRL, $2, $3, STAY, RIGHT, $2, OPP_SWIMMER_F, $10
 	object SPRITE_SWIMMER, $8, $7, STAY, LEFT, $3, OPP_SWIMMER, $1
 	object SPRITE_GYM_HELPER, $7, $a, STAY, DOWN, $4 ; person
-
-	; warp-to
-	EVENT_DISP CERULEAN_GYM_WIDTH, $d, $4
-	EVENT_DISP CERULEAN_GYM_WIDTH, $d, $5

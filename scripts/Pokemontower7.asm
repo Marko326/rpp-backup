@@ -1,11 +1,9 @@
 PokemonTower7Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, PokemonTower7TrainerHeader0
 	ld de, PokemonTower7ScriptPointers
-	ld a, [wPokemonTower7CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower7CurScript], a
-	ret
+	ld bc, wPokemonTower7CurScript
+	jp Bank18RunTrainerMapScript
 
 PokemonTower7Script_60d18:
 	xor a
@@ -210,7 +208,6 @@ PokemonTower7TrainerHeader0:
 	dw PokemonTower7BattleText1 ; TextBeforeBattle
 	dw PokemonTower7AfterBattleText1 ; TextAfterBattle
 	dw PokemonTower7EndBattleText1 ; TextEndBattle
-	dw PokemonTower7EndBattleText1 ; TextEndBattle
 
 PokemonTower7TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_7_TRAINER_1
@@ -218,7 +215,6 @@ PokemonTower7TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_7_TRAINER_1
 	dw PokemonTower7BattleText2 ; TextBeforeBattle
 	dw PokemonTower7AfterBattleText2 ; TextAfterBattle
-	dw PokemonTower7EndBattleText2 ; TextEndBattle
 	dw PokemonTower7EndBattleText2 ; TextEndBattle
 
 PokemonTower7TrainerHeader2:
@@ -228,27 +224,17 @@ PokemonTower7TrainerHeader2:
 	dw PokemonTower7BattleText3 ; TextBeforeBattle
 	dw PokemonTower7AfterBattleText3 ; TextAfterBattle
 	dw PokemonTower7EndBattleText3 ; TextEndBattle
-	dw PokemonTower7EndBattleText3 ; TextEndBattle
 
 	db $ff
 
 PokemonTower7Text1:
-	TX_ASM
-	ld hl, PokemonTower7TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower7TrainerHeader0
 
 PokemonTower7Text2:
-	TX_ASM
-	ld hl, PokemonTower7TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower7TrainerHeader1
 
 PokemonTower7Text3:
-	TX_ASM
-	ld hl, PokemonTower7TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower7TrainerHeader2
 
 PokemonTower7FujiText:
 	TX_ASM

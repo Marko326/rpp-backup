@@ -1,6 +1,3 @@
-VermilionHouse2Script:
-	jp EnableAutoTextBoxDrawing
-
 VermilionHouse2TextPointers:
 	dw VermilionHouse2Text1
 
@@ -10,10 +7,7 @@ VermilionHouse2Text1:
 	bit 3, a
 	jr nz, .asm_03ef5
 	ld hl, VermilionHouse2Text_560b1
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_eb1b7
 	lb bc, OLD_ROD, 1
 	call GiveItem
@@ -31,8 +25,7 @@ VermilionHouse2Text1:
 .asm_03ef5
 	ld hl, VermilionHouse2Text_560c5
 .asm_5dd95
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 VermilionHouse2Text_560b1:
 	TX_FAR _VermilionHouse2Text_560b1
@@ -49,7 +42,8 @@ VermilionHouse2Text_560c0:
 	db "@"
 
 VermilionHouse2Text_560c5:
-	TX_FAR _VermilionHouse2Text_560c5
+	; FIS-5.62.85: only repeat talk after the rod was gifted.
+	TX_FAR FishingGuruOldRodRepeatText
 	db "@"
 
 VermilionHouse2Text_560ca:

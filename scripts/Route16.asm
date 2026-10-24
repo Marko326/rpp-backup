@@ -1,11 +1,9 @@
 Route16Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, Route16TrainerHeader0
 	ld de, Route16ScriptPointers
-	ld a, [wRoute16CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute16CurScript], a
-	ret
+	ld bc, wRoute16CurScript
+	jp Bank16RunTrainerMapScript
 
 Route16Script_59946:
 	xor a
@@ -33,6 +31,9 @@ Route16Script0:
 	ld [wCurOpponent], a
 	ld a, 30
 	ld [wCurEnemyLVL], a
+	; WLD-5.62.24: Route16 scripted static encounter is producer slot 0.
+	ld e, REGIONAL_WILD_STATIC_SCRIPT
+	call RegionalFormStageStaticEncounter_Bank0
 	xor a
 	ld [wIsTrainerBattle], a ; wild battle
 	ld a, HS_ROUTE_16_SNORLAX
@@ -83,7 +84,6 @@ Route16TrainerHeader0:
 	dw Route16BattleText1 ; TextBeforeBattle
 	dw Route16AfterBattleText1 ; TextAfterBattle
 	dw Route16EndBattleText1 ; TextEndBattle
-	dw Route16EndBattleText1 ; TextEndBattle
 
 Route16TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_16_TRAINER_1
@@ -91,7 +91,6 @@ Route16TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_16_TRAINER_1
 	dw Route16BattleText2 ; TextBeforeBattle
 	dw Route16AfterBattleText2 ; TextAfterBattle
-	dw Route16EndBattleText2 ; TextEndBattle
 	dw Route16EndBattleText2 ; TextEndBattle
 
 Route16TrainerHeader2:
@@ -101,7 +100,6 @@ Route16TrainerHeader2:
 	dw Route16BattleText3 ; TextBeforeBattle
 	dw Route16AfterBattleText3 ; TextAfterBattle
 	dw Route16EndBattleText3 ; TextEndBattle
-	dw Route16EndBattleText3 ; TextEndBattle
 
 Route16TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_16_TRAINER_3
@@ -109,7 +107,6 @@ Route16TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_16_TRAINER_3
 	dw Route16BattleText4 ; TextBeforeBattle
 	dw Route16AfterBattleText4 ; TextAfterBattle
-	dw Route16EndBattleText4 ; TextEndBattle
 	dw Route16EndBattleText4 ; TextEndBattle
 
 Route16TrainerHeader4:
@@ -119,7 +116,6 @@ Route16TrainerHeader4:
 	dw Route16BattleText5 ; TextBeforeBattle
 	dw Route16AfterBattleText5 ; TextAfterBattle
 	dw Route16EndBattleText5 ; TextEndBattle
-	dw Route16EndBattleText5 ; TextEndBattle
 
 Route16TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_16_TRAINER_5
@@ -128,15 +124,11 @@ Route16TrainerHeader5:
 	dw Route16BattleText6 ; TextBeforeBattle
 	dw Route16AfterBattleText6 ; TextAfterBattle
 	dw Route16EndBattleText6 ; TextEndBattle
-	dw Route16EndBattleText6 ; TextEndBattle
 
 	db $ff
 
 Route16Text1:
-	TX_ASM
-	ld hl, Route16TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader0
 
 Route16BattleText1:
 	TX_FAR _Route16BattleText1
@@ -151,10 +143,7 @@ Route16AfterBattleText1:
 	db "@"
 
 Route16Text2:
-	TX_ASM
-	ld hl, Route16TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader1
 
 Route16BattleText2:
 	TX_FAR _Route16BattleText2
@@ -169,10 +158,7 @@ Route16AfterBattleText2:
 	db "@"
 
 Route16Text3:
-	TX_ASM
-	ld hl, Route16TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader2
 
 Route16BattleText3:
 	TX_FAR _Route16BattleText3
@@ -187,10 +173,7 @@ Route16AfterBattleText3:
 	db "@"
 
 Route16Text4:
-	TX_ASM
-	ld hl, Route16TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader3
 
 Route16BattleText4:
 	TX_FAR _Route16BattleText4
@@ -205,10 +188,7 @@ Route16AfterBattleText4:
 	db "@"
 
 Route16Text5:
-	TX_ASM
-	ld hl, Route16TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader4
 
 Route16BattleText5:
 	TX_FAR _Route16BattleText5
@@ -223,10 +203,7 @@ Route16AfterBattleText5:
 	db "@"
 
 Route16Text6:
-	TX_ASM
-	ld hl, Route16TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route16TrainerHeader5
 
 Route16BattleText6:
 	TX_FAR _Route16BattleText6

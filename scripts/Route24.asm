@@ -1,11 +1,9 @@
 Route24Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, Route24TrainerHeader0
 	ld de, Route24ScriptPointers
-	ld a, [wRoute24CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute24CurScript], a
-	ret
+	ld bc, wRoute24CurScript
+	jp Bank14RunTrainerMapScript
 
 Route24Script_513c0:
 	xor a
@@ -92,7 +90,6 @@ Route24TrainerHeader0:
 	dw Route24BattleText1 ; TextBeforeBattle
 	dw Route24AfterBattleText1 ; TextAfterBattle
 	dw Route24EndBattleText1 ; TextEndBattle
-	dw Route24EndBattleText1 ; TextEndBattle
 
 Route24TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_24_TRAINER_1
@@ -100,7 +97,6 @@ Route24TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_24_TRAINER_1
 	dw Route24BattleText2 ; TextBeforeBattle
 	dw Route24AfterBattleText2 ; TextAfterBattle
-	dw Route24EndBattleText2 ; TextEndBattle
 	dw Route24EndBattleText2 ; TextEndBattle
 
 Route24TrainerHeader2:
@@ -110,7 +106,6 @@ Route24TrainerHeader2:
 	dw Route24BattleText3 ; TextBeforeBattle
 	dw Route24AfterBattleText3 ; TextAfterBattle
 	dw Route24EndBattleText3 ; TextEndBattle
-	dw Route24EndBattleText3 ; TextEndBattle
 
 Route24TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_24_TRAINER_3
@@ -118,7 +113,6 @@ Route24TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_24_TRAINER_3
 	dw Route24BattleText4 ; TextBeforeBattle
 	dw Route24AfterBattleText4 ; TextAfterBattle
-	dw Route24EndBattleText4 ; TextEndBattle
 	dw Route24EndBattleText4 ; TextEndBattle
 
 Route24TrainerHeader4:
@@ -128,7 +122,6 @@ Route24TrainerHeader4:
 	dw Route24BattleText5 ; TextBeforeBattle
 	dw Route24AfterBattleText5 ; TextAfterBattle
 	dw Route24EndBattleText5 ; TextEndBattle
-	dw Route24EndBattleText5 ; TextEndBattle
 
 Route24TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_24_TRAINER_5
@@ -136,7 +129,6 @@ Route24TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_24_TRAINER_5
 	dw Route24BattleText6 ; TextBeforeBattle
 	dw Route24AfterBattleText6 ; TextAfterBattle
-	dw Route24EndBattleText6 ; TextEndBattle
 	dw Route24EndBattleText6 ; TextEndBattle
 
 	db $ff
@@ -178,8 +170,7 @@ Route24Text1:
 	jp TextScriptEnd
 .asm_514f9
 	ld hl, Route24Text_51530
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .BagFull
 	ld hl, Route24Text_51521
 	call PrintText
@@ -215,40 +206,22 @@ Route24Text_51530:
 	db "@"
 
 Route24Text2:
-	TX_ASM
-	ld hl, Route24TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader0
 
 Route24Text3:
-	TX_ASM
-	ld hl, Route24TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader1
 
 Route24Text4:
-	TX_ASM
-	ld hl, Route24TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader2
 
 Route24Text5:
-	TX_ASM
-	ld hl, Route24TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader3
 
 Route24Text6:
-	TX_ASM
-	ld hl, Route24TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader4
 
 Route24Text7:
-	TX_ASM
-	ld hl, Route24TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route24TrainerHeader5
 
 Route24BattleText1:
 	TX_FAR _Route24BattleText1

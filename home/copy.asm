@@ -1,3 +1,5 @@
+SECTION "Home Far Copy Data", ROM0
+
 FarCopyData::
 ; Copy bc bytes from a:hl to de.
 	ld [wBuffer], a
@@ -12,6 +14,8 @@ FarCopyData::
 	ld [MBC1RomBank], a
 	ret
 
+SECTION "Home Copy Data", ROM0
+
 CopyData::
 ; Copy bc bytes from hl to de.
 	ld a, [hli]
@@ -22,6 +26,8 @@ CopyData::
 	or b
 	jr nz, CopyData
 	ret
+
+SECTION "Home Far Copy Data 2", ROM0
 
 FarCopyData2::
 ; Identical to FarCopyData, but uses $ff8b

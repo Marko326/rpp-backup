@@ -12,7 +12,12 @@ ConversionEffect_:
 	ld a, [wPlayerBattleStatus1]
 .conversionEffect
 	bit Invulnerable, a ; is mon immune to typical attacks (dig/fly)
-	jr nz, PrintButItFailedText
+	jr z, .copyTargetTypes
+	; BTL-5.62.19: ResidualEffects1 skips the common post-move pause.
+	ld c, 50
+	call DelayFrames
+	jr PrintButItFailedText
+.copyTargetTypes
 ; copy target's types to user
 	ld a, [hli]
 	ld [de], a

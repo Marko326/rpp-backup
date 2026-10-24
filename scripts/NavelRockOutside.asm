@@ -1,6 +1,3 @@
-NavelRockOutsideScript:
-	jp EnableAutoTextBoxDrawing
-
 NavelRockOutsideTextPointers:
 	dw NavelRockSignText
 

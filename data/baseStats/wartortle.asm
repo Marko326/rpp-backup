@@ -1,4 +1,3 @@
-db DEX_WARTORTLE ; pokedex id
 db 59 ; base hp
 db 63 ; base attack
 db 80 ; base defense
@@ -14,9 +13,6 @@ dw WartortlePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 11
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,16

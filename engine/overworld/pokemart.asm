@@ -47,11 +47,13 @@ DisplayPokemartDialogue_:
 	ld a,[wNumBagItems]
 	and a
 	jp z,.bagEmpty
+	xor a
+	ld [wWhichPokemon],a ; initial absolute list position
 	ld hl,PokemonSellingGreetingText
 	call PrintText
 	call SaveScreenTilesToBuffer1 ; save screen
 .sellMenuLoop
-	call LoadScreenTilesFromBuffer1 ; restore saved screen
+	call LoadScreenTilesFromBuffer1DisableBGTransfer ; restore saved screen off-screen
 	ld a,MONEY_BOX
 	ld [wTextBoxID],a
 	call DisplayTextBoxID ; draw money text box
@@ -62,7 +64,7 @@ DisplayPokemartDialogue_:
 	ld [wListPointer + 1],a
 	xor a
 	ld [wPrintItemPrices],a
-	ld [wCurrentMenuItem],a
+	callba RestoreItemListPosition
 	ld a,ITEMLISTMENU
 	ld [wListMenuID],a
 	call DisplayListMenuID
@@ -107,13 +109,13 @@ DisplayPokemartDialogue_:
 	ld [wBoughtOrSoldItemInMart],a
 .skipSettingFlag1
 	call AddAmountSoldToMoney
-	ld hl,wNumBagItems
-	call RemoveItemFromInventory
+	ld de,wNumBagItems
+	callba RemoveItemFromInventoryPreserveListState
 	jp .sellMenuLoop
 .unsellableItem
 	ld hl,PokemartUnsellableItemText
 	call PrintText
-	jp .returnToMainPokemartMenu
+	jp .sellMenuLoop
 .bagEmpty
 	ld hl,PokemartItemBagEmptyText
 	call PrintText
@@ -128,6 +130,8 @@ DisplayPokemartDialogue_:
 	ld [wInitListType],a
 	callab InitList
 
+	xor a
+	ld [wWhichPokemon],a ; initial absolute list position
 	call SaveScreenTilesToBuffer1
 .buyMenuLoop
 	call LoadScreenTilesFromBuffer1
@@ -139,9 +143,8 @@ DisplayPokemartDialogue_:
 	ld [wListPointer],a
 	ld a,h
 	ld [wListPointer + 1],a
-	xor a
-	ld [wCurrentMenuItem],a
-	inc a
+	callba RestoreItemListPosition
+	ld a,1
 	ld [wPrintItemPrices],a
 	inc a ; a = 2 (PRICEDITEMLISTMENU)
 	ld [wListMenuID],a
@@ -210,11 +213,11 @@ DisplayPokemartDialogue_:
 .notEnoughMoney
 	ld hl,PokemartNotEnoughMoneyText
 	call PrintText
-	jr .returnToMainPokemartMenu
+	jp .buyMenuLoop
 .bagFull
 	ld hl,PokemartItemBagFullText
 	call PrintText
-	jr .returnToMainPokemartMenu
+	jp .buyMenuLoop
 .done
 	ld hl,PokemartThankYouText
 	call PrintText
@@ -224,7 +227,6 @@ DisplayPokemartDialogue_:
 	ld a,[wSavedListScrollOffset]
 	ld [wListScrollOffset],a
 	ret
-
 
 PokemartTellBuyPriceText:
 	TX_FAR _PokemartTellBuyPriceText
@@ -316,23 +318,7 @@ DisplayListMenuIDLoop_Mart::
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable transfer
 	call Delay3
-	ld a,[wBattleType]
-	and a ; is it the Old Man battle?
-	jr z,.notOldManBattle
-.oldManBattle
-	ld a,"▶"
-	Coorda 5, 4 ; place menu cursor in front of first menu entry
-	ld c,80
-	call DelayFrames
-	xor a
-	ld [wCurrentMenuItem],a
-	coord hl, 5, 4
-	ld a,l
-	ld [wMenuCursorLocation],a
-	ld a,h
-	ld [wMenuCursorLocation + 1],a
-	jr .buttonAPressed
-.notOldManBattle
+	; TUT-5.41.00: the Old Man pseudo-list is gone.
 	call LoadGBPal
 	call HandleMenuInput_Mart
 	push af

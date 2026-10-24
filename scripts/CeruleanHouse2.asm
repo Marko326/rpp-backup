@@ -48,8 +48,7 @@ CeruleanHouse2Text1:
 	xor a
 	ld [wListScrollOffset], a
 	ld hl, CeruleanHouse2Text_74e81
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 BerryItemList:
 	db 10,ORAN_BERRY,SITRUS_BERRY,LEPPA_BERRY,PECHA_BERRY,RAWST_BERRY,ASPEAR_BERRY,CHESTO_BERRY,CHERI_BERRY,LUM_BERRY,ACAI_BERRY,$FF

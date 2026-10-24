@@ -163,9 +163,9 @@ ItemDescriptionPointers_Mart:
 	db "@"
 	TX_FAR _EonTicketDescription_Mart
 	db "@"
-	TX_FAR _TeruSama1ADescription_Mart
+	TX_FAR _GBPlayerDescription_Mart
 	db "@"
-	TX_FAR _TeruSama1BDescription_Mart
+	TX_FAR _IceStoneDescription_Mart
 	db "@"
 	TX_FAR _TeruSama1CDescription_Mart
 	db "@"

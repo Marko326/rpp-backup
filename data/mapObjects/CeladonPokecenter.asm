@@ -13,7 +13,3 @@ CeladonPokecenterObject:
 	object SPRITE_FOULARD_WOMAN, $a, $5, WALK, $0, $3 ; person
 	object SPRITE_CABLE_CLUB_WOMAN, $b, $2, STAY, DOWN, $4 ; person
 	object SPRITE_BENCH_GUY, $0, $4, STAY, NONE, $5
-
-	; warp-to
-	EVENT_DISP CELADON_POKECENTER_WIDTH, $7, $3
-	EVENT_DISP CELADON_POKECENTER_WIDTH, $7, $4

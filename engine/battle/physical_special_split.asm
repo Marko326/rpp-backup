@@ -1,3 +1,99 @@
+; MOVE-5.62.183: battle-aware classification, shared by both acting sides.
+; wTempMoveID contains the queried low-byte ID. The one-byte active ordinal
+; is only valid for the currently acting move, NOT arbitrary target queries
+; (Counter / Sucker Punch). Require that the queried ID is also the selected
+; move on the acting side before using the extended class table.
+; Output classification is returned in wTempMoveID (CALLBA clobbers A).
+_BattlePhysicalSpecialSplit::
+	ld a, [wTempMoveID]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr z, .escape
+	ld c, a
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr z, .ordinary
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .ordinary
+	cp c
+	jr nz, .ordinary
+	ldh a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerSelectedMove]
+	jr z, .selected
+	ld a, [wEnemySelectedMove]
+.selected
+	cp c
+	jr nz, .ordinary
+	ld a, [wExtendedActiveMoveOrdinal]
+	dec a
+	ld c, a
+	ld b, 0
+	ld hl, .extendedClasses
+	add hl, bc
+	ld a, [hl]
+	ld [wTempMoveID], a
+	ret
+.escape
+	ld a, PHYSICAL ; preserve pre-existing $ff escape classification
+	ld [wTempMoveID], a
+	ret
+.ordinary
+	call _PhysicalSpecialSplit
+	ld a, [wTempMoveID]
+	cp DYNAMIC
+	ret nz
+	call ResolveDynamicMoveCategory
+	ld [wTempMoveID], a
+	ret
+
+; One class per complete extended identity (one-based ordinals 1..40).
+; Current prototype moves are damaging physical moves as in the old player
+; shortcut. Do NOT derive the class from the reused legacy low byte; future
+; special/status extended moves must update their own entry here.
+.extendedClasses
+	db PHYSICAL ; EXT 01: Power Whip
+	db PHYSICAL ; EXT 02: Play Rough
+	db PHYSICAL ; EXT 03: POUND
+	db PHYSICAL ; EXT 04: TACKLE
+	db PHYSICAL ; EXT 05: MEGA_PUNCH
+	db PHYSICAL ; EXT 06: CUT
+	db PHYSICAL ; EXT 07: GUST
+	db PHYSICAL ; EXT 08: PECK
+	db PHYSICAL ; EXT 09: VICEGRIP
+	db PHYSICAL ; EXT 10: STRENGTH
+	db PHYSICAL ; EXT 11: SCRATCH
+	db PHYSICAL ; EXT 12: HORN_ATTACK
+	db PHYSICAL ; EXT 13: WING_ATTACK
+	db PHYSICAL ; EXT 14: POUND
+	db PHYSICAL ; EXT 15: VICEGRIP
+	db PHYSICAL ; EXT 16: GUST
+	db PHYSICAL ; EXT 17: PECK
+	db PHYSICAL ; EXT 18: TACKLE
+	db PHYSICAL ; EXT 19: MEGA_PUNCH
+	db PHYSICAL ; EXT 20: STRENGTH
+	db PHYSICAL ; EXT 21: SCRATCH
+	db PHYSICAL ; EXT 22: HORN_ATTACK
+	db PHYSICAL ; EXT 23: PECK
+	db PHYSICAL ; EXT 24: GUST
+	db PHYSICAL ; EXT 25: TACKLE
+	db PHYSICAL ; EXT 26: VICEGRIP
+	db PHYSICAL ; EXT 27: WING_ATTACK
+	db PHYSICAL ; EXT 28: MEGA_PUNCH
+	db PHYSICAL ; EXT 29: STRENGTH
+	db PHYSICAL ; EXT 30: CUT
+	db PHYSICAL ; EXT 31: POUND
+	db PHYSICAL ; EXT 32: GUST
+	db PHYSICAL ; EXT 33: PECK
+	db PHYSICAL ; EXT 34: HORN_ATTACK
+	db PHYSICAL ; EXT 35: TACKLE
+	db PHYSICAL ; EXT 36: WING_ATTACK
+	db PHYSICAL ; EXT 37: SCRATCH
+	db PHYSICAL ; EXT 38: STRENGTH
+	db PHYSICAL ; EXT 39: VICEGRIP
+	db PHYSICAL ; EXT 40: MEGA_PUNCH
+.extendedClassesEnd
+ASSERT .extendedClassesEnd - .extendedClasses == NUM_EXTENDED_MOVES
+
 _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	ld a, [wTempMoveID]
 	ld c,a
@@ -23,7 +119,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;SCRATCH      EQU $0A
 	db PHYSICAL;VICEGRIP     EQU $0B
 	db PHYSICAL;GUILLOTINE   EQU $0C
-	db SPECIAL ;RAZOR_WIND   EQU $0D
+	db DYNAMIC ;SPARK        EQU $0D
 	db OTHER_M ;SWORDS_DANCE EQU $0E
 	db PHYSICAL;CUT          EQU $0F
 	db SPECIAL ;GUST         EQU $10
@@ -37,7 +133,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;DOUBLE_KICK  EQU $18
 	db PHYSICAL;MEGA_KICK    EQU $19
 	db PHYSICAL;JUMP_KICK    EQU $1A
-	db PHYSICAL;ROLLING_KICK EQU $1B
+	db SPECIAL ;AURA_SPHERE  EQU $1B
 	db OTHER_M ;SAND_ATTACK  EQU $1C
 	db PHYSICAL;HEADBUTT     EQU $1D
 	db PHYSICAL;HORN_ATTACK  EQU $1E
@@ -131,7 +227,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db OTHER_M ;METRONOME    EQU $76
 	db OTHER_M ;MIRROR_MOVE  EQU $77
 	db PHYSICAL;SELFDESTRUCT EQU $78
-	db PHYSICAL;EGG_BOMB     EQU $79
+	db SPECIAL ;EGG_BOMB     EQU $79
 	db PHYSICAL;LICK         EQU $7A
 	db SPECIAL ;SMOG         EQU $7B
 	db SPECIAL ;SLUDGE       EQU $7C
@@ -150,7 +246,7 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db OTHER_M ;GLARE        EQU $89
 	db SPECIAL ;DREAM_EATER  EQU $8A
 	db OTHER_M ;POISON_GAS   EQU $8B
-	db PHYSICAL;BARRAGE      EQU $8C
+	db PHYSICAL;BULLET_SEED  EQU $8C
 	db PHYSICAL;LEECH_LIFE   EQU $8D
 	db OTHER_M ;LOVELY_KISS  EQU $8E
 	db PHYSICAL;SKY_ATTACK   EQU $8F
@@ -227,13 +323,13 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db SPECIAL ;Muddy Water
 	db SPECIAL ;Whirlpool
 	db SPECIAL ;Giga Drain
-	db PHYSICAL;Petal Blizzard
+	db SPECIAL ;Energy Ball
 	db PHYSICAL;Leaf Blade
 	db PHYSICAL;Wood Hammer
 	db PHYSICAL;Poison Jab
 	db PHYSICAL;Gunk Shot
 	db PHYSICAL;Poison Fang
-	db SPECIAL ;Sludge Wave
+	db SPECIAL ;Sludge Bomb
 	db SPECIAL ;Silver Wind
 	db SPECIAL ;Bug Buzz
 	db PHYSICAL;Megahorn
@@ -258,10 +354,208 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 	db PHYSICAL;Low Sweep
 	db SPECIAL ;Hurricane
 	db OTHER_M ;Baby Doll Eyes
-	db PHYSICAL;Bone Rush
+	; MOV-5.61.53: Sacred Fire is a physical Fire attack.
+	db PHYSICAL;Sacred Fire
 	db SPECIAL ;Aeroblast
 	db SPECIAL ;AncientPower
 	db PHYSICAL;Dive (Unused)
     db SPECIAL ;Luster Purge
     db SPECIAL ;Psystrike
-    
+    ; MOV-5.61.31: Iron Head is a physical Steel attack.
+    db PHYSICAL;Iron Head
+
+; MOVE-5.62.199: Spark Dynamic category (not a Counter redesign).
+; Fight menu only previews the category; the damage path resolves it again.
+; Stage-adjusted battle Attack/Special are already available in WRAM.
+; Burn must not influence category selection, so only burned Attack is
+; reconstructed from the original stat and its stage, capped at 999.
+; PHYSICAL when Attack >= Special (including ties), otherwise SPECIAL.
+ResolveDynamicMoveCategory:
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyStats
+.playerStats
+	ld hl, wBattleMonAttack
+	ld de, wBattleMonSpecial
+	ld a, [wBattleMonStatus]
+	bit BRN, a
+	jr z, .compareLive
+	ld a, [wPlayerMonAttackMod]
+	ld de, wPlayerMonUnmodifiedAttack
+	jr .rebuildBurnedAttack
+.enemyStats
+	ld hl, wEnemyMonAttack
+	ld de, wEnemyMonSpecial
+	ld a, [wEnemyMonStatus]
+	bit BRN, a
+	jr z, .compareLive
+	ld a, [wEnemyMonAttackMod]
+	ld de, wEnemyMonUnmodifiedAttack
+.rebuildBurnedAttack
+	; BATTLE-200.002: calculate the unburned stage-adjusted Attack
+	; entirely in this ROM bank. The Fight menu can query this while the
+	; player is burned; a nested ROM bank hop back into battle core used
+	; to make that menu path unsafe. Keep the same ratio table and cap as
+	; the normal stat calculator without writing live Attack.
+	call ResolveDynamicCalcStageAttack
+	; Match the core damage stat cap of 999 before class comparison.
+	ld a, [H_DIVIDEND + 3]
+	sub 999 % $100
+	ld a, [H_DIVIDEND + 2]
+	sbc 999 / $100
+	jr c, .withinLimit
+	lb bc, 999 / $100, 999 % $100
+	jr .chooseSpecial
+.withinLimit
+	ld a, [H_DIVIDEND + 2]
+	ld b, a
+	ld a, [H_DIVIDEND + 3]
+	ld c, a
+	; BATTLE-5.62.202: Dynamic classification honors the minimum stat of 1, even when the -6 ratio rounds to 0.
+	; The burned Dynamic preview must match core stat recalculation.
+	or b
+	jr nz, .chooseSpecial
+	inc c
+.chooseSpecial
+	ldh a, [H_WHOSETURN]
+	and a
+	ld de, wBattleMonSpecial
+	jr z, .compareBC
+	ld de, wEnemyMonSpecial
+	jr .compareBC
+.compareLive
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+.compareBC
+	ld a, [de]
+	cp b
+	jr c, .physical
+	jr nz, .special
+	inc de
+	ld a, [de]
+	cp c
+	jr c, .physical
+	jr z, .physical ; tie: restore Spark's original physical class
+.special
+	ld a, SPECIAL
+	ret
+.physical
+	ld a, PHYSICAL
+	ret
+
+
+; Exact local equivalent of RecalculateBattleStatFromModifier for Attack.
+; Input A=stage (1..13), DE=unmodified Attack (big-endian).
+; Output H_DIVIDEND+2/+3 = stage-adjusted value, before 999 cap.
+; No mutable battle-stat writes or nested ROM-bank call.
+ResolveDynamicCalcStageAttack:
+	; The normal battle initializer sets each stage to 7. Clamp an
+	; invalid test-save value to neutral rather than indexing outside ratios.
+	cp 1
+	jr nc, .atLeastOne
+	ld a, 7
+.atLeastOne
+	cp 14
+	jr c, .inRange
+	ld a, 7
+.inRange
+	dec a
+	add a
+	ld c, a
+	ld b, 0
+	ld hl, .ratios
+	add hl, bc
+	ld a, [hli]
+	ld b, a ; numerator
+	ld c, [hl] ; denominator
+	push bc
+	xor a
+	ld [H_MULTIPLICAND], a
+	ld a, [de]
+	ld [H_MULTIPLICAND + 1], a
+	inc de
+	ld a, [de]
+	ld [H_MULTIPLICAND + 2], a
+	pop bc
+	ld a, b
+	ld [H_MULTIPLIER], a
+	push bc
+	call Multiply
+	pop bc
+	ld a, c
+	ld [H_DIVISOR], a
+	ld b, 4
+	call Divide
+	ret
+.ratios
+	db 25, 100, 28, 100, 33, 100, 40, 100, 50, 100, 66, 100
+	db 1, 1, 15, 10, 2, 1, 25, 10, 3, 1, 35, 10, 4, 1
+
+
+; BATTLE-5.62.202 confusion self-hit setup, kept in this spare battle-helper bank
+; because battle core bank $0f is already full. This is not a move and must
+; not use PhysicalSpecialSplit, the target's defenses, screens or critical-hit
+; stat overrides. Input: H_WHOSETURN identifies the self-hitting side.
+; Output: H_PRODUCT+2=Attack, +3=own Defense, D=40 power, E=user level.
+; Bankswitch clobbers BC, so battle core reloads B/C from scratch bytes.
+; The caller sets the active move effect to 0 and the critical flag to 0.
+GetConfusionSelfDamageVars::
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .enemy
+	ld hl, wBattleMonAttack
+	ld de, wBattleMonDefense
+	ld a, [wBattleMonLevel]
+	jr .readStats
+.enemy
+	ld hl, wEnemyMonAttack
+	ld de, wEnemyMonDefense
+	ld a, [wEnemyMonLevel]
+.readStats
+	push af
+	ld a, [de]
+	ld b, a
+	inc de
+	ld a, [de]
+	ld c, a ; BC = own Defense
+	ld a, [hli]
+	ld d, a
+	ld e, [hl] ; DE = own Attack
+	; Match the core's 10-bit stat handling: divide both by four
+	; whenever either operand is wider than a byte.
+	ld a, b
+	or d
+	jr z, .lowBytes
+	srl b
+	rr c
+	srl b
+	rr c
+	srl d
+	rr e
+	srl d
+	rr e
+.lowBytes
+	; Damage division must never use a zero Defense. Likewise,
+	; the attacking stat is at least one after 10-bit scaling.
+	ld a, c
+	and a
+	jr nz, .defenseNonzero
+	inc c
+.defenseNonzero
+	ld a, e
+	and a
+	jr nz, .attackNonzero
+	inc e
+.attackNonzero
+	ld a, e
+	ld [H_PRODUCT + 2], a
+	ld a, c
+	ld [H_PRODUCT + 3], a
+	pop af
+	ld e, a ; user level, not doubled for a critical hit
+	ld d, 40 ; confusion self-hit base power
+	xor a
+	ld [wDamage], a
+	ld [wDamage + 1], a
+	ret

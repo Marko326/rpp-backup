@@ -1,4 +1,3 @@
-db DEX_MAGNETON ; pokedex id
 db 50 ; base hp
 db 60 ; base attack
 db 95 ; base defense
@@ -14,9 +13,6 @@ dw MagnetonPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6
 	tmlearn 9,10,15

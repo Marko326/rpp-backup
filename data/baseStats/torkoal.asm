@@ -1,5 +1,4 @@
 TorkoalBaseStats:
-db DEX_TORKOAL ; pokedex id
 db 70 ; base hp
 db 85 ; base attack
 db 140 ; base defense
@@ -9,15 +8,12 @@ db FIRE ; species type 1
 db FIRE ; species type 2
 db 90 ; catch rate
 db 161 ; base exp yield
-INCBIN "pic/bmon/torkoal.pic",0,1 ; 55, sprite dimensions
+INCBIN "pic/bmon/torkoal.pic",0,1 ; sprite dimensions
 dw TorkoalPicFront
 dw TorkoalPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 5,6,8
 	tmlearn 9,10,15,16

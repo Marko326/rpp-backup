@@ -93,16 +93,8 @@ GainExperience:
 	ld a, 0
 	jr z, .next
 .tradedMon
-	push hl
-	ld hl, wExtraFlags
-	bit 2,[hl]
-	pop hl
-	jr nz, .noBoost
 	call BoostExp ; traded mon exp boost
 	ld a, 1
-	jr .next
-.noBoost
-	ld a, 0 ; Makes traded Pokemon act the same as normal ones
 .next
 	ld [wGainBoostedExp], a
 	ld a, [wIsInBattle]
@@ -137,7 +129,7 @@ GainExperience:
 	add hl, bc
 	ld a, [hl] ; species
 	ld [wd0b5], a
-	call GetMonHeader
+	callba RegionalFormLoadPartyMonHeader
 	ld d, MAX_LEVEL
 	callab CalcExperience ; get max exp
 ; compare max exp with current exp
@@ -200,7 +192,15 @@ GainExperience:
 	ld a, [hl] ; species
 	ld [wd0b5], a
 	ld [wd11e], a
-	call GetMonHeader
+	; FORM-5.20.05: callba itself consumes BC/HL for the far call. The stock
+	; GetMonHeader call preserved both registers, and the level-up path still
+	; needs HL to point at this party mon immediately afterwards. Preserve the
+	; caller's real registers outside the far call.
+	push bc
+	push hl
+	callba RegionalFormLoadPartyMonHeader
+	pop hl
+	pop bc
 	ld bc, (wPartyMon1MaxHP + 1) - wPartyMon1Species
 	add hl, bc
 	push hl
@@ -264,7 +264,6 @@ GainExperience:
 	ld [wCalculateWhoseStats], a
 	callab CalculateModifiedStats
 	callab ApplyBurnAndParalysisPenaltiesToPlayer
-	callab ApplyBadgeStatBoosts
 	callab DrawPlayerHUDAndHPBar
 	callab PrintEmptyString
 	call SaveScreenTilesToBuffer1
@@ -292,7 +291,11 @@ GainExperience:
 	ld a, b
 	ld [wCurEnemyLVL], a
 	push bc
+	; FORM-5.20.03: suppress #019's stock learnset when this instance is Alolan.
+	callba RegionalFormTryLearnLevelMove
+	jr c,.levelMoveHandled
 	predef LearnMoveFromLevelUp
+.levelMoveHandled
 	pop bc
 	ld a, b
 	cp c

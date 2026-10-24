@@ -1,74 +1,16 @@
 SilphCo5Script:
-	call SilphCo5Script_19f4d
-	call EnableAutoTextBoxDrawing
-	ld hl, SilphCo5TrainerHeader0
-	ld de, SilphCo5ScriptPointers
-	ld a, [wSilphCo5CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo5CurScript], a
-	ret
-
-SilphCo5Script_19f4d:
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
 	ld hl, wCurrentMapScriptFlags
 	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
 	res 5, [hl]
-	ret z
-	ld hl, SilphCo5GateCoords
-	call SilphCo4Script_19d5d
-	call SilphCo5Script_19f9e
-	CheckEvent EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	jr nz, .asm_19f74
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 2, 3
-	predef ReplaceTileBlock
-	pop af
-.asm_19f74
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_5_UNLOCKED_DOOR2, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	jr nz, .asm_19f87
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 6, 3
-	predef ReplaceTileBlock
-	pop af
-.asm_19f87
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_5_UNLOCKED_DOOR3, EVENT_SILPH_CO_5_UNLOCKED_DOOR2
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 5, 7
-	predef_jump ReplaceTileBlock
-
-SilphCo5GateCoords:
-	db $02,$03
-	db $06,$03
-	db $05,$07
-	db $FF
-
-SilphCo5Script_19f9e:
-	EventFlagAddress hl, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	ld a, [$ffe0]
-	and a
-	ret z
-	cp $1
-	jr nz, .next1
-	SetEventReuseHL EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	ret
-.next1
-	cp $2
-	jr nz, .next2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_5_UNLOCKED_DOOR2, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	ret
-.next2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_5_UNLOCKED_DOOR3, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	ret
-
-SilphCo5ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
+	ld hl, SilphCo5TrainerHeader0
+	ld bc, wSilphCo5CurScript
+	jp Bank06RunStandardTrainerMapScript
 
 SilphCo5TextPointers:
 	dw SilphCo5Text1
@@ -90,7 +32,6 @@ SilphCo5TrainerHeader0:
 	dw SilphCo5BattleText2 ; TextBeforeBattle
 	dw SilphCo5AfterBattleText2 ; TextAfterBattle
 	dw SilphCo5EndBattleText2 ; TextEndBattle
-	dw SilphCo5EndBattleText2 ; TextEndBattle
 
 SilphCo5TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_5F_TRAINER_1
@@ -98,7 +39,6 @@ SilphCo5TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_5F_TRAINER_1
 	dw SilphCo5BattleText3 ; TextBeforeBattle
 	dw SilphCo5AfterBattleText3 ; TextAfterBattle
-	dw SilphCo5EndBattleText3 ; TextEndBattle
 	dw SilphCo5EndBattleText3 ; TextEndBattle
 
 SilphCo5TrainerHeader2:
@@ -108,7 +48,6 @@ SilphCo5TrainerHeader2:
 	dw SilphCo5BattleText4 ; TextBeforeBattle
 	dw SilphCo5AfterBattleText4 ; TextAfterBattle
 	dw SilphCo5EndBattleText4 ; TextEndBattle
-	dw SilphCo5EndBattleText4 ; TextEndBattle
 
 SilphCo5TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_5F_TRAINER_3
@@ -116,7 +55,6 @@ SilphCo5TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_5F_TRAINER_3
 	dw SilphCo5BattleText5 ; TextBeforeBattle
 	dw SilphCo5AfterBattleText5 ; TextAfterBattle
-	dw SilphCo5EndBattleText5 ; TextEndBattle
 	dw SilphCo5EndBattleText5 ; TextEndBattle
 
 	db $ff
@@ -137,10 +75,7 @@ SilphCo5Text_1a015:
 	db "@"
 
 SilphCo5Text2:
-	TX_ASM
-	ld hl, SilphCo5TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo5TrainerHeader0
 
 SilphCo5BattleText2:
 	TX_FAR _SilphCo5BattleText2
@@ -155,10 +90,7 @@ SilphCo5AfterBattleText2:
 	db "@"
 
 SilphCo5Text3:
-	TX_ASM
-	ld hl, SilphCo5TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo5TrainerHeader1
 
 SilphCo5BattleText3:
 	TX_FAR _SilphCo5BattleText3
@@ -173,10 +105,7 @@ SilphCo5AfterBattleText3:
 	db "@"
 
 SilphCo5Text4:
-	TX_ASM
-	ld hl, SilphCo5TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo5TrainerHeader2
 
 SilphCo5BattleText4:
 	TX_FAR _SilphCo5BattleText4
@@ -191,10 +120,7 @@ SilphCo5AfterBattleText4:
 	db "@"
 
 SilphCo5Text5:
-	TX_ASM
-	ld hl, SilphCo5TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo5TrainerHeader3
 
 SilphCo5BattleText5:
 	TX_FAR _SilphCo5BattleText5

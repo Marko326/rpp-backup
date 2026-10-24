@@ -1,4 +1,3 @@
-db DEX_AERODACTYL ; pokedex id
 db 80 ; base hp
 db 105 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw AerodactylPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 2,3,4,6
 	tmlearn 9,10,15,16

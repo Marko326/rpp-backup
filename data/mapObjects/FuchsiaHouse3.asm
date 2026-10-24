@@ -10,8 +10,3 @@ FuchsiaHouse3Object:
 
 	db $1 ; objects
 	object SPRITE_FISHER, $5, $3, STAY, RIGHT, $1 ; person
-
-	; warp-to
-	EVENT_DISP FUCHSIA_HOUSE_3_WIDTH, $0, $2
-	EVENT_DISP FUCHSIA_HOUSE_3_WIDTH, $7, $2
-	EVENT_DISP FUCHSIA_HOUSE_3_WIDTH, $7, $3

@@ -3,13 +3,11 @@ VictoryRoad1Script:
 	bit 5, [hl]
 	res 5, [hl]
 	call nz, .next
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, VictoryRoad1TrainerHeader0
 	ld de, VictoryRoad1ScriptPointers
-	ld a, [wVictoryRoad1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVictoryRoad1CurScript], a
-	ret
+	ld bc, wVictoryRoad1CurScript
+	jp Bank17RunTrainerMapScript
 .next
 	CheckEvent EVENT_VICTORY_ROAD_1_BOULDER_ON_SWITCH
 	ret z
@@ -53,7 +51,6 @@ VictoryRoad1TrainerHeader0:
 	dw VictoryRoad1BattleText1 ; TextBeforeBattle
 	dw VictoryRoad1AfterBattleText1 ; TextAfterBattle
 	dw VictoryRoad1EndBattleText1 ; TextEndBattle
-	dw VictoryRoad1EndBattleText1 ; TextEndBattle
 
 VictoryRoad1TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VICTORY_ROAD_1_TRAINER_1
@@ -62,21 +59,14 @@ VictoryRoad1TrainerHeader1:
 	dw VictoryRoad1BattleText2 ; TextBeforeBattle
 	dw VictoryRoad1AfterBattleText2 ; TextAfterBattle
 	dw VictoryRoad1EndBattleText2 ; TextEndBattle
-	dw VictoryRoad1EndBattleText2 ; TextEndBattle
 
 	db $ff
 
 VictoryRoad1Text1:
-	TX_ASM
-	ld hl, VictoryRoad1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad1TrainerHeader0
 
 VictoryRoad1Text2:
-	TX_ASM
-	ld hl, VictoryRoad1TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VictoryRoad1TrainerHeader1
 
 VictoryRoad1BattleText1:
 	TX_FAR _VictoryRoad1BattleText1

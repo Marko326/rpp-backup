@@ -1,12 +1,10 @@
 RocketHideout4Script:
 	call RocketHideout4Script_45473
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, RocketHideout4TrainerHeader0
 	ld de, RocketHideout4ScriptPointers
-	ld a, [wRocketHideout4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRocketHideout4CurScript], a
-	ret
+	ld bc, wRocketHideout4CurScript
+	jp Bank11RunTrainerMapScript
 
 RocketHideout4Script_45473:
 	ld hl, wCurrentMapScriptFlags
@@ -91,7 +89,6 @@ RocketHideout4TrainerHeader0:
 	dw RocketHideout4BattleText2 ; TextBeforeBattle
 	dw RocketHideout4AfterBattleText2 ; TextAfterBattle
 	dw RocketHideout4EndBattleText2 ; TextEndBattle
-	dw RocketHideout4EndBattleText2 ; TextEndBattle
 
 RocketHideout4TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_4_TRAINER_1
@@ -100,7 +97,6 @@ RocketHideout4TrainerHeader1:
 	dw RocketHideout4BattleText3 ; TextBeforeBattle
 	dw RocketHideout4AfterBattleText3 ; TextAfterBattle
 	dw RocketHideout4EndBattleText3 ; TextEndBattle
-	dw RocketHideout4EndBattleText3 ; TextEndBattle
 
 RocketHideout4TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_4_TRAINER_2
@@ -108,7 +104,6 @@ RocketHideout4TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_ROCKET_HIDEOUT_4_TRAINER_2
 	dw RocketHideout4BattleText4 ; TextBeforeBattle
 	dw RocketHideout4AfterBattleText4 ; TextAfterBattle
-	dw RocketHideout4EndBattleText4 ; TextEndBattle
 	dw RocketHideout4EndBattleText4 ; TextEndBattle
 
 	db $ff
@@ -154,10 +149,7 @@ RocketHideout4Text10:
 	db "@"
 
 RocketHideout4Text2:
-	TX_ASM
-	ld hl, RocketHideout4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout4TrainerHeader0
 
 RocketHideout4BattleText2:
 	TX_FAR _RocketHideout4BattleText2
@@ -172,10 +164,7 @@ RocketHideout4AfterBattleText2:
 	db "@"
 
 RocketHideout4Text3:
-	TX_ASM
-	ld hl, RocketHideout4TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout4TrainerHeader1
 
 RocketHideout4BattleText3:
 	TX_FAR _RocketHideout4BattleText3
@@ -190,10 +179,7 @@ RocketHideout4AfterBattleText3:
 	db "@"
 
 RocketHideout4Text4:
-	TX_ASM
-	ld hl, RocketHideout4TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout4TrainerHeader2
 
 RocketHideout4BattleText4:
 	TX_FAR _RocketHideout4BattleText4

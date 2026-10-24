@@ -157,67 +157,13 @@ PalletMovementScript_Done:
 	res 7, [hl]
 	jp EndNPCMovementScript
 
-PewterMuseumGuyMovementScriptPointerTable:
-	dw PewterMovementScript_WalkToMuseum
-	dw PewterMovementScript_Done
-
-PewterMovementScript_WalkToMuseum:
-	ld a, 0 ; BANK(Music_MuseumGuy)
-	ld [wAudioROMBank], a
-	ld [wAudioSavedROMBank], a
-	ld a, MUSIC_MUSEUM_GUY
-	ld [wNewSoundID], a
-	call PlayMusic
-	ld a, [wSpriteIndex]
-	swap a
-	ld [wNPCMovementScriptSpriteOffset], a
-	call StartSimulatingJoypadStates
-	ld hl, wSimulatedJoypadStatesEnd
-	ld de, RLEList_PewterMuseumPlayer
-	call DecodeRLEList
-	dec a
-	ld [wSimulatedJoypadStatesIndex], a
-	xor a
-	ld [wWhichPewterGuy], a
-	predef PewterGuys
-	ld hl, wNPCMovementDirections2
-	ld de, RLEList_PewterMuseumGuy
-	call DecodeRLEList
-	ld hl, wd72e
-	res 7, [hl]
-	ld a, $1
-	ld [wNPCMovementScriptFunctionNum], a
-	ret
-
-RLEList_PewterMuseumPlayer:
-	db 0, $01
-	db D_UP, $03
-	db D_LEFT, $0D
-	db D_UP, $06
-	db $FF
-
-RLEList_PewterMuseumGuy:
-	db NPC_MOVEMENT_UP, $06
-	db NPC_MOVEMENT_LEFT, $0D
-	db NPC_MOVEMENT_UP, $03
-	db NPC_MOVEMENT_LEFT, $01
-	db $FF
-
-PewterMovementScript_Done:
-	ld a, [wSimulatedJoypadStatesIndex]
-	and a
-	ret nz
-	ld hl, wd730
-	res 7, [hl]
-	ld hl, wd72e
-	res 7, [hl]
-	jp EndNPCMovementScript
-
 PewterGymGuyMovementScriptPointerTable:
-	dw PewterMovementScript_WalkToGym
+	dw PewterMovementScript_StartGymGuide
 	dw PewterMovementScript_Done
 
-PewterMovementScript_WalkToGym:
+; PWT-5.40.03: Museum escort movement is gone. The remaining scripted
+; Pewter escort is the Gym guide, so no Museum/Gym selector is required.
+PewterMovementScript_StartGymGuide:
 	ld a, 0 ; BANK(Music_MuseumGuy)
 	ld [wAudioROMBank], a
 	ld [wAudioSavedROMBank], a
@@ -234,8 +180,6 @@ PewterMovementScript_WalkToGym:
 	call DecodeRLEList
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
-	ld a, 1
-	ld [wWhichPewterGuy], a
 	predef PewterGuys
 	ld hl, wNPCMovementDirections2
 	ld de, RLEList_PewterGymGuy
@@ -265,6 +209,16 @@ RLEList_PewterGymGuy:
 	db NPC_MOVEMENT_DOWN, $05
 	db NPC_MOVEMENT_RIGHT, $03
 	db $FF
+
+PewterMovementScript_Done:
+	ld a, [wSimulatedJoypadStatesIndex]
+	and a
+	ret nz
+	ld hl, wd730
+	res 7, [hl]
+	ld hl, wd72e
+	res 7, [hl]
+	jp EndNPCMovementScript
 
 FreezeEnemyTrainerSprite:
 	ld a, [wCurMap]

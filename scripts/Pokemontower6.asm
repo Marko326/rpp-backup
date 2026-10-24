@@ -1,11 +1,9 @@
 PokemonTower6Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, PokemonTower6TrainerHeader0
 	ld de, PokemonTower6ScriptPointers
-	ld a, [wPokemonTower6CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower6CurScript], a
-	ret
+	ld bc, wPokemonTower6CurScript
+	jp Bank18RunTrainerMapScript
 
 PokemonTower6Script_60b02:
 	xor a
@@ -36,6 +34,10 @@ PokemonTower6Script0:
 	ld [wCurOpponent], a
 	ld a, 30
 	ld [wCurEnemyLVL], a
+	; WLD-5.62.24: Ghost Marowak is scripted static producer slot 0. The
+	; latched marker survives the Ghost -> Marowak reveal reload.
+	ld e, REGIONAL_WILD_STATIC_SCRIPT
+	call RegionalFormStageStaticEncounter_Bank0
 	ld a, $4
 	ld [wPokemonTower6CurScript], a
 	ld [wCurMapScript], a
@@ -110,7 +112,6 @@ PokemonTower6TrainerHeader0:
 	dw PokemonTower6BattleText1 ; TextBeforeBattle
 	dw PokemonTower6AfterBattleText1 ; TextAfterBattle
 	dw PokemonTower6EndBattleText1 ; TextEndBattle
-	dw PokemonTower6EndBattleText1 ; TextEndBattle
 
 PokemonTower6TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_6_TRAINER_1
@@ -118,7 +119,6 @@ PokemonTower6TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_6_TRAINER_1
 	dw PokemonTower6BattleText2 ; TextBeforeBattle
 	dw PokemonTower6AfterBattleText2 ; TextAfterBattle
-	dw PokemonTower6EndBattleText2 ; TextEndBattle
 	dw PokemonTower6EndBattleText2 ; TextEndBattle
 
 PokemonTower6TrainerHeader2:
@@ -128,27 +128,17 @@ PokemonTower6TrainerHeader2:
 	dw PokemonTower6BattleText3 ; TextBeforeBattle
 	dw PokemonTower6AfterBattleText3 ; TextAfterBattle
 	dw PokemonTower6EndBattleText3 ; TextEndBattle
-	dw PokemonTower6EndBattleText3 ; TextEndBattle
 
 	db $ff
 
 PokemonTower6Text1:
-	TX_ASM
-	ld hl, PokemonTower6TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower6TrainerHeader0
 
 PokemonTower6Text2:
-	TX_ASM
-	ld hl, PokemonTower6TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower6TrainerHeader1
 
 PokemonTower6Text3:
-	TX_ASM
-	ld hl, PokemonTower6TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower6TrainerHeader2
 
 PokemonTower6Text7:
 	TX_ASM
@@ -160,8 +150,7 @@ PokemonTower6Text7:
 	ld c, 30
 	call DelayFrames
 	ld hl, PokemonTower2Text_60c24
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 PokemonTower2Text_60c1f:
 	TX_FAR _PokemonTower2Text_60c1f

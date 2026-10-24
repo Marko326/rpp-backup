@@ -1,16 +1,8 @@
 SSAnne10Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SSAnne10TrainerHeader0
-	ld de, SSAnne10ScriptPointers
-	ld a, [wSSAnne10CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSSAnne10CurScript], a
-	ret
-
-SSAnne10ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wSSAnne10CurScript
+	jp Bank18RunStandardTrainerMapScript
 
 SSAnne10TextPointers:
 	dw SSAnne10Text1
@@ -32,7 +24,6 @@ SSAnne10TrainerHeader0:
 	dw SSAnne10BattleText1 ; TextBeforeBattle
 	dw SSAnne10AfterBattleText1 ; TextAfterBattle
 	dw SSAnne10EndBattleText1 ; TextEndBattle
-	dw SSAnne10EndBattleText1 ; TextEndBattle
 
 SSAnne10TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_10_TRAINER_1
@@ -40,7 +31,6 @@ SSAnne10TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SS_ANNE_10_TRAINER_1
 	dw SSAnne10BattleText2 ; TextBeforeBattle
 	dw SSAnne10AfterBattleText2 ; TextAfterBattle
-	dw SSAnne10EndBattleText2 ; TextEndBattle
 	dw SSAnne10EndBattleText2 ; TextEndBattle
 
 SSAnne10TrainerHeader2:
@@ -50,7 +40,6 @@ SSAnne10TrainerHeader2:
 	dw SSAnne10BattleText3 ; TextBeforeBattle
 	dw SSAnne10AfterBattleText3 ; TextAfterBattle
 	dw SSAnne10EndBattleText3 ; TextEndBattle
-	dw SSAnne10EndBattleText3 ; TextEndBattle
 
 SSAnne10TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_10_TRAINER_3
@@ -58,7 +47,6 @@ SSAnne10TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_SS_ANNE_10_TRAINER_3
 	dw SSAnne10BattleText4 ; TextBeforeBattle
 	dw SSAnne10AfterBattleText4 ; TextAfterBattle
-	dw SSAnne10EndBattleText4 ; TextEndBattle
 	dw SSAnne10EndBattleText4 ; TextEndBattle
 
 SSAnne10TrainerHeader4:
@@ -68,7 +56,6 @@ SSAnne10TrainerHeader4:
 	dw SSAnne10BattleText5 ; TextBeforeBattle
 	dw SSAnne10AfterBattleText5 ; TextAfterBattle
 	dw SSAnne10EndBattleText5 ; TextEndBattle
-	dw SSAnne10EndBattleText5 ; TextEndBattle
 
 SSAnne10TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_10_TRAINER_5
@@ -77,45 +64,26 @@ SSAnne10TrainerHeader5:
 	dw SSAnne10BattleText6 ; TextBeforeBattle
 	dw SSAnne10AfterBattleText6 ; TextAfterBattle
 	dw SSAnne10EndBattleText6 ; TextEndBattle
-	dw SSAnne10EndBattleText6 ; TextEndBattle
 
 	db $ff
 
 SSAnne10Text1:
-	TX_ASM
-	ld hl, SSAnne10TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne10TrainerHeader0
 
 SSAnne10Text2:
-	TX_ASM
-	ld hl, SSAnne10TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne10TrainerHeader1
 
 SSAnne10Text3:
-	TX_ASM
-	ld hl, SSAnne10TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne10TrainerHeader2
 
 SSAnne10Text4:
-	TX_ASM
-	ld hl, SSAnne10TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne10TrainerHeader3
 
 SSAnne10Text5:
-	TX_ASM
-	ld hl, SSAnne10TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne10TrainerHeader4
 
 SSAnne10Text6:
-	TX_ASM
-	ld hl, SSAnne10TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne10TrainerHeader5
 
 SSAnne10Text8:
 	TX_FAR _SSAnne10Text8

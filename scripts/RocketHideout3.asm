@@ -1,11 +1,9 @@
 RocketHideout3Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, RocketHideout3TrainerHeader0
 	ld de, RocketHideout3ScriptPointers
-	ld a, [wRocketHideout3CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRocketHideout3CurScript], a
-	ret
+	ld bc, wRocketHideout3CurScript
+	jp Bank11RunTrainerMapScript
 
 RocketHideout3ScriptPointers:
 	dw RocketHideout3Script0
@@ -156,7 +154,6 @@ RocketHideout3TrainerHeader0:
 	dw RocketHideout3BattleText2 ; TextBeforeBattle
 	dw RocketHideout3AfterBattleTxt2 ; TextAfterBattle
 	dw RocketHideout3EndBattleText2 ; TextEndBattle
-	dw RocketHideout3EndBattleText2 ; TextEndBattle
 
 RocketHideout3TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCKET_HIDEOUT_3_TRAINER_1
@@ -165,15 +162,11 @@ RocketHideout3TrainerHeader1:
 	dw RocketHideout3BattleTxt ; TextBeforeBattle
 	dw RocketHideout3AfterBattleText3 ; TextAfterBattle
 	dw RocketHideout3EndBattleText3 ; TextEndBattle
-	dw RocketHideout3EndBattleText3 ; TextEndBattle
 
 	db $ff
 
 RocketHideout3Text1:
-	TX_ASM
-	ld hl, RocketHideout3TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout3TrainerHeader0
 
 RocketHideout3BattleText2:
 	TX_FAR _RocketHideout3BattleText2
@@ -188,10 +181,7 @@ RocketHideout3AfterBattleTxt2:
 	db "@"
 
 RocketHideout3Text2:
-	TX_ASM
-	ld hl, RocketHideout3TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RocketHideout3TrainerHeader1
 
 RocketHideout3BattleTxt:
 	TX_FAR _RocketHideout3BattleTxt

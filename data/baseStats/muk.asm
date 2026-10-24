@@ -1,4 +1,3 @@
-db DEX_MUK ; pokedex id
 db 105 ; base hp
 db 105 ; base attack
 db 75 ; base defense
@@ -6,7 +5,8 @@ db 50 ; base speed
 db 65 ; base special
 db POISON ; species type 1
 db POISON ; species type 2
-db 75 ; catch rate
+MUK_CATCH_RATE EQU 75
+db MUK_CATCH_RATE ; catch rate
 db 157 ; base exp yield
 INCBIN "pic/bmon/muk.pic",0,1 ; 77, sprite dimensions
 dw MukPicFront
@@ -14,9 +14,6 @@ dw MukPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,6,8
 	tmlearn 9,10,12,15

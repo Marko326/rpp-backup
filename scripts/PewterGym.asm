@@ -1,15 +1,24 @@
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank17RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
 PewterGymScript:
 	ld hl, wCurrentMapScriptFlags
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, PewterGymScript_5c3a4
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, PewterGymTrainerHeader0
 	ld de, PewterGymScriptPointers
-	ld a, [wPewterGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPewterGymCurScript], a
-	ret
+	ld bc, wPewterGymCurScript
+	jp Bank17RunTrainerMapScript
 
 PewterGymScript_5c3a4:
 	ld hl, Gym1CityName
@@ -43,25 +52,9 @@ PewterGymScript3:
 	ld [wJoyIgnore], a
 
 PewterGymScript_5c3df:
-	ld a, $4
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_BROCK
-	lb bc, TM_36, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $5
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM34
-	jr .asm_5c408
-.BagFull
-	ld a, $6
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5c408
-	ld hl, wObtainedKantoBadges
-	set 0, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 0
+	callba GiveGymLeaderReward
 
 	ld a, HS_GYM_GUY
 	ld [wMissableObjectIndex], a
@@ -91,7 +84,6 @@ PewterGymTrainerHeader0:
 	dwEventFlagAddress EVENT_BEAT_PEWTER_GYM_TRAINER_0
 	dw PewterGymBattleText1 ; TextBeforeBattle
 	dw PewterGymAfterBattleText1 ; TextAfterBattle
-	dw PewterGymEndBattleText1 ; TextEndBattle
 	dw PewterGymEndBattleText1 ; TextEndBattle
 
 	db $ff
@@ -161,10 +153,7 @@ PewterGymText_5c4bc:
 	db "@"
 
 PewterGymText2:
-	TX_ASM
-	ld hl, PewterGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PewterGymTrainerHeader0
 
 PewterGymBattleText1:
 	TX_FAR _PewterGymBattleText1
@@ -184,10 +173,7 @@ PewterGymText3:
 	bit 0, a
 	jr nz, .asm_5c50c
 	ld hl, PewterGymText_5c515
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_5c4fe
 	ld hl, PewterGymText_5c51a
 	call PrintText

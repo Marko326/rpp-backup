@@ -1,16 +1,8 @@
 SSAnne5Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SSAnne5TrainerHeader0
-	ld de, SSAnne5ScriptPointers
-	ld a, [wSSAnne5CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSSAnne5CurScript], a
-	ret
-
-SSAnne5ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wSSAnne5CurScript
+	jp Bank18RunStandardTrainerMapScript
 
 SSAnne5TextPointers:
 	dw SSAnne5Text1
@@ -26,7 +18,6 @@ SSAnne5TrainerHeader0:
 	dw SSAnne5BattleText1 ; TextBeforeBattle
 	dw SSAnne5AfterBattleText1 ; TextAfterBattle
 	dw SSAnne5EndBattleText1 ; TextEndBattle
-	dw SSAnne5EndBattleText1 ; TextEndBattle
 
 SSAnne5TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_5_TRAINER_1
@@ -34,7 +25,6 @@ SSAnne5TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SS_ANNE_5_TRAINER_1
 	dw SSAnne5BattleText2 ; TextBeforeBattle
 	dw SSAnne5AfterBattleText2 ; TextAfterBattle
-	dw SSAnne5EndBattleText2 ; TextEndBattle
 	dw SSAnne5EndBattleText2 ; TextEndBattle
 
 	db $ff
@@ -52,10 +42,7 @@ SSAnne5Text3:
 	db "@"
 
 SSAnne5Text4:
-	TX_ASM
-	ld hl, SSAnne5TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne5TrainerHeader0
 
 SSAnne5BattleText1:
 	TX_FAR _SSAnne5BattleText1
@@ -70,10 +57,7 @@ SSAnne5AfterBattleText1:
 	db "@"
 
 SSAnne5Text5:
-	TX_ASM
-	ld hl, SSAnne5TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne5TrainerHeader1
 
 SSAnne5BattleText2:
 	TX_FAR _SSAnne5BattleText2

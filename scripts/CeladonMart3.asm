@@ -38,8 +38,7 @@ CeladonMart3Text1:
 .asm_a5463
 	ld hl, TM18ExplanationText
 .asm_81359
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 TM18PreReceiveText:
 	TX_FAR _TM18PreReceiveText

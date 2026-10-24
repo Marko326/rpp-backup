@@ -1,12 +1,10 @@
 LoreleiScript:
 	call LoreleiShowOrHideExitBlock
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, LoreleiTrainerHeader0
 	ld de, LoreleiScriptPointers
-	ld a, [wLoreleiCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wLoreleiCurScript], a
-	ret
+	ld bc, wLoreleiCurScript
+	jp Bank1DRunTrainerMapScript
 
 LoreleiShowOrHideExitBlock:
 ; Blocks or clears the exit to the next room.
@@ -36,13 +34,54 @@ LoreleiScriptPointers:
 	dw LoreleiScript0
 	dw DisplayEnemyTrainerTextAndStartBattle
 	dw LoreleiScript2
-	dw LoreleiScript3
-	dw LoreleiScript4
+	dw EliteFourRoomEntranceWait
+	dw EliteFourRoomNoOp
 
-LoreleiScript4:
+EliteFourRoomNoOp:
 	ret
 
-LoreleiScriptWalkIntoRoom:
+LoreleiScript0:
+	EventFlagAddress de, EVENT_AUTOWALKED_INTO_LORELEIS_ROOM
+	ld b, 1 << (EVENT_AUTOWALKED_INTO_LORELEIS_ROOM % 8)
+	jp EliteFourRoomEntranceScript
+
+; E4R-5.37.00: Lorelei, Bruno, and Agatha share the same entrance flow.
+; Each room keeps its own auto-walk event; the visible six-step walk and
+; "Don't run away!" pushback behavior are unchanged.
+EliteFourRoomEntranceScript:
+	push de
+	push bc
+	ld hl, EliteFourRoomEntranceCoords
+	call ArePlayerCoordsInArray
+	pop bc
+	pop de
+	jp nc, CheckFightingMapTrainers
+	xor a
+	ld [hJoyPressed], a
+	ld [hJoyHeld], a
+	ld [wSimulatedJoypadStatesEnd], a
+	ld [wSimulatedJoypadStatesIndex], a
+	ld a, [wCoordIndex]
+	cp $3  ; Is player standing one tile above the exit?
+	jr c, .stopPlayerFromLeaving
+	ld a, [de]
+	ld c, a
+	or b
+	ld [de], a
+	ld a, c
+	and b
+	jr z, .walkIntoRoom
+.stopPlayerFromLeaving
+	ld a, $2
+	ld [hSpriteIndexOrTextID], a
+	call DisplayTextID  ; "Don't run away!"
+	ld a, D_UP
+	ld [wSimulatedJoypadStatesEnd], a
+	ld a, $1
+	ld [wSimulatedJoypadStatesIndex], a
+	call StartSimulatingJoypadStates
+	jr .waitForMovement
+.walkIntoRoom
 ; Walk six steps upward.
 	ld hl, wSimulatedJoypadStatesEnd
 	ld a, D_UP
@@ -55,54 +94,25 @@ LoreleiScriptWalkIntoRoom:
 	ld a, $6
 	ld [wSimulatedJoypadStatesIndex], a
 	call StartSimulatingJoypadStates
+.waitForMovement
 	ld a, $3
-	ld [wLoreleiCurScript], a
 	ld [wCurMapScript], a
 	ret
 
-LoreleiScript0:
-	ld hl, LoreleiEntranceCoords
-	call ArePlayerCoordsInArray
-	jp nc, CheckFightingMapTrainers
-	xor a
-	ld [hJoyPressed], a
-	ld [hJoyHeld], a
-	ld [wSimulatedJoypadStatesEnd], a
-	ld [wSimulatedJoypadStatesIndex], a
-	ld a, [wCoordIndex]
-	cp $3  ; Is player standing one tile above the exit?
-	jr c, .stopPlayerFromLeaving
-	CheckAndSetEvent EVENT_AUTOWALKED_INTO_LORELEIS_ROOM
-	jr z, LoreleiScriptWalkIntoRoom
-.stopPlayerFromLeaving
-	ld a, $2
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID  ; "Don't run away!"
-	ld a, D_UP
-	ld [wSimulatedJoypadStatesEnd], a
-	ld a, $1
-	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
-	ld a, $3
-	ld [wLoreleiCurScript], a
-	ld [wCurMapScript], a
-	ret
-
-LoreleiEntranceCoords:
+EliteFourRoomEntranceCoords:
 	db $0A,$04
 	db $0A,$05
 	db $0B,$04
 	db $0B,$05
 	db $FF
 
-LoreleiScript3:
+EliteFourRoomEntranceWait:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
 	call Delay3
 	xor a
 	ld [wJoyIgnore], a
-	ld [wLoreleiCurScript], a
 	ld [wCurMapScript], a
 	ret
 
@@ -126,15 +136,11 @@ LoreleiTrainerHeader0:
 	dw LoreleiBeforeBattleText ; TextBeforeBattle
 	dw LoreleiAfterBattleText ; TextAfterBattle
 	dw LoreleiEndBattleText ; TextEndBattle
-	dw LoreleiEndBattleText ; TextEndBattle
 
 	db $ff
 
 LoreleiText1:
-	TX_ASM
-	ld hl, LoreleiTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER LoreleiTrainerHeader0
 
 LoreleiBeforeBattleText:
 	TX_FAR _LoreleiBeforeBattleText

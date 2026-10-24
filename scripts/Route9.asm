@@ -1,16 +1,8 @@
 Route9Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route9TrainerHeader0
-	ld de, Route9ScriptPointers
-	ld a, [wRoute9CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute9CurScript], a
-	ret
-
-Route9ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRoute9CurScript
+	jp Bank15RunStandardTrainerMapScript
 
 Route9TextPointers:
 	dw Route9Text1
@@ -32,7 +24,6 @@ Route9TrainerHeader0:
 	dw Route9BattleText1 ; TextBeforeBattle
 	dw Route9AfterBattleText1 ; TextAfterBattle
 	dw Route9EndBattleText1 ; TextEndBattle
-	dw Route9EndBattleText1 ; TextEndBattle
 
 Route9TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_9_TRAINER_1
@@ -40,7 +31,6 @@ Route9TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_9_TRAINER_1
 	dw Route9BattleText2 ; TextBeforeBattle
 	dw Route9AfterBattleText2 ; TextAfterBattle
-	dw Route9EndBattleText2 ; TextEndBattle
 	dw Route9EndBattleText2 ; TextEndBattle
 
 Route9TrainerHeader2:
@@ -50,7 +40,6 @@ Route9TrainerHeader2:
 	dw Route9BattleText3 ; TextBeforeBattle
 	dw Route9AfterBattleText3 ; TextAfterBattle
 	dw Route9EndBattleText3 ; TextEndBattle
-	dw Route9EndBattleText3 ; TextEndBattle
 
 Route9TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_9_TRAINER_3
@@ -58,7 +47,6 @@ Route9TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_9_TRAINER_3
 	dw Route9BattleText4 ; TextBeforeBattle
 	dw Route9AfterBattleText4 ; TextAfterBattle
-	dw Route9EndBattleText4 ; TextEndBattle
 	dw Route9EndBattleText4 ; TextEndBattle
 
 Route9TrainerHeader4:
@@ -68,7 +56,6 @@ Route9TrainerHeader4:
 	dw Route9BattleText5 ; TextBeforeBattle
 	dw Route9AfterBattleText5 ; TextAfterBattle
 	dw Route9EndBattleText5 ; TextEndBattle
-	dw Route9EndBattleText5 ; TextEndBattle
 
 Route9TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_9_TRAINER_5
@@ -76,7 +63,6 @@ Route9TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_9_TRAINER_5
 	dw Route9BattleText6 ; TextBeforeBattle
 	dw Route9AfterBattleText6 ; TextAfterBattle
-	dw Route9EndBattleText6 ; TextEndBattle
 	dw Route9EndBattleText6 ; TextEndBattle
 
 Route9TrainerHeader6:
@@ -86,7 +72,6 @@ Route9TrainerHeader6:
 	dw Route9BattleText7 ; TextBeforeBattle
 	dw Route9AfterBattleText7 ; TextAfterBattle
 	dw Route9EndBattleText7 ; TextEndBattle
-	dw Route9EndBattleText7 ; TextEndBattle
 
 Route9TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_9_TRAINER_7, 1
@@ -94,7 +79,6 @@ Route9TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_9_TRAINER_7, 1
 	dw Route9BattleText8 ; TextBeforeBattle
 	dw Route9AfterBattleText8 ; TextAfterBattle
-	dw Route9EndBattleText8 ; TextEndBattle
 	dw Route9EndBattleText8 ; TextEndBattle
 
 Route9TrainerHeader8:
@@ -104,56 +88,35 @@ Route9TrainerHeader8:
 	dw Route9BattleText9 ; TextBeforeBattle
 	dw Route9AfterBattleText9 ; TextAfterBattle
 	dw Route9EndBattleText9 ; TextEndBattle
-	dw Route9EndBattleText9 ; TextEndBattle
 
 	db $ff
 
 Route9Text1:
-	TX_ASM
-	ld hl, Route9TrainerHeader0
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader0
 
 Route9Text2:
-	TX_ASM
-	ld hl, Route9TrainerHeader1
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader1
 
 Route9Text3:
-	TX_ASM
-	ld hl, Route9TrainerHeader2
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader2
 
 Route9Text4:
-	TX_ASM
-	ld hl, Route9TrainerHeader3
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader3
 
 Route9Text5:
-	TX_ASM
-	ld hl, Route9TrainerHeader4
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader4
 
 Route9Text6:
-	TX_ASM
-	ld hl, Route9TrainerHeader5
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader5
 
 Route9Text7:
-	TX_ASM
-	ld hl, Route9TrainerHeader6
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader6
 
 Route9Text8:
-	TX_ASM
-	ld hl, Route9TrainerHeader7
-	jr Route9TalkToTrainer
+	TX_TRAINER Route9TrainerHeader7
 
 Route9Text9:
-	TX_ASM
-	ld hl, Route9TrainerHeader8
-Route9TalkToTrainer:
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route9TrainerHeader8
 
 Route9BattleText1:
 	TX_FAR _Route9BattleText1

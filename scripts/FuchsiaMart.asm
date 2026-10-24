@@ -1,6 +1,3 @@
-FuchsiaMartScript:
-	jp EnableAutoTextBoxDrawing
-
 FuchsiaMartTextPointers:
 	dw FuchsiaCashierText
 	dw FuchsiaMartText2

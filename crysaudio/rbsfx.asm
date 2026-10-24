@@ -120,7 +120,79 @@ RedSfxHeaderPointers:
 	dbw BANK(SFX_Slots_New_Spin), SFX_Slots_New_Spin
 	dbw BANK(SFX_Shooting_Star), SFX_Shooting_Star
 
-	dbw BANK(Sfx_NotVeryEffective), Sfx_NotVeryEffective
+	; Egg Bomb lower-pitch Ball Toss option: private audio data lives in a
+	; floating ROMX section, leaving the stock capture Ball Toss untouched.
+	dbw BANK(EggBombBallTossLow), EggBombBallTossLow
 	dbw BANK(Sfx_Damage), Sfx_Damage
 	dbw BANK(Sfx_SuperEffective), Sfx_SuperEffective
 
+	; ANM-5.61.45: Gold Sludge Bomb launch plus the exact Toxic bubble SFX.
+	; Sfx_Unknown7F is byte-for-byte Gold's Sfx_Toxic, so reuse it instead of
+	; duplicating audio data. Shadow Ball continues sharing Sfx_SludgeBomb.
+	dbw BANK(Sfx_SludgeBomb), Sfx_SludgeBomb
+	dbw BANK(Sfx_Unknown7F), Sfx_Unknown7F
+
+	; ANM-5.61.46: exact Gold Aeroblast SFX; audio data already exists in sfx.asm.
+	dbw BANK(Sfx_Aeroblast), Sfx_Aeroblast
+
+	; ANM-5.61.48: exact Gold/Crystal DynamicPunch explosion SFX.
+	dbw BANK(Sfx_EggBomb), Sfx_EggBomb
+
+	; MOV-5.61.53: Sacred Fire reuses the exact Gold Ember SFX data already present.
+	dbw BANK(Sfx_Ember), Sfx_Ember
+
+	; ANM-5.61.59: Shadow Punch reuses Gold Quick Attack's exact SFX_MENU data.
+	dbw BANK(Sfx_Menu), Sfx_Menu
+
+	; ANM-5.61.67: Cross Chop reuses the exact Gold Cut/Vicegrip data already present.
+	dbw BANK(Sfx_Cut), Sfx_Cut
+	dbw BANK(Sfx_Vicegrip), Sfx_Vicegrip
+
+	; ANM-5.61.69: Crunch reuses the exact Gold/Crystal Bite SFX already present.
+	dbw BANK(Sfx_Bite), Sfx_Bite
+
+	; ANM-5.61.72: Gold Spark reuses the exact audio data already present in crysaudio/sfx.asm.
+	dbw BANK(Sfx_ZapCannon), Sfx_ZapCannon
+	dbw BANK(Sfx_Spark), Sfx_Spark
+	dbw BANK(Sfx_Thundershock), Sfx_Thundershock
+
+	; ANM-5.61.81: Icy Wind reuses Gold/Crystal Psychic SFX data.
+	dbw BANK(Sfx_Psychic), Sfx_Psychic
+
+	; ANM-5.62.05: Energy Ball reuses the existing Polished Crystal / Gen II SFX data.
+	dbw BANK(Sfx_WarpTo), Sfx_WarpTo
+	dbw BANK(Sfx_Present), Sfx_Present
+	dbw BANK(Sfx_SweetScent), Sfx_SweetScent
+
+	; ANM-5.62.07: Iron Tail reuses the exact Gold/Crystal Mega Kick impact data.
+	dbw BANK(Sfx_MegaKick), Sfx_MegaKick
+
+	; ANM-5.62.07: exact Gold Iron Tail opening / Metallic audio.
+	dbw BANK(Sfx_Rage), Sfx_Rage
+	dbw BANK(Sfx_Shine), Sfx_Shine
+
+	; ANM-5.62.10: Gunk Shot reuses the existing Gen II Bubble Beam SFX data.
+	dbw BANK(Sfx_Bubblebeam), Sfx_Bubblebeam
+
+	; HUR-5.62.32: Hurricane reuses the existing Gen II Thunder SFX data.
+	dbw BANK(Sfx_Thunder), Sfx_Thunder
+
+	; SP-5.62.33: Sucker Punch reuses existing Gen II Comet Punch / Karate Chop data.
+	dbw BANK(Sfx_CometPunch), Sfx_CometPunch
+	dbw BANK(Sfx_KarateChop), Sfx_KarateChop
+
+	; AUR-5.62.36: Aura Sphere charge/launch use existing Gen II SFX.
+	dbw BANK(Sfx_Outrage), Sfx_Outrage
+	dbw BANK(Sfx_MegaPunch), Sfx_MegaPunch
+
+	; Pay Day only: reuse embedded Gold sound sequences without copying SFX data.
+	dbw BANK(Sfx_RazorWind), Sfx_RazorWind
+	dbw BANK(Sfx_PayDay), Sfx_PayDay
+
+	; Play Rough: point to existing Gen II audio data; no copied SFX tracks.
+	dbw BANK(Sfx_ThrowBall), Sfx_ThrowBall
+	dbw BANK(Sfx_BoneClub), Sfx_BoneClub
+	dbw BANK(Sfx_Doubleslap), Sfx_Doubleslap
+
+	; Power Gem: PC's opening Metronome sound already exists in sfx.asm.
+	dbw BANK(Sfx_Metronome), Sfx_Metronome

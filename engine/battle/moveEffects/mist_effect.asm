@@ -12,6 +12,9 @@ MistEffect_:
 	ld hl, ShroudedInMistText
 	jp PrintText
 .mistAlreadyInUse
+	; BTL-5.62.19: ResidualEffects1 skips the common post-move pause.
+	ld c, 50
+	call DelayFrames
 	jpab PrintButItFailedText_
 
 ShroudedInMistText:

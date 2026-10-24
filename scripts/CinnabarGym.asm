@@ -140,25 +140,9 @@ CinnabarGymScript3:
 	ld a, $f0
 	ld [wJoyIgnore], a
 CinnabarGymScript3_75857:
-	ld a, $a
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_BLAINE
-	lb bc, TM_38, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $b
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM38
-	jr .asm_75880
-.BagFull
-	ld a, $c
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_75880
-	ld hl, wObtainedKantoBadges
-	set 6, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 6
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_CINNABAR_GYM_TRAINER_0, EVENT_BEAT_CINNABAR_GYM_TRAINER_6
@@ -213,8 +197,7 @@ CinnabarGymText1:
 	jp TextScriptEnd
 .asm_3012f
 	ld hl, BlaineFireBlastText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .asm_d9332
 	ld hl, BlaineBattleText
 	call PrintText
@@ -266,8 +249,7 @@ CinnabarGymText2:
 	jp CinnabarGymScript_758b7
 .asm_46bb4
 	ld hl, CinnabarGymText_75969
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_7595f:
 	TX_FAR _CinnabarGymText_7595f
@@ -294,8 +276,7 @@ CinnabarGymText3:
 	jp CinnabarGymScript_758b7
 .asm_4b406
 	ld hl, CinnabarGymText_7599e
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75994:
 	TX_FAR _CinnabarGymText_75994
@@ -322,8 +303,7 @@ CinnabarGymText4:
 	jp CinnabarGymScript_758b7
 .asm_c0673
 	ld hl, CinnabarGymText_759d3
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_759c9:
 	TX_FAR _CinnabarGymText_759c9
@@ -350,8 +330,7 @@ CinnabarGymText5:
 	jp CinnabarGymScript_758b7
 .asm_5cfd7
 	ld hl, CinnabarGymText_75a08
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_759fe:
 	TX_FAR _CinnabarGymText_759fe
@@ -378,8 +357,7 @@ CinnabarGymText6:
 	jp CinnabarGymScript_758b7
 .asm_776b4
 	ld hl, CinnabarGymText_75a3d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75a33:
 	TX_FAR _CinnabarGymText_75a33
@@ -406,8 +384,7 @@ CinnabarGymText7:
 	jp CinnabarGymScript_758b7
 .asm_2f755
 	ld hl, CinnabarGymText_75a72
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75a68:
 	TX_FAR _CinnabarGymText_75a68
@@ -434,8 +411,7 @@ CinnabarGymText8:
 	jp CinnabarGymScript_758b7
 .asm_d87be
 	ld hl, CinnabarGymText_75aa7
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75a9d:
 	TX_FAR _CinnabarGymText_75a9d
@@ -458,8 +434,7 @@ CinnabarGymText9:
 .asm_627d9
 	ld hl, CinnabarGymText_75ac7
 .asm_0b11d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 CinnabarGymText_75ac2:
 	TX_FAR _CinnabarGymText_75ac2

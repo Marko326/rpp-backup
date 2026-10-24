@@ -1,16 +1,8 @@
 NavelRockLugiaRoomScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, NavelRockLugiaRoomTrainerHeaders
-	ld de, NavelRockLugiaRoomScriptPointers
-	ld a, [wNavelRockLugiaRoomCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wNavelRockLugiaRoomCurScript], a
-	ret
-
-NavelRockLugiaRoomScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wNavelRockLugiaRoomCurScript
+	jp Bank34RunStandardTrainerMapScript
 
 NavelRockLugiaRoomTextPointers:
 	dw NavelRockLugiaRoomText1 ; Lugia
@@ -24,7 +16,6 @@ NavelRockLugiaRoomTrainerHeader0:
 	dw NavelRockLugiaRoomLugiaText ; TextBeforeBattle
 	dw NavelRockLugiaRoomLugiaText ; TextAfterBattle
 	dw NavelRockLugiaRoomLugiaText ; TextEndBattle
-	dw NavelRockLugiaRoomLugiaText ; TextEndBattle
 
 NavelRockLugiaRoomTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_HO_OH
@@ -33,21 +24,14 @@ NavelRockLugiaRoomTrainerHeader1:
 	dw NavelRockLugiaRoomHoohText ; TextBeforeBattle
 	dw NavelRockLugiaRoomHoohText ; TextAfterBattle
 	dw NavelRockLugiaRoomHoohText ; TextEndBattle
-	dw NavelRockLugiaRoomHoohText ; TextEndBattle
 
 	db $ff
 
 NavelRockLugiaRoomText1:
-	TX_ASM
-	ld hl, NavelRockLugiaRoomTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER NavelRockLugiaRoomTrainerHeader0
 
 NavelRockLugiaRoomText2:
-	TX_ASM
-	ld hl, NavelRockLugiaRoomTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER NavelRockLugiaRoomTrainerHeader1
 
 NavelRockLugiaRoomLugiaText:
 	TX_FAR _NavelRockLugiaRoomLugiaText

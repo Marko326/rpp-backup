@@ -9,14 +9,9 @@ _ViridianPokeCenterText1::
 	line "told me. So kind!"
 	done
 
+; WTR-5.53.00: Wonder Trade was removed; this NPC now gives a normal PC tip.
 _ViridianPokeCenterText3::
-	text "The big computer"
-	line "in the middle"
-	cont "accesses the"
-	cont "Wonder Trade"
-	cont "system."
-	
-	para "You should try it"
-	line "out if you're a"
-	cont "trainer!"
+	text "The PC here lets"
+	line "trainers store and"
+	cont "withdraw #mon."
 	done

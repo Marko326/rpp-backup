@@ -46,9 +46,14 @@ PKMNLeaguePC:
 	pop hl
 	res 6, [hl]
 	call GBPalWhiteOutWithDelay3
-	call ClearScreen
+	; PC-5.62.14: League PC front pictures overwrite vFrontPic, which aliases the
+	; overworld tileset in vChars2. Restore only those tile patterns here; the
+	; caller restores its saved background instead of rebuilding the whole map.
+	call ReloadTilesetTilePatterns
 	call RunDefaultPaletteCommand
-	jp GBPalNormal
+	; Keep the screen white. The caller restores the PC background and redraws the
+	; complete menu before revealing it, so no HoF or partial-menu frame is shown.
+	ret
 
 LeaguePCShowTeam:
 	ld c, PARTY_LENGTH
@@ -78,8 +83,25 @@ LeaguePCShowTeam:
 	ret
 
 LeaguePCShowMon:
+	; HOF-5.62.15: keep the League PC frame stable while advancing through a
+	; recorded team. The first entry still performs the stock whole-screen setup;
+	; later entries blank only the 7x7 front-pic canvas and wait until that local
+	; wipe reaches VRAM before replacing the picture behind it.
+	ld a, [wHoFTeamIndex2]
+	and a
+	jr nz, .refreshFrontPic
+	ld a, c
+	cp PARTY_LENGTH
+	jr nz, .refreshFrontPic
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
+	jr .loadMon
+.refreshFrontPic
+	coord hl, 12, 5
+	lb bc, 7, 7
+	call ClearScreenArea
+	call Delay3
+.loadMon
 	ld hl, wHallOfFame
 	ld a, [hli]
 	ld [wHoFMonSpecies], a
@@ -92,11 +114,18 @@ LeaguePCShowMon:
 	ld de, wcd6d
 	ld bc, NAME_LENGTH
 	call CopyData
+	; FORM-5.62.13: LeaguePCShowTeam shifts the displayed record into slot 0.
+	; Stage its saved marker before legacy UI routines can reuse HoF scratch.
+	ld a, [wHallOfFame + HOF_MON_FORM_MARKER]
+	ld [wHoFMonFormMarker], a
 	ld b, SET_PAL_POKEMON_WHOLE_SCREEN
 	ld c, 0
 	call RunPaletteCommand
+	callba HoFOverrideRegionalPaletteMon
+	; CALLBA owns HL, so establish the tilemap destination only after the
+	; form-aware header call.
+	callba HoFLoadMonHeaderForForm
 	coord hl, 12, 5
-	call GetMonHeader
 	call LoadFrontSpriteByMonIndex
 	call GBPalNormal
 	coord hl, 0, 13

@@ -11,7 +11,7 @@ AttackAnimationPointers:
 	dw ScratchAnim
 	dw VicegripAnim
 	dw GuillotineAnim
-	dw RazorWindAnim
+	dw SparkAnim
 	dw SwordsDanceAnim
 	dw CutAnim
 	dw GustAnim
@@ -25,7 +25,7 @@ AttackAnimationPointers:
 	dw DoubleKickAnim
 	dw MegaKickAnim
 	dw JumpKickAnim
-	dw RollingKickAnim
+	dw AuraSphereAnim
 	dw SandAttackAnim
 	dw HeatButtAnim
 	dw HornAttackAnim
@@ -138,7 +138,7 @@ AttackAnimationPointers:
 	dw GlareAnim
 	dw DreamEaterAnim
 	dw PoisonGasAnim
-	dw BarrageAnim
+	dw BulletSeedAnim
 	dw LeechLifeAnim
 	dw LovelyKissAnim
 	dw SkyAttackAnim
@@ -209,10 +209,6 @@ AttackAnimationPointers:
 ; if first byte >= $D8
 ;	db special_effect_id, sound_id
 ; $FF terminated
-ZigZagScreenAnim:
-	db SE_WAVY_SCREEN, $FF
-	db $FF
-
 PoundAnim:
 StruggleAnim:
 	db $08,$00,$01
@@ -267,10 +263,17 @@ VicegripAnim:
 	db $FF
 
 GuillotineAnim:
-	db $06,$0B,$2A
+	; ANM-5.61.40: restore two opening clamp beats, then reuse the same bilateral
+	; blade material for the final inward close. Delay 6 keeps the Guillotine-only
+	; short flash on the final closing subanimation.
+	db $05,$13,$23
+	db $05,$13,$23
+	db $06,$0B,$56
 	db $FF
 
-RazorWindAnim:
+SparkAnim:
+	; Dedicated Gold Spark recipe is staged by real move ID. Keep a compact
+	; legacy fallback for synthetic animation-ID callers.
 	db $04,$0C,$16
 	db $FF
 
@@ -301,6 +304,8 @@ WhirlwindAnim:
 
 FlyAnim:
 	db $46,$12,$04
+; EnemyFlashAnim is Fly's exact show-mon suffix.
+EnemyFlashAnim:
 	db SE_SHOW_MON_PIC, $FF
 	db $FF
 
@@ -335,9 +340,11 @@ JumpKickAnim:
 	db $46,$19,$04
 	db $FF
 
-RollingKickAnim:
-	db SE_DARK_SCREEN_FLASH, $1A
-	db $46,$FF,$04
+AuraSphereAnim:
+	; AUR-5.62.36: real move use stages the dedicated Polished Crystal recipe by move ID.
+	; Keep a compact orb fallback for synthetic animation-ID callers.
+	db $44,$1B,$41
+	db $44,$1B,$42
 	db $FF
 
 SandAttackAnim:
@@ -404,6 +411,7 @@ DoubleEdgeAnim:
 	db $FF
 
 TailWhipAnim:
+MetronomeAnim: ; identical script; share one immutable command stream
 	db SE_MOVE_MON_HORIZONTALLY, $84
 	db SE_DELAY_ANIMATION_10, $FF
 	db SE_RESET_MON_POSITION, $84
@@ -427,6 +435,7 @@ PinMissileAnim:
 	db $FF
 
 LeerAnim:
+DisableAnim: ; identical script
 	db SE_DARK_SCREEN_PALETTE, $48
 	db SE_DARK_SCREEN_FLASH, $2A
 	db SE_DARK_SCREEN_FLASH, $2A
@@ -462,13 +471,6 @@ SonicBoomAnim:
 	db $46,$2D,$15
 	db $46,$0F,$10
 	db $46,$FF,$05
-	db $FF
-
-DisableAnim:
-	db SE_DARK_SCREEN_PALETTE, $48
-	db SE_DARK_SCREEN_FLASH, $2A
-	db SE_DARK_SCREEN_FLASH, $2A
-	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
 AcidAnim:
@@ -508,7 +510,9 @@ SurfAnim:
 
 IceBeamAnim:
 	db $03,$39,$2E
-	db $10,$FF,$2F
+	; ANM-5.61.40: restore sound $05 for Subanimation2f; PlayIcePillarSound
+	; adds its extra repeat during the ice-pillar sequence.
+	db $10,$05,$2F
 	db $FF
 
 BlizzardAnim:
@@ -697,6 +701,8 @@ FissureAnim:
 	db SE_DARK_SCREEN_FLASH, $59
 	db SE_SHAKE_SCREEN, $FF
 	db SE_DARK_SCREEN_FLASH, $59
+; Standalone screen-shake animation is Fissure's exact final suffix.
+ShakeScreenAnim:
 	db SE_SHAKE_SCREEN, $FF
 	db $FF
 
@@ -716,6 +722,10 @@ ConfusionAnim:
 
 PsychicAnim:
 	db SE_FLASH_SCREEN_LONG, $5D
+; Legacy animation ID $CB is just Psychic's wavy-screen suffix.  Keep the
+; public pointer-table entry, but share these final three bytes instead of
+; storing a second identical command stream.
+ZigZagScreenAnim:
 	db SE_WAVY_SCREEN, $FF
 	db $FF
 
@@ -779,6 +789,8 @@ DoubleTeamAnim:
 
 RecoverAnim:
 	db SE_BLINK_MON, $68
+; X-stat animation is Recover's exact palette/orb/reset suffix.
+XStatItemAnim:
 	db SE_LIGHT_SCREEN_PALETTE, $FF
 	db SE_SPIRAL_BALLS_INWARD, $FF
 	db SE_RESET_SCREEN_PALETTE, $FF
@@ -870,18 +882,10 @@ BideAnim:
 	db $46,$74,$04
 	db $FF
 
-MetronomeAnim:
-	db SE_MOVE_MON_HORIZONTALLY, $84
-	db SE_DELAY_ANIMATION_10, $FF
-	db SE_RESET_MON_POSITION, $84
-	db SE_DELAY_ANIMATION_10, $FF
-	db SE_MOVE_MON_HORIZONTALLY, $84
-	db SE_DELAY_ANIMATION_10, $FF
-	db SE_RESET_MON_POSITION, $84
-	db $FF
-
 MirrorMoveAnim:
-	db $08,$76,$01
+	; PureRGB transition recipe adapted to RPP IDs:
+	; Conversion sound + Barrier visual, tileset 1, short delay 2.
+	db $42,$9F,$33
 	db $FF
 
 SelfdestructAnim:
@@ -893,10 +897,6 @@ EggBombAnim:
 	db $44,$78,$42
 	db $FF
 
-LickAnim:
-	db $46,$7B,$14
-	db $FF
-
 SmogAnim:
 	db SE_DARKEN_MON_PALETTE, $48
 	db $46,$7A,$19
@@ -905,11 +905,19 @@ SmogAnim:
 
 SludgeAnim:
 	db $46,$7B,$13
+	; ANM-5.61.29: reuse $14 unchanged; the renderer replays only its two-drop
+	; tail once for Sludge, keeping Acid/Lick on the original two-drop sequence.
+; Lick is Sludge's final subanimation plus terminator.
+LickAnim:
 	db $46,$7B,$14
 	db $FF
 
 BoneClubAnim:
-	db $08,$7C,$02
+	; ANM-5.62.09: Gold bone spin on the smoothed pureRGB toss route.
+	db SE_MOVE_MON_HORIZONTALLY,$FF
+	db $81,$7C,$59 ; smoothed pureRGB BONE_TOSS, tileset 2, delay 1
+	db $08,$FF,$02
+	db SE_RESET_MON_POSITION,$FF
 	db $FF
 
 FireBlastAnim:
@@ -952,6 +960,7 @@ ConstrictAnim:
 	db $FF
 
 AmnesiaAnim:
+ConfusedPlayerAnim: ; identical script
 	db $08,$84,$25
 	db $08,$84,$25
 	db $FF
@@ -970,7 +979,10 @@ SoftboiledAnim:
 	db $FF
 
 HiJumpKickAnim:
+	; ANM-5.61.40: restore the old-project lunge, impact and return sequence.
+	db SE_MOVE_MON_HORIZONTALLY, $FF
 	db $46,$87,$04
+	db SE_RESET_MON_POSITION, $FF
 	db $FF
 
 GlareAnim:
@@ -991,9 +1003,10 @@ PoisonGasAnim:
 	db $46,$8A,$19
 	db $FF
 
-BarrageAnim:
-	db $43,$8B,$41
-	db $05,$FF,$55
+BulletSeedAnim:
+	; ANIM-5.62.96: fallback seed toss if the real-move helper is bypassed.
+	db $46,$8B,$1B
+	db $55,$4D,$1C
 	db $FF
 
 LeechLifeAnim:
@@ -1058,8 +1071,14 @@ AcidArmorAnim:
 	db $FF
 
 CrabHammerAnim:
-	db $46,$97,$05
-	db $06,$FF,$2A
+	; ANM-5.61.40: restore two water sweeps, two clamp hits and the final hammer.
+	; Subanimations57/58 add Crabhammer-only Y-3 copies of FrameBlock0C to thicken
+	; the water bands without changing the shared sweep data or animation gfx.
+	db $06,$34,$57
+	db $06,$34,$58
+	db $06,$13,$23
+	db $06,$13,$23
+	db $43,$0B,$2A
 	db $FF
 
 ExplosionAnim:
@@ -1071,10 +1090,18 @@ FurySwipesAnim:
 	db $FF
 
 BonemerangAnim:
-	db $06,$9A,$02
+	; ANM-5.62.09: Both travel legs now interpolate the same authored route at one update/VBlank
+	; while Gold's two-frame bone spin alternates every visible frame.
+	db SE_MOVE_MON_HORIZONTALLY,$FF
+	db $81,$9A,$59 ; smoothed pureRGB BONE_TOSS, tileset 2, delay 1
+	db $06,$FF,$02
+	db SE_DELAY_ANIMATION_10,$FF
+	db $81,$FF,$5A ; smoothed pureRGB BONE_RECOVER, tileset 2, delay 1
+	db SE_RESET_MON_POSITION,$17 ; pureRGB uses DOUBLE_KICK's sound profile here
 	db $FF
 
 RestAnim:
+SleepPlayerAnim: ; identical script
 	db $10,$9B,$3A
 	db $10,$9B,$3A
 	db $FF
@@ -1104,9 +1131,17 @@ ConversionAnim:
 	db $FF
 
 TriAttackAnim:
+	; ANM-5.61.40: keep the existing Tri Attack opening, then continue with the
+	; old-project fire -> ice -> electric stages and their palette transitions.
 	db SE_DARK_SCREEN_FLASH, $A0
 	db $46,$FF,$4D
 	db SE_DARK_SCREEN_FLASH, $FF
+	db $46,$34,$0E
+	db SE_LIGHT_SCREEN_PALETTE, $FF
+	db $06,$05,$2F
+	db SE_DARK_SCREEN_PALETTE, $56
+	db $43,$FF,$2B
+	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
 SuperFangAnim:
@@ -1153,10 +1188,6 @@ HidePicAnim:
 	db SE_HIDE_ENEMY_MON_PIC, $FF
 	db $FF
 
-EnemyFlashAnim:
-	db SE_SHOW_MON_PIC, $FF
-	db $FF
-
 PlayerFlashAnim:
 	db SE_FLASH_MON_PIC, $FF
 	db $FF
@@ -1179,12 +1210,6 @@ TradeBallAppear2Anim:
 
 TradeBallPoofAnim:
 	db $86,$FF,$4B
-	db $FF
-
-XStatItemAnim:
-	db SE_LIGHT_SCREEN_PALETTE, $FF
-	db SE_SPIRAL_BALLS_INWARD, $FF
-	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
 ShrinkingSquareAnim:
@@ -1211,6 +1236,49 @@ UnusedAnim:
 	db SE_RESET_SCREEN_PALETTE, $FF
 	db $FF
 
+; ANM-5.61.33: restored directly from the legacy project. These scripts stay
+; in bank $1E beside PlayAnimation, so Flare Blitz's 32-byte stream does not need
+; a compression-only command just to fit the 30-byte extended recipe buffer.
+FlareBlitzDirectAnim:
+	db SE_DARK_SCREEN_PALETTE, $48
+	db SE_SPIRAL_BALLS_INWARD, $FF
+	db SE_MOVE_MON_HORIZONTALLY, $FF
+	db $46,FIRE_BLAST - 1,$20
+	db $46,$FF,$20
+	db $46,$FF,$0C
+	db $46,$FF,$0D
+	db $46,HEADBUTT - 1,$05
+	db SE_HIDE_ENEMY_MON_PIC, $FF
+	db SE_SHAKE_SCREEN, $FF
+	db SE_SHOW_ENEMY_MON_PIC, $FF
+	db SE_RESET_MON_POSITION, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
+	db $FF
+
+VoltTackleDirectAnim:
+	; VTA-5.62.43: real move use is dispatched by C2 to the Ruby-inspired renderer.
+	db EXT_ANIM_VOLT_TACKLE_RUBY
+	db $FF
+
+GigaImpactDirectAnim:
+	db SE_DARK_SCREEN_PALETTE, $48
+	db SE_SPIRAL_BALLS_INWARD, $FF
+	db SE_MOVE_MON_HORIZONTALLY, $FF
+	db $41,$04,$0A
+	db SE_HIDE_ENEMY_MON_PIC, $FF
+	db SE_SHAKE_SCREEN, $FF
+	db SE_SHOW_ENEMY_MON_PIC, $FF
+	db SE_RESET_MON_POSITION, $FF
+	db SE_RESET_SCREEN_PALETTE, $FF
+	db $FF
+
+GunkShotDirectAnim:
+	; ANM-5.62.10: the dedicated renderer keeps the charge on the normal
+	; battlefield and switches to the dark palette only for the barrage.
+	db EXT_ANIM_GUNK_SHOT_PC
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+
 ParalyzeAnim:
 	db $04,$13,$24
 	db $04,$13,$24
@@ -1221,19 +1289,9 @@ PoisonAnim:
 	db $08,$13,$27
 	db $FF
 
-SleepPlayerAnim:
-	db $10,$9B,$3A
-	db $10,$9B,$3A
-	db $FF
-
 SleepEnemyAnim:
 	db $10,$9B,$3B
 	db $10,$9B,$3B
-	db $FF
-
-ConfusedPlayerAnim:
-	db $08,$84,$25
-	db $08,$84,$25
 	db $FF
 
 ConfusedEnemyAnim:
@@ -1249,10 +1307,6 @@ FaintAnim:
 	db SE_SLIDE_MON_DOWN, $5A
 	db $FF
 
-ShakeScreenAnim:
-	db SE_SHAKE_SCREEN, $FF
-	db $FF
-
 ThrowRockAnim:
 	db $03,$8B,$53
 	db $FF
@@ -1260,6 +1314,192 @@ ThrowRockAnim:
 ThrowBaitAnim:
 	db $03,$8B,$54
 	db $FF
+
+; Subanimation source stays semantic even though ROM entries are packed to 2 bytes.
+; Usage: subentry FrameBlock, BaseCoord, Mode
+;   Mode 0 stores BaseCoord directly.
+;   Modes 2/3/4 store a 6-bit index into SubanimationCoordTable and encode
+;   the mode in byte 1 bits 7-6. Byte 0 bit 7 marks the packed-mode form.
+; Keep SubanimationCoordTable append-only: existing coordinate indices are stable.
+; To add a new nonzero-mode BaseCoord, append it to SubanimationCoordTable and
+; add one matching lookup clause below using the next free index (currently 55-63).
+subentry: MACRO
+	assert (\1) < $80
+	assert (\3) == 0 || (\3) == 2 || (\3) == 3 || (\3) == 4
+	IF (\3) == 0
+		db \1, \2
+	ELSE
+		DEF _subanim_coord_index = -1
+		IF (\2) == $21
+			DEF _subanim_coord_index = 0
+		ENDC
+		IF (\2) == $03
+			DEF _subanim_coord_index = 1
+		ENDC
+		IF (\2) == $38
+			DEF _subanim_coord_index = 2
+		ENDC
+		IF (\2) == $20
+			DEF _subanim_coord_index = 3
+		ENDC
+		IF (\2) == $23
+			DEF _subanim_coord_index = 4
+		ENDC
+		IF (\2) == $15
+			DEF _subanim_coord_index = 5
+		ENDC
+		IF (\2) == $17
+			DEF _subanim_coord_index = 6
+		ENDC
+		IF (\2) == $19
+			DEF _subanim_coord_index = 7
+		ENDC
+		IF (\2) == $30
+			DEF _subanim_coord_index = 8
+		ENDC
+		IF (\2) == $40
+			DEF _subanim_coord_index = 9
+		ENDC
+		IF (\2) == $41
+			DEF _subanim_coord_index = 10
+		ENDC
+		IF (\2) == $42
+			DEF _subanim_coord_index = 11
+		ENDC
+		IF (\2) == $43
+			DEF _subanim_coord_index = 12
+		ENDC
+		IF (\2) == $52
+			DEF _subanim_coord_index = 13
+		ENDC
+		IF (\2) == $63
+			DEF _subanim_coord_index = 14
+		ENDC
+		IF (\2) == $4d
+			DEF _subanim_coord_index = 15
+		ENDC
+		IF (\2) == $97
+			DEF _subanim_coord_index = 16
+		ENDC
+		IF (\2) == $98
+			DEF _subanim_coord_index = 17
+		ENDC
+		IF (\2) == $58
+			DEF _subanim_coord_index = 18
+		ENDC
+		IF (\2) == $00
+			DEF _subanim_coord_index = 19
+		ENDC
+		IF (\2) == $02
+			DEF _subanim_coord_index = 20
+		ENDC
+		IF (\2) == $07
+			DEF _subanim_coord_index = 21
+		ENDC
+		IF (\2) == $0e
+			DEF _subanim_coord_index = 22
+		ENDC
+		IF (\2) == $24
+			DEF _subanim_coord_index = 23
+		ENDC
+		IF (\2) == $1c
+			DEF _subanim_coord_index = 24
+		ENDC
+		IF (\2) == $16
+			DEF _subanim_coord_index = 25
+		ENDC
+		IF (\2) == $05
+			DEF _subanim_coord_index = 26
+		ENDC
+		IF (\2) == $0c
+			DEF _subanim_coord_index = 27
+		ENDC
+		IF (\2) == $11
+			DEF _subanim_coord_index = 28
+		ENDC
+		IF (\2) == $1b
+			DEF _subanim_coord_index = 29
+		ENDC
+		IF (\2) == $2f
+			DEF _subanim_coord_index = 30
+		ENDC
+		IF (\2) == $10
+			DEF _subanim_coord_index = 31
+		ENDC
+		IF (\2) == $1d
+			DEF _subanim_coord_index = 32
+		ENDC
+		IF (\2) == $22
+			DEF _subanim_coord_index = 33
+		ENDC
+		IF (\2) == $2c
+			DEF _subanim_coord_index = 34
+		ENDC
+		IF (\2) == $2a
+			DEF _subanim_coord_index = 35
+		ENDC
+		IF (\2) == $99
+			DEF _subanim_coord_index = 36
+		ENDC
+		IF (\2) == $62
+			DEF _subanim_coord_index = 37
+		ENDC
+		IF (\2) == $0f
+			DEF _subanim_coord_index = 38
+		ENDC
+		IF (\2) == $68
+			DEF _subanim_coord_index = 39
+		ENDC
+		IF (\2) == $6a
+			DEF _subanim_coord_index = 40
+		ENDC
+		IF (\2) == $69
+			DEF _subanim_coord_index = 41
+		ENDC
+		IF (\2) == $73
+			DEF _subanim_coord_index = 42
+		ENDC
+		IF (\2) == $83
+			DEF _subanim_coord_index = 43
+		ENDC
+		IF (\2) == $84
+			DEF _subanim_coord_index = 44
+		ENDC
+		IF (\2) == $85
+			DEF _subanim_coord_index = 45
+		ENDC
+		IF (\2) == $01
+			DEF _subanim_coord_index = 46
+		ENDC
+		IF (\2) == $28
+			DEF _subanim_coord_index = 47
+		ENDC
+		IF (\2) == $26
+			DEF _subanim_coord_index = 48
+		ENDC
+		IF (\2) == $12
+			DEF _subanim_coord_index = 49
+		ENDC
+		IF (\2) == $1e
+			DEF _subanim_coord_index = 50
+		ENDC
+		IF (\2) == $48
+			DEF _subanim_coord_index = 51
+		ENDC
+		IF (\2) == $b4
+			DEF _subanim_coord_index = 52
+		ENDC
+		IF (\2) == $b5
+			DEF _subanim_coord_index = 53
+		ENDC
+		IF (\2) == $b6
+			DEF _subanim_coord_index = 54
+		ENDC
+		assert _subanim_coord_index >= 0
+		assert _subanim_coord_index < $40
+		db $80 | (\1), (((\3) - 1) << 6) | _subanim_coord_index
+	ENDC
+ENDM
 
 SubanimationPointers:
 	dw Subanimation00
@@ -1348,863 +1588,984 @@ SubanimationPointers:
 	dw Subanimation53
 	dw Subanimation54
 	dw Subanimation55
+	dw Subanimation56
+	dw Subanimation57
+	dw Subanimation58
+	dw Subanimation59 ; ANM-5.62.09: 60fps pureRGB-route bone toss
+	dw Subanimation5a ; ANM-5.62.09: 60fps pureRGB-route bone recover
 
 Subanimation04:
 	db $43
-	db $02,$1a,$00
-	db $02,$10,$00
-	db $02,$03,$00
+	subentry $02, $1a, 0
+	subentry $02, $10, 0
+	subentry $02, $03, 0
 
 Subanimation05:
 	db $41
-	db $02,$10,$00
+	subentry $02, $10, 0
 
 Subanimation08:
 	db $0b
-	db $03,$30,$00
-	db $03,$44,$00
-	db $03,$94,$00
-	db $03,$60,$00
-	db $03,$76,$00
-	db $03,$9f,$00
-	db $03,$8d,$00
-	db $03,$a0,$00
-	db $03,$1a,$00
-	db $03,$a1,$00
-	db $03,$34,$00
+	subentry $03, $30, 0
+	subentry $03, $44, 0
+	subentry $03, $94, 0
+	subentry $03, $60, 0
+	subentry $03, $76, 0
+	subentry $03, $9f, 0
+	subentry $03, $8d, 0
+	subentry $03, $a0, 0
+	subentry $03, $1a, 0
+	subentry $03, $a1, 0
+	subentry $03, $34, 0
 
 Subanimation07:
 	db $0b
-	db $03,$30,$00
-	db $03,$a2,$00
-	db $03,$31,$00
-	db $03,$a3,$00
-	db $03,$32,$00
-	db $03,$a4,$00
-	db $03,$92,$00
-	db $03,$a5,$00
-	db $03,$15,$00
-	db $03,$a6,$00
-	db $03,$34,$00
+	subentry $03, $30, 0
+	subentry $03, $a2, 0
+	subentry $03, $31, 0
+	subentry $03, $a3, 0
+	subentry $03, $32, 0
+	subentry $03, $a4, 0
+	subentry $03, $92, 0
+	subentry $03, $a5, 0
+	subentry $03, $15, 0
+	subentry $03, $a6, 0
+	subentry $03, $34, 0
 
 Subanimation06:
 	db $0b
-	db $03,$30,$00
-	db $03,$a2,$00
-	db $03,$93,$00
-	db $03,$61,$00
-	db $03,$73,$00
-	db $03,$a7,$00
-	db $03,$33,$00
-	db $03,$a8,$00
-	db $03,$0e,$00
-	db $03,$a9,$00
-	db $03,$34,$00
+	subentry $03, $30, 0
+	subentry $03, $a2, 0
+	subentry $03, $93, 0
+	subentry $03, $61, 0
+	subentry $03, $73, 0
+	subentry $03, $a7, 0
+	subentry $03, $33, 0
+	subentry $03, $a8, 0
+	subentry $03, $0e, 0
+	subentry $03, $a9, 0
+	subentry $03, $34, 0
 
 Subanimation09:
 	db $04
-	db $03,$21,$04
-	db $04,$21,$04
-	db $03,$21,$04
-	db $05,$21,$04
+	subentry $03, $21, 4
+	subentry $04, $21, 4
+	subentry $03, $21, 4
+	subentry $05, $21, 4
 
 Subanimation0a:
 	db $46
-	db $06,$1b,$00
-	db $07,$1b,$00
-	db $08,$36,$00
-	db $09,$36,$00
-	db $0a,$15,$00
-	db $0a,$15,$00
+	subentry $06, $1b, 0
+	subentry $07, $1b, 0
+	subentry $08, $36, 0
+	subentry $09, $36, 0
+	subentry $0a, $15, 0
+	subentry $0a, $15, 0
 
 Subanimation0b:
 	db $04
-	db $01,$2d,$00
-	db $03,$2f,$00
-	db $03,$35,$00
-	db $03,$4d,$00
+	subentry $01, $2d, 0
+	subentry $03, $2f, 0
+	subentry $03, $35, 0
+	subentry $03, $4d, 0
 
 Subanimation55:
 	db $41
-	db $01,$9d,$00
+	subentry $01, $9d, 0
 
 Subanimation11:
 	db $4c
-	db $0b,$26,$00
-	db $0c,$26,$00
-	db $0b,$26,$00
-	db $0c,$26,$00
-	db $0b,$28,$00
-	db $0c,$28,$00
-	db $0b,$28,$00
-	db $0c,$28,$00
-	db $0b,$27,$00
-	db $0c,$27,$00
-	db $0b,$27,$00
-	db $0c,$27,$00
+	subentry $0b, $26, 0
+	subentry $0c, $26, 0
+	subentry $0b, $26, 0
+	subentry $0c, $26, 0
+	subentry $0b, $28, 0
+	subentry $0c, $28, 0
+	subentry $0b, $28, 0
+	subentry $0c, $28, 0
+	subentry $0b, $27, 0
+	subentry $0c, $27, 0
+	subentry $0b, $27, 0
+	subentry $0c, $27, 0
 
 Subanimation2b:
 	db $4b
-	db $0d,$03,$03
-	db $0e,$03,$03
-	db $0f,$03,$00
-	db $0d,$11,$00
-	db $0d,$11,$00
-	db $0d,$37,$00
-	db $0d,$37,$00
-	db $10,$21,$00
-	db $10,$21,$00
-	db $11,$1b,$00
-	db $11,$1b,$00
+	subentry $0d, $03, 3
+	subentry $0e, $03, 3
+	subentry $0f, $03, 0
+	subentry $0d, $11, 0
+	subentry $0d, $11, 0
+	subentry $0d, $37, 0
+	subentry $0d, $37, 0
+	subentry $10, $21, 0
+	subentry $10, $21, 0
+	subentry $11, $1b, 0
+	subentry $11, $1b, 0
 
 Subanimation2c:
 	db $4c
-	db $12,$01,$00
-	db $12,$0f,$00
-	db $12,$1b,$00
-	db $12,$25,$00
-	db $13,$38,$00
-	db $13,$38,$02
-	db $14,$38,$00
-	db $14,$38,$02
-	db $15,$38,$00
-	db $15,$38,$00
-	db $16,$38,$00
-	db $16,$38,$00
+	subentry $12, $01, 0
+	subentry $12, $0f, 0
+	subentry $12, $1b, 0
+	subentry $12, $25, 0
+	subentry $13, $38, 0
+	subentry $13, $38, 2
+	subentry $14, $38, 0
+	subentry $14, $38, 2
+	subentry $15, $38, 0
+	subentry $15, $38, 0
+	subentry $16, $38, 0
+	subentry $16, $38, 0
 
 Subanimation12:
 	db $69
-	db $17,$30,$00
-	db $17,$39,$00
-	db $17,$3a,$00
-	db $17,$3b,$00
-	db $17,$3c,$00
-	db $17,$3d,$00
-	db $17,$3e,$00
-	db $17,$3f,$00
-	db $17,$1f,$00
+	subentry $17, $30, 0
+	subentry $17, $39, 0
+	subentry $17, $3a, 0
+	subentry $17, $3b, 0
+	subentry $17, $3c, 0
+	subentry $17, $3d, 0
+	subentry $17, $3e, 0
+	subentry $17, $3f, 0
+	subentry $17, $1f, 0
 
 Subanimation00:
 	db $41
-	db $01,$17,$00
+	subentry $01, $17, 0
 
 Subanimation01:
 	db $42
-	db $01,$0f,$00
-	db $01,$1d,$00
+	subentry $01, $0f, 0
+	subentry $01, $1d, 0
 
 Subanimation02:
 	db $43
-	db $01,$12,$00
-	db $01,$15,$00
-	db $01,$1c,$00
+	subentry $01, $12, 0
+	subentry $01, $15, 0
+	subentry $01, $1c, 0
 
 Subanimation03:
 	db $44
-	db $01,$0b,$00
-	db $01,$11,$00
-	db $01,$18,$00
-	db $01,$1d,$00
+	subentry $01, $0b, 0
+	subentry $01, $11, 0
+	subentry $01, $18, 0
+	subentry $01, $1d, 0
 
 Subanimation0c:
 	db $43
-	db $0c,$20,$00
-	db $0c,$21,$00
-	db $0c,$23,$00
+	subentry $0c, $20, 0
+	subentry $0c, $21, 0
+	subentry $0c, $23, 0
 
 Subanimation0d:
 	db $46
-	db $0c,$20,$02
-	db $0c,$15,$00
-	db $0c,$21,$02
-	db $0c,$17,$00
-	db $0c,$23,$02
-	db $0c,$19,$00
+	subentry $0c, $20, 2
+	subentry $0c, $15, 0
+	subentry $0c, $21, 2
+	subentry $0c, $17, 0
+	subentry $0c, $23, 2
+	subentry $0c, $19, 0
 
 Subanimation0e:
 	db $49
-	db $0c,$20,$02
-	db $0c,$15,$02
-	db $0c,$07,$00
-	db $0c,$21,$02
-	db $0c,$17,$02
-	db $0c,$09,$00
-	db $0c,$23,$02
-	db $0c,$19,$02
-	db $0c,$0c,$00
+	subentry $0c, $20, 2
+	subentry $0c, $15, 2
+	subentry $0c, $07, 0
+	subentry $0c, $21, 2
+	subentry $0c, $17, 2
+	subentry $0c, $09, 0
+	subentry $0c, $23, 2
+	subentry $0c, $19, 2
+	subentry $0c, $0c, 0
 
 Subanimation1f:
 	db $85
-	db $0c,$30,$03
-	db $0c,$40,$03
-	db $0c,$41,$03
-	db $0c,$42,$03
-	db $0c,$21,$00
+	subentry $0c, $30, 3
+	subentry $0c, $40, 3
+	subentry $0c, $41, 3
+	subentry $0c, $42, 3
+	subentry $0c, $21, 0
 
 Subanimation2e:
 	db $2e
-	db $18,$43,$02
-	db $75,$52,$04
-	db $19,$43,$02
-	db $75,$63,$04
-	db $1a,$43,$02
-	db $75,$4d,$04
-	db $1b,$43,$02
-	db $75,$97,$04
-	db $1c,$43,$02
-	db $75,$98,$04
-	db $1d,$43,$02
-	db $75,$58,$04
-	db $1e,$43,$02
-	db $75,$1b,$00
+	subentry $18, $43, 2
+	subentry $75, $52, 4
+	subentry $19, $43, 2
+	subentry $75, $63, 4
+	subentry $1a, $43, 2
+	subentry $75, $4d, 4
+	subentry $1b, $43, 2
+	subentry $75, $97, 4
+	subentry $1c, $43, 2
+	subentry $75, $98, 4
+	subentry $1d, $43, 2
+	subentry $75, $58, 4
+	subentry $1e, $43, 2
+	subentry $75, $1b, 0
 
 Subanimation2f:
 	db $44
-	db $1f,$24,$00
-	db $20,$20,$00
-	db $21,$1a,$00
-	db $22,$15,$00
+	subentry $1f, $24, 0
+	subentry $20, $20, 0
+	subentry $21, $1a, 0
+	subentry $22, $15, 0
 
 Subanimation30:
 	db $52
-	db $23,$00,$02
-	db $23,$02,$02
-	db $23,$04,$00
-	db $23,$07,$02
-	db $23,$02,$02
-	db $23,$04,$00
-	db $23,$0e,$02
-	db $23,$02,$02
-	db $23,$0c,$00
-	db $25,$07,$00
-	db $25,$0e,$00
-	db $25,$15,$00
-	db $24,$24,$02
-	db $23,$1c,$02
-	db $23,$23,$00
-	db $23,$21,$02
-	db $24,$28,$00
-	db $24,$28,$00
+	subentry $23, $00, 2
+	subentry $23, $02, 2
+	subentry $23, $04, 0
+	subentry $23, $07, 2
+	subentry $23, $02, 2
+	subentry $23, $04, 0
+	subentry $23, $0e, 2
+	subentry $23, $02, 2
+	subentry $23, $0c, 0
+	subentry $25, $07, 0
+	subentry $25, $0e, 0
+	subentry $25, $15, 0
+	subentry $24, $24, 2
+	subentry $23, $1c, 2
+	subentry $23, $23, 0
+	subentry $23, $21, 2
+	subentry $24, $28, 0
+	subentry $24, $28, 0
 
 Subanimation0f:
 	db $4c
-	db $26,$0e,$02
-	db $26,$16,$02
-	db $26,$1c,$00
-	db $27,$0e,$02
-	db $27,$16,$02
-	db $27,$1c,$00
-	db $28,$0e,$02
-	db $28,$16,$02
-	db $28,$1c,$00
-	db $29,$0e,$02
-	db $29,$16,$02
-	db $29,$1c,$00
+	subentry $26, $0e, 2
+	subentry $26, $16, 2
+	subentry $26, $1c, 0
+	subentry $27, $0e, 2
+	subentry $27, $16, 2
+	subentry $27, $1c, 0
+	subentry $28, $0e, 2
+	subentry $28, $16, 2
+	subentry $28, $1c, 0
+	subentry $29, $0e, 2
+	subentry $29, $16, 2
+	subentry $29, $1c, 0
 
 Subanimation16:
 	db $4c
-	db $2a,$05,$00
-	db $2b,$05,$02
-	db $2b,$0c,$02
-	db $2a,$11,$04
-	db $2b,$11,$02
-	db $2b,$17,$02
-	db $2a,$1b,$04
-	db $2b,$1b,$02
-	db $2b,$20,$02
-	db $2a,$2f,$04
-	db $2c,$00,$02
-	db $2c,$00,$00
+	subentry $2a, $05, 0
+	subentry $2b, $05, 2
+	subentry $2b, $0c, 2
+	subentry $2a, $11, 4
+	subentry $2b, $11, 2
+	subentry $2b, $17, 2
+	subentry $2a, $1b, 4
+	subentry $2b, $1b, 2
+	subentry $2b, $20, 2
+	; Keep the final complete Cut head in its own OAM slots.  Mode 3 advances
+	; the destination after the normal delay, so the following off-screen $2c
+	; cleanup frames cannot overwrite half of FrameBlock2a.
+	subentry $2a, $2f, 3
+	subentry $2c, $00, 2
+	subentry $2c, $00, 0
 
 Subanimation10:
 	db $88
-	db $2d,$44,$00
-	db $2e,$45,$00
-	db $2d,$46,$00
-	db $2e,$47,$00
-	db $2d,$48,$00
-	db $2e,$49,$00
-	db $2d,$2f,$00
-	db $2e,$1a,$00
+	subentry $2d, $44, 0
+	subentry $2e, $45, 0
+	subentry $2d, $46, 0
+	subentry $2e, $47, 0
+	subentry $2d, $48, 0
+	subentry $2e, $49, 0
+	subentry $2d, $2f, 0
+	subentry $2e, $1a, 0
 
 Subanimation31:
 	db $2a
-	db $2f,$46,$00
-	db $2f,$4a,$00
-	db $2f,$4b,$00
-	db $2f,$4c,$00
-	db $2f,$4d,$00
-	db $2f,$4e,$00
-	db $2f,$4f,$00
-	db $2f,$50,$00
-	db $2f,$2e,$00
-	db $2f,$51,$00
+	subentry $2f, $46, 0
+	subentry $2f, $4a, 0
+	subentry $2f, $4b, 0
+	subentry $2f, $4c, 0
+	subentry $2f, $4d, 0
+	subentry $2f, $4e, 0
+	subentry $2f, $4f, 0
+	subentry $2f, $50, 0
+	subentry $2f, $2e, 0
+	subentry $2f, $51, 0
 
 Subanimation13:
 	db $86
-	db $30,$31,$00
-	db $30,$32,$00
-	db $30,$92,$00
-	db $30,$0e,$00
-	db $30,$0f,$00
-	db $30,$10,$00
+	subentry $30, $31, 0
+	subentry $30, $32, 0
+	subentry $30, $92, 0
+	subentry $30, $0e, 0
+	subentry $30, $0f, 0
+	subentry $30, $10, 0
 
 Subanimation14:
 	db $49
-	db $30,$10,$00
-	db $30,$10,$03
-	db $31,$1c,$04
-	db $31,$21,$04
-	db $31,$26,$00
-	db $30,$10,$02
-	db $31,$1d,$04
-	db $31,$22,$04
-	db $31,$27,$00
+	subentry $30, $10, 0
+	subentry $30, $10, 3
+	subentry $31, $1c, 4
+	subentry $31, $21, 4
+	subentry $31, $26, 0
+	subentry $30, $10, 2
+	subentry $31, $1d, 4
+	subentry $31, $22, 4
+	subentry $31, $27, 0
 
 Subanimation41:
 	db $85
-	db $03,$31,$00
-	db $03,$32,$00
-	db $03,$92,$00
-	db $03,$0e,$00
-	db $03,$10,$00
+	subentry $03, $31, 0
+	subentry $03, $32, 0
+	subentry $03, $92, 0
+	subentry $03, $0e, 0
+	subentry $03, $10, 0
 
 Subanimation42:
 	db $43
-	db $48,$08,$00
-	db $49,$08,$00
-	db $5a,$08,$00
+	subentry $48, $08, 0
+	subentry $49, $08, 0
+	subentry $5a, $08, 0
 
 Subanimation15:
 	db $22
-	db $35,$52,$00
-	db $35,$53,$00
+	subentry $35, $52, 0
+	subentry $35, $53, 0
 
 Subanimation17:
 	db $44
-	db $36,$54,$00
-	db $36,$55,$00
-	db $37,$56,$00
-	db $37,$57,$00
+	subentry $36, $54, 0
+	subentry $36, $55, 0
+	subentry $37, $56, 0
+	subentry $37, $57, 0
 
 Subanimation18:
 	db $a4
-	db $36,$54,$00
-	db $36,$55,$00
-	db $37,$56,$00
-	db $37,$57,$00
+	subentry $36, $54, 0
+	subentry $36, $55, 0
+	subentry $37, $56, 0
+	subentry $37, $57, 0
 
 Subanimation40:
 	db $46
-	db $17,$54,$00
-	db $17,$55,$00
-	db $17,$0e,$00
-	db $17,$56,$00
-	db $17,$57,$00
-	db $17,$13,$00
+	subentry $17, $54, 0
+	subentry $17, $55, 0
+	subentry $17, $0e, 0
+	subentry $17, $56, 0
+	subentry $17, $57, 0
+	subentry $17, $13, 0
 
 Subanimation19:
 	db $8c
-	db $38,$31,$00
-	db $39,$31,$00
-	db $38,$32,$00
-	db $39,$32,$00
-	db $38,$92,$00
-	db $39,$92,$00
-	db $38,$0e,$00
-	db $39,$0e,$00
-	db $38,$0f,$00
-	db $39,$0f,$00
-	db $38,$10,$00
-	db $39,$10,$00
+	subentry $38, $31, 0
+	subentry $39, $31, 0
+	subentry $38, $32, 0
+	subentry $39, $32, 0
+	subentry $38, $92, 0
+	subentry $39, $92, 0
+	subentry $38, $0e, 0
+	subentry $39, $0e, 0
+	subentry $38, $0f, 0
+	subentry $39, $0f, 0
+	subentry $38, $10, 0
+	subentry $39, $10, 0
 
 Subanimation1a:
 	db $50
-	db $3a,$08,$00
-	db $3b,$08,$00
-	db $3c,$08,$00
-	db $3d,$08,$00
-	db $3e,$08,$00
-	db $3f,$08,$00
-	db $3e,$08,$00
-	db $3f,$08,$00
-	db $3a,$0b,$00
-	db $3b,$0b,$00
-	db $3c,$0b,$00
-	db $3d,$0b,$00
-	db $3e,$0b,$00
-	db $3f,$0b,$00
-	db $3e,$0b,$00
-	db $3f,$0b,$00
+	subentry $3a, $08, 0
+	subentry $3b, $08, 0
+	subentry $3c, $08, 0
+	subentry $3d, $08, 0
+	subentry $3e, $08, 0
+	subentry $3f, $08, 0
+	subentry $3e, $08, 0
+	subentry $3f, $08, 0
+	subentry $3a, $0b, 0
+	subentry $3b, $0b, 0
+	subentry $3c, $0b, 0
+	subentry $3d, $0b, 0
+	subentry $3e, $0b, 0
+	subentry $3f, $0b, 0
+	subentry $3e, $0b, 0
+	subentry $3f, $0b, 0
 
 Subanimation1b:
 	db $84
-	db $40,$31,$00
-	db $40,$32,$00
-	db $40,$92,$00
-	db $40,$15,$00
+	subentry $40, $31, 0
+	subentry $40, $32, 0
+	subentry $40, $92, 0
+	subentry $40, $15, 0
 
 Subanimation1c:
 	db $43
-	db $41,$58,$00
-	db $41,$59,$00
-	db $41,$21,$00
+	subentry $41, $58, 0
+	subentry $41, $59, 0
+	subentry $41, $21, 0
 
 Subanimation1d:
 	db $af
-	db $24,$9a,$00
-	db $23,$1b,$02
-	db $24,$22,$00
-	db $23,$16,$02
-	db $23,$1d,$02
-	db $24,$98,$00
-	db $25,$2c,$04
-	db $25,$2a,$04
-	db $25,$99,$04
-	db $25,$62,$04
-	db $25,$99,$04
-	db $25,$62,$04
-	db $25,$99,$04
-	db $25,$62,$04
-	db $25,$99,$03
+	subentry $24, $9a, 0
+	subentry $23, $1b, 2
+	subentry $24, $22, 0
+	subentry $23, $16, 2
+	subentry $23, $1d, 2
+	subentry $24, $98, 0
+	subentry $25, $2c, 4
+	subentry $25, $2a, 4
+	subentry $25, $99, 4
+	subentry $25, $62, 4
+	subentry $25, $99, 4
+	subentry $25, $62, 4
+	subentry $25, $99, 4
+	subentry $25, $62, 4
+	subentry $25, $99, 3
 
 Subanimation1e:
 	db $01
-	db $25,$75,$00
+	subentry $25, $75, 0
 
 Subanimation20:
 	db $42
-	db $42,$07,$00
-	db $43,$07,$00
+	subentry $42, $07, 0
+	subentry $43, $07, 0
 
+; ANM-5.61.12: keep the original 40 -> 24 -> 8 contraction beats while
+; tightening their delay so the first pull remains deliberate instead of drifting.
 Subanimation21:
 	db $43
-	db $44,$00,$00
-	db $45,$08,$00
-	db $46,$10,$02
+	subentry $44, $00, 0
+	subentry $45, $08, 0
+	subentry $46, $10, 2
 
 Subanimation22:
 	db $8b
-	db $47,$10,$00
-	db $47,$56,$00
-	db $47,$07,$00
-	db $47,$aa,$00
-	db $47,$ab,$00
-	db $47,$ac,$00
-	db $47,$ad,$00
-	db $47,$ae,$00
-	db $47,$af,$00
-	db $47,$89,$00
-	db $47,$b0,$00
+	subentry $47, $10, 0
+	subentry $47, $56, 0
+	subentry $47, $07, 0
+	subentry $47, $aa, 0
+	subentry $47, $ab, 0
+	subentry $47, $ac, 0
+	subentry $47, $ad, 0
+	subentry $47, $ae, 0
+	subentry $47, $af, 0
+	subentry $47, $89, 0
+	subentry $47, $b0, 0
 
 Subanimation2d:
 	db $26
-	db $44,$64,$00
-	db $45,$65,$00
-	db $46,$66,$00
-	db $47,$66,$00
-	db $47,$66,$00
-	db $47,$66,$00
+	subentry $44, $64, 0
+	subentry $45, $65, 0
+	subentry $46, $66, 0
+	subentry $47, $66, 0
+	subentry $47, $66, 0
+	subentry $47, $66, 0
 
+; Draining Kiss owns subanimation $39: seven heart anchors.
+; The final wave is adjusted in the dedicated OAM renderer before Absorb.
 Subanimation39:
-	db $61
-	db $47,$67,$00
+	db $67
+	subentry $17, $30, 0
+	subentry $17, $39, 0
+	subentry $17, $3a, 0
+	subentry $17, $3b, 0
+	subentry $17, $3c, 0
+	subentry $17, $3d, 0
+	subentry $17, $3e, 0
 
 Subanimation4e:
 	db $41
-	db $71,$0f,$03
+	subentry $71, $0f, 3
 
 Subanimation4f:
 	db $47
-	db $71,$0f,$00
-	db $71,$08,$00
-	db $71,$01,$00
-	db $71,$95,$00
-	db $72,$95,$00
-	db $73,$95,$00
-	db $74,$95,$00
+	subentry $71, $0f, 0
+	subentry $71, $08, 0
+	subentry $71, $01, 0
+	subentry $71, $95, 0
+	subentry $72, $95, 0
+	subentry $73, $95, 0
+	subentry $74, $95, 0
 
 Subanimation50:
 	db $48
-	db $74,$95,$00
-	db $73,$95,$00
-	db $72,$95,$00
-	db $71,$95,$00
-	db $71,$01,$00
-	db $71,$08,$00
-	db $71,$0f,$00
-	db $71,$16,$00
+	subentry $74, $95, 0
+	subentry $73, $95, 0
+	subentry $72, $95, 0
+	subentry $71, $95, 0
+	subentry $71, $01, 0
+	subentry $71, $08, 0
+	subentry $71, $0f, 0
+	subentry $71, $16, 0
 
 Subanimation29:
 	db $5d
-	db $48,$0f,$00
-	db $4a,$68,$03
-	db $4b,$2a,$03
-	db $49,$0f,$00
-	db $4a,$68,$03
-	db $4b,$2a,$00
-	db $4c,$6a,$03
-	db $4d,$69,$03
-	db $49,$6b,$00
-	db $4c,$6a,$03
-	db $4d,$69,$00
-	db $4a,$68,$03
-	db $4b,$2a,$03
-	db $49,$6c,$00
-	db $4a,$68,$03
-	db $4b,$2a,$00
-	db $4c,$6a,$03
-	db $4d,$69,$03
-	db $49,$6d,$00
-	db $4c,$6a,$03
-	db $4d,$2a,$00
-	db $4a,$68,$03
-	db $4b,$2a,$03
-	db $49,$0f,$00
-	db $4a,$68,$03
-	db $4b,$2a,$00
-	db $4c,$6a,$03
-	db $4d,$2a,$03
-	db $49,$6b,$00
+	subentry $48, $0f, 0
+	subentry $4a, $68, 3
+	subentry $4b, $2a, 3
+	subentry $49, $0f, 0
+	subentry $4a, $68, 3
+	subentry $4b, $2a, 0
+	subentry $4c, $6a, 3
+	subentry $4d, $69, 3
+	subentry $49, $6b, 0
+	subentry $4c, $6a, 3
+	subentry $4d, $69, 0
+	subentry $4a, $68, 3
+	subentry $4b, $2a, 3
+	subentry $49, $6c, 0
+	subentry $4a, $68, 3
+	subentry $4b, $2a, 0
+	subentry $4c, $6a, 3
+	subentry $4d, $69, 3
+	subentry $49, $6d, 0
+	subentry $4c, $6a, 3
+	subentry $4d, $2a, 0
+	subentry $4a, $68, 3
+	subentry $4b, $2a, 3
+	subentry $49, $0f, 0
+	subentry $4a, $68, 3
+	subentry $4b, $2a, 0
+	subentry $4c, $6a, 3
+	subentry $4d, $2a, 3
+	subentry $49, $6b, 0
 
 Subanimation2a:
 	db $44
-	db $4e,$2b,$00
-	db $4f,$2b,$00
-	db $50,$2b,$00
-	db $50,$2b,$00
+	subentry $4e, $2b, 0
+	subentry $4f, $2b, 0
+	subentry $50, $2b, 0
+	subentry $50, $2b, 0
 
 Subanimation23:
 	db $42
-	db $51,$2d,$00
-	db $51,$6e,$00
+	subentry $51, $2d, 0
+	subentry $51, $6e, 0
+
+; ANM-5.61.40: Guillotine final close. Reuse FrameBlock51's left/right blade
+; art and progressively move both halves toward the target center.
+Subanimation56:
+	db $44
+	subentry $51, $2d, 0
+	subentry $7b, $2d, 0
+	subentry $7c, $2d, 0
+	subentry $7d, $2d, 0
+
+; ANM-5.61.40: Crabhammer-only taller first water sweep. Pair each original
+; FrameBlock0C anchor with a matching Y-3 copy without changing shared sweep data
+; or animation gfx.
+Subanimation57:
+	db $46
+	subentry $0c, $20, 2
+	subentry $0c, $b1, 0
+	subentry $0c, $21, 2
+	subentry $0c, $b2, 0
+	subentry $0c, $23, 2
+	subentry $0c, $b3, 0
+
+; ANM-5.61.40: Crabhammer-only taller second water sweep. Each four-entry beat
+; keeps the upper/lower copies plus one Y-3 copy in OAM, then uses the final
+; mode-0 copy for the original six-frame hold and cleanup.
+Subanimation58:
+	db $4c
+	subentry $0c, $15, 2
+	subentry $0c, $b4, 2
+	subentry $0c, $20, 2
+	subentry $0c, $b1, 0
+	subentry $0c, $17, 2
+	subentry $0c, $b5, 2
+	subentry $0c, $21, 2
+	subentry $0c, $b2, 0
+	subentry $0c, $19, 2
+	subentry $0c, $b6, 2
+	subentry $0c, $23, 2
+	subentry $0c, $b3, 0
+
+; ANM-5.62.09: delay-3 keyframes to one position per VBlank. Every original key remains at
+; the same 3-frame boundary, so total timing and route are unchanged; only the
+; in-between motion and Gold-style spin are now continuous. Type 4 keeps the
+; original enemy-side reverse traversal.
+Subanimation59:
+	db $8c ; type 4, 12 entries = original 4 keys * 3 VBlanks
+	subentry $7e, $40, 0
+	subentry $7f, $b7, 0
+	subentry $7e, $b8, 0
+	subentry $7f, $41, 0
+	subentry $7e, $b9, 0
+	subentry $7f, $ba, 0
+	subentry $7e, $42, 0
+	subentry $7f, $bb, 0
+	subentry $7e, $bc, 0
+	subentry $7f, $21, 0
+	subentry $7e, $21, 0
+	subentry $7f, $21, 0
+
+Subanimation5a:
+	db $8f ; type 4, 15 entries = original 5 keys * 3 VBlanks
+	subentry $7e, $10, 0
+	subentry $7f, $bd, 0
+	subentry $7e, $be, 0
+	subentry $7f, $0e, 0
+	subentry $7e, $bf, 0
+	subentry $7f, $c0, 0
+	subentry $7e, $92, 0
+	subentry $7f, $c1, 0
+	subentry $7e, $c2, 0
+	subentry $7f, $32, 0
+	subentry $7e, $c3, 0
+	subentry $7f, $c4, 0
+	subentry $7e, $31, 0
+	subentry $7f, $31, 0
+	subentry $7e, $31, 0
 
 Subanimation24:
 	db $a2
-	db $51,$2d,$00
-	db $51,$6e,$00
+	subentry $51, $2d, 0
+	subentry $51, $6e, 0
 
 Subanimation25:
 	db $62
-	db $52,$71,$00
-	db $52,$72,$00
+	subentry $52, $71, 0
+	subentry $52, $72, 0
 
 Subanimation26:
 	db $02
-	db $52,$01,$00
-	db $52,$2c,$00
+	subentry $52, $01, 0
+	subentry $52, $2c, 0
 
 Subanimation3a:
 	db $63
-	db $53,$71,$00
-	db $53,$7f,$00
-	db $53,$81,$00
+	subentry $53, $71, 0
+	subentry $53, $7f, 0
+	subentry $53, $81, 0
 
 Subanimation3b:
 	db $03
-	db $53,$01,$00
-	db $53,$15,$00
-	db $53,$2c,$00
+	subentry $53, $01, 0
+	subentry $53, $15, 0
+	subentry $53, $2c, 0
 
 Subanimation27:
 	db $a2
-	db $54,$01,$00
-	db $54,$2c,$00
+	subentry $54, $01, 0
+	subentry $54, $2c, 0
 
 Subanimation28:
 	db $23
-	db $55,$73,$03
-	db $56,$73,$03
-	db $57,$73,$00
+	subentry $55, $73, 3
+	subentry $56, $73, 3
+	subentry $57, $73, 0
 
+; Reserved unused subanimation slot $32: currently has no runtime references.
+; Safe to replace with a future custom subanimation; keep this pointer ID stable.
 Subanimation32:
 	db $63
-	db $47,$74,$00
-	db $47,$43,$00
-	db $47,$75,$00
+	subentry $47, $74, 0
+	subentry $47, $43, 0
+	subentry $47, $75, 0
 
 Subanimation33:
 	db $26
-	db $58,$76,$00
-	db $34,$76,$00
-	db $58,$76,$00
-	db $34,$76,$00
-	db $58,$76,$00
-	db $34,$76,$00
+	subentry $58, $76, 0
+	subentry $34, $76, 0
+	subentry $58, $76, 0
+	subentry $34, $76, 0
+	subentry $58, $76, 0
+	subentry $34, $76, 0
 
+; Reserved unused subanimation slot $3C: currently has no runtime references.
+; Safe to replace with a future custom subanimation; keep this pointer ID stable.
 Subanimation3c:
-	db $67
-	db $59,$79,$03
-	db $59,$7b,$03
-	db $59,$77,$03
-	db $59,$7a,$03
-	db $59,$78,$03
-	db $59,$7c,$03
-	db $59,$76,$00
+	; Shadow Ball V7-style short poof: FrameBlocks 06-09 only.
+	; Type 2 mirrors the poof for an enemy attacker, matching Subanimation0a.
+	db $44
+	subentry $06, $1b, 0
+	subentry $07, $1b, 0
+	subentry $08, $36, 0
+	subentry $09, $36, 0
 
+; Reserved unused subanimation slot $3D: currently has no runtime references.
+; Safe to replace with a future custom subanimation; keep this pointer ID stable.
 Subanimation3d:
 	db $08
-	db $3a,$4d,$00
-	db $3b,$4d,$00
-	db $3c,$4d,$00
-	db $3d,$4d,$00
-	db $3e,$4d,$00
-	db $3f,$4d,$00
-	db $3e,$4d,$00
-	db $3f,$4d,$00
+	subentry $3a, $4d, 0
+	subentry $3b, $4d, 0
+	subentry $3c, $4d, 0
+	subentry $3d, $4d, 0
+	subentry $3e, $4d, 0
+	subentry $3f, $4d, 0
+	subentry $3e, $4d, 0
+	subentry $3f, $4d, 0
 
 Subanimation34:
 	db $35
-	db $48,$7d,$00
-	db $49,$7d,$00
-	db $5a,$7d,$00
-	db $48,$30,$00
-	db $49,$30,$00
-	db $5a,$30,$00
-	db $48,$7e,$00
-	db $49,$7e,$00
-	db $5a,$7e,$00
-	db $48,$7f,$00
-	db $49,$7f,$00
-	db $5a,$7f,$00
-	db $48,$80,$00
-	db $49,$80,$00
-	db $5a,$80,$00
-	db $48,$81,$00
-	db $49,$81,$00
-	db $5a,$81,$00
-	db $48,$82,$00
-	db $49,$82,$00
-	db $5a,$82,$00
+	subentry $48, $7d, 0
+	subentry $49, $7d, 0
+	subentry $5a, $7d, 0
+	subentry $48, $30, 0
+	subentry $49, $30, 0
+	subentry $5a, $30, 0
+	subentry $48, $7e, 0
+	subentry $49, $7e, 0
+	subentry $5a, $7e, 0
+	subentry $48, $7f, 0
+	subentry $49, $7f, 0
+	subentry $5a, $7f, 0
+	subentry $48, $80, 0
+	subentry $49, $80, 0
+	subentry $5a, $80, 0
+	subentry $48, $81, 0
+	subentry $49, $81, 0
+	subentry $5a, $81, 0
+	subentry $48, $82, 0
+	subentry $49, $82, 0
+	subentry $5a, $82, 0
 
 Subanimation35:
 	db $24
-	db $5b,$83,$03
-	db $5c,$84,$03
-	db $5d,$85,$03
-	db $5e,$09,$00
+	subentry $5b, $83, 3
+	subentry $5c, $84, 3
+	subentry $5d, $85, 3
+	subentry $5e, $09, 0
 
 Subanimation36:
 	db $48
-	db $5f,$2a,$00
-	db $5f,$00,$00
-	db $60,$2a,$00
-	db $60,$00,$00
-	db $61,$2a,$00
-	db $61,$00,$00
-	db $62,$2a,$00
-	db $62,$00,$00
+	subentry $5f, $2a, 0
+	subentry $5f, $00, 0
+	subentry $60, $2a, 0
+	subentry $60, $00, 0
+	subentry $61, $2a, 0
+	subentry $61, $00, 0
+	subentry $62, $2a, 0
+	subentry $62, $00, 0
 
 Subanimation37:
 	db $2a
-	db $63,$89,$00
-	db $64,$75,$00
-	db $63,$76,$00
-	db $65,$0d,$00
-	db $65,$86,$00
-	db $65,$12,$00
-	db $65,$87,$00
-	db $65,$17,$00
-	db $65,$88,$00
-	db $65,$1a,$00
+	subentry $63, $89, 0
+	subentry $64, $75, 0
+	subentry $63, $76, 0
+	subentry $65, $0d, 0
+	subentry $65, $86, 0
+	subentry $65, $12, 0
+	subentry $65, $87, 0
+	subentry $65, $17, 0
+	subentry $65, $88, 0
+	subentry $65, $1a, 0
 
 Subanimation38:
 	db $50
-	db $66,$8a,$00
-	db $66,$33,$00
-	db $66,$2e,$00
-	db $67,$24,$03
-	db $66,$01,$04
-	db $66,$10,$04
-	db $66,$1d,$04
-	db $67,$28,$03
-	db $66,$2a,$04
-	db $66,$0e,$04
-	db $66,$1b,$04
-	db $67,$26,$03
-	db $66,$03,$04
-	db $66,$12,$04
-	db $66,$1e,$04
-	db $67,$29,$00
+	subentry $66, $8a, 0
+	subentry $66, $33, 0
+	subentry $66, $2e, 0
+	subentry $67, $24, 3
+	subentry $66, $01, 4
+	subentry $66, $10, 4
+	subentry $66, $1d, 4
+	subentry $67, $28, 3
+	subentry $66, $2a, 4
+	subentry $66, $0e, 4
+	subentry $66, $1b, 4
+	subentry $67, $26, 3
+	subentry $66, $03, 4
+	subentry $66, $12, 4
+	subentry $66, $1e, 4
+	subentry $67, $29, 0
 
 Subanimation3e:
 	db $92
-	db $02,$31,$00
-	db $34,$31,$00
-	db $02,$31,$00
-	db $02,$32,$00
-	db $34,$32,$00
-	db $02,$32,$00
-	db $02,$92,$00
-	db $34,$92,$00
-	db $02,$92,$00
-	db $02,$0e,$00
-	db $34,$0e,$00
-	db $02,$0e,$00
-	db $02,$0f,$00
-	db $34,$0f,$00
-	db $02,$0f,$00
-	db $02,$10,$00
-	db $34,$10,$00
-	db $02,$10,$00
+	subentry $02, $31, 0
+	subentry $34, $31, 0
+	subentry $02, $31, 0
+	subentry $02, $32, 0
+	subentry $34, $32, 0
+	subentry $02, $32, 0
+	subentry $02, $92, 0
+	subentry $34, $92, 0
+	subentry $02, $92, 0
+	subentry $02, $0e, 0
+	subentry $34, $0e, 0
+	subentry $02, $0e, 0
+	subentry $02, $0f, 0
+	subentry $34, $0f, 0
+	subentry $02, $0f, 0
+	subentry $02, $10, 0
+	subentry $34, $10, 0
+	subentry $02, $10, 0
 
 Subanimation3f:
 	db $72
-	db $68,$4b,$00
-	db $68,$8c,$00
-	db $68,$20,$00
-	db $68,$1c,$00
-	db $68,$19,$00
-	db $68,$14,$00
-	db $68,$76,$00
-	db $68,$8d,$00
-	db $68,$15,$00
-	db $68,$10,$00
-	db $68,$0c,$00
-	db $68,$06,$00
-	db $68,$8e,$00
-	db $68,$8f,$00
-	db $68,$90,$00
-	db $68,$26,$00
-	db $68,$23,$00
-	db $68,$1f,$00
+	subentry $68, $4b, 0
+	subentry $68, $8c, 0
+	subentry $68, $20, 0
+	subentry $68, $1c, 0
+	subentry $68, $19, 0
+	subentry $68, $14, 0
+	subentry $68, $76, 0
+	subentry $68, $8d, 0
+	subentry $68, $15, 0
+	subentry $68, $10, 0
+	subentry $68, $0c, 0
+	subentry $68, $06, 0
+	subentry $68, $8e, 0
+	subentry $68, $8f, 0
+	subentry $68, $90, 0
+	subentry $68, $26, 0
+	subentry $68, $23, 0
+	subentry $68, $1f, 0
 
 Subanimation44:
 	db $2c
-	db $69,$4b,$00
-	db $69,$8c,$00
-	db $69,$20,$00
-	db $69,$1c,$00
-	db $69,$19,$00
-	db $69,$14,$00
-	db $69,$76,$00
-	db $69,$8d,$00
-	db $69,$15,$00
-	db $69,$10,$00
-	db $69,$0c,$00
-	db $69,$06,$00
+	subentry $69, $4b, 0
+	subentry $69, $8c, 0
+	subentry $69, $20, 0
+	subentry $69, $1c, 0
+	subentry $69, $19, 0
+	subentry $69, $14, 0
+	subentry $69, $76, 0
+	subentry $69, $8d, 0
+	subentry $69, $15, 0
+	subentry $69, $10, 0
+	subentry $69, $0c, 0
+	subentry $69, $06, 0
 
 Subanimation43:
 	db $a3
-	db $6a,$07,$00
-	db $6b,$0f,$00
-	db $6c,$17,$00
+	subentry $6a, $07, 0
+	subentry $6b, $0f, 0
+	subentry $6c, $17, 0
 
 Subanimation45:
 	db $24
-	db $6d,$8b,$00
-	db $6d,$84,$00
-	db $6d,$63,$00
-	db $6d,$8c,$00
+	subentry $6d, $8b, 0
+	subentry $6d, $84, 0
+	subentry $6d, $63, 0
+	subentry $6d, $8c, 0
 
 Subanimation46:
 	db $26
-	db $6d,$8b,$00
-	db $6d,$84,$00
-	db $6d,$63,$00
-	db $6d,$8c,$00
-	db $6d,$0a,$00
-	db $6d,$89,$00
+	subentry $6d, $8b, 0
+	subentry $6d, $84, 0
+	subentry $6d, $63, 0
+	subentry $6d, $8c, 0
+	subentry $6d, $0a, 0
+	subentry $6d, $89, 0
 
 Subanimation47:
 	db $23
-	db $06,$82,$00
-	db $07,$82,$00
-	db $08,$96,$00
+	subentry $06, $82, 0
+	subentry $07, $82, 0
+	subentry $08, $96, 0
 
 Subanimation48:
 	db $06
-	db $03,$41,$04
-	db $03,$48,$04
-	db $04,$48,$04
-	db $03,$48,$04
-	db $05,$48,$04
-	db $03,$48,$03
+	subentry $03, $41, 4
+	subentry $03, $48, 4
+	subentry $04, $48, 4
+	subentry $03, $48, 4
+	subentry $05, $48, 4
+	subentry $03, $48, 3
 
 Subanimation49:
 	db $04
-	db $04,$48,$04
-	db $03,$48,$04
-	db $05,$48,$04
-	db $03,$48,$03
+	subentry $04, $48, 4
+	subentry $03, $48, 4
+	subentry $05, $48, 4
+	subentry $03, $48, 3
 
 Subanimation4a:
 	db $01
-	db $04,$84,$03
+	subentry $04, $84, 3
 
 Subanimation4b:
 	db $03
-	db $06,$72,$00
-	db $07,$72,$00
-	db $08,$72,$00
+	subentry $06, $72, 0
+	subentry $07, $72, 0
+	subentry $08, $72, 0
 
 Subanimation4c:
 	db $68
-	db $6f,$30,$00
-	db $6e,$30,$00
-	db $70,$30,$00
-	db $6e,$30,$00
-	db $6f,$30,$00
-	db $6e,$30,$00
-	db $70,$30,$00
-	db $6e,$30,$00
+	subentry $6f, $30, 0
+	subentry $6e, $30, 0
+	subentry $70, $30, 0
+	subentry $6e, $30, 0
+	subentry $6f, $30, 0
+	subentry $6e, $30, 0
+	subentry $70, $30, 0
+	subentry $6e, $30, 0
 
 Subanimation4d:
 	db $26
-	db $32,$4b,$00
-	db $33,$4f,$00
-	db $32,$20,$00
-	db $33,$16,$00
-	db $32,$19,$00
-	db $33,$0d,$00
+	subentry $32, $4b, 0
+	subentry $33, $4f, 0
+	subentry $32, $20, 0
+	subentry $33, $16, 0
+	subentry $32, $19, 0
+	subentry $33, $0d, 0
 
 Subanimation51:
 	db $a6
-	db $76,$1b,$00
-	db $34,$1b,$00
-	db $76,$1b,$00
-	db $34,$1b,$00
-	db $76,$1b,$00
-	db $34,$1b,$00
+	subentry $76, $1b, 0
+	subentry $34, $1b, 0
+	subentry $76, $1b, 0
+	subentry $34, $1b, 0
+	subentry $76, $1b, 0
+	subentry $34, $1b, 0
 
+; ANIM-5.62.85: Ruby-like screen-plane spinning is applied per displayed
+; frame by UpdatePayDayBounceCoinSpin. Keep the stock $52 bounce keys and
+; four-frame delays intact so the smoothed path remains backwards-compatible.
 Subanimation52:
 	db $47
-	db $77,$25,$00
-	db $77,$9b,$00
-	db $77,$1a,$00
-	db $77,$9c,$00
-	db $77,$2f,$00
-	db $77,$50,$00
-	db $77,$8c,$00
+	subentry $77, $25, 0
+	subentry $77, $9b, 0
+	subentry $77, $1a, 0
+	subentry $77, $9c, 0
+	subentry $77, $2f, 0
+	subentry $77, $50, 0
+	subentry $77, $8c, 0
 
 Subanimation53:
 	db $0c
-	db $78,$30,$00
-	db $78,$a2,$00
-	db $78,$93,$00
-	db $78,$61,$00
-	db $78,$73,$00
-	db $78,$a7,$00
-	db $78,$33,$00
-	db $78,$a8,$00
-	db $78,$0e,$00
-	db $78,$a9,$00
-	db $78,$34,$00
-	db $01,$9e,$00
+	subentry $78, $30, 0
+	subentry $78, $a2, 0
+	subentry $78, $93, 0
+	subentry $78, $61, 0
+	subentry $78, $73, 0
+	subentry $78, $a7, 0
+	subentry $78, $33, 0
+	subentry $78, $a8, 0
+	subentry $78, $0e, 0
+	subentry $78, $a9, 0
+	subentry $78, $34, 0
+	subentry $01, $9e, 0
 
 Subanimation54:
 	db $0b
-	db $79,$30,$00
-	db $79,$a2,$00
-	db $79,$93,$00
-	db $79,$61,$00
-	db $79,$73,$00
-	db $79,$a7,$00
-	db $79,$33,$00
-	db $79,$a8,$00
-	db $79,$0e,$00
-	db $79,$a9,$00
-	db $79,$34,$00
+	subentry $79, $30, 0
+	subentry $79, $a2, 0
+	subentry $79, $93, 0
+	subentry $79, $61, 0
+	subentry $79, $73, 0
+	subentry $79, $a7, 0
+	subentry $79, $33, 0
+	subentry $79, $a8, 0
+	subentry $79, $0e, 0
+	subentry $79, $a9, 0
+	subentry $79, $34, 0
+
+; Compact nonzero-mode coordinate table for 2-byte subanimation entries.
+; Entry byte 0: bit 7 marks a nonzero mode, bits 0-6 are FrameBlock ID.
+; Entry byte 1: mode-0 entries store BaseCoord ID directly. For marked entries,
+; bits 7-6 encode modes 2/3/4 as 1/2/3 and bits 5-0 index this table.
+; Shared BaseCoord table for nonzero-mode subentries.
+; IMPORTANT: append new coordinates only; do not reorder existing entries.
+; The subentry macro resolves raw BaseCoord values to these stable 6-bit indices.
+SubanimationCoordTable:
+	db $21,$03,$38,$20,$23,$15,$17,$19,$30,$40,$41,$42 ; indices 0-11
+	db $43,$52,$63,$4d,$97,$98,$58,$00,$02,$07,$0e,$24 ; indices 12-23
+	db $1c,$16,$05,$0c,$11,$1b,$2f,$10,$1d,$22,$2c,$2a ; indices 24-35
+	db $99,$62,$0f,$68,$6a,$69,$73,$83,$84,$85,$01,$28 ; indices 36-47
+	db $26,$12,$1e,$48 ; indices 48-51
+	db $b4,$b5,$b6 ; indices 52-54: Crabhammer upper Y-3 copies
+SubanimationCoordTableEnd:
+
+ASSERT SubanimationCoordTableEnd - SubanimationCoordTable == 55
+ASSERT SubanimationCoordTableEnd - SubanimationCoordTable <= $40
 
 FrameBlockPointers:
 	dw FrameBlock00
@@ -2329,6 +2690,12 @@ FrameBlockPointers:
 	dw FrameBlock77
 	dw FrameBlock78
 	dw FrameBlock79
+	dw PunchFrameBlock ; $7A - shared Punch family 16x16 contact object
+	dw GuillotineClampMid1FrameBlock ; $7B
+	dw GuillotineClampMid2FrameBlock ; $7C
+	dw GuillotineClampClosedFrameBlock ; $7D
+	dw GoldBoneFrameBlockA ; $7E - ANM-5.62.09
+	dw GoldBoneFrameBlockB ; $7F - ANM-5.62.09
 
 ; FrameBlock format is as follows:
 ; first byte = number of tiles in FrameBlock
@@ -2684,6 +3051,7 @@ FrameBlock22:
 	db $18,$30,$13,$20
 
 FrameBlock23:
+FrameBlock38: ; byte-identical frame block
 	db $04
 	db $00,$00,$0a,$00
 	db $00,$08,$0b,$00
@@ -2742,6 +3110,7 @@ FrameBlock29:
 	db $06,$12,$47,$00
 
 FrameBlock2a:
+FrameBlock30: ; byte-identical frame block
 	db $04
 	db $00,$00,$44,$00
 	db $00,$08,$44,$20
@@ -2785,13 +3154,6 @@ FrameBlock2f:
 	db $00,$08,$0d,$00
 	db $08,$00,$0c,$40
 	db $08,$08,$0d,$40
-
-FrameBlock30:
-	db $04
-	db $00,$00,$44,$00
-	db $00,$08,$44,$20
-	db $08,$00,$44,$40
-	db $08,$08,$44,$60
 
 FrameBlock31:
 	db $01
@@ -2843,13 +3205,6 @@ FrameBlock37:
 	db $00,$08,$00,$a0
 	db $08,$00,$11,$a0
 	db $08,$08,$10,$a0
-
-FrameBlock38:
-	db $04
-	db $00,$00,$0a,$00
-	db $00,$08,$0b,$00
-	db $08,$00,$1a,$00
-	db $08,$08,$1b,$00
 
 FrameBlock39:
 	db $04
@@ -2977,6 +3332,7 @@ FrameBlock46:
 	db $08,$08,$49,$00
 
 FrameBlock47:
+FrameBlock5b: ; byte-identical frame block
 	db $04
 	db $00,$00,$43,$00
 	db $00,$08,$43,$20
@@ -3213,13 +3569,6 @@ FrameBlock5a:
 	db $18,$10,$25,$60
 	db $18,$18,$24,$60
 
-FrameBlock5b:
-	db $04
-	db $00,$00,$43,$00
-	db $00,$08,$43,$20
-	db $08,$00,$43,$40
-	db $08,$08,$43,$60
-
 FrameBlock5c:
 	db $08
 	db $00,$00,$49,$00
@@ -3446,6 +3795,72 @@ FrameBlock79:
 	db $01
 	db $00,$00,$4e,$00
 
+; ANM-5.61.40: inward-closing variants of FrameBlock51. Tile $35 and all flip
+; attributes stay unchanged; only the left/right X offsets converge.
+GuillotineClampMid1FrameBlock:
+	db $08
+	db $00,$08,$35,$20
+	db $08,$08,$35,$40
+	db $10,$08,$35,$00
+	db $18,$08,$35,$60
+	db $00,$38,$35,$00
+	db $08,$38,$35,$60
+	db $10,$38,$35,$20
+	db $18,$38,$35,$40
+
+GuillotineClampMid2FrameBlock:
+	db $08
+	db $00,$10,$35,$20
+	db $08,$10,$35,$40
+	db $10,$10,$35,$00
+	db $18,$10,$35,$60
+	db $00,$30,$35,$00
+	db $08,$30,$35,$60
+	db $10,$30,$35,$20
+	db $18,$30,$35,$40
+
+GuillotineClampClosedFrameBlock:
+	db $08
+	db $00,$1c,$35,$20
+	db $08,$1c,$35,$40
+	db $10,$1c,$35,$00
+	db $18,$1c,$35,$60
+	db $00,$24,$35,$00
+	db $08,$24,$35,$60
+	db $10,$24,$35,$20
+	db $18,$24,$35,$40
+
+PunchFrameBlock:
+	; Shared Punch-family object: user-selected 20x20 shadow-ring fist centered in
+	; a 24x24 / 3x3 tile canvas.  The canvas stays smaller than Headbutt-class
+	; impact objects while giving type palettes enough interior shading to read.
+	db $09
+	db $04,$04,$46,$00
+	db $04,$0c,$47,$00
+	db $04,$14,$48,$00
+	db $0c,$04,$49,$00
+	db $0c,$0c,$4a,$00
+	db $0c,$14,$4b,$00
+	db $14,$04,$4c,$00
+	db $14,$0c,$4d,$00
+	db $14,$14,$4e,$00
+
+; ANM-5.62.09: Gold misc.png tiles $04/$05 are loaded as local tile IDs 0/1. The second
+; FrameBlock is the frameset's one-VBlank whole-object X flip.
+GoldBoneFrameBlockA:
+	db 4
+	db $00,$00,$00,$00
+	db $00,$08,$01,$00
+	db $08,$00,$01,OAM_HFLIP | OAM_VFLIP
+	db $08,$08,$00,OAM_HFLIP | OAM_VFLIP
+
+GoldBoneFrameBlockB:
+	db 4
+	db $00,$00,$01,OAM_HFLIP
+	db $00,$08,$00,OAM_HFLIP
+	db $08,$00,$00,OAM_VFLIP
+	db $08,$08,$01,OAM_VFLIP
+
 FrameBlockBaseCoords:
 	db $10,$68
 	db $10,$70
@@ -3624,6 +4039,46 @@ FrameBlockBaseCoords:
 	db $18,$4C
 	db $1C,$48
 	db $48,$28
+; ANM-5.61.40: Crabhammer-only Y-3 copies of the restored sweep anchors.
+; $B1-$B3 mirror the lower band ($38 -> $35); $B4-$B6 mirror the upper band
+; ($28 -> $25). X positions stay identical to the shared $0C/$0D sweep.
+CrabhammerLowerTallLeftBaseCoord:
+	db $35,$68
+CrabhammerLowerTallMidBaseCoord:
+	db $35,$78
+CrabhammerLowerTallRightBaseCoord:
+	db $35,$88
+CrabhammerUpperTallLeftBaseCoord:
+	db $25,$68
+CrabhammerUpperTallMidBaseCoord:
+	db $25,$78
+CrabhammerUpperTallRightBaseCoord:
+	db $25,$88
+ASSERT (CrabhammerLowerTallLeftBaseCoord - FrameBlockBaseCoords) / 2 == $b1
+ASSERT (CrabhammerLowerTallMidBaseCoord - FrameBlockBaseCoords) / 2 == $b2
+ASSERT (CrabhammerLowerTallRightBaseCoord - FrameBlockBaseCoords) / 2 == $b3
+ASSERT (CrabhammerUpperTallLeftBaseCoord - FrameBlockBaseCoords) / 2 == $b4
+ASSERT (CrabhammerUpperTallMidBaseCoord - FrameBlockBaseCoords) / 2 == $b5
+ASSERT (CrabhammerUpperTallRightBaseCoord - FrameBlockBaseCoords) / 2 == $b6
 
+; ANM-5.62.09: delay-3 bone keyframes. IDs $b7-$c4 are append-only so existing BaseCoord IDs
+; stay stable. Original anchors ($40/$41/$42/$21 and $10/$0e/$92/$32/$31) are
+; still used verbatim at every three-frame boundary.
+BoneTossInterp1BaseCoord: db $4d,$43 ; $b7: (77,67)
+BoneTossInterp2BaseCoord: db $4b,$49 ; $b8: (75,73)
+BoneTossInterp3BaseCoord: db $45,$57 ; $b9: (69,87)
+BoneTossInterp4BaseCoord: db $43,$5d ; $ba: (67,93)
+BoneTossInterp5BaseCoord: db $3d,$6b ; $bb: (61,107)
+BoneTossInterp6BaseCoord: db $3b,$71 ; $bc: (59,113)
+BoneRecoverInterp1BaseCoord: db $20,$73 ; $bd: (32,115)
+BoneRecoverInterp2BaseCoord: db $20,$6d ; $be: (32,109)
+BoneRecoverInterp3BaseCoord: db $23,$63 ; $bf: (35,99)
+BoneRecoverInterp4BaseCoord: db $25,$5d ; $c0: (37,93)
+BoneRecoverInterp5BaseCoord: db $2c,$53 ; $c1: (44,83)
+BoneRecoverInterp6BaseCoord: db $2f,$4d ; $c2: (47,77)
+BoneRecoverInterp7BaseCoord: db $38,$43 ; $c3: (56,67)
+BoneRecoverInterp8BaseCoord: db $3e,$3d ; $c4: (62,61)
+ASSERT (BoneTossInterp1BaseCoord - FrameBlockBaseCoords) / 2 == $b7
+ASSERT (BoneRecoverInterp8BaseCoord - FrameBlockBaseCoords) / 2 == $c4
 FrameBlock00:
 	db $00,$00

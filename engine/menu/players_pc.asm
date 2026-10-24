@@ -21,7 +21,7 @@ PlayerPCMenu:
 	ld [wCurrentMenuItem], a
 	ld hl, wFlags_0xcd60
 	set 5, [hl]
-	call LoadScreenTilesFromBuffer2
+	call LoadScreenTilesFromBuffer2DisableBGTransfer
 	coord hl, 0, 0
 	ld b, $8
 	ld c, $e
@@ -49,6 +49,9 @@ PlayerPCMenu:
 	ld [wPlayerMonNumber], a
 	ld hl, WhatDoYouWantText
 	call PrintText
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call Delay3
 	call HandleMenuInput
 	bit 1, a
 	jp nz, ExitPlayerPC
@@ -87,6 +90,7 @@ PlayerPCDeposit:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	ld [wWhichPokemon], a ; initial absolute list position
 	ld a, [wNumBagItems]
 	and a
 	jr nz, .loop
@@ -101,12 +105,24 @@ PlayerPCDeposit:
 	ld [wListPointer], a
 	ld a, h
 	ld [wListPointer + 1], a
+	callba RestoreItemListPosition
 	xor a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
 	ld [wListMenuID], a
 	call DisplayListMenuID
 	jp c, PlayerPCMenu
+	; HMs are progression-critical reusable machines. Keep them in the Bag so the
+	; player cannot strand a required field move by leaving its machine in the PC.
+	ld a, [wcf91]
+	call IsItemHM
+	jr nc, .notHM
+	ld a, SFX_DENIED
+	call PlaySoundWaitForCurrent
+	ld hl, HMItemCantBeStoredText
+	call PrintText
+	jp .loop
+.notHM
 	call IsKeyItem
 	ld a, 1
 	ld [wItemQuantity], a
@@ -127,8 +143,8 @@ PlayerPCDeposit:
 	call PrintText
 	jp .loop
 .roomAvailable
-	ld hl, wNumBagItems
-	call RemoveItemFromInventory
+	ld de, wNumBagItems
+	callba RemoveItemFromInventoryPreserveListState
 	call WaitForSoundToFinish
 	ld a, SFX_WITHDRAW_DEPOSIT
 	call PlaySound
@@ -141,6 +157,7 @@ PlayerPCWithdraw:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	ld [wWhichPokemon], a ; initial absolute list position
 	ld a, [wNumBoxItems]
 	and a
 	jr nz, .loop
@@ -155,6 +172,7 @@ PlayerPCWithdraw:
 	ld [wListPointer], a
 	ld a, h
 	ld [wListPointer + 1], a
+	callba RestoreItemListPosition
 	xor a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
@@ -181,8 +199,8 @@ PlayerPCWithdraw:
 	call PrintText
 	jp .loop
 .roomAvailable
-	ld hl, wNumBoxItems
-	call RemoveItemFromInventory
+	ld de, wNumBoxItems
+	callba RemoveItemFromInventoryPreserveListState
 	call WaitForSoundToFinish
 	ld a, SFX_WITHDRAW_DEPOSIT
 	call PlaySound
@@ -195,6 +213,7 @@ PlayerPCToss:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	ld [wWhichPokemon], a ; initial absolute list position
 	ld a, [wNumBoxItems]
 	and a
 	jr nz, .loop
@@ -209,17 +228,14 @@ PlayerPCToss:
 	ld [wListPointer], a
 	ld a, h
 	ld [wListPointer + 1], a
+	callba RestoreItemListPosition
 	xor a
 	ld [wPrintItemPrices], a
 	ld a, ITEMLISTMENU
 	ld [wListMenuID], a
-	push hl
 	call DisplayListMenuID
-	pop hl
 	jp c, PlayerPCMenu
-	push hl
 	call IsKeyItem
-	pop hl
 	ld a, 1
 	ld [wItemQuantity], a
 	ld a, [wIsKeyItem]
@@ -229,14 +245,13 @@ PlayerPCToss:
 	call IsItemHM
 	jr c, .next
 ; if it's not a key item, there can be more than one of the item
-	push hl
 	ld hl, TossHowManyText
 	call PrintText
 	call DisplayChooseQuantityMenu
-	pop hl
 	cp $ff
 	jp z, .loop
 .next
+	ld hl, wNumBoxItems
 	call TossItem ; disallows tossing key items
 	jp .loop
 
@@ -257,6 +272,11 @@ WhatDoYouWantText:
 WhatToDepositText:
 	TX_FAR _WhatToDepositText
 	db "@"
+
+HMItemCantBeStoredText:
+	text "HMs can't be"
+	line "stored via PC."
+	prompt
 
 DepositHowManyText:
 	TX_FAR _DepositHowManyText

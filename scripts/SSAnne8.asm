@@ -1,16 +1,8 @@
 SSAnne8Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SSAnne8TrainerHeader0
-	ld de, SSAnne8ScriptPointers
-	ld a, [wSSAnne8CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSSAnne8CurScript], a
-	ret
-
-SSAnne8ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wSSAnne8CurScript
+	jp Bank18RunStandardTrainerMapScript
 
 SSAnne8TextPointers:
 	dw SSAnne8Text1
@@ -32,7 +24,6 @@ SSAnne8TrainerHeader0:
 	dw SSAnne8BattleText1 ; TextBeforeBattle
 	dw SSAnne8AfterBattleText1 ; TextAfterBattle
 	dw SSAnne8EndBattleText1 ; TextEndBattle
-	dw SSAnne8EndBattleText1 ; TextEndBattle
 
 SSAnne8TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_8_TRAINER_1
@@ -40,7 +31,6 @@ SSAnne8TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SS_ANNE_8_TRAINER_1
 	dw SSAnne8BattleText2 ; TextBeforeBattle
 	dw SSAnne8AfterBattleText2 ; TextAfterBattle
-	dw SSAnne8EndBattleText2 ; TextEndBattle
 	dw SSAnne8EndBattleText2 ; TextEndBattle
 
 SSAnne8TrainerHeader2:
@@ -50,7 +40,6 @@ SSAnne8TrainerHeader2:
 	dw SSAnne8BattleText3 ; TextBeforeBattle
 	dw SSAnne8AfterBattleText3 ; TextAfterBattle
 	dw SSAnne8EndBattleText3 ; TextEndBattle
-	dw SSAnne8EndBattleText3 ; TextEndBattle
 
 SSAnne8TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_8_TRAINER_3
@@ -59,33 +48,20 @@ SSAnne8TrainerHeader3:
 	dw SSAnne8BattleText4 ; TextBeforeBattle
 	dw SSAnne8AfterBattleText4 ; TextAfterBattle
 	dw SSAnne8EndBattleText4 ; TextEndBattle
-	dw SSAnne8EndBattleText4 ; TextEndBattle
 
 	db $ff
 
 SSAnne8Text1:
-	TX_ASM
-	ld hl, SSAnne8TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne8TrainerHeader0
 
 SSAnne8Text2:
-	TX_ASM
-	ld hl, SSAnne8TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne8TrainerHeader1
 
 SSAnne8Text3:
-	TX_ASM
-	ld hl, SSAnne8TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne8TrainerHeader2
 
 SSAnne8Text4:
-	TX_ASM
-	ld hl, SSAnne8TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne8TrainerHeader3
 
 SSAnne8Text8:
 	TX_FAR _SSAnne8Text8

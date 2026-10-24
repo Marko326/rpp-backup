@@ -1,5 +1,4 @@
 SkarmoryBaseStats:
-db DEX_SKARMORY ; pokedex id
 db 65 ; base hp
 db 80 ; base attack
 db 140 ; base defense
@@ -9,15 +8,12 @@ db STEEL ; species type 1
 db FLYING ; species type 2
 db 75 ; catch rate
 db 168 ; base exp yield
-INCBIN "pic/bmon/skarmory.pic",0,1 ; 55, sprite dimensions
+INCBIN "pic/bmon/skarmory.pic",0,1 ; sprite dimensions
 dw SkarmoryPicFront
 dw SkarmoryPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,4,6
 	tmlearn 9,10,15,16

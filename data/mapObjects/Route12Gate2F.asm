@@ -10,6 +10,3 @@ Route12GateUpstairsObject:
 
 	db $1 ; objects
 	object SPRITE_BRUNETTE_GIRL, $5, $4, STAY, LEFT, $1 ; person
-
-	; warp-to
-	EVENT_DISP ROUTE_12_GATE_2F_WIDTH, $7, $7 ; ROUTE_12_GATE_1F

@@ -9,7 +9,3 @@ NameRaterObject:
 
 	db $1 ; objects
 	object SPRITE_GENTLEMAN, $5, $3, STAY, LEFT, $1 ; person
-
-	; warp-to
-	EVENT_DISP NAME_RATERS_HOUSE_WIDTH, $7, $2
-	EVENT_DISP NAME_RATERS_HOUSE_WIDTH, $7, $3

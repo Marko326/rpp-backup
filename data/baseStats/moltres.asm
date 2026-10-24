@@ -1,4 +1,3 @@
-db DEX_MOLTRES ; pokedex id
 db 90 ; base hp
 db 100 ; base attack
 db 90 ; base defense
@@ -6,7 +5,8 @@ db 90 ; base speed
 db 125 ; base special
 db FIRE ; species type 1
 db FLYING ; species type 2
-db 3 ; catch rate
+MOLTRES_CATCH_RATE EQU 3 ; existing normal species catch rate, form guard only
+db MOLTRES_CATCH_RATE ; catch rate
 db 217 ; base exp yield
 INCBIN "pic/bmon/moltres.pic",0,1 ; 77, sprite dimensions
 dw MoltresPicFront
@@ -14,9 +14,6 @@ dw MoltresPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10,15

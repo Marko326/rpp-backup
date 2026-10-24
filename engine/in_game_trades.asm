@@ -5,8 +5,7 @@ DoInGameTradeDialogue:
 	ld a,[wWhichTrade]
 	ld b,a
 	swap a
-	sub b
-	sub b
+	sub b ; FORM-5.62.20: 15-byte TradeMons records
 	ld c,a
 	ld b,0
 	add hl,bc
@@ -14,6 +13,8 @@ DoInGameTradeDialogue:
 	ld [wInGameTradeGiveMonSpecies],a
 	ld a,[hli]
 	ld [wInGameTradeReceiveMonSpecies],a
+	ld a,[hli]
+	ld [wInGameTradeReceiveMonForm],a
 	ld a,[hli]
 	push af
 	ld de,wInGameTradeMonNick
@@ -102,7 +103,7 @@ InGameTrade_DoTrade:
 	ld a,[wcf91]
 	cp b
 	ld a,$2
-	jr nz,.tradeFailed ; jump if the selected mon's species is not the required one
+	jp nz,.tradeFailed ; jump if the selected mon's species is not the required one
 	ld a,[wWhichPokemon]
 	ld hl,wPartyMon1Level
 	ld bc, wPartyMon2 - wPartyMon1
@@ -135,8 +136,13 @@ InGameTrade_DoTrade:
 	call RemovePokemon
 	ld a,$80 ; prevent the player from naming the mon
 	ld [wMonDataLocation],a
-	call AddPartyMon
-	call InGameTrade_CopyDataToReceivedMon
+	ld a,[wInGameTradeReceiveMonSpecies]
+	ld d,a
+	ld a,[wTradedEnemyMonFormMarker]
+	ld e,a
+	callba RegionalFormAddPartyMonWithMarker
+	callba InGameTrade_CopyDataToReceivedMon
+	callba RegionalDexMarkReceivedTradeOwned
 	callab EvolveTradeMon
 	call ClearScreen
 	call InGameTrade_RestoreScreen
@@ -161,7 +167,31 @@ InGameTrade_RestoreScreen:
 	call DelayFrames
 	jpba LoadWildData
 
+; FORM-5.62.20: retain the selected player's stored marker and convert the
+; scripted receive runtime form into the persistent marker used by animation/storage.
+InGameTrade_CaptureRegionalFormMarkers:
+	ld a, [wWhichPokemon]
+	ld hl, wPartyMon1CatchRate
+	ld bc, wPartyMon2 - wPartyMon1
+	call AddNTimes
+	ld a, [hl]
+	ld [wTradedPlayerMonFormMarker], a
+	ld a,[wInGameTradeReceiveMonSpecies]
+	ld d,a
+	ld a,[wInGameTradeReceiveMonForm]
+	ld e,a
+	callba RegionalFormGetMarkerBySpeciesForm
+	jr nc,.normalReceivedForm
+	ld a,e
+	ld [wTradedEnemyMonFormMarker],a
+	ret
+.normalReceivedForm
+	xor a
+	ld [wTradedEnemyMonFormMarker],a
+	ret
+
 InGameTrade_PrepareTradeData:
+	call InGameTrade_CaptureRegionalFormMarkers
 	ld hl, wTradedPlayerMonSpecies
 	ld a, [wInGameTradeGiveMonSpecies]
 	ld [hli], a ; wTradedPlayerMonSpecies
@@ -197,36 +227,6 @@ InGameTrade_CopyData:
 	call CopyData
 	pop bc
 	pop hl
-	ret
-
-InGameTrade_CopyDataToReceivedMon:
-	ld hl, wPartyMonNicks
-	ld bc, NAME_LENGTH
-	call InGameTrade_GetReceivedMonPointer
-	ld hl, wInGameTradeMonNick
-	ld bc, NAME_LENGTH
-	call CopyData
-	ld hl, wPartyMonOT
-	ld bc, NAME_LENGTH
-	call InGameTrade_GetReceivedMonPointer
-	ld hl, wCurTrainerName;InGameTrade_TrainerString
-	ld bc, NAME_LENGTH
-	call CopyData
-	ld hl, wPartyMon1OTID
-	ld bc, wPartyMon2 - wPartyMon1
-	call InGameTrade_GetReceivedMonPointer
-	ld hl, wTradedEnemyMonOTID
-	ld bc, $2
-	jp CopyData
-
-; the received mon's index is (partyCount - 1),
-; so this adds bc to hl (partyCount - 1) times and moves the result to de
-InGameTrade_GetReceivedMonPointer:
-	ld a, [wPartyCount]
-	dec a
-	call AddNTimes
-	ld e, l
-	ld d, h
 	ret
 
 ;InGameTrade_TrainerString:

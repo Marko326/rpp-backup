@@ -1,6 +1,10 @@
 ; list menu ID's
 PCPOKEMONLISTMENU  EQU $00 ; PC pokemon withdraw/deposit lists
 MOVESLISTMENU      EQU $01 ; XXX where is this used?
+
+; MOVE-5.62.171: upper bound for shared Move Relearner candidate rows.
+; Ordinary learnset rows and extended ordinal rows share this list.
+MOVE_RELEARNER_MAX_MOVES EQU 32
 PRICEDITEMLISTMENU EQU $02 ; Pokemart buy menu / Pokemart buy/sell choose quantity menu
 ITEMLISTMENU       EQU $03 ; Start menu Item menu / Pokemart sell menu
 SPECIALLISTMENU    EQU $04 ; list of special "items" e.g. floor list in elevators / list of badges

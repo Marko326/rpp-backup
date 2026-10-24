@@ -1,3 +1,12 @@
+; FORM-5.27.00: stock BaseStats use a 24-byte ROM record while wMonHeader
+; remains the legacy 28-byte runtime ABI. The compact record omits only data
+; that can be reconstructed without coupling one Pokémon to another:
+; - Pokédex id: implied by BaseStats/Pokédex table order.
+; - Tutor 17-32: stored sparsely in BaseStatsTutorHighCompat when nonzero.
+; - Growth rate: 2-bit common table plus sparse arbitrary-value overrides.
+; Sprite dimensions remain INCBIN-derived from the .pic header, and picture bank
+; remains explicit so graphics can be moved between ROM banks safely.
+
 INCLUDE "data/baseStats/bulbasaur.asm"
 INCLUDE "data/baseStats/ivysaur.asm"
 INCLUDE "data/baseStats/venusaur.asm"
@@ -206,3 +215,6 @@ INCLUDE "data/baseStats/munchlax.asm"
 INCLUDE "data/baseStats/zigzagoon.asm"
 INCLUDE "data/baseStats/linoone.asm"
 INCLUDE "data/baseStats/hooh.asm"
+
+BaseStatsEnd::
+ASSERT BaseStatsEnd - BaseStats == NUM_POKEMON * COMPACT_MON_HEADER_SIZE

@@ -1,13 +1,31 @@
+; TMD-5.47.00: standard three-state trainer maps in bank 14
+; share one script table and the generic bank-local dispatcher.
+Bank14RunStandardTrainerMapScript:
+	ld de, Bank14StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank14RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
+Bank14StandardTrainerScriptPointers:
+	dw CheckFightingMapTrainers
+	dw DisplayEnemyTrainerTextAndStartBattle
+	dw EndTrainerBattle
+
 Route20Script:
 	CheckAndResetEvent EVENT_IN_SEAFOAM_ISLANDS
 	call nz, Route20Script_50cc6
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route20TrainerHeader0
-	ld de, Route20ScriptPointers
-	ld a, [wRoute20CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute20CurScript], a
-	ret
+	ld bc, wRoute20CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Route20Script_50cc6:
 	CheckBothEventsSet EVENT_SEAFOAM3_BOULDER1_DOWN_HOLE, EVENT_SEAFOAM3_BOULDER2_DOWN_HOLE
@@ -56,11 +74,6 @@ Route20Script_50d14:
 	ld [wMissableObjectIndex], a
 	predef_jump HideObject
 
-Route20ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
-
 Route20TextPointers:
 	dw Route20Text1
 	dw Route20Text2
@@ -82,7 +95,6 @@ Route20TrainerHeader0:
 	dw Route20BattleText1 ; TextBeforeBattle
 	dw Route20AfterBattleText1 ; TextAfterBattle
 	dw Route20EndBattleText1 ; TextEndBattle
-	dw Route20EndBattleText1 ; TextEndBattle
 
 Route20TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_20_TRAINER_1
@@ -90,7 +102,6 @@ Route20TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_20_TRAINER_1
 	dw Route20BattleText2 ; TextBeforeBattle
 	dw Route20AfterBattleText2 ; TextAfterBattle
-	dw Route20EndBattleText2 ; TextEndBattle
 	dw Route20EndBattleText2 ; TextEndBattle
 
 Route20TrainerHeader2:
@@ -100,7 +111,6 @@ Route20TrainerHeader2:
 	dw Route20BattleText3 ; TextBeforeBattle
 	dw Route20AfterBattleText3 ; TextAfterBattle
 	dw Route20EndBattleText3 ; TextEndBattle
-	dw Route20EndBattleText3 ; TextEndBattle
 
 Route20TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_20_TRAINER_3
@@ -108,7 +118,6 @@ Route20TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_20_TRAINER_3
 	dw Route20BattleText4 ; TextBeforeBattle
 	dw Route20AfterBattleText4 ; TextAfterBattle
-	dw Route20EndBattleText4 ; TextEndBattle
 	dw Route20EndBattleText4 ; TextEndBattle
 
 Route20TrainerHeader4:
@@ -118,7 +127,6 @@ Route20TrainerHeader4:
 	dw Route20BattleText5 ; TextBeforeBattle
 	dw Route20AfterBattleText5 ; TextAfterBattle
 	dw Route20EndBattleText5 ; TextEndBattle
-	dw Route20EndBattleText5 ; TextEndBattle
 
 Route20TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_20_TRAINER_5
@@ -126,7 +134,6 @@ Route20TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_20_TRAINER_5
 	dw Route20BattleText6 ; TextBeforeBattle
 	dw Route20AfterBattleText6 ; TextAfterBattle
-	dw Route20EndBattleText6 ; TextEndBattle
 	dw Route20EndBattleText6 ; TextEndBattle
 
 Route20TrainerHeader6:
@@ -136,7 +143,6 @@ Route20TrainerHeader6:
 	dw Route20BattleText7 ; TextBeforeBattle
 	dw Route20AfterBattleText7 ; TextAfterBattle
 	dw Route20EndBattleText7 ; TextEndBattle
-	dw Route20EndBattleText7 ; TextEndBattle
 
 Route20TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_20_TRAINER_7, 1
@@ -144,7 +150,6 @@ Route20TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_20_TRAINER_7, 1
 	dw Route20BattleText8 ; TextBeforeBattle
 	dw Route20AfterBattleText8 ; TextAfterBattle
-	dw Route20EndBattleText8 ; TextEndBattle
 	dw Route20EndBattleText8 ; TextEndBattle
 
 Route20TrainerHeader8:
@@ -154,7 +159,6 @@ Route20TrainerHeader8:
 	dw Route20BattleText9 ; TextBeforeBattle
 	dw Route20AfterBattleText9 ; TextAfterBattle
 	dw Route20EndBattleText9 ; TextEndBattle
-	dw Route20EndBattleText9 ; TextEndBattle
 
 Route20TrainerHeader9:
 	dbEventFlagBit EVENT_BEAT_ROUTE_20_TRAINER_9, 1
@@ -163,69 +167,38 @@ Route20TrainerHeader9:
 	dw Route20BattleText10 ; TextBeforeBattle
 	dw Route20AfterBattleText10 ; TextAfterBattle
 	dw Route20EndBattleText10 ; TextEndBattle
-	dw Route20EndBattleText10 ; TextEndBattle
 
 	db $ff
 
 Route20Text1:
-	TX_ASM
-	ld hl, Route20TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader0
 
 Route20Text2:
-	TX_ASM
-	ld hl, Route20TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader1
 
 Route20Text3:
-	TX_ASM
-	ld hl, Route20TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader2
 
 Route20Text4:
-	TX_ASM
-	ld hl, Route20TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader3
 
 Route20Text5:
-	TX_ASM
-	ld hl, Route20TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader4
 
 Route20Text6:
-	TX_ASM
-	ld hl, Route20TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader5
 
 Route20Text7:
-	TX_ASM
-	ld hl, Route20TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader6
 
 Route20Text8:
-	TX_ASM
-	ld hl, Route20TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader7
 
 Route20Text9:
-	TX_ASM
-	ld hl, Route20TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader8
 
 Route20Text10:
-	TX_ASM
-	ld hl, Route20TrainerHeader9
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route20TrainerHeader9
 
 Route20BattleText1:
 	TX_FAR _Route20BattleText1

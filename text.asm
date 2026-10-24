@@ -1757,9 +1757,6 @@ _OopsYouDontHaveEnoughRoomText::
 	text "Oops! You don't"
 	line "have enough room.@@"
 
-_OhFineThenText::
-	text "Oh, fine then.@@"
-
 _GetDexRatedText::
 	text "Want to get your"
 	line "#dex rated?"
@@ -2039,6 +2036,21 @@ _WontFallAnymoreText::
 	cont "go any lower!"
 	prompt
 
+_UsersStatFellText::
+	text "[USER]'s"
+	line "@"
+	TX_RAM wcf4b
+	text " fell!"
+	prompt
+
+_UserStatWontFallAnymoreText::
+	text "[USER]'s"
+	line "@"
+	TX_RAM wcf4b
+	text " won't"
+	cont "go any lower!"
+	prompt
+
 _RanFromBattleText::
 	text "[USER]"
 	line "ran from battle!"
@@ -2057,10 +2069,7 @@ _WasBlownAwayText::
 _ChargeMoveEffectText::
 	text "[USER]@@"
 
-_MadeWhirlwindText::
-	text ""
-	line "made a whirlwind!"
-	prompt
+; ANM-5.61.72: Razor Wind was replaced by Spark; its unique charge text is no longer emitted.
 
 _TookInSunlightText::
 	text ""
@@ -2482,10 +2491,13 @@ _ForgotAndText::
 	para "And..."
 	prompt
 
-_HMCantDeleteText::
-	text "HM techniques"
-	line "can't be deleted!"
-	prompt
+; [HM-5.19.0] Legacy text for the old HM-forget restriction.
+; The learn-move path no longer references this text because HM moves are now
+; replaceable. Keep it commented for future source lookup without emitting ROM data.
+; _HMCantDeleteText::
+; 	text "HM techniques"
+; 	line "can't be deleted!"
+; 	prompt
 
 _PokemonCenterWelcomeText::
 	text "Welcome to our"
@@ -2802,17 +2814,23 @@ _PPMaxedOutText::
 	TX_RAM wcf4b
 	text "'s PP"
 	line "is maxed out."
-	prompt
+	done
 
 _PPIncreasedText::
 	TX_RAM wcf4b
 	text "'s PP"
 	line "increased."
-	prompt
+	done
 
 _PPRestoredText::
 	text "PP was restored."
-	prompt
+	done
+
+; MENU-5.62.31: PP submenu failure returns to move selection without a prompt.
+_PPNoEffectText::
+	text "It won't have any"
+	line "effect."
+	done
 
 _BootedUpTMText::
 	text "Booted up a TM!"

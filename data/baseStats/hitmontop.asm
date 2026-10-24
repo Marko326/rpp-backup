@@ -1,5 +1,4 @@
 HitmontopBaseStats:
-db DEX_HITMONTOP ; pokedex id
 db 50 ; base hp
 db 95 ; base attack
 db 95 ; base defense
@@ -15,9 +14,6 @@ dw HitmontopPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10

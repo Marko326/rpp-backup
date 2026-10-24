@@ -1,16 +1,29 @@
-FarawayIslandInsideScript:
+; TMD-5.47.00: standard three-state trainer maps in bank 34
+; share one script table and the generic bank-local dispatcher.
+Bank34RunStandardTrainerMapScript:
+	ld de, Bank34StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank34RunTrainerMapScript:
 	call EnableAutoTextBoxDrawing
-	ld hl, FarawayIslandInsideTrainerHeaders
-	ld de, FarawayIslandInsideScriptPointers
-	ld a, [wFarawayIslandInsideCurScript]
+	ld a, [bc]
+	push bc
 	call ExecuteCurMapScriptInTable
-	ld [wFarawayIslandInsideCurScript], a
+	pop bc
+	ld [bc], a
 	ret
 
-FarawayIslandInsideScriptPointers:
+Bank34StandardTrainerScriptPointers:
 	dw CheckFightingMapTrainers
 	dw DisplayEnemyTrainerTextAndStartBattle
 	dw EndTrainerBattle
+
+FarawayIslandInsideScript:
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
+	ld hl, FarawayIslandInsideTrainerHeaders
+	ld bc, wFarawayIslandInsideCurScript
+	jp Bank34RunStandardTrainerMapScript
 
 FarawayIslandInsideTextPointers:
 	dw FarawayIslandInsideText1
@@ -23,15 +36,11 @@ FarawayIslandInsideTrainerHeader0:
 	dw FarawayIslandInsideMewText ; TextBeforeBattle
 	dw FarawayIslandInsideMewText ; TextAfterBattle
 	dw FarawayIslandInsideMewText ; TextEndBattle
-	dw FarawayIslandInsideMewText ; TextEndBattle
 
 	db $ff
 
 FarawayIslandInsideText1:
-	TX_ASM
-	ld hl, FarawayIslandInsideTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FarawayIslandInsideTrainerHeader0
 
 FarawayIslandInsideMewText:
 	TX_FAR _FarawayIslandInsideMewText

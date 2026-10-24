@@ -1,6 +1,3 @@
-SSAnne3Script:
-	jp EnableAutoTextBoxDrawing
-
 SSAnne3TextPointers:
 	dw SSAnne3Text1
 

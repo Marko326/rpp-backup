@@ -1,4 +1,3 @@
-db DEX_GOLDEEN ; pokedex id
 db 45 ; base hp
 db 67 ; base attack
 db 60 ; base defense
@@ -14,9 +13,6 @@ dw GoldeenPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6,7,8
 	tmlearn 9,10,11,12,13,14

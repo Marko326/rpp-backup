@@ -1,43 +1,16 @@
 SilphCo10Script:
-	call SilphCo10Script_5a14f
-	call EnableAutoTextBoxDrawing
-	ld hl, SilphCo10TrainerHeader0
-	ld de, SilphCo10ScriptPointers
-	ld a, [wSilphCo10CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo10CurScript], a
-	ret
-
-SilphCo10Script_5a14f:
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
 	ld hl, wCurrentMapScriptFlags
 	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
 	res 5, [hl]
-	ret z
-	ld hl, SilphCo10GateCoords
-	call SilphCo2Script_59d43
-	call SilphCo10Text_5a176
-	CheckEvent EVENT_SILPH_CO_10_UNLOCKED_DOOR
-	ret nz
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 4, 5
-	predef_jump ReplaceTileBlock
-
-SilphCo10GateCoords:
-	db $04,$05
-	db $FF
-
-SilphCo10Text_5a176:
-	ld a, [$ffe0]
-	and a
-	ret z
-	SetEvent EVENT_SILPH_CO_10_UNLOCKED_DOOR
-	ret
-
-SilphCo10ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
+	ld hl, SilphCo10TrainerHeader0
+	ld bc, wSilphCo10CurScript
+	jp Bank16RunStandardTrainerMapScript
 
 SilphCo10TextPointers:
 	dw SilphCo10Text1
@@ -54,7 +27,6 @@ SilphCo10TrainerHeader0:
 	dw SilphCo10BattleText1 ; TextBeforeBattle
 	dw SilphCo10AfterBattleText1 ; TextAfterBattle
 	dw SilphCo10EndBattleText1 ; TextEndBattle
-	dw SilphCo10EndBattleText1 ; TextEndBattle
 
 SilphCo10TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_10F_TRAINER_1
@@ -63,21 +35,14 @@ SilphCo10TrainerHeader1:
 	dw SilphCo10BattleText2 ; TextBeforeBattle
 	dw SilphCo10AfterBattleText2 ; TextAfterBattle
 	dw SilphCo10EndBattleText2 ; TextEndBattle
-	dw SilphCo10EndBattleText2 ; TextEndBattle
 
 	db $ff
 
 SilphCo10Text1:
-	TX_ASM
-	ld hl, SilphCo10TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo10TrainerHeader0
 
 SilphCo10Text2:
-	TX_ASM
-	ld hl, SilphCo10TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo10TrainerHeader1
 
 SilphCo10Text3:
 	TX_ASM
@@ -86,8 +51,7 @@ SilphCo10Text3:
 	jr nz, .asm_cf85f
 	ld hl, SilphCo10Text_5a1d3
 .asm_cf85f
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SilphCo10Text_5a1d3:
 	TX_FAR _SilphCo10Text_5a1d3

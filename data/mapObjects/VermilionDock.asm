@@ -10,7 +10,3 @@ VermilionDockObject:
 	db $0, $15, $2
 
 	db $0 ; objects
-
-	; warp-to
-	EVENT_DISP VERMILION_DOCK_WIDTH, $0, $e
-	EVENT_DISP VERMILION_DOCK_WIDTH, $2, $e ; SS_ANNE_1

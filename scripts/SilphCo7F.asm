@@ -1,105 +1,17 @@
 SilphCo7Script:
-	call SilphCo7Script_51b77
-	call EnableAutoTextBoxDrawing
-	ld hl, SilphCo7TrainerHeader0
-	ld de, SilphCo7ScriptPointers
-	ld a, [wSilphCo7CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo7CurScript], a
-	ret
-
-SilphCo7Script_51b77:
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
 	ld hl, wCurrentMapScriptFlags
 	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
 	res 5, [hl]
-	ret z
-	ld hl, SilphCo7GateCoords
-	call SilphCo7Text_51bc8
-	call SilphCo7Text_51bf4
-	CheckEvent EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	jr nz, .asm_51b9e
-	push af
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 3, 5
-	predef ReplaceTileBlock
-	pop af
-.asm_51b9e
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_7_UNLOCKED_DOOR2, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	jr nz, .asm_51bb1
-	push af
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 2, 10
-	predef ReplaceTileBlock
-	pop af
-.asm_51bb1
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_7_UNLOCKED_DOOR3, EVENT_SILPH_CO_7_UNLOCKED_DOOR2
-	ret nz
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 6, 10
-	predef_jump ReplaceTileBlock
-
-SilphCo7GateCoords:
-	db $03,$05
-	db $02,$0A
-	db $06,$0A
-	db $FF
-
-SilphCo7Text_51bc8:
-	push hl
-	ld hl, wCardKeyDoorY
-	ld a, [hli]
-	ld b, a
-	ld a, [hl]
-	ld c, a
-	xor a
-	ld [$ffe0], a
-	pop hl
-.asm_51bd4
-	ld a, [hli]
-	cp $ff
-	jr z, .asm_51bf0
-	push hl
-	ld hl, $ffe0
-	inc [hl]
-	pop hl
-	cp b
-	jr z, .asm_51be5
-	inc hl
-	jr .asm_51bd4
-.asm_51be5
-	ld a, [hli]
-	cp c
-	jr nz, .asm_51bd4
-	ld hl, wCardKeyDoorY
-	xor a
-	ld [hli], a
-	ld [hl], a
-	ret
-.asm_51bf0
-	xor a
-	ld [$ffe0], a
-	ret
-
-SilphCo7Text_51bf4:
-	EventFlagAddress hl, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	ld a, [$ffe0]
-	and a
-	ret z
-	cp $1
-	jr nz, .next1
-	SetEventReuseHL EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	ret
-.next1
-	cp $2
-	jr nz, .next2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_7_UNLOCKED_DOOR2, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	ret
-.next2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_7_UNLOCKED_DOOR3, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	ret
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
+	ld hl, SilphCo7TrainerHeader0
+	ld de, SilphCo7ScriptPointers
+	ld bc, wSilphCo7CurScript
+	jp Bank14RunTrainerMapScript
 
 SilphCo7Text_51c0c:
 	xor a
@@ -290,7 +202,6 @@ SilphCo7TrainerHeader0:
 	dw SilphCo7BattleText1 ; TextBeforeBattle
 	dw SilphCo7AfterBattleText1 ; TextAfterBattle
 	dw SilphCo7EndBattleText1 ; TextEndBattle
-	dw SilphCo7EndBattleText1 ; TextEndBattle
 
 SilphCo7TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_7F_TRAINER_1
@@ -298,7 +209,6 @@ SilphCo7TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_7F_TRAINER_1
 	dw SilphCo7BattleText2 ; TextBeforeBattle
 	dw SilphCo7AfterBattleText2 ; TextAfterBattle
-	dw SilphCo7EndBattleText2 ; TextEndBattle
 	dw SilphCo7EndBattleText2 ; TextEndBattle
 
 SilphCo7TrainerHeader2:
@@ -308,7 +218,6 @@ SilphCo7TrainerHeader2:
 	dw SilphCo7BattleText3 ; TextBeforeBattle
 	dw SilphCo7AfterBattleText3 ; TextAfterBattle
 	dw SilphCo7EndBattleText3 ; TextEndBattle
-	dw SilphCo7EndBattleText3 ; TextEndBattle
 
 SilphCo7TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_7F_TRAINER_3, 1
@@ -316,7 +225,6 @@ SilphCo7TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_7F_TRAINER_3, 1
 	dw SilphCo7BattleText4 ; TextBeforeBattle
 	dw SilphCo7AfterBattleText4 ; TextAfterBattle
-	dw SilphCo7EndBattleText4 ; TextEndBattle
 	dw SilphCo7EndBattleText4 ; TextEndBattle
 
 	db $ff
@@ -433,10 +341,7 @@ SilphCo7Text4:
 	db "@"
 
 SilphCo7Text5:
-	TX_ASM
-	ld hl, SilphCo7TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo7TrainerHeader0
 
 SilphCo7BattleText1:
 	TX_FAR _SilphCo7BattleText1
@@ -451,10 +356,7 @@ SilphCo7AfterBattleText1:
 	db "@"
 
 SilphCo7Text6:
-	TX_ASM
-	ld hl, SilphCo7TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo7TrainerHeader1
 
 SilphCo7BattleText2:
 	TX_FAR _SilphCo7BattleText2
@@ -469,10 +371,7 @@ SilphCo7AfterBattleText2:
 	db "@"
 
 SilphCo7Text7:
-	TX_ASM
-	ld hl, SilphCo7TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo7TrainerHeader2
 
 SilphCo7BattleText3:
 	TX_FAR _SilphCo7BattleText3
@@ -487,10 +386,7 @@ SilphCo7AfterBattleText3:
 	db "@"
 
 SilphCo7Text8:
-	TX_ASM
-	ld hl, SilphCo7TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo7TrainerHeader3
 
 SilphCo7BattleText4:
 	TX_FAR _SilphCo7BattleText4
@@ -507,8 +403,7 @@ SilphCo7AfterBattleText4:
 SilphCo7Text9:
 	TX_ASM
 	ld hl, SilphCo7Text_51ebe
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SilphCo7Text_51ebe:
 	TX_FAR _SilphCo7Text_51ebe

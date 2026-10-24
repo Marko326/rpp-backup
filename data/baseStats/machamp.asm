@@ -1,4 +1,3 @@
-db DEX_MACHAMP ; pokedex id
 db 90 ; base hp
 db 130 ; base attack
 db 80 ; base defense
@@ -14,9 +13,6 @@ dw MachampPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,15

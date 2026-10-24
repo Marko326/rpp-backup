@@ -11,6 +11,40 @@ const_value = 0
 	const SPRITE_GRASS     ; $7
 	const SPRITE_SNAKE     ; $8
 	const SPRITE_QUADRUPED ; $9
+	const SPRITE_PIKACHU_YELLOW ; $a
+	const SPRITE_STARYU_GS      ; $b
+	const SPRITE_GHOST_GS       ; $c
+	const SPRITE_BAT_GS         ; $d
+	const SPRITE_LUGIA_GS       ; $e
+	const SPRITE_HO_OH_GS       ; $f
+	const SPRITE_BULBASAUR_GS        ; $10
+	const SPRITE_CHARMANDER_GS       ; $11
+	const SPRITE_BIGMON_GS           ; $12
+	const SPRITE_SQUIRTLE_GS         ; $13
+	const SPRITE_GYARADOS_GS         ; $14
+	const SPRITE_SNORLAX_GS          ; $15
+	const SPRITE_SLOWPOKE_GS         ; $16
+	const SPRITE_LAPRAS_GS           ; $17
+	const SPRITE_GEODUDE_GS          ; $18
+	const SPRITE_POLIWAG_GS          ; $19
+	const SPRITE_JIGGLYPUFF_GS          ; $1a
+	const SPRITE_DIGLETT_GS             ; $1b
+	const SPRITE_JELLYFISH_GS           ; $1c
+	const SPRITE_FIGHTER_GS             ; $1d
+	const SPRITE_SHELL_GS               ; $1e
+	const SPRITE_CATERPILLAR_GS         ; $1f
+	const SPRITE_MOTH_GS                ; $20
+	const SPRITE_BLOB_GS                ; $21
+	const SPRITE_ODDISH_GS              ; $22
+	const SPRITE_FISH_GS                ; $23
+	const SPRITE_FOX_GS                 ; $24
+	const SPRITE_HUMANSHAPE_GS          ; $25
+	const SPRITE_HUMANOID_INSECT        ; $26
+
+; Bit 0 of a SpriteSheetPointerTable byte-count marks a sheet with no separate
+; walking block. Sprite graphics lengths are multiples of 16 bytes, so this bit
+; is free metadata and is masked before the copy length is used.
+SPRITE_SHEET_REUSE_STANDING EQU $01
 
 ; overworld sprites
 const_value = 1
@@ -150,7 +184,15 @@ ATK_PAL_YELLOW  EQU 4
 ATK_PAL_GREEN   EQU 5
 ATK_PAL_ICE     EQU 6
 ATK_PAL_PURPLE  EQU 7
-; 8: color based on attack type
+
+; Dedicated dynamic move-type palette slots. These are only used while an
+; expanded animation recipe explicitly enables a move-type palette mode.
+; The fixed animation gfx in each tileset do not use these slots, so loading a
+; move-specific palette here leaves legacy animation colors unchanged.
+BATTLE_TYPE_PAL_TILESET1 EQU 5 ; wWhichBattleAnimTileset = 0
+BATTLE_TYPE_PAL_TILESET2 EQU 3 ; wWhichBattleAnimTileset = 1
+
+; 8: legacy color based on attack type (TypeColorTable; semantics preserved)
 ; 9: don't change color palette (assume it's already set properly from elsewhere)
 
 ; Moved these here instead of making them local

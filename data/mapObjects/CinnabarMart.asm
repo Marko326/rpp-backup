@@ -11,7 +11,3 @@ CinnabarMartObject:
 	object SPRITE_MART_GUY, $0, $5, STAY, RIGHT, $1 ; person
 	object SPRITE_LASS, $6, $2, STAY, NONE, $2 ; person
 	object SPRITE_OAK_AIDE, $3, $4, STAY, NONE, $3 ; person
-
-	; warp-to
-	EVENT_DISP CINNABAR_MART_WIDTH, $7, $3
-	EVENT_DISP CINNABAR_MART_WIDTH, $7, $4

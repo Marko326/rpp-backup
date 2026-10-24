@@ -9,7 +9,3 @@ VermilionHouse3Object:
 
 	db $1 ; objects
 	object SPRITE_OFFICER_JENNY, $3, $5, STAY, UP, $1 ; person
-
-	; warp-to
-	EVENT_DISP VERMILION_HOUSE_3_WIDTH, $7, $2
-	EVENT_DISP VERMILION_HOUSE_3_WIDTH, $7, $3

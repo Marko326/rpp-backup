@@ -144,7 +144,6 @@ ArticunoTrainerHeader:
 	dw ArticunoBattleText ; TextBeforeBattle
 	dw ArticunoBattleText ; TextAfterBattle
 	dw ArticunoBattleText ; TextEndBattle
-	dw ArticunoBattleText ; TextEndBattle
 
 	db $ff
 

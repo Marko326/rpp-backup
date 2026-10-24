@@ -122,19 +122,15 @@ _ViridianCityText_1920f::
 	line "know how to catch"
 	cont "#mon?"
 
-	para "I'll show you"
-	line "how to then."
+	para "First, weaken the"
+	line "target #mon,"
+	cont "then throw a"
+	cont "# Ball!"
 	done
 
 _ViridianCityText_19214::
 	text "Time is money..."
 	line "Go along then."
-	done
-
-_ViridianCityText_19219::
-	text "First, you need"
-	line "to weaken the"
-	cont "target #mon."
 	done
 
 _ViridianCityText8::

@@ -1,6 +1,3 @@
-SaffronHouse2Script:
-	jp EnableAutoTextBoxDrawing
-
 SaffronHouse2TextPointers:
 	dw SaffronHouse2Text1
 

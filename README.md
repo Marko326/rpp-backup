@@ -1,5 +1,7 @@
 # Pokémon Red++ v3
 
+> **本分支项目协作约定：**交付每轮补丁时，固定提供增量补丁、基于项目 ZIP 的全量补丁、包含两者的合集 ZIP，**并同时附上可直接使用的 Git 提交日志**。详细要求、基线确认及校验规则见 [PROJECT_DELIVERY_RULES.md](PROJECT_DELIVERY_RULES.md)。该要求跨新会话持续生效，Git Commit/Push 由项目所有者操作。
+
 This is based on the [**Pokémon Red Disassembly**][pokered]
 
 Red++ serves as an updated version of Pokémon Red.
@@ -27,10 +29,7 @@ For a list of features, check out [**FEATURES.md**](FEATURES.md).
 ## Frequently Asked Questions
 
 ### Q: Are all Pokémon available?
-A: Yes, all 208 Pokémon that are included in the game are available without needing to trade with another person or abusing Wonder Trade.
-
-### Q: Which Pokémon are in Wonder Trade?
-A: Every Pokémon that isn't legendary can appear in Wonder Trade, but you will only find Pokémon that can legally exist at the same level as the one you offered for the trade.
+A: Yes, all 208 Pokémon that are included in the game are available without needing to trade with another person.
 
 ### Q: How do you get Dive?
 A: Dive is not available because the functionality hasn't been added yet. It will be in v4.

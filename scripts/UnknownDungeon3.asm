@@ -24,15 +24,11 @@ MewtwoTrainerHeader:
 	dw MewtwoBattleText ; TextBeforeBattle
 	dw MewtwoBattleText ; TextAfterBattle
 	dw MewtwoBattleText ; TextEndBattle
-	dw MewtwoBattleText ; TextEndBattle
 
 	db $ff
 
 MewtwoText:
-	TX_ASM
-	ld hl, MewtwoTrainerHeader
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER MewtwoTrainerHeader
 
 MewtwoBattleText:
 	TX_FAR _MewtwoBattleText

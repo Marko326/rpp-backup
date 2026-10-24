@@ -1,0 +1,3135 @@
+; Dedicated animation recipes for expanded moves.
+;
+; Expanded move data still keeps a legacy animation byte for compatibility.
+; PrepareCurrentMoveAnimation asks this bank for a dedicated recipe by REAL move
+; ID. Every expanded move from METAL_CLAW through MIND_BLAST now has a recipe.
+;
+; Each staged recipe starts with its byte length (including the $FF terminator)
+; and is copied into the existing 30-byte wBuffer. ANM-5.61.33 restores the
+; three longer legacy-project scripts through direct bank-$1E ROM pointers, so
+; their authored command streams are no longer constrained by that staging size.
+
+; ROM0 relief: moved here from SECTION "Home" (movedex_v1.2.7 and later).
+; This file is included by main.asm inside bank $3A, alongside the dedicated
+; animation recipe tables/loaders used below.
+PrepareCurrentMoveAnimation::
+	xor a
+	ld [wExtendedAnimFrameEffect], a
+	ld [wExtendedAnimPaletteMode], a
+	ld [wMoveAnimScriptLoaded], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	; X stat items temporarily replace MoveNum with a synthetic animation ID but
+	; leave SelectedMove holding the previous real move. Player items use
+	; XSTATITEM_ANIM; trainer AI uses ANIM_AF. Do not stage a dedicated recipe
+	; from that stale move identity.
+	cp XSTATITEM_ANIM
+	ret z
+	cp ANIM_AF
+	ret z
+	; ANIM-5.62.194: EXT02 is the second identity in the 40-slot sidecar
+	; table, not ordinary Karate Chop ($02). Its legacy animation byte is
+	; BITE, so route by the active full identity before the old-ID table.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .notPlayRough
+	; Metronome/Mimic may keep the originating move as SelectedMove.
+	; The resolved active EXT ordinal is the animation identity.
+	ld hl, PlayRoughExtAnim
+	jp StageDedicatedMoveAnimation
+.notPlayRough
+	call GetCurrentMoveID
+	cp NUM_ATTACKS
+	ret nc
+	ld e, a
+	; MOVE-5.62.156: AGILITY can stage Rock Polish's existing animation
+	; for the ordinary learnset users, without changing the real move ID.
+	ld a, e
+	cp AGILITY
+	jr nz, .normalAnimation
+	push de ; the shared species predicate uses IsInArray (clobbers DE).
+	callab IsRockPolishActingUser
+	pop de
+	jr nc, .normalAnimation
+	ld hl, RockPolishExtAnim
+	jp StageDedicatedMoveAnimation
+.normalAnimation
+	ld a, e
+	; ANM-5.61.33: selected legacy-project animations live beside the interpreter
+	; in bank $1E and execute directly from ROM. This restores their original
+	; command streams without inventing compression-only animation commands.
+	call LoadDirectMoveAnimationOverride
+	ret c
+	ld a, e
+	cp METAL_CLAW
+	jr nc, .expandedMove
+	; Selected original moves can opt into shared family recipes by real move ID
+	; without changing their legacy animation byte. Non-listed moves return.
+	call LoadLegacyMoveAnimationOverride
+	ret
+.expandedMove
+	call LoadExtendedMoveAnimation
+	ret
+
+; Bank-$0F public entry points tail-call these routines with jpab. Keeping the
+; actual wrappers here removes their movedex-era footprint from ROM0 while still
+; allowing bank-$0E -> BankswitchEtoF -> bank-$0F callers to restore correctly.
+PlayCurrentMoveAnimation2Far::
+	; Legacy callers expect DE to survive PlayCurrentMoveAnimation*. The recipe
+	; preparer uses E for the real move ID (and expanded recipes reuse DE again),
+	; so preserve DE across that new preprocessing layer. Minimize in particular
+	; keeps DE pointing at MoveNum across the animation to balance its saved stack.
+	push de
+	call PrepareCurrentMoveAnimation
+	pop de
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	ld [wAnimationID], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, $6
+	jr z, .storeAnimationType
+	ld a, $3
+.storeAnimationType
+	ld [wAnimationType], a
+	jpab PlayBattleAnimationGotID
+
+PlayCurrentMoveAnimationFar::
+	; Keep the original PlayCurrentMoveAnimation DE-preservation ABI.
+	push de
+	call PrepareCurrentMoveAnimation
+	pop de
+	xor a
+	ld [wAnimationType], a
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .gotAnimationID
+	ld a, [wEnemyMoveNum]
+.gotAnimationID
+	and a
+	ret z
+	ld [wAnimationID], a
+	jpab PlayBattleAnimationGotID
+
+; BAS-5.51.01: HealEffect fills the six bytes beginning at wHPBarMaxHP before
+; playing its move animation. Dedicated recipes reuse that same wBuffer range,
+; so keep only those six bytes on the stack until the animation has finished.
+; This wrapper is private to HealEffect; other move-animation callers retain
+; their existing dispatch and scratch-memory behavior.
+PlayHealingMoveAnimation::
+	ld hl, wHPBarMaxHP
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	push bc
+	ld a, [hli]
+	ld b, a
+	ld a, [hli]
+	ld c, a
+	push bc
+	ld a, [hli]
+	ld b, a
+	ld a, [hl]
+	ld c, a
+	push bc
+
+	call PlayCurrentMoveAnimationFar
+
+	ld hl, wHPBarNewHP + 1
+	pop bc
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hld], a
+	pop bc
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hld], a
+	pop bc
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hl], a
+	ret
+
+; Gold-style orb projectile prototype.
+; ANM-5.61.45: Sludge Bomb/Toxic SFX IDs now live with the shared music constants.
+
+; Keep the old public label because bank $1E already far-calls it.  The second
+; label is the direction for later reuse by Moonblast / Energy Ball / etc.
+PlayExtendedShadowBallProjectile:
+PlayExtendedOrbProjectile:
+	; C2 is a compact banked-helper gateway. EXT02 has its own complete
+	; identity, so test its sidecar ordinal before interpreting legacy IDs.
+	ld a, [wExtendedActiveMoveOrdinal]
+	cp EXT_MOVE_LOW_PLAY_ROUGH
+	jr nz, .notPlayRough
+	callba PlayPolishedCrystalPlayRoughAnimation
+	ret
+.notPlayRough
+	call GetCurrentMoveID
+	cp POISON_JAB
+	jp z,PlayPoisonJabQuickHit
+	cp PAY_DAY
+	jr nz,.notPayDay
+	; ANIM-5.62.85: size-aware rotating throw and centred hit, then $52 bounce.
+	callba PlayPayDayCoinTossAnimation
+	ret
+.notPayDay
+	cp BULLET_SEED
+	jr nz,.notBulletSeed
+	; ANIM-5.62.96: one seed volley per actual multi-hit strike.
+	callba PlayBulletSeedAnimation
+	ret
+.notBulletSeed
+	cp VOLT_TACKLE
+	jr nz,.notVoltTackle
+	; VTA-5.62.43: Ruby-inspired Volt Tackle timeline lives in bank $3E.
+	callba PlayRubyVoltTackleAnimation
+	ret
+.notVoltTackle
+	cp BULLET_PUNCH
+	jp z,SetHorizontalHitFeedback
+	cp SUCKER_PUNCH
+	jr nz,.notSuckerPunch
+	; SP-5.62.33: animation-only renderer; battle effect unchanged.
+	callba PlayPolishedCrystalSuckerPunchAnimation
+	ret
+.notSuckerPunch
+	cp METAL_CLAW
+	jp z,PlayClawThrashStyleShake
+	cp DRAGON_CLAW
+	jp z,PlayClawThrashStyleShake
+	cp SHADOW_CLAW
+	jp z,PlayClawThrashStyleShake
+	cp SHADOW_PUNCH
+	jp z,PlayShadowPunchCenteredPoof
+	cp WING_ATTACK
+	jr nz,.notWingAttack
+	callba PlayWingAttackClosingPairs
+	ret
+.notWingAttack
+	cp DRILL_PECK
+	jp z,PlayDrillPeckGoldLike
+	cp DRAGON_PULSE
+	jr nz,.notDragonPulse
+	; ANM-5.61.97: Dragon Pulse uses Gold/Crystal Dragon Rage's 16-wave projectile timeline at 80% speed.
+	callba PlayGoldDragonPulseAnimation
+	ret
+.notDragonPulse
+	cp IRON_TAIL
+	jr z,.playGoldMetallicAttack
+	cp STEEL_WING
+	jr nz,.notIronTail
+.playGoldMetallicAttack
+	; Iron Tail owns the shared Gold/Crystal Metallic opening in bank $3D.
+	; Steel Wing branches there after Metallic and finishes with Wing Attack.
+	callba PlayGoldIronTailAnimation
+	ret
+.notIronTail
+	cp SPARK
+	jr nz,.notSpark
+	callba PlayGoldSparkAnimation
+	ret
+.notSpark
+	cp ICY_WIND
+	jr nz,.notIcyWind
+	; ANM-5.61.81: Gold/Crystal Icy Wind renderer lives in bank $3D.
+	callba PlayGoldIcyWindAnimation
+	ret
+.notIcyWind
+	cp EARTH_POWER
+	jr nz,.notEarthPower
+	; ANM-5.61.102: compact Ember + Rock Throw eruption renderer lives in bank $3D.
+	callba PlayGoldEarthPowerAnimation
+	ret
+.notEarthPower
+	cp POWER_GEM
+	jr nz, .notPowerGem
+	callba PlayPolishedCrystalPowerGemAnimation
+	ret
+.notPowerGem
+	cp CRUNCH
+	jr nz,.notCrunch
+	; ANM-5.61.69: exact Gold/Crystal jaw, full-frame shake and double-impact timeline lives in bank $3D.
+	callba PlayGoldCrunchAnimation
+	ret
+.notCrunch
+	cp EGG_BOMB
+	jr nz,.notEggBomb
+	; EGG-A4-5.61.75: Gold egg projectile + shared DynamicPunch five-explosion impact.
+	callba PlayGoldEggBombAnimation
+	ret
+.notEggBomb
+	cp DYNAMICPUNCH
+	jr nz,.notDynamicPunch
+	; ANM-5.61.48: exact overlapping Gold/Crystal explosion timeline lives in bank $3D.
+	callba PlayGoldDynamicPunchAnimation
+	ret
+.notDynamicPunch
+	cp METEOR_MASH
+	jp z,PlayRocksLiftWithSwiftStars
+	cp SLUDGE_BOMB
+	jr nz,.notSludgeBomb
+	; ANM-5.61.45: keep the bulky Gold Sludge Bomb renderer in roomy bank $3D.
+	callba PlayGoldSludgeBombAnimation
+	ret
+.notSludgeBomb
+	cp AEROBLAST
+	jr nz,.notAeroblast
+	; ANM-5.61.46: keep the Aeroblast fan renderer/data in roomy bank $3D.
+	callba PlayGoldAeroblastAnimation
+	ret
+.notAeroblast
+	cp FLAME_WHEEL
+	jr nz,.notFlameWheel
+	; ANM-5.61.62: Gold/Crystal Flame Wheel timeline reuses Sacred Fire fire assets in bank $3D.
+	callba PlayGoldFlameWheelAnimation
+	ret
+.notFlameWheel
+	cp CROSS_CHOP
+	jr nz,.notCrossChop
+	; ANM-5.61.67: Gold/Crystal Cross Chop timeline lives in bank $3D.
+	callba PlayGoldCrossChopAnimation
+	ret
+.notCrossChop
+	cp SACRED_FIRE
+	jr nz,.notSacredFire
+	; MOV-5.61.53: Sacred Fire owns its complete Gold-style timeline in roomy bank $3D.
+	callba PlayGoldSacredFireAnimation
+	ret
+.notSacredFire
+	cp HURRICANE
+	jr nz,.notHurricane
+	; HUR-5.62.32: full Polished Crystal Hurricane renderer lives in bank $38.
+	callba PlayPolishedCrystalHurricaneAnimation
+	ret
+.notHurricane
+	cp HYPER_VOICE
+	jr nz,.notHyperVoice
+	; ANIM-5.62.74: original dual wave + echo renderer in bank $38.
+	callba PlayRubyHyperVoiceAnimation
+	ret
+.notHyperVoice
+	cp GUNK_SHOT
+	jr nz,.notGunkShot
+	; ANM-5.62.10: Gunk Shot owns its full Polished Crystal timeline in bank $3D.
+	callba PlayPolishedCrystalGunkShotAnimation
+	ret
+.notGunkShot
+	cp AURA_SPHERE
+	jr nz,.notAuraSphere
+	; AUR-5.62.36: Aura Sphere owns its Polished Crystal renderer in roomy bank $3E.
+	callba PlayPolishedCrystalAuraSphereAnimation
+	ret
+.notAuraSphere
+	cp ENERGY_BALL
+	jr nz,.notEnergyBall
+	; ANM-5.62.05: Energy Ball owns its full Polished Crystal timeline in bank $3D.
+	callba PlayPolishedCrystalEnergyBallAnimation
+	ret
+.notEnergyBall
+
+	; Gold-style Shadow Ball projectile; C2 currently has no operand.
+	; Initialize animation VRAM and OBJ palettes through the exact legacy path.
+	; LoadAnimationTileset calls the normal palette wrapper, then loads tileset 0.
+	; The two Gold orb tiles overwrite $31/$32 immediately below.
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	; Load the exact two unique tiles used by Gold's BARRAGE_BALL frameset.
+	; Use tile slots $35/$36 because AnimationTileset1Palettes maps both to
+	; ATK_PAL_BLUE.  ColorNonOverworldSprites therefore keeps the orb blue on
+	; every frame instead of forcing $31/$32 to the yellow palette.
+	ld hl,vSprites + $350
+	ld de,GoldOrbAnimationTileset
+	ld b,BANK(GoldOrbAnimationTileset)
+	ld c,2
+	call CopyVideoData
+
+	; Gold plays one SFX_SLUDGE_BOMB for the whole launch/flight/impact sequence.
+	; The impact smoke below is deliberately silent.
+	ld a,GSSFX_SLUDGE_BOMB
+	call PlaySound
+
+	; ANM-5.61.99: Shadow Ball follows Gold's actual WAVE_TO_TARGET coordinate
+	; rules instead of the old hand-mirrored prototype. Gold stores one logical
+	; path for both sides: each frame moves X += 2 / Y -= 1 first, then applies
+	; its sine/cosine offsets; RELATIVE_X maps only the enemy display coordinates.
+	; Keep 34 visible frames so the handoff reaches the existing V7 poof anchor
+	; smoothly without importing Gen2's object/poof overlap engine.
+	ld b,$40 ; logical center X = 64
+	ld c,$5C ; logical center Y = 92
+	ld hl,GoldShadowBallWaveXYOffsets
+	ld a,34
+.shadowLoop
+	push af
+
+	; BattleAnimFunction_MoveWaveToTarget updates the base coordinate before OAM.
+	inc b
+	inc b
+	dec c
+	push bc ; preserve the logical center for the next frame
+
+	ld a,[hli]
+	ld d,a ; signed X cosine offset (Gold divides amplitude-16 cosine by 16)
+	ld a,[hli]
+	ld e,a ; signed Y sine offset, amplitude 16
+
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.shadowEnemy
+	ld a,b
+	add d
+	ld b,a
+	ld a,c
+	add e
+	ld c,a
+	jr .drawShadowFrame
+.shadowEnemy
+	ld a,$B4 ; 180 - logical X - X offset
+	sub b
+	sub d
+	ld b,a
+	ld a,$98 ; fixY $98: 152 - logical Y + Y offset
+	sub c
+	add e
+	ld c,a
+.drawShadowFrame
+	; DelayFrame/ClearSprites clobber HL, so preserve the offset-table pointer.
+	push hl
+	call .drawBall
+	call DelayFrame
+	call ClearSprites
+	pop hl
+
+	pop bc
+	pop af
+	dec a
+	jr nz,.shadowLoop
+
+	; ANM-5.61.69: Shadow Ball's exceptional generic damage feedback is
+	; selected centrally by PlayApplyingAttackAnimation from the real-move override table.
+	ret
+
+.drawBall:
+	; B,C = 16x16 orb center. Gold's OAM set uses two unique left-half tiles and
+	; mirrors them horizontally to form the right half.
+	ld hl,wOAMBuffer
+
+	; top-left
+	ld a,c
+	sub 8
+	ld [hli],a
+	ld a,b
+	sub 8
+	ld [hli],a
+	ld a,$35
+	ld [hli],a
+	ld a,ATK_PAL_BLUE
+	ld [hli],a
+
+	; top-right = X-flipped copy of top-left tile
+	ld a,c
+	sub 8
+	ld [hli],a
+	ld a,b
+	ld [hli],a
+	ld a,$35
+	ld [hli],a
+	ld a,ATK_PAL_BLUE | OAM_HFLIP
+	ld [hli],a
+
+	; bottom-left
+	ld a,c
+	ld [hli],a
+	ld a,b
+	sub 8
+	ld [hli],a
+	ld a,$36
+	ld [hli],a
+	ld a,ATK_PAL_BLUE
+	ld [hli],a
+
+	; bottom-right = X-flipped copy of bottom-left tile
+	ld a,c
+	ld [hli],a
+	ld a,b
+	ld [hli],a
+	ld a,$36
+	ld [hli],a
+	ld a,ATK_PAL_BLUE | OAM_HFLIP
+	ld [hl],a
+	ret
+
+
+; ANM-5.61.99: Gold WAVE_TO_TARGET offsets for Shadow Ball. Each pair is
+; signed X,Y after cosine is divided by 16 and sine keeps amplitude 16.
+; 34 visible frames preserve the selected smooth handoff into the existing poof.
+GoldShadowBallWaveXYOffsets:
+	db  1,$00, 0,$06, 0,$0B, 0,$0E
+	db  0,$10,$FF,$0E,$FF,$0B,$FF,$06
+	db $FF,$00,$FF,$FA,$FF,$F5,$FF,$F2
+	db  0,$F0, 0,$F2, 0,$F5, 0,$FA
+	db  1,$00, 0,$06, 0,$0B, 0,$0E
+	db  0,$10,$FF,$0E,$FF,$0B,$FF,$06
+	db $FF,$00,$FF,$FA,$FF,$F5,$FF,$F2
+	db  0,$F0, 0,$F2, 0,$F5, 0,$FA
+	db  1,$00, 0,$06
+
+LoadDirectMoveAnimationOverride:
+; input: e = real move ID
+; output: carry set and wMoveAnimScriptLoaded = 2 when a direct bank-$1E script
+;         pointer has been written to wBuffer; carry clear otherwise.
+;
+; Mode 2 deliberately keeps only the 16-bit ROM pointer in wBuffer. The actual
+; animation remains in bank $1E, where PlayAnimation can read it directly.
+	ld hl, DirectMoveAnimationOverrides
+.loop
+	ld a, [hli]
+	cp $FF
+	jr z, .notFound
+	cp e
+	jr z, .found
+	inc hl
+	inc hl
+	jr .loop
+.found
+	ld a, [hli]
+	ld [wBuffer], a
+	ld a, [hl]
+	ld [wBuffer + 1], a
+	ld a, 2
+	ld [wMoveAnimScriptLoaded], a
+	scf
+	ret
+.notFound
+	and a ; clear carry
+	ret
+
+DirectMoveAnimationOverrides:
+	db FLARE_BLITZ
+	dw FlareBlitzDirectAnim
+	db VOLT_TACKLE
+	dw VoltTackleDirectAnim
+	db GIGA_IMPACT
+	dw GigaImpactDirectAnim
+	db GUNK_SHOT
+	dw GunkShotDirectAnim
+	db $FF
+
+LoadLegacyMoveAnimationOverride:
+; input: e = real move ID below METAL_CLAW
+; output: stages a dedicated recipe only when the sparse table contains e
+;
+; Keep legacy animation IDs untouched.  This lets original elemental punches
+; join the same Punch family recipe system without changing MoveNum semantics.
+	ld hl, LegacyMoveAnimationOverrides
+.loop
+	ld a, [hli]
+	cp $FF
+	ret z
+	cp e
+	jr z, .found
+	inc hl ; skip recipe pointer
+	inc hl
+	jr .loop
+.found
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	jr StageDedicatedMoveAnimation
+
+LoadExtendedMoveAnimation:
+; input: e = real move ID (range-checked by PrepareCurrentMoveAnimation)
+; output: wMoveAnimScriptLoaded = 1 after the dedicated recipe is staged
+;
+; Expanded move IDs are contiguous, so index a compact pointer table directly.
+	ld a, e
+	sub METAL_CLAW
+	add a
+	ld l, a
+	ld h, 0
+	ld de, ExtendedMoveAnimationPointers
+	add hl, de
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+
+StageDedicatedMoveAnimation:
+	ld a, [hli] ; recipe byte length, including terminator
+	ld b, a
+	ld de, wBuffer
+.copy
+	ld a, [hli]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ld a, 1
+	ld [wMoveAnimScriptLoaded], a
+	ret
+
+; ANIM-5.62.194: Polished Crystal Play Rough art and event timing on
+; Red++ Quick Attack's speed-line bridge and existing FrameBlock/OAM display.
+; EXT02 only; ordinary Karate Chop keeps its original animation.
+PlayRoughExtAnim:
+	db PlayRoughExtAnimEnd - PlayRoughExtAnimData
+PlayRoughExtAnimData:
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE, GOLD_QUICK_ATTACK_PREPARE
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE, GOLD_QUICK_ATTACK_APPROACH
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; dispatch by full EXT identity
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE, GOLD_QUICK_ATTACK_RETURN
+	db $FF
+PlayRoughExtAnimEnd:
+	ASSERT PlayRoughExtAnimEnd - PlayRoughExtAnimData <= 30
+
+; Sparse dedicated recipes for original Gen 1 real move IDs.  These are the
+; elemental Punch-family members used by Contact V1.  The terminator is an ID
+; byte only; every non-terminator entry is ID + 16-bit recipe pointer.
+LegacyMoveAnimationOverrides:
+	db PAY_DAY
+	dw PayDayDedicatedAnim
+	db BULLET_SEED
+	dw BulletSeedDedicatedAnim
+	db AURA_SPHERE
+	dw AuraSphereDedicatedAnim
+	db SPARK
+	dw SparkGoldDedicatedAnim
+	db COMET_PUNCH
+	dw CometPunchDedicatedAnim
+	db WING_ATTACK
+	dw WingAttackDedicatedAnim
+	db DRILL_PECK
+	dw DrillPeckDedicatedAnim
+	db FIRE_PUNCH
+	dw FirePunchDedicatedAnim
+	db ICE_PUNCH
+	dw IcePunchDedicatedAnim
+	db THUNDERPUNCH
+	dw ThunderPunchDedicatedAnim
+	db SLASH
+	dw SlashDedicatedAnim
+	db EGG_BOMB
+	dw EggBombDedicatedAnim
+	db $FF
+
+; ANIM-5.62.96: Barrage slot $8C becomes a Grass-type multi-hit seed volley.
+; Kept as a sparse real-move recipe so Shadow Ball and Rock Blast can continue
+; using the old animation byte as a legacy compatibility ID.
+BulletSeedDedicatedAnim:
+	db BulletSeedDedicatedAnimEnd - BulletSeedDedicatedAnimData
+BulletSeedDedicatedAnimData:
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+BulletSeedDedicatedAnimEnd:
+	IF BulletSeedDedicatedAnimEnd - BulletSeedDedicatedAnimData > 30
+		fail "Bullet Seed animation recipe exceeds wBuffer"
+	ENDC
+
+; Full contiguous table for expanded move IDs $A6-$FE.
+ExtendedMoveAnimationPointers:
+	dw MetalClawExtAnim             ; METAL_CLAW
+	dw BulletPunchExtAnim           ; BULLET_PUNCH
+	dw FlashCannonExtAnim           ; FLASH_CANNON
+	dw IronTailExtAnim              ; IRON_TAIL
+	dw MeteorMashExtAnim            ; METEOR_MASH
+	dw CrunchGoldExtAnim            ; CRUNCH
+	dw DarkPulseExtAnim             ; DARK_PULSE
+	dw FeintAttackExtAnim           ; FEINT_ATTACK
+	dw NightSlashExtAnim            ; NIGHT_SLASH
+	dw MoonblastExtAnim             ; MOONBLAST
+	dw DrainingKissExtAnim          ; DRAININGKISS
+	dw DisarmingVoiceExtAnim        ; DISARM_VOICE
+	dw DazzlingGleamExtAnim         ; DAZZLINGLEAM
+	dw DracoMeteorExtAnim           ; DRACO_METEOR
+	dw DragonbreathExtAnim          ; DRAGONBREATH
+	dw DragonClawExtAnim            ; DRAGON_CLAW
+	dw DragonPulseExtAnim           ; DRAGON_PULSE
+	dw TwisterExtAnim               ; TWISTER
+	dw OutrageExtAnim               ; OUTRAGE
+	dw ShadowClawExtAnim            ; SHADOW_CLAW
+	dw SteelWingExtAnim             ; STEEL_WING
+	dw IronDefenseExtAnim           ; IRON_DEFENSE
+	dw AirSlashExtAnim              ; AIR_SLASH
+	dw FangNormalExtAnim            ; FIRE_FANG
+	dw FlareBlitzExtAnim            ; FLARE_BLITZ
+	dw BlastBurnExtAnim             ; BLAST_BURN
+	dw FangNormalExtAnim            ; ICE_FANG
+	dw FangNormalExtAnim            ; THUNDER_FANG
+	dw WaterPulseExtAnim            ; WATER_PULSE
+	dw AquaTailExtAnim              ; AQUA_TAIL
+	dw HydroCannonExtAnim           ; HYDRO_CANNON
+	dw FrenzyPlantExtAnim           ; FRENZY_PLANT
+	dw SuckerPunchExtAnim           ; SUCKER_PUNCH
+	dw ShadowBallExtAnim            ; SHADOW_BALL
+	dw FlameWheelExtAnim            ; FLAME_WHEEL
+	dw MoonlightExtAnim             ; HEALINGLIGHT
+	dw HexExtAnim                   ; HEX
+	dw ShadowPunchExtAnim           ; SHADOW_PUNCH
+	dw AerialAceExtAnim             ; AERIAL_ACE
+	dw AcrobaticsExtAnim            ; ACROBATICS
+	dw AirSlashExtAnim              ; AIR_CUTTER - share finalized Flying Blade animation
+	dw IcyWindExtAnim               ; ICY_WIND
+	dw IceShardExtAnim              ; ICE_SHARD
+	dw SheerColdExtAnim             ; SHEER_COLD
+	dw ElectroBallExtAnim           ; ELECTRO_BALL
+	dw NuzzleExtAnim                ; NUZZLE
+	dw DischargeExtAnim             ; DISCHARGE
+	dw VoltTackleExtAnim            ; VOLT_TACKLE
+	dw MuddyWaterExtAnim            ; MUDDY_WATER
+	dw WhirlpoolExtAnim             ; WHIRLPOOL
+	dw GigaDrainExtAnim             ; GIGA_DRAIN
+	dw EnergyBallExtAnim            ; ENERGY_BALL
+	dw ParallelBladeExtAnim         ; LEAF_BLADE - keep V1.9 shared Blade pacing
+	dw WoodHammerExtAnim            ; WOOD_HAMMER
+	dw PoisonJabExtAnim             ; POISON_JAB
+	dw GunkShotExtAnim              ; GUNK_SHOT
+	dw FangNormalExtAnim            ; POISON_FANG
+	dw SludgeBombExtAnim            ; SLUDGE_BOMB
+	dw SilverWindExtAnim            ; SILVER_WIND
+	dw BugBuzzExtAnim               ; BUG_BUZZ
+	dw MegahornExtAnim              ; MEGAHORN
+	dw XScissorExtAnim              ; X_SCISSOR
+	dw SignalBeamExtAnim            ; SIGNAL_BEAM
+	dw EarthPowerExtAnim            ; EARTH_POWER
+	dw MudSlapExtAnim               ; MUD_SLAP
+	dw MudBombExtAnim               ; MUD_BOMB
+	dw ExtrasensoryExtAnim          ; EXTRASENSORY
+	dw ZenHeadbuttExtAnim           ; ZEN_HEADBUTT
+	dw ParallelBladeExtAnim         ; PSYCHO_CUT - keep V1.9 shared Blade pacing
+	dw HyperVoiceExtAnim            ; HYPER_VOICE
+	dw ExtremespeedExtAnim          ; EXTREMESPEED
+	dw GigaImpactExtAnim            ; GIGA_IMPACT
+	dw PowerGemExtAnim              ; POWER_GEM
+	dw RockBlastExtAnim             ; ROCK_BLAST
+	dw RockPolishExtAnim            ; ROCK_POLISH
+	dw RockTombExtAnim              ; ROCK_TOMB
+	dw DynamicpunchExtAnim          ; DYNAMICPUNCH
+	dw StormThrowExtAnim            ; STORM_THROW
+	dw CrossChopExtAnim             ; CROSS_CHOP
+	dw LowSweepExtAnim              ; LOW_SWEEP
+	dw HurricaneExtAnim             ; HURRICANE
+	dw BabydolleyesExtAnim          ; BABYDOLLEYES
+	dw SacredFireExtAnim            ; SACRED_FIRE
+	dw AeroblastExtAnim             ; AEROBLAST
+	dw AncientpowerExtAnim          ; ANCIENTPOWER
+	dw DiveExtAnim                  ; DIVE
+	dw LusterPurgeExtAnim           ; LUSTER_PURGE
+	dw MindBlastExtAnim             ; MIND_BLAST
+	dw IronHeadExtAnim              ; IRON_HEAD
+ExtendedMoveAnimationPointersEnd:
+	IF ExtendedMoveAnimationPointersEnd - ExtendedMoveAnimationPointers != (NUM_ATTACKS - METAL_CLAW) * 2
+		fail "extended move animation pointer table size mismatch"
+	ENDC
+
+
+; ANIM-5.62.85: size-aware rotating throw and a single centred Gold-like
+; hit (both via C2), then untouched smoothed $52 bounce with NO sound.
+PayDayDedicatedAnim:
+	db PayDayDedicatedAnimEnd - PayDayDedicatedAnimData
+PayDayDedicatedAnimData:
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $04,$FF,$52
+	db $FF
+PayDayDedicatedAnimEnd:
+	IF PayDayDedicatedAnimEnd - PayDayDedicatedAnimData > 30
+		fail "Pay Day animation recipe exceeds wBuffer"
+	ENDC
+
+AuraSphereDedicatedAnim:
+	db AuraSphereDedicatedAnimEnd - AuraSphereDedicatedAnimData
+AuraSphereDedicatedAnimData:
+	; AUR-5.62.36: original move #027 stages its dedicated renderer through the C2 gateway.
+	db EXT_ANIM_AURA_SPHERE_PC
+	db $FF
+AuraSphereDedicatedAnimEnd:
+	IF AuraSphereDedicatedAnimEnd - AuraSphereDedicatedAnimData > 30
+		fail "Aura Sphere animation recipe exceeds wBuffer"
+	ENDC
+
+SparkGoldDedicatedAnim:
+	db SparkGoldDedicatedAnimEnd - SparkGoldDedicatedAnimData
+SparkGoldDedicatedAnimData:
+	; ANM-5.61.72: Gold/Crystal Spark owns its complete lightning/tackle/impact timeline in bank $3D.
+	db EXT_ANIM_SPARK_GOLD
+	db $FF
+SparkGoldDedicatedAnimEnd:
+	IF SparkGoldDedicatedAnimEnd - SparkGoldDedicatedAnimData > 30
+		fail "Spark Gold animation recipe exceeds wBuffer"
+	ENDC
+
+CometPunchDedicatedAnim:
+	db CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData
+CometPunchDedicatedAnimData:
+	; Keep Gen1 Comet Punch's original repeated impact geometry; only opt the
+	; two passes into the move's Fighting palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $04,$03,$02
+	db $04,$03,$02
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+CometPunchDedicatedAnimEnd:
+	IF CometPunchDedicatedAnimEnd - CometPunchDedicatedAnimData > 30
+		fail "Comet Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+WingAttackDedicatedAnim:
+	db WingAttackDedicatedAnimEnd - WingAttackDedicatedAnimData
+WingAttackDedicatedAnimData:
+	; ANM-5.61.30: keep the same three-step Gen2-inspired bilateral closing
+	; motion without reserving a Subanimation ID. C2 dispatches by real move ID
+	; to the bank-$1E helper, which reuses FrameBlock01 directly.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+WingAttackDedicatedAnimEnd:
+	IF WingAttackDedicatedAnimEnd - WingAttackDedicatedAnimData > 30
+		fail "Wing Attack dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+DrillPeckDedicatedAnim:
+	db DrillPeckDedicatedAnimEnd - DrillPeckDedicatedAnimData
+DrillPeckDedicatedAnimData:
+	; ANM-5.61.26: C2 plays the Gold Drill Peck timing directly: a 4-sprite
+	; small hit every 4 VBlanks, with SFX_PECK retriggered for every point.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+DrillPeckDedicatedAnimEnd:
+	IF DrillPeckDedicatedAnimEnd - DrillPeckDedicatedAnimData > 30
+		fail "Drill Peck dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+SlashDedicatedAnim:
+	db SlashDedicatedAnimEnd - SlashDedicatedAnimData
+SlashDedicatedAnimData:
+	; Gen1 Slash uses the established 6 px parallel Cut geometry.
+	; Keep fixed/legacy animation colors: do not opt into MOVE_TYPE palette.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
+	db $04,$A2,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $FF
+SlashDedicatedAnimEnd:
+	IF SlashDedicatedAnimEnd - SlashDedicatedAnimData > 30
+		fail "Slash animation recipe exceeds wBuffer"
+	ENDC
+
+EggBombDedicatedAnim:
+	db EggBombDedicatedAnimEnd - EggBombDedicatedAnimData
+EggBombDedicatedAnimData:
+	; EGG-A4-5.61.75: C2 dispatches by real move ID to the Gold egg projectile,
+	; then reuses DynamicPunch's shared five-Explosion2 impact timeline.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+EggBombDedicatedAnimEnd:
+	IF EggBombDedicatedAnimEnd - EggBombDedicatedAnimData > 30
+		fail "Egg Bomb dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+FirePunchDedicatedAnim:
+	db FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData
+FirePunchDedicatedAnimData:
+	; Restore the stock Gen1 Fire Punch sequence exactly; only the explicit
+	; palette mode is new, so both the original impact and flame follow-up use
+	; the current Fire move-type palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$06,$02
+	db $46,$FF,$11
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+FirePunchDedicatedAnimEnd:
+	IF FirePunchDedicatedAnimEnd - FirePunchDedicatedAnimData > 30
+		fail "Fire Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+IcePunchDedicatedAnim:
+	db IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData
+IcePunchDedicatedAnimData:
+	; Stock Gen1 Ice Punch geometry + the new explicit Ice move-type palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$07,$02
+	db $10,$FF,$2F
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+IcePunchDedicatedAnimEnd:
+	IF IcePunchDedicatedAnimEnd - IcePunchDedicatedAnimData > 30
+		fail "Ice Punch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+ThunderPunchDedicatedAnim:
+	db ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData
+ThunderPunchDedicatedAnimData:
+	; Stock Gen1 ThunderPunch structure + the new explicit Electric palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$08,$02
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $46,$FF,$2B
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+ThunderPunchDedicatedAnimEnd:
+	IF ThunderPunchDedicatedAnimEnd - ThunderPunchDedicatedAnimData > 30
+		fail "ThunderPunch dedicated animation recipe exceeds wBuffer"
+	ENDC
+
+MetalClawExtAnim:
+	db MetalClawExtAnimEnd - MetalClawExtAnimData
+MetalClawExtAnimData:
+	; Steel Claw: voiced square closing prep -> Thrash-style slow back-and-forth
+	; -> native Scratch. $69 is Harden's original square-closing sound.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$69,$43
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
+	db $06,$A2,$0F
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+MetalClawExtAnimEnd:
+	IF MetalClawExtAnimEnd - MetalClawExtAnimData > 30
+		fail "Metal Claw animation recipe exceeds wBuffer"
+	ENDC
+
+BulletPunchExtAnim:
+	db BulletPunchExtAnimEnd - BulletPunchExtAnimData
+BulletPunchExtAnimData:
+	; Quick profile: Quick Attack hide/approach, then a Steel fist.  Force the
+	; normal Gen1 "damaging move with an added effect" horizontal hit feedback
+	; instead of the weaker player-side blink used by no-effect damage moves.
+	db SE_SLIDE_MON_OFF,$61
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$03,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+BulletPunchExtAnimEnd:
+	IF BulletPunchExtAnimEnd - BulletPunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IronTailExtAnim:
+	db IronTailExtAnimEnd - IronTailExtAnimData
+IronTailExtAnimData:
+	; ANM-5.62.07: the bank-$3D helper owns Gold's complete Iron Tail:
+	; TargetObj_1Row + Metallic opening, then WOBBLE_MON + HIT_BIG.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+IronTailExtAnimEnd:
+	IF IronTailExtAnimEnd - IronTailExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MeteorMashExtAnim:
+	db MeteorMashExtAnimEnd - MeteorMashExtAnimData
+MeteorMashExtAnimData:
+	; Steel-star composition built entirely from existing Gen1 primitives:
+	; preserve Rock Slide's native multi-rock layout but temporarily replace its
+	; rock quadrants with Swift-star quadrants, then use Draco Meteor's proven
+	; IceFall/star motion -> a short body lean -> stock Swift-star contact.
+	; Keep move-type palette mode active for every sprite segment in the move.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; C2 gateway: RocksLift with 3-star rock layout
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
+	db $43,$FF,$38 ; IceFall/Draco motion, drawing full Swift stars
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
+	db $46,$04,$05 ; stock 16x16 Swift star at the contact point
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_RESET_MON_POSITION,$FF
+	db SE_SHAKE_SCREEN,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+MeteorMashExtAnimEnd:
+	IF MeteorMashExtAnimEnd - MeteorMashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FangNormalExtAnim:
+	db FangNormalExtAnimEnd - FangNormalExtAnimData
+FangNormalExtAnimData:
+	; Shared Bite/Fang core.  Only this subanimation opts into move-type color.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $08,$2B,$02
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+FangNormalExtAnimEnd:
+	IF FangNormalExtAnimEnd - FangNormalExtAnimData > 30
+		fail "Fang normal animation recipe exceeds wBuffer"
+	ENDC
+
+CrunchGoldExtAnim:
+	db CrunchGoldExtAnimEnd - CrunchGoldExtAnimData
+CrunchGoldExtAnimData:
+	; ANM-5.61.69: banked helper owns Gold's paired jaws, 32-frame VBlank-latched
+	; X shake, two offset HitBig bursts and both original Bite SFX triggers.
+	db EXT_ANIM_CRUNCH_GOLD
+	db $FF
+CrunchGoldExtAnimEnd:
+	IF CrunchGoldExtAnimEnd - CrunchGoldExtAnimData > 30
+		fail "Crunch Gold animation recipe exceeds wBuffer"
+	ENDC
+
+DarkPulseExtAnim:
+	db DarkPulseExtAnimEnd - DarkPulseExtAnimData
+DarkPulseExtAnimData:
+	; Darken the field and send three expanding pulse/wave bursts.
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $06,$2F,$31 ; Supersonic/Psywave-style pulse
+	db $08,$FF,$31
+	db $0A,$FF,$31
+	db SE_WAVY_SCREEN,$FF
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DarkPulseExtAnimEnd:
+	IF DarkPulseExtAnimEnd - DarkPulseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FeintAttackExtAnim:
+	db FeintAttackExtAnimEnd - FeintAttackExtAnimData
+FeintAttackExtAnimData:
+	db SE_SLIDE_MON_OFF,$61
+	db $46,$FF,$04
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+FeintAttackExtAnimEnd:
+	IF FeintAttackExtAnimEnd - FeintAttackExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+NightSlashExtAnim:
+	db NightSlashExtAnimEnd - NightSlashExtAnimData
+NightSlashExtAnimData:
+	; Night Slash keeps the established 6 px parallel Cut, but uses the stock
+	; Cut timing (4 frames per visible stage) so the completed double slash reads
+	; more clearly without adding a held-object helper.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
+	db $03,$A2,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+NightSlashExtAnimEnd:
+	IF NightSlashExtAnimEnd - NightSlashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+; Leaf Blade / Psycho Cut keep the V1.9 Blade-family timing.  This small recipe
+; split isolates the Night Slash speed test without changing their cadence.
+ParallelBladeExtAnim:
+	db ParallelBladeExtAnimEnd - ParallelBladeExtAnimData
+ParallelBladeExtAnimData:
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_OFFSET_6
+	db $03,$A2,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+ParallelBladeExtAnimEnd:
+	IF ParallelBladeExtAnimEnd - ParallelBladeExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MoonblastExtAnim:
+	db MoonblastExtAnimEnd - MoonblastExtAnimData
+MoonblastExtAnimData:
+	; Gather light, scatter star-like sparks, then release a bright beam.
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db $43,$80,$3F ; Swift-style stars
+	db $04,$4B,$2E ; Solar Beam-style ray
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+MoonblastExtAnimEnd:
+	IF MoonblastExtAnimEnd - MoonblastExtAnimData > 30
+		fail "Moonblast animation recipe exceeds wBuffer"
+	ENDC
+
+FlashCannonExtAnim:
+	db FlashCannonExtAnimEnd - FlashCannonExtAnimData
+FlashCannonExtAnimData:
+	; Explicitly opt into Hyper Beam's per-frame flash behavior without using
+	; HYPER_BEAM as this move's animation identity.
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_4
+	db $02,$3E,$2E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+FlashCannonExtAnimEnd:
+	IF FlashCannonExtAnimEnd - FlashCannonExtAnimData > 30
+		fail "Flash Cannon animation recipe exceeds wBuffer"
+	ENDC
+
+DrainingKissExtAnim:
+	db DrainingKissExtAnimEnd - DrainingKissExtAnimData
+DrainingKissExtAnimData:
+	; Draining Kiss heart uses Fairy type palette and the original Absorb
+	; contraction/return phases ($21, $22) after seven anchors.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$8D,$39
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $06,$FF,$21
+	db $06,$FF,$22
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+DrainingKissExtAnimEnd:
+	IF DrainingKissExtAnimEnd - DrainingKissExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DisarmingVoiceExtAnim:
+	db DisarmingVoiceExtAnimEnd - DisarmingVoiceExtAnimData
+DisarmingVoiceExtAnimData:
+	; Use the attacker's actual cry with Growl's softer pitch/tempo profile, then
+	; layer voice-wave visuals.  No dependency on wAnimationID == GROWL/ROAR.
+	db EXT_ANIM_PLAY_USER_CRY,GROWL
+	db $46,$FF,$12
+	db $50,$FF,$40
+	db $06,$2F,$31
+	db $FF
+DisarmingVoiceExtAnimEnd:
+	IF DisarmingVoiceExtAnimEnd - DisarmingVoiceExtAnimData > 30
+		fail "Disarming Voice animation recipe exceeds wBuffer"
+	ENDC
+
+DazzlingGleamExtAnim:
+	db DazzlingGleamExtAnimEnd - DazzlingGleamExtAnimData
+DazzlingGleamExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_DARK_SCREEN_FLASH,$88
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DazzlingGleamExtAnimEnd:
+	IF DazzlingGleamExtAnimEnd - DazzlingGleamExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DracoMeteorExtAnim:
+	db DracoMeteorExtAnimEnd - DracoMeteorExtAnimData
+DracoMeteorExtAnimData:
+	; Prototype: keep Blizzard/IceFall's BaseCoord + mode sequence (Sub38),
+	; but force Swift's complete 16x16 star object (FrameBlock68).  Tileset 1
+	; is required because FrameBlock68's $03/$13 tiles are Swift's star there.
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $68
+	db $43,$9C,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DracoMeteorExtAnimEnd:
+	IF DracoMeteorExtAnimEnd - DracoMeteorExtAnimData > 30
+		fail "Draco Meteor animation recipe exceeds wBuffer"
+	ENDC
+
+; Generic FrameBlock duplication primitives used by slash-family recipes.
+;
+; DrawFrameBlock calls this after writing the source FrameBlock but before its
+; normal delay/cleanup.  Duplicate modes use the matching slot in OAM lane
+; 20-39, preserving legacy mode-2/mode-4 overwrite/persistence behavior.
+;
+; Both modes fail closed unless the ENTIRE source FrameBlock lies in slots
+; 0-19.  The wrapper preserves DE because DrawFrameBlock may need its source
+; end pointer immediately after the banked call.
+DuplicateCurrentFrameBlock:
+	push de
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAME_DUPLICATE_OFFSET_6
+	jr z,.offset6
+	cp EXT_FRAME_DUPLICATE_MIRROR_X
+	jr z,.mirrorX
+	jr .done
+.offset6
+	call DuplicateCurrentFrameBlockOffset6
+	jr .done
+.mirrorX
+	call DuplicateCurrentFrameBlockMirrorX
+.done
+	pop de
+	ret
+
+; Return HL = source FrameBlock OAM slot and DE = corresponding slot +20.
+; Carry is set only when source..source+size is wholly inside OAM lane 0-19.
+GetCurrentFrameBlockDuplicateLane:
+	ld a,[wFBDestAddr + 1]
+	ld l,a
+	ld a,[wFBDestAddr]
+	ld h,a
+
+	ld a,h
+	cp HIGH(wOAMBuffer)
+	jr nz,.invalid
+	ld a,l
+	sub LOW(wOAMBuffer)
+	cp 20 * 4
+	jr nc,.invalid
+	ld c,a ; source byte offset within wOAMBuffer
+	ld a,[wNumFBTiles]
+	add a
+	add a ; bytes in this FrameBlock
+	add c
+	cp 20 * 4 + 1
+	jr nc,.invalid ; end offset > 80 would make the duplicate overrun OAM
+
+	ld a,l
+	add a,20 * 4
+	ld e,a
+	ld a,h
+	adc a,0
+	ld d,a
+	scf
+	ret
+.invalid
+	and a ; clear carry so callers fail closed
+	ret
+
+; Night Slash / parallel-slash primitive.  Keep the established 6 px spacing.
+; The V1.9 10 px experiment was not the real fix for the clipped final head;
+; Subanimation16 now preserves that final FrameBlock in separate OAM slots.
+; Offset semantics follow DrawFrameBlock's local-coordinate transforms:
+; transform 0/3/4=(-6,-6), transform 1=(+6,+6), transform 2=(+6,-6).
+DuplicateCurrentFrameBlockOffset6:
+	call GetCurrentFrameBlockDuplicateLane
+	ret nc
+
+	; C bits: bit 0 = +X instead of -X, bit 1 = +Y instead of -Y.
+	; Transform 3 flips BaseCoord only; FrameBlock-local offsets stay unflipped.
+	ld c,0
+	ld a,[wSubAnimTransform]
+	cp 1
+	jr z,.flipBoth
+	cp 2
+	jr nz,.offsetReady
+	set 0,c
+	jr .offsetReady
+.flipBoth
+	ld c,3
+.offsetReady
+	ld a,[wNumFBTiles]
+	ld b,a
+.loop
+	ld a,[hli] ; Y
+	bit 1,c
+	jr z,.subtractY
+	add 6
+	jr .storeY
+.subtractY
+	sub 6
+.storeY
+	ld [de],a
+	inc de
+
+	ld a,[hli] ; X
+	bit 0,c
+	jr z,.subtractX
+	add 6
+	jr .storeX
+.subtractX
+	sub 6
+.storeX
+	ld [de],a
+	inc de
+
+	ld a,[hli] ; tile
+	ld [de],a
+	inc de
+	ld a,[hli] ; flags
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.loop
+	ret
+
+; Cross-slash primitive.  Mirror every sprite in the current FrameBlock around
+; the target Pokemon's vertical centerline and toggle HFLIP.  A diagonal Cut
+; arm therefore becomes its opposite diagonal without a copied Subanimation or
+; second graphics object.  Gen1 battle target centers are X=120 (enemy) and
+; X=48 (player), so for an 8 px OAM sprite: X' = (2*center - 8) - X.
+DuplicateCurrentFrameBlockMirrorX:
+	call GetCurrentFrameBlockDuplicateLane
+	ret nc
+
+	ld c,$E8 ; 2*120 - 8: player attacks enemy
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.gotMirrorConstant
+	ld c,$58 ; 2*48 - 8: enemy attacks player
+.gotMirrorConstant
+	ld a,[wNumFBTiles]
+	ld b,a
+.loop
+	ld a,[hli] ; Y is unchanged by a vertical-axis mirror
+	ld [de],a
+	inc de
+
+	ld a,c
+	sub [hl] ; X' = (2*targetCenter - 8) - X
+	inc hl
+	ld [de],a
+	inc de
+
+	ld a,[hli] ; tile
+	ld [de],a
+	inc de
+	ld a,[hli] ; flags
+	xor OAM_HFLIP
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.loop
+	ret
+
+; Generic dispatch point for FrameBlock-override anchor corrections.  The
+; correction belongs to a specific motion/object pairing, not to one move ID:
+; any recipe that runs legacy Sub38 (IceFall) with full Swift FrameBlock68 needs
+; the same center correction.  Other FrameBlock68 uses (for example RocksLift
+; or contact impact) intentionally fail closed here.
+ApplyFrameBlockOverrideAnchorCompensation:
+	ld a,[wExtendedAnimFrameEffect]
+	and $7f
+	cp $68
+	ret nz
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + $38 * 2)
+	ret nz
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + $38 * 2)
+	ret nz
+
+; Sub38 -> FrameBlock68 center correction.  Every 66 -> 68 replacement grows
+; from 8 px to 16 px in width, so shift left 4 px.  Sub38's 67 entries are its
+; mode-3 terminal objects except the final entry; those also grow from 8 px to
+; 16 px in height, so shift them up 4 px.
+ApplyDracoMeteorStarAnchorCompensation:
+	ld a,[wBaseCoordX]
+	sub 4
+	ld [wBaseCoordX],a
+
+	ld a,[wFBMode]
+	cp 3
+	jr z,.shiftY
+	ld a,[wSubAnimCounter]
+	cp 1
+	ret nz
+.shiftY
+	ld a,[wBaseCoordY]
+	sub 4
+	ld [wBaseCoordY],a
+	ret
+
+DragonbreathExtAnim:
+	db DragonbreathExtAnimEnd - DragonbreathExtAnimData
+DragonbreathExtAnimData:
+	db $46,$51,$1F
+	db $46,$FF,$0C
+	db $42,$55,$29
+	db $FF
+DragonbreathExtAnimEnd:
+	IF DragonbreathExtAnimEnd - DragonbreathExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DragonClawExtAnim:
+	db DragonClawExtAnimEnd - DragonClawExtAnimData
+DragonClawExtAnimData:
+	; Dragon Claw: voiced square closing prep -> Thrash-style slow back-and-forth
+	; -> native Scratch. Reuse the square-closing $69 sound.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$69,$43
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
+	db $06,$A2,$0F
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+DragonClawExtAnimEnd:
+	IF DragonClawExtAnimEnd - DragonClawExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DragonPulseExtAnim:
+	db DragonPulseExtAnimEnd - DragonPulseExtAnimData
+DragonPulseExtAnimData:
+	; ANM-5.61.97: port Gold/Crystal Dragon Rage's projectile stream at 80% speed to
+	; Dragon Pulse; the renderer replaces Gold red with RPP's Dragon-type palette.
+	db EXT_ANIM_DRAGON_PULSE_GOLD
+	db $FF
+DragonPulseExtAnimEnd:
+	IF DragonPulseExtAnimEnd - DragonPulseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+TwisterExtAnim:
+	db TwisterExtAnimEnd - TwisterExtAnimData
+TwisterExtAnimData:
+	db $46,$0F,$10
+	db $46,$2D,$15
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+TwisterExtAnimEnd:
+	IF TwisterExtAnimEnd - TwisterExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+OutrageExtAnim:
+	db OutrageExtAnimEnd - OutrageExtAnimData
+OutrageExtAnimData:
+	; ANM-5.61.40: restore Thrash's original command stream for Outrage, while
+	; enabling the Dragon-type dynamic OBJ palette only for Outrage.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$24,$04
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+OutrageExtAnimEnd:
+	IF OutrageExtAnimEnd - OutrageExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ShadowClawExtAnim:
+	db ShadowClawExtAnimEnd - ShadowClawExtAnimData
+ShadowClawExtAnimData:
+	; Shadow Claw: voiced circle closing prep -> Thrash-style slow back-and-forth
+	; -> native Scratch. $6E is Defense Curl's original circle-closing sound.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $06,$6E,$43
+	db EXT_ANIM_PUNCH_HORIZONTAL_HIT
+	db $06,$A2,$0F
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+ShadowClawExtAnimEnd:
+	IF ShadowClawExtAnimEnd - ShadowClawExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SteelWingExtAnim:
+	db SteelWingExtAnimEnd - SteelWingExtAnimData
+SteelWingExtAnimData:
+	; Gold/Crystal Steel Wing = Iron Tail's Metallic opening + Wing Attack.
+	; Keep only the Wing Attack closing pairs on the move's Steel type palette.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+SteelWingExtAnimEnd:
+	IF SteelWingExtAnimEnd - SteelWingExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IronDefenseExtAnim:
+	db IronDefenseExtAnimEnd - IronDefenseExtAnimData
+IronDefenseExtAnimData:
+	db $46,$6F,$33
+	db $46,$6F,$33
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $FF
+IronDefenseExtAnimEnd:
+	IF IronDefenseExtAnimEnd - IronDefenseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AirSlashExtAnim:
+	db AirSlashExtAnimEnd - AirSlashExtAnimData
+AirSlashExtAnimData:
+	; Flying-family blade: tint both the native Gust wind-up and the long Cut
+	; slice with the move-type palette so the whole wind -> blade sequence reads
+	; as one Flying animation.  Keep the Cut sound attached to the slice itself.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db $46,$0F,$10
+	db $04,$FF,$16
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+AirSlashExtAnimEnd:
+	IF AirSlashExtAnimEnd - AirSlashExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FlareBlitzExtAnim:
+	db FlareBlitzExtAnimEnd - FlareBlitzExtAnimData
+FlareBlitzExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $46,$34,$1F
+	db $46,$FF,$0C
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+FlareBlitzExtAnimEnd:
+	IF FlareBlitzExtAnimEnd - FlareBlitzExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BlastBurnExtAnim:
+	db BlastBurnExtAnimEnd - BlastBurnExtAnimData
+BlastBurnExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db $46,$7D,$1F
+	db $46,$FF,$20
+	db $43,$77,$34
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+BlastBurnExtAnimEnd:
+	IF BlastBurnExtAnimEnd - BlastBurnExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+WaterPulseExtAnim:
+	db WaterPulseExtAnimEnd - WaterPulseExtAnimData
+WaterPulseExtAnimData:
+	db $12,$3C,$35
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_WAVY_SCREEN,$FF
+	db $06,$37,$1A
+	db $FF
+WaterPulseExtAnimEnd:
+	IF WaterPulseExtAnimEnd - WaterPulseExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AquaTailExtAnim:
+	db AquaTailExtAnimEnd - AquaTailExtAnimData
+AquaTailExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db $06,$37,$1A
+	db $06,$14,$02
+	db $FF
+AquaTailExtAnimEnd:
+	IF AquaTailExtAnimEnd - AquaTailExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+HydroCannonExtAnim:
+	db HydroCannonExtAnimEnd - HydroCannonExtAnimData
+HydroCannonExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db SE_DARK_SCREEN_FLASH,$FF
+	; Treat the cannon beam like other dedicated high-power beam recipes instead
+	; of depending on HYPER_BEAM as an animation identity.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_4
+	db $02,$3E,$2E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $46,$FF,$04
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+HydroCannonExtAnimEnd:
+	IF HydroCannonExtAnimEnd - HydroCannonExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FrenzyPlantExtAnim:
+	db FrenzyPlantExtAnimEnd - FrenzyPlantExtAnimData
+FrenzyPlantExtAnimData:
+	db SE_LEAVES_FALLING,$4A
+	db $01,$15,$16
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+FrenzyPlantExtAnimEnd:
+	IF FrenzyPlantExtAnimEnd - FrenzyPlantExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SuckerPunchExtAnim:
+	db SuckerPunchExtAnimEnd - SuckerPunchExtAnimData
+SuckerPunchExtAnimData:
+	; SP-5.62.33: animation-only renderer; success/failure battle logic is separate.
+	db EXT_ANIM_SUCKER_PUNCH_PC
+	db $FF
+SuckerPunchExtAnimEnd:
+	IF SuckerPunchExtAnimEnd - SuckerPunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ShadowBallExtAnim:
+	db ShadowBallExtAnimEnd - ShadowBallExtAnimData
+ShadowBallExtAnimData:
+	; ANM-5.61.99: Gold-accurate coordinate math for the orb, with two extra
+	; live projectile frames retained so the handoff reaches the existing V7 poof.
+	; Keep the V7 poof and post-impact tail unchanged.
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $03,$FF,$3C
+	db SE_DELAY_ANIMATION_10,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+ShadowBallExtAnimEnd:
+	IF ShadowBallExtAnimEnd - ShadowBallExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+FlameWheelExtAnim:
+	db FlameWheelExtAnimEnd - FlameWheelExtAnimData
+FlameWheelExtAnimData:
+	; ANM-5.61.62: banked helper owns Gold's 8 orbiting flames, lunge, flash and split impact.
+	db EXT_ANIM_FLAME_WHEEL_GOLD
+	db $FF
+FlameWheelExtAnimEnd:
+	IF FlameWheelExtAnimEnd - FlameWheelExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MoonlightExtAnim:
+	db MoonlightExtAnimEnd - MoonlightExtAnimData
+MoonlightExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_SPIRAL_BALLS_INWARD,$73
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+MoonlightExtAnimEnd:
+	IF MoonlightExtAnimEnd - MoonlightExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+HexExtAnim:
+	db HexExtAnimEnd - HexExtAnimData
+HexExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$5C
+	db SE_WAVY_SCREEN,$FF
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+HexExtAnimEnd:
+	IF HexExtAnimEnd - HexExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ShadowPunchExtAnim:
+	db ShadowPunchExtAnimEnd - ShadowPunchExtAnimData
+ShadowPunchExtAnimData:
+	; ANM-5.61.59: preload Shadow Punch's fist before the Quick Attack vanish so the Gold
+	; approach can flow straight into the existing hit without a VRAM-load gap.
+	; Gold's Comet Punch sound / HIT object are intentionally not reproduced.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_PREPARE
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_APPROACH
+	db $46,$04,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_SHADOW_PUNCH_POOF
+	; Keep the full attack in darkness, but restore the normal battle palette
+	; before redrawing the user so the return does not linger as a dark-palette silhouette.
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_RETURN
+	db $FF
+ShadowPunchExtAnimEnd:
+	IF ShadowPunchExtAnimEnd - ShadowPunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AerialAceExtAnim:
+	db AerialAceExtAnimEnd - AerialAceExtAnimData
+AerialAceExtAnimData:
+	db $46,$10,$04
+	db $46,$FF,$04
+	db $06,$FF,$02
+	db $FF
+AerialAceExtAnimEnd:
+	IF AerialAceExtAnimEnd - AerialAceExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AcrobaticsExtAnim:
+	db AcrobaticsExtAnimEnd - AcrobaticsExtAnimData
+AcrobaticsExtAnimData:
+	db SE_SLIDE_MON_OFF,$61
+	db $46,$10,$04
+	db $46,$FF,$04
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+AcrobaticsExtAnimEnd:
+	IF AcrobaticsExtAnimEnd - AcrobaticsExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IcyWindExtAnim:
+	db IcyWindExtAnimEnd - IcyWindExtAnimData
+IcyWindExtAnimData:
+	; ANM-5.61.81: use the dedicated Gold/Crystal Icy Wind timeline.
+	db EXT_ANIM_ICY_WIND_GOLD
+	db $FF
+IcyWindExtAnimEnd:
+	IF IcyWindExtAnimEnd - IcyWindExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IceShardExtAnim:
+	db IceShardExtAnimEnd - IceShardExtAnimData
+IceShardExtAnimData:
+	; ANM-5.61.40: restore the old-project single Ice Shard impact.
+	db $01,$05,$3F
+	db $FF
+IceShardExtAnimEnd:
+	IF IceShardExtAnimEnd - IceShardExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SheerColdExtAnim:
+	db SheerColdExtAnimEnd - SheerColdExtAnimData
+SheerColdExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_BLIZZARD
+	db $04,$3A,$38
+	db $04,$37,$38
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+SheerColdExtAnimEnd:
+	IF SheerColdExtAnimEnd - SheerColdExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ElectroBallExtAnim:
+	db ElectroBallExtAnimEnd - ElectroBallExtAnimData
+ElectroBallExtAnimData:
+	db SE_SPIRAL_BALLS_INWARD,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db $41,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $FF
+ElectroBallExtAnimEnd:
+	IF ElectroBallExtAnimEnd - ElectroBallExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+NuzzleExtAnim:
+	db NuzzleExtAnimEnd - NuzzleExtAnimData
+NuzzleExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $02,$FF,$23
+	db $46,$FF,$05
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+NuzzleExtAnimEnd:
+	IF NuzzleExtAnimEnd - NuzzleExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DischargeExtAnim:
+	db DischargeExtAnimEnd - DischargeExtAnimData
+DischargeExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$56
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db $42,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+DischargeExtAnimEnd:
+	IF DischargeExtAnimEnd - DischargeExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+VoltTackleExtAnim:
+	db VoltTackleExtAnimEnd - VoltTackleExtAnimData
+VoltTackleExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db SE_DARK_SCREEN_FLASH,$FF
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_FLASH_8
+	db $41,$54,$29
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db $46,$FF,$04
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+VoltTackleExtAnimEnd:
+	IF VoltTackleExtAnimEnd - VoltTackleExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MuddyWaterExtAnim:
+	db MuddyWaterExtAnimEnd - MuddyWaterExtAnimData
+MuddyWaterExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db $06,$37,$1A
+	db $46,$1B,$28
+	db $FF
+MuddyWaterExtAnimEnd:
+	IF MuddyWaterExtAnimEnd - MuddyWaterExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+WhirlpoolExtAnim:
+	db WhirlpoolExtAnimEnd - WhirlpoolExtAnimData
+WhirlpoolExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db $46,$2D,$15
+	db SE_WAVY_SCREEN,$FF
+	db $FF
+WhirlpoolExtAnimEnd:
+	IF WhirlpoolExtAnimEnd - WhirlpoolExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+GunkShotExtAnim:
+	db GunkShotExtAnimEnd - GunkShotExtAnimData
+GunkShotExtAnimData:
+	; ANM-5.62.10: mirror the direct override; the renderer itself changes to
+	; the dark palette between the charge and barrage stages.
+	db EXT_ANIM_GUNK_SHOT_PC
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+GunkShotExtAnimEnd:
+	IF GunkShotExtAnimEnd - GunkShotExtAnimData > 30
+		fail "Gunk Shot animation recipe exceeds wBuffer"
+	ENDC
+
+HyperVoiceExtAnim:
+	db HyperVoiceExtAnimEnd - HyperVoiceExtAnimData
+HyperVoiceExtAnimData:
+	; ANIM-5.62.74: the bank-$38 renderer plays both cries and double rings.
+	; The C2 gateway is a single animation command, not two damage hits.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+HyperVoiceExtAnimEnd:
+	IF HyperVoiceExtAnimEnd - HyperVoiceExtAnimData > 30
+		fail "Hyper Voice animation recipe exceeds wBuffer"
+	ENDC
+
+GigaDrainExtAnim:
+	db GigaDrainExtAnimEnd - GigaDrainExtAnimData
+GigaDrainExtAnimData:
+	db SE_LEAVES_FALLING,$4A
+	db $06,$FF,$21
+	db $06,$FF,$22
+	db $FF
+GigaDrainExtAnimEnd:
+	IF GigaDrainExtAnimEnd - GigaDrainExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+EnergyBallExtAnim:
+	db EnergyBallExtAnimEnd - EnergyBallExtAnimData
+EnergyBallExtAnimData:
+	; ANM-5.62.05: the bank-$3D helper owns the complete Polished Crystal timeline.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+EnergyBallExtAnimEnd:
+	IF EnergyBallExtAnimEnd - EnergyBallExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+WoodHammerExtAnim:
+	db WoodHammerExtAnimEnd - WoodHammerExtAnimData
+WoodHammerExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db $04,$57,$30
+	db $46,$FF,$05
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+WoodHammerExtAnimEnd:
+	IF WoodHammerExtAnimEnd - WoodHammerExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+PoisonJabExtAnim:
+	db PoisonJabExtAnimEnd - PoisonJabExtAnimData
+PoisonJabExtAnimData:
+	; ANIM-5.62.151: Quick Attack vanish/speed/return surround one native
+	; 16x16 Drill Peck HIT and the untouched $14 poison/liquid sequence.
+	; Both stages use their stock palette indices, never the dynamic type map.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_PREPARE
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_APPROACH
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; Poison Jab's private small HIT + stab SFX
+	db $46,$5B,$14
+	db EXT_ANIM_GOLD_QUICK_ATTACK_PHASE,GOLD_QUICK_ATTACK_RETURN
+	db $FF
+PoisonJabExtAnimEnd:
+	IF PoisonJabExtAnimEnd - PoisonJabExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SludgeBombExtAnim:
+	db SludgeBombExtAnimEnd - SludgeBombExtAnimData
+SludgeBombExtAnimData:
+	; ANM-5.61.45: the banked Gold helper owns the gentle full-sequence palette
+	; darkening and restores the normal battle palette only after the sludge tail.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; C2 gateway dispatches by real move ID
+	db $FF
+SludgeBombExtAnimEnd:
+	IF SludgeBombExtAnimEnd - SludgeBombExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SilverWindExtAnim:
+	db SilverWindExtAnimEnd - SilverWindExtAnimData
+SilverWindExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $46,$0F,$10
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+SilverWindExtAnimEnd:
+	IF SilverWindExtAnimEnd - SilverWindExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BugBuzzExtAnim:
+	db BugBuzzExtAnimEnd - BugBuzzExtAnimData
+BugBuzzExtAnimData:
+	db $06,$2F,$31
+	db $46,$2D,$15
+	db SE_WAVY_SCREEN,$FF
+	db $FF
+BugBuzzExtAnimEnd:
+	IF BugBuzzExtAnimEnd - BugBuzzExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MegahornExtAnim:
+	db MegahornExtAnimEnd - MegahornExtAnimData
+MegahornExtAnimData:
+	db $06,$1D,$45
+	db $03,$29,$01
+	db $46,$FF,$05
+	db $FF
+MegahornExtAnimEnd:
+	IF MegahornExtAnimEnd - MegahornExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+XScissorExtAnim:
+	db XScissorExtAnimEnd - XScissorExtAnimData
+XScissorExtAnimData:
+	; Cross-Blade accent: keep the verified mirror-X geometry, and explicitly
+	; color only the Cut subanimation with the current BUG palette.
+	db SE_DARK_SCREEN_FLASH,$0E
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_DUPLICATE_MIRROR_X
+	db $03,$FF,$16
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db $FF
+XScissorExtAnimEnd:
+	IF XScissorExtAnimEnd - XScissorExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SignalBeamExtAnim:
+	db SignalBeamExtAnimEnd - SignalBeamExtAnimData
+SignalBeamExtAnimData:
+	db $03,$3B,$2E
+	db $03,$29,$01
+	db SE_FLASH_SCREEN_LONG,$FF
+	db $FF
+SignalBeamExtAnimEnd:
+	IF SignalBeamExtAnimEnd - SignalBeamExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+EarthPowerExtAnim:
+	db EarthPowerExtAnimEnd - EarthPowerExtAnimData
+EarthPowerExtAnimData:
+	; ANM-5.61.102: C2 dispatches by real move ID to the lightweight three-burst
+	; Earth Power renderer; no dedicated graphics or audio resources are added.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+EarthPowerExtAnimEnd:
+	IF EarthPowerExtAnimEnd - EarthPowerExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MudSlapExtAnim:
+	db MudSlapExtAnimEnd - MudSlapExtAnimData
+MudSlapExtAnimData:
+	db $46,$1B,$28
+	db $08,$FF,$01
+	db $FF
+MudSlapExtAnimEnd:
+	IF MudSlapExtAnimEnd - MudSlapExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MudBombExtAnim:
+	db MudBombExtAnimEnd - MudBombExtAnimData
+MudBombExtAnimData:
+	db $43,$8B,$41
+	db $46,$1B,$28
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+MudBombExtAnimEnd:
+	IF MudBombExtAnimEnd - MudBombExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ExtrasensoryExtAnim:
+	db ExtrasensoryExtAnimEnd - ExtrasensoryExtAnimData
+ExtrasensoryExtAnimData:
+	db SE_FLASH_SCREEN_LONG,$5D
+	db $06,$FF,$02
+	db SE_WAVY_SCREEN,$FF
+	db $FF
+ExtrasensoryExtAnimEnd:
+	IF ExtrasensoryExtAnimEnd - ExtrasensoryExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ZenHeadbuttExtAnim:
+	db ZenHeadbuttExtAnimEnd - ZenHeadbuttExtAnimData
+ZenHeadbuttExtAnimData:
+	db SE_FLASH_SCREEN_LONG,$5C
+	db $46,$1C,$05
+	db $46,$FF,$05
+	db $FF
+ZenHeadbuttExtAnimEnd:
+	IF ZenHeadbuttExtAnimEnd - ZenHeadbuttExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+ExtremespeedExtAnim:
+	db ExtremespeedExtAnimEnd - ExtremespeedExtAnimData
+ExtremespeedExtAnimData:
+	db SE_SLIDE_MON_OFF,$61
+	db $46,$FF,$04
+	db $46,$FF,$05
+	db SE_SHOW_MON_PIC,$FF
+	db $FF
+ExtremespeedExtAnimEnd:
+	IF ExtremespeedExtAnimEnd - ExtremespeedExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+GigaImpactExtAnim:
+	db GigaImpactExtAnimEnd - GigaImpactExtAnimData
+GigaImpactExtAnimData:
+	db SE_MOVE_MON_HORIZONTALLY,$48
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $46,$04,$04
+	db SE_SHAKE_SCREEN,$FF
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+GigaImpactExtAnimEnd:
+	IF GigaImpactExtAnimEnd - GigaImpactExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+PowerGemExtAnim:
+	db PowerGemExtAnimEnd - PowerGemExtAnimData
+PowerGemExtAnimData:
+	; ANIM-5.62.198: eight hovering/firing stones from the project rock art.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; banked Power Gem renderer
+	db $FF
+PowerGemExtAnimEnd:
+	IF PowerGemExtAnimEnd - PowerGemExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+RockBlastExtAnim:
+	db RockBlastExtAnimEnd - RockBlastExtAnimData
+RockBlastExtAnimData:
+	; ANM-5.61.40: reuse Barrage's smooth Subanimation41 projectile path and
+	; override its ball with Rock Throw's FrameBlock23. Multi-hit battle flow
+	; replays this recipe once for each actual Rock Blast hit.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $23
+	db $03,$57,$41
+	db $FF
+RockBlastExtAnimEnd:
+	IF RockBlastExtAnimEnd - RockBlastExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+RockPolishExtAnim:
+	db RockPolishExtAnimEnd - RockPolishExtAnimData
+RockPolishExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db $46,$6F,$33
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+RockPolishExtAnimEnd:
+	IF RockPolishExtAnimEnd - RockPolishExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+RockTombExtAnim:
+	db RockTombExtAnimEnd - RockTombExtAnimData
+RockTombExtAnimData:
+	; Rock Slide's falling-rock frames expect frame-counter shakes/flash.
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_ROCK_SLIDE
+	db $04,$9C,$1D
+	db $03,$9C,$1E
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+RockTombExtAnimEnd:
+	IF RockTombExtAnimEnd - RockTombExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DynamicpunchExtAnim:
+	db DynamicpunchExtAnimEnd - DynamicpunchExtAnimData
+DynamicpunchExtAnimData:
+	; ANM-5.61.48: keep the existing Fighting fist, then let the banked Gold/Crystal
+	; impact helper overlap its final pose with five independently-timed explosions.
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_MOVE_TYPE
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAMEBLOCK_OVERRIDE | $7A
+	db $46,$04,$05
+	db EXT_ANIM_SET_FRAME_EFFECT,EXT_FRAME_NONE
+	db EXT_ANIM_SET_PALETTE_MODE,EXT_PALETTE_MODE_FIXED
+	db EXT_ANIM_DYNAMIC_PUNCH_GOLD
+	db $FF
+DynamicpunchExtAnimEnd:
+	IF DynamicpunchExtAnimEnd - DynamicpunchExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+StormThrowExtAnim:
+	db StormThrowExtAnimEnd - StormThrowExtAnimData
+StormThrowExtAnimData:
+	db $08,$01,$03
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+StormThrowExtAnimEnd:
+	IF StormThrowExtAnimEnd - StormThrowExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+CrossChopExtAnim:
+	db CrossChopExtAnimEnd - CrossChopExtAnimData
+CrossChopExtAnimData:
+	; ANM-5.61.67: replace the old Gen I combination with Gold/Crystal's two
+	; crossing cut objects, long horizontal shake and delayed inverted impact.
+	db EXT_ANIM_CROSS_CHOP_GOLD
+	db $FF
+CrossChopExtAnimEnd:
+	IF CrossChopExtAnimEnd - CrossChopExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+LowSweepExtAnim:
+	db LowSweepExtAnimEnd - LowSweepExtAnimData
+LowSweepExtAnimData:
+	; Dedicated recipes bypass MEGA_KICK's hard-coded flash, so add an explicit
+	; impact flash instead of depending on the legacy animation identity.
+	db $46,$18,$04
+	db SE_DARK_SCREEN_FLASH,$FF
+	db $46,$FF,$05
+	db SE_SHAKE_SCREEN,$FF
+	db $FF
+LowSweepExtAnimEnd:
+	IF LowSweepExtAnimEnd - LowSweepExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+HurricaneExtAnim:
+	db HurricaneExtAnimEnd - HurricaneExtAnimData
+HurricaneExtAnimData:
+	; HUR-5.62.32: C2 dispatches HURRICANE to the full Polished Crystal renderer.
+	db EXT_ANIM_HURRICANE_PC
+	db $FF
+HurricaneExtAnimEnd:
+	IF HurricaneExtAnimEnd - HurricaneExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+BabydolleyesExtAnim:
+	db BabydolleyesExtAnimEnd - BabydolleyesExtAnimData
+BabydolleyesExtAnimData:
+	db $06,$8D,$12
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+BabydolleyesExtAnimEnd:
+	IF BabydolleyesExtAnimEnd - BabydolleyesExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+SacredFireExtAnim:
+	db SacredFireExtAnimEnd - SacredFireExtAnimData
+SacredFireExtAnimData:
+	; MOV-5.61.53: C2 dispatches by real move ID; the banked helper owns the
+	; eight rising flames, target lunge and three-way Fire Blast impact.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE
+	db $FF
+SacredFireExtAnimEnd:
+	IF SacredFireExtAnimEnd - SacredFireExtAnimData > 30
+		fail "Sacred Fire animation recipe exceeds wBuffer"
+	ENDC
+
+AeroblastExtAnim:
+	db AeroblastExtAnimEnd - AeroblastExtAnimData
+AeroblastExtAnimData:
+	; ANM-5.61.47: the banked helper owns the complete Gold-style 84-frame
+	; timeline so screen shake can continue while the three beam objects appear.
+	db EXT_ANIM_SHADOW_BALL_PROJECTILE ; C2 gateway dispatches by real move ID
+	db $FF
+AeroblastExtAnimEnd:
+	IF AeroblastExtAnimEnd - AeroblastExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+AncientpowerExtAnim:
+	db AncientpowerExtAnimEnd - AncientpowerExtAnimData
+AncientpowerExtAnimData:
+	db $04,$9C,$1D
+	db $04,$57,$30
+	db SE_LIGHT_SCREEN_PALETTE,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+AncientpowerExtAnimEnd:
+	IF AncientpowerExtAnimEnd - AncientpowerExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+DiveExtAnim:
+	db DiveExtAnimEnd - DiveExtAnimData
+DiveExtAnimData:
+	db SE_WATER_DROPLETS_EVERYWHERE,$38
+	db SE_SLIDE_MON_DOWN,$48
+	db $06,$37,$1A
+	db SE_SLIDE_MON_UP,$FF
+	db $FF
+DiveExtAnimEnd:
+	IF DiveExtAnimEnd - DiveExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+LusterPurgeExtAnim:
+	db LusterPurgeExtAnimEnd - LusterPurgeExtAnimData
+LusterPurgeExtAnimData:
+	db SE_LIGHT_SCREEN_PALETTE,$48
+	db $03,$3B,$2E
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+LusterPurgeExtAnimEnd:
+	IF LusterPurgeExtAnimEnd - LusterPurgeExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+MindBlastExtAnim:
+	db MindBlastExtAnimEnd - MindBlastExtAnimData
+MindBlastExtAnimData:
+	db SE_DARK_SCREEN_PALETTE,$5D
+	db SE_FLASH_SCREEN_LONG,$FF
+	db SE_WAVY_SCREEN,$FF
+	db SE_DARK_SCREEN_FLASH,$FF
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db $FF
+MindBlastExtAnimEnd:
+	IF MindBlastExtAnimEnd - MindBlastExtAnimData > 30
+		fail "extended move animation recipe exceeds wBuffer"
+	ENDC
+
+IronHeadExtAnim:
+	db IronHeadExtAnimEnd - IronHeadExtAnimData
+IronHeadExtAnimData:
+	; MOV-5.61.31: reproduce KEP Iron Head without consuming a new Subanimation slot.
+	; $2D is the stock circles-centering sequence; FLASH and DOUBLE_EDGE provide
+	; the same charge/impact sound profiles used by KEP.
+	db SE_LIGHT_SCREEN_PALETTE,FLASH - 1
+	db $06,$FF,$2D
+	db SE_RESET_SCREEN_PALETTE,$FF
+	db SE_MOVE_MON_HORIZONTALLY,$FF
+	db SE_DARK_SCREEN_FLASH,DOUBLE_EDGE - 1
+	db SE_RESET_MON_POSITION,$FF
+	db $FF
+IronHeadExtAnimEnd:
+	IF IronHeadExtAnimEnd - IronHeadExtAnimData > 30
+		fail "Iron Head animation recipe exceeds wBuffer"
+	ENDC
+
+; Exact Gold BARRAGE_BALL source tiles after egg.2bpp --remove-whitespace:
+; compact tiles $0A and $0B (source PNG tiles 14 and 16).  The right half is
+; produced with OAM_HFLIP, just like Gold's BATTLE_ANIM_OAMSET_95.
+GoldOrbAnimationTileset::
+	db $00,$00,$00,$00,$03,$03,$0D,$0E,$12,$1C,$12,$1C,$21,$3E,$20,$3F
+	db $20,$3F,$20,$3F,$10,$1F,$10,$1F,$0C,$0F,$03,$03,$00,$00,$00,$00
+GoldOrbAnimationTilesetEnd::
+	IF GoldOrbAnimationTilesetEnd - GoldOrbAnimationTileset != 2 * 16
+		fail "Gold orb animation tileset must contain exactly 2 tiles"
+	ENDC
+
+
+; Shared Punch-family gfx loader.  Keep the 9-tile transfer in bank $3A;
+; BANK1E only retains the existing thin hook.  Only true fist overrides use
+; FrameBlock $7A now; Meteor Mash has returned to stock Swift-star geometry.
+LoadPunchFamilyTilesIfNeeded::
+	ld a,[wExtendedAnimFrameEffect]
+	cp EXT_FRAMEBLOCK_OVERRIDE | $7A
+	jr nz,.checkGoldBone
+	ld hl,vSprites + $770
+	ld de,PunchBattleTiles
+	ld b,BANK(PunchBattleTiles)
+	ld c,9
+	jp CopyVideoData
+
+.checkGoldBone
+	; ANM-5.62.09: Bone Club / Bonemerang keep pureRGB's authored routes but
+	; use Gold/Crystal's two source bone tiles and gray OBJ palette. Legacy index-2
+	; trade/utility graphics remain untouched for every other animation.
+	ld a,[wWhichBattleAnimTileset]
+	cp 2
+	ret nz
+	ld a,[wAnimationID]
+	cp BONE_CLUB
+	jr z,.loadGoldBone
+	cp BONEMERANG
+	ret nz
+.loadGoldBone
+	ld hl,vSprites + $310
+	ld de,GoldBoneAnimationTiles
+	ld b,BANK(GoldBoneAnimationTiles)
+	ld c,2
+	call CopyVideoData
+	; Gold BATTLE_ANIM_OBJ_BONE_CLUB/BONEMERANG use PAL_BATTLE_OB_GRAY.
+	ld a,2
+	ld [rSVBK],a
+	ld a,ATK_PAL_GREY
+	ld [W2_SpritePaletteMap + $31],a
+	ld [W2_SpritePaletteMap + $32],a
+	xor a
+	ld [rSVBK],a
+	ret
+
+PunchBattleTiles::
+	INCBIN "gfx/punch_anim.2bpp"
+PunchBattleTilesEnd::
+	IF PunchBattleTilesEnd - PunchBattleTiles != 9 * 16
+		fail "Punch battle tileset must contain exactly 9 tiles"
+	ENDC
+
+; Punch users keep Gen1's fast horizontal damage feedback.
+SetHorizontalHitFeedback::
+SetPunchHorizontalHitFeedback::
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,5 ; player damaging move with side effect -> fast/light horizontal shake
+	jr z,.store
+	ld a,2 ; enemy counterpart -> fast/heavy horizontal shake
+.store
+	ld [wAnimationType],a
+	ret
+
+; Claw family uses Thrash's visibly slower back-and-forth cadence *inside*
+; the recipe between Closing and Scratch.  After that immediate pre-attack
+; motion, restore the normal damaging-move horizontal feedback so Gen1 still
+; appends the final hit shake + applying-attack sound after Scratch finishes.
+PlayClawThrashStyleShake::
+SetClawThrashStyleFeedback::
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.enemy
+	callba ShakeScreenHorizontallySlow2 ; player pre-attack: b=3,c=2
+	jp SetHorizontalHitFeedback         ; final hit: type 5 fast/light
+.enemy
+	callba ShakeScreenHorizontallySlow  ; enemy pre-attack: b=6,c=2
+	jp SetHorizontalHitFeedback         ; final hit: type 2 fast/heavy
+
+; ---------------------------------------------------------------------------
+; ANIM-5.62.151 - Poison Jab's preloaded native small HIT
+; ---------------------------------------------------------------------------
+; Preserve the complete poison AnimationTileset2 in $31-$7F. Only the one
+; Drill Peck tile ($44 of AnimationTileset1) is copied into the private $61
+; slot, never over the $75/$76 poison tiles used by Subanimation14.
+; ANIM-5.62.151: borrow only the graphic, not the source ICE palette 6.
+; The private HIT uses the ordinary GREY palette 0; poison stays unchanged.
+POISON_JAB_HIT_TILE EQU $61
+POISON_JAB_HIT_PALETTE EQU ATK_PAL_GREY ; neutral HIT, not Drill Peck's blue/ICE palette
+
+PreloadPoisonJabQuickHit::
+	ld hl,vSprites + POISON_JAB_HIT_TILE * 16
+	ld de,AnimationTileset1 + $44 * 16
+	ld b,BANK(AnimationTileset1)
+	ld c,1
+	call CopyVideoData
+	ld a,2
+	ld [rSVBK],a
+	ld a,POISON_JAB_HIT_PALETTE
+	ld [W2_SpritePaletteMap + POISON_JAB_HIT_TILE],a
+	ld a,1
+	ld [W2_ForceOBPUpdate],a
+	xor a
+	ld [rSVBK],a
+	ret
+
+PlayPoisonJabQuickHit::
+	; Match the first stage of $08,$27,$00: Poison Sting SFX, pitch $00,
+	; tempo $80. PlaySFX reads E (not A); the marker is temporary.
+	xor a
+	ld [wFrequencyModifier],a
+	ld a,$80
+	ld [wTempoModifier],a
+	ld a,2
+	ld [wSFXDontWait],a
+	ld e,SFX_BATTLE_1B
+	ld d,0
+	call PlaySFX
+	xor a
+	ld [wSFXDontWait],a
+
+	; Subanimation14's first FrameBlock30 is at BaseCoord $10:
+	; (Y=$20,X=$78). Enemy type-2 transform mirrors about X=168 and adds 40Y.
+	; Four H/V-mirrored quadrants form the original Drill Peck 16x16 HIT.
+	ld b,$20
+	ld c,$78
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.draw
+	ld b,$48
+	ld c,$28
+.draw
+	ld hl,DrillPeckSmallHitOAM
+	ld de,wOAMBuffer
+	ld a,4
+.drawQuad
+	push af
+	ld a,b
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,POISON_JAB_HIT_TILE
+	ld [de],a
+	inc de
+	ld a,[hli]
+	ld [de],a
+	inc de
+	pop af
+	dec a
+	jr nz,.drawQuad
+
+	; Original 117 $08,$27,$00: 8 VBlanks showing HIT and 1 cleanup.
+	; Its next $46,$5B,$14 used to reload 79 poison tiles via
+	; CopyVideoData (8 tiles/VBlank = 10 additional blank VBlanks).
+	; Preloading skips the original copy, so preserve that pause explicitly.
+	; Keep the 117 HIT duration and restore ONLY the missing transition,
+	; without reloading VRAM or changing Subanimation14's trajectory.
+	ld b,8
+.holdHit
+	push bc
+	call DelayFrame
+	pop bc
+	dec b
+	jr nz,.holdHit
+	call ClearSprites
+	call DelayFrame
+	ld c,10
+	call DelayFrames
+
+	; The following $14 uses the preloaded complete AnimationTileset2.
+	; The existing zero-lifetime $FD -> $14 pair skips only the reload.
+	ld a,$FE
+	ld [wBattleAnimSeamlessStage],a
+	xor a
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+
+; ---------------------------------------------------------------------------
+; ANM-5.61.26 - Gold-style Drill Peck using only Gen1 animation graphics
+; ---------------------------------------------------------------------------
+; Gold uses HIT_SMALL (4 OAM sprites) rather than Wing Attack's 9-sprite HIT,
+; spawns one point every 4 VBlanks, retriggers SFX_PECK on every point, and lets
+; each point live for 6 VBlanks.  Keep that timing while reusing Gen1 tile $44.
+PlayDrillPeckGoldLike::
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	ld a,20
+	ld [wSubAnimCounter],a
+
+	; First point: 4 VBlanks alone, then it overlaps the second point for 2.
+	call .loadCenter
+	ld a,SFX_PECK
+	call PlaySound
+	ld de,wOAMBuffer
+	call .drawSmallHit
+	ld c,4
+	call DelayFrames
+	ld a,[wSubAnimCounter]
+	dec a
+	ld [wSubAnimCounter],a
+
+.loop
+	call .loadCenter
+	ld a,SFX_PECK
+	call PlaySound
+
+	; New point appears beside the previous point for the 2-VBlank overlap
+	; that Gold gets from a 6-frame object lifetime and 4-frame spawn interval.
+	ld de,wOAMBuffer + 4 * 4
+	call .drawSmallHit
+	ld c,2
+	call DelayFrames
+
+	; Retire the previous point, compact the new point to lane 0, then leave it
+	; alone for 2 VBlanks before the following point is spawned.
+	call ClearSprites
+	ld de,wOAMBuffer
+	call .drawSmallHit
+	ld c,2
+	call DelayFrames
+
+	ld a,[wSubAnimCounter]
+	dec a
+	ld [wSubAnimCounter],a
+	jr nz,.loop
+
+	; Gold's last HIT_SMALL survives 6 VBlanks total.  Its anim_wait 16 then
+	; continues for another 14 blank VBlanks after the object deletes.
+	ld c,2
+	call DelayFrames
+	call ClearSprites
+	ld c,14
+	jp DelayFrames
+
+.loadCenter
+	; Counter 20,19,18,17... maps to center indices 0,1,2,3... without
+	; storing five copies of the same four-point orbit.
+	ld a,[wSubAnimCounter]
+	cpl
+	inc a
+	and 3
+	add a
+	ld e,a
+	ld d,0
+	ld hl,DrillPeckGoldCenters
+	add hl,de
+	ld a,[hli] ; player-side center X
+	ld b,a
+	ld a,[hl] ; player-side center Y
+	ld c,a
+	ld a,[H_WHOSETURN]
+	and a
+	jr z,.storeCenter
+	; Mirror the target-side orbit to the player's sprite position, matching
+	; legacy type-2 battle-animation geometry.
+	ld a,176
+	sub b
+	ld b,a
+	ld a,c
+	add 40
+	ld c,a
+.storeCenter
+	ld a,c
+	ld [wBaseCoordY],a
+	ld a,b
+	ld [wBaseCoordX],a
+	ret
+
+.drawSmallHit
+	; FrameBlock30 is the existing 16x16 four-quadrant impact made from tile
+	; $44.  Draw it around the requested center into the caller-selected OAM lane.
+	ld a,[wBaseCoordY]
+	sub 8
+	ld b,a
+	ld a,[wBaseCoordX]
+	sub 8
+	ld c,a
+	ld hl,DrillPeckSmallHitOAM
+	ld a,4
+.drawLoop
+	push af
+	ld a,b
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,$31 + $44
+	ld [de],a
+	inc de
+	ld a,[hli]
+	ld [de],a
+	inc de
+	pop af
+	dec a
+	jr nz,.drawLoop
+	ret
+
+DrillPeckSmallHitOAM:
+	db 0,0,0
+	db 0,8,OAM_HFLIP
+	db 8,0,OAM_VFLIP
+	db 8,8,OAM_HFLIP | OAM_VFLIP
+
+; Gold centers: left -> top -> right -> bottom. The 20-hit loop repeats these
+; five times; enemy use mirrors the four target-side centers.
+DrillPeckGoldCenters:
+	db 124,56, 132,48, 140,56, 132,64
+
+; ANM-5.61.14: $FE is reserved inside the seamless-pair table for a banked
+; custom helper target rather than a normal Subanimation ID.
+SEAMLESS_CUSTOM_TARGET EQU $FE
+
+; Shadow Punch uses Shadow Ball's short poof vocabulary, but Sub3C is anchored
+; for the orb's lower projectile impact.  Keep the fist from Subanimation $05
+; alive in the seamless high-water lane while these four centered poof frames run.
+PlayShadowPunchCenteredPoof::
+	; ANM-5.61.14: reuse the Acid high-water bridge for the first custom-target
+	; experiment.  Subanimation $05 has already left its final 3x3 fist in OAM;
+	; promote that saved high-water count to a 12-VBlank overlap carry.
+	ld c,SEAMLESS_CUSTOM_TARGET
+	call ActivateCustomBattleAnimBridge
+	; The largest poof frame uses 16 sprites.  If a future fist grows beyond
+	; 24 carried sprites, fail closed to the old poof path instead of overrunning OAM.
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jr z,.carrySizeReady
+	and $3f
+	cp 25
+	jr c,.carrySizeReady
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	call ClearSprites
+.carrySizeReady
+
+	; The poof uses a few tiles from AnimationTileset1, while the carried fist
+	; occupies $77-$7F.  Loading all 79 tiles would overwrite the live fist for
+	; several VBlanks, so refresh only the palette map and the two poof tile runs.
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	callba _LoadAnimationTilesetPalettes
+
+	; The fixed poof palette reload replaces the dynamic Ghost palette slot/map.
+	; Restore only the carried fist's nine tile IDs; the poof keeps its stock colors.
+	ld d,GHOST
+	ld e,BATTLE_TYPE_PAL_TILESET2
+	callba LoadBattleAnimTypePalette_Sprite
+	ld a,2
+	ld [rSVBK],a
+	ld hl,W2_SpritePaletteMap + $77
+	ld b,9
+	ld a,BATTLE_TYPE_PAL_TILESET2
+.restoreFistPaletteMap
+	ld [hli],a
+	dec b
+	jr nz,.restoreFistPaletteMap
+	ld a,1
+	ld [W2_ForceOBPUpdate],a
+	xor a
+	ld [rSVBK],a
+
+	ld hl,vSprites + $510
+	ld de,AnimationTileset1 + $20 * 16
+	ld b,BANK(AnimationTileset1)
+	ld c,6
+	call CopyVideoData
+	ld hl,vSprites + $610
+	ld de,AnimationTileset1 + $30 * 16
+	ld b,BANK(AnimationTileset1)
+	ld c,5
+	call CopyVideoData
+
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,48
+	ld [wBaseCoordY],a
+	ld a,136
+	jr z,.storeX
+	ld a,88
+	ld [wBaseCoordY],a
+	; ANM-5.61.43: enemy Punch transform centers the carried fist at X=36.
+	; Poof frames average 4 px left of wBaseCoordX, so use 40 (not 32).
+	ld a,40
+.storeX
+	ld [wBaseCoordX],a
+
+	ld hl,ShadowPunchPoofFrame06
+	call .drawFrame
+	ld hl,ShadowPunchPoofFrame07
+	call .drawFrame
+	ld hl,ShadowPunchPoofFrame08
+	call .drawFrame
+	ld hl,ShadowPunchPoofFrame09
+	call .drawFrame
+	; ANM-5.61.69: the prior enemy-side vertical feedback override is now
+	; centralized in DamageFeedbackOverrides; this renderer only draws the poof.
+	ret
+
+.drawFrame
+	; frame data = sprite count, object half-size, then legacy
+	; y-offset/x-offset/tile/flags tuples.  During the carry, draw after the fist's
+	; saved OAM high-water lane instead of overwriting it.
+	ld a,[hli]
+	ld b,a
+	ld a,[hli]
+	ld c,a
+	push hl
+	push bc
+	callba BattleAnimGetFrameDest
+	ld d,h
+	ld e,l
+	pop bc
+	pop hl
+.loop
+	ld a,[wBaseCoordY]
+	sub c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,[wBaseCoordX]
+	sub c
+	add [hl]
+	ld [de],a
+	inc hl
+	inc de
+	ld a,[hli]
+	add $31
+	ld [de],a
+	inc de
+	ld a,[hli]
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.loop
+	push hl
+	ld c,3
+.delay
+	push bc
+	call BattleAnimCarryDelayFrame
+	pop bc
+	dec c
+	jr nz,.delay
+	; For the first three frames this clears only the poof lane.  On frame 09,
+	; the 12-VBlank carry has just expired, so the same helper clears both layers.
+	call ClearBattleAnimTargetOAMKeepingCarry
+	pop hl
+	ret
+
+ShadowPunchPoofFrame06:
+	db 12,16
+	db $00,$08,$23,$00
+	db $08,$00,$32,$00
+	db $08,$08,$33,$00
+	db $00,$10,$23,$20
+	db $08,$10,$33,$20
+	db $08,$18,$32,$20
+	db $10,$00,$32,$40
+	db $10,$08,$33,$40
+	db $18,$08,$23,$40
+	db $10,$10,$33,$60
+	db $10,$18,$32,$60
+	db $18,$10,$23,$60
+ShadowPunchPoofFrame07:
+	db 16,16
+	db $00,$00,$20,$00
+	db $00,$08,$21,$00
+	db $08,$00,$30,$00
+	db $08,$08,$31,$00
+	db $00,$10,$21,$20
+	db $00,$18,$20,$20
+	db $08,$10,$31,$20
+	db $08,$18,$30,$20
+	db $10,$00,$30,$40
+	db $10,$08,$31,$40
+	db $18,$00,$20,$40
+	db $18,$08,$21,$40
+	db $10,$10,$31,$60
+	db $10,$18,$30,$60
+	db $18,$10,$21,$60
+	db $18,$18,$20,$60
+ShadowPunchPoofFrame08:
+	db 16,20
+	db $00,$00,$20,$00
+	db $00,$08,$21,$00
+	db $08,$00,$30,$00
+	db $08,$08,$31,$00
+	db $00,$18,$21,$20
+	db $00,$20,$20,$20
+	db $08,$18,$31,$20
+	db $08,$20,$30,$20
+	db $18,$00,$30,$40
+	db $18,$08,$31,$40
+	db $20,$00,$20,$40
+	db $20,$08,$21,$40
+	db $18,$18,$31,$60
+	db $18,$20,$30,$60
+	db $20,$18,$21,$60
+	db $20,$20,$20,$60
+ShadowPunchPoofFrame09:
+	db 12,20
+	db $00,$00,$24,$00
+	db $00,$08,$25,$00
+	db $08,$00,$34,$00
+	db $00,$18,$25,$20
+	db $00,$20,$24,$20
+	db $08,$20,$34,$20
+	db $18,$00,$34,$40
+	db $20,$00,$24,$40
+	db $20,$08,$25,$40
+	db $18,$20,$34,$60
+	db $20,$18,$25,$60
+	db $20,$20,$24,$60
+
+; Reuse Rock Slide's *native* RocksLift object layout for Meteor Mash.
+; FrameBlock23/24/25 already encode the 1 -> 2 -> 3 rock reveal and the final
+; three-object lift.  Instead of overriding those FrameBlocks with one Swift
+; star (which collapses the top phase to one object), patch the four rock
+; quadrant tiles with the stock Swift star's four quadrants, then play Sub1D
+; unchanged.  The next normal subanimation reload restores attack_anim_2.
+PlayRocksLiftWithSwiftStars::
+	ld a,1
+	ld [wWhichBattleAnimTileset],a
+	callba LoadAnimationTileset
+
+	; RocksLift uses relative tiles $0A/$0B for the top row and $1A/$1B for
+	; the bottom row.  Animation tiles begin at OBJ tile $31.
+	ld hl,vSprites + $3B0 ; $31 + $0A
+	ld de,MeteorMashLiftStarTiles
+	ld b,BANK(MeteorMashLiftStarTiles)
+	ld c,2
+	call CopyVideoData
+	ld hl,vSprites + $4B0 ; $31 + $1A
+	ld de,MeteorMashLiftStarTiles + 2 * 16
+	ld b,BANK(MeteorMashLiftStarTiles)
+	ld c,2
+	call CopyVideoData
+
+	ld a,3
+	ld [wSubAnimFrameDelay],a
+	ld a,$9C
+	ld [wAnimSoundID],a
+	ld hl,SubanimationPointers + $1D * 2
+	ld a,l
+	ld [wSubAnimAddrPtr],a
+	ld a,h
+	ld [wSubAnimAddrPtr + 1],a
+	callba LoadSubanimation
+	callba PlaySubanimation
+
+	; Sub1D deliberately ends on mode 3, leaving the final three-object rock
+	; layout in OAM.  Those objects point at the temporary $0A/$0B/$1A/$1B
+	; Swift-star replacements above.  The next normal $43 command reloads
+	; attack_anim_2; if the OAM is still alive at that VBlank, the same objects
+	; instantly turn back into the stock sand/Poison-Gas-looking tiles.
+	; Sub1D ends on mode 3, so the three raised stars are still live in OAM.
+	; Hold that completed pose for the user-tested 5-frame delay, then clear OAM
+	; before returning so the following tileset reload cannot morph the stars.
+	ld c,5
+	call DelayFrames
+	callba AnimationCleanOAM
+	ret
+
+MeteorMashLiftStarTiles:
+	INCBIN "gfx/meteor_mash_lift_star.2bpp"
+
+; ---------------------------------------------------------------------------
+; ANM-5.61.14 - reusable high-water overlap bridge, extended from Acid
+; ---------------------------------------------------------------------------
+; Keep Subanimation data untouched. Normal target IDs bridge verified stages that
+; share one animation tileset; a reserved custom target lets a banked helper manage
+; its own graphics transition while reusing the same source-pose/high-water state.
+;
+; lifetime = 0: seamless replacement with no blank or redundant tileset load.
+; lifetime > 0: keep the source's complete final OAM composition in a leading
+;               lane while the target starts immediately in the following lane.
+;
+; The important detail is "complete": a source may accumulate mode 2/3/4
+; FrameBlocks before a normal final cleanup frame. wNumFBTiles describes only
+; that final FrameBlock, so cleanup records the real OAM high-water mark: start
+; slot of the final FrameBlock + its size. The lifetime field remains available
+; for future verified overlap pairs without changing this framework.
+; Pair keys use the real move ID for dedicated recipes and the legacy animation
+; ID for ordinary command streams.  This keeps expanded moves such as Shadow Punch
+; distinct even when their Moves-table compatibility animation reuses Mega Punch.
+GetBattleAnimBridgeID::
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ld a,[wAnimationID]
+	ret z
+	jp GetCurrentMoveID
+
+UpdateSeamlessBattleAnimStage::
+	; Recover the compact Subanimation ID from its pointer-table address.
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld c,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	jr nz,.invalidStage
+	bit 0,c
+	jr nz,.invalidStage
+	srl c
+
+	; Preserve the immediately preceding source token and the high-water count
+	; captured on its final frame. wFBTileCounter is dead between subanimations,
+	; so it is safe as a one-call scratch byte here.
+	ld a,[wBattleAnimSeamlessStage]
+	ld e,a
+	ld a,[wBattleAnimStageCarryTimer]
+	ld [wFBTileCounter],a
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	call GetBattleAnimBridgeID
+	ld b,a
+	ld hl,SeamlessBattleAnimStagePairs
+.loop
+	ld a,[hli]
+	cp $ff
+	ret z
+	cp b
+	jr nz,.skipPair
+	ld a,[hli]
+	ld d,a                           ; source Subanimation ID
+	ld a,[hli]                       ; target Subanimation ID
+	cp c
+	jr nz,.consumeLifetime
+	; A target may bridge only from this exact immediately preceding source.
+	ld a,d
+	inc a                            ; source token = source ID + 1
+	cp e
+	jr nz,.consumeLifetime
+	ld a,[hl]                        ; carry lifetime in VBlanks
+	and $7f
+	or $80                           ; one-shot marker: same tileset, skip reload
+	ld [wBattleAnimStageCarryTimer],a
+	and $7f
+	jr z,.noCarryPose
+	; Use the source's recorded OAM high-water mark, not the size of its last
+	; FrameBlock. This preserves accumulated beams/flames built with mode 2/3/4.
+	ld a,[wFBTileCounter]
+	and $3f
+	jr z,.noCarryPose
+	cp 40
+	jr c,.storeCarryLane
+	ld a,40
+.storeCarryLane
+	or $80
+	ld [wBattleAnimSeamlessStage],a
+	jr .consumeLifetime
+.noCarryPose
+	; Zero-lifetime entries are pure seamless bridges: replace WRAM OAM now;
+	; hardware keeps the source visible until the target's first VBlank.
+	call ClearSprites
+.consumeLifetime
+	inc hl                           ; lifetime byte
+	ld a,d
+	cp c
+	jr nz,.loop
+	; Mark this stage as a possible source unless it is already the active target
+	; of an overlap bridge. The final-frame cleanup will capture its high-water.
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jr nz,.loop
+	ld a,d
+	inc a
+	ld [wBattleAnimSeamlessStage],a
+	jr .loop
+.skipPair
+	inc hl                           ; source ID
+	inc hl                           ; target ID
+	inc hl                           ; lifetime
+	jr .loop
+.invalidStage
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+
+; One VBlank of battle-animation time. When a target is carrying the preceding
+; source pose, decrement its independent lifetime after the combined OAM frame
+; has reached hardware. Expiry hides only the source lane; the target keeps going.
+BattleAnimCarryDelayFrame::
+	call DelayFrame
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	ret z
+	ld a,[wBattleAnimStageCarryTimer]
+	and a
+	ret z
+	dec a
+	ld [wBattleAnimStageCarryTimer],a
+	ret nz
+	ld a,[wBattleAnimSeamlessStage]
+	and $3f
+	ld b,a
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld hl,wOAMBuffer
+	ld a,b
+	and a
+	ret z
+	xor a
+.hideSourceLoop
+	ld [hl],a                       ; Y=0 hides this OAM entry
+	inc hl
+	inc hl
+	inc hl
+	inc hl
+	dec b
+	jr nz,.hideSourceLoop
+	ret
+
+; ANM-5.61.14: activate a carried source for a banked custom helper target.
+; Input: C = pseudo-target ID from SeamlessBattleAnimStagePairs.
+; The source token/high-water were captured by the same path Acid uses; this
+; routine only converts them to the active overlap representation and lifetime.
+ActivateCustomBattleAnimBridge::
+	ld a,[wBattleAnimSeamlessStage]
+	ld e,a                           ; source token = source Subanimation ID + 1
+	ld a,[wBattleAnimStageCarryTimer]
+	ld d,a                           ; saved source OAM high-water
+	call GetBattleAnimBridgeID
+	ld b,a
+	ld hl,SeamlessBattleAnimStagePairs
+.loop
+	ld a,[hli]
+	cp $ff
+	jr z,.fail
+	cp b
+	jr nz,.skipEntry
+	ld a,[hli]                       ; source Subanimation ID
+	inc a
+	cp e
+	jr nz,.skipTargetAndLifetime
+	ld a,[hli]                       ; target Subanimation/pseudo-target ID
+	cp c
+	jr nz,.skipLifetime
+	ld a,d
+	and $3f
+	jr z,.fail
+	cp 40
+	jr c,.storeLane
+	ld a,40
+.storeLane
+	or $80
+	ld [wBattleAnimSeamlessStage],a
+	ld a,[hl]                        ; carry lifetime in VBlanks
+	and $7f
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+.skipLifetime
+	inc hl
+	jr .loop
+.skipTargetAndLifetime
+	inc hl
+	inc hl
+	jr .loop
+.skipEntry
+	inc hl
+	inc hl
+	inc hl
+	jr .loop
+.fail
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	jp ClearSprites
+
+; Clear only the target lane while an overlap carry is alive. The source owns
+; entries [0,high-water); target keyframes are redrawn in [high-water,40).
+ClearBattleAnimTargetOAMKeepingCarry::
+	ld a,[wBattleAnimSeamlessStage]
+	and $3f
+	add a
+	add a
+	ld l,a
+	ld h,HIGH(wOAMBuffer)
+	ld a,40 * 4
+	sub l
+	ld b,a
+	ret z
+	xor a
+.clearTargetLoop
+	ld [hli],a
+	dec b
+	jr nz,.clearTargetLoop
+	ret
+
+; Capture the complete final OAM composition of an approved source stage.
+; wFBDestAddr points at the start of the final FrameBlock while wNumFBTiles is
+; that FrameBlock's size. Their sum is the actual high-water even after mode 2/3
+; accumulated earlier FrameBlocks. wOAMBuffer is page-aligned, so low/4 is slot.
+SaveBattleAnimSourceOAMHighWater::
+	ld a,[wFBDestAddr + 1]
+	srl a
+	srl a
+	ld b,a
+	ld a,[wNumFBTiles]
+	add b
+	cp 41
+	jr c,.store
+	ld a,40
+.store
+	ld [wBattleAnimStageCarryTimer],a
+	ret
+
+; Called through the register-preserving AnimationCleanOAM wrapper in BANK1E.
+; Approved sources keep only their final composite pose. Carry targets preserve
+; that complete source lane while clearing/redrawing only their own lane.
+AnimationCleanOAMSeamlessBody::
+	call BattleAnimCarryDelayFrame
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jr nz,.carryTarget
+	and a
+	jr z,.clearAll
+	ld a,[wSubAnimCounter]
+	cp 1
+	jr nz,.clearAll
+	call SaveBattleAnimSourceOAMHighWater
+	ret                              ; hold final source pose across the boundary
+.clearAll
+	jp ClearSprites
+.carryTarget
+	ld a,[wSubAnimCounter]
+	cp 1
+	jr nz,.clearTargetOnly
+	; Never leak a residual pose beyond its target stage even if its requested
+	; lifetime is longer than the target itself.
+	xor a
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	jp ClearSprites
+.clearTargetOnly
+	jp ClearBattleAnimTargetOAMKeepingCarry
+
+; bridge key, source Subanimation ID, target Subanimation ID, carry VBlanks
+; Normal target IDs must share one tileset. SEAMLESS_CUSTOM_TARGET reserves the
+; boundary for a banked helper that explicitly manages any graphics/palette swap.
+; Every carried pair must finish the source on a cleanup-capable frame and be
+; checked so source + target OAM stays within 40 sprites / scanline limits.
+SeamlessBattleAnimStagePairs:
+	; ANM-5.61.27: Sludge uses the same adjacent $13 -> $14 stages and tileset
+	; as Acid, so keep the boundary pose instead of clearing/reloading between them.
+	db ACID,         $13, $14, 0      ; same boundary pose: seamless replacement only
+	db SLUDGE,       $13, $14, 0      ; same two-stage poison animation as Acid
+	db SHADOW_PUNCH, $FD, $05, 0      ; ANM-5.61.59: prepared Quick Attack handoff; skip fist gfx reload
+	db POISON_JAB,    $FD, $14, 0     ; ANIM-5.62.151: prepared poison tiles; no redraw gap
+	db SHADOW_PUNCH, $05, SEAMLESS_CUSTOM_TARGET, 12 ; 9-sprite fist through 4x3-frame poof
+	; ANM-5.61.48: Gold starts Explosion2 four VBlanks before PunchShake disappears.
+	db DYNAMICPUNCH,  $05, SEAMLESS_CUSTOM_TARGET, 4  ; carry final fist into first explosion
+	db $ff

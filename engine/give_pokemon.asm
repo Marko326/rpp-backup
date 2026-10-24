@@ -18,6 +18,7 @@ _GivePokemon:
 	callab LoadEnemyMonData
 	call SetPokedexOwnedFlag
 	callab SendNewMonToBox
+	callab RegionalDexMarkGiftBoxOwned
 	ld hl, wcf4b
 	ld a, [wCurrentBoxNum]
 	and $7f
@@ -45,6 +46,9 @@ _GivePokemon:
 .addToParty
 	call SetPokedexOwnedFlag
 	call AddPartyMon
+	push af
+	callab RegionalDexMarkNewestPartyOwned
+	pop af
 	ld a, 1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ld [wAddedToParty], a

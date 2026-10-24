@@ -1,11 +1,9 @@
 PokemonTower5Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, PokemonTower5TrainerHeader0
 	ld de, PokemonTower5ScriptPointers
-	ld a, [wPokemonTower5CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower5CurScript], a
-	ret
+	ld bc, wPokemonTower5CurScript
+	jp Bank18RunTrainerMapScript
 
 PokemonTower5ScriptPointers:
 	dw PokemonTower5Script0
@@ -64,7 +62,6 @@ PokemonTower5TrainerHeader0:
 	dw PokemonTower5BattleText1 ; TextBeforeBattle
 	dw PokemonTower5AfterBattleText1 ; TextAfterBattle
 	dw PokemonTower5EndBattleText1 ; TextEndBattle
-	dw PokemonTower5EndBattleText1 ; TextEndBattle
 
 PokemonTower5TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_5_TRAINER_1
@@ -72,7 +69,6 @@ PokemonTower5TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_5_TRAINER_1
 	dw PokemonTower5BattleText2 ; TextBeforeBattle
 	dw PokemonTower5AfterBattleText2 ; TextAfterBattle
-	dw PokemonTower5EndBattleText2 ; TextEndBattle
 	dw PokemonTower5EndBattleText2 ; TextEndBattle
 
 PokemonTower5TrainerHeader2:
@@ -82,7 +78,6 @@ PokemonTower5TrainerHeader2:
 	dw PokemonTower5BattleText3 ; TextBeforeBattle
 	dw PokemonTower5AfterBattleText3 ; TextAfterBattle
 	dw PokemonTower5EndBattleText3 ; TextEndBattle
-	dw PokemonTower5EndBattleText3 ; TextEndBattle
 
 PokemonTower5TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_5_TRAINER_3
@@ -90,7 +85,6 @@ PokemonTower5TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_5_TRAINER_3
 	dw PokemonTower5BattleText4 ; TextBeforeBattle
 	dw PokemonTower5AfterBattleText4 ; TextAfterBattle
-	dw PokemonTower5EndBattleText4 ; TextEndBattle
 	dw PokemonTower5EndBattleText4 ; TextEndBattle
 
 	db $ff
@@ -100,10 +94,7 @@ PokemonTower5Text1:
 	db "@"
 
 PokemonTower5Text2:
-	TX_ASM
-	ld hl, PokemonTower5TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower5TrainerHeader0
 
 PokemonTower5BattleText1:
 	TX_FAR _PokemonTower5BattleText1
@@ -118,10 +109,7 @@ PokemonTower5AfterBattleText1:
 	db "@"
 
 PokemonTower5Text3:
-	TX_ASM
-	ld hl, PokemonTower5TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower5TrainerHeader1
 
 PokemonTower5BattleText2:
 	TX_FAR _PokemonTower5BattleText2
@@ -136,10 +124,7 @@ PokemonTower5AfterBattleText2:
 	db "@"
 
 PokemonTower5Text4:
-	TX_ASM
-	ld hl, PokemonTower5TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower5TrainerHeader2
 
 PokemonTower5BattleText3:
 	TX_FAR _PokemonTower5BattleText3
@@ -154,10 +139,7 @@ PokemonTower5AfterBattleText3:
 	db "@"
 
 PokemonTower5Text5:
-	TX_ASM
-	ld hl, PokemonTower5TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower5TrainerHeader3
 
 PokemonTower5BattleText4:
 	TX_FAR _PokemonTower5BattleText4

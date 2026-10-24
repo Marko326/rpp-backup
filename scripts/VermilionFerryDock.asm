@@ -1,6 +1,3 @@
-VermilionFerryScript:
-	jp EnableAutoTextBoxDrawing
-
 VermilionFerryTextPointers:
 	dw VermilionFerryText1
 

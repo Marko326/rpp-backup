@@ -1,16 +1,8 @@
 PokemonTower4Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, PokemonTower4TrainerHeader0
-	ld de, PokemonTower4ScriptPointers
-	ld a, [wPokemonTower4CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower4CurScript], a
-	ret
-
-PokemonTower4ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wPokemonTower4CurScript
+	jp Bank18RunStandardTrainerMapScript
 
 PokemonTower4TextPointers:
 	dw PokemonTower4Text1
@@ -27,7 +19,6 @@ PokemonTower4TrainerHeader0:
 	dw PokemonTower4BattleText1 ; TextBeforeBattle
 	dw PokemonTower4AfterBattleText1 ; TextAfterBattle
 	dw PokemonTower4EndBattleText1 ; TextEndBattle
-	dw PokemonTower4EndBattleText1 ; TextEndBattle
 
 PokemonTower4TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_POKEMONTOWER_4_TRAINER_1
@@ -35,7 +26,6 @@ PokemonTower4TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_POKEMONTOWER_4_TRAINER_1
 	dw PokemonTower4BattleText2 ; TextBeforeBattle
 	dw PokemonTower4AfterBattleText2 ; TextAfterBattle
-	dw PokemonTower4EndBattleText2 ; TextEndBattle
 	dw PokemonTower4EndBattleText2 ; TextEndBattle
 
 PokemonTower4TrainerHeader2:
@@ -45,27 +35,17 @@ PokemonTower4TrainerHeader2:
 	dw PokemonTower4BattleText3 ; TextBeforeBattle
 	dw PokemonTower4AfterBattleText3 ; TextAfterBattle
 	dw PokemonTower4EndBattleText3 ; TextEndBattle
-	dw PokemonTower4EndBattleText3 ; TextEndBattle
 
 	db $ff
 
 PokemonTower4Text1:
-	TX_ASM
-	ld hl, PokemonTower4TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower4TrainerHeader0
 
 PokemonTower4Text2:
-	TX_ASM
-	ld hl, PokemonTower4TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower4TrainerHeader1
 
 PokemonTower4Text3:
-	TX_ASM
-	ld hl, PokemonTower4TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER PokemonTower4TrainerHeader2
 
 PokemonTower4BattleText1:
 	TX_FAR _PokemonTower4BattleText1

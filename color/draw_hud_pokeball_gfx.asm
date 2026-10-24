@@ -36,23 +36,17 @@ EnemyHUDHAX:
 	ld [hl], $72
 	ld a, [wIsInBattle]
 	dec a
-	jr  nz, .notWildBattle
+	jr nz, .notWildBattle
 	push hl
-	ld a, [wEnemyMonSpecies2]
-	ld [wd11e], a
-	callab IndexToPokedex
-	ld a, [wd11e]
-	dec a
-	ld c, a
-	ld b, FLAG_TEST
-	ld hl, wPokedexOwned
-	predef FlagActionPredef
-	ld a, c
-	and a
-	jr z, .notOwned
+	; Test the original encounter identity, not the displayed Transform form.
+	; The far call preserves Z but does not preserve A as its return value.
+	callab RegionalDexWildHUDOwnedTest
+	ld a, " " ; always clear the previous wild opponent's marker
+	jr z, .writeOwnedMarker
+	ld a, $E9 ; same existing small gray HUD ball
+.writeOwnedMarker
 	coord hl, 1, 1
-	ld [hl], $E9
-.notOwned
+	ld [hl], a
 	pop hl
 .notWildBattle
 	ld de, $0001

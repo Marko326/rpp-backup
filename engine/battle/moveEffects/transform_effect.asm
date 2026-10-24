@@ -2,21 +2,46 @@ TransformEffect_:
 	ld hl, wBattleMonSpecies
 	ld de, wEnemyMonSpecies
 	ld bc, wEnemyBattleStatus3
-	ld a, [wEnemyBattleStatus1]
 	ld a, [H_WHOSETURN]
 	and a
-	jr nz, .hitTest
+	jr z, .playerUser
+	; BTL-5.62.19: enemy user targets the player, so the Fly/Dig test must
+	; inspect the player's BattleStatus1 instead of the turn selector itself.
+	ld a, [wPlayerBattleStatus1]
+	jr .hitTest
+.playerUser
 	ld hl, wEnemyMonSpecies
 	ld de, wBattleMonSpecies
 	ld bc, wPlayerBattleStatus3
 	ld [wPlayerMoveListIndex], a
-	ld a, [wPlayerBattleStatus1]
+	; Player user targets the enemy; preserve the target's BattleStatus1 for the
+	; Invulnerable test after the Transform identity checks.
+	ld a, [wEnemyBattleStatus1]
 .hitTest
+	; TRN-5.62.18: reject a second Transform before any animation/data copy, and
+	; reject an already-identical Species + runtime form. Same Species with a
+	; different regional form is still a meaningful Transform and remains allowed.
+	push af
+	ld a, [bc]
+	bit Transformed, a
+	jr nz, .identityFailed
+	call .sameSpeciesAndForm
+	jr nz, .differentIdentity
+.identityFailed
+	pop af
+	jp .failed
+.differentIdentity
+	pop af
 	bit Invulnerable, a ; is mon invulnerable to typical attacks? (fly/dig)
 	jp nz, .failed
 	push hl
 	push de
 	push bc
+	; TRN-5.62.18: all failure conditions have passed. Cache the user's exact
+	; pre-transform palette before the animation changes Species/Form. A short-lived
+	; staging bit makes palette reloads during the animation use this cache without
+	; changing the stock timing of the battle-status Transformed flag.
+	callba CacheTransformUserPalette
 	ld hl, wPlayerBattleStatus2
 	ld a, [H_WHOSETURN]
 	and a
@@ -46,6 +71,8 @@ TransformEffect_:
 	ld a, [bc]
 	set Transformed, a ; mon is now Transformed
 	ld [bc], a
+	; The permanent battle-status bit now owns palette restoration.
+	callba ClearTransformPaletteStaging
 	pop de
 	pop hl
 	push hl
@@ -64,9 +91,20 @@ TransformEffect_:
 	inc bc
 	inc bc
 	call CopyData
+	; MOVE-5.62.184: the four copied move bytes must travel together
+	; with their slot identity bits. The banked helper updates only the
+	; acting side's nibble. Preserve the CopyData source/destination
+	; pointers: the following DV copy still depends on both.
+	push hl
+	push de
+	callba CopyTransformBattleMoveMask
+	pop de
+	pop hl
 	ld a, [H_WHOSETURN]
 	and a
-	jr z, .next
+	jr nz, .saveEnemyDVs
+	jr .next
+.saveEnemyDVs
 ; save enemy mon DVs at wTransformedEnemyMonOriginalDVs
 	ld a, [de]
 	ld [wTransformedEnemyMonOriginalDVs], a
@@ -127,6 +165,32 @@ TransformEffect_:
 	ld hl, TransformedText
 	jp PrintText
 
+.sameSpeciesAndForm
+; Return Z only when both active battle slots have the same Species and runtime
+; regional form. Preserve the Transform copy pointers used by the caller.
+	push bc
+	push de
+	push hl
+	ld a, [wEnemyMonSpecies]
+	ld d, a
+	ld a, [wBattleMonSpecies]
+	cp d
+	jr nz, .identityCompared
+	ld e, 0 ; player battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	ld a, d
+	push af
+	ld e, 1 ; enemy battle slot
+	callba RegionalFormGetBattleSlotFormIdentity
+	ld e, d
+	pop af
+	cp e
+.identityCompared
+	pop hl
+	pop de
+	pop bc
+	ret
+
 .copyBasedOnTurn
 	ld a, [H_WHOSETURN]
 	and a
@@ -140,6 +204,10 @@ TransformEffect_:
 	jp CopyData
 
 .failed
+	; BTL-5.62.19: ResidualEffects1 skips the common post-move pause. Match
+	; other direct-failure effects so the move-use text remains readable first.
+	ld c, 50
+	call DelayFrames
 	ld hl, PrintButItFailedText_
 	jp BankswitchEtoF
 

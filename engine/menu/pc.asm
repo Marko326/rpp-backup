@@ -11,6 +11,7 @@ ActivatePC:
 	call Delay3
 PCMainMenu:
 	callba DisplayPCMainMenu
+.handleInput
 	ld hl, wFlags_0xcd60
 	set 5, [hl]
 	call HandleMenuInput
@@ -69,7 +70,17 @@ PKMNLeague:
 	call PlaySound
 	call WaitForSoundToFinish
 	callba PKMNLeaguePC
-	jr ReloadMainMenu
+	; PC-5.62.14: PKMNLeaguePC returns with the restored overworld tileset hidden
+	; behind white palettes. Restore the background already owned by this PC
+	; session without transferring it yet, then compose the menu on top.
+	xor a
+	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
+	call LoadScreenTilesFromBuffer2DisableBGTransfer
+	call UpdateSprites
+	callba DisplayPCMainMenu
+	call Delay3
+	call GBPalNormal
+	jp PCMainMenu.handleInput
 BillsPC:
 	ld a, SFX_ENTER_PC
 	call PlaySound

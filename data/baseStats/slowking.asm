@@ -1,5 +1,4 @@
 SlowkingBaseStats:
-db DEX_SLOWKING ; pokedex id
 db 95 ; base hp
 db 75 ; base attack
 db 80 ; base defense
@@ -7,7 +6,8 @@ db 30 ; base speed
 db 110 ; base special
 db WATER ; species type 1
 db PSYCHIC ; species type 2
-db 70 ; catch rate
+SLOWKING_CATCH_RATE EQU 70
+db SLOWKING_CATCH_RATE ; catch rate
 db 164 ; base exp yield
 INCBIN "pic/bmon/slowking.pic",0,1 ; 77, sprite dimensions
 dw SlowkingPicFront
@@ -15,9 +15,6 @@ dw SlowkingPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,15,16

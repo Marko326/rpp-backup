@@ -112,22 +112,33 @@ CalcEXPBarPixelLength:
 	ld hl, wd72c
 	bit 1, [hl]
 	jr z, .isBattleScreen
-	ld hl, wLoadedMonSpecies
-	jr .skip
+	; FORM-5.62.13: Summary/Status owns a concrete loaded instance. Its growth
+	; rate must come from the same Species + stored-form marker as its other data.
+	callba RegionalFormLoadLoadedMonHeader
+	jr .headerReady
 
 .isBattleScreen
 	; get the base exp needed for the current level
 	ld a, [wPlayerBattleStatus3]
-	ld hl, wBattleMonSpecies
-	bit Transformed, a ; Check if transformed
-	jr z, .skip
+	bit Transformed, a ; transformed mons still earn EXP on their original growth curve
+	jr z, .activeBattleMon
+	; Resolve the original party instance directly: Transform can change the
+	; battle Species, but must not change which stored mon owns the EXP curve.
 	ld hl, wPartyMon1
 	call BattleMonPartyAttr
-	
-.skip
 	ld a, [hl]
+	ld d, a
 	ld [wd0b5], a
+	ld bc, wPartyMon1CatchRate - wPartyMon1Species
+	add hl, bc
+	ld a, [hl]
+	ld e, a
 	call GetMonHeader
+	callba RegionalFormApplySpeciesMarkerHeader
+	jr .headerReady
+.activeBattleMon
+	callba RegionalFormLoadBattleMonHeader
+.headerReady
 	ld a, [wBattleMonLevel]
 	ld d, a
 	callab CalcExperience

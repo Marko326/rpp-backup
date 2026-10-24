@@ -1,5 +1,4 @@
 LatiasBaseStats:
-db DEX_LATIAS ; pokedex id
 db 80 ; base hp
 db 80 ; base attack
 db 90 ; base defense
@@ -15,9 +14,6 @@ dw LatiasPicBack
 ; move tutor compatibility flags
 	m_tutor 6
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; include learnset directly
 	tmlearn 2,3,4,6,8
 	tmlearn 9,10,11,13,14,15,16

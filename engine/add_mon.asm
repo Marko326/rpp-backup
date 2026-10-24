@@ -16,6 +16,26 @@ _AddPartyMon:
 	ld [de], a
 	ld a, [de]
 	ld [hNewPartyLength], a
+	; A newly created Party member owns only legacy generated moves.
+	; Never inherit a stale sidecar from a vacated party slot.
+	push af
+	push de
+	push hl
+	ld a, [wMonDataLocation]
+	and $0f
+	jr nz, .skipExtendedNewPartyFlag
+	ld a, [hNewPartyLength]
+	dec a
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	xor a
+	ld [hl], a
+.skipExtendedNewPartyFlag
+	pop hl
+	pop de
+	pop af
 	add e
 	ld e, a
 	jr nc, .noCarry
@@ -67,6 +87,7 @@ _AddPartyMon:
 	ld a, [wcf91]
 	ld [wd0b5], a
 	call GetMonHeader
+	callba RegionalFormPrepareCaughtMonHeader ; FORM-5.20.03: persist caught form
 	ld hl, wMonHeader
 	ld a, [hli]
 	ld [de], a ; species
@@ -88,6 +109,7 @@ _AddPartyMon:
 	jr nz, .writeFreshMonData
 
 ; If the mon is being added to the player's party, update the pokedex.
+	; FORM-5.20.03: regional forms intentionally share their species Pokédex bit.
 	ld a, [wcf91]
 	ld [wd11e], a
 	push de
@@ -203,7 +225,11 @@ _AddPartyMon:
 	dec de
 	xor a
 	ld [wLearningMovesFromDayCare], a
+	; FORM-5.20.03: a stored Alolan marker selects its independent level-up table.
+	callba RegionalFormTryWriteStoredMonMoves
+	jr c,.regionalMovesReady
 	predef WriteMonMoves
+.regionalMovesReady
 	pop de
 	ld a, [wPlayerID]  ; set trainer ID to player ID
 	inc de
@@ -267,6 +293,11 @@ AddPartyMon_WriteMovePP:
 	ld a, [hli]     ; read move ID
 	and a
 	jr z, .empty
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .stockMove
+	ld a, 10 ; independent Power Whip max PP in the second move table
+	jr .empty
+.stockMove
 	dec a
 	push hl
 	push de

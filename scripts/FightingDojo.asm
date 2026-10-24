@@ -1,11 +1,9 @@
 FightingDojoScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, FightingDojoTrainerHeader0
 	ld de, FightingDojoScriptPointers
-	ld a, [wFightingDojoCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wFightingDojoCurScript], a
-	ret
+	ld bc, wFightingDojoCurScript
+	jp Bank17RunTrainerMapScript
 
 FightingDojoScript_5cd70:
 	xor a
@@ -97,7 +95,6 @@ FightingDojoTrainerHeader0:
 	dw FightingDojoBattleText1 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText1 ; TextAfterBattle
 	dw FightingDojoEndBattleText1 ; TextEndBattle
-	dw FightingDojoEndBattleText1 ; TextEndBattle
 
 FightingDojoTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_FIGHTING_DOJO_TRAINER_1
@@ -105,7 +102,6 @@ FightingDojoTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_FIGHTING_DOJO_TRAINER_1
 	dw FightingDojoBattleText2 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText2 ; TextAfterBattle
-	dw FightingDojoEndBattleText2 ; TextEndBattle
 	dw FightingDojoEndBattleText2 ; TextEndBattle
 
 FightingDojoTrainerHeader2:
@@ -115,7 +111,6 @@ FightingDojoTrainerHeader2:
 	dw FightingDojoBattleText3 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText3 ; TextAfterBattle
 	dw FightingDojoEndBattleText3 ; TextEndBattle
-	dw FightingDojoEndBattleText3 ; TextEndBattle
 
 FightingDojoTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_FIGHTING_DOJO_TRAINER_3
@@ -123,7 +118,6 @@ FightingDojoTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_FIGHTING_DOJO_TRAINER_3
 	dw FightingDojoBattleText4 ; TextBeforeBattle
 	dw FightingDojoAfterBattleText4 ; TextAfterBattle
-	dw FightingDojoEndBattleText4 ; TextEndBattle
 	dw FightingDojoEndBattleText4 ; TextEndBattle
 
 	db $ff
@@ -177,10 +171,7 @@ FightingDojoText_5ce9d:
 	db "@"
 
 FightingDojoText2:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader0
 
 FightingDojoBattleText1:
 	TX_FAR _FightingDojoBattleText1
@@ -195,10 +186,7 @@ FightingDojoAfterBattleText1:
 	db "@"
 
 FightingDojoText3:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader1
 
 FightingDojoBattleText2:
 	TX_FAR _FightingDojoBattleText2
@@ -213,10 +201,7 @@ FightingDojoAfterBattleText2:
 	db "@"
 
 FightingDojoText4:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader2
 
 FightingDojoBattleText3:
 	TX_FAR _FightingDojoBattleText3
@@ -231,10 +216,7 @@ FightingDojoAfterBattleText3:
 	db "@"
 
 FightingDojoText5:
-	TX_ASM
-	ld hl, FightingDojoTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER FightingDojoTrainerHeader3
 
 FightingDojoBattleText4:
 	TX_FAR _FightingDojoBattleText4
@@ -260,10 +242,7 @@ FightingDojoText6:
 	ld a, HITMONLEE
 	call DisplayPokedex
 	ld hl, WantHitmonleeText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done
 	ld a, [wcf91]
 	ld b, a
@@ -295,10 +274,7 @@ FightingDojoText7:
 	ld a, HITMONCHAN
 	call DisplayPokedex
 	ld hl, WantHitmonchanText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done
 	ld a, [wcf91]
 	ld b, a

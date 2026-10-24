@@ -1,5 +1,4 @@
 LugiaBaseStats:
-db DEX_LUGIA ; pokedex id
 db 106 ; base hp
 db 90 ; base attack
 db 130 ; base defense
@@ -15,9 +14,6 @@ dw LugiaPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; include learnset directly
 	tmlearn 4,6,8
 	tmlearn 9,10,11,12,13,14,15,16

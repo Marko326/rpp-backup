@@ -41,6 +41,15 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, c
 	and a ; is the mon's bit set?
 	jp z, Evolution_PartyMonLoop ; if not, go to the next mon
+	ld a, [wcf91]
+	push af
+	xor a ; PLAYER_PARTY_DATA
+	ld [wMonDataLocation], a
+	call LoadMonData
+	pop af
+	ld [wcf91], a
+	callba RegionalFormTryGetLoadedMonEvolutionPointer
+	jr c,.evolutionDataReady
 	ld a, [wEvoOldSpecies]
 	dec a
 	ld b, 0
@@ -52,18 +61,11 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	push hl
-	ld a, [wcf91]
-	push af
-	xor a ; PLAYER_PARTY_DATA
-	ld [wMonDataLocation], a
-	call LoadMonData
-	pop af
-	ld [wcf91], a
-	pop hl
+	jr .evolutionDataReady
+.evolutionDataReady
 
 .evoEntryLoop ; loop over evolution entries
-	ld a, [hli]
+	call .readDataByte
 	and a ; have we reached the end of the evolution data?
 	jr z, Evolution_PartyMonLoop
 	ld b, a ; evolution type
@@ -95,7 +97,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, [wLinkState]
 	cp LINK_STATE_TRADING
 	jp nz, .nextEvoEntry1 ; if not trading, go to the next evolution entry
-	ld a, [hli] ; level requirement
+	call .readDataByte ; level requirement
 	ld b, a
 	ld a, [wLoadedMonLevel]
 	cp b ; is the mon's level greater than the evolution requirement?
@@ -103,7 +105,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jp .doEvolution
 	
 .checkMapEvo
-	ld a, [hli]
+	call .readDataByte
 	ld b, a ; Map to evolve on
 	ld a, [wCurMap]
 	cp b ; Are we on the right map?
@@ -112,7 +114,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jp .doEvolution; Do evolution
 	
 .checkMoveEvo
-	ld a, [hli] ; get the move number
+	call .readDataByte ; get the move number
 	ld [wMoveNum],a ; store it here to hang onto it
 	push hl ; We don't want to lose our place
 	call CheckForMove ; New routine based on the one used by TMs
@@ -122,12 +124,12 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jp .doEvolution; If they did know it, do the evolution
 	
 .checkRandomEvo
-	ld a, [hli] ; get level to evolve
+	call .readDataByte ; get level to evolve
 	ld b, a
 	ld a, [wLoadedMonLevel]
 	cp b
 	jp c, .nextEvoEntry1 ; if too low, go to next evolution
-	ld a, [hli] ; which method is this?
+	call .readDataByte ; which method is this?
 	dec a ; is it RAND_1?
 	jr z, .rand1
 ;rand2
@@ -147,12 +149,12 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jr .doEvolution ; Do evolution
 	
 .checkTyrogueEvo
-    ld a, [hli] ; level to evolve
+    call .readDataByte ; level to evolve
     ld b, a
     ld a, [wLoadedMonLevel] ; current level
     cp b
     jp c, .nextEvoEntry1 ; if too low, go to next evo
-    ld a, [hli] ; which method is this?
+    call .readDataByte ; which method is this?
     cp ATK_HIGHER
     jp z, .AtkHigher
     cp BOTH_EQUAL
@@ -183,7 +185,7 @@ Evolution_PartyMonLoop: ; loop over party mons
     jr .doEvolution ; Do first Pokemon if Def is higher
 	
 .checkItemEvo
-	ld a, [hli]
+	call .readDataByte
 	ld b, a ; evolution item
     ld a,[wIsInBattle] ; check if we're in a battle
 	and a
@@ -194,7 +196,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	; fallthrough
 	
 .checkLevel
-	ld a, [hli] ; level requirement
+	call .readDataByte ; level requirement
 	ld b, a
 	ld a, [wLoadedMonLevel]
 	cp b ; is the mon's level greater than the evolution requirement?
@@ -206,8 +208,9 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld a, 1
 	ld [wEvolutionOccurred], a
 	push hl
-	ld a, [hl]
+	call .peekDataByte
 	ld [wEvoNewSpecies], a
+	callba RegionalFormResolveEvolutionTargetForm
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMonNicks
 	call GetPartyMonName
@@ -231,10 +234,9 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld hl, EvolvedText
 	call PrintText
 	pop hl
-	ld a, [hl]
+	ld a, [wEvoNewSpecies]
 	ld [wd0b5], a
 	ld [wLoadedMonSpecies], a
-	ld [wEvoNewSpecies], a
 	ld a, MONSTER_NAME
 	ld [wNameListType], a
 	ld a, BANK(TrainerNames) ; bank is not used for monster names
@@ -252,22 +254,7 @@ Evolution_PartyMonLoop: ; loop over party mons
 	call RenameEvolvedMon
 	ld a, [wd11e]
 	push af
-	ld a, [wd0b5]
-	ld [wd11e], a
-	predef IndexToPokedex
-	ld a, [wd11e]
-	dec a
-	ld hl, BaseStats
-	ld bc, MonBaseStatsEnd - MonBaseStats
-	call AddNTimes
-	ld de, wMonHeader
-	;call CopyData
-; New thing to move BaseStats into another bank
-	ld a, BANK(BaseStats)
-	call FarCopyData
-;End new thing
-	ld a, [wd0b5]
-	ld [wMonHIndex], a
+	callba RegionalFormCommitEvolutionTargetHeader
 	pop af
 	ld [wd11e], a
 	ld hl, wLoadedMonHPExp - 1
@@ -308,23 +295,17 @@ Evolution_PartyMonLoop: ; loop over party mons
 	ld [wd11e], a
 	xor a
 	ld [wMonDataLocation], a
+	callba RegionalFormTryLearnLevelMove
+	jr c,.evolutionLevelMoveHandled
 	call LearnMoveFromLevelUp
+.evolutionLevelMoveHandled
 	pop hl
 	predef SetPartyMonTypes
 	ld a, [wIsInBattle]
 	and a
 	call z, Evolution_ReloadTilesetTilePatterns
-	predef IndexToPokedex
-	ld a, [wd11e]
-	dec a
-	ld c, a
-	ld b, FLAG_SET
-	ld hl, wPokedexOwned
-	push bc
-	call Evolution_FlagAction
-	pop bc
-	ld hl, wPokedexSeen
-	call Evolution_FlagAction
+	; Species flags and exact newly evolved form now share one success-only hook.
+	callba RegionalDexMarkEvolvedMonOwned
 	pop de
 	pop hl
 	ld a, [wLoadedMonSpecies]
@@ -335,11 +316,55 @@ Evolution_PartyMonLoop: ; loop over party mons
 	jr .nextEvoEntry2
    
 .nextEvoEntry1
-	inc hl
+	call .skipDataByte
 
 .nextEvoEntry2
-	inc hl
+	call .skipDataByte
 	jp .evoEntryLoop
+
+; FORM-5.21.06: normal species keep using HL directly. A non-zero high byte in
+; wRegionalFormEvolutionReadPointer switches the same parser to bank-$34 data.
+; The far helpers return their byte in E because Bankswitch overwrites A while
+; restoring the caller ROM bank. Preserve the parser's DE around the adapter.
+.readDataByte:
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	and a
+	jr z,.readNormal
+	push de
+	callba RegionalFormReadEvolutionByte
+	ld a,e
+	pop de
+	ret
+.readNormal
+	ld a,[hli]
+	ret
+
+.peekDataByte:
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	and a
+	jr z,.peekNormal
+	push de
+	callba RegionalFormPeekEvolutionByte
+	ld a,e
+	pop de
+	ret
+.peekNormal
+	ld a,[hl]
+	ret
+
+.skipDataByte:
+	ld a,[wRegionalFormEvolutionReadPointer + 1]
+	and a
+	jr z,.skipNormal
+	ld hl,wRegionalFormEvolutionReadPointer
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.skipNormal
+	inc hl
+	ret
 
 .done
 	pop de
@@ -418,7 +443,70 @@ Evolution_ReloadTilesetTilePatterns:
 	ret z
 	jp ReloadTilesetTilePatterns
 
+ReadPackedLevelMove:
+; LEARN-5.31.01 packed level-up learnset iterator.
+; Input:
+;   HL = packed learnset cursor
+;   B  = previous absolute learn level (0 before the first entry)
+;   C  = iterator state (0 before the first entry)
+; Output when carry is set:
+;   A  = move ID
+;   B  = absolute learn level
+;   C  = updated iterator state
+;   HL = cursor for the next entry
+; Carry clear means end of learnset. DE is preserved.
+	push de
+	bit 7,c
+	jr nz,.secondEntry
+
+	ld a,[hli] ; first move, or 0 for an even-length terminator
+	and a
+	jr z,.done
+	ld e,a
+	ld a,[hli] ; packed delta header
+	ld d,a
+	and $f
+	or $80
+	ld c,a ; remember second delta and mark it pending
+	ld a,d
+	swap a
+	and $f
+	ld d,a ; first delta code
+	jr .applyDelta
+
+.secondEntry
+	ld d,c
+	res 7,c ; consuming the pending second entry
+	ld a,[hli] ; second move, or 0 for an odd-length terminator
+	and a
+	jr z,.done
+	ld e,a
+	ld a,d
+	and $f
+	ld d,a ; second delta code
+
+.applyDelta
+	ld a,d
+	cp $f
+	jr nz,.deltaReady
+	ld a,[hli] ; escaped full 8-bit delta
+.deltaReady
+	add b
+	ld b,a
+	ld a,e
+	pop de
+	scf
+	ret
+
+.done
+	pop de
+	and a ; clear carry
+	ret
+
 LearnMoveFromLevelUp:
+	; The extended-learning ordinal is local to this synchronous level-up.
+	xor a
+	ld [wExtendedLearningMoveOrdinal], a
 	ld a, [wd11e] ; species
 	ld [wcf91], a
 	dec a
@@ -435,47 +523,34 @@ LearnMoveFromLevelUp:
 	ld a, [hli]
 	and a ; have we reached the end of the evolution data?
 	jr nz, .skipEvolutionDataLoop ; if not, jump back up
-	
-.learnSetLoop ; loop over the learn set until we reach a move that is learnt at the current level or the end of the list
-	ld a, [hli]
-	and a ; have we reached the end of the learn set?
-	jr z, .done ; if we've reached the end of the learn set, jump
-	
-	ld b, a ; level the move is learnt at
-	ld a, [wCurEnemyLVL]
-	cp b ; is the move learnt at the mon's current level?
-	ld a, [hli] ; move ID
-	jr nz, .learnSetLoop
-	
-	push hl
-	ld d, a ; ID of move to learn
-	ld hl, wPartyMon1Moves
-	ld a, [wWhichPokemon]
-	ld bc, wPartyMon2 - wPartyMon1
-	call AddNTimes
 
-	ld b, NUM_MOVES
-.checkCurrentMovesLoop ; check if the move to learn is already known
-	ld a, [hli]
-	cp d
-	jr z, .has_move ; if already known, jump
-	dec b
-	jr nz, .checkCurrentMovesLoop
-;learn move
-	ld a, d
-	ld [wMoveNum], a
-	ld [wd11e], a
-	call GetMoveName
-	call CopyStringToCF4B
-	predef LearnMove
-.has_move
+	ld b,0 ; previous absolute learn level
+	ld c,0 ; packed iterator state
+.learnSetLoop ; loop over the packed learnset until the current level is found
+	call ReadPackedLevelMove
+	jr nc,.done
+	ld d,a ; move ID
+	ld a,[wCurEnemyLVL]
+	cp b ; is the move learnt at the mon's current level?
+	jr nz,.learnSetLoop
+
+	; MOVE-5.62.178: packed rows are ordinary IDs. The shared learner
+	; owns complete-identity filtering, name preparation and LearnMove.
+	; Preserve parser cursor, packed iterator state and original DE.
+	push hl
+	push bc
+	push de
+	ld e,0
+	callba TryLearnPartyLevelMove
+	pop de
+	pop bc
 	pop hl
 	jr .learnSetLoop
 	
 .done
-	ld a, [wcf91]
-	ld [wd11e], a
-	ret
+	; Normal packed data has ended. EXT-only supplemental rows are
+	; handled in floating ROMX, without changing stock packing or readers.
+	jpba TryLearnExtendedLevelUpSources
 
 ; writes the moves a mon has at level [wCurEnemyLVL] to [de]
 ; move slots are being filled up sequentially and shifted if all slots are full
@@ -499,27 +574,28 @@ WriteMonMoves:
 	ld a, [hli]
 	and a
 	jr nz, .skipEvoEntriesLoop
-	jr .firstMove
-.nextMove
-	pop de
-.nextMove2
-	inc hl
-.firstMove
-	ld a, [hli]       ; read level of next move in learnset
-	and a
-	jp z, .done       ; end of list
-	ld b, a
-	ld a, [wCurEnemyLVL]
-	cp b
-	jp c, .done       ; mon level < move level (assumption: learnset is sorted by level)
-	ld a, [wLearningMovesFromDayCare]
-	and a
-	jr z, .skipMinLevelCheck
-	ld a, [wDayCareStartLevel]
-	cp b
-	jr nc, .nextMove2 ; min level >= move level
 
-.skipMinLevelCheck
+	ld b,0 ; previous absolute learn level
+	ld c,0 ; packed iterator state
+.learnSetLoop
+	call ReadPackedLevelMove
+	jp nc,.done
+	push af ; keep move ID while checking the level filters
+	ld a,[wCurEnemyLVL]
+	cp b
+	jr c,.pastCurrentLevel ; learnsets are sorted by level
+	ld a,[wLearningMovesFromDayCare]
+	and a
+	jr z,.processMove
+	ld a,[wDayCareStartLevel]
+	cp b
+	jr nc,.skipPackedMove ; min level >= move level
+
+.processMove
+	pop af
+	push hl ; packed cursor
+	push bc ; packed iterator state
+	ld b,a ; current move ID
 
 ; check if the move is already known
 	push de
@@ -527,8 +603,8 @@ WriteMonMoves:
 .alreadyKnowsCheckLoop
 	ld a, [de]
 	inc de
-	cp [hl]
-	jr z, .nextMove
+	cp b
+	jr z, .finishEntryWithDE
 	dec c
 	jr nz, .alreadyKnowsCheckLoop
 
@@ -539,7 +615,7 @@ WriteMonMoves:
 .findEmptySlotLoop
 	ld a, [de]
 	and a
-	jr z, .writeMoveToSlot2
+	jr z, .writeMoveToSlot
 	inc de
 	dec c
 	jr nz, .findEmptySlotLoop
@@ -547,7 +623,6 @@ WriteMonMoves:
 ; no empty move slots found
 	pop de
 	push de
-	push hl
 	ld h, d
 	ld l, e
 	call WriteMonMoves_ShiftMoveData ; shift all moves one up (deleting move 1)
@@ -556,6 +631,8 @@ WriteMonMoves:
 	jr z, .writeMoveToSlot
 
 ; shift PP as well if learning moves from day care
+	ld a,b
+	push af ; preserve current move ID while BC is used for the PP offset
 	push de
 	ld bc, wPartyMon1PP - (wPartyMon1Moves + 3)
 	add hl, bc
@@ -563,19 +640,18 @@ WriteMonMoves:
 	ld e, l
 	call WriteMonMoves_ShiftMoveData ; shift all move PP data one up
 	pop de
+	pop af
+	ld b,a
 
 .writeMoveToSlot
-	pop hl
-.writeMoveToSlot2
-	ld a, [hl]
+	ld a,b
 	ld [de], a
 	ld a, [wLearningMovesFromDayCare]
 	and a
-	jr z, .nextMove
+	jr z, .finishEntryWithDE
 
 ; write move PP value if learning moves from day care
-	push hl
-	ld a, [hl]
+	ld a,b
 	ld hl, wPartyMon1PP - wPartyMon1Moves
 	add hl, de
 	push hl
@@ -589,9 +665,20 @@ WriteMonMoves:
 	ld a, [wBuffer + 5]
 	pop hl
 	ld [hl], a
-	pop hl
-	jr .nextMove
 
+.finishEntryWithDE
+	pop de
+.finishEntry
+	pop bc
+	pop hl
+	jr .learnSetLoop
+
+.skipPackedMove
+	pop af
+	jr .learnSetLoop
+
+.pastCurrentLevel
+	pop af
 .done
 	pop bc
 	pop de
@@ -666,14 +753,20 @@ GetMonDVs:
 PrepareRelearnableMoveList:
 ; Loads relearnable move list to wRelearnableMoves.
 ; Input: party mon index = [wWhichPokemon]
-	; Get mon id.
+	; Clear the parallel extended identities before either ordinary or
+	; regional list construction. The item list is not active in this NPC.
+	xor a
+	ld hl, wExtendedNPCListMoveOrdinals
+	ld bc, MOVE_RELEARNER_MAX_MOVES
+	call FillMemory
+	callba RegionalFormPrepareRelearnableMoveList
+	ret c
 	ld a, [wWhichPokemon]
 	ld c, a
 	ld b, 0
 	ld hl, wPartySpecies
 	add hl, bc
-	ld a, [hl] ; a = mon id
-	; Get pointer to evos moves data.
+	ld a, [hl]
 	dec a
 	ld c, a
 	ld b, 0
@@ -682,87 +775,104 @@ PrepareRelearnableMoveList:
 	add hl, bc
 	ld a, [hli]
 	ld h, [hl]
-	ld l, a  ; hl = pointer to evos moves data for our mon
+	ld l, a
+.skipEvoEntriesLoop
+	ld a, [hli]
+	and a
+	jr nz, .skipEvoEntriesLoop
 	push hl
-	; Get pointer to mon's currently-known moves.
+	; Cache the mon's current level in the existing generic scratch buffer.
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1Level
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
 	ld a, [hl]
-	ld b, a
-	push bc
+	ld [wBuffer],a
+	; Get pointer to mon's currently-known moves.
 	ld a, [wWhichPokemon]
 	ld hl, wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
 	call AddNTimes
-	pop bc
 	ld d, h
 	ld e, l
+	; MOVE-5.62.169: the learnset cursor was ALREADY pushed before loading the
+	; party move pointer. Only DE needs temporary protection here.
+	; A second push hl left an extra word on the stack, so the final ret
+	; jumped into packed learnset data instead of returning to the NPC.
+	push de
+	ld a, [wWhichPokemon]
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld [wExtendedMoveFlagsScratch], a
+	pop de
 	pop hl
-	; Skip over evolution data.
-.skipEvoEntriesLoop
-	ld a, [hli]
-	and a
-	jr nz, .skipEvoEntriesLoop
-	; Write list of relearnable moves, while keeping count along the way.
-	; de = pointer to mon's currently-known moves
-	; hl = pointer to moves data for our mon
-	;  b = mon's level
-	ld c, 0 ; c = count of relearnable moves
+	xor a
+	ld [wRelearnableMoves],a ; running output count
+	ld b,0 ; previous absolute learn level
+	ld c,0 ; packed iterator state
 .loop
-	ld a, [hli]
-	and a
-	jr z, .done
+	call ReadPackedLevelMove
+	jr nc,.done
+	push af ; current move ID
+	ld a,[wBuffer]
 	cp b
-	jr c, .addMove
-	jr nz, .done
-.addMove
-	push bc
-	ld a, [hli] ; move id
-	ld b, a
+	jr c,.pastCurrentLevel ; sorted learnset: no later move can qualify
+	pop af
+	push hl
+	push bc ; preserve packed iterator state
+	ld b,a ; move ID
 	; Check if move is already known by our mon.
 	push de
-	ld a, [de]
-	cp b
-	jr z, .knowsMove
+	ld a, [wExtendedMoveFlagsScratch]
+	ld [wExtendedActiveMoveOrdinal], a ; synchronous NPC-only bit iterator
+	ld c, NUM_MOVES
+.knowsMoveLoop
+	ld a,[de]
 	inc de
-	ld a, [de]
 	cp b
-	jr z, .knowsMove
-	inc de
-	ld a, [de]
-	cp b
-	jr z, .knowsMove
-	inc de
-	ld a, [de]
-	cp b
-	jr z, .knowsMove
-.relearnableMove
+	jr nz, .nextKnownSlot
+	ld a, [wExtendedActiveMoveOrdinal]
+	and 1
+	jr z, .knowsMove ; same old-table identity, not an expanded slot
+.nextKnownSlot
+	ld a, [wExtendedActiveMoveOrdinal]
+	srl a
+	ld [wExtendedActiveMoveOrdinal], a
+	dec c
+	jr nz,.knowsMoveLoop
 	pop de
-	push hl
-	; Add move to the list, and update the running count.
-	ld a, b
-	ld b, 0
-	ld hl, wRelearnableMoves + 1
-	add hl, bc
-	ld [hl], a
-	pop hl
-	pop bc
-	inc c
-	jr .loop
+
+	; MOVE-5.62.171: bound the *ordinary* learnset too; it previously
+	; appended without checking the fixed 8-row WRAM scratch and could
+	; overwrite unrelated state before extended candidates were considered.
+	ld a, [wRelearnableMoves]
+	cp MOVE_RELEARNER_MAX_MOVES
+	jr nc, .nextEntry
+	ld c,a
+	ld a,b
+	ld b,0
+	ld hl,wRelearnableMoves + 1
+	add hl,bc
+	ld [hl],a
+	ld hl,wRelearnableMoves
+	inc [hl]
+	jr .nextEntry
+
 .knowsMove
 	pop de
+.nextEntry
 	pop bc
+	pop hl
 	jr .loop
+
+.pastCurrentLevel
+	pop af
 .done
-	ld b, 0
-	ld hl, wRelearnableMoves + 1
-	add hl, bc
-	ld a, $ff
-	ld [hl], a
-	ld hl, wRelearnableMoves
-	ld [hl], c
-	ret
+	; The extended source list is separate; append true EXT rows with
+	; per-row ordinals, then write the normal $ff list terminator.
+	jpba AppendExtendedLevelUpRelearnMoves
 
 INCLUDE "data/evos_moves.asm"

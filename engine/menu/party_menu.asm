@@ -7,6 +7,8 @@
 ; 03: learn TM/HM menu
 ; 04: swap pokemon positions menu
 ; 05: use evolution stone on pokemon menu
+; 06: move tutor menu
+; 07: START -> Pokémon normal menu (SELECT shortcut scope)
 ; otherwise, it is a message ID
 ; f0: poison healed
 ; f1: burn healed
@@ -25,6 +27,8 @@ DrawPartyMenu_:
 	callba LoadMonPartySpriteGfxWithLCDDisabled ; load pokemon icon graphics
 
 RedrawPartyMenu_:
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a ; keep the redraw off-screen until it is complete
 	ld a,[wPartyMenuTypeOrMessageID]
 	cp a,SWAP_MONS_PARTY_MENU
 	jp z,.printMessage
@@ -140,61 +144,14 @@ RedrawPartyMenu_:
 	db "Not able@"
 .evolutionStoneMenu
 	push hl
-	ld hl,EvosMovesPointerTable
-	ld b,0
-	ld a,[wLoadedMonSpecies]
-	dec a
-	add a
-	rl b
-	ld c,a
-	add hl,bc
-	ld de,wEnemyMon ; Used as a buffer since we aren't in battle
-	ld a,BANK(EvosMovesPointerTable)
-	ld bc,2
-	call FarCopyData
-	ld hl,wEnemyMon
-	ld a,[hli]
-	ld h,[hl]
-	ld l,a
-	ld de,wEnemyMon
-	ld a,BANK(EvosMovesPointerTable)
-	ld bc,Mon133_EvosEnd - Mon133_EvosMoves
-	call FarCopyData
-	ld hl,wEnemyMon
-	ld de,.notAbleToEvolveText
-; loop through the pokemon's evolution entries
-.checkEvolutionsLoop
-	ld a,[hli]
-	and a ; reached terminator?
-	jr z,.placeEvolutionStoneString ; if so, place the "NOT ABLE" string
-	inc hl
-	inc hl
-	cp a,EV_ITEM
-	jr nz,.checkEvolutionsLoop
-; if it's a stone evolution entry
-	dec hl
-	dec hl
-	ld b,[hl]
-	ld a,[wEvoStoneItemID] ; the stone the player used
-	inc hl
-	inc hl
-	inc hl
-	cp b ; does the player's stone match this evolution entry's stone?
-	jr nz,.checkEvolutionsLoop
-; if it does match
-	ld de,.ableToEvolveText
-.placeEvolutionStoneString
-	ld bc,20 + 9 ; down 1 row and right 9 columns
-	pop hl
-	push hl
-	add hl,bc
-	call PlaceString
+	; EVO-5.62.27: CALLBA consumes HL for the far target address, so never pass
+	; a Party-menu tilemap pointer through HL. Doing so can redirect UI writes
+	; into ROM/MBC control addresses and corrupt the active bank state.
+	ld d,h
+	ld e,l
+	callba EvolutionStoneDrawPartyStatus
 	pop hl
 	jr .printLevel
-.ableToEvolveText
-	db "Able@"
-.notAbleToEvolveText
-	db "Not able@"
 .afterDrawingMonEntries
 	ld b, SET_PAL_PARTY_MENU
 	call RunPaletteCommand
@@ -203,10 +160,10 @@ RedrawPartyMenu_:
 	ld a,[hl]
 	push af
 	push hl
-	set 6,[hl] ; turn off letter printing delay
 	ld a,[wPartyMenuTypeOrMessageID] ; message ID
 	cp a,$F0
 	jr nc,.printItemUseMessage
+	set 6,[hl] ; fixed menu prompts do not use the letter printing delay
 	add a
 	ld hl,PartyMenuMessagePointers
 	ld b,0
@@ -225,6 +182,9 @@ RedrawPartyMenu_:
 	call Delay3
 	jp GBPalNormal
 .printItemUseMessage
+	; TEXT-5.62.165: item results follow the selected text speed.
+	; Make each letter visible instead of waiting for the entire redraw.
+	res 6,[hl]
 	and a,$0F
 	ld hl,PartyMenuItemUseMessagePointers
 	add a
@@ -239,6 +199,8 @@ RedrawPartyMenu_:
 	ld hl,wPartyMonNicks
 	call GetPartyMonName
 	pop hl
+	ld a,1
+	ld [H_AUTOBGTRANSFERENABLED],a
 	call PrintText
 	jr .done
 
@@ -261,6 +223,7 @@ PartyMenuMessagePointers:
 	dw PartyMenuSwapMonText
 	dw PartyMenuItemUseText
 	dw PartyMenuUseTMText
+	dw PartyMenuNormalText ; START_PARTY_MENU
 
 PartyMenuNormalText:
 	TX_FAR _PartyMenuNormalText
@@ -317,7 +280,9 @@ ReviveText:
 RareCandyText:
 	TX_FAR _RareCandyText
 	TX_SFX_ITEM_1 ; probably supposed to play SFX_LEVEL_UP but the wrong music bank is loaded
-	TX_BLINK
+	; ITEM-5.27.02: TX_SFX_ITEM_1 already waits for the sound to finish.
+	; Return immediately afterwards so Rare Candy opens the stat box automatically
+	; instead of showing a down arrow and requiring an extra A/B press here.
 	db "@"
 
 SetPartyMenuHPBarColor:

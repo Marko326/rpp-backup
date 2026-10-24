@@ -1,16 +1,8 @@
 ViridianForestScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, ViridianForestTrainerHeader0
-	ld de, ViridianForestScriptPointers
-	ld a, [wViridianForestCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wViridianForestCurScript], a
-	ret
-
-ViridianForestScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wViridianForestCurScript
+	jp Bank18RunStandardTrainerMapScript
 
 ViridianForestTextPointers:
 	dw ViridianForestText1
@@ -36,7 +28,6 @@ ViridianForestTrainerHeader0:
 	dw ViridianForestBattleText1 ; TextBeforeBattle
 	dw ViridianForestAfterBattleText1 ; TextAfterBattle
 	dw ViridianForestEndBattleText1 ; TextEndBattle
-	dw ViridianForestEndBattleText1 ; TextEndBattle
 
 ViridianForestTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_FOREST_TRAINER_1
@@ -44,7 +35,6 @@ ViridianForestTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_FOREST_TRAINER_1
 	dw ViridianForestBattleText2 ; TextBeforeBattle
 	dw ViridianForestAfterBattleText2 ; TextAfterBattle
-	dw ViridianForestEndBattleText2 ; TextEndBattle
 	dw ViridianForestEndBattleText2 ; TextEndBattle
 
 ViridianForestTrainerHeader2:
@@ -54,7 +44,6 @@ ViridianForestTrainerHeader2:
 	dw ViridianForestBattleText3 ; TextBeforeBattle
 	dw ViridianForestAfterBattleText3 ; TextAfterBattle
 	dw ViridianForestEndBattleText3 ; TextEndBattle
-	dw ViridianForestEndBattleText3 ; TextEndBattle
 
 	db $ff
 
@@ -63,22 +52,13 @@ ViridianForestText1:
 	db "@"
 
 ViridianForestText2:
-	TX_ASM
-	ld hl, ViridianForestTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianForestTrainerHeader0
 
 ViridianForestText3:
-	TX_ASM
-	ld hl, ViridianForestTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianForestTrainerHeader1
 
 ViridianForestText4:
-	TX_ASM
-	ld hl, ViridianForestTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianForestTrainerHeader2
 
 ViridianForestBattleText1:
 	TX_FAR _ViridianForestBattleText1

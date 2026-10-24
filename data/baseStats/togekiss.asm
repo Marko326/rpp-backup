@@ -1,5 +1,4 @@
 TogekissBaseStats:
-db DEX_TOGEKISS ; pokedex id
 db 85 ; base hp
 db 50 ; base attack
 db 95 ; base defense
@@ -9,15 +8,12 @@ db FAIRY ; species type 1
 db FLYING ; species type 2
 db 30 ; catch rate
 db 220 ; base exp yield
-INCBIN "pic/bmon/togekiss.pic",0,1 ; 55, sprite dimensions
+INCBIN "pic/bmon/togekiss.pic",0,1 ; sprite dimensions
 dw TogekissPicFront
 dw TogekissPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 4,6,8
 	tmlearn 9,10,11,15

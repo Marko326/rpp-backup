@@ -1,5 +1,4 @@
 PolitoedBaseStats:
-db DEX_POLITOED ; pokedex id
 db 90 ; base hp
 db 75 ; base attack
 db 75 ; base defense
@@ -15,9 +14,6 @@ dw PolitoedPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 11
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,15

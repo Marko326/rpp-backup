@@ -1,14 +1,23 @@
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank1DRunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
 ViridianGymScript:
 	ld hl, Gym8CityName
 	ld de, Gym8LeaderName
 	call LoadGymLeaderAndCityName
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, ViridianGymTrainerHeader0
 	ld de, ViridianGymScriptPointers
-	ld a, [wViridianGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wViridianGymCurScript], a
-	ret
+	ld bc, wViridianGymCurScript
+	jp Bank1DRunTrainerMapScript
 
 Gym8CityName:
 	db "Viridian City@"
@@ -137,25 +146,9 @@ ViridianGymScript3:
 	ld a, $f0
 	ld [wJoyIgnore], a
 ViridianGymScript3_74995:
-	ld a, $c
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_VIRIDIAN_GYM_GIOVANNI
-	lb bc, TM_27, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $d
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM27
-	jr .asm_749be
-.BagFull
-	ld a, $e
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_749be
-	ld hl, wObtainedKantoBadges
-	set 7, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 7
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_VIRIDIAN_GYM_TRAINER_0, EVENT_BEAT_VIRIDIAN_GYM_TRAINER_7
@@ -189,7 +182,6 @@ ViridianGymTrainerHeader0:
 	dw ViridianGymBattleText1 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText1 ; TextAfterBattle
 	dw ViridianGymEndBattleText1 ; TextEndBattle
-	dw ViridianGymEndBattleText1 ; TextEndBattle
 
 ViridianGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_1
@@ -197,7 +189,6 @@ ViridianGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_1
 	dw ViridianGymBattleText2 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText2 ; TextAfterBattle
-	dw ViridianGymEndBattleText2 ; TextEndBattle
 	dw ViridianGymEndBattleText2 ; TextEndBattle
 
 ViridianGymTrainerHeader2:
@@ -207,7 +198,6 @@ ViridianGymTrainerHeader2:
 	dw ViridianGymBattleText3 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText3 ; TextAfterBattle
 	dw ViridianGymEndBattleText3 ; TextEndBattle
-	dw ViridianGymEndBattleText3 ; TextEndBattle
 
 ViridianGymTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_3
@@ -215,7 +205,6 @@ ViridianGymTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_3
 	dw ViridianGymBattleText4 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText4 ; TextAfterBattle
-	dw ViridianGymEndBattleText4 ; TextEndBattle
 	dw ViridianGymEndBattleText4 ; TextEndBattle
 
 ViridianGymTrainerHeader4:
@@ -225,7 +214,6 @@ ViridianGymTrainerHeader4:
 	dw ViridianGymBattleText5 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText5 ; TextAfterBattle
 	dw ViridianGymEndBattleText5 ; TextEndBattle
-	dw ViridianGymEndBattleText5 ; TextEndBattle
 
 ViridianGymTrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_5
@@ -233,7 +221,6 @@ ViridianGymTrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_5
 	dw ViridianGymBattleText6 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText6 ; TextAfterBattle
-	dw ViridianGymEndBattleText6 ; TextEndBattle
 	dw ViridianGymEndBattleText6 ; TextEndBattle
 
 ViridianGymTrainerHeader6:
@@ -243,7 +230,6 @@ ViridianGymTrainerHeader6:
 	dw ViridianGymBattleText7 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText7 ; TextAfterBattle
 	dw ViridianGymEndBattleText7 ; TextEndBattle
-	dw ViridianGymEndBattleText7 ; TextEndBattle
 
 ViridianGymTrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_VIRIDIAN_GYM_TRAINER_7, 1
@@ -251,7 +237,6 @@ ViridianGymTrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_VIRIDIAN_GYM_TRAINER_7, 1
 	dw ViridianGymBattleText8 ; TextBeforeBattle
 	dw ViridianGymAfterBattleText8 ; TextAfterBattle
-	dw ViridianGymEndBattleText8 ; TextEndBattle
 	dw ViridianGymEndBattleText8 ; TextEndBattle
 
 	db $ff
@@ -329,10 +314,7 @@ ViridianGymText14:
 	db "@"
 
 ViridianGymText2:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader0
 
 ViridianGymBattleText1:
 	TX_FAR _ViridianGymBattleText1
@@ -347,10 +329,7 @@ ViridianGymAfterBattleText1:
 	db "@"
 
 ViridianGymText3:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader1
 
 ViridianGymBattleText2:
 	TX_FAR _ViridianGymBattleText2
@@ -365,10 +344,7 @@ ViridianGymAfterBattleText2:
 	db "@"
 
 ViridianGymText4:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader2
 
 ViridianGymBattleText3:
 	TX_FAR _ViridianGymBattleText3
@@ -383,10 +359,7 @@ ViridianGymAfterBattleText3:
 	db "@"
 
 ViridianGymText5:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader3
 
 ViridianGymBattleText4:
 	TX_FAR _ViridianGymBattleText4
@@ -401,10 +374,7 @@ ViridianGymAfterBattleText4:
 	db "@"
 
 ViridianGymText6:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader4
 
 ViridianGymBattleText5:
 	TX_FAR _ViridianGymBattleText5
@@ -419,10 +389,7 @@ ViridianGymAfterBattleText5:
 	db "@"
 
 ViridianGymText7:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader5
 
 ViridianGymBattleText6:
 	TX_FAR _ViridianGymBattleText6
@@ -437,10 +404,7 @@ ViridianGymAfterBattleText6:
 	db "@"
 
 ViridianGymText8:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader6
 
 ViridianGymBattleText7:
 	TX_FAR _ViridianGymBattleText7
@@ -455,10 +419,7 @@ ViridianGymAfterBattleText7:
 	db "@"
 
 ViridianGymText9:
-	TX_ASM
-	ld hl, ViridianGymTrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER ViridianGymTrainerHeader7
 
 ViridianGymBattleText8:
 	TX_FAR _ViridianGymBattleText8

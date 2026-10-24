@@ -1,16 +1,8 @@
 Route17Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route17TrainerHeader0
-	ld de, Route17ScriptPointers
-	ld a, [wRoute17CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute17CurScript], a
-	ret
-
-Route17ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRoute17CurScript
+	jp Bank15RunStandardTrainerMapScript
 
 Route17TextPointers:
 	dw Route17Text1
@@ -37,7 +29,6 @@ Route17TrainerHeader0:
 	dw Route17BattleText1 ; TextBeforeBattle
 	dw Route17AfterBattleText1 ; TextAfterBattle
 	dw Route17EndBattleText1 ; TextEndBattle
-	dw Route17EndBattleText1 ; TextEndBattle
 
 Route17TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_17_TRAINER_1
@@ -45,7 +36,6 @@ Route17TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_17_TRAINER_1
 	dw Route17BattleText2 ; TextBeforeBattle
 	dw Route17AfterBattleText2 ; TextAfterBattle
-	dw Route17EndBattleText2 ; TextEndBattle
 	dw Route17EndBattleText2 ; TextEndBattle
 
 Route17TrainerHeader2:
@@ -55,7 +45,6 @@ Route17TrainerHeader2:
 	dw Route17BattleText3 ; TextBeforeBattle
 	dw Route17AfterBattleText3 ; TextAfterBattle
 	dw Route17EndBattleText3 ; TextEndBattle
-	dw Route17EndBattleText3 ; TextEndBattle
 
 Route17TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_17_TRAINER_3
@@ -63,7 +52,6 @@ Route17TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_17_TRAINER_3
 	dw Route17BattleText4 ; TextBeforeBattle
 	dw Route17AfterBattleText4 ; TextAfterBattle
-	dw Route17EndBattleText4 ; TextEndBattle
 	dw Route17EndBattleText4 ; TextEndBattle
 
 Route17TrainerHeader4:
@@ -73,7 +61,6 @@ Route17TrainerHeader4:
 	dw Route17BattleText5 ; TextBeforeBattle
 	dw Route17AfterBattleText5 ; TextAfterBattle
 	dw Route17EndBattleText5 ; TextEndBattle
-	dw Route17EndBattleText5 ; TextEndBattle
 
 Route17TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_17_TRAINER_5
@@ -81,7 +68,6 @@ Route17TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_17_TRAINER_5
 	dw Route17BattleText6 ; TextBeforeBattle
 	dw Route17AfterBattleText6 ; TextAfterBattle
-	dw Route17EndBattleText6 ; TextEndBattle
 	dw Route17EndBattleText6 ; TextEndBattle
 
 Route17TrainerHeader6:
@@ -91,7 +77,6 @@ Route17TrainerHeader6:
 	dw Route17BattleText7 ; TextBeforeBattle
 	dw Route17AfterBattleText7 ; TextAfterBattle
 	dw Route17EndBattleText7 ; TextEndBattle
-	dw Route17EndBattleText7 ; TextEndBattle
 
 Route17TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_17_TRAINER_7, 1
@@ -99,7 +84,6 @@ Route17TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_17_TRAINER_7, 1
 	dw Route17BattleText8 ; TextBeforeBattle
 	dw Route17AfterBattleText8 ; TextAfterBattle
-	dw Route17EndBattleText8 ; TextEndBattle
 	dw Route17EndBattleText8 ; TextEndBattle
 
 Route17TrainerHeader8:
@@ -109,7 +93,6 @@ Route17TrainerHeader8:
 	dw Route17BattleText9 ; TextBeforeBattle
 	dw Route17AfterBattleText9 ; TextAfterBattle
 	dw Route17EndBattleText9 ; TextEndBattle
-	dw Route17EndBattleText9 ; TextEndBattle
 
 Route17TrainerHeader9:
 	dbEventFlagBit EVENT_BEAT_ROUTE_17_TRAINER_9, 1
@@ -118,15 +101,11 @@ Route17TrainerHeader9:
 	dw Route17BattleText10 ; TextBeforeBattle
 	dw Route17AfterBattleText10 ; TextAfterBattle
 	dw Route17EndBattleText10 ; TextEndBattle
-	dw Route17EndBattleText10 ; TextEndBattle
 
 	db $ff
 
 Route17Text1:
-	TX_ASM
-	ld hl, Route17TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader0
 
 Route17BattleText1:
 	TX_FAR _Route17BattleText1
@@ -141,10 +120,7 @@ Route17AfterBattleText1:
 	db "@"
 
 Route17Text2:
-	TX_ASM
-	ld hl, Route17TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader1
 
 Route17BattleText2:
 	TX_FAR _Route17BattleText2
@@ -159,10 +135,7 @@ Route17AfterBattleText2:
 	db "@"
 
 Route17Text3:
-	TX_ASM
-	ld hl, Route17TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader2
 
 Route17BattleText3:
 	TX_FAR _Route17BattleText3
@@ -177,10 +150,7 @@ Route17AfterBattleText3:
 	db "@"
 
 Route17Text4:
-	TX_ASM
-	ld hl, Route17TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader3
 
 Route17BattleText4:
 	TX_FAR _Route17BattleText4
@@ -195,10 +165,7 @@ Route17AfterBattleText4:
 	db "@"
 
 Route17Text5:
-	TX_ASM
-	ld hl, Route17TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader4
 
 Route17BattleText5:
 	TX_FAR _Route17BattleText5
@@ -213,10 +180,7 @@ Route17AfterBattleText5:
 	db "@"
 
 Route17Text6:
-	TX_ASM
-	ld hl, Route17TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader5
 
 Route17BattleText6:
 	TX_FAR _Route17BattleText6
@@ -231,10 +195,7 @@ Route17AfterBattleText6:
 	db "@"
 
 Route17Text7:
-	TX_ASM
-	ld hl, Route17TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader6
 
 Route17BattleText7:
 	TX_FAR _Route17BattleText7
@@ -249,10 +210,7 @@ Route17AfterBattleText7:
 	db "@"
 
 Route17Text8:
-	TX_ASM
-	ld hl, Route17TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader7
 
 Route17BattleText8:
 	TX_FAR _Route17BattleText8
@@ -267,10 +225,7 @@ Route17AfterBattleText8:
 	db "@"
 
 Route17Text9:
-	TX_ASM
-	ld hl, Route17TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader8
 
 Route17BattleText9:
 	TX_FAR _Route17BattleText9
@@ -285,10 +240,7 @@ Route17AfterBattleText9:
 	db "@"
 
 Route17Text10:
-	TX_ASM
-	ld hl, Route17TrainerHeader9
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route17TrainerHeader9
 
 Route17BattleText10:
 	TX_FAR _Route17BattleText10

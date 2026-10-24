@@ -1,4 +1,3 @@
-db DEX_GLOOM ; pokedex id
 db 60 ; base hp
 db 65 ; base attack
 db 70 ; base defense
@@ -14,9 +13,6 @@ dw GloomPicBack
 ; move tutor compatibility flags
 	m_tutor 7
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 3,6
 	tmlearn 9,10

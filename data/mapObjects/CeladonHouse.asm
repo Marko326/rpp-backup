@@ -11,7 +11,3 @@ CeladonHouseObject:
 	object SPRITE_OLD_PERSON, $4, $2, STAY, DOWN, $1 ; person
 	object SPRITE_ROCKET_F, $1, $4, WALK, $0, $2 ; person
 	object SPRITE_SAILOR, $5, $6, STAY, LEFT, $3 ; person
-
-	; warp-to
-	EVENT_DISP CELADON_HOUSE_WIDTH, $7, $2
-	EVENT_DISP CELADON_HOUSE_WIDTH, $7, $3

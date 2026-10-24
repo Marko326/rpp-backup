@@ -14,6 +14,3 @@ CopycatsHouse2FObject:
 	object SPRITE_SLOWBRO, $5, $1, STAY, DOWN, $3 ; person
 	object SPRITE_BIRD, $2, $0, STAY, DOWN, $4 ; person
 	object SPRITE_CLEFAIRY, $1, $6, STAY, RIGHT, $5 ; person
-
-	; warp-to
-	EVENT_DISP COPYCATS_HOUSE_2F_WIDTH, $0, $7 ; COPYCATS_HOUSE_1F

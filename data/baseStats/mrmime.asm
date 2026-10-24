@@ -1,4 +1,3 @@
-db DEX_MR_MIME ; pokedex id
 db 40 ; base hp
 db 45 ; base attack
 db 65 ; base defense
@@ -6,7 +5,8 @@ db 90 ; base speed
 db 100 ; base special
 db PSYCHIC ; species type 1
 db FAIRY ; species type 2
-db 45 ; catch rate
+MR_MIME_CATCH_RATE EQU 45 ; existing normal species catch rate, form guard only
+db MR_MIME_CATCH_RATE ; catch rate
 db 136 ; base exp yield
 INCBIN "pic/bmon/mr.mime.pic",0,1 ; 66, sprite dimensions
 dw MrMimePicFront
@@ -14,9 +14,6 @@ dw MrMimePicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,15

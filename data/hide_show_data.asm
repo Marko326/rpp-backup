@@ -580,6 +580,6 @@ MapHS70:
 	db SOUTHERN_ISLAND_INSIDE,$02,Show
 MapHSEE:
 	db NAVEL_ROCK_LUGIA_ROOM,$01,Show
-;	db NAVEL_ROCK_LUGIA_ROOM,$02,Show
+	db NAVEL_ROCK_LUGIA_ROOM,$02,Show ; HOOH-5.19.56: Ho-Oh must participate in post-battle HideObject lookup
 ; End of list thing
 	db $FF,$01,Show

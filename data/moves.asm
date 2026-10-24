@@ -2,7 +2,7 @@ Moves:
 ; Characteristics of each move.
 
 move: macro
-	db \1 ; animation (interchangeable with move id)
+	db \1 ; legacy animation ID (do not use as real move identity)
 	db \2 ; effect
 	db \3 ; power
 	db \4 ; type
@@ -14,7 +14,7 @@ endm
 MoveEnd:
 	move KARATE_CHOP,  NO_ADDITIONAL_EFFECT,        50, FIGHTING, 100, 25
 	move DOUBLESLAP,   TWO_TO_FIVE_ATTACKS_EFFECT,  15, NORMAL,    85, 10
-	move COMET_PUNCH,  TWO_TO_FIVE_ATTACKS_EFFECT,  18, NORMAL,    85, 15
+	move COMET_PUNCH,  TWO_TO_FIVE_ATTACKS_EFFECT,  18, FIGHTING,  85, 15
 	move MEGA_PUNCH,   NO_ADDITIONAL_EFFECT,        80, NORMAL,    85, 20
 	move PAY_DAY,      PAY_DAY_EFFECT,              40, NORMAL,   100, 20
 	move FIRE_PUNCH,   BURN_SIDE_EFFECT1,           75, FIRE,     100, 15
@@ -23,7 +23,7 @@ MoveEnd:
 	move SCRATCH,      NO_ADDITIONAL_EFFECT,        40, NORMAL,   100, 35
 	move VICEGRIP,     NO_ADDITIONAL_EFFECT,        55, NORMAL,   100, 30
 	move GUILLOTINE,   OHKO_EFFECT,                  1, NORMAL,    30,  5
-	move RAZOR_WIND,   CHARGE_EFFECT,               80, NORMAL,   100, 10
+	move SPARK,        PARALYZE_SIDE_EFFECT2,       65, ELECTRIC, 100, 20
 	move SWORDS_DANCE, ATTACK_UP2_EFFECT,            0, NORMAL,   100, 30
 	move CUT,          NO_ADDITIONAL_EFFECT,        50, NORMAL,    95, 30
 	move GUST,         NO_ADDITIONAL_EFFECT,        40, FLYING,   100, 35
@@ -37,7 +37,7 @@ MoveEnd:
 	move DOUBLE_KICK,  ATTACK_TWICE_EFFECT,         30, FIGHTING, 100, 30
 	move MEGA_KICK,    NO_ADDITIONAL_EFFECT,       120, NORMAL,    75,  5
 	move JUMP_KICK,    JUMP_KICK_EFFECT,           100, FIGHTING,  95, 10
-	move ROLLING_KICK, FLINCH_SIDE_EFFECT2,         60, FIGHTING,  85, 15
+	move AURA_SPHERE,  SWIFT_EFFECT,                80, FIGHTING, 100, 20
 	move SAND_ATTACK,  ACCURACY_DOWN1_EFFECT,        0, GROUND,   100, 15
 	move HEADBUTT,     FLINCH_SIDE_EFFECT2,         70, NORMAL,   100, 15
 	move HORN_ATTACK,  NO_ADDITIONAL_EFFECT,        65, NORMAL,   100, 25
@@ -91,7 +91,7 @@ MoveEnd:
 	move STUN_SPORE,   PARALYZE_EFFECT,              0, GRASS,     75, 30
 	move SLEEP_POWDER, SLEEP_EFFECT,                 0, GRASS,     75, 15
 	move PETAL_DANCE,  THRASH_PETAL_DANCE_EFFECT,  120, GRASS,    100, 10
-	move STRING_SHOT,  SPEED_DOWN1_EFFECT,           0, BUG,       95, 40
+	move STRING_SHOT,  SPEED_DOWN2_EFFECT,           0, BUG,       95, 40
 	move DRAGON_RAGE,  SPECIAL_DAMAGE_EFFECT,        1, DRAGON,   100, 10
 	move FIRE_SPIN,    TRAPPING_EFFECT,             35, FIRE,      85, 15
 	move THUNDERSHOCK, PARALYZE_SIDE_EFFECT1,       40, ELECTRIC, 100, 30
@@ -117,7 +117,7 @@ MoveEnd:
 	move DOUBLE_TEAM,  EVASION_UP1_EFFECT,           0, NORMAL,   100, 15
 	move RECOVER,      HEAL_EFFECT,                  0, NORMAL,   100, 10
 	move HARDEN,       DEFENSE_UP1_EFFECT,           0, NORMAL,   100, 30
-	move MINIMIZE,     EVASION_UP1_EFFECT,           0, NORMAL,   100, 10
+	move MINIMIZE,     EVASION_UP2_EFFECT,           0, NORMAL,   100, 10
 	move SMOKESCREEN,  ACCURACY_DOWN1_EFFECT,        0, NORMAL,   100, 20
 	move CONFUSE_RAY,  CONFUSION_EFFECT,             0, GHOST,    100, 10
 	move WITHDRAW,     DEFENSE_UP1_EFFECT,           0, WATER,    100, 40
@@ -131,7 +131,9 @@ MoveEnd:
 	move METRONOME,    METRONOME_EFFECT,             0, NORMAL,   100, 10
 	move MIRROR_MOVE,  MIRROR_MOVE_EFFECT,           0, FLYING,   100, 20
 	move SELFDESTRUCT, EXPLODE_EFFECT,             200, NORMAL,   100,  5
-	move EGG_BOMB,     NO_ADDITIONAL_EFFECT,       100, NORMAL,    75, 10
+	; EGG-A4-5.61.75: NORMAL is only the out-of-battle fallback; battle load replaces
+	; Egg Bomb's runtime type with the acting Pokemon's first type.
+	move EGG_BOMB,     CONFUSION_SIDE_EFFECT,       100, NORMAL,    90, 10
 	move LICK,         PARALYZE_SIDE_EFFECT2,       30, GHOST,    100, 30
 	move SMOG,         POISON_SIDE_EFFECT2,         30, POISON,    70, 20
 	move SLUDGE,       POISON_SIDE_EFFECT2,         65, POISON,   100, 20
@@ -143,14 +145,14 @@ MoveEnd:
 	move SKULL_BASH,   CHARGE_EFFECT,              130, NORMAL,   100, 10
 	move SPIKE_CANNON, TWO_TO_FIVE_ATTACKS_EFFECT,  20, NORMAL,   100, 15
 	move CONSTRICT,    SPEED_DOWN_SIDE_EFFECT,      10, NORMAL,   100, 35
-	move AMNESIA,      SPECIAL_UP2_EFFECT,           0, PSYCHIC,  100, 20
+	move AMNESIA,      SPECIAL_UP1_EFFECT,           0, PSYCHIC,  100, 20
 	move KINESIS,      ACCURACY_DOWN1_EFFECT,        0, PSYCHIC,   80, 15
 	move SOFTBOILED,   HEAL_EFFECT,                  0, NORMAL,   100, 10
 	move HI_JUMP_KICK, JUMP_KICK_EFFECT,           130, FIGHTING,  90, 10
 	move GLARE,        PARALYZE_EFFECT,              0, NORMAL,   100, 30
 	move DREAM_EATER,  DREAM_EATER_EFFECT,         100, PSYCHIC,  100, 15
 	move POISON_GAS,   POISON_EFFECT,                0, POISON,    90, 40
-	move BARRAGE,      TWO_TO_FIVE_ATTACKS_EFFECT,  15, NORMAL,    85, 20
+	move BULLET_SEED,  TWO_TO_FIVE_ATTACKS_EFFECT,  25, GRASS,    100, 30
 	move LEECH_LIFE,   DRAIN_HP_EFFECT,             80, BUG,      100, 10
 	move LOVELY_KISS,  SLEEP_EFFECT,                 0, NORMAL,    75, 10
 	move SKY_ATTACK,   CHARGE_EFFECT,              200, FLYING,    90,  5
@@ -180,7 +182,7 @@ MoveEnd:
 	move COMET_PUNCH,  NO_ADDITIONAL_EFFECT,        40, STEEL,    100, 30 ; Bullet Punch
 	move AURORA_BEAM,  SPECIAL_DOWN_SIDE_EFFECT,    80, STEEL,    100, 10 ; Flash Cannon
 	move CUT,          DEFENSE_DOWN_SIDE_EFFECT,   100, STEEL,     75, 15 ; Iron Tail
-	move STRENGTH,     ATTACK_UP1_SIDE_EFFECT2,     90, STEEL,     90, 10 ; Meteor Mash
+	move STRENGTH,     ATTACK_UP1_SIDE_EFFECT,      90, STEEL,     90, 10 ; Meteor Mash
 	move BITE,         DEFENSE_DOWN_SIDE_EFFECT,    80, DARK,     100, 15 ; Crunch
 	move PSYCHIC_M,    FLINCH_SIDE_EFFECT1,         80, DARK,     100, 15 ; Dark Pulse
 	move QUICK_ATTACK, SWIFT_EFFECT,                60, DARK,     100, 20 ; Feint Attack
@@ -189,18 +191,18 @@ MoveEnd:
 	move LOVELY_KISS,  DRAIN_HP_EFFECT,             50, FAIRY,    100, 10 ; Draining Kiss
 	move SCREECH,      SWIFT_EFFECT,                40, FAIRY,    100, 15 ; Disarming Voice
 	move FLASH,        NO_ADDITIONAL_EFFECT,        80, FAIRY,    100, 10 ; Dazzling Gleam
-	move SEISMIC_TOSS, SPECIAL_DOWN_SIDE_EFFECT,   130, DRAGON,    90,  5 ; Draco Meteor
+	move SEISMIC_TOSS, SELF_SPECIAL_DOWN1_EFFECT,  130, DRAGON,    90,  5 ; Draco Meteor
 	move FLAMETHROWER, PARALYZE_SIDE_EFFECT1,       60, DRAGON,   100, 20 ; Dragonbreath
 	move SLASH,        NO_ADDITIONAL_EFFECT,        80, DRAGON,   100, 15 ; Dragon Claw
 	move AURORA_BEAM,  NO_ADDITIONAL_EFFECT,        85, DRAGON,   100, 10 ; Dragon Pulse
 	move SONICBOOM,    FLINCH_SIDE_EFFECT1,         40, DRAGON,   100, 20 ; Twister
-	move RAGE,         THRASH_PETAL_DANCE_EFFECT,  120, DRAGON,   100, 10 ; Outrage
+	move THRASH,       THRASH_PETAL_DANCE_EFFECT,  120, DRAGON,   100, 10 ; Outrage
 	move SLASH,        NO_ADDITIONAL_EFFECT,        70, GHOST,    100, 15 ; Shadow Claw
-	move WING_ATTACK,  DEFENSE_UP1_SIDE_EFFECT,     70, STEEL,     90, 25 ; Steel Wing
+	move WING_ATTACK,  DEFENSE_UP1_SIDE_EFFECT,     80, STEEL,    100, 25 ; Steel Wing
 	move BARRIER,      DEFENSE_UP2_EFFECT,           0, STEEL,    100, 15 ; Iron Defense
 	move CUT,          FLINCH_SIDE_EFFECT2,         75, FLYING,    95, 15 ; Air Slash
 	move BITE,         FIRE_FANG_EFFECT,            65, FIRE,      95, 15 ; Fire Fang
-	move EMBER,        RECOIL_EFFECT,              120, FIRE,     100, 15 ; Flare Blitz
+	move EMBER,        BURN_SIDE_EFFECT1,          120, FIRE,     100, 15 ; Flare Blitz
 	move FIRE_BLAST,   HYPER_BEAM_EFFECT,          150, FIRE,      90,  5 ; Blast Burn
 	move BITE,         ICE_FANG_EFFECT,             65, ICE,       95, 15 ; Ice Fang
 	move BITE,         THUNDER_FANG_EFFECT,         65, ELECTRIC,  95, 15 ; Thunder Fang
@@ -209,7 +211,7 @@ MoveEnd:
 	move AURORA_BEAM,  HYPER_BEAM_EFFECT,          150, WATER,     90,  5 ; Hydro Cannon
 	move VINE_WHIP,    HYPER_BEAM_EFFECT,          150, GRASS,     90,  5 ; Frenzy Plant
 	move MEGA_PUNCH,   NO_ADDITIONAL_EFFECT,        70, DARK,     100,  5 ; Sucker Punch
-	move BARRAGE,      SPECIAL_DOWN_SIDE_EFFECT,    80, GHOST,    100, 15 ; Shadow Ball
+	move BULLET_SEED,  SPECIAL_DOWN_SIDE_EFFECT,    80, GHOST,    100, 15 ; Shadow Ball
 	move EMBER,        BURN_SIDE_EFFECT1,           60, FIRE,     100, 25 ; Flame Wheel
 	move FOCUS_ENERGY, HEAL_EFFECT,                  0, FAIRY,    100, 20 ; Moonlight
 	move PSYCHIC_M,    NO_ADDITIONAL_EFFECT,        65, GHOST,    100, 10 ; Hex
@@ -223,17 +225,17 @@ MoveEnd:
 	move THUNDER,      NO_ADDITIONAL_EFFECT,        80, ELECTRIC, 100, 10 ; Electro Ball
 	move TACKLE,       NUZZLE_EFFECT,               20, ELECTRIC, 100, 20 ; Nuzzle
 	move THUNDERBOLT,  PARALYZE_SIDE_EFFECT1,       80, ELECTRIC, 100, 15 ; Discharge
-	move QUICK_ATTACK, VOLT_TACKLE_EFFECT,         120, ELECTRIC, 100, 15 ; Volt Tackle
+	move QUICK_ATTACK, PARALYZE_SIDE_EFFECT1,      120, ELECTRIC, 100, 15 ; Volt Tackle
 	move SURF,         ACCURACY_DOWN_SIDE_EFFECT,   90, WATER,     85, 10 ; Muddy Water
 	move GUST,         TRAPPING_EFFECT,             35, WATER,     85, 15 ; Whirlpool
 	move MEGA_DRAIN,   DRAIN_HP_EFFECT,             75, GRASS,    100, 10 ; Giga Drain
-	move PETAL_DANCE,  NO_ADDITIONAL_EFFECT,        90, GRASS,    100, 15 ; Petal Blizzard
+	move PETAL_DANCE,  SPECIAL_DOWN_SIDE_EFFECT,    90, GRASS,    100, 10 ; Energy Ball
 	move CUT,          NO_ADDITIONAL_EFFECT,        90, GRASS,    100, 15 ; Leaf Blade
 	move ROCK_THROW,   RECOIL_EFFECT,              120, GRASS,    100, 15 ; Wood Hammer
 	move COMET_PUNCH,  POISON_SIDE_EFFECT2,         80, POISON,   100, 20 ; Poison Jab
 	move SLUDGE,       POISON_SIDE_EFFECT2,        120, POISON,    80,  5 ; Gunk Shot
 	move BITE,         POISON_FANG_EFFECT,          50, POISON,   100, 15 ; Poison Fang
-	move SURF,         POISON_SIDE_EFFECT1,         95, POISON,   100, 10 ; Sludge Wave
+	move SLUDGE,       POISON_SIDE_EFFECT1,         90, POISON,   100, 10 ; Sludge Bomb
 	move MIST,         SILVER_WIND_EFFECT,          60, BUG,      100,  5 ; Silver Wind
 	move SUPERSONIC,   SPECIAL_DOWN_SIDE_EFFECT,    90, BUG,      100, 10 ; Bug Buzz
 	move HORN_ATTACK,  NO_ADDITIONAL_EFFECT,       120, BUG,       85, 10 ; Megahorn
@@ -243,24 +245,25 @@ MoveEnd:
 	move SAND_ATTACK,  ACCURACY_DOWN_SIDE_EFFECT,   20, GROUND,   100, 10 ; Mud-Slap
 	move SAND_ATTACK,  ACCURACY_DOWN_SIDE_EFFECT,   65, GROUND,    85, 10 ; Mud Bomb
 	move CONFUSION,    FLINCH_SIDE_EFFECT1,         80, PSYCHIC,  100, 20 ; Extrasensory
-	move HEADBUTT,     FLINCH_SIDE_EFFECT2,         80, PSYCHIC,  100, 15 ; Zen Headbutt
+	move HEADBUTT,     FLINCH_SIDE_EFFECT2,         80, PSYCHIC,   90, 15 ; Zen Headbutt
 	move CUT,          NO_ADDITIONAL_EFFECT,        70, PSYCHIC,  100, 20 ; Psycho Cut
 	move SING,         NO_ADDITIONAL_EFFECT,        90, NORMAL,   100, 10 ; Hyper Voice
 	move QUICK_ATTACK, NO_ADDITIONAL_EFFECT,        80, NORMAL,   100,  5 ; Extremespeed
 	move SLAM,         HYPER_BEAM_EFFECT,          150, NORMAL,    90,  5 ; Giga Impact
 	move KINESIS,      NO_ADDITIONAL_EFFECT,        80, ROCK,     100, 20 ; Power Gem
-	move BARRAGE,      TWO_TO_FIVE_ATTACKS_EFFECT,  25, ROCK,      95, 10 ; Rock Blast
+	move BULLET_SEED,  TWO_TO_FIVE_ATTACKS_EFFECT,  25, ROCK,      95, 10 ; Rock Blast
 	move HARDEN,       SPEED_UP2_EFFECT,             0, ROCK,     100, 20 ; Rock Polish
 	move ROCK_SLIDE,   SPEED_DOWN_SIDE_EFFECT,      60, ROCK,      95, 15 ; Rock Tomb
 	move MEGA_PUNCH,   DYNAMIC_PUNCH_EFFECT,       100, FIGHTING,  50,  5 ; Dynamicpunch
 	move COUNTER,      NO_ADDITIONAL_EFFECT,        60, FIGHTING,  90, 10 ; Storm Throw
 	move KARATE_CHOP,  NO_ADDITIONAL_EFFECT,       100, FIGHTING,  85,  5 ; Cross Chop
 	move MEGA_KICK,    SPEED_DOWN_SIDE_EFFECT,      65, FIGHTING, 100, 20 ; Low Sweep
-	move SONICBOOM,    CONFUSION_SIDE_EFFECT,      110, FLYING,    85, 10 ; Hurricane
+	move SONICBOOM,    CONFUSION_SIDE_EFFECT,      110, FLYING,    70, 10 ; Hurricane
 	move TAIL_WHIP,    ATTACK_DOWN1_EFFECT,          0, FAIRY,    100, 30 ; Baby Doll Eyes
-	move BONEMERANG,   TWO_TO_FIVE_ATTACKS_EFFECT,  25, GROUND,    90, 10 ; Bone Rush
+	move FIRE_BLAST,   SACRED_FIRE_EFFECT,         100, FIRE,      95,  5 ; Sacred Fire ; MOV-5.61.53: Gen II Sacred Fire: 100 power / 95% / 5 PP / 50% burn.
 	move AURORA_BEAM,  NO_ADDITIONAL_EFFECT,       100, FLYING,   100,  5 ; Aeroblast
 	move ROCK_THROW,   SILVER_WIND_EFFECT,          60, ROCK,     100,  5 ; Ancient Power
 	move SURF,         CHARGE_EFFECT,               80, WATER,    100, 10 ; Dive (Unused)
 	move FLASH,        SPECIAL_DOWN_SIDE_EFFECT,    70, PSYCHIC,  100,  5 ; Luster Purge
 	move GLARE,        SILVER_WIND_EFFECT,         100, PSYCHIC,  100, 10 ; Mind Blast
+	move DOUBLE_EDGE,  FLINCH_SIDE_EFFECT2,         80, STEEL,    100, 15 ; Iron Head ; MOV-5.61.31: KEP Iron Head; DOUBLE_EDGE also matches KEP's $20/$c0 impact sound profile.

@@ -81,10 +81,18 @@ SuperPalettes:
 	RGB 0,0,0
 
 ; PAL_LOGO1
+IF DEF(_RED)
 	RGB 31,31,31
 	RGB 30,30,17
 	RGB 17,23,10
 	RGB 21,0,4
+ENDC
+IF DEF(_BLUE)
+	RGB 31,31,31
+	RGB 30,30,17
+	RGB 21,0,4
+	RGB 14,19,29
+ENDC
 
 ; PAL_LOGO2
 	RGB 31,31,31
@@ -223,6 +231,131 @@ SuperPalettes:
 	RGB 31,28,14
 	RGB 24,20,10
 	RGB 0,0,0
+
+; Battle-animation dedicated 18-type palettes.
+;
+; This is intentionally separate from both the legacy 8 attack palettes and
+; MoveDex presentation colors.  Expanded animation recipes opt into this table
+; explicitly, so original Swift/fire/ice/etc. colors remain untouched unless a
+; recipe asks for move-type coloring.  Sparse Gen1 type IDs keep placeholders.
+BattleAnimTypePaletteTable:
+
+; $00 NORMAL - warm neutral gray
+	RGB 27,26,24
+	RGB 17,16,15
+
+; $01 FIGHTING - crimson / brick red
+	RGB 29,11,8
+	RGB 17,4,3
+
+; $02 FLYING - pale sky blue
+	RGB 22,27,31
+	RGB 12,17,24
+
+; $03 POISON - vivid violet
+	RGB 27,11,29
+	RGB 14,5,18
+
+; $04 GROUND - ochre earth
+	RGB 28,18,7
+	RGB 16,9,3
+
+; $05 ROCK - tan stone
+	RGB 24,21,13
+	RGB 13,11,7
+
+; $06 unused / TYPELESS - neutral
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $07 BUG - yellow-green / olive
+	RGB 24,29,9
+	RGB 11,18,4
+
+; $08 GHOST - indigo purple
+	RGB 19,13,28
+	RGB 8,6,16
+
+; $09 STEEL - cool silver
+	RGB 27,30,31
+	RGB 15,18,21
+
+; $0A UNK_TYPE - neutral
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0B unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0C unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0D unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0E unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $0F unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $10 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $11 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $12 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $13 unused
+	RGB 22,22,22
+	RGB 12,12,12
+
+; $14 FIRE - orange / hot red
+	RGB 31,19,5
+	RGB 26,3,1
+
+; $15 WATER - cyan / deep blue
+	RGB 11,23,31
+	RGB 5,11,23
+
+; $16 GRASS - leaf green
+	RGB 13,28,10
+	RGB 5,17,6
+
+; $17 ELECTRIC - bright yellow / gold
+	RGB 31,29,5
+	RGB 22,16,1
+
+; $18 PSYCHIC - hot pink / magenta red
+	RGB 31,14,23
+	RGB 20,5,13
+
+; $19 ICE - pale cyan / icy teal
+	RGB 20,30,30
+	RGB 8,19,22
+
+; $1A DRAGON - blue violet
+	RGB 12,14,31
+	RGB 6,5,19
+
+; $1B DARK - charcoal blue-black for type-colored battle animations
+	RGB 15,16,20
+	RGB 6,7,10
+
+; $1C FAIRY - preserve the previously approved PAL_PINKMON look
+	RGB 30,22,24
+	RGB 28,15,21
+
 
 ; MoveDex 专用类型图标调色板。
 ; 和 PokemonPaletteTable 一样，每项只保存中间两色。
@@ -1001,8 +1134,8 @@ PokemonPaletteTable:
 	RGB 03, 20, 00
 
 ; PAL_SYLVEON
-	RGB 31, 17, 20
-	RGB 06, 19, 25
+	RGB 08, 23, 29
+	RGB 30, 16, 20
 
 ; PAL_SCIZOR
 	RGB 26, 08, 08
@@ -1037,8 +1170,8 @@ PokemonPaletteTable:
 	RGB 18, 05, 08
 
 ; PAL_PORYGON2
-	RGB 24, 09, 04
-	RGB 12, 11, 25
+	RGB 10, 12, 24
+	RGB 25, 09, 10
 
 ; PAL_PORYGONZ
 	RGB 24, 09, 04
@@ -1053,8 +1186,8 @@ PokemonPaletteTable:
 	RGB 25, 16, 05
 
 ; PAL_MAGNEZONE
-	RGB 14, 17, 24
-	RGB 31, 15, 00
+	RGB 13, 17, 24
+	RGB 30, 16, 00
 
 ; PAL_RHYPERIOR
 	RGB 31, 13, 00
@@ -1073,7 +1206,7 @@ PokemonPaletteTable:
 	RGB 31, 06, 17
 
 ; PAL_TOGETIC
-	RGB 23, 20, 30
+	RGB 31, 24, 08
 	RGB 28, 07, 06
 
 ; PAL_TOGEKISS
@@ -1836,8 +1969,8 @@ ShinyPokemonPaletteTable:
 	RGB 03, 23, 19
 
 ; PAL_SHINY_SYLVEON
-	RGB 12, 19, 26
-	RGB 31, 17, 20
+	RGB 30, 16, 20
+	RGB 10, 21, 26
 
 ; PAL_SHINY_SCIZOR
 	RGB 22, 22, 08

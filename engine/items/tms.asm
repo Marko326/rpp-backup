@@ -1,22 +1,18 @@
-; tests if mon [wcf91] can learn move [wMoveNum]
+; tests if mon [wcf91] can learn the selected TM/HM
+; INPUT: wSelectedMachineIndex = 1..55 (TM01..TM50/HM01..HM05)
+;        wMoveNum = move taught by that machine (kept for the teaching flow)
 CanLearnTM:
 	ld a, [wcf91]
 	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.21.00: TM compatibility comes from the selected individual's
+	; descriptor header when it is a registered regional form.
+	callba RegionalFormLoadPartyMonHeader
 	ld hl, wMonHLearnset
-	push hl
-	ld a, [wMoveNum]
-	ld b, a
-	ld c, $0
-	ld hl, TechnicalMachines
-.findTMloop
-	ld a, [hli]
-	cp b
-	jr z, .TMfoundLoop
-	inc c
-	jr .findTMloop
-.TMfoundLoop
-	pop hl
+	; OPT-5.28.00: test the real machine slot directly. The old move->first
+	; matching machine lookup was ambiguous when two TMs/HMs taught one move.
+	ld a, [wSelectedMachineIndex]
+	dec a
+	ld c, a
 	ld b, FLAG_TEST
 	predef_jump FlagActionPredef
 
@@ -42,7 +38,8 @@ INCLUDE "data/tms.asm"
 CanLearnTutor:
 	ld a, [wcf91]
 	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.21.00: tutor compatibility uses the same full descriptor header.
+	callba RegionalFormLoadPartyMonHeader
 	ld hl, wMonHMoves
 	push hl
 	ld a, [wMoveNum]

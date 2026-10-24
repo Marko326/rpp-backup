@@ -1,5 +1,4 @@
 HonchkrowBaseStats:
-db DEX_HONCHKROW ; pokedex id
 db 100 ; base hp
 db 125 ; base attack
 db 52 ; base defense
@@ -15,9 +14,6 @@ dw HonchkrowPicBack
 ; move tutor compatibility flags
 	m_tutor 7,8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 4,6
 	tmlearn 9,10,15

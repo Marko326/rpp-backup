@@ -1,6 +1,3 @@
-Route12HouseScript:
-	jp EnableAutoTextBoxDrawing
-
 Route12HouseTextPointers:
 	dw Route12HouseText1
 
@@ -10,10 +7,7 @@ Route12HouseText1:
 	bit 5, a
 	jr nz, .asm_b4cad
 	ld hl, Route12HouseText_564c0
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_a2d76
 	lb bc, SUPER_ROD, 1
 	call GiveItem
@@ -31,8 +25,7 @@ Route12HouseText1:
 .asm_b4cad
 	ld hl, Route12HouseText_564d4
 .asm_df984
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Route12HouseText_564c0:
 	TX_FAR _Route12HouseText_564c0
@@ -49,7 +42,8 @@ Route12HouseText_564cf:
 	db "@"
 
 Route12HouseText_564d4:
-	TX_FAR _Route12HouseText_564d4
+	; FIS-5.62.85: only repeat talk after the rod was gifted.
+	TX_FAR FishingGuruSuperRodRepeatText
 	db "@"
 
 Route12HouseText_564d9:

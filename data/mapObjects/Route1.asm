@@ -10,6 +10,3 @@ Route1Object:
 	object SPRITE_BUG_CATCHER, $5, $18, WALK, $1, $1 ; person
 	object SPRITE_BUG_CATCHER, $f, $d, WALK, $2, $2 ; person
 	object SPRITE_BERRY_TREE, $6, $7, STAY, NONE, $3 ; person
-
-	; warp-to (unused)
-	EVENT_DISP $4, $7, $2

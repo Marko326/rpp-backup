@@ -1,4 +1,3 @@
-db DEX_GYARADOS ; pokedex id
 db 95 ; base hp
 db 125 ; base attack
 db 79 ; base defense
@@ -14,9 +13,6 @@ dw GyaradosPicBack
 ; move tutor compatibility flags
 	m_tutor 6
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,11,12,13,14,15,16

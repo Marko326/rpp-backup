@@ -10,7 +10,3 @@ SafariZoneRestHouse1Object:
 	db $2 ; objects
 	object SPRITE_GIRL, $3, $2, STAY, DOWN, $1 ; person
 	object SPRITE_OAK_AIDE, $1, $4, WALK, $1, $2 ; person
-
-	; warp-to
-	EVENT_DISP SAFARI_ZONE_REST_HOUSE_1_WIDTH, $7, $2 ; SAFARI_ZONE_CENTER
-	EVENT_DISP SAFARI_ZONE_REST_HOUSE_1_WIDTH, $7, $3 ; SAFARI_ZONE_CENTER

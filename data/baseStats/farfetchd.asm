@@ -1,4 +1,3 @@
-db DEX_FARFETCHD ; pokedex id
 db 52 ; base hp
 db 90 ; base attack
 db 55 ; base defense
@@ -6,7 +5,8 @@ db 60 ; base speed
 db 58 ; base special
 db NORMAL ; species type 1
 db FLYING ; species type 2
-db 45 ; catch rate
+FARFETCHD_CATCH_RATE EQU 45 ; existing normal species catch rate, form guard only
+db FARFETCHD_CATCH_RATE ; catch rate
 db 94 ; base exp yield
 INCBIN "pic/bmon/farfetchd.pic",0,1 ; 66, sprite dimensions
 dw FarfetchdPicFront
@@ -14,9 +14,6 @@ dw FarfetchdPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,4,6,8
 	tmlearn 9,10,16

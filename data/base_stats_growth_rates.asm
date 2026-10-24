@@ -1,0 +1,69 @@
+; FORM-5.27.00: stock growth-rate side table.
+; Four Pokémon are packed into each byte in Pokédex/BaseStats order.
+; 2-bit codes: 0 -> growth 0, 1 -> growth 3, 2 -> growth 4, 3 -> growth 5.
+; Moving growth out of each 24-byte compact header keeps every Pokémon
+; independently editable without coupling sprite dimensions to growth. Values outside
+; the current 0/3/4/5 set remain possible through the sparse override table below.
+
+BaseStatsGrowthRates::
+	db $55 ; BULBASAUR=3, IVYSAUR=3, VENUSAUR=3, CHARMANDER=3
+	db $55 ; CHARMELEON=3, CHARIZARD=3, SQUIRTLE=3, WARTORTLE=3
+	db $01 ; BLASTOISE=3, CATERPIE=0, METAPOD=0, BUTTERFREE=0
+	db $40 ; WEEDLE=0, KAKUNA=0, BEEDRILL=0, PIDGEY=3
+	db $05 ; PIDGEOTTO=3, PIDGEOT=3, RATTATA=0, RATICATE=0
+	db $00 ; SPEAROW=0, FEAROW=0, EKANS=0, ARBOK=0
+	db $00 ; PIKACHU=0, RAICHU=0, SANDSHREW=0, SANDSLASH=0
+	db $55 ; NIDORAN_F=3, NIDORINA=3, NIDOQUEEN=3, NIDORAN_M=3
+	db $a5 ; NIDORINO=3, NIDOKING=3, CLEFAIRY=4, CLEFABLE=4
+	db $a0 ; VULPIX=0, NINETALES=0, JIGGLYPUFF=4, WIGGLYTUFF=4
+	db $50 ; ZUBAT=0, GOLBAT=0, ODDISH=3, GLOOM=3
+	db $01 ; VILEPLUME=3, PARAS=0, PARASECT=0, VENONAT=0
+	db $00 ; VENOMOTH=0, DIGLETT=0, DUGTRIO=0, MEOWTH=0
+	db $00 ; PERSIAN=0, PSYDUCK=0, GOLDUCK=0, MANKEY=0
+	db $7c ; PRIMEAPE=0, GROWLITHE=5, ARCANINE=5, POLIWAG=3
+	db $55 ; POLIWHIRL=3, POLIWRATH=3, ABRA=3, KADABRA=3
+	db $55 ; ALAKAZAM=3, MACHOP=3, MACHOKE=3, MACHAMP=3
+	db $d5 ; BELLSPROUT=3, WEEPINBELL=3, VICTREEBEL=3, TENTACOOL=5
+	db $57 ; TENTACRUEL=5, GEODUDE=3, GRAVELER=3, GOLEM=3
+	db $00 ; PONYTA=0, RAPIDASH=0, SLOWPOKE=0, SLOWBRO=0
+	db $00 ; MAGNEMITE=0, MAGNETON=0, FARFETCHD=0, DODUO=0
+	db $00 ; DODRIO=0, SEEL=0, DEWGONG=0, GRIMER=0
+	db $7c ; MUK=0, SHELLDER=5, CLOYSTER=5, GASTLY=3
+	db $05 ; HAUNTER=3, GENGAR=3, ONIX=0, DROWZEE=0
+	db $00 ; HYPNO=0, KRABBY=0, KINGLER=0, VOLTORB=0
+	db $3c ; ELECTRODE=0, EXEGGCUTE=5, EXEGGUTOR=5, CUBONE=0
+	db $00 ; MAROWAK=0, HITMONLEE=0, HITMONCHAN=0, LICKITUNG=0
+	db $f0 ; KOFFING=0, WEEZING=0, RHYHORN=5, RHYDON=5
+	db $02 ; CHANSEY=4, TANGELA=0, KANGASKHAN=0, HORSEA=0
+	db $c0 ; SEADRA=0, GOLDEEN=0, SEAKING=0, STARYU=5
+	db $03 ; STARMIE=5, MR_MIME=0, SCYTHER=0, JYNX=0
+	db $f0 ; ELECTABUZZ=0, MAGMAR=0, PINSIR=5, TAUROS=5
+	db $3f ; MAGIKARP=5, GYARADOS=5, LAPRAS=5, DITTO=0
+	db $00 ; EEVEE=0, VAPOREON=0, JOLTEON=0, FLAREON=0
+	db $00 ; PORYGON=0, OMANYTE=0, OMASTAR=0, KABUTO=0
+	db $fc ; KABUTOPS=0, AERODACTYL=5, SNORLAX=5, ARTICUNO=5
+	db $ff ; ZAPDOS=5, MOLTRES=5, DRATINI=5, DRAGONAIR=5
+	db $5f ; DRAGONITE=5, MEWTWO=5, MEW=3, LUGIA=3
+	db $0f ; HOUNDOUR=5, HOUNDOOM=5, MURKROW=0, HONCHKROW=0
+	db $03 ; HERACROSS=5, ESPEON=0, UMBREON=0, GLACEON=0
+	db $00 ; LEAFEON=0, SYLVEON=0, SCIZOR=0, STEELIX=0
+	db $44 ; CROBAT=0, POLITOED=3, SLOWKING=0, BELLOSSOM=3
+	db $08 ; KINGDRA=0, BLISSEY=4, PORYGON2=0, PORYGONZ=0
+	db $c0 ; MAGMORTAR=0, ELECTIVIRE=0, MAGNEZONE=0, RHYPERIOR=5
+	db $50 ; TANGROWTH=0, LICKILICKY=0, TOGEPI=3, TOGETIC=3
+	db $55 ; TOGEKISS=3, SNEASEL=3, WEAVILE=3, SKARMORY=3
+	db $55 ; MISDREAVUS=3, MISMAGIUS=3, MILTANK=3, CHINCHOU=3
+	db $01 ; LANTURN=3, SLUGMA=0, MAGCARGO=0, TORKOAL=0
+	db $05 ; LATIAS=3, LATIOS=3, HITMONTOP=0, TYROGUE=0
+	db $28 ; PICHU=0, CLEFFA=4, IGGLYBUFF=4, SMOOCHUM=0
+	db $80 ; ELEKID=0, MAGBY=0, MIME_JR=0, HAPPINY=4
+	db $c3 ; MUNCHLAX=5, ZIGZAGOON=0, LINOONE=0, HO_OH=5
+BaseStatsGrowthRatesEnd::
+ASSERT BaseStatsGrowthRatesEnd - BaseStatsGrowthRates == (NUM_POKEMON + 3) / 4
+
+; Sparse escape hatch for any future growth value not represented by the 2-bit
+; common table. Format: species, raw historical growth byte. Overrides take
+; priority, so the compact format retains the original 8-bit growth expressiveness.
+BaseStatsGrowthRateOverrides::
+	; db PIKACHU, 6 ; example future custom growth rate
+	db 0 ; terminator: species id 0 is never valid

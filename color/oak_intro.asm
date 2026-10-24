@@ -4,9 +4,15 @@ GetOakPalID:
 	ld a, PAL_PROF_OAK
 	jr GotIntroTrainerPalID
 
-GetSylveonPalID:
+GetOakIntroMonPalID:
 	call ClearScreen
-	ld a, PAL_SYLVEON
+; NEW-5.61.08: match Oak's first Pokémon to the Red++/Blue++ build.
+IF DEF(_RED)
+	ld a, PAL_NIDORINO
+ENDC
+IF DEF(_BLUE)
+	ld a, PAL_NIDORINA
+ENDC
 	jr GotIntroMonPalID
 
 GetRedPalID:

@@ -1,11 +1,9 @@
 Route12Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, Route12TrainerHeader0
 	ld de, Route12ScriptPointers
-	ld a, [wRoute12CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute12CurScript], a
-	ret
+	ld bc, wRoute12CurScript
+	jp Bank16RunTrainerMapScript
 
 Route12Script_59606:
 	xor a
@@ -33,6 +31,9 @@ Route12Script0:
 	ld [wCurOpponent], a
 	ld a, 30
 	ld [wCurEnemyLVL], a
+	; WLD-5.62.24: Route12 scripted static encounter is producer slot 0.
+	ld e, REGIONAL_WILD_STATIC_SCRIPT
+	call RegionalFormStageStaticEncounter_Bank0
 	xor a
 	ld [wIsTrainerBattle], a ; wild battle
 	ld a, HS_ROUTE_12_SNORLAX
@@ -85,7 +86,6 @@ Route12TrainerHeader0:
 	dw Route12BattleText1 ; TextBeforeBattle
 	dw Route12AfterBattleText1 ; TextAfterBattle
 	dw Route12EndBattleText1 ; TextEndBattle
-	dw Route12EndBattleText1 ; TextEndBattle
 
 Route12TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_12_TRAINER_1
@@ -93,7 +93,6 @@ Route12TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_12_TRAINER_1
 	dw Route12BattleText2 ; TextBeforeBattle
 	dw Route12AfterBattleText2 ; TextAfterBattle
-	dw Route12EndBattleText2 ; TextEndBattle
 	dw Route12EndBattleText2 ; TextEndBattle
 
 Route12TrainerHeader2:
@@ -103,7 +102,6 @@ Route12TrainerHeader2:
 	dw Route12BattleText3 ; TextBeforeBattle
 	dw Route12AfterBattleText3 ; TextAfterBattle
 	dw Route12EndBattleText3 ; TextEndBattle
-	dw Route12EndBattleText3 ; TextEndBattle
 
 Route12TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_12_TRAINER_3
@@ -111,7 +109,6 @@ Route12TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_12_TRAINER_3
 	dw Route12BattleText4 ; TextBeforeBattle
 	dw Route12AfterBattleText4 ; TextAfterBattle
-	dw Route12EndBattleText4 ; TextEndBattle
 	dw Route12EndBattleText4 ; TextEndBattle
 
 Route12TrainerHeader4:
@@ -121,7 +118,6 @@ Route12TrainerHeader4:
 	dw Route12BattleText5 ; TextBeforeBattle
 	dw Route12AfterBattleText5 ; TextAfterBattle
 	dw Route12EndBattleText5 ; TextEndBattle
-	dw Route12EndBattleText5 ; TextEndBattle
 
 Route12TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_12_TRAINER_5
@@ -130,7 +126,6 @@ Route12TrainerHeader5:
 	dw Route12BattleText6 ; TextBeforeBattle
 	dw Route12AfterBattleText6 ; TextAfterBattle
 	dw Route12EndBattleText6 ; TextEndBattle
-	dw Route12EndBattleText6 ; TextEndBattle
 
 Route12TrainerHeader6:
 	dbEventFlagBit EVENT_BEAT_ROUTE_12_TRAINER_6, 1
@@ -138,7 +133,6 @@ Route12TrainerHeader6:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_12_TRAINER_6, 1
 	dw Route12BattleText7 ; TextBeforeBattle
 	dw Route12AfterBattleText7 ; TextAfterBattle
-	dw Route12EndBattleText7 ; TextEndBattle
 	dw Route12EndBattleText7 ; TextEndBattle
 
 	db $ff
@@ -156,10 +150,7 @@ Route12Text14:
 	db "@"
 
 Route12Text2:
-	TX_ASM
-	ld hl, Route12TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader0
 
 Route12BattleText1:
 	TX_FAR _Route12BattleText1
@@ -174,10 +165,7 @@ Route12AfterBattleText1:
 	db "@"
 
 Route12Text3:
-	TX_ASM
-	ld hl, Route12TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader1
 
 Route12BattleText2:
 	TX_FAR _Route12BattleText2
@@ -192,10 +180,7 @@ Route12AfterBattleText2:
 	db "@"
 
 Route12Text4:
-	TX_ASM
-	ld hl, Route12TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader2
 
 Route12BattleText3:
 	TX_FAR _Route12BattleText3
@@ -210,10 +195,7 @@ Route12AfterBattleText3:
 	db "@"
 
 Route12Text5:
-	TX_ASM
-	ld hl, Route12TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader3
 
 Route12BattleText4:
 	TX_FAR _Route12BattleText4
@@ -228,10 +210,7 @@ Route12AfterBattleText4:
 	db "@"
 
 Route12Text6:
-	TX_ASM
-	ld hl, Route12TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader4
 
 Route12BattleText5:
 	TX_FAR _Route12BattleText5
@@ -246,10 +225,7 @@ Route12AfterBattleText5:
 	db "@"
 
 Route12Text7:
-	TX_ASM
-	ld hl, Route12TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader5
 
 Route12BattleText6:
 	TX_FAR _Route12BattleText6
@@ -264,10 +240,7 @@ Route12AfterBattleText6:
 	db "@"
 
 Route12Text8:
-	TX_ASM
-	ld hl, Route12TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route12TrainerHeader6
 
 Route12BattleText7:
 	TX_FAR _Route12BattleText7

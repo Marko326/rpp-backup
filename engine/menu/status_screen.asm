@@ -64,6 +64,9 @@ DrawHP_:
 
 StatusScreen_LoadCurrentMon:
 	call LoadMonData
+	; Status detail receives its own scoped sidecar; normal GetMoveName
+	; remains untouched for unrelated consumers.
+	callba LoadExtendedStatusMoveMask
 	ld a, [wMonDataLocation]
 	cp BOX_DATA
 	ret c
@@ -79,15 +82,16 @@ StatusScreen_LoadCurrentMon:
 
 ; Predef 0x37
 StatusScreen:
-	; Bit 7 is set only by START -> Pokémon. Preserve that ownership flag while
-	; resetting the summary itself to page 1, the normal map assignment, and the
-	; primary frontpic buffer. Other callers therefore keep UP/DOWN disabled.
+	; Bit 7 is an explicit caller-owned permission for live Pokémon navigation.
+	; START -> Pokémon plus Bill's PC Deposit/Withdraw Stats may set it; other
+	; callers leave it clear. Preserve that permission while resetting Summary to page 1.
 	ld a, [wStatusScreenPage]
 	and $80
 	or $1
 	ld [wStatusScreenPage], a
 	xor a
 	ld [wStatusScreenDeferPaletteUpdate], a
+	ld [wTemporaryViewerFacing], a ; new Party/Box Summary always starts front
 	call StatusScreen_LoadCurrentMon
 	ld hl, wd72c
 	set 1, [hl]
@@ -103,9 +107,27 @@ StatusScreen:
 	ld [rNR50], a ; Reduce the volume
 .skipEntryVolumeReduction
 	call GBPalWhiteOutWithDelay3
-	call ClearScreen
+	; START -> Pokémon -> Stats may later use vBGMap0 for Page 2. The far helper
+	; cheaply returns for other callers and otherwise caches the live overworld BG0.
+	callba Summary_MaybeCacheOverworldBG0
+	; The display is already white and AutoBG is not needed until the completed
+	; Page 1 transfer below. Clear only the WRAM tilemap here; ClearScreen would
+	; spend another fixed three frames transferring an intermediate blank map.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	call StatusScreen_ClearTileMapNoWait
 	call UpdateSprites
+
+	; START Party and the initial Bill's PC entry may have loaded these exact shared
+	; graphics immediately beforehand. The hint is deliberately one-shot: consume
+	; it now so later callers cannot skip a load after unrelated VRAM activity.
+	ld a, [wStatusScreenCommonTilesReady]
+	and a
+	jr nz, .commonTilesReady
 	call LoadHpBarAndStatusTilePatterns
+.commonTilesReady
+	xor a
+	ld [wStatusScreenCommonTilesReady], a
 	ld de, BattleHudTiles1  ; source
 	ld hl, vChars2 + $6d0 ; dest
 	lb bc, BANK(BattleHudTiles1), $03
@@ -132,6 +154,10 @@ StatusScreen:
 	; The Pokémon graphic is persistent across LEFT/RIGHT. UP/DOWN keeps the
 	; display white while rebuilding the primary frontpic buffer and both page
 	; maps, then restores the logical page that was being viewed.
+	; FORM-5.20.03: StatusScreen_DrawPage1 -> PrintEXPBar reloads the stock species
+	; header and therefore discards regional sprite pointers. Rebuild the header
+	; from the caught mon's persistent form marker immediately before drawing.
+	callba RegionalFormLoadLoadedMonHeader
 	coord hl, 1, 0
 	call LoadFlippedFrontSpriteByMonIndex
 
@@ -151,17 +177,11 @@ StatusScreen:
 	and a
 	jr nz, .PagesReady
 
-	; Normal Summary mode prepares page 2 from the finished page-1 tilemap. The
-	; Pokémon header/frontpic remains untouched; only page-specific fields change.
-	; The finished page is copied to the hidden window map ($9800) while page 1
-	; remains visible.
-	call StatusScreen_BuildPage2
-	call StatusScreen_SetTransferMap0
-	ld a, $1
-	ld [H_AUTOBGTRANSFERENABLED], a
-	call Delay3
-	xor a
-	ld [H_AUTOBGTRANSFERENABLED], a
+	; Do not keep the initial white screen up just to prepare the hidden Page 2.
+	; Existing dirty-page machinery will build and transfer it on the first request,
+	; while Page 1 can become visible immediately after its completed transfer.
+	ld hl, wStatusScreenPage
+	set STATUS_SCREEN_HIDDEN_PAGE_DIRTY_F, [hl]
 
 .PagesReady
 	; Page navigation now becomes an atomic window-map flip in VBlank. No page
@@ -331,6 +351,9 @@ StatusScreen_DrawPage1:
 	call PrintNumber ; Pokémon no.
 	coord hl, 11, 10
 	predef PrintMonType
+	; FORM-5.21.00: stock PrintMonType only knows species. If this individual has
+	; a registered form, redraw both type values from its resolved full header.
+	call StatusScreen_ApplyRegionalFormTypes
 	ld hl, NamePointers2
 	call StatusScreen_GetStringPointer
 	ld d, h
@@ -354,6 +377,45 @@ StatusScreen_DrawPage1:
 	ld d, $0
 	call PrintStatsBox
 	ret
+
+; FORM-5.21.00: species-agnostic status type redraw. The regional engine returns
+; carry only when wLoadedMon has a registered form and leaves that form's complete
+; header in wMonHeader. No concrete species or type is hard-coded here.
+StatusScreen_ApplyRegionalFormTypes:
+	callba RegionalFormLoadLoadedMonHeader
+	ret nc
+
+	; Clear the old species Type 1 value before writing the form value.
+	coord hl,11,10
+	ld a," "
+	ld bc,8
+	call FillMemory
+	coord de,11,10
+	ld a,[wMonHType1]
+	ld [wRegionalFormPrintTypeArgument],a ; FORM-5.21.02: A is not far-call-safe
+	callba PrintTypeAtDE
+
+	; Clear any stock Type 2 label/value, then redraw it only for dual types.
+	coord hl,10,11
+	ld a," "
+	ld bc,6
+	call FillMemory
+	coord hl,11,12
+	ld a," "
+	ld bc,8
+	call FillMemory
+	ld a,[wMonHType1]
+	ld b,a
+	ld a,[wMonHType2]
+	cp b
+	ret z
+	coord hl,10,11
+	ld de,Type2Text
+	call PlaceString
+	coord de,11,12
+	ld a,[wMonHType2]
+	ld [wRegionalFormPrintTypeArgument],a ; FORM-5.21.02: A is not far-call-safe
+	jpba PrintTypeAtDE
 
 OTPointers:
 	dw wPartyMonOT
@@ -592,7 +654,11 @@ StatusScreen_BuildPage2:
 	ld de, wMoves
 	ld bc, NUM_MOVES
 	call CopyData
-	callab FormatMovesString
+	; MOVE-5.62.161: always use the summary-only formatter. It checks
+	; the loaded party/box species locally for each AGILITY entry instead
+	; of selecting a formatter through a separate far-call carry flag.
+	; No global move names or battle behavior are changed.
+	callab FormatRockPolishStatusMovesString
 	coord hl, 9, 2
 	lb bc, 5, 10
 	call ClearScreenArea ; Clear under name
@@ -733,7 +799,7 @@ StatusScreen_InputLoop:
 	; that contract while the summary owns input itself.
 	predef CableClub_Run
 	ld a, [hJoy5]
-	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON
+	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON | SELECT
 	jr z, StatusScreen_InputLoop
 	bit BIT_B_BUTTON, a
 	jp nz, StatusScreen_Exit
@@ -746,7 +812,19 @@ StatusScreen_InputLoop:
 	jr nz, StatusScreen_InputLoop
 
 	ld a, [hJoy5]
-	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON
+	and D_RIGHT | D_LEFT | D_UP | D_DOWN | A_BUTTON | B_BUTTON | SELECT
+	bit BIT_SELECT, a
+	jr z, .checkPageKeys
+	; One temporary orientation is shared across live UP/DOWN changes.
+	; Reuse the established dual-palette 49-tile transfer, not a second
+	; SELECT-only copy path that could expose partially uploaded picture data.
+	ld hl, wTemporaryViewerFacing
+	ld a, [hl]
+	xor 1
+	ld [hl], a
+	call StatusScreen_RebuildSwitchedPartyMon
+	jr StatusScreen_InputLoop
+.checkPageKeys
 	bit BIT_D_LEFT, a
 	jr nz, .PreviousPage
 	bit BIT_D_RIGHT, a
@@ -754,9 +832,9 @@ StatusScreen_InputLoop:
 	bit BIT_A_BUTTON, a
 	jr nz, .AButton
 
-	; SUMMARY04 exposes Gold/Silver-style Pokémon navigation only to the START
-	; Party caller. Other StatusScreen callers leave bit 7 clear and therefore
-	; retain SUMMARY03 behavior until their own staged integration.
+	; Gold/Silver-style Pokémon navigation is available only when the caller sets
+	; the switch-permission bit. StatusScreen_TrySwitchPartyMon independently accepts
+	; only Party or Box data, so enemy/daycare callers cannot opt in by accident.
 	ld b, a
 	ld a, [wStatusScreenPage]
 	bit STATUS_SCREEN_MON_SWITCH_F, a
@@ -801,16 +879,22 @@ StatusScreen_InputLoop:
 .ShowPage2
 	call StatusScreen_PreparePage2IfDirty
 	call StatusScreen_ShowPage2
-	jr StatusScreen_InputLoop
+	jp StatusScreen_InputLoop
 
 StatusScreen_TrySwitchPartyMon:
 	; A = D_UP / D_DOWN. Carry is set only when the selection actually changes.
-	; This routine is intentionally Party-only for SUMMARY04.
+	; The caller owns permission; only Party and Box data are accepted here.
 	ld c, a
 	ld a, [wMonDataLocation]
 	cp PLAYER_PARTY_DATA
+	jr z, .party
+	cp BOX_DATA
 	jr nz, .cantSwitch
+	ld a, [wNumInBox]
+	jr .gotCount
+.party
 	ld a, [wPartyCount]
+.gotCount
 	cp 2
 	jr c, .cantSwitch
 	ld b, a
@@ -829,7 +913,9 @@ StatusScreen_TrySwitchPartyMon:
 	jr nc, .cantSwitch
 .store
 	ld [wWhichPokemon], a
-	; Keep the START Party cursor synchronized with the Pokémon currently shown.
+	; Keep the caller synchronized with the Pokémon currently shown. START consumes
+	; this as its final party cursor directly; Bill's PC converts the absolute index
+	; back to its scroll-offset + visible-row representation after Stats exits.
 	ld [wPartyAndBillsPCSavedMenuItem], a
 	scf
 	ret
@@ -927,16 +1013,27 @@ StatusScreen_UpdateShinyFlag:
 	ret
 
 StatusScreen_PrepareFlippedFrontPicDualPalette:
-	; Party-only live switch helper. StatusScreen_LoadCurrentMon has already loaded
-	; a valid Pokémon header, so we can reuse the original Home decompression and
-	; alignment helpers while replacing only the final CopyVideoData stage.
-	ld a, 1
-	ld [wSpriteFlipped], a
-	ld hl, wMonHFrontSprite - wMonHeader
+	; Party and Box share one offscreen SRAM preparation / dual-palette VRAM
+	; upload regardless of facing. The back resource is 6x6 and unflipped;
+	; the front retains the project's stock horizontally flipped layout.
+	ld a,[wTemporaryViewerFacing]
+	and 1
+	jr nz,.back
+	ld a,1
+	ld [wSpriteFlipped],a
+	ld hl,wMonHFrontSprite - wMonHeader
 	call UncompressMonSprite
-	ld hl, wMonHSpriteDim
-	ld a, [hli]
-	ld c, a
+	ld hl,wMonHSpriteDim
+	ld a,[hl]
+	jr .sizeReady
+.back
+	xor a
+	ld [wSpriteFlipped],a
+	ld hl,wMonHBackSprite - wMonHeader
+	call UncompressMonSprite
+	ld a,$66
+.sizeReady
+	ld c,a
 
 	and $f
 	ld [H_SPRITEWIDTH], a
@@ -1007,6 +1104,15 @@ StatusScreen_PrepareFlippedFrontPicDualPalette:
 	dec a
 	ld [H_SPRITEINTERLACECOUNTER], a
 	jr nz, .interlaceLoop
+	; Front nibble swap matches the stock reversed display arrangement. For
+	; back pictures, reverse the seven 112-byte column blocks IN SRAM instead
+	; of reversing the visible BG tilemap. Otherwise old front tile IDs change
+	; meaning before their new 49 tiles have arrived over seven VBlanks, causing
+	; the broken intermediate image seen on SELECT. UP/DOWN never needed that
+	; tilemap change and already rendered smoothly.
+	ld a,[wTemporaryViewerFacing]
+	and 1
+	jr nz,.reorderBackColumns
 	ld bc, 2 * SPRITEBUFFERSIZE
 	ld hl, sSpriteBuffer1
 .flipLoop
@@ -1016,6 +1122,36 @@ StatusScreen_PrepareFlippedFrontPicDualPalette:
 	ld a, b
 	or c
 	jr nz, .flipLoop
+	jr .spriteReady
+.reorderBackColumns
+	; 7 tiles * 16 bytes per column; swap 0<->6, 1<->5, 2<->4.
+	; 2bpp image occupies two contiguous SPRITEBUFFERSIZE work buffers.
+	; The middle column remains in place. The result is in the same order as
+	; the stock front tile IDs so the visible tilemap NEVER needs reshuffling.
+	ld hl,sSpriteBuffer1
+	ld de,sSpriteBuffer1 + 6 * 7 * 16
+	call .swapColumns
+	ld hl,sSpriteBuffer1 + 7 * 16
+	ld de,sSpriteBuffer1 + 5 * 7 * 16
+	call .swapColumns
+	ld hl,sSpriteBuffer1 + 2 * 7 * 16
+	ld de,sSpriteBuffer1 + 4 * 7 * 16
+	call .swapColumns
+	jr .spriteReady
+.swapColumns
+	ld b,7 * 16
+.swapByte
+	ld a,[de]
+	ld c,a
+	ld a,[hl]
+	ld [de],a
+	ld a,c
+	ld [hli],a
+	inc de
+	dec b
+	jr nz,.swapByte
+	ret
+.spriteReady
 	; Stop here: the prepared pixels live only in SRAM. Do not touch vFrontPic or
 	; the visible tilemap until the ordinary text/data transfer has fully completed.
 	ret
@@ -1036,9 +1172,11 @@ StatusScreen_DrawFlippedFrontPicTileMap:
 	; banked call: tile 0 begins at coord(7,0), IDs run downward, then columns move
 	; left. The visible VRAM map already has this layout during the wipe; rebuilding
 	; it here only restores the cleared WRAM page for the later normal transfer.
-	coord hl, 7, 0
+	; The on-screen tile IDs must have one stable right-to-left order. The
+	; prepared back pixels are reversed by columns in SRAM above.
+	coord hl,7,0
 	xor a
-	ld b, 7
+	ld b,7
 .columnLoop
 	push bc
 	push hl
@@ -1054,7 +1192,7 @@ StatusScreen_DrawFlippedFrontPicTileMap:
 	dec hl
 	pop bc
 	dec b
-	jr nz, .columnLoop
+	jr nz,.columnLoop
 	ret
 
 StatusScreen_CopyFrontPicDualPalette:
@@ -1218,9 +1356,49 @@ StatusScreen_WaitForBgPaletteCommit:
 	jr .check
 
 StatusScreen_TransferPreparedMap:
+	; A live-switch wipe leaves the visible 7x7 picture attributes on palette 2.
+	; Do not rely on a destination change or a previous RunPaletteCommand to mark
+	; the static attribute map dirty: same-page consecutive switches can otherwise
+	; promote the next Pokemon colors into palette 2 while the old picture still
+	; references it, producing a one-frame recolored old sprite.
+	ld a, 2
+	ld [rSVBK], a
+	ld a, 3
+	ld [W2_StaticPaletteMapChanged], a
+	xor a
+	ld [rSVBK], a
+
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call Delay3
+
+	; Delay3 is the normal three-portion transfer time, but palette-map preparation
+	; and its VBlank DMA use an explicit producer/consumer handshake. Wait for all
+	; three portions and any final prepared window portion to be consumed before
+	; palette 2 is allowed to change. In the common case this exits immediately.
+.waitForPaletteMapCommit
+	ld a, 2
+	ld [rSVBK], a
+	ld a, [W2_StaticPaletteMapChanged]
+	and a
+	jr nz, .paletteMapPending
+	ld a, [W2_StaticPaletteMapChanged_vbl]
+	and a
+	jr nz, .paletteMapPending
+	ld a, [W2_UpdatedWindowPortion]
+	and a
+	jr nz, .paletteMapPending
+	xor a
+	ld [rSVBK], a
+	jr .transferComplete
+
+.paletteMapPending
+	xor a
+	ld [rSVBK], a
+	call DelayFrame
+	jr .waitForPaletteMapCommit
+
+.transferComplete
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
@@ -1275,6 +1453,9 @@ StatusScreen_Exit:
 	ld a, [rLCDC]
 	set 6, a ; restore the project's normal window tile map at $9c00
 	ld [rLCDC], a
+	; Restore START Party's cached overworld BG0 before returning. Other StatusScreen
+	; callers take the far helper's immediate return path.
+	callba Summary_MaybeRestoreOverworldBG0
 	call StatusScreen_SetTransferMap1
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
@@ -1297,10 +1478,24 @@ StatusScreen_Exit:
 	xor a
 	ld [wStatusScreenStatMode], a
 	ld [wStatusScreenPage], a
+	ld [wStatusScreenCommonTilesReady], a
 	ld [hJoyHeld], a
 	ld [hJoyPressed], a
 	ld [hJoyReleased], a
 	ld [hJoy5], a
+	; START Party immediately restores/redraws its saved full-screen tilemap.
+	; Battle Party also redraws immediately, but has no saved Party tilemap to
+	; restore first. Clear only WRAM there; the Party redraw performs the one
+	; visible three-frame transfer that is actually needed.
+	ld a, [wStatusScreenPartyCaller]
+	cp SUMMARY_PARTY_CALLER_START
+	ret z
+	cp SUMMARY_PARTY_CALLER_BATTLE
+	jr nz, .genericCaller
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED], a
+	jp StatusScreen_ClearTileMapNoWait
+.genericCaller
 	jp ClearScreen
 
 CalcExpToLevelUp:

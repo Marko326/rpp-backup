@@ -1,33 +1,50 @@
 StartMenu_Pokedex:
 	predef ShowPokedexMenu
 	call LoadScreenTilesFromBuffer2 ; restore saved screen
-	call Delay3
-	call LoadGBPal
-	call UpdateSprites
+	; MENU-5.62.11: finish the START transfer while CGB OBJ palettes commit invisibly.
+	callba StartMenuFinishWhiteReturn
 	jp RedisplayStartMenu
 
 StartMenu_Pokemon:
 	ld a,[wPartyCount]
 	and a
 	jp z,RedisplayStartMenu
+	; Battles and Bill's PC share/clear the generic party cursor. Restore START's
+	; session-only cursor before opening the party so battles cannot reset it.
+	; Fall back to the first Pokémon if the saved slot no longer exists.
+	ld a,[wPartyCount]
+	dec a
+	ld b,a
+	ld a,[wStartPartySavedMenuItem]
+	cp b
+	jr c,.restoreSavedCursor
+	jr z,.restoreSavedCursor
+	xor a
+.restoreSavedCursor
+	ld [wPartyAndBillsPCSavedMenuItem],a
 	xor a
 	ld [wMenuItemToSwap],a
-	ld [wPartyMenuTypeOrMessageID],a
 	ld [wUpdateSpritesEnabled],a
+	call SetStartPartyMenuType
 	call DisplayPartyMenu
 	jr .checkIfPokemonChosen
 .loop
 	xor a
 	ld [wMenuItemToSwap],a
-	ld [wPartyMenuTypeOrMessageID],a
+	call SetStartPartyMenuType
 	call GoBackToPartyMenu
 .checkIfPokemonChosen
+	; HandlePartyMenuInput has just updated the generic cursor. Mirror it now so
+	; every START Party exit path retains the latest selected Pokémon.
+	ld a,[wPartyAndBillsPCSavedMenuItem]
+	ld [wStartPartySavedMenuItem],a
 	jr nc,.chosePokemon
 .exitMenu
-	call GBPalWhiteOutWithDelay3
-	call RestoreScreenTilesAndReloadTilePatterns
-    call ReloadMapData
-	call LoadGBPal
+	; The cached BG0 restore still makes ReloadMapData unnecessary.
+	; Restore the saved START screen and all overwritten overworld graphics in one
+	; consolidated white/LCD-off phase instead of two separate restore waits.
+	; The helper also completes the CGB palette reveal atomically.
+	callba Summary_RestoreStartMenuFromParty
 	jp RedisplayStartMenu
 .chosePokemon
 	call SaveScreenTilesToBuffer1
@@ -100,23 +117,20 @@ StartMenu_Pokemon:
 	call ClearSprites
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
-	; SUMMARY04: only START Party owns UP/DOWN Pokémon navigation for now.
-	ld a, $80
-	ld [wStatusScreenPage], a
-	predef StatusScreen
+	; START Party owns live UP/DOWN navigation and the temporary overworld-BG0
+	; cache used by the Summary return path. Keep the caller-specific setup outside
+	; bank $04.
+	callba Summary_RunStartPartyStatusScreen
 	; Return the Party cursor to the last Pokémon viewed in Summary.
 	ld a, [wWhichPokemon]
 	ld [wPartyAndBillsPCSavedMenuItem], a
-	call ReloadMapData
-	; Summary page 2 shares vBGMap0 with the overworld, so its page data must
-	; be replaced before returning to the Party/START-menu lifecycle.  Do not
-	; use _LoadMapVramAndColors here: that map-load helper always writes from
-	; $9800 and loses the current overworld ring-buffer phase after walking.
-	; RedrawMapView rebuilds vBGMap0 from the live wMapViewVRAMPointer instead.
-	ld b, SET_PAL_OVERWORLD
-	call RunPaletteCommand
-	callba RedrawMapView
-	jp StartMenu_Pokemon
+	; The Summary exit path restores the cached overworld BG0 before StatusScreen
+	; returns.
+	; The Party is still full-screen here, so keep the fast return: restore the
+	; Party tilemap saved before the action menu and resume its already-resident
+	; icon set without rebuilding or redrawing the overworld.
+	call LoadScreenTilesFromBuffer1
+	jp .loop
 .choseOutOfBattleMove
 	push hl
 	ld a,[wWhichPokemon]
@@ -151,6 +165,10 @@ StartMenu_Pokemon:
 	jp z,.newBadgeRequired
 	ld a, [wCurMap]
 	cp MT_MOON_SQUARE
+	jr z, .canFly
+	cp VIRIDIAN_FOREST
+	jr z, .canFly
+	cp CELADON_MART_ROOF
 	jr z, .canFly
 	call CheckIfInOutsideMap
 	jr z,.canFly
@@ -468,6 +486,8 @@ StartMenu_Item:
 	ld a,[wActionResultOrTookBattleTurn]
 	and a
 	jp z,ItemMenuLoop
+	; FIS-5.62.84: record only a successful, deliberate Bag rod use.
+	callab RememberBagFishingRod
 	jp CloseStartMenu
 .useItem_partyMenu
 	ld a,[wUpdateSpritesEnabled]
@@ -476,8 +496,12 @@ StartMenu_Item:
 	ld a,[wActionResultOrTookBattleTurn]
 	cp a,$02
 	jp z,.partyMenuNotDisplayed
-	call GBPalWhiteOutWithDelay3
-	call RestoreScreenTilesAndReloadTilePatterns
+	; BAG-5.19.1: Party-target item handlers can overwrite the same overworld
+	; sprite/font VRAM as the normal Party menu. Restore those graphics once, but
+	; keep the saved START tilemap hidden because StartMenu_Item immediately redraws
+	; the Bag over it. This avoids both the legacy VBlank reload and an intermediate
+	; three-frame START transfer.
+	callba Summary_RestoreStartBagFromParty
 	pop af
 	ld [wUpdateSpritesEnabled],a
 	jp StartMenu_Item
@@ -526,6 +550,7 @@ UsableItems_PartyMenu:
 	db HYPER_POTION
 	db SUPER_POTION
 	db POTION
+	db ICE_STONE
 	db FIRE_STONE
 	db THUNDER_STONE
 	db WATER_STONE
@@ -635,7 +660,7 @@ DrawTrainerInfo:
 	ld hl,GymLeaderFaceAndBadgeTileGraphics  ; gym leader face and badge tile patterns
 	ld de,vChars2 + $200
 	ld bc,$0400
-	ld a,$03
+	ld a, BANK(GymLeaderFaceAndBadgeTileGraphics)
 	call FarCopyData2
 	ld hl,TextBoxGraphics
 	ld de,$00d0
@@ -787,6 +812,9 @@ SwitchPartyMon:
 	call SwitchPartyMon_ClearGfx
 	ld a, [wCurrentMenuItem]
 	call SwitchPartyMon_ClearGfx
+	; Swap only the slot-to-tile mapping: the two icons are already in VRAM.
+	; Avoid disabling LCD during normal and SELECT party swaps.
+	callba SwapPartyIconSlots
 	jp RedrawPartyMenu_
 
 SwitchPartyMon_ClearGfx:
@@ -922,6 +950,24 @@ SwitchPartyMon_InitVarOrSwapData:
 	ld hl, wSwitchPartyMonTempBuffer
 	ld bc, NAME_LENGTH
 	call CopyData
+	; MOVE-5.62.169: keep each mon's four-slot extension mask
+	; paired with its original party data when positions are exchanged.
+	ld a, [wCurrentMenuItem]
+	ld c, a
+	ld b, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, bc
+	ld d, h
+	ld e, l
+	ld a, [wMenuItemToSwap]
+	ld c, a
+	ld hl, wExtendedPartyMoveFlags
+	add hl, bc
+	ld a, [de]
+	ld c, a
+	ld a, [hl]
+	ld [de], a
+	ld [hl], c
 	ld a, [wMenuItemToSwap]
 	ld [wSwappedMenuItem], a
 	xor a

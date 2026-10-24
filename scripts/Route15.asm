@@ -1,16 +1,8 @@
 Route15Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route15TrainerHeader0
-	ld de, Route15ScriptPointers
-	ld a, [wRoute15CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute15CurScript], a
-	ret
-
-Route15ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRoute15CurScript
+	jp Bank16RunStandardTrainerMapScript
 
 Route15TextPointers:
 	dw Route15Text1
@@ -33,7 +25,6 @@ Route15TrainerHeader0:
 	dw Route15BattleText1 ; TextBeforeBattle
 	dw Route15AfterBattleText1 ; TextAfterBattle
 	dw Route15EndBattleText1 ; TextEndBattle
-	dw Route15EndBattleText1 ; TextEndBattle
 
 Route15TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_1
@@ -41,7 +32,6 @@ Route15TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_1
 	dw Route15BattleText2 ; TextBeforeBattle
 	dw Route15AfterBattleText2 ; TextAfterBattle
-	dw Route15EndBattleText2 ; TextEndBattle
 	dw Route15EndBattleText2 ; TextEndBattle
 
 Route15TrainerHeader2:
@@ -51,7 +41,6 @@ Route15TrainerHeader2:
 	dw Route15BattleText3 ; TextBeforeBattle
 	dw Route15AfterBattleText3 ; TextAfterBattle
 	dw Route15EndBattleText3 ; TextEndBattle
-	dw Route15EndBattleText3 ; TextEndBattle
 
 Route15TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_3
@@ -59,7 +48,6 @@ Route15TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_3
 	dw Route15BattleText4 ; TextBeforeBattle
 	dw Route15AfterBattleText4 ; TextAfterBattle
-	dw Route15EndBattleText4 ; TextEndBattle
 	dw Route15EndBattleText4 ; TextEndBattle
 
 Route15TrainerHeader4:
@@ -69,7 +57,6 @@ Route15TrainerHeader4:
 	dw Route15BattleText5 ; TextBeforeBattle
 	dw Route15AfterBattleText5 ; TextAfterBattle
 	dw Route15EndBattleText5 ; TextEndBattle
-	dw Route15EndBattleText5 ; TextEndBattle
 
 Route15TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_5
@@ -77,7 +64,6 @@ Route15TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_5
 	dw Route15BattleText6 ; TextBeforeBattle
 	dw Route15AfterBattleText6 ; TextAfterBattle
-	dw Route15EndBattleText6 ; TextEndBattle
 	dw Route15EndBattleText6 ; TextEndBattle
 
 Route15TrainerHeader6:
@@ -87,7 +73,6 @@ Route15TrainerHeader6:
 	dw Route15BattleText7 ; TextBeforeBattle
 	dw Route15AfterBattleText7 ; TextAfterBattle
 	dw Route15EndBattleText7 ; TextEndBattle
-	dw Route15EndBattleText7 ; TextEndBattle
 
 Route15TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_7, 1
@@ -95,7 +80,6 @@ Route15TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_15_TRAINER_7, 1
 	dw Route15BattleText8 ; TextBeforeBattle
 	dw Route15AfterBattleText8 ; TextAfterBattle
-	dw Route15EndBattleText8 ; TextEndBattle
 	dw Route15EndBattleText8 ; TextEndBattle
 
 Route15TrainerHeader8:
@@ -105,7 +89,6 @@ Route15TrainerHeader8:
 	dw Route15BattleText9 ; TextBeforeBattle
 	dw Route15AfterBattleText9 ; TextAfterBattle
 	dw Route15EndBattleText9 ; TextEndBattle
-	dw Route15EndBattleText9 ; TextEndBattle
 
 Route15TrainerHeader9:
 	dbEventFlagBit EVENT_BEAT_ROUTE_15_TRAINER_9, 1
@@ -114,61 +97,38 @@ Route15TrainerHeader9:
 	dw Route15BattleText10 ; TextBeforeBattle
 	dw Route15AfterBattleText10 ; TextAfterBattle
 	dw Route15EndBattleText10 ; TextEndBattle
-	dw Route15EndBattleText10 ; TextEndBattle
 
 	db $ff
 
 Route15Text1:
-	TX_ASM
-	ld hl, Route15TrainerHeader0
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader0
 
 Route15Text2:
-	TX_ASM
-	ld hl, Route15TrainerHeader1
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader1
 
 Route15Text3:
-	TX_ASM
-	ld hl, Route15TrainerHeader2
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader2
 
 Route15Text4:
-	TX_ASM
-	ld hl, Route15TrainerHeader3
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader3
 
 Route15Text5:
-	TX_ASM
-	ld hl, Route15TrainerHeader4
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader4
 
 Route15Text6:
-	TX_ASM
-	ld hl, Route15TrainerHeader5
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader5
 
 Route15Text7:
-	TX_ASM
-	ld hl, Route15TrainerHeader6
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader6
 
 Route15Text8:
-	TX_ASM
-	ld hl, Route15TrainerHeader7
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader7
 
 Route15Text9:
-	TX_ASM
-	ld hl, Route15TrainerHeader8
-	jr Route15TalkToTrainer
+	TX_TRAINER Route15TrainerHeader8
 
 Route15Text10:
-	TX_ASM
-	ld hl, Route15TrainerHeader9
-Route15TalkToTrainer:
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route15TrainerHeader9
 
 Route15BattleText1:
 	TX_FAR _Route15BattleText1

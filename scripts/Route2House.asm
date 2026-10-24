@@ -1,6 +1,3 @@
-Route2HouseScript:
-	jp EnableAutoTextBoxDrawing
-
 Route2HouseTextPointers:
 	dw Route2HouseText1
 	dw Route2HouseText2

@@ -12,7 +12,7 @@ const_value = 1
 	const SCRATCH      ; 0a
 	const VICEGRIP     ; 0b
 	const GUILLOTINE   ; 0c
-	const RAZOR_WIND   ; 0d
+	const SPARK        ; 0d
 	const SWORDS_DANCE ; 0e
 	const CUT          ; 0f
 	const GUST         ; 10
@@ -26,7 +26,7 @@ const_value = 1
 	const DOUBLE_KICK  ; 18
 	const MEGA_KICK    ; 19
 	const JUMP_KICK    ; 1a
-	const ROLLING_KICK ; 1b
+	const AURA_SPHERE  ; 1b
 	const SAND_ATTACK  ; 1c
 	const HEADBUTT     ; 1d
 	const HORN_ATTACK  ; 1e
@@ -139,7 +139,7 @@ const_value = 1
 	const GLARE        ; 89
 	const DREAM_EATER  ; 8a
 	const POISON_GAS   ; 8b
-	const BARRAGE      ; 8c
+	const BULLET_SEED  ; 8c
 	const LEECH_LIFE   ; 8d
 	const LOVELY_KISS  ; 8e
 	const SKY_ATTACK   ; 8f
@@ -216,13 +216,13 @@ const_value = 1
 	const MUDDY_WATER  ; d6
 	const WHIRLPOOL    ; d7
 	const GIGA_DRAIN   ; d8
-	const PETALBLIZARD ; d9
+	const ENERGY_BALL  ; d9
 	const LEAF_BLADE   ; da
 	const WOOD_HAMMER  ; db
 	const POISON_JAB   ; dc
 	const GUNK_SHOT    ; dd
 	const POISON_FANG  ; de
-	const SLUDGE_WAVE  ; df
+	const SLUDGE_BOMB  ; df
 	const SILVER_WIND  ; e0
 	const BUG_BUZZ     ; e1
 	const MEGAHORN     ; e2
@@ -247,14 +247,39 @@ const_value = 1
 	const LOW_SWEEP    ; f5
 	const HURRICANE    ; f6
 	const BABYDOLLEYES ; f7
-	const BONE_RUSH    ; f8
+	; MOV-5.61.53: replace low-use Bone Rush slot with Ho-Oh signature move Sacred Fire.
+	const SACRED_FIRE  ; f8
 	const AEROBLAST    ; f9
 	const ANCIENTPOWER ; fa
 	const DIVE         ; fb (Unused) 
 	const LUSTER_PURGE ; fc
 	const MIND_BLAST   ; fd
+	; MOV-5.61.31: KEP Iron Head uses the final safe real-move ID before $FF sentinels.
+	const IRON_HEAD    ; fe
 
 NUM_ATTACKS EQU const_value
+
+; MOVE-5.62.171: 16-bit identity for the separate experimental move table.
+; Do not reuse a legacy 8-bit move ID or enlarge existing party/box structs.
+EXT_MOVE_BASE_ID EQU $0100
+EXT_MOVE_POWER_WHIP EQU EXT_MOVE_BASE_ID
+EXT_MOVE_PLAY_ROUGH EQU EXT_MOVE_BASE_ID + 1
+NUM_EXTENDED_MOVES EQU 40
+EXT_MOVE_MAX_PILOT_CAPACITY EQU 64
+; Stored one-byte extended slot values are 1..64 (never 0 = empty).
+; A sidecar bit discriminates these from old IDs of the same byte value.
+EXT_MOVE_LOW_POWER_WHIP EQU 1
+EXT_MOVE_LOW_PLAY_ROUGH EQU 2
+ASSERT NUM_EXTENDED_MOVES <= EXT_MOVE_MAX_PILOT_CAPACITY
+; MOVE-5.62.173: keep a conservative per-species budget for future real
+; distribution, even though all 1-40 temporary test learnsets are removed.
+; Later allocations must not exceed two relearnable extended moves per mon
+; without increasing this compile-time reserve and auditing NPC capacity.
+EXT_MOVE_MAX_PER_SPECIES EQU 2
+; MOVE-5.62.169: reserved escape byte, *only* for the first experimental
+; extended move.  It is NOT an additional legacy Moves-table entry.
+EXT_MOVE_SLOT_ESCAPE EQU $ff
+ASSERT NUM_ATTACKS == EXT_MOVE_SLOT_ESCAPE
 const_value = STRUGGLE + 1
 
 ; 必定暴击技能的单一身份来源。战斗核心和 MoveDex 都引用这两个别名，

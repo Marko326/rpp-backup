@@ -25,6 +25,9 @@ HallofFameRoomScript2:
 	push af
 	xor a
 	ld [wJoyIgnore], a
+	; HOF-5.27.03: the League challenge is over. Restore the party before
+	; recording the Hall of Fame so the post-clear save starts fully healed.
+	predef HealParty
 	predef HallOfFamePC
 	pop af
 	ld [wLetterPrintingDelayFlags], a

@@ -37,4 +37,6 @@ InitBattleVariables:
 	ld a, BATTLE_TYPE_SAFARI
 	ld [wBattleType], a
 .notSafariBattle
-	jpab PlayBattleMusic
+	; MIRROR-5.19.19: keep this bank size-neutral; the banked helper clears
+	; Mirror Move memory, then starts the same battle music routine.
+	jpab InitMirrorMoveMemoryAndPlayBattleMusic

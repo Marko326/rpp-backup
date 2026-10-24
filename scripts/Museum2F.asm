@@ -1,6 +1,3 @@
-Museum2FScript:
-	jp EnableAutoTextBoxDrawing
-
 Museum2FTextPointers:
 	dw Museum2FText1
 	dw Museum2FText2

@@ -23,6 +23,16 @@ PrintType:
 	push hl
 	jr PrintType_
 
+; FORM-5.21.02: far-call-safe entry for regional-form UI code.
+; [wRegionalFormPrintTypeArgument] = type, DE = destination tilemap address.
+; CALLBA/Bankswitch consumes A/BC/HL, so the byte argument uses an existing
+; shared scratch byte while DE carries the destination across the bank switch.
+PrintTypeAtDE::
+	ld a,[wRegionalFormPrintTypeArgument]
+	ld h,d
+	ld l,e
+	jp PrintType
+
 ; erase "TYPE2/" if the mon only has 1 type
 EraseType2Text:
 	ld a, " "

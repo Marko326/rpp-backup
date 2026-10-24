@@ -3,13 +3,11 @@ SaffronGymScript:
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, .extra
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, SaffronGymTrainerHeader0
 	ld de, SaffronGymScriptPointers
-	ld a, [wSaffronGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSaffronGymCurScript], a
-	ret
+	ld bc, wSaffronGymCurScript
+	jp Bank17RunTrainerMapScript
 
 .extra
 	ld hl, Gym6CityName
@@ -43,25 +41,9 @@ SaffronGymScript3:
 	ld [wJoyIgnore], a
 
 SaffronGymText_5d068:
-	ld a, $a
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_SABRINA
-	lb bc, TM_46, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $b
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM46
-	jr .asm_5d091
-.BagFull
-	ld a, $c
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5d091
-	ld hl, wObtainedKantoBadges
-	set 5, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 5
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_SAFFRON_GYM_TRAINER_0, EVENT_BEAT_SAFFRON_GYM_TRAINER_6
@@ -89,7 +71,6 @@ SaffronGymTrainerHeader0:
 	dw SaffronGymBattleText1 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText1 ; TextAfterBattle
 	dw SaffronGymEndBattleText1 ; TextEndBattle
-	dw SaffronGymEndBattleText1 ; TextEndBattle
 
 SaffronGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_1
@@ -97,7 +78,6 @@ SaffronGymTrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SAFFRON_GYM_TRAINER_1
 	dw SaffronGymBattleText2 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText2 ; TextAfterBattle
-	dw SaffronGymEndBattleText2 ; TextEndBattle
 	dw SaffronGymEndBattleText2 ; TextEndBattle
 
 SaffronGymTrainerHeader2:
@@ -107,7 +87,6 @@ SaffronGymTrainerHeader2:
 	dw SaffronGymBattleText3 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText3 ; TextAfterBattle
 	dw SaffronGymEndBattleText3 ; TextEndBattle
-	dw SaffronGymEndBattleText3 ; TextEndBattle
 
 SaffronGymTrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_3
@@ -115,7 +94,6 @@ SaffronGymTrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_SAFFRON_GYM_TRAINER_3
 	dw SaffronGymBattleText4 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText4 ; TextAfterBattle
-	dw SaffronGymEndBattleText4 ; TextEndBattle
 	dw SaffronGymEndBattleText4 ; TextEndBattle
 
 SaffronGymTrainerHeader4:
@@ -125,7 +103,6 @@ SaffronGymTrainerHeader4:
 	dw SaffronGymBattleText5 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText5 ; TextAfterBattle
 	dw SaffronGymEndBattleText5 ; TextEndBattle
-	dw SaffronGymEndBattleText5 ; TextEndBattle
 
 SaffronGymTrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_5
@@ -134,7 +111,6 @@ SaffronGymTrainerHeader5:
 	dw SaffronGymBattleText6 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText6 ; TextAfterBattle
 	dw SaffronGymEndBattleText6 ; TextEndBattle
-	dw SaffronGymEndBattleText6 ; TextEndBattle
 
 SaffronGymTrainerHeader6:
 	dbEventFlagBit EVENT_BEAT_SAFFRON_GYM_TRAINER_6, 1
@@ -142,7 +118,6 @@ SaffronGymTrainerHeader6:
 	dwEventFlagAddress EVENT_BEAT_SAFFRON_GYM_TRAINER_6, 1
 	dw SaffronGymBattleText7 ; TextBeforeBattle
 	dw SaffronGymAfterBattleText7 ; TextAfterBattle
-	dw SaffronGymEndBattleText7 ; TextEndBattle
 	dw SaffronGymEndBattleText7 ; TextEndBattle
 
 	db $ff
@@ -209,46 +184,25 @@ SaffronGymText12:
 	db "@"
 
 SaffronGymText2:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader0
 
 SaffronGymText3:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader1
 
 SaffronGymText4:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader2
 
 SaffronGymText5:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader3
 
 SaffronGymText6:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader4
 
 SaffronGymText7:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader5
 
 SaffronGymText8:
-	TX_ASM
-	ld hl, SaffronGymTrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SaffronGymTrainerHeader6
 
 SaffronGymText9:
 	TX_ASM

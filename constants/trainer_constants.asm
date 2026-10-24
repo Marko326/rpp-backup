@@ -1,3 +1,12 @@
+; TRH-5.44.00: TrainerHeader stores the one end-battle text pointer consumed
+; by the current runtime instead of two identical copies. Keep offsets and size
+; named so future header fields remain straightforward to extend.
+DEF TRAINER_HEADER_FLAG_PTR     EQU $2
+DEF TRAINER_HEADER_BEFORE_TEXT  EQU $4
+DEF TRAINER_HEADER_AFTER_TEXT   EQU $6
+DEF TRAINER_HEADER_END_TEXT     EQU $8
+DEF TRAINER_HEADER_SIZE         EQU $a
+
 trainer_const: MACRO
 \1     EQU const_value
 OPP_\1 EQU const_value + 200

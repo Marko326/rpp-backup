@@ -1,5 +1,4 @@
 CleffaBaseStats:
-db DEX_CLEFFA ; pokedex id
 db 50 ; base hp
 db 25 ; base attack
 db 28 ; base defense
@@ -15,9 +14,6 @@ dw CleffaPicBack
 ; move tutor compatibility flags
 	m_tutor 7
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 4 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,13,14,16

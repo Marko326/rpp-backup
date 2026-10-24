@@ -24,8 +24,8 @@ ItemPrices:
 	money 0     ; THUNDERBADGE
 	money 0     ; RAINBOWBADGE
 	money 0     ; SOULBADGE
-	money 0     ; MARSHBADGE
-	money 0     ; VOLCANOBADGE
+	money 0     ; GB_PLAYER
+	money 2100  ; ICE_STONE
 	money 0     ; EARTHBADGE
 	money 550   ; ESCAPE_ROPE
 	money 350   ; REPEL

@@ -30,8 +30,7 @@ SaffronCityPokecenterBenchGuyText:
 	jr nz, .asm_624f2
 	ld hl, SaffronCityPokecenterBenchGuyText1
 .asm_624f2
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SaffronCityPokecenterBenchGuyText1:
 	TX_FAR _SaffronCityPokecenterGuyText1

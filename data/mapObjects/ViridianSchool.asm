@@ -10,7 +10,3 @@ SchoolObject:
 	db $2 ; objects
 	object SPRITE_BRUNETTE_GIRL, $3, $5, STAY, UP, $1 ; person
 	object SPRITE_LASS, $4, $1, STAY, DOWN, $2 ; person
-
-	; warp-to
-	EVENT_DISP VIRIDIAN_SCHOOL_WIDTH, $7, $2
-	EVENT_DISP VIRIDIAN_SCHOOL_WIDTH, $7, $3

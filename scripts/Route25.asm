@@ -1,12 +1,9 @@
 Route25Script:
 	call Route25Script_515e1
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Route25TrainerHeader0
-	ld de, Route25ScriptPointers
-	ld a, [wRoute25CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute25CurScript], a
-	ret
+	ld bc, wRoute25CurScript
+	jp Bank14RunStandardTrainerMapScript
 
 Route25Script_515e1:
 	ld hl, wCurrentMapScriptFlags
@@ -35,11 +32,6 @@ Route25Script_515e1:
 	ld [wMissableObjectIndex], a
 	predef_jump ShowObject
 
-Route25ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
-
 Route25TextPointers:
 	dw Route25Text1
 	dw Route25Text2
@@ -60,7 +52,6 @@ Route25TrainerHeader0:
 	dw Route25BattleText1 ; TextBeforeBattle
 	dw Route25AfterBattleText1 ; TextAfterBattle
 	dw Route25EndBattleText1 ; TextEndBattle
-	dw Route25EndBattleText1 ; TextEndBattle
 
 Route25TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_25_TRAINER_1
@@ -68,7 +59,6 @@ Route25TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_25_TRAINER_1
 	dw Route25BattleText2 ; TextBeforeBattle
 	dw Route25AfterBattleText2 ; TextAfterBattle
-	dw Route25EndBattleText2 ; TextEndBattle
 	dw Route25EndBattleText2 ; TextEndBattle
 
 Route25TrainerHeader2:
@@ -78,7 +68,6 @@ Route25TrainerHeader2:
 	dw Route25BattleText3 ; TextBeforeBattle
 	dw Route25AfterBattleText3 ; TextAfterBattle
 	dw Route25EndBattleText3 ; TextEndBattle
-	dw Route25EndBattleText3 ; TextEndBattle
 
 Route25TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_25_TRAINER_3
@@ -86,7 +75,6 @@ Route25TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_25_TRAINER_3
 	dw Route25BattleText4 ; TextBeforeBattle
 	dw Route25AfterBattleText4 ; TextAfterBattle
-	dw Route25EndBattleText4 ; TextEndBattle
 	dw Route25EndBattleText4 ; TextEndBattle
 
 Route25TrainerHeader4:
@@ -96,7 +84,6 @@ Route25TrainerHeader4:
 	dw Route25BattleText5 ; TextBeforeBattle
 	dw Route25AfterBattleText5 ; TextAfterBattle
 	dw Route25EndBattleText5 ; TextEndBattle
-	dw Route25EndBattleText5 ; TextEndBattle
 
 Route25TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_25_TRAINER_5
@@ -104,7 +91,6 @@ Route25TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_25_TRAINER_5
 	dw Route25BattleText6 ; TextBeforeBattle
 	dw Route25AfterBattleText6 ; TextAfterBattle
-	dw Route25EndBattleText6 ; TextEndBattle
 	dw Route25EndBattleText6 ; TextEndBattle
 
 Route25TrainerHeader6:
@@ -114,7 +100,6 @@ Route25TrainerHeader6:
 	dw Route25BattleText7 ; TextBeforeBattle
 	dw Route25AfterBattleText7 ; TextAfterBattle
 	dw Route25EndBattleText7 ; TextEndBattle
-	dw Route25EndBattleText7 ; TextEndBattle
 
 Route25TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROUTE_25_TRAINER_7, 1
@@ -122,7 +107,6 @@ Route25TrainerHeader7:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_25_TRAINER_7, 1
 	dw Route25BattleText8 ; TextBeforeBattle
 	dw Route25AfterBattleText8 ; TextAfterBattle
-	dw Route25EndBattleText8 ; TextEndBattle
 	dw Route25EndBattleText8 ; TextEndBattle
 
 Route25TrainerHeader8:
@@ -132,63 +116,35 @@ Route25TrainerHeader8:
 	dw Route25BattleText9 ; TextBeforeBattle
 	dw Route25AfterBattleText9 ; TextAfterBattle
 	dw Route25EndBattleText9 ; TextEndBattle
-	dw Route25EndBattleText9 ; TextEndBattle
 
 	db $ff
 
 Route25Text1:
-	TX_ASM
-	ld hl, Route25TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader0
 
 Route25Text2:
-	TX_ASM
-	ld hl, Route25TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader1
 
 Route25Text3:
-	TX_ASM
-	ld hl, Route25TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader2
 
 Route25Text4:
-	TX_ASM
-	ld hl, Route25TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader3
 
 Route25Text5:
-	TX_ASM
-	ld hl, Route25TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader4
 
 Route25Text6:
-	TX_ASM
-	ld hl, Route25TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader5
 
 Route25Text7:
-	TX_ASM
-	ld hl, Route25TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader6
 
 Route25Text8:
-	TX_ASM
-	ld hl, Route25TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader7
 
 Route25Text9:
-	TX_ASM
-	ld hl, Route25TrainerHeader8
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route25TrainerHeader8
 
 Route25BattleText1:
 	TX_FAR _Route25BattleText1

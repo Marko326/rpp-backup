@@ -6,10 +6,9 @@ Predef::
 	; Save the predef id for GetPredefPointer.
 	ld [wPredefID], a
 
-	; A hack for LoadDestinationWarpPosition.
-	; See LoadTilesetHeader (predef $19).
+	; WDP-5.49.00: normal destination positions no longer need
+	; wPredefParentBank. Keep the current ROM bank in A so Predef can restore it.
 	ld a, [H_LOADEDROMBANK]
-	ld [wPredefParentBank], a
 
 	push af
 	ld a, BANK(GetPredefPointer)

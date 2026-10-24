@@ -11,9 +11,3 @@ Route19GateObject:
 
 	db $1 ; people
 	db SPRITE_GUARD, $3 + 4, $1 + 4, $ff, $d3, $1 ; person
-
-	; warp-to
-	EVENT_DISP ROUTE_19_GATE_WIDTH, $5, $3
-	EVENT_DISP ROUTE_19_GATE_WIDTH, $5, $4
-	EVENT_DISP ROUTE_19_GATE_WIDTH, $0, $3
-	EVENT_DISP ROUTE_19_GATE_WIDTH, $0, $4

@@ -1,6 +1,8 @@
 # Instructions
 
-These instructions explain how to set up the tools required to build **pokered**, including [**rgbds**](https://github.com/gbdev/rgbds), which assembles the source files into a ROM.
+These instructions explain how to set up the tools required to build **Pokémon Red++ v3**, including [**rgbds**](https://github.com/gbdev/rgbds), which assembles the source files into a ROM.
+
+This repository expects **RGBDS 0.5.2** (also recorded in `.rgbds-version`). The Makefile uses RGBDS from your `PATH` by default, or a separate local installation when `RGBDS=...` is provided.
 
 If you run into trouble, ask for help on IRC or Discord (see [README.md](README.md)).
 
@@ -147,16 +149,28 @@ git clone https://github.com/JustRegularLuna/rpp-backup
 cd rpp-backup
 ```
 
-To build **pokered.gbc** and **pokeblue.gbc**:
+To build **patches/rppred.gbc** and **patches/rppblue.gbc**:
 
 ```bash
 make
 ```
 
+`make` uses `rgbasm`, `rgblink`, `rgbfix`, and `rgbgfx` from your `PATH` unless you set `RGBDS`. The small helper programs in `tools/` are compiled locally using your system C compiler. You can override it when needed, for example with `make CC=gcc` or `make CC=clang`.
+
 ### Build with a local rgbds version
 
-If you have different projects that require different versions of `rgbds`, it might not be convenient to install rgbds 0.5.2 globally. Instead, you can put its files in a directory within pokered, such as `pokered/rgbds-0.5.2/`. Then specify it when you run `make`:
+If you have different projects that require different versions of `rgbds`, it might not be convenient to install RGBDS 0.5.2 globally. Instead, keep RGBDS 0.5.2 in a separate directory, for example `rgbds-0.5.2/`, and specify that directory when you run `make`:
 
 ```bash
 make RGBDS=rgbds-0.5.2/
 ```
+
+All four RGBDS programs used by the build (`rgbasm`, `rgblink`, `rgbfix`, and `rgbgfx`) will then come from that directory, so they cannot accidentally mix with another RGBDS version installed in `PATH`.
+
+A directory named `rgbds/` at the repository root is ignored by Git, so it can also be used for a private local installation:
+
+```bash
+make RGBDS=rgbds/
+```
+
+Do not copy `make`, `gcc`, or other system build tools into `rgbds/`; install those through your operating system or build environment instead.

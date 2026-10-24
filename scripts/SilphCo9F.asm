@@ -1,122 +1,17 @@
 SilphCo9Script:
-	call SilphCo9Script_5d7d1
-	call EnableAutoTextBoxDrawing
-	ld hl, SilphCo9TrainerHeader0
-	ld de, SilphCo9ScriptPointers
-	ld a, [wSilphCo9CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo9CurScript], a
-	ret
-
-SilphCo9Script_5d7d1:
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
 	ld hl, wCurrentMapScriptFlags
 	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
 	res 5, [hl]
-	ret z
-	ld hl, SilphCo9GateCoords
-	call SilphCo9Script_5d837
-	call SilphCo9Script_5d863
-	CheckEvent EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	jr nz, .asm_5d7f8
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 4, 1
-	predef ReplaceTileBlock
-	pop af
-.asm_5d7f8
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_9_UNLOCKED_DOOR2, EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	jr nz, .asm_5d80b
-	push af
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 2, 9
-	predef ReplaceTileBlock
-	pop af
-.asm_5d80b
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_9_UNLOCKED_DOOR3, EVENT_SILPH_CO_9_UNLOCKED_DOOR2
-	jr nz, .asm_5d81e
-	push af
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 5, 9
-	predef ReplaceTileBlock
-	pop af
-.asm_5d81e
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_9_UNLOCKED_DOOR4, EVENT_SILPH_CO_9_UNLOCKED_DOOR3
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 6, 5
-	predef_jump ReplaceTileBlock
-
-SilphCo9GateCoords:
-	db $04,$01
-	db $02,$09
-	db $05,$09
-	db $06,$05
-	db $FF
-
-SilphCo9Script_5d837:
-	push hl
-	ld hl, wCardKeyDoorY
-	ld a, [hli]
-	ld b, a
-	ld a, [hl]
-	ld c, a
-	xor a
-	ld [$ffe0], a
-	pop hl
-.asm_5d843
-	ld a, [hli]
-	cp $ff
-	jr z, .asm_5d85f
-	push hl
-	ld hl, $ffe0
-	inc [hl]
-	pop hl
-	cp b
-	jr z, .asm_5d854
-	inc hl
-	jr .asm_5d843
-.asm_5d854
-	ld a, [hli]
-	cp c
-	jr nz, .asm_5d843
-	ld hl, wCardKeyDoorY
-	xor a
-	ld [hli], a
-	ld [hl], a
-	ret
-.asm_5d85f
-	xor a
-	ld [$ffe0], a
-	ret
-
-SilphCo9Script_5d863:
-	EventFlagAddress hl, EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	ld a, [$ffe0]
-	and a
-	ret z
-	cp $1
-	jr nz, .next1
-	SetEventReuseHL EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	ret
-.next1
-	cp $2
-	jr nz, .next2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_9_UNLOCKED_DOOR2, EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	ret
-.next2
-	cp $3
-	jr nz, .next3
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_9_UNLOCKED_DOOR3, EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	ret
-.next3
-	cp $4
-	ret nz
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_9_UNLOCKED_DOOR4, EVENT_SILPH_CO_9_UNLOCKED_DOOR1
-	ret
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
+	ld hl, SilphCo9TrainerHeader0
+	ld de, SilphCo9ScriptPointers
+	ld bc, wSilphCo9CurScript
+	jp Bank17RunTrainerMapScript
 
 SilphCo9ScriptPointers:
 	dw CheckFightingMapTrainers
@@ -136,7 +31,6 @@ SilphCo9TrainerHeader0:
 	dw SilphCo9BattleText1 ; TextBeforeBattle
 	dw SilphCo9AfterBattleText1 ; TextAfterBattle
 	dw SilphCo9EndBattleText1 ; TextEndBattle
-	dw SilphCo9EndBattleText1 ; TextEndBattle
 
 SilphCo9TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_9F_TRAINER_1
@@ -145,7 +39,6 @@ SilphCo9TrainerHeader1:
 	dw SilphCo9BattleText2 ; TextBeforeBattle
 	dw SilphCo9AfterBattleText2 ; TextAfterBattle
 	dw SilphCo9EndBattleText2 ; TextEndBattle
-	dw SilphCo9EndBattleText2 ; TextEndBattle
 
 SilphCo9TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_9F_TRAINER_2
@@ -153,7 +46,6 @@ SilphCo9TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_9F_TRAINER_2
 	dw SilphCo9BattleText3 ; TextBeforeBattle
 	dw SilphCo9AfterBattleText3 ; TextAfterBattle
-	dw SilphCo9EndBattleText3 ; TextEndBattle
 	dw SilphCo9EndBattleText3 ; TextEndBattle
 
 	db $ff
@@ -190,22 +82,13 @@ SilphCo9Text_5d8ef:
 	db "@"
 
 SilphCo9Text2:
-	TX_ASM
-	ld hl, SilphCo9TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo9TrainerHeader0
 
 SilphCo9Text3:
-	TX_ASM
-	ld hl, SilphCo9TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo9TrainerHeader1
 
 SilphCo9Text4:
-	TX_ASM
-	ld hl, SilphCo9TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo9TrainerHeader2
 
 SilphCo9BattleText1:
 	TX_FAR _SilphCo9BattleText1

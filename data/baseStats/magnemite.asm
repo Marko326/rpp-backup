@@ -1,4 +1,3 @@
-db DEX_MAGNEMITE ; pokedex id
 db 25 ; base hp
 db 35 ; base attack
 db 70 ; base defense
@@ -14,9 +13,6 @@ dw MagnemitePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 6
 	tmlearn 9,10

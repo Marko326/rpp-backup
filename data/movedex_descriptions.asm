@@ -1,5 +1,9 @@
 SECTION "MoveDex Descriptions A", ROMX, BANK[$3B]
 
+; MoveDex 说明文本保持可读英文源码；运行时存储由 Bank $35 中定义的
+; movedex_desc charmap 自动替换常见字串 token。page-list / pointer ABI 不变。
+SETCHARMAP movedex_desc
+
 ; MoveDex 正式说明独立于 $35 UI bank。
 ; 每项固定 3 bytes：page-list 所在 bank + 16-bit page-list 地址。
 ; 之后若说明扩展到 $39/$34 等 bank，只需让对应 page-list 与其页面留在同一 bank。
@@ -22,7 +26,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescScratchPages ; SCRATCH
 	movedex_desc_ptr MoveDexDescViceGripPages ; VICEGRIP
 	movedex_desc_ptr MoveDexDescGuillotinePages ; GUILLOTINE
-	movedex_desc_ptr MoveDexDescRazorWindPages ; RAZOR_WIND
+	movedex_desc_ptr MoveDexDescSparkPages ; SPARK
 	movedex_desc_ptr MoveDexDescSwordsDancePages ; SWORDS_DANCE
 	movedex_desc_ptr MoveDexDescCutPages ; CUT
 	movedex_desc_ptr MoveDexDescGustPages ; GUST
@@ -36,7 +40,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescDoubleKickPages ; DOUBLE_KICK
 	movedex_desc_ptr MoveDexDescMegaKickPages ; MEGA_KICK
 	movedex_desc_ptr MoveDexDescJumpKickPages ; JUMP_KICK
-	movedex_desc_ptr MoveDexDescRollingKickPages ; ROLLING_KICK
+	movedex_desc_ptr MoveDexDescAuraSpherePages ; AURA_SPHERE
 	movedex_desc_ptr MoveDexDescSandAttackPages ; SAND_ATTACK
 	movedex_desc_ptr MoveDexDescHeadbuttPages ; HEADBUTT
 	movedex_desc_ptr MoveDexDescHornAttackPages ; HORN_ATTACK
@@ -149,7 +153,7 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescGlarePages ; GLARE
 	movedex_desc_ptr MoveDexDescDreamEaterPages ; DREAM_EATER
 	movedex_desc_ptr MoveDexDescPoisonGasPages ; POISON_GAS
-	movedex_desc_ptr MoveDexDescBarragePages ; BARRAGE
+	movedex_desc_ptr MoveDexDescBulletSeedPages ; BULLET_SEED
 	movedex_desc_ptr MoveDexDescLeechLifePages ; LEECH_LIFE
 	movedex_desc_ptr MoveDexDescLovelyKissPages ; LOVELY_KISS
 	movedex_desc_ptr MoveDexDescSkyAttackPages ; SKY_ATTACK
@@ -226,13 +230,13 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescMuddyWaterPages ; MUDDY_WATER #214
 	movedex_desc_ptr MoveDexDescWhirlpoolPages ; WHIRLPOOL #215
 	movedex_desc_ptr MoveDexDescGigaDrainPages ; GIGA_DRAIN #216
-	movedex_desc_ptr MoveDexDescPetalBlizzardPages ; PETALBLIZARD #217
+	movedex_desc_ptr MoveDexDescEnergyBallPages ; ENERGY_BALL #217
 	movedex_desc_ptr MoveDexDescLeafBladePages ; LEAF_BLADE #218
 	movedex_desc_ptr MoveDexDescWoodHammerPages ; WOOD_HAMMER #219
 	movedex_desc_ptr MoveDexDescPoisonJabPages ; POISON_JAB #220
 	movedex_desc_ptr MoveDexDescGunkShotPages ; GUNK_SHOT #221
 	movedex_desc_ptr MoveDexDescPoisonFangPages ; POISON_FANG #222
-	movedex_desc_ptr MoveDexDescSludgeWavePages ; SLUDGE_WAVE #223
+	movedex_desc_ptr MoveDexDescSludgeBombPages ; SLUDGE_BOMB #223
 	movedex_desc_ptr MoveDexDescSilverWindPages ; SILVER_WIND #224
 	movedex_desc_ptr MoveDexDescBugBuzzPages ; BUG_BUZZ #225
 	movedex_desc_ptr MoveDexDescMegahornPages ; MEGAHORN #226
@@ -257,14 +261,15 @@ MoveDexDescriptionPointerTable::
 	movedex_desc_ptr MoveDexDescLowSweepPages ; LOW_SWEEP #245
 	movedex_desc_ptr MoveDexDescHurricanePages ; HURRICANE #246
 	movedex_desc_ptr MoveDexDescBabyDollEyesPages ; BABYDOLLEYES #247
-	movedex_desc_ptr MoveDexDescBoneRushPages ; BONE_RUSH #248
+	movedex_desc_ptr MoveDexDescSacredFirePages ; SACRED_FIRE #248
 	movedex_desc_ptr MoveDexDescAeroblastPages ; AEROBLAST #249
 	movedex_desc_ptr MoveDexDescAncientPowerPages ; ANCIENTPOWER #250
 	movedex_desc_ptr MoveDexDescDivePages ; DIVE #251
 	movedex_desc_ptr MoveDexDescLusterPurgePages ; LUSTER_PURGE #252
 	movedex_desc_ptr MoveDexDescMindBlastPages ; MIND_BLAST #253
+	movedex_desc_ptr MoveDexDescIronHeadPages ; IRON_HEAD #254
 MoveDexDescriptionPointerTableEnd::
-; 固定表为 (NUM_ATTACKS - 1) * 3 = 759 bytes（253 个技能）。
+; 固定表为 (NUM_ATTACKS - 1) * 3 = 762 bytes（254 个技能）。
 
 ; #001 Pound
 MoveDexDescPoundPages:
@@ -359,14 +364,17 @@ MoveDexDescGuillotine1:
 	db   "Crushes the foe"
 	next "with huge pincers.@"
 
-; #013 Razor Wind
-MoveDexDescRazorWindPages:
-	dw MoveDexDescRazorWind1, 0
-MoveDexDescRazorWind1:
-	; RPP CHARGE_EFFECT：第一回合蓄力，下一回合攻击；不会像 Fly 那样进入无敌状态。
-	db   "Whips up a sharp"
-	next "wind on turn one."
-	next "Strikes next turn.@"
+; #013 Spark
+MoveDexDescSparkPages:
+	dw MoveDexDescSpark1, MoveDexDescSpark2, 0
+MoveDexDescSpark1:
+	db   "Uses the higher"
+	next "Attack or Special."
+	next "May paralyze.@"
+MoveDexDescSpark2:
+	db   "Boosts or drops"
+	next "can change class."
+	next "Ties use Special.@"
 
 ; #014 Swords Dance
 MoveDexDescSwordsDancePages:
@@ -473,12 +481,12 @@ MoveDexDescJumpKick1:
 	db   "Leaps up to land"
 	next "a jumping kick.@"
 
-; #027 Rolling Kick
-MoveDexDescRollingKickPages:
-	dw MoveDexDescRollingKick1, MoveDexDescEffectFlinch30, 0
-MoveDexDescRollingKick1:
-	db   "Rolls into the foe"
-	next "with a hard kick.@"
+; #027 Aura Sphere
+MoveDexDescAuraSpherePages:
+	dw MoveDexDescAuraSphere1, MoveDexDescEffectBSwift, 0
+MoveDexDescAuraSphere1:
+	db   "Fires a sphere of"
+	next "aura at the foe.@"
 
 ; #028 Sand-Attack
 MoveDexDescSandAttackPages:
@@ -602,10 +610,16 @@ MoveDexDescLeer1:
 
 ; #044 Bite
 MoveDexDescBitePages:
-	dw MoveDexDescBite1, MoveDexDescEffectFlinch10, 0
+	dw MoveDexDescBite1, MoveDexDescEffectFlinch10, MoveDexDescBiteBugBite, 0
 MoveDexDescBite1:
 	db   "Bites the foe with"
 	next "sharp teeth.@"
+MoveDexDescBiteBugBite:
+	; MOVE-5.62.155: describe the battle-only alias under the base Bite entry.
+	db   "Certain Pokémon"
+	next "use Bug Bite in"
+	next "battle: BUG-type,"
+	next "no flinch effect.@"
 
 ; #045 Growl
 MoveDexDescGrowlPages:
@@ -651,7 +665,7 @@ MoveDexDescDisable1:
 
 ; #051 Acid
 MoveDexDescAcidPages:
-	dw MoveDexDescAcid1, MoveDexDescEffectSpecialDown33, 0
+	dw MoveDexDescAcid1, MoveDexDescEffectSpecialDown10, 0
 MoveDexDescAcid1:
 	db   "Sprays corrosive"
 	next "acid at the foe.@"
@@ -673,7 +687,7 @@ MoveDexDescFlamethrower1:
 
 ; #054 Mist
 MoveDexDescMistPages:
-	dw MoveDexDescMist1, MoveDexDescEffectMist, MoveDexDescEffectMistDuration, 0
+	dw MoveDexDescMist1, MoveDexDescEffectMist, MoveDexDescEffectMistDuration, MoveDexDescEffectMistRepeat, 0
 MoveDexDescMist1:
 	db   "Covers the user"
 	next "in a cooling mist.@"
@@ -730,14 +744,14 @@ MoveDexDescPsybeam1:
 
 ; #061 Bubble Beam
 MoveDexDescBubbleBeamPages:
-	dw MoveDexDescBubbleBeam1, MoveDexDescEffectSpeedDown33, 0
+	dw MoveDexDescBubbleBeam1, MoveDexDescEffectSpeedDown10, 0
 MoveDexDescBubbleBeam1:
 	db   "Blasts the foe in"
 	next "a rush of bubbles.@"
 
 ; #062 Aurora Beam
 MoveDexDescAuroraBeamPages:
-	dw MoveDexDescAuroraBeam1, MoveDexDescEffectAttackDown33, 0
+	dw MoveDexDescAuroraBeam1, MoveDexDescEffectAttackDown10, 0
 MoveDexDescAuroraBeam1:
 	db   "Fires a colorful"
 	next "beam of icy light.@"
@@ -885,13 +899,13 @@ MoveDexDescEffectFlinch10:
 	db   "10", $d9, " chance to make"
 	next "the foe flinch.@"
 
-MoveDexDescEffectSpecialDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectSpecialDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
-MoveDexDescEffectSpeedDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectSpeedDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Speed"
 	next "drops 1 stage.@"
 
@@ -993,16 +1007,22 @@ MoveDexDescEffectDisable:
 	next "Each length: 12.5", $d9, "@"
 
 MoveDexDescEffectMist:
-	db   "Blocks foe-caused"
-	next "stat reductions.@"
+	; BTL-5.62.19: Mist only blocks direct stat-down status effects; damaging
+	; move side effects use the separate $44+ path and are not stopped here.
+	db   "Blocks stat drops"
+	next "from status moves.@"
 
 MoveDexDescEffectMistDuration:
 	; ProtectedByMist 会在换人或 Haze 时清除。
 	db   "Lasts until user"
 	next "switches or Haze.@"
 
-MoveDexDescEffectAttackDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectMistRepeat:
+	db   "Fails while Mist"
+	next "is active.@"
+
+MoveDexDescEffectAttackDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Attack"
 	next "drops 1 stage.@"
 
@@ -1094,7 +1114,7 @@ MoveDexDescPetalDance1:
 
 ; #081 String Shot
 MoveDexDescStringShotPages:
-	dw MoveDexDescStringShot1, MoveDexDescEffectBSpeedDown1, 0
+	dw MoveDexDescStringShot1, MoveDexDescEffectBSpeedDown2, 0
 MoveDexDescStringShot1:
 	db   "Fires sticky silk"
 	next "around the foe.@"
@@ -1185,7 +1205,7 @@ MoveDexDescConfusion1:
 
 ; #094 Psychic
 MoveDexDescPsychicPages:
-	dw MoveDexDescPsychic1, MoveDexDescEffectBSpecialDown33, 0
+	dw MoveDexDescPsychic1, MoveDexDescEffectBSpecialDown10, 0
 MoveDexDescPsychic1:
 	db   "Unleashes psychic"
 	next "power at the foe.@"
@@ -1285,7 +1305,7 @@ MoveDexDescHarden1:
 
 ; #107 Minimize
 MoveDexDescMinimizePages:
-	dw MoveDexDescMinimize1, MoveDexDescEffectBEvasionUp1, 0
+	dw MoveDexDescMinimize1, MoveDexDescEffectBEvasionUp2, 0
 MoveDexDescMinimize1:
 	db   "Shrinks the body"
 	next "to evade attacks.@"
@@ -1386,24 +1406,28 @@ MoveDexDescMetronome1:
 	next "then uses a random"
 	next "move.@"
 MoveDexDescMetronome2:
-	; MetronomePickMove 排除 Metronome、Struggle，以及从 Dive 起的 #251-#253。
-	db   "Won't call itself,"
-	next "Struggle, Dive or"
-	next "later moves.@"
+	; MOVE-5.62.187: normal IDs still stop before Dive; EXT01..40 join the pool.
+	db   "Won't call itself"
+	next "or Struggle. May"
+	next "call ext moves.@"
 
 ; #119 Mirror Move
 MoveDexDescMirrorMovePages:
-	dw MoveDexDescMirrorMove1, MoveDexDescMirrorMove2, MoveDexDescMirrorMove3, 0
+	dw MoveDexDescMirrorMove1, MoveDexDescMirrorMove2, MoveDexDescMirrorMove3, MoveDexDescMirrorMove4, 0
 MoveDexDescMirrorMove1:
 	db   "Copies the foe's"
-	next "selected move.@"
+	next "last selected"
+	next "move.@"
 MoveDexDescMirrorMove2:
-	; RPP 实际执行的是对手本回合 selected move，但仍要求 used-move 记录非空。
-	db   "Needs the foe to"
-	next "have used a move"
-	next "earlier in battle.@"
+	db   "Memory survives"
+	next "switches or turns"
+	next "foe can't move.@"
 MoveDexDescMirrorMove3:
-	db   "Also fails after"
+	db   "Direct non-STAB"
+	next "damage gets +20%.@"
+MoveDexDescMirrorMove4:
+	db   "Fails with no move"
+	next "stored, or after"
 	next "foe's Mirror Move.@"
 
 ; #120 SelfDestruct
@@ -1415,10 +1439,13 @@ MoveDexDescSelfdestruct1:
 
 ; #121 Egg Bomb
 MoveDexDescEggBombPages:
-	dw MoveDexDescEggBomb1, 0
+	dw MoveDexDescEggBomb1, MoveDexDescEggBomb2, MoveDexDescEffectBConfuse10, MoveDexDescEffectBConfusionDuration, 0
 MoveDexDescEggBomb1:
 	db   "Throws a large egg"
 	next "at the foe.@"
+MoveDexDescEggBomb2:
+	db   "Matches the user's"
+	next "first type.@"
 
 ; #122 Lick
 MoveDexDescLickPages:
@@ -1495,14 +1522,14 @@ MoveDexDescSpikeCannon1:
 
 ; #132 Constrict
 MoveDexDescConstrictPages:
-	dw MoveDexDescConstrict1, MoveDexDescEffectBSpeedDown33, 0
+	dw MoveDexDescConstrict1, MoveDexDescEffectBSpeedDown10, 0
 MoveDexDescConstrict1:
 	db   "Tightly squeezes"
 	next "the foe in coils.@"
 
 ; #133 Amnesia
 MoveDexDescAmnesiaPages:
-	dw MoveDexDescAmnesia1, MoveDexDescEffectBSpecialUp2, 0
+	dw MoveDexDescAmnesia1, MoveDexDescEffectBSpecialUp1, 0
 MoveDexDescAmnesia1:
 	db   "Clears the mind to"
 	next "focus its power.@"
@@ -1557,12 +1584,12 @@ MoveDexDescPoisonGas1:
 	db   "Releases a cloud"
 	next "of poisonous gas.@"
 
-; #140 Barrage
-MoveDexDescBarragePages:
-	dw MoveDexDescBarrage1, MoveDexDescEffectBHits2To5, 0
-MoveDexDescBarrage1:
-	db   "Pelts the foe with"
-	next "round objects.@"
+; #140 Bullet Seed
+MoveDexDescBulletSeedPages:
+	dw MoveDexDescBulletSeed1, MoveDexDescEffectBHits2To5, 0
+MoveDexDescBulletSeed1:
+	db   "Shoots seeds in"
+	next "rapid succession.@"
 
 ; #141 Leech Life
 MoveDexDescLeechLifePages:
@@ -1588,21 +1615,34 @@ MoveDexDescSkyAttack1:
 
 ; #144 Transform
 MoveDexDescTransformPages:
-	dw MoveDexDescTransform1, MoveDexDescTransform2, MoveDexDescTransform3, MoveDexDescEffectBTargetInvulnerable, 0
+	dw MoveDexDescTransform1, MoveDexDescTransform2, MoveDexDescTransform3, MoveDexDescTransform4, MoveDexDescTransform5, MoveDexDescTransform6, MoveDexDescTransform7, MoveDexDescEffectBTargetInvulnerable, 0
 MoveDexDescTransform1:
 	db   "Copies the foe's"
-	next "form in battle.@"
+	next "form and types.@"
 MoveDexDescTransform2:
-	; RPP 复制 type、DVs、Attack/Defense/Speed/Special、stat mods 和招式。
-	db   "Copies foe types"
-	next "stats and moves.@"
+	; BTL-5.62.19: Transform copies the four battle stats, not HP or level.
+	db   "Copies Attack,"
+	next "Defense, Speed and"
+	next "Special stats.@"
 MoveDexDescTransform3:
+	db   "Copies stat stages"
+	next "and foe's moves.@"
+MoveDexDescTransform4:
 	db   "Copied moves have"
 	next "5 PP each.@"
+MoveDexDescTransform5:
+	db   "Keeps own HP,"
+	next "level and colors.@"
+MoveDexDescTransform6:
+	db   "Fails if already"
+	next "transformed.@"
+MoveDexDescTransform7:
+	db   "Fails against same"
+	next "species and form.@"
 
 ; #145 Bubble
 MoveDexDescBubblePages:
-	dw MoveDexDescBubble1, MoveDexDescEffectBSpeedDown33, 0
+	dw MoveDexDescBubble1, MoveDexDescEffectBSpeedDown10, 0
 MoveDexDescBubble1:
 	db   "Blows bubbles that"
 	next "burst on the foe.@"
@@ -1663,6 +1703,10 @@ MoveDexDescEffectBDefenseDown2:
 MoveDexDescEffectBEvasionUp1:
 	db   "Raises Evasion"
 	next "by 1 stage.@"
+
+MoveDexDescEffectBEvasionUp2:
+	db   "Raises Evasion"
+	next "by 2 stages.@"
 
 MoveDexDescEffectBHealHalf:
 	; HealEffect_ 对 Recover / Softboiled 在满 HP 时会直接失败。
@@ -1769,15 +1813,14 @@ MoveDexDescEffectBHits2To5:
 	next "2-3 hits: 37.5", $d9
 	next "4-5 hits: 12.5", $d9, "@"
 
-MoveDexDescEffectBSpeedDown33:
-	; SPEED_DOWN_SIDE_EFFECT 通过 85/256 判定，约 33%。
-	db   "33", $d9, " chance."
+MoveDexDescEffectBSpeedDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Speed"
 	next "drops 1 stage.@"
 
-MoveDexDescEffectBSpecialUp2:
+MoveDexDescEffectBSpecialUp1:
 	db   "Raises Special"
-	next "by 2 stages.@"
+	next "by 1 stage.@"
 
 MoveDexDescEffectBJumpKickCrash:
 	; 当前 RPP miss 时 wDamage 已为 0，最低 crash damage 因而固定为 1 HP。
@@ -1849,6 +1892,10 @@ MoveDexDescEffectBSpeedDown1:
 	db   "Lowers Speed"
 	next "by 1 stage.@"
 
+MoveDexDescEffectBSpeedDown2:
+	db   "Lowers Speed"
+	next "by 2 stages.@"
+
 MoveDexDescEffectBTrapTurns:
 	db   "Lasts 2-5 turns."
 	next "2-3 turns: 37.5", $d9
@@ -1899,8 +1946,8 @@ MoveDexDescEffectBConfuse10:
 	db   "10", $d9, " chance to"
 	next "confuse the foe.@"
 
-MoveDexDescEffectBSpecialDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectBSpecialDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
@@ -1941,7 +1988,8 @@ MoveDexDescEffectBWildEscape2:
 ; 本 bank 的 page-list 只引用本 bank 页面，避免二级跨 bank 指针。
 ; ---------------------------------------------------------------------------
 
-SECTION "MoveDex Descriptions C", ROMX, BANK[$34]
+; PC forms relocation: description pointer table stores BANK, safe to move to $30.
+SECTION "MoveDex Descriptions C", ROMX, BANK[$30]
 
 ; #151 Acid Armor
 MoveDexDescAcidArmorPages:
@@ -2024,10 +2072,10 @@ MoveDexDescConversion1:
 	db   "Copies both of"
 	next "the foe's types.@"
 MoveDexDescConversion2:
-	; ConversionEffect_ 对 Fly/Dig 的 Invulnerable 目标直接失败。
-	db   "Fails if foe is"
-	next "flying high or"
-	next "underground.@"
+	; BTL-5.62.19: matching types still succeed; Invulnerable Fly/Dig targets fail.
+	; Keep both facts on the existing page instead of growing tight bank $34.
+	db   "Type match works."
+	next "Fails vs Fly/Dig.@"
 
 ; #161 Tri Attack
 MoveDexDescTriAttackPages:
@@ -2080,14 +2128,14 @@ MoveDexDescBulletPunch1:
 
 ; #168 Flash Cannon
 MoveDexDescFlashCannonPages:
-	dw MoveDexDescFlashCannon1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescFlashCannon1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescFlashCannon1:
 	db   "Fires a steel beam"
 	next "of bright energy.@"
 
 ; #169 Iron Tail
 MoveDexDescIronTailPages:
-	dw MoveDexDescIronTail1, MoveDexDescEffectCDefenseDown33, 0
+	dw MoveDexDescIronTail1, MoveDexDescEffectCDefenseDown30, 0
 MoveDexDescIronTail1:
 	db   "Slams with a hard"
 	next "steel-coated tail.@"
@@ -2101,14 +2149,14 @@ MoveDexDescMeteorMash1:
 
 ; #171 Crunch
 MoveDexDescCrunchPages:
-	dw MoveDexDescCrunch1, MoveDexDescEffectCDefenseDown33, 0
+	dw MoveDexDescCrunch1, MoveDexDescEffectCDefenseDown20, 0
 MoveDexDescCrunch1:
 	db   "Bites the foe with"
 	next "razor-sharp fangs.@"
 
 ; #172 Dark Pulse
 MoveDexDescDarkPulsePages:
-	dw MoveDexDescDarkPulse1, MoveDexDescEffectCFlinch10, 0
+	dw MoveDexDescDarkPulse1, MoveDexDescEffectCFlinch20, 0
 MoveDexDescDarkPulse1:
 	db   "Sends dark power"
 	next "in a pulsing wave.@"
@@ -2129,14 +2177,14 @@ MoveDexDescNightSlash1:
 
 ; #175 Moonblast
 MoveDexDescMoonblastPages:
-	dw MoveDexDescMoonblast1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescMoonblast1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescMoonblast1:
 	db   "Draws on moonlight"
 	next "to attack the foe.@"
 
 ; #176 Draining Kiss
 MoveDexDescDrainingKissPages:
-	dw MoveDexDescDrainingKiss1, MoveDexDescEffectCDrainHalf, 0
+	dw MoveDexDescDrainingKiss1, MoveDexDescEffectCDrain75, 0
 MoveDexDescDrainingKiss1:
 	db   "Steals energy with"
 	next "a draining kiss.@"
@@ -2157,16 +2205,15 @@ MoveDexDescDazzlingGleam1:
 
 ; #179 Draco Meteor
 MoveDexDescDracoMeteorPages:
-	; 当前 RPP 为 SPECIAL_DOWN_SIDE_EFFECT：约 33% 降低目标 Special 1 stage。
-	dw MoveDexDescDracoMeteor1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescDracoMeteor1, MoveDexDescEffectCSelfSpecialDown1, 0
 MoveDexDescDracoMeteor1:
 	db   "Calls down fierce"
 	next "dragon meteors.@"
 
 ; #180 Dragonbreath
 MoveDexDescDragonbreathPages:
-	; 通用状态追加按“招式属性 = 目标属性”阻止，因此这里是 Dragon 目标免疫追加麻痹。
-	dw MoveDexDescDragonbreath1, MoveDexDescEffectCParalyze10Dragon, MoveDexDescEffectCParalyzeDragonImmune, 0
+	; MOVE-5.62.147: 30% paralysis; Electric, not Dragon, is immune.
+	dw MoveDexDescDragonbreath1, MoveDexDescEffectCParalyze30Dragon, MoveDexDescEffectCParalyzeElectricImmune, 0
 MoveDexDescDragonbreath1:
 	db   "Breathes a blast"
 	next "of dragon energy.@"
@@ -2187,7 +2234,7 @@ MoveDexDescDragonPulse1:
 
 ; #183 Twister
 MoveDexDescTwisterPages:
-	dw MoveDexDescTwister1, MoveDexDescEffectCFlinch10, 0
+	dw MoveDexDescTwister1, MoveDexDescEffectCFlinch20, 0
 MoveDexDescTwister1:
 	db   "Whips up a fierce"
 	next "dragon tornado.@"
@@ -2208,7 +2255,7 @@ MoveDexDescShadowClaw1:
 
 ; #186 Steel Wing
 MoveDexDescSteelWingPages:
-	dw MoveDexDescSteelWing1, MoveDexDescEffectCDefenseUp10, 0
+	dw MoveDexDescSteelWing1, MoveDexDescEffectCDefenseUp30, 0
 MoveDexDescSteelWing1:
 	db   "Strikes with hard"
 	next "steel-like wings.@"
@@ -2229,16 +2276,15 @@ MoveDexDescAirSlash1:
 
 ; #189 Fire Fang
 MoveDexDescFireFangPages:
-	; FangAttacks 先走 FlinchSideEffect；非 FLINCH_SIDE_EFFECT1 因而实际约 30% 畏缩，再独立约 10% 状态。
-	dw MoveDexDescFireFang1, MoveDexDescEffectCFlinch30, MoveDexDescEffectCBurn10Fire, MoveDexDescEffectCBurnFireImmune, 0
+	; MOVE-5.62.149: 20% flinch, independently of the unchanged ~10% burn.
+	dw MoveDexDescFireFang1, MoveDexDescEffectCFlinch20, MoveDexDescEffectCBurn10Fire, MoveDexDescEffectCBurnFireImmune, 0
 MoveDexDescFireFang1:
 	db   "Bites with fangs"
 	next "wrapped in flame.@"
 
 ; #190 Flare Blitz
 MoveDexDescFlareBlitzPages:
-	; 当前 move effect 只有 RECOIL_EFFECT；没有现代版烧伤追加，但 FrozenCheck 特判可自行解冻。
-	dw MoveDexDescFlareBlitz1, MoveDexDescEffectCRecoil25, MoveDexDescEffectCSelfThaw, 0
+	dw MoveDexDescFlareBlitz1, MoveDexDescEffectCRecoil33, MoveDexDescEffectCBurn10Fire, MoveDexDescEffectCBurnFireImmune, MoveDexDescEffectCSelfThaw, 0
 MoveDexDescFlareBlitz1:
 	db   "Charges in cloaked"
 	next "in raging flames.@"
@@ -2252,22 +2298,22 @@ MoveDexDescBlastBurn1:
 
 ; #192 Ice Fang
 MoveDexDescIceFangPages:
-	dw MoveDexDescIceFang1, MoveDexDescEffectCFlinch30, MoveDexDescEffectCFreeze10Ice, MoveDexDescEffectCFreezeIceImmune, 0
+	dw MoveDexDescIceFang1, MoveDexDescEffectCFlinch20, MoveDexDescEffectCFreeze10Ice, MoveDexDescEffectCFreezeIceImmune, 0
 MoveDexDescIceFang1:
 	db   "Bites with fangs"
 	next "covered in frost.@"
 
 ; #193 Thunder Fang
 MoveDexDescThunderFangPages:
-	dw MoveDexDescThunderFang1, MoveDexDescEffectCFlinch30, MoveDexDescEffectCParalyze10Electric, MoveDexDescEffectCParalyzeElectricImmune, 0
+	dw MoveDexDescThunderFang1, MoveDexDescEffectCFlinch20, MoveDexDescEffectCParalyze10Electric, MoveDexDescEffectCParalyzeElectricImmune, 0
 MoveDexDescThunderFang1:
 	db   "Bites with charged"
 	next "electric fangs.@"
 
 ; #194 Water Pulse
 MoveDexDescWaterPulsePages:
-	; CONFUSION_SIDE_EFFECT 在当前 RPP 为约 10%，不是现代常见的 20%。
-	dw MoveDexDescWaterPulse1, MoveDexDescEffectCConfuse10, MoveDexDescEffectCConfusionDuration, 0
+	; MOVE-5.62.147: Water Pulse's own confusion chance is ~20%.
+	dw MoveDexDescWaterPulse1, MoveDexDescEffectCConfuse20, MoveDexDescEffectCConfusionDuration, 0
 MoveDexDescWaterPulse1:
 	db   "Fires a pulsing"
 	next "blast of water.@"
@@ -2294,16 +2340,19 @@ MoveDexDescFrenzyPlant1:
 	next "wild plant roots.@"
 
 ; #198 Sucker Punch
+; SP-5.62.34: document the damaging-move requirement used by the battle gate.
 MoveDexDescSuckerPunchPages:
-	; 当前 RPP 只把 Sucker Punch 放入 priority move 列表，没有现代版“目标未选择攻击则失败”的判定。
-	dw MoveDexDescSuckerPunch1, MoveDexDescEffectCPriority, 0
+	dw MoveDexDescSuckerPunch1, MoveDexDescSuckerPunch2, MoveDexDescEffectCPriority, 0
 MoveDexDescSuckerPunch1:
 	db   "Ambushes the foe"
 	next "with a sudden hit.@"
+MoveDexDescSuckerPunch2:
+	db   "Fails unless foe's"
+	next "move deals damage.@"
 
 ; #199 Shadow Ball
 MoveDexDescShadowBallPages:
-	dw MoveDexDescShadowBall1, MoveDexDescEffectCSpecialDown33, 0
+	dw MoveDexDescShadowBall1, MoveDexDescEffectCSpecialDown10, 0
 MoveDexDescShadowBall1:
 	db   "Fires a shadow orb"
 	next "of dark energy.@"
@@ -2347,6 +2396,10 @@ MoveDexDescEffectCHitsTwice:
 
 MoveDexDescEffectCFlinch10:
 	db   "10", $d9, " chance to make"
+	next "the foe flinch.@"
+
+MoveDexDescEffectCFlinch20:
+	db   "20", $d9, " chance to make"
 	next "the foe flinch.@"
 
 MoveDexDescEffectCHoneClaws:
@@ -2398,19 +2451,28 @@ MoveDexDescEffectCPriority:
 	db   "Moves before most"
 	next "other attacks.@"
 
-MoveDexDescEffectCSpecialDown33:
-	; SIDE_EFFECT stat-down 统一用 85/256，约 33%；作用目标是对手。
-	db   "33", $d9, " chance."
+MoveDexDescEffectCSpecialDown10:
+	db   "10", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
-MoveDexDescEffectCDefenseDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectCSelfSpecialDown1:
+	db   "After it hits,"
+	next "user's Special"
+	next "drops 1 stage.@"
+
+MoveDexDescEffectCDefenseDown30:
+	db   "30", $d9, " chance."
+	next "Foe's Defense"
+	next "drops 1 stage.@"
+
+MoveDexDescEffectCDefenseDown20:
+	db   "20", $d9, " chance."
 	next "Foe's Defense"
 	next "drops 1 stage.@"
 
 MoveDexDescEffectCAttackUp20:
-	; ATTACK_UP1_SIDE_EFFECT2 为 $34/256，约 20%。
+	; Meteor Mash shares ATTACK_UP1_SIDE_EFFECT; Move-ID table supplies ~20%.
 	db   "20", $d9, " chance to"
 	next "raise Attack"
 	next "by 1 stage.@"
@@ -2424,14 +2486,13 @@ MoveDexDescEffectCDrainHalf:
 	db   "Heals half of the"
 	next "damage it deals.@"
 
-MoveDexDescEffectCParalyze10Dragon:
-	db   "10", $d9, " chance to"
-	next "paralyze the foe.@"
+MoveDexDescEffectCDrain75:
+	db   "Heals 75", $d9, " of the"
+	next "damage it deals.@"
 
-MoveDexDescEffectCParalyzeDragonImmune:
-	; Dragonbreath 的追加麻痹按招式属性同属性免疫，因此 Dragon 目标不会被该追加效果麻痹。
-	db   "Cannot paralyze a"
-	next "Dragon-type foe.@"
+MoveDexDescEffectCParalyze30Dragon:
+	db   "30", $d9, " chance to"
+	next "paralyze the foe.@"
 
 MoveDexDescEffectCThrashTurns:
 	db   "Lasts 3-4 turns."
@@ -2445,9 +2506,9 @@ MoveDexDescEffectCConfusionDuration:
 	db   "Duration is 2-5"
 	next "turns, 25", $d9, " each.@"
 
-MoveDexDescEffectCDefenseUp10:
-	; DEFENSE_UP1_SIDE_EFFECT 为约 10%，作用于使用者。
-	db   "10", $d9, " chance to"
+MoveDexDescEffectCDefenseUp30:
+	; RPP Steel Wing balance: 77/256 (~30%) user Defense +1.
+	db   "30", $d9, " chance to"
 	next "raise Defense"
 	next "by 1 stage.@"
 
@@ -2465,6 +2526,10 @@ MoveDexDescEffectCBurnFireImmune:
 
 MoveDexDescEffectCRecoil25:
 	db   "User takes 25", $d9, " of"
+	next "damage as recoil.@"
+
+MoveDexDescEffectCRecoil33:
+	db   "User takes 1/3 of"
 	next "damage as recoil.@"
 
 MoveDexDescEffectCSelfThaw:
@@ -2495,10 +2560,14 @@ MoveDexDescEffectCConfuse10:
 	db   "10", $d9, " chance to"
 	next "confuse the foe.@"
 
+MoveDexDescEffectCConfuse20:
+	db   "20", $d9, " chance to"
+	next "confuse the foe.@"
+
 SECTION "MoveDex Descriptions D", ROMX, BANK[$38]
 
 ; ---------------------------------------------------------------------------
-; #201-#253：最后一批连续技能说明。
+; #201-#254：最后一批连续技能说明。
 ; 本 bank 内的 page-list 只引用本 bank 页面，避免二级跨 bank 指针。
 ; ---------------------------------------------------------------------------
 
@@ -2549,7 +2618,7 @@ MoveDexDescAirCutter1:
 
 ; #207 Icy Wind
 MoveDexDescIcyWindPages:
-	dw MoveDexDescIcyWind1, MoveDexDescEffectDSpeedDown33, 0
+	dw MoveDexDescIcyWind1, MoveDexDescEffectDSpeedDownAlways, 0
 MoveDexDescIcyWind1:
 	db   "Sends icy wind"
 	next "across the foe.@"
@@ -2582,31 +2651,30 @@ MoveDexDescElectroBall2:
 
 ; #211 Nuzzle
 MoveDexDescNuzzlePages:
-	; NUZZLE_EFFECT 走 ParalyzeEffect：命中必定麻痹；Electric 招式会检查 Ground 免疫。
-	dw MoveDexDescNuzzle1, MoveDexDescEffectDNuzzle, MoveDexDescEffectDGroundImmune, 0
+	; MOVE-5.62.147: Electric-type immunity also blocks the paralysis.
+	dw MoveDexDescNuzzle1, MoveDexDescEffectDNuzzle, MoveDexDescEffectDGroundImmune, MoveDexDescEffectDParalyzeElectricImmune, 0
 MoveDexDescNuzzle1:
 	db   "Nuzzles the foe"
 	next "with electricity.@"
 
 ; #212 Discharge
 MoveDexDescDischargePages:
-	; 当前为 PARALYZE_SIDE_EFFECT1，约 10%；通用追加状态会让 Electric 目标免疫。
-	dw MoveDexDescDischarge1, MoveDexDescEffectDParalyze10Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
+	; MOVE-5.62.147: Discharge gets ~30%; Volt Tackle keeps ~10%.
+	dw MoveDexDescDischarge1, MoveDexDescEffectDParalyze30Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
 MoveDexDescDischarge1:
 	db   "Releases a burst"
 	next "of electricity.@"
 
 ; #213 Volt Tackle
 MoveDexDescVoltTacklePages:
-	; VOLT_TACKLE_EFFECT = 25% recoil + 独立约 10% 麻痹追加。
-	dw MoveDexDescVoltTackle1, MoveDexDescEffectDRecoil25, MoveDexDescEffectDParalyze10Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
+	dw MoveDexDescVoltTackle1, MoveDexDescEffectDRecoil33, MoveDexDescEffectDParalyze10Electric, MoveDexDescEffectDParalyzeElectricImmune, 0
 MoveDexDescVoltTackle1:
 	db   "Charges the foe"
 	next "wrapped in sparks.@"
 
 ; #214 Muddy Water
 MoveDexDescMuddyWaterPages:
-	dw MoveDexDescMuddyWater1, MoveDexDescEffectDAccuracyDown33, 0
+	dw MoveDexDescMuddyWater1, MoveDexDescEffectDAccuracyDown30, 0
 MoveDexDescMuddyWater1:
 	db   "Hurls muddy water"
 	next "all over the foe.@"
@@ -2626,12 +2694,12 @@ MoveDexDescGigaDrain1:
 	next "from the foe to"
 	next "restore health.@"
 
-; #217 Petal Blizzard
-MoveDexDescPetalBlizzardPages:
-	dw MoveDexDescPetalBlizzard1, 0
-MoveDexDescPetalBlizzard1:
-	db   "Hits the foe with"
-	next "a storm of petals.@"
+; #217 Energy Ball
+MoveDexDescEnergyBallPages:
+	dw MoveDexDescEnergyBall1, MoveDexDescEffectCSpecialDown10, 0
+MoveDexDescEnergyBall1:
+	db   "Fires a sphere of"
+	next "natural energy.@"
 
 ; #218 Leaf Blade
 MoveDexDescLeafBladePages:
@@ -2642,39 +2710,39 @@ MoveDexDescLeafBlade1:
 
 ; #219 Wood Hammer
 MoveDexDescWoodHammerPages:
-	dw MoveDexDescWoodHammer1, MoveDexDescEffectDRecoil25, 0
+	dw MoveDexDescWoodHammer1, MoveDexDescEffectDRecoil33, 0
 MoveDexDescWoodHammer1:
 	db   "Slams the foe with"
 	next "a wooden body.@"
 
 ; #220 Poison Jab
 MoveDexDescPoisonJabPages:
-	dw MoveDexDescPoisonJab1, MoveDexDescEffectDPoison40, MoveDexDescEffectDPoisonImmune, 0
+	dw MoveDexDescPoisonJab1, MoveDexDescEffectDPoison30, MoveDexDescEffectDPoisonImmune, 0
 MoveDexDescPoisonJab1:
 	db   "Stabs the foe with"
 	next "a poisoned limb.@"
 
 ; #221 Gunk Shot
 MoveDexDescGunkShotPages:
-	dw MoveDexDescGunkShot1, MoveDexDescEffectDPoison40, MoveDexDescEffectDPoisonImmune, 0
+	dw MoveDexDescGunkShot1, MoveDexDescEffectDPoison30, MoveDexDescEffectDPoisonImmune, 0
 MoveDexDescGunkShot1:
 	db   "Hurls toxic sludge"
 	next "right at the foe.@"
 
 ; #222 Poison Fang
 MoveDexDescPoisonFangPages:
-	; POISON_FANG_EFFECT 约 40%；Bite 动画 ID 特判会设置 BadlyPoisoned。
-	dw MoveDexDescPoisonFang1, MoveDexDescEffectDBadPoison40, MoveDexDescEffectDPoisonImmune, 0
+	; POISON-5.62.150: Poison Fang has 50% chance to badly poison.
+	dw MoveDexDescPoisonFang1, MoveDexDescEffectDBadPoison50, MoveDexDescEffectDPoisonImmune, 0
 MoveDexDescPoisonFang1:
 	db   "Bites the foe with"
 	next "toxic fangs.@"
 
-; #223 Sludge Wave
-MoveDexDescSludgeWavePages:
-	dw MoveDexDescSludgeWave1, MoveDexDescEffectDPoison20, MoveDexDescEffectDPoisonImmune, 0
-MoveDexDescSludgeWave1:
-	db   "Sweeps the foe in"
-	next "a sludge wave.@"
+; #223 Sludge Bomb
+MoveDexDescSludgeBombPages:
+	dw MoveDexDescSludgeBomb1, MoveDexDescEffectDPoison30, MoveDexDescEffectDPoisonImmune, 0
+MoveDexDescSludgeBomb1:
+	db   "Hurls sludge bombs"
+	next "that may poison.@"
 
 ; #224 Silver Wind
 MoveDexDescSilverWindPages:
@@ -2685,7 +2753,7 @@ MoveDexDescSilverWind1:
 
 ; #225 Bug Buzz
 MoveDexDescBugBuzzPages:
-	dw MoveDexDescBugBuzz1, MoveDexDescEffectDSpecialDown33, 0
+	dw MoveDexDescBugBuzz1, MoveDexDescEffectDSpecialDown10, 0
 MoveDexDescBugBuzz1:
 	db   "Hits with a harsh"
 	next "buzzing vibration.@"
@@ -2713,14 +2781,14 @@ MoveDexDescSignalBeam1:
 
 ; #229 Earth Power
 MoveDexDescEarthPowerPages:
-	dw MoveDexDescEarthPower1, MoveDexDescEffectDSpecialDown33, 0
+	dw MoveDexDescEarthPower1, MoveDexDescEffectDSpecialDown10, 0
 MoveDexDescEarthPower1:
 	db   "Makes ground erupt"
 	next "beneath the foe.@"
 
 ; #230 Mud-Slap
 MoveDexDescMudSlapPages:
-	dw MoveDexDescMudSlap1, MoveDexDescEffectDAccuracyDown33, 0
+	dw MoveDexDescMudSlap1, MoveDexDescEffectDAccuracyDownAlways, 0
 MoveDexDescMudSlap1:
 	db   "Throws a clump"
 	next "of mud into the"
@@ -2728,7 +2796,7 @@ MoveDexDescMudSlap1:
 
 ; #231 Mud Bomb
 MoveDexDescMudBombPages:
-	dw MoveDexDescMudBomb1, MoveDexDescEffectDAccuracyDown33, 0
+	dw MoveDexDescMudBomb1, MoveDexDescEffectDAccuracyDown30, 0
 MoveDexDescMudBomb1:
 	db   "Hurls a mud bomb"
 	next "right at the foe.@"
@@ -2742,7 +2810,7 @@ MoveDexDescExtrasensory1:
 
 ; #233 Zen Headbutt
 MoveDexDescZenHeadbuttPages:
-	dw MoveDexDescZenHeadbutt1, MoveDexDescEffectDFlinch30, 0
+	dw MoveDexDescZenHeadbutt1, MoveDexDescEffectDFlinch20, 0
 MoveDexDescZenHeadbutt1:
 	db   "Focuses its will"
 	next "then rams the foe.@"
@@ -2798,7 +2866,7 @@ MoveDexDescRockPolish1:
 
 ; #241 Rock Tomb
 MoveDexDescRockTombPages:
-	dw MoveDexDescRockTomb1, MoveDexDescEffectDSpeedDown33, 0
+	dw MoveDexDescRockTomb1, MoveDexDescEffectDSpeedDownAlways, 0
 MoveDexDescRockTomb1:
 	db   "Drops rocks around"
 	next "the foe to pin it.@"
@@ -2827,15 +2895,15 @@ MoveDexDescCrossChop1:
 
 ; #245 Low Sweep
 MoveDexDescLowSweepPages:
-	dw MoveDexDescLowSweep1, MoveDexDescEffectDSpeedDown33, 0
+	dw MoveDexDescLowSweep1, MoveDexDescEffectDSpeedDownAlways, 0
 MoveDexDescLowSweep1:
 	db   "Sweeps low at the"
 	next "foe's legs.@"
 
 ; #246 Hurricane
 MoveDexDescHurricanePages:
-	; 当前 CONFUSION_SIDE_EFFECT 为约 10%，不是现代版 30%。
-	dw MoveDexDescHurricane1, MoveDexDescEffectDConfuse10, MoveDexDescEffectDConfusionDuration, 0
+	; MOVE-5.62.147: ~30% confusion, 70% accuracy in move data.
+	dw MoveDexDescHurricane1, MoveDexDescEffectDConfuse30, MoveDexDescEffectDConfusionDuration, 0
 MoveDexDescHurricane1:
 	db   "Engulfs the foe"
 	next "in a hurricane.@"
@@ -2848,12 +2916,13 @@ MoveDexDescBabyDollEyes1:
 	db   "Stares with round"
 	next "charming eyes.@"
 
-; #248 Bone Rush
-MoveDexDescBoneRushPages:
-	dw MoveDexDescBoneRush1, MoveDexDescEffectDHits2To5, 0
-MoveDexDescBoneRush1:
-	db   "Strikes repeatedly"
-	next "with a hard bone.@"
+; #248 Sacred Fire
+MoveDexDescSacredFirePages:
+	; MOV-5.61.53: dedicated 50% burn plus Gen II self-thaw behavior.
+	dw MoveDexDescSacredFire1, MoveDexDescEffectDBurn50, MoveDexDescEffectDFireBurnImmune, MoveDexDescEffectDSelfThaw, 0
+MoveDexDescSacredFire1:
+	db   "Mystical fire that"
+	next "may burn the foe.@"
 
 ; #249 Aeroblast
 MoveDexDescAeroblastPages:
@@ -2879,7 +2948,7 @@ MoveDexDescDive1:
 
 ; #252 Luster Purge
 MoveDexDescLusterPurgePages:
-	dw MoveDexDescLusterPurge1, MoveDexDescEffectDSpecialDown33, 0
+	dw MoveDexDescLusterPurge1, MoveDexDescEffectDSpecialDown30, 0
 MoveDexDescLusterPurge1:
 	db   "Unleashes bright"
 	next "psychic light.@"
@@ -2891,6 +2960,14 @@ MoveDexDescMindBlastPages:
 MoveDexDescMindBlast1:
 	db   "Hits the foe with"
 	next "raw psychic force.@"
+
+; #254 Iron Head
+MoveDexDescIronHeadPages:
+	; MOV-5.61.31: KEP stats/effect: 80 power, Steel, 100 accuracy, 30% flinch.
+	dw MoveDexDescIronHead1, MoveDexDescEffectDFlinch30, 0
+MoveDexDescIronHead1:
+	db   "Slams the foe with"
+	next "a steel-hard head.@"
 
 ; ---------------------------------------------------------------------------
 ; Bank $38 共用机制页。
@@ -2915,10 +2992,11 @@ MoveDexDescEffectDHighCrit:
 	db   "About 25", $d9, " of hits"
 	next "are critical hits.@"
 
-MoveDexDescEffectDSpeedDown33:
-	db   "33", $d9, " chance."
-	next "Foe's Speed"
-	next "drops 1 stage.@"
+MoveDexDescEffectDSpeedDownAlways:
+	; Icy Wind / Rock Tomb / Low Sweep use the shared Move-ID table at 100%.
+	db   "Always lowers the"
+	next "foe's Speed by"
+	next "1 stage.@"
 
 MoveDexDescEffectDPriority:
 	db   "Moves before most"
@@ -2941,6 +3019,10 @@ MoveDexDescEffectDParalyze10Electric:
 	db   "10", $d9, " chance to"
 	next "paralyze the foe.@"
 
+MoveDexDescEffectDParalyze30Electric:
+	db   "30", $d9, " chance to"
+	next "paralyze the foe.@"
+
 MoveDexDescEffectDParalyzeElectricImmune:
 	; 这里只描述追加麻痹；并非说明 Electric 招式整体对 Electric 属性无效。
 	db   "Cannot paralyze an"
@@ -2950,10 +3032,19 @@ MoveDexDescEffectDRecoil25:
 	db   "User takes 25", $d9, " of"
 	next "damage as recoil.@"
 
-MoveDexDescEffectDAccuracyDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectDRecoil33:
+	db   "User takes 1/3 of"
+	next "damage as recoil.@"
+
+MoveDexDescEffectDAccuracyDown30:
+	db   "30", $d9, " chance."
 	next "Foe's Accuracy"
 	next "drops 1 stage.@"
+
+MoveDexDescEffectDAccuracyDownAlways:
+	db   "Always lowers the"
+	next "foe's Accuracy by"
+	next "1 stage.@"
 
 MoveDexDescEffectDTrapTurns:
 	db   "Lasts 2-5 turns."
@@ -2976,8 +3067,14 @@ MoveDexDescEffectDPoison20:
 	db   "20", $d9, " chance to"
 	next "poison the foe.@"
 
-MoveDexDescEffectDBadPoison40:
-	db   "40", $d9, " chance to"
+; ANM-5.61.45: Sludge Bomb keeps its Gen 2/modern 30% poison chance without
+; changing the shared 20% Poison Sting effect.
+MoveDexDescEffectDPoison30:
+	db   "30", $d9, " chance to"
+	next "poison the foe.@"
+
+MoveDexDescEffectDBadPoison50:
+	db   "50", $d9, " chance to"
 	next "badly poison"
 	next "the foe.@"
 
@@ -2987,7 +3084,7 @@ MoveDexDescEffectDPoisonImmune:
 	next "Poison/Steel foes.@"
 
 MoveDexDescEffectDAllStatsUp10:
-	; SilverWindEffect 只提升 Attack / Defense / Speed / Special，不含 Accuracy / Evasion。
+	; Silver Wind / AncientPower / Mind Blast raise the four Gen I battle stats only.
 	db   "10", $d9, " chance to"
 	next "raise 4 stats by"
 	next "1 stage.@"
@@ -2996,13 +3093,22 @@ MoveDexDescEffectDAllStatsList:
 	db   "Attack, Defense,"
 	next "Speed and Special.@"
 
-MoveDexDescEffectDSpecialDown33:
-	db   "33", $d9, " chance."
+MoveDexDescEffectDSpecialDown10:
+	db   "10", $d9, " chance."
+	next "Foe's Special stat"
+	next "drops 1 stage.@"
+
+MoveDexDescEffectDSpecialDown30:
+	db   "30", $d9, " chance."
 	next "Foe's Special stat"
 	next "drops 1 stage.@"
 
 MoveDexDescEffectDConfuse10:
 	db   "10", $d9, " chance to"
+	next "confuse the foe.@"
+
+MoveDexDescEffectDConfuse30:
+	db   "30", $d9, " chance to"
 	next "confuse the foe.@"
 
 MoveDexDescEffectDConfusionDuration:
@@ -3013,9 +3119,25 @@ MoveDexDescEffectDFlinch10:
 	db   "10", $d9, " chance to make"
 	next "the foe flinch.@"
 
+MoveDexDescEffectDFlinch20:
+	db   "20", $d9, " chance to make"
+	next "the foe flinch.@"
+
 MoveDexDescEffectDFlinch30:
 	db   "30", $d9, " chance to make"
 	next "the foe flinch.@"
+
+MoveDexDescEffectDBurn50:
+	db   "50", $d9, " chance to"
+	next "burn the foe.@"
+
+MoveDexDescEffectDFireBurnImmune:
+	db   "Cannot burn a"
+	next "Fire-type foe.@"
+
+MoveDexDescEffectDSelfThaw:
+	db   "Thaws frozen user"
+	next "before attacking.@"
 
 MoveDexDescEffectDRecharge:
 	db   "User must recharge"
@@ -3047,3 +3169,5 @@ MoveDexDescEffectDChargeOnly:
 	db   "Charges on turn 1."
 	next "Attacks on turn 2.@"
 
+; 后续源码恢复项目默认字符映射。
+SETCHARMAP main

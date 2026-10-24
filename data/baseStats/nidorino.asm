@@ -1,4 +1,3 @@
-db DEX_NIDORINO ; pokedex id
 db 61 ; base hp
 db 72 ; base attack
 db 57 ; base defense
@@ -14,9 +13,6 @@ dw NidorinoPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,7,8
 	tmlearn 9,10,11,12,13,14,16

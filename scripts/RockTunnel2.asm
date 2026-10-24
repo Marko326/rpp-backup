@@ -1,16 +1,8 @@
 RockTunnel2Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, RockTunnel2TrainerHeader0
-	ld de, RockTunnel2ScriptPointers
-	ld a, [wRockTunnel2CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRockTunnel2CurScript], a
-	ret
-
-RockTunnel2ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRockTunnel2CurScript
+	jp Bank11RunStandardTrainerMapScript
 
 RockTunnel2TextPointers:
 	dw RockTunnel2Text1
@@ -29,7 +21,6 @@ RockTunnel2TrainerHeader0:
 	dw RockTunnel2BattleText2 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText2 ; TextAfterBattle
 	dw RockTunnel2EndBattleText2 ; TextEndBattle
-	dw RockTunnel2EndBattleText2 ; TextEndBattle
 
 RockTunnel2TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_1
@@ -37,7 +28,6 @@ RockTunnel2TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_1
 	dw RockTunnel2BattleText3 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText3 ; TextAfterBattle
-	dw RockTunnel2EndBattleText3 ; TextEndBattle
 	dw RockTunnel2EndBattleText3 ; TextEndBattle
 
 RockTunnel2TrainerHeader2:
@@ -47,7 +37,6 @@ RockTunnel2TrainerHeader2:
 	dw RockTunnel2BattleText4 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText4 ; TextAfterBattle
 	dw RockTunnel2EndBattleText4 ; TextEndBattle
-	dw RockTunnel2EndBattleText4 ; TextEndBattle
 
 RockTunnel2TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_3
@@ -55,7 +44,6 @@ RockTunnel2TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_3
 	dw RockTunnel2BattleText5 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText5 ; TextAfterBattle
-	dw RockTunnel2EndBattleText5 ; TextEndBattle
 	dw RockTunnel2EndBattleText5 ; TextEndBattle
 
 RockTunnel2TrainerHeader4:
@@ -65,7 +53,6 @@ RockTunnel2TrainerHeader4:
 	dw RockTunnel2BattleText6 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText6 ; TextAfterBattle
 	dw RockTunnel2EndBattleText6 ; TextEndBattle
-	dw RockTunnel2EndBattleText6 ; TextEndBattle
 
 RockTunnel2TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_5
@@ -73,7 +60,6 @@ RockTunnel2TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_5
 	dw RockTunnel2BattleText7 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText7 ; TextAfterBattle
-	dw RockTunnel2EndBattleText7 ; TextEndBattle
 	dw RockTunnel2EndBattleText7 ; TextEndBattle
 
 RockTunnel2TrainerHeader6:
@@ -83,7 +69,6 @@ RockTunnel2TrainerHeader6:
 	dw RockTunnel2BattleText8 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText8 ; TextAfterBattle
 	dw RockTunnel2EndBattleText8 ; TextEndBattle
-	dw RockTunnel2EndBattleText8 ; TextEndBattle
 
 RockTunnel2TrainerHeader7:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_2_TRAINER_7, 1
@@ -92,57 +77,32 @@ RockTunnel2TrainerHeader7:
 	dw RockTunnel2BattleText9 ; TextBeforeBattle
 	dw RockTunnel2AfterBattleText9 ; TextAfterBattle
 	dw RockTunnel2EndBattleText9 ; TextEndBattle
-	dw RockTunnel2EndBattleText9 ; TextEndBattle
 
 	db $ff
 
 RockTunnel2Text1:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader0
 
 RockTunnel2Text2:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader1
 
 RockTunnel2Text3:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader2
 
 RockTunnel2Text4:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader3
 
 RockTunnel2Text5:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader4
 
 RockTunnel2Text6:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader5
 
 RockTunnel2Text7:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader6
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader6
 
 RockTunnel2Text8:
-	TX_ASM
-	ld hl, RockTunnel2TrainerHeader7
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel2TrainerHeader7
 
 RockTunnel2BattleText2:
 	TX_FAR _RockTunnel2BattleText2

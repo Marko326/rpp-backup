@@ -1,4 +1,3 @@
-db DEX_ALAKAZAM ; pokedex id
 db 55 ; base hp
 db 50 ; base attack
 db 45 ; base defense
@@ -14,9 +13,6 @@ dw AlakazamPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 3 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,15,16

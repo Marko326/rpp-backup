@@ -98,8 +98,7 @@ BookshelfTileIDs:
 	db_tx_pre BookOrSculptureText
 	db GYM,		  29
 	db_tx_pre BookOrSculptureText
-	db POKECENTER,   41
-	db_tx_pre WonderTradeMachineText
+	; WTR-5.53.00: POKECENTER tile 41 no longer has a hidden machine interaction.
 	db LOBBY,		22
 	db_tx_pre ElevatorText
 	db FERRY,		 4
@@ -116,8 +115,7 @@ IndigoPlateauStatues:
 	jr nz, .ok
 	ld hl, IndigoPlateauStatuesText3
 .ok
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 IndigoPlateauStatuesText1:
 	TX_FAR _IndigoPlateauStatuesText1
@@ -142,8 +140,7 @@ BookOrSculptureText:
 	jr nz, .ok
 	ld hl, DiglettSculptureText
 .ok
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 PokemonBooksText:
 	TX_FAR _PokemonBooksText
@@ -184,10 +181,6 @@ PokemonStuffText:
 	TX_FAR _PokemonStuffText
 	db "@"
 
-WonderTradeMachineText:
-	TX_ASM
-	callba DoWonderTradeDialogue
-	jp TextScriptEnd
 
 MyReflectionText:
 	TX_FAR _MyReflectionText

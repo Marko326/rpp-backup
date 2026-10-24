@@ -1,4 +1,3 @@
-db DEX_TANGELA ; pokedex id
 db 65 ; base hp
 db 55 ; base attack
 db 115 ; base defense
@@ -14,9 +13,6 @@ dw TangelaPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 3,6,8
 	tmlearn 9,10,15

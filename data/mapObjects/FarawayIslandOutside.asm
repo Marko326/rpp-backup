@@ -12,8 +12,3 @@ FarawayIslandOutsideObject:
 	db $2 ; people
 	db SPRITE_SAILOR, $27 + 4, $d + 4, $ff, $d1, $1 ; FarawayIslandCaptainText
 	db SPRITE_BERRY_TREE, $e + 4, $14 + 4, $ff, $ff, $2 ; FarawayIslandBerryTreeText
-
-	; warp-to
-	EVENT_DISP FARAWAY_ISLAND_OUTSIDE_WIDTH, $27, $e ; INSIDE_FERRY
-	EVENT_DISP FARAWAY_ISLAND_OUTSIDE_WIDTH, $7, $16 ; FARAWAY_ISLAND_INSIDE
-	EVENT_DISP FARAWAY_ISLAND_OUTSIDE_WIDTH, $7, $17 ; FARAWAY_ISLAND_INSIDE

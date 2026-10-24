@@ -73,10 +73,7 @@ Museum1FText1:
 	xor a
 	ld [hJoyHeld], a
 	ld hl, Museum1FText_5c21f
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_de133
 	xor a
 	ld [hMoney], a
@@ -125,10 +122,7 @@ Museum1FText1:
 
 Museum1FScript_5c1f9:
 	ld hl, Museum1FText_5c22e
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	cp $0
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_d1144
 	ld hl, Museum1FText_5c233
 	call PrintText
@@ -178,8 +172,7 @@ Museum1FText_5c242:
 Museum1FText2:
 	TX_ASM
 	ld hl, Museum1FText_5c251
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c251:
 	TX_FAR _Museum1FText_5c251
@@ -206,8 +199,7 @@ Museum1FText3:
 .asm_5c285
 	ld hl, Museum1FText_5c299
 .asm_5c288
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c28e:
 	TX_FAR _Museum1FText_5c28e
@@ -229,8 +221,7 @@ Museum1FText_5c29e:
 Museum1FText4:
 	TX_ASM
 	ld hl, Museum1FText_5c2ad
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c2ad:
 	TX_FAR _Museum1FText_5c2ad
@@ -239,8 +230,7 @@ Museum1FText_5c2ad:
 Museum1FText5:
 	TX_ASM
 	ld hl, Museum1FText_5c2bc
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 Museum1FText_5c2bc:
 	TX_FAR _Museum1FText_5c2bc

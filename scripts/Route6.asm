@@ -1,16 +1,29 @@
-Route6Script:
+; TMD-5.47.00: standard three-state trainer maps in bank 16
+; share one script table and the generic bank-local dispatcher.
+Bank16RunStandardTrainerMapScript:
+	ld de, Bank16StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank16RunTrainerMapScript:
 	call EnableAutoTextBoxDrawing
-	ld hl, Route6TrainerHeader0
-	ld de, Route6ScriptPointers
-	ld a, [wRoute6CurScript]
+	ld a, [bc]
+	push bc
 	call ExecuteCurMapScriptInTable
-	ld [wRoute6CurScript], a
+	pop bc
+	ld [bc], a
 	ret
 
-Route6ScriptPointers:
+Bank16StandardTrainerScriptPointers:
 	dw CheckFightingMapTrainers
 	dw DisplayEnemyTrainerTextAndStartBattle
 	dw EndTrainerBattle
+
+Route6Script:
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
+	ld hl, Route6TrainerHeader0
+	ld bc, wRoute6CurScript
+	jp Bank16RunStandardTrainerMapScript
 
 Route6TextPointers:
 	dw Route6Text1
@@ -28,7 +41,6 @@ Route6TrainerHeader0:
 	dw Route6BattleText1 ; TextBeforeBattle
 	dw Route6AfterBattleText1 ; TextAfterBattle
 	dw Route6EndBattleText1 ; TextEndBattle
-	dw Route6EndBattleText1 ; TextEndBattle
 
 Route6TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROUTE_6_TRAINER_1
@@ -36,7 +48,6 @@ Route6TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_6_TRAINER_1
 	dw Route6BattleText2 ; TextBeforeBattle
 	dw Route6AfterBattleText1 ; TextAfterBattle
-	dw Route6EndBattleText2 ; TextEndBattle
 	dw Route6EndBattleText2 ; TextEndBattle
 
 Route6TrainerHeader2:
@@ -46,7 +57,6 @@ Route6TrainerHeader2:
 	dw Route6BattleText3 ; TextBeforeBattle
 	dw Route6AfterBattleText3 ; TextAfterBattle
 	dw Route6EndBattleText3 ; TextEndBattle
-	dw Route6EndBattleText3 ; TextEndBattle
 
 Route6TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROUTE_6_TRAINER_3
@@ -54,7 +64,6 @@ Route6TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROUTE_6_TRAINER_3
 	dw Route6BattleText4 ; TextBeforeBattle
 	dw Route6AfterBattleText4 ; TextAfterBattle
-	dw Route6EndBattleText4 ; TextEndBattle
 	dw Route6EndBattleText4 ; TextEndBattle
 
 Route6TrainerHeader4:
@@ -64,7 +73,6 @@ Route6TrainerHeader4:
 	dw Route6BattleText5 ; TextBeforeBattle
 	dw Route6AfterBattleText5 ; TextAfterBattle
 	dw Route6EndBattleText5 ; TextEndBattle
-	dw Route6EndBattleText5 ; TextEndBattle
 
 Route6TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROUTE_6_TRAINER_5
@@ -73,15 +81,11 @@ Route6TrainerHeader5:
 	dw Route6BattleText6 ; TextBeforeBattle
 	dw Route6AfterBattleText6 ; TextAfterBattle
 	dw Route6EndBattleText6 ; TextEndBattle
-	dw Route6EndBattleText6 ; TextEndBattle
 
 	db $ff
 
 Route6Text1:
-	TX_ASM
-	ld hl, Route6TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route6TrainerHeader0
 
 Route6BattleText1:
 	TX_FAR _Route6BattleText1
@@ -96,10 +100,7 @@ Route6AfterBattleText1:
 	db "@"
 
 Route6Text2:
-	TX_ASM
-	ld hl, Route6TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route6TrainerHeader1
 
 Route6BattleText2:
 	TX_FAR _Route6BattleText2
@@ -110,10 +111,7 @@ Route6EndBattleText2:
 	db "@"
 
 Route6Text3:
-	TX_ASM
-	ld hl, Route6TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route6TrainerHeader2
 
 Route6BattleText3:
 	TX_FAR _Route6BattleText3
@@ -128,10 +126,7 @@ Route6AfterBattleText3:
 	db "@"
 
 Route6Text4:
-	TX_ASM
-	ld hl, Route6TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route6TrainerHeader3
 
 Route6BattleText4:
 	TX_FAR _Route6BattleText4
@@ -146,10 +141,7 @@ Route6AfterBattleText4:
 	db "@"
 
 Route6Text5:
-	TX_ASM
-	ld hl, Route6TrainerHeader4
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route6TrainerHeader4
 
 Route6BattleText5:
 	TX_FAR _Route6BattleText5
@@ -164,10 +156,7 @@ Route6AfterBattleText5:
 	db "@"
 
 Route6Text6:
-	TX_ASM
-	ld hl, Route6TrainerHeader5
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Route6TrainerHeader5
 
 Route6BattleText6:
 	TX_FAR _Route6BattleText6

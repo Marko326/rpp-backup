@@ -1,6 +1,3 @@
-DayCareMScript:
-	jp EnableAutoTextBoxDrawing
-
 DayCareMTextPointers:
 	dw DayCareMText1 ; Day Care Lady
 	dw DayCareMText2 ; Day Care Man
@@ -13,10 +10,7 @@ DayCareMText1:
 	and a
 	jp nz, .daycareInUse
 	ld hl, DayCareIntroText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ld hl, DayCareComeAgainText
 	jp nz, .done
 	ld a, [wPartyCount]
@@ -182,7 +176,11 @@ DayCareMText1:
 	ld e, l
 	ld a, 1
 	ld [wLearningMovesFromDayCare], a
+	; FORM-5.21.00: stored registered forms learn from their descriptor learnset.
+	callba RegionalFormTryWriteStoredMonMoves
+	jr c,.regionalMovesReady
 	predef WriteMonMoves
+.regionalMovesReady
 	pop bc
 	pop af
 
@@ -209,8 +207,7 @@ DayCareMText1:
 	ld [wDayCareMonBoxLevel], a
 
 .done
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 DayCareIntroText:
 	TX_FAR _DayCareIntroText

@@ -15,9 +15,9 @@ PrintSafariZoneBattleText:
 	ld hl, SafariZoneAngryText
 	jr nz, .asm_429f
 	push hl
-	ld a, [wEnemyMonSpecies]
-	ld [wd0b5], a
-	call GetMonHeader
+	; FORM-5.62.12: restore Catch Rate from the already-resolved enemy form.
+	; Reloading the stock species header here would silently drop a regional form.
+	callba RegionalFormLoadCurrentEnemyHeader
 	ld a, [wMonHCatchRate]
 	ld [wEnemyMonCatchRate], a
 	pop hl

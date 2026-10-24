@@ -1,6 +1,3 @@
-NavelRockFerryScript:
-	jp EnableAutoTextBoxDrawing
-
 NavelRockFerryTextPointers:
 	dw NavelRockFerryText1
 

@@ -1,12 +1,30 @@
+; TMD-5.47.00: standard three-state trainer maps in bank 11
+; share one script table and the generic bank-local dispatcher.
+Bank11RunStandardTrainerMapScript:
+	ld de, Bank11StandardTrainerScriptPointers
+	; fall through
+; TMD-5.47.00: bank-local trainer map dispatcher.
+; HL = first TrainerHeader, DE = script table, BC = map script state.
+Bank11RunTrainerMapScript:
+	call EnableAutoTextBoxDrawing
+	ld a, [bc]
+	push bc
+	call ExecuteCurMapScriptInTable
+	pop bc
+	ld [bc], a
+	ret
+
+Bank11StandardTrainerScriptPointers:
+	dw CheckFightingMapTrainers
+	dw DisplayEnemyTrainerTextAndStartBattle
+	dw EndTrainerBattle
+
 Mansion1Script:
 	call Mansion1Subscript1
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, Mansion1TrainerHeader0
-	ld de, Mansion1ScriptPointers
-	ld a, [wMansion1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wMansion1CurScript], a
-	ret
+	ld bc, wMansion1CurScript
+	jp Bank11RunStandardTrainerMapScript
 
 Mansion1Subscript1:
 	ld hl, wCurrentMapScriptFlags
@@ -55,11 +73,6 @@ Mansion1Script_Switches:
 	ld [hSpriteIndexOrTextID], a
 	jp DisplayTextID
 
-Mansion1ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
-
 Mansion1TextPointers:
 	dw Mansion1Text1
 	dw PickUpItemText
@@ -73,15 +86,11 @@ Mansion1TrainerHeader0:
 	dw Mansion1BattleText2 ; TextBeforeBattle
 	dw Mansion1AfterBattleText2 ; TextAfterBattle
 	dw Mansion1EndBattleText2 ; TextEndBattle
-	dw Mansion1EndBattleText2 ; TextEndBattle
 
 	db $ff
 
 Mansion1Text1:
-	TX_ASM
-	ld hl, Mansion1TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER Mansion1TrainerHeader0
 
 Mansion1BattleText2:
 	TX_FAR _Mansion1BattleText2
@@ -98,10 +107,7 @@ Mansion1AfterBattleText2:
 Mansion1Text4:
 	TX_ASM
 	ld hl, MansionSwitchText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .asm_4438c
 	ld a, $1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a

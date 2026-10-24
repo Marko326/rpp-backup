@@ -1,6 +1,3 @@
-FanClubScript:
-	jp EnableAutoTextBoxDrawing
-
 FanClubBikeInBag:
 ; check if any bike paraphernalia in bag
 	CheckEvent EVENT_GOT_BIKE_VOUCHER
@@ -104,10 +101,7 @@ FanClubText5:
 	jr nz, .nothingleft
 
 	ld hl, .meetchairtext
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .nothanks
 
 	; tell the story

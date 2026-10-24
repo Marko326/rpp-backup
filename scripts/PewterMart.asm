@@ -12,8 +12,7 @@ PewterMartTextPointers:
 PewterMartText2:
 	TX_ASM
 	ld hl, .Text
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .Text
 	TX_FAR _PewterMartText2
 	db "@"
@@ -21,8 +20,7 @@ PewterMartText2:
 PewterMartText3:
 	TX_ASM
 	ld hl, .Text
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 .Text
 	TX_FAR _PewterMartText3
 	db "@"

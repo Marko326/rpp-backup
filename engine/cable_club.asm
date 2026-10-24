@@ -632,6 +632,10 @@ TradeCenter_PlaceSelectedEnemyMonMenuCursor:
 TradeCenter_DisplayStats:
 	ld a, [wCurrentMenuItem]
 	ld [wWhichPokemon], a
+	; LNK-5.55.00: link receive data overlaps the Summary one-shot tile flag.
+	; Force the shared HP/status tiles to reload before every link Summary.
+	xor a
+	ld [wStatusScreenCommonTilesReady], a
 	predef StatusScreen
 	call GBPalNormal
 	call LoadTrainerInfoTextBoxTiles
@@ -761,6 +765,9 @@ TradeCenter_Trade:
 	call PlaceString
 	jp .tradeCancelled
 .doTrade
+	; FORM-5.62.13: capture both instance markers while the selected party slots
+	; still refer to the pre-trade parties.
+	callba TradeCenter_CaptureRegionalFormMarkers
 	ld a, [wTradingWhichPlayerMon]
 	ld hl, wPartyMonOT
 	call SkipFixedLengthTextEntries
@@ -813,6 +820,8 @@ TradeCenter_Trade:
 	add hl, de
 	ld a, [hl]
 	ld [wcf91], a
+	; Latch the actually received species before the successful add/Owned hook.
+	ld [wTradedEnemyMonSpecies], a
 	ld hl, wEnemyMons
 	ld a, c
 	ld bc, wEnemyMon2 - wEnemyMon1
@@ -821,18 +830,14 @@ TradeCenter_Trade:
 	ld bc, wEnemyMon2 - wEnemyMon1
 	call CopyData
 	call AddEnemyMonToPlayerParty
+	jr c,.receivedMonNotAdded
+	callab RegionalDexMarkReceivedTradeOwned
+.receivedMonNotAdded
 	ld a, [wPartyCount]
 	dec a
 	ld [wWhichPokemon], a
 	ld a, $1
 	ld [wForceEvolution], a
-	ld a, [wTradingWhichEnemyMon]
-	ld hl, wEnemyPartyMons
-	ld b, 0
-	ld c, a
-	add hl, bc
-	ld a, [hl]
-	ld [wTradedEnemyMonSpecies], a
 	ld a, 10
 	ld [wAudioFadeOutControl], a
 	ld a, $2

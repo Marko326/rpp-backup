@@ -6,10 +6,7 @@ PromptUserToPlaySlots:
 	ld hl, DisplayTextIDInit
 	call Bankswitch
 	ld hl, PlaySlotMachineText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jr nz, .done ; if player chose No
 	dec a
 	ld [wUpdateSpritesEnabled], a
@@ -850,7 +847,7 @@ LoadSlotMachineTiles:
 	call DisableLCD
 	ld hl, SlotMachineTiles2
 	ld de, vChars0
-	ld bc, $1c0
+	ld bc, SlotMachineTiles2End - SlotMachineTiles2
 	ld a, BANK(SlotMachineTiles2)
 	call FarCopyData2
 	ld hl, SlotMachineTiles1
@@ -860,7 +857,7 @@ LoadSlotMachineTiles:
 	call FarCopyData2
 	ld hl, SlotMachineTiles2
 	ld de, vChars2 + $250
-	ld bc, $1c0
+	ld bc, SlotMachineTiles2End - SlotMachineTiles2
 	ld a, BANK(SlotMachineTiles2)
 	call FarCopyData2
 	ld hl, SlotMachineMap
@@ -884,4 +881,9 @@ SlotMachineMapEnd:
 INCLUDE "data/slot_machine_wheels.asm"
 
 SlotMachineTiles1:
+IF DEF(_RED)
 	INCBIN "gfx/red/slotmachine1.2bpp"
+ENDC
+IF DEF(_BLUE)
+	INCBIN "gfx/blue/slotmachine1.2bpp"
+ENDC

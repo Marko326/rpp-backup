@@ -15,6 +15,3 @@ Museum2FObject:
 	object SPRITE_OAK_AIDE, $7, $5, STAY, DOWN, $3 ; person
 	object SPRITE_BRUNETTE_GIRL, $b, $5, STAY, NONE, $4 ; person
 	object SPRITE_HIKER, $c, $5, STAY, DOWN, $5 ; person
-
-	; warp-to
-	EVENT_DISP MUSEUM_2F_WIDTH, $7, $7 ; MUSEUM_1F

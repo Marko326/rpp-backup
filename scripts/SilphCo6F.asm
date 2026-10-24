@@ -1,43 +1,16 @@
 SilphCo6Script:
-	call SilphCo6Script_1a1bf
-	call EnableAutoTextBoxDrawing
-	ld hl, SilphCo6TrainerHeader0
-	ld de, SilphCo6ScriptPointers
-	ld a, [wSilphCo6CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo6CurScript], a
-	ret
-
-SilphCo6Script_1a1bf:
+	; SCK-5.48.00: keep the per-frame flag check local; only bank-switch when
+	; entering the map or after a Card Key door was opened.
 	ld hl, wCurrentMapScriptFlags
 	bit 5, [hl]
+	jr z, .skipCardKeyDoorUpdate
 	res 5, [hl]
-	ret z
-	ld hl, SilphCo6GateCoords
-	call SilphCo4Script_19d5d
-	call SilphCo6Script_1a1e6
-	CheckEvent EVENT_SILPH_CO_6_UNLOCKED_DOOR
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 6, 2
-	predef_jump ReplaceTileBlock
-
-SilphCo6GateCoords:
-	db $06,$02
-	db $FF
-
-SilphCo6Script_1a1e6:
-	ld a, [$ffe0]
-	and a
-	ret z
-	SetEvent EVENT_SILPH_CO_6_UNLOCKED_DOOR
-	ret
-
-SilphCo6ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	callba HandleSilphCoCardKeyDoors
+.skipCardKeyDoorUpdate
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
+	ld hl, SilphCo6TrainerHeader0
+	ld bc, wSilphCo6CurScript
+	jp Bank06RunStandardTrainerMapScript
 
 SilphCo6TextPointers:
 	dw SilphCo6Text1
@@ -58,7 +31,6 @@ SilphCo6TrainerHeader0:
 	dw SilphCo6BattleText2 ; TextBeforeBattle
 	dw SilphCo6AfterBattleText2 ; TextAfterBattle
 	dw SilphCo6EndBattleText2 ; TextEndBattle
-	dw SilphCo6EndBattleText2 ; TextEndBattle
 
 SilphCo6TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_6F_TRAINER_1
@@ -67,7 +39,6 @@ SilphCo6TrainerHeader1:
 	dw SilphCo6BattleText3 ; TextBeforeBattle
 	dw SilphCo6AfterBattleText3 ; TextAfterBattle
 	dw SilphCo6EndBattleText3 ; TextEndBattle
-	dw SilphCo6EndBattleText3 ; TextEndBattle
 
 SilphCo6TrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_SILPH_CO_6F_TRAINER_2, 1
@@ -75,7 +46,6 @@ SilphCo6TrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_SILPH_CO_6F_TRAINER_2, 1
 	dw SilphCo6BattleText4 ; TextBeforeBattle
 	dw SilphCo6AfterBattleText4 ; TextAfterBattle
-	dw SilphCo6EndBattleText4 ; TextEndBattle
 	dw SilphCo6EndBattleText4 ; TextEndBattle
 
 	db $ff
@@ -166,10 +136,7 @@ SilphCo6Text_1a2ab:
 	db "@"
 
 SilphCo6Text6:
-	TX_ASM
-	ld hl, SilphCo6TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo6TrainerHeader0
 
 SilphCo6BattleText2:
 	TX_FAR _SilphCo6BattleText2
@@ -184,10 +151,7 @@ SilphCo6AfterBattleText2:
 	db "@"
 
 SilphCo6Text7:
-	TX_ASM
-	ld hl, SilphCo6TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo6TrainerHeader1
 
 SilphCo6BattleText3:
 	TX_FAR _SilphCo6BattleText3
@@ -202,10 +166,7 @@ SilphCo6AfterBattleText3:
 	db "@"
 
 SilphCo6Text8:
-	TX_ASM
-	ld hl, SilphCo6TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SilphCo6TrainerHeader2
 
 SilphCo6BattleText4:
 	TX_FAR _SilphCo6BattleText4

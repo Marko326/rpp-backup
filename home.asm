@@ -35,9 +35,7 @@ SECTION "vblank", ROM0 [$40]
 	ld hl, VBlank
 	jp InterruptWrapper
 SECTION "hblank",   ROM0 [$48] ; HAX: interrupt wasn't used in original game
-	push hl
-	ld hl, _GbcPrepareVBlank
-	jp InterruptWrapper
+	jp LCDStatInterrupt
 SECTION "timer",  ROM0 [$50]
 	push hl
 	ld hl, Timer
@@ -50,7 +48,9 @@ SECTION "joypad", ROM0 [$60]
 	reti
 
 
-SECTION "Home", ROM0
+; Keep tiny ROM0 helpers in separate sections so rgblink can fill the
+; fragmented holes below $0150 instead of requiring one large Home block.
+SECTION "Home Disable LCD", ROM0
 
 DisableLCD::
 	xor a
@@ -72,11 +72,144 @@ DisableLCD::
 	ld [rIE], a
 	ret
 
+SECTION "Home Enable LCD", ROM0
+
 EnableLCD::
 	ld a, [rLCDC]
 	set rLCDC_ENABLE, a
 	ld [rLCDC], a
 	ret
+
+SECTION "Home LCD STAT Dispatch", ROM0
+
+LCDStatInterrupt::
+	; ANM-5.62.07: Iron Tail uses sparse LYC triggers plus one HBlank edge at each real band
+	; boundary. LYC is disabled before mode-0 is armed, so the shared STAT signal
+	; always gets a fresh edge instead of the old LYC/mode-0 lockout.
+	push af
+	ld a, [wBattleAnimRasterMode]
+	cp 4
+	jr z, .ironTailLYC
+	cp 5
+	jr z, .ironTailLYC
+
+	; ANM-5.61.94: Icy Wind temporarily enables STAT mode-0 interrupts. Keep this
+	; fast path in ROM0 and touch only AF/HL so next-line SCY lands in HBlank.
+	; The normal line-$6e LYC interrupt still uses the color wrapper below.
+	ldh a, [rSTAT]
+	and $3
+	jp nz, .prepareColorVBlank
+	push hl
+	ldh a, [rLY]
+	inc a
+	ld l, a
+	ld a, [wBattleAnimRasterTableHigh]
+	ld h, a
+	ld a, [hl]
+	ldh [rSCY], a
+
+	; Stop Icy Wind's mode-0 source immediately after the target band. Apart from
+	; avoiding needless interrupts, this guarantees STAT is low again before the
+	; normal line-$6e LYC source rises (the two STAT sources share one edge line).
+	ld a, l
+	cp $38 ; ANM-5.61.95: HBlank 55 stages baseline line 56 after safe Y=55 wave
+	jr z, .maybeStopUpperIcyWind
+	cp $60 ; lower target: HBlank 95 has staged baseline line 96
+	jr nz, .done
+	ldh a, [H_WHOSETURN]
+	and a
+	jr z, .done
+	jr .stopIcyWindHBlank
+.maybeStopUpperIcyWind
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .done
+.stopIcyWindHBlank
+	ldh a, [rSTAT]
+	res 3, a
+	ldh [rSTAT], a
+	jr .done
+
+.ironTailLYC
+	; Gold WOBBLE_MON changes SCX in HBlank. Keep LYC only as a sparse trigger that
+	; arms one HBlank edge at each band boundary; this avoids touching either side
+	; of the shared Y=48..55 target-protection row while pixels are being drawn.
+	ldh a, [rSTAT]
+	and $3
+	jr z, .ironTailHBlank
+
+	; Normal LYC source: preserve the project's color-preparation interrupt.
+	ldh a, [rLY]
+	cp $6e
+	jp z, .prepareColorVBlank
+	; Drop LYC while its coincidence signal is high, then arm mode-0. This creates
+	; a fresh STAT edge when the same scanline reaches HBlank.
+	ldh a, [rSTAT]
+	and $bf
+	or $08
+	ldh [rSTAT], a
+	jr .ironTailDone
+
+.ironTailHBlank
+	ldh a, [H_WHOSETURN]
+	and a
+	jr nz, .ironTailEnemyHBlank
+
+	ldh a, [rLY]
+	cp $2f
+	jr nz, .ironTailPlayerEnd
+	; HBlank 47: line 48 begins Gold's player-user wobble band.
+	ld a, [wBattleAnimRasterTableHigh]
+	ldh [rSCX], a
+	ld a, $5f
+	jr .ironTailFinishHBlank
+
+.ironTailPlayerEnd
+	; HBlank 95: restore baseline before line 96.
+	ldh a, [hSCX]
+	ldh [rSCX], a
+	ld a, $6e
+	jr .ironTailFinishHBlank
+
+.ironTailEnemyHBlank
+	; Enemy user was preloaded at line 0. HBlank 55 restores baseline for line 56.
+	ldh a, [hSCX]
+	ldh [rSCX], a
+	ld a, $6e
+
+.ironTailFinishHBlank
+	; Change LYC before re-enabling its source, so the just-finished line cannot
+	; immediately retrigger through the shared STAT signal.
+	ldh [rLYC], a
+	ldh a, [rSTAT]
+	and $f7
+	or $40
+	ldh [rSTAT], a
+	jr .ironTailDone
+.ironTailDone
+	pop af
+	reti
+.done
+	pop hl
+	pop af
+	reti
+.prepareColorVBlank
+	pop af
+	push hl
+	ld hl, _GbcPrepareVBlank
+	jp InterruptWrapper
+
+SECTION "Home Pokedex Overworld Restore", ROM0
+
+; Pokédex Info uses both VRAM BG maps for atomic, flicker-free page swaps.
+; vBGMap0 is scratch while the Pokédex is open, so rebuild the visible overworld
+; ring before control returns to any caller that expects overworld BG0 ownership.
+Pokedex_ReloadAndRedrawOverworld::
+	call ReloadMapData
+	callba RedrawMapView
+	ret
+
+SECTION "Home Clear Sprites", ROM0
 
 ClearSprites::
 	xor a
@@ -87,6 +220,8 @@ ClearSprites::
 	dec b
 	jr nz, .loop
 	ret
+
+SECTION "Home Hide Sprites", ROM0
 
 HideSprites::
 	ld a, 160
@@ -208,29 +343,11 @@ CheckForUserInterruption::
 	scf
 	ret
 
-; function to load position data for destination warp when switching maps
-; INPUT:
-; a = ID of destination warp within destination map
+; WDP-5.49.00: normal map warp-to records are no longer stored in ROM.
+; Reconstruct the destination position from the destination map's wWarpEntries.
+; Input: wDestinationWarpID = zero-based destination warp ID within the current map.
 LoadDestinationWarpPosition::
-	ld b,a
-	ld a,[H_LOADEDROMBANK]
-	push af
-	ld a,[wPredefParentBank]
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
-	ld a,b
-	add a
-	add a
-	ld c,a
-	ld b,0
-	add hl,bc
-	ld bc,4
-	ld de,wCurrentTileBlockMapViewPointer
-	call CopyData
-	pop af
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
-	ret
+	jpba ReconstructDestinationWarpPosition
 
 
 DrawHPBar::
@@ -329,6 +446,15 @@ OverwritewMoves::
 	ret
 
 LoadFlippedFrontSpriteByMonIndex::
+	; Only the internal Pokédex Info viewer (bit 7) may replace this initial
+	; front picture with the remembered back. External capture pages, battles,
+	; trading, evolution, and other uses keep the stock front loader.
+	ld a,[wPokedexFacingPreference]
+	and $81
+	cp $81
+	jr nz,.front
+	jpba PokedexData_LoadBackPic
+.front
 	ld a, 1
 	ld [wSpriteFlipped], a
 
@@ -394,10 +520,20 @@ GoBackToPartyMenu::
 	call RedrawPartyMenu
 	jp HandlePartyMenuInput
 
+GoBackToPartyMenuClean::
+	; MENU-5.62.31: remove overlaid move/TM windows before the light Party redraw.
+	; Keep BG transfer disabled until RedrawPartyMenu finishes the new tilemap.
+	xor a
+	ld [H_AUTOBGTRANSFERENABLED],a
+	call ClearScreen
+	jp GoBackToPartyMenu
+
 PartyMenuInit::
 	ld a, 1 ; hardcoded bank
 	call BankswitchHome
 	call LoadHpBarAndStatusTilePatterns
+
+PartyMenuInitState::
 	ld hl, wd730
 	set 6, [hl] ; turn off letter printing delay
 	xor a ; PLAYER_PARTY_DATA
@@ -428,9 +564,31 @@ PartyMenuInit::
 	ld [wForcePlayerToChooseMon], a
 	inc a ; a = A_BUTTON
 .next
+	; MENU-5.61.17: SELECT belongs only to START -> Pokémon. Other callers may
+	; use NORMAL_PARTY_MENU too, so the dedicated START type is the scope guard.
+	ld b, a
+	ld a, [wIsInBattle]
+	and a
+	jr nz, .restoreWatchedKeys
+	ld a, [wPartyMenuTypeOrMessageID]
+	cp START_PARTY_MENU
+	jr nz, .restoreWatchedKeys
+	ld a, b
+	or SELECT
+	jr .storeWatchedKeys
+.restoreWatchedKeys
+	ld a, b
+.storeWatchedKeys
 	ld [hli], a ; menu watched keys
 	pop af
 	ld [hl], a ; old menu item ID
+	ret
+
+SetStartPartyMenuType::
+	; MENU-5.61.17: START -> Pokémon gets a distinct menu type so SELECT cannot
+	; leak into other callers which also use NORMAL_PARTY_MENU.
+	ld a, START_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID], a
 	ret
 
 HandlePartyMenuInput::
@@ -441,6 +599,27 @@ HandlePartyMenuInput::
 	call HandleMenuInput_
 	call PlaceUnfilledArrowMenuCursor
 	ld b,a
+	; MENU-5.61.17: SELECT swaps the highlighted non-battle Party member with
+	; slot 1. hJoyPressed makes a held SELECT identical to one short press.
+	bit BIT_SELECT, b
+	jr z, .partyShortcutDone
+	ld a, [wMenuWatchedKeys]
+	bit BIT_SELECT, a
+	jr z, .partyShortcutDone
+	ld a, [hJoyPressed]
+	bit BIT_SELECT, a
+	jr nz, .freshPartySelect
+	; Ignore low-sensitivity SELECT repeats. If A/B was newly combined with the held
+	; key, keep that normal action; direction-only repeats have already moved cursor.
+	res BIT_SELECT, b
+	ld a, b
+	and A_BUTTON | B_BUTTON
+	jr nz, .partyShortcutDone
+	jr HandlePartyMenuInput
+.freshPartySelect
+	callba QuickSwapPartyMonWithFirst
+	jr HandlePartyMenuInput
+.partyShortcutDone
 	xor a
 	ld [wPartyMenuAnimMonEnabled],a
 	ld a,[wCurrentMenuItem]
@@ -482,12 +661,12 @@ HandlePartyMenuInput::
 	ld [wMenuItemToSwap],a
 	ld [wPartyMenuTypeOrMessageID],a
 	call RedrawPartyMenu
-	jr HandlePartyMenuInput
+	jp HandlePartyMenuInput
 .handleSwap
 	ld a,[wCurrentMenuItem]
 	ld [wWhichPokemon],a
 	callba SwitchPartyMon
-	jr HandlePartyMenuInput
+	jp HandlePartyMenuInput
 
 DrawPartyMenu::
 	ld hl, DrawPartyMenu_
@@ -608,12 +787,12 @@ GetMonHeader::
 	predef IndexToPokedex   ; convert pokemon ID in [wd11e] to pokedex number
 	ld a,[wd11e]
 	dec a
-	ld bc, MonBaseStatsEnd - MonBaseStats
+	ld bc,COMPACT_MON_HEADER_SIZE
 	ld hl,BaseStats
 	call AddNTimes
-	ld de,wMonHeader
-	ld bc, MonBaseStatsEnd - MonBaseStats
-	call CopyData
+	; FORM-5.27.00: stock records are compact in ROM. Bank $30 is already
+	; mapped here; rebuild the unchanged 28-byte wMonHeader runtime ABI.
+	call DecodeCompactMonHeader
 	jr .done
 .specialID
 	ld hl,wMonHSpriteDim
@@ -1114,8 +1293,8 @@ DisplayTextID::
 	jp z,DisplayPokemartDialogue
 	cp $ff   ; Pokemon Center NPC
 	jp z,DisplayPokemonCenterDialogue
-	cp $fc   ; Item Storage PC
-	jp z,FuncTX_ItemStoragePC
+	cp $fc   ; Red's bedroom PC
+	jp z,FuncTX_RedBedroomPC
 	cp $fd   ; Bill's PC
 	jp z,FuncTX_BillsPC
 	cp $f9   ; Pokemon Center PC
@@ -1161,6 +1340,8 @@ CloseTextDisplay::
 	call LoadGBPal
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable continuous WRAM to VRAM transfer each V-blank
+CloseTextDisplayAfterWindowHide::
+; MENU-5.62.11: START full-restore continuation after its Window-hide phase already completed.
 ; loop to make sprites face the directions they originally faced before the dialogue
 	ld hl,wSpriteStateData2 + $19
 	ld c,$0f
@@ -1368,14 +1549,9 @@ DisplayListMenuID::
 	ld [H_AUTOBGTRANSFERENABLED],a ; disable auto-transfer
 	ld a,1
 	ld [hJoy7],a ; joypad state update flag
-	ld a,[wBattleType]
-	and a ; is it the Old Man battle?
-	jr nz,.specialBattleType
+	; TUT-5.41.00: no Old Man pseudo-bag remains; all list menus use
+	; the normal list-menu bank-switch path.
 	ld a,$01 ; hardcoded bank
-	jr .bankswitch
-.specialBattleType ; Old Man battle
-	ld a, BANK(DisplayBattleMenu)
-.bankswitch
 	call BankswitchHome
 	ld hl,wd730
 	set 6,[hl] ; turn off letter printing delay
@@ -1445,10 +1621,29 @@ DisplayListMenuID::
 	xor a ; empty Pocket has only Cancel at menu position 0
 	jr .setMenuVariables
 .nonemptyList
+	; PC Pokémon lists can temporarily keep an older scroll offset after removing
+	; entries from the end. Limit the selectable rows to what is actually visible
+	; so Cancel remains the final selectable row without rewriting the saved cursor.
+	ld b,a
+	ld a,[wListMenuID]
+	and a ; is it a PC Pokémon list?
+	ld a,b
+	jr nz,.setMenuLimitFromCount
+	ld b,a
+	ld a,[wListScrollOffset]
+	cp b
+	jr nc,.pcCancelOnly
+	ld c,a
+	ld a,b
+	sub c ; remaining Pokémon entries from the current scroll offset
+.setMenuLimitFromCount
 	cp 2
 	ld a,1
 	jr c,.setMenuVariables
 	inc a
+	jr .setMenuVariables
+.pcCancelOnly
+	xor a
 .setMenuVariables
 	ld [wMaxMenuItem],a
 	ld a,[wBagPocketActive]
@@ -1474,6 +1669,13 @@ DisplayListMenuID::
 	or D_LEFT | D_RIGHT
 .storeWatchedKeys
 	ld [wMenuWatchedKeys],a
+	; MENU-5.61.17: only the categorized START Bag may opt into START.
+	; Other ITEMLISTMENU callers keep their historical input behavior.
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	jr nz,.watchedKeysReady
+	callba UpdateBagPocketStartShortcutWatchedKey
+.watchedKeysReady
 	ld c,10
 	call DelayFrames
 
@@ -1498,23 +1700,6 @@ DisplayListMenuIDLoop::
 	and a
 	call nz,checkOtherKeys.waitForDPadRelease
 .input
-	ld a,[wBattleType]
-	and a ; is it the Old Man battle?
-	jr z,.notOldManBattle
-.oldManBattle
-	ld a,"▶"
-	Coorda 5, 4 ; place menu cursor in front of first menu entry
-	ld c,80
-	call DelayFrames
-	xor a
-	ld [wCurrentMenuItem],a
-	coord hl, 5, 4
-	ld a,l
-	ld [wMenuCursorLocation],a
-	ld a,h
-	ld [wMenuCursorLocation + 1],a
-	jr .buttonAPressed
-.notOldManBattle
 	call LoadGBPal
 	call HandleMenuInput
 	push af
@@ -1627,9 +1812,35 @@ skipStoringItemName:
 	ld hl,wd730
 	res 6,[hl] ; turn on letter printing delay
 	jp BankswitchBack
-checkOtherKeys: ; check B, SELECT, directions
+checkOtherKeys: ; check B, START, SELECT, directions
 	bit 1,a ; was the B button pressed?
 	jp nz,ExitListMenu ; if so, exit the menu
+	bit 3,a ; was START pressed?
+	jr z,.notStart
+	; MENU-5.61.17: consume the Bag shortcut only on the physical press edge.
+	; JoypadLowSensitivity may repeat a held START; repeated states are masked below
+	; so holding the key never jumps again and direction combos still work normally.
+	ld b,a
+	ld a,[hJoyPressed]
+	bit BIT_START,a
+	ld a,b
+	jr nz,.freshBagStart
+	; A repeated START is not a command. Remove it before continuing so a held
+	; START cannot be mistaken for UP by the direction fallback below.
+	res BIT_START,a
+	and a
+	jp z,DisplayListMenuIDLoop.input
+	jr .notStart
+.freshBagStart
+	; HandleMenuInput returns the complete hJoy5 state once any watched key fires.
+	; Only consume START when this menu explicitly watches it; otherwise combos such
+	; as START+RIGHT must continue through the normal direction/SELECT handling.
+	ld hl,wMenuWatchedKeys
+	bit BIT_START,[hl]
+	jr z,.notStart
+	callba HandleBagStartShortcut
+	jp DisplayListMenuIDLoop
+.notStart
 	bit 2,a ; was the select button pressed?
 	jr z,.notSelect
 	ld b,a
@@ -1652,8 +1863,11 @@ checkOtherKeys: ; check B, SELECT, directions
 .downPressed
 ; A held Down stops on Cancel. A fresh Down press on Cancel wraps once.
 	ld a,[wListMenuID]
+	and a ; PC Pokémon lists use the same first <-> Cancel boundary wrap as item lists
+	jr z,.checkDownBoundaryWrap
 	cp ITEMLISTMENU
 	jr nz,.tryScrollingDown
+.checkDownBoundaryWrap
 	ld a,[wCurrentMenuItem]
 	ld c,a
 	ld a,[hl]
@@ -1682,8 +1896,11 @@ checkOtherKeys: ; check B, SELECT, directions
 	jr nz,.scrollUp
 ; A held Up stops on the first item. A fresh Up press wraps once.
 	ld a,[wListMenuID]
+	and a ; PC Pokémon lists wrap from the first entry to Cancel too
+	jr z,.checkUpBoundaryWrap
 	cp ITEMLISTMENU
 	jr nz,.waitForDPadReleaseAndInput
+.checkUpBoundaryWrap
 	ld a,[hJoyPressed]
 	and D_UP
 	jr z,.waitForDPadReleaseAndInput
@@ -1718,162 +1935,9 @@ checkOtherKeys: ; check B, SELECT, directions
 	ret
 
 DisplayChooseQuantityMenu::
-; text box dimensions/coordinates for just quantity
-	coord hl, 15, 9
-	ld b,1 ; height
-	ld c,3 ; width
-	ld a,[wListMenuID]
-	cp PRICEDITEMLISTMENU
-	jr nz,.drawTextBox
-; text box dimensions/coordinates for quantity and price
-	coord hl, 7, 9
-	ld b,1  ; height
-	ld c,11 ; width
-.drawTextBox
-	call TextBoxBorder
-	coord hl, 16, 10
-	ld a,[wListMenuID]
-	cp PRICEDITEMLISTMENU
-	jr nz,.printInitialQuantity
-	coord hl, 8, 10
-.printInitialQuantity
-	ld de,InitialQuantityText
-	call PlaceString
-	xor a
-	ld [wItemQuantity],a ; initialize current quantity to 0
-	jp .incrementQuantity
-.waitForKeyPressLoop
-	call JoypadLowSensitivity
-	ld a,[hJoyPressed] ; newly pressed buttons
-	bit 0,a ; was the A button pressed?
-	jp nz,.buttonAPressed
-	bit 1,a ; was the B button pressed?
-	jp nz,.buttonBPressed
-	bit 6,a ; was Up pressed?
-	jr nz,.incrementQuantity
-	bit 7,a ; was Down pressed?
-	jr nz,.decrementQuantity
-	ld b,a
-	ld a,[wListMenuID]
-	cp PRICEDITEMLISTMENU
-	jr nz,.waitForKeyPressLoop ; only buying and selling use Left/Right shortcuts
-	bit 5,b ; was Left pressed?
-	jr nz,.decrementQuantityBy10
-	bit 4,b ; was Right pressed?
-	jr nz,.incrementQuantityBy10
-	jr .waitForKeyPressLoop
-.incrementQuantity
-	ld a,[wMaxItemQuantity]
-	inc a
-	ld b,a
-	ld hl,wItemQuantity ; current quantity
-	inc [hl]
-	ld a,[hl]
-	cp b
-	jr nz,.handleNewQuantity
-; wrap to 1 if the player goes above the max quantity
-	ld a,1
-	ld [hl],a
-	jr .handleNewQuantity
-.decrementQuantity
-	ld hl,wItemQuantity ; current quantity
-	dec [hl]
-	jr nz,.handleNewQuantity
-; wrap to the max quantity if the player goes below 1
-	ld a,[wMaxItemQuantity]
-	ld [hl],a
-	jr .handleNewQuantity
-.decrementQuantityBy10
-; Match Crystal's Left-key behavior: subtract 10 and clamp at 1.
-	ld hl,wItemQuantity
-	ld a,[hl]
-	sub 10
-	jr c,.setMinimumQuantity
-	jr z,.setMinimumQuantity
-	ld [hl],a
-	jr .handleNewQuantity
-.setMinimumQuantity
-	ld [hl],1
-	jr .handleNewQuantity
-.incrementQuantityBy10
-; Match Crystal's Right-key behavior: add 10 and clamp at the current maximum.
-	ld hl,wItemQuantity
-	ld a,[hl]
-	add 10
-	ld b,a
-	ld a,[wMaxItemQuantity]
-	cp b
-	jr nc,.storeIncreasedQuantity
-	ld b,a
-.storeIncreasedQuantity
-	ld [hl],b
-.handleNewQuantity
-	coord hl, 17, 10
-	ld a,[wListMenuID]
-	cp PRICEDITEMLISTMENU
-	jr nz,.printQuantity
-.printPrice
-	ld c,$03
-	ld a,[wItemQuantity]
-	ld b,a
-	ld hl,hMoney ; total price
-; initialize total price to 0
-	xor a
-	ld [hli],a
-	ld [hli],a
-	ld [hl],a
-.addLoop ; loop to multiply the individual price by the quantity to get the total price
-	ld de,hMoney + 2
-	ld hl,hItemPrice + 2
-	push bc
-	predef AddBCDPredef ; add the individual price to the current sum
-	pop bc
-	dec b
-	jr nz,.addLoop
-	ld a,[hHalveItemPrices]
-	and a ; should the price be halved (for selling items)?
-	jr z,.skipHalvingPrice
-	xor a
-	ld [hDivideBCDDivisor],a
-	ld [hDivideBCDDivisor + 1],a
-	ld a,$02
-	ld [hDivideBCDDivisor + 2],a
-	predef DivideBCDPredef3 ; halves the price
-; store the halved price
-	ld a,[hDivideBCDQuotient]
-	ld [hMoney],a
-	ld a,[hDivideBCDQuotient + 1]
-	ld [hMoney + 1],a
-	ld a,[hDivideBCDQuotient + 2]
-	ld [hMoney + 2],a
-.skipHalvingPrice
-	coord hl, 12, 10
-	ld de,SpacesBetweenQuantityAndPriceText
-	call PlaceString
-	ld de,hMoney ; total price
-	ld c,$a3
-	call PrintBCDNumber
-	coord hl, 9, 10
-.printQuantity
-	ld de,wItemQuantity ; current quantity
-	lb bc, LEADING_ZEROES | 1, 2 ; 1 byte, 2 digits
-	call PrintNumber
-	jp .waitForKeyPressLoop
-.buttonAPressed ; the player chose to make the transaction
-	xor a
-	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped
+	callab DisplayChooseQuantityMenu_
+	ld a,e ; return selected/cancel result across Bankswitch
 	ret
-.buttonBPressed ; the player chose to cancel the transaction
-	xor a
-	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped
-	ld a,$ff
-	ret
-
-InitialQuantityText::
-	db "×01@"
-
-SpacesBetweenQuantityAndPriceText::
-	db "      @"
 
 ExitListMenu::
 	ld a,[wCurrentMenuItem]
@@ -1904,226 +1968,17 @@ RefreshBagPocketDescription:
 	ret
 
 PrintListMenuEntries::
-	ld a,[wBagPocketActive]
-	and a
-	jr z,.printConventionalEntries
-	callba PrintBagPocketListEntries
-	ret
-.printConventionalEntries
-	coord hl, 5, 3
-	ld b,9
-	ld c,14
-	call ClearScreenArea
-	ld a,[wListPointer]
-	ld e,a
-	ld a,[wListPointer + 1]
-	ld d,a
-	inc de ; de = beginning of list entries
-	ld a,[wListScrollOffset]
-	ld c,a
-	ld a,[wListMenuID]
-	cp ITEMLISTMENU
-	ld a,c
-	jr nz,.skipMultiplying
-; if it's an item menu
-; item entries are 2 bytes long, so multiply by 2
-	sla a
-	sla c
-.skipMultiplying
-	add e
-	ld e,a
-	jr nc,.noCarry
-	inc d
-.noCarry
-	coord hl, 6, 4 ; coordinates of first list entry name
-	ld b,4 ; print 4 names
-.loop
-	ld a,b
-	ld [wWhichPokemon],a
-	ld a,[de]
-	ld [wd11e],a
-	cp $ff
-	jp z,.printCancelMenuItem
-	push bc
-	push de
-	push hl
-	push hl
-	push de
-	ld a,[wListMenuID]
-	and a
-	jr z,.pokemonPCMenu
-	cp MOVESLISTMENU
-	jr z,.movesMenu
-.itemMenu
-	call GetItemName
-	jr .placeNameString
-.pokemonPCMenu
-	push hl
-	ld hl,wPartyCount
-	ld a,[wListPointer]
-	cp l ; is it a list of party pokemon or box pokemon?
-	ld hl,wPartyMonNicks
-	jr z,.getPokemonName
-	ld hl, wBoxMonNicks ; box pokemon names
-.getPokemonName
-	ld a,[wWhichPokemon]
-	ld b,a
-	ld a,4
-	sub b
-	ld b,a
-	ld a,[wListScrollOffset]
-	add b
-	call GetPartyMonName
-	pop hl
-	jr .placeNameString
-.movesMenu
-	call GetMoveName
-.placeNameString
-	call PlaceString
-	pop de
-	pop hl
-	ld a,[wPrintItemPrices]
-	and a ; should prices be printed?
-	jr z,.skipPrintingItemPrice
-.printItemPrice
-	push hl
-	ld a,[de]
-	ld de,ItemPrices
-	ld [wcf91],a
-	call GetItemPrice ; get price
-	pop hl
-	ld bc, SCREEN_WIDTH + 5 ; 1 row down and 5 columns right
-	add hl,bc
-	ld c,$a3 ; no leading zeroes, right-aligned, print currency symbol, 3 bytes
-	call PrintBCDNumber
-.skipPrintingItemPrice
-	ld a,[wListMenuID]
-	and a
-	jr nz,.skipPrintingPokemonLevel
-.printPokemonLevel
-	ld a,[wd11e]
-	push af
-	push hl
-	ld hl,wPartyCount
-	ld a,[wListPointer]
-	cp l ; is it a list of party pokemon or box pokemon?
-	ld a,PLAYER_PARTY_DATA
-	jr z,.next
-	ld a,BOX_DATA
-.next
-	ld [wMonDataLocation],a
-	ld hl,wWhichPokemon
-	ld a,[hl]
-	ld b,a
-	ld a,$04
-	sub b
-	ld b,a
-	ld a,[wListScrollOffset]
-	add b
-	ld [hl],a
-	call LoadMonData
-	ld a,[wMonDataLocation]
-	and a ; is it a list of party pokemon or box pokemon?
-	jr z,.skipCopyingLevel
-.copyLevel
-	ld a,[wLoadedMonBoxLevel]
-	ld [wLoadedMonLevel],a
-.skipCopyingLevel
-	pop hl
-	ld bc,$001c
-	add hl,bc
-	call PrintLevel
-	pop af
-	ld [wd11e],a
-.skipPrintingPokemonLevel
-	pop hl
-	pop de
-	inc de
-	ld a,[wListMenuID]
-	cp ITEMLISTMENU
-	jr nz,.nextListEntry
-.printItemQuantity
-	ld a,[wd11e]
-	ld [wcf91],a
-	call IsKeyItem ; check if item is unsellable
-	ld a,[wIsKeyItem]
-	and a ; is the item unsellable?
-	jr nz,.skipPrintingItemQuantity ; if so, don't print the quantity
-	push hl
-	ld bc, SCREEN_WIDTH + 8 ; 1 row down and 8 columns right
-	add hl,bc
-	ld a,"×"
-	ld [hli],a
-	ld a,[wd11e]
-	push af
-	ld a,[de]
-	ld [wMaxItemQuantity],a
-	push de
-	ld de,wd11e
-	ld [de],a
-	lb bc, 1, 2
-	call PrintNumber
-	pop de
-	pop af
-	ld [wd11e],a
-	pop hl
-.skipPrintingItemQuantity
-	inc de
-	pop bc
-	inc c
-	push bc
-	inc c
-	ld a,[wMenuItemToSwap] ; ID of item chosen for swapping (counts from 1)
-	and a ; is an item being swapped?
-	jr z,.nextListEntry
-	sla a
-	cp c ; is it this item?
-	jr nz,.nextListEntry
-	dec hl
-	ld a,$ec ; unfilled right arrow menu cursor to indicate an item being swapped
-	ld [hli],a
-.nextListEntry
-	ld bc,2 * SCREEN_WIDTH ; 2 rows
-	add hl,bc
-	pop bc
-	inc c
-	dec b
-	jp nz,.loop
-	ld bc,-8
-	add hl,bc
-	ld a,"▼"
-	ld [hl],a
-	ret
-.printCancelMenuItem
-	ld de,ListMenuCancelText
-	jp PlaceString
+	jpab PrintListMenuEntries_
 
 ListMenuCancelText::
 	db "Cancel@"
 
 GetMonName::
+	; NAME-5.29.01: packed Pokémon names are block-indexed in bank 7.
+	; GetPackedMonName reads wd11e itself because callba clobbers A while
+	; switching banks. Keep the legacy contract: preserve HL, DE = wcd6d.
 	push hl
-	ld a,[H_LOADEDROMBANK]
-	push af
-	ld a,BANK(MonsterNames)
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
-	ld a,[wd11e]
-	dec a
-	ld hl,MonsterNames
-	ld c,10
-	ld b,0
-	call AddNTimes
-	ld de,wcd6d
-	push de
-	ld bc,10
-	call CopyData
-	ld hl,wcd6d + 10
-	ld [hl], "@"
-	pop de
-	pop af
-	ld [H_LOADEDROMBANK],a
-	ld [MBC1RomBank],a
+	callba GetPackedMonName
 	pop hl
 	ret
 
@@ -2220,16 +2075,21 @@ IsItemHM::
 	and a
 	ret
 
-; sets carry if move is an HM, clears carry if move is not an HM
-; Input: a = move ID
-IsMoveHM::
-	ld hl,HMMoves
-	ld de,1
-	jp IsInArray
-
-HMMoves::
-	db CUT,FLY,SURF,STRENGTH,DIVE
-	db $ff ; terminator
+; [HM-5.19.0] Legacy HM-move deletion guard, intentionally disabled.
+; Normal move learning can now replace an HM move, so IsMoveHM and HMMoves no
+; longer have live callers. Keep the old implementation commented here for code
+; archaeology; re-enable it only if the HM-forget restriction is restored.
+;
+; ; sets carry if move is an HM, clears carry if move is not an HM
+; ; Input: a = move ID
+; IsMoveHM::
+; 	ld hl,HMMoves
+; 	ld de,1
+; 	jp IsInArray
+;
+; HMMoves::
+; 	db CUT,FLY,SURF,STRENGTH,DIVE
+; 	db $ff ; terminator
 
 GetMoveName::
 	push hl
@@ -2397,7 +2257,8 @@ RunNPCMovementScript::
 
 .NPCMovementScriptPointerTables
 	dw PalletMovementScriptPointerTable
-	dw PewterMuseumGuyMovementScriptPointerTable
+	; PWT-5.40.03: legacy Museum-guide table slot; no Museum movement remains.
+	dw PewterGymGuyMovementScriptPointerTable
 	dw PewterGymGuyMovementScriptPointerTable
 .playerStepOutFromDoor
 	jpba PlayerStepOutFromDoor
@@ -2447,6 +2308,8 @@ LoadGymLeaderAndCityName::
 	ld bc, NAME_LENGTH
 	jp CopyData     ; load gym leader name
 
+; TRH-5.44.00: TrainerHeader is now 10 bytes and stores one end-battle text
+; pointer. Offset 0 is the flag bit; every other valid field is a pointer.
 ; reads specific information from trainer header (pointed to at wTrainerHeaderPtr)
 ; a: offset in header data
 ;    0 -> flag's bit (into wTrainerHeaderFlagBit)
@@ -2456,40 +2319,24 @@ LoadGymLeaderAndCityName::
 ;    8 -> end battle text (into hl)
 ReadTrainerHeaderInfo::
 	push de
-	push af
-	ld d, $0
 	ld e, a
+	ld d, $0
 	ld hl, wTrainerHeaderPtr
 	ld a, [hli]
 	ld l, [hl]
 	ld h, a
 	add hl, de
-	pop af
+	ld a, e
 	and a
-	jr nz, .nonZeroOffset
+	jr nz, .readPointer
 	ld a, [hl]
 	ld [wTrainerHeaderFlagBit], a  ; store flag's bit
-	jr .done
-.nonZeroOffset
-	cp $2
-	jr z, .readPointer ; read flag's byte ptr
-	cp $4
-	jr z, .readPointer ; read before battle text
-	cp $6
-	jr z, .readPointer ; read after battle text
-	cp $8
-	jr z, .readPointer ; read end battle text
-	cp $a
-	jr nz, .done
-	ld a, [hli]        ; read end battle text (2) but override the result afterwards (XXX why, bug?)
-	ld d, [hl]
-	ld e, a
-	jr .done
+	pop de
+	ret
 .readPointer
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-.done
 	pop de
 	ret
 
@@ -2500,7 +2347,7 @@ TalkToTrainer::
 	call StoreTrainerHeaderPointer
 	xor a
 	call ReadTrainerHeaderInfo     ; read flag's bit
-	ld a, $2
+	ld a, TRAINER_HEADER_FLAG_PTR
 	call ReadTrainerHeaderInfo     ; read flag's byte ptr
 	ld a, [wTrainerHeaderFlagBit]
 	ld c, a
@@ -2509,19 +2356,19 @@ TalkToTrainer::
 	ld a, c
 	and a
 	jr z, .trainerNotYetFought     ; test trainer's flag
-	ld a, $6
+	ld a, TRAINER_HEADER_AFTER_TEXT
 	call ReadTrainerHeaderInfo     ; print after battle text
 	jp PrintText
 .trainerNotYetFought
-	ld a, $4
+	ld a, TRAINER_HEADER_BEFORE_TEXT
 	call ReadTrainerHeaderInfo     ; print before battle text
 	call PrintText
-	ld a, $a
-	call ReadTrainerHeaderInfo     ; (?) does nothing apparently (maybe bug in ReadTrainerHeaderInfo)
-	push de
-	ld a, $8
+	ld a, TRAINER_HEADER_END_TEXT
 	call ReadTrainerHeaderInfo     ; read end battle text
-	pop de
+; TRH-5.44.01: map TrainerHeaders share one end-battle text, so initialize
+; both runtime win/lose pointers from that same header pointer.
+	ld d, h
+	ld e, l
 	call SaveEndBattleTextPointers
 	ld hl, wFlags_D733
 	set 4, [hl]                    ; activate map script index override (index is set below)
@@ -2597,7 +2444,7 @@ EndTrainerBattle::
 	ld a, [wIsInBattle]
 	cp $ff
 	jr z, EndTrainerBattleWhiteout
-	ld a, $2
+	ld a, TRAINER_HEADER_FLAG_PTR
 	call ReadTrainerHeaderInfo
 	ld a, [wTrainerHeaderFlagBit]
 	ld c, a
@@ -2659,7 +2506,15 @@ InitBattleEnemyParameters::
 .noTrainer
 	ld a, [wEngagedTrainerSet]
 	ld [wCurEnemyLVL], a
+	; WLD-5.62.24: OW_POKEMON retains the exact 1-based map object id in
+	; wSpriteIndex. Bind that static-object identity before battle setup.
+	callba RegionalFormStageStaticObjectEncounter
 	ret
+
+; WLD-5.62.24: tight map-script banks use this tiny ROM0 bridge after writing
+; wCurOpponent. E already contains REGIONAL_WILD_STATIC_SCRIPT | 0-based slot.
+RegionalFormStageStaticEncounter_Bank0::
+	jpba RegionalFormStageStaticEncounter
 
 GetSpritePosition1::
 	ld hl, _GetSpritePosition1
@@ -2691,7 +2546,7 @@ CheckForEngagingTrainers::
 	ld [wTrainerHeaderFlagBit], a
 	cp $ff
 	ret z
-	ld a, $2
+	ld a, TRAINER_HEADER_FLAG_PTR
 	call ReadTrainerHeaderInfo       ; read trainer flag's byte ptr
 	ld b, FLAG_TEST
 	ld a, [wTrainerHeaderFlagBit]
@@ -2719,7 +2574,7 @@ CheckForEngagingTrainers::
 	and a
 	ret nz        ; break if the trainer is engaging
 .continue
-	ld hl, $c
+	ld hl, TRAINER_HEADER_SIZE
 	add hl, de
 	ld d, h
 	ld e, l
@@ -2892,10 +2747,9 @@ DecodeArrowMovementRLE::
 	inc hl
 	jr DecodeArrowMovementRLE
 
-FuncTX_ItemStoragePC::
-	call SaveScreenTilesToBuffer2
-	ld b, BANK(PlayerPC)
-	ld hl, PlayerPC
+FuncTX_RedBedroomPC::
+	ld b, BANK(OpenRedBedroomPC)
+	ld hl, OpenRedBedroomPC
 	jr bankswitchAndContinue
 
 FuncTX_BillsPC::
@@ -3399,14 +3253,19 @@ SaveScreenTilesToBuffer1::
 	jp CopyData
 
 LoadScreenTilesFromBuffer1::
+	call LoadScreenTilesFromBuffer1DisableBGTransfer
+	ld a, 1
+	ld [H_AUTOBGTRANSFERENABLED], a
+	ret
+
+; loads screen tiles stored in wTileMapBackup but leaves H_AUTOBGTRANSFERENABLED disabled
+LoadScreenTilesFromBuffer1DisableBGTransfer::
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED], a
 	ld hl, wTileMapBackup
 	coord de, 0, 0
 	ld bc, SCREEN_WIDTH * SCREEN_HEIGHT
 	call CopyData
-	ld a, 1
-	ld [H_AUTOBGTRANSFERENABLED], a
 	ret
 
 DelayFrames::
@@ -3563,11 +3422,50 @@ GetName::
 	ld a,b          ;wanted entry
 	cp c
 	jr nz,.nextName
+
+	; Types 2-4 are packed ROM tables (type 3 aliases MoveNames), and type 7 is
+	; the packed trainer table. MONSTER_NAME uses its dedicated packed block-index
+	; path in GetMonName; types 5/6 are RAM OT-name lists and stay raw.
+	ld a,[wNameListType]
+	cp PLAYEROT_NAME
+	jr c,.packedName
+	cp TRAINER_NAME
+	jr z,.packedName
+
 	ld h,d
 	ld l,e
 	ld de,wcd6d
 	ld bc,$0014
 	call CopyData
+	jr .gotPtr
+
+.packedName
+	; DE=start, HL=one byte past @. The decoder consumes this metadata before
+	; reusing wcd6d as its in-place packed/input and expanded/output buffer.
+	ld a,e
+	ld [wcd6d],a
+	ld a,d
+	ld [wcd6d + 1],a
+	ld a,[wPredefBank]
+	ld [wcd6d + 2],a
+	ld a,l
+	sub e
+	ld c,a
+	ld a,h
+	sbc d
+	jr nz,.packedNameTooLong
+	ld a,c
+	ld [wcd6d + 3],a
+	callba DecodePackedName
+	ld de,wcd6d
+	jr .gotPtr
+
+.packedNameTooLong
+	; Current names are <= 20 bytes and cannot reach this path. Keep a safe
+	; terminator rather than truncating from an invalid >255-byte packed entry.
+	ld de,wcd6d
+	ld a,"@"
+	ld [de],a
 .gotPtr
 	ld a,e
 	ld [wUnusedCF8D],a
@@ -3791,6 +3689,32 @@ PrintLetterDelay::
 	push hl
 	push de
 	push bc
+
+	; TEXT-5.62.205: only prioritize actual glyphs in the bottom six
+	; tilemap rows. A text delay may also belong to a number or menu
+	; elsewhere on the screen; those must keep the ordinary refresh cycle.
+	ld a, h
+	cp HIGH(wTileMap + 12 * SCREEN_WIDTH)
+	jr c, .normalTransfer
+	jr nz, .checkTextEnd
+	ld a, l
+	cp LOW(wTileMap + 12 * SCREEN_WIDTH)
+	jr c, .normalTransfer
+.checkTextEnd
+	ld a, h
+	cp HIGH(wTileMap + SCREEN_HEIGHT * SCREEN_WIDTH)
+	jr c, .requestBottomRefresh
+	jr nz, .normalTransfer
+	ld a, l
+	cp LOW(wTileMap + SCREEN_HEIGHT * SCREEN_WIDTH)
+	jr nc, .normalTransfer
+.requestBottomRefresh
+	ld a, [H_AUTOBGTRANSFERENABLED]
+	and a
+	jr z, .normalTransfer
+	ld a, 1
+	ld [hTextBottomRefreshRequest], a
+.normalTransfer
 	ld a,[wLetterPrintingDelayFlags]
 	bit 0,a
 	jr z,.waitOneFrame
@@ -4000,6 +3924,18 @@ HandleMenuInput_::
 .getJoypadState
 	pop hl
 	call JoypadLowSensitivity
+	; START -> Bag keeps low-sensitivity repeat for normal menu controls, but the
+	; HM01 shortcut itself is edge-triggered. Strip held/repeated START after its
+	; initial press so holding START never retriggers or blocks direction input.
+	ld a,[wBagPocketActive]
+	cp BAG_POCKET_MODE_START
+	jr nz,.bagStartInputReady
+	ld a,[hJoyPressed]
+	bit BIT_START,a
+	jr nz,.bagStartInputReady
+	ld hl,hJoy5
+	res BIT_START,[hl]
+.bagStartInputReady
 	ld a,[hJoy5]
 	and a ; was a key pressed?
 	jr nz,.keyPressed
@@ -4269,30 +4205,6 @@ AutoTextBoxDrawingCommon::
 	ld [wDoNotWaitForButtonPressAfterDisplayingText],a ; make DisplayTextID wait for button press
 	ret
 
-; Save the exact Bill's PC mon-list screen before the action menu covers it.
-; Buffer 1 is restored on B/Cancel so the existing bottom message text is kept.
-PrepareBillsPCActionMenu::
-	call SaveScreenTilesToBuffer1
-	xor a
-	ld [wCurrentMenuItem], a
-	ret
-
-; Tail-called by DisplayDepositWithdrawMenu when B/Cancel is chosen.
-RestoreBillsPCActionMenuAndCancel::
-	call LoadScreenTilesFromBuffer1
-	and a
-	ret
-
-; Restore the underlying list after Stats and redraw the action menu on top.
-RestoreBillsPCActionMenuAfterStats::
-	call LoadScreenTilesFromBuffer1
-	call ReloadTilesetTilePatterns
-	call RunDefaultPaletteCommand
-	call LoadGBPal
-	ld a, 1
-	ld [wCurrentMenuItem], a
-	ret
-
 PrintText::
 ; Print text hl at (1, 14).
 	push hl
@@ -4306,6 +4218,11 @@ PrintText_NoCreatingTextBox::
 	coord bc, 1, 14
 	jp TextCommandProcessor
 
+; PTE-5.50.00: share the common PrintText -> TextScriptEnd tail used by scripts.
+PrintTextAndTextScriptEnd::
+	call PrintText
+	jp TextScriptEnd
+
 
 PrintNumber::
 ; Print the c-digit, b-byte value at de.
@@ -4313,7 +4230,9 @@ PrintNumber::
 ; the value to char "0" instead of calling PrintNumber.
 ; Flags LEADING_ZEROES and LEFT_ALIGN can be given
 ; in bits 7 and 6 of b respectively.
-	push bc
+;
+; Read caller-bank ROMX data while still executing in HOME. The ROMX formatter
+; only consumes H_NUMTOPRINT, so switching banks cannot change the meaning of DE.
 	xor a
 	ld [H_PASTLEADINGZEROES], a
 	ld [H_NUMTOPRINT], a
@@ -4333,7 +4252,7 @@ PrintNumber::
 	inc de
 	ld a, [de]
 	ld [H_NUMTOPRINT + 2], a
-	jr .start
+	jr .runFormatter
 
 .word
 	ld a, [de]
@@ -4341,190 +4260,31 @@ PrintNumber::
 	inc de
 	ld a, [de]
 	ld [H_NUMTOPRINT + 2], a
-	jr .start
+	jr .runFormatter
 
 .byte
 	ld a, [de]
 	ld [H_NUMTOPRINT + 2], a
 
-.start
+.runFormatter
+	ld a,[H_LOADEDROMBANK]
+	push af
+	ld a,BANK(PrintNumber_)
+	call SetRomBank
+	call PrintNumber_
+	push af
+	push bc
 	push de
-
-	ld d, b
-	ld a, c
-	ld b, a
-	xor a
-	ld c, a
-	ld a, b
-
-	cp 2
-	jr z, .tens
-	cp 3
-	jr z, .hundreds
-	cp 4
-	jr z, .thousands
-	cp 5
-	jr z, .ten_thousands
-	cp 6
-	jr z, .hundred_thousands
-
-print_digit: macro
-
-if (\1) / $10000
-	ld a, \1 / $10000 % $100
-else
-	xor a
-endc
-	ld [H_POWEROFTEN + 0], a
-
-if (\1) / $100
-	ld a, \1 / $100   % $100
-else
-	xor a
-endc
-	ld [H_POWEROFTEN + 1], a
-
-	ld a, \1 / $1     % $100
-	ld [H_POWEROFTEN + 2], a
-
-	call .PrintDigit
-	call .NextDigit
-endm
-
-.millions          print_digit 1000000
-.hundred_thousands print_digit 100000
-.ten_thousands     print_digit 10000
-.thousands         print_digit 1000
-.hundreds          print_digit 100
-
-.tens
-	ld c, 0
-	ld a, [H_NUMTOPRINT + 2]
-.mod
-	cp 10
-	jr c, .ok
-	sub 10
-	inc c
-	jr .mod
-.ok
-
-	ld b, a
-	ld a, [H_PASTLEADINGZEROES]
-	or c
-	ld [H_PASTLEADINGZEROES], a
-	jr nz, .past
-	call .PrintLeadingZero
-	jr .next
-.past
-	ld a, "0"
-	add c
-	ld [hl], a
-.next
-
-	call .NextDigit
-.ones
-	ld a, "0"
-	add b
-	ld [hli], a
+	push hl
+	ld hl,sp + 9 ; saved caller ROM bank is the A byte of the older AF entry
+	ld a,[hl]
+	call SetRomBank
+	pop hl
 	pop de
-	dec de
 	pop bc
-	ret
-
-.PrintDigit:
-; Divide by the current decimal place.
-; Print the quotient, and keep the modulus.
-	ld c, 0
-.loop
-	ld a, [H_POWEROFTEN]
-	ld b, a
-	ld a, [H_NUMTOPRINT]
-	ld [H_SAVEDNUMTOPRINT], a
-	cp b
-	jr c, .underflow0
-	sub b
-	ld [H_NUMTOPRINT], a
-	ld a, [H_POWEROFTEN + 1]
-	ld b, a
-	ld a, [H_NUMTOPRINT + 1]
-	ld [H_SAVEDNUMTOPRINT + 1], a
-	cp b
-	jr nc, .noborrow1
-
-	ld a, [H_NUMTOPRINT]
-	or 0
-	jr z, .underflow1
-	dec a
-	ld [H_NUMTOPRINT], a
-	ld a, [H_NUMTOPRINT + 1]
-.noborrow1
-
-	sub b
-	ld [H_NUMTOPRINT + 1], a
-	ld a, [H_POWEROFTEN + 2]
-	ld b, a
-	ld a, [H_NUMTOPRINT + 2]
-	ld [H_SAVEDNUMTOPRINT + 2], a
-	cp b
-	jr nc, .noborrow2
-
-	ld a, [H_NUMTOPRINT + 1]
-	and a
-	jr nz, .borrowed
-
-	ld a, [H_NUMTOPRINT]
-	and a
-	jr z, .underflow2
-	dec a
-	ld [H_NUMTOPRINT], a
-	xor a
-.borrowed
-
-	dec a
-	ld [H_NUMTOPRINT + 1], a
-	ld a, [H_NUMTOPRINT + 2]
-.noborrow2
-	sub b
-	ld [H_NUMTOPRINT + 2], a
-	inc c
-	jr .loop
-
-.underflow2
-	ld a, [H_SAVEDNUMTOPRINT + 1]
-	ld [H_NUMTOPRINT + 1], a
-.underflow1
-	ld a, [H_SAVEDNUMTOPRINT]
-	ld [H_NUMTOPRINT], a
-.underflow0
-	ld a, [H_PASTLEADINGZEROES]
-	or c
-	jr z, .PrintLeadingZero
-
-	ld a, "0"
-	add c
-	ld [hl], a
-	ld [H_PASTLEADINGZEROES], a
-	ret
-
-.PrintLeadingZero:
-	bit BIT_LEADING_ZEROES, d
-	ret z
-	ld [hl], "0"
-	ret
-
-.NextDigit:
-; Increment unless the number is left-aligned,
-; leading zeroes are not printed, and no digits
-; have been printed yet.
-	bit BIT_LEADING_ZEROES, d
-	jr nz, .inc
-	bit BIT_LEFT_ALIGN, d
-	jr z, .inc
-	ld a, [H_PASTLEADINGZEROES]
-	and a
-	ret z
-.inc
-	inc hl
+	pop af
+	inc sp
+	inc sp
 	ret
 
 
@@ -4841,7 +4601,9 @@ const_value = 1
 	add_tx_pre BookOrSculptureText                  ; 40
 	add_tx_pre ElevatorText                         ; 41
 	add_tx_pre PokemonStuffText                     ; 42
-	add_tx_pre WonderTradeMachineText               ; 43
+	; WTR-5.53.00: Wonder Trade was removed. Keep slot $43 reserved so later
+	; HOME entry offsets remain unchanged.
+UnusedPredefText43_id:: dw UnusedPredefText           ; 43 XXX unused/reserved
 	
 SetCustomName:
 ; INPUTS: hl = pointer to name
@@ -4957,4 +4719,13 @@ GetCurrentMoveID::
 	ret
 .enemy
 	ld a, [wEnemySelectedMove]
+	ret
+
+; YNP-5.52.01: keep this shared prompt tail at the end of HOME so existing
+; HOME entry points retain their addresses.
+PrintTextAndYesNoChoice::
+	call PrintText
+	call YesNoChoice
+	ld a, [wCurrentMenuItem]
+	and a
 	ret

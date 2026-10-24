@@ -9,6 +9,7 @@ EnterMap::
 	ld [wJoyIgnore], a
 	call LoadMapData
 	callba ClearVariablesOnEnterMap
+	callab UpdateSeafoamEntranceSource
 	ld hl, wd72c
 	bit 0, [hl] ; has the player already made 3 steps since the last battle?
 	jr z, .skipGivingThreeStepsOfNoRandomBattles
@@ -24,6 +25,11 @@ EnterMap::
 	ld a, [hl]
 	and 1 << 4 | 1 << 3 ; fly warp or dungeon warp
 	jr z, .didNotEnterUsingFlyWarpOrDungeonWarp
+	; MAPFLOOR-5.19.44: for non-Fly warp pads, prepare a changed destination
+	; floor sign before EnterMapAnim fades the target map in. This prevents the
+	; destination's sprites/BG details from flashing before the bottom Window appears.
+	callab PrimeMapNameSignForWarpPad
+	ld hl, wd732 ; callab does not preserve HL
 	res 3, [hl]
 	callba EnterMapAnim
 	call UpdateSprites
@@ -44,6 +50,7 @@ OverworldLoopLessDelay::
 	; 60FPS: GBC double-speed is already enabled by InitGbcMode, so only one
 	; VBlank wait is needed for each normal overworld update.
 	call LoadGBPal
+	callab UpdateMapNameSign ; MAPSIGN-5.19.36
 	ld a,[wd736]
 	bit 6,a ; jumping down a ledge?
 	call nz, HandleMidJump
@@ -76,7 +83,8 @@ OverworldLoopLessDelay::
 	bit 2,a ; select button
 	jr z,.selectButtonNotPressed
 ; if SELECT is pressed
-	farcall TryRideBike
+	farcall TryFishOrRideBike ; FIS-5.62.84: shore fishing, otherwise original bike shortcut
+	jp c, OverworldLoop ; shortcut text/cast consumed this frame's buttons
 .selectButtonNotPressed
 	bit 3,a ; start button
 	jr z,.startButtonNotPressed
@@ -1810,9 +1818,11 @@ CollisionCheckOnWater::
 	jr z,.stopSurfing ; stop surfing if the tile is passable
 	jr .loop
 .collision
-	ld a,[wChannelSoundIDs + Ch4]
-	cp SFX_COLLISION ; check if collision sound is already playing
-	jr z,.setCarry
+	; Match land collision behavior: use the active SFX channel state
+	; instead of the legacy sound-ID byte, which can retrigger while held.
+	ld hl, Channel5 + Channel1Flags - Channel1
+	bit 0, [hl]
+	jr nz,.setCarry
 	ld a,SFX_COLLISION
 	call PlaySound ; play collision sound (if it's not already playing)
 .setCarry
@@ -1872,9 +1882,7 @@ LoadWalkingPlayerSpriteGraphics::
 	jr LoadPlayerSpriteGraphicsCommon
 
 LoadSurfingPlayerSpriteGraphics::
-	ld de,SurfingLapras
-	ld hl,vNPCSprites
-	jr LoadPlayerSpriteGraphicsCommon
+	jpba LoadSurfingPlayerSpriteGraphicsByUser
 
 LoadBikePlayerSpriteGraphics::
 	ld de,RedCyclingSprite
@@ -2197,6 +2205,7 @@ LoadMapData::
 	ld a,[H_LOADEDROMBANK]
 	push af
 	call DisableLCD
+	callab LoadMapNameSignGFX ; MAPSIGN-5.19.36: private CGB VRAM bank 1 copy
 	ld a,$98
 	ld [wMapViewVRAMPointer + 1],a
 	xor a

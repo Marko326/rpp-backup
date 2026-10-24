@@ -1,4 +1,3 @@
-db DEX_PONYTA ; pokedex id
 db 50 ; base hp
 db 85 ; base attack
 db 55 ; base defense
@@ -6,7 +5,8 @@ db 90 ; base speed
 db 65 ; base special
 db FIRE ; species type 1
 db FIRE ; species type 2
-db 190 ; catch rate
+PONYTA_CATCH_RATE EQU 190 ; existing normal species catch rate, form guard only
+db PONYTA_CATCH_RATE ; catch rate
 db 152 ; base exp yield
 INCBIN "pic/bmon/ponyta.pic",0,1 ; 66, sprite dimensions
 dw PonytaPicFront
@@ -14,9 +14,6 @@ dw PonytaPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 5,6,7,8
 	tmlearn 9,10,16

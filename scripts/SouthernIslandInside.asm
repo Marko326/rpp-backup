@@ -1,16 +1,8 @@
 SouthernIslandInsideScript:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, SouthernIslandInsideTrainerHeaders
-	ld de, SouthernIslandInsideScriptPointers
-	ld a, [wSouthernIslandInsideCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSouthernIslandInsideCurScript], a
-	ret
-
-SouthernIslandInsideScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wSouthernIslandInsideCurScript
+	jp Bank34RunStandardTrainerMapScript
 
 SouthernIslandInsideTextPointers:
 	dw SouthernIslandInsideText1
@@ -25,7 +17,6 @@ SouthernIslandInsideTrainerHeader0:
 	dw SouthernIslandInsideLatiosText ; TextBeforeBattle
 	dw SouthernIslandInsideLatiosText ; TextAfterBattle
 	dw SouthernIslandInsideLatiosText ; TextEndBattle
-	dw SouthernIslandInsideLatiosText ; TextEndBattle
 
 SouthernIslandInsideTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SOUTHERN_INSIDE_TRAINER_1
@@ -34,21 +25,14 @@ SouthernIslandInsideTrainerHeader1:
 	dw SouthernIslandInsideLatiasText ; TextBeforeBattle
 	dw SouthernIslandInsideLatiasText ; TextAfterBattle
 	dw SouthernIslandInsideLatiasText ; TextEndBattle
-	dw SouthernIslandInsideLatiasText ; TextEndBattle
 	
 	db $ff
 
 SouthernIslandInsideText1:
-	TX_ASM
-	ld hl, SouthernIslandInsideTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
-	
+	TX_TRAINER SouthernIslandInsideTrainerHeader0
+
 SouthernIslandInsideText2:
-	TX_ASM
-	ld hl, SouthernIslandInsideTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SouthernIslandInsideTrainerHeader1
 
 SouthernIslandInsideLatiosText:
 	TX_FAR _SouthernIslandInsideLatiText

@@ -1,4 +1,3 @@
-db DEX_CUBONE ; pokedex id
 db 50 ; base hp
 db 50 ; base attack
 db 95 ; base defense
@@ -14,9 +13,6 @@ dw CubonePicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 9,10
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,8
 	tmlearn 9,10,13,14,16

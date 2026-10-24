@@ -1,4 +1,3 @@
-db DEX_SANDSHREW ; pokedex id
 db 50 ; base hp
 db 75 ; base attack
 db 85 ; base defense
@@ -6,7 +5,8 @@ db 40 ; base speed
 db 30 ; base special
 db GROUND ; species type 1
 db GROUND ; species type 2
-db 255 ; catch rate
+SANDSHREW_CATCH_RATE EQU 255
+db SANDSHREW_CATCH_RATE ; catch rate
 db 93 ; base exp yield
 INCBIN "pic/bmon/sandshrew.pic",0,1 ; 55, sprite dimensions
 dw SandshrewPicFront
@@ -14,9 +14,6 @@ dw SandshrewPicBack
 ; move tutor compatibility flags
 	m_tutor 0
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,3,6,8
 	tmlearn 9,10,16

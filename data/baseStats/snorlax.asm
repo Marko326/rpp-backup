@@ -1,4 +1,3 @@
-db DEX_SNORLAX ; pokedex id
 db 160 ; base hp
 db 110 ; base attack
 db 65 ; base defense
@@ -14,9 +13,6 @@ dw SnorlaxPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 1,5,6,8
 	tmlearn 9,10,11,12,13,14,15,16

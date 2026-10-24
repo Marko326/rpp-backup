@@ -1,6 +1,6 @@
-IF DEF(_BLUE)
+; DUAL-5.19.23: both Red++ and Blue++ use the Hard ruleset.
+; _RED/_BLUE now identify version-specific content only.
 _HARD EQU 1
-ENDC
 
 ; uncomment this to build snowy roms
 ;_SNOW EQU 1

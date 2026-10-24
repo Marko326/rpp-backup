@@ -1,6 +1,3 @@
-FarawayIslandOutsideScript:
-	jp EnableAutoTextBoxDrawing
-
 FarawayIslandOutsideTextPointers:
 	dw FarawayIslandCaptainText
 	dw FarawayIslandBerryTreeText

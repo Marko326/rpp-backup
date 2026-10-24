@@ -1,7 +1,3 @@
-FuchsiaHouse1Script:
-	call EnableAutoTextBoxDrawing
-	ret
-
 FuchsiaHouse1TextPointers:
 	dw FuchsiaHouse1Text1
 	dw FuchsiaHouse1Text2

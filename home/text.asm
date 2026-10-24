@@ -401,6 +401,8 @@ NextTextCommand::
 	ret
 .doTextCommand
 	push hl
+	cp a, $18
+	jr z, TextCommand18
 	cp a, $17
 	jp z, TextCommand17
 	cp a, $0e
@@ -417,6 +419,20 @@ NextTextCommand::
 	ld h, [hl]
 	ld l, a
 	jp hl
+
+; TTX-5.45.00: ordinary map trainer
+; 18AAAA
+; AAAA = TrainerHeader address in the current map bank
+TextCommand18::
+	pop hl
+	ld a, [hli]
+	ld h, [hl]
+	ld l, a
+	; Match TX_ASM's continuation/register setup before entering TalkToTrainer.
+	ld de, NextTextCommand
+	push de
+	call TalkToTrainer
+	jp TextScriptEnd
 
 ; draw box
 ; 04AAAABBCC
@@ -645,7 +661,13 @@ TextCommandSounds::
 	db $10, SFX_GET_ITEM_2
 	db $11, SFX_GET_KEY_ITEM
 	db $13, SFX_DEX_PAGE_ADDED
-	db $14, SYLVEON ; used in OakSpeech
+; NEW-5.61.08: Oak's first shown Pokémon follows the build version.
+IF DEF(_RED)
+	db $14, NIDORINO
+ENDC
+IF DEF(_BLUE)
+	db $14, NIDORINA
+ENDC
 	db $15, PIDGEOT  ; used in SaffronCityText12
 	db $16, DEWGONG  ; unused?
 

@@ -9,6 +9,10 @@ PlayIntro:
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call PlayShootingStar
 	call PlayIntroScene
+	jr nc, .finishIntroScene
+	; SFX-5.62.140: an A/START skip must not carry battle SFX into the title.
+	callba StopInterruptedIntroSFX
+.finishIntroScene
 	call GBFadeOutToWhite
 	xor a
 	ld [hSCX], a
@@ -302,6 +306,7 @@ LoadIntroGraphics:
 	jp FarCopyData2
 
 PlayShootingStar:
+; MENU-5.62.139: always show Mateo Presents, with or without Continue.
 ; load Meowth palette to screen and call Mateo Presents instead of Nintendo Creatures Gamefreak
 	ld a, MEOWTH
 	ld [wWholeScreenPaletteMonSpecies],a
@@ -331,9 +336,11 @@ PlayShootingStar:
 	ld c, 64
 	call DelayFrames
 	callba AnimateShootingStar
-	push af
-	pop af
-	jr c, .next ; skip the delay if the user interrupted the animation
+	jr nc, .starCompleted
+	; SFX-5.62.140: cut the shooting-star effect before starting battle BGM.
+	callba StopInterruptedIntroSFX
+	jr .next
+.starCompleted
 	ld c, 40
 	call DelayFrames
 .next
@@ -450,9 +457,16 @@ FightIntroBackMon:
 FightIntroBackMonEnd:
 
 FightIntroFrontMon:
+IF DEF(_RED)
 	INCBIN "gfx/red/intro_nido_1.6x6.2bpp"
 	INCBIN "gfx/red/intro_nido_2.6x6.2bpp"
 	INCBIN "gfx/red/intro_nido_3.6x6.2bpp"
+ENDC
+IF DEF(_BLUE)
+	INCBIN "gfx/blue/intro_purin_1.6x6.2bpp"
+	INCBIN "gfx/blue/intro_purin_2.6x6.2bpp"
+	INCBIN "gfx/blue/intro_purin_3.6x6.2bpp"
+ENDC
 FightIntroFrontMonEnd:
 
 	ds $10 ; blank tile

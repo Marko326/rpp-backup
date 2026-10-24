@@ -1,5 +1,4 @@
 HoundourBaseStats:
-db DEX_HOUNDOUR ; pokedex id
 db 45 ; base hp
 db 60 ; base attack
 db 30 ; base defense
@@ -15,9 +14,6 @@ dw HoundourPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,16

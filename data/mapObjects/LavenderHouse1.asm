@@ -14,7 +14,3 @@ LavenderHouse1Object:
 	object SPRITE_SLOWBRO, $1, $3, STAY, NONE, $4 ; person
 	object SPRITE_MR_FUJI, $3, $1, STAY, NONE, $5 ; person
 	object SPRITE_BOOK, $3, $4, STAY, NONE, $6 ; person
-
-	; warp-to
-	EVENT_DISP LAVENDER_HOUSE_1_WIDTH, $7, $2
-	EVENT_DISP LAVENDER_HOUSE_1_WIDTH, $7, $3

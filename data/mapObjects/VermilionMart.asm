@@ -11,7 +11,3 @@ VermilionMartObject:
 	object SPRITE_MART_GUY, $0, $5, STAY, RIGHT, $1 ; person
 	object SPRITE_BLACK_HAIR_BOY_1, $7, $5, STAY, NONE, $2 ; person
 	object SPRITE_LASS, $3, $3, WALK, $2, $3 ; person
-
-	; warp-to
-	EVENT_DISP VERMILION_MART_WIDTH, $7, $3
-	EVENT_DISP VERMILION_MART_WIDTH, $7, $4

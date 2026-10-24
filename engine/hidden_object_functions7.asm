@@ -104,8 +104,7 @@ SafariGameOverText:
 	call PrintText
 .noMoreSafariBalls
 	ld hl, GameOverText
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 TimesUpText:
 	TX_FAR _TimesUpText

@@ -1,6 +1,3 @@
-ViridianHouseScript:
-	jp EnableAutoTextBoxDrawing
-
 ViridianHouseTextPointers:
 	dw ViridianHouseText1
 	dw ViridianHouseText2

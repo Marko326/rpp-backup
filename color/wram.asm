@@ -45,12 +45,21 @@ W2_UpdatedWindowPortion        EQU $d78a
 ; Set if a row or column on the map was drawn during the current vblank.
 W2_DrewRowOrColumn             EQU $d78b
 
-; Palette of the current pokemon (remembered here so pokemon have correct palette when
-; transformed)
-W2_BattleMonPalette            EQU $d78c
+; TRN-5.62.18: Transform palette state. Bits 0/1 are the short-lived player/enemy
+; animation staging flags; bits 2/3 record that the corresponding full 8-byte cache
+; was actually populated. The valid bits prevent legacy temporary Transformed status
+; uses (notably capture DV preservation) from reading an uninitialized palette cache.
+; This reuses the byte that previously cached one stock palette ID.
+W2_TransformPaletteStaging     EQU $d78c
 
 ; Used by "WindowTransferBgRowsAndColors" function. Analagous to H_VBCOPYBGNUMROWS.
 W2_VBCOPYBGNUMROWS             EQU $d78d
+
+; TRN-5.62.18: Transform preserves the user's exact pre-transform CGB palette.
+; Cache the complete BG palette rather than trying to reconstruct normal/regional/shiny
+; identity after the battle struct has been replaced by the Transform target.
+W2_TransformPlayerPalette      EQU $d78e ; 8 bytes
+W2_TransformEnemyPalette       EQU $d796 ; 8 bytes
 
 ; In bank 1, the stack starts at $dfff. So, that's also the stack here when bank 2 is
 ; loaded. Don't use anything too close to there.

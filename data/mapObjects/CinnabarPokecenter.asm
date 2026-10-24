@@ -13,7 +13,3 @@ CinnabarPokecenterObject:
 	object SPRITE_GENTLEMAN, $2, $6, STAY, NONE, $3 ; person
 	object SPRITE_CABLE_CLUB_WOMAN, $b, $2, STAY, DOWN, $4 ; person
 	object SPRITE_BENCH_GUY, $0, $4, STAY, NONE, $5
-
-	; warp-to
-	EVENT_DISP CINNABAR_POKECENTER_WIDTH, $7, $3
-	EVENT_DISP CINNABAR_POKECENTER_WIDTH, $7, $4

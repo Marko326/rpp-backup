@@ -9,7 +9,3 @@ RocketHideoutElevatorObject:
 	db $1, $1, $1 ; RocketHideoutElevatorText1
 
 	db $0 ; objects
-
-	; warp-to
-	EVENT_DISP ROCKET_HIDEOUT_ELEVATOR_WIDTH, $1, $2 ; ROCKET_HIDEOUT_1
-	EVENT_DISP ROCKET_HIDEOUT_ELEVATOR_WIDTH, $1, $3 ; ROCKET_HIDEOUT_1

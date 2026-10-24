@@ -1,5 +1,4 @@
 HoundoomBaseStats:
-db DEX_HOUNDOOM ; pokedex id
 db 75 ; base hp
 db 90 ; base attack
 db 50 ; base defense
@@ -15,9 +14,6 @@ dw HoundoomPicBack
 ; move tutor compatibility flags
 	m_tutor 8
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,8
 	tmlearn 9,10,15,16

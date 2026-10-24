@@ -1,6 +1,3 @@
-PewterHouse1Script:
-	jp EnableAutoTextBoxDrawing
-
 PewterHouse1TextPointers:
 	dw PewterHouse1Text1
 	dw PewterHouse1Text2

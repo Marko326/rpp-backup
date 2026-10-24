@@ -1,4 +1,3 @@
-db DEX_DRATINI ; pokedex id
 db 41 ; base hp
 db 64 ; base attack
 db 45 ; base defense
@@ -14,9 +13,6 @@ dw DratiniPicBack
 ; move tutor compatibility flags
 	m_tutor 6
 	m_tutor 0
-	m_tutor 0
-	m_tutor 0
-db 5 ; growth rate
 ; learnset
 	tmlearn 6,7,8
 	tmlearn 9,10,11,12,13,14,15,16

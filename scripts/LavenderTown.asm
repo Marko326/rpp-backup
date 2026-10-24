@@ -1,6 +1,3 @@
-LavenderTownScript:
-	jp EnableAutoTextBoxDrawing
-
 LavenderTownTextPointers:
 	dw LavenderTownText1
 	dw LavenderTownText2
@@ -15,16 +12,12 @@ LavenderTownTextPointers:
 LavenderTownText1:
 	TX_ASM
 	ld hl, LavenderTownText_4413c
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ld hl, LavenderTownText_44146
 	jr nz, .asm_40831
 	ld hl, LavenderTownText_44141
 .asm_40831
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 LavenderTownText_4413c:
 	TX_FAR _LavenderTownText_4413c

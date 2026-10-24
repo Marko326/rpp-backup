@@ -58,9 +58,9 @@ Route17Name:
 Route18Name:
 	db "Route 18@"
 Route19Name:
-	db "Route 19@"
+	db "SeaRoute 19@"
 Route20Name:
-	db "Route 20@"
+	db "SeaRoute 20@"
 Route21Name:
 	db "Route 21@"
 Route22Name:
@@ -77,6 +77,8 @@ MountMoonName:
 	db "Mt. Moon@"
 MountMoonSquareName:
 	db "Mt. Moon_Square@"
+CeladonDeptRoofName:
+	db "CeladonDept_Roof@"
 RockTunnelName:
 	db "Rock Tunnel@"
 SeaCottageName:
@@ -107,3 +109,10 @@ CeruleanCaveName:
 	db "Cerulean_Cave@"
 PowerPlantName:
 	db "Power Plant@"
+; LNK-5.55.00: exact Cable Club names used by the Town Map/map-name paths.
+TradeCenterName:
+	db "Trade Center@"
+ColosseumName:
+	db "Colosseum@"
+Colosseum50Name:
+	db "Colosseum 50@"

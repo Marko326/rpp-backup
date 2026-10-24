@@ -1,3 +1,7 @@
+; Keep names readable in source; RGBDS packs common phrases with the shared
+; packed_names charmap. Runtime GetName expands them back to main-charmap bytes.
+SETCHARMAP packed_names
+
 MoveNames::
 	db "Pound@"
 	db "Karate Chop@"
@@ -11,7 +15,7 @@ MoveNames::
 	db "Scratch@"
 	db "Vice Grip@"
 	db "Guillotine@"
-	db "Razor Wind@"
+	db "Spark@"
 	db "Swords Dance@"
 	db "Cut@"
 	db "Gust@"
@@ -25,7 +29,7 @@ MoveNames::
 	db "Double Kick@"
 	db "Mega Kick@"
 	db "Jump Kick@"
-	db "Rolling Kick@"
+	db "Aura Sphere@"
 	db "Sand Attack@"
 	db "Headbutt@"
 	db "Horn Attack@"
@@ -138,7 +142,7 @@ MoveNames::
 	db "Glare@"
 	db "Dream Eater@"
 	db "Poison Gas@"
-	db "Barrage@"
+	db "Bullet Seed@"
 	db "Leech Life@"
 	db "Lovely Kiss@"
 	db "Sky Attack@"
@@ -215,13 +219,13 @@ MoveNames::
 	db "Muddy Water@"
 	db "Whirlpool@"
 	db "Giga Drain@"
-	db "PetalBlizard@"
+	db "Energy Ball@"
 	db "Leaf Blade@"
 	db "Wood Hammer@"
 	db "Poison Jab@"
 	db "Gunk Shot@"
 	db "Poison Fang@"
-	db "Sludge Wave@"
+	db "Sludge Bomb@"
 	db "Silver Wind@"
 	db "Bug Buzz@"
 	db "Megahorn@"
@@ -246,10 +250,13 @@ MoveNames::
 	db "Low Sweep@"
 	db "Hurricane@"
 	db "BabyDollEyes@"
-	db "Bone Rush@"
+	db "Sacred Fire@"
 	db "Aeroblast@"
 	db "AncientPower@"
 	db "Dive@"
 	db "Luster Purge@"
 	db "Mind Blast@"
+	; MOV-5.61.31: KEP Iron Head.
+	db "Iron Head@"
 
+SETCHARMAP main

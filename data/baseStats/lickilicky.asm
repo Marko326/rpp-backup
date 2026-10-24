@@ -1,5 +1,4 @@
 LickilickyBaseStats:
-db DEX_LICKILICKY ; pokedex id
 db 110 ; base hp
 db 85 ; base attack
 db 95 ; base defense
@@ -15,9 +14,6 @@ dw LickilickyPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,3,5,6,8
 	tmlearn 9,10,11,12,13,14,15,16

@@ -1,6 +1,3 @@
-SaffronCityScript:
-	jp EnableAutoTextBoxDrawing
-
 SaffronCityTextPointers:
 	dw SaffronCityText1
 	dw SaffronCityText2

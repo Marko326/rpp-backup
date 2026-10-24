@@ -131,27 +131,42 @@ DrawFrameBlock:
 	cp c
 	jp nz,.loop ; go back up if there are more tiles to draw
 .afterDrawingTiles
+	; Dedicated recipes may request a second copy of the FrameBlock that was
+	; just drawn.  Modes 5-6 share a banked duplicate dispatcher and write the
+	; copy into a separate OAM lane, preserving legacy mode-2/mode-4 behavior.
+	; The banked dispatcher preserves DE for the mode-2/mode-3 continuation.
+	ld a,[wExtendedAnimFrameEffect]
+	sub EXT_FRAME_DUPLICATE_OFFSET_6
+	cp 2 ; offset-6 and target-mirror are the two duplicate modes
+	jr nc,.skipExtendedFrameDuplicate
+	callba DuplicateCurrentFrameBlock
+.skipExtendedFrameDuplicate
 	ld a,[wFBMode]
 	cp a,2
 	jr z,.advanceFrameBlockDestAddr; skip delay and don't clean OAM buffer
-	ld a,[wSubAnimFrameDelay]
-	ld c,a
-	call DelayFrames
+	; ANM-5.61.10: keep legacy keyframe timing, but let selected continuous
+	; projectiles update their existing OAM position during the hold VBlanks.
+	; Non-selected/discrete effects still use the original DelayFrames path.
+	call SmoothBattleAnimDelayFrames
 	ld a,[wFBMode]
 	cp a,3
 	jr z,.advanceFrameBlockDestAddr ; skip cleaning OAM buffer
 	cp a,4
 	jr z,.done ; skip cleaning OAM buffer and don't advance the frame block destination address
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.cleanOAM
 	ld a,[wAnimationID]
 	cp a,GROWL
 	jr z,.resetFrameBlockDestAddr
+.cleanOAM
 	call AnimationCleanOAM
 .resetFrameBlockDestAddr
-	ld hl,wOAMBuffer ; OAM buffer
+	call BattleAnimGetFrameDest
 	ld a,l
 	ld [wFBDestAddr + 1],a
 	ld a,h
-	ld [wFBDestAddr],a ; set destination address to beginning of OAM buffer
+	ld [wFBDestAddr],a ; reset to normal base or the lane after a carried source
 	ret
 .advanceFrameBlockDestAddr
 	ld a,e
@@ -161,11 +176,962 @@ DrawFrameBlock:
 .done
 	ret
 
+; Return the first OAM byte available to the active stage. During an overlap
+; bridge, the source pose owns the first N OAM entries and the target renders
+; immediately after them. wOAMBuffer is page-aligned, so count*4 is the low byte.
+BattleAnimGetFrameDest:
+	ld hl,wOAMBuffer
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	ret z
+	and $3f
+	add a
+	add a
+	ld l,a
+	ret
+
+; ANM-5.61.13: carry timing is inert for ordinary animations. Only an active
+; overlap target routes delay VBlanks through the carry lifetime updater.
+BattleAnimDelayFrameMaybeCarry:
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jp z,DelayFrame
+	push bc
+	push de
+	push hl
+	callba BattleAnimCarryDelayFrame
+	pop hl
+	pop de
+	pop bc
+	ret
+
+BattleAnimDelayFramesMaybeCarry:
+	ld a,[wBattleAnimSeamlessStage]
+	bit 7,a
+	jp z,DelayFrames
+.loop
+	push bc
+	call BattleAnimDelayFrameMaybeCarry
+	pop bc
+	dec c
+	jr nz,.loop
+	ret
+
+
+; ---------------------------------------------------------------------------
+; ANM-5.61.10 - smooth selected continuous battle-animation motion
+; ---------------------------------------------------------------------------
+; Keep the original FrameBlock keyframe duration.  During the VBlanks that
+; would otherwise be pure DelayFrames, translate the already-drawn OAM object
+; toward the next BaseCoord.  Graphic/keyframe timing is unchanged.
+;
+; Verified continuous travel phases:
+;   $1B = Leech Seed throw
+;   $3F = Swift stars
+;   $44 = Razor Leaf projectile
+; The discrete Leech Seed landing phase ($1C) and Supersonic/Psywave ($31)
+; remain legacy-timed because interpolation changes their intended motion.
+;
+; ANM-5.61.10 extends the same guarded path to Acid / Sludge, Water Gun and
+; Egg Bomb / Barrage. Water Gun smoothing naturally stops when its FrameBlock
+; changes into the impact splash, which keeps the authored hit timing intact.
+; Acid / Sludge retain their total keyframe delay but move during the final four
+; hold VBlanks so the projectile remains quick instead of drifting slowly.
+; ANM-5.61.27 smooths only their $14 mode-4 impact-droplet legs and, like
+; Swift's edge-exit tail, extrapolates each final droplet along its last segment
+; during the existing hold frames before cleanup. Other $14 users stay legacy.
+;
+; Dedicated / extended move recipes may reuse the same verified allowlist, so
+; Moonblast, Sludge Bomb and Mud Bomb inherit only already-approved
+; projectile stages without opening smoothing to recipe-only commands.
+;
+; ANM-5.61.11 adds the verified single-object parabolas used by Poké Ball,
+; Great Ball, Ultra Ball, Pay Day, Safari Throw Rock and Safari Throw Bait.
+; FrameBlock changes such as Throw Rock impact still fall back to legacy timing.
+;
+
+; ANM-5.61.12 adds the final $22 return profile used by Absorb-family effects.
+; It keeps continuous per-VBlank motion while varying each leg duration to restore
+; the launch/apex/drop weight of the original two-stage drain animation.
+;
+; This code stays in bank $1E with DrawFrameBlock instead of ROM0/HOME.  The
+; same bank also contains SubanimationPointers and FrameBlockBaseCoords, so no
+; bank switch is needed and HOME space is not consumed.
+; ANM-5.61.30: Wing Attack no longer reserves Subanimation56. Reproduce the
+; exact three closing pairs directly from FrameBlock01: left arm is mode 2 so it
+; stays in OAM, right arm is mode 0 so each completed pair holds for 5 frames
+; and then cleans normally. Enemy use keeps the old type-2 transform.
+PlayWingAttackClosingPairs::
+	xor a
+	ld [wWhichBattleAnimTileset],a
+	call LoadAnimationTileset
+
+	ld a,5
+	ld [wSubAnimFrameDelay],a
+	; Keep the generic smooth-delay dispatcher on a known non-whitelisted ID so
+	; these discrete closing beats retain their original legacy timing.
+	ld hl,SubanimationPointers + 2 * $04
+	ld a,l
+	ld [wSubAnimAddrPtr],a
+	ld a,h
+	ld [wSubAnimAddrPtr + 1],a
+
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,2
+	jr nz,.storeTransform
+	xor a
+.storeTransform
+	ld [wSubAnimTransform],a
+
+	; Legacy Wing Attack sound index is its zero-based MoveSoundTable entry.
+	ld a,WING_ATTACK - 1
+	call GetMoveSound
+	call nc,AnimPlaySFX
+
+	ld hl,.pairXs
+	ld a,3
+	ld [wSubAnimCounter],a
+.pairLoop
+	; BattleAnimGetFrameDest returns the OAM destination in HL, so preserve the
+	; .pairXs stream pointer across the call before consuming the next X pair.
+	push hl
+	call BattleAnimGetFrameDest
+	ld a,l
+	ld [wFBDestAddr + 1],a
+	ld a,h
+	ld [wFBDestAddr],a
+	pop hl
+
+	ld a,$28
+	ld [wBaseCoordY],a
+	ld a,[hli]
+	ld [wBaseCoordX],a
+	ld a,2
+	ld [wFBMode],a
+	push hl
+	ld bc,FrameBlock01
+	call DrawFrameBlock
+	pop hl
+
+	ld a,$28
+	ld [wBaseCoordY],a
+	ld a,[hli]
+	ld [wBaseCoordX],a
+	xor a
+	ld [wFBMode],a
+	push hl
+	ld bc,FrameBlock01
+	call DrawFrameBlock
+	pop hl
+
+	ld a,[wSubAnimCounter]
+	dec a
+	ld [wSubAnimCounter],a
+	jr nz,.pairLoop
+	ret
+
+.pairXs
+	; far L/R, middle L/R, near L/R. These are the raw BaseCoord X values
+	; formerly referenced by $15/$19, $B1/$B2 and $16/$18 in Subanimation56.
+	db $68,$88,$6C,$84,$70,$80
+
+SmoothBattleAnimDelayFrames::
+	push bc
+	push de
+	push hl
+
+	; Extended recipes may reuse this helper, but only when their active
+	; Subanimation is already in the verified allowlist below.
+
+	ld a,[wSubAnimFrameDelay]
+	and a
+	jp z,.legacyDelay
+
+	; Convert the pointer-table address back to a compact Subanimation ID and
+	; require an explicit V2 allowlist entry.
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld c,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	and a
+	jp nz,.legacyDelay
+	bit 0,c
+	jp nz,.legacyDelay
+	srl c
+
+	; ANM-5.61.76: enemy Acid / Sludge $13 is corrected at every authored
+	; anchor instead of bending only its final hold toward $14. The first point
+	; stays untouched; the remaining five absorb the exact -16 X / +5 Y boundary
+	; mismatch progressively, so the smoothed projectile remains one trajectory.
+	; The next-anchor path below applies the same correction before DDA deltas are
+	; calculated, avoiding a snap back toward the legacy coordinate between keys.
+	; ANM-5.61.27: Subanimation $14 is shared by several moves. Allow its
+	; persistent mode-4 legs, plus the final mode-0 droplet frame needed for
+	; Swift-style edge extrapolation, only for ordinary Acid / Sludge.
+	ld a,[wFBMode]
+	and a
+	jr z,.checkImpactMode0
+	cp 4
+	jp nz,.legacyDelay
+	ld a,c
+	cp $14
+	jp nz,.legacyDelay
+	push bc
+	call SmoothBattleAnimIsAcidSludgeImpact
+	pop bc
+	jp nz,.legacyDelay
+	jr .motionAllowed
+
+.checkImpactMode0
+	ld a,c
+	cp $14
+	jr nz,.checkStandardWhitelist
+	push bc
+	call SmoothBattleAnimIsAcidSludgeImpact
+	pop bc
+	jp nz,.legacyDelay
+	jr .motionAllowed
+
+.checkStandardWhitelist
+	; Ordinary Lovely Kiss alone uses the $12 curve; scripted Draining
+	; Kiss uses $39. Other script aliases use the legacy delay.
+	; Other $12 aliases and all unrelated $39 callers retain legacy timing.
+	ld a,c
+	cp $12
+	jr z,.checkHeartScript
+	cp $39
+	jr nz,.checkWhitelistTable
+	ld a,[wMoveAnimScriptLoaded]
+	cp 1
+	jp nz,.legacyDelay
+	jr .checkHeartIdentity
+.checkHeartScript
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jp nz,.legacyDelay
+.checkHeartIdentity
+	ld a,[wAnimationID]
+	cp LOVELY_KISS
+	jp nz,.legacyDelay
+	ld a,[wBattleAnimSeamlessStage]
+	and a
+	jp nz,.legacyDelay               ; this renderer is for ordinary OAM only
+	callba PlayLovelyKissCurvedMotion
+	jp .doneSmoothDelay
+.checkWhitelistTable
+	ld hl,SmoothBattleAnimSubanimationIDs
+.checkWhitelist
+	ld a,[hli]
+	cp $ff
+	jp z,.legacyDelay
+	cp c
+	jr nz,.checkWhitelist
+.motionAllowed
+	; ANIM-5.62.85: refresh the Pay Day $52 planar-rotation pose without
+	; disturbing the original bounced/smoothed coordinates.
+	call MaybeUpdatePayDayBounceSpin
+
+	; Swift and Acid / Sludge $14 may use a final velocity tail: continue the
+	; previous segment during existing hold frames before OAM cleanup.
+	ld a,[wSubAnimCounter]
+	cp 2
+	jp c,.tryMotionTail
+
+	; Locate the current compact subentry and remember its FrameBlock ID.
+	ld a,[wSubAnimSubEntryAddr]
+	ld l,a
+	ld a,[wSubAnimSubEntryAddr + 1]
+	ld h,a
+	ld a,[hl]
+	ld e,a                           ; preserve packed-mode marker
+	and $7f
+	ld b,a
+	bit 7,e
+	jr z,.currentEntryReady
+	; Only the verified $14 mode-4 droplet legs may reach this packed path.
+	ld a,c
+	cp $14
+	jp nz,.legacyDelay
+	inc hl
+	ld a,[hl]
+	and $c0
+	cp $c0                           ; packed mode 4
+	jp nz,.legacyDelay
+	dec hl
+.currentEntryReady
+
+	; Find the next keyframe in playback order. Transform 4 reverses the compact
+	; list; every other transform advances normally.
+	ld a,[wSubAnimTransform]
+	cp 4
+	jr z,.previousSubentry
+	inc hl
+	inc hl
+	jr .gotNextSubentry
+.previousSubentry
+	dec hl
+	dec hl
+.gotNextSubentry
+	ld a,[hli]
+	ld e,a                           ; preserve packed marker for coordinate decode
+	and $7f
+	cp b
+	jp nz,.tryMotionTail
+	bit 7,e
+	jr z,.nextMode0Coord
+	; $14 mode-4 -> mode-4/mode-0 is the only packed continuous leg approved.
+	ld a,c
+	cp $14
+	jp nz,.legacyDelay
+	ld a,[hl]
+	ld e,a
+	and $c0
+	cp $c0
+	jp nz,.legacyDelay
+	ld a,e
+	and $3f
+	ld e,a
+	ld d,0
+	ld hl,SubanimationCoordTable
+	add hl,de
+	ld a,[hl]
+	jr .resolveNextBaseCoord
+.nextMode0Coord
+	ld a,[hl]
+.resolveNextBaseCoord
+	ld l,a
+	ld h,0
+	add hl,hl
+	ld de,FrameBlockBaseCoords
+	add hl,de
+	ld a,[hli]
+	ld d,a                           ; next raw base Y
+	ld a,[hl]
+	ld e,a                           ; next raw base X
+	call AdjustAcidSludgeEnemyProjectileNextAnchor
+
+	; Signed next-current delta in corrected BaseCoord space.
+	ld a,[wBaseCoordY]
+	ld c,a
+	ld a,d
+	sub c
+	ld d,a
+	ld a,[wBaseCoordX]
+	ld c,a
+	ld a,e
+	sub c
+	ld e,a
+
+	; Large jumps are projectile respawns/resets, not travel.  Swift uses those
+	; reset points as the cue to extrapolate the outgoing star instead.
+	ld a,d
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.tryMotionTail
+	ld a,e
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.tryMotionTail
+	jp .applyTransform
+
+.tryMotionTail
+	; The final $52 keyframe has no next travel anchor. Keep its ordinary
+	; four-frame hold, but continue cycling the coin pose throughout it.
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $52)
+	jr nz,.otherMotionTail
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $52)
+	jr nz,.otherMotionTail
+	ld a,[wSubAnimFrameDelay]
+	ld b,a
+.spinFinalHold
+	push bc
+	call BattleAnimDelayFrameMaybeCarry
+	call MaybeUpdatePayDayBounceSpin
+	pop bc
+	dec b
+	jr nz,.spinFinalHold
+	jp .doneSmoothDelay
+.otherMotionTail
+	; Swift uses its own final velocity tail. ANM-5.61.27 also applies
+	; this only to Acid / Sludge $14 droplets, not to Lovely Kiss.
+	call SmoothBattleAnimIsSwift
+	jr z,.tailEligible
+	call SmoothBattleAnimIsSubanimation14
+	jp nz,.legacyDelay
+	call SmoothBattleAnimIsAcidSludgeImpact
+	jp nz,.legacyDelay
+.tailEligible
+
+	; Tail sources themselves must be cleanup-capable mode-0 entries.
+	ld a,[wSubAnimSubEntryAddr]
+	ld l,a
+	ld a,[wSubAnimSubEntryAddr + 1]
+	ld h,a
+	ld a,[hl]
+	bit 7,a
+	jp nz,.legacyDelay
+	and $7f
+	ld b,a
+	; Acid / Sludge may extrapolate only the one-sprite droplet FrameBlock $31.
+	call SmoothBattleAnimIsSwift
+	jr z,.tailCurrentReady
+	ld a,b
+	cp $31
+	jp nz,.legacyDelay
+.tailCurrentReady
+
+	; Read the previous keyframe in playback order and require the same object.
+	ld a,[wSubAnimTransform]
+	cp 4
+	jr z,.swiftPreviousIsForward
+	dec hl
+	dec hl
+	jr .gotSwiftPrevious
+.swiftPreviousIsForward
+	inc hl
+	inc hl
+.gotSwiftPrevious
+	ld a,[hli]
+	ld e,a                           ; previous packed marker, if any
+	and $7f
+	cp b
+	jp nz,.legacyDelay
+	bit 7,e
+	jr z,.tailPreviousMode0Coord
+	; The Acid / Sludge final droplet follows a packed mode-4 entry. Decode its
+	; coordinate exactly as PlaySubanimation does before extending that velocity.
+	ld a,[hl]
+	ld e,a
+	and $c0
+	cp $c0
+	jp nz,.legacyDelay
+	ld a,e
+	and $3f
+	ld e,a
+	ld d,0
+	ld hl,SubanimationCoordTable
+	add hl,de
+	ld a,[hl]
+	jr .resolveTailPreviousBaseCoord
+.tailPreviousMode0Coord
+	ld a,[hl]
+.resolveTailPreviousBaseCoord
+	ld l,a
+	ld h,0
+	add hl,hl
+	ld de,FrameBlockBaseCoords
+	add hl,de
+	ld a,[hli]
+	ld d,a                           ; previous raw base Y
+	ld a,[hl]
+	ld e,a                           ; previous raw base X
+
+	; Extrapolation delta = current - previous, i.e. continue the same velocity.
+	ld a,d
+	ld c,a
+	ld a,[wBaseCoordY]
+	sub c
+	ld d,a
+	ld a,e
+	ld c,a
+	ld a,[wBaseCoordX]
+	sub c
+	ld e,a
+
+	; Fail closed if Swift data is ever changed into a large discontinuity.
+	ld a,d
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.legacyDelay
+	ld a,e
+	call SmoothBattleAnimAbsA
+	cp 33
+	jp nc,.legacyDelay
+
+.applyTransform
+	; Match DrawFrameBlock's screen-space transforms.  Types 1 and 3 reverse
+	; both axes; type 2 reverses X only; type 4 only reverses keyframe order.
+	ld a,[wSubAnimTransform]
+	cp 1
+	jr z,.invertBothAxes
+	cp 3
+	jr z,.invertBothAxes
+	cp 2
+	jr z,.invertXAxis
+	jr .deltasReady
+.invertBothAxes
+	xor a
+	sub d
+	ld d,a
+.invertXAxis
+	xor a
+	sub e
+	ld e,a
+.deltasReady
+
+	; There are delay+1 displayed intervals between normal keyframes: the
+	; DrawFrameBlock delay plus AnimationCleanOAM's final VBlank.  Most smooth
+	; animations use the full delay as before. ANM-5.61.10 gives selected long
+	; trajectories a shorter late-motion window without changing total waits.
+	ld a,[wSubAnimFrameDelay]
+	ld b,a                           ; total DelayFrame waits before cleanup
+	push bc
+	push de
+	call SmoothBattleAnimGetMotionWindow
+	pop de
+	pop bc
+	; ANM-5.61.12: $22 uses a gravity-timed motion profile without adding static
+	; holds. Launch is quick, the apex stays slower, and the descending legs
+	; progressively shorten so the return keeps its original weight.
+	cp 28
+	jr nz,.normalMotionWindow
+	ld a,b
+	cp 6
+	jr nz,.useFullMotionWindow       ; nonstandard $22 timing: preserve legacy
+	ld b,6                           ; apex / tiny descent: 7 intervals
+	ld a,d
+	bit 7,a
+	jr z,.gravityFall
+	call SmoothBattleAnimAbsA
+	cp 4
+	jr c,.gravityWindowReady
+	ld b,4                           ; early rise: 5 intervals
+	jr .gravityWindowReady
+.gravityFall
+	cp 4
+	jr c,.gravityWindowReady
+	ld b,5                           ; ordinary descent: 6 intervals
+	cp 16
+	jr c,.gravityWindowReady
+	ld b,4                           ; large drop: 5 intervals
+	cp 24
+	jr c,.gravityWindowReady
+	ld b,3                           ; final 24 px drop: 4 intervals
+.gravityWindowReady
+	ld a,b
+	inc a
+	ld c,a                           ; full-motion denominator for this leg
+	jr .initTweenAccumulators
+.normalMotionWindow
+	and a
+	jr z,.useFullMotionWindow
+	cp b
+	jr c,.motionWindowReady
+.useFullMotionWindow
+	ld a,b                           ; default/full-window tween
+.motionWindowReady
+	ld c,a                           ; active movement waits
+	ld a,b
+	sub c                            ; initial legacy-style hold waits
+	jr z,.startTweenWindow
+	push bc
+	push de
+	ld c,a
+	call BattleAnimDelayFramesMaybeCarry
+	pop de
+	pop bc
+.startTweenWindow
+	ld b,c                           ; intermediate movement updates
+	ld a,c
+	; Ordinary mode-0 frames include AnimationCleanOAM's final VBlank, matching
+	; Swift's tail timing. Persistent mode 4 has no cleanup VBlank, so use the
+	; delay count itself and reach the authored next anchor without a final snap.
+	ld c,a
+	ld a,[wFBMode]
+	cp 4
+	jr z,.tweenDenominatorReady
+	inc c
+.tweenDenominatorReady
+.initTweenAccumulators
+	xor a
+	ld h,a                           ; Y DDA accumulator
+	ld l,a                           ; X DDA accumulator
+
+.smoothFrameLoop
+	push bc
+	push de
+	push hl
+	call BattleAnimDelayFrameMaybeCarry
+	pop hl
+	pop de
+	pop bc
+
+	; Y DDA. Shift the current FrameBlock by one pixel for every denominator
+	; crossed.  Small projectile deltas keep this inexpensive.
+	ld a,d
+	and a
+	jr z,.stepX
+	call SmoothBattleAnimAbsA
+	add h
+	ld h,a
+.yConsume
+	ld a,h
+	cp c
+	jr c,.stepX
+	sub c
+	ld h,a
+	ld a,1
+	bit 7,d
+	jr z,.shiftY
+	ld a,$ff
+.shiftY
+	push bc
+	push de
+	push hl
+	ld c,0                           ; OAM byte 0 = Y
+	call SmoothShiftCurrentFrameBlock
+	pop hl
+	pop de
+	pop bc
+	jr .yConsume
+
+.stepX
+	ld a,e
+	and a
+	jr z,.finishSmoothStep
+	call SmoothBattleAnimAbsA
+	add l
+	ld l,a
+.xConsume
+	ld a,l
+	cp c
+	jr c,.finishSmoothStep
+	sub c
+	ld l,a
+	ld a,1
+	bit 7,e
+	jr z,.shiftX
+	ld a,$ff
+.shiftX
+	push bc
+	push de
+	push hl
+	ld c,1                           ; OAM byte 1 = X
+	call SmoothShiftCurrentFrameBlock
+	pop hl
+	pop de
+	pop bc
+	jr .xConsume
+
+.finishSmoothStep
+	; Redraw the next coin pose after this frame's smooth X/Y movement.
+	; Non-$52 subanimations return without a far call.
+	call MaybeUpdatePayDayBounceSpin
+	dec b
+	jp nz,.smoothFrameLoop
+	jr .doneSmoothDelay
+
+.legacyDelay
+	ld a,[wSubAnimFrameDelay]
+	ld c,a
+	call BattleAnimDelayFramesMaybeCarry
+
+.doneSmoothDelay
+	pop hl
+	pop de
+	pop bc
+	; DelayFrames leaves C at zero. Preserve that caller-visible detail.
+	ld c,0
+	ret
+
+; ANIM-5.62.85: keep Pay Day's original $52 smooth path and frame timing;
+; only its four coin OAM tile IDs/flags receive the Ruby-style planar spin.
+; The larger pose table/render routine stays in bank $3B, not bank $1E.
+MaybeUpdatePayDayBounceSpin:
+	push af
+	ld a,[wAnimationID]
+	cp PAY_DAY
+	jr nz,.done
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $52)
+	jr nz,.done
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $52)
+	jr nz,.done
+	push bc
+	push de
+	push hl
+	callba UpdatePayDayBounceCoinSpin
+	pop hl
+	pop de
+	pop bc
+.done
+	pop af
+	ret
+
+; ANM-5.61.10: return the number of DelayFrame waits that should actively
+; move the current object. A=0 means use the full legacy delay. Keeping this
+; data-driven makes later per-animation timing tuning a table-only change.
+SmoothBattleAnimGetMotionWindow:
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld c,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	jr nz,.fullWindow
+	bit 0,c
+	jr nz,.fullWindow
+	srl c
+
+	; ANM-5.61.12: $22 asks the caller for gravity timing.
+	ld a,c
+	cp $22
+	jr z,.gravityWindow
+
+	ld hl,SmoothBattleAnimMotionWindows
+.checkWindow
+	ld a,[hli]
+	cp $ff
+	jr z,.fullWindow
+	cp c
+	jr z,.foundWindow
+	inc hl                           ; skip this entry's active-wait count
+	jr .checkWindow
+.foundWindow
+	ld a,[hl]
+	ret
+
+.gravityWindow
+	ld a,28                         ; sentinel, not an active-wait count
+	ret
+
+.fullWindow
+	xor a
+	ret
+
+; Return abs(A), treating A as signed 8-bit.
+SmoothBattleAnimAbsA:
+	bit 7,a
+	ret z
+	cpl
+	inc a
+	ret
+
+; Z if the active Subanimation pointer is entry $3F (Swift), NZ otherwise.
+SmoothBattleAnimIsSwift:
+	ld a,[wSubAnimAddrPtr]
+	sub LOW(SubanimationPointers)
+	ld e,a
+	ld a,[wSubAnimAddrPtr + 1]
+	sbc HIGH(SubanimationPointers)
+	ret nz
+	bit 0,e
+	ret nz
+	srl e
+	ld a,e
+	cp $3f
+	ret
+
+; Z only while the active compact Subanimation is $14.
+SmoothBattleAnimIsSubanimation14:
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $14)
+	ret nz
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $14)
+	ret
+
+; ANM-5.61.27: $14 is shared widely. ANIM-5.62.151 also allows Poison Jab's
+; unchanged $14 droplets to reuse the approved Acid / Sludge smooth motion.
+SmoothBattleAnimIsAcidSludgeImpact:
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr z,.legacy
+	call GetCurrentMoveID
+	cp POISON_JAB
+	ret
+.legacy
+	ld a,[wAnimationID]
+	cp ACID
+	ret z
+	cp SLUDGE
+	ret
+
+; Carry only for the ordinary enemy Acid / Sludge $13 source while the verified
+; zero-lifetime $13 -> $14 bridge is armed. This keeps the coordinate correction
+; out of player use and out of every other move that happens to reuse $13.
+IsAcidSludgeEnemyProjectileBridge:
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $13)
+	jr nz,.no
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $13)
+	jr nz,.no
+	ld a,[wBattleAnimSeamlessStage]
+	cp $14                         ; source token = $13 + 1
+	jr nz,.no
+	ldh a,[H_WHOSETURN]
+	and a
+	jr z,.no
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.no
+	ld a,[wAnimationID]
+	cp ACID
+	jr z,.yes
+	cp SLUDGE
+	jr nz,.no
+.yes
+	scf
+	ret
+.no
+	and a                           ; clear carry
+	ret
+
+; A = remaining $13 keyframe count (6..1). Return HL -> signed X,Y correction.
+; Enemy playback reverses the six authored points, so counter 6 is the launch
+; anchor and counter 1 is the impact anchor. The table linearly distributes the
+; exact boundary correction instead of adding a second motion leg at the end.
+GetAcidSludgeEnemyProjectileCorrection:
+	cp 7
+	jr c,.counterValid
+	ld a,6
+.counterValid
+	ld b,a
+	ld a,6
+	sub b                           ; phase 0..5 from launch to impact
+	add a
+	ld e,a
+	ld d,0
+	ld hl,AcidSludgeEnemyProjectileCorrections
+	add hl,de
+	ret
+
+ApplyAcidSludgeEnemyProjectileAnchorCorrection:
+	push bc
+	push de
+	push hl
+	call IsAcidSludgeEnemyProjectileBridge
+	jr nc,.done
+	ld a,[wSubAnimCounter]
+	call GetAcidSludgeEnemyProjectileCorrection
+	ld a,[wBaseCoordX]
+	add [hl]
+	ld [wBaseCoordX],a
+	inc hl
+	ld a,[wBaseCoordY]
+	add [hl]
+	ld [wBaseCoordY],a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; D/E = next raw BaseCoord Y/X. Apply the correction belonging to the next
+; enemy $13 keyframe before SmoothBattleAnimDelayFrames derives its DDA delta.
+AdjustAcidSludgeEnemyProjectileNextAnchor:
+	push af
+	push bc
+	push hl
+	call IsAcidSludgeEnemyProjectileBridge
+	jr nc,.done
+	ld a,[wSubAnimCounter]
+	dec a                           ; next keyframe has one fewer entry remaining
+	push de
+	call GetAcidSludgeEnemyProjectileCorrection
+	pop de
+	ld a,e
+	add [hl]
+	ld e,a
+	inc hl
+	ld a,d
+	add [hl]
+	ld d,a
+.done
+	pop hl
+	pop bc
+	pop af
+	ret
+
+AcidSludgeEnemyProjectileCorrections:
+	db   0,0
+	db  -3,1
+	db  -6,2
+	db -10,3
+	db -13,4
+	db -16,5
+
+; Translate every sprite belonging to the currently drawn FrameBlock by one
+; signed pixel. A = +1/-1, C = OAM coordinate byte (0=Y, 1=X).
+SmoothShiftCurrentFrameBlock:
+	ld d,a
+	ld a,[wFBDestAddr + 1]
+	ld l,a
+	ld a,[wFBDestAddr]
+	ld h,a
+	ld a,c
+	and a
+	jr z,.gotAxis
+	inc hl
+.gotAxis
+	ld a,[wNumFBTiles]
+	ld b,a
+.shiftLoop
+	ld a,[hl]
+	add d
+	ld [hl],a
+	inc hl
+	inc hl
+	inc hl
+	inc hl
+	dec b
+	jr nz,.shiftLoop
+	ret
+
+; ANM-5.61.10 late-motion profiles. Each pair is:
+;   subanimation ID, active DelayFrame waits
+; Total keyframe duration is unchanged; unlisted IDs use the full delay.
+SmoothBattleAnimMotionWindows:
+	db $13, 5 ; Acid / Sludge: keep 1 of 6 waits static, then move over the final 5
+	; ANM-5.61.12: $22 gravity timing is handled above.
+	db $ff
+
+; ANM-5.61.10: verified continuous-travel allowlist.
+SmoothBattleAnimSubanimationIDs:
+	db $06 ; Poke Ball toss arc
+	db $07 ; Great Ball toss arc
+	db $08 ; Ultra Ball toss arc
+	db $13 ; Acid / Sludge projectile
+	db $1b ; Leech Seed throw
+	db $22 ; Absorb/Mega Drain/Leech Life/Mimic/Transform/Conversion return particle
+	db $2c ; Water Gun projectile (same-FrameBlock travel phase only)
+	db $3f ; Swift stars
+	db $41 ; Egg Bomb / Barrage projectile
+	db $44 ; Razor Leaf projectile
+	db $52 ; Pay Day coin path
+	db $53 ; Safari Throw Rock arc
+	db $54 ; Safari Throw Bait arc
+	db $ff
+
 PlayAnimation:
 	xor a
 	ld [$FF8B],a ; it looks like nothing reads this
 	ld [wSubAnimTransform],a
-	ld a,[wAnimationID] ; get animation number
+	; ANM-5.61.13: bridge state is local to one PlayAnimation command stream.
+	ld [wBattleAnimSeamlessStage],a
+	ld [wBattleAnimStageCarryTimer],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr z,.legacyAnimation
+	dec a
+	jr z,.stagedAnimation
+	; ANM-5.61.33 mode 2: wBuffer holds a bank-$1E ROM script pointer. The
+	; interpreter is already in the same bank, so no staging-size limit applies.
+	ld a,[wBuffer]
+	ld l,a
+	ld a,[wBuffer + 1]
+	ld h,a
+	jr .animationLoop
+.stagedAnimation
+	ld hl,wBuffer
+	jr .animationLoop
+.legacyAnimation
+	ld a,[wAnimationID] ; get legacy animation number
 	dec a
 	ld l,a
 	ld h,0
@@ -178,21 +1144,77 @@ PlayAnimation:
 .animationLoop
 	ld a,[hli]
 	cp a,$FF
-	jr z,.AnimationOver
-	cp a,$C0 ; is this subanimation or a special effect?
+	ret z
+	cp a,$C0 ; is this subanimation or a special effect/extended command?
 	jr c,.playSubanimation
+	cp SE_WAVY_SCREEN
+	jr nc,.doSpecialEffect
+
+	; $C0-$D7 is reserved for dedicated-recipe commands.  Never interpret these
+	; bytes in a legacy animation stream, where they remain invalid/fail-closed.
+	ld b,a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ret z
+	ld a,b
+	cp EXT_ANIM_SET_FRAME_EFFECT
+	jr z,.setExtendedFrameEffect
+	cp EXT_ANIM_PLAY_USER_CRY
+	jr z,.playExtendedUserCry
+	cp EXT_ANIM_SHADOW_BALL_PROJECTILE
+	jr z,.playExtendedProjectile
+	cp EXT_ANIM_SET_PALETTE_MODE
+	jr z,.setExtendedPaletteMode
+	; ANM-5.61.59: dedicated Gold Quick Attack phase command used by Shadow Punch.
+	cp EXT_ANIM_GOLD_QUICK_ATTACK_PHASE
+	jr z,.playGoldQuickAttackPhase
+	ret
+.setExtendedFrameEffect
+	ld a,[hli]
+	bit 7,a
+	jr nz,.storeExtendedFrameMode ; bit 7 = FrameBlock override
+	cp EXT_FRAME_DUPLICATE_MIRROR_X + 1
+	ret nc ; unknown per-frame mode: fail closed
+.storeExtendedFrameMode
+	ld [wExtendedAnimFrameEffect],a
+	jr .animationLoop
+.setExtendedPaletteMode
+	ld a,[hli]
+	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK + 1
+	ret nc ; unknown palette mode: fail closed
+	ld [wExtendedAnimPaletteMode],a
+	jr .animationLoop
+.playExtendedUserCry
+	ld a,[hli]
+	push hl
+	call PlayExtendedAnimationUserCry
+	pop hl
+	jr .animationLoop
+.playExtendedProjectile
+	; C2 has no operand. Extended projectile graphics are banked with their
+	; helper code and do not consume or redefine legacy animation tileset slots.
+	push hl
+	callba PlayExtendedShadowBallProjectile
+	pop hl
+	jp .animationLoop
+.playGoldQuickAttackPhase
+	ld a,[hli]
+	cp GOLD_QUICK_ATTACK_RETURN + 1
+	ret nc ; unknown phase: fail closed
+	ld e,a
+	push hl
+	callba PlayGoldQuickAttackPhase
+	pop hl
+	jp .animationLoop
 .doSpecialEffect
-	ld c,a
-	ld de,SpecialEffectPointers
-.searchSpecialEffectTableLoop
-	ld a,[de]
-	cp c
-	jr z,.foundMatch
-	inc de
-	inc de
-	inc de
-	jr .searchSpecialEffectTableLoop
-.foundMatch
+	; SE_* commands are contiguous from $D8 through $FE. Convert the command
+	; directly to a 16-bit pointer-table offset instead of linearly searching a
+	; redundant ID+pointer table. This is smaller, faster, and cannot scan past
+	; the table; $FF has already been handled as the recipe terminator above.
+	sub SE_WAVY_SCREEN
+	add a ; two bytes per pointer
+	ld e,a
+	ld d,0
 	ld a,[hli]
 	cp a,$FF ; is there a sound to play?
 	jr z,.skipPlayingSound
@@ -205,12 +1227,11 @@ PlayAnimation:
 	pop hl
 .skipPlayingSound
 	push hl
-	inc de
-	ld a,[de]
+	ld hl,SpecialEffectPointers
+	add hl,de
+	ld a,[hli]
+	ld h,[hl]
 	ld l,a
-	inc de
-	ld a,[de]
-	ld h,a
 	ld de,.nextAnimationCommand
 	push de
 	jp hl ; jump to special effect function
@@ -247,22 +1268,44 @@ PlayAnimation:
 ;	ld [rOBP0],a	; HAX
 	nop
 	nop
+	; ANM-5.61.13: resolve only a verified same-tileset bridge before loading
+	; graphics. Acid $13 -> $14 can skip the redundant copy at the boundary.
+	callba UpdateSeamlessBattleAnimStage
+	ld a,[wBattleAnimStageCarryTimer]
+	bit 7,a
+	jr nz,.seamlessTilesetReady
 	call LoadAnimationTileset
+	jr .afterSeamlessTileset
+.seamlessTilesetReady
+	and $7f
+	ld [wBattleAnimStageCarryTimer],a
+.afterSeamlessTileset
 	call LoadSubanimation
 	call PlaySubanimation
+	; ANM-5.61.29: Sludge reuses the authored $14 impact data for one extra
+	; two-drop pair. The helper replays only the tail entries, so there is no
+	; second setup pause and no duplicate Subanimation data.
+	call ReplaySludgeImpactTail
 	pop af
 	ld [rOBP0],a
 .nextAnimationCommand
 	pop hl
-	jr .animationLoop
-.AnimationOver
-	ret
+	jp .animationLoop
 
 AnimPlaySFX:
 	push de
 	ld e, a
 	xor a
 	ld d, a
+
+	; ANM-5.61.33: direct legacy-project scripts (mode 2) keep the audio behavior
+	; they were authored against: a new SFX replaces the previous SFX channels,
+	; and the later Gen1 dynamic pitch/tempo path is not enabled for that launch.
+	; This prevents Volt Tackle's electric pulse channels from leaking into the
+	; following Headbutt impact and restores its original launch sound.
+	ld a,[wMoveAnimScriptLoaded]
+	cp 2
+	jr z,.legacyDirect
 
 	; [修复] wSFXDontWait 原本只有 Growl/Roar 临时使用值 1。
 	; 这里临时使用值 2 作为“技能动画 SFX”启动标记，只在 PlaySFX 调用期间存在；
@@ -271,6 +1314,12 @@ AnimPlaySFX:
 	ld a, 2
 	ld [wSFXDontWait], a
 	call PlaySFX
+	jr .clearMarker
+.legacyDirect
+	xor a
+	ld [wSFXDontWait], a
+	call PlaySFX
+.clearMarker
 	xor a
 	ld [wSFXDontWait], a
 
@@ -310,11 +1359,8 @@ LoadSubanimation:
 ; if the animation is reversed, then place the initial subentry address at the end of the list of subentries
 	ld a,[wSubAnimCounter]
 	dec a
-	ld bc,3
-.loop
-	add hl,bc
-	dec a
-	jr nz,.loop
+	add a ; 2 bytes per compact subentry
+	ld l,a
 .storeSubentryAddr
 	inc de
 	add hl,de
@@ -370,10 +1416,12 @@ LoadAnimationTileset:
 	ld d,[hl] ; de = address of tileset
 	ld hl,vSprites + $310
 	ld b, BANK(AnimationTileset1) ; ROM bank
-	jp CopyVideoData ; load tileset
+	call CopyVideoData ; load the normal animation set first
 
-	; Padding to prevent data shifting
-	nop
+	; Keep all Punch-family override testing and the 9-tile transfer in bank $3A.
+	; This unconditional tail-call is intentionally tiny because BANK1E has only
+	; 18 bytes slack in the Punch V0 baseline.
+	jpba LoadPunchFamilyTilesIfNeeded
 
 AnimationTilesetPointers:
 	db 79 ; number of tiles
@@ -388,21 +1436,12 @@ AnimationTilesetPointers:
 	dw AnimationTileset1
 	db $FF
 
-AnimationTileset1:
-	INCBIN "gfx/attack_anim_1.2bpp"
-
-AnimationTileset2:
-	INCBIN "gfx/attack_anim_2.2bpp"
-
-SlotMachineTiles2:
-	INCBIN "gfx/red/slotmachine2.2bpp"
-
 MoveAnimation:
 	push hl
 	push de
 	push bc
 	push af
-	call WaitForSoundToFinish
+	callba WaitForBattleAnimationSFX
 	call SetAnimationPalette
 	ld a,[wAnimationID]
 	and a
@@ -420,6 +1459,14 @@ MoveAnimation:
 	ld a,[wOptions]
 	bit 7,a
 	jr nz, .animationsDisabled
+	; ANIM-5.62.109: separate mirrored-axis twin projectiles; keep the
+	; shared generic damage reaction for each hit via .next4.
+	ld a,[wAnimationID]
+	cp TWINEEDLE
+	jr nz,.regularMoveAnimation
+	callba PlaySymmetricTwineedleAnimation
+	jr .next4
+.regularMoveAnimation
 	call ShareMoveAnimations
 	call PlayAnimation
 	jr .next4
@@ -427,12 +1474,19 @@ MoveAnimation:
 	ld c,30
 	call DelayFrames
 .next4
+	; ANM-5.61.33: direct-script mode applies only to the authored move animation.
+	; Clear it before the generic hit/effectiveness animation so its SFX keeps the
+	; normal Gen1 battle-SFX modifier/coexistence path.
+	xor a
+	ld [wMoveAnimScriptLoaded],a
 	call PlayApplyingAttackAnimation ; shake the screen or flash the pic in and out (to show damage)
 .animationFinished
-	call WaitForSoundToFinish
+	callba WaitForBattleAnimationSFX
 	xor a
 	ld [wSubAnimSubEntryAddr],a
-	ld [wUnusedD09B],a
+	ld [wExtendedAnimFrameEffect],a
+	ld [wExtendedAnimPaletteMode],a
+	ld [wMoveAnimScriptLoaded],a ; clear staged extended recipe before later legacy animations
 	ld [wSubAnimTransform],a
 	dec a
 	ld [wAnimSoundID],a
@@ -443,7 +1497,11 @@ MoveAnimation:
 	ret
 
 ShareMoveAnimations:
-; some moves just reuse animations from status conditions
+; Some legacy moves reuse animations from status conditions. Dedicated recipes
+; were already selected by real move ID, so never remap them through the alias.
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	ret nz
 	ld a,[H_WHOSETURN]
 	and a
 	ret z
@@ -468,6 +1526,22 @@ ShareMoveAnimations:
 PlayApplyingAttackAnimation:
 ; Generic animation that shows after the move's individual animation
 ; Different animation depending on whether the move has an additional effect and on whose turn it is
+	; ANM-5.61.69: keep RPP's stock effect-based feedback as the default. Only
+	; real moves whose restored behavior intentionally differs from that default
+	; are listed in the floating DamageFeedbackOverrides table. This avoids teaching every
+	; Gold/Crystal renderer about wAnimationType while preserving ordinary side-
+	; effect horizontal shakes for moves that still use them.
+	ld a,[wAnimationType]
+	and a
+	ret z ; miss/immune/no-reaction path
+	cp 3
+	jr z,.useStoredType ; enemy non-damaging animation
+	cp 6
+	jr z,.useStoredType ; player non-damaging animation
+	; ANIM-5.62.97: resolve normal overrides and all enemy multi-hit damage
+	; in a floating bank. Bankswitch clobbers A; load the selected type back.
+	callba SelectGlobalDamageFeedbackType
+.useStoredType
 	ld a,[wAnimationType]
 	and a
 	ret z
@@ -566,7 +1640,7 @@ SetAnimationPalette:
 	nop
 	ret
 .notSGB
-	ld a, $e4
+	; A is already $e4 from the common setup above.
 	ld [wAnimPalette], a
 	ld [rOBP0], a
 	ld a, $6c
@@ -580,7 +1654,7 @@ PlaySubanimation:
 	call GetMoveSound
 	call nc, AnimPlaySFX
 .skipPlayingSound
-	ld hl,wOAMBuffer ; base address of OAM buffer
+	call BattleAnimGetFrameDest ; base address, or lane after a carried source pose
 	ld a,l
 	ld [wFBDestAddr + 1],a
 	ld a,h
@@ -589,9 +1663,56 @@ PlaySubanimation:
 	ld h,a
 	ld a,[wSubAnimSubEntryAddr]
 	ld l,a
+
+; Entry point for replaying an already-loaded compact Subanimation slice.
+; The caller supplies wSubAnimSubEntryAddr/wSubAnimCounter and, when needed,
+; preserves wFBDestAddr so mode-2 accumulated OAM can flow into the next slice.
+PlaySubanimationEntries:
 .loop
-	push hl
-	ld c,[hl] ; frame block ID
+	; Compact subentries are always 2 bytes. Byte 0 stores FrameBlock ID in
+	; bits 0-6; bit 7 marks a nonzero mode. For marked entries, byte 1 bits
+	; 7-6 encode modes 2/3/4 as 1/2/3 and bits 5-0 index SubanimationCoordTable.
+	; Unmarked byte 1 is the BaseCoord ID directly and implies mode 0.
+	; Dedicated recipes may still override only the FrameBlock while preserving
+	; the subentry's BaseCoord and mode.
+	ld a,[wExtendedAnimFrameEffect]
+	bit 7,a
+	jr z,.useSubanimationFrameBlock
+	and $7f
+	cp $7B ; FrameBlockPointers contains IDs $00-$7A
+	ret nc ; malformed override: fail closed before consuming the subentry
+	ld c,a
+	ld a,[hli] ; consume encoded legacy FrameBlock/mode marker
+	ld d,a
+	jr .decodeSubanimationCoordMode
+.useSubanimationFrameBlock
+	ld a,[hli]
+	ld d,a
+	and $7f
+	ld c,a
+.decodeSubanimationCoordMode
+	ld a,[hl]
+	bit 7,d
+	jr z,.subanimationMode0
+	ld e,a ; packed mode in bits 7-6, coordinate index in bits 5-0
+	rlca
+	rlca
+	and 3
+	inc a ; encoded 1/2/3 -> modes 2/3/4
+	ld [wFBMode],a
+	ld a,e
+	and $3f
+	ld e,a
+	ld d,0
+	ld hl,SubanimationCoordTable
+	add hl,de
+	ld e,[hl]
+	jr .gotSubanimationBaseCoord
+.subanimationMode0
+	ld e,a
+	xor a
+	ld [wFBMode],a
+.gotSubanimationBaseCoord
 	ld b,0
 	ld hl,FrameBlockPointers
 	add hl,bc
@@ -600,10 +1721,6 @@ PlaySubanimation:
 	ld c,a
 	ld a,[hli]
 	ld b,a
-	pop hl
-	inc hl
-	push hl
-	ld e,[hl] ; base coordinate ID
 	ld d,0
 	ld hl,FrameBlockBaseCoords  ; base coordinate table
 	add hl,de
@@ -612,12 +1729,21 @@ PlaySubanimation:
 	ld [wBaseCoordY],a
 	ld a,[hl]
 	ld [wBaseCoordX],a
-	pop hl
-	inc hl
-	ld a,[hl] ; frame block mode
-	ld [wFBMode],a
+	call ApplyAcidSludgeEnemyProjectileAnchorCorrection
+	; FrameBlock overrides may need object-specific anchor compensation.  Keep
+	; the dispatch in bank $3A so this generic renderer is not tied to Draco
+	; Meteor or FrameBlock68.  The helper itself fail-closes for other cases.
+	ld a,[wExtendedAnimFrameEffect]
+	bit 7,a
+	jr z,.skipFrameBlockAnchorCompensation
+	push bc ; DrawFrameBlock needs the resolved FrameBlock pointer after callba
+	callba ApplyFrameBlockOverrideAnchorCompensation
+	pop bc
+.skipFrameBlockAnchorCompensation
 	call DrawFrameBlock
 	call DoSpecialEffectByAnimationId ; run animation-specific function (if there is one)
+	; ANM-5.61.40: restore the old-project repeated ice-pillar SFX cadence.
+	call PlayIcePillarSound
 	ld a,[wSubAnimCounter]
 	dec a
 	ld [wSubAnimCounter],a
@@ -628,9 +1754,9 @@ PlaySubanimation:
 	ld l,a
 	ld a,[wSubAnimTransform]
 	cp a,4 ; is the animation reversed?
-	ld bc,3
+	ld bc,2
 	jr nz,.nextSubanimationSubentry
-	ld bc,-3
+	ld bc,-2
 .nextSubanimationSubentry
 	add hl,bc
 	ld a,h
@@ -639,13 +1765,129 @@ PlaySubanimation:
 	ld [wSubAnimSubEntryAddr],a
 	jp .loop
 
+; ANM-5.61.40: repeated ice-pillar SFX helper shared by Ice Shard, Ice Beam
+; and Tri Attack's ice stage. Sound $05 starts with the subanimation; this adds
+; the extra repeats for Subanimation2f/3f at their configured frame points.
+PlayIcePillarSound:
+	ld a,[wAnimSoundID]
+	cp PAY_DAY - 1
+	ret nz
+
+	; Resolve the currently loaded Subanimation data address.
+	ld a,[wSubAnimAddrPtr + 1]
+	ld h,a
+	ld a,[wSubAnimAddrPtr]
+	ld l,a
+	ld a,[hli]
+	ld e,a
+	ld a,[hl]
+	ld d,a
+
+	; Subanimation2f: add one repeat when three entries remain.
+	ld hl,Subanimation2f
+	ld a,e
+	cp l
+	jr nz,.checkSubanimation3f
+	ld a,d
+	cp h
+	jr nz,.checkSubanimation3f
+	ld a,[wSubAnimCounter]
+	cp 1
+	ret z
+	bit 0,a
+	ret z
+	jr .playSound
+
+.checkSubanimation3f
+	; Subanimation3f: add repeats when 13 and 7 entries remain.
+	ld hl,Subanimation3f
+	ld a,e
+	cp l
+	ret nz
+	ld a,d
+	cp h
+	ret nz
+	ld a,[wSubAnimCounter]
+	cp 13
+	jr z,.playSound
+	cp 7
+	ret nz
+
+.playSound
+	ld a,PAY_DAY - 1
+	call GetMoveSound
+	call nc,AnimPlaySFX
+	ret
+
+SLUDGE_EXTRA_DRIP_PAIRS EQU 1 ; 1 = 4 total drops, 2 = 6 total drops
+
+; ANM-5.61.29: append extra pairs of Sludge impact drops without creating a
+; second Subanimation. $14 entries 0-1 are the one-time impact setup; entries
+; 2-8 are the two authored drops, with entry 5 rebuilding their shared 2x2 base.
+; Replaying entry 5 once and then entries 2-8 reproduces the exact same 19-VBlank
+; launch cadence as the first pair while skipping the 13-VBlank setup pause.
+ReplaySludgeImpactTail:
+	ld a,[wSubAnimAddrPtr]
+	cp LOW(SubanimationPointers + 2 * $14)
+	ret nz
+	ld a,[wSubAnimAddrPtr + 1]
+	cp HIGH(SubanimationPointers + 2 * $14)
+	ret nz
+	call GetCurrentMoveID
+	cp SLUDGE
+	ret nz
+
+	ld b,SLUDGE_EXTRA_DRIP_PAIRS
+.repeatPair
+	push bc
+	; Start from the ordinary OAM lane. Entry 5 (mode 2) draws the shared
+	; FrameBlock30 base and advances the destination without consuming a VBlank.
+	call BattleAnimGetFrameDest
+	ld a,l
+	ld [wFBDestAddr + 1],a
+	ld a,h
+	ld [wFBDestAddr],a
+	ld hl,Subanimation14 + 1 + 5 * 2
+	ld a,1
+	call PlaySubanimationSlice
+
+	; Entries 2-8 are the two actual drops. Their counters are 7..1, exactly
+	; matching the original $14 playback, so smoothing/tail timing is unchanged.
+	ld hl,Subanimation14 + 1 + 2 * 2
+	ld a,7
+	call PlaySubanimationSlice
+	pop bc
+	dec b
+	jr nz,.repeatPair
+	ret
+
+; A = number of compact subentries, HL = first compact subentry.
+; Graphics, transform, frame delay, sound and Subanimation ID are intentionally
+; inherited from the active $14 command; only the selected data window changes.
+PlaySubanimationSlice:
+	ld [wSubAnimCounter],a
+	ld a,l
+	ld [wSubAnimSubEntryAddr],a
+	ld a,h
+	ld [wSubAnimSubEntryAddr + 1],a
+	jp PlaySubanimationEntries
+
 AnimationCleanOAM:
 	push hl
 	push de
 	push bc
 	push af
+	; Ordinary animations retain the exact local path; only a verified source or
+	; active overlap target pays for the banked bridge cleanup logic.
+	ld a,[wBattleAnimSeamlessStage]
+	and a
+	jr nz,.seamless
 	call DelayFrame
 	call ClearSprites
+	jr .done
+.seamless
+	callba AnimationCleanOAMSeamlessBody
+.done
 	pop af
 	pop bc
 	pop de
@@ -658,6 +1900,34 @@ DoSpecialEffectByAnimationId:
 	push hl
 	push de
 	push bc
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr z,.legacyAnimationID
+	ld a,[wExtendedAnimFrameEffect]
+	and a
+	jr z,.done
+	cp EXT_FRAME_FLASH_4
+	jr z,.extendedFlash4
+	cp EXT_FRAME_FLASH_8
+	jr z,.extendedFlash8
+	cp EXT_FRAME_BLIZZARD
+	jr z,.extendedBlizzard
+	cp EXT_FRAME_ROCK_SLIDE
+	jr z,.extendedRockSlide
+	jr .done
+.extendedFlash4
+	call FlashScreenEveryFourFrameBlocks
+	jr .done
+.extendedFlash8
+	call FlashScreenEveryEightFrameBlocks
+	jr .done
+.extendedBlizzard
+	call DoBlizzardSpecialEffects
+	jr .done
+.extendedRockSlide
+	call DoRockSlideSpecialEffects
+	jr .done
+.legacyAnimationID
 	ld a,[wAnimationID]
 	ld hl,AnimationIdSpecialEffects
 	ld de,3
@@ -682,7 +1952,10 @@ AnimationIdSpecialEffects:
 	dw AnimationFlashScreen
 
 	db GUILLOTINE
-	dw AnimationFlashScreen
+	dw DoGuillotineSpecialEffects
+
+	db CRABHAMMER
+	dw DoCrabhammerSpecialEffects
 
 	db MEGA_KICK
 	dw AnimationFlashScreen
@@ -829,7 +2102,7 @@ DoBallShakeSpecialEffects:
 	ld l,a
 	ld a,[wSubAnimSubEntryAddr + 1]
 	ld h,a
-	ld de,-(4 * 3) ; 4 subentries and 3 bytes per subentry
+	ld de,-(4 * 2) ; 4 compact subentries and 2 bytes per subentry
 	add hl,de
 	ld a,l
 	ld [wSubAnimSubEntryAddr],a
@@ -886,29 +2159,16 @@ DoExplodeSpecialEffects:
 	jp AnimationHideMonPic ; make pokemon disappear
 
 ; flashes the screen when subanimation counter is 1 modulo 4
+; Legacy Blizzard only flashes at 13/9/5/1. Keep the upper bound so malformed
+; or future longer subanimations do not gain extra flashes.
 DoBlizzardSpecialEffects:
 	ld a,[wSubAnimCounter]
-	cp a,13
-	jp z,AnimationFlashScreen
-	cp a,9
-	jp z,AnimationFlashScreen
-	cp a,5
-	jp z,AnimationFlashScreen
-	cp a,1
-	jp z,AnimationFlashScreen
-	ret
-
-; flashes the screen at 3 points in the subanimation
-; unused
-FlashScreenUnused:
-	ld a,[wSubAnimCounter]
-	cp a,14
-	jp z,AnimationFlashScreen
-	cp a,9
-	jp z,AnimationFlashScreen
-	cp a,2
-	jp z,AnimationFlashScreen
-	ret
+	cp 14
+	ret nc
+	dec a
+	and 3
+	ret nz
+	jp AnimationFlashScreen
 
 ; function to make the pokemon disappear at the beginning of the animation
 TradeHidePokemon:
@@ -1012,87 +2272,49 @@ TailWhipAnimationUnused:
 	ld c,20
 	jp DelayFrames
 
-; Format: Special Effect ID (1 byte), Address (2 bytes)
+; Format: 16-bit pointers indexed by contiguous SE_* command IDs.
 SpecialEffectPointers:
-	db SE_DARK_SCREEN_FLASH ; $FE
-	dw AnimationFlashScreen
-	db SE_DARK_SCREEN_PALETTE ; $FD
-	dw AnimationDarkScreenPalette
-	db SE_RESET_SCREEN_PALETTE ; $FC
-	dw AnimationResetScreenPalette
-	db SE_SHAKE_SCREEN ; $FB
-	dw AnimationShakeScreen
-	db SE_WATER_DROPLETS_EVERYWHERE ; $FA
-	dw AnimationWaterDropletsEverywhere
-	db SE_DARKEN_MON_PALETTE ; $F9
-	dw AnimationDarkenMonPalette
-	db SE_FLASH_SCREEN_LONG ; $F8
-	dw AnimationFlashScreenLong
-	db SE_SLIDE_MON_UP ; $F7
-	dw AnimationSlideMonUp
-	db SE_SLIDE_MON_DOWN ; $F6
-	dw AnimationSlideMonDown
-	db SE_FLASH_MON_PIC ; $F5
-	dw AnimationFlashMonPic
-	db SE_SLIDE_MON_OFF ; $F4
-	dw AnimationSlideMonOff
-	db SE_BLINK_MON ; $F3
-	dw AnimationBlinkMon
-	db SE_MOVE_MON_HORIZONTALLY ; $F2
-	dw AnimationMoveMonHorizontally
-	db SE_RESET_MON_POSITION ; $F1
-	dw AnimationResetMonPosition
-	db SE_LIGHT_SCREEN_PALETTE ; $F0
-	dw AnimationLightScreenPalette
-	db SE_HIDE_MON_PIC ; $EF
-	dw AnimationHideMonPic
-	db SE_SQUISH_MON_PIC ; $EE
-	dw AnimationSquishMonPic
-	db SE_SHOOT_BALLS_UPWARD ; $ED
-	dw AnimationShootBallsUpward
-	db SE_SHOOT_MANY_BALLS_UPWARD ; $EC
-	dw AnimationShootManyBallsUpward
-	db SE_BOUNCE_UP_AND_DOWN ; $EB
-	dw AnimationBoundUpAndDown
-	db SE_MINIMIZE_MON ; $EA
-	dw AnimationMinimizeMon
-	db SE_SLIDE_MON_DOWN_AND_HIDE ; $E9
-	dw AnimationSlideMonDownAndHide
-	db SE_TRANSFORM_MON ; $E8
-	dw AnimationTransformMon
-	db SE_LEAVES_FALLING ; $E7
-	dw AnimationLeavesFalling
-	db SE_PETALS_FALLING ; $E6
-	dw AnimationPetalsFalling
-	db SE_SLIDE_MON_HALF_OFF ; $E5
-	dw AnimationSlideMonHalfOff
-	db SE_SHAKE_ENEMY_HUD ; $E4
-	dw AnimationShakeEnemyHUD
-	db SE_SHAKE_ENEMY_HUD_2 ; unused--same pointer as SE_SHAKE_ENEMY_HUD ($E4)
-	dw AnimationShakeEnemyHUD
-	db SE_SPIRAL_BALLS_INWARD ; $E2
-	dw AnimationSpiralBallsInward
-	db SE_DELAY_ANIMATION_10 ; $E1
-	dw AnimationDelay10
-	db SE_FLASH_ENEMY_MON_PIC ; unused--same as SE_FLASH_MON_PIC ($F5), but for the enemy mon
-	dw AnimationFlashEnemyMonPic
-	db SE_HIDE_ENEMY_MON_PIC ; $DF
-	dw AnimationHideEnemyMonPic
-	db SE_BLINK_ENEMY_MON ; $DE
-	dw AnimationBlinkEnemyMon
-	db SE_SHOW_MON_PIC ; $DD
-	dw AnimationShowMonPic
-	db SE_SHOW_ENEMY_MON_PIC ; $DC
-	dw AnimationShowEnemyMonPic
-	db SE_SLIDE_ENEMY_MON_OFF ; $DB
-	dw AnimationSlideEnemyMonOff
-	db SE_SHAKE_BACK_AND_FORTH ; $DA
-	dw AnimationShakeBackAndForth
-	db SE_SUBSTITUTE_MON ; $D9
-	dw AnimationSubstitute
-	db SE_WAVY_SCREEN ; $D8
-	dw AnimationWavyScreen
-	db $FF
+; Indexed directly by (special_effect_id - SE_WAVY_SCREEN) * 2.
+; Keep this table in exact ascending command order, $D8 through $FE.
+	dw AnimationWavyScreen              ; $D8
+	dw AnimationSubstitute              ; $D9
+	dw AnimationShakeBackAndForth       ; $DA
+	dw AnimationSlideEnemyMonOff        ; $DB
+	dw AnimationShowEnemyMonPic         ; $DC
+	dw AnimationShowMonPic              ; $DD
+	dw AnimationBlinkEnemyMon           ; $DE
+	dw AnimationHideEnemyMonPic         ; $DF
+	dw AnimationFlashEnemyMonPic        ; $E0
+	dw AnimationDelay10                 ; $E1
+	dw AnimationSpiralBallsInward       ; $E2
+	dw AnimationShakeEnemyHUD           ; $E3
+	dw AnimationShakeEnemyHUD           ; $E4
+	dw AnimationSlideMonHalfOff         ; $E5
+	dw AnimationPetalsFalling           ; $E6
+	dw AnimationLeavesFalling           ; $E7
+	dw AnimationTransformMon            ; $E8
+	dw AnimationSlideMonDownAndHide     ; $E9
+	dw AnimationMinimizeMon             ; $EA
+	dw AnimationBoundUpAndDown          ; $EB
+	dw AnimationShootManyBallsUpward    ; $EC
+	dw AnimationShootBallsUpward        ; $ED
+	dw AnimationSquishMonPic            ; $EE
+	dw AnimationHideMonPic              ; $EF
+	dw AnimationLightScreenPalette      ; $F0
+	dw AnimationResetMonPosition        ; $F1
+	dw AnimationMoveMonHorizontally     ; $F2
+	dw AnimationBlinkMon                ; $F3
+	dw AnimationSlideMonOff             ; $F4
+	dw AnimationFlashMonPic             ; $F5
+	dw AnimationSlideMonDown            ; $F6
+	dw AnimationSlideMonUp              ; $F7
+	dw AnimationFlashScreenLong         ; $F8
+	dw AnimationDarkenMonPalette        ; $F9
+	dw AnimationWaterDropletsEverywhere ; $FA
+	dw AnimationShakeScreen             ; $FB
+	dw AnimationResetScreenPalette      ; $FC
+	dw AnimationDarkScreenPalette       ; $FD
+	dw AnimationFlashScreen             ; $FE
 
 AnimationDelay10:
 	ld c,10
@@ -1174,17 +2396,53 @@ FlashScreenLongSGB:
 ; causes a delay of 2 frames for the first cycle
 ; causes a delay of 1 frame for the second and third cycles
 FlashScreenLongDelay:
+	; Counter starts at 3 and only decreases: 2 frames on the first cycle,
+	; 1 frame on the remaining cycles. The old cp 4 branch was unreachable,
+	; and cp 2 had no consumer.
 	ld a,[wFlashScreenLongCounter]
-	cp a,4 ; never true since [wFlashScreenLongCounter] starts at 3
-	ld c,4
-	jr z,.delayFrames
 	cp a,3
 	ld c,2
 	jr z,.delayFrames
-	cp a,2 ; nothing is done with this
 	ld c,1
 .delayFrames
 	jp DelayFrames
+
+; ANM-5.61.40: Guillotine flashes only during its final closing subanimation.
+; The two opening clamp beats use delay 5; the final close uses delay 6.
+DoGuillotineSpecialEffects:
+	ld a,[wSubAnimFrameDelay]
+	cp a,6
+	ret nz
+	jp AnimationFlashScreenLegacyShort
+
+; ANM-5.61.40: Crabhammer flashes when three entries remain in the final
+; delay-3 hammer subanimation.
+DoCrabhammerSpecialEffects:
+	ld a,[wSubAnimFrameDelay]
+	cp a,3
+	ret nz
+	ld a,[wSubAnimCounter]
+	cp a,3
+	ret nz
+	jp AnimationFlashScreenLegacyShort
+
+; The old project used a one-frame inverted phase and one-frame white phase
+; for these two move-specific flashes. Keep that timing local instead of
+; changing the current global two-frame AnimationFlashScreen behavior.
+AnimationFlashScreenLegacyShort:
+	ld a,[rBGP]
+	push af
+	ld a,%00011011
+	ld [rBGP],a
+	ld c,1
+	call DelayFrames
+	xor a
+	ld [rBGP],a
+	ld c,1
+	call DelayFrames
+	pop af
+	ld [rBGP],a
+	ret
 
 AnimationFlashScreen:
 	ld a,[rBGP]
@@ -1211,30 +2469,15 @@ AnimationDarkenMonPalette:
 	lb bc, $f9, $f4
 	jr SetAnimationBGPalette
 
-AnimationUnusedPalette1:
-	lb bc, $fe, $f8
-	jr SetAnimationBGPalette
-
-AnimationUnusedPalette2:
-	lb bc, $ff, $ff
-	jr SetAnimationBGPalette
-
 AnimationResetScreenPalette:
 ; Restores the screen's palette to the normal palette.
 	lb bc, $e4, $e4
-	jr SetAnimationBGPalette
-
-AnimationUnusedPalette3:
-	lb bc, $00, $00
 	jr SetAnimationBGPalette
 
 AnimationLightScreenPalette:
 ; Changes the screen to use a palette with light colors.
 	lb bc, $90, $90
 	jr SetAnimationBGPalette
-
-AnimationUnusedPalette4:
-	lb bc, $40, $40
 
 SetAnimationBGPalette:
 	ld a, [wOnSGB]
@@ -1245,8 +2488,6 @@ SetAnimationBGPalette:
 .next
 	ld [rBGP], a
 	ret
-
-	ld b, $5
 
 AnimationShakeScreenVertically:
 	predef_jump PredefShakeScreenVertically
@@ -1457,46 +2698,39 @@ AdjustOAMBlockXPos:
 	ld h, d
 
 AdjustOAMBlockXPos2:
-	ld de, 4
-.loop
-	ld a, [wCoordAdjustmentAmount]
-	ld b, a
-	ld a, [hl]
-	add b
-	cp 168
-	jr c, .skipPuttingEntryOffScreen
-; put off-screen if X >= 168
-	dec hl
-	ld a, 160
-	ld [hli], a
-.skipPuttingEntryOffScreen
-	ld [hl], a
-	add hl, de
-	dec c
-	jr nz, .loop
-	ret
+	ld d, 168
+	jr AdjustOAMBlockPos2
 
 AdjustOAMBlockYPos:
 	ld l, e
 	ld h, d
 
 AdjustOAMBlockYPos2:
-	ld de, 4
+	ld d, 112
+
+; Shared X/Y OAM coordinate adjustment. D is the off-screen threshold.
+; Preserve the legacy DE=$0004 return value even though the loop now advances
+; HL directly instead of using ADD HL,DE.
+AdjustOAMBlockPos2:
 .loop
 	ld a, [wCoordAdjustmentAmount]
 	ld b, a
 	ld a, [hl]
 	add b
-	cp 112
-	jr c, .skipSettingPreviousEntrysAttribute
+	cp d
+	jr c, .storeAdjustedCoordinate
 	dec hl
-	ld a, 160 ; bug, sets previous OAM entry's attribute
+	ld a, 160 ; preserves the legacy X/Y off-screen behavior, including Y's old attribute write
 	ld [hli], a
-.skipSettingPreviousEntrysAttribute
+.storeAdjustedCoordinate
 	ld [hl], a
-	add hl, de
+	inc hl
+	inc hl
+	inc hl
+	inc hl
 	dec c
 	jr nz, .loop
+	ld de, 4
 	ret
 
 AnimationBlinkEnemyMon:
@@ -1528,7 +2762,10 @@ AnimationFlashMonPic:
 	ld [wChangeMonPicPlayerTurnSpecies], a
 	ld a, [wEnemyMonSpecies]
 	ld [wChangeMonPicEnemyTurnSpecies], a
-	jp ChangeMonPic
+	; FORM-5.62.12: this is an ordinary redraw of the active battler, so preserve
+	; its already-resolved regional form. TRN-5.62.16 also gives Transform its own
+	; staged form-aware redraw; unrelated deliberate replacements stay stock.
+	jp ChangeMonPicPreserveCurrentForm
 
 AnimationFlashEnemyMonPic:
 ; Flashes the enemy mon's sprite on and off
@@ -1536,6 +2773,19 @@ AnimationFlashEnemyMonPic:
 	jp CallWithTurnFlipped
 
 AnimationShowMonPic:
+	; BATTLE-5.61.19: a special Fly/Dig hit may deal damage without ending the
+	; target's semi-invulnerable state. Mirror Gen II's ShowMon guard: while the
+	; mon is still Invulnerable, keep its battle picture hidden and preserve the
+	; original three-frame timing. Its own charge continuation clears the bit
+	; before the second-turn animation, so Fly/Dig still reappear normally then.
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, [wPlayerBattleStatus1]
+	jr z, .checkInvulnerable
+	ld a, [wEnemyBattleStatus1]
+.checkInvulnerable
+	bit Invulnerable, a
+	jp nz, Delay3
 	xor a
 	call GetTileIDList
 	call GetMonSpriteTileMapPointerFromRowCount
@@ -1623,6 +2873,36 @@ AnimationResetMonPosition:
 .next
 	call ClearMonPicFromTileMap
 	jp AnimationShowMonPic
+
+; MOV-5.61.53: Sacred Fire runs from bank $3D, so its lunge must enter bank $1E
+; through one normal far-call.  Keep all tile-list work local to this bank: using
+; the ROM0-only `homecall` macro from ROMX switches away from the caller itself.
+SacredFireShiftUserForwardNoDelay::
+	call AnimationHideMonPic
+	ld a, [H_WHOSETURN]
+	and a
+	coord hl, 2, 5
+	jr z, .coordReady
+	coord hl, 11, 0
+.coordReady
+	xor a
+	push hl
+	call GetTileIDList
+	pop hl
+	jp CopyPicTiles
+
+SacredFireRestoreUserPositionNoDelay::
+	ld a, [H_WHOSETURN]
+	and a
+	ld a, 5 * SCREEN_WIDTH + 2
+	jr z, .clearReady
+	ld a, 11
+.clearReady
+	call ClearMonPicFromTileMap
+	xor a
+	call GetTileIDList
+	call GetMonSpriteTileMapPointerFromRowCount
+	jp CopyPicTiles
 
 AnimationSpiralBallsInward:
 ; Creates an effect that looks like energy balls spiralling into the
@@ -1975,10 +3255,8 @@ _AnimationSlideMonOff:
 .PlayerNextTile
 	ld a, [hl]
 	add 7
-; This is a bug. The lower right corner tile of the mon back pic is blanked
-; while the mon is sliding off the screen. It should compare with the max tile
-; plus one instead.
-	cp $61
+; Keep the lower-right tile valid until it actually slides past the edge.
+	cp $62
 	ret c
 	ld a, " "
 	ret
@@ -2026,6 +3304,8 @@ AnimationWavyScreen:
 	ld c, $ff
 	ld hl, WavyScreenLineOffsets
 .loop
+	ld a, [hl]
+	ld [hSCX], a
 	push hl
 .innerLoop
 	call WavyScreen_SetSCX
@@ -2042,6 +3322,7 @@ AnimationWavyScreen:
 	dec c
 	jr nz, .loop
 	xor a
+	ld [hSCX], a
 	ld [hWY], a
 	call SaveScreenTilesToBuffer2
 	call ClearScreen
@@ -2162,12 +3443,67 @@ AnimationBoundUpAndDown:
 AnimationTransformMon:
 ; Redraws this mon's sprite as the back/front sprite of the opposing mon.
 ; Used in Transform.
+	; TRN-5.62.16: resolve the target Species + form at the actual Transform redraw.
+	; This runs after Substitute cleanup with animations both on and off. Keeping the
+	; staging here also avoids growing the capacity-constrained Transform effect bank.
+	call .prepareRegionalFormIdentity
 	ld a, [wEnemyMonSpecies]
 	ld [wChangeMonPicPlayerTurnSpecies], a
 	ld a, [wBattleMonSpecies]
 	ld [wChangeMonPicEnemyTurnSpecies], a
+	; The transformed identity is now current, so this redraw uses the form-aware
+	; path. Other deliberate Species replacements keep ChangeMonPic stock semantics.
+	jp ChangeMonPicPreserveCurrentForm
+
+.prepareRegionalFormIdentity
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyUser
+
+; Player transforms into the active enemy. Mirror its marker into the enemy's
+; otherwise-unused battle CatchRate byte so the stock Transform copy naturally
+; carries the marker into wBattleMonCatchRate after the animation.
+.playerUser
+	ld a, [wEnemyMonSpecies]
+	ld [wBattleMonSpecies], a
+	ld e, 1
+	callba RegionalFormGetBattleSlotFormIdentity
+	jr nc, .playerNormal
+	ld a, e
+	jr .storePlayerMarker
+.playerNormal
+	xor a
+.storePlayerMarker
+	ld [wBattleMonCatchRate], a
+	ld [wEnemyMonCatchRate_NotReferenced], a
+	ret
+
+; Enemy transforms into the active player. wEnemyMonSpecies2 deliberately remains
+; the original enemy identity; only the active Species/runtime form are replaced.
+.enemyUser
+	ld a, [wBattleMonSpecies]
+	ld [wEnemyMonSpecies], a
+	ld e, 0
+	callba RegionalFormGetBattleSlotFormIdentity
+	jr nc, .enemyNormal
+	ld a, d
+	jr .storeEnemyForm
+.enemyNormal
+	xor a
+.storeEnemyForm
+	ld [wEnemyMonForm], a
+	ret
 
 ChangeMonPic:
+	; Deliberate species replacement uses the stock requested-species header.
+	; Ordinary redraws and TRN-5.62.16 Transform enter through the form-aware label.
+	xor a
+	jr ChangeMonPicModeReady
+
+ChangeMonPicPreserveCurrentForm:
+	ld a, 1
+ChangeMonPicModeReady:
+	ld b, a
 	ld a, [H_WHOSETURN]
 	and a
 	jr z, .playerTurn
@@ -2176,7 +3512,16 @@ ChangeMonPic:
 	ld [wd0b5], a
 	xor a
 	ld [wSpriteFlipped], a
+	ld a, b
+	and a
+	jr z, .enemyStockHeader
+	; FORM-5.62.12: active-enemy redraws reuse the runtime form that was already
+	; resolved when this battle instance was created.
+	callba RegionalFormLoadCurrentEnemyHeader
+	jr .enemyHeaderReady
+.enemyStockHeader
 	call GetMonHeader
+.enemyHeaderReady
 	coord hl, 12, 0
 	call LoadFrontSpriteByMonIndex
 	jr .done
@@ -2186,7 +3531,15 @@ ChangeMonPic:
 	ld a, [wChangeMonPicPlayerTurnSpecies]
 	ld [wBattleMonSpecies2], a
 	ld [wd0b5], a
+	ld a, b
+	and a
+	jr z, .playerStockHeader
+	; FORM-5.62.12: same rule for the active player's back sprite.
+	callba RegionalFormLoadBattleMonHeader
+	jr .playerHeaderReady
+.playerStockHeader
 	call GetMonHeader
+.playerHeaderReady
 	predef LoadMonBackPic
 	xor a
 	call GetTileIDList
@@ -2383,8 +3736,46 @@ GetMoveSound:
 	ld a,b
 	ret
 
+PlayExtendedAnimationUserCry:
+; input: a = move ID whose MoveSoundTable pitch/tempo should profile the cry.
+; Dedicated recipes use this instead of pretending their animation ID is
+; GROWL/ROAR, so real move identity and cry behavior stay independent.
+; Move IDs are 1-based, while MoveSoundTable starts directly at POUND (index 0).
+	dec a
+	ld e,a
+	ld d,0
+	ld hl,MoveSoundTable
+	add hl,de
+	add hl,de
+	add hl,de
+	inc hl ; skip the regular SFX ID
+	ld a,[hli]
+	ld [wFrequencyModifier],a
+	ld a,[hl]
+	ld [wTempoModifier],a
+	ld a,[H_WHOSETURN]
+	and a
+	jr nz,.enemy
+	ld a,[wBattleMonSpecies]
+	jr .play
+.enemy
+	ld a,[wEnemyMonSpecies]
+.play
+	push af
+	ld a,1
+	ld [wSFXDontWait],a
+	pop af
+	call PlayCry
+	xor a
+	ld [wSFXDontWait],a
+	ret
+
 IsCryMove:
-; set carry if the move animation involves playing a monster cry
+; set carry if the legacy move animation involves playing a monster cry.
+; Dedicated recipes must not inherit Growl/Roar cry behavior from an alias.
+	ld a,[wMoveAnimScriptLoaded]
+	and a ; also clears carry
+	ret nz
 	ld a,[wAnimationID]
 	cp a,GROWL
 	jr z,.CryMove
@@ -2410,7 +3801,7 @@ MoveSoundTable:
 	db SFX_DAMAGE,            $00,$80 ; SCRATCH
 	db SFX_BATTLE_0F,         $20,$40 ; VICEGRIP
 	db SFX_BATTLE_0F,         $00,$80 ; GUILLOTINE
-	db SFX_BATTLE_0E,         $00,$a0 ; RAZOR_WIND
+	db SFX_BATTLE_0E,         $00,$a0 ; SPARK (legacy fallback only)
 	db SFX_NOT_VERY_EFFECTIVE,$10,$c0 ; SWORDS_DANCE
 	db SFX_NOT_VERY_EFFECTIVE,$00,$a0 ; CUT
 	db SFX_BATTLE_12,         $00,$c0 ; GUST
@@ -2424,7 +3815,7 @@ MoveSoundTable:
 	db SFX_BATTLE_17,         $f0,$40 ; DOUBLE_KICK
 	db SFX_SUPER_EFFECTIVE,   $00,$80 ; MEGA_KICK
 	db SFX_BATTLE_17,         $00,$80 ; JUMP_KICK
-	db SFX_BATTLE_21,         $10,$80 ; ROLLING_KICK
+	db SFX_BATTLE_21,         $10,$80 ; AURA_SPHERE (legacy profile only)
 	db SFX_BATTLE_1B,         $01,$a0 ; SAND_ATTACK
 	db SFX_BATTLE_18,         $00,$80 ; HEADBUTT
 	db SFX_BATTLE_1E,         $00,$60 ; HORN_ATTACK
@@ -2537,7 +3928,7 @@ MoveSoundTable:
 	db SFX_NOT_VERY_EFFECTIVE,$09,$ff ; GLARE
 	db SFX_BATTLE_35,         $42,$01 ; DREAM_EATER
 	db SFX_BATTLE_1C,         $00,$ff ; POISON_GAS
-	db SFX_BATTLE_32,         $08,$e0 ; BARRAGE
+	db SFX_BATTLE_1B,         $03,$60 ; BULLET_SEED
 	db SFX_BATTLE_24,         $00,$80 ; LEECH_LIFE
 	db SFX_BATTLE_09,         $88,$10 ; LOVELY_KISS
 	db SFX_BATTLE_25,         $48,$ff ; SKY_ATTACK
@@ -3048,7 +4439,7 @@ TossBallAnimation:
 PlayApplyingAttackSound:
 ; play a different sound depending if move is not very effective, neutral, or super-effective
 ; don't play any sound at all if move is ineffective
-	call WaitForSoundToFinish
+	callba WaitForBattleAnimationSFX
 	ld a, [wDamageMultipliers] ; effectiveness
 	and $7f
 	cp $7f

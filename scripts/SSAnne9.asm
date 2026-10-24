@@ -4,16 +4,12 @@ SSAnne9Script:
 	xor a
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ld hl, SSAnne9TrainerHeader0
-	ld de, SSAnne9ScriptPointers
+	; TMD-5.47.00: share bank 18's standard three-state trainer script table.
+	ld de, Bank18StandardTrainerScriptPointers
 	ld a, [wSSAnne9CurScript]
 	call ExecuteCurMapScriptInTable
 	ld [wSSAnne9CurScript], a
 	ret
-
-SSAnne9ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
 
 SSAnne9TextPointers:
 	dw SSAnne9Text1
@@ -37,7 +33,6 @@ SSAnne9TrainerHeader0:
 	dw SSAnne9BattleText1 ; TextBeforeBattle
 	dw SSAnne9AfterBattleText1 ; TextAfterBattle
 	dw SSAnne9EndBattleText1 ; TextEndBattle
-	dw SSAnne9EndBattleText1 ; TextEndBattle
 
 SSAnne9TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_9_TRAINER_1
@@ -45,7 +40,6 @@ SSAnne9TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_SS_ANNE_9_TRAINER_1
 	dw SSAnne9BattleText2 ; TextBeforeBattle
 	dw SSAnne9AfterBattleText2 ; TextAfterBattle
-	dw SSAnne9EndBattleText2 ; TextEndBattle
 	dw SSAnne9EndBattleText2 ; TextEndBattle
 
 SSAnne9TrainerHeader2:
@@ -55,7 +49,6 @@ SSAnne9TrainerHeader2:
 	dw SSAnne9BattleText3 ; TextBeforeBattle
 	dw SSAnne9AfterBattleText3 ; TextAfterBattle
 	dw SSAnne9EndBattleText3 ; TextEndBattle
-	dw SSAnne9EndBattleText3 ; TextEndBattle
 
 SSAnne9TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_SS_ANNE_9_TRAINER_3
@@ -64,33 +57,20 @@ SSAnne9TrainerHeader3:
 	dw SSAnne9BattleText4 ; TextBeforeBattle
 	dw SSAnne9AfterBattleText4 ; TextAfterBattle
 	dw SSAnne9EndBattleText4 ; TextEndBattle
-	dw SSAnne9EndBattleText4 ; TextEndBattle
 
 	db $ff
 
 SSAnne9Text1:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader0
 
 SSAnne9Text2:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader1
 
 SSAnne9Text3:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader2
 
 SSAnne9Text4:
-	TX_ASM
-	ld hl, SSAnne9TrainerHeader3
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER SSAnne9TrainerHeader3
 
 SSAnne9Text5:
 	TX_ASM
@@ -109,8 +89,7 @@ SSAnne9Text_61bf2:
 SSAnne9Text7:
 	TX_ASM
 	ld hl, SSAnne9Text_61c01
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c01:
 	TX_FAR _SSAnne9Text_61c01
@@ -119,8 +98,7 @@ SSAnne9Text_61c01:
 SSAnne9Text8:
 	TX_ASM
 	ld hl, SSAnne9Text_61c10
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c10:
 	TX_FAR _SSAnne9Text_61c10
@@ -129,8 +107,7 @@ SSAnne9Text_61c10:
 SSAnne9Text10:
 	TX_ASM
 	ld hl, SSAnne9Text_61c1f
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c1f:
 	TX_FAR _SSAnne9Text_61c1f
@@ -139,8 +116,7 @@ SSAnne9Text_61c1f:
 SSAnne9Text11:
 	TX_ASM
 	ld hl, SSAnne9Text_61c2e
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c2e:
 	TX_FAR _SSAnne9Text_61c2e
@@ -149,8 +125,7 @@ SSAnne9Text_61c2e:
 SSAnne9Text12:
 	TX_ASM
 	ld hl, SSAnne9Text_61c3d
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c3d:
 	TX_FAR _SSAnne9Text_61c3d
@@ -159,8 +134,7 @@ SSAnne9Text_61c3d:
 SSAnne9Text13:
 	TX_ASM
 	ld hl, SSAnne9Text_61c4c
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 SSAnne9Text_61c4c:
 	TX_FAR _SSAnne9Text_61c4c

@@ -11,6 +11,8 @@ DisplayElevatorFloorMenu:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
+	callba RestoreElevatorFloorMenuPosition
+	xor a
 	ld [wPrintItemPrices], a
 	ld a, SPECIALLISTMENU
 	ld [wListMenuID], a

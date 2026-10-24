@@ -1,16 +1,8 @@
 RockTunnel1Script:
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local shared trainer dispatcher/table.
 	ld hl, RockTunnel1TrainerHeader0
-	ld de, RockTunnel1ScriptPointers
-	ld a, [wRockTunnel1CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRockTunnel1CurScript], a
-	ret
-
-RockTunnel1ScriptPointers:
-	dw CheckFightingMapTrainers
-	dw DisplayEnemyTrainerTextAndStartBattle
-	dw EndTrainerBattle
+	ld bc, wRockTunnel1CurScript
+	jp Bank11RunStandardTrainerMapScript
 
 RockTunnel1TextPointers:
 	dw RockTunnel1Text1
@@ -29,7 +21,6 @@ RockTunnel1TrainerHeader0:
 	dw RockTunnel1BattleText1 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText1 ; TextAfterBattle
 	dw RockTunnel1EndBattleText1 ; TextEndBattle
-	dw RockTunnel1EndBattleText1 ; TextEndBattle
 
 RockTunnel1TrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_1
@@ -37,7 +28,6 @@ RockTunnel1TrainerHeader1:
 	dwEventFlagAddress EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_1
 	dw RockTunnel1BattleText2 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText2 ; TextAfterBattle
-	dw RockTunnel1EndBattleText2 ; TextEndBattle
 	dw RockTunnel1EndBattleText2 ; TextEndBattle
 
 RockTunnel1TrainerHeader2:
@@ -47,7 +37,6 @@ RockTunnel1TrainerHeader2:
 	dw RockTunnel1BattleText3 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText3 ; TextAfterBattle
 	dw RockTunnel1EndBattleText3 ; TextEndBattle
-	dw RockTunnel1EndBattleText3 ; TextEndBattle
 
 RockTunnel1TrainerHeader3:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_3
@@ -55,7 +44,6 @@ RockTunnel1TrainerHeader3:
 	dwEventFlagAddress EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_3
 	dw RockTunnel1BattleText4 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText4 ; TextAfterBattle
-	dw RockTunnel1EndBattleText4 ; TextEndBattle
 	dw RockTunnel1EndBattleText4 ; TextEndBattle
 
 RockTunnel1TrainerHeader4:
@@ -65,7 +53,6 @@ RockTunnel1TrainerHeader4:
 	dw RockTunnel1BattleText5 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText5 ; TextAfterBattle
 	dw RockTunnel1EndBattleText5 ; TextEndBattle
-	dw RockTunnel1EndBattleText5 ; TextEndBattle
 
 RockTunnel1TrainerHeader5:
 	dbEventFlagBit EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_5
@@ -73,7 +60,6 @@ RockTunnel1TrainerHeader5:
 	dwEventFlagAddress EVENT_BEAT_ROCK_TUNNEL_1_TRAINER_5
 	dw RockTunnel1BattleText6 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText6 ; TextAfterBattle
-	dw RockTunnel1EndBattleText6 ; TextEndBattle
 	dw RockTunnel1EndBattleText6 ; TextEndBattle
 
 RockTunnel1TrainerHeader6:
@@ -83,46 +69,29 @@ RockTunnel1TrainerHeader6:
 	dw RockTunnel1BattleText7 ; TextBeforeBattle
 	dw RockTunnel1AfterBattleText7 ; TextAfterBattle
 	dw RockTunnel1EndBattleText7 ; TextEndBattle
-	dw RockTunnel1EndBattleText7 ; TextEndBattle
 
 	db $ff
 
 RockTunnel1Text1:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader0
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader0
 
 RockTunnel1Text2:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader1
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader1
 
 RockTunnel1Text3:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader2
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader2
 
 RockTunnel1Text4:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader3
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader3
 
 RockTunnel1Text5:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader4
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader4
 
 RockTunnel1Text6:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader5
-	jr RockTunnel1TalkToTrainer
+	TX_TRAINER RockTunnel1TrainerHeader5
 
 RockTunnel1Text7:
-	TX_ASM
-	ld hl, RockTunnel1TrainerHeader6
-RockTunnel1TalkToTrainer:
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER RockTunnel1TrainerHeader6
 
 RockTunnel1BattleText1:
 	TX_FAR _RockTunnel1BattleText1

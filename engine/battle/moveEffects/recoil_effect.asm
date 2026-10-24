@@ -1,28 +1,15 @@
 RecoilEffect_:
+	; RCL-5.62.40: resolve recoil fraction by real Move ID in roomy Bank $3E.
+	; The far helper returns the 16-bit recoil amount in DE because Bankswitch
+	; uses A/B/C/HL while restoring the caller's ROM bank.
+	callab CalculateRecoilDamage
+	ld b, d
+	ld c, e
 	ld a, [H_WHOSETURN]
 	and a
 	ld hl, wBattleMonMaxHP
-	jr z, .recoilEffect
+	jr z, .updateHP
 	ld hl, wEnemyMonMaxHP
-.recoilEffect
-	call GetCurrentMoveID
-	ld d, a
-	ld a, [wDamage]
-	ld b, a
-	ld a, [wDamage + 1]
-	ld c, a
-	srl b
-	rr c
-	ld a, d
-	cp STRUGGLE ; struggle deals 50% recoil damage
-	jr z, .gotRecoilDamage
-	srl b
-	rr c
-.gotRecoilDamage
-	ld a, b
-	or c
-	jr nz, .updateHP
-	inc c ; minimum recoil damage is 1
 .updateHP
 ; subtract HP from user due to the recoil damage
 	ld a, [hli]

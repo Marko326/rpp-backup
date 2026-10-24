@@ -1,4 +1,3 @@
-db DEX_GRIMER ; pokedex id
 db 80 ; base hp
 db 80 ; base attack
 db 50 ; base defense
@@ -6,7 +5,8 @@ db 25 ; base speed
 db 40 ; base special
 db POISON ; species type 1
 db POISON ; species type 2
-db 190 ; catch rate
+GRIMER_CATCH_RATE EQU 190
+db GRIMER_CATCH_RATE ; catch rate
 db 90 ; base exp yield
 INCBIN "pic/bmon/grimer.pic",0,1 ; 55, sprite dimensions
 dw GrimerPicFront
@@ -14,9 +14,6 @@ dw GrimerPicBack
 ; move tutor compatibility flags
 	m_tutor 5
 	m_tutor 9,10,11
-	m_tutor 0
-	m_tutor 0
-db 0 ; growth rate
 ; learnset
 	tmlearn 1,6,8
 	tmlearn 9,10,12

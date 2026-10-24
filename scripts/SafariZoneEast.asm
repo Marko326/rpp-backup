@@ -1,6 +1,3 @@
-SafariZoneEastScript:
-	jp EnableAutoTextBoxDrawing
-
 SafariZoneEastTextPointers:
 	dw PickUpItemText
 	dw PickUpItemText

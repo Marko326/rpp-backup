@@ -7,7 +7,9 @@ ChoosePlayerName:
 	and a        ; Added gender check
 	jr nz, .AreGirl ; Skip to girl names if you are a girl instead
 	ld de, DefaultNamesPlayer
-	call DisplayIntroNameTextBox
+	call DisplayPlayerIntroNameTextBox
+	bit BIT_B_BUTTON, a
+	jp nz, .cancelNameList
 	ld a, [wCurrentMenuItem]
 	and a
 	jr z, .customName
@@ -18,7 +20,9 @@ ChoosePlayerName:
 	jr .done
 .AreGirl ; Copy of the boy naming routine, just with girl's names
 	ld de, DefaultNamesGirl
-	call DisplayIntroNameTextBox
+	call DisplayPlayerIntroNameTextBox
+	bit BIT_B_BUTTON, a
+	jp nz, .cancelNameList
 	ld a, [wCurrentMenuItem] ; wCurrentMenuItem
 	and a
 	jr z, .customName
@@ -35,7 +39,7 @@ ChoosePlayerName:
 	ld a, [wcf4b]
 	cp "@"
 	jr nz, .notBlankName
-	ld hl, RedDefaultName
+	ld hl, PlayerDefaultName
 	ld a, [wPlayerGender]
 	and a
 	jr z, .okGo
@@ -58,13 +62,17 @@ ChoosePlayerName:
 	call IntroDisplayPicCenteredOrUpperRight
 .done
 	ld hl, YourNameIsText2
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, ReChoosePlayerName
 	ld hl, YourNameIsText
-	jp PrintText
+	call PrintText
+	and a ; clear carry: confirmed names remain in the name flow
+	ret
+
+.cancelNameList
+; NEW-5.61.08: only B on the player-name list returns to gender selection.
+	scf
+	ret
 
 YourNameIsText:
 	TX_FAR _YourNameIsText
@@ -109,10 +117,7 @@ ChooseRivalName:
 	call IntroDisplayPicCenteredOrUpperRight
 .done
 	ld hl, HisNameIsText2
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	jp nz, ReChooseRivalName
 	ld hl, HisNameIsText
 	jp PrintText
@@ -224,7 +229,14 @@ OakSpeechSlidePicCommon:
 	pop hl
 	ret
 
+DisplayPlayerIntroNameTextBox:
+	ld a, A_BUTTON | B_BUTTON
+	jr DisplayIntroNameTextBoxWithKeys
+
 DisplayIntroNameTextBox:
+	ld a, A_BUTTON
+DisplayIntroNameTextBoxWithKeys:
+	ld [wMenuWatchedKeys], a
 	push de
 	coord hl, 0, 0
 	ld b, $a
@@ -242,7 +254,6 @@ DisplayIntroNameTextBox:
 	ld [wLastMenuItem], a
 	inc a
 	ld [wTopMenuItemX], a
-	ld [wMenuWatchedKeys], a ; A_BUTTON
 	inc a
 	ld [wTopMenuItemY], a
 	inc a
@@ -254,9 +265,16 @@ DisplayIntroNameTextBox:
 
 DefaultNamesPlayer:
 	db   "New Name"
+IF DEF(_RED)
 	next "Red"
 	next "Ash"
 	next "Jack"
+ENDC
+IF DEF(_BLUE)
+	next "Blue"
+	next "Gary"
+	next "John"
+ENDC
 	db   "@"
 	
 DefaultNamesGirl:
@@ -268,9 +286,16 @@ DefaultNamesGirl:
 
 DefaultNamesRival:
 	db   "New Name"
+IF DEF(_RED)
 	next "Blue"
 	next "Gary"
 	next "John"
+ENDC
+IF DEF(_BLUE)
+	next "Red"
+	next "Ash"
+	next "Jack"
+ENDC
 	db   "@"
 
 GetDefaultName:
@@ -299,17 +324,31 @@ GetDefaultName:
 
 DefaultNamesPlayerList:
 	db "New Name@"
-RedDefaultName:
+PlayerDefaultName:
+IF DEF(_RED)
 	db "Red@"
 	db "Ash@"
 	db "Jack@"
+ENDC
+IF DEF(_BLUE)
+	db "Blue@"
+	db "Gary@"
+	db "John@"
+ENDC
 
 DefaultNamesRivalList:
 	db "New Name@"
 RivalDefaultName:
+IF DEF(_RED)
 	db "Blue@"
 	db "Gary@"
 	db "John@"
+ENDC
+IF DEF(_BLUE)
+	db "Red@"
+	db "Ash@"
+	db "Jack@"
+ENDC
 
 DefaultNamesGirlList:
 	db "New Name@"

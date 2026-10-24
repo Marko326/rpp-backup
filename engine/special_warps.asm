@@ -25,6 +25,19 @@ SpecialWarpIn:
 	bit 4,[hl] ; dungeon warp?
 	ret nz
 ; if not dungeon warp
+	; Viridian Forest's south gate exits through LAST_MAP. A normal visit keeps
+	; ROUTE_2 here from the outdoor -> gate warp, but Fly enters the forest
+	; directly and would otherwise leave VIRIDIAN_FOREST in wLastMap, causing
+	; the gate's south exit to warp straight back into the forest.
+	cp VIRIDIAN_FOREST
+	jr nz,.notViridianForest
+	ld a,ROUTE_2
+	jr .storeLastMap
+.notViridianForest
+	cp CELADON_MART_ROOF
+	jr nz,.storeLastMap
+	ld a,CELADON_CITY
+.storeLastMap
 	ld [wLastMap],a
 	ret
 
@@ -113,16 +126,24 @@ LoadSpecialWarpData:
 .otherDestination
 	ld a, [wDestinationMap]
 .usedFlyWarp
-	ld b, a
+	; Extra Fly destinations live in expansion bank $35 so bank $01 only keeps
+	; the original town/blackout table. D survives the far-call bank switch.
+	ld d, a
+	callab TryLoadSpecialFlyWarpData
+	jr c, .finishSpecialWarp
+
+	; Original town/blackout/Teleport destinations.
+	ld b, d
+	ld a, d
 	ld [wCurMap], a
 	ld hl, FlyWarpDataPtr
 .flyWarpDataPtrLoop
 	ld a, [hli]
-	inc hl
+	inc hl ; skip unused byte in the original 4-byte record
 	cp b
 	jr z, .foundFlyWarpMatch
 	inc hl
-	inc hl
+	inc hl ; skip warp-data pointer
 	jr .flyWarpDataPtrLoop
 .foundFlyWarpMatch
 	ld a, [hli]
@@ -137,6 +158,7 @@ LoadSpecialWarpData:
 	inc de
 	dec c
 	jr nz, .copyWarpDataLoop2
+.finishSpecialWarp
 	xor a ; OVERWORLD
 	ld [wCurMapTileset], a
 .done

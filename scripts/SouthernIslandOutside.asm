@@ -1,6 +1,3 @@
-SouthernIslandOutsideScript:
-	jp EnableAutoTextBoxDrawing
-
 SouthernIslandOutsideTextPointers:
 	dw SouthernIslandCaptainText
 	dw SouthernIslandBerryTreeText

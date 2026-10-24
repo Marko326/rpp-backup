@@ -1,20 +1,62 @@
 ShowPokedexMenu:
+	; Pokédex is a full-screen menu. Keep overworld OAM disabled for the whole
+	; session so returning from Nest Map cannot redraw the player/NPC sprites
+	; over the Pokédex list. Restore the caller's exact state on exit.
+	ld hl,wUpdateSpritesEnabled
+	ld a,[hl]
+	push af
+	ld [hl],$ff
+	call ClearSprites
 	call GBPalWhiteOut
 	call ClearScreen
 	call UpdateSprites
 	ld a,[wListScrollOffset]
 	push af
+	; Restore the last Pokédex selection for this play session. Only the absolute
+	; Pokédex number is remembered, so reopening keeps the same Pokémon selected
+	; without adding anything to save data. Entries beyond the first page are
+	; placed on the bottom visible row.
+	ld a,[wPokedexSavedSelection]
+	and a
+	jr z,.useFirstPokedexEntry
+	ld [wd11e],a
+	dec a ; zero-based absolute list index
+	cp 7
+	jr c,.savedPokedexEntryOnFirstPage
+	sub 6
+	ld [wListScrollOffset],a
+	ld a,6
+	jr .storeSavedPokedexRow
+.savedPokedexEntryOnFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wd11e]
+	dec a
+.storeSavedPokedexRow
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	jr .pokedexSelectionReady
+.useFirstPokedexEntry
 	xor a
 	ld [wCurrentMenuItem],a
 	ld [wListScrollOffset],a
 	ld [wLastMenuItem],a
 	inc a
 	ld [wd11e],a
+.pokedexSelectionReady
+	ld a,1
 	ld [hJoy7],a
 .setUpGraphics
 	ld b, SET_PAL_GENERIC
 	call RunPaletteCommand
+IF DEF(_BLUE)
+	callab SetBluePokedexListPokeballPalettes
+ENDC
+IF DEF(_RED)
 	callab LoadPokedexTilePatterns
+ENDC
+	; DEX-5.62.118: neutral palette 2 is reserved for partly owned forms.
+	callab RegionalDexLoadPartialBallPalette
 .doPokemonListMenu
 	ld hl,wTopMenuItemY
 	ld a,3
@@ -35,6 +77,15 @@ ShowPokedexMenu:
 	and a
 	jr nz,.setUpGraphics ; START 查看地区后重新初始化图鉴列表界面
 .exitPokedex
+	; Remember the selected Pokémon only in runtime WRAM. MainMenu clears this at
+	; the title/main-menu session boundary, so Continue/new game after a restart
+	; starts the Pokédex from entry 1 and no .sav bytes are involved.
+	ld a,[wListScrollOffset]
+	ld b,a
+	ld a,[wCurrentMenuItem]
+	add b
+	inc a
+	ld [wPokedexSavedSelection],a
 	xor a
 	ld [wMenuWatchMovingOutOfBounds],a
 	ld [wCurrentMenuItem],a
@@ -46,7 +97,9 @@ ShowPokedexMenu:
 	ld [wListScrollOffset],a
 	call GBPalWhiteOutWithDelay3
 	call RunDefaultPaletteCommand
-	jp ReloadMapData
+	pop af
+	ld [wUpdateSpritesEnabled],a
+	jp Pokedex_ReloadAndRedrawOverworld
 .goToSideMenu
 	call HandlePokedexSideMenu
 	dec b
@@ -141,8 +194,10 @@ HandlePokedexSideMenu:
 
 .choseData
 	call ShowPokedexDataInternal
-	ld b,0
-	jr .exitSideMenu
+	; The paged Info session returns the last viewed Pokédex number in wd11e.
+	; Do not restore the original list cursor after browsing: return the player to
+	; the Pokémon that is actually on screen when B is pressed.
+	jp PokedexData_ExitSideMenuAtCurrentEntry
 
 ; play pokemon cry
 .choseCry
@@ -264,14 +319,10 @@ HandlePokedexListMenu:
 	add hl,de
 	dec hl
 	push hl
-	ld hl,wPokedexOwned
-	call IsPokemonBitSet
+	ld d,h
+	ld e,l
+	callab RegionalDexDrawPokedexListBall
 	pop hl
-	ld a," "
-	jr z,.writeTile
-	ld a,$72 ; pokeball tile
-.writeTile
-	ld [hl],a ; put a pokeball next to pokemon that the player has owned
 	push hl
 	ld hl,wPokedexSeen
 	call IsPokemonBitSet
@@ -458,7 +509,7 @@ HandlePokedexListMenu:
 	; 首尾跳转或按住到达边界后必须先松开上下键，防止继续移动。
 	call DelayFrame
 	call Joypad
-	ld a,[hJoyHeld]
+	ldh a,[hJoyHeld]
 	and D_UP | D_DOWN
 	jr nz,.waitForVerticalRelease
 	ret
@@ -520,40 +571,80 @@ IsPokemonBitSet:
 	and a
 	ret
 
+; ShowPokedexDataInternal returns the final viewed Pokédex number in wd11e.
+; The side menu has five saved values above its return address; discard the
+; original selection and rebuild the list cursor around the final entry instead.
+PokedexData_ExitSideMenuAtCurrentEntry:
+	ld a,[wd11e]
+	ld d,a ; DE survives the far-call bank switch; D = final Pokédex number
+	pop af
+	ld [wDexMaxSeenMon],a
+	pop af ; discard original wd11e
+	pop af ; discard original wListScrollOffset
+	pop af ; discard original wLastMenuItem
+	pop af ; original visible row becomes the preferred return row
+	ld e,a ; E = preferred visible row (0..6)
+	callba PokedexData_SelectCurrentListEntry
+	ld b,0
+	push bc
+	coord hl, 0, 3
+	ld de,20
+	lb bc, " ", 13
+	call DrawTileLine
+	pop bc
+	ret
+
 ; function to display pokedex data from outside the pokedex
 ShowPokedexData:
 	call GBPalWhiteOutWithDelay3
 	call ClearScreen
 	call UpdateSprites
 	callab LoadPokedexTilePatterns ; load pokedex tiles
+	xor a ; external callers keep the original single-entry A/B-only behavior
+	jr ShowPokedexDataCommon
 
 ; function to display pokedex data from inside the pokedex
 ShowPokedexDataInternal:
+	ld a,1 ; Pokédex list -> Info enables UP/DOWN browsing
+
+ShowPokedexDataCommon:
+	; Save the caller mode above the original hTilesetType value so the whole
+	; paged session owns one setup/teardown pair, even when entries are redrawn.
+	ld b,a
+	ld a,[hTilesetType]
+	push af
+	ld a,b
+	push af
 	ld hl,wd72c
 	set 1,[hl]
-	; Music Off keeps silent hardware routes connected. Changing NR50 while
-	; those DACs are connected creates an audible pop, so only apply the
-	; temporary Pokedex volume reduction while background music is enabled.
-	ld a, [wOptions]
-	bit 5, a
-	jr nz, .skipEntryVolumeReduction
-	ld a, [wBGMVolume]
-	cp $a0 ; BGM Volume 0 is also effectively muted
-	jr z, .skipEntryVolumeReduction
-	ld a, $33 ; 3/7 volume
-	ld [rNR50], a
-.skipEntryVolumeReduction
+	; FORM-5.62.12: pass the caller mode in E. The roomy helper starts internal
+	; browsing on NORMAL and derives capture one-shots from wCapturedMonSpecies.
+	ld e,a
+	; The audio engine rewrites NR50 from Volume every update, so a direct NR50
+	; write only lasts a frame. Keep the temporary Pokédex attenuation in the
+	; audio engine's master-volume state instead; the roomy helper bank owns it.
+	callba PokedexData_BeginSessionVolume
+.renderEntry
+	; External callers keep state 0; internal callers normalize to 1 as the session
+	; mode marker. The bank-$34 input loop owns its local 1/2/3 page state.
+	pop af
+	and a
+	jr z,.storeDescriptionState
+	ld a,1
+.storeDescriptionState
+	push af
 	call GBPalWhiteOut ; zero all palettes
 	call ClearScreen
 	ld a,[wd11e] ; pokemon ID
 	ld [wcf91],a
+	; DEX-5.62.117: the first frame must use the actual Seen form.
+	callba PokedexData_SelectFirstSeenForm
+	ld a,[wcf91]
 	push af
 	ld b, SET_PAL_POKEDEX
 	call RunPaletteCommand
 	pop af
 	ld [wd11e],a
-	ld a,[hTilesetType]
-	push af
 	xor a
 	ld [hTilesetType],a
 
@@ -626,8 +717,22 @@ ShowPokedexDataInternal:
 	lb bc, LEADING_ZEROES | 1, 3
 	call PrintNumber ; print pokedex number
 
+	; Use the current form's independent Owned permission for height,
+	; weight and description. Preserve the stock data pointer and DE.
 	ld hl,wPokedexOwned
-	call IsPokemonBitSet
+	push hl
+	push de
+	ld a,[wcf91]
+	ld d,a
+	ld a,[wPokedexViewForm]
+	ld e,a
+	callba RegionalDexPokedexOwnedTest
+	pop de
+	pop hl
+	ld c,0
+	jr z,.initialNotOwned
+	inc c
+.initialNotOwned
 	pop af
 	ld [wd11e],a
 	ld a,[wcf91]
@@ -640,8 +745,10 @@ ShowPokedexDataInternal:
 	push hl
 
 	call Delay3
+	; FORM-5.62.12: resolve the caller-selected form immediately before the stock
+	; palette commit/frontpic load, preserving the original first-render timing.
+	callba PokedexData_PrepareInitialViewForm
 	call GBPalNormal
-	call GetMonHeader ; load pokemon picture location
 	coord hl, 1, 1
 	call LoadFlippedFrontSpriteByMonIndex ; draw pokemon picture
 	ld a,[wcf91]
@@ -651,6 +758,12 @@ ShowPokedexDataInternal:
 	pop de
 	pop bc
 	pop af
+
+	; $FF8B is shared with H_SPRITEWIDTH, so the frontpic loader may leave the
+	; down-arrow Active alias nonzero. Reinitialize it only after picture/cry work
+	; has finished; Owned descriptions will explicitly arm it again after rendering.
+	xor a
+	ld [hDownArrowBlinkActive],a
 
 	ld a,c
 	and a
@@ -705,36 +818,63 @@ ShowPokedexDataInternal:
 	ld [hDexWeight + 1],a ; restore original value of [hDexWeight + 1]
 	pop af
 	ld [hDexWeight],a ; restore original value of [hDexWeight]
+	; FORM-5.62.12: after the stock metrics are drawn, replace only the numeric
+	; Ht/Wt fields when the selected regional form defines overrides.
+	callba PokedexData_OverrideInitialViewMetrics
 	pop hl
 	inc hl ; hl = address of pokedex description text
+	; External one-shot callers retain the original text engine behavior, where
+	; the embedded `page` command waits for A/B. Internal Pokédex Info owns its
+	; description input so B can exit from either half and A alone toggles halves.
+	pop af
+	push af
+	and a
+	jr nz,.renderInternalDescription
 	coord bc, 1, 11
 	ld a,2
 	ld [$fff4],a
-	call TextCommandProcessor ; print pokedex description text
+	call TextCommandProcessor ; original external Pokédex description behavior
 	xor a
 	ld [$fff4],a
+	jr .waitForButtonPress
+
+.renderInternalDescription
+	ld e,0
+	callba PokedexData_DrawDescriptionPage
+
 .waitForButtonPress
+	pop af
+	push af
+	and a
+	jr nz,.waitForInternalInput
+.externalInputLoop
 	call JoypadLowSensitivity
 	ld a,[hJoy5]
-	and a,A_BUTTON | B_BUTTON
-	jr z,.waitForButtonPress
+	and A_BUTTON | B_BUTTON
+	jr z,.externalInputLoop
+	jr .exitData
+
+.waitForInternalInput
+	; The roomy helper owns the whole internal A/B/D-pad category/subpage loop. Keeping
+	; its four-state machine in bank $34 avoids growing capacity-constrained bank $10.
+	callba PokedexData_RunInternalInputLoop
+
+.exitData
+	pop af
+	ld c,a ; 0 = external one-shot, nonzero = internal Pokédex Info
 	pop af
 	ld [hTilesetType],a
-	call GBPalWhiteOut
-	call ClearScreen
-	call RunDefaultPaletteCommand
-	call LoadTextBoxTilePatterns
-	call GBPalNormal
-	ld hl,wd72c
-	res 1,[hl]
-	ld a, [wOptions]
-	bit 5, a
-	ret nz
-	ld a, [wBGMVolume]
-	cp $a0 ; BGM Volume 0 keeps the silent master-volume state
+	push bc
+	callba PokedexData_EndSession
+	pop bc
+	ld a,c
+	and a
 	ret z
-	ld a, $77 ; max volume
-	ld [rNR50], a
+	; Return the final viewed Pokédex number so HandlePokedexSideMenu can move
+	; the list cursor to the Pokémon the player actually exited from.
+	ld a,[wcf91]
+	ld [wd11e],a
+	call IndexToPokedex
 	ret
 
 HeightWeightText:
@@ -773,41 +913,66 @@ DrawTileLine:
 
 INCLUDE "data/pokedex_entries.asm"
 
+INCLUDE "data/pokedex_order.asm"
+
+; MAP-5.30.02: Species ID and Pokédex number remain independent concepts.
+; With the current identity ordering, assembly keeps the original entry points at
+; the minimal identity implementation. Any declared non-identity pair automatically
+; enables the sparse bidirectional lookup below.
+IF PokedexOrderOverrideCount == 0
 PokedexToIndex:
-	; converts the Pokédex number at wd11e to an index
+IndexToPokedex:
+	ld a,[wd11e]
+	ret
+ELSE
+PokedexToIndex:
+	; converts the Pokédex number at wd11e to an internal species ID
 	push bc
 	push hl
 	ld a,[wd11e]
 	ld b,a
-	ld c,0
-	ld hl,PokedexOrder
-
-.loop ; go through the list until we find an entry with a matching dex number
-	inc c
-	ld a,[hli]
+	ld hl,PokedexOrderOverrides
+.loop
+	ld a,[hli] ; species ID, or 0 terminator
+	and a
+	jr z,.identity
+	ld c,a
+	ld a,[hli] ; Pokédex number
 	cp b
 	jr nz,.loop
-
 	ld a,c
+	jr .store
+.identity
+	ld a,b
+.store
 	ld [wd11e],a
 	pop hl
 	pop bc
 	ret
 
 IndexToPokedex:
-	; converts the index number at wd11e to a Pokédex number
+	; converts the internal species ID at wd11e to a Pokédex number
 	push bc
 	push hl
 	ld a,[wd11e]
-	dec a
-	ld hl,PokedexOrder
-	ld b,0
-	ld c,a
-	add hl,bc
+	ld b,a
+	ld hl,PokedexOrderOverrides
+.loop
+	ld a,[hli] ; species ID, or 0 terminator
+	and a
+	jr z,.identity
+	cp b
+	jr z,.found
+	inc hl ; skip Pokédex number
+	jr .loop
+.found
 	ld a,[hl]
+	jr .store
+.identity
+	ld a,b
+.store
 	ld [wd11e],a
 	pop hl
 	pop bc
 	ret
-
-INCLUDE "data/pokedex_order.asm"
+ENDC

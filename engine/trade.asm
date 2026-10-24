@@ -264,6 +264,8 @@ Trade_ShowPlayerMon:
 	ld b, vBGMap0 / $100
 	call CopyScreenTileBufferToVRAM
 	call ClearScreen
+	ld a, [wTradedPlayerMonFormMarker]
+	ld e, a
 	ld a, [wTradedPlayerMonSpecies]
 	call Trade_LoadMonSprite
 	ld a, $7e
@@ -388,6 +390,8 @@ Trade_ShowEnemyMon:
 	call Trade_CopyTileMapToVRAM
 	ld a, $1
 	ld [H_AUTOBGTRANSFERENABLED], a
+	ld a, [wTradedEnemyMonFormMarker]
+	ld e, a
 	ld a, [wTradedEnemyMonSpecies]
 	call Trade_LoadMonSprite
 	ld a, TRADE_BALL_POOF_ANIM
@@ -404,6 +408,9 @@ Trade_ShowEnemyMon:
 
 Trade_AnimLeftToRight:
 ; Animates the mon moving from the left GB to the right one.
+	; ICO-5.62.56: the single-icon loader now needs the species before init.
+	ld a, [wLeftGBMonSpecies]
+	ld [wcf91], a
 	call Trade_InitGameboyTransferGfx_ColorHook
 	ld a, $1
 	ld [wTradedMonMovingRight], a
@@ -438,6 +445,8 @@ Trade_AnimLeftToRight:
 
 Trade_AnimRightToLeft:
 ; Animates the mon moving from the right GB to the left one.
+	ld a, [wRightGBMonSpecies]
+	ld [wcf91], a
 	call Trade_InitGameboyTransferGfx_ColorHook
 	xor a
 	ld [wTradedMonMovingRight], a
@@ -750,18 +759,27 @@ Trade_CircleOAM3:
 	db $3B,$70,$3A,$70
 	db $39,$70,$38,$70
 
-; a = species
+; A = species, E = persistent form marker
 Trade_LoadMonSprite:
+	ld d, a
 	ld [wcf91], a
 	ld [wd0b5], a
 	ld [wWholeScreenPaletteMonSpecies], a
+	push de
 	ld b, SET_PAL_POKEMON_WHOLE_SCREEN
 	ld c, 0
 	call RunPaletteCommand
+	pop de
+	; FORM-5.62.13: the trade animation represents the selected stored instance,
+	; so its whole-screen palette and front sprite both follow the marker.
+	callba RegionalFormOverrideWholeScreenPaletteByMarker
 	ld a, [H_AUTOBGTRANSFERENABLED]
 	xor $1
 	ld [H_AUTOBGTRANSFERENABLED], a
+	push de
 	call GetMonHeader
+	pop de
+	callba RegionalFormApplySpeciesMarkerHeader
 	coord hl, 7, 2
 	call LoadFlippedFrontSpriteByMonIndex
 	ld c, 10

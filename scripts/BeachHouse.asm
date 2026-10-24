@@ -1,6 +1,3 @@
-BeachHouseScript:
-	jp EnableAutoTextBoxDrawing
-
 BeachHouseTextPointers:
 	dw BeachHouseText1
 	dw BeachHouseText2

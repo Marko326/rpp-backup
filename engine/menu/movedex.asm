@@ -12,7 +12,38 @@ ShowMoveDexMenu:
 	call MoveDexFindMaxSeenMove
 	ld a,[wListScrollOffset]
 	push af
-	; 默认打开时直接定位到最低编号的 Seen 技能，并把它放在列表第一行。
+	; 与 Pokédex 一样，优先恢复本次游戏会话中最后停留的技能。这里只
+	; 记绝对 move ID，不写存档；超过第一页的条目放在可见列表最底行。
+	; 如果记录因状态重置而已经超过当前最高 Seen，则退回原来的默认逻辑。
+	ld a,[wMoveDexSavedSelection]
+	and a
+	jr z,.openAtLowestSeenMove
+	ld b,a
+	ld a,[wMoveDexMaxSeenMove]
+	cp b
+	jr c,.openAtLowestSeenMove
+	ld a,b
+	ld [wd11e],a
+	dec a ; zero-based absolute move index
+	cp 7
+	jr c,.savedMoveOnFirstPage
+	sub 6
+	ld [wListScrollOffset],a
+	ld a,6
+	jr .storeSavedMoveRow
+.savedMoveOnFirstPage
+	xor a
+	ld [wListScrollOffset],a
+	ld a,[wd11e]
+	dec a
+.storeSavedMoveRow
+	ld [wCurrentMenuItem],a
+	ld [wLastMenuItem],a
+	ld a,1
+	ld [hJoy7],a
+	jp .setUpGraphics ; Info 返回后重新加载列表图块与静态界面
+.openAtLowestSeenMove
+	; 首次打开仍直接定位到最低编号的 Seen 技能，并把它放在列表第一行。
 	; 如果一个技能都没见过，则继续保留原来的 #001 虚线占位。
 	call MoveDexFindMinSeenMove
 	and a
@@ -41,7 +72,12 @@ ShowMoveDexMenu:
 	call ClearScreen
 	ld b, SET_PAL_GENERIC
 	call RunPaletteCommand
+IF DEF(_BLUE)
+	callab SetBlueMoveDexListPokeballPalettes
+ENDC
+IF DEF(_RED)
 	callab LoadPokedexTilePatterns
+ENDC
 	call MoveDexDrawStaticListUI
 
 .doMoveListMenu
@@ -52,6 +88,10 @@ ShowMoveDexMenu:
 	jr c,.goToSideMenu
 
 .exitMovedex
+	; 只在运行时 WRAM 记住最后选中的技能。MainMenu 会在回到标题/主菜单
+	; 的会话边界清零，因此重启后恢复首次打开逻辑，也不会增加 .sav 数据。
+	call MoveDexGetSelectedMove
+	ld [wMoveDexSavedSelection],a
 	xor a
 	ld [wMenuWatchMovingOutOfBounds],a
 	ld [wCurrentMenuItem],a
@@ -396,9 +436,21 @@ MoveDexRecordPlayerMove:
 	; 玩家真正进入技能执行流程：至少 Seen。
 	; 直接选择/正常派生执行的技能记 Use；Metronome 随机链中的技能只记 Seen。
 	call MoveDexEnsureStateInitialized
+	; Until MoveDex has a separate extended record, never attribute
+	; an expanded slot's attack to Pound / Karate Chop.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	jr z, .notExtended
+	ld b, a
+	ld a, [wPlayerSelectedMove]
+	cp b
+	ret z
+.notExtended
 	; wPlayerMoveNum 是 Moves 表第 1 byte 的兼容动画 ID；
 	; 扩展技能必须按真实 selected move ID 记录。
 	ld a,[wPlayerSelectedMove]
+	cp EXT_MOVE_SLOT_ESCAPE
+	ret z ; MOVE-5.62.169: MoveDex extended Seen/Use is future work; avoid overflow.
 	push af
 	ld hl,wMoveDexSeen
 	call MoveDexSetMoveFlag
@@ -422,8 +474,16 @@ MoveDexRecordEnemyMove:
 	ret nz
 	; 敌方真正进入技能执行流程：只 Seen。
 	call MoveDexEnsureStateInitialized
+	; MOVE-5.62.188: a nonzero active EXT ordinal is a second-table
+	; identity, not the ordinary move with the same selected byte.
+	; Until MoveDex can record EXT identities separately, skip it.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	ret nz
 	; 敌方同样使用真实技能 ID，避免 Gunk Shot 等被记成兼容动画技能。
 	ld a,[wEnemySelectedMove]
+	cp EXT_MOVE_SLOT_ESCAPE
+	ret z ; Never pass the experimental escape into a 254-bit flag array.
 	ld hl,wMoveDexSeen
 	jp MoveDexSetMoveFlag
 
@@ -692,9 +752,8 @@ HandleMoveDexSideMenu:
 	ld [wCurrentMenuItem],a
 	push bc
 	coord hl, 0, 3
-	ld de,SCREEN_WIDTH
-	lb bc, " ", 13
-	call DrawTileLine ; 与 Pokédex 一样清掉左侧列表旧光标
+	lb bc, 13, 1
+	call ClearScreenArea ; ROM0 helper: avoid cross-bank call to Pokédex DrawTileLine in bank $10
 	pop bc
 	ret
 
@@ -706,9 +765,8 @@ HandleMoveDexSideMenu:
 	; 再保留 Pokédex 原版的整列清理作为保险，四个菜单项全部覆盖。
 	push bc
 	coord hl, 15, 10
-	ld de,SCREEN_WIDTH
-	lb bc, " ", 7
-	call DrawTileLine
+	lb bc, 7, 1
+	call ClearScreenArea ; clear the right-side cursor column without leaving bank $35
 	pop bc
 	jr .exitSideMenu
 
@@ -796,27 +854,36 @@ ShowMoveDexData:
 	call HandleDownArrowBlinkTiming
 	call JoypadLowSensitivity
 	ld a,[hJoy5]
-	bit 5,a
-	jp nz,.previousMove
-	bit 4,a
-	jp nz,.nextMove
+	; 与 Pokédex Info 一样，退出/翻页优先于条目切换。
+	; 方向仍读取 hJoy5，因此继续保留 MoveDex 原有的长按快速切换。
 	bit 1,a ; B
 	jp nz,.close
 	bit 0,a ; A
 	jr nz,.nextDescriptionPage
+	bit 6,a ; UP
+	jp nz,.previousMove
+	bit 7,a ; DOWN
+	jp nz,.nextMove
 	jr .inputLoop
 
 .nextDescriptionPage
-	; PureRGB 风格分页：有下一页时 A 翻页；最后一页按 A 不退出。
+	; 与 Pokédex 的 Details 翻页习惯一致：A 逐页前进，最后一页再按 A 回第 1 页。
+	; 单页说明没有可循环的后续页，因此仍保持原页不动。
 	call MoveDexDescriptionHasNextPage
-	jr nc,.inputLoop
 	ld a,[wBuffer + 6]
+	jr c,.advanceDescriptionPage
+	and a
+	jr z,.inputLoop
+	xor a
+	jr .setDescriptionPage
+.advanceDescriptionPage
 	inc a
+.setDescriptionPage
 	ld [wBuffer + 6],a
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
-	; 说明正文只占 y=11..15。y=16 同时放着 <PREV/NEXT> 的上半部分，
-	; 不能整行清掉；中央下箭头由 MoveDexPrepareDescriptionArrow 单独处理。
+	; 说明正文只占 y=11..15；y=16 留给分页下箭头，
+	; 因此这里只清正文区域，箭头由 MoveDexPrepareDescriptionArrow 单独处理。
 	coord hl, 1, 11
 	lb bc, 5, 18
 	call ClearScreenArea
@@ -833,7 +900,7 @@ ShowMoveDexData:
 	pop af
 	ld [hDownArrowBlinkActive],a
 
-	; 如果在详情页用左右切换过技能，返回列表时同步选中位置。
+	; 如果在详情页用上下切换过技能，返回列表时同步选中位置。
 	call MoveDexSyncListSelection
 	call GBPalWhiteOut
 	; 详情页临时占用了字体区 $C0-$D9，白屏期间恢复这些字体图块，
@@ -843,7 +910,7 @@ ShowMoveDexData:
 	ret
 
 .previousMove
-	; 详情页只在 Seen 技能之间移动，避免左右键泄露虚线条目的名字/资料。
+	; 详情页只在 Seen 技能之间移动，避免上下键泄露虚线条目的名字/资料。
 	ld a,[wd11e]
 	call MoveDexFindPreviousSeenMove
 	jp nc,.inputLoop
@@ -857,19 +924,22 @@ ShowMoveDexData:
 	ld [wd11e],a
 
 .redrawMove
-	; 左右切换技能时回到说明第 1 页。
+	; 上下切换技能时回到说明第 1 页。
 	xor a
 	ld [wBuffer + 6],a
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call MoveDexClearDynamicData
 	call MoveDexDrawMoveData
+	; 新技能先以隐藏状态启动分页箭头。只要玩家持续快速切换，
+	; 每次切换都会重新开始隐藏阶段，因此不会在连续浏览时闪出 ▼。
+	call MoveDexStartSwitchedDescriptionArrowHidden
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call Delay3
 	jp .inputLoop
 
 MoveDexLoadDataUITiles:
-	; PureRGB 的 <PREV/NEXT>、分类标识与百分号图块。
+	; PureRGB 的分类标识、百分号等 MoveDex UI 图块。
 	; 三种伤害分类统一使用 PureRGB PHYSICAL 的完整宽底框和同一套字模。
 	; 1bpp 图块复制到 $C4-$D9，不覆盖当前 MoveDex/Pokédex 边框图块。
 	ld de,MoveDexUI
@@ -1055,7 +1125,7 @@ MoveDexDrawMoveData:
 	call MoveDexDrawDescription
 
 .drawNavigationOnly
-	jp MoveDexDrawBottomNavigation
+	ret
 
 MoveDexClearDynamicData:
 	coord hl, 1, 1
@@ -1095,19 +1165,28 @@ MoveDexClearDynamicData:
 	coord hl, 10, 16
 	ld a," "
 	ld [hl],a
-	coord hl, 1, 16
-	lb bc, 1, 3
-	call ClearScreenArea
-	coord hl, 16, 16
-	lb bc, 1, 3
-	call ClearScreenArea
 	ret
 
 MoveDexDrawDamageClass:
 	ld a,[wd11e]
 	ld [wTempMoveID],a
-	callba _PhysicalSpecialSplit
-	ld a,[wTempMoveID]
+	callba _PhysicalSpecialSplit ; fixed class metadata, not battle resolution
+	; Reuse $D1-$D4; $DA-$DD are reserved for TM/HM/Tutor labels.
+	; Restore the original PHYSICAL bitmap on every non-Dynamic move.
+	ld de, MoveDexUI + ($d1 - $c4) * 8
+	ld a, [wTempMoveID]
+	cp DYNAMIC
+	jr nz, .loadClassArt
+	ld de, MoveDexDynamicLabel
+.loadClassArt
+	ld hl, vChars1 + $510 ; tile $D1 (same four-tile category rectangle)
+	lb bc, BANK(MoveDexUI), 4
+	call CopyVideoDataDouble
+	ld a, [wTempMoveID]
+	cp DYNAMIC
+	ld a, $d1 ; DYNAMIC reuses the PHYSICAL rectangle temporarily
+	jr z, .draw
+	ld a, [wTempMoveID]
 	cp PHYSICAL
 	ld a,$d1 ; PHYSICAL
 	jr z,.draw
@@ -1125,62 +1204,6 @@ MoveDexDrawDamageClass:
 	dec c
 	jr nz,.loop
 	ret
-
-MoveDexDrawBottomNavigation:
-	; 先恢复中央底边，再根据当前技能是否有前/后项绘制按钮。
-	coord hl, 4, 17
-	ld de,1
-	lb bc, $6f, 12
-	call MoveDexDrawTileLine
-
-	ld a,[wd11e]
-	call MoveDexFindPreviousSeenMove
-	jr nc,.noPrevious
-	coord hl, 1, 17
-	ld a,$c4
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	coord hl, 1, 16
-	ld a,$ca
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	jr .nextButton
-.noPrevious
-	coord hl, 1, 17
-	ld de,1
-	lb bc, $6f, 3
-	call MoveDexDrawTileLine
-
-.nextButton
-	ld a,[wd11e]
-	call MoveDexFindNextSeenMove
-	jr nc,.noNext
-	coord hl, 16, 17
-	ld a,$c7
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	coord hl, 16, 16
-	ld a,$ca
-	ld [hli],a
-	inc a
-	ld [hli],a
-	inc a
-	ld [hl],a
-	ret
-.noNext
-	coord hl, 16, 17
-	ld de,1
-	lb bc, $6f, 3
-	jp MoveDexDrawTileLine
 
 MoveDexSetupTypeIconAttributes:
 	; 给 2x2 类型图标单独使用 BG palette 2，其余 MoveDex UI 保持原菜单配色。
@@ -1543,6 +1566,163 @@ MoveDexBlitSmallGlyph:
 	jr nz,.rowLoop
 	ret
 
+; MoveDex description text compression. RGBDS 0.5.2 charmaps can map multi-character
+; strings to one byte, so the source descriptions stay as ordinary readable English.
+; Token bytes $01-$40 are private to MoveDex descriptions; raw MoveDex text never uses
+; this range. Each ROM token expands recursively to the two symbols stored here.
+; Keep the CHARMAP definition and runtime pair table in one macro so they cannot drift.
+NEWCHARMAP movedex_desc, main
+
+movedex_desc_token: MACRO
+	CHARMAP \1, \2
+	ASSERT CHARLEN(\1) == 1
+	db \3, \4
+ENDM
+
+MoveDexDescriptionTokenPairs:
+	movedex_desc_token "s ", $01, $b2, $7f
+	movedex_desc_token "e ", $02, $a4, $7f
+	movedex_desc_token "th", $03, $b3, $a7
+	movedex_desc_token "fo", $04, $a5, $ae
+	movedex_desc_token "the ", $05, $03, $02
+	movedex_desc_token "e.", $06, $a4, $e8
+	movedex_desc_token "the fo", $07, $05, $04
+	movedex_desc_token "er", $08, $a4, $b1
+	movedex_desc_token "es ", $09, $a4, $01
+	movedex_desc_token "st", $0a, $b2, $b3
+	movedex_desc_token "in", $0b, $a8, $ad
+	movedex_desc_token "an", $0c, $a0, $ad
+	movedex_desc_token "a ", $0d, $a0, $7f
+	movedex_desc_token "s.", $0e, $b2, $e8
+	movedex_desc_token "t ", $0f, $b3, $7f
+	movedex_desc_token "ar", $10, $a0, $b1
+	movedex_desc_token "on", $11, $ae, $ad
+	movedex_desc_token "ch", $12, $a2, $a7
+	movedex_desc_token "wi", $13, $b6, $a8
+	movedex_desc_token "to", $14, $b3, $ae
+	movedex_desc_token "en", $15, $a4, $ad
+	movedex_desc_token "al", $16, $a0, $ab
+	movedex_desc_token "d ", $17, $a3, $7f
+	movedex_desc_token "ag", $18, $a0, $a6
+	movedex_desc_token "ur", $19, $b4, $b1
+	movedex_desc_token "it", $1a, $a8, $b3
+	movedex_desc_token "the foe.", $1b, $07, $06
+	movedex_desc_token "with", $1c, $13, $03
+	movedex_desc_token "ro", $1d, $b1, $ae
+	movedex_desc_token "at", $1e, $a0, $b3
+	movedex_desc_token "is", $1f, $a8, $b2
+	movedex_desc_token "the foe ", $20, $07, $02
+	movedex_desc_token "or", $21, $ae, $b1
+	movedex_desc_token "ea", $22, $a4, $a0
+	movedex_desc_token "la", $23, $ab, $a0
+	movedex_desc_token "y ", $24, $b8, $7f
+	movedex_desc_token "ck", $25, $a2, $aa
+	movedex_desc_token "with ", $26, $1c, $7f
+	movedex_desc_token "er ", $27, $08, $7f
+	movedex_desc_token "us", $28, $b4, $b2
+	movedex_desc_token " st", $29, $7f, $0a
+	movedex_desc_token "ee", $2a, $a4, $a4
+	movedex_desc_token "of", $2b, $ae, $a5
+	movedex_desc_token "urn", $2c, $19, $ad
+	movedex_desc_token "anc", $2d, $0c, $a2
+	movedex_desc_token "ow", $2e, $ae, $b6
+	movedex_desc_token "ri", $2f, $b1, $a8
+	movedex_desc_token "ing", $30, $0b, $a6
+	movedex_desc_token "un", $31, $b4, $ad
+	movedex_desc_token " ch", $32, $7f, $12
+	movedex_desc_token "to ", $33, $14, $7f
+	movedex_desc_token " chanc", $34, $32, $2d
+	movedex_desc_token "sh", $35, $b2, $a7
+	movedex_desc_token "ta", $36, $b3, $a0
+	movedex_desc_token "turn", $37, $b3, $2c
+	movedex_desc_token "ir", $38, $a8, $b1
+	movedex_desc_token "ra", $39, $b1, $a0
+	movedex_desc_token "ps ", $3a, $af, $01
+	movedex_desc_token "the foe", $3b, $07, $a4
+	movedex_desc_token "il", $3c, $a8, $ab
+	movedex_desc_token "le", $3d, $ab, $a4
+	movedex_desc_token "gh", $3e, $a6, $a7
+	movedex_desc_token "age.", $3f, $18, $06
+	movedex_desc_token " h", $40, $7f, $a7
+MoveDexDescriptionTokenPairsEnd:
+ASSERT MoveDexDescriptionTokenPairsEnd - MoveDexDescriptionTokenPairs == $40 * 2
+SETCHARMAP main
+
+; A=description bank, DE=packed page, HL=tilemap destination.
+; Read one packed byte at a time through FarCopyData2 so no speculative read can cross
+; a linker section/bank boundary. This is a cold MoveDex-only path and displayed glyphs
+; still use the original PrintLetterDelay behavior.
+MoveDexPlacePackedDescriptionFar:
+	ld [wBuffer + 24],a ; source bank
+	ld a,e
+	ld [wBuffer + 25],a ; source low
+	ld a,d
+	ld [wBuffer + 26],a ; source high
+	xor a
+	ld [wBuffer + 27],a ; rendered line index: 0/1/2
+.readNext:
+	push hl
+	ld a,[wBuffer + 25]
+	ld l,a
+	ld a,[wBuffer + 26]
+	ld h,a
+	ld de,wBuffer + 28
+	ld bc,1
+	ld a,[wBuffer + 24]
+	call FarCopyData2
+	ld a,l
+	ld [wBuffer + 25],a
+	ld a,h
+	ld [wBuffer + 26],a
+	pop hl
+
+	ld a,[wBuffer + 28]
+	cp "@"
+	ret z
+	cp $4e ; next
+	jr z,.nextLine
+	call MoveDexEmitDescriptionSymbol
+	jr .readNext
+
+.nextLine
+	ld a,[wBuffer + 27]
+	inc a
+	ld [wBuffer + 27],a
+	cp 1
+	jr z,.line2
+	coord hl,1,15
+	jr .readNext
+.line2
+	coord hl,1,13
+	jr .readNext
+
+; A = one packed symbol. Token bytes recursively expand to raw game-font bytes.
+; Token phrases never contain MoveDex page-control bytes, so only the top-level stream
+; handles @ / next; expansions just render glyphs.
+MoveDexEmitDescriptionSymbol:
+	cp $41
+	jr nc,.rawGlyph
+	dec a
+	add a
+	ld e,a
+	ld d,0
+	push hl
+	ld hl,MoveDexDescriptionTokenPairs
+	add hl,de
+	ld a,[hli]
+	ld c,a
+	ld b,[hl]
+	pop hl
+	push bc
+	ld a,c
+	call MoveDexEmitDescriptionSymbol
+	pop bc
+	ld a,b
+	jp MoveDexEmitDescriptionSymbol
+.rawGlyph
+	ld [hli],a
+	jp PrintLetterDelay
+
 MoveDexDrawDescription:
 	; MoveDex 本地说明分页，不修改全局文本引擎。
 	; RPP 的 next 默认下移两行，因此说明区 y=11/13/15 天然形成
@@ -1550,7 +1730,7 @@ MoveDexDrawDescription:
 	call MoveDexGetDescriptionPagePointer
 	jr nc,.fallback
 	coord hl, 1, 11
-	call MoveDexPlaceStringFar
+	call MoveDexPlacePackedDescriptionFar
 	jp MoveDexDrawDescriptionPageArrow
 
 .fallback
@@ -1646,6 +1826,24 @@ MoveDexDescriptionHasNextPage:
 	ret
 .no
 	and a
+	ret
+
+MoveDexStartSwitchedDescriptionArrowHidden:
+	; 切换技能后的新页面先不显示分页箭头。若当前说明还有下一页，
+	; 直接以 active + 空白 tile 启动闪烁计时；计时结束后才第一次显示 ▼。
+	; 连续按住上下快速切换时，每次切换都会重新开始这段隐藏时间。
+	xor a
+	ld [hDownArrowBlinkActive],a
+	coord hl, 10, 16
+	ld a," "
+	ld [hl],a
+	call MoveDexDescriptionHasNextPage
+	ret nc
+	ld a,1
+	ld [hDownArrowBlinkActive],a
+	ld [hDownArrowBlinkFrameProcessed],a
+	ld a,DOWN_ARROW_BLINK_INTERVAL_FRAMES
+	ld [hDownArrowBlinkTimer],a
 	ret
 
 MoveDexDrawDescriptionPageArrow:
@@ -1764,9 +1962,8 @@ MoveDexTypePointers:
 
 ; MoveDex 第一阶段 UI 图形。
 ; 基础 UI 与初代类型图标来自 PureRGB 的 MoveDex 设计；Steel/Dark/Fairy 为 RPP 扩展类型补充图标。
-MoveDexUI:
-	INCBIN "gfx/movedex/movedex_ui.1bpp"
-MoveDexUIEnd:
+; MoveDexUI / Dynamic label artwork is defined in main.asm Bank $39.
+; Keep this file inside the caller's existing pokecenters section ($35).
 
 ; MoveDex 小型 UI 字模：A-Z + 0-9，共 36 个 8x8 1bpp glyph。
 ; 仓库只保存 learn_source_font.png；.1bpp 由通用 Makefile 规则生成，

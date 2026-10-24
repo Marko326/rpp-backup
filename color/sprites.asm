@@ -100,6 +100,8 @@ ColorOverworldSprite:
 	jr .continue
 
 .playerSprite
+	; FLY-5.62.73: flying sprites share the local player's gender palette.
+	; The bird animation uses this same sprite slot, not a neutral palette.
 	ld a, [wPlayerGender]
 	and a
 	ld a, PAL_OW_RED
@@ -167,9 +169,18 @@ ColorNonOverworldSprites:
 .getAttackType
 	push hl
 
-	; Load animation (move) being used
+	; Preserve legacy palette-map value 8 semantics, but only for real battle
+	; moves. Utility animations can inherit stale move/type state, so they fall
+	; back to palette 0 instead of being recolored by the previous attack.
 	xor a
 	ld [rSVBK],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.legacyTypeColorAllowed
+	ld a,[wAnimationID]
+	cp STRUGGLE + 1
+	jr nc,.legacyTypeColorFallback
+.legacyTypeColorAllowed
 	ld a,[wAnimationID]
 	ld d,a
 	ld a,2
@@ -213,6 +224,13 @@ ColorNonOverworldSprites:
 .noCarry
 	ld a,[hl]
 	pop hl
+	jr .setPalette
+
+.legacyTypeColorFallback
+	ld a,2
+	ld [rSVBK],a
+	xor a ; safe fixed palette for non-move users of legacy palette-map value 8
+	pop hl
 
 .setPalette
 	ld c,a
@@ -245,6 +263,49 @@ LoadAnimationTilesetPalettes:
 
 	call LoadAttackSpritePalettes
 
+	; Preserve the existing Dark/Fairy battle look for legacy/fixed-palette
+	; animation content, but only for real battle moves.  Utility animations can
+	; inherit stale MoveType state, so fail closed before replacing whole slots.
+	ld a,c
+	cp 2
+	jr z,.legacyAnimationTypePaletteDone
+	xor a
+	ld [rSVBK],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.legacyAnimationMoveAllowed
+	ld a,[wAnimationID]
+	cp STRUGGLE + 1
+	jr nc,.legacyAnimationRestoreBank2
+.legacyAnimationMoveAllowed
+	ld a,2
+	ld [rSVBK],a
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,[wPlayerMoveType]
+	jr z,.gotLegacyAnimationMoveType
+	ld a,[wEnemyMoveType]
+.gotLegacyAnimationMoveType
+	cp FAIRY
+	jr z,.fairyAnimationPalette
+	cp DARK
+	jr z,.darkAnimationPalette
+	jr .legacyAnimationTypePaletteDone
+.fairyAnimationPalette
+	ld d,PAL_PINKMON
+	ld e,ATK_PAL_PURPLE
+	jr .loadLegacyAnimationTypePalette
+.darkAnimationPalette
+	ld d,PAL_BLACK
+	ld e,ATK_PAL_GREY
+.loadLegacyAnimationTypePalette
+	call LoadSGBPalette_Sprite
+	jr .legacyAnimationTypePaletteDone
+.legacyAnimationRestoreBank2
+	ld a,2
+	ld [rSVBK],a
+.legacyAnimationTypePaletteDone
+
 	; Indices 0 and 2 both refer to "AnimationTileset1", just different amounts of it.
 	; 0 is in-battle, 2 is during a trade.
 	; Index 1 refers to "AnimationTileset2".
@@ -262,6 +323,82 @@ LoadAnimationTilesetPalettes:
 	inc e
 	dec b
 	jr nz,.copyLoop
+
+	; Expanded recipes may explicitly opt the *next loaded subanimation* into
+	; move-type coloring.  Do not repurpose legacy palette-map value 8 and do not
+	; key this off tile IDs.  Instead, while the mode is active, map the complete
+	; battle-animation tileset range ($31-$7f) to one dedicated OBJ palette slot.
+	; A later subanimation reloads its original map when the recipe turns the mode
+	; back off, so Swift and other legacy users of the same gfx keep stock colors.
+	ld a,c
+	cp 2
+	jr z,.dynamicTypePaletteDone
+	xor a
+	ld [rSVBK],a
+	ld a,[wMoveAnimScriptLoaded]
+	and a
+	jr nz,.checkExtendedDynamicTypePalette
+
+	; Legacy Bite has no expanded recipe, but it is the base animation for the
+	; Fang family.  Let the stock Bite animation use the same dynamic Dark
+	; palette as the expanded elemental Fang recipes. Crunch now uses its dedicated
+	; Gold/Crystal renderer and fixed gray OBJ palette. Other legacy
+	; animations keep their original fixed/type-color behavior.
+	ld a,[wAnimationID]
+	cp BITE
+	jr nz,.dynamicTypePaletteRestoreBank2
+	jr .loadDynamicTypePalette
+
+.checkExtendedDynamicTypePalette
+	ld a,[wExtendedAnimPaletteMode]
+	and a
+	jr z,.dynamicTypePaletteRestoreBank2
+	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK + 1
+	jr nc,.dynamicTypePaletteRestoreBank2
+
+.loadDynamicTypePalette
+	; Pick the current move's real type; unlike legacy palette-map 8, this new
+	; mode intentionally has no Absorb/Stun Spore/Solarbeam/Tri Attack exceptions.
+	ld a,[H_WHOSETURN]
+	and a
+	ld a,[wPlayerMoveType]
+	jr z,.gotDynamicAnimationMoveType
+	ld a,[wEnemyMoveType]
+.gotDynamicAnimationMoveType
+	ld d,a
+	ld a,c
+	and a
+	ld e,BATTLE_TYPE_PAL_TILESET1
+	jr z,.gotDynamicTypePaletteSlot
+	ld e,BATTLE_TYPE_PAL_TILESET2
+.gotDynamicTypePaletteSlot
+	push de
+	call LoadBattleAnimTypePalette_Sprite
+	pop de
+	; ANM-5.61.39: legacy type-DARK mode remaps OBJ color 3; Poison Jab
+	; now uses FIXED mode (ANIM-5.62.151). DARK keeps colors 1/2
+	; intact and maps only color 3 from black to the staged type-dark color.
+	ld a,[wExtendedAnimPaletteMode]
+	cp EXT_PALETTE_MODE_MOVE_TYPE_DARK
+	jr nz,.dynamicTypePaletteDarkDone
+	push de
+	call LoadBattleAnimTypeDarkPalette_Sprite
+	pop de
+.dynamicTypePaletteDarkDone
+	ld a,2
+	ld [rSVBK],a
+	ld hl,W2_SpritePaletteMap+$31
+	ld b,79
+	ld a,e
+.dynamicTypePaletteMapLoop
+	ld [hli],a
+	dec b
+	jr nz,.dynamicTypePaletteMapLoop
+	jr .dynamicTypePaletteDone
+.dynamicTypePaletteRestoreBank2
+	ld a,2
+	ld [rSVBK],a
+.dynamicTypePaletteDone
 
 	; If in a trade, some of the tiles near the end are different. Override some tiles
 	; for the link cable, and replace the "purple" palette to match the exact color of
@@ -646,5 +783,7 @@ TypeColorTable: ; Used for a select few sprites to be colorized based on attack 
 	db 7 ; PSYCHIC EQU $18
 	db 6 ; ICE EQU $19
 	db 1 ; DRAGON EQU $1A
+	db ATK_PAL_GREY   ; DARK EQU $1B
+	db ATK_PAL_PURPLE ; FAIRY EQU $1C
 
 INCLUDE "color/data/spritepalettes.asm"

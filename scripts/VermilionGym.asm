@@ -8,13 +8,11 @@ VermilionGymScript:
 	bit 6, [hl]
 	res 6, [hl]
 	call nz, VermilionGymScript_5ca6d
-	call EnableAutoTextBoxDrawing
+	; TMD-5.47.00: use the bank-local trainer map dispatcher.
 	ld hl, VermilionGymTrainerHeader0
 	ld de, VermilionGymScriptPointers
-	ld a, [wVermilionGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVermilionGymCurScript], a
-	ret
+	ld bc, wVermilionGymCurScript
+	jp Bank17RunTrainerMapScript
 
 VermilionGymScript_5ca4c:
 	ld hl, Gym3CityName
@@ -62,25 +60,9 @@ VermilionGymScript3:
 	ld [wJoyIgnore], a
 
 VermilionGymScript_5caaa:
-	ld a, $6
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_BEAT_LT_SURGE
-	lb bc, TM_24, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, $7
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM24
-	jr .asm_5cad3
-.BagFull
-	ld a, $8
-	ld [hSpriteIndexOrTextID], a
-	call DisplayTextID
-.asm_5cad3
-	ld hl, wObtainedKantoBadges
-	set 2, [hl]
+	; GLR-5.51.00: shared data-driven badge/TM reward flow.
+	ld e, 2
+	callba GiveGymLeaderReward
 
 	; deactivate gym trainers
 	SetEventRange EVENT_BEAT_VERMILION_GYM_TRAINER_0, EVENT_BEAT_VERMILION_GYM_TRAINER_2
@@ -104,7 +86,6 @@ VermilionGymTrainerHeader0:
 	dw VermilionGymBattleText1 ; TextBeforeBattle
 	dw VermilionGymAfterBattleText1 ; TextAfterBattle
 	dw VermilionGymEndBattleText1 ; TextEndBattle
-	dw VermilionGymEndBattleText1 ; TextEndBattle
 
 VermilionGymTrainerHeader1:
 	dbEventFlagBit EVENT_BEAT_VERMILION_GYM_TRAINER_1
@@ -113,7 +94,6 @@ VermilionGymTrainerHeader1:
 	dw VermilionGymBattleText2 ; TextBeforeBattle
 	dw VermilionGymAfterBattleText2 ; TextAfterBattle
 	dw VermilionGymEndBattleText2 ; TextEndBattle
-	dw VermilionGymEndBattleText2 ; TextEndBattle
 
 VermilionGymTrainerHeader2:
 	dbEventFlagBit EVENT_BEAT_VERMILION_GYM_TRAINER_2
@@ -121,7 +101,6 @@ VermilionGymTrainerHeader2:
 	dwEventFlagAddress EVENT_BEAT_VERMILION_GYM_TRAINER_2
 	dw VermilionGymBattleText3 ; TextBeforeBattle
 	dw VermilionGymAfterBattleText3 ; TextAfterBattle
-	dw VermilionGymEndBattleText3 ; TextEndBattle
 	dw VermilionGymEndBattleText3 ; TextEndBattle
 
 	db $ff
@@ -189,10 +168,7 @@ ReceivedThunderbadgeText:
 	db "@"
 
 VermilionGymText2:
-	TX_ASM
-	ld hl, VermilionGymTrainerHeader0
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VermilionGymTrainerHeader0
 
 VermilionGymBattleText1:
 	TX_FAR _VermilionGymBattleText1
@@ -207,10 +183,7 @@ VermilionGymAfterBattleText1:
 	db "@"
 
 VermilionGymText3:
-	TX_ASM
-	ld hl, VermilionGymTrainerHeader1
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VermilionGymTrainerHeader1
 
 VermilionGymBattleText2:
 	TX_FAR _VermilionGymBattleText2
@@ -225,10 +198,7 @@ VermilionGymAfterBattleText2:
 	db "@"
 
 VermilionGymText4:
-	TX_ASM
-	ld hl, VermilionGymTrainerHeader2
-	call TalkToTrainer
-	jp TextScriptEnd
+	TX_TRAINER VermilionGymTrainerHeader2
 
 VermilionGymBattleText3:
 	TX_FAR _VermilionGymBattleText3

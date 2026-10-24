@@ -6,10 +6,31 @@ HealParty:
 .healmon
 	ld a, [hli]
 	cp $ff
-	jr z, .done
+	jp z, .done
 
 	push hl
 	push de
+	; Species list pointer is one past this Party index.
+	; Cache its four extension bits across the inner PP table loop.
+	ld a, l
+	sub LOW(wPartySpecies + 1)
+	ld c, a
+	ld a, h
+	sbc HIGH(wPartySpecies + 1)
+	jr nz, .noExtendedMask
+	ld a, c
+	cp PARTY_LENGTH
+	jr nc, .noExtendedMask
+	ld b, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, bc
+	ld a, [hl]
+	and $0f
+	jr .gotExtendedMask
+.noExtendedMask
+	xor a
+.gotExtendedMask
+	ld [wExtendedMoveFlagsScratch], a
 
 	ld hl, wPartyMon1Status - wPartyMon1HP
 	add hl, de
@@ -33,7 +54,45 @@ HealParty:
 	push hl
 	push de
 	push bc
-
+	; B counts 4,3,2,1, so the actual slot is (4-B).
+	push af ; move ID minus one
+	ld a, NUM_MOVES
+	sub b
+	ld c, a
+	ld a, [wExtendedMoveFlagsScratch]
+.extShift
+	ld d, a
+	ld a, c
+	and a
+	ld a, d
+	jr z, .extBit
+	srl a
+	dec c
+	jr .extShift
+.extBit
+	and 1
+	jr z, .ordinaryBit
+	pop af
+	inc a ; one-based extended ordinal
+	ld [wTempMoveID], a
+	ld e, a
+	callba LoadExtendedMoveStatsByOrdinalToCD6D
+	jr c, .flaggedExtendedInvalid
+	ld a, [wcd6d + 5]
+	jr .haveBasePP
+.flaggedExtendedInvalid
+	ld a, [wTempMoveID]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr nz, .ordinaryMove
+	ld a, 10 ; legacy $ff Power Whip compatibility only
+	jr .haveBasePP
+.ordinaryBit
+	pop af
+	cp EXT_MOVE_SLOT_ESCAPE - 1 ; already decremented in this loop
+	jr nz, .ordinaryMove
+	ld a, 10 ; legacy $ff Power Whip compatibility only
+	jr .haveBasePP
+.ordinaryMove
 	ld hl, Moves
 	ld bc, MoveEnd - Moves
 	call AddNTimes
@@ -41,7 +100,7 @@ HealParty:
 	ld a, BANK(Moves)
 	call FarCopyData
 	ld a, [wcd6d + 5] ; PP is byte 5 of move data
-
+.haveBasePP
 	pop bc
 	pop de
 	pop hl
@@ -79,7 +138,7 @@ HealParty:
 	ld d, h
 	ld e, l
 	pop hl
-	jr .healmon
+	jp .healmon
 
 .done
 	xor a

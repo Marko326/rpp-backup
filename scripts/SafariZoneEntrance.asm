@@ -287,16 +287,12 @@ SafariZoneEntranceTextPointers:
 .SafariZoneEntranceText2
 	TX_ASM
 	ld hl, .FirstTimeQuestionText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
+	call PrintTextAndYesNoChoice
 	ld hl, .RegularText
 	jr nz, .Explanation
 	ld hl, .ExplanationText
 .Explanation
-	call PrintText
-	jp TextScriptEnd
+	jp PrintTextAndTextScriptEnd
 
 .FirstTimeQuestionText
 	TX_FAR _SafariZoneEntranceText_753e6

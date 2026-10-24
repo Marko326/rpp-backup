@@ -41,8 +41,8 @@ ItemUsePtrTable:
 	dw UnusableItem      ; OLD SEA MAP
 	dw UnusableItem      ; FERRY TICKET
 	dw UnusableItem      ; EON TICKET
-	dw UnusableItem      ; TERU-SAMA
-	dw UnusableItem      ; TERU-SAMA
+	dw ItemUseGBPlayer   ; GB_PLAYER (reuses TERU_SAMA_1A)
+	dw ItemUseEvoStone   ; ICE_STONE
 	dw UnusableItem      ; TERU-SAMA
 	dw ItemUseEscapeRope ; ESCAPE_ROPE
 	dw ItemUseRepel      ; REPEL
@@ -322,11 +322,6 @@ ItemUseBall:
 	jp nz,ThrowBallAtTrainerMon
 
 BallAnyway:
-; If this is for the old man battle, skip checking if the party & box are full.
-	ld a,[wBattleType]
-	dec a
-	jr z,.canUseBall
-
 	ld a,[wPartyCount] ; is party full?
 	cp a,PARTY_LENGTH
 	jr nz,.canUseBall
@@ -362,18 +357,6 @@ BallAnyway:
 	ld b,$10 ; can't be caught value
 	jp z,.setAnimData
 
-	ld a,[wBattleType]
-	dec a
-	jr nz,.notOldManBattle
-
-.oldManBattle
-	ld hl,wCurTrainerName
-	ld de,wPlayerName
-	ld bc,NAME_LENGTH
-	call CopyData ; restore player name
-	jp .captured
-
-.notOldManBattle
 ; If the player is fighting the ghost Marowak, set the value that indicates the
 ; Pokémon can't be caught and skip the capture calculations.
 	ld a,[wCurMap]
@@ -683,22 +666,13 @@ BallAnyway:
 
 	push hl
 
-; If the Pokémon is transformed, the Pokémon is assumed to be a Ditto.
-; This is a bug because a wild Pokémon could have used Transform via
-; Mirror Move even though the only wild Pokémon that knows Transform is Ditto.
+; CAP-5.62.17: wEnemyMonSpecies2 keeps the original wild species across Transform.
+; Do not infer the caught species from the transformed state or current map; both
+; Ditto/Mew and wild Pokémon that reach Transform through copied-move paths keep it.
 	ld hl,wEnemyBattleStatus3
 	bit Transformed,[hl]
-	jr z,.notTransformed
-	ld a, [wCurMap] ; check which map we're on
-	cp FARAWAY_ISLAND_INSIDE ; If we're on Faraway Island, the only Pokemon that can transform is MEW
-	ld a,MEW
-	jr z, .faraway ; if we're on Faraway Island, we're done. Otherwise, load DITTO instead
-	ld a,DITTO ; A Pokémon that has transformed anywhere else is treated as Ditto once caught
-.faraway
-	ld [wEnemyMonSpecies2],a
-	jr .skip6
+	jr nz,.skip6
 
-.notTransformed
 ; If the Pokémon is not transformed, set the transformed bit and copy the
 ; DVs to wTransformedEnemyMonOriginalDVs so that LoadEnemyMonData won't generate
 ; new DVs.
@@ -716,7 +690,9 @@ BallAnyway:
 	ld [wcf91],a
 	ld a,[wEnemyMonLevel]
 	ld [wCurEnemyLVL],a
-	callab LoadEnemyMonData
+	; DEX-5.62.117: capture-only reload marks this exact form Owned.
+	; The call footprint stays identical in the capacity-full item bank.
+	callba RegionalFormReloadCapturedWildEnemyMonData
 	pop af
 	ld [wcf91],a
 	pop hl
@@ -731,32 +707,13 @@ BallAnyway:
 	ld [wCapturedMonSpecies],a
 	ld [wcf91],a
 	ld [wd11e],a
-	ld a,[wBattleType]
-	dec a ; is this the old man battle?
-	jr z,.oldManCaughtMon ; if so, don't give the player the caught Pokémon
-
 	ld hl,ItemUseBallText05
 	call PrintText
 
-; Add the caught Pokémon to the Pokédex.
-	predef IndexToPokedex
-	ld a,[wd11e]
-	dec a
-	ld c,a
-	ld b,FLAG_TEST
-	ld hl,wPokedexOwned
-	predef FlagActionPredef
-	ld a,c
-	push af
-	ld a,[wd11e]
-	dec a
-	ld c,a
-	ld b,FLAG_SET
-	predef FlagActionPredef
-	pop af
-
-	and a ; was the Pokémon already in the Pokédex?
-	jr nz,.skipShowingPokedexData ; if so, don't show the Pokédex data
+; The capture wrapper saved whether THIS form was previously Owned.
+; Keep the 208-species Owned bit separate from first-time form disclosure.
+	callba RegionalDexFinalizeCapturedPokedexOwned
+	jr nz,.skipShowingPokedexData ; skip only if this exact form was already Owned
 
 	ld hl,ItemUseBallText06
 	call PrintText
@@ -786,17 +743,14 @@ BallAnyway:
 	call PrintText
 	jr .done
 
-.oldManCaughtMon
-	ld hl,ItemUseBallText05
-
 .printMessage
 	call PrintText
 	call ClearSprites
 
 .done
 	ld a,[wBattleType]
-	and a ; is this the old man battle?
-	ret nz ; if so, don't remove a ball from the bag
+	cp BATTLE_TYPE_SAFARI
+	ret z ; Safari Balls use wNumSafariBalls, not the player's bag.
 
 ; Remove a ball from the bag.
 	ld hl,wNumBagItems
@@ -848,6 +802,18 @@ ItemUseBallText06:
 	TX_SFX_DEX_PAGE_ADDED
 	TX_BLINK
 	db "@"
+
+; GBP-5.57.01: GB Player is a reusable Key Item backed by the old $1A
+; TERU-SAMA slot. The player UI lives in a relocatable ROMX section so bank $03
+; only pays for this small far-call hook.
+ItemUseGBPlayer:
+	ld a,[wIsInBattle]
+	and a
+	jp nz,ItemUseNotTime
+	callba GBPlayerMenu
+	xor a
+	ld [wActionResultOrTookBattleTurn],a ; keep the Bag open after returning
+	ret
 
 ItemUseTownMap:
 	ld a,[wIsInBattle]
@@ -921,13 +887,7 @@ ItemUseSurfboard:
 	jp c,SurfingAttemptFailed
 .surf
 	call .makePlayerMoveForward
-	ld hl,wd730
-	set 7,[hl]
-	ld a,2
-	ld [wWalkBikeSurfState],a ; change player state to surfing
-	call PlayDefaultMusic ; play surfing music
-	ld hl,SurfingGotOnText
-	jp PrintText
+	jpba StartSurfingWithSelectedPokemon
 .tryToStopSurfing
 	xor a
 	ld [hSpriteIndexOrTextID],a
@@ -987,10 +947,6 @@ ItemUseSurfboard:
 	ld [wSimulatedJoypadStatesIndex],a
 	ret
 
-SurfingGotOnText:
-	TX_FAR _SurfingGotOnText
-	db "@"
-
 SurfingNoPlaceToGetOffText:
 	TX_FAR _SurfingNoPlaceToGetOffText
 	db "@"
@@ -1006,16 +962,28 @@ ItemUseEvoStone:
 	push af
 	ld a,[wcf91]
 	ld [wEvoStoneItemID],a
-	push af
 	ld a,EVO_STONE_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID],a
 	ld a,$ff
 	ld [wUpdateSpritesEnabled],a
 	call DisplayPartyMenu
-	pop bc
+.checkSelection
 	jr c,.canceledItemUse
-	ld a,b
+	ld a,[wEvoStoneItemID]
 	ld [wcf91],a
+	; EVO-5.62.27: failed stone use stays in the Party selector. A non-matching
+	; stone and a level-gated match are both rejected before the use sound, so a
+	; sound/item-consumption side effect only happens once the stone is usable.
+	callba EvolutionStoneCheckSelectedMonLevel
+	jr nc,.tryEvolution
+	ld a,[wd11e]
+	and a
+	jr nz,.returnToParty
+	call ItemUseNoEffect
+.returnToParty
+	call GoBackToPartyMenu
+	jr .checkSelection
+.tryEvolution
 	ld a,$01
 	ld [wForceEvolution],a
 	ld a,SFX_HEAL_AILMENT
@@ -1032,7 +1000,10 @@ ItemUseEvoStone:
 	ld [wItemQuantity],a
 	jp RemoveItemFromInventory
 .noEffect
+	; This should only be reachable if evolution data changed between the precheck
+	; and TryEvolvingMon. Treat it like every other failed stone use and stay here.
 	call ItemUseNoEffect
+	jr .returnToParty
 .canceledItemUse
 	xor a
 	ld [wActionResultOrTookBattleTurn],a ; item not used
@@ -1048,6 +1019,12 @@ ItemUseMedicine:
 	ld a,[wPartyCount]
 	and a
 	jp z,.emptyParty
+	ld a,[wPseudoItemID]
+	and a ; using Softboiled?
+	jr nz,.prepareSelection
+	ld a,[wcf91]
+	ld [wPartyConsumableItemID],a
+.prepareSelection
 	ld a,[wWhichPokemon]
 	push af
 	ld a,[wcf91]
@@ -1073,6 +1050,22 @@ ItemUseMedicine:
 	prompt
 .notUsingSoftboiled
 	call DisplayPartyMenu
+	jr .getPartyMonDataAddress
+.returnToParty
+	; ITEM-5.62.28: out-of-battle consumables keep the player in the Party
+	; selector while the same stack still has at least one item remaining.
+	ld a,[wPartyConsumableItemID]
+	ld [wcf91],a
+	ld a,[wWhichPokemon]
+	push af
+	ld a,[wcf91]
+	push af
+	ld a,USE_ITEM_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID],a
+	ld a,$ff
+	ld [wUpdateSpritesEnabled],a
+	; TEXT-5.62.165: redraw the Party background after level-up overlays.
+	call GoBackToPartyMenuClean
 .getPartyMonDataAddress
 	jp c,.canceledItemUse
 	ld hl,wPartyMons
@@ -1095,7 +1088,7 @@ ItemUseMedicine:
 ; if using softboiled
 	ld a,[wWhichPokemon]
 	cp d ; is the pokemon trying to use softboiled on itself?
-	jr z,ItemUseMedicine ; if so, force another choice
+	jp z,ItemUseMedicine ; if so, force another choice
 .checkItemType
 	ld a,[wcf91]
 	cp a,ACAI_BERRY
@@ -1449,8 +1442,16 @@ ItemUseMedicine:
 	jr .doneHealing
 .healingItemNoEffect
 	call ItemUseNoEffect
-	jp .done
+	ld a,[wPseudoItemID]
+	and a ; Softboiled keeps its original one-shot field-move flow
+	jp nz,.done
+	ld a,[wIsInBattle]
+	and a ; battle item use still returns to the battle after one attempt
+	jp nz,.done
+	jp .returnToParty
 .doneHealing
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a ; a later success overrides an earlier failed selection
 	ld a,[wPseudoItemID]
 	and a ; using Softboiled?
 	jr nz,.skipRemovingItem ; no item to remove if using Softboiled
@@ -1458,6 +1459,28 @@ ItemUseMedicine:
 	call RemoveUsedItem
 	pop hl
 .skipRemovingItem
+	; Save whether this successful field use may immediately select another mon.
+	; Keep battle items and Softboiled on their existing one-shot return paths.
+	ld a,[wPseudoItemID]
+	and a
+	jr nz,.noContinuousMedicineUse
+	ld a,[wIsInBattle]
+	and a
+	jr nz,.noContinuousMedicineUse
+	ld a,[wMaxItemQuantity]
+	and a
+	jr z,.noContinuousMedicineUse
+	ld a,1
+	jr .saveContinuousMedicineUse
+.noContinuousMedicineUse
+	xor a
+.saveContinuousMedicineUse
+	push af
+	; RedrawPartyMenu walks every Party entry and leaves wWhichPokemon on the
+	; last Party slot. Preserve the Bag slot used by RemoveUsedItem across that
+	; redraw or the next repeat would decrement an unrelated Bag entry.
+	ld a,[wWhichPokemon]
+	push af
 	ld a,[wcf91]
 	cp a,PECHA_BERRY
 	jr nc,.playStatusAilmentCuringSound
@@ -1498,9 +1521,25 @@ ItemUseMedicine:
 	call RedrawPartyMenu ; redraws the party menu and displays the message
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a
+	; Field consumables already finish their HP/status animation before this text.
+	; Do not add the legacy fixed 50-frame dead time on every repeat; the explicit
+	; button wait below is sufficient. Battle/Softboiled keep the old delay.
+	ld a,[wPseudoItemID]
+	and a
+	jr nz,.medicineMessageDelay
+	ld a,[wIsInBattle]
+	and a
+	jr z,.medicineMessageReady
+.medicineMessageDelay
 	ld c,50
 	call DelayFrames
+.medicineMessageReady
 	call WaitForTextScrollButtonPress
+	pop af
+	ld [wWhichPokemon],a
+	pop af
+	and a
+	jp nz,.returnToParty
 	jr .done
 .canceledItemUse
 	xor a
@@ -1511,12 +1550,18 @@ ItemUseMedicine:
 	ld a,[wPseudoItemID]
 	and a ; using Softboiled?
 	ret nz ; if so, return
-	call GBPalWhiteOut
-	call z,RunDefaultPaletteCommand
 	ld a,[wIsInBattle]
 	and a
-	ret nz
-	jp ReloadMapData
+	jr z,.returnToStartBag
+	; Battle callers still own their original white/palette restore.
+	call GBPalWhiteOut
+	call RunDefaultPaletteCommand
+	ret
+.returnToStartBag
+	; BAG-5.19.1: START -> Bag owns the Party-to-Bag graphics restore in
+	; StartMenu_Item's caller. ReloadMapData here rebuilt the overworld only to have
+	; it hidden immediately by the Bag, adding an unnecessary LCD-off map reload.
+	ret
 .useVitamin
 	push hl
 	ld a,[hl]
@@ -1526,7 +1571,21 @@ ItemUseMedicine:
 	add hl,bc ; hl now points to level
 	ld a,[hl] ; a = level
 	ld [wCurEnemyLVL],a ; store level
-	call GetMonHeader
+	; FORM-5.20.05: match GetMonHeader's BC/HL preservation around the far
+	; form-aware header load. wWhichPokemon normally holds the Bag slot here,
+	; while D holds the selected Party slot; temporarily expose the Party slot so
+	; RegionalFormLoadPartyMonHeader resolves the correct stored instance.
+	ld a,[wWhichPokemon]
+	push af
+	ld a,d
+	ld [wWhichPokemon],a
+	push bc
+	push hl
+	callba RegionalFormLoadPartyMonHeader
+	pop hl
+	pop bc
+	pop af
+	ld [wWhichPokemon],a
 	push de
 	ld a,d
 	ld hl,wPartyMonNicks
@@ -1582,12 +1641,18 @@ ItemUseMedicine:
 	call PlaySound
 	ld hl,VitaminStatRoseText
 	call PrintText
-	jp RemoveUsedItem
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a
+	call RemoveUsedItem
+	ld a,[wMaxItemQuantity]
+	and a
+	jp nz,.returnToParty
+	jp .done
 .vitaminNoEffect
 	pop hl
 	ld hl,VitaminNoEffectText
 	call PrintText
-	jp GBPalWhiteOut
+	jp .returnToParty
 .recalculateStats
 	ld bc,wPartyMon1Stats - wPartyMon1
 	add hl,bc
@@ -1673,7 +1738,11 @@ ItemUseMedicine:
 	call WaitForTextScrollButtonPress ; wait for button press
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
+	; FORM-5.20.03: Rare Candy uses the independent regional level-up table.
+	callba RegionalFormTryLearnLevelMove
+	jr c,.rareCandyMoveHandled
 	predef LearnMoveFromLevelUp ; learn level up move, if any
+.rareCandyMoveHandled
 	xor a
 	ld [wForceEvolution],a
 	callab TryEvolvingMon ; evolve pokemon, if appropriate
@@ -1683,7 +1752,13 @@ ItemUseMedicine:
 	ld [wcf91],a
 	pop af
 	ld [wWhichPokemon],a
-	jp RemoveUsedItem
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a
+	call RemoveUsedItem
+	ld a,[wMaxItemQuantity]
+	and a
+	jp nz,.returnToParty
+	jp .done
 
 VitaminStatRoseText:
 	TX_FAR _VitaminStatRoseText
@@ -1978,7 +2053,20 @@ ItemUseXStat:
 	call Delay3
 	xor a
 	ld [H_WHOSETURN],a ; set turn to player's turn
+
+	; XStatItemAnim uses the spiral-ball tile, whose CGB palette is normally
+	; selected from wPlayerMoveType.  Item use does not load a real move, so that
+	; byte still describes the previous move (e.g. Moonblast/Draco Meteor).  Use
+	; neutral NORMAL coloring for the synthetic item animation, then restore the
+	; real move type immediately afterwards.
+	ld a,[wPlayerMoveType]
+	push af
+	xor a ; NORMAL
+	ld [wPlayerMoveType],a
 	callba StatModifierUpEffect ; do stat increase move
+	pop af
+	ld [wPlayerMoveType],a
+
 	pop hl
 	pop af
 	ld [hld],a ; restore [wPlayerMoveEffect]
@@ -2019,29 +2107,22 @@ ItemUsePokeflute:
 	SetEvent EVENT_FIGHT_ROUTE16_SNORLAX
 	ret
 .noSnorlaxToWakeUp
+	; Outside battle, reuse the same party wake-up helper as the battle path.
+	; The two successful Snorlax branches above return before reaching here, so
+	; waking Snorlax never also wakes the player's party.
+	callba WakeSleepingPlayerPartyWithPokeflute
 	ld hl,PlayedFluteNoEffectText
+	jp z,PrintText
+	ld hl,PlayedFluteHadEffectText
+	call PrintText
+	ld hl,FluteWokeUpText
 	jp PrintText
 .inBattle
-	xor a
-	ld [wWereAnyMonsAsleep],a
-	ld b,~SLP & $ff
-	ld hl,wPartyMon1Status
-	call WakeUpEntireParty
-	ld a,[wIsInBattle]
-	dec a ; is it a trainer battle?
-	jr z,.skipWakingUpEnemyParty
-; if it's a trainer battle
-	ld hl,wEnemyMon1Status
-	call WakeUpEntireParty
-.skipWakingUpEnemyParty
-	ld hl,wBattleMonStatus
-	ld a,[hl]
-	and b ; remove Sleep status
-	ld [hl],a
-	ld hl,wEnemyMonStatus
-	ld a,[hl]
-	and b ; remove Sleep status
-	ld [hl],a
+	; Keep the original battle wake-up behavior, but perform the whole operation
+	; inside the shared helper bank. callba uses B/HL for its own bank dispatch,
+	; so the old 48.8 direct callba WakeUpEntireParty calls destroyed that helper's
+	; B/HL arguments (and also clobbered B before clearing the active battlers).
+	callba WakeSleepingBattlePartiesWithPokeflute
 	call LoadScreenTilesFromBuffer2 ; restore saved screen
 	ld a,[wWereAnyMonsAsleep]
 	and a ; were any pokemon asleep before playing the flute?
@@ -2053,41 +2134,13 @@ ItemUsePokeflute:
 	ld a,[wDanger]
 	and a,$80
 	jr nz,.skipMusic
-	call WaitForSoundToFinish ; wait for sound to end
-	;callba Music_PokeFluteInBattle ; play in-battle pokeflute music ; XXX
-.musicWaitLoop ; wait for music to finish playing
-	ld a,[wChannelSoundIDs + Ch6]
-	and a ; music off?
-	jr nz,.musicWaitLoop
+	; The old pokered Music_PokeFluteInBattle routine was removed when this
+	; project switched audio engines. Use the live SFX API instead of touching
+	; legacy wChannelCommandPointers/wChannelSoundIDs state.
+	callba PlayBattlePokefluteSfx
 .skipMusic
 	ld hl,FluteWokeUpText
 	jp PrintText
-
-; wakes up all party pokemon
-; INPUT:
-; hl must point to status of first pokemon in party (player's or enemy's)
-; b must equal ~SLP
-; [wWereAnyMonsAsleep] should be initialized to 0
-; OUTPUT:
-; [wWereAnyMonsAsleep]: set to 1 if any pokemon were asleep
-WakeUpEntireParty:
-	ld de,44
-	ld c,6
-.loop
-	ld a,[hl]
-	push af
-	and a,SLP ; is pokemon asleep?
-	jr z,.notAsleep
-	ld a,1
-	ld [wWereAnyMonsAsleep],a ; indicate that a pokemon had to be woken up
-.notAsleep
-	pop af
-	and b ; remove Sleep status
-	ld [hl],a
-	add hl,de
-	dec c
-	jr nz,.loop
-	ret
 
 ; Format:
 ; 00: Y
@@ -2174,6 +2227,7 @@ ItemUseOldRod:
 .done
 ; Set up the encounter
 	pop af
+	ld e,a ; WLD-5.62.23: preserve the selected 0-based Old Rod slot
 	add a,a
 	ld c,a
 	ld b,0
@@ -2181,7 +2235,8 @@ ItemUseOldRod:
 	ld b,[hl]
 	inc hl
 	ld c,[hl]
-	ld a, 1
+	ld a,e
+	or REGIONAL_FISHING_SLOT_FLAG
 	jr RodResponse
 	
 INCLUDE "data/old_rod.asm"
@@ -2204,6 +2259,7 @@ ItemUseGoodRod:
 	jr nc, .RandomLoop
 	; choose which monster appears
 	ld hl,GoodRodMons
+	ld e,a ; WLD-5.62.23: preserve the selected 0-based Good Rod slot
 	add a,a
 	ld c,a
 	ld b,0
@@ -2211,7 +2267,8 @@ ItemUseGoodRod:
 	ld b,[hl]
 	inc hl
 	ld c,[hl]
-	ld a, 1
+	ld a,e
+	or REGIONAL_FISHING_SLOT_FLAG
 	jr RodResponse
 
 INCLUDE "data/good_rod.asm"
@@ -2224,6 +2281,15 @@ ItemUseSuperRod:
 	call ReadSuperRodData
 	ld a, e
 RodResponse:
+	; WLD-5.62.23: preserve level/species in BC across the far producer bridge.
+	; D carries either stock response 0/2 or bite-flag + exact rod slot; E carries
+	; the hooked Species on bites. The bridge returns normalized response in E.
+	ld d,a
+	ld e,c
+	push bc
+	callba RegionalFormStageFishingRodResponse
+	pop bc
+	ld a,e
 	ld [wRodResponse], a
 	and a ; only "Not even a nibble" may offer an immediate retry
 	jr z, .repeatAvailable
@@ -2235,7 +2301,11 @@ RodResponse:
 	dec a ; is there a bite?
 	jr nz, .next
 
-	call CheckChainFishingShiny
+	; WLD-5.62.23: shiny-chain helper moved out of packed bank $03.
+	; CALLBA uses BC internally, so preserve the selected level/species pair.
+	push bc
+	callba CheckChainFishingShiny
+	pop bc
 
 	; if yes, store level and species data
 	ld a, 1
@@ -2246,59 +2316,9 @@ RodResponse:
 	ld [wCurOpponent], a
 
 .next
-	ld hl, wWalkBikeSurfState
-	ld a, [hl] ; store the value in a
-	push af
-	push hl
-	ld [hl], 0
-	callba FishingAnim
-	pop hl
-	pop af
-	ld [hl], a
-	ret
-
-; Checks if the hooked pokemon should be shiny, based on the current
-; chain the player has built up.
-; Sets the "force shiny" flag appropriately.
-; Probablities are based on this research: http://mrnbayoh.github.io/pkmn6gen/chain_fishing_shiny/
-; Once a chain of 20 is reached, it's approximately a 1/100 chance.
-CheckChainFishingShiny:
-	push de
-	push bc
-	ld a, [wChainFishingStreak]
-	cp 21
-	jr c, .ok
-	ld a, 20  ; maximum of 20 * 2 attempts at being shiny
-.ok
-	sla a
-	push af
-	; increase chain
-	ld a, [wChainFishingStreak]
-	cp $ff
-	jr z, .maxChain
-	inc a
-	ld [wChainFishingStreak], a
-.maxChain
-	pop af
-	ld e, a  ; e = number of rolls to try and get shiny
-	inc e
-.loop
-	dec e
-	jr z, .end
-	; Generate a random number and see if its shiny (1/256 now, since 1/1024 for normal wild)
-	call Random
-	; Check if a = $AA
-	cp a, $AA
-	jr nz, .loop
-	; Force wild pokemon to be shiny
-	ld hl, wExtraFlags
-	set 0, [hl]
-	; Reset chain
-	xor a
-	ld [wChainFishingStreak], a
-.end
-	pop bc
-	pop de
+	; FIS-5.62.87: keep the packed item Bank small; Surf SELECT uses
+	; the same result codes without loading a rod sprite or changing Surf.
+	callba PresentFishingResultR2
 	ret
 
 ; checks if fishing is possible and if so, runs initialization code common to all rods
@@ -2310,22 +2330,25 @@ FishingInit:
 	scf ; can't fish during battle
 	ret
 .notInBattle
-	call IsNextTileShoreOrWater
+	; FIS-5.62.87: Surf accepts both Bag rods and SELECT/repeat casts;
+	; land keeps the original tile validator in the Bank $3B helper.
+	callba CheckFishingEligibleR2
 	ret c
-	ld a,[wWalkBikeSurfState]
-	cp a,2 ; Surfing?
-	jr z,.surfing
+	; A repeated cast already has the overworld and a text window open.
+	; Redrawing the map here exposes map tiles through the Yes/No window
+	; for a frame before the next "used the rod" text is drawn.
+	ld a, [wRepeatFishingRod]
+	rlca ; carry = temporary retry handoff bit 7
+	jr c, .alreadyShowingOverworld
 	call ItemUseReloadOverworldData
+.alreadyShowingOverworld
 	ld hl,ItemUseText00
 	call PrintText
 	ld a,SFX_HEAL_AILMENT
 	call PlaySound
-	ld c,80
+	ld c,48 ; restored shorter fishing lead-in from archived P034
 	call DelayFrames
 	and a
-	ret
-.surfing
-	scf ; can't fish when surfing
 	ret
 
 ItemUseOaksParcel:
@@ -2386,12 +2409,13 @@ ItemUsePPRestore:
 	jp .itemNotUsed
 .chooseMove
 	ld a,[wPPRestoreItem]
-	cp a,ELIXER
-	jp z,.useElixir ; if Elixir or Max Elixir
-	cp a,MAX_ELIXER
-	jp z,.useElixir
-	ld a,$02
-	ld [wMoveMenuType],a
+	sub a,ELIXER
+	cp a,2 ; Elixir and Max Elixir are consecutive item IDs
+	jp c,.useElixir
+	; A newly selected Party member starts on move 1. Repeat uses enter
+	; .resumeMoveSelection directly and retain wPlayerMoveListIndex.
+	xor a
+	ld [wPlayerMoveListIndex],a
 	ld hl,RaisePPWhichTechniqueText
 	ld a,[wPPRestoreItem]
 	cp a,ETHER ; is it a PP Up?
@@ -2399,12 +2423,16 @@ ItemUsePPRestore:
 	ld hl,RestorePPWhichTechniqueText ; otherwise, print the restore PP message
 .printWhichTechniqueMessage
 	call PrintText
-	xor a
-	ld [wPlayerMoveListIndex],a
+.resumeMoveSelection
+	; MENU-5.62.31: retain the last result instead of reprinting the question.
+	ld a,$02
+	ld [wMoveMenuType],a
 	callab MoveSelectionMenu ; move selection menu
-	ld a,0
-	ld [wPlayerMoveListIndex],a
-	jr nz,.chooseMon
+	jr z,.moveSelected
+	; MENU-5.62.31: B exits only the move overlay, not the Party selector.
+	; The Bag-slot backup on the stack must not be pushed a second time.
+	jp .returnToPartyFromMove
+.moveSelected
 	ld hl,wPartyMon1Moves
 	ld bc, wPartyMon2 - wPartyMon1
 	call GetSelectedMoveOffset
@@ -2412,11 +2440,14 @@ ItemUsePPRestore:
 	ld a,[hl]
 	ld [wd11e],a
 	call GetMoveName
+	; PP-item result text uses wcf4b, not the selected-move list.
+	; Keep the real move ID and use the selected Party species for its alias.
+	callab MaybeRenameRockPolishLearningMoveName
 	call CopyStringToCF4B ; copy name to wcf4b
 	pop hl
 	ld a,[wPPRestoreItem]
 	cp a,ETHER
-	jr nc,.useEther ; if Ether or Max Ether
+	jp nc,.useEther ; if Ether or Max Ether
 .usePPUp
 	ld bc,wPartyMon1PP - wPartyMon1Moves
 	add hl,bc
@@ -2425,22 +2456,68 @@ ItemUsePPRestore:
 	jr c,.PPNotMaxedOut
 	ld hl,PPMaxedOutText
 	call PrintText
-	jr .chooseMove
+	jr .resumeMoveSelection
 .PPNotMaxedOut
 	ld a,[hl]
 	add a,1 << 6 ; increase PP Up count by 1
 	ld [hl],a
-	ld a,1 ; 1 PP Up used
-	ld [wd11e],a
+	ld a,1 ; apply only this PP Up bonus
+	ld [wUsingPPUp],a
 	call RestoreBonusPP ; add the bonus PP to current PP
 	ld hl,PPIncreasedText
-	call PrintText
+	jp .playPPSuccessSound
 .done
-	pop af
+	; wWhichPokemon is the selected Party slot here, while the stack still holds
+	; the original Bag slot. Preserve the Party slot across RemoveUsedItem so a
+	; single-move PP item can reopen the same move list without returning to Party.
+	ld a,[wWhichPokemon]
+	ld b,a ; B = selected Party slot
+	pop af ; A = Bag slot
 	ld [wWhichPokemon],a
+	push bc
+	ld a,1
+	ld [wActionResultOrTookBattleTurn],a
+	call RemoveUsedItem
+	; TEXT-5.62.165: one successful PP restore ends the battle item action.
+	; Keep the field-only repeat selection when another item remains.
+	ld a,[wIsInBattle]
+	and a
+	jr nz,.finishUsedItemDropPartySlot
+	ld a,[wMaxItemQuantity]
+	and a
+	jr z,.finishUsedItemDropPartySlot
+	pop bc
+	ld a,[wPPRestoreItem]
+	sub a,ELIXER
+	cp a,2 ; Elixir and Max Elixir are consecutive item IDs
+	jr c,.returnToPartyAfterPPUse
+	; PP Up / Ether / Max Ether / Leppa Berry target one move. Keep both the
+	; selected Party member and MoveSelectionMenu cursor so repeated use resumes
+	; on the exact move that was just changed.
+	ld a,[wWhichPokemon]
+	push af ; restore the Bag-slot backup expected by the next successful use
+	ld a,b
+	ld [wWhichPokemon],a
+	jp .resumeMoveSelection
+.returnToPartyAfterPPUse
+	; Elixir / Max Elixir affect every move at once, so their repeat unit is the
+	; Pokémon rather than a move. Return one level to the Party selector.
+	ld a,[wWhichPokemon]
+	push af
+.returnToPartyFromMove
+	ld a,USE_ITEM_PARTY_MENU
+	ld [wPartyMenuTypeOrMessageID],a
+	call GoBackToPartyMenuClean
+	jp nc,.chooseMove
+	jp .itemNotUsed
+.finishUsedItemDropPartySlot
+	pop bc
+	; MENU-5.62.31: keep the final result readable when the item stack runs out.
+	call WaitForTextScrollButtonPress
+.finishUsedItem
 	call GBPalWhiteOut
 	call RunDefaultPaletteCommand
-	jp RemoveUsedItem
+	ret
 .afterRestoringPP ; after using a (Max) Ether/Elixir
 	ld a,[wWhichPokemon]
 	ld b,a
@@ -2454,17 +2531,20 @@ ItemUsePPRestore:
 	ld bc,4
 	call CopyData ; copy party data to in-battle data
 .skipUpdatingInBattleData
+	ld hl,PPRestoredText
+.playPPSuccessSound
+	; MENU-5.62.31: PP Up and PP restore share the success-only sound path.
 	ld a,SFX_HEAL_AILMENT
 	call PlaySound
-	ld hl,PPRestoredText
 	call PrintText
 	jr .done
 .useEther
 	call .restorePP
 	jr nz,.afterRestoringPP
-	jp .noEffect
+	ld hl,PPNoEffectText
+	call PrintText
+	jp .resumeMoveSelection
 ; unsets zero flag if PP was restored, sets zero flag if not
-; however, this is bugged for Max Ethers and Max Elixirs (see below)
 .restorePP
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation],a
@@ -2478,6 +2558,8 @@ ItemUsePPRestore:
 	ld b,a
 	ld a,[wPPRestoreItem]
 	cp a,MAX_ETHER
+	jr z,.fullyRestorePP
+	cp a,MAX_ELIXER
 	jr z,.fullyRestorePP
 	ld a,[hl] ; move PP
 	and a,%00111111 ; lower 6 bit bits store current PP
@@ -2499,18 +2581,13 @@ ItemUsePPRestore:
 	ret
 .fullyRestorePP
 	ld a,[hl] ; move PP
-; Note that this code has a bug. It doesn't mask out the upper two bits, which
-; are used to count how many PP Ups have been used on the move. So, Max Ethers
-; and Max Elixirs will not be detected as having no effect on a move with full
-; PP if the move has had any PP Ups used on it.
+	and a,%00111111 ; ignore PP Up counter bits when checking whether PP is full
 	cp b ; does current PP equal max PP?
 	ret z
 	jr .storeNewAmount
 .useElixir
-; decrement the item ID so that ELIXER becomes ETHER and MAX_ELIXER becomes MAX_ETHER
-	ld hl,wPPRestoreItem
-	dec [hl]
-	dec [hl]
+	; Keep the original item ID intact across repeated Party selections.
+	; .restorePP handles ELIXER/MAX_ELIXER as their single-move counterparts.
 	xor a
 	ld hl,wCurrentMenuItem
 	ld [hli],a
@@ -2539,8 +2616,9 @@ ItemUsePPRestore:
 	ld a,[wTileBehindCursor]
 	and a ; did any moves have their PP restored?
 	jp nz,.afterRestoringPP
-.noEffect
 	call ItemUseNoEffect
+	call GoBackToPartyMenu
+	jp nc,.chooseMove
 .itemNotUsed
 	call GBPalWhiteOut
 	call RunDefaultPaletteCommand
@@ -2569,6 +2647,10 @@ PPRestoredText:
 	TX_FAR _PPRestoredText
 	db "@"
 
+PPNoEffectText:
+	TX_FAR _PPNoEffectText
+	db "@"
+
 ; for items that can't be used from the Item menu
 UnusableItem:
 	jp ItemUseNotTime
@@ -2584,6 +2666,10 @@ ItemUseTMHM:
 	add a,55 ; if item is an HM, add 55
 .skipAdding
 	inc a
+	; OPT-5.28.00: preserve the actual 1..55 machine slot before TMToMove
+	; replaces wd11e with the taught move ID. This keeps compatibility checks
+	; correct even when two machines teach the same move.
+	ld [wSelectedMachineIndex],a
 	ld [wd11e],a
 	predef TMToMove ; get move ID from TM/HM ID
 	ld a,[wd11e]
@@ -2614,30 +2700,40 @@ ItemUseTMHM:
 	push af
 	ld a,[wcf91]
 	push af
+	xor a ; the first Party entry still needs its full graphics initialization
 .chooseMon
-	ld hl,wcf4b
-	ld de,wTempMoveNameBuffer
-	ld bc,14
-	call CopyData ; save the move name because DisplayPartyMenu will overwrite it
+	push af
 	ld a,$ff
 	ld [wUpdateSpritesEnabled],a
 	ld a,TMHM_PARTY_MENU
 	ld [wPartyMenuTypeOrMessageID],a
+	pop af
+	jr c,.redrawParty
 	call DisplayPartyMenu
+	jr .partyDisplayed
+.redrawParty
+	; MENU-5.62.31: retrying TM/HM choices does not need another whiteout.
+	call GoBackToPartyMenuClean
+.partyDisplayed
 	push af
-	ld hl,wTempMoveNameBuffer
-	ld de,wcf4b
-	ld bc,14
-	call CopyData
+	; Rebuild the taught move name from its stable ID. wTempMoveNameBuffer
+	; aliases wLearnMoveMonName and can be clobbered by LearnMove.
+	ld a,[wMoveNum]
+	ld [wd11e],a
+	call GetMoveName
+	call CopyStringToCF4B
 	pop af
 	jr nc,.checkIfAbleToLearnMove
 ; if the player canceled teaching the move
 	pop af
 	pop af
-	call GBPalWhiteOutWithDelay3
-	call ClearSprites
-	call RunDefaultPaletteCommand
-	jp LoadScreenTilesFromBuffer1 ; restore saved screen
+	; BAG-5.19.1: the START Bag caller immediately performs the consolidated
+	; Party-to-Bag restore. Do not first spend three frames restoring the pre-Party
+	; Bag buffer only to replace it again on return.
+	ret
+.chooseAnotherMon
+	scf ; carry selects a light redraw; initial xor a selects the full draw
+	jr .chooseMon
 .checkIfAbleToLearnMove
 	predef CanLearnTM ; check if the pokemon can learn the move
 	push bc
@@ -2653,11 +2749,22 @@ ItemUseTMHM:
 	call PlaySoundWaitForCurrent
 	ld hl,MonCannotLearnMachineMoveText
 	call PrintText
-	jr .chooseMon
+	jr .chooseAnotherMon
 .checkIfAlreadyLearnedMove
 	callab CheckIfMoveIsKnown ; check if the pokemon already knows the move
-	jr c,.chooseMon
+	jr c,.chooseAnotherMon
 	predef LearnMove ; teach move
+	ld a,b
+	and a
+	jr nz,.machineLearned
+	; MENU-5.61.06: abandoning the replacement flow backs out to Party instead of
+	; skipping straight to the Bag. Keep the saved Bag item state on the stack.
+	ld a,[wMoveNum]
+	ld [wd11e],a
+	call GetMoveName
+	call CopyStringToCF4B
+	jp .chooseAnotherMon
+.machineLearned
 	pop af
 	ld [wcf91],a
 	pop af
@@ -2880,6 +2987,77 @@ AddBonusPP:
 ; [wCurrentMenuItem] = move index
 ; OUTPUT:
 ; [wMaxPP] = max PP
+; MOVE-5.62.169: test the *slot* flag, not just the raw ID;
+; ordinary Pound/Karate Chop must retain their stock PP.
+; Input HL = selected stored move; result A=1 if extended, 0 otherwise.
+; BC/DE preserved. Only Party, loaded Box summary and BattleMon are
+; eligible; all other contexts remain ordinary during the pilot.
+IsCurrentSelectedMoveExtendedPP:
+	push bc
+	push de
+	push hl
+	ld a, [hl]
+	ld [wTempMoveID], a
+	ld a, [wMonDataLocation]
+	and a
+	jr z, .party
+	cp BOX_DATA
+	jr z, .box
+	cp BATTLE_MON_DATA
+	jr z, .battle
+	jr .none
+.party
+	ld a, [wWhichPokemon]
+	cp PARTY_LENGTH
+	jr nc, .none
+	ld e, a
+	ld d, 0
+	ld hl, wExtendedPartyMoveFlags
+	add hl, de
+	ld a, [hl]
+	ld b, a
+	jr .getByte
+.box
+	ld a, [wExtendedStatusMoveFlags]
+	ld b, a
+	jr .getByte
+.battle
+	ld a, [wExtendedBattleMoveFlags]
+	ld b, a
+.getByte
+	ld a, [wCurrentMenuItem]
+	cp NUM_MOVES
+	jr nc, .none
+	ld e, a
+	ld a, b
+.shift
+	ld c, a
+	ld a, e
+	and a
+	ld a, c
+	jr z, .bit
+	srl a
+	dec e
+	jr .shift
+.bit
+	and 1
+	jr z, .none
+	ld a, [wTempMoveID]
+	and a
+	jr z, .none
+	cp NUM_EXTENDED_MOVES + 1
+	jr nc, .none
+.yes
+	ld a, 1
+	jr .finish
+.none
+	xor a
+.finish
+	pop hl
+	pop de
+	pop bc
+	ret
+
 GetMaxPP:
 	ld a,[wMonDataLocation]
 	and a
@@ -2903,7 +3081,14 @@ GetMaxPP:
 .sourceWithMultipleMon
 	call GetSelectedMoveOffset
 .next
+	push hl
+	call IsCurrentSelectedMoveExtendedPP
+	pop hl
+	and a
+	jr nz, .extendedPP
 	ld a,[hl]
+	cp EXT_MOVE_SLOT_ESCAPE
+	jr z, .extendedPP
 	dec a
 	push hl
 	ld hl,Moves
@@ -2916,6 +3101,23 @@ GetMaxPP:
 	ld a,[de]
 	ld b,a ; b = normal max PP
 	pop hl
+	jr .haveBasePP
+.extendedPP
+	push hl
+	ld a,[wTempMoveID]
+	ld e,a
+	callba LoadExtendedMoveStatsByOrdinalToCD6D
+	jr c,.legacyExtendedPP
+	ld a,[wcd6d + 5]
+	ld b,a
+	ld de,wcd6d + 5 ; shared bonus-PP scratch pointer
+	pop hl
+	jr .haveBasePP
+.legacyExtendedPP
+	pop hl
+	ld b,10 ; legacy $ff Power Whip compatibility only
+	ld de,wcd6d + 5 ; shared bonus-PP scratch pointer
+.haveBasePP
 	push bc
 	ld bc,wPartyMon1PP - wPartyMon1Moves ; PP offset if not player's in-battle pokemon data
 	ld a,[wMonDataLocation]
@@ -2990,8 +3192,9 @@ TossItem_:
 	ret z ; return if the player chose No
 ; if the player chose Yes
 	push hl
-	ld a,[wWhichPokemon]
-	call RemoveItemFromInventory
+	ld d,h
+	ld e,l
+	callba RemoveItemFromInventoryPreserveListState
 	ld a,[wcf91]
 	ld [wd11e],a
 	call GetItemName
@@ -3077,6 +3280,7 @@ SendNewMonToBox:
 	cp $ff
 	jr nz, .asm_e7b1
 	call GetMonHeader
+	callba RegionalFormPrepareCaughtMonHeader ; FORM-5.20.03 persist caught form in box
 	ld hl, wBoxMonOT
 	ld bc, NAME_LENGTH
 	ld a, [wNumInBox]
@@ -3258,7 +3462,7 @@ WaterTilesets:
 
 ReadSuperRodData:
 ; return e = 2 if no fish on this map
-; return e = 1 if a bite, bc = level,species
+; return e = REGIONAL_FISHING_SLOT_FLAG | slot if a bite, bc = level,species
 ; return e = 0 if no bite
 	ld a, [wCurMap]
 	ld de, 3 ; each fishing group is three bytes wide
@@ -3296,6 +3500,7 @@ ReadSuperRodData:
 	jr nc, .RandomLoop ; if a is greater than the number of mons, regenerate
 .hookedMon
 	; get the mon
+	ld e,a ; WLD-5.62.23: preserve selected 0-based Super Rod slot
 	add a
 	ld c, a
 	ld b, $0
@@ -3303,7 +3508,7 @@ ReadSuperRodData:
 	ld b, [hl] ; level
 	inc hl
 	ld c, [hl] ; species
-	ld e, $1 ; $1 if there's a bite
+	set 7,e ; mark bite while keeping the exact slot for RodResponse
 	ret
 
 INCLUDE "data/super_rod.asm"
@@ -3317,14 +3522,13 @@ ItemUseReloadOverworldData:
 ; creates a list at wBuffer of maps where the mon in [wd11e] can be found.
 ; this is used by the pokedex to display locations the mon can be found on the map.
 FindWildLocationsOfMon:
-	ld hl, WildDataPointers
+	ld hl, WildDataTable
 	ld de, wBuffer
-	ld c, $0
 .loop
-	inc hl
-	ld a, [hld]
-	inc a
+	ld a, [hli]
+	cp $ff
 	jr z, .done
+	ld c, a ; map ID
 	push hl
 	ld a, [hli]
 	ld h, [hl]
@@ -3338,7 +3542,6 @@ FindWildLocationsOfMon:
 	pop hl
 	inc hl
 	inc hl
-	inc c
 	jr .loop
 .done
 	ld a, $ff ; list terminator

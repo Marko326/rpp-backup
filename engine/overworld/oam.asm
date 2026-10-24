@@ -28,7 +28,7 @@ PrepareOAMData:
 	inc e
 	inc e
 	ld a, [de] ; c1x2 (facing/anim)
-	ld [wd5cd], a
+	ldh [hOAMFacingAnim], a ; HOOH-5.19.56: runtime-only scratch, no longer stored in save WRAM
 	cp $ff ; off-screen (don't draw)
 	jr nz, .visible
 
@@ -77,6 +77,18 @@ PrepareOAMData:
 
 	call GetSpriteScreenXY
 
+	; MAPSIGN-5.19.40: while the bottom map-name Window is actually visible,
+	; omit the whole 16x16 logical sprite as soon as it overlaps the Window.
+	; MAPCLIP-5.19.37 clipped individual 8x8 OAM pieces after rendering, which
+	; could make moving characters lose half their body / appear to flicker.
+	ldh a, [hWY]
+	cp MAP_NAME_SIGN_Y
+	jr nz, .mapNameSignClear
+	ldh a, [hSpriteScreenY]
+	cp MAP_NAME_SIGN_Y - 15
+	jp nc, .nextSprite
+.mapNameSignClear
+
 	ld a, [hOAMBufferOffset]
 	ld e, a
 	ld d, wOAMBuffer / $100
@@ -98,7 +110,7 @@ PrepareOAMData:
 	push bc
 	ld b, a
 
-	ld a, [wd5cd]            ; temp copy of c1x2
+	ldh a, [hOAMFacingAnim]  ; temp copy of c1x2
 	swap a                   ; high nybble determines sprite used (0 is always player sprite, next are some npcs)
 	and $f
 
