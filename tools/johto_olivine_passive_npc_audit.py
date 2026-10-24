@@ -49,8 +49,8 @@ def audit(root: Path, gold: Path) -> list[str]:
         if not all(section.count('db '+w)==1 for w in want):
             errors.append('House $0c sprite sheet must include both Guru palette IDs')
         pointers = sets.split('SpriteSheetPointerTable:',1)[1]
-        if pointers.count('dw JohtoFishingGuruSprite') != 2:
-            errors.append('Two sprite pointers must reuse one Gold Guru 12-tile asset')
+        if pointers.count('dw JohtoFishingGuruSprite') != 3:
+            errors.append('Red, green and blue sprite pointers must reuse one Gold Guru 12-tile asset')
         if graphics.count('JohtoFishingGuruSprite: INCBIN "gfx/sprites/johto_fishing_guru.2bpp"') != 1:
             errors.append('One PNG-derived 12-tile Guru sprite source must be included')
         passive = (root/'engine/overworld/johto_passive_house_npc.asm').read_text()

@@ -1,3 +1,20 @@
+## OLIV-5.62.241｜公共建筑批量导入与稳定版守护（2026-10-25）
+
+- **MART SoftReset 真正危险点**：源端 `data/mapObjects/JohtoOlivineCity.asm` 和 `engine/overworld/region_map_lookup.asm` 的目标 Warp 必须精确一致；曾因只改目标查询或盲目将稳定版 0→0 迁移为 1 而出现跳标题。当前已被用户确认可用的 0→0 路径作为实机兼容基准保护，不能仅凭 Gold 原始编号替换。未来变更需同时核对回程、Gold 目标和实机，而不是为绿测试捏造编号。
+- **咖啡馆与 NPC 回归**：Gold 出口方向地毯是 COLLISION_ONLY/向下触发，站在上面与左右横移不得立刻出门；新的 Cafe local ID 必须经过原方向分派。Clerk 默认绿、Sailor 默认蓝、Fishing Guru 蓝色变体的指针/VRAM、调色、角色实际加载必须一起核对，禁止只改注释或只改 `color/sprites.asm`。
+- **转换链漏检**：生成器与审核不能采用同一个错误预期；必须对比 Gold 独立 Warp/NPC 原始数据并注入错误，防止城市源端 Warp 与目标表不同步。当前导出 ZIP 因全局 `*.json` 忽略，缺少公共建筑两份生成清单和 4 份 `provenance.json`；专项会报 FileNotFoundError，应由后续单独工具修复处理成可复现受控输入，而不是把缺文件当 PASS，也不可在清理包中盲目新增会与用户忽略文件冲突的 JSON。
+- **证据级别**：用户回复「没问题了」仅支持稳定版候选所覆盖的实机操作；该清理未重新编译 ROM。定向 30/30 PASS；另 12 测试 2 ERROR（缺 JSON）；统一发布门禁本轮没有完整通过证据时须登记真实状态，不能以局部通过替代。
+
+## 2026-10-24｜浅葱公共建筑批量预备：多目的地 Warp 不等于普通民宅双出口
+
+> OLIVINE-5.62.241 DEV：公共建筑 NPC 的普通 tile-collision whitelist 不能直接使用 Gold 的原图 ID；同一 8x8 图像可能同时出现在可走地面与阻挡家具。运行时生成器会为可走脚下图块复制像素、复制对应 block，并只改可走 cell 的左下图块 ID；玩家仍使用精确 Gold blocked-mask。两条碰撞路径需分别审计。Pokecenter 2F 楼梯目前刻意保持阻挡且不注册 Warp。
+
+
+- Gold `OlivinePokecenter1F` 有两条回浅葱市的 Warp `(3,7)/(4,7)`，以及第三条 `(0,7)` 通往 `POKECENTER_2F`。普通 House1 的“两条室内 Warp 全都返回同一室外”断言不适用；不能因此放宽现有全项目 Warp 规则。`--allow-nonlocal-warps` / v2 manifest 仅能生成离线预备报告，把第三条列为**需注册真实目的地或实际阻断**，不得生成启用的虚假 Warp。
+- Gold `OlivineMart` 使用 `mart`，`OlivineCafe` 使用 `game_corner`，`OlivinePokecenter1F` 使用 `pokecenter` 图块集；与现有 RPP Kanto 图集逐像素匹配均为 0。`tools/olivine_public_candidates/` 的 96 槽原图 PNG、压缩 `.bst`、`.blk`、palette 和遮罩目前为**未接入的候选素材**，需要独立 Tileset 编号、精灵加载、人物 NPC 图像、实际碰撞/音效调色和 ROM/MAP 容量检查。绝不能直接把 Gold 的原始 `.blk` 编号放进 RPP 现用 Mart/Pokecenter/House 图集。
+- 本批次 Gold 9 NPC 的位置清单和 8 种共享原版人物 PNG 已准备；静态 PNG 文件存在不等于显存中的精灵可见，更不等于 A 键特殊脚本安全。不要误将仅能读取 `hSpriteIndexOrTextID` 的人物对话指针当作可空数据，以免误触发或空指针。
+- 离线 v2 批处理不可创建地图/开放城市房门。**先把候选图形转成真正可链接资源，接通每个返回 Warp + step，并覆盖成功和错误路线的负向测试，再交用户手机验收。**本轮未触动三间用户已验收民宅的 ASM。
+
 - **被忽略的 `.2bpp` 不能代替正式 PNG 源文件**：`.gitignore` 忽略 `*.2bpp`，本地已有生成物时可能让编译成功，但干净源码包无法重建。每个被 `INCBIN` 的 `.2bpp`／`.1bpp` 都要有同路径 PNG 源，普通资源走通用 PNG 转换规则；使用绝对图块 ID 的稀疏图集必须像 `johto_house` 一样声明专用无裁剪规则，并校验固定槽位与输出字节数。不要把生成的 `.2bpp` 误当成唯一源，也不要因源文件存在就声称 ROM／手机已验收。
 ## OLIV-5.62.241｜浅葱市民宅首座室内正式收口（2026-10-23）
 

@@ -50,6 +50,15 @@ MAPPINGS = {
 EAST_IDS = ('JOHTO_ROUTE_44_LOCAL_ID', 'JOHTO_BLACKTHORN_CITY_LOCAL_ID',
             'JOHTO_ROUTE_45_LOCAL_ID', 'JOHTO_ROUTE_46_LOCAL_ID')
 
+# New native Olivine interiors use the shared Gold quadrant-mask predicate,
+# not a separate per-map call. Preserve the pre-existing dispatch inventory.
+PUBLIC_MASK_IDS = {
+    'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID': ('.olivinePokecenter', 'JohtoOlivinePokecenter1FBlockedRows', 'JOHTO_OLIVINE_POKECENTER_1F_WIDTH * 2', '2'),
+    'JOHTO_OLIVINE_CAFE_LOCAL_ID': ('.olivineCafe', 'JohtoOlivineCafeBlockedRows', 'JOHTO_OLIVINE_CAFE_WIDTH * 2', '1'),
+    'JOHTO_OLIVINE_MART_LOCAL_ID': ('.olivineMart', 'JohtoOlivineMartBlockedRows', 'JOHTO_OLIVINE_MART_WIDTH * 2', '2'),
+}
+
+
 def audit(root, overrides=None):
     root = Path(root)
     overrides = overrides or {}
@@ -88,7 +97,7 @@ def audit(root, overrides=None):
         errors.append('ROMX native collision dispatcher must load exact local map ID')
     compare = re.findall(r'(?m)^\s*cp (JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) (\w+),\s*(\.\w+)',
                          romx.split('\n\tld e, 0\n', 1)[0])
-    if len(compare) != len(MAPPINGS) + len(EAST_IDS) or {x[0] for x in compare} != set(MAPPINGS) | set(EAST_IDS) or any(cond != 'z' for _, cond, _ in compare):
+    if len(compare) != len(MAPPINGS) + len(EAST_IDS) + len(PUBLIC_MASK_IDS) or {x[0] for x in compare} != set(MAPPINGS) | set(EAST_IDS) | set(PUBLIC_MASK_IDS) or any(cond != 'z' for _, cond, _ in compare):
         errors.append('ROMX native collision local-ID inventory / equality branches changed')
     branches = re.findall(r'(?m)^(\.\w+)\n\s*call (Johto\w+CanStepAhead)\n(?=\s*(?:(?:jr|jp) \.handled|\.handled))',romx)
     if len(branches) != len(set(MAPPINGS.values())) or len({b for b,_ in branches}) != len(branches):
@@ -97,6 +106,15 @@ def audit(root, overrides=None):
     for mapid, _cond, label in compare:
         if mapid in EAST_IDS:
             if label != '.east': errors.append('wrong new exterior dispatch: ' + mapid)
+            continue
+        if mapid in PUBLIC_MASK_IDS:
+            wanted_label, mask, stride, rowbytes = PUBLIC_MASK_IDS[mapid]
+            if label != wanted_label:
+                errors.append('wrong Olivine public mask dispatch: ' + mapid)
+            exact = (wanted_label + '\n ld hl, ' + mask + '\n ld d, ' + stride
+                     + '\n ld e, ' + rowbytes + '\n call JohtoModernMaskedStep\n jp .handled')
+            if exact not in romx:
+                errors.append('wrong Olivine public Gold mask parameters: ' + mapid)
             continue
         if targets.get(label) != MAPPINGS.get(mapid):
             errors.append('ROMX wrong native map->collision predicate: '+mapid)

@@ -52,12 +52,12 @@ def audit(root: Path, gold: Path) -> list[str]:
         pointer_names=re.findall(r'(?m)^\s*dw (\w+)\s*$',pointers)
         if len(pointer_names)!=len(declared):
             problems.append('SpriteSheetPointerTable must align exactly to real sprite constant count')
-        elif pointer_names[-4:]!=['JohtoPokefanMSprite','JohtoLassSprite','JohtoFishingGuruSprite','JohtoFishingGuruSprite']:
-            problems.append('new Gold sprite pointers misindexed')
+        elif pointer_names[0x63:0x67]!=['JohtoPokefanMSprite','JohtoLassSprite','JohtoFishingGuruSprite','JohtoFishingGuruSprite']:
+            problems.append('existing house Gold sprite pointers misindexed after public sprite append')
         col_rows=files['color/sprites.asm'].split('SpritePaletteAssignments:',1)[1].split('AnimationTileset1Palettes:',1)[0]
         pal_rows=re.findall(r'(?m)^\s*db (PAL_OW_\w+)',col_rows)
-        if len(pal_rows)!=len(declared) or pal_rows[-4:]!=['PAL_OW_BROWN','PAL_OW_RED','PAL_OW_RED','PAL_OW_GREEN']:
-            problems.append('SpritePaletteAssignments rows must align to actual sprite indices')
+        if len(pal_rows)!=len(declared) or pal_rows[0x63:0x67]!=['PAL_OW_BROWN','PAL_OW_RED','PAL_OW_RED','PAL_OW_GREEN']:
+            problems.append('SpritePaletteAssignments rows must align to existing house sprite indices')
         a=sets.split('; sprite set $0b',1)
         if len(a)!=2:
             problems.append('outdoor Johto $0b set missing')

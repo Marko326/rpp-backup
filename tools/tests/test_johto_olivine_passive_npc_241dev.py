@@ -33,7 +33,7 @@ class PassiveNPC241DEV(unittest.TestCase):
             for file,before,after in (
                 ('data/mapObjects/JohtoOlivineTimsHouse.asm', '2, 3, STAY, NONE','3, 3, STAY, NONE'),
                 ('engine/overworld/johto_passive_house_npc.asm','cp 3\n','cp 4\n'),
-                ('color/sprites.asm','db PAL_OW_GREEN\n\n\nAnimationTileset1Palettes:', 'db PAL_OW_RED\n\n\nAnimationTileset1Palettes:'),
+                ('color/sprites.asm','0x67: SPRITE_JOHTO_FISHING_GURU_GREEN (Gold PAL_NPC_GREEN)\n\tdb PAL_OW_GREEN', '0x67: SPRITE_JOHTO_FISHING_GURU_GREEN (Gold PAL_NPC_GREEN)\n\tdb PAL_OW_RED'),
             ):
                 p=dir/file;original=(ROOT/file).read_text();self.assertIn(before,original)
                 p.write_text(original.replace(before,after,1))

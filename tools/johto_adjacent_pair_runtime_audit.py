@@ -83,12 +83,12 @@ def audit(root: Path, gold: Path, overrides=None) -> list[str]:
             if name == 'OlivineCity':
                 obj = objects[name]
                 # Three Gold exact entrances; old city Warp remains slot zero.
-                active = re.search(r'(?m)^\s*db \$03\s*; three Gold-proven ordinary houses', obj)
-                expected = [(11,29,0),(11,25,0),(15,13,0)]
+                active = re.search(r'(?m)^\s*db \$06\s*; three tested houses plus Pokecenter, Cafe, and Mart', obj)
+                expected = [(11,29,0),(11,25,0),(15,13,0),(21,13,0),(21,7,0),(17,19,0)]
                 found = [tuple(map(int,row)) for row in re.findall(
                     r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*REGION_WARP_ESCAPE', obj)]
                 if not active or found != expected:
-                    errors.append('OlivineCity must expose exactly three original Gold House1 doors in audited order')
+                    errors.append('OlivineCity must expose the three House1 doors plus PC/Cafe/Mart in audited order')
             elif not re.search(r'(?m)^\s*db \$00\s*; no (?:dummy Warp|active Warp)',objects[name]):
                 errors.append(f'{name} unbuilt indoor warp has active dummy registration')
             if expected_water is not None:

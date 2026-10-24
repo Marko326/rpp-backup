@@ -19,8 +19,8 @@ class OlivineHouseBatch241DEV(unittest.TestCase):
         city = (ROOT/'data/mapObjects/JohtoOlivineCity.asm').read_text()
         gold_city = (GOLD/'maps/OlivineCity.asm').read_text()
         resolver = (ROOT/'engine/overworld/region_map_lookup.asm').read_text()
-        self.assertIn('db $03 ; three Gold-proven ordinary houses', city)
-        self.assertEqual(len(re.findall(r'(?m)^\s*db\s+\d+,\s*\d+,\s*\d+,\s*REGION_WARP_ESCAPE',city)),3)
+        self.assertIn('db $06 ; three tested houses plus Pokecenter, Cafe, and Mart', city)
+        self.assertEqual(len(re.findall(r'(?m)^\s*db\s+\d+,\s*\d+,\s*\d+,\s*REGION_WARP_ESCAPE',city)),6)
         first = (ROOT/'maps/JohtoOlivinePunishmentSpeechHouse.blk').read_bytes()
         mask = (ROOT/'maps/JohtoOlivinePunishmentSpeechHouse.blocked_mask.bin').read_bytes()
         self.assertEqual(len(mask),8)
@@ -52,9 +52,12 @@ class OlivineHouseBatch241DEV(unittest.TestCase):
                     if alias == 'REGION_NATIVE_MAP_SLOT' and mid == 'JOHTO_OLIVINE_CITY_LOCAL_ID']
         expected = [(11,29,'REGION_NATIVE_MAP_SLOT','D_DOWN'),
                     (11,25,'REGION_NATIVE_MAP_SLOT','D_DOWN'),
-                    (15,13,'REGION_NATIVE_MAP_SLOT','D_DOWN')]
+                    (15,13,'REGION_NATIVE_MAP_SLOT','D_DOWN'),
+                    (21,13,'REGION_NATIVE_MAP_SLOT','D_DOWN'),
+                    (21,7,'REGION_NATIVE_MAP_SLOT','D_DOWN'),
+                    (17,19,'REGION_NATIVE_MAP_SLOT','D_DOWN')]
         self.assertEqual(all_city, expected)
-        # All three destinations are exact Gold exterior warps and their
+        # All six destinations are exact Gold exterior warps and their
         # NEXT cells must be walkable. Neither inside exit lane auto-steps.
         mask = (ROOT/'maps/JohtoOlivineCity.blocked_mask.bin').read_bytes()
         for y,x,_,_ in expected:
@@ -76,12 +79,12 @@ class OlivineHouseBatch241DEV(unittest.TestCase):
             self.assertIn('db $01 ; Gold',obj)
             self.assertEqual(len(re.findall(r'(?m)^\s*object SPRITE_',obj)),1)
             self.assertNotIn('OPP_',obj) ; self.assertNotIn('ITEM ',obj)
-        self.assertIn('DEF NUM_JOHTO_MAPS EQU 49',(ROOT/'constants/region_map_constants.asm').read_text())
+        self.assertIn('DEF NUM_JOHTO_MAPS EQU 52',(ROOT/'constants/region_map_constants.asm').read_text())
 
-    def test_only_exact_three_outdoor_doors(self):
+    def test_six_outdoor_doors_are_exact_and_ordered(self):
         city=(ROOT/'data/mapObjects/JohtoOlivineCity.asm').read_text()
         entries=re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*REGION_WARP_ESCAPE',city)
-        self.assertEqual(entries,[('11','29','0'),('11','25','0'),('15','13','0')])
+        self.assertEqual(entries,[('11','29','0'),('11','25','0'),('15','13','0'),('21','13','0'),('21','7','0'),('17','19','0')])
 
 if __name__=='__main__':
     unittest.main()

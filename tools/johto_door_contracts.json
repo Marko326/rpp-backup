@@ -3240,9 +3240,10 @@
       "rpp_map": "JohtoOlivineCity",
       "gold_map": "OlivineCity",
       "family": "BUILDING",
-      "warp_count": 3,
+      "warp_count": 6,
       "required_test_ids": [
-        "test_johto_olivine_house_240dev.OlivineHouse240DEV.test_city_outdoor_warp_must_not_move"
+        "test_johto_olivine_house_240dev.OlivineHouse240DEV.test_city_outdoor_warp_must_not_move",
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_city_doors_gold_and_arrival_step"
       ]
     },
     {
@@ -3270,6 +3271,36 @@
       "warp_count": 2,
       "required_test_ids": [
         "test_johto_olivine_house_batch_241dev.OlivineHouseBatch241DEV.test_two_house_batch_gold_warp_graph"
+      ]
+    },
+    {
+      "rpp_map": "JohtoOlivinePokecenter1F",
+      "gold_map": "OlivinePokecenter1F",
+      "family": "BUILDING",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_room_warps_gold_and_no_unsafe_stair",
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_npc_and_passive_A_contract"
+      ]
+    },
+    {
+      "rpp_map": "JohtoOlivineCafe",
+      "gold_map": "OlivineCafe",
+      "family": "BUILDING",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_room_warps_gold_and_no_unsafe_stair",
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_npc_and_passive_A_contract"
+      ]
+    },
+    {
+      "rpp_map": "JohtoOlivineMart",
+      "gold_map": "OlivineMart",
+      "family": "BUILDING",
+      "warp_count": 2,
+      "required_test_ids": [
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_room_warps_gold_and_no_unsafe_stair",
+        "test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_npc_and_passive_A_contract"
       ]
     }
   ],

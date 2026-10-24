@@ -165,3 +165,18 @@ python -B tools/johto_indoor_pipeline.py \
 Gold 原版：城市 `(29,11)` Warp #5 入屋；房内 `(2,7)/(3,7)` 都回城第 #5 条。原版两名 NPC 与两处书架在 `maps/OlivinePunishmentSpeechHouse.asm`。`.240` 的 RPP `JohtoOlivineCityObject` 仍然登记 **0 条室外 Warp**。若图形无法像素精确复用，隔离候选只证明源资源可生成；阶段 B 必须另行审核新 tileset、门口碰撞、调色、ROM Bank 和 NPC 真正交互，再谈开门。
 
 具体实施顺序见 `docs/JOHTO_INDOOR_HOUSE_PLAN_240_DEV.md`。
+
+## OLIV.241 DEV｜浅葱公共建筑批量未注册预备（v2）
+
+v1 `johto-indoor-batch-v1` 注册地图审核不变。新增 v2 为**仅离线** `prestage_unregistered`，一次可将多张尚未开放的原版室内按 Gold 来源生成独立候选，绝不修改游戏地图登记、门口、ROM 或版本号。项目内配置：
+
+```sh
+python tools/johto_indoor_batch.py \
+  --rpp . --gold /path/to/pokegold-master \
+  --manifest tools/manifests/olivine_public_buildings_241.json \
+  --output /outside/rpp/new-empty-olivine-stage
+```
+
+三个任务：`OlivinePokecenter1F`（pokecenter）、`OlivineMart`（mart）、`OlivineCafe`（Gold `game_corner`，RPP 暂以 `mart` 作为**像素对照源而非未来运行时图块**）。读取 Gold 11 条城市 Warp 时不把第二楼虚作街道回程。PC 的楼梯 `(0,7)` 仍须真实运行时阻断或合法注册；离线候选面罩本身不会影响游戏。
+
+为以后源码接入暂存的图像、compact blockset、candidate `.blk`、Gold 碰撞遮罩、调色候选及人员 PNG 在 `tools/olivine_public_candidates/`；`provenance.json` 写明每个候选 SHA。这里的 mask、palette、sprite 没有注册成 RPP tileset 或 sprite set，必须单独验收，`import_allowed=false` 不得改成 true。测试见 `tools/tests/test_johto_olivine_public_batch_241dev.py`。

@@ -60,7 +60,12 @@ def verify(rpp:Path,gold:Path):
         # the new Johto house is appended in its own slot (36).
         house_base=('INDOOR_GRAY','INDOOR_RED','INDOOR_GREEN','INDOOR_BLUE',
                     'INDOOR_YELLOW','INDOOR_BROWN','INDOOR_LIGHT_BLUE','CRYS_TEXTBOX')
-        if len(slots)!=37 or slots[32]!=ilex_base or slots[33]!=('OUTDOOR_GRAY','OUTDOOR_RED','OUTDOOR_GREEN','OUTDOOR_BLUE','OUTDOOR_YELLOW','OUTDOOR_BROWN','OUTDOOR_ROOF','CRYS_TEXTBOX') or slots[34]!=GATE_BASE or slots[35]!=GATE_BASE or slots[36]!=house_base:
+        public_sets = (
+            ('INDOOR_GRAY','POKECENTER_TABLE','INDOOR_GREEN','INDOOR_BLUE','INDOOR_YELLOW','INDOOR_BROWN','POKECENTER_FLOOR','PC_POKEBALL_PAL'),
+            ('INDOOR_GRAY','INDOOR_RED','INDOOR_GREEN','INDOOR_BLUE','INDOOR_YELLOW','MART_FLOOR','INDOOR_LIGHT_BLUE','PC_POKEBALL_PAL'),
+            ('INDOOR_GRAY','INDOOR_RED','INDOOR_GREEN','INDOOR_BLUE','INDOOR_YELLOW','INDOOR_BROWN','INDOOR_LIGHT_BLUE','CRYS_TEXTBOX'),
+        )
+        if len(slots)!=40 or slots[32]!=ilex_base or slots[33]!=('OUTDOOR_GRAY','OUTDOOR_RED','OUTDOOR_GREEN','OUTDOOR_BLUE','OUTDOOR_YELLOW','OUTDOOR_BROWN','OUTDOOR_ROOF','CRYS_TEXTBOX') or slots[34]!=GATE_BASE or slots[35]!=GATE_BASE or slots[36]!=house_base or tuple(slots[37:40]) != public_sets:
             errors.append('tileset palette sets changed or new park family mismatched Gold')
         if len(slots)>29 and slots[29]!=GATE_BASE:errors.append('JOHTO_GATE must use isolated Gold palettes')
         if len(slots)>12 and slots[12]!=KANTO_GATE:errors.append('Kanto GATE palette set was changed')

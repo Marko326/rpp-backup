@@ -1,3 +1,11 @@
+# OLIV-5.62.241｜公共建筑三图＋稳定修复正式清理索引（本文件不是 git commit -F 正文）
+# 基线：金银 HEAD 7465e56938e8910fdd79ad6987559674c4860d6d；版本 OLIV-5.62.241 -> OLIV-5.62.241。
+# 模式 A：第一笔 feat(johto): 接入浅葱市公共建筑并修正门毯及 NPC 配色
+#             第二笔 test(tool): 固化公共建筑 Gold 转换与进出门审计
+# 第一步清理增量只用于已验收稳定修复 DEV；HEAD 全量仅用于干净 7465e569，二者不能叠加。
+# 应用工具反向隔离后按功能日志提交；再 git apply -R 撤销隔离并按工具日志提交。
+# 全量门禁、丢失 JSON、用户实机范围及暂缓事件的细节见 TODO／RPP_DEVELOPMENT_PITFALLS；具体正文见 ZIP 两份独立 TXT。
+
 # OLIV-5.62.241｜浅葱市双民宅＋展示 NPC：正式清理索引（本文件不是 git commit -F 正文）
 # 分支：金银；正式 HEAD：a4fe015f6998e7c58f2bbf106726c930b060c774；Version: OLIV-5.62.241 -> OLIV-5.62.241。
 # 1) feat(johto): 批量接通浅葱市两间民宅并加入原版展示型 NPC

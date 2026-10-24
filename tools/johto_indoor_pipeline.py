@@ -141,12 +141,12 @@ def _gold_interaction_inventory(gold: Path, room: str, width: int, height: int) 
     return results
 
 
-def _gold_outdoor_pairs(gold: Path, room: str, outside: str, indoor_warps: list) -> dict:
-    """Prove the one-outside-map house topology using independent Gold source.
+def _gold_outdoor_pairs(gold: Path, room: str, outside: str, indoor_warps: list,
+                        *, allow_nonlocal_warps: bool = False) -> dict:
+    """Check all Gold exits without converting a multi-destination room to a house.
 
-    This is only for a small house whose *every* indoor return points to one
-    outdoor map. Other interiors may connect many maps and must be reviewed
-    separately; do not generalize this into an automatic Warp converter.
+    Nonlocal warps (such as Pokemon Center stairs) are returned as blockers,
+    never silently routed to the street or declared a playable entrance.
     """
     out_warps = gold_warps(gold, outside)
     linked = [w for w in out_warps if _gold_name_key(w['dest_map']) == _gold_name_key(room)]
@@ -155,14 +155,33 @@ def _gold_outdoor_pairs(gold: Path, room: str, outside: str, indoor_warps: list)
     if any(w['dest_id'] > len(indoor_warps) or w['dest_id'] < 1 for w in linked):
         raise ConversionError('Gold 城外 Warp 指向不存在的房内 1-based 索引')
     linked_ids = {w['id'] for w in linked}
-    if any(_gold_name_key(w['dest_map']) != _gold_name_key(outside)
-           or w['dest_id'] not in linked_ids for w in indoor_warps):
+    home = [w for w in indoor_warps if _gold_name_key(w['dest_map']) == _gold_name_key(outside)]
+    extra = [w for w in indoor_warps if _gold_name_key(w['dest_map']) != _gold_name_key(outside)]
+    if extra and not allow_nonlocal_warps:
         raise ConversionError('Gold 室内出口并未全部回到指定室外入口，拒绝按简单民宅处理')
-    if any(indoor_warps[w['dest_id'] - 1]['dest_id'] != w['id'] for w in linked):
+    if any(w['dest_id'] not in linked_ids for w in home):
+        raise ConversionError('Gold 室内回程引用了与该房间无关的室外 Warp')
+    if any(_gold_name_key(indoor_warps[w['dest_id'] - 1]['dest_map']) != _gold_name_key(outside)
+           or indoor_warps[w['dest_id'] - 1]['dest_id'] != w['id'] for w in linked):
         raise ConversionError('Gold 室外入口对应的房内回程索引不一致')
+    if any(w['dest_id'] < 1 for w in extra):
+        raise ConversionError('Gold 多目的地 Warp 目标索引非法')
+    if extra:
+        # Reject unknown destination names rather than treating a typo as a
+        # legitimate link to be disabled at runtime.
+        map_defs = (gold/'data/maps/maps.asm').read_text(encoding='utf-8')
+        targets = set(re.findall(r'^\s*map\s+(\w+)\s*,',map_defs,re.M))
+        if any(_gold_name_key(w['dest_map']) not in {_gold_name_key(x) for x in targets}
+               for w in extra):
+            raise ConversionError('Gold 多目的地 Warp 指向未知地图')
     return {'outside_map': outside, 'outside_to_indoor_1_based': linked,
-            'inside_to_outside_1_based': indoor_warps,
-            'verified_single_outside_house_topology': True,
+            'inside_to_outside_1_based': home,
+            'nonlocal_indoor_warps_1_based': extra,
+            'required_disabled_or_validly_routed_at_runtime': [
+                {'gold_warp_id': w['id'], 'x': w['x'], 'y': w['y'],
+                 'destination_map': w['dest_map']} for w in extra],
+            'verified_single_outside_house_topology': not extra,
+            'verified_outdoor_return_subset': True,
             'rpp_destination_indices_0_based_review_only': [
                 {'outside_gold_warp_id': w['id'], 'indoor_destination_zero_based': w['dest_id'] - 1}
                 for w in linked],
@@ -172,7 +191,8 @@ def _gold_outdoor_pairs(gold: Path, room: str, outside: str, indoor_warps: list)
 def prestage_unregistered(rpp: Path, gold: Path, out: Path, *, gold_room: str,
                           rpp_room: str, gold_tileset: str = 'gate',
                           rpp_tileset: str = 'gate', gold_outside_map: str | None = None,
-                          rpp_outside_map: str | None = None):
+                          rpp_outside_map: str | None = None,
+                          allow_nonlocal_warps: bool = False):
     """Use existing art/collision pipeline before an RPP room is registered.
 
     Unregistered houses can be reviewed like gates but are never auto-imported.
@@ -187,7 +207,8 @@ def prestage_unregistered(rpp: Path, gold: Path, out: Path, *, gold_room: str,
     warps = gold_warps(gold, gold_room)
     if not warps or any(not (0 <= w['x'] < width*2 and 0 <= w['y'] < height*2) for w in warps):
         raise ConversionError('Gold 室内 Warp 缺失或不在原始地图边界内')
-    pair = _gold_outdoor_pairs(gold, gold_room, gold_outside_map, warps) if gold_outside_map else None
+    pair = _gold_outdoor_pairs(gold, gold_room, gold_outside_map, warps,
+                               allow_nonlocal_warps=allow_nonlocal_warps) if gold_outside_map else None
     outside_rpp = None
     if rpp_outside_map:
         from johto_indoor_common import rpp_warps
@@ -214,6 +235,8 @@ def prestage_unregistered(rpp: Path, gold: Path, out: Path, *, gold_room: str,
                 'PALETTE_RGB_NOT_PHONE_ACCEPTED', 'BANK_LAYOUT_NOT_LINKED']
     if pair is None:
         blockers.append('GOLD_OUTDOOR_RETURN_NOT_REVIEWED')
+    if pair and pair['nonlocal_indoor_warps_1_based']:
+        blockers.append('NONLOCAL_WARPS_NOT_IMPLEMENTED_OR_BLOCKED')
     overview = {
         'schema': 'johto-indoor-prestage-v2',
         'status': 'OFFLINE_UNREGISTERED_ONLY',
@@ -243,11 +266,12 @@ def prestage_unregistered(rpp: Path, gold: Path, out: Path, *, gold_room: str,
         f'- RPP 目标：`{rpp_room}`；**未注册，不得打开入口**。\n'
         f'- Gold 尺寸：{width} × {height} block，室内 Warp {len(warps)} 条，'
         f'NPC {len(interactions["npcs"])} 个，背景交互 {len(interactions["backgrounds"])} 个。\n'
-        f'- Gold 室外往返检查：{"已核对" if pair else "尚未指定室外地图"}；'
+        f'- Gold 室外往返检查：{"已核对全部回程及非本地 Warp" if pair else "尚未指定室外地图"}；'
         f'**Gold Warp # 从 1 开始，RPP 从 0 开始**。\n'
         f'- 室外 RPP 地图：{rpp_outside_map or "未指定"}，不得替换尚未开放的其它入口。\n'
         f'- 图块精确匹配：{artwork["exact_mapped"]}/{artwork["used_unique_blocks"]}；'
         f'隔离 Gold 原图候选：{isolated is not None}。\n'
+        f'- 跨目的地室内 Warp：{len(pair["nonlocal_indoor_warps_1_based"]) if pair else "未审核"}，如有额外出口必须先独立接通或阻断。\n'
         '- **碰撞／调色／ROM Bank／NPC 脚本与手机操作均未验收**。\n\n'
         '该预备包是来源证据和候选素材，不生成或安装游戏 Warp。\n',
         encoding='utf-8')
@@ -263,6 +287,8 @@ def main(argv=None):
     ap.add_argument('--prestage-unregistered',action='store_true',
                     help='stage Gold indoor art and topology before a room is registered; never open Warp')
     ap.add_argument('--gold-outside-map',help='Gold outdoor map for pre-stage reciprocal warp review')
+    ap.add_argument('--allow-nonlocal-warps', action='store_true',
+                    help='prestage ONLY: list extra Gold destinations as blockers, never import them')
     ap.add_argument('--rpp-outside-map',help='RPP outdoor map for pre-stage closed-door inventory')
     ap.add_argument('--reference-room',default='Route15Gate1F')
     ap.add_argument('--allow-shared-landing',action='store_true')
@@ -276,7 +302,8 @@ def main(argv=None):
             result=prestage_unregistered(args.rpp,args.gold,args.output,
                 gold_room=args.gold_room,rpp_room=args.rpp_room,
                 gold_tileset=args.gold_tileset,rpp_tileset=args.rpp_tileset,
-                gold_outside_map=args.gold_outside_map,rpp_outside_map=args.rpp_outside_map)
+                gold_outside_map=args.gold_outside_map,rpp_outside_map=args.rpp_outside_map,
+                allow_nonlocal_warps=args.allow_nonlocal_warps)
             print(json.dumps(result,ensure_ascii=False,indent=2))
             return 0
         result=pipeline(args.rpp,args.gold,args.output,gold_room=args.gold_room,rpp_room=args.rpp_room,

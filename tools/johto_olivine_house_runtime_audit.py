@@ -104,8 +104,11 @@ def audit(root: Path, gold: Path) -> list[str]:
         if not re.search(rf'(?m)^DEF {HOUSE} EQU 34\b',const):
             errors.append('frozen house local ID must remain 34')
         nmap=(root/'data/mapObjects/JohtoOlivineCity.asm').read_text()
-        if not re.search(r'(?m)^\s*db\s+\$03\s*; three Gold-proven ordinary houses',nmap):
-            errors.append('city must register exactly THREE independently routed indoor Warps')
+        if not re.search(r'(?m)^\s*db\s+\$06\s*; three tested houses plus Pokecenter, Cafe, and Mart',nmap):
+            errors.append('city must register six independently routed house/public-building Warps')
+        city_warps = [tuple(map(int, row)) for row in re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*REGION_WARP_ESCAPE', nmap)]
+        if city_warps != [(11,29,0),(11,25,0),(15,13,0),(21,13,0),(21,7,0),(17,19,0)]:
+            errors.append('city Warp order must preserve three houses then Pokecenter/Cafe/Mart')
         if re.findall(r'(?m)^\s*db\s+11,\s*29,\s*0,\s*REGION_WARP_ESCAPE',nmap)!=['db 11, 29, 0, REGION_WARP_ESCAPE']:
             # Accept formatting but reject duplicates by separate cardinality.
             if len(re.findall(r'(?m)^\s*db\s+11,\s*29,\s*0,\s*REGION_WARP_ESCAPE',nmap))!=1:
@@ -131,21 +134,39 @@ def audit(root: Path, gold: Path) -> list[str]:
         lookup=(root/'engine/overworld/region_map_lookup.asm').read_text()
         target_rows=re.findall(rf'(?m)^\s*db\s+({CITY}|{HOUSE}),\s*([01]),\s*0,\s*MAP_REGION_JOHTO,\s*({CITY}|{HOUSE})\s*$',lookup)
         if sorted(target_rows)!=sorted([(CITY,'0',HOUSE),(HOUSE,'0',CITY),(HOUSE,'1',CITY)]):
-            errors.append('native Warp resolver must provide exact 3 reciprocal rows')
+            errors.append('native Warp resolver must preserve exact house reciprocal rows')
+        public_warps = (
+            (CITY, '3', '0', 'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID', '0', '3', CITY),
+            ('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID', '1', '3', CITY),
+            (CITY, '4', '0', 'JOHTO_OLIVINE_CAFE_LOCAL_ID'),
+            ('JOHTO_OLIVINE_CAFE_LOCAL_ID', '0', '4', CITY),
+            ('JOHTO_OLIVINE_CAFE_LOCAL_ID', '1', '4', CITY),
+            (CITY, '5', '0', 'JOHTO_OLIVINE_MART_LOCAL_ID'),
+            ('JOHTO_OLIVINE_MART_LOCAL_ID', '0', '5', CITY),
+            ('JOHTO_OLIVINE_MART_LOCAL_ID', '1', '5', CITY),
+        )
+        for src, warp, dest, target in public_warps:
+            if not re.search(rf'(?m)^\s*db\s+{src},\s*{warp},\s*{dest},\s*MAP_REGION_JOHTO,\s*{target}\s*$', lookup):
+                errors.append(f'public-building reciprocal Warp missing: {src}/{warp} -> {target}/{dest}')
         col=(root/'engine/overworld/johto_route33_collision.asm').read_text()
         # The three exterior doors are exact Gold coordinates, and are walkable
         # only when approached from the tile immediately below, facing north.
-        for token in ('cp 29', 'cp 25', 'cp 13', 'cp 12', 'cp 16', '.firstHouseDoor', '.westConnection'):
+        for token in ('cp 29', 'cp 25', 'cp 13', 'cp 12', 'cp 16', 'cp 22', 'cp 7', 'cp 19', 'cp 18', '.firstHouseDoor', '.olivineCafeDoor', '.olivineMartDoor', '.westConnection'):
             if token not in col.split('JohtoOlivineCityCanStepAhead::',1)[1].split('JohtoOlivineCityBlockedRows::',1)[0]:
                 errors.append('Olivine multi-house outdoor door step mask missing: '+token)
         selector_north=col.split('JohtoNorthGateStepWarpAllowed::',1)[1].split('JohtoGateCollisionDirectionAllowed::',1)[0]
         if not all(token in selector_north for token in ('cp '+CITY, '.olivineHouseDoor',
-                '.olivineNorthDoors', 'cp 11', 'cp 15', 'cp 29', 'cp 25', 'cp 13')):
-            errors.append('Olivine three Gold DOOR cells require registered STEP_ON and UP')
+                '.olivineNorthDoors', 'cp 11', 'cp 15', 'cp 21', 'cp 17', 'cp 29', 'cp 25', 'cp 13', 'cp 7', 'cp 19')):
+            errors.append('Olivine six Gold DOOR cells require registered STEP_ON and UP')
         exit_selector=col.split('JohtoGateCollisionDirectionAllowed::',1)[1].split('.route32RuinsGate',1)[0]
-        for mid in (HOUSE, 'JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID', 'JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID'):
+        for mid in (HOUSE, 'JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID', 'JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID', 'JOHTO_OLIVINE_CAFE_LOCAL_ID', 'JOHTO_OLIVINE_MART_LOCAL_ID'):
             if not re.search(r'cp '+mid+r'\s+jp z, \.houseExitDown',exit_selector):
-                errors.append('House1 exit-down selector missing: '+mid)
+                errors.append('House1/public exit-down selector missing: '+mid)
+        if not re.search(r'cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jp z, \.pokecenterExitDown', exit_selector):
+            errors.append('Pokecenter two-lane exit-down selector missing')
+        if not re.search(r'(?s)\.pokecenterExitDown\s+ld a, \[wYCoord\]\s+cp 7\s+jp nz, \.denied\s+ld a, \[wXCoord\]\s+cp 3\s+jp z, \.down\s+cp 4\s+jp z, \.down', col):
+            errors.append('Pokecenter WARP_CARPET_DOWN exit lanes must be x3/x4')
         if not re.search(r'(?s)\.houseExitDown\s+ld a, \[wYCoord\]\s+cp 7\s+jp nz, \.denied\s+ld a, \[wXCoord\]\s+cp 2\s+jp z, \.down\s+cp 3\s+jp z, \.down', col):
             errors.append('house two WARP_CARPET_DOWN exit lanes missing')
         mask=(root/'maps/JohtoOlivinePunishmentSpeechHouse.blocked_mask.bin').read_bytes()

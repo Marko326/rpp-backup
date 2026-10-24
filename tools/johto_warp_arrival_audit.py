@@ -272,12 +272,15 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 5, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
         ('JOHTO_ROUTE_29', 'JOHTO_ROUTE_29_LOCAL_ID', 1, 27, 'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
     ]
-    # All three opened Gold Olivine House1 doors are solid DOOR landing cells.
+    # All six opened Gold Olivine building doors are solid DOOR landing cells.
     # Keep this exact list (not a city-wide blanket auto-step); the indoor
     # carpet arrivals must never receive automatic UP or DOWN movement.
     olivine_house_doors = ((29, 11, 'OLIVINE_PUNISHMENT_SPEECH_HOUSE'),
                            (25, 11, 'OLIVINE_TIMS_HOUSE'),
-                           (13, 15, 'OLIVINE_GOOD_ROD_HOUSE'))
+                           (13, 15, 'OLIVINE_GOOD_ROD_HOUSE'),
+                           (13, 21, 'OLIVINE_POKECENTER_1F'),
+                           (7, 21, 'OLIVINE_CAFE'),
+                           (19, 17, 'OLIVINE_MART'))
     olivine_house_return = [
         ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', y, x,
          'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
@@ -309,7 +312,8 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
             try:
                 gold_city = (gold/'maps/OlivineCity.asm').read_text()
                 for x, y, room in olivine_house_doors:
-                    if not re.search(rf'(?m)^\s*warp_event\s+{x},\s*{y},\s*{room},\s*1\b',gold_city):
+                    original_entry = 2 if room == 'OLIVINE_MART' else 1
+                    if not re.search(rf'(?m)^\s*warp_event\s+{x},\s*{y},\s*{room},\s*{original_entry}\b',gold_city):
                         errors.append(f'Olivine City Gold exterior Warp ({x},{y}) mismatch: {room}')
             except OSError:
                 errors.append('Gold Olivine City Warp source unavailable')
