@@ -135,6 +135,12 @@ gfx/tilesets/johto_park_gate.2bpp: gfx/tilesets/johto_park_gate.png
 gfx/tilesets/johto_ruins_gate.2bpp: gfx/tilesets/johto_ruins_gate.png
 	$(RGBGFX) -o $@ $<
 
+# Gold House1 uses absolute graphic IDs from this compact 8x12 atlas.
+# Keep all 96 slots (1536 bytes); never apply the generic whitespace trimmer.
+gfx/tilesets/johto_house.2bpp: gfx/tilesets/johto_house.png
+	$(RGBGFX) -o $@ $<
+	@test "$$(wc -c < "$@")" -eq 1536 || { echo "JOHTO_HOUSE atlas must contain exactly 96 tiles: $@" >&2; exit 1; }
+
 %.png: ;
 
 %.2bpp: %.png
