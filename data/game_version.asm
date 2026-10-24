@@ -7,6 +7,6 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Independent battle-test identity: 14 chars; keep the T09 label unchanged.
 	db "B-5.62.204-T09@"
 ELSE
-	; Ordinary Red/Blue text refresh release; battle test code is compiled out.
-	db "TEXT-5.62.205@"
+	; Ordinary Red/Blue animation gallery branch; battle-test identity is independent.
+	db "ANIM-5.62.206@"
 ENDC

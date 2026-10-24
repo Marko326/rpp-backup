@@ -3603,17 +3603,20 @@ wCardKeyDoorX:: ; d7c4
 
 ; GYM-5.34.00: legacy random-switch slots retained to preserve WRAM layout.
 ; The fixed-switch puzzle no longer reads or writes either byte.
-; Optional test-only aliases. The two original bytes and offsets remain unchanged.
-; Default production assembly never defines the test aliases.
+; The video gallery uses unconditional aliases in ordinary Red/Blue builds;
+; the battle-test names remain conditional. All aliases share the same two
+; legacy unused bytes, so WRAM addresses and layout remain unchanged.
 IF DEF(BATTLE_TEST_BUILD)
 wTestSuiteGuard::
 ENDC
+wVideoGalleryGuard:: ; d7c7, gallery encounter/return state
 wFirstLockTrashCanIndex:: ; d7c7, old unused index
 	ds 1
 
 IF DEF(BATTLE_TEST_BUILD)
 wTestSuitePhase::
 ENDC
+wVideoGalleryPhase:: ; d7c8, gallery mode and B-cancel state
 wSecondLockTrashCanIndex:: ; d7c8, old unused index
 	ds 1
 

@@ -1,7 +1,13 @@
 EndOfBattle:
-	; RUN-001: never leave the test guard armed after a completed battle.
+	; Keep the bedroom gallery's $a7 flag through native battle teardown.
+	; The optional test harness (test-red/test-blue) still disarms its own
+	; encounters as before; overworld owns the gallery cleanup after battle.
 IF DEF(BATTLE_TEST_BUILD)
+	ld a, [wTestSuiteGuard]
+	cp $a7
+	jr z, .keepVideoGalleryState
 	callab TestSuite_Disarm
+.keepVideoGalleryState
 ENDC
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING

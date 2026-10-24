@@ -1,0 +1,5 @@
+Deluxe 技能动画录制分支（55 个技能）
+普通 make / make red / make blue；不再使用 video-red。
+ROM：patches/rppred.gbc / patches/rppblue.gbc。
+在主角家二楼 PC 选择 A-Z 55 MOVES 或 TEST 5 MOVES；本方→对方，播完自动退出，按 B 也可以在安全动画边界提前退出。
+不扣 HP/PP；只供录制视频。本轮普通 Red/Blue 接入需用户本地编译和实机复核。

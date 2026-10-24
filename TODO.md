@@ -1,3 +1,12 @@
+## 小功能专用分支：Deluxe 55 动画录制清理（2026-10-24）
+
+- 本轮按用户已验证的录像场景清理：分离动画数据与自动播放控制，取消 video-red 专用编译，普通 make/red/blue 都包含二楼 PC 入口。
+- [x] 静态清理 55 条脚本（含 Gear Grind、Power Whip），保持脚本字节不变；双提交可分别隔离。
+- [x] 改用普通构建目标，避免依赖 BATTLE_TEST_BUILD；保留旧测试设施的专用构建。
+- [ ] 用户本地分别完成 make red / make blue 链接及 MAP Bank 容量检查。
+- [ ] 玩家二楼 PC：A-Z / TEST、真实名称与滚动文字、ALLY→FOE、不扣血、结束及 B 退出后房间图块和配色恢复（两版至少各快速复测一次）。
+- [ ] Git 两次提交由用户自行操作；本轮 ZIP 导出的 HEAD 是 f9a31af31fe4927e351650c5ba40f9b81cd199be，当前 Worktree 尚未提交。
+
 ## BATTLE-5.62.204 — 可选独立测试 ROM 收口（拟提交）
 
 - [x] **正式／测试构建隔离**：默认 `make red/blue` 不编入测试 Hook/NPC/WRAM 测试别名，`make test-red/test-blue` 使用独立对象和输出；正式战斗算法未新增规则，参考 `docs/BATTLE_TEST_BUILD.md`。

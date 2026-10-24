@@ -29,7 +29,8 @@ maps := $(roms:.gbc=.map)
 all: $(roms)
 red: patches/rppred.gbc
 blue: patches/rppblue.gbc
-# Opt-in only. Normal 'all', 'red', and 'blue' never enable test code.
+# Existing battle-test harness remains opt-in. Deluxe bedroom-PC gallery is
+# compiled into BOTH ordinary Red and Blue builds on this recording branch.
 test-red: patches/rppredtest.gbc
 test-blue: patches/rppbluetest.gbc
 map: $(maps)

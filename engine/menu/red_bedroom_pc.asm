@@ -2,19 +2,8 @@
 ; After that it enters the exact same full ActivatePC path used by Pokémon Center PCs,
 ; including Pokémon storage, Player's item storage, Oak's PC, and League PC as available.
 
+; Recording-only branch: use the 2F bedroom PC to select an animation run.
+; All regular Red/Blue ROMs built from this branch include the gallery.
 OpenRedBedroomPC::
-	CheckEvent EVENT_GOT_POKEDEX
-	jr z, .temporarilyUnavailable
-	callba ActivatePC
+	callba VideoBedroomPCMenu
 	ret
-
-.temporarilyUnavailable
-	ld hl, RedBedroomPCUnavailableText
-	call PrintText
-	ret
-
-RedBedroomPCUnavailableText:
-	text "The PC can't be"
-	line "used right now."
-	prompt
-	db "@"

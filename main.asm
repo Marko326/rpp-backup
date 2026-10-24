@@ -3204,6 +3204,11 @@ SECTION "RUN-001 Battle Test Suite", ROMX
 INCLUDE "engine/battle/test_suite_run001.asm"
 ENDC
 
+; This recording-only branch includes the Deluxe gallery in normal Red/Blue.
+; Keep animation runner and its pointer tables in the SAME ROMX bank.
+SECTION "Deluxe Footage Preview", ROMX
+INCLUDE "engine/battle/deluxe_video_preview.asm"
+
 ; VTA-5.62.43: Ruby-inspired Volt Tackle five-sweep renderer in Bank $3E.
 SECTION "Ruby-style Volt Tackle Animation", ROMX, BANK[$3E]
 INCLUDE "engine/battle/volt_tackle_animation.asm"

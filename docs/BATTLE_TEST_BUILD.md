@@ -6,12 +6,12 @@
 
 | 本地命令 | 产物 | 版本显示 | 专用测试设施 |
 |---|---|---|---|
-| `make red` / `make blue` | `patches/rppred.gbc` / `patches/rppblue.gbc` | `TEXT-5.62.205` | **不编入**测试 NPC、Hook、专用状态别名、测试 helper |
+| `make red` / `make blue` | `patches/rppred.gbc` / `patches/rppblue.gbc` | `ANIM-5.62.206` | 不编入战斗测试 NPC／Hook／helper；本分支会编入二楼动画展示及其独立状态别名 |
 | `make test-red` / `make test-blue` | `patches/rppredtest.gbc` / `patches/rppbluetest.gbc` | `B-5.62.204-T09` | 启用测试 NPC、三个测试组和受控战斗输入 |
 
 正常功能版本号升级不自动同步战斗测试 ROM 专用标签；当前测试标签仍保留 `B-5.62.204-T09`，只有测试设施自己改版时才另行调整。
 
-只有显式传递 `-D BATTLE_TEST_BUILD` 才编入测试设施；四种目标使用各自的 `.o`，默认 `make`/`make red`/`make blue` 不包含它们。`test-red` / `test-blue` 必须与正式 ROM 使用**不同的 SAV 路径或独立模拟器存档目录**。测试组会覆盖**测试存档**的当前队伍，不会自动恢复，切勿共用主存档。
+只有显式传递 `-D BATTLE_TEST_BUILD` 才编入战斗测试设施；四种目标使用各自的 `.o`。本分支的二楼动画展示属于普通游戏功能，使用两个旧的未用 WRAM 字节作为独立别名，不改变 WRAM 布局。`test-red` / `test-blue` 必须与正式 ROM 使用**不同的 SAV 路径或独立模拟器存档目录**。测试组会覆盖**测试存档**的当前队伍，不会自动恢复，切勿共用主存档。
 
 ## 地图入口与菜单
 

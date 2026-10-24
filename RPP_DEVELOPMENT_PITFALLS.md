@@ -1,3 +1,9 @@
+## 录屏战斗与地图生命周期、动画数据同 Bank（小功能专用）
+
+- 从二楼 PC 的文字回调直接启动 `InitOpponent` 会跳过原生 `OverworldLoop.battleOccurred -> EnterMap`，可能在白屏后只恢复部分图块、地图调色板污染或移动死机。PC 只布置 `wCurOpponent`，交给原生 `NewBattle`，再由 `VideoCleanupAfterBattle` 清理临时队伍，最后正常重入地图。
+- 录屏中 B 的一次短按由 DelayFrameHook 记录，在完整动画播放结束后的安全点退出；强行中止动画易残留显示状态。
+- 录制的 `VideoRecipePointers` 是 16 位地址，必须与 55 套动画数据在相同 ROMX Section/Bank 内；数据单独提交后仍应由运行器同 SECTION `INCLUDE`，不能另起浮动 SECTION。Gear Grind 使用安全的 POUND carrier ID，不用目录编号当 wAnimationID。
+
 # RPP Development Pitfalls
 
 This file is the persistent, Git-tracked record of repeatable development failures and prevention rules for this branch.

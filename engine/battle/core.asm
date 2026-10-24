@@ -419,6 +419,21 @@ EnemyRanText:
 	db "@"
 
 MainInBattleLoop:
+	; Only the bedroom PC can arm a video encounter. Ordinary wild and
+	; trainer battles continue through the normal menu/turn engine.
+	ld a, [wVideoGalleryGuard]
+	cp $a7
+	jr nz, .normalFight
+	ld a, [wVideoGalleryPhase]
+	and a
+	jr z, .normalFight
+	call SaveScreenTilesToBuffer1
+	callab VideoPlayAllDeluxeAnimations
+	; A finished preview is a harmless draw, with no fainting/rewards.
+	ld a, 2
+	ld [wBattleResult], a
+	ret ; StartBattle -> InitOpponent -> EndOfBattle -> overworld
+.normalFight
 	; RUN-001: advance only at the BEGINNING of the next complete round.
 	; Never advance from an individual hit of Spike Cannon.
 IF DEF(BATTLE_TEST_BUILD)
@@ -478,7 +493,7 @@ ENDC
 	call LoadScreenTilesFromBuffer1
 	call DrawHUDsAndHPBars
 	pop af
-	jr nz, MainInBattleLoop ; if the player didn't select a move, jump
+	jp nz, MainInBattleLoop ; if the player didn't select a move, jump
 	; A newly chosen move ends any prior Mirror Move copied-move damage state.
 	; Locked multi-turn moves bypass MoveSelectionMenu, so their state persists.
 	ld hl, wPlayerBattleStatus3

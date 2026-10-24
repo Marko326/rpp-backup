@@ -4672,6 +4672,20 @@ DelayFrameHook:
 	ld [rSVBK], a
 	push bc ; Save wram bank
 
+	; Record a single B tap throughout a preview, including while an
+	; animation is still running. Polling between moves alone misses taps
+	; during longer effects. This latch is consumed at the NEXT safe
+	; animation boundary; no graphics/audio operation is interrupted.
+	ld a, [wVideoGalleryGuard]
+	cp $a7 ; VIDEO_GALLERY_MAGIC
+	jr nz, .videoBNotHeld
+	ld a, [hJoyInput] ; updated by the regular VBlank ReadJoypad
+	and B_BUTTON
+	jr z, .videoBNotHeld
+	ld hl, wVideoGalleryPhase
+	set 7, [hl]
+.videoBNotHeld
+
 	; Save the current rom bank to a variable. This is important because the game does
 	; not expect the "DelayFrame" function to change the rom bank. If an interrupt
 	; occurs in the middle of this hook, the interrupt wrapper will know to restore

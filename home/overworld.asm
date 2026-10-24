@@ -100,7 +100,7 @@ OverworldLoopLessDelay::
 	bit 2,a
 	jp nz,.noDirectionButtonsPressed
 	call IsPlayerCharacterBeingControlledByGame
-	jr nz,.checkForOpponent
+	jp nz,.checkForOpponent
 	call CheckForHiddenObjectOrBookshelfOrCardKeyDoor
 	ld a,[$ffeb]
 	and a
@@ -134,6 +134,7 @@ OverworldLoopLessDelay::
 	aCoord 8, 9
 	ld [wTilePlayerStandingOn],a ; unused?
 	call DisplayTextID ; display either the start menu or the NPC/sign text
+
 	ld a,[wEnteringCableClub]
 	and a
 	jr z,.checkForOpponent
@@ -403,6 +404,10 @@ OverworldLoopLessDelay::
 .noFaintCheck
 	ld c,10
 	call DelayFrames
+	; The PC only staged an encounter; this is the native battle-exit
+	; owner. Remove the temporary recording mon, then let EnterMap
+	; restore VRAM, BG maps, palette and overworld state as usual.
+	callab VideoCleanupAfterBattle
 	jp EnterMap
 .allPokemonFainted
 	ld a,$ff
