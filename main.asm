@@ -3212,6 +3212,7 @@ INCLUDE "engine/battle/jump_kick_recoil_helper.asm"
 IF DEF(BATTLE_TEST_BUILD)
 SECTION "RUN-001 Battle Test Suite", ROMX
 INCLUDE "engine/battle/test_suite_run001.asm"
+INCLUDE "engine/battle/test_suite_imposter.asm"
 ENDC
 
 ; VTA-5.62.43: Ruby-inspired Volt Tackle five-sweep renderer in Bank $3E.

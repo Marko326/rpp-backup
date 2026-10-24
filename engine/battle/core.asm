@@ -542,7 +542,11 @@ ENDC
 	ld a, $1
 	ld [H_WHOSETURN], a
 	ld [wEnemyWentFirst], a
+IF DEF(BATTLE_TEST_BUILD)
+    callab TestSuiteImposter_TrainerAIWrapper
+ELSE
 	callab TrainerAI
+ENDC
 	jr c, .AIActionUsedEnemyFirst
 	call ExecuteEnemyMove
 	ld a, [wEscapedFromBattle]
@@ -587,7 +591,11 @@ ENDC
 	jr z, .AIActionUsedPlayerFirst
 	and a
 	jr nz, .executeEnemyMovePlayerFirst
+IF DEF(BATTLE_TEST_BUILD)
+    callab TestSuiteImposter_TrainerAIWrapper
+ELSE
 	callab TrainerAI
+ENDC
 	jr c, .AIActionUsedPlayerFirst
 .executeEnemyMovePlayerFirst
 	call ExecuteEnemyMove
@@ -6855,7 +6863,12 @@ InitBattleCommon:
 	ld [wTrainerPicID], a ; new
 	ld [wTrainerAINumber], a ; new
 	call GetTrainerInformation
+IF DEF(BATTLE_TEST_BUILD)
+	; Same banked-call footprint as the normal trainer loader.
+	callab TestSuiteImposter_ReadTrainerWrapper
+ELSE
 	callab ReadTrainer
+ENDC
 	callab LoadTrainerPicPointer ; new
 	call DoBattleTransitionAndInitBattleVariables
 	call _LoadTrainerPic

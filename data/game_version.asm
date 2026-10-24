@@ -4,9 +4,9 @@ SECTION "Game Version", ROM0
 ; 放在 ROM0 中，任何 ROMX bank 都可以直接读取，无需额外切换 ROM bank。
 GameVersionText::
 IF DEF(BATTLE_TEST_BUILD)
-	; Independent battle-test identity: 14 chars; keep the T09 label unchanged.
-	db "B-5.62.204-T09@"
+	; Short public test label, shared by the menu footer and Options.
+	db "TEST-209@"
 ELSE
-	; Red/Blue build with entry-triggered Imposter; test code is compiled out.
+	; Ordinary Red/Blue Imposter animation revision; test code is compiled out.
 	db "IMP-5.62.207@"
 ENDC

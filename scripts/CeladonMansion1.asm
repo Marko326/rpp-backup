@@ -32,34 +32,13 @@ CeladonMansion1Text5: ; Sign on wall
 	db "@"
 
 IF DEF(BATTLE_TEST_BUILD)
-CeladonMansion1TestNpcText: ; extra NPC in test ROM only
-	TX_ASM
-	; A/No/B have already been consumed by the nested native menus.
-	; Finish through DisplayTextID's own window-hide/map-restore path;
-	; do not leave the original warning displayed until another A press.
-	ld hl, CeladonMansion1TestOnlyText
-	call PrintText
-	call YesNoChoice
-	ld a, [wCurrentMenuItem]
-	and a
-	jr nz, .finish ; first NO/B: never edit the party
-	; Replace the warning with relevant controls BEFORE the three-way menu.
-	; The chooser saves this new textbox in Buffer1 and restores it on A/B;
-	; DisplayTextID then closes it on this very same interaction.
-	ld hl, CeladonMansion1TestSelectText
-	call PrintText
-	callab TestSuite_StartFromNpc ; group B cancels before any party edit
-.finish
-	call DisableWaitingAfterTextDisplay
-	jp TextScriptEnd
-
-CeladonMansion1TestOnlyText:
-	TX_FAR _CeladonMansion1TestOnlyText
-	db "@"
-
-CeladonMansion1TestSelectText:
-	TX_FAR _CeladonMansion1TestSelectText
-	db "@"
+CeladonMansion1TestNpcText: ; extra Pokey, TEST ROM only
+    TX_ASM
+    ; No Yes/No or TX_RAM: show the selection menu immediately.
+    ; Its fixed bottom footer reads GameVersionText directly from ROM0.
+    callab TestSuite_StartFromNpc
+    call DisableWaitingAfterTextDisplay
+    jp TextScriptEnd
 
 ENDC
 CeladonMansionTutors: ; Common to all three tutors

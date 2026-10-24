@@ -15,52 +15,147 @@ TestSuite_Disarm::
     ld [wTestSuitePhase], a
     ret
 
-; RUN-006: native menu with balanced A/B exit stack. Follow the native
-; CeladonGameCornerPurchaseMenu / VendingMachineMenu / LinkCableHelp pattern:
-; save the map tilemap, set cursor geometry before drawing, draw a box wholly
-; above the message box, and let HandleMenuInput manage A/B/up/down.
-; Unlike the old RUN-001 selector, do not open a second PrintText box, do not
-; manually toggle BG transfer during a live menu, and do not rewrite menu input
-; globals in a custom polling loop. Restore both cursor spacing and map tiles.
-; Return carry set on B/cancel; no party changes until A confirms a group.
-; RUN-007 lifecycle: the NPC first replaces its warning with control hints.
-; Buffer1 therefore snapshots the CONTROL HINTS, not the stale warning.
-; This helper restores the background only; the TX_ASM caller must finish with
-; DisableWaitingAfterTextDisplay so the outer DisplayTextID hides the textbox.
+; T15: One owner for the tilemap backup and flag stack.  A child B returns to
+; this category selector, and B at the root closes the test menu.  The bottom
+; version footer is drawn directly from ROM0 (never via TX_RAM/wBuffer).
+; Save the incoming BG-transfer state too: LoadScreenTilesFromBuffer1
+; unconditionally enables it, even if it was disabled before the NPC menu.
 TestSuite_ChooseGroup:
     call SaveScreenTilesToBuffer1
+    ld a, [H_AUTOBGTRANSFERENABLED]
+    push af ; saved below hFlags and wd730 for every final exit path
     ld a, [hFlags_0xFFF6]
     push af
-    res 1, a ; native two-row menu spacing (choices at Y=4,6,8)
+    res 1, a ; two-tile menu row spacing
     ld [hFlags_0xFFF6], a
     ld a, [wd730]
     push af
-    set 6, a ; no per-character delay while drawing menu labels
+    set 6, a ; labels without character delay
     ld [wd730], a
+    call TestSuite_DrawVersionFooter
 
+.topFirst
     xor a
+    jr .top
+.topSubstitute
+    xor a ; returning from SUBSTITUTE keeps its category highlighted
+    jr .top
+.topImposter
+    ld a, 1 ; returning from IMPOSTER keeps its category highlighted
+.top
     ld [wCurrentMenuItem], a
+    call TestSuite_SetMenuCommon
+    ld a, 1
+    ld [wMaxMenuItem], a
+    call TestSuite_DrawMenuFrame
+    coord hl, 2, 3
+    ld de, TestSuiteMenuTitle
+    call PlaceString
+    coord hl, 3, 4
+    ld de, TestSuiteCategorySubstituteText
+    call PlaceString
+    coord hl, 3, 6
+    ld de, TestSuiteCategoryImposterText
+    call PlaceString
+    call TestSuite_ShowMenu
+.topInput
+    call HandleMenuInput
+    bit 1, a
+    jr nz, .cancel
+    bit 0, a
+    jr z, .topInput
+    ld a, [wCurrentMenuItem]
+    and a
+    jr nz, .enterImposter
+    call TestSuite_ChooseSubstitute
+    jp c, .topSubstitute
+    jp .selected
+.enterImposter
+    call TestSuiteImposter_ChooseScene
+    jp c, .topImposter
+.selected
+    and a ; selected leaf, carry clear
+    jr .restore
+.cancel
+    call TestSuite_Disarm
+    scf
+.restore
+    ; Keep carry safely while restoring hFlags and the single map backup.
+    push af
+    pop bc ; B = result A, C = F; carry is bit 4 in F
+    pop af
+    ld [wd730], a
+    pop af
+    ld [hFlags_0xFFF6], a
+    push bc
+    call LoadScreenTilesFromBuffer1
+    ; Finish one VBlank transfer of the restored map before re-disabling it.
+    ; Otherwise an entry state of 0 could leave the menu tiles in video RAM.
+    call DelayFrame
+    pop bc
+    pop af ; original BG-transfer state, after restoring the map
+    ld [H_AUTOBGTRANSFERENABLED], a
+    ld a, b
+    bit 4, c
+    jr z, .returnSelected
+    scf
+    ret
+.returnSelected
+    and a
+    ret
+
+; Common helpers: no nested SaveScreenTilesToBuffer1 calls.
+TestSuite_SetMenuCommon::
+    xor a
     ld [wLastMenuItem], a
     ld [wMenuWatchMovingOutOfBounds], a
     ld [wMenuWrappingEnabled], a
-    ld [wMenuJoypadPollCount], a ; same native initialization as MainMenu
+    ld [wMenuJoypadPollCount], a
     ld a, 1
     ld [wTopMenuItemX], a
     ld a, 4
     ld [wTopMenuItemY], a
-    ld a, 2 ; zero-based index: three choices
-    ld [wMaxMenuItem], a
     ld a, A_BUTTON | B_BUTTON
     ld [wMenuWatchedKeys], a
+    ret
 
-    ; TextBoxBorder's c,b are INNER dimensions: x0 + 17 + 2 = 19 tiles;
-    ; y2 + 8 + 2 = 12 tiles. Entire box is inside screen, above textbox Y12.
+TestSuite_DrawMenuFrame::
     coord hl, 0, 2
-    ld b, 8
+    ld b, 8 ; uniform frame clears old labels on every level/page
     ld c, 17
+    jp TextBoxBorder
+
+TestSuite_DrawVersionFooter::
+    coord hl, 0, 12
+    ld b, 4
+    ld c, 18
     call TextBoxBorder
+    coord hl, 2, 14
+    ld de, GameVersionText ; ROM0 data, never copied into text engine scratch
+    jp PlaceString
+
+TestSuite_ShowMenu::
+    call UpdateSprites
+    ld a, 1
+    ld [H_AUTOBGTRANSFERENABLED], a
+    jp Delay3
+
+TestSuiteMenuTitle:
+    db "SELECT TEST@"
+TestSuiteCategorySubstituteText:
+    db "SUBSTITUTE TEST@"
+TestSuiteCategoryImposterText:
+    db "IMPOSTER TEST@"
+
+TestSuite_ChooseSubstitute:
+    xor a ; menus without PAGE begin at their first item
+    ld [wCurrentMenuItem], a
+    call TestSuite_SetMenuCommon
+    ld a, 2
+    ld [wMaxMenuItem], a
+    call TestSuite_DrawMenuFrame
     coord hl, 2, 3
-    ld de, TestSuiteMenuTitle
+    ld de, TestSuiteSubmenuTitle
     call PlaceString
     coord hl, 3, 4
     ld de, TestSuiteOption1Text
@@ -71,41 +166,24 @@ TestSuite_ChooseGroup:
     coord hl, 3, 8
     ld de, TestSuiteOption3Text
     call PlaceString
-
-    pop af
-    ld [wd730], a
-    call UpdateSprites
-    ld a, 1
-    ld [H_AUTOBGTRANSFERENABLED], a
-    call Delay3
-.menuInput
-    call HandleMenuInput ; same native cursor/input routine as Game Corner
+    call TestSuite_ShowMenu
+.input
+    call HandleMenuInput
     bit 1, a
     jr nz, .cancel
     bit 0, a
-    jr z, .menuInput
+    jr z, .input
     ld a, [wCurrentMenuItem]
     inc a ; group IDs 1,2,3
     ld [wTestSuitePhase], a
-    jr .finish ; do NOT call a routine which pops a caller-owned AF
+    and a
+    ret
 .cancel
-    ; TestSuite_Disarm cleared the phase before opening this menu.
-    ; Keep phase 0 and restore through the same straight-line exit.
-.finish
-    ; Balanced with the one saved hFlags AF above. The old "call .restore"
-    ; pushed a return address which this POP treated as AF, corrupting SP;
-    ; both A and B consequently returned into invalid code and froze.
-    pop af
-    ld [hFlags_0xFFF6], a
-    call LoadScreenTilesFromBuffer1
-    ld a, [wTestSuitePhase]
-    and a ; nonzero group clears carry for successful selection
-    ret nz
-    scf ; phase 0 = B cancel; no party was edited
+    scf
     ret
 
-TestSuiteMenuTitle:
-    db "SELECT TEST@"
+TestSuiteSubmenuTitle:
+    db "SUBSTITUTE TEST@"
 TestSuiteOption1Text:
     db "TEST 01 SPIKE@"
 TestSuiteOption2Text:
@@ -118,6 +196,11 @@ TestSuite_StartFromNpc::
     call TestSuite_Disarm
     call TestSuite_ChooseGroup
     ret c
+    ; Imposter tests use their own battle-ready teams and may use a trainer
+    ; battle. The existing three groups retain their original fixtures.
+    ld a, [wTestSuitePhase]
+    cp $40
+    jp nc, TestSuiteImposter_StartScenario
     ; Preserve the selected group across party-building helpers, which may use
     ; unrelated scratch bytes. Restore the ID immediately before configuring moves.
     ld a, [wTestSuitePhase]
@@ -249,6 +332,9 @@ TestSuite_EnemyReady::
     ld a, [wIsInBattle]
     cp 1
     jp nz, TestSuite_Disarm
+    ld a, [wTestSuitePhase]
+    cp $40
+    jp nc, TestSuiteImposter_WildEnemyReady
     ld a, [wCurOpponent]
     cp SNORLAX
     jp nz, TestSuite_Disarm
@@ -351,6 +437,8 @@ TestSuite_AfterSubstituteCreated::
     ret
 
 TestSuite_OnRoundBoundary::
+    ; Trainer Imposter scenarios use a real native enemy switch between rounds.
+    call TestSuiteImposter_AtRoundBoundary
     call TestSuite_IsActive
     ret nz
     ld a, [wTestSuitePhase]

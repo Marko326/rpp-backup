@@ -435,3 +435,9 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - `PrintLetterDelay` 里直接强制 `H_AUTOBGTRANSFERPORTION=TRANSFERBOTTOM` 会让 BG 窗口图块更新与已经准备的对应调色板批次错位；正确做法是仅设置一次性 `hTextBottomRefreshRequest`，由 `GbcPrepareVBlank` 在 `RefreshWindowPalettesPreVBlank` **之前**统一判断是否可以优先选择底部六行。
 - 必须保留 `H_AUTOBGTRANSFERENABLED`、`W2_UpdatedWindowPortion`、`W2_StaticPaletteMapChanged` 和窗口目标变更保护；请求若不安全即回退原三段轮换。快速文字显示之外的菜单、战斗 HUD 和地图调色板仍需实测回归。
 - 本优化**不更改文字实际等待帧数**、`ScrollTextUpOneLine`、字体资源、`wOptions` 或存档。正式构建 205 的文字显示优化不代表独立测试 ROM 的 T09 版本号需要随之更新。旧 204 MAP 仅供空间基线参考，新增长度仍需本地链接后确认。
+
+## TEST-209 / 测试菜单恢复地图后必须恢复 BG 传输原值
+
+- `LoadScreenTilesFromBuffer1` 会把 `H_AUTOBGTRANSFERENABLED` 无条件设为 1；调用它不等于恢复调用前状态。菜单入口若允许该值原本为 0，必须保存原值。
+- 正确顺序：保存地图和原开关值 → 退出菜单 → 恢复地图 → 在传输开启时等待一次 `DelayFrame` 完成地图图块上传 → 恢复原开关值。不能在地图 VRAM 更新前就重新关闭传输，否则可能残留菜单图块。
+- 多层菜单只在根入口备份一次地图；子菜单 B 仅回上级，只有根退出或确认具体测试场景才进入共享恢复路径。所有返回路径需同时保持 AF/Carry 语义与栈平衡。

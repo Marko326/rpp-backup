@@ -1498,7 +1498,7 @@ wHPBarTempHP:: ; cef0
 
 wHPBarHPDifference:: ; cefd
 	ds 1
-	ds 7 ; unused?
+	ds 7 ; legacy general-purpose wBuffer scratch, NOT persistent flags
 
 wAIItem:: ; cf05
 ; the item that the AI used
