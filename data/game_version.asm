@@ -7,6 +7,6 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-215@"
 ELSE
-	; Manual Transform now executes one copied move in the same action.
-	db "TRF-5.62.209@"
+	; Manual Transform executes one copied move in the same action; successful Transform also clears stale Disable state.
+	db "TRF-5.62.210@"
 ENDC

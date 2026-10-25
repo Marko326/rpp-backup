@@ -196,6 +196,22 @@ TransformEffect_:
 	ld hl, wEnemyMonStatMods
 	ld de, wPlayerMonStatMods
 	call .copyBasedOnTurn ; stat mods
+	; TRF-5.62.210: Disable records a move slot, not a move identity.
+	; Successful Transform replaces that user's move list, so discard the
+	; pre-Transform Disable timer and move-ID guard for the acting side only.
+	; A later Disable can set these fields again and works normally.
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .clearEnemyDisable
+	xor a
+	ld [wPlayerDisabledMove], a
+	ld [wPlayerDisabledMoveNumber], a
+	jr .disableCleared
+.clearEnemyDisable
+	xor a
+	ld [wEnemyDisabledMove], a
+	ld [wEnemyDisabledMoveNumber], a
+.disableCleared
 	ld hl, TransformedText
 	call PrintText
 	scf ; the manual move wrapper needs an unambiguous success result

@@ -52,7 +52,7 @@ These are notable features which have been added
 * Dark, Steel, and Fairy types
 * Several new Pokémon (NO FAKEMON)
 * Several new moves from newer generations
-* Manual Transform can immediately execute one copied move in the same action after a successful transformation (TRF-5.62.209; player confirms with A, B is ignored; enemy/Link paths choose a copied move automatically).
+* Manual Transform can immediately execute one copied move in the same action after a successful transformation (TRF-5.62.210; player confirms with A, B is ignored; enemy/Link paths choose a copied move automatically). A successful Transform now clears the acting side's stale Disable slot/timer state; failed Transform preserves it, and later Disable still works normally.
 * New evolution methods added
 * Updated move pools for all Pokémon, inspired by XY/ORAS (not exact)
 * Berry Trees (working off of a step counter)
