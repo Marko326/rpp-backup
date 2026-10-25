@@ -84,8 +84,8 @@ class EastCorridorPreflight240(unittest.TestCase):
         self.assertIn('unsafe_runtime_approval', result['errors'])
 
     def test_formal_version_is_numeric_without_test_suffix(self):
-        self.assertEqual(self.good['version'], 'OLIV-5.62.241')
-        self.assertIn('OLIV-5.62.241@', (ROOT / 'data/game_version.asm').read_text())
+        self.assertEqual(self.good['version'], 'JSON-5.62.242')
+        self.assertIn('JSON-5.62.242@', (ROOT / 'data/game_version.asm').read_text())
         self.assertNotIn('239A@', (ROOT / 'data/game_version.asm').read_text())
 
 

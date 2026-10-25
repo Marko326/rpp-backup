@@ -42,7 +42,7 @@ def audit(project, gold, *, connections=True, fly=True, overrides=None):
         names=read('engine/town_map.asm')
         idx=read('engine/overworld/johto_town_map_helpers.asm')
         spec={e['name']: e for e in contract['maps']}
-        assert read('data/game_version.asm').count('OLIV-5.62.241@')==1
+        assert read('data/game_version.asm').count('JSON-5.62.242@')==1
     except (OSError,ValueError,KeyError,AssertionError) as exc:
         return ['Gold eastern live sources unavailable or formal version drift: '+str(exc)]
     # The four eastern slots must be unchanged. The newly registered room is

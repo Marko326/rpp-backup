@@ -1,0 +1,148 @@
+{
+  "candidate_status": "OFFLINE_ONLY_NEVER_REGISTERED",
+  "gold_room": "OlivinePokecenter1F",
+  "source_gold_layout": "maps/Pokecenter1F.blk",
+  "dimensions_blocks": [
+    5,
+    4
+  ],
+  "tileset_original": "pokecenter",
+  "compacted_source_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    10,
+    11,
+    12,
+    15,
+    17,
+    19,
+    20,
+    21,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    36,
+    37,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    52,
+    53,
+    60,
+    61,
+    63,
+    64,
+    65,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    84,
+    85,
+    88,
+    89
+  ],
+  "compacted_block_count": 15,
+  "black_border_block_id": 15,
+  "screen_blocked_stairs": [
+    [
+      0,
+      7
+    ]
+  ],
+  "mask_allowed_collisions": [
+    "FLOOR",
+    "WARP_CARPET_DOWN"
+  ],
+  "warps_gold_one_based": [
+    {
+      "id": 1,
+      "x": 3,
+      "y": 7,
+      "dest_map": "OLIVINE_CITY",
+      "dest_id": 1
+    },
+    {
+      "id": 2,
+      "x": 4,
+      "y": 7,
+      "dest_map": "OLIVINE_CITY",
+      "dest_id": 1
+    },
+    {
+      "id": 3,
+      "x": 0,
+      "y": 7,
+      "dest_map": "POKECENTER_2F",
+      "dest_id": 1
+    }
+  ],
+  "npc_gold": [
+    {
+      "x": 3,
+      "y": 1,
+      "script": "OlivinePokecenter1FNurseScript"
+    },
+    {
+      "x": 8,
+      "y": 4,
+      "script": "OlivinePokecenter1FFishingGuruScript"
+    },
+    {
+      "x": 2,
+      "y": 3,
+      "script": "OlivinePokecenter1FFisherScript"
+    },
+    {
+      "x": 7,
+      "y": 1,
+      "script": "OlivinePokecenter1FTeacherScript"
+    }
+  ],
+  "nonlocal_gold_warps": [
+    {
+      "id": 3,
+      "x": 0,
+      "y": 7,
+      "dest_map": "POKECENTER_2F",
+      "dest_id": 1
+    }
+  ],
+  "asset_sha256": {
+    "JohtoOlivinePokecenter1F.blk": "a1c01c7652d86c6c9b50ad85a30a11a3cab00e0bcb88e69011b9d8bfa6a85eb4",
+    "JohtoOlivinePokecenter1F.blocked_mask.bin": "df0f838f76f13b02fcc63a90e66cccd7fc8c5f0139c6f0c86ae3a35209ed6f47",
+    "johto_olivine_pokecenter.bst": "bf443a133825bb0ecf0b186f0132d1bc474db0d49661cab222bb2d321128d3dc",
+    "johto_olivine_pokecenter.palette_candidate.asm": "cf95dab523b8cba6fef691af6c4aefe4900d936daa1c7181ee487b41257b22cf",
+    "johto_olivine_pokecenter.png": "8791a8b72990f39567a7430437a81fe2c56aefaa8aa92dbe60d6c3351a0632fa"
+  },
+  "not_yet_certified": [
+    "tilecoll npc walkability",
+    "sprite sheets/VRAM",
+    "dynamic tile palette",
+    "Gold WARP_CARPET collision",
+    "ROM bank allocation",
+    "runtime Warp dispatch",
+    "A-key NPC safety",
+    "Gold NPC presence conditions",
+    "real ROM/phone behavior"
+  ]
+}

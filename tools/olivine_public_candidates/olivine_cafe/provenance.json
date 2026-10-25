@@ -1,0 +1,103 @@
+{
+  "candidate_status": "OFFLINE_ONLY_NEVER_REGISTERED",
+  "gold_room": "OlivineCafe",
+  "source_gold_layout": "maps/OlivineCafe.blk",
+  "dimensions_blocks": [
+    4,
+    4
+  ],
+  "tileset_original": "game_corner",
+  "compacted_source_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    36,
+    37,
+    41,
+    44,
+    46,
+    47,
+    57,
+    60,
+    61,
+    62,
+    63,
+    78,
+    79,
+    80
+  ],
+  "compacted_block_count": 10,
+  "black_border_block_id": 10,
+  "screen_blocked_stairs": [],
+  "mask_allowed_collisions": [
+    "FLOOR",
+    "WARP_CARPET_DOWN"
+  ],
+  "warps_gold_one_based": [
+    {
+      "id": 1,
+      "x": 2,
+      "y": 7,
+      "dest_map": "OLIVINE_CITY",
+      "dest_id": 7
+    },
+    {
+      "id": 2,
+      "x": 3,
+      "y": 7,
+      "dest_map": "OLIVINE_CITY",
+      "dest_id": 7
+    }
+  ],
+  "npc_gold": [
+    {
+      "x": 4,
+      "y": 3,
+      "script": "OlivineCafeStrengthSailorScript"
+    },
+    {
+      "x": 1,
+      "y": 5,
+      "script": "OlivineCafeFishingGuruScript"
+    }
+  ],
+  "nonlocal_gold_warps": [],
+  "asset_sha256": {
+    "JohtoOlivineCafe.blk": "259e66d220b9114329e6ddddc0030ab3d5d3a7eeba2284d4453dc105627d5787",
+    "JohtoOlivineCafe.blocked_mask.bin": "1466f91d86c560fa2046dc7fb60beac31641b6f04acd6dc36d720f399a3a5890",
+    "johto_olivine_cafe.bst": "a676d2e1642c1cb9dd7ed3890a8aaceedaacee4d533ea44015ecdf9e6f34f0a3",
+    "johto_olivine_cafe.palette_candidate.asm": "ce4dd0656a62786e13d6f08d6446bc0b13f49c4160cc7808c983f4aa3e35cb85",
+    "johto_olivine_cafe.png": "1e89b0c7bb814799ef26d57b0b9fda356eb6678347eed8deb0c1b0529c823c4f"
+  },
+  "not_yet_certified": [
+    "tilecoll npc walkability",
+    "sprite sheets/VRAM",
+    "dynamic tile palette",
+    "Gold WARP_CARPET collision",
+    "ROM bank allocation",
+    "runtime Warp dispatch",
+    "A-key NPC safety",
+    "Gold NPC presence conditions",
+    "real ROM/phone behavior"
+  ]
+}

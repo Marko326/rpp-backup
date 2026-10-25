@@ -1,0 +1,14 @@
+{
+  "status": "OFFLINE_GOLD_SOURCE_SPRITES_ONLY",
+  "purpose": "Gold original NPC artwork, unregistered and not available in ROM",
+  "sha256": {
+    "clerk.png": "cc66aca39e2a7be65f7b4d78c3e347d21b33676bee9d78a08203f414914d05c9",
+    "cooltrainer_f.png": "7b537b4dbc3a3555df0ab78bb2ae8ea2a3085874dbebc15752542e9f2f802764",
+    "fisher.png": "e884a2b4da41666a207ef80f20197e3ac2ff6aab85e6dd4829b3a72bfe10b762",
+    "fishing_guru.png": "c882b75a38269d902c6a1da1811a5e33521e8290c88cbfcac499b0ae31ddd38c",
+    "lass.png": "90f03a004c572cf3385dbe725d07695fcd38575fd0ef709c4df9cb0a7f2a9762",
+    "nurse.png": "0924a8b724f5f80e14b84fd32140a8c8db954a4726394473118e6abcb126cb52",
+    "sailor.png": "104647940d96c7ea95835c6204fc89d34ad4fd2dcac8fc4bc408c19579aa7572",
+    "teacher.png": "e0815f62403536af8acbfd1bde1043fa8a0f319fc79a4b327eb6e73d1b86420c"
+  }
+}

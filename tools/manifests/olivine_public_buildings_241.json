@@ -1,0 +1,38 @@
+{
+  "schema": "johto-indoor-batch-v2",
+  "jobs": [
+    {
+      "id": "olivine_pokecenter_1f",
+      "mode": "prestage_unregistered",
+      "gold_room": "OlivinePokecenter1F",
+      "rpp_room": "JohtoOlivinePokecenter1F",
+      "gold_tileset": "pokecenter",
+      "rpp_tileset": "pokecenter",
+      "gold_outside_map": "OlivineCity",
+      "rpp_outside_map": "JohtoOlivineCity",
+      "allow_nonlocal_warps": true
+    },
+    {
+      "id": "olivine_mart",
+      "mode": "prestage_unregistered",
+      "gold_room": "OlivineMart",
+      "rpp_room": "JohtoOlivineMart",
+      "gold_tileset": "mart",
+      "rpp_tileset": "mart",
+      "gold_outside_map": "OlivineCity",
+      "rpp_outside_map": "JohtoOlivineCity",
+      "allow_nonlocal_warps": false
+    },
+    {
+      "id": "olivine_cafe",
+      "mode": "prestage_unregistered",
+      "gold_room": "OlivineCafe",
+      "rpp_room": "JohtoOlivineCafe",
+      "gold_tileset": "game_corner",
+      "rpp_tileset": "mart",
+      "gold_outside_map": "OlivineCity",
+      "rpp_outside_map": "JohtoOlivineCity",
+      "allow_nonlocal_warps": false
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "candidate_status": "OFFLINE_ONLY_NEVER_REGISTERED",
+  "gold_room": "OlivineMart",
+  "source_gold_layout": "maps/Mart.blk",
+  "dimensions_blocks": [
+    6,
+    4
+  ],
+  "tileset_original": "mart",
+  "compacted_source_ids": [
+    11,
+    12,
+    13,
+    17,
+    25,
+    26,
+    27,
+    30,
+    31,
+    32,
+    33,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    47,
+    48,
+    49,
+    54,
+    55,
+    56,
+    57,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    72,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95
+  ],
+  "compacted_block_count": 10,
+  "black_border_block_id": 10,
+  "screen_blocked_stairs": [],
+  "mask_allowed_collisions": [
+    "FLOOR",
+    "WARP_CARPET_DOWN"
+  ],
+  "warps_gold_one_based": [
+    {
+      "id": 1,
+      "x": 2,
+      "y": 7,
+      "dest_map": "OLIVINE_CITY",
+      "dest_id": 8
+    },
+    {
+      "id": 2,
+      "x": 3,
+      "y": 7,
+      "dest_map": "OLIVINE_CITY",
+      "dest_id": 8
+    }
+  ],
+  "npc_gold": [
+    {
+      "x": 1,
+      "y": 3,
+      "script": "OlivineMartClerkScript"
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "script": "OlivineMartCooltrainerFScript"
+    },
+    {
+      "x": 1,
+      "y": 6,
+      "script": "OlivineMartLassScript"
+    }
+  ],
+  "nonlocal_gold_warps": [],
+  "asset_sha256": {
+    "JohtoOlivineMart.blk": "7e0651f0a4b6e6de0029423276471cbed15aea8f6f33a66070e9946efefab0d9",
+    "JohtoOlivineMart.blocked_mask.bin": "df9e0978966e471d26911ea5a4c425dfb324887d8038c6e19caeba9ad79c4037",
+    "johto_olivine_mart.bst": "b98677f65c7e9133aefbdd86cb5ee33c940fc088f00547433060adf6faeed60f",
+    "johto_olivine_mart.palette_candidate.asm": "14342dc84fcc6e77a66f12bc5aff0f01fe9879d94b48c32ae1c157351655b840",
+    "johto_olivine_mart.png": "7656667affc115c6ddc93153da71081b8aab39dcd72fbaf2ce72a8d87e127fa6"
+  },
+  "not_yet_certified": [
+    "tilecoll npc walkability",
+    "sprite sheets/VRAM",
+    "dynamic tile palette",
+    "Gold WARP_CARPET collision",
+    "ROM bank allocation",
+    "runtime Warp dispatch",
+    "A-key NPC safety",
+    "Gold NPC presence conditions",
+    "real ROM/phone behavior"
+  ]
+}

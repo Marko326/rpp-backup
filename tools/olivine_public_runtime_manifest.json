@@ -1,0 +1,195 @@
+{
+  "source_head": "7465e56938e8910fdd79ad6987559674c4860d6d",
+  "version": "OLIV-5.62.241",
+  "status": "runtime-development-candidate",
+  "maps": [
+    {
+      "map": "JohtoOlivinePokecenter1F",
+      "tileset": "johto_olivine_pokecenter",
+      "local_id": 30,
+      "active_slot": 49,
+      "landmark": 26,
+      "dimensions_blocks": [
+        5,
+        4
+      ],
+      "dimensions_cells": [
+        10,
+        8
+      ],
+      "source_block_count": 16,
+      "runtime_block_count": 34,
+      "collision_split_blocks": 18,
+      "ambiguous_foot_graphics": {
+        "0": 56,
+        "9": 57
+      },
+      "npc_walkable_foot_tile_ids": [
+        27,
+        40,
+        46,
+        47,
+        56,
+        57
+      ],
+      "blocked_foot_tile_ids": [
+        0,
+        1,
+        2,
+        9,
+        10,
+        17,
+        19,
+        21,
+        25,
+        29,
+        32,
+        34,
+        38,
+        44,
+        50
+      ],
+      "source_hashes": {
+        "map": "a1c01c7652d86c6c9b50ad85a30a11a3cab00e0bcb88e69011b9d8bfa6a85eb4",
+        "blockset": "bf443a133825bb0ecf0b186f0132d1bc474db0d49661cab222bb2d321128d3dc",
+        "mask": "df0f838f76f13b02fcc63a90e66cccd7fc8c5f0139c6f0c86ae3a35209ed6f47",
+        "atlas": "8791a8b72990f39567a7430437a81fe2c56aefaa8aa92dbe60d6c3351a0632fa",
+        "palette": "cf95dab523b8cba6fef691af6c4aefe4900d936daa1c7181ee487b41257b22cf"
+      },
+      "runtime_hashes": {
+        "map": "615f4f7b92a3414915aae5b2d51cbe255defc4294760d7d50b0325f3f87fe596",
+        "blockset": "7eb9b1d4d16c2dc638e29653975de76dba3aca12643c160f51a70c9baf893dbe",
+        "mask": "df0f838f76f13b02fcc63a90e66cccd7fc8c5f0139c6f0c86ae3a35209ed6f47",
+        "tilecoll": "44ddb647b3957b546e46ec8db97b8501c7a17f0acd579dfb5244d4081dff0b2e",
+        "atlas": "1abea5f77aa9d685876e321f4a797a15708f33cddebaa8b53b3955d4d74e7bc6",
+        "palette": "880f871a05442890c9e6ddd69bcd0d12c0937b958bd15eec3581bbde3817948b"
+      }
+    },
+    {
+      "map": "JohtoOlivineCafe",
+      "tileset": "johto_olivine_cafe",
+      "local_id": 36,
+      "active_slot": 50,
+      "landmark": 26,
+      "dimensions_blocks": [
+        4,
+        4
+      ],
+      "dimensions_cells": [
+        8,
+        8
+      ],
+      "source_block_count": 11,
+      "runtime_block_count": 21,
+      "collision_split_blocks": 10,
+      "ambiguous_foot_graphics": {
+        "0": 40
+      },
+      "npc_walkable_foot_tile_ids": [
+        2,
+        5,
+        12,
+        14,
+        18,
+        40
+      ],
+      "blocked_foot_tile_ids": [
+        0,
+        1,
+        7,
+        8,
+        9,
+        22,
+        35,
+        36
+      ],
+      "source_hashes": {
+        "map": "259e66d220b9114329e6ddddc0030ab3d5d3a7eeba2284d4453dc105627d5787",
+        "blockset": "a676d2e1642c1cb9dd7ed3890a8aaceedaacee4d533ea44015ecdf9e6f34f0a3",
+        "mask": "1466f91d86c560fa2046dc7fb60beac31641b6f04acd6dc36d720f399a3a5890",
+        "atlas": "1e89b0c7bb814799ef26d57b0b9fda356eb6678347eed8deb0c1b0529c823c4f",
+        "palette": "ce4dd0656a62786e13d6f08d6446bc0b13f49c4160cc7808c983f4aa3e35cb85"
+      },
+      "runtime_hashes": {
+        "map": "74a67cfdc041eb3b56dade0c5d94d39db0f41aa44808e838248faa441f1dd27e",
+        "blockset": "bf77f0a8cd2868ac402c93f0d4e7b34f90315ed9143c1e4b5f8c3381305f0f85",
+        "mask": "1466f91d86c560fa2046dc7fb60beac31641b6f04acd6dc36d720f399a3a5890",
+        "tilecoll": "504b1da88b8d4732194a8580526e3a1942828baaf436bb416299cb132241b8ed",
+        "atlas": "370a5a34e89a542cd938214319a3017b83dca1d07e3c9d379053c3f07b68a626",
+        "palette": "e6a46b92a8d7d4549568636d6628110f03b3c06b1d35a3411d7ba38b1d7d961a"
+      }
+    },
+    {
+      "map": "JohtoOlivineMart",
+      "tileset": "johto_olivine_mart",
+      "local_id": 37,
+      "active_slot": 51,
+      "landmark": 26,
+      "dimensions_blocks": [
+        6,
+        4
+      ],
+      "dimensions_cells": [
+        12,
+        8
+      ],
+      "source_block_count": 11,
+      "runtime_block_count": 23,
+      "collision_split_blocks": 12,
+      "ambiguous_foot_graphics": {
+        "32": 56
+      },
+      "npc_walkable_foot_tile_ids": [
+        0,
+        6,
+        11,
+        13,
+        56
+      ],
+      "blocked_foot_tile_ids": [
+        1,
+        8,
+        20,
+        22,
+        28,
+        32,
+        33,
+        35,
+        39,
+        41,
+        43,
+        45,
+        47
+      ],
+      "source_hashes": {
+        "map": "7e0651f0a4b6e6de0029423276471cbed15aea8f6f33a66070e9946efefab0d9",
+        "blockset": "b98677f65c7e9133aefbdd86cb5ee33c940fc088f00547433060adf6faeed60f",
+        "mask": "df9e0978966e471d26911ea5a4c425dfb324887d8038c6e19caeba9ad79c4037",
+        "atlas": "7656667affc115c6ddc93153da71081b8aab39dcd72fbaf2ce72a8d87e127fa6",
+        "palette": "14342dc84fcc6e77a66f12bc5aff0f01fe9879d94b48c32ae1c157351655b840"
+      },
+      "runtime_hashes": {
+        "map": "df21c527cc1bde70362f8e07cc079d285cc7903bc8e88d163d372f48d30541b7",
+        "blockset": "84f617fbe973c4842ea64ba87ad7883e5d24f183a50b0c7a16f94d0308c04b9f",
+        "mask": "df9e0978966e471d26911ea5a4c425dfb324887d8038c6e19caeba9ad79c4037",
+        "tilecoll": "976bfec20ee6b35695b2c7c1d2a9d726f4fa05e31fa8823ab39ee68be3ded561",
+        "atlas": "799d284f9b8d32d49b23134f1026aba522a81880ba9ef2cb69134ad752ef94a7",
+        "palette": "115a3f1033b4feb447d2249a317d241649e896a5468e8ea866a42c8e9a368c46"
+      }
+    }
+  ],
+  "sprites": {
+    "clerk": "cc66aca39e2a7be65f7b4d78c3e347d21b33676bee9d78a08203f414914d05c9",
+    "cooltrainer_f": "7b537b4dbc3a3555df0ab78bb2ae8ea2a3085874dbebc15752542e9f2f802764",
+    "fisher": "e884a2b4da41666a207ef80f20197e3ac2ff6aab85e6dd4829b3a72bfe10b762",
+    "nurse": "0924a8b724f5f80e14b84fd32140a8c8db954a4726394473118e6abcb126cb52",
+    "sailor": "104647940d96c7ea95835c6204fc89d34ad4fd2dcac8fc4bc408c19579aa7572",
+    "teacher": "e0815f62403536af8acbfd1bde1043fa8a0f319fc79a4b327eb6e73d1b86420c"
+  },
+  "deferred_features": [
+    "Pokemon Center healing and 2F stair warp",
+    "Mart buying and selling",
+    "Cafe Strength gift and dialogue events"
+  ],
+  "safety": "The Pokemon Center 2F stair remains blocked and has no registered Warp."
+}

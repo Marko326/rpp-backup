@@ -25,14 +25,12 @@
 # swap files for vim
 .*.swp
 
-# no data from extras/
-*.json
-# Reviewed contracts required for the Johto static release gate.
-!tools/johto_native_maps.json
-!tools/johto_door_contracts.json
-!tools/johto_gold_geometry_contracts.json
-!tools/johto_deferred_field_moves.json
-!tools/johto_east_corridor_source_contract.json
+# JSON inputs/contracts are source files and must remain visible to Git.
+# Keep only disposable JSON in explicitly scoped output/cache directories.
+# Do not put source manifests or provenance files in these directories.
+extras/**/*.json
+tools/generated_reports/**/*.json
+tools/cache/**/*.json
 
 # for any of the poor souls with save game files in their working directory
 *.sgm
