@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 GOLD = Path(os.environ.get('JOHTO_GOLD_SOURCE', '/nonexistent'))
@@ -42,6 +43,24 @@ def ids():
 class WestGateCarpet229(unittest.TestCase):
     def test_double_lane_walk_and_outward_collision_are_distinct(self):
         self.assertEqual(gate_mat_path_errors(ROOT,data()),[])
+
+    @unittest.skipUnless(GOLD.is_dir(), 'Gold source mandatory')
+    def test_explicit_gold_path_ignores_wrong_environment(self):
+        # Release --gold must reach Route32's legacy carpet proof even when
+        # inherited shell variables name a stale checkout.
+        with patch.dict(os.environ, {'JOHTO_GOLD_SOURCE': '/missing-stale-gold',
+                                     'JOHTO_GOLD_ROOT': '/missing-stale-gold'}):
+            self.assertEqual(gate_mat_path_errors(ROOT, data(), gold=GOLD), [])
+            self.assertEqual(gate_audit(ROOT, GOLD), [])
+
+    @unittest.skipUnless(GOLD.is_dir(), 'Gold source mandatory')
+    def test_wrong_explicit_gold_path_is_rejected_despite_valid_environment(self):
+        with patch.dict(os.environ, {'JOHTO_GOLD_SOURCE': str(GOLD),
+                                     'JOHTO_GOLD_ROOT': str(GOLD)}):
+            errors = gate_mat_path_errors(
+                ROOT, data(), gold=Path('/missing-explicit-gold'))
+        self.assertTrue(any('legacy Route32 exact carpet' in err
+                            for err in errors), errors)
 
     def test_both_lanes_round_trip_through_actual_runtime_dispatch(self):
         manifest = next(a for a in data()['active_warp_maps'] if a['rpp_map']==GATE)

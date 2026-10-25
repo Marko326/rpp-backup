@@ -8,6 +8,7 @@ matching native masked-step caller are eligible; other maps remain NOT_TESTED.
 """
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 import re
 
@@ -163,7 +164,8 @@ def trace_masked_step(program, labels, mask: bytes, width: int, height: int,
     raise ConversionError('ASM caller loop exceeds static trace budget')
 
 
-def gate_mat_path_errors(rpp: Path, manifest: dict, overrides: dict | None = None) -> list[str]:
+def gate_mat_path_errors(rpp: Path, manifest: dict, overrides: dict | None = None,
+                         *, gold: Path | None = None) -> list[str]:
     """Strict two-lane EAST/WEST gate carpet movement and collision checks.
 
     Read each registered native gate's ACTUAL caller and blocked mask. Gold's
@@ -209,8 +211,12 @@ def gate_mat_path_errors(rpp: Path, manifest: dict, overrides: dict | None = Non
                 if name == 'JohtoRoute32':
                     from johto_gold_door_audit import gold_collision_index
                     from johto_gold_sources import gold_block_sources
-                    import os
-                    gpath = Path(os.environ.get('JOHTO_GOLD_SOURCE') or os.environ.get('JOHTO_GOLD_ROOT') or '/INVALID_GOLD_ROOT')
+                    # The top-level release gate already receives --gold;
+                    # environment variables are only a fallback for legacy
+                    # standalone callers that omit the explicit Gold root.
+                    gpath = Path(gold) if gold is not None else Path(
+                        os.environ.get('JOHTO_GOLD_SOURCE') or
+                        os.environ.get('JOHTO_GOLD_ROOT') or '/INVALID_GOLD_ROOT')
                     home = (overrides or {}).get('home/overworld.asm',(root/'home/overworld.asm').read_text())
                     collision = (overrides or {}).get('engine/overworld/johto_route33_collision.asm',(root/'engine/overworld/johto_route33_collision.asm').read_text())
                     if (not (gpath/'data/maps/blocks.asm').exists() or
@@ -415,7 +421,7 @@ def audit(rpp: Path, gold: Path) -> dict:
             if row['status']=='FAIL':
                 errors.append(f"{rpp_name} {row['from']} {row['direction']} -> {row['to']}: "
                               + row.get('error', 'expected ALLOW, executed BLOCK'))
-    errors.extend(gate_mat_path_errors(root, {'active_warp_maps':contracts}))
+    errors.extend(gate_mat_path_errors(root, {'active_warp_maps':contracts}, gold=gold))
     return {'schema':'rpp-masked-step-source-execution-v2',
             'masked_caller_maps_checked':eligible_maps,
             'movement_edges_executed':len(entries),

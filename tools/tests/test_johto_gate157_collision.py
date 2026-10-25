@@ -54,7 +54,7 @@ class Route31VioletNativeGate(unittest.TestCase):
             self.assertIn(condition, left)
         self.assertIn('jr nz, .normalLeftEdge', left)
         self.assertIn('jr z, .setCarry', left)
-        self.assertIn('ld a, c\n\tand a\n\tjr z, .setCarry', left)
+        self.assertIn('ld a, c\n\tcp 1\n\tret', left)
         # ExtraWarpCheck already calls IsPlayerFacingEdgeOfMap for JOHTO.
         extra = (ROOT/'home/overworld.asm').read_text().split('ExtraWarpCheck::', 1)[1].split('MapEntryAfterBattle::', 1)[0]
         self.assertIn('ld hl, IsPlayerFacingEdgeOfMap', extra)

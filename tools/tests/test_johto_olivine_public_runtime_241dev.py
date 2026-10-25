@@ -77,6 +77,42 @@ class PublicBuildingRuntimeTests(unittest.TestCase):
             self.assertNotIn('jp JohtoModernMaskedStep',segment)
         self.assertIn('.handled\n ld e, 1\n ret',dispatch)
 
+    def test_gold_pc_red_palette_and_reinstall_template_stay_consistent(self):
+        # A former installer fixture and the gate RGB audit used to restore
+        # / require POKECENTER_TABLE even after the user's Gold-red correction.
+        from johto_gate_rgb_audit import _sets
+        rows = _sets(self.source('color/data/map_palette_sets.asm'))
+        self.assertEqual(rows[37][1], 'INDOOR_RED')
+        self.assertEqual(rows[12][1], 'POKECENTER_TABLE')  # Kanto remains unchanged
+        installer = self.source('tools/install_olivine_public_runtime.py')
+        self.assertIn("s += '; JOHTO_OLIVINE_POKECENTER\\n\\tdb INDOOR_GRAY\\n\\tdb INDOOR_RED", installer)
+        self.assertNotIn("s += '; JOHTO_OLIVINE_POKECENTER\\n\\tdb INDOOR_GRAY\\n\\tdb POKECENTER_TABLE", installer)
+
+    def test_old_pc_red_palette_is_rejected_by_real_gate_rgb_checker(self):
+        from johto_gate_rgb_audit import verify
+        import os
+        import shutil
+        from tempfile import TemporaryDirectory
+        gold = Path(os.environ.get('JOHTO_GOLD_SOURCE', '/missing-gold'))
+        if not gold.is_dir():
+            self.skipTest('Gold source required for RGB source check')
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in ('map_palette_sets.asm', 'map_palettes.asm', 'map_palette_constants.asm'):
+                source = ROOT / 'color/data' / name
+                target = root / 'color/data' / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+            self.assertEqual(verify(root, gold), [])
+            target = root / 'color/data/map_palette_sets.asm'
+            text = target.read_text()
+            prefix, suffix = text.split('; JOHTO_OLIVINE_POKECENTER', 1)
+            self.assertIn('db INDOOR_RED', suffix)
+            suffix = suffix.replace('db INDOOR_RED', 'db POKECENTER_TABLE', 1)
+            target.write_text(prefix + '; JOHTO_OLIVINE_POKECENTER' + suffix)
+            errors = verify(root, gold)
+            self.assertTrue(any('tileset palette sets changed' in error for error in errors), errors)
+
     def test_generated_runtime_tiles_match_manifest(self):
         manifest=json.loads((ROOT/'tools/olivine_public_runtime_manifest.json').read_text())
         self.assertEqual(len(manifest['maps']),3)

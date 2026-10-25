@@ -1,3 +1,13 @@
+# JSON-5.62.242｜Warp 指针越界＋浅葱 PC 红色、审计工具的正式双提交索引（仅索引，非提交日志）
+# 导出基线：金银 HEAD 91a4bb41ceb83032758c97a01b930146a2197f1b；版本 JSON-5.62.242 -> JSON-5.62.242。
+# 第一笔 fix(johto): 防止新增图块集 Warp 指针越界并匹配 Gold PC 红色
+#   仅 engine/overworld/player_state.asm 和 color/data/map_palette_sets.asm；不动地图/NPC/事件。
+# 第二笔 test(tool): 固化 Gold 路径、Warp 边界、移动边与清理验收记录
+#   tools/ 的脚本/测试/强制门禁清单，及 TODO、踩坑和此索引；不重新提交 ASM。
+# 清理增量以前一轮「累计三轮完整 PC 配色 DEV」为前置；基线全量仅供真实干净 HEAD 使用，二选一。
+# 完整最终状态→工具反向隔离→功能 Commit→git apply -R 恢复工具→工具 Commit。用户本地验证/提交；本包不代表已经执行 Git Commit/Push。
+# 清理只建立可提交的文件状态；既有全量门禁失败和 ROM/手机待验记录在本轮正式两份日志中。
+
 # OLIV-5.62.241｜公共建筑三图＋稳定修复正式清理索引（本文件不是 git commit -F 正文）
 # 基线：金银 HEAD 7465e56938e8910fdd79ad6987559674c4860d6d；版本 OLIV-5.62.241 -> OLIV-5.62.241。
 # 模式 A：第一笔 feat(johto): 接入浅葱市公共建筑并修正门毯及 NPC 配色

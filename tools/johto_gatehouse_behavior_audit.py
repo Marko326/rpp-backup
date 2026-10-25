@@ -550,7 +550,7 @@ def audit(root: Path, gold: Path, overrides: dict | None = None,
                                   f'unexpected auto-step {move}; immediate reverse would only return to carpet')
     # Distinguish moving on carpet (ordinary movement) from colliding with
     # the edge (Warp trigger). The Gold gate guide explicitly requires both.
-    errors.extend(gate_mat_path_errors(root, doc, overrides))
+    errors.extend(gate_mat_path_errors(root, doc, overrides, gold=gold))
     try:
         errors.extend(gold_approach_collision_errors(root, Path(gold), gates, overrides))
         errors.extend(gold_arrival_step_errors(root, Path(gold), gates, overrides))

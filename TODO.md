@@ -1,3 +1,12 @@
+## JSON-5.62.242｜Warp 越界保护、浅葱 PC Gold 红色与工具审计正式清理（2026-10-25）
+
+- [x] **基线与范围**：导出分支「金银」，记录 HEAD `91a4bb41ceb83032758c97a01b930146a2197f1b`（ZIP 为不含 `.git` 的干净 HEAD 源码快照，真实手机 Worktree / Git 状态待用户确认）；版本 `JSON-5.62.242 -> JSON-5.62.242`。本轮在该快照上复放三轮开发补丁，清理不新增房内外事件。
+- [x] **游戏功能补丁**：`engine/overworld/player_state.asm` 为 34 项旧 `WarpTileIDPointers` 的查表增加 `JOHTO_PARK_GATE` 边界检查，编号 34–39 使用既有门碰撞分支，不读取表尾垃圾；对应两处 Carry 等价短分支按指令长度估计抵消保护开销，未实编译验证 Bank 3。`color/data/map_palette_sets.asm` 中浅葱 PC 专用 RED 从 `POKECENTER_TABLE` 切换为 Gold `INDOOR_RED`；该色槽其它 RED 图块随之变色，**不是只动门毯**。NPC 精灵/颜色、地图对象、Warp 目标、事件均未修改。
+- [x] **工具和强制回归**：`tools/johto_gatehouse_behavior_audit.py` / `tools/johto_masked_step_audit.py` 传递显式 Gold 路径，避免环境变量错误造成 Route32 误报；更新现有移动边计数 171→174，保留 145 必须放行合同；同步门房 Gold RGB 审计与公共建筑安装模板中的 PC 红色色槽，防止重新安装还原旧颜色；新增 Warp 指针边界及 PC 调色回退负向测试，并在统一发布门禁的 `REQUIRED_TEST_IDS` 强制注册关键用例。不允许通过删除异常或放宽错误注入达成 PASS。
+- [x] **产品边界**：用户明确决定房内、房外**只有人物，无剧情/服务事件**。不得在后续跨城镇批量房屋接入时擅加治疗、存取、购买、赠送 HM／道具或其它事件。下一批按房屋类型跨城镇推进，优先逐屋核对 Gold 来源、人物配色、Warp、碰撞和 ROM 空间。
+- [ ] **尚未验收**：本清理基于导出快照而非用户当前真实 `.git`；本轮已实际运行 `tools/johto_map_release_audit.py --rpp . --gold <Gold路径> --expect-version JSON-5.62.242`：活动连接 56/56 PASS、unittest 共 1,035 项、14 FAIL、0 skipped，且测试登记显示 1,034 个不同 ID 与运行数量 1,035 不一致；总体 `status=FAIL`，Gold 全来源审计因前述失败没有执行。受影响的 6 个目标模块定向 **45/45 PASS**，单独 Gold 门房 RGB 核验通过。当前错误以旧测试断言与错误注入失效为主，尚未逐项清零；真实 ROM 编译链接、最新 MAP 余量、手机新的 Warp 保护与 Gold PC 颜色均需独立证据。**不能把 Git 干净状态等同于发布门禁 PASS**。真实提交/推送、更新下轮 Git 基线须在用户本地完成并提供新状态。
+- [x] **双提交模式 A**：运行时 ASM＋PC 色板第一笔 `fix(johto)`；工具、回归与本 TODO/踩坑/提交索引第二笔 `test(tool)`。清理增量以最新「三轮完整累计 PC 配色 DEV」候选为前置；全量以以上 HEAD 快照为前置，两条路线不可叠加；工具反向隔离仅为先提交功能、后提交工具。
+
 ## JSON-5.62.242｜桐树林交付合同与 Gold 来源可复现性（2026-10-25）
 
 - [x] **基线**：金银分支导出 HEAD `db96620dedeec205327267eb11d5bd363ac4b748`，源码版本 `JSON-5.62.242`；本轮不改游戏运行逻辑和游戏版本号。

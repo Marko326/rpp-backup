@@ -78,7 +78,7 @@ s = p.read_text(encoding='utf-8')
 if not s.rstrip().endswith('\tdb CRYS_TEXTBOX'):
     raise SystemExit('map_palette_sets.asm unexpected ending')
 s = s.rstrip() + '\n\n; OLIVINE-5.62.241 DEV: public-building palette sets are isolated from Kanto.\n'
-s += '; JOHTO_OLIVINE_POKECENTER\n\tdb INDOOR_GRAY\n\tdb POKECENTER_TABLE\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb INDOOR_BROWN\n\tdb POKECENTER_FLOOR\n\tdb PC_POKEBALL_PAL\n\n'
+s += '; JOHTO_OLIVINE_POKECENTER\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb INDOOR_BROWN\n\tdb POKECENTER_FLOOR\n\tdb PC_POKEBALL_PAL\n\n'
 s += '; JOHTO_OLIVINE_MART\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb MART_FLOOR\n\tdb INDOOR_LIGHT_BLUE\n\tdb PC_POKEBALL_PAL\n\n'
 s += '; JOHTO_OLIVINE_CAFE\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb INDOOR_BROWN\n\tdb INDOOR_LIGHT_BLUE\n\tdb CRYS_TEXTBOX\n'
 p.write_text(s, encoding='utf-8')
