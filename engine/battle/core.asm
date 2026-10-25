@@ -2704,6 +2704,10 @@ MoveSelectionMenu:
 	dec a
 	ld b, D_UP | D_DOWN | A_BUTTON
 	jr z, .matchedkeyspicked
+	; Type 3 is the player's post-Transform copied-move menu: same
+	; battle move picker as type 0, but B must not confirm a move.
+	cp $2
+	jr z, .matchedkeyspicked
 	dec a
 	ld b, D_UP | D_DOWN | A_BUTTON | B_BUTTON
 	jr z, .matchedkeyspicked
@@ -2730,6 +2734,9 @@ MoveSelectionMenu:
 SelectMenuItem:
 	ld a, [wMoveMenuType]
 	and a
+	jr z, .battleselect
+	; Type 3 still needs normal move preview, PP and Disable checks.
+	cp $3
 	jr z, .battleselect
 	dec a
 	jr nz, .select
@@ -8178,7 +8185,12 @@ HealEffect:
 	jpab HealEffect_
 
 TransformEffect:
-	jpab TransformEffect_
+	; TRF-5.62.208: return a same-action continuation only when a direct
+	; Transform succeeds. The floating-ROMX helper returns HL as the next
+	; battle-core address; discard JumpMoveEffect's temporary return first.
+	callab TransformMoveFollowup_
+	pop bc
+	jp hl
 
 ReflectLightScreenEffect:
 	jpab ReflectLightScreenEffect_

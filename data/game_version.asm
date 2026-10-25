@@ -7,6 +7,6 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-209@"
 ELSE
-	; Ordinary Red/Blue Imposter animation revision; test code is compiled out.
-	db "IMP-5.62.207@"
+	; Manual Transform now executes one copied move in the same action.
+	db "TRF-5.62.209@"
 ENDC

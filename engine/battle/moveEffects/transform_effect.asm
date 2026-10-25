@@ -197,7 +197,9 @@ TransformEffect_:
 	ld de, wPlayerMonStatMods
 	call .copyBasedOnTurn ; stat mods
 	ld hl, TransformedText
-	jp PrintText
+	call PrintText
+	scf ; the manual move wrapper needs an unambiguous success result
+	ret
 
 .sameSpeciesAndForm
 ; Return Z only when both active battle slots have the same Species and runtime
@@ -240,13 +242,145 @@ TransformEffect_:
 .failed
 	ld a, [wImposterEntryFlags]
 	bit 1, a
-	ret nz ; a failed entry effect must not print a move-failure message
+	jr z, .showFailure
+	and a ; silent entry failure returns with carry clear
+	ret ; a failed entry effect must not print a move-failure message
+.showFailure
 	; BTL-5.62.19: ResidualEffects1 skips the common post-move pause. Match
 	; other direct-failure effects so the move-use text remains readable first.
 	ld c, 50
 	call DelayFrames
-	jpba PrintButItFailedText_
+	callab PrintButItFailedText_
+	and a ; failed manual Transform must not enter the copied-move continuation
+	ret
 
 TransformedText:
 	TX_FAR _TransformedText
 	db "@"
+
+; TRF-5.62.208: a successful direct Transform can immediately execute one of
+; the copied moves as the same action. Return the Bank-F continuation in HL,
+; matching MimicEffect_'s existing stack contract. Entry-only Imposter calls
+; TransformEffect_ directly and never enters this follow-up gateway.
+TransformMoveFollowup_::
+	call TransformEffect_
+	jp nc, .failed
+	ld a, [H_WHOSETURN]
+	and a
+	jp nz, .enemyTurn
+	; Only a direct Transform action gets a follow-up. Mirror Move / Metronome
+	; keep their own root-action semantics instead of recursively adding an action.
+	ld a, [wPlayerLastSelectedMove]
+.playerRootReady
+	cp TRANSFORM
+	jp nz, .playerDone
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jp z, .chooseRandomCopiedMove ; Link exchanges one slot only, as Mimic does
+	; Use the ordinary four-move menu after the copied list and 5 PP are ready.
+	; TRF-208 display fix: round-start backup can show an airborne (hidden)
+	; opponent even after it landed earlier in this round.  The follow-up
+	; menu restores that backup on exit, incorrectly erasing its live sprite.
+	; Refresh it now, after Transform animation, before opening that menu.
+	call SaveScreenTilesToBuffer1
+	; Use regular battle move selection with B suppressed (mode 3).
+	; A must confirm the copied move; B cannot consume the follow-up.
+	ld a, 3
+	ld [wMoveMenuType], a
+	ld a, 1
+	ld [wAnimationID], a
+	callab MoveSelectionMenu
+	call LoadScreenTilesFromBuffer1
+	callab DrawHUDsAndHPBars
+.loadPlayerFollowup
+	callab GetCurrentMove
+	ld hl, CheckIfPlayerNeedsToChargeUp
+	ret
+.enemyTurn
+	ld a, [wEnemyLastSelectedMove]
+	cp TRANSFORM
+	jp nz, .enemyDone
+.chooseRandomCopiedMove
+	; Enemies and Link battles cannot open the local player's follow-up menu.
+	; TEST-214 fixes slot 1 only for controlled enemy-mirror cases. Official
+	; ROM and all other test cases retain Mimic's non-empty-slot PRNG rule.
+	; Pick a non-empty copied slot with the same far-PRNG convention as Mimic.
+	callab BattleRandomFar
+	ld a, e
+	and 3
+	ld c, a
+	ld b, NUM_MOVES
+.scanCopiedMove
+	push bc
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, wBattleMonMoves
+	jr z, .gotCopiedMoveList
+	ld hl, wEnemyMonMoves
+.gotCopiedMoveList
+	ld b, 0
+	ld a, c
+	ld e, a
+	ld d, 0
+	add hl, de
+	ld a, [hl]
+	and a
+	jr nz, .copiedMoveFound
+	pop bc
+	inc c
+	ld a, c
+	and 3
+	ld c, a
+	dec b
+	jr nz, .scanCopiedMove
+	; Defensive fallback for malformed/empty move lists; ordinary battles
+	; normally have at least one real move to copy.
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .enemyStruggle
+	ld a, STRUGGLE
+	ld [wPlayerSelectedMove], a
+	xor a
+	ld [wPlayerMoveListIndex], a
+	jr .loadPlayerFollowup
+.enemyStruggle
+	ld a, STRUGGLE
+	ld [wEnemySelectedMove], a
+	xor a
+	ld [wEnemyMoveListIndex], a
+	jr .loadEnemyFollowup
+.copiedMoveFound
+	pop bc
+	ld d, a ; preserve move ID while storing the selected slot index
+	ld a, [H_WHOSETURN]
+	and a
+	jr nz, .storeEnemyCopiedMove
+	ld a, c
+	ld [wPlayerMoveListIndex], a
+	ld a, d
+	ld [wPlayerSelectedMove], a
+	jr .loadPlayerFollowup
+.storeEnemyCopiedMove
+	ld a, c
+	ld [wEnemyMoveListIndex], a
+	ld a, d
+	ld [wEnemySelectedMove], a
+.loadEnemyFollowup
+	callab GetCurrentMove
+	ld hl, CheckIfEnemyNeedsToChargeUp
+	ret
+.playerDone
+	ld hl, ExecutePlayerMoveDone
+	ret
+.enemyDone
+	ld hl, ExecuteEnemyMoveDone
+	ret
+.failed
+	; Failed Transform consumes only the already-started Transform action.
+	ld a, [H_WHOSETURN]
+	and a
+	ld hl, ExecutePlayerMoveDone
+	jr z, .returnContinuation
+	ld hl, ExecuteEnemyMoveDone
+.returnContinuation
+	ret
