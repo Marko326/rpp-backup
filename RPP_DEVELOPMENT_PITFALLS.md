@@ -1,4 +1,22 @@
+## TEST-217 / DOC-218 — Disable 旧状态与测试假阳性；不要错误扩大边界
+
+- 成功 Transform 复制新招式后，原 Disable 以旧槽位标记继续存在会错误禁用新招式；正确的是仅在**成功路径**一次性清除**施术者** `w*DisabledMove` 与 `w*DisabledMoveNumber` 两字段，失败时保持状态，之后重新受到 Disable 仍生效。共享 Transform 内核同时覆盖手动与自动 Imposter；正常自动入场原本多已清状态，不必为不自然旧状态编造必要性。
+- 测试程序若只检查 Disable 计时／槽位字段，然后马上写入新的被禁用招式编号，会覆盖编号残留而导致**假阳性**。TEST-217 16/17 两字段均为零才允许进入“旧状态清除成功”后续注入路径；用户录像主路径和故意破坏一字段的反例注入不是一回事。
+- 正常宝可梦仅**第一槽**一招、且被禁用时，旧 `AnyMoveToSelect` / `SelectEnemyMove` 应回退 Struggle；TEST217.mp4 的 19、20 看到了双方 Struggle，未卡住。敌方异常数据“第 1 槽空、非空后槽唯一被禁用”的潜在无限重选不等于此项通过，也不是同回合 Transform 成功后的自然流程。
+- TEST-217 21 使用真实 Disable 命中后，录像文字为 `Enemy Mew's Disable was disabled!`：它禁用的是复制后的 **Disable**，并没有禁用 Tackle。不能因为敌方随后能用 Tackle 就误判 Disable 失效，也不能宣称“禁用 Tackle 的后续选择”已实测。
+- TEST-214 05/09 的 0 PP 非空招式仍可被野生敌人随机选中，07/14 同类风险未修；禁止为了稳定测试顺手改变正式敌方 AI。文档收口不得把此前待验条目自动全打勾，联机、MAP/Bank 和完整 ROM 构建证据分别保留。
+
+---
+
 # RPP Development Pitfalls
+
+## TEST-216 — Transform 成功后必须清除施术者旧 Disable 槽位状态
+
+- `Disable` 保存的是槽号与持续回合（`wPlayerDisabledMove` / `wEnemyDisabledMove`），另有 `w*DisabledMoveNumber` 供选中招式检查。Transform 会替换四个招式槽；如果成功后保留旧标记，旧槽里的新复制招式会被错误禁用。
+- 只在 `TransformEffect_` 确认成功并完成复制后，清除 `H_WHOSETURN` 当前施术者的两个 Disable 字段。不要清目标侧状态；不要在失败分支清；不要在后续每回合清，以免后续新施加的 Disable 失效。
+- 测试必须双向：玩家手动 Transform（第二次菜单路径）和敌方 Transform（自动续招路径）。敌方续招会绕过普通根行动状态检查，必须固定复制槽并观察下一回合 AI 对 Disable 槽的处理，不能只看当回合攻击动作。
+- TEST-216 场景 16/17 直接注入确定的旧状态，并在成功后注入另一个槽位的新状态，隔离随机命中率；18 验证 Transform 失败时状态保留。夹具只在 `BATTLE_TEST_BUILD`，不改正式 AI 或 Disable 的随机选择规则。
+
 
 ## TEST-212 — 双向场景必须核实真实动作和身份位（待 ROM 验证）
 

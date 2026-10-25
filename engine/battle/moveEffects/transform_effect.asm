@@ -358,12 +358,15 @@ ENDC
 	jp nz, .enemyDone
 .chooseRandomCopiedMove
 	; Enemies and Link battles cannot open the local player's follow-up menu.
-	; TEST-214 fixes slot 1 only for controlled enemy-mirror cases. Official
-	; ROM and all other test cases retain Mimic's non-empty-slot PRNG rule.
+	; TEST fixtures fix a copied slot only for controlled enemy-mirror cases.
+	; Official ROM and other test cases retain Mimic's non-empty-slot PRNG rule.
 IF DEF(BATTLE_TEST_BUILD)
 	ld a, [wTestSuiteGuard]
 	cp $5a
+	jr z, .testGuardActive
+	cp $5d ; E-DIS-CLEAR keeps its one-shot state armed through the first follow-up
 	jr nz, .randomCopiedSlot
+.testGuardActive
 	ld a, [wTestSuitePhase]
 	cp $41 ; E-LATE-FLY: copied player slot 1 is Fly
 	jr z, .fixedEnemySlot
@@ -376,6 +379,10 @@ IF DEF(BATTLE_TEST_BUILD)
 	cp $49 ; E-LATE-SUB: copied player slot 1 is Tackle
 	jr z, .fixedEnemySlot
 	cp $4e ; E-CHARGE baseline: copied player slot 1 is Fly
+	jr z, .fixedEnemySlot
+	cp $50 ; E-DIS-CLEAR: copied player slot 2 is Tackle
+	jr z, .fixedEnemySlot
+	cp $54 ; REAL-DIS: enemy copies Tackle, player then uses real Disable
 	jr nz, .randomCopiedSlot
 .fixedEnemySlot
 	ld a, [H_WHOSETURN]

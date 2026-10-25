@@ -313,7 +313,12 @@ TestSuite_StartFromNpc::
 TestSuite_IsActive:
     ld a, [wTestSuiteGuard]
     cp $5a
+    jr z, .checkMap
+    cp $5c
+    jr z, .checkMap
+    cp $5d
     ret nz
+.checkMap
     ld a, [wCurMap]
     cp CELADON_MANSION_1
     ret nz
@@ -437,7 +442,7 @@ TestSuite_AfterSubstituteCreated::
     ret
 
 TestSuite_OnRoundBoundary::
-    ; First validate the battle test, then prepare TEST-214 E-LATE-EXT sidecar
+    ; First validate the battle test, then prepare the E-LATE-EXT sidecar
     ; before the enemy Transform. Trainer switch remains in its AI action slot.
     call TestSuite_IsActive
     ret nz

@@ -1,9 +1,9 @@
-; TEST-214: complex paired manual-Transform interaction matrix plus entry-Imposter fixture.
-; The 15 slots are disposable test cases, not permanent regression assets.
-; Scene IDs $40..$4e; battle guard $a5 / $5a; test ROM only.
+; TEST-217: verify both Disable fields and native one-move Struggle fallbacks.
+; The 21 slots are disposable test cases, not permanent regression assets.
+; Scene IDs $40..$54; battle guard $a5 / $5a plus staged Disable states; test ROM only.
 
 TestSuiteImposter_ChooseScene::
-    ld a, $e0 ; page 1/5 in transient menu-only phase
+    ld a, $e0 ; page 1/7 in transient menu-only phase
     ld [wTestSuitePhase], a
     ld a, 3 ; PAGE is the default cursor on entering this submenu
     ld [wCurrentMenuItem], a
@@ -17,7 +17,7 @@ TestSuiteImposter_ChooseScene::
     coord hl, 2, 3
     ld de, TestSuiteImposterMenuTitle
     call PlaceString
-    ; Each page has three scenarios and a PAGE x/5 selector (Left/Right).
+    ; Each page has three scenarios and a PAGE x/7 selector (Left/Right).
     ld a, [wTestSuitePhase]
     sub $e0
     add a
@@ -79,7 +79,7 @@ TestSuiteImposter_ChooseScene::
     jr nz, .input
     ld a, [wTestSuitePhase]
     cp $e0
-    jr z, .input ; do not wrap past PAGE 1/5
+    jr z, .input ; do not wrap past PAGE 1/7
     dec a
     ld [wTestSuitePhase], a
     jr .changePage
@@ -88,7 +88,7 @@ TestSuiteImposter_ChooseScene::
     cp 3
     jr nz, .input
     ld a, [wTestSuitePhase]
-    cp $e4
+    cp $e6
     jr z, .input
     inc a
     ld [wTestSuitePhase], a
@@ -121,6 +121,8 @@ TestSuiteImposterMenuChoices:
     dw .s07, .s08, .s09, .p3
     dw .s10, .s11, .s12, .p4
     dw .s13, .s14, .s15, .p5
+    dw .s16, .s17, .s18, .p6
+    dw .s19, .s20, .s21, .p7
 .s01:
     db "01 P-LATE-FLY@"
 .s02:
@@ -151,20 +153,36 @@ TestSuiteImposterMenuChoices:
     db "14 P-CHARGE@"
 .s15:
     db "15 E-CHARGE@"
+.s16:
+    db "16 P-DIS-CLEAR@"
+.s17:
+    db "17 E-DIS-CLEAR@"
+.s18:
+    db "18 P-DIS-FAIL@"
+.s19:
+    db "19 P-ONE-DIS@"
+.s20:
+    db "20 E-ONE-DIS@"
+.s21:
+    db "21 REAL-DIS@"
 .p1:
-    db "PAGE 1/5@"
+    db "PAGE 1/7@"
 .p2:
-    db "PAGE 2/5@"
+    db "PAGE 2/7@"
 .p3:
-    db "PAGE 3/5@"
+    db "PAGE 3/7@"
 .p4:
-    db "PAGE 4/5@"
+    db "PAGE 4/7@"
 .p5:
-    db "PAGE 5/5@"
+    db "PAGE 5/7@"
+.p6:
+    db "PAGE 6/7@"
+.p7:
+    db "PAGE 7/7@"
 
-; TEST-214: complex interaction matrix, not fifteen independent smoke tests.
-; $40..$4e map to menu slots 01..15. All fixture hooks are test-ROM-only.
-; $a5 = scenario setup active; $5a = battle fixture armed.
+; TEST-217: complex interaction matrix plus native Disable/Struggle edge tests.
+; $40..$54 map to menu slots 01..21. All fixture hooks are test-ROM-only.
+; $a5 = setup active; $5a = armed; $5c/$5d = Disable pre-state checks.
 TestSuiteImposter_StartScenario::
     ld a, [wTestSuitePhase]
     push af
@@ -191,6 +209,12 @@ TestSuiteImposter_StartScenario::
     cp $4b ; AUTO-BIDIR: real player switch to reserve Ditto
     jr z, .snorlaxLead
     cp $4e ; E-CHARGE baseline
+    jr z, .snorlaxLead
+    cp $52 ; one available player move is disabled
+    jr z, .snorlaxLead
+    cp $53 ; one enemy move is disabled
+    jr z, .snorlaxLead
+    cp $54 ; real Disable cast by player AFTER enemy Transform
     jr z, .snorlaxLead
     ld a, MEW
     jr .addFirst
@@ -225,6 +249,13 @@ TestSuiteImposter_StartScenario::
     ld a, [wPartyMon1Species]
     cp MEW
     jr nz, .snorlaxMoves
+    ld a, [wTestSuitePhase]
+    cp $4f ; P-DIS-CLEAR: Transform slot 1, old disabled Tackle slot 2
+    jr z, .playerDisableClearMoves
+    cp $50 ; E-DIS-CLEAR: target's copied moves are Splash / Tackle
+    jr z, .enemyDisableClearTargetMoves
+    cp $51 ; P-DIS-FAIL: failed Transform must preserve old Disable
+    jr z, .playerDisableClearMoves
     ld a, TRANSFORM
     ld [wPartyMon1Moves], a
     ld a, 10
@@ -238,6 +269,26 @@ TestSuiteImposter_StartScenario::
     ld a, 35
     ld [wPartyMon1PP + 2], a
     jp .setSpeed
+.playerDisableClearMoves
+    ld a, TRANSFORM
+    ld [wPartyMon1Moves], a
+    ld a, 10
+    ld [wPartyMon1PP], a
+    ld a, TACKLE
+    ld [wPartyMon1Moves + 1], a
+    ld a, 35
+    ld [wPartyMon1PP + 1], a
+    jp .setSpeed
+.enemyDisableClearTargetMoves
+    ld a, SPLASH
+    ld [wPartyMon1Moves], a
+    ld a, 40
+    ld [wPartyMon1PP], a
+    ld a, TACKLE
+    ld [wPartyMon1Moves + 1], a
+    ld a, 35
+    ld [wPartyMon1PP + 1], a
+    jp .setSpeed
 .snorlaxMoves
     ld a, SPLASH
     ld [wPartyMon1Moves], a
@@ -247,6 +298,35 @@ TestSuiteImposter_StartScenario::
     ld [wPartyMon1Moves + 1], a
     ld a, 35
     ld [wPartyMon1PP + 1], a
+    ld a, [wTestSuitePhase]
+    cp $52 ; only Tackle; the round-boundary hook disables this one slot
+    jr z, .soloPlayerTackle
+    cp $53 ; only Splash, so the opponent's Struggle is visible
+    jr z, .soloPlayerSplash
+    cp $54 ; real Disable AFTER enemy Transform; target copies both moves
+    jr z, .realDisablePlayerMoves
+    jr .regularSnorlaxMovesDone
+.soloPlayerTackle
+    ld a, TACKLE
+    ld [wPartyMon1Moves], a
+    ld a, 35
+    ld [wPartyMon1PP], a
+    xor a
+    ld [wPartyMon1Moves + 1], a
+    ld [wPartyMon1PP + 1], a
+    jp .setSpeed
+.soloPlayerSplash
+    xor a
+    ld [wPartyMon1Moves + 1], a
+    ld [wPartyMon1PP + 1], a
+    jp .setSpeed
+.realDisablePlayerMoves
+    ld a, DISABLE
+    ld [wPartyMon1Moves], a
+    ld a, 20
+    ld [wPartyMon1PP], a
+    jp .setSpeed
+.regularSnorlaxMovesDone
     ld a, [wTestSuitePhase]
     cp $41 ; player must start Fly; enemy Transform follows it
     jr nz, .notPlayerFly
@@ -322,6 +402,10 @@ TestSuiteImposter_StartScenario::
     jr z, .slowPlayer
     cp $4e ; E-CHARGE: enemy Transform acts before slow player Splash
     jr z, .slowPlayer
+    cp $50 ; E-DIS-CLEAR: enemy Transform acts before player Splash
+    jr z, .slowPlayer
+    cp $54 ; real Disable: enemy Transform acts before player Disable
+    jr z, .slowPlayer
     ld a, 250
     jr .storeSpeed
 .slowPlayer
@@ -375,6 +459,10 @@ TestSuiteImposter_StartScenario::
     jr z, .wildMew
     cp $4e ; E-CHARGE
     jr z, .wildMew
+    cp $51 ; P-DIS-FAIL: same-species target keeps Transform failing
+    jr z, .wildMew
+    cp $54 ; enemy Mew has only Transform before copying the player
+    jr z, .wildMew
     ld a, SNORLAX
     jr .arm
 .wildMew
@@ -414,7 +502,7 @@ TestSuiteImposter_WildEnemyReady::
     jp c, TestSuite_Disarm
     cp $4b ; $4b is the trainer fixture, not a wild battle
     jp z, TestSuite_Disarm
-    cp $4f ; valid wild scenes resume at $4c after the trainer slot
+    cp $55 ; valid wild scenes are $40..$54 except trainer fixture $4b
     jp nc, TestSuite_Disarm
     ld hl, wEnemyMonMoves
     ld b, NUM_MOVES
@@ -431,6 +519,18 @@ TestSuiteImposter_WildEnemyReady::
     dec b
     jr nz, .clearPP
     ld a, [wTestSuitePhase]
+    cp $4f ; P-DIS-CLEAR: target provides Splash / Tackle to copy
+    jp z, .disableTarget
+    cp $50 ; E-DIS-CLEAR: enemy Transform is slot 1, Tackle is slot 2
+    jp z, .disableEnemyTransform
+    cp $51 ; P-DIS-FAIL: same-species Mew target, Transform always fails
+    jp z, .disableTarget
+    cp $52 ; single disabled player Tackle; wild opponent only Splash
+    jp z, .soloEnemySplash
+    cp $53 ; single disabled enemy Tackle; player only Splash
+    jp z, .soloEnemyTackle
+    cp $54 ; native enemy Transform, then player casts real Disable
+    jp z, .enemyTransform
     cp $41 ; E-LATE-FLY
     jp z, .enemyTransform
     cp $43 ; E-LATE-DIG
@@ -479,6 +579,34 @@ TestSuiteImposter_WildEnemyReady::
     ld a, TRANSFORM
     ld b, 10
     jp .oneMove
+.disableTarget
+    ld a, SPLASH
+    ld [wEnemyMonMoves], a
+    ld a, 40
+    ld [wEnemyMonPP], a
+    ld a, TACKLE
+    ld [wEnemyMonMoves + 1], a
+    ld a, 35
+    ld [wEnemyMonPP + 1], a
+    jp .setEnemySpeed
+.soloEnemySplash
+    ld a, SPLASH
+    ld b, 40
+    jp .oneMove
+.soloEnemyTackle
+    ld a, TACKLE
+    ld b, 35
+    jp .oneMove
+.disableEnemyTransform
+    ld a, TRANSFORM
+    ld [wEnemyMonMoves], a
+    ld a, 10
+    ld [wEnemyMonPP], a
+    ld a, TACKLE
+    ld [wEnemyMonMoves + 1], a
+    ld a, 35
+    ld [wEnemyMonPP + 1], a
+    jp .setEnemySpeed
 .fly
     ld a, FLY
     ld b, 15
@@ -558,6 +686,10 @@ TestSuiteImposter_WildEnemyReady::
     jr z, .fastEnemy
     cp $4e ; E-CHARGE: enemy Transform acts before player
     jr z, .fastEnemy
+    cp $50 ; E-DIS-CLEAR: enemy Transform acts before player Splash
+    jr z, .fastEnemy
+    cp $54 ; native real-Disable scene: enemy first Transforms
+    jr z, .fastEnemy
     ld a, 1
     jr .storeSpeed
 .fastEnemy
@@ -617,18 +749,139 @@ TestSuiteImposter_TrainerPartyReady::
     ld [wTestSuiteGuard], a
     ret
 
-; For E-LATE-EXT, inject the active player's sidecar after battle data load,
-; before the enemy Transform copies it. This never touches Party/SRAM.
+; Round-boundary fixtures never touch Party/SRAM. Disable is injected directly
+; with a deterministic slot/timer so these cases test Transform state handling,
+; not Disable's random slot selection or accuracy.
 TestSuiteImposter_OnRoundBoundary::
     ld a, [wTestSuiteGuard]
     cp $5a
-    ret nz
+    jr z, .initialFixture
+    cp $5c
+    jp z, .playerPostTransform
+    cp $5d
+    jp z, .enemyPostTransform
+    ret
+.initialFixture
     ld a, [wTestSuitePhase]
+    cp $4f ; P-DIS-CLEAR: old player slot 2 is disabled before Transform
+    jr z, .seedPlayerOldDisable
+    cp $50 ; E-DIS-CLEAR: old enemy slot 2 is disabled before Transform
+    jr z, .seedEnemyOldDisable
+    cp $51 ; P-DIS-FAIL: failed Transform must not clear old Disable
+    jr z, .seedPlayerFailureDisable
+    cp $52 ; player has one Tackle, disabled: normal Struggle fallback
+    jp z, .seedPlayerSingleDisabled
+    cp $53 ; enemy has one Tackle, disabled: native enemy Struggle
+    jp z, .seedEnemySingleDisabled
     cp $45 ; E-LATE-EXT only
     ret nz
     ld a, [wExtendedBattleMoveFlags]
     or $0e ; player EXT01 is in slots 1, 2, 3
     ld [wExtendedBattleMoveFlags], a
+    ret
+.seedPlayerOldDisable
+    ld a, $25 ; slot 2, 5 turns
+    ld [wPlayerDisabledMove], a
+    ld a, TACKLE
+    ld [wPlayerDisabledMoveNumber], a
+    ld a, $5c ; armed for the post-Transform check
+    ld [wTestSuiteGuard], a
+    ret
+.seedEnemyOldDisable
+    ld a, $25 ; slot 2, 5 turns
+    ld [wEnemyDisabledMove], a
+    ld a, TACKLE
+    ld [wEnemyDisabledMoveNumber], a
+    ld a, $5d ; keep enemy follow-up fixture armed
+    ld [wTestSuiteGuard], a
+    ret
+.seedPlayerFailureDisable
+    ld a, $25 ; slot 2, 5 turns
+    ld [wPlayerDisabledMove], a
+    ld a, TACKLE
+    ld [wPlayerDisabledMoveNumber], a
+    ld a, $5b ; one-shot fixture; failure must leave this state alone
+    ld [wTestSuiteGuard], a
+    ret
+.playerPostTransform
+    ld a, [wPlayerBattleStatus3]
+    bit Transformed, a
+    ret z ; keep waiting if the player has not successfully transformed yet
+    ld a, [wPlayerDisabledMove]
+    and a
+    jr nz, .playerOldDisableRemained
+    ld a, [wPlayerDisabledMoveNumber]
+    and a
+    jr nz, .playerOldDisableRemained
+    ; Both fields must be zero; checking only the timer hid a stale move ID.
+    ; Correct clear: simulate a NEW Disable on slot 1 after Transform. Tackle
+    ; (slot 2) should remain usable. If old Disable survived, leave slot 2 set.
+    ld a, $15 ; slot 1, 5 turns
+    ld [wPlayerDisabledMove], a
+    ld a, SPLASH
+    ld [wPlayerDisabledMoveNumber], a
+    jr .playerDisableCheckDone
+.playerOldDisableRemained
+    ; Fail visibly if EITHER old field survived: force the old slot 2
+    ; restriction so the player's Tackle is visibly marked Disabled.
+    ; This is test-only instrumentation, never an official battle effect.
+    ld a, $25
+    ld [wPlayerDisabledMove], a
+    ld a, TACKLE
+    ld [wPlayerDisabledMoveNumber], a
+    jr .playerDisableCheckDone
+.playerDisableCheckDone
+    ld a, $5b ; fixture complete
+    ld [wTestSuiteGuard], a
+    ret
+.enemyPostTransform
+    ld a, [wEnemyBattleStatus3]
+    bit Transformed, a
+    ret z ; keep waiting if the enemy has not successfully transformed yet
+    ld a, [wEnemyDisabledMove]
+    and a
+    jr nz, .enemyOldDisableRemained
+    ld a, [wEnemyDisabledMoveNumber]
+    and a
+    jr nz, .enemyOldDisableRemained
+    ; Both fields must be zero; checking only the timer hid a stale move ID.
+    ; Correct clear: simulate a NEW Disable on copied slot 1 after Transform.
+    ; The enemy must now avoid Splash and choose Tackle in slot 2. If old Disable
+    ; survived, leave slot 2 disabled and the enemy will instead choose Splash.
+    ld a, $15 ; slot 1, 5 turns
+    ld [wEnemyDisabledMove], a
+    ld a, SPLASH
+    ld [wEnemyDisabledMoveNumber], a
+    jr .enemyDisableCheckDone
+.enemyOldDisableRemained
+    ; A partial clear must not be mistaken for a success by overwriting
+    ; its stale ID. Force old slot 2 Disabled to make the failure visible.
+    ld a, $25
+    ld [wEnemyDisabledMove], a
+    ld a, TACKLE
+    ld [wEnemyDisabledMoveNumber], a
+.enemyDisableCheckDone
+    ld a, $5b ; fixture complete
+    ld [wTestSuiteGuard], a
+    ret
+
+; 19/20: single normally packed move, explicitly disabled at round start.
+; This exercises the STOCK player/enemy Struggle fallback; no fake input.
+.seedPlayerSingleDisabled
+    ld a, $15 ; first and only move, 5 turns
+    ld [wPlayerDisabledMove], a
+    ld a, TACKLE
+    ld [wPlayerDisabledMoveNumber], a
+    ld a, $5b
+    ld [wTestSuiteGuard], a
+    ret
+.seedEnemySingleDisabled
+    ld a, $15
+    ld [wEnemyDisabledMove], a
+    ld a, TACKLE
+    ld [wEnemyDisabledMoveNumber], a
+    ld a, $5b
+    ld [wTestSuiteGuard], a
     ret
 
 ; AUTO-BIDIR forces the enemy's real switch only in its TrainerAI action slot.
