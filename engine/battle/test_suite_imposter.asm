@@ -1,9 +1,6 @@
-; IMP-T14: battle-test-build-only Imposter encounter fixtures.
-; The test-only suite changes only menu navigation/fixtures; the shared
-; Imposter animation is implemented in TransformEffect_, not here.
-; Scenario codes $40..$4e are one-shot NPC selections. $a5 arms the next
-; NPC-launched encounter; $5a means that encounter has been initialized.
-; This module is never included in the ordinary red/blue ROM.
+; TEST-214: complex paired manual-Transform interaction matrix plus entry-Imposter fixture.
+; The 15 slots are disposable test cases, not permanent regression assets.
+; Scene IDs $40..$4e; battle guard $a5 / $5a; test ROM only.
 
 TestSuiteImposter_ChooseScene::
     ld a, $e0 ; page 1/5 in transient menu-only phase
@@ -117,7 +114,7 @@ TestSuiteImposter_ChooseScene::
     ret
 
 TestSuiteImposterMenuTitle:
-    db "IMPOSTER TEST@"
+    db "TRANSFORM TEST@"
 TestSuiteImposterMenuChoices:
     dw .s01, .s02, .s03, .p1
     dw .s04, .s05, .s06, .p2
@@ -125,35 +122,35 @@ TestSuiteImposterMenuChoices:
     dw .s10, .s11, .s12, .p4
     dw .s13, .s14, .s15, .p5
 .s01:
-    db "01 P-LEAD@"
+    db "01 P-LATE-FLY@"
 .s02:
-    db "02 E-LEAD@"
+    db "02 E-LATE-FLY@"
 .s03:
-    db "03 SW/RE-ENTER@"
+    db "03 P-LATE-DIG@"
 .s04:
-    db "04 P-FAINT@"
+    db "04 E-LATE-DIG@"
 .s05:
-    db "05 E-SWITCH@"
+    db "05 P-LATE-EXT@"
 .s06:
-    db "06 FLY/RETRY@"
+    db "06 E-LATE-EXT@"
 .s07:
-    db "07 DIG@"
+    db "07 P-LATE-KO@"
 .s08:
-    db "08 DITTO/DITTO@"
+    db "08 E-LATE-KO@"
 .s09:
-    db "09 E-FAINT@"
+    db "09 P-LATE-SUB@"
 .s10:
-    db "10 DOUBLE KO@"
+    db "10 E-LATE-SUB@"
 .s11:
-    db "11 SUBSTITUTE@"
+    db "11 PP/RESTORE@"
 .s12:
-    db "12 DUAL/NO-RE@"
+    db "12 AUTO-BIDIR@"
 .s13:
-    db "13 ALOLA FORM@"
+    db "13 BOTH-FAIL@"
 .s14:
-    db "14 EXT MOVE@"
+    db "14 P-CHARGE@"
 .s15:
-    db "15 NATIVE AI@"
+    db "15 E-CHARGE@"
 .p1:
     db "PAGE 1/5@"
 .p2:
@@ -165,8 +162,9 @@ TestSuiteImposterMenuChoices:
 .p5:
     db "PAGE 5/5@"
 
-; The first party member is used for the initial send-out, so switch and
-; replacement cases add Ditto second. All edits are on disposable TEST saves.
+; TEST-214: complex interaction matrix, not fifteen independent smoke tests.
+; $40..$4e map to menu slots 01..15. All fixture hooks are test-ROM-only.
+; $a5 = scenario setup active; $5a = battle fixture armed.
 TestSuiteImposter_StartScenario::
     ld a, [wTestSuitePhase]
     push af
@@ -177,31 +175,30 @@ TestSuiteImposter_StartScenario::
     ld [hl], a
     ld a, 50
     ld [wCurEnemyLVL], a
-    ld a, $10 ; player's party, suppress nickname dialog
+    ld a, $10 ; party data, no nickname prompt
     ld [wMonDataLocation], a
     ld a, [wTestSuitePhase]
-    cp $49
-    jr z, .explosionLead
-    cp $40
-    jr z, .dittoLead
-    cp $47
-    jr z, .dittoLead
-    cp $4c
-    jr z, .dittoLead
-    cp $4d
-    jr z, .dittoLead
+    cp $41 ; E-LATE-FLY: player uses Fly before enemy Transform
+    jr z, .snorlaxLead
+    cp $43 ; E-LATE-DIG
+    jr z, .snorlaxLead
+    cp $45 ; E-LATE-EXT
+    jr z, .snorlaxLead
+    cp $47 ; E-LATE-KO
+    jr z, .snorlaxLead
+    cp $49 ; E-LATE-SUB
+    jr z, .snorlaxLead
+    cp $4b ; AUTO-BIDIR: real player switch to reserve Ditto
+    jr z, .snorlaxLead
+    cp $4e ; E-CHARGE baseline
+    jr z, .snorlaxLead
+    ld a, MEW
+    jr .addFirst
+.snorlaxLead
     ld a, SNORLAX
-    jr .addFirst
-.explosionLead
-    ld a, ELECTRODE
-    jr .addFirst
-.dittoLead
-    ld a, DITTO
 .addFirst
     ld [wcf91], a
     call AddPartyMon
-    ; Test-only AddPartyMon suppresses the naming prompt, so explicitly
-    ; replace the old save's nickname (as in the three legacy test groups).
     ld a, [wcf91]
     ld [wd11e], a
     call GetMonName
@@ -209,19 +206,39 @@ TestSuiteImposter_StartScenario::
     ld de, wPartyMonNicks
     ld bc, NAME_LENGTH
     call CopyData
-    ; Prepare Splash/Tackle for Snorlax scenarios and Explosion for double KO.
-    ld a, [wTestSuitePhase]
-    cp $49
-    jr nz, .notExplosion
-    ld a, SELFDESTRUCT
-    ld [wPartyMon1Moves], a
-    ld a, 5
-    ld [wPartyMon1PP], a
-    jr .selectReserve
-.notExplosion
+
+    ; Build explicit disposable test-party data; battle mechanics remain native.
+    ld hl, wPartyMon1Moves
+    ld b, NUM_MOVES
+    xor a
+.clearMoves
+    ld [hli], a
+    dec b
+    jr nz, .clearMoves
+    ld hl, wPartyMon1PP
+    ld b, NUM_MOVES
+    xor a
+.clearPP
+    ld [hli], a
+    dec b
+    jr nz, .clearPP
     ld a, [wPartyMon1Species]
-    cp SNORLAX
-    jr nz, .selectReserve
+    cp MEW
+    jr nz, .snorlaxMoves
+    ld a, TRANSFORM
+    ld [wPartyMon1Moves], a
+    ld a, 10
+    ld [wPartyMon1PP], a
+    ld a, SPLASH
+    ld [wPartyMon1Moves + 1], a
+    ld a, 40
+    ld [wPartyMon1PP + 1], a
+    ld a, TACKLE
+    ld [wPartyMon1Moves + 2], a
+    ld a, 35
+    ld [wPartyMon1PP + 2], a
+    jp .setSpeed
+.snorlaxMoves
     ld a, SPLASH
     ld [wPartyMon1Moves], a
     ld a, 40
@@ -230,23 +247,96 @@ TestSuiteImposter_StartScenario::
     ld [wPartyMon1Moves + 1], a
     ld a, 35
     ld [wPartyMon1PP + 1], a
-.selectReserve
     ld a, [wTestSuitePhase]
-    cp $42 ; SWITCH + RE-ENTER
-    jr z, .addDittoReserve
-    cp $43 ; P-FAINT
-    jr z, .addDittoReserve
-    cp $45 ; FLY
-    jr z, .addDittoReserve
-    cp $46 ; DIG
-    jr z, .addDittoReserve
-    cp $4b ; DUAL-SWITCH needs Ditto in reserve
-    jr z, .addDittoReserve
-    cp $49 ; DOUBLE KO
-    jr z, .addDittoReserve
-    cp $4a ; SUBSTITUTE
+    cp $41 ; player must start Fly; enemy Transform follows it
+    jr nz, .notPlayerFly
+    ld a, FLY
+    ld [wPartyMon1Moves + 1], a
+    ld a, 15
+    ld [wPartyMon1PP + 1], a
+.notPlayerFly
+    ld a, [wTestSuitePhase]
+    cp $43 ; player must start Dig; enemy Transform follows it
+    jr nz, .notPlayerDig
+    ld a, DIG
+    ld [wPartyMon1Moves + 1], a
+    ld a, 10
+    ld [wPartyMon1PP + 1], a
+.notPlayerDig
+    ld a, [wTestSuitePhase]
+    cp $45 ; E-LATE-EXT: player uses Splash; copied slot 1 is EXT01
+    jr nz, .notPlayerExt
+    ld a, 1 ; EXT ordinal 1 = Power Whip
+    ld [wPartyMon1Moves + 1], a
+    ld [wPartyMon1Moves + 2], a
+    ld [wPartyMon1Moves + 3], a
+    xor a ; only Splash is available to the player before Transform
+    ld [wPartyMon1PP + 1], a
+    ld [wPartyMon1PP + 2], a
+    ld [wPartyMon1PP + 3], a
+.notPlayerExt
+    ld a, [wTestSuitePhase]
+    cp $47 ; E-LATE-KO: Swift copied from slot 1, but not selected by player
+    jr nz, .notPlayerKO
+    ld a, SWIFT
+    ld [wPartyMon1Moves + 1], a
+    xor a
+    ld [wPartyMon1PP + 1], a
+    ld [wPartyMon1HP], a
+    inc a
+    ld [wPartyMon1HP + 1], a
+.notPlayerKO
+    ld a, [wTestSuitePhase]
+    cp $49 ; E-LATE-SUB: player creates Substitute, enemy copies Tackle
+    jr nz, .notPlayerSub
+    ld a, SUBSTITUTE
+    ld [wPartyMon1Moves], a
+    ld a, 10
+    ld [wPartyMon1PP], a
+    ld a, TACKLE
+    ld [wPartyMon1Moves + 1], a
+    xor a
+    ld [wPartyMon1PP + 1], a
+.notPlayerSub
+    ld a, [wTestSuitePhase]
+    cp $4e ; E-CHARGE: copy Fly even though target PP is 0
+    jr nz, .setSpeed
+    ld a, FLY
+    ld [wPartyMon1Moves + 1], a
+    xor a
+    ld [wPartyMon1PP + 1], a
+.setSpeed
+    ; Set active stats before LoadBattleMonFromParty reads them.
+    xor a
+    ld [wPartyMon1Speed], a
+    ld a, [wTestSuitePhase]
+    cp $40 ; player acts after the enemy starts Fly
+    jr z, .slowPlayer
+    cp $42 ; player acts after the enemy starts Dig
+    jr z, .slowPlayer
+    cp $44 ; player acts after the enemy's ordinary move before EXT copy
+    jr z, .slowPlayer
+    cp $46 ; player acts after the enemy Splash before KO follow-up
+    jr z, .slowPlayer
+    cp $48 ; player acts after the enemy Substitute
+    jr z, .slowPlayer
+    cp $4e ; E-CHARGE: enemy Transform acts before slow player Splash
+    jr z, .slowPlayer
+    ld a, 250
+    jr .storeSpeed
+.slowPlayer
+    ld a, 1
+.storeSpeed
+    ld [wPartyMon1Speed + 1], a
+    ld a, [wTestSuitePhase]
+    cp $4a ; PP/RESTORE: switch Mew out and back
+    jr z, .addSnorlaxReserve
+    cp $4b ; AUTO-BIDIR: player switches to Ditto in round one
     jr z, .addDittoReserve
     jr .finishParty
+.addSnorlaxReserve
+    ld a, SNORLAX
+    jr .addReserve
 .addDittoReserve
     ld a, DITTO
 .addReserve
@@ -264,65 +354,42 @@ TestSuiteImposter_StartScenario::
 .finishParty
     pop af
     ld [wTestSuitePhase], a
-    cp $43 ; player's active Snorlax starts at 1 HP
-    jr nz, .selectEnemy
-    xor a
-    ld [wPartyMon1HP], a
-    inc a
-    ld [wPartyMon1HP + 1], a
-.selectEnemy
-    ld a, [wTestSuitePhase]
-    cp $44 ; scripted AI-action switch, not a free boundary action
-    jp z, .trainer
-    cp $48 ; enemy Ditto replaces a fainted trainer lead
-    jp z, .trainer
-    cp $49 ; real double-KO trainer replacement
-    jp z, .trainer
-    cp $4b ; both sides switch in the same turn
-    jp z, .trainer
-    cp $4c ; regional trainer target
-    jp z, .trainer
-    cp $4e ; native randomized trainer AI switch
-    jp z, .trainer
+    cp $4b ; only AUTO-BIDIR uses the real trainer party/switch path
+    jr z, .trainer
     xor a
     ld [wIsTrainerBattle], a
-    ld a, SNORLAX
-    ld b, a
     ld a, [wTestSuitePhase]
+    cp $40
+    jr z, .wildPidgeot
     cp $41
-    jr z, .dittoEnemy
-    cp $47
-    jr z, .dittoEnemy
+    jr z, .wildMew
+    cp $43
+    jr z, .wildMew
     cp $45
-    jr z, .flyEnemy
-    cp $46
-    jr z, .digEnemy
-    ld a, b
+    jr z, .wildMew
+    cp $47
+    jr z, .wildMew
+    cp $49
+    jr z, .wildMew
+    cp $4c ; BOTH-FAIL
+    jr z, .wildMew
+    cp $4e ; E-CHARGE
+    jr z, .wildMew
+    ld a, SNORLAX
     jr .arm
-.dittoEnemy
-    ld a, DITTO
+.wildMew
+    ld a, MEW
     jr .arm
-.flyEnemy
+.wildPidgeot
     ld a, PIDGEOT
-    jr .arm
-.digEnemy
-    ld a, DUGTRIO
 .arm
     ld [wCurOpponent], a
     jr .ready
 .trainer
     ld a, 1
     ld [wIsTrainerBattle], a
-    ld [wTrainerNo], a ; party replaced by our test loader
-    ld a, [wTestSuitePhase]
-    cp $4e
-    jr z, .nativeAITrainer
+    ld [wTrainerNo], a
     ld a, 200 + YOUNGSTER
-    jr .setTrainer
-.nativeAITrainer
-    ; Juggler has the stock SwitchOutAI in both normal and hard modes.
-    ld a, 200 + JUGGLER
-.setTrainer
     ld [wCurOpponent], a
 .ready
     ld a, 50
@@ -331,7 +398,7 @@ TestSuiteImposter_StartScenario::
     ld [wTestSuiteGuard], a
     ret
 
-; The wild loader calls here AFTER the enemy's normal header/data are ready.
+; Wild enemy data is loaded before this hook. It changes only test fixtures.
 TestSuiteImposter_WildEnemyReady::
     ld a, [wTestSuiteGuard]
     cp $a5
@@ -345,75 +412,168 @@ TestSuiteImposter_WildEnemyReady::
     ld a, [wTestSuitePhase]
     cp $40
     jp c, TestSuite_Disarm
-    cp $4f
+    cp $4b ; $4b is the trainer fixture, not a wild battle
+    jp z, TestSuite_Disarm
+    cp $4f ; valid wild scenes resume at $4c after the trainer slot
     jp nc, TestSuite_Disarm
-    ; One move, deterministic intent; the engine still resolves its
-    ; actual charge, accuracy, damage and Substitute effects.
-    ld a, SPLASH
-    ld b, 40
+    ld hl, wEnemyMonMoves
+    ld b, NUM_MOVES
+    xor a
+.clearMoves
+    ld [hli], a
+    dec b
+    jr nz, .clearMoves
+    ld hl, wEnemyMonPP
+    ld b, NUM_MOVES
+    xor a
+.clearPP
+    ld [hli], a
+    dec b
+    jr nz, .clearPP
     ld a, [wTestSuitePhase]
-    cp $43
-    jr z, .tackle
-    cp $45
-    jr z, .fly
+    cp $41 ; E-LATE-FLY
+    jp z, .enemyTransform
+    cp $43 ; E-LATE-DIG
+    jp z, .enemyTransform
+    cp $45 ; E-LATE-EXT
+    jp z, .enemyTransform
+    cp $47 ; E-LATE-KO
+    jp z, .enemyTransform
+    cp $49 ; E-LATE-SUB
+    jp z, .enemyTransform
+    cp $4c ; BOTH-FAIL
+    jp z, .enemyTransform
+    cp $4e ; E-CHARGE baseline
+    jp z, .enemyTransform
+    cp $40
+    jp z, .fly
+    cp $42
+    jp z, .dig
+    cp $44
+    jp z, .extended
     cp $46
-    jr z, .dig
-    cp $4a
-    jr z, .substitute
+    jp z, .finishKO
+    cp $48
+    jp z, .substitute
     cp $4d
-    jr z, .extended
-    ld a, SPLASH
-    jr .store
-.tackle
+    jp z, .charge
+    ; PP/RESTORE: a four-slot target for copying and later party restoration.
     ld a, TACKLE
-    ld b, 35
-    jr .store
+    ld [wEnemyMonMoves], a
+    ld a, 35
+    ld [wEnemyMonPP], a
+    ld a, SPLASH
+    ld [wEnemyMonMoves + 1], a
+    ld a, 40
+    ld [wEnemyMonPP + 1], a
+    ld a, DOUBLE_KICK
+    ld [wEnemyMonMoves + 2], a
+    ld a, 30
+    ld [wEnemyMonPP + 2], a
+    ld a, SWIFT
+    ld [wEnemyMonMoves + 3], a
+    ld a, 20
+    ld [wEnemyMonPP + 3], a
+    jp .setEnemySpeed
+.enemyTransform
+    ld a, TRANSFORM
+    ld b, 10
+    jp .oneMove
 .fly
     ld a, FLY
     ld b, 15
-    jr .store
+    jp .oneMove
 .dig
     ld a, DIG
     ld b, 10
-    jr .store
+    jp .oneMove
+.charge
+    ; P-CHARGE: enemy can only act with Splash; Fly remains copyable in slot 1.
+    ld a, SPLASH
+    ld [wEnemyMonMoves], a
+    ld a, 40
+    ld [wEnemyMonPP], a
+    ld a, FLY
+    ld [wEnemyMonMoves + 1], a
+    jp .setEnemySpeed
+.finishKO
+    ; Swift is copied with fresh 5 PP but unavailable to the target AI itself.
+    xor a
+    ld [wEnemyMonHP], a
+    inc a
+    ld [wEnemyMonHP + 1], a
+    ld a, SPLASH
+    ld [wEnemyMonMoves], a
+    ld a, 40
+    ld [wEnemyMonPP], a
+    ld a, SWIFT
+    ld [wEnemyMonMoves + 1], a
+    xor a
+    ld [wEnemyMonPP + 1], a
+    jp .setEnemySpeed
 .substitute
+    ; Substitute must be the only move the enemy can select; Tackle is copied
+    ; with fresh PP so the player can use it after a late Transform.
     ld a, SUBSTITUTE
-    ld b, 10
-    jr .store
+    ld [wEnemyMonMoves], a
+    ld a, 10
+    ld [wEnemyMonPP], a
+    ld a, TACKLE
+    ld [wEnemyMonMoves + 1], a
+    xor a
+    ld [wEnemyMonPP + 1], a
+    jp .setEnemySpeed
 .extended
-    ; Ordinal 1 corresponds to EXT_MOVE_POWER_WHIP, NOT legacy POUND.
-    ; Sidecar high nibble belongs to the live enemy. CopyTransformBattleMoveMask
-    ; must copy this to the player when Ditto leads.
+    ; EXT01 = Power Whip in slot 1. Its PP is 0 on the target so it cannot
+    ; interfere with the first action, but Transform copies it with 5 PP.
     ld a, [wExtendedBattleMoveFlags]
     and $0f
-    or $10
+    or $20
     ld [wExtendedBattleMoveFlags], a
+    ld a, SPLASH
+    ld [wEnemyMonMoves], a
+    ld a, 40
+    ld [wEnemyMonPP], a
     ld a, 1
-    ld b, 5
-.store
+    ld [wEnemyMonMoves + 1], a
+    jp .setEnemySpeed
+.oneMove
     ld [wEnemyMonMoves], a
     ld a, b
     ld [wEnemyMonPP], a
+.setEnemySpeed
     xor a
-    ld [wEnemyMonMoves + 1], a
-    ld [wEnemyMonMoves + 2], a
-    ld [wEnemyMonMoves + 3], a
-    ld [wEnemyMonPP + 1], a
-    ld [wEnemyMonPP + 2], a
-    ld [wEnemyMonPP + 3], a
+    ld [wEnemyMonSpeed], a
+    ld [wEnemyMonUnmodifiedSpeed], a
+    ld a, [wTestSuitePhase]
+    cp $40 ; P-LATE-FLY: target must act before player's Transform
+    jr z, .fastEnemy
+    cp $42 ; P-LATE-DIG
+    jr z, .fastEnemy
+    cp $44 ; P-LATE-EXT
+    jr z, .fastEnemy
+    cp $46 ; P-LATE-KO
+    jr z, .fastEnemy
+    cp $48 ; P-LATE-SUB
+    jr z, .fastEnemy
+    cp $4e ; E-CHARGE: enemy Transform acts before player
+    jr z, .fastEnemy
+    ld a, 1
+    jr .storeSpeed
+.fastEnemy
+    ld a, 250
+.storeSpeed
+    ld [wEnemyMonSpeed + 1], a
+    ld [wEnemyMonUnmodifiedSpeed + 1], a
     ld a, $5a
     ld [wTestSuiteGuard], a
     ret
 
-; Test build swaps the existing ReadTrainer banked call for this wrapper;
-; there is no byte cost in the saturated battle core or trainer AI bank.
+; Keep the native trainer loader call size unchanged in its saturated bank.
 TestSuiteImposter_ReadTrainerWrapper::
     callab ReadTrainer
     jp TestSuiteImposter_TrainerPartyReady
 
-; Called AFTER the ordinary trainer party load.
-; Build actual enemy-party entries, so enemy switches and faint replacements
-; run through the native EnemySendOut paths (not synthetic battle-slot swaps).
 TestSuiteImposter_TrainerPartyReady::
     ld a, [wTestSuiteGuard]
     cp $a5
@@ -422,19 +582,9 @@ TestSuiteImposter_TrainerPartyReady::
     cp CELADON_MANSION_1
     ret nz
     ld a, [wTestSuitePhase]
-    cp $44
-    jr z, .build
-    cp $48
-    jr z, .build
-    cp $49
-    jr z, .build
-    cp $4b
-    jr z, .build
-    cp $4c
-    jr z, .build
-    cp $4e
+    cp $4b ; AUTO-BIDIR only
     ret nz
-.build
+    ; Real two-member trainer party: Pidgeot lead, Ditto reserve.
     ld hl, wEnemyPartyCount
     xor a
     ld [hli], a
@@ -444,32 +594,9 @@ TestSuiteImposter_TrainerPartyReady::
     ld [wCurEnemyLVL], a
     ld a, ENEMY_PARTY_DATA
     ld [wMonDataLocation], a
-    ld a, [wTestSuitePhase]
-    cp $4c
-    jr nz, .firstSnorlax
-    ld a, RATTATA
-    ld [wcf91], a
-    ld e, FORM_ALOLA
-    callba RegionalFormAddPartyMonWithForm
-    jp .ready
-.firstSnorlax
-    ld a, SNORLAX
+    ld a, PIDGEOT
     ld [wcf91], a
     call AddPartyMon
-    ld a, [wTestSuitePhase]
-    cp $44 ; 05: switch the intact lead to Ditto
-    jr z, .keepHealthy
-    cp $4b ; 12: player and enemy switch in the same turn
-    jr z, .keepHealthy
-    cp $4e ; 15: real AI decides whether to withdraw
-    jr z, .keepHealthy
-    ; 09 E-FAINT and 10 DOUBLE KO need a real 1-HP enemy lead.
-    xor a
-    ld [wEnemyMon1HP], a
-    inc a
-    ld [wEnemyMon1HP + 1], a
-.keepHealthy
-    ; Only Splash on the lead: its attack must not disturb the switch test.
     ld a, SPLASH
     ld [wEnemyMon1Moves], a
     ld a, 40
@@ -481,79 +608,30 @@ TestSuiteImposter_TrainerPartyReady::
     ld [wEnemyMon1PP + 1], a
     ld [wEnemyMon1PP + 2], a
     ld [wEnemyMon1PP + 3], a
-    ld a, [wTestSuitePhase]
-    cp $44 ; scripted switch into Ditto
-    jr z, .addDitto
-    cp $48 ; faint replacement is Ditto
-    jr z, .addDitto
-    cp $4e ; native Juggler AI switches into Ditto
-    jr z, .addDitto
-    ld a, PIDGEOT
-    jr .addSecond
-.addDitto
     ld a, DITTO
-.addSecond
     ld [wcf91], a
     ld a, ENEMY_PARTY_DATA
     ld [wMonDataLocation], a
     call AddPartyMon
-.ready
     ld a, $5a
     ld [wTestSuiteGuard], a
     ret
 
-; The script must NOT call SwitchEnemyMon at a round boundary. It may
-; mark a scenario as ready there; the actual switch must occupy the native
-; TrainerAI action slot so that the engine skips ExecuteEnemyMove this turn.
-TestSuiteImposter_AtRoundBoundary::
+; For E-LATE-EXT, inject the active player's sidecar after battle data load,
+; before the enemy Transform copies it. This never touches Party/SRAM.
+TestSuiteImposter_OnRoundBoundary::
     ld a, [wTestSuiteGuard]
     cp $5a
     ret nz
     ld a, [wTestSuitePhase]
-    cp $45 ; 06: Fly + failed entry + later manual Transform
-    jr z, .flyRound1
-    cp $95
-    jr z, .flyRound2
-    cp $96
-    jr z, .flyRound3
-    ld a, [wIsInBattle]
-    cp 2
+    cp $45 ; E-LATE-EXT only
     ret nz
-    ld a, [wTestSuitePhase]
-    cp $44 ; first round: no forced switch
-    jr z, .switchRound1
-    cp $74 ; second round: AI action must perform the switch
-    ret nz
-    ld a, $84
-    ld [wTestSuitePhase], a
-    ret
-.switchRound1
-    ld a, $74
-    ld [wTestSuitePhase], a
-    ret
-.flyRound1
-    ld a, $95
-    ld [wTestSuitePhase], a
-    ret
-.flyRound2
-    ld a, $96
-    ld [wTestSuitePhase], a
-    ret
-.flyRound3
-    ; After Fly resolves on round 2, make its next move Splash.
-    ; This keeps the actual midair failure, but gives manual Transform
-    ; a grounded target on the following turn without relying on speed RNG.
-    ld a, SPLASH
-    ld [wEnemyMonMoves], a
-    ld a, 40
-    ld [wEnemyMonPP], a
-    ld a, $97 ; consumed; never reset the move on later rounds
-    ld [wTestSuitePhase], a
+    ld a, [wExtendedBattleMoveFlags]
+    or $0e ; player EXT01 is in slots 1, 2, 3
+    ld [wExtendedBattleMoveFlags], a
     ret
 
-; Called ONLY at the two existing TrainerAI actions in MainInBattleLoop.
-; No third trainer action is added: a scripted switch returns Carry just like
-; native SwitchEnemyMon, so the caller skips the enemy's ordinary attack.
+; AUTO-BIDIR forces the enemy's real switch only in its TrainerAI action slot.
 TestSuiteImposter_TrainerAIWrapper::
     ld a, [wTestSuiteGuard]
     cp $5a
@@ -562,21 +640,12 @@ TestSuiteImposter_TrainerAIWrapper::
     cp 2
     jr nz, .native
     ld a, [wTestSuitePhase]
-    cp $84 ; 05: round 2, scripted enemy Ditto switch
-    jr z, .force
-    cp $4b ; 12: same-turn switch, only after the player's Ditto entered
+    cp $4b
     jr nz, .native
-    ld a, [wBattleMonSpecies2]
-    cp DITTO
-    jr nz, .native
-    ld a, $8b ; DUAL-SWITCH consumed
-    jr .doSwitch
-.force
-    ld a, $85 ; E-SWITCH consumed
-.doSwitch
-    ld [wTestSuitePhase], a ; one-shot BEFORE animations
+    ld a, $9e ; consume the fixture once, before the native switch
+    ld [wTestSuitePhase], a
     callab SwitchEnemyMon
-    scf ; explicitly consume the enemy action
+    scf ; enemy action is consumed, no follow-up attack
     ret
 .native
-    jpab TrainerAI ; preserves normal AI's Carry result
+    jpab TrainerAI

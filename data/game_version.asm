@@ -5,7 +5,7 @@ SECTION "Game Version", ROM0
 GameVersionText::
 IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
-	db "TEST-209@"
+	db "TEST-215@"
 ELSE
 	; Manual Transform now executes one copied move in the same action.
 	db "TRF-5.62.209@"

@@ -1,15 +1,76 @@
-# TEST-209（T15 菜单状态恢复）— 独立战斗测试构建（长期有效）
+# TEST-215 — Transform 双向专项测试矩阵（收口保留，未全部验收）
 
-> 本文记录**当前已保留的测试框架**，不是旧 T01～T08 补丁操作手册。正式提交以已确认的 `BATTLE-5.62.203` / HEAD `71d78a1a4a80949e4ec903212991a4726ed24f9c` 为基线。生产与测试编译共享正式战斗算法，但测试 ROM 额外注入受控输入；不可将测试结果解释为自然 RNG/存档流程的全面验证。
+> **当前有效菜单配置沿用 TEST-214 的 15 项，TEST-215 仅修第二次选招 B 键。** 正式游戏版本为 `TRF-5.62.209`，测试版为 `TEST-215`。用户已定点验证 B 在续招菜单无效、普通菜单 B 保持原行为；既有 214 视频覆盖部分复杂场景，但不能写为 15 项全部验收。原 TEST-214 编号仍有效。
+
+## 构建与入口
+
+- 正式构建：`make red`、`make blue`；独立测试构建：`make test-red`、`make test-blue`。
+- 菜单：玉虹大厦 1F → Pokey → `SELECT TEST` → `TRANSFORM TEST`。五页，每页 3 项；光标在 `PAGE x/5` 时用左右键翻页，A 不启动，B 逐级返回。
+- 选择场景会重建测试队伍并覆盖当前队伍；**必须使用独立测试 SAV**。
+- 本轮不由 AI 编译／链接 ROM，不生成 MAP。测试构建的敌方续招固定槽位只在 `BATTLE_TEST_BUILD` 生效，正式 ROM 仍按原随机非空槽规则。
+
+## TEST-215 验收证据与场景限制（2026-10-25）
+
+- **用户已确认**：手动 Transform 成功后第二次菜单按 B 不再出招；普通战斗选招菜单 B 仍能正常返回。这只确认键位主路径。
+- **TEST-214 视频已有证据**：01 `P-LATE-FLY` 的旧画面缓存问题在受测画面未再复现；02 `E-LATE-FLY`、06 `E-LATE-EXT`、10 `E-LATE-SUB` 主要流程可见；03 `P-LATE-DIG` 未覆盖完整 Dig 第二段。
+- **不能按原前提通过**：05 `P-LATE-EXT` 实际敌方先使用 Power Whip 而非 Splash；09 `P-LATE-SUB` 敌方先 Tackle 而非 Substitute。旧野生 AI 不按 PP=0 排除非空招式，原测试预设有误；07、14 有同类潜在风险。此收口只记录，不更改 AI 和场景代码。
+- **其他边界**：04、07、08、11、12、13、14、15 未在 `214.mp4` 中录到；旧测试结果可作为相应旧路径证据，但不能代替这些新版夹具的全部前提验证。PP 精确值、换人/KO 极端流程、Link 双机、正式/测试双构建与 MAP 另记待验。
+
+## 当前 15 项：复杂组合优先
+
+| 编号／菜单 | 自动配置与玩家操作 | 预期观察（不是已通过结论） |
+|---|---|---|
+| 01 `$40` `P-LATE-FLY` | 玩家慢速 Mew，对面高速 Pidgeot 仅有 Fly。第 1 回合选 Transform；第 2 回合再选 Transform；对面完成 Fly 后，Mew 后手变身成功，再选复制的 Fly。 | 第 1 回合对半无敌目标变身失败；第 2 回合目标落地后成功。选择／开始玩家自己的 Fly 时，**对方 Pidgeot 图像不得被错误抹掉**；只隐藏当前使用 Fly 的玩家，下一回合恢复并完成攻击。这是本轮图像缓存修复的首要复测项。 |
+| 02 `$41` `E-LATE-FLY` | 玩家高速 Snorlax，Fly 在第 2 槽；敌方慢速 Mew。第 1 回合玩家选 Fly；第 2 回合玩家自动完成 Fly 后，敌方 Mew 后手 Transform。 | 第 1 回合敌方对升空目标变身失败；第 2 回合敌方变身成功并固定执行复制的第 2 槽 Fly，下一回合完成攻击。检查敌方施招者隐藏／恢复及玩家图像不被误隐藏。 |
+| 03 `$42` `P-LATE-DIG` | 玩家慢速 Mew，对面高速 Snorlax 仅有 Dig。第 1 回合选 Transform；第 2 回合再次选 Transform。 | 第 1 回合对地下目标变身失败；目标完成 Dig、回到地面后，玩家后手变身成功并选择复制的 Dig；下一回合完成攻击。检查双方图像与回合状态。 |
+| 04 `$43` `E-LATE-DIG` | 玩家高速 Snorlax，Dig 在第 2 槽；敌方慢速 Mew。第 1 回合玩家选 Dig；第 2 回合玩家自动完成 Dig。 | 第 1 回合敌方变身失败；第 2 回合敌方后手变身成功，自动执行复制的第 2 槽 Dig，下一回合完成攻击。 |
+| 05 `$44` `P-LATE-EXT` | 高速预期敌方 Snorlax 先用 Splash（**目前不保证**）；慢速玩家 Mew 后手 Transform，选第 2 槽 Power Whip（EXT01）。 | 玩家菜单名称与执行身份必须是 Power Whip，不可退化成普通 Pound；复制招式 PP 正常。Power Whip 未命中属于命中概率，不单独判为身份复制失败。 |
+| 06 `$45` `E-LATE-EXT` | 高速玩家 Snorlax 先用 Splash；慢速敌方 Mew 后手 Transform，测试夹具在测试 ROM 中为玩家第 2 槽注入 EXT01 身份。 | 敌方同回合固定执行复制的第 2 槽 Power Whip。检查低 nibble → 敌方高 nibble 的身份传递、招式名称／效果与 PP；命中仍随机。 |
+| 07 `$46` `P-LATE-KO` | 高速敌方 Snorlax 预置 1 HP，预期先用 Splash（**未保证选招确定性**）；慢速玩家 Mew 后手 Transform，选择 Swift。 | 玩家在同一回合真正击倒敌方，昏厥／战斗结束流程正常，不出现多余敌方行动或卡住。 |
+| 08 `$47` `E-LATE-KO` | 高速玩家 Snorlax 预置 1 HP，先用 Splash；慢速敌方 Mew 后手 Transform。 | 敌方固定执行复制的第 2 槽 Swift，将玩家击倒，正常进入昏厥／败北流程。 |
+| 09 `$48` `P-LATE-SUB` | 高速敌方 Snorlax 先建立 Substitute；慢速玩家 Mew 后手 Transform，再选复制的 Tackle。敌方 Tackle 槽 PP 为 0（**旧 AI 仍可能选中该招，不能据此保证先用 Substitute；已观察到前置条件失败**）。 | 在目标已有 Substitute 时变身／播放动画／打开续招菜单，目标替身和双方本体图像保持正确；复制的 Tackle 可用。 |
+| 10 `$49` `E-LATE-SUB` | 高速玩家 Snorlax 先建立 Substitute；慢速敌方 Mew 后手 Transform。玩家的第 2 槽 Tackle 仅用于复制，原槽 PP 为 0。 | 敌方成功变身后自动固定执行复制的 Tackle；检查玩家替身、敌方动画和画面恢复，不得额外攻击。 |
+| 11 `$4A` `PP/RESTORE` | 玩家 Mew + 后备 Snorlax，对面普通四招 Snorlax。Transform 后选 Tackle，再换出并换回 Mew。 | Transform 根招只扣一次 PP；临时复制招式 PP 正常扣减；换出后恢复 Mew 的 Party 原始四招与 PP，不永久覆盖存档数据。 |
+| 12 `$4B` `AUTO-BIDIR` | 真实训练师队伍：玩家 Snorlax + 后备 Ditto；敌方 Pidgeot + 后备 Ditto。第 1 回合玩家主动换入 Ditto。 | 玩家 Ditto 自动复制 Pidgeot；敌方在自己的真实 TrainerAI 行动槽换入 Ditto，再复制玩家当前的 Pidgeot 形态。双方换人各消耗自己的行动，不得额外攻击。此项验证脚本换人路径，不代表原生 AI 随机换人决策。 |
+| 13 `$4C` `BOTH-FAIL` | 玩家与敌方均为 Mew，双方使用 Transform。 | 按项目同物种同运行时形态规则，双方变身均失败，不出现复制招式菜单或追加攻击。 |
+| 14 `$4D` `P-CHARGE` | 高速玩家 Mew Transform 对面 Snorlax；目标第 2 槽有 Fly（目标 PP=0），敌方预设先用 Splash（**PP=0 的其他非空招仍可能被原生野生 AI 选中；不得据此保证**）。 | 玩家选复制的 Fly，当回合开始蓄力，下一回合完成攻击。作为普通先手续招与 Fly 动画的对照项。 |
+| 15 `$4E` `E-CHARGE` | 慢速玩家 Snorlax，Fly 在第 2 槽且原 PP=0；高速敌方 Mew 使用 Transform。玩家选择 Splash。 | 敌方同回合自动执行复制的第 2 槽 Fly 并进入蓄力，下一回合完成攻击；检查敌方续招和图像恢复。 |
+
+## 运行时序与测试隔离约束
+
+- 01–04 是成对的 **“先进入半无敌 → 第一次后手 Transform 失败 → 下一回合完成 Fly/Dig → 后手 Transform 成功 → 续招再蓄力”** 场景。不要只测失败的一瞬间，也不要把后续成功误记为第一次失败错误。
+- 每次开测先看实际行动顺序是否与说明一致（P-LATE 场景应由敌方先行动，E-LATE 场景应由玩家先行动）。夹具写入速度值不等于已证明引擎最终采用该顺序；若顺序不符，先记录为测试前置条件未成立，不要直接把该局当作功能通过或失败。
+- 05/06、07/08、09/10 分别是 EXT、KO、Substitute 的玩家／敌方镜像。镜像通过不代表另一侧菜单／自动选槽路径通过。
+- 敌方固定复制槽只适用于 `$41/$43/$45/$47/$49/$4e` 且 `wTestSuiteGuard == $5a` 的测试场景；正式 ROM 继续原随机非空槽规则。
+- EXT 玩家侧身份在 `TestSuiteImposter_OnRoundBoundary` 注入，只针对 `$45`，发生在敌方 Transform 复制前；不得把该注入写入 Party/SRAM 或正式构建。
+- `$4b` 使用真实训练师后备队伍；敌方强制换入只在其 TrainerAI 行动槽执行，并通过 Carry 消耗敌方本回合行动，不在回合入口提前换人。
+- `SUBSTITUTE TEST` 原有 SPIKE／2-HIT／RECOIL 三项不改。测试队伍仅用于独立 TEST SAV；不改变正式招式伤害、Transform 判定、Imposter 自动入场、WRAM/SRAM 布局。
+
+## 历史优先测试顺序（不要求因版本号变化重录）
+
+1. **01 P-LATE-FLY**：完整录下两回合失败→落地→成功→选择 Fly，重点看比雕在玩家打开／关闭复制招式菜单及玩家起飞时是否一直正确显示。
+2. **02 E-LATE-FLY**：对称检查敌方后手成功续招及双方图像。
+3. **03/04 P/E-LATE-DIG**：确认 Dig 的半无敌失败、落地后成功、续招蓄力。
+4. **05/06 P/E-LATE-EXT**：先看菜单名称与招式身份，再看执行；未命中不能直接判身份失败。
+5. **09/10 P/E-LATE-SUB**：确认替身动画和第二次选招画面恢复。
+6. **07/08 KO、11 PP/RESTORE、12 AUTO-BIDIR**：分别核对结束战斗、Party 恢复与双方换人行动消费。
+7. **14/15 CHARGE**：作为先手基线；13 BOTH-FAIL 仅需快速确认失败路径。
+
+**验证状态：** `214.mp4` 记录 01/02/03/05/06/09/10；01 图像缓存回归、02/06/10 主路径可见；03 Dig 第二段证据不足；05/09 前置条件失效。TEST-215 用户确认 B 在第二选招菜单无效、普通菜单 B 仍正常。04/07/08/11/12/13/14/15 本轮未重录，不能凭缺席判失败或通过。正式及测试双 Red/Blue 构建、MAP/Bank 和 Link 仍无本环境验证。
+
+
+# TEST-211 历史场景归档（现由顶部 TEST-214 替代）
+
+> 本文记录**当前已保留的测试框架**，不是旧 T01～T08 补丁操作手册。本轮最新已确认的提交基线为 `TEST-209` / HEAD `eae3e430690fcc798083887b09d44e891717cead`；本次是未提交的 `TRF-5.62.208 / TEST-210` 开发候选之上的专项测试场景调整。生产与测试编译共享正式战斗算法，但测试 ROM 额外注入受控输入；不可将测试结果解释为自然 RNG/存档流程的全面验证。
 
 ## 构建与隔离
 
 | 本地命令 | 产物 | 版本显示 | 专用测试设施 |
 |---|---|---|---|
-| `make red` / `make blue` | `patches/rppred.gbc` / `patches/rppblue.gbc` | `IMP-5.62.207` | **不编入**测试 NPC、Hook、专用状态别名、测试 helper |
-| `make test-red` / `make test-blue` | `patches/rppredtest.gbc` / `patches/rppbluetest.gbc` | `TEST-209` | 启用测试 NPC、替身测试三场景、变身者测试十五场景和受控战斗输入 |
+| `make red` / `make blue` | `patches/rppred.gbc` / `patches/rppblue.gbc` | `TRF-5.62.208` | **不编入**测试 NPC、Hook、专用状态别名、测试 helper |
+| `make test-red` / `make test-blue` | `patches/rppredtest.gbc` / `patches/rppbluetest.gbc` | `TEST-211` | 启用测试 NPC、替身测试三场景、Transform 专项十五场景和受控战斗输入 |
 
-正式 ROM 的入场自动变身动画仍为 `IMP-5.62.207`；本轮测试 ROM 标记为 `TEST-209`。两者共用变身逻辑，但只有测试构建包含专用测试设施。
+正式 ROM 当前标记为 `TRF-5.62.208`；本轮测试 ROM 标记为 `TEST-211`。两者共用变身逻辑，但只有测试构建包含专用测试设施。
 
 只有显式传递 `-D BATTLE_TEST_BUILD` 才编入测试设施；四种目标使用各自的 `.o`，默认 `make`/`make red`/`make blue` 不包含它们。`test-red` / `test-blue` 必须与正式 ROM 使用**不同的 SAV 路径或独立模拟器存档目录**。测试组会覆盖**测试存档**的当前队伍，不会自动恢复，切勿共用主存档。
 
@@ -17,7 +78,7 @@
 
 - 两种构建都保留玉虹大厦 1F 原老太太及三个导师的原始功能和文本。
 - **仅测试 ROM** 增加 `SPRITE_POKEY` 测试 NPC。坐标为**用户手工定稿**的 `($00,$0A)`，朝左，保留原位，不要按过时的 `(5,5)` 恢复。
-- 与 Pokey 对话直接进入 `SELECT TEST`（没有 YES/NO），主菜单仅有 `SUBSTITUTE TEST` / `IMPOSTER TEST` 两大类。前者包含 SPIKE / 2-HIT / RECOIL，后者保留五页十五场景。IMPOSTER 进入时光标默认 `PAGE`，左右翻页保持 PAGE 光标；没有 PAGE 的菜单默认第一项。各子菜单 B 返回上一级，只有根目录 B 返回地图；未确定测试场景前不会覆盖队伍。菜单下方一直显示公共 ROM0 版本 `TEST-209`，不再用可能乱码的 TX_RAM。T15 退出时成对还原 `H_AUTOBGTRANSFERENABLED`、`hFlags_0xFFF6` 和 `wd730`，并在地图图块传输完成后才还原原 BG 开关值。
+- 与 Pokey 对话直接进入 `SELECT TEST`（没有 YES/NO），主菜单仅有 `SUBSTITUTE TEST` / `TRANSFORM TEST` 两大类。前者包含 SPIKE / 2-HIT / RECOIL，后者五页共十五场景，当前重配为手动 Transform 十项 + Imposter 回归五项。TRANSFORM TEST 进入时光标默认 `PAGE`，左右翻页保持 PAGE 光标；没有 PAGE 的菜单默认第一项。各子菜单 B 返回上一级，只有根目录 B 返回地图；未确定测试场景前不会覆盖队伍。菜单下方一直显示公共 ROM0 版本 `TEST-211`，不再用可能乱码的 TX_RAM。T15 退出时成对还原 `H_AUTOBGTRANSFERENABLED`、`hFlags_0xFFF6` 和 `wd730`，并在地图图块传输完成后才还原原 BG 开关值。
 - 在 `EndOfBattle` 后清零本轮测试激活状态；该清零**不**会恢复存档中的测试队伍。
 
 ## 已有三个测试组（原逻辑保留）
@@ -42,6 +103,36 @@
 - 选择菜单 A/B 两条退出路径必须严格保持栈平衡；`PrintText` 与菜单退出后，由 `DisableWaitingAfterTextDisplay` 关闭外层文字框，避免旧提示残留。
 - 旧版画框越界、A/B 栈损坏、残留文本、错误 `SPRITE_YOUNGSTER`、211T 的 15 击错误属于**历史测试夹具问题**；修复根因和边界记录见 `RPP_DEVELOPMENT_PITFALLS.md`，不要回滚旧实现。
 
+## TEST-211 — 历史 Pokey 场景（已由顶部 TEST-214 替代）
+
+用户要求测试夹具**随开发功能重新分配**，不把旧 15 场景当成不可修改的展品。本轮重用旧的 `$40..$4e` 场景编号、5 页 3 项 + PAGE 行、一次性 guard、野战装载与训练师后备队伍；主类别将 `IMPOSTER TEST` 更名为 `TRANSFORM TEST`。`SUBSTITUTE TEST` 三项原样保留。**正式游戏版 `TRF-5.62.208` 不修改**，测试版本 `TEST-210 → TEST-211`。
+
+所有手动变身玩家场景使用**50 级梦幻（MEW，非百变怪）**，预置 `Transform / Splash / Tackle`，避免百变怪入场特性在选招前提前变身。敌方手动 Transform 场景让野生梦幻**只会 Transform**，不必靠 AI 随机选中。测试组只改双方战斗初始数据；Transform 是否成功、弹出第二次选招、PP 扣减、Charge 和真正伤害仍走正式战斗引擎。
+
+| 编号／页面 | 场景 | 对手与操作 | 要观察的结果 |
+|---|---|---|---|
+| 01 / 1 | P-4 MOVES | 梦幻首发，对手卡比兽带 Tackle/Splash/Double Kick/Swift；选 Transform 后在四招菜单选 Tackle 或 Swift | **成功后当回合真正攻击**；复制四招菜单、回合顺序与 PP 正常 |
+| 02 / 1 | E-FOLLOW | 玩家卡比兽选 Splash；野生梦幻仅有 Transform | 敌方自动选复制来的非空招式，并在**同一次敌方行动**执行；不再随机等待敌方是否选 Transform |
+| 03 / 1 | FLY-FAIL | 玩家慢速梦幻用 Transform；敌方比雕只会 Fly | 比雕先升空，手动 Transform 失败、无第二次菜单／追加招式 |
+| 04 / 2 | DIG-FAIL | 同上，敌方三地鼠只会 Dig | 三地鼠先钻地，手动失败、不追加招式 |
+| 05 / 2 | SAME-FAIL | 双方都是梦幻；敌方只会 Splash，玩家用 Transform | 按项目“同物种同形态”规则失败，无追加出招 |
+| 06 / 2 | EXT-MOVE | 梦幻对卡比兽；敌方第一槽设扩展序号 1（Power Whip）及敌方身份位 | Transform 后菜单显示 Power Whip、选该槽实际执行（命中仍有 RNG）；不能错误显示普通 POUND |
+| 07 / 3 | CHARGE | 梦幻对只会 Fly 的比雕；梦幻预置高速度，首回合先用 Transform，第二菜单选 Fly | Transform 成功，同回合执行 Fly **第一段升空**，下一回合完成第二段；不是额外打一回合 |
+| 08 / 3 | FINISH-KO | 梦幻对仅 1 HP 的卡比兽（第一招 Swift）；变身后选 Swift | 在 Transform 后的**同一次行动中**由真实命中／伤害路径 KO；正常进入胜利结算 |
+| 09 / 3 | PP/RESTORE | 梦幻、后备卡比兽；Transform 后选 Tackle（或 Swift），再切到卡比兽并切回梦幻 | 复制招式初始 5 PP、子招扣一次；战斗外梦幻原 Transform PP 应只因根招扣一次，四招不被永久覆写 |
+| 10 / 4 | E-FAIL | 玩家梦幻选 Splash；对手梦幻只会 Transform | 敌方手动 Transform 因同物种同形态失败；不执行第二招 |
+| 11 / 4 | IMP-LEAD | 玩家百变怪首发，对手卡比兽 | 自动入场变身仍免费成功，**不会**因新增手动续招而额外攻击 |
+| 12 / 4 | IMP-SWITCH | 卡比兽首发、后备百变怪；玩家切百变怪上场 | 自动变身，不额外占用攻击行动；玩家正常换人仍占用回合 |
+| 13 / 5 | DOUBLE-KO | 玩家雷电球和后备百变怪、对手训练师 1HP 卡比兽和后备比雕；选 Selfdestruct | 双方同倒后百变怪只复制新比雕，不复制旧昏厥目标 |
+| 14 / 5 | ALOLA FORM | 玩家百变怪，对手训练师阿罗拉小拉达 | 入场自动复制正确地区形态与临时数据 |
+| 15 / 5 | E-SWITCH | 玩家卡比兽选 Splash 两回合，训练师第二回合于**自身 AI 行动槽**换入百变怪 | 敌方自动变身；换人占其行动，不会额外攻击；不依赖随机 AI 概率 |
+
+**操作：** 玉虹大厦 1F 的 Pokey → `SELECT TEST` → `TRANSFORM TEST`。进入五页子菜单时默认光标在 PAGE；移到所需场景按 A；PAGE 行仅左／右翻页（不循环）。子菜单 B 回到大类，顶层 B 才返回地图。启动任一场景会重建测试 SAV 的队伍，**不得共用主存档**。
+
+**最少建议测** 01、02、03、06、07、08、11（七项），优先确认根行动/子招、敌方对称、失败、EXT、蓄力、KO 和自动入场互不干扰。04/05/10 与 03 是不同的失败入口，09 核对 PP/离场恢复，12～15 是回归项；没有异常时不用逐项重录旧案例。
+
+**验证状态**：以上是源码设计／场景配置，不是已执行结果。本环境未编译 ROM／链接／模拟器/联机测试。已有旧 15 项的手机验收不能推算为重配后的 15 项通过。项目全局 Link 同步仍另列风险。
+
 ## T09 历史定版验收状态（见下方 T10 增量）
 
 - 用户已确认 T07 的三选一 A/B 与对话框行为正常；随后 T08/T09 实现独立 NPC，用户重新上传了自行调整站位的工作区。不能把确认早期菜单行为外推为 **204 正式/测试双构建、当前位置双模式**均已重新实测。
@@ -50,7 +141,7 @@
 
 ## IMP-5.62.206 / T10 — 旧版百变怪测试记录（已由下方 T11 场景表取代）
 
-以下记录 T10 原方案，**不再是当前可选菜单的准确配置；请以末尾 T11 场景表为准**。正常 ROM 仍显示 `IMP-5.62.206`，只有 `make test-red` / `make test-blue` 的独立测试 ROM 显示 `I-5.62.206-T10`。正式 ROM 的 NPC、菜单、队伍与战斗规则均不因新增测试设施改变。历史三个测试组 **TEST 01 SPIKE／TEST 02 2-HIT／TEST 03 RECOIL** 继续保留。
+以下记录 T10 原方案，**不再是当前可选菜单的准确配置；请以顶部 TEST-211 当前场景表为准**。正常 ROM 仍显示 `IMP-5.62.206`，只有 `make test-red` / `make test-blue` 的独立测试 ROM 显示 `I-5.62.206-T10`。正式 ROM 的 NPC、菜单、队伍与战斗规则均不因新增测试设施改变。历史三个测试组 **TEST 01 SPIKE／TEST 02 2-HIT／TEST 03 RECOIL** 继续保留。
 
 **测试入口**：玉虹大厦 1F `($00,$0A)` 的 Pokey → YES → 第四项 `IMPOSTER TEST` → 共五页，每页三项场景、第四项 `NEXT PAGE`（第五页为 `CANCEL`）。上／下移动、A 选择、B 退出；第一层 NO、任一层 B、最后一页 CANCEL 均应保持原队伍不变。选中场景后覆盖测试存档的队伍并启动战斗，返回地图后不会自动恢复。请务必与正式存档隔离。
 

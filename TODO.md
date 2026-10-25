@@ -1,3 +1,25 @@
+## TRF-5.62.209 / TEST-215 — 手动 Transform 续招验收收口（2026-10-25）
+
+- [x] 调用现有四招战斗选招菜单的专用 type 3，保留上下移动、A 确认、PP/Disable 过滤，只有本菜单的 B 无效；不改变 Mimic、普通战斗菜单及自动 Imposter。
+- [x] 更新测试版 `TEST-215` 与专项说明；正式可见版本更新为 `TRF-5.62.209`。
+- [x] 用户 TEST-215 定点反馈：成功手动 Transform 后第二次菜单按 B 无效，普通选招菜单 B 仍正常响应。
+- [ ] 正式/测试 Red/Blue 构建与新 Bank/MAP、Link 双端、Disable 槽位延续极端路径仍缺专项证据。
+- [ ] 独立问题：TEST-214 的 05/09 以及 07/14 零 PP 野生敌方随机选择问题本轮**未修**，不可视为已验收。
+
+## TEST-212 — Transform 双向场景重排（本轮重建候选，待用户验收）
+
+- [x] **按新交接规格重建源码候选**：从用户提供的 TEST-211 实际工作区重新配置十五项：先/后手玩家与敌方、双方失败、Fly/Dig、双向蓄力/KO/EXT、PP/RESTORE、同回合双向换入；测试版标识 `TEST-212`，正式 `TRF-5.62.208` 不变。旧未交付的九文件草稿并非本轮源码来源。
+- [x] **测试代码条件隔离**：测试固定敌方续招槽只在 `BATTLE_TEST_BUILD`，第 15 项敌方换人仅在 TrainerAI 行动槽执行并返回 Carry；第 13 项在回合边界准备玩家侧 EXT 身份。未修改 `engine/battle/core.asm` 与正式 Imposter 入口。
+- [ ] **本地用户构建/验收**：`red`/`blue`/`test-red`/`test-blue` 四目标、MAP/Bank，十五项场景（尤其后手、半无敌、蓄力、EXT、双换人），异常战斗退出及 Link 两端同步均待验证；不得把静态审查当作通过。
+- [ ] **正式收口**：只有用户明确确认功能和测试 ROM 后才准备提交／清理资料；保留准确 `eae3e430690fcc798083887b09d44e891717cead` HEAD 基线。
+
+## TEST-211 — 复用历史测试场景，专项验证手动 Transform（待用户验收）
+
+- [x] **已改测试夹具、未动正式战斗**：把原 IMP 场景 $40..$4E 改成 10 项手动 Transform + 5 项自动变身回归，`IMPOSTER TEST` 改名 `TRANSFORM TEST`，测试版升 `TEST-211`，正式仍 `TRF-5.62.208`。Substitute 3 项、两级菜单／PAGE 默认光标／B 逐级返回与 BG 恢复不变。
+- [x] **自动准备动作**：玩家使用非 Ditto 梦幻手动 Transform，敌方可固定只使用 Transform/Fly/Dig；另有四招、Power Whip 身份位、充能招式、1HP KO、原 PP/离场恢复，以及双方同种失败。15、13 等老夹具位置已按本轮目的替换或合并，旧场景不视为永久冻结。
+- [ ] **待用户最小验收**：优先 01 玩家同回合、02 敌方同回合、03 半无敌失败、06 EXT、07 两回合招式、08 KO、11 自动 Imposter 不追加攻击；若异常再测相邻边界。Red/Blue 链接/MAP 与联机仍待本地专项验证；AI 不编译 ROM/Commit/Push。
+- **精确基线**：已提交 `TEST-209` / HEAD `eae3e430690fcc798083887b09d44e891717cead`，当前上轮功能补丁 `TRF-5.62.208 / TEST-210` 尚未由用户报告 Git 提交。本轮增量以 **已应用 208/210 的源码状态** 为前置，全量从本次用户提供的 **TEST-209 HEAD** 累计 208 功能及 211 场景调整；两份二选一。
+
 ## TEST-209 / T15 — 变身者测试 UI 状态恢复（待设备验收）
 
 - [x] **T14 审查 FINDING-01 的源码修复**：`TestSuite_ChooseGroup` 保存原 `H_AUTOBGTRANSFERENABLED`，在统一的“取消/确定叶子场景”退出路径恢复地图、等待一帧完成 BG 传输，再恢复原值；原有 `wd730`、`hFlags_0xFFF6` 和选/取消 Carry 语义继续成对维护。
@@ -476,7 +498,7 @@ Status legend:
 - [?] **进化后立即学习指定招式的机制**：参考 Evolution Moves 的专用学习规则；当前未发现 `EVOLUTION_MOVE`／`LearnEvolutionMoves` 实现。需要先决定是否移植、哪些宝可梦使用，不把普通等级学招式表当作已完成。
 - [ ] **非战斗场景更换招式顺序**：战斗技能菜单已有 SELECT 交换位置与 PP；用户想增加类似金银版的非战斗招式排序交互，尚未完成。
 - [ ] **游戏大厅／对战设施的挥指大赛**：以后新增独立活动、参与入口与专用规则；目前没有相应赛事流程。
-- [ ] **Transform 手动招式同回合使用复制招式（仍未实现）**：Mimic、Mirror Move 的回合内复制与执行和普通 Transform 是不同机制；已有“已变身不能再次成功变身”的失败保护继续保留。IMP-5.62.206 已单独接入百变怪入场自动变身（待实测），不等于手动 Transform 能在出招的同一回合追加执行复制招式。
+- [~] **Transform 手动招式同回合使用复制招式（TRF-5.62.209，按已测范围收口）**：当前具备玩家选复制招式／敌方续执行主路径，TEST-214 视频记录了部分复杂镜像与画面缓存修复；TEST-215 用户确认 B 在第二菜单无效、普通菜单 B 正常。未完成全量 Red/Blue/MAP、Link 双端、精确 PP／全部异常边界，不把有限实测写成全面通过。
 - [ ] **TM 学习列表增加 Learned 标签**：在 Able／Not able 之外，对已经学过目标招式的宝可梦显示 Learned；当前只有已学判断，未见这一标签的完整显示分支。
 - [ ] **吼叫／瞬间移动／吹飞的对战效果与 -6 优先度**：保留已有多档优先度框架，补齐三招的 -6 行动顺序、训练师战效果及相关失败／换人边界。
 - [ ] **怪力推动岩石的局部视觉反馈**：目前岩石推动没有专用局部烟尘／闪烁演出；目标是仅被推动的那一块岩石播放反馈，不影响同场景其他岩石。
@@ -1041,3 +1063,33 @@ This section preserves the original author's roadmap. Status markers reflect the
 - [x] **风险复核**：动画脚本标志由原生 `MoveAnimation` 结束流程清理；双倒挂起标志有玩家新入场重置及敌方有效补位消费。没有静态证据要求改动正式战斗核心。
 - [ ] **工程验证边界**：本环境未执行 ROM 编译／链接或生成新 MAP；联机双端、异常战斗终止后的新战斗仍需有针对性时再专项检查。
 - **提交拆分**：测试 NPC、场景夹具、分页菜单、测试版本标签及相关说明独立作为第二笔 `test(battle)`；依赖第一笔 `feat(battle)` 的正式变身者运行时功能。
+
+
+## TRF-5.62.208 / TEST-210 — 手动 Transform 成功后同回合执行复制招式（开发待验）
+
+- [x] **续执行入口**：`TransformEffect` 改为短 `callab` 网关，浮动 ROMX 的 `TransformMoveFollowup_` 调用共享 `TransformEffect_`。成功结果通过 Carry 明确返回；网关按 Mimic 的 HL continuation 约定清理 `JumpMoveEffect` 临时返回地址，再进入 `CheckIfPlayerNeedsToChargeUp` / `CheckIfEnemyNeedsToChargeUp`，不重跑行动前状态检查，也不新建第二个回合。
+- [x] **玩家选招**：直接手动使用 Transform 并成功时，打开普通四招菜单；选择复制招式后重载当前招式数据，执行该招的正常 PP、EXT 身份、蓄力、命中、MoveDex 与伤害流程。该早期版本原本按 B 会错误执行高亮槽，已由 TEST-215/type 3 修复（按 B 无效）。Link 不能二次交换招式槽，因此沿用 Mimic 的同步方式，从复制槽随机选择。
+- [x] **敌方选招**：敌方直接手动使用 Transform 并成功后，从新复制的敌方四槽随机选取一个非空招式；若列表异常全空则回退 Struggle。失败、已经变身、同物种同运行时形态、Fly/Dig 半无敌目标均不进入续执行。
+- [x] **边界隔离**：只对根行动本身为 Transform 的成功分支追加复制招式；由 Mirror Move／Metronome 等派生出来的 Transform 不额外生成第二层行动。自动 Imposter 继续直接调用 `TransformEffect_`，不会弹出手动选招菜单或额外攻击。
+- [x] **版本／文档**：正式 ROM 标记 `TRF-5.62.208`，测试 ROM 标记 `TEST-210`。既有 3 项 Substitute + 15 项 Imposter 测试夹具不变；本轮不新增菜单场景。详细规则与最小测试步骤见 `docs/TRANSFORM_SAME_TURN_FOLLOWUP.md`。
+- [ ] **用户最小验收**：玩家侧成功 Transform 后选择复制招式并在同一行动中执行；敌方可用 Transform 的非 Ditto 使用者成功后会随机执行复制招式；Fly/Dig 失败不追加招式；确认 Transform PP 与复制招式临时 PP 各扣一次、扩展招式身份正确。Battle Animation ON/OFF、红蓝双构建、Link 双端同步与新 MAP 尚未由本环境验证。
+- **Git 基线**：本轮用户上传 ZIP 声明分支 `常规功能备份`、干净 HEAD `eae3e430690fcc798083887b09d44e891717cead` / `TEST-209`；本阶段只制作开发补丁，不 Commit/Push、不生成正式提交日志。
+
+## TEST-213 / TRF-5.62.208 — 手动 Transform 续招菜单旧屏缓存修补（待用户 ROM 验证）
+
+- [x] 已阅读用户 `06测三次.mp4`；录像显示在 06 后续回合玩家成功 Transform 并选择复制招式时，已落地的敌方精灵图像可能被异常抹除。这与 Fly/Dig 正常隐藏**施招者自身**的动画不同。
+- [x] 静态定位：回合开头 `SaveScreenTilesToBuffer1` 可能保存敌方升空后的隐藏图；原 `TransformMoveFollowup_` 第二选招菜单结束后无条件恢复旧 `wTileMapBackup`。候选改为第二选招前刷新当前画面缓存，不改 Fly/Dig 状态和战斗行动。
+- [x] 测试版本 `TEST-212 → TEST-213`；15 项测试矩阵不变，正式 `TRF-5.62.208` 不变。
+- [ ] TEST-213 ROM 尚未由项目所有者本地编译/验证。优先重跑 06 后续成功 Transform→Fly 并看比雕图像、01 普通续招、08 正常蓄力；必要时 07 的 Dig 恢复。检查正式/测试 Red/Blue MAP/Bank 和动画开关。
+- [ ] 本轮不代表 15 项均完成验收；不执行 Git Commit/Push。
+- **增量基线**：准确已交付 `TEST-212` 开发候选；累计全量基线：`eae3e430690fcc798083887b09d44e891717cead`（此前 ZIP 导出的 HEAD），不得互叠补丁。
+
+
+## TEST-214 / TRF-5.62.208 — 复杂交互优先的双向 Transform 矩阵（开发待验）
+
+- [x] **以实际 TEST-213 工作区为起点重排测试菜单**：保留 TEST-213 玩家第二次选招菜单前刷新画面缓存的修复；15 个槽位改为玩家／敌方后手 Fly、Dig、EXT、KO、Substitute 镜像，另保留 PP/RESTORE、真实双方同回合换入、双方同物种变身失败及两项先手蓄力对照。简单的先手／后手 Tackle 场景不再占用主菜单。
+- [x] **组合时序**：01–04 串联第一次对半无敌目标变身失败、下一回合目标完成 Fly/Dig、后手 Transform 成功并执行复制的 Fly/Dig；05/06、07/08、09/10 分别覆盖 EXT、KO、Substitute 的玩家／敌方镜像。
+- [x] **测试构建隔离**：敌方固定槽 1 仅用于 `$41/$43/$45/$47/$49/$4e`，并要求 `wTestSuiteGuard == $5a`；玩家 EXT 身份只在 `$45` 回合边界注入。正式 Transform／Imposter 算法、正式版本 `TRF-5.62.208`、Party/SRAM/WRAM 布局与原 3 项 Substitute 测试不改。测试标签为 `TEST-214`。
+- [ ] **最小验收顺序**：先测 01 的敌方图像缓存问题，再测 02 镜像；之后 03/04 Dig、05/06 EXT、09/10 Substitute；最后检查 07/08 KO、11 PP/RESTORE、12 AUTO-BIDIR、13 BOTH-FAIL 和 14/15 蓄力对照。所有结果仍待用户本地编译／实测。
+- **基线与交付**：用户上传 `TEST-213.zip` 的导出 HEAD 为 `eae3e430690fcc798083887b09d44e891717cead`，源码为包含未提交 Worktree Patch 的实际工作区。增量补丁以该 ZIP 的 TEST-213 工作区为前置；累计全量从该 HEAD 重建并包含此前工作区差异与 TEST-214。两份补丁只择一应用，不叠加。
+- **验证边界**：AI 不编译／链接 ROM、不生成 MAP、不执行 Git Commit/Push。静态源码与补丁回放不等于 TEST-214 游戏通过；15 项均未验收。

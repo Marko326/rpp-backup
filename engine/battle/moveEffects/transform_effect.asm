@@ -270,6 +270,14 @@ TransformMoveFollowup_::
 	jp nz, .enemyTurn
 	; Only a direct Transform action gets a follow-up. Mirror Move / Metronome
 	; keep their own root-action semantics instead of recursively adding an action.
+IF DEF(BATTLE_TEST_BUILD)
+	ld a, [wFlags_D733]
+	bit BIT_TEST_BATTLE, a
+	jr z, .playerRootFromHistory
+	ld a, [wTestBattlePlayerSelectedMove]
+	jr .playerRootReady
+.playerRootFromHistory
+ENDC
 	ld a, [wPlayerLastSelectedMove]
 .playerRootReady
 	cp TRANSFORM
@@ -292,6 +300,38 @@ TransformMoveFollowup_::
 	callab MoveSelectionMenu
 	call LoadScreenTilesFromBuffer1
 	callab DrawHUDsAndHPBars
+IF DEF(BATTLE_TEST_BUILD)
+	; GetCurrentMove intentionally reads this override in the test ROM.
+	ld a, [wFlags_D733]
+	bit BIT_TEST_BATTLE, a
+	jr z, .loadPlayerFollowup
+	; The test menu omits the ordinary cursor preview; read the chosen slot
+	; explicitly (only A confirms; B is not a watched key).
+	ld hl, wBattleMonMoves
+	ld b, NUM_MOVES
+	xor a
+.scanTestCopiedMoves
+	or [hl]
+	inc hl
+	dec b
+	jr nz, .scanTestCopiedMoves
+	and a
+	jr nz, .testCopiedMovesExist
+	ld a, STRUGGLE
+	ld [wPlayerSelectedMove], a
+	jr .saveTestFollowupMove
+.testCopiedMovesExist
+	ld a, [wPlayerMoveListIndex]
+	ld c, a
+	ld b, 0
+	ld hl, wBattleMonMoves
+	add hl, bc
+	ld a, [hl]
+	ld [wPlayerSelectedMove], a
+.saveTestFollowupMove
+	ld a, [wPlayerSelectedMove]
+	ld [wTestBattlePlayerSelectedMove], a
+ENDC
 .loadPlayerFollowup
 	callab GetCurrentMove
 	ld hl, CheckIfPlayerNeedsToChargeUp
@@ -304,6 +344,35 @@ TransformMoveFollowup_::
 	; Enemies and Link battles cannot open the local player's follow-up menu.
 	; TEST-214 fixes slot 1 only for controlled enemy-mirror cases. Official
 	; ROM and all other test cases retain Mimic's non-empty-slot PRNG rule.
+IF DEF(BATTLE_TEST_BUILD)
+	ld a, [wTestSuiteGuard]
+	cp $5a
+	jr nz, .randomCopiedSlot
+	ld a, [wTestSuitePhase]
+	cp $41 ; E-LATE-FLY: copied player slot 1 is Fly
+	jr z, .fixedEnemySlot
+	cp $43 ; E-LATE-DIG: copied player slot 1 is Dig
+	jr z, .fixedEnemySlot
+	cp $45 ; E-LATE-EXT: copied player slot 1 is EXT01 Power Whip
+	jr z, .fixedEnemySlot
+	cp $47 ; E-LATE-KO: copied player slot 1 is Swift
+	jr z, .fixedEnemySlot
+	cp $49 ; E-LATE-SUB: copied player slot 1 is Tackle
+	jr z, .fixedEnemySlot
+	cp $4e ; E-CHARGE baseline: copied player slot 1 is Fly
+	jr nz, .randomCopiedSlot
+.fixedEnemySlot
+	ld a, [H_WHOSETURN]
+	and a
+	jr z, .randomCopiedSlot
+	ld a, [wEnemyMonMoves + 1]
+	and a
+	jr z, .randomCopiedSlot ; malformed fixture -> native fallback
+	ld bc, $0401 ; four candidate moves; index 1 is selected
+	push bc ; .copiedMoveFound consumes one saved BC
+	jp .copiedMoveFound
+.randomCopiedSlot
+ENDC
 	; Pick a non-empty copied slot with the same far-PRNG convention as Mimic.
 	callab BattleRandomFar
 	ld a, e
@@ -342,7 +411,11 @@ TransformMoveFollowup_::
 	ld [wPlayerSelectedMove], a
 	xor a
 	ld [wPlayerMoveListIndex], a
-	jr .loadPlayerFollowup
+IF DEF(BATTLE_TEST_BUILD)
+	jp .loadPlayerFollowup ; test-only fixed-slot selection grows this routine
+ELSE
+	jr .loadPlayerFollowup ; original official-ROM encoding
+ENDC
 .enemyStruggle
 	ld a, STRUGGLE
 	ld [wEnemySelectedMove], a
@@ -359,7 +432,11 @@ TransformMoveFollowup_::
 	ld [wPlayerMoveListIndex], a
 	ld a, d
 	ld [wPlayerSelectedMove], a
+IF DEF(BATTLE_TEST_BUILD)
+	jp .loadPlayerFollowup
+ELSE
 	jr .loadPlayerFollowup
+ENDC
 .storeEnemyCopiedMove
 	ld a, c
 	ld [wEnemyMoveListIndex], a

@@ -145,7 +145,7 @@ TestSuiteMenuTitle:
 TestSuiteCategorySubstituteText:
     db "SUBSTITUTE TEST@"
 TestSuiteCategoryImposterText:
-    db "IMPOSTER TEST@"
+    db "TRANSFORM TEST@"
 
 TestSuite_ChooseSubstitute:
     xor a ; menus without PAGE begin at their first item
@@ -196,8 +196,8 @@ TestSuite_StartFromNpc::
     call TestSuite_Disarm
     call TestSuite_ChooseGroup
     ret c
-    ; Imposter tests use their own battle-ready teams and may use a trainer
-    ; battle. The existing three groups retain their original fixtures.
+    ; The Transform/Imposter submenu builds its own battle-ready teams.
+    ; The three Substitute cases still use their original fixtures.
     ld a, [wTestSuitePhase]
     cp $40
     jp nc, TestSuiteImposter_StartScenario
@@ -437,10 +437,11 @@ TestSuite_AfterSubstituteCreated::
     ret
 
 TestSuite_OnRoundBoundary::
-    ; Trainer Imposter scenarios use a real native enemy switch between rounds.
-    call TestSuiteImposter_AtRoundBoundary
+    ; First validate the battle test, then prepare TEST-214 E-LATE-EXT sidecar
+    ; before the enemy Transform. Trainer switch remains in its AI action slot.
     call TestSuite_IsActive
     ret nz
+    call TestSuiteImposter_OnRoundBoundary
     ld a, [wTestSuitePhase]
     cp $12
     jp z, .playerSpikeDoneCheck
