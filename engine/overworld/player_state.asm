@@ -148,10 +148,11 @@ IsPlayerFacingEdgeOfMap:
 	jr .resetCarry
 
 .facingUp
+	; Carry iff the player's Y coordinate is zero.  The indirect
+	; facing dispatcher observes Carry only; avoid two jumps in bank 3.
 	ld a, b
-	and a
-	jr z, .setCarry
-	jr .resetCarry
+	cp 1
+	ret
 
 .facingLeft
 	; GATE-5.62.157: Route31 gate opens west at (4,6)/(4,7),
@@ -188,10 +189,10 @@ IsPlayerFacingEdgeOfMap:
 	jr z, .setCarry
 	jr .resetCarry
 .normalLeftEdge
+	; Identical Carry result for x=0, with two fewer bytes in bank 3.
 	ld a, c
-	and a
-	jr z, .setCarry
-	jr .resetCarry
+	cp 1
+	ret
 
 .facingRight
 	ld a, [wCurMapWidth]
@@ -286,6 +287,11 @@ IsPlayerStandingOnDoorTileOrWarpTile:
 	callba IsPlayerStandingOnDoorTile
 	jr c, .done
 	ld a, [wCurMapTileset]
+	; Only tilesets 0..33 have WarpTileIDPointers entries.  Johto
+	; tilesets 34..39 use native directional collision-only exits;
+	; never read past the table or reinterpret floor data as pointers.
+	cp JOHTO_PARK_GATE ; first tileset without an entry (ID 34)
+	jr nc, .done      ; fail closed, preserving Carry=0
 	add a
 	ld c, a
 	ld b, $0

@@ -374,7 +374,8 @@ MapPaletteSets:
 ; OLIVINE-5.62.241 DEV: public-building palette sets are isolated from Kanto.
 ; JOHTO_OLIVINE_POKECENTER
 	db INDOOR_GRAY
-	db POKECENTER_TABLE
+	; Gold indoor RED for the entry carpet and every tile sharing this RED slot.
+	db INDOOR_RED
 	db INDOOR_GREEN
 	db INDOOR_BLUE
 	db INDOOR_YELLOW
