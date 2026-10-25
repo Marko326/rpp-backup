@@ -1,0 +1,169 @@
+{
+  "schema": "rpp-ilex-p17-gold-asset-manifest-v2",
+  "runtime_enabled": true,
+  "west_gate_enabled": true,
+  "phone_door_status": "PHONE_PENDING",
+  "phone_visual_status": "PHONE_PENDING",
+  "gold_source_sha256": {
+    "maps/IlexForest.blk": "27ac4ed6d260cb924da06a3bcec0ab29ed92df03f4ff3c2a37a5b73d2af9f234",
+    "data/tilesets/forest_metatiles.bin": "d08517b7cf0ca9e50ed1cbe8c513c9453c8c675d75e2911e633398b2e91a3c8d",
+    "gfx/tilesets/forest.png": "6b20d47d470d2972ec454282351aa85a1701d65fa043066e1a8372b263a05a48",
+    "gfx/tilesets/forest_palette_map.asm": "8418bd44ee6b7b76638bebd5a599cfe4ef78d714d52ca4fa31f5f09710b4a8a2",
+    "maps/IlexForest.asm": "e65d805e69f48a4090463dde8cd1edc4e5d3049899c1cf8c12fb1ff8e066de8a",
+    "maps/IlexForestAzaleaGate.asm": "d74b3c411146cc57fa64ecc281c823a8f1e6e10b4a9a6e4abd1893b4c2dd5f2d",
+    "data/tilesets/forest_collision.asm": "663d7e2d2853e0abdc27ad511d06cd4e505ffb94e20e0fe42952c7db30341ee1",
+    "data/maps/maps.asm": "c9d71dddc4ab4bb0ca9981c7483c74f0c620829f38788eb294888db3d26c0f72",
+    "data/maps/attributes.asm": "fa788a9d1a8200e1dd0f99a41e826a3bc307c04a9318905ea8eaa20df8f6cead",
+    "data/maps/blocks.asm": "7f7d207eaf3572b79162dc810e2ec3f6b0073143bf5ebe6df3fa40210a0c2e1d",
+    "constants/map_constants.asm": "b5ed162d1230385bbb61bcd324b590e2a151bf630d9e2f0d8a5c37766da89716",
+    "gfx/tilesets.asm": "4113949fdc2b71c0b35bdd3df0956bfb2612f0d253313dd436d6266e2c7cd179"
+  },
+  "mask_sha256": "8d219724d41f029d63ce99fa6dabf9ad048dfa6e6e7eb24d5a6345d8695ce7db",
+  "dimensions_blocks": [
+    15,
+    27
+  ],
+  "dimensions_cells": [
+    30,
+    54
+  ],
+  "metatile_count": 40,
+  "collision_count": 64,
+  "blocked_count": 1261,
+  "walkable_count": 359,
+  "walkable_roles": [
+    "FLOOR"
+  ],
+  "collision_roles": {
+    "CUT_TREE": 1,
+    "DOOR": 1,
+    "FLOOR": 351,
+    "HEADBUTT_TREE": 152,
+    "HOP_DOWN": 4,
+    "HOP_DOWN_LEFT": 1,
+    "HOP_DOWN_RIGHT": 1,
+    "HOP_LEFT": 2,
+    "WALL": 1073,
+    "WARP_CARPET_RIGHT": 2,
+    "WATER": 32
+  },
+  "unreviewed_ledge_count": 6,
+  "unreviewed_ledge_xy_dir": [
+    [
+      24,
+      2,
+      0,
+      1
+    ],
+    [
+      25,
+      2,
+      0,
+      1
+    ],
+    [
+      15,
+      14,
+      -1,
+      0
+    ],
+    [
+      15,
+      15,
+      -1,
+      0
+    ],
+    [
+      23,
+      22,
+      0,
+      1
+    ],
+    [
+      24,
+      22,
+      0,
+      1
+    ]
+  ],
+  "north_portal_blocked": [
+    1,
+    5
+  ],
+  "south_portal_blocked": [
+    [
+      3,
+      42
+    ],
+    [
+      3,
+      43
+    ]
+  ],
+  "event_inventory": {
+    "forest_warps": [
+      [
+        1,
+        5,
+        "ROUTE_34_ILEX_FOREST_GATE",
+        3
+      ],
+      [
+        3,
+        42,
+        "ILEX_FOREST_AZALEA_GATE",
+        1
+      ],
+      [
+        3,
+        43,
+        "ILEX_FOREST_AZALEA_GATE",
+        2
+      ]
+    ],
+    "gate_warps": [
+      [
+        0,
+        4,
+        "ILEX_FOREST",
+        2
+      ],
+      [
+        0,
+        5,
+        "ILEX_FOREST",
+        3
+      ],
+      [
+        9,
+        4,
+        "AZALEA_TOWN",
+        7
+      ],
+      [
+        9,
+        5,
+        "AZALEA_TOWN",
+        8
+      ]
+    ],
+    "forest_coord_events": 0,
+    "forest_bg_events": 5,
+    "forest_objects": 14,
+    "gate_objects": 2
+  },
+  "status": "RUNTIME_CODE_ENABLED_PHONE_PENDING",
+  "note": "Gold source hashes and the raw Gold layout/derived collision-mask fixtures are pinned. RPP runtime map, blockset, graphics, palette mapping, and collision hookup include reviewed native adaptations and are hash-pinned separately. Runtime source is registered, but ROM build/link and phone behavior are not certified by this manifest; phone door/visual acceptance remains pending.",
+  "gold_reference_fixtures": {
+    "maps/IlexForest.blk": "tools/fixtures/ilex_forest_gold/IlexForest.blk",
+    "gold_collision_mask": "tools/fixtures/ilex_forest_gold/blocked_mask.bin"
+  },
+  "runtime_asset_sha256": {
+    "maps/JohtoIlexForest.blk": "1e769cf75cec7e2236ea6a33c26b57d33d6f15bd51342d1edde48150d3e4ebb8",
+    "maps/JohtoIlexForest.blocked_mask.bin": "8d219724d41f029d63ce99fa6dabf9ad048dfa6e6e7eb24d5a6345d8695ce7db",
+    "gfx/blocksets/johto_ilex_forest.bst": "50636a7b656ee41686410b72da9d5ecfdd97fb1fd3dd296b7beb59e06d5c87ba",
+    "gfx/tilesets/johto_ilex_forest.png": "52291b743dbd8fd02cb326d1ce472626319e2c8cdd47a0981d27e0169be17433",
+    "color/tilesets/johto_ilex_forest.asm": "44d2218a4051dfbd6b382921a731f692b11e4e3e57dbaaca1abb3cd63f310832",
+    "engine/overworld/johto_ilex_forest_collision.asm": "b101233a056a312924be3066a332932fb195b9dc44923474da382c11a119d60d"
+  }
+}

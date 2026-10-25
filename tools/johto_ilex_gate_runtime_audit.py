@@ -4,6 +4,7 @@
 Keep the already accepted Azalea/east-gate source and render behavior intact.
 """
 from pathlib import Path
+import hashlib
 import json
 import re
 from johto_indoor_common import gold_warps, rpp_warps, ConversionError
@@ -201,8 +202,138 @@ FOREST_FILES = (
     'constants/region_map_constants.asm', 'data/johto_map_headers.asm',
     'data/tileset_headers.asm', 'engine/overworld/tileset_header.asm',
     'engine/overworld/player_state.asm', 'color/loadpalettes.asm', 'main.asm', 'Makefile',
+    'tools/johto_ilex_gold_staging_manifest.json',
+    'tools/johto_ilex_west_contract.json',
+    'tools/fixtures/ilex_forest_gold/IlexForest.blk',
+    'tools/fixtures/ilex_forest_gold/blocked_mask.bin',
 )
 FOREST_HOP_CELLS = ((22,2),(24,2),(25,2),(15,14),(15,15),(23,22),(24,22),(26,22))
+
+
+def audit_ilex_delivery_contracts(rpp: Path, gold: Path) -> list[str]:
+    """Validate tracked Ilex source contracts, fixtures, and runtime hashes."""
+    rpp, gold = Path(rpp), Path(gold)
+    problems = []
+
+    def expect(ok, detail):
+        if not ok:
+            problems.append(detail)
+
+    try:
+        manifest = json.loads((rpp/'tools/johto_ilex_gold_staging_manifest.json').read_text())
+        west = json.loads((rpp/'tools/johto_ilex_west_contract.json').read_text())
+    except (OSError, ValueError) as exc:
+        return ['Ilex delivery JSON invalid/unreadable: ' + str(exc)]
+
+    expect(manifest.get('schema') == 'rpp-ilex-p17-gold-asset-manifest-v2',
+           'Ilex Gold asset manifest schema/version stale')
+    expect(manifest.get('runtime_enabled') is True and
+           manifest.get('west_gate_enabled') is True and
+           manifest.get('status') == 'RUNTIME_CODE_ENABLED_PHONE_PENDING',
+           'Ilex Gold asset manifest runtime status does not match current source')
+    expect(manifest.get('phone_door_status') == 'PHONE_PENDING' and
+           manifest.get('phone_visual_status') == 'PHONE_PENDING',
+           'Ilex Gold asset manifest must not claim phone acceptance')
+
+    gold_hashes = manifest.get('gold_source_sha256')
+    expect(isinstance(gold_hashes, dict) and bool(gold_hashes),
+           'Ilex Gold source SHA-256 inventory missing')
+    if isinstance(gold_hashes, dict):
+        for rel, expected in gold_hashes.items():
+            source = gold / rel
+            actual = hashlib.sha256(source.read_bytes()).hexdigest() if source.is_file() else None
+            expect(actual == expected, 'Gold source SHA-256 mismatch: ' + rel)
+
+    fixtures = manifest.get('gold_reference_fixtures', {})
+    layout_fixture = rpp / fixtures.get('maps/IlexForest.blk', '')
+    mask_fixture = rpp / fixtures.get('gold_collision_mask', '')
+    gold_layout = gold / 'maps/IlexForest.blk'
+    expect(layout_fixture.is_file() and gold_layout.is_file() and
+           layout_fixture.read_bytes() == gold_layout.read_bytes(),
+           'Gold layout fixture differs from maps/IlexForest.blk')
+    expect(mask_fixture.is_file(), 'Gold collision mask fixture missing')
+    if mask_fixture.is_file():
+        actual_mask_hash = hashlib.sha256(mask_fixture.read_bytes()).hexdigest()
+        expect(actual_mask_hash == manifest.get('mask_sha256'),
+               'Gold collision mask fixture SHA-256 mismatch')
+        expect(len(mask_fixture.read_bytes()) == 216,
+               'Gold collision mask fixture must be 30x54 (216 bytes)')
+
+    expected_runtime_hashes = manifest.get('runtime_asset_sha256')
+    expect(isinstance(expected_runtime_hashes, dict) and bool(expected_runtime_hashes),
+           'Ilex runtime asset SHA-256 inventory missing')
+    if isinstance(expected_runtime_hashes, dict):
+        for rel, expected in expected_runtime_hashes.items():
+            target = rpp / rel
+            actual = hashlib.sha256(target.read_bytes()).hexdigest() if target.is_file() else None
+            expect(actual == expected, 'Ilex runtime asset SHA-256 mismatch: ' + rel)
+
+    expect(manifest.get('dimensions_blocks') == [15, 27] and
+           manifest.get('dimensions_cells') == [30, 54],
+           'Ilex Gold dimensions changed')
+    expect(manifest.get('blocked_count') == 1261 and
+           manifest.get('walkable_count') == 359,
+           'Ilex Gold collision counts stale; rerun the generic Gold pipeline')
+    expect(manifest.get('unreviewed_ledge_count') == 6 and
+           len(manifest.get('unreviewed_ledge_xy_dir', [])) == 6,
+           'Ilex unreviewed ledge inventory changed')
+    expect(manifest.get('north_portal_blocked') == [1, 5] and
+           manifest.get('south_portal_blocked') == [[3, 42], [3, 43]],
+           'Ilex portal coordinates/status changed')
+
+    expect(west.get('schema') == 'rpp-ilex-west-runtime-v3' and
+           west.get('phase') == 'SOUTH_GATE_RUNTIME_CODE_ENABLED_PHONE_PENDING' and
+           west.get('runtime_open') is True and
+           west.get('runtime_scope') == 'SOUTH_GATE_TWO_LANES_ONLY_NORTH_EXIT_SEALED',
+           'Ilex west contract runtime scope/status stale')
+    expect(west.get('rom_build_status') == 'NOT_VERIFIED' and
+           west.get('phone_acceptance') == 'PENDING' and
+           west.get('phone_door_status') == 'PHONE_PENDING' and
+           west.get('phone_visual_status') == 'PHONE_PENDING',
+           'Ilex west contract must not claim ROM or phone acceptance')
+    expect(west.get('gold_source_verified') is True,
+           'Ilex west contract must retain Gold source verification')
+
+    expected_lanes = [
+        {'gold_gate_warp': 1, 'gate_xy': [0, 4], 'gold_forest_warp': 2, 'forest_xy': [3, 42]},
+        {'gold_gate_warp': 2, 'gate_xy': [0, 5], 'gold_forest_warp': 3, 'forest_xy': [3, 43]},
+    ]
+    expect(west.get('west_lanes') == expected_lanes,
+           'Ilex west lane contract does not match Gold coordinates/warp indices')
+    expected_rpp_lanes = [
+        {'gate_map': 'JohtoIlexAzaleaGate', 'gate_warp_index_zero_based': 2,
+         'gate_xy': [0, 4], 'gate_direction': 'LEFT', 'forest_map': 'JohtoIlexForest',
+         'forest_warp_index_zero_based': 0, 'forest_xy': [3, 42], 'forest_direction': 'RIGHT'},
+        {'gate_map': 'JohtoIlexAzaleaGate', 'gate_warp_index_zero_based': 3,
+         'gate_xy': [0, 5], 'gate_direction': 'LEFT', 'forest_map': 'JohtoIlexForest',
+         'forest_warp_index_zero_based': 1, 'forest_xy': [3, 43], 'forest_direction': 'RIGHT'},
+    ]
+    expect(west.get('rpp_runtime_lanes') == expected_rpp_lanes,
+           'Ilex west lane contract does not match RPP runtime warp slots/directions')
+
+    try:
+        gold_forest = gold_warps(gold, 'IlexForest')
+        gold_gate = gold_warps(gold, 'IlexForestAzaleaGate')
+        rpp_forest = rpp_warps(rpp, 'JohtoIlexForest')
+        rpp_gate = rpp_warps(rpp, 'JohtoIlexAzaleaGate')
+        expect([(x['x'], x['y']) for x in gold_gate[:2]] == [(0, 4), (0, 5)],
+               'Gold west gate Warp source coordinates changed')
+        expect([(x['x'], x['y']) for x in gold_forest[1:3]] == [(3, 42), (3, 43)],
+               'Gold forest south Warp source coordinates changed')
+        expect([(x['x'], x['y']) for x in rpp_gate[2:4]] == [(0, 4), (0, 5)],
+               'RPP west gate Warp slots changed')
+        expect([(x['x'], x['y']) for x in rpp_forest[:2]] == [(3, 42), (3, 43)],
+               'RPP forest south Warp slots changed')
+        expect((gold_forest[0]['x'], gold_forest[0]['y']) == (1, 5) and
+               (rpp_forest[2]['x'], rpp_forest[2]['y']) == (1, 5),
+               'Gold/RPP north exit coordinate changed')
+    except (OSError, ValueError, IndexError, KeyError, ConversionError) as exc:
+        problems.append('Ilex Gold/RPP Warp contract could not be checked: ' + str(exc))
+
+    north = west.get('gold_north_exit', {})
+    expect(north.get('forest_xy') == [1, 5] and north.get('status') == 'SEALED',
+           'Ilex Route34 north exit must remain sealed')
+    return problems
 
 
 def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
@@ -216,6 +347,9 @@ def audit_ilex_forest(rpp: Path, gold: Path) -> list[str]:
     def require(ok, detail):
         if not ok:
             problems.append('P17 '+detail)
+
+    for detail in audit_ilex_delivery_contracts(rpp, gold):
+        require(False, detail)
 
     # P17 first phone run exposed a pre-existing 8-bit overflow at tileset 32.
     # Check engine runtime table indexing, not just valid-looking Gold outputs.

@@ -1,0 +1,81 @@
+{
+  "schema": "rpp-ilex-west-runtime-v3",
+  "phase": "SOUTH_GATE_RUNTIME_CODE_ENABLED_PHONE_PENDING",
+  "runtime_open": true,
+  "gold_source_verified": true,
+  "gatehouse_guide": "docs/JOHTO_GATEHOUSE_READ_FIRST.md",
+  "west_lanes": [
+    {
+      "gold_gate_warp": 1,
+      "gate_xy": [
+        0,
+        4
+      ],
+      "gold_forest_warp": 2,
+      "forest_xy": [
+        3,
+        42
+      ]
+    },
+    {
+      "gold_gate_warp": 2,
+      "gate_xy": [
+        0,
+        5
+      ],
+      "gold_forest_warp": 3,
+      "forest_xy": [
+        3,
+        43
+      ]
+    }
+  ],
+  "gold_north_exit": {
+    "forest_xy": [
+      1,
+      5
+    ],
+    "status": "SEALED"
+  },
+  "phone_door_status": "PHONE_PENDING",
+  "phone_visual_status": "PHONE_PENDING",
+  "runtime_reference": "JohtoRoute31VioletGate LEFT doorway",
+  "runtime_scope": "SOUTH_GATE_TWO_LANES_ONLY_NORTH_EXIT_SEALED",
+  "rom_build_status": "NOT_VERIFIED",
+  "phone_acceptance": "PENDING",
+  "note": "runtime_open means the south gate/forest two-lane path is wired in source. It does not mean ROM link or phone acceptance passed. The Route34 north exit remains sealed.",
+  "rpp_runtime_lanes": [
+    {
+      "gate_map": "JohtoIlexAzaleaGate",
+      "gate_warp_index_zero_based": 2,
+      "gate_xy": [
+        0,
+        4
+      ],
+      "gate_direction": "LEFT",
+      "forest_map": "JohtoIlexForest",
+      "forest_warp_index_zero_based": 0,
+      "forest_xy": [
+        3,
+        42
+      ],
+      "forest_direction": "RIGHT"
+    },
+    {
+      "gate_map": "JohtoIlexAzaleaGate",
+      "gate_warp_index_zero_based": 3,
+      "gate_xy": [
+        0,
+        5
+      ],
+      "gate_direction": "LEFT",
+      "forest_map": "JohtoIlexForest",
+      "forest_warp_index_zero_based": 1,
+      "forest_xy": [
+        3,
+        43
+      ],
+      "forest_direction": "RIGHT"
+    }
+  ]
+}

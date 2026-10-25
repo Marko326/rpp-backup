@@ -1,3 +1,10 @@
+## JSON-5.62.242｜桐树林合同 JSON 与原版素材 fixture 必须一起跟踪（2026-10-25）
+
+- `tools/johto_ilex_gold_staging_manifest.json` 与 `tools/johto_ilex_west_contract.json` 曾只存在于未提交 Worktree 补丁，最新源码 ZIP 没有这两个文件；单靠地图 ASM/PNG 仍能看见功能代码，却无法在新环境中重现 Gold 来源与双格门口合同。
+- 旧 staging manifest 的 fixture 路径不存在，碰撞数量与 mask SHA-256 已过期，而且把已接入源码写成 `runtime_enabled=false`。现在固定原版 Gold 405B `IlexForest.blk` 与通用转换器产生的 216B 碰撞遮罩 fixture，并分别记录 Gold 源文件和 RPP 运行时资源 SHA-256；图块、PNG、palette 经过原生适配，不能宣称逐字节等于 Gold。
+- `runtime_open=true` 只表示南侧两条门口通道已接入源码，不代表 ROM 已链接或手机已验收。必须同时保留 `ROM NOT_VERIFIED`、`PHONE_PENDING` 和 Route34 北口 `SEALED` 状态，禁止把静态审计误写成实机 PASS。
+- `johto_ilex_gate_runtime_audit.py` 已检查合同 JSON、来源哈希、fixture、运行时资源哈希、RPP Warp 槽位/方向和北口阻挡；负向测试必须证明错误哈希、错通道坐标和缺失 fixture 会失败。流水线生成的临时报告 JSON 不作为源文件提交。
+
 ## OLIV-5.62.241｜公共建筑批量导入与稳定版守护（2026-10-25）
 
 - **MART SoftReset 真正危险点**：源端 `data/mapObjects/JohtoOlivineCity.asm` 和 `engine/overworld/region_map_lookup.asm` 的目标 Warp 必须精确一致；曾因只改目标查询或盲目将稳定版 0→0 迁移为 1 而出现跳标题。当前已被用户确认可用的 0→0 路径作为实机兼容基准保护，不能仅凭 Gold 原始编号替换。未来变更需同时核对回程、Gold 目标和实机，而不是为绿测试捏造编号。

@@ -1,5 +1,6 @@
 """P17: real Gold source, generic pipeline, native double-door fault injection."""
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -267,6 +268,44 @@ class ForestRuntimeP17(unittest.TestCase):
                     'ld a, $2\n\tld [wSimulatedJoypadStatesIndex], a',
                     'ld a, $1\n\tld [wSimulatedJoypadStatesIndex], a',
                     'common ledge forced-input count must remain the same')
+
+
+    def test_delivery_contracts_pin_gold_fixtures_and_runtime_assets(self):
+        self.assertEqual(audit_ilex_forest(ROOT,GOLD), [])
+        manifest=json.loads((ROOT/'tools/johto_ilex_gold_staging_manifest.json').read_text())
+        west=json.loads((ROOT/'tools/johto_ilex_west_contract.json').read_text())
+        self.assertEqual(manifest['status'], 'RUNTIME_CODE_ENABLED_PHONE_PENDING')
+        self.assertEqual(manifest['blocked_count'], 1261)
+        self.assertEqual(manifest['walkable_count'], 359)
+        self.assertTrue((ROOT/manifest['gold_reference_fixtures']['maps/IlexForest.blk']).is_file())
+        self.assertTrue((ROOT/manifest['gold_reference_fixtures']['gold_collision_mask']).is_file())
+        self.assertEqual(west['runtime_scope'], 'SOUTH_GATE_TWO_LANES_ONLY_NORTH_EXIT_SEALED')
+        self.assertEqual(west['phone_acceptance'], 'PENDING')
+
+    def test_negative_stale_ilex_gold_hash_rejected(self):
+        self.mutate('tools/johto_ilex_gold_staging_manifest.json',
+                    '27ac4ed6d260cb924da06a3bcec0ab29ed92df03f4ff3c2a37a5b73d2af9f234',
+                    '0' * 64,
+                    'Gold source SHA-256 mismatch: maps/IlexForest.blk')
+
+    def test_negative_ilex_west_lane_contract_drift_rejected(self):
+        self.mutate('tools/johto_ilex_west_contract.json',
+                    '"gold_forest_warp": 2,\n      "forest_xy": [\n        3,\n        42',
+                    '"gold_forest_warp": 2,\n      "forest_xy": [\n        4,\n        42',
+                    'Ilex west lane contract does not match Gold coordinates/warp indices')
+
+    def test_negative_missing_ilex_gold_fixture_rejected(self):
+        with TemporaryDirectory() as td:
+            temp=Path(td)
+            for rel in FOREST_FILES:
+                target=temp/rel
+                target.parent.mkdir(parents=True,exist_ok=True)
+                shutil.copyfile(ROOT/rel,target)
+            (temp/'tools/fixtures/ilex_forest_gold/IlexForest.blk').unlink()
+            issues=audit_ilex_forest(temp,GOLD)
+            self.assertTrue(any('tools/fixtures/ilex_forest_gold/IlexForest.blk' in issue
+                                for issue in issues), issues)
+
 
 
 if __name__=='__main__':

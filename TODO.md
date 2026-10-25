@@ -1,3 +1,12 @@
+## JSON-5.62.242｜桐树林交付合同与 Gold 来源可复现性（2026-10-25）
+
+- [x] **基线**：金银分支导出 HEAD `db96620dedeec205327267eb11d5bd363ac4b748`，源码版本 `JSON-5.62.242`；本轮不改游戏运行逻辑和游戏版本号。
+- [x] **两个合同 JSON**：纳入 `tools/johto_ilex_gold_staging_manifest.json` 与 `tools/johto_ilex_west_contract.json`。前者记录 Gold 来源 SHA-256、运行时资源哈希及碰撞/跳崖清单；后者记录南门房—桐树林两条双格通道、RPP Warp 槽位/方向及 Route34 北口封闭状态。
+- [x] **补齐引用 fixture**：新增 `tools/fixtures/ilex_forest_gold/IlexForest.blk`（原版 Gold 405B 布局）和 `blocked_mask.bin`（通用 Gold 碰撞转换器生成的 216B 遮罩）。修正旧 manifest 的悬空 fixture 路径、过期 blocked/walkable 数和遮罩 SHA-256；运行时素材使用独立哈希，不再误称图块/PNG/调色是 Gold 原始字节直拷。
+- [x] **防丢失审计**：扩展既有 `tools/johto_ilex_gate_runtime_audit.py`，检查两个 JSON 的 schema/status、Gold 源文件哈希、fixture 内容/哈希、运行时素材哈希、双格 Warp 对应与北口封闭；新测试覆盖陈旧哈希、通道坐标错误及 fixture 缺失。
+- [x] **验证**：通用 `johto_rpp_pipeline.py --gold-map IlexForest` 退出码 0，结果 `OFFLINE_REVIEW_REQUIRED`；P16/P17 审计无错误；桐树林门房/森林/Gold 参考专项 **51/51 PASS**。未生成或提交流水线临时报告 JSON。
+- [ ] **未验证边界**：完整 `johto_map_release_audit.py` 本轮执行被工具环境 60 秒上限中断，不能记为 PASS；未编译/链接 ROM，未做手机实测。门口/视觉验收继续保持 `PHONE_PENDING`，静态检查不代表运行时实机通过。
+
 ## OLIV-5.62.241｜浅葱市公共建筑三图正式清理（2026-10-25）
 
 - [x] **基线**：金银分支 `7465e56938e8910fdd79ad6987559674c4860d6d`，从用户 2026-10-25 上传的 Worktree ZIP 所附 `current_worktree.patch` 反向重建，已与既有 3943 个 HEAD 文件逐字节对照；游戏显示版本 `OLIV-5.62.241` → `OLIV-5.62.241`。本轮清理以该 Worktree 叠加用户已实测的「稳定版餐厅门毯与 NPC 配色」DEV 补丁为增量起点，不能再叠加历史 MART 改 1 的补丁。
