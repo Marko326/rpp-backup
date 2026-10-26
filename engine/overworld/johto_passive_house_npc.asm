@@ -16,9 +16,20 @@ IsDeferredOlivineHouseNPC::
 	cp JOHTO_OLIVINE_CAFE_LOCAL_ID
 	jr z, .publicNPC
 	cp JOHTO_OLIVINE_MART_LOCAL_ID
-	jr nz, .notPassive
+	jr z, .publicNPC
+	cp JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID
+	jr z, .publicNPC
+	cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+	jr z, .publicNPC
+	cp JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID
+	jr z, .publicNPC
+	cp JOHTO_CHERRYGROVE_MART_LOCAL_ID
+	jr z, .publicNPC
+	cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+	jr z, .publicNPC
+	jr .notPassive
 .publicNPC
-	; These three public-building object tables have zero BG/sign entries.
+	; These three public-building and three Cherrygrove house object tables have zero BG/sign entries.
 	; A nonzero hSpriteIndexOrTextID therefore identifies a sprite, even
 	; after that sprite walks away from its original spawn coordinates.
 	; Keep normal face-player behavior from IsSpriteInFrontOfPlayer.

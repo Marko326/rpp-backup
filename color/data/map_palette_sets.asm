@@ -376,7 +376,7 @@ MapPaletteSets:
 	db INDOOR_GRAY
 	; Gold indoor RED for the entry carpet and every tile sharing this RED slot.
 	db INDOOR_RED
-	db INDOOR_GREEN
+	db JOHTO_GATE_GOLD_GREEN ; Gold indoor GREEN, shared with Cherrygrove PC
 	db INDOOR_BLUE
 	db INDOOR_YELLOW
 	db INDOOR_BROWN
@@ -386,10 +386,10 @@ MapPaletteSets:
 ; JOHTO_OLIVINE_MART
 	db INDOOR_GRAY
 	db INDOOR_RED
-	db INDOOR_GREEN
+	db JOHTO_GATE_GOLD_GREEN ; Gold indoor GREEN, shared with Cherrygrove MART
 	db INDOOR_BLUE
 	db INDOOR_YELLOW
-	db MART_FLOOR
+	db JOHTO_GATE_GOLD_BROWN ; Gold indoor BROWN, not legacy MART_FLOOR
 	db INDOOR_LIGHT_BLUE
 	db PC_POKEBALL_PAL
 

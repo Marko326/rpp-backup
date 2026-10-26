@@ -8,7 +8,13 @@ MarkTownVisitedAndLoadMissableObjects:
 	set EVENT_JOHTO_FLY_NEW_BARK % 8, [hl]
 .notJohtoNewBark
 	ld a, [wCurMap]
-	cp JOHTO_CHERRYGROVE_CITY
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .notJohtoCherrygrove
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .notJohtoCherrygrove
+	ld a, [wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
 	jr nz, .notJohtoCherrygrove
 	ld hl, wEventFlags + EVENT_JOHTO_FLY_CHERRYGROVE / 8
 	set EVENT_JOHTO_FLY_CHERRYGROVE % 8, [hl]

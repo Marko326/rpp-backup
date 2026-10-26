@@ -168,10 +168,19 @@ INCLUDE "engine/overworld/johto_indoor_furniture.asm"
 SECTION "Johto Passive House NPC", ROMX
 INCLUDE "engine/overworld/johto_passive_house_npc.asm"
 
+; A tiny bank-1 hook uses this relocatable Johto-only patrol-radius check.
+SECTION "Johto NPC Patrol Bounds", ROMX
+INCLUDE "engine/overworld/johto_npc_patrol_bounds.asm"
+
 SECTION "Johto Olivine House NPC Sprites", ROMX
 JohtoPokefanMSprite: INCBIN "gfx/sprites/johto_pokefan_m.2bpp"
 JohtoLassSprite:    INCBIN "gfx/sprites/johto_lass.2bpp"
 JohtoFishingGuruSprite: INCBIN "gfx/sprites/johto_fishing_guru.2bpp"
+JohtoBugCatcherSprite: INCBIN "gfx/sprites/johto_bug_catcher.2bpp"
+JohtoGrampsSprite: INCBIN "gfx/sprites/johto_gramps.2bpp"
+JohtoYoungsterSprite: INCBIN "gfx/sprites/johto_youngster.2bpp"
+JohtoGentlemanSprite: INCBIN "gfx/sprites/johto_gentleman.2bpp"
+JohtoCooltrainerMSprite: INCBIN "gfx/sprites/johto_cooltrainer_m.2bpp"
 
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
@@ -3550,6 +3559,28 @@ INCLUDE "data/mapHeaders/JohtoOlivineTimsHouse.asm"
 INCLUDE "data/mapObjects/JohtoOlivineTimsHouse.asm"
 INCLUDE "scripts/JohtoOlivineTimsHouse.asm"
 JohtoOlivineTimsHouseBlocks: INCBIN "maps/JohtoOlivineTimsHouse.blk"
+
+SECTION "Johto Cherrygrove Three Houses", ROMX, BANK[$47]
+INCLUDE "scripts/JohtoCherrygrovePassiveText.asm"
+INCLUDE "data/mapHeaders/JohtoCherrygroveGymSpeechHouse.asm"
+INCLUDE "data/mapObjects/JohtoCherrygroveGymSpeechHouse.asm"
+INCLUDE "scripts/JohtoCherrygroveGymSpeechHouse.asm"
+JohtoCherrygroveGymSpeechHouseBlocks: INCBIN "maps/JohtoCherrygroveGymSpeechHouse.blk"
+INCLUDE "data/mapHeaders/JohtoGuideGentsHouse.asm"
+INCLUDE "data/mapObjects/JohtoGuideGentsHouse.asm"
+INCLUDE "scripts/JohtoGuideGentsHouse.asm"
+JohtoGuideGentsHouseBlocks: INCBIN "maps/JohtoGuideGentsHouse.blk"
+INCLUDE "data/mapHeaders/JohtoCherrygroveEvolutionSpeechHouse.asm"
+INCLUDE "data/mapObjects/JohtoCherrygroveEvolutionSpeechHouse.asm"
+INCLUDE "scripts/JohtoCherrygroveEvolutionSpeechHouse.asm"
+JohtoCherrygroveEvolutionSpeechHouseBlocks: INCBIN "maps/JohtoCherrygroveEvolutionSpeechHouse.blk"
+
+; Gold Cherrygrove public interiors share already installed Olivine block maps.
+INCLUDE "scripts/JohtoCherrygrovePublicText.asm"
+INCLUDE "data/mapHeaders/JohtoCherrygroveMart.asm"
+INCLUDE "data/mapObjects/JohtoCherrygroveMart.asm"
+INCLUDE "data/mapHeaders/JohtoCherrygrovePokecenter1F.asm"
+INCLUDE "data/mapObjects/JohtoCherrygrovePokecenter1F.asm"
 
 ; GATE-5.62.240: Route29 / Route46 transition, no extra source maps opened.
 SECTION "Johto Route29 Route46 Gate Map", ROMX, BANK[$47]

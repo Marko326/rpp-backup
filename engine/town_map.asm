@@ -9,8 +9,6 @@ DisplayTownMap:
 	jr z, .johtoRegion
 	cp JOHTO_ROUTE_29
 	jr z, .johtoRegion
-	cp JOHTO_CHERRYGROVE_CITY
-	jr z, .johtoRegion
 	cp JOHTO_ROUTE_30
 	jr z, .johtoRegion
 	cp JOHTO_ROUTE_31
@@ -1162,7 +1160,7 @@ JohtoNativeTownMapEntries::
 	dw JohtoNewBarkName
 	db 116, 94
 	dw JohtoRoute29TownMapName
-	db 116, 94
+	db 116, 108
 	dw JohtoCherrygroveName
 	db 116, 94
 	dw JohtoRoute30TownMapName
@@ -1264,6 +1262,16 @@ JohtoNativeTownMapEntries::
 	dw JohtoOlivineName
 	db 76, 44 ; Olivine Mart uses city landmark26
 	dw JohtoOlivineName
+ db 116, 108 ; CherrygroveGymSpeechHouse inherits Cherrygrove
+ dw JohtoCherrygroveName
+ db 116, 108 ; GuideGentsHouse inherits Cherrygrove
+ dw JohtoCherrygroveName
+ db 116, 108 ; CherrygroveEvolutionSpeechHouse inherits Cherrygrove
+ dw JohtoCherrygroveName
+ db 116, 108 ; CherrygroveMart inherits Cherrygrove
+ dw JohtoCherrygroveName
+ db 116, 108 ; CherrygrovePokecenter1F inherits Cherrygrove
+ dw JohtoCherrygroveName
 JohtoNativeTownMapEntriesEnd::
 
 ASSERT JohtoNativeTownMapEntriesEnd - JohtoNativeTownMapEntries == NUM_JOHTO_MAPS * 4

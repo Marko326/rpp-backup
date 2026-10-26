@@ -171,6 +171,8 @@ LoadSpecialWarpData:
 	cp MAP_REGION_JOHTO
 	jr nz, .legacyFlyTileset
 	ld a, [wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr z, .johtoTileset
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jr z, .nativeModern
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
@@ -192,8 +194,6 @@ LoadSpecialWarpData:
 .legacyFlyTileset
 	ld a, [wCurMap]
 	cp NEW_BARK_TOWN
-	jr z, .johtoTileset
-	cp JOHTO_CHERRYGROVE_CITY
 	jr z, .johtoTileset
 	; FLY-5.62.156: Violet City also uses JOHTO after a direct Fly warp.
 	cp JOHTO_VIOLET_CITY

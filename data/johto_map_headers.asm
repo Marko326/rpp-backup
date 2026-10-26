@@ -9,7 +9,7 @@ JohtoStableIDToActiveSlot::
 	db $1b, $21, $24, $23, $22, $29, $ff, $2a, $2b, $2c, $2d, $ff, $ff, $ff, $ff, $ff ; $40-$4f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $50-$5f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $28, $25, $26, $27, $ff, $ff, $ff, $ff, $ff, $ff ; $60-$6f
-	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $70-$7f
+	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $37, $38, $34, $35, $36, $ff ; $70-$7f, Mart122/PC123/houses124..126
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $80-$8f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $90-$9f
 	db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff ; $a0-$af
@@ -49,7 +49,7 @@ GetJohtoActiveSlot::
 JohtoMapHeaderPointers::
 	dw NewBarkTown_h ; local $00 (legacy NEW_BARK_TOWN = $E7)
 	dw JohtoRoute29_h ; local $01 (legacy JOHTO_ROUTE_29 = $F4)
-	dw JohtoCherrygroveCity_h ; local $02 (legacy $CE)
+	dw JohtoCherrygroveCity_h ; local $02 (native $FC; old $CE slot is reserved)
 	dw JohtoRoute30_h ; local $03 (legacy $0B)
 	dw JohtoRoute31_h ; local $04 (legacy $F8)
 	dw JohtoVioletCity_h ; local $05 (legacy $F9)
@@ -99,6 +99,11 @@ JohtoMapHeaderPointers::
 	dw JohtoOlivinePokecenter1F_h ; stable ID $1e -> active slot 49
 	dw JohtoOlivineCafe_h ; stable ID $24 -> active slot 50
 	dw JohtoOlivineMart_h ; stable ID $25 -> active slot 51
+	dw JohtoCherrygroveGymSpeechHouse_h ; stable JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID -> slot 52
+	dw JohtoGuideGentsHouse_h ; stable JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID -> slot 53
+	dw JohtoCherrygroveEvolutionSpeechHouse_h ; stable JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID -> slot 54
+	dw JohtoCherrygroveMart_h ; stable local 122 -> slot 55
+	dw JohtoCherrygrovePokecenter1F_h ; stable local 123 -> slot 56
 JohtoMapHeaderPointersEnd::
 
 JohtoMapHeaderBanks::
@@ -154,16 +159,21 @@ JohtoMapHeaderBanks::
  db BANK(JohtoOlivinePokecenter1F_h)
  db BANK(JohtoOlivineCafe_h)
  db BANK(JohtoOlivineMart_h)
+ db BANK(JohtoCherrygroveGymSpeechHouse_h)
+ db BANK(JohtoGuideGentsHouse_h)
+ db BANK(JohtoCherrygroveEvolutionSpeechHouse_h)
+ db BANK(JohtoCherrygroveMart_h)
+ db BANK(JohtoCherrygrovePokecenter1F_h)
 JohtoMapHeaderBanksEnd::
 
-; REG-5.62.120: old-engine aliases for registered Johto local IDs.
-; Keep in local-ID order. New Johto physical maps use
-; REGION_NATIVE_MAP_SLOT (shared), never new sequential legacy IDs.
+; REG-5.62.120: runtime handle for each registered Johto local ID.
+; Cherrygrove local 2 is now native $FC; the adjacent routes retain their
+; current legacy handles. Never allocate new sequential legacy map IDs here.
 ; A table row equal to $ff remains INVALID, not a map.
 JohtoMapLegacyAliases::
 	db NEW_BARK_TOWN
 	db JOHTO_ROUTE_29
-	db JOHTO_CHERRYGROVE_CITY
+	db REGION_NATIVE_MAP_SLOT ; Cherrygrove City now uses local ID 2 directly
 	db JOHTO_ROUTE_30
 	db JOHTO_ROUTE_31
 	db JOHTO_VIOLET_CITY
@@ -213,6 +223,11 @@ JohtoMapLegacyAliases::
  db REGION_NATIVE_MAP_SLOT ; OlivinePokecenter1F
  db REGION_NATIVE_MAP_SLOT ; OlivineCafe
  db REGION_NATIVE_MAP_SLOT ; OlivineMart
+ db REGION_NATIVE_MAP_SLOT ; CherrygroveGymSpeechHouse
+ db REGION_NATIVE_MAP_SLOT ; GuideGentsHouse
+ db REGION_NATIVE_MAP_SLOT ; CherrygroveEvolutionSpeechHouse
+ db REGION_NATIVE_MAP_SLOT ; CherrygroveMart
+ db REGION_NATIVE_MAP_SLOT ; CherrygrovePokecenter1F
 JohtoMapLegacyAliasesEnd::
 
 ; Song map indexed by Johto local ID rather than the shared $FC slot.
@@ -270,6 +285,11 @@ JohtoNativeMapSongBanks::
  db MUSIC_POKECENTER, 0 ; Olivine Pokecenter uses its dedicated theme
  db MUSIC_CITIES1, 0 ; Olivine Cafe follows Olivine city
  db MUSIC_CITIES1, 0 ; Olivine Mart follows Olivine city
+ db MUSIC_CITIES1, 0 ; CherrygroveGymSpeechHouse, Gold CherrygroveCity theme family
+ db MUSIC_CITIES1, 0 ; GuideGentsHouse, Gold CherrygroveCity theme family
+ db MUSIC_CITIES1, 0 ; CherrygroveEvolutionSpeechHouse, Gold CherrygroveCity theme family
+ db MUSIC_CITIES1, 0 ; CherrygroveMart uses Cherrygrove city theme
+ db MUSIC_POKECENTER, 0 ; CherrygrovePokecenter1F uses PC theme
 JohtoNativeMapSongBanksEnd::
 
 GetJohtoNativeMapSong::

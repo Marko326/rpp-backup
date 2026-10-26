@@ -124,6 +124,22 @@ LoadMapSpriteTilePatterns:
 	jr z, .notFourTileSprite
 	cp a, SPRITE_JOHTO_FISHING_GURU_BLUE
 	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_BUG_CATCHER_RED
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_GRAMPS
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_YOUNGSTER_RED
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_LASS_GREEN
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_FISHER_RED
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_TEACHER_GREEN
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_GENTLEMAN
+	jr z, .notFourTileSprite
+	cp a, SPRITE_JOHTO_COOLTRAINER_M
+	jr z, .notFourTileSprite
 	cp a,SPRITE_BALL ; is it a 4-tile sprite?
 	jr c,.notFourTileSprite
 	pop af
@@ -284,12 +300,10 @@ ReadSpriteSheetData:
 ; Loads sprite set for outside maps (cities and routes) and sets VRAM slots.
 ; sets carry if the map is a city or route, unsets carry if not
 InitOutsideMapSprites:
-	; FIX-5.62.141: Johto's legacy aliases are not contiguous with the
-	; Kanto outdoor IDs (New Bark=$E7, Route 29=$F4, Cherrygrove=$CE,
-	; Route 30=$0B). Use tileset identity to choose ONE shared outdoor
-	; sprite sheet before the old Kanto map-ID lookup. Connected-map
-	; transitions run InitMapSprites with LCD on: keeping one sprite set
-	; prevents unsafe per-map graphics writes and stale VRAM slots.
+	; FIX-5.62.141: the remaining early Johto legacy aliases are not
+	; contiguous with Kanto outdoor IDs. Cherrygrove is now $FC/local 2;
+	; tileset identity still selects ONE shared Johto outdoor sprite sheet.
+	; Connected-map transitions keep one sprite set to avoid stale VRAM slots.
 	ld a, [wCurMapTileset]
 	cp JOHTO
 	jr z, .johtoSprites

@@ -3,8 +3,9 @@
 DEF MAP_REGION_KANTO EQU 0
 DEF MAP_REGION_JOHTO EQU 1
 
-; Registered Johto maps use local IDs with distinct old-engine aliases.
-; NEW_BARK_TOWN ($E7) and JOHTO_ROUTE_29 ($F4) are compatibility aliases.
+; Stable local IDs are independent of legacy handles. Cherrygrove (local 2)
+; is now native $FC; New Bark, Route29, Route30, Route31, Violet, the Violet
+; gate, and Route32 keep their existing legacy handles until their own migration.
 DEF JOHTO_NEW_BARK_LOCAL_ID EQU 0
 DEF JOHTO_ROUTE_29_LOCAL_ID EQU 1
 DEF JOHTO_CHERRYGROVE_LOCAL_ID EQU 2
@@ -32,18 +33,19 @@ DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
 INCLUDE "constants/johto_fixed_map_ids.asm"
 
 ; Compact row count; not the highest stable ID or frozen roster size.
-DEF NUM_JOHTO_MAPS EQU 52
+DEF NUM_JOHTO_MAPS EQU 57
 DEF NUM_JOHTO_ACTIVE_MAPS EQU NUM_JOHTO_MAPS
 DEF JOHTO_STABLE_ID_TABLE_SIZE EQU 256
 DEF JOHTO_INVALID_ACTIVE_SLOT EQU $ff
 
-; Native Johto local IDs >= 8 share one runtime compatibility handle.
-; They must never consume more legacy bytes or reuse an old Kanto map ID.
+; Native Johto maps use the shared runtime handle $FC whenever their alias
+; row says REGION_NATIVE_MAP_SLOT. Cherrygrove local 2 is the first migrated
+; early map; other early locals retain their existing IDs until separately migrated.
 ASSERT REGION_NATIVE_MAP_SLOT == $fc
 ; FLY-5.62.196: Fly selector only; $FC is a shared native map handle.
-; P19-5.62.216: selector bytes are fly-menu-only identifiers. The $FE value
-; already used by warp records is safe here only because TryLoadSpecialFlyWarpData
-; resolves it to ($FC, Johto local 15) before the ordinary warp executor.
+; P19-5.62.216: selector bytes are Fly-menu-only identifiers. $FE is shared
+; by native Fly destinations; wJohtoFlySelectedLocalID identifies the actual map
+; before the ordinary warp executor receives the shared $FC handle.
 DEF JOHTO_AZALEA_FLY_SELECTOR EQU $fd
 DEF JOHTO_GOLDENROD_FLY_SELECTOR EQU $fe
 ASSERT JOHTO_AZALEA_FLY_SELECTOR == REGION_NATIVE_MAP_SLOT + 1
@@ -102,6 +104,8 @@ DEF JOHTO_OLIVINE_CAFE_WIDTH EQU 4
 DEF JOHTO_OLIVINE_CAFE_HEIGHT EQU 4
 DEF JOHTO_OLIVINE_MART_WIDTH EQU 6
 DEF JOHTO_OLIVINE_MART_HEIGHT EQU 4
+DEF JOHTO_CHERRYGROVE_HOUSE_WIDTH EQU 4
+DEF JOHTO_CHERRYGROVE_HOUSE_HEIGHT EQU 4
 DEF JOHTO_ROUTE_40_WIDTH EQU 10
 DEF JOHTO_ROUTE_40_HEIGHT EQU 18
 DEF JOHTO_ROUTE_41_WIDTH EQU 25

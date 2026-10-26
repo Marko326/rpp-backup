@@ -1,0 +1,2 @@
+JohtoGuideGentsHouseTextPointers:
+ dw JohtoCherrygrovePassiveNoText

@@ -803,6 +803,22 @@ SpritePaletteAssignments: ; Characters on the overworld
 	db PAL_OW_BLUE
 	; 0x6e: SPRITE_JOHTO_FISHING_GURU_BLUE (same Gold sheet, blue palette)
 	db PAL_OW_BLUE
+	; SPRITE_JOHTO_BUG_CATCHER_RED: Gold Cherrygrove bug_catcher
+	db PAL_OW_RED
+	; SPRITE_JOHTO_GRAMPS: Gold Cherrygrove gramps
+	db PAL_OW_BROWN
+	; SPRITE_JOHTO_YOUNGSTER_RED: Gold Cherrygrove youngster
+	db PAL_OW_RED
+	; SPRITE_JOHTO_LASS_GREEN: Gold EvolutionSpeechHouse lass
+	db PAL_OW_GREEN
+	; SPRITE_JOHTO_FISHER_RED: CherrygrovePokecenter1F Gold PAL_NPC_RED
+	db PAL_OW_RED
+	; SPRITE_JOHTO_TEACHER_GREEN: CherrygrovePokecenter1F Gold PAL_NPC_GREEN
+	db PAL_OW_GREEN
+	; SPRITE_JOHTO_GENTLEMAN: CherrygrovePokecenter1F Gold default blue
+	db PAL_OW_BLUE
+	; SPRITE_JOHTO_COOLTRAINER_M: CherrygroveMart Gold default blue
+	db PAL_OW_BLUE
 
 
 AnimationTileset1Palettes:

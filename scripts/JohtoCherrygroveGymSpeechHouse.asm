@@ -1,0 +1,3 @@
+JohtoCherrygroveGymSpeechHouseTextPointers:
+ dw JohtoCherrygrovePassiveNoText
+ dw JohtoCherrygrovePassiveNoText

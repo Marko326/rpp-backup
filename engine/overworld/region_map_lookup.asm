@@ -65,8 +65,6 @@ LegacyMapIDToRegionKey::
 	jr z, .newBark
 	cp JOHTO_ROUTE_29
 	jr z, .route29
-	cp JOHTO_CHERRYGROVE_CITY
-	jr z, .cherrygrove
 	cp JOHTO_ROUTE_30
 	jr z, .route30
 	cp JOHTO_ROUTE_31
@@ -96,10 +94,6 @@ LegacyMapIDToRegionKey::
 	ld d, MAP_REGION_JOHTO
 	ld e, JOHTO_ROUTE_30_LOCAL_ID
 	ret
-.cherrygrove
-	ld d, MAP_REGION_JOHTO
-	ld e, JOHTO_CHERRYGROVE_LOCAL_ID
-	ret
 .route29
 	ld d, MAP_REGION_JOHTO
 	ld e, JOHTO_ROUTE_29_LOCAL_ID
@@ -111,7 +105,7 @@ LegacyMapIDToRegionKey::
 
 ; REG-5.62.119: while warps and connections still carry legacy one-byte IDs,
 ; derive both saved region fields from those IDs at every map-header load.
-; This fills the compatible region fields for older saves at map load.
+; This derives region/local identity for maps that still use legacy handles; it is not a save conversion layer.
 ; Both fields are overwritten, not restored as independent saved-region keys.
 ; $E7 and $F4 are Johto locals $00/$01; other aliases are Kanto.
 ; Do not replace this with an unconditional reset once region-aware warps land.
@@ -274,7 +268,7 @@ RegionMapKeyToLegacyID::
 	jr z, .invalid
 	cp JOHTO_ROUTE_29 ; $F4 is reserved for Route 29
 	jr z, .invalid
-	cp JOHTO_CHERRYGROVE_CITY ; $CE is the pilot Cherrygrove alias
+	cp JOHTO_CHERRYGROVE_CITY ; $CE is reserved and never a runtime city handle
 	jr z, .invalid
 	cp JOHTO_ROUTE_30 ; $0B is the P2-2 Route 30 alias
 	jr z, .invalid
@@ -293,6 +287,8 @@ RegionMapKeyToLegacyID::
 ; destination warp 2 = Vermilion dock. Both boat exit tiles are registered.
 ; No legacy mapObjects format or $FF LAST_MAP meaning is changed.
 ExplicitWarpRegionTargets::
+; Cherrygrove local 2 uses the native resolver; only legacy-source Warps
+; belong in this table. Its three house destinations live in NativeRegionWarpTargets.
 	db INSIDE_FERRY, 0, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
 	db INSIDE_FERRY, 1, 0, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
 	db INSIDE_FERRY, 0, 2, MAP_REGION_KANTO, VERMILION_FERRY_DOCK
@@ -432,6 +428,21 @@ NativeRegionWarpTargets::
  db JOHTO_OLIVINE_CITY_LOCAL_ID, 2, 0, MAP_REGION_JOHTO, JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
  db JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID, 0, 2, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
  db JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID, 1, 2, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
+ db JOHTO_CHERRYGROVE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID, 1, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_LOCAL_ID, 1, 0, MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+ db JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, 0, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_LOCAL_ID, 2, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID, 0, 2, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID, 1, 2, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_LOCAL_ID, 3, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_MART_LOCAL_ID
+ db JOHTO_CHERRYGROVE_MART_LOCAL_ID, 0, 3, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_MART_LOCAL_ID, 1, 3, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_LOCAL_ID, 4, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+ db JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 0, 4, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+ db JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 1, 4, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
  ; Route46 two south mats enter the gate north, then return lane-by-lane.
  db JOHTO_ROUTE_46_LOCAL_ID, 0, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
  db JOHTO_ROUTE_46_LOCAL_ID, 1, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
@@ -601,20 +612,25 @@ SelectNativeMapConnection::
 ; callab overwrites A with the callee ROM bank ($40), so A MUST NOT carry
 ; the edge direction across the far-call. E survives bank restoration.
 ResolveNativeConnectionPreviewBank::
+ ; E=0..3 cardinal edge on entry; E=neighbor bank or $ff on return.
+ ; P23: ROM0 cannot index a ROMX map bank from wCurMap=$FC alone. Resolve
+ ; the actual neighbor through the source map's stable local ID + edge.
  ld c,e
  ld a,[wCurMap]
- ; GATE-5.62.240A: legacy Route29 ($F4) north strip comes from the
- ; registered Route46 block array in ROMX bank $47, NOT Route29's $40.
- ; Native-only dispatch previously returned $ff, so LoadTileBlockMap
- ; read a valid pointer from the wrong physical ROM bank into its border.
+ ; The adjacent legacy routes now target native Cherrygrove through $FC.
+ ; Preserve Route29 north->Route46, add Route29 west/Route30 south->city.
  cp JOHTO_ROUTE_29
- jp z,.legacyRoute29North
+ jp z,.legacyRoute29
+ cp JOHTO_ROUTE_30
+ jp z,.legacyRoute30
  cp REGION_NATIVE_MAP_SLOT
  jr nz,.invalid
  ld a,[wCurRegion]
  cp MAP_REGION_JOHTO
  jr nz,.invalid
  ld a,[wCurLocalMapID]
+ cp JOHTO_CHERRYGROVE_LOCAL_ID
+ jr z,.nativeCherrygrove
  ld b,a
  ld hl,NativeRegionConnectionTargets
 .loop
@@ -646,7 +662,7 @@ ResolveNativeConnectionPreviewBank::
  inc hl
  inc hl
  jr .loop
-.legacyRoute29North
+.legacyRoute29
  ld a,[wCurRegion]
  cp MAP_REGION_JOHTO
  jr nz,.invalid
@@ -654,15 +670,47 @@ ResolveNativeConnectionPreviewBank::
  cp JOHTO_ROUTE_29_LOCAL_ID
  jr nz,.invalid
  ld a,c
- and a ; north connection is edge 0; never bank-switch other edges
- jr nz,.invalid
+ and a ; north edge still leads to Route46
+ jr z,.legacyRoute29North
+ cp 2 ; west edge now leads to native Cherrygrove
+ jr z,.legacyRoute29Cherrygrove
+ jr .invalid
+.legacyRoute29North
  ld e,BANK(JohtoRoute46Blocks)
+ ret
+.legacyRoute29Cherrygrove
+ ld e,BANK(JohtoCherrygroveCityBlocks)
+ ret
+.legacyRoute30
+ ld a,[wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz,.invalid
+ ld a,[wCurLocalMapID]
+ cp JOHTO_ROUTE_30_LOCAL_ID
+ jr nz,.invalid
+ ld a,c
+ cp 1 ; south edge leads to native Cherrygrove
+ jr nz,.invalid
+ ld e,BANK(JohtoCherrygroveCityBlocks)
+ ret
+.nativeCherrygrove
+ ld a,c
+ and a ; north edge returns to legacy Route30
+ jr z,.cherrygroveNorth
+ cp 3 ; east edge returns to legacy Route29
+ jr nz,.invalid
+ ld e,BANK(JohtoRoute29Blocks)
+ ret
+.cherrygroveNorth
+ ld e,BANK(JohtoRoute30Blocks)
  ret
 .invalid
  ld e,$ff
  ret
-
 NativeRegionConnectionTargets::
+ ; Cherrygrove is native local 2; Route29/Route30 themselves remain legacy.
+ db JOHTO_ROUTE_29_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID ; Route29 WEST -> Cherrygrove
+ db JOHTO_ROUTE_30_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID ; Route30 SOUTH -> Cherrygrove
  ; Route29/Route46 north-south preview is all solid Gold wall, never enter.
  db JOHTO_ROUTE_29_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
  ; Gold east exterior spine, exact reciprocal connection ordinals.
@@ -815,6 +863,11 @@ GetJohtoWarpArrivalStep::
  db REGION_NATIVE_MAP_SLOT, JOHTO_OLIVINE_CITY_LOCAL_ID, 21, 13, REGION_NATIVE_MAP_SLOT, D_DOWN ; Pokecenter
  db REGION_NATIVE_MAP_SLOT, JOHTO_OLIVINE_CITY_LOCAL_ID, 21, 7, REGION_NATIVE_MAP_SLOT, D_DOWN ; Cafe
  db REGION_NATIVE_MAP_SLOT, JOHTO_OLIVINE_CITY_LOCAL_ID, 17, 19, REGION_NATIVE_MAP_SLOT, D_DOWN ; Mart
+ db REGION_NATIVE_MAP_SLOT, JOHTO_CHERRYGROVE_LOCAL_ID, 7, 17, REGION_NATIVE_MAP_SLOT, D_DOWN ; CherrygroveGymSpeechHouse
+ db REGION_NATIVE_MAP_SLOT, JOHTO_CHERRYGROVE_LOCAL_ID, 9, 25, REGION_NATIVE_MAP_SLOT, D_DOWN ; GuideGentsHouse
+ db REGION_NATIVE_MAP_SLOT, JOHTO_CHERRYGROVE_LOCAL_ID, 11, 31, REGION_NATIVE_MAP_SLOT, D_DOWN ; CherrygroveEvolutionSpeechHouse
+ db REGION_NATIVE_MAP_SLOT, JOHTO_CHERRYGROVE_LOCAL_ID, 3, 23, REGION_NATIVE_MAP_SLOT, D_DOWN ; CherrygroveMart
+ db REGION_NATIVE_MAP_SLOT, JOHTO_CHERRYGROVE_LOCAL_ID, 3, 29, REGION_NATIVE_MAP_SLOT, D_DOWN ; CherrygrovePokecenter1F
  ; Gold house landing on (2,7) remains on its WARP_CARPET_DOWN tile.
  ; No automatic UP: all accepted native arrival profiles are DOWN-only.
  ; Route29/46 gate top Gold DOOR: move DOWN; bottom/outside carpet: NONE.

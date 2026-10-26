@@ -80,6 +80,11 @@ JohtoRoofGroupForLocalMap:
  db $ff ; Olivine Pokecenter 1F interior
  db $ff ; Olivine Cafe interior
  db $ff ; Olivine Mart interior
+ db $ff ; Cherrygrove GymSpeechHouse interior (slot 52)
+ db $ff ; Cherrygrove GuideGentsHouse interior (slot 53)
+ db $ff ; Cherrygrove EvolutionSpeechHouse interior (slot 54)
+ db $ff ; Cherrygrove Mart interior (slot 55)
+ db $ff ; Cherrygrove Pokecenter 1F interior (slot 56)
 JohtoRoofGroupForLocalMapEnd:
 ASSERT JohtoRoofGroupForLocalMapEnd - JohtoRoofGroupForLocalMap == NUM_JOHTO_MAPS
 

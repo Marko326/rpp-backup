@@ -1,0 +1,7 @@
+; Gold CherrygrovePokecenter1F shares Pokecenter1F.blk with Olivine.
+JohtoCherrygrovePokecenter1F_h:
+ db JOHTO_OLIVINE_POKECENTER
+ db JOHTO_OLIVINE_POKECENTER_1F_HEIGHT, JOHTO_OLIVINE_POKECENTER_1F_WIDTH
+ dw JohtoOlivinePokecenter1FBlocks, JohtoCherrygrovePokecenter1FTextPointers, EnableAutoTextBoxDrawing
+ db $00
+ dw JohtoCherrygrovePokecenter1FObject

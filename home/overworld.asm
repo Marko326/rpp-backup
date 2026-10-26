@@ -481,6 +481,26 @@ CheckWarpsNoCollisionLoop::
 	push bc
 	ld hl,wd736
 	set 2,[hl] ; standing on warp flag
+	; Cherrygrove is native $FC + Johto local ID 2. Its only live outdoor
+	; Warp records are the three exact Gold north-facing HOUSE doors.
+	; After the native source/region/local ID and UP approach match, transfer
+	; immediately through the native Warp target table, before generic portals.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .otherJohtoPortals
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .otherJohtoPortals
+	ld a, [wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr nz, .otherJohtoPortals
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .otherJohtoPortals
+	pop bc
+	pop hl
+	jp WarpFound1
+.otherJohtoPortals
 	; GATE-5.62.202: both native Ilex gate mouths are collision-only.
 	; Arm the standing bit but do not transfer on entry or sideways movement.
 	call IsJohtoSouthGatePortal
@@ -978,7 +998,7 @@ ExtraWarpCheck::
 IsJohtoSouthGatePortal::
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_32
-	jr z, .legacyRuinsGate
+	jp z, .legacyRuinsGate
 	cp JOHTO_ROUTE_29
 	jr z, .legacyRoute29Door
 	cp REGION_NATIVE_MAP_SLOT
@@ -994,9 +1014,9 @@ IsJohtoSouthGatePortal::
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .notGate
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
-	jr c, .notGate
+	jp c, .notGate
 	cp JOHTO_ROUTE_37_LOCAL_ID
-	jr c, .yes
+	jp c, .yes
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr c, .notGate
 	cp JOHTO_ROUTE_39_LOCAL_ID
@@ -1030,6 +1050,12 @@ IsJohtoSouthGatePortal::
 	jr z, .yes
 	cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
 	jr z, .yes
+	; All three Gold Cherrygrove House1 interiors use collision-only
+	; down-facing exit carpets, not automatic STEP_ON warps.
+	cp JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID
+	jr c, .notGate
+	cp JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID + 1
+	jr c, .yes
 	jr .notGate
 .legacyRoute29Door
 	ld a, [wCurRegion]
@@ -1615,13 +1641,21 @@ IsSpriteInFrontOfPlayer2::
 ; function to check if the player will jump down a ledge and check if the tile ahead is passable (when not surfing)
 ; sets the carry flag if there is a collision, and unsets it if there isn't a collision
 CollisionCheckOnLand::
-	; MAP-5.62.139 P2-2: only the authentic Route 30 corridor is open north of
-	; Cherrygrove. Preserve Route 29's separate north/south guards.
+	; CG-NATIVE: Cherrygrove is $FC/local 2; the adjacent road handles stay legacy.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jr nz, .legacyEdgeFences
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .checkLandCollision
+	ld a, [wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr z, .cherrygroveEdgeFence
+	jp .checkLandCollision
+.legacyEdgeFences
 	ld a, [wCurMap]
 	cp JOHTO_ROUTE_29
 	jr z, .route29EdgeFence
-	cp JOHTO_CHERRYGROVE_CITY
-	jr z, .cherrygroveEdgeFence
 	cp JOHTO_ROUTE_30
 	jp z, .route30EdgeFence
 	cp JOHTO_ROUTE_31
@@ -1734,6 +1768,21 @@ CollisionCheckOnLand::
 	and a ; was there a sprite collision?
 	jr nz,.collision
 ; if no sprite collision
+	; Cherrygrove is native $FC/local 2, but its Gold door tiles still need
+	; an exact UP-approach exception before generic tile-pair passability.
+	; Do not widen this exception to other native or legacy maps.
+	ld a, [wCurMap]
+	cp REGION_NATIVE_MAP_SLOT
+	jp nz, .ordinaryTilePair
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .ordinaryTilePair
+	ld a, [wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jp nz, .ordinaryTilePair
+	callba JohtoCherrygroveHouseDoorStepAllowed
+	jp c, .noCollision
+.ordinaryTilePair
 	ld hl,TilePairCollisionsLand
 	call CheckForJumpingAndTilePairCollisions
 	jr c,.collision
@@ -1746,10 +1795,10 @@ CollisionCheckOnLand::
 	jr c, .noCollision
 	callba JohtoRoute32RuinsGateCarpetStepCheck
 	jr c, .noCollision
-.normalTileCollision
 	; GATE-5.62.240A: Route29 is legacy $F4 and skips the native
 	; collision adapter. Gold's (27,1) DOOR must be entered from (27,2)
 	; before the standing-on-Warp STEP_ON executor can run.
+.normalTileCollision
 	ld a,[wCurMap]
 	cp JOHTO_ROUTE_29
 	jr nz,.normalTilePassability

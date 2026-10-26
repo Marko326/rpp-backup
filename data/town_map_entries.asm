@@ -95,7 +95,7 @@ InternalMapEntries:
 	IMAP VICTORY_ROAD_3,             36,  68, VictoryRoadName
 	IMAP ROCKET_HIDEOUT_ELEVATOR,    92,  76, RocketHQName
 	IMAP BEACH_HOUSE,               100, 136, Route19Name
-	IMAP JOHTO_CHERRYGROVE_CITY,    116,  94, JohtoCherrygroveName ; P2 pilot
+	IMAP JOHTO_CHERRYGROVE_CITY,    116,  94, JohtoCherrygroveName ; reserved legacy table slot only
 	IMAP JOHTO_ROUTE_30,            116,  94, JohtoRoute30Name ; MAP-5.62.139
 	IMAP SILPH_CO_8F,               116,  76, SilphCoName
 	IMAP MANSION_4,                  58, 146, PokemonMansionName

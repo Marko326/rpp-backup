@@ -136,7 +136,9 @@ LoadJohtoFlyTownMap::
  jr z, .selectEcruteak
  cp 4
  jr z, .selectGoldenrod
- ld a, $ff ; first four destinations use legacy selector IDs
+ cp 1
+ jr z, .selectCherrygrove
+ ld a, $ff ; New Bark and Violet still use their legacy selector IDs
  jr .storeFlyLocal
 .selectBlackthorn
  ld a,JOHTO_BLACKTHORN_CITY_LOCAL_ID
@@ -157,7 +159,10 @@ LoadJohtoFlyTownMap::
  ld a, JOHTO_ECRUTEAK_CITY_LOCAL_ID
  jr .storeFlyLocal
 .selectGoldenrod
- ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
+	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jr .storeFlyLocal
+.selectCherrygrove
+	ld a, JOHTO_CHERRYGROVE_LOCAL_ID
 .storeFlyLocal
 	ld [wJohtoFlySelectedLocalID], a
 	pop af
@@ -229,7 +234,7 @@ LoadJohtoFlyTownMap::
  dw .blackthornName
 .destinations
 	; FLY-5.62.196: $FD selector resolves separately to (JOHTO, local 10).
-	db NEW_BARK_TOWN, JOHTO_CHERRYGROVE_CITY, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
+	db NEW_BARK_TOWN, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_VIOLET_CITY, JOHTO_AZALEA_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR, JOHTO_GOLDENROD_FLY_SELECTOR
 .newBarkName
 	db "New Bark_Town@"
 .cherrygroveName

@@ -18,6 +18,11 @@ JohtoNativeTownMapIndices::
  db 26 ; Olivine Pokecenter inherits Olivine City landmark
  db 26 ; Olivine Cafe inherits Olivine City landmark
  db 26 ; Olivine Mart inherits Olivine City landmark
+ db 2 ; CherrygroveGymSpeechHouse inherits CherrygroveCity
+ db 2 ; GuideGentsHouse inherits CherrygroveCity
+ db 2 ; CherrygroveEvolutionSpeechHouse inherits CherrygroveCity
+ db 2 ; CherrygroveMart inherits CherrygroveCity
+ db 2 ; CherrygrovePokecenter1F inherits CherrygroveCity
 JohtoNativeTownMapIndicesEnd::
 ASSERT JohtoNativeTownMapIndicesEnd - JohtoNativeTownMapIndices == NUM_JOHTO_MAPS
 
@@ -51,8 +56,6 @@ GetJohtoTownMapCurrentIndexCore:
 .legacyID
 	cp JOHTO_ROUTE_29
 	jr z, .route29
-	cp JOHTO_CHERRYGROVE_CITY
-	jr z, .cherrygrove
 	cp JOHTO_ROUTE_30
 	jr z, .route30
 	cp JOHTO_ROUTE_31
@@ -65,9 +68,6 @@ GetJohtoTownMapCurrentIndexCore:
 	ret
 .route29
 	ld a, 1
-	ret
-.cherrygrove
-	ld a, 2
 	ret
 .route30
 	ld a, 3

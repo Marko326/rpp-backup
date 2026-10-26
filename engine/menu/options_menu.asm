@@ -1194,6 +1194,11 @@ JohtoNativeGSCMusic::
  db MUSIC_GBP_GSC_POKEMON_CENTER ; Olivine Pokecenter 1F
  db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Cafe
  db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Mart
+ db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; CherrygroveGymSpeechHouse
+ db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; GuideGentsHouse
+ db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; CherrygroveEvolutionSpeechHouse
+ db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; CherrygroveMart shares city theme
+ db MUSIC_GBP_GSC_POKEMON_CENTER ; CherrygrovePokecenter1F Gold PC theme
 JohtoNativeGSCMusicEnd::
 
 ASSERT JohtoNativeGSCMusicEnd - JohtoNativeGSCMusic == NUM_JOHTO_MAPS
@@ -1248,7 +1253,6 @@ CheckJohtoMusicSceneTransition::
 JohtoSceneGSCMap:
 	db NEW_BARK_TOWN,             MUSIC_GBP_GSC_NEW_BARK_TOWN
 	db JOHTO_ROUTE_29,            MUSIC_GBP_GSC_ROUTE29
-	db JOHTO_CHERRYGROVE_CITY,    MUSIC_GBP_GSC_CHERRYGROVE_CITY
 	db JOHTO_ROUTE_30,            MUSIC_GBP_GSC_ROUTE30
 	db JOHTO_ROUTE_31,            MUSIC_GBP_GSC_ROUTE30
 	db JOHTO_VIOLET_CITY,         MUSIC_GBP_GSC_VIOLET_CITY

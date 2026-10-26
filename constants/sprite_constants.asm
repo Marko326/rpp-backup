@@ -162,6 +162,14 @@ SPRITE_LEAF EQU SPRITE_GAMEBOY_KID_COPY ; unused duplicate slot for linked Green
 	const SPRITE_JOHTO_TEACHER              ; $6c Gold Teacher
 	const SPRITE_JOHTO_SAILOR               ; $6d Gold Sailor
 	const SPRITE_JOHTO_FISHING_GURU_BLUE    ; $6e Gold blue Fishing Guru
+	const SPRITE_JOHTO_BUG_CATCHER_RED ; Cherrygrove Gold bug_catcher
+	const SPRITE_JOHTO_GRAMPS ; Cherrygrove Gold gramps
+	const SPRITE_JOHTO_YOUNGSTER_RED ; Cherrygrove Gold youngster
+	const SPRITE_JOHTO_LASS_GREEN ; Evolution house Gold PAL_NPC_GREEN, shared Gold Lass graphic
+	const SPRITE_JOHTO_FISHER_RED ; Cherrygrove PC Gold PAL_NPC_RED
+	const SPRITE_JOHTO_TEACHER_GREEN ; Cherrygrove PC Gold PAL_NPC_GREEN
+	const SPRITE_JOHTO_GENTLEMAN ; Cherrygrove PC Gold gentleman, default blue
+	const SPRITE_JOHTO_COOLTRAINER_M ; Cherrygrove Mart Gold male cooltrainer, blue
 	
 	
 ; Variable Sprite IDs Here

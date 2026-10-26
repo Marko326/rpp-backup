@@ -15,6 +15,14 @@ JohtoRoute29_h:
  db JOHTO_ROUTE_46_HEIGHT * 2 - 1
  db -20
  dw wOverworldMap + 1 + JOHTO_ROUTE_46_HEIGHT * (JOHTO_ROUTE_46_WIDTH + 6)
-	WEST_MAP_CONNECTION JOHTO_ROUTE_29, JOHTO_CHERRYGROVE_CITY, 0, 0, JohtoCherrygroveCityBlocks
+	; Native Cherrygrove target ($FC), but retain its real dimensions for the strip.
+	db REGION_NATIVE_MAP_SLOT
+	dw JohtoCherrygroveCityBlocks + JOHTO_CHERRYGROVE_CITY_WIDTH - 3
+	dw wOverworldMap + (JOHTO_ROUTE_29_WIDTH + 6) * 3
+	db JOHTO_CHERRYGROVE_CITY_HEIGHT
+	db JOHTO_CHERRYGROVE_CITY_WIDTH
+	db 0
+	db JOHTO_CHERRYGROVE_CITY_WIDTH * 2 - 1
+	dw wOverworldMap + 6 + (2 * JOHTO_CHERRYGROVE_CITY_WIDTH)
 	EAST_MAP_CONNECTION JOHTO_ROUTE_29, NEW_BARK_TOWN, 0, 0, NewBarkTownBlocks
 	dw JohtoRoute29Object

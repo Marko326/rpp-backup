@@ -651,6 +651,14 @@ CanWalkOntoTile:
 	and a
 	ret
 .notScripted
+	; Preserve the Kanto walker, tile and collision code. Only the six
+	; enabled Johto walkers get their original Gold spawn-radius limits.
+	; Bank 1 has no room for the table, so dispatch to a floating ROMX helper.
+	; On denial the helper enters the ordinary delayed state itself.
+	push bc
+	callab CheckJohtoNPCPatrolBounds
+	pop bc
+	ret c
 	ld a, [wTilesetCollisionPtr]
 	ld l, a
 	ld a, [wTilesetCollisionPtr+1]

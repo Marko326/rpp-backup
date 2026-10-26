@@ -40,9 +40,9 @@ const_value = 0
 	const INDOOR_PURPLE     ; 26
 	const MART_FLOOR        ; 27
 	
-	; These are unused
-	const JOHTO_GATE_GOLD_GREEN ; 28 -- unused slot, gate only
-	const JOHTO_GATE_GOLD_BROWN ; 29 -- unused slot, gate only
+	; Gold indoor RGB reserved from Kanto; shared by Johto gates and PC/MART.
+	const JOHTO_GATE_GOLD_GREEN ; 28
+	const JOHTO_GATE_GOLD_BROWN ; 29
 	const MAP_PALETTE_2A    ; 2A
 	const MAP_PALETTE_2B    ; 2B
 	const MAP_PALETTE_2C    ; 2C

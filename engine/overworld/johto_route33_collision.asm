@@ -781,7 +781,14 @@ JohtoOlivinePunishmentSpeechHouseCanStepAhead::
  cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
  jr z, .house1
  cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
- jr nz, .blocked
+ jr z, .house1
+ cp JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID
+ jr z, .house1
+ cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+ jr z, .house1
+ cp JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID
+ jr z, .house1
+ jr .blocked
 .house1
  ld hl, JohtoOlivinePunishmentSpeechHouseBlockedRows
  ld d, JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_WIDTH * 2
@@ -2183,7 +2190,60 @@ JohtoRoute34BlockedRows::
 ; GATE-5.62.240A: legacy Route29 uses generic RBY tile passability,
 ; unlike the native $FC maps. This single Gold DOOR step must bypass the
 ; old generic wall tile ONLY from the floor below. Carry means ALLOW.
-; Called after ordinary ledges / sprite and tile-pair collision checks.
+; Called after ordinary ledge/sprite checks and before generic tile-pair passability.
+; Cherrygrove $FC/local2: precisely five Gold exterior DOORs permit UP
+; from one tile below; no unregistered entry is unlocked. Carry = ALLOW.
+JohtoCherrygroveHouseDoorStepAllowed::
+ ld a, [wCurRegion]
+ cp MAP_REGION_JOHTO
+ jr nz, .deny
+ ld a, [wCurLocalMapID]
+ cp JOHTO_CHERRYGROVE_LOCAL_ID
+ jr nz, .deny
+ ld a, [wPlayerDirection]
+ cp PLAYER_DIR_UP
+ jr nz, .deny
+ ld a, [wXCoord]
+ cp 17
+ jr z, .gym
+ cp 25
+ jr z, .guide
+ cp 31
+ jr z, .evolution
+ cp 23
+ jr z, .mart
+ cp 29
+ jr nz, .deny
+ ld a, [wYCoord]
+ cp 4 ; PC door (29,3) from below
+ jr z, .allow
+ jr .deny
+.mart
+ ld a, [wYCoord]
+ cp 4 ; Mart door (23,3) from below
+ jr z, .allow
+ jr .deny
+.evolution
+ ld a, [wYCoord]
+ cp 12 ; Gold evolution house DOOR is (31,11)
+ jr z, .allow
+ jr .deny
+.gym
+ ld a, [wYCoord]
+ cp 8 ; Gold gym speech house DOOR is (17,7)
+ jr z, .allow
+ jr .deny
+.guide
+ ld a, [wYCoord]
+ cp 10 ; Gold guide house DOOR is (25,9)
+ jr nz, .deny
+.allow
+ scf
+ ret
+.deny
+ and a
+ ret
+
 JohtoRoute29GateStepAllowed::
  ld a, [wCurRegion]
  cp MAP_REGION_JOHTO
@@ -2457,12 +2517,24 @@ JohtoNorthGateStepWarpAllowed::
 ; with preserved region-local identity. carry = correct approach.
 JohtoGateCollisionDirectionAllowed::
 	ld a, [wCurLocalMapID]
+ cp JOHTO_CHERRYGROVE_LOCAL_ID
+ jp z, .cherrygroveHouseDoors
  cp JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID
 	jp z, .houseExitDown
 	cp JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID
 	jp z, .houseExitDown
  cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
  jp z, .houseExitDown
+ cp JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_CHERRYGROVE_MART_LOCAL_ID
+ jp z, .houseExitDown
+ cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+ jp z, .pokecenterExitDown
  cp JOHTO_OLIVINE_CAFE_LOCAL_ID
  jp z, .houseExitDown
  cp JOHTO_OLIVINE_MART_LOCAL_ID
@@ -2696,6 +2768,39 @@ JohtoGateCollisionDirectionAllowed::
 	cp 10
 	jp z, .down
 	jp .denied
+; All five registered Gold Cherrygrove exterior DOOR positions.
+.cherrygroveHouseDoors
+ ld a, [wXCoord]
+ cp 17
+ jr z, .cherrygroveGym
+ cp 25
+ jr z, .cherrygroveGuide
+ cp 31
+ jr z, .cherrygroveEvolution
+ cp 23
+ jr z, .cherrygrovePublic
+ cp 29
+ jp nz, .denied
+.cherrygrovePublic
+ ld a, [wYCoord]
+ cp 3
+ jp z, .up
+ jp .denied
+.cherrygroveEvolution
+ ld a, [wYCoord]
+ cp 11
+ jp z, .up
+ jp .denied
+.cherrygroveGym
+ ld a, [wYCoord]
+ cp 7
+ jp z, .up
+ jp .denied
+.cherrygroveGuide
+ ld a, [wYCoord]
+ cp 9
+ jp z, .up
+ jp .denied
 .houseExitDown
  ld a, [wYCoord]
  cp 7
@@ -4213,6 +4318,16 @@ JohtoNativeCanStepAhead::
  jp z, .olivineHouse
  cp JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID
  jp z, .olivineHouse
+ cp JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID
+ jp z, .olivineHouse
+ cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+ jp z, .olivineHouse
+ cp JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID
+ jp z, .olivineHouse
+ cp JOHTO_CHERRYGROVE_MART_LOCAL_ID
+ jp z, .olivineMart
+ cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+ jp z, .olivinePokecenter
  cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
  jp z, .olivinePokecenter
  cp JOHTO_OLIVINE_CAFE_LOCAL_ID

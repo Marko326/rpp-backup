@@ -20,7 +20,7 @@ JohtoRoute30_h:
 	dw wOverworldMap + 1 + JOHTO_ROUTE_31_HEIGHT * (JOHTO_ROUTE_31_WIDTH + 6)
 	; CONN-5.62.223: Gold -5 moves the target five source columns east;
 	; the legacy SOUTH macro copies 15 columns from the wrong start.
-	db JOHTO_CHERRYGROVE_CITY
+	db REGION_NATIVE_MAP_SLOT
 	dw JohtoCherrygroveCityBlocks + 5
 	dw wOverworldMap + (JOHTO_ROUTE_30_HEIGHT + 3) * (JOHTO_ROUTE_30_WIDTH + 6) + 3
 	db JOHTO_ROUTE_30_WIDTH

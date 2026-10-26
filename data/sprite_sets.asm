@@ -209,15 +209,15 @@ SpriteSets:
 
 ; sprite set $0c: Gold Olivine house, not the outdoor Johto $0b sheet.
 ; Preserve 11 fixed VRAM slots: 9 walking sprites + 2 four-tile objects.
-	db SPRITE_SAILOR
-	db SPRITE_GAMBLER
+	db SPRITE_JOHTO_GRAMPS
+	db SPRITE_JOHTO_YOUNGSTER_RED
 	db SPRITE_BUG_CATCHER
 	db SPRITE_JOHTO_LASS
 	db SPRITE_JOHTO_POKEFAN_M
 	db SPRITE_JOHTO_FISHING_GURU_RED
-	db SPRITE_GIRL
+	db SPRITE_JOHTO_BUG_CATCHER_RED
 	db SPRITE_JOHTO_FISHING_GURU_GREEN
-	db SPRITE_BLACK_HAIR_BOY_1
+	db SPRITE_JOHTO_LASS_GREEN
 	db SPRITE_BALL
 	db SPRITE_BERRY_TREE
 
@@ -784,3 +784,39 @@ SpriteSheetPointerTable:
 	dw JohtoFishingGuruSprite
 	db $c0
 	db BANK(JohtoFishingGuruSprite)
+
+	; SPRITE_JOHTO_BUG_CATCHER_RED
+	dw JohtoBugCatcherSprite
+	db $c0
+	db BANK(JohtoBugCatcherSprite)
+
+	; SPRITE_JOHTO_GRAMPS
+	dw JohtoGrampsSprite
+	db $c0
+	db BANK(JohtoGrampsSprite)
+
+	; SPRITE_JOHTO_YOUNGSTER_RED
+	dw JohtoYoungsterSprite
+	db $c0
+	db BANK(JohtoYoungsterSprite)
+
+	; SPRITE_JOHTO_LASS_GREEN: Gold EvolutionSpeechHouse original PAL_NPC_GREEN
+	dw JohtoLassSprite
+	db $c0
+	db BANK(JohtoLassSprite)
+	; Cherrygrove PC Fisher red palette, same 12-tile Gold art
+	dw JohtoFisherSprite
+	db $c0
+	db BANK(JohtoFisherSprite)
+	; Cherrygrove PC Teacher green palette, same 12-tile Gold art
+	dw JohtoTeacherSprite
+	db $c0
+	db BANK(JohtoTeacherSprite)
+	; Cherrygrove PC Gentleman: original Gold 12-tile sprite
+	dw JohtoGentlemanSprite
+	db $c0
+	db BANK(JohtoGentlemanSprite)
+	; Cherrygrove Mart Cooltrainer M: original Gold 12-tile sprite
+	dw JohtoCooltrainerMSprite
+	db $c0
+	db BANK(JohtoCooltrainerMSprite)

@@ -781,31 +781,36 @@ TryLoadSpecialFlyWarpData::
 	cp JOHTO_GOLDENROD_FLY_SELECTOR
 	jr nz, .regularScan
 	ld a, [wJohtoFlySelectedLocalID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr z, .cherrygroveWarp
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .specialEcruteak
- cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
- jr z, .specialMahogany
- cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
- jr z,.specialBlackthorn
- cp JOHTO_OLIVINE_CITY_LOCAL_ID
- jr z,.olivineWarp
- cp JOHTO_CIANWOOD_CITY_LOCAL_ID
- jr z,.cianwoodWarp
- cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
- jr nz,.regularScan
- ld hl,JohtoLakeOfRageFlyWarpData
- jr .found
+	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+	jr z, .specialMahogany
+	cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+	jr z, .specialBlackthorn
+	cp JOHTO_OLIVINE_CITY_LOCAL_ID
+	jr z, .olivineWarp
+	cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+	jr z, .cianwoodWarp
+	cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+	jr nz, .regularScan
+	ld hl, JohtoLakeOfRageFlyWarpData
+	jr .found
 .cianwoodWarp
- ld hl,JohtoCianwoodFlyWarpData
- jr .found
+	ld hl, JohtoCianwoodFlyWarpData
+	jr .found
 .olivineWarp
- ld hl, JohtoOlivineFlyWarpData
- jr .found
+	ld hl, JohtoOlivineFlyWarpData
+	jr .found
 .specialBlackthorn
- ld hl,JohtoBlackthornFlyWarpData
- jr .found
+	ld hl, JohtoBlackthornFlyWarpData
+	jr .found
 .specialMahogany
 	ld hl, JohtoMahoganyFlyWarpData
+	jr .found
+.cherrygroveWarp
+	ld hl, JohtoCherrygroveFlyWarpData
 	jr .found
 .specialEcruteak
 	ld hl, JohtoEcruteakFlyWarpData
@@ -818,15 +823,14 @@ TryLoadSpecialFlyWarpData::
 	ret z ; CP equality clears carry
 	cp d
 	jr z, .found
-	ld bc, 7 ; actual map + six FLYWARP_DATA bytes
+	ld bc, 7 ; actual map + six-byte FLYWARP_DATA record
 	add hl, bc
 	jr .loop
 .found
 	ld a, [hli]
 	ld [wDestinationMap], a
 	ld [wCurMap], a
-	; FLY-5.62.196: only the reviewed Fly selector uses the shared native handle.
-	; Synchronize both saved physical keys: SpecialWarpIn resets wLastMap.
+	; Only reviewed Fly selectors use the shared native handle.
 	cp REGION_NATIVE_MAP_SLOT
 	jr nz, .copyFlyWarp
 	ld a, MAP_REGION_JOHTO
@@ -839,18 +843,20 @@ TryLoadSpecialFlyWarpData::
 	jr .storeNativeLocal
 .goldenrodOrEcruteak
 	ld a, [wJohtoFlySelectedLocalID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr z, .storeNativeLocal
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jr z, .storeNativeLocal
 	cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
- jr z, .storeNativeLocal
- cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
- jr z,.storeNativeLocal
- cp JOHTO_OLIVINE_CITY_LOCAL_ID
- jr z, .storeNativeLocal
- cp JOHTO_CIANWOOD_CITY_LOCAL_ID
- jr z, .storeNativeLocal
- cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
- jr z, .storeNativeLocal
+	jr z, .storeNativeLocal
+	cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+	jr z, .storeNativeLocal
+	cp JOHTO_OLIVINE_CITY_LOCAL_ID
+	jr z, .storeNativeLocal
+	cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+	jr z, .storeNativeLocal
+	cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+	jr z, .storeNativeLocal
 	; For the other valid $FE selection, resolve to Goldenrod.
 	ld a, JOHTO_GOLDENROD_CITY_LOCAL_ID
 .storeNativeLocal
@@ -868,8 +874,12 @@ TryLoadSpecialFlyWarpData::
 	scf
 	ret
 
-; Native Ecruteak shares Goldenrod's Fly-only selector $FE. Destination
-; identity comes from wJohtoFlySelectedLocalID, never the recycled menu index.
+; Native Cherrygrove shares Goldenrod's Fly-only selector $FE. The saved
+; local ID 2 selects this Gold landing; it is not a legacy map selector.
+JohtoCherrygroveFlyWarpData:
+ db REGION_NATIVE_MAP_SLOT
+ FLYWARP_DATA JOHTO_CHERRYGROVE_CITY_WIDTH, 4, 29
+
 JohtoEcruteakFlyWarpData:
 	db REGION_NATIVE_MAP_SLOT
 	FLYWARP_DATA JOHTO_ECRUTEAK_CITY_WIDTH, 28, 23
@@ -902,8 +912,6 @@ SpecialFlyWarpData:
 	; FLY-5.62.140: Gold outdoor spawn coordinates, verified walkable.
 	db NEW_BARK_TOWN, NEW_BARK_TOWN
 	FLYWARP_DATA NEW_BARK_TOWN_WIDTH, 6, 13
-	db JOHTO_CHERRYGROVE_CITY, JOHTO_CHERRYGROVE_CITY
-	FLYWARP_DATA JOHTO_CHERRYGROVE_CITY_WIDTH, 4, 29
 	db JOHTO_VIOLET_CITY, JOHTO_VIOLET_CITY
 	FLYWARP_DATA JOHTO_VIOLET_CITY_WIDTH, 26, 31
 	; FLY-5.62.196: Gold SPAWN_AZALEA is X=15,Y=10; macro takes (Y,X).
