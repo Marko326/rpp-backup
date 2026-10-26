@@ -71,7 +71,7 @@
       "local_symbol": "JOHTO_CHERRYGROVE_LOCAL_ID",
       "header": "JohtoCherrygroveCity_h",
       "bank": "BANK(JohtoCherrygroveCity_h)",
-      "legacy_alias": "JOHTO_CHERRYGROVE_CITY",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
       "rby_music": [
         "MUSIC_CITIES1",
         "0"
@@ -81,7 +81,7 @@
       "town_map_name": "JohtoCherrygroveName",
       "town_map_xy": [
         116,
-        94
+        108
       ],
       "feature_status": {
         "town_map_background": "DEFERRED",
@@ -3550,6 +3550,166 @@
         "warp": "ALLOWED"
       },
       "identity_evidence": "STATIC_PASS",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 124,
+      "local_symbol": "JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID",
+      "header": "JohtoCherrygroveGymSpeechHouse_h",
+      "bank": "BANK(JohtoCherrygroveGymSpeechHouse_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_CHERRYGROVE_CITY",
+      "town_map_index": 2,
+      "town_map_name": "JohtoCherrygroveName",
+      "town_map_xy": [
+        116,
+        108
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "FORBIDDEN",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 125,
+      "local_symbol": "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID",
+      "header": "JohtoGuideGentsHouse_h",
+      "bank": "BANK(JohtoGuideGentsHouse_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_CHERRYGROVE_CITY",
+      "town_map_index": 2,
+      "town_map_name": "JohtoCherrygroveName",
+      "town_map_xy": [
+        116,
+        108
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "FORBIDDEN",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 126,
+      "local_symbol": "JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID",
+      "header": "JohtoCherrygroveEvolutionSpeechHouse_h",
+      "bank": "BANK(JohtoCherrygroveEvolutionSpeechHouse_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_CHERRYGROVE_CITY",
+      "town_map_index": 2,
+      "town_map_name": "JohtoCherrygroveName",
+      "town_map_xy": [
+        116,
+        108
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "FORBIDDEN",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 122,
+      "local_symbol": "JOHTO_CHERRYGROVE_MART_LOCAL_ID",
+      "header": "JohtoCherrygroveMart_h",
+      "bank": "BANK(JohtoCherrygroveMart_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_CITIES1",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_CHERRYGROVE_CITY",
+      "town_map_index": 2,
+      "town_map_name": "JohtoCherrygroveName",
+      "town_map_xy": [
+        116,
+        108
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "FORBIDDEN",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
+      "gold_fly_landmark": null
+    },
+    {
+      "local_id": 123,
+      "local_symbol": "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID",
+      "header": "JohtoCherrygrovePokecenter1F_h",
+      "bank": "BANK(JohtoCherrygrovePokecenter1F_h)",
+      "legacy_alias": "REGION_NATIVE_MAP_SLOT",
+      "rby_music": [
+        "MUSIC_POKECENTER",
+        "0"
+      ],
+      "gsc_music": "MUSIC_GBP_GSC_POKEMON_CENTER",
+      "town_map_index": 2,
+      "town_map_name": "JohtoCherrygroveName",
+      "town_map_xy": [
+        116,
+        108
+      ],
+      "feature_status": {
+        "town_map_background": "ALLOWED",
+        "fly": "FORBIDDEN",
+        "bike": "FORBIDDEN",
+        "surf": "FORBIDDEN",
+        "dig": "DEFERRED",
+        "escape_rope": "DEFERRED",
+        "cut": "FORBIDDEN",
+        "strength": "FORBIDDEN",
+        "npc": "DEFERRED",
+        "warp": "ALLOWED"
+      },
+      "identity_evidence": "PHONE_PENDING",
       "gold_fly_landmark": null
     }
   ]

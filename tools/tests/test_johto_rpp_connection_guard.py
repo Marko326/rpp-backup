@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from johto_rpp_connection_guard import (
     audit, ConnectionError, constant_expr, audit_all_active, discover_active_edges,
     frozen_gold_direct_seams, check_frozen_gold_source, check_all_native_selectors,
-    require_registered_gold_seams,
+    require_registered_gold_seams, registered_native_alias,
 )
 
 
@@ -535,6 +535,10 @@ class RealConnectionCoverage(unittest.TestCase):
                 self.assertTrue(any(e.get('edge',())[0]=='JohtoRoute32'
                                     for e in report['edges'] if e.get('status')=='FAIL'),report)
 
+    def test_cherrygrove_native_alias_uses_manifest_local_symbol(self):
+        self.assertTrue(registered_native_alias(self.rpp, 'JohtoCherrygroveCity', 'JOHTO_CHERRYGROVE_CITY'))
+        self.assertFalse(registered_native_alias(self.rpp, 'JohtoRoute30', 'JOHTO_ROUTE_30'))
+
     def test_bad_legacy_connection_is_rejected_globally(self):
         with tempfile.TemporaryDirectory() as tmp:
             dest=Path(tmp)
@@ -546,7 +550,7 @@ class RealConnectionCoverage(unittest.TestCase):
             shutil.copy2(self.rpp/'data/johto_map_headers.asm',dest/'data/johto_map_headers.asm')
             p=dest/'data/mapHeaders/JohtoRoute30.asm'
             s=p.read_text()
-            start=s.index('\tdb JOHTO_CHERRYGROVE_CITY\n')
+            start=s.index('\tdb REGION_NATIVE_MAP_SLOT\n')
             end=s.index('\tdw JohtoRoute30Object',start)
             p.write_text(s[:start]+'\tSOUTH_MAP_CONNECTION JOHTO_ROUTE_30, JOHTO_CHERRYGROVE_CITY, -5, 0, JohtoCherrygroveCityBlocks\n'+s[end:])
             # Actual audit needs all project constants and map blocks.

@@ -25,21 +25,21 @@ class JohtoWarpArrivalContract(unittest.TestCase):
         self.assertEqual(audit(ROOT, self.gold), [])
         src = (ROOT / INPUTS[0]).read_text()
         actual=profiles(src)
-        self.assertEqual(actual[12:14], [
+        self.assertEqual(actual[20:22], [
             ('JOHTO_ROUTE_32', 'JOHTO_ROUTE_32_LOCAL_ID', 79, 6,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_33_LOCAL_ID', 9, 11,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN')])
-        self.assertEqual(len(actual), 26)
-        # New Route29/Route46 gate arrivals occupy three deliberately
-        # prepended rows; keep the old cave and north-gate rows unchanged.
-        self.assertEqual(actual[:6], [
-            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 11, 29,
-             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
-            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 11, 25,
-             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
-            ('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', 15, 13,
-             'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
+        self.assertEqual(len(actual), 34)
+        # Keep all six Olivine landings, the three newly reviewed Gold
+        # Cherrygrove houses, AND the Route29/Route46 gate arrivals in order.
+        self.assertEqual(actual[:14], [
+            *(('REGION_NATIVE_MAP_SLOT', 'JOHTO_OLIVINE_CITY_LOCAL_ID', y, x,
+               'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
+              for y,x in ((11,29),(11,25),(15,13),(21,13),(21,7),(17,19))),
+            *(('REGION_NATIVE_MAP_SLOT', 'JOHTO_CHERRYGROVE_LOCAL_ID', y, x,
+               'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
+              for y,x in ((7,17),(9,25),(11,31),(3,23),(3,29))),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 4,
              'REGION_NATIVE_MAP_SLOT', 'D_DOWN'),
             ('REGION_NATIVE_MAP_SLOT', 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 5,

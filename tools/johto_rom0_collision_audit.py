@@ -28,6 +28,9 @@ MAPPINGS = {
     'JOHTO_OLIVINE_PUNISHMENT_SPEECH_HOUSE_LOCAL_ID': 'JohtoOlivinePunishmentSpeechHouseCanStepAhead',
     'JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID': 'JohtoOlivinePunishmentSpeechHouseCanStepAhead',
     'JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID': 'JohtoOlivinePunishmentSpeechHouseCanStepAhead',
+    'JOHTO_CHERRYGROVE_GYM_SPEECH_HOUSE_LOCAL_ID': 'JohtoOlivinePunishmentSpeechHouseCanStepAhead',
+    'JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID': 'JohtoOlivinePunishmentSpeechHouseCanStepAhead',
+    'JOHTO_CHERRYGROVE_EVOLUTION_SPEECH_HOUSE_LOCAL_ID': 'JohtoOlivinePunishmentSpeechHouseCanStepAhead',
     'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID': 'JohtoRoute38EcruteakGateCanStepAhead',
     'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID': 'JohtoRoute42EcruteakGateCanStepAhead',
     'JOHTO_ROUTE_37_LOCAL_ID': 'JohtoRoute37CanStepAhead',
@@ -56,6 +59,9 @@ PUBLIC_MASK_IDS = {
     'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID': ('.olivinePokecenter', 'JohtoOlivinePokecenter1FBlockedRows', 'JOHTO_OLIVINE_POKECENTER_1F_WIDTH * 2', '2'),
     'JOHTO_OLIVINE_CAFE_LOCAL_ID': ('.olivineCafe', 'JohtoOlivineCafeBlockedRows', 'JOHTO_OLIVINE_CAFE_WIDTH * 2', '1'),
     'JOHTO_OLIVINE_MART_LOCAL_ID': ('.olivineMart', 'JohtoOlivineMartBlockedRows', 'JOHTO_OLIVINE_MART_WIDTH * 2', '2'),
+    # Cherrygrove Gold public rooms alias the proven Olivine Mart/PC blocks.
+    'JOHTO_CHERRYGROVE_MART_LOCAL_ID': ('.olivineMart', 'JohtoOlivineMartBlockedRows', 'JOHTO_OLIVINE_MART_WIDTH * 2', '2'),
+    'JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID': ('.olivinePokecenter', 'JohtoOlivinePokecenter1FBlockedRows', 'JOHTO_OLIVINE_POKECENTER_1F_WIDTH * 2', '2'),
 }
 
 

@@ -286,7 +286,14 @@ def audit(root: Path, gold: Path | None = None) -> list[str]:
          'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
         for x, y, _ in olivine_house_doors
     ]
-    if arrivals != olivine_house_return + route29_gate_steps + middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps + park_south_steps + park35_solid_door:
+    # Gold Cherrygrove has three additional solid DOOR landing cells; this
+    # exact prefix extends, rather than loosens, the previous Olivine list.
+    cherrygrove_house_return = [
+        ('REGION_NATIVE_MAP_SLOT', 'JOHTO_CHERRYGROVE_LOCAL_ID', y, x,
+         'REGION_NATIVE_MAP_SLOT', 'D_DOWN')
+        for x, y in ((17,7),(25,9),(31,11),(23,3),(29,3))
+    ]
+    if arrivals != olivine_house_return + cherrygrove_house_return + route29_gate_steps + middle_gate_steps + route43_gate_steps + [expected, expected33] + north_steps + park_south_steps + park35_solid_door:
         errors.append('Only reviewed gate DOWN arrivals may auto-step; all UP arrivals must remain at their warp coordinates')
     house_city_mask = root/'maps/JohtoOlivineCity.blocked_mask.bin'
     house_city_source = root/'data/mapObjects/JohtoOlivineCity.asm'

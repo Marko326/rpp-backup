@@ -74,14 +74,14 @@ def check_native_identity(sources, local_symbols, count, tables, gsc):
     # while the save/name path uses JohtoNativeTownMapEntries.  Matching both
     # to the manifest separately is NOT enough: the manifest can repeat the
     # same incorrect landmark index.  Compare the actual 45-entry browse row
-    # to each active native map name/XY.  Local 0..6 still use legacy aliases
-    # for their player marker; their native fallback coordinates are historical.
+    # to each active native map name/XY. Local 0,1,3..6 still use legacy
+    # aliases; Cherrygrove local 2 and local 7+ use native current-position markers.
     landmarks = town.split('JohtoTownMapEntries:', 1)[-1].split('JohtoTownMapEntriesEnd:', 1)[0]
     browse = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*(?:;[^\n]*)?\n\s*dw\s+(\w+)', landmarks)
     if len(browse) != 45:
         errors.append('ordinary Johto Town Map landmark count != 45')
     else:
-        for i in range(7, min(count, len(town_indices), len(names), len(positions))):
+        for i in [2, *range(7, min(count, len(town_indices), len(names), len(positions)))]:
             try:
                 index = int(town_indices[i], 0)
             except ValueError:
@@ -136,6 +136,12 @@ def audit(root=ROOT):
     resolver = sources['engine/overworld/region_map_lookup.asm']
     home = sources['home/overworld.asm']
 
+    # Cherrygrove local 2 is now native $FC. Do not silently restore the old
+    # $CE -> local-2 translation in the legacy one-byte identity resolver.
+    legacy_key = resolver.split('LegacyMapIDToRegionKey::', 1)[1].split('SyncLegacyMapRegions::', 1)[0]
+    if re.search(r'(?m)^\s*cp JOHTO_CHERRYGROVE_CITY\b', legacy_key):
+        errors.append('legacy $CE Cherrygrove alias still maps to native local ID 2')
+
     if not re.search(r'mapconst\s+REGION_NATIVE_MAP_SLOT,\s*0,\s*0\s*;\s*\$FC', const, re.I):
         errors.append('missing $FC virtual legacy map handle')
     if 'DEF REGION_WARP_ESCAPE EQU $fe' not in keys or 'ASSERT REGION_NATIVE_MAP_SLOT == $fc' not in keys:
@@ -178,8 +184,10 @@ def audit(root=ROOT):
         name = value.strip().split()[0]
         if index >= 8 and name != 'REGION_NATIVE_MAP_SLOT':
             errors.append(f'Johto local {index} must use the shared virtual handle, not a new alias')
-        if index < 8 and name == 'REGION_NATIVE_MAP_SLOT':
+        if index < 8 and index != 2 and name == 'REGION_NATIVE_MAP_SLOT':
             errors.append(f'legacy Johto local {index} alias was removed')
+        if index == 2 and name != 'REGION_NATIVE_MAP_SLOT':
+            errors.append('Cherrygrove local 2 must use the native $FC handle')
     gsc = entries(sources['engine/menu/options_menu.asm'], 'JohtoNativeGSCMusic::',
                   'JohtoNativeGSCMusicEnd::', r'db')
     if len(gsc) != count:

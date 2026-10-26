@@ -68,7 +68,7 @@ class GoldRoofMapgroupsP19D(unittest.TestCase):
     def test_gfx_and_palette_same_group_for_all_19_local_maps(self):
         color=(ROOT/'color/loadpalettes.asm').read_text()
         graphics=(ROOT/'engine/overworld/johto_goldenrod_roof_gfx.asm').read_text()
-        expected=[index for _,index in SCOPE]+[7, 6, 6, 8, 8, 8, None, 9, 9, None, None, None, None, None, 7, 10, 10, 10, None, None, None, None]  # Last four $ff: gate and three Olivine houses
+        expected=[index for _,index in SCOPE]+[7, 6, 6, 8, 8, 8, None, 9, 9, None, None, None, None, None, 7, 10, 10, 10, None, None, None, None] + [None] * 6  # Olivine 3 public interiors + Cherrygrove 3 homes
         self.assertEqual(current_roof_group_table(color,'JohtoGoldDayRoofGroups'),expected)
         self.assertEqual(current_roof_group_table(graphics,'JohtoRoofGroupForLocalMap'),expected)
         self.assertIn('cp JOHTO_MODERN',graphics)

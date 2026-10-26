@@ -79,7 +79,7 @@ class OlivineHouseBatch241DEV(unittest.TestCase):
             self.assertIn('db $01 ; Gold',obj)
             self.assertEqual(len(re.findall(r'(?m)^\s*object SPRITE_',obj)),1)
             self.assertNotIn('OPP_',obj) ; self.assertNotIn('ITEM ',obj)
-        self.assertIn('DEF NUM_JOHTO_MAPS EQU 52',(ROOT/'constants/region_map_constants.asm').read_text())
+        self.assertIn('DEF NUM_JOHTO_MAPS EQU 57',(ROOT/'constants/region_map_constants.asm').read_text())
 
     def test_six_outdoor_doors_are_exact_and_ordered(self):
         city=(ROOT/'data/mapObjects/JohtoOlivineCity.asm').read_text()

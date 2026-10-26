@@ -275,7 +275,7 @@ def check_all_native_selectors(project, active_edges):
     direction_index={'north':0,'south':1,'west':2,'east':3}
     for current,target,_,_,direction in active_edges:
         header=(project/'data/mapHeaders'/f'{current}.asm').read_text(encoding='utf-8')
-        bounded=re.findall(r'^\s*db\s+REGION_NATIVE_MAP_SLOT\s*\n\s*dw\s+(\w+)Blocks\b',header,re.M)
+        bounded=re.findall(r'^\s*db\s+REGION_NATIVE_MAP_SLOT(?:\s*;[^\n]*)?\s*\n\s*dw\s+(\w+)Blocks\b',header,re.M)
         if target in bounded:
             key=(symbols[current],direction_index[direction])
             if key in expected:
@@ -461,6 +461,14 @@ def registered_native_alias(project, target, target_id):
     if not native.is_file():
         return False
     constants = native.read_text(encoding='utf-8')
+    # Resolve the stable symbol from the manifest. Not every map's local symbol
+    # is mechanically derived from its legacy map constant (Cherrygrove is the
+    # first example: JOHTO_CHERRYGROVE_LOCAL_ID vs JOHTO_CHERRYGROVE_CITY).
+    manifest = json.loads((project/'tools/johto_native_maps.json').read_text(encoding='utf-8'))['maps']
+    records = [record for record in manifest if record.get('header') == target + '_h']
+    if len(records) != 1:
+        return False
+    local_symbol = records[0]['local_symbol']
     # The frozen 21+ constants are real assembler INCLUDEs, not new runtime slots.
     if 'INCLUDE "constants/johto_fixed_map_ids.asm"' in constants:
         frozen = project / 'constants/johto_fixed_map_ids.asm'
@@ -468,7 +476,7 @@ def registered_native_alias(project, target, target_id):
             constants += '\n' + frozen.read_text(encoding='utf-8')
         # Minimal negative-test fixtures can omit the frozen asset; pre-21
         # active local IDs remain defined in region_map_constants.asm.
-    local = re.search(r'^\s*DEF\s+'+re.escape(target_id)+r'_LOCAL_ID\s+EQU\s+(\d+)',
+    local = re.search(r'^\s*DEF\s+'+re.escape(local_symbol)+r'\s+EQU\s+(\d+)',
                       constants, re.M)
     if local is None:
         return False
@@ -915,7 +923,7 @@ def check_native_connection_selector(project, current, target, direction):
     """
     header = (project/'data/mapHeaders'/f'{current}.asm').read_text(encoding='utf-8')
     target_record = re.search(
-        r'^\s*db\s+REGION_NATIVE_MAP_SLOT\s*\n\s*dw\s+'
+        r'^\s*db\s+REGION_NATIVE_MAP_SLOT(?:\s*;[^\n]*)?\s*\n\s*dw\s+'
         + re.escape(target) + r'Blocks\b', header, re.M)
     if target_record is None:
         return
@@ -970,6 +978,19 @@ def check_native_connection_preview_abi(project):
         raise ConnectionError('Preview ABI: four destination bank switches required')
     if not re.search(r'\bld e,\[hl\]',resolver_body):
         raise ConnectionError('Preview ABI: neighbor bank must be returned in E')
+    # Cherrygrove local 2 is the only migrated early town in this patch. Both
+    # incoming road seams and both city-side previews must select the neighbor's
+    # actual ROM bank; a valid pointer with the wrong bank produces scrambled trees.
+    cherrygrove_preview_checks = [
+        (r'\.legacyRoute29Cherrygrove\s+ld e,BANK\(JohtoCherrygroveCityBlocks\)', 'Route29 west -> Cherrygrove bank'),
+        (r'\.legacyRoute30.*?cp JOHTO_ROUTE_30_LOCAL_ID.*?cp 1.*?ld e,BANK\(JohtoCherrygroveCityBlocks\)', 'Route30 south -> Cherrygrove bank'),
+        (r'\.nativeCherrygrove.*?cp 3.*?ld e,BANK\(JohtoRoute29Blocks\)', 'Cherrygrove east -> Route29 bank'),
+        (r'\.cherrygroveNorth\s+ld e,BANK\(JohtoRoute30Blocks\)', 'Cherrygrove north -> Route30 bank'),
+        (r'\.legacyRoute29North\s+ld e,BANK\(JohtoRoute46Blocks\)', 'Route29 north -> Route46 bank preserved'),
+    ]
+    for pattern, label in cherrygrove_preview_checks:
+        if not re.search(pattern, resolver_body, re.S):
+            raise ConnectionError('Cherrygrove native preview dispatch missing: '+label)
 
 
 def check_sea_chain_surf_outer_edge(project, gold):

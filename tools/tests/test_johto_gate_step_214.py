@@ -85,9 +85,11 @@ class GateOneStepContract(unittest.TestCase):
 
     def test_only_down_arrivals_auto_step_and_land_on_floor(self):
         actual=self.arrival
-        self.assertEqual(len(actual),26)
+        self.assertEqual(len(actual),32)
         expected_by_map={
-            'JOHTO_OLIVINE_CITY_LOCAL_ID':{(11,29,'D_DOWN'),(11,25,'D_DOWN'),(15,13,'D_DOWN')},
+            'JOHTO_OLIVINE_CITY_LOCAL_ID':{(11,29,'D_DOWN'),(11,25,'D_DOWN'),(15,13,'D_DOWN'),
+                                           (21,13,'D_DOWN'),(21,7,'D_DOWN'),(17,19,'D_DOWN')},
+            'JOHTO_CHERRYGROVE_LOCAL_ID':{(7,17,'D_DOWN'),(9,25,'D_DOWN'),(11,31,'D_DOWN')},
             'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},
             'JOHTO_ROUTE_29_LOCAL_ID':{(1,27,'D_DOWN')},
             'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':{(0,4,'D_DOWN'),(0,5,'D_DOWN')},

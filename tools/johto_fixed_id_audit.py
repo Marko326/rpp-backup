@@ -153,6 +153,39 @@ def check_active_slot_mapping(headers: str, active: list[dict]) -> list[str]:
     return errors
 
 
+def check_roof_table_slot_lengths(root: Path, overrides: dict[str, str],
+                                  active_count: int) -> list[str]:
+    """Preflight both roof tables against dense active slots before RGBASM.
+
+    The Gold roof reference audit checks actual group identities separately;
+    this lightweight dependency-free check closes the build-preflight gap.
+    """
+    errors: list[str] = []
+    tables = (
+        ('color/loadpalettes.asm', 'JohtoGoldDayRoofGroups',
+         'JohtoGoldDayRoofGroupsEnd'),
+        ('engine/overworld/johto_goldenrod_roof_gfx.asm',
+         'JohtoRoofGroupForLocalMap', 'JohtoRoofGroupForLocalMapEnd'),
+    )
+    for rel, begin, end in tables:
+        source = _read(root, rel, overrides)
+        if source.count(begin + ':') != 1 or source.count(end + ':') != 1:
+            errors.append(f'roof map table labels missing/ambiguous: {rel}')
+            continue
+        body = source.split(begin + ':', 1)[1].split(end + ':', 1)[0]
+        rows = re.findall(r'(?m)^\s*db\s+([^;\n]+)', body)
+        values = [item.strip() for row in rows for item in row.split(',')]
+        if not values or any(not re.fullmatch(r'\$[0-9a-fA-F]{1,2}|\d+', v)
+                             for v in values):
+            errors.append(f'roof map table contains missing/nonliteral db entries: {rel}')
+        elif len(values) != active_count:
+            errors.append(f'roof map table length mismatch in {rel}: '
+                          f'{len(values)} entries vs {active_count} active Johto maps')
+        if f'ASSERT {end} - {begin} == NUM_JOHTO_MAPS' not in source:
+            errors.append(f'roof map table missing RGBASM length ASSERT: {rel}')
+    return errors
+
+
 def check_sparse_runtime_paths(root: Path, overrides: dict[str, str]) -> list[str]:
     """Protect the *consumers*, not just the 256-byte routing data.
 
@@ -367,6 +400,7 @@ def audit(root: Path = ROOT, overrides: dict[str, str] | None = None,
     # Every dense slot must have exactly one frozen stable physical identity.
     # The 256-entry ROM table rejects invalid targets and phantom headers.
     errors.extend(check_active_slot_mapping(raw[HEADERS], active))
+    errors.extend(check_roof_table_slot_lengths(Path(root), overrides, len(active)))
     errors.extend(check_sparse_runtime_paths(Path(root), overrides))
     symbols = dict((key, int(value)) for key, value in re.findall(
         r'(?m)^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\d+)\s*$', const))
@@ -419,12 +453,39 @@ def audit(root: Path = ROOT, overrides: dict[str, str] | None = None,
         if not 0 <= id_ < len(rows):
             continue
         name = 'Johto' + rows[id_]['gold_name']
-        for rel in (f'maps/{name}.blk', f'data/mapHeaders/{name}.asm',
-                    f'data/mapObjects/{name}.asm', f'scripts/{name}.asm'):
+        for rel in (f'data/mapHeaders/{name}.asm', f'data/mapObjects/{name}.asm'):
             if not (Path(root) / rel).is_file() and rel not in overrides:
                 errors.append(f'active map #{slot}: missing actual map asset {rel}')
-            if f'\"{rel}\"' not in main_asm:
+            if f'"{rel}"' not in main_asm:
                 errors.append(f'active map #{slot}: missing ROM include for {rel}')
+        # These two Gold public rooms have identical blocks to installed
+        # Olivine Mart / PC and therefore intentionally alias those assets.
+        # Both still require their *own* headers, objects and no-service
+        # pointer table; all other maps retain the strict 4-asset contract.
+        shared_public = {
+            'JohtoCherrygroveMart': ('JohtoOlivineMartBlocks',
+                                     'JohtoOlivineMart',
+                                     'JohtoCherrygroveMartTextPointers'),
+            'JohtoCherrygrovePokecenter1F': ('JohtoOlivinePokecenter1FBlocks',
+                                             'JohtoOlivinePokecenter1F',
+                                             'JohtoCherrygrovePokecenter1FTextPointers'),
+        }
+        if name in shared_public:
+            blocks, source_map, pointers = shared_public[name]
+            header_text = _read(Path(root), f'data/mapHeaders/{name}.asm', overrides)
+            text_file = 'scripts/JohtoCherrygrovePublicText.asm'
+            text_body = _read(Path(root), text_file, overrides)
+            if not all((f'dw {blocks}, {pointers}' in header_text,
+                        f'"maps/{source_map}.blk"' in main_asm,
+                        f'"{text_file}"' in main_asm,
+                        f'{pointers}:' in text_body)):
+                errors.append(f'active map #{slot}: public Gold shared-block/text aliases invalid')
+        else:
+            for rel in (f'maps/{name}.blk', f'scripts/{name}.asm'):
+                if not (Path(root) / rel).is_file() and rel not in overrides:
+                    errors.append(f'active map #{slot}: missing actual map asset {rel}')
+                if f'"{rel}"' not in main_asm:
+                    errors.append(f'active map #{slot}: missing ROM include for {rel}')
     if len(active) > 0:
         headers = re.findall(r'(?m)^\s*dw\s+(\w+_h)\s*(?:;[^\n]*)?$',
                              raw[HEADERS].split('JohtoMapHeaderPointers::', 1)[-1]

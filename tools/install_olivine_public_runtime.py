@@ -78,8 +78,8 @@ s = p.read_text(encoding='utf-8')
 if not s.rstrip().endswith('\tdb CRYS_TEXTBOX'):
     raise SystemExit('map_palette_sets.asm unexpected ending')
 s = s.rstrip() + '\n\n; OLIVINE-5.62.241 DEV: public-building palette sets are isolated from Kanto.\n'
-s += '; JOHTO_OLIVINE_POKECENTER\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb INDOOR_BROWN\n\tdb POKECENTER_FLOOR\n\tdb PC_POKEBALL_PAL\n\n'
-s += '; JOHTO_OLIVINE_MART\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb MART_FLOOR\n\tdb INDOOR_LIGHT_BLUE\n\tdb PC_POKEBALL_PAL\n\n'
+s += '; JOHTO_OLIVINE_POKECENTER\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb JOHTO_GATE_GOLD_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb INDOOR_BROWN\n\tdb POKECENTER_FLOOR\n\tdb PC_POKEBALL_PAL\n\n'
+s += '; JOHTO_OLIVINE_MART\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb JOHTO_GATE_GOLD_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb JOHTO_GATE_GOLD_BROWN\n\tdb INDOOR_LIGHT_BLUE\n\tdb PC_POKEBALL_PAL\n\n'
 s += '; JOHTO_OLIVINE_CAFE\n\tdb INDOOR_GRAY\n\tdb INDOOR_RED\n\tdb INDOOR_GREEN\n\tdb INDOOR_BLUE\n\tdb INDOOR_YELLOW\n\tdb INDOOR_BROWN\n\tdb INDOOR_LIGHT_BLUE\n\tdb CRYS_TEXTBOX\n'
 p.write_text(s, encoding='utf-8')
 
@@ -368,4 +368,4 @@ replace_once('data/mapObjects/JohtoOlivineCafe.asm',
     'object SPRITE_JOHTO_FISHING_GURU_BLUE, 1, 5, WALK, 1, 2')
 replace_once('data/mapObjects/JohtoOlivinePokecenter1F.asm',
     'object SPRITE_JOHTO_FISHING_GURU_RED, 8, 4, WALK, 2, 2',
-    'object SPRITE_JOHTO_FISHING_GURU_BLUE, 8, 4, WALK, 1, 2')
+    'object SPRITE_JOHTO_FISHING_GURU_BLUE, 8, 4, WALK, 2, 2')

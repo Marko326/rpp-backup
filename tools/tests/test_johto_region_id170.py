@@ -16,6 +16,12 @@ REGISTERED_COUNT = len(json.loads((ROOT / "tools/johto_native_maps.json").read_t
 class NativeMapIDExpansion(unittest.TestCase):
     def test_registered_legacy_and_native_maps_remain_distinct(self):
         self.assertEqual(audit(ROOT), [])
+        manifest=json.loads((ROOT / 'tools/johto_native_maps.json').read_text())['maps']
+        self.assertEqual(manifest[2]['legacy_alias'], 'REGION_NATIVE_MAP_SLOT')
+        for i in (0, 1, 3, 4, 5, 6, 7):
+            self.assertNotEqual(manifest[i]['legacy_alias'], 'REGION_NATIVE_MAP_SLOT')
+        self.assertEqual(manifest[1]['local_symbol'], 'JOHTO_ROUTE_29_LOCAL_ID')
+        self.assertEqual(manifest[3]['local_symbol'], 'JOHTO_ROUTE_30_LOCAL_ID')
 
     def mutate(self, rel, before, after, expected):
         with TemporaryDirectory() as tmp:
@@ -67,6 +73,12 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'cp REGION_NATIVE_MAP_SLOT\n\tjr z, .invalid',
                     'cp REGION_NATIVE_MAP_SLOT\n\tnop\n\tnop', 'Kanto resolver')
 
+    def test_old_cherrygrove_alias_must_not_map_to_native_local_two(self):
+        self.mutate('engine/overworld/region_map_lookup.asm',
+                    'cp JOHTO_ROUTE_29\n\tjr z, .route29',
+                    'cp JOHTO_CHERRYGROVE_CITY\n\tjr z, .cherrygrove\n\tcp JOHTO_ROUTE_29\n\tjr z, .route29',
+                    'legacy $CE Cherrygrove alias still maps to native local ID 2')
+
     def test_abandoned_region_save_must_not_reset_native_map(self):
         self.mutate('engine/overworld/region_map_lookup.asm',
                     'SyncLegacyMapRegions::\n\t; A virtual map is keyed by the saved (region, local) pair. Legacy\n\t; map IDs remain authoritative for every pre-existing map/save.\n\tld a, [wCurMap]\n\tcp REGION_NATIVE_MAP_SLOT',
@@ -82,7 +94,7 @@ class NativeMapIDExpansion(unittest.TestCase):
                     'ld a,[wCurLocalMapID]', 'LAST_MAP')
 
     def test_missing_map_names_are_fatal(self):
-        self.mutate('engine/town_map.asm', 'dw JohtoOlivineName\nJohtoNativeTownMapEntriesEnd::',
+        self.mutate('engine/town_map.asm', 'dw JohtoCherrygroveName\nJohtoNativeTownMapEntriesEnd::',
                     'JohtoNativeTownMapEntriesEnd::', 'Town Map name count')
 
     def test_native_music_symbols_must_be_declared(self):
@@ -123,7 +135,7 @@ class NativeMapIDExpansion(unittest.TestCase):
 
     def test_missing_gsc_row_is_fatal(self):
         self.mutate('engine/menu/options_menu.asm',
-                    'db MUSIC_GBP_GSC_VIOLET_CITY ; Olivine Mart\nJohtoNativeGSCMusicEnd::',
+                    'db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; CherrygroveEvolutionSpeechHouse\nJohtoNativeGSCMusicEnd::',
                     'JohtoNativeGSCMusicEnd::', 'GSC music table count')
 
     def test_missing_town_map_index_in_relocated_romx_table_is_fatal(self):

@@ -21,14 +21,17 @@ class JohtoMusicContinuation(unittest.TestCase):
         cls.helper = cls.style.split('CheckJohtoMusicSceneTransition::', 1)[1].split('JohtoSceneGSCMap:', 1)[0]
 
     def test_same_legacy_song_can_have_distinct_gsc_scenes(self):
-        # Real counterexample: both Cherrygrove and Violet are CITIES1, but
-        # the map-specific GSC songs are different. This is not an invented song.
+        # Cherrygrove and Violet both use CITIES1 in the legacy RBY table,
+        # but only Violet remains in the legacy scene table; Cherrygrove is native local 2.
         songs = re.findall(r'^\s*db\s+(MUSIC_[A-Z0-9_]+)\s*,\s*0\b', self.songtable, re.M)
         self.assertEqual(songs[0xce], 'MUSIC_CITIES1')
         self.assertEqual(songs[0xf9], 'MUSIC_CITIES1')
         scene = self.style.split('JohtoSceneGSCMap:', 1)[1].split('db $ff', 1)[0]
-        self.assertIn('JOHTO_CHERRYGROVE_CITY,    MUSIC_GBP_GSC_CHERRYGROVE_CITY', scene)
+        self.assertNotIn('JOHTO_CHERRYGROVE_CITY', scene)
         self.assertIn('JOHTO_VIOLET_CITY,         MUSIC_GBP_GSC_VIOLET_CITY', scene)
+        native = self.style.split('JohtoNativeGSCMusic::', 1)[1].split('JohtoNativeGSCMusicEnd::', 1)[0]
+        native_tracks = re.findall(r'^\s*db\s+(MUSIC_GBP_GSC_[A-Z0-9_]+)', native, re.M)
+        self.assertEqual(native_tracks[2], 'MUSIC_GBP_GSC_CHERRYGROVE_CITY')
         self.assertRegex(self.audio, r'ld a, \[wLastMusicSoundID\]\s*\n\s*cp b')
 
     def test_call_after_ordinary_header_music_load_and_bank_restore(self):

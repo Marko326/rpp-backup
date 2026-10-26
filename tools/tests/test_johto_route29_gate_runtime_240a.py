@@ -56,8 +56,8 @@ def preview_bank(source, *, alias='JOHTO_ROUTE_29',
     body = section(source, 'ResolveNativeConnectionPreviewBank::', 'NativeRegionConnectionTargets::')
     program, labels = instructions(body)
     mem = {'wCurMap': alias, 'wCurRegion': region, 'wCurLocalMapID': local}
-    a, c, e, z, pc = None, None, edge, False, 0
-    for _ in range(75):
+    a, b, c, e, z, pc = None, None, None, edge, False, 0
+    for _ in range(120):
         if pc >= len(program):
             raise AssertionError('preview bank resolver ran past function')
         op = program[pc]; pc += 1
@@ -70,21 +70,26 @@ def preview_bank(source, *, alias='JOHTO_ROUTE_29',
             a = mem[m[1]]; continue
         m = re.fullmatch(r'cp (\w+)', op)
         if m:
-            z = a == m[1]; continue
-        m = re.fullmatch(r'(?:jr|jp) (z|nz),(\.\w+)', op)
+            token=m.group(1)
+            value=int(token,0) if token.isdigit() else token
+            z = a == value; continue
+        m = re.fullmatch(r'(?:jr|jp) (z|nz),\s*(\.\w+)', op)
         if m:
-            if z == (m[1] == 'z'):
+            if z == (m[1]=='z'):
                 pc = labels[m[2]]
             continue
+        m = re.fullmatch(r'(?:jr|jp)\s+(\.\w+)', op)
+        if m:
+            pc = labels[m[1]]; continue
         if op == 'and a':
             z = (a == 0); continue
-        m = re.fullmatch(r'ld e,(BANK\(\w+\)|\$ff)', op)
+        m = re.fullmatch(r'ld e,\s*(BANK\(\w+\)|\$ff)', op)
         if m:
             e = m[1]; continue
         if op == 'ret':
             return e
         if op == 'ld b,a' or op == 'ld hl,NativeRegionConnectionTargets':
-            raise AssertionError('Route29 legacy preview wrongly entered native search')
+            raise AssertionError('Unexpected native selector scan in a reviewed Cherrygrove seam')
         raise AssertionError('unknown cross-bank preview ASM: '+op)
     raise AssertionError('preview bank lookup did not terminate')
 
@@ -112,7 +117,8 @@ class Route29GateRuntime240A(unittest.TestCase):
     def test_legacy_preview_reads_actual_route46_bank(self):
         expected = 'BANK(JohtoRoute46Blocks)'
         self.assertEqual(preview_bank(self.lookup), expected)
-        for changes in ({'edge':1}, {'edge':2}, {'edge':3},
+        self.assertEqual(preview_bank(self.lookup, edge=2), 'BANK(JohtoCherrygroveCityBlocks)')
+        for changes in ({'edge':1}, {'edge':3},
                         {'region':'MAP_REGION_KANTO'}, {'local':'JOHTO_ROUTE_30_LOCAL_ID'},
                         {'alias':'JOHTO_ROUTE_30'}):
             self.assertEqual(preview_bank(self.lookup, **changes), '$ff')
@@ -145,12 +151,22 @@ class Route29GateRuntime240A(unittest.TestCase):
         with self.assertRaises(AssertionError):
             legacy_route29_door_step(bad,self.collision)
 
+    def test_cherrygrove_native_mixed_edges_select_correct_preview_banks(self):
+        self.assertEqual(preview_bank(self.lookup, alias='JOHTO_ROUTE_29',
+            local='JOHTO_ROUTE_29_LOCAL_ID', edge=2), 'BANK(JohtoCherrygroveCityBlocks)')
+        self.assertEqual(preview_bank(self.lookup, alias='JOHTO_ROUTE_30',
+            local='JOHTO_ROUTE_30_LOCAL_ID', edge=1), 'BANK(JohtoCherrygroveCityBlocks)')
+        self.assertEqual(preview_bank(self.lookup, alias='REGION_NATIVE_MAP_SLOT',
+            local='JOHTO_CHERRYGROVE_LOCAL_ID', edge=0), 'BANK(JohtoRoute30Blocks)')
+        self.assertEqual(preview_bank(self.lookup, alias='REGION_NATIVE_MAP_SLOT',
+            local='JOHTO_CHERRYGROVE_LOCAL_ID', edge=3), 'BANK(JohtoRoute29Blocks)')
+
     def test_wrong_preview_bank_and_edge_are_rejected(self):
         anchor='ld e,BANK(JohtoRoute46Blocks)'
         self.assertEqual(self.lookup.count(anchor), 1)
         bad = self.lookup.replace(anchor, 'ld e,BANK(JohtoRoute29Blocks)',1)
         self.assertNotEqual(preview_bank(bad), 'BANK(JohtoRoute46Blocks)')
-        anchor='ld a,c\n and a ; north connection is edge 0'
+        anchor='ld a,c\n and a ; north edge still leads to Route46'
         self.assertEqual(self.lookup.count(anchor), 1)
         bad=self.lookup.replace(anchor, 'ld a,c\n cp 1 ; incorrect south edge',1)
         self.assertNotEqual(preview_bank(bad), 'BANK(JohtoRoute46Blocks)')

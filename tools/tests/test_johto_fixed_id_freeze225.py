@@ -71,7 +71,7 @@ class FixedIdFreeze225(unittest.TestCase):
 
     def test_route37_and_ecruteak_are_active_but_next_map_reserved(self):
         data = json.loads((ROOT / REGISTRY).read_text())
-        self.assertEqual(49, len(data['maps']))  # two new Olivine House1 rooms occupy slots 47..48
+        self.assertGreaterEqual(len(data['maps']), 49)  # existing slots 47..48 must stay fixed as later towns expand
         self.assertEqual([(32, 'JOHTO_OLIVINE_TIMS_HOUSE_LOCAL_ID'),
                           (35, 'JOHTO_OLIVINE_GOOD_ROD_HOUSE_LOCAL_ID')],
                          [(x['local_id'],x['local_symbol']) for x in data['maps'][47:49]])
@@ -88,6 +88,22 @@ class FixedIdFreeze225(unittest.TestCase):
         self.assertIn('JohtoRoute37_h', (ROOT / HEADERS).read_text(encoding='utf8'))
         self.assertIn('JohtoEcruteakCity_h', (ROOT / HEADERS).read_text(encoding='utf8'))
         self.assertEqual([], audit(ROOT))
+
+    def test_roof_table_expansion_is_required_before_rgbasm(self):
+        # Missing one registered indoor slot used to escape ID preflight and
+        # abort only inside color/loadpalettes.asm / roof GFX RGBASM ASSERTs.
+        for path, row in (
+            ('color/loadpalettes.asm',
+             ' db $ff, $ff, $ff ; Cherrygrove GymSpeech, GuideGents, EvolutionSpeech homes, slots52..54\n'),
+            ('engine/overworld/johto_goldenrod_roof_gfx.asm',
+             ' db $ff ; Cherrygrove EvolutionSpeechHouse interior (slot 54)\n'),
+        ):
+            source = (ROOT / path).read_text()
+            self.assertEqual(source.count(row), 1)
+            broken = source.replace(row, '', 1)
+            failures = audit(ROOT, {path: broken})
+            self.assertTrue(any('roof map table length mismatch' in e and path in e
+                                for e in failures), failures)
 
     def test_all_reserved_ids_exist_in_assembler_input(self):
         import re

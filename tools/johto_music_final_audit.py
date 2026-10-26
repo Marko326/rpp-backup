@@ -18,7 +18,6 @@ from pathlib import Path
 EXPECTED_SCENES = {
     'NEW_BARK_TOWN': ('MUSIC_PALLET_TOWN', 'MUSIC_GBP_GSC_NEW_BARK_TOWN'),
     'JOHTO_ROUTE_29': ('MUSIC_ROUTES1', 'MUSIC_GBP_GSC_ROUTE29'),
-    'JOHTO_CHERRYGROVE_CITY': ('MUSIC_CITIES1', 'MUSIC_GBP_GSC_CHERRYGROVE_CITY'),
     'JOHTO_ROUTE_30': ('MUSIC_ROUTES3', 'MUSIC_GBP_GSC_ROUTE30'),
     'JOHTO_ROUTE_31': ('MUSIC_ROUTES3', 'MUSIC_GBP_GSC_ROUTE30'),
     'JOHTO_VIOLET_CITY': ('MUSIC_CITIES1', 'MUSIC_GBP_GSC_VIOLET_CITY'),
@@ -112,7 +111,7 @@ def audit(root: Path) -> tuple[list[str], list[dict[str, str]]]:
     # handle.  This is NOT a GSC music scene: native music uses local-ID rows.
     if any(alias != 'REGION_NATIVE_MAP_SLOT' for alias in aliases[8:]):
         errors.append('native locals must share the virtual map handle')
-    legacy_aliases = aliases[:8]
+    legacy_aliases = [alias for index, alias in enumerate(aliases[:8]) if index != 2]
     if len(aliases) != len(headers):
         errors.append('Johto aliases and header pointer counts differ')
 
@@ -122,6 +121,11 @@ def audit(root: Path) -> tuple[list[str], list[dict[str, str]]]:
         pairs = re.findall(r'(?m)^\s*db\s+([A-Z][A-Z0-9_]+)\s*,\s*(MUSIC_GBP_GSC_[A-Z0-9_]+)',
                            scene_src)
         scene_map = dict(pairs)
+        native_gsc = symbols(section(styles, 'JohtoNativeGSCMusic::', 'JohtoNativeGSCMusicEnd::'), 'db')
+        if len(aliases) > 2 and aliases[2] != 'REGION_NATIVE_MAP_SLOT':
+            errors.append('Cherrygrove local 2 is not registered with native $FC handle')
+        if len(native_gsc) <= 2 or native_gsc[2] != 'MUSIC_GBP_GSC_CHERRYGROVE_CITY':
+            errors.append('Cherrygrove native local 2 lost its Gold GSC music scene')
         if len(scene_map) != len(pairs):
             errors.append('duplicate Johto GSC scene mapping')
     except IndexError:

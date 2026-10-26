@@ -74,9 +74,12 @@ def audit(root: Path, gold: Path) -> list[str]:
         else:
             indoor=a[1].split('SpriteSheetPointerTable:',1)[0]
             have=re.findall(r'(?m)^\s*db (SPRITE_\w+)\s*$',indoor)
-            wanted=['SPRITE_SAILOR','SPRITE_GAMBLER','SPRITE_BUG_CATCHER','SPRITE_JOHTO_LASS',
-                    'SPRITE_JOHTO_POKEFAN_M','SPRITE_JOHTO_FISHING_GURU_RED','SPRITE_GIRL','SPRITE_JOHTO_FISHING_GURU_GREEN',
-                    'SPRITE_BLACK_HAIR_BOY_1','SPRITE_BALL','SPRITE_BERRY_TREE']
+            # Gold House1 cross-town VRAM sheet: preserve the Olivine
+            # accepted people, add Cherrygrove Gramps/Bug Catcher/Youngster
+            # and the green Evolution Lass alias; exactly 9 walking slots.
+            wanted=['SPRITE_JOHTO_GRAMPS','SPRITE_JOHTO_YOUNGSTER_RED','SPRITE_BUG_CATCHER','SPRITE_JOHTO_LASS',
+                    'SPRITE_JOHTO_POKEFAN_M','SPRITE_JOHTO_FISHING_GURU_RED','SPRITE_JOHTO_BUG_CATCHER_RED','SPRITE_JOHTO_FISHING_GURU_GREEN',
+                    'SPRITE_JOHTO_LASS_GREEN','SPRITE_BALL','SPRITE_BERRY_TREE']
             if have!=wanted:problems.append('house $0c set must be 11 slots with Gold NPCs')
         for tag,asmname in [('POKEFAN_M','JohtoPokefanMSprite'),('LASS','JohtoLassSprite')]:
             if not re.search(rf'(?s); SPRITE_JOHTO_{tag}.*?\bdw {asmname}\s+db \$c0\s+db BANK\({asmname}\)', sets):

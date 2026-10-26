@@ -1,3 +1,40 @@
+## NPC-5.62.243｜清理收口：区分「行走正常」与「Gold 范围一致」
+
+- 正式功能提交将 `data/game_version.asm` 的显示版本从 `JSON-5.62.242` 升为 `NPC-5.62.243`；工具提交不再次升级游戏版本。涉及旧版本硬编码的离线检查器及单测必须同步更新。
+
+- NPC 在室内能够持续走动、走得看起来差不多，是有限度的手机观察；不能拿它代替 Gold `object_event` 的出生坐标、方向轴、活动半径静态比对。六名已启用室内 WALK 的半径表已对照原版，但 Gold 运动节奏/动画和其它未移植事件仍不等价。
+- 此次清理保留已经恢复的关东 WALK 状态机、NPC 专用 `.tilecoll`、受限城都 ROMX helper，不修改运行时代码。`WALK,2` 是水平轴不是半径；Gold 坐标进入 RPP `c2x4/c2x5` 需 +4。以 Gold 边界+关东碰撞共同限制人物，不因用户无法数格子就放松静态数据核对。
+- 双提交的工具反向隔离只撤下 `tools/`、`docs/`、TODO/踩坑及索引，绝不能误删 `scripts/` 下游戏事件、`main.asm` 的 ROMX INCLUDE 或地图图块资源。导出 ZIP 含 Worktree、非已提交 HEAD，清理增量只能应用于 R2 最终开发候选。
+- 发布门禁仍 FAIL（Route29 6 条占位差异、Route32 1 条既有缺口），R2 工具仍有独立复审报告记录的 P1-A/P1-B 静态审计盲区；不为凑 PASS 修改道路 NPC、篡改审计结论或把 MAP 地址当 ROM 实测。Bank1 slack=0，新增功能需重新检查 ROM 空间。
+
+## NPC-KANTO-5.62.242（追加 2026-10-26）｜生成器脚下图块偏移必须按 DrawTileBlock 的 4×4 行优先
+
+- 实际根因不是移动轴、金版 NPC 引擎、随机等待，也不是缺少整张 `.tilecoll`。公共建筑 `tools/johto_olivine_public_runtime.py` 曾取 `subcell*4+2` 当 16×16 格的左下 8×8；但关东 `DrawTileBlock` 是 4×4 **row-major**，真实偏移应为 `4,6,12,14`。这使部分相邻地板在 `.tilecoll` 中交替放行/禁止；浅葱 PC 渔夫 `(8,4)->(7,4)` 后左右下一步都被拒绝的实测现象可由原资源复算复现。吉花 MART 男 `(7,6)` 左右相邻格亦受影响。
+- 纠正生成器并重生三套公共建筑资源，吉花 MART 自动共用 MART 资源。保留关东 `TryWalking`、`CanWalkOntoTile` 和金版精确玩家位置遮罩、旧民房。新增整图像素对照与所有 Gold 16×16 格步行白名单/遮罩一致性测试。**源码静态 PASS != ROM 编译与实机 PASS**。
+- 工程验收与命令见 `docs/JOHTO_PUBLIC_NPC_FOOT_TILE_FIX_242.md`。
+
+## NPC-KANTO-5.62.242｜“转头不走”先拆轴、目的地图块与运行时拒绝原因
+
+- Kanto 的 `engine/overworld/movement.asm` 已有 `WALK=$FE`、`STAY=$FF`：`WALK,1` 是上下，`WALK,2` 是左右；`TryWalking` 把朝向更新与实际 `CanWalkOntoTile` 成功后位移分开，NPC 原地转向**不能**证明行走指令或源轴设置正确。Gold `SPRITEMOVEDATA_WALK_LEFT_RIGHT` 应转换为现有 RPP `WALK,2`，不移植 Gold 引擎；原版 Gold `range_x/range_y` 没有对应的 RPP `object` 编码，不能写成已一比一实现。
+- 浅葱 PC Fishing Guru `(8,4)` 曾误写 `WALK,1`，确定会尝试垂直而非 Gold 的左右方向；本轮同时修复运行时对象源配置、`install_olivine_public_runtime.py` 中会重新写错 `WALK,1` 的安装模板、以及把错误轴误当正确答案的旧单测。另两位 MART 行走者已正确是 `WALK,2`，客厅 Cafe 是 `WALK,1`。通过 `.blk`→`.bst` 左下 8x8 脚底图块→`.tilecoll` 的 Kanto NPC 碰撞链路计算，吉花 MART `(7,6)` 左右、浅葱 MART `(6,2)` 左右、PC `(8,4)` 左右及 Cafe `(1,5)` 上下邻格目前都能通过静态地板检查。
+- 不能把游戏玩家使用的 Gold 位置 blocked-mask 当成 NPC `CanWalkOntoTile` 的唯一判定。后者还有 `wTilesetCollisionPtr`、移动屏幕边缘、sprite 碰撞、等待计数及实时玩家位置。静态目标格 PASS **不代表玩家报告的 MART 原地转向已解决**；缺 ROM CPU／手机轨迹时应注明未定位运行时拒绝点，而不能“修”掉原版 Kanto 全局条件。现有生成器可以按静态数据重建，但不负责把 Gold 的 NPC 漫游范围移植到 Kanto。
+
+## CG-NATIVE-5.62.242｜旧 `$CE` 城市改为 `$FC + local ID 2`，不要全局替换
+
+- **范围约束**：本轮只迁移吉花市室外身份。稳定 local ID 2 已存在，活动槽仍是 slot 2；旧 `$CE` 仅留作固定索引占位，不是运行时地图身份。其余早期地图保持现状，不能把 `$E7/$F4/$0B/$F8/$F9/$FA/$FB` 批量替换成 `$FC`。
+- **不能只改 alias 表**：吉花市切换后，必须同步 native header/bank/alias 表、legacy `$CE` 来源拒绝、城市 3 个源 Warp 与室内回程、`CheckTilePassable` 实际门口执行路径、Route29 西／Route30 南连接目标、`ResolveNativeConnectionPreviewBank` 的跨 Bank 预览、Town Map 当前标记、Fly selector/local ID、GSC 音乐、室外精灵／图块选择。相邻 Route29/30 的自身身份仍是旧句柄，只有连接目的地改成 `$FC`。
+- **此前事故教训**：曾把多个早期城镇和道路一起迁移，用户 ROM 出现黑屏、乱码树木和无法行动。此次不得扩大范围，也不能将静态表检查当作 ROM/实机证明。连接预览必须对每个真实边方向检查 Bank；Route29 的 north→Route46（Bank `$47`）与 west→吉花市（吉花市 blocks 所在 Bank）是不同分支。
+- **本轮证据与未覆盖**：吉花市房屋、固定 ID、56 条活动连接、Fly、Warp 到达、屋顶和门房专项均 PASS；最后合并运行的相关模块 134/134 PASS（此前两组 92/92 与 52/52 也通过）。统一发布审计与迁移前基线有完全相同的 16 条错误（门口合同、室内标牌、Surf 延后登记），本轮新增 0 条；全量 unittest discover 超时，不能记 PASS。未编译 ROM、未生成 MAP、未手机验收。后续其它城镇/道路必须逐个单独迁移并复用同样的正反例，不得一次性改多个 ID。
+
+## 吉花市普通民宅跨城镇接入注意事项（开发候选，2026-10-25）
+
+- 不能以 `Cherrygrove` 文件名前缀判断民宅总数：原版另有 `GuideGentsHouse`；本批为三间民宅、五名 NPC、室内六个出口、城市三个入口，宝可梦中心与商店仍封闭。
+- Gold `TILESET_HOUSE` 三图都复用 House1；可用已接入浅葱市的 House1 块、碰撞和 `$0c` NPC 图集，但须为人物调色分配独立图片 ID。进化介绍屋的 Lass 为 **PAL_NPC_GREEN**，不能复用浅葱红色 Lass 的颜色 ID。
+- RPP `object` 宏超过六参数会把普通人物分派为 `ITEM` 或 `TRAINER`，新 NPC 应严格使用六参数并做反向注入测试。
+- 原版民宅 Warp #3/#4/#5 不等于 RPP 城市运行时 Warp #0/#1/#2。室内 `(2,7)/(3,7)` 均返回所属城市入口，新增稳定 ID124/125/126 分别挂活动槽52/53/54，不能把 Gold 组内编号当作活动槽。
+- 旧门禁检查器存在写死“52图”“浅葱是表尾”“26条自动步进记录”和未同步的 `$0c` 精灵表预期；在新房屋接入时调整为显式核对**原记录＋新记录**，不得删掉旧记录或负向用例。
+- 旧 1,035 项门禁记录 14 FAIL，此次没有独立清零全量 14 项。已经确认 Route35 门毯负向注入测试还引用旧的 `jr` 锚点；暂保留，涉及相关门房施工时再修。项目无本批新编译 MAP/ROM、VRAM 或手机行为验收，编译空间与入口/回程行为仍应由用户侧确认。
+
 ## JSON-5.62.242｜正式清理：Gold 路径、Warp 指针与 PC 共用色槽（2026-10-25）
 
 - **查表越界是 ROM 风险，不是只改测试**：`WarpTileIDPointers` 只有 34 个旧图块集指针，当前登记 40 种；新图块集编号 34–39 若落入旧查表将读到无关字节。游戏 ASM 必须先以 `cp JOHTO_PARK_GATE` 拒绝旧表范围外查询，再交还既有门碰撞路径。Bank3 随附 MAP 无余量，本轮用 Carry 等价边界判断等额节字节；只有真实 RGBDS 链接才可最终证明空间无增长。强制负向检查覆盖取消保护、错误 Carry 和新增图块集不经复核。
@@ -849,3 +886,15 @@ P16B 只在 Warp 完整加载 `LoadMapData` 后补边；从 33 号道路直接�
 - **初版双房漏登记到达自动步进**：第一间民宅 `(29,11)` 已有 `D_DOWN`，首轮新增 Tim `(25,11)` 与 Good Rod `(13,15)` 时只登记了 Warp，却漏了到达后的向下步进，角色停在室外门砖上。修复两条精确 arrival-step，并在现有审核里同时检查 Gold 门砖、回程目的地、玩家落点／马上反向复入；“能够传送”不能等同于完整出门行为。
 - **旧测试随活动地图扩张失效**：本次最初完整门禁运行 994 项、12 FAIL／2 ERROR，原因是历史测试写死 46／47 地图、最后一个门房／地图条目、旧 `.gateVertical` 的 `jr` 分支、`SPID` 版本前缀和稀疏映射表尾注释。只修复这些工具测试的真实锚点，保留删除／错误注入必须 FAIL 的负向行为，不修改已经验收的运行时 ASM。重新完整执行发布门禁 994/994、0 skipped、56/56 连接 PASS，Gold 来源 367/367 PASS；源码级 23 图、171 边、0 failures，仍非 ROM 编译或手机全路径证据。
 - **用户反馈边界**：用户先确认两间新民宅出门自动行走修复正常，随后视频及文字确认两名 NPC 可见、面对玩家按 A 后转向且无文字，并表示没问题。只登记上述可见场景验收；不声称所有昼夜调色、存读档、长期随机转向或特殊事件已通过。Tim 交换与好钓竿赠送仍延期；用户新 ROM/MAP 原件未提供，本轮助手没有编译／链接 ROM。
+
+## NPC-5.62.243：城都 NPC Gold 半径参数不可被 WALK,2 替代
+
+- Kanto 对象宏 `object SPRITE, X, Y, WALK, 2, TEXT` 的 `2` 是**水平行走轴**，不是 Gold `object_event` 的 `range_x=2`。旧地图转换只带了轴，没带原点半径，导致吉花 MART 人物远离原位。关东原 `c2x2/c2x3` 位移累计也不是每人独立 Gold 半径。
+- 仅在 Kanto `CanWalkOntoTile` 的**非脚本 NPC 随机行走**分支调用 `CheckJohtoNPCPatrolBounds`。先确认 `wCurMap=$fc`、`wCurRegion=Johto`、`wCurLocalMapID`，不能只按共享 $FC 判断。允许范围坐标须用 `c2x4/c2x5=Gold+4`。
+- `callab` 的 Bankswitch 会破坏 BC 与 HL：Bank1 调用保存/恢复 BC，随后原引擎重读 tileset 碰撞指针。被范围拒绝时不能只清 Carry/直接返回，要复制 Kanto `.impassable` 进入延迟随机等待，否则会出现每帧原地转头。
+- 当前每个受限室内地图恰好一个 WALK 人物，所以可只按 local map ID 索引；**今后新增同房间第二个 WALK，必须改成按人物区分的范围表**，全量审计已有 fail-closed 检查。Route29 占位仍单独处理。
+- Gold 事件对象还含调色板、时间条件、脚本、事件标志，及移动节奏等，不能把“六人的方向和坐标范围对齐”写作“所有 Gold 参数完全移植”。本次无 ROM 构建/手机实机证明。
+
+### NPC-5.62.243 DEV：Gold 半径判断静态测试的反向分支盲区（独立审查后修正）
+
+旧 `tools/johto_npc_movement_audit.py` 只检查 Gold 半径常量和是否存在挂钩；把 ROMX helper `.compare` 的 `jr c, .blocked` 改为 `jr nc, .blocked`，仍只报 Route29 已知错误。修复：解析当前汇编比较指令，对六个上下界逐字节运行条件跳转，新增分支反转、Carry、Bank 挂钩、main INCLUDE 等负向注入。新增 WALK 必须先通过独立半径及每图唯一 WALK 门禁。以上是源码审计加固，不能替代用户 ROM 实测；不为得到全 PASS 而修改 Route29/Route32。

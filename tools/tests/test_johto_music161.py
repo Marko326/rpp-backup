@@ -34,12 +34,15 @@ class JohtoMusicScenes(unittest.TestCase):
         self.assertEqual(pairs, {
             'NEW_BARK_TOWN': 'MUSIC_GBP_GSC_NEW_BARK_TOWN',
             'JOHTO_ROUTE_29': 'MUSIC_GBP_GSC_ROUTE29',
-            'JOHTO_CHERRYGROVE_CITY': 'MUSIC_GBP_GSC_CHERRYGROVE_CITY',
             'JOHTO_ROUTE_30': 'MUSIC_GBP_GSC_ROUTE30',
             'JOHTO_ROUTE_31': 'MUSIC_GBP_GSC_ROUTE30',
             'JOHTO_VIOLET_CITY': 'MUSIC_GBP_GSC_VIOLET_CITY',
             'JOHTO_ROUTE_32': 'MUSIC_GBP_GSC_ROUTE30',
         })
+        native = self.style.split('JohtoNativeGSCMusic::', 1)[1].split('JohtoNativeGSCMusicEnd::', 1)[0]
+        native_tracks = re.findall(r'^\s*db\s+(MUSIC_GBP_GSC_[A-Z0-9_]+)', native, re.M)
+        self.assertEqual(native_tracks[2], 'MUSIC_GBP_GSC_CHERRYGROVE_CITY')
+        self.assertNotIn('JOHTO_CHERRYGROVE_CITY', table)
         constants = asm('constants/music_constants.asm')
         for symbol in pairs.values():
             self.assertRegex(constants, r'(?m)^\s*const ' + symbol + r'\s*$')

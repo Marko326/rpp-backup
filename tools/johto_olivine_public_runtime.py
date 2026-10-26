@@ -59,6 +59,18 @@ def _palette_roles(path: Path) -> list[str]:
     return roles
 
 
+def _npc_foot_index(x: int, y: int) -> int:
+    """Lower-left 8x8 tile of one 16x16 cell in an RPP 4x4 block.
+
+    DrawTileBlock in home/overworld.asm copies four sequential *rows* of four
+    8x8 tiles. A 16x16 cell occupies two rows and two columns, so its bottom
+    left tile is at row (2*(y%2)+1), column 2*(x%2): 4, 6, 12, or 14.
+    Do not use (subcell*4 + 2): that assumes four packed 2x2 quadrants and
+    describes a different tile for three out of the four cells.
+    """
+    return (2 * (y % 2) + 1) * 4 + 2 * (x % 2)
+
+
 def _blocked(mask: bytes, width_cells: int, x: int, y: int) -> bool:
     row_bytes = (width_cells + 7) // 8
     return bool(mask[y * row_bytes + x // 8] & (1 << (x % 8)))
@@ -100,11 +112,10 @@ def build_room(root: Path, candidate_root: Path, key: str) -> dict:
             map_block = map_src[(y // 2) * width_blocks + (x // 2)]
             if map_block >= block_count:
                 raise ValueError(f"{key}: map references missing source block {map_block}")
-            subcell = (y % 2) * 2 + (x % 2)
-            offset = map_block * 16 + subcell * 4
-            foot_tile = block_src[offset + 2]
+            foot_index = _npc_foot_index(x, y)
+            foot_tile = block_src[map_block * 16 + foot_index]
             blocked = _blocked(mask, width_cells, x, y)
-            cell_data[(x, y)] = (map_block, subcell, blocked, foot_tile)
+            cell_data[(x, y)] = (map_block, foot_index, blocked, foot_tile)
             (blocked_ids if blocked else pass_ids).add(foot_tile)
 
     ambiguous = sorted(pass_ids & blocked_ids)
@@ -142,9 +153,9 @@ def build_room(root: Path, candidate_root: Path, key: str) -> dict:
             for sub_y in range(2):
                 for sub_x in range(2):
                     x, y = bx * 2 + sub_x, by * 2 + sub_y
-                    _, subcell, is_blocked, original_tile = cell_data[(x, y)]
+                    _, foot_index, is_blocked, original_tile = cell_data[(x, y)]
                     if not is_blocked and original_tile in duplicate_ids:
-                        block_bytes[subcell * 4 + 2] = duplicate_ids[original_tile]
+                        block_bytes[foot_index] = duplicate_ids[original_tile]
                         needs_clone = True
             if needs_clone:
                 new_block_id = len(block_out) // 16
@@ -159,8 +170,7 @@ def build_room(root: Path, candidate_root: Path, key: str) -> dict:
     for y in range(height_cells):
         for x in range(width_cells):
             block_id = map_out[(y // 2) * width_blocks + (x // 2)]
-            subcell = (y % 2) * 2 + (x % 2)
-            foot_tile = block_out[block_id * 16 + subcell * 4 + 2]
+            foot_tile = block_out[block_id * 16 + _npc_foot_index(x, y)]
             (blocked_after if _blocked(mask, width_cells, x, y) else passable_after).add(foot_tile)
     tilecoll = sorted(passable_after) + [0xFF]
     allowed = set(tilecoll[:-1])

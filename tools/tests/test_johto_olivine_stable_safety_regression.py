@@ -67,8 +67,8 @@ def failures(files):
          'Blue Fishing Guru missing 12-tile sprite branch')
     must('object SPRITE_JOHTO_FISHING_GURU_BLUE, 1, 5, WALK, 1, 2' in cafe,
          'Cafe Fishing Guru color not corrected')
-    must('object SPRITE_JOHTO_FISHING_GURU_BLUE, 8, 4, WALK, 1, 2' in center,
-         'Pokecenter Fishing Guru color/distance not corrected')
+    must('object SPRITE_JOHTO_FISHING_GURU_BLUE, 8, 4, WALK, 2, 2' in center,
+         'Pokecenter Fishing Guru color/horizontal axis not corrected')
     return faults
 
 FILES=[
@@ -105,6 +105,14 @@ class StableOlivineContracts(unittest.TestCase):
         edited=dict(self.sources)
         edited['home/overworld.asm']=edited['home/overworld.asm'].replace('cp JOHTO_OLIVINE_CAFE_LOCAL_ID','cp JOHTO_OLIVINE_MART_LOCAL_ID')
         self.assertIn('Cafe missing from collision-only selector',failures(edited))
+
+    def test_pc_wrong_axis_is_rejected(self):
+        edited = dict(self.sources)
+        edited['data/mapObjects/JohtoOlivinePokecenter1F.asm'] = (
+            edited['data/mapObjects/JohtoOlivinePokecenter1F.asm'].replace(
+                'object SPRITE_JOHTO_FISHING_GURU_BLUE, 8, 4, WALK, 2, 2',
+                'object SPRITE_JOHTO_FISHING_GURU_BLUE, 8, 4, WALK, 1, 2'))
+        self.assertIn('Pokecenter Fishing Guru color/horizontal axis not corrected', failures(edited))
 
     def test_gold_color_errors_are_rejected(self):
         edited=dict(self.sources)

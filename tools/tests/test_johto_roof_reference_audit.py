@@ -48,8 +48,9 @@ class RoofGoldReferenceGate(unittest.TestCase):
     def test_gold_registry_roofs_and_runtime_tables_match(self):
         self.assertEqual(audit(self.path,GOLD),[])
 
-    def test_batch_indoor_houses_have_no_roof_and_both_tables_have_49_slots(self):
+    def test_registered_indoor_houses_have_no_roof_and_both_tables_match_registry(self):
         from johto_roof_reference_audit import roof_table
+        registered = json.loads((self.path/'tools/johto_native_maps.json').read_text())['maps']
         tables = (
             ('color/loadpalettes.asm', 'JohtoGoldDayRoofGroups', 'JohtoGoldDayRoofGroupsEnd'),
             ('engine/overworld/johto_goldenrod_roof_gfx.asm',
@@ -57,8 +58,10 @@ class RoofGoldReferenceGate(unittest.TestCase):
         )
         for rel, start, end in tables:
             values = roof_table((self.path/rel).read_text(), start, end)
-            self.assertEqual(len(values), 49, rel)
-            self.assertEqual(values[-3:], [None, None, None], rel)
+            self.assertEqual(len(values), len(registered), rel)
+            # Olivine House/Pokecenter/Mart/Cafe + Cherrygrove houses (slots 46-54)
+            # are indoors; future maps must not invalidate this fixed prefix.
+            self.assertEqual(values[46:55], [None] * 9, rel)
 
     def test_last_house_roof_row_missing_is_rejected(self):
         for rel, last_row in (

@@ -35,7 +35,7 @@ class PublicBuildingRuntimeTests(unittest.TestCase):
             stride=5
             self.assertTrue(mask[y*stride+x//8] & (1 << (x%8)),f'exterior door must be solid at {(x,y)}')
             self.assertFalse(mask[(y+1)*stride+x//8] & (1 << (x%8)),f'step below door blocked {(x,y+1)}')
-        self.assertEqual(self.source('constants/region_map_constants.asm').count('NUM_JOHTO_MAPS EQU 52'),1)
+        self.assertEqual(self.source('constants/region_map_constants.asm').count('NUM_JOHTO_MAPS EQU 57'),1)
 
     def test_room_warps_gold_and_no_unsafe_stair(self):
         lookup = self.source('engine/overworld/region_map_lookup.asm')
@@ -83,9 +83,14 @@ class PublicBuildingRuntimeTests(unittest.TestCase):
         from johto_gate_rgb_audit import _sets
         rows = _sets(self.source('color/data/map_palette_sets.asm'))
         self.assertEqual(rows[37][1], 'INDOOR_RED')
+        self.assertEqual(rows[37][2], 'JOHTO_GATE_GOLD_GREEN')
+        self.assertEqual(rows[38][2], 'JOHTO_GATE_GOLD_GREEN')
+        self.assertEqual(rows[38][5], 'JOHTO_GATE_GOLD_BROWN')
         self.assertEqual(rows[12][1], 'POKECENTER_TABLE')  # Kanto remains unchanged
         installer = self.source('tools/install_olivine_public_runtime.py')
         self.assertIn("s += '; JOHTO_OLIVINE_POKECENTER\\n\\tdb INDOOR_GRAY\\n\\tdb INDOOR_RED", installer)
+        self.assertIn('db JOHTO_GATE_GOLD_GREEN', installer)
+        self.assertIn('db JOHTO_GATE_GOLD_BROWN', installer)
         self.assertNotIn("s += '; JOHTO_OLIVINE_POKECENTER\\n\\tdb INDOOR_GRAY\\n\\tdb POKECENTER_TABLE", installer)
 
     def test_old_pc_red_palette_is_rejected_by_real_gate_rgb_checker(self):

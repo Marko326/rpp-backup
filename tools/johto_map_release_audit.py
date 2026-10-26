@@ -37,6 +37,7 @@ from johto_east_exterior_runtime_audit import audit as east_exterior_runtime_aud
 from johto_adjacent_pair_runtime_audit import audit as adjacent_pair_runtime_audit
 from rom0_list_menu_bank_audit import audit as rom0_list_menu_bank_audit
 from johto_olivine_passive_npc_audit import audit as passive_npc_audit
+from johto_npc_movement_audit import audit as npc_movement_audit
 
 GOLD_REQUIRED = ('maps/Route32.asm', 'maps/UnionCave1F.asm',
                  'data/tilesets/johto_collision.asm',
@@ -68,7 +69,7 @@ test_johto_indoor_stage5 test_johto_indoor_stage6
 test_johto_olivine_public_batch_241dev
 test_johto_olivine_house_240dev test_johto_olivine_house_npc_floor_240dev
 test_johto_olivine_house_sprite_parity_240dev test_johto_house_furniture_240dev
-test_johto_olivine_house_batch_241dev test_johto_olivine_passive_npc_241dev test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
+test_johto_olivine_house_batch_241dev test_johto_olivine_passive_npc_241dev test_johto_cherrygrove_houses_243dev test_johto_npc_movement_audit test_johto_indoor_toolchain test_johto_masked_step_audit test_johto_tileset_index_audit test_johto_gold_cells test_johto_map_release_audit
 test_johto_mapname158 test_johto_music161 test_johto_music163
 test_johto_music_final_audit test_johto_region_id170 test_johto_fixed_id_freeze225
 test_johto_route32_ladder166 test_johto_route32_p1b
@@ -94,6 +95,17 @@ test_johto_ledge_full_217 test_johto_ruins_ledge224 test_johto_route35_goldenrod
 
 # A module with a dummy test is not a replacement for critical negative checks.
 REQUIRED_TEST_IDS = frozenset('''
+test_johto_cherrygrove_houses_243dev.CherrygroveHouses243DEV.test_gold_three_house_full_contract
+test_johto_cherrygrove_houses_243dev.CherrygroveHouses243DEV.test_reject_wrong_evolution_return_lane
+test_johto_cherrygrove_houses_243dev.CherrygroveHouses243DEV.test_reject_bug_catcher_as_item_object
+test_johto_cherrygrove_houses_243dev.CherrygroveHouses243DEV.test_reject_lass_recolored_red
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_current_bounded_patrol_gap_is_reported
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_wrong_walk_axis_is_reported
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_wrong_stationary_facing_is_reported
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_unknown_gold_movement_fails_closed
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_new_johto_map_without_gold_source_is_not_silently_skipped
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_rpp_npc_without_gold_coordinate_is_reported
+test_johto_npc_movement_audit.NpcMovementAuditTests.test_known_spinrandom_slow_equivalence_is_not_a_false_positive
 test_johto_olivine_public_runtime_241dev.PublicBuildingRuntimeTests.test_old_pc_red_palette_is_rejected_by_real_gate_rgb_checker
 test_johto_warp_pointer_bounds_242.WarpPointerBoundary242.test_guard_prevents_out_of_bounds_and_keeps_romx3_byte_neutral
 test_johto_warp_pointer_bounds_242.WarpPointerBoundary242.test_wrong_carry_direction_does_not_pass
@@ -630,6 +642,9 @@ def audit_project(root: Path, gold: Path, expected_version: str | None = None,
             corpus_summary = full_gold_corpus(root, gold, Path(tmp)/'source_audit')
         errors.extend('GOLD_FULL_CORPUS: '+item['map']+': '+item['error']
                       for item in corpus_summary['errors'])
+    # Run movement parity last so known movement gaps are reported without
+    # suppressing unrelated connection, gate, or full-source diagnostics.
+    errors.extend('NPC_MOVEMENT: '+e for e in npc_movement_audit(root, gold))
     return {'status': 'FAIL' if errors else 'PASS', 'errors': errors,
             'active_connections': {'status': connections['status'],
                                    'checked': len(connections['edges'])} if connections else None,

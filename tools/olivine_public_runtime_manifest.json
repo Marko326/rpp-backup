@@ -18,35 +18,27 @@
         8
       ],
       "source_block_count": 16,
-      "runtime_block_count": 34,
-      "collision_split_blocks": 18,
-      "ambiguous_foot_graphics": {
-        "0": 56,
-        "9": 57
-      },
+      "runtime_block_count": 16,
+      "collision_split_blocks": 0,
+      "ambiguous_foot_graphics": {},
       "npc_walkable_foot_tile_ids": [
-        27,
-        40,
-        46,
-        47,
-        56,
-        57
+        9,
+        46
       ],
       "blocked_foot_tile_ids": [
-        0,
         1,
         2,
-        9,
-        10,
-        17,
+        11,
+        13,
         19,
         21,
+        23,
         25,
-        29,
-        32,
         34,
         38,
+        42,
         44,
+        48,
         50
       ],
       "source_hashes": {
@@ -57,12 +49,12 @@
         "palette": "cf95dab523b8cba6fef691af6c4aefe4900d936daa1c7181ee487b41257b22cf"
       },
       "runtime_hashes": {
-        "map": "615f4f7b92a3414915aae5b2d51cbe255defc4294760d7d50b0325f3f87fe596",
-        "blockset": "7eb9b1d4d16c2dc638e29653975de76dba3aca12643c160f51a70c9baf893dbe",
+        "map": "a1c01c7652d86c6c9b50ad85a30a11a3cab00e0bcb88e69011b9d8bfa6a85eb4",
+        "blockset": "bf443a133825bb0ecf0b186f0132d1bc474db0d49661cab222bb2d321128d3dc",
         "mask": "df0f838f76f13b02fcc63a90e66cccd7fc8c5f0139c6f0c86ae3a35209ed6f47",
-        "tilecoll": "44ddb647b3957b546e46ec8db97b8501c7a17f0acd579dfb5244d4081dff0b2e",
-        "atlas": "1abea5f77aa9d685876e321f4a797a15708f33cddebaa8b53b3955d4d74e7bc6",
-        "palette": "880f871a05442890c9e6ddd69bcd0d12c0937b958bd15eec3581bbde3817948b"
+        "tilecoll": "368008e8f7a13b2dab22403815a79917fe5303d6bd59c8dabe704a8299c9cb1b",
+        "atlas": "818bbead9534b82c084864d7239bd8b06e2425f94b4adc25830a2e779230f7ab",
+        "palette": "88f6c49c2c5d1ce279f0edbe87a02c2c6f912227b97dbc27b5d646045c384af9"
       }
     },
     {
@@ -80,28 +72,28 @@
         8
       ],
       "source_block_count": 11,
-      "runtime_block_count": 21,
-      "collision_split_blocks": 10,
+      "runtime_block_count": 26,
+      "collision_split_blocks": 15,
       "ambiguous_foot_graphics": {
-        "0": 40
+        "12": 40
       },
       "npc_walkable_foot_tile_ids": [
-        2,
-        5,
-        12,
         14,
         18,
         40
       ],
       "blocked_foot_tile_ids": [
-        0,
         1,
+        3,
         7,
-        8,
-        9,
+        12,
+        15,
+        20,
         22,
-        35,
-        36
+        23,
+        25,
+        31,
+        35
       ],
       "source_hashes": {
         "map": "259e66d220b9114329e6ddddc0030ab3d5d3a7eeba2284d4453dc105627d5787",
@@ -111,11 +103,11 @@
         "palette": "ce4dd0656a62786e13d6f08d6446bc0b13f49c4160cc7808c983f4aa3e35cb85"
       },
       "runtime_hashes": {
-        "map": "74a67cfdc041eb3b56dade0c5d94d39db0f41aa44808e838248faa441f1dd27e",
-        "blockset": "bf77f0a8cd2868ac402c93f0d4e7b34f90315ed9143c1e4b5f8c3381305f0f85",
+        "map": "27f6230765f41af765645a43c679123b71f75252b988887872849c3b0eaa91e5",
+        "blockset": "f2d9e20a27359ce0616f9fca46e61ec98a6af3bf2a15bbce485301ecb857a78c",
         "mask": "1466f91d86c560fa2046dc7fb60beac31641b6f04acd6dc36d720f399a3a5890",
-        "tilecoll": "504b1da88b8d4732194a8580526e3a1942828baaf436bb416299cb132241b8ed",
-        "atlas": "370a5a34e89a542cd938214319a3017b83dca1d07e3c9d379053c3f07b68a626",
+        "tilecoll": "fd9513c708f55b38bf7338c194eff6d2e6e2c349d46b6d44e57cf05c08cb434f",
+        "atlas": "8a32971bbd9e168da2a6bc4fc799bf7f94dc11863cff0e92b1cfb5855f42ea79",
         "palette": "e6a46b92a8d7d4549568636d6628110f03b3c06b1d35a3411d7ba38b1d7d961a"
       }
     },
@@ -134,31 +126,26 @@
         8
       ],
       "source_block_count": 11,
-      "runtime_block_count": 23,
-      "collision_split_blocks": 12,
-      "ambiguous_foot_graphics": {
-        "32": 56
-      },
+      "runtime_block_count": 11,
+      "collision_split_blocks": 0,
+      "ambiguous_foot_graphics": {},
       "npc_walkable_foot_tile_ids": [
-        0,
         6,
-        11,
-        13,
-        56
+        32
       ],
       "blocked_foot_tile_ids": [
-        1,
+        5,
         8,
+        15,
+        18,
         20,
         22,
-        28,
-        32,
+        24,
         33,
         35,
+        36,
         39,
-        41,
         43,
-        45,
         47
       ],
       "source_hashes": {
@@ -169,12 +156,12 @@
         "palette": "14342dc84fcc6e77a66f12bc5aff0f01fe9879d94b48c32ae1c157351655b840"
       },
       "runtime_hashes": {
-        "map": "df21c527cc1bde70362f8e07cc079d285cc7903bc8e88d163d372f48d30541b7",
-        "blockset": "84f617fbe973c4842ea64ba87ad7883e5d24f183a50b0c7a16f94d0308c04b9f",
+        "map": "7e0651f0a4b6e6de0029423276471cbed15aea8f6f33a66070e9946efefab0d9",
+        "blockset": "b98677f65c7e9133aefbdd86cb5ee33c940fc088f00547433060adf6faeed60f",
         "mask": "df9e0978966e471d26911ea5a4c425dfb324887d8038c6e19caeba9ad79c4037",
-        "tilecoll": "976bfec20ee6b35695b2c7c1d2a9d726f4fa05e31fa8823ab39ee68be3ded561",
-        "atlas": "799d284f9b8d32d49b23134f1026aba522a81880ba9ef2cb69134ad752ef94a7",
-        "palette": "115a3f1033b4feb447d2249a317d241649e896a5468e8ea866a42c8e9a368c46"
+        "tilecoll": "91d769cb72b783105cf924b637389b40e1393e9986700ba90f53e4f5cae937bd",
+        "atlas": "81e4f380055f705d4312ea6e392da2d238be4977d0a20b648b522718ad5e6316",
+        "palette": "850f25514eed6fc7232ad9b99974510119bc18da10f0a84dcbf04fab9756ce57"
       }
     }
   ],
