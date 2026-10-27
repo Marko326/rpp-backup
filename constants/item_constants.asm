@@ -121,6 +121,7 @@ const_value = 1
 
 ; Dummy item used for Ferry list
 	const GO_HOME       ; $6C
+	const NEW_BARK_PASS ; $6D, ferry-menu pseudo-item only; never stored in the bag
 
 ; Don't call actual item scripts
 const_value = $C4

@@ -48,16 +48,17 @@ GetFerryTickets:
 	pop hl
 	jr .loop
 .done
+	; New Bark is a native-region ferry stop, not a physical inventory item.
+	; Always offer it and a return-to-Vermilion option, even without island tickets.
 	ld hl, wFilteredBagItemsCount
-	ld a, [hl]
-	and a
-	jr z, .endList ; if no items are in the pack, don't add "Go Home" option
-
-	; add Vermilion to the list if there is one, to get back home
-	ld a, GO_HOME
-	ld [de],a
+	ld a, NEW_BARK_PASS
+	ld [de], a
 	inc de
-	inc [hl] ; increase item count so GO HOME shows up
+	inc [hl]
+	ld a, GO_HOME
+	ld [de], a
+	inc de
+	inc [hl]
 
 .endList
 	ld a, $ff ; End of list
@@ -109,7 +110,31 @@ SetFerryMenuCursorToCurrentStop:
 	jr z, .findTicket
 	cp NAVEL_ROCK_FERRY_DOCK
 	ld b, MYSTIC_TICKET
+	jr z, .findTicket
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr z, .nativeJohtoStop
+	cp JOHTO_REGION_WARP_ESCAPE
+	jr z, .explicitRegionStop
+	cp VERMILION_FERRY_DOCK
+	ret nz ; Vermilion defaults to the first available destination
+	ret
+.nativeJohtoStop
+	ld a, [wLastRegion]
+	cp MAP_REGION_JOHTO
 	ret nz
+	ld a, [wLastLocalMapID]
+	cp JOHTO_NEW_BARK_LOCAL_ID
+	ret nz
+	ld b, NEW_BARK_PASS
+	jr .findTicket
+.explicitRegionStop
+	ld a, [wWarpEntries + 2]
+	and a
+	jr z, .newBarkStop ; destination warp 0 = New Bark; warp 2 = Vermilion
+	ret
+.newBarkStop
+	ld b, NEW_BARK_PASS
+	jr .findTicket
 .findTicket
 	ld hl, wFilteredBagItems
 	ld c, 0
@@ -158,7 +183,7 @@ DoIslandMenu:
 	res 6, [hl]
 	call HandleMenuInput
 	bit 1, a ; Pressed B?
-	jr nz, .cancelledChoosingTicket
+	jp nz, .cancelledChoosingTicket
 	ld hl, wFilteredBagItems
 	ld a, [wCurrentMenuItem]
 	ld d, 0
@@ -172,10 +197,12 @@ DoIslandMenu:
 	jr z, .choseSouthernIsland
 	cp MYSTIC_TICKET
 	jr z, .choseNavelRock
+	cp NEW_BARK_PASS
+	jr z, .choseNewBark
 
-;choseVermilion
+; chose Vermilion. $FE is resolved with destination warp 2.
 	ld b, 2
-	ld c, VERMILION_FERRY_DOCK
+	ld c, JOHTO_REGION_WARP_ESCAPE
 	jr .islandSelected
 
 .choseFarawayIsland
@@ -191,13 +218,43 @@ DoIslandMenu:
 .choseNavelRock
 	ld b, 2
 	ld c, NAVEL_ROCK_FERRY_DOCK
+	jr .islandSelected
+
+.choseNewBark
+	ld b, 0
+	ld c, JOHTO_REGION_WARP_ESCAPE
 	; fallthrough
 
 .islandSelected
-; First, see if we need to update the warps
-	ld a, [wWarpEntries + 3] ; Map ID of first warp
-	cp c ; see if we're already at the place we tried to go
+; Normalize native New Bark and the Kanto dock to the explicit region selector.
+	ld a, [wWarpEntries + 3]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .checkExplicitStop
+	ld a, [wLastRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .checkExplicitStop
+	ld a, [wLastLocalMapID]
+	cp JOHTO_NEW_BARK_LOCAL_ID
+	jr nz, .checkExplicitStop
+	ld a, JOHTO_REGION_WARP_ESCAPE
+	jr .compareStop
+.checkExplicitStop
+	ld a, [wWarpEntries + 3]
+	cp VERMILION_FERRY_DOCK
+	jr z, .normalizeVermilion
+	jr .compareStop
+.normalizeVermilion
+	ld a, JOHTO_REGION_WARP_ESCAPE
+.compareStop
+	cp c
+	jr nz, .depart
+	cp JOHTO_REGION_WARP_ESCAPE
+	jr nz, .alreadyThere
+	ld a, [wWarpEntries + 2]
+	cp b
 	jr z, .alreadyThere
+	jr .depart
+.depart
 
 ; Hold onto the warp entry we selected
 	push bc

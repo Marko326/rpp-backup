@@ -82,7 +82,7 @@ UpdateMapNameSign::
 	and a
 	jr z, .mapChanged ; WRAM starts at 0, so initialize even if the first map ID is 0
 
-	ld a, [wCurMap]
+	call .GetIdentityKey
 	ld b, a
 	ld a, [wMapNameSignLastMap]
 	cp b
@@ -107,6 +107,21 @@ UpdateMapNameSign::
 	ld hl, wMapNameSignTimer
 	dec [hl]
 	ret nz
+	jr .hide
+.GetIdentityKey
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .legacyIdentityKey
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyIdentityKey
+	ld a, [wCurLocalMapID]
+	add JOHTO_MAP_NAME_SIGN_KEY_BASE ; reserved keys are above the legacy mapconst range
+	ret
+.legacyIdentityKey
+	ld a, [wCurMap]
+	ret
+
 .hide
 	ld a, SCREEN_HEIGHT_PIXELS
 	ld [hWY], a
@@ -119,13 +134,12 @@ UpdateMapNameSign::
 	jr .hide
 
 .mapChanged
+	call .GetIdentityKey
+	ld [wMapNameSignLastMap], a
 	; MAPSIGN-5.19.41: do not hide an already-visible sign before we know what
 	; the new effective landmark is. If the new map needs another sign, keep the
 	; Window at Y=112 and atomically replace its four rows during VBlank. This
 	; matches Crystal's continuous frame behavior when crossing landmarks.
-	ld a, [wCurMap]
-	ld [wMapNameSignLastMap], a
-
 	; MAPSIGN-5.19.40: transit maps inherit the previous effective landmark.
 	; This prevents same-route gates (Route 12/15/16/18, etc.) from forcing a
 	; duplicate route popup when the player exits on either side. The Celadon

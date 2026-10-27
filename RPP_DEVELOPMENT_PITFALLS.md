@@ -1,3 +1,10 @@
+## P3-DOC-006 — 城都 Town Map 调色板与飞行身份的防回归规则
+
+- 切换地图图像并不等于切换调色板：旧 TEST-230 仅加载城都 Town Map 像素数据，却沿用 Kanto 的 RGB 颜色与 64 图块 palette ID 表，导致明显失色。接入新地区时必须成套迁移 RGB 表和 palette assignment 表，并在普通地图和 Fly 两个入口核对地区选择器；关都既有色表不能被覆盖。
+- Fly 列表地标索引与物理地图身份不同；城都有效目的地必须以 `(region, stable local ID)`、已激活 Header 和安全 Warp 共同验证，不能拿旧 `$E7/$F4` 地图编号或未激活的可浏览地标当落点。目前 45 地标可浏览，但只有若叶镇是可落地城都点。
+- 户外人物无缝跨图时应复用参考分支共享 sprite set，避免更换 tileset 图形槽位引起乱码；测试用贴图人不得作为 Gold 正式 NPC 提交。遇敌、捕捉教学、昼夜、自行车等是未来独立功能，不要为了地图收口开启。
+- **验证限制**：TEST-231 用户认可 Route29 地图配色；并没有完整四 ROM/MAP、飞行地图专门的最终版配色、全部边界显示验收。旧导出 MAP 属 TEST-226，不能作为本轮空间证明。后续新增地图必须重复源码结构、连接可达边界、最新 MAP 及设备显示检查。
+
 ## P2-006 — 新增 Tileset 必须同时补齐两种 Palette 表（2026-10-27）
 
 - 城都 Tileset ID 28 在 P2-005B 注册后，若 `MapPaletteSets` 少一行 8B 或 `MapPaletteAssignments` 少一行 96B，运行期可能越过表尾读到后续 `RoofPalettes` 等数据；图形显示异常不能只归咎于地图 Block 或 Header。

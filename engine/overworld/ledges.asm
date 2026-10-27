@@ -3,8 +3,24 @@ HandleLedges:
 	bit 6, a ; already jumping down ledge
 	ret nz
 	ld a, [wCurMapTileset]
-	and a ; OVERWORLD
+	cp JOHTO_PILOT
+	jr z, .johtoPilot
+	and a ; original Kanto OVERWORLD
 	ret nz
+	ld hl, LedgeTiles
+	jr .checkPairs
+.johtoPilot
+	; The source branch handles Route 29 ledges using standard RPP tile pairs.
+	; Only stable Johto ID 1 receives these pairs; New Bark cannot inherit them.
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	ret nz
+	ld hl, JohtoPilotRoute29LedgeTiles
+.checkPairs
+	push hl ; predef destroys HL, keep the selected source pair table
 	predef GetTileAndCoordsInFrontOfPlayer
 	ld a, [wSpriteStateData1 + 9]
 	ld b, a
@@ -12,7 +28,7 @@ HandleLedges:
 	ld c, a
 	ld a, [wTileInFrontOfPlayer]
 	ld d, a
-	ld hl, LedgeTiles
+	pop hl
 .loop
 	ld a, [hli]
 	cp $ff
@@ -64,6 +80,15 @@ LedgeTiles:
 	db SPRITE_FACING_RIGHT,$2C,$0D,D_RIGHT
 	db SPRITE_FACING_RIGHT,$2C,$1D,D_RIGHT
 	db SPRITE_FACING_RIGHT,$39,$0D,D_RIGHT
+	db $FF
+
+; Exact source-branch Route29 pair mapping for unchanged Johto blockset/tiles.
+; $20/$21 are copies of the cliff barriers, not legacy map IDs.
+JohtoPilotRoute29LedgeTiles:
+	db SPRITE_FACING_LEFT,  $05,$3B,D_LEFT
+	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
+	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
+	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN
 	db $FF
 
 LoadHoppingShadowOAM:

@@ -12,8 +12,12 @@
 ; independent parallel arrays. Slot n corresponds to bytes [3*n .. 3*n+2].
 ; A row MUST be added only alongside all other map runtime resources, a
 ; stable-ID map entry, and an increment of NUM_JOHTO_ACTIVE_MAPS.
-; There are deliberately ZERO rows at this stage.
+; P3-001 registers New Bark Town (stable ID 0) and Route 29 (stable ID 1).
 JohtoHeaderDescriptors::
+    dw JohtoPilotNewBarkRuntimeHeader
+    db BANK(JohtoPilotNewBarkRuntimeHeader)
+    dw JohtoPilotRoute29RuntimeHeader
+    db BANK(JohtoPilotRoute29RuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

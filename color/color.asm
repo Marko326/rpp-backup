@@ -412,44 +412,11 @@ FillBox:
 	pop bc
 	ret
 
-; Load town map
+; P3-005 / TEST-231: full regional palette data and loader live in an
+; expansion ROMX bank. Keep this table-call ABI unchanged in bank $1C.
 SetPal_TownMap:
-	ld a,2
-	ld [rSVBK],a
-
-	; Load all town map pals at once
-	ld hl, TownMapPals
-	ld de, W2_BgPaletteData
-	ld bc, TownMapPalsEnd - TownMapPals
-	call CopyData
-
-	ld a,1
-	ld [W2_TileBasedPalettes],a
-
-	ld de, TownMapPalAssignments
-	ld hl, W2_TilesetPaletteMap
-	ld b, $40
-.copyLoop
-	ld a, [de]
-	inc de
-	ld [hli], a
-	dec b
-	jr nz, .copyLoop
-
-	; Set the remaining tiles (the font) to pal 0
-	ld b, $c0
-	xor a
-.fillLoop
-	ld [hli], a
-	dec b
-	jr nz, .fillLoop
-
-	xor a
-	ld [rSVBK],a
+	callab SetPal_TownMap_Regional
 	ret
-
-INCLUDE "color/town_map_pals.asm"
-INCLUDE "color/town_map_pal_assignments.asm"
 
 ; Status screen
 ; Stage the next Pokémon palette in unused BG palette slot 7. Slot 7 is not used by

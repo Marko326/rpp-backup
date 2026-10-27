@@ -1,3 +1,51 @@
+# P3-DOC-006 / PAL-5.62.224 / TEST-231 — 若叶镇＋29号道路第一批地图验收收口（2026-10-27）
+
+- [x] **本轮基线**：用户最新确认的正式 Git 提交是 `PAL-5.62.219 / TEST-226`、HEAD `495b7dc86ff6cbed5ed80483d1e8488dcb0e70bf`，其干净源码来自本轮项目 ZIP；P3-001～005（TEST-227～231）是累计未提交开发补丁。本轮仅清理文档，不改变 ASM、资源、图像、游戏内版本或工具脚本。
+- [x] **地图可进入**：启用仅两个新的城都稳定 local ID（若叶镇 0，29号道路 1），其余 220 个稳定 ID 暂不可达；关都旧编号及地图规则保留，不使用 `$E7/$F4` 等旧城都地图编号别名。若叶镇↔29号道路双向连接、渡轮进出、跳崖、人物跨图显示由用户逐轮反馈正常；本次未重新在手机复测全部路径。
+- [x] **参考分支表现**：渡轮菜单文字恢复 `New Bark`（不是超框的 `New Bark Pass`）；恢复岸边水手和原参考分支船进出场景及相关对白，若叶镇三个贴图测试 NPC 已删除；29号道路现有四名角色是旧参考分支的占位人物/普通文本，非真正 Gold 捕捉教学或剧情移植。
+- [x] **Town Map / Fly**：浏览旧分支 45 个城都地标；只有实际已激活的若叶镇是当前合法的城都飞行落点。用户在 TEST-230 报告飞行可用，TEST-231 提供了 Route29 普通地图配色画面并确认没有问题。TEST-231 从旧分支恢复 Johto Town Map RGB 调色板与 64 项图块调色板分配，并迁移加载代码到扩容 ROMX，关都原调色板表保留。**Fly 地图专门的最终版配色、关都飞行回归、旧/新存档及多 ROM 版本不是本次独立重测结论。**
+- [ ] **有意推迟**：城都自行车白名单／骑车跨图、其他 220 张地图与全目的地到访解锁 Fly、真实 Gold 人物和捕捉教学、宝可梦／野生遇敌／昼夜／剧情。未激活城镇不能仅因存在地标便允许飞入；未来一次性复用参考分支的通用解锁逻辑，并以实际活动 ID / Header / 安全落点作门禁。
+- [ ] **工程验证边界**：不由 AI 编译/链接 ROM；随源码保留的 `patches/rppred.map`、`patches/rppblue.map` 来自旧 TEST-226 导出，**不可**当成 TEST-231 新链接 MAP。请用户在本机使用本清理后的源码重建正式 Red、Blue（以及需要时的测试 ROM），检查新 MAP ROM0、Bank $03/$05/$1C/$35/$38/$41/$42/$43/$45、符号和长度；有条件再确认关都地图、Fly 与存读档。项目原有脚本/工具没有针对本阶段地图连接的独立强制审计入口；本次使用只读结构核验与补丁正反应用验证，不能声称全量地图运行审计通过。
+- **清理交付**：模式 B，单笔拟提交；清理增量以已应用 TEST-231（P3-005）为前置，累计全量从 HEAD `495b7dc8` 干净项目 → 本次收口状态。两份补丁互斥，ZIP 内另附一份 `commit-message.txt`。由用户完成 Git Commit／Push，本环境不自行执行。
+- **Version**：`PAL-5.62.219 / TEST-226` → `PAL-5.62.224 / TEST-231`（收口无额外升版）。
+
+---
+
+## P3-005 / PAL-5.62.224 / TEST-231 — 城都 Town Map 原分支配色修复（待验）
+
+- [x] 从用户提供的 `NPC-5.62.243_金银分支` 原样恢复 `JohtoTownMapPals` 与 `JohtoTownMapPalAssignments`；此前地图使用关都调色板，故 Johto 图片绿／橙／蓝不协调。现在普通地图与 Fly 共用地区选择器，加载匹配的 RGB 颜色和 64 项 tile palette ID。
+- [x] 原 `SetPal_TownMap` 银行 `$1C` 的表调用接口不变，但把完整调色板加载程序及两地区颜色数据迁到扩容 `ROMX`，不继续挤占 `$1C`。关都颜色字节未修改。地图 PNG、45 地标、飞行手段、地面物理地图新编号、轮船、跳崖、NPC 都不变。
+- [ ] 用户实测 TEST-230 飞行若叶镇成功；此版仅修配色，红蓝实际 ROM/MAP 和手机截图仍需验收。优先测城都普通地图／Fly 色彩，再测关都地图显示、Fly 和一次轮船。AI 不编译 ROM。
+- [ ] 暂不新增其它 Fly 目标：未激活的城镇不可安全飞入。未来应一次性迁移参考分支 11 个目的地的登记与到访解锁机制，同时新增目标必须检查已激活的 stable ID / Header / Warp，不能每张地图靠临时列表开放，更不能解锁未移植地图。此事项不作为首批 2 地图提交的前置条件。
+- [ ] 城都自行车白名单尚未开放，本轮不扩围。暂不涉及野生遭遇、宝可梦、昼夜或剧情。
+- 本轮开发补丁增量 TEST-230→231、全量 Git 导出 HEAD `495b7dc86ff6cbed5ed80483d1e8488dcb0e70bf`→231 互斥使用。若用户验收色彩 OK，应开始首批地图正式清理三件套，不再加新功能。
+
+## P3-004 / PAL-5.62.223 / TEST-230 — 城都地图浏览与若叶镇飞行（开发待验）
+
+- [x] 读取旧 NPC-5.62.243 的 Gold 45 个城都地标表与名称，放入扩容 ROMX；普通城都 Town Map 可遍历全部地标，无需将其错误映射成活动地图 ID。
+- [x] 保留若叶镇=稳定 local ID 0、29 号道路=稳定 local ID 1 的玩家位置；只给已开放的若叶镇开放 Fly 目标，Fly 选择与物理地图身份分离，使用 Fly-only `$FD`，不采用旧城都地图编号。
+- [x] 复用现有 Johto 地图图形、Kanto Fly 用户图标及 Fly 动画交接；关都 Fly 选择逻辑不变。金版其它地点可看地图，但未开放 Fly／Warp。
+- [x] 不修改 NPC/剧情、野生遇敌、宝可梦、昼夜及骑行规则；29 号道路的替代 NPC 保持原样，留待后续正式 NPC 批次。
+- [ ] 用户须编译正式红蓝和对应 MAP；验证城都地图 45 个地点上下翻页、若叶镇/29 号道路玩家标记、Kanto 地图未改、持有飞行宝可梦且有徽章时从29号道路飞回若叶镇，并确认存读档/渡轮不回归。AI 未编译、未在手机实测。
+- [ ] 本版仅开发补丁（增量 TEST-229→230；全量 Git HEAD `495b7dc8`→230），不生成正式清理三件套、不 Commit/Push。
+
+## P3-003 / PAL-5.62.222 / TEST-229 — outdoor NPC sprite reload, first pair (awaiting user Red/Blue build and phone check)
+
+- [x] Adapt reference `FLY-5.62.144` shared Johto outdoor sprite set to *tileset* `JOHTO_PILOT` 28 (current new local map IDs 0 / 1 only); add 11-slot set $0b, no old map ID aliases.
+- [x] Remove 3 New Bark diagnostic sprite stand-ins; preserve ferry sailor, its dialog, and all P3-002 warp/ledge/navigation behaviour.
+- [ ] Gold New Bark teacher/fisher/rival artwork and events, plus Route 29 real Gold sprites, remain unported; Route 29 characters are RPP stand-ins from reference branch, not Gold original art.
+- [ ] User must rebuild official Red/Blue and inspect MAP (Bank $05, ROM0). Test New Bark / Route 29 repeated transitions, NPC animation and ferry, save/Continue, Kanto outside; cycling follow-up requires separate Johto bike whitelist activation (not enabled here). No AI compilation or Git commit.
+
+# PAL-5.62.220 / TEST-227 — P3-001 若叶镇＋29 号道路首批运行候选（待编译／手机验收）
+
+- [x] 本轮从用户新上传的 P2 干净提交 HEAD `495b7dc86ff6cbed5ed80483d1e8488dcb0e70bf` 出发；只开放稳定 local ID 0/1，原 222 个城都编号不变，关都地图常量不改。
+- [x] 增加首两图 Header/双向连接、渡轮菜单与显式地区 Warp、野怪安全门禁、音乐/Town Map/Name Sign；解决 Johto Tile 28 的 Warp 索引遗漏，并将拥挤 Bank `$03` 的相关处理一同迁移至 `$41`。
+- [ ] **未在本环境链接 ROM 或手机实测**。本轮 MAP 与 ROM0/Bank 空间需用户重新构建确认；P2-005D 历史花屏必须以首次若叶镇实机画面确认。
+- [ ] 用户最小测试：红蓝分别从枯叶轮船到若叶镇、若叶镇西↔29 号道路东、回船返回关都、旧档/新档存读、Town Map、边缘树林与碰撞。Wild/NPC/其他路口暂未移植。
+- 见 `docs/JOHTO_MIGRATION_P3_FIRST_PAIR.md`；开发阶段只交付两种互斥补丁，不生成正式提交日志，不自行 Commit/Push。
+
+---
+
 # PAL-5.62.219 / TEST-226 — 城都 P2-001～P2-006 基础底座清理（待用户构建复核，2026-10-27）
 
 - [x] 已提交基线按导出记录为 `ROM-5.62.211 / TEST-218`、HEAD `7c3040b601a221419a50c9bcf572ab2446b6385c`；当前 Worktree 已累计 P2-001～P2-006，尚无新的 Git 提交证据。

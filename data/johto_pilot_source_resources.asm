@@ -1,13 +1,13 @@
 ; P2-004: source-authentic Gold pilot map geometry, NOT live Kanto mapconst IDs.
-; Descriptors here are SOURCE records for the two-map pilot. They are not
-; JohtoHeaderDescriptors (which remain empty while NUM_JOHTO_ACTIVE_MAPS=0).
+; These immutable source records preserve the original Gold map blocks. The
+; two connection rows below are also the validated source for P3-001 runtime
+; east/west dispatch; runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-; Native Johto map headers, events and boundary/warp dispatch must be ported
-; together before activating a map; do not route the engine to this table.
 DEF JOHTO_PILOT_SOURCE_COUNT EQU 2
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 2
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 0
+ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
 
@@ -27,7 +27,7 @@ JohtoPilotSourceConnections::
     db JOHTO_NEW_BARK_LOCAL_ID, WEST, JOHTO_ROUTE_29_LOCAL_ID
     db JOHTO_ROUTE_29_LOCAL_ID, EAST, JOHTO_NEW_BARK_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
-ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == 2 * 3
+ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * 3
 
 JohtoPilotNewBarkGoldBlocks::
     INCBIN "maps/johto_pilot/NewBarkTown.gold.blk"

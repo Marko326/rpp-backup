@@ -1,3 +1,12 @@
+## P3-DOC-006 / TEST-231 — 首批城都两地图收口（2026-10-27）
+
+- 当前确认基线为干净 P2 HEAD `495b7dc86ff6cbed5ed80483d1e8488dcb0e70bf`（`PAL-5.62.219 / TEST-226`）；P3-001～005 累计到 `PAL-5.62.224 / TEST-231`，尚无后续已提交新 HEAD 的资料。
+- 收到用户 TEST-231 普通地图配色通过反馈；本次只收口 `TODO.md`、`docs/JOHTO_MIGRATION_P3_FIRST_PAIR.md`、`PROJECT_DELIVERY_RULES.md` 和 `RPP_DEVELOPMENT_PITFALLS.md`。不改 ASM、图像、战斗、Wild、骑行、游戏显示版本与 tools/，采用模式 B 单提交。
+- 清理增量从 TEST-231 已应用源码 → 文档收口后；累计全量从上述 P2 HEAD → P3-DOC-006，二者择一。ZIP 同时包含一份完整拟提交日志，不提交或推送 Git。
+- TEST-231 本机截图支持当前 Route29 的 Town Map 颜色通过；用户先前反馈飞行、轮船、跳崖、人物正常。不冒称当前旧 MAP 是 TEST-231 重链接结果，不擅自升级其它测试范围。保留自行车／全部 Fly 解锁／剧情／遭遇有意后置。
+
+---
+
 ## PAL-5.62.219 / TEST-226 — 城都 P2 底座验收清理与提交边界（2026-10-27）
 
 - **准确基线**：本次用户主项目 ZIP 的导出记录为分支 `常规功能备份`、HEAD `7c3040b601a221419a50c9bcf572ab2446b6385c`（P1 已提交）+ 未提交的 P2-001～P2-006 Worktree；ZIP 不含 `.git`，不能视作本环境执行的 `git status`。

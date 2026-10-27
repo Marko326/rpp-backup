@@ -170,8 +170,16 @@ StartMenu_Pokemon:
 	jr z, .canFly
 	cp CELADON_MART_ROOF
 	jr z, .canFly
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .checkFlyOutdoor
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr z, .canFly ; native pilot outdoor; destinations remain gated
+.checkFlyOutdoor
 	call CheckIfInOutsideMap
 	jr z,.canFly
+.cannotFlyHere
 	ld a,[wWhichPokemon]
 	ld hl,wPartyMonNicks
 	call GetPartyMonName
@@ -251,8 +259,15 @@ StartMenu_Pokemon:
 	ld a, [wCurMap]
 	cp MT_MOON_SQUARE
 	jr z, .canTeleport
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .checkTeleportOutdoor
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr z, .cannotUseTeleportNow
+.checkTeleportOutdoor
 	call CheckIfInOutsideMap
 	jr z,.canTeleport
+.cannotUseTeleportNow
 	ld a,[wWhichPokemon]
 	ld hl,wPartyMonNicks
 	call GetPartyMonName

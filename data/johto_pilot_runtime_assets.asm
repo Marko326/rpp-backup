@@ -1,15 +1,13 @@
-; P2-005: executable-format graphics/blocks for the two-map pilot, isolated
-; from the untouched, byte-authentic Gold source data in bank $42.
-; The 1 New Bark / 19 Route29 adjusted blocks use the reference renderer's
-; extra Johto block IDs, not legacy Kanto map-number aliases.
-; These resources are not yet routed into map loading or save/warp execution.
+; P2-005 / P3-001: executable-format graphics and blocks for the two-map pilot,
+; isolated from untouched, byte-authentic Gold source data in bank $42.
+; The adjusted runtime blocks use the Johto metatile mapping, never legacy Kanto IDs.
 DEF JOHTO_PILOT_RUNTIME_RECORD_SIZE EQU 7
 DEF JOHTO_PILOT_TILESET_ID EQU JOHTO_PILOT
 ASSERT JOHTO_PILOT == 28
-; Tile registration is not map activation; stable map IDs remain gated.
+; P3-001 activates only the two fully described pilot headers; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 0
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 2
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"

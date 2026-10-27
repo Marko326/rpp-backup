@@ -111,5 +111,6 @@ ItemNames:
 	db "Lum Berry@"
 	db "Acai Berry@"
 	db "Go Home@"
+	db "New Bark@"
 
 SETCHARMAP main

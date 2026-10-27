@@ -543,9 +543,15 @@ WarpFound2::
 ; this is for handling "outside" maps that can't have the 0xFF destination map
 	ld a,[wCurMap]
 	ld [wLastMap],a
+	ld a,[wCurRegion]
+	ld [wLastRegion],a
+	ld a,[wCurLocalMapID]
+	ld [wLastLocalMapID],a
 	; d366 used to receive wCurMapWidth here, but the value was never read.
 	; It is now persistent BGM volume storage, so do not overwrite it on warps.
-	ld a,[hWarpDestinationMap]
+	callab JohtoPilotResolveWarpDestination
+	ld a,e
+	ld [hWarpDestinationMap],a
 	ld [wCurMap],a
 	cp ROCK_TUNNEL_1
 	jr nz,.notRockTunnel
@@ -562,7 +568,10 @@ WarpFound2::
 	ld a,[hWarpDestinationMap] ; destination map
 	cp $ff
 	jr z,.goBackOutside
-; if not going back to the previous map
+ ; if not going back to the previous map
+	callab JohtoPilotResolveWarpDestination
+	ld a,e
+	ld [hWarpDestinationMap],a
 	ld [wCurMap],a
 	callba IsPlayerStandingOnWarpPadOrHole
 	ld a,[wStandingOnWarpPadOrHole]
@@ -583,6 +592,13 @@ WarpFound2::
 .goBackOutside
 	ld a,[wLastMap]
 	ld [wCurMap],a
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz,.goBackOutsideLegacy
+	ld [hWarpDestinationMap],a
+	callab JohtoPilotResolveWarpDestination
+	ld a,e
+	ld [wCurMap],a
+.goBackOutsideLegacy
 	call PlayMapChangeSound
 	xor a
 	ld [wMapPalOffset],a
@@ -604,6 +620,10 @@ CheckMapConnections::
 	cp $ff
 	jr nz,.checkEastMap
 	ld a,[wMapConn3Ptr]
+	ld e,a
+	ld d,WEST
+	callab JohtoPilotSelectConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wWestConnectedMapXAlignment] ; new X coordinate upon entering west map
 	ld [wXCoord],a
@@ -641,6 +661,10 @@ CheckMapConnections::
 	cp b
 	jr nz,.checkNorthMap
 	ld a,[wMapConn4Ptr]
+	ld e,a
+	ld d,EAST
+	callab JohtoPilotSelectConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wEastConnectedMapXAlignment] ; new X coordinate upon entering east map
 	ld [wXCoord],a
@@ -756,11 +780,27 @@ PlayMapChangeSound::
 	jp GBFadeOutToWhite ; HAX: Fade to white instead of black. Looks nicer IMO.
 
 CheckIfInOutsideMap::
-; If the player is in an outside map (a town or route), set the z flag
+; If the player is in an outside map (a town or route), set the z flag.
+; The Johto pilot uses a dedicated nonzero tileset but is still outdoors.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .legacyTileset
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyTileset
+	ld a, [wCurLocalMapID]
+	cp JOHTO_NEW_BARK_LOCAL_ID
+	jr z, .nativeOutside
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	jr z, .nativeOutside
+.legacyTileset
 	ld a, [wCurMapTileset]
-	and a ; most towns/routes have tileset 0 (OVERWORLD)
+	and a ; most Kanto towns/routes have tileset 0 (OVERWORLD)
 	ret z
 	cp PLATEAU ; Route 23 / Indigo Plateau
+	ret
+.nativeOutside
+	xor a
 	ret
 
 ; this function is an extra check that sometimes has to pass in order to warp, beyond just standing on a warp
@@ -1912,6 +1952,8 @@ LoadPlayerSpriteGraphicsCommon::
 
 ; function to load data from the map header
 LoadMapHeader::
+	; Synchronize Kanto keys and validate the active native stable ID before lookup.
+	callab JohtoPilotSyncMapIdentity
 	; Native Johto uses the region/local key, not an out-of-range Kanto ID.
 	; Existing Kanto map handling must remain byte-for-byte in its branch.
 	ld a, [wCurMap]
@@ -2186,6 +2228,8 @@ LoadMapHeader::
 	add a ; double it
 	ld [wCurrentMapWidth2],a ; map width in 2x2 tile blocks
 	ld a,[wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr z,.loadJohtoPilotMusic
 	ld c,a
 	ld b,$00
 	ld a,[H_LOADEDROMBANK]
@@ -2203,6 +2247,9 @@ LoadMapHeader::
 	pop af
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a
+	ret
+.loadJohtoPilotMusic
+	callab JohtoPilotLoadMapMusic
 	ret
 
 ; function to copy map connection data from ROM to WRAM

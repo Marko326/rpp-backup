@@ -1,4 +1,7 @@
 LoadWildData:
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr z, .noMons ; pilot has no imported Gold encounter table yet
 	ld hl, WildDataTable
 	ld a, [wCurMap]
 	ld c, a

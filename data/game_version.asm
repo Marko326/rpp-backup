@@ -5,8 +5,8 @@ SECTION "Game Version", ROM0
 GameVersionText::
 IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
-	db "TEST-226@"
+	db "TEST-231@"
 ELSE
-	; Manual Transform executes one copied move in the same action; successful Transform also clears stale Disable state.
-	db "PAL-5.62.219@"
+	; P3-005 restores reference Gold regional Town Map color tables.
+	db "PAL-5.62.224@"
 ENDC

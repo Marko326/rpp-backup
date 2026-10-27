@@ -27,6 +27,9 @@ WarpTileIDPointers:
 	dw FerryWarpTileIDs
 	dw CavernWarpTileIDs
 	dw MuseumWarpTileIDs
+	dw JohtoPilotWarpTileIDs ; $1c/28: native Johto pilot tileset
+WarpTileIDPointersEnd:
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_PILOT + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -74,3 +77,8 @@ FerryWarpTileIDs:
 	db 16,48,$FF
 MuseumWarpTileIDs:
 	db $16,$1E,$FF
+
+; Johto pilot only: original Gold New Bark ferry boarding pad ($06).
+; Do not register walkable scenery tiles as generic warps.
+JohtoPilotWarpTileIDs:
+	db $06,$FF

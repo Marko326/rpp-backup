@@ -183,6 +183,25 @@ InitTownMapLocationFromPlayerMap::
 ; is on an interior map that is not itself in TownMapOrder, fall back to the
 ; nearest Town Map coordinates. F23.15fix keeps all Route 20/Seafoam pseudo
 ; selectors as real browse nodes, so the displayed selector can be scanned as-is.
+	ld a, e
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .kantoPlayerMap
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .kantoPlayerMap
+	ld a, [wCurLocalMapID]
+	ld e, a
+	callab GetJohtoActiveSlot
+	ld a, e
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z, .nativeMapUnknown
+	ld [wWhichTownMapLocation], a
+	ret
+.nativeMapUnknown
+	xor a
+	ld [wWhichTownMapLocation], a
+	ret
+.kantoPlayerMap
 	ld d, e ; preserve displayed selector for the exact-ID scan
 	xor a
 	ld [wBuffer + 1], a ; current TownMapOrder index
@@ -695,6 +714,9 @@ TryLoadSpecialTownMapEntry::
 ; out on match: carry set, D = y, E = x, HL = name pointer
 ; out on miss: carry clear
 	ld a, e
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jp z, .johtoPilot
+	ld a, e
 	; LNK-5.55.00: Cable Club maps need exact room names instead of the
 	; InternalMapEntries upper-bound fallback to Pokemon League.
 	cp TRADE_CENTER
@@ -714,6 +736,26 @@ TryLoadSpecialTownMapEntry::
 	cp CELADON_MART_ROOF
 	jr z, .celadonMartRoof
 	and a ; clear carry
+	ret
+.johtoPilot
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .johtoPilotUnknown
+	ld a, [wCurLocalMapID]
+	ld e, a
+	callab GetJohtoActiveSlot
+	ld a, e
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z, .johtoPilotUnknown
+	ld e, a
+	call LoadJohtoPilotTownMapEntryFromSlot
+	scf
+	ret
+.johtoPilotUnknown
+	ld d, 0
+	ld e, 0
+	ld hl, AreaUnknownText
+	scf ; $FC must never fall through to ExternalMapEntries[$FC]
 	ret
 .tradeCenter
 	ld d, 36
@@ -769,11 +811,49 @@ TryLoadSpecialTownMapEntry::
 	scf
 	ret
 
+; P3-001: active-slot-ordered Johto Town Map entries. Names reside in bank $1C.
+JohtoPilotTownMapEntries::
+    db 116, 148
+    dw JohtoPilotNewBarkTownName
+    db 116, 136
+    dw JohtoPilotRoute29Name
+JohtoPilotTownMapEntriesEnd::
+ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
+
+LoadJohtoPilotTownMapEntryFromSlot::
+; in: E = dense active slot; out: D = Y, E = X, HL = map name pointer.
+    ld a, e
+    cp NUM_JOHTO_ACTIVE_MAPS
+    jr c, .validSlot
+    xor a
+.validSlot
+    ld l, a
+    ld h, 0
+    add hl, hl
+    add hl, hl
+    ld bc, JohtoPilotTownMapEntries
+    add hl, bc
+    ld a, [hli]
+    ld d, a
+    ld a, [hli]
+    ld e, a
+    ld a, [hli]
+    ld h, [hl]
+    ld l, a
+    ret
+
 TryLoadSpecialFlyWarpData::
-; in: D = Fly selector map ID
-; out: carry set if D is an extra Fly selector and its destination/warp data
-;      have been copied; carry clear if the caller should use the original
-;      town/blackout FlyWarpDataPtr table.
+; in: D = Fly selector (never a physical Johto ID).
+; out: carry set when fully resolved; no Kanto table lookups for Johto.
+	ld a, d
+	cp JOHTO_PILOT_FLY_SELECTOR
+	jr nz, .otherFly
+	; Keep the $35 bank small. The native region/warp payload lives in
+	; floating ROMX and never feeds $FD to the legacy Kanto Fly table.
+	callab JohtoPilotApplyNewBarkFlyWarp
+	scf
+	ret
+.otherFly
 	ld hl, SpecialFlyWarpData
 .loop
 	ld a, [hli]

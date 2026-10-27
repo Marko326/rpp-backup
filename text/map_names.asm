@@ -116,3 +116,9 @@ ColosseumName:
 	db "Colosseum@"
 Colosseum50Name:
 	db "Colosseum 50@"
+
+; P3-001 native Johto Town Map / save-screen names.
+JohtoPilotNewBarkTownName::
+	db "New Bark_Town@"
+JohtoPilotRoute29Name::
+	db "Route 29@"

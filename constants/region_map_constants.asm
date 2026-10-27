@@ -29,11 +29,11 @@ DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
 
 INCLUDE "constants/johto_fixed_map_ids.asm"
 
-; Dense active slots are not stable local IDs. No Johto map has been
-; imported into this mainline yet: EVERY local ID is inactive.
-; Raise NUM_JOHTO_ACTIVE_MAPS only together with complete audited map assets
-; and slot rows (Header, Bank, events, warp, connection, music, Town Map).
-DEF NUM_JOHTO_ACTIVE_MAPS EQU 0
+; Dense active slots are not stable local IDs. P3-001 activates only the
+; source-audited New Bark Town / Route 29 pilot pair; all other stable IDs stay inactive.
+; Raise this only alongside the complete header, bank, event, warp, connection,
+; music, Town Map, and runtime identity records for each added map.
+DEF NUM_JOHTO_ACTIVE_MAPS EQU 2
 DEF JOHTO_STABLE_ID_TABLE_SIZE EQU 256
 DEF JOHTO_INVALID_ACTIVE_SLOT EQU $ff
 ; Each registered map carries one ROMX header pointer (2B) and its bank (1B).
@@ -46,6 +46,25 @@ ASSERT NUM_JOHTO_ACTIVE_MAPS < JOHTO_INVALID_ACTIVE_SLOT
 ; P2-003 save-backed region key. $FC is solely the eventual engine handle,
 ; never a persistent Johto identity or an alias of Kanto map IDs.
 DEF JOHTO_RUNTIME_MAP_HANDLE EQU $fc
+; Reserved destination selector for region-aware ferry warps. It is not a map ID.
+DEF JOHTO_PILOT_FLY_SELECTOR EQU $fd ; fly-only selector, NEVER a physical map ID
+DEF JOHTO_TOWNMAP_LANDMARK_COUNT EQU 45 ; original Gold browsing order
+DEF JOHTO_REGION_WARP_ESCAPE EQU $fe
+; Map-name sign scratch keys are encoded above the legacy mapconst range ($00-$F7).
+; Expand/update this encoding before activating stable Johto IDs >= 8.
+DEF JOHTO_MAP_NAME_SIGN_KEY_BASE EQU $f8
+DEF JOHTO_NEW_BARK_WIDTH EQU 10
+DEF JOHTO_NEW_BARK_HEIGHT EQU 9
+DEF JOHTO_ROUTE_29_WIDTH EQU 30
+DEF JOHTO_ROUTE_29_HEIGHT EQU 9
 DEF JOHTO_REGION_MAGIC_0 EQU $4a
 DEF JOHTO_REGION_MAGIC_1 EQU $32
-ASSERT JOHTO_RUNTIME_MAP_HANDLE > LORELEIS_ROOM ; mapconst ends at $f7
+ASSERT JOHTO_RUNTIME_MAP_HANDLE > LORELEIS_ROOM ; legacy mapconst ends at $f7
+ASSERT JOHTO_REGION_WARP_ESCAPE > JOHTO_RUNTIME_MAP_HANDLE
+ASSERT JOHTO_REGION_WARP_ESCAPE < $ff ; $ff remains LAST_MAP
+ASSERT JOHTO_MAP_NAME_SIGN_KEY_BASE > LORELEIS_ROOM
+ASSERT JOHTO_ROUTE_29_LOCAL_ID < 8 ; map-name sign scratch key is $F8 + stable ID
+ASSERT JOHTO_NEW_BARK_WIDTH == 10
+ASSERT JOHTO_NEW_BARK_HEIGHT == 9
+ASSERT JOHTO_ROUTE_29_WIDTH == 30
+ASSERT JOHTO_ROUTE_29_HEIGHT == 9

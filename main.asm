@@ -361,7 +361,7 @@ SilphCo6Blocks: INCBIN "maps/SilphCo6F.blk"
 
 INCLUDE "engine/overworld/npc_movement.asm"
 INCLUDE "engine/overworld/doors.asm"
-INCLUDE "engine/overworld/ledges.asm"
+; P3-002: HandleLedges still called by callba from HOME; moved to Bank $43.
 
 
 SECTION "bank7",ROMX,BANK[$7]
@@ -3046,6 +3046,15 @@ SECTION "Fly Town Map Helpers", ROMX, BANK[$35]
 INCLUDE "engine/fly_town_map_helpers.asm"
 
 ; FLY-5.62.79: keep Teleport shortcut lookup outside the nearly full Fly Map bank.
+SECTION "Johto Gold Town Map Browse", ROMX
+INCLUDE "engine/johto_pilot_town_map_browse.asm"
+
+SECTION "Johto Town Map Palette Loader", ROMX
+INCLUDE "color/johto_town_map_palette_runtime.asm"
+
+SECTION "Johto Pilot Fly Map", ROMX
+INCLUDE "engine/johto_pilot_fly_map.asm"
+
 SECTION "Fly Town Map Teleport Shortcut", ROMX
 INCLUDE "engine/fly_town_map_shortcut.asm"
 
@@ -3342,9 +3351,14 @@ SECTION "Johto Stable Map ID Lookup", ROMX, BANK[$41]
 INCLUDE "data/johto_stable_id_slots.asm"
 INCLUDE "engine/johto_region_state.asm"
 INCLUDE "data/johto_header_descriptors.asm"
+INCLUDE "engine/johto_pilot_runtime.asm"
+INCLUDE "engine/johto_pilot_warp_tiles.asm"
 
 SECTION "Johto Gold Pilot Source Resources", ROMX, BANK[$42]
 INCLUDE "data/johto_pilot_source_resources.asm"
+
+SECTION "Johto Pilot Connection Resolver", ROMX, BANK[$42]
+INCLUDE "engine/johto_pilot_connection.asm"
 
 SECTION "Johto Pilot Runtime Assets", ROMX, BANK[$43]
 INCLUDE "data/johto_pilot_runtime_assets.asm"
@@ -3355,11 +3369,30 @@ INCLUDE "data/johto_pilot_runtime_assets.asm"
 SECTION "Relocated Tileset Header Loader", ROMX, BANK[$43]
 INCLUDE "engine/overworld/tileset_header.asm"
 
-; Prepared Gen1-format Johto headers share Bank $43 with their runtime blocks.
-; They are not present in JohtoHeaderDescriptors until connections/events are
-; implemented and NUM_JOHTO_ACTIVE_MAPS is raised with valid stable-ID slots.
-SECTION "Johto Pilot Staged Map Headers", ROMX, BANK[$43]
-INCLUDE "data/johto_pilot_staged_headers.asm"
+; P3-001: active pilot headers share Bank $43 with their runtime blocks.
+SECTION "Johto Pilot Active Map Headers", ROMX, BANK[$43]
+INCLUDE "data/johto_pilot_map_headers.asm"
+
+; No free room in legacy Bank $06; preserve shared RPP hop animation,
+; and dispatch the original Route 29 tile-pairs using Johto stable local ID 1.
+SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
+INCLUDE "engine/overworld/ledges.asm"
+
+; Gold-derived Johto Town Map art and its 20x18 KMP tilemap live outside the
+; nearly-full Bank $1C code/data region.
+SECTION "Town Map Artwork", ROMX, BANK[$45]
+UncompressedMap::
+    INCBIN "gfx/tilemaps/kanto_map.kmp"
+UncompressedMapEnd::
+ASSERT UncompressedMapEnd - UncompressedMap == 360
+
+JohtoTownMapTileGraphics::
+    INCBIN "gfx/town_map_johto.2bpp"
+JohtoTownMapTileGraphicsEnd::
+JohtoTownMapTilemap::
+    INCBIN "gfx/tilemaps/johto_map.kmp"
+JohtoTownMapTilemapEnd::
+ASSERT JohtoTownMapTilemapEnd - JohtoTownMapTilemap == 360
 
 SECTION "Johto 2MB ROM Boundary", ROMX[$7FFF], BANK[$7F]
     db $00

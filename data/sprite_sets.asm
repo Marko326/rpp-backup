@@ -189,6 +189,22 @@ SpriteSets:
 	db SPRITE_BALL
 	db SPRITE_OMANYTE
 
+; Shared Johto outdoor sprite set from the reference branch FLY-5.62.144.
+; Slots 1-9 include the current New Bark ferry NPC and Route 29 stand-ins.
+; The final two 4-tile sprites must remain last; do not shuffle Kanto sets.
+; sprite set $0b
+	db SPRITE_SAILOR
+	db SPRITE_GAMBLER
+	db SPRITE_BUG_CATCHER
+	db SPRITE_LASS
+	db SPRITE_FISHER
+	db SPRITE_FISHER2
+	db SPRITE_GIRL
+	db SPRITE_HIKER
+	db SPRITE_BLACK_HAIR_BOY_1
+	db SPRITE_BALL
+	db SPRITE_BERRY_TREE
+
 SpriteSheetPointerTable:
 	; SPRITE_RED
 	dw RedSprite

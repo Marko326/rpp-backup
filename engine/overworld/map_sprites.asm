@@ -260,9 +260,16 @@ ReadSpriteSheetData:
 ; Loads sprite set for outside maps (cities and routes) and sets VRAM slots.
 ; sets carry if the map is a city or route, unsets carry if not
 InitOutsideMapSprites:
+	; FLY-5.62.144 reference behaviour, adapted for the new ID architecture:
+	; New Bark (local 0) and Route 29 (local 1) share JOHTO_PILOT
+	; tileset 28, not legacy Kanto map numbers. Use one stable outdoor
+	; VRAM sprite set across seamless transitions, including bike travel.
+	ld a, [wCurMapTileset]
+	cp JOHTO_PILOT
+	jr z, .johtoOutdoorSprites
 	ld a,[wCurMap]
-	cp a,REDS_HOUSE_1F ; is the map a city or a route (map ID less than $25)?
-	ret nc ; if not, return
+	cp a,REDS_HOUSE_1F ; original Kanto city/route range only
+	ret nc ; not an outdoor Kanto map
 	ld hl,MapSpriteSets
 	add l
 	ld l,a
@@ -270,6 +277,10 @@ InitOutsideMapSprites:
 	inc h
 .noCarry
 	ld a,[hl] ; a = spriteSetID
+	jr .spriteSetReady
+.johtoOutdoorSprites
+	ld a, $0b ; same dedicated outdoor set as reference FLY-5.62.144
+.spriteSetReady
 	cp a,$f0 ; does the map have 2 sprite sets?
 	call nc,GetSplitMapSpriteSetID ; if so, choose the appropriate one
 	ld b,a ; b = spriteSetID
