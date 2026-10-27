@@ -2865,6 +2865,7 @@ wBagPocketTitleRowBytes:: ds 1 ; SpanWidth * 8 bytes
 ; MUS-5.60.00: three saved bytes from the still-unused tail of this legacy
 ; 128-byte block. wMusicStyle packs base family + independent RBY/GSC Custom
 ; preferences; the two-byte signature version-gates this format for old saves.
+; bit 4: Bike Song off (bit clear = original On); bit 0-3: RBY/GSC/RND and custom.
 wMusicStyle:: ds 1
 wMusicStyleMagic0:: ds 1
 wMusicStyleMagic1:: ds 1
@@ -3563,7 +3564,10 @@ wBeatLorelei::
 ; the game uses this to tell when Elite 4 events need to be reset
 	ds 1
 
-; unused
+; P4-002: persistent Fly-only selected stable ID. Former unused byte.
+; The ordinary Fly transition reuses menu scratch, so never store the
+; destination in wWhichTownMapLocation or wRegionalDexOwnedLast.
+wJohtoFlySelectedLocalID::
 	ds 1
 
 wd736:: ; d7ba

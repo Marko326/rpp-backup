@@ -261,15 +261,17 @@ DisplayOptionMenu:
 	jp nz,.showPage3
 	jp .loop
 
-; Page 3: World appearance and Page.
+; Page 3: World, Bike Song, Page. Bike Song changes sound only, not bike state.
 .checkPage3DirectionKeys
 	ld a,[wTopMenuItemY]
 	bit 7,b ; Down pressed?
-	jr nz,.page3MoveCursor
+	jr nz,.page3DownPressed
 	bit 6,b ; Up pressed?
-	jr nz,.page3MoveCursor
-	cp 16 ; cursor on Page?
-	jr z,.cursorOnPage3Back
+	jr nz,.page3UpPressed
+	cp 16
+	jp z,.cursorOnPage3Back ; the new middle row makes this branch too far for JR
+	cp 8
+	jr z,.cursorInBikeSong
 .cursorInWorld
 	ld hl,wOptions
 	bit 5,b ; Left = Normal, Right = Snowy
@@ -281,13 +283,41 @@ DisplayOptionMenu:
 	set 4,[hl]
 	ld a,10
 	jp .eraseOldMenuCursor
-.page3MoveCursor
+.cursorInBikeSong
+	; One persisted bit of the existing Music Style byte; old saves default On.
+	ld hl,wMusicStyle
+	bit 5,b ; Left = On, Right = Off
+	jr z,.bikeSongOff
+	res MUSIC_STYLE_BIKE_SONG_OFF_BIT,[hl]
+	jr .bikeSongChanged
+.bikeSongOff
+	set MUSIC_STYLE_BIKE_SONG_OFF_BIT,[hl]
+.bikeSongChanged
+	callba StoreMusicStyleSignature
+	call PlayDefaultMusic ; live preview if already riding
+	call GetBikeSongOptionCursorX
+	jp .eraseOldMenuCursor
+.page3DownPressed
+	cp 3
+	jr z,.page3SelectBikeSong
+	cp 8
+	jr z,.page3SelectBack
+	jr .page3SelectWorld
+.page3UpPressed
 	cp 3
 	jr z,.page3SelectBack
+	cp 8
+	jr z,.page3SelectWorld
+	jr .page3SelectBikeSong
 .page3SelectWorld
 	ld a,3
 	ld [wTopMenuItemY],a
 	call GetWorldOptionCursorX
+	jp .storeOptionMenuCursorX
+.page3SelectBikeSong
+	ld a,8
+	ld [wTopMenuItemY],a
+	call GetBikeSongOptionCursorX
 	jp .storeOptionMenuCursorX
 .page3SelectBack
 	ld a,16
@@ -398,6 +428,9 @@ DisplayOptionMenu:
 	coord hl,1,1
 	ld de,WorldOptionText
 	call PlaceString
+	coord hl,1,6
+	ld de,BikeSongOptionText
+	call PlaceString
 	ld de,OptionMenuPage3Text
 	jp .drawPageSelector
 
@@ -436,6 +469,12 @@ DisplayOptionMenu:
 	ld d,0
 	add hl,de
 	ld [hl],$ec
+	coord hl,0,8
+	call GetBikeSongOptionCursorX
+	ld e,a
+	ld d,0
+	add hl,de
+	ld [hl],$ec
 	coord hl,1,16
 	ld [hl],$ec
 	ret
@@ -467,6 +506,10 @@ MusicStyleOptionText:
 WorldOptionText:
 	db   "World:"
 	next " Normal   Snowy@"
+
+BikeSongOptionText:
+	db   "Bike Song:"
+	next " On       Off@"
 
 OptionMenuPageText:
 	db "Page@"
@@ -543,6 +586,14 @@ GetMusicStyleOptionCursorX:
 	ret
 .gsc
 	ld a,8
+	ret
+
+GetBikeSongOptionCursorX:
+	ld a,[wMusicStyle]
+	bit MUSIC_STYLE_BIKE_SONG_OFF_BIT,a
+	ld a,1 ; On
+	ret z
+	ld a,10 ; Off
 	ret
 
 GetWorldOptionCursorX:
@@ -660,7 +711,9 @@ TextSpeedOptionData:
 	db 7 ; default X coordinate (Medium)
 	db $ff ; terminator
 
+SECTION "Runtime Options World Diff Helpers", ROMX, BANK[$35]
 OptionsLoadWorldTilesetDiffVBlank::
+; Keep these routines in bank $35 with the Snowy patch tables read via HL.
 ; 只传 Normal/Snowy 真正不同的 tiles，不重传完整 $600 bytes tileset。
 ; 这样既避免关闭 LCD 的白闪，也缩短 World 切换时等待的 VBlank 数量。
 	ld a,[wCurMapTileset]
@@ -840,7 +893,7 @@ ReadMusicStyleState:
 .packed
 	ld a,[wMusicStyle]
 	ld b,a
-	and %11110000
+	and %11100000 ; accept Bike Song off in packed saves
 	jr nz,.rby
 	ld a,b
 	and MUSIC_STYLE_BASE_MASK

@@ -1,7 +1,16 @@
+## P4-DOC-007 / PAL-5.62.230 — 城都阶段2验收收口（2026-10-27）
+
+- **最新项目 ZIP 基线**：分支 `常规功能备份`，导出 HEAD `8c1789757f529de6eeb43de17b9b2d3e3eb8646a`（已提交的 P3 / `PAL-5.62.224`）。P4-001～P4-006 为其后的累计未提交功能与文档修改。本次清理**只更改四份长期维护文档**，正式 PAL 仍 `PAL-5.62.230`；TEST 代码及版本未动。
+- **验收证据**：用户先前确认吉花市↔29号道路可走、P4-004 城都飞行和普通地图位置正常、P4-006 Bike Song Off 上下车不重播音乐；既有渡轮、跳崖和显示反馈为此前阶段实测。未在本环境重新编译/链接 ROM，尚无 P4-006 新红蓝 MAP、各音乐模式的完整矩阵、全部存读档/关都回归证明。
+- **模式 B 单提交**：相对该 HEAD 的累计差异无 `tools/`、离线脚本或独立审计工具变更；游戏内 `scripts/*.asm` 如有改动仍属于功能代码。清理增量基于已应用 P4-006 → 文档收口；累计全量基于已确认 HEAD → 收口，两份互斥。ZIP 内另附一份 `commit-message.txt`。
+- **范围边界**：Johto 新稳定编号 0／1／2 已激活，剩余编号仅登记不开放。到访解锁 Fly 的11条预登记项不能绕过活动 Header 安全门禁；剧情/野怪/昼夜/原版 NPC 及后续地图留待下一批。用户自行 Git Commit/Push；下一阶段须用后续新导出重新核对 HEAD。
+
+---
+
 ## P3-DOC-006 / TEST-231 — 首批城都两地图收口（2026-10-27）
 
 - 当前确认基线为干净 P2 HEAD `495b7dc86ff6cbed5ed80483d1e8488dcb0e70bf`（`PAL-5.62.219 / TEST-226`）；P3-001～005 累计到 `PAL-5.62.224 / TEST-231`，尚无后续已提交新 HEAD 的资料。
-- 收到用户 TEST-231 普通地图配色通过反馈；本次只收口 `TODO.md`、`docs/JOHTO_MIGRATION_P3_FIRST_PAIR.md`、`PROJECT_DELIVERY_RULES.md` 和 `RPP_DEVELOPMENT_PITFALLS.md`。不改 ASM、图像、战斗、Wild、骑行、游戏显示版本与 tools/，采用模式 B 单提交。
+- 收到用户 TEST-231 普通地图配色通过反馈；本次只收口 `TODO.md`、`docs/JOHTO_MIGRATION.md`、`PROJECT_DELIVERY_RULES.md` 和 `RPP_DEVELOPMENT_PITFALLS.md`。不改 ASM、图像、战斗、Wild、骑行、游戏显示版本与 tools/，采用模式 B 单提交。
 - 清理增量从 TEST-231 已应用源码 → 文档收口后；累计全量从上述 P2 HEAD → P3-DOC-006，二者择一。ZIP 同时包含一份完整拟提交日志，不提交或推送 Git。
 - TEST-231 本机截图支持当前 Route29 的 Town Map 颜色通过；用户先前反馈飞行、轮船、跳崖、人物正常。不冒称当前旧 MAP 是 TEST-231 重链接结果，不擅自升级其它测试范围。保留自行车／全部 Fly 解锁／剧情／遭遇有意后置。
 

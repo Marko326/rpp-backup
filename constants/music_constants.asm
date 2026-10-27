@@ -48,6 +48,7 @@ MUSIC_STYLE_BASE_COUNT       EQU 3
 MUSIC_STYLE_BASE_MASK        EQU %00000011
 MUSIC_STYLE_RBY_CUSTOM_BIT   EQU 2
 MUSIC_STYLE_GSC_CUSTOM_BIT   EQU 3
+MUSIC_STYLE_BIKE_SONG_OFF_BIT EQU 4 ; persisted option, clear = existing default On
 MUSIC_STYLE_MAGIC0           EQU $4d ; "M"
 MUSIC_STYLE_MAGIC1           EQU $32 ; "2" (packed independent-CSTM format)
 MUSIC_STYLE_LEGACY_MAGIC1    EQU $53 ; "S" (legacy three-value format)

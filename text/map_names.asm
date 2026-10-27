@@ -122,3 +122,5 @@ JohtoPilotNewBarkTownName::
 	db "New Bark_Town@"
 JohtoPilotRoute29Name::
 	db "Route 29@"
+JohtoPilotCherrygroveName::
+	db "Cherrygrove_City@"

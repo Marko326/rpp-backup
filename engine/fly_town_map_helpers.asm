@@ -658,6 +658,7 @@ SpecialFlyLocationEntriesEnd:
 
 
 MarkSpecialFlyLocationVisited::
+	callab JohtoPilotRecordFlyVisit
 ; Unlock extra Fly destinations only when the player actually loads the chosen
 ; landmark map. Diglett's Cave remains entrance-based because its two ends are
 ; distinct Fly destinations. Bits 0-7 use wSpecialFlyVisitedFlag; bit indices 8+ map
@@ -817,6 +818,8 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotNewBarkTownName
     db 116, 136
     dw JohtoPilotRoute29Name
+    db 116, 108
+    dw JohtoPilotCherrygroveName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 

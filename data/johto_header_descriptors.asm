@@ -18,6 +18,8 @@ JohtoHeaderDescriptors::
     db BANK(JohtoPilotNewBarkRuntimeHeader)
     dw JohtoPilotRoute29RuntimeHeader
     db BANK(JohtoPilotRoute29RuntimeHeader)
+    dw JohtoPilotCherrygroveRuntimeHeader
+    db BANK(JohtoPilotCherrygroveRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

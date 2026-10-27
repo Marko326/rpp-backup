@@ -7,6 +7,6 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
-	; P3-005 restores reference Gold regional Town Map color tables.
-	db "PAL-5.62.224@"
+	; P4-006: avoid restarting current BGM on bicycle mount/dismount with Bike Song Off.
+	db "PAL-5.62.230@"
 ENDC

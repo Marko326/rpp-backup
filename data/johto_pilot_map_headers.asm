@@ -31,7 +31,16 @@ JohtoPilotRoute29RuntimeHeader::
     dw JohtoPilotRoute29RuntimeBlocks
     dw JohtoPilotRoute29TextPointers
     dw JohtoPilotMapScript
-    db EAST
+    db WEST | EAST
+    ; WEST: Route 29 -> Cherrygrove (same Gold north/south alignment).
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotCherrygroveRuntimeBlocks + JOHTO_CHERRYGROVE_WIDTH - 3
+    dw wOverworldMap + (JOHTO_ROUTE_29_WIDTH + 6) * 3
+    db JOHTO_CHERRYGROVE_HEIGHT
+    db JOHTO_CHERRYGROVE_WIDTH
+    db 0
+    db JOHTO_CHERRYGROVE_WIDTH * 2 - 1
+    dw wOverworldMap + 6 + 2 * JOHTO_CHERRYGROVE_WIDTH
     ; EAST connection record (11 bytes), target map handle is shared $FC.
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoPilotNewBarkRuntimeBlocks
@@ -43,8 +52,30 @@ JohtoPilotRoute29RuntimeHeader::
     dw wOverworldMap + 7 + JOHTO_NEW_BARK_WIDTH
     dw JohtoPilotRoute29RuntimeObjects
 JohtoPilotRoute29RuntimeHeaderEnd::
-ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 23
+ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 34
 ASSERT BANK(JohtoPilotRoute29RuntimeHeader) == BANK(JohtoPilotRoute29RuntimeBlocks)
+
+; P4-001: City exits EAST toward Route29. Its original north Route30
+; passage is fenced in runtime-only blocks until Route30 ID3 is registered.
+JohtoPilotCherrygroveRuntimeHeader::
+    db JOHTO_PILOT
+    db JOHTO_CHERRYGROVE_HEIGHT, JOHTO_CHERRYGROVE_WIDTH
+    dw JohtoPilotCherrygroveRuntimeBlocks
+    dw JohtoPilotCherrygroveTextPointers
+    dw JohtoPilotMapScript
+    db EAST
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotRoute29RuntimeBlocks
+    dw wOverworldMap - 3 + (JOHTO_CHERRYGROVE_WIDTH + 6) * 4
+    db JOHTO_ROUTE_29_HEIGHT
+    db JOHTO_ROUTE_29_WIDTH
+    db 0
+    db 0
+    dw wOverworldMap + 7 + JOHTO_ROUTE_29_WIDTH
+    dw JohtoPilotCherrygroveRuntimeObjects
+JohtoPilotCherrygroveRuntimeHeaderEnd::
+ASSERT JohtoPilotCherrygroveRuntimeHeaderEnd - JohtoPilotCherrygroveRuntimeHeader == 23
+ASSERT BANK(JohtoPilotCherrygroveRuntimeHeader) == BANK(JohtoPilotCherrygroveRuntimeBlocks)
 
 JohtoPilotMapScript::
     call EnableAutoTextBoxDrawing
@@ -206,3 +237,43 @@ JohtoPilotRoute29RuntimeObjects::
 	object SPRITE_BUG_CATCHER, $1b, $10, STAY, DOWN,  $02 ; youngster
 	object SPRITE_LASS,        $0f, $0b, STAY, LEFT,  $03 ; teacher
 	object SPRITE_FISHER,      $19, $03, STAY, DOWN,  $04 ; fisherman
+
+; Original Gold Cherrygrove four exterior signs; houses and storyline events
+; deliberately remain closed. No temporary diagnostic NPCs.
+JohtoPilotCherrygroveTextPointers:
+    dw JohtoPilotCherrygroveCitySignText
+    dw JohtoPilotCherrygroveHouseSignText
+    dw JohtoPilotCherrygroveMartSignText
+    dw JohtoPilotCherrygroveCenterSignText
+
+JohtoPilotCherrygroveCitySignText:
+    text "CHERRYGROVE CITY"
+    para "The City of"
+    line "Fragrant Flowers"
+    done
+    db "@"
+JohtoPilotCherrygroveHouseSignText:
+    text "GUIDE GENT'S HOUSE"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotCherrygroveMartSignText:
+    text "#MON MART"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotCherrygroveCenterSignText:
+    text "#MON CENTER"
+    para "Closed for now."
+    done
+    db "@"
+
+JohtoPilotCherrygroveRuntimeObjects::
+    db $05 ; original Gold outdoor forest border
+    db $00 ; no enabled indoor warps in the map-only phase
+    db $04 ; original Gold signs (y, x, text index)
+    db $08, $1e, $01 ; city
+    db $09, $17, $02 ; guide's house
+    db $03, $18, $03 ; Mart
+    db $03, $1e, $04 ; Poke Center
+    db $00 ; no replacement / diagnostic NPCs

@@ -57,16 +57,10 @@ DisplayTownMap:
 	jr .enterLoop
 .initJohtoBrowse
 	pop af
-	; Only the two registered physical maps exist. Their Gold browse indices
-	; are 0 (New Bark) and 1 (Route 29), independent of future active slots.
+	; First three active native maps use contiguous stable IDs and map indices
+	; 0/1/2. Region/active-slot checks already gate malformed IDs on map load.
+	; Revisit this lookup before any sparse stable-ID registration.
 	ld a, [wCurLocalMapID]
-	cp JOHTO_ROUTE_29_LOCAL_ID
-	jr z, .startRoute29
-	xor a
-	jr .storeBrowseIndex
-.startRoute29
-	ld a, 1
-.storeBrowseIndex
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 
@@ -224,12 +218,9 @@ DisplayTownMap:
 ; Cross-bank Fly sprite helpers. Selection, labels and Fly destination live
 ; in floating ROMX; only these short drawing wrappers use Town Map's bank.
 DrawJohtoPilotFlyPlayerMarker::
+	; Only stable IDs 0/1/2 are active, and they equal their dense slots.
 	ld a, [wCurLocalMapID]
-	ld e, 0
-	cp JOHTO_ROUTE_29_LOCAL_ID
-	jr nz, .mapReady
-	ld e, 1
-.mapReady
+	ld e, a
 	callab LoadJohtoPilotTownMapEntryFromSlot
 	ld b, d
 	ld c, e

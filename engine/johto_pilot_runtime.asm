@@ -110,12 +110,17 @@ JohtoPilotLoadMapMusic::
     jr z, .newBark
     cp JOHTO_ROUTE_29_LOCAL_ID
     jr z, .route29
+    cp JOHTO_CHERRYGROVE_LOCAL_ID
+    jr z, .cherrygrove
     jp SoftReset
 .newBark
     ld a, MUSIC_PALLET_TOWN
     jr .storeMusic
 .route29
     ld a, MUSIC_ROUTES1
+    jr .storeMusic
+.cherrygrove
+    ld a, MUSIC_CITIES1
 .storeMusic
     ld [wMapMusicSoundID], a
     xor a ; both base RBY map songs are in music bank 0; music style remaps them

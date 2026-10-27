@@ -3061,8 +3061,10 @@ INCLUDE "engine/fly_town_map_shortcut.asm"
 SECTION "Warp Destination Helpers", ROMX, BANK[$35]
 INCLUDE "engine/overworld/warp_destination.asm"
 
-; Bank 1 已接近满载，把完整 Options 菜单搬到空余更大的扩展 Bank $35。
-SECTION "Runtime Options Menu", ROMX, BANK[$35]
+; P4-005: the Options UI outgrew crowded Bank $35 (26B slack in the last submitted MAP).
+; Keep Snowy data readers pinned to $35 in their own section, but allow the
+; bank-independent menu/UI to be placed in a roomy ROMX bank.
+SECTION "Runtime Options Menu", ROMX
 INCLUDE "engine/menu/options_menu.asm"
 
 ; MENU-5.61.17: keep Party/Bag shortcut executors out of crowded bank $35.

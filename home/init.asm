@@ -211,7 +211,7 @@ LoadStartupMusicOption:
 .loadPackedMusicStyle
 	ld a, [sMainData + (wMusicStyle - wMainDataStart)]
 	ld b, a
-	and %11110000
+	and %11100000 ; bit 4 is the optional Bike Song off flag
 	jr nz, .closeSRAM
 	ld a, b
 	and MUSIC_STYLE_BASE_MASK

@@ -844,7 +844,7 @@ ItemUseBicycle:
 .getOffBike
 	xor a
 	ld [wWalkBikeSurfState],a ; change player state to walking
-	call PlayDefaultMusic ; play walking music
+	call PlayBikeToggleMusicIfEnabled ; Bike Song Off: keep current BGM playing
 	ld a,[wPseudoItemID]
 	and a ; if using select shortcut
 	ret nz
@@ -858,7 +858,7 @@ ItemUseBicycle:
 	ld [hJoyHeld],a ; current joypad state
 	inc a
 	ld [wWalkBikeSurfState],a ; change player state to bicycling
-	call PlayDefaultMusic ; play bike riding music
+	call PlayBikeToggleMusicIfEnabled ; Bike Song Off: keep current BGM playing
 	ld a,[wPseudoItemID]
 	and a ; if using select shortcut
 	ret nz
@@ -868,6 +868,17 @@ ItemUseBicycle:
 .printCannotGetOffText
 	ld hl,CannotGetOffBicycleText
 	jp PrintText
+
+; Bike Song Off must not just select the map track: PlayDefaultMusic clears
+; wLastMusicSoundID and restarts it even when the same track is already playing.
+; Ignore bicycle-only transitions in every music style (RBY/GSC/Random),
+; preserving the current song and playback position. Real map changes still
+; use the ordinary map music path.
+PlayBikeToggleMusicIfEnabled:
+	ld a, [wMusicStyle]
+	bit MUSIC_STYLE_BIKE_SONG_OFF_BIT, a
+	ret nz
+	jp PlayDefaultMusic
 
 CannotGetOffBicycleText:
 	TX_FAR _CannotGetOffHereText

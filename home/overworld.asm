@@ -1954,11 +1954,15 @@ LoadPlayerSpriteGraphicsCommon::
 LoadMapHeader::
 	; Synchronize Kanto keys and validate the active native stable ID before lookup.
 	callab JohtoPilotSyncMapIdentity
-	; Native Johto uses the region/local key, not an out-of-range Kanto ID.
-	; Existing Kanto map handling must remain byte-for-byte in its branch.
+	; Kanto's missable-object path must not index map $FC. Register the
+	; actual stable-ID city visit on the native Johto path instead:
+	; P4-002's hook inside MarkSpecialFlyLocationVisited was bypassed here.
 	ld a, [wCurMap]
 	cp JOHTO_RUNTIME_MAP_HANDLE
-	jr z, .headerIntro
+	jr nz, .markKantoTown
+	callab JohtoPilotRecordFlyVisit
+	jr .headerIntro
+.markKantoTown
 	callba MarkTownVisitedAndLoadMissableObjects
 .headerIntro
 	ld a,[wCurMapTileset]

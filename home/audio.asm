@@ -24,6 +24,9 @@ PlayDefaultMusicCommon::
 	jr z, .walking
 	cp $2
 	jr z, .surfing
+	ld a, [wMusicStyle]
+	bit MUSIC_STYLE_BIKE_SONG_OFF_BIT, a
+	jr nz, .walking ; bike visuals/movement remain; use ordinary map track
 	ld a, MUSIC_BIKE_RIDING
 	jr .next
 
