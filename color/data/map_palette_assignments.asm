@@ -37,3 +37,9 @@ INCLUDE "color/tilesets/facility.asm" ; FACILITY
 INCLUDE "color/tilesets/ferry.asm" ; FERRY
 INCLUDE "color/tilesets/ice_cavern.asm" ; ICE_CAVERN
 INCLUDE "color/tilesets/museum2.asm" ; MUSEUM_2
+
+; JOHTO_PILOT: use the proven Johto palette arrangement, not the following
+; RoofPalettes bytes. Each tileset must have exactly 96 tile assignments.
+INCLUDE "color/tilesets/johto.asm" ; JOHTO_PILOT
+MapPaletteAssignmentsEnd::
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_PILOT + 1) * $60

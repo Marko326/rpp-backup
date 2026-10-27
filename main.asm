@@ -99,7 +99,6 @@ INCLUDE "data/map_header_banks.asm"
 INCLUDE "engine/overworld/clear_variables.asm"
 INCLUDE "engine/overworld/player_state.asm"
 INCLUDE "engine/overworld/poison.asm"
-INCLUDE "engine/overworld/tileset_header.asm"
 INCLUDE "engine/overworld/daycare_exp.asm"
 
 INCLUDE "data/hide_show_data.asm"
@@ -3336,6 +3335,31 @@ INCLUDE "data/map_header_pointers.asm"
 ; callab restores the map bank on return; do not return the ID in A.
 SECTION "Kanto Map Header Pointer Lookup", ROMX, BANK[JOHTO_ROM_BANK]
 INCLUDE "engine/overworld/kanto_header_lookup.asm"
+
+; P2-001: dedicated expansion ROMX bank for the frozen Johto ID registry.
+; P2 does not hook this into legacy Kanto maps or activate any Johto map.
+SECTION "Johto Stable Map ID Lookup", ROMX, BANK[$41]
+INCLUDE "data/johto_stable_id_slots.asm"
+INCLUDE "engine/johto_region_state.asm"
+INCLUDE "data/johto_header_descriptors.asm"
+
+SECTION "Johto Gold Pilot Source Resources", ROMX, BANK[$42]
+INCLUDE "data/johto_pilot_source_resources.asm"
+
+SECTION "Johto Pilot Runtime Assets", ROMX, BANK[$43]
+INCLUDE "data/johto_pilot_runtime_assets.asm"
+
+; The tileset loader is invoked only via predef, whose pointer table carries
+; BANK(LoadTilesetHeader). Keep its Kanto table in the same bank as the code.
+; This removes the 6-byte Bank $03 ceiling without changing a Kanto caller.
+SECTION "Relocated Tileset Header Loader", ROMX, BANK[$43]
+INCLUDE "engine/overworld/tileset_header.asm"
+
+; Prepared Gen1-format Johto headers share Bank $43 with their runtime blocks.
+; They are not present in JohtoHeaderDescriptors until connections/events are
+; implemented and NUM_JOHTO_ACTIVE_MAPS is raised with valid stable-ID slots.
+SECTION "Johto Pilot Staged Map Headers", ROMX, BANK[$43]
+INCLUDE "data/johto_pilot_staged_headers.asm"
 
 SECTION "Johto 2MB ROM Boundary", ROMX[$7FFF], BANK[$7F]
     db $00

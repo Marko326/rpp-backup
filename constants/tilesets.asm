@@ -28,3 +28,4 @@ const_value = 0
 	const FERRY        ; 25
 	const ICE_CAVERN   ; 26
 	const MUSEUM_2     ; 27
+	const JOHTO_PILOT  ; 28 ; Johto outdoor pilot, not an active map

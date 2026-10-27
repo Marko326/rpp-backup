@@ -1,0 +1,67 @@
+; P2-005: executable-format graphics/blocks for the two-map pilot, isolated
+; from the untouched, byte-authentic Gold source data in bank $42.
+; The 1 New Bark / 19 Route29 adjusted blocks use the reference renderer's
+; extra Johto block IDs, not legacy Kanto map-number aliases.
+; These resources are not yet routed into map loading or save/warp execution.
+DEF JOHTO_PILOT_RUNTIME_RECORD_SIZE EQU 7
+DEF JOHTO_PILOT_TILESET_ID EQU JOHTO_PILOT
+ASSERT JOHTO_PILOT == 28
+; Tile registration is not map activation; stable map IDs remain gated.
+ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
+ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 0
+
+JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
+JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
+JohtoPilot_BlockEnd::
+ASSERT JohtoPilot_BlockEnd - JohtoPilot_Block == 141 * 16
+
+JohtoPilot_Coll:: INCBIN "gfx/tilesets/johto.tilecoll"
+JohtoPilot_CollEnd::
+ASSERT JohtoPilot_CollEnd - JohtoPilot_Coll == 7
+
+JohtoPilotNewBarkRuntimeBlocks::
+    INCBIN "maps/johto_pilot/NewBarkTown.runtime.blk"
+JohtoPilotNewBarkRuntimeBlocksEnd::
+ASSERT JohtoPilotNewBarkRuntimeBlocksEnd - JohtoPilotNewBarkRuntimeBlocks == 10 * 9
+
+JohtoPilotRoute29RuntimeBlocks::
+    INCBIN "maps/johto_pilot/Route29.runtime.blk"
+JohtoPilotRoute29RuntimeBlocksEnd::
+ASSERT JohtoPilotRoute29RuntimeBlocksEnd - JohtoPilotRoute29RuntimeBlocks == 30 * 9
+
+; Stable physical ID, registered tileset ID, width, height, block pointer, block bank.
+; Not a map Header: no event, connection, Warp, sprite or collision fence
+; may be enabled merely because a resource row appears here.
+JohtoPilotRuntimeResourceDescriptors::
+JohtoPilotNewBarkRuntimeDescriptor::
+    db JOHTO_NEW_BARK_LOCAL_ID, JOHTO_PILOT_TILESET_ID, 10, 9
+    dw JohtoPilotNewBarkRuntimeBlocks
+    db BANK(JohtoPilotNewBarkRuntimeBlocks)
+JohtoPilotRoute29RuntimeDescriptor::
+    db JOHTO_ROUTE_29_LOCAL_ID, JOHTO_PILOT_TILESET_ID, 30, 9
+    dw JohtoPilotRoute29RuntimeBlocks
+    db BANK(JohtoPilotRoute29RuntimeBlocks)
+JohtoPilotRuntimeResourceDescriptorsEnd::
+ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == 2 * JOHTO_PILOT_RUNTIME_RECORD_SIZE
+
+; Read-only descriptor selector. Input E=stable physical Johto local ID.
+; Success: D=ROM bank, HL=descriptor in D; failure: D=0/HL=0.
+; A/flags are not outputs through callab; this does NOT activate a map.
+JohtoPilotGetRuntimeResourceDescriptor::
+    ld a, e
+    cp JOHTO_NEW_BARK_LOCAL_ID
+    jr z, .newBark
+    cp JOHTO_ROUTE_29_LOCAL_ID
+    jr z, .route29
+    ld d, 0
+    ld hl, 0
+    ret
+.newBark
+    ld hl, JohtoPilotNewBarkRuntimeDescriptor
+    jr .valid
+.route29
+    ld hl, JohtoPilotRoute29RuntimeDescriptor
+.valid
+    ld d, BANK(JohtoPilotRuntimeResourceDescriptors)
+    ret

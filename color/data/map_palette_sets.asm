@@ -279,3 +279,18 @@ MapPaletteSets:
 	db INDOOR_BROWN
 	db INDOOR_LIGHT_BLUE
 	db ALT_TEXTBOX_PAL ; Uses variant of textbox palette for skeleton pokemon
+
+; JOHTO_PILOT (28): canonical Johto outdoor color family.
+; The tileset list and this palette list are positional. Without this row,
+; index 28 reads bytes from MapPaletteAssignments as bogus palette IDs.
+	db OUTDOOR_GRAY
+	db OUTDOOR_RED
+	db OUTDOOR_GREEN
+	db OUTDOOR_BLUE
+	db OUTDOOR_YELLOW
+	db OUTDOOR_BROWN
+	db OUTDOOR_ROOF
+	db CRYS_TEXTBOX
+MapPaletteSetsEnd::
+ASSERT JOHTO_PILOT == 28
+ASSERT MapPaletteSetsEnd - MapPaletteSets == (JOHTO_PILOT + 1) * 8

@@ -3421,7 +3421,7 @@ wPlayerJumpingYScreenCoordsIndex:: ; d798
 wRivalStarter:: ; d799
 	ds 1
 
-; unused?
+wRegionStateMagic0:: ; d79a; formerly unused, saved in wMainData
 	ds 1
 
 wPlayerStarter:: ; d79b
@@ -3522,7 +3522,7 @@ wd72e::
 ; TODO: Move some of this into event flags, others into an EngineFlags array
 	ds 1
 
-; unused? 
+wRegionStateMagic1:: ; d7b3; formerly unused, saved in wMainData
 	ds 1
 
 wd730:: ; d7b4
@@ -3532,7 +3532,7 @@ wd730:: ; d7b4
 ; bit 7: set if joypad states are being simulated in the overworld or an NPC's movement is being scripted
 	ds 1
 
-; unused?
+wCurRegion:: ; d7b5; formerly unused; MAP_REGION_KANTO / JOHTO
 	ds 1
 
 wd732:: ; d7b6
@@ -3589,7 +3589,7 @@ wWarpedFromWhichMap:: ; d7c0
 wSeafoamEntranceSource:: ; d7c1
 	ds 1
 
-; unused?
+wCurLocalMapID:: ; d7c2; formerly unused; stable Johto ID or Kanto map ID
 	ds 1
 
 wCardKeyDoorY:: ; d7c3
@@ -3598,8 +3598,11 @@ wCardKeyDoorY:: ; d7c3
 wCardKeyDoorX:: ; d7c4
 	ds 1
 
-; unused?
-	ds 2
+; Reuse two unreferenced save-backed bytes without moving any WRAM address.
+wLastRegion:: ; d7c5
+	ds 1
+wLastLocalMapID:: ; d7c6
+	ds 1
 
 ; GYM-5.34.00: legacy random-switch slots retained to preserve WRAM layout.
 ; The fixed-switch puzzle no longer reads or writes either byte.

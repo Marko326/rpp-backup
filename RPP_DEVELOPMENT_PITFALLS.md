@@ -1,3 +1,9 @@
+## P2-006 — 新增 Tileset 必须同时补齐两种 Palette 表（2026-10-27）
+
+- 城都 Tileset ID 28 在 P2-005B 注册后，若 `MapPaletteSets` 少一行 8B 或 `MapPaletteAssignments` 少一行 96B，运行期可能越过表尾读到后续 `RoofPalettes` 等数据；图形显示异常不能只归咎于地图 Block 或 Header。
+- P2-006 已给两表补齐对应城都行并加表长 `ASSERT`。这属于**确定的静态越界风险修复**，不是 P2-005D 花屏已经实机解决的证据。P2-005D 临时开启的 `$FC` 入口/B+SELECT 调试路径已撤销，禁止只为测试 Palette 将其直接恢复。
+- 后续新增任意 Tileset 时，成套登记 Header/GFX/Blockset/Collision、Palette Sets、Tile Assignments 和 MAP 检查；城都第一次激活前先保证真实地图连接、碰撞、事件、Warp、存读档和 Fail-closed 活动槽位一致。
+
 ## ROM-5.62.211 / TEST-218 — 跨 Bank Kanto Header 指针迁移的调用约定
 
 - `MapHeaderPointers` 原本在 ROM0，占 248 × 2 = 496B；移至扩展 Bank `$40` 时必须保持 248 项**次序、指针与地图 Header 所在原 Bank**不变。只搬运表的位置，不能连带改变 Kanto 地图编号、Warp/连接、存档镜像。

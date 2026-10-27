@@ -1912,7 +1912,13 @@ LoadPlayerSpriteGraphicsCommon::
 
 ; function to load data from the map header
 LoadMapHeader::
+	; Native Johto uses the region/local key, not an out-of-range Kanto ID.
+	; Existing Kanto map handling must remain byte-for-byte in its branch.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr z, .headerIntro
 	callba MarkTownVisitedAndLoadMissableObjects
+.headerIntro
 	ld a,[wCurMapTileset]
 	ld [wUnusedD119],a
 	ld a,[wCurMap]
@@ -1924,12 +1930,31 @@ LoadMapHeader::
 	ld [hPreviousTileset],a
 	bit 7,b
 	ret nz
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .kantoHeader
+	; D=region, E=stable Johto local ID. No old Kanto alias is consulted.
+	ld a, [wCurRegion]
+	ld d, a
+	ld a, [wCurLocalMapID]
+	ld e, a
+	callab ResolveJohtoHeaderDescriptor
+	; The resolver returns D/HL, NOT A/carry across callab.
+	; No active Johto maps yet: this path fails closed.
+	ld a, d
+	and a
+	jp z, SoftReset
+	ld [H_LOADEDROMBANK], a
+	ld [MBC1RomBank], a
+	jr .headerReady
+.kantoHeader
 	; P1b: the 248-entry Kanto pointer table lives in expansion ROM now.
 	; callab overwrites A while banking; pass the map ID in E instead.
 	ld a, [wCurMap]
 	ld e, a
 	callab GetKantoMapHeaderPointer ; HL = original Kanto map header
 	; Bankswitch restored the map's ROM bank for the following [HL] reads.
+.headerReady
 ; copy the first 10 bytes (the fixed area) of the map data to D367-D370
 	ld de,wCurMapTileset
 	ld c,$0a
@@ -2248,6 +2273,8 @@ endr
 SwitchToMapRomBank::
 	push hl
 	push bc
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr z, .johtoBank
 	ld c,a
 	ld b,$00
 	ld a,Bank(MapHeaderBanks)
@@ -2258,6 +2285,23 @@ SwitchToMapRomBank::
 	ld [$ffe8],a ; save map ROM bank
 	call BankswitchBack
 	ld a,[$ffe8]
+	jr .setBank
+.johtoBank
+	push de
+	ld a, [wCurRegion]
+	ld d, a
+	ld a, [wCurLocalMapID]
+	ld e, a
+	callab ResolveJohtoHeaderDescriptor
+	ld a, d ; bank, not A from callab
+	pop de
+	and a
+	jr nz, .setBank
+	; Never interpret missing Johto header as a Kanto address/Bank 0.
+	pop bc
+	pop hl
+	jp SoftReset
+.setBank
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a ; switch to map ROM bank
 	pop bc

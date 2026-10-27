@@ -72,6 +72,8 @@ LoadSAV0:
 	ld de, wMainDataStart
 	ld bc, wMainDataEnd - wMainDataStart
 	call CopyData
+	; Old saves have no authenticated region key. Normalize only in WRAM.
+	callba JohtoValidateSavedRegionState
 	ld hl, wCurMapTileset
 	set 7, [hl]
 	ld hl, sSpriteData
@@ -197,6 +199,8 @@ OlderFileWillBeErasedText:
 	db "@"
 
 SaveSAVtoSRAM0:
+	; Synchronize Kanto IDs before copying the checked main save block.
+	callba JohtoPrepareRegionStateForSave
 	ld a, SRAM_ENABLE
 	ld [MBC1SRamEnable], a
 	ld a, $1

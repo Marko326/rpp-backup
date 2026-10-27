@@ -13,6 +13,9 @@ InitPlayerData2:
 	ld a, $ff
 	ld [wUnusedD71B], a
 
+	; Establish a valid Kanto map key for new saves.
+	callba JohtoResetRegionStateToKanto
+
 ; MOVE-5.62.169: a new game has no extended move identities.
 	xor a
 	ld hl, wExtendedPartyMoveFlags
