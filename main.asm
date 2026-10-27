@@ -3320,3 +3320,22 @@ INCLUDE "engine/battle/metronome_extended.asm"
 
 ; MOVE-5.62.189: source-driven enemy full move identity (floating ROMX).
 INCLUDE "engine/battle/enemy_native_extended.asm"
+
+; JOHTO-P1a: reserve the upper half of the 2MB MBC3 ROM for Johto.
+; The expansion boundary intentionally has no game behavior or map hooks.
+; Banks $40-$7E host explicitly banked expansion data (including the
+; migrated Kanto pointer resolver); bank $7F's last byte forces 2MB.
+; Keep the existing MBC3 / SRAM rgbfix flags unchanged.
+DEF JOHTO_ROM_BANK EQU $40
+; JOHTO-P1b: retain the complete legacy table, in the same order.
+; All Kanto map headers still live in their original ROM banks.
+SECTION "Kanto Map Header Pointer Table", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "data/map_header_pointers.asm"
+
+; Short far-call target. In: E = old map ID. Out: HL = header pointer.
+; callab restores the map bank on return; do not return the ID in A.
+SECTION "Kanto Map Header Pointer Lookup", ROMX, BANK[JOHTO_ROM_BANK]
+INCLUDE "engine/overworld/kanto_header_lookup.asm"
+
+SECTION "Johto 2MB ROM Boundary", ROMX[$7FFF], BANK[$7F]
+    db $00

@@ -1,3 +1,17 @@
+# ROM-5.62.211 / TEST-218 — 城都移植 P1：2MB 与 ROM0 迁表（核心验收收口）
+
+- [x] **ROM 容量**：`main.asm` 增加 Bank `$7F:$7FFF` 锚点，保留原 MBC3、SRAM、Makefile 与地图/战斗运行机制；扩展 Bank `$40` 起预留给后续地区移植。
+- [x] **ROM0 地图表搬迁**：将 248 项关都 Header 指针表迁入 Bank `$40`，通过 `E=wCurMap` 跨 Bank 查表、返回 `HL`；不改原地图编号、Header 内容、Warp 或存档结构。
+- [x] **正式红蓝 MAP**：`patches/rppred.map`、`patches/rppblue.map` 均显示 ROM0 空闲 `$0338`（824B），相比原 319B 净增 505B；Bank `$40` 表 `$4000–$41EF`，查表例程 `$41F0–$41FB`，Bank `$7F` 容量锚点存在。ROM0 ≥800B 的首阶段目标达成。
+- [x] **运行回归已报告范围**：宝可梦中心、山洞、普通房屋进出及存读档未发现问题；这些结果不等于 Fly、地图连接或所有游戏场景已验收。
+- [x] **静态回归**：地图表 248 项原数据逐字节不变，调用约定和唯一 INCLUDE 已复核；增量、全量补丁做正反向及文件权限校验。
+- [ ] **未覆盖的验收**：Fly、跨地图边界、道馆/港口、独立测试 Red/Blue MAP，四 ROM 的真实文件长度与头部容量码尚无完整核对材料；后续按需补测。`buildRB/pokered.map` 与 `buildRB/pokeblue.map` 不作为 P1 合并后的 MAP 验收依据。
+- [ ] **P2 约束**：当前正式红蓝 MAP 显示 WRAM0 剩余 0B、WRAMX #1 剩余 1B；城都新编号/活动槽位需要 RAM 生命周期与空间方案，不能直接追加常驻变量。
+- **补丁边界**：清理增量以已应用 `P1-001` 的文件状态为前置；累计全量以 `TEST-217.zip` 干净导出 HEAD `486c89c4a032473306267e95d5865149fc0b12a6` 为起点；两份互斥，只用其一。
+- **游戏版本**：正式 `ROM-5.62.211`，测试 `TEST-218`。本次清理不改变 ASM、地图数据或 ROM 内的版本文本，不由 AI 执行 ROM 编译或 Git Commit/Push。
+
+---
+
 # TRF-5.62.210 / TEST-217 — DOC-218 验收清理记录（2026-10-25）
 
 - [x] **正式功能**：成功 Transform 清除**施术者自己的** `wPlayerDisabledMove`／`wPlayerDisabledMoveNumber` 或对应敌方两字段；失败不清。清理是成功瞬间一次性发生，后来真正的 Disable 可重新施加；无需修改原有 Disable、Struggle 或 AI 算法。自动 Imposter 通过相同复制内核，正常换入路径通常已先清除旧状态。

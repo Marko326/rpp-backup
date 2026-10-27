@@ -1,3 +1,12 @@
+## ROM-5.62.211 / TEST-218 — 跨 Bank Kanto Header 指针迁移的调用约定
+
+- `MapHeaderPointers` 原本在 ROM0，占 248 × 2 = 496B；移至扩展 Bank `$40` 时必须保持 248 项**次序、指针与地图 Header 所在原 Bank**不变。只搬运表的位置，不能连带改变 Kanto 地图编号、Warp/连接、存档镜像。
+- `callab` 实际设置 `HL` 和 `B`，经 `Bankswitch` 后 `A` 用于切换新旧 ROM Bank，所以 **不能用 `A` 跨调用传入 wCurMap**。稳定传参是 `E=wCurMap`，目标例程读取 `E`，返回 `HL=HeaderPtr`；Farcall 返回后，`Bankswitch` 将 ROM Bank 恢复到 `SwitchToMapRomBank` 事先设置的地图 Bank，方可安全读取 `[HL]`。`BC` 不承诺保留。
+- 104 提交参考包中的 `HOME-5.62.121` 曾因错误传 `A` 导致用户进入室内/Fly 花屏甚至死机；参考的是第 007 提交最终修正版 `HOME-5.62.122` 的 ABI 思路，不是失败试作。TEST-217 的 `LoadMapHeader` 尚无城都地区分支，不能原样照搬参考项目包含 `ResolveRegionMapHeader` 的调用点。
+- 2MB 依赖 Bank `$7F:$7FFF` 的容量边界和 MBC3 可访问 Bank `$40`；不能仅凭 `BANK[$40]` 声称产物恰好为 2MB。扩 Bank 后可能改变浮动 ROMX 的排布。P1 正式红蓝 MAP 显示 ROM0 各余 824B，Bank `$40` 的表与查表例程位置均正确；独立测试红蓝 MAP 及 ROM 文件头仍待核验。
+
+---
+
 ## TEST-217 / DOC-218 — Disable 旧状态与测试假阳性；不要错误扩大边界
 
 - 成功 Transform 复制新招式后，原 Disable 以旧槽位标记继续存在会错误禁用新招式；正确的是仅在**成功路径**一次性清除**施术者** `w*DisabledMove` 与 `w*DisabledMoveNumber` 两字段，失败时保持状态，之后重新受到 Disable 仍生效。共享 Transform 内核同时覆盖手动与自动 Imposter；正常自动入场原本多已清状态，不必为不自然旧状态编造必要性。

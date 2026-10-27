@@ -1924,20 +1924,12 @@ LoadMapHeader::
 	ld [hPreviousTileset],a
 	bit 7,b
 	ret nz
-	ld hl,MapHeaderPointers
-	ld a,[wCurMap]
-	sla a
-	jr nc,.noCarry1
-	inc h
-.noCarry1
-	add l
-	ld l,a
-	jr nc,.noCarry2
-	inc h
-.noCarry2
-	ld a,[hli]
-	ld h,[hl]
-	ld l,a ; hl = base of map header
+	; P1b: the 248-entry Kanto pointer table lives in expansion ROM now.
+	; callab overwrites A while banking; pass the map ID in E instead.
+	ld a, [wCurMap]
+	ld e, a
+	callab GetKantoMapHeaderPointer ; HL = original Kanto map header
+	; Bankswitch restored the map's ROM bank for the following [HL] reads.
 ; copy the first 10 bytes (the fixed area) of the map data to D367-D370
 	ld de,wCurMapTileset
 	ld c,$0a
