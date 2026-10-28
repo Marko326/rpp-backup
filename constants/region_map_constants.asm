@@ -29,11 +29,11 @@ DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
 
 INCLUDE "constants/johto_fixed_map_ids.asm"
 
-; Dense active slots are not stable local IDs. P3-001 activates only the
-; source-audited New Bark Town / Route 29 pilot pair; all other stable IDs stay inactive.
+; Dense active slots are not stable local IDs. P5-002 activates the
+; source-audited New Bark / Route29 / Cherrygrove / Route30 / Route31 maps; others inactive.
 ; Raise this only alongside the complete header, bank, event, warp, connection,
 ; music, Town Map, and runtime identity records for each added map.
-DEF NUM_JOHTO_ACTIVE_MAPS EQU 3
+DEF NUM_JOHTO_ACTIVE_MAPS EQU 5
 DEF JOHTO_STABLE_ID_TABLE_SIZE EQU 256
 DEF JOHTO_INVALID_ACTIVE_SLOT EQU $ff
 ; Each registered map carries one ROMX header pointer (2B) and its bank (1B).
@@ -49,27 +49,36 @@ DEF JOHTO_RUNTIME_MAP_HANDLE EQU $fc
 ; Reserved destination selector for region-aware ferry warps. It is not a map ID.
 DEF JOHTO_PILOT_FLY_SELECTOR EQU $fd ; fly-only selector, NEVER a physical map ID
 DEF JOHTO_TOWNMAP_LANDMARK_COUNT EQU 45 ; original Gold browsing order
+; Generic table-routed Warp destination selector; NOT a physical map ID.
+; Existing $FC last-map and $FE ferry selectors keep their exact old semantics.
+DEF JOHTO_REGISTERED_WARP_SELECTOR EQU $fb
 DEF JOHTO_REGION_WARP_ESCAPE EQU $fe
-; Map-name sign scratch keys are encoded above the legacy mapconst range ($00-$F7).
-; Expand/update this encoding before activating stable Johto IDs >= 8.
-DEF JOHTO_MAP_NAME_SIGN_KEY_BASE EQU $f8
+DEF JOHTO_MAP_PROFILE_BYTES EQU 4 ; outdoor, landmark index, music id, music bank
 DEF JOHTO_NEW_BARK_WIDTH EQU 10
 DEF JOHTO_NEW_BARK_HEIGHT EQU 9
 DEF JOHTO_ROUTE_29_WIDTH EQU 30
 DEF JOHTO_ROUTE_29_HEIGHT EQU 9
 DEF JOHTO_CHERRYGROVE_WIDTH EQU 20
 DEF JOHTO_CHERRYGROVE_HEIGHT EQU 9
+DEF JOHTO_ROUTE_30_WIDTH EQU 10
+DEF JOHTO_ROUTE_30_HEIGHT EQU 27
+DEF JOHTO_ROUTE_31_WIDTH EQU 20
+DEF JOHTO_ROUTE_31_HEIGHT EQU 9
 DEF JOHTO_REGION_MAGIC_0 EQU $4a
 DEF JOHTO_REGION_MAGIC_1 EQU $32
+ASSERT JOHTO_REGISTERED_WARP_SELECTOR > LORELEIS_ROOM
+ASSERT JOHTO_REGISTERED_WARP_SELECTOR < JOHTO_RUNTIME_MAP_HANDLE
 ASSERT JOHTO_RUNTIME_MAP_HANDLE > LORELEIS_ROOM ; legacy mapconst ends at $f7
 ASSERT JOHTO_REGION_WARP_ESCAPE > JOHTO_RUNTIME_MAP_HANDLE
 ASSERT JOHTO_REGION_WARP_ESCAPE < $ff ; $ff remains LAST_MAP
-ASSERT JOHTO_MAP_NAME_SIGN_KEY_BASE > LORELEIS_ROOM
-ASSERT JOHTO_CHERRYGROVE_LOCAL_ID < 8
-ASSERT JOHTO_ROUTE_29_LOCAL_ID < 8 ; map-name sign scratch key is $F8 + stable ID
+ASSERT JOHTO_TOWNMAP_LANDMARK_COUNT <= $ff
 ASSERT JOHTO_NEW_BARK_WIDTH == 10
 ASSERT JOHTO_NEW_BARK_HEIGHT == 9
 ASSERT JOHTO_ROUTE_29_WIDTH == 30
 ASSERT JOHTO_ROUTE_29_HEIGHT == 9
 ASSERT JOHTO_CHERRYGROVE_WIDTH == 20
 ASSERT JOHTO_CHERRYGROVE_HEIGHT == 9
+ASSERT JOHTO_ROUTE_30_WIDTH == 10
+ASSERT JOHTO_ROUTE_30_HEIGHT == 27
+ASSERT JOHTO_ROUTE_31_WIDTH == 20
+ASSERT JOHTO_ROUTE_31_HEIGHT == 9

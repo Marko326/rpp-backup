@@ -57,10 +57,10 @@ DisplayTownMap:
 	jr .enterLoop
 .initJohtoBrowse
 	pop af
-	; First three active native maps use contiguous stable IDs and map indices
-	; 0/1/2. Region/active-slot checks already gate malformed IDs on map load.
-	; Revisit this lookup before any sparse stable-ID registration.
-	ld a, [wCurLocalMapID]
+	; Every active map declares its own Gold browse landmark (0..44),
+	; including sparse stable IDs and interior maps anchored to a town.
+	callab JohtoPilotGetTownMapLandmark ; E = valid browse index
+	ld a, e
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 
@@ -218,9 +218,13 @@ DisplayTownMap:
 ; Cross-bank Fly sprite helpers. Selection, labels and Fly destination live
 ; in floating ROMX; only these short drawing wrappers use Town Map's bank.
 DrawJohtoPilotFlyPlayerMarker::
-	; Only stable IDs 0/1/2 are active, and they equal their dense slots.
+	; Do not confuse permanent stable IDs with dense active slots.
 	ld a, [wCurLocalMapID]
 	ld e, a
+	callab GetJohtoActiveSlot
+	ld a, e
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jp z, SoftReset
 	callab LoadJohtoPilotTownMapEntryFromSlot
 	ld b, d
 	ld c, e

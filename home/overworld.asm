@@ -701,6 +701,10 @@ CheckMapConnections::
 	cp $ff
 	jr nz,.checkSouthMap
 	ld a,[wMapConn1Ptr]
+	ld e,a
+	ld d,NORTH
+	callab JohtoPilotSelectConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wNorthConnectedMapYAlignment] ; new Y coordinate upon entering north map
 	ld [wYCoord],a
@@ -729,6 +733,10 @@ CheckMapConnections::
 	cp b
 	jr nz,.didNotEnterConnectedMap
 	ld a,[wMapConn2Ptr]
+	ld e,a
+	ld d,SOUTH
+	callab JohtoPilotSelectConnection
+	ld a,e
 	ld [wCurMap],a
 	ld a,[wSouthConnectedMapYAlignment] ; new Y coordinate upon entering south map
 	ld [wYCoord],a
@@ -788,19 +796,15 @@ CheckIfInOutsideMap::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	jr nz, .legacyTileset
-	ld a, [wCurLocalMapID]
-	cp JOHTO_NEW_BARK_LOCAL_ID
-	jr z, .nativeOutside
-	cp JOHTO_ROUTE_29_LOCAL_ID
-	jr z, .nativeOutside
+	callab JohtoPilotGetOutdoorFlag ; E = 1 outdoors, 0 indoors
+	ld a, e
+	cp 1
+	ret
 .legacyTileset
 	ld a, [wCurMapTileset]
 	and a ; most Kanto towns/routes have tileset 0 (OVERWORLD)
 	ret z
 	cp PLATEAU ; Route 23 / Indigo Plateau
-	ret
-.nativeOutside
-	xor a
 	ret
 
 ; this function is an extra check that sometimes has to pass in order to warp, beyond just standing on a warp
@@ -1337,6 +1341,16 @@ CollisionCheckOnLand::
 	ld a,[wSimulatedJoypadStatesIndex]
 	and a
 	jr nz,.noCollision ; no collisions when the player's movements are being controlled by the game
+	; Only the Gold-verified City/Route30 seam can cross north/south.
+	; Leave ROM0 small: the edge coordinate contract lives in expansion ROMX.
+	ld a,[wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz,.checkedJohtoEdge
+	callab JohtoPilotIsClosedOutdoorEdge
+	ld a,e
+	and a
+	jp nz,.collision
+.checkedJohtoEdge
 	ld a,[wPlayerDirection] ; the direction that the player is trying to go in
 	ld d,a
 	ld a,[wSpriteStateData1 + 12] ; the player sprite's collision data (bit field) (set in the sprite movement code)

@@ -10,14 +10,21 @@ HandleLedges:
 	ld hl, LedgeTiles
 	jr .checkPairs
 .johtoPilot
-	; The source branch handles Route 29 ledges using standard RPP tile pairs.
-	; Only stable Johto ID 1 receives these pairs; New Bark cannot inherit them.
+	; Source-audited Route29/30/31 use RPP-native cliff pairs.
+	; Route31 has one additional right-hop pair; do not enable globally.
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	ret nz
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_29_LOCAL_ID
+	jr z, .supportedJohtoLedges
+	cp JOHTO_ROUTE_30_LOCAL_ID
+	jr z, .supportedJohtoLedges
+	cp JOHTO_ROUTE_31_LOCAL_ID
 	ret nz
+	ld hl, JohtoPilotRoute31LedgeTiles
+	jr .checkPairs
+.supportedJohtoLedges
 	ld hl, JohtoPilotRoute29LedgeTiles
 .checkPairs
 	push hl ; predef destroys HL, keep the selected source pair table
@@ -87,6 +94,15 @@ LedgeTiles:
 JohtoPilotRoute29LedgeTiles:
 	db SPRITE_FACING_LEFT,  $05,$3B,D_LEFT
 	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
+	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
+	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN
+	db $FF
+
+; Route31 adds the original Gold/RPP right hop from $06 onto $30.
+JohtoPilotRoute31LedgeTiles:
+	db SPRITE_FACING_LEFT,  $05,$3B,D_LEFT
+	db SPRITE_FACING_RIGHT, $05,$20,D_RIGHT
+	db SPRITE_FACING_RIGHT, $06,$30,D_RIGHT
 	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
 	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN
 	db $FF

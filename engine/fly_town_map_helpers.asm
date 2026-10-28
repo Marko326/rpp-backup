@@ -820,6 +820,10 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute29Name
     db 116, 108
     dw JohtoPilotCherrygroveName
+    db 96, 108
+    dw JohtoPilotRoute30Name
+    db 76, 104
+    dw JohtoPilotRoute31Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 

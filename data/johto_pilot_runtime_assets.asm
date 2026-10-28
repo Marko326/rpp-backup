@@ -4,10 +4,10 @@
 DEF JOHTO_PILOT_RUNTIME_RECORD_SIZE EQU 7
 DEF JOHTO_PILOT_TILESET_ID EQU JOHTO_PILOT
 ASSERT JOHTO_PILOT == 28
-; P3-001 activates only the two fully described pilot headers; other stable IDs remain gated.
+; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 3
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 5
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -33,6 +33,15 @@ JohtoPilotCherrygroveRuntimeBlocks::
 JohtoPilotCherrygroveRuntimeBlocksEnd::
 ASSERT JohtoPilotCherrygroveRuntimeBlocksEnd - JohtoPilotCherrygroveRuntimeBlocks == JOHTO_CHERRYGROVE_WIDTH * JOHTO_CHERRYGROVE_HEIGHT
 
+JohtoPilotRoute30RuntimeBlocks::
+    INCBIN "maps/johto_pilot/Route30.runtime.blk"
+JohtoPilotRoute30RuntimeBlocksEnd::
+ASSERT JohtoPilotRoute30RuntimeBlocksEnd - JohtoPilotRoute30RuntimeBlocks == JOHTO_ROUTE_30_WIDTH * JOHTO_ROUTE_30_HEIGHT
+JohtoPilotRoute31RuntimeBlocks::
+    INCBIN "maps/johto_pilot/Route31.runtime.blk"
+JohtoPilotRoute31RuntimeBlocksEnd::
+ASSERT JohtoPilotRoute31RuntimeBlocksEnd - JohtoPilotRoute31RuntimeBlocks == JOHTO_ROUTE_31_WIDTH * JOHTO_ROUTE_31_HEIGHT
+
 ; Stable physical ID, registered tileset ID, width, height, block pointer, block bank.
 ; Not a map Header: no event, connection, Warp, sprite or collision fence
 ; may be enabled merely because a resource row appears here.
@@ -49,8 +58,16 @@ JohtoPilotCherrygroveRuntimeDescriptor::
     db JOHTO_CHERRYGROVE_LOCAL_ID, JOHTO_PILOT_TILESET_ID, 20, 9
     dw JohtoPilotCherrygroveRuntimeBlocks
     db BANK(JohtoPilotCherrygroveRuntimeBlocks)
+JohtoPilotRoute30RuntimeDescriptor::
+    db JOHTO_ROUTE_30_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_30_WIDTH, JOHTO_ROUTE_30_HEIGHT
+    dw JohtoPilotRoute30RuntimeBlocks
+    db BANK(JohtoPilotRoute30RuntimeBlocks)
+JohtoPilotRoute31RuntimeDescriptor::
+    db JOHTO_ROUTE_31_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_31_WIDTH, JOHTO_ROUTE_31_HEIGHT
+    dw JohtoPilotRoute31RuntimeBlocks
+    db BANK(JohtoPilotRoute31RuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
-ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == 3 * JOHTO_PILOT_RUNTIME_RECORD_SIZE
+ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
 ; Read-only descriptor selector. Input E=stable physical Johto local ID.
 ; Success: D=ROM bank, HL=descriptor in D; failure: D=0/HL=0.
@@ -63,6 +80,10 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr z, .route29
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jr z, .cherrygrove
+    cp JOHTO_ROUTE_30_LOCAL_ID
+    jr z, .route30
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr z, .route31
     ld d, 0
     ld hl, 0
     ret
@@ -74,6 +95,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr .valid
 .cherrygrove
     ld hl, JohtoPilotCherrygroveRuntimeDescriptor
+    jr .valid
+.route30
+    ld hl, JohtoPilotRoute30RuntimeDescriptor
+    jr .valid
+.route31
+    ld hl, JohtoPilotRoute31RuntimeDescriptor
 .valid
     ld d, BANK(JohtoPilotRuntimeResourceDescriptors)
     ret

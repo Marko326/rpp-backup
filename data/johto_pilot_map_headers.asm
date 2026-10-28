@@ -1,8 +1,8 @@
-; P3-001: active two-map Johto pilot headers.
+; P5 final (.233): five active Johto outdoor headers, stable IDs 0..4.
 ; Both maps use the shared runtime handle $FC. The source-local ID and direction
 ; resolve the actual destination through JohtoPilotSourceConnections in bank $42.
-; Only New Bark west <-> Route 29 east is open. Route 29 north/west and all other
-; edges remain sealed until their adjacent maps are activated.
+; Verified route chain: New Bark ↔ Route 29 ↔ Cherrygrove ↔ Route30 ↔ Route31.
+; Route31 north/west/east and all unregistered indoor/event warps remain closed.
 
 JohtoPilotNewBarkRuntimeHeader::
     db JOHTO_PILOT
@@ -55,15 +55,26 @@ JohtoPilotRoute29RuntimeHeaderEnd::
 ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 34
 ASSERT BANK(JohtoPilotRoute29RuntimeHeader) == BANK(JohtoPilotRoute29RuntimeBlocks)
 
-; P4-001: City exits EAST toward Route29. Its original north Route30
-; passage is fenced in runtime-only blocks until Route30 ID3 is registered.
+; P5-001: the original narrow north opening connects to Route30 ID3.
+; Gold city x8 aligns to Route30 x3; all other open exits remain unchanged.
 JohtoPilotCherrygroveRuntimeHeader::
     db JOHTO_PILOT
     db JOHTO_CHERRYGROVE_HEIGHT, JOHTO_CHERRYGROVE_WIDTH
     dw JohtoPilotCherrygroveRuntimeBlocks
     dw JohtoPilotCherrygroveTextPointers
     dw JohtoPilotMapScript
-    db EAST
+    db NORTH | EAST
+    ; NORTH connection: city x=5..14 overlaps Route30 x=0..9.
+    ; The Gold source offset is +5 blocks, hence X arrival = city X - 10 tiles.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotRoute30RuntimeBlocks + JOHTO_ROUTE_30_WIDTH * (JOHTO_ROUTE_30_HEIGHT - 3)
+    dw wOverworldMap + 3 + 5
+    db JOHTO_ROUTE_30_WIDTH
+    db JOHTO_ROUTE_30_WIDTH
+    db JOHTO_ROUTE_30_HEIGHT * 2 - 1
+    db -10
+    dw wOverworldMap + 1 + JOHTO_ROUTE_30_HEIGHT * (JOHTO_ROUTE_30_WIDTH + 6)
+    ; EAST connection to Route29; preserve P4 behavior.
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoPilotRoute29RuntimeBlocks
     dw wOverworldMap - 3 + (JOHTO_CHERRYGROVE_WIDTH + 6) * 4
@@ -74,8 +85,67 @@ JohtoPilotCherrygroveRuntimeHeader::
     dw wOverworldMap + 7 + JOHTO_ROUTE_29_WIDTH
     dw JohtoPilotCherrygroveRuntimeObjects
 JohtoPilotCherrygroveRuntimeHeaderEnd::
-ASSERT JohtoPilotCherrygroveRuntimeHeaderEnd - JohtoPilotCherrygroveRuntimeHeader == 23
+ASSERT JohtoPilotCherrygroveRuntimeHeaderEnd - JohtoPilotCherrygroveRuntimeHeader == 34
 ASSERT BANK(JohtoPilotCherrygroveRuntimeHeader) == BANK(JohtoPilotCherrygroveRuntimeBlocks)
+
+; P5-002: Route30 north now reaches Route31 (Gold -10 block offset);
+; its existing narrow southern exit to Cherrygrove remains unchanged.
+JohtoPilotRoute30RuntimeHeader::
+    db JOHTO_PILOT
+    db JOHTO_ROUTE_30_HEIGHT, JOHTO_ROUTE_30_WIDTH
+    dw JohtoPilotRoute30RuntimeBlocks
+    dw JohtoPilotRoute30TextPointers
+    dw JohtoPilotMapScript
+    db NORTH | SOUTH
+    ; NORTH: Route30 x=0..9 overlaps Route31 x=10..19 (Gold offset -10).
+    ; Explicit 10x3 strip (not the unsafe broad Gold-offset RPP macro).
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotRoute31RuntimeBlocks + JOHTO_ROUTE_31_WIDTH * (JOHTO_ROUTE_31_HEIGHT - 3) + 10
+    dw wOverworldMap + 3
+    db JOHTO_ROUTE_30_WIDTH ; exactly ten columns
+    db JOHTO_ROUTE_31_WIDTH ; source row stride = twenty blocks
+    db JOHTO_ROUTE_31_HEIGHT * 2 - 1 ; north entry Y=17
+    db 20 ; Route30 X -> Route31 X + 20 tiles
+    dw wOverworldMap + 1 + JOHTO_ROUTE_31_HEIGHT * (JOHTO_ROUTE_31_WIDTH + 6)
+    ; SOUTH: each 11-byte connection record must begin with the map handle.
+    ; Keep this byte even though the source map uses the shared $FC handle.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    ; Existing SOUTH: Gold -5 source offset; copy only city columns 5..14 (10 blocks),
+    ; not the unsafe 15-column legacy SOUTH macro expansion.
+    dw JohtoPilotCherrygroveRuntimeBlocks + 5
+    dw wOverworldMap + (JOHTO_ROUTE_30_HEIGHT + 3) * (JOHTO_ROUTE_30_WIDTH + 6) + 3
+    db JOHTO_ROUTE_30_WIDTH
+    db JOHTO_CHERRYGROVE_WIDTH
+    db 0
+    db 10 ; Route30 x=3 -> Cherrygrove x=8 (2x2 tiles)
+    dw wOverworldMap + 7 + JOHTO_CHERRYGROVE_WIDTH
+    dw JohtoPilotRoute30RuntimeObjects
+JohtoPilotRoute30RuntimeHeaderEnd::
+ASSERT JohtoPilotRoute30RuntimeHeaderEnd - JohtoPilotRoute30RuntimeHeader == 34
+ASSERT BANK(JohtoPilotRoute30RuntimeHeader) == BANK(JohtoPilotRoute30RuntimeBlocks)
+
+; Gold Route31 20x9, SOUTH -> Route30 10x27 with Gold +10 block offset.
+; Only Route31 columns 10..19 touch the 10-column Route30; the visible
+; exit is within Route31 tile columns 24..27. West gate / other exits closed.
+JohtoPilotRoute31RuntimeHeader::
+    db JOHTO_PILOT
+    db JOHTO_ROUTE_31_HEIGHT, JOHTO_ROUTE_31_WIDTH
+    dw JohtoPilotRoute31RuntimeBlocks
+    dw JohtoPilotRoute31TextPointers
+    dw JohtoPilotMapScript
+    db SOUTH
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotRoute30RuntimeBlocks
+    dw wOverworldMap + 3 + (JOHTO_ROUTE_31_HEIGHT + 3) * (JOHTO_ROUTE_31_WIDTH + 6) + 10
+    db JOHTO_ROUTE_30_WIDTH ; exactly ten columns for the overlapping strip
+    db JOHTO_ROUTE_30_WIDTH ; source row stride
+    db 0 ; arrival Y
+    db -20 ; Route31 X -> Route30 X - 20 tiles
+    dw wOverworldMap + 7 + JOHTO_ROUTE_30_WIDTH
+    dw JohtoPilotRoute31RuntimeObjects
+JohtoPilotRoute31RuntimeHeaderEnd::
+ASSERT JohtoPilotRoute31RuntimeHeaderEnd - JohtoPilotRoute31RuntimeHeader == 23
+ASSERT BANK(JohtoPilotRoute31RuntimeHeader) == BANK(JohtoPilotRoute31RuntimeBlocks)
 
 JohtoPilotMapScript::
     call EnableAutoTextBoxDrawing
@@ -277,3 +347,68 @@ JohtoPilotCherrygroveRuntimeObjects::
     db $03, $18, $03 ; Mart
     db $03, $1e, $04 ; Poke Center
     db $00 ; no replacement / diagnostic NPCs
+
+
+; Route30 outdoor sign coordinates derive from Gold Route30_MapEvents.
+; Original buildings (7,39)/(17,5), trainers, wilds and story stay inactive.
+JohtoPilotRoute30TextPointers:
+    dw JohtoPilotRoute30SignText
+    dw JohtoPilotRoute30DirectionsText
+    dw JohtoPilotRoute30HouseText
+    dw JohtoPilotRoute30TipsText
+JohtoPilotRoute30SignText:
+    text "ROUTE 30"
+    para "VIOLET CITY -"
+    line "CHERRYGROVE CITY"
+    done
+    db "@"
+JohtoPilotRoute30DirectionsText:
+    text "MR.#MON'S HOUSE"
+    para "Straight ahead!"
+    done
+    db "@"
+JohtoPilotRoute30HouseText:
+    text "MR.#MON'S HOUSE"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotRoute30TipsText:
+    text "TRAINER TIPS"
+    para "Watch the ledges!"
+    done
+    db "@"
+JohtoPilotRoute30RuntimeObjects::
+    db $05 ; shared outdoor forest border
+    db $00 ; neither Gold house has an enabled indoor destination yet
+    db $04 ; exactly four original exterior signs (Y, X, text index)
+    db 43, 9, 1
+    db 29, 13, 2
+    db 5, 15, 3
+    db 21, 3, 4
+    db $00 ; no trainer/NPC event sprites until later event phase
+
+
+; Gold Route31 exterior signage (y=5,x=7 and y=5,x=31); indoor gate,
+; cave, trainer, fruit tree, item and storyline events remain deferred.
+JohtoPilotRoute31TextPointers:
+    dw JohtoPilotRoute31SignText
+    dw JohtoPilotRoute31CaveSignText
+JohtoPilotRoute31SignText:
+    text "ROUTE 31"
+    para "VIOLET CITY -"
+    line "CHERRYGROVE CITY"
+    done
+    db "@"
+JohtoPilotRoute31CaveSignText:
+    text "DARK CAVE"
+    para "Entrance closed"
+    line "for now."
+    done
+    db "@"
+JohtoPilotRoute31RuntimeObjects::
+    db $05 ; original Gold outdoor forest border
+    db $00 ; Gold gate (2) and Dark Cave (1) warps not implemented
+    db $02 ; two original outdoor signs
+    db 5, 7, 1
+    db 5, 31, 2
+    db $00 ; original seven NPC / event objects stay deferred

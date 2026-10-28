@@ -662,7 +662,12 @@ wSlotMachineSavedROMBank:: ; cc5e
 wAnimPalette:: ; cc79
 	ds 1
 
-	ds 29
+; Last byte of the pre-existing anonymous $CC7A-$CC96 scratch range.
+; Runtime map-sign region tag; NOT stored in the main save or box save.
+	ds 28
+wMapNameSignLastRegion:: ; cc96, 0 = Kanto/legacy, 1 = Johto
+	ds 1
+ASSERT wMapNameSignLastRegion == $cc96
 
 wNPCMovementDirections2:: ; cc97
 

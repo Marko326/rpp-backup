@@ -124,3 +124,7 @@ JohtoPilotRoute29Name::
 	db "Route 29@"
 JohtoPilotCherrygroveName::
 	db "Cherrygrove_City@"
+JohtoPilotRoute30Name::
+	db "Route 30@"
+JohtoPilotRoute31Name::
+	db "Route 31@"

@@ -87,6 +87,11 @@ UpdateMapNameSign::
 	ld a, [wMapNameSignLastMap]
 	cp b
 	jr nz, .mapChanged
+	ld a, [wCurRegion]
+	ld b, a
+	ld a, [wMapNameSignLastRegion]
+	cp b
+	jr nz, .mapChanged
 
 	ld a, [wMapNameSignTimer]
 	and a
@@ -115,8 +120,9 @@ UpdateMapNameSign::
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	jr nz, .legacyIdentityKey
+	; Keep the entire 0..255 stable local ID. Region is tracked in a
+	; separate runtime-only byte, never encoded in this one-byte key.
 	ld a, [wCurLocalMapID]
-	add JOHTO_MAP_NAME_SIGN_KEY_BASE ; reserved keys are above the legacy mapconst range
 	ret
 .legacyIdentityKey
 	ld a, [wCurMap]
@@ -136,6 +142,8 @@ UpdateMapNameSign::
 .mapChanged
 	call .GetIdentityKey
 	ld [wMapNameSignLastMap], a
+	ld a, [wCurRegion]
+	ld [wMapNameSignLastRegion], a
 	; MAPSIGN-5.19.41: do not hide an already-visible sign before we know what
 	; the new effective landmark is. If the new map needs another sign, keep the
 	; Window at Y=112 and atomically replace its four rows during VBlank. This

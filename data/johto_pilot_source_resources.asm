@@ -1,11 +1,12 @@
 ; P2-004: source-authentic Gold pilot map geometry, NOT live Kanto mapconst IDs.
 ; These immutable source records preserve the original Gold map blocks. The
-; two connection rows below are also the validated source for P3-001 runtime
-; east/west dispatch; runtime blocks and headers remain separate in bank $43.
+; eight directed source-authentic connections feed the region-aware four-direction
+; dispatcher; runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 3
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 5
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 4
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 8
+DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
@@ -21,18 +22,30 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID, 20, 9
     dw JohtoPilotCherrygroveGoldBlocks
     db BANK(JohtoPilotCherrygroveGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_30_LOCAL_ID, JOHTO_ROUTE_30_WIDTH, JOHTO_ROUTE_30_HEIGHT
+    dw JohtoPilotRoute30GoldBlocks
+    db BANK(JohtoPilotRoute30GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, JOHTO_ROUTE_31_WIDTH, JOHTO_ROUTE_31_HEIGHT
+    dw JohtoPilotRoute31GoldBlocks
+    db BANK(JohtoPilotRoute31GoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
-; Source-native east/west adjacency (NO old $E7/$F4 aliases).
-; Format: source stable ID, exit direction (WEST/EAST), target stable ID.
+; Region-aware adjacency registry, valid for WEST/EAST/NORTH/SOUTH.
+; One row: source region, source local ID (Kanto mapconst for Kanto), direction,
+; target region, target local ID. Four bidirectional seams are active.
+; A future Kanto↔Johto seam must be explicitly registered both ways.
 JohtoPilotSourceConnections::
-    db JOHTO_NEW_BARK_LOCAL_ID, WEST, JOHTO_ROUTE_29_LOCAL_ID
-    db JOHTO_ROUTE_29_LOCAL_ID, EAST, JOHTO_NEW_BARK_LOCAL_ID
-    db JOHTO_ROUTE_29_LOCAL_ID, WEST, JOHTO_CHERRYGROVE_LOCAL_ID
-    db JOHTO_CHERRYGROVE_LOCAL_ID, EAST, JOHTO_ROUTE_29_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_30_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_30_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_30_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_30_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
-ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * 3
+ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 
 JohtoPilotNewBarkGoldBlocks::
     INCBIN "maps/johto_pilot/NewBarkTown.gold.blk"
@@ -46,6 +59,14 @@ JohtoPilotCherrygroveGoldBlocks::
     INCBIN "maps/johto_pilot/CherrygroveCity.gold.blk"
 JohtoPilotCherrygroveGoldBlocksEnd::
 ASSERT JohtoPilotCherrygroveGoldBlocksEnd - JohtoPilotCherrygroveGoldBlocks == 20 * 9
+JohtoPilotRoute30GoldBlocks::
+    INCBIN "maps/johto_pilot/Route30.gold.blk"
+JohtoPilotRoute30GoldBlocksEnd::
+ASSERT JohtoPilotRoute30GoldBlocksEnd - JohtoPilotRoute30GoldBlocks == JOHTO_ROUTE_30_WIDTH * JOHTO_ROUTE_30_HEIGHT
+JohtoPilotRoute31GoldBlocks::
+    INCBIN "maps/johto_pilot/Route31.gold.blk"
+JohtoPilotRoute31GoldBlocksEnd::
+ASSERT JohtoPilotRoute31GoldBlocksEnd - JohtoPilotRoute31GoldBlocks == JOHTO_ROUTE_31_WIDTH * JOHTO_ROUTE_31_HEIGHT
 
 ; Original GSC Johto 4x4-tile metatiles: kept intact for later gfx mapping.
 ; This is NOT the RGBDS/RPP tileset header, collision or sprite implementation.
@@ -56,3 +77,5 @@ ASSERT JohtoPilotGoldMetatilesEnd - JohtoPilotGoldMetatiles == $800
 ASSERT BANK(JohtoPilotNewBarkGoldBlocks) == JOHTO_PILOT_SOURCE_BANK
 ASSERT BANK(JohtoPilotRoute29GoldBlocks) == JOHTO_PILOT_SOURCE_BANK
 ASSERT BANK(JohtoPilotCherrygroveGoldBlocks) == JOHTO_PILOT_SOURCE_BANK
+ASSERT BANK(JohtoPilotRoute30GoldBlocks) == JOHTO_PILOT_SOURCE_BANK
+ASSERT BANK(JohtoPilotRoute31GoldBlocks) == JOHTO_PILOT_SOURCE_BANK
