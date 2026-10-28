@@ -1,0 +1,307 @@
+{
+  "schema": "johto-pilot-door-contracts-v1",
+  "gold_reference": "MUS-1.0.1",
+  "purpose": "Source-only contracts: proven Cherrygrove house plus the new, phone-unverified Route31–Violet gate.",
+  "active_routes": [
+    {
+      "id": "cherrygrove_to_guide_house",
+      "source": {
+        "map": "CherrygroveCity",
+        "stable_id": 2,
+        "warp_ordinal_zero_based": 0,
+        "gold_warp_number_one_based": 4,
+        "xy": [
+          25,
+          9
+        ],
+        "gold_collision_role": "DOOR",
+        "trigger": "STEP_ON",
+        "approach_direction": "UP"
+      },
+      "target": {
+        "map": "GuideGentsHouse",
+        "stable_id": 125,
+        "warp_ordinal_zero_based": 0,
+        "gold_warp_number_one_based": 1,
+        "xy": [
+          2,
+          7
+        ],
+        "gold_collision_role": "WARP_CARPET_DOWN",
+        "arrival_step": "NONE"
+      }
+    },
+    {
+      "id": "guide_house_left_exit",
+      "source": {
+        "map": "GuideGentsHouse",
+        "stable_id": 125,
+        "warp_ordinal_zero_based": 0,
+        "gold_warp_number_one_based": 1,
+        "xy": [
+          2,
+          7
+        ],
+        "gold_collision_role": "WARP_CARPET_DOWN",
+        "trigger": "COLLISION_ONLY",
+        "approach_direction": "DOWN"
+      },
+      "target": {
+        "map": "CherrygroveCity",
+        "stable_id": 2,
+        "warp_ordinal_zero_based": 0,
+        "gold_warp_number_one_based": 4,
+        "xy": [
+          25,
+          9
+        ],
+        "gold_collision_role": "DOOR",
+        "arrival_step": "D_DOWN",
+        "final_xy_after_auto_step": [
+          25,
+          10
+        ]
+      }
+    },
+    {
+      "id": "guide_house_right_exit",
+      "source": {
+        "map": "GuideGentsHouse",
+        "stable_id": 125,
+        "warp_ordinal_zero_based": 1,
+        "gold_warp_number_one_based": 2,
+        "xy": [
+          3,
+          7
+        ],
+        "gold_collision_role": "WARP_CARPET_DOWN",
+        "trigger": "COLLISION_ONLY",
+        "approach_direction": "DOWN"
+      },
+      "target": {
+        "map": "CherrygroveCity",
+        "stable_id": 2,
+        "warp_ordinal_zero_based": 0,
+        "gold_warp_number_one_based": 4,
+        "xy": [
+          25,
+          9
+        ],
+        "gold_collision_role": "DOOR",
+        "arrival_step": "D_DOWN",
+        "final_xy_after_auto_step": [
+          25,
+          10
+        ]
+      }
+    }
+  ],
+  "runtime_invariants": {
+    "registered_warp_route_rows": 11,
+    "outdoor_step_on_warp_tile_ids": [
+      6,
+      57
+    ],
+    "indoor_step_on_warp_tile_ids": [],
+    "indoor_collision_carpet_tile_id": 18,
+    "outdoor_door_tile_id": 57,
+    "collision_tables_must_be_rom0_visible": true
+  },
+  "gold_gatehouse_inventory_expected": {
+    "maps": 24,
+    "warp_events": 100,
+    "collision_roles": {
+      "DOOR": 26,
+      "WARP_CARPET_DOWN": 30,
+      "WARP_CARPET_LEFT": 22,
+      "WARP_CARPET_RIGHT": 22
+    }
+  },
+  "gatehouse_activation_policy": {
+    "require_explicit_contract_before_activation": true,
+    "active_gatehouse_contracts": [
+      {
+        "stable_id": 6,
+        "gold_map": "Route31VioletGate",
+        "runtime_tileset": "JOHTO_GATE",
+        "warp_contracts": [
+          {
+            "id": "route31_0",
+            "source_stable_id": 4,
+            "source_warp_ordinal": 0,
+            "source_xy": [
+              4,
+              6
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 6,
+            "target_warp_ordinal": 2,
+            "target_xy": [
+              9,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route31_1",
+            "source_stable_id": 4,
+            "source_warp_ordinal": 1,
+            "source_xy": [
+              4,
+              7
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 6,
+            "target_warp_ordinal": 3,
+            "target_xy": [
+              9,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "violet_0",
+            "source_stable_id": 5,
+            "source_warp_ordinal": 0,
+            "source_xy": [
+              39,
+              24
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 6,
+            "target_warp_ordinal": 0,
+            "target_xy": [
+              0,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "violet_1",
+            "source_stable_id": 5,
+            "source_warp_ordinal": 1,
+            "source_xy": [
+              39,
+              25
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 6,
+            "target_warp_ordinal": 1,
+            "target_xy": [
+              0,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "gate_to_violet_0",
+            "source_stable_id": 6,
+            "source_warp_ordinal": 0,
+            "source_xy": [
+              0,
+              4
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 5,
+            "target_warp_ordinal": 0,
+            "target_xy": [
+              39,
+              24
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "gate_to_violet_1",
+            "source_stable_id": 6,
+            "source_warp_ordinal": 1,
+            "source_xy": [
+              0,
+              5
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 5,
+            "target_warp_ordinal": 1,
+            "target_xy": [
+              39,
+              25
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "gate_to_route31_0",
+            "source_stable_id": 6,
+            "source_warp_ordinal": 2,
+            "source_xy": [
+              9,
+              4
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 4,
+            "target_warp_ordinal": 0,
+            "target_xy": [
+              4,
+              6
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "gate_to_route31_1",
+            "source_stable_id": 6,
+            "source_warp_ordinal": 3,
+            "source_xy": [
+              9,
+              5
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 4,
+            "target_warp_ordinal": 1,
+            "target_xy": [
+              4,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          }
+        ],
+        "runtime_verified": false,
+        "phone_accepted": false
+      }
+    ],
+    "required_checks": [
+      "Gold collision role for every warp",
+      "entry trigger and approach direction",
+      "target warp index and landing coordinate",
+      "arrival auto-step direction and final walkable cell",
+      "reverse exit and side-direction negative cases",
+      "repeat enter/exit and immediate reverse re-entry",
+      "old Kanto house/gate regression",
+      "new Red/Blue MAP plus phone/emulator evidence"
+    ]
+  },
+  "required_phone_tests": [
+    "从(10,25)按一次UP进入，直接落在室内(2,7)，不能自动走出",
+    "刚进屋第一按DOWN能出门，左右两个门毯都测试",
+    "出门先落回(25,9)，自动DOWN一格后停在(25,10)",
+    "出门后立即UP重新进屋，连续往返至少三次",
+    "门毯左右/向上移动不应误传送，室内存读档后再出门",
+    "关都普通房屋、PC、渡轮与既有五张城都户外地图回归",
+    "Route31 (5,6)/(5,7) LEFT one step through registered gate; left/right strip scenery blocks remain solid",
+    "Violet (38,24)/(38,25) RIGHT one step through registered gate; unregistered city boundary remains closed",
+    "Gate BOTH west carpets LEFT and east carpets RIGHT collision-exit; other directions must not warp",
+    "All four corridors should allow immediate backtracking and no unrequested auto-step",
+    "Red and Blue fresh builds, gate save/load, Kanto and Cherrygrove regression"
+  ],
+  "evidence_boundary": {
+    "rom_built": false,
+    "runtime_verified": false,
+    "phone_accepted": false,
+    "notes": "This contract describes what must be checked; it does not claim the tests were performed."
+  }
+}

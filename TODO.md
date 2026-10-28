@@ -1,3 +1,118 @@
+## P6-DOC-001｜PAL-5.62.239 — 当前 Worktree 清理与门房合同追踪（提交准备）
+
+- **真实基线**：用户 2026-10-28 22:39 导出，`常规功能备份`，HEAD `5c41a6960556732d8364eb7ec87594e330784969`（P5 / `.233`）；当前为 `.239` Worktree，尚未获本轮 Git Commit 确认。本次只整理源文件追踪和记录，不改游戏 ASM、图块、Warp、音乐设置或版本。
+- **JSON 处理**：手机本地 `tools/johto_pilot_door_contracts.json` 先前未被 Git 追踪，补丁中的新增文件与现有同名文件冲突。现用户用包含忽略项的 ZIP 提供了完整 8,702B 合同；SHA256 `714507d2a49dd299d9b0a1bdef7f8497d7a230a9f75b42e665f8f934ad4815e5`。只调整 `.gitignore` 对此精确文件例外，不修改合同内容。清理增量**不得再次添加 JSON**；正式工具提交时须由用户把现有文件纳入 Git 索引。
+- **运行证据分级**：用户反馈门房左右进出已未观察到卡门或按键异常，属于用户实测反馈，但并非八条 Warp 各场景、Red/Blue 全矩阵验收；向导家曾有实机进出通过。包内正式 Red/Blue `.239` MAP 已附带，符号可见 `Map Name Sign` 和 `Menu Shortcut Helpers`，本轮不由 AI 重新链接 ROM。
+- **本轮静态复核**：使用 MUS-1.0.1 + NPC-5.62.243 参考，城都专项静态审计 66/66，门房合同审计 12/12，Python 测试 59/59；这些不是手机结果。地图与工具的累计未提交差异依项目规则拆成功能与工具两笔，避免重复把同一个 JSON 当作新增补丁覆盖现有文件。
+- **延期**：门房继承进入来源的 BGM、各城都场景的 GSC 选曲/缓存和 Options 音乐设置尚待专项开发；不得借本次清理把音乐错误写为验收。还有室内存读档和关都综合回归待补充。
+
+## P6-BANK-001｜PAL-5.62.239 — P5 干净工程累计恢复与 Bank $3D 容量修复（待红蓝链接验证）
+
+- [x] 以用户 2026-10-28 新导出的干净 P5 / HEAD `5c41a696` 为唯一源码基线，回放 GATE-005 累计功能源码（P6 室内、GATE/地图、工具和地名牌），不覆盖导出元数据与旧红蓝 MAP。
+- [x] 原 P5 红蓝 MAP 均记录 Bank `$3D` 只余 `$006c`（108B）；GATE-005 地名牌增加城都名称和解析代码，`Menu Shortcut Helpers` 仍固定 `$3D`，因此出现无法放置该节的链接报错。现将两段仅经 `callba` 从 ROM0 调用的 `Menu Shortcut Helpers` 和 `Map Name Sign` 改为浮动 ROMX，保留内部名称指针在同一段，免再次挤占固定 Bank `$3D`。
+- [x] 检查代码位置与调用约定，新增只读的 Bank 布局静态回归检查；不修改原关都门口、门毯及门房运行逻辑。
+- [ ] **必须用户本机重新编译 Red/Blue 并提供本轮新 MAP**，确认 `$3D` 容量及新分配 Bank，无其它链接断言或溢出；ZIP 自带 MAP 为 P5 旧版，不能作为 `.239` 新链接证据。
+- [ ] GATE-005 之前门房左侧 A/B 失控及名称牌问题仍按用户实机反馈再验收，不能因补丁恢复、静态检查而宣布修复成功。
+
+## P6-GATE-005 / PAL-5.62.239 — Route31/Violet 左侧回程与地点牌候选修复（实机未验）
+
+- [x] 用户手机反馈 `.238` 从门房往桔梗市左口出来后，会出现下方空白地点提示框、控制短暂异常，需要多次按 A/B；用户还要求门房内部**不弹出地名牌**。`GATE-004` 静态完成不代表手机验收；不得继续称之为通过。
+- [x] 以用户 2026-10-28 20:28 导出的 **实际 PAL-5.62.238 Worktree ZIP** 为唯一增量基线；部分先前补丁没有应用，不能再要求叠加旧 GATE-004。
+- [x] 对照旧 `NPC-5.62.243/docs/JOHTO_GATEHOUSE_READ_FIRST.md` 的中立门房规则，在 `engine/overworld/map_name_sign.asm` 使用共享地图句柄 `$FC` + 城都地区 + stable ID6 精确屏蔽过渡门房的名称牌；不会屏蔽关都门房或整个城都。
+- [x] 同时修复共享 `$FC` 被当成关都真实地图号读取 MapNames 的风险：已启用城都 ID0..5 及 ID125 的地名从当前 stable ID 解析到 map-sign 自身 Bank `$3D` 的本地字符串；门房直接继承前一地点，不触发空白框；不增加已拥挤 Bank `$1C` 的文字数据。游戏自身 Town Map/Fly 名称表不变。
+- [x] 新增源码静态预检与错误注入测试，拦截“漏屏蔽门房 / 错区域 / 回退关都 $FC / 使用错误文本 Bank”等回归。保留目前 `.238` 的门毯碰撞-only、无强制左右迈步及关都原始控制状态路径。
+- [x] 这次上传的 ZIP 中缺少 `tools/johto_pilot_door_contracts.json`；依据此前**已向用户交付**的 GATE-004 全量补丁原样恢复，并使用 MUS 审计 12/12 通过；不复用 GATE-004 其它未应用的代码。
+- [ ] **待用户编译及手机实测**：红蓝 ROM/MAP；31 路、门房、桔梗市两条 Lane 反复出入；左口第一次出去无空白框、不需 A/B 解锁；门房内部无地名牌；进入桔梗市显示正确名称、相邻预览不花屏，旧向导家及关都门房正常。
+- [ ] 如果左口控制异常仍存在，需获取 `.239` 新 ROM 对应的视频或逐帧记录，继续查 `wd730/wd736`、Joypad/map script 时序；本轮**没有证据证明**空白框就是无法移动的唯一原因，不强制清除脚本标志以免破坏关都。
+
+## P6-GATE-002 / PAL-5.62.237 — 修复本机 RGBDS 活动槽位 ASSERT（编译待重验）
+
+- [x] 用户本机 `main_red.o` 报 `data/johto_stable_id_slots.asm:25 Assertion failed`。已定位原版 GATE-001 将 `NUM_JOHTO_ACTIVE_MAPS` 扩至 8，却遗留 `ASSERT ... == 6`；此前 59 项静态审计没有覆盖汇编中的字面断言，这是交付漏检，不能称上一版编译通过。
+- [x] 同步改为 `ASSERT NUM_JOHTO_ACTIVE_MAPS == 8`，不改 stable-ID 到活动槽的路由字节、地图 Header、Warp、地图资源、游戏版本或已经能进出的旧房屋。
+- [x] 迁移审计新增 `rgbds_literal_active_count_asserts`：扫描实际 ASM 的硬编码活动槽位断言，检查所有值与常量一致，要求稳定槽位表必须保有断言；加入故意恢复 `==6`、其它 ASM `==6` 和删除断言的负向测试。
+- [ ] 用户重新执行 Red/Blue 正式构建并查看此错误是否消失、是否出现后续汇编/链接问题；提供真实新 MAP 后再审核 Bank 空间。未进行 AI 编译或手机验收，不写成 PASS_BUILD。
+
+## P6-GATE-001 / PAL-5.62.237 — 桔梗市 ID5 + 31号道路门房 ID6（地图功能开发待本机验收）
+
+- [x] **实际移植**：在已应用 P6-TOOLS-002 的 PAL-5.62.236 主项目上，依据用户 MUS-1.0.1 Gold 主参考和 NPC-5.62.243 成熟 RPP 运行素材，新增桔梗市 20×18 与东西门房 5×4；金版原始 `.gold.blk` 独立保存，运行版采用旧分支紧凑图块。逐像素复核：城市 368,640 像素、门房 20,480 像素与 MUS 底图零差异。不是整批自动导入其它地图。
+- [x] **稳定编号与资源**：激活 stable ID5=VioletCity、ID6=Route31VioletGate；原 ID0–4 / ID125 不变，活动槽 6/7；独立门房 Tileset30/Bank `$47`，户外资源进入已存在 Bank `$43`，城都源资源保持 Bank `$42`；新增 Header、两张运行 `.blk`、纹理与 Blockset、地图属性和 Town Map/飞行地标查表，未改关都物理 ID、存档结构或旧五图连接。
+- [x] **八条门房 Warp**：31号路 (X4,Y6/7) 左入门房右侧 (X9,Y4/5)；桔梗市 (X39,Y24/25) 右入门房左侧 (X0,Y4/5)；门房两侧在朝外 LEFT/RIGHT 撞边界时分别返回原城市和道路。目标 map 与 ordinal 全部按零基重登记，不照搬 Gold/旧 RPP 旧地图号；未开放的室外边界、桔梗市其余室内依旧封闭。
+- [x] **防止卡门及错误出门**：仅已登记门口、对应方向绕过地形双砖碰撞；踏上实体门格的同一步触发 Warp。门房内门毯只按指定 LEFT/RIGHT 碰边界触发；额外检查避免站在毯上向上/向下撞墙时误传送。非门房、非城都地图继续走旧 RPP 碰撞代码，不强制自动步出门格。
+- [x] **离线检查**：MUS 地图布局底图像素一致；当前静态迁移审计 59/59 通过；MUS 环境下 Python 单测与负向测试 44/44 通过；门房 ID6 已登记明示的八条入口/出口合同，取消旧工具“无门房已开放”的错误固定假设。没有 AI 编译 ROM，既有 MAP 并非 `.237` 构建产物。
+- [ ] **本机必测**：Red/Blue 正式编译和最新 MAP，查 ROM0、Banks `$41/$42/$43/$47` 空间；31号路两格朝 LEFT 单次入门房、桔梗市两格朝 RIGHT 入门房，进门落点、四格方向门毯按外侧方向出门、反向立即返回、侧向撞墙不误出、读档后继续往返；原向导家自动下迈、五张户外地图连接、渡轮、Town Map/Fly、关都房屋回归。只有实机通过才能标记 P6-GATE-001 已验收/准备提交。
+
+## P6-TOOLS-002 / PAL-5.62.236 — MUS 主参考的室内转换、Warp 到达与门房方向审计（工具-only，开发待验）
+
+- [x] 按用户最新要求，`MUS-1.0.1.zip` 是唯一主 Gold 参考；不要求同时上传 pret。当前 PAL `.236` 工程是转换目标，NPC-5.62.243 旧 RPP 只作为实现经验来源，不混作 Gold 数据源。
+- [x] 修复 `johto_indoor_collision_adapter.py`：支持明确指定 `--gold-map/--gold-tileset/--rpp-tileset`，并能从 `home.asm` 解析当前 ROM0 `JohtoHouse_Coll`，不再错误地只查 `data/collision.asm` 或默认比较旧 `gate` Tileset。
+- [x] 适配 `johto_indoor_registration_generator.py` 到当前 stable-ID 架构：核对 ID125→slot5、Header 指针/Bank、资源描述符、source record、4×4 runtime/reference layout、三条 `$FB` Warp、ROM0 碰撞表断言；未知地图 fail-closed，不自动写 ASM。
+- [x] 新增 `johto_pilot_door_contracts.json`、`johto_warp_arrival_audit.py` 和 `johto_gatehouse_behavior_audit.py`：对比 MUS 原始 Gold `DOOR` / `WARP_CARPET_DOWN`、Gold 一基 Warp 号、RPP 零基登记序号、进门单次 UP、室内双 DOWN 出口、户外自动 DOWN 到 `(25,10)`；统计 MUS 24 个门房地图/100 个 Warp，并要求未来门房先有明确合同。
+- [x] 新增 `johto_indoor_pipeline.py`：一条命令在隔离目录产出候选 `.blk`、像素映射、碰撞复核、注册审计、到达合同、Gold 门房库存和输入 SHA-256；不会改 RPP 项目、不会编译 ROM、不会自动启用新地图。
+- [x] 使用 MUS 单独执行完整管线：当前 PAL 静态审计 51/51 PASS；Gold 门/Warp 清单 PASS；房间像素候选为 `PIXEL_CANDIDATE_ONLY`；注册审计 `PRESENT_STATIC_ONLY`（14项）；到达审计 17/17；Gold 门房审计 10/10；碰撞审计 14 项需人工/运行时复核，符合 DOOR 与方向门毯不能自动等同的安全策略。
+- [x] Python 单元/负向测试 32/32 通过，含错误出口坐标、错误自动迈步方向、删 Header descriptor、未注册地图、未有合同就激活门房 ID 等故障注入。
+- [ ] **强制未验项**：没有编译正式 Red/Blue ROM、没有新 MAP、没有手机运行证据。当前输出必须保持 `OFFLINE_REVIEW_REQUIRED`、`runtime_verified=false`、`rom_built=false`、`phone_accepted=false`；不可把 32 项测试通过当作游戏验收。
+- [ ] 运行命令：`python tools/johto_indoor_pipeline.py --project . --gold-root <MUS-1.0.1解压目录> --output <项目和MUS目录之外的全新空目录>`。Pillow 用于像素转换；若缺少则 `python -m pip install Pillow`。本轮未修改游戏 ASM、地图、ROM 版本号或测试版本号。
+
+## P6-TOOLS-COMPAT-002 / pret 与 MUS 双参考源码二次审计（待用户应用验证）
+
+- [x] 本轮 002 取代尚未应用/未验收的 COMPAT-001 包；以当前 PAL-5.62.236 + P6-TOOLS-001 导出工作区为增量基线，不需要先应用 COMPAT-001。
+- [x] 除原地图、Warp、连接与碰撞源码语义比较之外，加入引用的 Gold `.blk` 原始字节 SHA256 和 `data/tilesets`、`gfx/tilesets` 所有资源字节 SHA256，缺失引用文件直接报错；不允许因文件同名而错误批准变化后的地图。
+- [x] 完整审核两份用户参考源码：pret、MUS 均 368 张注册地图、1241 个 Warp、142 条连接，239 个 `.blk` 与 tileset 资源的实际内容一致；门/Warp 审计与当前 `.236` 试点审计两边均通过。
+- [x] 另列 MUS 与 pret 7 个不同的 `maps/*.asm` 事件脚本；即使 Warp 表一致，也不声称完整脚本行为相同。两边分别通过 5 项室内/30、31 号道路离线 Smoke 测试；更新后的 Python 单测 27 个测试，26 个通过、1 个在无环境变量时跳过，另对两个真实 Gold 根单独补跑全部 Smoke。
+- [ ] 仅证明离线迁移工具双参考源码兼容；未由 AI 编译 pret/MUS ROM，也未执行游戏手机测试。MUS 的地图连接宏结构不同，工具解析的是有效连接数据而不是要求源码文本一致。两份 `.rgbds-version` 分别为 1.0.0、1.0.4；用户本机如需分别构建 ROM，应使用各自规定版本。
+
+## P6-TOOLS-COMPAT-001 / pret 与 MUS Gold 源码双项目兼容（工具开发待验）
+
+- [x] 新增只读 `tools/johto_gold_compat.py`：自动识别 pret `pokegold-master/` 嵌套目录和 MUS 平铺目录；支持 `--gold-profile auto|pret|mus` 严格校验，遇到缺文件、多个候选根或 profile 不符时 fail-closed，不自动改源码或解压 ZIP。
+- [x] 将 Gold 根目录解析接入门碰撞审计、室内候选转换、资源审计、连接基线、离线候选管线、批处理与迁移审计；默认自动识别，既有单独工具也能显式指定 profile。
+- [x] 对本轮两份真实源码实测：pret 与 MUS 均为 368 张注册地图、368 份属性、417 个共享 Block 布局别名、1241 个 Warp、142 条直接连接和 28 份碰撞表；地图名、尺寸、布局引用、连接、Warp 与碰撞表的语义清单一致。门/Warp 审计两边均 PASS；向导家图形转换两边均得到 12 个已使用区块、0 个未映射区块（仍只是像素候选，不等于碰撞/ROM 验收）。
+- [x] 新增 `tools/tests/test_johto_gold_compat.py`，覆盖平铺/嵌套根目录、MUS/pret profile、profile 不符、重复根目录拒绝，以及语义差异必须报警。
+- [ ] **边界**：这证明当前离线迁移工具可兼容两份参考源码，不代表两个 ROM 已编译或运行。pret 声明 RGBDS 1.0.0，MUS 声明 1.0.4；本环境没有 RGBDS，按项目要求不编译/链接 ROM。用户本机应按各自 `.rgbds-version` / `INSTALL.md` 的对应工具链分别构建；如果两份文档/版本声明冲突，先核对工具版本，不自动改 `.rgbds-version`。
+
+## P6-TOOLS-001 / PAL-5.62.236 — 迁移 NPC-5.62.243 首批离线 Python 工具（工具补丁待验）
+
+- [x] 只迁移经过选择的工具模块，不整包复制 185 个 `.py`：Gold 源地图解析、离线候选转换/验证、Gold 142 条直接连接基线、Gold 门碰撞/ Warp 语义，以及适配当前稳定 ID / `$FC` 运行句柄 / `$FB` 登记 Warp 的 `johto_pilot_migration_audit.py`。
+- [x] 将 `johto_rpp_pipeline.py` 的当前项目接入检查从旧 `data/mapHeaders` / `johto_native_maps.json` 适配到 `data/johto_pilot_map_headers.asm`、活动槽位和当前室内登记表；`--adjacent-pair` 使用独立 Gold 源拓扑校验，不把旧 RPP Header ABI 审计误用在当前工程。
+- [x] 当前源码专项静态审计：52/52 项通过（包括 Gold 368 图/ Warp 来源、142 条 Gold 连接基线、Route30↔31 条带、六个活动资源槽、ID125 稀疏映射、向导家实体门、两格 DOWN 门毯、ROM0 碰撞表和自动迈步控制流）。
+- [x] 工具测试 21/21 通过；含故意删除反向连接、删除 Route30 SOUTH Header 首字段、错门坐标、误把 `$12` 门毯加入 STEP_ON 表、自动步进方向反转、碰撞 `$37` 缺失、Warp 路由缺一条、ID125 错映射等负向用例。离线候选管线成功生成 Route30↔Route31 配对及 GuideGentsHouse 候选。
+- [ ] **边界**：以上均为静态/离线工具验证；没有编译 ROM、没有生成当前游戏的新 MAP、没有手机验收，也没有把候选地图自动导入游戏。报告中的 `runtime_approved/build_performed/phone_accepted` 必须保持 false。
+- [ ] 本机可运行：`python tools/johto_pilot_migration_audit.py --project . --gold-root <pokegold-master路径> --reference-root <NPC-5.62.243源码路径>`；离线候选转换和房间像素比较依赖 Pillow（缺失时执行 `python -m pip install Pillow`）；候选输出必须放在项目和 Gold 源码目录之外，例如 `python tools/johto_rpp_pipeline.py --gold-root <Gold路径> --project . --output /tmp/johto-route30-31 --adjacent-pair Route30 Route31`。
+- [ ] 第二批室内转换、到达落点/自动迈步合同及门房方向审计已在 P6-TOOLS-002 实现；不要直接启用旧版 `johto_map_release_audit.py` 或 `johto_rpp_connection_guard.py` 的旧运行时 ABI 模式。当前审计已覆盖向导家和现有 30↔31；后续新房屋需增加明确合同与负向测试。
+
+## P6-INDOOR-006 / PAL-5.62.236 — 对齐用户提供的已实测 RPP 金银旧分支门禁（卡门复修，待手机验收）
+
+- [x] **用户反馈**：应用上轮 P6-005 后，吉花市向导家门口依然像障碍物，按上无法踏入；故 P6-005 没有获得运行验收。此前“将 `$37` 加入白名单、移动表到 ROM0 就能进入”的判断不能冒称已证实。
+- [x] **以旧 RPP 分支而非 Gold 图块为执行基准**：对照用户附带 `参考源码/NPC-5.62.243_金银分支` 的 `home/overworld.asm::CollisionCheckOnLand`、`CheckWarpsNoCollisionLoop` 和 `engine/overworld/johto_route33_collision.asm::JohtoCherrygroveHouseDoorStepAllowed`。旧分支在精灵阻挡检查后、通用 tile-pair/passability 前按吉花市地点/方向/玩家坐标放行，然后在实际登记的门格踏格时优先直达 `WarpFound1`。此前新工程漏了两层受限入口逻辑。
+- [x] **第一层：单门精确放行**：`home/overworld.asm` 的 `CollisionCheckOnLand` 新增条件 `wCurMap=$FC / wCurRegion=Johto / wCurLocalMapID=2 / UP / (Y10,X25)`，从现有 sprite/edge 检查后直达 `.noCollision`；其它位置仍执行原 tile-pair 和 `CheckTilePassable`。不为所有 `$37` 增加特殊通行权限，也不修改跳崖。
+- [x] **第二层：门格直接 Warp**：`CheckWarpsNoCollisionLoop` 已核对 `wWarpEntries` 的位置 `(Y9,X25)` 后，且相同地区/地图/方向满足时，恢复栈中的 HL/BC 并跳 `WarpFound1`，复制旧分支做法但只作用于唯一开放的向导家；其它地图和触发类别继续原通用门砖/毯处理。
+- [x] **保留 P6-005 双向修复**：仍从室外门 `(9,25)` 入室、室内落 `(7,2)` 无自动步进；两个 `(7,2/3)` 的方向门毯朝下碰边缘出屋，返回室外 `(9,25)` 再 `PlayerStepOutFromDoor` 自动 DOWN 到 `(10,25)`。房间图块、Header、固定 ID125、Warp 表、ROM0 碰撞数据、已验五张户外图/关都图均不改。
+- [ ] **未验收**：本环境不执行 ROM 编译/链接和手机实测；请本机重新编译正式红蓝、检查 ROM0/Bank 空间，并使用新启动 ROM 测真正的单次 UP 进门、入室第一按 DOWN、双出口、返回自动迈步和立即反向再入；不得使用旧即时存档假装加载新代码。
+
+## P6-INDOOR-005 / PAL-5.62.235 — 吉花市实体门 / 室内方向门毯往返联合修复（开发待验）
+
+- [x] 参考 Gold 的 `GuideGentsHouse (2/3,7)` 两格 `WARP_CARPET_DOWN` 与吉花市 `(25,9)` `DOOR` 及旧分支 `JOHTO_GOLD_DOOR_GATE_POLICY.md`；原房间运行块还原的底图与 Gold 像素一致，不修改 `.blk`、尺寸或固定 ID125。
+- [x] 根因 1：`JOHTO_PILOT / JOHTO_HOUSE` 碰撞白名单原在 ROMX `$43/$46`，多个调用者按 `wTilesetCollisionPtr` 直接读未切 Bank 地址；不依赖“刚好当前 Bank 正确”，将两份总计 12B 的列表迁到 ROM0，保持 GFX/Block 和旧关都资料不变。
+- [x] 根因 2：将 `$12` 当作普通 STEP_ON Warp 会在走上 (7,2)/(7,3) 时立即传送。改为可站立，普通走到出口时不传送；只有从 y7 朝 DOWN 撞边界才通过现有 `CheckWarpsCollision` 触发，向上离开/左右换 Lane 不触发。不改变已验收的户外实体 DOOR 踏格机制。
+- [x] 保留入口 `(9,25)` 到室内 `(7,2)`、室内两条出口到户外 `(9,25)` 的登记式 Warp，确认目的地 tileset 变化会在 `LoadTilesetHeader` 重定位；入屋/室内读档后由 `IsPlayerStandingOnWarp` 重新设置目标门毯站立标志，不依赖室外遗留状态；落回户外的 `$39` 被 `IsPlayerStandingOnDoorTile` 识别，`wd736 bit0 -> PlayerStepOutFromDoor` 自动 DOWN 到 `(10,25)`；室内毯不在 DoorTileIDPointers 内，因此入室不自动迈步。
+- [ ] 按原项目规则，AI 不编译链接 ROM。本机正式红/蓝编译/MAP 查 ROM0 与 Bank43/46 空间；手机逐条验收单格 STEP_ON 入室、双 Lane 踏毯不传送、从毯再 DOWN 传送、返回自动 DOWN 一格、立即反向再进、左右擦边、存读档/旧五图/渡轮/关都房屋。未提供用户实测前不得标记为 PHONE PASS。
+- [ ] 当前室内仅启用两条 DOWN 毯；将来扩展 JOHTO_HOUSE 其它类型 Warp 时不得直接沿用本轮“整 tileset 跳过无碰撞触发”分支，需先拆分同图的 DOOR/STAIR/方向门毯检测并回归测试。
+
+## P6-INDOOR-003 / PAL-5.62.234 — 向导家实体门卡住修复（开发待验）
+
+- [ ] 参考源码前置核验：P4 含 Gold/旧分支交接 ZIP 存在且完整；须沿实际 Gold `DOOR` / `WARP_CARPET` 行为核对，不照搬旧 mapconst。
+- [x] 根因定位：吉花市 Gold block `$14` 的入口 `(Y9,X25)`，朝上移动时碰撞测试检测 8×8 图块 `$37`，现有 `JOHTO_PILOT` 允许列表无 `$37`，故玩家无法踩上已登记的 Warp。门下半图块 `$39` 原本已在 Warp 检测表，但只有 `$39` 不足以触发。
+- [x] 在独立城都户外碰撞白名单加入 `$37`，保留其它图块；在已存在的原生门框表登记 `JOHTO_PILOT / $39`，让进入/返回复用原 `PlayerStepOutFromDoor`，从 Gold DOOR 落点向下自动离门。室内 Gold 门毯在该旧版曾被错误列为 `$12` 踏格触发；现已被上方 P6-005 的 DOWN 碰撞触发方案取代，不得恢复。未增加 ROM0 功能入口，最终空间需新 MAP 确认。
+- [ ] 用户本机编译正式红蓝、提供新 MAP（确认 ROM0 和 Bank），在 `(10,25)` 朝上走入 `GuideGentsHouse`；内部 `(7,2)/(7,3)` 走出、出门自动向下走、立刻反向重进；两格分别往返、室内存读档和原 P5 户外/渡轮/关都房屋回归。
+- [ ] 首批新城都室内底层仅在上述场景用户实机确认后可进入正式清理。其它城都房门无登记 Warp，仍不能进入；$37 同形普通门砖现在可走上，后续接入其它房屋时应评估其闭门表现。
+
+## 城都 P6-001 第一张室内（PAL-5.62.234，开发待验）
+
+- [ ] 用户本机编译正式红蓝 ROM 并提供最新 MAP：核对 ROM0 未增长、新增 Bank `$46`、旧存档区地址不变。
+- [ ] 吉花市 `(9,25)` 向导家进门、房内 `(7,2)/(7,3)` 双出口返回；核对房屋图形/碰撞/音乐/地名。
+- [ ] 在室内存档、读档，再出门；Town Map 高 ID125、渡轮、旧户外地图/关都室内回归。
+- [ ] 若测试失败先局部修复，不把 P6-001 和下一张房屋一起提交；用户要求验收清理时按项目规范交三件套。
+- [ ] 后续门房、洞穴、水域、多 Tileset、跨区域与通用边界逐类真实场景验证。长期技术记录见 `docs/JOHTO_MIGRATION.md`。
+
 ## P5-DOC-008 / PAL-5.62.233 — 五张城都户外地图累计验收及提交收口（2026-10-28）
 
 - [x] **底层通用化**：四方向使用地区/稳定 ID 路由；地图属性驱动室外、Town Map 地标和音乐，地名牌完整 ID 比较；登记式 Warp 为 fail-closed 空路由，渡轮保留旧行为。

@@ -25,8 +25,9 @@
 # swap files for vim
 .*.swp
 
-# no data from extras/
+# Ignore generated JSON by default. The Johto gatehouse contract is source, not an output.
 *.json
+!tools/johto_pilot_door_contracts.json
 
 # for any of the poor souls with save game files in their working directory
 *.sgm
