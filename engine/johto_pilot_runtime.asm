@@ -113,7 +113,24 @@ JohtoPilotResolveWarpDestination::
 ; warp index, bank, landing tile and reverse route have been verified.
 DEF JOHTO_REGISTERED_WARP_RECORD_BYTES EQU 5
 JohtoRegisteredWarpRoutes::
-    ; Empty during the outdoor-only P4/P5 framework stage.
+    ; P6-001: Cherrygrove Gold door (9,25) is the city's first enabled
+    ; warp (ordinal 0); house exits (7,2)/(7,3) are ordinals 0/1.
+    ; The target ordinal in the object record is zero for all three rows.
+    ; Old reference mapconst numbers are never consulted.
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+    ; Route31 gate entrance at (Y6/7, X4), opens the gate's right-hand carpet.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    ; Violet City east gate at (Y24/25, X39), lands on left-hand carpet.
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    ; Gate's left pair -> city; right pair -> Route31.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -204,6 +221,9 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 2, MUSIC_CITIES1, 0     ; 2 Cherrygrove, outdoor
     johto_map_profile 1, 3, MUSIC_ROUTES1, 0     ; 3 Route30, outdoor
     johto_map_profile 1, 4, MUSIC_ROUTES1, 0     ; 4 Route31, outdoor
+    johto_map_profile 0, 2, MUSIC_CITIES1, 0     ; slot 5: Gold GuideGentsHouse ID125, indoor, parent city
+    johto_map_profile 1, 5, MUSIC_CITIES1, 0     ; slot 6: Violet City ID5, outdoor
+    johto_map_profile 0, 4, MUSIC_ROUTES1, 0     ; slot 7: Route31VioletGate ID6, indoor
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -279,10 +299,73 @@ JohtoPilotIsClosedOutdoorEdge::
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jp z, .city
     cp JOHTO_ROUTE_30_LOCAL_ID
-    jr z, .route30
+    jp z, .route30
     cp JOHTO_ROUTE_31_LOCAL_ID
     jp z, .route31
+    cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+    jp z, .houseCarpet
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    jp z, .violet
+    cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    jp z, .gate
     ret
+.gate
+    ; Gold EastWestGate: standing on x0/9 carpets is safe. Only an
+    ; outward LEFT/RIGHT collision at the edge triggers a registered Warp.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr z, .gateLeft
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE31_VIOLET_GATE_WIDTH * 2 - 1
+    ret c
+    jp .closed
+.gateLeft
+    ld a, [wXCoord]
+    and a
+    ret nz
+    jp .closed
+.violet
+    ; No unverified direct outdoor seam to Route31/Route32/Route36.
+    ; The only playable east entrance is the two-door registered gate.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    jr z, .violetEast
+    cp PLAYER_DIR_LEFT
+    jr z, .violetWest
+    cp PLAYER_DIR_DOWN
+    jr z, .violetSouth
+    ld a, [wYCoord]
+    and a
+    ret nz
+    jp .closed
+.violetEast
+    ld a, [wXCoord]
+    cp JOHTO_VIOLET_CITY_WIDTH * 2 - 1
+    ret c
+    jp .closed
+.violetWest
+    ld a, [wXCoord]
+    and a
+    ret nz
+    jp .closed
+.violetSouth
+    ld a, [wYCoord]
+    cp JOHTO_VIOLET_CITY_HEIGHT * 2 - 1
+    ret c
+    jp .closed
+.houseCarpet
+    ; Gold WARP_CARPET_DOWN can be stood on. At y7, DOWN must collide
+    ; with the map edge, so CheckWarpsCollision can resolve a registered
+    ; house exit; sideways/up movement must remain freely walkable.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wYCoord]
+    cp JOHTO_GUIDE_GENTS_HOUSE_HEIGHT * 2 - 1
+    ret c
+    jp .closed
 .route30
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
@@ -343,6 +426,15 @@ JohtoPilotIsClosedOutdoorEdge::
     jp .closed
 .route31West
     ld a, [wXCoord]
+    cp 4
+    jr nz, .route31PhysicalWest
+    ld a, [wYCoord]
+    cp 6
+    jp z, .closed
+    cp 7
+    jp z, .closed
+.route31PhysicalWest
+    ld a, [wXCoord]
     and a
     ret nz
     jp .closed
@@ -369,5 +461,176 @@ JohtoPilotIsClosedOutdoorEdge::
     cp 9 * 2
     ret c
 .closed
+    ld e, 1
+    ret
+
+
+ ; P6-GATE-004: All Route31/Violet west/east gate destinations are Gold
+ ; WARP_CARPET_LEFT / WARP_CARPET_RIGHT, not solid DOOR tiles.
+ ; They must REMAIN on their destination carpet; the next outward
+ ; collision, not an arrival script, performs the reverse Warp.
+ ; This matches NPC-5.62.243 GetJohtoWarpArrivalStep (no profiles
+ ; for Route31VioletGate or its outdoor carpets).
+JohtoPilotGateArrivalStep::
+    ld e, 0
+    ret
+
+; P6-GATE-001: two *registered* exterior gate door approaches only.
+; In: player coordinate BEFORE step. Out: E=1 bypass normal tile collision.
+; Reused by the Warp executor with matching target coordinate AFTER step.
+; Never weakens neighbouring scenery or Kanto collision.
+JohtoPilotGateDoorApproachAllowed::
+    ld e, 0
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr z, .route31
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    ret nz
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp 38
+    ret nz
+    ld a, [wYCoord]
+    cp 24
+    jr z, .allow
+    cp 25
+    ret nz
+    jr .allow
+.route31
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    ret nz
+    ld a, [wXCoord]
+    cp 5
+    ret nz
+    ld a, [wYCoord]
+    cp 6
+    jr z, .allow
+    cp 7
+    ret nz
+.allow
+    ld e, 1
+    ret
+
+JohtoPilotGateDoorWarpMatched::
+    ld e, 0
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr z, .route31
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    ret nz
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp 39
+    ret nz
+    ld a, [wYCoord]
+    cp 24
+    jr z, .allow
+    cp 25
+    ret nz
+    jr .allow
+.route31
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    ret nz
+    ld a, [wXCoord]
+    cp 4
+    ret nz
+    ld a, [wYCoord]
+    cp 6
+    jr z, .allow
+    cp 7
+    ret nz
+.allow
+    ld e, 1
+    ret
+
+; P6-GATE-004: standing-on-carpet (not entering it) exit collision.
+; EastWestGate's outdoor counterparts are both real Gold direction carpets.
+; Route31 (Y6/7,X4) faces LEFT and is not the physical map edge;
+; Violet City (Y24/25,X39) faces RIGHT and is the map edge.
+; E=1 only for the exact open pair and correct outward direction.
+JohtoPilotGateExteriorCollisionAllowed::
+    ld e, 0
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr z, .route31
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    ret nz
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp 39
+    ret nz
+    ld a, [wYCoord]
+    cp 24
+    jr z, .yes
+    cp 25
+    ret nz
+    jr .yes
+.route31
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    ret nz
+    ld a, [wXCoord]
+    cp 4
+    ret nz
+    ld a, [wYCoord]
+    cp 6
+    jr z, .yes
+    cp 7
+    ret nz
+.yes
+    ld e, 1
+    ret
+
+; P6-GATE-001: a colliding warp in the EastWestGate must match the
+; Gold carpet's orientation. Without this additional guard, RPP's generic
+; CheckWarpsCollision can warp when the player hits a *different* obstacle
+; while standing on the edge carpet. Non-gate maps retain Kanto behavior.
+; Result E=1 permits the matched collision warp, E=0 denies it.
+JohtoPilotGateCollisionExitAllowed::
+    ld e, 1
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    ret nz
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    ret nz
+    ld e, 0
+    ld a, [wYCoord]
+    cp 4
+    jr z, .lane
+    cp 5
+    ret nz
+.lane
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr z, .left
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE31_VIOLET_GATE_WIDTH * 2 - 1
+    ret nz
+    jr .yes
+.left
+    ld a, [wXCoord]
+    and a
+    ret nz
+.yes
     ld e, 1
     ret

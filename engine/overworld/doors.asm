@@ -45,6 +45,9 @@ DoorTileIDPointers:
 	dbw MART,         MartDoorTileIDs
 	dbw FERRY,        FerryDoorTileIDs
 	dbw MUSEUM_2,     TilesetMuseumDoorTileIDs
+	; P6-001: Gold JOHTO DOOR (not a directional gate carpet).
+	; Source-registered warp coordinates still control which house can open.
+	dbw JOHTO_PILOT,  JohtoPilotDoorTileIDs
 	db $FF
 
 OverworldDoorTileIDs:
@@ -91,3 +94,9 @@ FerryDoorTileIDs:
 
 TilesetMuseumDoorTileIDs:
 	db $16,$00
+
+; The lower-left 8x8 graphics tile of the Gold city house DOOR.
+; Arrival here from the indoor warp must simulate one step DOWN, matching
+; the existing RPP PlayerStepOutFromDoor mechanism without a new ROM0 hook.
+JohtoPilotDoorTileIDs:
+	db $39,$00

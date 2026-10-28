@@ -7,16 +7,16 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 5
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 8
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
 JohtoPilot_BlockEnd::
 ASSERT JohtoPilot_BlockEnd - JohtoPilot_Block == 141 * 16
 
-JohtoPilot_Coll:: INCBIN "gfx/tilesets/johto.tilecoll"
-JohtoPilot_CollEnd::
-ASSERT JohtoPilot_CollEnd - JohtoPilot_Coll == 7
+; P6-INDOOR-005: JohtoPilot_Coll now lives in ROM0 (home.asm).
+; Switchable-bank pointers were unsafe for unbanked collision readers.
+ASSERT BANK(JohtoPilot_Coll) == 0
 
 JohtoPilotNewBarkRuntimeBlocks::
     INCBIN "maps/johto_pilot/NewBarkTown.runtime.blk"
@@ -42,6 +42,11 @@ JohtoPilotRoute31RuntimeBlocks::
 JohtoPilotRoute31RuntimeBlocksEnd::
 ASSERT JohtoPilotRoute31RuntimeBlocksEnd - JohtoPilotRoute31RuntimeBlocks == JOHTO_ROUTE_31_WIDTH * JOHTO_ROUTE_31_HEIGHT
 
+JohtoPilotVioletRuntimeBlocks::
+    INCBIN "maps/johto_pilot/VioletCity.runtime.blk"
+JohtoPilotVioletRuntimeBlocksEnd::
+ASSERT JohtoPilotVioletRuntimeBlocksEnd - JohtoPilotVioletRuntimeBlocks == JOHTO_VIOLET_CITY_WIDTH * JOHTO_VIOLET_CITY_HEIGHT
+
 ; Stable physical ID, registered tileset ID, width, height, block pointer, block bank.
 ; Not a map Header: no event, connection, Warp, sprite or collision fence
 ; may be enabled merely because a resource row appears here.
@@ -66,6 +71,18 @@ JohtoPilotRoute31RuntimeDescriptor::
     db JOHTO_ROUTE_31_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_31_WIDTH, JOHTO_ROUTE_31_HEIGHT
     dw JohtoPilotRoute31RuntimeBlocks
     db BANK(JohtoPilotRoute31RuntimeBlocks)
+JohtoGuideGentsHouseRuntimeDescriptor::
+    db JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, JOHTO_HOUSE, JOHTO_GUIDE_GENTS_HOUSE_WIDTH, JOHTO_GUIDE_GENTS_HOUSE_HEIGHT
+    dw JohtoGuideGentsHouseRuntimeBlocks
+    db BANK(JohtoGuideGentsHouseRuntimeBlocks)
+JohtoPilotVioletRuntimeDescriptor::
+    db JOHTO_VIOLET_CITY_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_VIOLET_CITY_WIDTH, JOHTO_VIOLET_CITY_HEIGHT
+    dw JohtoPilotVioletRuntimeBlocks
+    db BANK(JohtoPilotVioletRuntimeBlocks)
+JohtoPilotVioletGateRuntimeDescriptor::
+    db JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, JOHTO_GATE, JOHTO_ROUTE31_VIOLET_GATE_WIDTH, JOHTO_ROUTE31_VIOLET_GATE_HEIGHT
+    dw JohtoPilotVioletGateRuntimeBlocks
+    db BANK(JohtoPilotVioletGateRuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -84,6 +101,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr z, .route30
     cp JOHTO_ROUTE_31_LOCAL_ID
     jr z, .route31
+    cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+    jr z, .guideHouse
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    jr z, .violet
+    cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    jr z, .gate
     ld d, 0
     ld hl, 0
     ret
@@ -101,6 +124,15 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr .valid
 .route31
     ld hl, JohtoPilotRoute31RuntimeDescriptor
+    jr .valid
+.guideHouse
+    ld hl, JohtoGuideGentsHouseRuntimeDescriptor
+    jr .valid
+.violet
+    ld hl, JohtoPilotVioletRuntimeDescriptor
+    jr .valid
+.gate
+    ld hl, JohtoPilotVioletGateRuntimeDescriptor
 .valid
     ld d, BANK(JohtoPilotRuntimeResourceDescriptors)
     ret

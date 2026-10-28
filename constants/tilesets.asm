@@ -29,3 +29,5 @@ const_value = 0
 	const ICE_CAVERN   ; 26
 	const MUSEUM_2     ; 27
 	const JOHTO_PILOT  ; 28 ; Johto outdoor pilot, not an active map
+	const JOHTO_HOUSE  ; 29 ; first Gold indoor tileset (runtime ID, not map ID)
+	const JOHTO_GATE   ; 30 ; original RPP Gold EastWestGate tileset

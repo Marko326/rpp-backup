@@ -1,15 +1,26 @@
 PlayerStepOutFromDoor:
 	ld hl, wd730
 	res 1, [hl]
+	; P6-GATE-004: source-verified arrival profile. Current Gate has NO
+	; automatic step on its four Gold direction carpets. Kanto DOOR tiles
+	; still use their existing DOWN fallback; Johto house DOOR is unchanged.
+	; E=direction for an explicitly reviewed destination or 0.
+	callab JohtoPilotGateArrivalStep
+	ld a, e
+	and a
+	jr nz, .stepFromProfile
 	call IsPlayerStandingOnDoorTile
 	jr nc, .notStandingOnDoor
+	ld a, D_DOWN
+.stepFromProfile
+	push af
 	ld a, $fc
 	ld [wJoyIgnore], a
 	ld hl, wd736
 	set 1, [hl]
 	ld a, $1
 	ld [wSimulatedJoypadStatesIndex], a
-	ld a, D_DOWN
+	pop af ; selected profile direction, or stock Kanto DOWN
 	ld [wSimulatedJoypadStatesEnd], a
 	xor a
 	ld [wSpriteStateData1 + 2], a

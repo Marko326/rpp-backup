@@ -195,7 +195,15 @@ InitTownMapLocationFromPlayerMap::
 	ld a, e
 	cp JOHTO_INVALID_ACTIVE_SLOT
 	jr z, .nativeMapUnknown
+	; Active slots and Town Map browsing indices are not interchangeable:
+	; slot 5 is Guide Gent's House, but it browses at Cherrygrove (2).
+	push de
+	ld d, 0
+	ld hl, JohtoPilotTownMapBrowseIndexBySlot
+	add hl, de
+	ld a, [hl]
 	ld [wWhichTownMapLocation], a
+	pop de
 	ret
 .nativeMapUnknown
 	xor a
@@ -824,8 +832,23 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute30Name
     db 76, 104
     dw JohtoPilotRoute31Name
+    ; Slot 5: Guide Gent's House (stable ID 125) shares Cherrygrove's Town Map area.
+    ; This is an indoor map entry, not an additional Fly destination.
+    db 116, 108
+    dw JohtoPilotCherrygroveName
+    db 76, 92
+    dw JohtoPilotVioletName
+    db 76, 104
+    dw JohtoPilotRoute31Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
+
+; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
+; uses its active slot as the browse index. Keep this in sync with the slot table.
+JohtoPilotTownMapBrowseIndexBySlot:
+    db 0, 1, 2, 3, 4, 2, 5, 4
+JohtoPilotTownMapBrowseIndexBySlotEnd:
+ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
 LoadJohtoPilotTownMapEntryFromSlot::
 ; in: E = dense active slot; out: D = Y, E = X, HL = map name pointer.
@@ -929,3 +952,5 @@ TownMapCursorEnd:
 MonNestIcon:
 	INCBIN "gfx/mon_nest_icon.2bpp"
 MonNestIconEnd:
+
+JohtoPilotVioletName:: db "Violet City@"

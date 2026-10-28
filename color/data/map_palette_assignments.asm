@@ -41,5 +41,8 @@ INCLUDE "color/tilesets/museum2.asm" ; MUSEUM_2
 ; JOHTO_PILOT: use the proven Johto palette arrangement, not the following
 ; RoofPalettes bytes. Each tileset must have exactly 96 tile assignments.
 INCLUDE "color/tilesets/johto.asm" ; JOHTO_PILOT
+INCLUDE "color/tilesets/johto_house.asm" ; JOHTO_HOUSE
+; P6-GATE-004: original RPP compact-tileset indexed Gold gate colors.
+INCLUDE "color/tilesets/johto_gate.asm" ; JOHTO_GATE
 MapPaletteAssignmentsEnd::
-ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_PILOT + 1) * $60
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_GATE + 1) * $60

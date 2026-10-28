@@ -1,4 +1,4 @@
-; MENU-5.61.17: menu-only shortcut executors live in expansion bank $3D.
+; P6-BANK-001: menu-only shortcut executors are bank-independent floating ROMX.
 ; Keep Bag Pockets bank $35 focused on the reusable Bag core; this also prevents
 ; the fixed-bank Warp Destination Helpers section from being displaced.
 

@@ -9,6 +9,20 @@ EnterMap::
 	ld [wJoyIgnore], a
 	call LoadMapData
 	callba ClearVariablesOnEnterMap
+	; P6-GATE-003: house DOWN carpets and the new east/west gate LEFT/RIGHT
+	; carpets need their destination warp-standing bit rebuilt on map load.
+	; They must not inherit the previous map's bit2; the exact registered
+	; Warp entry determines whether collision-only exit is currently armed.
+	ld a,[wCurMapTileset]
+	cp JOHTO_HOUSE
+	jr z,.armJohtoCarpetArrival
+	cp JOHTO_GATE
+	jr nz,.noJohtoCarpetArrival
+.armJohtoCarpetArrival
+	ld hl,wd736
+	res 2,[hl]
+	callba IsPlayerStandingOnWarp
+.noJohtoCarpetArrival
 	callab UpdateSeafoamEntranceSource
 	ld hl, wd72c
 	bit 0, [hl] ; has the player already made 3 steps since the last battle?
@@ -456,19 +470,71 @@ CheckWarpsNoCollision::
 CheckWarpsNoCollisionLoop::
 	ld a,[hli] ; check if the warp's Y position matches
 	cp d
-	jr nz,CheckWarpsNoCollisionRetry1
+	; P6-INDOOR-006: the new exact-door predicate lengthens this loop.
+	; Use absolute branches: JR to the Retry labels would exceed +/-127B.
+	jp nz,CheckWarpsNoCollisionRetry1
 	ld a,[hli] ; check if the warp's X position matches
 	cp e
-	jr nz,CheckWarpsNoCollisionRetry2
+	jp nz,CheckWarpsNoCollisionRetry2
 ; if a match was found
 	push hl
 	push bc
 	ld hl,wd736
 	set 2,[hl] ; standing on warp flag
+    ; P6-GATE-001: only an already-matched exterior warp may enter the
+    ; gate in its Gold approach direction (not the scenery around it).
+    push de
+    callab JohtoPilotGateDoorWarpMatched
+    ld a, e
+    pop de
+    and a
+    jr z, .noRegisteredGateDoor
+    pop bc
+    pop hl
+    ; Original NPC-5.62.243 Route31 gate rule: arriving ON a
+    ; WARP_CARPET_LEFT/RIGHT is safe, and must arm wd736 bit2 only.
+    ; Transfer later on an outward collision via ExtraWarpCheck.
+    jp CheckWarpsNoCollisionRetry2
+.noRegisteredGateDoor
+	; P6-INDOOR-006: match the working RPP reference branch. After
+	; a real warp ENTRY coordinate has matched, this exact Gold DOOR
+	; enters on the approach step, without depending on generic tile
+	; family detection. Future city doors must be explicitly audited.
+	ld a,[wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz,.ordinaryWarpTile
+	ld a,[wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz,.ordinaryWarpTile
+	ld a,[wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr nz,.ordinaryWarpTile
+	ld a,[wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz,.ordinaryWarpTile
+	ld a,[wYCoord]
+	cp 9
+	jr nz,.ordinaryWarpTile
+	ld a,[wXCoord]
+	cp 25
+	jr nz,.ordinaryWarpTile
+	pop bc
+	pop hl
+	jp WarpFound1
+.ordinaryWarpTile
 	callba IsPlayerStandingOnDoorTileOrWarpTile
 	pop bc
 	pop hl
 	jr c,WarpFound1 ; jump if standing on door or warp
+	; P6-INDOOR-005: the only JOHTO_HOUSE exits are Gold DOWN carpets.
+	; Walking onto either carpet must NOT warp, even while holding DOWN.
+	; Preserve wd736 bit 2 so a later DOWN collision can use the existing
+	; CheckWarpsCollision -> ExtraWarpCheck path, with no auto step inside.
+	ld a,[wCurMapTileset]
+	cp JOHTO_HOUSE
+	jr z,CheckWarpsNoCollisionRetry2
+	cp JOHTO_GATE
+	jr z,CheckWarpsNoCollisionRetry2
 	push hl
 	push bc
 	call ExtraWarpCheck
@@ -505,6 +571,16 @@ CheckWarpsCollision::
 	ld a,[wXCoord]
 	cp b
 	jr nz,.retry2
+	; P6-GATE-001: only outward LEFT/RIGHT carpet collisions may exit
+	; the gate. A collision against an interior wall must never teleport.
+	push hl
+	push bc
+	callab JohtoPilotGateCollisionExitAllowed
+	ld a, e
+	pop bc
+	pop hl
+	and a
+	jr z, .retry2
 	ld a,[hli]
 	ld [wDestinationWarpID],a
 	ld a,[hl]
@@ -814,6 +890,22 @@ CheckIfInOutsideMap::
 ; "function 2" passes when the the tile in front of the player is among a certain set
 ; sets carry if the check passes, otherwise clears carry
 ExtraWarpCheck::
+    ; Exact registered outdoor left/right carpets are collision-only.
+    ; Route31 uses a NON-EDGE x4 carpet, so the generic edge detector
+    ; never finds it. The older RPP's JohtoInternalDoorFacingCheck did.
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jr nz, .legacyExtraWarp
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    jr nz, .legacyExtraWarp
+    callab JohtoPilotGateExteriorCollisionAllowed
+    ld a, e
+    and a
+    jr z, .legacyExtraWarp
+    scf
+    ret
+.legacyExtraWarp
 	ld a, [wCurMap]
 	cp SS_ANNE_3
 	jr z, .useFunction1
@@ -1336,7 +1428,7 @@ IsSpriteInFrontOfPlayer2::
 CollisionCheckOnLand::
 	ld a,[wd736]
 	bit 6,a ; is the player jumping?
-	jr nz,.noCollision
+	jp nz,.noCollision
 ; if not jumping a ledge
 	ld a,[wSimulatedJoypadStatesIndex]
 	and a
@@ -1363,6 +1455,40 @@ CollisionCheckOnLand::
 	and a ; was there a sprite collision?
 	jr nz,.collision
 ; if no sprite collision
+    ; P6-GATE-001: exact exterior door approaches to the 31/Violet gate.
+    ; Only two registered pairs; leave neighbouring forest/roofs collidable.
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jr nz, .ordinaryGateApproach
+    callab JohtoPilotGateDoorApproachAllowed
+    ld a, e
+    and a
+    jp nz, .noCollision
+.ordinaryGateApproach
+	; P6-INDOOR-006: port the tested NPC-5.62.243 Cherrygrove house
+	; DOOR approach guard. The actual Gold door is (Y9,X25); from
+	; (Y10,X25), a single UP step must pass before generic tile-pair
+	; and passability rules. This ONE registered door only; not roofs,
+	; unregistered houses, Kanto doors or other Johto maps.
+	ld a,[wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz,.ordinaryTilePair
+	ld a,[wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz,.ordinaryTilePair
+	ld a,[wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr nz,.ordinaryTilePair
+	ld a,[wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz,.ordinaryTilePair
+	ld a,[wXCoord]
+	cp 25
+	jr nz,.ordinaryTilePair
+	ld a,[wYCoord]
+	cp 10
+	jp z,.noCollision
+.ordinaryTilePair
 	ld hl,TilePairCollisionsLand
 	call CheckForJumpingAndTilePairCollisions
 	jr c,.collision

@@ -1092,6 +1092,17 @@ InterlaceMergeSpriteBuffers::
 
 
 INCLUDE "data/collision.asm"
+; P6-INDOOR-005: these tiny passability lists must be always visible.
+; CheckTilePassable, NPC movement, SURF landing and boulder collision all
+; dereference wTilesetCollisionPtr without selecting the tileset's ROMX bank.
+; Keep graphics / block data in their original ROMX banks; only 12 data bytes
+; move to ROM0. Never use a switchable ROMX address for these live pointers.
+JohtoPilot_Coll:: INCBIN "gfx/tilesets/johto.tilecoll"
+JohtoPilot_CollEnd::
+ASSERT JohtoPilot_CollEnd - JohtoPilot_Coll == 8
+JohtoHouse_Coll:: INCBIN "gfx/tilesets/johto_house.tilecoll"
+JohtoHouse_CollEnd::
+ASSERT JohtoHouse_CollEnd - JohtoHouse_Coll == 4
 INCLUDE "home/copy2.asm"
 INCLUDE "home/text.asm"
 INCLUDE "home/vcopy.asm"

@@ -243,6 +243,56 @@ UpdateMapNameSign::
 ; reserves bit 6 as a private Game Corner identity tag with no floor suffix.
 	call .ResolveKnownFloor
 	ret c
+	; P6-GATE-005: $FC is only the shared runtime handle, not a real
+	; Kanto Town Map selector. Resolve the active Johto landmark by its
+	; stable local ID, with text resident in this map-sign bank.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .resolveLegacyLandmark
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .resolveLegacyLandmark
+	ld a, [wCurLocalMapID]
+	cp JOHTO_NEW_BARK_LOCAL_ID
+	jr z, .johtoNewBark
+	cp JOHTO_ROUTE_29_LOCAL_ID
+	jr z, .johtoRoute29
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr z, .johtoCherrygrove
+	cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
+	jr z, .johtoCherrygrove
+	cp JOHTO_ROUTE_30_LOCAL_ID
+	jr z, .johtoRoute30
+	cp JOHTO_ROUTE_31_LOCAL_ID
+	jr z, .johtoRoute31
+	cp JOHTO_VIOLET_CITY_LOCAL_ID
+	jr z, .johtoViolet
+	; A neutral gate reached by Continue has no outdoor source saved
+	; for sign purposes. Store a harmless placeholder without showing.
+	; Unknown Johto maps must never consult the Kanto $FC entry.
+	ld hl, .JohtoUnknownName
+	jr .johtoResolved
+.johtoNewBark
+	ld hl, .JohtoNewBarkName
+	jr .johtoResolved
+.johtoRoute29
+	ld hl, .JohtoRoute29Name
+	jr .johtoResolved
+.johtoCherrygrove
+	ld hl, .JohtoCherrygroveName
+	jr .johtoResolved
+.johtoRoute30
+	ld hl, .JohtoRoute30Name
+	jr .johtoResolved
+.johtoRoute31
+	ld hl, .JohtoRoute31Name
+	jr .johtoResolved
+.johtoViolet
+	ld hl, .JohtoVioletName
+.johtoResolved
+	ld b, 0
+	ret
+.resolveLegacyLandmark
 	ld a, [wCurMap]
 	cp CELADON_MANSION_4
 	jp z, .celadonMansionRoof
@@ -550,6 +600,20 @@ UpdateMapNameSign::
 	db $ff
 
 .IsNeutralMap
+; P6-GATE-005: this is a neutral transit room. Use BOTH region and
+; stable ID: testing the shared $FC handle alone would hide all Johto towns.
+; Keep the previous landmark and cancel an existing Window popup.
+; Matches the reviewed NPC-5.62.243 gatehouse sign contract.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .legacyNeutralMap
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyNeutralMap
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+	ret z
+.legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
 ; Safari rest/secret houses inherit the outdoor Safari area. Once Center/East/North/West
 ; have separate identities, treating the rooms as normal maps would incorrectly fall
@@ -616,6 +680,15 @@ UpdateMapNameSign::
 	call .CompareNamePointer
 	jr z, .copyLocalName
 
+	; Native Johto names live in this same ROMX section, not in the Kanto
+	; MapNames bank $1C. Reuse the bounded local copy path below.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .copyKantoName
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp z, .copyLocalName
+.copyKantoName
 	ld a, [wMapNameSignNamePtr]
 	ld l, a
 	ld a, [wMapNameSignNamePtr + 1]
@@ -900,3 +973,13 @@ UpdateMapNameSign::
 	pop af
 	ld [rIE], a
 	ret
+
+; P6-GATE-005: section-local name strings for the six currently available
+; Johto outdoor landmarks. Do not spend bytes in the full MapNames bank.
+.JohtoUnknownName:      db "Johto@"
+.JohtoNewBarkName:      db "New Bark Town@"
+.JohtoRoute29Name:      db "Route 29@"
+.JohtoCherrygroveName:  db "Cherrygrove City@"
+.JohtoRoute30Name:      db "Route 30@"
+.JohtoRoute31Name:      db "Route 31@"
+.JohtoVioletName:       db "Violet City@"

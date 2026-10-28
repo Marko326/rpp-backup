@@ -133,7 +133,7 @@ JohtoPilotRoute31RuntimeHeader::
     dw JohtoPilotRoute31RuntimeBlocks
     dw JohtoPilotRoute31TextPointers
     dw JohtoPilotMapScript
-    db SOUTH
+    db SOUTH | WEST
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoPilotRoute30RuntimeBlocks
     dw wOverworldMap + 3 + (JOHTO_ROUTE_31_HEIGHT + 3) * (JOHTO_ROUTE_31_WIDTH + 6) + 10
@@ -142,9 +142,20 @@ JohtoPilotRoute31RuntimeHeader::
     db 0 ; arrival Y
     db -20 ; Route31 X -> Route30 X - 20 tiles
     dw wOverworldMap + 7 + JOHTO_ROUTE_30_WIDTH
+    ; WEST screen-preview strip, aligned as in accepted NPC-5.62.243:
+    ; Violet rows 9..17 overlap Route31 rows 0..8 (Gold offset -9).
+    ; Boundary crossing stays blocked by the exact Route31 collision fence.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotVioletRuntimeBlocks + JOHTO_VIOLET_CITY_WIDTH * 9 + JOHTO_VIOLET_CITY_WIDTH - 3
+    dw wOverworldMap + 3 * (JOHTO_ROUTE_31_WIDTH + 6)
+    db JOHTO_ROUTE_31_HEIGHT
+    db JOHTO_VIOLET_CITY_WIDTH
+    db 18
+    db JOHTO_VIOLET_CITY_WIDTH * 2 - 1
+    dw wOverworldMap + 6 + 2 * JOHTO_VIOLET_CITY_WIDTH
     dw JohtoPilotRoute31RuntimeObjects
 JohtoPilotRoute31RuntimeHeaderEnd::
-ASSERT JohtoPilotRoute31RuntimeHeaderEnd - JohtoPilotRoute31RuntimeHeader == 23
+ASSERT JohtoPilotRoute31RuntimeHeaderEnd - JohtoPilotRoute31RuntimeHeader == 34
 ASSERT BANK(JohtoPilotRoute31RuntimeHeader) == BANK(JohtoPilotRoute31RuntimeBlocks)
 
 JohtoPilotMapScript::
@@ -324,7 +335,7 @@ JohtoPilotCherrygroveCitySignText:
     db "@"
 JohtoPilotCherrygroveHouseSignText:
     text "GUIDE GENT'S HOUSE"
-    para "Closed for now."
+    para "You can go inside!"
     done
     db "@"
 JohtoPilotCherrygroveMartSignText:
@@ -340,7 +351,8 @@ JohtoPilotCherrygroveCenterSignText:
 
 JohtoPilotCherrygroveRuntimeObjects::
     db $05 ; original Gold outdoor forest border
-    db $00 ; no enabled indoor warps in the map-only phase
+    db 1 ; P6-001: first registered Gold Guide Gent door only
+    db 9, 25, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Guide Gent house -> stable ID 125
     db $04 ; original Gold signs (y, x, text index)
     db $08, $1e, $01 ; city
     db $09, $17, $02 ; guide's house
@@ -407,8 +419,89 @@ JohtoPilotRoute31CaveSignText:
     db "@"
 JohtoPilotRoute31RuntimeObjects::
     db $05 ; original Gold outdoor forest border
-    db $00 ; Gold gate (2) and Dark Cave (1) warps not implemented
+    db $02 ; Route31 Gate pair enabled, Dark Cave remains closed
+    db 6, 4, 2, JOHTO_REGISTERED_WARP_SELECTOR
+    db 7, 4, 3, JOHTO_REGISTERED_WARP_SELECTOR
     db $02 ; two original outdoor signs
     db 5, 7, 1
     db 5, 31, 2
     db $00 ; original seven NPC / event objects stay deferred
+
+; Violet City P6-GATE-001: city is reachable via its Gold east gate only.
+; Route31 east/west outdoor seam stays disabled until strip/fence audited.
+JohtoPilotVioletRuntimeHeader::
+    db JOHTO_PILOT
+    db JOHTO_VIOLET_CITY_HEIGHT, JOHTO_VIOLET_CITY_WIDTH
+    dw JohtoPilotVioletRuntimeBlocks
+    dw JohtoPilotVioletTextPointers
+    dw JohtoPilotMapScript
+    db EAST
+    ; EAST screen-preview strip, aligned as in accepted NPC-5.62.243:
+    ; Route31 rows 0..8 overlap Violet rows 9..17 (Gold offset +9).
+    ; At the gate, the player stays on the direction carpet; the seam is
+    ; still not an unrestricted outdoor crossing.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotRoute31RuntimeBlocks
+    dw wOverworldMap + (9 + 3) * (JOHTO_VIOLET_CITY_WIDTH + 6) + JOHTO_VIOLET_CITY_WIDTH + 3
+    db JOHTO_ROUTE_31_HEIGHT
+    db JOHTO_ROUTE_31_WIDTH
+    db -18
+    db 0
+    dw wOverworldMap + 7 + JOHTO_ROUTE_31_WIDTH
+    dw JohtoPilotVioletRuntimeObjects
+JohtoPilotVioletRuntimeHeaderEnd::
+ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 23
+ASSERT BANK(JohtoPilotVioletRuntimeHeader) == BANK(JohtoPilotVioletRuntimeBlocks)
+
+JohtoPilotVioletTextPointers:
+    dw JohtoPilotVioletSignText
+    dw JohtoPilotVioletGymSignText
+    dw JohtoPilotVioletSproutSignText
+    dw JohtoPilotVioletAcademySignText
+    dw JohtoPilotVioletCenterSignText
+    dw JohtoPilotVioletMartSignText
+JohtoPilotVioletSignText:
+    text "VIOLET CITY"
+    para "The City of"
+    line "Nostalgic Scents"
+    done
+    db "@"
+JohtoPilotVioletGymSignText:
+    text "VIOLET GYM"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotVioletSproutSignText:
+    text "SPROUT TOWER"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotVioletAcademySignText:
+    text "#MON ACADEMY"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotVioletCenterSignText:
+    text "#MON CENTER"
+    para "Closed for now."
+    done
+    db "@"
+JohtoPilotVioletMartSignText:
+    text "#MON MART"
+    para "Closed for now."
+    done
+    db "@"
+
+JohtoPilotVioletRuntimeObjects::
+    db $05 ; original Gold city border metatile
+    db 2 ; only Route31VioletGate door pair (Gold warps 8 and 9)
+    db 24, 39, 0, JOHTO_REGISTERED_WARP_SELECTOR
+    db 25, 39, 1, JOHTO_REGISTERED_WARP_SELECTOR
+    db 6 ; original exterior signs; no Gold item events or NPC stories
+    db 20, 24, 1
+    db 17, 15, 2
+    db  8, 24, 3
+    db 17, 27, 4
+    db 25, 32, 5
+    db 17, 10, 6
+    db 0

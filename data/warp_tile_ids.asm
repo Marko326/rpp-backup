@@ -27,9 +27,11 @@ WarpTileIDPointers:
 	dw FerryWarpTileIDs
 	dw CavernWarpTileIDs
 	dw MuseumWarpTileIDs
-	dw JohtoPilotWarpTileIDs ; $1c/28: native Johto pilot tileset
+	dw JohtoPilotWarpTileIDs ; $1c/28: native Johto outdoor tileset
+	dw JohtoHouseWarpTileIDs ; $1d/29: dedicated Gold house interior
+	dw JohtoGateWarpTileIDs ; $1e/30: EastWestGate directional edge carpet only
 WarpTileIDPointersEnd:
-ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_PILOT + 1) * 2
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_GATE + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -81,4 +83,15 @@ MuseumWarpTileIDs:
 ; Johto pilot only: original Gold New Bark ferry boarding pad ($06).
 ; Do not register walkable scenery tiles as generic warps.
 JohtoPilotWarpTileIDs:
-	db $06,$FF
+    ; $39 is the lower-left tile of the original Gold Cherrygrove house
+    ; doorway (9,25). Only a registered warp coordinate can trigger it.
+    db $06,$39,$FF
+JohtoHouseWarpTileIDs:
+    ; Gold WARP_CARPET_DOWN ($12) is a standable *collision-only* exit.
+    ; Do not list it as STEP_ON: standing/moving sideways on y7 must not warp.
+    ; CheckWarpsCollision + facing DOWN at the bottom edge handle both lanes.
+    db $FF
+
+JohtoGateWarpTileIDs:
+    ; Gold LEFT/RIGHT edge carpets: only direction + collision may exit.
+    db $FF

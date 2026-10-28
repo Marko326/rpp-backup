@@ -3067,8 +3067,10 @@ INCLUDE "engine/overworld/warp_destination.asm"
 SECTION "Runtime Options Menu", ROMX
 INCLUDE "engine/menu/options_menu.asm"
 
-; MENU-5.61.17: keep Party/Bag shortcut executors out of crowded bank $35.
-SECTION "Menu Shortcut Helpers", ROMX, BANK[$3D]
+; P6-BANK-001: Party/Bag executors are called only via callba from ROM0.
+; Let the linker place this independent section in ROMX: bank $3D had only
+; $006c bytes free in the submitted P5 red MAP before the newer map-sign code.
+SECTION "Menu Shortcut Helpers", ROMX
 INCLUDE "engine/menu/menu_shortcuts.asm"
 
 SECTION "Fly Icon Runtime Helpers", ROMX, BANK[$3D]
@@ -3078,8 +3080,12 @@ INCLUDE "engine/fly_icon_runtime_helpers.asm"
 SECTION "Party Gender Sprite Palettes", ROMX, BANK[$3D]
 INCLUDE "color/party_gender_palettes.asm"
 
-SECTION "Map Name Sign", ROMX, BANK[$3D]
-; Crystal-style overworld location popup lives in a fully empty expansion bank.
+; P6-BANK-001: Map-name sign was pinned to bank $3D, but GATE-005 adds
+; Johto-local names and name resolution. All external entries are reached via
+; callab, and its local name strings stay in this same section. Keep it
+; in floating ROMX rather than squeezing unrelated animation bank $3D.
+SECTION "Map Name Sign", ROMX
+; Crystal-style overworld location popup may move to any roomy ROMX bank.
 INCLUDE "engine/overworld/map_name_sign.asm"
 
 ; MENU-5.62.11: START helpers have no fixed-bank dependency. Keep them floating so
@@ -3375,8 +3381,16 @@ INCLUDE "engine/overworld/tileset_header.asm"
 SECTION "Johto Pilot Active Map Headers", ROMX, BANK[$43]
 INCLUDE "data/johto_pilot_map_headers.asm"
 
+; First Gold indoor house: reserve a separate expansion ROMX bank for its
+; graphics, blocks, objects and header. No added ROM0 dispatch code.
+SECTION "Johto Gold First Indoor House", ROMX, BANK[$46]
+INCLUDE "data/johto_indoor_house.asm"
+
 ; No free room in legacy Bank $06; preserve shared RPP hop animation,
 ; and dispatch the original Route 29 tile-pairs using Johto stable local ID 1.
+SECTION "Johto Route31 Violet Gate", ROMX, BANK[$47]
+INCLUDE "data/johto_gate_runtime.asm"
+
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"
 

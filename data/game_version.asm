@@ -8,5 +8,5 @@ IF DEF(BATTLE_TEST_BUILD)
 	db "TEST-231@"
 ELSE
 	; P4-006: avoid restarting current BGM on bicycle mount/dismount with Bike Song Off.
-	db "PAL-5.62.233@"
+	db "PAL-5.62.239@"
 ENDC

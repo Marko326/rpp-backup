@@ -27,10 +27,20 @@ Tilesets:
 	tileset Ferry_Block,       Ferry_GFX,       Ferry_Coll,       255,255,255, 19, OUTDOOR
 	tileset Cavern_Block,      Ice_Cavern_GFX,  Cavern_Coll,      $FF,$FF,$FF, $FF, CAVE
 	tileset Museum2_Block,     Museum2_GFX,     Museum_Coll,	  64,81,255, 255, 0
-	; Keep Kanto records unchanged; all three runtime pointers reside in Bank $43.
+	; Johto graphics/blocks stay in ROMX; the unbanked collision readers require
+	; a ROM0 passability pointer. Original Kanto tileset records stay untouched.
 	tileset JohtoPilot_Block, JohtoPilot_GFX, JohtoPilot_Coll, $FF,$FF,$FF, $04, OUTDOOR
+	; Gold house keeps separate graphics/blocks; collisions are in ROM0 too.
+	tileset JohtoHouse_Block, JohtoHouse_GFX, JohtoHouse_Coll, $FF,$FF,$FF, $FF, INDOOR
+	; Reuse the RPP Kanto gate collision vocabulary; dedicated Gold art/blocks.
+	tileset JohtoGate_Block, JohtoGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_PILOT + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_GATE + 1) * 12
 ASSERT JOHTO_PILOT == 28
+ASSERT JOHTO_HOUSE == 29
+ASSERT JOHTO_GATE == 30
+ASSERT BANK(JohtoGate_Block) == BANK(JohtoGate_GFX)
+ASSERT BANK(JohtoHouse_Block) == BANK(JohtoHouse_GFX)
+ASSERT BANK(JohtoHouse_Coll) == 0
 ASSERT BANK(JohtoPilot_Block) == BANK(JohtoPilot_GFX)
-ASSERT BANK(JohtoPilot_GFX) == BANK(JohtoPilot_Coll)
+ASSERT BANK(JohtoPilot_Coll) == 0
