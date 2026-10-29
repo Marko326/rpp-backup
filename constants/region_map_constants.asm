@@ -30,10 +30,10 @@ DEF JOHTO_RUINS_OF_ALPH_LOCAL_ID EQU 20
 INCLUDE "constants/johto_fixed_map_ids.asm"
 
 ; Dense active slots are not stable local IDs. P5-002 activates the
-; source-audited New Bark / Route29 / Cherrygrove / Route30 / Route31 maps; others inactive.
+; source-audited outdoors through Violet City and Route32; other maps inactive.
 ; Raise this only alongside the complete header, bank, event, warp, connection,
 ; music, Town Map, and runtime identity records for each added map.
-DEF NUM_JOHTO_ACTIVE_MAPS EQU 8
+DEF NUM_JOHTO_ACTIVE_MAPS EQU 9
 DEF JOHTO_STABLE_ID_TABLE_SIZE EQU 256
 DEF JOHTO_INVALID_ACTIVE_SLOT EQU $ff
 ; Each registered map carries one ROMX header pointer (2B) and its bank (1B).
@@ -64,6 +64,8 @@ DEF JOHTO_ROUTE_30_WIDTH EQU 10
 DEF JOHTO_ROUTE_30_HEIGHT EQU 27
 DEF JOHTO_ROUTE_31_WIDTH EQU 20
 DEF JOHTO_ROUTE_31_HEIGHT EQU 9
+DEF JOHTO_ROUTE_32_WIDTH EQU 10
+DEF JOHTO_ROUTE_32_HEIGHT EQU 45
 DEF JOHTO_VIOLET_CITY_WIDTH EQU 20
 DEF JOHTO_VIOLET_CITY_HEIGHT EQU 18
 DEF JOHTO_ROUTE31_VIOLET_GATE_WIDTH EQU 5

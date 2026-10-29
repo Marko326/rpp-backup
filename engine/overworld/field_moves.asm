@@ -276,6 +276,8 @@ IsHeadbuttTile:
 
 
 IsSurfTile:
+	callab JohtoVioletWaterAhead
+	ret c
 	ld a, [wCurMapTileset]
 	ld hl, WaterTilesets2
 	ld de,1
@@ -317,6 +319,8 @@ WaterTilesets2: ; Renamed from what Yenatch called it, since that had overlap er
 	db -1
 
 IsCutTile:
+	callab JohtoVioletCutTreeAhead
+	ret c
 	ld a, [wCurMapTileset]
 	and a ; OVERWORLD
 	jr z, .overworld

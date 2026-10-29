@@ -1,11 +1,12 @@
 ; P2-004: source-authentic Gold pilot map geometry, NOT live Kanto mapconst IDs.
 ; These immutable source records preserve the original Gold map blocks. The
-; eight directed source-authentic connections feed the region-aware four-direction
-; dispatcher; runtime blocks and headers remain separate in bank $43.
+; twelve directed source-authentic connections feed the region-aware four-direction
+; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
+; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 8
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 9
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 10
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 12
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
@@ -38,12 +39,16 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, JOHTO_ROUTE31_VIOLET_GATE_WIDTH, JOHTO_ROUTE31_VIOLET_GATE_HEIGHT
     dw JohtoPilotVioletGateGoldBlocks
     db BANK(JohtoPilotVioletGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, JOHTO_ROUTE_32_WIDTH, JOHTO_ROUTE_32_HEIGHT
+    dw JohtoPilotRoute32GoldBlocks
+    db BANK(JohtoPilotRoute32GoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
 ; Region-aware adjacency registry, valid for WEST/EAST/NORTH/SOUTH.
 ; One row: source region, source local ID (Kanto mapconst for Kanto), direction,
-; target region, target local ID. Four bidirectional seams are active.
+; target region, target local ID. Six bidirectional pairs are registered,
+; including the preview-only Route31/Violet outdoor seam.
 ; A future Kanto↔Johto seam must be explicitly registered both ways.
 JohtoPilotSourceConnections::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
@@ -58,6 +63,9 @@ JohtoPilotSourceConnections::
     ; blocked by JohtoPilotIsClosedOutdoorEdge; passage uses gate collision Warps.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
+    ; Gold south/north seam (offset 0); only lane x14/15 is traversable.
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
 ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 
@@ -92,6 +100,10 @@ ASSERT JohtoPilotVioletGoldBlocksEnd - JohtoPilotVioletGoldBlocks == JOHTO_VIOLE
 JohtoPilotVioletGateGoldBlocks::
     INCBIN "maps/johto_pilot/Route31VioletGate.gold.blk"
 JohtoPilotVioletGateGoldBlocksEnd::
+JohtoPilotRoute32GoldBlocks::
+    INCBIN "maps/johto_pilot/Route32.gold.blk"
+JohtoPilotRoute32GoldBlocksEnd::
+ASSERT JohtoPilotRoute32GoldBlocksEnd - JohtoPilotRoute32GoldBlocks == JOHTO_ROUTE_32_WIDTH * JOHTO_ROUTE_32_HEIGHT
 ASSERT JohtoPilotVioletGateGoldBlocksEnd - JohtoPilotVioletGateGoldBlocks == JOHTO_ROUTE31_VIOLET_GATE_WIDTH * JOHTO_ROUTE31_VIOLET_GATE_HEIGHT
 ASSERT JohtoGuideGentsHouseSourceBlocksEnd - JohtoGuideGentsHouseSourceBlocks == JOHTO_GUIDE_GENTS_HOUSE_WIDTH * JOHTO_GUIDE_GENTS_HOUSE_HEIGHT
 ASSERT BANK(JohtoGuideGentsHouseSourceBlocks) == JOHTO_PILOT_SOURCE_BANK

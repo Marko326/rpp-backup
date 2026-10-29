@@ -435,7 +435,17 @@ JohtoPilotVioletRuntimeHeader::
     dw JohtoPilotVioletRuntimeBlocks
     dw JohtoPilotVioletTextPointers
     dw JohtoPilotMapScript
-    db EAST
+    db SOUTH | EAST
+    ; SOUTH: first three rows of Route32, original Gold offset 0.
+    ; Only x14/15 may actually pass; the edge fence rejects other columns.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoPilotRoute32RuntimeBlocks
+    dw wOverworldMap + (JOHTO_VIOLET_CITY_HEIGHT + 3) * (JOHTO_VIOLET_CITY_WIDTH + 6) + 3
+    db JOHTO_ROUTE_32_WIDTH
+    db JOHTO_ROUTE_32_WIDTH
+    db 0
+    db 0
+    dw wOverworldMap + 7 + JOHTO_ROUTE_32_WIDTH
     ; EAST screen-preview strip, aligned as in accepted NPC-5.62.243:
     ; Route31 rows 0..8 overlap Violet rows 9..17 (Gold offset +9).
     ; At the gate, the player stays on the direction carpet; the seam is
@@ -450,7 +460,7 @@ JohtoPilotVioletRuntimeHeader::
     dw wOverworldMap + 7 + JOHTO_ROUTE_31_WIDTH
     dw JohtoPilotVioletRuntimeObjects
 JohtoPilotVioletRuntimeHeaderEnd::
-ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 23
+ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 34
 ASSERT BANK(JohtoPilotVioletRuntimeHeader) == BANK(JohtoPilotVioletRuntimeBlocks)
 
 JohtoPilotVioletTextPointers:

@@ -3380,6 +3380,7 @@ INCLUDE "engine/overworld/tileset_header.asm"
 ; P3-001: active pilot headers share Bank $43 with their runtime blocks.
 SECTION "Johto Pilot Active Map Headers", ROMX, BANK[$43]
 INCLUDE "data/johto_pilot_map_headers.asm"
+INCLUDE "data/johto_route32_runtime.asm"
 
 ; First Gold indoor house: reserve a separate expansion ROMX bank for its
 ; graphics, blocks, objects and header. No added ROM0 dispatch code.
@@ -3393,6 +3394,11 @@ INCLUDE "data/johto_gate_runtime.asm"
 
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"
+
+; Only one city's terrain abilities; keep the large Gold coordinate table
+; away from ROM0, Bank $03 and the already full legacy field move sections.
+SECTION "Johto Violet Field Skills", ROMX
+INCLUDE "engine/johto_violet_field_skills.asm"
 
 ; Gold-derived Johto Town Map art and its 20x18 KMP tilemap live outside the
 ; nearly-full Bank $1C code/data region.

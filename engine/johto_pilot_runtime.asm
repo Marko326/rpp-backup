@@ -233,6 +233,7 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 2, MUSIC_CITIES1, 0     ; slot 5: Gold GuideGentsHouse ID125, indoor, parent city
     johto_map_profile 1, 5, MUSIC_CITIES1, 0     ; slot 6: Violet City ID5, outdoor
     johto_map_profile 0, 4, MUSIC_ROUTES1, 0     ; slot 7: Route31VioletGate ID6, indoor
+    johto_map_profile 1, 7, MUSIC_ROUTES1, 0     ; slot 8: Route32 ID7, Gold Route30 theme
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -331,6 +332,8 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .houseCarpet
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     jp z, .violet
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jp z, .route32
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .gate
     ret
@@ -379,6 +382,47 @@ JohtoPilotIsClosedOutdoorEdge::
     ld a, [wYCoord]
     cp JOHTO_VIOLET_CITY_HEIGHT * 2 - 1
     ret c
+    ld a, [wXCoord]
+    cp 14
+    jp c, .closed
+    cp 16
+    ret c
+    jp .closed
+.route32
+    ; Route32 is deliberately a one-way expansion of the *map network*,
+    ; not a one-way walk: its only open edge is back to Violet City.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .route32North
+    cp PLAYER_DIR_DOWN
+    jr z, .route32South
+    cp PLAYER_DIR_LEFT
+    jr z, .route32West
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_32_WIDTH * 2 - 1
+    ret c
+    jp .closed
+.route32North
+    ld a, [wYCoord]
+    and a
+    ret nz
+    ld a, [wXCoord]
+    cp 14
+    jp c, .closed
+    cp 16
+    ret c
+    jp .closed
+.route32South
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_32_HEIGHT * 2 - 1
+    ret c
+    jp .closed
+.route32West
+    ld a, [wXCoord]
+    and a
+    ret nz
     jp .closed
 .houseCarpet
     ; Gold WARP_CARPET_DOWN can be stood on. At y7, DOWN must collide

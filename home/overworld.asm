@@ -2031,6 +2031,26 @@ CollisionCheckOnWater::
 	call CheckForJumpingAndTilePairCollisions
 	jr c,.collision
 	predef GetTileAndCoordsInFrontOfPlayer ; get tile in front of player (puts it in c and [wTileInFrontOfPlayer])
+	; Exact Gold water collision for Violet only. Other Johto maps retain
+	; their previous closed behavior; never pass by a shared art tile ID.
+	ld a, [wCurMapTileset]
+	cp JOHTO_PILOT
+	jr nz, .legacySurfTile
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacySurfTile
+	ld a, [wCurLocalMapID]
+	cp JOHTO_VIOLET_CITY_LOCAL_ID
+	jr nz, .legacySurfTile
+	callab JohtoVioletWaterAhead
+	jp c, .noCollision
+	; VIOLET-248: the map-local water query answers only WATER vs non-WATER.
+	; Restore the actual front tile in C before the legacy passable-shore scan,
+	; matching the old Johto Surf helper's landing path.
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
+	jr .checkIfNextTileIsPassable
+.legacySurfTile
 	ld a,[wTileInFrontOfPlayer] ; tile in front of player
 	cp a,$14 ; water tile
 	jr z,.noCollision ; keep surfing if it's a water tile

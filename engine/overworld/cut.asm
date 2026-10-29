@@ -1,6 +1,11 @@
 UsedCut:
 	xor a
 	ld [wActionResultOrTookBattleTurn], a ; initialise to failure value
+	callab JohtoVioletCutTreeAhead
+	jr nc, .legacyTileset
+	ld a, $3d ; reuse original Cut tree animation
+	jr .canCut
+.legacyTileset
 	ld a, [wCurMapTileset]
 	and a ; OVERWORLD
 	jr z, .overworld
@@ -155,9 +160,9 @@ GetCutAnimationOffsets:
 
 	ld hl, CutAnimationOffsets
 
-	rept 9 ; Padding to prevent data shifting
+	; VIOLET-247: reclaim the old nine-NOP spacer to keep Bank $03
+	; in range after adding map-scoped Gold Cut and Surf entry checks.
 	nop
-	endr
 ; 	ld a, [wWhichAnimationOffsets]
 ; 	and a
 ; 	ld hl, CutAnimationOffsets
@@ -277,4 +282,7 @@ CutTreeBlockSwaps:
 	db $3C, $35
 	db $3F, $35
 	db $3D, $36
+	; Johto Violet: replace only the Gold CUT_TREE quadrant, never the
+	; neighboring HEADBUTT_TREE in the same 32x32 block.
+	db $63, $8D
 	db $FF ; list terminator

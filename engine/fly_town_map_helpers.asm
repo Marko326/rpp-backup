@@ -820,7 +820,7 @@ TryLoadSpecialTownMapEntry::
 	scf
 	ret
 
-; P3-001: active-slot-ordered Johto Town Map entries. Names reside in bank $1C.
+; Active-slot-ordered Johto Town Map entries. Name pointers are resolved by their owning banks.
 JohtoPilotTownMapEntries::
     db 116, 148
     dw JohtoPilotNewBarkTownName
@@ -840,13 +840,16 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotVioletName
     db 76, 104
     dw JohtoPilotRoute31Name
+    ; Slot 8: Route32 (stable ID 7), Gold landmark index 7.
+    db 108, 92
+    dw JohtoPilotRoute32Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -954,3 +957,6 @@ MonNestIcon:
 MonNestIconEnd:
 
 JohtoPilotVioletName:: db "Violet City@"
+; Route32 uses this helper's Bank $35, not a cross-bank pointer into the
+; floating Gold landmark table used by Continue/Save.
+JohtoPilotRoute32Name:: db "Route 32@"

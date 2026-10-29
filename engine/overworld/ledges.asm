@@ -20,6 +20,9 @@ HandleLedges:
 	jr z, .supportedJohtoLedges
 	cp JOHTO_ROUTE_30_LOCAL_ID
 	jr z, .supportedJohtoLedges
+	; Gold Violet has three HOP_DOWN quadrants using $06 -> $21.
+	cp JOHTO_VIOLET_CITY_LOCAL_ID
+	jr z, .supportedJohtoLedges
 	cp JOHTO_ROUTE_31_LOCAL_ID
 	ret nz
 	ld hl, JohtoPilotRoute31LedgeTiles

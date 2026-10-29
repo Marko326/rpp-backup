@@ -30,6 +30,8 @@ JohtoHeaderDescriptors::
     db BANK(JohtoPilotVioletRuntimeHeader)
     dw JohtoPilotVioletGateRuntimeHeader
     db BANK(JohtoPilotVioletGateRuntimeHeader)
+    dw JohtoPilotRoute32RuntimeHeader
+    db BANK(JohtoPilotRoute32RuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3
