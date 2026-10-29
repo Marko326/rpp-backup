@@ -276,6 +276,8 @@ IsHeadbuttTile:
 
 
 IsSurfTile:
+	callab JohtoCherrygroveWaterAhead
+	ret c
 	callab JohtoVioletWaterAhead
 	ret c
 	ld a, [wCurMapTileset]

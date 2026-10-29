@@ -1,7 +1,7 @@
-; VIOLET-247: Gold 16x16 terrain-specific field skills. The 8x8 compact
-; art IDs are shared among water, walls and plants; only map-specific Gold
-; collision coordinates may unlock a field action. Do not widen tilecoll.
-; Gold: VioletCity 20x18 blocks / 40x36 collision cells.
+; Johto map-local field skills. The 8x8 compact art IDs are shared among
+; water, walls and plants; only Gold collision coordinates may unlock a
+; field action. Do not widen tilecoll. VioletCity is 40x36 cells; Cherrygrove
+; is 40x18 cells. The helper names retain VIOLET-247 compatibility.
 JohtoVioletIsActive::
 	ld a, [wCurMap]
 	cp JOHTO_RUNTIME_MAP_HANDLE
@@ -80,6 +80,163 @@ JohtoVioletWaterAhead::
 	pop de
 	pop bc
 	ret
+
+; Cherrygrove City uses the same existing Surf entrypoints and shore scan as
+; Violet City, but its Gold map is only 20x9 blocks (40x18 collision cells).
+; Keep this predicate/map-specific table separate: shared 8x8 art IDs are not
+; enough to authorize Surf on other maps.
+JohtoCherrygroveIsActive::
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jp nz, .no
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .no
+	ld a, [wCurLocalMapID]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jp nz, .no
+	scf
+	ret
+.no
+	and a
+	ret
+
+; Carry = Gold WATER immediately ahead in Cherrygrove City only.
+; Preserves BC, DE and HL. The 142 entries are decoded from Gold's original
+; CherrygroveCity.blk plus johto_collision.asm, not inferred from artwork.
+JohtoCherrygroveWaterAhead::
+	push bc
+	push de
+	push hl
+	call JohtoCherrygroveIsActive
+	jp nc, .noWater
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .bounds
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .bounds
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .bounds
+.right
+	cp SPRITE_FACING_RIGHT
+	jp nz, .noWater
+	inc e
+.bounds
+	ld a, d
+	cp 18
+	jp nc, .noWater
+	ld a, e
+	cp 40
+	jp nc, .noWater
+	ld hl, JohtoCherrygroveGoldWaterCells
+.loop
+	ld a, [hli] ; y
+	cp $ff
+	jr z, .noWater
+	cp d
+	jr nz, .skipX
+	ld a, [hli] ; x
+	cp e
+	jr z, .yesWater
+	jr .loop
+.skipX
+	inc hl
+	jr .loop
+.yesWater
+	scf
+	jr .done
+.noWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; Gold Cherrygrove SW rock platform has eight FLOOR cells (x4..7,
+; y12..13), rendered with compact tile $3c, which also appears on walls.
+; This explicit Gold-only land table is shared by surf disembark and normal
+; walking; do not add $3c to the global passable-tile whitelist.
+; Carry = facing the exact registered FLOOR; registers BC/DE/HL preserved.
+JohtoCherrygroveShoreFloorAhead::
+	push bc
+	push de
+	push hl
+	call JohtoCherrygroveIsActive
+	jp nc, .noFloor
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .lookup
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .lookup
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .lookup
+.right
+	cp SPRITE_FACING_RIGHT
+	jr nz, .noFloor
+	inc e
+.lookup
+	ld hl, JohtoCherrygroveShoreFloorCells
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .noFloor
+	cp d
+	jr nz, .skipX
+	ld a, [hli]
+	cp e
+	jr z, .yesFloor
+	jr .loop
+.skipX
+	inc hl
+	jr .loop
+.yesFloor
+	scf
+	jr .done
+.noFloor
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+JohtoCherrygroveShoreFloorCells::
+	db 12, 4
+	db 12, 5
+	db 12, 6
+	db 12, 7
+	db 13, 4
+	db 13, 5
+	db 13, 6
+	db 13, 7
+	db $ff
+JohtoCherrygroveShoreFloorCellsEnd::
+ASSERT JohtoCherrygroveShoreFloorCellsEnd - JohtoCherrygroveShoreFloorCells == 8 * 2 + 1
 
 ; The only Gold CUT_TREE in Violet is at (x=36,y=19), directly next to a
 ; HEADBUTT_TREE at (37,19). The original block $63 must be present: once
@@ -348,3 +505,152 @@ JohtoVioletGoldWaterCells::
 	db $ff
 JohtoVioletGoldWaterCellsEnd::
 ASSERT JohtoVioletGoldWaterCellsEnd - JohtoVioletGoldWaterCells == 140 * 2 + 1
+
+; Gold CherrygroveCity WATER collision cells (40x18). Source coordinates are
+; compared by tools/johto_surf_preflight.py against the original Gold assets.
+JohtoCherrygroveGoldWaterCells::
+	db 0, 34
+	db 0, 35
+	db 0, 36
+	db 0, 37
+	db 1, 34
+	db 1, 35
+	db 1, 36
+	db 1, 37
+	db 4, 0
+	db 4, 1
+	db 4, 4
+	db 4, 5
+	db 4, 6
+	db 4, 7
+	db 5, 0
+	db 5, 1
+	db 5, 4
+	db 5, 5
+	db 5, 6
+	db 5, 7
+	db 6, 0
+	db 6, 1
+	db 6, 2
+	db 6, 4
+	db 6, 5
+	db 6, 6
+	db 6, 7
+	db 6, 8
+	db 6, 9
+	db 7, 0
+	db 7, 1
+	db 7, 2
+	db 7, 4
+	db 7, 5
+	db 7, 6
+	db 7, 7
+	db 7, 8
+	db 7, 9
+	db 8, 4
+	db 8, 5
+	db 8, 6
+	db 8, 7
+	db 8, 8
+	db 8, 9
+	db 9, 2
+	db 9, 3
+	db 9, 4
+	db 9, 5
+	db 9, 6
+	db 9, 7
+	db 9, 8
+	db 9, 9
+	db 10, 1
+	db 10, 2
+	db 10, 3
+	db 10, 6
+	db 10, 7
+	db 10, 8
+	db 10, 9
+	db 10, 10
+	db 10, 11
+	db 10, 12
+	db 10, 13
+	db 11, 1
+	db 11, 2
+	db 11, 3
+	db 11, 6
+	db 11, 7
+	db 11, 8
+	db 11, 9
+	db 11, 10
+	db 11, 11
+	db 11, 12
+	db 11, 13
+	db 12, 1
+	db 12, 2
+	db 12, 3
+	db 12, 8
+	db 12, 9
+	db 12, 10
+	db 12, 11
+	db 12, 12
+	db 12, 13
+	db 12, 14
+	db 12, 15
+	db 13, 1
+	db 13, 2
+	db 13, 3
+	db 13, 8
+	db 13, 9
+	db 13, 10
+	db 13, 11
+	db 13, 12
+	db 13, 13
+	db 13, 14
+	db 13, 15
+	db 14, 1
+	db 14, 2
+	db 14, 3
+	db 14, 4
+	db 14, 5
+	db 14, 6
+	db 14, 7
+	db 14, 8
+	db 14, 9
+	db 14, 10
+	db 14, 11
+	db 14, 16
+	db 14, 17
+	db 15, 1
+	db 15, 2
+	db 15, 3
+	db 15, 4
+	db 15, 5
+	db 15, 6
+	db 15, 7
+	db 15, 8
+	db 15, 9
+	db 15, 10
+	db 15, 11
+	db 15, 13
+	db 15, 16
+	db 15, 17
+	db 16, 2
+	db 16, 3
+	db 16, 8
+	db 16, 9
+	db 16, 10
+	db 16, 11
+	db 16, 13
+	db 16, 14
+	db 16, 15
+	db 16, 16
+	db 16, 17
+	db 17, 0
+	db 17, 5
+	db 17, 6
+	db 17, 13
+	db 17, 14
+	db 17, 15
+	db 17, 16
+	db 17, 17
+	db $ff
+JohtoCherrygroveGoldWaterCellsEnd::
+ASSERT JohtoCherrygroveGoldWaterCellsEnd - JohtoCherrygroveGoldWaterCells == 142 * 2 + 1

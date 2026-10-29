@@ -7,7 +7,9 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
+	; CHERRY-250: allow exact Gold FLOOR at the southwest shore and normal walking.
+	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "PAL-5.62.248@"
+	db "PAL-5.62.250@"
 ENDC

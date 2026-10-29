@@ -3444,6 +3444,8 @@ SendNewMonToBox:
 ; used for surfing and fishing
 ; unsets carry if it is, sets carry if not
 IsNextTileShoreOrWater:
+	callab JohtoCherrygroveWaterAhead
+	jr c, .shoreOrWater
 	callab JohtoVioletWaterAhead
 	jr c, .shoreOrWater
 	ld a, [wCurMapTileset]

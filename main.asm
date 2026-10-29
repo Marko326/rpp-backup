@@ -3395,8 +3395,8 @@ INCLUDE "data/johto_gate_runtime.asm"
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"
 
-; Only one city's terrain abilities; keep the large Gold coordinate table
-; away from ROM0, Bank $03 and the already full legacy field move sections.
+; Map-local Johto terrain abilities; keep Gold coordinate tables away from
+; ROM0, Bank $03 and the already full legacy field move sections.
 SECTION "Johto Violet Field Skills", ROMX
 INCLUDE "engine/johto_violet_field_skills.asm"
 

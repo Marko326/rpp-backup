@@ -37,3 +37,28 @@ python -m unittest discover -s tools/tests -p test_johto_surf_preflight.py
 5. 用户在手机上分别验证：从各岸边入水、四向移动、靠合法岸上岸并继续行走、非法墙不出水、重新入水、冲浪音乐/切图/存读档，以及关都正常。
 
 **限制**：本工具不是 Game Boy CPU 仿真器，不执行 ROM 链接或音频与玩家操作。它能拦截这次遗漏的代码模式，不能保证未来所有地图自动一次成功。
+
+## 活动地图的缺失水域盘点（新增 Surf coverage audit）
+
+`johto_surf_preflight.py` 只检查合同中**已经登记**的 helper，不能发现其他
+已开放地图里尚未实现的 Gold WATER。新增只读
+`tools/johto_surf_coverage_audit.py` 专门补上这一点：
+
+```bash
+python tools/johto_surf_coverage_audit.py --gold /Gold源码根目录
+python tools/johto_surf_coverage_audit.py --gold /Gold源码根目录 --require-map CherrygroveCity
+```
+
+它直接读取当前活动 Source + Runtime Descriptor，而不把 `maps/johto_staged/`
+中的尚未开放素材算作运行地图；用 Gold `.blk` + `*_collision.asm` 逐格计算
+`WATER` 数量，并验证当前 `.gold.blk` 与 Gold 原始文件字节一致。
+默认 `NewBarkTown` 标记 `DEFERRED`（用户要求暂时跳过东侧水域）。
+`REGISTERED` 只表示存在合格的源码合同，不代表 ROM 编译或手机实测。
+
+2026-10-29 的 PAL-5.62.248 结果：吉花市 142、30 号路 32、31 号路 44、
+32 号路 278 格 `MISSING_SURF`；桔梗市 140 格 `REGISTERED`；若叶镇
+8 格 `DEFERRED`。下一个测试目标是吉花市，不需要提前开放联合洞穴。
+
+交付新水域代码前，先运行覆盖盘点（目标地图必须从 `MISSING_SURF`
+转为 `REGISTERED`），再运行原有 `johto_surf_preflight.py --gold`、
+专项负向测试与 ASM 预检；用户的 RGBDS 编译和实机上/下岸验收仍是独立关卡。

@@ -1571,6 +1571,16 @@ CollisionCheckOnLand::
 ; clears carry if it is, sets carry if not
 CheckTilePassable::
 	predef GetTileAndCoordsInFrontOfPlayer ; get tile in front of player
+	; CHERRY-250: Gold FLOOR uses compact visual tile $3c on the
+	; isolated south-west platform. $3c also draws walls; never whitelist it.
+	ld a, [wTileInFrontOfPlayer]
+	cp $3c
+	jr nz, .normalTilePassability
+	callab JohtoCherrygroveShoreFloorAhead
+	jr nc, .normalTilePassability
+	and a ; return carry clear: exactly this Gold FLOOR is walkable
+	ret
+.normalTilePassability
 	ld a,[wTileInFrontOfPlayer] ; tile in front of player
 	ld c,a
 	ld hl,wTilesetCollisionPtr ; pointer to list of passable tiles
@@ -2041,12 +2051,26 @@ CollisionCheckOnWater::
 	jr nz, .legacySurfTile
 	ld a, [wCurLocalMapID]
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
-	jr nz, .legacySurfTile
+	jr nz, .checkCherrygroveSurf
 	callab JohtoVioletWaterAhead
 	jp c, .noCollision
-	; VIOLET-248: the map-local water query answers only WATER vs non-WATER.
-	; Restore the actual front tile in C before the legacy passable-shore scan,
-	; matching the old Johto Surf helper's landing path.
+	; VIOLET-248: restore the actual front tile in C before the legacy
+	; passable-shore scan when the map-local water query says non-water.
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
+	jr .checkIfNextTileIsPassable
+.checkCherrygroveSurf
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr nz, .legacySurfTile
+	callab JohtoCherrygroveWaterAhead
+	jp c, .noCollision
+	; CHERRY-250: Gold marks the south-west rock platform as FLOOR, but
+	; its compact tile $3c is not in the global passability whitelist.
+	; Disembark only onto the eight explicitly audited Gold FLOOR cells.
+	callab JohtoCherrygroveShoreFloorAhead
+	jp c, .stopSurfing
+	; Cherrygrove uses the same safe disembark path as Violet: only Gold
+	; WATER cells bypass collision; the real shore tile must be scanned.
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a
 	jr .checkIfNextTileIsPassable
