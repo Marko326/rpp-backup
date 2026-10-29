@@ -935,6 +935,75 @@ ResolveMusicStyle::
 	ret nc
 	call ReadMusicStyleState
 	ld b,a
+	; PAL241: a Gold scene can share the RBY song ID of another town.
+	; Apply per-scene GSC mapping only to the currently requested map BGM.
+	; Bike Song Off still uses the map's walking BGM when riding.
+	ld a, [wWalkBikeSurfState]
+	and a
+	jr z, .checkJohtoMapSong
+	cp 1
+	jp nz, .legacyStyle
+	bit MUSIC_STYLE_BIKE_SONG_OFF_BIT, b
+	jp z, .legacyStyle
+.checkJohtoMapSong
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jp nz, .legacyStyle
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .legacyStyle
+	ld a, [wMapMusicSoundID]
+	cp e
+	jp nz, .legacyStyle
+	call LookupJohtoMapGSCMusic
+	and a
+	jp z, .legacyStyle
+	ld c, a ; Gold scene counterpart, not generic RBY song mapping
+	ld a, b
+	and MUSIC_STYLE_BASE_MASK
+	cp MUSIC_STYLE_GSC
+	jr z, .johtoGSC
+	cp MUSIC_STYLE_RND
+	jr z, .johtoRND
+	jp .legacyStyle ; MUS-242: RBY/RBY+C share existing base-style path
+.johtoGSC
+	bit MUSIC_STYLE_GSC_CUSTOM_BIT, b
+	jr z, .johtoUseGSC
+	ld hl, MusicStyleCSTMMap
+	call LookupMusicStyleMap
+	and a
+	jr z, .johtoUseGSC
+	ld e, a
+	ret
+.johtoUseGSC
+	ld e, c
+	ret
+.johtoRND
+	; RND rolls only at normal song-start time, and only within this
+	; map's RBY / Gold / optional custom counterparts.
+	ld hl, MusicStyleCSTMMap
+	call LookupMusicStyleMap
+	and a
+	jr z, .johtoRNDTwice
+	ld b, a
+.johtoRNDThree
+	call Random
+	and 3
+	cp 3
+	jr z, .johtoRNDThree
+	and a
+	ret z
+	cp 1
+	jr z, .johtoUseGSC
+	ld e, b
+	ret
+.johtoRNDTwice
+	call Random
+	and 1
+	ret z
+	jr .johtoUseGSC
+.legacyStyle
+	ld a, b
 	and MUSIC_STYLE_BASE_MASK
 	cp MUSIC_STYLE_RND
 	jr z,.random
@@ -1076,6 +1145,115 @@ LookupMusicStyleRandomExtras:
 	jr .loop
 .found
 	ld a,[hli]
+	ret
+
+; Gold scene lookup for the *eight active* PAL241 native maps, not the old
+; NPC branch mapconst numbers (which are NOT the shared $FC runtime identity).
+; E=RBY song request; B=packed style. Output A=GSC counterpart or 0.
+; Preserve B and E. `GetJohtoActiveSlot` returns compact slot through E.
+LookupJohtoMapGSCMusic:
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jp nz, .unresolved
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .unresolved
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+	jr nz, .activeSlot
+	; Source is written at the actual registered Warp, before $FC is reused.
+	ld a, [wJohtoGateMusicSourceLocalID]
+	cp JOHTO_VIOLET_CITY_LOCAL_ID
+	jr z, .violetGate
+	ld a, MUSIC_GBP_GSC_ROUTE30 ; Route31, or safe unknown fallback
+	ret
+.violetGate
+	ld a, MUSIC_GBP_GSC_VIOLET_CITY
+	ret
+.activeSlot
+	push bc
+	push de
+	ld e, a
+	callab GetJohtoActiveSlot
+	ld a, e
+	pop de
+	cp JOHTO_INVALID_ACTIVE_SLOT
+	jr z, .popUnresolved
+	ld c, a
+	ld b, 0
+	ld hl, JohtoActiveGSCMusic
+	add hl, bc
+	ld a, [hl]
+	pop bc
+	ret
+.popUnresolved
+	pop bc
+.unresolved
+	xor a
+	ret
+
+JohtoActiveGSCMusic::
+	; Slot order from data/johto_stable_id_slots.asm, NOT stable ID order.
+	db MUSIC_GBP_GSC_NEW_BARK_TOWN   ; slot 0: ID 0 NewBark
+	db MUSIC_GBP_GSC_ROUTE29         ; slot 1: ID 1 Route29
+	db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot 2: ID 2 Cherrygrove
+	db MUSIC_GBP_GSC_ROUTE30         ; slot 3: ID 3 Route30
+	db MUSIC_GBP_GSC_ROUTE30         ; slot 4: ID 4 Route31 (Gold MUSIC_ROUTE_30)
+	db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot 5: ID125 GuideGentsHouse
+	db MUSIC_GBP_GSC_VIOLET_CITY     ; slot 6: ID 5 VioletCity
+	db 0                             ; slot 7: ID 6 gate, source-dependent
+JohtoActiveGSCMusicEnd::
+ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
+
+; Maintain per-Gold-scene cache independently of the original RBY ID.
+; Clears the raw song cache only when a true GSC/RND scene changes.
+; The previous scene cache occupies a formerly unused existing WRAM byte;
+; this function never adds to save size or rewrites any legacy map IDs.
+CheckJohtoMusicSceneTransition::
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .kantoScene
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .kantoScene
+	ld a, [wMapMusicSoundID]
+	ld e, a
+	call LookupJohtoMapGSCMusic
+	and a
+	jr z, .unresolvedScene
+	ld c, a
+	ld a, [wLastJohtoMusicSceneID]
+	cp c
+	ret z
+	ld a, c
+	ld [wLastJohtoMusicSceneID], a
+	jr .considerRestart
+.kantoScene
+	ld a, [wLastJohtoMusicSceneID]
+	and a
+	ret z
+.unresolvedScene
+	xor a
+	ld [wLastJohtoMusicSceneID], a
+.considerRestart
+	call ReadMusicStyleState
+	and MUSIC_STYLE_BASE_MASK
+	cp MUSIC_STYLE_GSC
+	jr z, .checkWalking
+	cp MUSIC_STYLE_RND
+	ret nz
+.checkWalking
+	ld a, [wWalkBikeSurfState]
+	and a
+	jr z, .invalidateRawSong
+	cp 1
+	ret nz
+	ld a, [wMusicStyle]
+	bit MUSIC_STYLE_BIKE_SONG_OFF_BIT, a
+	ret z
+.invalidateRawSong
+	xor a
+	ld [wLastMusicSoundID], a
 	ret
 
 ; Legacy RBY ID -> corresponding GSC direct-select ID.

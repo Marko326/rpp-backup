@@ -7,6 +7,6 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
-	; P4-006: avoid restarting current BGM on bicycle mount/dismount with Bike Song Off.
-	db "PAL-5.62.239@"
+	; MUS-241: Gold-scene mapping and neutral gate source continuity.
+	db "PAL-5.62.243@"
 ENDC

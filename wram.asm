@@ -3629,8 +3629,12 @@ ENDC
 wSecondLockTrashCanIndex:: ; d7c8, old unused index
 	ds 1
 
-; unused?
-	ds 2
+; MUS-PAL241: two formerly unallocated saved bytes at $D7C9/$D7CA.
+; Keep all subsequent WRAM/SRAM offsets unchanged; source is the real Johto
+; stable ID captured only on a registered gate-entry Warp (not legacy $FC).
+; Music scene ID is a cache, 0 = unknown/legacy Kanto; not a save identity.
+wJohtoGateMusicSourceLocalID:: ds 1 ; $D7C9
+wLastJohtoMusicSceneID:: ds 1       ; $D7CA
 ; EVC-5.46.02: keep this address annotation synchronized with the linked map.
 wEventFlags:: ; d7cb
 	ds 139

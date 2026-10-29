@@ -187,6 +187,15 @@ JohtoPilotResolveRegisteredWarp::
     ld e, [hl]
     ret
 .toJohto
+    ; PAL241: registered gate entry knows the actual stable source in C.
+    ; wWarpedFromWhichMap holds only $FC for *every* native Johto map.
+    ; Never use wLastMap or an old physical mapconst to infer gate music.
+    ld a, [hl]
+    cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    jr nz, .notGateMusicEntry
+    ld a, c
+    ld [wJohtoGateMusicSourceLocalID], a
+.notGateMusicEntry
     ld e, [hl] ; target stable ID
     call GetJohtoActiveSlot
     ld a, e
@@ -281,6 +290,22 @@ JohtoPilotLoadMapMusic::
     ld [wMapMusicSoundID], a
     ld a, [hl]
     ld [wMapMusicROMBank], a
+    ; Original Gold gate music is Route30. For a neutral transition gate,
+    ; preserve the arriving side's legacy RBY BGM as well as its GSC theme.
+    ; Only the registered gate uses this source; other indoor maps use their
+    ; own active profile and must not inherit an unrelated prior song.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    ret nz
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    jr z, .fromViolet
+    ld a, MUSIC_ROUTES1 ; Route31, or unknown source on an old save
+    jr .setGateSong
+.fromViolet
+    ld a, MUSIC_CITIES1
+.setGateSong
+    ld [wMapMusicSoundID], a
     ret
 
 

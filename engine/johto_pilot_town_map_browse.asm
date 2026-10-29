@@ -33,6 +33,38 @@ LoadJohtoBrowseEntry::
 	pop de
 	ret
 
+; LOC-240: shared Continue/Save info name provider. Both menu pages call this
+; through callba, so nothing needs to be added to near-full bank $1C.
+; The legacy LoadTownMapEntry can return a name pointer in a different ROM bank
+; (e.g. Violet City's name is in bank $35), which becomes invalid when the
+; calling bank $1C tries to read the name. Copy Johto's browse name into WRAM
+; while this bank is selected instead. Do not change Kanto's existing path.
+GetCurrentMapNameForSaveScreen::
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .kanto
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .kanto
+	; Stable ID -> active-slot profile -> Gold browse landmark; a house
+	; inherits its city, and the neutral gate inherits the Route31 anchor.
+	callab JohtoPilotGetTownMapLandmark ; E = landmark index
+	call LoadJohtoBrowseEntry          ; wBuffer = copied name ending in @
+	ld hl, wBuffer
+.replaceLineBreak
+	ld a, [hl]
+	cp "@"
+	ret z
+	cp "_"
+	jr nz, .nextChar
+	ld [hl], " "
+.nextChar
+	inc hl
+	jr .replaceLineBreak
+.kanto
+	callab GetMapNameForSaveScreen
+	ret
+
 ; Gold original browse order (45 landmarks, independently of map unlocks). All Johto landmarks remain visible,
 ; independently of visited flags, Fly registrations, and unfinished maps.
 JohtoBrowseEntries:

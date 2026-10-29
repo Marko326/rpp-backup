@@ -426,8 +426,9 @@ DisplayContinueGameInfo:
 	call TextBoxBorder
 
 ; Display the current Town Map legend on one line.
-; GetMapNameForSaveScreen reads wCurMap after the bank switch.
-	callba GetMapNameForSaveScreen
+; LOC-240: Johto uses a shared $FC handle. Copy its name from the
+; correct ROM bank before displaying it; keep Kanto's existing lookup.
+	callba GetCurrentMapNameForSaveScreen
 	coord hl, 3, 8
 	ld de, wBuffer
 	call PlaceString
@@ -461,8 +462,9 @@ PrintSaveScreenText:
 	call UpdateSprites
 
 ; Display the current Town Map legend on one line.
-; GetMapNameForSaveScreen reads wCurMap after the bank switch.
-	callba GetMapNameForSaveScreen
+; LOC-240: Johto uses a shared $FC handle. Copy its name from the
+; correct ROM bank before displaying it; keep Kanto's existing lookup.
+	callba GetCurrentMapNameForSaveScreen
 	coord hl, 3, 2
 	ld de, wBuffer
 	call PlaceString

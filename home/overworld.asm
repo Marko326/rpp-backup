@@ -807,7 +807,7 @@ CheckMapConnections::
 	ld b,a
 	ld a,[wCurrentMapHeight2]
 	cp b
-	jr nz,.didNotEnterConnectedMap
+	jp nz,.didNotEnterConnectedMap
 	ld a,[wMapConn2Ptr]
 	ld e,a
 	ld d,SOUTH
@@ -834,8 +834,62 @@ CheckMapConnections::
 	ld a,h
 	ld [wCurrentTileBlockMapViewPointer + 1],a
 .loadNewMap ; load the connected map that was entered
+	; MUS-243: snapshot the *source* Gold scene and legacy map BGM before
+	; LoadMapHeader changes the $FC stable map ID and its song profile.
+	; This path is for seamless connections, not warps or battle returns.
+	ld a, [wLastJohtoMusicSceneID]
+	ld b, a
+	ld a, [wMapMusicSoundID]
+	ld c, a
+	push bc
 	call LoadMapHeader
+	pop bc
+	; Gold's FadeToMapMusic/PlayMapMusic keeps the playback cursor when the
+	; requested song is already playing. Preserve the same invariant across
+	; two directly connected Johto maps (Route30 <-> Route31).
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .playConnectedMapMusic
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .playConnectedMapMusic
+	ld a, b
+	and a ; unknown old scene must not suppress a needed start
+	jr z, .playConnectedMapMusic
+	ld a, [wLastJohtoMusicSceneID]
+	cp b
+	jr nz, .playConnectedMapMusic
+	ld a, [wMapMusicSoundID]
+	cp c
+	jr nz, .playConnectedMapMusic
+	ld a, [wWalkBikeSurfState]
+	and a
+	jr z, .connectedMapWalking
+	cp 1
+	jr z, .connectedMapBike
+	cp 2
+	jr z, .connectedMapSurf
+	jr .playConnectedMapMusic
+.connectedMapBike
+	ld a, [wMusicStyle]
+	bit MUSIC_STYLE_BIKE_SONG_OFF_BIT, a
+	jr nz, .connectedMapWalking
+	ld a, [wLastMusicSoundID]
+	cp MUSIC_BIKE_RIDING
+	jr z, .keepConnectedMapMusic
+	jr .playConnectedMapMusic
+.connectedMapSurf
+	ld a, [wLastMusicSoundID]
+	cp MUSIC_SURFING
+	jr z, .keepConnectedMapMusic
+	jr .playConnectedMapMusic
+.connectedMapWalking
+	ld a, [wLastMusicSoundID]
+	cp c
+	jr z, .keepConnectedMapMusic
+.playConnectedMapMusic
 	call PlayDefaultMusicFadeOutCurrent
+.keepConnectedMapMusic
 	ld b, SET_PAL_OVERWORLD
 	call RunPaletteCommand
 ; Since the sprite set shouldn't change, this will just update VRAM slots at
@@ -2391,9 +2445,13 @@ LoadMapHeader::
 	pop af
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a
-	ret
+	jr .musicSceneLoaded
 .loadJohtoPilotMusic
 	callab JohtoPilotLoadMapMusic
+.musicSceneLoaded
+	; The RBY song cache alone cannot identify two different Gold scenes.
+	; Keep the cross-bank transition check separate from name-sign events.
+	callba CheckJohtoMusicSceneTransition
 	ret
 
 ; function to copy map connection data from ROM to WRAM
