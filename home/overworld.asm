@@ -2169,7 +2169,19 @@ LoadMapHeader::
 	ld [wCurMapTileset],a
 	ld [hPreviousTileset],a
 	bit 7,b
-	ret nz
+	jr z, .readMapHeader
+	; SAV-244: Continue restores map state from SRAM rather than ROM headers,
+	; but the stored tileset pointers can be stale after a ROM update.
+	; Rebuild the pointer block without warping the player off the saved tile.
+	ld a, [wDestinationWarpID]
+	push af
+	ld a, $ff
+	ld [wDestinationWarpID], a
+	predef LoadTilesetHeader
+	pop af
+	ld [wDestinationWarpID], a
+	ret
+.readMapHeader
 	ld a, [wCurMap]
 	cp JOHTO_RUNTIME_MAP_HANDLE
 	jr nz, .kantoHeader
