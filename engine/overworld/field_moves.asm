@@ -321,7 +321,7 @@ WaterTilesets2: ; Renamed from what Yenatch called it, since that had overlap er
 	db -1
 
 IsCutTile:
-	callab JohtoVioletCutTreeAhead
+	callab JohtoPilotCutTreeAhead
 	ret c
 	ld a, [wCurMapTileset]
 	and a ; OVERWORLD

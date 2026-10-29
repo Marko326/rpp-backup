@@ -3387,8 +3387,8 @@ INCLUDE "data/johto_route32_runtime.asm"
 SECTION "Johto Gold First Indoor House", ROMX, BANK[$46]
 INCLUDE "data/johto_indoor_house.asm"
 
-; No free room in legacy Bank $06; preserve shared RPP hop animation,
-; and dispatch the original Route 29 tile-pairs using Johto stable local ID 1.
+; Preserve shared RPP hop animation and dispatch Gold-verified Johto ledge
+; tile-pairs only for active stable map IDs (Route29/30/31/32 and Violet).
 SECTION "Johto Route31 Violet Gate", ROMX, BANK[$47]
 INCLUDE "data/johto_gate_runtime.asm"
 
@@ -3397,7 +3397,10 @@ INCLUDE "engine/overworld/ledges.asm"
 
 ; Map-local Johto terrain abilities; keep Gold coordinate tables away from
 ; ROM0, Bank $03 and the already full legacy field move sections.
-SECTION "Johto Violet Field Skills", ROMX
+; ROUTES-252: move the entire existing field-skills section (same labels and
+; farcall interface) to unused expansion bank $48; the former auto-placed
+; bank was almost full after ROUTES-251. No new Bank $03 calls.
+SECTION "Johto Violet Field Skills", ROMX, BANK[$48]
 INCLUDE "engine/johto_violet_field_skills.asm"
 
 ; Gold-derived Johto Town Map art and its 20x18 KMP tilemap live outside the

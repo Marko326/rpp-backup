@@ -47,7 +47,7 @@ A: The only "Event Shiny" for now is the Magikarp you buy in the Mt. Moon Pokéc
 A: Yes, Dark Steel and Fairy are all in, and type strengths/weaknesses match Gen 6.
 
 ### Q: Can I go to Johto?
-A: There is only Kanto for now. Johto is part of the ongoing copy of v4 in the main repo.
+A: This branch now includes a limited Johto pilot area. Only the nine maps listed as active in [docs/JOHTO_MIGRATION.md](docs/JOHTO_MIGRATION.md) are enabled; staged resources such as Union Cave, Route 33, and Azalea Town are not yet playable.
 
 ### Q: Will you add so-and-so feature?
 A: Maybe!

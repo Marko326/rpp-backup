@@ -10,8 +10,8 @@ HandleLedges:
 	ld hl, LedgeTiles
 	jr .checkPairs
 .johtoPilot
-	; Source-audited Route29/30/31 use RPP-native cliff pairs.
-	; Route31 has one additional right-hop pair; do not enable globally.
+	; Source-audited Route29/30/31/32 and Violet use RPP-native cliff pairs.
+	; Route31/32 share the additional right-hop pair; do not enable globally.
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
 	ret nz
@@ -24,7 +24,12 @@ HandleLedges:
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jr z, .supportedJohtoLedges
 	cp JOHTO_ROUTE_31_LOCAL_ID
+	jr z, .route31PairTable
+	cp JOHTO_ROUTE_32_LOCAL_ID
 	ret nz
+.route31PairTable
+	; Gold Route32 uses the same verified $05/$20, $06/$30 and $05/$21
+	; tile-pair families as Route31. Keep the dispatch map-specific.
 	ld hl, JohtoPilotRoute31LedgeTiles
 	jr .checkPairs
 .supportedJohtoLedges

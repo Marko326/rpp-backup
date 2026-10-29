@@ -1,3 +1,12 @@
+## ROUTES-251 / PAL-5.62.251 — 30、31号道路 Surf/Cut 开发候选（待本机验收）
+
+- [x] 用户提供最新 `.250` 干净 HEAD 导出与 Gold 原版参考；沿用原有三个 Surf 入口和城都地图身份机制。Route30 32 格水面＋1处 Cut、Route31 44 格水面＋2处 Cut 已登记，工具 Gold 逐格核对通过。
+- [x] 两图地图专属水域查询、精确 Cut 及单象限替换图块；保持邻接摇树、关都徽章门槛、已有9活动地图、若叶镇东侧暂缓。Bank `$03` 用既有 Surf/Cut 远调用入口、只增加6B Cut 交换映射。
+- [x] `tools/johto_surf_contracts.json`、负向测试与 Gold 岸线审计同步更新；完整测试145项（143通过、2跳过）；迁移69/69、门房12/12、Warp17/17、ASM符号预检2067。
+- [ ] 用户本机正式红蓝和 TEST 红蓝编译及**新 MAP** 检查，尤其 Bank `$03`；手机 Route30、Route31 逐树 Cut、两片 Route30 水域及 Route31 岸边上下水、走动、原路返回、跳崖、存档 Continue。静态 PASS 不等于 ROM 可链接或手机 PASS。
+- [ ] Route32 278 WATER／1 Cut 待下轮，Route29 两棵 Cut 另待办；若叶镇东侧保持 DEFERRED，不开放联合洞穴或新增剧情。
+- 详细技术与验收清单：`docs/JOHTO_ROUTE30_ROUTE31_FIELD_251.md`。本轮仅开发互斥补丁，**尚无 Git 提交**。
+
 ## CHERRY-250-ACC-001 / PAL-5.62.250 — 吉花市 Surf 阶段提交收口
 
 - [x] 核对 `.248` 用户上传的干净基线 HEAD `d1d833b6`，恢复 CHERRY-249 + CHERRY-250 的累计差异，复用 Gold 与旧 NPC 金银分支资料。

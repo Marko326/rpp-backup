@@ -51,8 +51,8 @@ class CoverageTests(unittest.TestCase):
             'NewBarkTown': (8, 'DEFERRED'),
             'Route29': (0, 'NO_WATER'),
             'CherrygroveCity': (142, 'REGISTERED'),
-            'Route30': (32, 'MISSING_SURF'),
-            'Route31': (44, 'MISSING_SURF'),
+            'Route30': (32, 'REGISTERED'),
+            'Route31': (44, 'REGISTERED'),
             'GuideGentsHouse': (0, 'NO_WATER'),
             'VioletCity': (140, 'REGISTERED'),
             'Route31VioletGate': (0, 'NO_WATER'),
@@ -89,6 +89,8 @@ class CoverageTests(unittest.TestCase):
                      'engine/johto_violet_field_skills.asm',
                      'maps/johto_pilot/CherrygroveCity.runtime.blk',
                      'maps/johto_pilot/VioletCity.runtime.blk',
+                     'maps/johto_pilot/Route30.runtime.blk',
+                     'maps/johto_pilot/Route31.runtime.blk',
                      'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll')
             paths += tuple(x['source_asset'] for x in read_active_maps(ROOT))
             for f in paths:

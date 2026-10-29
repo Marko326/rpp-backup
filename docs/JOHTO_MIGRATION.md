@@ -311,6 +311,10 @@
 - maps/NewBarkTown.blk: Gold 90B SHA256 41a1012a051d22ade1b6cdb14577c4b6ad3e195be7024d6f3a020a9f7f5fedd3; NPC reference 90B SHA256 b210de4425e931debf49253868cb0e35ddf4c8bf8a4e3881f7f040f819f251e8; changed cells 1 (0-index): 39:$54->$01
 - maps/Route29.blk: Gold 270B SHA256 c64074bce43b16b161497c18245b52bf5e660eb34d0cb3b717b606aa01f735e9; NPC reference 270B SHA256 458b83be91980e911c3fb8f53ff59f7b15c484eadc4647257f8a9093b956acd8; changed cells 19 (0-index): 37:$4f->$83, 65:$4b->$81, 66:$57->$82, 67:$53->$84, 124:$52->$80, 125:$4b->$81, 126:$57->$82, 132:$57->$82, 133:$57->$82, 141:$4f->$83, 171:$4f->$83, 187:$57->$82, 188:$57->$82, 194:$52->$80, 195:$4b->$81, 196:$57->$82, 199:$57->$82, 200:$57->$82, 201:$53->$84
 
+#### MAP-5.62.253 update to the historical New Bark difference
+
+The earlier `NewBarkTown.blk` offset 39 difference (`Gold $54 -> NPC/runtime $01`) was intentional while New Bark Surf remained deferred. MAP-5.62.253 explicitly enables that pond, so `maps/johto_pilot/NewBarkTown.runtime.blk` now restores offset 39 to `$54` to match the original Gold water block. The exact 8 WATER cells are registered and the runtime art is checked against the non-walkable collision whitelist; the historical source-difference record above remains as an archive of the earlier state.
+
 ## 后续活动地图启用门槛
 
 1. 将地图头、Tileset/GFX、Blockset、NPC/文本和碰撞实现转成双地区+稳定 local ID 机制。

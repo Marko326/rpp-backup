@@ -227,6 +227,12 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
             errors.append(f'duplicate water helper registration: {helper}')
         declared.add(helper)
 
+    # When a ROM bank has no room for another farcall, a registered
+    # entrypoint_helper may forward to the map helper *in its own ROMX bank*.
+    # The branch and carry must still be verified, not blindly trusted.
+    delegated = {entry['water_helper']: entry['entrypoint_helper']
+                 for entry in maps if entry.get('entrypoint_helper')}
+    endpoints = {delegated.get(helper, helper) for helper in declared}
     texts = {}
     for filename in ENTRYPOINTS:
         try:
@@ -242,8 +248,8 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
             errors.append(f'{filename}: {exc}')
             continue
         actual = local_water_helpers(body)
-        missing = declared - actual
-        undeclared = actual - declared
+        missing = endpoints - actual
+        undeclared = actual - declared  # the water-movement path may query routes directly
         for helper in sorted(missing):
             errors.append(f'{filename}::{label}: missing {helper} call')
         for helper in sorted(undeclared):
@@ -258,9 +264,10 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
         helper = entry.get('water_helper')
         if helper not in declared:
             continue
+        endpoint = delegated.get(helper, helper)
         for filename, expected in carry_contracts.items():
             body = routine(texts[filename], ENTRYPOINTS[filename])
-            if not re.search(rf'(?m)^callab\s+{re.escape(helper)}\s*\n{expected}\s*$', body):
+            if not re.search(rf'(?m)^callab\s+{re.escape(endpoint)}\s*\n{expected}\s*$', body):
                 errors.append(f'{filename}: {helper} carry polarity/dispatch incorrect')
 
     for entry in maps:
@@ -270,6 +277,20 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
         try:
             asm = (root / entry['routine_file']).read_text(encoding='utf8')
             body = routine(asm, helper)
+            # A bank-local gateway must explicitly forward with unchanged
+            # carry and without allowing non-water to short-circuit other maps.
+            if helper in delegated:
+                gateway = delegated[helper]
+                if gateway not in declared or entry['routine_file'] != next(
+                    (other['routine_file'] for other in maps
+                     if other.get('water_helper') == gateway), None
+                ):
+                    errors.append(f'{helper}: invalid bank-local Surf gateway {gateway}')
+                else:
+                    gateway_body = routine(asm, gateway)
+                    if not re.search(rf'(?m)^call\s+{re.escape(helper)}\s*\nret c\s*$',
+                                     gateway_body):
+                        errors.append(f'{helper}: missing carry-safe bank-local dispatch in {gateway}')
             predicate = entry['map_scope_predicate']
             if f'call {predicate}' not in body:
                 errors.append(f'{helper}: does not invoke map-scope predicate {predicate}')

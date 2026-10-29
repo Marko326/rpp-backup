@@ -267,6 +267,8 @@ UpdateMapNameSign::
 	jr z, .johtoRoute31
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jr z, .johtoViolet
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr z, .johtoRoute32
 	; A neutral gate reached by Continue has no outdoor source saved
 	; for sign purposes. Store a harmless placeholder without showing.
 	; Unknown Johto maps must never consult the Kanto $FC entry.
@@ -289,6 +291,9 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoViolet
 	ld hl, .JohtoVioletName
+	jr .johtoResolved
+.johtoRoute32
+	ld hl, .JohtoRoute32Name
 .johtoResolved
 	ld b, 0
 	ret
@@ -983,3 +988,4 @@ UpdateMapNameSign::
 .JohtoRoute30Name:      db "Route 30@"
 .JohtoRoute31Name:      db "Route 31@"
 .JohtoVioletName:       db "Violet City@"
+.JohtoRoute32Name:      db "Route 32@"

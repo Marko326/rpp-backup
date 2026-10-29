@@ -67,6 +67,7 @@ These are notable features which have been added
 * Ability to use Headbutt outside of Battle, like GSC or HGSS
 * Flash is a TM instead of an HM
 * New areas in Kanto
+* Limited Johto pilot area: New Bark Town, Route 29, Cherrygrove City, Route 30, Route 31, Guide Gent's House, Violet City, Route 31 Gate, and Route 32. Active-map Surf, Cut, ledge movement, and the Route 31 Gate bike exception follow Gold-scoped map rules; staged maps remain disabled.
 * Navel Rock, Faraway Island, and Southern Island from Pokémon Emerald are all included
 * Breeding at the Day-Care
 * Smarter AI for Boss trainers (Normal Patch) or All Trainers (Hard Patch)

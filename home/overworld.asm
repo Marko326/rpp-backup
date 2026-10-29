@@ -1099,10 +1099,22 @@ LoadPlayerSpriteGraphics::
 	jp LoadWalkingPlayerSpriteGraphics
 
 IsBikeRidingAllowed::
-; The bike can be used on Route 23 and Indigo Plateau,
-; or maps with tilesets in BikeRidingTilesets.
-; Return carry if biking is allowed.
-
+; GATE-252: Gold allows biking in gate environments, but the Red++
+; legacy tileset list does not include the Johto gate art. Permit ONLY
+; the already-active Route31/Violet gate by its region + stable identity.
+; Do not allow Johto houses or Kanto indoor maps as a side effect.
+; All callers (item, shortcut, warp graphics and summary restore) share
+; this one predicate; carry = allowed.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .legacyBike
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jr nz, .legacyBike
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+	jr z, .allowed
+.legacyBike
 	ld a, [wCurMap]
 	cp ROUTE_23
 	jr z, .allowed
@@ -2036,32 +2048,40 @@ CollisionCheckOnWater::
 	ld d,a
 	ld a,[wSpriteStateData1 + 12] ; the player sprite's collision data (bit field) (set in the sprite movement code)
 	and d ; check if a sprite is in the direction the player is trying to go
-	jr nz,.checkIfNextTileIsPassable ; bug?
+	jp nz,.checkIfNextTileIsPassable ; bug?
 	ld hl,TilePairCollisionsWater
 	call CheckForJumpingAndTilePairCollisions
-	jr c,.collision
+	jp c,.collision
 	predef GetTileAndCoordsInFrontOfPlayer ; get tile in front of player (puts it in c and [wTileInFrontOfPlayer])
 	; Exact Gold water collision for Violet only. Other Johto maps retain
 	; their previous closed behavior; never pass by a shared art tile ID.
 	ld a, [wCurMapTileset]
 	cp JOHTO_PILOT
-	jr nz, .legacySurfTile
+	jp nz, .legacySurfTile
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .legacySurfTile
+	jp nz, .legacySurfTile
 	ld a, [wCurLocalMapID]
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
-	jr nz, .checkCherrygroveSurf
+	jr nz, .checkNewBarkSurf
 	callab JohtoVioletWaterAhead
 	jp c, .noCollision
 	; VIOLET-248: restore the actual front tile in C before the legacy
 	; passable-shore scan when the map-local water query says non-water.
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a
+	jp .checkIfNextTileIsPassable
+.checkNewBarkSurf
+	cp JOHTO_NEW_BARK_LOCAL_ID
+	jr nz, .checkCherrygroveSurf
+	callab JohtoNewBarkWaterAhead
+	jp c, .noCollision
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
 	jr .checkIfNextTileIsPassable
 .checkCherrygroveSurf
 	cp JOHTO_CHERRYGROVE_LOCAL_ID
-	jr nz, .legacySurfTile
+	jr nz, .checkRoute30Surf
 	callab JohtoCherrygroveWaterAhead
 	jp c, .noCollision
 	; CHERRY-250: Gold marks the south-west rock platform as FLOOR, but
@@ -2071,6 +2091,33 @@ CollisionCheckOnWater::
 	jp c, .stopSurfing
 	; Cherrygrove uses the same safe disembark path as Violet: only Gold
 	; WATER cells bypass collision; the real shore tile must be scanned.
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
+	jr .checkIfNextTileIsPassable
+.checkRoute30Surf
+	ld a, [wCurLocalMapID] ; previous farcall modifies A
+	cp JOHTO_ROUTE_30_LOCAL_ID
+	jr nz, .checkRoute31Surf
+	callab JohtoRoute30WaterAhead
+	jp c, .noCollision
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
+	jr .checkIfNextTileIsPassable
+.checkRoute31Surf
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_31_LOCAL_ID
+	jr nz, .checkRoute32Surf
+	callab JohtoRoute31WaterAhead
+	jp c, .noCollision
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
+	jr .checkIfNextTileIsPassable
+.checkRoute32Surf
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr nz, .legacySurfTile
+	callab JohtoRoute32WaterAhead
+	jp c, .noCollision
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a
 	jr .checkIfNextTileIsPassable

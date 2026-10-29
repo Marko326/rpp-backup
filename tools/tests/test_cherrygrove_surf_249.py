@@ -35,7 +35,7 @@ class CherrygroveSurf249(unittest.TestCase):
         expected = {
             'engine/overworld/field_moves.asm': r'IsSurfTile::?[\s\S]*?callab JohtoCherrygroveWaterAhead\s+ret c',
             'engine/items/items.asm': r'IsNextTileShoreOrWater::?[\s\S]*?callab JohtoCherrygroveWaterAhead\s+jr c, \.shoreOrWater',
-            'home/overworld.asm': r'\.checkCherrygroveSurf\s+cp JOHTO_CHERRYGROVE_LOCAL_ID\s+jr nz, \.legacySurfTile\s+callab JohtoCherrygroveWaterAhead\s+jp c, \.noCollision\s+callab JohtoCherrygroveShoreFloorAhead\s+jp c, \.stopSurfing\s+ld a, \[wTileInFrontOfPlayer\]\s+ld c, a\s+jr \.checkIfNextTileIsPassable',
+            'home/overworld.asm': r'\.checkCherrygroveSurf\s+cp JOHTO_CHERRYGROVE_LOCAL_ID\s+jr nz, \.checkRoute30Surf\s+callab JohtoCherrygroveWaterAhead\s+jp c, \.noCollision\s+callab JohtoCherrygroveShoreFloorAhead\s+jp c, \.stopSurfing\s+ld a, \[wTileInFrontOfPlayer\]\s+ld c, a\s+jr \.checkIfNextTileIsPassable',
         }
         for filename, pattern in expected.items():
             source = (ROOT / filename).read_text()

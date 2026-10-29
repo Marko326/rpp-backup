@@ -29,10 +29,10 @@ class VioletFieldContract(unittest.TestCase):
 
     def test_all_surf_and_cut_routes_connected(self):
         for path, tokens in {
-            'engine/overworld/field_moves.asm': ('callab JohtoVioletWaterAhead','callab JohtoVioletCutTreeAhead'),
+            'engine/overworld/field_moves.asm': ('callab JohtoVioletWaterAhead','callab JohtoPilotCutTreeAhead'),
             'engine/items/items.asm': ('callab JohtoVioletWaterAhead',),
             'home/overworld.asm': ('callab JohtoVioletWaterAhead',),
-            'engine/overworld/cut.asm': ('callab JohtoVioletCutTreeAhead','db $63, $8D')
+            'engine/overworld/cut.asm': ('callab JohtoPilotCutTreeAhead','db $63, $8D')
         }.items():
             contents=(ROOT/path).read_text()
             for token in tokens:self.assertIn(token,contents)
@@ -40,8 +40,8 @@ class VioletFieldContract(unittest.TestCase):
     def test_live_block_clone_only_replaces_cut_quadrant(self):
         asm=(ROOT/'data/johto_pilot_runtime_assets.asm').read_text()
         self.assertIn('JohtoPilotVioletCutClearedBlock::',asm)
-        part=asm.split('JohtoPilotVioletCutClearedBlock::',1)[1].split('JohtoPilot_BlockEnd::',1)[0]
-        raw=re.findall(r'\$([0-9a-fA-F]{2})',part)
+        part=asm.split('JohtoPilotVioletCutClearedBlock::',1)[1].split('JohtoPilotCutClearedBlock8E::',1)[0]
+        raw=re.findall(r'\$([0-9a-fA-F]{2})', '\n'.join(line for line in part.splitlines() if line.lstrip().startswith('db ')))
         self.assertEqual(16,len(raw))
         old=(ROOT/'gfx/blocksets/johto.bst').read_bytes()[0x63*16:(0x63+1)*16]
         new=bytes(int(x,16) for x in raw)

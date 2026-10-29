@@ -1,7 +1,7 @@
 UsedCut:
 	xor a
 	ld [wActionResultOrTookBattleTurn], a ; initialise to failure value
-	callab JohtoVioletCutTreeAhead
+	callab JohtoPilotCutTreeAhead
 	jr nc, .legacyTileset
 	ld a, $3d ; reuse original Cut tree animation
 	jr .canCut
@@ -285,4 +285,9 @@ CutTreeBlockSwaps:
 	; Johto Violet: replace only the Gold CUT_TREE quadrant, never the
 	; neighboring HEADBUTT_TREE in the same 32x32 block.
 	db $63, $8D
+	; Gold Cut has a different quadrant in each of these original blocks.
+	; Replacement clones preserve the three surrounding 16x16 quadrants.
+	db $67, $8E ; Route30 (8,6) top-left
+	db $5F, $8F ; Route31 (13,5) bottom-right
+	db $5B, $90 ; Route31 (25,10) top-right
 	db $FF ; list terminator

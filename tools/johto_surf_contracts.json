@@ -36,6 +36,36 @@
       "height_cells": 36,
       "representation": "yx_db",
       "map_scope_predicate": "JohtoVioletIsActive"
+    },
+    {
+      "gold_map": "Route30",
+      "local_id_symbol": "JOHTO_ROUTE_30_LOCAL_ID",
+      "water_helper": "JohtoRoute30WaterAhead",
+      "routine_file": "engine/johto_violet_field_skills.asm",
+      "water_table": "JohtoRoute30GoldWaterCells",
+      "water_end": "JohtoRoute30GoldWaterCellsEnd",
+      "expected_water_cells": 32,
+      "width_cells": 20,
+      "height_cells": 54,
+      "representation": "yx_db",
+      "map_scope_predicate": "JohtoRoute30IsActive",
+      "runtime_map": "maps/johto_pilot/Route30.runtime.blk",
+      "entrypoint_helper": "JohtoVioletWaterAhead"
+    },
+    {
+      "gold_map": "Route31",
+      "local_id_symbol": "JOHTO_ROUTE_31_LOCAL_ID",
+      "water_helper": "JohtoRoute31WaterAhead",
+      "routine_file": "engine/johto_violet_field_skills.asm",
+      "water_table": "JohtoRoute31GoldWaterCells",
+      "water_end": "JohtoRoute31GoldWaterCellsEnd",
+      "expected_water_cells": 44,
+      "width_cells": 40,
+      "height_cells": 18,
+      "representation": "yx_db",
+      "map_scope_predicate": "JohtoRoute31IsActive",
+      "runtime_map": "maps/johto_pilot/Route31.runtime.blk",
+      "entrypoint_helper": "JohtoVioletWaterAhead"
     }
   ]
 }

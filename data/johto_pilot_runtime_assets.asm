@@ -17,8 +17,22 @@ JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
 JohtoPilotVioletCutClearedBlock::
 	db $05, $05, $05, $05, $05, $05, $05, $05
 	db $05, $05, $1e, $1f, $05, $05, $3e, $3f
+; ROUTES-251: three single-quadrant Cut replacements. Every other 8x8
+; tile is byte-identical to Gold. $05 is the existing ordinary FLOOR art.
+; Block $8E: original $67, Route30 top-left CUT_TREE -> FLOOR
+JohtoPilotCutClearedBlock8E::
+	db $05, $05, $05, $05, $05, $05, $05, $05
+	db $1e, $1f, $05, $05, $3e, $3f, $05, $05
+; Block $8F: original $5F, Route31 bottom-right CUT_TREE -> FLOOR
+JohtoPilotCutClearedBlock8F::
+	db $05, $05, $1e, $1f, $05, $05, $3e, $3f
+	db $05, $05, $05, $05, $05, $05, $05, $05
+; Block $90: original $5B, Route31 top-right CUT_TREE -> FLOOR
+JohtoPilotCutClearedBlock90::
+	db $1e, $1f, $05, $05, $3e, $3f, $05, $05
+	db $05, $05, $05, $05, $05, $05, $05, $05
 JohtoPilot_BlockEnd::
-ASSERT JohtoPilot_BlockEnd - JohtoPilot_Block == 142 * 16
+ASSERT JohtoPilot_BlockEnd - JohtoPilot_Block == 145 * 16
 
 ; P6-INDOOR-005: JohtoPilot_Coll now lives in ROM0 (home.asm).
 ; Switchable-bank pointers were unsafe for unbanked collision readers.

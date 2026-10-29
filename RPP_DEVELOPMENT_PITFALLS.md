@@ -1,3 +1,10 @@
+## ROUTES-251：新地图 Surf/Cut 要守住 Bank `$03`、逐图作用域和单象限替换
+
+- 道具 Surfboard 与 Cut 使用所在 Bank `$03` 在 `.250` MAP 只有6B剩余；新增道路时不能在 Bank `$03` 多加一组组 `callab`。已用现有 `JohtoVioletWaterAhead` 做同 ROMX Bank 的 Route30/31 carry 逐图转发，Cut 则用 `JohtoPilotCutTreeAhead` 保留原调用数，Bank03 只添三组2B Cut block swap。`.251` 实际剩余量须用户重新链接看新 MAP，不能用旧 MAP 代替。
+- 水中 `CollisionCheckOnWater` 的分图链：原吉花市 helper 返回后 A 可能已被修改，因此 Route30/31 分支必须重新加载 `wCurLocalMapID`，并在目标非水时 `wTileInFrontOfPlayer → C`，否则会重现无法上岸／误地图的隐患。必须同时测试道具、招式、水中续行及上岸。
+- Route30 `(8,6)` 对应 Block `$67` 左上 Cut；Route31 `(13,5)` 对应 `$5F` 右下、`(25,10)` 对应 `$5B` 右上。不能整块换为地面，会删除旁边 Gold HEADBUTT_TREE；原 `$63→$8D` 必须保留给桔梗市。
+- 两图 Gold FLOOR 岸线无已知额外例外，但只属静态查表结论，用户要在手机验多个岸线。详见 `docs/JOHTO_ROUTE30_ROUTE31_FIELD_251.md`。
+
 ## CHERRY-250 收口要点：冲浪成功不等于所有 Gold FLOOR 可以上岸
 
 - Gold WATER 几何合同即使完整，紧凑图块 `$3C` 同时被 WALL 与 FLOOR 复用，也可能让原版8个可登陆 FLOOR 被运行时白名单误判为墙。不可全局放行共享图块 ID；使用当前地图稳定 ID 和 Gold 精确地面格解决 Surf 上岸与陆地移动两条分支。
