@@ -74,7 +74,7 @@ class TestSaveTilesetReload244(unittest.TestCase):
 
     def test_version_is_updated_without_moving_test_branch(self):
         version = read("data/game_version.asm")
-        official = re.search(r'db "PAL-5\.62\.(\d+)@"', version)
+        official = re.search(r'db "(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@"', version)
         self.assertIsNotNone(official)
         self.assertGreaterEqual(int(official.group(1)), 244)
         self.assertIn('db "TEST-231@"', version)

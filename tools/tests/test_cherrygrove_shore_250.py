@@ -27,10 +27,12 @@ class GoldShoreFloor250(unittest.TestCase):
         files = (
             'home/overworld.asm', 'engine/overworld/field_moves.asm',
             'engine/items/items.asm', 'engine/johto_violet_field_skills.asm',
+            'maps/johto_pilot/NewBarkTown.runtime.blk',
             'maps/johto_pilot/CherrygroveCity.runtime.blk',
             'maps/johto_pilot/VioletCity.runtime.blk',
                  'maps/johto_pilot/Route30.runtime.blk',
                  'maps/johto_pilot/Route31.runtime.blk',
+                 'maps/johto_pilot/Route32.runtime.blk',
             'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll',
         )
         for file in files:
@@ -38,7 +40,7 @@ class GoldShoreFloor250(unittest.TestCase):
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / file, dest)
         self.contract = json.loads((ROOT / 'tools/johto_surf_contracts.json').read_text())
-        self.cherry = self.contract['maps'][0]
+        self.cherry = next(entry for entry in self.contract['maps'] if entry['gold_map'] == 'CherrygroveCity')
         self.assertEqual('CherrygroveCity', self.cherry['gold_map'])
 
     def change(self, path, before, after):
@@ -65,7 +67,7 @@ class GoldShoreFloor250(unittest.TestCase):
         # This reproduces CHERRY-249's false green: all 142 WATER cells correct,
         # but Surf had no legal FLOOR transition on the west rock platform.
         old = copy.deepcopy(self.contract)
-        old['maps'][0].pop('shore_floor_exception')
+        next(entry for entry in old['maps'] if entry['gold_map'] == 'CherrygroveCity').pop('shore_floor_exception')
         errors = check_project(self.root, old, GOLD)
         self.assertTrue(any('MISSING_SHORE_PASSABILITY' in e for e in errors), errors)
 

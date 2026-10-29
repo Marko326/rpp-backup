@@ -293,13 +293,15 @@ def check_johto_gate_name_sign(source: str) -> bool:
         resolve) is not None and
         "cp JOHTO_VIOLET_CITY_LOCAL_ID" in resolve and
         "ld hl, .JohtoVioletName" in resolve and
+        "cp JOHTO_ROUTE_32_LOCAL_ID" in resolve and
+        "ld hl, .JohtoRoute32Name" in resolve and
         "ld b, 0" in resolve and "ret" in resolve)
     copy_ok = ("cp JOHTO_RUNTIME_MAP_HANDLE" in copy_name and
                "cp MAP_REGION_JOHTO" in copy_name and
                "jp z, .copyLocalName" in copy_name and
                "ld a, BANK(MapNames)" in copy_name)
     names_ok = all(re.search(r"(?m)^\.Johto" + name + r"Name:.*db \"[^\"]+@\"", sign)
-                   for name in ("NewBark", "Route29", "Cherrygrove", "Route30", "Route31", "Violet"))
+                   for name in ("NewBark", "Route29", "Cherrygrove", "Route30", "Route31", "Violet", "Route32"))
     return bool(neutral_ok and resolve_ok and copy_ok and names_ok)
 
 

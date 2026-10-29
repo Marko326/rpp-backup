@@ -1,3 +1,17 @@
+# 城都 Surf 源码预检与覆盖合同
+
+## MAP-5.62.253 当前覆盖（此前 NewBark 暂缓规则已被本轮要求取代）
+
+- 用户本轮要求把**当前已激活的地图**中缺少的冲浪、砍树和跳崖一次性补齐。因此此前 `NewBarkTown` 东侧水域 `DEFERRED` 的范围限制不再适用；8 个 Gold WATER 已正式加入 Surf 合同。
+- 当前 9 张活动地图的 Surf 覆盖：NewBarkTown 8、CherrygroveCity 142、Route30 32、Route31 44、VioletCity 140、Route32 278 格，全部 `REGISTERED`；Route29、GuideGentsHouse、Route31VioletGate 没有 Gold WATER。
+- 当前 Gold Cut 共 7 棵：Route29 两棵、Route30 一棵、Route31 两棵、VioletCity 一棵、Route32 一棵；全部与地图专属坐标／原始块检查匹配。Headbutt 树不计入 Cut。
+- 当前 Gold HOP 碰撞格共 78：Route29 35、Route30 21、Route31 13、VioletCity 3、Route32 6。Route32 现在使用已验证的 Route31 跳崖 tile-pair 表；其他活动地图没有 Gold HOP。
+- 32 号道路底部的地图名称曾显示通用 `Johto`，根因是 `engine/overworld/map_name_sign.asm::ResolvePhysicalLandmark` 没有处理稳定地图 ID 7。本轮补入 `Route 32` 分支与名称字符串。
+- 完整静态清单：`python tools/johto_field_move_coverage_audit.py --gold <Gold源码根目录>`。当前静态结果为 9 张活动地图、644 个 WATER、7 棵 CUT_TREE、78 个 HOP 碰撞格全部登记。此结果**不等于** ROM 链接或手机验收。
+- 用户在 2026-10-29 报告本轮本机正式／测试红蓝构建、新 MAP 与手机回归均已通过；这属于用户验收反馈，工具本身仍只做静态审计。
+
+---
+
 ## CHERRY-250：检查可登陆的非水图块是否被紧凑碰撞表错误阻止
 
 工具不只对照 `WATER` 坐标，还须检查与水相邻的 Gold `FLOOR` 连通分量。当运行时图块（compact `johto.bst` + `.blk`）不在 `johto.tilecoll` 的白名单内时，判定存在无法登岸／无法继续走动的风险。若未注册精确地图／坐标例外，返回 `MISSING_SHORE_PASSABILITY`。不得把图块 `$3C` 全局放行：它也表示墙。对于新的城都水域，每次必须携带 Gold 源运行专项检查。
@@ -56,7 +70,7 @@ python tools/johto_surf_coverage_audit.py --gold /Gold源码根目录 --require-
 它直接读取当前活动 Source + Runtime Descriptor，而不把 `maps/johto_staged/`
 中的尚未开放素材算作运行地图；用 Gold `.blk` + `*_collision.asm` 逐格计算
 `WATER` 数量，并验证当前 `.gold.blk` 与 Gold 原始文件字节一致。
-默认 `NewBarkTown` 标记 `DEFERRED`（用户要求暂时跳过东侧水域）。
+历史记录：旧版默认将 `NewBarkTown` 标记 `DEFERRED`；此规则已由 MAP-5.62.253 用户要求补齐所有活动地图的决定取代。
 `REGISTERED` 只表示存在合格的源码合同，不代表 ROM 编译或手机实测。
 
 2026-10-29 的 PAL-5.62.248 基线：吉花市 142、30 号路 32、31 号路 44、
@@ -71,6 +85,6 @@ python tools/johto_surf_coverage_audit.py --gold /Gold源码根目录 --require-
 - 上岸的非水分支必须恢复 `wTileInFrontOfPlayer` 到 `C`，防止重现 VIOLET-247 的下水正常但无法上岸问题。工具合同、覆盖盘点和负向测试已同步增加吉花市。
 - 静态合同状态 `REGISTERED` 不等于已链接或手机验收。仍需用户本机红/蓝正式与 TEST 构建、MAP 检查，并在吉花市测试面对水面使用 Surf、Surfboard、四向游泳、多个岸边上岸、上岸后行走、重新入水、存档 Continue；同时回归桔梗市与关都。
 
-当前覆盖状态（PAL-5.62.249）：吉花市 142 格与桔梗市 140 格 `REGISTERED`；若叶镇 8 格 `DEFERRED`；30 号路 32、31 号路 44、32 号路 278 格 `MISSING_SURF`。按地图推进顺序，下一候选为 30 号路。
+历史覆盖状态（PAL-5.62.249）：当时 NewBarkTown 被暂缓，Route30/31/32 尚未接入；当前状态以本文件开头的 MAP-5.62.253 清单为准。
 
 交付新水域代码前，先运行覆盖盘点（目标地图必须从 `MISSING_SURF` 转为 `REGISTERED`），再运行原有 `johto_surf_preflight.py --gold`、专项负向测试与 ASM 预检；用户的 RGBDS 编译和实机上/下岸验收仍是独立关卡。

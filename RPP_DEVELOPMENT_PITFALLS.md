@@ -1,3 +1,16 @@
+## ROUTES-253｜活动地图 Field Moves 全覆盖与地点栏收口
+
+- 新增活动地图时，不能只看已登记 Surf 合同的预检 PASS；必须同时跑 `johto_surf_coverage_audit.py` 与 `johto_field_move_coverage_audit.py --gold <Gold源码根目录>`，分别发现漏登水域及 Cut/HOP 缺口。当前已启用 9 张地图共 644 WATER、7 CUT_TREE、78 HOP；这不是 Gold 全 222 张地图均已适配。
+- 若叶镇 Surf 通过恢复 runtime `.blk` 偏移39的 Gold 水面块 `$54` 接回，不要把显示图块或共享 tilecoll 当成水域真值。水域按 Gold 碰撞坐标限定，三个 Surf 入口与上岸陆地通行分支必须一起核对。
+- Route32 的跳崖要按稳定 ID 7 独立派发；不能因复用 Route31 的 tile-pair 表就把 Route31 的地图身份判断删掉。地图地点栏也必须为稳定 ID 7 显式返回 `Route 32`，避免解析失败回退到通用 `Johto`。
+- 当前用户已反馈正式／测试红蓝构建、新 MAP 与手机回归均通过；这属于用户验收。静态工具仍只证明源码合同与参考数据，后续新增地图必须重新做本地构建、MAP 和实机验收。
+
+## GATE-ROUTES-252｜Gold 门房骑车不能按建筑名称或图块集“一刀切”
+
+- Gold `BikeFunction.CheckEnvironment` 允许 `GATE`，地图切换不强制 `GATE` 下车；但 `Route35NationalParkGate` 与 `Route36NationalParkGate` 的环境恰是 `INDOOR`。别见 Gate 就开车，更不能把 `JOHTO_GATE` 塞进所有骑车图块集白名单。按 `wCurMap=$FC/region=Johto/稳定 local ID` 明确登记当前开放门房，继续让关都逻辑走原分支。
+- 新路线 Surf 不光有 Gold WATER 还要逐岸 Gold FLOOR / compact 视觉 tile 预检，防止能下水不能上岸；Bank `$03` 没有空间时使用已有银行内 Surf 路由。城都 Field Skills 原自动 Bank 余量紧张，.252 改为显式未占用扩展 Bank `$48`，用户必须检查最新 MAP，不以静态通过代替 RGBDS。
+- Cut 必须同时确认 Gold 碰撞象限与当前 runtime block，删除后只替换对应2×2 tile，邻近摇树不可抹掉；可复用既有 `$8D/$8F` 克隆而不新增 Bank `$03` Cut 映射。详见 `docs/JOHTO_GATE_ROUTE29_ROUTE32_252.md`。
+
 ## ROUTES-251：新地图 Surf/Cut 要守住 Bank `$03`、逐图作用域和单象限替换
 
 - 道具 Surfboard 与 Cut 使用所在 Bank `$03` 在 `.250` MAP 只有6B剩余；新增道路时不能在 Bank `$03` 多加一组组 `callab`。已用现有 `JohtoVioletWaterAhead` 做同 ROMX Bank 的 Route30/31 carry 逐图转发，Cut 则用 `JohtoPilotCutTreeAhead` 保留原调用数，Bank03 只添三组2B Cut block swap。`.251` 实际剩余量须用户重新链接看新 MAP，不能用旧 MAP 代替。
@@ -716,3 +729,11 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Disable 标记包含旧的禁用槽位及持续时间；Transform 拷贝新四招时没有显式清除旧禁用标记。刚复制的同槽招式是否受到旧禁用限制是继承旧机制的潜在行为，不是敌方在同回合第二次施放 Disable；该边界未取得单独实测，清理阶段不改。
 - **野生敌方招式 PP=0 不是禁止出招条件。** `SelectEnemyMove` 可从非空且未 Disable 的槽中随机抽取，非 Link 野生敌方沿用无限 PP 规则。TEST-214 05/09 误以 PP=0 能保证 Splash／Substitute，录像分别见 Power Whip／Tackle，前提失效。07/14 有同类不确定性；不要修改正式 AI，只能未来在 `BATTLE_TEST_BUILD` 且指定 guard/场景的敌方行动槽做专用确定性选择，并检查清理时机。
 - 用户不愿重复已测场景：录像可支持当次已观察的画面与流程，未录到的 Dig 第二段、PP 精确数值、联机同步、新 MAP 等仅作为剩余风险；不得标记为已通过，也不因改文档强制所有场景重测。
+
+## ROUTES-253：活动地图技能覆盖与地图名称回退
+
+- Surf helper 清单必须与活动 Source/Runtime descriptors 一致。旧版 `johto_surf_coverage_audit.py` 默认跳过 NewBarkTown；用户明确要求补齐当前所有活动地图后，已移除默认跳过，8 个 Gold WATER 必须进入三个既有 Surf 入口和上岸分支。启用前还必须审查运行 `.blk`：NewBark 偏移 39 曾从 Gold `$54` 改成草地 `$01`，所以只登记 Surf 坐标会让草地可冲浪；当前 `.253` 将其恢复为 `$54`，并有视觉/碰撞防回归测试。
+- Cut 不只看共享艺术图块：按 Gold 稳定地图 ID、坐标与原始 Block ID 核对。当前活动地图共 7 棵 Cut 树，不能把邻接 `HEADBUTT_TREE` 当作可砍树。
+- 新地图有 `HOP_*` 碰撞不代表 `HandleLedges` 自动支持。Route32 以前有 6 个 Gold HOP 碰撞格但未进稳定 ID 派发；它们应复用已核验的 Route31 tile-pair 表，不得扩大为所有 Johto 地图可跳。
+- `engine/overworld/map_name_sign.asm::ResolvePhysicalLandmark` 缺少活动地图 stable ID 时会落到 `.JohtoUnknownName`，显示 `Johto`。地图激活时要同时补齐地点提示名称分支；不能把 Town Map landmark 已登记误认为地图名称栏也已登记。
+- 交付前运行 `python tools/johto_field_move_coverage_audit.py --gold <Gold源码根目录>`；它会输出 Surf/Cut/HOP 地图覆盖，但仍是静态检查，不替代正式/测试红蓝构建、新 MAP 和手机验收。

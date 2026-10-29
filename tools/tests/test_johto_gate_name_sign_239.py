@@ -1,5 +1,6 @@
 """Prevent regression of P6-GATE-005 neutral signs and native map identity."""
 from pathlib import Path
+import re
 import sys
 import unittest
 
@@ -36,6 +37,20 @@ class GateSignRegression(unittest.TestCase):
                              'jp nz, .copyLocalName', 1)
         self.assertNotEqual(bad, SOURCE)
         self.assertFalse(check_johto_gate_name_sign(bad))
+
+
+    def test_route32_uses_its_own_landmark_name(self):
+        match = re.search(r'(?ms)^\.ResolvePhysicalLandmark\s*$\n(.*?)(?=^\.ResolveKnownFloor\s*$)', SOURCE)
+        self.assertIsNotNone(match)
+        resolve = match.group(1)
+        self.assertIn("cp JOHTO_ROUTE_32_LOCAL_ID\n\tjr z, .johtoRoute32", resolve)
+        self.assertIn('.johtoRoute32\n\tld hl, .JohtoRoute32Name', resolve)
+        self.assertIn('.JohtoRoute32Name:      db "Route 32@"', SOURCE)
+
+    def test_route32_uses_route31_hop_pairs(self):
+        ledges = (ROOT / 'engine/overworld/ledges.asm').read_text(encoding='utf-8')
+        self.assertRegex(ledges, r'cp JOHTO_ROUTE_31_LOCAL_ID\s+jr z, \.route31PairTable\s+cp JOHTO_ROUTE_32_LOCAL_ID\s+ret nz\s+\.route31PairTable')
+        self.assertIn('JohtoPilotRoute31LedgeTiles', ledges)
 
     def test_gate_keeps_existing_warp_movement(self):
         movement = (ROOT / 'engine/overworld/npc_movement.asm').read_text()

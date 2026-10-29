@@ -28,7 +28,7 @@ def check_bank_layout(main: str, home: str, menu: str, sign: str) -> None:
         if not re.search(rf'(?m)^{name}::', sign):
             raise AssertionError(f'missing map-sign helper {name}')
     # The new local name strings must remain inside the single moved section.
-    for name in ['JohtoNewBarkName', 'JohtoVioletName', 'JohtoRoute31Name']:
+    for name in ['JohtoNewBarkName', 'JohtoVioletName', 'JohtoRoute31Name', 'JohtoRoute32Name']:
         if not re.search(rf'(?m)^\.{name}:', sign):
             raise AssertionError(f'missing section-local sign text {name}')
 

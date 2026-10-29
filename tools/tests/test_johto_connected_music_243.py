@@ -77,7 +77,7 @@ class TestJohtoConnectedMusic243(unittest.TestCase):
         self.assertIn("johto_map_profile 1, 4, MUSIC_ROUTES1, 0     ; 4 Route31", self.profiles)
         self.assertIn("db MUSIC_GBP_GSC_ROUTE30         ; slot 3:", self.options)
         self.assertIn("db MUSIC_GBP_GSC_ROUTE30         ; slot 4:", self.options)
-        version = re.search(r'PAL-5\.62\.(\d+)@', self.version)
+        version = re.search(r'(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@', self.version)
         self.assertIsNotNone(version)
         self.assertGreaterEqual(int(version.group(1)), 243)
 

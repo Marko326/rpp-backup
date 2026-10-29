@@ -20,7 +20,7 @@ from johto_surf_preflight import check_project
 SOURCE_RECORDS = 'data/johto_pilot_source_resources.asm'
 RUNTIME_RECORDS = 'data/johto_pilot_runtime_assets.asm'
 CONSTANTS = ('constants/region_map_constants.asm', 'constants/johto_fixed_map_ids.asm')
-DEFAULT_SKIP = ('NewBarkTown',)  # The east water area; a deliberate user deferral.
+DEFAULT_SKIP: tuple[str, ...] = ()  # All active Gold WATER maps are now in scope.
 
 
 def read_active_maps(root: Path) -> list[dict]:
@@ -139,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--gold', type=Path, default=Path(os.environ['GOLD_SOURCE_ROOT'])
                         if os.environ.get('GOLD_SOURCE_ROOT') else None)
     parser.add_argument('--skip-map', action='append', default=None,
-                        help='Explicit user-deferred active map; default: NewBarkTown')
+                        help='Explicitly defer an active map (none by default)')
     parser.add_argument('--require-map', help='Fail if the chosen map has no complete Surf contract')
     parser.add_argument('--json', action='store_true', help='Write machine-readable JSON to stdout')
     args = parser.parse_args(argv)

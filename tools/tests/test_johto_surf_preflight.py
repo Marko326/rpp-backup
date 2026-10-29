@@ -22,10 +22,12 @@ class SurfPreflight(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.contract = json.loads((ROOT / 'tools/johto_surf_contracts.json').read_text())
         paths = list(ENTRYPOINTS) + ['engine/johto_violet_field_skills.asm',
+                 'maps/johto_pilot/NewBarkTown.runtime.blk',
                  'maps/johto_pilot/CherrygroveCity.runtime.blk',
                  'maps/johto_pilot/VioletCity.runtime.blk',
                  'maps/johto_pilot/Route30.runtime.blk',
                  'maps/johto_pilot/Route31.runtime.blk',
+                 'maps/johto_pilot/Route32.runtime.blk',
                  'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll']
         for path in paths:
             dest = self.root / path
@@ -93,8 +95,8 @@ class SurfPreflight(unittest.TestCase):
     def test_future_map_without_contract_is_rejected(self):
         self.change('engine/items/items.asm',
                     'callab JohtoVioletWaterAhead',
-                    'callab JohtoRoute32WaterAhead\n\tcallab JohtoVioletWaterAhead')
-        self.assert_has_error('unregistered JohtoRoute32WaterAhead')
+                    'callab JohtoRoute33WaterAhead\n\tcallab JohtoVioletWaterAhead')
+        self.assert_has_error('unregistered JohtoRoute33WaterAhead')
 
     def test_wrong_map_id_guard_is_rejected(self):
         self.change('engine/johto_violet_field_skills.asm',

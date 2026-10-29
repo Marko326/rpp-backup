@@ -56,8 +56,8 @@ class JohtoSaveLocationTests(unittest.TestCase):
         self.assertIn("GetMapNameForSaveScreen:", town)
         self.assertIn("call LoadTownMapEntry", town.split("GetMapNameForSaveScreen:", 1)[1])
         version = read("data/game_version.asm")
-        # Location regression persists across later official PAL versions.
-        match = re.search(r'db "PAL-5\.62\.(\d+)@"', version)
+        # Location regression persists across future official feature prefixes.
+        match = re.search(r'db "(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@"', version)
         self.assertIsNotNone(match)
         self.assertGreaterEqual(int(match.group(1)), 240)
         self.assertIn('db "TEST-231@"', version)
