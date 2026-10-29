@@ -1,3 +1,30 @@
+## CHERRY-250-ACC-001 / PAL-5.62.250 — 吉花市 Surf 阶段提交收口
+
+- [x] 核对 `.248` 用户上传的干净基线 HEAD `d1d833b6`，恢复 CHERRY-249 + CHERRY-250 的累计差异，复用 Gold 与旧 NPC 金银分支资料。
+- [x] 吉花市原版 142 WATER 接入现有 Surf 三路径；西南平台8格 FLOOR 增加限定为吉花市稳定 ID2 的水上登岸／陆上行走判定；保留 `$3C` 墙壁碰撞。
+- [x] 将用户反馈的先前登陆失败与修复后要求提交清理记录为本阶段验收反馈；将补丁、反例审计及操作说明整理为功能提交与工具文档提交两笔，不夸大为逐格全地图用户复测。
+- [x] 新增的 Surf 合同及 Git 源 JSON 跟踪规则保留；`MISSING_SHORE_PASSABILITY` 需要同时检查水上、陆上执行路径。
+- [ ] 用户从 `.248` 实际 HEAD 自行提交两笔并返回新 HEAD（不自动 Push）；收到新提交前不可把 `.250` 假定为新基线。
+- [ ] 待进一步验证：两色正式/测试 ROM 链接、`.250` MAP、所有岸线及存档 Continue 的完整实机覆盖；不把静态成功当成用户已完成测试。
+- [ ] 下一轮制作跨窗口交接资料，保留参考 Gold、NPC 旧分支、QOL 源码；若叶镇东侧水域先跳过，Route30（32 水格）为后续未开放 Surf 的下一候选。
+
+## CHERRY-250 / PAL-5.62.250 — 吉花市西南岩石平台登陆及 Gold FLOOR 审计（开发候选）
+
+- **故障证据**：用户截图显示在吉花市西南岩石平台南边水域无法登岸。Gold `CherrygroveCity` 地图碰撞定义平台 `(x4..7,y12..13)` 共 8 个格为 `FLOOR`；紧凑运行 Block `$71` 绘制的是 8×8 图块 `$3C`，但 `johto.tilecoll` 不允许 `$3C`。同一图块 `$3C` 在本图还用于 `WALL`，绝不能全局放行，否则穿墙。
+- **最小修复**：不改 Gold 水格 142 条、不改 Blockset／碰撞白名单、不改存档、门房和其他地图。新增 `JohtoCherrygroveShoreFloorAhead`，仅允许吉花市稳定 ID2 的这 8 个 Gold `FLOOR` 坐标，水上经 `CollisionCheckOnWater` 停止 Surf 上岸、陆地经 `CheckTilePassable` 放行平台内部的连续走动。其余 `$3C` 仍碰撞。复用原版已有 Surf 状态恢复函数，不另造状态机。
+- **工具改进**：`tools/johto_surf_preflight.py --gold` 现在除对照 Gold WATER，还会从 Gold FLOOR／当前 compact `.blk`／Blockset／tilecoll 动态检测“海岸边属于可走 FLOOR，但运行白名单不放行”的连通区域。CHERRY-249 原代码会报 `MISSING_SHORE_PASSABILITY`；只有水陆两条执行路径都正确接入有范围限定的例外，且坐标与 Gold 完全一致，才通过。`tools/tests/test_cherrygrove_shore_250.py` 包含故障反例。
+- **实际边界**：完成的是静态源码修复与审计。正式 Red/Blue 与 TEST 编译、最新 MAP 空间及该平台四周上下岸、步行、回水、存读档实测由用户本地确认。未确认之前不得标为运行验收通过，也不制作 Git 提交日志、不自行 Commit/Push。
+
+## CHERRY-249 / PAL-5.62.249 — 吉花市冲浪接入（待本机编译与实测）
+
+- [x] 以最新用户上传的 `PAL-5.62.248.zip` 为基线；保留既有未提交累计改动，正式标签更新至 `.249`，`TEST-231` 不变。
+- [x] 从 Gold 原版 `CherrygroveCity.blk` 与 Johto collision 表逐格生成 142 个 WATER 坐标（40×18 collision cells）；不使用共享美术 ID 作为全局冲浪白名单。
+- [x] 将吉花市专用判断接入 A 键 Surf、Surfboard 和水中移动/上岸三个现有入口；非水分支恢复 `wTileInFrontOfPlayer` 到 `C` 后复用现有陆地通行扫描。
+- [x] 更新 Surf 合同、覆盖盘点与故障注入测试；若叶镇东侧水域继续按用户要求跳过。
+- [x] 静态检查：122 项测试运行，120 通过、2 跳过；Gold 水格逐格比对通过；ASM 标签 2,067 文件通过；地图迁移 69/69、门房 12/12、Warp 17/17。
+- [ ] 用户本机 Red/Blue 正式与 TEST 编译及 MAP 检查；手机实测吉花市下水、四向游泳、合法岸边上岸、上岸后行走、重新入水和 Continue；回归桔梗市与关都。
+- [ ] 本轮实测通过后，下一片水域按推进顺序考虑 Route30（32 格）；Route31（44 格）与 Route32（278 格）仍未接入。联合洞穴尚未开放，不计入当前水域。
+
 ## VIOLET-248-ACC-001｜用户验收及分三笔提交收口（2026-10-29）
 
 - [x] 用户提供最新 `.248` 工作区 Patch，基线为已提交的 `.243 / b6102175`；补丁累计包含 SAV-244、Route32-245/246、VIOLET-247/248 和 Surf 审计。

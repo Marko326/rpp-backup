@@ -1,3 +1,29 @@
+## CHERRY-250-ACC-001｜吉花市 Surf 用户验收后双笔提交收口（2026-10-29）
+
+- **本次真实提交基线**：用户最近上传的 `PAL-5.62.248.zip` 是已提交且工作区干净的 `d1d833b69c681517102304221e813dd5aa76ff44`。CHERRY-249 与 CHERRY-250 均在此后作为开发补丁，尚未收到新的 Git Commit／HEAD，绝不能从 `.243` 或臆造 `.249` 的 Git 提交计算日志。
+- **功能与用户反馈**：吉花市接入 Gold 原版 142 格 WATER，按地区与稳定 ID 限定 Surf 招式、Surfboard、游泳中续行和上岸；西南岩石平台 `(x4..7,y12..13)` Gold FLOOR 共8格，修复紧凑 TILE `$3C` 在水上登陆与陆上移动双路径的误挡，不将 `$3C` 全局放行。用户先报告该平台无法登岸，CHERRY-250 修补后明确要求进行本轮验收清理；这属于用户报告的收口决定，不得写成助手独立运行模拟器或四种 ROM 构建及所有岸线逐项测试均通过。
+- **工具与长期约束**：`johto_surf_contracts.json`、`johto_surf_preflight.py` 和负向测试覆盖 Gold WATER 几何、Surf 三入口、登陆 FLOOR／绘图 TILE 复用、地形误判（`MISSING_SHORE_PASSABILITY`）。吉花市、桔梗市登记已实现；Route30／Route31／Route32 仍未开放 Surf；若叶镇东侧按用户要求继续跳过。源 JSON 必须继续 Git 追踪。
+- **按项目模式 A 分两笔**：① `feat(johto)` 仅游戏代码及 `PAL-5.62.248 → PAL-5.62.250` 的版本变化；② `test(tool)` 才包含 Surf 合同、Python 测试、专项文档和长期规则，游戏版本保持 `.250`。不改 `TEST-231`、SRAM、门房、其他地图与 ROM 资源。
+- **交付与提交安全**：本轮 ZIP 提供从用户已应用 `.250` 工作区出发的纯文档清理增量、从干净 `.248` ZIP 的累计全量，以及两份按真实差异拆分的 `git apply --cached` 暂存补丁与中文提交日志。增量／全量二选一，不重复套用；`--cached` 只用于暂存，不得普通 `git apply` 到工作区。用户自己核查实际 HEAD、工作区与 index 后执行两笔 Commit；AI 不自行 Git Commit／Push，也不自行编译 ROM。
+- **未独立验收**：本环境没有对 `.250` 运行 RGBDS 正式／测试红蓝链接和最新 MAP；Gold 对照与 Python 静态审计不能替代这些构建。旧 SAV 全版本兼容、关都全部水域和所有可登陆岸线也不由此推定。下一版先准备跨窗口交接再开放 Route30 Surf。
+
+## CHERRY-250 / PAL-5.62.250 — 吉花市西南岩石平台登陆及 Gold FLOOR 审计（开发候选）
+
+- **故障证据**：用户截图显示在吉花市西南岩石平台南边水域无法登岸。Gold `CherrygroveCity` 地图碰撞定义平台 `(x4..7,y12..13)` 共 8 个格为 `FLOOR`；紧凑运行 Block `$71` 绘制的是 8×8 图块 `$3C`，但 `johto.tilecoll` 不允许 `$3C`。同一图块 `$3C` 在本图还用于 `WALL`，绝不能全局放行，否则穿墙。
+- **最小修复**：不改 Gold 水格 142 条、不改 Blockset／碰撞白名单、不改存档、门房和其他地图。新增 `JohtoCherrygroveShoreFloorAhead`，仅允许吉花市稳定 ID2 的这 8 个 Gold `FLOOR` 坐标，水上经 `CollisionCheckOnWater` 停止 Surf 上岸、陆地经 `CheckTilePassable` 放行平台内部的连续走动。其余 `$3C` 仍碰撞。复用原版已有 Surf 状态恢复函数，不另造状态机。
+- **工具改进**：`tools/johto_surf_preflight.py --gold` 现在除对照 Gold WATER，还会从 Gold FLOOR／当前 compact `.blk`／Blockset／tilecoll 动态检测“海岸边属于可走 FLOOR，但运行白名单不放行”的连通区域。CHERRY-249 原代码会报 `MISSING_SHORE_PASSABILITY`；只有水陆两条执行路径都正确接入有范围限定的例外，且坐标与 Gold 完全一致，才通过。`tools/tests/test_cherrygrove_shore_250.py` 包含故障反例。
+- **实际边界**：完成的是静态源码修复与审计。正式 Red/Blue 与 TEST 编译、最新 MAP 空间及该平台四周上下岸、步行、回水、存读档实测由用户本地确认。未确认之前不得标为运行验收通过，也不制作 Git 提交日志、不自行 Commit/Push。
+
+## CHERRY-249 / PAL-5.62.249 — 吉花市冲浪接入（开发候选，待用户本机编译与实测）
+
+- **基线**：用户上传 `PAL-5.62.248.zip`，本轮从该完整源码开始；保留 SAV-244、Route32-245/246、桔梗市 VIOLET-247/248 和 SURF-AUD/COVER 工具改动，不改变存档布局或活动地图数。正式标签升至 `PAL-5.62.249`，`TEST-231` 不变。
+- **Gold 源数据**：`CherrygroveCity` 原版地图有 142 个 `WATER` 碰撞格，尺寸为 20×9 Blocks / 40×18 collision cells。坐标表从 Gold 原始 `.blk` 与 `johto_collision.asm` 逐格解码；水域表不通过共享 8×8 图块 ID 推断，也不改全局 tilecoll。
+- **运行实现**：新增 `JohtoCherrygroveIsActive` 与 `JohtoCherrygroveWaterAhead`，限定共享地图句柄 `$FC`、Johto 区域、稳定 ID `JOHTO_CHERRYGROVE_LOCAL_ID`。把吉花市接入现有三个 Surf 入口：`IsSurfTile`、`IsNextTileShoreOrWater`、`CollisionCheckOnWater`；非水分支先恢复 `wTileInFrontOfPlayer` 到 `C`，再复用既有陆地通行扫描。桔梗市的 140 格合同和 Cut/跳崖实现保持不变；若叶镇东侧水域继续按用户要求跳过。
+- **工具合同**：`tools/johto_surf_contracts.json` 加入吉花市，coverage audit 预期状态从 `MISSING_SURF` 变为 `REGISTERED`。仍未实现 Route30（32 格）、Route31（44 格）、Route32（278 格）；未激活联合洞穴不计入活动地图。
+- **静态验证**：完整 Python 测试 122 项运行、120 通过、2 跳过；Surf 预检与 Gold 逐格比较通过；ASM 局部符号预检 2,067 个文件通过；地图迁移审计 69/69、门房 12/12、Warp 17/17。静态通过不是 RGBDS 链接或实机证明。
+- **手机验收要求**：本机正式 Red/Blue、TEST Red/Blue 构建与 MAP；吉花市用 Surf 招式、Surfboard、四向游泳、从各合法岸边上岸、上岸后步行、重新入水、存档/Continue；回归桔梗市上岸、Cut、跳崖及关都冲浪。未通过不得再开放下一水域。
+- **交付边界**：只生成开发补丁，不附 Git 提交日志、不代 Commit/Push、不自行 RGBDS 链接 ROM。覆盖审计 `REGISTERED` 不等于用户验收。
+
 ## VIOLET-248-ACC-001｜三笔 Git 提交收口（2026-10-29）
 
 - **实际依据**：用户提供 `PAL-5.62.248.patch`，RPP-BASE 为 `b610217566cedf3ed8f9138d126ab40d56ed41a6`（已提交 PAL-5.62.243）；该补丁累计 SAV-244、Route32-245/246、VIOLET-247/248 与 SURF-AUD-001。本轮以该工作区补丁还原最终文件，并保留 `.248` 游戏实现与 `TEST-231`，不更改 ASM 或存档结构。

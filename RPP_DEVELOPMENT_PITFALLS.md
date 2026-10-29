@@ -1,3 +1,26 @@
+## CHERRY-250 收口要点：冲浪成功不等于所有 Gold FLOOR 可以上岸
+
+- Gold WATER 几何合同即使完整，紧凑图块 `$3C` 同时被 WALL 与 FLOOR 复用，也可能让原版8个可登陆 FLOOR 被运行时白名单误判为墙。不可全局放行共享图块 ID；使用当前地图稳定 ID 和 Gold 精确地面格解决 Surf 上岸与陆地移动两条分支。
+- 从 CHERRY-249 到 CHERRY-250，`johto_surf_preflight.py` 的 `MISSING_SHORE_PASSABILITY` 负例属于必须保留的回归关卡。新地图注册 Surf 时要让水面、可登陆岸线、上岸后步行及来源地图隔离同时通过，不能只验证水格计数和上岸寄存器。
+- 用户已申请本轮清理提交，正式 Git 基线为 `.248 / d1d833b6`。功能运行源码与 Python/JSON/维护文档须拆两笔；历史 `.249`／`.250` 开发补丁不能伪称中间独立 Git Commit。
+
+## CHERRY-250 / PAL-5.62.250 — 吉花市西南岩石平台登陆及 Gold FLOOR 审计（开发候选）
+
+- **故障证据**：用户截图显示在吉花市西南岩石平台南边水域无法登岸。Gold `CherrygroveCity` 地图碰撞定义平台 `(x4..7,y12..13)` 共 8 个格为 `FLOOR`；紧凑运行 Block `$71` 绘制的是 8×8 图块 `$3C`，但 `johto.tilecoll` 不允许 `$3C`。同一图块 `$3C` 在本图还用于 `WALL`，绝不能全局放行，否则穿墙。
+- **最小修复**：不改 Gold 水格 142 条、不改 Blockset／碰撞白名单、不改存档、门房和其他地图。新增 `JohtoCherrygroveShoreFloorAhead`，仅允许吉花市稳定 ID2 的这 8 个 Gold `FLOOR` 坐标，水上经 `CollisionCheckOnWater` 停止 Surf 上岸、陆地经 `CheckTilePassable` 放行平台内部的连续走动。其余 `$3C` 仍碰撞。复用原版已有 Surf 状态恢复函数，不另造状态机。
+- **工具改进**：`tools/johto_surf_preflight.py --gold` 现在除对照 Gold WATER，还会从 Gold FLOOR／当前 compact `.blk`／Blockset／tilecoll 动态检测“海岸边属于可走 FLOOR，但运行白名单不放行”的连通区域。CHERRY-249 原代码会报 `MISSING_SHORE_PASSABILITY`；只有水陆两条执行路径都正确接入有范围限定的例外，且坐标与 Gold 完全一致，才通过。`tools/tests/test_cherrygrove_shore_250.py` 包含故障反例。
+- **实际边界**：完成的是静态源码修复与审计。正式 Red/Blue 与 TEST 编译、最新 MAP 空间及该平台四周上下岸、步行、回水、存读档实测由用户本地确认。未确认之前不得标为运行验收通过，也不制作 Git 提交日志、不自行 Commit/Push。
+
+## CHERRY-249 / PAL-5.62.249 — 吉花市冲浪接入（开发候选，待用户本机编译与实测）
+
+- **基线**：用户上传 `PAL-5.62.248.zip`，本轮从该完整源码开始；保留 SAV-244、Route32-245/246、桔梗市 VIOLET-247/248 和 SURF-AUD/COVER 工具改动，不改变存档布局或活动地图数。正式标签升至 `PAL-5.62.249`，`TEST-231` 不变。
+- **Gold 源数据**：`CherrygroveCity` 原版地图有 142 个 `WATER` 碰撞格，尺寸为 20×9 Blocks / 40×18 collision cells。坐标表从 Gold 原始 `.blk` 与 `johto_collision.asm` 逐格解码；水域表不通过共享 8×8 图块 ID 推断，也不改全局 tilecoll。
+- **运行实现**：新增 `JohtoCherrygroveIsActive` 与 `JohtoCherrygroveWaterAhead`，限定共享地图句柄 `$FC`、Johto 区域、稳定 ID `JOHTO_CHERRYGROVE_LOCAL_ID`。把吉花市接入现有三个 Surf 入口：`IsSurfTile`、`IsNextTileShoreOrWater`、`CollisionCheckOnWater`；非水分支先恢复 `wTileInFrontOfPlayer` 到 `C`，再复用既有陆地通行扫描。桔梗市的 140 格合同和 Cut/跳崖实现保持不变；若叶镇东侧水域继续按用户要求跳过。
+- **工具合同**：`tools/johto_surf_contracts.json` 加入吉花市，coverage audit 预期状态从 `MISSING_SURF` 变为 `REGISTERED`。仍未实现 Route30（32 格）、Route31（44 格）、Route32（278 格）；未激活联合洞穴不计入活动地图。
+- **静态验证**：完整 Python 测试 122 项运行、120 通过、2 跳过；Surf 预检与 Gold 逐格比较通过；ASM 局部符号预检 2,067 个文件通过；地图迁移审计 69/69、门房 12/12、Warp 17/17。静态通过不是 RGBDS 链接或实机证明。
+- **手机验收要求**：本机正式 Red/Blue、TEST Red/Blue 构建与 MAP；吉花市用 Surf 招式、Surfboard、四向游泳、从各合法岸边上岸、上岸后步行、重新入水、存档/Continue；回归桔梗市上岸、Cut、跳崖及关都冲浪。未通过不得再开放下一水域。
+- **交付边界**：只生成开发补丁，不附 Git 提交日志、不代 Commit/Push、不自行 RGBDS 链接 ROM。覆盖审计 `REGISTERED` 不等于用户验收。
+
 ## ACC-248｜同一 ASM 涉及两笔提交时必须拆分补丁而非按文件名分类
 
 - 真实 `.248` 工作区里，`home/overworld.asm` 既有 SAV-244 读档后指针刷新，也有 VIOLET-248 的 Surf 上岸修复；`data/game_version.asm` 同时承担 `.244`、`.248` 两个阶段版本变化。直接 `git add home/overworld.asm` 会把两类功能捆成一笔，违反三提交要求。

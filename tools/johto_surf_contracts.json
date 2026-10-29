@@ -2,6 +2,29 @@
   "schema_version": 1,
   "maps": [
     {
+      "gold_map": "CherrygroveCity",
+      "local_id_symbol": "JOHTO_CHERRYGROVE_LOCAL_ID",
+      "water_helper": "JohtoCherrygroveWaterAhead",
+      "routine_file": "engine/johto_violet_field_skills.asm",
+      "water_table": "JohtoCherrygroveGoldWaterCells",
+      "water_end": "JohtoCherrygroveGoldWaterCellsEnd",
+      "expected_water_cells": 142,
+      "width_cells": 40,
+      "height_cells": 18,
+      "representation": "yx_db",
+      "map_scope_predicate": "JohtoCherrygroveIsActive",
+      "shore_floor_exception": {
+        "helper": "JohtoCherrygroveShoreFloorAhead",
+        "table": "JohtoCherrygroveShoreFloorCells",
+        "table_end": "JohtoCherrygroveShoreFloorCellsEnd",
+        "expected_cells": 8,
+        "runtime_map": "maps/johto_pilot/CherrygroveCity.runtime.blk",
+        "runtime_blockset": "gfx/blocksets/johto.bst",
+        "runtime_passable_tiles": "gfx/tilesets/johto.tilecoll",
+        "visual_tile_id": "$3c"
+      }
+    },
+    {
       "gold_map": "VioletCity",
       "local_id_symbol": "JOHTO_VIOLET_CITY_LOCAL_ID",
       "water_helper": "JohtoVioletWaterAhead",

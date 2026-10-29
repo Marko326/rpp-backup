@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import os
+import re
 import shutil
 import sys
 from tempfile import TemporaryDirectory
@@ -20,7 +21,10 @@ class SurfPreflight(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         self.contract = json.loads((ROOT / 'tools/johto_surf_contracts.json').read_text())
-        paths = list(ENTRYPOINTS) + ['engine/johto_violet_field_skills.asm']
+        paths = list(ENTRYPOINTS) + ['engine/johto_violet_field_skills.asm',
+                 'maps/johto_pilot/CherrygroveCity.runtime.blk',
+                 'maps/johto_pilot/VioletCity.runtime.blk',
+                 'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll']
         for path in paths:
             dest = self.root / path
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -38,6 +42,17 @@ class SurfPreflight(unittest.TestCase):
 
     def test_current_shore_and_water_contract(self):
         self.assertEqual([], check_project(self.root, self.contract, GOLD))
+
+    def test_cherrygrove_water_table_is_exact_gold_and_bounded(self):
+        asm = (self.root / 'engine/johto_violet_field_skills.asm').read_text()
+        block = asm.split('JohtoCherrygroveGoldWaterCells::', 1)[1].split(
+            'JohtoCherrygroveGoldWaterCellsEnd::', 1)[0]
+        cells = [(int(y), int(x)) for y, x in re.findall(
+            r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*$', block)]
+        self.assertEqual(142, len(cells))
+        self.assertEqual(142, len(set(cells)))
+        self.assertTrue(all(0 <= y < 18 and 0 <= x < 40 for y, x in cells))
+        self.assertIn('cp JOHTO_CHERRYGROVE_LOCAL_ID', asm)
 
     def test_missing_c_register_reload_is_rejected(self):
         self.change('home/overworld.asm',
@@ -88,6 +103,16 @@ class SurfPreflight(unittest.TestCase):
         self.change('engine/johto_violet_field_skills.asm',
                     '\tdb 0, 11', '\tdb 0, 10')
         self.assert_has_error('duplicate water coordinates')
+
+    @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
+    def test_cherrygrove_water_swap_is_rejected_by_gold_comparison(self):
+        path = self.root / 'engine/johto_violet_field_skills.asm'
+        source = path.read_text()
+        before = 'JohtoCherrygroveGoldWaterCells::\n\tdb 0, 34'
+        after = 'JohtoCherrygroveGoldWaterCells::\n\tdb 0, 33'
+        self.assertIn(before, source)
+        path.write_text(source.replace(before, after, 1))
+        self.assert_has_error('Gold water mismatch', GOLD)
 
     @unittest.skipIf(GOLD is None, 'GOLD_SOURCE_ROOT not set; optional Gold asset comparison')
     def test_water_cell_swap_detected_even_when_count_unchanged(self):

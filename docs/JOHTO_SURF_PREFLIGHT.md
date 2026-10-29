@@ -1,3 +1,7 @@
+## CHERRY-250：检查可登陆的非水图块是否被紧凑碰撞表错误阻止
+
+工具不只对照 `WATER` 坐标，还须检查与水相邻的 Gold `FLOOR` 连通分量。当运行时图块（compact `johto.bst` + `.blk`）不在 `johto.tilecoll` 的白名单内时，判定存在无法登岸／无法继续走动的风险。若未注册精确地图／坐标例外，返回 `MISSING_SHORE_PASSABILITY`。不得把图块 `$3C` 全局放行：它也表示墙。对于新的城都水域，每次必须携带 Gold 源运行专项检查。
+
 ## 验收与提交安排（ACC-248）
 
 用户已确认桔梗市上岸修复正常，当前 `.248` 补丁已测试无异常。本工具及 Gold 数据审计属于第三笔 `test(tool)` 提交，不得和旧存档指针刷新、地图地形运行代码混为同一笔。工具仍不自动运行 Game Boy ROM，Route32 及洞穴水面合同需以后逐图登记。
@@ -55,10 +59,18 @@ python tools/johto_surf_coverage_audit.py --gold /Gold源码根目录 --require-
 默认 `NewBarkTown` 标记 `DEFERRED`（用户要求暂时跳过东侧水域）。
 `REGISTERED` 只表示存在合格的源码合同，不代表 ROM 编译或手机实测。
 
-2026-10-29 的 PAL-5.62.248 结果：吉花市 142、30 号路 32、31 号路 44、
+2026-10-29 的 PAL-5.62.248 基线：吉花市 142、30 号路 32、31 号路 44、
 32 号路 278 格 `MISSING_SURF`；桔梗市 140 格 `REGISTERED`；若叶镇
-8 格 `DEFERRED`。下一个测试目标是吉花市，不需要提前开放联合洞穴。
+8 格 `DEFERRED`。
 
-交付新水域代码前，先运行覆盖盘点（目标地图必须从 `MISSING_SURF`
-转为 `REGISTERED`），再运行原有 `johto_surf_preflight.py --gold`、
-专项负向测试与 ASM 预检；用户的 RGBDS 编译和实机上/下岸验收仍是独立关卡。
+## CHERRY-249｜吉花市 Gold 原版水域接入（待本机编译与实测）
+
+- 本轮只新增吉花市冲浪，若叶镇东侧 8 格按用户要求继续 `DEFERRED`；不开放联合洞穴，也不修改 Route30/31/32 的水域。
+- Gold 原版 `CherrygroveCity.blk` + Johto collision 表解码得到 142 个 `WATER` 碰撞格，地图是 20×9 Blocks，即 40×18 个碰撞格。源码表 `JohtoCherrygroveGoldWaterCells` 必须与 Gold 逐格相同，且不能按共享美术 ID 全局放开。
+- 新增 `JohtoCherrygroveIsActive` / `JohtoCherrygroveWaterAhead`，只在共享运行时句柄 `$FC`、Johto 区域、稳定 ID `JOHTO_CHERRYGROVE_LOCAL_ID` 下生效；复用现有 `IsSurfTile`、`IsNextTileShoreOrWater`、`CollisionCheckOnWater` 三个入口和陆地岸边通行扫描。
+- 上岸的非水分支必须恢复 `wTileInFrontOfPlayer` 到 `C`，防止重现 VIOLET-247 的下水正常但无法上岸问题。工具合同、覆盖盘点和负向测试已同步增加吉花市。
+- 静态合同状态 `REGISTERED` 不等于已链接或手机验收。仍需用户本机红/蓝正式与 TEST 构建、MAP 检查，并在吉花市测试面对水面使用 Surf、Surfboard、四向游泳、多个岸边上岸、上岸后行走、重新入水、存档 Continue；同时回归桔梗市与关都。
+
+当前覆盖状态（PAL-5.62.249）：吉花市 142 格与桔梗市 140 格 `REGISTERED`；若叶镇 8 格 `DEFERRED`；30 号路 32、31 号路 44、32 号路 278 格 `MISSING_SURF`。按地图推进顺序，下一候选为 30 号路。
+
+交付新水域代码前，先运行覆盖盘点（目标地图必须从 `MISSING_SURF` 转为 `REGISTERED`），再运行原有 `johto_surf_preflight.py --gold`、专项负向测试与 ASM 预检；用户的 RGBDS 编译和实机上/下岸验收仍是独立关卡。

@@ -43,14 +43,14 @@ class CoverageTests(unittest.TestCase):
                 read_active_maps(dst)
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
-    def test_full_inventory_exposes_missing_water(self):
+    def test_full_inventory_distinguishes_registered_deferred_and_missing_water(self):
         result = audit(ROOT, GOLD, {'NewBarkTown'})
         self.assertEqual([c['cells'] for c in next(r for r in result['rows'] if r['map']=='CherrygroveCity')['connected_water_areas']], [106, 15, 10, 8, 2, 1])
         self.assertEqual({r['map']: (r['gold_water_cells'], r['status'])
                           for r in result['rows']}, {
             'NewBarkTown': (8, 'DEFERRED'),
             'Route29': (0, 'NO_WATER'),
-            'CherrygroveCity': (142, 'MISSING_SURF'),
+            'CherrygroveCity': (142, 'REGISTERED'),
             'Route30': (32, 'MISSING_SURF'),
             'Route31': (44, 'MISSING_SURF'),
             'GuideGentsHouse': (0, 'NO_WATER'),
@@ -60,12 +60,12 @@ class CoverageTests(unittest.TestCase):
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
-    def test_require_unimplemented_cherrygrove_fails(self):
+    def test_require_implemented_cherrygrove_passes(self):
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
             result = main(['--root', str(ROOT), '--gold', str(GOLD),
                            '--require-map', 'CherrygroveCity'])
-        self.assertEqual(1, result)
-        self.assertIn('MISSING_SURF', err.getvalue())
+        self.assertEqual(0, result)
+        self.assertEqual('', err.getvalue())
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
     def test_invalid_skipped_map_is_rejected(self):
@@ -86,7 +86,10 @@ class CoverageTests(unittest.TestCase):
                      'home/overworld.asm',
                      'engine/overworld/field_moves.asm',
                      'engine/items/items.asm',
-                     'engine/johto_violet_field_skills.asm')
+                     'engine/johto_violet_field_skills.asm',
+                     'maps/johto_pilot/CherrygroveCity.runtime.blk',
+                     'maps/johto_pilot/VioletCity.runtime.blk',
+                     'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll')
             paths += tuple(x['source_asset'] for x in read_active_maps(ROOT))
             for f in paths:
                 dst = root / f

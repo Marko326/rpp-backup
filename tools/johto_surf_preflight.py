@@ -5,13 +5,14 @@ Read the tracked source-water contract, compare it to actual game entrypoints,
 check that non-water continues through the original *shore* passability scan,
 and optionally compare all water cells against the supplied Gold .blk/tilecoll.
 
-Scope: recognized, registered water helpers. Adding a new map-local water helper
-without a source contract fails instead of silently treating it as tested.
+Scope: recognized, registered map-local water helpers. Adding a new map-local
+water helper without a source contract fails instead of silently treating it as tested.
 This does not prove ROM linkage, CPU register state at runtime or phone behavior.
 """
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import json
 import os
 from pathlib import Path
@@ -94,6 +95,121 @@ def shore_branch_valid(overworld: str, helper: str) -> bool:
     i = scan[0]
     return (instructions[i - 2] == 'ld a, [wTileInFrontOfPlayer]' and
             instructions[i - 1] == 'ld c, a')
+
+
+
+def gold_shore_floor_mismatch(root: Path, gold: Path, entry: dict) -> set[tuple[int, int]]:
+    """Gold FLOOR cells sharing a component with landable water-edge FLOOR,
+    but rendered by compact tiles absent from current passability whitelist.
+
+    This is deliberately separate from Gold WATER detection. It finds the
+    screenshot failure: map-local FLOOR must remain walkable after Surf.
+    """
+    from johto_gold_door_audit import GoldCollisionIndex
+    index = GoldCollisionIndex(gold)
+    gold_cells = index.cells(entry['gold_map'])
+    if entry['gold_map'] == 'CherrygroveCity':
+        layout = 'maps/johto_pilot/CherrygroveCity.runtime.blk'
+    elif entry['gold_map'] == 'VioletCity':
+        layout = 'maps/johto_pilot/VioletCity.runtime.blk'
+    else:
+        layout = entry.get('runtime_map')
+    if not layout:
+        raise ValueError(f"{entry['gold_map']}: missing runtime map for shore audit")
+    blocks = (root / layout).read_bytes()
+    metatiles = (root / 'gfx/blocksets/johto.bst').read_bytes()
+    allowed = set((root / 'gfx/tilesets/johto.tilecoll').read_bytes()) - {0xff}
+    width = entry['width_cells'] // 2
+    height = entry['height_cells'] // 2
+    if len(blocks) != width * height or len(metatiles) % 16:
+        raise ValueError('invalid runtime map or blockset size for shore audit')
+    failed_floor = set()
+    for (x, y), cell in gold_cells.items():
+        if cell['role'] != 'FLOOR':
+            continue
+        block = blocks[(y // 2) * width + (x // 2)]
+        row = (y % 2) * 2
+        col = (x % 2) * 2
+        visual = {metatiles[block * 16 + (row + dy) * 4 + col + dx]
+                  for dy in range(2) for dx in range(2)}
+        if not (visual & allowed):
+            failed_floor.add((y, x))
+    def neighbors(y, x):
+        return ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1))
+    # Only water-exposed components are relevant to this Surf audit; a
+    # disconnected cliff wall is not automatically a legal shore.
+    seeds = {pos for pos in failed_floor
+             if any(gold_cells.get((nx, ny), {}).get('role') == 'WATER'
+                    for ny, nx in neighbors(*pos))}
+    exposed = set(seeds)
+    pending = deque(seeds)
+    while pending:
+        y, x = pending.popleft()
+        for pos in neighbors(y, x):
+            if pos in failed_floor and pos not in exposed:
+                exposed.add(pos)
+                pending.append(pos)
+    return exposed
+
+
+def validate_shore_exception(root: Path, entry: dict, source: str, overworld: str,
+                             gold: Path | None) -> list[str]:
+    errors = []
+    exception = entry.get('shore_floor_exception')
+    expected = set()
+    if gold:
+        try:
+            expected = gold_shore_floor_mismatch(root, gold, entry)
+        except (OSError, KeyError, ValueError, IndexError) as exc:
+            errors.append(f"{entry['gold_map']}: shore geometry audit failed: {exc}")
+            return errors
+    if not exception:
+        if expected:
+            errors.append(f"{entry['gold_map']}: MISSING_SHORE_PASSABILITY: "
+                          f"{len(expected)} Gold FLOOR cells touch water but runtime "
+                          "collision blocks them; register map-local shore-floor exception")
+        return errors
+    helper = exception['helper']
+    try:
+        coords = water_coordinates(source, exception['table'], exception['table_end'])
+    except (KeyError, ValueError) as exc:
+        return [f'{helper}: invalid shore-floor table: {exc}']
+    if len(coords) != exception['expected_cells']:
+        errors.append(f'{helper}: wrong shore-floor cell count')
+    if any(not(0 <= y < entry['height_cells'] and 0 <= x < entry['width_cells'])
+           for y, x in coords):
+        errors.append(f'{helper}: shore-floor coordinates outside map')
+    if gold and coords != expected:
+        errors.append(f'{helper}: Gold FLOOR shoreline mismatch: '
+                      f'{len(coords-expected)} forbidden, {len(expected-coords)} missing')
+    try:
+        body = routine(source, helper)
+        for needle in ('call '+entry['map_scope_predicate'],
+                       'ld hl, '+exception['table'],
+                       'wXCoord', 'wYCoord', 'SPRITE_FACING_DOWN',
+                       'SPRITE_FACING_UP', 'SPRITE_FACING_LEFT',
+                       'SPRITE_FACING_RIGHT'):
+            if needle not in body:
+                errors.append(f'{helper}: missing active-map/coordinate/lookup guard {needle}')
+        for needle in ('push bc', 'push de', 'push hl', 'pop hl', 'pop de', 'pop bc'):
+            if needle not in body:
+                errors.append(f'{helper}: missing register preservation: {needle}')
+    except ValueError as exc:
+        errors.append(str(exc))
+    surf = routine(overworld, 'CollisionCheckOnWater')
+    if not re.search(rf'(?m)^callab\s+{re.escape(entry["water_helper"])}\s*\n'
+                     rf'jp c, \.noCollision\s*\ncallab\s+{re.escape(helper)}\s*\n'
+                     rf'jp c, \.stopSurfing\s*$', surf):
+        errors.append(f'{helper}: missing disembark path for Gold FLOOR shore')
+    land = routine(overworld, 'CheckTilePassable')
+    if not re.search(rf'(?m)^cp \$3c\s*\njr nz, \.normalTilePassability\s*\n'
+                     rf'callab\s+{re.escape(helper)}\s*\n'
+                     rf'jr nc, \.normalTilePassability\s*\nand a\s*\nret\s*$', land):
+        errors.append(f'{helper}: missing normal walking allowance on shore platform')
+    if '$3c' in [f'${x:02x}' for x in
+                   (root / 'gfx/tilesets/johto.tilecoll').read_bytes()]:
+        errors.append(f'{helper}: forbidden global passability expansion for $3c')
+    return errors
 
 
 def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[str]:
@@ -188,6 +304,8 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
         if not shore_branch_valid(texts['home/overworld.asm'], helper):
             errors.append(f'{helper}: disembark must restore wTileInFrontOfPlayer '
                           'to C before .checkIfNextTileIsPassable')
+        errors.extend(validate_shore_exception(
+            root, entry, asm, texts['home/overworld.asm'], gold))
 
     # A recognized helper appearing in the ASM tree must not evade the audit
     # simply because the contract entry was forgotten.
