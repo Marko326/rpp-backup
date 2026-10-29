@@ -38,10 +38,10 @@ def check_contract(runtime, options, overworld, wram, main, ids):
         'MUSIC_GBP_GSC_NEW_BARK_TOWN','MUSIC_GBP_GSC_ROUTE29',
         'MUSIC_GBP_GSC_CHERRYGROVE_CITY','MUSIC_GBP_GSC_ROUTE30',
         'MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_CHERRYGROVE_CITY',
-        'MUSIC_GBP_GSC_VIOLET_CITY','0',
+        'MUSIC_GBP_GSC_VIOLET_CITY','0','MUSIC_GBP_GSC_ROUTE30',
     ]
     assert [n for n,i in names] == expected, names
-    assert [int(i) for n,i in names] == list(range(8))
+    assert [int(i) for n,i in names] == list(range(9))
     assert 'NUM_JOHTO_ACTIVE_MAPS' in options.split('JohtoActiveGSCMusicEnd::', 1)[1][:110]
     assert 'JohtoActiveGSCMusic' in between(options,'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
     helper = between(options, 'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
@@ -78,7 +78,7 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'wJohtoGateMusicSourceLocalID:: ds 1' in wram
     assert 'wLastJohtoMusicSceneID:: ds 1' in wram
     assert 'wEventFlags::' in wram.split('wLastJohtoMusicSceneID:: ds 1',1)[1][:165]
-    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 8' in ids
+    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 9' in ids
 
 class JohtoMusicScene241Tests(unittest.TestCase):
     @classmethod
@@ -95,15 +95,15 @@ class JohtoMusicScene241Tests(unittest.TestCase):
         vals.update(updates)
         check_contract(**vals)
     def test_current_stable_id_contract(self): self.check()
-    def test_gold_eight_scene_mappings_match_source_catalog(self):
+    def test_gold_active_scene_mappings_match_source_catalog(self):
         # Reference data is in MUS Gold's data/maps/maps.asm (in handoff ZIP).
         gold = [
             (0, 'NEW_BARK_TOWN'), (1,'ROUTE29'), (2,'CHERRYGROVE_CITY'),
             (3,'ROUTE30'), (4,'ROUTE30'), (125,'CHERRYGROVE_CITY'),
-            (5,'VIOLET_CITY'), (6,'ROUTE30'),
+            (5,'VIOLET_CITY'), (6,'ROUTE30'), (7,'ROUTE30'),
         ]
         active=[int(v) for v in re.findall(r'(?m)^\s*db\s+.*; slot \d+: ID\s*(\d+)',between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))]
-        self.assertEqual(active, [0,1,2,3,4,125,5,6])
+        self.assertEqual(active, [0,1,2,3,4,125,5,6,7])
         for local,scene in gold:
             self.assertIn(scene, self.options)
         self.assertNotIn('JOHTO_ROUTE31_VIOLET_GATE', between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))

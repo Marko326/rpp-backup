@@ -28,13 +28,14 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7]
 EXPECTED_CONNECTIONS = {
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
     (2, "NORTH", 3), (3, "SOUTH", 2),
     (3, "NORTH", 4), (4, "SOUTH", 3),
     (4, "WEST", 5), (5, "EAST", 4),
+    (5, "SOUTH", 7), (7, "NORTH", 5),
 }
 MAP_LAYOUTS = {
     "NewBarkTown": (10, 9),
@@ -45,6 +46,7 @@ MAP_LAYOUTS = {
     "GuideGentsHouse": (4, 4),
     "VioletCity": (20, 18),
     "Route31VioletGate": (5, 4),
+    "Route32": (10, 45),
 }
 GOLD_SOURCE_MAPS = {
     "NewBarkTown": "NewBarkTown",
@@ -55,6 +57,7 @@ GOLD_SOURCE_MAPS = {
     "GuideGentsHouse": "GuideGentsHouse",
     "VioletCity": "VioletCity",
     "Route31VioletGate": "Route31VioletGate",
+    "Route32": "Route32",
 }
 
 
@@ -338,8 +341,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
            "Johto stable ID6 must be neutral, and native city/route names must not use Kanto $FC MapNames")
 
     active_count = constants.get("NUM_JOHTO_ACTIVE_MAPS")
-    _check(errors, checks, "active_map_count", active_count == 8,
-           f"expected 8 active slots (IDs 0,1,2,3,4,125,5,6), got {active_count}")
+    _check(errors, checks, "active_map_count", active_count == len(EXPECTED_ACTIVE_IDS),
+           f"expected {len(EXPECTED_ACTIVE_IDS)} active slots {EXPECTED_ACTIVE_IDS}, got {active_count}")
 
     # Source-level preflight for literal RGBDS ASSERT expressions.  These are
     # evaluated by rgbasm even when every map/warp asset is otherwise correct.
@@ -365,18 +368,96 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
            active_count is not None and all(value == active_count for _, _, value in count_asserts),
            f"NUM_JOHTO_ACTIVE_MAPS={active_count}; literal ASM ASSERTs={count_asserts}; "
            "stable-slot-router equality must be present")
+    # A new active slot must be reflected in *all* Town Map tables, not only
+    # headers, music, and runtime profiles. This was missed for Route32 in 245
+    # and rgbasm later failed both length ASSERTs before linking a ROM.
+    try:
+        fly = _read(project, "engine/fly_town_map_helpers.asm")
+        browse = _read(project, "engine/johto_pilot_town_map_browse.asm")
+        map_names = _read(project, "text/map_names.asm")
+
+        def parse_map_pairs(source: str, first: str, last: str) -> list[tuple[int, int, str]]:
+            body = _section(source, first, last)
+            lines = [line.split(";", 1)[0].strip() for line in body.splitlines()]
+            lines = [line for line in lines if line]
+            if len(lines) % 2:
+                raise ValueError(f"{first}: uneven db/dw table rows")
+            rows = []
+            for position in range(0, len(lines), 2):
+                xy = re.fullmatch(r"db\s+(\d+)\s*,\s*(\d+)", lines[position])
+                name = re.fullmatch(r"dw\s+([A-Za-z_][A-Za-z_0-9]*)", lines[position + 1])
+                if not xy or not name:
+                    raise ValueError(f"{first}: bad map entry near row {position // 2}: {lines[position:position+2]}")
+                rows.append((int(xy.group(1)), int(xy.group(2)), name.group(1)))
+            return rows
+
+        displayed = parse_map_pairs(fly, "JohtoPilotTownMapEntries", "JohtoPilotTownMapEntriesEnd")
+        landmarks = parse_map_pairs(browse, "JohtoBrowseEntries", "JohtoBrowseEntriesEnd")
+        browse_index_body = _section(fly, "JohtoPilotTownMapBrowseIndexBySlot", "JohtoPilotTownMapBrowseIndexBySlotEnd")
+        browse_indices = []
+        for line in browse_index_body.splitlines():
+            code = line.split(";", 1)[0].strip()
+            if not code:
+                continue
+            if not code.startswith("db "):
+                raise ValueError(f"browse index: non-db row: {code}")
+            browse_indices.extend(int(token.strip(), 0) for token in code[3:].split(","))
+
+        profiles = _section(runtime, "JohtoPilotMapProfiles", "JohtoPilotMapProfilesEnd")
+        profile_indices = []
+        for line in profiles.splitlines():
+            code = line.split(";", 1)[0].strip()
+            if not code:
+                continue
+            match = re.fullmatch(r"johto_map_profile\s+[01]\s*,\s*(\d+)\s*,\s*[^,]+\s*,\s*[^,]+", code)
+            if not match:
+                raise ValueError(f"unexpected johto_map_profile row: {code}")
+            profile_indices.append(int(match.group(1)))
+
+        # Copy of all names used by the two tables, including expansion-bank
+        # labels. Compare the actual name bytes and coordinates, not only count.
+        defined_names = {}
+        for source in (map_names, fly, browse):
+            for label, value in re.findall(
+                r'(?m)^([A-Za-z_][A-Za-z_0-9]*)::?\s*\n?\s*db\s+"([^"]*)"', source
+            ):
+                defined_names[label] = value
+        good = (active_count is not None and len(displayed) == active_count and
+                len(browse_indices) == active_count and len(profile_indices) == active_count and
+                len(landmarks) == constants.get("JOHTO_TOWNMAP_LANDMARK_COUNT", 45))
+        for slot, (coord_y, coord_x, name) in enumerate(displayed):
+            if slot >= len(profile_indices) or slot >= len(browse_indices):
+                good = False
+                continue
+            landmark = browse_indices[slot]
+            if not (0 <= landmark < len(landmarks)) or landmark != profile_indices[slot]:
+                good = False
+                continue
+            expected_y, expected_x, expected_name = landmarks[landmark]
+            if (coord_y, coord_x) != (expected_y, expected_x) or not (
+                name in defined_names and expected_name in defined_names and
+                defined_names[name] == defined_names[expected_name]
+            ):
+                good = False
+        _check(errors, checks, "active_slot_town_map_tables", good,
+               f"active={active_count}, town entries={len(displayed)}, browse indices={len(browse_indices)}, "
+               f"profiles={len(profile_indices)}, landmarks={len(landmarks)}; "
+               "each slot must have matching Gold landmark, coordinates, and name")
+    except (ValueError, OSError) as exc:
+        _check(errors, checks, "active_slot_town_map_tables", False, str(exc))
+
     header_body = _section(headers, "JohtoHeaderDescriptors", "JohtoHeaderDescriptorsEnd")
     header_rows = re.findall(r"(?m)^\s*dw\s+(\w+RuntimeHeader)\s*$", header_body)
     header_banks = re.findall(r"(?m)^\s*db\s+BANK\((\w+RuntimeHeader)\)\s*$", header_body)
     _check(errors, checks, "header_descriptor_cardinality",
-           len(header_rows) == 8 and len(header_banks) == 8 and header_rows == header_banks,
+           len(header_rows) == len(EXPECTED_ACTIVE_IDS) and len(header_banks) == len(EXPECTED_ACTIVE_IDS) and header_rows == header_banks,
            f"header pointers={len(header_rows)}, bank rows={len(header_banks)}, paired={header_rows == header_banks}")
 
     id_symbols = {name: value for name, value in constants.items() if name.startswith("JOHTO_") and name.endswith("_LOCAL_ID")}
     expected_id_symbols = ["JOHTO_NEW_BARK_LOCAL_ID", "JOHTO_ROUTE_29_LOCAL_ID",
                            "JOHTO_CHERRYGROVE_LOCAL_ID", "JOHTO_ROUTE_30_LOCAL_ID",
                            "JOHTO_ROUTE_31_LOCAL_ID", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID",
-                           "JOHTO_VIOLET_CITY_LOCAL_ID", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID"]
+                           "JOHTO_VIOLET_CITY_LOCAL_ID", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "JOHTO_ROUTE_32_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -419,7 +500,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots = [255] * 256
     expected_slots[0:5] = [0, 1, 2, 3, 4]
     expected_slots[125] = 5
-    expected_slots[5:7] = [6, 7]
+    expected_slots[5:8] = [6, 7, 8]
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7}}; all others must be inactive")
@@ -517,7 +598,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("MAP_REGION_JOHTO", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "3", "MAP_REGION_JOHTO", "JOHTO_ROUTE_31_LOCAL_ID"),
         ]
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
-               f"expected Guide Gents + all eight directional gate entries/exits; found {warp_rows}")
+               f"expected Guide Gents + existing directional gate entries/exits; found {warp_rows}")
     except ValueError as exc:
         errors.append(f"registered_warp_routes: {exc}")
         checks.append({"check": "registered_warp_routes", "status": "FAIL", "detail": str(exc)})
@@ -648,10 +729,10 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                "outside paired Gold carpets must arm on step-on, then warp only on exact outward collision")
         _check(errors, checks, "gate_border_preview_pair",
                ("dw JohtoPilotVioletRuntimeBlocks + JOHTO_VIOLET_CITY_WIDTH * 9 + JOHTO_VIOLET_CITY_WIDTH - 3" in route31 and
-                "db EAST" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
+                "db SOUTH | EAST" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
                 "dw JohtoPilotRoute31RuntimeBlocks" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
                 "db -18" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
-                "ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 23" in map_headers),
+                "ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 34" in map_headers),
                "Violet/Route31 shared-border preview must use Gold +/-9-block alignment without opening a free seam")
         # Validate tilepal and independent Gold RGB, not just PNG/BLK bytes.
         palette_assign = _read(project, "color/data/map_palette_assignments.asm")

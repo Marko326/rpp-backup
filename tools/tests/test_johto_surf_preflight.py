@@ -1,0 +1,100 @@
+"""SURF-AUD-001: fail-closed, reusable Surf contract and shore-path checks."""
+from pathlib import Path
+import json
+import os
+import shutil
+import sys
+from tempfile import TemporaryDirectory
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tools'))
+from johto_surf_preflight import ENTRYPOINTS, check_project
+
+GOLD = Path(os.environ['GOLD_SOURCE_ROOT']) if os.environ.get('GOLD_SOURCE_ROOT') else None
+
+
+class SurfPreflight(unittest.TestCase):
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.contract = json.loads((ROOT / 'tools/johto_surf_contracts.json').read_text())
+        paths = list(ENTRYPOINTS) + ['engine/johto_violet_field_skills.asm']
+        for path in paths:
+            dest = self.root / path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / path, dest)
+
+    def change(self, path, before, after):
+        f = self.root / path
+        original = f.read_text()
+        self.assertIn(before, original)
+        f.write_text(original.replace(before, after, 1))
+
+    def assert_has_error(self, needle, gold=None):
+        errors = check_project(self.root, self.contract, gold)
+        self.assertTrue(any(needle in err for err in errors), errors)
+
+    def test_current_shore_and_water_contract(self):
+        self.assertEqual([], check_project(self.root, self.contract, GOLD))
+
+    def test_missing_c_register_reload_is_rejected(self):
+        self.change('home/overworld.asm',
+                    '\tld a, [wTileInFrontOfPlayer]\n\tld c, a\n\tjr .checkIfNextTileIsPassable',
+                    '\tjr .checkIfNextTileIsPassable')
+        self.assert_has_error('disembark must restore')
+
+    def test_reversed_water_carry_is_rejected(self):
+        self.change('home/overworld.asm',
+                    '\tcallab JohtoVioletWaterAhead\n\tjp c, .noCollision',
+                    '\tcallab JohtoVioletWaterAhead\n\tjp nc, .noCollision')
+        self.assert_has_error('disembark must restore')
+
+    def test_wrong_field_move_carry_is_rejected(self):
+        self.change('engine/overworld/field_moves.asm',
+                    'callab JohtoVioletWaterAhead\n\tret c',
+                    'callab JohtoVioletWaterAhead\n\tret nc')
+        self.assert_has_error('carry polarity/dispatch incorrect')
+
+    def test_wrong_surfboard_carry_is_rejected(self):
+        self.change('engine/items/items.asm',
+                    'callab JohtoVioletWaterAhead\n\tjr c, .shoreOrWater',
+                    'callab JohtoVioletWaterAhead\n\tjr nc, .shoreOrWater')
+        self.assert_has_error('carry polarity/dispatch incorrect')
+
+    def test_missing_surfboard_entry_is_rejected(self):
+        self.change('engine/items/items.asm',
+                    'callab JohtoVioletWaterAhead', 'callab MissingSurfQuery')
+        self.assert_has_error('missing JohtoVioletWaterAhead call')
+
+    def test_missing_field_move_entry_is_rejected(self):
+        self.change('engine/overworld/field_moves.asm',
+                    'callab JohtoVioletWaterAhead', 'callab MissingSurfQuery')
+        self.assert_has_error('missing JohtoVioletWaterAhead call')
+
+    def test_future_map_without_contract_is_rejected(self):
+        self.change('engine/items/items.asm',
+                    'callab JohtoVioletWaterAhead',
+                    'callab JohtoRoute32WaterAhead\n\tcallab JohtoVioletWaterAhead')
+        self.assert_has_error('unregistered JohtoRoute32WaterAhead')
+
+    def test_wrong_map_id_guard_is_rejected(self):
+        self.change('engine/johto_violet_field_skills.asm',
+                    'cp JOHTO_VIOLET_CITY_LOCAL_ID', 'cp JOHTO_ROUTE_32_LOCAL_ID')
+        self.assert_has_error('map-scope predicate')
+
+    def test_duplicate_water_cell_is_rejected(self):
+        self.change('engine/johto_violet_field_skills.asm',
+                    '\tdb 0, 11', '\tdb 0, 10')
+        self.assert_has_error('duplicate water coordinates')
+
+    @unittest.skipIf(GOLD is None, 'GOLD_SOURCE_ROOT not set; optional Gold asset comparison')
+    def test_water_cell_swap_detected_even_when_count_unchanged(self):
+        self.change('engine/johto_violet_field_skills.asm',
+                    '\tdb 0, 10', '\tdb 0, 9')
+        self.assert_has_error('Gold water mismatch', GOLD)
+
+
+if __name__ == '__main__':
+    unittest.main()

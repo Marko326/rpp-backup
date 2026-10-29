@@ -1,3 +1,47 @@
+## ACC-248｜同一 ASM 涉及两笔提交时必须拆分补丁而非按文件名分类
+
+- 真实 `.248` 工作区里，`home/overworld.asm` 既有 SAV-244 读档后指针刷新，也有 VIOLET-248 的 Surf 上岸修复；`data/game_version.asm` 同时承担 `.244`、`.248` 两个阶段版本变化。直接 `git add home/overworld.asm` 会把两类功能捆成一笔，违反三提交要求。
+- 正确方式：以已核验的 `.243` HEAD 及工作区完整 Patch 重建 `BASE → SAV → GAME → TOOLS/DOC` 四个精确文件树，分别生成三份可 `git apply --cached` 的暂存补丁。每笔提交后再应用下一笔，不能把这三份暂存补丁当作工作区功能补丁重复执行。
+- 旧存档具体故障样本、地图手机实测、静态回放和 ROM/MAP 构建证据需要明确区分；本轮用户仅确认所测场景正常。
+
+## VIOLET-248 / PAL-5.62.248 — 修复桔梗市冲浪无法上岸（待本机编译与实测）
+
+- **故障原因**：`home/overworld.asm::CollisionCheckOnWater` 对桔梗市先调用 `JohtoVioletWaterAhead`。当目标不是 Gold WATER 时，旧分支直接进入 `.checkIfNextTileIsPassable`，没有把 `wTileInFrontOfPlayer` 重新装入 `C`；该扫描因此可能使用旧的/无效的 C 值，将岸上可走图块判成碰撞。用户实测确认可以下水但无法上岸。
+- **参考逻辑**：旧 NPC 金银分支在 `CollisionCheckOnWater` 的城都水面查询返回非水后，明确执行 `ld a, [wTileInFrontOfPlayer]` / `ld c, a`，再进入原通行表扫描。本修复补回这一步；继续复用现有通用上岸/恢复步行状态代码，不另造 Surf 状态机。
+- **范围**：只改桔梗市地图专用非水分支，保留 140 格 Gold 水面表、入水检查、砍树和跳崖、关都 Surf 与徽章逻辑不变。新增 `tools/tests/test_violet_surf_shore_248.py`，包含正向检查与移除两条指令的故障注入反例。
+- **状态**：静态回归及补丁回放可通过不代表 RGBDS 已链接；项目规则禁止助手自行编译 ROM。用户需重新编译红蓝／测试版本并在桔梗市实际测试：从不同岸边上岸、继续走动、重新入水；同时复测关都与 Route32 Surf。未获用户实测前保持开发候选，不生成提交日志、不 Commit/Push。
+
+## VIOLET-247：原版地形角色不可用图形 Tile ID 代替（开发中）
+
+- Gold 桔梗市存在 140 个 WATER 16×16 格、1 个 CUT_TREE 格和 3 个向下 HOP 格，另有 68 个 HEADBUTT_TREE 格。后者不是 CUT_TREE；已覆盖的建筑和树木保持原样，不应因“室外技能补齐”全局解锁。
+- 同一紧凑绘图 Tile ID 可同时属于水、墙或摇树，直接把整个 `JOHTO_PILOT` 加入 `WaterTilesets` 或扩展 `johto.tilecoll` 会导致人物走水、穿墙。使用地图稳定 ID + Gold 精确水格，对 A 键 Surf、Surfboard 和水上移动三条路径一致判定。
+- 唯一 Cut 树 `(36,19)` 与 `(37,19)` HEADBUTT 树共处源块 `$63`；只增设 `$8D` 运行时派生块，不能修改原始 141 块 `johto.bst`，也不能把整个 `$63` 改成普通地面。
+- `.246` MAP 的 Bank `$03` 仅有 `$000F` 字节空间。此次在 Bank `$03` 放最小钩子，并移除 Cut 动画中无语义的旧 NOP 间隔来控制净字节差；全图位置表必须在浮动 Bank。静态预检不能发现 Bank 溢出，用户仍须完成红蓝真实链接／MAP 后才能验收。
+- 本阶段不变更关都既有徽章规则，当前 Cut/Surf 仍依赖 Cascade/Soul Badge 以及会相应招式的宝可梦；Gold 城都徽章剧情之后另立专项统一。SAV-244、Route32-245/246 尚未 Git 提交，不改 SRAM 和地图激活编号。
+
+## ROUTE32-246 / PAL-5.62.246 — 修正城都活动地图 Town Map 表并加入交付前强制核验（待用户构建）
+
+- **真实故障证据**：用户 2026-10-29 的 `make test-red` 日志在 `engine/fly_town_map_helpers.asm:844/851` 报两次 `Assertion failed`。ROUTE32-245 将 `NUM_JOHTO_ACTIVE_MAPS` 增至9，但旧 Fly/Town Map 条目与槽位→地标索引表各停留在8；这是上一轮开发遗漏，不是 RGBDS／设备问题。
+- **最小修复**：补入槽位8（Route32，稳定ID7）Town Map 条目 `(Y108,X92)`、`Route 32` 名字及 Gold 地标索引7；名称实体与 Fly Helper 放在同 Bank `$35`，不从不可直接读取的浮动 Bank 返回名字指针。保持现有 8 张槽位顺序和 Route32 地图/碰撞/Warp/音乐逻辑不变。
+- **防止复发**：`tools/johto_pilot_migration_audit.py` 新增 `active_slot_town_map_tables`，随 `NUM_JOHTO_ACTIVE_MAPS` 动态对照 Fly/Town Map 记录、浏览索引、地图 profile 的地标编号与真实地标坐标／名称；对缺表、错索引、错坐标、错名称均 FAIL。新增5项反例测试，**地图增减时必须执行这项审计和 ASM 预检**。只过 ASM 符号预检、碰撞测试或补丁回放不足以宣称可构建。
+- **交付/限制**：仅两份互斥开发补丁 ZIP（已打245的增量、干净 `.243` HEAD `b6102175` 的累计全量，后者含 SAV-244、245、246），不含 Git 提交日志；AI 不编译/链接 ROM、不 Commit/Push。新版红蓝、测试两色、MAP 与实机走动仍由用户本机构建／验收；没有编译证据不称已编译成功。
+
+## ROUTE32-245 / PAL-5.62.245 — 城都南下批量资源准备与首张道路开放（开发待验）
+
+- **准确工作区前提**：本批以新上传的 `.243` / `b610217566cedf3ed8f9138d126ab40d56ed41a6` 干净 HEAD 以及 SAV-244 开发补丁已应用状态为增量起点；`.243` 原项目全量包含 SAV-244 + 本批。用户未明确确认 SAV-244 手机实测或 Git Commit，不把它写成已验收/已提交。
+- **实际开放仅 Route32**：稳定 ID `7` 新增活动槽位 `8`（9 张活动地图）。原 Gold `.blk` 与已实现的旧 NPC 金银分支 compact `.blk` 分开保存；复用经逐字节核对的 Johto blockset 与图形，不移植旧的物理地图句柄。
+- **双向连接与防卡控制**：桔梗市南 ↔ Route32 北，Gold offset=0，严格只开放人物 tile `x=14/15`。Violet 原 EAST 门房屏幕预览及 Warp 不改。Route32 北边预览保留参考项目多三列可视缓冲；Route32 南、西、东边界保持关闭。两端 Header、资源和预览 Block 都在 `$43` 同一 ROM Bank，防止跨 Bank 直接复制错误。
+- **音乐与地点**：Route32 使用原版 Gold `MUSIC_ROUTE_30`（GSC 模式）和项目现有 RBY 道路曲族；Gold 地标索引 7 与 Save/Continue、Town Map 复用，不额外增加游戏存档字段。新地图保持已验收的 30↔31 同曲续播规则，不改关都音乐与门房。
+- **只暂存不开放**：联合洞穴 1F（ID8）、33号道路（ID9）、桧皮镇（ID10）的旧 Compact `.blk` 已作为 `maps/johto_staged/` 离线来源归档并固化 SHA-256；**没有**登记到活动槽位、Header、Warp 或地图连接。洞穴另需独立 Tileset、ROM0 可读碰撞、洞口正确落点/出口方向与返回路径；33号路后续还需 modern Tileset。绝不把资源文件存在当作可玩开放。
+- **验收重点**：用户本机正式红/蓝编译和 MAP 空间检查；从桔梗市 `(Y35,X14/15)` 向南一步进入 Route32、双向正常走动；返回桔梗市后继续能动，步行和骑行方向完整；在 Route32 保存／Continue 仍能动，边界未开放区域不应误传送、残影或卡死；关都和既有门房/音乐不回归。本轮静态审计与未编译源码不能冒充 ROM/手机实测。
+- **交付规则**：只交两份互斥补丁的开发合集 ZIP，不含 Git 提交日志，AI 不自行编译 ROM、Commit/Push。增量仅适用于 SAV-244 已打而未提交；全量仅适用于 `.243` HEAD `b6102175` 干净工程，两份严禁叠加。下一批先收用户运行反馈，再开放洞穴，不因为用户想加快进度而打开未核实 Warp。
+
+## SAV-244：旧存档正常载入不等于碰撞指针正确
+
+- 用户参考的 CHS 项目第005次历史提交 `1d7c62e5`（SAV-1.2）明确修复了旧存档 Continue 后四向不能走：地图状态从 SRAM 恢复时跳过 ROM Header，但 Tileset 指针可能已随新 ROM 位移。当前 PAL 原来在 `LoadMapHeader` 的 bit7 分支 `ret nz`，同样跳过 `LoadTilesetHeader`。
+- 只在 bit7 的存档恢复路径（新旧存档均可能经过）重新调用 `predef LoadTilesetHeader`，调用时暂时令 `wDestinationWarpID=$ff` 并保存恢复原值，防止玩家坐标被重新定位。不得覆盖其它地图 Header、重编号城都 local ID、移动 SRAM 字段或擅自清空旧存档。
+- 强制运行 `tools/tests/test_save_tileset_reload_244.py` 和 `tools/asm_symbol_preflight.py`。前者是静态源码合同，不能替代用户在旧 SAV 上的实际运行；ROM/Bank/MAP 与关都/城都兼容最终仍由用户编译实测。
+
 ## MUS-243-DOC-001 验收收口及跨窗口防回归（2026-10-29）
 
 - 用户已在实际游戏中完成并确认 MUS-243 上轮要求的测试，30↔31 号路同曲双向跨图未再重播，相关模式及切换回归均报告正常。属于**用户报告的验收结果**，不能改写成 AI 自行编译／实测。最新 `.243` MAP 未随本轮对话提供，空间结论保持未独立核验。

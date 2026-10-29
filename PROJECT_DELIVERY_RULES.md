@@ -1,3 +1,57 @@
+## VIOLET-248-ACC-001｜三笔 Git 提交收口（2026-10-29）
+
+- **实际依据**：用户提供 `PAL-5.62.248.patch`，RPP-BASE 为 `b610217566cedf3ed8f9138d126ab40d56ed41a6`（已提交 PAL-5.62.243）；该补丁累计 SAV-244、Route32-245/246、VIOLET-247/248 与 SURF-AUD-001。本轮以该工作区补丁还原最终文件，并保留 `.248` 游戏实现与 `TEST-231`，不更改 ASM 或存档结构。
+- **用户验收**：用户反馈本轮工作区已测试且没有问题；此前明确确认 Route32 往返、桔梗市 Cut、跳崖和 VIOLET-248 Surf 上岸恢复。该反馈不等于助手运行 ROM，不自动证明所有历史旧存档样本和全部红蓝构建场景均被单独覆盖；尤其最初卡住的 SAV 原始样本仍需独立证据。
+- **三笔独立提交（按顺序）**：① `fix(save)`：仅旧存档继续游戏时恢复 Tileset 指针和阶段版本 `.244`；② `feat(johto)`：Route32 接入、Fly/Town Map 表、桔梗市三种地形、Surf 上岸修复及最终 `.248` 版本；③ `test(tool)`：Surf 审计、地图与存档防回归测试、长期维护文档。`home/overworld.asm` 和 `data/game_version.asm` 在前两笔均有分阶段差异，**不可按完整文件路径粗暴暂存**。
+- **交付执行**：当前用户工作树仅应用收口文档增量，然后在**暂存区保持干净且 HEAD 仍为上述 `.243`** 的前提下，依次 `git apply --cached --check`、`git apply --cached` 三份分笔暂存补丁；每一笔核对 `git diff --cached` 后自行 `git commit -F 中文日志.txt`，切勿对工作树直接应用分笔补丁或把恢复全量重复叠加。累计全量只允许在干净 `.243` 基线恢复时使用。三笔日志标题为英文 Conventional 前缀加中文说明，正文中文。
+- **边界**：不由助手编译／链接 ROM，不代提交或 Push。静态审计／补丁回放与用户手机实测分开记录，日后需以用户提供的新 HEAD 更新基线。
+
+## SURF-AUD-001（工具维护）— 城都水域新增前必须复用旧逻辑并静态预检
+
+- 用户确认 VIOLET-248 桔梗市已可上岸。后续地图首先复用项目现有三条 Surf 入口及关都陆地通行扫描，不能只照抄 Gold 水格而忘记 `wTileInFrontOfPlayer -> C`。
+- 新增任何城都水面，必须登记 `tools/johto_surf_contracts.json` 并运行 `python tools/johto_surf_preflight.py --gold /Gold根目录`、`python -m unittest discover -s tools/tests -p test_johto_surf_preflight.py`；失败不得打包。没有 Gold 资源时仅能完成非源数据审查，不能宣称逐格一致。
+- 旧分支文档有 Surf runtime / geometry 专项脚本名称，但用户提供的旧参考包不含对应脚本文件；当前审计复用的是现有 RPP / Gold 解码库及源码行为合同，并非从旧脚本直接复制。详细边界见 `docs/JOHTO_SURF_PREFLIGHT.md`。
+- 本次仅添加工具、合同与文档，**不改动游戏 ROM 源码和可见版本 PAL-5.62.248**；用户尚未提交 SAV-244 到 VIOLET-248 的累计功能修改，不推断新的 Git HEAD。
+
+## VIOLET-248 / PAL-5.62.248 — 修复桔梗市冲浪无法上岸（待本机编译与实测）
+
+- **故障原因**：`home/overworld.asm::CollisionCheckOnWater` 对桔梗市先调用 `JohtoVioletWaterAhead`。当目标不是 Gold WATER 时，旧分支直接进入 `.checkIfNextTileIsPassable`，没有把 `wTileInFrontOfPlayer` 重新装入 `C`；该扫描因此可能使用旧的/无效的 C 值，将岸上可走图块判成碰撞。用户实测确认可以下水但无法上岸。
+- **参考逻辑**：旧 NPC 金银分支在 `CollisionCheckOnWater` 的城都水面查询返回非水后，明确执行 `ld a, [wTileInFrontOfPlayer]` / `ld c, a`，再进入原通行表扫描。本修复补回这一步；继续复用现有通用上岸/恢复步行状态代码，不另造 Surf 状态机。
+- **范围**：只改桔梗市地图专用非水分支，保留 140 格 Gold 水面表、入水检查、砍树和跳崖、关都 Surf 与徽章逻辑不变。新增 `tools/tests/test_violet_surf_shore_248.py`，包含正向检查与移除两条指令的故障注入反例。
+- **状态**：静态回归及补丁回放可通过不代表 RGBDS 已链接；项目规则禁止助手自行编译 ROM。用户需重新编译红蓝／测试版本并在桔梗市实际测试：从不同岸边上岸、继续走动、重新入水；同时复测关都与 Route32 Surf。未获用户实测前保持开发候选，不生成提交日志、不 Commit/Push。
+
+
+## VIOLET-247 / PAL-5.62.247 — 桔梗市原版地形能力（开发候选）
+
+- 仅限**桔梗市稳定 ID5**。以提供的 MUS Gold `VioletCity.blk`（20×18 Blocks）和 `johto_collision.asm` 全量解码为依据：3 个 `HOP_DOWN`（X26、28、29，Y22），140 个 `WATER` 象限，1 个 `CUT_TREE`（X36,Y19）；另有 68 个 `HEADBUTT_TREE` 象限。摇树、门房、普通障碍等不在本轮解锁范围。
+- 跳崖使用既有 `JohtoPilotRoute29LedgeTiles` + 原共享动画，不改跳跃步数；Surf 采用按 Gold 16×16 坐标登记的地图专用查询，覆盖 A 键、Surfboard/道具与游泳中继续移动/上岸，其他地图默认不开放；Cut 只对桔梗市 Gold 原始唯一格启用，$63→$8D 克隆块只替换可砍格，隔壁 Headbutt 树保持。`johto.bst` 原始 141 块逐字节保留，运行时只追加第 142 块。
+- 当前阶段**不改徽章系统**：Cut 仍遵从既有 Cascade Badge、Surf 仍遵从 Soul Badge 的入口门禁（原版 Gold 的 Hive/Fog Badge 剧情尚未建立）；验收时应使用符合现有条件的存档和会相应招式的宝可梦。不把受徽章门禁拒绝误判为地图不支持。
+- 保留 SAV-244、Route32-245/246 的未提交累计修改、现有 ID、连接、存档格式和关都 Field Move 行为。新增 `tools/tests/test_violet_field_247.py`；严禁跳过源资产严格对照和 ASM 预检。
+- 交付仍为**互斥增量/全量开发补丁**，不附提前拟提交日志，AI 不自行编译 ROM、不提交 Git。新版本的 ROM0、Bank $03、联接与红蓝 MAP、手机游泳/下水/上岸/砍树后通行/跳崖/Continue 仍须用户本机验收，静态测试不能替代。
+
+## ROUTE32-246 / PAL-5.62.246 — 修正城都活动地图 Town Map 表并加入交付前强制核验（待用户构建）
+
+- **真实故障证据**：用户 2026-10-29 的 `make test-red` 日志在 `engine/fly_town_map_helpers.asm:844/851` 报两次 `Assertion failed`。ROUTE32-245 将 `NUM_JOHTO_ACTIVE_MAPS` 增至9，但旧 Fly/Town Map 条目与槽位→地标索引表各停留在8；这是上一轮开发遗漏，不是 RGBDS／设备问题。
+- **最小修复**：补入槽位8（Route32，稳定ID7）Town Map 条目 `(Y108,X92)`、`Route 32` 名字及 Gold 地标索引7；名称实体与 Fly Helper 放在同 Bank `$35`，不从不可直接读取的浮动 Bank 返回名字指针。保持现有 8 张槽位顺序和 Route32 地图/碰撞/Warp/音乐逻辑不变。
+- **防止复发**：`tools/johto_pilot_migration_audit.py` 新增 `active_slot_town_map_tables`，随 `NUM_JOHTO_ACTIVE_MAPS` 动态对照 Fly/Town Map 记录、浏览索引、地图 profile 的地标编号与真实地标坐标／名称；对缺表、错索引、错坐标、错名称均 FAIL。新增5项反例测试，**地图增减时必须执行这项审计和 ASM 预检**。只过 ASM 符号预检、碰撞测试或补丁回放不足以宣称可构建。
+- **交付/限制**：仅两份互斥开发补丁 ZIP（已打245的增量、干净 `.243` HEAD `b6102175` 的累计全量，后者含 SAV-244、245、246），不含 Git 提交日志；AI 不编译/链接 ROM、不 Commit/Push。新版红蓝、测试两色、MAP 与实机走动仍由用户本机构建／验收；没有编译证据不称已编译成功。
+
+## ROUTE32-245 / PAL-5.62.245 — 城都南下批量资源准备与首张道路开放（开发待验）
+
+- **准确工作区前提**：本批以新上传的 `.243` / `b610217566cedf3ed8f9138d126ab40d56ed41a6` 干净 HEAD 以及 SAV-244 开发补丁已应用状态为增量起点；`.243` 原项目全量包含 SAV-244 + 本批。用户未明确确认 SAV-244 手机实测或 Git Commit，不把它写成已验收/已提交。
+- **实际开放仅 Route32**：稳定 ID `7` 新增活动槽位 `8`（9 张活动地图）。原 Gold `.blk` 与已实现的旧 NPC 金银分支 compact `.blk` 分开保存；复用经逐字节核对的 Johto blockset 与图形，不移植旧的物理地图句柄。
+- **双向连接与防卡控制**：桔梗市南 ↔ Route32 北，Gold offset=0，严格只开放人物 tile `x=14/15`。Violet 原 EAST 门房屏幕预览及 Warp 不改。Route32 北边预览保留参考项目多三列可视缓冲；Route32 南、西、东边界保持关闭。两端 Header、资源和预览 Block 都在 `$43` 同一 ROM Bank，防止跨 Bank 直接复制错误。
+- **音乐与地点**：Route32 使用原版 Gold `MUSIC_ROUTE_30`（GSC 模式）和项目现有 RBY 道路曲族；Gold 地标索引 7 与 Save/Continue、Town Map 复用，不额外增加游戏存档字段。新地图保持已验收的 30↔31 同曲续播规则，不改关都音乐与门房。
+- **只暂存不开放**：联合洞穴 1F（ID8）、33号道路（ID9）、桧皮镇（ID10）的旧 Compact `.blk` 已作为 `maps/johto_staged/` 离线来源归档并固化 SHA-256；**没有**登记到活动槽位、Header、Warp 或地图连接。洞穴另需独立 Tileset、ROM0 可读碰撞、洞口正确落点/出口方向与返回路径；33号路后续还需 modern Tileset。绝不把资源文件存在当作可玩开放。
+- **验收重点**：用户本机正式红/蓝编译和 MAP 空间检查；从桔梗市 `(Y35,X14/15)` 向南一步进入 Route32、双向正常走动；返回桔梗市后继续能动，步行和骑行方向完整；在 Route32 保存／Continue 仍能动，边界未开放区域不应误传送、残影或卡死；关都和既有门房/音乐不回归。本轮静态审计与未编译源码不能冒充 ROM/手机实测。
+- **交付规则**：只交两份互斥补丁的开发合集 ZIP，不含 Git 提交日志，AI 不自行编译 ROM、Commit/Push。增量仅适用于 SAV-244 已打而未提交；全量仅适用于 `.243` HEAD `b6102175` 干净工程，两份严禁叠加。下一批先收用户运行反馈，再开放洞穴，不因为用户想加快进度而打开未核实 Warp。
+
+## 旧存档图块指针回放规则（SAV-244）
+
+- 存档 `wCurMapTileset` 的 bit7 表示地图正文从存档恢复（新旧存档均如此）；这个分支允许跳过 ROM 地图 Header，但**不能**沿用可能已经过时的图块集指针。必须保留 `LoadMapHeader` 中旧存档刷新 `LoadTilesetHeader` 的路径。
+- 刷新时保存/恢复 `wDestinationWarpID` 并临时设为 `$FF`，避免以刷新指针为由改变存档坐标。保护城都地区/稳定 ID 验证与既有关都读档兼容；不得改 SRAM 布局，不能宣称所有旧档都兼容。
+- 后续改 ROM Bank、Tileset、存读档、碰撞或头数据时，交付前运行 `python -m unittest discover -s tools/tests -p test_save_tileset_reload_244.py`、ASM 预检和相关地图审计；仍须用户本机编译/实际旧存档回归才能验收。
+
 ## MUS-243-DOC-001 — 最新已报告验收与正式双提交基线（2026-10-29）
 
 - **最近已确认提交基线**：用户上传的 `PAL-5.62.239` 主项目 ZIP，导出元数据记录分支 `常规功能备份`，完整 HEAD `2b0d260729dbf28bc72dd9a739e646b1bfaf35e8`。ZIP 未包含 `.git`，本环境没有手机实时 Git 状态。用户明确说后续 JSON、LOC、MUS-241 等补丁已应用但尚未提交；没有收到任何新的 HEAD，不能虚构中间提交。

@@ -72,7 +72,7 @@ def make_map_onboarding(gold: Path, map_name: str, art: dict, geometry: dict) ->
              ['data/johto_pilot_map_headers.asm','data/johto_indoor_house.asm',
               'engine/johto_pilot_runtime.asm','tools/johto_pilot_migration_audit.py']),
         item('surf', water > 0,
-             f'Gold 水域相关16x16地格 {water} 个；逐岸核对上水、移动、上岸、徽章、音乐及双入口',
+             f'Gold 水域相关16x16地格 {water} 个；逐岸核对上水、移动、上岸、徽章、音乐及双入口；有水域必须运行 johto_surf_preflight.py 并登记水域合同',
              ['home/overworld.asm','engine/overworld/player_movement.asm','data/johto_pilot_runtime_assets.asm']),
         item('dig_escape_rope', cave,
              '洞穴需分别审核技能准入、最近入口来源、跨地区安全返程、旧档与黑屏返回',

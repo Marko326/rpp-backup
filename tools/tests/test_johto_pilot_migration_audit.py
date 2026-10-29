@@ -19,7 +19,8 @@ REQUIRED_FILES = (
     "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm",
     "data/johto_indoor_house.asm", "data/johto_gate_runtime.asm", "engine/johto_pilot_runtime.asm",
     "home/overworld.asm", "home.asm", "engine/overworld/doors.asm",
-    "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm",
+    "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/fly_town_map_helpers.asm",
+    "engine/johto_pilot_town_map_browse.asm", "text/map_names.asm",
     "gfx/tilesets/johto.tilecoll",
     "gfx/tilesets/johto_house.tilecoll",
     "color/data/map_palette_assignments.asm", "color/data/map_palette_sets.asm",
@@ -33,6 +34,7 @@ REQUIRED_FILES = (
     "maps/johto_pilot/GuideGentsHouse.reference.blk", "maps/johto_pilot/GuideGentsHouse.runtime.blk",
     "maps/johto_pilot/VioletCity.gold.blk", "maps/johto_pilot/VioletCity.runtime.blk",
     "maps/johto_pilot/Route31VioletGate.gold.blk", "maps/johto_pilot/Route31VioletGate.runtime.blk",
+    "maps/johto_pilot/Route32.gold.blk", "maps/johto_pilot/Route32.runtime.blk",
 )
 
 
@@ -69,7 +71,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 8",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 9",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -77,15 +79,54 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 8",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 9",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))
 
+    def test_missing_new_town_map_entry_fails_before_assembly(self):
+        self.mutate("engine/fly_town_map_helpers.asm",
+                    "    ; Slot 8: Route32 (stable ID 7), Gold landmark index 7.\n    db 108, 92\n    dw JohtoPilotRoute32Name\n", "")
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
+
+    def test_missing_new_browse_index_fails_before_assembly(self):
+        self.mutate("engine/fly_town_map_helpers.asm",
+                    "db 0, 1, 2, 3, 4, 2, 5, 4, 7",
+                    "db 0, 1, 2, 3, 4, 2, 5, 4")
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
+
+    def test_wrong_new_browse_index_fails_before_assembly(self):
+        self.mutate("engine/fly_town_map_helpers.asm",
+                    "db 0, 1, 2, 3, 4, 2, 5, 4, 7",
+                    "db 0, 1, 2, 3, 4, 2, 5, 4, 6")
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
+
+    def test_wrong_new_town_map_coords_fails_before_assembly(self):
+        self.mutate("engine/fly_town_map_helpers.asm",
+                    "    db 108, 92\n    dw JohtoPilotRoute32Name",
+                    "    db 104, 92\n    dw JohtoPilotRoute32Name")
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
+
+    def test_wrong_new_town_map_name_fails_before_assembly(self):
+        self.mutate("engine/fly_town_map_helpers.asm",
+                    'JohtoPilotRoute32Name:: db "Route 32@"',
+                    'JohtoPilotRoute32Name:: db "Route 33@"')
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
+
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 8", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 9", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))
