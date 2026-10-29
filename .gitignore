@@ -25,9 +25,12 @@
 # swap files for vim
 .*.swp
 
-# Ignore generated JSON by default. The Johto gatehouse contract is source, not an output.
-*.json
-!tools/johto_pilot_door_contracts.json
+# JSON inputs/contracts are source files and must remain visible to Git.
+# Keep only disposable JSON in explicitly scoped output/cache directories.
+# Do not put source manifests or provenance files in these directories.
+extras/**/*.json
+tools/generated_reports/**/*.json
+tools/cache/**/*.json
 
 # for any of the poor souls with save game files in their working directory
 *.sgm

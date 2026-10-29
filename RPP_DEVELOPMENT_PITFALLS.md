@@ -1,3 +1,40 @@
+## MUS-243-DOC-001 验收收口及跨窗口防回归（2026-10-29）
+
+- 用户已在实际游戏中完成并确认 MUS-243 上轮要求的测试，30↔31 号路同曲双向跨图未再重播，相关模式及切换回归均报告正常。属于**用户报告的验收结果**，不能改写成 AI 自行编译／实测。最新 `.243` MAP 未随本轮对话提供，空间结论保持未独立核验。
+- 上次 MUS-241 的 `ResolveMusicStyle.rbyFamily` 局部标签缺失曾令用户 RGBDS 链接失败；保留 `tools/asm_symbol_preflight.py` 与负向测试作为后续 AI 修改 ASM 时的必跑门禁。它只能检查局部引用，不能代替真正链接或运行时音乐播放接续。
+- 旧 Gold 的 Route30/Route31 都使用 `MUSIC_ROUTE_30`；新实现对连接前后目标曲与缓存作比对，同曲跳过重播，换曲、Warp、战斗恢复等仍走原逻辑。新地图务必增加相邻同曲的双向检测，不能用相邻地图编号代替真实连接拓扑。
+- JSON 源合同不能再被全局 `*.json` 忽略；按旧 NPC 项目经验，仅忽略指定生成目录。正式提交采用模式 A 分功能与工具两笔；第二笔带 `.gitignore`、`tools/`、测试和配套说明。不得把工具隔离补丁和从 `.239` HEAD 的累计全量同时套用，也不得重复添加已有门房合同。
+- 后续 `222` 个城都稳定 ID 仍只有当前 8 个活动地图完成运行时音乐适配；其余需逐张映射并验收，避免将这一轮通过误写成全城都音乐已完成。
+
+## MUS-243 相邻道路同曲仍重播：不能只检查曲目表
+
+- Gold Route30/Route31 直接连通且 `MUSIC_ROUTE_30` 相同；关东也存在真正连通的同曲路段。`wCurMap=$FC` 是共享句柄，不能直接用旧物理地图号或地图名判定同曲。
+- 即使两处曲目表相同，RBY 的 `PlayDefaultMusicFadeOutCurrent` 仍有战斗后强制重播分支，不能把源码里存在 `wLastMusicSoundID` 比较就算实机续播通过。
+- 在无缝连接专用路径快照切换前 Gold 场景/RBY 音乐，加载后还要求实际缓存匹配对应移动模式，才跳过播放入口；若歌曲变更、缓存未建立或 Warp/战斗返回仍使用原规则。新窗口要跑 `test_johto_connected_music_243.py`、`asm_symbol_preflight.py` 和地图审计并等待用户正式 ROM/手机验证，禁止静态测试替代音轨续播验收。
+
+## MUS-242：Python 业务测试通过仍可能留下 RGBDS 未定义局部标签（交付强制门禁）
+
+- MUS-241 在 `engine/menu/options_menu.asm` 中引入 `jr .rbyFamily`，但 `ResolveMusicStyle` 内未定义 `.rbyFamily`。用户编译时报 `Unknown symbol "ResolveMusicStyle.rbyFamily"`，前轮宣称的 Python 业务测试和补丁回放均不能替代真实汇编/链接。
+- 修复路径：将错误分支改到已有的 `.legacyStyle`，使用 `jp` 避免相对跳转距离问题；保留原 RBY/RBY+C 语义。**补丁发出前执行** `python tools/asm_symbol_preflight.py`，再运行局部符号错误注入测试；新 `.asm` 修改不能跳过此门禁。
+- 检查器默认不编译 ROM，只检查 `jr`/`jp`/`call` 的本地点标签；其他未定义跨文件符号、宏和条件汇编、`jr` 位移超范围、ROM Bank 与 MAP 溢出必须交由用户本地 `python tools/asm_symbol_preflight.py --build` 的 RGBDS 完整四目标构建确认。AI 不能将静态 PASS 写成 RGBDS PASS，也不自行编译 ROM。
+
+## MUS-241 / PAL-5.62.241 — 城都 8 张已激活地图的音乐场景与中立门房（开发待验，2026-10-29）
+
+- **前置工作区**：用户确认已应用 JSON-TRACK-002、LOC-240（地点显示实机已正常），尚未 Git Commit。此次只追加 MUSIC-241 增量；不重复添加/覆盖之前 JSON、Save/Continue 名称修复。正式版本 `.240 -> .241`，`TEST-231` 不变。
+- **原版核对**：MUS Gold `data/maps/maps.asm`：若叶镇 New Bark、29 号路 Route29、吉花市 Cherrygrove、30/31号路同为 Route30、向导家 Cherrygrove、桔梗市 Violet、31号路门房 Route30（但中立门房按进入来源继承，不固定开一段歌曲）。旧 `NPC-5.62.243` 的 `LookupJohtoMapGSCMusic` / `CheckJohtoMusicSceneTransition` 仅作五模式与场景缓存参考，绝不直接使用旧物理地图号。
+- **新工程映射**：以 `(wCurMap=$FC, region=Johto, stable local ID)` 经 `GetJohtoActiveSlot` 查找 8 条活动槽位的 Gold 主题；状态/表 `0,1,2,3,4,125,5,6` 对应 8 槽。只有当前地图默认 BGM 才参与 Gold 场景映射，战斗、Surf、飞行、GB Player 直选曲继续走现有全局风格路径；Bike Song Off 的骑行仍使用当前地点主题。
+- **门房音乐**：进入门房的已登记 Warp 在源 ID 被覆盖前，写入原来闲置的 `$D7C9` `wJohtoGateMusicSourceLocalID`。来自 Route31 ID4 时保留道路 RBY/GSC/RND 已在播曲，来自 Violet ID5 时保留城市曲；旧存档或非法来源退回 Route31 主题，不能从共享句柄 `$FC`、`wWarpedFromWhichMap` 或陈旧 `wLastMap` 猜来源。返回同侧尽量不重启，跨到另一侧选目标地点曲。门房仍**不额外显示地点牌**，地点显示独立。
+- **缓存与存档**：`$D7CA` 由旧未用字节记录最近 Gold 场景，不变更后续 WRAM/SRAM 地址或存档长度；跨不同 Gold 场景（即使同 RBY ID）仅在 GSC/GSC+C/RND 且播放地图 BGM 时清除旧原曲缓存。RND **不在进门/地图载入时主动抽曲**，只在真正启动新曲时重抽；RBY/RBY+C 不被强制切换。切回关都清除场景标识并在相应模式下恢复正常选曲。
+- **交付和验收边界**：本轮静态测试与补丁回放不等于 ROM 通过。AI 不编译 ROM、Commit 或 Push；等待用户本机红蓝 ROM 构建、新 MAP、五种模式、门房两侧进出、Bike Song On/Off、Surf、存读档、关都与渡轮回归。详情 `docs/JOHTO_MUSIC_SCENES_241.md`。
+
+## JSON-TRACK-002｜按旧 NPC 金银分支的目录级忽略规则防止源 JSON 再度漏入 Git（2026-10-29）
+
+- 参考用户交接包 `NPC-5.62.243_金银分支/.gitignore`：**不全局忽略 `*.json`**，而是只忽略 `extras/**/*.json`、`tools/generated_reports/**/*.json`、`tools/cache/**/*.json` 三类一次性输出。此规则已从旧分支核对，而不是单独为现有门房合同开白名单。
+- 新增的地图定义、门房合同、资源清单、来源指纹与其他源 JSON **默认可被 Git 追踪**，无需每次维护 `!某个文件.json`。不要把需要入库的清单或来源记录放在上述生成输出目录。
+- 离线工具生成的临时 JSON 应写到约定的生成目录，或写到项目外的隔离输出目录，不要因为临时输出存在就恢复全局 `*.json`。首次新增 JSON 时仍需查看 `git status --short` 并确认 `git add`，因为「未忽略」不等于「已提交」。
+- 运行 `python -m unittest tools.tests.test_gitignore_json_policy`（或 `python -m unittest discover -s tools/tests`）检验未来源 JSON/生成 JSON 的 Git 行为；测试包含恢复全局忽略规则的反向故障注入。若重引入 `*.json` 则必须失败。
+- 历史段 `P6-DOC-001` 记录的是当时的单文件例外紧急处理，不再代表当前长期忽略策略；本次不修改 `tools/johto_pilot_door_contracts.json` 内容。
+
 ## P6-DOC-001｜被忽略 JSON 合同与补丁重复创建冲突（2026-10-28）
 
 - 根 `.gitignore` 中 `*.json` 会忽略新增的 `tools/johto_pilot_door_contracts.json`，即使手机本地与 RPP 导出 ZIP 里存在该文件，`current_worktree.patch` 仍不包含它；再执行带 `new file` 的累计补丁就报 `already exists in working directory`。

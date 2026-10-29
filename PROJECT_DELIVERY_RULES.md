@@ -1,3 +1,42 @@
+## MUS-243-DOC-001 — 最新已报告验收与正式双提交基线（2026-10-29）
+
+- **最近已确认提交基线**：用户上传的 `PAL-5.62.239` 主项目 ZIP，导出元数据记录分支 `常规功能备份`，完整 HEAD `2b0d260729dbf28bc72dd9a739e646b1bfaf35e8`。ZIP 未包含 `.git`，本环境没有手机实时 Git 状态。用户明确说后续 JSON、LOC、MUS-241 等补丁已应用但尚未提交；没有收到任何新的 HEAD，不能虚构中间提交。
+- **验收与状态**：用户对 MUS-243 上轮所列音乐和回归项目给出“都测过、没问题”的实机反馈；LOC-240 地点乱码修复也获正确显示反馈。正式版保留 `PAL-5.62.243`，不再改动音乐 ASM。用户尚未提供可独立核验的 `.243` 两色 MAP 空间报告；不把用户的功能验收等同于本环境编译、MAP 审计或全222图完成。
+- **按用户原始项目要求选择模式 A**：从 HEAD `.239` 到 `.243` 的累计未提交差异包含游戏运行代码，也包含 `.gitignore`、`tools/asm_symbol_preflight.py` 和工具测试，因此正式收口需**3份补丁+2份日志=一个ZIP**。第一笔仅包含游戏功能与版本文件；第二笔包含工具、测试、Git 忽略规则及配套文档。两份提交日志均从**实际累计差异**分工生成，不单纯记录本轮文档修改。
+- **应用顺序**：先在用户已应用 `JSON-TRACK-002 + LOC-240 + MUS-241 + MUS-242 + MUS-243` 的未提交状态应用清理增量；再用工具反向隔离补丁暂时退回工具/文档到 HEAD，仅保留功能做第一笔 Git Commit；接着 `git apply -R` 撤回隔离，恢复工具/文档并做第二笔 Git Commit。全量补丁仅供从干净 `.239` HEAD 恢复使用，绝不能与增量叠加。AI 不自行 Commit/Push 或编译 ROM。
+- **边界**：未来新增地图需同步配置 Gold 曲目、来源归属和连接同曲续播审计。用户本次确认的是当前已开放地图与所列回归场景，不代表未开放地图、所有平台或所有历史存档已验收。
+
+## MUS-243 / PAL-5.62.243 — 无缝相邻地图同曲不重播（历史开发说明，用户验收见上方 DOC-001）
+
+- **修复范围**：在 `home/overworld.asm` 的 `CheckMapConnections .loadNewMap` 中，在加载目标 Header 前保留上一地图的 Gold 场景及 RBY 原始 BGM；加载后仅当目的地仍是城都 `$FC`、Gold 场景相同、RBY BGM 相同、当前音乐缓存符合步行／Bike Song Off／Bike Song On／Surf 的预期时，跳过 `PlayDefaultMusicFadeOutCurrent`，保持播放位置。**音乐不同、缓存失效、首次加载、Warp、战斗返回、关都原逻辑均不跳过。** `wd72e` 的战斗后强制重播路径不在普通无缝同曲过图中误触发。
+- **Gold 依据**：原版 `home/audio.asm` 的 `FadeToMapMusic` 与 `PlayMapMusic` 比较正在播放的 `wMapMusic` 与目标曲，匹配即返回；`Route30` 与 `Route31` 的地图资料均为 `MUSIC_ROUTE_30`。保留关都原有单曲缓存与正常音乐切换；地点牌是否显示是独立规则，不能拿地图名作歌曲是否变化的依据。
+- **覆盖范围边界**：现有 Gold 原曲对照只覆盖 8 个已激活的城都槽位；222 个稳定 ID 并**未**全部完成运行时映射，不新增未开放地图和曲目。关都原有 RBY 音乐及模式映射不等于“222 张 Gold 地图已经适配”。
+- **交付**：在 JSON-TRACK-002 + LOC-240 + MUS-241 + MUS-242 已应用、都未 Git Commit 的前提下，提供 MUS-243 增量；累计全量从已确认 `.239` / `HEAD 2b0d2607` 恢复。二者互斥，绝不叠加；用户自行编译红蓝 ROM、检查最新 MAP、手机实测并提交。`tools/tests/test_johto_connected_music_243.py` 提供不运行 ROM 的回归检查，AI 每次改 ASM 仍必须运行 `tools/asm_symbol_preflight.py`。
+- **验收**：Route30↔Route31 双向，步行 + Bike Song Off／On + GSC、RBY、RND 连续播放不重头；在吉花市↔Route30、门房↔桔梗市等不同曲场景必须正常换曲；战斗恢复、Surf、存读档、地点牌、门房与关都回归。静态通过不冒充以上实际通过。
+
+## 交付前 ASM 符号预检：每次新窗口必须执行（MUS-242）
+
+- 2026-10-29 用户发现 MUS-241 实际链接错误 `ResolveMusicStyle.rbyFamily` 未定义；原 Python 音乐静态测试未检查分支符号。此类错误在交付前应当被拦截，**不是把“静态测试通过”当作汇编通过**。
+- **任何窗口修改 `.asm` 后，交付前强制运行** `python tools/asm_symbol_preflight.py`，默认对完整工程 ASM 的 `JR/JP/CALL` 局部点标签进行作用域校验，并运行 `python -m unittest discover -s tools/tests -p 'test_asm_symbol_preflight_242.py'` 和相关既有审计。发现 undefined local label 即停止打包。新工具的负向故障注入必须持续通过。
+- **真实链接仍是必须由用户执行的独立关卡**：`python tools/asm_symbol_preflight.py --build` 会在用户本地使用现有 RGBDS 调用 `make -B red blue test-red test-blue map`，产出正式 Red/Blue、TEST 两色及正式 MAP。AI 严格不自行编译/链接 ROM；没有用户报告的本机构建结果，不能宣称无 `JR` 越界、跨文件符号错误、Bank 溢出或运行正常。若用户提供最新编译错误，先修该错误再继续功能开发。
+- 增量基于当前 JSON-TRACK-002 + LOC-240 + MUS-241 已应用、仍未 Git 提交的工作区；累计全量基于上次真正已确认的 `PAL-5.62.239 / HEAD 2b0d2607`。增量、全量二选一，不得叠加；不重复补丁，也不得修改游戏已有存档结构。
+
+## MUS-241 / PAL-5.62.241 — 城都 8 张已激活地图的音乐场景与中立门房（开发待验，2026-10-29）
+
+- **前置工作区**：用户确认已应用 JSON-TRACK-002、LOC-240（地点显示实机已正常），尚未 Git Commit。此次只追加 MUSIC-241 增量；不重复添加/覆盖之前 JSON、Save/Continue 名称修复。正式版本 `.240 -> .241`，`TEST-231` 不变。
+- **原版核对**：MUS Gold `data/maps/maps.asm`：若叶镇 New Bark、29 号路 Route29、吉花市 Cherrygrove、30/31号路同为 Route30、向导家 Cherrygrove、桔梗市 Violet、31号路门房 Route30（但中立门房按进入来源继承，不固定开一段歌曲）。旧 `NPC-5.62.243` 的 `LookupJohtoMapGSCMusic` / `CheckJohtoMusicSceneTransition` 仅作五模式与场景缓存参考，绝不直接使用旧物理地图号。
+- **新工程映射**：以 `(wCurMap=$FC, region=Johto, stable local ID)` 经 `GetJohtoActiveSlot` 查找 8 条活动槽位的 Gold 主题；状态/表 `0,1,2,3,4,125,5,6` 对应 8 槽。只有当前地图默认 BGM 才参与 Gold 场景映射，战斗、Surf、飞行、GB Player 直选曲继续走现有全局风格路径；Bike Song Off 的骑行仍使用当前地点主题。
+- **门房音乐**：进入门房的已登记 Warp 在源 ID 被覆盖前，写入原来闲置的 `$D7C9` `wJohtoGateMusicSourceLocalID`。来自 Route31 ID4 时保留道路 RBY/GSC/RND 已在播曲，来自 Violet ID5 时保留城市曲；旧存档或非法来源退回 Route31 主题，不能从共享句柄 `$FC`、`wWarpedFromWhichMap` 或陈旧 `wLastMap` 猜来源。返回同侧尽量不重启，跨到另一侧选目标地点曲。门房仍**不额外显示地点牌**，地点显示独立。
+- **缓存与存档**：`$D7CA` 由旧未用字节记录最近 Gold 场景，不变更后续 WRAM/SRAM 地址或存档长度；跨不同 Gold 场景（即使同 RBY ID）仅在 GSC/GSC+C/RND 且播放地图 BGM 时清除旧原曲缓存。RND **不在进门/地图载入时主动抽曲**，只在真正启动新曲时重抽；RBY/RBY+C 不被强制切换。切回关都清除场景标识并在相应模式下恢复正常选曲。
+- **交付和验收边界**：本轮静态测试与补丁回放不等于 ROM 通过。AI 不编译 ROM、Commit 或 Push；等待用户本机红蓝 ROM 构建、新 MAP、五种模式、门房两侧进出、Bike Song On/Off、Surf、存读档、关都与渡轮回归。详情 `docs/JOHTO_MUSIC_SCENES_241.md`。
+
+## JSON 合同及生成文件的长期 Git 管理规则（JSON-TRACK-002，2026-10-29）
+
+- 遵循用户提供的旧 `NPC-5.62.243` 参考分支：**禁止使用根目录全局 `*.json` 忽略规则**，也不再依赖为每个源 JSON 单独写 `!path.json`。新地图合同、审计配置、可复现的资源清单等源 JSON 默认必须能被 Git 发现。
+- 只对约定的临时输出目录进行目录级忽略：`extras/**/*.json`、`tools/generated_reports/**/*.json`、`tools/cache/**/*.json`；需保存到 Git 的来源文件、登记清单不得写进这些目录。其它转换输出优先放项目外隔离目录。
+- 后续改工具或添加新的 JSON 时，运行 `python -m unittest discover -s tools/tests -p test_gitignore_json_policy.py`，并用 `git status --short`／`git check-ignore -v --no-index <path>` 核对新增源文件。Git 默认可发现不等于已加入索引，仍需由用户决定 Git Commit／Push。
+- 已经存在的 `tools/johto_pilot_door_contracts.json` 原样保留，不重复以新增文件补丁创建。
+
 ## P6-DOC-001 / PAL-5.62.239 — 清理模式 A 的执行边界（2026-10-28）
 
 - 最新用户 ZIP 真实 HEAD 为 P5 `5c41a696...`，当前 `.239` 源码带未提交修改。正式清理采用**模式 A，功能与工具两个 Git 提交**；用户自行检查真实 Git 状态并 Commit/Push。此次清理不修改游戏可运行 ASM、不改变版本及音乐设置。
@@ -87,6 +126,12 @@
 - 累积未提交的 S1、清理、规则补丁时，若用户尚未确认 Git 提交，**一份拟提交日志应覆盖从最近已确认 Git 基线到目标状态的全部未提交修改**，不能只写最后一次文档清理，也不能虚构中间提交。
 - **仅用户明确告知已执行 Git Commit，并确认提交点后**，才把该提交作为后续日志及补丁的 Git 基线。交付、测试、生成日志 ≠ 已提交。禁止 AI 自行 Commit、Push。
 - 即使只是维护文档、验收清理而没有 ROM 行为改动，也要提供三件套；**用户提出验收清理三件套时必须附提交日志**，但单纯开发中间版、尚待验收的功能补丁不主动预写。可保留游戏内版本不变；待用户明确要求时，再于提交日志中说明版本未变化。功能改动的游戏可见版本按项目现有约定更新，勿批量改旧注释以凑版本。
+
+## 提交日志语言与历史风格（强制）
+
+- Git 提交标题采用项目历史的 Conventional Commit 格式：类型／作用域前缀保留英文，例如 `feat(johto):`、`fix(johto):`、`test(tool):`；**标题的实际修改说明使用中文，提交正文也使用中文**。技术标识、文件名、命令、API、曲目名及测试工具名保留其原文。
+- 不得擅自把提交标题和正文整体改成英文。生成日志前，必须先查看用户项目中 `RPP_PROJECT_CONTEXT/patches/individual/` 的真实历史提交；若历史提交标题为英文前缀加中文说明，应保持一致。
+- 双提交的两份日志都遵守此规则；日志需简洁、准确地记录本笔真实差异、根因／修复、实际检查、用户实测范围和未验证边界。
 
 ## 交付前校验与最小测试
 

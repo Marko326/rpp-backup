@@ -1,3 +1,37 @@
+## MUS-243-DOC-001 近期验收与后续地图入口（2026-10-29）
+
+- 用户已反馈 MUS-243 的 Route30↔Route31 双向同曲续播和上轮要求的音乐/回归场景在手机上测试无问题；之前 LOC-240 存档/Continue 地点乱码也反馈正常。本次只记录反馈，不改地图、音乐 ASM、版本号，不虚构没有随本轮提供的最新 Red/Blue MAP 空间证据。
+- 当前八个已激活城都槽位使用 Gold 原曲映射；并非全部222个稳定地图 ID 的音乐都已经匹配。后续新增地图必须同时纳入 Gold BGM、原版地标、同曲直连续播、门房来源继承与 Warp/存档回归审核。
+- 本轮累计有游戏代码和工具/测试改动，按 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 的**模式 A**进行正式验收收口：功能与工具分两笔，由用户自行提交。最后确认的 Git HEAD 仍为 `.239` 的 `2b0d2607`，直到用户报告新提交才更新基线。
+
+## MUS-243：Route30↔Route31 无缝同曲续播（待手机验收）
+
+当前 `PAL-5.62.243` 针对直接地图连接而非 Warp 增加缓存/场景双检查；Gold 原版 `PlayMapMusic` 和 `FadeToMapMusic` 在目标曲与当前曲相同时不重播。已激活的 Route30/Route31 Gold 主题均 `MUSIC_ROUTE_30`，新项目仅 8 个活动槽位的曲目已经适配，其它稳定 ID 未开放。真实构建、MAP 和五模式/骑行双向实测仍由用户完成。详情 `docs/JOHTO_MUSIC_SCENES_241.md` 与 `tools/tests/test_johto_connected_music_243.py`。
+
+## MUS-242 / PAL-5.62.242 — 修复 MUS-241 缺失的汇编局部符号并建立交付前预检（待用户构建，2026-10-29）
+
+- **用户构建失败证据**：用户应用 MUS-241 后 `main.asm(3068) -> engine/menu/options_menu.asm(968): Unknown symbol "ResolveMusicStyle.rbyFamily"`；因此 MUS-241 不可按“成功编译”或“游戏已验收”表述。前轮 Python 60 项场景静态测试没有验证局部标签实际存在。
+- **精准修复**：原 `ResolveMusicStyle` 中 `jr .rbyFamily` 引用不存在的局部标签，改为 `jp .legacyStyle`，对 RBY/RBY+C 仍走既存基础风格路径；不动 Gold 稳定 ID、门房来源、JSON 追踪、LOC-240 地点或存档布局。正式版本 `.241 -> .242`；测试版不变。
+- **持续防回归**：新增 `tools/asm_symbol_preflight.py`，默认全工程检查 `jr`/`jp`/`call` 引用的局部点标签是否在同一 RGBDS 全局作用域定义；兼容无冒号局部标签、宏定义与行内宏标签。`tools/tests/test_asm_symbol_preflight_242.py` 使用真实 MUS-241 故障注入、跨作用域和宏用例校验检查器。**后续任何修改 ASM 的窗口，交付前必须运行** `python tools/asm_symbol_preflight.py` 及相关工具测试；失败不得交付。
+- **强制边界**：静态 PASS 不涵盖绝对/跨文件符号、条件编译、`JR` 距离、Bank/SECTION 超额或 RGBDS 链接；本项目禁止 AI 编译 ROM，故用户本机应运行 `python tools/asm_symbol_preflight.py --build`（可用 `--rgbds-prefix` 指定工具路径），触发 Red/Blue 正式和 TEST 两色及正式 MAP 的真实构建。构建失败不能验收，成功也需实机音乐回归。只交本轮增量与从最后确认 HEAD `2b0d2607` 起的累计全量；用户 JSON/LOC/MUS-241 均已应用但未提交。AI 不 Commit/Push。
+
+## MUS-241 / PAL-5.62.241 — 城都 8 张已激活地图的音乐场景与中立门房（开发待验，2026-10-29）
+
+- **前置工作区**：用户确认已应用 JSON-TRACK-002、LOC-240（地点显示实机已正常），尚未 Git Commit。此次只追加 MUSIC-241 增量；不重复添加/覆盖之前 JSON、Save/Continue 名称修复。正式版本 `.240 -> .241`，`TEST-231` 不变。
+- **原版核对**：MUS Gold `data/maps/maps.asm`：若叶镇 New Bark、29 号路 Route29、吉花市 Cherrygrove、30/31号路同为 Route30、向导家 Cherrygrove、桔梗市 Violet、31号路门房 Route30（但中立门房按进入来源继承，不固定开一段歌曲）。旧 `NPC-5.62.243` 的 `LookupJohtoMapGSCMusic` / `CheckJohtoMusicSceneTransition` 仅作五模式与场景缓存参考，绝不直接使用旧物理地图号。
+- **新工程映射**：以 `(wCurMap=$FC, region=Johto, stable local ID)` 经 `GetJohtoActiveSlot` 查找 8 条活动槽位的 Gold 主题；状态/表 `0,1,2,3,4,125,5,6` 对应 8 槽。只有当前地图默认 BGM 才参与 Gold 场景映射，战斗、Surf、飞行、GB Player 直选曲继续走现有全局风格路径；Bike Song Off 的骑行仍使用当前地点主题。
+- **门房音乐**：进入门房的已登记 Warp 在源 ID 被覆盖前，写入原来闲置的 `$D7C9` `wJohtoGateMusicSourceLocalID`。来自 Route31 ID4 时保留道路 RBY/GSC/RND 已在播曲，来自 Violet ID5 时保留城市曲；旧存档或非法来源退回 Route31 主题，不能从共享句柄 `$FC`、`wWarpedFromWhichMap` 或陈旧 `wLastMap` 猜来源。返回同侧尽量不重启，跨到另一侧选目标地点曲。门房仍**不额外显示地点牌**，地点显示独立。
+- **缓存与存档**：`$D7CA` 由旧未用字节记录最近 Gold 场景，不变更后续 WRAM/SRAM 地址或存档长度；跨不同 Gold 场景（即使同 RBY ID）仅在 GSC/GSC+C/RND 且播放地图 BGM 时清除旧原曲缓存。RND **不在进门/地图载入时主动抽曲**，只在真正启动新曲时重抽；RBY/RBY+C 不被强制切换。切回关都清除场景标识并在相应模式下恢复正常选曲。
+- **交付和验收边界**：本轮静态测试与补丁回放不等于 ROM 通过。AI 不编译 ROM、Commit 或 Push；等待用户本机红蓝 ROM 构建、新 MAP、五种模式、门房两侧进出、Bike Song On/Off、Surf、存读档、关都与渡轮回归。详情 `docs/JOHTO_MUSIC_SCENES_241.md`。
+
+## P6-LOC-240｜PAL-5.62.240 — 城都存档／Continue 当前地点乱码修复（开发待本机验收）
+
+- 本轮以用户已应用、**尚未提交**的 JSON-TRACK-002 作为增量前置；用户主 ZIP 的已提交 HEAD 仍为 `2b0d260729dbf28bc72dd9a739e646b1bfaf35e8`，不是新 Git 提交。全量补丁从原 `.239` ZIP 累计包括 JSON-TRACK-002 和 LOC-240，不能和增量叠加。
+- **静态根因**：`DisplayContinueGameInfo` 与 `PrintSaveScreenText` 原本都 `callba GetMapNameForSaveScreen`。城都的 `$FC` 经 Bank `$35` 特殊入口可返回名称指针；若文本在 `$35`（桔梗市 `JohtoPilotVioletName`），随后 Bank `$1C` 的拷贝循环会从错误 ROM Bank 读取。部分旧地名位于 `$1C`，因此不是所有城市都必然乱码。
+- **修复**：两个菜单统一改走浮动 ROMX 的 `GetCurrentMapNameForSaveScreen`；仅对 `(wCurMap=$FC, region=Johto)` 按稳定 ID 的活动地图 profile 求 Gold Town Map 地标，在城都浏览代码所在 Bank 直接复制名称到 `wBuffer`，将 `_` 换成空格。其余关都路线继续调用旧 `GetMapNameForSaveScreen`，保留关都菜单逻辑。GuideGent 室内归吉花市，Route31VioletGate 归 Route31；不改变场景地图切换地名牌、Fly、Warp、存档结构或音乐。
+- Bank `$1C` 近满，新增代码全在浮动 ROMX；正式版本升到 `.240`，TEST 仍 `.231`；附静态回归工具，但**未在本环境编译 ROM 或手机实测**。用户需本机红蓝正式编译、核对新 MAP 并测试城都 8 个活动槽位的存档／Continue；尤其桔梗市、向导家、门房；再检查关都存档页面和 Continue、地图切换提示牌、存档后实际读档。测试通过后才可清理并准备 Git 提交。
+- 音乐问题暂不合并到本轮：城都场景选曲和门房来源继承 BGM 为另一个专项，避免一个补丁同时改变显示和音频导致定位困难；已有 JSON 规则修改也不应丢失。
+
 ## P6-DOC-001 / PAL-5.62.239 — 以用户实际 Worktree 收口（不新增地图）
 
 - 当前 P6 已开放城都 stable ID 0–6（ID0–6 的七个室外/门房地图）及向导家 ID125，总计 8 个活动槽位；其中桔梗市 ID5 和 Route31VioletGate ID6 仍属于 P6 第一批通道，不表示其它桔梗建筑开放。
