@@ -1,18 +1,19 @@
 LoadTilesetHeader:
 	call GetPredefRegisters
 	push hl
-	ld d, 0
+	; FIX-267: full 16-bit offset for each 12-byte tileset record.
+	; Previous 8-bit multiplication lost an intermediate carry at ID $20:
+	; $20 * 12 must be $0180, not $0080.
 	ld a, [wCurMapTileset]
-	add a
-	add a
-	ld b, a
-	add a
-	add b ; a = tileset * 12
-	jr nc, .noCarry
-	inc d
-.noCarry
-	ld e, a
-	ld hl, Tilesets
+	ld l, a
+	ld h, 0
+	add hl, hl ; 2 * tileset ID
+	add hl, hl ; 4 * tileset ID
+	ld d, h
+	ld e, l
+	add hl, hl ; 8 * tileset ID
+	add hl, de ; 12 * tileset ID, preserving high byte
+	ld de, Tilesets
 	add hl, de
 	ld de, wTilesetBank
 	ld c, $b

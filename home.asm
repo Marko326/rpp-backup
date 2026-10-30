@@ -1103,6 +1103,14 @@ ASSERT JohtoPilot_CollEnd - JohtoPilot_Coll == 8
 JohtoHouse_Coll:: INCBIN "gfx/tilesets/johto_house.tilecoll"
 JohtoHouse_CollEnd::
 ASSERT JohtoHouse_CollEnd - JohtoHouse_Coll == 4
+; Union Cave 1F: collision must be visible to the original unbanked reader.
+JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"
+JohtoUnionCave_CollEnd::
+ASSERT JohtoUnionCave_CollEnd - JohtoUnionCave_Coll == 13
+; Route33 movement uses exact Gold 16x16 spatial collision instead of ambiguous
+; shared 8x8 visual IDs. The unbanked tileset pointer stays valid.
+JohtoModern_Coll:: INCBIN "gfx/tilesets/johto_modern.tilecoll"
+ASSERT BANK(JohtoModern_Coll) == 0
 INCLUDE "home/copy2.asm"
 INCLUDE "home/text.asm"
 INCLUDE "home/vcopy.asm"

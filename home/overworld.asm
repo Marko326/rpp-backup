@@ -9,7 +9,7 @@ EnterMap::
 	ld [wJoyIgnore], a
 	call LoadMapData
 	callba ClearVariablesOnEnterMap
-	; P6-GATE-003: house DOWN carpets and the new east/west gate LEFT/RIGHT
+	; P6-GATE-003/FIX-264: house/cave DOWN carpets and east/west gate LEFT/RIGHT
 	; carpets need their destination warp-standing bit rebuilt on map load.
 	; They must not inherit the previous map's bit2; the exact registered
 	; Warp entry determines whether collision-only exit is currently armed.
@@ -17,6 +17,10 @@ EnterMap::
 	cp JOHTO_HOUSE
 	jr z,.armJohtoCarpetArrival
 	cp JOHTO_GATE
+	jr z,.armJohtoCarpetArrival
+	; FIX-264: cave entry also lands ON a collision-only DOWN warp.
+	; Clear stale flags and rearm only the exact registered (17,3) cell.
+	cp JOHTO_UNION_CAVE
 	jr nz,.noJohtoCarpetArrival
 .armJohtoCarpetArrival
 	ld hl,wd736
@@ -536,7 +540,7 @@ CheckWarpsNoCollisionLoop::
 	callba IsPlayerStandingOnDoorTileOrWarpTile
 	pop bc
 	pop hl
-	jr c,WarpFound1 ; jump if standing on door or warp
+	jp c,WarpFound1 ; long branch: cave preflight guard lengthens path to WarpFound1
 	; P6-INDOOR-005: the only JOHTO_HOUSE exits are Gold DOWN carpets.
 	; Walking onto either carpet must NOT warp, even while holding DOWN.
 	; Preserve wd736 bit 2 so a later DOWN collision can use the existing
@@ -546,6 +550,10 @@ CheckWarpsNoCollisionLoop::
 	jr z,CheckWarpsNoCollisionRetry2
 	cp JOHTO_GATE
 	jr z,CheckWarpsNoCollisionRetry2
+	; FIX-264: the cave DOWN carpet only warps upon a *blocked* step.
+	; ExtraWarpCheck now recognizes it, so skip the no-collision path.
+	cp JOHTO_UNION_CAVE
+	jp z,CheckWarpsNoCollisionRetry2
 	push hl
 	push bc
 	call ExtraWarpCheck
@@ -1512,7 +1520,7 @@ CollisionCheckOnLand::
 ; if not jumping a ledge
 	ld a,[wSimulatedJoypadStatesIndex]
 	and a
-	jr nz,.noCollision ; no collisions when the player's movements are being controlled by the game
+	jp nz,.noCollision ; no collisions when the player's movements are being controlled by the game
 	; Only the Gold-verified City/Route30 seam can cross north/south.
 	; Leave ROM0 small: the edge coordinate contract lives in expansion ROMX.
 	ld a,[wCurMap]
@@ -1569,6 +1577,24 @@ CollisionCheckOnLand::
 	cp 10
 	jp z,.noCollision
 .ordinaryTilePair
+    ; Route33: same visual tile ID can represent both WALL and FLOOR.
+    ; Never globally whitelist those IDs, use exact Gold coordinate mask.
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jr nz, .nonRoute33Tiles
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jr nz, .nonRoute33Tiles
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jp nz, .noCollision
+    callab JohtoRoute33StepPolicy
+    ld a, e
+    and a
+    jp z, .noCollision
+    jp .collision
+.nonRoute33Tiles
 	ld hl,TilePairCollisionsLand
 	call CheckForJumpingAndTilePairCollisions
 	jr c,.collision
@@ -2067,83 +2093,21 @@ CollisionCheckOnWater::
 	call CheckForJumpingAndTilePairCollisions
 	jp c,.collision
 	predef GetTileAndCoordsInFrontOfPlayer ; get tile in front of player (puts it in c and [wTileInFrontOfPlayer])
-	; Exact Gold water collision for Violet only. Other Johto maps retain
-	; their previous closed behavior; never pass by a shared art tile ID.
-	ld a, [wCurMapTileset]
-	cp JOHTO_PILOT
-	jp nz, .legacySurfTile
-	ld a, [wCurRegion]
-	cp MAP_REGION_JOHTO
-	jp nz, .legacySurfTile
-	ld a, [wCurLocalMapID]
-	cp JOHTO_VIOLET_CITY_LOCAL_ID
-	jr nz, .checkNewBarkSurf
-	callab JohtoVioletWaterAhead
-	jp c, .noCollision
-	; VIOLET-248: restore the actual front tile in C before the legacy
-	; passable-shore scan when the map-local water query says non-water.
-	ld a, [wTileInFrontOfPlayer]
-	ld c, a
-	jp .checkIfNextTileIsPassable
-.checkNewBarkSurf
-	cp JOHTO_NEW_BARK_LOCAL_ID
-	jr nz, .checkCherrygroveSurf
-	callab JohtoNewBarkWaterAhead
-	jp c, .noCollision
-	ld a, [wTileInFrontOfPlayer]
-	ld c, a
-	jp .checkIfNextTileIsPassable
-.checkCherrygroveSurf
-	cp JOHTO_CHERRYGROVE_LOCAL_ID
-	jr nz, .checkRoute30Surf
-	callab JohtoCherrygroveWaterAhead
-	jp c, .noCollision
-	; CHERRY-250: Gold marks the south-west rock platform as FLOOR, but
-	; its compact tile $3c is not in the global passability whitelist.
-	; Disembark only onto the eight explicitly audited Gold FLOOR cells.
-	callab JohtoCherrygroveShoreFloorAhead
-	jp c, .stopSurfing
-	; Cherrygrove uses the same safe disembark path as Violet: only Gold
-	; WATER cells bypass collision; the real shore tile must be scanned.
-	ld a, [wTileInFrontOfPlayer]
-	ld c, a
-	jr .checkIfNextTileIsPassable
-.checkRoute30Surf
-	ld a, [wCurLocalMapID] ; previous farcall modifies A
-	cp JOHTO_ROUTE_30_LOCAL_ID
-	jr nz, .checkRoute31Surf
-	callab JohtoRoute30WaterAhead
-	jp c, .noCollision
-	ld a, [wTileInFrontOfPlayer]
-	ld c, a
-	jr .checkIfNextTileIsPassable
-.checkRoute31Surf
-	ld a, [wCurLocalMapID]
-	cp JOHTO_ROUTE_31_LOCAL_ID
-	jr nz, .checkRoute32Surf
-	callab JohtoRoute31WaterAhead
-	jp c, .noCollision
-	ld a, [wTileInFrontOfPlayer]
-	ld c, a
-	jr .checkIfNextTileIsPassable
-.checkRoute32Surf
-	ld a, [wCurLocalMapID]
-	cp JOHTO_ROUTE_32_LOCAL_ID
-	jr nz, .checkRuinsSurf
-	callab JohtoRoute32WaterAhead
-	jp c, .noCollision
-	ld a, [wTileInFrontOfPlayer]
-	ld c, a
-	jr .checkIfNextTileIsPassable
-.checkRuinsSurf
-	ld a, [wCurLocalMapID]
-	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	; ROM0-BUDGET-262: Gold map-specific Surf dispatch lives in Bank $48.
+	; A farcall's restored bank clobbers A, but Bankswitch preserves C/Z:
+	;   C=1,Z=1 Gold WATER; C=1,Z=0 Cherrygrove safe FLOOR shore;
+	;   C=0,Z=1 registered Johto nonwater; C=0,Z=0 legacy Kanto.
+	; Keep the original collision/shore handling here in ROM0.
+	callab JohtoOverworldSurfDecision
+	jr nc, .johtoSurfNotWater
+	jp z, .noCollision
+	jp .stopSurfing
+.johtoSurfNotWater
 	jr nz, .legacySurfTile
-	callab JohtoRuinsWaterAhead
-	jp c, .noCollision
+	; Earlier Violet/Route32 shore bug: restore C after banked lookup.
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a
-	jr .checkIfNextTileIsPassable
+	jp .checkIfNextTileIsPassable
 .legacySurfTile
 	ld a,[wTileInFrontOfPlayer] ; tile in front of player
 	cp a,$14 ; water tile

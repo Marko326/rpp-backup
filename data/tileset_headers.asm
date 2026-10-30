@@ -34,11 +34,20 @@ Tilesets:
 	tileset JohtoHouse_Block, JohtoHouse_GFX, JohtoHouse_Coll, $FF,$FF,$FF, $FF, INDOOR
 	; Reuse the RPP Kanto gate collision vocabulary; dedicated Gold art/blocks.
 	tileset JohtoGate_Block, JohtoGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
+	; Gold CAVE environment, independent compact art and always-readable ROM0 collision.
+	tileset JohtoUnionCave_Block, JohtoUnionCave_GFX, JohtoUnionCave_Coll, $FF,$FF,$FF, $FF, CAVE
+	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_GATE + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_MODERN + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
+ASSERT JOHTO_UNION_CAVE == 31
+ASSERT JOHTO_MODERN == 32
+ASSERT BANK(JohtoModern_Block) == BANK(JohtoModern_GFX)
+ASSERT BANK(JohtoModern_Coll) == 0
+ASSERT BANK(JohtoUnionCave_Block) == BANK(JohtoUnionCave_GFX)
+ASSERT BANK(JohtoUnionCave_Coll) == 0
 ASSERT BANK(JohtoGate_Block) == BANK(JohtoGate_GFX)
 ASSERT BANK(JohtoHouse_Block) == BANK(JohtoHouse_GFX)
 ASSERT BANK(JohtoHouse_Coll) == 0

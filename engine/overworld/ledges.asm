@@ -3,12 +3,20 @@ HandleLedges:
 	bit 6, a ; already jumping down ledge
 	ret nz
 	ld a, [wCurMapTileset]
+	cp JOHTO_MODERN
+	jr z, .route33Modern
 	cp JOHTO_PILOT
 	jr z, .johtoPilot
 	and a ; original Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
 	jr .checkPairs
+.route33Modern
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ROUTE_33_LOCAL_ID
+	ret nz
+	ld hl, JohtoRoute33Hops
+	jr .ruinsCoordinateHopLookup
 .johtoPilot
 	; Source-audited Route29/30/31/32 and Violet use RPP-native cliff pairs.
 	; Route31/32 share the additional right-hop pair; do not enable globally.
@@ -166,6 +174,17 @@ JohtoPilotRoute31LedgeTiles:
 ; Some compact graphics/collision tiles are shared by safe and unsafe ledges.
 ; Keep the Gold source coordinate AND facing direction together so the
 ; (9,30) HOP_DOWN with a WALL landing at (9,32) remains blocked.
+; Gold Route33 one-way HOP coordinates: source tile + direction.
+JohtoRoute33Hops:
+	db 9, 10, PLAYER_DIR_LEFT
+	db 9, 11, PLAYER_DIR_LEFT
+	db 9, 12, PLAYER_DIR_LEFT
+	db 9, 12, PLAYER_DIR_DOWN
+	db 10, 12, PLAYER_DIR_DOWN
+	db 11, 12, PLAYER_DIR_DOWN
+	db 12, 12, PLAYER_DIR_DOWN
+	db $FF
+
 JohtoAlphSouthHops:
 	db 2, 18, PLAYER_DIR_DOWN
 	db 5, 30, PLAYER_DIR_DOWN

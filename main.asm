@@ -3399,6 +3399,14 @@ INCLUDE "data/johto_ruins_south_runtime.asm"
 SECTION "Johto Ruins North Runtime", ROMX, BANK[$4A]
 INCLUDE "data/johto_ruins_north_runtime.asm"
 
+; Independent cave tileset and runtime, never rely on Kanto Cavern pointers.
+SECTION "Johto Union Cave 1F Runtime", ROMX, BANK[$4B]
+INCLUDE "data/johto_union_cave_runtime.asm"
+
+; Route33 independent Gold modern tileset and 16x16 spatial collision mask.
+SECTION "Johto Route33 Runtime", ROMX, BANK[$4C]
+INCLUDE "data/johto_route33_runtime.asm"
+
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"
 

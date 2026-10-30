@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 13
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 15
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 12
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -54,6 +54,13 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, JOHTO_ROUTE_36_WIDTH, JOHTO_ROUTE_36_HEIGHT
     dw JohtoPilotRoute36GoldBlocks
     db BANK(JohtoPilotRoute36GoldBlocks)
+    ; Gold original bytes must not be confused with the compact runtime block indexes.
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, JOHTO_UNION_CAVE_1F_WIDTH, JOHTO_UNION_CAVE_1F_HEIGHT
+    dw JohtoUnionCave1FGoldBlocks
+    db BANK(JohtoUnionCave1FGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, JOHTO_ROUTE_33_WIDTH, JOHTO_ROUTE_33_HEIGHT
+    dw JohtoRoute33GoldBlocks
+    db BANK(JohtoRoute33GoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -147,3 +154,14 @@ ASSERT BANK(JohtoPilotRoute29GoldBlocks) == JOHTO_PILOT_SOURCE_BANK
 ASSERT BANK(JohtoPilotCherrygroveGoldBlocks) == JOHTO_PILOT_SOURCE_BANK
 ASSERT BANK(JohtoPilotRoute30GoldBlocks) == JOHTO_PILOT_SOURCE_BANK
 ASSERT BANK(JohtoPilotRoute31GoldBlocks) == JOHTO_PILOT_SOURCE_BANK
+
+JohtoUnionCave1FGoldBlocks::
+    INCBIN "maps/johto_pilot/UnionCave1F.gold.blk"
+JohtoUnionCave1FGoldBlocksEnd::
+ASSERT JohtoUnionCave1FGoldBlocksEnd - JohtoUnionCave1FGoldBlocks == JOHTO_UNION_CAVE_1F_WIDTH * JOHTO_UNION_CAVE_1F_HEIGHT
+
+; Gold source original Route33 uses JOHTO_MODERN, never JOHTO_PILOT.
+JohtoRoute33GoldBlocks::
+    INCBIN "maps/johto_pilot/Route33.gold.blk"
+JohtoRoute33GoldBlocksEnd::
+ASSERT JohtoRoute33GoldBlocksEnd - JohtoRoute33GoldBlocks == JOHTO_ROUTE_33_WIDTH * JOHTO_ROUTE_33_HEIGHT

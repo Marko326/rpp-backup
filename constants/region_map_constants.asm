@@ -33,7 +33,7 @@ INCLUDE "constants/johto_fixed_map_ids.asm"
 ; source-audited outdoors through Violet City and Route32; other maps inactive.
 ; Raise this only alongside the complete header, bank, event, warp, connection,
 ; music, Town Map, and runtime identity records for each added map.
-DEF NUM_JOHTO_ACTIVE_MAPS EQU 13
+DEF NUM_JOHTO_ACTIVE_MAPS EQU 15
 DEF JOHTO_STABLE_ID_TABLE_SIZE EQU 256
 DEF JOHTO_INVALID_ACTIVE_SLOT EQU $ff
 ; Each registered map carries one ROMX header pointer (2B) and its bank (1B).
@@ -72,6 +72,10 @@ DEF JOHTO_RUINS_OF_ALPH_WIDTH EQU 10
 DEF JOHTO_RUINS_OF_ALPH_HEIGHT EQU 18
 DEF JOHTO_ROUTE32_RUINS_GATE_WIDTH EQU 5
 DEF JOHTO_ROUTE32_RUINS_GATE_HEIGHT EQU 4
+DEF JOHTO_ROUTE_33_WIDTH EQU 10
+DEF JOHTO_ROUTE_33_HEIGHT EQU 9
+DEF JOHTO_UNION_CAVE_1F_WIDTH EQU 10
+DEF JOHTO_UNION_CAVE_1F_HEIGHT EQU 18
 DEF JOHTO_ROUTE_32_WIDTH EQU 10
 DEF JOHTO_ROUTE_32_HEIGHT EQU 45
 DEF JOHTO_VIOLET_CITY_WIDTH EQU 20

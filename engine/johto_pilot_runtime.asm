@@ -152,6 +152,12 @@ JohtoRegisteredWarpRoutes::
     ; Route36 Gold #3/#4 only; National Park #1/#2 are not live.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+    ; UNION-260: Route32 Gold cave mouth #4, 1F Gold return #4 only.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+    ; R33-266: Gold cave south 1F #3 (17,31) <-> Route33 (11,9).
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -264,6 +270,8 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 8, MUSIC_ROUTES1, 0     ; slot 10: Ruins of Alph outside ID20
     johto_map_profile 0, 19, MUSIC_ROUTES1, 0    ; slot 11: Route36/Ruins North Gate ID19
     johto_map_profile 1, 19, MUSIC_ROUTES1, 0    ; slot 12: Route36 ID16
+    johto_map_profile 0, 9, MUSIC_DUNGEON2, 0    ; slot 13: Union Cave 1F, standalone cave landmark
+    johto_map_profile 1, 10, MUSIC_ROUTES1, 0   ; slot 14: Route33, Gold Route30 theme
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -397,6 +405,73 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .route36Edge
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .ruinsClosedEdge
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    jp z, .unionCaveClosedEdge
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jp z, .route33ClosedEdge
+    ret
+.route33ClosedEdge
+    ; No Route33/Route32 cross-tileset connection until a verified full reload.
+    ; West Azalea and all other neighbours are also inactive.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .r33Up
+    cp PLAYER_DIR_DOWN
+    jr z, .r33Down
+    cp PLAYER_DIR_LEFT
+    jr z, .r33Left
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_33_WIDTH * 2 - 1
+    jp nc, .closed
+    ret
+.r33Up
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    ret
+.r33Down
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_33_HEIGHT * 2 - 1
+    jp nc, .closed
+    ret
+.r33Left
+    ld a, [wXCoord]
+    and a
+    jp z, .closed
+    ret
+.unionCaveClosedEdge
+    ; Cave has no external seams: its only door is an explicit Warp.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .unionCaveUp
+    cp PLAYER_DIR_DOWN
+    jr z, .unionCaveDown
+    cp PLAYER_DIR_LEFT
+    jr z, .unionCaveLeft
+    cp PLAYER_DIR_RIGHT
+    jr nz, .unionCaveAllowed
+    ld a, [wXCoord]
+    cp JOHTO_UNION_CAVE_1F_WIDTH * 2 - 1
+    jp nc, .closed
+    jr .unionCaveAllowed
+.unionCaveUp
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    jr .unionCaveAllowed
+.unionCaveDown
+    ld a, [wYCoord]
+    cp JOHTO_UNION_CAVE_1F_HEIGHT * 2 - 1
+    jp nc, .closed
+    jr .unionCaveAllowed
+.unionCaveLeft
+    ld a, [wXCoord]
+    and a
+    jp z, .closed
+.unionCaveAllowed
+    ld e, 0
     ret
 .route36Edge
     ; Prevent unregistered 35/37/Violet edges, allow interior movement.
@@ -704,6 +779,15 @@ JohtoPilotGateArrivalStep::
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     jr z, .gateTop
+    ; Gold UnionCave1F (17,3) is WARP_CARPET_DOWN, not a DOOR.
+    ; Arrive stationary facing the original UP approach; do not force a
+    ; direction or simulate a step. DOWN is only the voluntary exit input.
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jr z, .route32CaveLanding
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jr z, .route33CaveLanding
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     ret nz
     ld a, [wXCoord]
@@ -711,6 +795,22 @@ JohtoPilotGateArrivalStep::
     ret nz
     ld a, [wYCoord]
     cp 5
+    ret nz
+    jr .down
+.route33CaveLanding
+    ld a, [wXCoord]
+    cp 11
+    ret nz
+    ld a, [wYCoord]
+    cp 9
+    ret nz
+    jr .down
+.route32CaveLanding
+    ld a, [wXCoord]
+    cp 6
+    ret nz
+    ld a, [wYCoord]
+    cp 79
     ret nz
     jr .down
 .gateTop
@@ -738,6 +838,11 @@ JohtoPilotGateDoorApproachAllowed::
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_32_LOCAL_ID
     jp z, .route32Alph
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jp z, .route33Cave
+    ; The cave interior is collision-only: never STEP_ON or override walls.
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    ret z
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .ruinsAlph
     cp JOHTO_ROUTE_36_LOCAL_ID
@@ -769,12 +874,26 @@ JohtoPilotGateDoorApproachAllowed::
     ret nz
     ld a, [wYCoord]
     cp 6
-    jr z, .allow
+    jp z, .allow
     cp 7
     ret nz
-    jr .allow
+    jp .allow
+.route33Cave
+    ; Only (11,10) north to the Gold CAVE at (11,9).
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    ret nz
+    ld a, [wXCoord]
+    cp 11
+    ret nz
+    ld a, [wYCoord]
+    cp 10
+    ret nz
+    jp .allow
 .route32Alph
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .route32Cave
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -786,6 +905,14 @@ JohtoPilotGateDoorApproachAllowed::
     cp 3
     ret nz
     jr .allow
+.route32Cave
+    ld a, [wXCoord]
+    cp 6
+    ret nz
+    ld a, [wYCoord]
+    cp 80
+    ret nz
+    jp .allow
 .ruinsAlph
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_RIGHT
@@ -848,6 +975,11 @@ JohtoPilotGateDoorWarpMatched::
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_32_LOCAL_ID
     jp z, .route32Alph
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jp z, .route33Cave
+    ; The cave interior is collision-only: never STEP_ON or override walls.
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    ret z
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .ruinsAlph
     cp JOHTO_ROUTE_36_LOCAL_ID
@@ -879,12 +1011,25 @@ JohtoPilotGateDoorWarpMatched::
     ret nz
     ld a, [wYCoord]
     cp 6
-    jr z, .allow
+    jp z, .allow
     cp 7
     ret nz
-    jr .allow
+    jp .allow
+.route33Cave
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    ret nz
+    ld a, [wXCoord]
+    cp 11
+    ret nz
+    ld a, [wYCoord]
+    cp 9
+    ret nz
+    jp .yesDoor
 .route32Alph
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .route32Cave
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -896,6 +1041,14 @@ JohtoPilotGateDoorWarpMatched::
     cp 3
     ret nz
     jr .allow
+.route32Cave
+    ld a, [wXCoord]
+    cp 6
+    ret nz
+    ld a, [wYCoord]
+    cp 79
+    ret nz
+    jp .yesDoor
 .ruinsAlph
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_RIGHT
@@ -961,6 +1114,12 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    ; FIX-264: ExtraWarpCheck calls THIS predicate before CheckWarpsCollision.
+    ; The first Union Cave fix only added the final collision guard, leaving
+    ; the entry qualification false and making the north exit unreachable.
+    ; Share the final coordinate/facing guard: do not create a second rule.
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    jp z, JohtoPilotGateCollisionExitAllowed
     cp JOHTO_ROUTE_32_LOCAL_ID
     jr z,.route32Alph
     cp JOHTO_ROUTE_36_LOCAL_ID
@@ -1059,6 +1218,8 @@ JohtoPilotGateCollisionExitAllowed::
     jr z, .isGate
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     jr z, .northGateBottom
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    jr z, .unionCaveExit
     cp JOHTO_ROUTE_36_LOCAL_ID
     ret nz
     ld e, 0
@@ -1072,6 +1233,22 @@ JohtoPilotGateCollisionExitAllowed::
     cp 47
     jr z, .yes
     cp 48
+    ret nz
+    jr .yes
+.unionCaveExit
+    ; Gold WARP_CARPET_DOWN: collide with the solid south neighbor
+    ; while standing exactly on the north entrance at (17,3).
+    ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wXCoord]
+    cp 17
+    ret nz
+    ld a, [wYCoord]
+    cp 3
+    jr z, .yes
+    cp 31
     ret nz
     jr .yes
 .northGateBottom

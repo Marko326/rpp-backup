@@ -1228,6 +1228,8 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE30         ; slot10: ID20 Ruins outside (temporary scene)
     db MUSIC_GBP_GSC_ROUTE36         ; slot11: ID19 North Gate fallback only
     db MUSIC_GBP_GSC_ROUTE36         ; slot12: ID16 Route36
+    db MUSIC_GBP_GSC_UNION_CAVE      ; slot13: ID 8 Union Cave 1F (Gold MUSIC_UNION_CAVE)
+    db MUSIC_GBP_GSC_ROUTE30          ; slot14: Route33 Gold Route30 music
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

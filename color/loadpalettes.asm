@@ -23,12 +23,14 @@ LoadTilesetPalette:
 
 	ld a,b ; Get wCurMapTileset
 	push af
-	ld d,0
-	ld e,a
-	sla e
-	sla e
-	sla e
-	ld hl, MapPaletteSets
+	; FIX-267: retain the high byte of the tileset*8 palette-table offset.
+	; ID $20 starts at $0100, not $0000 (the old SLA E wrapped).
+	ld l,a
+	ld h,0
+	add hl,hl ; 2 * ID
+	add hl,hl ; 4 * ID
+	add hl,hl ; 8 * ID, full 16-bit
+	ld de,MapPaletteSets
 	add hl,de
 	ld d,h
 	ld e,l

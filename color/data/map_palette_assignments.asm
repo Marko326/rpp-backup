@@ -44,5 +44,7 @@ INCLUDE "color/tilesets/johto.asm" ; JOHTO_PILOT
 INCLUDE "color/tilesets/johto_house.asm" ; JOHTO_HOUSE
 ; P6-GATE-004: original RPP compact-tileset indexed Gold gate colors.
 INCLUDE "color/tilesets/johto_gate.asm" ; JOHTO_GATE
+INCLUDE "color/tilesets/johto_union_cave.asm" ; JOHTO_UNION_CAVE
+INCLUDE "color/tilesets/johto_modern.asm" ; JOHTO_MODERN independent Route33 Gold art
 MapPaletteAssignmentsEnd::
-ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_GATE + 1) * $60
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_MODERN + 1) * $60

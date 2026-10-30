@@ -30,8 +30,9 @@ WarpTileIDPointers:
 	dw JohtoPilotWarpTileIDs ; $1c/28: native Johto outdoor tileset
 	dw JohtoHouseWarpTileIDs ; $1d/29: dedicated Gold house interior
 	dw JohtoGateWarpTileIDs ; $1e/30: EastWestGate directional edge carpet only
+	dw JohtoUnionCaveWarpTileIDs ; $1f/31: exact cave entry/exit only
 WarpTileIDPointersEnd:
-ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_GATE + 1) * 2
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_UNION_CAVE + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -95,3 +96,8 @@ JohtoHouseWarpTileIDs:
 JohtoGateWarpTileIDs:
     ; Gold LEFT/RIGHT edge carpets: only direction + collision may exit.
     db $FF
+
+; Union Cave uses coordinate- and facing-verified Gold entrance only.
+; No generic walkable tile may be used to trigger an arbitrary cave Warp.
+JohtoUnionCaveWarpTileIDs:
+    db $ff

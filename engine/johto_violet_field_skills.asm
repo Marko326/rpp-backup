@@ -3,6 +3,87 @@
 ; field action. Do not widen tilecoll. VioletCity is 40x36 cells; Cherrygrove
 ; and NewBarkTown are 40x18 and 20x18 cells respectively. Helper names retain
 ; their compatibility labels from earlier releases.
+; ROM0-BUDGET-262: field-move movement-time Surf dispatcher, entirely in
+; the established fixed expansion Bank $48. ROM0 calls only this gateway.
+; Carry/Zero encode four outcomes because Bankswitch restores A to the old
+; ROM bank and must not be treated as a return value:
+;   C=1,Z=1 -> Gold WATER: keep surfing
+;   C=1,Z=0 -> audited Cherrygrove FLOOR: stop surfing
+;   C=0,Z=1 -> registered nonwater: use original shore collision scan
+;   C=0,Z=0 -> not one of these active maps: legacy Kanto tile check
+; All queried helpers preserve BC/DE/HL and return carry for Gold WATER.
+JohtoOverworldSurfDecision::
+	ld a, [wCurMapTileset]
+	cp JOHTO_UNION_CAVE
+	jp z, .unionCave
+	cp JOHTO_PILOT
+	jp nz, .legacy
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .legacy
+	ld a, [wCurLocalMapID]
+	cp JOHTO_VIOLET_CITY_LOCAL_ID
+	jp z, .violet
+	cp JOHTO_NEW_BARK_LOCAL_ID
+	jp z, .newBark
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jp z, .cherrygrove
+	cp JOHTO_ROUTE_30_LOCAL_ID
+	jp z, .route30
+	cp JOHTO_ROUTE_31_LOCAL_ID
+	jp z, .route31
+	cp JOHTO_ROUTE_32_LOCAL_ID
+	jp z, .route32
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jp z, .ruins
+	jp .legacy
+.violet
+	call JohtoVioletWaterAhead
+	jp .waterOrShore
+.newBark
+	call JohtoNewBarkWaterAhead
+	jp .waterOrShore
+.cherrygrove
+	call JohtoCherrygroveWaterAhead
+	jp c, .water
+	call JohtoCherrygroveShoreFloorAhead
+	jp c, .floorShore
+	jp .shore
+.route30
+	call JohtoRoute30WaterAhead
+	jp .waterOrShore
+.route31
+	call JohtoRoute31WaterAhead
+	jp .waterOrShore
+.route32
+	call JohtoRoute32WaterAhead
+	jp .waterOrShore
+.ruins
+	call JohtoRuinsWaterAhead
+	jp .waterOrShore
+.unionCave
+	; The unique cave tileset is not a Kanto water tile set. Its scoped
+	; predicate rejects all inactive/stale non-cave map IDs.
+	call JohtoUnionCaveWaterAhead
+.waterOrShore
+	jp c, .water
+.shore
+	xor a                      ; Z=1, C=0
+	ret
+.water
+	xor a                      ; Z=1, C=0
+	scf                        ; Z=1, C=1
+	ret
+.floorShore
+	ld a, 1
+	or a                       ; Z=0, C=0
+	scf                        ; Z=0, C=1
+	ret
+.legacy
+	ld a, 1
+	or a                       ; Z=0, C=0
+	ret
+
 JohtoVioletIsActive::
 	ld a, [wCurMap]
 	cp JOHTO_RUNTIME_MAP_HANDLE
@@ -32,6 +113,8 @@ JohtoVioletWaterAhead::
 	call JohtoRoute32WaterAhead
 	ret c
 	call JohtoRuinsWaterAhead
+	ret c
+	call JohtoUnionCaveWaterAhead
 	ret c
 	call JohtoNewBarkWaterAhead
 	ret c
@@ -1662,3 +1745,152 @@ JohtoRuinsGoldWaterCells::
 	db $ff
 JohtoRuinsGoldWaterCellsEnd::
 ASSERT JohtoRuinsGoldWaterCellsEnd - JohtoRuinsGoldWaterCells == 48 * 2 + 1
+
+; UNION-260: Gold-verified Union Cave 1F water, never shared by other cave tilesets.
+JohtoUnionCaveIsActive::
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jp nz, .no
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .no
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+	jp nz, .no
+	scf
+	ret
+.no
+	and a
+	ret
+
+JohtoUnionCaveWaterAhead::
+	push bc
+	push de
+	push hl
+	call JohtoUnionCaveIsActive
+	jp nc, .noWater
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .bounds
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .bounds
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .bounds
+.right
+	cp SPRITE_FACING_RIGHT
+	jp nz, .noWater
+	inc e
+.bounds
+	ld a, d
+	cp 36
+	jp nc, .noWater
+	ld a, e
+	cp 20
+	jp nc, .noWater
+	ld hl, JohtoUnionCaveGoldWaterCells
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .noWater
+	cp d
+	jr nz, .skipX
+	ld a, [hli]
+	cp e
+	jr z, .yesWater
+	jr .loop
+.skipX
+	inc hl
+	jr .loop
+.yesWater
+	scf
+	jr .done
+.noWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+
+JohtoUnionCaveGoldWaterCells::
+	db 4, 6
+	db 4, 7
+	db 4, 8
+	db 4, 9
+	db 4, 10
+	db 4, 11
+	db 4, 12
+	db 4, 13
+	db 5, 6
+	db 5, 7
+	db 5, 8
+	db 5, 9
+	db 5, 10
+	db 5, 11
+	db 5, 12
+	db 5, 13
+	db 8, 2
+	db 8, 3
+	db 8, 4
+	db 8, 5
+	db 9, 2
+	db 9, 3
+	db 9, 4
+	db 9, 5
+	db 10, 2
+	db 10, 3
+	db 10, 4
+	db 10, 5
+	db 11, 2
+	db 11, 3
+	db 11, 4
+	db 11, 5
+	db 28, 2
+	db 28, 3
+	db 28, 4
+	db 28, 5
+	db 28, 12
+	db 28, 13
+	db 28, 14
+	db 28, 15
+	db 29, 2
+	db 29, 3
+	db 29, 4
+	db 29, 5
+	db 29, 12
+	db 29, 13
+	db 29, 14
+	db 29, 15
+	db 30, 2
+	db 30, 3
+	db 30, 4
+	db 30, 5
+	db 30, 12
+	db 30, 13
+	db 30, 14
+	db 30, 15
+	db 31, 2
+	db 31, 3
+	db 31, 4
+	db 31, 5
+	db 31, 12
+	db 31, 13
+	db 31, 14
+	db 31, 15
+	db $FF
+
+JohtoUnionCaveGoldWaterCellsEnd::
+ASSERT JohtoUnionCaveGoldWaterCellsEnd - JohtoUnionCaveGoldWaterCells == 64 * 2 + 1
