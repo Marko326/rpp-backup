@@ -46,9 +46,10 @@ def check_contract(runtime, options, overworld, wram, main, ids):
         'MUSIC_GBP_GSC_VIOLET_CITY','MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_ROUTE30',
         'MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_ROUTE30',
         'MUSIC_GBP_GSC_ROUTE36','MUSIC_GBP_GSC_ROUTE36',
+        'MUSIC_GBP_GSC_UNION_CAVE', 'MUSIC_GBP_GSC_ROUTE30',
     ]
     assert [n for n,i in names] == expected, names
-    assert [int(i) for n,i in names] == list(range(13))
+    assert [int(i) for n,i in names] == list(range(15))
     assert 'NUM_JOHTO_ACTIVE_MAPS' in options.split('JohtoActiveGSCMusicEnd::', 1)[1][:110]
     assert 'JohtoActiveGSCMusic' in between(options,'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
     helper = between(options, 'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
@@ -88,7 +89,7 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'wJohtoGateMusicSourceLocalID:: ds 1' in wram
     assert 'wLastJohtoMusicSceneID:: ds 1' in wram
     assert 'wEventFlags::' in wram.split('wLastJohtoMusicSceneID:: ds 1',1)[1][:165]
-    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 13' in ids
+    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 15' in ids
 
 class JohtoMusicScene241Tests(unittest.TestCase):
     @classmethod
@@ -111,9 +112,10 @@ class JohtoMusicScene241Tests(unittest.TestCase):
             (0, 'NEW_BARK_TOWN'), (1,'ROUTE29'), (2,'CHERRYGROVE_CITY'),
             (3,'ROUTE30'), (4,'ROUTE30'), (125,'CHERRYGROVE_CITY'),
             (5,'VIOLET_CITY'), (6,'ROUTE30'), (7,'ROUTE30'),
+            (8,'UNION_CAVE'),
         ]
         active=[int(v) for v in re.findall(r'(?m)^\s*db\s+.*; slot\s*\d+: ID\s*(\d+)',between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))]
-        self.assertEqual(active, [0,1,2,3,4,125,5,6,7,102,20,19,16])
+        self.assertEqual(active, [0,1,2,3,4,125,5,6,7,102,20,19,16,8])
         for local,scene in gold:
             self.assertIn(scene, self.options)
         self.assertNotIn('JOHTO_ROUTE31_VIOLET_GATE', between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))

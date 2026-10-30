@@ -22,8 +22,8 @@ class CoverageTests(unittest.TestCase):
             (0, 'NewBarkTown'), (1, 'Route29'), (2, 'CherrygroveCity'),
             (3, 'Route30'), (4, 'Route31'), (125, 'GuideGentsHouse'),
             (5, 'VioletCity'), (6, 'Route31VioletGate'), (7, 'Route32'), (102, 'Route32RuinsOfAlphGate'),
-            (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36')])
-        self.assertNotIn('UnionCave1F', [r['map'] for r in rows])
+            (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36'), (8, 'UnionCave1F'), (9, 'Route33')])
+        self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
         with TemporaryDirectory() as temp:
@@ -37,8 +37,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 13', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 13',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 15', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 15',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -62,6 +62,8 @@ class CoverageTests(unittest.TestCase):
             'RuinsOfAlphOutside': (48, 'REGISTERED'),
             'Route36RuinsOfAlphGate': (0, 'NO_WATER'),
             'Route36': (0, 'NO_WATER'),
+            'UnionCave1F': (64, 'REGISTERED'),
+            'Route33': (0, 'NO_WATER'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
@@ -75,7 +77,7 @@ class CoverageTests(unittest.TestCase):
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
     def test_invalid_skipped_map_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'skip map not active'):
-            audit(ROOT, GOLD, {'UnionCave1F'})
+            audit(ROOT, GOLD, {'UnionCaveB1F'})
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
     def test_source_block_corruption_fails(self):
@@ -92,6 +94,9 @@ class CoverageTests(unittest.TestCase):
                      'engine/overworld/field_moves.asm',
                      'engine/items/items.asm',
                      'engine/johto_violet_field_skills.asm',
+                     'maps/johto_pilot/UnionCave1F.runtime.blk',
+                     'gfx/blocksets/johto_union_cave.bst',
+                     'gfx/tilesets/johto_union_cave.tilecoll',
                      'maps/johto_pilot/NewBarkTown.runtime.blk',
                      'maps/johto_pilot/CherrygroveCity.runtime.blk',
                      'maps/johto_pilot/VioletCity.runtime.blk',

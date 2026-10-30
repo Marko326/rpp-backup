@@ -1,3 +1,52 @@
+## CLEAN-267｜用户反馈收口与剩余风险
+
+- [x] 收到用户 `FIX-5.62.267.patch` 并确认分支、HEAD 和工作区来源，保留 `home/overworld.asm` 的 `jp nz,.noCollision`。
+- [x] 核实 `johto_modern.png` 为项目源资源；`.2bpp` 为 Makefile 自动转换且受 `.gitignore` 忽略，不纳入正式补丁。
+- 已修正 Route33 离线审计及负向测试的 PNG 源文件核对，不再要求 Git 包含被忽略的 `.2bpp`，ROM 游戏代码保持原状。
+- [x] 用户报告：联合洞窟进出及朝向正常、33号路不花屏、骑车及 Fly 正常。
+- [ ] 用户另有“出去的时候……”未完整说明的问题；获取具体症状后另行处理，不在清理中猜测修复。
+- [ ] 用户自行核对新 MAP、正式/TEST 红蓝 ROM 链接及存读档等未逐项反馈场景；不由助手代编译／提交。
+
+## FIX-264｜联合洞穴北口前置 Warp 修复（开发候选）
+
+- [x] 复查用户视频与旧 NPC 分支；发现 `ExtraWarpCheck → JohtoPilotGateExteriorCollisionAllowed` 没有 Union Cave 分支，上一版的最终 guard 虽正确却不会执行。
+- [x] 共享最终的 `JohtoPilotGateCollisionExitAllowed` (17,3/DOWN) 检查；防止独立条件日后分叉。
+- [x] 加全链路、方向/坐标负向轨迹和删除前置入口/Carry 传递的故障注入；总迁移审计覆盖。
+- [ ] 用户手机重新测试从32号路进洞、在(17,3)朝下返回、骑车和 Surf；检查关都及三座门房回归；未验收前不得清理提交。
+
+## FIX-263 联合洞穴北洞口与骑行修复：待本机验收
+
+- [x] 对照 Gold 源码和 NPC-5.62.243 的洞内 WARP_CARPET_DOWN 与 WALL：1F (17,3) 朝下碰撞出口；不做洞内自动步。
+- [x] 保留 Route32 (6,79) 到达后南移安全一步；仅保留1F北口，未开放南口/地下层。
+- [x] 把 `JOHTO_UNION_CAVE` 加入原有可骑车 Tileset 白名单（不开放 Gold INDOOR 门房）。
+- [x] 新增 cave 方向/自动步/骑行/双向 Warp 审计及负向故障注入，纳入总迁移审计。
+- [ ] 本机编译链接 Red／Blue／TEST，查看新 MAP 的 ROM0/Bank 余量。
+- [ ] 实机检查：进洞站位、(17,3) DOWN 返回、朝上/左右不误传送、(6,80) 安全步、自行车、Surf、Save/Continue。
+- [ ] 实机验收后再按真实 Git 基线整理清理三件套；本轮不 Commit/Push。
+
+## FIX-262 ROM0 空间修复候选：待设备验收
+
+- [x] 对照旧 NPC-5.62.243 ROM0 MAP/碰撞表/银行式 Gold Surf 实现；不照搬其 Bank `$01` 菜单主体。
+- [x] 只迁出 ROM0 的逐图 Surf 判定到现有 Bank `$48`，保留关都分支、洞穴13字节 unbanked 碰撞、吉花市岸线语义。
+- [x] ROM0 源码审计与过时 MAP 检测，加入故障注入；日常迁移审计入口同步。
+- [ ] 用户 `make red` 重新连接成功后，以全新 MAP 检查 `--require-fresh-map` 与 ROM0 至少64字节余量。
+- [ ] 用户实测联合洞穴进出/冲浪/上岸、Route32/吉花市 Gold FLOOR、关都冲浪；验收前不做清理三件套。
+
+## FIX-261｜联合洞穴GSC音乐表 ASSERT 热修复（待本机编译）
+
+- [x] `JohtoActiveGSCMusic` 从13行补齐到14行，对齐联合洞穴1F新活动槽位13与 Gold `MUSIC_UNION_CAVE`。
+- [x] 合并上次单独交付的 `johto_table_assert_preflight.py` 与使用说明，工具加入总迁移审计，并加入缺/多音乐项、删除 ASSERT、删 Town Map 索引的故障注入。
+- [ ] 用户本机重新执行正式红蓝／TEST 的 RGBDS 构建并核对最新 MAP；只有构建结果确认后才能视为消除了编译阻塞。
+- [ ] 用户手机复测 Route32 ⇄ Union Cave 1F、进出后的实际音乐及原有门房／Surf；本批不提前正式提交。
+
+## UNION-260｜联合洞穴1F双向通路（开发候选）
+
+- [x] 对照 Gold 和旧 NPC 源，登记稳定 ID8／slot13、专属 Cave Tileset/ROM0碰撞及64格 WATER。
+- [x] 32号道路 `(6,79)` ⇄ 1F `(17,3)` 双向 Warp，与正确方向／到达自动一步联动。
+- [x] 限制 B1F/B2F、Route33、训练师及野怪仍不开放；补全地点栏/Town Map、审计和负向测试。
+- [ ] 用户本地构建正式红蓝和 TEST、检查新 MAP 空间；实测门口进出、墙体碰撞、冲浪上下岸、已完成遗迹门房与 Continue。
+- [ ] 通过实机验收后才生成 Git 清理三件套；AI 不自行 Commit／Push。
+
 ## MUS-259｜用户验收后正式清理（本轮）
 
 - [x] 核对用户提供的干净 `FIX-5.62.256.zip`：分支 `常规功能备份`，实际 HEAD `403e41e5ba763b4d747a7bbc6a03d6da161ab1be`，无未提交 Worktree Patch。

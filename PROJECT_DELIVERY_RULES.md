@@ -1,3 +1,70 @@
+## CLEAN-267｜正式清理基线及 PNG／JP 保护
+
+- 最新用户上传的 `FIX-5.62.267.patch` 为分支 `常规功能备份` 上的完整未提交 Worktree 导出，基线为 HEAD `438046a6ae6a709b656b8f712eeeecefc6259dda`。清理增量从该**用户实际工作区**出发，累计全量从可逆重建的对应 HEAD 出发；绝不能混用先前窗口生成但未含用户 `jp` 修复的旧累计补丁。
+- 已修正 Route33 离线审计及负向测试的 PNG 源文件核对，不再要求 Git 包含被忽略的 `.2bpp`，ROM 游戏代码保持原状。
+- 用户实测反馈：洞穴进出与朝向正常、Route33 花屏已消失、骑车及 Fly 可用。尚有一句未说完的“出去的时候……”反馈，其具体内容未获确认，不将所有出洞后的场景标为完整验收。
+- `gfx/tilesets/johto_modern.png` 是图形源；`Makefile` 按 `%.2bpp: %.png` 自动生成并依旧被源码 `INCBIN` 引用。`*.2bpp` 被 `.gitignore` 忽略，清理包不得擅自纳入生成的 `johto_modern.2bpp`。PNG 必须在全量补丁中保留。
+- 用户对 `home/overworld.asm` 的 `jr nz,.noCollision`→`jp nz,.noCollision` 属于已应用的真实工作区修复，避免短跳距离限制；本轮文档清理不改动或回退该指令。
+- 从 HEAD 到 `.267` 的累计差异同时包含运行时及工具审计，按正式清理模式 A：单 ZIP 内 3 个补丁（清理增量、工具／审计反向隔离、HEAD 累计全量）＋两份中文 Git 日志，先功能后工具自行提交；禁止由助手编译 ROM、Commit／Push。TEST-231 不变。
+
+## FIX-5.62.267｜33号道路图块集加载溢出修复（开发候选）
+
+- 症状：联合洞窟南出口进入 Route33 后整屏花屏；并非 Gold 33号路 `.blk`、PNG 或落点写反。
+- 根因：`engine/overworld/tileset_header.asm` 原先以8位移位/加法拼出 `tileset * 12`，`JOHTO_MODERN=32` 时中间进位丢失，实际 `$0080` 而非 `$0180`；读取到错误的 ROM Bank/图块指针。`color/loadpalettes.asm` 又以8位 `sla e`×3 求 `tileset * 8`，ID32 时 `$0000` 而非 `$0100`。**旧回归检查没有把新 Tileset ID 32 送过这两段运行时地址计算。**
+- 修复：仅将两处索引改用16位 HL 算术，保留 `.266` 地图资源、Gold碰撞、双向 Warp 和 `.265` 朝向。无新 Bank、新 SRAM、无大范围图形替换。
+- 防回归：新增 `tools/tileset_index_preflight_267.py`、`tools/tests/test_tileset_index_267.py`，检查 ID 0–32 及故障注入；注意该检查不模拟 ROM VRAM，不能代替手机验收。
+- 交付：增量严格从 `.266` 实际开发候选生成，累计全量从 `.266` 原来声明的干净 HEAD `438046a6ae6a709b656b8f712eeeecefc6259dda` 生成，两份互斥；不编译 ROM、不提交 Git、不更新 `TEST-231`。须由用户本机编译并检查新 MAP／南北口和 Route33 显示。
+
+## MAP-266｜联合洞窟南出口＋Route33 开发候选交付（待本机验收）
+
+- 以用户最新完整 `.264` Worktree + 已交付 `.265` 开发修复为增量基线，绝不能误作 `.265` 已提交。累计全量从可验证的干净 HEAD `438046a6ae6a709b656b8f712eeeecefc6259dda` 生成；**互斥补丁二选一**，不叠加。不执行 Git Commit/Push。
+- 按成熟 NPC-5.62.243 分支与 Gold `Route33` / `UnionCave1F` 源逐格核验，启用1F南口 `17,31` 与 Route33 `11,9` 双向 Warp 和外侧南移一步；进洞保留当前方向，不强制改向。Route33 独立 Gold 10×9地形／图块／碰撞、草丛视觉角色、音乐／地名／骑车、精确 Gold 跳崖；不改变关都与已验收北口。
+- **负向保护：** Route33→AzaleaTown、Route32↔Route33 野外接壤、Union Cave 地下层与剧情遭遇保持关闭；不能因为本轮开南口顺带开放未经验收的地图连接／存档出口。
+- 新增图必须保持活动地图数、Town Map、音乐等表长 ASSERT；运行完整单元测试、Gold 迁移／字段技能／门口／ASM 符号和故障注入审计。开发阶段仅两份互斥补丁 ZIP，不附正式 Git 日志，不编译 ROM。旧 MAP ROM0 空间测试异常要单独记录，不得为凑通过删除断言。正式 `MAP-5.62.266`，`TEST-231` 不变。
+
+## FIX-265｜进入洞穴方向不可由出口碰撞方向倒推（待验收开发版）
+
+- Route32 `(6,80)` 朝 UP 进入 Union Cave 1F `(17,3)` 后，默认保留原生 UP，不模拟步进、不强制设置面向 DOWN；出口 `WARP_CARPET_DOWN` 只意味着玩家主动按 DOWN、撞南墙 `(17,4)` 才触发回程。
+- 保留 `.264` `ExtraWarpCheck`→ROMX→Carry→最终 guard 的全链路出洞修复和 `wd736` 重置，回到 Route32 `(6,79)` 后仅自动向南 `(6,80)` 一步。禁止修改已验收的门房与关都，不开放 Route33、B1F/B2F。
+- 洞穴朝向审计必须拒绝任何到达阶段直接写 `wPlayerDirection`、`wPlayerMovingDirection` 或 Sprite facing（即使强制 UP 也不允许），并用故障注入拦截自动移步／强制朝向回归。以本次 `.264` Worktree 为增量、从可重建的当前 Git HEAD 为全量；仅两份互斥开发补丁 ZIP，不提供正式提交日志、不自行链接 ROM／提交 Git。
+
+## FIX-264｜任何碰撞式 Warp 必须沿整条控制流审计
+
+- **关键教训**：在 `JohtoPilotGateCollisionExitAllowed` 补了出洞方向还不够。玩家碰撞时先通过 `ExtraWarpCheck`，只有 Carry=1 才会进入 `CheckWarpsCollision`，最终 guard 才会运行。
+- 新洞口必须同时验证：碰撞/`wd736` Warp 标志 → `ExtraWarpCheck` → ROMX前置资格 → Carry → `CheckWarpsCollision` → 精确方向/坐标 guard → 目标 Warp 表。需以真实代码分支轨迹及反向故障注入确认，不得仅搜索“DOWN”字符串或检查最后一个 guard。
+- FIX-263 在视频中复现无法出洞，不能算用户验收。`.264` 只提供开发补丁；用户本机编译与手机复测前不生成正式清理提交日志。不改已验收南北门房和关都逻辑。
+
+## FIX-263R｜补丁真实基线与失败处理
+
+- 最新用户 `FIX-5.62.262.patch` 为 Worktree 差异，基础 HEAD `438046a6ae6a709b656b8f712eeeecefc6259dda`；与交付前本地 `.262` 唯一区别是 `engine/johto_pilot_runtime.asm` 的四条 `jr`→`jp`，不可把本地快照当用户实际状态。
+- 从该完整用户差异还原 `.262` 后重新生成增量，保留必要的绝对分支；功能仍为 `.263` 的 Gold WARP_CARPET_DOWN 洞内不自走、向下碰壁出洞、Route32安全单步和骑车许可。若旧 `.263` 曾部分应用，先恢复 `.262`，不得对已污染工作区强打增量。
+- 打包前须在 Git 暂存区模拟用户实际模式 `100755/100644`，跑 `git apply --index --check`、正反向逐字节复原和 Gold 回归。不能通过忽略报错或删除 ASSERT 解决。
+
+## FIX-5.62.263 开发基线与验收边界（2026-10-30）
+
+- 用户当前上传的最新完整源码为 `CAV-5.62.260.zip`；其后已提供 `.261` 音乐 ASSERT 修复与 `.262` ROM0 Surf 外迁。`all_maps.zip` 是 ROM MAP 产物，**不是**新的源码全包。本次修复增量以前述 `.262` 已应用的源码为基线；从完整 `.260` 出发则用包含 `.261`、`.262` 的替代累计全量补丁，二选一。
+- 本版仅修联合洞穴1F洞口方向、洞内自动走一步和骑车许可，新增独立审计及负例测试。不得把 Gold `WARP_CARPET_DOWN` 当 `DOOR`，也不得从先前测试的结果推断已经验收。
+- 本阶段尚未收到 `.263` 本机编译／手机验收；只交两份互斥开发补丁，不提前做 Git 提交日志或工具隔离提交。
+
+## FIX-262｜ROM0 空间和跨 Bank 结果的强制预检
+
+- Johto 活动水域扩展前运行 `python tools/johto_rom0_space_preflight.py --root .`，该项已接入迁移总审计；检查 ROM0 Surf 分流的紧凑入口、原始 Kanto 保留路径、Gold 逐地图水域、吉花市特殊岸线、Bank `$48`、`callab/Bankswitch` Carry/Zero 保持及 ROM0 碰撞表固定要求。
+- MAP 容量必须只以**最新用户本机成功链接产生的新 MAP**为最终证据。旧 `.259` MAP 余31字节不能证明 `.262` 能链接；静态估算当前移出ROM0约173字节，也不能宣称新链接成功。项目仍禁止 AI 自行构建 ROM／Git Commit／Push。
+- 本次基线为最新用户 `CAV-5.62.260.zip` Worktree + `FIX-5.62.261` 已交付修复；用户上传的 `.260` 带未提交源码，不能把它等同于纯净 Git HEAD。开发阶段仅交互斥补丁、不提前提交日志。
+
+## FIX-261｜新活动地图交付前强制检查表长 ASSERT（2026-10-30）
+
+- 新增任何 Johto 活动地图，除现有 `asm_symbol_preflight.py`、地图迁移、Warp、Gold、Field Moves 检查外，必须执行 `python tools/johto_table_assert_preflight.py --root .`；其结果已经嵌入 `johto_pilot_migration_audit.py`，删掉预检或相关 ASSERT 不得视为通过。
+- 应核对 `NUM_JOHTO_ACTIVE_MAPS`、Town Map表、Town Map浏览索引和 `JohtoActiveGSCMusic` 的字节数与槽位一致。CAV-260 曾因第14张联合洞穴缺一条 GSC歌曲导致 `options_menu.asm:1232` 编译 ASSERT 报错。Gold 原始曲目须通过交接参考源码核实，不可以删除 ASM ASSERT 糊弄通过。
+- 本次按最新用户 `CAV-5.62.260.zip` Worktree 精确出补丁；该导出 HEAD 是 `438046a6...` 且包含未提交修改，不等同于纯净 HEAD。用户仍需本地构建/MAP/手机复验，验收前不提交清理日志，AI 不编译 ROM/Commit/Push。
+
+## UNION-260｜首张活动洞穴的迁移与交付边界
+
+- 当前开发基线是用户最新 `MUS-5.62.259.zip`；新候选 `CAV-5.62.260`，不改 `TEST-231`。不能用旧 `.256` 或历史 HEAD 混算最新增量。
+- 首批只开 Route32 ↔ Union Cave 1F 的双向洞口，B1F/B2F、Route33 全部 fail-closed。采用 Gold 原始块与 NPC compact 资源分别校验，洞穴独立 Tileset/ROM0 collision/Surf；不能将 `JOHTO_PILOT` 野外白名单扩到 cave。
+- 入口必须按 Gold 方向、目标 DOOR 和落点后单步自动行走核验；注册新地图时同时检查稳定 ID、活动槽位、bank/headers、Town Map、地点弹窗、音乐、palette、warp、64格水域与岸线。
+- 用户尚未本机编译／实测，本轮只交付互斥开发补丁及校验，不附 Git 日志、不执行 Git Commit/Push、不代编译 ROM。
+
 ## MUS-259｜门房音乐与骑车验收清理（2026-10-30）
 
 - **本轮最新确认 Git 基线**：用户完整 `FIX-5.62.256.zip` 内 `RPP_PROJECT_CONTEXT/02_EXPORT_INFO.txt` 明确为分支 `常规功能备份`、干净 HEAD `403e41e5ba763b4d747a7bbc6a03d6da161ab1be`、正式版本 `FIX-5.62.256`。该 HEAD 已包含遗迹南侧和 FIX-256 的两笔提交；本次仅从该 HEAD 到最终 `MUS-5.62.259` 计算净差异，不能再重复归入旧功能。

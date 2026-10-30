@@ -114,7 +114,7 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
            len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 3 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 26 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 28 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
            'MUS contract records three house routes plus sixteen explicitly contracted routes across two horizontal gates')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
@@ -195,6 +195,11 @@ def audit(project: Path, gold: Path) -> dict:
         ('JOHTO_ROUTE_36_LOCAL_ID', 1, 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'),
     ):
         expected_routes.append(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target))
+    for row in contract.get('cave_1f_routes', []):
+        ids = {7: 'JOHTO_ROUTE_32_LOCAL_ID', 8: 'JOHTO_UNION_CAVE_1F_LOCAL_ID',
+               9: 'JOHTO_ROUTE_33_LOCAL_ID'}
+        expected_routes.append(('MAP_REGION_JOHTO', ids[row['source_stable_id']],
+            str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', ids[row['target_stable_id']]))
     try:
         rows = _route_rows(runtime)
         _check(checks, errors, 'registered_routes', rows == expected_routes,

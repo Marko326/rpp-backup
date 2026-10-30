@@ -6,26 +6,18 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 def has_map_local_shore_tile_restore(source: str, helper: str, next_label: str) -> bool:
-    try:
-        start = source.index("CollisionCheckOnWater::")
-        tail = source[start:]
-        end = re.search(rf"(?m)^\.{re.escape(next_label)}\s*$", tail)
-        if end is None:
-            return False
-        body = tail[:end.start()]
-    except ValueError:
-        return False
-    # Strip comments first: comments may be inserted without changing the
-    # required instruction order, but the legacy branch must not satisfy this.
-    code = "\n".join(line.split(";", 1)[0].strip() for line in body.splitlines())
+    # All registered map-local queries now share a single ROM0 restore path.
+    code = "\n".join(line.split(";", 1)[0].strip() for line in source.splitlines())
     return re.search(
-        rf"callab {re.escape(helper)}\s+"
-        r"jp c, \.noCollision\s+"
-        rf"(?:callab JohtoCherrygroveShoreFloorAhead\s+jp c, \.stopSurfing\s+)?"
+        r"callab JohtoOverworldSurfDecision\s+"
+        r"jr nc, \.johtoSurfNotWater\s+"
+        r"jp z, \.noCollision\s+"
+        r"jp \.stopSurfing\s+"
+        r"\.johtoSurfNotWater\s+"
+        r"jr nz, \.legacySurfTile\s+"
         r"ld a, \[wTileInFrontOfPlayer\]\s+"
         r"ld c, a\s+"
-        r"(?:jr|jp) \.checkIfNextTileIsPassable",
-        code,
+        r"jp \.checkIfNextTileIsPassable", code,
     ) is not None
 
 class MapLocalSurfShoreRegression(unittest.TestCase):

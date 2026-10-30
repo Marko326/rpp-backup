@@ -13,22 +13,25 @@ from johto_pilot_migration_audit import audit_project
 
 
 REQUIRED_FILES = (
+    "main.asm", "macros/asm_macros.asm", "engine/johto_violet_field_skills.asm",
     "constants/region_map_constants.asm", "constants/johto_fixed_map_ids.asm",
     "data/johto_header_descriptors.asm", "data/johto_pilot_runtime_assets.asm",
     "data/johto_pilot_source_resources.asm", "data/johto_pilot_map_headers.asm",
     "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm",
-    "data/johto_indoor_house.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm",
-    "home/overworld.asm", "home.asm", "engine/overworld/doors.asm",
-    "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/fly_town_map_helpers.asm",
+    "data/johto_indoor_house.asm", "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm",
+    "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
+    "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
+    "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/overworld/tileset_header.asm", "color/loadpalettes.asm", "engine/fly_town_map_helpers.asm",
     "engine/johto_pilot_town_map_browse.asm", "text/map_names.asm",
     "tools/johto_map_name_sign_contracts.json", "tools/johto_pilot_door_contracts.json",
     "tools/johto_gate_music_bike_contracts.json", "engine/menu/options_menu.asm",
     "home/audio.asm", "data/bike_riding_tilesets.asm",
     "gfx/tilesets/johto.tilecoll",
     "gfx/tilesets/johto_house.tilecoll",
+    "gfx/tilesets/johto_union_cave.tilecoll", "gfx/blocksets/johto_union_cave.bst",
     "color/data/map_palette_assignments.asm", "color/data/map_palette_sets.asm",
     "color/data/map_palette_constants.asm", "color/data/map_palettes.asm",
-    "color/tilesets/johto_gate.asm",
+    "color/tilesets/johto_gate.asm", "color/tilesets/johto_union_cave.asm",
     "maps/johto_pilot/NewBarkTown.gold.blk", "maps/johto_pilot/NewBarkTown.runtime.blk",
     "maps/johto_pilot/Route29.gold.blk", "maps/johto_pilot/Route29.runtime.blk",
     "maps/johto_pilot/CherrygroveCity.gold.blk", "maps/johto_pilot/CherrygroveCity.runtime.blk",
@@ -42,6 +45,8 @@ REQUIRED_FILES = (
     "maps/johto_pilot/RuinsOfAlphOutside.gold.blk", "maps/johto_pilot/RuinsOfAlphOutside.runtime.blk",
     "maps/johto_pilot/Route36.gold.blk", "maps/johto_pilot/Route36.runtime.blk",
     "maps/johto_pilot/Route36RuinsOfAlphGate.gold.blk", "maps/johto_pilot/Route36RuinsOfAlphGate.runtime.blk",
+    "maps/johto_pilot/UnionCave1F.gold.blk", "maps/johto_pilot/UnionCave1F.runtime.blk",
+    "maps/johto_pilot/Route33.gold.blk", "maps/johto_pilot/Route33.runtime.blk",
 )
 
 
@@ -83,9 +88,16 @@ class PilotMigrationAuditTests(unittest.TestCase):
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("johto_map_sign_all_neutral_gates" in err for err in report["errors"]), report["errors"])
 
+    def test_missing_union_cave_gsc_row_fails_main_audit(self):
+        self.mutate("engine/menu/options_menu.asm",
+                    "    db MUSIC_GBP_GSC_UNION_CAVE      ; slot13: ID 8 Union Cave 1F (Gold MUSIC_UNION_CAVE)\n", "")
+        report = self.run_audit()
+        self.assertEqual("FAIL", report["status"])
+        self.assertTrue(any("active_map_rgbds_table_lengths" in e for e in report["errors"]), report["errors"])
+
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 13",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 15",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -93,7 +105,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 13",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 15",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -140,7 +152,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 13", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 15", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

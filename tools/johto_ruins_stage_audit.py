@@ -63,7 +63,7 @@ def audit(project=ROOT, gold_root=None):
     if record['main_version_unchanged'] != 'MAP-5.62.257':
         issues.append('expected MAP-5.62.254 for southern runtime candidate')
     constants = (project / 'constants/region_map_constants.asm').read_text()
-    if not re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 13$', constants):
+    if not re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 15$', constants):
         issues.append('unexpected current active count')
     stable_text = (project / 'data/johto_stable_id_slots.asm').read_text()
     dbpart = stable_text.split('JohtoStableIDToActiveSlot::')[1].split('JohtoStableIDToActiveSlotEnd::')[0]

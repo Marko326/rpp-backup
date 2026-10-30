@@ -203,6 +203,9 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             for row in gate.get('warp_contracts', []):
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        for row in contract.get('cave_1f_routes', []):
+            expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         rows = _runtime_warp_rows(runtime)
         add('REGISTERED_WARP_ROUTES', rows == expected_routes,
             f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; exact={rows == expected_routes}')

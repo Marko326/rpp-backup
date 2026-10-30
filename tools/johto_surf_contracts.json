@@ -111,6 +111,23 @@
       "map_scope_predicate": "JohtoRuinsIsActive",
       "runtime_map": "maps/johto_pilot/RuinsOfAlphOutside.runtime.blk",
       "entrypoint_helper": "JohtoVioletWaterAhead"
+    },
+    {
+      "gold_map": "UnionCave1F",
+      "local_id_symbol": "JOHTO_UNION_CAVE_1F_LOCAL_ID",
+      "water_helper": "JohtoUnionCaveWaterAhead",
+      "routine_file": "engine/johto_violet_field_skills.asm",
+      "water_table": "JohtoUnionCaveGoldWaterCells",
+      "water_end": "JohtoUnionCaveGoldWaterCellsEnd",
+      "expected_water_cells": 64,
+      "width_cells": 20,
+      "height_cells": 36,
+      "representation": "yx_db",
+      "map_scope_predicate": "JohtoUnionCaveIsActive",
+      "runtime_map": "maps/johto_pilot/UnionCave1F.runtime.blk",
+      "entrypoint_helper": "JohtoVioletWaterAhead",
+      "runtime_blockset": "gfx/blocksets/johto_union_cave.bst",
+      "runtime_passable_tiles": "gfx/tilesets/johto_union_cave.tilecoll"
     }
   ]
 }

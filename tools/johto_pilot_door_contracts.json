@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 26,
+    "registered_warp_route_rows": 28,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -660,5 +660,27 @@
     "runtime_verified": false,
     "phone_accepted": false,
     "notes": "This contract describes what must be checked; it does not claim the tests were performed."
-  }
+  },
+  "cave_1f_routes": [
+    {
+      "source_stable_id": 7,
+      "source_warp_ordinal": 2,
+      "target_stable_id": 8
+    },
+    {
+      "source_stable_id": 8,
+      "source_warp_ordinal": 0,
+      "target_stable_id": 7
+    },
+    {
+      "source_stable_id": 8,
+      "source_warp_ordinal": 1,
+      "target_stable_id": 9
+    },
+    {
+      "source_stable_id": 9,
+      "source_warp_ordinal": 0,
+      "target_stable_id": 8
+    }
+  ]
 }

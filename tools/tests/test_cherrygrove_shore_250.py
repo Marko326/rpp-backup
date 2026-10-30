@@ -34,6 +34,8 @@ class GoldShoreFloor250(unittest.TestCase):
                  'maps/johto_pilot/Route31.runtime.blk',
                  'maps/johto_pilot/Route32.runtime.blk',
             'maps/johto_pilot/RuinsOfAlphOutside.runtime.blk',
+            'maps/johto_pilot/UnionCave1F.runtime.blk',
+            'gfx/blocksets/johto_union_cave.bst', 'gfx/tilesets/johto_union_cave.tilecoll',
             'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll',
         )
         for file in files:
@@ -73,8 +75,8 @@ class GoldShoreFloor250(unittest.TestCase):
         self.assertTrue(any('MISSING_SHORE_PASSABILITY' in e for e in errors), errors)
 
     def test_remove_surf_landing_hook_rejected(self):
-        self.change('home/overworld.asm',
-                    '\tcallab JohtoCherrygroveShoreFloorAhead\n\tjp c, .stopSurfing',
+        self.change('engine/johto_violet_field_skills.asm',
+                    '\tcall JohtoCherrygroveShoreFloorAhead\n\tjp c, .floorShore',
                     '\t; BUG: missing landing allowance')
         self.assert_fails('missing disembark path')
 

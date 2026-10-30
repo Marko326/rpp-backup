@@ -121,7 +121,11 @@ class JohtoBikeCutSurf252(unittest.TestCase):
         self.assertEqual([],check_project(ROOT,self.contract,GOLD))
         gateway=self.field.split('JohtoVioletWaterAhead::',1)[1].split('JohtoCherrygroveIsActive::',1)[0]
         self.assertRegex(gateway,r'call JohtoRoute32WaterAhead\s+ret c')
-        self.assertRegex(self.home,r'callab JohtoRoute32WaterAhead\s+jp c, \.noCollision\s+ld a, \[wTileInFrontOfPlayer\]\s+ld c, a\s+jr \.checkIfNextTileIsPassable')
+        # Movement-time dispatch lives in ROMX Bank $48, like the old NPC
+        # branch's banked Gold water predicate; ROM0 restores the shore tile.
+        self.assertRegex(self.home, r'callab JohtoOverworldSurfDecision\s+jr nc, \.johtoSurfNotWater')
+        self.assertRegex(self.field, r'\.route32\s+call JohtoRoute32WaterAhead\s+jp \.waterOrShore')
+        self.assertRegex('\n'.join(x.split(';', 1)[0] for x in self.home.splitlines()), r'\.johtoSurfNotWater\s+jr nz, \.legacySurfTile\s+ld a, \[wTileInFrontOfPlayer\]\s+ld c, a\s+jp \.checkIfNextTileIsPassable')
 
     def test_negative_broken_route32_water_table_detected(self):
         orig=water_coordinates(self.field,'JohtoRoute32GoldWaterCells','JohtoRoute32GoldWaterCellsEnd')

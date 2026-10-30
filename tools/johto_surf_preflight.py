@@ -25,6 +25,7 @@ ENTRYPOINTS = {
     'home/overworld.asm': 'CollisionCheckOnWater',
 }
 CONTRACT = 'tools/johto_surf_contracts.json'
+BANKED_MOVEMENT_DISPATCH = 'JohtoOverworldSurfDecision'
 
 
 def code_only(source: str) -> str:
@@ -71,31 +72,37 @@ def water_coordinates(source: str, start: str, end: str) -> set[tuple[int, int]]
 
 
 def shore_branch_valid(overworld: str, helper: str) -> bool:
-    """Check both carry polarity and the C register passed to shoreline scan.
-
-    Match until the next local label, so a register reload in a *different*
-    path does not accidentally satisfy this check. Allows a future explicit
-    unsafe-edge guard between the water query and shoreline scan.
-    """
+    """ROM0 must retain both ABI flags and the real C register shore tile."""
     block = routine(overworld, 'CollisionCheckOnWater')
-    match = re.search(rf'(?m)^callab\s+{re.escape(helper)}\s*$', block)
-    if not match:
-        return False
-    tail = block[match.end():]
-    until_label = re.split(r'(?m)^\.[A-Za-z_]\w*:?\s*$', tail, maxsplit=1)[0]
-    instructions = [s for s in until_label.splitlines() if s]
-    if not instructions or not re.fullmatch(r'(?:jp|jr) c, \.noCollision', instructions[0]):
-        return False
-    # A non-water path can check additional unsafe edges, but must never
-    # jump to the shore scan without first restoring the actual front tile.
-    scan = [i for i, s in enumerate(instructions)
-            if re.fullmatch(r'(?:jp|jr) \.checkIfNextTileIsPassable', s)]
-    if len(scan) != 1 or scan[0] < 3:
-        return False
-    i = scan[0]
-    return (instructions[i - 2] == 'ld a, [wTileInFrontOfPlayer]' and
-            instructions[i - 1] == 'ld c, a')
+    return bool(re.search(
+        r'callab JohtoOverworldSurfDecision\s+'
+        r'jr nc, \.johtoSurfNotWater\s+'
+        r'jp z, \.noCollision\s+'
+        r'jp \.stopSurfing\s+'
+        r'\.johtoSurfNotWater\s+'
+        r'jr nz, \.legacySurfTile\s+'
+        r'ld a, \[wTileInFrontOfPlayer\]\s+'
+        r'ld c, a\s+'
+        r'jp \.checkIfNextTileIsPassable', block))
 
+
+def dispatcher_contract_ok(banked: str) -> bool:
+    """Require C/Z outcome polarity and the registered Cherrygrove exception."""
+    try:
+        block = routine(banked, BANKED_MOVEMENT_DISPATCH)
+    except ValueError:
+        return False
+    patterns = (
+        r'\.waterOrShore\s+jp c, \.water\s+\.shore\s+xor a\s+ret',
+        r'\.water\s+xor a\s+scf\s+ret',
+        r'\.floorShore\s+ld a, 1\s+or a\s+scf\s+ret',
+        r'\.legacy\s+ld a, 1\s+or a\s+ret',
+        r'\.cherrygrove\s+call JohtoCherrygroveWaterAhead\s+'
+        r'jp c, \.water\s+call JohtoCherrygroveShoreFloorAhead\s+'
+        r'jp c, \.floorShore\s+jp \.shore',
+        r'\.unionCave\s+call JohtoUnionCaveWaterAhead',
+    )
+    return all(re.search(p, block) for p in patterns)
 
 
 def gold_shore_floor_mismatch(root: Path, gold: Path, entry: dict) -> set[tuple[int, int]]:
@@ -117,8 +124,8 @@ def gold_shore_floor_mismatch(root: Path, gold: Path, entry: dict) -> set[tuple[
     if not layout:
         raise ValueError(f"{entry['gold_map']}: missing runtime map for shore audit")
     blocks = (root / layout).read_bytes()
-    metatiles = (root / 'gfx/blocksets/johto.bst').read_bytes()
-    allowed = set((root / 'gfx/tilesets/johto.tilecoll').read_bytes()) - {0xff}
+    metatiles = (root / entry.get('runtime_blockset', 'gfx/blocksets/johto.bst')).read_bytes()
+    allowed = set((root / entry.get('runtime_passable_tiles', 'gfx/tilesets/johto.tilecoll')).read_bytes()) - {0xff}
     width = entry['width_cells'] // 2
     height = entry['height_cells'] // 2
     if len(blocks) != width * height or len(metatiles) % 16:
@@ -196,10 +203,10 @@ def validate_shore_exception(root: Path, entry: dict, source: str, overworld: st
                 errors.append(f'{helper}: missing register preservation: {needle}')
     except ValueError as exc:
         errors.append(str(exc))
-    surf = routine(overworld, 'CollisionCheckOnWater')
-    if not re.search(rf'(?m)^callab\s+{re.escape(entry["water_helper"])}\s*\n'
-                     rf'jp c, \.noCollision\s*\ncallab\s+{re.escape(helper)}\s*\n'
-                     rf'jp c, \.stopSurfing\s*$', surf):
+    dispatch = routine(source, BANKED_MOVEMENT_DISPATCH)
+    if not re.search(rf'(?m)^call\s+{re.escape(entry["water_helper"])}\s*\n'
+                     rf'jp c, \.water\s*\ncall\s+{re.escape(helper)}\s*\n'
+                     rf'jp c, \.floorShore\s*$', dispatch):
         errors.append(f'{helper}: missing disembark path for Gold FLOOR shore')
     land = routine(overworld, 'CheckTilePassable')
     if not re.search(rf'(?m)^cp \$3c\s*\njr nz, \.normalTilePassability\s*\n'
@@ -241,13 +248,26 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
             errors.append(f'{filename}: {exc}')
     if len(texts) != len(ENTRYPOINTS):
         return errors
+    try:
+        banked = (root / 'engine/johto_violet_field_skills.asm').read_text(encoding='utf8')
+        banked_body = routine(banked, BANKED_MOVEMENT_DISPATCH)
+        if not dispatcher_contract_ok(banked):
+            errors.append('banked Surf dispatcher: incorrect carry/zero/floor-shore flags')
+    except (ValueError, OSError) as exc:
+        errors.append(f'banked Surf dispatcher: {exc}')
+        banked_body = ''
     for filename, label in ENTRYPOINTS.items():
         try:
             body = routine(texts[filename], label)
         except ValueError as exc:
             errors.append(f'{filename}: {exc}')
             continue
-        actual = local_water_helpers(body)
+        if filename == 'home/overworld.asm':
+            if not shore_branch_valid(texts[filename], 'JohtoOverworldSurfDecision'):
+                errors.append('CollisionCheckOnWater: missing banked dispatcher/shore ABI')
+            actual = set(re.findall(r'(?m)^call\s+(\w*WaterAhead)\s*$', banked_body))
+        else:
+            actual = local_water_helpers(body)
         missing = endpoints - actual
         undeclared = actual - declared  # the water-movement path may query routes directly
         for helper in sorted(missing):
@@ -322,7 +342,7 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
                                   f'{len(coords-source)} extra, {len(source-coords)} missing')
         except (KeyError, ValueError, OSError) as exc:
             errors.append(f'{helper}: {exc}')
-        if not shore_branch_valid(texts['home/overworld.asm'], helper):
+        if not shore_branch_valid(texts['home/overworld.asm'], delegated.get(helper, helper)):
             errors.append(f'{helper}: disembark must restore wTileInFrontOfPlayer '
                           'to C before .checkIfNextTileIsPassable')
         errors.extend(validate_shore_exception(

@@ -45,16 +45,16 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertLessEqual(max((ROOT/'maps/johto_pilot/Route32.runtime.blk').read_bytes()), 140)
 
     def test_stable_id7_is_slot8_and_south_ruins_are_slots9_10(self):
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 13', read('constants/region_map_constants.asm'))
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 15', read('constants/region_map_constants.asm'))
         first = next(row for row in segment(self.stable, 'JohtoStableIDToActiveSlot::', 'JohtoStableIDToActiveSlotEnd::').splitlines() if '$00-$0f' in row)
         cells = [x.strip() for x in first.split(';')[0].strip()[3:].split(',')]
-        self.assertEqual(cells[5:11], ['6', '7', '8', 'JOHTO_INVALID_ACTIVE_SLOT', 'JOHTO_INVALID_ACTIVE_SLOT', 'JOHTO_INVALID_ACTIVE_SLOT'])
+        self.assertEqual(cells[5:11], ['6', '7', '8', '13', '14', 'JOHTO_INVALID_ACTIVE_SLOT'])
         r = read('data/johto_header_descriptors.asm')
         self.assertIn('dw JohtoPilotRoute32RuntimeHeader\n    db BANK(JohtoPilotRoute32RuntimeHeader)',r)
         self.assertIn('dw JohtoPilotAlphSouthGateRuntimeHeader\n    db BANK(JohtoPilotAlphSouthGateRuntimeHeader)', r)
         self.assertIn('dw JohtoPilotAlphOutsideRuntimeHeader\n    db BANK(JohtoPilotAlphOutsideRuntimeHeader)', r)
         self.assertNotIn('JohtoPilotUnionCaveRuntimeHeader', r)
-        self.assertNotIn('JohtoPilotRoute33RuntimeHeader', r)
+        self.assertIn('JohtoRoute33RuntimeHeader', r)
         self.assertNotIn('JohtoPilotAzaleaRuntimeHeader', r)
         row_60 = next(line for line in self.stable.splitlines() if '$60-$6f' in line)
         vals_60 = [v.strip() for v in row_60.split(';', 1)[0].strip()[3:].split(',')]
@@ -112,13 +112,13 @@ class Route32Stage245Tests(unittest.TestCase):
 
     def test_south_gate_warps_are_explicit_and_other_exits_stay_closed(self):
         objs = segment(self.r32, 'JohtoPilotRoute32RuntimeObjects::', '\n    db 0 ; NPCs')
-        self.assertIn('db 2 ; Gold ruins west gate pair only; center/cave remain closed', objs)
+        self.assertIn('db 3 ; Gold ruins west gate pair + Union Cave entrance; center remains closed', objs)
         self.assertIn('db 4 ; Gold signs', objs)
         runtime_routes = segment(self.edge, 'JohtoRegisteredWarpRoutes::', 'JohtoRegisteredWarpRoutesEnd::')
         self.assertEqual(2, runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID') + runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'))
         self.assertIn('JOHTO_RUINS_OF_ALPH_LOCAL_ID', runtime_routes)
         self.assertIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', runtime_routes)
-        self.assertNotIn('JOHTO_UNION_CAVE_1F_LOCAL_ID', runtime_routes)
+        self.assertIn('JOHTO_UNION_CAVE_1F_LOCAL_ID', runtime_routes)
         self.assertIn('db NORTH\n', self.r32)
         self.assertNotIn('db NORTH | SOUTH\n', self.r32)
 

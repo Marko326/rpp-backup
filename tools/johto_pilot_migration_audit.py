@@ -26,7 +26,23 @@ try:
     from johto_map_name_sign_audit import audit as audit_map_sign
 except ImportError:
     from tools.johto_map_name_sign_audit import audit as audit_map_sign
+try:
+    from johto_rom0_space_preflight import inspect as inspect_rom0_space
+except ImportError:
+    from tools.johto_rom0_space_preflight import inspect as inspect_rom0_space
+try:
+    from johto_union_cave_portal_audit import audit as audit_union_cave_portal
+except ImportError:
+    from tools.johto_union_cave_portal_audit import audit as audit_union_cave_portal
+try:
+    from tileset_index_preflight_267 import audit as audit_tileset_index
+except ImportError:
+    from tools.tileset_index_preflight_267 import audit as audit_tileset_index
 from typing import Iterable
+try:
+    from johto_table_assert_preflight import inspect as inspect_johto_table_asserts
+except ImportError:
+    from tools.johto_table_assert_preflight import inspect as inspect_johto_table_asserts
 
 try:
     from johto_gold_door_audit import GoldCollisionIndex, inspect as inspect_gold
@@ -36,7 +52,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9]
 EXPECTED_CONNECTIONS = {
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
@@ -59,6 +75,8 @@ MAP_LAYOUTS = {
     "RuinsOfAlphOutside": (10, 18),
     "Route36RuinsOfAlphGate": (5, 4),
     "Route36": (30, 9),
+    "UnionCave1F": (10, 18),
+    "Route33": (10, 9),
 }
 GOLD_SOURCE_MAPS = {
     "NewBarkTown": "NewBarkTown",
@@ -74,6 +92,8 @@ GOLD_SOURCE_MAPS = {
     "RuinsOfAlphOutside": "RuinsOfAlphOutside",
     "Route36RuinsOfAlphGate": "Route36RuinsOfAlphGate",
     "Route36": "Route36",
+    "UnionCave1F": "UnionCave1F",
+    "Route33": "Route33",
 }
 
 
@@ -365,6 +385,44 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                item["status"] == "PASS", item["detail"])
 
     active_count = constants.get("NUM_JOHTO_ACTIVE_MAPS")
+
+    # RGBDS ASSERT on table *byte lengths* is independent of literal slot-count
+    # ASSERTs.  New slot 13 once had 13 music db rows for 14 active maps and
+    # passed all previous map/movement checks, but rgbasm refused main_red.o.
+    # Reuse the separately runnable fail-closed preflight (no ROM build).
+    table_issues, table_rows, table_expected = inspect_johto_table_asserts(project)
+    _check(errors, checks, "active_map_rgbds_table_lengths",
+           not table_issues and table_expected == active_count and len(table_rows) >= 3,
+           f"NUM_JOHTO_ACTIVE_MAPS={table_expected}, checked={len(table_rows)}, "
+           f"tables={[name for _file, name, _got, _expected in table_rows]}, "
+           f"issues={table_issues}")
+    # FIX-267: physically execute arithmetic offsets for all tileset IDs.
+    # Gold asset hashes and RGBDS table lengths alone missed ID32 wraparound.
+    # Legacy isolated test fixtures intentionally do not contain the full engine.
+    # Require the 16-bit indexing audit whenever the real tileset and palette
+    # loader source files are both present; never bypass it in complete builds.
+    tileset_sources = (project / 'engine/overworld/tileset_header.asm',
+                       project / 'color/loadpalettes.asm')
+    if any(p.is_file() for p in tileset_sources):
+        index_report = (audit_tileset_index(project) if all(p.is_file() for p in tileset_sources)
+                        else {'status': 'FAIL', 'checks': {'missing_loader_source': False}})
+        _check(errors, checks, 'johto_tileset_header_and_palette_16bit_index',
+               index_report['status'] == 'PASS_STATIC_ONLY' and all(index_report['checks'].values()),
+               f"checks={index_report['checks']}")
+    rom0_report = inspect_rom0_space(project)
+    _check(errors, checks, "rom0_surf_bank_budget_and_abi",
+           rom0_report['status'] == 'PASS_STATIC_ONLY',
+           f"metrics={rom0_report['metrics']}, issues={rom0_report['issues']}; "
+           "old MAP advisory only; requires new rgblink + MAP")
+    # UNION-263: independently check cave arrival, collision-only return,
+    # and cycling against the old reference and Gold collision roles.
+    cave_portal = audit_union_cave_portal(project, Path(gold_root) if gold_root else None)
+    for item in cave_portal['checks']:
+        _check(errors, checks, 'johto_union_cave_' + item['check'],
+               item['status'] == 'PASS', item['detail'])
+    if cave_portal['errors'] and not cave_portal['checks']:
+        _check(errors, checks, 'johto_union_cave_audit_loaded', False,
+               str(cave_portal['errors']))
     music_bike = audit_gate_music_bike(project, Path(gold_root) if gold_root else None)
     for item in music_bike['checks']:
         _check(errors, checks, 'johto_gate_music_bike_' + item['check'],
@@ -488,7 +546,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_31_LOCAL_ID", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID",
                            "JOHTO_VIOLET_CITY_LOCAL_ID", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "JOHTO_ROUTE_32_LOCAL_ID",
                            "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
-                           "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", "JOHTO_ROUTE_36_LOCAL_ID"]
+                           "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", "JOHTO_ROUTE_36_LOCAL_ID",
+                           "JOHTO_UNION_CAVE_1F_LOCAL_ID", "JOHTO_ROUTE_33_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -536,9 +595,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[20] = 10
     expected_slots[19] = 11
     expected_slots[16] = 12
+    expected_slots[8] = 13
+    expected_slots[9] = 14
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
-           f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12}}; all others must be inactive")
+           f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
 
     # Source adjacency table is 5 bytes per row and must be reciprocal.
     try:
@@ -656,6 +717,13 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE_36_LOCAL_ID", 1, "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
+        # Union Cave 1F north/south activated, but B1F/B2F stay sealed.
+        expected_warps.extend((
+            ("MAP_REGION_JOHTO", "JOHTO_ROUTE_32_LOCAL_ID", "2", "MAP_REGION_JOHTO", "JOHTO_UNION_CAVE_1F_LOCAL_ID"),
+            ("MAP_REGION_JOHTO", "JOHTO_UNION_CAVE_1F_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_ROUTE_32_LOCAL_ID"),
+            ("MAP_REGION_JOHTO", "JOHTO_UNION_CAVE_1F_LOCAL_ID", "1", "MAP_REGION_JOHTO", "JOHTO_ROUTE_33_LOCAL_ID"),
+            ("MAP_REGION_JOHTO", "JOHTO_ROUTE_33_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_UNION_CAVE_1F_LOCAL_ID"),
+        ))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
                f"expected Guide Gents + existing directional gate entries/exits; found {warp_rows}")
     except ValueError as exc:
@@ -775,7 +843,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                 "cp JOHTO_RUINS_OF_ALPH_LOCAL_ID" in gate_arrival and
                 "ld e, 0" in gate_arrival and "ld e, D_DOWN" in gate_arrival and
                 ".gateTop" in gate_arrival and "cp 5" in gate_arrival and
-                "cp JOHTO_GATE\n\tjr nz,.noJohtoCarpetArrival" in enter_map and
+                "cp JOHTO_GATE\n\tjr z,.armJohtoCarpetArrival" in enter_map and
+                "cp JOHTO_UNION_CAVE\n\tjr nz,.noJohtoCarpetArrival" in enter_map and
                 "callba IsPlayerStandingOnWarp" in enter_map),
                "North-side Gold DOOR arrives with one DOWN step; all directional carpets stay in place")
         _check(errors, checks, "gate_exterior_collision_only",
@@ -803,10 +872,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         gate_tilepal = _read(project, "color/tilesets/johto_gate.asm")
         _check(errors, checks, "gate_palette_and_gold_colors",
                ("INCLUDE \"color/tilesets/johto_gate.asm\"" in palette_assign and
-                "(JOHTO_GATE + 1) * $60" in palette_assign and
+                "(JOHTO_MODERN + 1) * $60" in palette_assign and
+                "INCLUDE \"color/tilesets/johto_union_cave.asm\"" in palette_assign and
                 "JOHTO_GATE_GOLD_GREEN" in palette_sets and
                 "JOHTO_GATE_GOLD_BROWN" in palette_sets and
-                "(JOHTO_GATE + 1) * 8" in palette_sets and
+                "(JOHTO_MODERN + 1) * 8" in palette_sets and
                 "const JOHTO_GATE_GOLD_GREEN ; 28" in palette_consts and
                 "const JOHTO_GATE_GOLD_BROWN ; 29" in palette_consts and
                 "RGB 18,24,9" in palettes and "RGB 15,20,1" in palettes and

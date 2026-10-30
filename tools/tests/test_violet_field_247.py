@@ -31,7 +31,7 @@ class VioletFieldContract(unittest.TestCase):
         for path, tokens in {
             'engine/overworld/field_moves.asm': ('callab JohtoVioletWaterAhead','callab JohtoPilotCutTreeAhead'),
             'engine/items/items.asm': ('callab JohtoVioletWaterAhead',),
-            'home/overworld.asm': ('callab JohtoVioletWaterAhead',),
+            'home/overworld.asm': ('callab JohtoOverworldSurfDecision',),
             'engine/overworld/cut.asm': ('callab JohtoPilotCutTreeAhead','db $63, $8D')
         }.items():
             contents=(ROOT/path).read_text()

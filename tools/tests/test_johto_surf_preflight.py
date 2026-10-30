@@ -29,6 +29,9 @@ class SurfPreflight(unittest.TestCase):
                  'maps/johto_pilot/Route31.runtime.blk',
                  'maps/johto_pilot/Route32.runtime.blk',
                  'maps/johto_pilot/RuinsOfAlphOutside.runtime.blk',
+                 'maps/johto_pilot/UnionCave1F.runtime.blk',
+                 'gfx/blocksets/johto_union_cave.bst',
+                 'gfx/tilesets/johto_union_cave.tilecoll',
                  'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll']
         for path in paths:
             dest = self.root / path
@@ -61,14 +64,14 @@ class SurfPreflight(unittest.TestCase):
 
     def test_missing_c_register_reload_is_rejected(self):
         self.change('home/overworld.asm',
-                    '\tld a, [wTileInFrontOfPlayer]\n\tld c, a\n\tjr .checkIfNextTileIsPassable',
-                    '\tjr .checkIfNextTileIsPassable')
+                    '\tld a, [wTileInFrontOfPlayer]\n\tld c, a\n\tjp .checkIfNextTileIsPassable',
+                    '\tjp .checkIfNextTileIsPassable')
         self.assert_has_error('disembark must restore')
 
     def test_reversed_water_carry_is_rejected(self):
         self.change('home/overworld.asm',
-                    '\tcallab JohtoVioletWaterAhead\n\tjp c, .noCollision',
-                    '\tcallab JohtoVioletWaterAhead\n\tjp nc, .noCollision')
+                    '\tjr nc, .johtoSurfNotWater\n\tjp z, .noCollision',
+                    '\tjr nc, .johtoSurfNotWater\n\tjp nz, .noCollision')
         self.assert_has_error('disembark must restore')
 
     def test_wrong_field_move_carry_is_rejected(self):
@@ -101,7 +104,11 @@ class SurfPreflight(unittest.TestCase):
 
     def test_wrong_map_id_guard_is_rejected(self):
         self.change('engine/johto_violet_field_skills.asm',
-                    'cp JOHTO_VIOLET_CITY_LOCAL_ID', 'cp JOHTO_ROUTE_32_LOCAL_ID')
+                    'JohtoVioletIsActive::\n\tld a, [wCurMap]',
+                    'JohtoVioletIsActive::\n\tld a, [wCurMap]\n\t; mutation guard')
+        self.change('engine/johto_violet_field_skills.asm',
+                    'cp JOHTO_VIOLET_CITY_LOCAL_ID\n\tjp nz, .no',
+                    'cp JOHTO_ROUTE_32_LOCAL_ID\n\tjp nz, .no')
         self.assert_has_error('map-scope predicate')
 
     def test_duplicate_water_cell_is_rejected(self):

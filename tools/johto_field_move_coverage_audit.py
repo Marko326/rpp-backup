@@ -32,6 +32,7 @@ LEDGE_TABLES = {
 LEDGE_COORDINATE_TABLES = {
     'RuinsOfAlphOutside': ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JohtoAlphSouthHops',
                            '.ruinsHopTable', '.ruinsCoordinateHopLookup'),
+    'Route33': ('JOHTO_ROUTE_33_LOCAL_ID', 'JohtoRoute33Hops', '.route33Modern', '.ruinsCoordinateHopLookup'),
 }
 
 
@@ -81,6 +82,14 @@ def _cut_records(root: Path, active: list[dict]) -> tuple[dict[str, set[tuple[in
 
 
 def _ledge_table_for_map(source: str, map_name: str) -> str | None:
+    if map_name == 'Route33':
+        part=source.split('HandleLedges:',1)[-1]
+        if not re.search(r'(?s)cp JOHTO_MODERN\s+jr z, \.route33Modern.*?'
+                         r'\.route33Modern\s+ld a, \[wCurLocalMapID\]\s+'
+                         r'cp JOHTO_ROUTE_33_LOCAL_ID\s+ret nz\s+'
+                         r'ld hl, JohtoRoute33Hops\s+jr \.ruinsCoordinateHopLookup',part):
+            return None
+        return 'JohtoRoute33Hops'
     if map_name in LEDGE_COORDINATE_TABLES:
         symbol, table, dispatch_label, lookup_label = LEDGE_COORDINATE_TABLES[map_name]
         body = source.split('HandleLedges:', 1)[1]
@@ -121,7 +130,7 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
 
 def _coordinate_hop_entries(source: str, table: str) -> set[tuple[int, int, str]]:
     match = re.search(
-        rf'(?ms)^{re.escape(table)}:\s*\n(.*?)(?=^LoadHoppingShadowOAM:)',
+        rf'(?ms)^{re.escape(table)}:\s*\n(.*?)(?=^JohtoAlphSouthHops:|^LoadHoppingShadowOAM:)',
         source)
     if not match:
         return set()

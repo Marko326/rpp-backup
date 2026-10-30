@@ -86,9 +86,13 @@ class JohtoRoutes251(unittest.TestCase):
         self.assertIn('callab JohtoVioletWaterAhead', (ROOT / 'engine/items/items.asm').read_text())
         self.assertIn('callab JohtoVioletWaterAhead', (ROOT / 'engine/overworld/field_moves.asm').read_text())
         home = (ROOT / 'home/overworld.asm').read_text()
+        home = '\n'.join(line.split(';', 1)[0].strip() for line in home.splitlines())
+        self.assertIn('callab JohtoOverworldSurfDecision', home)
+        self.assertRegex(home, r'jr nc, \.johtoSurfNotWater\s+jp z, \.noCollision\s+jp \.stopSurfing')
+        self.assertRegex(home, r'jr nz, \.legacySurfTile\s+ld a, \[wTileInFrontOfPlayer\]\s+ld c, a\s+jp \.checkIfNextTileIsPassable')
+        dispatch = self.asm.split('JohtoOverworldSurfDecision::', 1)[1].split('JohtoVioletIsActive::', 1)[0]
         for name in ROUTES:
-            self.assertRegex(home, rf'callab Johto{name}WaterAhead\s+jp c, \.noCollision\s+ld a, \[wTileInFrontOfPlayer\]\s+ld c, a\s+jr \.checkIfNextTileIsPassable')
-        self.assertIn('ld a, [wCurLocalMapID] ; previous farcall modifies A', home)
+            self.assertRegex(dispatch, rf'call Johto{name}WaterAhead\s+jp \.waterOrShore')
 
     def test_cut_live_lookup_and_both_entrypaths(self):
         self.assertEqual(TREES, gold_cut_table(self.asm))

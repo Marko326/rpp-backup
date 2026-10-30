@@ -1,3 +1,64 @@
+## CLEAN-267｜切勿把图形中间文件当作缺失源码、或回退用户 JP
+
+- 前版累计补丁多带了本地生成的 `gfx/tilesets/johto_modern.2bpp`，但实际用户工作区导出仅有 PNG，这是正确的：`Makefile` 会从 PNG 自动产出 `.2bpp`，而 `.gitignore` 忽略生成文件。收口必须以 Git 可追踪源资源为准，不用 `git add -f` 强行提交编译中间物。
+- 正式清理还修正旧 `johto_route33_266_audit.py` 的过度依赖：旧审计直接读取被忽略的 `.2bpp`，干净 Git 检出后会 FAIL。现改为读取 PNG 源，经已有 `strict_2bpp` 仅在内存中转换后与 Gold 源作比较，配套测试改为复制 PNG 并注入 PNG 图像改动。运行时 ASM、Makefile 和资源内容均不变。
+- 用户工作区有针对 `home/overworld.asm` 的 `jp nz,.noCollision` 长跳修复；以前窗口的旧 `jr` 作为清理源会造成编译范围回归。对有 `JR` 距离限制的情况须依据实际源码与用户构建反馈审查，避免凭静态符号预检就称能够链接。
+- 用户反馈进出洞、Route33 显示、骑车、Fly 正常；后续未说明完整的“出去的时候……”仍需确认。不得把静态 PASS 冒充其它地图、地下层、与桧皮镇连接已验收。
+
+## FIX-5.62.267｜33号道路图块集加载溢出修复（开发候选）
+
+- 症状：联合洞窟南出口进入 Route33 后整屏花屏；并非 Gold 33号路 `.blk`、PNG 或落点写反。
+- 根因：`engine/overworld/tileset_header.asm` 原先以8位移位/加法拼出 `tileset * 12`，`JOHTO_MODERN=32` 时中间进位丢失，实际 `$0080` 而非 `$0180`；读取到错误的 ROM Bank/图块指针。`color/loadpalettes.asm` 又以8位 `sla e`×3 求 `tileset * 8`，ID32 时 `$0000` 而非 `$0100`。**旧回归检查没有把新 Tileset ID 32 送过这两段运行时地址计算。**
+- 修复：仅将两处索引改用16位 HL 算术，保留 `.266` 地图资源、Gold碰撞、双向 Warp 和 `.265` 朝向。无新 Bank、新 SRAM、无大范围图形替换。
+- 防回归：新增 `tools/tileset_index_preflight_267.py`、`tools/tests/test_tileset_index_267.py`，检查 ID 0–32 及故障注入；注意该检查不模拟 ROM VRAM，不能代替手机验收。
+- 交付：增量严格从 `.266` 实际开发候选生成，累计全量从 `.266` 原来声明的干净 HEAD `438046a6ae6a709b656b8f712eeeecefc6259dda` 生成，两份互斥；不编译 ROM、不提交 Git、不更新 `TEST-231`。须由用户本机编译并检查新 MAP／南北口和 Route33 显示。
+
+## FIX-265：不能把 Warp 出口朝向误当作进入后的朝向
+
+- `.264` 为了让 `WARP_CARPET_DOWN` 的出口“面向内部”，在到达 `.caveFacing` 中强写 DOWN；但北侧进入是 Route32 朝 UP，且洞内 Gold `(17,2)` 为 FLOOR、`(17,4)` 为 WALL。普通引擎已经保有按键方向，进入洞穴应不额外改朝向。
+- `PlayerStepOutFromDoor` 的洞内 E=0 不模拟步进；出洞的 DOWN 仅由 `ExtraWarpCheck`＋最终碰撞 guard 在玩家主动朝南碰撞时判断。避免让静态测试硬编码错误的 DOWN 覆盖。
+- 待用户本机正式 ROM/TEST ROM、最新 MAP 及手机走出／再次进入、存读档验证；静态审计不等于实机验收。
+
+## FIX-264｜静态全绿但 Union Cave 1F 始终出不了：漏了 ExtraWarpCheck 的前置 Warp 资格
+
+- `.263` 将 Gold `UnionCave1F (17,3)` 的最终 `JohtoPilotGateCollisionExitAllowed` 改成 DOWN，却未给更早运行的 `JohtoPilotGateExteriorCollisionAllowed` 登记该洞穴。玩家碰撞墙面时 `ExtraWarpCheck` 询问前置函数返回0，退回旧 `IsPlayerFacingEdgeOfMap`；洞穴入口在图内，不是地图边缘，所以 Carry=0，根本不会调用最后的 Warp 匹配。
+- 旧 NPC 分支的门房踩坑文档已明确记载过类似“非地图边界入口未接入 ExtraWarpCheck”问题，这次没有沿完整调用链检查，重复了同类错误。
+- 还有更上游的门槛：`EnterMap` 原只为 HOUSE/GATE 调用 `IsPlayerStandingOnWarp`；CAVE 到达格本身是 Warp，必须重建 `wd736 bit2` 才可能进入 collision path。
+- 此外，新增前置资格后必须同步隔离 `CheckWarpsNoCollision` 的 fallback；否则洞穴 `WARP_CARPET_DOWN` 会在无碰撞踩格时被立即触发。只从碰撞路径回程，仍保留 warp 标志 bit2。
+- 正确修复不是改第三遍 `PLAYER_DIR_UP/DOWN`：在 ROMX 前置函数按洞穴 ID 转发到同一个最终 guard，保留 `(17,3,DOWN)` 唯一放行、`(17,4)` 阻挡、未开放楼梯/南洞口继续关闭。
+- `johto_union_cave_portal_audit.py` 必须解释执行 ROMX 两个关联谓词，并静态验证 ROM0 前置 Carry 与碰撞调用链；测试须在故意删除前置地图登记、断开调用、颠倒 Carry 跳转时 FAIL。ROM 编译与设备验收仍由用户完成。
+
+## FIX-263｜联合洞穴 WARP_CARPET_DOWN 不等于 DOOR（Gold／旧 NPC 参考）
+
+- **用户实测故障**：新 `.260`～`.262` 洞口虽然静态 Warp 表互通，但进洞后角色朝墙，不能回 Route32，且洞内不能骑车。不能把地图“有 Warp”视为双向可用。
+- **来源核实**：Gold UnionCave1F `(17,3)` 是 `WARP_CARPET_DOWN`，下面 `(17,4)` 是 `WALL`；旧 NPC-5.62.243 已实现“进入洞内保持原 Warp 格、朝下撞墙才出洞；只有出洞至 Route32 `(6,79)` 需要自动往南一步”。
+- **根因**：新代码把洞内 carpet 当 DOOR 设置 `D_DOWN` 自动步，把回程碰撞方向反设为 `PLAYER_DIR_UP`，还错误允许从 `(17,4)` 朝上进入 Warp。修法是删掉洞内 STEP_ON／DOOR 例外，只保留精确站位+朝下碰壁的 COLLISION_ONLY 出口；别修改已经验收的横向／竖向门房。
+- **骑车**：旧分支 `BikeRidingTilesets` 显式包含 `JOHTO_UNION_CAVE`，新 Tileset 注册时遗漏了这项；只有洞穴专属 Tileset 恢复骑车，不靠名字含 CAVE/GATE 全局开放，不碰普通室内许可。
+- **防回归**：`tools/johto_union_cave_portal_audit.py` 与 `tools/tests/test_johto_union_cave_portal_263.py` 被总迁移审计发现；故意把出口方向改上、把洞内 D_DOWN 自动步加回、放宽 STEP_ON、删骑车或反向 Warp，必须 FAIL。静态审计不能取代 ROM/手机验收。
+
+## ROM0-262｜旧 NPC 已完成更多地图，为什么本工程先链接溢出？
+
+- 旧 NPC-5.62.243 的 MAP：ROM0 15,916字节、剩余468字节，Main `$3C21`；当前旧 MAP：ROM0 16,353字节、剩余31字节，Main `$3DAE`。不能以地图数量推断 ROM0 空间，两个工程还有其它功能差异。
+- 两边的联合洞穴碰撞都是 ROM0 可读，**切忌**为了腾空间将 `JohtoUnionCave_Coll` 放在裸 ROMX：移动、NPC、Surf 上岸使用 unbanked 的 `wTilesetCollisionPtr`。
+- 旧分支把 Gold 水格和原生碰撞判定外迁 ROMX，也曾将菜单主循环迁 Bank `$01`；当前 Bank `$01` 几乎满，只借鉴前者的短入口/远谓词模式。
+- 本批把行内逐图 Surf 判定转到 Bank `$48`，Carry/Zero 双标志编码 Gold WATER、吉花市 FLOOR、非水岸、关都兜底。Bankswitch 恢复 Bank 会污染 A，但不改 C/Z；岸线上岸前须恢复 `C=wTileInFrontOfPlayer`。
+- 旧 MAP `$001F` 余量是**旧链接结果**，不是 `.262` 编译结果。预检输出23字节入口、估计减少173字节只是预算；新 ROM 必须用户重新 rgblink，且 `--require-fresh-map` 不得接受旧地图。
+
+## FIX-261｜ASM 标签预检通过仍可能被 RGBDS 数据表长度 ASSERT 阻断
+
+- CAV-260 将城都活动地图从13扩至14，但 `engine/menu/options_menu.asm::JohtoActiveGSCMusic` 仍只有13条 `db`。`ASSERT ... == NUM_JOHTO_ACTIVE_MAPS` 正确阻止了汇编，不能通过删除 ASSERT 或降低活动数绕过。
+- 以后新增地图槽位时，地图注册、Town Map项目表（4字节/槽）、浏览索引（1字节/槽）及 GSC音乐表（1字节/槽）必须同步；缺一项也要阻止交付。
+- 独立预检现在是 `python tools/johto_table_assert_preflight.py --root .`，同时已经作为 `johto_pilot_migration_audit.py` 的强制检查执行。测试还会注入漏项、重复项和 ASSERT 被删除，不能仅靠 ASM 局部标签检查宣称可编译。
+- Gold原版 `UnionCave1F` 是 `MUSIC_UNION_CAVE`；主工程第14条选 `MUSIC_GBP_GSC_UNION_CAVE`，与现有 `MUSIC_DUNGEON2`运行场景对应。工具仍不取代 ROM/MAP/手机验证。
+
+## UNION-260：洞穴与野外共享逻辑时的易漏项
+
+1. `Gold UnionCave1F.blk` 和 NPC compact `JohtoUnionCave1F.blk` 含义不同；必须保存、单独验证，不能互相覆盖。
+2. 新 Tileset 编号必须同时扩展 `data/tileset_headers.asm`、`data/warp_tile_ids.asm`、`color/data/map_palette_sets.asm` 和 `color/data/map_palette_assignments.asm`，遗漏会令颜色或指针错位。
+3. 洞穴 Surf 不能只在 A 键或道具入口接水格判断；游泳中续行和岸边上岸也必须单独识别 `JOHTO_UNION_CAVE`，并恢复 `wTileInFrontOfPlayer` 到 `C`。
+4. Gold DOOR 需要目标落点安全自动走一步，不能照搬门房地毯；B1F/B2F/Route33 的其它 Warp 必须关闭。
+5. 历史脚本固定13张图时应保留真实回归意图，升级活动地图合同并加新地点名、田野能力、Gold逐格碰撞负向测试。
+
 ## MUS-259 验收经验｜门房与首次洞穴前的检查
 
 - 活动门房不能仅有 Warp、音乐 profile 或 neutral 地名之一：新增 stable ID 后，必须分别登记方向与到达步进、Gold GATE/INDOOR 骑车、真实进入侧曲目、同曲缓存、地点弹窗、Town Map/Save 名称；运行 `johto_gate_music_bike_audit.py` 与 `johto_map_name_sign_audit.py` 故障注入，不能仅凭单元测试 PASS 宣称 ROM 音轨连续。
