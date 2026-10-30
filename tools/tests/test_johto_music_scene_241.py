@@ -29,8 +29,13 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'call JohtoPilotGetMapProfile' in m
     assert 'cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID' in m
     assert 'ld a, [wJohtoGateMusicSourceLocalID]' in m
-    assert 'cp JOHTO_VIOLET_CITY_LOCAL_ID' in m
-    assert 'ld a, MUSIC_CITIES1' in m and 'ld a, MUSIC_ROUTES1' in m
+    for gate in ('JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID',
+                 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID',
+                 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'):
+        assert 'cp '+gate in m
+    assert '.sourceValid' in m and 'call JohtoPilotGetMapProfile' in m
+    assert 'ld [wMapMusicSoundID], a' in m and 'ld [wMapMusicROMBank], a' in m
+    assert 'ld a, MUSIC_CITIES1' not in m  # inherited via source profile, not hardcoded
     assert 'wLastMap' not in m
 
     names = re.findall(r'(?m)^\s*db\s+(MUSIC_GBP_\w+|0)\s*;\s*slot\s*(\d+):', between(options, 'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))
@@ -38,18 +43,22 @@ def check_contract(runtime, options, overworld, wram, main, ids):
         'MUSIC_GBP_GSC_NEW_BARK_TOWN','MUSIC_GBP_GSC_ROUTE29',
         'MUSIC_GBP_GSC_CHERRYGROVE_CITY','MUSIC_GBP_GSC_ROUTE30',
         'MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_CHERRYGROVE_CITY',
-        'MUSIC_GBP_GSC_VIOLET_CITY','0','MUSIC_GBP_GSC_ROUTE30',
+        'MUSIC_GBP_GSC_VIOLET_CITY','MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_ROUTE30',
         'MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_ROUTE30',
+        'MUSIC_GBP_GSC_ROUTE36','MUSIC_GBP_GSC_ROUTE36',
     ]
     assert [n for n,i in names] == expected, names
-    assert [int(i) for n,i in names] == list(range(11))
+    assert [int(i) for n,i in names] == list(range(13))
     assert 'NUM_JOHTO_ACTIVE_MAPS' in options.split('JohtoActiveGSCMusicEnd::', 1)[1][:110]
     assert 'JohtoActiveGSCMusic' in between(options,'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
     helper = between(options, 'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
     assert 'callab GetJohtoActiveSlot' in helper
     assert 'cp JOHTO_INVALID_ACTIVE_SLOT' in helper
     assert 'wJohtoGateMusicSourceLocalID' in helper
-    assert 'MUSIC_GBP_GSC_VIOLET_CITY' in helper and 'MUSIC_GBP_GSC_ROUTE30' in helper
+    assert '.gateDefault' in helper and 'ld a, [wCurLocalMapID]' in helper
+    for gate in ('JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID', 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'):
+        assert 'cp '+gate in helper
+    assert all('cp '+side in helper for side in ('JOHTO_ROUTE_31_LOCAL_ID', 'JOHTO_VIOLET_CITY_LOCAL_ID', 'JOHTO_ROUTE_32_LOCAL_ID', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JOHTO_ROUTE_36_LOCAL_ID'))
     assert 'wLastMap' not in helper and 'wWarpedFromWhichMap' not in helper
 
     scene = between(options, 'CheckJohtoMusicSceneTransition::', '; Legacy RBY ID -> corresponding GSC direct-select ID.')
@@ -79,7 +88,7 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'wJohtoGateMusicSourceLocalID:: ds 1' in wram
     assert 'wLastJohtoMusicSceneID:: ds 1' in wram
     assert 'wEventFlags::' in wram.split('wLastJohtoMusicSceneID:: ds 1',1)[1][:165]
-    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 11' in ids
+    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 13' in ids
 
 class JohtoMusicScene241Tests(unittest.TestCase):
     @classmethod
@@ -104,12 +113,12 @@ class JohtoMusicScene241Tests(unittest.TestCase):
             (5,'VIOLET_CITY'), (6,'ROUTE30'), (7,'ROUTE30'),
         ]
         active=[int(v) for v in re.findall(r'(?m)^\s*db\s+.*; slot\s*\d+: ID\s*(\d+)',between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))]
-        self.assertEqual(active, [0,1,2,3,4,125,5,6,7,102,20])
+        self.assertEqual(active, [0,1,2,3,4,125,5,6,7,102,20,19,16])
         for local,scene in gold:
             self.assertIn(scene, self.options)
         self.assertNotIn('JOHTO_ROUTE31_VIOLET_GATE', between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))
     def test_old_wlastmap_gate_source_regression_fails(self):
-        bad=self.runtime.replace('ld a, [wJohtoGateMusicSourceLocalID]\n    cp JOHTO_VIOLET_CITY_LOCAL_ID','ld a, [wLastMap]\n    cp JOHTO_VIOLET_CITY_LOCAL_ID',1)
+        bad=self.runtime.replace('ld a, [wJohtoGateMusicSourceLocalID]\n    cp JOHTO_ROUTE_31_LOCAL_ID','ld a, [wLastMap]\n    cp JOHTO_ROUTE_31_LOCAL_ID',1)
         with self.assertRaises(AssertionError): self.check(runtime=bad)
     def test_stale_warped_map_source_regression_fails(self):
         bad=self.runtime.replace('ld a, c\n    ld [wJohtoGateMusicSourceLocalID], a','ld a, [wWarpedFromWhichMap]\n    ld [wJohtoGateMusicSourceLocalID], a',1)

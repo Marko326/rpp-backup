@@ -113,8 +113,8 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 2 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 19 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 3 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 26 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
            'MUS contract records three house routes plus sixteen explicitly contracted routes across two horizontal gates')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
@@ -183,6 +183,16 @@ def audit(project: Path, gold: Path) -> dict:
         ('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 3, 'JOHTO_ROUTE_32_LOCAL_ID'),
         ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 0, 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'),
         ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 1, 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'),
+    ):
+        expected_routes.append(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target))
+    for source, ordinal, target in (
+        ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 2, 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 0, 'JOHTO_ROUTE_36_LOCAL_ID'),
+        ('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 1, 'JOHTO_ROUTE_36_LOCAL_ID'),
+        ('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 2, 'JOHTO_RUINS_OF_ALPH_LOCAL_ID'),
+        ('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 3, 'JOHTO_RUINS_OF_ALPH_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_LOCAL_ID', 0, 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_LOCAL_ID', 1, 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'),
     ):
         expected_routes.append(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target))
     try:

@@ -1,3 +1,21 @@
+## MUS-5.62.259｜城都北侧地图、门房音乐与骑车（用户已验收）
+
+- 新增36号道路和遗迹北门房运行地图、原版上下门毯/实体门及单步到达；三座城都活动 GATE 依据真实进入侧继承正在播放的音乐，不主动重启同曲，遗迹北门房允许骑车。
+- 北门房的中立地点弹窗修正；自动检测新活动地图地点名称、门房音乐／骑车合同，错误配置会阻止静态审计通过。
+- Gold INDOOR 自然公园门房、36号路尚未开放的出口与剧情仍封闭；联合洞穴仅暂存资源，尚未激活。
+
+## MUS-259 — Active Johto gate music/bike preflight (development)
+
+- All three active Johto Gold GATEs inherit the entering side's RBY/GSC music scene without intentionally resetting the live song; north gate now allows bike use, while Gold INDOOR gates and Kanto keep their old restrictions. New migration preflight checks every active gate's policy and has mutation tests. Device verification pending.
+
+## FIX-5.62.258（开发候选）
+
+- 修复遗迹北门房误显示 `Johto` 的地点弹窗；扩充按活动地图自动审计所有道路名称、过渡门房及 Town Map／存档名称的防回归脚本。不改门房 Warp 和自动行走机制。
+
+## MAP-5.62.257（开发候选，未实机验收）
+
+- 新增阿露福遗迹北门房与36号路（安全范围），保持北门房 DOOR 与向下地毯的方向／自动走一步规则，外部未开发道路和胡说树事件暂不开放。
+
 ## FIX-256｜阿露福遗迹南侧通路与 Gold 方向跳崖（用户实机验收通过）
 
 - 遗迹外围跳崖使用 Gold 坐标＋面向方向白名单，共16条物理安全的有向跳崖；复合转角保留 DOWN/LEFT 与 DOWN/RIGHT 的不同方向。

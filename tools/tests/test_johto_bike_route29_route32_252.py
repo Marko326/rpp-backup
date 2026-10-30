@@ -40,7 +40,8 @@ class JohtoBikeCutSurf252(unittest.TestCase):
         tilesets=(ROOT/'data/bike_riding_tilesets.asm').read_text()
         self.assertNotIn('JOHTO_GATE',tilesets)
         self.assertNotIn('JOHTO_HOUSE',tilesets)
-        self.assertEqual(1,b.count('cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID'))
+        for gate in ('JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID', 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID'):
+            self.assertEqual(1,b.count('cp '+gate))
         for filename in ('engine/items/items.asm','engine/overworld/bike_shortcut.asm','engine/menu/summary_return_helpers.asm'):
             self.assertIn('IsBikeRidingAllowed',(ROOT/filename).read_text())
         # shared predicate also runs on warp player-sprite reload.

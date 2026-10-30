@@ -1,0 +1,18 @@
+{
+  "schema": "johto-map-sign-contract-v1",
+  "active_maps": [
+    {"id": "JOHTO_NEW_BARK_LOCAL_ID", "role": "named", "name": "New Bark Town", "town_map_name": "New Bark Town"},
+    {"id": "JOHTO_ROUTE_29_LOCAL_ID", "role": "named", "name": "Route 29", "town_map_name": "Route 29"},
+    {"id": "JOHTO_CHERRYGROVE_LOCAL_ID", "role": "named", "name": "Cherrygrove City", "town_map_name": "Cherrygrove City"},
+    {"id": "JOHTO_ROUTE_30_LOCAL_ID", "role": "named", "name": "Route 30", "town_map_name": "Route 30"},
+    {"id": "JOHTO_ROUTE_31_LOCAL_ID", "role": "named", "name": "Route 31", "town_map_name": "Route 31"},
+    {"id": "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID", "role": "named", "name": "Cherrygrove City", "town_map_name": "Cherrygrove City"},
+    {"id": "JOHTO_VIOLET_CITY_LOCAL_ID", "role": "named", "name": "Violet City", "town_map_name": "Violet City"},
+    {"id": "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "role": "neutral", "town_map_name": "Route 31"},
+    {"id": "JOHTO_ROUTE_32_LOCAL_ID", "role": "named", "name": "Route 32", "town_map_name": "Route 32"},
+    {"id": "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", "role": "neutral", "town_map_name": "Route 32"},
+    {"id": "JOHTO_RUINS_OF_ALPH_LOCAL_ID", "role": "named", "name": "Ruins Of Alph", "town_map_name": "Ruins Of Alph"},
+    {"id": "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", "role": "neutral", "town_map_name": "Route 36"},
+    {"id": "JOHTO_ROUTE_36_LOCAL_ID", "role": "named", "name": "Route 36", "town_map_name": "Route 36"}
+  ]
+}

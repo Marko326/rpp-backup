@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 19,
+    "registered_warp_route_rows": 26,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -455,6 +455,171 @@
               5
             ],
             "arrival_auto_step": "NONE"
+          }
+        ],
+        "runtime_verified": false,
+        "phone_accepted": false
+      },
+      {
+        "stable_id": 19,
+        "gold_map": "Route36RuinsOfAlphGate",
+        "runtime_tileset": "JOHTO_GATE",
+        "runtime_object_file": "data/johto_ruins_north_runtime.asm",
+        "runtime_object_label": "JohtoPilotAlphNorthGateRuntimeObjects",
+        "warp_contracts": [
+          {
+            "id": "ruins_north_to_gate",
+            "source_stable_id": 20,
+            "source_warp_ordinal": 2,
+            "source_gold_map": "RuinsOfAlphOutside",
+            "source_gold_warp_number_one_based": 9,
+            "source_xy": [
+              7,
+              5
+            ],
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "target_stable_id": 19,
+            "target_warp_ordinal": 2,
+            "target_gold_map": "Route36RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              4,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "north_gate_top_to_route36_left",
+            "source_stable_id": 19,
+            "source_warp_ordinal": 0,
+            "source_gold_map": "Route36RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              4,
+              0
+            ],
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "target_stable_id": 16,
+            "target_warp_ordinal": 0,
+            "target_gold_map": "Route36",
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              47,
+              13
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "north_gate_top_to_route36_right",
+            "source_stable_id": 19,
+            "source_warp_ordinal": 1,
+            "source_gold_map": "Route36RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              5,
+              0
+            ],
+            "direction": "UP",
+            "trigger": "STEP_ON",
+            "target_stable_id": 16,
+            "target_warp_ordinal": 1,
+            "target_gold_map": "Route36",
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              48,
+              13
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "north_gate_bottom_to_ruins_left",
+            "source_stable_id": 19,
+            "source_warp_ordinal": 2,
+            "source_gold_map": "Route36RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              4,
+              7
+            ],
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 20,
+            "target_warp_ordinal": 2,
+            "target_gold_map": "RuinsOfAlphOutside",
+            "target_gold_warp_number_one_based": 9,
+            "target_xy": [
+              7,
+              5
+            ],
+            "arrival_auto_step": "DOWN"
+          },
+          {
+            "id": "north_gate_bottom_to_ruins_right",
+            "source_stable_id": 19,
+            "source_warp_ordinal": 3,
+            "source_gold_map": "Route36RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              5,
+              7
+            ],
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 20,
+            "target_warp_ordinal": 2,
+            "target_gold_map": "RuinsOfAlphOutside",
+            "target_gold_warp_number_one_based": 9,
+            "target_xy": [
+              7,
+              5
+            ],
+            "arrival_auto_step": "DOWN"
+          },
+          {
+            "id": "route36_to_north_gate_left",
+            "source_stable_id": 16,
+            "source_warp_ordinal": 0,
+            "source_gold_map": "Route36",
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              47,
+              13
+            ],
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 19,
+            "target_warp_ordinal": 0,
+            "target_gold_map": "Route36RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              4,
+              0
+            ],
+            "arrival_auto_step": "DOWN"
+          },
+          {
+            "id": "route36_to_north_gate_right",
+            "source_stable_id": 16,
+            "source_warp_ordinal": 1,
+            "source_gold_map": "Route36",
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              48,
+              13
+            ],
+            "direction": "DOWN",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 19,
+            "target_warp_ordinal": 1,
+            "target_gold_map": "Route36RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              5,
+              0
+            ],
+            "arrival_auto_step": "DOWN"
           }
         ],
         "runtime_verified": false,

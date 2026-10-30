@@ -18,6 +18,14 @@ import json
 from pathlib import Path
 import re
 from johto_gold_compat import PROFILES, resolve_gold_root
+try:
+    from johto_gate_music_bike_audit import audit as audit_gate_music_bike
+except ImportError:
+    from tools.johto_gate_music_bike_audit import audit as audit_gate_music_bike
+try:
+    from johto_map_name_sign_audit import audit as audit_map_sign
+except ImportError:
+    from tools.johto_map_name_sign_audit import audit as audit_map_sign
 from typing import Iterable
 
 try:
@@ -28,7 +36,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16]
 EXPECTED_CONNECTIONS = {
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
@@ -49,6 +57,8 @@ MAP_LAYOUTS = {
     "Route32": (10, 45),
     "Route32RuinsOfAlphGate": (5, 4),
     "RuinsOfAlphOutside": (10, 18),
+    "Route36RuinsOfAlphGate": (5, 4),
+    "Route36": (30, 9),
 }
 GOLD_SOURCE_MAPS = {
     "NewBarkTown": "NewBarkTown",
@@ -62,6 +72,8 @@ GOLD_SOURCE_MAPS = {
     "Route32": "Route32",
     "Route32RuinsOfAlphGate": "Route32RuinsOfAlphGate",
     "RuinsOfAlphOutside": "RuinsOfAlphOutside",
+    "Route36RuinsOfAlphGate": "Route36RuinsOfAlphGate",
+    "Route36": "Route36",
 }
 
 
@@ -346,7 +358,18 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
            check_johto_gate_name_sign(map_sign),
            "Johto stable ID6 must be neutral, and native city/route names must not use Kanto $FC MapNames")
 
+    # Cross-check every active stable ID against popup and Save/Town Map names.
+    sign_report = audit_map_sign(project)
+    for item in sign_report["checks"]:
+        _check(errors, checks, "johto_map_sign_" + item["check"],
+               item["status"] == "PASS", item["detail"])
+
     active_count = constants.get("NUM_JOHTO_ACTIVE_MAPS")
+    music_bike = audit_gate_music_bike(project, Path(gold_root) if gold_root else None)
+    for item in music_bike['checks']:
+        _check(errors, checks, 'johto_gate_music_bike_' + item['check'],
+               item['status'] == 'PASS', item['detail'])
+
     _check(errors, checks, "active_map_count", active_count == len(EXPECTED_ACTIVE_IDS),
            f"expected {len(EXPECTED_ACTIVE_IDS)} active slots {EXPECTED_ACTIVE_IDS}, got {active_count}")
 
@@ -464,7 +487,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_CHERRYGROVE_LOCAL_ID", "JOHTO_ROUTE_30_LOCAL_ID",
                            "JOHTO_ROUTE_31_LOCAL_ID", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID",
                            "JOHTO_VIOLET_CITY_LOCAL_ID", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "JOHTO_ROUTE_32_LOCAL_ID",
-                           "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", "JOHTO_RUINS_OF_ALPH_LOCAL_ID"]
+                           "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+                           "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", "JOHTO_ROUTE_36_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -510,9 +534,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[5:8] = [6, 7, 8]
     expected_slots[102] = 9
     expected_slots[20] = 10
+    expected_slots[19] = 11
+    expected_slots[16] = 12
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
-           f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10}}; all others must be inactive")
+           f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12}}; all others must be inactive")
 
     # Source adjacency table is 5 bytes per row and must be reciprocal.
     try:
@@ -617,6 +643,17 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", 3, "JOHTO_ROUTE_32_LOCAL_ID"),
             ("JOHTO_RUINS_OF_ALPH_LOCAL_ID", 0, "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"),
             ("JOHTO_RUINS_OF_ALPH_LOCAL_ID", 1, "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"),
+        ):
+            expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
+        # Northern Gold corridor (the original southern ordinals are unchanged).
+        for source, ordinal, target in (
+            ("JOHTO_RUINS_OF_ALPH_LOCAL_ID", 2, "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", 0, "JOHTO_ROUTE_36_LOCAL_ID"),
+            ("JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", 1, "JOHTO_ROUTE_36_LOCAL_ID"),
+            ("JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", 2, "JOHTO_RUINS_OF_ALPH_LOCAL_ID"),
+            ("JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID", 3, "JOHTO_RUINS_OF_ALPH_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_LOCAL_ID", 0, "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_LOCAL_ID", 1, "JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
@@ -734,13 +771,15 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         _check(errors, checks, "gate_arrival_none_on_direction_carpet",
                ("callab JohtoPilotGateArrivalStep" in stepout_body and
                 stepout_body.index("callab JohtoPilotGateArrivalStep") < stepout_body.index("call IsPlayerStandingOnDoorTile") and
-                re.search(r"(?m)^\s*ld e, 0\s*\n\s*ret\s*$", gate_arrival) is not None and
-                not re.search(r"\bld e, D_(?:UP|DOWN|LEFT|RIGHT)\b", gate_arrival) and
+                "cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID" in gate_arrival and
+                "cp JOHTO_RUINS_OF_ALPH_LOCAL_ID" in gate_arrival and
+                "ld e, 0" in gate_arrival and "ld e, D_DOWN" in gate_arrival and
+                ".gateTop" in gate_arrival and "cp 5" in gate_arrival and
                 "cp JOHTO_GATE\n\tjr nz,.noJohtoCarpetArrival" in enter_map and
                 "callba IsPlayerStandingOnWarp" in enter_map),
-               "all Gold direction carpet arrivals must stay in place and re-arm the standing flag; Kanto DOOR fallback remains")
+               "North-side Gold DOOR arrives with one DOWN step; all directional carpets stay in place")
         _check(errors, checks, "gate_exterior_collision_only",
-               ("jp CheckWarpsNoCollisionRetry2\n.noRegisteredGateDoor" in warp_loop and
+               ("jp CheckWarpsNoCollisionRetry2\n.northGoldStepOnDoor" in warp_loop and
                 "callab JohtoPilotGateExteriorCollisionAllowed" in extra and
                 "scf\n    ret" in extra and
                 ".route31" in gate_exit and "cp 4" in gate_exit and

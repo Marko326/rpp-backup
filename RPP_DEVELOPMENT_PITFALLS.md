@@ -1,3 +1,21 @@
+## MUS-259 验收经验｜门房与首次洞穴前的检查
+
+- 活动门房不能仅有 Warp、音乐 profile 或 neutral 地名之一：新增 stable ID 后，必须分别登记方向与到达步进、Gold GATE/INDOOR 骑车、真实进入侧曲目、同曲缓存、地点弹窗、Town Map/Save 名称；运行 `johto_gate_music_bike_audit.py` 与 `johto_map_name_sign_audit.py` 故障注入，不能仅凭单元测试 PASS 宣称 ROM 音轨连续。
+- Gold `GATE` 可以骑车但需 FLOOR；`INDOOR` 不因门房名称或图块开放。门房 Continue 无可信来源必须回退原版默认曲，不继承陈旧 WRAM。
+- 联合洞穴是新 Tileset＋ROM Bank＋层间 Warp 场景：`maps/johto_staged/JohtoUnionCave1F.blk` 不是活动地图。旧 NPC 的洞穴图块、碰撞、1F参考实现需先逐块匹配 Gold，再加入 ROM0 可读取的碰撞和独立 Tileset；必须防止玩家从已开放1F进入未开放 B1F/Route33。不能把道路入口、Field Moves 或音乐检查的户外规则直接套入洞穴。
+
+## MUS-259：新门房必须分别核查 BGM 来源、音乐缓存、Gold 骑车环境
+
+- 北门房首次接入时只把新门房加入 Warp/地图表，遗留固定 GSC ROUTE36 曲目且忘记将稳定 ID19 加入 Bike 谓词。单独验证 Warp、地点栏和 ASM 标签都发现不了。
+- 今后每个新活动门房都要在 `johto_gate_music_bike_contracts.json` 中提供 Gold 环境、双向来源、继承音乐和骑车许可，并运行 `johto_gate_music_bike_audit.py`；此审计已被总迁移审计调用。不能简单 `cp JOHTO_GATE` 全局放行，也不能把名字带 Gate 的 INDOOR 门房当作 GATE。
+- GSC/RND 必须用进入侧稳定 ID，不是门房固定主题；同一曲维持缓存，不重复抽 RND。来源 WRAM 未知时回退自身 Gold 默认曲，不能使用非相邻地图的音乐。
+
+## FIX-258｜新地图必须登记 map-name sign 的独立 neutral/landmark 路径
+
+- 故障重现：`.257` 北门房 `Route36RuinsOfAlphGate` 已有 Town Map/Save 名字，但 `engine/overworld/map_name_sign.asm::.IsNeutralMap` 漏加此稳定 ID，转而走 `.JohtoUnknownName` 显示 `Johto`；Warp 和移动完全可以正常，这类缺项无法靠门房／Town Map 条目数量测试发现。
+- 解决：按活跃资源描述表逐张检查 `map-name sign` 独立名称路径；Gate 必须用 `wCurMap=$FC` + Johto region + stable local ID 判断 neutral；户外图必须有非默认分支和真实名字，并与 Town Map/Save 对齐。故障注入覆盖旧门房丢失、未来新地图缺合同及错误文本。执行 `python tools/johto_map_name_sign_audit.py --project .` 或包含它的迁移总审计。
+- 不要把整张 `$FC` 都当中立地图；不要通过让所有 unknown Johto 不显示来掩盖缺少道路名字的 bug。
+
 ## ALPH-NORTH-001｜竖向遗迹门房必须按目标落点处理自动迈步（下一阶段门禁）
 
 - 当前已验收的 Route32 遗迹南门房是横向 EastWestGate：左右地毯均为 `WARP_CARPET_LEFT/RIGHT`，按 LEFT/RIGHT 碰撞触发，到达地毯没有自动迈步。它的 `JohtoPilotGateCollisionExitAllowed` 只检查 `x=0/9`、`y=4/5` 与 LEFT/RIGHT。

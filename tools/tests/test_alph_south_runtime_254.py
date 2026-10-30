@@ -14,12 +14,13 @@ from johto_warp_arrival_audit import audit as warp_audit
 GOLD = Path(os.environ.get('GOLD_SOURCE_ROOT','/mnt/data/RUINS_GOLD_REF/REFERENCES/Gold/pokegold-master'))
 
 class AlphSouthRuntime254(unittest.TestCase):
-    def test_active_slots_frozen_and_north_offline(self):
+    def test_south_slots_preserved_when_north_activated(self):
         records = read_active_maps(ROOT)
-        self.assertEqual(11, len(records))
+        self.assertEqual(13, len(records))
         self.assertEqual([(9,102,'Route32RuinsOfAlphGate'),(10,20,'RuinsOfAlphOutside')],
-                         [(r['slot'],r['stable_id'],r['map']) for r in records[-2:]])
-        self.assertFalse({16,19,8,9,10,11,12} & {r['stable_id'] for r in records})
+                         [(r['slot'],r['stable_id'],r['map']) for r in records[9:11]])
+        self.assertEqual([(11,19,'Route36RuinsOfAlphGate'),(12,16,'Route36')], [(r['slot'],r['stable_id'],r['map']) for r in records[11:]])
+        self.assertFalse({8,9,10,11,12} & {r['stable_id'] for r in records})
 
     def test_gold_stage_and_runtime_layouts(self):
         self.assertEqual([], resource_audit(ROOT,GOLD if GOLD.is_dir() else None))
@@ -34,8 +35,8 @@ class AlphSouthRuntime254(unittest.TestCase):
         self.assertIn('dw JohtoPilotAlphOutsideMapScript',src)
         self.assertIn('JohtoPilotAlphOutsideMapScript::',src)
         self.assertIn('db 4\n    db 4, 0, 0, JOHTO_REGISTERED_WARP_SELECTOR',src)
-        self.assertIn('db 2 ; only Gold warp ordinals 9,10 enabled',src)
-        self.assertNotIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID',src)
+        self.assertIn('South pair plus Gold north door #9',src)
+        self.assertIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', (ROOT/'engine/johto_pilot_runtime.asm').read_text())
 
     @unittest.skipUnless(GOLD.is_dir(),'Gold reference unavailable')
     def test_migration_table_and_gold_contract(self):

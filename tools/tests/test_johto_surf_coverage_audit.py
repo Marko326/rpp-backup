@@ -22,7 +22,7 @@ class CoverageTests(unittest.TestCase):
             (0, 'NewBarkTown'), (1, 'Route29'), (2, 'CherrygroveCity'),
             (3, 'Route30'), (4, 'Route31'), (125, 'GuideGentsHouse'),
             (5, 'VioletCity'), (6, 'Route31VioletGate'), (7, 'Route32'), (102, 'Route32RuinsOfAlphGate'),
-            (20, 'RuinsOfAlphOutside')])
+            (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36')])
         self.assertNotIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -37,8 +37,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 11', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 11',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 13', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 13',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -60,6 +60,8 @@ class CoverageTests(unittest.TestCase):
             'Route32': (278, 'REGISTERED'),
             'Route32RuinsOfAlphGate': (0, 'NO_WATER'),
             'RuinsOfAlphOutside': (48, 'REGISTERED'),
+            'Route36RuinsOfAlphGate': (0, 'NO_WATER'),
+            'Route36': (0, 'NO_WATER'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')

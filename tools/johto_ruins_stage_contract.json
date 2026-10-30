@@ -1,10 +1,10 @@
 {
-  "stage": "ALPH-SOUTH-002",
-  "status": "SOUTH_ROUTE_RUNTIME_STATIC_PENDING_BUILD",
+  "stage": "ALPH-NORTH-001",
+  "status": "NORTH_ROUTE_RUNTIME_STATIC_PENDING_BUILD",
   "runtime_approved": false,
   "build_performed": false,
-  "main_version_unchanged": "MAP-5.62.254",
-  "active_map_count_must_remain": 11,
+  "main_version_unchanged": "MAP-5.62.257",
+  "active_map_count_must_remain": 13,
   "maps": [
     {
       "name": "RuinsOfAlphOutside",
@@ -31,7 +31,7 @@
       "height_blocks": 4,
       "gold_map_type": "GATE",
       "gold_tileset": "GATE",
-      "stage_only": true
+      "stage_only": false
     },
     {
       "name": "Route36",
@@ -40,7 +40,7 @@
       "height_blocks": 9,
       "gold_map_type": "ROUTE",
       "gold_tileset": "JOHTO",
-      "stage_only": true
+      "stage_only": false
     }
   ],
   "assets": {
@@ -64,13 +64,17 @@
       "gold_block_file": "NorthSouthGate.blk",
       "staged_file": "maps/johto_staged/Route36RuinsOfAlphGate.gold.blk",
       "size": 20,
-      "gold_sha256": "84fea213ad2cd20926551a70174baabfb495e3f150d708b532beba11e84771a2"
+      "gold_sha256": "84fea213ad2cd20926551a70174baabfb495e3f150d708b532beba11e84771a2",
+      "candidate_file": "maps/johto_pilot/Route36RuinsOfAlphGate.runtime.blk",
+      "candidate_sha256": "6bf53a71fb3f112149ddb189469b2aa8a4b346c5d4f6556893748dc1e0f44691"
     },
     "Route36": {
       "gold_block_file": "Route36.blk",
       "staged_file": "maps/johto_staged/Route36.gold.blk",
       "size": 270,
-      "gold_sha256": "29a2d2fdb546a71f0203858a8f18bd0dab8238d1160f0bba923586bcd4069878"
+      "gold_sha256": "29a2d2fdb546a71f0203858a8f18bd0dab8238d1160f0bba923586bcd4069878",
+      "candidate_file": "maps/johto_pilot/Route36.runtime.blk",
+      "candidate_sha256": "29a2d2fdb546a71f0203858a8f18bd0dab8238d1160f0bba923586bcd4069878"
     }
   },
   "future_link_review": [
@@ -241,13 +245,6 @@
       "why": "four puzzle chambers, inner chamber, research center and Union Cave B1F are inactive"
     },
     {
-      "name": "RuinsOfAlphOutside",
-      "gold_warp_ordinals": [
-        8
-      ],
-      "why": "north gate and Route36 remain inactive"
-    },
-    {
       "name": "Route36",
       "gold_warp_ordinals": [
         0,
@@ -259,6 +256,6 @@
   "reference_notes": {
     "ruins_candidate": "exact 180B NPC-5.62.243 compact layout, not direct Gold bytes",
     "south_gate_candidate": "exact 20B already existing verified Route31VioletGate.runtime.blk, both use Gold EastWestGate.blk",
-    "north_gate": "only Gold source staged; NS compact collision and portal still require review"
+    "north_gate": "Gold-backed exact-pixel NorthSouthGate compact map; live north-south DOOR and carpet warp rules, not copied from east-west gate."
   }
 }

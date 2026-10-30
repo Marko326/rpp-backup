@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Gold asset/warp audit covering ALPH-SOUTH-002 live southern corridor.
+"""Gold asset/warp audit covering ALPH-NORTH-001 live south/north corridors.
 
-South maps are active; north gate and Route36 stay offline. This read-only audit does not report user-device acceptance.
+All four Gold staged maps are now active; incomplete indoor entrances remain blocked. This read-only audit does not report user-device acceptance.
 Usage: python tools/johto_ruins_stage_audit.py [--gold-root /.../pokegold-master]
 """
 import argparse
@@ -58,13 +58,13 @@ def audit(project=ROOT, gold_root=None):
     project = Path(project)
     record = json.loads((project / CONTRACT).read_text(encoding='utf-8'))
     issues = validate_asset_hashes(project, record)
-    if record['status'] != 'SOUTH_ROUTE_RUNTIME_STATIC_PENDING_BUILD' or record['runtime_approved'] or record['build_performed']:
+    if record['status'] != 'NORTH_ROUTE_RUNTIME_STATIC_PENDING_BUILD' or record['runtime_approved'] or record['build_performed']:
         issues.append('runtime approval/build status was prematurely changed')
-    if record['main_version_unchanged'] != 'MAP-5.62.254':
+    if record['main_version_unchanged'] != 'MAP-5.62.257':
         issues.append('expected MAP-5.62.254 for southern runtime candidate')
     constants = (project / 'constants/region_map_constants.asm').read_text()
-    if not re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 11$', constants):
-        issues.append('unexpected southern active count')
+    if not re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 13$', constants):
+        issues.append('unexpected current active count')
     stable_text = (project / 'data/johto_stable_id_slots.asm').read_text()
     dbpart = stable_text.split('JohtoStableIDToActiveSlot::')[1].split('JohtoStableIDToActiveSlotEnd::')[0]
     slots = []
@@ -76,16 +76,20 @@ def audit(project=ROOT, gold_root=None):
         issues.append(f'stable slot array length {len(slots)} !=256')
     else:
         for row in record['maps']:
-            active_slot = {'RuinsOfAlphOutside': '10', 'Route32RuinsOfAlphGate': '9'}.get(row['name'], 'JOHTO_INVALID_ACTIVE_SLOT')
+            active_slot = {'RuinsOfAlphOutside': '10', 'Route32RuinsOfAlphGate': '9', 'Route36RuinsOfAlphGate':'11', 'Route36':'12'}.get(row['name'], 'JOHTO_INVALID_ACTIVE_SLOT')
             if slots[row['stable_id']] != active_slot:
                 issues.append(f'{row["name"]}: slot mismatch (expected {active_slot})')
     if 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID EQU 102' not in (project/'constants/johto_fixed_map_ids.asm').read_text():
         issues.append('Route32 ruins gate stable ID changed')
-    # South pair is live by design; Route36 and its north gate remain offline.
-    for asm in (project / 'main.asm', project / 'data/johto_header_descriptors.asm',
-                project / 'data/johto_pilot_runtime_assets.asm', project / 'engine/johto_pilot_runtime.asm'):
-        if any(name in asm.read_text() for name in ('JohtoPilotRoute36RuntimeHeader', 'JohtoPilotNorthAlphGateRuntimeHeader')):
-            issues.append(f'{asm.name}: northern Ruins route activated prematurely')
+    # All four source maps are live. Freeze explicit north mapping, but preserve south IDs.
+    runtime_main = (project / 'main.asm').read_text()
+    north_source = (project / 'data/johto_ruins_north_runtime.asm').read_text()
+    for symbol in ('JohtoPilotAlphNorthGateRuntimeHeader', 'JohtoPilotRoute36RuntimeHeader'):
+        if symbol + '::' not in north_source or symbol not in runtime_main and 'Johto Ruins North Runtime' not in runtime_main:
+            issues.append(f'northern runtime missing {symbol}')
+    for name in ('Route36', 'Route36RuinsOfAlphGate'):
+        if (project/f'maps/johto_pilot/{name}.runtime.blk').read_bytes() != _bytes(project,record['assets'][name]['candidate_file']):
+            issues.append(f'{name}: live runtime differs from candidate')
     assets = record['assets']
     gate_candidate = _bytes(project, assets['Route32RuinsOfAlphGate']['candidate_file'])
     if gate_candidate != _bytes(project, 'maps/johto_pilot/Route31VioletGate.runtime.blk'):
@@ -142,7 +146,7 @@ def main():
     if problems:
         for p in problems: print('FAIL:',p)
         raise SystemExit(1)
-    print('PASS: 4 Gold source layouts; south two runtime-registered, north two stage-only; 11 active maps; static audit only')
+    print('PASS: 4 Gold source layouts; all four runtime-registered; 13 active maps; static audit only')
 
 
 if __name__=='__main__':

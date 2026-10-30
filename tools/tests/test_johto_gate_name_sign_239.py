@@ -58,7 +58,9 @@ class GateSignRegression(unittest.TestCase):
         movement = (ROOT / 'engine/overworld/npc_movement.asm').read_text()
         runtime = (ROOT / 'engine/johto_pilot_runtime.asm').read_text()
         self.assertIn('callab JohtoPilotGateArrivalStep', movement)
-        self.assertIn('JohtoPilotGateArrivalStep::\n    ld e, 0\n    ret', runtime)
+        self.assertIn('JohtoPilotGateArrivalStep::', runtime)
+        self.assertIn('ld e, 0\n    ld a, [wCurMap]',runtime)
+        self.assertIn('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', runtime)
         self.assertIn('JohtoPilotGateCollisionExitAllowed::', runtime)
 
 if __name__ == '__main__':

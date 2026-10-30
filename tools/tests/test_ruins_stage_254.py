@@ -22,12 +22,12 @@ class RuinsStageTests(unittest.TestCase):
         bad['assets']['RuinsOfAlphOutside']['gold_sha256'] = '0'*64
         self.assertTrue(any('changed' in msg for msg in validate_asset_hashes(ROOT,bad)))
 
-    def test_north_gate_is_not_prematurely_activated(self):
+    def test_north_gate_was_activated_under_gold_contract(self):
         contract = json.loads((ROOT / CONTRACT).read_text())
         self.assertFalse(contract['runtime_approved'])
-        self.assertEqual(contract['active_map_count_must_remain'],11)
-        self.assertNotIn('candidate_file', contract['assets']['Route36RuinsOfAlphGate'])
-        self.assertNotIn('candidate_file', contract['assets']['Route36'])
+        self.assertEqual(contract['active_map_count_must_remain'],13)
+        self.assertIn('candidate_file', contract['assets']['Route36RuinsOfAlphGate'])
+        self.assertIn('candidate_file', contract['assets']['Route36'])
 
 
 if __name__ == '__main__':

@@ -45,7 +45,7 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertLessEqual(max((ROOT/'maps/johto_pilot/Route32.runtime.blk').read_bytes()), 140)
 
     def test_stable_id7_is_slot8_and_south_ruins_are_slots9_10(self):
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 11', read('constants/region_map_constants.asm'))
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 13', read('constants/region_map_constants.asm'))
         first = next(row for row in segment(self.stable, 'JohtoStableIDToActiveSlot::', 'JohtoStableIDToActiveSlotEnd::').splitlines() if '$00-$0f' in row)
         cells = [x.strip() for x in first.split(';')[0].strip()[3:].split(',')]
         self.assertEqual(cells[5:11], ['6', '7', '8', 'JOHTO_INVALID_ACTIVE_SLOT', 'JOHTO_INVALID_ACTIVE_SLOT', 'JOHTO_INVALID_ACTIVE_SLOT'])
@@ -117,7 +117,7 @@ class Route32Stage245Tests(unittest.TestCase):
         runtime_routes = segment(self.edge, 'JohtoRegisteredWarpRoutes::', 'JohtoRegisteredWarpRoutesEnd::')
         self.assertEqual(2, runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID') + runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'))
         self.assertIn('JOHTO_RUINS_OF_ALPH_LOCAL_ID', runtime_routes)
-        self.assertNotIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', runtime_routes)
+        self.assertIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', runtime_routes)
         self.assertNotIn('JOHTO_UNION_CAVE_1F_LOCAL_ID', runtime_routes)
         self.assertIn('db NORTH\n', self.r32)
         self.assertNotIn('db NORTH | SOUTH\n', self.r32)

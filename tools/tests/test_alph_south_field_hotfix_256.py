@@ -93,7 +93,11 @@ class AlphSouthFieldHotfix256(unittest.TestCase):
 
     def test_version_and_test_label(self):
         src = (ROOT / 'data/game_version.asm').read_text()
-        self.assertIn('db "FIX-5.62.256@"', src)
+        # Version prefix follows the *current* release feature. Do not lock the
+        # old Route36 patch label and break every subsequent maintenance release.
+        versions = re.findall(r'(?m)^\s*db "([A-Z]{3})-5\.62\.(\d+)@"', src)
+        self.assertEqual(len(versions), 1, versions)
+        self.assertGreaterEqual(int(versions[0][1]), 256)
         self.assertIn('db "TEST-231@"', src)
 
 
