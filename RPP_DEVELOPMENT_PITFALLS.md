@@ -1,3 +1,11 @@
+## ALPH-NORTH-001｜竖向遗迹门房必须按目标落点处理自动迈步（下一阶段门禁）
+
+- 当前已验收的 Route32 遗迹南门房是横向 EastWestGate：左右地毯均为 `WARP_CARPET_LEFT/RIGHT`，按 LEFT/RIGHT 碰撞触发，到达地毯没有自动迈步。它的 `JohtoPilotGateCollisionExitAllowed` 只检查 `x=0/9`、`y=4/5` 与 LEFT/RIGHT。
+- Gold `Route36RuinsOfAlphGate` 是竖向门房，不能复制南门房守卫：上端 `(4/5,0)` 是 `DOOR`，STEP_ON/UP；下端 `(4/5,7)` 是 `WARP_CARPET_DOWN`，COLLISION_ONLY/DOWN。Route36 的入口 `(47/48,13)` 是 DOWN 地毯；遗迹外围北门 `(7,5)` 是 DOOR。
+- **关键：到达自动迈步取决于目标落点角色，而非源地毯。** Route36 → 门房上端 DOOR、门房下端 → 遗迹北侧 DOOR 都需要 Gold `D_DOWN` 一步；门房上端 → Route36 地毯、遗迹北门 → 门房下端地毯则没有自动迈步。不得对所有 Warp 统一自动下行，也不得遗漏 DOOR 到达后的单步。
+- 新合同须同时记录源触发类型／方向、Gold 源 Warp 编号、压缩 runtime ordinal、目标 Warp 编号／落点碰撞角色、arrival step 和最终落点。特别注意 Route36 的 Gold Warp #1/#2 属于 National Park Gate，遗迹门房入口是 Route36 Gold Warp #3/#4；Ruins 北门是 Gold Warp #9，不能将 Gold ordinal 直接当 runtime ordinal。
+- 测试必须覆盖上下两条车道、四个进出方向、自动 D_DOWN 仅执行一次、最终格可走、不会立即二次 Warp、到达后第一按键、存档 Continue、侧向碰撞负例、骑车进出，以及 National Park/Route35/37 未完成出口 fail-closed。
+
 ## ROUTES-253｜活动地图 Field Moves 全覆盖与地点栏收口
 
 - 新增活动地图时，不能只看已登记 Surf 合同的预检 PASS；必须同时跑 `johto_surf_coverage_audit.py` 与 `johto_field_move_coverage_audit.py --gold <Gold源码根目录>`，分别发现漏登水域及 Cut/HOP 缺口。当前已启用 9 张地图共 644 WATER、7 CUT_TREE、78 HOP；这不是 Gold 全 222 张地图均已适配。

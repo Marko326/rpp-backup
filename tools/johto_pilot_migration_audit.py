@@ -28,7 +28,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20]
 EXPECTED_CONNECTIONS = {
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
@@ -47,6 +47,8 @@ MAP_LAYOUTS = {
     "VioletCity": (20, 18),
     "Route31VioletGate": (5, 4),
     "Route32": (10, 45),
+    "Route32RuinsOfAlphGate": (5, 4),
+    "RuinsOfAlphOutside": (10, 18),
 }
 GOLD_SOURCE_MAPS = {
     "NewBarkTown": "NewBarkTown",
@@ -58,6 +60,8 @@ GOLD_SOURCE_MAPS = {
     "VioletCity": "VioletCity",
     "Route31VioletGate": "Route31VioletGate",
     "Route32": "Route32",
+    "Route32RuinsOfAlphGate": "Route32RuinsOfAlphGate",
+    "RuinsOfAlphOutside": "RuinsOfAlphOutside",
 }
 
 
@@ -459,7 +463,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_id_symbols = ["JOHTO_NEW_BARK_LOCAL_ID", "JOHTO_ROUTE_29_LOCAL_ID",
                            "JOHTO_CHERRYGROVE_LOCAL_ID", "JOHTO_ROUTE_30_LOCAL_ID",
                            "JOHTO_ROUTE_31_LOCAL_ID", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID",
-                           "JOHTO_VIOLET_CITY_LOCAL_ID", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "JOHTO_ROUTE_32_LOCAL_ID"]
+                           "JOHTO_VIOLET_CITY_LOCAL_ID", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "JOHTO_ROUTE_32_LOCAL_ID",
+                           "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", "JOHTO_RUINS_OF_ALPH_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -503,9 +508,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[0:5] = [0, 1, 2, 3, 4]
     expected_slots[125] = 5
     expected_slots[5:8] = [6, 7, 8]
+    expected_slots[102] = 9
+    expected_slots[20] = 10
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
-           f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7}}; all others must be inactive")
+           f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10}}; all others must be inactive")
 
     # Source adjacency table is 5 bytes per row and must be reciprocal.
     try:
@@ -599,6 +606,19 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("MAP_REGION_JOHTO", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "2", "MAP_REGION_JOHTO", "JOHTO_ROUTE_31_LOCAL_ID"),
             ("MAP_REGION_JOHTO", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID", "3", "MAP_REGION_JOHTO", "JOHTO_ROUTE_31_LOCAL_ID"),
         ]
+        # Only reviewed southern Gold corridor pairs are enabled. Ruins north
+        # gate, cave, puzzle rooms and Route36 remain fail-closed.
+        for source, ordinal, target in (
+            ("JOHTO_ROUTE_32_LOCAL_ID", 0, "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_32_LOCAL_ID", 1, "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", 0, "JOHTO_RUINS_OF_ALPH_LOCAL_ID"),
+            ("JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", 1, "JOHTO_RUINS_OF_ALPH_LOCAL_ID"),
+            ("JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", 2, "JOHTO_ROUTE_32_LOCAL_ID"),
+            ("JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID", 3, "JOHTO_ROUTE_32_LOCAL_ID"),
+            ("JOHTO_RUINS_OF_ALPH_LOCAL_ID", 0, "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"),
+            ("JOHTO_RUINS_OF_ALPH_LOCAL_ID", 1, "JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID"),
+        ):
+            expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
                f"expected Guide Gents + existing directional gate entries/exits; found {warp_rows}")
     except ValueError as exc:

@@ -49,8 +49,10 @@ class GateSignRegression(unittest.TestCase):
 
     def test_route32_uses_route31_hop_pairs(self):
         ledges = (ROOT / 'engine/overworld/ledges.asm').read_text(encoding='utf-8')
-        self.assertRegex(ledges, r'cp JOHTO_ROUTE_31_LOCAL_ID\s+jr z, \.route31PairTable\s+cp JOHTO_ROUTE_32_LOCAL_ID\s+ret nz\s+\.route31PairTable')
+        self.assertRegex(ledges, r'cp JOHTO_ROUTE_31_LOCAL_ID\s+jr z, \.route31PairTable\s+cp JOHTO_ROUTE_32_LOCAL_ID\s+jr z, \.route31PairTable')
+        self.assertRegex(ledges, r'cp JOHTO_RUINS_OF_ALPH_LOCAL_ID\s+jr z, \.ruinsHopTable')
         self.assertIn('JohtoPilotRoute31LedgeTiles', ledges)
+        self.assertIn('JohtoAlphSouthHops', ledges)
 
     def test_gate_keeps_existing_warp_movement(self):
         movement = (ROOT / 'engine/overworld/npc_movement.asm').read_text()

@@ -1,3 +1,41 @@
+## FIX-256｜遗迹 Gold 方向跳崖与 Select 修复（用户实机验收通过）
+
+- [x] 遗迹改用 Gold 坐标＋面向方向白名单，登记16条安全有向跳崖；复合转角按 DOWN/LEFT、DOWN/RIGHT 分别处理。
+- [x] 排除 `(9,30,DOWN)`：Gold 落点 `(9,32)` 是 WALL，不允许向下跳。
+- [x] Select 快捷功能后保留原始按键掩码与 carry，单按 Select 不再误开 Start。
+- [x] 用户反馈 FIX-256 实机测试通过；遗迹南侧通路与横向门房也已测试，没有发现问题。
+- [x] 完成验收清理：从已提交 `MAP-5.62.253` HEAD `3b163292e7fcedef584c469af3dd744add3f573e` 起整理功能与工具两笔提交。
+
+## ALPH-NORTH-001｜下一阶段：遗迹北门房与 Route36（计划，尚未开发）
+
+- [ ] 接入 Route36（稳定 ID16）与 Route36RuinsOfAlphGate（稳定 ID19），连接当前遗迹外围北门；预计活动地图11→13。
+- [ ] 按 Gold 核对上门 `DOOR` 的 STEP_ON/UP、落到 DOOR 后自动 D_DOWN 一步；下门 `WARP_CARPET_DOWN` 仅 DOWN 碰撞触发。
+- [ ] 单独实现“依据目标落点碰撞角色”的自动步进合同；验证只走一步、不二次触发 Warp、落点可通行、Continue 不误走。
+- [ ] Route36 的 National Park Gate 两个 Warp 与 Route35/37 等未完成出口继续关闭。
+- [ ] 完成逐 Warp Gold 合同、负向测试、完整静态审计和补丁正反向验证后，再交给用户本机编译及实机验收。
+
+## FIX-255｜Select 按键修复（跳崖部分已由 FIX-256 替代）
+
+- [x] Select 快捷功能后恢复原始按键掩码，保留返回 carry；阻断 Select 被误判成 Start。
+- [x] 原始左端跳崖图块配对试修；此实现已被 FIX-256 的 Gold 坐标／方向白名单替代。
+
+## ALPH-SOUTH-002｜遗迹南侧通路运行时接入（用户已验收）
+
+- 从 ALPH-SOUTH-001 离线候选接入两张新图：Route32RuinsOfAlphGate 稳定 ID102→slot9、RuinsOfAlphOutside ID20→slot10；活动地图9→11，正式版改为 `MAP-5.62.254`，测试版仍 `TEST-231`。
+- Gold 原版南侧四对入口按两车道双向登记：32号路 x4,y2/3 ↔ 南门房东侧 x9,y4/5 ↔ 南门房西侧 x0,y4/5 ↔ 遗迹外围 x13,y20/21；保留既有 Route31/Violet 门房与 Route32 冲浪。
+- 遗迹外围 Gold 48 格 WATER 接入原有 Surf 三入口及上岸；14格 Gold HOP 在 254 初版曾复用 Route31 图块配对；该触发方式已由 FIX-256 的 Gold 坐标／方向白名单替代；无 Cut 树。门房允许骑车、地点栏/存档名与音乐表同步。
+- **关闭范围：** 遗迹内拼图、研究中心、联合洞穴、北门房、Route36、36号路后续出口均未开放；不新增 SAV 字段、不修改关都逻辑。
+- 用户已报告南侧门房与遗迹通路测试正常。静态工具也已更新为11张活动地图、19条登记 Warp 的当前合同；用户设备验收与静态报告分开记录。详见 `docs/JOHTO_RUINS_SOUTH_RUNTIME_254.md`。
+
+## ALPH-SOUTH-001 — 阿露福遗迹南侧入口离线准备（历史阶段，已由 ALPH-SOUTH-002 完成激活）
+
+- [x] 对照 Gold 和旧 NPC 工程，冻结遗迹外围、32号路遗迹门房、36号路门房及36号路的原版块数据。
+- [x] 保存32号路门房与遗迹外围的 compact 候选布局；登记两端入口和所有待关闭的其他 Warp，新增 Gold 审计和反向测试。
+- [x] 本阶段只负责资源准备；运行时激活随后由 ALPH-SOUTH-002 完成。
+- [x] Gold 原版资源与后续南侧闭环已按 `docs/JOHTO_RUINS_SOUTH_STAGE_254.md`、`docs/JOHTO_RUINS_SOUTH_RUNTIME_254.md` 接续。
+
+---
+
 ## ROUTES-253 / MAP-5.62.253 — 当前活动地图 Field Moves 全覆盖（正式清理，用户已验收）
 
 - [x] **版本前缀校正**：地图及野外地形功能使用 `MAP-5.62.253`，不是误沿用的 `PAL`；旧 `.250` 等历史版本记录不回写，`TEST-231` 不改。仅改版本显示与现行交付文档，不修改已验收功能指令。

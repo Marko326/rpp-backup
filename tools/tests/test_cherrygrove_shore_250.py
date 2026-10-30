@@ -33,6 +33,7 @@ class GoldShoreFloor250(unittest.TestCase):
                  'maps/johto_pilot/Route30.runtime.blk',
                  'maps/johto_pilot/Route31.runtime.blk',
                  'maps/johto_pilot/Route32.runtime.blk',
+            'maps/johto_pilot/RuinsOfAlphOutside.runtime.blk',
             'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll',
         )
         for file in files:

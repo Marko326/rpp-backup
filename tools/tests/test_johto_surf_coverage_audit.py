@@ -21,7 +21,8 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual([(r['stable_id'], r['map']) for r in rows], [
             (0, 'NewBarkTown'), (1, 'Route29'), (2, 'CherrygroveCity'),
             (3, 'Route30'), (4, 'Route31'), (125, 'GuideGentsHouse'),
-            (5, 'VioletCity'), (6, 'Route31VioletGate'), (7, 'Route32')])
+            (5, 'VioletCity'), (6, 'Route31VioletGate'), (7, 'Route32'), (102, 'Route32RuinsOfAlphGate'),
+            (20, 'RuinsOfAlphOutside')])
         self.assertNotIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -36,9 +37,9 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 9', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 9',
-                                     'NUM_JOHTO_ACTIVE_MAPS EQU 8'))
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 11', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 11',
+                                     'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
 
@@ -57,6 +58,8 @@ class CoverageTests(unittest.TestCase):
             'VioletCity': (140, 'REGISTERED'),
             'Route31VioletGate': (0, 'NO_WATER'),
             'Route32': (278, 'REGISTERED'),
+            'Route32RuinsOfAlphGate': (0, 'NO_WATER'),
+            'RuinsOfAlphOutside': (48, 'REGISTERED'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
@@ -93,6 +96,7 @@ class CoverageTests(unittest.TestCase):
                      'maps/johto_pilot/Route30.runtime.blk',
                      'maps/johto_pilot/Route31.runtime.blk',
                      'maps/johto_pilot/Route32.runtime.blk',
+                     'maps/johto_pilot/RuinsOfAlphOutside.runtime.blk',
                      'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll')
             paths += tuple(x['source_asset'] for x in read_active_maps(ROOT))
             for f in paths:

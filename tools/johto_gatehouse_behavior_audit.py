@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Audit Gold gatehouse collision semantics and current PAL activation policy.
+"""Audit Gold gatehouse collision semantics and current stable-ID Johto activation contracts.
 
 The Gold inventory is sourced only from the supplied MUS-1.0.1 tree. Current
-RPP activation is read from its stable-ID table. This is a static audit: a
+RPP gate activation is read from its stable-ID table and explicit per-gate contracts. This is a static audit: a
 Gold role/contract match does not prove a built ROM behaves correctly.
 """
 from __future__ import annotations
@@ -164,18 +164,20 @@ def audit(project: Path, gold: Path) -> dict:
     gate_contracts = contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
     contract_ids = {row.get('stable_id') for row in gate_contracts if isinstance(row, dict)}
     missing_contracts = [value for value in active_gate_ids if value not in contract_ids]
-    _check(checks, errors, 'no_uncontracted_gatehouse_activation', not missing_contracts,
-           f'active gate IDs={active_gate_ids}; IDs without explicit gate contract={missing_contracts}')
-    # The first activated gate needs an *exact* source, direction, exit and
-    # destination contract. Only the contracted gate may be enabled: later gates
-    # still fail closed. Independently compare to MUS and the PAL object rows.
+    extra_contracts = sorted(contract_ids - set(active_gate_ids))
+    _check(checks, errors, 'no_uncontracted_gatehouse_activation',
+           not missing_contracts and not extra_contracts,
+           f'active gate IDs={active_gate_ids}; missing contracts={missing_contracts}; inactive contracts={extra_contracts}')
+    gate_contracts_by_id = {row.get('stable_id'): row for row in gate_contracts if isinstance(row, dict)}
+
+    # Keep the already accepted Route31/Violet horizontal gate contract exact.
     gate_errors = []
-    if len(gate_contracts) != 1 or contract_ids != {6}:
-        gate_errors.append(f'unexpected active gate contract IDs: {sorted(contract_ids)}')
+    gate_contract = gate_contracts_by_id.get(6)
+    if gate_contract is None:
+        gate_errors.append('missing stable ID 6 contract')
     else:
-        gate_contract = gate_contracts[0]
         if gate_contract.get('gold_map') != 'Route31VioletGate' or gate_contract.get('runtime_tileset') != 'JOHTO_GATE':
-            gate_errors.append('wrong reference/tileset')
+            gate_errors.append('wrong Route31/Violet gate reference/tileset')
         got = gate_contract.get('warp_contracts', [])
         expected = [
             ('route31_0', 4, 0, [4, 6], 'LEFT', 'COLLISION_ONLY', 6, 2, [9, 4]),
@@ -191,7 +193,7 @@ def audit(project: Path, gold: Path) -> dict:
                     r.get('source_xy'), r.get('direction'), r.get('trigger'),
                     r.get('target_stable_id'), r.get('target_warp_ordinal'), r.get('target_xy')) for r in got]
         if records != expected or any(r.get('arrival_auto_step') != 'NONE' for r in got):
-            gate_errors.append('gate contract differs from eight actual directional routes')
+            gate_errors.append('ID6 contract differs from its eight Gold directional routes')
         try:
             gold_route = _gold_warp_events(gold, 'Route31')[:2]
             gold_city = [r for r in _gold_warp_events(gold, 'VioletCity') if r['destination']=='ROUTE_31_VIOLET_GATE']
@@ -202,9 +204,6 @@ def audit(project: Path, gold: Path) -> dict:
                 gate_errors.append('MUS Violet City entry mismatch')
             if [(r['x'],r['y'],r['destination_warp_number']) for r in gold_gate] != [(0,4,8),(0,5,9),(9,4,1),(9,5,2)]:
                 gate_errors.append('MUS gate return mismatch')
-            # Derive the current gate contract from MUS *collision cells* rather
-            # than trusting a copied hard-coded trigger policy. In particular,
-            # the four outside warps are WARP_CARPET_LEFT/RIGHT, not DOOR.
             gold_sources = (
                 ('Route31',4,6),('Route31',4,7),
                 ('VioletCity',39,24),('VioletCity',39,25),
@@ -215,20 +214,89 @@ def audit(project: Path, gold: Path) -> dict:
                 role = index.role_at(map_name,x,y)
                 actual_rule = gold_gate_approach_rule(role,'COLLISION_ONLY')
                 if actual_rule != (row.get('trigger'),row.get('direction')):
-                    gate_errors.append(f'MUS collision mismatch {map_name}({x},{y}): '
-                                       f'{role} -> {actual_rule}, contract='
-                                       f'{row.get("trigger"),row.get("direction")}')
+                    gate_errors.append(f'MUS collision mismatch {map_name}({x},{y}): {role} -> {actual_rule}')
                 if row.get('arrival_auto_step') != gold_gate_arrival_step(role):
-                    gate_errors.append(f'MUS arrival behavior mismatch {map_name}({x},{y}): '
-                                       f'{row.get("arrival_auto_step")} vs {gold_gate_arrival_step(role)}')
+                    gate_errors.append(f'MUS arrival mismatch {map_name}({x},{y})')
             source = (project/'data/johto_gate_runtime.asm').read_text()
-            rows = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*JOHTO_REGISTERED_WARP_SELECTOR',source)
-            if rows != [('4','0','0'),('5','0','1'),('4','9','0'),('5','9','1')]:
-                gate_errors.append('PAL gate object warp positions/target indices mismatch')
+            object_rows = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*JOHTO_REGISTERED_WARP_SELECTOR',source)
+            if object_rows != [('4','0','0'),('5','0','1'),('4','9','0'),('5','9','1')]:
+                gate_errors.append('ID6 runtime object warp positions/target indices mismatch')
         except (OSError, ValueError) as exc:
             gate_errors.append(str(exc))
     _check(checks, errors, 'active_gatehouse_exact_contract', not gate_errors,
-           f'Gate ID6 exact four doorways, eight routes and MUS source references; errors={gate_errors}')
+           f'ID6 Route31/Violet gate: four doorway pairs, eight Gold routes; errors={gate_errors}')
+
+    # The newly active South Gate is horizontal like the accepted Violet gate,
+    # but its source Gold warp numbers differ from compact runtime ordinals:
+    # Route32's enabled Gold warps are #2/#3, while its compact object rows are 0/1;
+    # Ruins' enabled Gold warps are #10/#11, while its compact object rows are 0/1.
+    south_errors = []
+    south = gate_contracts_by_id.get(102)
+    if south is None:
+        south_errors.append('missing stable ID 102 contract')
+    else:
+        if south.get('gold_map') != 'Route32RuinsOfAlphGate' or south.get('runtime_tileset') != 'JOHTO_GATE':
+            south_errors.append('wrong South Gate Gold map or runtime tileset')
+        if south.get('runtime_object_file') != 'data/johto_ruins_south_runtime.asm' or south.get('runtime_object_label') != 'JohtoPilotAlphSouthGateRuntimeObjects':
+            south_errors.append('wrong South Gate runtime object source')
+        got = south.get('warp_contracts', [])
+        expected = [
+            ('route32_to_south_gate_0', 7, 0, [4, 2], 'LEFT', 'COLLISION_ONLY', 102, 2, [9, 4]),
+            ('route32_to_south_gate_1', 7, 1, [4, 3], 'LEFT', 'COLLISION_ONLY', 102, 3, [9, 5]),
+            ('south_gate_to_ruins_0', 102, 0, [0, 4], 'LEFT', 'COLLISION_ONLY', 20, 0, [13, 20]),
+            ('south_gate_to_ruins_1', 102, 1, [0, 5], 'LEFT', 'COLLISION_ONLY', 20, 1, [13, 21]),
+            ('south_gate_to_route32_0', 102, 2, [9, 4], 'RIGHT', 'COLLISION_ONLY', 7, 0, [4, 2]),
+            ('south_gate_to_route32_1', 102, 3, [9, 5], 'RIGHT', 'COLLISION_ONLY', 7, 1, [4, 3]),
+            ('ruins_to_south_gate_0', 20, 0, [13, 20], 'RIGHT', 'COLLISION_ONLY', 102, 0, [0, 4]),
+            ('ruins_to_south_gate_1', 20, 1, [13, 21], 'RIGHT', 'COLLISION_ONLY', 102, 1, [0, 5]),
+        ]
+        records = [(r.get('id'), r.get('source_stable_id'), r.get('source_warp_ordinal'),
+                    r.get('source_xy'), r.get('direction'), r.get('trigger'),
+                    r.get('target_stable_id'), r.get('target_warp_ordinal'), r.get('target_xy')) for r in got]
+        if records != expected or any(r.get('arrival_auto_step') != 'NONE' for r in got):
+            south_errors.append('ID102 contract differs from the eight horizontal Gold routes')
+        gold_destination = {7: 'ROUTE_32', 20: 'RUINS_OF_ALPH_OUTSIDE', 102: 'ROUTE_32_RUINS_OF_ALPH_GATE'}
+        stable_symbol = {value: name for name, value in _constants(project).items()
+                         if name.endswith('_LOCAL_ID')}
+        runtime_route_source = (project/'engine/johto_pilot_runtime.asm').read_text()
+        route_body = runtime_route_source.split('JohtoRegisteredWarpRoutes::',1)[1].split('JohtoRegisteredWarpRoutesEnd::',1)[0]
+        actual_routes = set(re.findall(r'(?m)^\s*db\s*MAP_REGION_JOHTO\s*,\s*(JOHTO_[A-Z0-9_]+)\s*,\s*(\d+)\s*,\s*MAP_REGION_JOHTO\s*,\s*(JOHTO_[A-Z0-9_]+)',route_body))
+        try:
+            for row in got:
+                source_map = row.get('source_gold_map')
+                source_number = row.get('source_gold_warp_number_one_based')
+                target_map = row.get('target_gold_map')
+                target_number = row.get('target_gold_warp_number_one_based')
+                events = _gold_warp_events(gold, source_map)
+                if not isinstance(source_number, int) or source_number < 1 or source_number > len(events):
+                    south_errors.append(f'{row.get("id")}: invalid Gold source warp number')
+                    continue
+                event = events[source_number - 1]
+                expected_event = (row.get('source_xy', [None,None])[0], row.get('source_xy', [None,None])[1],
+                                  gold_destination.get(row.get('target_stable_id')), target_number)
+                actual_event = (event['x'], event['y'], event['destination'], event['destination_warp_number'])
+                if actual_event != expected_event:
+                    south_errors.append(f'{row.get("id")}: Gold warp {actual_event} != {expected_event}')
+                role = index.role_at(source_map, *row.get('source_xy', [None,None]))
+                rule = gold_gate_approach_rule(role, row.get('trigger'))
+                if rule != (row.get('trigger'), row.get('direction')) or gold_gate_arrival_step(role) != row.get('arrival_auto_step'):
+                    south_errors.append(f'{row.get("id")}: Gold collision/arrival {role} -> {rule}')
+                source_symbol = stable_symbol.get(row.get('source_stable_id'))
+                target_symbol = stable_symbol.get(row.get('target_stable_id'))
+                route = (source_symbol, str(row.get('source_warp_ordinal')), target_symbol)
+                if None in route or route not in actual_routes:
+                    south_errors.append(f'{row.get("id")}: registered runtime route missing {route}')
+            object_file = (project / south['runtime_object_file']).read_text()
+            object_body = object_file.split(south['runtime_object_label'] + '::',1)[1].split('JohtoPilotAlphOutsideRuntimeHeader::',1)[0]
+            object_rows = re.findall(r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*JOHTO_REGISTERED_WARP_SELECTOR',object_body)
+            expected_object_rows = [(str(r['source_xy'][1]), str(r['source_xy'][0]), str(r['target_warp_ordinal']))
+                                    for r in got if r.get('source_stable_id') == 102]
+            if object_rows != expected_object_rows:
+                south_errors.append(f'South Gate object rows {object_rows} != {expected_object_rows}')
+        except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
+            south_errors.append(str(exc))
+    _check(checks, errors, 'active_south_gate_exact_contract', not south_errors,
+           f'ID102 South Gate: 8 Gold/runtime directional routes, no auto-step; errors={south_errors[:8]}')
 
     # Runtime direction guard is separate from the static object contract:
     # the existing RPP CheckWarpsCollision matches a coordinate alone.
@@ -238,8 +306,10 @@ def audit(project: Path, gold: Path) -> dict:
         direction_body = gate_runtime.split('JohtoPilotGateCollisionExitAllowed::', 1)[1]
         collision_body = overworld.split('CheckWarpsCollision::', 1)[1].split('CheckWarpsNoCollisionRetry1::', 1)[0]
         pass_direction = all(x in direction_body for x in (
-            'cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID', 'cp PLAYER_DIR_LEFT',
-            'cp PLAYER_DIR_RIGHT', 'cp JOHTO_ROUTE31_VIOLET_GATE_WIDTH * 2 - 1',
+            'cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID',
+            'cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID',
+            'cp PLAYER_DIR_LEFT', 'cp PLAYER_DIR_RIGHT',
+            'cp JOHTO_ROUTE31_VIOLET_GATE_WIDTH * 2 - 1',
             'cp 4', 'cp 5', 'ld e, 1')) and \
             all(x in collision_body for x in ('callab JohtoPilotGateCollisionExitAllowed',
                 'jr z, .retry2', 'push bc', 'pop bc', 'push hl', 'pop hl'))

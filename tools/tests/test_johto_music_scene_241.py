@@ -39,9 +39,10 @@ def check_contract(runtime, options, overworld, wram, main, ids):
         'MUSIC_GBP_GSC_CHERRYGROVE_CITY','MUSIC_GBP_GSC_ROUTE30',
         'MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_CHERRYGROVE_CITY',
         'MUSIC_GBP_GSC_VIOLET_CITY','0','MUSIC_GBP_GSC_ROUTE30',
+        'MUSIC_GBP_GSC_ROUTE30','MUSIC_GBP_GSC_ROUTE30',
     ]
     assert [n for n,i in names] == expected, names
-    assert [int(i) for n,i in names] == list(range(9))
+    assert [int(i) for n,i in names] == list(range(11))
     assert 'NUM_JOHTO_ACTIVE_MAPS' in options.split('JohtoActiveGSCMusicEnd::', 1)[1][:110]
     assert 'JohtoActiveGSCMusic' in between(options,'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
     helper = between(options, 'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
@@ -78,7 +79,7 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'wJohtoGateMusicSourceLocalID:: ds 1' in wram
     assert 'wLastJohtoMusicSceneID:: ds 1' in wram
     assert 'wEventFlags::' in wram.split('wLastJohtoMusicSceneID:: ds 1',1)[1][:165]
-    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 9' in ids
+    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 11' in ids
 
 class JohtoMusicScene241Tests(unittest.TestCase):
     @classmethod
@@ -102,8 +103,8 @@ class JohtoMusicScene241Tests(unittest.TestCase):
             (3,'ROUTE30'), (4,'ROUTE30'), (125,'CHERRYGROVE_CITY'),
             (5,'VIOLET_CITY'), (6,'ROUTE30'), (7,'ROUTE30'),
         ]
-        active=[int(v) for v in re.findall(r'(?m)^\s*db\s+.*; slot \d+: ID\s*(\d+)',between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))]
-        self.assertEqual(active, [0,1,2,3,4,125,5,6,7])
+        active=[int(v) for v in re.findall(r'(?m)^\s*db\s+.*; slot\s*\d+: ID\s*(\d+)',between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))]
+        self.assertEqual(active, [0,1,2,3,4,125,5,6,7,102,20])
         for local,scene in gold:
             self.assertIn(scene, self.options)
         self.assertNotIn('JOHTO_ROUTE31_VIOLET_GATE', between(self.options,'JohtoActiveGSCMusic::','JohtoActiveGSCMusicEnd::'))

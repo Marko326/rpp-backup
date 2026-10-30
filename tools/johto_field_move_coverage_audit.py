@@ -29,6 +29,10 @@ LEDGE_TABLES = {
     'Route31': ('JOHTO_ROUTE_31_LOCAL_ID', 'JohtoPilotRoute31LedgeTiles'),
     'Route32': ('JOHTO_ROUTE_32_LOCAL_ID', 'JohtoPilotRoute31LedgeTiles'),
 }
+LEDGE_COORDINATE_TABLES = {
+    'RuinsOfAlphOutside': ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JohtoAlphSouthHops',
+                           '.ruinsHopTable', '.ruinsCoordinateHopLookup'),
+}
 
 
 def _id_values(root: Path) -> dict[str, int]:
@@ -77,10 +81,26 @@ def _cut_records(root: Path, active: list[dict]) -> tuple[dict[str, set[tuple[in
 
 
 def _ledge_table_for_map(source: str, map_name: str) -> str | None:
+    if map_name in LEDGE_COORDINATE_TABLES:
+        symbol, table, dispatch_label, lookup_label = LEDGE_COORDINATE_TABLES[map_name]
+        body = source.split('HandleLedges:', 1)[1]
+        dispatch = re.search(
+            rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, {re.escape(dispatch_label)}\s*$',
+            body)
+        if not dispatch:
+            return None
+        dispatch_body = source.split(dispatch_label + '\n', 1)
+        if len(dispatch_body) != 2:
+            return None
+        target = dispatch_body[1].split(lookup_label, 1)[0]
+        if re.search(rf'(?m)^\s*ld hl, {re.escape(table)}\s*$', target):
+            return table
+        return None
     if map_name not in LEDGE_TABLES:
         return None
     symbol, table = LEDGE_TABLES[map_name]
-    match = re.search(r'(?ms)^\.johtoPilot\s*$\n(.*?)(?=^\.checkPairs\s*$)', source.split('HandleLedges:', 1)[1])
+    body = source.split('HandleLedges:', 1)[1]
+    match = re.search(r'(?ms)^\.johtoPilot\s*$\n(.*?)(?=^\.checkPairs\s*$)', body)
     if not match:
         return None
     dispatch = match.group(1)
@@ -92,11 +112,71 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
         if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.route31PairTable\s*$', dispatch):
             return table if table in dispatch else None
         return None
-    # Route32 deliberately shares the reviewed Route31 table but must have its
-    # own stable-ID guard before the common table label.
-    if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*ret nz\s*\n\.route31PairTable\s*$', dispatch):
+    # Route32 shares Route31's reviewed pair table. Ruins is separately
+    # handled by the Gold-coordinate/direction whitelist above.
+    if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.route31PairTable\s*$', dispatch):
         return table if table in dispatch else None
     return None
+
+
+def _coordinate_hop_entries(source: str, table: str) -> set[tuple[int, int, str]]:
+    match = re.search(
+        rf'(?ms)^{re.escape(table)}:\s*\n(.*?)(?=^LoadHoppingShadowOAM:)',
+        source)
+    if not match:
+        return set()
+    return {(int(x), int(y), direction) for x, y, direction in re.findall(
+        r'(?m)^\s*db\s+(\d+)\s*,\s*(\d+)\s*,\s*PLAYER_DIR_(DOWN|LEFT|RIGHT)\s*$',
+        match.group(1))}
+
+
+def _gold_safe_hop_directions(cells: dict[tuple[int, int], dict]) -> set[tuple[int, int, str]]:
+    """Return Gold-directed HOPs with a solid intervening barrier and safe landing.
+
+    Downhill chains may land on another Gold HOP only when each following tier
+    has its own wall and eventually reaches ordinary floor. Sideways jumps
+    must land directly on FLOOR/TALL_GRASS.
+    """
+    width = max(x for x, _ in cells) + 1
+    height = max(y for _, y in cells) + 1
+    roles = {
+        'HOP_DOWN': ((0, 1, 'DOWN'),),
+        'HOP_LEFT': ((-1, 0, 'LEFT'),),
+        'HOP_RIGHT': ((1, 0, 'RIGHT'),),
+        'HOP_DOWN_LEFT': ((0, 1, 'DOWN'), (-1, 0, 'LEFT')),
+        'HOP_DOWN_RIGHT': ((0, 1, 'DOWN'), (1, 0, 'RIGHT')),
+    }
+
+    def role_at(x: int, y: int) -> str | None:
+        cell = cells.get((x, y))
+        return cell['role'] if cell else None
+
+    def safe_down_chain(x: int, y: int) -> bool:
+        for _ in range(height // 2 + 1):
+            role = role_at(x, y)
+            if role in {'FLOOR', 'TALL_GRASS'}:
+                return True
+            if role not in {'HOP_DOWN', 'HOP_DOWN_LEFT', 'HOP_DOWN_RIGHT'}:
+                return False
+            if y + 2 >= height or role_at(x, y + 1) not in {'WALL', 'UP_WALL'}:
+                return False
+            y += 2
+        return False
+
+    result = set()
+    for (x, y), cell in cells.items():
+        for dx, dy, direction in roles.get(cell['role'], ()):
+            barrier = role_at(x + dx, y + dy)
+            landing = role_at(x + 2 * dx, y + 2 * dy)
+            if barrier not in {'WALL', 'UP_WALL'}:
+                continue
+            if dy == 1:
+                safe = safe_down_chain(x + 2 * dx, y + 2 * dy)
+            else:
+                safe = landing in {'FLOOR', 'TALL_GRASS'}
+            if safe:
+                result.add((x, y, direction))
+    return result
 
 
 def audit(root: Path, gold_root: Path) -> dict:
@@ -143,16 +223,28 @@ def audit(root: Path, gold_root: Path) -> dict:
             ledge_table = None
         else:
             ledge_table = _ledge_table_for_map(ledges, name)
-            if ledge_table:
-                ledge_status = 'REGISTERED'
-            else:
+            if not ledge_table:
                 ledge_status = 'MISSING_LEDGE_DISPATCH'
-                errors.append(f'{name}: {len(hops)} Gold HOP cells lack a map-specific ledge table')
+                errors.append(f'{name}: {len(hops)} Gold HOP cells lack a map-specific ledge handler')
+            elif name in LEDGE_COORDINATE_TABLES:
+                actual = _coordinate_hop_entries(ledges, ledge_table)
+                expected = _gold_safe_hop_directions(cells)
+                if actual == expected:
+                    ledge_status = 'REGISTERED'
+                else:
+                    ledge_status = 'MISSING_OR_MISMATCHED_COORDINATE_HOPS'
+                    missing = sorted(expected - actual)
+                    extra = sorted(actual - expected)
+                    errors.append(f'{name}: Gold directed HOP mismatch; missing={missing}, extra={extra}')
+            else:
+                ledge_status = 'REGISTERED'
         rows.append({
             'slot': item['slot'], 'stable_id': item['stable_id'], 'map': name,
             'water_cells': len(water), 'surf': surf_status,
             'cut_trees': len(trees), 'cut': cut_status,
             'hop_cells': len(hops), 'ledge': ledge_status, 'ledge_table': ledge_table,
+            **({'safe_hop_directions': len(_gold_safe_hop_directions(cells))}
+               if name in LEDGE_COORDINATE_TABLES and hops else {}),
         })
     totals = {
         'active_maps': len(active),

@@ -113,9 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 11 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 2 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 19 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records three house routes plus eight explicitly contracted gate routes')
+           'MUS contract records three house routes plus sixteen explicitly contracted routes across two horizontal gates')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -173,6 +174,17 @@ def audit(project: Path, gold: Path) -> dict:
         ('MAP_REGION_JOHTO', 'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID', '2', 'MAP_REGION_JOHTO', 'JOHTO_ROUTE_31_LOCAL_ID'),
         ('MAP_REGION_JOHTO', 'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID', '3', 'MAP_REGION_JOHTO', 'JOHTO_ROUTE_31_LOCAL_ID'),
     ]
+    for source, ordinal, target in (
+        ('JOHTO_ROUTE_32_LOCAL_ID', 0, 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE_32_LOCAL_ID', 1, 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 0, 'JOHTO_RUINS_OF_ALPH_LOCAL_ID'),
+        ('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 1, 'JOHTO_RUINS_OF_ALPH_LOCAL_ID'),
+        ('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 2, 'JOHTO_ROUTE_32_LOCAL_ID'),
+        ('JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID', 3, 'JOHTO_ROUTE_32_LOCAL_ID'),
+        ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 0, 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'),
+        ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 1, 'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'),
+    ):
+        expected_routes.append(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target))
     try:
         rows = _route_rows(runtime)
         _check(checks, errors, 'registered_routes', rows == expected_routes,

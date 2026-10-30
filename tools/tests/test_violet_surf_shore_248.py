@@ -24,7 +24,7 @@ def has_map_local_shore_tile_restore(source: str, helper: str, next_label: str) 
         rf"(?:callab JohtoCherrygroveShoreFloorAhead\s+jp c, \.stopSurfing\s+)?"
         r"ld a, \[wTileInFrontOfPlayer\]\s+"
         r"ld c, a\s+"
-        r"jr \.checkIfNextTileIsPassable",
+        r"(?:jr|jp) \.checkIfNextTileIsPassable",
         code,
     ) is not None
 
@@ -32,19 +32,19 @@ class MapLocalSurfShoreRegression(unittest.TestCase):
     def test_violet_nonwater_branch_restores_front_tile_to_c(self):
         source = (ROOT / "home/overworld.asm").read_text()
         self.assertTrue(has_map_local_shore_tile_restore(
-            source, 'JohtoVioletWaterAhead', 'checkCherrygroveSurf'))
+            source, 'JohtoVioletWaterAhead', 'checkNewBarkSurf'))
         self.assertTrue(has_map_local_shore_tile_restore(
             source, 'JohtoCherrygroveWaterAhead', 'legacySurfTile'))
 
     def test_guard_rejects_the_old_buggy_branch(self):
         source = (ROOT / "home/overworld.asm").read_text()
         buggy = re.sub(
-            r"\n\s*ld a, \[wTileInFrontOfPlayer\]\n\s*ld c, a(?=\n\s*jr \.checkIfNextTileIsPassable)",
+            r"\n\s*ld a, \[wTileInFrontOfPlayer\]\n\s*ld c, a(?=\n\s*(?:jr|jp) \.checkIfNextTileIsPassable)",
             "", source, count=1,
         )
         self.assertNotEqual(source, buggy, "mutation must remove the map-local restoration")
         self.assertFalse(has_map_local_shore_tile_restore(
-            buggy, 'JohtoVioletWaterAhead', 'checkCherrygroveSurf'))
+            buggy, 'JohtoVioletWaterAhead', 'checkNewBarkSurf'))
 
 if __name__ == "__main__":
     unittest.main()

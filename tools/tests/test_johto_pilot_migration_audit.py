@@ -17,7 +17,7 @@ REQUIRED_FILES = (
     "data/johto_header_descriptors.asm", "data/johto_pilot_runtime_assets.asm",
     "data/johto_pilot_source_resources.asm", "data/johto_pilot_map_headers.asm",
     "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm",
-    "data/johto_indoor_house.asm", "data/johto_gate_runtime.asm", "engine/johto_pilot_runtime.asm",
+    "data/johto_indoor_house.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "engine/johto_pilot_runtime.asm",
     "home/overworld.asm", "home.asm", "engine/overworld/doors.asm",
     "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/fly_town_map_helpers.asm",
     "engine/johto_pilot_town_map_browse.asm", "text/map_names.asm",
@@ -35,6 +35,8 @@ REQUIRED_FILES = (
     "maps/johto_pilot/VioletCity.gold.blk", "maps/johto_pilot/VioletCity.runtime.blk",
     "maps/johto_pilot/Route31VioletGate.gold.blk", "maps/johto_pilot/Route31VioletGate.runtime.blk",
     "maps/johto_pilot/Route32.gold.blk", "maps/johto_pilot/Route32.runtime.blk",
+    "maps/johto_pilot/Route32RuinsOfAlphGate.gold.blk", "maps/johto_pilot/Route32RuinsOfAlphGate.runtime.blk",
+    "maps/johto_pilot/RuinsOfAlphOutside.gold.blk", "maps/johto_pilot/RuinsOfAlphOutside.runtime.blk",
 )
 
 
@@ -71,7 +73,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 9",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 11",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -79,7 +81,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 9",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 11",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -126,7 +128,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 9", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 11", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

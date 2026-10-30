@@ -1,7 +1,7 @@
 """PAL-245: source-anchored, fail-closed first part of south Johto migration.
 
-Only Route32 (stable ID7) is activated. The three following compact .blk maps
-are *offline staging*, not active headers, Warp routes, or playable destinations.
+Route32 remains the stable-ID7 outdoor; the later south ruins gate (ID102) and
+Ruins exterior (ID20) are now active. Other interiors and the north gate remain staged.
 """
 from pathlib import Path
 import hashlib
@@ -44,16 +44,24 @@ class Route32Stage245Tests(unittest.TestCase):
         # Route32 old compact layout only uses registered 0..140 Johto blockset.
         self.assertLessEqual(max((ROOT/'maps/johto_pilot/Route32.runtime.blk').read_bytes()), 140)
 
-    def test_stable_id7_is_slot8_and_8_9_10_remain_inactive(self):
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 9', read('constants/region_map_constants.asm'))
+    def test_stable_id7_is_slot8_and_south_ruins_are_slots9_10(self):
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 11', read('constants/region_map_constants.asm'))
         first = next(row for row in segment(self.stable, 'JohtoStableIDToActiveSlot::', 'JohtoStableIDToActiveSlotEnd::').splitlines() if '$00-$0f' in row)
         cells = [x.strip() for x in first.split(';')[0].strip()[3:].split(',')]
         self.assertEqual(cells[5:11], ['6', '7', '8', 'JOHTO_INVALID_ACTIVE_SLOT', 'JOHTO_INVALID_ACTIVE_SLOT', 'JOHTO_INVALID_ACTIVE_SLOT'])
         r = read('data/johto_header_descriptors.asm')
         self.assertIn('dw JohtoPilotRoute32RuntimeHeader\n    db BANK(JohtoPilotRoute32RuntimeHeader)',r)
+        self.assertIn('dw JohtoPilotAlphSouthGateRuntimeHeader\n    db BANK(JohtoPilotAlphSouthGateRuntimeHeader)', r)
+        self.assertIn('dw JohtoPilotAlphOutsideRuntimeHeader\n    db BANK(JohtoPilotAlphOutsideRuntimeHeader)', r)
         self.assertNotIn('JohtoPilotUnionCaveRuntimeHeader', r)
         self.assertNotIn('JohtoPilotRoute33RuntimeHeader', r)
         self.assertNotIn('JohtoPilotAzaleaRuntimeHeader', r)
+        row_60 = next(line for line in self.stable.splitlines() if '$60-$6f' in line)
+        vals_60 = [v.strip() for v in row_60.split(';', 1)[0].strip()[3:].split(',')]
+        row_10 = next(line for line in self.stable.splitlines() if '$10-$1f' in line)
+        vals_10 = [v.strip() for v in row_10.split(';', 1)[0].strip()[3:].split(',')]
+        self.assertEqual(vals_60[6], '9')  # stable ID102 -> active slot 9
+        self.assertEqual(vals_10[4], '10') # stable ID20 -> active slot 10
 
     def test_route32_violet_bidirectional_connections(self):
         self.assertIn('JOHTO_VIOLET_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID', self.registry)
@@ -102,12 +110,15 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertIn('cp JOHTO_ROUTE_32_HEIGHT * 2 - 1', south)
         self.assertIn('jp .closed', south)
 
-    def test_no_unregistered_warp_or_extra_route_connections(self):
+    def test_south_gate_warps_are_explicit_and_other_exits_stay_closed(self):
         objs = segment(self.r32, 'JohtoPilotRoute32RuntimeObjects::', '\n    db 0 ; NPCs')
-        self.assertIn('db 0 ; no Warps', objs)
+        self.assertIn('db 2 ; Gold ruins west gate pair only; center/cave remain closed', objs)
         self.assertIn('db 4 ; Gold signs', objs)
         runtime_routes = segment(self.edge, 'JohtoRegisteredWarpRoutes::', 'JohtoRegisteredWarpRoutesEnd::')
-        self.assertNotIn('JOHTO_ROUTE_32_LOCAL_ID', runtime_routes)
+        self.assertEqual(2, runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID') + runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'))
+        self.assertIn('JOHTO_RUINS_OF_ALPH_LOCAL_ID', runtime_routes)
+        self.assertNotIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', runtime_routes)
+        self.assertNotIn('JOHTO_UNION_CAVE_1F_LOCAL_ID', runtime_routes)
         self.assertIn('db NORTH\n', self.r32)
         self.assertNotIn('db NORTH | SOUTH\n', self.r32)
 

@@ -1,7 +1,7 @@
 {
   "schema": "johto-pilot-door-contracts-v1",
   "gold_reference": "MUS-1.0.1",
-  "purpose": "Source-only contracts: proven Cherrygrove house plus the new, phone-unverified Route31–Violet gate.",
+  "purpose": "Source-only contracts: Guide Gents House plus the two currently active horizontal Johto gates; future vertical gates remain fail-closed.",
   "active_routes": [
     {
       "id": "cherrygrove_to_guide_house",
@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 11,
+    "registered_warp_route_rows": 19,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -272,6 +272,193 @@
         ],
         "runtime_verified": false,
         "phone_accepted": false
+      },
+      {
+        "stable_id": 102,
+        "gold_map": "Route32RuinsOfAlphGate",
+        "runtime_tileset": "JOHTO_GATE",
+        "runtime_object_file": "data/johto_ruins_south_runtime.asm",
+        "runtime_object_label": "JohtoPilotAlphSouthGateRuntimeObjects",
+        "warp_contracts": [
+          {
+            "id": "route32_to_south_gate_0",
+            "source_stable_id": 7,
+            "source_warp_ordinal": 0,
+            "source_gold_map": "Route32",
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              4,
+              2
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 102,
+            "target_warp_ordinal": 2,
+            "target_gold_map": "Route32RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              9,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route32_to_south_gate_1",
+            "source_stable_id": 7,
+            "source_warp_ordinal": 1,
+            "source_gold_map": "Route32",
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              4,
+              3
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 102,
+            "target_warp_ordinal": 3,
+            "target_gold_map": "Route32RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              9,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "south_gate_to_ruins_0",
+            "source_stable_id": 102,
+            "source_warp_ordinal": 0,
+            "source_gold_map": "Route32RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              0,
+              4
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 20,
+            "target_warp_ordinal": 0,
+            "target_gold_map": "RuinsOfAlphOutside",
+            "target_gold_warp_number_one_based": 10,
+            "target_xy": [
+              13,
+              20
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "south_gate_to_ruins_1",
+            "source_stable_id": 102,
+            "source_warp_ordinal": 1,
+            "source_gold_map": "Route32RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              0,
+              5
+            ],
+            "direction": "LEFT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 20,
+            "target_warp_ordinal": 1,
+            "target_gold_map": "RuinsOfAlphOutside",
+            "target_gold_warp_number_one_based": 11,
+            "target_xy": [
+              13,
+              21
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "south_gate_to_route32_0",
+            "source_stable_id": 102,
+            "source_warp_ordinal": 2,
+            "source_gold_map": "Route32RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              9,
+              4
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 7,
+            "target_warp_ordinal": 0,
+            "target_gold_map": "Route32",
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              4,
+              2
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "south_gate_to_route32_1",
+            "source_stable_id": 102,
+            "source_warp_ordinal": 3,
+            "source_gold_map": "Route32RuinsOfAlphGate",
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              9,
+              5
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 7,
+            "target_warp_ordinal": 1,
+            "target_gold_map": "Route32",
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              4,
+              3
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "ruins_to_south_gate_0",
+            "source_stable_id": 20,
+            "source_warp_ordinal": 0,
+            "source_gold_map": "RuinsOfAlphOutside",
+            "source_gold_warp_number_one_based": 10,
+            "source_xy": [
+              13,
+              20
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 102,
+            "target_warp_ordinal": 0,
+            "target_gold_map": "Route32RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              0,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "ruins_to_south_gate_1",
+            "source_stable_id": 20,
+            "source_warp_ordinal": 1,
+            "source_gold_map": "RuinsOfAlphOutside",
+            "source_gold_warp_number_one_based": 11,
+            "source_xy": [
+              13,
+              21
+            ],
+            "direction": "RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "target_stable_id": 102,
+            "target_warp_ordinal": 1,
+            "target_gold_map": "Route32RuinsOfAlphGate",
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              0,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          }
+        ],
+        "runtime_verified": false,
+        "phone_accepted": false
       }
     ],
     "required_checks": [
@@ -296,7 +483,12 @@
     "Violet (38,24)/(38,25) RIGHT one step through registered gate; unregistered city boundary remains closed",
     "Gate BOTH west carpets LEFT and east carpets RIGHT collision-exit; other directions must not warp",
     "All four corridors should allow immediate backtracking and no unrequested auto-step",
-    "Red and Blue fresh builds, gate save/load, Kanto and Cherrygrove regression"
+    "Red and Blue fresh builds, gate save/load, Kanto and Cherrygrove regression",
+    "Route32 -> Route32RuinsOfAlphGate: both Gold WARP_CARPET_LEFT lanes require LEFT collision; landing stays on the right carpets with no auto-step",
+    "South Gate west carpets require LEFT to return to RuinsOfAlphOutside; east carpets require RIGHT to return to Route32",
+    "Ruins outside -> South Gate: both Gold WARP_CARPET_RIGHT lanes require RIGHT collision; no auto-step on arrival",
+    "South Gate immediate reverse entry/exit on both sides, save/Continue while standing on either carpet, and bike preservation",
+    "Unregistered Ruins chambers, research center, Union Cave and north gate remain unreachable"
   ],
   "evidence_boundary": {
     "rom_built": false,

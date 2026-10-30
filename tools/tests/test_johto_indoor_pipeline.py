@@ -46,7 +46,7 @@ REGISTRATION_FILES = (
 )
 GATE_FILES = tuple(dict.fromkeys(ARRIVAL_FILES + (
     'constants/johto_fixed_map_ids.asm', 'constants/region_map_constants.asm',
-    'data/johto_stable_id_slots.asm', 'data/johto_gate_runtime.asm',
+    'data/johto_stable_id_slots.asm', 'data/johto_gate_runtime.asm', 'data/johto_ruins_south_runtime.asm',
 )))
 
 
@@ -72,8 +72,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 9', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 9',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 11', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 11',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -161,7 +161,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
         self.assertEqual(report['gold_gate_inventory']['collision_roles'], {
             'WARP_CARPET_DOWN': 30, 'DOOR': 26,
             'WARP_CARPET_LEFT': 22, 'WARP_CARPET_RIGHT': 22})
-        self.assertEqual(report['current_active_gate_ids'], [6])
+        self.assertEqual(report['current_active_gate_ids'], [6, 102])
         self.assertFalse(report['phone_accepted'])
 
     def test_activating_gate_id_without_contract_fails(self):
@@ -215,6 +215,21 @@ class IndoorGoldDependentTests(unittest.TestCase):
             report = audit_gatehouses(root, self.gold)
             self.assertEqual(report['status'], 'FAIL')
             self.assertTrue(any(x['check']=='active_gatehouse_exact_contract' and x['status']=='FAIL'
+                                for x in report['checks']))
+
+
+    def test_south_gate_wrong_warp_position_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            copy_files(ROOT, root, GATE_FILES)
+            path = root / 'data/johto_ruins_south_runtime.asm'
+            text = path.read_text()
+            self.assertIn('db 4, 0, 0, JOHTO_REGISTERED_WARP_SELECTOR', text)
+            path.write_text(text.replace('db 4, 0, 0, JOHTO_REGISTERED_WARP_SELECTOR',
+                                         'db 4, 1, 0, JOHTO_REGISTERED_WARP_SELECTOR', 1))
+            report = audit_gatehouses(root, self.gold)
+            self.assertEqual(report['status'], 'FAIL')
+            self.assertTrue(any(x['check'] == 'active_south_gate_exact_contract' and x['status'] == 'FAIL'
                                 for x in report['checks']))
 
     def test_gate_missing_collision_facing_guard_fails(self):

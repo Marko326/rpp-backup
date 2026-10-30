@@ -189,15 +189,24 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
         len(re.findall(r'(?m)^\s*db\s+9\s*,\s*25\s*,\s*0\s*,\s*JOHTO_REGISTERED_WARP_SELECTOR\b', city_objects)) == 1 and
         len(re.findall(r'(?m)^\s*db\s+7\s*,\s*[23]\s*,\s*0\s*,\s*JOHTO_REGISTERED_WARP_SELECTOR\b', objects_body)) == 2,
         'one city entry at (Y9,X25) and two room exits at (Y7,X2/3)')
-    expected_routes = [
-        ('MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID', '0', 'MAP_REGION_JOHTO', 'JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID'),
-        ('MAP_REGION_JOHTO', 'JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID', '0', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID'),
-        ('MAP_REGION_JOHTO', 'JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID', '1', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID'),
-    ]
     try:
+        contract = json.loads(_read(rpp, 'tools/johto_pilot_door_contracts.json'))
+        id_symbols = {}
+        for symbol, value in re.findall(r'(?m)^\s*DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\$[0-9a-fA-F]+|\d+)\b', fixed + '\n' + dims):
+            id_symbols[int(value[1:], 16) if value.startswith('$') else int(value)] = symbol
+        expected_routes = []
+        for row in contract.get('active_routes', []):
+            source, target = row['source'], row['target']
+            expected_routes.append(('MAP_REGION_JOHTO', id_symbols[source['stable_id']],
+                str(source['warp_ordinal_zero_based']), 'MAP_REGION_JOHTO', id_symbols[target['stable_id']]))
+        for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', []):
+            for row in gate.get('warp_contracts', []):
+                expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                    str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         rows = _runtime_warp_rows(runtime)
-        add('REGISTERED_WARP_ROUTES', rows[:3] == expected_routes and len(rows) == 11, f'expected first three GuideGentsHouse routes plus eight VioletGate routes; found {rows}')
-    except ConversionError as exc:
+        add('REGISTERED_WARP_ROUTES', rows == expected_routes,
+            f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; exact={rows == expected_routes}')
+    except (ConversionError, OSError, KeyError, ValueError, TypeError) as exc:
         add('REGISTERED_WARP_ROUTES', False, str(exc))
     add('ROM0_COLLISION_ASSERT',
         'JohtoHouse_Coll:: INCBIN "gfx/tilesets/johto_house.tilecoll"' in _read(rpp, 'home.asm') and

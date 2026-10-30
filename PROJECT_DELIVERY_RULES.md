@@ -1,3 +1,45 @@
+## FIX-5.62.256｜验收清理模式 A（2026-10-30）
+
+- **真实提交基线**：用户上传的 `MAP-5.62.253.zip` 导出记录显示干净 HEAD `3b163292e7fcedef584c469af3dd744add3f573e`。`.254` 南侧通路、`.255` Select 修复、`.256` Gold 方向跳崖均在此 HEAD 之后，尚无用户提供的新 Git Commit 证明；本次日志必须累计覆盖 `3b163292... → FIX-5.62.256`，不能只写最后一个补丁。
+- **用户验收**：用户明确报告 FIX-256 已测试通过；遗迹南侧通路与横向门房也已测试、没有问题。按用户报告记录；助手没有自行 RGBDS 编译／链接 ROM、生成新 MAP 或运行手机。
+- **正式版本**：`FIX-5.62.256`；`TEST-231` 不变。版本前缀按本版主要修复选择 `FIX`，不回写历史 `MAP-5.62.253` 等版本。
+- **当前地图范围**：11 张活动地图；Gold 覆盖 692 WATER、7 CUT_TREE、92 HOP 碰撞格，遗迹跳崖表有16条物理安全方向。遗迹北门房与 Route36 仍未激活。
+- **静态复核**：Python 193 项运行、192 通过、1 项跳过（源码导出不含生成的 `patches/rppred.map`，故 Bank MAP 检查按规则跳过）；Surf preflight/coverage、Field Moves、迁移审计75/75、门房参考审计13/13、Warp/落点17/17、ASM局部标签2,068文件均通过。所有 PASS 仅代表静态合同；用户的设备验收是独立证据。
+- **模式 A 两笔提交**：① `feat(johto)` 包含南侧两张新地图、Warp/门房、Select、遗迹 Gold 坐标方向跳崖、正式版本及用户功能说明；② `test(tool)` 包含 Gold 门房合同、Field Moves/Surf/迁移审计、负向测试和维护文档。工具合同与测试必须留在第二笔，不能混入功能提交。
+- **交付三件套**：一个 ZIP 固定包含清理增量、工具/测试反向隔离补丁、基线累计全量补丁和两份中文提交日志。增量以 FIX-256 开发工作区为前置；全量以 HEAD `3b163292...` 为基线；两者互斥。先反向隔离工具部分提交功能，再 `git apply -R` 恢复工具部分提交第二笔。用户自行核对本地 HEAD/index 并 Commit/Push；助手不执行 Git 操作。
+- **下一阶段**：Route36（ID16）＋Route36RuinsOfAlphGate（ID19）＋遗迹外围北门。竖向门房 Gold 上端 DOOR 为 STEP_ON/UP，目标落点 DOOR 后自动 D_DOWN；下端 WARP_CARPET_DOWN 为 COLLISION_ONLY/DOWN；自动步进必须按目标落点角色判断，不能复用横向南门房的无自动步进逻辑。National Park Gate 与其他未完成出口继续关闭。详见 `docs/JOHTO_ALPH_NORTH_GATE_PLAN.md`。
+
+---
+
+## FIX-256｜遗迹跳崖必须按 Gold 坐标和方向登记
+
+- Gold `RuinsOfAlphOutside` 的 HOP 碰撞角色不能直接转成一个通用 tile-pair whitelist。紧凑图块可能被多个 Gold 坐标复用，且 Gold HOP 标签本身不保证两格落点可通行。
+- 必须保留 Gold 的 `(x,y,direction)` 白名单，并按 Gold 中间障碍与最终落点验证。当前安全表16条；`(9,30,DOWN)` 必须排除，因为 `(9,32)` 是 WALL。
+- `HOP_DOWN_LEFT` / `HOP_DOWN_RIGHT` 是复合方向：分别按 Gold 原版允许 DOWN+LEFT、DOWN+RIGHT，不能将其统一映射为左跳或右跳。
+- 复用公共 `HandleLedges → .foundMatch` 执行器；只替换遗迹触发判定。Route29/30/31/32、Violet 与关都的既有逻辑不得随意更改。
+- Field Moves 审计必须逐方向比较 Gold 安全候选与运行时坐标表；仅确认存在一个地图专属表不算通过。参见 `docs/JOHTO_RUINS_LEDGE_FIX_256.md`。
+
+## FIX-255｜Select→Start 误触发修复（原遗迹图块配对试修已由 FIX-256 替代）
+
+- 用户实机报告 `.254` 两项缺陷：单独按 Select 偶发打开 Start 菜单；阿露福遗迹左下角左向跳崖不能触发，右侧与下侧功能正常。保留全部已验收地图/水域/门房行为。
+- `home/overworld.asm` 的 `TryFishOrRideBike` 会覆盖 A；旧代码直接读取其返回 A 的 Start bit。用 `push af / pop bc / ld a,b` 保留原按钮掩码，`POP BC`、`LD A,B` 不修改标志位，继续使用快捷例程的 carry 表示按键被消费；同时兼容模拟按键路径。
+- Gold `RuinsOfAlphOutside` 原始 `HOP_DOWN_LEFT` 转角 `(x5,y30)` 在紧凑图块中左向配对 `$06->$3B`，全图唯一。仅向遗迹专属 `JohtoAlphSouthLedgeTiles` 添加这对；Route29/30/31/32、桔梗市和关都跳崖表保持原样。不修改图块数据、Surf/ Cut、Warp、存档或剧情。
+- 正式标记 `FIX-5.62.255`，`TEST-231` 保持。仅开发补丁，不附提交日志；静态检查不代替本机正式红蓝/测试构建及实机 Select/左向跳崖回归；不执行 Git Commit/Push、ROM 编译。
+
+## ALPH-SOUTH-002｜遗迹南侧通路运行时接入（用户已验收）
+
+- 从 ALPH-SOUTH-001 离线候选接入两张新图：Route32RuinsOfAlphGate 稳定 ID102→slot9、RuinsOfAlphOutside ID20→slot10；活动地图9→11，正式版改为 `MAP-5.62.254`，测试版仍 `TEST-231`。
+- Gold 原版南侧四对入口按两车道双向登记：32号路 x4,y2/3 ↔ 南门房东侧 x9,y4/5 ↔ 南门房西侧 x0,y4/5 ↔ 遗迹外围 x13,y20/21；保留既有 Route31/Violet 门房与 Route32 冲浪。
+- 遗迹外围 Gold 48 格 WATER 接入原有 Surf 三入口及上岸；14格 Gold HOP 在254初版曾 map-ID 独立复用 Route31 跳崖配对（该实现已由 FIX-256 的坐标／方向表替代）；无 Cut 树。门房允许骑车、地点栏/存档名与音乐表同步。
+- **关闭范围：** 遗迹内拼图、研究中心、联合洞穴、北门房、Route36、36号路后续出口均未开放；不新增 SAV 字段、不修改关都逻辑。
+- 用户后来明确报告南侧门房与遗迹通路实测正常。当前静态工具已更新为11张活动地图、19条登记 Warp 的合同；静态报告不代替用户验收记录。详见 `docs/JOHTO_RUINS_SOUTH_RUNTIME_254.md`。
+
+## ALPH-SOUTH-001｜遗迹南侧资源准备阶段（尚未开放运行地图）
+
+- 此次以用户新上传 `MAP-5.62.253.zip` 为基线，Gold + NPC 旧分支作为资源来源，**仅离线暂存**遗迹外围、32号路遗迹门房及北侧两张源布局；新增 `tools/johto_ruins_stage_contract.json`、独立校验与负例测试。
+- 未新增游戏运行时 Header、Warp、活动地图槽位、存档字段；现有 9 张地图与 ROM 均无变化；正式版本 `MAP-5.62.253` 与 `TEST-231` 不动。**不能把 staged candidate 称为可玩激活。**
+- 后续先激活 32号路⇄门房⇄遗迹外围，完整审计出入口方向、地毯碰撞与内部门口封闭；36号路与胡说树留后续。不自行 RGBDS 编译、Git Commit/Push。参见 `docs/JOHTO_RUINS_SOUTH_STAGE_254.md`。
+
 ## ROUTES-253｜当前活动地图 Field Moves 全覆盖与 Route32 地点栏（正式清理，2026-10-29）
 
 - **本轮正式前缀纠正**：`MAP` 表示地图／野外地形（冲浪、砍树、跳崖、门房与地点栏）功能；旧 `PAL-5.62.250` 等已存在历史版本保持原样，不延续 `PAL` 到本次新功能。正式版本仅将 `PAL-5.62.253` 校正为 `MAP-5.62.253`，数字仍为 `.253`，`TEST-231` 保持不变；该更正不改变任何游戏行为。今后版本前缀须按当次主要功能选择，不机械沿用上轮缩写。

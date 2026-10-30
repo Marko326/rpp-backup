@@ -96,6 +96,21 @@
       "map_scope_predicate": "JohtoRoute32IsActive",
       "runtime_map": "maps/johto_pilot/Route32.runtime.blk",
       "entrypoint_helper": "JohtoVioletWaterAhead"
+    },
+    {
+      "gold_map": "RuinsOfAlphOutside",
+      "local_id_symbol": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "water_helper": "JohtoRuinsWaterAhead",
+      "routine_file": "engine/johto_violet_field_skills.asm",
+      "water_table": "JohtoRuinsGoldWaterCells",
+      "water_end": "JohtoRuinsGoldWaterCellsEnd",
+      "expected_water_cells": 48,
+      "width_cells": 20,
+      "height_cells": 36,
+      "representation": "yx_db",
+      "map_scope_predicate": "JohtoRuinsIsActive",
+      "runtime_map": "maps/johto_pilot/RuinsOfAlphOutside.runtime.blk",
+      "entrypoint_helper": "JohtoVioletWaterAhead"
     }
   ]
 }

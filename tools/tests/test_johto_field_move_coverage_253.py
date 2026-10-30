@@ -17,7 +17,7 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_all_active_water_cut_and_hop_cells_are_registered(self):
         result = audit(ROOT, GOLD)
         self.assertEqual('PASS', result['status'], result['errors'])
-        self.assertEqual({'active_maps': 9, 'water_cells': 644, 'cut_trees': 7, 'hop_cells': 78},
+        self.assertEqual({'active_maps': 11, 'water_cells': 692, 'cut_trees': 7, 'hop_cells': 92},
                          result['totals'])
         rows = {row['map']: row for row in result['rows']}
         self.assertEqual((8, 'REGISTERED'), (rows['NewBarkTown']['water_cells'], rows['NewBarkTown']['surf']))
@@ -28,6 +28,11 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
                          (rows['Route32']['cut_trees'], rows['Route32']['cut'],
                           rows['Route32']['hop_cells'], rows['Route32']['ledge'],
                           rows['Route32']['ledge_table']))
+        self.assertEqual((14, 16, 'REGISTERED', 'JohtoAlphSouthHops'),
+                         (rows['RuinsOfAlphOutside']['hop_cells'],
+                          rows['RuinsOfAlphOutside']['safe_hop_directions'],
+                          rows['RuinsOfAlphOutside']['ledge'],
+                          rows['RuinsOfAlphOutside']['ledge_table']))
         self.assertFalse(result['runtime_verified'])
         self.assertFalse(result['rom_built'])
         self.assertFalse(result['phone_accepted'])
@@ -53,8 +58,8 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_route32_requires_its_own_map_guard(self):
         source = (ROOT / 'engine/overworld/ledges.asm').read_text()
         self.assertEqual('JohtoPilotRoute31LedgeTiles', _ledge_table_for_map(source, 'Route32'))
-        broken = source.replace('cp JOHTO_ROUTE_32_LOCAL_ID\n\tret nz',
-                                'cp JOHTO_ROUTE_33_LOCAL_ID\n\tret nz', 1)
+        broken = source.replace('cp JOHTO_ROUTE_32_LOCAL_ID\n\tjr z, .route31PairTable',
+                                'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjr z, .route31PairTable', 1)
         self.assertIsNone(_ledge_table_for_map(broken, 'Route32'))
 
     def test_cut_tree_route_table_covers_each_route_tree(self):

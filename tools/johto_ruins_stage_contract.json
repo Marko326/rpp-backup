@@ -1,0 +1,264 @@
+{
+  "stage": "ALPH-SOUTH-002",
+  "status": "SOUTH_ROUTE_RUNTIME_STATIC_PENDING_BUILD",
+  "runtime_approved": false,
+  "build_performed": false,
+  "main_version_unchanged": "MAP-5.62.254",
+  "active_map_count_must_remain": 11,
+  "maps": [
+    {
+      "name": "RuinsOfAlphOutside",
+      "stable_id": 20,
+      "width_blocks": 10,
+      "height_blocks": 18,
+      "gold_map_type": "ROUTE",
+      "gold_tileset": "JOHTO",
+      "stage_only": false
+    },
+    {
+      "name": "Route32RuinsOfAlphGate",
+      "stable_id": 102,
+      "width_blocks": 5,
+      "height_blocks": 4,
+      "gold_map_type": "GATE",
+      "gold_tileset": "GATE",
+      "stage_only": false
+    },
+    {
+      "name": "Route36RuinsOfAlphGate",
+      "stable_id": 19,
+      "width_blocks": 5,
+      "height_blocks": 4,
+      "gold_map_type": "GATE",
+      "gold_tileset": "GATE",
+      "stage_only": true
+    },
+    {
+      "name": "Route36",
+      "stable_id": 16,
+      "width_blocks": 30,
+      "height_blocks": 9,
+      "gold_map_type": "ROUTE",
+      "gold_tileset": "JOHTO",
+      "stage_only": true
+    }
+  ],
+  "assets": {
+    "RuinsOfAlphOutside": {
+      "gold_block_file": "RuinsOfAlphOutside.blk",
+      "staged_file": "maps/johto_staged/RuinsOfAlphOutside.gold.blk",
+      "size": 180,
+      "gold_sha256": "dbebb97a9ee6bbbff89527e9e90c8c5d03d7f1cb56923724064aba90bc411cbb",
+      "candidate_file": "maps/johto_staged/RuinsOfAlphOutside.candidate.blk",
+      "candidate_sha256": "0fb6ea07082d0876394edb1f4cfe147b56a4b962016f161aeba937572ecd931f"
+    },
+    "Route32RuinsOfAlphGate": {
+      "gold_block_file": "EastWestGate.blk",
+      "staged_file": "maps/johto_staged/Route32RuinsOfAlphGate.gold.blk",
+      "size": 20,
+      "gold_sha256": "4345b9806ded35bc2b76429a281e9391c0c614597f4ccf547a89edee84d5160c",
+      "candidate_file": "maps/johto_staged/Route32RuinsOfAlphGate.candidate.blk",
+      "candidate_sha256": "cc1cea3fabff7f7b4f1cdde7438a2698cfd6bc71936f887a5a19aa04bb2bde0a"
+    },
+    "Route36RuinsOfAlphGate": {
+      "gold_block_file": "NorthSouthGate.blk",
+      "staged_file": "maps/johto_staged/Route36RuinsOfAlphGate.gold.blk",
+      "size": 20,
+      "gold_sha256": "84fea213ad2cd20926551a70174baabfb495e3f150d708b532beba11e84771a2"
+    },
+    "Route36": {
+      "gold_block_file": "Route36.blk",
+      "staged_file": "maps/johto_staged/Route36.gold.blk",
+      "size": 270,
+      "gold_sha256": "29a2d2fdb546a71f0203858a8f18bd0dab8238d1160f0bba923586bcd4069878"
+    }
+  },
+  "future_link_review": [
+    {
+      "from": "Route32",
+      "warp_ordinal": 1,
+      "coordinate_xy": [
+        4,
+        2
+      ],
+      "to": "Route32RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 2
+    },
+    {
+      "from": "Route32",
+      "warp_ordinal": 2,
+      "coordinate_xy": [
+        4,
+        3
+      ],
+      "to": "Route32RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 3
+    },
+    {
+      "from": "Route32RuinsOfAlphGate",
+      "warp_ordinal": 0,
+      "coordinate_xy": [
+        0,
+        4
+      ],
+      "to": "RuinsOfAlphOutside",
+      "destination_gold_warp_ordinal": 9
+    },
+    {
+      "from": "Route32RuinsOfAlphGate",
+      "warp_ordinal": 1,
+      "coordinate_xy": [
+        0,
+        5
+      ],
+      "to": "RuinsOfAlphOutside",
+      "destination_gold_warp_ordinal": 10
+    },
+    {
+      "from": "Route32RuinsOfAlphGate",
+      "warp_ordinal": 2,
+      "coordinate_xy": [
+        9,
+        4
+      ],
+      "to": "Route32",
+      "destination_gold_warp_ordinal": 1
+    },
+    {
+      "from": "Route32RuinsOfAlphGate",
+      "warp_ordinal": 3,
+      "coordinate_xy": [
+        9,
+        5
+      ],
+      "to": "Route32",
+      "destination_gold_warp_ordinal": 2
+    },
+    {
+      "from": "RuinsOfAlphOutside",
+      "warp_ordinal": 9,
+      "coordinate_xy": [
+        13,
+        20
+      ],
+      "to": "Route32RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 0
+    },
+    {
+      "from": "RuinsOfAlphOutside",
+      "warp_ordinal": 10,
+      "coordinate_xy": [
+        13,
+        21
+      ],
+      "to": "Route32RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 1
+    },
+    {
+      "from": "RuinsOfAlphOutside",
+      "warp_ordinal": 8,
+      "coordinate_xy": [
+        7,
+        5
+      ],
+      "to": "Route36RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 2
+    },
+    {
+      "from": "Route36RuinsOfAlphGate",
+      "warp_ordinal": 2,
+      "coordinate_xy": [
+        4,
+        7
+      ],
+      "to": "RuinsOfAlphOutside",
+      "destination_gold_warp_ordinal": 8
+    },
+    {
+      "from": "Route36RuinsOfAlphGate",
+      "warp_ordinal": 3,
+      "coordinate_xy": [
+        5,
+        7
+      ],
+      "to": "RuinsOfAlphOutside",
+      "destination_gold_warp_ordinal": 8
+    },
+    {
+      "from": "Route36RuinsOfAlphGate",
+      "warp_ordinal": 0,
+      "coordinate_xy": [
+        4,
+        0
+      ],
+      "to": "Route36",
+      "destination_gold_warp_ordinal": 2
+    },
+    {
+      "from": "Route36RuinsOfAlphGate",
+      "warp_ordinal": 1,
+      "coordinate_xy": [
+        5,
+        0
+      ],
+      "to": "Route36",
+      "destination_gold_warp_ordinal": 3
+    },
+    {
+      "from": "Route36",
+      "warp_ordinal": 2,
+      "coordinate_xy": [
+        47,
+        13
+      ],
+      "to": "Route36RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 0
+    },
+    {
+      "from": "Route36",
+      "warp_ordinal": 3,
+      "coordinate_xy": [
+        48,
+        13
+      ],
+      "to": "Route36RuinsOfAlphGate",
+      "destination_gold_warp_ordinal": 1
+    }
+  ],
+  "blocked_until_indoor_maps_live": [
+    {
+      "name": "RuinsOfAlphOutside",
+      "gold_warp_ordinals": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "four puzzle chambers, inner chamber, research center and Union Cave B1F are inactive"
+    },
+    {
+      "name": "RuinsOfAlphOutside",
+      "gold_warp_ordinals": [
+        8
+      ],
+      "why": "north gate and Route36 remain inactive"
+    },
+    {
+      "name": "Route36",
+      "gold_warp_ordinals": [
+        0,
+        1
+      ],
+      "why": "National Park gate and external roads remain inactive"
+    }
+  ],
+  "reference_notes": {
+    "ruins_candidate": "exact 180B NPC-5.62.243 compact layout, not direct Gold bytes",
+    "south_gate_candidate": "exact 20B already existing verified Route31VioletGate.runtime.blk, both use Gold EastWestGate.blk",
+    "north_gate": "only Gold source staged; NS compact collision and portal still require review"
+  }
+}
