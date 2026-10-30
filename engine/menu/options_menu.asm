@@ -1203,6 +1203,8 @@ JohtoActiveGSCMusic::
 	db MUSIC_GBP_GSC_VIOLET_CITY     ; slot 6: ID 5 VioletCity
 	db 0                             ; slot 7: ID 6 gate, source-dependent
 	db MUSIC_GBP_GSC_ROUTE30         ; slot 8: ID 7 Route32, Gold MUSIC_ROUTE_30
+	db MUSIC_GBP_GSC_ROUTE30         ; slot 9: ID102 South Gate, Route32 theme
+    db MUSIC_GBP_GSC_ROUTE30         ; slot10: ID20 Ruins outside (temporary scene)
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

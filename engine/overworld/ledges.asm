@@ -26,10 +26,57 @@ HandleLedges:
 	cp JOHTO_ROUTE_31_LOCAL_ID
 	jr z, .route31PairTable
 	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr z, .route31PairTable
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr z, .ruinsHopTable
 	ret nz
+.ruinsHopTable
+	ld hl, JohtoAlphSouthHops
+	jr .ruinsCoordinateHopLookup
+.ruinsCoordinateHopLookup
+	; Gold source coordinates are 8x8-cell coordinates. The same collision
+	; role can describe different safe directions at different locations.
+	ld a, [wXCoord]
+	ld b, a
+	ld a, [wYCoord]
+	ld c, a
+	ld a, [wPlayerDirection]
+	ld d, a
+.ruinsHopLoop
+	ld a, [hli]
+	cp $ff
+	ret z
+	cp b
+	jr nz, .ruinsSkipHopY
+	ld a, [hli]
+	cp c
+	jr nz, .ruinsSkipHopDirection
+	ld a, [hl]
+	cp d
+	jr z, .ruinsHopMatch
+	inc hl
+	jr .ruinsHopLoop
+.ruinsSkipHopY
+	inc hl
+.ruinsSkipHopDirection
+	inc hl
+	jr .ruinsHopLoop
+.ruinsHopMatch
+	; Convert the facing bit to the joypad bit expected by .foundMatch.
+	ld a, d
+	cp PLAYER_DIR_LEFT
+	ld e, D_LEFT
+	jr z, .ruinsHopReady
+	cp PLAYER_DIR_RIGHT
+	ld e, D_RIGHT
+	jr z, .ruinsHopReady
+	cp PLAYER_DIR_DOWN
+	ld e, D_DOWN
+	ret nz
+.ruinsHopReady
+	jp .foundMatch
 .route31PairTable
-	; Gold Route32 uses the same verified $05/$20, $06/$30 and $05/$21
-	; tile-pair families as Route31. Keep the dispatch map-specific.
+	; Route31/32 preserve the already accepted pair family.
 	ld hl, JohtoPilotRoute31LedgeTiles
 	jr .checkPairs
 .supportedJohtoLedges
@@ -113,6 +160,29 @@ JohtoPilotRoute31LedgeTiles:
 	db SPRITE_FACING_RIGHT, $06,$30,D_RIGHT
 	db SPRITE_FACING_DOWN,  $05,$21,D_DOWN
 	db SPRITE_FACING_DOWN,  $06,$21,D_DOWN
+	db $FF
+
+; Ruins of Alph uses Gold's directed HOP coordinates, not generic tile pairs.
+; Some compact graphics/collision tiles are shared by safe and unsafe ledges.
+; Keep the Gold source coordinate AND facing direction together so the
+; (9,30) HOP_DOWN with a WALL landing at (9,32) remains blocked.
+JohtoAlphSouthHops:
+	db 2, 18, PLAYER_DIR_DOWN
+	db 5, 30, PLAYER_DIR_DOWN
+	db 5, 30, PLAYER_DIR_LEFT
+	db 6, 30, PLAYER_DIR_DOWN
+	db 7, 30, PLAYER_DIR_DOWN
+	db 8, 30, PLAYER_DIR_DOWN
+	db 10, 30, PLAYER_DIR_DOWN
+	db 10, 30, PLAYER_DIR_RIGHT
+	db 2, 32, PLAYER_DIR_DOWN
+	db 3, 32, PLAYER_DIR_DOWN
+	db 4, 32, PLAYER_DIR_DOWN
+	db 5, 32, PLAYER_DIR_DOWN
+	db 6, 32, PLAYER_DIR_DOWN
+	db 7, 32, PLAYER_DIR_DOWN
+	db 8, 32, PLAYER_DIR_DOWN
+	db 8, 32, PLAYER_DIR_RIGHT
 	db $FF
 
 LoadHoppingShadowOAM:

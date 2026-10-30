@@ -269,6 +269,8 @@ UpdateMapNameSign::
 	jr z, .johtoViolet
 	cp JOHTO_ROUTE_32_LOCAL_ID
 	jr z, .johtoRoute32
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr z, .johtoRuins
 	; A neutral gate reached by Continue has no outdoor source saved
 	; for sign purposes. Store a harmless placeholder without showing.
 	; Unknown Johto maps must never consult the Kanto $FC entry.
@@ -291,6 +293,9 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoViolet
 	ld hl, .JohtoVioletName
+	jr .johtoResolved
+.johtoRuins
+	ld hl, .JohtoRuinsName
 	jr .johtoResolved
 .johtoRoute32
 	ld hl, .JohtoRoute32Name
@@ -617,6 +622,8 @@ UpdateMapNameSign::
 	jr nz, .legacyNeutralMap
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
 	ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -989,3 +996,4 @@ UpdateMapNameSign::
 .JohtoRoute31Name:      db "Route 31@"
 .JohtoVioletName:       db "Violet City@"
 .JohtoRoute32Name:      db "Route 32@"
+.JohtoRuinsName: db "Ruins Of Alph@"

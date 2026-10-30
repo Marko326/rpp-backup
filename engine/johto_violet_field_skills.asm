@@ -31,6 +31,8 @@ JohtoVioletWaterAhead::
 	ret c
 	call JohtoRoute32WaterAhead
 	ret c
+	call JohtoRuinsWaterAhead
+	ret c
 	call JohtoNewBarkWaterAhead
 	ret c
 	push bc
@@ -1529,3 +1531,134 @@ JohtoPilotCutTreeAhead::
 	call JohtoVioletCutTreeAhead
 	ret c
 	jp JohtoRoutesCutTreeAhead
+
+; ALPH-SOUTH-002: Gold Ruins exterior water (48 cells); same three Surf entrypoints.
+JohtoRuinsIsActive::
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jp nz, .no
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	jp nz, .no
+	ld a, [wCurLocalMapID]
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jp nz, .no
+	scf
+	ret
+.no
+	and a
+	ret
+
+JohtoRuinsWaterAhead::
+	push bc
+	push de
+	push hl
+	call JohtoRuinsIsActive
+	jp nc, .noWater
+	ld a, [wYCoord]
+	ld d, a
+	ld a, [wXCoord]
+	ld e, a
+	ld a, [wSpriteStateData1 + 9]
+	cp SPRITE_FACING_DOWN
+	jr nz, .up
+	inc d
+	jr .bounds
+.up
+	cp SPRITE_FACING_UP
+	jr nz, .left
+	dec d
+	jr .bounds
+.left
+	cp SPRITE_FACING_LEFT
+	jr nz, .right
+	dec e
+	jr .bounds
+.right
+	cp SPRITE_FACING_RIGHT
+	jp nz, .noWater
+	inc e
+.bounds
+	ld a, d
+	cp 36
+	jp nc, .noWater
+	ld a, e
+	cp 20
+	jp nc, .noWater
+	ld hl, JohtoRuinsGoldWaterCells
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .noWater
+	cp d
+	jr nz, .skipX
+	ld a, [hli]
+	cp e
+	jr z, .yesWater
+	jr .loop
+.skipX
+	inc hl
+	jr .loop
+.yesWater
+	scf
+	jr .done
+.noWater
+	and a
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+JohtoRuinsGoldWaterCells::
+	db 6, 2
+	db 6, 3
+	db 6, 4
+	db 6, 5
+	db 7, 2
+	db 7, 3
+	db 7, 4
+	db 7, 5
+	db 8, 2
+	db 8, 3
+	db 8, 4
+	db 8, 5
+	db 9, 2
+	db 9, 3
+	db 9, 4
+	db 9, 5
+	db 10, 2
+	db 10, 3
+	db 10, 4
+	db 10, 5
+	db 11, 2
+	db 11, 3
+	db 11, 4
+	db 11, 5
+	db 12, 2
+	db 12, 3
+	db 12, 4
+	db 12, 5
+	db 13, 2
+	db 13, 3
+	db 13, 4
+	db 13, 5
+	db 26, 12
+	db 26, 13
+	db 26, 14
+	db 26, 15
+	db 27, 12
+	db 27, 13
+	db 27, 14
+	db 27, 15
+	db 28, 12
+	db 28, 13
+	db 28, 14
+	db 28, 15
+	db 29, 12
+	db 29, 13
+	db 29, 14
+	db 29, 15
+	db $ff
+JohtoRuinsGoldWaterCellsEnd::
+ASSERT JohtoRuinsGoldWaterCellsEnd - JohtoRuinsGoldWaterCells == 48 * 2 + 1

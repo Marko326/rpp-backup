@@ -843,13 +843,19 @@ JohtoPilotTownMapEntries::
     ; Slot 8: Route32 (stable ID 7), Gold landmark index 7.
     db 108, 92
     dw JohtoPilotRoute32Name
+    ; Slot 9: Route32/Alph gate inherits the Route32-side landmark.
+    db 108, 92
+    dw JohtoPilotRoute32Name
+    ; Slot 10: Ruins of Alph outside, Gold landmark 8.
+    db 92, 84
+    dw JohtoPilotRuinsOfAlphName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -959,4 +965,5 @@ MonNestIconEnd:
 JohtoPilotVioletName:: db "Violet City@"
 ; Route32 uses this helper's Bank $35, not a cross-bank pointer into the
 ; floating Gold landmark table used by Continue/Save.
+JohtoPilotRuinsOfAlphName: db "Ruins_Of Alph@"
 JohtoPilotRoute32Name:: db "Route 32@"

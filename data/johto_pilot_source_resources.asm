@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 9
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 11
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 12
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -42,6 +42,12 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, JOHTO_ROUTE_32_WIDTH, JOHTO_ROUTE_32_HEIGHT
     dw JohtoPilotRoute32GoldBlocks
     db BANK(JohtoPilotRoute32GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, JOHTO_ROUTE32_RUINS_GATE_WIDTH, JOHTO_ROUTE32_RUINS_GATE_HEIGHT
+    dw JohtoPilotAlphSouthGateGoldBlocks
+    db BANK(JohtoPilotAlphSouthGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, JOHTO_RUINS_OF_ALPH_WIDTH, JOHTO_RUINS_OF_ALPH_HEIGHT
+    dw JohtoPilotAlphOutsideGoldBlocks
+    db BANK(JohtoPilotAlphOutsideGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -103,6 +109,14 @@ JohtoPilotVioletGateGoldBlocksEnd::
 JohtoPilotRoute32GoldBlocks::
     INCBIN "maps/johto_pilot/Route32.gold.blk"
 JohtoPilotRoute32GoldBlocksEnd::
+JohtoPilotAlphSouthGateGoldBlocks::
+    INCBIN "maps/johto_pilot/Route32RuinsOfAlphGate.gold.blk"
+JohtoPilotAlphSouthGateGoldBlocksEnd::
+JohtoPilotAlphOutsideGoldBlocks::
+    INCBIN "maps/johto_pilot/RuinsOfAlphOutside.gold.blk"
+JohtoPilotAlphOutsideGoldBlocksEnd::
+ASSERT JohtoPilotAlphSouthGateGoldBlocksEnd - JohtoPilotAlphSouthGateGoldBlocks == JOHTO_ROUTE32_RUINS_GATE_WIDTH * JOHTO_ROUTE32_RUINS_GATE_HEIGHT
+ASSERT JohtoPilotAlphOutsideGoldBlocksEnd - JohtoPilotAlphOutsideGoldBlocks == JOHTO_RUINS_OF_ALPH_WIDTH * JOHTO_RUINS_OF_ALPH_HEIGHT
 ASSERT JohtoPilotRoute32GoldBlocksEnd - JohtoPilotRoute32GoldBlocks == JOHTO_ROUTE_32_WIDTH * JOHTO_ROUTE_32_HEIGHT
 ASSERT JohtoPilotVioletGateGoldBlocksEnd - JohtoPilotVioletGateGoldBlocks == JOHTO_ROUTE31_VIOLET_GATE_WIDTH * JOHTO_ROUTE31_VIOLET_GATE_HEIGHT
 ASSERT JohtoGuideGentsHouseSourceBlocksEnd - JohtoGuideGentsHouseSourceBlocks == JOHTO_GUIDE_GENTS_HOUSE_WIDTH * JOHTO_GUIDE_GENTS_HOUSE_HEIGHT

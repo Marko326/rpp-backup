@@ -131,6 +131,17 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
+    ; ALPH-SOUTH-002: two exterior entrance carpets -> South Gate.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+    ; Gate's west pair -> ruins; gate's east pair -> Route32.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+    ; Ruins south exit eastward to the South Gate; north and inner rooms stay absent.
+    db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -192,7 +203,10 @@ JohtoPilotResolveRegisteredWarp::
     ; Never use wLastMap or an old physical mapconst to infer gate music.
     ld a, [hl]
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     jr nz, .notGateMusicEntry
+.recordGateSource
     ld a, c
     ld [wJohtoGateMusicSourceLocalID], a
 .notGateMusicEntry
@@ -234,6 +248,8 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 5, MUSIC_CITIES1, 0     ; slot 6: Violet City ID5, outdoor
     johto_map_profile 0, 4, MUSIC_ROUTES1, 0     ; slot 7: Route31VioletGate ID6, indoor
     johto_map_profile 1, 7, MUSIC_ROUTES1, 0     ; slot 8: Route32 ID7, Gold Route30 theme
+    johto_map_profile 0, 7, MUSIC_ROUTES1, 0     ; slot 9: Route32/Alph South Gate ID102, neutral
+    johto_map_profile 1, 8, MUSIC_ROUTES1, 0     ; slot 10: Ruins of Alph outside ID20
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -336,7 +352,41 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .route32
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .gate
+    cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+    jp z, .gate
+    cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    jp z, .ruinsClosedEdge
     ret
+.ruinsClosedEdge
+    ; No direct outdoor seams on the current isolated ruins exterior.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr z, .ruinsWest
+    cp PLAYER_DIR_RIGHT
+    jr z, .ruinsEast
+    cp PLAYER_DIR_UP
+    jr z, .ruinsNorth
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wYCoord]
+    cp JOHTO_RUINS_OF_ALPH_HEIGHT * 2 - 1
+    ret c
+    jp .closed
+.ruinsNorth
+    ld a, [wYCoord]
+    and a
+    ret nz
+    jp .closed
+.ruinsWest
+    ld a, [wXCoord]
+    and a
+    ret nz
+    jp .closed
+.ruinsEast
+    ld a, [wXCoord]
+    cp JOHTO_RUINS_OF_ALPH_WIDTH * 2 - 1
+    ret c
+    jp .closed
 .gate
     ; Gold EastWestGate: standing on x0/9 carpets is safe. Only an
     ; outward LEFT/RIGHT collision at the edge triggers a registered Warp.
@@ -554,6 +604,10 @@ JohtoPilotGateDoorApproachAllowed::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jp z, .route32Alph
+    cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    jp z, .ruinsAlph
     cp JOHTO_ROUTE_31_LOCAL_ID
     jr z, .route31
     cp JOHTO_VIOLET_CITY_LOCAL_ID
@@ -582,6 +636,33 @@ JohtoPilotGateDoorApproachAllowed::
     jr z, .allow
     cp 7
     ret nz
+    jr .allow
+.route32Alph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    ret nz
+    ld a, [wXCoord]
+    cp 5
+    ret nz
+    ld a, [wYCoord]
+    cp 2
+    jr z, .allow
+    cp 3
+    ret nz
+    jr .allow
+.ruinsAlph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp 12
+    ret nz
+    ld a, [wYCoord]
+    cp 20
+    jr z, .allow
+    cp 21
+    ret nz
+
 .allow
     ld e, 1
     ret
@@ -592,6 +673,10 @@ JohtoPilotGateDoorWarpMatched::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jp z, .route32Alph
+    cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    jp z, .ruinsAlph
     cp JOHTO_ROUTE_31_LOCAL_ID
     jr z, .route31
     cp JOHTO_VIOLET_CITY_LOCAL_ID
@@ -620,6 +705,33 @@ JohtoPilotGateDoorWarpMatched::
     jr z, .allow
     cp 7
     ret nz
+    jr .allow
+.route32Alph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    ret nz
+    ld a, [wXCoord]
+    cp 4
+    ret nz
+    ld a, [wYCoord]
+    cp 2
+    jr z, .allow
+    cp 3
+    ret nz
+    jr .allow
+.ruinsAlph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp 13
+    ret nz
+    ld a, [wYCoord]
+    cp 20
+    jr z, .allow
+    cp 21
+    ret nz
+
 .allow
     ld e, 1
     ret
@@ -632,6 +744,10 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jr z,.route32Alph
+    cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    jr z, .ruinsAlph
     cp JOHTO_ROUTE_31_LOCAL_ID
     jr z, .route31
     cp JOHTO_VIOLET_CITY_LOCAL_ID
@@ -660,6 +776,33 @@ JohtoPilotGateExteriorCollisionAllowed::
     jr z, .yes
     cp 7
     ret nz
+    jr .yes
+.route32Alph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    ret nz
+    ld a, [wXCoord]
+    cp 4
+    ret nz
+    ld a, [wYCoord]
+    cp 2
+    jr z, .yes
+    cp 3
+    ret nz
+    jr .yes
+.ruinsAlph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp 13
+    ret nz
+    ld a, [wYCoord]
+    cp 20
+    jr z, .yes
+    cp 21
+    ret nz
+    jr .yes
 .yes
     ld e, 1
     ret
@@ -679,7 +822,10 @@ JohtoPilotGateCollisionExitAllowed::
     ret nz
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    jr z, .isGate
+    cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     ret nz
+.isGate
     ld e, 0
     ld a, [wYCoord]
     cp 4

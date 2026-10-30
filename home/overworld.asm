@@ -97,7 +97,12 @@ OverworldLoopLessDelay::
 	bit 2,a ; select button
 	jr z,.selectButtonNotPressed
 ; if SELECT is pressed
-	farcall TryFishOrRideBike ; FIS-5.62.84: shore fishing, otherwise original bike shortcut
+	; FIX-255: the shortcut clobbers A. Preserve the original button mask
+	; without destroying its carry result (POP BC / LD A,B leave flags intact).
+	push af
+	farcall TryFishOrRideBike ; shore fishing or bike shortcut
+	pop bc
+	ld a, b
 	jp c, OverworldLoop ; shortcut text/cast consumed this frame's buttons
 .selectButtonNotPressed
 	bit 3,a ; start button
@@ -1114,6 +1119,8 @@ IsBikeRidingAllowed::
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
 	jr z, .allowed
+	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jr z, .allowed
 .legacyBike
 	ld a, [wCurMap]
 	cp ROUTE_23
@@ -2078,7 +2085,7 @@ CollisionCheckOnWater::
 	jp c, .noCollision
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a
-	jr .checkIfNextTileIsPassable
+	jp .checkIfNextTileIsPassable
 .checkCherrygroveSurf
 	cp JOHTO_CHERRYGROVE_LOCAL_ID
 	jr nz, .checkRoute30Surf
@@ -2115,8 +2122,17 @@ CollisionCheckOnWater::
 .checkRoute32Surf
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_32_LOCAL_ID
-	jr nz, .legacySurfTile
+	jr nz, .checkRuinsSurf
 	callab JohtoRoute32WaterAhead
+	jp c, .noCollision
+	ld a, [wTileInFrontOfPlayer]
+	ld c, a
+	jr .checkIfNextTileIsPassable
+.checkRuinsSurf
+	ld a, [wCurLocalMapID]
+	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+	jr nz, .legacySurfTile
+	callab JohtoRuinsWaterAhead
 	jp c, .noCollision
 	ld a, [wTileInFrontOfPlayer]
 	ld c, a

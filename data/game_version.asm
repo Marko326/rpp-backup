@@ -7,11 +7,13 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
-	; MAP-253: complete active-map Surf coverage, Route32 ledge dispatch and map-sign fix.
+	; FIX-256: restore Gold coordinate/direction ledges and reject unsafe Ruins landing.
+	; FIX-255: preserve SELECT-only input without opening the Start menu.
+	; MAP-254: open Gold Ruins of Alph south exterior via Route32 EastWestGate.
 	; ROUTES-253: restore New Bark Town's original pond block and enable Surf.
 	; ROUTES-252: allow exact Gold FLOOR at the southwest shore and normal walking.
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "MAP-5.62.253@"
+	db "FIX-5.62.256@"
 ENDC

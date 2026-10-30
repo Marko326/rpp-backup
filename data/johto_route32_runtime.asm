@@ -35,8 +35,7 @@ JohtoPilotRoute32Sign:
     db "@"
 JohtoPilotRoute32Ruins:
     text "RUINS OF ALPH"
-    para "Entrance closed"
-    line "for now."
+    para "West gate is open."
     done
     db "@"
 JohtoPilotRoute32Cave:
@@ -52,7 +51,9 @@ JohtoPilotRoute32Center:
     db "@"
 JohtoPilotRoute32RuntimeObjects::
     db $05 ; source's outdoor forest border
-    db 0 ; no Warps until cave, ruins gate, center and Route33 are active
+    db 2 ; Gold ruins west gate pair only; center/cave remain closed
+    db 2, 4, 2, JOHTO_REGISTERED_WARP_SELECTOR
+    db 3, 4, 3, JOHTO_REGISTERED_WARP_SELECTOR
     db 4 ; Gold signs at (Y,X): (5,13), (1,9), (84,10), (73,12)
     db 5, 13, 1
     db 1, 9, 2

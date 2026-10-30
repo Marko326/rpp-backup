@@ -1,3 +1,18 @@
+## FIX-256｜阿露福遗迹南侧通路与 Gold 方向跳崖（用户实机验收通过）
+
+- 遗迹外围跳崖使用 Gold 坐标＋面向方向白名单，共16条物理安全的有向跳崖；复合转角保留 DOWN/LEFT 与 DOWN/RIGHT 的不同方向。
+- Gold `(9,30)` 虽标记 `HOP_DOWN`，但落点 `(9,32)` 是 WALL，因此明确禁止向下跳；公共跳跃动画和执行器不变。
+- 修复 Select 快捷功能调用后误开 Start 菜单的问题；用户报告 FIX-256 实机测试通过。
+- 当前活动城都地图增至11张，新增 Route32 遗迹南门房与遗迹外围；南侧双向通路和横向门房已由用户测试。北门房与 Route36 仍未激活。
+- 正式游戏版本 `FIX-5.62.256`，测试版本 `TEST-231` 保持。下一阶段竖向北门房需独立实现 Gold DOOR 自动 `D_DOWN` 到达规则，不可照搬横向门房。
+
+## ALPH-SOUTH-002｜遗迹南侧通路运行时接入（已验收）
+
+- Route32 ↔ 南门房 ↔ 阿露福遗迹外围双向通路已激活；稳定 ID102→slot9、ID20→slot10，活动地图共11张。
+- 遗迹外围 Gold 48格 WATER 已接入 Surf，14个 HOP 碰撞格按16条安全方向登记；无 Cut 树。保留现有路线 Surf、门房骑车、地点栏、存档名与音乐映射。
+- 遗迹拼图、研究中心、联合洞穴、北门房、Route36、National Park 及其他未完成出口继续关闭；不新增 SAV 字段，不改变关都行为。
+- 用户已确认南侧门房与本轮 FIX-256 测试没有问题。详细地图与碰撞合同见 `docs/JOHTO_RUINS_SOUTH_RUNTIME_254.md` 和 `docs/JOHTO_RUINS_LEDGE_FIX_256.md`。
+
 # FEATURES
 There are a number of different types of updates that have been included so far.
 This list is not necessarily complete, but it gives a good list and will be updated semi-regularly
@@ -67,7 +82,7 @@ These are notable features which have been added
 * Ability to use Headbutt outside of Battle, like GSC or HGSS
 * Flash is a TM instead of an HM
 * New areas in Kanto
-* Limited Johto pilot area: New Bark Town, Route 29, Cherrygrove City, Route 30, Route 31, Guide Gent's House, Violet City, Route 31 Gate, and Route 32. Active-map Surf, Cut, ledge movement, and the Route 31 Gate bike exception follow Gold-scoped map rules; staged maps remain disabled.
+* Limited Johto pilot area: 11 active maps including New Bark Town, Routes 29–32, Cherrygrove City, Violet City, Guide Gent's House, Route 31 Gate, Route32 Ruins Gate, and Ruins of Alph outside. Active Surf, Cut, ledges, and gate behavior follow Gold-scoped map rules; the north gate, Route36, caves and unfinished story rooms remain disabled.
 * Navel Rock, Faraway Island, and Southern Island from Pokémon Emerald are all included
 * Breeding at the Day-Care
 * Smarter AI for Boss trainers (Normal Patch) or All Trainers (Hard Patch)

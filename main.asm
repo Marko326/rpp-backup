@@ -3392,6 +3392,10 @@ INCLUDE "data/johto_indoor_house.asm"
 SECTION "Johto Route31 Violet Gate", ROMX, BANK[$47]
 INCLUDE "data/johto_gate_runtime.asm"
 
+; Small, separately banked Ruins/Route32 Gate runtime to avoid Bank $43 overflow.
+SECTION "Johto Ruins South Runtime", ROMX, BANK[$49]
+INCLUDE "data/johto_ruins_south_runtime.asm"
+
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"
 
