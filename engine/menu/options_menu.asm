@@ -1152,45 +1152,66 @@ LookupMusicStyleRandomExtras:
 ; E=RBY song request; B=packed style. Output A=GSC counterpart or 0.
 ; Preserve B and E. `GetJohtoActiveSlot` returns compact slot through E.
 LookupJohtoMapGSCMusic:
-	ld a, [wCurMap]
-	cp JOHTO_RUNTIME_MAP_HANDLE
-	jp nz, .unresolved
-	ld a, [wCurRegion]
-	cp MAP_REGION_JOHTO
-	jp nz, .unresolved
-	ld a, [wCurLocalMapID]
-	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
-	jr nz, .activeSlot
-	; Source is written at the actual registered Warp, before $FC is reused.
-	ld a, [wJohtoGateMusicSourceLocalID]
-	cp JOHTO_VIOLET_CITY_LOCAL_ID
-	jr z, .violetGate
-	ld a, MUSIC_GBP_GSC_ROUTE30 ; Route31, or safe unknown fallback
-	ret
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jp nz, .unresolved
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    jp nz, .unresolved
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
+    jr z, .violetGate
+    cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+    jr z, .southGate
+    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+    jr nz, .activeSlot
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_36_LOCAL_ID
+    jr z, .activeSlot
+    cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    jr z, .activeSlot
+    jr .gateDefault
+.southGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jr z, .activeSlot
+    cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    jr z, .activeSlot
+    jr .gateDefault
 .violetGate
-	ld a, MUSIC_GBP_GSC_VIOLET_CITY
-	ret
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr z, .activeSlot
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    jr nz, .gateDefault
+    jr .activeSlot
+.gateDefault
+    ; Continue inside a gate has no reliable arrival-source WRAM yet.
+    ; Use the gate's Gold default scene in that case, never a stale source.
+    ld a, [wCurLocalMapID]
 .activeSlot
-	push bc
-	push de
-	ld e, a
-	callab GetJohtoActiveSlot
-	ld a, e
-	pop de
-	cp JOHTO_INVALID_ACTIVE_SLOT
-	jr z, .popUnresolved
-	ld c, a
-	ld b, 0
-	ld hl, JohtoActiveGSCMusic
-	add hl, bc
-	ld a, [hl]
-	pop bc
-	ret
+    ; For a gate, A is the validated *source* stable ID, not gate ID.
+    ; No scene change means the existing GSC/RND song keeps its cursor.
+    push bc
+    push de
+    ld e, a
+    callab GetJohtoActiveSlot
+    ld a, e
+    pop de
+    cp JOHTO_INVALID_ACTIVE_SLOT
+    jr z, .popUnresolved
+    ld c, a
+    ld b, 0
+    ld hl, JohtoActiveGSCMusic
+    add hl, bc
+    ld a, [hl]
+    pop bc
+    ret
 .popUnresolved
-	pop bc
+    pop bc
 .unresolved
-	xor a
-	ret
+    xor a
+    ret
 
 JohtoActiveGSCMusic::
 	; Slot order from data/johto_stable_id_slots.asm, NOT stable ID order.
@@ -1201,10 +1222,12 @@ JohtoActiveGSCMusic::
 	db MUSIC_GBP_GSC_ROUTE30         ; slot 4: ID 4 Route31 (Gold MUSIC_ROUTE_30)
 	db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot 5: ID125 GuideGentsHouse
 	db MUSIC_GBP_GSC_VIOLET_CITY     ; slot 6: ID 5 VioletCity
-	db 0                             ; slot 7: ID 6 gate, source-dependent
+	db MUSIC_GBP_GSC_ROUTE30         ; slot 7: ID6 Violet Gate fallback only
 	db MUSIC_GBP_GSC_ROUTE30         ; slot 8: ID 7 Route32, Gold MUSIC_ROUTE_30
-	db MUSIC_GBP_GSC_ROUTE30         ; slot 9: ID102 South Gate, Route32 theme
+	db MUSIC_GBP_GSC_ROUTE30         ; slot 9: ID102 South Gate fallback only
     db MUSIC_GBP_GSC_ROUTE30         ; slot10: ID20 Ruins outside (temporary scene)
+    db MUSIC_GBP_GSC_ROUTE36         ; slot11: ID19 North Gate fallback only
+    db MUSIC_GBP_GSC_ROUTE36         ; slot12: ID16 Route36
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

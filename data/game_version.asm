@@ -7,6 +7,8 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
+	; MUS-259: inherit active Gold gate music without restart; audit music and cycling.
+	; FIX-258: register new neutral gate name-sign and enforce full active-map name audit.
 	; FIX-256: restore Gold coordinate/direction ledges and reject unsafe Ruins landing.
 	; FIX-255: preserve SELECT-only input without opening the Start menu.
 	; MAP-254: open Gold Ruins of Alph south exterior via Route32 EastWestGate.
@@ -15,5 +17,5 @@ ELSE
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "FIX-5.62.256@"
+	db "MUS-5.62.259@"
 ENDC

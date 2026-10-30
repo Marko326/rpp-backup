@@ -849,13 +849,17 @@ JohtoPilotTownMapEntries::
     ; Slot 10: Ruins of Alph outside, Gold landmark 8.
     db 92, 84
     dw JohtoPilotRuinsOfAlphName
+    db 76, 72 ; north gate Route36 name/landmark
+    dw JohtoPilotRoute36Name
+    db 76, 72 ; Route36 Gold landmark index 19
+    dw JohtoPilotRoute36Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -967,3 +971,4 @@ JohtoPilotVioletName:: db "Violet City@"
 ; floating Gold landmark table used by Continue/Save.
 JohtoPilotRuinsOfAlphName: db "Ruins_Of Alph@"
 JohtoPilotRoute32Name:: db "Route 32@"
+JohtoPilotRoute36Name:: db "Route 36@"

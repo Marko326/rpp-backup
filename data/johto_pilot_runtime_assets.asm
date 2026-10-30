@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 11
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 13
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -120,6 +120,14 @@ JohtoPilotAlphOutsideRuntimeDescriptor::
     db JOHTO_RUINS_OF_ALPH_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_RUINS_OF_ALPH_WIDTH, JOHTO_RUINS_OF_ALPH_HEIGHT
     dw JohtoPilotAlphOutsideRuntimeBlocks
     db BANK(JohtoPilotAlphOutsideRuntimeBlocks)
+JohtoPilotAlphNorthGateRuntimeDescriptor::
+    db JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, JOHTO_GATE, JOHTO_ROUTE36_RUINS_GATE_WIDTH, JOHTO_ROUTE36_RUINS_GATE_HEIGHT
+    dw JohtoPilotAlphNorthGateRuntimeBlocks
+    db BANK(JohtoPilotAlphNorthGateRuntimeBlocks)
+JohtoPilotRoute36RuntimeDescriptor::
+    db JOHTO_ROUTE_36_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_36_WIDTH, JOHTO_ROUTE_36_HEIGHT
+    dw JohtoPilotRoute36RuntimeBlocks
+    db BANK(JohtoPilotRoute36RuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -150,9 +158,19 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr z, .alphGate
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jr z, .alphOutside
+    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+    jr z, .alphNorthGate
+    cp JOHTO_ROUTE_36_LOCAL_ID
+    jr z, .route36
     ld d, 0
     ld hl, 0
     ret
+.alphNorthGate
+    ld hl, JohtoPilotAlphNorthGateRuntimeDescriptor
+    jr .valid
+.route36
+    ld hl, JohtoPilotRoute36RuntimeDescriptor
+    jr .valid
 .alphGate
     ld hl, JohtoPilotAlphSouthGateRuntimeDescriptor
     jr .valid

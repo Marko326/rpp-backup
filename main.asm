@@ -3396,6 +3396,9 @@ INCLUDE "data/johto_gate_runtime.asm"
 SECTION "Johto Ruins South Runtime", ROMX, BANK[$49]
 INCLUDE "data/johto_ruins_south_runtime.asm"
 
+SECTION "Johto Ruins North Runtime", ROMX, BANK[$4A]
+INCLUDE "data/johto_ruins_north_runtime.asm"
+
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"
 

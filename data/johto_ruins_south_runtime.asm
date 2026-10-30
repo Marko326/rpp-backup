@@ -52,8 +52,9 @@ JohtoPilotAlphOutsideMapScript::
 JohtoPilotAlphOutsideTextPointers:
 JohtoPilotAlphOutsideRuntimeObjects::
     db $05 ; Gold outdoor border
-    db 2 ; only Gold warp ordinals 9,10 enabled; other nine intentionally absent
+    db 3 ; South pair plus Gold north door #9; interior/cave warps still closed
     db 20, 13, 0, JOHTO_REGISTERED_WARP_SELECTOR ; rightward west gate exit
     db 21, 13, 1, JOHTO_REGISTERED_WARP_SELECTOR
+    db 5, 7, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold north DOOR (x7,y5) UP
     db 0 ; no signs yet
     db 0 ; no NPC/hidden events

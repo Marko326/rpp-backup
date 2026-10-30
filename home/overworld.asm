@@ -492,6 +492,8 @@ CheckWarpsNoCollisionLoop::
     callab JohtoPilotGateDoorWarpMatched
     ld a, e
     pop de
+    cp 2
+    jr z, .northGoldStepOnDoor
     and a
     jr z, .noRegisteredGateDoor
     pop bc
@@ -500,6 +502,10 @@ CheckWarpsNoCollisionLoop::
     ; WARP_CARPET_LEFT/RIGHT is safe, and must arm wd736 bit2 only.
     ; Transfer later on an outward collision via ExtraWarpCheck.
     jp CheckWarpsNoCollisionRetry2
+.northGoldStepOnDoor
+    pop bc
+    pop hl
+    jp WarpFound1
 .noRegisteredGateDoor
 	; P6-INDOOR-006: match the working RPP reference branch. After
 	; a real warp ENTRY coordinate has matched, this exact Gold DOOR
@@ -1104,10 +1110,9 @@ LoadPlayerSpriteGraphics::
 	jp LoadWalkingPlayerSpriteGraphics
 
 IsBikeRidingAllowed::
-; GATE-252: Gold allows biking in gate environments, but the Red++
-; legacy tileset list does not include the Johto gate art. Permit ONLY
-; the already-active Route31/Violet gate by its region + stable identity.
-; Do not allow Johto houses or Kanto indoor maps as a side effect.
+; Gold GATE environments allow cycling; check each active gate's stable
+; identity (including vertical north gate), not its shared gate tileset.
+; Gold INDOOR gates and Kanto/house rules stay unchanged.
 ; All callers (item, shortcut, warp graphics and summary restore) share
 ; this one predicate; carry = allowed.
 	ld a, [wCurMap]
@@ -1120,6 +1125,8 @@ IsBikeRidingAllowed::
 	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
 	jr z, .allowed
 	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
+	jr z, .allowed
+	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jr z, .allowed
 .legacyBike
 	ld a, [wCurMap]
