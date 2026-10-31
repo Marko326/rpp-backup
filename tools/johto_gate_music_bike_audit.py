@@ -174,19 +174,32 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
         # Guard *which* two neighbours each gate accepts, not just the global
         # union. Swapping a Ruins source into the Violet gate must fail.
         def gate_branches(code, variant):
-            end = '.sourceValid' if variant == 'rby' else '.gateDefault'
-            return {
-                'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID':
-                    code.split('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID',1)[1].split('\n.southGate\n',1)[0],
-                'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID':
-                    code.split('\n.southGate\n',1)[1].split('\n.violetGate\n',1)[0],
-                'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID':
-                    code.split('\n.violetGate\n',1)[1].split('\n.southForestGate\n',1)[0],
-                'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID':
-                    code.split('\n.southForestGate\n',1)[1].split('\n.northForestGate\n',1)[0],
-                'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':
-                    code.split('\n.northForestGate\n',1)[1].split('\n'+end+'\n',1)[0],
+            # Each gate-specific branch ends at the next local selector label.
+            # Parse labels, not fixed order: newly activated neutral gates must
+            # have EXACT two Gold neighbour comparisons, with no fallthrough.
+            rows = {}
+            label_for = {
+                'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID': None,  # default branch
+                'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID': '.southGate',
+                'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID': '.violetGate',
+                'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID': '.route35GoldenrodGate',
+                'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID': '.southForestGate',
+                'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': '.northForestGate',
+                'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID': '.southParkGate',
+                'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID': '.eastParkGate',
             }
+            labels=list(re.finditer(r'(?m)^([.]\w+)\s*$', code))
+            for gate_id, label in label_for.items():
+                if label is None:
+                    initial = code.split('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID', 1)[1]
+                    rows[gate_id] = initial.split('\n.southGate\n', 1)[0]
+                    continue
+                match=next((m for m in labels if m.group(1)==label), None)
+                if match is None:
+                    raise ValueError('gate selector missing '+label)
+                later=next((m.start() for m in labels if m.start()>match.start()), len(code))
+                rows[gate_id]=code[match.end():later]
+            return rows
         for variant,code in [('rby',loader),('gsc',gsc)]:
             pieces=gate_branches(code,variant)
             for p in policies:

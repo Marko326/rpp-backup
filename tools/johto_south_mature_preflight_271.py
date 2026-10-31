@@ -14,7 +14,7 @@ CLOSED = {
     'JOHTO_AZALEA_TOWN_LOCAL_ID': {(9,5),(21,5),(15,9),(21,13),(10,15)},
     'JOHTO_ROUTE_34_LOCAL_ID': {(11,14),(11,15),(13,15),(13,41)},
     'JOHTO_GOLDENROD_CITY_LOCAL_ID': {
-        (19,1),(9,5),(33,5),(15,7),(24,7),(33,9),(9,13),(5,15),
+        (9,5),(33,5),(15,7),(24,7),(33,9),(9,13),(5,15),
         (14,21),(31,21),(5,25),(15,27),(24,27),(11,29),(29,29)},
 }
 FOREST_SPECIAL = {(1,5),(3,42),(3,43)}
@@ -44,8 +44,8 @@ def audit(root=ROOT):
         parsed = {}
         for label, x, y in entries:
             parsed.setdefault(label,set()).add((int(x),int(y)))
-        if parsed != CLOSED or len(entries) != 24:
-            problems.append('mature blocked-door list must match 24 exact closed interiors')
+        if parsed != CLOSED or len(entries) != 23:
+            problems.append('mature blocked-door list must match 23 remaining closed interiors; activated Route35 park entrance must stay open')
         # FIX-281: cross-check the runtime black list against the exact
         # registered exterior Warp targets, not just the old mask. These
         # coordinates are FLOOR in Gold and may be crossed sideways on foot
@@ -93,4 +93,4 @@ if __name__ == '__main__':
     if problems:
         print('FAIL:', *problems, sep='\n- ')
         raise SystemExit(1)
-    print('PASS: borders, jump speed, 24 closed interiors, two live Route34 gate carpets, forest directional rules')
+    print('PASS: borders, jump speed, 23 closed doors; Park entrance opened, two live Route34 gate carpets, forest directional rules')

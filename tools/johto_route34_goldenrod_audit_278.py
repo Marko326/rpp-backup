@@ -22,7 +22,7 @@ SIZES = {'Route34': (20, 54), 'GoldenrodCity': (40, 36)}
 # FIX-281: (13,37)/(14,37) are LIVE two-lane gate carpets; not closed doors.
 ROUTE34_CLOSED_DOORS = {(11, 14), (11, 15), (13, 15), (13, 41)}
 GOLDENROD_CLOSED_DOORS = {
-    (19, 1), (9, 5), (33, 5), (15, 7), (24, 7), (33, 9),
+    (9, 5), (33, 5), (15, 7), (24, 7), (33, 9),
     (9, 13), (5, 15), (14, 21), (31, 21), (5, 25), (15, 27),
     (24, 27), (11, 29), (29, 29),
 }
@@ -84,7 +84,7 @@ def audit(project: Path, gold_root: Path | None = None) -> dict:
                       original == (gold/f'maps/{name}.blk').read_bytes())
             roles[name] = terrain
         check('active_stable_ids_14_15',
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 21' in constants and
+              int(re.search(r'DEF NUM_JOHTO_ACTIVE_MAPS EQU (\d+)', constants).group(1)) >= 23 and
               'JOHTO_ROUTE_34_LOCAL_ID' in geo and 'JOHTO_GOLDENROD_CITY_LOCAL_ID' in edge)
         check('route34_city_source_connections', all(token in connections for token in (
             'db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID',
@@ -118,14 +118,16 @@ def audit(project: Path, gold_root: Path | None = None) -> dict:
         )) and 'cp JOHTO_ROUTE_34_LOCAL_ID' in gate)
         route_edge = geo.split('JohtoSouthIsKnownClosedEdge::', 1)[1].split('\n.goldenrod\n', 1)[0]
         goldenrod_edge = geo.split('\n.goldenrod\n', 1)[1].split('\n.smallGate\n', 1)[0]
+        # CLEAN-290: branch may be JR or JP depending on source distance;
+        # do not reject user-side valid JP repairs. Preserve four-lane checks.
         # FIX-279: older TOOL-278 checked for only two lanes and silently
         # certified the precise phone-reported air-wall as correct.
         check('route34_north_gold_four_lanes', bool(re.search(
             r'(?s)\.route34\s+ld b, 20\s+ld c, 54.*?cp PLAYER_DIR_UP.*?'
-            r'cp 8\s+jp c, \.closed\s+cp 12[^\n]*\s+ret c\s+jr \.closed', route_edge)))
+            r'cp 8\s+jp c, \.closed\s+cp 12[^\n]*\s+ret c\s+(?:jp|jr) \.closed', route_edge)))
         check('goldenrod_south_gold_four_lanes', bool(re.search(
             r'(?s)ld b, 40\s+ld c, 36.*?cp PLAYER_DIR_DOWN.*?cp 35\s+ret nz.*?'
-            r'cp 18\s+jp c, \.closed\s+cp 22[^\n]*\s+ret c\s+jr \.closed', goldenrod_edge)))
+            r'cp 18\s+jp c, \.closed\s+cp 22[^\n]*\s+ret c\s+(?:jp|jr) \.closed', goldenrod_edge)))
         check('route34_gold_tree_border', bool(re.search(
             r'JohtoSouthRoute34RuntimeObjects::\s+db \$05\b', src)) and (
             source_gold is None or
@@ -136,7 +138,7 @@ def audit(project: Path, gold_root: Path | None = None) -> dict:
             r'(?s)\.done\s+; FIX-279:.*?callab PatchJohtoSouthBordersAfterBlockLoad\s+ret', blockmap)))
         dispatcher = mature.split('PatchJohtoSouthBordersAfterBlockLoad::', 1)[1].split('PatchJohtoGoldenrodNorthBorder::', 1)[0] if 'PatchJohtoSouthBordersAfterBlockLoad::' in mature else ''
         check('preserve_azalea_then_north_preview_same_romx_bank',
-              bool(re.search(r'call PatchJohtoAzaleaWestGateBorder\s+jp PatchJohtoGoldenrodNorthBorder', dispatcher)))
+              bool(re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder', dispatcher)))
         north = mature.split('PatchJohtoGoldenrodNorthBorder::', 1)[1] if 'PatchJohtoGoldenrodNorthBorder::' in mature else ''
         expected_rows = [bytes.fromhex(x) for x in (
             '05 05 58 59 01 78 44 05 05 05',

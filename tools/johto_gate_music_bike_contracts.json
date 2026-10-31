@@ -57,10 +57,40 @@
         "JOHTO_ILEX_FOREST_LOCAL_ID",
         "JOHTO_ROUTE_34_LOCAL_ID"
       ]
+    },
+    {
+      "id": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+      "gold_map": "Route35GoldenrodGate",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+        "JOHTO_ROUTE_35_LOCAL_ID"
+      ]
+    },
+    {
+      "id": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+      "gold_map": "Route35NationalParkGate",
+      "gold_environment": "INDOOR",
+      "bike_allowed": false,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_ROUTE_35_LOCAL_ID",
+        "JOHTO_NATIONAL_PARK_LOCAL_ID"
+      ]
+    },
+    {
+      "id": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+      "gold_map": "Route36NationalParkGate",
+      "gold_environment": "INDOOR",
+      "bike_allowed": false,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_ROUTE_36_LOCAL_ID",
+        "JOHTO_NATIONAL_PARK_LOCAL_ID"
+      ]
     }
   ],
-  "negative_gold_gates": [
-    "Route35NationalParkGate",
-    "Route36NationalParkGate"
-  ]
+  "negative_gold_gates": []
 }

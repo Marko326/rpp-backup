@@ -45,7 +45,7 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertLessEqual(max((ROOT/'maps/johto_pilot/Route32.runtime.blk').read_bytes()), 140)
 
     def test_stable_id7_is_slot8_and_south_ruins_are_slots9_10(self):
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 21', read('constants/region_map_constants.asm'))
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 26', read('constants/region_map_constants.asm'))
         first = next(row for row in segment(self.stable, 'JohtoStableIDToActiveSlot::', 'JohtoStableIDToActiveSlotEnd::').splitlines() if '$00-$0f' in row)
         cells = [x.strip() for x in first.split(';')[0].strip()[3:].split(',')]
         self.assertEqual(cells[5:11], ['6', '7', '8', '13', '14', '15'])
@@ -67,7 +67,7 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertIn('JOHTO_VIOLET_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID', self.registry)
         self.assertIn('JOHTO_ROUTE_32_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID', self.registry)
         violet = segment(self.headers, 'JohtoPilotVioletRuntimeHeader::', 'JohtoPilotVioletRuntimeHeaderEnd::')
-        self.assertIn('db SOUTH | EAST', violet)
+        self.assertIn('db SOUTH | WEST | EAST', violet)
         self.assertIn('dw JohtoPilotRoute32RuntimeBlocks', violet)
         self.assertIn('dw JohtoPilotRoute31RuntimeBlocks', violet)
         self.assertIn('dw wOverworldMap + (JOHTO_VIOLET_CITY_HEIGHT + 3) * (JOHTO_VIOLET_CITY_WIDTH + 6) + 3', violet)

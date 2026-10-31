@@ -37,7 +37,7 @@ def read_active_maps(root: Path) -> list[dict]:
     for symbol, value in re.findall(r'^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\$[\da-fA-F]+|\d+)\b', defs, re.M):
         id_defs[symbol] = int(value[1:], 16) if value.startswith('$') else int(value)
     labels = dict(re.findall(
-        r'(?m)^(\w+)::\s*\n\s*INCBIN\s+"(maps/johto_pilot/[^"\n]+)"', src))
+        r'(?m)^(\w+)::\s*INCBIN\s+"(maps/johto_pilot/[^"\n]+)"', src))
     section = src.split('JohtoPilotSourceRecords::', 1)[-1].split('JohtoPilotSourceRecordsEnd::', 1)[0]
     rows = re.findall(r'(?m)^\s*db\s+MAP_REGION_JOHTO\s*,\s*(JOHTO_\w+_LOCAL_ID)\s*,[^\n]*\n\s*dw\s+(\w+)', section)
     if len(rows) != count:
@@ -105,6 +105,15 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
     if south_check['status'] != 'PASS_STATIC_ONLY':
         raise ValueError('south batch Surf missing/corrupt: ' + '; '.join(south_check['errors']))
     registered.update(('IlexForest', 'Route34', 'GoldenrodCity'))
+    # MAP-283: independently require Route35 to have a registered Gold role
+    # array and actual ROMX water probe before classifying its Surf as live.
+    geo=(root/'engine/johto_south_geometry.asm').read_text()
+    fld=(root/'engine/johto_violet_field_skills.asm').read_text()
+    if ('JohtoNorthRoute35Roles:: INCBIN "maps/johto_pilot/Route35.roles.bin"' in geo and
+        'cp JOHTO_ROUTE_35_LOCAL_ID' in geo and
+        'cp JOHTO_ROUTE_35_LOCAL_ID' in fld and
+        (root/'maps/johto_pilot/Route35.roles.bin').is_file()):
+        registered.add('Route35')
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

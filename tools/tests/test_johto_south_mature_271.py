@@ -21,7 +21,8 @@ class Mature271(unittest.TestCase):
                      'maps/johto_pilot/AzaleaTown.roles.bin',
                      'maps/johto_pilot/Route34.roles.bin',
                      'maps/johto_pilot/GoldenrodCity.roles.bin',
-                     'maps/johto_pilot/IlexForest.roles.bin')
+                     'maps/johto_pilot/IlexForest.roles.bin',
+                     'maps/johto_pilot/Route35.roles.bin')
             for path in paths:
                 (temp/path).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT/path, temp/path)
@@ -47,7 +48,8 @@ class Mature271(unittest.TestCase):
                      'maps/johto_pilot/AzaleaTown.roles.bin',
                      'maps/johto_pilot/Route34.roles.bin',
                      'maps/johto_pilot/GoldenrodCity.roles.bin',
-                     'maps/johto_pilot/IlexForest.roles.bin')
+                     'maps/johto_pilot/IlexForest.roles.bin',
+                     'maps/johto_pilot/Route35.roles.bin')
             for path in paths:
                 (temp/path).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT/path, temp/path)
@@ -70,16 +72,17 @@ class Mature271(unittest.TestCase):
                      'home/overworld.asm', 'maps/johto_pilot/AzaleaTown.roles.bin',
                      'maps/johto_pilot/Route34.roles.bin',
                      'maps/johto_pilot/GoldenrodCity.roles.bin',
-                     'maps/johto_pilot/IlexForest.roles.bin')
+                     'maps/johto_pilot/IlexForest.roles.bin',
+                     'maps/johto_pilot/Route35.roles.bin')
             for path in paths:
                 (temp/path).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT/path, temp/path)
             self.assertEqual([], audit(temp))
             p = temp/'engine/johto_south_geometry.asm'
             original = p.read_text()
-            p.write_text(original.replace('db JOHTO_GOLDENROD_CITY_LOCAL_ID, 19, 1',
-                                          'db JOHTO_GOLDENROD_CITY_LOCAL_ID, 19, 2',1))
-            self.assertTrue(any('24 exact' in x for x in audit(temp)))
+            p.write_text(original.replace('db JOHTO_GOLDENROD_CITY_LOCAL_ID, 9, 5',
+                                          'db JOHTO_GOLDENROD_CITY_LOCAL_ID, 9, 6',1))
+            self.assertTrue(any('23 remaining closed' in x for x in audit(temp)))
             p.write_text(original)
             p = temp/'home/overworld.asm'
             original = p.read_text()

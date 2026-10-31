@@ -43,8 +43,8 @@ class TestGateMusicContinuity282(unittest.TestCase):
     ; MUS-282: the city side must use its own music profile.  Falling
     ; through into .southForestGate silently reverted to the gate default.
     jp .sourceValid
-.southForestGate''', '''    ret nz
-.southForestGate''', 1)
+.route35GoldenrodGate''', '''    ret nz
+.route35GoldenrodGate''', 1)
         self.assertNotEqual(patched,self.runtime)
         self.expect_fail('rby_resolved_source_JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID_JOHTO_VIOLET_CITY_LOCAL_ID',
                          **{'engine/johto_pilot_runtime.asm':patched})

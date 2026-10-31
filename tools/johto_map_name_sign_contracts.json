@@ -121,6 +121,33 @@
       "role": "named",
       "name": "Goldenrod City",
       "town_map_name": "Goldenrod City"
+    },
+    {
+      "id": "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 35"
+    },
+    {
+      "id": "JOHTO_ROUTE_35_LOCAL_ID",
+      "role": "named",
+      "name": "Route 35",
+      "town_map_name": "Route 35"
+    },
+    {
+      "id": "JOHTO_NATIONAL_PARK_LOCAL_ID",
+      "role": "named",
+      "name": "National Park",
+      "town_map_name": "National Park"
+    },
+    {
+      "id": "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 35"
+    },
+    {
+      "id": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 36"
     }
   ]
 }

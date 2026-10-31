@@ -63,7 +63,7 @@ def audit(root:Path)->list[str]:
     block=home.split('LoadTileBlockMap::',1)[1].split('LoadNorthSouthConnectionsTileMap::',1)[0]
     if not re.search(r'\.done\s+; FIX-279:(?s:.*?)callab PatchJohtoSouthBordersAfterBlockLoad\s+ret',block):
         errors.append('Azalea outdoor west extension is not applied AFTER blockmap load')
-    if not re.search(r'PatchJohtoSouthBordersAfterBlockLoad::\s+call PatchJohtoAzaleaWestGateBorder\s+jp PatchJohtoGoldenrodNorthBorder', mature):
+    if not re.search(r'PatchJohtoSouthBordersAfterBlockLoad::\s+call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder', mature):
         errors.append('Azalea west border handler lost from common post-blockmap dispatcher')
     if 'jp nz,.noCollision' not in home:
         errors.append('owner-tested JP reverted')

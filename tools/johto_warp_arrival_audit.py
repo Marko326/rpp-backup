@@ -113,10 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 5 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 43 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 8 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 65 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records three house, three old gates, two south gates and south route arcs')
+           'MUS contract records 3 house arcs, 8 gates and all activated north/south arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -232,10 +232,63 @@ def audit(project: Path, gold: Path) -> dict:
             verified_south = False
     _check(checks, errors, 'south_batch_exact_gold_warps', verified_south,
            '15 source ordinal, target ordinal, XY and original Gold role pairs must match')
+    # MAP-283: require exact registered Gold routes, in on-ROM append order.
+    north_gates = [g for g in contract['gatehouse_activation_policy']['active_gatehouse_contracts']
+                   if g.get('stable_id') == 18]
+    ids_north = {15: 'JOHTO_GOLDENROD_CITY_LOCAL_ID',
+                 18: 'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID',
+                 17: 'JOHTO_ROUTE_35_LOCAL_ID'}
+    north_verified = len(north_gates) == 1 and len(north_gates[0].get('warp_contracts', [])) == 7
+    if north_verified:
+        north_entries = north_gates[0]['warp_contracts']
+        north_verified = [(r['source_stable_id'], r['source_warp_ordinal']) for r in north_entries] == [
+            (15, 0), (18, 0), (18, 1), (18, 2), (18, 3), (17, 0), (17, 1)]
+        if north_verified:
+            for row in north_entries:
+                src, dst = row['source_stable_id'], row['target_stable_id']
+                if src not in ids_north or dst not in ids_north:
+                    north_verified = False
+                    break
+                try:
+                    native = _gold_warp_events(gold, row['source_gold_map'])[
+                        row['source_gold_warp_number_one_based'] - 1]
+                    source_role = collision_index.role_at(row['source_gold_map'], *row['source_xy'])
+                    if ([native['x'], native['y']] != row['source_xy'] or
+                        native['destination'].replace('_', '') != row['target_gold_map'].upper().replace('_','') or
+                        source_role != row['source_gold_collision_role']):
+                        north_verified = False
+                except (IndexError, ValueError, KeyError):
+                    north_verified = False
+                expected_routes.append(('MAP_REGION_JOHTO', ids_north[src],
+                    str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', ids_north[dst]))
+    _check(checks, errors, 'route35_gold_and_registered_warps', north_verified,
+           'Route35 gate requires 7 contract arcs, exact source Gold warp and collision roles')
+    # MAP-286: exact 15 newly activated Park/source arcs in *append* order.
+    # Explicit IDs and ordinals prevent changing the existing Route36 Ruins
+    # slots0/1 when Park Route36 slots2/3 become active.
+    park_routes = (
+        ('JOHTO_ROUTE_35_LOCAL_ID', 2, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_LOCAL_ID', 2, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_LOCAL_ID', 3, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_NATIONAL_PARK_LOCAL_ID', 0, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_NATIONAL_PARK_LOCAL_ID', 1, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_NATIONAL_PARK_LOCAL_ID', 2, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_NATIONAL_PARK_LOCAL_ID', 3, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID'),
+        ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 0, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+        ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 1, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+        ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 2, 'JOHTO_ROUTE_35_LOCAL_ID'),
+        ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 3, 'JOHTO_ROUTE_35_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 0, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 1, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 2, 'JOHTO_ROUTE_36_LOCAL_ID'),
+        ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 3, 'JOHTO_ROUTE_36_LOCAL_ID'),
+    )
+    expected_routes.extend(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target)
+                           for source, ordinal, target in park_routes)
     try:
         rows = _route_rows(runtime)
         _check(checks, errors, 'registered_routes', rows == expected_routes,
-               f'expected three house and eight contracted gate routes; actual={rows}')
+               f'expected exact activated house and gate routes; actual={rows}')
     except ValueError as exc:
         _check(checks, errors, 'registered_routes', False, str(exc))
 

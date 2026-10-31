@@ -222,6 +222,13 @@ def audit(root: Path, gold_root: Path) -> dict:
         raise ValueError('South spatial Surf audit: ' + '; '.join(spatial['errors']))
     for name in ('IlexForest', 'Route34', 'GoldenrodCity'):
         surf_maps[name] = {'gold_map': name, 'dispatch': 'JohtoSouthGoldWaterProbe'}
+    # MAP-283: Route35 is scanned with the same Gold WATER predicate as
+    # the mature southern maps; a missing active-map dispatch is an error.
+    spatial_dispatch = (root / 'engine/johto_south_geometry.asm').read_text(encoding='utf8')
+    if ('cp JOHTO_ROUTE_35_LOCAL_ID' in spatial_dispatch and
+        'JohtoNorthRoute35Roles:: INCBIN "maps/johto_pilot/Route35.roles.bin"' in spatial_dispatch and
+        any(r['map'] == 'Route35' for r in active)):
+        surf_maps['Route35'] = {'gold_map': 'Route35', 'dispatch': 'JohtoSouthGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []

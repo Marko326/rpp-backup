@@ -69,6 +69,24 @@ class Route34Goldenrod278(unittest.TestCase):
         self.assertFalse(result['rom_built'])
         self.assertFalse(result['phone_accepted'])
 
+    def test_valid_jp_and_jr_closure_variants_both_keep_four_lanes(self):
+        # The user's device uses longer JP jumps where the earlier assistant
+        # candidate used JR. Both are valid when the edge contract is intact.
+        p = self.root / 'engine/johto_south_geometry.asm'
+        raw = p.read_bytes()
+        first = b'cp 12 ; FIX-279: Gold has four contiguous north seam columns 8..11\n    ret c\n    jp .closed'
+        second = b'cp 22 ; FIX-279:'
+        self.assertIn(first, raw)
+        self.assertIn(second, raw)
+        changed = raw.replace(first, first.replace(b'jp .closed', b'jr .closed'), 1)
+        pos = changed.index(second)
+        target = b'    ret c\n    jr .closed'
+        k = changed.find(target, pos)
+        self.assertNotEqual(-1, k)
+        changed = changed[:k] + target.replace(b'jr .closed', b'jp .closed') + changed[k + len(target):]
+        p.write_bytes(changed)
+        self.assertEqual('PASS_STATIC_ONLY', self.result()['status'])
+
     def test_gold_connection_offset_regression(self):
         self.mutate('gold/data/maps/attributes.asm', b'GOLDENROD_CITY, -5',
                     b'GOLDENROD_CITY, -4', 'gold_reciprocal_seam_offsets')
@@ -117,8 +135,8 @@ class Route34Goldenrod278(unittest.TestCase):
 
     def test_north_preview_must_not_replace_azalea_fix(self):
         self.mutate('engine/johto_ilex_mature_runtime_275.asm',
-                    b'call PatchJohtoAzaleaWestGateBorder\n    jp PatchJohtoGoldenrodNorthBorder',
-                    b'call PatchJohtoGoldenrodNorthBorder\n    jp PatchJohtoGoldenrodNorthBorder',
+                    b'call PatchJohtoAzaleaWestGateBorder\n    call PatchJohtoGoldenrodNorthBorder\n    jp PatchJohtoRoute35SouthBorder',
+                    b'call PatchJohtoGoldenrodNorthBorder\n    call PatchJohtoGoldenrodNorthBorder\n    jp PatchJohtoRoute35SouthBorder',
                     'preserve_azalea_then_north_preview_same_romx_bank')
 
     def test_route35_stays_closed_not_a_real_map_connection(self):

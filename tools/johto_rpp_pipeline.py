@@ -119,26 +119,88 @@ def make_map_onboarding(gold: Path, map_name: str, art: dict, geometry: dict) ->
             'warning': 'REVIEW_REQUIRED means a check is needed, never that the feature is enabled. Do not auto-edit field move allow-lists.'}
 
 
-def review_rpp_integration(rpp: Path, rpp_map: str, onboarding: dict) -> dict:
-    """Review a candidate against the CURRENT stable-ID pilot registration.
+# Explicit Gold/header/stable-ID contract in CURRENT slot order. The source-of-
+# truth checks below fail if any runtime row, stable slot or active count drifts;
+# do not silently treat a future new map as integrated without reviewing it.
+RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
+    ('JohtoPilotNewBarkRuntimeHeader', 'NewBarkTown', 0),
+    ('JohtoPilotRoute29RuntimeHeader', 'Route29', 1),
+    ('JohtoPilotCherrygroveRuntimeHeader', 'CherrygroveCity', 2),
+    ('JohtoPilotRoute30RuntimeHeader', 'Route30', 3),
+    ('JohtoPilotRoute31RuntimeHeader', 'Route31', 4),
+    ('JohtoGuideGentsHouseRuntimeHeader', 'GuideGentsHouse', 125),
+    ('JohtoPilotVioletRuntimeHeader', 'VioletCity', 5),
+    ('JohtoPilotVioletGateRuntimeHeader', 'Route31VioletGate', 6),
+    ('JohtoPilotRoute32RuntimeHeader', 'Route32', 7),
+    ('JohtoPilotAlphSouthGateRuntimeHeader', 'Route32RuinsOfAlphGate', 102),
+    ('JohtoPilotAlphOutsideRuntimeHeader', 'RuinsOfAlphOutside', 20),
+    ('JohtoPilotAlphNorthGateRuntimeHeader', 'Route36RuinsOfAlphGate', 19),
+    ('JohtoPilotRoute36RuntimeHeader', 'Route36', 16),
+    ('JohtoUnionCave1FRuntimeHeader', 'UnionCave1F', 8),
+    ('JohtoRoute33RuntimeHeader', 'Route33', 9),
+    ('JohtoSouthAzaleaTownRuntimeHeader', 'AzaleaTown', 10),
+    ('JohtoSouthIlexForestAzaleaGateRuntimeHeader', 'IlexForestAzaleaGate', 11),
+    ('JohtoSouthIlexForestRuntimeHeader', 'IlexForest', 12),
+    ('JohtoSouthRoute34IlexForestGateRuntimeHeader', 'Route34IlexForestGate', 13),
+    ('JohtoSouthRoute34RuntimeHeader', 'Route34', 14),
+    ('JohtoSouthGoldenrodCityRuntimeHeader', 'GoldenrodCity', 15),
+    ('JohtoNorthRoute35GoldenrodGateRuntimeHeader', 'Route35GoldenrodGate', 18),
+    ('JohtoNorthRoute35RuntimeHeader', 'Route35', 17),
+    ('JohtoParkRuntimeHeader', 'NationalPark', 103),
+    ('JohtoParkSouthGateRuntimeHeader', 'Route35NationalParkGate', 104),
+    ('JohtoParkEastGateRuntimeHeader', 'Route36NationalParkGate', 105),
+)
 
-    The NPC-5.62.243 toolchain expected data/mapHeaders + johto_native_maps.json;
-    the current project instead uses johto_pilot_map_headers.asm and compact
-    active slots. This adapter intentionally accepts only current active labels.
-    It is static evidence, never gameplay approval.
-    """
+
+def current_rpp_active_map_contract(rpp: Path):
+    """Prove the active map names match CURRENT real table and slot registration."""
+    root = Path(rpp)
+    raw=(root/'data/johto_header_descriptors.asm').read_text()
+    body=raw.split('JohtoHeaderDescriptors::',1)[1].split('JohtoHeaderDescriptorsEnd::',1)[0]
+    headers=re.findall(r'^\s*dw\s+(\w+RuntimeHeader)\s*$',body,re.M)
+    expected=[row[0] for row in RPP_ACTIVE_GOLD_HEADER_CONTRACT]
+    if headers != expected:
+        raise ValueError('RPP active map header descriptors differ from reviewed Gold/header registry')
+    constants=(root/'constants/region_map_constants.asm').read_text()
+    count=re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (\d+)\b',constants)
+    if not count or int(count[1]) != len(headers):
+        raise ValueError('RPP active map count differs from actual descriptor rows')
+    aliases={k:int(v[1:],16) if v.startswith('$') else int(v) for k,v in re.findall(
+        r'(?m)^DEF (JOHTO_[A-Z0-9_]+) EQU (\$[A-Fa-f0-9]+|\d+)\b',constants)}
+    raw=(root/'data/johto_stable_id_slots.asm').read_text()
+    body=raw.split('JohtoStableIDToActiveSlot::',1)[1].split('JohtoStableIDToActiveSlotEnd::',1)[0]
+    slots=[]
+    for line in body.splitlines():
+        code=line.split(';',1)[0].strip()
+        if not code.startswith('db '):
+            continue
+        for item in code[3:].split(','):
+            token=item.strip()
+            if token == 'JOHTO_INVALID_ACTIVE_SLOT':
+                slots.append(255)
+            elif token in aliases:
+                slots.append(aliases[token])
+            elif token.isdigit():
+                slots.append(int(token))
+            else:
+                raise ValueError('Unrecognized active slot value: '+token)
+    if len(slots)!=256:
+        raise ValueError('RPP stable-ID slot table must have 256 entries')
+    for idx,(_header,_gold,stable) in enumerate(RPP_ACTIVE_GOLD_HEADER_CONTRACT):
+        if slots[stable]!=idx:
+            raise ValueError(f'RPP stable-ID slot mismatch for {_gold}: {stable} => {slots[stable]} expected {idx}')
+    if sorted(x for x in slots if x!=255) != list(range(len(headers))):
+        raise ValueError('RPP stable-ID slot table has missing, extra or duplicate active maps')
+    return {header:(gold,stable) for header,gold,stable in RPP_ACTIVE_GOLD_HEADER_CONTRACT}
+
+
+def review_rpp_integration(rpp: Path, rpp_map: str, onboarding: dict) -> dict:
+    """Review real active registrations; never auto-activate a staged map."""
     from johto_pilot_migration_audit import audit_project
 
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', rpp_map):
         raise ValueError('Invalid RPP map/header name')
-    active = {
-        'JohtoPilotNewBarkRuntimeHeader': ('NewBarkTown', 0),
-        'JohtoPilotRoute29RuntimeHeader': ('Route29', 1),
-        'JohtoPilotCherrygroveRuntimeHeader': ('CherrygroveCity', 2),
-        'JohtoPilotRoute30RuntimeHeader': ('Route30', 3),
-        'JohtoPilotRoute31RuntimeHeader': ('Route31', 4),
-        'JohtoGuideGentsHouseRuntimeHeader': ('GuideGentsHouse', 125),
-    }
+    active = current_rpp_active_map_contract(rpp)
     alias = {
         'JohtoNewBarkTown': 'JohtoPilotNewBarkRuntimeHeader',
         'JohtoRoute29': 'JohtoPilotRoute29RuntimeHeader',

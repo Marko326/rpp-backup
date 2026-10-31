@@ -73,8 +73,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 21', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 21',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 26', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 26',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -109,7 +109,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
     def test_warp_arrival_contract_passes_against_mus(self):
         report = audit_arrival(ROOT, self.gold)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(len(report['checks']), 18)
+        self.assertEqual(len(report['checks']), 19)  # .283 added Route35 Goldenrod gate
         self.assertFalse(report['runtime_verified'])
         self.assertFalse(report['phone_accepted'])
         self.assertEqual(report['gold_roles']['GuideGentsHouse(2,7)'], 'WARP_CARPET_DOWN')
@@ -162,7 +162,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
         self.assertEqual(report['gold_gate_inventory']['collision_roles'], {
             'WARP_CARPET_DOWN': 30, 'DOOR': 26,
             'WARP_CARPET_LEFT': 22, 'WARP_CARPET_RIGHT': 22})
-        self.assertEqual(report['current_active_gate_ids'], [6, 11, 13, 19, 102])
+        self.assertEqual(report['current_active_gate_ids'], [6, 11, 13, 18, 19, 102, 104, 105])
         self.assertFalse(report['phone_accepted'])
 
     def test_activating_gate_id_without_contract_fails(self):

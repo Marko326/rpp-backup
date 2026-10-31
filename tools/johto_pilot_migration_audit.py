@@ -62,6 +62,30 @@ try:
     from johto_fly_visit_audit_280 import audit as audit_fly_visit_280
 except ImportError:
     from tools.johto_fly_visit_audit_280 import audit as audit_fly_visit_280
+try:
+    from johto_route35_runtime_audit_283 import audit as audit_route35_runtime_283
+except ImportError:
+    from tools.johto_route35_runtime_audit_283 import audit as audit_route35_runtime_283
+try:
+    from johto_park_activation_audit_286 import audit as audit_park_286
+except ImportError:
+    from tools.johto_park_activation_audit_286 import audit as audit_park_286
+try:
+    from johto_map_script_bank_audit_287 import audit as audit_script_bank_287
+except ImportError:
+    from tools.johto_map_script_bank_audit_287 import audit as audit_script_bank_287
+try:
+    from johto_park_runtime_regression_audit_288 import audit as audit_park_288
+except ImportError:
+    from tools.johto_park_runtime_regression_audit_288 import audit as audit_park_288
+try:
+    from johto_route36_seam_audit_289 import audit as audit_route36_seam_289
+except ImportError:
+    from tools.johto_route36_seam_audit_289 import audit as audit_route36_seam_289
+try:
+    from johto_active_seam_coverage_gate_291 import audit as audit_seam_coverage_291
+except ImportError:
+    from tools.johto_active_seam_coverage_gate_291 import audit as audit_seam_coverage_291
 from typing import Iterable
 try:
     from johto_table_assert_preflight import inspect as inspect_johto_table_asserts
@@ -76,7 +100,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105]
 EXPECTED_CONNECTIONS = {
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
@@ -86,6 +110,8 @@ EXPECTED_CONNECTIONS = {
     (5, "SOUTH", 7), (7, "NORTH", 5),
     (9, "WEST", 10), (10, "EAST", 9),
     (14, "NORTH", 15), (15, "SOUTH", 14),
+    (17, "NORTH", 16), (16, "SOUTH", 17),
+    (16, "EAST", 5), (5, "WEST", 16),
 }
 MAP_LAYOUTS = {
     "NewBarkTown": (10, 9),
@@ -109,6 +135,11 @@ MAP_LAYOUTS = {
     "Route34IlexForestGate": (5, 4),
     "Route34": (10, 27),
     "GoldenrodCity": (20, 18),
+    "Route35GoldenrodGate": (5, 4),
+    "Route35": (10, 18),
+    "NationalPark": (20, 27),
+    "Route35NationalParkGate": (4, 4),
+    "Route36NationalParkGate": (5, 4),
 }
 GOLD_SOURCE_MAPS = {
     "NewBarkTown": "NewBarkTown",
@@ -132,6 +163,8 @@ GOLD_SOURCE_MAPS = {
     "Route34IlexForestGate": "Route34IlexForestGate",
     "Route34": "Route34",
     "GoldenrodCity": "GoldenrodCity",
+    "Route35GoldenrodGate": "Route35GoldenrodGate",
+    "Route35": "Route35",
 }
 
 
@@ -485,6 +518,59 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         if pair_report['errors'] and not pair_report['checks']:
             _check(errors, checks, 'johto_route34_goldenrod_source_loaded', False,
                    str(pair_report['errors']))
+    # MAP-283: a Gold staging pass is not enough: enforce actual Route35
+    # ROMX resources, source identity, directional carpets, Cut and Surf.
+    if (project/'data/johto_north_runtime_283.asm').is_file():
+        north = audit_route35_runtime_283(project, Path(gold_root) if gold_root else None)
+        for item in north['checks']:
+            _check(errors, checks, 'johto_route35_live_' + item['check'],
+                   item['status']=='PASS', item['detail'])
+        if north['errors'] and not north['checks']:
+            _check(errors, checks, 'johto_route35_live_source_available', False,
+                   str(north['errors']))
+    # MAP-286: Park + two gates require their Gold source, actual ROMX warp
+    # destination ordinals, collidable directional entrances, music and bike.
+    if (project/'data/johto_park_runtime_286.asm').is_file():
+        park_report=audit_park_286(project,Path(gold_root) if gold_root else None)
+        for item in park_report['checks']:
+            _check(errors,checks,'johto_park_live_'+item['check'],
+                   item['status']=='PASS','Park/Route35/Route36 gate executable-source contract')
+        if park_report['errors'] and not park_report['checks']:
+            _check(errors,checks,'johto_park_live_sources_loaded',False,str(park_report['errors']))
+    # FIX-288: exercise live collision edge gate, mature Park passability and
+    # tall-grass sprite-priority contracts (not just source-block equality).
+    park_regression = audit_park_288(project, Path(reference_root) if reference_root else None)
+    for item in park_regression['checks']:
+        _check(errors, checks, 'johto_park288_' + item['check'],
+               item['status']=='PASS', 'Park border, warp, mask and LONG_GRASS')
+    # FIX-289: actual Route35/Route36/Violet direct connection is not
+    # verified just because the Gold adjacency source lists it. The strips
+    # must be in the CURRENT map ROM bank, and collision exits exact.
+    r36_seams = audit_route36_seam_289(project, Path(gold_root) if gold_root else None,
+                                     Path(reference_root) if reference_root else None)
+    for item in r36_seams['checks']:
+        _check(errors, checks, 'johto_route36_seam289_' + item['check'],
+               item['status']=='PASS', 'Route36 south/east bank+edge+Gold collision contract')
+    if r36_seams['errors'] and not r36_seams['checks']:
+        _check(errors, checks, 'johto_route36_seam289_source_loaded', False,
+               str(r36_seams['errors']))
+    # TOOL-291: fail closed if a new live seam is registered without its own
+    # visual-coverage review. This is a coverage gate, NOT an emulator or an
+    # automatic proof that any particular Gold corner is rendered correctly.
+    if (project/'data/johto_north_runtime_283.asm').is_file() and (project/'data/johto_ruins_north_runtime.asm').is_file():
+        coverage = audit_seam_coverage_291(project, EXPECTED_ACTIVE_IDS, MAP_LAYOUTS)
+        for item in coverage['checks']:
+            _check(errors, checks, 'johto_active_seam_coverage291_' + item['check'],
+                   item['status'] == 'PASS', item.get('detail', ''))
+        if coverage['errors'] and not coverage['checks']:
+            _check(errors, checks, 'johto_active_seam_coverage291_source_loaded', False,
+                   str(coverage['errors']))
+    # FIX-287: RunMapScript uses map bank + direct jp hl, not a farcall.
+    # A map header that points to a script in another ROMX bank will crash.
+    script_bank_report = audit_script_bank_287(project)
+    for item in script_bank_report['checks']:
+        _check(errors, checks, 'johto_active_script_bank_' + item['check'],
+               item['status'] == 'PASS', item.get('detail', ''))
     # FIX-274: collision bypass must end with the actual scripted-input
     # session, not the old stale input counter after a ledge animation.
     if (project/'tools/johto_ledge_state_preflight_274.py').is_file():
@@ -632,7 +718,10 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_UNION_CAVE_1F_LOCAL_ID", "JOHTO_ROUTE_33_LOCAL_ID",
                            "JOHTO_AZALEA_TOWN_LOCAL_ID", "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
                            "JOHTO_ILEX_FOREST_LOCAL_ID", "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
-                           "JOHTO_ROUTE_34_LOCAL_ID", "JOHTO_GOLDENROD_CITY_LOCAL_ID"]
+                           "JOHTO_ROUTE_34_LOCAL_ID", "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+                           "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID", "JOHTO_ROUTE_35_LOCAL_ID",
+                           "JOHTO_NATIONAL_PARK_LOCAL_ID", "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
+                           "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -683,6 +772,9 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[8] = 13
     expected_slots[9] = 14
     expected_slots[10:16] = [15, 16, 17, 18, 19, 20]
+    expected_slots[17] = 22
+    expected_slots[18] = 21
+    expected_slots[103:106] = [23, 24, 25]
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -828,6 +920,28 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",3,"JOHTO_ILEX_FOREST_LOCAL_ID"),
             ("JOHTO_ROUTE_34_LOCAL_ID",0,"JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID"),
             ("JOHTO_ROUTE_34_LOCAL_ID",1,"JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID"),
+            ("JOHTO_GOLDENROD_CITY_LOCAL_ID",0,"JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",0,"JOHTO_ROUTE_35_LOCAL_ID"),
+            ("JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",1,"JOHTO_ROUTE_35_LOCAL_ID"),
+            ("JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",2,"JOHTO_GOLDENROD_CITY_LOCAL_ID"),
+            ("JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID",3,"JOHTO_GOLDENROD_CITY_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_LOCAL_ID",0,"JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_LOCAL_ID",1,"JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_LOCAL_ID",2,"JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_LOCAL_ID",2,"JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_LOCAL_ID",3,"JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_NATIONAL_PARK_LOCAL_ID",0,"JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_NATIONAL_PARK_LOCAL_ID",1,"JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_NATIONAL_PARK_LOCAL_ID",2,"JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_NATIONAL_PARK_LOCAL_ID",3,"JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",0,"JOHTO_NATIONAL_PARK_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",1,"JOHTO_NATIONAL_PARK_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",2,"JOHTO_ROUTE_35_LOCAL_ID"),
+            ("JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",3,"JOHTO_ROUTE_35_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",0,"JOHTO_NATIONAL_PARK_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",1,"JOHTO_NATIONAL_PARK_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",2,"JOHTO_ROUTE_36_LOCAL_ID"),
+            ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",3,"JOHTO_ROUTE_36_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
@@ -993,10 +1107,10 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                "outside paired Gold carpets must arm on step-on, then warp only on exact outward collision")
         _check(errors, checks, "gate_border_preview_pair",
                ("dw JohtoPilotVioletRuntimeBlocks + JOHTO_VIOLET_CITY_WIDTH * 9 + JOHTO_VIOLET_CITY_WIDTH - 3" in route31 and
-                "db SOUTH | EAST" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
+                "db SOUTH | WEST | EAST" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
                 "dw JohtoPilotRoute31RuntimeBlocks" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
                 "db -18" in _section(map_headers, "JohtoPilotVioletRuntimeHeader", "JohtoPilotVioletRuntimeHeaderEnd") and
-                "ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 34" in map_headers),
+                "ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 45" in map_headers),
                "Violet/Route31 shared-border preview must use Gold +/-9-block alignment without opening a free seam")
         # Validate tilepal and independent Gold RGB, not just PNG/BLK bytes.
         palette_assign = _read(project, "color/data/map_palette_assignments.asm")
@@ -1006,11 +1120,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         gate_tilepal = _read(project, "color/tilesets/johto_gate.asm")
         _check(errors, checks, "gate_palette_and_gold_colors",
                ("INCLUDE \"color/tilesets/johto_gate.asm\"" in palette_assign and
-                "(JOHTO_SOUTH_GATE + 1) * $60" in palette_assign and
+                "(JOHTO_PARK_GATE + 1) * $60" in palette_assign and
                 "INCLUDE \"color/tilesets/johto_union_cave.asm\"" in palette_assign and
                 "JOHTO_GATE_GOLD_GREEN" in palette_sets and
                 "JOHTO_GATE_GOLD_BROWN" in palette_sets and
-                "(JOHTO_SOUTH_GATE + 1) * 8" in palette_sets and
+                "(JOHTO_PARK_GATE + 1) * 8" in palette_sets and
                 "const JOHTO_GATE_GOLD_GREEN ; 28" in palette_consts and
                 "const JOHTO_GATE_GOLD_BROWN ; 29" in palette_consts and
                 "RGB 18,24,9" in palettes and "RGB 15,20,1" in palettes and

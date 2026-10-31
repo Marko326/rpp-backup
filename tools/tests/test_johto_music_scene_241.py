@@ -48,8 +48,10 @@ def check_contract(runtime, options, overworld, wram, main, ids):
         'MUSIC_GBP_GSC_ROUTE36','MUSIC_GBP_GSC_ROUTE36',
         'MUSIC_GBP_GSC_UNION_CAVE', 'MUSIC_GBP_GSC_ROUTE30',
     ]
-    assert [n for n,i in names] == expected, names
-    assert [int(i) for n,i in names] == list(range(15))
+    assert [n for n,i in names[:15]] == expected, names
+    assert [n for n,i in names[15:]] == ['MUSIC_GBP_GSC_ROUTE36','MUSIC_GBP_GSC_ROUTE36'], names
+    assert [int(i) for n,i in names[:15]] == list(range(15))
+    assert [int(i) for n,i in names[15:]] == [21,22]
     assert 'NUM_JOHTO_ACTIVE_MAPS' in options.split('JohtoActiveGSCMusicEnd::', 1)[1][:110]
     assert 'JohtoActiveGSCMusic' in between(options,'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
     helper = between(options, 'LookupJohtoMapGSCMusic:', 'JohtoActiveGSCMusic::')
@@ -89,7 +91,7 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'wJohtoGateMusicSourceLocalID:: ds 1' in wram
     assert 'wLastJohtoMusicSceneID:: ds 1' in wram
     assert 'wEventFlags::' in wram.split('wLastJohtoMusicSceneID:: ds 1',1)[1][:165]
-    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 21' in ids
+    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 26' in ids
 
 class JohtoMusicScene241Tests(unittest.TestCase):
     @classmethod

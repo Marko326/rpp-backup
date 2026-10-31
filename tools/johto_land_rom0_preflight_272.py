@@ -52,7 +52,7 @@ def inspect(root: Path) -> dict:
         errors.append('original gate approach must execute ahead of the land gateway')
     if not re.search(r'SECTION "Johto Land Collision Gateway 272", ROMX, BANK\[\$4F\]\s*\nINCLUDE "engine/johto_land_collision_gateway_272.asm"',main):
         errors.append('gateway code is not declared in ROMX bank $4F')
-    for fragment in ('JohtoOverworldSouthLandDecision::', 'ld e, 2', 'cp JOHTO_CHERRYGROVE_LOCAL_ID', 'cp JOHTO_AZALEA_TOWN_LOCAL_ID', 'cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1', 'cp JOHTO_ROUTE_33_LOCAL_ID', 'callab HandleLedges', 'callab JohtoSouthSpatialStep', 'callab JohtoRoute33StepPolicy', 'bit 6, a', 'ld e, 0'):
+    for fragment in ('JohtoOverworldSouthLandDecision::', 'ld e, 2', 'cp JOHTO_CHERRYGROVE_LOCAL_ID', 'cp JOHTO_AZALEA_TOWN_LOCAL_ID', 'cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1', 'cp JOHTO_ROUTE_35_LOCAL_ID', 'cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID', '.activeSouthMap', 'cp JOHTO_ROUTE_33_LOCAL_ID', 'callab HandleLedges', 'callab JohtoSouthSpatialStep', 'callab JohtoRoute33StepPolicy', 'bit 6, a', 'ld e, 0'):
         if fragment not in module:
             errors.append('banked gateway missing: '+fragment)
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL', 'errors':errors,

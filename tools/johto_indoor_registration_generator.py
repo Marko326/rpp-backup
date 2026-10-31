@@ -200,17 +200,45 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[source['stable_id']],
                 str(source['warp_ordinal_zero_based']), 'MAP_REGION_JOHTO', id_symbols[target['stable_id']]))
         for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', []):
-            if gate.get('stable_id') in (11,13):
+            if gate.get('stable_id') in (11,13,18,104,105):
                 continue  # new gates are appended in exact global South route order
             for row in gate.get('warp_contracts', []):
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        # MAP-283 gate routes are appended *after* the earlier southern rows.
+        northern_routes = [gate for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
+                           if gate.get('stable_id') == 18]
         for row in contract.get('cave_1f_routes', []):
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                 str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         for row in contract.get('south_batch_routes', []):
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                 str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        for gate in northern_routes:
+            for row in gate.get('warp_contracts', []):
+                expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                    str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        # MAP-286: Park registration follows the historical 50 rows without
+        # renumbering Route36 Ruins gate rows (ordinals 0/1).
+        park_rows = (
+            ('JOHTO_ROUTE_35_LOCAL_ID', 2, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_ROUTE_36_LOCAL_ID', 2, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_ROUTE_36_LOCAL_ID', 3, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_NATIONAL_PARK_LOCAL_ID', 0, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_NATIONAL_PARK_LOCAL_ID', 1, 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_NATIONAL_PARK_LOCAL_ID', 2, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_NATIONAL_PARK_LOCAL_ID', 3, 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID'),
+            ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 0, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+            ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 1, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+            ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 2, 'JOHTO_ROUTE_35_LOCAL_ID'),
+            ('JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID', 3, 'JOHTO_ROUTE_35_LOCAL_ID'),
+            ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 0, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+            ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 1, 'JOHTO_NATIONAL_PARK_LOCAL_ID'),
+            ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 2, 'JOHTO_ROUTE_36_LOCAL_ID'),
+            ('JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID', 3, 'JOHTO_ROUTE_36_LOCAL_ID'),
+        )
+        expected_routes.extend(('MAP_REGION_JOHTO', src, str(n), 'MAP_REGION_JOHTO', dst)
+                               for src, n, dst in park_rows)
         rows = _runtime_warp_rows(runtime)
         add('REGISTERED_WARP_ROUTES', rows == expected_routes,
             f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; exact={rows == expected_routes}')

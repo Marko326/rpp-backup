@@ -67,7 +67,7 @@ def audit(root:Path, gold:Path)->dict:
         check('grass_visual_role', len([x for x in cells.values() if x['role']=='TALL_GRASS'])==12 and
               'JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR' in text('data/tileset_headers.asm'),
               '12 Gold grass cells and shared RPG grass sprite priority tile $04')
-        check('outdoor_bike', 'JOHTO_UNION_CAVE,JOHTO_MODERN,JOHTO_ILEX_FOREST,$FF' in text('data/bike_riding_tilesets.asm'),
+        check('outdoor_bike', 'JOHTO_UNION_CAVE,JOHTO_MODERN,JOHTO_ILEX_FOREST,JOHTO_PARK,$FF' in text('data/bike_riding_tilesets.asm'),
               'Route33 outdoor bike list; ordinary gate not widened')
         check('route33_no_unsafe_global_tiles', get('gfx/tilesets/johto_modern.tilecoll')==b'\xff' and
               'callab JohtoOverworldSouthLandDecision' in text('home/overworld.asm') and

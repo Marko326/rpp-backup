@@ -1,7 +1,7 @@
 {
   "schema": "johto-pilot-door-contracts-v1",
   "gold_reference": "MUS-1.0.1",
-  "purpose": "Source-only contracts: Guide Gents House plus the two currently active horizontal Johto gates; future vertical gates remain fail-closed.",
+  "purpose": "Source-only contracts for currently active Gold Johto gates; all gates require verified directional movement and two-way Warp contracts.",
   "active_routes": [
     {
       "id": "cherrygrove_to_guide_house",
@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 43,
+    "registered_warp_route_rows": 65,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -981,6 +981,533 @@
               0
             ],
             "arrival_auto_step": "D_DOWN"
+          }
+        ]
+      },
+      {
+        "stable_id": 18,
+        "gold_map": "Route35GoldenrodGate",
+        "runtime_tileset": "JOHTO_GATE",
+        "warp_contracts": [
+          {
+            "id": "GoldenrodCity_0_to_Route35GoldenrodGate",
+            "source_stable_id": 15,
+            "source_gold_map": "GoldenrodCity",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 13,
+            "source_xy": [
+              19,
+              1
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 18,
+            "target_gold_map": "Route35GoldenrodGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              4,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route35GoldenrodGate_0_to_Route35",
+            "source_stable_id": 18,
+            "source_gold_map": "Route35GoldenrodGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              4,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 17,
+            "target_gold_map": "Route35",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              9,
+              33
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route35GoldenrodGate_1_to_Route35",
+            "source_stable_id": 18,
+            "source_gold_map": "Route35GoldenrodGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              5,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 17,
+            "target_gold_map": "Route35",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              10,
+              33
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route35GoldenrodGate_2_to_GoldenrodCity",
+            "source_stable_id": 18,
+            "source_gold_map": "Route35GoldenrodGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              4,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 15,
+            "target_gold_map": "GoldenrodCity",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              19,
+              1
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route35GoldenrodGate_3_to_GoldenrodCity",
+            "source_stable_id": 18,
+            "source_gold_map": "Route35GoldenrodGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              5,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 15,
+            "target_gold_map": "GoldenrodCity",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              19,
+              1
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route35_0_to_Route35GoldenrodGate",
+            "source_stable_id": 17,
+            "source_gold_map": "Route35",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              9,
+              33
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 18,
+            "target_gold_map": "Route35GoldenrodGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              4,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route35_1_to_Route35GoldenrodGate",
+            "source_stable_id": 17,
+            "source_gold_map": "Route35",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              10,
+              33
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 18,
+            "target_gold_map": "Route35GoldenrodGate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              5,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          }
+        ]
+      },
+      {
+        "stable_id": 104,
+        "gold_map": "Route35NationalParkGate",
+        "runtime_tileset": "JOHTO_PARK_GATE",
+        "warp_contracts": [
+          {
+            "id": "Route35_2_to_Route35NationalParkGate",
+            "source_stable_id": 17,
+            "source_gold_map": "Route35",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              3,
+              5
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 104,
+            "target_gold_map": "Route35NationalParkGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              3,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route35NationalParkGate_0_to_NationalPark",
+            "source_stable_id": 104,
+            "source_gold_map": "Route35NationalParkGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              3,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 103,
+            "target_gold_map": "NationalPark",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              10,
+              47
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route35NationalParkGate_1_to_NationalPark",
+            "source_stable_id": 104,
+            "source_gold_map": "Route35NationalParkGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              4,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 103,
+            "target_gold_map": "NationalPark",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              11,
+              47
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route35NationalParkGate_2_to_Route35",
+            "source_stable_id": 104,
+            "source_gold_map": "Route35NationalParkGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              3,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 17,
+            "target_gold_map": "Route35",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              3,
+              5
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route35NationalParkGate_3_to_Route35",
+            "source_stable_id": 104,
+            "source_gold_map": "Route35NationalParkGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              4,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 17,
+            "target_gold_map": "Route35",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              3,
+              5
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "NationalPark_2_to_Route35NationalParkGate",
+            "source_stable_id": 103,
+            "source_gold_map": "NationalPark",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              10,
+              47
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 104,
+            "target_gold_map": "Route35NationalParkGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              3,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "NationalPark_3_to_Route35NationalParkGate",
+            "source_stable_id": 103,
+            "source_gold_map": "NationalPark",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              11,
+              47
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 104,
+            "target_gold_map": "Route35NationalParkGate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              4,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          }
+        ]
+      },
+      {
+        "stable_id": 105,
+        "gold_map": "Route36NationalParkGate",
+        "runtime_tileset": "JOHTO_PARK_GATE",
+        "warp_contracts": [
+          {
+            "id": "Route36_2_to_Route36NationalParkGate",
+            "source_stable_id": 16,
+            "source_gold_map": "Route36",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              18,
+              8
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 105,
+            "target_gold_map": "Route36NationalParkGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              9,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route36_3_to_Route36NationalParkGate",
+            "source_stable_id": 16,
+            "source_gold_map": "Route36",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              18,
+              9
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 105,
+            "target_gold_map": "Route36NationalParkGate",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              9,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route36NationalParkGate_2_to_Route36",
+            "source_stable_id": 105,
+            "source_gold_map": "Route36NationalParkGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              9,
+              4
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 16,
+            "target_gold_map": "Route36",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              18,
+              8
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route36NationalParkGate_3_to_Route36",
+            "source_stable_id": 105,
+            "source_gold_map": "Route36NationalParkGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              9,
+              5
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 16,
+            "target_gold_map": "Route36",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              18,
+              9
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route36NationalParkGate_0_to_NationalPark",
+            "source_stable_id": 105,
+            "source_gold_map": "Route36NationalParkGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              0,
+              4
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 103,
+            "target_gold_map": "NationalPark",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              33,
+              18
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route36NationalParkGate_1_to_NationalPark",
+            "source_stable_id": 105,
+            "source_gold_map": "Route36NationalParkGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              0,
+              5
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 103,
+            "target_gold_map": "NationalPark",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              33,
+              19
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "NationalPark_0_to_Route36NationalParkGate",
+            "source_stable_id": 103,
+            "source_gold_map": "NationalPark",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              33,
+              18
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 105,
+            "target_gold_map": "Route36NationalParkGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              0,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "NationalPark_1_to_Route36NationalParkGate",
+            "source_stable_id": 103,
+            "source_gold_map": "NationalPark",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              33,
+              19
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 105,
+            "target_gold_map": "Route36NationalParkGate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              0,
+              5
+            ],
+            "arrival_auto_step": "NONE"
           }
         ]
       }
