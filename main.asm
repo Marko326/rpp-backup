@@ -3417,6 +3417,7 @@ INCLUDE "data/johto_north_runtime_283.asm"
 ; Park graphics and objects live in a separate ROMX bank; keep bank $4C safe.
 SECTION "Johto Corridor Route37 Ecruteak 294", ROMX, BANK[$51]
 INCLUDE "data/johto_corridor_runtime_294.asm"
+INCLUDE "data/johto_west_runtime_297.asm"
 SECTION "Johto Park Runtime 286", ROMX, BANK[$50]
 INCLUDE "data/johto_park_runtime_286.asm"
 

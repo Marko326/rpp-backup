@@ -883,13 +883,21 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute37Name
     db 60, 76 ; slot 27 Ecruteak City
     dw JohtoPilotEcruteakName
+    db 60, 60 ; slot 28 Route38/Ecruteak gate inherits Route38 landmark
+    dw JohtoPilotRoute38Name
+    db 60, 60 ; slot 29 Route38 Gold landmark 24
+    dw JohtoPilotRoute38Name
+    db 64, 44 ; slot 30 Route39 Gold landmark 25
+    dw JohtoPilotRoute39Name
+    db 76, 44 ; slot 31 Olivine City Gold landmark 26
+    dw JohtoPilotOlivineName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1015,3 +1023,6 @@ JohtoPilotNorthRoute35Name:: db "Route 35@"
 JohtoPilotNationalParkName:: db "National Park@"
 JohtoPilotRoute37Name:: db "Route 37@"
 JohtoPilotEcruteakName:: db "Ecruteak City@"
+JohtoPilotRoute38Name:: db "Route 38@"
+JohtoPilotRoute39Name:: db "Route 39@"
+JohtoPilotOlivineName:: db "Olivine City@"

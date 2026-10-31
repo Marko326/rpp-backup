@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 28
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 32
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -188,6 +188,22 @@ JohtoEcruteakRuntimeDescriptor::
     db JOHTO_ECRUTEAK_CITY_LOCAL_ID, JOHTO_PILOT, JOHTO_ECRUTEAK_WIDTH, JOHTO_ECRUTEAK_HEIGHT
     dw JohtoEcruteakBlocks
     db BANK(JohtoEcruteakBlocks)
+JohtoRoute38EcruteakGateRuntimeDescriptor::
+    db JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID, JOHTO_GATE, JOHTO_ROUTE_38_ECRUTEAK_GATE_WIDTH, JOHTO_ROUTE_38_ECRUTEAK_GATE_HEIGHT
+    dw JohtoRoute38EcruteakGateBlocks
+    db BANK(JohtoRoute38EcruteakGateBlocks)
+JohtoRoute38RuntimeDescriptor::
+    db JOHTO_ROUTE_38_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE_38_WIDTH, JOHTO_ROUTE_38_HEIGHT
+    dw JohtoRoute38Blocks
+    db BANK(JohtoRoute38Blocks)
+JohtoRoute39RuntimeDescriptor::
+    db JOHTO_ROUTE_39_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE_39_WIDTH, JOHTO_ROUTE_39_HEIGHT
+    dw JohtoRoute39Blocks
+    db BANK(JohtoRoute39Blocks)
+JohtoOlivineRuntimeDescriptor::
+    db JOHTO_OLIVINE_CITY_LOCAL_ID, JOHTO_PILOT, JOHTO_OLIVINE_CITY_WIDTH, JOHTO_OLIVINE_CITY_HEIGHT
+    dw JohtoOlivineBlocks
+    db BANK(JohtoOlivineBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -246,6 +262,14 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .route37
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .ecruteak
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .route38Gate
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .route38
+    cp JOHTO_ROUTE_39_LOCAL_ID
+    jp z, .route39
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .olivine
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .park
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -290,6 +314,18 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .ecruteak
     ld hl, JohtoEcruteakRuntimeDescriptor
+    jp .valid
+.route38Gate
+    ld hl, JohtoRoute38EcruteakGateRuntimeDescriptor
+    jp .valid
+.route38
+    ld hl, JohtoRoute38RuntimeDescriptor
+    jp .valid
+.route39
+    ld hl, JohtoRoute39RuntimeDescriptor
+    jp .valid
+.olivine
+    ld hl, JohtoOlivineRuntimeDescriptor
     jp .valid
 .park
     ld hl, JohtoParkDescriptor

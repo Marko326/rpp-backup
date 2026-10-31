@@ -291,6 +291,12 @@ UpdateMapNameSign::
 	jp z, .johtoRoute37
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jp z, .johtoEcruteak
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jp z, .johtoRoute38
+	cp JOHTO_ROUTE_39_LOCAL_ID
+	jp z, .johtoRoute39
+	cp JOHTO_OLIVINE_CITY_LOCAL_ID
+	jp z, .johtoOlivine
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
 	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
@@ -350,6 +356,15 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoEcruteak
 	ld hl, .JohtoEcruteakName
+	jr .johtoResolved
+.johtoRoute38
+	ld hl, .JohtoRoute38Name
+	jr .johtoResolved
+.johtoRoute39
+	ld hl, .JohtoRoute39Name
+	jr .johtoResolved
+.johtoOlivine
+	ld hl, .JohtoOlivineName
 	jr .johtoResolved
 .johtoPark
 	ld hl, .JohtoParkName
@@ -691,6 +706,8 @@ UpdateMapNameSign::
 	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
 	ret z
 	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 	ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -1075,3 +1092,6 @@ UpdateMapNameSign::
 .JohtoParkName: db "National Park@"
 .JohtoRoute37Name: db "Route 37@"
 .JohtoEcruteakName: db "Ecruteak City@"
+.JohtoRoute38Name: db "Route 38@"
+.JohtoRoute39Name: db "Route 39@"
+.JohtoOlivineName: db "Olivine City@"

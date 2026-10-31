@@ -197,6 +197,15 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
+    ; MAP-297: Ecruteak west gate <-> Route38, exact paired Gold carpets.
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_38_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_38_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_38_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_38_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -272,6 +281,8 @@ JohtoPilotResolveRegisteredWarp::
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
     jr z, .recordGateSource
     cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
     jr nz, .notGateMusicEntry
 .recordGateSource
     ld a, c
@@ -334,6 +345,10 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 19, MUSIC_ROUTES1, 0 ; slot25 Route36 Park gate inherits source
     johto_map_profile 1, 20, MUSIC_ROUTES1, 0 ; slot26 Route37 Gold Route37
     johto_map_profile 1, 21, MUSIC_CITIES1, 0 ; slot27 Ecruteak City, Fly on visit
+    johto_map_profile 0, 24, MUSIC_ROUTES1, 0 ; slot28 Route38/Ecruteak gate, source music
+    johto_map_profile 1, 24, MUSIC_ROUTES1, 0 ; slot29 Route38, Gold Route37 family
+    johto_map_profile 1, 25, MUSIC_ROUTES1, 0 ; slot30 Route39, Gold Route37 family
+    johto_map_profile 1, 26, MUSIC_CITIES1, 0 ; slot31 Olivine City
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -406,6 +421,8 @@ JohtoPilotLoadMapMusic::
     jp z, .southForestGate
     cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
     jp z, .northForestGate
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .route38GateMusic
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -433,6 +450,13 @@ JohtoPilotLoadMapMusic::
     ret nz
     ; MUS-282: the city side must use its own music profile.  Falling
     ; through into .southForestGate silently reverted to the gate default.
+    jp .sourceValid
+.route38GateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    ret nz
     jp .sourceValid
 .route35GoldenrodGate
     ld a, [wJohtoGateMusicSourceLocalID]
@@ -536,6 +560,14 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .route37ClosedEdge
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .ecruteakClosedEdge
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .westClosedEdge
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .westClosedEdge
+    cp JOHTO_ROUTE_39_LOCAL_ID
+    jp z, .westClosedEdge
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .westClosedEdge
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .southClosedEdge
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -554,6 +586,9 @@ JohtoPilotIsClosedOutdoorEdge::
     ret
 .ecruteakClosedEdge
     callab JohtoCorridorEcruteakEdge
+    ret
+.westClosedEdge
+    callab JohtoWestIsKnownClosedEdge
     ret
 .southClosedEdge
     ; All six maps use finite geometry. Non-seam edges fail closed.
@@ -963,6 +998,17 @@ JohtoPilotGateArrivalStep::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jr z, .westPortalDispatch
+    jr .westPortalContinue
+.westPortalDispatch
+    callab JohtoWestPortalArrivalStep
+    ret
+.westPortalContinue
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .newNorthSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -1041,6 +1087,17 @@ JohtoPilotGateDoorApproachAllowed::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jr z, .westPortalDispatch
+    jr .westPortalContinue
+.westPortalDispatch
+    callab JohtoWestPortalBeforeStep
+    ret
+.westPortalContinue
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .newNorthSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -1210,6 +1267,17 @@ JohtoPilotGateDoorWarpMatched::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jr z, .westPortalDispatch
+    jr .westPortalContinue
+.westPortalDispatch
+    callab JohtoWestPortalAfterStep
+    ret
+.westPortalContinue
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .newNorthSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -1383,6 +1451,17 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jr z, .westPortalDispatch
+    jr .westPortalContinue
+.westPortalDispatch
+    callab JohtoWestPortalCollisionExit
+    ret
+.westPortalContinue
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .newNorthSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -1513,6 +1592,17 @@ JohtoPilotGateCollisionExitAllowed::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .westPortalDispatch
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jr z, .westPortalDispatch
+    jr .westPortalContinue
+.westPortalDispatch
+    callab JohtoWestPortalCollisionExit
+    ret
+.westPortalContinue
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .newNorthSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID

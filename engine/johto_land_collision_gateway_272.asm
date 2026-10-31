@@ -33,6 +33,14 @@ JohtoOverworldSouthLandDecision::
     jp z, .activeSouthMap
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .activeSouthMap
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .activeSouthMap
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .activeSouthMap
+    cp JOHTO_ROUTE_39_LOCAL_ID
+    jp z, .activeSouthMap
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .activeSouthMap
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .activeSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID

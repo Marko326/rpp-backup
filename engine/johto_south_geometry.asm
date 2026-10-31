@@ -30,6 +30,14 @@ JohtoSouthSpatialRoleAhead::
     jp z, .Route37
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .EcruteakCity
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .Route38Gate
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .Route38
+    cp JOHTO_ROUTE_39_LOCAL_ID
+    jp z, .Route39
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .OlivineCity
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .NationalPark
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -84,6 +92,26 @@ JohtoSouthSpatialRoleAhead::
     jp .common
 .EcruteakCity
     ld hl, JohtoEcruteakRoles
+    ld b, 40
+    ld c, 36
+    jp .common
+.Route38Gate
+    ld hl, JohtoRoute38EcruteakGateRoles
+    ld b, 10
+    ld c, 8
+    jp .common
+.Route38
+    ld hl, JohtoRoute38Roles
+    ld b, 40
+    ld c, 18
+    jp .common
+.Route39
+    ld hl, JohtoRoute39Roles
+    ld b, 20
+    ld c, 36
+    jp .common
+.OlivineCity
+    ld hl, JohtoOlivineRoles
     ld b, 40
     ld c, 36
     jp .common
@@ -353,9 +381,18 @@ JohtoSouthSpatialStep::
     ; several interior floor cells (notably x1/y5) as walls. Use the
     ; validated NPC-243 two-byte-per-row mask for this one gate.
     ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .westCarpet
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .westCarpet
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jr z, .westCarpet
     cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
     jr nz, .otherSpatialRole
     call JohtoParkEastGateMatureStep
+    jr .haveSpatialRole
+.westCarpet
+    call JohtoWestCarpetSpatialStep
     jr .haveSpatialRole
 .otherSpatialRole
     call JohtoSouthSpatialRoleAhead
@@ -381,6 +418,139 @@ JohtoSouthSpatialStep::
     pop bc
     ret
 
+
+; MAP-297: mature west-gate carpets are blocked in the static mask because
+; only outward collision may Warp. Permit ordinary approach/vertical lane moves.
+; Returns E=0 pass / E=1 block for the three carpet-bearing maps.
+JohtoWestCarpetSpatialStep::
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr z, .city
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .route38
+    ; EastWestGate x0/x9, y4/y5.
+    ld a, [wYCoord]
+    cp 4
+    jr z, .gateLane
+    cp 5
+    jr z, .gateLane
+    jp .role
+.gateLane
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr z, .gateLeft
+    cp PLAYER_DIR_RIGHT
+    jr z, .gateRight
+    cp PLAYER_DIR_UP
+    jr z, .gateUp
+    cp PLAYER_DIR_DOWN
+    jr z, .gateDown
+    jp .role
+.gateLeft
+    ld a, [wXCoord]
+    cp 1
+    jp z, .allow
+    jr .verticalGate
+.gateRight
+    ld a, [wXCoord]
+    cp 8
+    jp z, .allow
+    jr .verticalGate
+.gateUp
+    ld a, [wYCoord]
+    cp 5
+    jp nz, .role
+    jr .verticalGate
+.gateDown
+    ld a, [wYCoord]
+    cp 4
+    jp nz, .role
+.verticalGate
+    ld a, [wXCoord]
+    and a
+    jp z, .allow
+    cp 9
+    jp z, .allow
+    jr .role
+.city
+    ld a, [wXCoord]
+    cp 1
+    jr nz, .cityVertical
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr nz, .cityVertical
+    ld a, [wYCoord]
+    cp 18
+    jr z, .allow
+    cp 19
+    jr z, .allow
+.cityVertical
+    ld a, [wXCoord]
+    and a
+    jr nz, .role
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .cityUp
+    cp PLAYER_DIR_DOWN
+    jr nz, .role
+    ld a, [wYCoord]
+    cp 18
+    jr z, .allow
+    jr .role
+.cityUp
+    ld a, [wYCoord]
+    cp 19
+    jr z, .allow
+    jr .role
+.route38
+    ld a, [wXCoord]
+    cp 34
+    jr nz, .r38Vertical
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    jr nz, .r38Vertical
+    ld a, [wYCoord]
+    cp 8
+    jr z, .allow
+    cp 9
+    jr z, .allow
+.r38Vertical
+    ld a, [wXCoord]
+    cp 35
+    jr nz, .role
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .r38Up
+    cp PLAYER_DIR_DOWN
+    jr nz, .role
+    ld a, [wYCoord]
+    cp 8
+    jr z, .allow
+    cp 7
+    jr z, .allow
+    jr .role
+.r38Up
+    ld a, [wYCoord]
+    cp 9
+    jr z, .allow
+.role
+    call JohtoSouthSpatialRoleAhead
+    ld a, e
+    cp 2
+    jr nz, .notWaterWest
+    ld a, [wWalkBikeSurfState]
+    cp 2
+    jr z, .allow
+    jr .block
+.notWaterWest
+    and a
+    jr z, .allow
+.block
+    ld e, 1
+    ret
+.allow
+    ld e, 0
+    ret
 
 ; FIX-288: exact 10x8 Park east gate passability, from NPC-243 mature mask.
 ; The four verified x0/x9 (y4/y5) warp carpets are physically walkable,
@@ -621,6 +791,14 @@ JohtoRoute37Roles:: INCBIN "maps/johto_pilot/Route37.roles.bin"
 ASSERT @ - JohtoRoute37Roles == 20 * 18
 JohtoEcruteakRoles:: INCBIN "maps/johto_pilot/EcruteakCity.roles.bin"
 ASSERT @ - JohtoEcruteakRoles == 40 * 36
+JohtoRoute38EcruteakGateRoles:: INCBIN "maps/johto_pilot/Route38EcruteakGate.roles.bin"
+ASSERT @ - JohtoRoute38EcruteakGateRoles == 10 * 8
+JohtoRoute38Roles:: INCBIN "maps/johto_pilot/Route38.roles.bin"
+ASSERT @ - JohtoRoute38Roles == 40 * 18
+JohtoRoute39Roles:: INCBIN "maps/johto_pilot/Route39.roles.bin"
+ASSERT @ - JohtoRoute39Roles == 20 * 36
+JohtoOlivineRoles:: INCBIN "maps/johto_pilot/OlivineCity.roles.bin"
+ASSERT @ - JohtoOlivineRoles == 40 * 36
 JohtoParkRoles:: INCBIN "maps/johto_pilot/NationalPark.roles.bin"
 JohtoParkRolesEnd::
 ASSERT JohtoParkRolesEnd - JohtoParkRoles == 2160

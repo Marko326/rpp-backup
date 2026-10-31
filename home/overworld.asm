@@ -1175,6 +1175,8 @@ IsBikeRidingAllowed::
 	jp z, .allowed
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
     jp z, .allowed
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .allowed
 .legacyBike
 	ld a, [wCurMap]
 	cp ROUTE_23

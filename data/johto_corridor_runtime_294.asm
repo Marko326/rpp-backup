@@ -57,7 +57,7 @@ JohtoEcruteakRuntimeHeader::
     dw JohtoEcruteakBlocks
     dw JohtoEcruteakTextPointers
     dw JohtoCorridorLocalScript
-    db SOUTH ; WEST -> Route38 gate and EAST -> Route42 remain CLOSED
+    db SOUTH | WEST ; west is display preview; movement uses audited gate Warps
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoEcruteakSouthRoute37Mirror
     dw wOverworldMap + (JOHTO_ECRUTEAK_HEIGHT + 3) * (JOHTO_ECRUTEAK_WIDTH + 6) + 3 + 5
@@ -66,13 +66,24 @@ JohtoEcruteakRuntimeHeader::
     db 0
     db -10 ; City X -10 tile units -> Route37
     dw wOverworldMap + 7 + JOHTO_ROUTE37_WIDTH
+    ; WEST preview: Gold City Y5..13 aligns Route38 Y0..8. Physical crossing stays gated.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoEcruteakWestRoute38Mirror + JOHTO_ROUTE_38_WIDTH - 3
+    dw wOverworldMap + (5 + 3) * (JOHTO_ECRUTEAK_WIDTH + 6)
+    db JOHTO_ROUTE_38_HEIGHT
+    db JOHTO_ROUTE_38_WIDTH
+    db -10
+    db JOHTO_ROUTE_38_WIDTH * 2 - 1
+    dw wOverworldMap + 6 + 2 * JOHTO_ROUTE_38_WIDTH
     dw JohtoEcruteakRuntimeObjects
 JohtoEcruteakHeaderEnd::
-ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 23
+ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 34
 JohtoEcruteakTextPointers:
 JohtoEcruteakRuntimeObjects::
     db $05
-    db 0 ; all unreviewed Gold indoor and west/east gate warps CLOSED
+    db 2 ; only the paired west gate carpets are active; all buildings remain closed
+    db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR
+    db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR
     db 0
     db 0
 
@@ -104,6 +115,11 @@ JohtoCorridor37Edge::
     ld a, [wXCoord]
     and a
     ret nz
+    ld a, [wYCoord]
+    cp 18
+    jr z, .allowed
+    cp 19
+    jr z, .allowed
     jr .closed
 .north
     ld a, [wYCoord]

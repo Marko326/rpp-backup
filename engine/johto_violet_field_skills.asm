@@ -39,6 +39,12 @@ JohtoOverworldSurfDecision::
     ; swimming and shoreline disembark as spatial Gold roles, not $14.
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .southModern
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .southModern
+    cp JOHTO_ROUTE_39_LOCAL_ID
+    jp z, .southModern
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .southModern
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID

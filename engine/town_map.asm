@@ -24,16 +24,36 @@ DisplayTownMap:
 	push hl
 	ld a, $1
 	ld [hJoy7], a
+	; FIX-298: the ordinary Johto Town Map must never feed the cross-bank
+	; name pointer returned by LoadTownMapEntry($FC) into CopyTownMapDisplayName.
+	; That pointer belongs to the expansion bank; after Bankswitch restores this
+	; bank, reading through HL copies unrelated bytes past wcd6d until a random @.
+	ld a, [wFlyLocationsAxis]
+	and a
+	jr nz, .drawJohtoInitialMarker
 	callab GetFlyTownMapPlayerMap
 	ld a, d
 	push af
 	ld b, $0
-	call DrawPlayerOrBirdSprite ; player sprite
+	call DrawPlayerOrBirdSprite ; Kanto player sprite + local-bank name
+	ld de, wcd6d
+	jr .initialMarkerReady
+.drawJohtoInitialMarker
+	; Keep the initial selector for the browse loop, but copy the visible name
+	; while the Johto browse bank is actually selected.  The marker helper only
+	; consumes coordinates and therefore never dereferences the foreign HL name.
+	callab JohtoPilotGetTownMapLandmark ; E = Gold browse index
+	ld a, e
+	push af
+	ld e, a
+	callab LoadJohtoBrowseEntry ; bounded @-terminated name -> wBuffer
+	call DrawJohtoPilotFlyPlayerMarker
+	ld de, wBuffer
+.initialMarkerReady
 	coord hl, 0, 0
 	ld a, $3f ; up/down arrow tile
 	ld [hl], a
 	coord hl, 1, 0
-	ld de, wcd6d
 	call PlaceString
 	ld hl, wOAMBuffer
 	ld de, wTileMapBackup
@@ -45,7 +65,8 @@ DisplayTownMap:
 	call CopyVideoDataDouble
 	; wWhichTownMapLocation shares scratch WRAM at $cd3d, so initialize it only
 	; after the Town Map/OAM setup above has finished using that scratch area.
-	; Preserve the displayed player selector across the far call for .enterLoop.
+	; Preserve the displayed player selector across the Kanto far call.  Johto's
+	; saved byte is already the validated Gold browse index from the safe path.
 	pop af
 	push af ; Kanto fallback lookup may replace E with geographic coords
 	ld e, a
@@ -57,10 +78,6 @@ DisplayTownMap:
 	jr .enterLoop
 .initJohtoBrowse
 	pop af
-	; Every active map declares its own Gold browse landmark (0..44),
-	; including sparse stable IDs and interior maps anchored to a town.
-	callab JohtoPilotGetTownMapLandmark ; E = valid browse index
-	ld a, e
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 

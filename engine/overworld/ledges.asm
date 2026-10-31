@@ -52,6 +52,10 @@ HandleLedges:
 	; MAP-294: coordinate+facing jumps from mature NPC/Gold.
 	cp JOHTO_ROUTE_37_LOCAL_ID
 	jp z, .route37Gold
+	cp JOHTO_ROUTE_38_LOCAL_ID
+	jp z, .route38Gold
+	cp JOHTO_ROUTE_39_LOCAL_ID
+	jp z, .route39Gold
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jp z, .ecruteakGold
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
@@ -59,6 +63,12 @@ HandleLedges:
 	ret nz
 .route37Gold
 	ld hl, JohtoRoute37GoldHops
+	jp .ruinsCoordinateHopLookup
+.route38Gold
+	ld hl, JohtoRoute38GoldHops
+	jp .ruinsCoordinateHopLookup
+.route39Gold
+	ld hl, JohtoRoute39GoldHops
 	jp .ruinsCoordinateHopLookup
 .ecruteakGold
 	ld hl, JohtoEcruteakGoldHops
@@ -182,6 +192,10 @@ JohtoSouthHopLandingGuard::
     jr z, .azalea
     cp JOHTO_ROUTE_37_LOCAL_ID
     jp z, .route37
+    cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .route38
+    cp JOHTO_ROUTE_39_LOCAL_ID
+    jp z, .route39
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .ecruteak
     cp JOHTO_ILEX_FOREST_LOCAL_ID
@@ -190,6 +204,12 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .route37
     ld hl, JohtoRoute37GoldHops
+    jp .scan
+.route38
+    ld hl, JohtoRoute38GoldHops
+    jp .scan
+.route39
+    ld hl, JohtoRoute39GoldHops
     jp .scan
 .ecruteak
     ld hl, JohtoEcruteakGoldHops
@@ -320,6 +340,54 @@ JohtoIlexForestGoldHops:
 
 ; MAP-294: exact mature NPC Gold-directed safe hop coordinates.
 ; Do NOT make the five Ecruteak HOP_DOWNs a generic hop-right rule.
+JohtoRoute38GoldHops:
+    db 11, 8, PLAYER_DIR_LEFT
+    db 11, 9, PLAYER_DIR_LEFT
+    db 6, 10, PLAYER_DIR_RIGHT
+    db 11, 10, PLAYER_DIR_LEFT
+    db 6, 11, PLAYER_DIR_RIGHT
+    db 11, 11, PLAYER_DIR_LEFT
+    db 6, 12, PLAYER_DIR_RIGHT
+    db 11, 12, PLAYER_DIR_DOWN
+    db 11, 12, PLAYER_DIR_LEFT
+    db 12, 12, PLAYER_DIR_DOWN
+    db 13, 12, PLAYER_DIR_DOWN
+    db 14, 12, PLAYER_DIR_DOWN
+    db 15, 12, PLAYER_DIR_DOWN
+    db 16, 12, PLAYER_DIR_DOWN
+    db 17, 12, PLAYER_DIR_DOWN
+    db 18, 12, PLAYER_DIR_DOWN
+    db 19, 12, PLAYER_DIR_DOWN
+    db 20, 12, PLAYER_DIR_DOWN
+    db 20, 12, PLAYER_DIR_RIGHT
+    db 6, 13, PLAYER_DIR_RIGHT
+    db 4, 14, PLAYER_DIR_DOWN
+    db 5, 14, PLAYER_DIR_DOWN
+    db 6, 14, PLAYER_DIR_DOWN
+    db 6, 14, PLAYER_DIR_RIGHT
+    db $ff
+JohtoRoute39GoldHops:
+    db 7, 20, PLAYER_DIR_LEFT
+    db 7, 21, PLAYER_DIR_LEFT
+    db 7, 22, PLAYER_DIR_DOWN
+    db 7, 22, PLAYER_DIR_LEFT
+    db 10, 22, PLAYER_DIR_DOWN
+    db 11, 22, PLAYER_DIR_DOWN
+    db 12, 22, PLAYER_DIR_DOWN
+    db 13, 22, PLAYER_DIR_DOWN
+    db 7, 24, PLAYER_DIR_DOWN
+    db 7, 24, PLAYER_DIR_LEFT
+    db 10, 24, PLAYER_DIR_DOWN
+    db 11, 24, PLAYER_DIR_DOWN
+    db 12, 24, PLAYER_DIR_DOWN
+    db 13, 24, PLAYER_DIR_DOWN
+    db 7, 26, PLAYER_DIR_DOWN
+    db 7, 26, PLAYER_DIR_LEFT
+    db 10, 26, PLAYER_DIR_DOWN
+    db 11, 26, PLAYER_DIR_DOWN
+    db 12, 26, PLAYER_DIR_DOWN
+    db 13, 26, PLAYER_DIR_DOWN
+    db $ff
 JohtoRoute37GoldHops:
     db 12, 2, PLAYER_DIR_DOWN
     db 13, 2, PLAYER_DIR_DOWN
