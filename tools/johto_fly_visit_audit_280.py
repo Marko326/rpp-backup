@@ -90,7 +90,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict[str, str] |
                       f'{map_name} ({x},{y}) role={tile["role"] if tile else None}')
         check('unique_fly_id_and_events',len(rows)==len(site_ids)==len(names)==len(expected) and keys==expected,
               f'{len(site_ids)} unique IDs; {len(names)} unique saved event bits')
-        check('active_towns_not_inactive_routes',expected_active=={'NEW_BARK','CHERRYGROVE','VIOLET','AZALEA','GOLDENROD'},
+        check('active_towns_not_inactive_routes',expected_active=={'NEW_BARK','CHERRYGROVE','VIOLET','AZALEA','GOLDENROD','ECRUTEAK'},
               f'currently active fly towns={sorted(expected_active)}; remaining six are reserved')
         entry = fly.split('LoadJohtoPilotFlyTownMap::', 1)[1].split('JohtoPilotRecordFlyVisit::',1)[0]
         check('flight_requires_both_active_and_visited', all(t in entry for t in (

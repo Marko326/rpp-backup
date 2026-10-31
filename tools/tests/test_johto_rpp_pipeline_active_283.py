@@ -13,7 +13,7 @@ from johto_rpp_pipeline import current_rpp_active_map_contract,review_rpp_integr
 class ActiveMapReviewerTests(unittest.TestCase):
     def test_current_23_maps_have_real_descriptor_and_stable_slot(self):
         registered=current_rpp_active_map_contract(ROOT)
-        self.assertEqual(26,len(registered))
+        self.assertEqual(28,len(registered))
         self.assertEqual(('GoldenrodCity',15), registered['JohtoSouthGoldenrodCityRuntimeHeader'])
         self.assertEqual(('Route34',14), registered['JohtoSouthRoute34RuntimeHeader'])
         self.assertEqual(('Route36',16), registered['JohtoPilotRoute36RuntimeHeader'])
@@ -43,7 +43,7 @@ class ActiveMapReviewerTests(unittest.TestCase):
     def test_reviewer_must_reject_corrupt_descriptor_or_slot(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
-            for p in ('data/johto_header_descriptors.asm','constants/region_map_constants.asm',
+            for p in ('data/johto_header_descriptors.asm','constants/region_map_constants.asm','constants/johto_fixed_map_ids.asm',
                       'data/johto_stable_id_slots.asm'):
                 (root/p).parent.mkdir(parents=True,exist_ok=True)
                 shutil.copy(ROOT/p,root/p)

@@ -57,11 +57,13 @@ class FlyVisit280(unittest.TestCase):
     def test_release_version_matches_project_headings(self):
         version=(ROOT/'data/game_version.asm').read_text(encoding='utf-8')
         self.assertRegex(version, r'(?m)^\s*db "TEST-231@"$')
-        match=re.search(r'(?m)^\s*db "(FIX-5\.62\.\d+)@"$',version)
+        match=re.search(r'(?m)^\s*db "((?:FIX|MAP)-5\.62\.\d+)@"$',version)
         self.assertIsNotNone(match)
         for doc in ('README.md','FEATURES.md','TODO.md','PROJECT_DELIVERY_RULES.md','RPP_DEVELOPMENT_PITFALLS.md'):
-            title=(ROOT/doc).read_text(encoding='utf-8').splitlines()[0]
-            self.assertTrue(match.group(1) in title or title.startswith('## MAP-5.62.286'), doc)
+            lines=(ROOT/doc).read_text(encoding='utf-8').splitlines()
+            title=lines[0]
+            phase_intro=(title.startswith('## TOOL-5.62.') or title.startswith('## CLEAN-5.62.')) and match.group(1) in '\n'.join(lines[:15])
+            self.assertTrue(match.group(1) in title or title.startswith('## MAP-5.62.286') or phase_intro, doc)
 
 if __name__ == '__main__':
     unittest.main()

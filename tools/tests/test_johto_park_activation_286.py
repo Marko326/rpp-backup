@@ -66,7 +66,7 @@ class Park286Tests(unittest.TestCase):
         self.wrong('data/warp_tile_ids.asm','dw JohtoParkGateWarpTileIDs',
                    'dw JohtoParkWarpTileIDs','new_warp_pointer_table_in_bounds')
     def test_wrong_version_rejected(self):
-        self.wrong('data/game_version.asm','FIX-5.62.290@','FIX-5.62.285@',
+        self.wrong('data/game_version.asm','FIX-5.62.295@','FIX-5.62.285@',
                    'version_286_and_26_active')
 
 if __name__=='__main__':unittest.main()

@@ -74,11 +74,12 @@ def verify(root):
                 pairs.append((name,warp['index'],dest,ord_))
     if len(pairs)!=j['total_internal_warp_candidates'] or len(pairs)!=j['reciprocity_verified_count']:
         raise VerificationError('warp summary drift')
-    if re.search(r'DEF\s+NUM_JOHTO_ACTIVE_MAPS\s+EQU\s+(?!15\b|21\b|23\b|26\b)\d+', (root/'constants/region_map_constants.asm').read_text()):
+    if re.search(r'DEF\s+NUM_JOHTO_ACTIVE_MAPS\s+EQU\s+(?!15\b|21\b|23\b|26\b|28\b)\d+', (root/'constants/region_map_constants.asm').read_text()):
         raise VerificationError('unsafe number of active maps')
     active = ('DEF NUM_JOHTO_ACTIVE_MAPS EQU 21' in (root/'constants/region_map_constants.asm').read_text() or
               'DEF NUM_JOHTO_ACTIVE_MAPS EQU 23' in (root/'constants/region_map_constants.asm').read_text() or
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 26' in (root/'constants/region_map_constants.asm').read_text())
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 26' in (root/'constants/region_map_constants.asm').read_text() or
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 28' in (root/'constants/region_map_constants.asm').read_text())
     # Keep the active-map version gate strict while allowing the roof-budget
     # follow-up: the ROMX FIX-270 wrapper must pair with the FIX-270 label.
     roofs = root/'engine/johto_south_roofs_269.asm'
@@ -90,7 +91,7 @@ def verify(root):
     # FIX-276: avoid hard-coded release allowlists that reject each next patch.
     # Still require the correct runtime era: 21-map candidate with ROMX roof
     # wrapper must be 270+, and without wrapper 269+.
-    match=re.search(r'^\s*db\s+"FIX-5\.62\.(\d+)@"', version_text, re.M)
+    match=re.search(r'^\s*db\s+"(?:FIX|MAP)-5\.62\.(\d+)@"', version_text, re.M)
     version_num=int(match.group(1)) if match else None
     if (version_num is None or
         (not active and version_num != 267) or

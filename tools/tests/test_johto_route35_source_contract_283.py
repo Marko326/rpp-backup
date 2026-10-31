@@ -11,6 +11,8 @@ sys.path.insert(0, str(ROOT/'tools'))
 import johto_route35_source_contract_283 as mod
 
 
+@unittest.skipIf('NUM_JOHTO_ACTIVE_MAPS EQU 28' in (ROOT/'constants/region_map_constants.asm').read_text(),
+                 'old .282 source staging contract; Route35 now protected by live runtime audit')
 class Route35SourceGateTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

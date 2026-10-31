@@ -13,6 +13,8 @@ from johto_pilot_migration_audit import audit_project
 
 
 REQUIRED_FILES = (
+    "tools/johto_surf_active_water_manifest_296.json", "tools/johto_surf_contracts.json",
+    "engine/overworld/field_moves.asm", "engine/items/items.asm",
     "main.asm", "macros/asm_macros.asm", "engine/johto_violet_field_skills.asm",
     "constants/region_map_constants.asm", "constants/johto_fixed_map_ids.asm",
     "data/johto_header_descriptors.asm", "data/johto_pilot_runtime_assets.asm",
@@ -61,9 +63,11 @@ REQUIRED_FILES = (
     "maps/johto_pilot/NationalPark.gold.blk", "maps/johto_pilot/NationalPark.runtime.blk", "maps/johto_pilot/NationalPark.roles.bin",
     "maps/johto_pilot/Route35NationalParkGate.gold.blk", "maps/johto_pilot/Route35NationalParkGate.runtime.blk", "maps/johto_pilot/Route35NationalParkGate.roles.bin",
     "maps/johto_pilot/Route36NationalParkGate.gold.blk", "maps/johto_pilot/Route36NationalParkGate.runtime.blk", "maps/johto_pilot/Route36NationalParkGate.roles.bin", "maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin",
-    "engine/overworld/movement.asm", "data/tileset_headers.asm",
+    "engine/overworld/movement.asm", "engine/overworld/ledges.asm", "data/tileset_headers.asm",
     "data/game_version.asm", "data/bike_riding_tilesets.asm", "data/johto_ruins_north_runtime.asm",
+    "data/johto_corridor_runtime_294.asm",
     "color/data/map_palette_sets.asm", "engine/fly_town_map_helpers.asm", "tools/johto_gate_music_bike_contracts.json",
+    "engine/johto_land_collision_gateway_272.asm", "engine/johto_south_geometry.asm",
     "gfx/tilesets/johto_park.png", "gfx/tilesets/johto_park_gate.png",
     "gfx/blocksets/johto_park.bst", "gfx/blocksets/johto_park_gate.bst",
 
@@ -80,7 +84,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
             target = self.project / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
-        # Source audits now run for all 26 active maps; carry the shared role grids
+        # Source audits now run for all 28 active maps; carry the shared role grids
         # into this isolated fault-injection project rather than omitting them.
         shutil.copytree(ROOT / "maps/johto_pilot", self.project / "maps/johto_pilot", dirs_exist_ok=True)
 
@@ -132,7 +136,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 26",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 28",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -140,7 +144,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 26",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 28",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -187,7 +191,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 26", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 28", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

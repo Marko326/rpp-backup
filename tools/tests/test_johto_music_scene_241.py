@@ -91,7 +91,7 @@ def check_contract(runtime, options, overworld, wram, main, ids):
     assert 'wJohtoGateMusicSourceLocalID:: ds 1' in wram
     assert 'wLastJohtoMusicSceneID:: ds 1' in wram
     assert 'wEventFlags::' in wram.split('wLastJohtoMusicSceneID:: ds 1',1)[1][:165]
-    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 26' in ids
+    assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 28' in ids
 
 class JohtoMusicScene241Tests(unittest.TestCase):
     @classmethod

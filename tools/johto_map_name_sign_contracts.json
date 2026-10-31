@@ -148,6 +148,18 @@
       "id": "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
       "role": "neutral",
       "town_map_name": "Route 36"
+    },
+    {
+      "id": "JOHTO_ROUTE_37_LOCAL_ID",
+      "role": "named",
+      "name": "Route 37",
+      "town_map_name": "Route 37"
+    },
+    {
+      "id": "JOHTO_ECRUTEAK_CITY_LOCAL_ID",
+      "role": "named",
+      "name": "Ecruteak City",
+      "town_map_name": "Ecruteak City"
     }
   ]
 }

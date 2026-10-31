@@ -37,16 +37,16 @@ class ActiveMapTableAssert261(unittest.TestCase):
 
     def check_fails(self, detail):
         issues, tables, active = inspect(self.root)
-        self.assertEqual(active, 26)
+        self.assertEqual(active, 28)
         self.assertTrue(issues, tables)
         self.assertTrue(any(detail in x for x in issues), issues)
 
     def test_real_current_tables_all_match(self):
         issues, tables, active = inspect(self.root)
-        self.assertEqual(26, active)
+        self.assertEqual(28, active)
         self.assertFalse(issues, issues)
         self.assertEqual(3, len(tables))
-        self.assertIn(("engine/menu/options_menu.asm", "JohtoActiveGSCMusic", 26, 26), tables)
+        self.assertIn(("engine/menu/options_menu.asm", "JohtoActiveGSCMusic", 28, 28), tables)
 
     def test_gold_union_cave_mapped_to_final_slot(self):
         music = (self.root / "engine/menu/options_menu.asm").read_text()
@@ -61,12 +61,12 @@ class ActiveMapTableAssert261(unittest.TestCase):
     def test_missing_cave_song_fails_before_assembly(self):
         self.mutate("engine/menu/options_menu.asm",
                     "    db MUSIC_GBP_GSC_UNION_CAVE      ; slot13: ID 8 Union Cave 1F (Gold MUSIC_UNION_CAVE)\n", "")
-        self.check_fails("got 25 bytes, expected 26")
+        self.check_fails("got 27 bytes, expected 28")
 
     def test_extra_song_fails(self):
         self.mutate("engine/menu/options_menu.asm", "JohtoActiveGSCMusicEnd::",
                     " db MUSIC_GBP_GSC_UNION_CAVE\nJohtoActiveGSCMusicEnd::")
-        self.check_fails("got 27 bytes, expected 26")
+        self.check_fails("got 29 bytes, expected 28")
 
     def test_missing_music_assert_fails(self):
         self.mutate("engine/menu/options_menu.asm",

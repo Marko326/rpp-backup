@@ -24,7 +24,7 @@ class VioletFieldContract(unittest.TestCase):
                       'JOHTO_VIOLET_CITY_LOCAL_ID','wCurMapWidth'):
             self.assertIn(token,asm)
         ledge=(ROOT/'engine/overworld/ledges.asm').read_text()
-        self.assertRegex(ledge,r'cp JOHTO_VIOLET_CITY_LOCAL_ID\s+jr z, \.supportedJohtoLedges')
+        self.assertRegex(ledge,r'cp JOHTO_VIOLET_CITY_LOCAL_ID\s+(?:jr|jp) z, \.supportedJohtoLedges')
         self.assertIn('db SPRITE_FACING_DOWN,  $06,$21,D_DOWN',ledge)
 
     def test_all_surf_and_cut_routes_connected(self):

@@ -26,7 +26,7 @@ class SouthSourceStage(unittest.TestCase):
         self.assertEqual(len(self.manifest['maps']), 6)
         self.assertTrue(all(not row['runtime_enabled'] for row in self.manifest['maps']))
         table = (ROOT / 'constants/region_map_constants.asm').read_text()
-        self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 26', table)
+        self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 28', table)
         slots = (ROOT / 'data/johto_stable_id_slots.asm').read_text()
         # Existing IDs 10..15 are now live; source .gold.blk still remains an immutable comparison oracle.
         self.assertIn('13, 14, 15, 16, 17, 18, 19, 20', slots)

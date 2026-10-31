@@ -45,7 +45,7 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertLessEqual(max((ROOT/'maps/johto_pilot/Route32.runtime.blk').read_bytes()), 140)
 
     def test_stable_id7_is_slot8_and_south_ruins_are_slots9_10(self):
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 26', read('constants/region_map_constants.asm'))
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 28', read('constants/region_map_constants.asm'))
         first = next(row for row in segment(self.stable, 'JohtoStableIDToActiveSlot::', 'JohtoStableIDToActiveSlotEnd::').splitlines() if '$00-$0f' in row)
         cells = [x.strip() for x in first.split(';')[0].strip()[3:].split(',')]
         self.assertEqual(cells[5:11], ['6', '7', '8', '13', '14', '15'])

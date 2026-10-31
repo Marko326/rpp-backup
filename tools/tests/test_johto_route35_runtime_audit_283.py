@@ -31,7 +31,7 @@ class Route35LiveContractTests(unittest.TestCase):
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
 '''
         self.assertReject(path,
-            '    ld a, [wCurLocalMapID]\n    cp JOHTO_ROUTE_35_LOCAL_ID',
+            '    ld a, [wCurLocalMapID]\n    cp JOHTO_ROUTE_37_LOCAL_ID',
             faulty.rstrip('\n'),
             'route35_and_north_gate_reachable_in_land_gateway')
 
@@ -105,7 +105,7 @@ class Route35LiveContractTests(unittest.TestCase):
                           'gate_music_inherited_and_bike_safe')
 
     def test_reject_software_version_out_of_sync(self):
-        self.assertReject('data/game_version.asm','FIX-5.62.290','FIX-5.62.284',
+        self.assertReject('data/game_version.asm','FIX-5.62.295','FIX-5.62.284',
                           'actual_game_version_and_active_count')
 
 if __name__=='__main__':

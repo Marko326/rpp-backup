@@ -114,6 +114,16 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
         'cp JOHTO_ROUTE_35_LOCAL_ID' in fld and
         (root/'maps/johto_pilot/Route35.roles.bin').is_file()):
         registered.add('Route35')
+    # MAP-294: the city pond uses the existing JOHTO_PILOT spatial Surf predicate.
+    spatial=(root/'engine/johto_south_geometry.asm').read_text()
+    surf_runtime=(root/'engine/johto_violet_field_skills.asm').read_text()
+    if (any(r['map']=='EcruteakCity' for r in active)
+        and 'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID' in spatial
+        and 'JohtoEcruteakRoles:: INCBIN "maps/johto_pilot/EcruteakCity.roles.bin"' in spatial
+        and 'JohtoSouthGoldWaterProbe' in surf_runtime
+        and (root/'maps/johto_pilot/EcruteakCity.roles.bin').is_file()
+        and (root/'maps/johto_pilot/EcruteakCity.roles.bin').read_bytes().count(2)==20):
+        registered.add('EcruteakCity')
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

@@ -10,7 +10,7 @@ class ParkScriptBank287Tests(unittest.TestCase):
     def test_every_active_map_script_bank_matches_header(self):
         r=audit(ROOT)
         self.assertEqual('PASS_STATIC_ONLY',r['status'],r['errors'])
-        self.assertEqual(30,len(r['checks']))
+        self.assertEqual(32,len(r['checks']))
     def bad(self,old,new,expected):
         p='data/johto_park_runtime_286.asm';s=(ROOT/p).read_text()
         self.assertIn(old,s)

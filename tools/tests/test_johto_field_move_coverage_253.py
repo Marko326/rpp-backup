@@ -17,7 +17,7 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_all_active_water_cut_and_hop_cells_are_registered(self):
         result = audit(ROOT, GOLD)
         self.assertEqual('PASS', result['status'], result['errors'])
-        self.assertEqual({'active_maps': 26, 'water_cells': 1130, 'cut_trees': 9, 'hop_cells': 116},
+        self.assertEqual({'active_maps': 28, 'water_cells': 1150, 'cut_trees': 9, 'hop_cells': 127},
                          result['totals'])
         rows = {row['map']: row for row in result['rows']}
         self.assertEqual((8, 'REGISTERED'), (rows['NewBarkTown']['water_cells'], rows['NewBarkTown']['surf']))
@@ -41,6 +41,21 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
         self.assertFalse(result['phone_accepted'])
 
     @unittest.skipIf(GOLD is None, 'Gold reference root required for water/collision comparison')
+    @unittest.skipIf(GOLD is None, 'Gold reference required for new route ledges')
+    def test_route37_ecruteak_gold_hops_and_surf_are_registered(self):
+        original=(ROOT/'engine/overworld/ledges.asm').read_text()
+        from johto_field_move_coverage_audit import _coordinate_hop_entries, _gold_safe_hop_directions
+        gold=GoldCollisionIndex(GOLD)
+        for name, table in [('Route37','JohtoRoute37GoldHops'),('EcruteakCity','JohtoEcruteakGoldHops')]:
+            actual=_coordinate_hop_entries(original,table)
+            expected=_gold_safe_hop_directions(gold.cells(name))
+            self.assertEqual(expected,actual)
+        result=audit(ROOT,GOLD)
+        rows={r['map']:r for r in result['rows']}
+        self.assertEqual('REGISTERED',rows['Route37']['ledge'])
+        self.assertEqual('REGISTERED',rows['EcruteakCity']['ledge'])
+        self.assertEqual('REGISTERED',rows['EcruteakCity']['surf'])
+
     def test_newbark_water_is_exact_gold_and_not_walkable_without_surf(self):
         gold = GoldCollisionIndex(GOLD)
         water = {(c['y'], c['x']) for c in gold.cells('NewBarkTown').values()
@@ -61,8 +76,8 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_route32_requires_its_own_map_guard(self):
         source = (ROOT / 'engine/overworld/ledges.asm').read_text()
         self.assertEqual('JohtoPilotRoute31LedgeTiles', _ledge_table_for_map(source, 'Route32'))
-        broken = source.replace('cp JOHTO_ROUTE_32_LOCAL_ID\n\tjr z, .route31PairTable',
-                                'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjr z, .route31PairTable', 1)
+        broken = source.replace('cp JOHTO_ROUTE_32_LOCAL_ID\n\tjp z, .route31PairTable',
+                                'cp JOHTO_ROUTE_33_LOCAL_ID\n\tjp z, .route31PairTable', 1)
         self.assertIsNone(_ledge_table_for_map(broken, 'Route32'))
 
     def test_cut_tree_route_table_covers_each_route_tree(self):

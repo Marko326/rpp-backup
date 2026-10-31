@@ -49,7 +49,7 @@ class MapNameSign258Tests(unittest.TestCase):
     def test_all_active_map_signs_and_save_names_pass(self):
         report = audit(self.root)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(len([c for c in report['checks'] if c['check'].startswith('town_name_')]), 26)
+        self.assertEqual(len([c for c in report['checks'] if c['check'].startswith('town_name_')]), 28)
 
     def test_missing_north_gate_reproduces_257_bug(self):
         self.mutate('engine/overworld/map_name_sign.asm',

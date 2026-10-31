@@ -25,10 +25,22 @@ APPROVED = {
     ('Route34','NORTH','GoldenrodCity'),('GoldenrodCity','SOUTH','Route34'),
     ('Route35','NORTH','Route36'),('Route36','SOUTH','Route35'),
     ('Route36','EAST','VioletCity'),('VioletCity','WEST','Route36'),
+    ('Route36','NORTH','Route37'),('Route37','SOUTH','Route36'),
+    ('Route37','NORTH','EcruteakCity'),('EcruteakCity','SOUTH','Route37'),
 }
 # Distinct Gold offsets mean a blanket 'source width + 3' would be wrong.
 # The narrow-to-wider cases each require an explicitly inspected runtime width.
 NARROW_SEAM_CONTRACTS = {
+    ('Route37','SOUTH','Route36'): (
+        'data/johto_corridor_runtime_294.asm',
+        'JohtoRoute37RuntimeHeader::','JohtoRoute37HeaderEnd::',
+        'db JOHTO_ROUTE37_WIDTH + MAP_BORDER ; Gold south preview',
+        'dw JohtoRoute37SouthRoute36Mirror + 10'),
+    ('Route37','NORTH','EcruteakCity'): (
+        'data/johto_corridor_runtime_294.asm',
+        'JohtoRoute37RuntimeHeader::','JohtoRoute37HeaderEnd::',
+        'db JOHTO_ROUTE37_WIDTH + MAP_BORDER ; Gold north preview',
+        'dw JohtoRoute37NorthEcruteakMirror + JOHTO_ECRUTEAK_WIDTH * (JOHTO_ECRUTEAK_HEIGHT - 3) + 5'),
     ('Route30','NORTH','Route31'): (
         'data/johto_pilot_map_headers.asm',
         'JohtoPilotRoute30RuntimeHeader::','JohtoPilotRoute30RuntimeHeaderEnd::',
@@ -86,7 +98,7 @@ def audit(project: Path, active_ids: list[int], layouts: dict[str,tuple[int,int]
         test('active_id_layout_alignment',len(active_ids)==len(layouts),
              f'IDs={len(active_ids)} layouts={len(layouts)}')
         by_id=dict(zip(active_ids,layouts))
-        defs=read('constants/region_map_constants.asm')
+        defs=read('constants/region_map_constants.asm') + '\n' + read('constants/johto_fixed_map_ids.asm')
         id_by_const={m.group(1):int(m.group(2)) for m in re.finditer(
             r'^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\d+)\b',defs,re.M)}
         src=(registry_override if registry_override is not None else

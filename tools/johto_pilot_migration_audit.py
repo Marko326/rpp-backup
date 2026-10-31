@@ -86,6 +86,10 @@ try:
     from johto_active_seam_coverage_gate_291 import audit as audit_seam_coverage_291
 except ImportError:
     from tools.johto_active_seam_coverage_gate_291 import audit as audit_seam_coverage_291
+try:
+    from johto_next_corridor_source_gate_293 import audit as audit_next_corridor_293
+except ImportError:
+    from tools.johto_next_corridor_source_gate_293 import audit as audit_next_corridor_293
 from typing import Iterable
 try:
     from johto_table_assert_preflight import inspect as inspect_johto_table_asserts
@@ -100,8 +104,10 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22]
 EXPECTED_CONNECTIONS = {
+    (16, "NORTH", 21), (21, "SOUTH", 16),
+    (21, "NORTH", 22), (22, "SOUTH", 21),
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
     (2, "NORTH", 3), (3, "SOUTH", 2),
@@ -140,8 +146,12 @@ MAP_LAYOUTS = {
     "NationalPark": (20, 27),
     "Route35NationalParkGate": (4, 4),
     "Route36NationalParkGate": (5, 4),
+    "Route37": (10, 9),
+    "EcruteakCity": (20, 18),
 }
 GOLD_SOURCE_MAPS = {
+    "Route37": "Route37",
+    "EcruteakCity": "EcruteakCity",
     "NewBarkTown": "NewBarkTown",
     "Route29": "Route29",
     "CherrygroveCity": "CherrygroveCity",
@@ -565,6 +575,24 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         if coverage['errors'] and not coverage['checks']:
             _check(errors, checks, 'johto_active_seam_coverage291_source_loaded', False,
                    str(coverage['errors']))
+    # MAP-293: source-only four-map corridor must remain immutable and inactive.
+    # Do not mistake a source candidate for an approved runtime connection.
+    if (project / 'data/johto_next_corridor_293_manifest.json').is_file():
+        source293 = audit_next_corridor_293(project, Path(gold_root) if gold_root else None)
+        for item in source293['checks']:
+            _check(errors, checks, 'johto_source293_' + item['check'],
+                   item['status'] == 'PASS', item.get('detail', ''))
+        if source293['errors'] and not source293['checks']:
+            _check(errors, checks, 'johto_source293_loaded', False, str(source293['errors']))
+    # MAP-294: independent runtime (not source-only) fail-closed corridor contract.
+    try:
+        from johto_corridor_runtime_gate_294 import audit as audit_corridor_294
+    except ImportError:
+        from tools.johto_corridor_runtime_gate_294 import audit as audit_corridor_294
+    c294 = audit_corridor_294(project, Path(gold_root) if gold_root else None)
+    for item in c294['checks']:
+        _check(errors, checks, 'johto_corridor294_'+item['check'],
+               item['status']=='PASS','Route37/Ecruteak executable corridor contract')
     # FIX-287: RunMapScript uses map bank + direct jp hl, not a farcall.
     # A map header that points to a script in another ROMX bank will crash.
     script_bank_report = audit_script_bank_287(project)
@@ -721,7 +749,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_34_LOCAL_ID", "JOHTO_GOLDENROD_CITY_LOCAL_ID",
                            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID", "JOHTO_ROUTE_35_LOCAL_ID",
                            "JOHTO_NATIONAL_PARK_LOCAL_ID", "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
-                           "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID"]
+                           "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
+                           "JOHTO_ROUTE_37_LOCAL_ID", "JOHTO_ECRUTEAK_CITY_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -775,6 +804,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[17] = 22
     expected_slots[18] = 21
     expected_slots[103:106] = [23, 24, 25]
+    expected_slots[21:23] = [26, 27]
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1162,6 +1192,42 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     gold_result = None
     if gold_root is not None:
         gold_result = _audit_gold_source(project, Path(gold_root).resolve(), errors, checks)
+        # FIX-295: Gold WATER registration does NOT establish live Surf.
+        # Require both A/item entry paths and the movement/disembark branch
+        # for every active JOHTO_PILOT map with a Gold spatial role grid.
+        try:
+            from johto_live_surf_entry_audit_295 import audit as audit_live_surf_295
+            surf_live = audit_live_surf_295(project, Path(gold_root).resolve())
+            _check(errors, checks, 'live_gold_water_surf_entry_movement_shore_295',
+                   surf_live['status'] == 'PASS_STATIC_ONLY',
+                   'maps=%s errors=%s' %
+                   (surf_live.get('role_backed_pilot_water_maps'), surf_live.get('errors')))
+        except (OSError, ValueError, KeyError, IndexError) as exc:
+            _check(errors, checks, 'live_gold_water_surf_entry_movement_shore_295', False, str(exc))
+        # MAP-294: block release when an ACTIVE Gold map's Surf/Cut/ledge
+        # implementation is missing. Previously this was only run by separate
+        # environment-dependent tests and the main audit could falsely pass.
+        try:
+            from johto_field_move_coverage_audit import audit as audit_all_active_field_moves
+            fields = audit_all_active_field_moves(project, Path(gold_root).resolve())
+            _check(errors, checks, 'all_active_gold_surf_cut_and_hops_294',
+                   fields['status'] == 'PASS',
+                   'active=%s totals=%s errors=%s' %
+                   (len(fields.get('rows',[])),fields.get('totals'),fields.get('errors',[])))
+        except (OSError, ValueError, KeyError) as exc:
+            _check(errors, checks, 'all_active_gold_surf_cut_and_hops_294', False, str(exc))
+    # TOOL-296 is unconditional: source-only builds and ordinary CI must
+    # reject *new active maps* or unknown WATER before Gold-only audits run.
+    # A Gold root, when supplied, adds independent source-coordinate checks.
+    try:
+        from johto_surf_build_gate_296 import audit as audit_surf_build_296
+        surf_gate = audit_surf_build_296(project, Path(gold_root).resolve() if gold_root else None)
+        _check(errors, checks, 'all_active_surf_build_gate_296',
+               surf_gate['status'] == 'PASS_STATIC_ONLY',
+               'active=%s water=%s errors=%s' %
+               (surf_gate.get('active_maps'),surf_gate.get('water_maps'),surf_gate.get('errors')))
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        _check(errors, checks, 'all_active_surf_build_gate_296', False, str(exc))
     status = "PASS_STATIC_ONLY" if not errors else "FAIL"
     return {
         "schema": "johto-pilot-migration-audit-v1",

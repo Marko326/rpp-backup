@@ -33,6 +33,8 @@ LEDGE_COORDINATE_TABLES = {
     'RuinsOfAlphOutside': ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JohtoAlphSouthHops',
                            '.ruinsHopTable', '.ruinsCoordinateHopLookup'),
     'Route33': ('JOHTO_ROUTE_33_LOCAL_ID', 'JohtoRoute33Hops', '.route33Modern', '.ruinsCoordinateHopLookup'),
+    'Route37': ('JOHTO_ROUTE_37_LOCAL_ID', 'JohtoRoute37GoldHops', '.route37Gold', '.ruinsCoordinateHopLookup'),
+    'EcruteakCity': ('JOHTO_ECRUTEAK_CITY_LOCAL_ID', 'JohtoEcruteakGoldHops', '.ecruteakGold', '.ruinsCoordinateHopLookup'),
     'AzaleaTown': ('JOHTO_AZALEA_TOWN_LOCAL_ID', 'JohtoAzaleaGoldHops', '.route33Modern', '.ruinsCoordinateHopLookup'),
 }
 
@@ -113,15 +115,17 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
         symbol, table, dispatch_label, lookup_label = LEDGE_COORDINATE_TABLES[map_name]
         body = source.split('HandleLedges:', 1)[1]
         dispatch = re.search(
-            rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, {re.escape(dispatch_label)}\s*$',
+            rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*(?:jr|jp) z, {re.escape(dispatch_label)}\s*$',
             body)
         if not dispatch:
             return None
-        dispatch_body = source.split(dispatch_label + '\n', 1)
-        if len(dispatch_body) != 2:
+        # Match the actual label, not the `jr/jp z, .label` branch operand.
+        # Otherwise a preceding handler can cause a false negative.
+        target_label = re.search(rf'(?m)^{re.escape(dispatch_label)}\s*$', source)
+        if not target_label:
             return None
-        target = dispatch_body[1].split(lookup_label, 1)[0]
-        if re.search(rf'(?m)^\s*ld hl, {re.escape(table)}\s*$', target):
+        target = source[target_label.end():]
+        if re.search(rf'(?m)^\s*ld hl, {re.escape(table)}\s*\n\s*(?:jr|jp) {re.escape(lookup_label)}\s*$', target):
             return table
         return None
     if map_name not in LEDGE_TABLES:
@@ -133,14 +137,14 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
         return None
     dispatch = match.group(1)
     if map_name in ('Route29', 'Route30', 'VioletCity'):
-        if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.supportedJohtoLedges\s*$', dispatch):
+        if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*(?:jr|jp) z, \.supportedJohtoLedges\s*$', dispatch):
             return table if table in dispatch else None
         return None
     if map_name == 'Route31':
-        if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.route31PairTable\s*$', dispatch):
+        if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*(?:jr|jp) z, \.route31PairTable\s*$', dispatch):
             return table if table in dispatch else None
         return None
-    if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.route31PairTable\s*$', dispatch):
+    if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*(?:jr|jp) z, \.route31PairTable\s*$', dispatch):
         return table if table in dispatch else None
     return None
 
@@ -229,6 +233,17 @@ def audit(root: Path, gold_root: Path) -> dict:
         'JohtoNorthRoute35Roles:: INCBIN "maps/johto_pilot/Route35.roles.bin"' in spatial_dispatch and
         any(r['map'] == 'Route35' for r in active)):
         surf_maps['Route35'] = {'gold_map': 'Route35', 'dispatch': 'JohtoSouthGoldWaterProbe'}
+    # Ecruteak 20 Gold WATER cells are represented by numeric role=2, not generic tile ID.
+    # Validate both runtime role source AND reachable Gold water helper before registering.
+    spatial = (root / 'engine/johto_south_geometry.asm').read_text(encoding='utf8')
+    surf_runtime = (root / 'engine/johto_violet_field_skills.asm').read_text(encoding='utf8')
+    if (any(r['map'] == 'EcruteakCity' for r in active)
+        and 'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID' in spatial
+        and 'JohtoEcruteakRoles:: INCBIN "maps/johto_pilot/EcruteakCity.roles.bin"' in spatial
+        and 'JohtoSouthGoldWaterProbe' in surf_runtime
+        and (root / 'maps/johto_pilot/EcruteakCity.roles.bin').is_file()
+        and (root / 'maps/johto_pilot/EcruteakCity.roles.bin').read_bytes().count(2) == 20):
+        surf_maps['EcruteakCity'] = {'gold_map': 'EcruteakCity', 'dispatch': 'JohtoSouthGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []

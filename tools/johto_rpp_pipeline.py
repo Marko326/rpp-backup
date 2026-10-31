@@ -149,6 +149,8 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoParkRuntimeHeader', 'NationalPark', 103),
     ('JohtoParkSouthGateRuntimeHeader', 'Route35NationalParkGate', 104),
     ('JohtoParkEastGateRuntimeHeader', 'Route36NationalParkGate', 105),
+    ('JohtoRoute37RuntimeHeader', 'Route37', 21),
+    ('JohtoEcruteakRuntimeHeader', 'EcruteakCity', 22),
 )
 
 
@@ -161,7 +163,7 @@ def current_rpp_active_map_contract(rpp: Path):
     expected=[row[0] for row in RPP_ACTIVE_GOLD_HEADER_CONTRACT]
     if headers != expected:
         raise ValueError('RPP active map header descriptors differ from reviewed Gold/header registry')
-    constants=(root/'constants/region_map_constants.asm').read_text()
+    constants=(root/'constants/region_map_constants.asm').read_text()+'\n'+(root/'constants/johto_fixed_map_ids.asm').read_text()
     count=re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (\d+)\b',constants)
     if not count or int(count[1]) != len(headers):
         raise ValueError('RPP active map count differs from actual descriptor rows')

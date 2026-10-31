@@ -50,7 +50,7 @@ def audit(root: Path, changes: dict[str,str] | None = None) -> dict:
                     errors.append(f'duplicate_bank_symbol: {name}')
                 symbols[name]=(bank,filename,source[match.end():])
         headers=ACTIVE_HEADER.findall(desc.split('JohtoHeaderDescriptors::',1)[1].split('JohtoHeaderDescriptorsEnd::',1)[0])
-        ck('complete_26_active_map_headers',len(headers)==26 and len(set(headers))==26,
+        ck('complete_28_active_map_headers',len(headers)==28 and len(set(headers))==28,
            f'active={len(headers)}')
         for label in headers:
             if label not in symbols:

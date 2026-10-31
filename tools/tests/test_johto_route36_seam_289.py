@@ -44,7 +44,7 @@ class Route36Seam289(unittest.TestCase):
         self.reject('data/johto_pilot_source_resources.asm',
                     'JOHTO_ROUTE_36_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID',
                     'JOHTO_ROUTE_36_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID',
-                    'registered_exact_four_and_route37_still_closed')
+                    'registered_exact_six_and_route37_reciprocal')
     def test_violet_west_connection(self):
         self.reject('data/johto_pilot_map_headers.asm','dw JohtoVioletWestRoute36Mirror + JOHTO_ROUTE_36_WIDTH - 3',
                     'dw JohtoPilotRoute36RuntimeBlocks + JOHTO_ROUTE_36_WIDTH - 3',
@@ -60,11 +60,11 @@ class Route36Seam289(unittest.TestCase):
     def test_broad_open_route35_rejected(self):
         self.reject('engine/johto_south_geometry.asm','cp 17 ; only Gold mature collision lane (Route35 x17 -> Route36 x17)',
                     'cp 18 ; wrongly widened','route35_single_mature_north_lane')
-    def test_north_route37_forbidden(self):
+    def test_north_route37_reciprocal_required(self):
         self.reject('data/johto_pilot_source_resources.asm',
                     'JOHTO_ROUTE_36_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID',
-                    'JOHTO_ROUTE_36_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_37_LOCAL_ID',
-                    'registered_exact_four_and_route37_still_closed')
+                    'JOHTO_ROUTE_36_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_37_LOCAL_ID',
+                    'registered_exact_six_and_route37_reciprocal')
     def test_preserve_park_warp(self):
         self.reject('data/johto_ruins_north_runtime.asm',
                     'db 8, 18, 2, JOHTO_REGISTERED_WARP_SELECTOR',

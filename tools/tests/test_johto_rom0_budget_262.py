@@ -13,6 +13,8 @@ from johto_rom0_space_preflight import inspect
 
 class Rom0Budget262(unittest.TestCase):
     def setUp(self):
+        if not (ROOT/'patches/rppred.map').is_file():
+            self.skipTest('requires linked RGBDS MAP supplied by owner')
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)

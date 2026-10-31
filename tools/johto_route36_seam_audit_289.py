@@ -15,6 +15,8 @@ CONNECTIONS=(
     ('JOHTO_ROUTE_36_LOCAL_ID','SOUTH','JOHTO_ROUTE_35_LOCAL_ID'),
     ('JOHTO_ROUTE_36_LOCAL_ID','EAST','JOHTO_VIOLET_CITY_LOCAL_ID'),
     ('JOHTO_VIOLET_CITY_LOCAL_ID','WEST','JOHTO_ROUTE_36_LOCAL_ID'),
+    ('JOHTO_ROUTE_36_LOCAL_ID','NORTH','JOHTO_ROUTE_37_LOCAL_ID'),
+    ('JOHTO_ROUTE_37_LOCAL_ID','SOUTH','JOHTO_ROUTE_36_LOCAL_ID'),
 )
 
 def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dict|None=None):
@@ -57,10 +59,11 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 all(not blocked(mask35,20,17,y) for y in (0,1)) and
                 all(blocked(mask36,60,x,17) for x in (16,18,19,20)) and
                 all(not blocked(mask36,60,59,y) for y in (8,9)))
-        ck('registered_exact_four_and_route37_still_closed',
+        ck('registered_exact_six_and_route37_reciprocal',
            all(source.count(f'db MAP_REGION_JOHTO, {a}, {d}, MAP_REGION_JOHTO, {b}')==1 for a,d,b in CONNECTIONS) and
-           'DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 20' in source and
-           'JOHTO_ROUTE_37_LOCAL_ID' not in chunk(source,'JohtoPilotSourceConnections::','JohtoPilotSourceConnectionsEnd::'))
+           'DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 24' in source and
+           source.count('JOHTO_ROUTE_37_LOCAL_ID, SOUTH')==1 and
+           source.count('JOHTO_ROUTE_36_LOCAL_ID, NORTH')==1)
         # The engine copies strips after SwitchToMapRomBank, not a farcall to target.
         ck('connection_loader_uses_source_map_bank',
            'call SwitchToMapRomBank' in home and 'LoadNorthSouthConnectionsTileMap::' in home and 'LoadEastWestConnectionsTileMap::' in home)
@@ -78,12 +81,12 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
         h35=chunk(route35,'JohtoNorthRoute35RuntimeHeader::','JohtoNorthRoute35HeaderEnd::')
         hv=chunk(violet,'JohtoPilotVioletRuntimeHeader::','JohtoPilotVioletRuntimeHeaderEnd::')
         ck('route36_south_and_east_header_11_byte_records',all(t in h36 for t in (
-                'db SOUTH | EAST','dw JohtoRoute36SouthRoute35Mirror',
+                'db NORTH | SOUTH | EAST','dw JohtoRoute36NorthRoute37Mirror','dw JohtoRoute36SouthRoute35Mirror',
                 'dw wOverworldMap + (JOHTO_ROUTE_36_HEIGHT + 3) * (JOHTO_ROUTE_36_WIDTH + 6) + 3',
                 'dw JohtoRoute36EastVioletMirror',
                 'dw wOverworldMap + 3 * (JOHTO_ROUTE_36_WIDTH + 6) + JOHTO_ROUTE_36_WIDTH + 3',
                 'db JOHTO_VIOLET_CITY_WIDTH')) and
-           'ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 34' in route36)
+           'ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 45' in route36)
         ck('route35_north_header_same_bank_copy',all(t in h35 for t in (
                 'db NORTH','dw JohtoRoute35NorthRoute36Mirror + JOHTO_ROUTE_36_WIDTH * (JOHTO_ROUTE_36_HEIGHT - 3)',
                 'db JOHTO_ROUTE36_WIDTH' if False else 'db JOHTO_ROUTE_36_WIDTH',
@@ -143,7 +146,7 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 'db 13, 48, 1, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 8, 18, 2, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 9, 18, 3, JOHTO_REGISTERED_WARP_SELECTOR')))
-        ck('in_rom_version_and_test_label', 'FIX-5.62.290@' in version and 'TEST-231@' in version)
+        ck('in_rom_version_and_test_label', ('FIX-5.62.290@' in version or ('MAP-5.62.294@' in version or 'FIX-5.62.295@' in version)) and 'TEST-231@' in version)
     except (KeyError,IndexError,OSError,ValueError) as e:errors.append('audit_source_exception: '+str(e))
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks':checks,'errors':errors}
 

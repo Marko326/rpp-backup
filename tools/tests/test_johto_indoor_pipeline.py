@@ -73,8 +73,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 26', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 26',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 28', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 28',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
