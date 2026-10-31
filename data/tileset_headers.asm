@@ -39,8 +39,10 @@ Tilesets:
 	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR
 	tileset JohtoSouthForestBlocks, JohtoSouthForestGFX, JohtoIlexForest_Coll, $FF,$FF,$FF, $FF, CAVE
 	tileset JohtoSouthGateBlocks, JohtoSouthGateGFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
+	tileset JohtoPark_Block, JohtoPark_GFX, JohtoPilot_Coll, $FF,$FF,$FF, $04, OUTDOOR ; FIX-288: Gold Park tall grass
+	tileset JohtoParkGate_Block, JohtoParkGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_SOUTH_GATE + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_PARK_GATE + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30

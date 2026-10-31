@@ -22,6 +22,16 @@ JohtoSouthSpatialRoleAhead::
     jp z, .Route34
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID
     jp z, .GoldenrodCity
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .Route35Gate
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .Route35
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .NationalPark
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .SouthParkGate
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .EastParkGate
     ret
 .AzaleaTown
     ld hl, JohtoSouthAzaleaTownRoles
@@ -52,6 +62,31 @@ JohtoSouthSpatialRoleAhead::
     ld hl, JohtoSouthGoldenrodCityRoles
     ld b, 40
     ld c, 36
+    jp .common
+.Route35Gate
+    ld hl, JohtoNorthRoute35GoldenrodGateRoles
+    ld b, 10
+    ld c, 8
+    jp .common
+.Route35
+    ld hl, JohtoNorthRoute35Roles
+    ld b, 20
+    ld c, 36
+    jp .common
+.NationalPark
+    ld hl, JohtoParkRoles
+    ld b, 40
+    ld c, 54
+    jp .common
+.SouthParkGate
+    ld hl, JohtoParkSouthGateRoles
+    ld b, 8
+    ld c, 8
+    jp .common
+.EastParkGate
+    ld hl, JohtoParkEastGateRoles
+    ld b, 10
+    ld c, 8
     jp .common
 
 .common
@@ -102,13 +137,26 @@ JohtoSouthSpatialRoleAhead::
     push de
     ld a, [wCurLocalMapID]
     cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jr z, .checkForestCut
+    cp JOHTO_ROUTE_35_LOCAL_ID
     jr nz, .notClearedForestCut
+    ; Route35's Gold (17,6) CUT_TREE uses the existing $5B -> $90
+    ; clone. The immutable Gold collision mask remains blocked until Cut.
+    ld a, d
+    cp 6
+    jr nz, .notClearedForestCut
+    ld a, e
+    cp 17
+    jr nz, .notClearedForestCut
+    jr .readClearedBlock
+.checkForestCut
     ld a, d
     cp 25
     jr nz, .notClearedForestCut
     ld a, e
     cp 8
     jr nz, .notClearedForestCut
+.readClearedBlock
     call .isForestCutBlockCleared
     jr nc, .notClearedForestCut
     pop de
@@ -206,7 +254,15 @@ JohtoSouthSpatialRoleAhead::
     add hl, bc
     add hl, de
 .cutRead
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
     ld a, [hl]
+    jr nz, .forestClearedBlock
+    cp $90
+    jr z, .cutCleared
+    and a ; Gold $5B must never inherit CP carry as a cleared tree.
+    ret
+.forestClearedBlock
     cp $2d
     jr z, .cutCleared
     and a ; Critical: CP $2D on uncut $0F leaves Carry=1.
@@ -279,7 +335,17 @@ JohtoSouthSpatialStep::
     push bc
     push de
     push hl
+    ; FIX-288: the East Park Gate legacy Gold role converter marks
+    ; several interior floor cells (notably x1/y5) as walls. Use the
+    ; validated NPC-243 two-byte-per-row mask for this one gate.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr nz, .otherSpatialRole
+    call JohtoParkEastGateMatureStep
+    jr .haveSpatialRole
+.otherSpatialRole
     call JohtoSouthSpatialRoleAhead
+.haveSpatialRole
     ld a, e
     cp 2
     jr nz, .notWater
@@ -300,6 +366,91 @@ JohtoSouthSpatialStep::
     pop bc ; discard incoming E/D registers from stack below? (corrected below)
     pop bc
     ret
+
+
+; FIX-288: exact 10x8 Park east gate passability, from NPC-243 mature mask.
+; The four verified x0/x9 (y4/y5) warp carpets are physically walkable,
+; but only an outward collision on them may activate the registered warp.
+; Input live map/player position and direction. E=0 pass, E=1 block.
+JohtoParkEastGateMatureStep::
+    ld a, [wXCoord]
+    ld c, a
+    ld a, [wYCoord]
+    ld b, a
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .up
+    cp PLAYER_DIR_DOWN
+    jr z, .down
+    cp PLAYER_DIR_LEFT
+    jr z, .left
+    cp PLAYER_DIR_RIGHT
+    jp nz, .block
+    inc c
+    jr .bounds
+.left
+    dec c
+    jr .bounds
+.up
+    dec b
+    jr .bounds
+.down
+    inc b
+.bounds
+    ld a, c
+    cp 10
+    jp nc, .block
+    ld a, b
+    cp 8
+    jp nc, .block
+    ; Mature mask intentionally seals the 4 gate edge carpets until warp.
+    ; Moving onto those cells from inside is allowed; the outer boundary
+    ; is separately protected by JohtoPilotIsClosedOutdoorEdge.
+    ld a, c
+    and a
+    jr z, .maybeCarpet
+    cp 9
+    jr nz, .mask
+.maybeCarpet
+    ld a, b
+    cp 4
+    jr z, .pass
+    cp 5
+    jr z, .pass
+.mask
+    ld hl, JohtoParkEastGateBlockedRows
+    ld a, b
+    add a ; two mask bytes per row, 10 cell columns
+    ld e, a
+    ld d, 0
+    add hl, de
+    ld a, c
+    cp 8
+    jr c, .lowMaskByte
+    inc hl
+    sub 8
+.lowMaskByte
+    ld b, a
+    and a ; zero bit index must not underflow shift counter to $ff
+    ld a, 1
+    jr z, .maskReady
+.shiftMask
+    add a
+    dec b
+    jr nz, .shiftMask
+.maskReady
+    and [hl]
+    jr nz, .block
+.pass
+    ld e, 0
+    ret
+.block
+    ld e, 1
+    ret
+JohtoParkEastGateBlockedRows::
+    INCBIN "maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin"
+JohtoParkEastGateBlockedRowsEnd::
+ASSERT JohtoParkEastGateBlockedRowsEnd - JohtoParkEastGateBlockedRows == 16
 
 ; FIX-281: live carpet pairs are excluded from the closed-door blacklist.
 ; FIX-271: exact difference between mature NPC-243 passability masks and
@@ -385,7 +536,7 @@ JohtoSouthMatureDoorFence::
 ; Source: NPC-5.62.243's blocked_mask.bin vs Gold role arrays.
 ; The Azalea south gate (2,10)/(2,11) and Route34 north gate
 ; (13,37)/(14,37) are registered carpets and intentionally excluded.
-; All 24 remaining targets lead to unregistered interiors and stay solid.
+; The 24 previous building targets plus Route35 park (3,5) stay solid.
 .closedDoorTargets
     db JOHTO_AZALEA_TOWN_LOCAL_ID, 9, 5
     db JOHTO_AZALEA_TOWN_LOCAL_ID, 21, 5
@@ -400,7 +551,9 @@ JohtoSouthMatureDoorFence::
     ; or bike; outward DOWN collision alone activates the registered warp.
     ; Never blacklist a live carpet as an unopened building entrance.
     db JOHTO_ROUTE_34_LOCAL_ID, 13, 41
-    db JOHTO_GOLDENROD_CITY_LOCAL_ID, 19, 1
+    ; FIX-284: NPC-243 mature Route35 mask blocks the unregistered
+    ; National Park entrance (3,5); Gold art roles alone mark it FLOOR.
+    ; Only the separate live gate carpets (9,33)/(10,33) stay open.
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 9, 5
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 33, 5
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 15, 7
@@ -443,6 +596,23 @@ ASSERT JohtoSouthGoldenrodCityRolesEnd - JohtoSouthGoldenrodCityRoles == 1440
 
 ; E=1 closed edge, E=0 ordinary move. Negative coordinates never wrap
 ; into an unregistered map; direct approved lanes only in Gold topology.
+JohtoNorthRoute35GoldenrodGateRoles:: INCBIN "maps/johto_pilot/Route35GoldenrodGate.roles.bin"
+JohtoNorthRoute35GoldenrodGateRolesEnd::
+ASSERT JohtoNorthRoute35GoldenrodGateRolesEnd - JohtoNorthRoute35GoldenrodGateRoles == 80
+JohtoNorthRoute35Roles:: INCBIN "maps/johto_pilot/Route35.roles.bin"
+JohtoNorthRoute35RolesEnd::
+ASSERT JohtoNorthRoute35RolesEnd - JohtoNorthRoute35Roles == 720
+
+JohtoParkRoles:: INCBIN "maps/johto_pilot/NationalPark.roles.bin"
+JohtoParkRolesEnd::
+ASSERT JohtoParkRolesEnd - JohtoParkRoles == 2160
+JohtoParkSouthGateRoles:: INCBIN "maps/johto_pilot/Route35NationalParkGate.roles.bin"
+JohtoParkSouthGateRolesEnd::
+ASSERT JohtoParkSouthGateRolesEnd - JohtoParkSouthGateRoles == 64
+JohtoParkEastGateRoles:: INCBIN "maps/johto_pilot/Route36NationalParkGate.roles.bin"
+JohtoParkEastGateRolesEnd::
+ASSERT JohtoParkEastGateRolesEnd - JohtoParkEastGateRoles == 80
+
 JohtoSouthIsKnownClosedEdge::
     ld e, 0
     ld a, [wCurLocalMapID]
@@ -452,6 +622,16 @@ JohtoSouthIsKnownClosedEdge::
     jp z, .route34
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID
     jp z, .goldenrod
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .route35
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .route35Gate
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .park
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .parkSouthGate
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .parkEastGate
     cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
     jp z, .smallGate
     cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
@@ -473,7 +653,7 @@ JohtoSouthIsKnownClosedEdge::
     ret z
     cp 15
     ret z
-    jr .closed
+    jp .closed
 .route34
     ld b, 20
     ld c, 54
@@ -488,7 +668,7 @@ JohtoSouthIsKnownClosedEdge::
     jp c, .closed
     cp 12 ; FIX-279: Gold has four contiguous north seam columns 8..11
     ret c
-    jr .closed
+    jp .closed
 .goldenrod
     ld b, 40
     ld c, 36
@@ -504,6 +684,35 @@ JohtoSouthIsKnownClosedEdge::
     cp 22 ; FIX-279: reciprocal Goldenrod south columns 18..21
     ret c
     jr .closed
+.route35
+    ld b, 20
+    ld c, 36
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jp nz, .regular
+    ld a, [wYCoord]
+    and a
+    ret nz
+    ld a, [wXCoord]
+    cp 17 ; only Gold mature collision lane (Route35 x17 -> Route36 x17)
+    ret z
+    jp .closed
+.route35Gate
+    ld b, 10
+    ld c, 8
+    jp .regular
+.park
+    ld b, 40
+    ld c, 54
+    jp .regular
+.parkSouthGate
+    ld b, 8
+    ld c, 8
+    jp .regular
+.parkEastGate
+    ld b, 10
+    ld c, 8
+    jp .regular
 .smallGate
     ld b, 10
     ld c, 8

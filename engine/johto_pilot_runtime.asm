@@ -149,7 +149,7 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
-    ; Route36 Gold #3/#4 only; National Park #1/#2 are not live.
+    ; Ruins gate Gold #3/#4 keep slots0/1; Park Gold #1/#2 activate slots2/3.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     ; UNION-260: Route32 Gold cave mouth #4, 1F Gold return #4 only.
@@ -173,6 +173,30 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    ; MAP-283: Goldenrod door Gold #13 -> gate south carpet; two return lanes.
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    ; MAP-286: seven new reciprocal park gates; existing ordinals never change.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -242,6 +266,12 @@ JohtoPilotResolveRegisteredWarp::
     cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
     jr z, .recordGateSource
     cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
     jr nz, .notGateMusicEntry
 .recordGateSource
     ld a, c
@@ -297,6 +327,11 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 14, MUSIC_ROUTES1, 0 ; slot 18 Route34IlexForestGate
     johto_map_profile 1, 14, MUSIC_ROUTES1, 0 ; slot 19 Route34
     johto_map_profile 1, 15, MUSIC_CITIES1, 0 ; slot 20 GoldenrodCity
+    johto_map_profile 0, 17, MUSIC_ROUTES1, 0 ; slot 21 Route35GoldenrodGate (source music)
+    johto_map_profile 1, 17, MUSIC_ROUTES1, 0 ; slot 22 Route35 (Gold Route36 theme)
+    johto_map_profile 1, 18, MUSIC_ROUTES1, 0 ; slot23 Park, Gold independent park music handled by scene mode
+    johto_map_profile 0, 17, MUSIC_ROUTES1, 0 ; slot24 Route35 Park gate inherits source
+    johto_map_profile 0, 19, MUSIC_ROUTES1, 0 ; slot25 Route36 Park gate inherits source
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -359,12 +394,18 @@ JohtoPilotLoadMapMusic::
     ; source is not guaranteed to survive Continue from an old save.
     ; Unknown sources fall back to this gate's own profile, never New Bark.
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .southParkGate
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .eastParkGate
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .route35GoldenrodGate
     cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
     jp z, .southForestGate
     cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
     jp z, .northForestGate
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
-    jr z, .violetGate
+    jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     jr z, .southGate
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
@@ -391,6 +432,13 @@ JohtoPilotLoadMapMusic::
     ; MUS-282: the city side must use its own music profile.  Falling
     ; through into .southForestGate silently reverted to the gate default.
     jp .sourceValid
+.route35GoldenrodGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    ret nz
+    jp .sourceValid
 .southForestGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -403,6 +451,20 @@ JohtoPilotLoadMapMusic::
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     jp z, .sourceValid
     cp JOHTO_ROUTE_34_LOCAL_ID
+    ret nz
+    jp .sourceValid
+.southParkGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    ret nz
+    jp .sourceValid
+.eastParkGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_36_LOCAL_ID
     ret nz
     jp .sourceValid
 .sourceValid
@@ -461,6 +523,19 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .southRoute34Edge
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID
     jp z, .southGoldenrodEdge
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .southRoute35Edge
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .southRoute35Edge
+    ; FIX-288: new Park and both gates are finite. Without this
+    ; dispatch their edge steps fell through as unrestricted land,
+    ; walking/cycling into the black border outside the map array.
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .southClosedEdge
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .southClosedEdge
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .southClosedEdge
     cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
     jp z, .southClosedEdge
     cp JOHTO_ILEX_FOREST_LOCAL_ID
@@ -479,6 +554,9 @@ JohtoPilotIsClosedOutdoorEdge::
     callab JohtoSouthIsKnownClosedEdge
     ret
 .southGoldenrodEdge
+    callab JohtoSouthIsKnownClosedEdge
+    ret
+.southRoute35Edge
     callab JohtoSouthIsKnownClosedEdge
     ret
 .route33ClosedEdge
@@ -550,7 +628,9 @@ JohtoPilotIsClosedOutdoorEdge::
     ld e, 0
     ret
 .route36Edge
-    ; Prevent unregistered 35/37/Violet edges, allow interior movement.
+    ; Gold Route36: SOUTH only x17 (the sole open tile in the mature
+    ; Route36/Route35 collision mask); EAST only y8/9 to Violet City.
+    ; NORTH remains shut until Route37 is registered. Interior unchanged.
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
     jr z, .route36Up
@@ -563,6 +643,11 @@ JohtoPilotIsClosedOutdoorEdge::
     ld a, [wXCoord]
     cp JOHTO_ROUTE_36_WIDTH * 2 - 1
     ret c
+    ld a, [wYCoord]
+    cp 8
+    ret z
+    cp 9
+    ret z
     jp .closed
 .route36Up
     ld a, [wYCoord]
@@ -573,6 +658,9 @@ JohtoPilotIsClosedOutdoorEdge::
     ld a, [wYCoord]
     cp JOHTO_ROUTE_36_HEIGHT * 2 - 1
     ret c
+    ld a, [wXCoord]
+    cp 17
+    ret z
     jp .closed
 .route36Left
     ld a, [wXCoord]
@@ -657,8 +745,8 @@ JohtoPilotIsClosedOutdoorEdge::
     ret nz
     jp .closed
 .violet
-    ; No unverified direct outdoor seam to Route31/Route32/Route36.
-    ; The only playable east entrance is the two-door registered gate.
+    ; Violet WEST outdoor path to Route36 is Gold y8/9, but the east
+    ; Route31 Gate and SOUTH Route32 keep their existing exact rules.
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_RIGHT
     jr z, .violetEast
@@ -679,6 +767,11 @@ JohtoPilotIsClosedOutdoorEdge::
     ld a, [wXCoord]
     and a
     ret nz
+    ld a, [wYCoord]
+    cp 8
+    ret z
+    cp 9
+    ret z
     jp .closed
 .violetSouth
     ld a, [wYCoord]
@@ -853,10 +946,21 @@ JohtoPilotGateArrivalStep::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jp c, .oldArrival
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
     jp nc, .oldArrival
+.newNorthSouthMap
     callab JohtoSouthPortalArrivalStep
     ret
 .oldArrival
@@ -920,10 +1024,21 @@ JohtoPilotGateDoorApproachAllowed::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jp c, .oldGateRules
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
     jp nc, .oldGateRules
+.newNorthSouthMap
     callab JohtoSouthPortalBeforeStep
     ret
 .oldGateRules
@@ -993,10 +1108,10 @@ JohtoPilotGateDoorApproachAllowed::
     ret nz
     ld a, [wYCoord]
     cp 2
-    jr z, .allow
+    jp z, .allow
     cp 3
     ret nz
-    jr .allow
+    jp .allow
 .route32Cave
     ld a, [wXCoord]
     cp 6
@@ -1030,6 +1145,19 @@ JohtoPilotGateDoorApproachAllowed::
     jr .allow ; preserve the already-validated Ruins south right-hand lane
 
 .route36Alph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr nz, .ruins36
+    ld a, [wXCoord]
+    cp 19
+    ret nz
+    ld a, [wYCoord]
+    cp 8
+    jp z, .allow
+    cp 9
+    jp z, .allow
+    ret
+.ruins36
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_DOWN
     ret nz
@@ -1065,10 +1193,21 @@ JohtoPilotGateDoorWarpMatched::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jp c, .oldGateRules
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
     jp nc, .oldGateRules
+.newNorthSouthMap
     callab JohtoSouthPortalAfterStep
     ret
 .oldGateRules
@@ -1137,10 +1276,10 @@ JohtoPilotGateDoorWarpMatched::
     ret nz
     ld a, [wYCoord]
     cp 2
-    jr z, .allow
+    jp z, .allow
     cp 3
     ret nz
-    jr .allow
+    jp .allow
 .route32Cave
     ld a, [wXCoord]
     cp 6
@@ -1174,6 +1313,19 @@ JohtoPilotGateDoorWarpMatched::
     jr .allow ; preserve the already-validated Ruins south right-hand lane
 
 .route36Alph
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr nz, .ruins36
+    ld a, [wXCoord]
+    cp 18
+    ret nz
+    ld a, [wYCoord]
+    cp 8
+    jp z, .allow
+    cp 9
+    jp z, .allow
+    ret
+.ruins36
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_DOWN
     ret nz
@@ -1214,10 +1366,21 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jp c, .legacyExtra
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
     jp nc, .legacyExtra
+.newNorthSouthMap
     callab JohtoSouthPortalCollisionExit
     ret
 .legacyExtra
@@ -1246,7 +1409,7 @@ JohtoPilotGateExteriorCollisionAllowed::
     ret nz
     ld a, [wYCoord]
     cp 24
-    jr z, .yes
+    jp z, .yes
     cp 25
     ret nz
     jr .yes
@@ -1291,6 +1454,19 @@ JohtoPilotGateExteriorCollisionAllowed::
     jr .yes
 .route36Alph
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr nz, .ruins36
+    ld a, [wXCoord]
+    cp 18
+    ret nz
+    ld a, [wYCoord]
+    cp 8
+    jp z, .yes
+    cp 9
+    jp z, .yes
+    ret
+.ruins36
+    ld a, [wPlayerDirection]
     cp PLAYER_DIR_DOWN
     ret nz
     ld a, [wYCoord]
@@ -1320,10 +1496,21 @@ JohtoPilotGateCollisionExitAllowed::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .newNorthSouthMap
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jp c, .legacyGuard
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
     jp nc, .legacyGuard
+.newNorthSouthMap
     callab JohtoSouthPortalCollisionExit
     ret
 .legacyGuard
@@ -1339,6 +1526,19 @@ JohtoPilotGateCollisionExitAllowed::
     cp JOHTO_ROUTE_36_LOCAL_ID
     ret nz
     ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr nz, .ruins36
+    ld a, [wXCoord]
+    cp 18
+    ret nz
+    ld a, [wYCoord]
+    cp 8
+    jp z, .yes
+    cp 9
+    jp z, .yes
+    ret
+.ruins36
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_DOWN
     ret nz

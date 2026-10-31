@@ -3413,6 +3413,10 @@ INCLUDE "engine/johto_ilex_mature_runtime_275.asm"
 SECTION "Johto Route33 Runtime", ROMX, BANK[$4C]
 INCLUDE "data/johto_route33_runtime.asm"
 INCLUDE "data/johto_south_runtime.asm"
+INCLUDE "data/johto_north_runtime_283.asm"
+; Park graphics and objects live in a separate ROMX bank; keep bank $4C safe.
+SECTION "Johto Park Runtime 286", ROMX, BANK[$50]
+INCLUDE "data/johto_park_runtime_286.asm"
 
 SECTION "Johto Gold Roofs 269", ROMX, BANK[$4F]
 INCLUDE "engine/johto_south_roofs_269.asm"

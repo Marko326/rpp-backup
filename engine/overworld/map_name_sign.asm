@@ -285,6 +285,10 @@ UpdateMapNameSign::
 	jp z, .johtoRoute34
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
 	jp z, .johtoGoldenrod
+	cp JOHTO_ROUTE_35_LOCAL_ID
+	jp z, .johtoRoute35
+	cp JOHTO_NATIONAL_PARK_LOCAL_ID
+	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
 	; for sign purposes. Store a harmless placeholder without showing.
 	; Unknown Johto maps must never consult the Kanto $FC entry.
@@ -336,6 +340,12 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoGoldenrod
 	ld hl, .JohtoGoldenrodName
+	jr .johtoResolved
+.johtoPark
+	ld hl, .JohtoParkName
+	jr .johtoResolved
+.johtoRoute35
+	ld hl, .JohtoRoute35Name
 	jr .johtoResolved
 .resolveLegacyLandmark
 	ld a, [wCurMap]
@@ -665,6 +675,12 @@ UpdateMapNameSign::
 	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
 	ret z
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
 	ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -1045,3 +1061,5 @@ UpdateMapNameSign::
 .JohtoIlexName: db "Ilex Forest@"
 .JohtoRoute34Name: db "Route 34@"
 .JohtoGoldenrodName: db "Goldenrod City@"
+.JohtoRoute35Name: db "Route 35@"
+.JohtoParkName: db "National Park@"

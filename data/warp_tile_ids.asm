@@ -34,8 +34,10 @@ WarpTileIDPointers:
     dw JohtoModernWarpTileIDs ; ID32, previously missing
     dw JohtoSouthForestWarpTileIDs
     dw JohtoSouthGateWarpTileIDs
+    dw JohtoParkWarpTileIDs
+    dw JohtoParkGateWarpTileIDs
 WarpTileIDPointersEnd:
-ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_SOUTH_GATE + 1) * 2
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_PARK_GATE + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -106,3 +108,7 @@ JohtoUnionCaveWarpTileIDs:
     db $ff
 
 INCLUDE "data/johto_south_warp_tile_ids.asm"
+
+; Park and park-gate Warps are coordinate/facing-qualified, not generic STEP_ON.
+JohtoParkWarpTileIDs: db $ff
+JohtoParkGateWarpTileIDs: db $ff

@@ -4,9 +4,9 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 21
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 26
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 16
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 20
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
@@ -26,6 +26,15 @@ JohtoSouthRoute34GoldBlocks::
 JohtoSouthGoldenrodCityGoldBlocks::
     INCBIN "maps/johto_pilot/GoldenrodCity.gold.blk"
 
+JohtoNorthRoute35GoldenrodGateGoldBlocks::
+    INCBIN "maps/johto_pilot/Route35GoldenrodGate.gold.blk"
+JohtoNorthRoute35GoldBlocks::
+    INCBIN "maps/johto_pilot/Route35.gold.blk"
+ASSERT JohtoNorthRoute35GoldBlocks - JohtoNorthRoute35GoldenrodGateGoldBlocks == 20
+
+JohtoParkGoldBlocks:: INCBIN "maps/johto_pilot/NationalPark.gold.blk"
+JohtoParkSouthGateGoldBlocks:: INCBIN "maps/johto_pilot/Route35NationalParkGate.gold.blk"
+JohtoParkEastGateGoldBlocks:: INCBIN "maps/johto_pilot/Route36NationalParkGate.gold.blk"
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -92,6 +101,21 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID, 20, 18
     dw JohtoSouthGoldenrodCityGoldBlocks
     db BANK(JohtoSouthGoldenrodCityGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID, JOHTO_ROUTE35_GATE_WIDTH, JOHTO_ROUTE35_GATE_HEIGHT
+    dw JohtoNorthRoute35GoldenrodGateGoldBlocks
+    db BANK(JohtoNorthRoute35GoldenrodGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID, JOHTO_ROUTE35_WIDTH, JOHTO_ROUTE35_HEIGHT
+    dw JohtoNorthRoute35GoldBlocks
+    db BANK(JohtoNorthRoute35GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_NATIONAL_PARK_LOCAL_ID, JOHTO_NATIONAL_PARK_WIDTH, JOHTO_NATIONAL_PARK_HEIGHT
+    dw JohtoParkGoldBlocks
+    db BANK(JohtoParkGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_ROUTE35_PARK_GATE_WIDTH, JOHTO_ROUTE35_PARK_GATE_HEIGHT
+    dw JohtoParkSouthGateGoldBlocks
+    db BANK(JohtoParkSouthGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_ROUTE36_PARK_GATE_WIDTH, JOHTO_ROUTE36_PARK_GATE_HEIGHT
+    dw JohtoParkEastGateGoldBlocks
+    db BANK(JohtoParkEastGateGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -121,6 +145,11 @@ JohtoPilotSourceConnections::
     db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
+    ; SEAM-289: verified Gold Route35/36 + Route36/Violet direct edges.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_35_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
 ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 

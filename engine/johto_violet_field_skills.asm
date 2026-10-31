@@ -20,6 +20,10 @@ JohtoOverworldSurfDecision::
     jp z, .southModern
     cp JOHTO_SOUTH_GATE
     jp z, .southModern
+    cp JOHTO_PARK
+    jp z, .southModern
+    cp JOHTO_PARK_GATE
+    jp z, .southModern
 	cp JOHTO_UNION_CAVE
 	jp z, .unionCave
 	cp JOHTO_PILOT
@@ -28,6 +32,8 @@ JohtoOverworldSurfDecision::
 	cp MAP_REGION_JOHTO
 	jp nz, .legacy
 	ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .southModern
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID
@@ -1485,9 +1491,10 @@ JohtoRoutesGoldCutCells::
 	db JOHTO_ROUTE_31_LOCAL_ID, 10, 25, $5b
 	db JOHTO_ROUTE_32_LOCAL_ID, 19, 10, $63
 	db JOHTO_ILEX_FOREST_LOCAL_ID, 25, 8, $0f
+	db JOHTO_ROUTE_35_LOCAL_ID, 6, 17, $5b
 	db $ff
 JohtoRoutesGoldCutCellsEnd::
-ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 7 * 4 + 1
+ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 8 * 4 + 1
 
 JohtoRoutesCutTreeAhead::
 	push bc
@@ -1508,6 +1515,8 @@ JohtoRoutesCutTreeAhead::
 	jr z, .validMap
 	cp JOHTO_ROUTE_32_LOCAL_ID
 	jr z, .validMap
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .validMap
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp nz, .no
 .validMap

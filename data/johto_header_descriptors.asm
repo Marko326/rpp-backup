@@ -56,6 +56,16 @@ JohtoHeaderDescriptors::
     db BANK(JohtoSouthRoute34RuntimeHeader)
     dw JohtoSouthGoldenrodCityRuntimeHeader
     db BANK(JohtoSouthGoldenrodCityRuntimeHeader)
+    dw JohtoNorthRoute35GoldenrodGateRuntimeHeader
+    db BANK(JohtoNorthRoute35GoldenrodGateRuntimeHeader)
+    dw JohtoNorthRoute35RuntimeHeader
+    db BANK(JohtoNorthRoute35RuntimeHeader)
+    dw JohtoParkRuntimeHeader
+    db BANK(JohtoParkRuntimeHeader)
+    dw JohtoParkSouthGateRuntimeHeader
+    db BANK(JohtoParkSouthGateRuntimeHeader)
+    dw JohtoParkEastGateRuntimeHeader
+    db BANK(JohtoParkEastGateRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

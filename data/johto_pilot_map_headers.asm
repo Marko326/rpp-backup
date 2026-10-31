@@ -429,13 +429,20 @@ JohtoPilotRoute31RuntimeObjects::
 
 ; Violet City P6-GATE-001: city is reachable via its Gold east gate only.
 ; Route31 east/west outdoor seam stays disabled until strip/fence audited.
+; SEAM-289: Violet's WEST preview is drawn while Bank $43 is selected.
+; Source-address targets must be co-banked even when the destination map
+; itself is in another Bank ($4A). Never point at its original ROM pointer.
+JohtoVioletWestRoute36Mirror::
+    INCBIN "maps/johto_pilot/Route36.runtime.blk"
+ASSERT @ - JohtoVioletWestRoute36Mirror == JOHTO_ROUTE_36_WIDTH * JOHTO_ROUTE_36_HEIGHT
+
 JohtoPilotVioletRuntimeHeader::
     db JOHTO_PILOT
     db JOHTO_VIOLET_CITY_HEIGHT, JOHTO_VIOLET_CITY_WIDTH
     dw JohtoPilotVioletRuntimeBlocks
     dw JohtoPilotVioletTextPointers
     dw JohtoPilotMapScript
-    db SOUTH | EAST
+    db SOUTH | WEST | EAST
     ; SOUTH: first three rows of Route32, original Gold offset 0.
     ; Only x14/15 may actually pass; the edge fence rejects other columns.
     db JOHTO_RUNTIME_MAP_HANDLE
@@ -446,6 +453,15 @@ JohtoPilotVioletRuntimeHeader::
     db 0
     db 0
     dw wOverworldMap + 7 + JOHTO_ROUTE_32_WIDTH
+    ; WEST -> Route36: Gold offset 0; only nine Route36 rows overlap.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoVioletWestRoute36Mirror + JOHTO_ROUTE_36_WIDTH - 3
+    dw wOverworldMap + 3 * (JOHTO_VIOLET_CITY_WIDTH + 6)
+    db JOHTO_ROUTE_36_HEIGHT
+    db JOHTO_ROUTE_36_WIDTH
+    db 0
+    db JOHTO_ROUTE_36_WIDTH * 2 - 1
+    dw wOverworldMap + (JOHTO_ROUTE_36_WIDTH + 6) * 2 - 6
     ; EAST screen-preview strip, aligned as in accepted NPC-5.62.243:
     ; Route31 rows 0..8 overlap Violet rows 9..17 (Gold offset +9).
     ; At the gate, the player stays on the direction carpet; the seam is
@@ -460,7 +476,8 @@ JohtoPilotVioletRuntimeHeader::
     dw wOverworldMap + 7 + JOHTO_ROUTE_31_WIDTH
     dw JohtoPilotVioletRuntimeObjects
 JohtoPilotVioletRuntimeHeaderEnd::
-ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 34
+ASSERT JohtoPilotVioletRuntimeHeaderEnd - JohtoPilotVioletRuntimeHeader == 45
+ASSERT BANK(JohtoVioletWestRoute36Mirror) == BANK(JohtoPilotVioletRuntimeHeader)
 ASSERT BANK(JohtoPilotVioletRuntimeHeader) == BANK(JohtoPilotVioletRuntimeBlocks)
 
 JohtoPilotVioletTextPointers:

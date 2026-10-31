@@ -34,16 +34,47 @@ JohtoPilotAlphNorthGateRuntimeObjects::
     db 0 ; no NPC until Gold scripted event implementation
     db 0
 
+; SEAM-289: the blockmap-strip loader uses SwitchToMapRomBank (the
+; *source* map's bank) while drawing connected neighbors. These full byte-
+; identical mirrors are intentionally in Route36's Bank $4A; pointers into
+; VioletCity's Bank $43 or Route35's Bank $4C would read the wrong ROM.
+JohtoRoute36SouthRoute35Mirror::
+    INCBIN "maps/johto_pilot/Route35.runtime.blk"
+ASSERT @ - JohtoRoute36SouthRoute35Mirror == JOHTO_ROUTE35_WIDTH * JOHTO_ROUTE35_HEIGHT
+JohtoRoute36EastVioletMirror::
+    INCBIN "maps/johto_pilot/VioletCity.runtime.blk"
+ASSERT @ - JohtoRoute36EastVioletMirror == JOHTO_VIOLET_CITY_WIDTH * JOHTO_VIOLET_CITY_HEIGHT
+
 JohtoPilotRoute36RuntimeHeader::
     db JOHTO_PILOT
     db JOHTO_ROUTE_36_HEIGHT, JOHTO_ROUTE_36_WIDTH
     dw JohtoPilotRoute36RuntimeBlocks
     dw JohtoPilotRoute36TextPointers
     dw JohtoPilotRoute36Script
-    db 0 ; Park/Violet/Route35/Route37 edges not yet certified; fail closed
+    db SOUTH | EAST ; Gold: Route35 south and VioletCity east; Route37 CLOSED
+    ; SOUTH -> Route35 (offset 0). Only the neighbor's ten columns overlap.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoRoute36SouthRoute35Mirror
+    dw wOverworldMap + (JOHTO_ROUTE_36_HEIGHT + 3) * (JOHTO_ROUTE_36_WIDTH + 6) + 3
+    db JOHTO_ROUTE35_WIDTH
+    db JOHTO_ROUTE35_WIDTH
+    db 0
+    db 0
+    dw wOverworldMap + 7 + JOHTO_ROUTE35_WIDTH
+    ; EAST -> VioletCity (offset 0), y=0..8 are the overlapping source rows.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoRoute36EastVioletMirror
+    dw wOverworldMap + 3 * (JOHTO_ROUTE_36_WIDTH + 6) + JOHTO_ROUTE_36_WIDTH + 3
+    db JOHTO_ROUTE_36_HEIGHT ; map rows (the border is refilled by 3 extra rows)
+    db JOHTO_VIOLET_CITY_WIDTH
+    db 0
+    db 0
+    dw wOverworldMap + 7 + JOHTO_VIOLET_CITY_WIDTH
     dw JohtoPilotRoute36RuntimeObjects
 JohtoPilotRoute36RuntimeHeaderEnd::
-ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 12
+ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 34
+ASSERT BANK(JohtoRoute36SouthRoute35Mirror) == BANK(JohtoPilotRoute36RuntimeHeader)
+ASSERT BANK(JohtoRoute36EastVioletMirror) == BANK(JohtoPilotRoute36RuntimeHeader)
 ASSERT BANK(JohtoPilotRoute36RuntimeHeader) == BANK(JohtoPilotRoute36RuntimeBlocks)
 JohtoPilotRoute36Script::
     call EnableAutoTextBoxDrawing
@@ -51,8 +82,10 @@ JohtoPilotRoute36Script::
 JohtoPilotRoute36TextPointers:
 JohtoPilotRoute36RuntimeObjects::
     db $05
-    db 2 ; Only Gold Route36 Warps #3/#4; National Park #1/#2 closed.
+    db 4 ; Ruins #3/#4 retain ordinals0/1; Park #1/#2 append 2/3.
     db 13, 47, 0, JOHTO_REGISTERED_WARP_SELECTOR ; DOWN carpet -> North Gate top left
     db 13, 48, 1, JOHTO_REGISTERED_WARP_SELECTOR ; DOWN carpet -> North Gate top right
+    db 8, 18, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #1 -> Park east gate #3
+    db 9, 18, 3, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #2 -> Park east gate #4
     db 0 ; defer signs and original NPC/Sudowoodo events
     db 0

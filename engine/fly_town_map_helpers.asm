@@ -869,13 +869,23 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotSouthRoute34Name
     db 108, 60
     dw JohtoPilotSouthGoldenrodName
+    db 92, 60 ; slot 21 Route35 Goldenrod Gate, neutral Route35 label
+    dw JohtoPilotNorthRoute35Name
+    db 92, 60 ; slot 22 Route35 Gold landmark
+    dw JohtoPilotNorthRoute35Name
+    db 76, 60 ; slot23 National Park
+    dw JohtoPilotNationalParkName
+    db 92, 60 ; slot24 south park gate inherits Route35 landmark
+    dw JohtoPilotNorthRoute35Name
+    db 76, 72 ; slot25 east park gate inherits Route36 landmark
+    dw JohtoPilotRoute36Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -996,3 +1006,6 @@ JohtoPilotSouthAzaleaName:: db "Azalea Town@"
 JohtoPilotSouthIlexName:: db "Ilex Forest@"
 JohtoPilotSouthRoute34Name:: db "Route 34@"
 JohtoPilotSouthGoldenrodName:: db "Goldenrod City@"
+
+JohtoPilotNorthRoute35Name:: db "Route 35@"
+JohtoPilotNationalParkName:: db "National Park@"

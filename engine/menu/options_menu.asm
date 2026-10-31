@@ -1159,12 +1159,18 @@ LookupJohtoMapGSCMusic:
     cp MAP_REGION_JOHTO
     jp nz, .unresolved
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .southParkGate
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .eastParkGate
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .route35GoldenrodGate
     cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
     jp z, .southForestGate
     cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
     jp z, .northForestGate
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
-    jr z, .violetGate
+    jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     jr z, .southGate
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
@@ -1189,6 +1195,13 @@ LookupJohtoMapGSCMusic:
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     jr nz, .gateDefault
     jr .activeSlot
+.route35GoldenrodGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
 .southForestGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1201,6 +1214,20 @@ LookupJohtoMapGSCMusic:
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     jp z, .activeSlot
     cp JOHTO_ROUTE_34_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.southParkGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.eastParkGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_36_LOCAL_ID
     jp z, .activeSlot
     jp .gateDefault
 .gateDefault
@@ -1254,6 +1281,11 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE36 ; North gate neutral fallback
     db MUSIC_GBP_GSC_ROUTE36 ; Route34
     db MUSIC_GBP_GSC_GOLDENROD_CITY
+    db MUSIC_GBP_GSC_ROUTE36 ; slot 21: Route35GoldenrodGate default
+    db MUSIC_GBP_GSC_ROUTE36 ; slot 22: Route35
+    db MUSIC_GBP_GSC_NATIONAL_PARK ; slot23 Park (GSC scene fallback)
+    db MUSIC_GBP_GSC_ROUTE36 ; slot24 South Park gate, source overrides
+    db MUSIC_GBP_GSC_ROUTE36 ; slot25 East Park gate, source overrides
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

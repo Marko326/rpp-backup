@@ -167,7 +167,8 @@ ASSERT BANK(JohtoSouthGoldenrodCityRuntimeHeader) == BANK(JohtoSouthGoldenrodCit
 JohtoSouthGoldenrodCityTextPointers:
 JohtoSouthGoldenrodCityRuntimeObjects::
     db $35 ; NPC-243 accepted Gold Goldenrod outdoor border
-    db 0
+    db 1
+    db 1, 19, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #13 -> Route35GoldenrodGate #3
     db 0 ; unregistered signs excluded
     db 0 ; trainer/story encounters excluded
 JohtoSouthScript::

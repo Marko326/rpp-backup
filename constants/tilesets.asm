@@ -35,3 +35,5 @@ const_value = 0
 	const JOHTO_MODERN ; 32 ; Gold Route33 separate modern outdoor tileset
 	const JOHTO_ILEX_FOREST ; 33 ; independent Gold IlexForest art
 	const JOHTO_SOUTH_GATE ; 34 ; independent Gold north/south and east/west Gate art
+	const JOHTO_PARK ; 35 ; independent Gold National Park art
+	const JOHTO_PARK_GATE ; 36 ; asymmetric Gold Park gate art

@@ -360,10 +360,11 @@ PatchJohtoAzaleaWestGateBorder::
 ; existing single ROM0 far-call (no new ROM0 allocation).
 PatchJohtoSouthBordersAfterBlockLoad::
     call PatchJohtoAzaleaWestGateBorder
-    jp PatchJohtoGoldenrodNorthBorder
+    call PatchJohtoGoldenrodNorthBorder
+    jp PatchJohtoRoute35SouthBorder
 
 ; Render only: the three rows NORTH of Goldenrod are the last three Gold
-; Route35 rows. Route35 is NOT an active map or a passable connection.
+; Route35 rows. No direct, walkable connection is activated.
 ; Reference: NPC-5.62.243/engine/overworld/johto_route33_collision.asm,
 ; PatchJohtoGoldenrodNorthBorder; positions and bytes unchanged.
 PatchJohtoGoldenrodNorthBorder::
@@ -399,3 +400,45 @@ PatchJohtoGoldenrodNorthBorder::
     db $41, $41, $41, $42, $0c, $0d, $40, $41, $41, $41
 .row2
     db $01, $01, $01, $46, $08, $09, $44, $01, $01, $01
+
+
+; FIX-284: NPC-243/GATE-224 accepted Route35 SOUTH out-of-map preview.
+; Gold's Route35 south neighbor is GoldenrodCity at offset -5, even
+; though the playable transfer remains the registered two-carpet Warp.
+; Do not insert raw JOHTO_MODERN block IDs into JOHTO_ROUTE35's JOHTO
+; tileset: $06 and $67 have no identical block crosswalk. This row map
+; is the mature, source-checked JOHTO-safe representation.
+; Loaded AFTER the full/connected-map block buffer, in ROMX Bank $4E.
+PatchJohtoRoute35SouthBorder::
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    ret nz
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    ret nz
+    ld de, .row0
+    ld hl, wOverworldMap + (MAP_BORDER + JOHTO_ROUTE35_HEIGHT) * (JOHTO_ROUTE35_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+    call .copyRow
+    ld de, .row1
+    ld hl, wOverworldMap + (MAP_BORDER + JOHTO_ROUTE35_HEIGHT + 1) * (JOHTO_ROUTE35_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+    call .copyRow
+    ld de, .row2
+    ld hl, wOverworldMap + (MAP_BORDER + JOHTO_ROUTE35_HEIGHT + 2) * (JOHTO_ROUTE35_WIDTH + 2 * MAP_BORDER) + MAP_BORDER
+.copyRow
+    ld b, JOHTO_ROUTE35_WIDTH
+.loop
+    ld a, [de]
+    inc de
+    ld [hli], a
+    dec b
+    jr nz, .loop
+    ret
+.row0
+    db $12, $15, $01, $46, $16, $1e, $44, $01, $01, $12
+.row1
+    db $01, $12, $15, $46, $01, $01, $44, $01, $01, $04
+.row2
+    db $15, $12, $18, $19, $01, $01, $18, $1f, $19, $02

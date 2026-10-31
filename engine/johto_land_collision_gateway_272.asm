@@ -24,11 +24,26 @@ JohtoOverworldSouthLandDecision::
     ld e, 0
     ret
 .southMaps
+    ; FIX-285: 17 Route35 / 18 Goldenrod north gate were registered after
+    ; FIX-272's 10..15 interval. Route35 collision must enter the Gold role
+    ; grid, not fall back to legacy 8x8 tile passability (fence can be crossed).
+    ; Local ID 16 is Route36: preserve its existing independent movement.
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .activeSouthMap
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jr z, .activeSouthMap
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jr z, .activeSouthMap
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .activeSouthMap
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jr z, .activeSouthMap
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jr c, .route33
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
     jr nc, .route33
+.activeSouthMap
     ; The accepted ledge handler starts the simulated two-input jump.
     callab HandleLedges
     ld a, [wd736]

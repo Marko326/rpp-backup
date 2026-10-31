@@ -20,6 +20,8 @@ EnterMap::
 	jr z,.armJohtoCarpetArrival
 	cp JOHTO_SOUTH_GATE
 	jr z,.armJohtoCarpetArrival
+	cp JOHTO_PARK_GATE
+	jr z,.armJohtoCarpetArrival
 	cp JOHTO_MODERN
 	jr z,.maybeSouthCarpetArrival
 	cp JOHTO_ILEX_FOREST
@@ -577,6 +579,8 @@ CheckWarpsNoCollisionLoop::
 	cp JOHTO_GATE
 	jr z,CheckWarpsNoCollisionRetry2
 	cp JOHTO_SOUTH_GATE
+	jp z,CheckWarpsNoCollisionRetry2
+	cp JOHTO_PARK_GATE
 	jp z,CheckWarpsNoCollisionRetry2
 	; FIX-264: the cave DOWN carpet only warps upon a *blocked* step.
 	; ExtraWarpCheck now recognizes it, so skip the no-collision path.
@@ -1169,6 +1173,8 @@ IsBikeRidingAllowed::
 	jp z, .allowed
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	jp z, .allowed
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .allowed
 .legacyBike
 	ld a, [wCurMap]
 	cp ROUTE_23

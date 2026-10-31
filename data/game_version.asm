@@ -7,6 +7,9 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
+	; FIX-288: protect Park borders, mature east-gate passability and long grass.
+	; FIX-287: keep Park/Gate map scripts in the same ROMX bank as their active headers.
+	; FIX-284: Route35 south Gold-compatible preview and closed park lane, preserve warp landing.
 	; FIX-281: reopen only registered Route34 north-gate carpet lanes and audit live warp collisions.
 	; FIX-280: synchronize real in-ROM version with cumulative Route34/Goldenrod fixes.
 	; FIX-279: restore Gold Route34 tree border, four seam lanes and north preview.
@@ -32,5 +35,5 @@ ELSE
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "FIX-5.62.282@"
+	db "FIX-5.62.290@"
 ENDC

@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 21
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 26
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -160,6 +160,26 @@ JohtoSouthGoldenrodCityDescriptor::
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, JOHTO_MODERN, 20, 18
     dw JohtoSouthGoldenrodCityBlocks
     db BANK(JohtoSouthGoldenrodCityBlocks)
+JohtoNorthRoute35GoldenrodGateDescriptor::
+    db JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID, JOHTO_GATE, JOHTO_ROUTE35_GATE_WIDTH, JOHTO_ROUTE35_GATE_HEIGHT
+    dw JohtoNorthRoute35GoldenrodGateBlocks
+    db BANK(JohtoNorthRoute35GoldenrodGateBlocks)
+JohtoNorthRoute35Descriptor::
+    db JOHTO_ROUTE_35_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE35_WIDTH, JOHTO_ROUTE35_HEIGHT
+    dw JohtoNorthRoute35Blocks
+    db BANK(JohtoNorthRoute35Blocks)
+JohtoParkDescriptor::
+    db JOHTO_NATIONAL_PARK_LOCAL_ID, JOHTO_PARK, JOHTO_NATIONAL_PARK_WIDTH, JOHTO_NATIONAL_PARK_HEIGHT
+    dw JohtoParkBlocks
+    db BANK(JohtoParkBlocks)
+JohtoParkSouthGateDescriptor::
+    db JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_PARK_GATE, JOHTO_ROUTE35_PARK_GATE_WIDTH, JOHTO_ROUTE35_PARK_GATE_HEIGHT
+    dw JohtoParkSouthGateBlocks
+    db BANK(JohtoParkSouthGateBlocks)
+JohtoParkEastGateDescriptor::
+    db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_PARK_GATE, JOHTO_ROUTE36_PARK_GATE_WIDTH, JOHTO_ROUTE36_PARK_GATE_HEIGHT
+    dw JohtoParkEastGateBlocks
+    db BANK(JohtoParkEastGateBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -187,17 +207,17 @@ JohtoPilotGetRuntimeResourceDescriptor::
     cp JOHTO_ROUTE_32_LOCAL_ID
     jp z, .route32
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
-    jr z, .alphGate
+    jp z, .alphGate
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-    jr z, .alphOutside
+    jp z, .alphOutside
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     jr z, .alphNorthGate
     cp JOHTO_ROUTE_36_LOCAL_ID
-    jr z, .route36
+    jp z, .route36
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jr z, .unionCave
     cp JOHTO_ROUTE_33_LOCAL_ID
-    jr z, .route33
+    jp z, .route33
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jp z, .southAzaleaTown
     cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
@@ -210,15 +230,25 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .southRoute34
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID
     jp z, .southGoldenrodCity
+    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
+    jp z, .route35GoldenrodGate
+    cp JOHTO_ROUTE_35_LOCAL_ID
+    jp z, .route35
+    cp JOHTO_NATIONAL_PARK_LOCAL_ID
+    jp z, .park
+    cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .parkSouthGate
+    cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
+    jp z, .parkEastGate
     ld d, 0
     ld hl, 0
     ret
 .alphNorthGate
     ld hl, JohtoPilotAlphNorthGateRuntimeDescriptor
-    jr .valid
+    jp .valid
 .unionCave
     ld hl, JohtoUnionCave1FRuntimeDescriptor
-    jr .valid
+    jp .valid
 .southAzaleaTown
     ld hl, JohtoSouthAzaleaTownDescriptor
     jp .valid
@@ -236,6 +266,21 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .southGoldenrodCity
     ld hl, JohtoSouthGoldenrodCityDescriptor
+    jp .valid
+.route35GoldenrodGate
+    ld hl, JohtoNorthRoute35GoldenrodGateDescriptor
+    jp .valid
+.route35
+    ld hl, JohtoNorthRoute35Descriptor
+    jp .valid
+.park
+    ld hl, JohtoParkDescriptor
+    jp .valid
+.parkSouthGate
+    ld hl, JohtoParkSouthGateDescriptor
+    jp .valid
+.parkEastGate
+    ld hl, JohtoParkEastGateDescriptor
     jp .valid
 .route33
     ld hl, JohtoRoute33RuntimeDescriptor
