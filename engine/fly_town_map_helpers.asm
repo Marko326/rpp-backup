@@ -857,13 +857,25 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotUnionCaveName
     db 140, 90 ; Route33 Gold landmark index 10
     dw JohtoPilotRoute33Name
+    db 140, 76
+    dw JohtoPilotSouthAzaleaName
+    db 140, 76
+    dw JohtoPilotSouthAzaleaName
+    db 136, 60
+    dw JohtoPilotSouthIlexName
+    db 128, 60
+    dw JohtoPilotSouthRoute34Name
+    db 128, 60
+    dw JohtoPilotSouthRoute34Name
+    db 108, 60
+    dw JohtoPilotSouthGoldenrodName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -979,3 +991,8 @@ JohtoPilotRoute33Name:: db "Route 33@"
 JohtoPilotRoute36Name:: db "Route 36@"
 
 JohtoPilotUnionCaveName:: db "Union Cave@"
+
+JohtoPilotSouthAzaleaName:: db "Azalea Town@"
+JohtoPilotSouthIlexName:: db "Ilex Forest@"
+JohtoPilotSouthRoute34Name:: db "Route 34@"
+JohtoPilotSouthGoldenrodName:: db "Goldenrod City@"

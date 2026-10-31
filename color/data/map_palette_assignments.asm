@@ -46,5 +46,7 @@ INCLUDE "color/tilesets/johto_house.asm" ; JOHTO_HOUSE
 INCLUDE "color/tilesets/johto_gate.asm" ; JOHTO_GATE
 INCLUDE "color/tilesets/johto_union_cave.asm" ; JOHTO_UNION_CAVE
 INCLUDE "color/tilesets/johto_modern.asm" ; JOHTO_MODERN independent Route33 Gold art
+INCLUDE "color/tilesets/johto_ilex_forest.asm" ; JOHTO_ILEX_FOREST
+INCLUDE "color/tilesets/johto_south_gold_gate.asm" ; JOHTO_SOUTH_GATE
 MapPaletteAssignmentsEnd::
-ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_MODERN + 1) * $60
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_SOUTH_GATE + 1) * $60

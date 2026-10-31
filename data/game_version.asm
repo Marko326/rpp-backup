@@ -7,6 +7,15 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
+	; FIX-281: reopen only registered Route34 north-gate carpet lanes and audit live warp collisions.
+	; FIX-280: synchronize real in-ROM version with cumulative Route34/Goldenrod fixes.
+	; FIX-279: restore Gold Route34 tree border, four seam lanes and north preview.
+	; FIX-276: adapt mature Forest/Azalea width constants to active Johto symbols.
+	; FIX-269: repair Route33 west seam, accepted ILEX-217 HOP/Cut, Gold roof PNG/RGB5.
+	; MAP-268: six Gold southern maps, Ilex gates, Surf/Cut/hops and Gold seam guards.
+	; FIX-272: move southern land decision to ROMX; cap ROM0 gateway at 25B.
+	; FIX-271: preserve NPC-243 south borders, ILEX-217 jump speed, and guarded doors.
+	; FIX-270: avoid two added ROM0 roof farcalls; reuse existing ROMX hooks.
 	; FIX-267: correct 16-bit tileset and palette pointer indexing for ID 32.
 	; R33-266: Union Cave south warp and Route33 modern outdoor map.
 	; FIX-265: preserve north-facing cave arrival; leave DOWN collision exit unchanged.
@@ -23,5 +32,5 @@ ELSE
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "FIX-5.62.267@"
+	db "FIX-5.62.282@"
 ENDC

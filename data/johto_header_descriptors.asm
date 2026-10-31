@@ -44,6 +44,18 @@ JohtoHeaderDescriptors::
     db BANK(JohtoUnionCave1FRuntimeHeader)
     dw JohtoRoute33RuntimeHeader
     db BANK(JohtoRoute33RuntimeHeader)
+    dw JohtoSouthAzaleaTownRuntimeHeader
+    db BANK(JohtoSouthAzaleaTownRuntimeHeader)
+    dw JohtoSouthIlexForestAzaleaGateRuntimeHeader
+    db BANK(JohtoSouthIlexForestAzaleaGateRuntimeHeader)
+    dw JohtoSouthIlexForestRuntimeHeader
+    db BANK(JohtoSouthIlexForestRuntimeHeader)
+    dw JohtoSouthRoute34IlexForestGateRuntimeHeader
+    db BANK(JohtoSouthRoute34IlexForestGateRuntimeHeader)
+    dw JohtoSouthRoute34RuntimeHeader
+    db BANK(JohtoSouthRoute34RuntimeHeader)
+    dw JohtoSouthGoldenrodCityRuntimeHeader
+    db BANK(JohtoSouthGoldenrodCityRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

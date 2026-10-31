@@ -18,6 +18,22 @@ EnterMap::
 	jr z,.armJohtoCarpetArrival
 	cp JOHTO_GATE
 	jr z,.armJohtoCarpetArrival
+	cp JOHTO_SOUTH_GATE
+	jr z,.armJohtoCarpetArrival
+	cp JOHTO_MODERN
+	jr z,.maybeSouthCarpetArrival
+	cp JOHTO_ILEX_FOREST
+	jr nz,.checkCaveCarpetArrival
+.maybeSouthCarpetArrival
+    ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jr z,.armJohtoCarpetArrival
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jr z,.armJohtoCarpetArrival
+    cp JOHTO_ROUTE_34_LOCAL_ID
+    jr z,.armJohtoCarpetArrival
+.checkCaveCarpetArrival
+    ld a,[wCurMapTileset]
 	; FIX-264: cave entry also lands ON a collision-only DOWN warp.
 	; Clear stale flags and rearm only the exact registered (17,3) cell.
 	cp JOHTO_UNION_CAVE
@@ -344,6 +360,16 @@ OverworldLoopLessDelay::
 	ld a,[wWalkBikeSurfState]
 	cp a, $02
 	jr z, .surfFaster
+	; ILEX-217: jumping must finish at the accepted two-cell landing.
+	; Do not let B-button running advance a third cell through trees.
+	; Other ordinary walking and surfing retain their original speed.
+	ld a, [wCurMapTileset]
+	cp JOHTO_ILEX_FOREST
+	jr nz, .checkRunningButton
+	ld a, [wd736]
+	bit 6, a
+	jr nz, .notRunning
+.checkRunningButton
 	; Add running shoes
 	ld a, [hJoyHeld] ; Check what buttons are being pressed
 	and B_BUTTON ; Are you holding B?
@@ -550,6 +576,8 @@ CheckWarpsNoCollisionLoop::
 	jr z,CheckWarpsNoCollisionRetry2
 	cp JOHTO_GATE
 	jr z,CheckWarpsNoCollisionRetry2
+	cp JOHTO_SOUTH_GATE
+	jp z,CheckWarpsNoCollisionRetry2
 	; FIX-264: the cave DOWN carpet only warps upon a *blocked* step.
 	; ExtraWarpCheck now recognizes it, so skip the no-collision path.
 	cp JOHTO_UNION_CAVE
@@ -913,7 +941,8 @@ CheckMapConnections::
 	call RunPaletteCommand
 ; Since the sprite set shouldn't change, this will just update VRAM slots at
 ; $C2XE without loading any tile patterns.
-	callba InitMapSprites
+	; FIX-270: ROMX wrapper runs sprite init and roof copy without a second ROM0 farcall.
+	callba JohtoSouthConnectionSpritesAndRoofs270
 	call LoadTileBlockMap
 	jp OverworldLoopLessDelay
 
@@ -1136,6 +1165,10 @@ IsBikeRidingAllowed::
 	jr z, .allowed
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jr z, .allowed
+	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	jp z, .allowed
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+	jp z, .allowed
 .legacyBike
 	ld a, [wCurMap]
 	cp ROUTE_23
@@ -1172,7 +1205,8 @@ LoadTilesetTilePatternData::
 	ld a,[wTilesetBank]
 	call FarCopyData2
 	; Snowy 以普通 tileset 为基础，只覆盖原补丁中真正变化的图块。
-	callba ApplySnowTilesetGfxPatch
+	; FIX-270: reuse this existing farcall for snow plus the Gold roof tiles.
+	callba JohtoSouthTilesetGfxFinalizer270
 	ret
 
 ; this loads the current maps complete tile map (which references blocks, not individual tiles) to C6E8
@@ -1304,6 +1338,10 @@ LoadTileBlockMap::
 	ld [hEastWestConnectedMapWidth],a
 	call LoadEastWestConnectionsTileMap
 .done
+	; FIX-279: one ROMX dispatcher after BOTH full blockmap load and
+	; connected-map strips: Azalea west and unopened Route35 north preview.
+	; Reuses the FIX-275 far-call slot; ROM0 does not grow.
+	callab PatchJohtoSouthBordersAfterBlockLoad
 	ret
 
 LoadNorthSouthConnectionsTileMap::
@@ -1514,13 +1552,30 @@ IsSpriteInFrontOfPlayer2::
 ; function to check if the player will jump down a ledge and check if the tile ahead is passable (when not surfing)
 ; sets the carry flag if there is a collision, and unsets it if there isn't a collision
 CollisionCheckOnLand::
-	ld a,[wd736]
-	bit 6,a ; is the player jumping?
-	jp nz,.noCollision
+    ld a, [wd736]
+    bit 6, a ; shared original jump flag
+    jr z, .notJumping
+    ; FIX-273: retain the mature shared two-input leap, but never begin
+    ; a third move after reaching the exact Gold second-cell landing.
+    ; Other Johto/Kanto jump paths retain their original no-collision rule.
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jp nz, .noCollision
+    callab JohtoSouthHopLandingGuard
+    ld a, e
+    and a
+    jp z, .noCollision
+    scf ; refuse overrun; sprite animation may finish and clear wd736.6
+    ret
+.notJumping
 ; if not jumping a ledge
-	ld a,[wSimulatedJoypadStatesIndex]
-	and a
-	jp nz,.noCollision ; no collisions when the player's movements are being controlled by the game
+	; FIX-274: never let a stale scripted-input index bypass land collision.
+	; Only a currently active simulated Joypad session may bypass it.
+	; RLCA copies bit 7 to carry in the same 7-byte ROM0 budget as the
+	; former index test (LD A,[nn] / AND A / JP NZ).
+	ld a,[wd730]
+	rlca
+	jp c,.noCollision ; active simulated movement only
 	; Only the Gold-verified City/Route30 seam can cross north/south.
 	; Leave ROM0 small: the edge coordinate contract lives in expansion ROMX.
 	ld a,[wCurMap]
@@ -1535,13 +1590,13 @@ CollisionCheckOnLand::
 	ld d,a
 	ld a,[wSpriteStateData1 + 12] ; the player sprite's collision data (bit field) (set in the sprite movement code)
 	and d ; check if a sprite is in the direction the player is trying to go
-	jr nz,.collision
+	jp nz,.collision
 	xor a
 	ld [hSpriteIndexOrTextID],a
 	call IsSpriteInFrontOfPlayer ; check for sprite collisions again? when does the above check fail to detect a sprite collision?
 	ld a,[hSpriteIndexOrTextID]
 	and a ; was there a sprite collision?
-	jr nz,.collision
+	jp nz,.collision
 ; if no sprite collision
     ; P6-GATE-001: exact exterior door approaches to the 31/Violet gate.
     ; Only two registered pairs; leave neighbouring forest/roofs collidable.
@@ -1553,44 +1608,15 @@ CollisionCheckOnLand::
     and a
     jp nz, .noCollision
 .ordinaryGateApproach
-	; P6-INDOOR-006: port the tested NPC-5.62.243 Cherrygrove house
-	; DOOR approach guard. The actual Gold door is (Y9,X25); from
-	; (Y10,X25), a single UP step must pass before generic tile-pair
-	; and passability rules. This ONE registered door only; not roofs,
-	; unregistered houses, Kanto doors or other Johto maps.
-	ld a,[wCurMap]
-	cp JOHTO_RUNTIME_MAP_HANDLE
-	jr nz,.ordinaryTilePair
-	ld a,[wCurRegion]
-	cp MAP_REGION_JOHTO
-	jr nz,.ordinaryTilePair
-	ld a,[wCurLocalMapID]
-	cp JOHTO_CHERRYGROVE_LOCAL_ID
-	jr nz,.ordinaryTilePair
-	ld a,[wPlayerDirection]
-	cp PLAYER_DIR_UP
-	jr nz,.ordinaryTilePair
-	ld a,[wXCoord]
-	cp 25
-	jr nz,.ordinaryTilePair
-	ld a,[wYCoord]
-	cp 10
-	jp z,.noCollision
-.ordinaryTilePair
-    ; Route33: same visual tile ID can represent both WALL and FLOOR.
-    ; Never globally whitelist those IDs, use exact Gold coordinate mask.
+    ; FIX-272: move the Johto house/South/Route33 collision dispatch to ROMX.
+    ; E = 0 allowed; 1 blocked; 2 use original generic tile pair rules.
     ld a, [wCurMap]
     cp JOHTO_RUNTIME_MAP_HANDLE
     jr nz, .nonRoute33Tiles
-    ld a, [wCurLocalMapID]
-    cp JOHTO_ROUTE_33_LOCAL_ID
-    jr nz, .nonRoute33Tiles
-    callab HandleLedges
-    ld a, [wd736]
-    bit 6, a
-    jp nz, .noCollision
-    callab JohtoRoute33StepPolicy
+    callab JohtoOverworldSouthLandDecision
     ld a, e
+    cp 2
+    jr z, .nonRoute33Tiles
     and a
     jp z, .noCollision
     jp .collision

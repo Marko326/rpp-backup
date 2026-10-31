@@ -79,6 +79,10 @@ UpdateMusic6Times::
 	;ret ; XXX UpdateMusic
 
 CompareMapMusicBankWithCurrentBank:
+	; MUS-282: this bank comparator is currently a no-op.  Never leak the
+	; carry from the preceding CP $2 / BIT when Bike Song is disabled:
+	; that used to bypass the same-song cache and restart gate music.
+	and a
 	ret
 
 ; plays <s>music</s>SFX specified by a. If value is $ff, music is stopped

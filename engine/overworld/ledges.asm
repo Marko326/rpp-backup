@@ -5,18 +5,32 @@ HandleLedges:
 	ld a, [wCurMapTileset]
 	cp JOHTO_MODERN
 	jr z, .route33Modern
+	cp JOHTO_ILEX_FOREST
+	jp z, .ilexForestModern
 	cp JOHTO_PILOT
 	jr z, .johtoPilot
 	and a ; original Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
-	jr .checkPairs
+	jp .checkPairs
 .route33Modern
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
+	jp z, .route33Gold
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	ret nz
+	ld hl, JohtoAzaleaGoldHops
+	jp .ruinsCoordinateHopLookup
+.route33Gold
 	ld hl, JohtoRoute33Hops
-	jr .ruinsCoordinateHopLookup
+	jp .ruinsCoordinateHopLookup
+.ilexForestModern
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	ret nz
+	; Accepted .217 Forest: cloned front tile + original shared hop executor.
+	ld hl, JohtoIlexForestLedgeTiles
+	jp .checkPairs
 .johtoPilot
 	; Source-audited Route29/30/31/32 and Violet use RPP-native cliff pairs.
 	; Route31/32 share the additional right-hop pair; do not enable globally.
@@ -140,6 +154,69 @@ HandleLedges:
 	call PlaySound
 	ret
 
+; FIX-273: guard a finished two-cell south hop while the shared animation
+; still holds wd736.6.  With the current south spatial collision dispatcher,
+; a pending simulated direction could otherwise start a THIRD movement through
+; trees before _HandleMidJump releases that flag.  This is a compatibility
+; guard, NOT a different hop animator/queue. E=1 only at a Gold landing.
+JohtoSouthHopLandingGuard::
+    ld e, 0
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jr z, .route33
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jr z, .azalea
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    ret nz
+    ld hl, JohtoIlexForestGoldHops
+    jr .scan
+.route33
+    ld hl, JohtoRoute33Hops
+    jr .scan
+.azalea
+    ld hl, JohtoAzaleaGoldHops
+.scan
+    ld a, [hli]
+    cp $ff
+    ret z
+    ld b, a ; Gold takeoff X
+    ld a, [hli]
+    ld c, a ; Gold takeoff Y
+    ld a, [hli]
+    ld d, a ; Gold takeoff facing
+    ld a, [wPlayerDirection]
+    cp d
+    jp nz, .scan
+    ld a, d
+    cp PLAYER_DIR_DOWN
+    jr z, .down
+    cp PLAYER_DIR_LEFT
+    jr z, .left
+    cp PLAYER_DIR_RIGHT
+    jp nz, .scan
+    inc b
+    inc b
+    jr .compare
+.left
+    dec b
+    dec b
+    jr .compare
+.down
+    inc c
+    inc c
+.compare
+    ld a, [wXCoord]
+    cp b
+    jp nz, .scan
+    ld a, [wYCoord]
+    cp c
+    jp nz, .scan
+    ld e, 1
+    ret
+
 	; (player direction) (tile player standing on) (ledge tile) (input required)
 LedgeTiles:
 	db SPRITE_FACING_DOWN, $2C,$37,D_DOWN
@@ -183,6 +260,41 @@ JohtoRoute33Hops:
 	db 10, 12, PLAYER_DIR_DOWN
 	db 11, 12, PLAYER_DIR_DOWN
 	db 12, 12, PLAYER_DIR_DOWN
+	db $FF
+
+; Exact Gold directed safe hops for the first south batch. A HOP role
+; alone must not allow crossing a cliff toward an unsafe landing.
+JohtoAzaleaGoldHops:
+	db 6, 6, PLAYER_DIR_DOWN
+	db 7, 6, PLAYER_DIR_DOWN
+	db 8, 6, PLAYER_DIR_DOWN
+	db 10, 6, PLAYER_DIR_DOWN
+	db 11, 6, PLAYER_DIR_DOWN
+	db 28, 10, PLAYER_DIR_DOWN
+	db 29, 10, PLAYER_DIR_DOWN
+	db 30, 10, PLAYER_DIR_DOWN
+	db 32, 10, PLAYER_DIR_DOWN
+	db 33, 10, PLAYER_DIR_DOWN
+	db $FF
+
+JohtoIlexForestLedgeTiles:
+    db SPRITE_FACING_DOWN,  $05, $40, D_DOWN
+    db SPRITE_FACING_LEFT,  $05, $41, D_LEFT
+    db SPRITE_FACING_RIGHT, $05, $42, D_RIGHT
+    db $ff
+
+; Retain the independent Gold-coordinate oracle for regression checking.
+JohtoIlexForestGoldHops:
+	db 15, 14, PLAYER_DIR_LEFT
+	db 15, 15, PLAYER_DIR_LEFT
+	db 22, 2, PLAYER_DIR_DOWN
+	db 23, 22, PLAYER_DIR_DOWN
+	db 23, 22, PLAYER_DIR_LEFT
+	db 24, 2, PLAYER_DIR_DOWN
+	db 24, 22, PLAYER_DIR_DOWN
+	db 25, 2, PLAYER_DIR_DOWN
+	db 26, 22, PLAYER_DIR_DOWN
+	db 26, 22, PLAYER_DIR_RIGHT
 	db $FF
 
 JohtoAlphSouthHops:

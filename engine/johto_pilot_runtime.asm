@@ -158,6 +158,21 @@ JohtoRegisteredWarpRoutes::
     ; R33-266: Gold cave south 1F #3 (17,31) <-> Route33 (11,9).
     db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -223,6 +238,10 @@ JohtoPilotResolveRegisteredWarp::
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     jr z, .recordGateSource
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
     jr nz, .notGateMusicEntry
 .recordGateSource
     ld a, c
@@ -272,6 +291,12 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 19, MUSIC_ROUTES1, 0    ; slot 12: Route36 ID16
     johto_map_profile 0, 9, MUSIC_DUNGEON2, 0    ; slot 13: Union Cave 1F, standalone cave landmark
     johto_map_profile 1, 10, MUSIC_ROUTES1, 0   ; slot 14: Route33, Gold Route30 theme
+    johto_map_profile 1, 11, MUSIC_CITIES1, 0 ; slot 15 AzaleaTown
+    johto_map_profile 0, 11, MUSIC_ROUTES1, 0 ; slot 16 IlexForestAzaleaGate
+    johto_map_profile 0, 13, MUSIC_DUNGEON2, 0 ; slot 17 IlexForest
+    johto_map_profile 0, 14, MUSIC_ROUTES1, 0 ; slot 18 Route34IlexForestGate
+    johto_map_profile 1, 14, MUSIC_ROUTES1, 0 ; slot 19 Route34
+    johto_map_profile 1, 15, MUSIC_CITIES1, 0 ; slot 20 GoldenrodCity
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -334,6 +359,10 @@ JohtoPilotLoadMapMusic::
     ; source is not guaranteed to survive Continue from an old save.
     ; Unknown sources fall back to this gate's own profile, never New Bark.
     ld a, [wCurLocalMapID]
+    cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    jp z, .southForestGate
+    cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    jp z, .northForestGate
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jr z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -359,6 +388,23 @@ JohtoPilotLoadMapMusic::
     jr z, .sourceValid
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     ret nz
+    ; MUS-282: the city side must use its own music profile.  Falling
+    ; through into .southForestGate silently reverted to the gate default.
+    jp .sourceValid
+.southForestGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    ret nz
+    jp .sourceValid
+.northForestGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_34_LOCAL_ID
+    ret nz
+    jp .sourceValid
 .sourceValid
     ld e, a
     call JohtoPilotGetMapProfile
@@ -409,6 +455,31 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .unionCaveClosedEdge
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33ClosedEdge
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z, .southAzaleaEdge
+    cp JOHTO_ROUTE_34_LOCAL_ID
+    jp z, .southRoute34Edge
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+    jp z, .southGoldenrodEdge
+    cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    jp z, .southClosedEdge
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jp z, .southClosedEdge
+    cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    jp z, .southClosedEdge
+    ret
+.southClosedEdge
+    ; All six maps use finite geometry. Non-seam edges fail closed.
+    callab JohtoSouthIsKnownClosedEdge
+    ret
+.southAzaleaEdge
+    callab JohtoSouthIsKnownClosedEdge
+    ret
+.southRoute34Edge
+    callab JohtoSouthIsKnownClosedEdge
+    ret
+.southGoldenrodEdge
+    callab JohtoSouthIsKnownClosedEdge
     ret
 .route33ClosedEdge
     ; No Route33/Route32 cross-tileset connection until a verified full reload.
@@ -439,8 +510,13 @@ JohtoPilotIsClosedOutdoorEdge::
 .r33Left
     ld a, [wXCoord]
     and a
-    jp z, .closed
-    ret
+    ret nz
+    ld a, [wYCoord]
+    cp 14
+    ret z
+    cp 15
+    ret z
+    jp .closed
 .unionCaveClosedEdge
     ; Cave has no external seams: its only door is an explicit Warp.
     ld a, [wPlayerDirection]
@@ -777,6 +853,14 @@ JohtoPilotGateArrivalStep::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp c, .oldArrival
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
+    jp nc, .oldArrival
+    callab JohtoSouthPortalArrivalStep
+    ret
+.oldArrival
+    ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     jr z, .gateTop
     ; Gold UnionCave1F (17,3) is WARP_CARPET_DOWN, not a DOOR.
@@ -835,6 +919,14 @@ JohtoPilotGateDoorApproachAllowed::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp c, .oldGateRules
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
+    jp nc, .oldGateRules
+    callab JohtoSouthPortalBeforeStep
+    ret
+.oldGateRules
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_32_LOCAL_ID
     jp z, .route32Alph
@@ -972,6 +1064,14 @@ JohtoPilotGateDoorWarpMatched::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp c, .oldGateRules
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
+    jp nc, .oldGateRules
+    callab JohtoSouthPortalAfterStep
+    ret
+.oldGateRules
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_32_LOCAL_ID
     jp z, .route32Alph
@@ -1114,6 +1214,14 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp c, .legacyExtra
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
+    jp nc, .legacyExtra
+    callab JohtoSouthPortalCollisionExit
+    ret
+.legacyExtra
+    ld a, [wCurLocalMapID]
     ; FIX-264: ExtraWarpCheck calls THIS predicate before CheckWarpsCollision.
     ; The first Union Cave fix only added the final collision guard, leaving
     ; the entry qualification false and making the north exit unreachable.
@@ -1211,6 +1319,14 @@ JohtoPilotGateCollisionExitAllowed::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp c, .legacyGuard
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1
+    jp nc, .legacyGuard
+    callab JohtoSouthPortalCollisionExit
+    ret
+.legacyGuard
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jr z, .isGate

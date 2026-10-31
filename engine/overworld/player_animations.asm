@@ -676,7 +676,15 @@ _HandleMidJump:
 	res 6, [hl] ; not jumping down a ledge any more
 	ld hl, wd730
 	res 7, [hl] ; not simulating joypad states any more
+	; FIX-274: the animation can finish before JoypadOverworld consumes
+	; the terminal simulated-input sentinel. Clear the entire two-input
+	; ledge queue here so a later land-collision call cannot treat its
+	; nonzero index as an active scripted move (and walk through trees).
 	xor a
+	ld [wSimulatedJoypadStatesIndex], a
+	ld [wSimulatedJoypadStatesEnd], a
+	ld [wSimulatedJoypadStatesEnd + 1], a
+	ld [wWastedByteCD3A], a
 	ld [wJoyIgnore], a
 	ret
 

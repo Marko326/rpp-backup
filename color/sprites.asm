@@ -17,6 +17,9 @@ LoadOverworldSpritePalettes:
 	jr z, .gotPaletteList
 	cp FOREST
 	jr z, .gotPaletteList
+	; ILEX-212: use night OBJ palette for the Forest Cut tree animation.
+	cp JOHTO_ILEX_FOREST
+	jr z, .gotPaletteList
 	; If it is the Pokemon Center, load different pals for the Heal Machine to flash
 	ld hl,SpritePalettesPokecenter
 	cp POKECENTER

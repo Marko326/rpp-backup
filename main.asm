@@ -3364,6 +3364,7 @@ INCLUDE "engine/johto_pilot_warp_tiles.asm"
 
 SECTION "Johto Gold Pilot Source Resources", ROMX, BANK[$42]
 INCLUDE "data/johto_pilot_source_resources.asm"
+; South source labels are colocated in johto_pilot_source_resources.asm
 
 SECTION "Johto Pilot Connection Resolver", ROMX, BANK[$42]
 INCLUDE "engine/johto_pilot_connection.asm"
@@ -3404,8 +3405,21 @@ SECTION "Johto Union Cave 1F Runtime", ROMX, BANK[$4B]
 INCLUDE "data/johto_union_cave_runtime.asm"
 
 ; Route33 independent Gold modern tileset and 16x16 spatial collision mask.
+SECTION "Johto South Gold Geometry", ROMX, BANK[$4E]
+INCLUDE "engine/johto_south_geometry.asm"
+INCLUDE "engine/johto_south_portals.asm"
+INCLUDE "engine/johto_ilex_mature_runtime_275.asm"
+
 SECTION "Johto Route33 Runtime", ROMX, BANK[$4C]
 INCLUDE "data/johto_route33_runtime.asm"
+INCLUDE "data/johto_south_runtime.asm"
+
+SECTION "Johto Gold Roofs 269", ROMX, BANK[$4F]
+INCLUDE "engine/johto_south_roofs_269.asm"
+
+; FIX-272: move Johto-only landing decisions out of the packed ROM0 Main.
+SECTION "Johto Land Collision Gateway 272", ROMX, BANK[$4F]
+INCLUDE "engine/johto_land_collision_gateway_272.asm"
 
 SECTION "Relocated Ledge Handler", ROMX, BANK[$43]
 INCLUDE "engine/overworld/ledges.asm"

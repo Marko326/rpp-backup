@@ -1159,6 +1159,10 @@ LookupJohtoMapGSCMusic:
     cp MAP_REGION_JOHTO
     jp nz, .unresolved
     ld a, [wCurLocalMapID]
+    cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    jp z, .southForestGate
+    cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    jp z, .northForestGate
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jr z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -1185,6 +1189,20 @@ LookupJohtoMapGSCMusic:
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     jr nz, .gateDefault
     jr .activeSlot
+.southForestGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.northForestGate
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_34_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
 .gateDefault
     ; Continue inside a gate has no reliable arrival-source WRAM yet.
     ; Use the gate's Gold default scene in that case, never a stale source.
@@ -1230,6 +1248,12 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE36         ; slot12: ID16 Route36
     db MUSIC_GBP_GSC_UNION_CAVE      ; slot13: ID 8 Union Cave 1F (Gold MUSIC_UNION_CAVE)
     db MUSIC_GBP_GSC_ROUTE30          ; slot14: Route33 Gold Route30 music
+    db MUSIC_GBP_GSC_AZALEA_TOWN
+    db MUSIC_GBP_GSC_ROUTE30 ; South gate neutral fallback
+    db MUSIC_GBP_GSC_UNION_CAVE
+    db MUSIC_GBP_GSC_ROUTE36 ; North gate neutral fallback
+    db MUSIC_GBP_GSC_ROUTE36 ; Route34
+    db MUSIC_GBP_GSC_GOLDENROD_CITY
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

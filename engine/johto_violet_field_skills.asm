@@ -14,6 +14,12 @@
 ; All queried helpers preserve BC/DE/HL and return carry for Gold WATER.
 JohtoOverworldSurfDecision::
 	ld a, [wCurMapTileset]
+    cp JOHTO_MODERN
+    jp z, .southModern
+    cp JOHTO_ILEX_FOREST
+    jp z, .southModern
+    cp JOHTO_SOUTH_GATE
+    jp z, .southModern
 	cp JOHTO_UNION_CAVE
 	jp z, .unionCave
 	cp JOHTO_PILOT
@@ -61,6 +67,14 @@ JohtoOverworldSurfDecision::
 .ruins
 	call JohtoRuinsWaterAhead
 	jp .waterOrShore
+.southModern
+    callab JohtoSouthGoldWaterProbe
+    jp c, .water
+    ; FIX-275: Gold non-water still needs the mature land collision mask.
+    ; Forest/Route34/Goldenrod tilecoll data cannot decide safe shoreline.
+    callab JohtoSouthGoldShoreProbe
+    jp c, .floorShore
+    jp .shore
 .unionCave
 	; The unique cave tileset is not a Kanto water tile set. Its scoped
 	; predicate rejects all inactive/stale non-cave map IDs.
@@ -116,6 +130,8 @@ JohtoVioletWaterAhead::
 	ret c
 	call JohtoUnionCaveWaterAhead
 	ret c
+    callab JohtoSouthGoldWaterProbe
+    ret c
 	call JohtoNewBarkWaterAhead
 	ret c
 	push bc
@@ -1468,9 +1484,10 @@ JohtoRoutesGoldCutCells::
 	db JOHTO_ROUTE_31_LOCAL_ID, 5, 13, $5f
 	db JOHTO_ROUTE_31_LOCAL_ID, 10, 25, $5b
 	db JOHTO_ROUTE_32_LOCAL_ID, 19, 10, $63
+	db JOHTO_ILEX_FOREST_LOCAL_ID, 25, 8, $0f
 	db $ff
 JohtoRoutesGoldCutCellsEnd::
-ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 6 * 4 + 1
+ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 7 * 4 + 1
 
 JohtoRoutesCutTreeAhead::
 	push bc
@@ -1490,6 +1507,8 @@ JohtoRoutesCutTreeAhead::
 	cp JOHTO_ROUTE_31_LOCAL_ID
 	jr z, .validMap
 	cp JOHTO_ROUTE_32_LOCAL_ID
+	jr z, .validMap
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp nz, .no
 .validMap
 	ld b, a ; stable ID

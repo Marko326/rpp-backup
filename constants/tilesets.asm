@@ -33,3 +33,5 @@ const_value = 0
 	const JOHTO_GATE   ; 30 ; original RPP Gold EastWestGate tileset
 	const JOHTO_UNION_CAVE ; 31 ; Gold Union Cave compact reference art/collision
 	const JOHTO_MODERN ; 32 ; Gold Route33 separate modern outdoor tileset
+	const JOHTO_ILEX_FOREST ; 33 ; independent Gold IlexForest art
+	const JOHTO_SOUTH_GATE ; 34 ; independent Gold north/south and east/west Gate art

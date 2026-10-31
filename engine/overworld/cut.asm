@@ -290,4 +290,6 @@ CutTreeBlockSwaps:
 	db $67, $8E ; Route30 (8,6) top-left
 	db $5F, $8F ; Route31 (13,5) bottom-right
 	db $5B, $90 ; Route31 (25,10) top-right
+	; Ilex Forest: original $0f bottom-left CUT quadrant only; keep adjacent Headbutt.
+	db $0F, $2D ; mature .217 Forest quadrant clone (not the cliff clone $28)
 	db $FF ; list terminator

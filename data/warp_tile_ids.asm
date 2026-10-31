@@ -31,8 +31,11 @@ WarpTileIDPointers:
 	dw JohtoHouseWarpTileIDs ; $1d/29: dedicated Gold house interior
 	dw JohtoGateWarpTileIDs ; $1e/30: EastWestGate directional edge carpet only
 	dw JohtoUnionCaveWarpTileIDs ; $1f/31: exact cave entry/exit only
+    dw JohtoModernWarpTileIDs ; ID32, previously missing
+    dw JohtoSouthForestWarpTileIDs
+    dw JohtoSouthGateWarpTileIDs
 WarpTileIDPointersEnd:
-ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_UNION_CAVE + 1) * 2
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_SOUTH_GATE + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -101,3 +104,5 @@ JohtoGateWarpTileIDs:
 ; No generic walkable tile may be used to trigger an arbitrary cave Warp.
 JohtoUnionCaveWarpTileIDs:
     db $ff
+
+INCLUDE "data/johto_south_warp_tile_ids.asm"

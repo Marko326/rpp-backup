@@ -4,14 +4,27 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 15
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 21
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 12
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 16
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
+
+JohtoSouthAzaleaTownGoldBlocks::
+    INCBIN "maps/johto_pilot/AzaleaTown.gold.blk"
+JohtoSouthIlexForestAzaleaGateGoldBlocks::
+    INCBIN "maps/johto_pilot/IlexForestAzaleaGate.gold.blk"
+JohtoSouthIlexForestGoldBlocks::
+    INCBIN "maps/johto_pilot/IlexForest.gold.blk"
+JohtoSouthRoute34IlexForestGateGoldBlocks::
+    INCBIN "maps/johto_pilot/Route34IlexForestGate.gold.blk"
+JohtoSouthRoute34GoldBlocks::
+    INCBIN "maps/johto_pilot/Route34.gold.blk"
+JohtoSouthGoldenrodCityGoldBlocks::
+    INCBIN "maps/johto_pilot/GoldenrodCity.gold.blk"
 
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
@@ -61,6 +74,24 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, JOHTO_ROUTE_33_WIDTH, JOHTO_ROUTE_33_HEIGHT
     dw JohtoRoute33GoldBlocks
     db BANK(JohtoRoute33GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 20, 9
+    dw JohtoSouthAzaleaTownGoldBlocks
+    db BANK(JohtoSouthAzaleaTownGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, 5, 4
+    dw JohtoSouthIlexForestAzaleaGateGoldBlocks
+    db BANK(JohtoSouthIlexForestAzaleaGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ILEX_FOREST_LOCAL_ID, 15, 27
+    dw JohtoSouthIlexForestGoldBlocks
+    db BANK(JohtoSouthIlexForestGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, 5, 4
+    dw JohtoSouthRoute34IlexForestGateGoldBlocks
+    db BANK(JohtoSouthRoute34IlexForestGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, 10, 27
+    dw JohtoSouthRoute34GoldBlocks
+    db BANK(JohtoSouthRoute34GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID, 20, 18
+    dw JohtoSouthGoldenrodCityGoldBlocks
+    db BANK(JohtoSouthGoldenrodCityGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -85,6 +116,11 @@ JohtoPilotSourceConnections::
     ; Gold south/north seam (offset 0); only lane x14/15 is traversable.
     db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
+    ; Route33/Azalea and Route34/Goldenrod are same-tileset Gold seams.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_34_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
 ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 

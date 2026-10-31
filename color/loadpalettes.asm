@@ -121,6 +121,10 @@ LoadTilesetPalette:
 	; They were removed, as they do not apply to the new tileset
 	; Any new map-specific overrides could be added here
 
+    ; Restore Gold RGB5 roof colors for the local Johto map group.
+    ; The GBC background roof lives in palette six; no map recolor for Kanto.
+    call ApplyJohtoGoldRoofPalette269
+
 	; Retrieve former wram bank
 	pop af
 	ld b,a
@@ -146,6 +150,105 @@ LoadTilesetPalette:
 	pop de
 	pop bc
 	ret
+
+ ; This helper is entered with WRAM bank 2 selected and leaves it selected.
+ApplyJohtoGoldRoofPalette269:
+    xor a
+    ld [rSVBK],a
+    ld a,[wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jp nz,.done
+    ld a,[wCurRegion]
+    cp MAP_REGION_JOHTO
+    jp nz,.done
+    ld a,[wCurMapTileset]
+    cp JOHTO_PILOT
+    jp z,.select
+    cp JOHTO_MODERN
+    jp nz,.done
+.select
+    ld a,[wCurLocalMapID]
+    cp JOHTO_ROUTE_33_LOCAL_ID
+    jp z,.azalea
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z,.azalea
+    cp JOHTO_ROUTE_34_LOCAL_ID
+    jp z,.goldenrod
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+    jp z,.goldenrod
+    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    jp z,.violet
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jp z,.violet
+    cp JOHTO_ROUTE_36_LOCAL_ID
+    jp z,.violet
+    cp JOHTO_CHERRYGROVE_LOCAL_ID
+    jp z,.cherrygrove
+    cp JOHTO_ROUTE_30_LOCAL_ID
+    jp z,.cherrygrove
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jp z,.cherrygrove
+    cp JOHTO_NEW_BARK_LOCAL_ID
+    jp z,.newbark
+    cp JOHTO_ROUTE_29_LOCAL_ID
+    jp nz,.done
+.newbark
+    ld de,JohtoNewBarkRoofPalette269
+    jp .copy
+.cherrygrove
+    ld de,JohtoCherrygroveRoofPalette269
+    jp .copy
+.violet
+    ld de,JohtoVioletRoofPalette269
+    jp .copy
+.azalea
+    ld de,JohtoAzaleaRoofPalette269
+    jp .copy
+.goldenrod
+    ld de,JohtoGoldenrodRoofPalette269
+.copy
+    ld a,2
+    ld [rSVBK],a
+    ld hl,W2_BgPaletteData + 6 * 8
+    ld b,8
+.loop
+    ld a,[de]
+    ld [hli],a
+    inc de
+    dec b
+    jp nz,.loop
+    ret
+.done
+    ld a,2
+    ld [rSVBK],a
+    ret
+
+; Gold gfx/tilesets/roofs.pal; RGB5 units (do not interpolate).
+JohtoNewBarkRoofPalette269:
+    RGB 27,31,27
+    RGB 20,31,14
+    RGB 11,23,05
+    RGB 07,07,07
+JohtoCherrygroveRoofPalette269:
+    RGB 27,31,27
+    RGB 31,14,28
+    RGB 31,05,21
+    RGB 07,07,07
+JohtoVioletRoofPalette269:
+    RGB 27,31,27
+    RGB 24,14,31
+    RGB 13,07,21
+    RGB 07,07,07
+JohtoAzaleaRoofPalette269:
+    RGB 27,31,27
+    RGB 22,20,10
+    RGB 17,14,03
+    RGB 07,07,07
+JohtoGoldenrodRoofPalette269:
+    RGB 27,31,27
+    RGB 25,25,00
+    RGB 20,17,08
+    RGB 07,07,07
 
 ; Towns have different roof colors while using the same tileset
 LoadTownPalette:

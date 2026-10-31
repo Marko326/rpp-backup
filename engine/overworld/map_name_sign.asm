@@ -248,10 +248,10 @@ UpdateMapNameSign::
 	; stable local ID, with text resident in this map-sign bank.
 	ld a, [wCurMap]
 	cp JOHTO_RUNTIME_MAP_HANDLE
-	jr nz, .resolveLegacyLandmark
+	jp nz, .resolveLegacyLandmark
 	ld a, [wCurRegion]
 	cp MAP_REGION_JOHTO
-	jr nz, .resolveLegacyLandmark
+	jp nz, .resolveLegacyLandmark
 	ld a, [wCurLocalMapID]
 	cp JOHTO_NEW_BARK_LOCAL_ID
 	jr z, .johtoNewBark
@@ -277,6 +277,14 @@ UpdateMapNameSign::
 	jr z, .johtoUnionCave
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .johtoRoute33
+	cp JOHTO_AZALEA_TOWN_LOCAL_ID
+	jp z, .johtoAzalea
+	cp JOHTO_ILEX_FOREST_LOCAL_ID
+	jp z, .johtoIlex
+	cp JOHTO_ROUTE_34_LOCAL_ID
+	jp z, .johtoRoute34
+	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jp z, .johtoGoldenrod
 	; A neutral gate reached by Continue has no outdoor source saved
 	; for sign purposes. Store a harmless placeholder without showing.
 	; Unknown Johto maps must never consult the Kanto $FC entry.
@@ -317,6 +325,18 @@ UpdateMapNameSign::
 .johtoResolved
 	ld b, 0
 	ret
+.johtoAzalea
+	ld hl, .JohtoAzaleaName
+	jr .johtoResolved
+.johtoIlex
+	ld hl, .JohtoIlexName
+	jr .johtoResolved
+.johtoRoute34
+	ld hl, .JohtoRoute34Name
+	jr .johtoResolved
+.johtoGoldenrod
+	ld hl, .JohtoGoldenrodName
+	jr .johtoResolved
 .resolveLegacyLandmark
 	ld a, [wCurMap]
 	cp CELADON_MANSION_4
@@ -641,6 +661,10 @@ UpdateMapNameSign::
 	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
 	ret z
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
 	ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -1017,3 +1041,7 @@ UpdateMapNameSign::
 .JohtoRoute33Name: db "Route 33@"
 .JohtoRoute32Name:      db "Route 32@"
 .JohtoRuinsName: db "Ruins Of Alph@"
+.JohtoAzaleaName: db "Azalea Town@"
+.JohtoIlexName: db "Ilex Forest@"
+.JohtoRoute34Name: db "Route 34@"
+.JohtoGoldenrodName: db "Goldenrod City@"

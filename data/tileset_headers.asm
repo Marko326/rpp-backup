@@ -37,14 +37,17 @@ Tilesets:
 	; Gold CAVE environment, independent compact art and always-readable ROM0 collision.
 	tileset JohtoUnionCave_Block, JohtoUnionCave_GFX, JohtoUnionCave_Coll, $FF,$FF,$FF, $FF, CAVE
 	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR
+	tileset JohtoSouthForestBlocks, JohtoSouthForestGFX, JohtoIlexForest_Coll, $FF,$FF,$FF, $FF, CAVE
+	tileset JohtoSouthGateBlocks, JohtoSouthGateGFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_MODERN + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_SOUTH_GATE + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
 ASSERT JOHTO_UNION_CAVE == 31
 ASSERT JOHTO_MODERN == 32
 ASSERT BANK(JohtoModern_Block) == BANK(JohtoModern_GFX)
+ASSERT BANK(JohtoIlexForest_Coll) == 0
 ASSERT BANK(JohtoModern_Coll) == 0
 ASSERT BANK(JohtoUnionCave_Block) == BANK(JohtoUnionCave_GFX)
 ASSERT BANK(JohtoUnionCave_Coll) == 0

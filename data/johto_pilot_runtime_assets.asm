@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 15
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 21
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -136,6 +136,30 @@ JohtoRoute33RuntimeDescriptor::
     db JOHTO_ROUTE_33_LOCAL_ID, JOHTO_MODERN, JOHTO_ROUTE_33_WIDTH, JOHTO_ROUTE_33_HEIGHT
     dw JohtoRoute33RuntimeBlocks
     db BANK(JohtoRoute33RuntimeBlocks)
+JohtoSouthAzaleaTownDescriptor::
+    db JOHTO_AZALEA_TOWN_LOCAL_ID, JOHTO_MODERN, 20, 9
+    dw JohtoSouthAzaleaTownBlocks
+    db BANK(JohtoSouthAzaleaTownBlocks)
+JohtoSouthIlexForestAzaleaGateDescriptor::
+    db JOHTO_ILEX_AZALEA_GATE_LOCAL_ID, JOHTO_GATE, 5, 4
+    dw JohtoSouthIlexForestAzaleaGateBlocks
+    db BANK(JohtoSouthIlexForestAzaleaGateBlocks)
+JohtoSouthIlexForestDescriptor::
+    db JOHTO_ILEX_FOREST_LOCAL_ID, JOHTO_ILEX_FOREST, 15, 27
+    dw JohtoSouthIlexForestBlocks
+    db BANK(JohtoSouthIlexForestBlocks)
+JohtoSouthRoute34IlexForestGateDescriptor::
+    db JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID, JOHTO_GATE, 5, 4
+    dw JohtoSouthRoute34IlexForestGateBlocks
+    db BANK(JohtoSouthRoute34IlexForestGateBlocks)
+JohtoSouthRoute34Descriptor::
+    db JOHTO_ROUTE_34_LOCAL_ID, JOHTO_MODERN, 10, 27
+    dw JohtoSouthRoute34Blocks
+    db BANK(JohtoSouthRoute34Blocks)
+JohtoSouthGoldenrodCityDescriptor::
+    db JOHTO_GOLDENROD_CITY_LOCAL_ID, JOHTO_MODERN, 20, 18
+    dw JohtoSouthGoldenrodCityBlocks
+    db BANK(JohtoSouthGoldenrodCityBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -145,23 +169,23 @@ ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescri
 JohtoPilotGetRuntimeResourceDescriptor::
     ld a, e
     cp JOHTO_NEW_BARK_LOCAL_ID
-    jr z, .newBark
+    jp z, .newBark
     cp JOHTO_ROUTE_29_LOCAL_ID
-    jr z, .route29
+    jp z, .route29
     cp JOHTO_CHERRYGROVE_LOCAL_ID
-    jr z, .cherrygrove
+    jp z, .cherrygrove
     cp JOHTO_ROUTE_30_LOCAL_ID
-    jr z, .route30
+    jp z, .route30
     cp JOHTO_ROUTE_31_LOCAL_ID
-    jr z, .route31
+    jp z, .route31
     cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
-    jr z, .guideHouse
+    jp z, .guideHouse
     cp JOHTO_VIOLET_CITY_LOCAL_ID
-    jr z, .violet
+    jp z, .violet
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
-    jr z, .gate
+    jp z, .gate
     cp JOHTO_ROUTE_32_LOCAL_ID
-    jr z, .route32
+    jp z, .route32
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     jr z, .alphGate
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
@@ -174,6 +198,18 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr z, .unionCave
     cp JOHTO_ROUTE_33_LOCAL_ID
     jr z, .route33
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z, .southAzaleaTown
+    cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
+    jp z, .southIlexForestAzaleaGate
+    cp JOHTO_ILEX_FOREST_LOCAL_ID
+    jp z, .southIlexForest
+    cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
+    jp z, .southRoute34IlexForestGate
+    cp JOHTO_ROUTE_34_LOCAL_ID
+    jp z, .southRoute34
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+    jp z, .southGoldenrodCity
     ld d, 0
     ld hl, 0
     ret
@@ -183,6 +219,24 @@ JohtoPilotGetRuntimeResourceDescriptor::
 .unionCave
     ld hl, JohtoUnionCave1FRuntimeDescriptor
     jr .valid
+.southAzaleaTown
+    ld hl, JohtoSouthAzaleaTownDescriptor
+    jp .valid
+.southIlexForestAzaleaGate
+    ld hl, JohtoSouthIlexForestAzaleaGateDescriptor
+    jp .valid
+.southIlexForest
+    ld hl, JohtoSouthIlexForestDescriptor
+    jp .valid
+.southRoute34IlexForestGate
+    ld hl, JohtoSouthRoute34IlexForestGateDescriptor
+    jp .valid
+.southRoute34
+    ld hl, JohtoSouthRoute34Descriptor
+    jp .valid
+.southGoldenrodCity
+    ld hl, JohtoSouthGoldenrodCityDescriptor
+    jp .valid
 .route33
     ld hl, JohtoRoute33RuntimeDescriptor
     jr .valid

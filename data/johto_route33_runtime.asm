@@ -13,10 +13,18 @@ JohtoRoute33RuntimeHeader::
     dw JohtoRoute33RuntimeBlocks
     dw JohtoRoute33TextPointers
     dw JohtoRoute33Script
-    db 0 ; Azalea, all external seams, and other routes remain gated
+    db WEST ; Source-verified Route33 -> Azalea exterior Gold 0 offset
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoSouthAzaleaTownBlocks + 20 - 3
+    dw wOverworldMap + 3 * (JOHTO_ROUTE_33_WIDTH + 6)
+    db JOHTO_ROUTE_33_HEIGHT
+    db 20
+    db 0
+    db 39
+    dw wOverworldMap + 6 + 2 * 20
     dw JohtoRoute33RuntimeObjects
 JohtoRoute33RuntimeHeaderEnd::
-ASSERT JohtoRoute33RuntimeHeaderEnd - JohtoRoute33RuntimeHeader == 12
+ASSERT JohtoRoute33RuntimeHeaderEnd - JohtoRoute33RuntimeHeader == 23
 ASSERT BANK(JohtoRoute33RuntimeHeader) == BANK(JohtoRoute33RuntimeBlocks)
 JohtoRoute33Script::
     call EnableAutoTextBoxDrawing
@@ -88,6 +96,21 @@ JohtoRoute33StepPolicy::
     inc c
     jr .bounds
 .left
+    ; FIX-269: the Gold Route33/Azalea west connector is x=0,
+    ; y=14/15.  An 8-bit DEC here wraps the target x to $ff and
+    ; the generic bounds check creates an invisible wall despite the
+    ; prior outdoor-seam guard allowing it.  Only this verified lane
+    ; may leave the map; every other west-border coordinate stays solid.
+    ld a, b
+    and a
+    jr nz, .leftInside
+    ld a, c
+    cp 14
+    jp z, .seamAllowed
+    cp 15
+    jp z, .seamAllowed
+    ret
+.leftInside
     dec b
 .bounds
     ld a, b
@@ -112,4 +135,7 @@ JohtoRoute33StepPolicy::
     ld de, JohtoRoute33BlockedCells
     add hl, de
     ld e, [hl]
+    ret
+.seamAllowed
+    ld e, 0
     ret

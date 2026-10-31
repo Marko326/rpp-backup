@@ -1109,6 +1109,8 @@ JohtoUnionCave_CollEnd::
 ASSERT JohtoUnionCave_CollEnd - JohtoUnionCave_Coll == 13
 ; Route33 movement uses exact Gold 16x16 spatial collision instead of ambiguous
 ; shared 8x8 visual IDs. The unbanked tileset pointer stays valid.
+JohtoIlexForest_Coll:: INCBIN "gfx/tilesets/johto_ilex_forest.tilecoll"
+ASSERT BANK(JohtoIlexForest_Coll) == 0
 JohtoModern_Coll:: INCBIN "gfx/tilesets/johto_modern.tilecoll"
 ASSERT BANK(JohtoModern_Coll) == 0
 INCLUDE "home/copy2.asm"
