@@ -46,8 +46,8 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None)->dict:
         colors=read('color/data/map_palette_sets.asm')
         music=read('tools/johto_gate_music_bike_contracts.json')
         doors=json.loads(read('tools/johto_pilot_door_contracts.json'))
-        ck('version_286_and_26_active', re.search(r'(?:FIX|MAP)-5\.62\.(?:288|289|290|294|295)@',version) is not None and 'TEST-231@' in version
-            and re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:26|28)\b', c) is not None and '== NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES' in headers)
+        ck('version_286_and_26_active', re.search(r'(?:FIX|MAP)-5\.62\.(?:288|289|290|294|295|297|298)@',version) is not None and 'TEST-231@' in version
+            and re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:26|28|32)\b', c) is not None and '== NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES' in headers)
         ck('frozen_stable_ids_and_dimensions',all(x in ids for x in (
             'JOHTO_NATIONAL_PARK_LOCAL_ID EQU 103',
             'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID EQU 104',
@@ -113,7 +113,7 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None)->dict:
             'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID' in l or
             'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID' in l
             for l in reg.splitlines() if l.strip().startswith('db MAP_REGION_JOHTO'))>=15)
-        ck('both_gate_contracts_present',len(doors['gatehouse_activation_policy']['active_gatehouse_contracts'])==8)
+        ck('both_gate_contracts_present', {104,105}.issubset({g.get('stable_id') for g in doors['gatehouse_activation_policy']['active_gatehouse_contracts']}) and len(doors['gatehouse_activation_policy']['active_gatehouse_contracts'])>=8)
     except (OSError,ValueError,KeyError) as e:
         ck('audit_inputs_complete',False)
         errors.append(str(e))

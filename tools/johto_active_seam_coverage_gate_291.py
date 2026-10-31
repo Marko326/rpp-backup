@@ -27,6 +27,9 @@ APPROVED = {
     ('Route36','EAST','VioletCity'),('VioletCity','WEST','Route36'),
     ('Route36','NORTH','Route37'),('Route37','SOUTH','Route36'),
     ('Route37','NORTH','EcruteakCity'),('EcruteakCity','SOUTH','Route37'),
+    ('EcruteakCity','WEST','Route38'),('Route38','EAST','EcruteakCity'),
+    ('Route38','WEST','Route39'),('Route39','EAST','Route38'),
+    ('Route39','SOUTH','OlivineCity'),('OlivineCity','NORTH','Route39'),
 }
 # Distinct Gold offsets mean a blanket 'source width + 3' would be wrong.
 # The narrow-to-wider cases each require an explicitly inspected runtime width.
@@ -66,6 +69,11 @@ NARROW_SEAM_CONTRACTS = {
         'JohtoNorthRoute35RuntimeHeader::','JohtoNorthRoute35HeaderEnd::',
         'db JOHTO_ROUTE35_WIDTH + MAP_BORDER ; 13 visible columns, not 10',
         'dw JohtoRoute35NorthRoute36Mirror + JOHTO_ROUTE_36_WIDTH * (JOHTO_ROUTE_36_HEIGHT - 3)'),
+    ('Route39','SOUTH','OlivineCity'): (
+        'data/johto_west_runtime_297.asm',
+        'JohtoRoute39RuntimeHeader::','JohtoRoute39HeaderEnd::',
+        'db JOHTO_ROUTE_39_WIDTH\n    db JOHTO_OLIVINE_CITY_WIDTH',
+        'dw JohtoRoute39SouthOlivineMirror + 5'),
 }
 # Same failure class exists on horizontal transitions when the destination is
 # taller than the current map. Review currently active edges explicitly;
@@ -81,6 +89,16 @@ SIDE_SEAM_CONTRACTS = {
         'JohtoPilotRoute36RuntimeHeader::','JohtoPilotRoute36RuntimeHeaderEnd::',
         'db JOHTO_ROUTE_36_HEIGHT ; map rows (the border is refilled by 3 extra rows)\n    db JOHTO_VIOLET_CITY_WIDTH',
         'dw JohtoRoute36EastVioletMirror'),
+    ('Route38','EAST','EcruteakCity'): (
+        'data/johto_west_runtime_297.asm',
+        'JohtoRoute38RuntimeHeader::','JohtoRoute38HeaderEnd::',
+        'db JOHTO_ROUTE_38_HEIGHT\n    db JOHTO_ECRUTEAK_WIDTH',
+        'dw JohtoRoute38EastEcruteakMirror + JOHTO_ECRUTEAK_WIDTH * 5'),
+    ('Route38','WEST','Route39'): (
+        'data/johto_west_runtime_297.asm',
+        'JohtoRoute38RuntimeHeader::','JohtoRoute38HeaderEnd::',
+        'db JOHTO_ROUTE_38_HEIGHT\n    db JOHTO_ROUTE_39_WIDTH',
+        'dw JohtoRoute38WestRoute39Mirror + JOHTO_ROUTE_39_WIDTH - 3'),
 }
 DIRECTIONS = {'NORTH':'SOUTH','SOUTH':'NORTH','WEST':'EAST','EAST':'WEST'}
 

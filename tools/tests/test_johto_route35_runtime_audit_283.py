@@ -26,13 +26,9 @@ class Route35LiveContractTests(unittest.TestCase):
 
     def test_reject_284_old_gateway_missing_new_maps(self):
         path='engine/johto_land_collision_gateway_272.asm'
-        text=(ROOT/path).read_text()
-        faulty='''    ld a, [wCurLocalMapID]
-    cp JOHTO_AZALEA_TOWN_LOCAL_ID
-'''
         self.assertReject(path,
-            '    ld a, [wCurLocalMapID]\n    cp JOHTO_ROUTE_37_LOCAL_ID',
-            faulty.rstrip('\n'),
+            '    cp JOHTO_ROUTE_35_LOCAL_ID\n    jr z, .activeSouthMap\n',
+            '',
             'route35_and_north_gate_reachable_in_land_gateway')
 
     def test_reject_route35_only_without_new_gate(self):
@@ -105,7 +101,7 @@ class Route35LiveContractTests(unittest.TestCase):
                           'gate_music_inherited_and_bike_safe')
 
     def test_reject_software_version_out_of_sync(self):
-        self.assertReject('data/game_version.asm','FIX-5.62.295','FIX-5.62.284',
+        self.assertReject('data/game_version.asm','FIX-5.62.298','MAP-5.62.296',
                           'actual_game_version_and_active_count')
 
 if __name__=='__main__':

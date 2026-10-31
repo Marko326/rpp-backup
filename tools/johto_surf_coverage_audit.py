@@ -124,6 +124,17 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
         and (root/'maps/johto_pilot/EcruteakCity.roles.bin').is_file()
         and (root/'maps/johto_pilot/EcruteakCity.roles.bin').read_bytes().count(2)==20):
         registered.add('EcruteakCity')
+    # MAP-297: Olivine uses the same Gold-role spatial Surf predicate. Keep the
+    # inventory independent from the manifest by requiring the live role table,
+    # dispatcher branch and the exact 406 Gold WATER cells.
+    if (any(r['map']=='OlivineCity' for r in active)
+        and 'cp JOHTO_OLIVINE_CITY_LOCAL_ID' in spatial
+        and 'JohtoOlivineRoles:: INCBIN "maps/johto_pilot/OlivineCity.roles.bin"' in spatial
+        and 'cp JOHTO_OLIVINE_CITY_LOCAL_ID' in surf_runtime
+        and 'JohtoSouthGoldWaterProbe' in surf_runtime
+        and (root/'maps/johto_pilot/OlivineCity.roles.bin').is_file()
+        and (root/'maps/johto_pilot/OlivineCity.roles.bin').read_bytes().count(2)==406):
+        registered.add('OlivineCity')
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

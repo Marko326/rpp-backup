@@ -151,6 +151,10 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoParkEastGateRuntimeHeader', 'Route36NationalParkGate', 105),
     ('JohtoRoute37RuntimeHeader', 'Route37', 21),
     ('JohtoEcruteakRuntimeHeader', 'EcruteakCity', 22),
+    ('JohtoRoute38EcruteakGateRuntimeHeader', 'Route38EcruteakGate', 23),
+    ('JohtoRoute38RuntimeHeader', 'Route38', 24),
+    ('JohtoRoute39RuntimeHeader', 'Route39', 25),
+    ('JohtoOlivineRuntimeHeader', 'OlivineCity', 26),
 )
 
 

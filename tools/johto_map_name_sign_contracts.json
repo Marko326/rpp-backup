@@ -160,6 +160,29 @@
       "role": "named",
       "name": "Ecruteak City",
       "town_map_name": "Ecruteak City"
+    },
+    {
+      "id": "JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 38"
+    },
+    {
+      "id": "JOHTO_ROUTE_38_LOCAL_ID",
+      "role": "named",
+      "name": "Route 38",
+      "town_map_name": "Route 38"
+    },
+    {
+      "id": "JOHTO_ROUTE_39_LOCAL_ID",
+      "role": "named",
+      "name": "Route 39",
+      "town_map_name": "Route 39"
+    },
+    {
+      "id": "JOHTO_OLIVINE_CITY_LOCAL_ID",
+      "role": "named",
+      "name": "Olivine City",
+      "town_map_name": "Olivine City"
     }
   ]
 }

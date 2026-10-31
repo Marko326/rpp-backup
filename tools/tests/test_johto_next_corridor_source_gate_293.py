@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools'))
 from johto_next_corridor_source_gate_293 import audit, MANIFEST
 
+CURRENT_297 = 'NUM_JOHTO_ACTIVE_MAPS EQU 32' in (ROOT/'constants/region_map_constants.asm').read_text()
+
 
 class NextCorridorSourceGate293(unittest.TestCase):
     def baseline(self, overrides=None):
@@ -51,17 +53,20 @@ class NextCorridorSourceGate293(unittest.TestCase):
         m=self.manifest();m['seams'][2]['offset']=0
         self.failed({MANIFEST:json.dumps(m).encode()},'six_source_seams_exact')
 
+    @unittest.skipIf(CURRENT_297, 'MAP-297 has approved this staged corridor; current seam/runtime gates own activation')
     def test_no_early_activate_route37(self):
         p='constants/region_map_constants.asm'
         s=(ROOT/p).read_text().replace('DEF NUM_JOHTO_ACTIVE_MAPS EQU 28','DEF NUM_JOHTO_ACTIVE_MAPS EQU 29')
         self.failed({p:s.encode()},'staging_does_not_advance_game_version')
 
+    @unittest.skipIf(CURRENT_297, 'MAP-297 has approved this staged corridor; current seam/runtime gates own activation')
     def test_no_early_route38_warp(self):
         p='data/johto_pilot_source_resources.asm'
         s=(ROOT/p).read_text().replace('JohtoPilotSourceConnectionsEnd::',
               '    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_38_LOCAL_ID\nJohtoPilotSourceConnectionsEnd::')
         self.failed({p:s.encode()},'no_unapproved_live_connection')
 
+    @unittest.skipIf(CURRENT_297, 'MAP-297 has approved this staged corridor; current seam/runtime gates own activation')
     def test_no_early_header_pointer(self):
         p='data/johto_header_descriptors.asm'
         s=(ROOT/p).read_text().replace('JohtoHeaderDescriptorsEnd::',

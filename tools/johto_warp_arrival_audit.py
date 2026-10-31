@@ -113,10 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 8 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 65 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 9 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 75 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 8 gates and all activated north/south arcs')
+           'MUS contract records 3 house arcs, 9 gates and all activated corridor arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -285,6 +285,24 @@ def audit(project: Path, gold: Path) -> dict:
     )
     expected_routes.extend(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target)
                            for source, ordinal, target in park_routes)
+    # MAP-297: west gate routes were appended after Park registration. Preserve
+    # contract order so exact on-ROM route ordering remains audited.
+    west_ids = {22: 'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
+                23: 'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID',
+                24: 'JOHTO_ROUTE_38_LOCAL_ID'}
+    west_gates = [g for g in contract['gatehouse_activation_policy']['active_gatehouse_contracts']
+                  if g.get('stable_id') == 23]
+    west_verified = len(west_gates) == 1 and len(west_gates[0].get('warp_contracts', [])) == 8
+    if west_verified:
+        for row in west_gates[0]['warp_contracts']:
+            src, dst = row['source_stable_id'], row['target_stable_id']
+            if src not in west_ids or dst not in west_ids:
+                west_verified = False
+                break
+            expected_routes.append(('MAP_REGION_JOHTO', west_ids[src],
+                str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', west_ids[dst]))
+    _check(checks, errors, 'route38_gate_registered_warps', west_verified,
+           'Ecruteak west gate requires 8 registered collision-only Warp arcs')
     try:
         rows = _route_rows(runtime)
         _check(checks, errors, 'registered_routes', rows == expected_routes,

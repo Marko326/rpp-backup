@@ -39,12 +39,16 @@ class TestGateMusicContinuity282(unittest.TestCase):
         self.assertEqual(trace_gate_source(gsc,gate,city,'gsc'),city)
 
     def test_missing_violet_jump_fails_even_with_all_source_names_present(self):
-        patched=self.runtime.replace('''    ret nz
+        patched=self.runtime.replace('''    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    ret nz
     ; MUS-282: the city side must use its own music profile.  Falling
     ; through into .southForestGate silently reverted to the gate default.
     jp .sourceValid
-.route35GoldenrodGate''', '''    ret nz
-.route35GoldenrodGate''', 1)
+.route38GateMusic''', '''    cp JOHTO_VIOLET_CITY_LOCAL_ID
+    ret nz
+    ; Broken: no explicit jump to the selected city profile.
+    ret
+.route38GateMusic''', 1)
         self.assertNotEqual(patched,self.runtime)
         self.expect_fail('rby_resolved_source_JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID_JOHTO_VIOLET_CITY_LOCAL_ID',
                          **{'engine/johto_pilot_runtime.asm':patched})

@@ -17,7 +17,7 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_all_active_water_cut_and_hop_cells_are_registered(self):
         result = audit(ROOT, GOLD)
         self.assertEqual('PASS', result['status'], result['errors'])
-        self.assertEqual({'active_maps': 28, 'water_cells': 1150, 'cut_trees': 9, 'hop_cells': 127},
+        self.assertEqual({'active_maps': 32, 'water_cells': 1556, 'cut_trees': 9, 'hop_cells': 165},
                          result['totals'])
         rows = {row['map']: row for row in result['rows']}
         self.assertEqual((8, 'REGISTERED'), (rows['NewBarkTown']['water_cells'], rows['NewBarkTown']['surf']))
@@ -36,6 +36,11 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
         self.assertEqual((6, 7, 'REGISTERED', 'JohtoRoute33Hops'),
                          (rows['Route33']['hop_cells'], rows['Route33']['safe_hop_directions'],
                           rows['Route33']['ledge'], rows['Route33']['ledge_table']))
+        self.assertEqual((24, 'REGISTERED', 'JohtoRoute38GoldHops'),
+                         (rows['Route38']['safe_hop_directions'], rows['Route38']['ledge'], rows['Route38']['ledge_table']))
+        self.assertEqual((20, 'REGISTERED', 'JohtoRoute39GoldHops'),
+                         (rows['Route39']['safe_hop_directions'], rows['Route39']['ledge'], rows['Route39']['ledge_table']))
+        self.assertEqual((406, 'REGISTERED'), (rows['OlivineCity']['water_cells'], rows['OlivineCity']['surf']))
         self.assertFalse(result['runtime_verified'])
         self.assertFalse(result['rom_built'])
         self.assertFalse(result['phone_accepted'])

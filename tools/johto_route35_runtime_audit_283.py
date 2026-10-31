@@ -49,8 +49,8 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
         roles = read('maps/johto_pilot/Route35.roles.bin', True)
         gate_roles = read('maps/johto_pilot/Route35GoldenrodGate.roles.bin', True)
         check('actual_game_version_and_active_count',
-              re.search(r'(?:FIX|MAP)-5\.62\.(?:285|286|287|288|289|290|294|295)@', version) is not None and 'TEST-231@' in version and
-              re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:23|26|28)\b', c) is not None)
+              re.search(r'(?:FIX|MAP)-5\.62\.(?:285|286|287|288|289|290|294|295|297|298)@', version) is not None and 'TEST-231@' in version and
+              re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:23|26|28|32)\b', c) is not None)
         check('distinct_stable_ids_17_18',
               'JOHTO_ROUTE_35_LOCAL_ID EQU 17' in c and
               'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID EQU 18' in c)
@@ -110,32 +110,24 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
         south_dispatch='\n'.join(line.split(';',1)[0].strip() for line in south_dispatch.splitlines() if line.split(';',1)[0].strip())
         # Both late IDs must branch BEFORE the old 10..15 range guard,
         # and the common target must enter the existing spatial step call.
-        gateway_pattern=(
-            r'ld a, \[wCurLocalMapID\]\s+'
-            r'cp JOHTO_ROUTE_37_LOCAL_ID\s+jp z, \.activeSouthMap\s+'
-            r'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\s+jp z, \.activeSouthMap\s+'
-            r'cp JOHTO_ROUTE_35_LOCAL_ID\s+jr z, \.activeSouthMap\s+'
-            r'cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID\s+jr z, \.activeSouthMap\s+'
-            r'(?:cp JOHTO_NATIONAL_PARK_LOCAL_ID\s+jr z, \.activeSouthMap\s+'
-            r'cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID\s+jr z, \.activeSouthMap\s+'
-            r'cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID\s+jr z, \.activeSouthMap\s+)?'
-            r'cp JOHTO_AZALEA_TOWN_LOCAL_ID\s+jr c, \.route33\s+'
-            r'cp JOHTO_GOLDENROD_CITY_LOCAL_ID \+ 1\s+jr nc, \.route33\s+'
-            r'\.activeSouthMap\s+callab HandleLedges\s+'
-            r'ld a, \[wd736\]\s+bit 6, a\s+jr nz, \.allowJump\s+'
-            r'callab JohtoSouthSpatialStep\s+ret')
+        # Later activations can insert branches before Route35. This historical
+        # gate owns only the Route35 / Goldenrod north-gate reachability invariant.
+        required_gateway = all(token in south_dispatch for token in (
+            'cp JOHTO_ROUTE_35_LOCAL_ID\njr z, .activeSouthMap',
+            'cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID\njr z, .activeSouthMap',
+            '.activeSouthMap\ncallab HandleLedges',
+            'callab JohtoSouthSpatialStep'))
         check('route35_and_north_gate_reachable_in_land_gateway',
-              bool(re.search(gateway_pattern,south_dispatch)) and
+              required_gateway and
               'callab JohtoOverworldSouthLandDecision' in read('home/overworld.asm'))
         ids=read('constants/region_map_constants.asm')
         matches=dict((k,int(v)) for k,v in re.findall(r'DEF (JOHTO_[A-Z0-9_]+_LOCAL_ID) EQU (\d+)',ids))
-        # Explicitly guard the *hole* between Goldenrod (15) and Route35
-        # (17): ID16 is live Route36 and must NOT enter the new dispatcher.
+        # ID16 remains Route36 and must keep its separate movement path.
         check('route36_keeps_separate_land_policy_while_17_18_use_gold_roles',
               [matches.get(k) for k in ('JOHTO_GOLDENROD_CITY_LOCAL_ID',
                 'JOHTO_ROUTE_36_LOCAL_ID','JOHTO_ROUTE_35_LOCAL_ID',
                 'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID')]==[15,16,17,18] and
-              bool(re.search(gateway_pattern,south_dispatch)) and
+              required_gateway and
               'cp JOHTO_ROUTE_36_LOCAL_ID' not in south_dispatch)
         role_table=read('maps/johto_pilot/Route35.roles.bin',binary=True)
         # Cross-check every 8x8 role against NPC-243's accepted row-padded

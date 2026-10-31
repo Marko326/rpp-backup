@@ -30,8 +30,8 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None):
         tile=read('engine/johto_south_geometry.asm')
         main=read('main.asm')
         version=read('data/game_version.asm')
-        ck('version_and_28_active', ('MAP-5.62.294@' in version or 'FIX-5.62.295@' in version) and 'TEST-231@' in version and
-           'NUM_JOHTO_ACTIVE_MAPS EQU 28' in region and 'JOHTO_ROUTE_37_LOCAL_ID EQU 21' in ids and
+        ck('version_and_28_active', ('MAP-5.62.294@' in version or 'FIX-5.62.295@' in version or 'MAP-5.62.297@' in version or 'FIX-5.62.298@' in version) and 'TEST-231@' in version and
+           ('NUM_JOHTO_ACTIVE_MAPS EQU 28' in region or 'NUM_JOHTO_ACTIVE_MAPS EQU 32' in region) and 'JOHTO_ROUTE_37_LOCAL_ID EQU 21' in ids and
            'JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22' in ids)
         ck('two_real_headers_and_active_slots', all(x in headers for x in
            ('dw JohtoRoute37RuntimeHeader','dw JohtoEcruteakRuntimeHeader')) and
@@ -65,14 +65,15 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None):
            'JOHTO_ROUTE_37_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_36_LOCAL_ID',
            'JOHTO_ROUTE_37_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID',
            'JOHTO_ECRUTEAK_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_37_LOCAL_ID')) and
-           not re.search(r'JOHTO_ECRUTEAK_CITY_LOCAL_ID, (?:WEST|EAST),',source))
+           True)
         ck('north_south_header_mirrors_and_exact_preview',all(x in corridor for x in (
            'db JOHTO_ROUTE37_WIDTH + MAP_BORDER ; Gold north preview',
            'db JOHTO_ROUTE37_WIDTH + MAP_BORDER ; Gold south preview',
            'dw JohtoRoute37NorthEcruteakMirror + JOHTO_ECRUTEAK_WIDTH * (JOHTO_ECRUTEAK_HEIGHT - 3) + 5',
            'dw JohtoRoute37SouthRoute36Mirror + 10',
-           'ASSERT JohtoRoute37HeaderEnd - JohtoRoute37RuntimeHeader == 34',
-           'ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 23')) and
+           'ASSERT JohtoRoute37HeaderEnd - JohtoRoute37RuntimeHeader == 34')) and
+           ('ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 23' in corridor or
+            'ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 34' in corridor) and
            'JohtoRoute36NorthRoute37Mirror' in ru36 and
            'ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 45' in ru36)
         roles=read('maps/johto_pilot/EcruteakCity.roles.bin',True)

@@ -104,10 +104,13 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
+    (22, "WEST", 24), (24, "EAST", 22),
+    (24, "WEST", 25), (25, "EAST", 24),
+    (25, "SOUTH", 26), (26, "NORTH", 25),
     (0, "WEST", 1), (1, "EAST", 0),
     (1, "WEST", 2), (2, "EAST", 1),
     (2, "NORTH", 3), (3, "SOUTH", 2),
@@ -148,6 +151,10 @@ MAP_LAYOUTS = {
     "Route36NationalParkGate": (5, 4),
     "Route37": (10, 9),
     "EcruteakCity": (20, 18),
+    "Route38EcruteakGate": (5, 4),
+    "Route38": (20, 9),
+    "Route39": (10, 18),
+    "OlivineCity": (20, 18),
 }
 GOLD_SOURCE_MAPS = {
     "Route37": "Route37",
@@ -175,6 +182,10 @@ GOLD_SOURCE_MAPS = {
     "GoldenrodCity": "GoldenrodCity",
     "Route35GoldenrodGate": "Route35GoldenrodGate",
     "Route35": "Route35",
+    "Route38EcruteakGate": "Route38EcruteakGate",
+    "Route38": "Route38",
+    "Route39": "Route39",
+    "OlivineCity": "OlivineCity",
 }
 
 
@@ -729,6 +740,39 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     except (ValueError, OSError) as exc:
         _check(errors, checks, "active_slot_town_map_tables", False, str(exc))
 
+    # FIX-298: ordinary Johto Town Map opening must not dereference the HL name
+    # pointer returned by the banked special-entry loader after Bankswitch has
+    # restored the Town Map bank.  That old path copied unrelated ROM bytes
+    # through CopyTownMapDisplayName until a random @, corrupting WRAM and
+    # causing garbled legends / crashes on exit.  Johto must branch before the
+    # Kanto DrawPlayerOrBirdSprite path, copy the browse name in its own bank,
+    # and draw only the returned coordinates in the Town Map bank.
+    try:
+        town = _read(project, "engine/town_map.asm")
+        display_start = town.index("DisplayTownMap:")
+        loop_start = town.index("\n.townMapLoop\n", display_start)
+        initial = town[display_start:loop_start]
+        johto_start = initial.index("\n.drawJohtoInitialMarker\n")
+        johto_end = initial.index("\n.initialMarkerReady\n", johto_start)
+        johto_initial = initial[johto_start:johto_end]
+        johto_marker = _section(town, "DrawJohtoPilotFlyPlayerMarker", "DrawJohtoPilotFlyCursor")
+        branch_pos = initial.find("jr nz, .drawJohtoInitialMarker")
+        kanto_lookup_pos = initial.find("callab GetFlyTownMapPlayerMap")
+        safe = (branch_pos >= 0 and kanto_lookup_pos >= 0 and branch_pos < kanto_lookup_pos and
+                "callab JohtoPilotGetTownMapLandmark" in johto_initial and
+                "callab LoadJohtoBrowseEntry" in johto_initial and
+                "call DrawJohtoPilotFlyPlayerMarker" in johto_initial and
+                "ld de, wBuffer" in johto_initial and
+                "DrawPlayerOrBirdSprite" not in johto_initial and
+                "CopyTownMapDisplayName" not in johto_initial and
+                "CopyTownMapDisplayName" not in johto_marker)
+        _check(errors, checks, "johto_town_map_cross_bank_initial_marker", safe,
+               "Johto DisplayTownMap must branch before Kanto's DrawPlayerOrBirdSprite, "
+               "copy its label via LoadJohtoBrowseEntry->wBuffer, and draw coordinates "
+               "without dereferencing a cross-bank HL name pointer")
+    except (ValueError, OSError) as exc:
+        _check(errors, checks, "johto_town_map_cross_bank_initial_marker", False, str(exc))
+
     header_body = _section(headers, "JohtoHeaderDescriptors", "JohtoHeaderDescriptorsEnd")
     header_rows = re.findall(r"(?m)^\s*dw\s+(\w+RuntimeHeader)\s*$", header_body)
     header_banks = re.findall(r"(?m)^\s*db\s+BANK\((\w+RuntimeHeader)\)\s*$", header_body)
@@ -750,7 +794,9 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID", "JOHTO_ROUTE_35_LOCAL_ID",
                            "JOHTO_NATIONAL_PARK_LOCAL_ID", "JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID",
                            "JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",
-                           "JOHTO_ROUTE_37_LOCAL_ID", "JOHTO_ECRUTEAK_CITY_LOCAL_ID"]
+                           "JOHTO_ROUTE_37_LOCAL_ID", "JOHTO_ECRUTEAK_CITY_LOCAL_ID",
+                           "JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID", "JOHTO_ROUTE_38_LOCAL_ID",
+                           "JOHTO_ROUTE_39_LOCAL_ID", "JOHTO_OLIVINE_CITY_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -805,6 +851,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[18] = 21
     expected_slots[103:106] = [23, 24, 25]
     expected_slots[21:23] = [26, 27]
+    expected_slots[23:27] = [28, 29, 30, 31]
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -972,6 +1019,18 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",1,"JOHTO_NATIONAL_PARK_LOCAL_ID"),
             ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",2,"JOHTO_ROUTE_36_LOCAL_ID"),
             ("JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID",3,"JOHTO_ROUTE_36_LOCAL_ID"),
+        ):
+            expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
+        # MAP-297 west corridor: Ecruteak <-> gate <-> Route38.
+        for source, ordinal, target in (
+            ("JOHTO_ECRUTEAK_CITY_LOCAL_ID",0,"JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID"),
+            ("JOHTO_ECRUTEAK_CITY_LOCAL_ID",1,"JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",0,"JOHTO_ROUTE_38_LOCAL_ID"),
+            ("JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",1,"JOHTO_ROUTE_38_LOCAL_ID"),
+            ("JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",2,"JOHTO_ECRUTEAK_CITY_LOCAL_ID"),
+            ("JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",3,"JOHTO_ECRUTEAK_CITY_LOCAL_ID"),
+            ("JOHTO_ROUTE_38_LOCAL_ID",0,"JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_38_LOCAL_ID",1,"JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,

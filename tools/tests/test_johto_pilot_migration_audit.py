@@ -24,7 +24,7 @@ REQUIRED_FILES = (
     "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
     "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
     "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/overworld/tileset_header.asm", "color/loadpalettes.asm", "engine/fly_town_map_helpers.asm",
-    "engine/johto_pilot_town_map_browse.asm", "text/map_names.asm",
+    "engine/johto_pilot_town_map_browse.asm", "engine/town_map.asm", "text/map_names.asm",
     "tools/johto_map_name_sign_contracts.json", "tools/johto_pilot_door_contracts.json",
     "tools/johto_gate_music_bike_contracts.json", "engine/menu/options_menu.asm",
     "home/audio.asm", "data/bike_riding_tilesets.asm",
@@ -65,7 +65,7 @@ REQUIRED_FILES = (
     "maps/johto_pilot/Route36NationalParkGate.gold.blk", "maps/johto_pilot/Route36NationalParkGate.runtime.blk", "maps/johto_pilot/Route36NationalParkGate.roles.bin", "maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin",
     "engine/overworld/movement.asm", "engine/overworld/ledges.asm", "data/tileset_headers.asm",
     "data/game_version.asm", "data/bike_riding_tilesets.asm", "data/johto_ruins_north_runtime.asm",
-    "data/johto_corridor_runtime_294.asm",
+    "data/johto_corridor_runtime_294.asm", "data/johto_west_runtime_297.asm",
     "color/data/map_palette_sets.asm", "engine/fly_town_map_helpers.asm", "tools/johto_gate_music_bike_contracts.json",
     "engine/johto_land_collision_gateway_272.asm", "engine/johto_south_geometry.asm",
     "gfx/tilesets/johto_park.png", "gfx/tilesets/johto_park_gate.png",
@@ -136,7 +136,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 28",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 32",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -144,7 +144,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 28",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 32",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -189,9 +189,18 @@ class PilotMigrationAuditTests(unittest.TestCase):
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
 
+    def test_johto_town_map_cross_bank_initial_marker_regression_fails(self):
+        self.mutate("engine/town_map.asm",
+                    "\tcall DrawJohtoPilotFlyPlayerMarker\n\tld de, wBuffer",
+                    "\tld b, $0\n\tcall DrawPlayerOrBirdSprite\n\tld de, wcd6d")
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("johto_town_map_cross_bank_initial_marker" in e for e in report["errors"]),
+                        report["errors"])
+
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 28", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 32", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

@@ -34,6 +34,8 @@ LEDGE_COORDINATE_TABLES = {
                            '.ruinsHopTable', '.ruinsCoordinateHopLookup'),
     'Route33': ('JOHTO_ROUTE_33_LOCAL_ID', 'JohtoRoute33Hops', '.route33Modern', '.ruinsCoordinateHopLookup'),
     'Route37': ('JOHTO_ROUTE_37_LOCAL_ID', 'JohtoRoute37GoldHops', '.route37Gold', '.ruinsCoordinateHopLookup'),
+    'Route38': ('JOHTO_ROUTE_38_LOCAL_ID', 'JohtoRoute38GoldHops', '.route38Gold', '.ruinsCoordinateHopLookup'),
+    'Route39': ('JOHTO_ROUTE_39_LOCAL_ID', 'JohtoRoute39GoldHops', '.route39Gold', '.ruinsCoordinateHopLookup'),
     'EcruteakCity': ('JOHTO_ECRUTEAK_CITY_LOCAL_ID', 'JohtoEcruteakGoldHops', '.ecruteakGold', '.ruinsCoordinateHopLookup'),
     'AzaleaTown': ('JOHTO_AZALEA_TOWN_LOCAL_ID', 'JohtoAzaleaGoldHops', '.route33Modern', '.ruinsCoordinateHopLookup'),
 }
@@ -244,6 +246,15 @@ def audit(root: Path, gold_root: Path) -> dict:
         and (root / 'maps/johto_pilot/EcruteakCity.roles.bin').is_file()
         and (root / 'maps/johto_pilot/EcruteakCity.roles.bin').read_bytes().count(2) == 20):
         surf_maps['EcruteakCity'] = {'gold_map': 'EcruteakCity', 'dispatch': 'JohtoSouthGoldWaterProbe'}
+    # MAP-297: Olivine uses the same numeric Gold role-grid Surf path.
+    if (any(r['map'] == 'OlivineCity' for r in active)
+        and 'cp JOHTO_OLIVINE_CITY_LOCAL_ID' in spatial
+        and 'JohtoOlivineRoles:: INCBIN "maps/johto_pilot/OlivineCity.roles.bin"' in spatial
+        and 'cp JOHTO_OLIVINE_CITY_LOCAL_ID' in surf_runtime
+        and 'JohtoSouthGoldWaterProbe' in surf_runtime
+        and (root / 'maps/johto_pilot/OlivineCity.roles.bin').is_file()
+        and (root / 'maps/johto_pilot/OlivineCity.roles.bin').read_bytes().count(2) == 406):
+        surf_maps['OlivineCity'] = {'gold_map': 'OlivineCity', 'dispatch': 'JohtoSouthGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []

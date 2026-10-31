@@ -200,7 +200,7 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[source['stable_id']],
                 str(source['warp_ordinal_zero_based']), 'MAP_REGION_JOHTO', id_symbols[target['stable_id']]))
         for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', []):
-            if gate.get('stable_id') in (11,13,18,104,105):
+            if gate.get('stable_id') in (11,13,18,23,104,105):
                 continue  # new gates are appended in exact global South route order
             for row in gate.get('warp_contracts', []):
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
@@ -239,6 +239,14 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
         )
         expected_routes.extend(('MAP_REGION_JOHTO', src, str(n), 'MAP_REGION_JOHTO', dst)
                                for src, n, dst in park_rows)
+        # MAP-297: the Ecruteak/Route38 west gate was activated after the Park
+        # routes, so preserve runtime row order when deriving the exact contract.
+        west_routes = [gate for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
+                       if gate.get('stable_id') == 23]
+        for gate in west_routes:
+            for row in gate.get('warp_contracts', []):
+                expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                    str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         rows = _runtime_warp_rows(runtime)
         add('REGISTERED_WARP_ROUTES', rows == expected_routes,
             f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; exact={rows == expected_routes}')
