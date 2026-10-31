@@ -87,6 +87,40 @@
       "role": "named",
       "name": "Route 33",
       "town_map_name": "Route 33"
+    },
+    {
+      "id": "JOHTO_AZALEA_TOWN_LOCAL_ID",
+      "role": "named",
+      "name": "Azalea Town",
+      "town_map_name": "Azalea Town"
+    },
+    {
+      "id": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Azalea Town"
+    },
+    {
+      "id": "JOHTO_ILEX_FOREST_LOCAL_ID",
+      "role": "named",
+      "name": "Ilex Forest",
+      "town_map_name": "Ilex Forest"
+    },
+    {
+      "id": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 34"
+    },
+    {
+      "id": "JOHTO_ROUTE_34_LOCAL_ID",
+      "role": "named",
+      "name": "Route 34",
+      "town_map_name": "Route 34"
+    },
+    {
+      "id": "JOHTO_GOLDENROD_CITY_LOCAL_ID",
+      "role": "named",
+      "name": "Goldenrod City",
+      "town_map_name": "Goldenrod City"
     }
   ]
 }

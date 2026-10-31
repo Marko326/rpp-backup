@@ -44,7 +44,7 @@ class UnionCavePortal263(unittest.TestCase):
              '    ; The cave interior is collision-only: never STEP_ON or override walls.\n    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    ret z',
              '    ; The cave interior is collision-only: never STEP_ON or override walls.\n    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, .unionCaveMouth',
              'cave_not_step_on_collision_override'),
-            ('remove_cave_bike', bike, ',JOHTO_UNION_CAVE,JOHTO_MODERN,$FF', ',$FF',
+            ('remove_cave_bike', bike, ',JOHTO_UNION_CAVE,JOHTO_MODERN,JOHTO_ILEX_FOREST,$FF', ',$FF',
              'union_cave_bike_gold_reference_policy'),
             ('remove_reverse_warp', runtime,
              '    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID',

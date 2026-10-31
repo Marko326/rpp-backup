@@ -26,7 +26,7 @@ class UnionCave260(unittest.TestCase):
 
     def test_reserved_id_and_own_cave_tileset(self):
         constants = (ROOT/'constants/region_map_constants.asm').read_text()
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 15', constants)
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 21', constants)
         self.assertIn('DEF JOHTO_UNION_CAVE_1F_LOCAL_ID EQU 8', constants)
         tilesets = (ROOT/'data/tileset_headers.asm').read_text()
         self.assertIn('tileset JohtoUnionCave_Block, JohtoUnionCave_GFX, JohtoUnionCave_Coll, $FF,$FF,$FF, $FF, CAVE', tilesets)

@@ -16,13 +16,13 @@ GOLD = Path(os.environ.get('GOLD_SOURCE_ROOT','/mnt/data/RUINS_GOLD_REF/REFERENC
 class AlphSouthRuntime254(unittest.TestCase):
     def test_south_slots_preserved_when_north_activated(self):
         records = read_active_maps(ROOT)
-        self.assertEqual(15, len(records))
+        self.assertEqual(21, len(records))
         self.assertEqual([(9,102,'Route32RuinsOfAlphGate'),(10,20,'RuinsOfAlphOutside')],
                          [(r['slot'],r['stable_id'],r['map']) for r in records[9:11]])
         self.assertEqual([(11,19,'Route36RuinsOfAlphGate'),(12,16,'Route36')], [(r['slot'],r['stable_id'],r['map']) for r in records[11:13]])
         self.assertEqual((13,8,'UnionCave1F'), (records[13]['slot'],records[13]['stable_id'],records[13]['map']))
         self.assertEqual((14,9,'Route33'), (records[14]['slot'],records[14]['stable_id'],records[14]['map']))
-        self.assertFalse({10,11,12} & {r['stable_id'] for r in records})
+        self.assertTrue({10,11,12,13,14,15}.issubset({r['stable_id'] for r in records}))
 
     def test_gold_stage_and_runtime_layouts(self):
         self.assertEqual([], resource_audit(ROOT,GOLD if GOLD.is_dir() else None))

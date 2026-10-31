@@ -22,7 +22,9 @@ class CoverageTests(unittest.TestCase):
             (0, 'NewBarkTown'), (1, 'Route29'), (2, 'CherrygroveCity'),
             (3, 'Route30'), (4, 'Route31'), (125, 'GuideGentsHouse'),
             (5, 'VioletCity'), (6, 'Route31VioletGate'), (7, 'Route32'), (102, 'Route32RuinsOfAlphGate'),
-            (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36'), (8, 'UnionCave1F'), (9, 'Route33')])
+            (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36'), (8, 'UnionCave1F'), (9, 'Route33'), (10, 'AzaleaTown'), (11, 'IlexForestAzaleaGate'),
+            (12, 'IlexForest'), (13, 'Route34IlexForestGate'),
+            (14, 'Route34'), (15, 'GoldenrodCity')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -37,8 +39,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 15', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 15',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 21', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 21',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -64,6 +66,12 @@ class CoverageTests(unittest.TestCase):
             'Route36': (0, 'NO_WATER'),
             'UnionCave1F': (64, 'REGISTERED'),
             'Route33': (0, 'NO_WATER'),
+            'AzaleaTown': (0, 'NO_WATER'),
+            'IlexForestAzaleaGate': (0, 'NO_WATER'),
+            'IlexForest': (32, 'REGISTERED'),
+            'Route34IlexForestGate': (0, 'NO_WATER'),
+            'Route34': (226, 'REGISTERED'),
+            'GoldenrodCity': (84, 'REGISTERED'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
@@ -106,6 +114,10 @@ class CoverageTests(unittest.TestCase):
                      'maps/johto_pilot/RuinsOfAlphOutside.runtime.blk',
                      'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll')
             paths += tuple(x['source_asset'] for x in read_active_maps(ROOT))
+            paths += ('engine/johto_south_geometry.asm',)
+            paths += tuple(f'maps/johto_pilot/{name}.gold.blk' for name in ('AzaleaTown','IlexForestAzaleaGate','IlexForest','Route34IlexForestGate','Route34','GoldenrodCity'))
+            paths += tuple(f'maps/johto_pilot/{name}.runtime.blk' for name in ('AzaleaTown','IlexForestAzaleaGate','IlexForest','Route34IlexForestGate','Route34','GoldenrodCity'))
+            paths += tuple(f'maps/johto_pilot/{name}.roles.bin' for name in ('AzaleaTown','IlexForestAzaleaGate','IlexForest','Route34IlexForestGate','Route34','GoldenrodCity'))
             for f in paths:
                 dst = root / f
                 dst.parent.mkdir(parents=True, exist_ok=True)

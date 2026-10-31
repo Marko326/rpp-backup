@@ -1,0 +1,686 @@
+{
+  "map": "AzaleaTown",
+  "schema": "gold-quadrant-candidate-v1",
+  "gold_geometry": {
+    "schema": "gold-quadrant-candidate-v1",
+    "map": "AzaleaTown",
+    "tileset": "johto_modern",
+    "width_cells": 40,
+    "height_cells": 18,
+    "mask_row_bytes": 5,
+    "mask_size_bytes": 90,
+    "blocked_count": 447,
+    "walkable_count": 273,
+    "collision_roles": {
+      "CAVE": 1,
+      "DOOR": 5,
+      "FLOOR": 263,
+      "HEADBUTT_TREE": 20,
+      "HOP_DOWN": 10,
+      "WALL": 419,
+      "WARP_CARPET_LEFT": 2
+    },
+    "ambiguous_visual_ids": {
+      "3E": [
+        "HEADBUTT_TREE",
+        "WALL"
+      ],
+      "3C": [
+        "FLOOR",
+        "WALL"
+      ],
+      "05": [
+        "FLOOR",
+        "HOP_DOWN"
+      ],
+      "06": [
+        "FLOOR",
+        "HOP_DOWN",
+        "WALL"
+      ]
+    },
+    "walkable_roles": [
+      "FLOOR",
+      "HOP_DOWN",
+      "HOP_DOWN_LEFT",
+      "HOP_DOWN_RIGHT",
+      "HOP_LEFT",
+      "TALL_GRASS"
+    ],
+    "hops": [
+      {
+        "x": 6,
+        "y": 6,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          6,
+          8
+        ]
+      },
+      {
+        "x": 7,
+        "y": 6,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          7,
+          8
+        ]
+      },
+      {
+        "x": 8,
+        "y": 6,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 6,
+        "edge_tile": 76,
+        "landing": [
+          8,
+          8
+        ]
+      },
+      {
+        "x": 10,
+        "y": 6,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          10,
+          8
+        ]
+      },
+      {
+        "x": 11,
+        "y": 6,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          11,
+          8
+        ]
+      },
+      {
+        "x": 28,
+        "y": 10,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          28,
+          12
+        ]
+      },
+      {
+        "x": 29,
+        "y": 10,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          29,
+          12
+        ]
+      },
+      {
+        "x": 30,
+        "y": 10,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          30,
+          12
+        ]
+      },
+      {
+        "x": 32,
+        "y": 10,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          32,
+          12
+        ]
+      },
+      {
+        "x": 33,
+        "y": 10,
+        "dx": 0,
+        "dy": 1,
+        "from_tile": 5,
+        "edge_tile": 76,
+        "landing": [
+          33,
+          12
+        ]
+      }
+    ],
+    "unsafe_hop_candidates": [],
+    "special_cells": [
+      {
+        "x": 9,
+        "y": 5,
+        "role": "DOOR"
+      },
+      {
+        "x": 21,
+        "y": 5,
+        "role": "DOOR"
+      },
+      {
+        "x": 31,
+        "y": 7,
+        "role": "CAVE"
+      },
+      {
+        "x": 15,
+        "y": 9,
+        "role": "DOOR"
+      },
+      {
+        "x": 2,
+        "y": 10,
+        "role": "WARP_CARPET_LEFT"
+      },
+      {
+        "x": 2,
+        "y": 11,
+        "role": "WARP_CARPET_LEFT"
+      },
+      {
+        "x": 21,
+        "y": 13,
+        "role": "DOOR"
+      },
+      {
+        "x": 10,
+        "y": 15,
+        "role": "DOOR"
+      }
+    ],
+    "portal_edges": [
+      {
+        "from_x": 9,
+        "from_y": 6,
+        "from_role": "FLOOR",
+        "to_x": 9,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 9,
+        "from_y": 4,
+        "from_role": "WALL",
+        "to_x": 9,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 10,
+        "from_y": 5,
+        "from_role": "WALL",
+        "to_x": 9,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 8,
+        "from_y": 5,
+        "from_role": "WALL",
+        "to_x": 9,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 21,
+        "from_y": 6,
+        "from_role": "FLOOR",
+        "to_x": 21,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 21,
+        "from_y": 4,
+        "from_role": "WALL",
+        "to_x": 21,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 22,
+        "from_y": 5,
+        "from_role": "WALL",
+        "to_x": 21,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 20,
+        "from_y": 5,
+        "from_role": "WALL",
+        "to_x": 21,
+        "to_y": 5,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 31,
+        "from_y": 8,
+        "from_role": "FLOOR",
+        "to_x": 31,
+        "to_y": 7,
+        "to_role": "CAVE",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 31,
+        "from_y": 6,
+        "from_role": "WALL",
+        "to_x": 31,
+        "to_y": 7,
+        "to_role": "CAVE",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 32,
+        "from_y": 7,
+        "from_role": "WALL",
+        "to_x": 31,
+        "to_y": 7,
+        "to_role": "CAVE",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 30,
+        "from_y": 7,
+        "from_role": "WALL",
+        "to_x": 31,
+        "to_y": 7,
+        "to_role": "CAVE",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 15,
+        "from_y": 10,
+        "from_role": "FLOOR",
+        "to_x": 15,
+        "to_y": 9,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 15,
+        "from_y": 8,
+        "from_role": "WALL",
+        "to_x": 15,
+        "to_y": 9,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 16,
+        "from_y": 9,
+        "from_role": "WALL",
+        "to_x": 15,
+        "to_y": 9,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 14,
+        "from_y": 9,
+        "from_role": "WALL",
+        "to_x": 15,
+        "to_y": 9,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 2,
+        "from_y": 11,
+        "from_role": "WARP_CARPET_LEFT",
+        "to_x": 2,
+        "to_y": 10,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "UP",
+        "source_semantics": "portal",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 2,
+        "from_y": 9,
+        "from_role": "WALL",
+        "to_x": 2,
+        "to_y": 10,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 3,
+        "from_y": 10,
+        "from_role": "FLOOR",
+        "to_x": 2,
+        "to_y": 10,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "LEFT",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 1,
+        "from_y": 10,
+        "from_role": "WALL",
+        "to_x": 2,
+        "to_y": 10,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 2,
+        "from_y": 12,
+        "from_role": "WALL",
+        "to_x": 2,
+        "to_y": 11,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "UP",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 2,
+        "from_y": 10,
+        "from_role": "WARP_CARPET_LEFT",
+        "to_x": 2,
+        "to_y": 11,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "DOWN",
+        "source_semantics": "portal",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 3,
+        "from_y": 11,
+        "from_role": "FLOOR",
+        "to_x": 2,
+        "to_y": 11,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "LEFT",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 1,
+        "from_y": 11,
+        "from_role": "WALL",
+        "to_x": 2,
+        "to_y": 11,
+        "to_role": "WARP_CARPET_LEFT",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 21,
+        "from_y": 14,
+        "from_role": "FLOOR",
+        "to_x": 21,
+        "to_y": 13,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 21,
+        "from_y": 12,
+        "from_role": "WALL",
+        "to_x": 21,
+        "to_y": 13,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 22,
+        "from_y": 13,
+        "from_role": "WALL",
+        "to_x": 21,
+        "to_y": 13,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 20,
+        "from_y": 13,
+        "from_role": "WALL",
+        "to_x": 21,
+        "to_y": 13,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 10,
+        "from_y": 16,
+        "from_role": "FLOOR",
+        "to_x": 10,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 10,
+        "from_y": 14,
+        "from_role": "WALL",
+        "to_x": 10,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 11,
+        "from_y": 15,
+        "from_role": "WALL",
+        "to_x": 10,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 9,
+        "from_y": 15,
+        "from_role": "WALL",
+        "to_x": 10,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      }
+    ],
+    "runtime_ready": false,
+    "notes": "Gold collision evidence only; engine entry exceptions and map connections require separate review"
+  },
+  "warps": [
+    {
+      "index": 1,
+      "x": 15,
+      "y": 9,
+      "destination_token": "AZALEA_POKECENTER_1F",
+      "destination_map": null,
+      "destination_gold_warp": 1,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 2,
+      "x": 21,
+      "y": 13,
+      "destination_token": "CHARCOAL_KILN",
+      "destination_map": null,
+      "destination_gold_warp": 1,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 3,
+      "x": 21,
+      "y": 5,
+      "destination_token": "AZALEA_MART",
+      "destination_map": null,
+      "destination_gold_warp": 2,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 4,
+      "x": 9,
+      "y": 5,
+      "destination_token": "KURTS_HOUSE",
+      "destination_map": null,
+      "destination_gold_warp": 1,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 5,
+      "x": 10,
+      "y": 15,
+      "destination_token": "AZALEA_GYM",
+      "destination_map": null,
+      "destination_gold_warp": 1,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 6,
+      "x": 31,
+      "y": 7,
+      "destination_token": "SLOWPOKE_WELL_B1F",
+      "destination_map": null,
+      "destination_gold_warp": 1,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 7,
+      "x": 2,
+      "y": 10,
+      "destination_token": "ILEX_FOREST_AZALEA_GATE",
+      "destination_map": "IlexForestAzaleaGate",
+      "destination_gold_warp": 3,
+      "planned_open": true,
+      "runtime_registered": false
+    },
+    {
+      "index": 8,
+      "x": 2,
+      "y": 11,
+      "destination_token": "ILEX_FOREST_AZALEA_GATE",
+      "destination_map": "IlexForestAzaleaGate",
+      "destination_gold_warp": 4,
+      "planned_open": true,
+      "runtime_registered": false
+    }
+  ]
+}

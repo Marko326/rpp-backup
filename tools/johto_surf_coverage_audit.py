@@ -97,6 +97,14 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
     if surf_errors:
         raise ValueError('registered Surf preflight failed: ' + '; '.join(surf_errors))
     registered = {e['gold_map'] for e in contract['maps']}
+    # MAP-268 is a different, explicitly checked representation: a Gold
+    # quadrant role grid rather than a hand-written y,x WATER db table.
+    # Never count a map as covered merely because a .roles.bin file exists.
+    from johto_south_spatial_surf_audit import audit as audit_south_spatial
+    south_check = audit_south_spatial(root, gold_root)
+    if south_check['status'] != 'PASS_STATIC_ONLY':
+        raise ValueError('south batch Surf missing/corrupt: ' + '; '.join(south_check['errors']))
+    registered.update(('IlexForest', 'Route34', 'GoldenrodCity'))
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

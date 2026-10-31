@@ -200,10 +200,15 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[source['stable_id']],
                 str(source['warp_ordinal_zero_based']), 'MAP_REGION_JOHTO', id_symbols[target['stable_id']]))
         for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', []):
+            if gate.get('stable_id') in (11,13):
+                continue  # new gates are appended in exact global South route order
             for row in gate.get('warp_contracts', []):
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         for row in contract.get('cave_1f_routes', []):
+            expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        for row in contract.get('south_batch_routes', []):
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                 str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         rows = _runtime_warp_rows(runtime)

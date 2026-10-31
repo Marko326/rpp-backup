@@ -148,8 +148,12 @@ class JohtoBikeCutSurf252(unittest.TestCase):
         if not all(path.is_file() for path in maps):
             self.skipTest('generated RGBDS MAP files are not part of this source export; owner already verifies current MAP')
         for path in maps:
-            prior=path.read_text()
-            self.assertIn('ROMX bank #72:\n  EMPTY',prior)
+            linked=path.read_text()
+            self.assertIn('ROMX bank #72:', linked)
+            bank72=linked.split('ROMX bank #72:', 1)[1].split('ROMX bank #73:', 1)[0]
+            # On current builds Bank $48 is populated by the exact field
+            # skills SECTION; the historical 'EMPTY' expectation is stale.
+            self.assertIn('["Johto Violet Field Skills"]', bank72)
         cut=(ROOT/'engine/overworld/cut.asm').read_text().split('UsedCut:',1)[1].split('.legacyTileset',1)[0]
         self.assertEqual(1,cut.count('callab JohtoPilotCutTreeAhead'))
         items=(ROOT/'engine/items/items.asm').read_text()

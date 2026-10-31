@@ -1,0 +1,426 @@
+{
+  "map": "Route34",
+  "schema": "gold-quadrant-candidate-v1",
+  "gold_geometry": {
+    "schema": "gold-quadrant-candidate-v1",
+    "map": "Route34",
+    "tileset": "johto_modern",
+    "width_cells": 20,
+    "height_cells": 54,
+    "mask_row_bytes": 3,
+    "mask_size_bytes": 162,
+    "blocked_count": 702,
+    "walkable_count": 378,
+    "collision_roles": {
+      "BUOY": 36,
+      "DOOR": 2,
+      "FLOOR": 278,
+      "HEADBUTT_TREE": 2,
+      "TALL_GRASS": 100,
+      "WALL": 432,
+      "WARP_CARPET_DOWN": 2,
+      "WARP_CARPET_RIGHT": 2,
+      "WATER": 226
+    },
+    "ambiguous_visual_ids": {
+      "06": [
+        "FLOOR",
+        "WALL"
+      ],
+      "3E": [
+        "HEADBUTT_TREE",
+        "WALL"
+      ],
+      "40": [
+        "WARP_CARPET_DOWN",
+        "WARP_CARPET_RIGHT"
+      ]
+    },
+    "walkable_roles": [
+      "FLOOR",
+      "HOP_DOWN",
+      "HOP_DOWN_LEFT",
+      "HOP_DOWN_RIGHT",
+      "HOP_LEFT",
+      "TALL_GRASS"
+    ],
+    "hops": [],
+    "unsafe_hop_candidates": [],
+    "special_cells": [
+      {
+        "x": 11,
+        "y": 14,
+        "role": "WARP_CARPET_RIGHT"
+      },
+      {
+        "x": 11,
+        "y": 15,
+        "role": "WARP_CARPET_RIGHT"
+      },
+      {
+        "x": 13,
+        "y": 15,
+        "role": "DOOR"
+      },
+      {
+        "x": 13,
+        "y": 37,
+        "role": "WARP_CARPET_DOWN"
+      },
+      {
+        "x": 14,
+        "y": 37,
+        "role": "WARP_CARPET_DOWN"
+      },
+      {
+        "x": 13,
+        "y": 41,
+        "role": "DOOR"
+      }
+    ],
+    "portal_edges": [
+      {
+        "from_x": 11,
+        "from_y": 15,
+        "from_role": "WARP_CARPET_RIGHT",
+        "to_x": 11,
+        "to_y": 14,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "UP",
+        "source_semantics": "portal",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 11,
+        "from_y": 13,
+        "from_role": "WALL",
+        "to_x": 11,
+        "to_y": 14,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 12,
+        "from_y": 14,
+        "from_role": "WALL",
+        "to_x": 11,
+        "to_y": 14,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 10,
+        "from_y": 14,
+        "from_role": "FLOOR",
+        "to_x": 11,
+        "to_y": 14,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "RIGHT",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 11,
+        "from_y": 16,
+        "from_role": "WALL",
+        "to_x": 11,
+        "to_y": 15,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "UP",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 11,
+        "from_y": 14,
+        "from_role": "WARP_CARPET_RIGHT",
+        "to_x": 11,
+        "to_y": 15,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "DOWN",
+        "source_semantics": "portal",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 12,
+        "from_y": 15,
+        "from_role": "WALL",
+        "to_x": 11,
+        "to_y": 15,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 10,
+        "from_y": 15,
+        "from_role": "FLOOR",
+        "to_x": 11,
+        "to_y": 15,
+        "to_role": "WARP_CARPET_RIGHT",
+        "direction": "RIGHT",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 16,
+        "from_role": "FLOOR",
+        "to_x": 13,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 14,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 14,
+        "from_y": 15,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 12,
+        "from_y": 15,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 15,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 38,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "UP",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 36,
+        "from_role": "FLOOR",
+        "to_x": 13,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "DOWN",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 14,
+        "from_y": 37,
+        "from_role": "WARP_CARPET_DOWN",
+        "to_x": 13,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "LEFT",
+        "source_semantics": "portal",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 12,
+        "from_y": 37,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 14,
+        "from_y": 38,
+        "from_role": "WALL",
+        "to_x": 14,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "UP",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 14,
+        "from_y": 36,
+        "from_role": "FLOOR",
+        "to_x": 14,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "DOWN",
+        "source_semantics": "ordinary",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 15,
+        "from_y": 37,
+        "from_role": "WALL",
+        "to_x": 14,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 37,
+        "from_role": "WARP_CARPET_DOWN",
+        "to_x": 14,
+        "to_y": 37,
+        "to_role": "WARP_CARPET_DOWN",
+        "direction": "RIGHT",
+        "source_semantics": "portal",
+        "review_priority": "TRAVERSAL_CANDIDATE",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 42,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 41,
+        "to_role": "DOOR",
+        "direction": "UP",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 13,
+        "from_y": 40,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 41,
+        "to_role": "DOOR",
+        "direction": "DOWN",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 14,
+        "from_y": 41,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 41,
+        "to_role": "DOOR",
+        "direction": "LEFT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      },
+      {
+        "from_x": 12,
+        "from_y": 41,
+        "from_role": "WALL",
+        "to_x": 13,
+        "to_y": 41,
+        "to_role": "DOOR",
+        "direction": "RIGHT",
+        "source_semantics": "solid",
+        "review_priority": "CHECK_BLOCKED_OR_SPECIAL",
+        "rpp_runtime_verified": false
+      }
+    ],
+    "runtime_ready": false,
+    "notes": "Gold collision evidence only; engine entry exceptions and map connections require separate review"
+  },
+  "warps": [
+    {
+      "index": 1,
+      "x": 13,
+      "y": 37,
+      "destination_token": "ROUTE_34_ILEX_FOREST_GATE",
+      "destination_map": "Route34IlexForestGate",
+      "destination_gold_warp": 1,
+      "planned_open": true,
+      "runtime_registered": false
+    },
+    {
+      "index": 2,
+      "x": 14,
+      "y": 37,
+      "destination_token": "ROUTE_34_ILEX_FOREST_GATE",
+      "destination_map": "Route34IlexForestGate",
+      "destination_gold_warp": 2,
+      "planned_open": true,
+      "runtime_registered": false
+    },
+    {
+      "index": 3,
+      "x": 11,
+      "y": 14,
+      "destination_token": "DAY_CARE",
+      "destination_map": null,
+      "destination_gold_warp": 1,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 4,
+      "x": 11,
+      "y": 15,
+      "destination_token": "DAY_CARE",
+      "destination_map": null,
+      "destination_gold_warp": 2,
+      "planned_open": false,
+      "runtime_registered": false
+    },
+    {
+      "index": 5,
+      "x": 13,
+      "y": 15,
+      "destination_token": "DAY_CARE",
+      "destination_map": null,
+      "destination_gold_warp": 3,
+      "planned_open": false,
+      "runtime_registered": false
+    }
+  ]
+}

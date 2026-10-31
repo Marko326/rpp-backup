@@ -81,8 +81,8 @@ def audit(root: Path) -> dict:
         guard = (re.search(r'(?s)ld a,\s*\[wCurMap\]\s*cp JOHTO_RUNTIME_MAP_HANDLE\s*jr nz, \.legacyNeutralMap'
                            r'.*?ld a,\s*\[wCurRegion\]\s*cp MAP_REGION_JOHTO\s*jr nz, \.legacyNeutralMap'
                            r'.*?ld a,\s*\[wCurLocalMapID\]', neutral) is not None)
-        resolve_guard = (re.search(r'(?s)ld a,\s*\[wCurMap\]\s*cp JOHTO_RUNTIME_MAP_HANDLE\s*jr nz, \.resolveLegacyLandmark'
-                                   r'.*?ld a,\s*\[wCurRegion\]\s*cp MAP_REGION_JOHTO\s*jr nz, \.resolveLegacyLandmark'
+        resolve_guard = (re.search(r'(?s)ld a,\s*\[wCurMap\]\s*cp JOHTO_RUNTIME_MAP_HANDLE\s*j[pr] nz, \.resolveLegacyLandmark'
+                                   r'.*?ld a,\s*\[wCurRegion\]\s*cp MAP_REGION_JOHTO\s*j[pr] nz, \.resolveLegacyLandmark'
                                    r'.*?ld a,\s*\[wCurLocalMapID\]', resolve) is not None)
         check('region_handle_guard', guard and resolve_guard,
               'both neutral filter and native name resolver must use region + $FC handle + stable ID')
@@ -93,7 +93,7 @@ def audit(root: Path) -> dict:
               len(neutral_symbols) == len(neutral_expected),
               f'neutral IDs in ASM={neutral_symbols}; required={neutral_expected}')
 
-        dispatch = dict(re.findall(r'(?m)^\s*cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*jr z,\s*(\.johto\w+)\s*$', resolve))
+        dispatch = dict(re.findall(r'(?m)^\s*cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*j[pr] z,\s*(\.johto\w+)\s*$', resolve))
         named_expected = [m['id'] for m in maps if m.get('role') == 'named']
         check('all_named_dispatches', set(dispatch) == set(named_expected) and
               len(dispatch) == len(named_expected),

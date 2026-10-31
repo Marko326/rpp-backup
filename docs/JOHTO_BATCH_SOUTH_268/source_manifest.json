@@ -1,0 +1,108 @@
+{
+  "schema": "johto-south-gold-source-stage-v1",
+  "state": "SOURCE_ONLY_NOT_PLAYABLE",
+  "project_head": "b4148ccb783bdf734d621d0b8e8419f24ffe72da",
+  "existing_game_version": "FIX-5.62.267",
+  "target_batch": "MAP-268 south corridor",
+  "art": [
+    "gfx/tilesets/johto_ilex_forest.png",
+    "gfx/blocksets/johto_ilex_forest.bst",
+    "gfx/blocksets/johto_south_gold_gate.bst",
+    "gfx/tilesets/johto_south_gold_gate.png"
+  ],
+  "reused": [
+    "gfx/tilesets/johto_modern.png",
+    "gfx/blocksets/johto_modern.bst"
+  ],
+  "maps": [
+    {
+      "name": "AzaleaTown",
+      "gold_map": "maps/AzaleaTown.blk",
+      "tileset": "johto_modern",
+      "width": 20,
+      "height": 9,
+      "sha256": "a1bb573967204e3385b731b4e3c2aaa9ecd0f26bb85d701c096d35b69559476a",
+      "gold_warps": 8,
+      "water_cells": 0,
+      "hops": 10,
+      "runtime_enabled": false,
+      "status": "GOLD_SOURCE_STAGED_ONLY"
+    },
+    {
+      "name": "IlexForestAzaleaGate",
+      "gold_map": "maps/IlexForestAzaleaGate.blk",
+      "tileset": "gate",
+      "width": 5,
+      "height": 4,
+      "sha256": "4345b9806ded35bc2b76429a281e9391c0c614597f4ccf547a89edee84d5160c",
+      "gold_warps": 4,
+      "water_cells": 0,
+      "hops": 0,
+      "runtime_enabled": false,
+      "status": "GOLD_SOURCE_STAGED_ONLY"
+    },
+    {
+      "name": "IlexForest",
+      "gold_map": "maps/IlexForest.blk",
+      "tileset": "forest",
+      "width": 15,
+      "height": 27,
+      "sha256": "27ac4ed6d260cb924da06a3bcec0ab29ed92df03f4ff3c2a37a5b73d2af9f234",
+      "gold_warps": 3,
+      "water_cells": 32,
+      "hops": 10,
+      "runtime_enabled": false,
+      "status": "GOLD_SOURCE_STAGED_ONLY"
+    },
+    {
+      "name": "Route34IlexForestGate",
+      "gold_map": "maps/Route34IlexForestGate.blk",
+      "tileset": "gate",
+      "width": 5,
+      "height": 4,
+      "sha256": "84fea213ad2cd20926551a70174baabfb495e3f150d708b532beba11e84771a2",
+      "gold_warps": 4,
+      "water_cells": 0,
+      "hops": 0,
+      "runtime_enabled": false,
+      "status": "GOLD_SOURCE_STAGED_ONLY"
+    },
+    {
+      "name": "Route34",
+      "gold_map": "maps/Route34.blk",
+      "tileset": "johto_modern",
+      "width": 10,
+      "height": 27,
+      "sha256": "2072139b189ae031f78ece58566db5ea6f5984c24c03c5a53ecce6bb4226eb11",
+      "gold_warps": 5,
+      "water_cells": 226,
+      "hops": 0,
+      "runtime_enabled": false,
+      "status": "GOLD_SOURCE_STAGED_ONLY"
+    },
+    {
+      "name": "GoldenrodCity",
+      "gold_map": "maps/GoldenrodCity.blk",
+      "tileset": "johto_modern",
+      "width": 20,
+      "height": 18,
+      "sha256": "3be1f7c4a5bf3596fc52ac74b172be0adc0d8323998bb5b541bc3b7a34a08f2c",
+      "gold_warps": 15,
+      "water_cells": 84,
+      "hops": 0,
+      "runtime_enabled": false,
+      "status": "GOLD_SOURCE_STAGED_ONLY"
+    }
+  ],
+  "missing_runtime": [
+    "active slots and descriptor header bank",
+    "forest and gate tileset runtime and palette",
+    "Gold safe walk masks and Cut/HOP/Surf",
+    "all six map objects and explicit warp routes",
+    "outdoor exact seam WRAM and cross-tileset boundaries",
+    "fly/landmark/music and source-based arrival",
+    "gold roofs and encounters/events",
+    "ROM compile and device verification"
+  ],
+  "safety": "DO NOT treat staged .gold.blk as active. Game code and version unchanged. Do not commit 2bpp; PNG is source."
+}

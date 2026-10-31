@@ -36,7 +36,7 @@ class GoldGateMusicBike259(unittest.TestCase):
         tiles=self.files['data/bike_riding_tilesets.asm']+'\n db JOHTO_GATE\n'
         self.assert_failure('bike_no_global_gate_tileset',**{'data/bike_riding_tilesets.asm':tiles})
     def test_missing_one_gate_music_source_fails(self):
-        runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n    jr nz, .notGateMusicEntry','    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n    jr z, .notGateMusicEntry',1)
+        runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n    jr z, .recordGateSource','    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n    jr z, .notGateMusicEntry',1)
         self.assert_failure('capture_every_gate_source',**{'engine/johto_pilot_runtime.asm':runtime})
     def test_north_gate_wrong_rby_source_fails(self):
         runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE_36_LOCAL_ID\n    jr z, .sourceValid','    cp JOHTO_ROUTE_29_LOCAL_ID\n    jr z, .sourceValid',1)

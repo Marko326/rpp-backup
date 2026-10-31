@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 28,
+    "registered_warp_route_rows": 43,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -624,6 +624,365 @@
         ],
         "runtime_verified": false,
         "phone_accepted": false
+      },
+      {
+        "stable_id": 11,
+        "gold_map": "IlexForestAzaleaGate",
+        "runtime_tileset": "JOHTO_SOUTH_GATE",
+        "warp_contracts": [
+          {
+            "id": "AzaleaTown_0_to_IlexForestAzaleaGate",
+            "source_stable_id": 10,
+            "source_gold_map": "AzaleaTown",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 7,
+            "source_xy": [
+              2,
+              10
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 11,
+            "target_gold_map": "IlexForestAzaleaGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              9,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "AzaleaTown_1_to_IlexForestAzaleaGate",
+            "source_stable_id": 10,
+            "source_gold_map": "AzaleaTown",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 8,
+            "source_xy": [
+              2,
+              11
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 11,
+            "target_gold_map": "IlexForestAzaleaGate",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              9,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "IlexForestAzaleaGate_0_to_IlexForest",
+            "source_stable_id": 11,
+            "source_gold_map": "IlexForestAzaleaGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              0,
+              4
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 12,
+            "target_gold_map": "IlexForest",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              3,
+              42
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "IlexForestAzaleaGate_1_to_IlexForest",
+            "source_stable_id": 11,
+            "source_gold_map": "IlexForestAzaleaGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              0,
+              5
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 12,
+            "target_gold_map": "IlexForest",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              3,
+              43
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "IlexForestAzaleaGate_2_to_AzaleaTown",
+            "source_stable_id": 11,
+            "source_gold_map": "IlexForestAzaleaGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              9,
+              4
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 10,
+            "target_gold_map": "AzaleaTown",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 7,
+            "target_xy": [
+              2,
+              10
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "IlexForestAzaleaGate_3_to_AzaleaTown",
+            "source_stable_id": 11,
+            "source_gold_map": "IlexForestAzaleaGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              9,
+              5
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 10,
+            "target_gold_map": "AzaleaTown",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 8,
+            "target_xy": [
+              2,
+              11
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "IlexForest_1_to_IlexForestAzaleaGate",
+            "source_stable_id": 12,
+            "source_gold_map": "IlexForest",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              3,
+              42
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 11,
+            "target_gold_map": "IlexForestAzaleaGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              0,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "IlexForest_2_to_IlexForestAzaleaGate",
+            "source_stable_id": 12,
+            "source_gold_map": "IlexForest",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              3,
+              43
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 11,
+            "target_gold_map": "IlexForestAzaleaGate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              0,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          }
+        ]
+      },
+      {
+        "stable_id": 13,
+        "gold_map": "Route34IlexForestGate",
+        "runtime_tileset": "JOHTO_SOUTH_GATE",
+        "warp_contracts": [
+          {
+            "id": "IlexForest_0_to_Route34IlexForestGate",
+            "source_stable_id": 12,
+            "source_gold_map": "IlexForest",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              1,
+              5
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 13,
+            "target_gold_map": "Route34IlexForestGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              4,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route34IlexForestGate_0_to_Route34",
+            "source_stable_id": 13,
+            "source_gold_map": "Route34IlexForestGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              4,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 14,
+            "target_gold_map": "Route34",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              13,
+              37
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route34IlexForestGate_1_to_Route34",
+            "source_stable_id": 13,
+            "source_gold_map": "Route34IlexForestGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              5,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 14,
+            "target_gold_map": "Route34",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              14,
+              37
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route34IlexForestGate_2_to_IlexForest",
+            "source_stable_id": 13,
+            "source_gold_map": "Route34IlexForestGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              4,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 12,
+            "target_gold_map": "IlexForest",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              1,
+              5
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route34IlexForestGate_3_to_IlexForest",
+            "source_stable_id": 13,
+            "source_gold_map": "Route34IlexForestGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              5,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 12,
+            "target_gold_map": "IlexForest",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              1,
+              5
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route34_0_to_Route34IlexForestGate",
+            "source_stable_id": 14,
+            "source_gold_map": "Route34",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              13,
+              37
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 13,
+            "target_gold_map": "Route34IlexForestGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              4,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route34_1_to_Route34IlexForestGate",
+            "source_stable_id": 14,
+            "source_gold_map": "Route34",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              14,
+              37
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 13,
+            "target_gold_map": "Route34IlexForestGate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              5,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          }
+        ]
       }
     ],
     "required_checks": [
@@ -681,6 +1040,353 @@
       "source_stable_id": 9,
       "source_warp_ordinal": 0,
       "target_stable_id": 8
+    }
+  ],
+  "south_batch_routes": [
+    {
+      "id": "AzaleaTown_0_to_IlexForestAzaleaGate",
+      "source_stable_id": 10,
+      "source_gold_map": "AzaleaTown",
+      "source_warp_ordinal": 0,
+      "source_gold_warp_number_one_based": 7,
+      "source_xy": [
+        2,
+        10
+      ],
+      "source_gold_collision_role": "WARP_CARPET_LEFT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "LEFT",
+      "target_stable_id": 11,
+      "target_gold_map": "IlexForestAzaleaGate",
+      "target_warp_ordinal": 2,
+      "target_gold_warp_number_one_based": 3,
+      "target_xy": [
+        9,
+        4
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "AzaleaTown_1_to_IlexForestAzaleaGate",
+      "source_stable_id": 10,
+      "source_gold_map": "AzaleaTown",
+      "source_warp_ordinal": 1,
+      "source_gold_warp_number_one_based": 8,
+      "source_xy": [
+        2,
+        11
+      ],
+      "source_gold_collision_role": "WARP_CARPET_LEFT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "LEFT",
+      "target_stable_id": 11,
+      "target_gold_map": "IlexForestAzaleaGate",
+      "target_warp_ordinal": 3,
+      "target_gold_warp_number_one_based": 4,
+      "target_xy": [
+        9,
+        5
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForestAzaleaGate_0_to_IlexForest",
+      "source_stable_id": 11,
+      "source_gold_map": "IlexForestAzaleaGate",
+      "source_warp_ordinal": 0,
+      "source_gold_warp_number_one_based": 1,
+      "source_xy": [
+        0,
+        4
+      ],
+      "source_gold_collision_role": "WARP_CARPET_LEFT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "LEFT",
+      "target_stable_id": 12,
+      "target_gold_map": "IlexForest",
+      "target_warp_ordinal": 1,
+      "target_gold_warp_number_one_based": 2,
+      "target_xy": [
+        3,
+        42
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForestAzaleaGate_1_to_IlexForest",
+      "source_stable_id": 11,
+      "source_gold_map": "IlexForestAzaleaGate",
+      "source_warp_ordinal": 1,
+      "source_gold_warp_number_one_based": 2,
+      "source_xy": [
+        0,
+        5
+      ],
+      "source_gold_collision_role": "WARP_CARPET_LEFT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "LEFT",
+      "target_stable_id": 12,
+      "target_gold_map": "IlexForest",
+      "target_warp_ordinal": 2,
+      "target_gold_warp_number_one_based": 3,
+      "target_xy": [
+        3,
+        43
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForestAzaleaGate_2_to_AzaleaTown",
+      "source_stable_id": 11,
+      "source_gold_map": "IlexForestAzaleaGate",
+      "source_warp_ordinal": 2,
+      "source_gold_warp_number_one_based": 3,
+      "source_xy": [
+        9,
+        4
+      ],
+      "source_gold_collision_role": "WARP_CARPET_RIGHT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "RIGHT",
+      "target_stable_id": 10,
+      "target_gold_map": "AzaleaTown",
+      "target_warp_ordinal": 0,
+      "target_gold_warp_number_one_based": 7,
+      "target_xy": [
+        2,
+        10
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForestAzaleaGate_3_to_AzaleaTown",
+      "source_stable_id": 11,
+      "source_gold_map": "IlexForestAzaleaGate",
+      "source_warp_ordinal": 3,
+      "source_gold_warp_number_one_based": 4,
+      "source_xy": [
+        9,
+        5
+      ],
+      "source_gold_collision_role": "WARP_CARPET_RIGHT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "RIGHT",
+      "target_stable_id": 10,
+      "target_gold_map": "AzaleaTown",
+      "target_warp_ordinal": 1,
+      "target_gold_warp_number_one_based": 8,
+      "target_xy": [
+        2,
+        11
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForest_0_to_Route34IlexForestGate",
+      "source_stable_id": 12,
+      "source_gold_map": "IlexForest",
+      "source_warp_ordinal": 0,
+      "source_gold_warp_number_one_based": 1,
+      "source_xy": [
+        1,
+        5
+      ],
+      "source_gold_collision_role": "DOOR",
+      "trigger": "STEP_ON",
+      "direction": "UP",
+      "target_stable_id": 13,
+      "target_gold_map": "Route34IlexForestGate",
+      "target_warp_ordinal": 2,
+      "target_gold_warp_number_one_based": 3,
+      "target_xy": [
+        4,
+        7
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForest_1_to_IlexForestAzaleaGate",
+      "source_stable_id": 12,
+      "source_gold_map": "IlexForest",
+      "source_warp_ordinal": 1,
+      "source_gold_warp_number_one_based": 2,
+      "source_xy": [
+        3,
+        42
+      ],
+      "source_gold_collision_role": "WARP_CARPET_RIGHT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "RIGHT",
+      "target_stable_id": 11,
+      "target_gold_map": "IlexForestAzaleaGate",
+      "target_warp_ordinal": 0,
+      "target_gold_warp_number_one_based": 1,
+      "target_xy": [
+        0,
+        4
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "IlexForest_2_to_IlexForestAzaleaGate",
+      "source_stable_id": 12,
+      "source_gold_map": "IlexForest",
+      "source_warp_ordinal": 2,
+      "source_gold_warp_number_one_based": 3,
+      "source_xy": [
+        3,
+        43
+      ],
+      "source_gold_collision_role": "WARP_CARPET_RIGHT",
+      "trigger": "COLLISION_ONLY",
+      "direction": "RIGHT",
+      "target_stable_id": 11,
+      "target_gold_map": "IlexForestAzaleaGate",
+      "target_warp_ordinal": 1,
+      "target_gold_warp_number_one_based": 2,
+      "target_xy": [
+        0,
+        5
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "Route34IlexForestGate_0_to_Route34",
+      "source_stable_id": 13,
+      "source_gold_map": "Route34IlexForestGate",
+      "source_warp_ordinal": 0,
+      "source_gold_warp_number_one_based": 1,
+      "source_xy": [
+        4,
+        0
+      ],
+      "source_gold_collision_role": "DOOR",
+      "trigger": "STEP_ON",
+      "direction": "UP",
+      "target_stable_id": 14,
+      "target_gold_map": "Route34",
+      "target_warp_ordinal": 0,
+      "target_gold_warp_number_one_based": 1,
+      "target_xy": [
+        13,
+        37
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "Route34IlexForestGate_1_to_Route34",
+      "source_stable_id": 13,
+      "source_gold_map": "Route34IlexForestGate",
+      "source_warp_ordinal": 1,
+      "source_gold_warp_number_one_based": 2,
+      "source_xy": [
+        5,
+        0
+      ],
+      "source_gold_collision_role": "DOOR",
+      "trigger": "STEP_ON",
+      "direction": "UP",
+      "target_stable_id": 14,
+      "target_gold_map": "Route34",
+      "target_warp_ordinal": 1,
+      "target_gold_warp_number_one_based": 2,
+      "target_xy": [
+        14,
+        37
+      ],
+      "arrival_auto_step": "NONE"
+    },
+    {
+      "id": "Route34IlexForestGate_2_to_IlexForest",
+      "source_stable_id": 13,
+      "source_gold_map": "Route34IlexForestGate",
+      "source_warp_ordinal": 2,
+      "source_gold_warp_number_one_based": 3,
+      "source_xy": [
+        4,
+        7
+      ],
+      "source_gold_collision_role": "WARP_CARPET_DOWN",
+      "trigger": "COLLISION_ONLY",
+      "direction": "DOWN",
+      "target_stable_id": 12,
+      "target_gold_map": "IlexForest",
+      "target_warp_ordinal": 0,
+      "target_gold_warp_number_one_based": 1,
+      "target_xy": [
+        1,
+        5
+      ],
+      "arrival_auto_step": "D_DOWN"
+    },
+    {
+      "id": "Route34IlexForestGate_3_to_IlexForest",
+      "source_stable_id": 13,
+      "source_gold_map": "Route34IlexForestGate",
+      "source_warp_ordinal": 3,
+      "source_gold_warp_number_one_based": 4,
+      "source_xy": [
+        5,
+        7
+      ],
+      "source_gold_collision_role": "WARP_CARPET_DOWN",
+      "trigger": "COLLISION_ONLY",
+      "direction": "DOWN",
+      "target_stable_id": 12,
+      "target_gold_map": "IlexForest",
+      "target_warp_ordinal": 0,
+      "target_gold_warp_number_one_based": 1,
+      "target_xy": [
+        1,
+        5
+      ],
+      "arrival_auto_step": "D_DOWN"
+    },
+    {
+      "id": "Route34_0_to_Route34IlexForestGate",
+      "source_stable_id": 14,
+      "source_gold_map": "Route34",
+      "source_warp_ordinal": 0,
+      "source_gold_warp_number_one_based": 1,
+      "source_xy": [
+        13,
+        37
+      ],
+      "source_gold_collision_role": "WARP_CARPET_DOWN",
+      "trigger": "COLLISION_ONLY",
+      "direction": "DOWN",
+      "target_stable_id": 13,
+      "target_gold_map": "Route34IlexForestGate",
+      "target_warp_ordinal": 0,
+      "target_gold_warp_number_one_based": 1,
+      "target_xy": [
+        4,
+        0
+      ],
+      "arrival_auto_step": "D_DOWN"
+    },
+    {
+      "id": "Route34_1_to_Route34IlexForestGate",
+      "source_stable_id": 14,
+      "source_gold_map": "Route34",
+      "source_warp_ordinal": 1,
+      "source_gold_warp_number_one_based": 2,
+      "source_xy": [
+        14,
+        37
+      ],
+      "source_gold_collision_role": "WARP_CARPET_DOWN",
+      "trigger": "COLLISION_ONLY",
+      "direction": "DOWN",
+      "target_stable_id": 13,
+      "target_gold_map": "Route34IlexForestGate",
+      "target_warp_ordinal": 1,
+      "target_gold_warp_number_one_based": 2,
+      "target_xy": [
+        5,
+        0
+      ],
+      "arrival_auto_step": "D_DOWN"
     }
   ]
 }

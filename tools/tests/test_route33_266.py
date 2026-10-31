@@ -12,7 +12,7 @@ REQUIRED=(
  'gfx/tilesets/johto_modern.png','gfx/tilesets/johto_modern.tilecoll',
  'color/tilesets/johto_modern.asm','data/johto_route33_runtime.asm',
  'data/johto_union_cave_runtime.asm','engine/johto_pilot_runtime.asm',
- 'engine/overworld/ledges.asm','data/tileset_headers.asm',
+ 'engine/overworld/ledges.asm','engine/johto_land_collision_gateway_272.asm','data/tileset_headers.asm',
  'data/bike_riding_tilesets.asm','home/overworld.asm',
 )
 @unittest.skipUnless(GOLD.is_dir(),'Gold reference required')

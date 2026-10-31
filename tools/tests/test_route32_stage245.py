@@ -45,17 +45,17 @@ class Route32Stage245Tests(unittest.TestCase):
         self.assertLessEqual(max((ROOT/'maps/johto_pilot/Route32.runtime.blk').read_bytes()), 140)
 
     def test_stable_id7_is_slot8_and_south_ruins_are_slots9_10(self):
-        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 15', read('constants/region_map_constants.asm'))
+        self.assertIn('DEF NUM_JOHTO_ACTIVE_MAPS EQU 21', read('constants/region_map_constants.asm'))
         first = next(row for row in segment(self.stable, 'JohtoStableIDToActiveSlot::', 'JohtoStableIDToActiveSlotEnd::').splitlines() if '$00-$0f' in row)
         cells = [x.strip() for x in first.split(';')[0].strip()[3:].split(',')]
-        self.assertEqual(cells[5:11], ['6', '7', '8', '13', '14', 'JOHTO_INVALID_ACTIVE_SLOT'])
+        self.assertEqual(cells[5:11], ['6', '7', '8', '13', '14', '15'])
         r = read('data/johto_header_descriptors.asm')
         self.assertIn('dw JohtoPilotRoute32RuntimeHeader\n    db BANK(JohtoPilotRoute32RuntimeHeader)',r)
         self.assertIn('dw JohtoPilotAlphSouthGateRuntimeHeader\n    db BANK(JohtoPilotAlphSouthGateRuntimeHeader)', r)
         self.assertIn('dw JohtoPilotAlphOutsideRuntimeHeader\n    db BANK(JohtoPilotAlphOutsideRuntimeHeader)', r)
         self.assertNotIn('JohtoPilotUnionCaveRuntimeHeader', r)
         self.assertIn('JohtoRoute33RuntimeHeader', r)
-        self.assertNotIn('JohtoPilotAzaleaRuntimeHeader', r)
+        self.assertIn('JohtoSouthAzaleaTownRuntimeHeader', r)
         row_60 = next(line for line in self.stable.splitlines() if '$60-$6f' in line)
         vals_60 = [v.strip() for v in row_60.split(';', 1)[0].strip()[3:].split(',')]
         row_10 = next(line for line in self.stable.splitlines() if '$10-$1f' in line)

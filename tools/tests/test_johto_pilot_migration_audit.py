@@ -18,7 +18,7 @@ REQUIRED_FILES = (
     "data/johto_header_descriptors.asm", "data/johto_pilot_runtime_assets.asm",
     "data/johto_pilot_source_resources.asm", "data/johto_pilot_map_headers.asm",
     "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm",
-    "data/johto_indoor_house.asm", "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm",
+    "data/johto_indoor_house.asm", "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm", "engine/johto_land_collision_gateway_272.asm",
     "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
     "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
     "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/overworld/tileset_header.asm", "color/loadpalettes.asm", "engine/fly_town_map_helpers.asm",
@@ -47,6 +47,12 @@ REQUIRED_FILES = (
     "maps/johto_pilot/Route36RuinsOfAlphGate.gold.blk", "maps/johto_pilot/Route36RuinsOfAlphGate.runtime.blk",
     "maps/johto_pilot/UnionCave1F.gold.blk", "maps/johto_pilot/UnionCave1F.runtime.blk",
     "maps/johto_pilot/Route33.gold.blk", "maps/johto_pilot/Route33.runtime.blk",
+    "maps/johto_pilot/AzaleaTown.gold.blk", "maps/johto_pilot/AzaleaTown.runtime.blk",
+    "maps/johto_pilot/IlexForestAzaleaGate.gold.blk", "maps/johto_pilot/IlexForestAzaleaGate.runtime.blk",
+    "maps/johto_pilot/IlexForest.gold.blk", "maps/johto_pilot/IlexForest.runtime.blk",
+    "maps/johto_pilot/Route34IlexForestGate.gold.blk", "maps/johto_pilot/Route34IlexForestGate.runtime.blk",
+    "maps/johto_pilot/Route34.gold.blk", "maps/johto_pilot/Route34.runtime.blk",
+    "maps/johto_pilot/GoldenrodCity.gold.blk", "maps/johto_pilot/GoldenrodCity.runtime.blk",
 )
 
 
@@ -63,6 +69,18 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_cherrygrove_banked_door_guard_rejects_wrong_x(self):
+        source = self.project / "engine/johto_land_collision_gateway_272.asm"
+        # Unit fixture may omit this newly required ROMX file in old tests;
+        # install it as part of this self-contained case.
+        source.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / "engine/johto_land_collision_gateway_272.asm", source)
+        content = source.read_text(encoding="utf-8")
+        self.assertIn("ld a, [wXCoord]\n    cp 25", content)
+        source.write_text(content.replace("ld a, [wXCoord]\n    cp 25", "ld a, [wXCoord]\n    cp 24", 1))
+        report = self.run_audit()
+        self.assertTrue(any('door_approach_collision_guard' in error for error in report['errors']), report['errors'])
 
     def run_audit(self):
         return audit_project(self.project)
@@ -97,7 +115,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 15",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 21",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -105,7 +123,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 15",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 21",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -152,7 +170,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 15", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 21", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

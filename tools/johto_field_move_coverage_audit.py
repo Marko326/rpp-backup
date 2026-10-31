@@ -33,6 +33,7 @@ LEDGE_COORDINATE_TABLES = {
     'RuinsOfAlphOutside': ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JohtoAlphSouthHops',
                            '.ruinsHopTable', '.ruinsCoordinateHopLookup'),
     'Route33': ('JOHTO_ROUTE_33_LOCAL_ID', 'JohtoRoute33Hops', '.route33Modern', '.ruinsCoordinateHopLookup'),
+    'AzaleaTown': ('JOHTO_AZALEA_TOWN_LOCAL_ID', 'JohtoAzaleaGoldHops', '.route33Modern', '.ruinsCoordinateHopLookup'),
 }
 
 
@@ -82,14 +83,32 @@ def _cut_records(root: Path, active: list[dict]) -> tuple[dict[str, set[tuple[in
 
 
 def _ledge_table_for_map(source: str, map_name: str) -> str | None:
-    if map_name == 'Route33':
-        part=source.split('HandleLedges:',1)[-1]
-        if not re.search(r'(?s)cp JOHTO_MODERN\s+jr z, \.route33Modern.*?'
-                         r'\.route33Modern\s+ld a, \[wCurLocalMapID\]\s+'
-                         r'cp JOHTO_ROUTE_33_LOCAL_ID\s+ret nz\s+'
-                         r'ld hl, JohtoRoute33Hops\s+jr \.ruinsCoordinateHopLookup',part):
+    # Route33/Azalea retain coordinate guarding, while accepted ILEX-217
+    # uses real cloned front-tile pairs to trigger the common executor.
+    if map_name == 'IlexForest':
+        body=source.split('\n.ilexForestModern\n', 1)[1].split('\n.johtoPilot', 1)[0]
+        required=('cp JOHTO_ILEX_FOREST_LOCAL_ID','ld hl, JohtoIlexForestLedgeTiles',
+                  'jp .checkPairs')
+        if not all(part in body for part in required):
             return None
-        return 'JohtoRoute33Hops'
+        block=source.split('JohtoIlexForestLedgeTiles:',1)[-1].split('JohtoIlexForestGoldHops:',1)[0]
+        expected=(('DOWN','$05','$40','DOWN'),('LEFT','$05','$41','LEFT'),('RIGHT','$05','$42','RIGHT'))
+        pairs=re.findall(r'db\s+SPRITE_FACING_(DOWN|LEFT|RIGHT)\s*,\s*(\$[\da-fA-F]+)\s*,\s*(\$[\da-fA-F]+)\s*,\s*D_(DOWN|LEFT|RIGHT)',block)
+        if tuple(pairs)!=expected:
+            return None
+        return 'JohtoIlexForestLedgeTiles'
+    if map_name in ('Route33', 'AzaleaTown'):
+        expected = {'Route33': ('JOHTO_MODERN', 'JOHTO_ROUTE_33_LOCAL_ID', 'JohtoRoute33Hops'),
+                    'AzaleaTown': ('JOHTO_MODERN', 'JOHTO_AZALEA_TOWN_LOCAL_ID', 'JohtoAzaleaGoldHops')}
+        tileset, local, table = expected[map_name]
+        body = source.split('HandleLedges:', 1)[-1].split('LedgeTiles:', 1)[0]
+        if not re.search(rf'(?m)^\s*cp {re.escape(tileset)}\s*$', body):
+            return None
+        if not re.search(rf'(?m)^\s*cp {re.escape(local)}\s*$', body):
+            return None
+        if not re.search(rf'(?m)^\s*ld hl, {re.escape(table)}\s*\n\s*jp \.ruinsCoordinateHopLookup', body):
+            return None
+        return table
     if map_name in LEDGE_COORDINATE_TABLES:
         symbol, table, dispatch_label, lookup_label = LEDGE_COORDINATE_TABLES[map_name]
         body = source.split('HandleLedges:', 1)[1]
@@ -121,8 +140,6 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
         if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.route31PairTable\s*$', dispatch):
             return table if table in dispatch else None
         return None
-    # Route32 shares Route31's reviewed pair table. Ruins is separately
-    # handled by the Gold-coordinate/direction whitelist above.
     if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jr z, \.route31PairTable\s*$', dispatch):
         return table if table in dispatch else None
     return None
@@ -130,7 +147,7 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
 
 def _coordinate_hop_entries(source: str, table: str) -> set[tuple[int, int, str]]:
     match = re.search(
-        rf'(?ms)^{re.escape(table)}:\s*\n(.*?)(?=^JohtoAlphSouthHops:|^LoadHoppingShadowOAM:)',
+        rf'(?ms)^{re.escape(table)}:\s*\n(.*?)(?=^[A-Za-z][A-Za-z0-9]*Hops:|^LoadHoppingShadowOAM:)',
         source)
     if not match:
         return set()
@@ -197,6 +214,14 @@ def audit(root: Path, gold_root: Path) -> dict:
     if surf_errors:
         raise ValueError('Surf preflight failed: ' + '; '.join(surf_errors))
     surf_maps = {entry['gold_map']: entry for entry in contract['maps']}
+    # The new south maps use a strict Gold quadrant role-grid predicate,
+    # audited separately across every Gold WATER cell in all Surf entrypaths.
+    from johto_south_spatial_surf_audit import audit as audit_south_spatial
+    spatial = audit_south_spatial(root, gold_root)
+    if spatial['status'] != 'PASS_STATIC_ONLY':
+        raise ValueError('South spatial Surf audit: ' + '; '.join(spatial['errors']))
+    for name in ('IlexForest', 'Route34', 'GoldenrodCity'):
+        surf_maps[name] = {'gold_map': name, 'dispatch': 'JohtoSouthGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []
@@ -235,6 +260,14 @@ def audit(root: Path, gold_root: Path) -> dict:
             if not ledge_table:
                 ledge_status = 'MISSING_LEDGE_DISPATCH'
                 errors.append(f'{name}: {len(hops)} Gold HOP cells lack a map-specific ledge handler')
+            elif name == 'IlexForest':
+                # Exact clone/pair proof is performed by the source and
+                # geometry audits; Gold still supplies all 10 legal hops.
+                if len(_gold_safe_hop_directions(cells)) == 10:
+                    ledge_status = 'REGISTERED'
+                else:
+                    ledge_status = 'MISMATCHED_GOLD_HOPS'
+                    errors.append('IlexForest: expected exactly ten Gold-directed hops')
             elif name in LEDGE_COORDINATE_TABLES:
                 actual = _coordinate_hop_entries(ledges, ledge_table)
                 expected = _gold_safe_hop_directions(cells)

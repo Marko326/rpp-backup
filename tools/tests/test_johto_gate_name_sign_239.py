@@ -27,8 +27,14 @@ class GateSignRegression(unittest.TestCase):
         self.assertFalse(check_johto_gate_name_sign(bad))
 
     def test_kanto_fc_fallback_is_rejected(self):
-        bad = SOURCE.replace('jr nz, .resolveLegacyLandmark',
-                             'jr z, .resolveLegacyLandmark', 1)
+        bad = SOURCE.replace('jp nz, .resolveLegacyLandmark',
+                             'jp z, .resolveLegacyLandmark', 1)
+        self.assertNotEqual(bad, SOURCE)
+        self.assertFalse(check_johto_gate_name_sign(bad))
+
+    def test_unconditional_legacy_fallback_is_rejected(self):
+        bad = SOURCE.replace('jp nz, .resolveLegacyLandmark',
+                             'jp .resolveLegacyLandmark', 1)
         self.assertNotEqual(bad, SOURCE)
         self.assertFalse(check_johto_gate_name_sign(bad))
 

@@ -67,14 +67,15 @@ def audit(root:Path, gold:Path)->dict:
         check('grass_visual_role', len([x for x in cells.values() if x['role']=='TALL_GRASS'])==12 and
               'JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR' in text('data/tileset_headers.asm'),
               '12 Gold grass cells and shared RPG grass sprite priority tile $04')
-        check('outdoor_bike', 'JOHTO_UNION_CAVE,JOHTO_MODERN,$FF' in text('data/bike_riding_tilesets.asm'),
+        check('outdoor_bike', 'JOHTO_UNION_CAVE,JOHTO_MODERN,JOHTO_ILEX_FOREST,$FF' in text('data/bike_riding_tilesets.asm'),
               'Route33 outdoor bike list; ordinary gate not widened')
         check('route33_no_unsafe_global_tiles', get('gfx/tilesets/johto_modern.tilecoll')==b'\xff' and
-              'callab JohtoRoute33StepPolicy' in text('home/overworld.asm'),
+              'callab JohtoOverworldSouthLandDecision' in text('home/overworld.asm') and
+              'callab JohtoRoute33StepPolicy' in text('engine/johto_land_collision_gateway_272.asm'),
               'all walkability from exact Gold coordinates, no globally passable wall art')
         check('sealed_unreleased_edges', '.route33ClosedEdge' in asm and
-              'JOHTO_AZALEA_TOWN_LOCAL_ID' not in rows and 'JOHTO_UNION_CAVE_B1F_LOCAL_ID' not in rows,
-              'Azalea, B1F, Route32/33 seam remain gated pending verified cross-tileset transition')
+              'JOHTO_UNION_CAVE_B1F_LOCAL_ID' not in rows and 'JOHTO_ROUTE_32_LOCAL_ID, 3' not in rows,
+              'B1F and Route32/33 seam remain gated; Azalea outdoor seam is now separately registered')
     except (OSError,KeyError,ValueError,IndexError) as exc:
         issues.append(str(exc))
     return {'status':'PASS_STATIC_ONLY' if not issues else 'FAIL', 'checks':checks,'errors':issues,'rom_built':False,'phone_accepted':False}

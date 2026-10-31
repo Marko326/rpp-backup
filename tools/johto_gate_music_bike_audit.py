@@ -16,6 +16,79 @@ POLICY='tools/johto_gate_music_bike_contracts.json'
 GOLD_MAPS='data/maps/maps.asm'
 
 
+
+def trace_gate_source(code: str, gate: str, source: str, kind: str) -> str:
+    """Execute the branch-only gate dispatcher to its selected source ID.
+
+    This tiny deterministic interpreter deliberately tests actual conditional
+    fallthrough, not just whether all the expected CP tokens are mentioned.
+    It stops before the regular profile/slot lookup and models only the ASM
+    instructions used by the gate-specific source selector.
+    """
+    start = 'ld a, [wCurLocalMapID]'
+    lines = []
+    labels = {}
+    for raw in code.splitlines():
+        line = raw.split(';', 1)[0].strip()
+        if not line:
+            continue
+        if line.endswith(':') or (line.startswith('.') and ' ' not in line):
+            labels[line.rstrip(':')] = len(lines)
+        else:
+            lines.append(line)
+    start_at = next((i for i in range(len(lines)-1) if lines[i] == start and
+                     lines[i+1].startswith('cp JOHTO_')), None)
+    if start_at is None:
+        raise ValueError('gate selector start missing')
+    a = gate
+    z = False
+    selected = gate
+    pc = start_at
+    for _ in range(150):
+        if pc >= len(lines):
+            raise ValueError('gate selector ran off the end')
+        ins = lines[pc]
+        pc += 1
+        if ins == start:
+            a = gate
+        elif ins == 'ld a, [wJohtoGateMusicSourceLocalID]':
+            a = source
+        elif ins.startswith('cp '):
+            z = (a == ins[3:].strip())
+        elif ins.startswith(('jr ', 'jp ')):
+            tail = ins[3:].strip()
+            if ', ' in tail:
+                cond, dest = tail.split(', ', 1)
+                jump = (cond == 'z' and z) or (cond == 'nz' and not z)
+            else:
+                dest, jump = tail, True
+            if jump:
+                if dest not in labels:
+                    raise ValueError('unknown branch label '+dest)
+                pc = labels[dest]
+        elif ins == 'ret':
+            return selected
+        elif ins == 'ret nz':
+            if not z:
+                return selected
+        elif ins == 'ret z':
+            if z:
+                return selected
+        elif ins == 'ld e, a':
+            # Both dispatchers use E for the selected profile/active-slot.
+            if (kind == 'rby' and pc < len(lines) and lines[pc] == 'call JohtoPilotGetMapProfile') or (
+                kind == 'gsc' and pc < len(lines) and lines[pc] == 'callab GetJohtoActiveSlot'):
+                selected = a
+                return selected
+        elif ins == 'call JohtoPilotGetMapProfile':
+            # Before selector: default loaded from the actual gate profile.
+            selected = gate
+        elif ins.startswith(('ld ', 'inc ', 'push ', 'pop ')):
+            continue
+        else:
+            raise ValueError('unexpected dispatcher instruction '+ins)
+    raise ValueError('gate selector exceeded step limit')
+
 def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None = None) -> dict:
     root=Path(root)
     overrides=overrides or {}
@@ -69,7 +142,7 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
                 check('indoor_exception_'+name, env.get(name)=='INDOOR',
                       f'Gold environment must be INDOOR, not automatically bike-enabled: {env.get(name)}')
         bike=home.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
-        bike_ids=re.findall(r'cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*jr z,\s*\.allowed',bike)
+        bike_ids=re.findall(r'cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) z,\s*\.allowed',bike)
         permitted={p['id'] for p in policies if p['bike_allowed']}
         check('bike_every_eligible_gate',len(bike_ids)==len(permitted) and set(bike_ids)==permitted,
               f'allowed stable IDs={bike_ids}; Gold GATE={sorted(permitted)}')
@@ -101,16 +174,18 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
         # Guard *which* two neighbours each gate accepts, not just the global
         # union. Swapping a Ruins source into the Violet gate must fail.
         def gate_branches(code, variant):
-            if variant == 'rby':
-                return {
-                    'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID':code.split('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID',1)[1].split('\n.southGate\n',1)[0],
-                    'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID':code.split('\n.southGate\n',1)[1].split('\n.violetGate\n',1)[0],
-                    'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID':code.split('\n.violetGate\n',1)[1].split('\n.sourceValid\n',1)[0],
-                }
+            end = '.sourceValid' if variant == 'rby' else '.gateDefault'
             return {
-                'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID':code.split('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID',1)[1].split('\n.southGate\n',1)[0],
-                'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID':code.split('\n.southGate\n',1)[1].split('\n.violetGate\n',1)[0],
-                'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID':code.split('\n.violetGate\n',1)[1].split('\n.gateDefault\n',1)[0],
+                'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID':
+                    code.split('cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID',1)[1].split('\n.southGate\n',1)[0],
+                'JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID':
+                    code.split('\n.southGate\n',1)[1].split('\n.violetGate\n',1)[0],
+                'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID':
+                    code.split('\n.violetGate\n',1)[1].split('\n.southForestGate\n',1)[0],
+                'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID':
+                    code.split('\n.southForestGate\n',1)[1].split('\n.northForestGate\n',1)[0],
+                'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID':
+                    code.split('\n.northForestGate\n',1)[1].split('\n'+end+'\n',1)[0],
             }
         for variant,code in [('rby',loader),('gsc',gsc)]:
             pieces=gate_branches(code,variant)
@@ -120,6 +195,37 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
                       len(found)==len(p['sources']) and
                       pieces[p['id']].count('wJohtoGateMusicSourceLocalID')==1,
                       f'gate {p["id"]} may inherit only {p["sources"]}; source comparisons={found}')
+        # MUS-282: check every permitted entry *and* every wrong neighbour
+        # through the real branch graph.  A mere token scan missed the old
+        # VioletCity fallthrough into .southForestGate.
+        all_sources = correct_sources | {'JOHTO_ROUTE_29_LOCAL_ID', 'JOHTO_ROUTE_33_LOCAL_ID'}
+        for variant, code in [('rby', loader), ('gsc', gsc)]:
+            for policy in policies:
+                gate_id = policy['id']
+                for source in sorted(all_sources):
+                    expected_source = source if source in policy['sources'] else gate_id
+                    try:
+                        actual_source = trace_gate_source(code, gate_id, source, variant)
+                        valid = actual_source == expected_source
+                        detail = f'{gate_id}, source={source}, selected={actual_source}, expected={expected_source}'
+                    except ValueError as exc:
+                        valid = False
+                        detail = str(exc)
+                    check(f'{variant}_resolved_source_{gate_id}_{source}', valid, detail)
+        # Same-song gate entry should take a no-restart path in all 5 music
+        # styles, walking, cycling with Bike Song OFF and Bike Song ON.  When
+        # walking from a bike, CP $2 leaves CARRY set. The placeholder bank
+        # routine used to RET with that stale carry, skipping the song cache.
+        cmpbank = audio.split('CompareMapMusicBankWithCurrentBank:', 1)[1].split('\nUpdateMusic', 1)[0]
+        check('music_bank_stub_clears_carry', bool(re.match(r'\s*;[^\n]*\n(?:\s*;[^\n]*\n)*\s*and a\s+ret\b', cmpbank)) and
+              re.search(r'\.walking\s+ld a, \[wMapMusicSoundID\]\s+ld b, a\s+call CompareMapMusicBankWithCurrentBank\s+jr c, \.next4', audio) is not None,
+              'no stale Carry from Bike Song OFF may bypass the same-song cache')
+        check('gate_warp_no_forced_music_restart',
+              'call PlayDefaultMusicFadeOutCurrent' in home.split('LoadMapData::',1)[1].split('SwitchToMapRomBank::',1)[0] and
+              'call PlayDefaultMusic\n' not in home.split('LoadMapData::',1)[1].split('SwitchToMapRomBank::',1)[0] and
+              re.search(r'ld a, \[wLastMusicSoundID\]\s+cp b[^\n]*\n\s*ret z', audio) is not None and
+              'ld [wJohtoGateMusicSourceLocalID], a' in runtime,
+              'ordinary Warp into a gate must reuse the song cache without a forced restart')
         check('rby_gate_source_profile',checked_sources==correct_sources and
               re.search(r'\.sourceValid\s+ld e, a\s+call JohtoPilotGetMapProfile\s+inc hl\s+inc hl\s+ld a, \[hli\]\s+ld \[wMapMusicSoundID\], a',loader) is not None,
               'RBY map BGM and bank are inherited from validated entering source profile')

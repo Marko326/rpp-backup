@@ -113,10 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 3 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 28 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 5 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 43 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records three house routes plus sixteen explicitly contracted routes across two horizontal gates')
+           'MUS contract records three house, three old gates, two south gates and south route arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -200,6 +200,38 @@ def audit(project: Path, gold: Path) -> dict:
                9: 'JOHTO_ROUTE_33_LOCAL_ID'}
         expected_routes.append(('MAP_REGION_JOHTO', ids[row['source_stable_id']],
             str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', ids[row['target_stable_id']]))
+    # MAP-268: South route order and physical Gold endpoints are frozen together.
+    south_routes = contract.get('south_batch_routes', [])
+    south_names = {10:'AzaleaTown', 11:'IlexForestAzaleaGate', 12:'IlexForest',
+                   13:'Route34IlexForestGate',14:'Route34'}
+    source_gold_ord = {10:[7,8],11:[1,2,3,4],12:[1,2,3],13:[1,2,3,4],14:[1,2]}
+    verified_south = len(south_routes) == 15
+    for row in south_routes:
+        try:
+            src, dst = row['source_stable_id'], row['target_stable_id']
+            if src not in south_names or dst not in south_names:
+                verified_south = False; continue
+            name, target_name = south_names[src], south_names[dst]
+            src_ordinal = row['source_warp_ordinal']
+            gold_num = source_gold_ord[src][src_ordinal]
+            gold_event = _gold_warp_events(gold,name)[gold_num - 1]
+            target_num = gold_event['destination_warp_number']
+            target_ordinal = source_gold_ord[dst].index(target_num)
+            target_event = _gold_warp_events(gold,target_name)[target_num-1]
+            actual = (gold_num, [gold_event['x'],gold_event['y']], target_num,
+                      target_ordinal, [target_event['x'],target_event['y']])
+            wanted = (row['source_gold_warp_number_one_based'],row['source_xy'],
+                      row['target_gold_warp_number_one_based'],row['target_warp_ordinal'],row['target_xy'])
+            role = collision_index.role_at(name,gold_event['x'],gold_event['y'])
+            if (actual != wanted or role != row['source_gold_collision_role'] or
+                gold_event['destination'].replace('_','') != target_name.upper().replace('_','')):
+                verified_south = False
+            expected_routes.append(('MAP_REGION_JOHTO', {10: 'JOHTO_AZALEA_TOWN_LOCAL_ID', 11: 'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID', 12: 'JOHTO_ILEX_FOREST_LOCAL_ID', 13: 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID', 14: 'JOHTO_ROUTE_34_LOCAL_ID'}[src], str(src_ordinal),
+                                     'MAP_REGION_JOHTO',{10: 'JOHTO_AZALEA_TOWN_LOCAL_ID', 11: 'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID', 12: 'JOHTO_ILEX_FOREST_LOCAL_ID', 13: 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID', 14: 'JOHTO_ROUTE_34_LOCAL_ID'}[dst]))
+        except (IndexError, KeyError, ValueError, TypeError):
+            verified_south = False
+    _check(checks, errors, 'south_batch_exact_gold_warps', verified_south,
+           '15 source ordinal, target ordinal, XY and original Gold role pairs must match')
     try:
         rows = _route_rows(runtime)
         _check(checks, errors, 'registered_routes', rows == expected_routes,
@@ -265,11 +297,25 @@ def audit(project: Path, gold: Path) -> dict:
     except (OSError, ValueError, IndexError) as exc:
         _check(checks, errors, 'landing_cell_decode', False, str(exc))
 
-    collision_entry = _section(overworld, 'CollisionCheckOnLand', '.collision') if False else overworld.split('CollisionCheckOnLand::', 1)[1].split('\n.collision\n', 1)[0]
+    # FIX-272 moved the guide-house Y10/X25/UP exception to ROMX. Verify
+    # the actual ROM0 -> ROMX call and E=0 result rather than an obsolete
+    # inline ROM0 shape (which used to make this test fail on valid builds).
+    collision_entry = overworld.split('CollisionCheckOnLand::', 1)[1].split('\n.collision\n', 1)[0]
+    land = _read(project, 'engine/johto_land_collision_gateway_272.asm')
+    guide = land.split('JohtoOverworldSouthLandDecision::', 1)[1].split('\n.southMaps\n', 1)[0]
     _check(checks, errors, 'one_step_up_entry_guard',
-           all(token in collision_entry for token in ('cp JOHTO_RUNTIME_MAP_HANDLE', 'cp MAP_REGION_JOHTO',
-               'cp JOHTO_CHERRYGROVE_LOCAL_ID', 'cp PLAYER_DIR_UP', 'cp 25', 'cp 10', 'jp z,.noCollision')),
-           'only the registered Cherrygrove (Y10,X25) UP approach bypasses generic collision')
+           all(token in collision_entry for token in (
+               'cp JOHTO_RUNTIME_MAP_HANDLE', 'callab JohtoOverworldSouthLandDecision',
+               'cp 2', 'jp z, .noCollision')) and
+           all(token in guide for token in (
+               'cp MAP_REGION_JOHTO', 'cp JOHTO_CHERRYGROVE_LOCAL_ID',
+               'cp PLAYER_DIR_UP', 'cp 25', 'cp 10', 'ld e, 0', 'ret')) and
+           bool(re.search(r'cp JOHTO_CHERRYGROVE_LOCAL_ID\s+jr nz, \.southMaps\s+'
+                          r'ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_UP\s+jr nz, \.southMaps\s+'
+                          r'ld a, \[wXCoord\]\s+cp 25\s+jr nz, \.southMaps\s+'
+                          r'ld a, \[wYCoord\]\s+cp 10\s+jr nz, \.southMaps\s+'
+                          r'ld e, 0\s+ret', guide)),
+           'only the registered Cherrygrove (Y10,X25) UP approach returns E=0 through ROMX')
     warp_loop = overworld.split('CheckWarpsNoCollisionLoop::', 1)[1].split('CheckWarpsCollision::', 1)[0]
     _check(checks, errors, 'step_on_door_warp_guard',
            all(token in warp_loop for token in ('cp JOHTO_RUNTIME_MAP_HANDLE', 'cp MAP_REGION_JOHTO',

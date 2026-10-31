@@ -35,6 +35,28 @@
         "JOHTO_ROUTE_36_LOCAL_ID",
         "JOHTO_RUINS_OF_ALPH_LOCAL_ID"
       ]
+    },
+    {
+      "id": "JOHTO_ILEX_AZALEA_GATE_LOCAL_ID",
+      "gold_map": "IlexForestAzaleaGate",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_AZALEA_TOWN_LOCAL_ID",
+        "JOHTO_ILEX_FOREST_LOCAL_ID"
+      ]
+    },
+    {
+      "id": "JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID",
+      "gold_map": "Route34IlexForestGate",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_ILEX_FOREST_LOCAL_ID",
+        "JOHTO_ROUTE_34_LOCAL_ID"
+      ]
     }
   ],
   "negative_gold_gates": [

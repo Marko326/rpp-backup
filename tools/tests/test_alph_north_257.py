@@ -26,7 +26,7 @@ class AlphNorth257(unittest.TestCase):
 
     def test_stable_map_slots_and_unopened_edges(self):
         const = (ROOT/'constants/region_map_constants.asm').read_text()
-        self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 15', const)
+        self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 21', const)
         self.assertIn('JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID EQU 19', const)
         self.assertIn('JOHTO_ROUTE_36_LOCAL_ID EQU 16', const)
         self.assertIn('db 0 ; Park/Violet/Route35/Route37 edges not yet certified', self.north)

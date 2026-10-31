@@ -39,7 +39,7 @@ class JohtoSaveLocationTests(unittest.TestCase):
         runtime = read("engine/johto_pilot_runtime.asm")
         section = runtime.split("JohtoPilotMapProfiles::", 1)[1].split("JohtoPilotMapProfilesEnd::", 1)[0]
         landmark_ids = [int(i) for i in re.findall(r"johto_map_profile\s+[01],\s*(\d+),", section)]
-        self.assertEqual(landmark_ids, [0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10])
+        self.assertEqual(landmark_ids, [0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15])
         browse = read("engine/johto_pilot_town_map_browse.asm")
         entries = browse.split("JohtoBrowseEntries:", 1)[1].split("JohtoBrowseEntriesEnd:", 1)[0]
         labels = re.findall(r"^\s*dw (\w+)\s*$", entries, flags=re.M)

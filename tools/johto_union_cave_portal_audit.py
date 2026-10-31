@@ -52,6 +52,28 @@ def _instructions(src: str) -> str:
                      for line in [line.split(';', 1)[0]])
 
 
+# Numeric stable IDs are taken from the frozen map registry.
+# Using exact numeric CP semantics here prevents new south-map range guards
+# from being mistaken for unreachable legacy cave branches.
+_TRACE_LOCAL_IDS = {
+    'JOHTO_UNION_CAVE_1F_LOCAL_ID': 8, 'JOHTO_ROUTE_33_LOCAL_ID': 9,
+    'JOHTO_AZALEA_TOWN_LOCAL_ID': 10, 'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID': 11,
+    'JOHTO_ILEX_FOREST_LOCAL_ID': 12, 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': 13,
+    'JOHTO_ROUTE_34_LOCAL_ID': 14, 'JOHTO_GOLDENROD_CITY_LOCAL_ID': 15,
+}
+def _trace_cp_operands(a, operand):
+    def numeric(value):
+        if isinstance(value, int): return value
+        if value in _TRACE_LOCAL_IDS: return _TRACE_LOCAL_IDS[value]
+        m = re.fullmatch(r'(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*\+\s*(\d+)', str(value))
+        if m and m[1] in _TRACE_LOCAL_IDS: return _TRACE_LOCAL_IDS[m[1]] + int(m[2])
+        return None
+    aa, bb = numeric(a), numeric(operand)
+    if aa is not None and bb is not None:
+        return aa == bb, aa < bb
+    return a == operand, False
+
+
 def _trace_cave_exit_predicates(runtime: str, direction: str, x: int, y: int,
                                 local: str = 'JOHTO_UNION_CAVE_1F_LOCAL_ID') -> int:
     """Execute the actual cave path in both ROMX predicates, not a prose contract.
@@ -78,6 +100,7 @@ def _trace_cave_exit_predicates(runtime: str, direction: str, x: int, y: int,
              'wXCoord': x, 'wYCoord': y}
     registers = {'a': None, 'e': None}
     zero = False
+    carry = False
     pc = labels[functions[0]]
     for _ in range(180):
         if not (0 <= pc < len(program)):
@@ -105,13 +128,13 @@ def _trace_cave_exit_predicates(runtime: str, direction: str, x: int, y: int,
             registers[dest] = val
         elif op == 'cp':
             value = int(arg) if arg.isdecimal() else arg
-            zero = registers['a'] == value
+            zero, carry = _trace_cp_operands(registers['a'], value)
         elif op in ('jp', 'jr', 'ret'):
             args = [a.strip() for a in arg.split(',')] if arg else []
             condition = None
-            if args and args[0] in ('z', 'nz'):
+            if args and args[0] in ('z', 'nz', 'c', 'nc'):
                 condition = args.pop(0)
-            take = condition is None or (zero if condition == 'z' else not zero)
+            take = condition is None or {'z': zero, 'nz': not zero, 'c': carry, 'nc': not carry}[condition]
             if take:
                 if op == 'ret':
                     if args:
@@ -125,6 +148,7 @@ def _trace_cave_exit_predicates(runtime: str, direction: str, x: int, y: int,
                 pc = labels[label]
         elif op == 'and' and arg == 'a':
             zero = not registers['a']
+            carry = False
         else:
             raise ValueError('unsupported predicate instruction ' + line)
     raise ValueError('predicate ran for more than 180 instructions')
@@ -152,6 +176,7 @@ def _trace_arrival_step(runtime: str, local: str, x: int, y: int) -> tuple[objec
              'wSpriteStateData1 + 9': 'SPRITE_FACING_UP'}
     registers = {'a': None, 'e': None}
     zero = False
+    carry = False
     pc = 0
     for _ in range(80):
         if not (0 <= pc < len(program)):
@@ -182,13 +207,14 @@ def _trace_arrival_step(runtime: str, local: str, x: int, y: int) -> tuple[objec
             registers[dest] = val
         elif op == 'cp':
             test = int(arg) if arg.isdecimal() else arg
-            zero = registers['a'] == test
+            zero, carry = _trace_cp_operands(registers['a'], test)
         elif op == 'and' and arg == 'a':
             zero = not registers['a']
+            carry = False
         elif op in ('jr', 'jp', 'ret'):
             args = [v.strip() for v in arg.split(',')] if arg else []
-            cond = args.pop(0) if args and args[0] in ('z', 'nz') else None
-            take = cond is None or (zero if cond == 'z' else not zero)
+            cond = args.pop(0) if args and args[0] in ('z', 'nz', 'c', 'nc') else None
+            take = cond is None or {'z': zero, 'nz': not zero, 'c': carry, 'nc': not carry}[cond]
             if take:
                 if op == 'ret':
                     if args:
@@ -280,19 +306,19 @@ def audit(root: Path, gold_root: Path | None = None) -> dict:
                          r'ld a, e\s+and a\s+jr z, \.legacyExtraWarp\s+scf\s+ret',
                          extra, re.S)),
           'ExtraWarpCheck must turn a permitted ROMX predicate into carry=1 (otherwise no collision Warp)')
+    enter = home.split('EnterMap::', 1)[1].split('callab UpdateSeafoamEntranceSource', 1)[0]
     check('cave_warp_flag_rearmed_on_map_entry',
-          bool(re.search(r'EnterMap::.*?cp JOHTO_HOUSE\s+jr z,\.armJohtoCarpetArrival\s+'
-                         r'cp JOHTO_GATE\s+jr z,\.armJohtoCarpetArrival\s+'
-                         r'cp JOHTO_UNION_CAVE\s+jr nz,\.noJohtoCarpetArrival\s+'
+          bool(re.search(r'cp JOHTO_UNION_CAVE\s+jr nz,\.noJohtoCarpetArrival\s+'
                          r'\.armJohtoCarpetArrival\s+ld hl,wd736\s+res 2,\[hl\]\s+'
-                         r'callba IsPlayerStandingOnWarp', home, re.S)),
-          'EnterMap must arm wd736 bit2 at the registered cave entrance; otherwise collision path is skipped')
+                         r'callba IsPlayerStandingOnWarp', enter)) and
+          all(x in enter for x in ('cp JOHTO_HOUSE', 'cp JOHTO_GATE', 'cp JOHTO_SOUTH_GATE')),
+          'EnterMap must arm cave carpet and the explicit south gates, then call standing-on-warp')
+    no_collision = home.split('CheckWarpsNoCollision::',1)[1].split('call ExtraWarpCheck',1)[0]
     check('cave_carpet_no_step_on_warp_even_with_prewrap_enabled',
-          bool(re.search(r'cp JOHTO_HOUSE\s+jr z,CheckWarpsNoCollisionRetry2\s+'
-                         r'cp JOHTO_GATE\s+jr z,CheckWarpsNoCollisionRetry2\s+'
-                         r'cp JOHTO_UNION_CAVE\s+jp z,CheckWarpsNoCollisionRetry2\s+'
-                         r'push hl\s+push bc\s+call ExtraWarpCheck', home)),
-          'keep wd736 bit2 armed but skip the STEP_ON ExtraWarpCheck fallback for cave DOWN carpet')
+          bool(re.search(r'cp JOHTO_UNION_CAVE\s+jp z,CheckWarpsNoCollisionRetry2\s+'
+                         r'push hl\s+push bc\s*$',no_collision, re.M)) and
+          all(x in no_collision for x in ('cp JOHTO_HOUSE','cp JOHTO_GATE', 'cp JOHTO_SOUTH_GATE')),
+          'CAVE must skip no-collision Warp even when new south-gate tilesets are present')
     check('collision_loop_reached_only_after_extra_carry',
           bool(re.search(r'bit 2,\[hl\].*?call ExtraWarpCheck.*?jp c,CheckWarpsCollision', home, re.S)) and
           bool(re.search(r'CheckWarpsCollision::.*?callab JohtoPilotGateCollisionExitAllowed\s+'
