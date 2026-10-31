@@ -34,6 +34,11 @@ JohtoOverworldSurfDecision::
 	ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_35_LOCAL_ID
     jp z, .southModern
+    ; FIX-295: Ecruteak uses the JOHTO_PILOT graphics but its Gold
+    ; 40x36 role grid owns the 20 pond WATER cells. Treat both continued
+    ; swimming and shoreline disembark as spatial Gold roles, not $14.
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .southModern
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID

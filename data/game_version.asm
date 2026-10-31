@@ -7,6 +7,7 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
+	; FIX-295: restore Ecruteak pond water movement and Gold shore disembark; require live-path audit.
 	; FIX-288: protect Park borders, mature east-gate passability and long grass.
 	; FIX-287: keep Park/Gate map scripts in the same ROMX bank as their active headers.
 	; FIX-284: Route35 south Gold-compatible preview and closed park lane, preserve warp landing.
@@ -35,5 +36,5 @@ ELSE
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "FIX-5.62.290@"
+	db "FIX-5.62.295@"
 ENDC

@@ -26,6 +26,10 @@ JohtoSouthSpatialRoleAhead::
     jp z, .Route35Gate
     cp JOHTO_ROUTE_35_LOCAL_ID
     jp z, .Route35
+    cp JOHTO_ROUTE_37_LOCAL_ID
+    jp z, .Route37
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .EcruteakCity
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .NationalPark
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -71,6 +75,16 @@ JohtoSouthSpatialRoleAhead::
 .Route35
     ld hl, JohtoNorthRoute35Roles
     ld b, 20
+    ld c, 36
+    jp .common
+.Route37
+    ld hl, JohtoRoute37Roles
+    ld b, 20
+    ld c, 18
+    jp .common
+.EcruteakCity
+    ld hl, JohtoEcruteakRoles
+    ld b, 40
     ld c, 36
     jp .common
 .NationalPark
@@ -603,6 +617,10 @@ JohtoNorthRoute35Roles:: INCBIN "maps/johto_pilot/Route35.roles.bin"
 JohtoNorthRoute35RolesEnd::
 ASSERT JohtoNorthRoute35RolesEnd - JohtoNorthRoute35Roles == 720
 
+JohtoRoute37Roles:: INCBIN "maps/johto_pilot/Route37.roles.bin"
+ASSERT @ - JohtoRoute37Roles == 20 * 18
+JohtoEcruteakRoles:: INCBIN "maps/johto_pilot/EcruteakCity.roles.bin"
+ASSERT @ - JohtoEcruteakRoles == 40 * 36
 JohtoParkRoles:: INCBIN "maps/johto_pilot/NationalPark.roles.bin"
 JohtoParkRolesEnd::
 ASSERT JohtoParkRolesEnd - JohtoParkRoles == 2160
@@ -626,6 +644,10 @@ JohtoSouthIsKnownClosedEdge::
     jp z, .route35
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
     jp z, .route35Gate
+    cp JOHTO_ROUTE_37_LOCAL_ID
+    jp z, .route37
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .ecruteak
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .park
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -700,6 +722,14 @@ JohtoSouthIsKnownClosedEdge::
 .route35Gate
     ld b, 10
     ld c, 8
+    jp .regular
+.route37
+    ld b, 20
+    ld c, 18
+    jp .regular
+.ecruteak
+    ld b, 40
+    ld c, 36
     jp .regular
 .park
     ld b, 40

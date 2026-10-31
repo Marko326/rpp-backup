@@ -332,6 +332,8 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 18, MUSIC_ROUTES1, 0 ; slot23 Park, Gold independent park music handled by scene mode
     johto_map_profile 0, 17, MUSIC_ROUTES1, 0 ; slot24 Route35 Park gate inherits source
     johto_map_profile 0, 19, MUSIC_ROUTES1, 0 ; slot25 Route36 Park gate inherits source
+    johto_map_profile 1, 20, MUSIC_ROUTES1, 0 ; slot26 Route37 Gold Route37
+    johto_map_profile 1, 21, MUSIC_CITIES1, 0 ; slot27 Ecruteak City, Fly on visit
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -530,6 +532,10 @@ JohtoPilotIsClosedOutdoorEdge::
     ; FIX-288: new Park and both gates are finite. Without this
     ; dispatch their edge steps fell through as unrestricted land,
     ; walking/cycling into the black border outside the map array.
+    cp JOHTO_ROUTE_37_LOCAL_ID
+    jp z, .route37ClosedEdge
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .ecruteakClosedEdge
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .southClosedEdge
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -542,6 +548,12 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .southClosedEdge
     cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
     jp z, .southClosedEdge
+    ret
+.route37ClosedEdge
+    callab JohtoCorridor37Edge
+    ret
+.ecruteakClosedEdge
+    callab JohtoCorridorEcruteakEdge
     ret
 .southClosedEdge
     ; All six maps use finite geometry. Non-seam edges fail closed.
@@ -630,7 +642,7 @@ JohtoPilotIsClosedOutdoorEdge::
 .route36Edge
     ; Gold Route36: SOUTH only x17 (the sole open tile in the mature
     ; Route36/Route35 collision mask); EAST only y8/9 to Violet City.
-    ; NORTH remains shut until Route37 is registered. Interior unchanged.
+    ; MAP-294: NORTH Route37 x25..32 only; other edges preserve Gold lanes.
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
     jr z, .route36Up
@@ -653,6 +665,11 @@ JohtoPilotIsClosedOutdoorEdge::
     ld a, [wYCoord]
     and a
     ret nz
+    ld a, [wXCoord]
+    cp 25
+    jp c, .closed
+    cp 33
+    ret c
     jp .closed
 .route36Down
     ld a, [wYCoord]

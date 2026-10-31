@@ -1,0 +1,156 @@
+{
+  "schema": "johto-next-corridor-source-gate-v1",
+  "stage": "MAP-5.62.293 SOURCE ONLY",
+  "active_map_count_unchanged": 26,
+  "runtime_approved": false,
+  "maps": [
+    {
+      "map": "Route37",
+      "stable_id": 21,
+      "width": 10,
+      "height": 9,
+      "gold_tileset": "johto",
+      "gold_source": "maps/Route37.blk",
+      "assets": {
+        "gold_blk": {
+          "path": "maps/johto_pilot/candidates293/Route37.gold.blk",
+          "sha256": "c07e00002261aa23b2f6405c0941c6d1a0d47ad0cfb23ea4e434d57db5178c88",
+          "bytes": 90
+        },
+        "gold_collision_candidate": {
+          "path": "maps/johto_pilot/candidates293/Route37.gold_candidate_mask.bin",
+          "sha256": "ef90a0a13be9305ca609f9939c70092282316fb30fdb25d370759824fad05064",
+          "bytes": 54
+        },
+        "npc_mature_mask": {
+          "path": "maps/johto_pilot/candidates293/Route37.npc243_mature_mask.bin",
+          "sha256": "ef90a0a13be9305ca609f9939c70092282316fb30fdb25d370759824fad05064",
+          "bytes": 54
+        }
+      },
+      "runtime_approved": false,
+      "npc_vs_gold_mask_equal": true
+    },
+    {
+      "map": "EcruteakCity",
+      "stable_id": 22,
+      "width": 20,
+      "height": 18,
+      "gold_tileset": "johto",
+      "gold_source": "maps/EcruteakCity.blk",
+      "assets": {
+        "gold_blk": {
+          "path": "maps/johto_pilot/candidates293/EcruteakCity.gold.blk",
+          "sha256": "4c6c7cfa7cb52167f6f806c6ca96746adf9cffc6719499c3ef125f41fe22bbf6",
+          "bytes": 360
+        },
+        "gold_collision_candidate": {
+          "path": "maps/johto_pilot/candidates293/EcruteakCity.gold_candidate_mask.bin",
+          "sha256": "1841d89596360688e0852b896cd290286304865600674b5846950d5b0fe2e846",
+          "bytes": 180
+        },
+        "npc_mature_mask": {
+          "path": "maps/johto_pilot/candidates293/EcruteakCity.npc243_mature_mask.bin",
+          "sha256": "de0457a0baa027a38a74a6f11da1c4f36e01a9db9fe97ac2b93c7b3f3ffeab2d",
+          "bytes": 180
+        }
+      },
+      "runtime_approved": false,
+      "npc_vs_gold_mask_equal": false
+    },
+    {
+      "map": "Route38EcruteakGate",
+      "stable_id": 23,
+      "width": 5,
+      "height": 4,
+      "gold_tileset": "gate",
+      "gold_source": "maps/EastWestGate.blk",
+      "assets": {
+        "gold_blk": {
+          "path": "maps/johto_pilot/candidates293/Route38EcruteakGate.gold.blk",
+          "sha256": "4345b9806ded35bc2b76429a281e9391c0c614597f4ccf547a89edee84d5160c",
+          "bytes": 20
+        },
+        "gold_collision_candidate": {
+          "path": "maps/johto_pilot/candidates293/Route38EcruteakGate.gold_candidate_mask.bin",
+          "sha256": "e8c08f9035cd510af68c28543b1000ec3f3eb30780add7c3d75ea1154e4fd4d8",
+          "bytes": 16
+        }
+      },
+      "runtime_approved": false
+    },
+    {
+      "map": "Route38",
+      "stable_id": 24,
+      "width": 20,
+      "height": 9,
+      "gold_tileset": "johto",
+      "gold_source": "maps/Route38.blk",
+      "assets": {
+        "gold_blk": {
+          "path": "maps/johto_pilot/candidates293/Route38.gold.blk",
+          "sha256": "432d51119b446a2fcbc14f21f24882d1c600373a634e82b98ae6d089af7b04e1",
+          "bytes": 180
+        },
+        "gold_collision_candidate": {
+          "path": "maps/johto_pilot/candidates293/Route38.gold_candidate_mask.bin",
+          "sha256": "e7b6f822586256efb839a927fb38743c8e13d34fe6a1b9ade235e349155e051d",
+          "bytes": 90
+        },
+        "npc_mature_mask": {
+          "path": "maps/johto_pilot/candidates293/Route38.npc243_mature_mask.bin",
+          "sha256": "31d12580a51ae3f01f8e033f5101388eba6bb4541a334f71cb33db413d329913",
+          "bytes": 90
+        }
+      },
+      "runtime_approved": false,
+      "npc_vs_gold_mask_equal": false
+    }
+  ],
+  "seams": [
+    {
+      "source": "Route36",
+      "target": "Route37",
+      "direction": "north",
+      "offset": 10
+    },
+    {
+      "source": "Route37",
+      "target": "Route36",
+      "direction": "south",
+      "offset": -10
+    },
+    {
+      "source": "Route37",
+      "target": "EcruteakCity",
+      "direction": "north",
+      "offset": -5
+    },
+    {
+      "source": "EcruteakCity",
+      "target": "Route37",
+      "direction": "south",
+      "offset": 5
+    },
+    {
+      "source": "EcruteakCity",
+      "target": "Route38",
+      "direction": "west",
+      "offset": 5
+    },
+    {
+      "source": "Route38",
+      "target": "EcruteakCity",
+      "direction": "east",
+      "offset": -5
+    }
+  ],
+  "blocked_until_full_runtime_review": [
+    "Route36 north edge",
+    "Route37 full runtime registration",
+    "EcruteakCity city warp & Fly",
+    "EcruteakCity west gate",
+    "Route38 gate & Route38 gameplay",
+    "Route42 east edge"
+  ]
+}

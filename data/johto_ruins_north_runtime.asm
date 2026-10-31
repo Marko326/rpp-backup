@@ -38,6 +38,9 @@ JohtoPilotAlphNorthGateRuntimeObjects::
 ; *source* map's bank) while drawing connected neighbors. These full byte-
 ; identical mirrors are intentionally in Route36's Bank $4A; pointers into
 ; VioletCity's Bank $43 or Route35's Bank $4C would read the wrong ROM.
+JohtoRoute36NorthRoute37Mirror::
+    INCBIN "maps/johto_pilot/Route37.runtime.blk"
+ASSERT @ - JohtoRoute36NorthRoute37Mirror == JOHTO_ROUTE37_WIDTH * JOHTO_ROUTE37_HEIGHT
 JohtoRoute36SouthRoute35Mirror::
     INCBIN "maps/johto_pilot/Route35.runtime.blk"
 ASSERT @ - JohtoRoute36SouthRoute35Mirror == JOHTO_ROUTE35_WIDTH * JOHTO_ROUTE35_HEIGHT
@@ -51,7 +54,16 @@ JohtoPilotRoute36RuntimeHeader::
     dw JohtoPilotRoute36RuntimeBlocks
     dw JohtoPilotRoute36TextPointers
     dw JohtoPilotRoute36Script
-    db SOUTH | EAST ; Gold: Route35 south and VioletCity east; Route37 CLOSED
+    db NORTH | SOUTH | EAST ; Gold Route37 north; Route35 south; Violet east
+    ; NORTH Gold +10: Route36 columns 10..19 overlap Route37 columns 0..9.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoRoute36NorthRoute37Mirror + JOHTO_ROUTE37_WIDTH * (JOHTO_ROUTE37_HEIGHT - 3)
+    dw wOverworldMap + 3 + 10
+    db JOHTO_ROUTE37_WIDTH
+    db JOHTO_ROUTE37_WIDTH
+    db JOHTO_ROUTE37_HEIGHT * 2 - 1
+    db -20 ; Route36 X-20 tile units -> Route37
+    dw wOverworldMap + 1 + JOHTO_ROUTE37_HEIGHT * (JOHTO_ROUTE37_WIDTH + 6)
     ; SOUTH -> Route35 (offset 0). Only the neighbor's ten columns overlap.
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoRoute36SouthRoute35Mirror
@@ -72,7 +84,8 @@ JohtoPilotRoute36RuntimeHeader::
     dw wOverworldMap + 7 + JOHTO_VIOLET_CITY_WIDTH
     dw JohtoPilotRoute36RuntimeObjects
 JohtoPilotRoute36RuntimeHeaderEnd::
-ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 34
+ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 45
+ASSERT BANK(JohtoRoute36NorthRoute37Mirror) == BANK(JohtoPilotRoute36RuntimeHeader)
 ASSERT BANK(JohtoRoute36SouthRoute35Mirror) == BANK(JohtoPilotRoute36RuntimeHeader)
 ASSERT BANK(JohtoRoute36EastVioletMirror) == BANK(JohtoPilotRoute36RuntimeHeader)
 ASSERT BANK(JohtoPilotRoute36RuntimeHeader) == BANK(JohtoPilotRoute36RuntimeBlocks)

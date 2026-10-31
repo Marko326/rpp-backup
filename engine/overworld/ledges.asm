@@ -39,19 +39,30 @@ HandleLedges:
 	ret nz
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_29_LOCAL_ID
-	jr z, .supportedJohtoLedges
+	jp z, .supportedJohtoLedges
 	cp JOHTO_ROUTE_30_LOCAL_ID
-	jr z, .supportedJohtoLedges
+	jp z, .supportedJohtoLedges
 	; Gold Violet has three HOP_DOWN quadrants using $06 -> $21.
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
-	jr z, .supportedJohtoLedges
+	jp z, .supportedJohtoLedges
 	cp JOHTO_ROUTE_31_LOCAL_ID
-	jr z, .route31PairTable
+	jp z, .route31PairTable
 	cp JOHTO_ROUTE_32_LOCAL_ID
-	jr z, .route31PairTable
+	jp z, .route31PairTable
+	; MAP-294: coordinate+facing jumps from mature NPC/Gold.
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jp z, .route37Gold
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jp z, .ecruteakGold
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsHopTable
 	ret nz
+.route37Gold
+	ld hl, JohtoRoute37GoldHops
+	jp .ruinsCoordinateHopLookup
+.ecruteakGold
+	ld hl, JohtoEcruteakGoldHops
+	jp .ruinsCoordinateHopLookup
 .ruinsHopTable
 	ld hl, JohtoAlphSouthHops
 	jr .ruinsCoordinateHopLookup
@@ -169,10 +180,20 @@ JohtoSouthHopLandingGuard::
     jr z, .route33
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
     jr z, .azalea
+    cp JOHTO_ROUTE_37_LOCAL_ID
+    jp z, .route37
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .ecruteak
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
-    jr .scan
+    jp .scan
+.route37
+    ld hl, JohtoRoute37GoldHops
+    jp .scan
+.ecruteak
+    ld hl, JohtoEcruteakGoldHops
+    jp .scan
 .route33
     ld hl, JohtoRoute33Hops
     jr .scan
@@ -296,6 +317,25 @@ JohtoIlexForestGoldHops:
 	db 26, 22, PLAYER_DIR_DOWN
 	db 26, 22, PLAYER_DIR_RIGHT
 	db $FF
+
+; MAP-294: exact mature NPC Gold-directed safe hop coordinates.
+; Do NOT make the five Ecruteak HOP_DOWNs a generic hop-right rule.
+JohtoRoute37GoldHops:
+    db 12, 2, PLAYER_DIR_DOWN
+    db 13, 2, PLAYER_DIR_DOWN
+    db 4, 6, PLAYER_DIR_DOWN
+    db 5, 6, PLAYER_DIR_DOWN
+    db 8, 6, PLAYER_DIR_DOWN
+    db 9, 6, PLAYER_DIR_DOWN
+    db $ff
+JohtoEcruteakGoldHops:
+    db 4, 10, PLAYER_DIR_DOWN
+    db 5, 10, PLAYER_DIR_DOWN
+    db 6, 10, PLAYER_DIR_DOWN
+    db 7, 10, PLAYER_DIR_DOWN
+    db 8, 10, PLAYER_DIR_DOWN
+    db 8, 10, PLAYER_DIR_RIGHT
+    db $ff
 
 JohtoAlphSouthHops:
 	db 2, 18, PLAYER_DIR_DOWN

@@ -1286,6 +1286,8 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_NATIONAL_PARK ; slot23 Park (GSC scene fallback)
     db MUSIC_GBP_GSC_ROUTE36 ; slot24 South Park gate, source overrides
     db MUSIC_GBP_GSC_ROUTE36 ; slot25 East Park gate, source overrides
+    db MUSIC_GBP_GSC_ROUTE37 ; slot 26 Route37
+    db MUSIC_GBP_GSC_ECRUTEAK_CITY ; slot 27 Ecruteak City
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

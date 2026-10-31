@@ -287,6 +287,10 @@ UpdateMapNameSign::
 	jp z, .johtoGoldenrod
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jp z, .johtoRoute35
+	cp JOHTO_ROUTE_37_LOCAL_ID
+	jp z, .johtoRoute37
+	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+	jp z, .johtoEcruteak
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
 	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
@@ -340,6 +344,12 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoGoldenrod
 	ld hl, .JohtoGoldenrodName
+	jr .johtoResolved
+.johtoRoute37
+	ld hl, .JohtoRoute37Name
+	jr .johtoResolved
+.johtoEcruteak
+	ld hl, .JohtoEcruteakName
 	jr .johtoResolved
 .johtoPark
 	ld hl, .JohtoParkName
@@ -1063,3 +1073,5 @@ UpdateMapNameSign::
 .JohtoGoldenrodName: db "Goldenrod City@"
 .JohtoRoute35Name: db "Route 35@"
 .JohtoParkName: db "National Park@"
+.JohtoRoute37Name: db "Route 37@"
+.JohtoEcruteakName: db "Ecruteak City@"

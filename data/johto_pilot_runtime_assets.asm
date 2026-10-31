@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 26
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 28
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -180,6 +180,14 @@ JohtoParkEastGateDescriptor::
     db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_PARK_GATE, JOHTO_ROUTE36_PARK_GATE_WIDTH, JOHTO_ROUTE36_PARK_GATE_HEIGHT
     dw JohtoParkEastGateBlocks
     db BANK(JohtoParkEastGateBlocks)
+JohtoRoute37RuntimeDescriptor::
+    db JOHTO_ROUTE_37_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE37_WIDTH, JOHTO_ROUTE37_HEIGHT
+    dw JohtoRoute37Blocks
+    db BANK(JohtoRoute37Blocks)
+JohtoEcruteakRuntimeDescriptor::
+    db JOHTO_ECRUTEAK_CITY_LOCAL_ID, JOHTO_PILOT, JOHTO_ECRUTEAK_WIDTH, JOHTO_ECRUTEAK_HEIGHT
+    dw JohtoEcruteakBlocks
+    db BANK(JohtoEcruteakBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -234,6 +242,10 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .route35GoldenrodGate
     cp JOHTO_ROUTE_35_LOCAL_ID
     jp z, .route35
+    cp JOHTO_ROUTE_37_LOCAL_ID
+    jp z, .route37
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .ecruteak
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .park
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -272,6 +284,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .route35
     ld hl, JohtoNorthRoute35Descriptor
+    jp .valid
+.route37
+    ld hl, JohtoRoute37RuntimeDescriptor
+    jp .valid
+.ecruteak
+    ld hl, JohtoEcruteakRuntimeDescriptor
     jp .valid
 .park
     ld hl, JohtoParkDescriptor

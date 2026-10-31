@@ -879,13 +879,17 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotNorthRoute35Name
     db 76, 72 ; slot25 east park gate inherits Route36 landmark
     dw JohtoPilotRoute36Name
+    db 68, 76 ; slot 26 Route37
+    dw JohtoPilotRoute37Name
+    db 60, 76 ; slot 27 Ecruteak City
+    dw JohtoPilotEcruteakName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1009,3 +1013,5 @@ JohtoPilotSouthGoldenrodName:: db "Goldenrod City@"
 
 JohtoPilotNorthRoute35Name:: db "Route 35@"
 JohtoPilotNationalParkName:: db "National Park@"
+JohtoPilotRoute37Name:: db "Route 37@"
+JohtoPilotEcruteakName:: db "Ecruteak City@"

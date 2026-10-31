@@ -29,6 +29,10 @@ JohtoOverworldSouthLandDecision::
     ; grid, not fall back to legacy 8x8 tile passability (fence can be crossed).
     ; Local ID 16 is Route36: preserve its existing independent movement.
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_37_LOCAL_ID
+    jp z, .activeSouthMap
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .activeSouthMap
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .activeSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
