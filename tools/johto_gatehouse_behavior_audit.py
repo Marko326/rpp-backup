@@ -17,6 +17,7 @@ from johto_gold_door_audit import (
     gold_gate_arrival_step, inspect as inspect_gold,
 )
 from johto_warp_arrival_audit import audit as audit_warp_arrival, _gold_warp_events
+from johto_gatehouse_shared_runtime_303 import scan as scan_shared303, structural_check as check_shared303
 
 CONTRACT_PATH = 'tools/johto_pilot_door_contracts.json'
 EXPECTED_ROLES = {
@@ -244,22 +245,25 @@ def audit_active_gatehouse_carpet_walkability(
     def fail(message: str) -> None:
         errors.append(message)
 
-    policy = {
-        6: 'legacy_gate_tilecoll',
-        11: 'south_gold_role_grid',
-        13: 'south_gold_role_grid',
-        18: 'south_gold_role_grid',
-        19: 'legacy_gate_tilecoll',
-        23: 'west_carpet_lane_helper',
-        62: 'east_carpet_lane_helper',
-        102: 'legacy_gate_tilecoll',
-        104: 'south_gold_role_grid',
-        105: 'park_east_mature_helper',
-    }
+    registry_path = 'tools/johto_gatehouse_profiles_303.json'
+    policy: dict[int, str] = {}
+
 
     try:
         constants = _constants(root)
         contract = json.loads(txt(CONTRACT_PATH))
+        registry = json.loads(txt(registry_path))
+        music = json.loads(txt('tools/johto_gate_music_bike_contracts.json'))
+        if registry.get('schema') != 'johto-active-gatehouse-profiles-v1':
+            fail('invalid shared gatehouse profile schema')
+        profile_rows = registry.get('active_gatehouses', [])
+        if len(profile_rows) != 10 or len({row.get('stable_id') for row in profile_rows}) != len(profile_rows):
+            fail('shared profiles must list 10 unique active gatehouse IDs')
+        profile_by_id = {row['stable_id']: row for row in profile_rows}
+        policy = {row['stable_id']:row['collision_strategy'] for row in profile_rows}
+        bike_policy = {row['gold_map']:row for row in music['active_gates']}
+        gold_maps = (gold/'data/maps/maps.asm').read_text(encoding='utf-8')
+        gold_env = dict(re.findall(r'(?m)^\s*map\s+(\w+)\s*,\s*\w+\s*,\s*(\w+)\s*,', gold_maps))
         active_ids = sorted(set(_gate_ids(root)).intersection(_active_stable_ids(root)))
         gate_contracts = {
             row.get('stable_id'): row
@@ -283,6 +287,7 @@ def audit_active_gatehouse_carpet_walkability(
         south_gateway = txt('engine/johto_land_collision_gateway_272.asm')
         east = txt('data/johto_east_runtime_300.asm')
         east_gateway = txt('engine/johto_land_collision_gateway_272.asm')
+        shared_wiring_ok = check_shared303(south, east, east, constants)
         tileset_headers = txt('data/tileset_headers.asm')
         collision_source = txt('data/collision.asm')
         player_state = txt('engine/overworld/player_state.asm')
@@ -298,6 +303,17 @@ def audit_active_gatehouse_carpet_walkability(
             fail(f'active gatehouse/contract mismatch: active={active_ids}, contracts={sorted(gate_contracts)}')
         if set(active_ids) != set(policy):
             fail(f'carpet collision policy must explicitly cover every active gatehouse: active={active_ids}, policy={sorted(policy)}')
+        allowed_policies = {
+            'legacy_gate_tilecoll': {6, 19, 102},
+            'south_gold_role_grid': {11, 13, 18, 104},
+            'west_carpet_lane_helper': {23},
+            'east_carpet_lane_helper': {62},
+            'park_east_mature_helper': {105},
+        }
+        for method, expected_ids in allowed_policies.items():
+            got = {stable_id for stable_id, strategy in policy.items() if strategy == method}
+            if got != expected_ids:
+                fail(f'collision backend {method} unexpected stable IDs {sorted(got)}')
 
         # The legacy tile-collision reader probes the lower-left 8x8 tile of
         # the target 16x16 cell (GetTileAndCoordsInFrontOfPlayer's aCoord 6/8/10,
@@ -327,6 +343,21 @@ def audit_active_gatehouse_carpet_walkability(
             if gate is None:
                 continue
             gold_map = gate.get('gold_map')
+            profile = profile_by_id.get(stable_id, {})
+            source_bike = bike_policy.get(gold_map, {})
+            if profile.get('gold_map') != gold_map:
+                fail(f'ID{stable_id} profile Gold map mismatch')
+            environment = gold_env.get(gold_map)
+            if (profile.get('gold_environment') != environment or
+                source_bike.get('gold_environment') != environment or
+                profile.get('bike_allowed') != (environment == 'GATE') or
+                source_bike.get('bike_allowed') != profile.get('bike_allowed')):
+                fail(f'ID{stable_id} Gold environment or bike profile drift')
+            layout = profile.get('layout')
+            if layout not in ('horizontal_ew','vertical_ns','park_south_ns','park_east_ew'):
+                fail(f'ID{stable_id} unknown layout {layout}')
+            if ('ew' in layout) != (stable_id in (6,11,23,62,102,105)):
+                fail(f'ID{stable_id} layout orientation drift')
             rows = gate.get('warp_contracts', [])
             carpets = []
             for row in rows:
@@ -414,23 +445,18 @@ def audit_active_gatehouse_carpet_walkability(
 
             elif strategy == 'west_carpet_lane_helper':
                 roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
-                if len(roles) != 80:
-                    gate_errors.append(f'West gate role grid size mismatch: {len(roles)} != 80')
-                else:
-                    for x, y, role in carpets:
-                        if roles[y * 10 + x] != 1:
-                            gate_errors.append(f'expected the mature West gate mask to seal carpet {(x, y)} and require its helper')
-                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID\s*\n\s*jr z, \.westCarpet', south):
-                    gate_errors.append('JohtoSouthSpatialStep no longer routes the West gate through JohtoWestCarpetSpatialStep')
-                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID\s*\n\s*jp z, \.activeSouthMap\s*$', south_gateway):
-                    gate_errors.append('ROM0 gateway no longer routes the West gate through the South spatial collision path')
-                helper = south.split('JohtoWestCarpetSpatialStep::', 1)[1].split('JohtoParkEastGateMatureStep::', 1)[0]
+                if len(roles) != 80 or not all(roles[y*10+x] == 1 for x in (0,9) for y in (4,5)):
+                    gate_errors.append('West mature roles must retain four solid carpet markers')
+                if not shared_wiring_ok:
+                    gate_errors.append('shared West/East profile dispatch or exact table differs')
+                if 'callab JohtoGateHorizontalCarpetInbound303' not in south:
+                    gate_errors.append('West gate no longer calls shared ROMX movement engine')
+                if 'callab JohtoSouthSpatialStep' not in south_gateway:
+                    gate_errors.append('missing South land movement gateway')
                 if len(roles) == 80:
-                    count, bad = _scan_horizontal_gate_moves(
-                        helper, stable_id=stable_id, roles=roles, constants=constants, western=True)
-                    if bad:
-                        gate_errors.extend(f'West carpet walk {e}' for e in bad[:12])
+                    count, bad = scan_shared303(east, constants, stable_id, roles)
                     results_checked[stable_id] = count
+                    gate_errors.extend('West shared carpet walk ' + err for err in bad[:12])
 
             elif strategy == 'park_east_mature_helper':
                 roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
@@ -447,29 +473,16 @@ def audit_active_gatehouse_carpet_walkability(
 
             elif strategy == 'east_carpet_lane_helper':
                 roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
-                if len(roles) != 80:
-                    gate_errors.append(f'East gate role grid size mismatch: {len(roles)} != 80')
-                else:
-                    for x, y, role in carpets:
-                        if roles[y * 10 + x] != 1:
-                            gate_errors.append(f'expected East gate mature mask to seal carpet {(x, y)} and require its helper')
-                step = east.split('JohtoEastSpatialStep::', 1)[1].split('JohtoRoute42CutClearedAhead300:', 1)[0]
-                before_role = step.split('call JohtoEastSpatialRoleAhead', 1)[0]
-                if not re.search(r'(?m)^\s*call JohtoEastGateCarpetLaneStep300\s*$', before_role) or not re.search(r'(?m)^\s*ret c\s*$', before_role):
-                    gate_errors.append('JohtoEastSpatialStep must accept only the exact carpet-lane exception before the mature role lookup')
+                if len(roles) != 80 or not all(roles[y*10+x] == 1 for x in (0,9) for y in (4,5)):
+                    gate_errors.append('East mature roles must retain four solid carpet markers')
+                if not shared_wiring_ok:
+                    gate_errors.append('shared West/East profile dispatch or exact table differs')
                 if 'callab JohtoEastSpatialStep' not in east_gateway:
-                    gate_errors.append('ROM0 land gateway no longer dispatches East Gate to JohtoEastSpatialStep')
-                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID\s*\n\s*jr z, \.eastMap', east_gateway):
-                    gate_errors.append('ROM0 land gateway no longer routes stable ID62 through the East Gate spatial path')
-                if 'JohtoEastGateCarpetLaneStep300::' not in east:
-                    gate_errors.append('missing JohtoEastGateCarpetLaneStep300 helper')
-                elif len(roles) == 80:
-                    helper = east.split('JohtoEastGateCarpetLaneStep300::', 1)[1].split('JohtoRoute42CutClearedAhead300:', 1)[0]
-                    count, bad = _scan_horizontal_gate_moves(
-                        helper, stable_id=stable_id, roles=roles, constants=constants, western=False)
-                    if bad:
-                        gate_errors.extend(f'East carpet walk {e}' for e in bad[:12])
+                    gate_errors.append('East gate ROM0 gateway missing')
+                if len(roles) == 80:
+                    count, bad = scan_shared303(east, constants, stable_id, roles)
                     results_checked[stable_id] = count
+                    gate_errors.extend('East shared carpet walk ' + err for err in bad[:12])
 
             else:
                 gate_errors.append(f'no carpet movement strategy registered for stable ID {stable_id}')
@@ -735,6 +748,15 @@ def audit(project: Path, gold: Path) -> dict:
     _check(checks, errors, 'future_gatehouse_fail_closed_policy',
            contract.get('gatehouse_activation_policy', {}).get('require_explicit_contract_before_activation') is True,
            'a gatehouse must have an explicit contract before its stable ID is activated')
+
+    # REF-305: the shared carpet engine does not own NPC identity. Keep the
+    # two Ecruteak Officers under a separate map-local object/text audit.
+    from johto_gatehouse_npc_pilot_305 import audit as audit_gatehouse_npc_pilot_305
+    npc_report = audit_gatehouse_npc_pilot_305(project, gold)
+    _check(checks, errors, 'ecruteak_gatehouse_npc_pilot',
+           npc_report.get('status') == 'PASS_STATIC_ONLY',
+           f"NPC audit={npc_report.get('status')}; errors={npc_report.get('errors', [])[:5]}")
+    errors.extend('npc_audit: ' + e for e in npc_report.get('errors', []))
 
     arrival = audit_warp_arrival(project, gold)
     _check(checks, errors, 'current_house_arrival_audit', arrival.get('status') == 'PASS_STATIC_ONLY',

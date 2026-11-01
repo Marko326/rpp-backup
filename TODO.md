@@ -1,3 +1,91 @@
+## CLEAN-5.62.306 / REF-5.62.306｜圆朱东西门房共享引擎与独立警员正式收口（2026-11-01）
+
+- **准确提交基线**：`常规功能备份`，用户干净 FIX-302 源码及导出记录均指向已提交 HEAD `27a2086219b56238e26844676f3a5328e5b567ee`；这笔 CLEAN 累计涵盖 REF-303～306，不重复提交已在 HEAD 内的 MAP-300、FIX-301／302。
+- **用户实际验收**：REF-306 视频中可见圆朱西门房 ID23 和东门房 ID62 的红色警员，玩家在柜台南侧按 A 均能触发各自不同对话；西门房提及 NEW BARK TOWN／PROF.ELM，东门房提醒 MOUNT MORTAR。这证明两座地图在该次实机测试中已独立显示和交互，不等于 Red／Blue 两版、其它八座门房、旧存档／所有时间条件已经全部通过。
+- **正式保留的游戏功能**：ID23／62 共用 `JohtoGateHorizontalCarpetInbound303` 横向登记地毯目标格判定，Warp 与碰撞后端仍独立；各自 `RuntimeObjects`／`TextPointers`／Officer 正式留在地图中。两位警员复用同一像素图像但使用新 `SPRITE_JOHTO_OFFICER`／`PAL_OW_RED`，关都原有 `SPRITE_GUARD` 的蓝色不动。站位为玩家 `(5,4)` 面朝 UP，经柜台 `(5,3)` 的**左下** 8×8 tile `$0E` 扩展原生对话距离到 32px；不开放柜台穿越。Gold 原版都无 scene／callback／flag 条件，仅独立普通对话。
+- **版本与场景**：项目版本 `REF-5.62.306`，游戏内统一显示 `REF-306`；Red／Blue／`BATTLE_TEST_BUILD` 均使用同一个 `GameVersionText`，保留真正的战斗测试功能隔离，不再维护独立 TEST-NNN 显示号。本次文档清理**不改变任何游戏 ASM、地图、配色、版本字符串或存档**。
+- **工具／审计**：保留十座活动门房／32 门毯的统一配置及专项审计；Gold NPC 对象、地图本地对话、精灵映射、专用红色与原本蓝色、柜台实际 `+14` 子图块、32px 距离和故障注入作为长期防回归。旧 REF-304 的北侧说话站位与 REF-305 的 `$00` 左上采样均为错误历史结论，最新合同以 `$0E` 为准。
+- **本次仍待验收**：最新 REF-306 Red／Blue／battle-test MAP 容量证明未随补丁提供；ROM0 `>=64B`、Bank `$05`／`$1C`／`$43`／`$4E`／`$53` 剩余空间以及关都警员配色、其它门房隔柜台交互、存读档需用户本机复核。其余八座已开放门房的 Gold NPC（29 条原版对象事件）仍待按图独立恢复，公园捕虫比赛人物／条件事件不得偷开。
+- **模式 A 双提交**：第一笔仅游戏 ASM／资源／统一版本；第二笔仅 `tools/`、测试、配置合同和维护文档。单 ZIP 固定三份补丁（REF-306 已应用工作区→本清理定稿的文档及工具权限增量；定稿→仅功能状态的工具反向隔离；确认 HEAD→定稿的累计全量）＋两份中文提交日志。增量与累计全量互斥；先用隔离补丁提交功能，再 `git apply -R` 恢复第二笔。另外将两个只供 Python 调用的新 NPC 审计模块统一为 `100644`，避免工作区链的意外 `100755` 导致工具隔离恢复时再次产生模式警告。Git Commit／Push 由用户自行执行。
+
+## REF-5.62.306｜柜台对话取样子图块修正（修复 REF-305 实机无响应）
+
+- **用户验收**：REF-305 警员红色正确，但从 `(5,4)` 面朝 UP 按 A 仍无法对话；因此 REF-305 的静态「可交互」结论已被设备反馈否定。
+- **根因**：`GetTileAndCoordsInFrontOfPlayer` 面朝 UP 执行 `aCoord 8,7`，采样的是前方 `(5,3)` 这个 16×16 格的**左下** 8×8 像素 tile；REF-305 工具错取**左上** tile `$00`。门房 runtime block #3 的该格四象限从左上至右下分别为 `$00,$00,$0E,$0F`，真正送到 `wTileInFrontOfPlayer` 的是 `$0E`。
+- **修复**：`data/tileset_headers.asm` 的 `JohtoGate` 三个柜台对话 tile 中仅将第一槽从 `$00` 改为 `$0E`；其余两槽 `$FF` 不变。`Gate_Coll`、墙壁通行、NPC 位置及精灵/红色调色板、Warp 与地图 TextPointers 完全不改。没有增加 ROM0 指令、MAP/存档结构改动。
+- **强制门禁**：修正 `_counter_front_tile_id` 为目标四象限的左下 `+14`（旧错为左上 `+10`）；对 ID23/62 均检查 `$0E`，故障注入把 tileset 改回 `$00`、修改真正 `+14` 图块都必须失败；仅修改旧误采样的左上 `+10` 图块时审计仍应通过。
+- **版本**：正式 Red／Blue 和 `BATTLE_TEST_BUILD` 游戏内统一为 `REF-306`，正式项目版本 `REF-5.62.306`。独立 TEST 版本号不恢复。
+- **验收边界**：源码级逻辑和数据取样测试与实际 ROM 有区别；本轮没有 RGBDS 构建／链接、最新 MAP 或设备确认。用户本机需重建并在圆朱东西门房 `(5,4)` 面朝 UP 按 A，检查警员面向玩家并显示各自对话，以及走动、骑行、柜台阻挡、往返 Warp、Kanto 旧对话和 Red／Blue 空间。
+
+## REF-5.62.305｜圆朱东西门房警员隔柜台交互与 Gold 红色调色板修复（开发候选）
+
+### REF-305 验收清单
+
+- [x] REF-306 已按朝上实际取样登记柜台**左下 tile `$0E`**；REF-305 使用 `$00` 为历史错误，柜台碰撞仍保持阻挡。
+- [x] 将玩家正确交互站位改为南侧 `(5,4)` 面朝 UP；柜台 `(5,3)`；警员 `(5,2)` 面朝 DOWN。
+- [x] 新增 `SPRITE_JOHTO_OFFICER` `$64`，复用 GuardSprite、使用 Gold `PAL_NPC_RED` 对应的 `PAL_OW_RED`；全局 `SPRITE_GUARD` 蓝色保持不变。
+- [x] 修正 `$64` `SPRITE_JOHTO_OFFICER` 的 12-tile 加载分类，并补齐柜台、颜色和 sprite 加载故障注入。
+- [ ] 用户本机以 REF-306 重新核对 Red／Blue／battle-test 三种构建均显示同一 `REF-306`，并确认战斗测试功能隔离正确。
+- [ ] 生成最新 MAP，核对 ROM0 至少保留 64B 及相关 ROMX Bank 余量。
+- [x] 用户 REF-306 实机视频确认 ID23／62 均可在柜台南侧按 A 触发各自不同对话，警员为红色；其他姿态／多 ROM 组合仍另验。
+- [ ] 验证关都原有 `SPRITE_GUARD` 仍为蓝色，其他门房、门毯、Warp 和骑车行为不变。
+
+- 基线：接在 REF-303 + TODO + REF-304 NPC 试点工作区之后；保留两座门房独立 Runtime Header、RuntimeObjects、TextPointers 和独立对话。
+- **隔柜台对话修复**：JohtoGate tileset 的三个原生 `wTilesetTalkingOverTiles` 槽位中，第一个登记 `$00`，其余保持 `$FF`。从玩家南侧站位 `(5,4)` 面朝 UP 时，`GetTileAndCoordsInFrontOfPlayer` 读取柜台格 `(5,3)` 的实际 8×8 tile ID `$00`；原版 `IsSpriteOrSignInFrontOfPlayer` 因此使用 `$20`（32px）范围，找到 `(5,2)`、面朝 DOWN 的警员，并由原版逻辑自动转向玩家。柜台仍然阻挡移动，不开放穿越。
+- **Gold 原版颜色修复**：Gold 两张原图对象均声明 `PAL_NPC_RED`。RPP `PAL_OW_RED` 的日间 RGB `(27,31,27)/(31,19,10)/(31,7,1)/(0,0,0)` 与 Gold `PAL_NPC_RED` 日间值一致。新增 `$64` `SPRITE_JOHTO_OFFICER`，复用像素一致的 `GuardSprite`，单独指定 `PAL_OW_RED`；全局 `SPRITE_GUARD` 仍保持 `PAL_OW_BLUE`，不改变关都警员。
+- 因 `$64` 高于 `SPRITE_BALL` 的静态四图块 ID 范围，在 `LoadMapSpriteTilePatterns` 增加专门例外，使 Johto Officer 按普通 12-tile 双帧人物加载，避免误分配 4-tile 对象 VRAM。
+- 更新 REF-305 NPC 专项审计：实际解析 5×4 runtime block map、19×16-byte blockset，计算柜台格 tile ID；检查南侧站位、32px 原生对话分支、Gold PAL_NPC_RED、专用 sprite alias 和全局 Guard 蓝色不变。新增错误柜台 ID、错误站位、蓝色调色板、错误 sprite sheet、四图块误分类等故障注入。
+- 正式版本 `REF-5.62.305`；游戏内正式 Red／Blue 与 `BATTLE_TEST_BUILD` 统一显示 `REF-305`。不恢复独立 TEST 版本号，不删除 `BATTLE_TEST_BUILD` 功能隔离。
+- **仍待本机验收**：本轮未运行 RGBDS 编译／链接、未生成 REF-305 MAP、未做手机实测。用户须重新构建 Red／Blue／battle-test，检查 ROM0 至少 64B 余量及相关 ROMX bank，并实测 ID23／62 从 `(5,4)` 面朝 UP 按 A 可隔柜台对话、警员转向玩家且呈 Gold 红色。源级审计不代替实机验收。
+
+## REF-5.62.304｜圆朱东西门房独立警员对象试点（开发候选）
+
+- 基线：以用户提供的干净 HEAD `27a2086219b56238e26844676f3a5328e5b567ee` 为起点，先应用用户的 REF-303 工作区补丁，再应用本轮 NPC 试点增量；不重复叠加 FIX-301/302 或旧 TODO 包。
+- ID23 `Route38EcruteakGate` 与 ID62 `Route42EcruteakGate` 各自恢复 Gold 原版一个警员对象：坐标 `(5,2)`、站立向下、RBY 精灵映射 `SPRITE_GUARD`、对象文本 ID 1。
+- 两张地图保留独立 Runtime Header、RuntimeObjects、TextPointers 和对话内容。西门房询问 NEW BARK TOWN／PROF.ELM；东门房提醒 MOUNT MORTAR 像迷宫。两者都使用原版对象加载、精灵绘制、面对玩家与 A 键文字分派，不共用对话指针。
+- Gold 原版两个门房均只有一个 `object_event`，MapScripts 的 scene scripts/callbacks 为空，Officer 脚本只是 `jumptextfaceplayer`；本试点不引入剧情旗标或复杂事件。
+- 项目正式版本为 `REF-5.62.304`；游戏内正式版和 `BATTLE_TEST_BUILD` 构建统一显示短标签 `REF-304`；只取消独立 `TEST-NNN` 版本文本，不删除 `BATTLE_TEST_BUILD` 宏及其测试功能隔离。
+- 新增 `tools/johto_gatehouse_npc_pilot_304.py` 与专项单元测试，核对 Gold 对象来源、地图本地对象／文字指针、ROMX 同 Bank、Guard sprite sheet、对象加载路径及跨门房串台负向故障注入。
+- [x] 正式 Red／Blue 与 `BATTLE_TEST_BUILD` 统一使用 `REF-304` 游戏内短标签（项目正式版本为 `REF-5.62.304`）；移除 `TEST-NNN` 显示分支，但保留测试构建宏与测试功能隔离。
+- [x] ID23／62 各接入一个 Gold 来源警员对象，独立 TextPointers／对话，使用原版对象加载、精灵显示和 A 键对话路径。
+- [x] 新增 NPC 专项审计与九项负向故障注入，检查对象缺失、精灵／坐标错误、跨门房文本指针、错误对话和测试版本号回流。
+- [ ] 用户本机重编 Red／Blue／battle-test，确认三个 ROM 的菜单／Options 版本字符串都显示 `REF-304`（对应项目正式版本 `REF-5.62.304`），且 BATTLE_TEST_BUILD 专用功能仍只在测试构建生效。
+- [ ] 实机测试 ID23／62：警员显示与朝向、A 键对话、文本完整分页、从门房离开再进入、东西门房来回切换；确认 NPC 不消失、不重叠、不串台。
+- [ ] 通过试点后按 Gold 原版逐座恢复其余 6 座普通门房人物；两座公园门房最后单独恢复比赛日／非比赛日 Officer、捕虫大会参赛者与事件回调。
+- [ ] 仍属开发候选：静态审计不代替 RGBDS 链接或设备实测；最新 MAP 的 ROM0 至少保留 64B，重点核对 Bank `$51`／`$53` 新对象与文字数据的实际空间。没有本机 MAP 时不得声称空间验收通过。
+
+## TODO｜统一唯一游戏版本标识，取消独立 TEST-NNN 版本号
+
+- [x] **统一版本规则已在源码实现**：正式 Red／Blue 与 `BATTLE_TEST_BUILD` 使用同一 `GameVersionText`（当前 `REF-306`），不再显示独立 TEST-NNN；不同构建是否在用户本机一致仍须实测。
+- [x] `data/game_version.asm` 已移除独立 TEST-NNN 文本选择，普通／测试构建读取相同 `GameVersionText`；`BATTLE_TEST_BUILD` 测试功能编译开关保持不变。
+- [ ] 保留 `BATTLE_TEST_BUILD` 真正承担的测试隔离功能，包括测试套件、WRAM 测试别名、测试流程、测试专用 NPC／入口等；本任务只取消第二套版本号，不得把测试功能删掉，也不得把测试功能编入正式 ROM。
+- [ ] 全量检索并清理当前仍生效的 `TEST-NNN` 版本合同：`tools/` 审计器与测试、版本门禁、`FEATURES.md`、`README.md`、`PROJECT_DELIVERY_RULES.md`、`TODO.md`、当前交接文档及构建摘要。所有当前版本检查统一改为校验同一个 `GameVersionText`，不能再要求同时存在 `TEST-NNN`。
+- [ ] 正式版与战斗测试版如需在文件层面区分，只使用 ROM 文件名后缀或独立 build manifest（例如 `release`／`battle-test`）；ROM 内菜单、Options 和版本元数据中的游戏版本字符串必须完全相同。
+- [ ] 历史 Commit、旧交接文档和旧 MAP 报告中的 `TEST-NNN` 保留为历史事实，不回写伪造旧记录；但历史测试号不得再参与当前版本选择、构建判定或交付门禁。自动生成的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 不手工修改，应按项目流程重新导出上下文。
+- [ ] 增加正反向测试：普通 Red、Blue 与 `BATTLE_TEST_BUILD` 构建的 `GameVersionText` 必须逐字节相同；测试专用套件只存在于测试构建；正式构建不包含测试套件；所有当前工具均不再依赖独立 `TEST-NNN`。
+- [ ] 用户本机重新构建 Red／Blue／battle-test 三种产物，核对游戏内显示、ROM／MAP 元数据、文件名／manifest 与构建类型一致，并按项目要求检查 ROM0 至少保留 64B 及相关 ROMX Bank 余量。
+
+## TODO｜恢复各门房独立的 Gold NPC 精灵、对象与事件
+
+- [x] ID23／ID62 两座活动门房已分别加入 Gold 来源 Officer（各一人）并经 REF-306 视频确认独立对话；**另外八座门房仍待 NPC 恢复**，不能因为共用碰撞引擎就认为这些人物已接入。
+- [ ] Gold 原版 10 座门房共有 **31 条 `object_event` 定义**，按稳定 Map ID 分别恢复，不可合并成一份通用 NPC 列表：ID6 `Route31VioletGate`（2：Officer、Cooltrainer F）；ID102 `Route32RuinsOfAlphGate`（3：Officer、Pokefan M、Youngster）；ID19 `Route36RuinsOfAlphGate`（2：Officer、Gramps）；ID11 `IlexForestAzaleaGate`（2：Officer、Granny）；ID13 `Route34IlexForestGate`（3：Teacher、Butterfree、Lass）；ID18 `Route35GoldenrodGate`（2：Officer、Pokefan F）；ID104 `Route35NationalParkGate`（3：比赛日／非比赛日 Officer 条件对象、Youngster）；ID105 `Route36NationalParkGate`（12：比赛日／非比赛日 Officer 条件对象、10 名捕虫大会参赛者）；ID23 `Route38EcruteakGate`（1：Officer）；ID62 `Route42EcruteakGate`（1：Officer）。
+- [x] ID23 与 ID62 已保留各自独立的 Gold 对话（新芽镇／PROF.ELM vs. MOUNT MORTAR），REF-306 实机视频已分别触发；共享碰撞引擎不共享人物文本。
+- [ ] **共享引擎与人物事件严格分层**：`JohtoGateHorizontalCarpetInbound303` 只负责 ID23／ID62 的下一步门毯碰撞判定；它按 `wCurLocalMapID` 选择门毯坐标，不负责加载人物、脚本或事件。每座地图继续使用自己的 Runtime Header、TextPointers、MapScript 和 RuntimeObjects；NPC 精灵、坐标、移动模式、调色板、脚本和事件标志必须留在对应 Map ID 的独立数据中。
+- [ ] 恢复 NPC 时逐条对照 Gold `object_event`：精灵类型、坐标、移动模式、移动范围、调色板、脚本标签、事件条件，以及场景／回调／背景事件均须匹配；所有 Map Header／Object／Script／Text 指针必须符合所在 Bank 与项目既有 far-call 规则。
+- [ ] 公园门房必须单独处理：ID104 有比赛日与非比赛日 Officer 切换；ID105 有捕虫大会场景、回调、事件旗标、Officer 切换和 10 名参赛者的动态显示。先实现并审计所需事件状态，再启用对应对象；不得只摆人物精灵而留下失效脚本或错误比赛流程。
+- [ ] 新增门房 NPC 审计：逐地图核对 Gold 预期对象清单与 RPP 实际对象清单，检查对象数量、sprite、坐标、movement、palette、script／event flag、重复对象和跨地图串用；加入缺失对象、错 Map ID、错脚本及公园条件对象故障注入。逐座实机交互，并测试地图切换、存档／读档后的对象状态。
+- [ ] Gold 10 座门房原版共 31 条对象事件：ID23／62 已恢复 2 条；剩余 8 座门房的 29 条对象事件及公园条件剧情继续明确标记为“尚未接入”，不得宣称全部完成。
+
+
+## REF-5.62.303｜门房共享入毯引擎与配置表（正式 REF-5.62.303／测试 TEST-234；开发候选）
+
+- 以已提交、干净的 `27a2086219b56238e26844676f3a5328e5b567ee` 为唯一基线；本轮不重复叠加 FIX-301/302、旧工作区补丁或 CLEAN-302 的清理包。
+- ID23 圆朱西门房与 ID62 圆朱东门房使用一份 Bank `$53` 的 `JohtoGateHorizontalCarpetInbound303` 和两条坐标配置；西门房 Bank `$4E` 只通过已有 far-call 机制调用。保留两侧向外 Warp、边界、地面/墙掩码、单车规则与已验证的东/西通行。
+- 其它 8 座活动门房仍使用各自已验收的 Gate_Coll、Gold 角色网格或公园东门房成熟阻挡掩码，不强行统一不同碰撞后端。公园两门房仍遵循 Gold `INDOOR` 禁骑车，普通 Gold `GATE` 维持原骑车许可。
+- 使用统一源级 ASM 解释器覆盖两座门房各172条相邻步进，需验证配置漂移、调用遗漏、方向分支错误故障注入；保留 10 座、32个登记地毯以及音乐与骑车审计。源级结果不代替 RGBDS 重链接或设备验收。
+- **版本识别修正**：基于上一版正式 `FIX-5.62.302`／测试 `TEST-233`，本轮显示为正式 `REF-5.62.303`／测试 `TEST-234`，避免用户用新旧 ROM 交叉验收时无法分辨；原测试构建的 `BATTLE_TEST_BUILD` 分支不改变，只更新版本文本。同步更新已有工具中的版本合同与测试。
+- 仍属开发候选：只准备从当前已应用 REF-303（旧显示版本）到本轮带版本号候选的增量补丁，以及从确认 HEAD 到本轮带版本号候选的累计全量补丁。两者互斥；不制作正式清理三件套／Git 日志，不执行用户 Git Commit/Push、ROM 编译或链接。
+
 ## CLEAN-5.62.302｜门房地毯入毯修复正式收口
 
 - [x] MAP-300、FIX-301、FIX-302 累计源码已进入清理状态；活动地图 35→38，新增 ID62–64 的圆朱东门房、Route42、Mahogany Town 室外，Route43／44、Mt. Mortar 洞口及 Mahogany 室内继续关闭。

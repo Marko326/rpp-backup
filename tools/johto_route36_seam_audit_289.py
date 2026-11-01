@@ -146,7 +146,7 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 'db 13, 48, 1, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 8, 18, 2, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 9, 18, 3, JOHTO_REGISTERED_WARP_SELECTOR')))
-        ck('in_rom_version_and_test_label', ('FIX-5.62.290@' in version or 'MAP-5.62.294@' in version or 'FIX-5.62.295@' in version or 'MAP-5.62.297@' in version or 'FIX-5.62.298@' in version or 'MAP-5.62.299@' in version or 'MAP-5.62.300@' in version or 'FIX-5.62.302@' in version) and 'TEST-233@' in version)
+        ck('in_rom_unified_version_label', 'REF-306@' in version and 'TEST-' not in version)
     except (KeyError,IndexError,OSError,ValueError) as e:errors.append('audit_source_exception: '+str(e))
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks':checks,'errors':errors}
 

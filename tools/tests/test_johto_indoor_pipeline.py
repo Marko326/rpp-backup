@@ -181,8 +181,8 @@ class IndoorGoldDependentTests(unittest.TestCase):
     def test_missing_east_gate_lane_allowlist_fails_closed(self):
         relative = 'data/johto_east_runtime_300.asm'
         source = (ROOT / relative).read_text(encoding='utf-8')
-        self.assertIn('call JohtoEastGateCarpetLaneStep300\n    ret c', source)
-        broken = source.replace('call JohtoEastGateCarpetLaneStep300\n    ret c\n', '', 1)
+        self.assertIn('call JohtoGateHorizontalCarpetInbound303\n    ret c', source)
+        broken = source.replace('call JohtoGateHorizontalCarpetInbound303\n    ret c\n', '', 1)
         report = audit_active_gatehouse_carpet_walkability(
             ROOT, self.gold, text_overrides={relative: broken})
         self.assertEqual(report['status'], 'FAIL')
@@ -191,12 +191,12 @@ class IndoorGoldDependentTests(unittest.TestCase):
     def test_wrong_east_gate_lane_direction_fails_closed(self):
         relative = 'data/johto_east_runtime_300.asm'
         source = (ROOT / relative).read_text(encoding='utf-8')
-        head, helper_tail = source.split('JohtoEastGateCarpetLaneStep300::', 1)
+        head, helper_tail = source.split('JohtoGateHorizontalCarpetInbound303::', 1)
         helper, tail = helper_tail.split('JohtoRoute42CutClearedAhead300:', 1)
         self.assertIn('cp PLAYER_DIR_DOWN', helper)
         helper = helper.replace('cp PLAYER_DIR_DOWN', 'cp PLAYER_DIR_LEFT', 1)
         report = audit_active_gatehouse_carpet_walkability(
-            ROOT, self.gold, text_overrides={relative: head + 'JohtoEastGateCarpetLaneStep300::' + helper + 'JohtoRoute42CutClearedAhead300:' + tail})
+            ROOT, self.gold, text_overrides={relative: head + 'JohtoGateHorizontalCarpetInbound303::' + helper + 'JohtoRoute42CutClearedAhead300:' + tail})
         self.assertEqual(report['status'], 'FAIL')
         self.assertTrue(any('ID62 Route42EcruteakGate' in error for error in report['errors']))
 
@@ -225,7 +225,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
         relative = 'engine/johto_south_geometry.asm'
         source = (ROOT / relative).read_text(encoding='utf-8')
         self.assertIn('JohtoWestCarpetSpatialStep::', source)
-        broken = source.replace('cp 4\n    jr z, .gateLane', 'cp 6\n    jr z, .gateLane', 1)
+        broken = source.replace('callab JohtoGateHorizontalCarpetInbound303', 'callab JohtoSouthSpatialRoleAhead', 1)
         report = audit_active_gatehouse_carpet_walkability(
             ROOT, self.gold, text_overrides={relative: broken})
         self.assertEqual(report['status'], 'FAIL')

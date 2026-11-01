@@ -65,9 +65,9 @@ def audit(root: Path, gold_root: Path | None = None, *,
         return {'status': 'FAIL', 'checks': checks, 'errors': [str(exc)],
                 'rom_built': False, 'phone_verified': False}
 
-    ck('release_and_active_count', ('FIX-5.62.298@' in version or 'MAP-5.62.299@' in version or 'MAP-5.62.300@' in version or 'FIX-5.62.302@' in version) and 'TEST-233@' in version and
+    ck('release_and_active_count', 'REF-306@' in version and 'TEST-' not in version and
        re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:32|35|38)\b', constants) is not None,
-       'west corridor remains valid in FIX-5.62.298 or later MAP-5.62.299/300 or FIX-5.62.302 / TEST-233')
+       'west corridor remains valid in REF-5.62.305 with one shared ROM version label')
     id_values = {name: int(value[1:], 16) if value.startswith('$') else int(value)
                  for name, value in re.findall(r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)\b', fixed + '\n' + constants)}
     slot_body = slots.split('JohtoStableIDToActiveSlot::', 1)[1].split('JohtoStableIDToActiveSlotEnd::', 1)[0]

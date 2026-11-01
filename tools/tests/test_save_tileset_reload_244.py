@@ -72,12 +72,14 @@ class TestSaveTilesetReload244(unittest.TestCase):
         self.assertTrue(guarded(code))
         self.assertFalse(guarded(bad))
 
-    def test_version_is_updated_without_moving_test_branch(self):
+    def test_version_is_shared_without_removing_test_build_switch(self):
         version = read("data/game_version.asm")
-        official = re.search(r'db "(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@"', version)
+        official = re.search(r'db "REF-(\d+)@"', version)
         self.assertIsNotNone(official)
         self.assertGreaterEqual(int(official.group(1)), 244)
-        self.assertIn('db "TEST-233@"', version)
+        self.assertIn('db "REF-306@"', version)
+        self.assertNotIn("TEST-", version)
+        self.assertIn("BATTLE_TEST_BUILD", read("main.asm"))
 
 
 if __name__ == "__main__":

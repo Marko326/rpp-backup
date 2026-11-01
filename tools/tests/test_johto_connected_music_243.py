@@ -77,9 +77,10 @@ class TestJohtoConnectedMusic243(unittest.TestCase):
         self.assertIn("johto_map_profile 1, 4, MUSIC_ROUTES1, 0     ; 4 Route31", self.profiles)
         self.assertIn("db MUSIC_GBP_GSC_ROUTE30         ; slot 3:", self.options)
         self.assertIn("db MUSIC_GBP_GSC_ROUTE30         ; slot 4:", self.options)
-        version = re.search(r'(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@', self.version)
+        version = re.search(r'REF-(\d+)@', self.version)
         self.assertIsNotNone(version)
         self.assertGreaterEqual(int(version.group(1)), 243)
+        self.assertNotIn("TEST-", self.version)
 
     def test_same_music_walking_and_bike_off_both_directions(self):
         for a,b in [(3,4),(4,3)]:

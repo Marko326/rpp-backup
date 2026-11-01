@@ -44,7 +44,7 @@ class WestCorridor297(unittest.TestCase):
             'olivine_spatial_surf')
 
     def test_release_version_cannot_drift(self):
-        self.mutate_text('data/game_version.asm', 'FIX-5.62.302@', 'MAP-5.62.297@',
+        self.mutate_text('data/game_version.asm', 'REF-306@', 'MAP-5.62.297@',
                          'release_and_active_count')
 
 

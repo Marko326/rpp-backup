@@ -56,19 +56,14 @@ class FlyVisit280(unittest.TestCase):
 
     def test_release_version_matches_project_headings(self):
         version=(ROOT/'data/game_version.asm').read_text(encoding='utf-8')
-        self.assertRegex(version, r'(?m)^\s*db "TEST-233@"$')
-        match=re.search(r'(?m)^\s*db "((?:FIX|MAP)-5\.62\.\d+)@"$',version)
+        self.assertRegex(version, r'(?m)^\s*db "REF-306@"$')
+        match=re.search(r'(?m)^\s*db "REF-(\d+)@"$',version)
         self.assertIsNotNone(match)
+        canonical=f"REF-5.62.{match.group(1)}"
         docs=('README.md','FEATURES.md','TODO.md','PROJECT_DELIVERY_RULES.md','RPP_DEVELOPMENT_PITFALLS.md')
         titles=[(ROOT/doc).read_text(encoding='utf-8').splitlines()[0] for doc in docs]
-        if match.group(1).startswith('MAP-'):
-            # Development candidates do not rewrite formal handoff/cleanup docs.
-            # They must, however, all remain pinned to the same accepted CLEAN baseline.
-            self.assertEqual(1, len(set(titles)), titles)
-            self.assertTrue(titles[0].startswith('## CLEAN-5.62.'), titles[0])
-        else:
-            for doc,title in zip(docs,titles):
-                self.assertIn(match.group(1), title, doc)
+        for doc,title in zip(docs,titles):
+            self.assertIn(canonical, title, doc)
 
 if __name__ == '__main__':
     unittest.main()

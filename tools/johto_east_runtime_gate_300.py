@@ -15,9 +15,11 @@ except ImportError:
     from tools.johto_gold_door_audit import GoldCollisionIndex
 
 try:
-    from johto_gatehouse_behavior_audit import _scan_horizontal_gate_moves, _constants
+    from johto_gatehouse_shared_runtime_303 import scan as scan_shared303, structural_check as check_shared303
+    from johto_gatehouse_behavior_audit import _constants
 except ImportError:
-    from tools.johto_gatehouse_behavior_audit import _scan_horizontal_gate_moves, _constants
+    from tools.johto_gatehouse_shared_runtime_303 import scan as scan_shared303, structural_check as check_shared303
+    from tools.johto_gatehouse_behavior_audit import _constants
 
 MAPS = (
     ("Route42EcruteakGate", "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID", 62, 5, 4, 0, "JohtoRoute42EcruteakGate"),
@@ -113,7 +115,7 @@ def audit(project: Path, gold_root: Path, reference_root: Path,
         roof=txt('engine/johto_south_roofs_269.asm'); pal=txt('color/loadpalettes.asm')
         home=txt('home/overworld.asm'); main=txt('main.asm')
 
-        ck('version_302_test233', 'db "FIX-5.62.302@"' in version and 'db "TEST-233@"' in version)
+        ck('version_ref304_unified', 'db "REF-306@"' in version and 'TEST-' not in version)
         ck('active_38', re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 38$',constants) is not None)
         ck('bank53_isolated', 'SECTION "Johto East Runtime 300", ROMX, BANK[$53]' in main and
            'INCLUDE "data/johto_east_runtime_300.asm"' in main)
@@ -234,24 +236,18 @@ def audit(project: Path, gold_root: Path, reference_root: Path,
 
         # Runtime movement, Surf, Cut and HOPs.
         ck('land_dispatch', all(x in land for x in ('JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID','JOHTO_ROUTE_42_LOCAL_ID','JOHTO_MAHOGANY_TOWN_LOCAL_ID','callab JohtoEastSpatialStep')))
-        # FIX-302: inspect actual helper instructions for *inbound* movement,
-        # including both plain-floor approaches, lateral entry and lane switch.
-        east_step = east.split('JohtoEastSpatialStep::',1)[1].split('JohtoEastGateCarpetLaneStep300::',1)[0]
-        lane_helper = _section(east,'JohtoEastGateCarpetLaneStep300::','JohtoRoute42CutClearedAhead300:')
+        # REF-303: both mature horizontal gates must execute the *same* profile
+        # lookup/target-coordinate routine, not copy-pasted per-map branches.
         gate_roles = raw('maps/johto_pilot/Route42EcruteakGate.roles.bin')
-        lane_call = ('call JohtoEastGateCarpetLaneStep300' in east_step and
-                     'ret c' in east_step and
-                     east_step.index('call JohtoEastGateCarpetLaneStep300') < east_step.index('call JohtoEastSpatialRoleAhead'))
-        try:
-            lane_count, lane_errors = _scan_horizontal_gate_moves(
-                lane_helper, stable_id=62, roles=gate_roles,
-                constants=_constants(root), western=False)
-        except (ValueError, IndexError, KeyError) as exc:
-            lane_count, lane_errors = 0, [str(exc)]
         lane_mask = len(gate_roles)==80 and all(gate_roles[y*10+x]==1 for x in (0,9) for y in (4,5))
+        try:
+            wiring_ok = check_shared303(txt('engine/johto_south_geometry.asm'), east, east, _constants(root))
+            lane_count, lane_errors = scan_shared303(east, _constants(root), 62, gate_roles)
+        except (ValueError, IndexError, KeyError) as exc:
+            wiring_ok, lane_count, lane_errors = False, 0, [str(exc)]
         ck('east_gate_full_inbound_carpet_movement_required',
-           lane_call and lane_mask and lane_count >= 150 and not lane_errors,
-           f'call-before-mask={lane_call}, blocked-carpet-mask={lane_mask}, checked={lane_count}, errors={lane_errors[:5]}')
+           wiring_ok and lane_mask and lane_count >= 150 and not lane_errors,
+           f'common-profile={wiring_ok}, blocked-carpet-mask={lane_mask}, checked={lane_count}, errors={lane_errors[:5]}')
         ck('surf_dispatch', all(x in surf for x in ('cp JOHTO_ROUTE_42_LOCAL_ID','jp z, .eastRoute42','callab JohtoEastGoldWaterProbe','callab JohtoEastUnsafeSurfEdge','callab JohtoEastGoldShoreProbe')))
         ck('surf_initiation','callab JohtoEastGoldWaterProbe\n    ret c' in surf)
         ck('cut_dispatch','db JOHTO_ROUTE_42_LOCAL_ID, 13, 24, $63' in surf and 'JohtoRoute42CutClearedAhead300' in east and 'cp $8d' in east.lower())
@@ -329,20 +325,11 @@ def fault_tests(root,gold,ref):
     bad_gate=base.replace('    cp 8\n    jr z, .yes\n    ret\n.gateBeforeLeft',
                           '    cp 7\n    jr z, .yes\n    ret\n.gateBeforeLeft',1)
     faults['east_gate_right_carpet_approach_required']=bad_gate!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_gate})['status']=='FAIL'
-    bad_lane=base.replace('    call JohtoEastGateCarpetLaneStep300\n    ret c\n', '', 1)
-    faults['east_gate_inbound_carpet_helper_required']=bad_lane!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_lane})['status']=='FAIL'
-    lane_start='JohtoEastGateCarpetLaneStep300::'
-    before_lane,lane_tail=base.split(lane_start,1)
-    lane_body,after_lane=lane_tail.split('JohtoRoute42CutClearedAhead300:',1)
-    bad_lane_direction=lane_body.replace('cp PLAYER_DIR_DOWN', 'cp PLAYER_DIR_LEFT', 1)
-    bad_lane_source=before_lane+lane_start+bad_lane_direction+'JohtoRoute42CutClearedAhead300:'+after_lane
-    faults['east_gate_vertical_entry_direction_required']=bad_lane_source!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_lane_source})['status']=='FAIL'
-    bad_upper_entry=lane_body.replace('    cp 3\n    jr z, .vertical', '    cp 2\n    jr z, .vertical', 1)
-    bad_upper_src=before_lane+lane_start+bad_upper_entry+'JohtoRoute42CutClearedAhead300:'+after_lane
-    faults['east_gate_upper_floor_entry_required']=bad_upper_src!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_upper_src})['status']=='FAIL'
-    bad_lower_entry=lane_body.replace('    cp 6\n    jr z, .vertical', '    cp 7\n    jr z, .vertical', 1)
-    bad_lower_src=before_lane+lane_start+bad_lower_entry+'JohtoRoute42CutClearedAhead300:'+after_lane
-    faults['east_gate_lower_floor_entry_required']=bad_lower_src!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_lower_src})['status']=='FAIL'
+    bad_lane=base.replace('    call JohtoGateHorizontalCarpetInbound303\n    ret c\n', '', 1)
+    faults['east_gate_inbound_handler_required']=bad_lane!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_lane})['status']=='FAIL'
+    bad_profile=base.replace('db JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID, 0, 9, 4, 5',
+                             'db JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID, 0, 8, 4, 5',1)
+    faults['east_gate_profile_exact']=bad_profile!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_profile})['status']=='FAIL'
     bad_preview=base.replace('db $71, $71, $71, $69, $01, $78, $05, $05, $6a, $71',
                              'db $70, $71, $71, $69, $01, $78, $05, $05, $6a, $71',1)
     faults['mahogany_preview_gold_byte_drift_rejected']=bad_preview!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_preview})['status']=='FAIL'

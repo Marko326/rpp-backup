@@ -46,7 +46,7 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None)->dict:
         colors=read('color/data/map_palette_sets.asm')
         music=read('tools/johto_gate_music_bike_contracts.json')
         doors=json.loads(read('tools/johto_pilot_door_contracts.json'))
-        ck('version_286_and_26_active', re.search(r'(?:FIX|MAP)-5\.62\.(?:288|289|290|294|295|297|298|299|300|302)@',version) is not None and 'TEST-233@' in version
+        ck('version_286_and_26_active', 'REF-306@' in version and 'TEST-' not in version
             and re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:26|28|32|35|38)\b', c) is not None and '== NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES' in headers)
         ck('frozen_stable_ids_and_dimensions',all(x in ids for x in (
             'JOHTO_NATIONAL_PARK_LOCAL_ID EQU 103',

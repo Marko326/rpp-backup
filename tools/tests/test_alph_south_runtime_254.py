@@ -53,10 +53,10 @@ class AlphSouthRuntime254(unittest.TestCase):
     def test_version_only_changed_on_runtime_activation(self):
         version=(ROOT/'data/game_version.asm').read_text()
         import re
-        match = re.search(r'db \"[A-Z0-9]{3,5}-5\.62\.(\d+)@\"', version)
-        self.assertIsNotNone(match, 'release label should use functional prefix')
+        match = re.search(r'db \"REF-(\d+)@\"', version)
+        self.assertIsNotNone(match, 'normal and battle-test builds share REF version label')
         self.assertGreaterEqual(int(match.group(1)), 254)
-        self.assertIn('TEST-233@',version)
+        self.assertNotIn('TEST-',version)
         main=(ROOT/'main.asm').read_text()
         self.assertIn('SECTION "Johto Ruins South Runtime", ROMX, BANK[$49]', main)
 

@@ -91,14 +91,12 @@ class AlphSouthFieldHotfix256(unittest.TestCase):
         self.assertIn('db SPRITE_FACING_RIGHT, $06,$30,D_RIGHT', route31)
         self.assertIn('db SPRITE_FACING_DOWN,  $06,$21,D_DOWN', route31)
 
-    def test_version_and_test_label(self):
+    def test_version_is_unified_without_test_label(self):
         src = (ROOT / 'data/game_version.asm').read_text()
-        # Version prefix follows the *current* release feature. Do not lock the
-        # old Route36 patch label and break every subsequent maintenance release.
-        versions = re.findall(r'(?m)^\s*db "([A-Z][A-Z0-9]{2,7})-5\.62\.(\d+)@"', src)
+        versions = re.findall(r'(?m)^\s*db "REF-(\d+)@"', src)
         self.assertEqual(len(versions), 1, versions)
-        self.assertGreaterEqual(int(versions[0][1]), 256)
-        self.assertIn('db "TEST-233@"', src)
+        self.assertGreaterEqual(int(versions[0]), 256)
+        self.assertNotIn("TEST-", src)
 
 
 if __name__ == '__main__':

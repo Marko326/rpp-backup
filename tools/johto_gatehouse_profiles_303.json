@@ -1,0 +1,86 @@
+{
+  "schema": "johto-active-gatehouse-profiles-v1",
+  "description": "Single audit-facing registry; original Gold map and runtime Warp objects remain authoritative; only the ID23/62 carpet geometry is used by shared ROMX handler.",
+  "active_gatehouses": [
+    {
+      "stable_id": 6,
+      "gold_map": "Route31VioletGate",
+      "layout": "horizontal_ew",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 11,
+      "gold_map": "IlexForestAzaleaGate",
+      "layout": "horizontal_ew",
+      "collision_strategy": "south_gold_role_grid",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 13,
+      "gold_map": "Route34IlexForestGate",
+      "layout": "vertical_ns",
+      "collision_strategy": "south_gold_role_grid",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 18,
+      "gold_map": "Route35GoldenrodGate",
+      "layout": "vertical_ns",
+      "collision_strategy": "south_gold_role_grid",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 19,
+      "gold_map": "Route36RuinsOfAlphGate",
+      "layout": "vertical_ns",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 23,
+      "gold_map": "Route38EcruteakGate",
+      "layout": "horizontal_ew",
+      "collision_strategy": "west_carpet_lane_helper",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 62,
+      "gold_map": "Route42EcruteakGate",
+      "layout": "horizontal_ew",
+      "collision_strategy": "east_carpet_lane_helper",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 102,
+      "gold_map": "Route32RuinsOfAlphGate",
+      "layout": "horizontal_ew",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 104,
+      "gold_map": "Route35NationalParkGate",
+      "layout": "park_south_ns",
+      "collision_strategy": "south_gold_role_grid",
+      "gold_environment": "INDOOR",
+      "bike_allowed": false
+    },
+    {
+      "stable_id": 105,
+      "gold_map": "Route36NationalParkGate",
+      "layout": "park_east_ew",
+      "collision_strategy": "park_east_mature_helper",
+      "gold_environment": "INDOOR",
+      "bike_allowed": false
+    }
+  ]
+}

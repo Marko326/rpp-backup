@@ -100,8 +100,8 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         main = txt("main.asm")
 
         ck("version_299_and_test_232",
-           ('db "MAP-5.62.299@"' in version or 'db "MAP-5.62.300@"' in version or 'db "FIX-5.62.302@"' in version) and 'db "TEST-233@"' in version,
-           "MAP-5.62.299/300 or FIX-5.62.302 with TEST-233")
+           'db "REF-306@"' in version and 'TEST-' not in version,
+           "REF-5.62.305; normal and battle-test builds share the same in-ROM version")
         ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:35|38)$", constants) is not None)
         for name, sym, dim_sym, ident, w, h, water_count, mature in MAPS:
             m = re.search(rf"(?m)^DEF {re.escape(sym)} EQU (\$[0-9A-Fa-f]+|\d+)(?:\s*;.*)?$", fixed + "\n" + constants)

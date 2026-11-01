@@ -56,11 +56,12 @@ class JohtoSaveLocationTests(unittest.TestCase):
         self.assertIn("GetMapNameForSaveScreen:", town)
         self.assertIn("call LoadTownMapEntry", town.split("GetMapNameForSaveScreen:", 1)[1])
         version = read("data/game_version.asm")
-        # Location regression persists across future official feature prefixes.
-        match = re.search(r'db "(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@"', version)
+        # All build flavors use one compact ROM label; canonical release ID stays in project docs.
+        match = re.search(r'db "REF-(\d+)@"', version)
         self.assertIsNotNone(match)
         self.assertGreaterEqual(int(match.group(1)), 240)
-        self.assertIn('db "TEST-233@"', version)
+        self.assertIn('db "REF-306@"', version)
+        self.assertNotIn("TEST-", version)
 
 
 if __name__ == "__main__":
