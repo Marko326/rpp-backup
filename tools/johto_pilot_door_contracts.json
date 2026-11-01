@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 75,
+    "registered_warp_route_rows": 83,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -1658,6 +1658,201 @@
             "target_warp_ordinal": 1,
             "target_xy": [
               0,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          }
+        ],
+        "runtime_verified": false,
+        "phone_accepted": false
+      },
+      {
+        "stable_id": 62,
+        "gold_map": "Route42EcruteakGate",
+        "runtime_tileset": "JOHTO_GATE",
+        "runtime_object_file": "data/johto_east_runtime_300.asm",
+        "runtime_object_label": "JohtoRoute42EcruteakGateRuntimeObjects",
+        "warp_contracts": [
+          {
+            "id": "ecruteak_to_route42_gate_0",
+            "source_stable_id": 22,
+            "source_gold_map": "EcruteakCity",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              35,
+              26
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 62,
+            "target_gold_map": "Route42EcruteakGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              0,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "ecruteak_to_route42_gate_1",
+            "source_stable_id": 22,
+            "source_gold_map": "EcruteakCity",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              35,
+              27
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 62,
+            "target_gold_map": "Route42EcruteakGate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              0,
+              5
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route42_gate_to_ecruteak_0",
+            "source_stable_id": 62,
+            "source_gold_map": "Route42EcruteakGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              0,
+              4
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 22,
+            "target_gold_map": "EcruteakCity",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              35,
+              26
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route42_gate_to_ecruteak_1",
+            "source_stable_id": 62,
+            "source_gold_map": "Route42EcruteakGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              0,
+              5
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 22,
+            "target_gold_map": "EcruteakCity",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              35,
+              27
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route42_gate_to_route42_0",
+            "source_stable_id": 62,
+            "source_gold_map": "Route42EcruteakGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              9,
+              4
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 63,
+            "target_gold_map": "Route42",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              0,
+              8
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route42_gate_to_route42_1",
+            "source_stable_id": 62,
+            "source_gold_map": "Route42EcruteakGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              9,
+              5
+            ],
+            "source_gold_collision_role": "WARP_CARPET_RIGHT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "RIGHT",
+            "target_stable_id": 63,
+            "target_gold_map": "Route42",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              0,
+              9
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route42_to_gate_0",
+            "source_stable_id": 63,
+            "source_gold_map": "Route42",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              0,
+              8
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 62,
+            "target_gold_map": "Route42EcruteakGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              9,
+              4
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "route42_to_gate_1",
+            "source_stable_id": 63,
+            "source_gold_map": "Route42",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              0,
+              9
+            ],
+            "source_gold_collision_role": "WARP_CARPET_LEFT",
+            "trigger": "COLLISION_ONLY",
+            "direction": "LEFT",
+            "target_stable_id": 62,
+            "target_gold_map": "Route42EcruteakGate",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              9,
               5
             ],
             "arrival_auto_step": "NONE"

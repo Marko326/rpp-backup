@@ -52,7 +52,7 @@ class MatureReuse275(unittest.TestCase):
                     'callab JohtoSouthGoldWaterProbe','Surf can enter')
     def test_border_hook_must_be_after_map_buffer_load(self):
         self.mutate('home/overworld.asm',
-                    'callab PatchJohtoSouthBordersAfterBlockLoad',
+                    'callab PatchJohtoBordersAfterBlockLoad300',
                     'callab JohtoSouthRoofOnConnection','Azalea outdoor west')
     def test_mature_palette_cannot_be_replaced_with_new_guess(self):
         self.mutate('color/tilesets/johto_ilex_forest.asm',

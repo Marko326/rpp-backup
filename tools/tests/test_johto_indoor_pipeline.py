@@ -16,7 +16,10 @@ TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 
-from johto_gatehouse_behavior_audit import audit as audit_gatehouses
+from johto_gatehouse_behavior_audit import (
+    audit as audit_gatehouses,
+    audit_active_gatehouse_carpet_walkability,
+)
 from johto_indoor_collision_adapter import check as check_collision
 from johto_indoor_pipeline import run as run_indoor_pipeline
 from johto_indoor_registration_generator import generate as generate_registration
@@ -73,8 +76,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 35', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 35',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 38', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 38',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -109,7 +112,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
     def test_warp_arrival_contract_passes_against_mus(self):
         report = audit_arrival(ROOT, self.gold)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(len(report['checks']), 20)  # .283 added Route35 Goldenrod gate
+        self.assertEqual(len(report['checks']), 21)  # MAP-300 adds the Ecruteak east gate Warp contract
         self.assertFalse(report['runtime_verified'])
         self.assertFalse(report['phone_accepted'])
         self.assertEqual(report['gold_roles']['GuideGentsHouse(2,7)'], 'WARP_CARPET_DOWN')
@@ -162,8 +165,93 @@ class IndoorGoldDependentTests(unittest.TestCase):
         self.assertEqual(report['gold_gate_inventory']['collision_roles'], {
             'WARP_CARPET_DOWN': 30, 'DOOR': 26,
             'WARP_CARPET_LEFT': 22, 'WARP_CARPET_RIGHT': 22})
-        self.assertEqual(report['current_active_gate_ids'], [6, 11, 13, 18, 19, 23, 102, 104, 105])
+        self.assertEqual(report['current_active_gate_ids'], [6, 11, 13, 18, 19, 23, 62, 102, 104, 105])
+        self.assertEqual(report['carpet_movement_audit']['status'], 'PASS_STATIC_ONLY')
+        self.assertEqual(report['carpet_movement_audit']['gatehouses_checked'], 10)
+        self.assertEqual(report['carpet_movement_audit']['carpets_checked'], 32)
         self.assertFalse(report['phone_accepted'])
+
+    def test_every_active_gatehouse_has_a_real_carpet_walkability_path(self):
+        report = audit_active_gatehouse_carpet_walkability(ROOT, self.gold)
+        self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
+        self.assertEqual(report['gatehouses_checked'], 10)
+        self.assertEqual(report['carpets_checked'], 32)
+        self.assertTrue(all(row['status'] == 'PASS' for row in report['results']))
+
+    def test_missing_east_gate_lane_allowlist_fails_closed(self):
+        relative = 'data/johto_east_runtime_300.asm'
+        source = (ROOT / relative).read_text(encoding='utf-8')
+        self.assertIn('call JohtoEastGateCarpetLaneStep300\n    ret c', source)
+        broken = source.replace('call JohtoEastGateCarpetLaneStep300\n    ret c\n', '', 1)
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, text_overrides={relative: broken})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID62 Route42EcruteakGate' in error for error in report['errors']))
+
+    def test_wrong_east_gate_lane_direction_fails_closed(self):
+        relative = 'data/johto_east_runtime_300.asm'
+        source = (ROOT / relative).read_text(encoding='utf-8')
+        head, helper_tail = source.split('JohtoEastGateCarpetLaneStep300::', 1)
+        helper, tail = helper_tail.split('JohtoRoute42CutClearedAhead300:', 1)
+        self.assertIn('cp PLAYER_DIR_DOWN', helper)
+        helper = helper.replace('cp PLAYER_DIR_DOWN', 'cp PLAYER_DIR_LEFT', 1)
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, text_overrides={relative: head + 'JohtoEastGateCarpetLaneStep300::' + helper + 'JohtoRoute42CutClearedAhead300:' + tail})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID62 Route42EcruteakGate' in error for error in report['errors']))
+
+    def test_legacy_gate_collision_probe_drift_fails_closed(self):
+        relative = 'gfx/tilesets/gate.tilecoll'
+        source = (ROOT / relative).read_bytes()
+        self.assertIn(0x14, source[:-1])
+        broken = bytes(value for value in source if value != 0x14)
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, byte_overrides={relative: broken})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID6 Route31VioletGate' in error or 'ID102 Route32RuinsOfAlphGate' in error
+                            for error in report['errors']))
+
+    def test_south_gate_carpet_marked_blocked_fails_closed(self):
+        relative = 'maps/johto_pilot/IlexForestAzaleaGate.roles.bin'
+        source = bytearray((ROOT / relative).read_bytes())
+        self.assertEqual(source[4 * 10 + 0], 0)
+        source[4 * 10 + 0] = 1
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, byte_overrides={relative: bytes(source)})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID11 IlexForestAzaleaGate' in error for error in report['errors']))
+
+    def test_west_gate_carpet_helper_drift_fails_closed(self):
+        relative = 'engine/johto_south_geometry.asm'
+        source = (ROOT / relative).read_text(encoding='utf-8')
+        self.assertIn('JohtoWestCarpetSpatialStep::', source)
+        broken = source.replace('cp 4\n    jr z, .gateLane', 'cp 6\n    jr z, .gateLane', 1)
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, text_overrides={relative: broken})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID23 Route38EcruteakGate' in error for error in report['errors']))
+
+    def test_park_east_mature_carpet_helper_removed_fails_closed(self):
+        relative = 'engine/johto_south_geometry.asm'
+        source = (ROOT / relative).read_text(encoding='utf-8')
+        self.assertIn('call JohtoParkEastGateMatureStep', source)
+        broken = source.replace('call JohtoParkEastGateMatureStep',
+                                'call JohtoSouthSpatialRoleAhead', 1)
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, text_overrides={relative: broken})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID105 Route36NationalParkGate' in error for error in report['errors']))
+
+    def test_park_east_gateway_spatial_dispatch_removed_fails_closed(self):
+        relative = 'engine/johto_land_collision_gateway_272.asm'
+        source = (ROOT / relative).read_text(encoding='utf-8')
+        old = 'cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID\n    jr z, .activeSouthMap'
+        self.assertIn(old, source)
+        broken = source.replace(old, 'cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID\n    jr nz, .activeSouthMap', 1)
+        report = audit_active_gatehouse_carpet_walkability(
+            ROOT, self.gold, text_overrides={relative: broken})
+        self.assertEqual(report['status'], 'FAIL')
+        self.assertTrue(any('ID105 Route36NationalParkGate' in error for error in report['errors']))
 
     def test_activating_gate_id_without_contract_fails(self):
         with tempfile.TemporaryDirectory() as tmp:

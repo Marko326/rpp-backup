@@ -39,7 +39,7 @@ class GoldGateMusicBike259(unittest.TestCase):
         runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n    jr z, .recordGateSource','    cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n    jr z, .notGateMusicEntry',1)
         self.assert_failure('capture_every_gate_source',**{'engine/johto_pilot_runtime.asm':runtime})
     def test_north_gate_wrong_rby_source_fails(self):
-        runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE_36_LOCAL_ID\n    jr z, .sourceValid','    cp JOHTO_ROUTE_29_LOCAL_ID\n    jr z, .sourceValid',1)
+        runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE_36_LOCAL_ID\n    jp z, .sourceValid','    cp JOHTO_ROUTE_29_LOCAL_ID\n    jp z, .sourceValid',1)
         self.assert_failure('rby_gate_source_profile',**{'engine/johto_pilot_runtime.asm':runtime})
     def test_north_gate_forced_gsc_song_fails(self):
         options=self.files['engine/menu/options_menu.asm'].replace('    cp JOHTO_ROUTE_36_LOCAL_ID\n    jp z, .activeSlot','    cp JOHTO_ROUTE_29_LOCAL_ID\n    jr z, .activeSlot',1)

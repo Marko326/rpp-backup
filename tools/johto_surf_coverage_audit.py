@@ -165,6 +165,20 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
         gold_water={(c['y'],c['x']) for c in cells.values() if c['role']=='WATER'}
         if role_water == gold_water:
             registered.add(name)
+    # MAP-300: Route42 uses the east ROMX spatial role contract; require the
+    # live selector, role grid and both Gold water/shore probes before marking it.
+    east_path=root/'data/johto_east_runtime_300.asm'
+    east_runtime=east_path.read_text() if east_path.is_file() else ''
+    route42_roles=root/'maps/johto_pilot/Route42.roles.bin'
+    if (any(r['map']=='Route42' for r in active)
+            and 'JohtoRoute42Roles:: INCBIN "maps/johto_pilot/Route42.roles.bin"' in east_runtime
+            and 'JohtoEastGoldWaterProbe::' in east_runtime
+            and 'JohtoEastGoldShoreProbe::' in east_runtime
+            and 'cp JOHTO_ROUTE_42_LOCAL_ID' in east_runtime
+            and re.search(r'cp JOHTO_ROUTE_42_LOCAL_ID\s*\n\s*jp z, \.eastRoute42', surf_runtime)
+            and route42_roles.is_file()
+            and route42_roles.read_bytes().count(2)==120):
+        registered.add('Route42')
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

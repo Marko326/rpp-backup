@@ -33,6 +33,8 @@ APPROVED = {
     ('OlivineCity','WEST','Route40'),('Route40','EAST','OlivineCity'),
     ('Route40','SOUTH','Route41'),('Route41','NORTH','Route40'),
     ('Route41','WEST','CianwoodCity'),('CianwoodCity','EAST','Route41'),
+    ('EcruteakCity','EAST','Route42'),('Route42','WEST','EcruteakCity'),
+    ('Route42','EAST','MahoganyTown'),('MahoganyTown','WEST','Route42'),
 }
 # Distinct Gold offsets mean a blanket 'source width + 3' would be wrong.
 # The narrow-to-wider cases each require an explicitly inspected runtime width.
@@ -107,6 +109,11 @@ SIDE_SEAM_CONTRACTS = {
         'JohtoRoute38RuntimeHeader::','JohtoRoute38HeaderEnd::',
         'db JOHTO_ROUTE_38_HEIGHT\n    db JOHTO_ROUTE_39_WIDTH',
         'dw JohtoRoute38WestRoute39Mirror + JOHTO_ROUTE_39_WIDTH - 3'),
+    ('Route42','WEST','EcruteakCity'): (
+        'data/johto_east_runtime_300.asm',
+        'JohtoRoute42RuntimeHeader::','JohtoRoute42HeaderEnd::',
+        'db JOHTO_ROUTE_42_HEIGHT\n    db JOHTO_ECRUTEAK_WIDTH',
+        'dw JohtoRoute42WestEcruteakMirror + 9 * JOHTO_ECRUTEAK_WIDTH + JOHTO_ECRUTEAK_WIDTH - 3'),
 }
 DIRECTIONS = {'NORTH':'SOUTH','SOUTH':'NORTH','WEST':'EAST','EAST':'WEST'}
 

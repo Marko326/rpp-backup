@@ -113,10 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 9 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 75 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 10 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 83 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 9 gates and all activated corridor arcs')
+           'MUS contract records 3 house arcs, 10 gates and 83 activated Warp arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -303,6 +303,40 @@ def audit(project: Path, gold: Path) -> dict:
                 str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', west_ids[dst]))
     _check(checks, errors, 'route38_gate_registered_warps', west_verified,
            'Ecruteak west gate requires 8 registered collision-only Warp arcs')
+    # MAP-300: exact Ecruteak east gate / Route42 carpets and reciprocal rows.
+    east_ids = {22: 'JOHTO_ECRUTEAK_CITY_LOCAL_ID',
+                62: 'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID',
+                63: 'JOHTO_ROUTE_42_LOCAL_ID'}
+    east_gates = [g for g in contract['gatehouse_activation_policy']['active_gatehouse_contracts']
+                  if g.get('stable_id') == 62]
+    east_verified = len(east_gates) == 1 and len(east_gates[0].get('warp_contracts', [])) == 8
+    if east_verified:
+        east_entries = east_gates[0]['warp_contracts']
+        east_verified = [(r['source_stable_id'], r['source_warp_ordinal']) for r in east_entries] == [
+            (22, 2), (22, 3), (62, 0), (62, 1), (62, 2), (62, 3), (63, 0), (63, 1)]
+        if east_verified:
+            for row in east_entries:
+                src, dst = row['source_stable_id'], row['target_stable_id']
+                if src not in east_ids or dst not in east_ids:
+                    east_verified = False
+                    break
+                try:
+                    native = _gold_warp_events(gold, row['source_gold_map'])[
+                        row['source_gold_warp_number_one_based'] - 1]
+                    target = _gold_warp_events(gold, row['target_gold_map'])[
+                        row['target_gold_warp_number_one_based'] - 1]
+                    source_role = collision_index.role_at(row['source_gold_map'], *row['source_xy'])
+                    if ([native['x'], native['y']] != row['source_xy'] or
+                        native['destination'].replace('_', '') != row['target_gold_map'].upper().replace('_','') or
+                        [target['x'], target['y']] != row['target_xy'] or
+                        source_role != row['source_gold_collision_role']):
+                        east_verified = False
+                except (IndexError, ValueError, KeyError):
+                    east_verified = False
+                expected_routes.append(('MAP_REGION_JOHTO', east_ids[src],
+                    str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', east_ids[dst]))
+    _check(checks, errors, 'route42_east_gate_registered_warps', east_verified,
+           'Ecruteak east gate requires 8 exact Gold carpet arcs and reciprocal Warp rows')
     try:
         rows = _route_rows(runtime)
         _check(checks, errors, 'registered_routes', rows == expected_routes,

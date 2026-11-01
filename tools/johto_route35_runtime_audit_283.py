@@ -49,8 +49,8 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
         roles = read('maps/johto_pilot/Route35.roles.bin', True)
         gate_roles = read('maps/johto_pilot/Route35GoldenrodGate.roles.bin', True)
         check('actual_game_version_and_active_count',
-              re.search(r'(?:FIX|MAP)-5\.62\.(?:285|286|287|288|289|290|294|295|297|298|299)@', version) is not None and 'TEST-231@' in version and
-              re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:23|26|28|32|35)\b', c) is not None)
+              re.search(r'(?:FIX|MAP)-5\.62\.(?:285|286|287|288|289|290|294|295|297|298|299|300|302)@', version) is not None and 'TEST-233@' in version and
+              re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:23|26|28|32|35|38)\b', c) is not None)
         check('distinct_stable_ids_17_18',
               'JOHTO_ROUTE_35_LOCAL_ID EQU 17' in c and
               'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID EQU 18' in c)
@@ -163,9 +163,12 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
               and roles[33*20+9]==roles[33*20+10]==0)
         mature = read('engine/johto_ilex_mature_runtime_275.asm')
         blockmap=read('home/overworld.asm').split('LoadTileBlockMap::',1)[-1].split('LoadNorthSouthConnectionsTileMap::',1)[0]
+        wrapper_path=root/'data/johto_east_runtime_300.asm'
+        wrapper=wrapper_path.read_text() if wrapper_path.exists() else ''
         dispatch=mature.split('PatchJohtoSouthBordersAfterBlockLoad::',1)[-1].split('PatchJohtoGoldenrodNorthBorder::',1)[0]
         check('route35_south_preview_after_both_map_loading_paths',
-              'callab PatchJohtoSouthBordersAfterBlockLoad' in blockmap and
+              'callab PatchJohtoBordersAfterBlockLoad300' in blockmap and
+              'callab PatchJohtoSouthBordersAfterBlockLoad' in wrapper and
               bool(re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder',dispatch)) and
               'SECTION "Johto South Gold Geometry", ROMX, BANK[$4E]' in read('main.asm') and
               'INCLUDE "engine/johto_ilex_mature_runtime_275.asm"' in read('main.asm'))

@@ -38,6 +38,7 @@ LEDGE_COORDINATE_TABLES = {
     'Route39': ('JOHTO_ROUTE_39_LOCAL_ID', 'JohtoRoute39GoldHops', '.route39Gold', '.ruinsCoordinateHopLookup'),
     'EcruteakCity': ('JOHTO_ECRUTEAK_CITY_LOCAL_ID', 'JohtoEcruteakGoldHops', '.ecruteakGold', '.ruinsCoordinateHopLookup'),
     'AzaleaTown': ('JOHTO_AZALEA_TOWN_LOCAL_ID', 'JohtoAzaleaGoldHops', '.route33Modern', '.ruinsCoordinateHopLookup'),
+    'MahoganyTown': ('JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JohtoMahoganyGoldHops', '.mahoganyGold', '.ruinsCoordinateHopLookup'),
 }
 
 
@@ -273,6 +274,17 @@ def audit(root: Path, gold_root: Path) -> dict:
             and 'JohtoWestSeaGoldWaterProbe' in surf_runtime
             and grid.is_file() and grid.read_bytes().count(2) == water_count):
             surf_maps[map_name] = {'gold_map': map_name, 'dispatch': 'JohtoWestSeaGoldWaterProbe'}
+    # MAP-300: Route42's 120 Gold WATER cells use the dedicated Bank $53 east
+    # role-grid predicate.  The gate and Mahogany are dry and need no Surf row.
+    east = (root / 'data/johto_east_runtime_300.asm').read_text(encoding='utf8')
+    route42_grid = root / 'maps/johto_pilot/Route42.roles.bin'
+    if (any(r['map'] == 'Route42' for r in active)
+        and 'cp JOHTO_ROUTE_42_LOCAL_ID' in east
+        and 'INCBIN "maps/johto_pilot/Route42.roles.bin"' in east
+        and 'cp JOHTO_ROUTE_42_LOCAL_ID' in surf_runtime
+        and 'JohtoEastGoldWaterProbe' in surf_runtime
+        and route42_grid.is_file() and route42_grid.read_bytes().count(2) == 120):
+        surf_maps['Route42'] = {'gold_map': 'Route42', 'dispatch': 'JohtoEastGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []

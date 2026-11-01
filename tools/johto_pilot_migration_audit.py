@@ -104,7 +104,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -124,6 +124,8 @@ EXPECTED_CONNECTIONS = {
     (26, "WEST", 27), (27, "EAST", 26),
     (27, "SOUTH", 28), (28, "NORTH", 27),
     (28, "WEST", 29), (29, "EAST", 28),
+    (22, "EAST", 63), (63, "WEST", 22),
+    (63, "EAST", 64), (64, "WEST", 63),
 }
 MAP_LAYOUTS = {
     "NewBarkTown": (10, 9),
@@ -161,6 +163,9 @@ MAP_LAYOUTS = {
     "Route40": (10, 18),
     "Route41": (25, 27),
     "CianwoodCity": (15, 27),
+    "Route42EcruteakGate": (5, 4),
+    "Route42": (30, 9),
+    "MahoganyTown": (10, 9),
 }
 GOLD_SOURCE_MAPS = {
     "Route37": "Route37",
@@ -195,6 +200,9 @@ GOLD_SOURCE_MAPS = {
     "Route40": "Route40",
     "Route41": "Route41",
     "CianwoodCity": "CianwoodCity",
+    "Route42EcruteakGate": "Route42EcruteakGate",
+    "Route42": "Route42",
+    "MahoganyTown": "MahoganyTown",
 }
 
 
@@ -807,7 +815,9 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID", "JOHTO_ROUTE_38_LOCAL_ID",
                            "JOHTO_ROUTE_39_LOCAL_ID", "JOHTO_OLIVINE_CITY_LOCAL_ID",
                            "JOHTO_ROUTE_40_LOCAL_ID", "JOHTO_ROUTE_41_LOCAL_ID",
-                           "JOHTO_CIANWOOD_CITY_LOCAL_ID"]
+                           "JOHTO_CIANWOOD_CITY_LOCAL_ID",
+                           "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID", "JOHTO_ROUTE_42_LOCAL_ID",
+                           "JOHTO_MAHOGANY_TOWN_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -864,6 +874,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[21:23] = [26, 27]
     expected_slots[23:27] = [28, 29, 30, 31]
     expected_slots[27:30] = [32, 33, 34]
+    expected_slots[62:65] = [35, 36, 37]
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1043,6 +1054,18 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID",3,"JOHTO_ECRUTEAK_CITY_LOCAL_ID"),
             ("JOHTO_ROUTE_38_LOCAL_ID",0,"JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID"),
             ("JOHTO_ROUTE_38_LOCAL_ID",1,"JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID"),
+        ):
+            expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
+        # MAP-300 east corridor: Ecruteak <-> east gate <-> Route42.
+        for source, ordinal, target in (
+            ("JOHTO_ECRUTEAK_CITY_LOCAL_ID",2,"JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID"),
+            ("JOHTO_ECRUTEAK_CITY_LOCAL_ID",3,"JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",0,"JOHTO_ECRUTEAK_CITY_LOCAL_ID"),
+            ("JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",1,"JOHTO_ECRUTEAK_CITY_LOCAL_ID"),
+            ("JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",2,"JOHTO_ROUTE_42_LOCAL_ID"),
+            ("JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",3,"JOHTO_ROUTE_42_LOCAL_ID"),
+            ("JOHTO_ROUTE_42_LOCAL_ID",0,"JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_42_LOCAL_ID",1,"JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
@@ -1312,6 +1335,13 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                    'Route40/Route41/Cianwood errors=%s' % west299.get('errors', []))
         except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
             _check(errors, checks, 'west_sea_runtime_299_reference_contract', False, str(exc))
+    if (project/'data/johto_east_runtime_300.asm').is_file() and gold_root:
+        # The MAP-300 gate needs the historical stage-77 reference.  When the
+        # caller supplied the final mature project, fall back to structural/Gold
+        # checks here; the dedicated gate is run explicitly in delivery review.
+        _check(errors, checks, 'east_runtime_300_present',
+               'SECTION "Johto East Runtime 300", ROMX, BANK[$53]' in _read(project,'main.asm'),
+               'east runtime must stay isolated in Bank $53')
     status = "PASS_STATIC_ONLY" if not errors else "FAIL"
     return {
         "schema": "johto-pilot-migration-audit-v1",

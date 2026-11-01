@@ -61,8 +61,13 @@ def audit(root:Path)->list[str]:
         errors.append('mature banked runtime not in main.asm')
     home=get('home/overworld.asm')
     block=home.split('LoadTileBlockMap::',1)[1].split('LoadNorthSouthConnectionsTileMap::',1)[0]
-    if not re.search(r'\.done\s+; FIX-279:(?s:.*?)callab PatchJohtoSouthBordersAfterBlockLoad\s+ret',block):
+    if not re.search(r'\.done\s+; FIX-279:(?s:.*?)callab PatchJohtoBordersAfterBlockLoad300\s+ret',block):
         errors.append('Azalea outdoor west extension is not applied AFTER blockmap load')
+    wrapper_path=root/'data/johto_east_runtime_300.asm'
+    if wrapper_path.exists():
+        wrapper=wrapper_path.read_text(encoding='utf8')
+        if 'callab PatchJohtoSouthBordersAfterBlockLoad' not in wrapper:
+            errors.append('MAP-300 border wrapper no longer delegates to mature south dispatcher')
     if not re.search(r'PatchJohtoSouthBordersAfterBlockLoad::\s+call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder', mature):
         errors.append('Azalea west border handler lost from common post-blockmap dispatcher')
     if 'jp nz,.noCollision' not in home:

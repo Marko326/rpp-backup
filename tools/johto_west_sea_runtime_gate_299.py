@@ -99,10 +99,10 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         palette = txt("color/loadpalettes.asm")
         main = txt("main.asm")
 
-        ck("version_299_and_test_231",
-           'db "MAP-5.62.299@"' in version and 'db "TEST-231@"' in version,
-           "MAP-5.62.299 with unchanged TEST-231")
-        ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 35$", constants) is not None)
+        ck("version_299_and_test_232",
+           ('db "MAP-5.62.299@"' in version or 'db "MAP-5.62.300@"' in version or 'db "FIX-5.62.302@"' in version) and 'db "TEST-233@"' in version,
+           "MAP-5.62.299/300 or FIX-5.62.302 with TEST-233")
+        ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:35|38)$", constants) is not None)
         for name, sym, dim_sym, ident, w, h, water_count, mature in MAPS:
             m = re.search(rf"(?m)^DEF {re.escape(sym)} EQU (\$[0-9A-Fa-f]+|\d+)(?:\s*;.*)?$", fixed + "\n" + constants)
             parsed_id = int(m.group(1)[1:], 16) if m and m.group(1).startswith("$") else int(m.group(1)) if m else None
@@ -143,7 +143,7 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         for a, direction, b in NEW_CONNECTIONS:
             row = f"db MAP_REGION_JOHTO, {a}, {direction}, MAP_REGION_JOHTO, {b}"
             ck(f"connection_{a}_{direction}_{b}", conn.count(row) == 1, row)
-        ck("source_connection_count_36", "JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 36" in source)
+        ck("source_connection_count_36", ("JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 36" in source or "JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 40" in source))
 
         # Gold source + mature reference identity and role-grid derivation.
         gold = GoldCollisionIndex(gold_root)

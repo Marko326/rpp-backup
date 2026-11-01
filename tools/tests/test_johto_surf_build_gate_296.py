@@ -26,11 +26,11 @@ class SurfBuildGate296(unittest.TestCase):
     def test_all_active_water_maps_with_no_external_reference(self):
         result=audit(ROOT)
         self.assertEqual(result['status'],'PASS_STATIC_ONLY',result['errors'])
-        self.assertEqual(result['active_maps'],35)
-        self.assertEqual(result['water_maps'],17)
-        self.assertEqual(len(result['checked']),35)
-        self.assertEqual(sum(x['water_cells'] for x in result['checked']),4240)
-        self.assertEqual(len([r for r in result['checked'] if r['handler']=='GOLD_SPATIAL']),9)
+        self.assertEqual(result['active_maps'],38)
+        self.assertEqual(result['water_maps'],18)
+        self.assertEqual(len(result['checked']),38)
+        self.assertEqual(sum(x['water_cells'] for x in result['checked']),4360)
+        self.assertEqual(len([r for r in result['checked'] if r['handler']=='GOLD_SPATIAL']),10)
 
     def test_new_active_map_cannot_escape_without_manual_water_review(self):
         fake={'map':'FutureWaterRoute','stable_id':99,
@@ -41,16 +41,16 @@ class SurfBuildGate296(unittest.TestCase):
     def test_new_manifest_entry_alone_cannot_authorize_unimplemented_surf(self):
         base=json.loads((ROOT/MANIFEST).read_text())
         rows=read_active_maps(ROOT)
-        fake=dict(rows[-1]); fake['map']='FutureWaterRoute'; fake['stable_id']=99
+        fake=dict(next(r for r in rows if r['map']=='Route42')); fake['map']='FutureWaterRoute'; fake['stable_id']=99
         # Even if someone copies an existing water profile into an approved
         # manifest, a map without real runtime ID/selector must still fail.
-        copied=dict(base['maps'][-1]); copied['map']=fake['map'];copied['stable_id']=99
+        copied=dict(next(r for r in base['maps'] if r['map']=='Route42')); copied['map']=fake['map'];copied['stable_id']=99
         base['maps'].append(copied)
         self.assert_bad(audit(ROOT,active_override=rows+[fake],manifest_override=base),
                         'FutureWaterRoute: active WATER map has no live stable ID/tileset')
 
     def test_source_bytes_modified_without_gold_reference_still_block_build(self):
-        item=read_active_maps(ROOT)[-1]
+        item=next(r for r in read_active_maps(ROOT) if r['map']=='Route42')
         raw=(ROOT/item['source_asset']).read_bytes()
         self.assert_bad(audit(ROOT,bytes_override={item['source_asset']:raw+b'\x00'}),
                         'Gold source bytes changed without Surf review')

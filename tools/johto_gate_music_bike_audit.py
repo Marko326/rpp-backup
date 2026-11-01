@@ -186,6 +186,7 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
                 'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID': '.southForestGate',
                 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': '.northForestGate',
                 'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID': '.route38GateMusic',
+                'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID': '.route42GateMusic',
                 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID': '.southParkGate',
                 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID': '.eastParkGate',
             }

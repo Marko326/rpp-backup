@@ -200,7 +200,7 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[source['stable_id']],
                 str(source['warp_ordinal_zero_based']), 'MAP_REGION_JOHTO', id_symbols[target['stable_id']]))
         for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', []):
-            if gate.get('stable_id') in (11,13,18,23,104,105):
+            if gate.get('stable_id') in (11,13,18,23,62,104,105):
                 continue  # new gates are appended in exact global South route order
             for row in gate.get('warp_contracts', []):
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
@@ -244,6 +244,13 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
         west_routes = [gate for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
                        if gate.get('stable_id') == 23]
         for gate in west_routes:
+            for row in gate.get('warp_contracts', []):
+                expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                    str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        # MAP-300: Ecruteak east gate routes append after the accepted west gate.
+        east_routes = [gate for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
+                       if gate.get('stable_id') == 62]
+        for gate in east_routes:
             for row in gate.get('warp_contracts', []):
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))

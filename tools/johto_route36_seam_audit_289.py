@@ -61,7 +61,7 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 all(not blocked(mask36,60,59,y) for y in (8,9)))
         ck('registered_exact_six_and_route37_reciprocal',
            all(source.count(f'db MAP_REGION_JOHTO, {a}, {d}, MAP_REGION_JOHTO, {b}')==1 for a,d,b in CONNECTIONS) and
-           re.search(r'DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU (?:24|30|36)\b', source) is not None and
+           re.search(r'DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU (?:24|30|36|40)\b', source) is not None and
            source.count('JOHTO_ROUTE_37_LOCAL_ID, SOUTH')==1 and
            source.count('JOHTO_ROUTE_36_LOCAL_ID, NORTH')==1)
         # The engine copies strips after SwitchToMapRomBank, not a farcall to target.
@@ -146,7 +146,7 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 'db 13, 48, 1, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 8, 18, 2, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 9, 18, 3, JOHTO_REGISTERED_WARP_SELECTOR')))
-        ck('in_rom_version_and_test_label', ('FIX-5.62.290@' in version or 'MAP-5.62.294@' in version or 'FIX-5.62.295@' in version or 'MAP-5.62.297@' in version or 'FIX-5.62.298@' in version or 'MAP-5.62.299@' in version) and 'TEST-231@' in version)
+        ck('in_rom_version_and_test_label', ('FIX-5.62.290@' in version or 'MAP-5.62.294@' in version or 'FIX-5.62.295@' in version or 'MAP-5.62.297@' in version or 'FIX-5.62.298@' in version or 'MAP-5.62.299@' in version or 'MAP-5.62.300@' in version or 'FIX-5.62.302@' in version) and 'TEST-233@' in version)
     except (KeyError,IndexError,OSError,ValueError) as e:errors.append('audit_source_exception: '+str(e))
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks':checks,'errors':errors}
 

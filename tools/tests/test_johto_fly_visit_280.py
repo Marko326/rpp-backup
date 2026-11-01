@@ -56,7 +56,7 @@ class FlyVisit280(unittest.TestCase):
 
     def test_release_version_matches_project_headings(self):
         version=(ROOT/'data/game_version.asm').read_text(encoding='utf-8')
-        self.assertRegex(version, r'(?m)^\s*db "TEST-231@"$')
+        self.assertRegex(version, r'(?m)^\s*db "TEST-233@"$')
         match=re.search(r'(?m)^\s*db "((?:FIX|MAP)-5\.62\.\d+)@"$',version)
         self.assertIsNotNone(match)
         docs=('README.md','FEATURES.md','TODO.md','PROJECT_DELIVERY_RULES.md','RPP_DEVELOPMENT_PITFALLS.md')

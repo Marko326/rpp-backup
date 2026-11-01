@@ -201,6 +201,23 @@
       "role": "named",
       "name": "Cianwood City",
       "town_map_name": "Cianwood City"
+    },
+    {
+      "id": "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 42"
+    },
+    {
+      "id": "JOHTO_ROUTE_42_LOCAL_ID",
+      "role": "named",
+      "name": "Route 42",
+      "town_map_name": "Route 42"
+    },
+    {
+      "id": "JOHTO_MAHOGANY_TOWN_LOCAL_ID",
+      "role": "named",
+      "name": "Mahogany Town",
+      "town_map_name": "Mahogany Town"
     }
   ]
 }

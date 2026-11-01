@@ -49,7 +49,7 @@ class GateSignRegression(unittest.TestCase):
         match = re.search(r'(?ms)^\.ResolvePhysicalLandmark\s*$\n(.*?)(?=^\.ResolveKnownFloor\s*$)', SOURCE)
         self.assertIsNotNone(match)
         resolve = match.group(1)
-        self.assertIn("cp JOHTO_ROUTE_32_LOCAL_ID\n\tjr z, .johtoRoute32", resolve)
+        self.assertIn("cp JOHTO_ROUTE_32_LOCAL_ID\n\tjp z, .johtoRoute32", resolve)
         self.assertIn('.johtoRoute32\n\tld hl, .JohtoRoute32Name', resolve)
         self.assertIn('.JohtoRoute32Name:      db "Route 32@"', SOURCE)
 

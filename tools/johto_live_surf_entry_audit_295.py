@@ -21,6 +21,7 @@ ITEMS = 'engine/items/items.asm'
 SURF = 'engine/johto_violet_field_skills.asm'
 SPATIAL = 'engine/johto_south_geometry.asm'
 WEST_SEA = 'data/johto_west_sea_runtime_299.asm'
+EAST_RUNTIME = 'data/johto_east_runtime_300.asm'
 DESCRIPTORS = 'data/johto_pilot_runtime_assets.asm'
 
 
@@ -30,10 +31,11 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
     def read(rel: str) -> str:
         return overrides[rel] if rel in overrides else (root / rel).read_text(encoding='utf8')
 
-    source = {p: code_only(read(p)) for p in (ENTRY, ITEMS, SURF, SPATIAL, WEST_SEA, DESCRIPTORS)}
+    source = {p: code_only(read(p)) for p in (ENTRY, ITEMS, SURF, SPATIAL, WEST_SEA, EAST_RUNTIME, DESCRIPTORS)}
     runtime = routine(source[SURF], 'JohtoOverworldSurfDecision')
     spatial = routine(source[SPATIAL], 'JohtoSouthSpatialRoleAhead')
     west_spatial = routine(source[WEST_SEA], 'JohtoWestSeaSpatialRoleAhead')
+    east_spatial = routine(source[EAST_RUNTIME], 'JohtoEastSpatialRoleAhead')
     violet_entry = routine(source[SURF], 'JohtoVioletWaterAhead')
     error: list[str] = []
     records = []
@@ -57,6 +59,12 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
                      r'ld \[wTileInFrontOfPlayer\], a\s+jp \.shore\s+'
                      r'\.westSeaShore\s+callab JohtoWestSeaGoldShoreProbe', runtime):
         error.append('JohtoOverworldSurfDecision: west-sea water/unsafe-edge/shore branch broken')
+    if not re.search(r'\.eastRoute42\s+callab JohtoEastGoldWaterProbe\s+'
+                     r'jp c, \.water\s+callab JohtoEastUnsafeSurfEdge\s+'
+                     r'jr nc, \.eastRoute42Shore\s+ld a, \$ff\s+'
+                     r'ld \[wTileInFrontOfPlayer\], a\s+jp \.shore\s+'
+                     r'\.eastRoute42Shore\s+callab JohtoEastGoldShoreProbe', runtime):
+        error.append('JohtoOverworldSurfDecision: east Route42 water/unsafe-edge/shore branch broken')
     if not re.search(r'(?m)^cp JOHTO_PILOT\s*\njp nz, \.legacy$',runtime) or not re.search(
             r'(?m)^cp MAP_REGION_JOHTO\s*\njp nz, \.legacy$',runtime):
         error.append('JohtoOverworldSurfDecision: missing JOHTO_PILOT+region routing guard')
@@ -68,6 +76,8 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
         error.append('JohtoWestSeaGoldWaterProbe: missing live role=2 lookup')
     if not re.search(r'(?m)^callab JohtoWestSeaGoldWaterProbe\s*\nret c', violet_entry):
         error.append('JohtoVioletWaterAhead: west-sea Gold water probe not reachable from Surf initiation')
+    if not re.search(r'(?m)^callab JohtoEastGoldWaterProbe\s*\nret c', violet_entry):
+        error.append('JohtoVioletWaterAhead: east Route42 Gold water probe not reachable from Surf initiation')
 
     # Exclude non-pilot tilesets, since JOHTO_MODERN/PARK etc have a separate
     # wCurMapTileset branch and older pilot maps have their own water helpers.
@@ -104,7 +114,8 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
         indexed = 'maps/johto_pilot/' + name + '.roles.bin'
         south_role = indexed in source[SPATIAL] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', spatial))
         west_role = indexed in source[WEST_SEA] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', west_spatial))
-        role_grid = south_role or west_role
+        east_role = indexed in source[EAST_RUNTIME] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', east_spatial))
+        role_grid = south_role or west_role or east_role
         if not (role_grid and grid.is_file()):
             if name not in registered_legacy:
                 error.append(f'{name}: Gold WATER map has neither live spatial role grid nor registered legacy water helper')
@@ -119,7 +130,7 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
                       if raw[y*width+x] == 2}
             if actual != water:
                 error.append(f'{name}: Gold WATER coordinates disagree with runtime role=2 grid')
-        branch = '.westSea' if (west_role or name == 'OlivineCity') else '.southModern'
+        branch = '.eastRoute42' if east_role else '.westSea' if (west_role or name == 'OlivineCity') else '.southModern'
         routed = bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\s*\n(?:jp|jr) z, '+re.escape(branch)+r'$', pilot_dispatch))
         if not routed:
             error.append(f'{name}: WATER role present but no live movement/landing dispatch {symbol} -> {branch}')

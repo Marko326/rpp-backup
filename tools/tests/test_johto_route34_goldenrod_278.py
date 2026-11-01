@@ -129,7 +129,7 @@ class Route34Goldenrod278(unittest.TestCase):
 
     def test_north_preview_must_be_called_after_blockmap(self):
         self.mutate('home/overworld.asm',
-                    b'callab PatchJohtoSouthBordersAfterBlockLoad',
+                    b'callab PatchJohtoBordersAfterBlockLoad300',
                     b'callab PatchJohtoAzaleaWestGateBorder',
                     'north_preview_runs_after_full_and_connection_load')
 

@@ -98,7 +98,7 @@ class AlphSouthFieldHotfix256(unittest.TestCase):
         versions = re.findall(r'(?m)^\s*db "([A-Z][A-Z0-9]{2,7})-5\.62\.(\d+)@"', src)
         self.assertEqual(len(versions), 1, versions)
         self.assertGreaterEqual(int(versions[0][1]), 256)
-        self.assertIn('db "TEST-231@"', src)
+        self.assertIn('db "TEST-233@"', src)
 
 
 if __name__ == '__main__':

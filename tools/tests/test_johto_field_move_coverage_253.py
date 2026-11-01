@@ -17,7 +17,7 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_all_active_water_cut_and_hop_cells_are_registered(self):
         result = audit(ROOT, GOLD)
         self.assertEqual('PASS', result['status'], result['errors'])
-        self.assertEqual({'active_maps': 35, 'water_cells': 4240, 'cut_trees': 9, 'hop_cells': 165},
+        self.assertEqual({'active_maps': 38, 'water_cells': 4360, 'cut_trees': 10, 'hop_cells': 176},
                          result['totals'])
         rows = {row['map']: row for row in result['rows']}
         self.assertEqual((8, 'REGISTERED'), (rows['NewBarkTown']['water_cells'], rows['NewBarkTown']['surf']))

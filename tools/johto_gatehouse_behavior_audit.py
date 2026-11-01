@@ -90,6 +90,412 @@ def _gate_ids(root: Path) -> dict[int, list[str]]:
     return result
 
 
+
+def _simulate_gate_asm_step(source: str, *, local_id: int, x: int, y: int,
+                            direction: str, roles: bytes, constants: dict[str, int],
+                            western: bool) -> tuple[int, bool]:
+    """Execute the small real ASM collision routine, not a copied Python policy.
+
+    Only instructions used by these two gatehouse routines are supported;
+    unexpected instructions fail the audit rather than being ignored. The sole
+    mocked call is the mature role lookup, which reads the shipped role bytes.
+    This is a source-level instruction simulation, not an emulator/ROM build.
+    """
+    labels: dict[str, int] = {}
+    ins: list[tuple[str, str]] = []
+    for raw_line in source.splitlines():
+        line = raw_line.split(';', 1)[0].strip()
+        if not line:
+            continue
+        if re.fullmatch(r'\.[A-Za-z_][A-Za-z_0-9]*:?', line):
+            labels[line.rstrip(':')] = len(ins)
+        else:
+            op, _, operand = line.partition(' ')
+            ins.append((op.lower(), operand.strip()))
+    if not ins or not labels:
+        raise ValueError('empty or unparseable gate ASM')
+
+    offsets = {'UP': (0, -1), 'DOWN': (0, 1), 'LEFT': (-1, 0), 'RIGHT': (1, 0)}
+    if direction not in offsets:
+        raise ValueError(f'invalid direction {direction}')
+    dx, dy = offsets[direction]
+    values = {
+        '[wCurLocalMapID]': local_id, '[wXCoord]': x, '[wYCoord]': y,
+        '[wPlayerDirection]': 'PLAYER_DIR_' + direction,
+        '[wWalkBikeSurfState]': 0,
+    }
+
+    def val(token: str):
+        token = token.strip()
+        if token in values:
+            return values[token]
+        if token in ('a', 'e'):
+            return {'a': a, 'e': e}[token]
+        if token in constants:
+            return constants[token]
+        if token.startswith('PLAYER_DIR_'):
+            return token
+        if token.isdecimal():
+            return int(token)
+        if token.startswith('$'):
+            return int(token[1:], 16)
+        raise ValueError(f'unsupported gate ASM operand: {token}')
+
+    a, e, zero, carry, pc = 0, 0, False, False, 0
+    for _ in range(300):
+        if not 0 <= pc < len(ins):
+            raise ValueError(f'gate ASM branched outside helper: {pc}')
+        op, operand = ins[pc]
+        pc += 1
+        if op == 'ld':
+            reg, rhs = (t.strip() for t in operand.split(',', 1))
+            if reg == 'a':
+                a = val(rhs)
+            elif reg == 'e':
+                e = val(rhs)
+            else:
+                raise ValueError(f'gate ASM writes unexpected register: {reg}')
+        elif op == 'cp':
+            target = val(operand)
+            zero = a == target
+            carry = (a < target) if isinstance(a, int) and isinstance(target, int) else False
+        elif op == 'and' and operand == 'a':
+            zero = a == 0
+            carry = False
+        elif op == 'scf' and not operand:
+            carry = True
+        elif op in ('jr', 'jp'):
+            parts = [t.strip() for t in operand.split(',')]
+            if len(parts) == 1:
+                yes, target = True, parts[0]
+            elif len(parts) == 2:
+                condition, target = parts
+                yes = {'z': zero, 'nz': not zero, 'c': carry, 'nc': not carry}.get(condition)
+                if yes is None:
+                    raise ValueError(f'unsupported gate ASM branch: {operand}')
+            else:
+                raise ValueError(f'invalid gate ASM jump: {operand}')
+            if yes:
+                if target not in labels:
+                    raise ValueError(f'undefined gate ASM branch: {target}')
+                pc = labels[target]
+        elif op == 'call' and western and operand == 'JohtoSouthSpatialRoleAhead':
+            tx, ty = x + dx, y + dy
+            e = roles[ty * 10 + tx] if 0 <= tx < 10 and 0 <= ty < 8 else 1
+        elif op == 'ret' and not operand:
+            return e, carry
+        else:
+            raise ValueError(f'unsupported gate ASM instruction: {op} {operand}')
+    raise ValueError('gate ASM did not terminate in 300 steps')
+
+
+def _scan_horizontal_gate_moves(source: str, *, stable_id: int, roles: bytes,
+                                constants: dict[str, int], western: bool) -> tuple[int, list[str]]:
+    """Check all legal on-map steps, including all 12 inbound carpet moves."""
+    failures: list[str] = []
+    checked = 0
+    carpet = {(x, y) for x in (0, 9) for y in (4, 5)}
+    deltas = {'UP': (0, -1), 'DOWN': (0, 1), 'LEFT': (-1, 0), 'RIGHT': (1, 0)}
+    for y in range(8):
+        for x in range(10):
+            if roles[y * 10 + x] != 0 and (x, y) not in carpet:
+                continue   # players cannot be standing inside solid walls
+            for direction, (dx, dy) in deltas.items():
+                tx, ty = x + dx, y + dy
+                if not (0 <= tx < 10 and 0 <= ty < 8):
+                    continue   # outdoor seam / Warp collision is another guard
+                target = (tx, ty)
+                expected = roles[ty * 10 + tx] == 0 or target in carpet
+                e, carry = _simulate_gate_asm_step(
+                    source, local_id=stable_id, x=x, y=y, direction=direction,
+                    roles=roles, constants=constants, western=western)
+                actual = (e == 0) if western else (carry and e == 0 or
+                           (not carry and roles[ty * 10 + tx] == 0))
+                checked += 1
+                if bool(actual) != bool(expected):
+                    failures.append(f'({x},{y}) {direction} -> ({tx},{ty}): '
+                                    f'expected={expected}, got={actual} (e={e}, C={carry})')
+    return checked, failures
+
+
+def audit_active_gatehouse_carpet_walkability(
+        project: Path, gold: Path, *, text_overrides: dict[str, str] | None = None,
+        byte_overrides: dict[str, bytes] | None = None) -> dict:
+    """Audit the real walkability path for every currently active gatehouse.
+
+    This deliberately goes beyond checking Warp rows. Each active gatehouse is
+    assigned one explicit collision strategy: legacy Gate_Coll probe, the
+    South Gold-role grid, the West carpet helper, the Park East mature-mask
+    helper, or the East Gate lane helper. Unknown/new gatehouses fail closed.
+    """
+    root, gold = Path(project).resolve(), Path(gold).resolve()
+    text_overrides = text_overrides or {}
+    byte_overrides = byte_overrides or {}
+    errors: list[str] = []
+    results: list[dict] = []
+    results_checked: dict[int, int] = {}
+
+    def txt(relative: str) -> str:
+        return text_overrides[relative] if relative in text_overrides else (root / relative).read_text(encoding='utf-8')
+
+    def raw(relative: str) -> bytes:
+        return byte_overrides[relative] if relative in byte_overrides else (root / relative).read_bytes()
+
+    def fail(message: str) -> None:
+        errors.append(message)
+
+    policy = {
+        6: 'legacy_gate_tilecoll',
+        11: 'south_gold_role_grid',
+        13: 'south_gold_role_grid',
+        18: 'south_gold_role_grid',
+        19: 'legacy_gate_tilecoll',
+        23: 'west_carpet_lane_helper',
+        62: 'east_carpet_lane_helper',
+        102: 'legacy_gate_tilecoll',
+        104: 'south_gold_role_grid',
+        105: 'park_east_mature_helper',
+    }
+
+    try:
+        constants = _constants(root)
+        contract = json.loads(txt(CONTRACT_PATH))
+        active_ids = sorted(set(_gate_ids(root)).intersection(_active_stable_ids(root)))
+        gate_contracts = {
+            row.get('stable_id'): row
+            for row in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
+            if isinstance(row, dict)
+        }
+        index = GoldCollisionIndex(gold)
+        runtime_assets = txt('data/johto_pilot_runtime_assets.asm')
+        descriptors: dict[int, tuple[str, int, int]] = {}
+        descriptor_re = re.compile(
+            r'(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,\s*(JOHTO_[A-Z0-9_]+)\s*,\s*([A-Z0-9_]+|\d+)\s*,\s*([A-Z0-9_]+|\d+)\s*(?:;[^\n]*)?$'
+        )
+        for symbol, tileset, width_token, height_token in descriptor_re.findall(runtime_assets):
+            if symbol not in constants:
+                continue
+            width = constants.get(width_token, int(width_token) if width_token.isdecimal() else -1)
+            height = constants.get(height_token, int(height_token) if height_token.isdecimal() else -1)
+            descriptors[constants[symbol]] = (tileset, width, height)
+
+        south = txt('engine/johto_south_geometry.asm')
+        south_gateway = txt('engine/johto_land_collision_gateway_272.asm')
+        east = txt('data/johto_east_runtime_300.asm')
+        east_gateway = txt('engine/johto_land_collision_gateway_272.asm')
+        tileset_headers = txt('data/tileset_headers.asm')
+        collision_source = txt('data/collision.asm')
+        player_state = txt('engine/overworld/player_state.asm')
+        closed_targets_text = south.split('.closedDoorTargets', 1)[1].split('JohtoSouthAzaleaTownRoles::', 1)[0]
+        closed_targets = set()
+        for symbol, x, y in re.findall(
+                r'(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,\s*(\d+)\s*,\s*(\d+)\s*$',
+                closed_targets_text):
+            if symbol in constants:
+                closed_targets.add((constants[symbol], int(x), int(y)))
+
+        if set(active_ids) != set(gate_contracts):
+            fail(f'active gatehouse/contract mismatch: active={active_ids}, contracts={sorted(gate_contracts)}')
+        if set(active_ids) != set(policy):
+            fail(f'carpet collision policy must explicitly cover every active gatehouse: active={active_ids}, policy={sorted(policy)}')
+
+        # The legacy tile-collision reader probes the lower-left 8x8 tile of
+        # the target 16x16 cell (GetTileAndCoordsInFrontOfPlayer's aCoord 6/8/10,
+        # row 9/11 offsets). Confirm those actual probe tiles are in Gate_Coll.
+        legacy_ids = {6, 19, 102}
+        if not all(token in player_state for token in ('aCoord 8, 11', 'aCoord 8, 7', 'aCoord 6, 9', 'aCoord 10, 9')):
+            fail('legacy Gate_Coll probe geometry no longer matches GetTileAndCoordsInFrontOfPlayer')
+        if not re.search(r'(?m)^\s*tileset\s+JohtoGate_Block\s*,\s*JohtoGate_GFX\s*,\s*Gate_Coll\s*,', tileset_headers):
+            fail('JOHTO_GATE no longer uses the ROM0 Gate_Coll list')
+        if not re.search(r'(?m)^\s*Gate_Coll::\s*INCBIN\s+"gfx/tilesets/gate\.tilecoll"', collision_source):
+            fail('Gate_Coll INCBIN source changed or is missing')
+        passable_bytes = raw('gfx/tilesets/gate.tilecoll')
+        if not passable_bytes or passable_bytes[-1] != 0xff or 0xff in passable_bytes[:-1]:
+            fail('Gate_Coll passable list has an invalid terminator')
+        passable_tiles = set(passable_bytes[:-1])
+        gate_blockset = raw('gfx/blocksets/johto_gate.bst')
+
+        south_role_labels = {
+            11: '.IlexForestAzaleaGate',
+            13: '.Route34IlexForestGate',
+            18: '.Route35Gate',
+            104: '.SouthParkGate',
+        }
+
+        for stable_id in active_ids:
+            gate = gate_contracts.get(stable_id)
+            if gate is None:
+                continue
+            gold_map = gate.get('gold_map')
+            rows = gate.get('warp_contracts', [])
+            carpets = []
+            for row in rows:
+                if row.get('source_stable_id') != stable_id:
+                    continue
+                xy = row.get('source_xy')
+                if not isinstance(xy, list) or len(xy) != 2:
+                    continue
+                x, y = xy
+                role = index.role_at(gold_map, x, y)
+                if role in GATE_CARPETS:
+                    carpets.append((x, y, role))
+            if not carpets:
+                fail(f'ID{stable_id} {gold_map}: no registered Gold carpet cells in its own warp contract')
+                results.append({'stable_id': stable_id, 'gold_map': gold_map,
+                                'policy': policy.get(stable_id, 'MISSING'), 'carpets': 0, 'status': 'FAIL'})
+                continue
+
+            strategy = policy.get(stable_id)
+            gate_errors: list[str] = []
+            if strategy == 'legacy_gate_tilecoll':
+                legacy_symbol = next((name for name, value in constants.items()
+                                      if value == stable_id and name.endswith('_LOCAL_ID') and 'GATE' in name), None)
+                if legacy_symbol and re.search(rf'(?m)^\s*cp\s+{re.escape(legacy_symbol)}\s*$', south_gateway):
+                    gate_errors.append(f'{legacy_symbol} unexpectedly bypasses its legacy Gate_Coll strategy')
+                descriptor = descriptors.get(stable_id)
+                if descriptor is None or descriptor[0] != 'JOHTO_GATE':
+                    gate_errors.append(f'expected JOHTO_GATE descriptor, got {descriptor}')
+                else:
+                    _, block_width, block_height = descriptor
+                    runtime = raw(f'maps/johto_pilot/{gold_map}.runtime.blk')
+                    if block_width <= 0 or block_height <= 0 or len(runtime) != block_width * block_height:
+                        gate_errors.append(f'legacy runtime block map size mismatch: {len(runtime)} vs {block_width}x{block_height}')
+                    else:
+                        for x, y, role in carpets:
+                            bx, by = x // 2, y // 2
+                            if bx >= block_width or by >= block_height:
+                                gate_errors.append(f'carpet {(x, y)} is outside the legacy runtime block map')
+                                continue
+                            block_id = runtime[by * block_width + bx]
+                            qx, qy = (x & 1) * 2, (y & 1) * 2
+                            probe_index = block_id * 16 + (qy + 1) * 4 + qx
+                            if probe_index >= len(gate_blockset):
+                                gate_errors.append(f'carpet {(x, y)} resolves beyond JOHTO_GATE blockset')
+                                continue
+                            probe_tile = gate_blockset[probe_index]
+                            if probe_tile not in passable_tiles:
+                                gate_errors.append(f'carpet {(x, y)} {role}: Gate_Coll probe tile ${probe_tile:02x} is not passable')
+
+            elif strategy == 'south_gold_role_grid':
+                descriptor = descriptors.get(stable_id)
+                if descriptor is None:
+                    gate_errors.append('missing runtime descriptor')
+                else:
+                    _, block_width, block_height = descriptor
+                    role_width, role_height = block_width * 2, block_height * 2
+                    roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
+                    if len(roles) != role_width * role_height:
+                        gate_errors.append(f'role grid size mismatch: {len(roles)} vs {role_width}x{role_height}')
+                    else:
+                        for x, y, role in carpets:
+                            if roles[y * role_width + x] != 0:
+                                gate_errors.append(f'carpet {(x, y)} {role}: Gold role grid blocks the live carpet')
+                            if (stable_id, x, y) in closed_targets:
+                                gate_errors.append(f'carpet {(x, y)} {role}: mature closed-door fence blacklists a live carpet')
+                symbol = next((name for name, value in constants.items()
+                               if value == stable_id and name.endswith('_LOCAL_ID') and 'GATE' in name), None)
+                label = south_role_labels[stable_id]
+                if symbol is None or not re.search(
+                        rf'(?m)^\s*cp\s+{re.escape(symbol)}\s*\n\s*jp z,\s*{re.escape(label)}\s*$', south):
+                    gate_errors.append(f'JohtoSouthSpatialRoleAhead dispatch missing for {symbol}/{label}')
+                if 'callab JohtoSouthSpatialStep' not in south_gateway:
+                    gate_errors.append('ROM0 land gateway no longer dispatches JohtoSouthSpatialStep')
+                if stable_id in (11, 13):
+                    range_guard = ('cp JOHTO_AZALEA_TOWN_LOCAL_ID\n    jr c, .route33' in south_gateway and
+                                   'cp JOHTO_GOLDENROD_CITY_LOCAL_ID + 1\n    jr nc, .route33' in south_gateway)
+                    if not range_guard or not (constants.get('JOHTO_AZALEA_TOWN_LOCAL_ID', 999) <= stable_id <=
+                                               constants.get('JOHTO_GOLDENROD_CITY_LOCAL_ID', -1)):
+                        gate_errors.append('ROM0 gateway no longer routes this South gate ID through the active South spatial range')
+                elif stable_id in (18, 104):
+                    explicit_symbol = ('JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID' if stable_id == 18 else
+                                       'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID')
+                    if not re.search(rf'(?m)^\s*cp\s+{re.escape(explicit_symbol)}\s*\n\s*jr z, \.activeSouthMap\s*$', south_gateway):
+                        gate_errors.append(f'ROM0 gateway explicit activeSouthMap dispatch missing for {explicit_symbol}')
+
+            elif strategy == 'west_carpet_lane_helper':
+                roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
+                if len(roles) != 80:
+                    gate_errors.append(f'West gate role grid size mismatch: {len(roles)} != 80')
+                else:
+                    for x, y, role in carpets:
+                        if roles[y * 10 + x] != 1:
+                            gate_errors.append(f'expected the mature West gate mask to seal carpet {(x, y)} and require its helper')
+                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID\s*\n\s*jr z, \.westCarpet', south):
+                    gate_errors.append('JohtoSouthSpatialStep no longer routes the West gate through JohtoWestCarpetSpatialStep')
+                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID\s*\n\s*jp z, \.activeSouthMap\s*$', south_gateway):
+                    gate_errors.append('ROM0 gateway no longer routes the West gate through the South spatial collision path')
+                helper = south.split('JohtoWestCarpetSpatialStep::', 1)[1].split('JohtoParkEastGateMatureStep::', 1)[0]
+                if len(roles) == 80:
+                    count, bad = _scan_horizontal_gate_moves(
+                        helper, stable_id=stable_id, roles=roles, constants=constants, western=True)
+                    if bad:
+                        gate_errors.extend(f'West carpet walk {e}' for e in bad[:12])
+                    results_checked[stable_id] = count
+
+            elif strategy == 'park_east_mature_helper':
+                roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
+                if len(roles) != 80:
+                    gate_errors.append(f'Park East role grid size mismatch: {len(roles)} != 80')
+                helper = south.split('JohtoParkEastGateMatureStep::', 1)[1].split('JohtoParkEastGateBlockedRows::', 1)[0]
+                required = ('cp 9', '.maybeCarpet', 'cp 4', 'cp 5', '.pass')
+                if not all(token in helper for token in required):
+                    gate_errors.append('Park East mature helper no longer opens only its four registered carpet cells')
+                if 'call JohtoParkEastGateMatureStep' not in south:
+                    gate_errors.append('JohtoSouthSpatialStep no longer dispatches Park East Gate to its mature helper')
+                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID\s*\n\s*jr z, \.activeSouthMap\s*$', south_gateway):
+                    gate_errors.append('ROM0 gateway no longer routes Park East Gate through the South spatial collision path')
+
+            elif strategy == 'east_carpet_lane_helper':
+                roles = raw(f'maps/johto_pilot/{gold_map}.roles.bin')
+                if len(roles) != 80:
+                    gate_errors.append(f'East gate role grid size mismatch: {len(roles)} != 80')
+                else:
+                    for x, y, role in carpets:
+                        if roles[y * 10 + x] != 1:
+                            gate_errors.append(f'expected East gate mature mask to seal carpet {(x, y)} and require its helper')
+                step = east.split('JohtoEastSpatialStep::', 1)[1].split('JohtoRoute42CutClearedAhead300:', 1)[0]
+                before_role = step.split('call JohtoEastSpatialRoleAhead', 1)[0]
+                if not re.search(r'(?m)^\s*call JohtoEastGateCarpetLaneStep300\s*$', before_role) or not re.search(r'(?m)^\s*ret c\s*$', before_role):
+                    gate_errors.append('JohtoEastSpatialStep must accept only the exact carpet-lane exception before the mature role lookup')
+                if 'callab JohtoEastSpatialStep' not in east_gateway:
+                    gate_errors.append('ROM0 land gateway no longer dispatches East Gate to JohtoEastSpatialStep')
+                if not re.search(r'(?m)^\s*cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID\s*\n\s*jr z, \.eastMap', east_gateway):
+                    gate_errors.append('ROM0 land gateway no longer routes stable ID62 through the East Gate spatial path')
+                if 'JohtoEastGateCarpetLaneStep300::' not in east:
+                    gate_errors.append('missing JohtoEastGateCarpetLaneStep300 helper')
+                elif len(roles) == 80:
+                    helper = east.split('JohtoEastGateCarpetLaneStep300::', 1)[1].split('JohtoRoute42CutClearedAhead300:', 1)[0]
+                    count, bad = _scan_horizontal_gate_moves(
+                        helper, stable_id=stable_id, roles=roles, constants=constants, western=False)
+                    if bad:
+                        gate_errors.extend(f'East carpet walk {e}' for e in bad[:12])
+                    results_checked[stable_id] = count
+
+            else:
+                gate_errors.append(f'no carpet movement strategy registered for stable ID {stable_id}')
+
+            if gate_errors:
+                errors.extend(f'ID{stable_id} {gold_map}: {message}' for message in gate_errors)
+            results.append({'stable_id': stable_id, 'gold_map': gold_map,
+                            'policy': strategy, 'carpets': len(carpets),
+                            'status': 'FAIL' if gate_errors else 'PASS',
+                            'details': gate_errors})
+
+    except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
+        errors.append(f'carpet movement audit could not complete: {exc}')
+
+    return {
+        'status': 'PASS_STATIC_ONLY' if not errors else 'FAIL',
+        'gatehouses_checked': len(results),
+        'carpets_checked': sum(row.get('carpets', 0) for row in results),
+        'source_simulated_moves': results_checked,
+        'results': results,
+        'errors': errors,
+        'runtime_verified': False,
+        'rom_built': False,
+        'phone_accepted': False,
+    }
+
 def audit(project: Path, gold: Path) -> dict:
     project, gold = Path(project).resolve(), Path(gold).resolve()
     checks: list[dict] = []
@@ -169,6 +575,14 @@ def audit(project: Path, gold: Path) -> dict:
            not missing_contracts and not extra_contracts,
            f'active gate IDs={active_gate_ids}; missing contracts={missing_contracts}; inactive contracts={extra_contracts}')
     gate_contracts_by_id = {row.get('stable_id'): row for row in gate_contracts if isinstance(row, dict)}
+
+    carpet_movement = audit_active_gatehouse_carpet_walkability(project, gold)
+    _check(checks, errors, 'active_gatehouse_carpet_walkability',
+           carpet_movement.get('status') == 'PASS_STATIC_ONLY',
+           f"gatehouses={carpet_movement.get('gatehouses_checked')}, "
+           f"registered carpet cells={carpet_movement.get('carpets_checked')}; "
+           f"errors={carpet_movement.get('errors', [])[:8]}")
+    errors.extend('carpet_movement_audit: ' + e for e in carpet_movement.get('errors', []))
 
     # Keep the already accepted Route31/Violet horizontal gate contract exact.
     gate_errors = []
@@ -337,6 +751,7 @@ def audit(project: Path, gold: Path) -> dict:
             'current_active_gate_ids': active_gate_ids,
             'future_gatehouse_contracts': gate_contracts,
             'arrival_audit_status': arrival.get('status'),
+            'carpet_movement_audit': carpet_movement,
             'runtime_verified': False, 'rom_built': False, 'phone_accepted': False,
             'note': 'Gold reference semantics and current source contracts passed; no ROM/runtime behavior is inferred.'}
 

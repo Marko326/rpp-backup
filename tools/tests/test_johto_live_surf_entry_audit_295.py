@@ -19,7 +19,7 @@ class SurfLive295(unittest.TestCase):
         result=audit(ROOT,GOLD)
         self.assertEqual(result['status'],'PASS_STATIC_ONLY',result)
         self.assertEqual({row['map'] for row in result['role_backed_pilot_water_maps']},
-                         {'EcruteakCity','Route35','OlivineCity','Route40','Route41','CianwoodCity'})
+                         {'EcruteakCity','Route35','OlivineCity','Route40','Route41','CianwoodCity','Route42'})
     def test_ecruteak_movement_missing(self):
         self.check_mutation(SURF,'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n    jp z, .southModern',
                             'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n    jp z, .legacy',

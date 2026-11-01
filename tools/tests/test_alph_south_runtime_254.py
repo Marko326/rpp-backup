@@ -16,7 +16,7 @@ GOLD = Path(os.environ.get('GOLD_SOURCE_ROOT','/mnt/data/RUINS_GOLD_REF/REFERENC
 class AlphSouthRuntime254(unittest.TestCase):
     def test_south_slots_preserved_when_north_activated(self):
         records = read_active_maps(ROOT)
-        self.assertEqual(35, len(records))
+        self.assertEqual(38, len(records))
         self.assertEqual([(9,102,'Route32RuinsOfAlphGate'),(10,20,'RuinsOfAlphOutside')],
                          [(r['slot'],r['stable_id'],r['map']) for r in records[9:11]])
         self.assertEqual([(11,19,'Route36RuinsOfAlphGate'),(12,16,'Route36')], [(r['slot'],r['stable_id'],r['map']) for r in records[11:13]])
@@ -56,7 +56,7 @@ class AlphSouthRuntime254(unittest.TestCase):
         match = re.search(r'db \"[A-Z0-9]{3,5}-5\.62\.(\d+)@\"', version)
         self.assertIsNotNone(match, 'release label should use functional prefix')
         self.assertGreaterEqual(int(match.group(1)), 254)
-        self.assertIn('TEST-231@',version)
+        self.assertIn('TEST-233@',version)
         main=(ROOT/'main.asm').read_text()
         self.assertIn('SECTION "Johto Ruins South Runtime", ROMX, BANK[$49]', main)
 

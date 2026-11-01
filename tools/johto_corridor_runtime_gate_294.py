@@ -30,8 +30,8 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None):
         tile=read('engine/johto_south_geometry.asm')
         main=read('main.asm')
         version=read('data/game_version.asm')
-        ck('version_and_28_active', ('MAP-5.62.294@' in version or 'FIX-5.62.295@' in version or 'MAP-5.62.297@' in version or 'FIX-5.62.298@' in version or 'MAP-5.62.299@' in version) and 'TEST-231@' in version and
-           ('NUM_JOHTO_ACTIVE_MAPS EQU 28' in region or 'NUM_JOHTO_ACTIVE_MAPS EQU 32' in region or 'NUM_JOHTO_ACTIVE_MAPS EQU 35' in region) and 'JOHTO_ROUTE_37_LOCAL_ID EQU 21' in ids and
+        ck('version_and_28_active', ('MAP-5.62.294@' in version or 'FIX-5.62.295@' in version or 'MAP-5.62.297@' in version or 'FIX-5.62.298@' in version or 'MAP-5.62.299@' in version or 'MAP-5.62.300@' in version or 'FIX-5.62.302@' in version) and 'TEST-233@' in version and
+           ('NUM_JOHTO_ACTIVE_MAPS EQU 28' in region or 'NUM_JOHTO_ACTIVE_MAPS EQU 32' in region or 'NUM_JOHTO_ACTIVE_MAPS EQU 35' in region or 'NUM_JOHTO_ACTIVE_MAPS EQU 38' in region) and 'JOHTO_ROUTE_37_LOCAL_ID EQU 21' in ids and
            'JOHTO_ECRUTEAK_CITY_LOCAL_ID EQU 22' in ids)
         ck('two_real_headers_and_active_slots', all(x in headers for x in
            ('dw JohtoRoute37RuntimeHeader','dw JohtoEcruteakRuntimeHeader')) and
@@ -73,7 +73,8 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None):
            'dw JohtoRoute37SouthRoute36Mirror + 10',
            'ASSERT JohtoRoute37HeaderEnd - JohtoRoute37RuntimeHeader == 34')) and
            ('ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 23' in corridor or
-            'ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 34' in corridor) and
+            'ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 34' in corridor or
+            'ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 45' in corridor) and
            'JohtoRoute36NorthRoute37Mirror' in ru36 and
            'ASSERT JohtoPilotRoute36RuntimeHeaderEnd - JohtoPilotRoute36RuntimeHeader == 45' in ru36)
         roles=read('maps/johto_pilot/EcruteakCity.roles.bin',True)

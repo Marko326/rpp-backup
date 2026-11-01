@@ -101,6 +101,17 @@
         "JOHTO_ECRUTEAK_CITY_LOCAL_ID",
         "JOHTO_ROUTE_38_LOCAL_ID"
       ]
+    },
+    {
+      "id": "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",
+      "gold_map": "Route42EcruteakGate",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_ECRUTEAK_CITY_LOCAL_ID",
+        "JOHTO_ROUTE_42_LOCAL_ID"
+      ]
     }
   ],
   "negative_gold_gates": []

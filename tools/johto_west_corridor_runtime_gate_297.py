@@ -65,9 +65,9 @@ def audit(root: Path, gold_root: Path | None = None, *,
         return {'status': 'FAIL', 'checks': checks, 'errors': [str(exc)],
                 'rom_built': False, 'phone_verified': False}
 
-    ck('release_and_active_count', ('FIX-5.62.298@' in version or 'MAP-5.62.299@' in version) and 'TEST-231@' in version and
-       re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:32|35)\b', constants) is not None,
-       'west corridor remains valid in FIX-5.62.298 or later MAP-5.62.299 / TEST-231')
+    ck('release_and_active_count', ('FIX-5.62.298@' in version or 'MAP-5.62.299@' in version or 'MAP-5.62.300@' in version or 'FIX-5.62.302@' in version) and 'TEST-233@' in version and
+       re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:32|35|38)\b', constants) is not None,
+       'west corridor remains valid in FIX-5.62.298 or later MAP-5.62.299/300 or FIX-5.62.302 / TEST-233')
     id_values = {name: int(value[1:], 16) if value.startswith('$') else int(value)
                  for name, value in re.findall(r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)\b', fixed + '\n' + constants)}
     slot_body = slots.split('JohtoStableIDToActiveSlot::', 1)[1].split('JohtoStableIDToActiveSlotEnd::', 1)[0]
@@ -143,11 +143,11 @@ def audit(root: Path, gold_root: Path | None = None, *,
        'JOHTO_REGISTERED_WARP_SELECTOR' not in oli_objects, '0 Olivine building/port warps')
 
     route_body = runtime.split('JohtoRegisteredWarpRoutes::', 1)[1].split('JohtoRegisteredWarpRoutesEnd::', 1)[0]
+    # Ecruteak City is shared by both west and east gatehouses. Select only
+    # records containing the west gate's stable ID, not all City-origin rows.
     west_route_rows = [line.split(';',1)[0].strip() for line in route_body.splitlines()
-                       if any(sym in line for sym in ('JOHTO_ECRUTEAK_CITY_LOCAL_ID',
-                          'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID', 'JOHTO_ROUTE_38_LOCAL_ID'))]
-    # Ecruteak/Route38 IDs also appear in comments only outside db rows; filter exact db records.
-    west_route_rows = [line for line in west_route_rows if line.startswith('db MAP_REGION_JOHTO')]
+                       if line.split(';',1)[0].strip().startswith('db MAP_REGION_JOHTO')
+                       and 'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID' in line]
     ck('west_gate_eight_registered_routes', len(west_route_rows) == 8 and
        sum('JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID' in row for row in west_route_rows) == 8,
        f'west registered rows={len(west_route_rows)}')

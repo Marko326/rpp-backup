@@ -77,7 +77,7 @@ class TestSaveTilesetReload244(unittest.TestCase):
         official = re.search(r'db "(?:[A-Z][A-Z0-9]{1,7})-5\.62\.(\d+)@"', version)
         self.assertIsNotNone(official)
         self.assertGreaterEqual(int(official.group(1)), 244)
-        self.assertIn('db "TEST-231@"', version)
+        self.assertIn('db "TEST-233@"', version)
 
 
 if __name__ == "__main__":

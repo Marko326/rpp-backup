@@ -135,7 +135,11 @@ def audit(project: Path, gold_root: Path | None = None) -> dict:
         # FIX-279: enforce the live render path, not a dead label in ROMX.
         blockmap = home.split('LoadTileBlockMap::', 1)[1].split('LoadNorthSouthConnectionsTileMap::', 1)[0]
         check('north_preview_runs_after_full_and_connection_load', bool(re.search(
-            r'(?s)\.done\s+; FIX-279:.*?callab PatchJohtoSouthBordersAfterBlockLoad\s+ret', blockmap)))
+            r'(?s)\.done\s+; FIX-279:.*?callab PatchJohtoBordersAfterBlockLoad300\s+ret', blockmap)))
+        wrapper_path = project/'data/johto_east_runtime_300.asm'
+        if wrapper_path.exists():
+            wrapper = wrapper_path.read_text()
+            check('map300_wrapper_preserves_old_preview_dispatch', 'callab PatchJohtoSouthBordersAfterBlockLoad' in wrapper)
         dispatcher = mature.split('PatchJohtoSouthBordersAfterBlockLoad::', 1)[1].split('PatchJohtoGoldenrodNorthBorder::', 1)[0] if 'PatchJohtoSouthBordersAfterBlockLoad::' in mature else ''
         check('preserve_azalea_then_north_preview_same_romx_bank',
               bool(re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder', dispatcher)))
