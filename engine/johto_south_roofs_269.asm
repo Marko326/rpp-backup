@@ -5,6 +5,7 @@ JohtoNewBarkRoofs_GFX:: INCBIN "gfx/tilesets/johto_new_bark_roofs.2bpp"
 JohtoVioletRoofs_GFX:: INCBIN "gfx/tilesets/johto_violet_roofs.2bpp"
 JohtoAzaleaRoofs_GFX:: INCBIN "gfx/tilesets/johto_azalea_roofs.2bpp"
 JohtoGoldenrodRoofs_GFX:: INCBIN "gfx/tilesets/johto_goldenrod_roofs.2bpp"
+JohtoOlivineRoofs_GFX:: INCBIN "gfx/tilesets/johto_olivine_roofs.2bpp"
 
  ; FIX-270: reuse the two ROM0 farcalls that already existed before .269.
  ; Do not call extra banked roof code from Home: that made ROM0 run out
@@ -76,6 +77,12 @@ SelectJohtoSouthRoofSource269::
     jp z,.violet
     cp JOHTO_ROUTE_36_LOCAL_ID
     jp z,.violet
+    cp JOHTO_ROUTE_40_LOCAL_ID
+    jp z,.olivine
+    cp JOHTO_ROUTE_41_LOCAL_ID
+    jp z,.olivine
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z,.olivine
     cp JOHTO_NEW_BARK_LOCAL_ID
     jp z,.newbark
     cp JOHTO_ROUTE_29_LOCAL_ID
@@ -101,6 +108,10 @@ SelectJohtoSouthRoofSource269::
 .goldenrod
     ld hl,JohtoGoldenrodRoofs_GFX
     ld a,BANK(JohtoGoldenrodRoofs_GFX)
+    jp .yes
+.olivine
+    ld hl,JohtoOlivineRoofs_GFX
+    ld a,BANK(JohtoOlivineRoofs_GFX)
 .yes
     scf
     ret

@@ -349,6 +349,9 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 24, MUSIC_ROUTES1, 0 ; slot29 Route38, Gold Route37 family
     johto_map_profile 1, 25, MUSIC_ROUTES1, 0 ; slot30 Route39, Gold Route37 family
     johto_map_profile 1, 26, MUSIC_CITIES1, 0 ; slot31 Olivine City
+    johto_map_profile 1, 28, MUSIC_ROUTES1, 0 ; slot32 Route40
+    johto_map_profile 1, 30, MUSIC_ROUTES1, 0 ; slot33 Route41
+    johto_map_profile 1, 31, MUSIC_CITIES1, 0 ; slot34 Cianwood City
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -567,7 +570,13 @@ JohtoPilotIsClosedOutdoorEdge::
     cp JOHTO_ROUTE_39_LOCAL_ID
     jp z, .westClosedEdge
     cp JOHTO_OLIVINE_CITY_LOCAL_ID
-    jp z, .westClosedEdge
+    jp z, .westSeaClosedEdge
+    cp JOHTO_ROUTE_40_LOCAL_ID
+    jp z, .westSeaClosedEdge
+    cp JOHTO_ROUTE_41_LOCAL_ID
+    jp z, .westSeaClosedEdge
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z, .westSeaClosedEdge
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .southClosedEdge
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -589,6 +598,9 @@ JohtoPilotIsClosedOutdoorEdge::
     ret
 .westClosedEdge
     callab JohtoWestIsKnownClosedEdge
+    ret
+.westSeaClosedEdge
+    callab JohtoWestSeaIsKnownClosedEdge
     ret
 .southClosedEdge
     ; All six maps use finite geometry. Non-seam edges fail closed.

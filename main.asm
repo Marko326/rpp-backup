@@ -3418,6 +3418,12 @@ INCLUDE "data/johto_north_runtime_283.asm"
 SECTION "Johto Corridor Route37 Ecruteak 294", ROMX, BANK[$51]
 INCLUDE "data/johto_corridor_runtime_294.asm"
 INCLUDE "data/johto_west_runtime_297.asm"
+
+; MAP-299: keep the large Route40/41/Cianwood sea runtime away from full
+; ROM0 and nearly-full west Bank $51. Bank $52 is dedicated expansion ROMX.
+SECTION "Johto West Sea Runtime 299", ROMX, BANK[$52]
+INCLUDE "data/johto_west_sea_runtime_299.asm"
+
 SECTION "Johto Park Runtime 286", ROMX, BANK[$50]
 INCLUDE "data/johto_park_runtime_286.asm"
 

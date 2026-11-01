@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 32
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 35
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -204,6 +204,18 @@ JohtoOlivineRuntimeDescriptor::
     db JOHTO_OLIVINE_CITY_LOCAL_ID, JOHTO_PILOT, JOHTO_OLIVINE_CITY_WIDTH, JOHTO_OLIVINE_CITY_HEIGHT
     dw JohtoOlivineBlocks
     db BANK(JohtoOlivineBlocks)
+JohtoRoute40RuntimeDescriptor::
+    db JOHTO_ROUTE_40_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE_40_WIDTH, JOHTO_ROUTE_40_HEIGHT
+    dw JohtoRoute40Blocks
+    db BANK(JohtoRoute40Blocks)
+JohtoRoute41RuntimeDescriptor::
+    db JOHTO_ROUTE_41_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE_41_WIDTH, JOHTO_ROUTE_41_HEIGHT
+    dw JohtoRoute41Blocks
+    db BANK(JohtoRoute41Blocks)
+JohtoCianwoodRuntimeDescriptor::
+    db JOHTO_CIANWOOD_CITY_LOCAL_ID, JOHTO_PILOT, JOHTO_CIANWOOD_CITY_WIDTH, JOHTO_CIANWOOD_CITY_HEIGHT
+    dw JohtoCianwoodBlocks
+    db BANK(JohtoCianwoodBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -270,6 +282,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .route39
     cp JOHTO_OLIVINE_CITY_LOCAL_ID
     jp z, .olivine
+    cp JOHTO_ROUTE_40_LOCAL_ID
+    jp z, .route40
+    cp JOHTO_ROUTE_41_LOCAL_ID
+    jp z, .route41
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z, .cianwood
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .park
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -326,6 +344,15 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .olivine
     ld hl, JohtoOlivineRuntimeDescriptor
+    jp .valid
+.route40
+    ld hl, JohtoRoute40RuntimeDescriptor
+    jp .valid
+.route41
+    ld hl, JohtoRoute41RuntimeDescriptor
+    jp .valid
+.cianwood
+    ld hl, JohtoCianwoodRuntimeDescriptor
     jp .valid
 .park
     ld hl, JohtoParkDescriptor

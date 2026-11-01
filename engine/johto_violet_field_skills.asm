@@ -44,7 +44,13 @@ JohtoOverworldSurfDecision::
     cp JOHTO_ROUTE_39_LOCAL_ID
     jp z, .southModern
     cp JOHTO_OLIVINE_CITY_LOCAL_ID
-    jp z, .southModern
+    jp z, .westSea
+    cp JOHTO_ROUTE_40_LOCAL_ID
+    jp z, .westSea
+    cp JOHTO_ROUTE_41_LOCAL_ID
+    jp z, .westSea
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z, .westSea
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID
@@ -84,6 +90,24 @@ JohtoOverworldSurfDecision::
 .ruins
 	call JohtoRuinsWaterAhead
 	jp .waterOrShore
+.westSea
+    callab JohtoWestSeaGoldWaterProbe
+    jp c, .water
+    ; Never let a connection preview tile turn an off-map Surf step into
+    ; a false shoreline. $ff is the collision-list terminator, hence solid.
+    callab JohtoWestSeaUnsafeSurfEdge
+    jr nc, .westSeaShore
+    ld a, $ff
+    ld [wTileInFrontOfPlayer], a
+    jp .shore
+.westSeaShore
+    callab JohtoWestSeaGoldShoreProbe
+    jp c, .floorShore
+    ; Mature non-floor roles are hard collision even when compact art shares
+    ; a passable legacy tile ID.
+    ld a, $ff
+    ld [wTileInFrontOfPlayer], a
+    jp .shore
 .southModern
     callab JohtoSouthGoldWaterProbe
     jp c, .water
@@ -147,6 +171,8 @@ JohtoVioletWaterAhead::
 	ret c
 	call JohtoUnionCaveWaterAhead
 	ret c
+    callab JohtoWestSeaGoldWaterProbe
+    ret c
     callab JohtoSouthGoldWaterProbe
     ret c
 	call JohtoNewBarkWaterAhead

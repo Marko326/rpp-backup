@@ -41,6 +41,12 @@ JohtoOverworldSouthLandDecision::
     jp z, .activeSouthMap
     cp JOHTO_OLIVINE_CITY_LOCAL_ID
     jp z, .activeSouthMap
+    cp JOHTO_ROUTE_40_LOCAL_ID
+    jr z, .westSeaMap
+    cp JOHTO_ROUTE_41_LOCAL_ID
+    jr z, .westSeaMap
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jr z, .westSeaMap
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .activeSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -62,6 +68,13 @@ JohtoOverworldSouthLandDecision::
     bit 6, a
     jr nz, .allowJump
     callab JohtoSouthSpatialStep
+    ret
+.westSeaMap
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
+    callab JohtoWestSeaSpatialStep
     ret
 .route33
     cp JOHTO_ROUTE_33_LOCAL_ID

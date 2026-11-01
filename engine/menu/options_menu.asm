@@ -1301,6 +1301,9 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE37 ; slot29 Route38
     db MUSIC_GBP_GSC_ROUTE37 ; slot30 Route39
     db MUSIC_GBP_GSC_VIOLET_CITY ; slot31 Olivine City
+    db MUSIC_GBP_GSC_ROUTE36 ; slot32 Route40
+    db MUSIC_GBP_GSC_ROUTE36 ; slot33 Route41
+    db MUSIC_GBP_GSC_ECRUTEAK_CITY ; slot34 Cianwood City
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

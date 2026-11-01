@@ -268,11 +268,11 @@ UpdateMapNameSign::
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jr z, .johtoViolet
 	cp JOHTO_ROUTE_32_LOCAL_ID
-	jr z, .johtoRoute32
+	jp z, .johtoRoute32
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .johtoRuins
 	cp JOHTO_ROUTE_36_LOCAL_ID
-	jr z, .johtoRoute36
+	jp z, .johtoRoute36
 	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
 	jr z, .johtoUnionCave
 	cp JOHTO_ROUTE_33_LOCAL_ID
@@ -297,6 +297,12 @@ UpdateMapNameSign::
 	jp z, .johtoRoute39
 	cp JOHTO_OLIVINE_CITY_LOCAL_ID
 	jp z, .johtoOlivine
+	cp JOHTO_ROUTE_40_LOCAL_ID
+	jp z, .johtoRoute40
+	cp JOHTO_ROUTE_41_LOCAL_ID
+	jp z, .johtoRoute41
+	cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+	jp z, .johtoCianwood
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
 	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
@@ -365,6 +371,15 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoOlivine
 	ld hl, .JohtoOlivineName
+	jr .johtoResolved
+.johtoRoute40
+	ld hl, .JohtoRoute40Name
+	jr .johtoResolved
+.johtoRoute41
+	ld hl, .JohtoRoute41Name
+	jr .johtoResolved
+.johtoCianwood
+	ld hl, .JohtoCianwoodName
 	jr .johtoResolved
 .johtoPark
 	ld hl, .JohtoParkName
@@ -1095,3 +1110,6 @@ UpdateMapNameSign::
 .JohtoRoute38Name: db "Route 38@"
 .JohtoRoute39Name: db "Route 39@"
 .JohtoOlivineName: db "Olivine City@"
+.JohtoRoute40Name: db "Route 40@"
+.JohtoRoute41Name: db "Route 41@"
+.JohtoCianwoodName: db "Cianwood City@"

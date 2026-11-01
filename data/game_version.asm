@@ -7,6 +7,7 @@ IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
 	db "TEST-231@"
 ELSE
+	; MAP-299: activate Route40/Route41/Cianwood outdoor sea chain with Gold/mature collision and Surf seams.
 	; FIX-298: keep ordinary Johto Town Map labels in-bank; prevent garble/WRAM overwrite on exit.
 	; FIX-295: restore Ecruteak pond water movement and Gold shore disembark; require live-path audit.
 	; FIX-288: protect Park borders, mature east-gate passability and long grass.
@@ -37,5 +38,5 @@ ELSE
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "FIX-5.62.298@"
+	db "MAP-5.62.299@"
 ENDC

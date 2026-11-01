@@ -182,6 +182,12 @@ ApplyJohtoGoldRoofPalette269:
     jp z,.violet
     cp JOHTO_ROUTE_36_LOCAL_ID
     jp z,.violet
+    cp JOHTO_ROUTE_40_LOCAL_ID
+    jp z,.cianwood
+    cp JOHTO_ROUTE_41_LOCAL_ID
+    jp z,.cianwood
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z,.cianwood
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jp z,.cherrygrove
     cp JOHTO_ROUTE_30_LOCAL_ID
@@ -206,6 +212,9 @@ ApplyJohtoGoldRoofPalette269:
     jp .copy
 .goldenrod
     ld de,JohtoGoldenrodRoofPalette269
+    jp .copy
+.cianwood
+    ld de,JohtoCianwoodRoofPalette299
 .copy
     ld a,2
     ld [rSVBK],a
@@ -248,6 +257,11 @@ JohtoGoldenrodRoofPalette269:
     RGB 27,31,27
     RGB 25,25,00
     RGB 20,17,08
+    RGB 07,07,07
+JohtoCianwoodRoofPalette299:
+    RGB 27,31,27
+    RGB 15,10,31
+    RGB 07,05,15
     RGB 07,07,07
 
 ; Towns have different roof colors while using the same tileset

@@ -22,6 +22,8 @@ JohtoRoute39SouthOlivineMirror:: INCBIN "maps/johto_pilot/OlivineCity.runtime.bl
 ASSERT @ - JohtoRoute39SouthOlivineMirror == JOHTO_OLIVINE_CITY_WIDTH * JOHTO_OLIVINE_CITY_HEIGHT
 JohtoOlivineNorthRoute39Mirror:: INCBIN "maps/johto_pilot/Route39.runtime.blk"
 ASSERT @ - JohtoOlivineNorthRoute39Mirror == JOHTO_ROUTE_39_WIDTH * JOHTO_ROUTE_39_HEIGHT
+JohtoOlivineWestRoute40Mirror:: INCBIN "maps/johto_pilot/Route40.runtime.blk"
+ASSERT @ - JohtoOlivineWestRoute40Mirror == JOHTO_ROUTE_40_WIDTH * JOHTO_ROUTE_40_HEIGHT
 
 JohtoRoute38EcruteakGateRuntimeHeader::
     db JOHTO_GATE
@@ -98,7 +100,8 @@ JohtoOlivineRuntimeHeader::
     dw JohtoOlivineBlocks
     dw JohtoOlivineTextPointers
     dw JohtoCorridorLocalScript
-    db NORTH ; Route40 west and all buildings remain closed
+    db NORTH | WEST
+    ; NORTH -> Route39, accepted .297 connection.
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoOlivineNorthRoute39Mirror + JOHTO_ROUTE_39_WIDTH * (JOHTO_ROUTE_39_HEIGHT - 3)
     dw wOverworldMap + 3 + 5
@@ -107,9 +110,18 @@ JohtoOlivineRuntimeHeader::
     db JOHTO_ROUTE_39_HEIGHT * 2 - 1
     db -10
     dw wOverworldMap + 1 + JOHTO_ROUTE_39_HEIGHT * (JOHTO_ROUTE_39_WIDTH + 6)
+    ; WEST -> Route40, Gold offset +9 blocks.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoOlivineWestRoute40Mirror + JOHTO_ROUTE_40_WIDTH - 3
+    dw wOverworldMap + (9 + 3) * (JOHTO_OLIVINE_CITY_WIDTH + 6)
+    db 9
+    db JOHTO_ROUTE_40_WIDTH
+    db -18
+    db JOHTO_ROUTE_40_WIDTH * 2 - 1
+    dw wOverworldMap + 6 + 2 * JOHTO_ROUTE_40_WIDTH
     dw JohtoOlivineRuntimeObjects
 JohtoOlivineHeaderEnd::
-ASSERT JohtoOlivineHeaderEnd - JohtoOlivineRuntimeHeader == 23
+ASSERT JohtoOlivineHeaderEnd - JohtoOlivineRuntimeHeader == 34
 
 ASSERT BANK(JohtoRoute38EcruteakGateRuntimeHeader) == BANK(JohtoRoute38EcruteakGateBlocks)
 ASSERT BANK(JohtoRoute38RuntimeHeader) == BANK(JohtoRoute38Blocks)

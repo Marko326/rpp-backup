@@ -78,6 +78,12 @@ JohtoHeaderDescriptors::
     db BANK(JohtoRoute39RuntimeHeader)
     dw JohtoOlivineRuntimeHeader
     db BANK(JohtoOlivineRuntimeHeader)
+    dw JohtoRoute40RuntimeHeader
+    db BANK(JohtoRoute40RuntimeHeader)
+    dw JohtoRoute41RuntimeHeader
+    db BANK(JohtoRoute41RuntimeHeader)
+    dw JohtoCianwoodRuntimeHeader
+    db BANK(JohtoCianwoodRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3
