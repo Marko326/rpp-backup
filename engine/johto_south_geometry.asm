@@ -428,13 +428,29 @@ JohtoWestCarpetSpatialStep::
     jr z, .city
     cp JOHTO_ROUTE_38_LOCAL_ID
     jp z, .route38
+    ; FIX-302: approach from y3 DOWN/y6 UP must also enter the blocked
+    ; x0/x9 carpet cells.  Previously only y4/y5 lane switching was open.
     ; EastWestGate x0/x9, y4/y5.
     ld a, [wYCoord]
     cp 4
     jr z, .gateLane
     cp 5
     jr z, .gateLane
+    cp 3
+    jr z, .approachUpper
+    cp 6
+    jr z, .approachLower
     jp .role
+.approachUpper
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    jp nz, .role
+    jp .verticalGate
+.approachLower
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jp nz, .role
+    jp .verticalGate
 .gateLane
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT

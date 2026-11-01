@@ -4,9 +4,9 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 35
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 38
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 36
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 40
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
@@ -44,6 +44,9 @@ JohtoOlivineGoldBlocks:: INCBIN "maps/johto_pilot/OlivineCity.gold.blk"
 JohtoRoute40GoldBlocks:: INCBIN "maps/johto_pilot/Route40.gold.blk"
 JohtoRoute41GoldBlocks:: INCBIN "maps/johto_pilot/Route41.gold.blk"
 JohtoCianwoodGoldBlocks:: INCBIN "maps/johto_pilot/CianwoodCity.gold.blk"
+JohtoRoute42EcruteakGateGoldBlocks:: INCBIN "maps/johto_pilot/Route42EcruteakGate.gold.blk"
+JohtoRoute42GoldBlocks:: INCBIN "maps/johto_pilot/Route42.gold.blk"
+JohtoMahoganyGoldBlocks:: INCBIN "maps/johto_pilot/MahoganyTown.gold.blk"
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -152,6 +155,15 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID, JOHTO_CIANWOOD_CITY_WIDTH, JOHTO_CIANWOOD_CITY_HEIGHT
     dw JohtoCianwoodGoldBlocks
     db BANK(JohtoCianwoodGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID, JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH, JOHTO_ROUTE_42_ECRUTEAK_GATE_HEIGHT
+    dw JohtoRoute42EcruteakGateGoldBlocks
+    db BANK(JohtoRoute42EcruteakGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, JOHTO_ROUTE_42_WIDTH, JOHTO_ROUTE_42_HEIGHT
+    dw JohtoRoute42GoldBlocks
+    db BANK(JohtoRoute42GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, JOHTO_MAHOGANY_TOWN_WIDTH, JOHTO_MAHOGANY_TOWN_HEIGHT
+    dw JohtoMahoganyGoldBlocks
+    db BANK(JohtoMahoganyGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -204,6 +216,11 @@ JohtoPilotSourceConnections::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_41_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_40_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_41_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_41_LOCAL_ID
+    ; MAP-300: east topology. Ecruteak/Route42 direct edge is preview-only; travel uses gate Warps.
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
 ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 

@@ -254,27 +254,27 @@ UpdateMapNameSign::
 	jp nz, .resolveLegacyLandmark
 	ld a, [wCurLocalMapID]
 	cp JOHTO_NEW_BARK_LOCAL_ID
-	jr z, .johtoNewBark
+	jp z, .johtoNewBark
 	cp JOHTO_ROUTE_29_LOCAL_ID
-	jr z, .johtoRoute29
+	jp z, .johtoRoute29
 	cp JOHTO_CHERRYGROVE_LOCAL_ID
-	jr z, .johtoCherrygrove
+	jp z, .johtoCherrygrove
 	cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
-	jr z, .johtoCherrygrove
+	jp z, .johtoCherrygrove
 	cp JOHTO_ROUTE_30_LOCAL_ID
-	jr z, .johtoRoute30
+	jp z, .johtoRoute30
 	cp JOHTO_ROUTE_31_LOCAL_ID
-	jr z, .johtoRoute31
+	jp z, .johtoRoute31
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
-	jr z, .johtoViolet
+	jp z, .johtoViolet
 	cp JOHTO_ROUTE_32_LOCAL_ID
 	jp z, .johtoRoute32
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-	jr z, .johtoRuins
+	jp z, .johtoRuins
 	cp JOHTO_ROUTE_36_LOCAL_ID
 	jp z, .johtoRoute36
 	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
-	jr z, .johtoUnionCave
+	jp z, .johtoUnionCave
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jr z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -303,6 +303,10 @@ UpdateMapNameSign::
 	jp z, .johtoRoute41
 	cp JOHTO_CIANWOOD_CITY_LOCAL_ID
 	jp z, .johtoCianwood
+    cp JOHTO_ROUTE_42_LOCAL_ID
+    jp z, .johtoRoute42
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .johtoMahogany
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
 	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
@@ -381,6 +385,12 @@ UpdateMapNameSign::
 .johtoCianwood
 	ld hl, .JohtoCianwoodName
 	jr .johtoResolved
+.johtoRoute42
+    ld hl, .JohtoRoute42Name
+    jr .johtoResolved
+.johtoMahogany
+    ld hl, .JohtoMahoganyName
+    jr .johtoResolved
 .johtoPark
 	ld hl, .JohtoParkName
 	jr .johtoResolved
@@ -723,6 +733,8 @@ UpdateMapNameSign::
 	cp JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID
 	ret z
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
 	ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -1113,3 +1125,5 @@ UpdateMapNameSign::
 .JohtoRoute40Name: db "Route 40@"
 .JohtoRoute41Name: db "Route 41@"
 .JohtoCianwoodName: db "Cianwood City@"
+.JohtoRoute42Name: db "Route 42@"
+.JohtoMahoganyName: db "Mahogany Town@"

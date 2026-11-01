@@ -11,6 +11,8 @@ JohtoRoute37NorthEcruteakMirror:: INCBIN "maps/johto_pilot/EcruteakCity.runtime.
 ASSERT @ - JohtoRoute37NorthEcruteakMirror == JOHTO_ECRUTEAK_WIDTH * JOHTO_ECRUTEAK_HEIGHT
 JohtoEcruteakSouthRoute37Mirror:: INCBIN "maps/johto_pilot/Route37.runtime.blk"
 ASSERT @ - JohtoEcruteakSouthRoute37Mirror == JOHTO_ROUTE37_WIDTH * JOHTO_ROUTE37_HEIGHT
+JohtoEcruteakEastRoute42Mirror:: INCBIN "maps/johto_pilot/Route42.runtime.blk"
+ASSERT @ - JohtoEcruteakEastRoute42Mirror == JOHTO_ROUTE_42_WIDTH * JOHTO_ROUTE_42_HEIGHT
 
 JohtoCorridorLocalScript::
     call EnableAutoTextBoxDrawing
@@ -57,7 +59,7 @@ JohtoEcruteakRuntimeHeader::
     dw JohtoEcruteakBlocks
     dw JohtoEcruteakTextPointers
     dw JohtoCorridorLocalScript
-    db SOUTH | WEST ; west is display preview; movement uses audited gate Warps
+    db SOUTH | WEST | EAST ; west/east previews; physical passage uses audited gate Warps
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoEcruteakSouthRoute37Mirror
     dw wOverworldMap + (JOHTO_ECRUTEAK_HEIGHT + 3) * (JOHTO_ECRUTEAK_WIDTH + 6) + 3 + 5
@@ -75,15 +77,26 @@ JohtoEcruteakRuntimeHeader::
     db -10
     db JOHTO_ROUTE_38_WIDTH * 2 - 1
     dw wOverworldMap + 6 + 2 * JOHTO_ROUTE_38_WIDTH
+    ; EAST preview: Route42 west, Gold +9 blocks. Physical crossing stays gated.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoEcruteakEastRoute42Mirror
+    dw wOverworldMap + (9 + 3) * (JOHTO_ECRUTEAK_WIDTH + 6) + JOHTO_ECRUTEAK_WIDTH + 3
+    db JOHTO_ROUTE_42_HEIGHT
+    db JOHTO_ROUTE_42_WIDTH
+    db -18
+    db 0
+    dw wOverworldMap + 7 + JOHTO_ROUTE_42_WIDTH
     dw JohtoEcruteakRuntimeObjects
 JohtoEcruteakHeaderEnd::
-ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 34
+ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 45
 JohtoEcruteakTextPointers:
 JohtoEcruteakRuntimeObjects::
     db $05
-    db 2 ; only the paired west gate carpets are active; all buildings remain closed
+    db 4 ; paired west and east gate carpets active; all buildings remain closed
     db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR
     db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR
+    db 26, 35, 0, JOHTO_REGISTERED_WARP_SELECTOR
+    db 27, 35, 1, JOHTO_REGISTERED_WARP_SELECTOR
     db 0
     db 0
 
@@ -92,6 +105,7 @@ ASSERT BANK(JohtoRoute37RuntimeHeader) == BANK(JohtoRoute37NorthEcruteakMirror)
 ASSERT BANK(JohtoRoute37RuntimeHeader) == BANK(JohtoRoute37SouthRoute36Mirror)
 ASSERT BANK(JohtoRoute37RuntimeHeader) == BANK(JohtoCorridorLocalScript)
 ASSERT BANK(JohtoEcruteakRuntimeHeader) == BANK(JohtoEcruteakBlocks)
+ASSERT BANK(JohtoEcruteakRuntimeHeader) == BANK(JohtoEcruteakEastRoute42Mirror)
 ASSERT BANK(JohtoEcruteakRuntimeHeader) == BANK(JohtoCorridorLocalScript)
 
 ; Boundary contracts separate movement width from display strip width.

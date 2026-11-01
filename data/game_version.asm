@@ -5,8 +5,10 @@ SECTION "Game Version", ROM0
 GameVersionText::
 IF DEF(BATTLE_TEST_BUILD)
 	; Short public test label, shared by the menu footer and Options.
-	db "TEST-231@"
+	db "TEST-233@"
 ELSE
+	; FIX-302: allow inward steps onto East/West gate carpets from floor, with ASM move simulation.
+	; MAP-300: activate Ecruteak east gate, Route42 and Mahogany outdoor corridor; keep Route43/44/Mt Mortar closed.
 	; MAP-299: activate Route40/Route41/Cianwood outdoor sea chain with Gold/mature collision and Surf seams.
 	; FIX-298: keep ordinary Johto Town Map labels in-bank; prevent garble/WRAM overwrite on exit.
 	; FIX-295: restore Ecruteak pond water movement and Gold shore disembark; require live-path audit.
@@ -38,5 +40,5 @@ ELSE
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "MAP-5.62.299@"
+	db "FIX-5.62.302@"
 ENDC

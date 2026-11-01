@@ -1170,13 +1170,15 @@ IsBikeRidingAllowed::
 	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
 	jr z, .allowed
 	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
-	jp z, .allowed
+	jr z, .allowed
 	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jp z, .allowed
+	jr z, .allowed
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
-    jp z, .allowed
+    jr z, .allowed
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
-    jp z, .allowed
+    jr z, .allowed
+    cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .allowed
 .legacyBike
 	ld a, [wCurMap]
 	cp ROUTE_23
@@ -1349,7 +1351,7 @@ LoadTileBlockMap::
 	; FIX-279: one ROMX dispatcher after BOTH full blockmap load and
 	; connected-map strips: Azalea west and unopened Route35 north preview.
 	; Reuses the FIX-275 far-call slot; ROM0 does not grow.
-	callab PatchJohtoSouthBordersAfterBlockLoad
+	callab PatchJohtoBordersAfterBlockLoad300
 	ret
 
 LoadNorthSouthConnectionsTileMap::

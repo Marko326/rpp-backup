@@ -51,6 +51,8 @@ JohtoOverworldSurfDecision::
     jp z, .westSea
     cp JOHTO_CIANWOOD_CITY_LOCAL_ID
     jp z, .westSea
+    cp JOHTO_ROUTE_42_LOCAL_ID
+    jp z, .eastRoute42
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID
@@ -105,6 +107,20 @@ JohtoOverworldSurfDecision::
     jp c, .floorShore
     ; Mature non-floor roles are hard collision even when compact art shares
     ; a passable legacy tile ID.
+    ld a, $ff
+    ld [wTileInFrontOfPlayer], a
+    jp .shore
+.eastRoute42
+    callab JohtoEastGoldWaterProbe
+    jp c, .water
+    callab JohtoEastUnsafeSurfEdge
+    jr nc, .eastRoute42Shore
+    ld a, $ff
+    ld [wTileInFrontOfPlayer], a
+    jp .shore
+.eastRoute42Shore
+    callab JohtoEastGoldShoreProbe
+    jp c, .floorShore
     ld a, $ff
     ld [wTileInFrontOfPlayer], a
     jp .shore
@@ -172,6 +188,8 @@ JohtoVioletWaterAhead::
 	call JohtoUnionCaveWaterAhead
 	ret c
     callab JohtoWestSeaGoldWaterProbe
+    ret c
+    callab JohtoEastGoldWaterProbe
     ret c
     callab JohtoSouthGoldWaterProbe
     ret c
@@ -1529,9 +1547,10 @@ JohtoRoutesGoldCutCells::
 	db JOHTO_ROUTE_32_LOCAL_ID, 19, 10, $63
 	db JOHTO_ILEX_FOREST_LOCAL_ID, 25, 8, $0f
 	db JOHTO_ROUTE_35_LOCAL_ID, 6, 17, $5b
+	db JOHTO_ROUTE_42_LOCAL_ID, 13, 24, $63
 	db $ff
 JohtoRoutesGoldCutCellsEnd::
-ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 8 * 4 + 1
+ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 9 * 4 + 1
 
 JohtoRoutesCutTreeAhead::
 	push bc
@@ -1553,6 +1572,8 @@ JohtoRoutesCutTreeAhead::
 	cp JOHTO_ROUTE_32_LOCAL_ID
 	jr z, .validMap
     cp JOHTO_ROUTE_35_LOCAL_ID
+    jr z, .validMap
+    cp JOHTO_ROUTE_42_LOCAL_ID
     jr z, .validMap
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp nz, .no

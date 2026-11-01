@@ -77,6 +77,10 @@ SelectJohtoSouthRoofSource269::
     jp z,.violet
     cp JOHTO_ROUTE_36_LOCAL_ID
     jp z,.violet
+    cp JOHTO_ROUTE_42_LOCAL_ID
+    jp z,.azalea
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z,.azalea
     cp JOHTO_ROUTE_40_LOCAL_ID
     jp z,.olivine
     cp JOHTO_ROUTE_41_LOCAL_ID

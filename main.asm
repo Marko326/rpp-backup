@@ -3424,6 +3424,10 @@ INCLUDE "data/johto_west_runtime_297.asm"
 SECTION "Johto West Sea Runtime 299", ROMX, BANK[$52]
 INCLUDE "data/johto_west_sea_runtime_299.asm"
 
+; MAP-300: east gate/Route42/Mahogany runtime isolated from ROM0 and packed banks.
+SECTION "Johto East Runtime 300", ROMX, BANK[$53]
+INCLUDE "data/johto_east_runtime_300.asm"
+
 SECTION "Johto Park Runtime 286", ROMX, BANK[$50]
 INCLUDE "data/johto_park_runtime_286.asm"
 

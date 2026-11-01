@@ -58,6 +58,8 @@ HandleLedges:
 	jp z, .route39Gold
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jp z, .ecruteakGold
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .mahoganyGold
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsHopTable
 	ret nz
@@ -73,6 +75,9 @@ HandleLedges:
 .ecruteakGold
 	ld hl, JohtoEcruteakGoldHops
 	jp .ruinsCoordinateHopLookup
+.mahoganyGold
+    ld hl, JohtoMahoganyGoldHops
+    jp .ruinsCoordinateHopLookup
 .ruinsHopTable
 	ld hl, JohtoAlphSouthHops
 	jr .ruinsCoordinateHopLookup
@@ -198,6 +203,8 @@ JohtoSouthHopLandingGuard::
     jp z, .route39
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .ecruteak
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .mahogany
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
@@ -213,6 +220,9 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .ecruteak
     ld hl, JohtoEcruteakGoldHops
+    jp .scan
+.mahogany
+    ld hl, JohtoMahoganyGoldHops
     jp .scan
 .route33
     ld hl, JohtoRoute33Hops
@@ -403,6 +413,22 @@ JohtoEcruteakGoldHops:
     db 7, 10, PLAYER_DIR_DOWN
     db 8, 10, PLAYER_DIR_DOWN
     db 8, 10, PLAYER_DIR_RIGHT
+    db $ff
+
+; Mahogany Town: exact 12 mature Gold directed safe HOP takeoffs.
+JohtoMahoganyGoldHops:
+    db 5, 4, PLAYER_DIR_DOWN
+    db 5, 4, PLAYER_DIR_LEFT
+    db 6, 4, PLAYER_DIR_DOWN
+    db 8, 4, PLAYER_DIR_DOWN
+    db 9, 4, PLAYER_DIR_DOWN
+    db 14, 6, PLAYER_DIR_DOWN
+    db 15, 6, PLAYER_DIR_DOWN
+    db 2, 10, PLAYER_DIR_DOWN
+    db 3, 10, PLAYER_DIR_DOWN
+    db 10, 10, PLAYER_DIR_DOWN
+    db 12, 10, PLAYER_DIR_DOWN
+    db 13, 10, PLAYER_DIR_DOWN
     db $ff
 
 JohtoAlphSouthHops:

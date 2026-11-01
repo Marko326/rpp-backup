@@ -1171,6 +1171,8 @@ LookupJohtoMapGSCMusic:
     jp z, .northForestGate
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
     jp z, .route38GateMusic
+    cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+    jp z, .route42GateMusic
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -1181,14 +1183,14 @@ LookupJohtoMapGSCMusic:
     cp JOHTO_ROUTE_36_LOCAL_ID
     jp z, .activeSlot
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-    jr z, .activeSlot
-    jr .gateDefault
+    jp z, .activeSlot
+    jp .gateDefault
 .southGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_32_LOCAL_ID
-    jr z, .activeSlot
+    jp z, .activeSlot
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
-    jr z, .activeSlot
+    jp z, .activeSlot
     jr .gateDefault
 .violetGate
     ld a, [wJohtoGateMusicSourceLocalID]
@@ -1202,6 +1204,13 @@ LookupJohtoMapGSCMusic:
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .activeSlot
     cp JOHTO_ROUTE_38_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.route42GateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_42_LOCAL_ID
     jp z, .activeSlot
     jp .gateDefault
 .route35GoldenrodGate
@@ -1304,6 +1313,9 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE36 ; slot32 Route40
     db MUSIC_GBP_GSC_ROUTE36 ; slot33 Route41
     db MUSIC_GBP_GSC_ECRUTEAK_CITY ; slot34 Cianwood City
+    db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot35 Route42 Ecruteak Gate, source overrides
+    db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot36 Route42, original Gold music
+    db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot37 Mahogany Town, original Gold music
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

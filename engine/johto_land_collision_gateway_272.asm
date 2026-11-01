@@ -47,6 +47,12 @@ JohtoOverworldSouthLandDecision::
     jr z, .westSeaMap
     cp JOHTO_CIANWOOD_CITY_LOCAL_ID
     jr z, .westSeaMap
+    cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .eastMap
+    cp JOHTO_ROUTE_42_LOCAL_ID
+    jr z, .eastMap
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jr z, .eastMap
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .activeSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -75,6 +81,13 @@ JohtoOverworldSouthLandDecision::
     bit 6, a
     jr nz, .allowJump
     callab JohtoWestSeaSpatialStep
+    ret
+.eastMap
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
+    callab JohtoEastSpatialStep
     ret
 .route33
     cp JOHTO_ROUTE_33_LOCAL_ID
