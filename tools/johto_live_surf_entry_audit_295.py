@@ -20,6 +20,7 @@ ENTRY = 'engine/overworld/field_moves.asm'
 ITEMS = 'engine/items/items.asm'
 SURF = 'engine/johto_violet_field_skills.asm'
 SPATIAL = 'engine/johto_south_geometry.asm'
+WEST_SEA = 'data/johto_west_sea_runtime_299.asm'
 DESCRIPTORS = 'data/johto_pilot_runtime_assets.asm'
 
 
@@ -29,9 +30,10 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
     def read(rel: str) -> str:
         return overrides[rel] if rel in overrides else (root / rel).read_text(encoding='utf8')
 
-    source = {p: code_only(read(p)) for p in (ENTRY, ITEMS, SURF, SPATIAL, DESCRIPTORS)}
+    source = {p: code_only(read(p)) for p in (ENTRY, ITEMS, SURF, SPATIAL, WEST_SEA, DESCRIPTORS)}
     runtime = routine(source[SURF], 'JohtoOverworldSurfDecision')
     spatial = routine(source[SPATIAL], 'JohtoSouthSpatialRoleAhead')
+    west_spatial = routine(source[WEST_SEA], 'JohtoWestSeaSpatialRoleAhead')
     violet_entry = routine(source[SURF], 'JohtoVioletWaterAhead')
     error: list[str] = []
     records = []
@@ -45,16 +47,27 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
         error.append('IsNextTileShoreOrWater: Surfboard/item water entry missing')
     if not re.search(r'(?m)^callab JohtoSouthGoldWaterProbe\s*\nret c$', violet_entry):
         error.append('JohtoVioletWaterAhead: shared Gold water probe not reachable from Surf initiation')
-    if not re.search(r'\.southModern\s+callab JohtoSouthGoldWaterProbe\s+' 
+    if not re.search(r'\.southModern\s+callab JohtoSouthGoldWaterProbe\s+'
                      r'jp c, \.water\s+callab JohtoSouthGoldShoreProbe\s+'
                      r'jp c, \.floorShore\s+jp \.shore', runtime):
-        error.append('JohtoOverworldSurfDecision: Gold water and safe shore branch broken')
+        error.append('JohtoOverworldSurfDecision: south Gold water and safe shore branch broken')
+    if not re.search(r'\.westSea\s+callab JohtoWestSeaGoldWaterProbe\s+'
+                     r'jp c, \.water\s+callab JohtoWestSeaUnsafeSurfEdge\s+'
+                     r'jr nc, \.westSeaShore\s+ld a, \$ff\s+'
+                     r'ld \[wTileInFrontOfPlayer\], a\s+jp \.shore\s+'
+                     r'\.westSeaShore\s+callab JohtoWestSeaGoldShoreProbe', runtime):
+        error.append('JohtoOverworldSurfDecision: west-sea water/unsafe-edge/shore branch broken')
     if not re.search(r'(?m)^cp JOHTO_PILOT\s*\njp nz, \.legacy$',runtime) or not re.search(
             r'(?m)^cp MAP_REGION_JOHTO\s*\njp nz, \.legacy$',runtime):
         error.append('JohtoOverworldSurfDecision: missing JOHTO_PILOT+region routing guard')
     if not re.search(r'(?m)^call JohtoSouthSpatialRoleAhead\s*\nld a, e\s*\ncp 2',
                      routine(source[SPATIAL], 'JohtoSouthGoldWaterProbe')):
         error.append('JohtoSouthGoldWaterProbe: missing live role=2 lookup')
+    if not re.search(r'(?m)^call JohtoWestSeaSpatialRoleAhead\s*\nld a, e\s*\ncp 2',
+                     routine(source[WEST_SEA], 'JohtoWestSeaGoldWaterProbe')):
+        error.append('JohtoWestSeaGoldWaterProbe: missing live role=2 lookup')
+    if not re.search(r'(?m)^callab JohtoWestSeaGoldWaterProbe\s*\nret c', violet_entry):
+        error.append('JohtoVioletWaterAhead: west-sea Gold water probe not reachable from Surf initiation')
 
     # Exclude non-pilot tilesets, since JOHTO_MODERN/PARK etc have a separate
     # wCurMapTileset branch and older pilot maps have their own water helpers.
@@ -88,10 +101,11 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
         # per-cell bin, not per-map static contracts elsewhere. New maps
         # acquire this obligation without editing a whitelist.
         grid = root / 'maps/johto_pilot' / (name + '.roles.bin')
-        selector = bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\s*\njp z, \.\w+$', spatial))
         indexed = 'maps/johto_pilot/' + name + '.roles.bin'
-        role_grid = indexed in source[SPATIAL]
-        if not (selector and role_grid and grid.is_file()):
+        south_role = indexed in source[SPATIAL] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', spatial))
+        west_role = indexed in source[WEST_SEA] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', west_spatial))
+        role_grid = south_role or west_role
+        if not (role_grid and grid.is_file()):
             if name not in registered_legacy:
                 error.append(f'{name}: Gold WATER map has neither live spatial role grid nor registered legacy water helper')
             # Older PILOT-only maps use their individually audited Surf helpers.
@@ -105,9 +119,10 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
                       if raw[y*width+x] == 2}
             if actual != water:
                 error.append(f'{name}: Gold WATER coordinates disagree with runtime role=2 grid')
-        routed = bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\s*\njp z, \.southModern$', pilot_dispatch))
+        branch = '.westSea' if (west_role or name == 'OlivineCity') else '.southModern'
+        routed = bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\s*\n(?:jp|jr) z, '+re.escape(branch)+r'$', pilot_dispatch))
         if not routed:
-            error.append(f'{name}: WATER role present but no live movement/landing dispatch {symbol} -> .southModern')
+            error.append(f'{name}: WATER role present but no live movement/landing dispatch {symbol} -> {branch}')
         records.append({'map':name,'stable_id':m['stable_id'],'water_cells':len(water),
                         'pilot_role_grid':True,'movement_and_shore_routed':routed})
     return {'status':'PASS_STATIC_ONLY' if not error else 'FAIL','errors':error,

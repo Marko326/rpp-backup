@@ -79,11 +79,11 @@ def audit(project: Path, gold_root: Path | None = None, *, overrides: dict[str, 
         constants = read('constants/region_map_constants.asm').decode()
         headers = read('data/johto_header_descriptors.asm').decode()
         links = read('data/johto_pilot_source_resources.asm').decode()
-        check('staging_does_not_advance_game_version',re.search(r'^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:26|28|32)$',constants,re.M) is not None)
+        check('staging_does_not_advance_game_version',re.search(r'^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:26|28|32|35)$',constants,re.M) is not None)
         body=headers.split('JohtoHeaderDescriptors::',1)[1].split('JohtoHeaderDescriptorsEnd::',1)[0]
-        check('staging_not_registered_in_live_headers', all(name+'RuntimeHeader' not in body for name,*_ in MAPS) if 'NUM_JOHTO_ACTIVE_MAPS EQU 26' in constants else ((all('Johto'+name+'RuntimeHeader' in body for name in ('Route37','Ecruteak')) and not any('Johto'+name+'RuntimeHeader' in body for name in ('Route38','Route38EcruteakGate'))) if 'NUM_JOHTO_ACTIVE_MAPS EQU 28' in constants else all('Johto'+name+'RuntimeHeader' in body for name in ('Route38','Route38EcruteakGate'))))
+        check('staging_not_registered_in_live_headers', all(name+'RuntimeHeader' not in body for name,*_ in MAPS) if 'NUM_JOHTO_ACTIVE_MAPS EQU 26' in constants else ((all('Johto'+name+'RuntimeHeader' in body for name in ('Route37','Ecruteak')) and not any('Johto'+name+'RuntimeHeader' in body for name in ('Route38','Route38EcruteakGate'))) if 'NUM_JOHTO_ACTIVE_MAPS EQU 28' in constants else all('Johto'+name+'RuntimeHeader' in body for name in ('Route37','Ecruteak','Route38','Route38EcruteakGate'))))
         connection_body=links.split('JohtoPilotSourceConnections::',1)[1].split('JohtoPilotSourceConnectionsEnd::',1)[0]
-        check('no_unapproved_live_connection', True if 'NUM_JOHTO_ACTIVE_MAPS EQU 32' in constants else (not any('JOHTO_ROUTE_38_LOCAL_ID' in line for line in connection_body.splitlines() if line.strip().startswith('db ')) if 'NUM_JOHTO_ACTIVE_MAPS EQU 28' in constants else not any('JOHTO_ROUTE_37_LOCAL_ID' in line or 'JOHTO_ECRUTEAK_CITY_LOCAL_ID' in line or 'JOHTO_ROUTE_38_LOCAL_ID' in line for line in connection_body.splitlines() if line.strip().startswith('db '))))
+        check('no_unapproved_live_connection', True if ('NUM_JOHTO_ACTIVE_MAPS EQU 32' in constants or 'NUM_JOHTO_ACTIVE_MAPS EQU 35' in constants) else (not any('JOHTO_ROUTE_38_LOCAL_ID' in line for line in connection_body.splitlines() if line.strip().startswith('db ')) if 'NUM_JOHTO_ACTIVE_MAPS EQU 28' in constants else not any('JOHTO_ROUTE_37_LOCAL_ID' in line or 'JOHTO_ECRUTEAK_CITY_LOCAL_ID' in line or 'JOHTO_ROUTE_38_LOCAL_ID' in line for line in connection_body.splitlines() if line.strip().startswith('db '))))
         if gold is not None:
             reg=(gold/'data/maps/maps.asm')
             attr=(gold/'data/maps/attributes.asm')

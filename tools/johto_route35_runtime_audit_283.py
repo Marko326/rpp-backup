@@ -49,8 +49,8 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
         roles = read('maps/johto_pilot/Route35.roles.bin', True)
         gate_roles = read('maps/johto_pilot/Route35GoldenrodGate.roles.bin', True)
         check('actual_game_version_and_active_count',
-              re.search(r'(?:FIX|MAP)-5\.62\.(?:285|286|287|288|289|290|294|295|297|298)@', version) is not None and 'TEST-231@' in version and
-              re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:23|26|28|32)\b', c) is not None)
+              re.search(r'(?:FIX|MAP)-5\.62\.(?:285|286|287|288|289|290|294|295|297|298|299)@', version) is not None and 'TEST-231@' in version and
+              re.search(r'NUM_JOHTO_ACTIVE_MAPS EQU (?:23|26|28|32|35)\b', c) is not None)
         check('distinct_stable_ids_17_18',
               'JOHTO_ROUTE_35_LOCAL_ID EQU 17' in c and
               'JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID EQU 18' in c)

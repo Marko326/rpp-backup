@@ -183,6 +183,24 @@
       "role": "named",
       "name": "Olivine City",
       "town_map_name": "Olivine City"
+    },
+    {
+      "id": "JOHTO_ROUTE_40_LOCAL_ID",
+      "role": "named",
+      "name": "Route 40",
+      "town_map_name": "Route 40"
+    },
+    {
+      "id": "JOHTO_ROUTE_41_LOCAL_ID",
+      "role": "named",
+      "name": "Route 41",
+      "town_map_name": "Route 41"
+    },
+    {
+      "id": "JOHTO_CIANWOOD_CITY_LOCAL_ID",
+      "role": "named",
+      "name": "Cianwood City",
+      "town_map_name": "Cianwood City"
     }
   ]
 }

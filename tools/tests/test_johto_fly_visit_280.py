@@ -59,11 +59,16 @@ class FlyVisit280(unittest.TestCase):
         self.assertRegex(version, r'(?m)^\s*db "TEST-231@"$')
         match=re.search(r'(?m)^\s*db "((?:FIX|MAP)-5\.62\.\d+)@"$',version)
         self.assertIsNotNone(match)
-        for doc in ('README.md','FEATURES.md','TODO.md','PROJECT_DELIVERY_RULES.md','RPP_DEVELOPMENT_PITFALLS.md'):
-            lines=(ROOT/doc).read_text(encoding='utf-8').splitlines()
-            title=lines[0]
-            phase_intro=(title.startswith('## TOOL-5.62.') or title.startswith('## CLEAN-5.62.')) and match.group(1) in '\n'.join(lines[:15])
-            self.assertTrue(match.group(1) in title or title.startswith('## MAP-5.62.286') or phase_intro, doc)
+        docs=('README.md','FEATURES.md','TODO.md','PROJECT_DELIVERY_RULES.md','RPP_DEVELOPMENT_PITFALLS.md')
+        titles=[(ROOT/doc).read_text(encoding='utf-8').splitlines()[0] for doc in docs]
+        if match.group(1).startswith('MAP-'):
+            # Development candidates do not rewrite formal handoff/cleanup docs.
+            # They must, however, all remain pinned to the same accepted CLEAN baseline.
+            self.assertEqual(1, len(set(titles)), titles)
+            self.assertTrue(titles[0].startswith('## CLEAN-5.62.'), titles[0])
+        else:
+            for doc,title in zip(docs,titles):
+                self.assertIn(match.group(1), title, doc)
 
 if __name__ == '__main__':
     unittest.main()

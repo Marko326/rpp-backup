@@ -65,9 +65,9 @@ def audit(root: Path, gold_root: Path | None = None, *,
         return {'status': 'FAIL', 'checks': checks, 'errors': [str(exc)],
                 'rom_built': False, 'phone_verified': False}
 
-    ck('release_and_active_count', 'FIX-5.62.298@' in version and 'TEST-231@' in version and
-       re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 32\b', constants) is not None,
-       'FIX-5.62.298 / TEST-231 / 32 active maps')
+    ck('release_and_active_count', ('FIX-5.62.298@' in version or 'MAP-5.62.299@' in version) and 'TEST-231@' in version and
+       re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:32|35)\b', constants) is not None,
+       'west corridor remains valid in FIX-5.62.298 or later MAP-5.62.299 / TEST-231')
     id_values = {name: int(value[1:], 16) if value.startswith('$') else int(value)
                  for name, value in re.findall(r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)\b', fixed + '\n' + constants)}
     slot_body = slots.split('JohtoStableIDToActiveSlot::', 1)[1].split('JohtoStableIDToActiveSlotEnd::', 1)[0]
@@ -125,9 +125,9 @@ def audit(root: Path, gold_root: Path | None = None, *,
        'west=Route39, east=Ecruteak preview')
     ck('route39_two_sided_header', 'JohtoRoute39RuntimeHeader::' in west and 'db SOUTH | EAST' in west,
        'south=Olivine, east=Route38')
-    ck('olivine_north_only_route40_closed', 'JohtoOlivineRuntimeHeader::' in west and
-       'db NORTH ; Route40 west and all buildings remain closed' in west,
-       'only Route39 north connection is live')
+    ck('olivine_north_route39_preserved', 'JohtoOlivineRuntimeHeader::' in west and
+       ('db NORTH ; Route40 west and all buildings remain closed' in west or 'db NORTH | WEST' in west),
+       'Route39 north connection remains live; MAP-299 may additionally open reviewed Route40 west')
 
     gate_objects = west.split('JohtoRoute38EcruteakGateRuntimeObjects::', 1)[1].split('JohtoRoute38RuntimeObjects::', 1)[0]
     r38_objects = west.split('JohtoRoute38RuntimeObjects::', 1)[1].split('JohtoRoute39RuntimeObjects::', 1)[0]
@@ -168,8 +168,8 @@ def audit(root: Path, gold_root: Path | None = None, *,
        'both routes have coordinate-direction Gold hop tables')
     ck('olivine_spatial_surf', all(x in geometry for x in (
        'cp JOHTO_OLIVINE_CITY_LOCAL_ID', 'JohtoOlivineRoles:: INCBIN "maps/johto_pilot/OlivineCity.roles.bin"')) and
-       re.search(r'cp JOHTO_OLIVINE_CITY_LOCAL_ID\s*\n\s*jp z, \.southModern', surf) is not None,
-       'Olivine role grid reaches shared Surf movement/shore path')
+       re.search(r'cp JOHTO_OLIVINE_CITY_LOCAL_ID\s*\n\s*jp z, \.(?:southModern|westSea)', surf) is not None,
+       'Olivine role grid reaches an audited Surf movement/shore path')
 
     ck('town_map_coordinates', all(x in fly for x in (
        'db 60, 60 ; slot 28 Route38/Ecruteak gate', 'db 60, 60 ; slot 29 Route38',

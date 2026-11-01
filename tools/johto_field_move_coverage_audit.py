@@ -255,6 +255,24 @@ def audit(root: Path, gold_root: Path) -> dict:
         and (root / 'maps/johto_pilot/OlivineCity.roles.bin').is_file()
         and (root / 'maps/johto_pilot/OlivineCity.roles.bin').read_bytes().count(2) == 406):
         surf_maps['OlivineCity'] = {'gold_map': 'OlivineCity', 'dispatch': 'JohtoSouthGoldWaterProbe'}
+    # MAP-299: Route40/41/Cianwood use the dedicated Bank $52 west-sea
+    # role-grid probe. Register only when the live selector, movement branch,
+    # exact role grid and expected Gold WATER cardinality are all present.
+    west = (root / 'data/johto_west_sea_runtime_299.asm').read_text(encoding='utf8')
+    west_contracts = (
+        ('Route40', 'JOHTO_ROUTE_40_LOCAL_ID', 466),
+        ('Route41', 'JOHTO_ROUTE_41_LOCAL_ID', 1699),
+        ('CianwoodCity', 'JOHTO_CIANWOOD_CITY_LOCAL_ID', 519),
+    )
+    for map_name, symbol, water_count in west_contracts:
+        grid = root / 'maps/johto_pilot' / f'{map_name}.roles.bin'
+        if (any(r['map'] == map_name for r in active)
+            and f'cp {symbol}' in west
+            and f'INCBIN "maps/johto_pilot/{map_name}.roles.bin"' in west
+            and f'cp {symbol}' in surf_runtime
+            and 'JohtoWestSeaGoldWaterProbe' in surf_runtime
+            and grid.is_file() and grid.read_bytes().count(2) == water_count):
+            surf_maps[map_name] = {'gold_map': map_name, 'dispatch': 'JohtoWestSeaGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []

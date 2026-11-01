@@ -30,6 +30,9 @@ APPROVED = {
     ('EcruteakCity','WEST','Route38'),('Route38','EAST','EcruteakCity'),
     ('Route38','WEST','Route39'),('Route39','EAST','Route38'),
     ('Route39','SOUTH','OlivineCity'),('OlivineCity','NORTH','Route39'),
+    ('OlivineCity','WEST','Route40'),('Route40','EAST','OlivineCity'),
+    ('Route40','SOUTH','Route41'),('Route41','NORTH','Route40'),
+    ('Route41','WEST','CianwoodCity'),('CianwoodCity','EAST','Route41'),
 }
 # Distinct Gold offsets mean a blanket 'source width + 3' would be wrong.
 # The narrow-to-wider cases each require an explicitly inspected runtime width.
@@ -69,6 +72,11 @@ NARROW_SEAM_CONTRACTS = {
         'JohtoNorthRoute35RuntimeHeader::','JohtoNorthRoute35HeaderEnd::',
         'db JOHTO_ROUTE35_WIDTH + MAP_BORDER ; 13 visible columns, not 10',
         'dw JohtoRoute35NorthRoute36Mirror + JOHTO_ROUTE_36_WIDTH * (JOHTO_ROUTE_36_HEIGHT - 3)'),
+    ('Route40','SOUTH','Route41'): (
+        'data/johto_west_sea_runtime_299.asm',
+        'JohtoRoute40RuntimeHeader::','JohtoRoute40HeaderEnd::',
+        'db JOHTO_ROUTE_40_WIDTH\n    db JOHTO_ROUTE_41_WIDTH',
+        'dw JohtoRoute41Blocks + 15'),
     ('Route39','SOUTH','OlivineCity'): (
         'data/johto_west_runtime_297.asm',
         'JohtoRoute39RuntimeHeader::','JohtoRoute39HeaderEnd::',

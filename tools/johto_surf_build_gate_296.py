@@ -26,6 +26,7 @@ MANIFEST = 'tools/johto_surf_active_water_manifest_296.json'
 CONTRACT = 'tools/johto_surf_contracts.json'
 SURF = 'engine/johto_violet_field_skills.asm'
 SPATIAL = 'engine/johto_south_geometry.asm'
+WEST_SEA = 'data/johto_west_sea_runtime_299.asm'
 DESCRIPTORS = 'data/johto_pilot_runtime_assets.asm'
 ENTRY = 'engine/overworld/field_moves.asm'
 ITEMS = 'engine/items/items.asm'
@@ -62,9 +63,10 @@ def audit(root: Path, gold_root: Path | None = None, *,
         errors.append(f'{name}: stale frozen Surf manifest record, map no longer active')
 
     sources = {path: code_only(read(path)) for path in
-               (SURF, SPATIAL, DESCRIPTORS, ENTRY, ITEMS, HOME)}
+               (SURF, SPATIAL, WEST_SEA, DESCRIPTORS, ENTRY, ITEMS, HOME)}
     asm = routine(sources[SURF], 'JohtoOverworldSurfDecision')
     selector = routine(sources[SPATIAL], 'JohtoSouthSpatialRoleAhead')
+    west_selector = routine(sources[WEST_SEA], 'JohtoWestSeaSpatialRoleAhead')
     water_probe = routine(sources[SPATIAL], 'JohtoSouthGoldWaterProbe')
     initiate = routine(sources[SURF], 'JohtoVioletWaterAhead')
     if not re.search(r'(?m)^callab JohtoVioletWaterAhead\s*\nret c$', routine(sources[ENTRY], 'IsSurfTile')):
@@ -73,11 +75,19 @@ def audit(root: Path, gold_root: Path | None = None, *,
                      routine(sources[ITEMS], 'IsNextTileShoreOrWater')):
         errors.append('SURF_INPUT: Surfboard/item WATER entry is missing/incorrect Carry')
     if not re.search(r'(?m)^callab JohtoSouthGoldWaterProbe\s*\nret c$', initiate):
-        errors.append('SURF_INPUT: Gold WATER probe not reachable from A/item gateway')
+        errors.append('SURF_INPUT: south Gold WATER probe not reachable from A/item gateway')
+    if not re.search(r'(?m)^callab JohtoWestSeaGoldWaterProbe\s*\nret c', initiate):
+        errors.append('SURF_INPUT: west-sea Gold WATER probe not reachable from A/item gateway')
     if not re.search(r'\.southModern\s+callab JohtoSouthGoldWaterProbe\s+'
                      r'jp c, \.water\s+callab JohtoSouthGoldShoreProbe\s+'
                      r'jp c, \.floorShore\s+jp \.shore', asm):
-        errors.append('SURF_MOVE_LAND: shared Gold movement/shore dispatch missing')
+        errors.append('SURF_MOVE_LAND: south Gold movement/shore dispatch missing')
+    if not re.search(r'\.westSea\s+callab JohtoWestSeaGoldWaterProbe\s+'
+                     r'jp c, \.water\s+callab JohtoWestSeaUnsafeSurfEdge\s+'
+                     r'jr nc, \.westSeaShore\s+ld a, \$ff\s+'
+                     r'ld \[wTileInFrontOfPlayer\], a\s+jp \.shore\s+'
+                     r'\.westSeaShore\s+callab JohtoWestSeaGoldShoreProbe', asm):
+        errors.append('SURF_MOVE_LAND: west-sea WATER/unsafe-edge/shore dispatch missing')
     if not re.search(r'(?m)^call JohtoSouthSpatialRoleAhead\s*\nld a, e\s*\ncp 2', water_probe):
         errors.append('SURF_ROLE: Gold role=2 water query missing')
     # Do not accept a water mask whose direction-to-next-cell calculation is
@@ -112,6 +122,29 @@ def audit(root: Path, gold_root: Path | None = None, *,
     ids = {int(num[1:],16) if num.startswith('$') else int(num): sym for sym,num in
            re.findall(r'(?m)^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)',ids_text)}
     desc = dict(re.findall(r'(?m)^db\s+(JOHTO_\w+_LOCAL_ID)\s*,\s*(JOHTO_\w+)\s*,',sources[DESCRIPTORS]))
+    # Source records freeze each active map's block dimensions.  This lets the
+    # ordinary source-only CI validate role-grid byte dimensions without an
+    # external Gold checkout; --gold-root still independently re-derives every
+    # WATER coordinate and source byte during developer onboarding/signoff.
+    equates = {k: int(v[1:],16) if v.startswith('$') else int(v) for k,v in re.findall(
+        r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)\b', ids_text)}
+    source_records = read('data/johto_pilot_source_resources.asm')
+    dimensions = {}
+    dimension_token = r'(JOHTO_[A-Z0-9_]+|\$[0-9A-Fa-f]+|\d+)'
+    for sid, wtoken, htoken in re.findall(
+            r'(?m)^\s*db\s+MAP_REGION_JOHTO,\s*(JOHTO_\w+_LOCAL_ID),\s*'
+            + dimension_token + r',\s*' + dimension_token + r'\s*$', source_records):
+        def resolve_dimension(token: str) -> int | None:
+            if token in equates:
+                return equates[token]
+            try:
+                return int(token[1:], 16) if token.startswith('$') else int(token)
+            except ValueError:
+                return None
+        width_blocks = resolve_dimension(wtoken)
+        height_blocks = resolve_dimension(htoken)
+        if width_blocks is not None and height_blocks is not None:
+            dimensions[sid] = (width_blocks * 2, height_blocks * 2)
     # Executable dispatch prefix: ignore fake branches after the terminal legacy jump.
     pilot_prefix = asm.split('\n.violet\n',1)[0].split('\njp .legacy\n',1)[0]
     tile_prefix = pilot_prefix.split('\ncp JOHTO_PILOT\n',1)[0]
@@ -120,7 +153,10 @@ def audit(root: Path, gold_root: Path | None = None, *,
         errors.append('SURF_REGION: Gold PILOT dispatcher lacks Johto/tileset guard')
     if not all(needle in selector for needle in ('wCurMap','JOHTO_RUNTIME_MAP_HANDLE',
                                                  'wCurRegion','MAP_REGION_JOHTO','wCurLocalMapID')):
-        errors.append('SURF_SCOPE: spatial selector missing map/region guards')
+        errors.append('SURF_SCOPE: south spatial selector missing map/region guards')
+    if not all(needle in west_selector for needle in ('wCurMap','JOHTO_RUNTIME_MAP_HANDLE',
+                                                       'wCurRegion','MAP_REGION_JOHTO','wCurLocalMapID')):
+        errors.append('SURF_SCOPE: west-sea spatial selector missing map/region guards')
     # Individual helper branch -> exact registered handler in the runnable block.
     gold = GoldCollisionIndex(gold_root) if gold_root is not None else None
     for m in active:
@@ -187,19 +223,27 @@ def audit(root: Path, gold_root: Path | None = None, *,
             records.append({'map':name,'water_cells':len(coords),'handler':'LEGACY','status':'CHECKED'})
             continue
         # New water-bearing maps cannot be signed off by declaring WATER cells
-        # alone. A real 16x16 role-grid selector plus runtime branch is required.
+        # alone. A real 16x16 role-grid selector plus executable runtime branch is required.
         grid_rel='maps/johto_pilot/'+name+'.roles.bin'
-        target=re.search(r'(?m)^cp '+re.escape(sym)+r'\s*\n(?:jp|jr) z, \.(\w+)$',selector)
-        registered=bool(re.search(r'(?m)^\w+::\s*INCBIN "'+re.escape(grid_rel)+r'"$',sources[SPATIAL]))
-        if not target or not registered:
+        in_south = grid_rel in sources[SPATIAL] and bool(re.search(r'(?m)^cp '+re.escape(sym)+r'\b', selector))
+        in_west = grid_rel in sources[WEST_SEA] and bool(re.search(r'(?m)^cp '+re.escape(sym)+r'\b', west_selector))
+        # Olivine keeps its accepted role grid in the south geometry bank but
+        # movement now routes through westSea so reciprocal Route40 seams can be checked.
+        routed_west = in_west or name == 'OlivineCity'
+        if not (in_south or in_west):
             errors.append(f'{name}: WATER present but no live Gold spatial selector/grid')
             continue
-        entry=re.search(r'(?m)^\.'+re.escape(target[1])+r'\s+ld hl, \w+\s+ld b, (\d+)\s+ld c, (\d+)\s+(?:jp|jr) \.common', selector)
-        if not entry:
-            errors.append(f'{name}: spatial role selector does not reach correct-sized grid')
-            continue
-        width, height = int(entry[1]), int(entry[2])
         raw = read_bytes(grid_rel)
+        if gold is not None:
+            cells = gold.cells(name)
+            width = max(x for x,y in cells) + 1
+            height = max(y for x,y in cells) + 1
+        else:
+            dims = dimensions.get(sym)
+            if dims is None:
+                errors.append(f'{name}: registered source dimensions unavailable for spatial role grid')
+                continue
+            width, height = dims
         if len(raw) != width*height:
             errors.append(f'{name}: spatial role grid size mismatch')
             continue
@@ -207,8 +251,9 @@ def audit(root: Path, gold_root: Path | None = None, *,
         if actual != coords:
             errors.append(f'{name}: role=2 grid does not match Gold WATER coordinates')
         if tileset in ('JOHTO_PILOT','JOHTO_PILOT_TILESET_ID'):
-            if not re.search(r'(?m)^cp '+re.escape(sym)+r'\s*\njp z, \.southModern$',pilot_prefix):
-                errors.append(f'{name}: WATER exists, Surf movement/shore not routed to live .southModern')
+            branch = '.westSea' if routed_west else '.southModern'
+            if not re.search(r'(?m)^cp '+re.escape(sym)+r'\s*\n(?:jp|jr) z, '+re.escape(branch)+r'$',pilot_prefix):
+                errors.append(f'{name}: WATER exists, Surf movement/shore not routed to live {branch}')
         elif not re.search(r'(?m)^cp '+re.escape(tileset)+r'\s*\njp z, \.southModern$', tile_prefix):
             errors.append(f'{name}: WATER exists, tileset {tileset} not routed to live .southModern')
         records.append({'map':name,'water_cells':len(coords),'handler':'GOLD_SPATIAL','status':'CHECKED'})

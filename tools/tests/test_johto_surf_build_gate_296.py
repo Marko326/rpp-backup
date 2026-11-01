@@ -26,11 +26,11 @@ class SurfBuildGate296(unittest.TestCase):
     def test_all_active_water_maps_with_no_external_reference(self):
         result=audit(ROOT)
         self.assertEqual(result['status'],'PASS_STATIC_ONLY',result['errors'])
-        self.assertEqual(result['active_maps'],32)
-        self.assertEqual(result['water_maps'],14)
-        self.assertEqual(len(result['checked']),32)
-        self.assertEqual(sum(x['water_cells'] for x in result['checked']),1556)
-        self.assertEqual(len([r for r in result['checked'] if r['handler']=='GOLD_SPATIAL']),6)
+        self.assertEqual(result['active_maps'],35)
+        self.assertEqual(result['water_maps'],17)
+        self.assertEqual(len(result['checked']),35)
+        self.assertEqual(sum(x['water_cells'] for x in result['checked']),4240)
+        self.assertEqual(len([r for r in result['checked'] if r['handler']=='GOLD_SPATIAL']),9)
 
     def test_new_active_map_cannot_escape_without_manual_water_review(self):
         fake={'map':'FutureWaterRoute','stable_id':99,
@@ -96,12 +96,12 @@ class SurfBuildGate296(unittest.TestCase):
     def test_swimming_probe_not_used(self):
         self.mutate_source(SURF,'callab JohtoSouthGoldWaterProbe\n    jp c, .water',
                            'callab JohtoSouthGoldWaterProbe\n    jp nc, .water',
-                           'SURF_MOVE_LAND: shared Gold movement/shore')
+                           'SURF_MOVE_LAND: south Gold movement/shore dispatch missing')
 
     def test_disembark_land_safety_broken(self):
         self.mutate_source(SURF,'callab JohtoSouthGoldShoreProbe\n    jp c, .floorShore',
                            'callab JohtoSouthGoldShoreProbe\n    jp nc, .floorShore',
-                           'SURF_MOVE_LAND: shared Gold movement/shore')
+                           'SURF_MOVE_LAND: south Gold movement/shore dispatch missing')
 
     def test_dpad_up_step_broken(self):
         self.mutate_source(SPATIAL,'.north\n    dec d\n    jp .bounds',

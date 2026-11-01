@@ -65,7 +65,7 @@ REQUIRED_FILES = (
     "maps/johto_pilot/Route36NationalParkGate.gold.blk", "maps/johto_pilot/Route36NationalParkGate.runtime.blk", "maps/johto_pilot/Route36NationalParkGate.roles.bin", "maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin",
     "engine/overworld/movement.asm", "engine/overworld/ledges.asm", "data/tileset_headers.asm",
     "data/game_version.asm", "data/bike_riding_tilesets.asm", "data/johto_ruins_north_runtime.asm",
-    "data/johto_corridor_runtime_294.asm", "data/johto_west_runtime_297.asm",
+    "data/johto_corridor_runtime_294.asm", "data/johto_west_runtime_297.asm", "data/johto_west_sea_runtime_299.asm",
     "color/data/map_palette_sets.asm", "engine/fly_town_map_helpers.asm", "tools/johto_gate_music_bike_contracts.json",
     "engine/johto_land_collision_gateway_272.asm", "engine/johto_south_geometry.asm",
     "gfx/tilesets/johto_park.png", "gfx/tilesets/johto_park_gate.png",
@@ -136,7 +136,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 32",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 35",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -144,7 +144,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 32",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 35",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -200,7 +200,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 32", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 35", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

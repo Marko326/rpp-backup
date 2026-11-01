@@ -135,6 +135,36 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
         and (root/'maps/johto_pilot/OlivineCity.roles.bin').is_file()
         and (root/'maps/johto_pilot/OlivineCity.roles.bin').read_bytes().count(2)==406):
         registered.add('OlivineCity')
+    # MAP-299: Route40/Route41/Cianwood use the dedicated Bank $52 west-sea
+    # selector.  Register them only when the live dispatcher and role-grid
+    # coordinates independently match Gold WATER; the manifest alone is not proof.
+    west_path=root/'data/johto_west_sea_runtime_299.asm'
+    west_runtime=west_path.read_text() if west_path.is_file() else ''
+    west_specs=(
+        ('Route40','JOHTO_ROUTE_40_LOCAL_ID','JohtoRoute40Roles'),
+        ('Route41','JOHTO_ROUTE_41_LOCAL_ID','JohtoRoute41Roles'),
+        ('CianwoodCity','JOHTO_CIANWOOD_CITY_LOCAL_ID','JohtoCianwoodRoles'),
+    )
+    for name,symbol,label in west_specs:
+        grid_path=root/'maps/johto_pilot'/f'{name}.roles.bin'
+        if not (any(r['map']==name for r in active)
+                and f'{label}:: INCBIN "maps/johto_pilot/{name}.roles.bin"' in west_runtime
+                and f'cp {symbol}' in west_runtime
+                and f'cp {symbol}\n    jp z, .westSea' in surf_runtime
+                and 'JohtoWestSeaGoldWaterProbe' in surf_runtime
+                and grid_path.is_file()):
+            continue
+        cells=gold.cells(name)
+        width=max(c['x'] for c in cells.values())+1
+        height=max(c['y'] for c in cells.values())+1
+        raw=grid_path.read_bytes()
+        if len(raw) != width*height:
+            continue
+        role_water={(y,x) for y in range(height) for x in range(width)
+                    if raw[y*width+x] == 2}
+        gold_water={(c['y'],c['x']) for c in cells.values() if c['role']=='WATER'}
+        if role_water == gold_water:
+            registered.add(name)
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

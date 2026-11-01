@@ -76,8 +76,8 @@ def audit(root=ROOT):
             if label not in colors:
                 problems.append(f'{name}: missing RGB5 roof palette')
                 continue
-            section=colors.split(label,1)[1].split('RoofPalette269:',1)[0]
-            actual=tuple(re.findall(r'RGB\s+(\d+\s*,\s*\d+\s*,\s*\d+)',section))
+            section=colors.split(label,1)[1]
+            actual=tuple(re.findall(r'(?m)^\s*RGB\s+(\d+\s*,\s*\d+\s*,\s*\d+)\s*$', section)[:4])
             if tuple(x.replace(' ','') for x in actual)!=palette:
                 problems.append(f'{name}: wrong Gold roof RGB5 value')
         ledges=read('engine/overworld/ledges.asm')

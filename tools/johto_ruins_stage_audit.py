@@ -63,7 +63,7 @@ def audit(project=ROOT, gold_root=None):
     if record['main_version_unchanged'] != 'MAP-5.62.257':
         issues.append('expected MAP-5.62.254 for southern runtime candidate')
     constants = (project / 'constants/region_map_constants.asm').read_text()
-    if not re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:15|21|23|26|28|32)$', constants):
+    if not re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:15|21|23|26|28|32|35)$', constants):
         issues.append('unexpected current active count')
     stable_text = (project / 'data/johto_stable_id_slots.asm').read_text()
     dbpart = stable_text.split('JohtoStableIDToActiveSlot::')[1].split('JohtoStableIDToActiveSlotEnd::')[0]
@@ -146,7 +146,7 @@ def main():
     if problems:
         for p in problems: print('FAIL:',p)
         raise SystemExit(1)
-    print('PASS: 4 Gold source layouts; all four runtime-registered; 13 active maps; static audit only')
+    print('PASS: 4 Gold source layouts; all four runtime-registered; static audit only')
 
 
 if __name__=='__main__':

@@ -39,12 +39,12 @@ class WestCorridor297(unittest.TestCase):
 
     def test_olivine_surf_dispatch_is_required(self):
         self.mutate_text('engine/johto_violet_field_skills.asm',
-            '    cp JOHTO_OLIVINE_CITY_LOCAL_ID\n    jp z, .southModern',
+            '    cp JOHTO_OLIVINE_CITY_LOCAL_ID\n    jp z, .westSea',
             '    cp JOHTO_OLIVINE_CITY_LOCAL_ID\n    jp z, .legacy',
             'olivine_spatial_surf')
 
     def test_release_version_cannot_drift(self):
-        self.mutate_text('data/game_version.asm', 'FIX-5.62.298@', 'MAP-5.62.297@',
+        self.mutate_text('data/game_version.asm', 'MAP-5.62.299@', 'MAP-5.62.297@',
                          'release_and_active_count')
 
 
