@@ -131,25 +131,26 @@ SPRITE_LEAF EQU SPRITE_GAMEBOY_KID_COPY ; unused duplicate slot for linked Green
 	const SPRITE_SILVER                    ; $4f
 	const SPRITE_BILL
 ; Sprites after this are only 1 frame
-	const SPRITE_BALL                      ; $50
-	const SPRITE_OMANYTE                   ; $51
-	const SPRITE_BOULDER                   ; $52
-	const SPRITE_PAPER_SHEET               ; $53
-	const SPRITE_BOOK                      ; $54
-	const SPRITE_CLIPBOARD                 ; $55
-	const SPRITE_SNORLAX                   ; $56
-	const SPRITE_BAG                       ; $57
-	const SPRITE_OLD_AMBER                 ; $58
-	const SPRITE_POKEDEX                   ; $59
-	const SPRITE_BERRY_TREE                ; $5a
-	const SPRITE_LYING_OLD_MAN             ; $5b
-	const SPRITE_SUDOWOODO                 ; $5c
-	const SPRITE_POKEY                     ; $5d
-	const SPRITE_DITTO                     ; $5e
-	const SPRITE_CELEBI                    ; $5f
-	const SPRITE_FOSSIL                    ; $60
-	const SPRITE_TOWN_MAP                  ; $61
-	const SPRITE_BENCH_GUY                 ; $62
+	const SPRITE_BALL                      ; $51
+	const SPRITE_OMANYTE                   ; $52
+	const SPRITE_BOULDER                   ; $53
+	const SPRITE_PAPER_SHEET               ; $54
+	const SPRITE_BOOK                      ; $55
+	const SPRITE_CLIPBOARD                 ; $56
+	const SPRITE_SNORLAX                   ; $57
+	const SPRITE_BAG                       ; $58
+	const SPRITE_OLD_AMBER                 ; $59
+	const SPRITE_POKEDEX                   ; $5a
+	const SPRITE_BERRY_TREE                ; $5b
+	const SPRITE_LYING_OLD_MAN             ; $5c
+	const SPRITE_SUDOWOODO                 ; $5d
+	const SPRITE_POKEY                     ; $5e
+	const SPRITE_DITTO                     ; $5f
+	const SPRITE_CELEBI                    ; $60
+	const SPRITE_FOSSIL                    ; $61
+	const SPRITE_TOWN_MAP                  ; $62
+	const SPRITE_BENCH_GUY                 ; $63
+	const SPRITE_JOHTO_OFFICER             ; $64 ; Gold Officer mapped to male Guard sheet + red palette
 	
 	
 ; Variable Sprite IDs Here

@@ -1,6 +1,7 @@
 ; MAP-300: Ecruteak east gate -> Route42 -> Mahogany Town outdoor chain.
-; Gold source bytes and mature stage-77 collision roles are preserved. Mt Mortar,
-; Route43/44, all Mahogany interiors, trainers/items/story remain fail-closed.
+; Gold source bytes and mature stage-77 collision roles are preserved. REF-304 adds
+; only the simple Route42 Gate Officer; Mt Mortar, Route43/44, Mahogany interiors,
+; Route42 trainers/items/story and all unregistered entrances remain fail-closed.
 
 JohtoRoute42EcruteakGateBlocks:: INCBIN "maps/johto_pilot/Route42EcruteakGate.runtime.blk"
 ASSERT @ - JohtoRoute42EcruteakGateBlocks == JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH * JOHTO_ROUTE_42_ECRUTEAK_GATE_HEIGHT
@@ -88,8 +89,9 @@ JohtoRoute42EcruteakGateRuntimeObjects::
     db 5, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR ; west -> Ecruteak east lower
     db 4, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR ; east -> Route42 upper
     db 5, 9, 1, JOHTO_REGISTERED_WARP_SELECTOR ; east -> Route42 lower
-    db 0
-    db 0
+    db 0 ; signs
+    db 1 ; Gold Route42EcruteakGate Officer at (5,2), facing down
+    object SPRITE_JOHTO_OFFICER, 5, 2, STAY, DOWN, $1
 
 JohtoRoute42RuntimeObjects::
     db $05
@@ -114,7 +116,19 @@ JohtoMahoganyRuntimeObjects::
     db 0
 
 JohtoRoute42EcruteakGateTextPointers:
-    ; NPCs remain deferred; keep no active text object.
+    dw JohtoRoute42EcruteakGateOfficerText
+JohtoRoute42EcruteakGateOfficerText:
+    ; Gold Route42EcruteakGateOfficerScript, adapted to the RBY text engine.
+    text "MOUNT MORTAR is"
+    line "like a maze."
+    para "Be careful. Don't"
+    line "get lost in there."
+    done
+    db "@"
+
+ASSERT BANK(JohtoRoute42EcruteakGateRuntimeHeader) == BANK(JohtoRoute42EcruteakGateRuntimeObjects)
+ASSERT BANK(JohtoRoute42EcruteakGateRuntimeHeader) == BANK(JohtoRoute42EcruteakGateTextPointers)
+ASSERT BANK(JohtoRoute42EcruteakGateRuntimeHeader) == BANK(JohtoRoute42EcruteakGateOfficerText)
 
 JohtoRoute42TextPointers:
     dw JohtoRoute42SignText
@@ -262,7 +276,7 @@ JohtoEastSpatialStep::
     ; FIX-302: mature masks mark the edge carpets solid. Permit all exact
     ; *inbound* steps to x0/x9,y4/y5 (from adjacent floor AND between carpets).
     ; Outward collision-Warps still belong to JohtoEastPortalCollisionExit.
-    call JohtoEastGateCarpetLaneStep300
+    call JohtoGateHorizontalCarpetInbound303
     ret c
     call JohtoEastSpatialRoleAhead
     ld a, e
@@ -286,17 +300,39 @@ JohtoEastSpatialStep::
     ld e, 0
     ret
 
-; FIX-302: permit walking/biking ONTO each of the four live gate carpets.
-; Only the exact adjacent inbound step to (0/9, 4/5) is accepted, whether
-; from the inner corridor (x1/x8) or from y3/y6 or the other carpet.
-; No off-map steps are accepted here; outward LEFT/RIGHT collision Warps remain
-; protected by the existing direction-qualified portal exit guard.
-; Carry=1/E=0: exact inbound carpet step. Carry=0: use mature collision grid.
-JohtoEastGateCarpetLaneStep300::
-    ld e, 0
+; REF-303: single data-driven inbound-carpet engine for both Ecruteak
+; horizontal gatehouses. Keep this in roomy Bank $53: West calls it with
+; callab; East calls it locally. No ROM0 growth or new Bank $4E data.
+; Records: stable local map ID, left X, right X, upper Y, lower Y.
+; These are runtime movement profiles, NOT Warp destinations/permissions.
+JohtoGateHorizontalCarpetProfiles303::
+    db JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID, 0, 9, 4, 5
+    db JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID, 0, 9, 4, 5
+    db $ff
+
+; In: live player coordinate and facing. Out: E=0/Carry=1 only when the
+; immediately adjacent *target* is a registered carpet of the current gate.
+; Otherwise E=1/Carry=0; caller uses its unchanged collision-mask fallback.
+; No edge or Warp transfer is performed here. This routine is invoked only
+; for the active Johto local-map collision paths.
+JohtoGateHorizontalCarpetInbound303::
     ld a, [wCurLocalMapID]
-    cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
-    jr nz, .no
+    ld b, a
+    ld hl, JohtoGateHorizontalCarpetProfiles303
+.find
+    ld a, [hli]
+    cp $ff
+    jr z, .no
+    cp b
+    jr z, .found
+    ld de, 4
+    add hl, de
+    jr .find
+.found
+    ld a, [wXCoord]
+    ld b, a
+    ld a, [wYCoord]
+    ld c, a
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
     jr z, .up
@@ -305,48 +341,39 @@ JohtoEastGateCarpetLaneStep300::
     cp PLAYER_DIR_LEFT
     jr z, .left
     cp PLAYER_DIR_RIGHT
-    jr z, .right
-    jr .no
+    jr nz, .no
+    inc b
+    jr .target
 .up
-    ld a, [wYCoord]
-    cp 5
-    jr z, .vertical
-    cp 6
-    jr z, .vertical
-    jr .no
+    dec c
+    jr .target
 .down
-    ld a, [wYCoord]
-    cp 3
-    jr z, .vertical
-    cp 4
-    jr z, .vertical
-    jr .no
-.vertical
-    ld a, [wXCoord]
-    and a
-    jr z, .allow
-    cp 9
-    jr z, .allow
-    jr .no
+    inc c
+    jr .target
 .left
-    ld a, [wXCoord]
-    cp 1
+    dec b
+.target
+    ld a, [hli] ; left carpet X
+    cp b
+    jr z, .skipRightX
+    ld a, [hli] ; right carpet X
+    cp b
     jr nz, .no
     jr .checkY
-.right
-    ld a, [wXCoord]
-    cp 8
-    jr nz, .no
+.skipRightX
+    inc hl
 .checkY
-    ld a, [wYCoord]
-    cp 4
-    jr z, .allow
-    cp 5
-    jr z, .allow
+    ld a, [hli] ; upper carpet Y
+    cp c
+    jr z, .yes
+    ld a, [hl]  ; lower carpet Y
+    cp c
+    jr z, .yes
 .no
+    ld e, 1
     and a
     ret
-.allow
+.yes
     ld e, 0
     scf
     ret

@@ -33,7 +33,10 @@ Tilesets:
 	; Gold house keeps separate graphics/blocks; collisions are in ROM0 too.
 	tileset JohtoHouse_Block, JohtoHouse_GFX, JohtoHouse_Coll, $FF,$FF,$FF, $FF, INDOOR
 	; Reuse the RPP Kanto gate collision vocabulary; dedicated Gold art/blocks.
-	tileset JohtoGate_Block, JohtoGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
+	; REF-306: aCoord 8,7 probes the LOWER-left 8x8 tile in the front 16x16
+	; counter cell (5,3), not its upper-left tile. That actual tile is $0E.
+	; Keep the counter solid: this is a talk-range marker, not walkability.
+	tileset JohtoGate_Block, JohtoGate_GFX, Gate_Coll, $0E,$FF,$FF, $FF, INDOOR
 	; Gold CAVE environment, independent compact art and always-readable ROM0 collision.
 	tileset JohtoUnionCave_Block, JohtoUnionCave_GFX, JohtoUnionCave_Coll, $FF,$FF,$FF, $FF, CAVE
 	tileset JohtoModern_Block, JohtoModern_GFX, JohtoModern_Coll, $FF,$FF,$FF, $04, OUTDOOR

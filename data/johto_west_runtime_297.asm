@@ -136,8 +136,9 @@ JohtoRoute38EcruteakGateRuntimeObjects::
     db 5, 0, 1, JOHTO_REGISTERED_WARP_SELECTOR ; west -> Route38 lower carpet
     db 4, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR ; east -> Ecruteak upper carpet
     db 5, 9, 1, JOHTO_REGISTERED_WARP_SELECTOR ; east -> Ecruteak lower carpet
-    db 0
-    db 0
+    db 0 ; signs
+    db 1 ; Gold Route38EcruteakGate Officer at (5,2), facing down
+    object SPRITE_JOHTO_OFFICER, 5, 2, STAY, DOWN, $1
 
 JohtoRoute38RuntimeObjects::
     db $05
@@ -170,17 +171,24 @@ JohtoOlivineRuntimeObjects::
     db 17, 20, 6
     db 0
 
-; Reference-project readable signs only; trainers/story/NPCs remain deferred.
+; REF-304: Route38 Gate's Gold Officer is live; Route38 signs remain readable, while trainers/story stay deferred.
 JohtoRoute38EcruteakGateTextPointers:
     dw JohtoRoute38EcruteakGateOfficerText
 JohtoRoute38EcruteakGateOfficerText:
-    text "NEW BARK TOWN?"
-    line "PROF. ELM lives"
-    cont "there, right?"
+    ; Gold Route38EcruteakGateOfficerScript, adapted to the RBY text engine.
+    text "Where did you say"
+    line "you're from?"
+    para "NEW BARK TOWN?"
+    line "PROF.ELM lives"
+    cont "over there, right?"
     para "You've come a long"
     line "way to get here."
     done
     db "@"
+
+ASSERT BANK(JohtoRoute38EcruteakGateRuntimeHeader) == BANK(JohtoRoute38EcruteakGateRuntimeObjects)
+ASSERT BANK(JohtoRoute38EcruteakGateRuntimeHeader) == BANK(JohtoRoute38EcruteakGateTextPointers)
+ASSERT BANK(JohtoRoute38EcruteakGateRuntimeHeader) == BANK(JohtoRoute38EcruteakGateOfficerText)
 
 JohtoRoute38TextPointers:
     dw JohtoRoute38SignText

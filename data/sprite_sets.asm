@@ -712,3 +712,10 @@ SpriteSheetPointerTable:
 	dw BenchGuySprite
 	db $40 ; byte count
 	db BANK(BenchGuySprite)
+
+	; SPRITE_JOHTO_OFFICER: Gold male Officer uses the same pixels as GuardSprite.
+	dw GuardSprite
+	db $c0 ; two-frame 12-tile human sprite
+	db BANK(GuardSprite)
+SpriteSheetPointerTableEnd::
+ASSERT SpriteSheetPointerTableEnd - SpriteSheetPointerTable == SPRITE_JOHTO_OFFICER * 4

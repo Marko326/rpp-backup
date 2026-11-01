@@ -422,72 +422,24 @@ JohtoSouthSpatialStep::
 ; MAP-297: mature west-gate carpets are blocked in the static mask because
 ; only outward collision may Warp. Permit ordinary approach/vertical lane moves.
 ; Returns E=0 pass / E=1 block for the three carpet-bearing maps.
+; Shared horizontal-carpet ingress. Both Ecruteak gates use one banked
+; target-cell predicate; their wall role grids and outward Warp guards remain
+; separate. Park East retains its accepted mature-mask backend.
 JohtoWestCarpetSpatialStep::
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
+    jr nz, .ordinaryWest
+    callab JohtoGateHorizontalCarpetInbound303
+    ld a, e
+    and a
+    ret z
+    jp .role
+.ordinaryWest
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .city
     cp JOHTO_ROUTE_38_LOCAL_ID
     jp z, .route38
-    ; FIX-302: approach from y3 DOWN/y6 UP must also enter the blocked
-    ; x0/x9 carpet cells.  Previously only y4/y5 lane switching was open.
-    ; EastWestGate x0/x9, y4/y5.
-    ld a, [wYCoord]
-    cp 4
-    jr z, .gateLane
-    cp 5
-    jr z, .gateLane
-    cp 3
-    jr z, .approachUpper
-    cp 6
-    jr z, .approachLower
     jp .role
-.approachUpper
-    ld a, [wPlayerDirection]
-    cp PLAYER_DIR_DOWN
-    jp nz, .role
-    jp .verticalGate
-.approachLower
-    ld a, [wPlayerDirection]
-    cp PLAYER_DIR_UP
-    jp nz, .role
-    jp .verticalGate
-.gateLane
-    ld a, [wPlayerDirection]
-    cp PLAYER_DIR_LEFT
-    jr z, .gateLeft
-    cp PLAYER_DIR_RIGHT
-    jr z, .gateRight
-    cp PLAYER_DIR_UP
-    jr z, .gateUp
-    cp PLAYER_DIR_DOWN
-    jr z, .gateDown
-    jp .role
-.gateLeft
-    ld a, [wXCoord]
-    cp 1
-    jp z, .allow
-    jr .verticalGate
-.gateRight
-    ld a, [wXCoord]
-    cp 8
-    jp z, .allow
-    jr .verticalGate
-.gateUp
-    ld a, [wYCoord]
-    cp 5
-    jp nz, .role
-    jr .verticalGate
-.gateDown
-    ld a, [wYCoord]
-    cp 4
-    jp nz, .role
-.verticalGate
-    ld a, [wXCoord]
-    and a
-    jp z, .allow
-    cp 9
-    jp z, .allow
-    jr .role
 .city
     ld a, [wXCoord]
     cp 1

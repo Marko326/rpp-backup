@@ -102,6 +102,8 @@ LoadMapSpriteTilePatterns:
 .notVarSprite
 	cp a,SPRITE_BALL ; is it a 4-tile sprite?
 	jr c,.notFourTileSprite
+	cp a,SPRITE_JOHTO_OFFICER ; this alias is a normal 12-tile human sprite
+	jr z,.notFourTileSprite
 	pop af
 	ld a,[hFourTileSpriteCount]
 	add a,11

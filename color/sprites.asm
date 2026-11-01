@@ -751,6 +751,11 @@ SpritePaletteAssignments: ; Characters on the overworld
 	; 0x62: SPRITE_BENCH_GUY
 	db PAL_OW_BROWN
 
+	; 0x63: SPRITE_JOHTO_OFFICER (Gold PAL_NPC_RED equivalent; keep SPRITE_GUARD unchanged)
+	db PAL_OW_RED
+SpritePaletteAssignmentsEnd::
+ASSERT SpritePaletteAssignmentsEnd - SpritePaletteAssignments == SPRITE_JOHTO_OFFICER
+
 
 AnimationTileset1Palettes:
 	INCBIN "color/data/animtileset1palettes.bin"
