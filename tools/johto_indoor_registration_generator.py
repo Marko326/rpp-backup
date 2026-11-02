@@ -260,12 +260,21 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
         late_gate_routes = [gate for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])
                             if 65 <= gate.get('stable_id', -1) < 102]
         for gate in late_gate_routes:
-            for row in gate.get('warp_contracts', []):
+            rows_for_gate = list(gate.get('warp_contracts', []))
+            if gate.get('stable_id') == 65:
+                # Gold source rows were reviewed in stages: the three initial
+                # Mahogany <-> ID65 rows, then the north ID65 <-> Route43 pair.
+                # Keep the exact in-ROM order, not the historical JSON order.
+                rows_for_gate = rows_for_gate[:3] + sorted(
+                    rows_for_gate[3:],
+                    key=lambda row: (row['source_stable_id'] != 65,
+                                     row['source_warp_ordinal']))
+            for row in rows_for_gate:
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         rows = _runtime_warp_rows(runtime)
         add('REGISTERED_WARP_ROUTES', rows == expected_routes,
-            f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; exact={rows == expected_routes}')
+            f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; first mismatch=' + str(next(((i, a, b) for i, (a, b) in enumerate(zip(expected_routes, rows)) if a != b), None)))
     except (ConversionError, OSError, KeyError, ValueError, TypeError) as exc:
         add('REGISTERED_WARP_ROUTES', False, str(exc))
     add('ROM0_COLLISION_ASSERT',

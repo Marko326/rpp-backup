@@ -10,6 +10,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
+try:
+    from johto_audit_phase import approved_phase
+except ImportError:
+    from tools.johto_audit_phase import approved_phase
 from pathlib import Path
 
 WEST = 'data/johto_west_runtime_297.asm'
@@ -65,8 +69,7 @@ def audit(root: Path, gold_root: Path | None = None, *,
         return {'status': 'FAIL', 'checks': checks, 'errors': [str(exc)],
                 'rom_built': False, 'phone_verified': False}
 
-    ck('release_and_active_count', 'REF-312@' in version and 'TEST-' not in version and
-       re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:32|35|38|39)\b', constants) is not None,
+    ck('release_and_active_count', approved_phase(version, constants, 32),
        'west corridor remains valid in REF-5.62.312 with one shared ROM version label')
     id_values = {name: int(value[1:], 16) if value.startswith('$') else int(value)
                  for name, value in re.findall(r'(?m)^DEF\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s+EQU\s+(\$[0-9A-Fa-f]+|\d+)\b', fixed + '\n' + constants)}

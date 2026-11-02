@@ -49,6 +49,9 @@ class Route43MahoganyGate316(unittest.TestCase):
         self.assertEqual(1, helper.count('cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID'))
         self.assertEqual(1, helper.count('cp JOHTO_ROUTE_43_LOCAL_ID'))
         self.assertEqual(1, helper.count('cp JOHTO_ROUTE_43_GATE_LOCAL_ID'))
+        self.assertEqual(1, helper.count('cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'))
+        self.assertEqual(1, helper.count('cp JOHTO_ROUTE_46_LOCAL_ID'))
+        self.assertEqual(1, helper.count('cp JOHTO_ROUTE_29_LOCAL_ID'))
         self.assertEqual(5, engine.count('call JohtoPilotIsVerticalGatePairMap314'))
         warp_table = engine.split('JohtoRegisteredWarpRoutes::',1)[1].split('JohtoRegisteredWarpRoutesEnd::',1)[0]
         self.assertIn('db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID', warp_table)
@@ -105,7 +108,7 @@ class Route43MahoganyGate316(unittest.TestCase):
     def test_active_gatehouses_include_both_route43_gold_gates(self):
         result = audit_active_gatehouse_carpet_walkability(ROOT, Path(GOLD))
         self.assertEqual('PASS_STATIC_ONLY', result['status'], result['errors'])
-        self.assertEqual(12, result['gatehouses_checked'])
+        self.assertEqual(13, result['gatehouses_checked'])
         self.assertEqual('PASS', next(r['status'] for r in result['results'] if r['stable_id'] == 65))
         self.assertEqual(218, result['asm_traced_moves'][65])
         self.assertEqual('PASS', next(r['status'] for r in result['results'] if r['stable_id'] == 66))

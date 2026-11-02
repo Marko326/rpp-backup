@@ -240,6 +240,35 @@
       "role": "named",
       "name": "Lake of Rage",
       "town_map_name": "Lake of Rage"
+    },
+    {
+      "id": "JOHTO_ROUTE_44_LOCAL_ID",
+      "role": "named",
+      "name": "Route 44",
+      "town_map_name": "Route 44"
+    },
+    {
+      "id": "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
+      "role": "named",
+      "name": "Blackthorn City",
+      "town_map_name": "Blackthorn City"
+    },
+    {
+      "id": "JOHTO_ROUTE_45_LOCAL_ID",
+      "role": "named",
+      "name": "Route 45",
+      "town_map_name": "Route 45"
+    },
+    {
+      "id": "JOHTO_ROUTE_46_LOCAL_ID",
+      "role": "named",
+      "name": "Route 46",
+      "town_map_name": "Route 46"
+    },
+    {
+      "id": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 29"
     }
   ]
 }

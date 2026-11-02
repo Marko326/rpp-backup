@@ -98,7 +98,20 @@ try:
     from johto_vertical_gate_runtime_314 import audit as audit_vertical_gate_runtime_314
 except ImportError:
     from tools.johto_vertical_gate_runtime_314 import audit as audit_vertical_gate_runtime_314
+try:
+    from johto_gatehouse_behavior_audit import audit as audit_gatehouse_behavior_329
+except ImportError:
+    from tools.johto_gatehouse_behavior_audit import audit as audit_gatehouse_behavior_329
+try:
+    from johto_south_chain_328_audit import audit as audit_current_south_chain
+except ImportError:
+    from tools.johto_south_chain_328_audit import audit as audit_current_south_chain
 from typing import Iterable
+try:
+    from johto_lake_of_rage_321_audit import audit as audit_current_lake
+except ImportError:
+    from tools.johto_lake_of_rage_321_audit import audit as audit_current_lake
+
 try:
     from johto_table_assert_preflight import inspect as inspect_johto_table_asserts
 except ImportError:
@@ -112,7 +125,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -135,6 +148,11 @@ EXPECTED_CONNECTIONS = {
     (22, "EAST", 63), (63, "WEST", 22),
     (63, "EAST", 64), (64, "WEST", 63),
     (67, "NORTH", 68), (68, "SOUTH", 67),
+    (64, "EAST", 69), (69, "WEST", 64),
+    (69, "EAST", 71), (71, "WEST", 69),
+    (71, "SOUTH", 72), (72, "NORTH", 71),
+    (72, "WEST", 73), (73, "EAST", 72),
+    (73, "SOUTH", 1), (1, "NORTH", 73),
 }
 MAP_LAYOUTS = {
     "NewBarkTown": (10, 9),
@@ -179,6 +197,11 @@ MAP_LAYOUTS = {
     "Route43": (10, 27),
     "Route43Gate": (5, 4),
     "LakeOfRage": (20, 18),
+    "Route44": (30, 9),
+    "BlackthornCity": (20, 18),
+    "Route45": (10, 45),
+    "Route46": (10, 18),
+    "Route29Route46Gate": (5, 4),
 }
 GOLD_SOURCE_MAPS = {
     "Route37": "Route37",
@@ -220,6 +243,11 @@ GOLD_SOURCE_MAPS = {
     "Route43": "Route43",
     "Route43Gate": "Route43Gate",
     "LakeOfRage": "LakeOfRage",
+    "Route44": "Route44",
+    "BlackthornCity": "BlackthornCity",
+    "Route45": "Route45",
+    "Route46": "Route46",
+    "Route29Route46Gate": "Route29Route46Gate",
 }
 
 
@@ -644,6 +672,62 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     for item in script_bank_report['checks']:
         _check(errors, checks, 'johto_active_script_bank_' + item['check'],
                item['status'] == 'PASS', item.get('detail', ''))
+    # REF-319: This is part of the active baseline, not an optional command
+    # a developer might forget to run after editing movement branches.
+    if (project / 'data/johto_lake_of_rage_321.asm').is_file():
+        lake_report = audit_current_lake(project)
+        for item in lake_report['checks']:
+            _check(errors, checks, 'johto_lake_319_' + item['name'],
+                   item['passed'], item.get('detail', ''))
+
+    # DEV-324 Route44: enforce the exact dry two-way seam and sealed future edges.
+    if (project / 'data/johto_route44_runtime_324.asm').is_file():
+        try:
+            from johto_route44_324_audit import audit as audit_route44_324
+        except ImportError:
+            from tools.johto_route44_324_audit import audit as audit_route44_324
+        r44 = audit_route44_324(project, gold_root=gold_root)
+        for item in r44['checks']:
+            _check(errors, checks, 'johto_route44_324_' + item['name'],
+                   item['passed'], 'source-level geometry/seam and no-plot contract')
+
+    if (project / 'data/johto_blackthorn_runtime_326.asm').is_file():
+        try:
+            from johto_blackthorn_326_audit import audit as audit_blackthorn_326
+        except ImportError:
+            from tools.johto_blackthorn_326_audit import audit as audit_blackthorn_326
+        report = audit_blackthorn_326(project, gold_root)
+        for item in report['checks']:
+            _check(errors, checks, 'johto_blackthorn_326_' + item['name'], item['passed'], '')
+
+    # REF-323: unconditional border and cross-map roof-color visual guard.
+    if (project / 'data/johto_blackthorn_runtime_326.asm').is_file():
+        try:
+            from johto_east_visual_border_palette_327 import audit as audit_visual_327
+        except ImportError:
+            from tools.johto_east_visual_border_palette_327 import audit as audit_visual_327
+        visual327 = audit_visual_327(project, gold_root)
+        for item in visual327['checks']:
+            _check(errors, checks, 'johto_visual_327_' + item['name'],
+                   item['passed'], 'active Gold map border and inherited roof palette')
+
+    if gold_root is not None:
+        try:
+            from johto_historic_visual_seam_guard_318 import audit as audit_visual_history
+        except ImportError:
+            from tools.johto_historic_visual_seam_guard_318 import audit as audit_visual_history
+        history = audit_visual_history(project, Path(gold_root))
+        for item in history['checks']:
+            _check(errors, checks, 'johto_historic_visual_' + item['name'], item['passed'], 'independent Gold visual reference')
+
+    # DEV-328: compare source Gold blocks, south gate carpet ordinals,
+    # Route29 northern viewport, blocked boundary and direct route seams.
+    # Live release audit must not rely on developers manually running this.
+    if (project / 'data/johto_south_chain_runtime_328.asm').is_file():
+        south_report = audit_current_south_chain(project, Path(gold_root) if gold_root else None)
+        for item in south_report['checks']:
+            _check(errors, checks, 'johto_south328_' + item['check'],
+                   item['status'] == 'PASS', item.get('detail', ''))
     # FIX-274: collision bypass must end with the actual scripted-input
     # session, not the old stale input counter after a ledge animation.
     if (project/'tools/johto_ledge_state_preflight_274.py').is_file():
@@ -669,6 +753,23 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         _check(errors, checks, 'johto_gate_music_bike_' + item['check'],
                item['status'] == 'PASS', item['detail'])
 
+    # DEV-329: a registered Warp table is not enough. With the supplied Gold
+    # source, force the complete active-gatehouse inventory, collision backend,
+    # carpet walkability and Warp/arrival audit into the main acceptance path.
+    # Without Gold, the unconditional vertical profile audit below still
+    # enforces the Route29 door and Route46 lane-switch thresholds.
+    if gold_root is not None:
+        try:
+            gatehouse_behavior = audit_gatehouse_behavior_329(project, Path(gold_root))
+            _check(errors, checks, 'johto_active_gatehouse_gold_collision_warp_contract_329',
+                   gatehouse_behavior.get('status') == 'PASS_REFERENCE_ONLY',
+                   f"gatehouses={gatehouse_behavior.get('carpet_movement_audit', {}).get('gatehouses_checked')}, "
+                   f"carpets={gatehouse_behavior.get('carpet_movement_audit', {}).get('carpets_checked')}, "
+                   f"arrival={gatehouse_behavior.get('arrival_audit_status')}, "
+                   f"errors={gatehouse_behavior.get('errors', [])[:8]}")
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+            _check(errors, checks, 'johto_active_gatehouse_gold_collision_warp_contract_329', False, str(exc))
+
     # DEV-314: the active vertical gate uses one shared, table-driven ASM
     # threshold/arrival/bounds implementation; future compatible gates add rows.
     vertical_gate_runtime = audit_vertical_gate_runtime_314(project)
@@ -682,7 +783,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     # DEV-312: planned future gatehouses are checked without activating them.
     # The Route43 pair must reuse the already-shared Gate_Coll path and keep
     # its Gold Warp/event contracts explicit before any runtime registration.
-    if gold_root is not None and (project / 'tools/johto_gatehouse_future_profiles_312.json').is_file():
+    if (active_count or 0) < 40 and gold_root is not None and (project / 'tools/johto_gatehouse_future_profiles_312.json').is_file():
         future_gates = audit_future_gatehouses_312(project, Path(gold_root))
         for item in future_gates['checks']:
             _check(errors, checks, 'johto_future_gatehouse_312_' + item['check'],
@@ -858,7 +959,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID", "JOHTO_ROUTE_42_LOCAL_ID",
                            "JOHTO_MAHOGANY_TOWN_LOCAL_ID", "JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",
                            "JOHTO_ROUTE_43_LOCAL_ID", "JOHTO_ROUTE_43_GATE_LOCAL_ID",
-                           "JOHTO_LAKE_OF_RAGE_LOCAL_ID"]
+                           "JOHTO_LAKE_OF_RAGE_LOCAL_ID", "JOHTO_ROUTE_44_LOCAL_ID", "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
+                           "JOHTO_ROUTE_45_LOCAL_ID", "JOHTO_ROUTE_46_LOCAL_ID", "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -920,6 +1022,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[67] = 39
     expected_slots[66] = 40
     expected_slots[68] = 41
+    expected_slots[69] = 42
+    expected_slots[71] = 43
+    expected_slots[72] = 44
+    expected_slots[73] = 45
+    expected_slots[74] = 46
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -970,10 +1077,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                "ASSERT JohtoPilotNewBarkRuntimeHeaderEnd - JohtoPilotNewBarkRuntimeHeader == 23" in map_headers,
                "New Bark WEST must target Route29 through one 11-byte record")
         _check(errors, checks, "route29_bidirectional_header",
-               "db WEST | EAST" in route29 and route29.count("db JOHTO_RUNTIME_MAP_HANDLE") == 2 and
+               "db NORTH | WEST | EAST" in route29 and route29.count("db JOHTO_RUNTIME_MAP_HANDLE") == 3 and
                "dw JohtoPilotCherrygroveRuntimeBlocks" in route29 and
                "dw JohtoPilotNewBarkRuntimeBlocks" in route29 and
-               "ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 34" in map_headers,
+               "ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 45" in map_headers and
+               "dw JohtoRoute46Route29NorthMirror + JOHTO_ROUTE_46_WIDTH * (JOHTO_ROUTE_46_HEIGHT - 3)" in route29,
                "Route29 WEST/EAST must preserve both reciprocal connections and 34-byte header")
         _check(errors, checks, "cherrygrove_route30_header",
                "db NORTH | EAST" in cherry and cherry.count("db JOHTO_RUNTIME_MAP_HANDLE") == 2 and
@@ -1119,8 +1227,48 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",1,"JOHTO_MAHOGANY_TOWN_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
+        # REF-319: keep a strict, explicit approval baseline. Do not permit
+        # arbitrary extra routes merely because they happen to be reciprocal.
+        # A newly reviewed milestone must extend the table and its tests.
+        for source, ordinal, target in (
+            ("JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",2,"JOHTO_ROUTE_43_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",3,"JOHTO_ROUTE_43_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_LOCAL_ID",0,"JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_LOCAL_ID",1,"JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_LOCAL_ID",2,"JOHTO_ROUTE_43_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_LOCAL_ID",3,"JOHTO_ROUTE_43_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_LOCAL_ID",4,"JOHTO_ROUTE_43_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_GATE_LOCAL_ID",0,"JOHTO_ROUTE_43_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_GATE_LOCAL_ID",1,"JOHTO_ROUTE_43_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_GATE_LOCAL_ID",2,"JOHTO_ROUTE_43_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_GATE_LOCAL_ID",3,"JOHTO_ROUTE_43_LOCAL_ID"),
+        ):
+            expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal),
+                                   "MAP_REGION_JOHTO", target))
+        for source, ordinal, target in (
+            ('JOHTO_ROUTE_29_LOCAL_ID',0,'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'),
+            ('JOHTO_ROUTE_46_LOCAL_ID',0,'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'),
+            ('JOHTO_ROUTE_46_LOCAL_ID',1,'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'),
+            ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',0,'JOHTO_ROUTE_46_LOCAL_ID'),
+            ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',1,'JOHTO_ROUTE_46_LOCAL_ID'),
+            ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',2,'JOHTO_ROUTE_29_LOCAL_ID'),
+            ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',3,'JOHTO_ROUTE_29_LOCAL_ID'),
+        ):
+            expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
-               f"expected Guide Gents + existing directional gate entries/exits; found {warp_rows}")
+               f"expected {len(expected_warps)} approved routes, got {len(warp_rows)}; "
+               f"missing={sorted(set(expected_warps)-set(warp_rows))}; "
+               f"extra={sorted(set(warp_rows)-set(expected_warps))}")
+        # Each registered source ordinal is unique; the graph is bidirectional
+        # at the map level, even where Gold uses different carpet counts.
+        keys = [(r[0], r[1], r[2]) for r in warp_rows]
+        pairs = {(r[0], r[1], r[3], r[4]) for r in warp_rows}
+        _check(errors, checks, "registered_warp_unique_ordinals", len(keys)==len(set(keys)),
+               "two runtime rows must not use the same source map + ordinal")
+        _check(errors, checks, "registered_warp_bidirectional_pairs",
+               all((to_reg, to_map, from_reg, from_map) in pairs
+                   for from_reg, from_map, to_reg, to_map in pairs),
+               "all approved pairs must have a reverse path")
     except ValueError as exc:
         errors.append(f"registered_warp_routes: {exc}")
         checks.append({"check": "registered_warp_routes", "status": "FAIL", "detail": str(exc)})

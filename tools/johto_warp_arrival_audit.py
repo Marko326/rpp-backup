@@ -113,10 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 12 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 97 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 13 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 104 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 12 gates and 97 activated Warp arcs')
+           'MUS contract records 3 house arcs, 13 gates and 104 activated Warp arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -382,6 +382,57 @@ def audit(project: Path, gold: Path) -> dict:
                 'MAP_REGION_JOHTO', local_names[row['target_stable_id']]))
     _check(checks, errors, 'route43_north_gates_both_exact_gold_warps', all_north_gates_valid,
            'ID65 + ID66 must register 14 ordered real Gold arcs with correct roles')
+    # DEV-328/329: exact Route29 <-> Route29Route46Gate <-> Route46 arcs.
+    # This is intentionally separate from the Route43 pair so a new vertical
+    # gate cannot inherit the wrong DOOR/carpet thresholds or ordinal order.
+    south_gate_ids = {
+        1: 'JOHTO_ROUTE_29_LOCAL_ID',
+        73: 'JOHTO_ROUTE_46_LOCAL_ID',
+        74: 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',
+    }
+    south_gate_pins = [
+        (1, 0, 74, 2),
+        (73, 0, 74, 0), (73, 1, 74, 1),
+        (74, 0, 73, 0), (74, 1, 73, 1),
+        (74, 2, 1, 0), (74, 3, 1, 0),
+    ]
+    south_gate_rows = [g for g in north_gate_contracts if g.get('stable_id') == 74]
+    south_gate_valid = len(south_gate_rows) == 1
+    if south_gate_valid:
+        south_gate_entries = south_gate_rows[0].get('warp_contracts', [])
+        observed = [(r.get('source_stable_id'), r.get('source_warp_ordinal'),
+                     r.get('target_stable_id'), r.get('target_warp_ordinal'))
+                    for r in south_gate_entries]
+        south_gate_valid = observed == south_gate_pins
+        for row in south_gate_entries:
+            src, dst = row.get('source_stable_id'), row.get('target_stable_id')
+            if src not in south_gate_ids or dst not in south_gate_ids:
+                south_gate_valid = False
+                continue
+            try:
+                source_events = _gold_warp_events(gold, row['source_gold_map'])
+                target_events = _gold_warp_events(gold, row['target_gold_map'])
+                native = source_events[row['source_gold_warp_number_one_based'] - 1]
+                target = target_events[row['target_gold_warp_number_one_based'] - 1]
+                role = collision_index.role_at(row['source_gold_map'], *row['source_xy'])
+                expected_trigger = 'STEP_ON' if role == 'DOOR' else 'COLLISION_ONLY'
+                expected_direction = 'UP' if role == 'DOOR' else 'DOWN'
+                target_role = collision_index.role_at(row['target_gold_map'], *row['target_xy'])
+                expected_arrival = 'D_DOWN' if target_role == 'DOOR' else 'NONE'
+                if ([native['x'], native['y']] != row['source_xy'] or
+                    native['destination'].replace('_', '') != row['target_gold_map'].upper().replace('_', '') or
+                    [target['x'], target['y']] != row['target_xy'] or
+                    role != row['source_gold_collision_role'] or
+                    row.get('trigger') != expected_trigger or
+                    row.get('direction') != expected_direction or
+                    row.get('arrival_auto_step') != expected_arrival):
+                    south_gate_valid = False
+            except (IndexError, ValueError, KeyError, TypeError):
+                south_gate_valid = False
+            expected_routes.append(('MAP_REGION_JOHTO', south_gate_ids[src],
+                str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', south_gate_ids[dst]))
+    _check(checks, errors, 'route29_46_gate_exact_gold_warps', south_gate_valid,
+           'ID74 requires 7 exact Route29/Route46/NorthSouthGate Gold arcs, roles, directions and arrival steps')
     try:
         from collections import Counter
         rows = _route_rows(runtime)

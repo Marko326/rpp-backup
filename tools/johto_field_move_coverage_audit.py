@@ -41,6 +41,10 @@ LEDGE_COORDINATE_TABLES = {
     'MahoganyTown': ('JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JohtoMahoganyGoldHops', '.mahoganyGold', '.ruinsCoordinateHopLookup'),
     'Route43': ('JOHTO_ROUTE_43_LOCAL_ID', 'JohtoRoute43GoldHops', '.route43Gold', '.ruinsCoordinateHopLookup'),
     'LakeOfRage': ('JOHTO_LAKE_OF_RAGE_LOCAL_ID', 'JohtoLakeOfRageGoldHops', '.lakeOfRageGold', '.ruinsCoordinateHopLookup'),
+    'Route44': ('JOHTO_ROUTE_44_LOCAL_ID', 'JohtoRoute44GoldHops', '.route44Gold', '.ruinsCoordinateHopLookup'),
+    'BlackthornCity': ('JOHTO_BLACKTHORN_CITY_LOCAL_ID', 'JohtoBlackthornGoldHops', '.blackthornGold', '.ruinsCoordinateHopLookup'),
+    'Route45': ('JOHTO_ROUTE_45_LOCAL_ID', 'JohtoRoute45GoldHops', '.route45Gold', '.ruinsCoordinateHopLookup'),
+    'Route46': ('JOHTO_ROUTE_46_LOCAL_ID', 'JohtoRoute46GoldHops', '.route46Gold', '.ruinsCoordinateHopLookup'),
 }
 
 
@@ -152,6 +156,29 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
     if re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*(?:jr|jp) z, \.route31PairTable\s*$', dispatch):
         return table if table in dispatch else None
     return None
+
+
+def _landing_guard_has_route_table(source: str, map_name: str) -> bool:
+    """Confirm the shared post-hop overrun guard dispatches the exact Gold table."""
+    expected = {
+        'Route45': ('JOHTO_ROUTE_45_LOCAL_ID', '.route45', 'JohtoRoute45GoldHops'),
+        'Route46': ('JOHTO_ROUTE_46_LOCAL_ID', '.route46', 'JohtoRoute46GoldHops'),
+    }.get(map_name)
+    if expected is None:
+        return True
+    symbol, label, table = expected
+    if 'JohtoSouthHopLandingGuard::' not in source:
+        return False
+    tail = source.split('JohtoSouthHopLandingGuard::', 1)[1]
+    end = re.search(r'(?m)^LoadHoppingShadowOAM::?\s*$', tail)
+    if not end:
+        return False
+    body = tail[:end.start()]
+    dispatch = re.search(rf'(?m)^\s*cp {re.escape(symbol)}\s*\n\s*jp z, {re.escape(label)}\s*$', body)
+    if not dispatch:
+        return False
+    target = re.search(rf'(?m)^{re.escape(label)}\s*\n\s*ld hl, {re.escape(table)}\s*\n\s*jp \.scan\s*$', body)
+    return target is not None
 
 
 def _coordinate_hop_entries(source: str, table: str) -> set[tuple[int, int, str]]:
@@ -293,11 +320,16 @@ def audit(root: Path, gold_root: Path) -> dict:
     for map_name, symbol, water_count in (
         ('Route43', 'JOHTO_ROUTE_43_LOCAL_ID', 72),
         ('LakeOfRage', 'JOHTO_LAKE_OF_RAGE_LOCAL_ID', 300),
+        ('Route44', 'JOHTO_ROUTE_44_LOCAL_ID', 120),
+        ('BlackthornCity', 'JOHTO_BLACKTHORN_CITY_LOCAL_ID', 80),
+        ('Route45', 'JOHTO_ROUTE_45_LOCAL_ID', 16),
     ):
         grid = root / 'maps/johto_pilot' / f'{map_name}.roles.bin'
+        role_source = (east + ((root/'data/johto_blackthorn_runtime_326.asm').read_text() if (root/'data/johto_blackthorn_runtime_326.asm').is_file() else '') +
+                       ((root/'data/johto_south_chain_runtime_328.asm').read_text() if (root/'data/johto_south_chain_runtime_328.asm').is_file() else ''))
         if (any(r['map'] == map_name for r in active)
             and f'cp {symbol}' in east
-            and f'INCBIN "maps/johto_pilot/{map_name}.roles.bin"' in east
+            and f'INCBIN "maps/johto_pilot/{map_name}.roles.bin"' in role_source
             and f'cp {symbol}' in surf_runtime
             and 'JohtoEastGoldWaterProbe' in surf_runtime
             and grid.is_file() and grid.read_bytes().count(2) == water_count):
@@ -351,13 +383,16 @@ def audit(root: Path, gold_root: Path) -> dict:
             elif name in LEDGE_COORDINATE_TABLES:
                 actual = _coordinate_hop_entries(ledges, ledge_table)
                 expected = _gold_safe_hop_directions(cells)
-                if actual == expected:
+                landing_guard_ok = _landing_guard_has_route_table(ledges, name)
+                if actual == expected and landing_guard_ok:
                     ledge_status = 'REGISTERED'
                 else:
                     ledge_status = 'MISSING_OR_MISMATCHED_COORDINATE_HOPS'
                     missing = sorted(expected - actual)
                     extra = sorted(actual - expected)
                     errors.append(f'{name}: Gold directed HOP mismatch; missing={missing}, extra={extra}')
+                    if not landing_guard_ok:
+                        errors.append(f'{name}: shared post-hop landing guard does not dispatch {ledge_table}')
             else:
                 ledge_status = 'REGISTERED'
         rows.append({

@@ -1,3 +1,31 @@
+> **CLEAN-5.62.325｜DEV-329 实机验收后的清理阶段**：用户已确认 Route46/Route29 门房空气墙问题修复正常，现有47张地图与游戏内 `REF-325` 均保持不变；本轮不改游戏运行代码。最新独立复验记录见 [`docs/CLEAN_REF325_VALIDATION.md`](docs/CLEAN_REF325_VALIDATION.md)。下阶段重点是[城都与关都地图功能等价性专项 TODO](docs/TODO_JOHTO_KANTO_MAP_FUNCTION_PARITY.md)，不是剧情开发。以下为历史开发记录。
+
+> **当前 DEV-329 / REF-5.62.325：修复29/46号道路门房双入口与门毯横向换道，47 张活动地图不变。** Route46 两格外部门毯可左右换位但不误触发 Warp；Route29 `(27,2)` 朝上可进入 ID74 门房。完整核对 Route45/46 全部 Gold 跳崖方向。仍是测试阶段，不接冰洞内部或剧情。见 [DEV-329 门房阈值修复说明](docs/DEV329_ROUTE29_46_GATE_THRESHOLD_FIX.md)。DEV-328 保留为上一轮测试候选记录。
+
+> **DEV-328 / REF-5.62.324：烟墨市南下完整通路测试候选，47 张活动地图。** Route45 → Route46 → ID74 29/46号道路门房 → Route29，连同29号道路北侧 Gold 画面预览；不接冰洞内部或剧情。见 [DEV-328 接入与实机测试说明](docs/DEV328_ROUTE45_ROUTE46_GATE_HANDOFF.md)。此下是 DEV-327 及更早阶段历史记录。
+
+> **DEV-327 设备画面问题修复**：Route44/Blackthorn Gold `$71` 岩壁边框及 Route44 继承 Mahogany 屋顶调色板；统一主审计加入负向测试。详见 [`docs/DEV327_ROUTE44_VISUAL_FIX.md`](docs/DEV327_ROUTE44_VISUAL_FIX.md)。
+
+> **当前 DEV-326 / REF-5.62.322：仅接入烟墨市室外（ID71 / slot43）**，共44张地图；Route44↔烟墨市真正双向通行，烟墨市南侧 Route45 只做原版预览，冰洞内部/建筑/剧情全不接。见 [DEV-326 单图说明](docs/DEV326_BLACKTHORN_OUTDOOR_ONBOARDING.md)。此下是历史阶段记录。
+
+> **DEV-326 测试候选**：只开放烟墨市室外（ID71/slot43），Route44 东侧与烟墨市西侧双向；Route45 南侧仅预览，洞内/建筑/剧情不接。
+> **DEV-325 / REF-5.62.321：Route44 东侧岩壁预览修复**。Gold 原版右侧应为烟墨市西侧山壁，这次仅补显示数据；烟墨市和冰之通路仍不开放。参见 [DEV-325 说明](docs/DEV325_ROUTE44_EAST_PREVIEW_FIX.md)。
+
+> **当前工作区：DEV-324 地图扩展测试版（游戏 REF-5.62.320）**：活动地图 **43 张**，本轮新增 Route44（ID69、slot42），卡吉镇东 ↔ Route44 西双向通行；Gold 地形、Surf、跳崖已接入。**本阶段只扩地图，不实现野外剧情、NPC、训练师、道具。**冰之通路未开放。
+> 本轮增量基线为**已应用 DEV-323** 的测试工作区；真实 Git HEAD `a167b2ad2bc8b12d3cb777c7120c008f7fdf8a5b` 未改变。只交两份互斥的正向补丁，不提交 Git，不由助手构建 ROM。
+> [DEV-324 最新范围和走图验收](docs/DEV324_ROUTE44_MAP_EXPANSION.md)。旧阶段内容保留作历史记录，以下 REF-319/DEV-323 描述**不是当前版本**。
+
+---
+
+> **最新 DEV-323 工作区说明（开发测试中）**：基于用户上传的 `REF-319.patch`，工具/测试继续修正版本来源判定和湖区移动控制流防回归。**仍为 REF-319，不使用 REF-320 正式收口包，不需反向隔离补丁或 Git 日志。**本轮开发包的增量/累计全量两份正向补丁二选一，不能叠加。
+>
+> **DEV-324 测试阶段 / 扩地图**：卡吉镇 EAST ↔ Route44 WEST，新增第43张活动地图；只做地形、移动、Surf/跳崖，不接剧情。
+> [DEV-324 地图扩展说明](docs/DEV324_ROUTE44_MAP_EXPANSION.md)。
+> **2026-11-02 维护修复交接**：本次修正历史审计和测试基线、补齐负向故障注入；
+> 最新统一验收入口：`python tools/validate_current_project.py`。
+> 详见 [`docs/REF319_CURRENT_VALIDATION_HANDOFF.md`](docs/REF319_CURRENT_VALIDATION_HANDOFF.md)。
+> 以下旧章节保留原开发过程记录，其中“未提交”等字样是历史状态，请以新交接和原始导出信息判读。
+
 ## 当前城都开发状态：REF-5.62.319（2026-11-02）
 
 当前未提交主线已接通 Route43 南北门房与 Lake of Rage 室外区域，活动地图 42 张。REF-319 保留 Gold 原版 Lake 20×18 地形、300 WATER、5 Cut、6 个向下跳崖，并修正 ID68 进入精确 Gold role-grid 的陆地碰撞分派；用户已反馈实际查看未发现问题。Lake 两栋房屋、红色暴鲤龙、渡和剧情事件仍为下一阶段，不属于本次收口。正式提交仍以导出记录的 HEAD `c4890820e06b5bb361ab663f40680117c59c2e70` 为累计基线。

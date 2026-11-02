@@ -33,7 +33,7 @@ class JohtoBikeCutSurf252(unittest.TestCase):
 
     def test_only_active_gold_gate_eligible_and_legacy_untouched(self):
         b=self.home.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
-        self.assertRegex(b, r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
+        self.assertRegex(b, r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+(?:cp MAP_REGION_JOHTO|dec a[^\n]*)\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
         self.assertIn('cp ROUTE_23',b)
         self.assertIn('cp INDIGO_PLATEAU',b)
         self.assertIn('ld hl, BikeRidingTilesets',b)
@@ -60,8 +60,8 @@ class JohtoBikeCutSurf252(unittest.TestCase):
 
     def test_negative_gate_identity_mutations_fail_contract(self):
         body=self.home.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
-        valid=re.compile(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
-        for src in (body.replace('cp MAP_REGION_JOHTO','cp MAP_REGION_KANTO',1),
+        valid=re.compile(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+(?:cp MAP_REGION_JOHTO|dec a[^\n]*)\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
+        for src in (body.replace('dec a ; Johto region=1; same Z flag as cp 1, saving one ROM0 byte','inc a ; tampered region test',1),
                     body.replace('cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID','cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID',1),
                     body.replace('jr nz, .legacyBike','jr z, .legacyBike',1)):
             self.assertIsNone(valid.search(src))

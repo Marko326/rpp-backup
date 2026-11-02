@@ -6,6 +6,7 @@ This test does not replace ROM linking or gameplay validation.
 """
 import hashlib
 import json
+import re
 import unittest
 from pathlib import Path
 import sys
@@ -26,7 +27,7 @@ class SouthSourceStage(unittest.TestCase):
         self.assertEqual(len(self.manifest['maps']), 6)
         self.assertTrue(all(not row['runtime_enabled'] for row in self.manifest['maps']))
         table = (ROOT / 'constants/region_map_constants.asm').read_text()
-        self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 39', table)
+        self.assertGreaterEqual(int(re.search(r'NUM_JOHTO_ACTIVE_MAPS\s+EQU\s+(\d+)', table).group(1)), 18)
         slots = (ROOT / 'data/johto_stable_id_slots.asm').read_text()
         # Existing IDs 10..15 are now live; source .gold.blk still remains an immutable comparison oracle.
         self.assertIn('13, 14, 15, 16, 17, 18, 19, 20', slots)

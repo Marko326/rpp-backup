@@ -77,8 +77,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 39', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 39',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 47', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 47',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -113,7 +113,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
     def test_warp_arrival_contract_passes_against_mus(self):
         report = audit_arrival(ROOT, self.gold)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(len(report['checks']), 22)  # MAP-300 adds the Ecruteak east gate Warp contract
+        self.assertEqual(len(report['checks']), 23)  # DEV-329 adds exact Route29/46 gate Gold Warp contract
         self.assertFalse(report['runtime_verified'])
         self.assertFalse(report['phone_accepted'])
         self.assertEqual(report['gold_roles']['GuideGentsHouse(2,7)'], 'WARP_CARPET_DOWN')
@@ -166,17 +166,17 @@ class IndoorGoldDependentTests(unittest.TestCase):
         self.assertEqual(report['gold_gate_inventory']['collision_roles'], {
             'WARP_CARPET_DOWN': 30, 'DOOR': 26,
             'WARP_CARPET_LEFT': 22, 'WARP_CARPET_RIGHT': 22})
-        self.assertEqual(report['current_active_gate_ids'], [6, 11, 13, 18, 19, 23, 62, 65, 102, 104, 105])
+        self.assertEqual(report['current_active_gate_ids'], [6, 11, 13, 18, 19, 23, 62, 65, 66, 74, 102, 104, 105])
         self.assertEqual(report['carpet_movement_audit']['status'], 'PASS_STATIC_ONLY')
-        self.assertEqual(report['carpet_movement_audit']['gatehouses_checked'], 11)
-        self.assertEqual(report['carpet_movement_audit']['carpets_checked'], 34)
+        self.assertEqual(report['carpet_movement_audit']['gatehouses_checked'], 13)
+        self.assertEqual(report['carpet_movement_audit']['carpets_checked'], 38)
         self.assertFalse(report['phone_accepted'])
 
     def test_every_active_gatehouse_has_a_real_carpet_walkability_path(self):
         report = audit_active_gatehouse_carpet_walkability(ROOT, self.gold)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(report['gatehouses_checked'], 11)
-        self.assertEqual(report['carpets_checked'], 34)
+        self.assertEqual(report['gatehouses_checked'], 13)
+        self.assertEqual(report['carpets_checked'], 38)
         self.assertTrue(all(row['status'] == 'PASS' for row in report['results']))
 
     def test_missing_east_gate_lane_allowlist_fails_closed(self):

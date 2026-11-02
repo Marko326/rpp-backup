@@ -19,7 +19,7 @@ REQUIRED_FILES = (
     "constants/region_map_constants.asm", "constants/johto_fixed_map_ids.asm",
     "data/johto_header_descriptors.asm", "data/johto_pilot_runtime_assets.asm",
     "data/johto_pilot_source_resources.asm", "data/johto_pilot_map_headers.asm",
-    "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm",
+    "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm", "data/johto_south_chain_runtime_328.asm", "data/johto_route44_runtime_324.asm", "data/johto_blackthorn_runtime_326.asm",
     "data/johto_indoor_house.asm", "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm", "engine/johto_land_collision_gateway_272.asm",
     "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
     "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
@@ -65,6 +65,8 @@ REQUIRED_FILES = (
     "maps/johto_pilot/Route36NationalParkGate.gold.blk", "maps/johto_pilot/Route36NationalParkGate.runtime.blk", "maps/johto_pilot/Route36NationalParkGate.roles.bin", "maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin",
     "engine/overworld/movement.asm", "engine/overworld/ledges.asm", "data/tileset_headers.asm",
     "data/game_version.asm", "data/bike_riding_tilesets.asm", "data/johto_ruins_north_runtime.asm",
+    "constants/event_constants.asm", "engine/johto_pilot_fly_map.asm", "engine/overworld/ledges.asm",
+    "data/johto_route43_runtime_315.asm", "data/johto_route43_gate_319.asm", "data/johto_lake_of_rage_321.asm",
     "data/johto_corridor_runtime_294.asm", "data/johto_west_runtime_297.asm", "data/johto_west_sea_runtime_299.asm", "data/johto_east_runtime_300.asm", "data/johto_route43_mahogany_gate_313.asm", "data/johto_vertical_gate_runtime_314.asm",
     "color/data/map_palette_sets.asm", "engine/fly_town_map_helpers.asm", "tools/johto_gate_music_bike_contracts.json",
     "engine/johto_land_collision_gateway_272.asm", "engine/johto_south_geometry.asm",
@@ -136,7 +138,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 39",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 47",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -144,7 +146,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 39",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 47",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -200,7 +202,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 39", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 47", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))
@@ -249,6 +251,20 @@ class PilotMigrationAuditTests(unittest.TestCase):
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("collision_list_contents" in error for error in report["errors"]))
+
+    def test_duplicate_registered_warp_source_ordinal_fails(self):
+        self.mutate('engine/johto_pilot_runtime.asm',
+                    'db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID',
+                    'db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID')
+        report=self.run_audit()
+        self.assertTrue(any('registered_warp_unique_ordinals' in e for e in report['errors']), report['errors'])
+
+    def test_non_reciprocal_registered_warp_pair_fails(self):
+        self.mutate('engine/johto_pilot_runtime.asm',
+                    'db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID',
+                    'db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID')
+        report=self.run_audit()
+        self.assertTrue(any('registered_warp_bidirectional_pairs' in e for e in report['errors']), report['errors'])
 
     def test_registered_warp_table_must_keep_both_room_exits(self):
         self.mutate("engine/johto_pilot_runtime.asm",

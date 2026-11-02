@@ -17,7 +17,7 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
     def test_all_active_water_cut_and_hop_cells_are_registered(self):
         result = audit(ROOT, GOLD)
         self.assertEqual('PASS', result['status'], result['errors'])
-        self.assertEqual({'active_maps': 42, 'water_cells': 4732, 'cut_trees': 16, 'hop_cells': 190},
+        self.assertEqual({'active_maps': 47, 'water_cells': 4948, 'cut_trees': 16, 'hop_cells': 358},
                          result['totals'])
         rows = {row['map']: row for row in result['rows']}
         self.assertEqual((8, 'REGISTERED'), (rows['NewBarkTown']['water_cells'], rows['NewBarkTown']['surf']))
@@ -49,6 +49,10 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
                          (rows['LakeOfRage']['water_cells'], rows['LakeOfRage']['surf'],
                           rows['LakeOfRage']['cut_trees'], rows['LakeOfRage']['cut'],
                           rows['LakeOfRage']['hop_cells'], rows['LakeOfRage']['ledge']))
+        self.assertEqual((120, 'REGISTERED', 0, 19, 21, 'REGISTERED'),
+                         (rows['Route44']['water_cells'], rows['Route44']['surf'],
+                          rows['Route44']['cut_trees'], rows['Route44']['hop_cells'],
+                          rows['Route44']['safe_hop_directions'], rows['Route44']['ledge']))
         self.assertFalse(result['runtime_verified'])
         self.assertFalse(result['rom_built'])
         self.assertFalse(result['phone_accepted'])
@@ -69,6 +73,7 @@ class JohtoFieldMoveCoverage253(unittest.TestCase):
         self.assertEqual('REGISTERED',rows['EcruteakCity']['ledge'])
         self.assertEqual('REGISTERED',rows['EcruteakCity']['surf'])
 
+    @unittest.skipIf(GOLD is None, 'Gold reference root required')
     def test_newbark_water_is_exact_gold_and_not_walkable_without_surf(self):
         gold = GoldCollisionIndex(GOLD)
         water = {(c['y'], c['x']) for c in gold.cells('NewBarkTown').values()

@@ -513,8 +513,8 @@ def audit_active_gatehouse_carpet_walkability(
         if registry.get('schema') != 'johto-active-gatehouse-profiles-v1':
             fail('invalid shared gatehouse profile schema')
         profile_rows = registry.get('active_gatehouses', [])
-        if len(profile_rows) != 12 or len({row.get('stable_id') for row in profile_rows}) != len(profile_rows):
-            fail('shared profiles must list 12 unique active gatehouse IDs')
+        if len(profile_rows) != 13 or len({row.get('stable_id') for row in profile_rows}) != len(profile_rows):
+            fail('shared profiles must list 13 unique active gatehouse IDs')
         profile_by_id = {row['stable_id']: row for row in profile_rows}
         policy = {row['stable_id']:row['collision_strategy'] for row in profile_rows}
         bike_policy = {row['gold_map']:row for row in music['active_gates']}
@@ -561,7 +561,7 @@ def audit_active_gatehouse_carpet_walkability(
         if set(active_ids) != set(policy):
             fail(f'carpet collision policy must explicitly cover every active gatehouse: active={active_ids}, policy={sorted(policy)}')
         allowed_policies = {
-            'legacy_gate_tilecoll': {6, 19, 65, 66, 102},
+            'legacy_gate_tilecoll': {6, 19, 65, 66, 74, 102},
             'south_gold_role_grid': {11, 13, 18, 104},
             'west_carpet_lane_helper': {23},
             'east_carpet_lane_helper': {62},
@@ -575,7 +575,7 @@ def audit_active_gatehouse_carpet_walkability(
         # The legacy tile-collision reader probes the lower-left 8x8 tile of
         # the target 16x16 cell (GetTileAndCoordsInFrontOfPlayer's aCoord 6/8/10,
         # row 9/11 offsets). Confirm those actual probe tiles are in Gate_Coll.
-        legacy_ids = {6, 19, 66, 102}
+        legacy_ids = {6, 19, 65, 66, 74, 102}
         if not all(token in player_state for token in ('aCoord 8, 11', 'aCoord 8, 7', 'aCoord 6, 9', 'aCoord 10, 9')):
             fail('legacy Gate_Coll probe geometry no longer matches GetTileAndCoordsInFrontOfPlayer')
         if not re.search(r'(?m)^\s*tileset\s+JohtoGate_Block\s*,\s*JohtoGate_GFX\s*,\s*Gate_Coll\s*,', tileset_headers):
@@ -1027,6 +1027,53 @@ def audit(project: Path, gold: Path) -> dict:
             south_errors.append(str(exc))
     _check(checks, errors, 'active_south_gate_exact_contract', not south_errors,
            f'ID102 South Gate: 8 Gold/runtime directional routes, no auto-step; errors={south_errors[:8]}')
+
+    # DEV-328/329: the Route29/46 vertical gate is a separate exact Gold
+    # contract. Validate all seven reciprocal arcs, including the Route29
+    # STEP_ON DOOR and both Route46 collision-only DOWN carpets.
+    south_gate_errors = []
+    south_gate = gate_contracts_by_id.get(74)
+    south_gate_expected = [
+        ('Route29_to_Gate', 1, 0, [27, 1], 'UP', 'STEP_ON', 74, 2, [4, 7]),
+        ('Route46_0_to_Gate', 73, 0, [7, 33], 'DOWN', 'COLLISION_ONLY', 74, 0, [4, 0]),
+        ('Route46_1_to_Gate', 73, 1, [8, 33], 'DOWN', 'COLLISION_ONLY', 74, 1, [5, 0]),
+        ('Gate_0_to_Route46', 74, 0, [4, 0], 'UP', 'STEP_ON', 73, 0, [7, 33]),
+        ('Gate_1_to_Route46', 74, 1, [5, 0], 'UP', 'STEP_ON', 73, 1, [8, 33]),
+        ('Gate_2_to_Route29', 74, 2, [4, 7], 'DOWN', 'COLLISION_ONLY', 1, 0, [27, 1]),
+        ('Gate_3_to_Route29', 74, 3, [5, 7], 'DOWN', 'COLLISION_ONLY', 1, 0, [27, 1]),
+    ]
+    if south_gate is None or south_gate.get('gold_map') != 'Route29Route46Gate':
+        south_gate_errors.append('missing or wrong ID74 Route29Route46Gate contract')
+    else:
+        rows = south_gate.get('warp_contracts', [])
+        actual = [(r.get('id'), r.get('source_stable_id'), r.get('source_warp_ordinal'),
+                   r.get('source_xy'), r.get('direction'), r.get('trigger'),
+                   r.get('target_stable_id'), r.get('target_warp_ordinal'), r.get('target_xy'))
+                  for r in rows]
+        if actual != south_gate_expected:
+            south_gate_errors.append(f'ID74 seven-route contract differs: {actual}')
+        for row in rows:
+            try:
+                source_event = _gold_warp_events(gold, row['source_gold_map'])[
+                    row['source_gold_warp_number_one_based'] - 1]
+                target_event = _gold_warp_events(gold, row['target_gold_map'])[
+                    row['target_gold_warp_number_one_based'] - 1]
+                source_role = index.role_at(row['source_gold_map'], *row['source_xy'])
+                target_role = index.role_at(row['target_gold_map'], *row['target_xy'])
+                trigger = 'STEP_ON' if source_role == 'DOOR' else 'COLLISION_ONLY'
+                direction = 'UP' if source_role == 'DOOR' else 'DOWN'
+                arrival = 'D_DOWN' if target_role == 'DOOR' else 'NONE'
+                if ([source_event['x'], source_event['y']] != row['source_xy'] or
+                    source_event['destination'].replace('_', '') != row['target_gold_map'].upper().replace('_', '') or
+                    [target_event['x'], target_event['y']] != row['target_xy'] or
+                    source_role != row['source_gold_collision_role'] or
+                    row.get('trigger') != trigger or row.get('direction') != direction or
+                    row.get('arrival_auto_step') != arrival):
+                    south_gate_errors.append(f"{row.get('id')}: Gold role/Warp/arrival mismatch")
+            except (IndexError, KeyError, ValueError, TypeError) as exc:
+                south_gate_errors.append(f"{row.get('id')}: {exc}")
+    _check(checks, errors, 'active_route29_46_gate_exact_contract', not south_gate_errors,
+           f'ID74 seven Gold Warp arcs and directional semantics; errors={south_gate_errors[:8]}')
 
     # Runtime direction guard is separate from the static object contract:
     # the existing RPP CheckWarpsCollision matches a coordinate alone.

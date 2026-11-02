@@ -213,6 +213,43 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
         role_water={(y,x) for y in range(36) for x in range(40) if grid[y*40+x]==2}
         if gold_water==role_water:
             registered.add('LakeOfRage')
+    # DEV-326 Blackthorn City: 80 Gold WATER quadrants in Bank $53.
+    blackthorn_grid = root/'maps/johto_pilot/BlackthornCity.roles.bin'
+    if (any(r['map']=='BlackthornCity' for r in active)
+            and 'JohtoBlackthornRoles:: INCBIN "maps/johto_pilot/BlackthornCity.roles.bin"' in (root/'data/johto_blackthorn_runtime_326.asm').read_text()
+            and 'cp JOHTO_BLACKTHORN_CITY_LOCAL_ID' in east_runtime
+            and re.search(r'cp JOHTO_BLACKTHORN_CITY_LOCAL_ID\s*\n\s*jp z, \.eastRoute42', surf_runtime)
+            and blackthorn_grid.is_file() and len(blackthorn_grid.read_bytes())==40*36):
+        grid=blackthorn_grid.read_bytes()
+        gold_water={(c['y'],c['x']) for c in gold.cells('BlackthornCity').values() if c['role']=='WATER'}
+        if {(y,x) for y in range(36) for x in range(40) if grid[y*40+x]==2}==gold_water:
+            registered.add('BlackthornCity')
+    # DEV-324: Route44 exact Gold WATER grid (120 cells); cannot be declared
+    # Surf-enabled by a map name or a reusable compact graphic tile alone.
+    route44_roles = root/'maps/johto_pilot/Route44.roles.bin'
+    if (any(r['map']=='Route44' for r in active)
+            and 'JohtoRoute44Roles:: INCBIN "maps/johto_pilot/Route44.roles.bin"' in east_runtime
+            and 'cp JOHTO_ROUTE_44_LOCAL_ID' in east_runtime
+            and re.search(r'cp JOHTO_ROUTE_44_LOCAL_ID\s*\n\s*jp z, \.eastRoute42', surf_runtime)
+            and route44_roles.is_file() and len(route44_roles.read_bytes())==60*18):
+        grid=route44_roles.read_bytes()
+        gold_water={(c['y'],c['x']) for c in gold.cells('Route44').values() if c['role']=='WATER'}
+        role_water={(y,x) for y in range(18) for x in range(60) if grid[y*60+x]==2}
+        if len(gold_water)==120 and gold_water==role_water:
+            registered.add('Route44')
+    # DEV-328 Route45 Gold WATER (16 quadrant cells) in the active south-chain role grid.
+    route45_grid = root/'maps/johto_pilot/Route45.roles.bin'
+    south_chain_src = (root/'data/johto_south_chain_runtime_328.asm').read_text() if (root/'data/johto_south_chain_runtime_328.asm').is_file() else ''
+    if (any(r['map']=='Route45' for r in active)
+            and 'JohtoRoute45Roles:: INCBIN "maps/johto_pilot/Route45.roles.bin"' in south_chain_src
+            and 'cp JOHTO_ROUTE_45_LOCAL_ID' in east_runtime
+            and re.search(r'cp JOHTO_ROUTE_45_LOCAL_ID\s*\n\s*jp z, \.eastRoute42', surf_runtime)
+            and route45_grid.is_file() and len(route45_grid.read_bytes())==20*90):
+        grid=route45_grid.read_bytes()
+        gold_water={(c['y'],c['x']) for c in gold.cells('Route45').values() if c['role']=='WATER'}
+        role_water={(y,x) for y in range(90) for x in range(20) if grid[y*20+x]==2}
+        if len(gold_water)==16 and gold_water==role_water:
+            registered.add('Route45')
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

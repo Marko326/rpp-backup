@@ -36,10 +36,25 @@ APPROVED = {
     ('EcruteakCity','EAST','Route42'),('Route42','WEST','EcruteakCity'),
     ('Route42','EAST','MahoganyTown'),('MahoganyTown','WEST','Route42'),
     ('Route43','NORTH','LakeOfRage'),('LakeOfRage','SOUTH','Route43'),
+    ('MahoganyTown','EAST','Route44'),('Route44','WEST','MahoganyTown'),
+    ('Route44','EAST','BlackthornCity'),('BlackthornCity','WEST','Route44'),
+    ('BlackthornCity','SOUTH','Route45'),('Route45','NORTH','BlackthornCity'),
+    ('Route45','WEST','Route46'),('Route46','EAST','Route45'),
+    ('Route46','SOUTH','Route29'),('Route29','NORTH','Route46'),
 }
 # Distinct Gold offsets mean a blanket 'source width + 3' would be wrong.
 # The narrow-to-wider cases each require an explicitly inspected runtime width.
 NARROW_SEAM_CONTRACTS = {
+    ('Route45','NORTH','BlackthornCity'): (
+        'data/johto_south_chain_runtime_328.asm',
+        'JohtoRoute45RuntimeHeader::','JohtoRoute45HeaderEnd::',
+        'db JOHTO_ROUTE_45_WIDTH\n    db JOHTO_BLACKTHORN_CITY_WIDTH',
+        'dw JohtoBlackthornBlocks + JOHTO_BLACKTHORN_CITY_WIDTH * (JOHTO_BLACKTHORN_CITY_HEIGHT - 3)'),
+    ('Route46','SOUTH','Route29'): (
+        'data/johto_south_chain_runtime_328.asm',
+        'JohtoRoute46RuntimeHeader::','JohtoRoute46HeaderEnd::',
+        'db JOHTO_ROUTE_46_WIDTH\n    db JOHTO_ROUTE_29_WIDTH',
+        'dw JohtoRoute29Mirror + 10'),
     ('Route37','SOUTH','Route36'): (
         'data/johto_corridor_runtime_294.asm',
         'JohtoRoute37RuntimeHeader::','JohtoRoute37HeaderEnd::',
@@ -95,6 +110,16 @@ NARROW_SEAM_CONTRACTS = {
 # taller than the current map. Review currently active edges explicitly;
 # future short-to-tall E/W edges must provide a contract before acceptance.
 SIDE_SEAM_CONTRACTS = {
+    ('Route46','EAST','Route45'): (
+        'data/johto_south_chain_runtime_328.asm',
+        'JohtoRoute46RuntimeHeader::','JohtoRoute46HeaderEnd::',
+        'db JOHTO_ROUTE_45_HEIGHT - 36\n    db JOHTO_ROUTE_45_WIDTH',
+        'dw JohtoRoute45Blocks + JOHTO_ROUTE_45_WIDTH * 36'),
+    ('Route44','EAST','BlackthornCity'): (
+        'data/johto_route44_runtime_324.asm',
+        'JohtoRoute44RuntimeHeader::','JohtoRoute44HeaderEnd::',
+        'db JOHTO_ROUTE_44_HEIGHT\n    db 20 ; Gold BlackthornCity width',
+        'dw JohtoRoute44EastBlackthornPreview + 9 * 20'),
     ('Route31','WEST','VioletCity'): (
         'data/johto_pilot_map_headers.asm',
         'JohtoPilotRoute31RuntimeHeader::','JohtoPilotRoute31RuntimeHeaderEnd::',

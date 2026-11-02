@@ -22,6 +22,8 @@ SURF = 'engine/johto_violet_field_skills.asm'
 SPATIAL = 'engine/johto_south_geometry.asm'
 WEST_SEA = 'data/johto_west_sea_runtime_299.asm'
 EAST_RUNTIME = 'data/johto_east_runtime_300.asm'
+BLACKTHORN_RUNTIME = 'data/johto_blackthorn_runtime_326.asm'
+SOUTH_CHAIN_RUNTIME = 'data/johto_south_chain_runtime_328.asm'
 DESCRIPTORS = 'data/johto_pilot_runtime_assets.asm'
 
 
@@ -32,6 +34,10 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
         return overrides[rel] if rel in overrides else (root / rel).read_text(encoding='utf8')
 
     source = {p: code_only(read(p)) for p in (ENTRY, ITEMS, SURF, SPATIAL, WEST_SEA, EAST_RUNTIME, DESCRIPTORS)}
+    if (root / BLACKTHORN_RUNTIME).is_file():
+        source[BLACKTHORN_RUNTIME] = code_only(read(BLACKTHORN_RUNTIME))
+    if (root / SOUTH_CHAIN_RUNTIME).is_file():
+        source[SOUTH_CHAIN_RUNTIME] = code_only(read(SOUTH_CHAIN_RUNTIME))
     runtime = routine(source[SURF], 'JohtoOverworldSurfDecision')
     spatial = routine(source[SPATIAL], 'JohtoSouthSpatialRoleAhead')
     west_spatial = routine(source[WEST_SEA], 'JohtoWestSeaSpatialRoleAhead')
@@ -114,7 +120,10 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str] | None = None) 
         indexed = 'maps/johto_pilot/' + name + '.roles.bin'
         south_role = indexed in source[SPATIAL] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', spatial))
         west_role = indexed in source[WEST_SEA] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', west_spatial))
-        east_role = indexed in source[EAST_RUNTIME] and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', east_spatial))
+        # Blackthorn role bytes live in their own Bank $53 include, but the
+        # executable east selector reaches the same label. Check both sides.
+        east_blob = source[EAST_RUNTIME] + '\n' + source.get(BLACKTHORN_RUNTIME, '') + '\n' + source.get(SOUTH_CHAIN_RUNTIME, '')
+        east_role = indexed in east_blob and bool(re.search(r'(?m)^cp '+re.escape(symbol)+r'\b', east_spatial))
         role_grid = south_role or west_role or east_role
         if not (role_grid and grid.is_file()):
             if name not in registered_legacy:

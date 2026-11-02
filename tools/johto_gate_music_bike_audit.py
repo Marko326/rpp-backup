@@ -154,15 +154,28 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
         bike=home.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
         bike_ids=re.findall(r'cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) z,\s*\.allowed',bike)
         permitted={p['id'] for p in policies if p['bike_allowed']}
-        route43_pair = ('and $fc\n    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\n    jr z, .allowed' in bike and
-                        {'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID','JOHTO_ROUTE_43_GATE_LOCAL_ID'} <= permitted)
-        # Route43's 64..67 mask includes two already bike-allowed outdoors and
-        # exactly the two Gold GATEs.  It saves ROM0 compared with two CP/JR pairs.
-        inline_permitted = permitted - {'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID','JOHTO_ROUTE_43_GATE_LOCAL_ID'} if route43_pair else permitted
-        if route43_pair:
+        # Compact ROM0-safe mask accepts current Gold gates IDs65/66/74,
+        # together with the bike-eligible outdoor maps 64,67,72,73.
+        # No other current stable ID may alias to this bit mask, especially
+        # future ID75 (which must stay inactive until explicitly reviewed).
+        compact_block = bool(re.search(
+            r'and \$f4\s+cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\s+jr z, \.allowed', bike))
+        active_ids=set()
+        slots=get('data/johto_stable_id_slots.asm')
+        idline=slots.split('; $40-$4f',1)[0].split('\n')[-1] if '; $40-$4f' in slots else ''
+        # The current 64..79 stable-ID row is explicit, unlike display names.
+        current_mid=(slots.split('; $40-$4f',1)[0].split('\n')[-1])
+        id75_inactive=bool(re.search(r'(?m)^\s*db 37, 38, 40, 39, 41, 42, JOHTO_INVALID_ACTIVE_SLOT, 43, 44, 45, 46, JOHTO_INVALID_ACTIVE_SLOT',slots))
+        compact_permitted={'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID',
+                           'JOHTO_ROUTE_43_GATE_LOCAL_ID',
+                           'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'}
+        inline_permitted=permitted - compact_permitted if compact_block else permitted
+        if compact_block:
             bike_ids = [x for x in bike_ids if x != 'JOHTO_MAHOGANY_TOWN_LOCAL_ID']
-        check('bike_every_eligible_gate',len(bike_ids)==len(inline_permitted) and set(bike_ids)==inline_permitted and route43_pair,
-              f'inline stable IDs={bike_ids}; compact Route43 mask={route43_pair}; Gold GATE={sorted(permitted)}')
+        check('bike_ROM0_mask_only_approved_outdoor_and_gates',compact_block and id75_inactive,
+              'compact $f4 mask covers IDs64..67,72..75; ID75 must be inactive')
+        check('bike_every_eligible_gate',len(bike_ids)==len(inline_permitted) and set(bike_ids)==inline_permitted and compact_block and id75_inactive,
+              f'inline stable IDs={bike_ids}; compact gate mask={compact_block}; Gold GATE={sorted(permitted)}')
         check('bike_region_and_handle_guard',bool(re.search(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+(?:cp MAP_REGION_JOHTO|dec a(?:[^\n]*))\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]',bike)),
               'only region-scoped Johto native maps may enter the gate exception')
         check('bike_no_global_gate_tileset', 'JOHTO_GATE' not in get('data/bike_riding_tilesets.asm') and
@@ -206,6 +219,7 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
                 'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID': '.route42GateMusic',
                 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': '.route43MahoganyGateMusic',
                 'JOHTO_ROUTE_43_GATE_LOCAL_ID': '.route43GateMusic',
+                'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID': '.route2946GateMusic',
                 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID': '.southParkGate',
                 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID': '.eastParkGate',
             }

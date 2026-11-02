@@ -8,7 +8,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools'))
 from johto_next_corridor_source_gate_293 import audit, MANIFEST
 
-CURRENT_297 = any(x in (ROOT/'constants/region_map_constants.asm').read_text() for x in ('NUM_JOHTO_ACTIVE_MAPS EQU 32','NUM_JOHTO_ACTIVE_MAPS EQU 35','NUM_JOHTO_ACTIVE_MAPS EQU 38','NUM_JOHTO_ACTIVE_MAPS EQU 39'))
+import re
+ACTIVE_MATCH = re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (\d+)', (ROOT/'constants/region_map_constants.asm').read_text())
+CURRENT_297 = bool(ACTIVE_MATCH and int(ACTIVE_MATCH.group(1)) >= 32)
 
 
 class NextCorridorSourceGate293(unittest.TestCase):

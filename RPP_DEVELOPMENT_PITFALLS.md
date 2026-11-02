@@ -1,3 +1,10 @@
+## DEV-329｜纵向门房不能只验 Warp 表：入口阈值和双格门毯换道是独立行为
+
+- **Route46 外部门毯**：Gold `(7,33)/(8,33)` 两格均是 `WARP_CARPET_DOWN`。从上向下进入已有 DOWN 规则，不代表两格间可以左右换道。横向换道必须有成对 BeforeStep（当前格+方向）与 AfterStep（目标格+方向）记录；AfterStep 必须是 `E=3`，而 collision-only 出口只接受 `E=1`。把角色网格整体改为可走会错误放开周围墙格。
+- **Route29 南侧门口**：Gold `(27,1)` 是 `DOOR`，从 `(27,2)` 朝 UP 进入。只登记七条 Warp 和 `JohtoPilotIsVerticalGatePairMap314` allowlist，不足以让门真正可走；还必须有 Route29 的 BeforeStep 精确门口阈值与 AfterStep `E=2` STEP_ON 记录。
+- **必须检查真实调用链**：`CollisionCheckOnLand` → `JohtoPilotGateDoorApproachAllowed`；`CheckWarpsNoCollisionLoop` → `JohtoPilotGateDoorWarpMatched`；`CheckWarpsCollision` → `JohtoPilotGateCollisionExitAllowed`；`ExtraWarpCheck` → `JohtoPilotGateExteriorCollisionAllowed`；`PlayerStepOutFromDoor` → `JohtoPilotGateArrivalStep`。只检查配置表存在会产生“脚本全绿、设备空气墙”。
+- **跳崖完整性**：对有 Gold role-grid 的地图逐个 HOP 格计算合法方向和安全落点；坐标表必须与 Gold 精确相等，且 `JohtoSouthHopLandingGuard` 必须将该地图分派到同一张 HOP 表。静态全量覆盖可以减少用户逐个手测，但不能声称完成设备帧级验证。
+
 ## REF-319｜愤怒之湖：连续跳崖与精确 role-grid 分派不能只看图块（2026-11-02）
 
 - **同一视觉 tile 不等于同一碰撞角色**：LakeOfRage 需要按坐标读取 40×36 Gold role grid；地图已经登记 role 数据仍不够，stable ID68 还必须真正进入 `JohtoEastSpatialStep`/精确陆地分派。漏掉地图 ID 时会退回通用 tile passability，表现为局部空气墙、崖边手感不一致或同图不同位置行为矛盾。

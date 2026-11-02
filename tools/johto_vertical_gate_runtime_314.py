@@ -12,6 +12,8 @@ from pathlib import Path
 RUNTIME = 'data/johto_vertical_gate_runtime_314.asm'
 MAP_DATA = 'data/johto_route43_mahogany_gate_313.asm'
 ENGINE = 'engine/johto_pilot_runtime.asm'
+OVERWORLD = 'home/overworld.asm'
+MOVEMENT = 'engine/overworld/npc_movement.asm'
 MAIN = 'main.asm'
 
 EXPECTED = {
@@ -26,6 +28,15 @@ EXPECTED = {
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '4', '1'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '5', '1'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_UP', '17', '36'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '7', '32'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '8', '32'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_RIGHT', '7', '33'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_LEFT', '8', '33'),
+        ('JOHTO_ROUTE_29_LOCAL_ID', 'PLAYER_DIR_UP', '27', '2'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_DOWN', '4', '6'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_DOWN', '5', '6'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '4', '1'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '5', '1'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_DOWN', '17', '30'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_DOWN', '18', '30'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_RIGHT', '17', '31'),
@@ -44,6 +55,15 @@ EXPECTED = {
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '4', '0', '2'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '5', '0', '2'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_UP', '17', '35', '2'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '7', '33', '1'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '8', '33', '1'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_RIGHT', '8', '33', '3'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_LEFT', '7', '33', '3'),
+        ('JOHTO_ROUTE_29_LOCAL_ID', 'PLAYER_DIR_UP', '27', '1', '2'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_DOWN', '4', '7', '1'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_DOWN', '5', '7', '1'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '4', '0', '2'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '5', '0', '2'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_DOWN', '17', '31', '1'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_DOWN', '18', '31', '1'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_RIGHT', '18', '31', '3'),
@@ -55,11 +75,15 @@ EXPECTED = {
         ('JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', '5', '0', 'D_DOWN'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', '4', '0', 'D_DOWN'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', '5', '0', 'D_DOWN'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', '4', '0', 'D_DOWN'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', '5', '0', 'D_DOWN'),
+        ('JOHTO_ROUTE_29_LOCAL_ID', '27', '1', 'D_DOWN'),
         ('JOHTO_ROUTE_43_LOCAL_ID', '17', '35', 'D_DOWN'),
     ],
     'JohtoVerticalGateBoundsProfiles314': [
         ('JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', '10', '8'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', '10', '8'),
+        ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', '10', '8'),
     ],
 }
 END_LABELS = {
@@ -147,6 +171,8 @@ def audit(root: Path, *, text_overrides: dict[str, str] | None = None) -> dict:
         runtime = read(RUNTIME)
         map_data = read(MAP_DATA)
         engine = read(ENGINE)
+        overworld = read(OVERWORLD)
+        movement = read(MOVEMENT)
         main = read(MAIN)
         for label, expected in EXPECTED.items():
             actual = _rows(runtime, label, END_LABELS[label])
@@ -164,6 +190,11 @@ def audit(root: Path, *, text_overrides: dict[str, str] | None = None) -> dict:
         ck('route43_north_ID66_lane_change_not_collision_exit',
            sim['id66_lane_change_not_collision_exit'],
            'E=3 lane changes must not be accepted by the E=1-only CollisionExit hook')
+        ck('route46_south_gate_carpet_lane_change',
+           sim['route46_carpet_lane_change_not_collision_exit'],
+           'Route46 (7,33) <-> (8,33) lateral movement is E=3 and cannot trigger a DOWN Warp')
+        ck('route29_north_door_entry', sim['route29_door_entry_step_on'],
+           'Route29 (27,2) UP -> Gold DOOR (27,1) is an exact STEP_ON entry; arrival steps D_DOWN')
         ck('town_door_arrival_auto_step', sim['town_arrival_step'] == 128,
            f"D_DOWN value={sim['town_arrival_step']}")
         ck('gate_carpet_arrival_stays_put', sim['gate_carpet_no_autostep'],
@@ -174,7 +205,8 @@ def audit(root: Path, *, text_overrides: dict[str, str] | None = None) -> dict:
             'up': 1, 'down': 1, 'left': 1, 'right': 1,
             'interior': 0, 'town_not_profiled': 0,
             'id66_up': 1, 'id66_down': 1, 'id66_left': 1, 'id66_right': 1,
-            'id66_interior': 0},
+            'id66_interior': 0,
+            'id74_up': 1, 'id74_down': 1, 'id74_left': 1, 'id74_right': 1, 'id74_interior': 0},
            f"edge behavior={sim['closed_edge_cases']}")
         routines = {
             'JohtoVerticalGateBeforeStep314': ('JohtoVerticalGateAfterStep314',
@@ -211,17 +243,41 @@ def audit(root: Path, *, text_overrides: dict[str, str] | None = None) -> dict:
             'JohtoVerticalGateCollisionExit314', 'JohtoVerticalGateArrivalStep314',
             'JohtoVerticalGateClosedEdge314')),
            'all five movement/arrival hooks route through the shared runtime')
+        # The profile table is only useful if the original movement/warp hooks
+        # actually reach it. Guard each stage of the live path, not just the
+        # helper's existence: approach -> step-on Warp -> collision-only exit
+        # -> arrival re-arm/facing.
+        collision_entry = overworld.split('CollisionCheckOnLand::', 1)[1].split('ExtraWarpCheck::', 1)[0]
+        no_collision_warps = overworld.split('CheckWarpsNoCollisionLoop::', 1)[1].split('CheckWarpsCollision::', 1)[0]
+        collision_warps = overworld.split('CheckWarpsCollision::', 1)[1].split('ExtraWarpCheck::', 1)[0]
+        extra_warp = overworld.split('ExtraWarpCheck::', 1)[1].split('CollisionCheckOnLand::', 1)[0]
+        step_out = movement.split('PlayerStepOutFromDoor:', 1)[1].split('_EndNPCMovementScript:', 1)[0]
+        ck('live_gate_approach_hook', 'callab JohtoPilotGateDoorApproachAllowed' in collision_entry,
+           'CollisionCheckOnLand must consult the before-step profile before normal collision blocks the door/carpet')
+        ck('live_gate_step_on_warp_hook', 'callab JohtoPilotGateDoorWarpMatched' in no_collision_warps,
+           'matched Gold DOOR coordinates must consult the after-step profile before WarpFound1')
+        ck('live_gate_collision_exit_hook', 'callab JohtoPilotGateCollisionExitAllowed' in collision_warps,
+           'collision-only carpets must pass the direction-specific exit guard')
+        ck('live_gate_exterior_carpet_hook', 'callab JohtoPilotGateExteriorCollisionAllowed' in extra_warp,
+           'exterior carpet collisions must consult the exact registered gate profile before generic edge checks')
+        ck('live_gate_arrival_hook', 'callab JohtoPilotGateArrivalStep' in step_out,
+           'door step-out must apply the destination gate arrival profile')
         dispatch_helper = engine.split('JohtoPilotIsVerticalGatePairMap314::', 1)[1].split('JohtoPilotGateArrivalStep::', 1)[0]
         ck('single_vertical_gate_map_allowlist',
            'cp JOHTO_MAHOGANY_TOWN_LOCAL_ID' in dispatch_helper and
            'cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID' in dispatch_helper and
            'cp JOHTO_ROUTE_43_GATE_LOCAL_ID' in dispatch_helper and
            'cp JOHTO_ROUTE_43_LOCAL_ID' in dispatch_helper and
+           'cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID' in dispatch_helper and
+           'cp JOHTO_ROUTE_46_LOCAL_ID' in dispatch_helper and
+           'cp JOHTO_ROUTE_29_LOCAL_ID' in dispatch_helper and
            all(dispatch_helper.count('cp ' + map_id) == 1 for map_id in (
                'JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID',
-               'JOHTO_ROUTE_43_GATE_LOCAL_ID', 'JOHTO_ROUTE_43_LOCAL_ID')) and
+               'JOHTO_ROUTE_43_GATE_LOCAL_ID', 'JOHTO_ROUTE_43_LOCAL_ID',
+               'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 'JOHTO_ROUTE_46_LOCAL_ID',
+               'JOHTO_ROUTE_29_LOCAL_ID')) and
            engine.count('call JohtoPilotIsVerticalGatePairMap314') == 5,
-           'Mahogany, ID65 gate, ID66 gate and Route43 are listed once; all five hooks call the common predicate')
+           'Mahogany, ID65/66/74 gates, Route29, Route43 and Route46 are listed once; all five hooks call the common predicate')
         ck('id66_active_header_and_resource',
            'JohtoRoute43GateRuntimeHeader' in read('data/johto_header_descriptors.asm') and
            'JOHTO_ROUTE_43_GATE_LOCAL_ID' in read('data/johto_pilot_runtime_assets.asm') and
@@ -274,13 +330,17 @@ def _simulate_text(runtime: str) -> dict:
         _matches(after, 'JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_LEFT', 17, 31, result=True) == 3)
     arrival_step = next((128 for row in arrival if row[:3] == ('JOHTO_MAHOGANY_TOWN_LOCAL_ID', '9', '1') and row[3] == 'D_DOWN'), 0)
     no_carpet_autostep = (
-        not any(row[0] in ('JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 'JOHTO_ROUTE_43_GATE_LOCAL_ID')
+        not any(row[0] in ('JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 'JOHTO_ROUTE_43_GATE_LOCAL_ID',
+                           'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID')
                 and row[1:3] in (('4','7'),('5','7')) for row in arrival) and
         not any(row[0] == 'JOHTO_ROUTE_43_LOCAL_ID' and row[1:3] in
                 (('9','51'),('10','51'),('17','31'),('18','31')) for row in arrival))
     bounds_row = next((row for row in bounds if row[0] == 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID'), None)
     gate66_bounds_row = next((row for row in bounds if row[0] == 'JOHTO_ROUTE_43_GATE_LOCAL_ID'), None)
-    edge_ok = bool(bounds_row and bounds_row[1:] == ('10','8') and gate66_bounds_row and gate66_bounds_row[1:] == ('10','8'))
+    gate74_bounds_row = next((row for row in bounds if row[0] == 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID'), None)
+    edge_ok = bool(bounds_row and bounds_row[1:] == ('10','8') and gate66_bounds_row and
+                   gate66_bounds_row[1:] == ('10','8') and gate74_bounds_row and
+                   gate74_bounds_row[1:] == ('10','8'))
     edge_cases = {
         'up': _edge_result(bounds, 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 4, 0, 'PLAYER_DIR_UP'),
         'down': _edge_result(bounds, 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID', 4, 7, 'PLAYER_DIR_DOWN'),
@@ -293,10 +353,22 @@ def _simulate_text(runtime: str) -> dict:
         'id66_left': _edge_result(bounds, 'JOHTO_ROUTE_43_GATE_LOCAL_ID', 0, 3, 'PLAYER_DIR_LEFT'),
         'id66_right': _edge_result(bounds, 'JOHTO_ROUTE_43_GATE_LOCAL_ID', 9, 3, 'PLAYER_DIR_RIGHT'),
         'id66_interior': _edge_result(bounds, 'JOHTO_ROUTE_43_GATE_LOCAL_ID', 4, 3, 'PLAYER_DIR_UP'),
+        'id74_up': _edge_result(bounds, 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 4, 0, 'PLAYER_DIR_UP'),
+        'id74_down': _edge_result(bounds, 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 4, 7, 'PLAYER_DIR_DOWN'),
+        'id74_left': _edge_result(bounds, 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 0, 3, 'PLAYER_DIR_LEFT'),
+        'id74_right': _edge_result(bounds, 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 9, 3, 'PLAYER_DIR_RIGHT'),
+        'id74_interior': _edge_result(bounds, 'JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', 4, 3, 'PLAYER_DIR_UP'),
     }
     lane_change_not_collision_exit = (
         _matches(after, 'JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_RIGHT', 18, 31, result=True) == 3 and
         _matches(after, 'JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_LEFT', 17, 31, result=True) == 3)
+    route46_lane_change_not_collision_exit = (
+        _matches(after, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_RIGHT', 8, 33, result=True) == 3 and
+        _matches(after, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_LEFT', 7, 33, result=True) == 3)
+    route29_door_entry_step_on = (
+        _matches(before, 'JOHTO_ROUTE_29_LOCAL_ID', 'PLAYER_DIR_UP', 27, 2) == 1 and
+        _matches(after, 'JOHTO_ROUTE_29_LOCAL_ID', 'PLAYER_DIR_UP', 27, 1, result=True) == 2 and
+        any(row[:3] == ('JOHTO_ROUTE_29_LOCAL_ID', '27', '1') and row[3] == 'D_DOWN' for row in arrival))
     return {
         'before_rows': before, 'after_rows': after, 'arrival_rows': arrival, 'bounds_rows': bounds,
         'before_thresholds': before_ok, 'after_thresholds': after_ok,
@@ -305,6 +377,8 @@ def _simulate_text(runtime: str) -> dict:
             all(_matches(after, 'JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_DOWN', x, 51, result=True) == 1 for x in (9,10))),
         'id66_carpet_reentry_and_lane_change': before_ok and after_ok,
         'id66_lane_change_not_collision_exit': lane_change_not_collision_exit,
+        'route46_carpet_lane_change_not_collision_exit': route46_lane_change_not_collision_exit,
+        'route29_door_entry_step_on': route29_door_entry_step_on,
         'town_arrival_step': arrival_step, 'gate_carpet_no_autostep': no_carpet_autostep,
         'closed_edge_dimensions': edge_ok, 'closed_edge_cases': edge_cases,
     }

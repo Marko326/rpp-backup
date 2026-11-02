@@ -28,6 +28,8 @@ SURF = 'engine/johto_violet_field_skills.asm'
 SPATIAL = 'engine/johto_south_geometry.asm'
 WEST_SEA = 'data/johto_west_sea_runtime_299.asm'
 EAST_RUNTIME = 'data/johto_east_runtime_300.asm'
+BLACKTHORN_RUNTIME = 'data/johto_blackthorn_runtime_326.asm'
+SOUTH_CHAIN_RUNTIME = 'data/johto_south_chain_runtime_328.asm'
 DESCRIPTORS = 'data/johto_pilot_runtime_assets.asm'
 ENTRY = 'engine/overworld/field_moves.asm'
 ITEMS = 'engine/items/items.asm'
@@ -65,6 +67,10 @@ def audit(root: Path, gold_root: Path | None = None, *,
 
     sources = {path: code_only(read(path)) for path in
                (SURF, SPATIAL, WEST_SEA, EAST_RUNTIME, DESCRIPTORS, ENTRY, ITEMS, HOME)}
+    if (root / BLACKTHORN_RUNTIME).is_file():
+        sources[BLACKTHORN_RUNTIME] = code_only(read(BLACKTHORN_RUNTIME))
+    if (root / SOUTH_CHAIN_RUNTIME).is_file():
+        sources[SOUTH_CHAIN_RUNTIME] = code_only(read(SOUTH_CHAIN_RUNTIME))
     asm = routine(sources[SURF], 'JohtoOverworldSurfDecision')
     selector = routine(sources[SPATIAL], 'JohtoSouthSpatialRoleAhead')
     west_selector = routine(sources[WEST_SEA], 'JohtoWestSeaSpatialRoleAhead')
@@ -240,7 +246,10 @@ def audit(root: Path, gold_root: Path | None = None, *,
         grid_rel='maps/johto_pilot/'+name+'.roles.bin'
         in_south = grid_rel in sources[SPATIAL] and bool(re.search(r'(?m)^cp '+re.escape(sym)+r'\b', selector))
         in_west = grid_rel in sources[WEST_SEA] and bool(re.search(r'(?m)^cp '+re.escape(sym)+r'\b', west_selector))
-        in_east = grid_rel in sources[EAST_RUNTIME] and bool(re.search(r'(?m)^cp '+re.escape(sym)+r'\b', east_selector))
+        # Role grids may be in a same-bank included file; require that bytes
+        # exist there and an executable selector branch reaches that label.
+        east_tables = sources[EAST_RUNTIME] + '\n' + sources.get(BLACKTHORN_RUNTIME, '') + '\n' + sources.get(SOUTH_CHAIN_RUNTIME, '')
+        in_east = grid_rel in east_tables and bool(re.search(r'(?m)^cp '+re.escape(sym)+r'\b', east_selector))
         # Olivine keeps its accepted role grid in the south geometry bank but
         # movement now routes through westSea so reciprocal Route40 seams can be checked.
         routed_west = in_west or name == 'OlivineCity'

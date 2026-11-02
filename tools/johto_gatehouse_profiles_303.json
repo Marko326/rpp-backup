@@ -97,6 +97,14 @@
       "collision_strategy": "legacy_gate_tilecoll",
       "gold_environment": "GATE",
       "bike_allowed": true
+    },
+    {
+      "stable_id": 74,
+      "gold_map": "Route29Route46Gate",
+      "layout": "vertical_ns",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true
     }
   ]
 }

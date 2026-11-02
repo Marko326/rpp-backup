@@ -162,6 +162,14 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoRoute42RuntimeHeader', 'Route42', 63),
     ('JohtoMahoganyRuntimeHeader', 'MahoganyTown', 64),
     ('JohtoRoute43MahoganyGateRuntimeHeader', 'Route43MahoganyGate', 65),
+    ('JohtoRoute43RuntimeHeader', 'Route43', 67),
+    ('JohtoRoute43GateRuntimeHeader', 'Route43Gate', 66),
+    ('JohtoLakeOfRageRuntimeHeader', 'LakeOfRage', 68),
+    ('JohtoRoute44RuntimeHeader', 'Route44', 69),
+    ('JohtoBlackthornRuntimeHeader', 'BlackthornCity', 71),
+    ('JohtoRoute45RuntimeHeader', 'Route45', 72),
+    ('JohtoRoute46RuntimeHeader', 'Route46', 73),
+    ('JohtoRoute29Route46GateRuntimeHeader', 'Route29Route46Gate', 74),
 )
 
 

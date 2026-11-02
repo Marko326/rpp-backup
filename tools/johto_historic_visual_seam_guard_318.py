@@ -186,6 +186,19 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str | bytes] | None 
         listed = {item['name']: item['passed'] for item in result43['checks'] if 'passed' in item}
         for name in sorted(route43_stable):
             check('route43_' + name, listed.get(name, False), 'Route43')
+        # DEV-325: after Route44 is activated, its closed east edge still
+        # requires Gold Blackthorn terrain in the display-only viewport.
+        # This is precisely the tree-wall regression a connection-only gate misses.
+        if (root / 'data/johto_route44_runtime_324.asm').is_file():
+            route44 = txt('data/johto_route44_runtime_324.asm')
+            blackthorn = blob('maps/johto_pilot/BlackthornCity.east_preview.blk')
+            gold_blackthorn = (gold_root / 'maps/BlackthornCity.blk').read_bytes()
+            check('route44_east_gold_preview_not_tree_border',
+                  blackthorn == gold_blackthorn and len(blackthorn) == 20 * 18 and
+                  'db WEST | EAST ; DEV-326 Gold physical seam' in route44 and
+                  'dw JohtoRoute44EastBlackthornPreview + 9 * 20' in route44 and
+                  'ASSERT JohtoRoute44HeaderEnd - JohtoRoute44RuntimeHeader == 34' in route44,
+                  'Route44 east display-only')
         check('route43_header_is_seam_preview_not_blank_border',
               'db NORTH | SOUTH' in region(route43, 'JohtoRoute43RuntimeHeader::', 'JohtoRoute43HeaderEnd::'),
               'Route43')

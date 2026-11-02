@@ -9,6 +9,10 @@ import argparse
 import hashlib
 import json
 import re
+try:
+    from johto_audit_phase import approved_phase
+except ImportError:
+    from tools.johto_audit_phase import approved_phase
 from pathlib import Path
 
 NAMES = (
@@ -42,7 +46,7 @@ def audit(root: Path, reference_root: Path | None = None, changes: dict | None =
         version = read('data/game_version.asm')
         mask = read('maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin', True)
         source_roles = read('maps/johto_pilot/Route36NationalParkGate.roles.bin', True)
-        ck('version_288_and_unified_version', 'REF-312@' in version and 'TEST-' not in version)
+        ck('version_288_and_unified_version', approved_phase(version, read('constants/region_map_constants.asm'), 26))
         # The actual collision dispatcher runs BEFORE legacy tile-pair checks.
         ck('all_three_park_maps_in_gold_land_gateway', all(f'cp {n}' in gateway for n in NAMES) and
            'callab JohtoSouthSpatialStep' in gateway and 'callab JohtoPilotIsClosedOutdoorEdge' in world)

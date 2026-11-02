@@ -133,6 +133,17 @@
       "sources": [
         "JOHTO_ROUTE_43_LOCAL_ID"
       ]
+    },
+    {
+      "id": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+      "gold_map": "Route29Route46Gate",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "music": "inherit_source_no_restart",
+      "sources": [
+        "JOHTO_ROUTE_46_LOCAL_ID",
+        "JOHTO_ROUTE_29_LOCAL_ID"
+      ]
     }
   ],
   "negative_gold_gates": []

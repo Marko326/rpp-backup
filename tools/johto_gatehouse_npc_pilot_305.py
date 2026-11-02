@@ -9,6 +9,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
+try:
+    from johto_audit_phase import approved_phase
+except ImportError:
+    from tools.johto_audit_phase import approved_phase
 from pathlib import Path
 from typing import Mapping
 
@@ -139,11 +143,10 @@ def audit(
         version = _read(project, "data/game_version.asm", text_overrides)
         ck(
             "one_shared_rom_version_ref317",
-            'db "REF-317@"' in version
-            and "TEST-" not in version
+            approved_phase(version, _read(project, "constants/region_map_constants.asm", text_overrides), 40, 317)
             and "IF DEF(BATTLE_TEST_BUILD)" not in version
             and "ENDC" not in version,
-            "normal and BATTLE_TEST_BUILD ROMs must expose only REF-317 (canonical REF-5.62.317)",
+            "normal and BATTLE_TEST_BUILD ROMs must share approved REF-317+ label",
         )
 
         build_sources = []
@@ -532,7 +535,7 @@ def fault_tests(project: Path, gold_root: Path | None = None) -> dict[str, bool]
     bad_east_text = east.replace("MOUNT MORTAR is", "ROUTE 42 is", 1)
     faults["wrong_east_dialogue_rejected"] = rejected_text(east_rel, bad_east_text)
 
-    bad_version = version.replace('db "REF-317@"', 'db "TEST-LABEL@"', 1)
+    bad_version = re.sub(r'db "REF-\d+@"', 'db "TEST-LABEL@"', version, count=1)
     faults["separate_test_version_rejected"] = (
         bad_version != version
         and audit(project, gold_root, {"data/game_version.asm": bad_version})["status"] == "FAIL"

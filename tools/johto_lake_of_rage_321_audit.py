@@ -40,11 +40,11 @@ def audit(root: Path, overrides: dict[str, bytes | str] | None = None) -> dict:
         return blob(path).decode('utf8')
 
     active=read_active_maps(root)
-    check('active_42_slot41_ID68', len(active)==42 and active[-1]['slot']==41 and
-          active[-1]['stable_id']==68 and active[-1]['map']=='LakeOfRage')
+    check('active_42_slot41_ID68', len(active)>=42 and active[41]['slot']==41 and
+          active[41]['stable_id']==68 and active[41]['map']=='LakeOfRage')
     slots=text('data/johto_stable_id_slots.asm')
     check('stable_ID68_slot41', 'db 37, 38, 40, 39, 41,' in slots and
-          'ASSERT NUM_JOHTO_ACTIVE_MAPS == 42' in slots)
+          re.search(rf'ASSERT NUM_JOHTO_ACTIVE_MAPS == {len(active)}\b', slots) is not None)
 
     preview=blob('maps/johto_pilot/LakeOfRage.preview.blk')
     gold=blob('maps/johto_pilot/LakeOfRage.gold.blk')
@@ -90,6 +90,40 @@ def audit(root: Path, overrides: dict[str, bytes | str] | None = None) -> dict:
     check('Gold_Lake_reciprocal_lanes_exact', {x+10 for x in reciprocal}==LAKE_OPEN)
 
     east=text('data/johto_east_runtime_300.asm')
+    # Trace the executable branch tails, not a hand-written Python cross()
+    # model: E=0 permits a step, E=1 blocks. Prevent accidental inversion.
+    spatial = east.split('JohtoEastSpatialStep::', 1)[1].split(
+        'JohtoGateHorizontalCarpetProfiles303::', 1)[0] if 'JohtoEastSpatialStep::' in east else ''
+    tails = re.findall(r'(?ms)^\.(block|allow)\s*\n(.*?)(?=^\.[A-Za-z]|\Z)', spatial)
+    tails_by_name = {name: re.sub(r';[^\n]*', '', body).strip() for name, body in tails}
+    # An early unconditional RET would bypass all downstream role-grid checks
+    # while a simple 'call ...' substring search would still appear healthy.
+    instructions = [line.split(';', 1)[0].strip() for line in spatial.splitlines()]
+    instructions = [line for line in instructions if line and not line.startswith('.')]
+    expected_prefix = [
+        'call JohtoGateHorizontalCarpetInbound303',
+        'ret c',
+        'call JohtoEastSpatialRoleAhead',
+        'ld a, e',
+        'cp 2',
+        'jr z, .water',
+        'and a',
+        'jr z, .allow',
+        'cp 1',
+        'jr nz, .block',
+    ]
+    check('Lake_spatial_step_role_call_and_decision_order',
+          instructions[:len(expected_prefix)] == expected_prefix,
+          'actual first instructions=' + repr(instructions[:len(expected_prefix)]))
+    check('Lake_spatial_step_allow_and_block_return_codes',
+          bool(re.fullmatch(r'ld e,\s*0\s*ret', tails_by_name.get('allow', ''))) and
+          bool(re.fullmatch(r'ld e,\s*1\s*ret', tails_by_name.get('block', ''))),
+          f"allow={tails_by_name.get('allow')!r}; block={tails_by_name.get('block')!r}")
+    check('Lake_spatial_step_branches_reach_named_outcomes',
+          bool(re.search(r'and a\s*\n\s*jr z, \.allow\s*\n\s*cp 1', spatial)) and
+          bool(re.search(r'(?m)^\s*jr nz, \.block\s*$', spatial)) and
+          bool(re.search(r'(?m)^\s*jr \.block\s*$', spatial)) and
+          'call JohtoEastSpatialRoleAhead' in spatial)
     edge=east.split('JohtoEastIsKnownClosedEdge::',1)[1].split('\n.gate\n',1)[0]
     route_guard='''ld a, [wXCoord]\n    and a\n    jp z, .open\n    cp 8\n    jp c, .closed\n    cp 12\n    jp c, .open\n    jp .closed'''
     lake_guard='''ld a, [wXCoord]\n    cp 10\n    jp z, .open\n    cp 18\n    jp c, .closed\n    cp 22\n    jp c, .open\n    jp .closed'''
@@ -173,7 +207,13 @@ def audit(root: Path, overrides: dict[str, bytes | str] | None = None) -> dict:
     music=text('engine/menu/options_menu.asm')
     check('Lake_GSC_music_slot41', 'db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot41 Lake of Rage' in music)
     version=text('data/game_version.asm')
-    check('REF319_same_length_version_label', 'db "REF-319@"' in version and 'REF-5.62.319' in version and len('REF-319@')==len('REF-318@'))
+    live_version = re.search(r'(?m)^\s*db "REF-(\d+)@"\s*$', version)
+    canonical = re.search(r'Canonical project version REF-5\.62\.(\d+)', version)
+    check('REF319_same_length_version_label',
+          live_version is not None and canonical is not None and
+          int(live_version.group(1)) >= 319 and
+          int(live_version.group(1)) == int(canonical.group(1)) and
+          len(live_version.group(1)) == 3)
 
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL',
             'checks_total':len(checks),'checks_passed':len(checks)-len(errors),

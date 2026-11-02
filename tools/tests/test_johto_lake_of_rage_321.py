@@ -26,6 +26,11 @@ CASES=[
  ('remove_surf_dispatch','engine/johto_violet_field_skills.asm','cp JOHTO_LAKE_OF_RAGE_LOCAL_ID\n    jp z, .eastRoute42','cp JOHTO_LAKE_OF_RAGE_LOCAL_ID\n    jp z, .legacy','Lake_Surf_routes_to_east_spatial'),
  ('remove_cut','engine/johto_violet_field_skills.asm','db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 4, 23, $5b','db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 4, 22, $5b','Lake_five_Cut_trees_and_postCut_walkability'),
  ('remove_hop','engine/overworld/ledges.asm','db 4, 28, PLAYER_DIR_DOWN','db 3, 28, PLAYER_DIR_DOWN','Lake_six_Gold_down_hops'),
+ ('invert_spatial_allow_result','data/johto_east_runtime_300.asm','.allow\n    ld e, 0\n    ret','.allow\n    ld e, 1\n    ret','Lake_spatial_step_allow_and_block_return_codes'),
+ ('invert_spatial_block_result','data/johto_east_runtime_300.asm','.block\n    ld e, 1\n    ret','.block\n    ld e, 0\n    ret','Lake_spatial_step_allow_and_block_return_codes'),
+ ('skip_spatial_allow_branch','data/johto_east_runtime_300.asm','and a\n    jr z, .allow\n    cp 1','and a\n    jr z, .block\n    cp 1','Lake_spatial_step_branches_reach_named_outcomes'),
+ ('premature_return_before_role_lookup','data/johto_east_runtime_300.asm','ret c\n    call JohtoEastSpatialRoleAhead','ret\n    call JohtoEastSpatialRoleAhead','Lake_spatial_step_role_call_and_decision_order'),
+ ('ignore_role_grid_result','data/johto_east_runtime_300.asm','call JohtoEastSpatialRoleAhead\n    ld a, e','call JohtoEastSpatialRoleAhead\n    xor a','Lake_spatial_step_role_call_and_decision_order'),
 ]
 
 @pytest.mark.parametrize('name,path,old,new,detector',CASES,ids=[x[0] for x in CASES])
@@ -51,3 +56,14 @@ def test_seam_role_fault_detected():
     b=bytearray(raw(path)); assert b[35*40+18]==0; b[35*40+18]=1
     r=audit(ROOT,{path:bytes(b)})
     assert 'Gold_reciprocal_land_seam_exact_five' in r['errors']
+
+
+def test_older_release_marker_cannot_pass_current_lake_gate():
+    path='data/game_version.asm'
+    source=text(path)
+    import re
+    match=re.search(r'(?m)^\s*db "REF-(\d+)@"\s*$',source)
+    assert match
+    mutated=source[:match.start()] + match.group(0).replace('REF-'+match.group(1)+'@', 'REF-310@') + source[match.end():]
+    result=audit(ROOT,{path:mutated})
+    assert 'REF319_same_length_version_label' in result['errors']

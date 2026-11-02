@@ -28,7 +28,7 @@ class GateCarpet302(unittest.TestCase):
             self.assertEqual([],errs)
 
     def test_profile_lookup_is_map_specific(self):
-        for invalid in (0,6,11,13,18,19,65,102,104,105,255):
+        for invalid in (0,6,11,13,18,19,65,74,102,104,105,255):
             got=evaluate(self.east,self.constants,invalid,0,3,'DOWN')
             self.assertEqual((1,False),got)
 
@@ -156,7 +156,7 @@ class GateCarpet302(unittest.TestCase):
     def test_source_trace_legacy_and_new_gate_counts(self):
         result=audit_active_gatehouse_carpet_walkability(ROOT,GOLD)
         self.assertEqual('PASS_STATIC_ONLY',result['status'],result['errors'])
-        self.assertEqual({6:172,11:172,13:218,18:218,19:218,65:218,66:218,
+        self.assertEqual({6:172,11:172,13:218,18:218,19:218,65:218,66:218,74:218,
                           102:172,104:186,105:225},
                          {int(k):v for k,v in result['asm_traced_moves'].items()})
 
@@ -199,11 +199,11 @@ class GateCarpet302(unittest.TestCase):
     def test_all_active_gates_static_contracts(self):
         result=audit_active_gatehouse_carpet_walkability(ROOT,GOLD)
         self.assertEqual('PASS_STATIC_ONLY',result['status'],result['errors'])
-        self.assertEqual((12,36),(result['gatehouses_checked'],result['carpets_checked']))
+        self.assertEqual((13,38),(result['gatehouses_checked'],result['carpets_checked']))
         self.assertEqual({23:172,62:172},result['source_simulated_moves'])
-        self.assertEqual({6:80,11:80,13:80,18:80,19:80,65:80,66:80,102:80,104:64,105:80},
+        self.assertEqual({6:80,11:80,13:80,18:80,19:80,65:80,66:80,74:80,102:80,104:64,105:80},
                          result['data_decoded_cells'])
-        self.assertEqual({6:172,11:172,13:218,18:218,19:218,65:218,66:218,102:172,104:186,105:225},
+        self.assertEqual({6:172,11:172,13:218,18:218,19:218,65:218,66:218,74:218,102:172,104:186,105:225},
                          result['data_decoded_moves'])
         # The park south room is 8x8, not a stretched copy of the 10x8
         # east park gate; each one keeps its own original walkability data.

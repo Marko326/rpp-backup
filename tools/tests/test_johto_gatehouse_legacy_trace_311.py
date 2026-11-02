@@ -1,4 +1,4 @@
-"""DEV-311: source-trace the three Johto gates still using shared Gate_Coll."""
+"""DEV-311: source-trace the four Johto gates still using shared Gate_Coll."""
 from __future__ import annotations
 
 import os
@@ -29,22 +29,22 @@ class GatehouseLegacyTrace311(unittest.TestCase):
         cls.player_state = (ROOT / 'engine/overworld/player_state.asm').read_text()
         cls.passable = (ROOT / 'gfx/tilesets/gate.tilecoll').read_bytes()
 
-    def test_three_legacy_gates_dispatch_to_shared_generic_fallback(self):
-        for gate_id in (6, 19, 102):
+    def test_four_legacy_gates_dispatch_to_shared_generic_fallback(self):
+        for gate_id in (6, 19, 74, 102):
             with self.subTest(gate_id=gate_id):
                 self.assertEqual(2, simulate_legacy_gate_dispatch(
                     self.gateway, constants=self.constants, gate_id=gate_id))
 
-    def test_future_route43_gate_ids_can_reuse_the_generic_dispatch_runner(self):
-        # IDs 65/66 are reserved and inactive today.  Their planned Gold maps
-        # use JOHTO_GATE/Gate_Coll, so the same E=2 dispatcher is reusable.
+    def test_active_route43_gate_ids_use_the_generic_dispatch_runner(self):
+        # IDs 65/66 are active in the current south-chain build. Their Gold maps
+        # use JOHTO_GATE/Gate_Coll and share the same E=2 dispatcher.
         for gate_id in (65, 66):
             with self.subTest(gate_id=gate_id):
                 self.assertEqual(2, simulate_legacy_gate_dispatch(
                     self.gateway, constants=self.constants, gate_id=gate_id))
 
     def test_actual_check_tile_passable_instruction_loop(self):
-        for gate_id in (6, 19, 102):
+        for gate_id in (6, 19, 74, 102):
             with self.subTest(gate_id=gate_id):
                 self.assertFalse(simulate_legacy_gate_passability(
                     self.home, gate_id=gate_id, tile_id=0x02,
@@ -59,12 +59,12 @@ class GatehouseLegacyTrace311(unittest.TestCase):
                     passable_tiles=self.passable))
 
     @unittest.skipIf(GOLD is None, 'set JOHTO_GOLD_SOURCE or GOLD_SOURCE_ROOT')
-    def test_all_three_legacy_gatehouses_are_asm_traced_against_gold(self):
+    def test_all_four_legacy_gatehouses_are_asm_traced_against_gold(self):
         result = audit_active_gatehouse_carpet_walkability(ROOT, GOLD)
         self.assertEqual('PASS_STATIC_ONLY', result['status'], result['errors'])
-        self.assertEqual({6: 172, 19: 218, 102: 172},
+        self.assertEqual({6: 172, 19: 218, 74: 218, 102: 172},
                          {int(k): v for k, v in result['asm_traced_moves'].items()
-                          if int(k) in (6, 19, 102)})
+                          if int(k) in (6, 19, 74, 102)})
 
     @unittest.skipIf(GOLD is None, 'set JOHTO_GOLD_SOURCE or GOLD_SOURCE_ROOT')
     def test_legacy_check_tile_passable_fault_is_detected(self):

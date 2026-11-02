@@ -40,10 +40,10 @@ class GoldGateMusicBike259(unittest.TestCase):
         self.assert_failure('capture_every_gate_source',**{'engine/johto_pilot_runtime.asm':runtime})
     def test_north_gate_wrong_rby_source_fails(self):
         runtime=self.files['engine/johto_pilot_runtime.asm'].replace('    cp JOHTO_ROUTE_36_LOCAL_ID\n    jp z, .sourceValid','    cp JOHTO_ROUTE_29_LOCAL_ID\n    jp z, .sourceValid',1)
-        self.assert_failure('rby_gate_source_profile',**{'engine/johto_pilot_runtime.asm':runtime})
+        self.assert_failure('rby_exact_sources_' ,**{'engine/johto_pilot_runtime.asm':runtime})
     def test_north_gate_forced_gsc_song_fails(self):
         options=self.files['engine/menu/options_menu.asm'].replace('    cp JOHTO_ROUTE_36_LOCAL_ID\n    jp z, .activeSlot','    cp JOHTO_ROUTE_29_LOCAL_ID\n    jr z, .activeSlot',1)
-        self.assert_failure('gsc_gate_source_profile',**{'engine/menu/options_menu.asm':options})
+        self.assert_failure('gsc_exact_sources_' ,**{'engine/menu/options_menu.asm':options})
     def test_same_scene_restart_fails(self):
         opt=self.files['engine/menu/options_menu.asm'].replace('cp c\n\tret z\n','cp c\n\tjr z, .considerRestart\n',1)
         self.assert_failure('music_cursor_kept_on_same_scene',**{'engine/menu/options_menu.asm':opt})

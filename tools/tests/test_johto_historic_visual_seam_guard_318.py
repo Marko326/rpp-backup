@@ -32,6 +32,19 @@ class HistoricVisualSeamGuard318(unittest.TestCase):
         self.assertEqual('FAIL', result['status'], result['errors'])
         self.assertIn(expected, result['errors'])
 
+    def test_route44_east_preview_must_not_fall_back_to_tree_border(self):
+        self.reject('data/johto_route44_runtime_324.asm',
+                    'db WEST | EAST ; DEV-326 Gold physical seam; IcePath cave still sealed',
+                    'db WEST ; wrong tree-wall regression',
+                    'route44_east_gold_preview_not_tree_border')
+
+    def test_route44_east_source_bytes_must_match_original_gold(self):
+        path='maps/johto_pilot/BlackthornCity.east_preview.blk'
+        raw=(ROOT/path).read_bytes()
+        changed=bytearray(raw);changed[9*20+2]^=1
+        result=audit(ROOT, self.gold, {path:bytes(changed)})
+        self.assertIn('route44_east_gold_preview_not_tree_border', result['errors'])
+
     def test_full_historical_visual_chain(self):
         result = audit(ROOT, self.gold)
         self.assertEqual('PASS_STATIC_ONLY', result['status'], result['errors'])

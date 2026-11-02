@@ -56,14 +56,14 @@ def audit(root, gold=None):
     manifest=json.loads((root/'tools/johto_gatehouse_profiles_303.json').read_text())
     profiles=manifest['active_gatehouses']
     ids={g['stable_id'] for g in profiles}
-    ck('ten_gatehouses_and_park_ids',len(profiles)==11 and len(ids)==11 and
+    ck('ten_gatehouses_and_park_ids',len(profiles)==13 and len(ids)==13 and
        {g['stable_id'] for g in profiles if g['gold_environment']=='INDOOR'}==PARK_IDS)
     source=(root/'data/johto_pilot_runtime_assets.asm').read_text()
     ck('park_gate_runtime_tileset_registration',
        'db JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_PARK_GATE' in source and
        'db JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID, JOHTO_PARK_GATE' in source)
     ck('ordinary_gate_runtime_count',sum(bool(re.search(r'\bdb\s+JOHTO_\w+_LOCAL_ID,\s+JOHTO_GATE\b',line))
-          for line in source.splitlines()) == 9)
+          for line in source.splitlines()) == len(ids-PARK_IDS))
     defs=(root/'color/data/map_palette_sets.asm').read_text()
     full=palette_sets(defs)
     ck('palette_set_stride',len(full)==37*8, f'{len(full)} entries')

@@ -8,6 +8,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
+try:
+    from johto_audit_phase import approved_phase
+except ImportError:
+    from tools.johto_audit_phase import approved_phase
 from pathlib import Path
 
 CONNECTIONS=(
@@ -61,7 +65,12 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 all(not blocked(mask36,60,59,y) for y in (8,9)))
         ck('registered_exact_six_and_route37_reciprocal',
            all(source.count(f'db MAP_REGION_JOHTO, {a}, {d}, MAP_REGION_JOHTO, {b}')==1 for a,d,b in CONNECTIONS) and
-           re.search(r'DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU (?:24|30|36|40)\b', source) is not None and
+           # The global source registry grows when later regions are approved.
+           # Validate the actual row count instead of freezing a 2026 milestone.
+           (lambda n: n is not None and int(n.group(1)) == len(re.findall(
+               r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, (?:NORTH|SOUTH|EAST|WEST), MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID\s*(?:;.*)?$',
+               source.split('JohtoPilotSourceConnections::', 1)[1].split('JohtoPilotSourceConnectionsEnd::', 1)[0])))
+           (re.search(r'DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU (\d+)\b', source)) and
            source.count('JOHTO_ROUTE_37_LOCAL_ID, SOUTH')==1 and
            source.count('JOHTO_ROUTE_36_LOCAL_ID, NORTH')==1)
         # The engine copies strips after SwitchToMapRomBank, not a farcall to target.
@@ -146,7 +155,7 @@ def audit(root:Path,gold_root:Path|None=None,npc_root:Path|None=None,changes:dic
                 'db 13, 48, 1, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 8, 18, 2, JOHTO_REGISTERED_WARP_SELECTOR',
                 'db 9, 18, 3, JOHTO_REGISTERED_WARP_SELECTOR')))
-        ck('in_rom_unified_version_label', 'REF-312@' in version and 'TEST-' not in version)
+        ck('in_rom_unified_version_label', approved_phase(version, get('constants/region_map_constants.asm'), 26))
     except (KeyError,IndexError,OSError,ValueError) as e:errors.append('audit_source_exception: '+str(e))
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks':checks,'errors':errors}
 

@@ -1,4 +1,5 @@
 """MAP-297 negative mutations for the new west corridor acceptance gate."""
+import re
 import os
 import sys
 import unittest
@@ -44,7 +45,7 @@ class WestCorridor297(unittest.TestCase):
             'olivine_spatial_surf')
 
     def test_release_version_cannot_drift(self):
-        self.mutate_text('data/game_version.asm', 'REF-312@', 'MAP-5.62.297@',
+        self.mutate_text('data/game_version.asm', re.search(r'REF-\d+@', (ROOT/'data/game_version.asm').read_text()).group(0), 'MAP-5.62.297@',
                          'release_and_active_count')
 
 

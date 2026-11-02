@@ -1,4 +1,4 @@
-"""DEV-320 regression coverage for shared ID65/ID66 vertical gates and Route43 carpet movement."""
+"""Vertical gate regression coverage for shared ID65/66/74 profiles and Route43/Route46 carpet movement."""
 from pathlib import Path
 import sys
 import unittest
@@ -22,13 +22,17 @@ class VerticalGateRuntime314(unittest.TestCase):
         self.assertTrue(result['gate_carpet_no_autostep'])
         self.assertTrue(result['id66_carpet_reentry_and_lane_change'])
         self.assertTrue(result['id66_lane_change_not_collision_exit'])
+        self.assertTrue(result['route46_carpet_lane_change_not_collision_exit'])
+        self.assertTrue(result['route29_door_entry_step_on'])
 
     def test_closed_edges_are_fail_closed_but_interior_and_town_are_not(self):
         result = simulate(ROOT)
         self.assertEqual({'up': 1, 'down': 1, 'left': 1, 'right': 1,
                           'interior': 0, 'town_not_profiled': 0,
                           'id66_up': 1, 'id66_down': 1, 'id66_left': 1,
-                          'id66_right': 1, 'id66_interior': 0},
+                          'id66_right': 1, 'id66_interior': 0,
+                          'id74_up': 1, 'id74_down': 1, 'id74_left': 1, 'id74_right': 1,
+                          'id74_interior': 0},
                          result['closed_edge_cases'])
 
     def test_id66_is_active_in_the_shared_profiles(self):
@@ -37,6 +41,18 @@ class VerticalGateRuntime314(unittest.TestCase):
         self.assertIn('db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_DOWN, 4, 6', runtime)
         self.assertIn('db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 1', runtime)
         self.assertIn('JohtoRoute43GateRuntimeHeader', (ROOT / 'data/johto_header_descriptors.asm').read_text())
+
+    def test_route46_external_pair_has_two_way_lane_switch_and_route29_has_step_on_door(self):
+        result = simulate(ROOT)
+        self.assertTrue(result['route46_carpet_lane_change_not_collision_exit'])
+        self.assertTrue(result['route29_door_entry_step_on'])
+        runtime = (ROOT / 'data/johto_vertical_gate_runtime_314.asm').read_text()
+        self.assertIn('db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_RIGHT, 7, 33', runtime)
+        self.assertIn('db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_LEFT, 8, 33', runtime)
+        self.assertIn('db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_RIGHT, 8, 33, 3', runtime)
+        self.assertIn('db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_LEFT, 7, 33, 3', runtime)
+        self.assertIn('db JOHTO_ROUTE_29_LOCAL_ID, PLAYER_DIR_UP, 27, 2', runtime)
+        self.assertIn('db JOHTO_ROUTE_29_LOCAL_ID, PLAYER_DIR_UP, 27, 1, 2', runtime)
 
     def test_route43_north_carpet_is_down_warp_with_exact_lane_exceptions(self):
         roles = (ROOT / 'maps/johto_pilot/Route43.roles.bin').read_bytes()
@@ -57,6 +73,8 @@ class VerticalGateRuntime314(unittest.TestCase):
         result = simulate(ROOT)
         self.assertTrue(result['id66_carpet_reentry_and_lane_change'])
         self.assertTrue(result['id66_lane_change_not_collision_exit'])
+        self.assertTrue(result['route46_carpet_lane_change_not_collision_exit'])
+        self.assertTrue(result['route29_door_entry_step_on'])
 
     def test_missing_north_reentry_profile_is_rejected(self):
         rel = 'data/johto_vertical_gate_runtime_314.asm'
