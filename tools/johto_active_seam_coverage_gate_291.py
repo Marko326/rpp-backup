@@ -35,6 +35,7 @@ APPROVED = {
     ('Route41','WEST','CianwoodCity'),('CianwoodCity','EAST','Route41'),
     ('EcruteakCity','EAST','Route42'),('Route42','WEST','EcruteakCity'),
     ('Route42','EAST','MahoganyTown'),('MahoganyTown','WEST','Route42'),
+    ('Route43','NORTH','LakeOfRage'),('LakeOfRage','SOUTH','Route43'),
 }
 # Distinct Gold offsets mean a blanket 'source width + 3' would be wrong.
 # The narrow-to-wider cases each require an explicitly inspected runtime width.
@@ -84,6 +85,11 @@ NARROW_SEAM_CONTRACTS = {
         'JohtoRoute39RuntimeHeader::','JohtoRoute39HeaderEnd::',
         'db JOHTO_ROUTE_39_WIDTH\n    db JOHTO_OLIVINE_CITY_WIDTH',
         'dw JohtoRoute39SouthOlivineMirror + 5'),
+    ('Route43','NORTH','LakeOfRage'): (
+        'data/johto_route43_runtime_315.asm',
+        'JohtoRoute43RuntimeHeader::','JohtoRoute43HeaderEnd::',
+        'db JOHTO_ROUTE_43_WIDTH + 3',
+        'dw JohtoRoute43LakeOfRagePreviewBlocks + 2 + JOHTO_LAKE_OF_RAGE_WIDTH * (JOHTO_LAKE_OF_RAGE_HEIGHT - 3)'),
 }
 # Same failure class exists on horizontal transitions when the destination is
 # taller than the current map. Review currently active edges explicitly;

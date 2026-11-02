@@ -42,7 +42,7 @@ def audit(root: Path, reference_root: Path | None = None, changes: dict | None =
         version = read('data/game_version.asm')
         mask = read('maps/johto_pilot/Route36NationalParkGate.mature_blocked_mask.bin', True)
         source_roles = read('maps/johto_pilot/Route36NationalParkGate.roles.bin', True)
-        ck('version_288_and_unified_version', 'REF-306@' in version and 'TEST-' not in version)
+        ck('version_288_and_unified_version', 'REF-312@' in version and 'TEST-' not in version)
         # The actual collision dispatcher runs BEFORE legacy tile-pair checks.
         ck('all_three_park_maps_in_gold_land_gateway', all(f'cp {n}' in gateway for n in NAMES) and
            'callab JohtoSouthSpatialStep' in gateway and 'callab JohtoPilotIsClosedOutdoorEdge' in world)

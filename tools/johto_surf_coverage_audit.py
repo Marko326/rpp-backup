@@ -179,6 +179,40 @@ def audit(root: Path, gold_root: Path, skips: set[str]) -> dict:
             and route42_roles.is_file()
             and route42_roles.read_bytes().count(2)==120):
         registered.add('Route42')
+    # REF-315: Route43 full Gold WATER grid routed through the existing east
+    # Bank $53 water/shore probes. Require every link and frozen 72-water mask.
+    route43_roles=root/'maps/johto_pilot/Route43.roles.bin'
+    if (any(r['map']=='Route43' for r in active)
+            and 'JohtoRoute43Roles:: INCBIN "maps/johto_pilot/Route43.roles.bin"' in east_runtime
+            and 'JohtoEastGoldWaterProbe::' in east_runtime
+            and 'JohtoEastGoldShoreProbe::' in east_runtime
+            and 'cp JOHTO_ROUTE_43_LOCAL_ID' in east_runtime
+            and re.search(r'cp JOHTO_ROUTE_43_LOCAL_ID\s*\n\s*jp z, \.eastRoute42', surf_runtime)
+            and route43_roles.is_file()
+            and len(route43_roles.read_bytes())==20*54
+            and route43_roles.read_bytes().count(2)==72):
+        gold_water={(c['y'],c['x']) for c in gold.cells('Route43').values() if c['role']=='WATER'}
+        grid=route43_roles.read_bytes()
+        role_water={(y,x) for y in range(54) for x in range(20) if grid[y*20+x]==2}
+        if gold_water==role_water:
+            registered.add('Route43')
+    # REF-318: Lake of Rage uses the same Bank $53 east spatial Surf path.
+    # Require exact 40x36 role geometry and all 300 Gold WATER cells.
+    lake_roles=root/'maps/johto_pilot/LakeOfRage.roles.bin'
+    if (any(r['map']=='LakeOfRage' for r in active)
+            and 'JohtoLakeOfRageRoles:: INCBIN "maps/johto_pilot/LakeOfRage.roles.bin"' in east_runtime
+            and 'JohtoEastGoldWaterProbe::' in east_runtime
+            and 'JohtoEastGoldShoreProbe::' in east_runtime
+            and 'cp JOHTO_LAKE_OF_RAGE_LOCAL_ID' in east_runtime
+            and re.search(r'cp JOHTO_LAKE_OF_RAGE_LOCAL_ID\s*\n\s*jp z, \.eastRoute42', surf_runtime)
+            and lake_roles.is_file()
+            and len(lake_roles.read_bytes())==40*36
+            and lake_roles.read_bytes().count(2)==300):
+        gold_water={(c['y'],c['x']) for c in gold.cells('LakeOfRage').values() if c['role']=='WATER'}
+        grid=lake_roles.read_bytes()
+        role_water={(y,x) for y in range(36) for x in range(40) if grid[y*40+x]==2}
+        if gold_water==role_water:
+            registered.add('LakeOfRage')
     known_maps = {r['map'] for r in active}
     if not skips <= known_maps:
         raise ValueError('skip map not active: ' + ', '.join(sorted(skips - known_maps)))

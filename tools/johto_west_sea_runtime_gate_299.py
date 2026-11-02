@@ -100,9 +100,9 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         main = txt("main.asm")
 
         ck("version_299_and_test_232",
-           'db "REF-306@"' in version and 'TEST-' not in version,
-           "REF-5.62.305; normal and battle-test builds share the same in-ROM version")
-        ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:35|38)$", constants) is not None)
+           'db "REF-312@"' in version and 'TEST-' not in version,
+           "REF-5.62.312; normal and battle-test builds share the same in-ROM version")
+        ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:35|38|39)$", constants) is not None)
         for name, sym, dim_sym, ident, w, h, water_count, mature in MAPS:
             m = re.search(rf"(?m)^DEF {re.escape(sym)} EQU (\$[0-9A-Fa-f]+|\d+)(?:\s*;.*)?$", fixed + "\n" + constants)
             parsed_id = int(m.group(1)[1:], 16) if m and m.group(1).startswith("$") else int(m.group(1)) if m else None

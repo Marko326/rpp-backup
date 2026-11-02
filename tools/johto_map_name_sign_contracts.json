@@ -218,6 +218,28 @@
       "role": "named",
       "name": "Mahogany Town",
       "town_map_name": "Mahogany Town"
+    },
+    {
+      "id": "JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Mahogany Town"
+    },
+    {
+      "id": "JOHTO_ROUTE_43_LOCAL_ID",
+      "role": "named",
+      "name": "Route 43",
+      "town_map_name": "Route 43"
+    },
+    {
+      "id": "JOHTO_ROUTE_43_GATE_LOCAL_ID",
+      "role": "neutral",
+      "town_map_name": "Route 43"
+    },
+    {
+      "id": "JOHTO_LAKE_OF_RAGE_LOCAL_ID",
+      "role": "named",
+      "name": "Lake of Rage",
+      "town_map_name": "Lake of Rage"
     }
   ]
 }

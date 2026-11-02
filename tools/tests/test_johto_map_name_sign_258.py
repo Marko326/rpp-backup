@@ -49,7 +49,7 @@ class MapNameSign258Tests(unittest.TestCase):
     def test_all_active_map_signs_and_save_names_pass(self):
         report = audit(self.root)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(len([c for c in report['checks'] if c['check'].startswith('town_name_')]), 38)
+        self.assertEqual(len([c for c in report['checks'] if c['check'].startswith('town_name_')]), 42)
 
     def test_missing_north_gate_reproduces_257_bug(self):
         self.mutate('engine/overworld/map_name_sign.asm',
@@ -114,8 +114,9 @@ class MapNameSign258Tests(unittest.TestCase):
         # Check the main audit has been wired up: use full project rather than
         # replacing dozens of unrelated Gold/map assets in this small fixture.
         report = audit_project(ROOT)
-        self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertTrue(any(c['check'] == 'johto_map_sign_all_neutral_gates' for c in report['checks']))
+        sign_checks = [c for c in report['checks'] if c['check'] == 'johto_map_sign_all_neutral_gates']
+        self.assertTrue(sign_checks, 'main audit no longer wires the map-sign gate')
+        self.assertTrue(all(c['status'] == 'PASS' for c in sign_checks), sign_checks)
 
 
 if __name__ == '__main__':

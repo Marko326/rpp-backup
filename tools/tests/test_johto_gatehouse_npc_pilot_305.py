@@ -31,7 +31,7 @@ class GatehouseNpcPilot305(unittest.TestCase):
         self.assertIn("johto_officer_alias_has_gold_red_palette", names)
         self.assertIn("global_kanto_guard_palette_unchanged", names)
         self.assertIn("west_east_dialogue_isolation", names)
-        self.assertIn("one_shared_rom_version_ref306", names)
+        self.assertIn("one_shared_rom_version_ref317", names)
 
     def test_up_facing_probe_uses_lower_left_not_upper_left(self):
         from johto_gatehouse_npc_pilot_305 import _counter_front_tile_id, GATES

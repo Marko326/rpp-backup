@@ -25,6 +25,7 @@ class ActiveMapTableAssert261(unittest.TestCase):
             target = self.root / rel
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / rel, target)
+        _, _, self.active = inspect(self.root)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -37,16 +38,16 @@ class ActiveMapTableAssert261(unittest.TestCase):
 
     def check_fails(self, detail):
         issues, tables, active = inspect(self.root)
-        self.assertEqual(active, 38)
+        self.assertEqual(active, self.active)
         self.assertTrue(issues, tables)
         self.assertTrue(any(detail in x for x in issues), issues)
 
     def test_real_current_tables_all_match(self):
         issues, tables, active = inspect(self.root)
-        self.assertEqual(38, active)
+        self.assertEqual(self.active, active)
         self.assertFalse(issues, issues)
         self.assertEqual(3, len(tables))
-        self.assertIn(("engine/menu/options_menu.asm", "JohtoActiveGSCMusic", 38, 38), tables)
+        self.assertIn(("engine/menu/options_menu.asm", "JohtoActiveGSCMusic", self.active, self.active), tables)
 
     def test_gold_union_cave_mapped_to_final_slot(self):
         music = (self.root / "engine/menu/options_menu.asm").read_text()
@@ -61,12 +62,12 @@ class ActiveMapTableAssert261(unittest.TestCase):
     def test_missing_cave_song_fails_before_assembly(self):
         self.mutate("engine/menu/options_menu.asm",
                     "    db MUSIC_GBP_GSC_UNION_CAVE      ; slot13: ID 8 Union Cave 1F (Gold MUSIC_UNION_CAVE)\n", "")
-        self.check_fails("got 37 bytes, expected 38")
+        self.check_fails(f"got {self.active - 1} bytes, expected {self.active}")
 
     def test_extra_song_fails(self):
         self.mutate("engine/menu/options_menu.asm", "JohtoActiveGSCMusicEnd::",
                     " db MUSIC_GBP_GSC_UNION_CAVE\nJohtoActiveGSCMusicEnd::")
-        self.check_fails("got 39 bytes, expected 38")
+        self.check_fails(f"got {self.active + 1} bytes, expected {self.active}")
 
     def test_missing_music_assert_fails(self):
         self.mutate("engine/menu/options_menu.asm",

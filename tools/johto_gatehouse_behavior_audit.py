@@ -18,6 +18,10 @@ from johto_gold_door_audit import (
 )
 from johto_warp_arrival_audit import audit as audit_warp_arrival, _gold_warp_events
 from johto_gatehouse_shared_runtime_303 import scan as scan_shared303, structural_check as check_shared303
+from johto_gatehouse_step_trace_308 import (
+    DIRECTIONS, simulate_south_gate, simulate_park_east,
+    simulate_legacy_gate_dispatch, simulate_legacy_gate_passability,
+)
 
 CONTRACT_PATH = 'tools/johto_pilot_door_contracts.json'
 EXPECTED_ROLES = {
@@ -219,6 +223,255 @@ def _scan_horizontal_gate_moves(source: str, *, stable_id: int, roles: bytes,
     return checked, failures
 
 
+# Gold's original door/carpet collision roles are traversable floor cells;
+# triggering a Warp is a separate direction/edge decision. PCs, counters and
+# walls are never floors, even when their 8x8 graphics look walkable.
+GATE_WALKABLE_GOLD_ROLES = frozenset({'FLOOR', 'DOOR'}) | GATE_CARPETS
+
+
+def _audit_gatehouse_full_walk_grid(*, gold_index: GoldCollisionIndex, gold_map: str,
+                                    stable_id: int, strategy: str,
+                                    descriptor: tuple[str, int, int] | None,
+                                    read_bytes, passable_tiles: set[int],
+                                    gate_blockset: bytes) -> tuple[int, int, list[str]]:
+    """Compare *every* interior cell and legal neighbouring step with Gold.
+
+    This decodes the selected RPP collision DATA backend, not the ASM CPU:
+    legacy gates use their real lower-left 8x8 Gate_Coll probe; south gates
+    use their own Gold role grid; Park East uses its separately accepted 2B/row
+    blocking mask, with its four carpet exceptions.  The result does NOT prove
+    source dispatch, outward Warp timing, or actual phone/ROM behaviour.
+    """
+    if descriptor is None:
+        return 0, 0, ['missing runtime descriptor for full-grid audit']
+    _, block_width, block_height = descriptor
+    width, height = block_width * 2, block_height * 2
+    original = gold_index.cells(gold_map)
+    if len(original) != width * height or any(
+            (x, y) not in original for y in range(height) for x in range(width)):
+        return 0, 0, [f'Gold/RPP room dimensions differ: {width}x{height}']
+
+    if strategy == 'legacy_gate_tilecoll':
+        blocks = read_bytes(f'maps/johto_pilot/{gold_map}.runtime.blk')
+        if len(blocks) != block_width * block_height:
+            return 0, 0, ['legacy block map has incorrect dimensions']
+
+        def walkable(x: int, y: int) -> bool:
+            block = blocks[(y // 2) * block_width + x // 2]
+            # 32x32 block contains sixteen 8x8 tiles. The legacy reader
+            # samples the bottom-left tile of the target 16x16 quadrant.
+            offset = block * 16 + ((y % 2) * 2 + 1) * 4 + (x % 2) * 2
+            if offset >= len(gate_blockset):
+                raise ValueError('legacy block points beyond JOHTO_GATE blockset')
+            return gate_blockset[offset] in passable_tiles
+
+    elif strategy == 'south_gold_role_grid':
+        roles = read_bytes(f'maps/johto_pilot/{gold_map}.roles.bin')
+        if len(roles) != width * height:
+            return 0, 0, ['south role grid has incorrect dimensions']
+
+        def walkable(x: int, y: int) -> bool:
+            return roles[y * width + x] == 0
+
+    elif strategy == 'park_east_mature_helper':
+        # This is intentionally NOT Route36NationalParkGate.roles.bin: its
+        # legacy converter wrongly blocked several valid indoor floor cells.
+        mask = read_bytes(f'maps/johto_pilot/{gold_map}.mature_blocked_mask.bin')
+        if (width, height) != (10, 8) or len(mask) != 16:
+            return 0, 0, ['Park East needs its independent 10x8, 2-byte/row mask']
+
+        def walkable(x: int, y: int) -> bool:
+            if x in (0, 9) and y in (4, 5):
+                return True
+            return not bool(mask[y * 2 + (x // 8)] & (1 << (x % 8)))
+
+    else:
+        return 0, 0, ['unsupported backend for full-grid comparison']
+
+    errors: list[str] = []
+    real: dict[tuple[int, int], bool] = {}
+    expected: dict[tuple[int, int], bool] = {}
+    for y in range(height):
+        for x in range(width):
+            expected[(x, y)] = original[(x, y)]['role'] in GATE_WALKABLE_GOLD_ROLES
+            real[(x, y)] = walkable(x, y)
+            if real[(x, y)] != expected[(x, y)]:
+                errors.append(f'cell ({x},{y}) Gold {original[(x,y)]["role"]} '
+                              f'expected walkable={expected[(x,y)]}, backend={real[(x,y)]}')
+    # Test the four cardinal target directions from each actually reachable
+    # floor cell, including sideways movement between adjacent carpets.
+    moves = 0
+    for (x, y), can_stand in expected.items():
+        if not can_stand:
+            continue
+        for direction, (dx, dy) in {'UP':(0,-1), 'DOWN':(0,1),
+                                     'LEFT':(-1,0), 'RIGHT':(1,0)}.items():
+            target = (x + dx, y + dy)
+            if target not in expected:
+                continue  # Border/outward Warp is audited separately.
+            moves += 1
+            if real[target] != expected[target] and len(errors) < 24:
+                errors.append(f'move ({x},{y}) {direction} -> {target}: '
+                              f'Gold={expected[target]} backend={real[target]}')
+    return width * height, moves, errors[:24]
+
+
+
+def _audit_gatehouse_source_walk(*, gold_index: GoldCollisionIndex, gold_map: str,
+                                 stable_id: int, strategy: str, source: str,
+                                 constants: dict[str, int], read_bytes,
+                                 blocked_targets: frozenset[tuple[int, int, int]]) -> tuple[int, list[str]]:
+    """Trace the actual South/park-East ASM operations for all interior moves.
+
+    The four South gates execute JohtoSouthSpatialRoleAhead's target,
+    bounds, grid-index and role lookup. The mature-door fence is a leaf
+    backed by the parsed blacklist; on those gate IDs it has no overrides.
+    Park East fully executes its mature mask helper, including all bit shifts.
+    The external ROM0 dispatch, outdoor Warp, sprite and Bike engines are
+    checked by separate static contracts, not emulated here.
+    """
+    if strategy not in ('south_gold_role_grid', 'park_east_mature_helper'):
+        return 0, []
+    cells = gold_index.cells(gold_map)
+    roles = (read_bytes(f'maps/johto_pilot/{gold_map}.roles.bin')
+             if strategy == 'south_gold_role_grid' else b'')
+    mask = (read_bytes(f'maps/johto_pilot/{gold_map}.mature_blocked_mask.bin')
+            if strategy == 'park_east_mature_helper' else b'')
+    checked, failures = 0, []
+    for (x, y), cell in cells.items():
+        if cell['role'] not in GATE_WALKABLE_GOLD_ROLES:
+            continue
+        for direction, (dx, dy) in DIRECTIONS.items():
+            target = (x + dx, y + dy)
+            if target not in cells:
+                continue  # crossing the outdoor seam is another pathway
+            if strategy == 'south_gold_role_grid':
+                result = simulate_south_gate(
+                    source, constants=constants, gate_id=stable_id,
+                    x=x, y=y, direction=direction, roles=roles,
+                    blocked_targets=blocked_targets)
+            else:
+                result = simulate_park_east(
+                    source, constants=constants, x=x, y=y,
+                    direction=direction, mask=mask)
+            expected = cells[target]['role'] in GATE_WALKABLE_GOLD_ROLES
+            checked += 1
+            if (result == 0) != expected and len(failures) < 20:
+                failures.append(f'ASM ({x},{y}) {direction} -> {target}: '
+                                f'Gold walkable={expected}, returned E={result}')
+    return checked, failures
+
+
+def _audit_gatehouse_legacy_source_walk(*, gold_index: GoldCollisionIndex,
+                                        gold_map: str, stable_id: int,
+                                        descriptor: tuple[str, int, int] | None,
+                                        read_bytes, constants: dict[str, int],
+                                        gateway_source: str, home_source: str,
+                                        player_state_source: str,
+                                        tileset_headers: str,
+                                        collision_source: str) -> tuple[int, list[str]]:
+    """Trace any explicitly profiled legacy Gate_Coll gatehouse.
+
+    Existing IDs 6/19/102 and future Gold-compatible vertical gates share the
+    original CheckTilePassable + Gate_Coll backend. The caller must supply an
+    explicit JOHTO_GATE descriptor/profile; this function deliberately avoids
+    a fixed stable-ID allowlist so future gatehouses can use the same verifier.
+    It executes the actual South dispatcher (which must return E=2), then the
+    actual CheckTilePassable instruction loop for each reachable room target.
+    It does not emulate sprites, the full movement scheduler, door/Warp
+    execution or a built ROM.
+    """
+    errors: list[str] = []
+    if descriptor is None or descriptor[0] != 'JOHTO_GATE':
+        return 0, [f'legacy gate must retain JOHTO_GATE descriptor, got {descriptor}']
+    _, block_width, block_height = descriptor
+    width, height = block_width * 2, block_height * 2
+    cells = gold_index.cells(gold_map)
+    if len(cells) != width * height:
+        return 0, [f'legacy Gold dimensions mismatch: {len(cells)} vs {width}x{height}']
+    runtime = read_bytes(f'maps/johto_pilot/{gold_map}.runtime.blk')
+    blockset = read_bytes('gfx/blocksets/johto_gate.bst')
+    passable = read_bytes('gfx/tilesets/gate.tilecoll')
+    if len(runtime) != block_width * block_height:
+        return 0, [f'legacy runtime block length {len(runtime)} != {block_width}x{block_height}']
+    if not blockset or len(blockset) % 16:
+        return 0, ['JOHTO_GATE blockset has invalid 16-tile metatile stride']
+    if not passable or passable[-1] != 0xff or 0xff in passable[:-1]:
+        return 0, ['Gate_Coll list must contain exactly one terminal $ff']
+
+    try:
+        dispatch = simulate_legacy_gate_dispatch(
+            gateway_source, constants=constants, gate_id=stable_id)
+    except ValueError as exc:
+        return 0, [f'legacy dispatch ASM trace failed: {exc}']
+    if dispatch != 2:
+        errors.append(f'legacy dispatch returned E={dispatch}, expected E=2 generic fallback')
+
+    caller = home_source.split('CollisionCheckOnLand::', 1)[-1].split('CheckTilePassable::', 1)[0]
+    required_caller = (
+        'callab JohtoOverworldSouthLandDecision', 'cp 2',
+        'jr z, .nonRoute33Tiles', 'ld hl,TilePairCollisionsLand',
+        'call CheckForJumpingAndTilePairCollisions', 'call CheckTilePassable',
+    )
+    if not all(token in caller for token in required_caller):
+        errors.append('CollisionCheckOnLand no longer routes E=2 through legacy tile-pair/CheckTilePassable')
+    if 'predef GetTileAndCoordsInFrontOfPlayer' not in home_source.split(
+            'CheckTilePassable::', 1)[-1].split('CheckForJumpingAndTilePairCollisions::', 1)[0]:
+        errors.append('CheckTilePassable no longer samples the actual front tile')
+    for token in ('aCoord 8, 11', 'aCoord 8, 7', 'aCoord 6, 9', 'aCoord 10, 9'):
+        if token not in player_state_source:
+            errors.append(f'GetTileAndCoordsInFrontOfPlayer probe offset missing: {token}')
+    land_pairs = home_source.split('TilePairCollisionsLand::', 1)[-1].split(
+        'TilePairCollisionsWater::', 1)[0]
+    if 'JOHTO_GATE' in land_pairs:
+        errors.append('JOHTO_GATE unexpectedly gained a legacy tile-pair collision override')
+    if not re.search(r'(?m)^\s*tileset\s+JohtoGate_Block\s*,\s*JohtoGate_GFX\s*,\s*Gate_Coll\s*,',
+                     tileset_headers):
+        errors.append('JOHTO_GATE tileset no longer points to Gate_Coll')
+    if not re.search(r'(?m)^\s*Gate_Coll::\s*INCBIN\s+"gfx/tilesets/gate\.tilecoll"',
+                     collision_source):
+        errors.append('Gate_Coll no longer resolves to gfx/tilesets/gate.tilecoll')
+
+    checked = 0
+    sampled_targets: set[tuple[int, int]] = set()
+    for (x, y), source_cell in cells.items():
+        if source_cell['role'] not in GATE_WALKABLE_GOLD_ROLES:
+            continue
+        for direction, (dx, dy) in DIRECTIONS.items():
+            tx, ty = x + dx, y + dy
+            if (tx, ty) not in cells:
+                continue  # Outdoor seam / outward Warp is audited independently.
+            bx, by = tx // 2, ty // 2
+            block_id = runtime[by * block_width + bx]
+            # GetTileAndCoordsInFrontOfPlayer uses the bottom-left 8x8 tile
+            # of the target 16x16 quadrant for all four player facings.
+            probe_offset = ((ty & 1) * 2 + 1) * 4 + (tx & 1) * 2
+            probe_index = block_id * 16 + probe_offset
+            if probe_index >= len(blockset):
+                errors.append(f'legacy probe ({tx},{ty}) resolves outside JOHTO_GATE blockset')
+                continue
+            tile_id = blockset[probe_index]
+            try:
+                blocked = simulate_legacy_gate_passability(
+                    home_source, gate_id=stable_id, tile_id=tile_id,
+                    passable_tiles=passable)
+            except ValueError as exc:
+                errors.append(f'legacy CheckTilePassable trace failed at ({tx},{ty}): {exc}')
+                return checked, errors[:24]
+            expected = cells[(tx, ty)]['role'] in GATE_WALKABLE_GOLD_ROLES
+            if (not blocked) != expected and len(errors) < 24:
+                errors.append(f'legacy ASM ({x},{y}) {direction} -> ({tx},{ty}) '
+                              f'tile=${tile_id:02x}: Gold walkable={expected}, blocked={blocked}')
+            sampled_targets.add((tx, ty))
+            checked += 1
+    expected_targets = {coord for coord, cell in cells.items()
+                        if cell['role'] in GATE_WALKABLE_GOLD_ROLES}
+    if not expected_targets.issubset(sampled_targets):
+        missing = sorted(expected_targets - sampled_targets)
+        errors.append(f'legacy ASM trace did not sample every Gold walkable target cell: {missing[:8]}')
+    return checked, errors[:24]
+
+
 def audit_active_gatehouse_carpet_walkability(
         project: Path, gold: Path, *, text_overrides: dict[str, str] | None = None,
         byte_overrides: dict[str, bytes] | None = None) -> dict:
@@ -235,6 +488,9 @@ def audit_active_gatehouse_carpet_walkability(
     errors: list[str] = []
     results: list[dict] = []
     results_checked: dict[int, int] = {}
+    decoded_cells: dict[int, int] = {}
+    decoded_moves: dict[int, int] = {}
+    asm_traced_moves: dict[int, int] = {}
 
     def txt(relative: str) -> str:
         return text_overrides[relative] if relative in text_overrides else (root / relative).read_text(encoding='utf-8')
@@ -257,8 +513,8 @@ def audit_active_gatehouse_carpet_walkability(
         if registry.get('schema') != 'johto-active-gatehouse-profiles-v1':
             fail('invalid shared gatehouse profile schema')
         profile_rows = registry.get('active_gatehouses', [])
-        if len(profile_rows) != 10 or len({row.get('stable_id') for row in profile_rows}) != len(profile_rows):
-            fail('shared profiles must list 10 unique active gatehouse IDs')
+        if len(profile_rows) != 12 or len({row.get('stable_id') for row in profile_rows}) != len(profile_rows):
+            fail('shared profiles must list 12 unique active gatehouse IDs')
         profile_by_id = {row['stable_id']: row for row in profile_rows}
         policy = {row['stable_id']:row['collision_strategy'] for row in profile_rows}
         bike_policy = {row['gold_map']:row for row in music['active_gates']}
@@ -291,6 +547,7 @@ def audit_active_gatehouse_carpet_walkability(
         tileset_headers = txt('data/tileset_headers.asm')
         collision_source = txt('data/collision.asm')
         player_state = txt('engine/overworld/player_state.asm')
+        home_source = txt('home/overworld.asm')
         closed_targets_text = south.split('.closedDoorTargets', 1)[1].split('JohtoSouthAzaleaTownRoles::', 1)[0]
         closed_targets = set()
         for symbol, x, y in re.findall(
@@ -304,7 +561,7 @@ def audit_active_gatehouse_carpet_walkability(
         if set(active_ids) != set(policy):
             fail(f'carpet collision policy must explicitly cover every active gatehouse: active={active_ids}, policy={sorted(policy)}')
         allowed_policies = {
-            'legacy_gate_tilecoll': {6, 19, 102},
+            'legacy_gate_tilecoll': {6, 19, 65, 66, 102},
             'south_gold_role_grid': {11, 13, 18, 104},
             'west_carpet_lane_helper': {23},
             'east_carpet_lane_helper': {62},
@@ -318,7 +575,7 @@ def audit_active_gatehouse_carpet_walkability(
         # The legacy tile-collision reader probes the lower-left 8x8 tile of
         # the target 16x16 cell (GetTileAndCoordsInFrontOfPlayer's aCoord 6/8/10,
         # row 9/11 offsets). Confirm those actual probe tiles are in Gate_Coll.
-        legacy_ids = {6, 19, 102}
+        legacy_ids = {6, 19, 66, 102}
         if not all(token in player_state for token in ('aCoord 8, 11', 'aCoord 8, 7', 'aCoord 6, 9', 'aCoord 10, 9')):
             fail('legacy Gate_Coll probe geometry no longer matches GetTileAndCoordsInFrontOfPlayer')
         if not re.search(r'(?m)^\s*tileset\s+JohtoGate_Block\s*,\s*JohtoGate_GFX\s*,\s*Gate_Coll\s*,', tileset_headers):
@@ -406,6 +663,17 @@ def audit_active_gatehouse_carpet_walkability(
                             probe_tile = gate_blockset[probe_index]
                             if probe_tile not in passable_tiles:
                                 gate_errors.append(f'carpet {(x, y)} {role}: Gate_Coll probe tile ${probe_tile:02x} is not passable')
+                try:
+                    count, bad = _audit_gatehouse_legacy_source_walk(
+                        gold_index=index, gold_map=gold_map, stable_id=stable_id,
+                        descriptor=descriptor, read_bytes=raw, constants=constants,
+                        gateway_source=south_gateway, home_source=home_source,
+                        player_state_source=player_state,
+                        tileset_headers=tileset_headers, collision_source=collision_source)
+                    asm_traced_moves[stable_id] = count
+                    gate_errors.extend('legacy source trace ' + err for err in bad)
+                except (OSError, ValueError, IndexError) as exc:
+                    gate_errors.append(f'legacy source trace failed: {exc}')
 
             elif strategy == 'south_gold_role_grid':
                 descriptor = descriptors.get(stable_id)
@@ -487,6 +755,38 @@ def audit_active_gatehouse_carpet_walkability(
             else:
                 gate_errors.append(f'no carpet movement strategy registered for stable ID {stable_id}')
 
+            # REF-307: audit complete floor/wall geometry for the eight gates
+            # not covered by the 303 ASM instruction simulator. This is not a
+            # claim that their collision ASM has been emulated or phone-tested.
+            if stable_id not in (23, 62):
+                try:
+                    cell_count, move_count, walk_errors = _audit_gatehouse_full_walk_grid(
+                        gold_index=index, gold_map=gold_map, stable_id=stable_id,
+                        strategy=strategy, descriptor=descriptors.get(stable_id),
+                        read_bytes=raw, passable_tiles=passable_tiles,
+                        gate_blockset=gate_blockset)
+                    decoded_cells[stable_id] = cell_count
+                    decoded_moves[stable_id] = move_count
+                    gate_errors.extend('full-grid ' + e for e in walk_errors)
+                except (OSError, ValueError, IndexError) as exc:
+                    gate_errors.append(f'full-grid decoder failed: {exc}')
+
+            # DEV-308: execute the shipped instructions for all room-internal
+            # moves on the four South gate grids and the special Park East
+            # bitmap helper. The three legacy Gate_Coll maps still use the
+            # original tile-probe data audit; they are not re-labelled traced.
+            if strategy in ('south_gold_role_grid', 'park_east_mature_helper'):
+                try:
+                    count, bad = _audit_gatehouse_source_walk(
+                        gold_index=index, gold_map=gold_map,
+                        stable_id=stable_id, strategy=strategy,
+                        source=south, constants=constants, read_bytes=raw,
+                        blocked_targets=frozenset(closed_targets))
+                    asm_traced_moves[stable_id] = count
+                    gate_errors.extend('source trace ' + e for e in bad)
+                except (OSError, ValueError, IndexError) as exc:
+                    gate_errors.append(f'ASM source trace failed: {exc}')
+
             if gate_errors:
                 errors.extend(f'ID{stable_id} {gold_map}: {message}' for message in gate_errors)
             results.append({'stable_id': stable_id, 'gold_map': gold_map,
@@ -502,6 +802,9 @@ def audit_active_gatehouse_carpet_walkability(
         'gatehouses_checked': len(results),
         'carpets_checked': sum(row.get('carpets', 0) for row in results),
         'source_simulated_moves': results_checked,
+        'data_decoded_cells': decoded_cells,
+        'data_decoded_moves': decoded_moves,
+        'asm_traced_moves': asm_traced_moves,
         'results': results,
         'errors': errors,
         'runtime_verified': False,

@@ -1,3 +1,30 @@
+## 当前城都开发状态：REF-5.62.319（2026-11-02）
+
+当前未提交主线已接通 Route43 南北门房与 Lake of Rage 室外区域，活动地图 42 张。REF-319 保留 Gold 原版 Lake 20×18 地形、300 WATER、5 Cut、6 个向下跳崖，并修正 ID68 进入精确 Gold role-grid 的陆地碰撞分派；用户已反馈实际查看未发现问题。Lake 两栋房屋、红色暴鲤龙、渡和剧情事件仍为下一阶段，不属于本次收口。正式提交仍以导出记录的 HEAD `c4890820e06b5bb361ab663f40680117c59c2e70` 为累计基线。
+
+## REF-5.62.315 / DEV-317｜Route43 Gold 原版上下邻接画面修复（待设备验收）
+- 修正 DEV-315/316 漏接的 Route43 地图头：恢复 Gold 原版 NORTH/SOUTH 邻接预览，北侧使用 Lake of Rage 原版 20×18 预览数据，南侧复用已活动的 Mahogany Town 原版地图数据。
+- 这两条只用于地图画面拼接；`JohtoPilotIsClosedOutdoorEdge` 仍封锁 Route43 北/南物理越界，未注册 Lake of Rage 或 ID66 的地图通行。Route43 南端仍只通过 ID65 的两格门毯 Warp 进出。
+- DEV-316 只证明 Route43 自身 270B block map 与 Gold 一致，没有检查地图头的邻接预览记录；因此其“地图显示正常”结论撤回。新增 DEV-317 审计覆盖北/南预览、源数据一致性、ROMX 同 Bank 和 fail-closed 边界。
+- **未编译 ROM／未生成新 MAP／未实机验收**；用户需本机重建 Red/Blue/battle-test 后核对画面与 ROM0/ROMX 空间。
+
+## REF-5.62.312 / DEV-314｜纵向门房共享运行逻辑与 REF-311 回归收口
+- DEV-314 纵向门房共享机制说明：`docs/JOHTO_VERTICAL_GATE_RUNTIME_314.md`。
+
+- 用户确认此前六座门房已完成；此前要求复测的门房也已测过且没有发现问题，不再重复要求旧门房复测。
+- 对 Gold 预留稳定 ID65 `Route43MahoganyGate`、ID66 `Route43Gate` 建立未来接入 profile。两张图同用 `NorthSouthGate.blk`（5×4），可沿用 ID19 已验证的紧凑运行布局与 `JOHTO_GATE` / `Gate_Coll` 通用碰撞路径；本轮不激活地图或 Warp。
+- 新增可复用的 legacy Gate_Coll ASM 步进执行器入口（不再硬编码只允许 ID6/19/102），并新增 Gold-backed future-gate onboarding audit。ID65、ID66 各 218 条源码级步进通过；ID65 Officer 与 ID66 Rocket 收费 scene/callback 保持独立。
+- **版本**：本轮仅 tools/tests/docs，开发包编号 `DEV-312`；游戏运行代码不变，游戏内版本继续 `REF-310`。DEV-311 未提升 ROM 版本是因为它也是 tools-only，并非漏改游戏版本；下次真正激活新门房运行代码时再提升到 `REF-311`。详见 `docs/JOHTO_GATEHOUSE_FUTURE_ONBOARDING_312.md`。
+
+## REF-5.62.310 / DEV-310｜Gold 门房配色修复与最新 MAP 复核
+
+- 用户 REF-309 Red/Blue MAP 验证 ROM0 都余69B、Bank `$4E` 都余162B；DEV-309 的19B节省已由旧 Red MAP（143B）与新 Red MAP（162B）对照确认。用户实测圆朱东西及公园两座门房的通行与公园禁骑。
+- 本轮对 Gold 门房96个子图及室内 RGB 核实，修复两座公园门房绿色／棕色错误映射；**不统一门房外观**，不改关都公共 RGB、地图、人物或运行碰撞。游戏内版本 `REF-310`；REF-310 ROM/MAP 与设备颜色变化尚待用户编译/验证。见 `docs/JOHTO_GATEHOUSE_PALETTE_310.md`。
+
+## REF-5.62.309 / DEV-309｜门房 10×8 角色网格尺寸共用（开发候选）
+
+- 本轮仅将 South 角色查询分派中的五个 10×8 门房尺寸初始化合并到一处，地图、墙壁、公园不同布局、Warp 和 NPC 不变。游戏内版本 `REF-309`；实测构建与 Bank `$4E` 新 MAP 仍待用户本地确认。详见 `TODO.md` 最上方。
+
 ## CLEAN-5.62.306 / REF-5.62.306｜圆朱东西门房共享引擎与独立警员正式收口（2026-11-01）
 
 - **准确提交基线**：`常规功能备份`，用户干净 FIX-302 源码及导出记录均指向已提交 HEAD `27a2086219b56238e26844676f3a5328e5b567ee`；这笔 CLEAN 累计涵盖 REF-303～306，不重复提交已在 HEAD 内的 MAP-300、FIX-301／302。

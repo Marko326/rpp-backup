@@ -113,10 +113,10 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('schema') == 'johto-pilot-door-contracts-v1' and
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
-           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 10 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 83 and
+           len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 12 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 97 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 10 gates and 83 activated Warp arcs')
+           'MUS contract records 3 house arcs, 12 gates and 97 activated Warp arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -337,10 +337,63 @@ def audit(project: Path, gold: Path) -> dict:
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', east_ids[dst]))
     _check(checks, errors, 'route42_east_gate_registered_warps', east_verified,
            'Ecruteak east gate requires 8 exact Gold carpet arcs and reciprocal Warp rows')
+    # DEV-319: both north gates have to preserve their original Gold arcs.
+    # DEV-313 previously pinned only three links because Route43 was still
+    # closed.  That frozen phase contract must not reject valid later maps.
+    north_gate_contracts = contract['gatehouse_activation_policy']['active_gatehouse_contracts']
+    local_names = {64: 'JOHTO_MAHOGANY_TOWN_LOCAL_ID',
+                   65: 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID',
+                   66: 'JOHTO_ROUTE_43_GATE_LOCAL_ID',
+                   67: 'JOHTO_ROUTE_43_LOCAL_ID'}
+    gate_pin_sets = {
+        65: [(64, 0, 65, 0), (65, 0, 64, 0), (65, 1, 64, 0),
+             (67, 0, 65, 2), (65, 2, 67, 0), (67, 1, 65, 3), (65, 3, 67, 1)],
+        66: [(67, 2, 66, 2), (67, 3, 66, 0), (67, 4, 66, 1),
+             (66, 0, 67, 3), (66, 1, 67, 4), (66, 2, 67, 2), (66, 3, 67, 2)],
+    }
+    all_north_gates_valid = True
+    for gate_id, pins in gate_pin_sets.items():
+        matches = [g for g in north_gate_contracts if g.get('stable_id') == gate_id]
+        if len(matches) != 1:
+            all_north_gates_valid = False
+            continue
+        entries = matches[0].get('warp_contracts', [])
+        observed_pins = [(r['source_stable_id'], r['source_warp_ordinal'],
+                          r['target_stable_id'], r['target_warp_ordinal']) for r in entries]
+        if observed_pins != pins:
+            all_north_gates_valid = False
+            continue
+        for row in entries:
+            try:
+                native = _gold_warp_events(gold, row['source_gold_map'])[
+                    row['source_gold_warp_number_one_based'] - 1]
+                target = _gold_warp_events(gold, row['target_gold_map'])[
+                    row['target_gold_warp_number_one_based'] - 1]
+                role = collision_index.role_at(row['source_gold_map'], *row['source_xy'])
+                if ([native['x'], native['y']] != row['source_xy'] or
+                    [target['x'], target['y']] != row['target_xy'] or
+                    native['destination'].replace('_','') != row['target_gold_map'].upper().replace('_','') or
+                    role != row['source_gold_collision_role']):
+                    all_north_gates_valid = False
+            except (IndexError, ValueError, KeyError):
+                all_north_gates_valid = False
+            expected_routes.append(('MAP_REGION_JOHTO',
+                local_names[row['source_stable_id']], str(row['source_warp_ordinal']),
+                'MAP_REGION_JOHTO', local_names[row['target_stable_id']]))
+    _check(checks, errors, 'route43_north_gates_both_exact_gold_warps', all_north_gates_valid,
+           'ID65 + ID66 must register 14 ordered real Gold arcs with correct roles')
     try:
+        from collections import Counter
         rows = _route_rows(runtime)
-        _check(checks, errors, 'registered_routes', rows == expected_routes,
-               f'expected exact activated house and gate routes; actual={rows}')
+        # Warp routing looks up source identity and ordinal, not table index.
+        # Different deployment stages legitimately append reciprocal rows in
+        # different orders. Compare the exact *multiset* (including duplicates).
+        unexpected = list((Counter(rows) - Counter(expected_routes)).elements())
+        missing = list((Counter(expected_routes) - Counter(rows)).elements())
+        route_diag = (f'actual {len(rows)}, expected {len(expected_routes)}; '
+                      f'unexpected={unexpected[:3]}, missing={missing[:3]}')
+        _check(checks, errors, 'registered_routes', Counter(rows) == Counter(expected_routes),
+               route_diag)
     except ValueError as exc:
         _check(checks, errors, 'registered_routes', False, str(exc))
 

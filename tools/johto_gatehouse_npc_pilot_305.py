@@ -138,12 +138,12 @@ def audit(
     try:
         version = _read(project, "data/game_version.asm", text_overrides)
         ck(
-            "one_shared_rom_version_ref306",
-            'db "REF-306@"' in version
+            "one_shared_rom_version_ref317",
+            'db "REF-317@"' in version
             and "TEST-" not in version
             and "IF DEF(BATTLE_TEST_BUILD)" not in version
             and "ENDC" not in version,
-            "normal and BATTLE_TEST_BUILD ROMs must expose only REF-306 (canonical REF-5.62.306)",
+            "normal and BATTLE_TEST_BUILD ROMs must expose only REF-317 (canonical REF-5.62.317)",
         )
 
         build_sources = []
@@ -532,7 +532,7 @@ def fault_tests(project: Path, gold_root: Path | None = None) -> dict[str, bool]
     bad_east_text = east.replace("MOUNT MORTAR is", "ROUTE 42 is", 1)
     faults["wrong_east_dialogue_rejected"] = rejected_text(east_rel, bad_east_text)
 
-    bad_version = version.replace('db "REF-306@"', 'db "TEST-LABEL@"', 1)
+    bad_version = version.replace('db "REF-317@"', 'db "TEST-LABEL@"', 1)
     faults["separate_test_version_rejected"] = (
         bad_version != version
         and audit(project, gold_root, {"data/game_version.asm": bad_version})["status"] == "FAIL"

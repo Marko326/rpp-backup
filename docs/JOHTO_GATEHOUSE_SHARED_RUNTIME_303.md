@@ -16,6 +16,14 @@
 
 这份 JSON 是离线开发审计的统一配置，不会被游戏动态加载；只有 ID23/62 的横向门毯坐标在 ROM 中采用共享数据表。其余8座保持原版行为，不能冒充“ROM 已全部数据驱动”。
 
+## DEV-311｜原生 Gate_Coll 路径也纳入源码级追踪
+
+- ID6／19／102 没有改用 REF-303 的圆朱门毯 helper，但并非三份独立代码；它们共用 `JohtoOverworldSouthLandDecision` 的 E=2 fallback、RPP `CheckTilePassable` 和 `Gate_Coll` 列表。十座门房现在共计 1,925 条受限源码级相邻步进轨迹；这不是完整 ROM CPU 仿真。
+- DEV-311 扩展 `tools/johto_gatehouse_step_trace_308.py`，执行实际 dispatcher 和 `CheckTilePassable` 指令循环。目标 tile 从当前 runtime block map 与 `johto_gate.bst` 计算，Gold 逐格 walkable roles 作期望值；步数为 ID6=172、ID19=218、ID102=172。
+- 通过负向注入检查错误分派、错误寄存器比较和 GetTileAndCoordsInFrontOfPlayer 的方向采样偏移。
+- **保留原生 Gate_Coll 后端**：它已经是共享通用实现，不为“看起来统一”而改成 role-grid；ID19 顶部 DOOR 和 ID6／102 的方向门毯触发继续走现有 Warp guard。
+- 此为有限源级追踪，不代表 ROM CPU 执行或实机验收；完整移动帧、sprite collision、Bank、Warp、存档和 bike/music 仍由本机回归覆盖。
+
 ## 必须回归
 
 1. ID23/62 各172条地图内相邻移动，包括从上方/下方普通地面入毯、室内侧面入毯、地毯上下换道、逆向返回、墙壁阻断。

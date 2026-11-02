@@ -115,8 +115,8 @@ def audit(project: Path, gold_root: Path, reference_root: Path,
         roof=txt('engine/johto_south_roofs_269.asm'); pal=txt('color/loadpalettes.asm')
         home=txt('home/overworld.asm'); main=txt('main.asm')
 
-        ck('version_ref304_unified', 'db "REF-306@"' in version and 'TEST-' not in version)
-        ck('active_38', re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 38$',constants) is not None)
+        ck('version_ref304_unified', 'db "REF-312@"' in version and 'TEST-' not in version)
+        ck('active_39', re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 39$',constants) is not None)
         ck('bank53_isolated', 'SECTION "Johto East Runtime 300", ROMX, BANK[$53]' in main and
            'INCLUDE "data/johto_east_runtime_300.asm"' in main)
         ck('post_block_border_hook', 'callab PatchJohtoBordersAfterBlockLoad300' in home)

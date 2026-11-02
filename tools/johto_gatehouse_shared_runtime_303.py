@@ -26,7 +26,7 @@ def _load(code, constants):
             records.append(n)
     if not records or records[-1] != 255 or (len(records)-1)%5:
         raise ValueError('invalid gate profile sentinel/size')
-    asm=code.split(SYMBOL,1)[1].split("; Route42's only Cut cell",1)[0]
+    asm=code.split(SYMBOL,1)[1].split('JohtoRoute42CutClearedAhead300:',1)[0]
     labels={}; instr=[]
     for raw in asm.splitlines():
         line=raw.split(';',1)[0].strip()

@@ -90,6 +90,14 @@ try:
     from johto_next_corridor_source_gate_293 import audit as audit_next_corridor_293
 except ImportError:
     from tools.johto_next_corridor_source_gate_293 import audit as audit_next_corridor_293
+try:
+    from johto_gatehouse_onboarding_312 import audit as audit_future_gatehouses_312
+except ImportError:
+    from tools.johto_gatehouse_onboarding_312 import audit as audit_future_gatehouses_312
+try:
+    from johto_vertical_gate_runtime_314 import audit as audit_vertical_gate_runtime_314
+except ImportError:
+    from tools.johto_vertical_gate_runtime_314 import audit as audit_vertical_gate_runtime_314
 from typing import Iterable
 try:
     from johto_table_assert_preflight import inspect as inspect_johto_table_asserts
@@ -104,7 +112,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -126,6 +134,7 @@ EXPECTED_CONNECTIONS = {
     (28, "WEST", 29), (29, "EAST", 28),
     (22, "EAST", 63), (63, "WEST", 22),
     (63, "EAST", 64), (64, "WEST", 63),
+    (67, "NORTH", 68), (68, "SOUTH", 67),
 }
 MAP_LAYOUTS = {
     "NewBarkTown": (10, 9),
@@ -166,6 +175,10 @@ MAP_LAYOUTS = {
     "Route42EcruteakGate": (5, 4),
     "Route42": (30, 9),
     "MahoganyTown": (10, 9),
+    "Route43MahoganyGate": (5, 4),
+    "Route43": (10, 27),
+    "Route43Gate": (5, 4),
+    "LakeOfRage": (20, 18),
 }
 GOLD_SOURCE_MAPS = {
     "Route37": "Route37",
@@ -203,6 +216,10 @@ GOLD_SOURCE_MAPS = {
     "Route42EcruteakGate": "Route42EcruteakGate",
     "Route42": "Route42",
     "MahoganyTown": "MahoganyTown",
+    "Route43MahoganyGate": "Route43MahoganyGate",
+    "Route43": "Route43",
+    "Route43Gate": "Route43Gate",
+    "LakeOfRage": "LakeOfRage",
 }
 
 
@@ -652,6 +669,28 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         _check(errors, checks, 'johto_gate_music_bike_' + item['check'],
                item['status'] == 'PASS', item['detail'])
 
+    # DEV-314: the active vertical gate uses one shared, table-driven ASM
+    # threshold/arrival/bounds implementation; future compatible gates add rows.
+    vertical_gate_runtime = audit_vertical_gate_runtime_314(project)
+    for item in vertical_gate_runtime['checks']:
+        _check(errors, checks, 'johto_vertical_gate_314_' + item['check'],
+               item['status'] == 'PASS', item.get('detail', ''))
+    if vertical_gate_runtime['errors'] and not vertical_gate_runtime['checks']:
+        _check(errors, checks, 'johto_vertical_gate_314_loaded', False,
+               str(vertical_gate_runtime['errors']))
+
+    # DEV-312: planned future gatehouses are checked without activating them.
+    # The Route43 pair must reuse the already-shared Gate_Coll path and keep
+    # its Gold Warp/event contracts explicit before any runtime registration.
+    if gold_root is not None and (project / 'tools/johto_gatehouse_future_profiles_312.json').is_file():
+        future_gates = audit_future_gatehouses_312(project, Path(gold_root))
+        for item in future_gates['checks']:
+            _check(errors, checks, 'johto_future_gatehouse_312_' + item['check'],
+                   item['status'] == 'PASS', item['detail'])
+        if future_gates['status'] != 'PASS_STATIC_ONLY' and not future_gates['checks']:
+            _check(errors, checks, 'johto_future_gatehouse_312_loaded', False,
+                   str(future_gates.get('errors', [])))
+
     _check(errors, checks, "active_map_count", active_count == len(EXPECTED_ACTIVE_IDS),
            f"expected {len(EXPECTED_ACTIVE_IDS)} active slots {EXPECTED_ACTIVE_IDS}, got {active_count}")
 
@@ -817,7 +856,9 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_40_LOCAL_ID", "JOHTO_ROUTE_41_LOCAL_ID",
                            "JOHTO_CIANWOOD_CITY_LOCAL_ID",
                            "JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID", "JOHTO_ROUTE_42_LOCAL_ID",
-                           "JOHTO_MAHOGANY_TOWN_LOCAL_ID"]
+                           "JOHTO_MAHOGANY_TOWN_LOCAL_ID", "JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",
+                           "JOHTO_ROUTE_43_LOCAL_ID", "JOHTO_ROUTE_43_GATE_LOCAL_ID",
+                           "JOHTO_LAKE_OF_RAGE_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -875,6 +916,10 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[23:27] = [28, 29, 30, 31]
     expected_slots[27:30] = [32, 33, 34]
     expected_slots[62:65] = [35, 36, 37]
+    expected_slots[65] = 38
+    expected_slots[67] = 39
+    expected_slots[66] = 40
+    expected_slots[68] = 41
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1066,6 +1111,12 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID",3,"JOHTO_ROUTE_42_LOCAL_ID"),
             ("JOHTO_ROUTE_42_LOCAL_ID",0,"JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID"),
             ("JOHTO_ROUTE_42_LOCAL_ID",1,"JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID"),
+        ):
+            expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
+        for source, ordinal, target in (
+            ("JOHTO_MAHOGANY_TOWN_LOCAL_ID",0,"JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",0,"JOHTO_MAHOGANY_TOWN_LOCAL_ID"),
+            ("JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",1,"JOHTO_MAHOGANY_TOWN_LOCAL_ID"),
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal), "MAP_REGION_JOHTO", target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,

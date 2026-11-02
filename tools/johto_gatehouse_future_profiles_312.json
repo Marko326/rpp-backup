@@ -1,0 +1,302 @@
+{
+  "schema": "johto-future-gatehouse-onboarding-v1",
+  "release": "DEV-314",
+  "game_version": "REF-312",
+  "status": "partial_65_active",
+  "purpose": "Gold-derived candidate contracts; ID65 south-only is active in DEV-314, ID66 remains inactive. North to Route43 is closed.",
+  "shared_runtime": {
+    "runtime_tileset": "JOHTO_GATE",
+    "collision_list": "Gate_Coll",
+    "collision_source": "gfx/tilesets/gate.tilecoll",
+    "dispatcher": "JohtoOverworldSouthLandDecision",
+    "legacy_result": 2,
+    "passability": "CollisionCheckOnLand -> CheckForJumpingAndTilePairCollisions -> CheckTilePassable -> wTilesetCollisionPtr/Gate_Coll",
+    "reuse_layout_from_stable_id": 19,
+    "reuse_runtime_layout": "maps/johto_pilot/Route36RuinsOfAlphGate.runtime.blk",
+    "reuse_layout_block_dimensions": [
+      5,
+      4
+    ],
+    "thresholds": "JohtoVerticalGateBeforeStep314 / JohtoVerticalGateAfterStep314 / JohtoVerticalGateCollisionExit314",
+    "arrival": "JohtoVerticalGateArrivalStep314",
+    "closed_edge": "JohtoVerticalGateClosedEdge314",
+    "configuration": "data/johto_vertical_gate_runtime_314.asm profile rows keyed by stable map ID",
+    "dispatch": "JohtoPilotIsVerticalGatePairMap314 is the single runtime stable-ID allowlist",
+    "future_gate_rule": "A compatible vertical gate adds its stable ID to the central allowlist and its before/after/arrival/bounds rows; it does not copy the five ASM routines.",
+    "scope_note": "This runtime abstraction is for compatible vertical gate geometry only; Park gates and horizontal Ecruteak gates retain their own specialized collision backends.",
+    "notes": [
+      "The two planned gates use the same Gold NorthSouthGate 5x4 source geometry as ID19 and can reuse its compact JOHTO_GATE runtime block layout.",
+      "The shared generic Gate_Coll path is the runtime reuse point; do not route these IDs through the Ecruteak horizontal carpet helper or Park masks.",
+      "Warp/arrival contracts and map-local scene/NPC scripts remain per-map data, separate from collision handling.",
+      "DEV-314: vertical threshold/arrival/edge logic is table-driven; adding a compatible gate requires one central stable-ID allowlist entry and profile rows."
+    ]
+  },
+  "activation_policy": {
+    "require_explicit_warp_contract_before_activation": true,
+    "require_route43_runtime_map_before_activation": true,
+    "keep_route43_and_route44_closed_until_their_own_contracts_pass": true,
+    "do_not_copy_gold_warp_ordinals_directly_to_runtime_ordinals": true,
+    "runtime_warp_ordinals": "unset_until Route43 runtime map and filtered warp table are implemented",
+    "do_not_merge_map_scene_or_npc_logic_into_shared_collision": true
+  },
+  "future_gatehouses": [
+    {
+      "stable_id": 65,
+      "stable_id_symbol": "JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",
+      "gold_map": "Route43MahoganyGate",
+      "layout": "vertical_ns",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "runtime_tileset": "JOHTO_GATE",
+      "active": true,
+      "gold_block_file": "NorthSouthGate.blk",
+      "block_dimensions": [
+        5,
+        4
+      ],
+      "thresholds": [
+        {
+          "xy": [
+            4,
+            0
+          ],
+          "role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "xy": [
+            5,
+            0
+          ],
+          "role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "xy": [
+            4,
+            7
+          ],
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "arrival_auto_step": "D_DOWN"
+        },
+        {
+          "xy": [
+            5,
+            7
+          ],
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "arrival_auto_step": "D_DOWN"
+        }
+      ],
+      "warp_events": [
+        {
+          "source_gold_warp_number": 1,
+          "source_xy": [
+            4,
+            0
+          ],
+          "source_role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "target_gold_map": "Route43",
+          "target_gold_warp_number": 1,
+          "target_role": "WARP_CARPET_DOWN",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "source_gold_warp_number": 2,
+          "source_xy": [
+            5,
+            0
+          ],
+          "source_role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "target_gold_map": "Route43",
+          "target_gold_warp_number": 2,
+          "target_role": "WARP_CARPET_DOWN",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "source_gold_warp_number": 3,
+          "source_xy": [
+            4,
+            7
+          ],
+          "source_role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "target_gold_map": "MahoganyTown",
+          "target_gold_warp_number": 5,
+          "target_role": "DOOR",
+          "arrival_auto_step": "D_DOWN"
+        },
+        {
+          "source_gold_warp_number": 4,
+          "source_xy": [
+            5,
+            7
+          ],
+          "source_role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "target_gold_map": "MahoganyTown",
+          "target_gold_warp_number": 5,
+          "target_role": "DOOR",
+          "arrival_auto_step": "D_DOWN"
+        }
+      ],
+      "event_profile": {
+        "scene_scripts": 0,
+        "callbacks": 0,
+        "object_events": 1,
+        "summary": "One Officer with map-local dialogue; no scene/callback state machine. Keep its event/text pointers independent."
+      }
+    },
+    {
+      "stable_id": 66,
+      "stable_id_symbol": "JOHTO_ROUTE_43_GATE_LOCAL_ID",
+      "gold_map": "Route43Gate",
+      "layout": "vertical_ns",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true,
+      "runtime_tileset": "JOHTO_GATE",
+      "active": false,
+      "gold_block_file": "NorthSouthGate.blk",
+      "block_dimensions": [
+        5,
+        4
+      ],
+      "thresholds": [
+        {
+          "xy": [
+            4,
+            0
+          ],
+          "role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "xy": [
+            5,
+            0
+          ],
+          "role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "xy": [
+            4,
+            7
+          ],
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "arrival_auto_step": "D_DOWN"
+        },
+        {
+          "xy": [
+            5,
+            7
+          ],
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "arrival_auto_step": "D_DOWN"
+        }
+      ],
+      "warp_events": [
+        {
+          "source_gold_warp_number": 1,
+          "source_xy": [
+            4,
+            0
+          ],
+          "source_role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "target_gold_map": "Route43",
+          "target_gold_warp_number": 4,
+          "target_role": "WARP_CARPET_DOWN",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "source_gold_warp_number": 2,
+          "source_xy": [
+            5,
+            0
+          ],
+          "source_role": "DOOR",
+          "trigger": "STEP_ON",
+          "direction": "UP",
+          "target_gold_map": "Route43",
+          "target_gold_warp_number": 5,
+          "target_role": "WARP_CARPET_DOWN",
+          "arrival_auto_step": "NONE"
+        },
+        {
+          "source_gold_warp_number": 3,
+          "source_xy": [
+            4,
+            7
+          ],
+          "source_role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "target_gold_map": "Route43",
+          "target_gold_warp_number": 3,
+          "target_role": "DOOR",
+          "arrival_auto_step": "D_DOWN"
+        },
+        {
+          "source_gold_warp_number": 4,
+          "source_xy": [
+            5,
+            7
+          ],
+          "source_role": "WARP_CARPET_DOWN",
+          "trigger": "COLLISION_ONLY",
+          "direction": "DOWN",
+          "target_gold_map": "Route43",
+          "target_gold_warp_number": 3,
+          "target_role": "DOOR",
+          "arrival_auto_step": "D_DOWN"
+        }
+      ],
+      "event_profile": {
+        "scene_scripts": 2,
+        "callbacks": 1,
+        "object_events": 3,
+        "summary": "Rocket toll takeover has two scenes, one new-map callback, an Officer and two Rockets; preserve Gold event flags, money flow and map-local scripts separately from shared collision."
+      }
+    }
+  ],
+  "dev314": {
+    "game_version": "REF-312",
+    "baseline": "REF-311.zip",
+    "active_gate_profile": [
+      64,
+      65
+    ],
+    "inactive_gate_ids": [
+      66
+    ],
+    "route43_outdoor_active": false,
+    "lake_of_rage_active": false,
+    "status": "source_static_only_not_rom_built"
+  }
+}

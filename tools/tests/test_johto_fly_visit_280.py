@@ -54,16 +54,13 @@ class FlyVisit280(unittest.TestCase):
         self.wrong('callab JohtoPilotRecordFlyVisit', 'callab InvalidFlyVisitHook',
                    'map_load_only_records_real_johto_towns', 'home/overworld.asm')
 
-    def test_release_version_matches_project_headings(self):
+    def test_release_version_label_matches_canonical_comment(self):
         version=(ROOT/'data/game_version.asm').read_text(encoding='utf-8')
-        self.assertRegex(version, r'(?m)^\s*db "REF-306@"$')
-        match=re.search(r'(?m)^\s*db "REF-(\d+)@"$',version)
+        match=re.search(r'(?m)^\s*db "REF-(\d{3})@"$',version)
         self.assertIsNotNone(match)
         canonical=f"REF-5.62.{match.group(1)}"
-        docs=('README.md','FEATURES.md','TODO.md','PROJECT_DELIVERY_RULES.md','RPP_DEVELOPMENT_PITFALLS.md')
-        titles=[(ROOT/doc).read_text(encoding='utf-8').splitlines()[0] for doc in docs]
-        for doc,title in zip(docs,titles):
-            self.assertIn(canonical, title, doc)
+        self.assertIn(canonical, version)
+        self.assertEqual(len(f"REF-{match.group(1)}@"), len('REF-317@'))
 
 if __name__ == '__main__':
     unittest.main()

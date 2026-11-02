@@ -1,6 +1,6 @@
 {
   "schema": "johto-active-gatehouse-profiles-v1",
-  "description": "Single audit-facing registry; original Gold map and runtime Warp objects remain authoritative; only the ID23/62 carpet geometry is used by shared ROMX handler.",
+  "description": "Single audit-facing registry; Gold map and runtime Warp objects remain authoritative; collision strategy records the live runtime backend.",
   "active_gatehouses": [
     {
       "stable_id": 6,
@@ -81,6 +81,22 @@
       "collision_strategy": "park_east_mature_helper",
       "gold_environment": "INDOOR",
       "bike_allowed": false
+    },
+    {
+      "stable_id": 65,
+      "gold_map": "Route43MahoganyGate",
+      "layout": "vertical_ns",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true
+    },
+    {
+      "stable_id": 66,
+      "gold_map": "Route43Gate",
+      "layout": "vertical_ns",
+      "collision_strategy": "legacy_gate_tilecoll",
+      "gold_environment": "GATE",
+      "bike_allowed": true
     }
   ]
 }

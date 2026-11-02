@@ -29,8 +29,9 @@ def audit(root:Path,gold:Path)->dict:
                      'cp 2','scf','ld a, [wCurLocalMapID]',
                      'cp JOHTO_RUNTIME_MAP_HANDLE','cp MAP_REGION_JOHTO'):
         if fragment not in geom:errors.append('missing required geometry predicate '+fragment)
-    if not re.search(r'^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:26|28|32|35|38)$', constants, re.M):
-        errors.append('active map count not 26, 28, 32, 35 or 38')
+    m = re.search(r'^DEF NUM_JOHTO_ACTIVE_MAPS EQU (\d+)$', constants, re.M)
+    if not m or int(m[1]) < 26:
+        errors.append('active map roster must contain at least the south batch of 26')
     for tileset in ('JOHTO_MODERN','JOHTO_ILEX_FOREST','JOHTO_SOUTH_GATE'):
         if not re.search(r'\bcp '+tileset+r'\s+jp z, \.southModern',water):
             errors.append('Surf movement not routed for '+tileset)

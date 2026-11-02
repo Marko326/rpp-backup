@@ -60,6 +60,7 @@ _TRACE_LOCAL_IDS = {
     'JOHTO_AZALEA_TOWN_LOCAL_ID': 10, 'JOHTO_ILEX_AZALEA_GATE_LOCAL_ID': 11,
     'JOHTO_ILEX_FOREST_LOCAL_ID': 12, 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': 13,
     'JOHTO_ROUTE_34_LOCAL_ID': 14, 'JOHTO_GOLDENROD_CITY_LOCAL_ID': 15,
+    'JOHTO_MAHOGANY_TOWN_LOCAL_ID': 64, 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': 65,
 }
 def _trace_cp_operands(a, operand):
     def numeric(value):
@@ -126,6 +127,15 @@ def _trace_cave_exit_predicates(runtime: str, direction: str, x: int, y: int,
             else:
                 raise ValueError('unsupported ld value ' + line)
             registers[dest] = val
+        elif op == 'call' and arg == 'JohtoPilotIsVerticalGatePairMap314':
+            # Execute the small shared stable-ID predicate used by the new
+            # vertical-gate hooks. For the Union Cave trace (ID8), it returns
+            # Z=0 and leaves A as the current local map ID.
+            registers['a'] = state['wCurLocalMapID']
+            zero = state['wCurLocalMapID'] in (
+                'JOHTO_MAHOGANY_TOWN_LOCAL_ID',
+                'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID')
+            carry = False
         elif op == 'cp':
             value = int(arg) if arg.isdecimal() else arg
             zero, carry = _trace_cp_operands(registers['a'], value)
@@ -205,6 +215,11 @@ def _trace_arrival_step(runtime: str, local: str, x: int, y: int) -> tuple[objec
             elif val != 'D_DOWN':
                 raise ValueError('unsupported arrival operand: ' + line)
             registers[dest] = val
+        elif op == 'call' and arg == 'JohtoPilotIsVerticalGatePairMap314':
+            registers['a'] = state['wCurLocalMapID']
+            zero = local in ('JOHTO_MAHOGANY_TOWN_LOCAL_ID',
+                             'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID')
+            carry = False
         elif op == 'cp':
             test = int(arg) if arg.isdecimal() else arg
             zero, carry = _trace_cp_operands(registers['a'], test)

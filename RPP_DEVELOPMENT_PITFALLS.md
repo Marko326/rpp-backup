@@ -1,3 +1,57 @@
+## REF-319｜愤怒之湖：连续跳崖与精确 role-grid 分派不能只看图块（2026-11-02）
+
+- **同一视觉 tile 不等于同一碰撞角色**：LakeOfRage 需要按坐标读取 40×36 Gold role grid；地图已经登记 role 数据仍不够，stable ID68 还必须真正进入 `JohtoEastSpatialStep`/精确陆地分派。漏掉地图 ID 时会退回通用 tile passability，表现为局部空气墙、崖边手感不一致或同图不同位置行为矛盾。
+- **连续跳崖不是“原地跳”**：Gold 的 `(4,28)`→`(4,30)` 与 `(6,28)`→`(6,30)` 第一次落点本身仍是 `HOP_DOWN`；正确检查是第一次输入后坐标实际向下两格并停在第二层崖边，第二次输入才继续跳。不能仅因落地仍站在跳崖格就把该格改成 FLOOR。
+- **高低宽度接缝必须逐格双向验证**：Route43 10 宽接 Lake 20 宽时，预览复制正确不代表物理边界正确。最终只开放 Gold 实际五条通行线 `x=0,8,9,10,11`，每条都要求 Route43→Lake 与 Lake→Route43 均可通过；其它十五条预览边缘必须保持 fail-closed，Surf 也复用相同边界策略。
+- **门毯与接缝审计必须模拟连续移动**：ID66 曾因审计把错误的“地毯不可 BeforeStep”写成正确合同，导致出门落毯后不能横移/回踩。后续门房不能只核对 Warp 表，要覆盖“出门落地→横移→离开→反向回踩→正确方向触发 Warp”的状态序列，并用错误注入证明门禁会 FAIL。
+- **资料来源纪律**：本项目地图/剧情只使用用户提供的当前源码、Gold 原版和参考分支；缺文件直接向用户索取，不再用网络片段补全，以免版本/资源不完整。
+
+## REF-5.62.317 / DEV-320｜Route43 北侧 ID66 与南侧 ID65 门毯必须分开处理
+- DEV-320：Route43 北侧 ID66 `(17/18,31)` 和南侧 ID65 `(9/10,51)` 虽然都是 `WARP_CARPET_DOWN`，但不能用同一个 BeforeStep 规则。北侧精确允许从 y30 向下回踩、两格之间横向换道；南侧不新增 BeforeStep 放行，必须保留 y52 碰撞返回。北侧角色网格继续 fail-closed，不可为图省事把两格全局改为可走。
+- AfterStep E=3 只代表横向换道，`CheckWarpsNoCollision` 用它跳过通用 step-on Warp；`CollisionExit` 仍只接受 E=1。审计必须同时检查 BeforeStep hook 在角色网格碰撞前执行、E=3 不会成为出口，以及视觉 tile `$40` 不在通用 step-on Warp ID 列表中。
+- 历史误区：仅断言三个 Route43 Warp 角色格是 solid 并不能证明门毯行为正确；必须把 Gold `LAND_TILE` 语义、角色网格 fallback、精确方向覆盖和 AfterStep/CollisionExit 分开核对。反过来，把北侧角色格全局改为 0 也过度放行，不是正确修复。
+- REF-5.62.312 / DEV-314：相同 5×4 纵向门房只应增加 stable-ID、方向/坐标/落点配置；不得复制每座门房的 BeforeStep/AfterStep/CollisionExit/Arrival/ClosedEdge 五套 ASM。共享函数通过单一地图 ID allowlist 分派，事件/NPC/Warp 仍独立。
+## REF-5.62.310 / DEV-312｜未来 Route43 门房必须复用通用 Gate_Coll，剧情不能并入碰撞
+
+- Gold ID65 `Route43MahoganyGate` 与 ID66 `Route43Gate` 都用 `NorthSouthGate.blk`，5×4，80 个 8×8 格；门口为上方 DOOR/STEP_ON/UP 与下方 WARP_CARPET_DOWN/COLLISION_ONLY/DOWN。
+- 二者可复用 ID19 已验收的紧凑 5×4 JOHTO_GATE 运行布局，以及 `JohtoOverworldSouthLandDecision` E=2 → `CheckTilePassable` → `Gate_Coll`；不能误用 ID23/62 横向门毯 helper，也不能使用 Park 专用 mask。
+- ID65 只有 Officer + hideout-clear 条件文本；ID66 有 Rocket toll scene/callback/1000 元处理及 event flags。碰撞共享不等于剧情/NPC/文本共享。
+- DEV-312 将 legacy Gate_Coll 源级执行器改为 stable-ID agnostic，但调用前必须显式登记 profile；未来新增兼容门房只需补 Gold profile/warp contract，不需再改执行器。候选 ID65/66 仍保持 inactive。
+- DEV-311 未更新 REF 号是工具-only 的正确行为；DEV-312 也不改 ROM，REF-310 保持。真正激活 Route43 门房运行代码时再升 REF-311。
+
+## REF-5.62.310 / DEV-311｜三个 legacy Gate_Coll 门房不是三套独立碰撞代码
+
+- ID6 Route31VioletGate、ID19 Route36RuinsOfAlphGate、ID102 Route32RuinsOfAlphGate 不使用 REF-303 的圆朱横向门毯 helper，也不走 South Gold role-grid；但它们都走同一份原生通用路径：`JohtoOverworldSouthLandDecision` 返回 E=2 → `CollisionCheckOnLand` → `CheckForJumpingAndTilePairCollisions` → `CheckTilePassable` → `wTilesetCollisionPtr` 指向的 `Gate_Coll`。不是每张门房复制一套代码。
+- DEV-311 在既有 `johto_gatehouse_step_trace_308.py` 增加受限源码执行：对三个 stable ID 真实跑通 E=2 分派和 `CheckTilePassable` 指令循环；目标 tile 来自各自 `.runtime.blk`、`johto_gate.bst`，并按 `GetTileAndCoordsInFrontOfPlayer` 四方向 aCoord 实际采样。Gold 对照步数 ID6=172、ID19=218、ID102=172；故障注入覆盖比较寄存器、错误 South 分派和前向采样偏移。
+- **为什么不把这三座改成 South role-grid**：原生 `Gate_Coll` 已经是共用的底层实现；替换它不会消除三份重复 ASM，因为根本不存在三份。迁移还需要每图 role 数据和额外分派，可能增加 ROM 占用，并改变 ID19 顶部 DOOR 与 ID6／102 碰撞型门毯的成熟触发链。没有可证明的空间收益或用户报告的行为缺陷时，保持原后端更安全。
+- 本轮仅工具／测试／文档修改，游戏运行 ASM、碰撞表、地图、Warp、NPC、颜色、版本号和 Bank 空间均不改。源级追踪不是 CPU/ROM 仿真：角色碰撞、移动帧、银行切换、碰撞音效、DOOR/Warp 执行、存档及自行车／音乐仍需用户本机验证。
+- 全套 527 个 pytest 项在单一进程中两次于约 79% 处达到 180／300 秒工具时限；将 67 个测试文件分为五批、每批启动新 pytest 进程后，全部得到 506 passed、21 skipped、100 子测试通过。慢测试 `test_manifest_generated_from_gold_is_exact` 和 `test_unregistered_fake_route35_headers_are_rejected` 单独执行均快速通过，因此当前证据更指向整套单进程的顺序／状态累积或执行环境问题，**根因尚未定位**；不要把超时伪报为测试失败，也不要删减历史回归测试。
+
+## REF-5.62.310 / DEV-310｜公园门房图块标签正确仍可能因 palette-set 选错而颜色偏差
+
+- 两座公园门房的 PNG 和全部96项 `tilepal` 与 Gold 原图一致，不等于颜色正确：`JOHTO_PARK_GATE` 在 `color/data/map_palette_sets.asm` 取了通用 `INDOOR_GREEN`/`INDOOR_BROWN`，其背景色第0项为(30,28,26)，Gold Gate 室内绿色应为(18,24,9)、棕色应为(26,24,17)。普通 `JOHTO_GATE` 已有专用 `JOHTO_GATE_GOLD_*` 正确颜色。
+- **正确修复层级**是替换 park tileset 8B palette-set 的2个引用，不能批量改 Kanto 通用 INDOOR 颜色，也不能为此统一两座公园房间布局或碰撞策略。配色标签、图块像素、真实 RGB 需三层联合审计；偏色不必然是图案错或碰撞错。
+- REF-309 新 MAP 证实 Bank `$4E` 由旧143B 增至162B、ROM0 Red/Blue 都69B；这只证明上轮 Bank 节省和新 MAP 安全，不是 REF-310 的链接结果。用户已实测四座门房的通行/公园禁骑；未证明新配色设备结果。详见 `docs/JOHTO_GATEHOUSE_PALETTE_310.md`。
+
+## REF-5.62.309 / DEV-309｜只共用同尺寸初始化，不把特殊门房并入同一碰撞后端
+
+- **实际已共享的基础设施**：普通 ID6／19／102 使用原生 `Gate_Coll`；South 常规门房通过 `JohtoSouthSpatialRoleAhead` 选自己的 Gold role grid；圆朱 ID23／62 的额外入毯修正通过 `JohtoGateHorizontalCarpetInbound303` 共用。重复机制比“十套完全独立程序”少得多。不要为了抽象而改变地图形状、NPC、Warp、闭门策略或公园禁骑车。
+- **本轮安全整理**：仅将角色查询函数中 ID11／13／18／23／105 的 5 组重复 `ld b,10` / `ld c,8` 归并到同一 `.gate10x8`；不同 `HL` 指针仍各自加载，公园南 ID104 保留 `8×8`；公园东 ID105 **实际碰撞仍通过独立 mature mask**，只在未作为实际碰撞后端的角色查询分支使用公共尺寸。静态按 RGBDS 指令长度推算 Bank `$4E` 少 19B，需用户本机 RGBDS 和新 MAP 确认。
+- **防回归**：`tools/tests/test_johto_gatehouse_carpet_302.py` 新增共享尾段结构与宽度 9 的故障注入，必须使 ASM 源级模拟识别误将墙格当越界；历史版本常量断言同步升级 `REF-309`，保留反向故障注入。全量静态通过不能等同于 Red/Blue 链接、Warp 实机或存档回归。
+
+## REF-5.62.306 / DEV-308｜原始 ASM 分支可以做受限步进，但不能冒充完整 ROM 执行
+
+- DEV-307 的全图比对仅验证数据后端，不会抓到“向下误取向上”、“公园东 x9 地毯误判”等**实际 ASM 指令**错误。DEV-308 以只读 `tools/johto_gatehouse_step_trace_308.py` 对 ID11／13／18／104 的 South `SpatialRoleAhead` 和 ID105 的 Park East 成熟掩码做有限指令执行（1,019 条室内相邻移动），并在现有审计统一报告 `asm_traced_moves`；任何未知操作码／分支应主动报错而非静默跳过。
+- South 源级轨迹唯一抽象的调用是 `JohtoSouthMatureDoorFence`：对这四座门房从 ASM 中读取现有 `.closedDoorTargets`，建模其非森林分支。门房 ID6／19／102 仍属 `Gate_Coll` 原生图块路径的数据与结构审计；ID23／62 仍按 REF-303 共享引擎各 172 步。**不得将新 1,019 步包装成“其余八座已完整 ASM 模拟”**。
+- Gold 原始地图与公园南北／东西两座的形状保持各自不变；没有修改 `.blk`、角色二进制、图块碰撞、Warp、ROM0、人物或事件。源级仿真不覆盖真实调用栈、ROMX Bank、物理角色与移动帧、出门 Warp、存档或 Red／Blue 构建；需用户本机继续验收。
+
+## REF-5.62.306 / DEV-307｜不要把“门房机制推广”误解成十张地图/房型统一
+
+- Gold 原版已有不同形状的门房：普通东西向 / 南北向，国家公园南门（8×8）和东门（10×8）尤其不同；**共享应限定为行为或审计，不应改相貌、.blk、Warp 方向或贴图**。
+- 城都活动门房存在三种有效碰撞数据后端：`Gate_Coll`（目标 16×16 格左下 8×8 探测 tile）、South Gold role grid（0 可走）和公园东独立成熟 blocked mask。曾有旧 Gold 转换数据将公园东 `(1,5)` 等合法地面封死；不可把旧 roles.bin 强行替换成熟掩码。
+- 单检 32 个登记地毯可能漏掉室内过道被封住或隔墙穿越。`johto_gatehouse_behavior_audit.py` 从 DEV-307 起对其余八座做全地图 624 格 + 1,581 室内相邻目标的 Gold 数据对照；故障注入须验证非地毯地面和特殊门房墙壁。**数据级审计不等同于 ASM 路径逐步模拟**，后续实际控制流与 Warp 实机还需分别检查。
+- ID23/62 仍由 REF-303 源级 ASM 模拟每图 172 步；现阶段不要再额外接入人物/剧情、改变骑车许可或在 ROM0 添加指令。Gold 原始图块和已有专用屏障保持不动。
+
 ## CLEAN-5.62.306 / REF-5.62.306｜圆朱东西门房共享引擎与独立警员正式收口（2026-11-01）
 
 - **准确提交基线**：`常规功能备份`，用户干净 FIX-302 源码及导出记录均指向已提交 HEAD `27a2086219b56238e26844676f3a5328e5b567ee`；这笔 CLEAN 累计涵盖 REF-303～306，不重复提交已在 HEAD 内的 MAP-300、FIX-301／302。

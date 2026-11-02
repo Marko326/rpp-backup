@@ -39,6 +39,8 @@ LEDGE_COORDINATE_TABLES = {
     'EcruteakCity': ('JOHTO_ECRUTEAK_CITY_LOCAL_ID', 'JohtoEcruteakGoldHops', '.ecruteakGold', '.ruinsCoordinateHopLookup'),
     'AzaleaTown': ('JOHTO_AZALEA_TOWN_LOCAL_ID', 'JohtoAzaleaGoldHops', '.route33Modern', '.ruinsCoordinateHopLookup'),
     'MahoganyTown': ('JOHTO_MAHOGANY_TOWN_LOCAL_ID', 'JohtoMahoganyGoldHops', '.mahoganyGold', '.ruinsCoordinateHopLookup'),
+    'Route43': ('JOHTO_ROUTE_43_LOCAL_ID', 'JohtoRoute43GoldHops', '.route43Gold', '.ruinsCoordinateHopLookup'),
+    'LakeOfRage': ('JOHTO_LAKE_OF_RAGE_LOCAL_ID', 'JohtoLakeOfRageGoldHops', '.lakeOfRageGold', '.ruinsCoordinateHopLookup'),
 }
 
 
@@ -285,6 +287,21 @@ def audit(root: Path, gold_root: Path) -> dict:
         and 'JohtoEastGoldWaterProbe' in surf_runtime
         and route42_grid.is_file() and route42_grid.read_bytes().count(2) == 120):
         surf_maps['Route42'] = {'gold_map': 'Route42', 'dispatch': 'JohtoEastGoldWaterProbe'}
+    # REF-317/318: Route43 and Lake of Rage extend the same Bank $53 role-grid
+    # Surf path. Register only when the live selector and exact role cardinality
+    # agree, so a missing dispatch cannot be hidden by the separate manifest audit.
+    for map_name, symbol, water_count in (
+        ('Route43', 'JOHTO_ROUTE_43_LOCAL_ID', 72),
+        ('LakeOfRage', 'JOHTO_LAKE_OF_RAGE_LOCAL_ID', 300),
+    ):
+        grid = root / 'maps/johto_pilot' / f'{map_name}.roles.bin'
+        if (any(r['map'] == map_name for r in active)
+            and f'cp {symbol}' in east
+            and f'INCBIN "maps/johto_pilot/{map_name}.roles.bin"' in east
+            and f'cp {symbol}' in surf_runtime
+            and 'JohtoEastGoldWaterProbe' in surf_runtime
+            and grid.is_file() and grid.read_bytes().count(2) == water_count):
+            surf_maps[map_name] = {'gold_map': map_name, 'dispatch': 'JohtoEastGoldWaterProbe'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []

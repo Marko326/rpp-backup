@@ -127,7 +127,17 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
             arriving={w.get('source_stable_id') for w in gate.get('warp_contracts',[]) if w.get('target_stable_id')==stable}
             source_symbols={name_by_value.get(i) for i in arriving}
             check('entry_sources_'+symbol, set(p['sources'])==source_symbols and
-                  len(p['sources'])==2 and set(p['sources']).issubset(set(active_names)),
+                  (len(p['sources']) == 2 or (
+                      p['id'] == 'JOHTO_ROUTE_43_GATE_LOCAL_ID' and
+                      p['sources'] == ['JOHTO_ROUTE_43_LOCAL_ID']
+                  ) or (
+                      p.get('staged_north_exit_closed') is True and
+                      len(p['sources']) == 1 and
+                      p['id'] == 'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID' and
+                      'JohtoVerticalGateClosedEdge314' in get('data/johto_vertical_gate_runtime_314.asm') and
+                      'JohtoVerticalGateBoundsProfiles314' in get('data/johto_vertical_gate_runtime_314.asm') and
+                      'db 2 ; Gold lower (south) two doors only' in get('data/johto_route43_mahogany_gate_313.asm')
+                  )) and set(p['sources']).issubset(set(active_names)),
                   f'Warp sources={source_symbols}, policy sources={p["sources"]}')
             check('gate_policy_'+symbol, gate.get('gold_map')==p.get('gold_map') and
                   p['bike_allowed']==(p['gold_environment']=='GATE'),
@@ -144,9 +154,16 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
         bike=home.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
         bike_ids=re.findall(r'cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) z,\s*\.allowed',bike)
         permitted={p['id'] for p in policies if p['bike_allowed']}
-        check('bike_every_eligible_gate',len(bike_ids)==len(permitted) and set(bike_ids)==permitted,
-              f'allowed stable IDs={bike_ids}; Gold GATE={sorted(permitted)}')
-        check('bike_region_and_handle_guard',bool(re.search(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+cp MAP_REGION_JOHTO\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]',bike)),
+        route43_pair = ('and $fc\n    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID\n    jr z, .allowed' in bike and
+                        {'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID','JOHTO_ROUTE_43_GATE_LOCAL_ID'} <= permitted)
+        # Route43's 64..67 mask includes two already bike-allowed outdoors and
+        # exactly the two Gold GATEs.  It saves ROM0 compared with two CP/JR pairs.
+        inline_permitted = permitted - {'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID','JOHTO_ROUTE_43_GATE_LOCAL_ID'} if route43_pair else permitted
+        if route43_pair:
+            bike_ids = [x for x in bike_ids if x != 'JOHTO_MAHOGANY_TOWN_LOCAL_ID']
+        check('bike_every_eligible_gate',len(bike_ids)==len(inline_permitted) and set(bike_ids)==inline_permitted and route43_pair,
+              f'inline stable IDs={bike_ids}; compact Route43 mask={route43_pair}; Gold GATE={sorted(permitted)}')
+        check('bike_region_and_handle_guard',bool(re.search(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+(?:cp MAP_REGION_JOHTO|dec a(?:[^\n]*))\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]',bike)),
               'only region-scoped Johto native maps may enter the gate exception')
         check('bike_no_global_gate_tileset', 'JOHTO_GATE' not in get('data/bike_riding_tilesets.asm') and
               'JOHTO_HOUSE' not in get('data/bike_riding_tilesets.asm'),
@@ -170,7 +187,7 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
                   f'gate identities={gate_symbols}, required={expected}')
             check(name+'_entry_source_whitelist', all('cp '+x in code for x in correct_sources) and
                   code.count('wJohtoGateMusicSourceLocalID')==len(policies),
-                  'each gate must check both of its real Gold-connected source sides')
+                  'each gate must check exactly its registered Gold-connected source side(s)')
         # Guard *which* two neighbours each gate accepts, not just the global
         # union. Swapping a Ruins source into the Violet gate must fail.
         def gate_branches(code, variant):
@@ -187,6 +204,8 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
                 'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID': '.northForestGate',
                 'JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID': '.route38GateMusic',
                 'JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID': '.route42GateMusic',
+                'JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID': '.route43MahoganyGateMusic',
+                'JOHTO_ROUTE_43_GATE_LOCAL_ID': '.route43GateMusic',
                 'JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID': '.southParkGate',
                 'JOHTO_ROUTE_36_NATIONAL_PARK_GATE_LOCAL_ID': '.eastParkGate',
             }

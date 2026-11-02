@@ -77,7 +77,7 @@ class TestSaveTilesetReload244(unittest.TestCase):
         official = re.search(r'db "REF-(\d+)@"', version)
         self.assertIsNotNone(official)
         self.assertGreaterEqual(int(official.group(1)), 244)
-        self.assertIn('db "REF-306@"', version)
+        self.assertIn('db "REF-312@"', version)
         self.assertNotIn("TEST-", version)
         self.assertIn("BATTLE_TEST_BUILD", read("main.asm"))
 

@@ -1,3 +1,89 @@
+## CLEAN-5.62.319 / REF-5.62.319｜Route43—愤怒之湖室外链正式收口（2026-11-02）
+- [x] 用户已实机确认 REF-317 的 ID66 北侧门毯可正常出门、左右换道、向上离开并向下回踩；随后确认 REF-319 愤怒之湖与跳崖“没什么问题”。不再把这些已验收行为列为待测。
+- [x] 最终保留 42 张活动地图；ID65/67/66/68 分别为 Route43MahoganyGate、Route43、Route43Gate、LakeOfRage。Route43 北侧与 Lake 南侧按 Gold 五条真实可走线双向连接，其余预览边缘继续封闭。
+- [x] LakeOfRage 使用 Gold 20×18 原图、40×36 精确 role grid、300 WATER、5 Cut、6 HOP；ID68 陆地移动已接入精确 role-grid 分派，避免回退通用 tile passability。`(4,28)` 与 `(6,28)` 为连续两层跳崖，不改成普通 FLOOR。
+- [x] 正式清理前按用户要求仅跑本轮相关工作区全量：Lake 32/32、Route43 回程 28/28、ID66 46/46、历史接缝 37/37、地点名 132 项、门房音乐/骑车 508 项、3 张活动表 ASSERT、10 个本轮相关 ASM 文件局部符号；Field Moves 42 图/4732 WATER/16 Cut/190 HOP；相关 pytest 137 passed + 5 subtests passed，0 failed。
+- [x] 清理采用模式 A 双提交：功能与游戏资源一笔；`tools/`、负向测试和维护文档一笔。当前已确认 Git 基线仍为分支“常规功能备份”HEAD `c4890820e06b5bb361ab663f40680117c59c2e70`，未假定 REF-307～319 已提交。
+- [ ] 最新 REF-319 MAP 文件未随本轮清理输入提供；AI 不编译/链接 ROM，因此最终 ROM0 `>=64B` 与相关 ROMX 剩余量仍需下次用户导出 MAP 时复核。REF-318/319 没有新增 ROM0 运行指令，不能据此替代链接后容量证据。
+- [ ] 下一阶段：愤怒之湖两栋房屋、红色暴鲤龙、渡、训练师/道具及后续火箭队剧情。若参考文件缺失，直接向用户索取；禁止用网上不完整资料补齐。
+
+## REF-5.62.317 / DEV-320｜Route43 ID66 北侧门毯修复（待设备验收）
+- [x] 读取 REF-316.zip，确认内容包含 DEV-319 当前源码，ROM 版本标签此前未同步。
+- [x] 修复 ID66 北侧 `(17/18,31)` 门毯：精确 BeforeStep 允许从 `(17/18,30)` 向下回踩、两格之间左右换道；AfterStep E=3 只表示换道，CollisionExit 仍只接受 E=1。
+- [x] ID66 北侧角色网格继续 fail-closed；不把两格全局改成可走。ID65 南侧 `(9/10,51)` 不新增 BeforeStep 放行，y=52 森林边界仍负责碰撞返回。
+- [x] 更新版本标签 REF-317，更新 ID66 gatehouse profile 和内部防回归测试；审计覆盖重入、换道、E=3 非出口、DOWN/E=1 碰撞返回及侧墙故障注入。
+- [x] 内部验证：ID66/Route43 专项 46/46；Route43 返回审计 28/28；纵向门房 profile 审计通过；Surf 活动地图 41 张/19 张水图；12 座门房/36 格门毯；相关 pytest 139 passed、8 skipped、23 subtests。7 项 DEV-312 未来门房测试作为历史快照跳过，不再把已激活 ID66 当作 inactive。
+- [ ] 用户设备构建后验收出门、左右换道、上行离开、下行回踩、向下碰撞返回；确认 ROM0 >=64B。AI 不编译 ROM。
+## REF-5.62.315 / DEV-317｜Route43 Gold 原版上下邻接画面修复（待设备验收）
+- [x] 根因：DEV-316 的 `JohtoRoute43RuntimeHeader` 使用 `db 0`，没有 NORTH/SOUTH 连接预览；仅验证 Route43 自身 270B 原图，未验证邻接地图显示。
+- [x] 按 Gold/参考分支恢复北侧 Lake of Rage 与南侧 Mahogany Town 的 11B 连接记录；南侧复用 Bank `$53` 已有 `JohtoMahoganyBlocks`，北侧增加 Gold 原版 360B 只读预览镜像。
+- [x] 保持 Route43 北/南物理边界关闭，Lake of Rage 与 ID66 仍 inactive；Route43 南端仅经 ID65 两格 Warp。
+- [ ] 用户本机编译 Red/Blue/battle-test 并实测：Route43 南端应显示 Mahogany Town 门房建筑，不再以默认树林填充；北侧预览与 Gold 对齐；确认双向门房 Warp 仍正常及 ROM0 >=64B。
+- **交付边界**：本轮只做源码/静态合同，不编译 ROM、不生成 MAP、不 Commit/Push；增量 REF-314→REF-315 与全量 REF-306→REF-315 互斥不可叠加。
+
+- DEV-314（REF-5.62.312）：完成 REF-311 的 39 地图测试合同修正、Warp 顺序合同补齐，以及纵向门房公共阈值运行逻辑；下一步才接 Route43 室外与 ID66。
+- 机制说明：`docs/JOHTO_VERTICAL_GATE_RUNTIME_314.md`；ID66/Route43/LakeOfRage 仍未开放。
+## REF-5.62.310 / DEV-312｜未来 Route43 门房复用接入准备（tools-only）
+
+- [x] 记录用户反馈：此前六座门房已完成；此前要求复测的门房也已测试，未发现问题。停止反复要求测试旧门房。
+- [x] 从 Gold 确认未来 stable ID65 `Route43MahoganyGate` 与 ID66 `Route43Gate`：均为 5×4 `NorthSouthGate.blk`，`TILESET_GATE/GATE`，上端两格 DOOR（UP/STEP_ON），下端两格 WARP_CARPET_DOWN（DOWN/COLLISION_ONLY）。
+- [x] 证明未来两图可复用 ID19 的紧凑 5×4 JOHTO_GATE 运行布局及原生 `Gate_Coll` 通用路径；扩展源级 Gate_Coll 执行器为 profile 驱动的任意 stable ID，不再写死 6/19/102。ID65 与 ID66 各完成 218 条源码级相邻步进，Gold 碰撞期望一致。
+- [x] 新增 `johto_gatehouse_future_profiles_312.json` 与 `johto_gatehouse_onboarding_312.py`，检查 Gold 布局、门口角色、方向、目标 Warp、到达自动步进、事件数量、通用碰撞分派与 inactive fail-closed。已接入 `johto_pilot_migration_audit.py`。
+- [x] 分开保护两座地图事件：ID65 Officer + `EVENT_CLEARED_ROCKET_HIDEOUT` 对话；ID66 Rocket 收费 scene/callback、1000 元收费和相关 event flags。两者不并入共享碰撞函数。
+- [x] ID65/66/67/69 保持 stable-slot `$FF`，活动地图数 38；Route43/Route44 未激活，无新增 Warp、地图、NPC 或 ASM 运行代码。
+- **版本**：本轮只改 tools/tests/docs，开发包版本 `DEV-312`；游戏内保持 `REF-310`。下一次真正新增并激活门房运行代码时才提升至 `REF-311`。
+- **交付边界**：无 ROM 编译、无 MAP 新构建、无 Git Commit/Push。
+
+## REF-5.62.310 / DEV-311｜三座原生 Gate_Coll 门房完整通用碰撞路径源码追踪（工具-only）
+
+- [x] 核实 ID6 桔梗门房、ID19 遗迹北门房、ID102 遗迹南门房仍走 `Gate_Coll`，但并非三套独立代码：三者共用原有 `JohtoOverworldSouthLandDecision` 的 E=2 通用回退、`CollisionCheckOnLand`、`CheckForJumpingAndTilePairCollisions`、`CheckTilePassable` 与同一 `gfx/tilesets/gate.tilecoll`。它们没有使用 REF-303 圆朱专用入毯 helper。
+- [x] 扩展受限 ASM 源指令执行器：实际执行 `JohtoOverworldSouthLandDecision`，验证三个 stable ID 均返回 E=2；随后逐条执行 `CheckTilePassable` 的前向 tile 读取、`wTilesetCollisionPtr` 指针解引用、`Gate_Coll` 列表扫描与 `$FF` 终止分支。前向 tile 由当前 `.runtime.blk`、`johto_gate.bst` 和 Gold 坐标计算，并核对四方向 `GetTileAndCoordsInFrontOfPlayer` 的 aCoord 采样偏移。
+- [x] 与 Gold walkable roles 比较：ID6=172、ID19=218、ID102=172 条室内相邻移动；现有 South／公园五座 1,019 条轨迹和圆朱 ID23／62 各 172 条模拟继续保留。十座活动门房现均有其实际后端的源级路径追踪或专用 helper 模拟。
+- [x] 新增故障注入：破坏 `CheckTilePassable` 比较寄存器、把 ID102 错送入 South role-grid 分支、改动前向 aCoord 探测位置，三种错误均须 FAIL；原有删除 `Gate_Coll` 可走 tile 的数据故障注入继续保留。
+- [x] **没有迁移游戏运行代码**：ID6／19／102 本来已经共用同一份 RPP 通用 `Gate_Coll` 引擎，并无三套重复 ASM 可合并。强行改成 Gold role-grid 会增加每图数据／分派并改变已成熟的碰撞和 DOOR/Warp 交互，没有已证明的 ROM 节省或行为收益；保留原生后端更稳妥。
+- [x] 用户确认此前六座门房均已完成，且助手此前要求复测的门房也已测过、未发现问题；不再重复安排 ID6／11／13／18／19／102 等旧门房的同一轮测试。源码追踪仍不等于完整 ROM CPU 仿真，但用户已完成相应实机检查。
+- [x] 全量测试共 527 项分五批执行：506 passed、21 skipped、100 子测试通过；单次 `pytest tools/tests` 在 300 秒运行限制内约 79% 处超时，而各批次分别完成。该现象属于单进程整套执行的未定位问题，不等同于某项功能测试失败；后续需独立调查测试进程状态／顺序依赖。
+- **版本与交付**：仅修改 `tools/`、测试和维护文档；游戏 ASM、地图、图块、版本字符串、ROM Bank 与存档均不变，继续 `REF-5.62.310`／`REF-310`。DEV-311 未提升游戏版本是工具-only 的有意规则，不是漏改。增量补丁以当前已应用 DEV-310 的工作区为前置；累计全量以导出记录的干净 HEAD `c4890820e06b5bb361ab663f40680117c59c2e70` 为基线，累计包括 DEV-307～310 和本轮 DEV-311。两份补丁互斥；AI 不编译 ROM、不 Commit/Push。
+
+## REF-5.62.310 / DEV-310｜Gold 门房配色回归和公园柜台颜色修正
+
+- [x] 用户新 MAP：Red/Blue REF-309 ROM0 各69B，Bank `$4E` 各162B；相较原 REF-306 Red MAP 的143B，核实 DEV-309 节约19B，且 ROM0 满足64B底线。该 MAP 不是 REF-310 新构建证据。
+- [x] 十座活动门房区分两组：八座 `JOHTO_GATE` 紧凑重排96张子图与 Gold 像素/颜色标签匹配；两座公园 ID104/105 `JOHTO_PARK_GATE` 为 Gold 原序96图，旧绿色／棕色 palette-set 索引错用了 Kanto 通用室内 RGB（底色与 Gold 不同）。现仅替换两个索引为共享现有 Gold 专用 RGB；布局、Sprite、NPC、Warp、碰撞、禁骑车不改。
+- [x] 新增 REF-310 来源级颜色审计、96 张 Gold 原图逐 tile 检查、RGB 核对及颜色回退故障注入；游戏内版本统一为 REF-310，更新旧审计版本断言。
+- [x] 用户实机确认公园门房柜台颜色已与 Gold 接近，颜色修正无明显问题；用户此前也已实测圆朱东西门房与公园南/东门房通行、换道和禁骑规则。
+- [ ] REF-310 Red、Blue、battle-test 新 MAP 与 Bank 余量仍需本机构建证据；夜间/关都颜色全覆盖若未测，作为普通全局回归保留，不重复测试白天柜台和既有门房通行。详见 `docs/JOHTO_GATEHOUSE_PALETTE_310.md`。
+
+## REF-5.62.309 / DEV-309｜普通门房角色网格公共尺寸尾段（开发候选，待 ROM 复测）
+
+- [x] 对照 Gold 原图、REF-303 双门房入毯引擎和 DEV-307／308 源级轨迹后确认：十座活动门房原本**已经按类型共享碰撞路径**，不应将全部门房强行改成一种碰撞算法或外观。
+- [x] 只在 ROMX Bank `$4E` 的 `JohtoSouthSpatialRoleAhead` 合并 **5 个 10×8 角色网格尺寸初始化**：ID11、13、18、23 的相应 South 角色分支与 ID105 的 Gold 角色**数据查询分支**共用 `.gate10x8` 的 `B=10/C=8`。各图自己的 `HL` 角色指针仍独立；ID105 实际步行继续走 `JohtoParkEastGateMatureStep` 专用成熟掩码，**不转用错误的 Gold 角色网格**；公园南门 ID104 继续 8×8。
+- [x] 按固定 RGBDS 指令字节长度静态计数，原 5×10=50B、现 4×(3+3)+3+2+2=31B，理论在 Bank `$4E` 减少 **19B**；没有改 ROM0 指令，游戏内版本号由等长 `REF-306@` → `REF-309@`，所以不增加该字符串的 ROM0 长度。**未编译、未链接、未取得新 MAP，不能声称已实测节省 19B。**
+- [x] 新增错误注入：将公共宽度误写为 9 时，真实 ASM 步进必须抓到把 (9,1) 墙格错当作越界的现象；统一版本号审计更新到 309，继续保留现有十座门房全面审计。
+- [x] 用户提供 REF-309 Red/Blue MAP，确认 ROM0 余量与 DEV-309 Bank `$4E` 节省；用户报告既有六座门房已完成，且之前要求复测的四座（ID23/62/104/105）通行、禁骑及配色均无异常。
+- [ ] REF-310 新 MAP 的 ROM0 `>=64B`、Bank `$4E` 及其他紧张 Bank 余量仍待新构建 MAP；不再重复要求既有十座门房走动测试。
+- **版本和补丁前置**：正式源码候选 `REF-5.62.309`／游戏内 `REF-309`（普通与测试构建统一标签）；本轮增量基于**已应用 DEV-308 的完整 REF-306 工作区**，累计全量基于原始干净 `REF-306` 上传 ZIP／导出 HEAD `c4890820e06b5bb361ab663f40680117c59c2e70`，累计包括 DEV-307 和 DEV-308。二选一不可叠加；用户未证明 DEV-307/308 已独立提交，不推定有新 HEAD。开发期不生成正式 Git 提交日志；AI 不编译 ROM、Commit 或 Push。
+
+## REF-5.62.306 / DEV-308｜其余门房 South／公园东实际 ASM 行走分支复核（开发中；仅工具）
+
+- [x] 在 DEV-307 的全地图数据级对照之上，对 **ID11／13／18／104** 执行 `JohtoSouthSpatialRoleAhead` 原始 ASM 的地图分派、方向／目标格、边界、行号索引和角色字节读取；对 **ID105** 执行独立的 `JohtoParkEastGateMatureStep` 原始 ASM，包含两字节行掩码及位移分支。全部与 Gold 原版可走／不可走区域比较。
+- [x] 源级逐步轨迹新增 **1,019 条室内相邻移动**：ID11=172、ID13=218、ID18=218、公园南 ID104=186、公园东 ID105=225；当前数据与源码均一致。源级执行器不接受未知指令，避免静默套用 Python 理想算法掩盖 ASM 分支回归。
+- [x] 增加源指令故障注入：公园东 x9 门毯判断被改坏、South 朝下错误变成朝上、综合审计只改 ASM 不改掩码也应 FAIL。原有 DEV-307 的 624 格／1,581 步**数据解码审计**和 ID23／62 各 172 步共享函数模拟继续保留。
+- [x] DEV-311 已补足 ID6／19／102 的 legacy `Gate_Coll` 源码级分派与 `CheckTilePassable` 指令追踪（172／218／172 步）。四个 South gate 的 `JohtoSouthMatureDoorFence` 在源级执行时仍使用已解析闭门列表作外部叶函数；ROM0 调度、室外 Warp、人物碰撞、移动帧和骑车／音乐仍非 ASM 模拟对象，需用户本机触发验证。
+- [x] 用户确认此前六座门房已完成；此前助手要求复测的既有门房也已实测且没有发现问题，不再重复要求相同的地毯进出、方向 Warp、墙/柜台阻挡和公园禁骑测试。
+- [ ] Red／Blue／battle-test 的 REF-310 新 MAP、Bank 余量和旧存档完整回归仍需单独构建证据；这不影响已确认的门房实机反馈。
+- **变更范围与版本**：仅 `tools/` 源级执行器、原审计和测试以及 TODO／踩坑记录。**游戏 ASM、室内地图、NPC、音效、版本均不改变**，保持 `REF-5.62.306`／`REF-306`。DEV-308 增量以已应用 DEV-307 为前置；累计全量以原上传干净 REF-306／已记录 HEAD `c4890820e06b5bb361ab663f40680117c59c2e70` 的真实文件状态为前置。两份补丁互斥，用户未确认 DEV-307/308 已提交。
+
+## REF-5.62.306 / DEV-307｜城都剩余门房行为与各自布局复核（开发中；仅审计，不改变 ROM）
+
+- [x] 重新核对 REF-306 后的开发主线：**先保证其余八座门房的实际地毯／地面／墙壁通行正确**，不把批量补 NPC、对话或比赛事件当成本轮目标；ID23／62 的警员试点正式保留。
+- [x] 逐图比对 Gold 原版：普通横向 ID6／11／102、普通纵向 ID13／18／19、公园南 ID104（8×8）、公园东 ID105（10×8）；保留各自原始布局，不追求统一外观。
+- [x] 为其余八座补上离线数据级全房间对照：624 个 8×8 地图格和 1,581 次房内相邻目标移动。分别按 legacy Gate_Coll 真实图块探测、South Gold role grid、公园东成熟掩码及四个地毯例外读取；结果进入既有 `johto_gatehouse_behavior_audit.py`，新增走廊地面阻断及柜台放行等错误注入。
+- [x] 继续保留 ID23／62 各 172 次**ASM 指令级模拟**；其它八座的新检查是**碰撞数据解码与 Gold 对照**，不是新增八套 ASM 模拟，更不是 ROM／手机实测。
+- [x] DEV-311 已将 ID6／19／102 的原生 `Gate_Coll` 控制流纳入源级追踪；它们仍共用原版通用碰撞引擎，不迁移到圆朱专用后端。后续如设备发现方向、步进、Warp 或门房入口异常，再对对应路径做最小运行代码修复。
+- [x] 用户确认此前六座门房已完成，并确认此前要求复测的门房均已实际走过、未发现异常；不再重复安排既有门房测试。
+- [ ] 仍需在首次激活 Route43/ID65/66 时，对新门房本身进行一次对应布局的实机验收；不能用旧门房验收替代新地图验收。
+- **版本**：本轮未修改 ROM、地图、游戏版本号或二进制资源，继续 `REF-5.62.306`／`REF-306`。项目原 `TODO` 的其余 NPC 工作为独立后续事项，本轮不执行。
+
 ## CLEAN-5.62.306 / REF-5.62.306｜圆朱东西门房共享引擎与独立警员正式收口（2026-11-01）
 
 - **准确提交基线**：`常规功能备份`，用户干净 FIX-302 源码及导出记录均指向已提交 HEAD `27a2086219b56238e26844676f3a5328e5b567ee`；这笔 CLEAN 累计涵盖 REF-303～306，不重复提交已在 HEAD 内的 MAP-300、FIX-301／302。

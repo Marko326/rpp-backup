@@ -25,7 +25,7 @@ class CoverageTests(unittest.TestCase):
             (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36'), (8, 'UnionCave1F'), (9, 'Route33'), (10, 'AzaleaTown'), (11, 'IlexForestAzaleaGate'),
             (12, 'IlexForest'), (13, 'Route34IlexForestGate'),
             (14, 'Route34'), (15, 'GoldenrodCity'), (18, 'Route35GoldenrodGate'), (17, 'Route35'), (103, 'NationalPark'), (104, 'Route35NationalParkGate'), (105, 'Route36NationalParkGate'), (21, 'Route37'), (22, 'EcruteakCity'),
-            (23, 'Route38EcruteakGate'), (24, 'Route38'), (25, 'Route39'), (26, 'OlivineCity'), (27, 'Route40'), (28, 'Route41'), (29, 'CianwoodCity'), (62, 'Route42EcruteakGate'), (63, 'Route42'), (64, 'MahoganyTown')])
+            (23, 'Route38EcruteakGate'), (24, 'Route38'), (25, 'Route39'), (26, 'OlivineCity'), (27, 'Route40'), (28, 'Route41'), (29, 'CianwoodCity'), (62, 'Route42EcruteakGate'), (63, 'Route42'), (64, 'MahoganyTown'), (65, 'Route43MahoganyGate'), (67, 'Route43'), (66, 'Route43Gate'), (68, 'LakeOfRage')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -40,8 +40,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 38', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 38',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 42', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 42',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -90,6 +90,10 @@ class CoverageTests(unittest.TestCase):
             'Route42EcruteakGate': (0, 'NO_WATER'),
             'Route42': (120, 'REGISTERED'),
             'MahoganyTown': (0, 'NO_WATER'),
+            'Route43MahoganyGate': (0, 'NO_WATER'),
+            'Route43': (72, 'REGISTERED'),
+            'Route43Gate': (0, 'NO_WATER'),
+            'LakeOfRage': (300, 'REGISTERED'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')

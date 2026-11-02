@@ -74,10 +74,10 @@ def verify(root):
                 pairs.append((name,warp['index'],dest,ord_))
     if len(pairs)!=j['total_internal_warp_candidates'] or len(pairs)!=j['reciprocity_verified_count']:
         raise VerificationError('warp summary drift')
-    if re.search(r'DEF\s+NUM_JOHTO_ACTIVE_MAPS\s+EQU\s+(?!15\b|21\b|23\b|26\b|28\b|32\b|35\b|38\b)\d+', (root/'constants/region_map_constants.asm').read_text()):
+    if re.search(r'DEF\s+NUM_JOHTO_ACTIVE_MAPS\s+EQU\s+(?!15\b|21\b|23\b|26\b|28\b|32\b|35\b|38\b|39\b)\d+', (root/'constants/region_map_constants.asm').read_text()):
         raise VerificationError('unsafe number of active maps')
     active_count_text = (root/'constants/region_map_constants.asm').read_text()
-    active = any(f'DEF NUM_JOHTO_ACTIVE_MAPS EQU {n}' in active_count_text for n in (21, 23, 26, 28, 32, 35, 38))
+    active = any(f'DEF NUM_JOHTO_ACTIVE_MAPS EQU {n}' in active_count_text for n in (21, 23, 26, 28, 32, 35, 38, 39))
     # Keep the active-map version gate strict while allowing the roof-budget
     # follow-up: the ROMX FIX-270 wrapper must pair with the FIX-270 label.
     roofs = root/'engine/johto_south_roofs_269.asm'

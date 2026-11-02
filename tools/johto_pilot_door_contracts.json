@@ -97,7 +97,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 83,
+    "registered_warp_route_rows": 97,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57
@@ -1856,6 +1856,346 @@
               5
             ],
             "arrival_auto_step": "NONE"
+          }
+        ],
+        "runtime_verified": false,
+        "phone_accepted": false
+      },
+      {
+        "stable_id": 65,
+        "gold_map": "Route43MahoganyGate",
+        "runtime_tileset": "JOHTO_GATE",
+        "warp_contracts": [
+          {
+            "id": "MahoganyTown_0_to_Route43MahoganyGate",
+            "source_stable_id": 64,
+            "source_gold_map": "MahoganyTown",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 5,
+            "source_xy": [
+              9,
+              1
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 65,
+            "target_gold_map": "Route43MahoganyGate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              4,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route43MahoganyGate_0_to_MahoganyTown",
+            "source_stable_id": 65,
+            "source_gold_map": "Route43MahoganyGate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              4,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 64,
+            "target_gold_map": "MahoganyTown",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 5,
+            "target_xy": [
+              9,
+              1
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43MahoganyGate_1_to_MahoganyTown",
+            "source_stable_id": 65,
+            "source_gold_map": "Route43MahoganyGate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              5,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 64,
+            "target_gold_map": "MahoganyTown",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 5,
+            "target_xy": [
+              9,
+              1
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43_0_to_Route43MahoganyGate",
+            "source_stable_id": 67,
+            "source_gold_map": "Route43",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              9,
+              51
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 65,
+            "target_gold_map": "Route43MahoganyGate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              4,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43MahoganyGate_2_to_Route43",
+            "source_stable_id": 65,
+            "source_gold_map": "Route43MahoganyGate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              4,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 67,
+            "target_gold_map": "Route43",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              9,
+              51
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route43_1_to_Route43MahoganyGate",
+            "source_stable_id": 67,
+            "source_gold_map": "Route43",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              10,
+              51
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 65,
+            "target_gold_map": "Route43MahoganyGate",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              5,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43MahoganyGate_3_to_Route43",
+            "source_stable_id": 65,
+            "source_gold_map": "Route43MahoganyGate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              5,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 67,
+            "target_gold_map": "Route43",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              10,
+              51
+            ],
+            "arrival_auto_step": "NONE"
+          }
+        ]
+      },
+      {
+        "stable_id": 66,
+        "gold_map": "Route43Gate",
+        "runtime_tileset": "JOHTO_GATE",
+        "runtime_object_file": "data/johto_route43_gate_319.asm",
+        "runtime_object_label": "JohtoRoute43GateRuntimeObjects",
+        "warp_contracts": [
+          {
+            "id": "Route43_2_to_Route43Gate",
+            "source_stable_id": 67,
+            "source_gold_map": "Route43",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              17,
+              35
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 66,
+            "target_gold_map": "Route43Gate",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              4,
+              7
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route43_3_to_Route43Gate",
+            "source_stable_id": 67,
+            "source_gold_map": "Route43",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              17,
+              31
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 66,
+            "target_gold_map": "Route43Gate",
+            "target_warp_ordinal": 0,
+            "target_gold_warp_number_one_based": 1,
+            "target_xy": [
+              4,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43_4_to_Route43Gate",
+            "source_stable_id": 67,
+            "source_gold_map": "Route43",
+            "source_warp_ordinal": 4,
+            "source_gold_warp_number_one_based": 5,
+            "source_xy": [
+              18,
+              31
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 66,
+            "target_gold_map": "Route43Gate",
+            "target_warp_ordinal": 1,
+            "target_gold_warp_number_one_based": 2,
+            "target_xy": [
+              5,
+              0
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43Gate_0_to_Route43",
+            "source_stable_id": 66,
+            "source_gold_map": "Route43Gate",
+            "source_warp_ordinal": 0,
+            "source_gold_warp_number_one_based": 1,
+            "source_xy": [
+              4,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 67,
+            "target_gold_map": "Route43",
+            "target_warp_ordinal": 3,
+            "target_gold_warp_number_one_based": 4,
+            "target_xy": [
+              17,
+              31
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route43Gate_1_to_Route43",
+            "source_stable_id": 66,
+            "source_gold_map": "Route43Gate",
+            "source_warp_ordinal": 1,
+            "source_gold_warp_number_one_based": 2,
+            "source_xy": [
+              5,
+              0
+            ],
+            "source_gold_collision_role": "DOOR",
+            "trigger": "STEP_ON",
+            "direction": "UP",
+            "target_stable_id": 67,
+            "target_gold_map": "Route43",
+            "target_warp_ordinal": 4,
+            "target_gold_warp_number_one_based": 5,
+            "target_xy": [
+              18,
+              31
+            ],
+            "arrival_auto_step": "NONE"
+          },
+          {
+            "id": "Route43Gate_2_to_Route43",
+            "source_stable_id": 66,
+            "source_gold_map": "Route43Gate",
+            "source_warp_ordinal": 2,
+            "source_gold_warp_number_one_based": 3,
+            "source_xy": [
+              4,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 67,
+            "target_gold_map": "Route43",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              17,
+              35
+            ],
+            "arrival_auto_step": "D_DOWN"
+          },
+          {
+            "id": "Route43Gate_3_to_Route43",
+            "source_stable_id": 66,
+            "source_gold_map": "Route43Gate",
+            "source_warp_ordinal": 3,
+            "source_gold_warp_number_one_based": 4,
+            "source_xy": [
+              5,
+              7
+            ],
+            "source_gold_collision_role": "WARP_CARPET_DOWN",
+            "trigger": "COLLISION_ONLY",
+            "direction": "DOWN",
+            "target_stable_id": 67,
+            "target_gold_map": "Route43",
+            "target_warp_ordinal": 2,
+            "target_gold_warp_number_one_based": 3,
+            "target_xy": [
+              17,
+              35
+            ],
+            "arrival_auto_step": "D_DOWN"
           }
         ],
         "runtime_verified": false,
