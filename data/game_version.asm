@@ -16,7 +16,8 @@ GameVersionText::
 	; DEV-319: ID66 Route43Gate transit skeleton and complete Gold Warp pairs, scene deferred.
 	; REF-318 / DEV-321: activate exact Gold Lake of Rage outdoor + audited Route43 seam; story/houses deferred.
 	; REF-319: route Lake of Rage land movement through the exact Gold role grid; audit chained ledges separately.
-	; Canonical project version REF-5.62.319; one in-ROM label REF-319 shared by all builds.
+	; DEV-325: restore Gold Route44 east cliff preview without activating Blackthorn.
+	; Canonical project version REF-5.62.325; one in-ROM label REF-325 shared by all builds.
 	; REF-304: restore map-local Officer sprites and independent West/East Gate dialogue.
 	; REF-303: shared East/West Gate carpet-entry decision (that candidate's separate TEST label is now retired).
 	; FIX-302: allow inward steps onto East/West gate carpets from floor, with ASM move simulation.
@@ -52,4 +53,4 @@ GameVersionText::
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "REF-319@"
+	db "REF-325@"

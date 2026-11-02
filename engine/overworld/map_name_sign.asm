@@ -311,6 +311,14 @@ UpdateMapNameSign::
     jp z, .johtoRoute43
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .johtoLakeOfRage
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .johtoRoute44
+	cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+	jp z, .johtoBlackthorn
+	cp JOHTO_ROUTE_45_LOCAL_ID
+	jp z, .johtoRoute45
+	cp JOHTO_ROUTE_46_LOCAL_ID
+	jp z, .johtoRoute46
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
 	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
@@ -400,6 +408,18 @@ UpdateMapNameSign::
     jr .johtoResolved
 .johtoLakeOfRage
     ld hl, .JohtoLakeOfRageName
+    jr .johtoResolved
+.johtoRoute44
+    ld hl, .JohtoRoute44Name
+    jr .johtoResolved
+.johtoBlackthorn
+    ld hl, .JohtoBlackthornName
+    jr .johtoResolved
+.johtoRoute45
+    ld hl, .JohtoRoute45Name
+    jr .johtoResolved
+.johtoRoute46
+    ld hl, .JohtoRoute46Name
     jr .johtoResolved
 .johtoPark
 	ld hl, .JohtoParkName
@@ -748,8 +768,10 @@ UpdateMapNameSign::
 	ret z
 	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
 	ret z
-	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    cp JOHTO_ROUTE_43_GATE_LOCAL_ID
 	ret z
+    cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
 ; Safari rest/secret houses inherit the outdoor Safari area. Once Center/East/North/West
@@ -1143,3 +1165,7 @@ UpdateMapNameSign::
 .JohtoMahoganyName: db "Mahogany Town@"
 .JohtoRoute43Name: db "Route 43@"
 .JohtoLakeOfRageName: db "Lake of Rage@"
+.JohtoRoute44Name: db "Route 44@"
+.JohtoBlackthornName: db "Blackthorn City@"
+.JohtoRoute45Name: db "Route 45@"
+.JohtoRoute46Name: db "Route 46@"

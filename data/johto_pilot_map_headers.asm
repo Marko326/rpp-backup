@@ -25,13 +25,24 @@ JohtoPilotNewBarkRuntimeHeaderEnd::
 ASSERT JohtoPilotNewBarkRuntimeHeaderEnd - JohtoPilotNewBarkRuntimeHeader == 23
 ASSERT BANK(JohtoPilotNewBarkRuntimeHeader) == BANK(JohtoPilotNewBarkRuntimeBlocks)
 
+JohtoRoute46Route29NorthMirror:: INCBIN "maps/johto_pilot/Route46.north_route29_mirror.blk"
+ASSERT @ - JohtoRoute46Route29NorthMirror == JOHTO_ROUTE_46_WIDTH * JOHTO_ROUTE_46_HEIGHT
 JohtoPilotRoute29RuntimeHeader::
     db JOHTO_PILOT
     db JOHTO_ROUTE_29_HEIGHT, JOHTO_ROUTE_29_WIDTH
     dw JohtoPilotRoute29RuntimeBlocks
     dw JohtoPilotRoute29TextPointers
     dw JohtoPilotMapScript
-    db WEST | EAST
+    db NORTH | WEST | EAST
+    ; NORTH Route46 preview, Gold horizontal offset +10; boundary stays blocked.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoRoute46Route29NorthMirror + JOHTO_ROUTE_46_WIDTH * (JOHTO_ROUTE_46_HEIGHT - 3)
+    dw wOverworldMap + 3 + 10
+    db JOHTO_ROUTE_46_WIDTH
+    db JOHTO_ROUTE_46_WIDTH
+    db JOHTO_ROUTE_46_HEIGHT * 2 - 1
+    db -20
+    dw wOverworldMap + 1 + JOHTO_ROUTE_46_HEIGHT * (JOHTO_ROUTE_46_WIDTH + 6)
     ; WEST: Route 29 -> Cherrygrove (same Gold north/south alignment).
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoPilotCherrygroveRuntimeBlocks + JOHTO_CHERRYGROVE_WIDTH - 3
@@ -52,7 +63,7 @@ JohtoPilotRoute29RuntimeHeader::
     dw wOverworldMap + 7 + JOHTO_NEW_BARK_WIDTH
     dw JohtoPilotRoute29RuntimeObjects
 JohtoPilotRoute29RuntimeHeaderEnd::
-ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 34
+ASSERT JohtoPilotRoute29RuntimeHeaderEnd - JohtoPilotRoute29RuntimeHeader == 45
 ASSERT BANK(JohtoPilotRoute29RuntimeHeader) == BANK(JohtoPilotRoute29RuntimeBlocks)
 
 ; P5-001: the original narrow north opening connects to Route30 ID3.
@@ -307,7 +318,8 @@ JohtoPilotNewBarkRuntimeObjects::
 JohtoPilotRoute29RuntimeObjects::
 	db $05 ; original Gold forest border block
 
-	db $00 ; north gate is not active in this first two-map release
+	db 1 ; Gold Route29 gate entry (x27,y1); ordinal 0
+    db 1, 27, 2, JOHTO_REGISTERED_WARP_SELECTOR
 
 	db $02 ; original Route29 road signs only
 	db $07, $33, $05 ; original eastern Route 29 sign (x=51, y=7)

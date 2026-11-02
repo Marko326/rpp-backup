@@ -64,6 +64,14 @@ HandleLedges:
     jp z, .route43Gold
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .lakeOfRageGold
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .route44Gold
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .blackthornGold
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .route45Gold
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .route46Gold
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsHopTable
 	ret nz
@@ -87,6 +95,18 @@ HandleLedges:
     jp .ruinsCoordinateHopLookup
 .lakeOfRageGold
     ld hl, JohtoLakeOfRageGoldHops
+    jp .ruinsCoordinateHopLookup
+.route44Gold
+    ld hl, JohtoRoute44GoldHops
+    jp .ruinsCoordinateHopLookup
+.blackthornGold
+    ld hl, JohtoBlackthornGoldHops
+    jp .ruinsCoordinateHopLookup
+.route45Gold
+    ld hl, JohtoRoute45GoldHops
+    jp .ruinsCoordinateHopLookup
+.route46Gold
+    ld hl, JohtoRoute46GoldHops
     jp .ruinsCoordinateHopLookup
 .ruinsHopTable
 	ld hl, JohtoAlphSouthHops
@@ -202,9 +222,9 @@ JohtoSouthHopLandingGuard::
     ret nz
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_33_LOCAL_ID
-    jr z, .route33
+    jp z, .route33
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
-    jr z, .azalea
+    jp z, .azalea
     cp JOHTO_ROUTE_37_LOCAL_ID
     jp z, .route37
     cp JOHTO_ROUTE_38_LOCAL_ID
@@ -219,6 +239,14 @@ JohtoSouthHopLandingGuard::
     jp z, .route43
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .lakeOfRage
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .route44
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .blackthorn
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .route45
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .route46
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
@@ -243,6 +271,18 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .lakeOfRage
     ld hl, JohtoLakeOfRageGoldHops
+    jp .scan
+.route44
+    ld hl, JohtoRoute44GoldHops
+    jp .scan
+.blackthorn
+    ld hl, JohtoBlackthornGoldHops
+    jp .scan
+.route45
+    ld hl, JohtoRoute45GoldHops
+    jp .scan
+.route46
+    ld hl, JohtoRoute46GoldHops
     jp .scan
 .route33
     ld hl, JohtoRoute33Hops
@@ -474,6 +514,197 @@ JohtoLakeOfRageGoldHops:
     db 7, 30, PLAYER_DIR_DOWN
     db $ff
 
+; DEV-324: Gold original directed Route44 safe ledge takeoffs.
+JohtoRoute44GoldHops:
+    db 47, 6, PLAYER_DIR_LEFT
+    db 47, 7, PLAYER_DIR_LEFT
+    db 47, 8, PLAYER_DIR_LEFT
+    db 51, 8, PLAYER_DIR_DOWN
+    db 51, 8, PLAYER_DIR_LEFT
+    db 52, 8, PLAYER_DIR_DOWN
+    db 53, 8, PLAYER_DIR_DOWN
+    db 54, 8, PLAYER_DIR_DOWN
+    db 55, 8, PLAYER_DIR_DOWN
+    db 56, 8, PLAYER_DIR_DOWN
+    db 57, 8, PLAYER_DIR_DOWN
+    db 47, 9, PLAYER_DIR_LEFT
+    db 47, 10, PLAYER_DIR_LEFT
+    db 47, 11, PLAYER_DIR_LEFT
+    db 47, 12, PLAYER_DIR_DOWN
+    db 47, 12, PLAYER_DIR_LEFT
+    db 48, 12, PLAYER_DIR_DOWN
+    db 50, 12, PLAYER_DIR_DOWN
+    db 51, 12, PLAYER_DIR_DOWN
+    db 52, 12, PLAYER_DIR_DOWN
+    db 53, 12, PLAYER_DIR_DOWN
+    db $ff
+
+
+; DEV-326: exactly Gold Blackthorn City directed takeoff cells.
+JohtoBlackthornGoldHops:
+    db 34, 10, PLAYER_DIR_DOWN
+    db 36, 10, PLAYER_DIR_DOWN
+    db 37, 10, PLAYER_DIR_DOWN
+    db 34, 14, PLAYER_DIR_DOWN
+    db 36, 14, PLAYER_DIR_DOWN
+    db 37, 14, PLAYER_DIR_DOWN
+    db 10, 16, PLAYER_DIR_DOWN
+    db 11, 16, PLAYER_DIR_DOWN
+    db 12, 16, PLAYER_DIR_DOWN
+    db 14, 16, PLAYER_DIR_DOWN
+    db 15, 16, PLAYER_DIR_DOWN
+    db 24, 16, PLAYER_DIR_DOWN
+    db 25, 16, PLAYER_DIR_DOWN
+    db 6, 20, PLAYER_DIR_DOWN
+    db 7, 20, PLAYER_DIR_DOWN
+    db 8, 20, PLAYER_DIR_DOWN
+    db 10, 20, PLAYER_DIR_DOWN
+    db 11, 20, PLAYER_DIR_DOWN
+    db 16, 20, PLAYER_DIR_DOWN
+    db 17, 20, PLAYER_DIR_DOWN
+    db 18, 20, PLAYER_DIR_DOWN
+    db 22, 20, PLAYER_DIR_DOWN
+    db 23, 20, PLAYER_DIR_DOWN
+    db 24, 20, PLAYER_DIR_DOWN
+    db 25, 20, PLAYER_DIR_DOWN
+    db 32, 20, PLAYER_DIR_DOWN
+    db 34, 20, PLAYER_DIR_DOWN
+    db 35, 20, PLAYER_DIR_DOWN
+    db 6, 22, PLAYER_DIR_DOWN
+    db 7, 22, PLAYER_DIR_DOWN
+    db 8, 22, PLAYER_DIR_DOWN
+    db 9, 22, PLAYER_DIR_DOWN
+    db 10, 22, PLAYER_DIR_DOWN
+    db 11, 22, PLAYER_DIR_DOWN
+    db 12, 22, PLAYER_DIR_DOWN
+    db 14, 22, PLAYER_DIR_DOWN
+    db 15, 22, PLAYER_DIR_DOWN
+    db 16, 22, PLAYER_DIR_DOWN
+    db 17, 22, PLAYER_DIR_DOWN
+    db 18, 22, PLAYER_DIR_DOWN
+    db 19, 22, PLAYER_DIR_DOWN
+    db 20, 22, PLAYER_DIR_DOWN
+    db 21, 22, PLAYER_DIR_DOWN
+    db 22, 22, PLAYER_DIR_DOWN
+    db 23, 22, PLAYER_DIR_DOWN
+    db 24, 22, PLAYER_DIR_DOWN
+    db 25, 22, PLAYER_DIR_DOWN
+    db $ff
+
+
+; DEV-328: exact Gold safe directional ledge takeoffs.
+JohtoRoute45GoldHops:
+    db 10, 8, PLAYER_DIR_DOWN
+    db 11, 8, PLAYER_DIR_DOWN
+    db 12, 8, PLAYER_DIR_DOWN
+    db 13, 8, PLAYER_DIR_DOWN
+    db 14, 8, PLAYER_DIR_DOWN
+    db 15, 8, PLAYER_DIR_DOWN
+    db 10, 12, PLAYER_DIR_DOWN
+    db 11, 12, PLAYER_DIR_DOWN
+    db 16, 12, PLAYER_DIR_DOWN
+    db 17, 12, PLAYER_DIR_DOWN
+    db 10, 16, PLAYER_DIR_DOWN
+    db 11, 16, PLAYER_DIR_DOWN
+    db 16, 18, PLAYER_DIR_DOWN
+    db 17, 18, PLAYER_DIR_DOWN
+    db 6, 20, PLAYER_DIR_RIGHT
+    db 6, 21, PLAYER_DIR_RIGHT
+    db 2, 22, PLAYER_DIR_DOWN
+    db 3, 22, PLAYER_DIR_DOWN
+    db 4, 22, PLAYER_DIR_DOWN
+    db 5, 22, PLAYER_DIR_DOWN
+    db 6, 22, PLAYER_DIR_DOWN
+    db 6, 22, PLAYER_DIR_RIGHT
+    db 12, 24, PLAYER_DIR_DOWN
+    db 13, 24, PLAYER_DIR_DOWN
+    db 2, 28, PLAYER_DIR_DOWN
+    db 3, 28, PLAYER_DIR_DOWN
+    db 4, 28, PLAYER_DIR_DOWN
+    db 5, 28, PLAYER_DIR_DOWN
+    db 12, 28, PLAYER_DIR_DOWN
+    db 13, 28, PLAYER_DIR_DOWN
+    db 7, 32, PLAYER_DIR_LEFT
+    db 7, 33, PLAYER_DIR_LEFT
+    db 7, 34, PLAYER_DIR_DOWN
+    db 7, 34, PLAYER_DIR_LEFT
+    db 8, 34, PLAYER_DIR_DOWN
+    db 9, 34, PLAYER_DIR_DOWN
+    db 10, 34, PLAYER_DIR_DOWN
+    db 11, 34, PLAYER_DIR_DOWN
+    db 4, 40, PLAYER_DIR_DOWN
+    db 5, 40, PLAYER_DIR_DOWN
+    db 10, 44, PLAYER_DIR_DOWN
+    db 11, 44, PLAYER_DIR_DOWN
+    db 12, 44, PLAYER_DIR_DOWN
+    db 13, 44, PLAYER_DIR_DOWN
+    db 10, 46, PLAYER_DIR_DOWN
+    db 11, 46, PLAYER_DIR_DOWN
+    db 12, 46, PLAYER_DIR_DOWN
+    db 13, 46, PLAYER_DIR_DOWN
+    db 9, 50, PLAYER_DIR_LEFT
+    db 9, 51, PLAYER_DIR_LEFT
+    db 9, 52, PLAYER_DIR_DOWN
+    db 9, 52, PLAYER_DIR_LEFT
+    db 10, 52, PLAYER_DIR_DOWN
+    db 11, 52, PLAYER_DIR_DOWN
+    db 12, 52, PLAYER_DIR_DOWN
+    db 13, 52, PLAYER_DIR_DOWN
+    db 14, 52, PLAYER_DIR_DOWN
+    db 15, 52, PLAYER_DIR_DOWN
+    db 2, 54, PLAYER_DIR_DOWN
+    db 3, 54, PLAYER_DIR_DOWN
+    db 8, 58, PLAYER_DIR_DOWN
+    db 9, 58, PLAYER_DIR_DOWN
+    db 16, 58, PLAYER_DIR_DOWN
+    db 17, 58, PLAYER_DIR_DOWN
+    db 8, 60, PLAYER_DIR_DOWN
+    db 9, 60, PLAYER_DIR_DOWN
+    db 2, 62, PLAYER_DIR_DOWN
+    db 3, 62, PLAYER_DIR_DOWN
+    db 6, 64, PLAYER_DIR_RIGHT
+    db 6, 65, PLAYER_DIR_RIGHT
+    db 2, 66, PLAYER_DIR_DOWN
+    db 3, 66, PLAYER_DIR_DOWN
+    db 4, 66, PLAYER_DIR_DOWN
+    db 5, 66, PLAYER_DIR_DOWN
+    db 6, 66, PLAYER_DIR_DOWN
+    db 6, 66, PLAYER_DIR_RIGHT
+    db 14, 66, PLAYER_DIR_DOWN
+    db 15, 66, PLAYER_DIR_DOWN
+    db 16, 66, PLAYER_DIR_DOWN
+    db 17, 66, PLAYER_DIR_DOWN
+    db 12, 70, PLAYER_DIR_DOWN
+    db 13, 70, PLAYER_DIR_DOWN
+    db 3, 76, PLAYER_DIR_DOWN
+    db 3, 76, PLAYER_DIR_LEFT
+    db 4, 76, PLAYER_DIR_DOWN
+    db 5, 76, PLAYER_DIR_DOWN
+    db 10, 84, PLAYER_DIR_DOWN
+    db 11, 84, PLAYER_DIR_DOWN
+    db $ff
+JohtoRoute46GoldHops:
+    db 12, 10, PLAYER_DIR_DOWN
+    db 13, 10, PLAYER_DIR_DOWN
+    db 14, 10, PLAYER_DIR_DOWN
+    db 15, 10, PLAYER_DIR_DOWN
+    db 9, 12, PLAYER_DIR_LEFT
+    db 9, 13, PLAYER_DIR_LEFT
+    db 10, 14, PLAYER_DIR_DOWN
+    db 11, 14, PLAYER_DIR_DOWN
+    db 2, 18, PLAYER_DIR_DOWN
+    db 3, 18, PLAYER_DIR_DOWN
+    db 7, 20, PLAYER_DIR_LEFT
+    db 7, 21, PLAYER_DIR_LEFT
+    db 7, 22, PLAYER_DIR_DOWN
+    db 7, 22, PLAYER_DIR_LEFT
+    db 8, 22, PLAYER_DIR_DOWN
+    db 9, 22, PLAYER_DIR_DOWN
+    db 10, 22, PLAYER_DIR_DOWN
+    db 11, 22, PLAYER_DIR_DOWN
+    db 12, 22, PLAYER_DIR_DOWN
+    db 13, 22, PLAYER_DIR_DOWN
+    db $ff
 JohtoAlphSouthHops:
 	db 2, 18, PLAYER_DIR_DOWN
 	db 5, 30, PLAYER_DIR_DOWN

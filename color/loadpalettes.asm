@@ -186,6 +186,9 @@ ApplyJohtoGoldRoofPalette269:
     jp z,.route42
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z,.route42
+    ; REF-323: Route44 shows the adjacent Mahogany roofs during the eastward scroll.
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z,.route42
     cp JOHTO_ROUTE_40_LOCAL_ID
     jp z,.cianwood
     cp JOHTO_ROUTE_41_LOCAL_ID

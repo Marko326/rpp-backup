@@ -911,13 +911,23 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute43Name
     db 44, 116 ; slot41 Lake of Rage, Gold landmark36
     dw JohtoPilotLakeOfRageName
+    db 60, 128 ; slot42 Route44, Gold landmark37
+    dw JohtoPilotRoute44Name
+    db 60, 140 ; slot43 Blackthorn City, Gold landmark39
+    dw JohtoPilotBlackthornName
+    db 80, 140 ; slot44 Route45, Gold landmark41
+    dw JohtoPilotRoute45Name
+    db 104, 132 ; slot45 Route46, Gold landmark43
+    dw JohtoPilotRoute46Name
+    db 116, 136 ; slot46 Gate, Route29 landmark1
+    dw JohtoPilotRoute29Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36, 37, 39, 41, 43, 1
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1053,3 +1063,7 @@ JohtoPilotRoute42Name:: db "Route 42@"
 JohtoPilotMahoganyName:: db "Mahogany Town@"
 JohtoPilotRoute43Name:: db "Route 43@"
 JohtoPilotLakeOfRageName:: db "Lake of Rage@"
+JohtoPilotRoute44Name:: db "Route 44@"
+JohtoPilotBlackthornName:: db "Blackthorn City@"
+JohtoPilotRoute45Name:: db "Route 45@"
+JohtoPilotRoute46Name:: db "Route 46@"

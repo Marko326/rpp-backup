@@ -1179,9 +1179,11 @@ IsBikeRidingAllowed::
     jr z, .allowed
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
     jr z, .allowed
-    ; IDs64..67: Mahogany + both Gold Route43 gates + Route43.
-    ; Both outdoors already permit biking through JOHTO_PILOT.
-    and $fc
+    ; ROM0-neutral permit mask: IDs64..67 + 72..75.  At this stage
+    ; 64..67 are town/Route43 and its two Gold gates; 72/73 outdoors,
+    ; 74 is Route29/46 Gold gate, 75 is inactive.  On activating ID75,
+    ; review this predicate before allocating the map to an interior.
+    and $f4
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jr z, .allowed
 .legacyBike

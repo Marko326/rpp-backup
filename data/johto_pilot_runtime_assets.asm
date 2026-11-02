@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 42
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 47
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -244,6 +244,26 @@ JohtoLakeOfRageRuntimeDescriptor::
     db JOHTO_LAKE_OF_RAGE_LOCAL_ID, JOHTO_PILOT, JOHTO_LAKE_OF_RAGE_WIDTH, JOHTO_LAKE_OF_RAGE_HEIGHT
     dw JohtoLakeOfRageBlocks
     db BANK(JohtoLakeOfRageBlocks)
+JohtoRoute44RuntimeDescriptor::
+    db JOHTO_ROUTE_44_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_44_WIDTH, JOHTO_ROUTE_44_HEIGHT
+    dw JohtoRoute44Blocks
+    db BANK(JohtoRoute44Blocks)
+JohtoBlackthornRuntimeDescriptor::
+    db JOHTO_BLACKTHORN_CITY_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_BLACKTHORN_CITY_WIDTH, JOHTO_BLACKTHORN_CITY_HEIGHT
+    dw JohtoBlackthornBlocks
+    db BANK(JohtoBlackthornBlocks)
+JohtoRoute45RuntimeDescriptor::
+    db JOHTO_ROUTE_45_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_45_WIDTH, JOHTO_ROUTE_45_HEIGHT
+    dw JohtoRoute45Blocks
+    db BANK(JohtoRoute45Blocks)
+JohtoRoute46RuntimeDescriptor::
+    db JOHTO_ROUTE_46_LOCAL_ID, JOHTO_PILOT_TILESET_ID, JOHTO_ROUTE_46_WIDTH, JOHTO_ROUTE_46_HEIGHT
+    dw JohtoRoute46Blocks
+    db BANK(JohtoRoute46Blocks)
+JohtoRoute29Route46GateRuntimeDescriptor::
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, JOHTO_GATE, 5, 4
+    dw JohtoRoute29Route46GateBlocks
+    db BANK(JohtoRoute29Route46GateBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -330,6 +350,16 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .route43Gate
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .lakeOfRage
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .route44
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .blackthorn
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .route45
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .route46
+    cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    jp z, .route2946Gate
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .park
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -416,6 +446,21 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .lakeOfRage
     ld hl, JohtoLakeOfRageRuntimeDescriptor
+    jp .valid
+.route44
+    ld hl, JohtoRoute44RuntimeDescriptor
+    jp .valid
+.blackthorn
+    ld hl, JohtoBlackthornRuntimeDescriptor
+    jp .valid
+.route45
+    ld hl, JohtoRoute45RuntimeDescriptor
+    jp .valid
+.route46
+    ld hl, JohtoRoute46RuntimeDescriptor
+    jp .valid
+.route2946Gate
+    ld hl, JohtoRoute29Route46GateRuntimeDescriptor
     jp .valid
 .park
     ld hl, JohtoParkDescriptor

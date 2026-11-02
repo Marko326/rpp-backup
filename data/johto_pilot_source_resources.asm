@@ -4,9 +4,9 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 42
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 47
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 42
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
@@ -56,6 +56,14 @@ JohtoRoute43GateGoldBlocks:: INCBIN "maps/johto_pilot/Route43Gate.gold.blk"
 ASSERT @ - JohtoRoute43GateGoldBlocks == JOHTO_ROUTE43_GATE_WIDTH * JOHTO_ROUTE43_GATE_HEIGHT
 JohtoLakeOfRageGoldBlocks:: INCBIN "maps/johto_pilot/LakeOfRage.gold.blk"
 ASSERT @ - JohtoLakeOfRageGoldBlocks == JOHTO_LAKE_OF_RAGE_WIDTH * JOHTO_LAKE_OF_RAGE_HEIGHT
+JohtoRoute44GoldBlocks:: INCBIN "maps/johto_pilot/Route44.gold.blk"
+ASSERT @ - JohtoRoute44GoldBlocks == JOHTO_ROUTE_44_WIDTH * JOHTO_ROUTE_44_HEIGHT
+JohtoBlackthornGoldBlocks:: INCBIN "maps/johto_pilot/BlackthornCity.gold.blk"
+ASSERT @ - JohtoBlackthornGoldBlocks == JOHTO_BLACKTHORN_CITY_WIDTH * JOHTO_BLACKTHORN_CITY_HEIGHT
+JohtoRoute45GoldBlocks:: INCBIN "maps/johto_pilot/Route45.gold.blk"
+JohtoRoute46GoldBlocks:: INCBIN "maps/johto_pilot/Route46.gold.blk"
+JohtoRoute29Route46GateGoldBlocks:: INCBIN "maps/johto_pilot/Route29Route46Gate.gold.blk"
+ASSERT @ - JohtoRoute29Route46GateGoldBlocks == 5 * 4
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -185,6 +193,21 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID, JOHTO_LAKE_OF_RAGE_WIDTH, JOHTO_LAKE_OF_RAGE_HEIGHT
     dw JohtoLakeOfRageGoldBlocks
     db BANK(JohtoLakeOfRageGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID, JOHTO_ROUTE_44_WIDTH, JOHTO_ROUTE_44_HEIGHT
+    dw JohtoRoute44GoldBlocks
+    db BANK(JohtoRoute44GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID, JOHTO_BLACKTHORN_CITY_WIDTH, JOHTO_BLACKTHORN_CITY_HEIGHT
+    dw JohtoBlackthornGoldBlocks
+    db BANK(JohtoBlackthornGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID, 10, 45
+    dw JohtoRoute45GoldBlocks
+    db BANK(JohtoRoute45GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, 10, 18
+    dw JohtoRoute46GoldBlocks
+    db BANK(JohtoRoute46GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 5, 4
+    dw JohtoRoute29Route46GateGoldBlocks
+    db BANK(JohtoRoute29Route46GateGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -245,6 +268,19 @@ JohtoPilotSourceConnections::
     ; DEV-321: Gold Route43 <-> Lake of Rage north/south seam, offsets -5/+5 blocks.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    ; DEV-324: Gold Mahogany EAST <-> Route44 WEST, offset 0.
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    ; DEV-326: Gold Route44 EAST <-> Blackthorn City WEST, +9 / -9 block offsets.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID
+    ; DEV-328: source-accurate southern physical routes and preview-only Route46/Route29.
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
 ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 

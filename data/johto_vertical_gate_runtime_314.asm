@@ -21,6 +21,20 @@ JohtoVerticalGateBeforeStepProfiles314::
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 1
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 5, 1
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_UP, 17, 36 ; Gold #3 DOOR only
+    ; DEV-328: Route46 Gold two downward carpet lanes at (7/8,33).
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 7, 32
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 8, 32
+    ; DEV-329: the two Gold carpets are one two-cell threshold; allow lateral
+    ; movement between them without turning the lane change into a Warp.
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_RIGHT, 7, 33
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_LEFT, 8, 33
+    ; Gold Route29 north DOOR: step ON only from below while facing UP.
+    db JOHTO_ROUTE_29_LOCAL_ID, PLAYER_DIR_UP, 27, 2
+    ; Route29/46 Gate shares the exact NorthSouthGate thresholds.
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_DOWN, 4, 6
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_DOWN, 5, 6
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 1
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_UP, 5, 1
     ; Gold ID66 north WARP_CARPET_DOWN pair: re-enter from north and switch
     ; between the two registered carpet lanes, but never step beyond rails.
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_DOWN, 17, 30
@@ -29,7 +43,7 @@ JohtoVerticalGateBeforeStepProfiles314::
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_LEFT, 18, 31
     db $ff
 JohtoVerticalGateBeforeStepProfilesEnd314::
-ASSERT JohtoVerticalGateBeforeStepProfilesEnd314 - JohtoVerticalGateBeforeStepProfiles314 == 57
+ASSERT JohtoVerticalGateBeforeStepProfilesEnd314 - JohtoVerticalGateBeforeStepProfiles314 == 93
 
 ; After-step rows: map ID, direction, destination X, destination Y, result.
 ; E=2 = exact solid DOOR; E=1 = DOWN collision-only carpet exit;
@@ -47,13 +61,24 @@ JohtoVerticalGateAfterStepProfiles314::
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 0, 2
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 5, 0, 2
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_UP, 17, 35, 2 ; solid DOOR
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 7, 33, 1
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 8, 33, 1
+    ; E=3 is a lateral lane change, never an outward collision Warp.
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_RIGHT, 8, 33, 3
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_LEFT, 7, 33, 3
+    ; Gold Route29 DOOR target is a real STEP_ON door, not a carpet.
+    db JOHTO_ROUTE_29_LOCAL_ID, PLAYER_DIR_UP, 27, 1, 2
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_DOWN, 4, 7, 1
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_DOWN, 5, 7, 1
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 0, 2
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, PLAYER_DIR_UP, 5, 0, 2
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_DOWN, 17, 31, 1 ; ID66 DOWN collision exit
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_DOWN, 18, 31, 1 ; ID66 DOWN collision exit
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_RIGHT, 18, 31, 3 ; ID66 lateral lane change only
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_LEFT, 17, 31, 3 ; ID66 lateral lane change only
     db $ff
 JohtoVerticalGateAfterStepProfilesEnd314::
-ASSERT JohtoVerticalGateAfterStepProfilesEnd314 - JohtoVerticalGateAfterStepProfiles314 == 81
+ASSERT JohtoVerticalGateAfterStepProfilesEnd314 - JohtoVerticalGateAfterStepProfiles314 == 126
 
 ; Arrival rows: map ID, landing X, landing Y, automatic step direction.
 ; Town plus ID65/ID66 upper DOOR landings step south. All carpets stay put.
@@ -63,19 +88,23 @@ JohtoVerticalGateArrivalProfiles314::
     db JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 5, 0, D_DOWN
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, 4, 0, D_DOWN
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, 5, 0, D_DOWN
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 4, 0, D_DOWN
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 5, 0, D_DOWN
+    db JOHTO_ROUTE_29_LOCAL_ID, 27, 1, D_DOWN
     db JOHTO_ROUTE_43_LOCAL_ID, 17, 35, D_DOWN ; arrival from ID66 south carpet onto DOOR
     db $ff
 JohtoVerticalGateArrivalProfilesEnd314::
-ASSERT JohtoVerticalGateArrivalProfilesEnd314 - JohtoVerticalGateArrivalProfiles314 == 25
+ASSERT JohtoVerticalGateArrivalProfilesEnd314 - JohtoVerticalGateArrivalProfiles314 == 37
 
 ; Closed-edge rows: map ID, width in 16x16 cells, height in 16x16 cells.
 ; ID65 and ID66 are 10x8 cells; unregistered physical edges stay closed.
 JohtoVerticalGateBoundsProfiles314::
     db JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 10, 8
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, 10, 8
+    db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 10, 8
     db $ff
 JohtoVerticalGateBoundsProfilesEnd314::
-ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 7
+ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 10
 
 ; In: current map, player direction and standing coordinate before the step.
 ; Out: E=1 only for a configured vertical-gate threshold; otherwise E=0.

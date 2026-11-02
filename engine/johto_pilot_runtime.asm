@@ -233,6 +233,14 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    ; DEV-328: original Route29/46 Gate, zero-based source ordinals.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -316,6 +324,8 @@ JohtoPilotResolveRegisteredWarp::
     cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
     jr z, .recordGateSource
     cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
     jr nz, .notGateMusicEntry
 .recordGateSource
     ld a, c
@@ -338,7 +348,7 @@ JohtoPilotResolveRegisteredWarp::
     inc hl ; ordinal
     inc hl ; dest region
     inc hl ; dest ID
-    jr .loop
+    jp .loop
 
 ; Physical region identity is resolved by the active stable-ID gate. Each
 ; active slot has ONE type/landmark/music descriptor: no ID-range guesses.
@@ -392,6 +402,11 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 35, MUSIC_ROUTES1, 0 ; slot39 Route43, Gold LakeOfRage theme
     johto_map_profile 0, 35, MUSIC_ROUTES1, 0 ; slot40 Route43Gate, neutral (Route43 music)
     johto_map_profile 1, 36, MUSIC_ROUTES1, 0 ; slot41 Lake of Rage, exact Gold outdoor landmark
+    johto_map_profile 1, 37, MUSIC_ROUTES1, 0 ; slot42 Route44, original Gold Lake of Rage theme
+    johto_map_profile 1, 39, MUSIC_CITIES1, 0 ; slot43 Blackthorn City, outdoor
+    johto_map_profile 1, 41, MUSIC_ROUTES2, 0 ; slot44 Route45
+    johto_map_profile 1, 43, MUSIC_ROUTES2, 0 ; slot45 Route46
+    johto_map_profile 0, 1, MUSIC_ROUTES1, 0 ; slot46 Route29/46 Gate
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -472,6 +487,8 @@ JohtoPilotLoadMapMusic::
     jp z, .route43MahoganyGateMusic
     cp JOHTO_ROUTE_43_GATE_LOCAL_ID
     jp z, .route43GateMusic
+    cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    jp z, .route2946GateMusic
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -494,7 +511,7 @@ JohtoPilotLoadMapMusic::
 .violetGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_31_LOCAL_ID
-    jr z, .sourceValid
+    jp z, .sourceValid
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     ret nz
     ; MUS-282: the city side must use its own music profile.  Falling
@@ -524,6 +541,13 @@ JohtoPilotLoadMapMusic::
 .route43GateMusic
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_43_LOCAL_ID
+    ret nz
+    jp .sourceValid
+.route2946GateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_29_LOCAL_ID
     ret nz
     jp .sourceValid
 
@@ -652,6 +676,14 @@ JohtoPilotIsClosedOutdoorEdge::
     cp JOHTO_ROUTE_43_LOCAL_ID
     jp z, .eastClosedEdge
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .eastClosedEdge
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .eastClosedEdge
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .eastClosedEdge
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .eastClosedEdge
+    cp JOHTO_ROUTE_46_LOCAL_ID
     jp z, .eastClosedEdge
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateClosedEdge314
@@ -1093,6 +1125,12 @@ JohtoPilotIsVerticalGatePairMap314::
     cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
     ret z
     cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_29_LOCAL_ID
     ret z
     cp JOHTO_ROUTE_43_LOCAL_ID
     ret

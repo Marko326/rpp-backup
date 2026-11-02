@@ -1,7 +1,7 @@
 ; MAP-300: Ecruteak east gate -> Route42 -> Mahogany Town outdoor chain.
 ; REF-315 adds the Gold Route43 outdoor slice in this same Bank $53. Its north/south
-; connection strips are display previews only; Lake of Rage, ID66, Route44, Mt Mortar,
-; Mahogany interiors, unported trainers/items/story and unregistered entrances stay closed.
+; connection strips are display previews only; Route44 now connects east of Mahogany,
+; while Mt Mortar, IcePath, Mahogany interiors and unported events remain closed.
 
 JohtoRoute42EcruteakGateBlocks:: INCBIN "maps/johto_pilot/Route42EcruteakGate.runtime.blk"
 ASSERT @ - JohtoRoute42EcruteakGateBlocks == JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH * JOHTO_ROUTE_42_ECRUTEAK_GATE_HEIGHT
@@ -64,7 +64,7 @@ JohtoMahoganyRuntimeHeader::
     dw JohtoMahoganyBlocks
     dw JohtoMahoganyTextPointers
     dw JohtoEastLocalScript
-    db WEST
+    db WEST | EAST
     ; WEST -> Route42 east, Gold offset 0.
     db JOHTO_RUNTIME_MAP_HANDLE
     dw JohtoRoute42Blocks + JOHTO_ROUTE_42_WIDTH - 3
@@ -74,9 +74,18 @@ JohtoMahoganyRuntimeHeader::
     db 0
     db JOHTO_ROUTE_42_WIDTH * 2 - 1
     dw wOverworldMap + 6 + 2 * JOHTO_ROUTE_42_WIDTH
+    ; EAST -> Route44 west, Gold offset 0.
+    db JOHTO_RUNTIME_MAP_HANDLE
+    dw JohtoRoute44Blocks
+    dw wOverworldMap + 3 * (JOHTO_MAHOGANY_TOWN_WIDTH + 6) + JOHTO_MAHOGANY_TOWN_WIDTH + 3
+    db JOHTO_ROUTE_44_HEIGHT
+    db JOHTO_ROUTE_44_WIDTH
+    db 0
+    db 0
+    dw wOverworldMap + 7 + JOHTO_ROUTE_44_WIDTH
     dw JohtoMahoganyRuntimeObjects
 JohtoMahoganyHeaderEnd::
-ASSERT JohtoMahoganyHeaderEnd - JohtoMahoganyRuntimeHeader == 23
+ASSERT JohtoMahoganyHeaderEnd - JohtoMahoganyRuntimeHeader == 34
 
 ASSERT BANK(JohtoRoute42EcruteakGateRuntimeHeader) == BANK(JohtoRoute42EcruteakGateBlocks)
 ASSERT BANK(JohtoRoute42RuntimeHeader) == BANK(JohtoRoute42Blocks)
@@ -191,6 +200,9 @@ ASSERT @ - JohtoRoute43Roles == JOHTO_ROUTE_43_WIDTH * 2 * JOHTO_ROUTE_43_HEIGHT
 ; REF-318: exact Gold 40x36 quadrant roles, including 300 WATER cells.
 JohtoLakeOfRageRoles:: INCBIN "maps/johto_pilot/LakeOfRage.roles.bin"
 ASSERT @ - JohtoLakeOfRageRoles == JOHTO_LAKE_OF_RAGE_WIDTH * 2 * JOHTO_LAKE_OF_RAGE_HEIGHT * 2
+; DEV-324: exact original Gold Route44 collision roles at 60x18 cells.
+JohtoRoute44Roles:: INCBIN "maps/johto_pilot/Route44.roles.bin"
+ASSERT @ - JohtoRoute44Roles == JOHTO_ROUTE_44_WIDTH * 2 * JOHTO_ROUTE_44_HEIGHT * 2
 
 ; E=0/1/2 for recognized maps, E=3 otherwise. Off-map is floor here because
 ; JohtoEastIsKnownClosedEdge owns the exact seamless Route42/Mahogany lanes.
@@ -212,7 +224,37 @@ JohtoEastSpatialRoleAhead::
     cp JOHTO_ROUTE_43_LOCAL_ID
     jr z, .route43
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
-    ret nz
+    jr z, .lakeOfRage
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jr z, .route44
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jr z, .blackthornRoles
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jr z, .route45Roles
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jr z, .route46Roles
+    ret
+.route45Roles
+    ld hl, JohtoRoute45Roles
+    ld b, JOHTO_ROUTE_45_WIDTH * 2
+    ld c, JOHTO_ROUTE_45_HEIGHT * 2
+    jr .common
+.route46Roles
+    ld hl, JohtoRoute46Roles
+    ld b, JOHTO_ROUTE_46_WIDTH * 2
+    ld c, JOHTO_ROUTE_46_HEIGHT * 2
+    jr .common
+.blackthornRoles
+    ld hl, JohtoBlackthornRoles
+    ld b, JOHTO_BLACKTHORN_CITY_WIDTH * 2
+    ld c, JOHTO_BLACKTHORN_CITY_HEIGHT * 2
+    jr .common
+.route44
+    ld hl, JohtoRoute44Roles
+    ld b, JOHTO_ROUTE_44_WIDTH * 2
+    ld c, JOHTO_ROUTE_44_HEIGHT * 2
+    jr .common
+.lakeOfRage
     ld hl, JohtoLakeOfRageRoles
     ld b, JOHTO_LAKE_OF_RAGE_WIDTH * 2
     ld c, JOHTO_LAKE_OF_RAGE_HEIGHT * 2
@@ -678,6 +720,14 @@ JohtoEastIsKnownClosedEdge::
     jp z, .route43
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .lakeOfRage
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .route44
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .blackthorn
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .route45
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .route46
     ld e, 1
     ret
 .route43
@@ -780,12 +830,12 @@ JohtoEastIsKnownClosedEdge::
 .rightGate
     ld a, [wXCoord]
     cp 9
-    jr nc, .closed
+    jp nc, .closed
     ret
 .upGate
     ld a, [wYCoord]
     and a
-    jr z, .closed
+    jp z, .closed
     ret
 .route42
     ld a, [wPlayerDirection]
@@ -799,17 +849,17 @@ JohtoEastIsKnownClosedEdge::
     ret nz
     ld a, [wYCoord]
     cp 17
-    jr nc, .closed
+    jp nc, .closed
     ret
 .route42West
     ld a, [wXCoord]
     and a
-    jr z, .closed ; gate Warp only
+    jp z, .closed ; gate Warp only
     ret
 .route42North
     ld a, [wYCoord]
     and a
-    jr z, .closed
+    jp z, .closed
     ret
 .route42East
     ld a, [wXCoord]
@@ -829,7 +879,7 @@ JohtoEastIsKnownClosedEdge::
     ret nz
     ld a, [wYCoord]
     cp 17
-    jr nc, .closed
+    jp nc, .closed
     ret
 .mahoganyWest
     ld a, [wXCoord]
@@ -838,23 +888,183 @@ JohtoEastIsKnownClosedEdge::
     ld a, [wYCoord]
 .seamY
     cp 4
-    jr c, .closed
+    jp c, .closed
     cp 8
-    jr c, .open
+    jp c, .open
     cp 9
-    jr c, .closed
+    jp c, .closed
     cp 18
-    jr c, .open
-    jr .closed
+    jp c, .open
+    jp .closed
 .mahoganyEast
     ld a, [wXCoord]
     cp 19
-    jr nc, .closed ; Route44 deferred
-    ret
+    ret c
+    ld a, [wYCoord]
+    jp .route44SeamY
 .mahoganyNorth
     ld a, [wYCoord]
     and a
-    jr z, .closed ; Route43 deferred
+    jp z, .closed ; Route43 deferred
+    ret
+; Route44 connects west to Mahogany on the audited Gold passable lanes.
+; The east edge and north/south borders remain sealed; IcePath cave is not active.
+.route44
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr z, .route44West
+    cp PLAYER_DIR_RIGHT
+    jr z, .route44East
+    cp PLAYER_DIR_UP
+    jr z, .route44North
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_44_HEIGHT * 2 - 1
+    jp nc, .closed
+    ret
+.route44West
+    ld a, [wXCoord]
+    and a
+    ret nz
+    ld a, [wYCoord]
+.route44SeamY
+    cp 8
+    jp c, .closed
+    cp 10
+    jp c, .open
+    cp 11
+    jp z, .closed
+    jp .open
+.route44East
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_44_WIDTH * 2 - 1
+    ret c
+    ; Gold Route44 eastern boundary is dry across all 18 rows.
+    jp .open
+.route44North
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    ret
+; Blackthorn west only opens y18..35 -> Route44 y0..17. All other
+; physical exits sealed even though SOUTH paints original Route45 preview.
+.blackthorn
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_LEFT
+    jr z, .blackthornWest
+    cp PLAYER_DIR_RIGHT
+    jr z, .blackthornEast
+    cp PLAYER_DIR_UP
+    jr z, .blackthornNorth
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wYCoord]
+    cp JOHTO_BLACKTHORN_CITY_HEIGHT * 2 - 1
+    ret c
+    ; Gold physical Blackthorn -> Route45 FLOOR pairs at Y35/0.
+    jp .southLaneGold
+.blackthornWest
+    ld a, [wXCoord]
+    and a
+    ret nz
+    ld a, [wYCoord]
+    cp 18
+    jp c, .closed
+    jp .open
+.blackthornEast
+    ld a, [wXCoord]
+    cp JOHTO_BLACKTHORN_CITY_WIDTH * 2 - 1
+    jp nc, .closed
+    ret
+.blackthornNorth
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    ret
+; Gold Route45 north and Blackthorn south share the same lanes.
+.southLaneGold
+    ld a, [wXCoord]
+    cp 3
+    jp c, .open
+    cp 8
+    jp c, .closed
+    cp 14
+    jp c, .open
+    cp 15
+    jp c, .closed
+    jp .open
+; Route45 west links Route46 only at y72..89, excluding two rock cells.
+.route45
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .route45North
+    cp PLAYER_DIR_LEFT
+    jr z, .route45West
+    cp PLAYER_DIR_DOWN
+    jr z, .route45South
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_45_WIDTH * 2 - 1
+    jp nc, .closed
+    ret
+.route45North
+    ld a, [wYCoord]
+    and a
+    ret nz
+    jp .southLaneGold
+.route45West
+    ld a, [wXCoord]
+    and a
+    ret nz
+    ld a, [wYCoord]
+    cp 72
+    jp c, .closed
+    cp 75
+    jp z, .closed
+    cp 82
+    jp z, .closed
+    jp .open
+.route45South
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_45_HEIGHT * 2 - 1
+    jp nc, .closed
+    ret
+; Route46 east y3 and y10 are walls; SOUTH is display-only.
+.route46
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_RIGHT
+    jr z, .route46East
+    cp PLAYER_DIR_DOWN
+    jr z, .route46South
+    cp PLAYER_DIR_LEFT
+    jr z, .route46West
+    cp PLAYER_DIR_UP
+    ret nz
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    ret
+.route46East
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_46_WIDTH * 2 - 1
+    ret c
+    ld a, [wYCoord]
+    cp 3
+    jp z, .closed
+    cp 10
+    jp z, .closed
+    jp .open
+.route46South
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_46_HEIGHT * 2 - 1
+    jp nc, .closed
+    ret
+.route46West
+    ld a, [wXCoord]
+    and a
+    jp z, .closed
     ret
 .open
     ret
@@ -912,6 +1122,14 @@ JohtoEastUnsafeSurfEdge::
     jp z, .route43
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .lakeOfRageSurf
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .route44Surf
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .route44Surf
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .route44Surf
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .route44Surf
     cp JOHTO_ROUTE_42_LOCAL_ID
     jp nz, .no
     ld a, [wPlayerDirection]
@@ -941,6 +1159,14 @@ JohtoEastUnsafeSurfEdge::
     ld a, [wXCoord]
     and a
     jp z, .yes
+    jp .no
+; DEV-324: every Route44 boundary is unsafe to Surf across; the only
+; approved Mahogany seam is dry FLOOR, not a WATER step.
+.route44Surf
+    call JohtoEastIsKnownClosedEdge
+    ld a, e
+    and a
+    jp nz, .yes
     jp .no
 ; Route43 is 20x54 cells, unlike Route42 60x18.
 .route43

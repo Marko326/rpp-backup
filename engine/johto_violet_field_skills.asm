@@ -57,6 +57,14 @@ JohtoOverworldSurfDecision::
     jp z, .eastRoute42
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jp z, .eastRoute42
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jp z, .eastRoute42
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .eastRoute42
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    jp z, .eastRoute42
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .eastRoute42
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID

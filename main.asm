@@ -3434,6 +3434,10 @@ INCLUDE "data/johto_route43_runtime_315.asm"
 INCLUDE "data/johto_route43_gate_319.asm"
 ; DEV-321: exact Gold Lake of Rage outdoor runtime, same roomy Bank $53.
 INCLUDE "data/johto_lake_of_rage_321.asm"
+; DEV-324: Route44 extends the east outdoor corridor without plot events.
+INCLUDE "data/johto_route44_runtime_324.asm"
+INCLUDE "data/johto_blackthorn_runtime_326.asm"
+INCLUDE "data/johto_south_chain_runtime_328.asm"
 
 SECTION "Johto Park Runtime 286", ROMX, BANK[$50]
 INCLUDE "data/johto_park_runtime_286.asm"

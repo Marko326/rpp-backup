@@ -61,6 +61,13 @@ JohtoOverworldSouthLandDecision::
     ; WALL/HOP barriers at others.
     cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jr z, .eastMap
+    ; DEV-328: ID69..73 share ROMX Gold roles; ID70 IcePath remains
+    ; unregistered and fails closed in JohtoEastSpatialRoleAhead.
+    cp JOHTO_ROUTE_44_LOCAL_ID
+    jr c, .afterEastSouth
+    cp JOHTO_ROUTE_46_LOCAL_ID + 1
+    jr c, .eastMap
+.afterEastSouth
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .activeSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID

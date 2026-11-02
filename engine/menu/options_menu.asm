@@ -1177,6 +1177,8 @@ LookupJohtoMapGSCMusic:
     jp z, .route43MahoganyGateMusic
     cp JOHTO_ROUTE_43_GATE_LOCAL_ID
     jp z, .route43GateMusic
+    cp JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID
+    jp z, .route2946GateMusic
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -1227,6 +1229,13 @@ LookupJohtoMapGSCMusic:
 .route43GateMusic
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.route2946GateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_29_LOCAL_ID
     jp z, .activeSlot
     jp .gateDefault
 .route35GoldenrodGate
@@ -1336,6 +1345,11 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot39 Route43, original Gold GSC song
     db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot40 Route43Gate, neutral source-music fallback
     db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot41 Lake of Rage, original Gold GSC song
+    db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot42 Route44, original Gold GSC song
+    db MUSIC_GBP_GSC_ECRUTEAK_CITY ; slot43 Blackthorn City, existing city tune placeholder (Gold Blackthorn song unavailable)
+    db MUSIC_GBP_GSC_ROUTE36 ; slot44 Route45
+    db MUSIC_GBP_GSC_ROUTE36 ; slot45 Route46
+    db MUSIC_GBP_GSC_ROUTE29 ; slot46 Route29/46 Gate
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 
