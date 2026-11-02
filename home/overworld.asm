@@ -1160,7 +1160,7 @@ IsBikeRidingAllowed::
 	cp JOHTO_RUNTIME_MAP_HANDLE
 	jr nz, .legacyBike
 	ld a, [wCurRegion]
-	cp MAP_REGION_JOHTO
+	dec a ; Johto region=1; same Z flag as cp 1, saving one ROM0 byte
 	jr nz, .legacyBike
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
@@ -1178,6 +1178,11 @@ IsBikeRidingAllowed::
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
     jr z, .allowed
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .allowed
+    ; IDs64..67: Mahogany + both Gold Route43 gates + Route43.
+    ; Both outdoors already permit biking through JOHTO_PILOT.
+    and $fc
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jr z, .allowed
 .legacyBike
 	ld a, [wCurMap]

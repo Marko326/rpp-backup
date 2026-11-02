@@ -276,7 +276,7 @@ UpdateMapNameSign::
 	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
 	jp z, .johtoUnionCave
 	cp JOHTO_ROUTE_33_LOCAL_ID
-	jr z, .johtoRoute33
+	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jp z, .johtoAzalea
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
@@ -307,6 +307,10 @@ UpdateMapNameSign::
     jp z, .johtoRoute42
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .johtoMahogany
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .johtoRoute43
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .johtoLakeOfRage
 	cp JOHTO_NATIONAL_PARK_LOCAL_ID
 	jp z, .johtoPark
 	; A neutral gate reached by Continue has no outdoor source saved
@@ -390,6 +394,12 @@ UpdateMapNameSign::
     jr .johtoResolved
 .johtoMahogany
     ld hl, .JohtoMahoganyName
+    jr .johtoResolved
+.johtoRoute43
+    ld hl, .JohtoRoute43Name
+    jr .johtoResolved
+.johtoLakeOfRage
+    ld hl, .JohtoLakeOfRageName
     jr .johtoResolved
 .johtoPark
 	ld hl, .JohtoParkName
@@ -735,6 +745,10 @@ UpdateMapNameSign::
 	cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
 	ret z
 	cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+	ret z
+	cp JOHTO_ROUTE_43_GATE_LOCAL_ID
 	ret z
 .legacyNeutralMap
 ; Z = set for maps that must not become a new effective map-sign landmark.
@@ -1127,3 +1141,5 @@ UpdateMapNameSign::
 .JohtoCianwoodName: db "Cianwood City@"
 .JohtoRoute42Name: db "Route 42@"
 .JohtoMahoganyName: db "Mahogany Town@"
+.JohtoRoute43Name: db "Route 43@"
+.JohtoLakeOfRageName: db "Lake of Rage@"

@@ -60,6 +60,10 @@ HandleLedges:
 	jp z, .ecruteakGold
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .mahoganyGold
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .route43Gold
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .lakeOfRageGold
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jr z, .ruinsHopTable
 	ret nz
@@ -77,6 +81,12 @@ HandleLedges:
 	jp .ruinsCoordinateHopLookup
 .mahoganyGold
     ld hl, JohtoMahoganyGoldHops
+    jp .ruinsCoordinateHopLookup
+.route43Gold
+    ld hl, JohtoRoute43GoldHops
+    jp .ruinsCoordinateHopLookup
+.lakeOfRageGold
+    ld hl, JohtoLakeOfRageGoldHops
     jp .ruinsCoordinateHopLookup
 .ruinsHopTable
 	ld hl, JohtoAlphSouthHops
@@ -205,6 +215,10 @@ JohtoSouthHopLandingGuard::
     jp z, .ecruteak
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .mahogany
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .route43
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .lakeOfRage
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
@@ -223,6 +237,12 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .mahogany
     ld hl, JohtoMahoganyGoldHops
+    jp .scan
+.route43
+    ld hl, JohtoRoute43GoldHops
+    jp .scan
+.lakeOfRage
+    ld hl, JohtoLakeOfRageGoldHops
     jp .scan
 .route33
     ld hl, JohtoRoute33Hops
@@ -429,6 +449,29 @@ JohtoMahoganyGoldHops:
     db 10, 10, PLAYER_DIR_DOWN
     db 12, 10, PLAYER_DIR_DOWN
     db 13, 10, PLAYER_DIR_DOWN
+    db $ff
+
+; REF-315: original Route43 two east ledge rows; north/south landing audited.
+JohtoRoute43GoldHops:
+    db 12, 32, PLAYER_DIR_DOWN
+    db 13, 32, PLAYER_DIR_DOWN
+    db 14, 32, PLAYER_DIR_DOWN
+    db 15, 32, PLAYER_DIR_DOWN
+    db 12, 34, PLAYER_DIR_DOWN
+    db 13, 34, PLAYER_DIR_DOWN
+    db 14, 34, PLAYER_DIR_DOWN
+    db 15, 34, PLAYER_DIR_DOWN
+    db $ff
+
+; Gold Lake of Rage six HOP_DOWN quadrants. Coordinate/facing gating avoids
+; making the shared visual block globally jumpable.
+JohtoLakeOfRageGoldHops:
+    db 4, 28, PLAYER_DIR_DOWN
+    db 5, 28, PLAYER_DIR_DOWN
+    db 6, 28, PLAYER_DIR_DOWN
+    db 4, 30, PLAYER_DIR_DOWN
+    db 6, 30, PLAYER_DIR_DOWN
+    db 7, 30, PLAYER_DIR_DOWN
     db $ff
 
 JohtoAlphSouthHops:

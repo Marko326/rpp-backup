@@ -52,9 +52,7 @@ JohtoSouthSpatialRoleAhead::
     jp .common
 .IlexForestAzaleaGate
     ld hl, JohtoSouthIlexForestAzaleaGateRoles
-    ld b, 10
-    ld c, 8
-    jp .common
+    jp .gate10x8
 .IlexForest
     ld hl, JohtoSouthIlexForestRoles
     ld b, 30
@@ -62,9 +60,7 @@ JohtoSouthSpatialRoleAhead::
     jp .common
 .Route34IlexForestGate
     ld hl, JohtoSouthRoute34IlexForestGateRoles
-    ld b, 10
-    ld c, 8
-    jp .common
+    jp .gate10x8
 .Route34
     ld hl, JohtoSouthRoute34Roles
     ld b, 20
@@ -77,9 +73,7 @@ JohtoSouthSpatialRoleAhead::
     jp .common
 .Route35Gate
     ld hl, JohtoNorthRoute35GoldenrodGateRoles
-    ld b, 10
-    ld c, 8
-    jp .common
+    jp .gate10x8
 .Route35
     ld hl, JohtoNorthRoute35Roles
     ld b, 20
@@ -97,9 +91,7 @@ JohtoSouthSpatialRoleAhead::
     jp .common
 .Route38Gate
     ld hl, JohtoRoute38EcruteakGateRoles
-    ld b, 10
-    ld c, 8
-    jp .common
+    jp .gate10x8
 .Route38
     ld hl, JohtoRoute38Roles
     ld b, 40
@@ -127,9 +119,11 @@ JohtoSouthSpatialRoleAhead::
     jp .common
 .EastParkGate
     ld hl, JohtoParkEastGateRoles
+    ; All five 10x8 Gold gate role grids share only their dimensions;
+    ; each keeps its own HL data pointer, carpet/Warp and collision backend.
+.gate10x8
     ld b, 10
     ld c, 8
-    jp .common
 
 .common
     push hl ; exact map's role grid

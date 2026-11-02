@@ -307,11 +307,13 @@ MapPaletteSets:
     db CAVE_YELLOW, CAVE_BROWN, CAVE_LIGHT_BLUE, CRYS_TEXTBOX ; IlexForest Gold CAVE
     db INDOOR_GRAY, INDOOR_RED, INDOOR_GREEN, INDOOR_BLUE
     db INDOOR_YELLOW, INDOOR_BROWN, INDOOR_LIGHT_BLUE, CRYS_TEXTBOX ; SouthGate
-; MAP-286: Gold Park uses outdoor colors, gates are indoor (not bike tiles).
+; MAP-286: Gold Park is outdoor; park gates are indoor and forbid cycling.
+; REF-310: keep park gates on their own tileset but reuse exact Gold indoor
+; GREEN/BROWN palettes already isolated for JOHTO_GATE (not generic Kanto indoor).
     db OUTDOOR_GRAY, OUTDOOR_RED, OUTDOOR_GREEN, OUTDOOR_BLUE
     db OUTDOOR_YELLOW, OUTDOOR_BROWN, OUTDOOR_ROOF, CRYS_TEXTBOX ; Park
-    db INDOOR_GRAY, INDOOR_RED, INDOOR_GREEN, INDOOR_BLUE
-    db INDOOR_YELLOW, INDOOR_BROWN, INDOOR_LIGHT_BLUE, CRYS_TEXTBOX ; Park Gates
+    db INDOOR_GRAY, INDOOR_RED, JOHTO_GATE_GOLD_GREEN, INDOOR_BLUE
+    db INDOOR_YELLOW, JOHTO_GATE_GOLD_BROWN, INDOOR_LIGHT_BLUE, CRYS_TEXTBOX ; Park Gates: exact Gold indoor GREEN/BROWN
 MapPaletteSetsEnd::
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29

@@ -3,9 +3,20 @@ SECTION "Game Version", ROM0
 ; 公共游戏版本号。以后发布新版本时只需要修改这一处。
 ; 放在 ROM0 中，任何 ROMX bank 都可以直接读取，无需额外切换 ROM bank。
 GameVersionText::
+	; REF-317: add exact north ID66 carpet re-entry/lane-switch profiles; keep coarse role grid fail-closed and DOWN-only Warp.
+	; REF-310: Gold-accurate green/brown map palette selection for two Park gates.
+	; REF-309: fold repeated 10x8 gate role-grid dimensions in ROMX Bank $4E.
 	; REF-306: correct UP-facing counter probe from upper-left $00 to lower-left $0E.
 	; REF-305: Gold red Officer alias (color works); previous counter tile was wrong.
-	; Canonical project version REF-5.62.306; one in-ROM label REF-306 shared by all builds.
+	; DEV-313: activate Gold Route43MahoganyGate (ID65) as a safe Mahogany round trip; north remains closed.
+	; DEV-314: shared data-driven vertical gate threshold/arrival/bounds profiles; ID65 behavior unchanged.
+	; REF-315: activate Gold Route43 (ID67) via north ID65 gate; Lake physical connection remains closed, ROMX only.
+	; DEV-316: keep ID65 south Route43 WARP_CARPET_DOWN on the collision path; do not bypass the y=52 forest-edge collision.
+	; DEV-317: restore Gold Route43 north/south visual previews; physical edges remain fail-closed.
+	; DEV-319: ID66 Route43Gate transit skeleton and complete Gold Warp pairs, scene deferred.
+	; REF-318 / DEV-321: activate exact Gold Lake of Rage outdoor + audited Route43 seam; story/houses deferred.
+	; REF-319: route Lake of Rage land movement through the exact Gold role grid; audit chained ledges separately.
+	; Canonical project version REF-5.62.319; one in-ROM label REF-319 shared by all builds.
 	; REF-304: restore map-local Officer sprites and independent West/East Gate dialogue.
 	; REF-303: shared East/West Gate carpet-entry decision (that candidate's separate TEST label is now retired).
 	; FIX-302: allow inward steps onto East/West gate carpets from floor, with ASM move simulation.
@@ -41,4 +52,4 @@ GameVersionText::
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "REF-306@"
+	db "REF-319@"

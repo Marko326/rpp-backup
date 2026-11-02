@@ -1,7 +1,7 @@
 ; MAP-300: Ecruteak east gate -> Route42 -> Mahogany Town outdoor chain.
-; Gold source bytes and mature stage-77 collision roles are preserved. REF-304 adds
-; only the simple Route42 Gate Officer; Mt Mortar, Route43/44, Mahogany interiors,
-; Route42 trainers/items/story and all unregistered entrances remain fail-closed.
+; REF-315 adds the Gold Route43 outdoor slice in this same Bank $53. Its north/south
+; connection strips are display previews only; Lake of Rage, ID66, Route44, Mt Mortar,
+; Mahogany interiors, unported trainers/items/story and unregistered entrances stay closed.
 
 JohtoRoute42EcruteakGateBlocks:: INCBIN "maps/johto_pilot/Route42EcruteakGate.runtime.blk"
 ASSERT @ - JohtoRoute42EcruteakGateBlocks == JOHTO_ROUTE_42_ECRUTEAK_GATE_WIDTH * JOHTO_ROUTE_42_ECRUTEAK_GATE_HEIGHT
@@ -107,7 +107,8 @@ JohtoRoute42RuntimeObjects::
 
 JohtoMahoganyRuntimeObjects::
     db $05
-    db 0 ; Mart/house/Gym/Center/Route43 gate all intentionally closed
+    db 1 ; Gold north gate only; four indoor doors still closed
+    db 1, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Mahogany Gold #5 -> Gate south #3
     db 4
     db 5, 1, 1
     db 7, 9, 2
@@ -181,6 +182,15 @@ JohtoRoute42Roles:: INCBIN "maps/johto_pilot/Route42.roles.bin"
 ASSERT @ - JohtoRoute42Roles == 60 * 18
 JohtoMahoganyRoles:: INCBIN "maps/johto_pilot/MahoganyTown.roles.bin"
 ASSERT @ - JohtoMahoganyRoles == 20 * 18
+; REF-315: full Gold 20x54 role-grid, 72 WATER cells.
+; REF-317: north ID66 WARP_CARPET_DOWN is Gold LAND_TILE, but the coarse role
+; grid stays blocked; exact BeforeStep rows allow only y30/down re-entry and
+; the paired lateral lane switch. AfterStep E=3 is not a collision Warp.
+JohtoRoute43Roles:: INCBIN "maps/johto_pilot/Route43.roles.bin"
+ASSERT @ - JohtoRoute43Roles == JOHTO_ROUTE_43_WIDTH * 2 * JOHTO_ROUTE_43_HEIGHT * 2
+; REF-318: exact Gold 40x36 quadrant roles, including 300 WATER cells.
+JohtoLakeOfRageRoles:: INCBIN "maps/johto_pilot/LakeOfRage.roles.bin"
+ASSERT @ - JohtoLakeOfRageRoles == JOHTO_LAKE_OF_RAGE_WIDTH * 2 * JOHTO_LAKE_OF_RAGE_HEIGHT * 2
 
 ; E=0/1/2 for recognized maps, E=3 otherwise. Off-map is floor here because
 ; JohtoEastIsKnownClosedEdge owns the exact seamless Route42/Mahogany lanes.
@@ -198,7 +208,21 @@ JohtoEastSpatialRoleAhead::
     cp JOHTO_ROUTE_42_LOCAL_ID
     jr z, .route42
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jr z, .mahogany
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jr z, .route43
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     ret nz
+    ld hl, JohtoLakeOfRageRoles
+    ld b, JOHTO_LAKE_OF_RAGE_WIDTH * 2
+    ld c, JOHTO_LAKE_OF_RAGE_HEIGHT * 2
+    jr .common
+.route43
+    ld hl, JohtoRoute43Roles
+    ld b, JOHTO_ROUTE_43_WIDTH * 2
+    ld c, JOHTO_ROUTE_43_HEIGHT * 2
+    jr .common
+.mahogany
     ld hl, JohtoMahoganyRoles
     ld b, 20
     ld c, 18
@@ -286,7 +310,7 @@ JohtoEastSpatialStep::
     jr z, .allow
     cp 1
     jr nz, .block
-    call JohtoRoute42CutClearedAhead300
+    call JohtoEastCutClearedAhead300
     jr c, .allow
     jr .block
 .water
@@ -378,11 +402,13 @@ JohtoGateHorizontalCarpetInbound303::
     scf
     ret
 
-; Route42's only Cut cell is Gold (x24,y13), source block $63 -> current clone $8D.
-JohtoRoute42CutClearedAhead300:
+; Static role grids keep Cut cells blocked after the visible metatile is swapped.
+; Re-open only source-authentic Cut coordinates whose live block now equals the
+; known cleared clone. This same Bank $53 helper covers Route42, Route43 and Lake.
+JohtoRoute42CutClearedAhead300: ; legacy label retained for older audits
+JohtoEastCutClearedAhead300:
     ld a, [wCurLocalMapID]
-    cp JOHTO_ROUTE_42_LOCAL_ID
-    jp nz, .no
+    ld b, a
     ld a, [wXCoord]
     ld e, a
     ld a, [wYCoord]
@@ -407,13 +433,31 @@ JohtoRoute42CutClearedAhead300:
 .cl
     dec e
 .target
-    ld a, e
-    cp 24
-    jr nz, .no
-    ld a, d
-    cp 13
-    jr nz, .no
-    ; Same visible block lookup used by the established Johto Cut helper.
+    ld hl, JohtoEastClearedCutCells300
+.scan
+    ld a, [hli]
+    cp $ff
+    jr z, .no
+    cp b
+    jr nz, .skip3
+    ld a, [hli] ; y
+    cp d
+    jr nz, .skip2
+    ld a, [hli] ; x
+    cp e
+    jr nz, .skip1
+    ld a, [hl] ; expected cleared visible block
+    push af
+    jr .lookupLiveBlock
+.skip3
+    inc hl
+.skip2
+    inc hl
+.skip1
+    inc hl
+    jr .scan
+.lookupLiveBlock
+    ; Same visible-block lookup used by the established Route42 helper.
     ld a, [wCurMapWidth]
     add 6
     ld c, a
@@ -467,8 +511,9 @@ JohtoRoute42CutClearedAhead300:
     add hl, bc
     add hl, de
 .read
-    ld a, [hl]
-    cp $8d
+    ld b, [hl]
+    pop af
+    cp b
     jr z, .yes
 .no
     and a
@@ -476,6 +521,17 @@ JohtoRoute42CutClearedAhead300:
 .yes
     scf
     ret
+
+; map, y, x, cleared runtime block. $63->$8D, $67->$8E, $5B->$90.
+JohtoEastClearedCutCells300:
+    db JOHTO_ROUTE_42_LOCAL_ID, 13, 24, $8d
+    db JOHTO_ROUTE_43_LOCAL_ID, 28, 2, $8e
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 4, 23, $90
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 9, 18, $8d
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 12, 11, $90
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 14, 5, $90
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 21, 6, $8d
+    db $ff
 
 ; East/west-gate carpets are collision Warps, not ordinary STEP_ON doors.
 ; These guards mirror the proven west-corridor contract while keeping every
@@ -613,13 +669,95 @@ JohtoEastIsKnownClosedEdge::
     ld e, 0
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
-    jr z, .gate
+    jp z, .gate
     cp JOHTO_ROUTE_42_LOCAL_ID
-    jr z, .route42
+    jp z, .route42
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-    jr z, .mahogany
+    jp z, .mahogany
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .route43
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .lakeOfRage
     ld e, 1
     ret
+.route43
+    ; Lake of Rage is the only physical north connection in REF-318. ID66 uses
+    ; registered Warps; all other off-map preview lanes remain fail-closed.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .route43North
+    cp PLAYER_DIR_DOWN
+    jr z, .route43South
+    cp PLAYER_DIR_LEFT
+    jr z, .route43West
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_43_WIDTH * 2 - 1
+    jp nc, .closed
+    ret
+.route43North
+    ld a, [wYCoord]
+    and a
+    ret nz
+    ; Gold -5 block seam: Route43 x0 and x8..11 map to walkable
+    ; Lake x10 and x18..21. Every other preview-border lane stays closed.
+    ld a, [wXCoord]
+    and a
+    jp z, .open
+    cp 8
+    jp c, .closed
+    cp 12
+    jp c, .open
+    jp .closed
+.route43South
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_43_HEIGHT * 2 - 1
+    jp nc, .closed
+    ret
+.route43West
+    ld a, [wXCoord]
+    and a
+    jp z, .closed
+    ret
+.lakeOfRage
+    ; Lake has only the Gold SOUTH connection in REF-318. North/west/east
+    ; remain fail-closed; south opens only the reciprocal walkable overlap.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    jr z, .lakeSouth
+    cp PLAYER_DIR_UP
+    jr z, .lakeNorth
+    cp PLAYER_DIR_LEFT
+    jr z, .lakeWest
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_LAKE_OF_RAGE_WIDTH * 2 - 1
+    jp nc, .closed
+    ret
+.lakeNorth
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    ret
+.lakeWest
+    ld a, [wXCoord]
+    and a
+    jp z, .closed
+    ret
+.lakeSouth
+    ld a, [wYCoord]
+    cp JOHTO_LAKE_OF_RAGE_HEIGHT * 2 - 1
+    ret c
+    ld a, [wXCoord]
+    cp 10
+    jp z, .open
+    cp 18
+    jp c, .closed
+    cp 22
+    jp c, .open
+    jp .closed
 .gate
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT
@@ -770,8 +908,12 @@ JohtoEastGoldShoreProbe::
 
 JohtoEastUnsafeSurfEdge::
     ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .route43
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .lakeOfRageSurf
     cp JOHTO_ROUTE_42_LOCAL_ID
-    jr nz, .no
+    jp nz, .no
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
     jr z, .up
@@ -780,25 +922,99 @@ JohtoEastUnsafeSurfEdge::
     cp PLAYER_DIR_LEFT
     jr z, .left
     cp PLAYER_DIR_RIGHT
-    jr nz, .no
+    jp nz, .no
     ld a, [wXCoord]
     cp 59
-    jr nc, .yes
-    jr .no
+    jp nc, .yes
+    jp .no
 .up
     ld a, [wYCoord]
     and a
-    jr z, .yes
-    jr .no
+    jp z, .yes
+    jp .no
 .down
     ld a, [wYCoord]
     cp 17
-    jr nc, .yes
-    jr .no
+    jp nc, .yes
+    jp .no
 .left
     ld a, [wXCoord]
     and a
-    jr z, .yes
+    jp z, .yes
+    jp .no
+; Route43 is 20x54 cells, unlike Route42 60x18.
+.route43
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jp z, .route43Up
+    cp PLAYER_DIR_DOWN
+    jp z, .route43Down
+    cp PLAYER_DIR_LEFT
+    jp z, .route43Left
+    cp PLAYER_DIR_RIGHT
+    jp nz, .no
+    ld a, [wXCoord]
+    cp JOHTO_ROUTE_43_WIDTH * 2 - 1
+    jp nc, .yes
+    jp .no
+.route43Up
+    ld a, [wYCoord]
+    and a
+    jp nz, .no
+    ld a, [wXCoord]
+    and a
+    jp z, .no
+    cp 8
+    jp c, .yes
+    cp 12
+    jp c, .no
+    jp .yes
+.route43Down
+    ld a, [wYCoord]
+    cp JOHTO_ROUTE_43_HEIGHT * 2 - 1
+    jp nc, .yes
+    jp .no
+.route43Left
+    ld a, [wXCoord]
+    and a
+    jp z, .yes
+    jp .no
+.lakeOfRageSurf
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    jr z, .lakeSurfSouth
+    cp PLAYER_DIR_UP
+    jr z, .lakeSurfNorth
+    cp PLAYER_DIR_LEFT
+    jr z, .lakeSurfWest
+    cp PLAYER_DIR_RIGHT
+    jp nz, .no
+    ld a, [wXCoord]
+    cp JOHTO_LAKE_OF_RAGE_WIDTH * 2 - 1
+    jp nc, .yes
+    jp .no
+.lakeSurfNorth
+    ld a, [wYCoord]
+    and a
+    jp z, .yes
+    jp .no
+.lakeSurfWest
+    ld a, [wXCoord]
+    and a
+    jp z, .yes
+    jp .no
+.lakeSurfSouth
+    ld a, [wYCoord]
+    cp JOHTO_LAKE_OF_RAGE_HEIGHT * 2 - 1
+    jp c, .no
+    ld a, [wXCoord]
+    cp 10
+    jp z, .no
+    cp 18
+    jp c, .yes
+    cp 22
+    jp c, .no
+    jp .yes
 .no
     and a
     ret
@@ -806,7 +1022,7 @@ JohtoEastUnsafeSurfEdge::
     scf
     ret
 
-; Display-only Route43 preview above Mahogany. Route43/ID67 stays inactive and
+; Display-only Route43 preview above Mahogany. Route43/ID67 is now active, but
 ; this writes only the three out-of-bounds border rows, never collision or Warps.
 PatchJohtoMahoganyNorthBorder300::
     ld a, [wCurMap]

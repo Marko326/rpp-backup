@@ -215,6 +215,24 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+    ; DEV-313: Mahogany Gold door #5 (9,1) -> Gate south carpet #3.
+    ; Gate south pair -> Mahogany Gold door #5; Route43 north pair registered in REF-315.
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    ; REF-315: Route43 south entrance, ID65 north DOOR pair (preserved by DEV-319).
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    ; DEV-319: Gold Route43 west-side door #3 and north carpets #4/#5 to ID66.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -294,6 +312,10 @@ JohtoPilotResolveRegisteredWarp::
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
     jr z, .recordGateSource
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    jr z, .recordGateSource
+    cp JOHTO_ROUTE_43_GATE_LOCAL_ID
     jr nz, .notGateMusicEntry
 .recordGateSource
     ld a, c
@@ -366,6 +388,10 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 32, MUSIC_ROUTES1, 0 ; slot35 Route42/Ecruteak gate, source music
     johto_map_profile 1, 32, MUSIC_ROUTES1, 0 ; slot36 Route42
     johto_map_profile 1, 34, MUSIC_CITIES1, 0 ; slot37 Mahogany Town
+    johto_map_profile 0, 34, MUSIC_CITIES1, 0 ; slot38 Mahogany north gate, inherits city music
+    johto_map_profile 1, 35, MUSIC_ROUTES1, 0 ; slot39 Route43, Gold LakeOfRage theme
+    johto_map_profile 0, 35, MUSIC_ROUTES1, 0 ; slot40 Route43Gate, neutral (Route43 music)
+    johto_map_profile 1, 36, MUSIC_ROUTES1, 0 ; slot41 Lake of Rage, exact Gold outdoor landmark
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -442,6 +468,10 @@ JohtoPilotLoadMapMusic::
     jp z, .route38GateMusic
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
     jp z, .route42GateMusic
+    cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    jp z, .route43MahoganyGateMusic
+    cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    jp z, .route43GateMusic
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -453,14 +483,14 @@ JohtoPilotLoadMapMusic::
     jp z, .sourceValid
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     ret nz
-    jr .sourceValid
+    jp .sourceValid
 .southGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_32_LOCAL_ID
-    jr z, .sourceValid
+    jp z, .sourceValid
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     ret nz
-    jr .sourceValid
+    jp .sourceValid
 .violetGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_31_LOCAL_ID
@@ -484,6 +514,19 @@ JohtoPilotLoadMapMusic::
     cp JOHTO_ROUTE_42_LOCAL_ID
     ret nz
     jp .sourceValid
+.route43MahoganyGateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .sourceValid
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    ret nz
+    jp .sourceValid
+.route43GateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    ret nz
+    jp .sourceValid
+
 .route35GoldenrodGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_GOLDENROD_CITY_LOCAL_ID
@@ -606,6 +649,12 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .eastClosedEdge
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .eastClosedEdge
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .eastClosedEdge
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .eastClosedEdge
+    call JohtoPilotIsVerticalGatePairMap314
+    jr z, .verticalGateClosedEdge314
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .southClosedEdge
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -633,6 +682,9 @@ JohtoPilotIsClosedOutdoorEdge::
     ret
 .eastClosedEdge
     callab JohtoEastIsKnownClosedEdge
+    ret
+.verticalGateClosedEdge314
+    callab JohtoVerticalGateClosedEdge314
     ret
 .southClosedEdge
     ; All six maps use finite geometry. Non-seam edges fail closed.
@@ -1031,6 +1083,20 @@ JohtoPilotIsClosedOutdoorEdge::
  ; collision, not an arrival script, performs the reverse Warp.
  ; This matches NPC-5.62.243 GetJohtoWarpArrivalStep (no profiles
  ; for Route31VioletGate or its outdoor carpets).
+; DEV-314: one allowlist for the shared vertical-gate profile runtime.
+; A future compatible gate adds its stable ID here and profile rows in Bank $53;
+; no per-hook before/after/arrival/collision branch copies are needed.
+JohtoPilotIsVerticalGatePairMap314::
+    ld a, [wCurLocalMapID]
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    ret z
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    ret
+
 JohtoPilotGateArrivalStep::
     ; ONLY after arrival on a north-side Gold DOOR, advance one step DOWN.
     ; Route36 carpets and the south gate carpets must never auto-step.
@@ -1041,7 +1107,8 @@ JohtoPilotGateArrivalStep::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
-    ld a, [wCurLocalMapID]
+    call JohtoPilotIsVerticalGatePairMap314
+    jr z, .verticalGateArrivalDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .westPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -1049,6 +1116,9 @@ JohtoPilotGateArrivalStep::
     cp JOHTO_ROUTE_38_LOCAL_ID
     jr z, .westPortalDispatch
     jr .westPortalContinue
+.verticalGateArrivalDispatch314
+    callab JohtoVerticalGateArrivalStep314
+    ret
 .westPortalDispatch
     callab JohtoWestPortalArrivalStep
     ret
@@ -1130,7 +1200,8 @@ JohtoPilotGateDoorApproachAllowed::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
-    ld a, [wCurLocalMapID]
+    call JohtoPilotIsVerticalGatePairMap314
+    jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .bothPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -1142,6 +1213,9 @@ JohtoPilotGateDoorApproachAllowed::
     cp JOHTO_ROUTE_42_LOCAL_ID
     jr z, .eastPortalDispatch
     jr .westPortalContinue
+.verticalGateDispatch314
+    callab JohtoVerticalGateBeforeStep314
+    ret
 .bothPortalDispatch
     callab JohtoWestPortalBeforeStep
     ld a, e
@@ -1324,7 +1398,8 @@ JohtoPilotGateDoorWarpMatched::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
-    ld a, [wCurLocalMapID]
+    call JohtoPilotIsVerticalGatePairMap314
+    jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .westPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -1332,6 +1407,9 @@ JohtoPilotGateDoorWarpMatched::
     cp JOHTO_ROUTE_38_LOCAL_ID
     jr z, .westPortalDispatch
     jr .westPortalContinue
+.verticalGateDispatch314
+    callab JohtoVerticalGateAfterStep314
+    ret
 .westPortalDispatch
     callab JohtoWestPortalAfterStep
     ret
@@ -1508,7 +1586,8 @@ JohtoPilotGateDoorWarpMatched::
 ; E=1 only for the exact open pair and correct outward direction.
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
-    ld a, [wCurLocalMapID]
+    call JohtoPilotIsVerticalGatePairMap314
+    jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .bothPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -1520,6 +1599,9 @@ JohtoPilotGateExteriorCollisionAllowed::
     cp JOHTO_ROUTE_42_LOCAL_ID
     jr z, .eastPortalDispatch
     jr .westPortalContinue
+.verticalGateDispatch314
+    callab JohtoVerticalGateCollisionExit314
+    ret
 .bothPortalDispatch
     callab JohtoWestPortalCollisionExit
     ld a, e

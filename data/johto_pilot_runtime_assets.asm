@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 38
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 42
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -228,6 +228,22 @@ JohtoMahoganyRuntimeDescriptor::
     db JOHTO_MAHOGANY_TOWN_LOCAL_ID, JOHTO_PILOT, JOHTO_MAHOGANY_TOWN_WIDTH, JOHTO_MAHOGANY_TOWN_HEIGHT
     dw JohtoMahoganyBlocks
     db BANK(JohtoMahoganyBlocks)
+JohtoRoute43MahoganyGateRuntimeDescriptor::
+    db JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, JOHTO_GATE, JOHTO_ROUTE43_MAHOGANY_GATE_WIDTH, JOHTO_ROUTE43_MAHOGANY_GATE_HEIGHT
+    dw JohtoRoute43MahoganyGateBlocks
+    db BANK(JohtoRoute43MahoganyGateBlocks)
+JohtoRoute43RuntimeDescriptor::
+    db JOHTO_ROUTE_43_LOCAL_ID, JOHTO_PILOT, JOHTO_ROUTE_43_WIDTH, JOHTO_ROUTE_43_HEIGHT
+    dw JohtoRoute43Blocks
+    db BANK(JohtoRoute43Blocks)
+JohtoRoute43GateRuntimeDescriptor::
+    db JOHTO_ROUTE_43_GATE_LOCAL_ID, JOHTO_GATE, JOHTO_ROUTE43_GATE_WIDTH, JOHTO_ROUTE43_GATE_HEIGHT
+    dw JohtoRoute43GateBlocks
+    db BANK(JohtoRoute43GateBlocks)
+JohtoLakeOfRageRuntimeDescriptor::
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, JOHTO_PILOT, JOHTO_LAKE_OF_RAGE_WIDTH, JOHTO_LAKE_OF_RAGE_HEIGHT
+    dw JohtoLakeOfRageBlocks
+    db BANK(JohtoLakeOfRageBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -306,6 +322,14 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .route42
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .mahogany
+    cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    jp z, .mahoganyNorthGate
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .route43
+    cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    jp z, .route43Gate
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .lakeOfRage
     cp JOHTO_NATIONAL_PARK_LOCAL_ID
     jp z, .park
     cp JOHTO_ROUTE_35_NATIONAL_PARK_GATE_LOCAL_ID
@@ -380,6 +404,18 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .mahogany
     ld hl, JohtoMahoganyRuntimeDescriptor
+    jp .valid
+.mahoganyNorthGate
+    ld hl, JohtoRoute43MahoganyGateRuntimeDescriptor
+    jp .valid
+.route43
+    ld hl, JohtoRoute43RuntimeDescriptor
+    jp .valid
+.route43Gate
+    ld hl, JohtoRoute43GateRuntimeDescriptor
+    jp .valid
+.lakeOfRage
+    ld hl, JohtoLakeOfRageRuntimeDescriptor
     jp .valid
 .park
     ld hl, JohtoParkDescriptor

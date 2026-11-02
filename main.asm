@@ -3427,6 +3427,13 @@ INCLUDE "data/johto_west_sea_runtime_299.asm"
 ; MAP-300: east gate/Route42/Mahogany runtime isolated from ROM0 and packed banks.
 SECTION "Johto East Runtime 300", ROMX, BANK[$53]
 INCLUDE "data/johto_east_runtime_300.asm"
+INCLUDE "data/johto_route43_mahogany_gate_313.asm"
+; DEV-314: shared data-driven vertical gate threshold/arrival/edge runtime.
+INCLUDE "data/johto_vertical_gate_runtime_314.asm"
+INCLUDE "data/johto_route43_runtime_315.asm"
+INCLUDE "data/johto_route43_gate_319.asm"
+; DEV-321: exact Gold Lake of Rage outdoor runtime, same roomy Bank $53.
+INCLUDE "data/johto_lake_of_rage_321.asm"
 
 SECTION "Johto Park Runtime 286", ROMX, BANK[$50]
 INCLUDE "data/johto_park_runtime_286.asm"

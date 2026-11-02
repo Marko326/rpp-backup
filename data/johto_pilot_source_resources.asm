@@ -4,9 +4,9 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 38
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 42
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
-DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 40
+DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 42
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
 DEF JOHTO_PILOT_SOURCE_BANK EQU $42
 ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT
@@ -47,6 +47,15 @@ JohtoCianwoodGoldBlocks:: INCBIN "maps/johto_pilot/CianwoodCity.gold.blk"
 JohtoRoute42EcruteakGateGoldBlocks:: INCBIN "maps/johto_pilot/Route42EcruteakGate.gold.blk"
 JohtoRoute42GoldBlocks:: INCBIN "maps/johto_pilot/Route42.gold.blk"
 JohtoMahoganyGoldBlocks:: INCBIN "maps/johto_pilot/MahoganyTown.gold.blk"
+JohtoRoute43MahoganyGateGoldBlocks:: INCBIN "maps/johto_pilot/Route43MahoganyGate.gold.blk"
+ASSERT @ - JohtoRoute43MahoganyGateGoldBlocks == 20
+JohtoRoute43GoldBlocks:: INCBIN "maps/johto_pilot/Route43.gold.blk"
+ASSERT @ - JohtoRoute43GoldBlocks == JOHTO_ROUTE_43_WIDTH * JOHTO_ROUTE_43_HEIGHT
+; Gold Route43Gate and Route43MahoganyGate share NorthSouthGate (5x4).
+JohtoRoute43GateGoldBlocks:: INCBIN "maps/johto_pilot/Route43Gate.gold.blk"
+ASSERT @ - JohtoRoute43GateGoldBlocks == JOHTO_ROUTE43_GATE_WIDTH * JOHTO_ROUTE43_GATE_HEIGHT
+JohtoLakeOfRageGoldBlocks:: INCBIN "maps/johto_pilot/LakeOfRage.gold.blk"
+ASSERT @ - JohtoLakeOfRageGoldBlocks == JOHTO_LAKE_OF_RAGE_WIDTH * JOHTO_LAKE_OF_RAGE_HEIGHT
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -164,6 +173,18 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, JOHTO_MAHOGANY_TOWN_WIDTH, JOHTO_MAHOGANY_TOWN_HEIGHT
     dw JohtoMahoganyGoldBlocks
     db BANK(JohtoMahoganyGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, JOHTO_ROUTE43_MAHOGANY_GATE_WIDTH, JOHTO_ROUTE43_MAHOGANY_GATE_HEIGHT
+    dw JohtoRoute43MahoganyGateGoldBlocks
+    db BANK(JohtoRoute43MahoganyGateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, JOHTO_ROUTE_43_WIDTH, JOHTO_ROUTE_43_HEIGHT
+    dw JohtoRoute43GoldBlocks
+    db BANK(JohtoRoute43GoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_GATE_LOCAL_ID, JOHTO_ROUTE43_GATE_WIDTH, JOHTO_ROUTE43_GATE_HEIGHT
+    dw JohtoRoute43GateGoldBlocks
+    db BANK(JohtoRoute43GateGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID, JOHTO_LAKE_OF_RAGE_WIDTH, JOHTO_LAKE_OF_RAGE_HEIGHT
+    dw JohtoLakeOfRageGoldBlocks
+    db BANK(JohtoLakeOfRageGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -221,6 +242,9 @@ JohtoPilotSourceConnections::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_42_LOCAL_ID
+    ; DEV-321: Gold Route43 <-> Lake of Rage north/south seam, offsets -5/+5 blocks.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID, NORTH, MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_LAKE_OF_RAGE_LOCAL_ID, SOUTH, MAP_REGION_JOHTO, JOHTO_ROUTE_43_LOCAL_ID
 JohtoPilotSourceConnectionsEnd::
 ASSERT JohtoPilotSourceConnectionsEnd - JohtoPilotSourceConnections == JOHTO_PILOT_SOURCE_CONNECTION_COUNT * JOHTO_PILOT_CONNECTION_BYTES
 

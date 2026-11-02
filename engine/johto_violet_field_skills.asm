@@ -53,6 +53,10 @@ JohtoOverworldSurfDecision::
     jp z, .westSea
     cp JOHTO_ROUTE_42_LOCAL_ID
     jp z, .eastRoute42
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .eastRoute42
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jp z, .eastRoute42
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .violet
 	cp JOHTO_NEW_BARK_LOCAL_ID
@@ -1548,9 +1552,15 @@ JohtoRoutesGoldCutCells::
 	db JOHTO_ILEX_FOREST_LOCAL_ID, 25, 8, $0f
 	db JOHTO_ROUTE_35_LOCAL_ID, 6, 17, $5b
 	db JOHTO_ROUTE_42_LOCAL_ID, 13, 24, $63
+    db JOHTO_ROUTE_43_LOCAL_ID, 28, 2, $67 ; Gold Cut tree at (2,28)
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 4, 23, $5b
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 9, 18, $63
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 12, 11, $5b
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 14, 5, $5b
+    db JOHTO_LAKE_OF_RAGE_LOCAL_ID, 21, 6, $63
 	db $ff
 JohtoRoutesGoldCutCellsEnd::
-ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 9 * 4 + 1
+ASSERT JohtoRoutesGoldCutCellsEnd - JohtoRoutesGoldCutCells == 15 * 4 + 1
 
 JohtoRoutesCutTreeAhead::
 	push bc
@@ -1574,6 +1584,10 @@ JohtoRoutesCutTreeAhead::
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .validMap
     cp JOHTO_ROUTE_42_LOCAL_ID
+    jr z, .validMap
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jr z, .validMap
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
     jr z, .validMap
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp nz, .no

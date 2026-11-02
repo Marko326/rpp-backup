@@ -1173,6 +1173,10 @@ LookupJohtoMapGSCMusic:
     jp z, .route38GateMusic
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
     jp z, .route42GateMusic
+    cp JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID
+    jp z, .route43MahoganyGateMusic
+    cp JOHTO_ROUTE_43_GATE_LOCAL_ID
+    jp z, .route43GateMusic
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     jp z, .violetGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -1191,14 +1195,14 @@ LookupJohtoMapGSCMusic:
     jp z, .activeSlot
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .activeSlot
-    jr .gateDefault
+    jp .gateDefault
 .violetGate
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ROUTE_31_LOCAL_ID
-    jr z, .activeSlot
+    jp z, .activeSlot
     cp JOHTO_VIOLET_CITY_LOCAL_ID
-    jr nz, .gateDefault
-    jr .activeSlot
+    jp nz, .gateDefault
+    jp .activeSlot
 .route38GateMusic
     ld a, [wJohtoGateMusicSourceLocalID]
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1211,6 +1215,18 @@ LookupJohtoMapGSCMusic:
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jp z, .activeSlot
     cp JOHTO_ROUTE_42_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.route43MahoganyGateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .activeSlot
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jp z, .activeSlot
+    jp .gateDefault
+.route43GateMusic
+    ld a, [wJohtoGateMusicSourceLocalID]
+    cp JOHTO_ROUTE_43_LOCAL_ID
     jp z, .activeSlot
     jp .gateDefault
 .route35GoldenrodGate
@@ -1316,6 +1332,10 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot35 Route42 Ecruteak Gate, source overrides
     db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot36 Route42, original Gold music
     db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot37 Mahogany Town, original Gold music
+    db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot38 north gate, source overrides
+    db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot39 Route43, original Gold GSC song
+    db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot40 Route43Gate, neutral source-music fallback
+    db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot41 Lake of Rage, original Gold GSC song
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

@@ -53,6 +53,14 @@ JohtoOverworldSouthLandDecision::
     jr z, .eastMap
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jr z, .eastMap
+    cp JOHTO_ROUTE_43_LOCAL_ID
+    jr z, .eastMap
+    ; REF-319: Lake of Rage uses the same exact Gold quadrant role grid as
+    ; Route42/43/Mahogany.  Do not fall back to the legacy JOHTO_PILOT tile
+    ; whitelist: shared visual tile IDs are FLOOR at some coordinates and
+    ; WALL/HOP barriers at others.
+    cp JOHTO_LAKE_OF_RAGE_LOCAL_ID
+    jr z, .eastMap
     cp JOHTO_ROUTE_35_LOCAL_ID
     jr z, .activeSouthMap
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
