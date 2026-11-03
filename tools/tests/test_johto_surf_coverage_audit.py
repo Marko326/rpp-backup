@@ -25,7 +25,7 @@ class CoverageTests(unittest.TestCase):
             (20, 'RuinsOfAlphOutside'), (19, 'Route36RuinsOfAlphGate'), (16, 'Route36'), (8, 'UnionCave1F'), (9, 'Route33'), (10, 'AzaleaTown'), (11, 'IlexForestAzaleaGate'),
             (12, 'IlexForest'), (13, 'Route34IlexForestGate'),
             (14, 'Route34'), (15, 'GoldenrodCity'), (18, 'Route35GoldenrodGate'), (17, 'Route35'), (103, 'NationalPark'), (104, 'Route35NationalParkGate'), (105, 'Route36NationalParkGate'), (21, 'Route37'), (22, 'EcruteakCity'),
-            (23, 'Route38EcruteakGate'), (24, 'Route38'), (25, 'Route39'), (26, 'OlivineCity'), (27, 'Route40'), (28, 'Route41'), (29, 'CianwoodCity'), (62, 'Route42EcruteakGate'), (63, 'Route42'), (64, 'MahoganyTown'), (65, 'Route43MahoganyGate'), (67, 'Route43'), (66, 'Route43Gate'), (68, 'LakeOfRage'), (69, 'Route44'), (71, 'BlackthornCity'), (72, 'Route45'), (73, 'Route46'), (74, 'Route29Route46Gate')])
+            (23, 'Route38EcruteakGate'), (24, 'Route38'), (25, 'Route39'), (26, 'OlivineCity'), (27, 'Route40'), (28, 'Route41'), (29, 'CianwoodCity'), (62, 'Route42EcruteakGate'), (63, 'Route42'), (64, 'MahoganyTown'), (65, 'Route43MahoganyGate'), (67, 'Route43'), (66, 'Route43Gate'), (68, 'LakeOfRage'), (69, 'Route44'), (71, 'BlackthornCity'), (72, 'Route45'), (73, 'Route46'), (74, 'Route29Route46Gate'), (123, 'CherrygrovePokecenter1F')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -40,8 +40,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 47', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 47',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 48', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 48',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -99,6 +99,7 @@ class CoverageTests(unittest.TestCase):
             'Route45': (16, 'REGISTERED'),
             'Route46': (0, 'NO_WATER'),
             'Route29Route46Gate': (0, 'NO_WATER'),
+            'CherrygrovePokecenter1F': (0, 'NO_WATER'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')

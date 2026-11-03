@@ -114,9 +114,9 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
            len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 13 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 104 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 107 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 13 gates and 104 activated Warp arcs')
+           'MUS contract records 3 house arcs, 13 gates and 107 activated Warp arcs incl. 3 center arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -164,6 +164,24 @@ def audit(project: Path, gold: Path) -> dict:
         ('MAP_REGION_JOHTO', 'JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID', '0', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID'),
         ('MAP_REGION_JOHTO', 'JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID', '1', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID'),
     ]
+    # DEV-334: one new Pokecenter adds exactly three routes; existing 104 unchanged.
+    center_routes = [
+        ('MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID', '1', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID'),
+        ('MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID', '0', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID'),
+        ('MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID', '1', 'MAP_REGION_JOHTO', 'JOHTO_CHERRYGROVE_LOCAL_ID'),
+    ]
+    center_gold = _gold_warp_events(gold, 'CherrygrovePokecenter1F')
+    city_center = [w for w in city_warps if w['x'] == 29 and w['y'] == 3]
+    _check(checks, errors, 'center_exact_gold_warp_sources',
+           len(city_center) == 1 and city_center[0]['warp_number'] == 2 and
+           city_center[0]['destination'] == 'CHERRYGROVE_POKECENTER_1F' and
+           city_center[0]['destination_warp_number'] == 1 and
+           len(center_gold) == 3 and all(w['destination'] == 'CHERRYGROVE_CITY' and
+           w['destination_warp_number'] == 2 for w in center_gold[:2]) and
+           collision_index.role_at('CherrygroveCity', 29, 3) == 'DOOR' and
+           all(collision_index.role_at('CherrygrovePokecenter1F', x, 7) == 'WARP_CARPET_DOWN' for x in (3,4)),
+           'Gold Center door at (29,3), two south exits, no 2F activation')
+    expected_routes.extend(center_routes)
     expected_routes += [
         ('MAP_REGION_JOHTO', 'JOHTO_ROUTE_31_LOCAL_ID', '0', 'MAP_REGION_JOHTO', 'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID'),
         ('MAP_REGION_JOHTO', 'JOHTO_ROUTE_31_LOCAL_ID', '1', 'MAP_REGION_JOHTO', 'JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID'),
@@ -518,18 +536,21 @@ def audit(project: Path, gold: Path) -> dict:
                'cp 2', 'jp z, .noCollision')) and
            all(token in guide for token in (
                'cp MAP_REGION_JOHTO', 'cp JOHTO_CHERRYGROVE_LOCAL_ID',
-               'cp PLAYER_DIR_UP', 'cp 25', 'cp 10', 'ld e, 0', 'ret')) and
-           bool(re.search(r'cp JOHTO_CHERRYGROVE_LOCAL_ID\s+jr nz, \.southMaps\s+'
-                          r'ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_UP\s+jr nz, \.southMaps\s+'
-                          r'ld a, \[wXCoord\]\s+cp 25\s+jr nz, \.southMaps\s+'
-                          r'ld a, \[wYCoord\]\s+cp 10\s+jr nz, \.southMaps\s+'
-                          r'ld e, 0\s+ret', guide)),
-           'only the registered Cherrygrove (Y10,X25) UP approach returns E=0 through ROMX')
+               'cp PLAYER_DIR_UP', 'cp 25', 'cp 10',
+               'cp 29', 'cp 4', '.cherryGuideApproach')) and
+           guide.count('ld e, 0') >= 2,
+           'only exact (Y10,X25) Guide and (Y4,X29) Center approaches bypass collision')
     warp_loop = overworld.split('CheckWarpsNoCollisionLoop::', 1)[1].split('CheckWarpsCollision::', 1)[0]
+    warp_pred = runtime.split('JohtoPilotGateDoorWarpMatched::',1)[1].split('JohtoPilotGateCollisionExitAllowed::',1)[0]
     _check(checks, errors, 'step_on_door_warp_guard',
-           all(token in warp_loop for token in ('cp JOHTO_RUNTIME_MAP_HANDLE', 'cp MAP_REGION_JOHTO',
-               'cp JOHTO_CHERRYGROVE_LOCAL_ID', 'cp PLAYER_DIR_UP', 'cp 9', 'cp 25', 'jp WarpFound1')),
-           'matched door entry warp routes to WarpFound1 on the same UP step')
+           all(token in warp_loop for token in (
+               'callab JohtoPilotGateDoorWarpMatched', 'cp 2',
+               '.northGoldStepOnDoor', 'jp WarpFound1')) and
+           all(token in warp_pred for token in (
+               'cp JOHTO_CHERRYGROVE_LOCAL_ID', '.cherrygroveGoldDoor',
+               'cp PLAYER_DIR_UP', 'cp 9', 'cp 25', 'cp 3', 'cp 29',
+               '.allowCherry', 'ld e, 2')),
+           'matched Cherrygrove Gold doors enter on UP via E=2/WarpFound1')
     _check(checks, errors, 'directional_carpet_no_step_on',
            'cp JOHTO_HOUSE' in warp_loop and 'jr z,CheckWarpsNoCollisionRetry2' in warp_loop and
            re.search(r'(?m)^\s*JohtoHouseWarpTileIDs:\s*$', warp_tiles) is not None,

@@ -20,7 +20,9 @@ REQUIRED_FILES = (
     "data/johto_header_descriptors.asm", "data/johto_pilot_runtime_assets.asm",
     "data/johto_pilot_source_resources.asm", "data/johto_pilot_map_headers.asm",
     "data/johto_stable_id_slots.asm", "data/warp_tile_ids.asm", "data/johto_south_chain_runtime_328.asm", "data/johto_route44_runtime_324.asm", "data/johto_blackthorn_runtime_326.asm",
-    "data/johto_indoor_house.asm", "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm", "engine/johto_land_collision_gateway_272.asm",
+    "data/johto_indoor_house.asm", "engine/johto_shared_pokecenter.asm", "engine/johto_pilot_warp_tiles.asm", "data/mapObjects/ViridianPokecenter.asm", "maps/johto_pilot/CherrygrovePokecenter1F.runtime.blk", "engine/overworld/healing_machine.asm", "engine/overworld/pokecenter.asm", "engine/johto_gold_healing_machine_337.asm", "gfx/johto_gold_heal_machine.png",
+    "gfx/tilesets/johto_shared_pokecenter.png", "gfx/blocksets/johto_shared_pokecenter.bst", "gfx/tilesets/pokecenter.tilecoll",
+    "color/tilesets/johto_shared_pokecenter.asm", "color/sprites.asm", "constants/tilesets.asm", "engine/overworld/set_blackout_map.asm", "wram.asm",  "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm", "engine/johto_land_collision_gateway_272.asm",
     "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
     "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
     "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/overworld/tileset_header.asm", "color/loadpalettes.asm", "engine/fly_town_map_helpers.asm",
@@ -138,7 +140,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 47",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 48",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -146,7 +148,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 47",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 48",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -191,6 +193,70 @@ class PilotMigrationAuditTests(unittest.TestCase):
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("active_slot_town_map_tables" in e for e in report["errors"]))
 
+    def test_town_map_name_over_30_bytes_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    'JohtoCherrygroveName:    db "Cherrygrove_City@"',
+                    'JohtoCherrygroveName:    db "Cherrygrove_City_0123456789012345@"')
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_missing_name_terminator_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    'JohtoCherrygroveName:    db "Cherrygrove_City@"',
+                    'JohtoCherrygroveName:    db "Cherrygrove_City"')
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_wrong_copy_buffer_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    "\tld de, wBuffer\n", "\tld de, wcd6d\n")
+        report = self.run_audit()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_runtime_30_byte_counter_fails_main_audit(self):
+        # The 30th byte must remain reserved for the final @.
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    "\tld b, 29\n.copyName", "\tld b, 30\n.copyName")
+        report = self.run_audit()
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_runtime_missing_termination_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    '.terminateName\n\tld a, "@"\n\tld [de], a',
+                    '.terminateName\n\tld a, "@"\n\tinc de\n\tld [de], a')
+        report = self.run_audit()
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_runtime_missing_countdown_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    "\tdec b\n\tjr nz, .copyName", "\tjr .copyName")
+        report = self.run_audit()
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_runtime_wrong_terminator_branch_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    'cp "@"\n\tjr z, .terminateName',
+                    'cp "@"\n\tjr nz, .terminateName')
+        report = self.run_audit()
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
+    def test_town_map_runtime_lost_register_restore_fails_main_audit(self):
+        self.mutate("engine/johto_pilot_town_map_browse.asm",
+                    "\tpop bc\n\tpop de\n\tret", "\tpop de\n\tret")
+        report = self.run_audit()
+        self.assertTrue(any("johto_town_map_name_buffer_capacity" in e for e in report["errors"]),
+                        report["errors"])
+
     def test_johto_town_map_cross_bank_initial_marker_regression_fails(self):
         self.mutate("engine/town_map.asm",
                     "\tcall DrawJohtoPilotFlyPlayerMarker\n\tld de, wBuffer",
@@ -202,7 +268,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 47", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 48", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

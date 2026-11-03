@@ -199,6 +199,18 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             source, target = row['source'], row['target']
             expected_routes.append(('MAP_REGION_JOHTO', id_symbols[source['stable_id']],
                 str(source['warp_ordinal_zero_based']), 'MAP_REGION_JOHTO', id_symbols[target['stable_id']]))
+        # DEV-334: exactly three Gold center routes follow the original house
+        # rows, *before* the Violet gate routes. Keep the contract independently
+        # grounded in stable IDs, ordinals and Gold source coordinates.
+        center_routes = contract['shared_pokecenter_routes']
+        center_shape = [(r['source_stable_id'], r['source_warp_ordinal'],
+                         r['target_stable_id'], r['source_xy']) for r in center_routes]
+        if center_shape != [(2, 1, 123, [29, 3]), (123, 0, 2, [3, 7]),
+                            (123, 1, 2, [4, 7])]:
+            raise ValueError('Johto shared center routes differ from reviewed Gold door/carpet registration')
+        for row in center_routes:
+            expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
+                str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         for gate in contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', []):
             if gate.get('stable_id') in (11,13,18,23,62,104,105) or 65 <= gate.get('stable_id', -1) < 102:
                 continue  # new gates are appended in exact global South route order
@@ -273,6 +285,8 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
         rows = _runtime_warp_rows(runtime)
+        if contract.get('runtime_invariants', {}).get('registered_warp_route_rows') != len(expected_routes):
+            raise ValueError('Warp contract row count differs from exact ordered registration')
         add('REGISTERED_WARP_ROUTES', rows == expected_routes,
             f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; first mismatch=' + str(next(((i, a, b) for i, (a, b) in enumerate(zip(expected_routes, rows)) if a != b), None)))
     except (ConversionError, OSError, KeyError, ValueError, TypeError) as exc:

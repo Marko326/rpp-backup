@@ -170,6 +170,8 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoRoute45RuntimeHeader', 'Route45', 72),
     ('JohtoRoute46RuntimeHeader', 'Route46', 73),
     ('JohtoRoute29Route46GateRuntimeHeader', 'Route29Route46Gate', 74),
+    # DEV-334: preserve 0..46; the first shared Johto center is slot 47.
+    ('JohtoSharedPokecenterRuntimeHeader', 'CherrygrovePokecenter1F', 123),
 )
 
 

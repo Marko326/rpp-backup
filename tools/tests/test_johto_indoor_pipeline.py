@@ -77,8 +77,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 47', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 47',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 48', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 48',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -95,6 +95,36 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             self.assertEqual(report['status'], 'FAIL')
             self.assertTrue(any(x['check'] == 'HEADER_DESCRIPTOR' and x['status'] == 'FAIL'
                                 for x in report['checks']))
+
+    def test_shared_center_warp_order_mutation_is_rejected(self):
+        # A wrong exit ordinal must fail even if the total remains 107 rows.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            copy_files(ROOT, root, REGISTRATION_FILES + ('tools/johto_pilot_door_contracts.json',))
+            p = root / 'engine/johto_pilot_runtime.asm'
+            src = p.read_text()
+            old = ('db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, '
+                   '1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID')
+            self.assertIn(old, src)
+            p.write_text(src.replace(old, old.replace(' 1, ', ' 2, '), 1))
+            result = generate_registration(root, 'GuideGentsHouse')
+            self.assertEqual(result['status'], 'FAIL')
+            self.assertTrue(any(c['check'] == 'REGISTERED_WARP_ROUTES' and c['status'] == 'FAIL'
+                                for c in result['checks']), result['errors'])
+
+    def test_shared_center_gold_carpet_contract_mutation_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            copy_files(ROOT, root, REGISTRATION_FILES + ('tools/johto_pilot_door_contracts.json',))
+            p = root / 'tools/johto_pilot_door_contracts.json'
+            contract = json.loads(p.read_text())
+            self.assertEqual(contract['shared_pokecenter_routes'][1]['source_xy'], [3, 7])
+            contract['shared_pokecenter_routes'][1]['source_xy'] = [5, 7]
+            p.write_text(json.dumps(contract))
+            result = generate_registration(root, 'GuideGentsHouse')
+            self.assertEqual(result['status'], 'FAIL')
+            self.assertTrue(any(c['check'] == 'REGISTERED_WARP_ROUTES' and c['status'] == 'FAIL'
+                                for c in result['checks']), result['errors'])
 
     def test_unknown_map_does_not_generate_asm_or_fake_pass(self):
         report = generate_registration(ROOT, 'SomeFutureHouse')
@@ -113,7 +143,7 @@ class IndoorGoldDependentTests(unittest.TestCase):
     def test_warp_arrival_contract_passes_against_mus(self):
         report = audit_arrival(ROOT, self.gold)
         self.assertEqual(report['status'], 'PASS_STATIC_ONLY', report['errors'])
-        self.assertEqual(len(report['checks']), 23)  # DEV-329 adds exact Route29/46 gate Gold Warp contract
+        self.assertEqual(len(report['checks']), 24)  # DEV-329 adds exact Route29/46 gate Gold Warp contract
         self.assertFalse(report['runtime_verified'])
         self.assertFalse(report['phone_accepted'])
         self.assertEqual(report['gold_roles']['GuideGentsHouse(2,7)'], 'WARP_CARPET_DOWN')

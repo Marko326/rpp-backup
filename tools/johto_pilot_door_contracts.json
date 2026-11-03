@@ -96,8 +96,40 @@
       }
     }
   ],
+  "shared_pokecenter_routes": [
+    {
+      "id": "cherrygrove_to_pokecenter",
+      "source_stable_id": 2,
+      "source_warp_ordinal": 1,
+      "target_stable_id": 123,
+      "source_xy": [
+        29,
+        3
+      ]
+    },
+    {
+      "id": "pokecenter_left_exit",
+      "source_stable_id": 123,
+      "source_warp_ordinal": 0,
+      "target_stable_id": 2,
+      "source_xy": [
+        3,
+        7
+      ]
+    },
+    {
+      "id": "pokecenter_right_exit",
+      "source_stable_id": 123,
+      "source_warp_ordinal": 1,
+      "target_stable_id": 2,
+      "source_xy": [
+        4,
+        7
+      ]
+    }
+  ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 104,
+    "registered_warp_route_rows": 107,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57

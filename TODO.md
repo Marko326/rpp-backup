@@ -1,9 +1,77 @@
+## REF-332 提交前死代码清理补充
+- [x] 原用户工作区与 DEV-339 最终版逐文件一致，仅正式 CLEAN 文档未在用户工作区。
+- [x] 移除不再执行的 Kanto 动画末尾 Johto 治疗记录回调及无调用者的旧 helper；审计改为保护 Gold 专用动画结束后记录，加入旧回调复活负向测试；工具 `if False` 死分支删除。
+- [ ] **因为移除旧 ASM 指令，应重新构建 Red/Blue/TEST 并核查 ROM0≥64B、ROMX 及必要的 Kanto／Johto 治疗路径**；静态检查并非新 ROM 验收。
+
+## CLEAN-5.62.332｜REF-332 用户验收后的正式清理（2026-11-03）
+
+- [x] 用户确认 **Pokémon → Fly 按 START 定位最后成功治疗地点**在实机正常；过去 `REF331.mp4` 的入口误判已由 `DEV-338` 修正，不能再误写成道具普通 Town Map 的 START 问题。
+- [x] 先前用户确认 `Cherrygrove City` Gold 风格室内、护士对话，且 REF-330 地毯/卡顿已正常；DEV-337 的室内分派提前返回不冒充有 profiler 证明的性能修复。其余未单独实测内容不扩大验收。
+- [x] DEV-339 更新48张活动地图、107 Warp 的工具合同和失败快照；Gold主审计1518/1518、2104 ASM预检、48图三表、全仓库五组727通过/49跳过/0失败（统一整批执行曾超时）。
+- [x] 按模式 A 准备清理三件套：已应用 DEV-339 → 清理版增量、工具审计隔离、干净 HEAD `300e0a4c...` → 清理版累计全量及两份中文日志；清理只改维护文档，游戏运行代码和版本保持 `REF-332`。
+- [ ] **用户本机完成两笔 Git Commit／必要时 Push**，并提供更新后的真实 HEAD；清理包本身不是已提交证明。
+- [ ] **存量验收缺口**：随包 Red REF-332 MAP ROM0余97B；Blue/TEST同版 MAP、完整设备回归及 Gold 治疗精灵球动画逐帧仍缺独立证据。Teleport、战败返程、其它 Johto Center、PC 存储与 Johto Nest 未开放，禁止将其写为本版完成。
+- [ ] **下一阶段**：在提交后逐个使用 Gold 5×4 与共享登记逻辑接其它 Pokémon Center；先做独立功能补丁与设备验收，不把下一座中心混入 REF-332 的清理提交。详情 `docs/CLEAN_REF332_ACCEPTANCE_AND_HANDOFF.md`。
+
+---
+
+## DEV-338 / REF-332 待实机验收
+
+- 视频 REF331.mp4 确认 Pokémon→Fly START 仍在按当前城镇选点（Route29 无动作、Mahogany Town 选 Mahogany）。源码已修改 Fly START 为按已记录的上次治疗地点（目前只支持 Cherrygrove City），保留活动+到访门禁及其他功能。
+- 请对照 `docs/DEV338_FLY_START_LAST_HEAL_VIDEO_FIX.md` 进行 Fly START 实机测试，勿以普通道具 Town Map 的 START 代替。确认治后、跨路、飞走后均定位 Cherrygrove；如果失败，读取 `$D795/$D796`，区分记录和菜单。
+- 前一版声称的室内“优化”只是分派提前返回，没有帧数测量；用户说 REF-330 已正常，不把它列为新故障。
+
+## DEV-335 / REF-329｜Gold 风格 Cherrygrove Pokémon Center 源码修复
+- [x] 从 REF-312 交接包 NPC-243 找回专用 Gold 5×4 室内视觉/碰撞/调色板并做无损 tile-ID 重新编号；共享布局支持未来其它 Johto 中心，不改 Kanto 图块。
+- [x] 将 Johto 上次治疗记录从原提前分支调整到 Yes 治疗动画完成出口；Town Map START 校验 magic+ID。No 不写；Kanto 恢复点隔离；仍不开放 Teleport/战败/PC存取。
+- [x] 增加 Gold 像素/碰撞/成功治疗路径综合审计、负向用例与 48图数据表检查。
+- [ ] REF-329 用户本机 Red/Blue/TEST ROM 与 MAP、ROM0≥64B、ROMX 新 Bank 放置验证；关东中心/Johto中心外观、护士动画、两出口实机测试。
+- [ ] 治疗前与 No 后 START 不改变；Yes 后前往 Route29/30 再 START 应回 Cherrygrove City；存档重进后保持。实机未通过不能继续推广别的中心。
+
+## DEV-334｜Cherrygrove City 首座共用 Pokémon Center（REF-328，开发候选）
+
+- [x] 活动地图48张（前47槽不动）、稳定ID123/槽47；`Cherrygrove City`原有`Guide Gent's House`不变；接入中心真实Gold门口和共用7×4 Pokémon Center室内模板、护士治疗、三条双向Warp（累计107条）。
+- [x] 按共享地图/门房的登记思路实现复用：新中心只添加地图ID/资源/入口/出口/恢复地点登记，不单独重写护士引擎。 Gold原版5×4室内源文件单独保留，当前视觉是Kanto共用模板，不冒充原版Gold像素版。
+- [x] Johto上次治疗中心保存到独立2字节带哨兵记录；不写Kanto`wLastBlackoutMap`。仅治愈后普通Town Map START回`Cherrygrove City`；否则回当前地标。Kanto START保持原语义。
+- [x] 新增`tools/johto_pokecenter_334_audit.py`和负向故障注入，连接统一迁移审计。详见`docs/DEV334_CHERRYGROVE_SHARED_POKECENTER.md`。
+- [ ] **用户本机Red/Blue/TEST构建＋MAP**：ROM0剩余≥64B，浮动ROMX放置与紧张Bank容量；**手机实测**中心门口UP进入、室内双出口、护士No/Yes、存读档与Johto/Kanto两个地区的Town Map START。已验收旧门房不要求全面重测。
+- [ ] 下一阶段：验证可用后改造恢复地点**数据表**并接入其他城市中心；随后才规划Teleport/战败安全回程、PC存储／二楼，不因一座中心可治愈而自动开启。
+- **边界**：版本`REF-328`，本轮不由AI编译/链接ROM、Commit/Push；开发ZIP只有两份互斥补丁，英语地名按游戏文本。
+
+## DEV-333｜Kanto Town Map能力移植到Johto（REF-327，开发候选）
+
+- [x] 对照Kanto普通地图、Fly、Nest三入口真实代码；共用Johto 45地标/47活动图/11 Fly门禁，不改变碰撞与剧情。详见 `docs/DEV333_KANTO_TO_JOHTO_TOWN_MAP_FUNCTION_PORT.md`。
+- [x] Johto普通地图START快速定位当前玩家Gold地标；SELECT继续回`New Bark Town`；Kanto START仍使用上次治疗地点。**Johto尚无治疗点历史数据，暂不能声称移植“上次治疗点”语义。**
+- [x] Johto Fly START仅在当前位置为活动且到访的Fly地点时定位，否则保留选择与轴；SELECT回第一个已解锁候选；LEFT/RIGHT仅在`Lake of Rage`真实解锁后进入特殊地点轴；上下返回城市轴仍验证到访与活动。保留A/B与飞行动画后的双门禁。
+- [x] Nest仍使用Kanto原有分布；城都缺乏wild encounter数据，不能把Kanto栖息地位置错误映到Johto。
+- [ ] 用户本机编译Red/Blue/TEST检查ROM0>=64B及ROMX空间（用户蓝版旧`$17`只剩29B）；并实机检查`Ecruteak City`、`Route 45`、`Lake of Rage`、`Blackthorn City`的START、SELECT、LEFT/RIGHT、UP/DOWN、A/B与Kanto回归。
+- [ ] 后续等真实Gold Pokécenter/LastHeal与Johto野生遭遇数据接入后，再做最近治疗点与Nest完整等价。交付测试阶段仍用两份互斥正向补丁，不编译ROM，不提交/Push Git。
+
+## DEV-332｜Town Map 三入口菜单专项审计（基于 REF-326，工具-only）
+
+- [x] 按用户澄清，今后测试指引与汇报中地点采用**游戏显示的英文名称**（如 `Ecruteak City`、`Olivine City`、`Blackthorn City`），不是要求修改游戏英文或引入汉字字体。
+- [x] 蓝版 REF-326 用户反馈“实机测过没问题”；用户提供 MAP 摘要 ROMX `$17` `39 B -> 29 B`（-10B），约1.01MB整体剩余。该摘要不是 Red/TEST 或 ROM0 最新容量证据；不得把已验收项目重复列作本轮必测。
+- [x] 为 Item Town Map、Fly、Pokédex Nest 三入口建立独立菜单流程合同，并接入统一迁移审计；检查45地标回卷、Kanto/Johto分派、共享WRAM跨Bank名称、A/B退出、Fly两重解锁和最终Warp校验，以及保留Kanto特殊地点轴。负向测试涵盖误入禁飞目的地和B键路径混淆。
+- [x] 设备检查指南采用游戏英语地名，见 `docs/DEV332_TOWN_MAP_MENU_TEST_MATRIX.md`。**本轮未改游戏ASM/ROM/地图/地名/输入规则，游戏版本仍 REF-326。**
+- [ ] **产品选择仍待决定**：是否将 Johto START 改为上次恢复地、Johto Fly LEFT/RIGHT 添加特殊地点轴、Nest 加入 Johto 分布。不能把“当前不同”直接算作 Bug 而擅自实现。
+- [ ] Red/Blue/TEST 的完整 MAP 容量与未覆盖菜单场景继续按实际构建与设备证据认定；静态工具通过不等于实机通过。开发交付只出两份互斥正向补丁；不编译ROM、不做Git Commit/Push。
+
+## DEV-331｜Town Map 名称复制运行时边界保护（REF-5.62.326，开发待验）
+
+- [x] 在 Bank `$35` 的 `LoadJohtoBrowseEntry` 中对 30B `wBuffer` 限定最多 29 字符并强制写入末尾 `@`；短名行为/坐标返回/保存页调用方的 BC/DE 无改变。47活动槽/45地标/11 Fly 候选及全部地图功能不改。
+- [x] 将 DEV-330 的静态名称容量审计升级为运行时截断路径合同；负向测试覆盖计数 29→30、没有终止写入、失去递减、反转结束条件、丢失 BC 栈恢复。保留原静态全表地标最长长度限制。
+- [ ] ROM Red/Blue/TEST 本机构建和新 MAP 空间、关都/城都设备抽查仍待用户验证；静态/补丁检查不是链接或实机测试。
+- [ ] Town Map START/SELECT、Fly 快捷定位/特殊轴、Nest 城都分布语义仍需先定产品操作规则，本次不改。
+- **交付边界**：从 DEV-330 已应用工作区的增量补丁，或从干净 REF-325 / HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4` 的累计全量补丁；二者互斥，只选其一。开发阶段不编译 ROM、不做 Git Commit/Push 或正式提交日志；版本 `REF-326`，测试版标签不变。
+
 ## CLEAN-5.62.325｜下一阶段任务：城都／关都 Town Map（城镇地图菜单）功能对比
 
 - [x] 用户设备确认 DEV-329 Route46 门毯左右换道和 Route29 向上入门已正常；本轮 CLEAN 不再修改地图运行代码。
 - [x] 重新运行 Gold 综合静态审计 1438/1438、47 张地图三表长度检查与核心 57 项 pytest，均通过。**全仓库本轮复跑因超时未全部结束**，不可把历史数字视为本轮通过。
-- [ ] **P0** 只调查游戏菜单中的 **Town Map（城镇地图）** 与关都原版功能差异：45 地标浏览、玩家与光标、地点名称及 Bank、START/SELECT、Fly 11 项与关都特殊目的地轴、图鉴栖息地地图。**不做47张野外地图通行/碰撞对比。** 详见 `docs/TODO_JOHTO_KANTO_MAP_FUNCTION_PARITY.md`。
-- [ ] 建立逐**菜单入口/操作**的功能差异矩阵，区分已对齐、设计不同、已确认缺口、证据不足；现阶段不做野外剧情、洞穴、训练家、野外碰撞修改。
+- [x] **DEV-330 静态调查**：完成道具 Town Map／城都45地标浏览、47槽地标归属、START/SELECT、城都Fly 11项与关都特殊轴、图鉴Nest底图、Bank／菜单退出的逐入口差异矩阵；Gold `landmarks.asm` 城都45项顺序与坐标逐项匹配。详见 `docs/JOHTO_KANTO_TOWN_MAP_PARITY_REPORT.md`。本次没有修改游戏执行指令或47张野外地图的碰撞。
+- [x] **DEV-330 工具 P0**：Route44 审计按现行 `jp` 分支恢复绿灯，新增东侧出口误封、南北误开放故障注入；同步修复历史 Surf 测试缺失 Route45 的快照并增加移动分派负向验证；补上 Town Map 30B `wBuffer` 名称终止和溢出防回归。静态工具通过不等于手机/ROM通过。
+- [ ] **P0 产品选择**：决定城都普通 Town Map 的 START 是上次恢复地还是若叶镇；Fly 是否支持类似关都的 START 最近恢复地和 LEFT/RIGHT 特殊目的地轴；Nest 是否需显示城都栖息地。未决定前不擅自修改现有操作，且不做野外剧情、洞穴、训练家或碰撞修改。
+- [ ] **P0 菜单设备抽查**：关都/城都道具地图初始标记、上下回卷、START/SELECT 与 B退出；圆朱/浅葱/烟墨重复打开、跨 Bank 长名；城都 Fly 已访问城市的 A/B 与图鉴 Nest 返回。详见上面的报告。
 - [ ] 用户本机保留最新 Red/Blue/TEST 构建 MAP 证据，ROM0 剩余至少64B；未取得新 MAP 前不声明链接容量已通过。
 
 ## DEV-329｜29/46号道路门房双入口与门毯换道修复（REF-325，47 张活动地图）

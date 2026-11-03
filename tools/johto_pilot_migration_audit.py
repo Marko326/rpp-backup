@@ -106,6 +106,11 @@ try:
     from johto_south_chain_328_audit import audit as audit_current_south_chain
 except ImportError:
     from tools.johto_south_chain_328_audit import audit as audit_current_south_chain
+try:
+    from johto_town_map_menu_audit_332 import audit as audit_town_map_menu_332
+except ImportError:
+    from tools.johto_town_map_menu_audit_332 import audit as audit_town_map_menu_332
+
 from typing import Iterable
 try:
     from johto_lake_of_rage_321_audit import audit as audit_current_lake
@@ -125,7 +130,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -202,6 +207,7 @@ MAP_LAYOUTS = {
     "Route45": (10, 45),
     "Route46": (10, 18),
     "Route29Route46Gate": (5, 4),
+    "CherrygrovePokecenter1F": (5, 4),
 }
 GOLD_SOURCE_MAPS = {
     "Route37": "Route37",
@@ -248,6 +254,7 @@ GOLD_SOURCE_MAPS = {
     "Route45": "Route45",
     "Route46": "Route46",
     "Route29Route46Gate": "Route29Route46Gate",
+    "CherrygrovePokecenter1F": "CherrygrovePokecenter1F",
 }
 
 
@@ -672,6 +679,53 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     for item in script_bank_report['checks']:
         _check(errors, checks, 'johto_active_script_bank_' + item['check'],
                item['status'] == 'PASS', item.get('detail', ''))
+    # DEV-334: no new center/old-save/Heal+Warp hazard can bypass the
+    # everyday migration gate. This is required even without Gold root.
+    try:
+        from johto_pokecenter_334_audit import audit as audit_center_334
+    except ImportError:
+        from tools.johto_pokecenter_334_audit import audit as audit_center_334
+    # DEV-335: additional pixel/collision equivalence and success-only heal proof.
+    try:
+        from johto_pokecenter_335_audit import audit as audit_center_335
+    except ImportError:
+        from tools.johto_pokecenter_335_audit import audit as audit_center_335
+    center335 = audit_center_335(project)
+    for item in center335['checks']:
+        _check(errors, checks, 'johto_center335_' + item['check'], item['status'] == 'PASS',
+               'NPC-243 Gold pixels, equivalent collision and nurse success-only writer')
+    if center335['errors'] and not center335['checks']:
+        _check(errors, checks, 'johto_center335_load', False, '; '.join(center335['errors']))
+    center334 = audit_center_334(project)
+    for item in center334['checks']:
+        _check(errors, checks, 'johto_center334_' + item['check'],
+               item['status'] == 'PASS', 'shared center and Kanto heal isolation')
+    if center334['errors'] and not center334['checks']:
+        _check(errors, checks, 'johto_center334_load', False, '; '.join(center334['errors']))
+    # DEV-336: run the real counter-talking, finite-room, and carpet Warp
+    # source gate on every migration audit, even without Gold reference.
+    try:
+        from johto_pokecenter_336_audit import audit as audit_center_336
+    except ImportError:
+        from tools.johto_pokecenter_336_audit import audit as audit_center_336
+    center336 = audit_center_336(project)
+    for item in center336['checks']:
+        _check(errors, checks, 'johto_center336_' + item['check'], item['status'] == 'PASS',
+               'Gold 5x4 nurse counter and DOWN-only dual carpet with ID37 pointer')
+    if center336['errors'] and not center336['checks']:
+        _check(errors, checks, 'johto_center336_load', False, '; '.join(center336['errors']))
+    # DEV-337: Gold healing machine asset/OAM, post-heal persistent stamp,
+    # and no-outdoor-work indoor fastpath; static-only, not a frame profiler.
+    try:
+        from johto_pokecenter_337_audit import audit as audit_center_337
+    except ImportError:
+        from tools.johto_pokecenter_337_audit import audit as audit_center_337
+    center337 = audit_center_337(project)
+    for item in center337['checks']:
+        _check(errors, checks, 'johto_center337_' + item['check'], item['status'] == 'PASS',
+               'Gold OAM/2-tile machine, successful center treatment stamp, indoor fastpath')
+    if center337['errors'] and not center337['checks']:
+        _check(errors, checks, 'johto_center337_load', False, '; '.join(center337['errors']))
     # REF-319: This is part of the active baseline, not an optional command
     # a developer might forget to run after editing movement branches.
     if (project / 'data/johto_lake_of_rage_321.asm').is_file():
@@ -894,8 +948,44 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                f"active={active_count}, town entries={len(displayed)}, browse indices={len(browse_indices)}, "
                f"profiles={len(profile_indices)}, landmarks={len(landmarks)}; "
                "each slot must have matching Gold landmark, coordinates, and name")
+        # Town Map's Johto loader must preserve the shared 30-byte wBuffer
+        # (wram.asm) even for a malformed pointer/string.  At most 29 visible
+        # characters may be copied before the guaranteed in-bounds '@'.
+        # Keep the separate static check on the actual landmark literals:
+        # truncating a shipping name would otherwise be a hidden regression.
+        browse_loader = _section(browse, "LoadJohtoBrowseEntry", "GetCurrentMapNameForSaveScreen")
+        invalid_names = [label for _, _, label in landmarks
+                         if label not in defined_names or
+                         not defined_names[label].endswith("@") or
+                         defined_names[label].count("@") != 1 or
+                         len(defined_names[label]) > 30]
+        # Strip comments, not instructions: assembly annotations may be inserted
+        # between instructions without changing the safety contract.
+        browse_loader_instructions = re.sub(r"(?m);[^\n]*$", "", browse_loader)
+        bounded_copy = re.search(
+            r'(?s)ld de, wBuffer\s+push bc\s+ld b, 29\s+'
+            r'\.copyName\s+ld a, \[hli\]\s+cp "@"\s+'
+            r'jr z, \.terminateName\s+ld \[de\], a\s+inc de\s+'
+            r'dec b\s+jr nz, \.copyName\s+'
+            r'\.terminateName\s+ld a, "@"\s+ld \[de\], a\s+'
+            r'pop bc\s+pop de\s+ret\b',
+            browse_loader_instructions,
+        )
+        name_copy_safe = not invalid_names and bool(bounded_copy)
+        _check(errors, checks, "johto_town_map_name_buffer_capacity", name_copy_safe,
+               f"wBuffer capacity=30 bytes including '@'; bad landmarks={invalid_names}; "
+               "LoadJohtoBrowseEntry must cap visible data at 29 bytes, "
+               "terminate inside wBuffer, and preserve BC/DE")
     except (ValueError, OSError) as exc:
         _check(errors, checks, "active_slot_town_map_tables", False, str(exc))
+
+    # DEV-332: constrain all three Town Map menu entry paths at their current
+    # verified-policy boundary (ordinary map, Fly, and Kanto-only Nest).  This
+    # does not select new START/LEFT/RIGHT/Nest behavior on the user's behalf.
+    menu_report = audit_town_map_menu_332(project)
+    for item in menu_report["checks"]:
+        _check(errors, checks, "town_map_menu_332_" + item["check"],
+               item["status"] == "PASS", item["detail"])
 
     # FIX-298: ordinary Johto Town Map opening must not dereference the HL name
     # pointer returned by the banked special-entry loader after Bankswitch has
@@ -960,7 +1050,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_MAHOGANY_TOWN_LOCAL_ID", "JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID",
                            "JOHTO_ROUTE_43_LOCAL_ID", "JOHTO_ROUTE_43_GATE_LOCAL_ID",
                            "JOHTO_LAKE_OF_RAGE_LOCAL_ID", "JOHTO_ROUTE_44_LOCAL_ID", "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
-                           "JOHTO_ROUTE_45_LOCAL_ID", "JOHTO_ROUTE_46_LOCAL_ID", "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID"]
+                           "JOHTO_ROUTE_45_LOCAL_ID", "JOHTO_ROUTE_46_LOCAL_ID", "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
+                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -1027,6 +1118,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[72] = 44
     expected_slots[73] = 45
     expected_slots[74] = 46
+    expected_slots[123] = 47
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1099,6 +1191,8 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     for name, (width, height) in MAP_LAYOUTS.items():
         variants = ("reference", "runtime") if name == "GuideGentsHouse" else ("gold", "runtime")
         for variant in variants:
+            # DEV-335: source Gold and compact runtime are both 5x4; runtime
+            # block IDs are reindexed against the dedicated NPC-243 tileset.
             path = project / f"maps/johto_pilot/{name}.{variant}.blk"
             expected_bytes = width * height
             actual_bytes = path.stat().st_size if path.is_file() else -1
@@ -1115,6 +1209,10 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ("MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID"),
             ("MAP_REGION_JOHTO", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_LOCAL_ID"),
             ("MAP_REGION_JOHTO", "JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID", "1", "MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_LOCAL_ID"),
+            # DEV-334: Gold Pokecenter exterior + two distinct shared-room exits.
+            ("MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_LOCAL_ID", "1", "MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID"),
+            ("MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_LOCAL_ID"),
+            ("MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "1", "MAP_REGION_JOHTO", "JOHTO_CHERRYGROVE_LOCAL_ID"),
             ("MAP_REGION_JOHTO", "JOHTO_ROUTE_31_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID"),
             ("MAP_REGION_JOHTO", "JOHTO_ROUTE_31_LOCAL_ID", "1", "MAP_REGION_JOHTO", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID"),
             ("MAP_REGION_JOHTO", "JOHTO_VIOLET_CITY_LOCAL_ID", "0", "MAP_REGION_JOHTO", "JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID"),
@@ -1363,24 +1461,28 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         cherry_guard = "\n".join(line.split(";", 1)[0].strip()
                                  for line in cherry_guard.splitlines()
                                  if line.split(";", 1)[0].strip())
-        cherry_ok = re.search(
-            r"ld e, 2\s*ld a, \[wCurRegion\]\s*cp MAP_REGION_JOHTO\s*jr nz, \.southMaps"
-            r"\s*ld a, \[wCurLocalMapID\]\s*cp JOHTO_CHERRYGROVE_LOCAL_ID\s*jr nz, \.southMaps"
-            r"\s*ld a, \[wPlayerDirection\]\s*cp PLAYER_DIR_UP\s*jr nz, \.southMaps"
-            r"\s*ld a, \[wXCoord\]\s*cp 25\s*jr nz, \.southMaps"
-            r"\s*ld a, \[wYCoord\]\s*cp 10\s*jr nz, \.southMaps"
-            r"\s*ld e, 0\s*ret", cherry_guard) is not None
+        cherry_ok = (all(t in cherry_guard for t in (
+            'cp JOHTO_CHERRYGROVE_LOCAL_ID', 'cp PLAYER_DIR_UP',
+            'cp 25', 'cp 10', 'cp 29', 'cp 4', '.cherryGuideApproach', 'ld e, 0'))
+            and cherry_guard.count('ld e, 0') >= 2)
         _check(errors, checks, "door_approach_collision_guard",
                gate_entry_ok and land_entry_ok and cherry_ok,
                "ROM0 must call registered gate and banked land decisions with E result; "
                "ROMX Cherrygrove exception only allows Johto/Y10/X25/UP")
         warp_loop = overworld.split("CheckWarpsNoCollisionLoop::", 1)[1].split("CheckWarpsCollision::", 1)[0]
+        door_code = runtime.split('JohtoPilotGateDoorWarpMatched::',1)[1].split('JohtoPilotGateCollisionExitAllowed::',1)[0]
+        center_branch = door_code.split('.cherrygroveGoldDoor',1)[-1]
         _check(errors, checks, "door_step_on_warp_guard",
                all(token in warp_loop for token in (
-                   "cp JOHTO_RUNTIME_MAP_HANDLE", "cp MAP_REGION_JOHTO",
-                   "cp JOHTO_CHERRYGROVE_LOCAL_ID", "cp PLAYER_DIR_UP",
-                   "cp 9", "cp 25", "jp WarpFound1", "callba IsPlayerStandingOnDoorTileOrWarpTile")),
-               "matched registered Cherrygrove door enters on one UP step; other warps use common path")
+                   'callab JohtoPilotGateDoorWarpMatched', 'cp 2',
+                   '.northGoldStepOnDoor', 'jp WarpFound1',
+                   'callba IsPlayerStandingOnDoorTileOrWarpTile')) and
+               all(token in door_code for token in (
+                   'cp JOHTO_CHERRYGROVE_LOCAL_ID', 'jp z, .cherrygroveGoldDoor',
+                   '.cherrygroveGoldDoor', 'cp PLAYER_DIR_UP',
+                   'cp 9', 'cp 25', 'cp 3', 'cp 29',
+                   '.allowCherry', 'ld e, 2')),
+               "registered, precise Cherrygrove doors route via E=2/ WarpFound1 on UP step")
         _check(errors, checks, "indoor_carpet_direction_guard",
                "cp JOHTO_HOUSE" in warp_loop and "jr z,CheckWarpsNoCollisionRetry2" in warp_loop and
                "CheckWarpsCollision::" in overworld,
@@ -1443,11 +1545,11 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         gate_tilepal = _read(project, "color/tilesets/johto_gate.asm")
         _check(errors, checks, "gate_palette_and_gold_colors",
                ("INCLUDE \"color/tilesets/johto_gate.asm\"" in palette_assign and
-                "(JOHTO_PARK_GATE + 1) * $60" in palette_assign and
+                "(JOHTO_POKECENTER + 1) * $60" in palette_assign and
                 "INCLUDE \"color/tilesets/johto_union_cave.asm\"" in palette_assign and
                 "JOHTO_GATE_GOLD_GREEN" in palette_sets and
                 "JOHTO_GATE_GOLD_BROWN" in palette_sets and
-                "(JOHTO_PARK_GATE + 1) * 8" in palette_sets and
+                "(JOHTO_POKECENTER + 1) * 8" in palette_sets and
                 "const JOHTO_GATE_GOLD_GREEN ; 28" in palette_consts and
                 "const JOHTO_GATE_GOLD_BROWN ; 29" in palette_consts and
                 "RGB 18,24,9" in palettes and "RGB 15,20,1" in palettes and

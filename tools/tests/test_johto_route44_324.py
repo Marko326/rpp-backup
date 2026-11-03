@@ -13,8 +13,8 @@ def test_current_route44_is_safe():
 
 
 @pytest.mark.parametrize('path,old,new,error',[
-    ('data/johto_east_runtime_300.asm','cp 8\n    jr c, .closed\n    cp 10\n    jr c, .open\n    cp 11\n    jr z, .closed',
-     'cp 7\n    jr c, .closed\n    cp 10\n    jr c, .open\n    cp 11\n    jr z, .closed',
+    ('data/johto_east_runtime_300.asm','cp 8\n    jp c, .closed\n    cp 10\n    jp c, .open\n    cp 11\n    jp z, .closed',
+     'cp 7\n    jp c, .closed\n    cp 10\n    jp c, .open\n    cp 11\n    jp z, .closed',
      'route44_seam_guard_excludes_y0_and_y10'),
     ('data/johto_east_runtime_300.asm','jp .route44SeamY','jp .closed','mahogany_east_uses_same_seam_guard'),
     ('data/johto_route44_runtime_324.asm','db WEST | EAST ; DEV-326 Gold physical seam; IcePath cave still sealed',
@@ -23,11 +23,23 @@ def test_current_route44_is_safe():
      'JOHTO_ROUTE_44_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID',
      'JOHTO_ROUTE_44_LOCAL_ID, EAST, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID',
      'route44_source_both_directions'),
+    ('data/johto_east_runtime_300.asm',
+     'cp JOHTO_ROUTE_44_WIDTH * 2 - 1\n    ret c\n    ; Gold Route44 eastern boundary is dry across all 18 rows.\n    jp .open',
+     'cp JOHTO_ROUTE_44_WIDTH * 2 - 1\n    ret c\n    ; Gold Route44 eastern boundary is dry across all 18 rows.\n    jp .closed',
+     'route44_north_south_closed_east_now_connected'),
+    ('data/johto_east_runtime_300.asm',
+     '.route44North\n    ld a, [wYCoord]\n    and a\n    jp z, .closed',
+     '.route44North\n    ld a, [wYCoord]\n    and a\n    jp z, .open',
+     'route44_north_south_closed_east_now_connected'),
+    ('data/johto_east_runtime_300.asm',
+     'cp JOHTO_ROUTE_44_HEIGHT * 2 - 1\n    jp nc, .closed',
+     'cp JOHTO_ROUTE_44_HEIGHT * 2 - 1\n    jp nc, .open',
+     'route44_north_south_closed_east_now_connected'),
     ('engine/johto_land_collision_gateway_272.asm',
      'cp JOHTO_ROUTE_44_LOCAL_ID\n    jr c, .afterEastSouth',
      'cp JOHTO_ROUTE_44_LOCAL_ID\n    jr c, .legacy',
      'route44_gold_role_dispatch'),
-],ids=['widen-seam','wrong-mahogany-return','open-unreviewed-east','drop-west-registry','skip-roles'])
+],ids=['widen-seam','wrong-mahogany-return','remove-east-preview','block-east-exit','open-north-exit','open-south-exit','drop-west-registry','skip-roles'])
 def test_source_mutation_detected(path,old,new,error):
     src=(ROOT/path).read_text()
     assert old in src

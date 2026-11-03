@@ -13,7 +13,8 @@ from johto_rpp_pipeline import current_rpp_active_map_contract,review_rpp_integr
 class ActiveMapReviewerTests(unittest.TestCase):
     def test_current_23_maps_have_real_descriptor_and_stable_slot(self):
         registered=current_rpp_active_map_contract(ROOT)
-        self.assertGreaterEqual(len(registered), 42)
+        self.assertEqual(len(registered), 48)
+        self.assertEqual(('CherrygrovePokecenter1F', 123), registered['JohtoSharedPokecenterRuntimeHeader'])
         self.assertEqual(('GoldenrodCity',15), registered['JohtoSouthGoldenrodCityRuntimeHeader'])
         self.assertEqual(('Route34',14), registered['JohtoSouthRoute34RuntimeHeader'])
         self.assertEqual(('Route36',16), registered['JohtoPilotRoute36RuntimeHeader'])
@@ -39,6 +40,29 @@ class ActiveMapReviewerTests(unittest.TestCase):
                 report=review_rpp_integration(ROOT,header,{'map':name})
                 self.assertEqual('STRUCTURAL_ERRORS',report['status'])
                 self.assertFalse(report['registered_active_map'])
+
+    def test_shared_center_slot_47_and_stable_id_123_are_fail_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel in ('data/johto_header_descriptors.asm', 'constants/region_map_constants.asm',
+                        'constants/johto_fixed_map_ids.asm', 'data/johto_stable_id_slots.asm'):
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(ROOT / rel, root / rel)
+            p = root / 'data/johto_header_descriptors.asm'
+            original = p.read_text()
+            self.assertIn('dw JohtoSharedPokecenterRuntimeHeader', original)
+            p.write_text(original.replace('dw JohtoSharedPokecenterRuntimeHeader',
+                                          'dw JohtoRoute29Route46GateRuntimeHeader', 1))
+            with self.assertRaisesRegex(ValueError, 'header descriptors differ'):
+                current_rpp_active_map_contract(root)
+            p.write_text(original)
+            slots = root / 'data/johto_stable_id_slots.asm'
+            original = slots.read_text()
+            row = next(line for line in original.splitlines() if '$70-$7f' in line)
+            self.assertIn(', 47,', row)
+            slots.write_text(original.replace(row, row.replace(', 47,', ', 46,', 1)))
+            with self.assertRaisesRegex(ValueError, 'stable-ID slot mismatch'):
+                current_rpp_active_map_contract(root)
 
     def test_reviewer_must_reject_corrupt_descriptor_or_slot(self):
         with tempfile.TemporaryDirectory() as tmp:

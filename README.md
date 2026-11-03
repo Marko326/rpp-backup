@@ -1,3 +1,7 @@
+> **REF-332 递交前复核补充**：已确认用户 `REF-332(1).patch` 和 DEV-339 游戏/工具树完全一致；正式清理附加移除一个不可达的旧 Kanto→Johto 治疗写入回调及其冗余 helper，并同步修复对应审计与负向测试。游戏内版本仍 `REF-332`，但 ASM 字节变化需要重新链接检查 ROM/MAP。详见 `docs/CLEAN_REF332_ACCEPTANCE_AND_HANDOFF.md`。
+
+> **最新 CLEAN-5.62.332（2026-11-03，准备双提交）**：当前游戏内版本 `REF-332`，48张活动地图、107条Warp；`Cherrygrove City` Gold 5×4 Pokémon Center 与 Town Map/Fly 近期功能已纳入累计工作树，用户确认 Pokémon → Fly 的 START 最近治疗地点功能实机正常。DEV-339 统一了离线地图/Warp合同；完整 Gold 静态审计1518/1518通过，Python分组727通过49跳过0失败。此次清理仅更新维护文档，不更改ASM或游戏版本。**尚未在用户仓库 Commit／Push**，最新 Red MAP 的 ROM0余97B，Blue/TEST尚缺新报告；详情见 [REF-332 正式清理交接](docs/CLEAN_REF332_ACCEPTANCE_AND_HANDOFF.md)。以下为历史阶段记录。
+
 > **CLEAN-5.62.325｜DEV-329 实机验收后的清理阶段**：用户已确认 Route46/Route29 门房空气墙问题修复正常，现有47张地图与游戏内 `REF-325` 均保持不变；本轮不改游戏运行代码。最新独立复验记录见 [`docs/CLEAN_REF325_VALIDATION.md`](docs/CLEAN_REF325_VALIDATION.md)。下阶段重点是[城都与关都地图功能等价性专项 TODO](docs/TODO_JOHTO_KANTO_MAP_FUNCTION_PARITY.md)，不是剧情开发。以下为历史开发记录。
 
 > **当前 DEV-329 / REF-5.62.325：修复29/46号道路门房双入口与门毯横向换道，47 张活动地图不变。** Route46 两格外部门毯可左右换位但不误触发 Warp；Route29 `(27,2)` 朝上可进入 ID74 门房。完整核对 Route45/46 全部 Gold 跳崖方向。仍是测试阶段，不接冰洞内部或剧情。见 [DEV-329 门房阈值修复说明](docs/DEV329_ROUTE29_46_GATE_THRESHOLD_FIX.md)。DEV-328 保留为上一轮测试候选记录。

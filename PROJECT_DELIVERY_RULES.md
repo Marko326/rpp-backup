@@ -1,3 +1,60 @@
+## REF-332 提交前等价死代码清理
+
+- 用户原始 `REF-332(1).patch` 已验证与 DEV-339 完成源码逐字节一致，原 CLEAN 三件套的4处差异仅是最终文档。
+- 旧 Kanto `AnimateHealingMachine` 中 `callab JohtoRecordSuccessfulCenterHeal335` 现属冗余，正常 Johto 成功写入发生在 `AnimateHealingMachineRegional337` 的 `.johto` 尾部。移除旧调用及无调用者函数；同步调整 334/335/337审计与负向测试，不扩大运行特性。删除工具 `if False` 分支。ROM与实机需因 ASM 变动重新验证。
+
+## CLEAN-5.62.332｜Town Map / Fly / 首座 Gold Pokémon Center 收口（2026-11-03）
+
+- 用户确认 `Pokémon → Fly` 的 START 定位最近治疗地点**已实机通过**；此前用户报告室内地毯及卡顿在 REF-330 已正常。此清理不重复修改已验收 ASM，`REF-332` 不升版。
+- 当前已确认 Git 分支 `常规功能备份`，未提交工作树累计基线 HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4`；活动地图 **48**、Warp **107**，稳定中心 ID123/slot47。Gold 主审计1518/1518；Python 五组727通过49跳过0失败，统一整批 pytest 超时不算成功。
+- 正式收口为**模式 A**：①已应用 DEV-339 工作树→清理最终状态；②完整最终状态用于**反向隔离**第二笔工具/文档的补丁；③干净上述 HEAD→完整最终状态。①③互斥。两笔中文提交日志分别记录游戏功能与工具审计。用户自行 Commit/Push，本助手不在用户仓库提交或构建 ROM。
+- 随包 Red REF-332 MAP 显示 ROM0 **97B**，但 Blue/TEST 同版本 MAP 未核验，不能写成三版通过。更多验收边界与下一阶段见 `docs/CLEAN_REF332_ACCEPTANCE_AND_HANDOFF.md`；以下历史条款保留供溯源。
+
+## DEV-339｜REF-332 当前阶段工具登记修复
+
+- 新增的 `CherrygrovePokecenter1F` 是第48张活动地图，稳定 ID123、活动槽47；总 Warp 107。工具/测试应与实际源码一致且保留顺序与故障注入，不得退回47图/104 Warp。
+- 只修离线工具与测试，当前游戏版本保持 `REF-332`，既有 Fly/中心/门房运行时逻辑不改。Gold 参考静态审计1518/1518通过，五组Python回归727通过、49跳过、0失败；统一命令整批执行超时，独立分组证据见 `docs/DEV339_REF332_REGISTRY_REGRESSION.md`。
+- 开发期两份互斥正向补丁，分别基于用户 REF-332 工作区及 HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4`。ROM/实机仍需用户验收，AI不编译、不提交或Push。
+
+## DEV-338｜用户 REF331.mp4 证实 Fly START 入口错位（REF-332）
+
+- 视频使用的是 Pokémon→Fly 地图，不是普通道具 Town Map；旧 Fly START 根据 `wCurLocalMapID` 定位玩家当前城市，故在道路上无响应，飞去 Mahogany 则跳到 Mahogany。DEV-334～337 仅修改普通 Town Map START 与护士记录，没有移植 Kanto Fly START 的真实上次治疗语义。
+- 本轮只修城都 Fly 的 `.startShortcut`：有效保存治疗点 CherrygrovePokecenter1F ID123 → Fly 表 Cherrygrove City；仍需活动/已到访双门禁；无有效治疗点、不可飞地点或映射异常时保持光标与左右轴不变。保留 Kanto Fly、普通 Town Map、护士、地毯与室内卡顿基线。视频未证明普通 Town Map 存在同一错误。
+- 用户确认此前室内地毯和卡顿已在 REF-330 正常；DEV-337 三处室内早退只是无 profiler 证明的分派缩短，不得作为本轮已解决问题。
+- 测试阶段两份互斥正向补丁：①已用 DEV-337/REF-331 的源码 → REF-332 增量；②干净 HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4` → REF-332 累计。不能叠加。AI 不编译/链接 ROM、不 Commit/Push。Red/Blue/TEST 必须用户本机新 MAP 检查 ROM0≥64B 与 Fly ROMX Bank。
+
+## DEV-337｜Gold 治疗机器、START 恢复点及室内移动分流（REF-331）
+
+- 针对 REF-330 实机反馈的 Gold 机器精灵球错位：Gold 原版 `gfx/overworld/heal_machine.png`（8×16 / 两图块）和 Gold 的8个 OAM 坐标独立接入城都 `Cherrygrove City`（稳定 ID123）护士 Yes 路径；不修改 Bank $01 原 Kanto 三图块动画，新增入口放浮动 ROMX，ROM0 不加逻辑。
+- 为了避免治疗完成后记录写入悄然跳过，Johto 成功治疗动画完成、恢复 sprite 状态后直接写 `wJohtoLastHealLocalID=123` 和 `wJohtoLastHealMagic=$A6`；入口先严格检查 Johto $FC + ID123。旧版 Kanto 恢复点及 Fly 地图的真实解锁条件不变。对其他地图继续调用 Kanto 原治疗动画。
+- 室内每步卡顿为尚未动态确诊的性能问题。本轮以安全方式缩短 ID123 的户外门禁、角色碰撞及封闭边界分派路径，保留 10×8 墙界及 DOWN-only 双门毯。静态审计不能证明卡顿已经消失；若实机仍顿，下一步要做逐帧 profiler/VBlank 与区分步进路径，禁止继续猜测。
+- DEV-337 测试期只交单 ZIP 两份**互斥**补丁：①已应用 DEV-336/REF-330→REF-331 增量；②已验证干净 HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4`→REF-331 累计。严禁叠加；不编译、链接 ROM，也不 Git Commit/Push。Red/Blue/TEST MAP 的 ROM0≥64 B 和 ROMX bank 真正余量必须由用户新构建确认。
+
+## DEV-336｜Cherrygrove Center 设备故障修复（REF-330）
+
+- 用户确认 Gold 风格已显示，但护士隔柜台 A 无反应、室内移动卡顿、门毯可走出黑白地图并重启、左右换毯误触发出口。以实际运行链复核并处理：JOHTO_POKECENTER tileset 的 counter-tile 位置登记 $15；新增 WarpTileIDPointers 的 ID37 项且保持 $FF collision-only；正常出门只允许 (3/4,7) 朝 DOWN 撞边界，左右换毯不 Warp；封闭 10×8 玩家格的四边，禁止继续走到未知 tile array。
+- Gold + Kanto 护士 sprite 均 (3,1)，不要误改站位。Gold 已验证图块/地图布局原样保留。重用已稳定的 JohtoGate 的方向/碰撞/有限室内机制，不改关东。
+- 从室外进入 Gold 中心可能直接落在门毯上：复用 EnterMap 已有的 `UpdateSeafoamEntranceSource` ROMX 回调，仅 Johto Center 重新装备站立 Warp 位；不得消耗 ROM0 新入口，不破坏 Kanto Seafoam 记录。相应源码见 `docs/DEV336_CHERRYGROVE_GOLD_CENTER_DEVICE_FIX.md`。
+- 本次静态检查不可当成 ROM 与实机正常。未自行编译/链接 ROM，不 Commit/Push；版本 REF-330。开发期单 ZIP 两份互斥正向补丁：①用户 REF-329（已用 DEV-335）→ REF-330 增量；②原 HEAD 300e0a4c... → REF-330 累计；严禁叠加。ROM0≥64 B 与 Red/Blue/TEST 最新 MAP 仍须用户本机验收。
+
+## DEV-335｜Cherrygrove Pokémon Center Gold 外观与治疗后 START 修复（REF-329）
+
+- 基于用户重新上传并核对的 REF-328.zip 和 REF-312 Gold/NPC-243 参考，回应实机报告的两项问题。保留48张地图、107条 Warp、稳定 ID123/活动槽47；采用 NPC-243 Gold 5×4 专用 tileset，且所有像素/碰撞角色通过重映射与参考等价，未修改 Kanto 原版中心模板。
+- 护士 Yes 完成治疗机器动画后登记 Johto magic+stable ID；No 不登记；Kanto wLastBlackoutMap 与 Johto 记录隔离。Town Map START 用有效记录定位 Cherrygrove City，无记录返回当前地标；Teleport/战败依旧不开放。
+- 游戏内版本 REF-329。开发期交付单 ZIP 两份互斥正向补丁：①已应用 REF-328 当前源码→REF-329 增量；②经 `current_worktree.patch` 反向重建的原 HEAD `300e0a4c...` → REF-329 全量。二选一，不能叠加；正式清理待用户确认。AI 不编译 ROM、不 Commit/Push，实机与Red/Blue/TEST新MAP待验收，ROM0≥64B。
+
+## DEV-334｜首座 Pokémon Center 开发候选交付规则（REF-328）
+
+- 用户批准先在 `Cherrygrove City` 示范，沿用门房共享地图Header/Warp/入口验证思路，不给每个中心单独重写引擎。原有47张地图及104条Warp登记按顺序保留，新中心仅末尾加槽47与3条Warp；仅开放护士治疗和普通Town Map的最近治疗地点，不开放Teleport/战败/PC存取或新增其它城镇中心。
+- 测试阶段单ZIP两份互斥正向补丁：①已应用DEV-333/REF-327→DEV-334增量；②干净REF-325 HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4`→DEV-334累计。二选一，严禁叠加；不生成反向隔离与正式Git日志。
+- AI不编译/链接ROM，不执行Git Commit/Push。版本`REF-328`；最新ROM0≥64B、Red/Blue/TEST ROMX BANK实际余量和手机实机验证必须以用户新构建与反馈为准。仅源码审计通过不能宣称新中心已正常游戏。
+
+## DEV-333｜Town Map游戏功能开发阶段规则（REF-327）
+
+- 此轮从已应用DEV-332/REF-326出发，只移植已能用真实数据证明的Kanto Town Map快捷功能。Kanto现有操作、Johto Fly活动/到访双门禁、Nest Kanto-only（无Johto野生数据）为不可破坏边界。
+- 游戏内版本文字改为等长`REF-327`；源码级审计和负向用例随功能修改。测试阶段单ZIP两份互斥正向补丁：①DEV-332已应用→DEV-333增量；②干净HEAD `300e0a4c4afece275db40a09558b5810d7deb8f4`→DEV-333累计。不可叠加。
+- AI不编译/链接ROM，不做Git Commit/Push。实机验收只使用游戏实际的英文地名，不做汉化；用户提供的Blue REF-326 Bank `$17` 29B余量不能作为REF-327空间凭证，仍需Red/Blue/TEST的最新MAP且ROM0≥64B。
+
 ## CLEAN-5.62.325｜DEV-329 用户实机验收后的正式清理（2026-11-02）
 
 - **状态**：用户确认门房问题已修复，明确要求复审工作区并执行清理三件套。当前基线为分支 `常规功能备份` 原已提交 HEAD `a167b2ad2bc8b12d3cb777c7120c008f7fdf8a5b`，完整未提交工作区为 DEV-329 / `REF-5.62.325` / 47 活动地图。本轮只是文档和 TODO 收尾，不修改 ASM、地图、Warp、配色或游戏版本。

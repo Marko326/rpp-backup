@@ -269,6 +269,12 @@
       "id": "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
       "role": "neutral",
       "town_map_name": "Route 29"
+    },
+    {
+      "id": "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Cherrygrove City",
+      "town_map_name": "Cherrygrove City"
     }
   ]
 }

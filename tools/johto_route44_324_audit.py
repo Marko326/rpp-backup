@@ -41,15 +41,25 @@ def audit(root: Path, changes: dict[str, bytes | str] | None = None, gold_root: 
     match = re.search(r'(?ms)^\.route44SeamY\s*\n(.*?)(?=^\.route44East\s*$)', edge)
     seam = re.sub(r';[^\n]*', '', match.group(1)).strip() if match else ''
     ck('route44_seam_guard_excludes_y0_and_y10', bool(re.fullmatch(
-       r'cp 8\s+jr c, \.closed\s+cp 10\s+jr c, \.open\s+cp 11\s+jr z, \.closed\s+jr \.open', seam)))
+       r'cp 8\s+jp c, \.closed\s+cp 10\s+jp c, \.open\s+cp 11\s+jp z, \.closed\s+jp \.open', seam)))
     ck('mahogany_east_uses_same_seam_guard', bool(re.search(
        r'(?s)\.mahoganyEast\s+ld a, \[wXCoord\]\s+cp 19\s+ret c\s+ld a, \[wYCoord\]\s+jp \.route44SeamY',edge)))
     ck('route44_west_uses_same_seam_guard', bool(re.search(
        r'(?s)\.route44West\s+ld a, \[wXCoord\]\s+and a\s+ret nz\s+ld a, \[wYCoord\]\s+\.route44SeamY',edge)))
-    ck('route44_north_south_closed_east_now_connected', all(x in edge for x in (
-       'cp JOHTO_ROUTE_44_WIDTH * 2 - 1\n    ret c',
-       'cp JOHTO_ROUTE_44_HEIGHT * 2 - 1\n    jr nc, .closed',
-       '.route44North\n    ld a, [wYCoord]\n    and a\n    jr z, .closed')))
+    # DEV-328 activated the Blackthorn/Route44 east seam.  Check the exit
+    # decision as well as the coordinate threshold: matching only `ret c`
+    # would miss an accidental jump to .closed for every east-border step.
+    route44_exits = re.search(
+       r'(?ms)^\.route44\n(?P<south>.*?)^\.route44West\n.*?^\.route44SeamY\n'
+       r'.*?^\.route44East\n(?P<east>.*?)^\.route44North\n(?P<north>.*?)^\.blackthorn\n',
+       edge)
+    south = route44_exits.group('south') if route44_exits else ''
+    east_exit = route44_exits.group('east') if route44_exits else ''
+    north = route44_exits.group('north') if route44_exits else ''
+    ck('route44_north_south_closed_east_now_connected',
+       'cp JOHTO_ROUTE_44_HEIGHT * 2 - 1\n    jp nc, .closed' in south
+       and bool(re.search(r'cp JOHTO_ROUTE_44_WIDTH \* 2 - 1\s+ret c\s+(?:;[^\n]*\s+)*jp \.open\s*$', east_exit))
+       and 'ld a, [wYCoord]\n    and a\n    jp z, .closed' in north)
     ck('route44_gold_role_dispatch', 'cp JOHTO_ROUTE_44_LOCAL_ID\n    jr z, .route44' in east and
        'cp JOHTO_ROUTE_44_LOCAL_ID\n    jr c, .afterEastSouth' in txt('engine/johto_land_collision_gateway_272.asm'))
     header = txt('data/johto_route44_runtime_324.asm')

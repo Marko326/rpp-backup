@@ -20146,6 +20146,13 @@
       "source_asset": "maps/johto_pilot/Route29Route46Gate.gold.blk",
       "source_sha256": "84fea213ad2cd20926551a70174baabfb495e3f150d708b532beba11e84771a2",
       "water_yx": []
+    },
+    {
+      "map": "CherrygrovePokecenter1F",
+      "stable_id": 123,
+      "source_asset": "maps/johto_pilot/CherrygrovePokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
     }
   ]
 }

@@ -1,3 +1,44 @@
+## DEV-335｜Gold 室内复用要同时移植 tile 像素、BLOCK、collision 和 palette
+
+- 只换 `.blk` 或把 `POKECENTER` 直接复制到 Johto 会产生视觉/碰撞不一致。Gold/NPC-243 的实际行走 tile `$09/$2e` 与 RPP `Pokecenter_Coll` 不同；新 tileset 将三个 tile-ID pair 无损交换（图像、blockset、palette 统一改编号），只复用已有常驻碰撞表，**不占用 ROM0 额外字节**，新运行资产和治疗函数放 ROMX。
+- 护士 Yes 治疗点写入不能只查护士对话出现：DEV-334 在治疗动画前由 `SetLastBlackoutMapRegional` 条件登记，用户报告未生效。DEV-335 把 Johto 记录移动到 `AnimateHealingMachine` 完成出口，并避开可能暂时过时的地区标志；条件仍要求共享 `$FC` handle + Center stable ID123。Kanto 原保存字节和 Safari 行为不可动；No、无效 Johto ID、Teleport/战败都不能覆盖恢复记录。
+- 旧 DEV-334 审计不能永久强制 Kanto 7×4 模板，新合同应锁 Gold 5×4 与共享 CENTER tileset ID37，并在主审计内执行像素级及全图碰撞等价检查，负向测试故意改坏调用/资源应失败。无实机时不能说 START 修复已被手机验收。
+
+## DEV-334｜共享中心入口不等于复制全部 Kanto 传送功能
+
+- `Cherrygrove City` 的 Gold Center 位于 `(Y3,X29)`，原 `Guide Gent's House` 在 `(Y9,X25)`；两者门口必须各自经过精准朝UP碰撞和RegisteredWarp判定，前者返回STEP_ON `E=2`，不能误给Carpet `E=1`（会不入门）。室内双出口均返回城市中心门，不复用房屋的出口索引0。
+- 复用 `maps/Pokecenter.blk` (7×4) + 护士脚本是**RPP/Kanto共用模板**；Gold `CherrygrovePokecenter1F` 本身是5×4，Gold原始blk必须独立留存，不可把模板宣称为Gold原样。未来其它中心先核对Gold门坐标与真实出口，再登记，不能无差别复用入口坐标。
+- Kanto `wLastBlackoutMap` 不能写入Johto `$FC` 共享运行地图句柄；用存档区原空闲字节 magic/允许列表保证旧档退回当前地标，且只有当前地图真实是已开放中心且护士Yes治愈后才更新。Teleport/战败返回仍关闭，待安全恢复入口和存档兼容后再开；Johto START并不会传送玩家。
+- 严守蓝版旧MAP Bank`$17`只剩29B及ROM0下限64B，新源码的浮动ROMX Section并不能证明会链接成功；本机Red/Blue/TEST MAP才能验收。
+
+## DEV-333｜Town Map移植必须用真实地区状态，不能复制关东地图ID
+
+- Kanto `wLastBlackoutMap` 表示Kanto最近治疗点，不包含城都本地稳定ID。Johto当前没有可验证的Gold医疗恢复/Teleport登记；普通地图START只能快速回到玩家当前Gold地标，Fly START只能在当前位置确为已解锁Fly落点时定位，不能谎称已经移植最近治疗点。
+- Johto Fly候选十一项中，`Lake of Rage`目前是唯一可注册的非城镇地点。LEFT/RIGHT特殊轴只能经`.isUnlocked`双门禁进入；UP/DOWN返回城市轴亦必须跳过未开放地点。`wFlyLocationsAxis=2`是Johto特殊轴，非0仍必须加载Johto素材。不可把Kanto特殊洞穴ID、未开放Gold地标或45项浏览列表混成可飞地点。
+- Johto野生遭遇尚为`NoMons`；Nest没有可定位到城都的真实分布。保持Kanto-only Nest并锁定审计；未来接入野生资料后再增加新Nest入口。
+- Town Map代码Bank `$1C`旧MAP余量16B，Blue REF-326 Bank `$17`余量29B；任何新代码必须通过用户本机Red/Blue/TEST最新MAP确认ROM0≥64B与相关ROMX空间，不能按整个ROM剩余1.01MB推断可以链接。
+
+## DEV-332｜Town Map 三种菜单不能混用地标、到访与栖息地
+
+- **给用户说游戏里的英文地名**：测试定位用 `New Bark Town`、`Ecruteak City`、`Olivine City`、`Blackthorn City`、`Lake of Rage` 等游戏实际文本。中文只是背景解释，不能要求玩家根据汉译去找 ROM 里不存在的中文 UI；更不能误解成要求汉化。
+- 城都 Item Town Map 的 **45地标**可浏览、活动世界 **47地图槽**与 Fly 的 **11登记候选**是不同数据。Fly 每一步必须依次检查真实活动稳定 ID、到访位；最终动画结束时重验，避免未开放地图被空降进入。
+- Kanto START 最近恢复地、Kanto Fly LEFT/RIGHT 特殊轴与 Kanto-only Pokédex Nest 是既有独立行为。Johto START 回 New Bark、Fly START/SELECT 到首已开放地点、Nest 仍显示 Kanto 都有实际源码证据，暂不是批准的需求变更。
+- DEV-332 只增加15项只读源码审计及反向故障注入，未改游戏ASM/ROM；在 `tools/johto_pilot_migration_audit.py` 内挂载后应报告 `town_map_menu_332_*`，独立运行入口为 `python tools/johto_town_map_menu_audit_332.py --project .`。它不模拟 CPU、Bank 切换或玩家按键帧。
+- 用户蓝版 REF-326 MAP 摘要只证实用户所报 ROMX `$17` 空间余量从39B变成29B；**不是新的 ROM0 链接 MAP**。DEV-332 工具-only 不动代码容量。
+
+## DEV-331｜仅靠 Town Map 地标字面量审计挡不住运行时指针损坏
+
+- DEV-330 已守住 45 个 Gold 地标名称不超过 30B，但 `LoadJohtoBrowseEntry.copyName` 原来没有运行时长度上限；即使当前常量都有效，后续名称指针/内容被意外破坏也可能跨越共享 `wBuffer`。新实现每次最多复制 29 个字符，把 `@` 写在缓冲区最后合法位置以内；正常短名逐字节相同。
+- 注意旧函数通过 `push de` 保留坐标后，`BC` 用来索引 45 行表；新增计数器要用 `push bc`/`pop bc` 保持旧寄存器副作用，再 `pop de` 恢复坐标，否则 Save/Continue 可能有调用时序回归。审计负例不得只校验源码存在任意 `dec b`，还必须约束 `@` 预检查、递减、跳转、最后写入与栈恢复的顺序。
+- 本次仅修改 Bank `$35`（RGBDS 输出的十进制 Bank #53）内的运行时函数和等长 ROM0 版本字面量；REF-325 旧 MAP 不是 REF-326 的构建空间证据。产品未选定前，不把 START、Fly 横轴和 Nest 的现有行为当作缺陷直接改。
+
+## DEV-330｜Town Map 的跨 Bank 名称容量和阶段审计不可只验旧指令拼写
+
+- **阶段源指令变更不能靠放宽断言糊弄**：DEV-324 Route44 源码检查还要求 `jr`，而 DEV-328 真正运行分支已经是 `jp`。修复时应核对当前受影响 `.route44SeamY/.route44East/.route44North` 的**标签边界和出口动作**，并以东侧误封、北/南侧误开放负向故障注入验证，而不是删掉检查或让只出现任意一种指令就算通过。搜索局部标签必须按行首锚定；`jr z, .route44East` 的引用文本不能被误判为 `.route44East` 标签定义。
+- **历史 Surf 快照也要跟随已批准的扩图**：旧 `test_johto_live_surf_entry_audit_295.py` 把 role-backed WATER 地图名单锁定在 DEV-326 之前，遗漏 DEV-328 已开放且有 16 个 Gold WATER 格的 Route45。保持快照清单与最新活动图一致，同时专门注入 Route45 从 `.eastRoute42` 误回落到 `.legacy` 的故障，验证真实 Surf 分派仍被守住。
+- **WRAM30B 不等于有界拷贝**：`LoadJohtoBrowseEntry` 的 E 索引有界（45 项），但 `.copyName` 仍复制到 `@` 才停。当前地标名字最长 17 字节（含 `@`），主审计 `johto_town_map_name_buffer_capacity` 约束名称 30B 内、合法终止、复制目标 `wBuffer` 与循环终止条件。若将来改成动态字符串或跨 Bank 拼接，仅靠字面字符串检查不再足够，必须引入真正运行时长度上限和相应测试，且遵守共享 WRAM 的生命周期。
+- **Town Map 产品语义应先定后改**：城都 START 跳若叶镇、Fly 不使用关都左右特殊目的地轴、图鉴 Nest 仍用关都底图是当前真实源码差异；这三点**不能仅凭不同就认定为 Bug**。先记录产品目标与最小设备测试，再单独设计 ROMX 运行修复，避免挤占 ROM0（REF-325 随包红版 MAP 仅余 64B）。
+
 ## DEV-329｜纵向门房不能只验 Warp 表：入口阈值和双格门毯换道是独立行为
 
 - **Route46 外部门毯**：Gold `(7,33)/(8,33)` 两格均是 `WARP_CARPET_DOWN`。从上向下进入已有 DOWN 规则，不代表两格间可以左右换道。横向换道必须有成对 BeforeStep（当前格+方向）与 AfterStep（目标格+方向）记录；AfterStep 必须是 `E=3`，而 collision-only 出口只接受 `E=1`。把角色网格整体改为可走会错误放开周围墙格。

@@ -19,11 +19,17 @@ class SurfLive295(unittest.TestCase):
         result=audit(ROOT,GOLD)
         self.assertEqual(result['status'],'PASS_STATIC_ONLY',result)
         self.assertEqual({row['map'] for row in result['role_backed_pilot_water_maps']},
-                         {'EcruteakCity','Route35','OlivineCity','Route40','Route41','CianwoodCity','Route42','Route43','LakeOfRage','Route44','BlackthornCity'})
+                         {'EcruteakCity','Route35','OlivineCity','Route40','Route41','CianwoodCity','Route42','Route43','LakeOfRage','Route44','BlackthornCity','Route45'})
     def test_ecruteak_movement_missing(self):
         self.check_mutation(SURF,'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n    jp z, .southModern',
                             'cp JOHTO_ECRUTEAK_CITY_LOCAL_ID\n    jp z, .legacy',
                             'EcruteakCity: WATER role present')
+    def test_route45_movement_missing(self):
+        # DEV-330: Route45 was activated in DEV-328, including 16 Gold WATER
+        # cells. Do not just widen the old inventory without a live-path probe.
+        self.check_mutation(SURF,'cp JOHTO_ROUTE_45_LOCAL_ID\n    jp z, .eastRoute42',
+                            'cp JOHTO_ROUTE_45_LOCAL_ID\n    jp z, .legacy',
+                            'Route45: WATER role present')
     def test_route35_movement_missing(self):
         self.check_mutation(SURF,'cp JOHTO_ROUTE_35_LOCAL_ID\n    jp z, .southModern',
                             'cp JOHTO_ROUTE_35_LOCAL_ID\n    jp z, .legacy',
