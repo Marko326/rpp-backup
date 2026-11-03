@@ -357,14 +357,15 @@ JohtoPilotCherrygroveMartSignText:
     db "@"
 JohtoPilotCherrygroveCenterSignText:
     text "#MON CENTER"
-    para "Closed for now."
+    para "Now open!"
     done
     db "@"
 
 JohtoPilotCherrygroveRuntimeObjects::
     db $05 ; original Gold outdoor forest border
-    db 1 ; P6-001: first registered Gold Guide Gent door only
-    db 9, 25, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Guide Gent house -> stable ID 125
+    db 2 ; DEV-334: original Guide Gent door plus Pokecenter entrance
+    db 9, 25, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Guide Gent house -> ID 125
+    db 3, 29, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Pokecenter door -> ID 123
     db $04 ; original Gold signs (y, x, text index)
     db $08, $1e, $01 ; city
     db $09, $17, $02 ; guide's house

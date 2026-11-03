@@ -377,6 +377,25 @@ FlyTownMapPlayerOverrides:
 
 
 UpdateSeafoamEntranceSource::
+; DEV-336: EnterMap already calls this ROMX hook after map data and warp
+; objects are loaded. Re-arm Johto Gold Pokecenter's collision-only carpets
+; on arrival without adding a new call to the capacity-constrained ROM0.
+; The two registered carpet cells (3,7)/(4,7) require standing+DOWN,
+; and may never behave as generic STEP_ON warps.
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jr nz, .checkSeafoam
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    ret nz
+    ld hl, wd736
+    res 2, [hl]
+    callba IsPlayerStandingOnWarp
+    ret
+.checkSeafoam
 ; Remember which Route 20 side was used to enter Seafoam Islands 1F and unlock
 ; only that entrance's Fly destination. This keeps the two entrances independent:
 ; wWarpedFromWhichWarp is the zero-based index of the source Route 20 warp:
@@ -921,13 +940,15 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute46Name
     db 116, 136 ; slot46 Gate, Route29 landmark1
     dw JohtoPilotRoute29Name
+    db 116, 108 ; slot47 Cherrygrove Pokecenter shares Cherrygrove landmark
+    dw JohtoPilotCherrygroveName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
 ; Slot -> geographic Town Map browse index; do not assume a sparse indoor map
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
-    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36, 37, 39, 41, 43, 1
+    db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36, 37, 39, 41, 43, 1, 2
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 

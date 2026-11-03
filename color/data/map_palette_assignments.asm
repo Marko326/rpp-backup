@@ -50,5 +50,6 @@ INCLUDE "color/tilesets/johto_ilex_forest.asm" ; JOHTO_ILEX_FOREST
 INCLUDE "color/tilesets/johto_south_gold_gate.asm" ; JOHTO_SOUTH_GATE
 INCLUDE "color/tilesets/johto_park.asm" ; JOHTO_PARK
 INCLUDE "color/tilesets/johto_park_gate.asm" ; JOHTO_PARK_GATE
+INCLUDE "color/tilesets/johto_shared_pokecenter.asm" ; JOHTO_POKECENTER
 MapPaletteAssignmentsEnd::
-ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_PARK_GATE + 1) * $60
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_POKECENTER + 1) * $60

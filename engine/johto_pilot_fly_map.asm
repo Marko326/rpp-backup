@@ -63,28 +63,102 @@ LoadJohtoPilotFlyTownMap::
 	call DelayFrame
 	call JoypadLowSensitivity
 	ld a, [hJoy5]
-	and A_BUTTON | B_BUTTON | D_UP | D_DOWN
+	and A_BUTTON | B_BUTTON | D_LEFT | D_RIGHT | D_UP | D_DOWN
 	ld b, a
 	ld a, [hJoyPressed]
 	and START | SELECT
 	or b
+	ld b, a
 	jp z, .input
 	bit 0, b
-	jr nz, .accept
+	jp nz, .accept
 	ld a, SFX_TINK
 	call PlaySound
 	bit 1, b
 	jp nz, .cancel
+	bit 3, b
+	jp nz, .startShortcut
+	bit 2, b
+	jp nz, .selectShortcut
+	bit 4, b
+	jp nz, .specialAxis
+	bit 5, b
+	jp nz, .specialAxis
 	bit 6, b
-	jr nz, .next
-	bit 7, b
-	jr nz, .previous
-	; START/SELECT restore the first visited place.
+	jp nz, .next
+	jp .previous
+.selectShortcut
+	; SELECT returns to the first unlocked city, as on Kanto Fly.
+	ld a, 1
+	ld [wFlyLocationsAxis], a
 	xor a
 	ld [wWhichTownMapLocation], a
 	call .findForward
 	jp .render
+.startShortcut
+	; DEV-338: Kanto Fly START locates the last HEALED/Teleport destination,
+	; not the player's current town. Johto's recovered Center is ID123;
+	; its corresponding Fly city is Cherrygrove (entry index 1).
+	; A missing/corrupt record must not recenter to a road or current town.
+	ld a, [wJohtoLastHealMagic]
+	cp JOHTO_LAST_HEAL_MAGIC
+	jp nz, .render
+	ld a, [wJohtoLastHealLocalID]
+	cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+	jp nz, .render
+	; Do not treat a map landmark as a Fly destination unless that city
+	; is registered AND visited. Preserve the old cursor AND special axis
+	; if the saved heal city is not Fly-unlocked.
+	ld a, [wWhichTownMapLocation]
+	push af
+	ld a, [wFlyLocationsAxis]
+	push af
+	ld a, 1 ; Cherrygrove City row in JohtoPilotFlyDestinations
+	ld [wWhichTownMapLocation], a
+	call .entry
+	ld a, [hl]
+	cp JOHTO_CHERRYGROVE_LOCAL_ID
+	jr nz, .startRestore
+	call .isUnlocked
+	jr z, .startRestore
+	pop af ; discard previous axis
+	pop af ; discard previous cursor
+	ld a, 1 ; city axis
+	ld [wFlyLocationsAxis], a
+	jp .render
+.startRestore
+	pop af
+	ld [wFlyLocationsAxis], a
+	pop af
+	ld [wWhichTownMapLocation], a
+	jp .render
+.specialAxis
+	; Lake of Rage is the sole currently registered non-town Fly stop.
+	; LEFT/RIGHT enter its own axis only after active-slot + visit checks.
+	; Other unimplemented Johto caves are never exposed as Fly destinations.
+	ld a, [wWhichTownMapLocation]
+	push af
+	ld a, 9
+	ld [wWhichTownMapLocation], a
+	call .isUnlocked
+	jr nz, .specialUnlocked
+	pop af
+	ld [wWhichTownMapLocation], a
+	jp .render
+.specialUnlocked
+	pop af
+	ld a, 2 ; 1 = Johto cities, 2 = Johto special, both use Johto art
+	ld [wFlyLocationsAxis], a
+	jp .render
 .next
+	ld a, [wFlyLocationsAxis]
+	cp 2
+	jr nz, .nextCity
+	ld a, 1
+	ld [wFlyLocationsAxis], a
+	ld a, 10 ; UP from Lake of Rage -> Blackthorn City side
+	jr .nextStore
+.nextCity
 	ld a, [wWhichTownMapLocation]
 	inc a
 	cp JOHTO_FLY_TOWN_COUNT
@@ -95,6 +169,14 @@ LoadJohtoPilotFlyTownMap::
 	call .findForward
 	jp .render
 .previous
+	ld a, [wFlyLocationsAxis]
+	cp 2
+	jr nz, .previousCity
+	ld a, 1
+	ld [wFlyLocationsAxis], a
+	ld a, 7 ; DOWN from Lake of Rage -> Mahogany Town side
+	jr .previousStore
+.previousCity
 	ld a, [wWhichTownMapLocation]
 	dec a
 	cp $ff

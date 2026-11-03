@@ -3412,11 +3412,13 @@ wFossilMon:: ; d794
 ; mon that will result from the item
 	ds 1
 
-; unused, wKurtApricorn?
-	ds 1
-
-; unused, wKurtBall?
-	ds 1
+; DEV-334: saved Johto last-heal key (formerly unused Kurt slots).
+; A single magic byte + allowlisted stable ID prevents interpreting legacy
+; uninitialized saves as recovery destinations. Neither byte moves WRAM.
+wJohtoLastHealMagic:: ; d795
+    ds 1
+wJohtoLastHealLocalID:: ; d796
+    ds 1
 
 ; unused, originally wEnemyMonOrTrainerClass
 	ds 1

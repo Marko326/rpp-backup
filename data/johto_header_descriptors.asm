@@ -108,6 +108,9 @@ JohtoHeaderDescriptors::
     db BANK(JohtoRoute46RuntimeHeader)
     dw JohtoRoute29Route46GateRuntimeHeader
     db BANK(JohtoRoute29Route46GateRuntimeHeader)
+    ; DEV-334: shared reusable Pokemon Center interior, slot 47 / Gold ID 123.
+    dw JohtoSharedPokecenterRuntimeHeader
+    db BANK(JohtoSharedPokecenterRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

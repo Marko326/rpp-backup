@@ -102,9 +102,12 @@ JohtoVerticalGateBoundsProfiles314::
     db JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID, 10, 8
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, 10, 8
     db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 10, 8
+    ; DEV-336: the 5x4 center is physically 10x8 player cells, like the gates.
+    ; No step may cross y7 into the missing black/white map border.
+    db JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 10, 8
     db $ff
 JohtoVerticalGateBoundsProfilesEnd314::
-ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 10
+ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 13
 
 ; In: current map, player direction and standing coordinate before the step.
 ; Out: E=1 only for a configured vertical-gate threshold; otherwise E=0.

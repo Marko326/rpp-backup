@@ -261,6 +261,8 @@ UpdateMapNameSign::
 	jp z, .johtoCherrygrove
 	cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
 	jp z, .johtoCherrygrove
+	cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+	jp z, .johtoCherrygrove
 	cp JOHTO_ROUTE_30_LOCAL_ID
 	jp z, .johtoRoute30
 	cp JOHTO_ROUTE_31_LOCAL_ID

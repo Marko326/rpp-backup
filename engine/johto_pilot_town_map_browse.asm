@@ -24,12 +24,23 @@ LoadJohtoBrowseEntry::
 	ld h, [hl]
 	ld l, a
 	ld de, wBuffer
+	; wBuffer is 30 bytes.  Copy at most 29 visible characters and
+	; always write a final @ inside the buffer, even for corrupt source data.
+	; Keep the old BC return value for the direct Save/Continue caller.
+	push bc
+	ld b, 29
 .copyName
 	ld a, [hli]
+	cp "@"
+	jr z, .terminateName
 	ld [de], a
 	inc de
-	cp "@"
+	dec b
 	jr nz, .copyName
+.terminateName
+	ld a, "@"
+	ld [de], a
+	pop bc
 	pop de
 	ret
 

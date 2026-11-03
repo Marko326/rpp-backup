@@ -44,8 +44,10 @@ Tilesets:
 	tileset JohtoSouthGateBlocks, JohtoSouthGateGFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
 	tileset JohtoPark_Block, JohtoPark_GFX, JohtoPilot_Coll, $FF,$FF,$FF, $04, OUTDOOR ; FIX-288: Gold Park tall grass
 	tileset JohtoParkGate_Block, JohtoParkGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
+	; Gold 5x4 art: three tile-ID swaps make Pokecenter_Coll equivalent to Gold $09/$2e.
+	tileset JohtoSharedPokecenter_Block, JohtoSharedPokecenter_GFX, Pokecenter_Coll, $15,$FF,$FF, $FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_PARK_GATE + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_POKECENTER + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30

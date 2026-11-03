@@ -5,6 +5,11 @@
 ; Never mutate Kanto collision or the user's JP jump distances.
 JohtoOverworldSouthLandDecision::
     ld e, 2
+    ; DEV-337: Gold Center is an indoor Kanto-style collision tileset.
+    ; Skip the long outdoor Gold-role dispatch on every interior step.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    ret z
     ; Original Cherrygrove guide's-house approach exception.
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
@@ -17,9 +22,17 @@ JohtoOverworldSouthLandDecision::
     jr nz, .southMaps
     ld a, [wXCoord]
     cp 25
+    jr z, .cherryGuideApproach
+    cp 29
     jr nz, .southMaps
     ld a, [wYCoord]
-    cp 10
+    cp 4 ; approach Gold Pokecenter door at (Y3,X29)
+    jr nz, .southMaps
+    ld e, 0
+    ret
+.cherryGuideApproach
+    ld a, [wYCoord]
+    cp 10 ; original Gold Guide Gent door at (Y9,X25)
     jr nz, .southMaps
     ld e, 0
     ret

@@ -22,7 +22,7 @@ DisplayPokemonCenterDialogue_:
 	ld [wSpriteStateData1 + $12], a ; make the nurse turn to face the machine
 	call Delay3
 	predef HealParty
-	callba AnimateHealingMachine ; do the healing machine animation
+	callba AnimateHealingMachineRegional337 ; Johto Gold or unchanged Kanto machine
 	xor a
 	ld [wAudioFadeOutControl], a
 	ld a, [wAudioSavedROMBank]

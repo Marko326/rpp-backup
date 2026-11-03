@@ -167,7 +167,10 @@ DisplayTownMap:
 	ld a, [wFlyLocationsAxis]
 	and a
 	jr z, .kantoStartShortcut
-	xor a ; New Bark is the only registered Johto recovery destination in this pilot.
+	; DEV-334: use Johto's validated last-heal landmark when available;
+	; otherwise retain DEV-333's safe recenter-on-player fallback.
+	callab JohtoPilotGetLastHealLandmarkOrPlayer
+	ld a, e
 	ld [wWhichTownMapLocation], a
 	jp .townMapLoop
 .kantoStartShortcut

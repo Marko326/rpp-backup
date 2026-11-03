@@ -3388,6 +3388,22 @@ INCLUDE "data/johto_route32_runtime.asm"
 SECTION "Johto Gold First Indoor House", ROMX, BANK[$46]
 INCLUDE "data/johto_indoor_house.asm"
 
+; DEV-334: shared Kanto-style center interior and region-safe heal record.
+; Floating ROMX avoids adding any new ROM0 collision table or crowding Bank $41.
+SECTION "Johto Shared Pokemon Center 334", ROMX
+INCLUDE "engine/johto_shared_pokecenter.asm"
+
+; DEV-335: separate movable ROMX section for Gold art, does not touch ROM0.
+SECTION "Johto Gold Shared Pokemon Center Tileset 335", ROMX
+JohtoSharedPokecenter_GFX:: INCBIN "gfx/tilesets/johto_shared_pokecenter.2bpp"
+JohtoSharedPokecenter_Block:: INCBIN "gfx/blocksets/johto_shared_pokecenter.bst"
+
+; DEV-337: Gold-only healing animation, in floating ROMX. Kanto Bank $01
+; remains untouched (only 4 bytes of old MAP slack).
+SECTION "Johto Gold Healing Machine 337", ROMX
+INCLUDE "engine/johto_gold_healing_machine_337.asm"
+
+
 ; Preserve shared RPP hop animation and dispatch Gold-verified Johto ledge
 ; tile-pairs only for active stable map IDs (Route29/30/31/32 and Violet).
 SECTION "Johto Route31 Violet Gate", ROMX, BANK[$47]

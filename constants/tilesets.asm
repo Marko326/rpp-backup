@@ -37,3 +37,4 @@ const_value = 0
 	const JOHTO_SOUTH_GATE ; 34 ; independent Gold north/south and east/west Gate art
 	const JOHTO_PARK ; 35 ; independent Gold National Park art
 	const JOHTO_PARK_GATE ; 36 ; asymmetric Gold Park gate art
+	const JOHTO_POKECENTER ; 37 ; Gold 5x4 shared center art, NPC-243 conversion

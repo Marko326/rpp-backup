@@ -549,21 +549,6 @@ CheckWarpsNoCollisionLoop::
 	ld a,[wCurRegion]
 	cp MAP_REGION_JOHTO
 	jr nz,.ordinaryWarpTile
-	ld a,[wCurLocalMapID]
-	cp JOHTO_CHERRYGROVE_LOCAL_ID
-	jr nz,.ordinaryWarpTile
-	ld a,[wPlayerDirection]
-	cp PLAYER_DIR_UP
-	jr nz,.ordinaryWarpTile
-	ld a,[wYCoord]
-	cp 9
-	jr nz,.ordinaryWarpTile
-	ld a,[wXCoord]
-	cp 25
-	jr nz,.ordinaryWarpTile
-	pop bc
-	pop hl
-	jp WarpFound1
 .ordinaryWarpTile
 	callba IsPlayerStandingOnDoorTileOrWarpTile
 	pop bc

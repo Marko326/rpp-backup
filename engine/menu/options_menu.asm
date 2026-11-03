@@ -1350,6 +1350,7 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE36 ; slot44 Route45
     db MUSIC_GBP_GSC_ROUTE36 ; slot45 Route46
     db MUSIC_GBP_GSC_ROUTE29 ; slot46 Route29/46 Gate
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot47 interior center tune
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

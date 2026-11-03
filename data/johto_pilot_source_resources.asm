@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 47
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 48
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -64,6 +64,9 @@ JohtoRoute45GoldBlocks:: INCBIN "maps/johto_pilot/Route45.gold.blk"
 JohtoRoute46GoldBlocks:: INCBIN "maps/johto_pilot/Route46.gold.blk"
 JohtoRoute29Route46GateGoldBlocks:: INCBIN "maps/johto_pilot/Route29Route46Gate.gold.blk"
 ASSERT @ - JohtoRoute29Route46GateGoldBlocks == 5 * 4
+JohtoCherrygrovePokecenterGoldBlocks::
+    INCBIN "maps/johto_pilot/CherrygrovePokecenter1F.gold.blk"
+ASSERT @ - JohtoCherrygrovePokecenterGoldBlocks == 5 * 4
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -208,6 +211,10 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 5, 4
     dw JohtoRoute29Route46GateGoldBlocks
     db BANK(JohtoRoute29Route46GateGoldBlocks)
+    ; Gold 5x4 source layout; runtime uses the converted Johto 5x4 shared interior.
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoCherrygrovePokecenterGoldBlocks
+    db BANK(JohtoCherrygrovePokecenterGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 

@@ -71,8 +71,8 @@ AnimateHealingMachine:
 	pop hl
 	pop af
 	ld [hl], a
-	
-	
+	; Kanto animation only. Johto writes its own heal record in the Gold
+	; animation's successful completion path, never from here.
 	jp UpdateSprites
 
 PokeCenterFlashingMonitorAndHealBall:

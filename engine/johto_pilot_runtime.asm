@@ -120,6 +120,11 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+    ; DEV-334: Gold Cherrygrove Pokecenter door (Y3,X29) added as ordinal 1.
+    ; The shared Kanto interior has two bottom exits, both return to ordinal 1.
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID
     ; Route31 gate entrance at (Y6/7, X4), opens the gate's right-hand carpet.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
@@ -407,6 +412,8 @@ JohtoPilotMapProfiles::
     johto_map_profile 1, 41, MUSIC_ROUTES2, 0 ; slot44 Route45
     johto_map_profile 1, 43, MUSIC_ROUTES2, 0 ; slot45 Route46
     johto_map_profile 0, 1, MUSIC_ROUTES1, 0 ; slot46 Route29/46 Gate
+    ; DEV-334 shared Pokecenter template: indoor, parent Cherrygrove, heal music.
+    johto_map_profile 0, 2, MUSIC_POKECENTER, 0 ; slot 47 Gold CherrygrovePokecenter1F ID123
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -450,6 +457,20 @@ JohtoPilotGetTownMapLandmark::
     jp nc, SoftReset
     ld e, a
     ret
+
+JohtoPilotGetLastHealLandmarkOrPlayer::
+    ld a, [wJohtoLastHealMagic]
+    cp JOHTO_LAST_HEAL_MAGIC
+    jr nz, .current
+    ld a, [wJohtoLastHealLocalID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jr nz, .current
+    ; ID123 is a compile-time registered center; the magic+ID pair is
+    ; sufficient to reject legacy save garbage without a volatile slot lookup.
+    ld e, 2 ; Cherrygrove City in the Gold 45-landmark browse table
+    ret
+.current
+    jp JohtoPilotGetTownMapLandmark
 
 JohtoPilotLoadMapMusic::
     ld a, [wCurRegion]
@@ -610,6 +631,9 @@ JohtoPilotIsClosedOutdoorEdge::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    ; DEV-337: ID123 indoor edge must not scan the outdoor ID chain.
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jp z, .city
     cp JOHTO_ROUTE_30_LOCAL_ID
@@ -1238,6 +1262,10 @@ JohtoPilotGateDoorApproachAllowed::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ; ID123 has no interior STEP_ON door to scan in the outdoor router.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    ret z
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1436,6 +1464,11 @@ JohtoPilotGateDoorWarpMatched::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetStand
+    cp JOHTO_CHERRYGROVE_LOCAL_ID
+    jp z, .cherrygroveGoldDoor
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1445,6 +1478,34 @@ JohtoPilotGateDoorWarpMatched::
     cp JOHTO_ROUTE_38_LOCAL_ID
     jr z, .westPortalDispatch
     jr .westPortalContinue
+.centerCarpetStand
+    ; The warp coordinate has already matched the exact Gold carpet.
+    ; E=1 arms the standing flag but prevents STEP_ON and sideways warp.
+    ld e, 1
+    ret
+.cherrygroveGoldDoor
+    ; This hook runs only after a registered-warp coordinate matches.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    ret nz
+    ld a, [wYCoord]
+    cp 9
+    jr z, .guideDoor
+    cp 3
+    ret nz
+    ld a, [wXCoord]
+    cp 29
+    ret nz
+    jr .allowCherry
+.guideDoor
+    ld a, [wXCoord]
+    cp 25
+    ret nz
+.allowCherry
+    ; E=2 means enter immediately via WarpFound1 on this UP step.
+    ; E=1 would only arm an indoor carpet and *not* enter the Center.
+    ld e, 2
+    ret
 .verticalGateDispatch314
     callab JohtoVerticalGateAfterStep314
     ret
@@ -1624,6 +1685,9 @@ JohtoPilotGateDoorWarpMatched::
 ; E=1 only for the exact open pair and correct outward direction.
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
+    ld a, [wCurLocalMapID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetExit
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1637,6 +1701,9 @@ JohtoPilotGateExteriorCollisionAllowed::
     cp JOHTO_ROUTE_42_LOCAL_ID
     jr z, .eastPortalDispatch
     jr .westPortalContinue
+.centerCarpetExit
+    callab JohtoSharedCenterDownCollision336
+    ret
 .verticalGateDispatch314
     callab JohtoVerticalGateCollisionExit314
     ret
@@ -1784,6 +1851,8 @@ JohtoPilotGateCollisionExitAllowed::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetExit
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .bothPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -1807,6 +1876,9 @@ JohtoPilotGateCollisionExitAllowed::
     ret
 .eastPortalDispatch
     callab JohtoEastPortalCollisionExit
+    ret
+.centerCarpetExit
+    callab JohtoSharedCenterDownCollision336
     ret
 .westPortalContinue
     cp JOHTO_ROUTE_35_LOCAL_ID
