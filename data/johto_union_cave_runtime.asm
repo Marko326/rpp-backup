@@ -26,7 +26,7 @@ JohtoUnionCave1FScript::
     ret
 JohtoUnionCave1FTextPointers:
 JohtoUnionCave1FRuntimeObjects::
-    db $21 ; Gold compact cave border (impassable)
+    db $21 ; NPC-243 dedicated opaque impassable cave border; differs visually from Gold $09
     db 2 ; Gold north #4 / south #3, underground stairways still sealed
     db 3, 17, 2, JOHTO_REGISTERED_WARP_SELECTOR
     db 31, 17, 0, JOHTO_REGISTERED_WARP_SELECTOR ; south cave -> Route33 warp0

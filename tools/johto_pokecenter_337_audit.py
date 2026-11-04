@@ -101,8 +101,8 @@ def audit(root: Path) -> dict:
         ck('center_skips_outdoor_role_dispatch_and_uses_legacy_collision',
            re.search(r'ld e, 2\s+ld a, \[wCurLocalMapID\]\s+cp '+ROOM+r'\s+ret z',collision) is not None and
            collision.index('cp '+ROOM) < collision.index('.southMaps'))
-        ck('same_version_all_builds', 'Canonical project version REF-5.62.337' in version and
-           'db "REF-337@"' in version)
+        ck('same_version_all_builds', 'Canonical project version REF-5.62.338' in version and
+           'db "REF-338@"' in version)
     except (OSError, ValueError, IndexError, TypeError) as exc:
         errors.append('input_error: '+str(exc))
     return {'status': 'PASS_STATIC_ONLY' if not errors else 'FAIL', 'checks': checks,

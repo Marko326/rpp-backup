@@ -59,7 +59,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         runtime_blk = read('maps/johto_pilot/AzaleaPokecenter1F.runtime.blk', True)
         reference = read('maps/johto_pilot/CherrygrovePokecenter1F.gold.blk', True)
         check('append_only_slot_and_identity',
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 56' in count and
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 57' in count and
               'ASSERT JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID == 135' in room and
               bool(re.search(r'(?m)^\s*db\s+[^\n]*\b49\b[^\n]*; \$80-\$8f', read('data/johto_stable_id_slots.asm'))) and
               'dw JohtoAzaleaPokecenterRuntimeHeader' in headers and
@@ -74,7 +74,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         check('independent_header_and_two_gold_carpets',
               bool(re.search(r'JohtoAzaleaPokecenterRuntimeHeader::.*?db JOHTO_POKECENTER.*?dw JohtoSharedPokecenterRuntimeBlocks.*?dw JohtoSharedPokecenterTextPointers.*?dw JohtoSharedPokecenterMapScript.*?dw JohtoAzaleaPokecenterRuntimeObjects',room,re.S)) and
               bool(re.search(r'db 2\s+db 7, 3, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 7, 4, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 0\s+db 1\s+object SPRITE_NURSE, \$3, \$1, STAY, DOWN, \$1',obj)) and
-              room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 9)
+              room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 10)
         town_warps = town.split('JohtoSouthAzaleaTownRuntimeObjects::', 1)[1].split('JohtoSouthIlexForestAzaleaGateBlocks::', 1)[0]
         check('only_center_door_unlocked_existing_gate_ordinals',
               bool(re.search(r'db 3\s+db 10, 2, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 11, 2, 3, JOHTO_REGISTERED_WARP_SELECTOR\s+db 9, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR',town_warps)) and
@@ -88,7 +88,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
             'db MAP_REGION_JOHTO, '+CENTER+', 1, MAP_REGION_JOHTO, '+TOWN,
         ]
         check('registered_113_exact_bidirectional_center_routes',
-              len(rows) == 131 and all(rows.count(x)==1 for x in target) and
+              len(rows) == 134 and all(rows.count(x)==1 for x in target) and
               'db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID' in routes and
               'db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID' in routes)
         fence = geo.split('JohtoSouthMatureDoorFence::',1)[1].split('JohtoSouthAzaleaTownRoles::',1)[0]
@@ -111,9 +111,9 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
               '.south\n    ld e, D_DOWN\n    ret' in arrival)
         collision = room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         check('same_down_only_exit_and_finite_bounds',
-              bool(re.search(r'cp '+CENTER+r'\s+jr z, \.center\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+ret nz\s+\.center\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+ld a, \[wYCoord\]\s+cp 7\s+ret nz\s+ld a, \[wXCoord\]\s+cp 3\s+jr z, \.allow\s+cp 4\s+ret nz',collision)) and
+              bool(re.search(r'cp '+CENTER+r'\s+jr z, \.center\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID\s+ret nz\s+\.center\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+ld a, \[wYCoord\]\s+cp 7\s+ret nz\s+ld a, \[wXCoord\]\s+cp 3\s+jr z, \.allow\s+cp 4\s+ret nz',collision)) and
               'db '+CENTER+', 10, 8' in guard and
-              'ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 37' in guard and
+              'ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 40' in guard and
               'cp '+CENTER+'\n    jp z, .verticalGateClosedEdge314' in runtime)
         check('treatment_success_records_135_not_other_centers',
               bool(re.search(r'cp '+CENTER+r'\s+jr z, \.johto', nurse)) and

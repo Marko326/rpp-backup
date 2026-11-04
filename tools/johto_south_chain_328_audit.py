@@ -50,7 +50,7 @@ def audit(root: Path, gold_root: Path|None=None, overrides: Mapping[str, str|byt
         edges=txt('data/johto_pilot_map_headers.asm')
         runtime=txt('engine/johto_pilot_runtime.asm')
         vgate=txt('data/johto_vertical_gate_runtime_314.asm')
-        test('south_47_retained_plus_3_centers', bool(re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 56$',constants)) and all(x in assets for x in ('JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID', 'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID', 'JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID')))
+        test('south_47_retained_plus_3_centers', bool(re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 57$',constants)) and all(x in assets for x in ('JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID', 'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID', 'JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID')))
         test('no_icepath_or_plot_activation', 'JOHTO_ICE_PATH_LOCAL_ID, JOHTO_PILOT_TILESET_ID' not in assets and
              'JohtoIcePathRuntimeHeader' not in headers and 'db 0 ; dialogue deferred, gate traversable' in gold_src)
         test('all_three_headers_registered',all('dw '+s in headers and 'db BANK('+s+')' in headers for s in

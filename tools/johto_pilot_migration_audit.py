@@ -130,7 +130,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123, 106, 135, 133, 146, 160, 30, 42, 77]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123, 106, 135, 133, 146, 160, 30, 42, 77, 85]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -216,6 +216,7 @@ MAP_LAYOUTS = {
     "OlivinePokecenter1F": (5, 4),
     "CianwoodPokecenter1F": (5, 4),
     "MahoganyPokecenter1F": (5, 4),
+    "BlackthornPokecenter1F": (5, 4),
 }
 GOLD_SOURCE_MAPS = {
     "Route32Pokecenter1F": "Route32Pokecenter1F",
@@ -226,6 +227,7 @@ GOLD_SOURCE_MAPS = {
     "OlivinePokecenter1F": "OlivinePokecenter1F",
     "CianwoodPokecenter1F": "CianwoodPokecenter1F",
     "MahoganyPokecenter1F": "MahoganyPokecenter1F",
+    "BlackthornPokecenter1F": "BlackthornPokecenter1F",
     "Route37": "Route37",
     "EcruteakCity": "EcruteakCity",
     "NewBarkTown": "NewBarkTown",
@@ -754,6 +756,18 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                item['status'] == 'PASS', 'Gold-source four-city center batch, no added Fly stops')
     if batch336['errors'] and not batch336['checks']:
         _check(errors, checks, 'johto_batch336_loaded', False, '; '.join(batch336['errors']))
+    # REF-338: verify Blackthorn City door and target warp ID 0 separately
+    # from source ordinal 0; cross-check real Gold exit carp, heal and Fly.
+    try:
+        from johto_blackthorn_center_338_audit import audit as audit_blackthorn_338
+    except ImportError:
+        from tools.johto_blackthorn_center_338_audit import audit as audit_blackthorn_338
+    thorn338 = audit_blackthorn_338(project, Path(gold_root) if gold_root else None)
+    for item in thorn338['checks']:
+        _check(errors, checks, 'johto_blackthorn338_' + item['check'],
+               item['status'] == 'PASS', 'REF-338 Blackthorn exact Gold center and Warp arrival contract')
+    if thorn338['errors'] and not thorn338['checks']:
+        _check(errors, checks, 'johto_blackthorn338_loaded', False, '; '.join(thorn338['errors']))
     # REF-333 Route32 roadside Pokecenter: fail closed on entry/exit, Gold
     # layout, successful heal ID and no standalone Fly stop.
     try:
@@ -1116,7 +1130,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_43_LOCAL_ID", "JOHTO_ROUTE_43_GATE_LOCAL_ID",
                            "JOHTO_LAKE_OF_RAGE_LOCAL_ID", "JOHTO_ROUTE_44_LOCAL_ID", "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
                            "JOHTO_ROUTE_45_LOCAL_ID", "JOHTO_ROUTE_46_LOCAL_ID", "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
-                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID", "JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID", "JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID", "JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID", "JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID", "JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID", "JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID", "JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID"]
+                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID", "JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID", "JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID", "JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID", "JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID", "JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID", "JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID", "JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID", "JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -1192,6 +1206,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[30] = 53
     expected_slots[42] = 54
     expected_slots[77] = 55
+    expected_slots[85] = 56
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1464,6 +1479,9 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ('JOHTO_MAHOGANY_TOWN_LOCAL_ID',1,'JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID'),
             ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',0,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
             ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',1,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_CITY_LOCAL_ID',0,'JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID',0,'JOHTO_BLACKTHORN_CITY_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID',1,'JOHTO_BLACKTHORN_CITY_LOCAL_ID'),
         ):
             expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,

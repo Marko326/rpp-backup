@@ -33,7 +33,7 @@ def audit(root, gold_root=None, overrides=None):
       'dw wOverworldMap + (3 + 9) * (JOHTO_BLACKTHORN_CITY_WIDTH + 6)',
       'ASSERT JohtoBlackthornHeaderEnd - JohtoBlackthornRuntimeHeader == 34',
       'ASSERT BANK(JohtoBlackthornRuntimeHeader) == BANK(JohtoRoute44Blocks)')))
-    ck('events_stay_unopened',re.search(r'JohtoBlackthornRuntimeObjects::\s*db \$71[^\n]*\s*db 0[^\n]*\s*db 0[^\n]*\s*db 0',hdr) is not None)
+    ck('only_gold_center_door_open',re.search(r'JohtoBlackthornRuntimeObjects::\s*db \$71[^\n]*\s*db 1[^\n]*\s*db 29, 21, 0, JOHTO_REGISTERED_WARP_SELECTOR[^\n]*\s*db 0[^\n]*\s*db 0',hdr) is not None)
     east=txt('data/johto_east_runtime_300.asm')
     ck('collision_and_sealed_south',all(x in east for x in (
      'cp JOHTO_BLACKTHORN_CITY_LOCAL_ID\n    jp z, .blackthorn',

@@ -30,12 +30,12 @@ class BatchCenters336(unittest.TestCase):
         broken=source.replace(line,'',1).replace(
             'JohtoPilotSourceRecords::',line+'JohtoPilotSourceRecords::',1)
         report=audit(ROOT,overrides={path:broken})
-        self.assertIn('all_nine_gold_center_size_asserts_immediately_follow_own_blob',report['errors'])
+        self.assertIn('all_ten_gold_center_size_asserts_immediately_follow_own_blob',report['errors'])
     def test_missing_cianwood_size_assert_rejected(self):
         self.reject('data/johto_pilot_source_resources.asm',
             'ASSERT @ - JohtoCianwoodPokecenterGoldBlocks == 5 * 4',
             'ASSERT @ - JohtoCianwoodPokecenterGoldBlocks == 5 * 5',
-            'all_nine_gold_center_size_asserts_immediately_follow_own_blob')
+            'all_ten_gold_center_size_asserts_immediately_follow_own_blob')
     def test_wrong_ecruteak_warp_target_rejected(self):
         self.reject('engine/johto_pilot_runtime.asm',
             'JOHTO_ECRUTEAK_CITY_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',
@@ -43,8 +43,8 @@ class BatchCenters336(unittest.TestCase):
             'Ecruteak_independent_bidirectional_gold_warps')
     def test_game_version_is_bumped_for_runtime_fix(self):
         version=(ROOT/'data/game_version.asm').read_text()
-        self.assertIn('Canonical project version REF-5.62.337',version)
-        self.assertIn('db "REF-337@"',version)
+        self.assertIn('Canonical project version REF-5.62.338',version)
+        self.assertIn('db "REF-338@"',version)
         self.assertNotIn('db "REF-336@"',version)
     def test_ecruteak_entry_uses_left_carpet(self):
         path='data/johto_corridor_runtime_294.asm'
@@ -81,7 +81,7 @@ class BatchCenters336(unittest.TestCase):
     def test_growing_fly_list_rejected(self):
         self.reject('engine/johto_pilot_fly_map.asm',
             'DEF JOHTO_FLY_TOWN_COUNT EQU 11','DEF JOHTO_FLY_TOWN_COUNT EQU 12',
-            'frozen_52_maps_plus_four_and_no_extra_fly_stops')
+            'frozen_57_maps_and_no_extra_fly_stops')
     def test_nurse_removed_rejected(self):
         self.reject('engine/johto_shared_pokecenter.asm',
             'JohtoCianwoodPokecenterRuntimeObjects::','JohtoChangedPokecenterRuntimeObjects::',

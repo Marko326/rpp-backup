@@ -297,6 +297,7 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             ('JOHTO_OLIVINE_CITY_LOCAL_ID', 0, 'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID'),
             ('JOHTO_CIANWOOD_CITY_LOCAL_ID', 0, 'JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID'),
             ('JOHTO_MAHOGANY_TOWN_LOCAL_ID', 1, 'JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_CITY_LOCAL_ID', 0, 'JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID'),
         )
         for outside, ordinal, center in added_centers:
             expected_routes.extend((

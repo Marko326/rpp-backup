@@ -20209,6 +20209,13 @@
       "source_asset": "maps/johto_pilot/MahoganyPokecenter1F.gold.blk",
       "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
       "water_yx": []
+    },
+    {
+      "map": "BlackthornPokecenter1F",
+      "stable_id": 85,
+      "source_asset": "maps/johto_pilot/BlackthornPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
     }
   ]
 }

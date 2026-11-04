@@ -112,7 +112,9 @@ class Route32Stage245Tests(unittest.TestCase):
 
     def test_south_gate_warps_are_explicit_and_other_exits_stay_closed(self):
         objs = segment(self.r32, 'JohtoPilotRoute32RuntimeObjects::', '\n    db 0 ; NPCs')
-        self.assertIn('db 3 ; Gold ruins west gate pair + Union Cave entrance; center remains closed', objs)
+        self.assertIn('db 4 ; Gold ruins gate, Union Cave, and Route32 Center (append only)', objs)
+        self.assertIn('db 73, 11, 0, JOHTO_REGISTERED_WARP_SELECTOR', objs)
+        self.assertIn('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID', self.edge)
         self.assertIn('db 4 ; Gold signs', objs)
         runtime_routes = segment(self.edge, 'JohtoRegisteredWarpRoutes::', 'JohtoRegisteredWarpRoutesEnd::')
         self.assertEqual(2, runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID') + runtime_routes.count('JOHTO_ROUTE_32_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID'))

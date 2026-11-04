@@ -180,6 +180,7 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoOlivinePokecenterRuntimeHeader', 'OlivinePokecenter1F', 30),
     ('JohtoCianwoodPokecenterRuntimeHeader', 'CianwoodPokecenter1F', 42),
     ('JohtoMahoganyPokecenterRuntimeHeader', 'MahoganyPokecenter1F', 77),
+    ('JohtoBlackthornPokecenterRuntimeHeader', 'BlackthornPokecenter1F', 85),
 )
 
 

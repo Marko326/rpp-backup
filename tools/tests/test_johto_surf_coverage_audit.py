@@ -29,7 +29,8 @@ class CoverageTests(unittest.TestCase):
             (106, 'Route32Pokecenter1F'), (135, 'AzaleaPokecenter1F'),
             (133, 'VioletPokecenter1F'), (146, 'GoldenrodPokecenter1F'),
             (160, 'EcruteakPokecenter1F'), (30, 'OlivinePokecenter1F'),
-            (42, 'CianwoodPokecenter1F'), (77, 'MahoganyPokecenter1F')])
+            (42, 'CianwoodPokecenter1F'), (77, 'MahoganyPokecenter1F'),
+            (85, 'BlackthornPokecenter1F')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -44,8 +45,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 56', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 56',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 57', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 57',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -112,6 +113,7 @@ class CoverageTests(unittest.TestCase):
             'OlivinePokecenter1F': (0, 'NO_WATER'),
             'CianwoodPokecenter1F': (0, 'NO_WATER'),
             'MahoganyPokecenter1F': (0, 'NO_WATER'),
+            'BlackthornPokecenter1F': (0, 'NO_WATER'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')

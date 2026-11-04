@@ -51,8 +51,8 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         objects = room.split('JohtoRoute32PokecenterRuntimeObjects::', 1)[1].split('JohtoSharedCenterDownCollision336::', 1)[0]
         # Unique stable-ID/slot; original slot 47 must retain Cherrygrove.
         check('identity_and_append_only',
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 56' in get('constants/region_map_constants.asm') and
-              'ASSERT NUM_JOHTO_ACTIVE_MAPS == 56' in get('data/johto_pilot_runtime_assets.asm') and
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 57' in get('constants/region_map_constants.asm') and
+              'ASSERT NUM_JOHTO_ACTIVE_MAPS == 57' in get('data/johto_pilot_runtime_assets.asm') and
               bool(re.search(r'(?m)^\s*db[^\n]*\b48\s*,[^\n]*; \$60-\$6f', slots)) and
               'dw JohtoRoute32PokecenterRuntimeHeader' in headers and
               'db BANK(JohtoRoute32PokecenterRuntimeHeader)' in headers and
@@ -96,7 +96,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
               'cp 79\n    ret nz\n    jp .yesDoor' in runtime)
         check('all_centers_only_down_exit',
               bool(re.search(r'JohtoSharedCenterDownCollision336::.*?cp '+OLD+r'.*?cp '+NEW+r'.*?cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID.*?cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID.*?cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID.*?cp PLAYER_DIR_DOWN.*?cp 7.*?cp 3.*?cp 4', room, re.S)) and
-              room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 9)
+              room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 10)
         check('healing_stamps_actual_center_not_cherrygrove',
               bool(re.search(r'AnimateHealingMachineRegional337::.*?cp '+OLD+r'\s+jr z, \.johto\s+cp '+NEW+r'\s+jr z, \.johto',healer,re.S)) and
               'call WaitForSongToFinish' in healer and

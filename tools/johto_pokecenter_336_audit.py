@@ -44,7 +44,7 @@ def audit(root):
            'object SPRITE_NURSE, $3, $1, STAY, DOWN, $1' in room and
            'object SPRITE_NURSE, $3, $1, STAY, DOWN, $1' in npc and
            'TX_POKECENTER_NURSE' in room and
-           room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 9)
+           room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 10)
         ck('counter_registered_for_long_range_A',
            bool(re.search(r'tileset JohtoSharedPokecenter_Block, JohtoSharedPokecenter_GFX, Pokecenter_Coll, \$15,\$FF,\$FF, \$FF, INDOOR',tileset)) and
            'wTilesetTalkingOverTiles' in home and 'ld d,$20' in home and
@@ -72,7 +72,7 @@ def audit(root):
         c=room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         ck('exit_guard_has_exact_map_direction_and_two_carpet_cells',
            bool(re.search(r'ld e, 0\s+ld a, \[wCurLocalMapID\]\s+cp '+ROOM+
-             r'\s+jr z, \.center\s+cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+ret nz\s+\.center\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+'
+             r'\s+jr z, \.center\s+cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+jr z, \.center\s+cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID\s+ret nz\s+\.center\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+'
              r'ld a, \[wYCoord\]\s+cp 7\s+ret nz\s+ld a, \[wXCoord\]\s+'
              r'cp 3\s+jr z, \.allow\s+cp 4\s+ret nz\s+\.allow\s+ld e, 1\s+ret',c)))
         e=runtime.split('JohtoPilotGateExteriorCollisionAllowed::',1)[1].split('JohtoPilotGateCollisionExitAllowed::',1)[0]
@@ -91,10 +91,10 @@ def audit(root):
            rows == [('JOHTO_ROUTE_43_MAHOGANY_GATE_LOCAL_ID','10','8'),
                     ('JOHTO_ROUTE_43_GATE_LOCAL_ID','10','8'),
                     ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID','10','8'),
-                    (ROOM,'10','8'), ('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID','10','8'), ('JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID','10','8')] and
+                    (ROOM,'10','8'), ('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID','10','8'), ('JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID','10','8'),('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID','10','8')] and
            'JohtoVerticalGateClosedEdge314::' in gate and
            'ld e, 1' in gate.split('JohtoVerticalGateClosedEdge314::',1)[1] and
-           '== 37' in gate)
+           '== 40' in gate)
         edge=runtime.split('JohtoPilotIsClosedOutdoorEdge::',1)[1].split('JohtoPilotGetLastHealLandmarkOrPlayer::',1)[0] if 'JohtoPilotGetLastHealLandmarkOrPlayer::' in runtime.split('JohtoPilotIsClosedOutdoorEdge::',1)[1] else runtime.split('JohtoPilotIsClosedOutdoorEdge::',1)[1]
         ck('live_overworld_collision_calls_room_bounds',
            bool(re.search(r'cp '+ROOM+r'\s+jp z, \.verticalGateClosedEdge314',edge)) and
@@ -111,11 +111,11 @@ def audit(root):
            'callab UpdateSeafoamEntranceSource' in home and
            bool(re.search(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.checkSeafoam',arrival)) and
            bool(re.search(r'cp MAP_REGION_JOHTO\s+ret nz',arrival)) and
-           bool(re.search(r'cp '+ROOM+r'\s+jr z, \.centerArrival\s+cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+ret nz',arrival)) and
+           bool(re.search(r'cp '+ROOM+r'\s+jr z, \.centerArrival\s+cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID\s+ret nz',arrival)) and
            bool(re.search(r'\.centerArrival\s+ld hl, wd736\s+res 2, \[hl\]\s+callba IsPlayerStandingOnWarp\s+ret',arrival)) and
            'cp SEAFOAM_ISLANDS_1' in seafoam and 'cp ROUTE_20' in seafoam)
-        ck('same_rom_version_all_builds', 'db "REF-337@"' in version and
-           'Canonical project version REF-5.62.337' in version)
+        ck('same_rom_version_all_builds', 'db "REF-338@"' in version and
+           'Canonical project version REF-5.62.338' in version)
     except (IndexError,ValueError,OSError) as exc:
         errors.append('input_error: '+str(exc))
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks':checks,'errors':errors,'rom_built':False,'device_accepted':False}

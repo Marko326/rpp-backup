@@ -48,8 +48,8 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         heal=read('engine/johto_gold_healing_machine_337.asm')
         music=read('engine/menu/options_menu.asm')
         bound=read('data/johto_vertical_gate_runtime_314.asm')
-        ck('new_52_maps_and_119_warps', 'NUM_JOHTO_ACTIVE_MAPS EQU 56' in const and
-           len(re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',r.split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0])) ==131)
+        ck('new_52_maps_and_119_warps', 'NUM_JOHTO_ACTIVE_MAPS EQU 57' in const and
+           len(re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',r.split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0])) ==134)
         ck('independent_stable_ids_slots_and_headers', all(
             f'ASSERT JOHTO_{up}_POKECENTER_1F_LOCAL_ID == {sid}' in room and
             f'dw Johto{nm}PokecenterRuntimeHeader' in header and
@@ -62,7 +62,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
             read(f'maps/johto_pilot/{nm}Pokecenter1F.runtime.blk',True)==read('maps/johto_pilot/CherrygrovePokecenter1F.runtime.blk',True) and
             f'Johto{nm}PokecenterGoldBlocks:: INCBIN "maps/johto_pilot/{nm}Pokecenter1F.gold.blk"' in src
             for nm,*_ in CENTERS))
-        ck('two_independent_nurse_objects',room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1')==9 and
+        ck('two_independent_nurse_objects',room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1')==10 and
            all(bool(re.search(r'Johto'+nm+r'PokecenterRuntimeObjects::\s+db \$0f\s+db 2\s+db 7, 3, '+str(ord)+r', JOHTO_REGISTERED_WARP_SELECTOR\s+db 7, 4, '+str(ord)+r', JOHTO_REGISTERED_WARP_SELECTOR\s+db 0.*?\s+db 1\s+object SPRITE_NURSE',room,re.S)) for nm,_,_,_,_,_,_,_,ord,_,_ in CENTERS))
         routes=r.split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0]
         ck('six_exact_reciprocal_warps',all(all(routes.count(row)==1 for row in (

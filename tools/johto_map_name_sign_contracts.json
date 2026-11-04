@@ -323,6 +323,12 @@
       "role": "named",
       "name": "Mahogany Town",
       "town_map_name": "Mahogany Town"
+    },
+    {
+      "id": "JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Blackthorn City",
+      "town_map_name": "Blackthorn City"
     }
   ]
 }

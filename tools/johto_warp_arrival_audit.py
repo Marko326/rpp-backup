@@ -114,9 +114,9 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
            len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 13 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 131 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 134 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 13 gates and 131 activated Warp arcs incl. 27 center arcs')
+           'MUS contract records 3 house arcs, 13 gates and 134 activated Warp arcs incl. 30 center arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -485,6 +485,9 @@ def audit(project: Path, gold: Path) -> dict:
             ('JOHTO_MAHOGANY_TOWN_LOCAL_ID',1,'JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID'),
             ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',0,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
             ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',1,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_CITY_LOCAL_ID',0,'JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID',0,'JOHTO_BLACKTHORN_CITY_LOCAL_ID'),
+            ('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID',1,'JOHTO_BLACKTHORN_CITY_LOCAL_ID'),
         ))
     try:
         from collections import Counter

@@ -61,25 +61,25 @@ def audit(root: Path, gold_root: Path|None=None, overrides:dict|None=None)->dict
         after=rt.split('JohtoBatchCenterDoorAfterStep336::',1)[1]
         guard=room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         writer=heal.split('AnimateHealingMachineRegional337::',1)[1].split('.johto',1)[0]
-        ck('current_game_version_REF337_shared_by_all_builds',
-           'Canonical project version REF-5.62.337' in version and 'db "REF-337@"' in version)
-        ck('frozen_52_maps_plus_four_and_no_extra_fly_stops',
-           'NUM_JOHTO_ACTIVE_MAPS EQU 56' in constants and
+        ck('current_game_version_REF338_shared_by_all_builds',
+           'Canonical project version REF-5.62.338' in version and 'db "REF-338@"' in version)
+        ck('frozen_57_maps_and_no_extra_fly_stops',
+           'NUM_JOHTO_ACTIVE_MAPS EQU 57' in constants and
            'DEF JOHTO_FLY_TOWN_COUNT EQU 11' in fly and
            'call .isUnlocked\n    jr z, .startRestore' in fly and
            'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID' not in fly)
         rows=re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',routes)
-        ck('exact_131_registered_warps',len(rows)==131)
-        ck('identical_gold_5x4_template_and_9_nurses',
+        ck('exact_134_registered_warps',len(rows)==134)
+        ck('identical_gold_5x4_template_and_10_nurses',
            len(rootblk)==len(rootrun)==20 and
-           room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1')==9 and
-           room.count('db JOHTO_POKECENTER')==9)
+           room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1')==10 and
+           room.count('db JOHTO_POKECENTER')==10)
         # RGBASM's @ advances with every INCBIN. An ASSERT separated from
         # its resource accidentally measures *all* intervening center blobs.
         # This caught the REF-336 Goldenrod assertion that spanned five maps.
         center_names=('Cherrygrove','Route32','Azalea','Violet','Goldenrod',
-                      'Mahogany','Cianwood','Olivine','Ecruteak')
-        ck('all_nine_gold_center_size_asserts_immediately_follow_own_blob',
+                      'Mahogany','Cianwood','Olivine','Ecruteak','Blackthorn')
+        ck('all_ten_gold_center_size_asserts_immediately_follow_own_blob',
            all(len(read(f'maps/johto_pilot/{nm}Pokecenter1F.gold.blk',True))==20 and
                len(re.findall(
                    rf'(?m)^Johto{nm}PokecenterGoldBlocks::[ \t]*(?:\n[ \t]*)?'
@@ -90,7 +90,7 @@ def audit(root: Path, gold_root: Path|None=None, overrides:dict|None=None)->dict
            'cp PLAYER_DIR_DOWN' in guard and 'cp 7' in guard and
            'cp 3' in guard and 'cp 4' in guard and
            'ld e, 1' in guard and
-           'ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 37' in bounds)
+           'ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 40' in bounds)
         # The third byte in each outdoor map's runtime warp event is the
         # destination warp ID inside the target center. It is NOT the source
         # ordinal used by JohtoRegisteredWarpRoutes. Both centers must arrive
@@ -99,7 +99,7 @@ def audit(root: Path, gold_root: Path|None=None, overrides:dict|None=None)->dict
         ck('ecruteak_entry_targets_left_center_carpet_warp_zero',
            bool(re.search(r'JohtoEcruteakRuntimeObjects::\s+db \$05\s+db 5[^\n]*\n\s+db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR\s+db 26, 35, 0, JOHTO_REGISTERED_WARP_SELECTOR\s+db 27, 35, 1, JOHTO_REGISTERED_WARP_SELECTOR\s+db 27, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR',ecruteak_map)))
         ck('mahogany_entry_targets_left_center_carpet_warp_zero',
-           bool(re.search(r'JohtoMahoganyRuntimeObjects::\s+db \$05\s+db 2[^\n]*\n\s+db 1, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR[^\n]*\n\s+db 13, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR',mahogany_map)))
+           bool(re.search(r'JohtoMahoganyRuntimeObjects::\s+db \$71[^\n]*\n\s+db 2[^\n]*\n\s+db 1, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR[^\n]*\n\s+db 13, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR',mahogany_map)))
         ck('all_four_new_outdoor_door_paths_wired',
            'call JohtoBatchCenterDoorBeforeStep336' in rt and
            'call JohtoBatchCenterDoorAfterStep336' in rt and

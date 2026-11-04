@@ -19,7 +19,7 @@ def test_blackthorn_current_statically_reviewed():
     ('data/johto_blackthorn_runtime_326.asm', 'dw JohtoBlackthornSouthRoute45Preview',
      'dw JohtoBlackthornBlocks', 'south_preview_and_west_connection'),
     ('data/johto_blackthorn_runtime_326.asm', '    db 0 ; no people, scripted scenes or plot',
-     '    db 1 ; incorrectly enabled event', 'events_stay_unopened'),
+     '    db 1 ; incorrectly enabled event', 'only_gold_center_door_open'),
     ('data/johto_east_runtime_300.asm', 'cp JOHTO_BLACKTHORN_CITY_HEIGHT * 2 - 1\n    ret c',
      'cp JOHTO_BLACKTHORN_CITY_HEIGHT * 2 - 1\n    jp .closed', 'collision_and_sealed_south'),
     ('data/johto_pilot_source_resources.asm', 'JOHTO_BLACKTHORN_CITY_LOCAL_ID, WEST, MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID',

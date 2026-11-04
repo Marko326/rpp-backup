@@ -96,7 +96,7 @@ def audit(root):
            'JohtoSharedPokecenter_Block:: INCBIN "gfx/blocksets/johto_shared_pokecenter.bst"' in main)
         ck('gold_runtime_room_and_warps',all(t in room for t in ('DEF JOHTO_SHARED_POKECENTER_WIDTH EQU 5','db JOHTO_POKECENTER',
             'db 7, 3, 1, JOHTO_REGISTERED_WARP_SELECTOR','db 7, 4, 1, JOHTO_REGISTERED_WARP_SELECTOR','db $0f','TX_POKECENTER_NURSE')) and
-           room.count('db JOHTO_POKECENTER')==9)
+           room.count('db JOHTO_POKECENTER')==10)
         ck('sprite_palettes_heal_machine',bool(re.search(r'cp POKECENTER\s+jr z, \.gotPaletteList\s+cp JOHTO_POKECENTER\s+jr z, \.gotPaletteList',sprite)))
         entry=goldheal.split('AnimateHealingMachineRegional337::',1)[1].split('\n.johto\n',1)[0]
         writer=goldheal.split('\n.johto\n',1)[1].split('\n.copyOne\n',1)[0]
