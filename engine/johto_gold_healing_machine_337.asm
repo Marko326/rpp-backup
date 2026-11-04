@@ -25,6 +25,8 @@ AnimateHealingMachineRegional337::
     jr z, .johto
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jr z, .johto
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
 .kanto
     callba AnimateHealingMachine
     ret

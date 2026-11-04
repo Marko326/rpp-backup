@@ -102,20 +102,20 @@ ASSERT BANK(JohtoCianwoodRuntimeHeader) == BANK(JohtoCianwoodBlocks)
 
 ; Gold readable signs only. All event/NPC/indoor content remains deferred.
 JohtoRoute40RuntimeObjects::
-    db $05
+    db $35 ; Gold water border
     db 0
     db 1
     db 8, 16, 1
     db 0
 
 JohtoRoute41RuntimeObjects::
-    db $05
+    db $35 ; Gold water border
     db 0 ; four Whirl Islands cave entries remain intentionally closed
     db 0
     db 0
 
 JohtoCianwoodRuntimeObjects::
-    db $05
+    db $35 ; Gold coastal water border
     db 1 ; REF-336 center enabled alongside existing warps
     db 43, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Cianwood #3 Center
     db 5

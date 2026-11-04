@@ -115,7 +115,7 @@ JohtoRoute42RuntimeObjects::
     db 0
 
 JohtoMahoganyRuntimeObjects::
-    db $05
+    db $71 ; Gold rock border (not tree $05)
     db 2 ; REF-336 center enabled alongside existing warps
     db 1, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Mahogany Gold #5 -> Gate south #3
     db 13, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Mahogany #4 Center -> room carpet warp 0

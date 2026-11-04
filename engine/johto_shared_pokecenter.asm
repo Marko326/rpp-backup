@@ -129,6 +129,19 @@ ASSERT JohtoMahoganyPokecenterRuntimeHeaderEnd - JohtoMahoganyPokecenterRuntimeH
 ASSERT BANK(JohtoMahoganyPokecenterRuntimeHeader) == BANK(JohtoSharedPokecenterRuntimeBlocks)
 ASSERT JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID == 77
 
+JohtoBlackthornPokecenterRuntimeHeader::
+    db JOHTO_POKECENTER
+    db JOHTO_SHARED_POKECENTER_HEIGHT, JOHTO_SHARED_POKECENTER_WIDTH
+    dw JohtoSharedPokecenterRuntimeBlocks
+    dw JohtoSharedPokecenterTextPointers
+    dw JohtoSharedPokecenterMapScript
+    db 0
+    dw JohtoBlackthornPokecenterRuntimeObjects
+JohtoBlackthornPokecenterRuntimeHeaderEnd::
+ASSERT JohtoBlackthornPokecenterRuntimeHeaderEnd - JohtoBlackthornPokecenterRuntimeHeader == 12
+ASSERT BANK(JohtoBlackthornPokecenterRuntimeHeader) == BANK(JohtoSharedPokecenterRuntimeBlocks)
+ASSERT JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID == 85
+
 JohtoSharedPokecenterMapScript::
     call EnableAutoTextBoxDrawing
     ret
@@ -223,6 +236,15 @@ JohtoMahoganyPokecenterRuntimeObjects::
     db 1
     object SPRITE_NURSE, $3, $1, STAY, DOWN, $1
 
+JohtoBlackthornPokecenterRuntimeObjects::
+    db $0f
+    db 2
+    db 7, 3, 0, JOHTO_REGISTERED_WARP_SELECTOR
+    db 7, 4, 0, JOHTO_REGISTERED_WARP_SELECTOR
+    db 0 ; PC storage and upstairs still deferred
+    db 1
+    object SPRITE_NURSE, $3, $1, STAY, DOWN, $1
+
 ; Reusable center carpet predicate for the existing Johto warp pipeline.
 ; E=1 only when standing on an actual Gold exit carpet and pressing DOWN.
 ; Any LEFT/RIGHT movement on the paired carpets must not trigger a warp;
@@ -247,6 +269,8 @@ JohtoSharedCenterDownCollision336::
     cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
     jr z, .center
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jr z, .center
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     ret nz
 .center
     ld a, [wPlayerDirection]

@@ -160,7 +160,7 @@ JohtoRoute39RuntimeObjects::
     db 0
 
 JohtoOlivineRuntimeObjects::
-    db $05
+    db $35 ; Gold ocean border, not inland forest
     db 1 ; REF-336 center enabled alongside existing warps
     db 21, 13, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Olivine #1 Center
     db 6

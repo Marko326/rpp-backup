@@ -41,7 +41,8 @@ ASSERT BANK(JohtoBlackthornRuntimeHeader) == BANK(JohtoRoute44Blocks)
 ASSERT BANK(JohtoBlackthornRuntimeHeader) == BANK(JohtoBlackthornSouthRoute45Preview)
 JohtoBlackthornRuntimeObjects::
     db $71 ; Gold BlackthornCity map_attributes border: rock, not $05 trees
-    db 0 ; houses, IcePath cave and Dragon's Den are sealed (no Warps)
+    db 1 ; only the Gold Pokecenter at (21,29); other doors remain closed
+    db 29, 21, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold warp #5 -> left room carpet
     db 0 ; no signs
     db 0 ; no people, scripted scenes or plot
 JohtoBlackthornTextPointers:

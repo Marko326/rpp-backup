@@ -406,6 +406,8 @@ UpdateSeafoamEntranceSource::
     cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
     jr z, .centerArrival
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     ret nz
 .centerArrival
     ld hl, wd736
@@ -975,6 +977,8 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotCianwoodName
     db 60, 116 ; slot55 Mahogany Center
     dw JohtoPilotMahoganyName
+    db 60, 140 ; slot56 Blackthorn Center inherits Blackthorn City
+    dw JohtoPilotBlackthornName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -990,6 +994,7 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 26 ; slot53 Olivine Center
     db 31 ; slot54 Cianwood Center
     db 34 ; slot55 Mahogany Center
+    db 39 ; slot56 Blackthorn Center
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 

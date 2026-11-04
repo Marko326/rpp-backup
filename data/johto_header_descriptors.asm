@@ -128,6 +128,8 @@ JohtoHeaderDescriptors::
     db BANK(JohtoCianwoodPokecenterRuntimeHeader)
     dw JohtoMahoganyPokecenterRuntimeHeader
     db BANK(JohtoMahoganyPokecenterRuntimeHeader)
+    dw JohtoBlackthornPokecenterRuntimeHeader
+    db BANK(JohtoBlackthornPokecenterRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

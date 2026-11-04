@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 56
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 57
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -300,6 +300,10 @@ JohtoMahoganyPokecenterRuntimeDescriptor::
     db JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
     dw JohtoSharedPokecenterRuntimeBlocks
     db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoBlackthornPokecenterRuntimeDescriptor::
+    db JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -338,6 +342,8 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .cianwoodPokecenter
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .mahoganyPokecenter
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    jp z, .blackthornPokecenter
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     jp z, .violet
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
@@ -581,6 +587,9 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .mahoganyPokecenter
     ld hl, JohtoMahoganyPokecenterRuntimeDescriptor
+    jp .valid
+.blackthornPokecenter
+    ld hl, JohtoBlackthornPokecenterRuntimeDescriptor
     jp .valid
 .violet
     ld hl, JohtoPilotVioletRuntimeDescriptor

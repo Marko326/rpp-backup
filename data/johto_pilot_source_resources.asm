@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 56
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 57
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -84,6 +84,8 @@ JohtoOlivinePokecenterGoldBlocks:: INCBIN "maps/johto_pilot/OlivinePokecenter1F.
 ASSERT @ - JohtoOlivinePokecenterGoldBlocks == 5 * 4
 JohtoEcruteakPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/EcruteakPokecenter1F.gold.blk"
 ASSERT @ - JohtoEcruteakPokecenterGoldBlocks == 5 * 4
+JohtoBlackthornPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/BlackthornPokecenter1F.gold.blk"
+ASSERT @ - JohtoBlackthornPokecenterGoldBlocks == 5 * 4
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -266,6 +268,10 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 5, 4
     dw JohtoMahoganyPokecenterGoldBlocks
     db BANK(JohtoMahoganyPokecenterGoldBlocks)
+    ; REF-338: Gold Blackthorn Center is the same 5x4 source, unique stable ID85.
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoBlackthornPokecenterGoldBlocks
+    db BANK(JohtoBlackthornPokecenterGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 

@@ -1359,6 +1359,7 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot53 Olivine Center
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot54 Cianwood Center
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot55 Mahogany Center
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot56 Blackthorn Center
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

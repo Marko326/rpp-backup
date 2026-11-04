@@ -113,9 +113,10 @@ JohtoVerticalGateBoundsProfiles314::
     db JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID, 10, 8
     db JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID, 10, 8
     db JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 10, 8
+    db JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 10, 8
     db $ff
 JohtoVerticalGateBoundsProfilesEnd314::
-ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 37
+ASSERT JohtoVerticalGateBoundsProfilesEnd314 - JohtoVerticalGateBoundsProfiles314 == 40
 
 ; In: current map, player direction and standing coordinate before the step.
 ; Out: E=1 only for a configured vertical-gate threshold; otherwise E=0.

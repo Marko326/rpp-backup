@@ -333,6 +333,8 @@ UpdateMapNameSign::
     jp z, .johtoRoute44
 	cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
 	jp z, .johtoBlackthorn
+	cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+	jp z, .johtoBlackthorn
 	cp JOHTO_ROUTE_45_LOCAL_ID
 	jp z, .johtoRoute45
 	cp JOHTO_ROUTE_46_LOCAL_ID

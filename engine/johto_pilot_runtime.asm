@@ -280,6 +280,11 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    ; REF-338: Blackthorn Gold door #5 and both 1F carpet return routes.
+    ; Outdoor ordinal0 (only active building), room destination warp0 (left).
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -456,6 +461,7 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 26, MUSIC_POKECENTER, 0 ; slot53 Olivine Center ID30
     johto_map_profile 0, 31, MUSIC_POKECENTER, 0 ; slot54 Cianwood Center ID42
     johto_map_profile 0, 34, MUSIC_POKECENTER, 0 ; slot55 Mahogany Center ID77
+    johto_map_profile 0, 39, MUSIC_POKECENTER, 0 ; slot56 Blackthorn Center ID85
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -523,6 +529,8 @@ JohtoPilotGetLastHealLandmarkOrPlayer::
     jp z, .cianwoodHeal
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .mahoganyHeal
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    jp z, .blackthornHeal
     jr .current
 .cherrygroveHeal
     ; ID123/106/135 map to Cherrygrove/Route32/Azalea landmarks.
@@ -552,6 +560,9 @@ JohtoPilotGetLastHealLandmarkOrPlayer::
     ret
 .mahoganyHeal
     ld e, 34 ; Gold Mahogany browse landmark
+    ret
+.blackthornHeal
+    ld e, 39 ; Gold Blackthorn City browse landmark
     ret
 .current
     jp JohtoPilotGetTownMapLandmark
@@ -733,6 +744,8 @@ JohtoPilotIsClosedOutdoorEdge::
     cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
     jp z, .verticalGateClosedEdge314
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     jp z, .verticalGateClosedEdge314
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jp z, .city
@@ -1382,6 +1395,8 @@ JohtoPilotGateDoorApproachAllowed::
     ret z
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     ret z
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    ret z
     ; REF-336: allow only four Gold source-verified 1F doors.
     call JohtoBatchCenterDoorBeforeStep336
     ld a, e
@@ -1622,6 +1637,8 @@ JohtoPilotGateDoorWarpMatched::
     cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
     jp z, .centerCarpetStand
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     jp z, .centerCarpetStand
     call JohtoBatchCenterDoorAfterStep336
     ld a, e
@@ -1883,6 +1900,8 @@ JohtoPilotGateExteriorCollisionAllowed::
     jp z, .centerCarpetExit
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .centerCarpetExit
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -2064,6 +2083,8 @@ JohtoPilotGateCollisionExitAllowed::
     jp z, .centerCarpetExit
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .centerCarpetExit
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .bothPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -2222,6 +2243,8 @@ JohtoBatchCenterDoorBeforeStep336::
     jp z, .cianwood
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .mahogany
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .blackthorn
     ret
 .ecruteak
     ld a, [wXCoord]
@@ -2255,6 +2278,14 @@ JohtoBatchCenterDoorBeforeStep336::
     cp 14
     jr z, .allow
     ret
+.blackthorn
+    ld a, [wXCoord]
+    cp 21
+    ret nz
+    ld a, [wYCoord]
+    cp 30
+    jr z, .allow
+    ret
 .allow
     ld e, 1
     ret
@@ -2273,6 +2304,8 @@ JohtoBatchCenterDoorAfterStep336::
     jp z, .cianwood
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
     jp z, .mahogany
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    jp z, .blackthorn
     ret
 .ecruteak
     ld a, [wXCoord]
@@ -2304,6 +2337,14 @@ JohtoBatchCenterDoorAfterStep336::
     ret nz
     ld a, [wYCoord]
     cp 13
+    jr z, .allow
+    ret
+.blackthorn
+    ld a, [wXCoord]
+    cp 21
+    ret nz
+    ld a, [wYCoord]
+    cp 29
     jr z, .allow
     ret
 .allow

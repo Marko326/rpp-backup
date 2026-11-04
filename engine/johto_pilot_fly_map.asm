@@ -119,6 +119,8 @@ LoadJohtoPilotFlyTownMap::
     jp z, .startCianwood
     cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .startMahogany
+    cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
+    jp z, .startBlackthorn
     jp .render
 .startGoldenrod
     ld a, 4 ; existing Goldenrod row, never an added Fly destination
@@ -134,6 +136,9 @@ LoadJohtoPilotFlyTownMap::
     jp .startSelect
 .startMahogany
     ld a, 7 ; existing Mahogany Fly row, requires unlocked visit
+    jp .startSelect
+.startBlackthorn
+    ld a, 10 ; existing Blackthorn City Fly row, requires unlocked visit
     jp .startSelect
 
 .startViolet

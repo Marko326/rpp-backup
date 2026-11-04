@@ -362,7 +362,7 @@ JohtoPilotCherrygroveCenterSignText:
     db "@"
 
 JohtoPilotCherrygroveRuntimeObjects::
-    db $05 ; original Gold outdoor forest border
+    db $35 ; Gold Cherrygrove City uses ocean border, never forest ($05)
     db 2 ; DEV-334: original Guide Gent door plus Pokecenter entrance
     db 9, 25, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Guide Gent house -> ID 125
     db 3, 29, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Pokecenter door -> ID 123
