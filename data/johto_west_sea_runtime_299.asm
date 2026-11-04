@@ -116,7 +116,8 @@ JohtoRoute41RuntimeObjects::
 
 JohtoCianwoodRuntimeObjects::
     db $05
-    db 0 ; six Gold indoor Warps remain sealed
+    db 1 ; REF-336 center enabled alongside existing warps
+    db 43, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Cianwood #3 Center
     db 5
     db 34, 20, 1
     db 45, 7, 2

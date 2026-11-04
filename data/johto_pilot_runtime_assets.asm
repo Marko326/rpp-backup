@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 48
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 56
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -268,6 +268,38 @@ JohtoSharedPokecenterRuntimeDescriptor::
     db JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
     dw JohtoSharedPokecenterRuntimeBlocks
     db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoRoute32PokecenterRuntimeDescriptor::
+    db JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoAzaleaPokecenterRuntimeDescriptor::
+    db JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoVioletPokecenterRuntimeDescriptor::
+    db JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoGoldenrodPokecenterRuntimeDescriptor::
+    db JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoEcruteakPokecenterRuntimeDescriptor::
+    db JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoOlivinePokecenterRuntimeDescriptor::
+    db JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoCianwoodPokecenterRuntimeDescriptor::
+    db JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoMahoganyPokecenterRuntimeDescriptor::
+    db JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
+    dw JohtoSharedPokecenterRuntimeBlocks
+    db BANK(JohtoSharedPokecenterRuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -290,6 +322,22 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .guideHouse
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jp z, .sharedPokecenter
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jp z, .route32Pokecenter
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jp z, .azaleaPokecenter
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jp z, .violetPokecenter
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jp z, .goldenrodPokecenter
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .ecruteakPokecenter
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .olivinePokecenter
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .cianwoodPokecenter
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .mahoganyPokecenter
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     jp z, .violet
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
@@ -509,6 +557,30 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jr .valid
 .sharedPokecenter
     ld hl, JohtoSharedPokecenterRuntimeDescriptor
+    jp .valid
+.route32Pokecenter
+    ld hl, JohtoRoute32PokecenterRuntimeDescriptor
+    jp .valid
+.azaleaPokecenter
+    ld hl, JohtoAzaleaPokecenterRuntimeDescriptor
+    jp .valid
+.violetPokecenter
+    ld hl, JohtoVioletPokecenterRuntimeDescriptor
+    jp .valid
+.goldenrodPokecenter
+    ld hl, JohtoGoldenrodPokecenterRuntimeDescriptor
+    jp .valid
+.ecruteakPokecenter
+    ld hl, JohtoEcruteakPokecenterRuntimeDescriptor
+    jp .valid
+.olivinePokecenter
+    ld hl, JohtoOlivinePokecenterRuntimeDescriptor
+    jp .valid
+.cianwoodPokecenter
+    ld hl, JohtoCianwoodPokecenterRuntimeDescriptor
+    jp .valid
+.mahoganyPokecenter
+    ld hl, JohtoMahoganyPokecenterRuntimeDescriptor
     jp .valid
 .violet
     ld hl, JohtoPilotVioletRuntimeDescriptor

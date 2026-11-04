@@ -390,7 +390,24 @@ UpdateSeafoamEntranceSource::
     ret nz
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jr z, .centerArrival
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     ret nz
+.centerArrival
     ld hl, wd736
     res 2, [hl]
     callba IsPlayerStandingOnWarp
@@ -942,6 +959,22 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute29Name
     db 116, 108 ; slot47 Cherrygrove Pokecenter shares Cherrygrove landmark
     dw JohtoPilotCherrygroveName
+    db 108, 92 ; slot48 Route32 Pokecenter shares Route32 landmark, not a Fly stop
+    dw JohtoPilotRoute32Name
+    db 140, 76 ; slot49 Azalea Center, same Town Map point as Azalea Town
+    dw JohtoPilotSouthAzaleaName
+    db 76, 92 ; slot50 Violet Center
+    dw JohtoPilotVioletName
+    db 108, 60 ; slot51 Goldenrod Center
+    dw JohtoPilotSouthGoldenrodName
+    db 60, 76 ; slot52 Ecruteak Center
+    dw JohtoPilotEcruteakName
+    db 76, 44 ; slot53 Olivine Center
+    dw JohtoPilotOlivineName
+    db 116, 28 ; slot54 Cianwood Center
+    dw JohtoPilotCianwoodName
+    db 60, 116 ; slot55 Mahogany Center
+    dw JohtoPilotMahoganyName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -949,6 +982,14 @@ ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIV
 ; uses its active slot as the browse index. Keep this in sync with the slot table.
 JohtoPilotTownMapBrowseIndexBySlot:
     db 0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36, 37, 39, 41, 43, 1, 2
+    db 7 ; slot48 Route32 Center
+    db 11 ; slot49 Azalea Center inherits city browse index
+    db 5 ; slot50 Violet Center inherits city browse index
+    db 15 ; slot51 Goldenrod Center inherits city browse index
+    db 21 ; slot52 Ecruteak Center
+    db 26 ; slot53 Olivine Center
+    db 31 ; slot54 Cianwood Center
+    db 34 ; slot55 Mahogany Center
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 

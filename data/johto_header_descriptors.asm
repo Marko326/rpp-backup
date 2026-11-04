@@ -111,6 +111,23 @@ JohtoHeaderDescriptors::
     ; DEV-334: shared reusable Pokemon Center interior, slot 47 / Gold ID 123.
     dw JohtoSharedPokecenterRuntimeHeader
     db BANK(JohtoSharedPokecenterRuntimeHeader)
+    dw JohtoRoute32PokecenterRuntimeHeader
+    db BANK(JohtoRoute32PokecenterRuntimeHeader)
+    ; REF-334: Azalea Town Gold Center, slot49 / stable ID135 (append only).
+    dw JohtoAzaleaPokecenterRuntimeHeader
+    db BANK(JohtoAzaleaPokecenterRuntimeHeader)
+    dw JohtoVioletPokecenterRuntimeHeader
+    db BANK(JohtoVioletPokecenterRuntimeHeader)
+    dw JohtoGoldenrodPokecenterRuntimeHeader
+    db BANK(JohtoGoldenrodPokecenterRuntimeHeader)
+    dw JohtoEcruteakPokecenterRuntimeHeader
+    db BANK(JohtoEcruteakPokecenterRuntimeHeader)
+    dw JohtoOlivinePokecenterRuntimeHeader
+    db BANK(JohtoOlivinePokecenterRuntimeHeader)
+    dw JohtoCianwoodPokecenterRuntimeHeader
+    db BANK(JohtoCianwoodPokecenterRuntimeHeader)
+    dw JohtoMahoganyPokecenterRuntimeHeader
+    db BANK(JohtoMahoganyPokecenterRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

@@ -246,6 +246,40 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_29_LOCAL_ID
+    ; Route32 (11,73) UP enters center; both Gold DOWN carpets return here.
+    ; Route32 existing ordinal 0..2 must not change (ruins/Union Cave).
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
+    ; REF-334: Azalea Gold door (15,9), two separate 1F carpet returns.
+    ; Existing town ordinals 0/1 (Ilex Forest gate) are never shifted.
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+    ; REF-335: Gold VioletPokecenter exterior door and paired return carpets.
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_VIOLET_CITY_LOCAL_ID
+    ; REF-335: Gold GoldenrodPokecenter exterior door and paired return carpets.
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_GOLDENROD_CITY_LOCAL_ID
+    ; REF-336: Gold Ecruteak exterior door #6 and paired carpet exits.
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    ; REF-336: Gold Olivine exterior door #1 and paired carpet exits.
+    db MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_OLIVINE_CITY_LOCAL_ID
+    ; REF-336: Gold Cianwood exterior door #3 and paired carpet exits.
+    db MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CIANWOOD_CITY_LOCAL_ID
+    ; REF-336: Gold Mahogany exterior door #4 and paired carpet exits.
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -414,6 +448,14 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 1, MUSIC_ROUTES1, 0 ; slot46 Route29/46 Gate
     ; DEV-334 shared Pokecenter template: indoor, parent Cherrygrove, heal music.
     johto_map_profile 0, 2, MUSIC_POKECENTER, 0 ; slot 47 Gold CherrygrovePokecenter1F ID123
+    johto_map_profile 0, 7, MUSIC_POKECENTER, 0 ; slot48 Route32 Center ID106; no independent Fly
+    johto_map_profile 0, 11, MUSIC_POKECENTER, 0 ; slot49 Azalea Gold Center ID135
+    johto_map_profile 0, 5, MUSIC_POKECENTER, 0 ; slot50 Violet Gold Center ID133
+    johto_map_profile 0, 15, MUSIC_POKECENTER, 0 ; slot51 Goldenrod Gold Center ID146
+    johto_map_profile 0, 21, MUSIC_POKECENTER, 0 ; slot52 Ecruteak Center ID160
+    johto_map_profile 0, 26, MUSIC_POKECENTER, 0 ; slot53 Olivine Center ID30
+    johto_map_profile 0, 31, MUSIC_POKECENTER, 0 ; slot54 Cianwood Center ID42
+    johto_map_profile 0, 34, MUSIC_POKECENTER, 0 ; slot55 Mahogany Center ID77
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -464,10 +506,52 @@ JohtoPilotGetLastHealLandmarkOrPlayer::
     jr nz, .current
     ld a, [wJohtoLastHealLocalID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
-    jr nz, .current
-    ; ID123 is a compile-time registered center; the magic+ID pair is
-    ; sufficient to reject legacy save garbage without a volatile slot lookup.
-    ld e, 2 ; Cherrygrove City in the Gold 45-landmark browse table
+    jr z, .cherrygroveHeal
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jr z, .route32Heal
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jr z, .azaleaHeal
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jr z, .violetHeal
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jr z, .goldenrodHeal
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .ecruteakHeal
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .olivineHeal
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .cianwoodHeal
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .mahoganyHeal
+    jr .current
+.cherrygroveHeal
+    ; ID123/106/135 map to Cherrygrove/Route32/Azalea landmarks.
+    ; A missing or corrupt ID falls back to the player.
+    ld e, 2
+    ret
+.route32Heal
+    ld e, 7 ; Gold Route32 landmark index
+    ret
+.azaleaHeal
+    ld e, 11 ; Gold Azalea Town landmark index
+    ret
+.violetHeal
+    ld e, 5 ; Gold Violet City landmark index
+    ret
+.goldenrodHeal
+    ld e, 15 ; Gold Goldenrod City landmark index
+    ret
+.ecruteakHeal
+    ld e, 21 ; Gold Ecruteak browse landmark
+    ret
+.olivineHeal
+    ld e, 26 ; Gold Olivine browse landmark
+    ret
+.cianwoodHeal
+    ld e, 31 ; Gold Cianwood browse landmark
+    ret
+.mahoganyHeal
+    ld e, 34 ; Gold Mahogany browse landmark
     ret
 .current
     jp JohtoPilotGetTownMapLandmark
@@ -631,8 +715,24 @@ JohtoPilotIsClosedOutdoorEdge::
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
-    ; DEV-337: ID123 indoor edge must not scan the outdoor ID chain.
+    ; Both shared Gold centers need the exact 10x8 interior bounds.
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .verticalGateClosedEdge314
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .verticalGateClosedEdge314
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jp z, .city
@@ -1262,10 +1362,32 @@ JohtoPilotGateDoorApproachAllowed::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
-    ; ID123 has no interior STEP_ON door to scan in the outdoor router.
+    ; No indoor center carpet may be treated as an outdoor STEP_ON door.
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     ret z
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    ret z
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    ret z
+    ; REF-336: allow only four Gold source-verified 1F doors.
+    call JohtoBatchCenterDoorBeforeStep336
+    ld a, e
+    and a
+    ret nz
+    ld a, [wCurLocalMapID]
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1333,6 +1455,8 @@ JohtoPilotGateDoorApproachAllowed::
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     ret nz
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .violetCenterBefore
     cp PLAYER_DIR_RIGHT
     ret nz
     ld a, [wXCoord]
@@ -1344,6 +1468,14 @@ JohtoPilotGateDoorApproachAllowed::
     cp 25
     ret nz
     jp .allow
+.violetCenterBefore
+    ld a, [wXCoord]
+    cp 31
+    ret nz
+    ld a, [wYCoord]
+    cp 26
+    jp z, .allow
+    ret
 .route31
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT
@@ -1372,7 +1504,7 @@ JohtoPilotGateDoorApproachAllowed::
 .route32Alph
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
-    jr z, .route32Cave
+    jr z, .route32NorthDoor
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -1384,6 +1516,14 @@ JohtoPilotGateDoorApproachAllowed::
     cp 3
     ret nz
     jp .allow
+.route32NorthDoor
+    ld a, [wXCoord]
+    cp 11
+    jr nz, .route32Cave
+    ld a, [wYCoord]
+    cp 74
+    jp z, .allow
+    ret
 .route32Cave
     ld a, [wXCoord]
     cp 6
@@ -1467,6 +1607,27 @@ JohtoPilotGateDoorWarpMatched::
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jr z, .centerCarpetStand
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetStand
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetStand
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetStand
+    call JohtoBatchCenterDoorAfterStep336
+    ld a, e
+    and a
+    ret nz
+    ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_LOCAL_ID
     jp z, .cherrygroveGoldDoor
     call JohtoPilotIsVerticalGatePairMap314
@@ -1550,6 +1711,8 @@ JohtoPilotGateDoorWarpMatched::
     cp JOHTO_VIOLET_CITY_LOCAL_ID
     ret nz
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .violetCenterMatched
     cp PLAYER_DIR_RIGHT
     ret nz
     ld a, [wXCoord]
@@ -1561,6 +1724,14 @@ JohtoPilotGateDoorWarpMatched::
     cp 25
     ret nz
     jp .allow
+.violetCenterMatched
+    ld a, [wXCoord]
+    cp 31
+    ret nz
+    ld a, [wYCoord]
+    cp 25
+    jp z, .yesDoor
+    ret
 .route31
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT
@@ -1588,7 +1759,7 @@ JohtoPilotGateDoorWarpMatched::
 .route32Alph
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
-    jr z, .route32Cave
+    jr z, .route32NorthDoor
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -1600,6 +1771,14 @@ JohtoPilotGateDoorWarpMatched::
     cp 3
     ret nz
     jp .allow
+.route32NorthDoor
+    ld a, [wXCoord]
+    cp 11
+    jr nz, .route32Cave
+    ld a, [wYCoord]
+    cp 73
+    jp z, .yesDoor
+    ret
 .route32Cave
     ld a, [wXCoord]
     cp 6
@@ -1688,6 +1867,22 @@ JohtoPilotGateExteriorCollisionAllowed::
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jr z, .centerCarpetExit
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetExit
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetExit
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1853,6 +2048,22 @@ JohtoPilotGateCollisionExitAllowed::
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jr z, .centerCarpetExit
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetExit
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jr z, .centerCarpetExit
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .centerCarpetExit
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
     jr z, .bothPortalDispatch
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
@@ -1989,4 +2200,112 @@ JohtoPilotGateCollisionExitAllowed::
     ret nz
 .yes
     ld e, 1
+    ret
+
+
+; REF-336 center-door ingress. Existing old gate corridors are not bypassed.
+; Input: wCurLocalMapID, wPlayerDirection, wXCoord/wYCoord.
+; Before-step requires the OUTSIDE tile directly below each Gold door;
+; after-step requires a matching registered Warp at the door itself.
+; E=1 before stepping, E=2 after matching => immediate STEP_ON door.
+JohtoBatchCenterDoorBeforeStep336::
+    ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .ecruteak
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .olivine
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z, .cianwood
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .mahogany
+    ret
+.ecruteak
+    ld a, [wXCoord]
+    cp 23
+    ret nz
+    ld a, [wYCoord]
+    cp 28
+    jr z, .allow
+    ret
+.olivine
+    ld a, [wXCoord]
+    cp 13
+    ret nz
+    ld a, [wYCoord]
+    cp 22
+    jr z, .allow
+    ret
+.cianwood
+    ld a, [wXCoord]
+    cp 23
+    ret nz
+    ld a, [wYCoord]
+    cp 44
+    jr z, .allow
+    ret
+.mahogany
+    ld a, [wXCoord]
+    cp 15
+    ret nz
+    ld a, [wYCoord]
+    cp 14
+    jr z, .allow
+    ret
+.allow
+    ld e, 1
+    ret
+
+JohtoBatchCenterDoorAfterStep336::
+    ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jp z, .ecruteak
+    cp JOHTO_OLIVINE_CITY_LOCAL_ID
+    jp z, .olivine
+    cp JOHTO_CIANWOOD_CITY_LOCAL_ID
+    jp z, .cianwood
+    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .mahogany
+    ret
+.ecruteak
+    ld a, [wXCoord]
+    cp 23
+    ret nz
+    ld a, [wYCoord]
+    cp 27
+    jr z, .allow
+    ret
+.olivine
+    ld a, [wXCoord]
+    cp 13
+    ret nz
+    ld a, [wYCoord]
+    cp 21
+    jr z, .allow
+    ret
+.cianwood
+    ld a, [wXCoord]
+    cp 23
+    ret nz
+    ld a, [wYCoord]
+    cp 43
+    jr z, .allow
+    ret
+.mahogany
+    ld a, [wXCoord]
+    cp 15
+    ret nz
+    ld a, [wYCoord]
+    cp 13
+    jr z, .allow
+    ret
+.allow
+    ld e, 2
     ret

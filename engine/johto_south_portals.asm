@@ -29,6 +29,8 @@ JohtoSouthPortalAfterStep::
     ret
 .azalea
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .azaleaCenterDoor
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -39,6 +41,14 @@ JohtoSouthPortalAfterStep::
     jp z, .carpet
     cp 11
     jp z, .carpet
+    ret
+.azaleaCenterDoor
+    ld a, [wXCoord]
+    cp 15
+    ret nz
+    ld a, [wYCoord]
+    cp 9
+    jp z, .door
     ret
 .southGate
     ld a, [wYCoord]
@@ -129,10 +139,17 @@ JohtoSouthPortalAfterStep::
     cp PLAYER_DIR_UP
     ret nz
     ld a, [wXCoord]
+    cp 15
+    jr z, .goldenrodCenter
     cp 19
     ret nz
     ld a, [wYCoord]
     cp 1
+    jp z, .door
+    ret
+.goldenrodCenter
+    ld a, [wYCoord]
+    cp 27
     jp z, .door
     ret
 .route35Gate
@@ -261,6 +278,8 @@ JohtoSouthPortalCollisionExit::
 JohtoSouthPortalArrivalStep::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z, .azalea
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     jp z, .forest
     cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
@@ -310,12 +329,28 @@ JohtoSouthPortalArrivalStep::
     cp 5
     jp z, .south
     ret
+.azalea
+    ; The only activated Azalea DOOR is (15,9); exit to the street.
+    ld a, [wXCoord]
+    cp 15
+    ret nz
+    ld a, [wYCoord]
+    cp 9
+    jp z, .south
+    ret
 .cityDoor
     ld a, [wXCoord]
+    cp 15
+    jr z, .goldenrodCenterArrival
     cp 19
     ret nz
     ld a, [wYCoord]
     cp 1
+    jp z, .south
+    ret
+.goldenrodCenterArrival
+    ld a, [wYCoord]
+    cp 27
     jp z, .south
     ret
 .forest
@@ -357,6 +392,8 @@ JohtoSouthPortalBeforeStep::
     ret
 .azalea
     ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .azaleaCenterDoor
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -366,6 +403,14 @@ JohtoSouthPortalBeforeStep::
     cp 10
     jp z, .allow
     cp 11
+    jp z, .allow
+    ret
+.azaleaCenterDoor
+    ld a, [wXCoord]
+    cp 15
+    ret nz
+    ld a, [wYCoord]
+    cp 10
     jp z, .allow
     ret
 .forest
@@ -422,10 +467,17 @@ JohtoSouthPortalBeforeStep::
     cp PLAYER_DIR_UP
     ret nz
     ld a, [wXCoord]
+    cp 15
+    jr z, .goldenrodCenter
     cp 19
     ret nz
     ld a, [wYCoord]
     cp 2
+    jp z, .allow
+    ret
+.goldenrodCenter
+    ld a, [wYCoord]
+    cp 28
     jp z, .allow
     ret
 .route35Gate

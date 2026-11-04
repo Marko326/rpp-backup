@@ -269,7 +269,11 @@ UpdateMapNameSign::
 	jp z, .johtoRoute31
 	cp JOHTO_VIOLET_CITY_LOCAL_ID
 	jp z, .johtoViolet
+	cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+	jp z, .johtoViolet
 	cp JOHTO_ROUTE_32_LOCAL_ID
+	jp z, .johtoRoute32
+	cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
 	jp z, .johtoRoute32
 	cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
 	jp z, .johtoRuins
@@ -281,11 +285,15 @@ UpdateMapNameSign::
 	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
 	jp z, .johtoAzalea
+	cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+	jp z, .johtoAzalea
 	cp JOHTO_ILEX_FOREST_LOCAL_ID
 	jp z, .johtoIlex
 	cp JOHTO_ROUTE_34_LOCAL_ID
 	jp z, .johtoRoute34
 	cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+	jp z, .johtoGoldenrod
+	cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
 	jp z, .johtoGoldenrod
 	cp JOHTO_ROUTE_35_LOCAL_ID
 	jp z, .johtoRoute35
@@ -293,11 +301,15 @@ UpdateMapNameSign::
 	jp z, .johtoRoute37
 	cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
 	jp z, .johtoEcruteak
+	cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+	jp z, .johtoEcruteak
 	cp JOHTO_ROUTE_38_LOCAL_ID
 	jp z, .johtoRoute38
 	cp JOHTO_ROUTE_39_LOCAL_ID
 	jp z, .johtoRoute39
 	cp JOHTO_OLIVINE_CITY_LOCAL_ID
+	jp z, .johtoOlivine
+	cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
 	jp z, .johtoOlivine
 	cp JOHTO_ROUTE_40_LOCAL_ID
 	jp z, .johtoRoute40
@@ -305,9 +317,13 @@ UpdateMapNameSign::
 	jp z, .johtoRoute41
 	cp JOHTO_CIANWOOD_CITY_LOCAL_ID
 	jp z, .johtoCianwood
+	cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+	jp z, .johtoCianwood
     cp JOHTO_ROUTE_42_LOCAL_ID
     jp z, .johtoRoute42
     cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
+    jp z, .johtoMahogany
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
     jp z, .johtoMahogany
     cp JOHTO_ROUTE_43_LOCAL_ID
     jp z, .johtoRoute43

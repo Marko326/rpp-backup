@@ -45,15 +45,16 @@ JohtoPilotRoute32Cave:
     db "@"
 JohtoPilotRoute32Center:
     text "#MON CENTER"
-    para "Closed for now."
+    para "Come in and rest!"
     done
     db "@"
 JohtoPilotRoute32RuntimeObjects::
     db $05 ; source's outdoor forest border
-    db 3 ; Gold ruins west gate pair + Union Cave entrance; center remains closed
+    db 4 ; Gold ruins gate, Union Cave, and Route32 Center (append only)
     db 2, 4, 2, JOHTO_REGISTERED_WARP_SELECTOR
     db 3, 4, 3, JOHTO_REGISTERED_WARP_SELECTOR
     db 79, 6, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold cave mouth x6,y79 -> 1F #4
+    db 73, 11, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Center x11,y73 -> 1F #1
     db 4 ; Gold signs at (Y,X): (5,13), (1,9), (84,10), (73,12)
     db 5, 13, 1
     db 1, 9, 2

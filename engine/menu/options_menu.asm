@@ -1351,6 +1351,14 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_ROUTE36 ; slot45 Route46
     db MUSIC_GBP_GSC_ROUTE29 ; slot46 Route29/46 Gate
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot47 interior center tune
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot48 Route32 Center (no Fly destination)
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot49 Azalea Center (existing town Fly only)
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot50 Violet Center
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot51 Goldenrod Center
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot52 Ecruteak Center
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot53 Olivine Center
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot54 Cianwood Center
+    db MUSIC_GBP_GSC_POKEMON_CENTER ; slot55 Mahogany Center
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

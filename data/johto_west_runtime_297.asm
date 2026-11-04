@@ -161,7 +161,8 @@ JohtoRoute39RuntimeObjects::
 
 JohtoOlivineRuntimeObjects::
     db $05
-    db 0 ; all 11 Gold building/port Warps remain sealed
+    db 1 ; REF-336 center enabled alongside existing warps
+    db 21, 13, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Olivine #1 Center
     db 6
     db 11, 17, 1
     db 24, 20, 2

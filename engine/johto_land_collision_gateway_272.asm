@@ -10,6 +10,28 @@ JohtoOverworldSouthLandDecision::
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     ret z
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    ret z
+    ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
+    ; The generic Gold role can otherwise treat the door as a solid wall.
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    jr nz, .cherryApproach
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_32_LOCAL_ID
+    jr nz, .cherryApproach
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr nz, .cherryApproach
+    ld a, [wXCoord]
+    cp 11
+    jr nz, .cherryApproach
+    ld a, [wYCoord]
+    cp 74
+    jr nz, .cherryApproach
+    ld e, 0
+    ret
+.cherryApproach
     ; Original Cherrygrove guide's-house approach exception.
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO

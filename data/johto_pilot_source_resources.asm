@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 48
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 56
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -67,6 +67,23 @@ ASSERT @ - JohtoRoute29Route46GateGoldBlocks == 5 * 4
 JohtoCherrygrovePokecenterGoldBlocks::
     INCBIN "maps/johto_pilot/CherrygrovePokecenter1F.gold.blk"
 ASSERT @ - JohtoCherrygrovePokecenterGoldBlocks == 5 * 4
+JohtoRoute32PokecenterGoldBlocks:: INCBIN "maps/johto_pilot/Route32Pokecenter1F.gold.blk"
+ASSERT @ - JohtoRoute32PokecenterGoldBlocks == 5 * 4
+JohtoAzaleaPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/AzaleaPokecenter1F.gold.blk"
+ASSERT @ - JohtoAzaleaPokecenterGoldBlocks == 5 * 4
+JohtoVioletPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/VioletPokecenter1F.gold.blk"
+ASSERT @ - JohtoVioletPokecenterGoldBlocks == 5 * 4
+; Keep each ASSERT adjacent to its own 5x4 Gold block resource.
+JohtoGoldenrodPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/GoldenrodPokecenter1F.gold.blk"
+ASSERT @ - JohtoGoldenrodPokecenterGoldBlocks == 5 * 4
+JohtoMahoganyPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/MahoganyPokecenter1F.gold.blk"
+ASSERT @ - JohtoMahoganyPokecenterGoldBlocks == 5 * 4
+JohtoCianwoodPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/CianwoodPokecenter1F.gold.blk"
+ASSERT @ - JohtoCianwoodPokecenterGoldBlocks == 5 * 4
+JohtoOlivinePokecenterGoldBlocks:: INCBIN "maps/johto_pilot/OlivinePokecenter1F.gold.blk"
+ASSERT @ - JohtoOlivinePokecenterGoldBlocks == 5 * 4
+JohtoEcruteakPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/EcruteakPokecenter1F.gold.blk"
+ASSERT @ - JohtoEcruteakPokecenterGoldBlocks == 5 * 4
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -215,6 +232,40 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 5, 4
     dw JohtoCherrygrovePokecenterGoldBlocks
     db BANK(JohtoCherrygrovePokecenterGoldBlocks)
+    ; Gold Route32Pokecenter1F uses shared Pokecenter1F.blk byte-for-byte.
+    ; Reuse the source Gold blocks (do not spend another ROMX copy).
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoRoute32PokecenterGoldBlocks
+    db BANK(JohtoRoute32PokecenterGoldBlocks)
+    ; Gold AzaleaPokecenter1F preserves its independent source-asset identity.
+    ; The 5x4 runtime blocks are still shared across all three centers.
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoAzaleaPokecenterGoldBlocks
+    db BANK(JohtoAzaleaPokecenterGoldBlocks)
+    ; REF-335: VioletPokecenter1F uses Gold shared Pokecenter1F layout.
+    db MAP_REGION_JOHTO, JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoVioletPokecenterGoldBlocks
+    db BANK(JohtoVioletPokecenterGoldBlocks)
+    ; REF-335: GoldenrodPokecenter1F uses Gold shared Pokecenter1F layout.
+    db MAP_REGION_JOHTO, JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoGoldenrodPokecenterGoldBlocks
+    db BANK(JohtoGoldenrodPokecenterGoldBlocks)
+    ; REF-336: Ecruteak Center uses source-exact Gold 5x4 Pokecenter1F.
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoEcruteakPokecenterGoldBlocks
+    db BANK(JohtoEcruteakPokecenterGoldBlocks)
+    ; REF-336: Olivine Center uses source-exact Gold 5x4 Pokecenter1F.
+    db MAP_REGION_JOHTO, JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoOlivinePokecenterGoldBlocks
+    db BANK(JohtoOlivinePokecenterGoldBlocks)
+    ; REF-336: Cianwood Center uses source-exact Gold 5x4 Pokecenter1F.
+    db MAP_REGION_JOHTO, JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoCianwoodPokecenterGoldBlocks
+    db BANK(JohtoCianwoodPokecenterGoldBlocks)
+    ; REF-336: Mahogany Center uses source-exact Gold 5x4 Pokecenter1F.
+    db MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID, 5, 4
+    dw JohtoMahoganyPokecenterGoldBlocks
+    db BANK(JohtoMahoganyPokecenterGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 

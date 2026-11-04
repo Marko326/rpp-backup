@@ -523,7 +523,7 @@ JohtoPilotVioletAcademySignText:
     db "@"
 JohtoPilotVioletCenterSignText:
     text "#MON CENTER"
-    para "Closed for now."
+    para "Now open."
     done
     db "@"
 JohtoPilotVioletMartSignText:
@@ -534,9 +534,10 @@ JohtoPilotVioletMartSignText:
 
 JohtoPilotVioletRuntimeObjects::
     db $05 ; original Gold city border metatile
-    db 2 ; only Route31VioletGate door pair (Gold warps 8 and 9)
+    db 3 ; original Gate pair, plus Gold Violet center door
     db 24, 39, 0, JOHTO_REGISTERED_WARP_SELECTOR
     db 25, 39, 1, JOHTO_REGISTERED_WARP_SELECTOR
+    db 25, 31, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Violet #5 -> Pokecenter #1
     db 6 ; original exterior signs; no Gold item events or NPC stories
     db 20, 24, 1
     db 17, 15, 2

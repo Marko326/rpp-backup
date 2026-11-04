@@ -31,9 +31,10 @@ ASSERT BANK(JohtoSouthAzaleaTownRuntimeHeader) == BANK(JohtoSouthAzaleaTownBlock
 JohtoSouthAzaleaTownTextPointers:
 JohtoSouthAzaleaTownRuntimeObjects::
     db $05 ; NPC-243 accepted Gold Azalea outdoor forest border
-    db 2
+    db 3 ; original Ilex gate pair, then Gold Azalea Pokecenter door
     db 10, 2, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #7 -> IlexForestAzaleaGate #3
     db 11, 2, 3, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #8 -> IlexForestAzaleaGate #4
+    db 9, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #1 -> AzaleaPokecenter1F #1
     db 0 ; unregistered signs excluded
     db 0 ; trainer/story encounters excluded
 
@@ -167,8 +168,9 @@ ASSERT BANK(JohtoSouthGoldenrodCityRuntimeHeader) == BANK(JohtoSouthGoldenrodCit
 JohtoSouthGoldenrodCityTextPointers:
 JohtoSouthGoldenrodCityRuntimeObjects::
     db $35 ; NPC-243 accepted Gold Goldenrod outdoor border
-    db 1
+    db 2 ; north Route35 gate and Gold Goldenrod Center
     db 1, 19, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #13 -> Route35GoldenrodGate #3
+    db 27, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #7 -> GoldenrodPokecenter1F #1
     db 0 ; unregistered signs excluded
     db 0 ; trainer/story encounters excluded
 JohtoSouthScript::

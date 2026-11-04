@@ -609,6 +609,12 @@ JohtoSouthMatureDoorFence::
     ld a, [wCurLocalMapID]
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     jp z, .forest
+    cp JOHTO_AZALEA_TOWN_LOCAL_ID
+    jp z, .azaleaDoor
+    cp JOHTO_GOLDENROD_CITY_LOCAL_ID
+    jp z, .goldenrodDoor
+.scanOther
+    ld a, [wCurLocalMapID]
     ld b, a
     ld hl, .closedDoorTargets
 .next
@@ -630,6 +636,31 @@ JohtoSouthMatureDoorFence::
 .skipY
     inc hl
     jp .next
+.goldenrodDoor
+    ; Gold (15,27) is the only additional opened city building.
+    ld a, e
+    cp 15
+    jr nz, .scanOther
+    ld a, d
+    cp 27
+    jr nz, .scanOther
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jp z, .open
+    jp .blocked
+.azaleaDoor
+    ; The only newly enabled building target is Gold (15,9). It is a
+    ; true DOOR and may be entered solely from (15,10) facing UP.
+    ld a, e
+    cp 15
+    jr nz, .scanOther
+    ld a, d
+    cp 9
+    jr nz, .scanOther
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jp z, .open
+    jp .blocked
 .forest
     ; NPC-243 ILEX-217: special north DOOR at (1,5) is approached
     ; from (1,6) facing UP, never from the sides or from above.
@@ -686,7 +717,6 @@ JohtoSouthMatureDoorFence::
 .closedDoorTargets
     db JOHTO_AZALEA_TOWN_LOCAL_ID, 9, 5
     db JOHTO_AZALEA_TOWN_LOCAL_ID, 21, 5
-    db JOHTO_AZALEA_TOWN_LOCAL_ID, 15, 9
     db JOHTO_AZALEA_TOWN_LOCAL_ID, 21, 13
     db JOHTO_AZALEA_TOWN_LOCAL_ID, 10, 15
     db JOHTO_ROUTE_34_LOCAL_ID, 11, 14
@@ -710,7 +740,6 @@ JohtoSouthMatureDoorFence::
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 14, 21
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 31, 21
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 5, 25
-    db JOHTO_GOLDENROD_CITY_LOCAL_ID, 15, 27
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 24, 27
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 11, 29
     db JOHTO_GOLDENROD_CITY_LOCAL_ID, 29, 29

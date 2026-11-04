@@ -9,6 +9,22 @@ AnimateHealingMachineRegional337::
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jr z, .johto
+    cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jr z, .johto
 .kanto
     callba AnimateHealingMachine
     ret
@@ -71,10 +87,11 @@ AnimateHealingMachineRegional337::
     pop hl
     pop af
     ld [hl], a
-    ; Entered Johto branch only with active Center stable ID 123 and nurse
-    ; Yes animation, so there is no second volatile map check after music.
-    ; Kanto wLastBlackoutMap is never modified here.
-    ld a, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    ; All five Gold centers entered by a verified stable ID on Yes.
+    ; Music and sprite restore do not change the current map; record the
+    ; actual center ID so Route32 never impersonates Cherrygrove.
+    ; Kanto wLastBlackoutMap remains untouched.
+    ld a, [wCurLocalMapID]
     ld [wJohtoLastHealLocalID], a
     ld a, JOHTO_LAST_HEAL_MAGIC
     ld [wJohtoLastHealMagic], a

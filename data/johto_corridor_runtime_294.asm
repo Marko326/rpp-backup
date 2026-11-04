@@ -92,11 +92,12 @@ ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 45
 JohtoEcruteakTextPointers:
 JohtoEcruteakRuntimeObjects::
     db $05
-    db 4 ; paired west and east gate carpets active; all buildings remain closed
+    db 5 ; REF-336 center enabled alongside existing warps
     db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR
     db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR
     db 26, 35, 0, JOHTO_REGISTERED_WARP_SELECTOR
     db 27, 35, 1, JOHTO_REGISTERED_WARP_SELECTOR
+    db 27, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Ecruteak #6 Center -> room carpet warp 0
     db 0
     db 0
 

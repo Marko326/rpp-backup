@@ -96,36 +96,69 @@ LoadJohtoPilotFlyTownMap::
 	call .findForward
 	jp .render
 .startShortcut
-	; DEV-338: Kanto Fly START locates the last HEALED/Teleport destination,
-	; not the player's current town. Johto's recovered Center is ID123;
-	; its corresponding Fly city is Cherrygrove (entry index 1).
-	; A missing/corrupt record must not recenter to a road or current town.
-	ld a, [wJohtoLastHealMagic]
-	cp JOHTO_LAST_HEAL_MAGIC
-	jp nz, .render
-	ld a, [wJohtoLastHealLocalID]
-	cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
-	jp nz, .render
-	; Do not treat a map landmark as a Fly destination unless that city
-	; is registered AND visited. Preserve the old cursor AND special axis
-	; if the saved heal city is not Fly-unlocked.
-	ld a, [wWhichTownMapLocation]
-	push af
-	ld a, [wFlyLocationsAxis]
-	push af
-	ld a, 1 ; Cherrygrove City row in JohtoPilotFlyDestinations
-	ld [wWhichTownMapLocation], a
-	call .entry
-	ld a, [hl]
-	cp JOHTO_CHERRYGROVE_LOCAL_ID
-	jr nz, .startRestore
-	call .isUnlocked
-	jr z, .startRestore
-	pop af ; discard previous axis
-	pop af ; discard previous cursor
-	ld a, 1 ; city axis
-	ld [wFlyLocationsAxis], a
-	jp .render
+    ; START uses the last successful treatment; only a city with an
+    ; existing registered Fly row and an unlocked visit may recenter.
+    ; Roadside Route32 is a landmark but never a standalone Fly stop.
+    ld a, [wJohtoLastHealMagic]
+    cp JOHTO_LAST_HEAL_MAGIC
+    jp nz, .render
+    ld a, [wJohtoLastHealLocalID]
+    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
+    jp z, .startCherrygrove
+    cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
+    jp z, .startAzalea
+    cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
+    jp z, .startViolet
+    cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
+    jp z, .startGoldenrod
+    cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID
+    jp z, .startEcruteak
+    cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID
+    jp z, .startOlivine
+    cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID
+    jp z, .startCianwood
+    cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID
+    jp z, .startMahogany
+    jp .render
+.startGoldenrod
+    ld a, 4 ; existing Goldenrod row, never an added Fly destination
+    jr .startSelect
+.startEcruteak
+    ld a, 5 ; existing Ecruteak Fly row, requires unlocked visit
+    jp .startSelect
+.startOlivine
+    ld a, 6 ; existing Olivine Fly row, requires unlocked visit
+    jp .startSelect
+.startCianwood
+    ld a, 8 ; existing Cianwood Fly row, requires unlocked visit
+    jp .startSelect
+.startMahogany
+    ld a, 7 ; existing Mahogany Fly row, requires unlocked visit
+    jp .startSelect
+
+.startViolet
+    ld a, 2 ; existing Violet row
+    jr .startSelect
+.startAzalea
+    ld a, 3 ; existing Azalea row
+    jr .startSelect
+.startCherrygrove
+    ld a, 1 ; Cherrygrove: existing row1
+.startSelect
+    ld b, a
+    ld a, [wWhichTownMapLocation]
+    push af
+    ld a, [wFlyLocationsAxis]
+    push af
+    ld a, b
+    ld [wWhichTownMapLocation], a
+    call .isUnlocked
+    jr z, .startRestore
+    pop af ; discard old axis
+    pop af ; discard old cursor
+    ld a, 1 ; city axis
+    ld [wFlyLocationsAxis], a
+    jp .render
 .startRestore
 	pop af
 	ld [wFlyLocationsAxis], a
