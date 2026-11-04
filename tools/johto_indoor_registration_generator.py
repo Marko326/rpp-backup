@@ -284,6 +284,26 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
             for row in rows_for_gate:
                 expected_routes.append(('MAP_REGION_JOHTO', id_symbols[row['source_stable_id']],
                     str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', id_symbols[row['target_stable_id']]))
+        # CLEAN-REF337: these eight accepted centers were appended after the
+        # historical 107 rows; each owns one outside door + two indoor carpets.
+        # Check the exact source ordinals and stable IDs independently instead
+        # of silently trusting runtime rows or ignoring post-REF332 additions.
+        added_centers = (
+            ('JOHTO_ROUTE_32_LOCAL_ID', 3, 'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_AZALEA_TOWN_LOCAL_ID', 2, 'JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_VIOLET_CITY_LOCAL_ID', 2, 'JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_CITY_LOCAL_ID', 1, 'JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_ECRUTEAK_CITY_LOCAL_ID', 4, 'JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_OLIVINE_CITY_LOCAL_ID', 0, 'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_CITY_LOCAL_ID', 0, 'JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_TOWN_LOCAL_ID', 1, 'JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID'),
+        )
+        for outside, ordinal, center in added_centers:
+            expected_routes.extend((
+                ('MAP_REGION_JOHTO', outside, str(ordinal), 'MAP_REGION_JOHTO', center),
+                ('MAP_REGION_JOHTO', center, '0', 'MAP_REGION_JOHTO', outside),
+                ('MAP_REGION_JOHTO', center, '1', 'MAP_REGION_JOHTO', outside),
+            ))
         rows = _runtime_warp_rows(runtime)
         if contract.get('runtime_invariants', {}).get('registered_warp_route_rows') != len(expected_routes):
             raise ValueError('Warp contract row count differs from exact ordered registration')

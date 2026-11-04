@@ -126,16 +126,18 @@ def audit(root: Path) -> dict:
         start_fly = _block(fly, ".startShortcut", ".specialAxis")
         verify("fly_start_last_heal_guard", _sequence(start_fly,
             r"ld a, \[wJohtoLastHealMagic\]\s+cp JOHTO_LAST_HEAL_MAGIC\s+jp nz, \.render",
-            r"ld a, \[wJohtoLastHealLocalID\]\s+cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\s+jp nz, \.render",
-            r"ld a, \[wWhichTownMapLocation\]\s+push af",
+            r"ld a, \[wJohtoLastHealLocalID\]\s+cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\s+jp z, \.startCherrygrove",
+            r"cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID\s+jp z, \.startAzalea\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jp z, \.startViolet\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jp z, \.startGoldenrod\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jp z, \.startEcruteak\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jp z, \.startOlivine\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jp z, \.startCianwood\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+jp z, \.startMahogany\s+jp \.render",
+            r"ld a, 4\s+jr \.startSelect\s+\.startEcruteak\s+ld a, 5\s+jp \.startSelect\s+\.startOlivine\s+ld a, 6\s+jp \.startSelect\s+\.startCianwood\s+ld a, 8\s+jp \.startSelect\s+\.startMahogany\s+ld a, 7\s+jp \.startSelect\s+\.startViolet\s+ld a, 2\s+jr \.startSelect\s+\.startAzalea\s+ld a, 3\s+jr \.startSelect",
+            r"\.startCherrygrove\s+ld a, 1",
+            r"\.startSelect\s+ld b, a\s+ld a, \[wWhichTownMapLocation\]\s+push af",
             r"ld a, \[wFlyLocationsAxis\]\s+push af",
-            r"ld a, 1\s+ld \[wWhichTownMapLocation\], a\s+call \.entry\s+ld a, \[hl\]",
-            r"cp JOHTO_CHERRYGROVE_LOCAL_ID\s+jr nz, \.startRestore",
-            r"call \.isUnlocked\s+jr z, \.startRestore",
+            r"ld a, b\s+ld \[wWhichTownMapLocation\], a\s+call \.isUnlocked\s+jr z, \.startRestore",
             r"pop af\s+pop af\s+ld a, 1\s+ld \[wFlyLocationsAxis\], a\s+jp \.render",
             r"\.startRestore\s+pop af\s+ld \[wFlyLocationsAxis\], a\s+pop af\s+ld \[wWhichTownMapLocation\], a\s+jp \.render") and
+            "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID" not in start_fly and
             "wCurLocalMapID" not in start_fly,
-            "START locates last healed Cherrygrove only when saved key is valid and Fly is active+visited; on failure restores cursor and axis")
+            "START uses last successful center ID: Cherrygrove/Azalea/Violet/Goldenrod city row only if active+visited; roadside Route32 never gains Fly; locked preserves cursor+axis")
         special = _block(fly, ".specialAxis", ".next")
         verify("fly_lake_special_axis_guard", _sequence(special,
             r"ld a, \[wWhichTownMapLocation\]\s+push af",

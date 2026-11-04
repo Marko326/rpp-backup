@@ -172,6 +172,14 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoRoute29Route46GateRuntimeHeader', 'Route29Route46Gate', 74),
     # DEV-334: preserve 0..46; the first shared Johto center is slot 47.
     ('JohtoSharedPokecenterRuntimeHeader', 'CherrygrovePokecenter1F', 123),
+    ('JohtoRoute32PokecenterRuntimeHeader', 'Route32Pokecenter1F', 106),
+    ('JohtoAzaleaPokecenterRuntimeHeader', 'AzaleaPokecenter1F', 135),
+    ('JohtoVioletPokecenterRuntimeHeader', 'VioletPokecenter1F', 133),
+    ('JohtoGoldenrodPokecenterRuntimeHeader', 'GoldenrodPokecenter1F', 146),
+    ('JohtoEcruteakPokecenterRuntimeHeader', 'EcruteakPokecenter1F', 160),
+    ('JohtoOlivinePokecenterRuntimeHeader', 'OlivinePokecenter1F', 30),
+    ('JohtoCianwoodPokecenterRuntimeHeader', 'CianwoodPokecenter1F', 42),
+    ('JohtoMahoganyPokecenterRuntimeHeader', 'MahoganyPokecenter1F', 77),
 )
 
 

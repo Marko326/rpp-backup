@@ -20153,6 +20153,62 @@
       "source_asset": "maps/johto_pilot/CherrygrovePokecenter1F.gold.blk",
       "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
       "water_yx": []
+    },
+    {
+      "map": "Route32Pokecenter1F",
+      "stable_id": 106,
+      "source_asset": "maps/johto_pilot/Route32Pokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "AzaleaPokecenter1F",
+      "stable_id": 135,
+      "source_asset": "maps/johto_pilot/AzaleaPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "VioletPokecenter1F",
+      "stable_id": 133,
+      "source_asset": "maps/johto_pilot/VioletPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "GoldenrodPokecenter1F",
+      "stable_id": 146,
+      "source_asset": "maps/johto_pilot/GoldenrodPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "EcruteakPokecenter1F",
+      "stable_id": 160,
+      "source_asset": "maps/johto_pilot/EcruteakPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "OlivinePokecenter1F",
+      "stable_id": 30,
+      "source_asset": "maps/johto_pilot/OlivinePokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "CianwoodPokecenter1F",
+      "stable_id": 42,
+      "source_asset": "maps/johto_pilot/CianwoodPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
+    },
+    {
+      "map": "MahoganyPokecenter1F",
+      "stable_id": 77,
+      "source_asset": "maps/johto_pilot/MahoganyPokecenter1F.gold.blk",
+      "source_sha256": "119bb73684e043cec6b2dd95be8a9cdabd1cd42e5e138089c865dfff8460b70b",
+      "water_yx": []
     }
   ]
 }

@@ -34,8 +34,8 @@ class WestCorridor297(unittest.TestCase):
 
     def test_olivine_building_warp_cannot_be_enabled_silently(self):
         self.mutate_text('data/johto_west_runtime_297.asm',
-            '    db 0 ; all 11 Gold building/port Warps remain sealed',
-            '    db 1 ; incorrectly enabled an unreviewed building warp',
+            '    db 1 ; REF-336 center enabled alongside existing warps',
+            '    db 2 ; incorrectly enabled an unreviewed building warp',
             'olivine_interiors_sealed')
 
     def test_olivine_surf_dispatch_is_required(self):

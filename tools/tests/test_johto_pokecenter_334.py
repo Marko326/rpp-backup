@@ -110,8 +110,8 @@ class Pokecenter334Tests(unittest.TestCase):
                      'shared_gold_template')
     def test_gsc_center_music_not_city_music(self):
         self.corrupt('engine/menu/options_menu.asm',
-                     'db MUSIC_GBP_GSC_POKEMON_CENTER ; slot47',
-                     'db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot47',
+                     'db MUSIC_GBP_GSC_POKEMON_CENTER ; slot47 interior center tune',
+                     'db MUSIC_GBP_GSC_CHERRYGROVE_CITY ; slot47 interior center tune',
                      'profile_music_and_map_labels')
 
 if __name__=='__main__':unittest.main()

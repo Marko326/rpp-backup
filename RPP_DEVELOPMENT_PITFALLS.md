@@ -1,3 +1,15 @@
+## CLEAN-REF337｜新中心清理时必须区分游戏运行数据与历史工具合同
+- 用户实际导出的 Git patch 中完整哈希及文件模式 metadata 可与窗口精简补丁不同；用同一干净 HEAD **实际应用**后按文件 SHA-256 比对，才能判断有没有实质差异。本轮3200个文件一致。
+- 不能因全局主审计通过，就忽略旧时代独立测试的硬编码。老室内登记工具仍按107条计算，`tools/` 某些测试仍要求48图、浅葱中心封闭；CLEAN-REF337 已恢复新增八家中心24条有序路由检查，锁定总131，并调整旧测试且保留故障注入。
+- 根目录和 `tools/` 下均有 `johto_table_assert_preflight.py`；两者之前的缺失 ASSERT 检查范围不同，会导致同一测试因导入路径而有不同结论。本轮统一检查音乐、Town Map Entries、BrowseIndex 三表，避免漏检。
+- 实机已通过的修复应保留来源 ordinal≠目标 Warp ID 的区别；编译 MAP／空间与用户旧档测试仍不能用纯静态审计替代。
+
+## REF-337｜Registered Warp 来源序号与目标地图 Warp ID 是两个不同字段
+- `wWarpedFromWhichWarp` 是**来源地图**的 Warp event 序号，供 `JohtoRegisteredWarpRoutes` 匹配；不要把它改成目标地图的落点编号。
+- Runtime map `db y, x, destination_warp_id, JOHTO_REGISTERED_WARP_SELECTOR` 的第三字节写入 `wDestinationWarpID`，用于目标地图选择实际落点。它必须落在目标地图的 Warp event 范围内，并与 Gold 原版 `destination_warp_number - 1` 对应。
+- 反例：Ecruteak City 来源 ordinal 4 正确，但目标 EcruteakPokecenter1F 只有两个 1F Warp，目标 ID 写4会越界并造成黑屏；Mahogany 来源 ordinal 1 正确，但目标 ID 写1会落在右侧地毯。两家 Gold 城镇入口都指向中心第1个 Warp，故 runtime 目标 ID 均为0。
+- 新中心审计必须分别核对：①来源地图 RuntimeObjects 中事件的列表序号；②第三字节目标 Warp ID；③注册路由表的来源 ordinal 与目标 stable ID；④目标地图实际 Warp 数量和坐标。仅检查注册路由表“源地图→目标地图”不能发现黑屏或落点偏移。
+
 ## DEV-335｜Gold 室内复用要同时移植 tile 像素、BLOCK、collision 和 palette
 
 - 只换 `.blk` 或把 `POKECENTER` 直接复制到 Johto 会产生视觉/碰撞不一致。Gold/NPC-243 的实际行走 tile `$09/$2e` 与 RPP `Pokecenter_Coll` 不同；新 tileset 将三个 tile-ID pair 无损交换（图像、blockset、palette 统一改编号），只复用已有常驻碰撞表，**不占用 ROM0 额外字节**，新运行资产和治疗函数放 ROMX。

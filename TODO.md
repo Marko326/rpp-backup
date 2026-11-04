@@ -1,3 +1,20 @@
+## CLEAN-5.62.337｜当前清理三件套与验收边界（优先于历史 TODO）
+- [x] 用户 `REF-337.patch` 对 HEAD `19c349b2` 独立应用并与窗口 REF-337 候选的3200个文件逐字节一致。
+- [x] 用户回复 REF-337 圆朱市／卡吉镇两项落点修复“没问题”；先前 REF-335 两座中心的进出、护士、START 验收保持有效。
+- [x] 主 Gold 静态审计和不带重型 Gold 来源的全套 Johto Python 单元测试复跑，修正旧合同与离线审计遗漏，不改任何游戏运行 ASM、地图和版本。
+- [ ] 用户实际 Red/Blue/TEST 新 ROM 与 MAP 验证 ROM0≥64B／相关 ROMX；旧存档继续读写及剩余手机路径仍需实际确认。
+- [ ] 用户按清理包选择 01 或 03，使用 02 进行工具反向隔离，再自行进行游戏功能与工具审计两笔 Commit／Push。
+- [ ] 下阶段三家中心：烟墨市／白银山附近／石英高原，不包含本轮。
+
+## REF-337｜圆朱市与卡吉镇宝可梦中心入场落点修复（待用户构建/实机复验）
+- [x] 根据用户《REF336，测试视频.mp4》定位两项问题：圆朱市中心进入黑屏；卡吉镇中心进入后落在右侧地毯。
+- [x] 根因是室外 RuntimeObjects 的第三字节是**目标地图的 destination warp ID**，不是 `JohtoRegisteredWarpRoutes` 的来源 ordinal。圆朱市 `(27,23)` 原写4，卡吉镇 `(13,15)` 原写1；两家室内各只有两个一楼入口 Warp，Gold 室外门均指向室内第1个 Warp，因此目标编号都应为0。
+- [x] 保留注册路由中的来源序号：圆朱市仍为4、卡吉镇仍为1；保留室内出口回城目标及双地毯独立登记。修复仅把两个室外入口的目标 Warp ID 改为0。
+- [x] 新增故障注入：把圆朱目标 ID 恢复为4或卡吉目标 ID 恢复为1，专项审计必须失败；同时从 Gold 原版确认两家入口的 `destination_warp_number == 1`。
+- [x] 游戏版本升为 `REF-337`（等长标签），同步当前版本审计合同。未改变地图数量、稳定 ID、Warp 路由来源 ordinal、治疗/START/Fly 逻辑。
+- [ ] 用户本机重新构建 Red/Blue/TEST 与 MAP，检查 ROM0≥64B、相关 ROMX Bank 余量；重点确认圆朱市中心不再黑屏，卡吉镇从门口进入落在左侧地毯，左右两个室内出口仍各自回城。
+- **边界**：本轮不编译/链接 ROM，不做 Git Commit/Push；静态审计与补丁回放不能替代用户新 ROM 实测。
+
 ## REF-332 提交前死代码清理补充
 - [x] 原用户工作区与 DEV-339 最终版逐文件一致，仅正式 CLEAN 文档未在用户工作区。
 - [x] 移除不再执行的 Kanto 动画末尾 Johto 治疗记录回调及无调用者的旧 helper；审计改为保护 Gold 专用动画结束后记录，加入旧回调复活负向测试；工具 `if False` 死分支删除。
@@ -2274,3 +2291,10 @@ This section preserves the original author's roadmap. Status markers reflect the
 - [ ] 用户四目标可用构建及 MAP 验证，重点 ROM0、Bank $41、存档块地址不变。
 - [ ] 最小实机：既有旧档继续→存档→读档；新游戏初始化→存档→读档。
 - [ ] 首次城都地图正式接入前增加地图切换的地区身份提交点及失效回退；不得用旧城都编号别名。
+
+
+### REF-336 batch Johto Pokecenter development candidate (awaiting user ROM/device verification)
+- Enabled Gold 5x4 shared treatment center 1F for Ecruteak, Olivine, Cianwood, and Mahogany, using stable physical IDs 160, 30, 42, 77.
+- Outdoor door source coordinates Gold (23,27), (13,21), (23,43), (15,13). Existing gatehouses/warps remain unchanged. 52 -> 56 active maps; 119 -> 131 registered warps.
+- Two exit carpets, one nurse, last-successful-heal ID, original town-map landmark and existing Fly unlock only; PC storage/2F/extra NPCs deferred.
+- User to build Red/Blue/TEST MAPs and confirm ROM0 >= 64B; review ROMX headroom, cross-town transfers, floor edge and four START selections on a handset. No assistant ROM build/link, Commit or Push.

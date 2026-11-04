@@ -95,7 +95,8 @@ def audit(root):
            'JohtoSharedPokecenter_GFX:: INCBIN "gfx/tilesets/johto_shared_pokecenter.2bpp"' in main and
            'JohtoSharedPokecenter_Block:: INCBIN "gfx/blocksets/johto_shared_pokecenter.bst"' in main)
         ck('gold_runtime_room_and_warps',all(t in room for t in ('DEF JOHTO_SHARED_POKECENTER_WIDTH EQU 5','db JOHTO_POKECENTER',
-            'db 7, 3, 1, JOHTO_REGISTERED_WARP_SELECTOR','db 7, 4, 1, JOHTO_REGISTERED_WARP_SELECTOR','db $0f','TX_POKECENTER_NURSE')))
+            'db 7, 3, 1, JOHTO_REGISTERED_WARP_SELECTOR','db 7, 4, 1, JOHTO_REGISTERED_WARP_SELECTOR','db $0f','TX_POKECENTER_NURSE')) and
+           room.count('db JOHTO_POKECENTER')==9)
         ck('sprite_palettes_heal_machine',bool(re.search(r'cp POKECENTER\s+jr z, \.gotPaletteList\s+cp JOHTO_POKECENTER\s+jr z, \.gotPaletteList',sprite)))
         entry=goldheal.split('AnimateHealingMachineRegional337::',1)[1].split('\n.johto\n',1)[0]
         writer=goldheal.split('\n.johto\n',1)[1].split('\n.copyOne\n',1)[0]
@@ -111,8 +112,8 @@ def audit(root):
            'ld [wLastBlackoutMap], a' in pre and 'ld [wJohtoLastHealMagic], a' not in pre and
            'callab SetLastBlackoutMapRegional' in code('engine/overworld/set_blackout_map.asm'))
         ck('writer_restricted_to_active_center',
-           bool(re.search(r'ld a, \[wCurMap\]\s+cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.kanto\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\s+jr z, \.johto',entry)) and
-           bool(re.search(r'ld a, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\s+ld \[wJohtoLastHealLocalID\], a\s+ld a, JOHTO_LAST_HEAL_MAGIC\s+ld \[wJohtoLastHealMagic\], a\s+jp UpdateSprites', writer)))
+           bool(re.search(r'ld a, \[wCurMap\]\s+cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.kanto\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\s+jr z, \.johto\s+cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID\s+jr z, \.johto',entry)) and
+           bool(re.search(r'ld a, \[wCurLocalMapID\]\s+ld \[wJohtoLastHealLocalID\], a\s+ld a, JOHTO_LAST_HEAL_MAGIC\s+ld \[wJohtoLastHealMagic\], a\s+jp UpdateSprites', writer)))
         s=town.split('JohtoPilotGetLastHealLandmarkOrPlayer::',1)[1].split('JohtoPilotLoadMapMusic::',1)[0]
         ck('town_start_recovers_record_or_player',all(t in s for t in ('cp JOHTO_LAST_HEAL_MAGIC',
             'cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID','ld e, 2','jp JohtoPilotGetTownMapLandmark')) and

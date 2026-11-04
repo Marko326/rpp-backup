@@ -130,7 +130,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123, 106, 135, 133, 146, 160, 30, 42, 77]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -208,8 +208,24 @@ MAP_LAYOUTS = {
     "Route46": (10, 18),
     "Route29Route46Gate": (5, 4),
     "CherrygrovePokecenter1F": (5, 4),
+    "Route32Pokecenter1F": (5, 4),
+    "AzaleaPokecenter1F": (5, 4),
+    "VioletPokecenter1F": (5, 4),
+    "GoldenrodPokecenter1F": (5, 4),
+    "EcruteakPokecenter1F": (5, 4),
+    "OlivinePokecenter1F": (5, 4),
+    "CianwoodPokecenter1F": (5, 4),
+    "MahoganyPokecenter1F": (5, 4),
 }
 GOLD_SOURCE_MAPS = {
+    "Route32Pokecenter1F": "Route32Pokecenter1F",
+    "AzaleaPokecenter1F": "AzaleaPokecenter1F",
+    "VioletPokecenter1F": "VioletPokecenter1F",
+    "GoldenrodPokecenter1F": "GoldenrodPokecenter1F",
+    "EcruteakPokecenter1F": "EcruteakPokecenter1F",
+    "OlivinePokecenter1F": "OlivinePokecenter1F",
+    "CianwoodPokecenter1F": "CianwoodPokecenter1F",
+    "MahoganyPokecenter1F": "MahoganyPokecenter1F",
     "Route37": "Route37",
     "EcruteakCity": "EcruteakCity",
     "NewBarkTown": "NewBarkTown",
@@ -726,6 +742,55 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                'Gold OAM/2-tile machine, successful center treatment stamp, indoor fastpath')
     if center337['errors'] and not center337['checks']:
         _check(errors, checks, 'johto_center337_load', False, '; '.join(center337['errors']))
+    # REF-336: exact four new Gold city-center doors, slot mapping,
+    # independent heal/return targets and no new Fly destinations.
+    try:
+        from johto_batch_centers_336_audit import audit as audit_batch_centers_336
+    except ImportError:
+        from tools.johto_batch_centers_336_audit import audit as audit_batch_centers_336
+    batch336 = audit_batch_centers_336(project, Path(gold_root) if gold_root else None)
+    for item in batch336['checks']:
+        _check(errors, checks, 'johto_batch336_' + item['check'],
+               item['status'] == 'PASS', 'Gold-source four-city center batch, no added Fly stops')
+    if batch336['errors'] and not batch336['checks']:
+        _check(errors, checks, 'johto_batch336_loaded', False, '; '.join(batch336['errors']))
+    # REF-333 Route32 roadside Pokecenter: fail closed on entry/exit, Gold
+    # layout, successful heal ID and no standalone Fly stop.
+    try:
+        from johto_route32_center_333_audit import audit as audit_route32_center_333
+    except ImportError:
+        from tools.johto_route32_center_333_audit import audit as audit_route32_center_333
+    center333 = audit_route32_center_333(project, Path(gold_root) if gold_root else None)
+    for item in center333['checks']:
+        _check(errors, checks, 'johto_route32_center333_' + item['check'],
+               item['status'] == 'PASS', 'Route32 center: Gold doorway, shared room, Nurse, Fly isolation')
+    if center333['errors'] and not center333['checks']:
+        _check(errors, checks, 'johto_route32_center333_load', False, '; '.join(center333['errors']))
+    # REF-334 Azalea Center: independent real-Gold door/exit/source audit.
+    # This must pass alongside the previous 2 center checks, not replace them.
+    try:
+        from johto_azalea_center_334_audit import audit as audit_azalea_center_334
+    except ImportError:
+        from tools.johto_azalea_center_334_audit import audit as audit_azalea_center_334
+    azalea_report = audit_azalea_center_334(project, Path(gold_root) if gold_root else None)
+    for item in azalea_report['checks']:
+        _check(errors, checks, 'johto_azalea_center334_' + item['check'],
+               item['status'] == 'PASS', 'Azalea Gold doorway, restricted open approach, two carpet exits, healer, Fly guard')
+    if azalea_report['errors'] and not azalea_report['checks']:
+        _check(errors, checks, 'johto_azalea_center334_load', False,
+               '; '.join(azalea_report['errors']))
+    # REF-335: two Gold centers plus preservation of already live Goldenrod gates.
+    try:
+        from johto_violet_goldenrod_centers_335_audit import audit as audit_centers335
+    except ImportError:
+        from tools.johto_violet_goldenrod_centers_335_audit import audit as audit_centers335
+    centers335 = audit_centers335(project, Path(gold_root) if gold_root else None)
+    for item in centers335['checks']:
+        _check(errors, checks, 'johto_violet_goldenrod_centers335_' + item['check'],
+               item['status'] == 'PASS', 'Violet/Goldenrod Gold centers + both existing gates preserved')
+    if centers335['errors'] and not centers335['checks']:
+        _check(errors, checks, 'johto_violet_goldenrod_centers335_load', False,
+               '; '.join(centers335['errors']))
     # REF-319: This is part of the active baseline, not an optional command
     # a developer might forget to run after editing movement branches.
     if (project / 'data/johto_lake_of_rage_321.asm').is_file():
@@ -1051,7 +1116,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_43_LOCAL_ID", "JOHTO_ROUTE_43_GATE_LOCAL_ID",
                            "JOHTO_LAKE_OF_RAGE_LOCAL_ID", "JOHTO_ROUTE_44_LOCAL_ID", "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
                            "JOHTO_ROUTE_45_LOCAL_ID", "JOHTO_ROUTE_46_LOCAL_ID", "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
-                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID"]
+                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID", "JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID", "JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID", "JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID", "JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID", "JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID", "JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID", "JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -1119,6 +1184,14 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     expected_slots[73] = 45
     expected_slots[74] = 46
     expected_slots[123] = 47
+    expected_slots[106] = 48
+    expected_slots[135] = 49
+    expected_slots[133] = 50
+    expected_slots[146] = 51
+    expected_slots[160] = 52
+    expected_slots[30] = 53
+    expected_slots[42] = 54
+    expected_slots[77] = 55
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1351,6 +1424,46 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
             ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',1,'JOHTO_ROUTE_46_LOCAL_ID'),
             ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',2,'JOHTO_ROUTE_29_LOCAL_ID'),
             ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID',3,'JOHTO_ROUTE_29_LOCAL_ID'),
+        ):
+            expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
+        # REF-333: 32号道路的无独立Fly中心，入口及两块出口独立注册。
+        for source, ordinal, target in (
+            ('JOHTO_ROUTE_32_LOCAL_ID',3,'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID',0,'JOHTO_ROUTE_32_LOCAL_ID'),
+            ('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID',1,'JOHTO_ROUTE_32_LOCAL_ID'),
+        ):
+            expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
+        # REF-334: Azalea Town Gold center, preserving town gate ordinals 0/1.
+        for source, ordinal, target in (
+            ('JOHTO_AZALEA_TOWN_LOCAL_ID',2,'JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID',0,'JOHTO_AZALEA_TOWN_LOCAL_ID'),
+            ('JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID',1,'JOHTO_AZALEA_TOWN_LOCAL_ID'),
+        ):
+            expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
+        # REF-335: newly activated Violet + Goldenrod centers; keep earlier 113 ordinals fixed.
+        for source, ordinal, target in (
+            ('JOHTO_VIOLET_CITY_LOCAL_ID',2,'JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID',0,'JOHTO_VIOLET_CITY_LOCAL_ID'),
+            ('JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID',1,'JOHTO_VIOLET_CITY_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_CITY_LOCAL_ID',1,'JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID',0,'JOHTO_GOLDENROD_CITY_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID',1,'JOHTO_GOLDENROD_CITY_LOCAL_ID'),
+        ):
+            expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
+        # REF-336: four new Gold-approved city centers, preserving original 119 rows and ordinals.
+        for source, ordinal, target in (
+            ('JOHTO_ECRUTEAK_CITY_LOCAL_ID',4,'JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',0,'JOHTO_ECRUTEAK_CITY_LOCAL_ID'),
+            ('JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',1,'JOHTO_ECRUTEAK_CITY_LOCAL_ID'),
+            ('JOHTO_OLIVINE_CITY_LOCAL_ID',0,'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID',0,'JOHTO_OLIVINE_CITY_LOCAL_ID'),
+            ('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID',1,'JOHTO_OLIVINE_CITY_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_CITY_LOCAL_ID',0,'JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID',0,'JOHTO_CIANWOOD_CITY_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID',1,'JOHTO_CIANWOOD_CITY_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_TOWN_LOCAL_ID',1,'JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',0,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',1,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
         ):
             expected_warps.append(('MAP_REGION_JOHTO',source,str(ordinal),'MAP_REGION_JOHTO',target))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,

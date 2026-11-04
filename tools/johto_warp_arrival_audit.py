@@ -114,9 +114,9 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
            len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 13 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 107 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 131 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 13 gates and 107 activated Warp arcs incl. 3 center arcs')
+           'MUS contract records 3 house arcs, 13 gates and 131 activated Warp arcs incl. 27 center arcs')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -218,6 +218,15 @@ def audit(project: Path, gold: Path) -> dict:
                9: 'JOHTO_ROUTE_33_LOCAL_ID'}
         expected_routes.append(('MAP_REGION_JOHTO', ids[row['source_stable_id']],
             str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', ids[row['target_stable_id']]))
+    # REF-333: Route32 Gold center north of Union Cave, no Fly destination.
+    expected_routes.extend(('MAP_REGION_JOHTO', src, str(n), 'MAP_REGION_JOHTO', dst)
+        for src, n, dst in (
+            ('JOHTO_ROUTE_32_LOCAL_ID', 3, 'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID', 0, 'JOHTO_ROUTE_32_LOCAL_ID'),
+            ('JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID', 1, 'JOHTO_ROUTE_32_LOCAL_ID'),
+            ('JOHTO_AZALEA_TOWN_LOCAL_ID', 2, 'JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID', 0, 'JOHTO_AZALEA_TOWN_LOCAL_ID'),
+            ('JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID', 1, 'JOHTO_AZALEA_TOWN_LOCAL_ID')))
     # MAP-268: South route order and physical Gold endpoints are frozen together.
     south_routes = contract.get('south_batch_routes', [])
     south_names = {10:'AzaleaTown', 11:'IlexForestAzaleaGate', 12:'IlexForest',
@@ -451,6 +460,32 @@ def audit(project: Path, gold: Path) -> dict:
                 str(row['source_warp_ordinal']), 'MAP_REGION_JOHTO', south_gate_ids[dst]))
     _check(checks, errors, 'route29_46_gate_exact_gold_warps', south_gate_valid,
            'ID74 requires 7 exact Route29/Route46/NorthSouthGate Gold arcs, roles, directions and arrival steps')
+    # REF-335: two city centers' Gold doors and dual exit carpets; existing 113 unchanged.
+    expected_routes.extend(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target)
+        for source, ordinal, target in (
+            ('JOHTO_VIOLET_CITY_LOCAL_ID',2,'JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID',0,'JOHTO_VIOLET_CITY_LOCAL_ID'),
+            ('JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID',1,'JOHTO_VIOLET_CITY_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_CITY_LOCAL_ID',1,'JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID',0,'JOHTO_GOLDENROD_CITY_LOCAL_ID'),
+            ('JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID',1,'JOHTO_GOLDENROD_CITY_LOCAL_ID'),
+        ))
+    # REF-336 append only approved center doors and two independent gold carpets for each.
+    expected_routes.extend(('MAP_REGION_JOHTO', source, str(ordinal), 'MAP_REGION_JOHTO', target)
+        for source, ordinal, target in (
+            ('JOHTO_ECRUTEAK_CITY_LOCAL_ID',4,'JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',0,'JOHTO_ECRUTEAK_CITY_LOCAL_ID'),
+            ('JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',1,'JOHTO_ECRUTEAK_CITY_LOCAL_ID'),
+            ('JOHTO_OLIVINE_CITY_LOCAL_ID',0,'JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID',0,'JOHTO_OLIVINE_CITY_LOCAL_ID'),
+            ('JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID',1,'JOHTO_OLIVINE_CITY_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_CITY_LOCAL_ID',0,'JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID',0,'JOHTO_CIANWOOD_CITY_LOCAL_ID'),
+            ('JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID',1,'JOHTO_CIANWOOD_CITY_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_TOWN_LOCAL_ID',1,'JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',0,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
+            ('JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID',1,'JOHTO_MAHOGANY_TOWN_LOCAL_ID'),
+        ))
     try:
         from collections import Counter
         rows = _route_rows(runtime)

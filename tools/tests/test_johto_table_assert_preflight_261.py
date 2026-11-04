@@ -42,6 +42,10 @@ class ActiveMapTableAssert261(unittest.TestCase):
         self.assertTrue(issues, tables)
         self.assertTrue(any(detail in x for x in issues), issues)
 
+    def test_build_preflight_and_tool_preflight_are_identical(self):
+        self.assertEqual((ROOT / 'johto_table_assert_preflight.py').read_bytes(),
+                         (ROOT / 'tools/johto_table_assert_preflight.py').read_bytes())
+
     def test_real_current_tables_all_match(self):
         issues, tables, active = inspect(self.root)
         self.assertEqual(self.active, active)

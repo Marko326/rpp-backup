@@ -109,9 +109,17 @@ def inspect(root):
             checked.append((str(f.relative_to(root)), start, got, expected_bytes))
             if got != expected_bytes:
                 issues.append(f'{f.relative_to(root)}: {start}: got {got} bytes, expected {expected_bytes} from NUM_JOHTO_ACTIVE_MAPS={expected_count}')
-    target = ('engine/menu/options_menu.asm', 'JohtoActiveGSCMusic')
-    if not any((f, start) == target for f, start, _, _ in checked):
-        issues.append('MISSING: JohtoActiveGSCMusic length ASSERT could not be verified (do not claim PASS)')
+    # These three active-slot tables exist in the current project. Their
+    # ASSERTs must not disappear silently if someone removes a declaration.
+    # Generic scanning above also checks any additional expression of this form.
+    required = {
+        ('engine/menu/options_menu.asm', 'JohtoActiveGSCMusic'),
+        ('engine/fly_town_map_helpers.asm', 'JohtoPilotTownMapEntries'),
+        ('engine/fly_town_map_helpers.asm', 'JohtoPilotTownMapBrowseIndexBySlot'),
+    }
+    present = {(f, start) for f, start, _got, _expected in checked}
+    for file, label in sorted(required - present):
+        issues.append(f'MISSING: {file}::{label} length ASSERT could not be verified (do not claim PASS)')
     return issues, checked, expected_count
 
 
@@ -119,7 +127,17 @@ def selftest():
     import tempfile
     with tempfile.TemporaryDirectory() as d:
         root = pathlib.Path(d)
-        (root / 'constants').mkdir(); (root / 'engine/menu').mkdir(parents=True)
+        (root / 'constants').mkdir()
+        (root / 'engine/menu').mkdir(parents=True)
+        (root / 'engine/fly_town_map_helpers.asm').write_text(
+            'JohtoPilotTownMapEntries::\n'
+            ' dw 0, 1, 2, 3, 4, 5\n'
+            'JohtoPilotTownMapEntriesEnd::\n'
+            'ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4\n'
+            'JohtoPilotTownMapBrowseIndexBySlot::\n'
+            ' db 0, 1, 2\n'
+            'JohtoPilotTownMapBrowseIndexBySlotEnd::\n'
+            'ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS\n')
         (root / 'constants/region_map_constants.asm').write_text('DEF NUM_JOHTO_ACTIVE_MAPS EQU 3\n')
         table = root / 'engine/menu/options_menu.asm'
         def write(rows):

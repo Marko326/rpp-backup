@@ -77,8 +77,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 48', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 48',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 56', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 56',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -111,6 +111,22 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             self.assertEqual(result['status'], 'FAIL')
             self.assertTrue(any(c['check'] == 'REGISTERED_WARP_ROUTES' and c['status'] == 'FAIL'
                                 for c in result['checks']), result['errors'])
+
+    def test_new_ecruteak_center_source_ordinal_mutation_is_rejected(self):
+        # A late appended center must not escape the historical 107-row check.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            copy_files(ROOT, root, REGISTRATION_FILES + ('tools/johto_pilot_door_contracts.json',))
+            p = root / 'engine/johto_pilot_runtime.asm'
+            src = p.read_text()
+            original = ('JOHTO_ECRUTEAK_CITY_LOCAL_ID, 4, MAP_REGION_JOHTO, '
+                        'JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID')
+            self.assertIn(original, src)
+            p.write_text(src.replace(original, original.replace(', 4, ', ', 3, '), 1))
+            report = generate_registration(root, 'GuideGentsHouse')
+            self.assertEqual(report['status'], 'FAIL')
+            self.assertTrue(any(c['check'] == 'REGISTERED_WARP_ROUTES' and c['status'] == 'FAIL'
+                                for c in report['checks']), report['errors'])
 
     def test_shared_center_gold_carpet_contract_mutation_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

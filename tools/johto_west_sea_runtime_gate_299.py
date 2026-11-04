@@ -100,9 +100,9 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         main = txt("main.asm")
 
         ck("version_299_and_test_232",
-           'db "REF-312@"' in version and 'TEST-' not in version,
+           'db "REF-337@"' in version and 'TEST-' not in version,
            "REF-5.62.312; normal and battle-test builds share the same in-ROM version")
-        ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (?:35|38|39)$", constants) is not None)
+        ck("active_35", re.search(r"(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 56$", constants) is not None)
         for name, sym, dim_sym, ident, w, h, water_count, mature in MAPS:
             m = re.search(rf"(?m)^DEF {re.escape(sym)} EQU (\$[0-9A-Fa-f]+|\d+)(?:\s*;.*)?$", fixed + "\n" + constants)
             parsed_id = int(m.group(1)[1:], 16) if m and m.group(1).startswith("$") else int(m.group(1)) if m else None
@@ -143,7 +143,7 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         for a, direction, b in NEW_CONNECTIONS:
             row = f"db MAP_REGION_JOHTO, {a}, {direction}, MAP_REGION_JOHTO, {b}"
             ck(f"connection_{a}_{direction}_{b}", conn.count(row) == 1, row)
-        ck("source_connection_count_36", ("JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 36" in source or "JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 40" in source))
+        ck("source_connection_count_36", "JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52" in source)
 
         # Gold source + mature reference identity and role-grid derivation.
         gold = GoldCollisionIndex(gold_root)
@@ -239,8 +239,8 @@ def _core(root: Path, gold_root: Path, reference_root: Path,
         ck("deferred_warps_closed",
            re.search(r"db \$05\s+db 0\s+db 1", r40_obj) is not None and
            re.search(r"db \$05\s+db 0\s*; four Whirl Islands cave entries remain intentionally closed\s+db 0\s+db 0", r41_obj) is not None and
-           re.search(r"db \$05\s+db 0\s*; six Gold indoor Warps remain sealed\s+db 5", cw_obj) is not None,
-           "Route40/41/Cianwood Warp count must stay zero")
+           re.search(r"db \$05\s+db 1\s*; REF-336 center enabled alongside existing warps\s+db 43, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR\s*; Gold Cianwood #3 Center\s+db 5", cw_obj) is not None,
+           "Route40/41 remain sealed; Cianwood only Gold center door #3 open")
         ck("route41_no_signs", re.search(r"db 0\s+db 0\s*$", r41_obj.strip()) is not None)
         ck("route40_sign_object_exact",
            re.search(r"db 1\s+db 8, 16, 1\s+db 0\s*$", r40_obj.strip()) is not None,

@@ -275,6 +275,54 @@
       "role": "named",
       "name": "Cherrygrove City",
       "town_map_name": "Cherrygrove City"
+    },
+    {
+      "id": "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Route 32",
+      "town_map_name": "Route 32"
+    },
+    {
+      "id": "JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Azalea Town",
+      "town_map_name": "Azalea Town"
+    },
+    {
+      "id": "JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Violet City",
+      "town_map_name": "Violet City"
+    },
+    {
+      "id": "JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Goldenrod City",
+      "town_map_name": "Goldenrod City"
+    },
+    {
+      "id": "JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Ecruteak City",
+      "town_map_name": "Ecruteak City"
+    },
+    {
+      "id": "JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Olivine City",
+      "town_map_name": "Olivine City"
+    },
+    {
+      "id": "JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Cianwood City",
+      "town_map_name": "Cianwood City"
+    },
+    {
+      "id": "JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Mahogany Town",
+      "town_map_name": "Mahogany Town"
     }
   ]
 }

@@ -86,7 +86,7 @@ class GoldCenter337(unittest.TestCase):
 
     def test_id_stamp_must_match_valid_room(self):
         self.mutate('engine/johto_gold_healing_machine_337.asm',
-                    'ld a, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\n    ld [wJohtoLastHealLocalID], a',
+                    'ld a, [wCurLocalMapID]\n    ld [wJohtoLastHealLocalID], a',
                     'ld a, JOHTO_CHERRYGROVE_LOCAL_ID\n    ld [wJohtoLastHealLocalID], a',
                     'stamp_only_after_song_and_sprite_restore')
 

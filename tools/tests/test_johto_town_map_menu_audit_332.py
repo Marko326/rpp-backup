@@ -78,7 +78,7 @@ class TownMapMenuAudit332Test(unittest.TestCase):
         self.assert_fails("fly_input_and_cancel")
 
     def test_fly_start_without_unlock_guard_is_caught(self):
-        self.mutate("engine/johto_pilot_fly_map.asm", "\tcall .isUnlocked\n\tjr z, .startRestore", "\tcall .isUnlocked\n\tjr nz, .startRestore")
+        self.mutate("engine/johto_pilot_fly_map.asm", "    call .isUnlocked\n    jr z, .startRestore", "    call .isUnlocked\n    jr nz, .startRestore")
         self.assert_fails("fly_start_last_heal_guard")
 
     def test_fly_start_missing_restore_on_miss_is_caught(self):
@@ -86,19 +86,19 @@ class TownMapMenuAudit332Test(unittest.TestCase):
         self.assert_fails("fly_start_last_heal_guard")
 
     def test_fly_start_no_old_current_map_shortcut(self):
-        self.mutate("engine/johto_pilot_fly_map.asm", "\tld a, [wJohtoLastHealLocalID]", "\tld a, [wCurLocalMapID]")
+        self.mutate("engine/johto_pilot_fly_map.asm", "    ld a, [wJohtoLastHealLocalID]", "    ld a, [wCurLocalMapID]")
         self.assert_fails("fly_start_last_heal_guard")
 
     def test_fly_start_invalid_magic_cannot_pass(self):
-        self.mutate("engine/johto_pilot_fly_map.asm", "\tcp JOHTO_LAST_HEAL_MAGIC", "\tcp 0")
+        self.mutate("engine/johto_pilot_fly_map.asm", "    cp JOHTO_LAST_HEAL_MAGIC", "    cp 0")
         self.assert_fails("fly_start_last_heal_guard")
 
     def test_fly_start_wrong_room_id_cannot_pass(self):
-        self.mutate("engine/johto_pilot_fly_map.asm", "\tcp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "\tcp JOHTO_CHERRYGROVE_LOCAL_ID")
+        self.mutate("engine/johto_pilot_fly_map.asm", "    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "    cp JOHTO_CHERRYGROVE_LOCAL_ID")
         self.assert_fails("fly_start_last_heal_guard")
 
     def test_fly_start_wrong_fly_row_cannot_pass(self):
-        self.mutate("engine/johto_pilot_fly_map.asm", "\tld a, 1 ; Cherrygrove City row", "\tld a, 7 ; Cherrygrove City row")
+        self.mutate("engine/johto_pilot_fly_map.asm", "    ld a, 1 ; Cherrygrove: existing row1", "    ld a, 7 ; Cherrygrove: existing row1")
         self.assert_fails("fly_start_last_heal_guard")
 
     def test_fly_lake_special_locked_destination_is_caught(self):

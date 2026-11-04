@@ -82,7 +82,7 @@ class Mature271(unittest.TestCase):
             original = p.read_text()
             p.write_text(original.replace('db JOHTO_GOLDENROD_CITY_LOCAL_ID, 9, 5',
                                           'db JOHTO_GOLDENROD_CITY_LOCAL_ID, 9, 6',1))
-            self.assertTrue(any('23 remaining closed' in x for x in audit(temp)))
+            self.assertTrue(any('21 remaining closed' in x for x in audit(temp)))
             p.write_text(original)
             p = temp/'home/overworld.asm'
             original = p.read_text()

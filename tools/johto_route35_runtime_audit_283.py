@@ -94,7 +94,7 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
         route_rows=re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR',runtime.split('JohtoNorthRoute35RuntimeObjects::',1)[-1])
         check('route35_gate_runtime_destination_ordinals_exact',
               gate_rows==[('0','4','0'),('0','5','1'),('7','4','0'),('7','5','0')] and
-              city_rows==[('1','19','2')] and
+              city_rows==[('1','19','2'),('27','15','0')] and
               route_rows[:2]==[('33','9','0'),('33','10','1')] and
               (len(route_rows)==2 or route_rows[2:]==[('5','3','2')]))
         check('source_and_runtime_assets_both_active',
@@ -192,7 +192,7 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
         check('route35_gate_arrival_and_carpet_trigger_distinct',
               all(t in portal for t in ('.route35Gate\n    jp .northGate',
                   '.gateTop\n    ld a, [wYCoord]\n    and a',
-                  '.cityDoor\n    ld a, [wXCoord]\n    cp 19',
+                  '.cityDoor\n    ld a, [wXCoord]\n    cp 15\n    jr z, .goldenrodCenterArrival\n    cp 19',
                   '.route35South\n    cp PLAYER_DIR_DOWN')) and
               'cp 2\n    jr z, .northGoldStepOnDoor' in read('home/overworld.asm') and
               'jp CheckWarpsNoCollisionRetry2' in read('home/overworld.asm'))

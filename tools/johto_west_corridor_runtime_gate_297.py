@@ -142,8 +142,13 @@ def audit(root: Path, gold_root: Path | None = None, *,
        '2 Route38 gate carpets')
     ck('route39_interiors_sealed', re.search(r'(?m)^\s*db\s+0\s*; barn/farmhouse interiors remain sealed', r39_objects) is not None and
        'JOHTO_REGISTERED_WARP_SELECTOR' not in r39_objects, '0 Route39 building warps')
-    ck('olivine_interiors_sealed', re.search(r'(?m)^\s*db\s+0\s*; all 11 Gold building/port Warps remain sealed', oli_objects) is not None and
-       'JOHTO_REGISTERED_WARP_SELECTOR' not in oli_objects, '0 Olivine building/port warps')
+    # REF-336/337: only the reviewed Gold Olivine Center door is open;
+    # the remaining ten original building/port entrances must stay sealed.
+    olivine_warps = re.findall(r'(?m)^\s*db\s+(\d+),\s*(\d+),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR', oli_objects)
+    ck('olivine_interiors_sealed',
+       re.search(r'(?m)^\s*db\s+1\s*; REF-336 center enabled alongside existing warps', oli_objects) is not None and
+       olivine_warps == [('21', '13', '0')],
+       'exactly one approved Olivine Center door (Y21,X13, destination 0); ten other warps closed')
 
     route_body = runtime.split('JohtoRegisteredWarpRoutes::', 1)[1].split('JohtoRegisteredWarpRoutesEnd::', 1)[0]
     # Ecruteak City is shared by both west and east gatehouses. Select only

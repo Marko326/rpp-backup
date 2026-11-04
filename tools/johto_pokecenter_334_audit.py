@@ -32,11 +32,11 @@ def audit(root: Path) -> dict:
         healed=code('engine/overworld/healing_machine.asm')
         gold=code('engine/johto_gold_healing_machine_337.asm')
         orig=room.split('SetLastBlackoutMapRegional::',1)[1]
-        center=room.split('JohtoSharedPokecenterRuntimeObjects::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
+        center=room.split('JohtoSharedPokecenterRuntimeObjects::',1)[1].split('JohtoRoute32PokecenterRuntimeObjects::',1)[0]
         routing=runtime.split('JohtoRegisteredWarpRoutes::',1)[1].split('JohtoRegisteredWarpRoutesEnd::',1)[0]
         predicate=runtime.split('JohtoPilotGateDoorWarpMatched::',1)[1].split('JohtoPilotGateCollisionExitAllowed::',1)[0]
         land=land.split('JohtoOverworldSouthLandDecision::',1)[1].split('\n.southMaps\n',1)[0]
-        verify('stable_slot_47', 'NUM_JOHTO_ACTIVE_MAPS EQU 48' in code('constants/region_map_constants.asm') and
+        verify('stable_slot_47', 'NUM_JOHTO_ACTIVE_MAPS EQU 56' in code('constants/region_map_constants.asm') and
                bool(re.search(r'\b47\s*,\s*JOHTO_INVALID_ACTIVE_SLOT\s*,\s*5\s*,',slots)) and
                'dw JohtoSharedPokecenterRuntimeHeader' in header and
                'db BANK(JohtoSharedPokecenterRuntimeHeader)' in header)
@@ -60,7 +60,7 @@ def audit(root: Path) -> dict:
                 'db MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_CHERRYGROVE_LOCAL_ID')))
         verify('land_exact_up_approach',all(t in land for t in (
                'cp JOHTO_CHERRYGROVE_LOCAL_ID','cp PLAYER_DIR_UP','cp 25','cp 10',
-               'cp 29','cp 4','.cherryGuideApproach')) and land.count('ld e, 0')==2)
+               'cp 29','cp 4','.cherryGuideApproach')) and land.count('ld e, 0')>=3)
         verify('warp_actual_immediate_entry',all(t in predicate for t in (
                'cp JOHTO_CHERRYGROVE_LOCAL_ID','jp z, .cherrygroveGoldDoor',
                '.cherrygroveGoldDoor','cp PLAYER_DIR_UP','cp 9','cp 25',
@@ -96,7 +96,8 @@ def audit(root: Path) -> dict:
                'callab JohtoPilotGetLastHealLandmarkOrPlayer' in mapui)
         verify('profile_music_and_map_labels',
                'johto_map_profile 0, 2, MUSIC_POKECENTER, 0' in runtime and
-               'db MUSIC_GBP_GSC_POKEMON_CENTER' in code('engine/menu/options_menu.asm') and
+               'db MUSIC_GBP_GSC_POKEMON_CENTER ; slot47 interior center tune' in read('engine/menu/options_menu.asm') and
+               'db MUSIC_GBP_GSC_POKEMON_CENTER ; slot48 Route32 Center (no Fly destination)' in read('engine/menu/options_menu.asm') and
                'dw JohtoPilotCherrygroveName' in names and
                'dw JohtoSharedPokecenterRuntimeHeader' in header)
         verify('source_is_gold_5x4_and_dry',

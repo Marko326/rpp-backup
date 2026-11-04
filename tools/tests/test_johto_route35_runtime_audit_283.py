@@ -153,8 +153,8 @@ class Route35Gate284RegressionTests(unittest.TestCase):
 
     def test_reject_reversing_arrival_auto_step(self):
         self.assertRejected('engine/johto_south_portals.asm',
-            '.cityDoor\n    ld a, [wXCoord]\n    cp 19',
-            '.cityDoor\n    ld a, [wXCoord]\n    cp 18',
+            '.cityDoor\n    ld a, [wXCoord]\n    cp 15\n    jr z, .goldenrodCenterArrival\n    cp 19',
+            '.cityDoor\n    ld a, [wXCoord]\n    cp 15\n    jr z, .goldenrodCenterArrival\n    cp 18',
             'route35_gate_arrival_and_carpet_trigger_distinct')
 
     def test_accepted_gold_warp_ordinals_and_safe_viewport(self):

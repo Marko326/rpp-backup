@@ -1,3 +1,5 @@
+> **最新 CLEAN-5.62.337｜正式提交准备**：以用户上传 `REF-337.patch` 为真实未提交工作区，分支 `常规功能备份`、正式 HEAD `19c349b2`。56张活动地图、131条 Warp、九家城都宝可梦中心。用户已确认圆朱黑屏及卡吉右毯两项 REF-337 修正正常；本轮只同步离线工具／测试／文档，不改运行 ASM 与游戏版号 `REF-337`。累计差异含功能和工具，按模式 A 双提交准备清理三件套。完整边界、测试和应用方式见 [CLEAN-REF337 交接](docs/CLEAN_REF337_ACCEPTANCE_AND_HANDOFF.md)。以下 REF-332 与更早段落为历史记录。
+
 > **REF-332 递交前复核补充**：已确认用户 `REF-332(1).patch` 和 DEV-339 游戏/工具树完全一致；正式清理附加移除一个不可达的旧 Kanto→Johto 治疗写入回调及其冗余 helper，并同步修复对应审计与负向测试。游戏内版本仍 `REF-332`，但 ASM 字节变化需要重新链接检查 ROM/MAP。详见 `docs/CLEAN_REF332_ACCEPTANCE_AND_HANDOFF.md`。
 
 > **最新 CLEAN-5.62.332（2026-11-03，准备双提交）**：当前游戏内版本 `REF-332`，48张活动地图、107条Warp；`Cherrygrove City` Gold 5×4 Pokémon Center 与 Town Map/Fly 近期功能已纳入累计工作树，用户确认 Pokémon → Fly 的 START 最近治疗地点功能实机正常。DEV-339 统一了离线地图/Warp合同；完整 Gold 静态审计1518/1518通过，Python分组727通过49跳过0失败。此次清理仅更新维护文档，不更改ASM或游戏版本。**尚未在用户仓库 Commit／Push**，最新 Red MAP 的 ROM0余97B，Blue/TEST尚缺新报告；详情见 [REF-332 正式清理交接](docs/CLEAN_REF332_ACCEPTANCE_AND_HANDOFF.md)。以下为历史阶段记录。

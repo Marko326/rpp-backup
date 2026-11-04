@@ -77,7 +77,7 @@ def audit(root: Path) -> dict:
         ck('stamp_only_after_song_and_sprite_restore',
            'call WaitForSongToFinish' in yes and stamp > yes.find('call WaitForSongToFinish') > 0 and
            stamp > yes.find('ld [hl], a') and
-           re.search(r'ld a, '+ROOM+r'\s+ld \[wJohtoLastHealLocalID\], a\s+' +
+           re.search(r'ld a, \[wCurLocalMapID\]\s+ld \[wJohtoLastHealLocalID\], a\s+' +
                      r'ld a, JOHTO_LAST_HEAL_MAGIC\s+ld \[wJohtoLastHealMagic\], a\s+jp UpdateSprites', yes) is not None)
         helper = runtime.split('JohtoPilotGetLastHealLandmarkOrPlayer::', 1)[1].split('JohtoPilotLoadMapMusic::',1)[0]
         ck('town_start_reads_saved_heal_and_fallback',
@@ -101,8 +101,8 @@ def audit(root: Path) -> dict:
         ck('center_skips_outdoor_role_dispatch_and_uses_legacy_collision',
            re.search(r'ld e, 2\s+ld a, \[wCurLocalMapID\]\s+cp '+ROOM+r'\s+ret z',collision) is not None and
            collision.index('cp '+ROOM) < collision.index('.southMaps'))
-        ck('same_version_all_builds', 'Canonical project version REF-5.62.332' in version and
-           'db "REF-332@"' in version)
+        ck('same_version_all_builds', 'Canonical project version REF-5.62.337' in version and
+           'db "REF-337@"' in version)
     except (OSError, ValueError, IndexError, TypeError) as exc:
         errors.append('input_error: '+str(exc))
     return {'status': 'PASS_STATIC_ONLY' if not errors else 'FAIL', 'checks': checks,
