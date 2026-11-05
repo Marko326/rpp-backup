@@ -21688,6 +21688,20 @@
           15
         ]
       ]
+    },
+    {
+      "map": "BurnedTower1F",
+      "stable_id": 177,
+      "source_asset": "maps/johto_pilot/BurnedTower1F.gold.blk",
+      "source_sha256": "2a4f9689436c9c785f33d68b46c49ac1c874608b365c520cde222b604ac62b8c",
+      "water_yx": []
+    },
+    {
+      "map": "BurnedTowerB1F",
+      "stable_id": 178,
+      "source_asset": "maps/johto_pilot/BurnedTowerB1F.gold.blk",
+      "source_sha256": "d72b10d15ec81042a67cc7798201849d3985b43e498b4734db4f8487bc647aa9",
+      "water_yx": []
     }
   ]
 }

@@ -1,3 +1,8 @@
+## CLEAN-REF348｜旧阶段断言与现役 Gold 地牢不可混跑
+- REF-345/346 的“烧焦塔必须关闭”阶段负向测试有其历史价值，但在63活动图的REF-348上直接调用会失败；应将旧门禁仅用于临时历史快照，同时用现役专项检查验证已开放的11 PIT、5只接收落点、楼梯/怪力。不能靠直接跳过或放宽Gold规则伪造PASS。
+- 每增加活动地图都要同步 `tools/johto_surf_active_water_manifest_296.json`：即使 Gold 无水格，也需冻结真实源SHA256和空 `water_yx`；烧焦塔1F/B1F经 Gold 校验均无水格。
+- MAP空间须以同版本的 Red/Blue/TEST 新MAP为准。仓内历史 `patches/rppred.map` 并不自动对应最新导出的 REF-348。用户独立审查指出 ROM0=59B 的预算缺口，应独立解决，清理不静默更改输入/跳崖/ROM指令。
+
 ## CLEAN-REF344｜旧固定数量审计不能冒充新版本强制门禁
 - 已确认 Gold B2F 共享 Cave 专项与故障注入通过，但历史主审计里固定REF-338版57图/134Warp、旧Union单层等断言对REF-344误报。修正ROM0 Cave collision表长度旧13→现21，旧综合检查的剩余错误必须如实列出并按当前登记顺序升级；在此之前不得宣称综合审计全绿。
 - 用户实测确认B1F怪力石头可推动；不代替Red/Blue/TEST MAP/ROM0与B2F楼梯Surf/旧档验收。

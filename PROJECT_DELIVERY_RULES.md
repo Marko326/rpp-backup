@@ -1,3 +1,53 @@
+## CLEAN-REF348｜烧焦塔正式清理三件套（不改跳崖）
+- 本次真实输入为用户 `REF-348.patch`，基线干净 HEAD `02a65db8343abb34cae9edbb2d23fe73d9da9578`（`REF-344.zip`）；此 REF-348 工作区还未成为 Git 提交。明确**未应用**最后的“B键跳崖”及“黑影计时”候选补丁。
+- 用户要求两项跳崖问题后续单独处理：偶发黑影滞留，以及 B 快跑跳崖后立即按 UP 可回走。本清理仅修过时测试/Gold Surf manifest及交接文档，不触动跳崖或落洞运行指令、游戏版本 `REF-348`、63活动图/160 Warp。
+- Gold资源与烧焦塔专项静态检查通过，31个相关测试通过；主 Gold 迁移审计仍包含旧版57/134等过时断言，不能声称全绿。独立审查引用的 Red/Blue 最新 REF-348 MAP 显示 ROM0 只剩59B，低于64B；TEST未验证，禁止把旧MAP当最新空间证据。
+- 模式 A：01从**用户当前 REF-348.patch 已打的工作区**到清理状态；02清理最终状态到**仅功能**的工具审计反向隔离；03从干净 REF-344 HEAD 到清理累计全量。01/03互斥；先打02暂隔离提交功能，再 `git apply -R 02_工具审计反向隔离.patch` 恢复工具提交第二笔。附2份中文提交日志；AI不代编ROM、不Commit/Push。
+- 细节与未验收边界见 `docs/CLEAN_REF348_BURNED_TOWER_AUDIT.md`。
+
+## REF-348 Gold/RPP 视频节奏修复（不升版）
+- 用用户 Gold版.mp4 和 348RPP.mp4 的接近60fps录屏逐帧核对：Gold下落可见每个纵向位移维持2帧，RPP原版约1帧；Gold震动在纵向每2帧换向，RPP原版每帧换向。**方向均为上下**，不是横向；背景往返差约2像素。
+- Gold源码 `StepFunction_Skyfall` + `StepFunction_ScreenShake`：落洞16步正弦位移、场景 `earthquake 16` (16个震动对象步) + `step_sleep 16`。本次只用现有 `DelayFrames` 将每个落下/震动步保持2录屏帧，并将后续静止等候映射为32显示帧；不新增震动引擎、不变地图、音效、怪力或版本。
+- 这是录屏帧节奏匹配，仍须用户 Red/Blue/TEST ROM/MAP、手机实测与旧存档确认。仅交01音效热修后增量、02干净REF344累计两个互斥补丁；不代编 ROM、不Commit/Push。
+
+## REF-348 Gold 视频音效热修（不升版）
+- 基于已打 REF348 编译热修的工作区做增量；提供可选的 REF344干净HEAD累计补丁。两份互斥，不可叠加。
+- 只将 PIT 入口/落地的两段 RBY 近似音效换成已存在的 GSC `Sfx_Kinesis`/`Sfx_Strength` 指针，不改 Gold落点、影子、地震或 16+16 帧计时。
+- 静态审计/补丁回放不等于 ROM 及手机动态验收。用户本机构建 Red/Blue/TEST + MAP；助手不编译、不 Commit/Push。
+
+## REF-348 编译热修（不升版本）
+- 修复新增slot62后漏同步的 Town Map 地标表、浏览索引表及 GSC 音乐表；B1F 裁去31个空白尾图块，GFX断言为65×16。
+- 两份互斥正向补丁：01针对已经应用REF-348的工作区，02针对干净REF-344 HEAD `02a65db8`；不能叠加。此热修不改地图/传送/动画机制。
+- 用户自行重新构建 Red/Blue/TEST 并提供MAP；不由助手编译/链接ROM、提交或Push。
+
+## REF-348 烧焦塔 B1F 开发期交付规则
+- 01增量前置：已应用 REF-347「视频三问题修复」的工作区；02累计从已核实干净 REF-344 HEAD `02a65db8` 出发。两份正向补丁互斥，不叠加。
+- 功能：B1F 原版地图、11 PIT→5个仅接收落点、双向楼梯、方向跳崖、怪力石头；复用 RPP 已有电梯 SCY、Strength、Warp 框架。剧情/NPC/道具/遭遇不开放。
+- 游戏显示 REF-348。开发阶段仅交两份互斥正向补丁（单ZIP）；不执行 ROM 编译/链接、Commit 或 Push。静态检查不等于用户手机测试。
+
+## REF-347 视频反馈热修｜烧焦塔 1F 门口、地点牌、岩石动画
+- 以已应用REF-347汇编热修的用户状态为01增量前置；02累计从干净REF-344 HEAD `02a65db8` 出发。二选一，严禁叠加。游戏版本继续REF-347，不打开B1F/PIT。
+- 外部门口 (5,5) 从塔内返回时复用原 `PlayerStepOutFromDoor`，仅对该坐标返回 `D_DOWN`；圆朱西门毯和其他城镇门口不改。入口仍按 Gold (5,6) 朝上进入。
+- `map_name_sign.asm` 为稳定ID177补 Burned Tower 独立地名，Town Map/存档资料已存在，不应显示默认 Johto。
+- Gold TOWER静态室内贴图错误按CAVE类型，造成RPP `UpdateMovingBgTiles` 定期旋转VRAM tile `$14`；tower tileset 类型改 INDOOR，禁止移动地面岩石，不触动联合洞穴Surf/动画。
+- 视频证实三个缺陷，源码已纠正；静态审计和补丁回放不等于新ROM/手机实测。Red/Blue/TEST+MAP、旧档由用户验证；AI不编译/链接ROM、不Commit/Push。
+
+## REF-347｜烧焦塔先开放1F（B1F与落洞仍关闭）
+- 基线 REF-346 双补丁已应用工作区，或用户干净 REF-344 HEAD `02a65db8`；两种正向补丁互斥。REF-345/346开发候选不要与累计补丁叠加。
+- 仅登记 Gold 烧焦塔 1F ID177/slot61，活动62图/147Warp；城市第五号之后追加门口ordinal5，并注册1F 0/1两个出口。B1F ID178仍无槽，无任何PIT/LADDER source registration；1F原版11 PIT与1 LADDER全部暂时碰撞阻挡。
+- 复用原室内精确 BeforeStep/AfterStep/Down-only Carpet 机制，独立Gold TOWER/DAY tileset与360格Gold精确角色；不带NPC、道具、剧情。Red/Blue/TEST+MAP、手机往返/旧档必须用户验证；不由AI编译ROM、Commit或Push。
+
+## REF-346｜烧焦塔两层运行资源候选（仍不可进入）
+- 基线干净 Git HEAD `02a65db8`（用户 `REF-344.zip`）。REF-345 为已制作但尚未获用户应用证明的资源阶段；开发期两份正向补丁须分别基于 REF-345 与 REF-344 HEAD，不能叠加。
+- 完成： Gold 两张地图专用 96 tile DAY 色板与 runtime Header/Objects、14+6 原版 Warp 槽位、11个 PIT → 5个 B1F 落点、B1F Gold(17,4)原有 Strength 物件全部生成并审计；`REF346_*_candidate.asm` 故意不被 main.asm include。
+- 未完成： 下一批实现并实际接入 PIT 动画/即时换层、上下方向墙/跳崖、DAY Tileset/碰撞、圆朱市入口后才登记ID177/178。当前仍61图/144 Warp，游戏REF-344。
+- 用户自行进行Red/Blue/TEST ROM/MAP和手机/旧存档验收；AI不编译ROM、不 Commit/Push。
+
+## REF-345｜当前已核实新基线与烧焦塔开发阶段（覆盖历史 REF-344 HEAD 描述）
+- 用户最新 `REF-344.zip` 的 `RPP_PROJECT_CONTEXT/02_EXPORT_INFO.txt` 证实分支 `常规功能备份` 干净 Git HEAD 为 `02a65db8343abb34cae9edbb2d23fe73d9da9578`，其前一笔功能提交 `4406313d`；旧 `0a676cb4` 是历史基线，不能用于 REF-345。
+- 本阶段 Gold Burned Tower 1F/B1F 先冻结资源、PIT/HOP/UP_WALL 与 Warp 语义；**未证明独立 DAY 图块与落洞运行逻辑前不得登记入口/稳定ID/路由**。本批只准备候选素材和工具，维持 61 图 / 144 Warp / 游戏 `REF-344`，不触碰 ROM0。
+- 开发阶段依照项目正文只交付一个 ZIP 内两份互斥补丁。由于用户的 ZIP 是干净 HEAD，当前增量与该 HEAD 累计补丁可以同字节，但仍须独立回放；不做清理三件套，不由 AI 编译 ROM / Commit / Push。
+
 ## CLEAN-REF344｜用户要求清理三件套，模式A，后续开发独立批次
 - 当前可核实正式HEAD：`0a676cb4722728c990ff5340527c7762d66d245d`（`REF-338`，分支`常规功能备份`）；REF-339～344均为HEAD之后未提交功能与工具。清理增量的前置为**已应用REF-344开发候选工作区**，不可将其叫新HEAD。
 - 用户确认**B1F怪力基本推石头手机通过**；其余B2F楼梯/Surf/方向墙/旧档、Red/Blue/TEST及新MAP未经确认，须保持待验证。清理不改运行指令、不改变`REF-344`游戏版本；仅修旧ROM0审计13→21字节与维护文档。旧版主综合审计固定57/134导致部分错误，不能宣称全绿。

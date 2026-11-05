@@ -1,0 +1,255 @@
+{
+  "schema": "rpp-ref345-burned-tower-staging-v1",
+  "status": "RESOURCES_ONLY_NOT_REGISTERED",
+  "game_version_unchanged": "REF-344",
+  "maps": [
+    {
+      "name": "BurnedTower1F",
+      "width": 10,
+      "height": 9,
+      "gold_tileset": "TILESET_TOWER",
+      "gold_palette": "PALETTE_DAY",
+      "gold_border": 0,
+      "roles": [
+        "FLOOR",
+        "LADDER",
+        "PIT",
+        "WALL",
+        "WARP_CARPET_DOWN"
+      ],
+      "role_counts": {
+        "FLOOR": 150,
+        "LADDER": 1,
+        "PIT": 11,
+        "WALL": 196,
+        "WARP_CARPET_DOWN": 2
+      },
+      "warp_events": [
+        {
+          "ordinal": 1,
+          "x": 9,
+          "y": 15,
+          "destination_const": "ECRUTEAK_CITY",
+          "destination_warp": 13,
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "DIRECTIONAL_COLLISION"
+        },
+        {
+          "ordinal": 2,
+          "x": 10,
+          "y": 15,
+          "destination_const": "ECRUTEAK_CITY",
+          "destination_warp": 13,
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "DIRECTIONAL_COLLISION"
+        },
+        {
+          "ordinal": 3,
+          "x": 5,
+          "y": 4,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 1,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 4,
+          "x": 5,
+          "y": 5,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 1,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 5,
+          "x": 5,
+          "y": 6,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 1,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 6,
+          "x": 4,
+          "y": 6,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 1,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 7,
+          "x": 15,
+          "y": 4,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 2,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 8,
+          "x": 15,
+          "y": 5,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 2,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 9,
+          "x": 10,
+          "y": 7,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 3,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 10,
+          "x": 5,
+          "y": 14,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 4,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 11,
+          "x": 4,
+          "y": 14,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 4,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 12,
+          "x": 14,
+          "y": 14,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 5,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 13,
+          "x": 15,
+          "y": 14,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 5,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE"
+        },
+        {
+          "ordinal": 14,
+          "x": 7,
+          "y": 15,
+          "destination_const": "BURNED_TOWER_B1F",
+          "destination_warp": 6,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE"
+        }
+      ],
+      "sha256": {
+        "layout": "2a4f9689436c9c785f33d68b46c49ac1c874608b365c520cde222b604ac62b8c",
+        "metatiles": "6919e06474e21772b13f454ee623dea6aa839957894879e7c298bc6a5983f80f",
+        "image": "b05a7ff3ca1531036fe46198aca32c563c1c828c0ac482f2061c3b3a823c7051",
+        "palette_source": "ba99c7d945d758b21f18c0cf3afcec0545551b21e58d752df7b710a4c829f2de",
+        "rolegrid": "ba6bb3b1156cdc60f15b55aaa35542e35a4719aaf48ed5de1a9e5fb4b629a0e0"
+      }
+    },
+    {
+      "name": "BurnedTowerB1F",
+      "width": 10,
+      "height": 9,
+      "gold_tileset": "TILESET_CAVE",
+      "gold_palette": "PALETTE_DAY",
+      "gold_border": 9,
+      "roles": [
+        "FLOOR",
+        "HOP_DOWN",
+        "HOP_DOWN_LEFT",
+        "HOP_LEFT",
+        "HOP_RIGHT",
+        "LADDER",
+        "UP_WALL",
+        "WALL"
+      ],
+      "role_counts": {
+        "FLOOR": 178,
+        "HOP_DOWN": 16,
+        "HOP_DOWN_LEFT": 1,
+        "HOP_LEFT": 8,
+        "HOP_RIGHT": 4,
+        "LADDER": 1,
+        "UP_WALL": 26,
+        "WALL": 126
+      },
+      "warp_events": [
+        {
+          "ordinal": 1,
+          "x": 3,
+          "y": 3,
+          "destination_const": "BURNED_TOWER_1F",
+          "destination_warp": 3,
+          "role": "FLOOR",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW"
+        },
+        {
+          "ordinal": 2,
+          "x": 17,
+          "y": 7,
+          "destination_const": "BURNED_TOWER_1F",
+          "destination_warp": 7,
+          "role": "HOP_LEFT",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW"
+        },
+        {
+          "ordinal": 3,
+          "x": 10,
+          "y": 8,
+          "destination_const": "BURNED_TOWER_1F",
+          "destination_warp": 9,
+          "role": "HOP_DOWN",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW"
+        },
+        {
+          "ordinal": 4,
+          "x": 3,
+          "y": 13,
+          "destination_const": "BURNED_TOWER_1F",
+          "destination_warp": 10,
+          "role": "FLOOR",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW"
+        },
+        {
+          "ordinal": 5,
+          "x": 17,
+          "y": 14,
+          "destination_const": "BURNED_TOWER_1F",
+          "destination_warp": 12,
+          "role": "FLOOR",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW"
+        },
+        {
+          "ordinal": 6,
+          "x": 7,
+          "y": 15,
+          "destination_const": "BURNED_TOWER_1F",
+          "destination_warp": 14,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE"
+        }
+      ],
+      "sha256": {
+        "layout": "d72b10d15ec81042a67cc7798201849d3985b43e498b4734db4f8487bc647aa9",
+        "metatiles": "170c22e8ce99451de10475d4bd284d3c0a01a8d53eb220baacefc013144e0e34",
+        "image": "62cfddef2094a16f5003bc2ad0587ef96650cb033c97684c31e1a90656a8c570",
+        "palette_source": "e4ad85344f948e2747aec13d802ac638e55ed4c85e2a639378ae2baf95a7fbb5",
+        "rolegrid": "4938d44658712191e12424efa128537161a2d657e7982183d7fc1fbd18e48b97"
+      }
+    }
+  ]
+}
