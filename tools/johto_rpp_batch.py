@@ -3,7 +3,8 @@
 
 This does not register any new maps or modify ROM/project files. It builds
 candidate .blk files and a SHARED Johto blockset, plus an auditable report.
-Route29 and NewBarkTown remain byte-for-byte unchanged as .134 references.
+Route29 and NewBarkTown remain byte-for-byte unchanged using the current mature
+`maps/johto_pilot/*.runtime.blk` references (legacy flat paths are fallback only).
 """
 import argparse
 from collections import Counter
@@ -15,6 +16,8 @@ import re
 from johto_gold_sources import gold_block_sources
 from johto_gold_compat import PROFILES, resolve_gold_root
 from johto_rpp_tileset_contract import check_runtime_contract, matches_gold_prefix
+from johto_gold_tileset_semantics import resolve_tileset_resources
+from johto_dungeon_batch_preflight import inspect as inspect_dungeons
 
 # All directions are handled by RPP's *existing* ledge action, not a Gold
 # movement interpreter. Composite HOP labels expand into ordinary RPP pairs.
@@ -385,7 +388,9 @@ def inventory_all_gold_maps(gold, project, output, staged_records):
         seen.add(name)
         key = tileset.removeprefix('TILESET_').lower()
         if tileset not in tileset_checks:
-            metatiles = gold / 'data/tilesets' / (key + '_metatiles.bin')
+            resources = resolve_tileset_resources(gold, tileset)
+            metatiles = gold / resources['metatiles']
+            collision_source = gold / resources['collision']
             rpp = project / 'gfx/blocksets' / (key + '.bst')
             source = metatiles.read_bytes() if metatiles.exists() else b''
             target = rpp.read_bytes() if rpp.exists() else b''
@@ -400,6 +405,9 @@ def inventory_all_gold_maps(gold, project, output, staged_records):
             tileset_checks[tileset] = {
                 'gold_metatiles': str(metatiles.relative_to(gold)),
                 'gold_metatiles_present': bool(source),
+                'gold_collision_source': str(collision_source.relative_to(gold)),
+                'gold_collision_present': collision_source.is_file(),
+                'resource_alias_resolved': resources['metatiles'] != f'data/tilesets/{key}_metatiles.bin' or resources['collision'] != f'data/tilesets/{key}_collision.asm',
                 'rpp_blockset': str(rpp.relative_to(project)),
                 'rpp_blockset_present': bool(target),
                 'rpp_tileset_png_present': (project / 'gfx/tilesets' / (key + '.png')).is_file(),
@@ -554,6 +562,22 @@ def make_import_plan(output, records):
         json.dumps(plan, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return plan
 
+def _mature_reference_layout(project: Path, name: str) -> bytes:
+    current = {
+        'Route29': 'maps/johto_pilot/Route29.runtime.blk',
+        'NewBarkTown': 'maps/johto_pilot/NewBarkTown.runtime.blk',
+    }
+    legacy = {
+        'Route29': 'maps/JohtoRoute29.blk',
+        'NewBarkTown': 'maps/NewBarkTown.blk',
+    }
+    for rel in (current[name], legacy[name]):
+        path = project / rel
+        if path.is_file():
+            return path.read_bytes()
+    raise ValueError(f'{name}: current/legacy RPP reference layout missing')
+
+
 def batch(gold, project, output):
     gold = resolve_gold_root(gold)
     project, output = Path(project).resolve(), Path(output).resolve()
@@ -570,10 +594,10 @@ def batch(gold, project, output):
         if t in source:
             raise ValueError(f'reserved tile index {t:02X} used in Gold blockset')
     # Guard existing reference: no output may mutate 29 (nor the user's game).
-    golden29=(project/'maps/JohtoRoute29.blk').read_bytes()
-    golden_town=(project/'maps/NewBarkTown.blk').read_bytes()
+    golden29=_mature_reference_layout(project, 'Route29')
+    golden_town=_mature_reference_layout(project, 'NewBarkTown')
     if len(golden29)!=270 or len(golden_town)!=90:
-        raise ValueError('Route29 or NewBarkTown .134 reference missing')
+        raise ValueError('Route29 or NewBarkTown mature runtime reference has unexpected size')
     # Regeneration must never leave stale .blk candidates behind when a map
     # changes from candidate to blocked. Delete only files owned by this tool.
     for folder_name in ('candidate_maps', 'original_maps',
@@ -694,6 +718,11 @@ def batch(gold, project, output):
     (output/'manifest.json').write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
     (output/'events_locations.json').write_text(json.dumps(events_catalog,ensure_ascii=False,indent=2)+'\n')
     full_inventory = inventory_all_gold_maps(gold, project, output, records)
+    dungeon_preflight = inspect_dungeons(gold)
+    if dungeon_preflight['status'] != 'PASS':
+        raise ValueError('Gold dungeon semantic preflight failed: ' + '; '.join(dungeon_preflight['errors'][:8]))
+    (output/'johto_dungeon_preflight.json').write_text(
+        json.dumps(dungeon_preflight, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     import_plan = make_import_plan(output, records)
     fields=['name','environment','width','height','status','hop_directions','warp_event',
             'object_event','bg_event','fruit_tree','map_connections','issues']
@@ -709,7 +738,7 @@ def batch(gold, project, output):
     issue_counts=Counter(i['code'] for e in records for i in e['findings'])
     total_hops=sum(e['hop_directions'] for e in records)
     overview=['# 城都室外地图批量预转换（仅离线候选）','',
-              '生成基线：MAP-5.62.134。既有 RPP 引擎保持不变；无自动注册、无 ROM 修改。','',
+              '生成基线：当前成熟 Johto runtime 参考。既有 RPP 引擎保持不变；无自动注册、无 ROM 修改。','',
               f'- 扫描 {len(records)} 张 Gold `TILESET_JOHTO` 地图，{total_hops} 条方向跳跃关系。',
               f'- 状态统计：'+', '.join(f'{k} {v}' for k,v in sorted(tally.items()))+'。',
               f'- 共享区块集：128 个原版区块 → {len(shared)//16} 个候选区块（含 .134 的 5 个变体）。',
@@ -719,6 +748,7 @@ def batch(gold, project, output):
               f'- 全 Gold 地图库盘点：{full_inventory["registered_gold_maps"]} 张地图，{len(full_inventory["tilesets"])} 组图块；仅 29 张 Johto 户外进入此轮地形转换。',
               '- `full_gold_inventory.json` / `full_gold_map_index.csv` 汇总全部原版地图及复用条件；字节一致只代表候选，不能推定贴图/碰撞/事件兼容。',
               '- `full_gold_events_locations.json` 提取全部地图的事件位置，供后续室内和其他图块组统一生成。',
+              '- `johto_dungeon_preflight.json` 单独锁定山洞的 Warp 类型、方向墙、跳崖、水/瀑布/漩涡、冰面/落洞、边框和 PALETTE_DARK/Flash 语义；后续地牢批量转换必须先过这一步。',
               '- `unverified_shared_metatiles_maps/` 只暂存其他图块集字节前缀匹配的 .blk；未验证美术与碰撞，不能直接导入 ROM。',
               '- `import_plan.json` 提议全部城都户外地图的稳定本地 ID 与连接依赖；目前不是可用地图编号，不可直接接入。',
               '- `johto_ledge_pairs_candidate.asm` 仅提供兼容表草案；RPP 原跳崖动作不变。',
@@ -742,6 +772,7 @@ def batch(gold, project, output):
             'staged':sum((candidate/(e['name']+'.blk')).exists() for e in records),
             'full_gold_map_count': full_inventory['registered_gold_maps'],
             'gold_tileset_count': len(full_inventory['tilesets']),
+            'dungeon_groups': len(dungeon_preflight['groups']),
             'proposed_local_ids': len(import_plan['maps'])}
 
 

@@ -14,6 +14,10 @@ import argparse
 import json
 import re
 from johto_gold_compat import PROFILES, detect_gold_profile, resolve_gold_root
+try:
+    from johto_gold_tileset_semantics import collision_rows
+except ImportError:
+    from tools.johto_gold_tileset_semantics import collision_rows
 
 
 # Categories are separate semantics; never collapse these into one step-on warp.
@@ -121,11 +125,12 @@ class GoldCollisionIndex:
         if map_name not in self.tilesets or map_name not in self.block_files:
             raise ValueError(f'Gold map tileset/block source missing: {map_name}')
         width, height = self.dimensions[self.map_const[map_name]]
-        tileset = self.tilesets[map_name].removeprefix('TILESET_').lower()
+        tileset = self.tilesets[map_name]
         layout = (self.gold / 'maps' / self.block_files[map_name]).read_bytes()
-        collision = _read(self.gold / f'data/tilesets/{tileset}_collision.asm')
-        rows = [tuple(part.strip() for part in row.split(','))
-                for row in re.findall(r'\btilecoll\s+([^;\n]+)', collision)]
+        # Resolve through Gold's actual Tileset*Meta/Tileset*Coll labels.
+        # TILESET_DARK_CAVE intentionally aliases cave_collision.asm; filename
+        # inference would fail exactly on the later Johto dungeons we batch.
+        rows = collision_rows(self.gold, tileset)
         if (len(layout) != width * height or not rows or
                 any(len(row) != 4 or not all(row) for row in rows) or
                 any(block >= len(rows) for block in layout)):

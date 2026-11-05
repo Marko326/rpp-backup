@@ -1,3 +1,32 @@
+## CLEAN-REF344｜旧固定数量审计不能冒充新版本强制门禁
+- 已确认 Gold B2F 共享 Cave 专项与故障注入通过，但历史主审计里固定REF-338版57图/134Warp、旧Union单层等断言对REF-344误报。修正ROM0 Cave collision表长度旧13→现21，旧综合检查的剩余错误必须如实列出并按当前登记顺序升级；在此之前不得宣称综合审计全绿。
+- 用户实测确认B1F怪力石头可推动；不代替Red/Blue/TEST MAP/ROM0与B2F楼梯Surf/旧档验收。
+
+## REF-343｜标准 Cave 的运行语义必须数据驱动，未开放楼梯不要登记
+- `SlowpokeWellB1F` 验证了普通 `TILESET_CAVE + PALETTE_NITE` 可以复用联合洞穴已验收的图块/调色，不需要按山洞名称复制整套引擎。25种 Gold metatile 已被现有洞穴 blockset 覆盖，新增层只需要自己的 `.blk`、尺寸、WATER/UP_WALL 和 Warp 语义。
+- 标准 Cave 的方向碰撞必须按 stable-ID 选择 **地图尺寸 + WATER 表 + UP_WALL 表 + 可选 HOP 表**。不要把联合洞穴20×36 cell写死后拿去跑20×18的呆呆兽之井；没有 HOP 的地图必须走安全空分支，不能伪造坐标。
+- Warp 触发仍按 Gold collision role：`LADDER/CAVE/PIT` 是踏入即触发，`WARP_CARPET_*` 是方向触发。**可见楼梯不等于已开放 Warp**；本批 B1F `(7,11)` 的 B2F 楼梯故意不登记 source trigger 和 route，所以必须 fail-closed。
+- Surf 审计必须允许“同一标准 Cave helper 服务多张地图”，但每张地图仍要冻结独立 Gold WATER 坐标、尺寸、源 `.blk` SHA-256；共享 helper 不能成为跳过逐图 Gold 对照的理由。
+- 新 Cave 层验收顺序固定为：地牢 preflight → Gold像素/块映射 → 逐方向碰撞 → Warp触发/落点 → Surf/岸边 → border/palette → 负向故障 → 用户 Red/Blue/TEST+MAP+手机。静态全绿不能替代实机。
+
+## REF-342｜城都地牢不能从联合洞穴硬复制：批量转换前先做 Gold 语义预检
+- 已横向核对 Union Cave、Slowpoke Well、Mount Mortar、Ice Path、Whirl Islands、Dark Cave、Dragon's Den、Burned Tower 共8组28张：普通 Cave/NITE 只是其中一类；另有 `PALETTE_DARK`+Flash、ICE/PIT、WATERFALL/WHIRLPOOL、混合 tileset/边框及 DAY 例外。
+- Gold `TILESET_DARK_CAVE` 与 `TILESET_CAVE` 共用 `cave_metatiles.bin` / `cave_collision.asm`；工具禁止再按 tileset 名猜文件路径，统一解析 `gfx/tilesets.asm` 的真实 Meta/Coll 别名。
+- 批量导入前必须按坐标保留 Warp trigger（LADDER/PIT/CAVE immediate vs carpet directional）、same-tileset 目标 XY 重建、UP_WALL 边语义、HOP 落点、逐地图 border/palette；Warp event 在 FLOOR/HOP 上可能仅是 arrival-only，不能自动生成源触发。
+- 新增 `tools/johto_dungeon_batch_preflight.py` 并挂入 `johto_rpp_batch.py` / 主迁移审计；详细清单与施工顺序见 `docs/REF342_JOHTO_DUNGEON_BATCH_HANDOFF.md`。
+
+## 联合洞穴楼梯不是方向地毯：Warp 坐标正确也可能触发时机错误（REF-342）
+- Gold `CAVE` 的 `LADDER` 与 `WARP_CARPET_DOWN` 是两种不同事件语义。LADDER 在**走入该格后**由 tile event 立即 Warp；方向地毯则是**站在该格上再按指定方向**才 Warp。
+- RPP `CheckWarpsCollision` 使用“当前站立 Warp 坐标 + 碰撞”路径；若不额外拒绝 LADDER，人物落在角落楼梯后只要撞墙就会错误换层。不能因为地图坐标/目标 Warp ID 正确就认为楼梯行为已还原。
+- 联合洞穴逐格 Gold 角色：1F `(5,19)/(3,33)`、B1F `(7,19)/(3,33)/(17,31)`、B2F `(5,3)` 是 LADDER；1F `(17,3)/(17,31)` 是 `WARP_CARPET_DOWN`。B1F `(3,3)/(3,11)` 也是方向地毯，但当前遗迹路由关闭，必须 fail-closed。
+
+
+## 联合洞穴同 Tileset 跨楼层 Warp：不要只核对 Warp 坐标（REF-341）
+- `LoadTilesetHeader` 在前后地图 Tileset 相同且当前 Tileset 不在 `DungeonTilesets` 时，会跳过 `LoadDestinationWarpPosition`。因此即使 RuntimeObjects 的目标 Warp ID、注册路由和 Gold 坐标全部正确，人物仍可能把来源地图 `(Y,X)` 原样带进目标楼层。
+- 联合洞穴 1F/B1F/B2F 共用 `JOHTO_UNION_CAVE`。旧 REF-340 从 B1F `(17,31)` 进入 B2F 时，正因为没有重建目标坐标，人物落在 B2F `(17,31)` 水池边，而不是 Gold 唯一楼梯 `(5,3)`。
+- 处理多层洞穴时必须同时检查：源 Warp ordinal、事件第三字节的目标 Warp ID、目标地图实际 Warp 顺序，以及同 Tileset 时是否进入目标坐标重建路径。不能只检查注册路由表。
+- Continue/旧档路径会临时把 `wDestinationWarpID=$ff`，不得为了楼层 Warp 修复而破坏存档原地恢复。
+
 ## CLEAN-REF338｜Gold 边框映射、洞穴例外及负向错误 ID
 - `RuntimeObjects` 首字节为地图外背景块，错误的 `$05` 会把海岸边界填成树林，即使 `.blk` 字节与 Gold 原版完全一致；对共用原版块集应审核边框像素，不要按单棵树修。
 - 特殊图块集不能全局替换编号：`UnionCave1F` 当前 `$21` 是 NPC-243 提供的专用不透明边框，Gold 原版是 `$09`；两者外观不同，但直接换成类似岩壁的图块可能引入碰撞风险。注释已明确此设计差异，保持逻辑不动。
@@ -1307,3 +1336,10 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - Johto `JOHTO_GATE` 不是户外 `JOHTO_PILOT` sprite-set 路径；室内式地图精灵加载会根据对象 picture ID 装载图像。使用的精灵必须在 `SpriteSheetPointerTable` 中有真实图像与 Bank 记录。
 - 地图 Header、RuntimeObjects、TextPointers、对话内容必须处于同一 ROMX Bank；增加 `ASSERT BANK(...)`，防止 `DisplayTextID` 切到地图 Bank 后解引用跨 Bank 指针。
 - ID23／62 Gold 原版都只有一个静态向下警员及简单 `jumptextfaceplayer`；公园门房的动态比赛人物不可套用这份简化配置。
+
+
+## REF-343 Bank $4E section overflow / portal bank split
+
+- 2026-11-05: adding the Azalea -> Slowpoke Well portal made `SECTION "Johto South Gold Geometry"` grow from the last successful `$3FF0` bytes to `$4001`, one byte beyond a 16 KiB ROMX bank. This is a linker/section-capacity failure, not a map-data syntax failure.
+- Do **not** fix a nearly-full bank by shaving a single byte when a clean bank split is available. `engine/johto_south_portals.asm` is entered externally only through `callab`, so REF-343 places it in dedicated Bank `$4D` (`Johto South Gold Portals`) and leaves geometry/ilex runtime in Bank `$4E`.
+- Before future map batches, inspect the newest successful Red/Blue MAP for every fixed-bank section touched by the patch. Treat <= `$20` bytes slack as a hard warning and prefer moving a callab-safe module to a dedicated bank before adding more map logic.

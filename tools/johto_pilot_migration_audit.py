@@ -1718,6 +1718,20 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
     gold_result = None
     if gold_root is not None:
         gold_result = _audit_gold_source(project, Path(gold_root).resolve(), errors, checks)
+        # REF-342 handoff hardening: before future cave batches, independently
+        # inventory Gold dungeon warp/collision/palette/border semantics. This
+        # prevents Union-Cave-specific assumptions from becoming a converter
+        # default (Dark Cave aliases cave collision files, Ice Path uses PIT/ICE,
+        # PALETTE_DARK needs Flash-aware handling, and borders are not uniform).
+        try:
+            from johto_dungeon_batch_preflight import inspect as inspect_dungeon_batch
+            dungeon = inspect_dungeon_batch(Path(gold_root).resolve())
+            _check(errors, checks, 'gold_johto_dungeon_batch_semantics_preflight',
+                   dungeon['status'] == 'PASS',
+                   'groups=%s errors=%s' % (len(dungeon.get('groups', [])), dungeon.get('errors', [])))
+            metrics['dungeon_batch_groups'] = len(dungeon.get('groups', []))
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+            _check(errors, checks, 'gold_johto_dungeon_batch_semantics_preflight', False, str(exc))
         # FIX-295: Gold WATER registration does NOT establish live Surf.
         # Require both A/item entry paths and the movement/disembark branch
         # for every active JOHTO_PILOT map with a Gold spatial role grid.

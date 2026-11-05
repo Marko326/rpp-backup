@@ -59,7 +59,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         runtime_blk = read('maps/johto_pilot/AzaleaPokecenter1F.runtime.blk', True)
         reference = read('maps/johto_pilot/CherrygrovePokecenter1F.gold.blk', True)
         check('append_only_slot_and_identity',
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 57' in count and
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 60' in count and
               'ASSERT JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID == 135' in room and
               bool(re.search(r'(?m)^\s*db\s+[^\n]*\b49\b[^\n]*; \$80-\$8f', read('data/johto_stable_id_slots.asm'))) and
               'dw JohtoAzaleaPokecenterRuntimeHeader' in headers and
@@ -77,7 +77,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
               room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1') == 10)
         town_warps = town.split('JohtoSouthAzaleaTownRuntimeObjects::', 1)[1].split('JohtoSouthIlexForestAzaleaGateBlocks::', 1)[0]
         check('only_center_door_unlocked_existing_gate_ordinals',
-              bool(re.search(r'db 3\s+db 10, 2, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 11, 2, 3, JOHTO_REGISTERED_WARP_SELECTOR\s+db 9, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR',town_warps)) and
+              bool(re.search(r'db 4\s+db 10, 2, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 11, 2, 3, JOHTO_REGISTERED_WARP_SELECTOR\s+db 9, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR\s+db 7, 31, 0, JOHTO_REGISTERED_WARP_SELECTOR',town_warps)) and
               'db 0' in town_warps)
         routes = runtime.split('JohtoRegisteredWarpRoutes::', 1)[1].split('JohtoRegisteredWarpRoutesEnd::', 1)[0]
         rows = [line.split(';',1)[0].strip() for line in routes.splitlines()
@@ -88,7 +88,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
             'db MAP_REGION_JOHTO, '+CENTER+', 1, MAP_REGION_JOHTO, '+TOWN,
         ]
         check('registered_113_exact_bidirectional_center_routes',
-              len(rows) == 134 and all(rows.count(x)==1 for x in target) and
+              len(rows) == 142 and all(rows.count(x)==1 for x in target) and
               'db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID' in routes and
               'db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID' in routes)
         fence = geo.split('JohtoSouthMatureDoorFence::',1)[1].split('JohtoSouthAzaleaTownRoles::',1)[0]
@@ -102,12 +102,12 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         before = portal.split('JohtoSouthPortalBeforeStep::',1)[1]
         arrival = portal.split('JohtoSouthPortalArrivalStep::',1)[1].split('JohtoSouthPortalBeforeStep::',1)[0]
         check('door_approach_before_and_after_step',
-              '.azaleaCenterDoor\n    ld a, [wXCoord]\n    cp 15\n    ret nz\n    ld a, [wYCoord]\n    cp 10\n    jp z, .allow' in before and
-              '.azaleaCenterDoor\n    ld a, [wXCoord]\n    cp 15\n    ret nz\n    ld a, [wYCoord]\n    cp 9\n    jp z, .door' in after and
-              bool(re.search(r'\.azalea\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_UP\s+jr z, \.azaleaCenterDoor', before)) and
-              bool(re.search(r'\.azalea\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_UP\s+jr z, \.azaleaCenterDoor', after)))
+              bool(re.search(r'\.azalea\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_UP\s+jr z, \.azaleaUpDoor', before)) and
+              bool(re.search(r'\.azaleaUpDoor\s+ld a, \[wXCoord\]\s+cp 15\s+jr z, \.azaleaCenterDoor.*?\.azaleaCenterDoor\s+ld a, \[wYCoord\]\s+cp 10\s+jp z, \.allow', before, re.S)) and
+              bool(re.search(r'\.azalea\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_UP\s+jr z, \.azaleaUpDoor', after)) and
+              bool(re.search(r'\.azaleaUpDoor\s+ld a, \[wXCoord\]\s+cp 15\s+jr z, \.azaleaCenterDoor.*?\.azaleaCenterDoor\s+ld a, \[wYCoord\]\s+cp 9\s+jp z, \.door', after, re.S)))
         check('door_return_forces_gold_south_step',
-              bool(re.search(r'\.azalea\s+ld a, \[wXCoord\]\s+cp 15\s+ret nz\s+ld a, \[wYCoord\]\s+cp 9\s+jp z, \.south', arrival)) and
+              bool(re.search(r'\.azalea\s+ld a, \[wXCoord\]\s+cp 15\s+jr z, \.azaleaCenterArrival.*?\.azaleaCenterArrival\s+ld a, \[wYCoord\]\s+cp 9\s+jp z, \.south', arrival, re.S)) and
               '.south\n    ld e, D_DOWN\n    ret' in arrival)
         collision = room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         check('same_down_only_exit_and_finite_bounds',

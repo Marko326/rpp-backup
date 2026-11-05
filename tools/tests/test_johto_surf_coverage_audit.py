@@ -30,7 +30,8 @@ class CoverageTests(unittest.TestCase):
             (133, 'VioletPokecenter1F'), (146, 'GoldenrodPokecenter1F'),
             (160, 'EcruteakPokecenter1F'), (30, 'OlivinePokecenter1F'),
             (42, 'CianwoodPokecenter1F'), (77, 'MahoganyPokecenter1F'),
-            (85, 'BlackthornPokecenter1F')])
+            (85, 'BlackthornPokecenter1F'), (114, 'UnionCaveB1F'),
+            (115, 'UnionCaveB2F'), (184, 'SlowpokeWellB1F')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -45,8 +46,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 57', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 57',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 60', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 60',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -114,6 +115,9 @@ class CoverageTests(unittest.TestCase):
             'CianwoodPokecenter1F': (0, 'NO_WATER'),
             'MahoganyPokecenter1F': (0, 'NO_WATER'),
             'BlackthornPokecenter1F': (0, 'NO_WATER'),
+            'UnionCaveB1F': (60, 'REGISTERED'),
+            'UnionCaveB2F': (168, 'REGISTERED'),
+            'SlowpokeWellB1F': (32, 'REGISTERED'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
@@ -127,7 +131,7 @@ class CoverageTests(unittest.TestCase):
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
     def test_invalid_skipped_map_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'skip map not active'):
-            audit(ROOT, GOLD, {'UnionCaveB1F'})
+            audit(ROOT, GOLD, {'NotAnActiveMap'})
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')
     def test_source_block_corruption_fails(self):
@@ -145,6 +149,9 @@ class CoverageTests(unittest.TestCase):
                      'engine/items/items.asm',
                      'engine/johto_violet_field_skills.asm',
                      'maps/johto_pilot/UnionCave1F.runtime.blk',
+                     'maps/johto_pilot/UnionCaveB1F.runtime.blk',
+                     'maps/johto_pilot/UnionCaveB2F.runtime.blk',
+                     'maps/johto_pilot/SlowpokeWellB1F.runtime.blk',
                      'gfx/blocksets/johto_union_cave.bst',
                      'gfx/tilesets/johto_union_cave.tilecoll',
                      'maps/johto_pilot/NewBarkTown.runtime.blk',

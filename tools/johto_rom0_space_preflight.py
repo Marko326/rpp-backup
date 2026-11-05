@@ -97,7 +97,7 @@ def inspect(project: Path, require_fresh_map: bool = False, minimum_rom0_slack: 
     home = sources['home.asm']
     for name, path, size in (('JohtoPilot_Coll','johto.tilecoll',8),
                              ('JohtoHouse_Coll','johto_house.tilecoll',4),
-                             ('JohtoUnionCave_Coll','johto_union_cave.tilecoll',13)):
+                             ('JohtoUnionCave_Coll','johto_union_cave.tilecoll',21)):
         if f'{name}:: INCBIN "gfx/tilesets/{path}"' not in home or f'ASSERT {name}End - {name} == {size}' not in home:
             issues.append(f'{name} must keep its {size} bytes of unbanked collision data in ROM0')
     wrapper = sources['macros/asm_macros.asm']

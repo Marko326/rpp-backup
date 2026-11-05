@@ -329,6 +329,30 @@
       "role": "named",
       "name": "Blackthorn City",
       "town_map_name": "Blackthorn City"
+    },
+    {
+      "id": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "role": "named",
+      "name": "Union Cave",
+      "town_map_name": "Union Cave"
+    },
+    {
+      "id": "JOHTO_UNION_CAVE_B2F_LOCAL_ID",
+      "role": "named",
+      "name": "Union Cave",
+      "town_map_name": "Union Cave"
+    },
+    {
+      "id": "JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID",
+      "role": "named",
+      "name": "Slowpoke Well",
+      "town_map_name": "Slowpoke Well"
+    },
+    {
+      "id": "JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID",
+      "role": "named",
+      "name": "Slowpoke Well",
+      "town_map_name": "Slowpoke Well"
     }
   ]
 }

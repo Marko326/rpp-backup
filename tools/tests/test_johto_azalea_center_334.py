@@ -48,10 +48,10 @@ class AzaleaCenter334(unittest.TestCase):
     def test_no_down_approach_to_door(self):
         source = (ROOT/'engine/johto_south_portals.asm').read_text()
         before, target = source.split('JohtoSouthPortalBeforeStep::', 1)
-        self.assertEqual(target.count('cp PLAYER_DIR_UP\n    jr z, .azaleaCenterDoor'), 1)
+        self.assertEqual(target.count('cp PLAYER_DIR_UP\n    jr z, .azaleaUpDoor'), 1)
         o = {'engine/johto_south_portals.asm': before + 'JohtoSouthPortalBeforeStep::' + target.replace(
-            'cp PLAYER_DIR_UP\n    jr z, .azaleaCenterDoor',
-            'cp PLAYER_DIR_DOWN\n    jr z, .azaleaCenterDoor', 1)}
+            'cp PLAYER_DIR_UP\n    jr z, .azaleaUpDoor',
+            'cp PLAYER_DIR_DOWN\n    jr z, .azaleaUpDoor', 1)}
         self.assertIn('door_approach_before_and_after_step',audit(ROOT,overrides=o)['errors'])
 
     def test_no_wrong_heal_stamp(self):

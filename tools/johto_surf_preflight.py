@@ -225,13 +225,22 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
         return ['unsupported or missing source Surf contract schema']
     maps = contract['maps']
     declared = set()
+    first_by_helper = {}
     for entry in maps:
         helper = entry.get('water_helper')
         if not isinstance(helper, str) or not re.fullmatch(r'\w+WaterAhead', helper):
             errors.append(f'invalid helper in contract: {helper!r}')
             continue
         if helper in declared:
-            errors.append(f'duplicate water helper registration: {helper}')
+            first = first_by_helper[helper]
+            shared_ok = (entry.get('shared_helper') is True and first.get('shared_helper') is True and
+                         entry.get('routine_file') == first.get('routine_file') and
+                         entry.get('map_scope_predicate') == first.get('map_scope_predicate') and
+                         entry.get('entrypoint_helper') == first.get('entrypoint_helper'))
+            if not shared_ok:
+                errors.append(f'duplicate water helper registration: {helper}')
+        else:
+            first_by_helper[helper] = entry
         declared.add(helper)
 
     # When a ROM bank has no room for another farcall, a registered

@@ -302,12 +302,28 @@ def audit(root: Path, gold_root: Path | None = None) -> dict:
     check('route32_outside_safety_step',
           bool(re.search(r'(?s)\.route32CaveLanding\s+ld a, \[wXCoord\]\s+cp 6\s+ret nz\s+ld a, \[wYCoord\]\s+cp 79\s+ret nz\s+jr \.down', arrival)),
           'only outdoor Route32 (6,79) needs arrival D_DOWN to safe (6,80)')
-    for label, body in [('cave_not_step_on_collision_override', approach),
-                        ('cave_not_step_on_warp', step_on)]:
-        check(label,
-              bool(re.search(r'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\s+ret z', body)) and
-              '.unionCaveMouth' not in body,
-              'cave interior warp must not bypass wall or trigger on step-on from (17,4)')
+    check('cave_not_step_on_collision_override',
+          all(re.search(rf'cp {map_id}\s+ret z', approach) for map_id in
+              ('JOHTO_UNION_CAVE_1F_LOCAL_ID',
+               'JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+               'JOHTO_UNION_CAVE_B2F_LOCAL_ID')) and
+          '.unionCaveMouth' not in approach,
+          'cave floors never bypass pre-step wall collision; exact warp handling happens after entering a registered coordinate')
+    check('cave_step_on_ladder_not_directional_carpet',
+          all(token in step_on for token in
+              ('cp JOHTO_UNION_CAVE_1F_LOCAL_ID',
+               'jr z, .unionCave1FWarpMatched342',
+               'cp JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+               'jr z, .unionCaveB1FWarpMatched342',
+               'cp JOHTO_UNION_CAVE_B2F_LOCAL_ID',
+               'jr z, .unionCaveB2FWarpMatched342',
+               '.unionCaveLadder342',
+               'ld e, 2',
+               '.unionCaveDirectional342',
+               'ld e, 1')) and
+          bool(re.search(r'\.unionCave1FWarpMatched342.*?cp 17\s+jr z, \.unionCaveDirectional342\s+jr \.unionCaveLadder342',
+                         step_on, re.S)),
+          'Gold LADDER entries transfer on step-in; 1F DOWN carpets only arm standing state for directional collision')
 
     # An old .263 checked the *final* warp guard but forgot that the
     # ExtraWarpCheck preflight is executed FIRST. This source would statically

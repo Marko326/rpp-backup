@@ -1,3 +1,110 @@
+## CLEAN-REF344｜呆呆兽之井验收清理（怪力专项手机通过，其余待证）
+- [x] 按用户要求准备模式A三补丁双中文日志；最近核实已提交HEAD仍为0a676cb4/REF-338，未将REF-344当成Git提交。
+- [x] 清理仅变更工具ROM0碰撞表预检21字节、维护文档与验收状态；游戏ASM、61图、144Warp、版本REF-344不变。
+- [ ] Gold-backed主审计的旧REF-338冻结断言仍不适配当前地图数，本次不可声称综合全绿。
+
+## REF-344 呆呆兽之井 B2F / Gold B1F 怪力石头（开发完成）
+- [x] 复制联合洞穴共享 Cave 实现，激活 B2F（稳定ID185/slot60）；61张图、144条注册Warp；B1F ↔ B2F 楼梯双向。
+- [x] Gold B2F 地图块和 100 WATER / 31 UP_WALL 坐标逐项对照；复用现有 Surf、方向墙、楼梯与地图标签。
+- [x] Gold 的怪力石头在 **B1F (3,2)**：使用现有 `SPRITE_BOULDER + BOULDER_MOVEMENT_BYTE_2` 与 RPP 原 Strength 推石头机制，不复制新系统。原游戏需要会 Strength 且有现有 Rainbow Badge 条件；未改成 Gold Plain Badge。
+- [x] REF-344 专项静态审计与负向故障注入；Gold 素材逐字节校验。
+- [x] **2026-11-05 用户手机反馈**：REF-344 的怪力石头可正常推动；仅此操作确认实测通过，不推定远距离所有方向墙、三个构建版本、旧存档均已验收。
+- [ ] **用户本机**编译 Red/Blue/TEST，逐一检查新MAP的ROM0≥64B/ROMX余量与旧存档，手机实际测试 B1F ↔ B2F、Surf/上下方向墙、B1F 石头四向推动、远距离 UP_WALL 推动及阻挡；当前不能算实机通过。
+- [ ] B2F NPC/道具、B1F 其他剧情仍不做。通过本阶段测试后才扩下一座洞穴。
+
+- [x] REF-343 compile hotfix: move `johto_south_portals.asm` from packed Bank `$4E` to empty Bank `$4D`; last successful MAP had only `$10` bytes slack in `$4E`, while the Slowpoke Well portal addition required 17 bytes.
+## REF-343 呆呆兽之井 B1F 单层验证（当前）
+- [x] 以 REF-342 当前 Worktree 为基线，只激活 `SlowpokeWellB1F`（稳定 ID184 / 活动 slot59）；活动地图 59→60，注册 Warp 140→142。
+- [x] 只开放 Azalea Town Gold #6 `(31,7)` ↔ Slowpoke Well B1F Gold #1 `(17,15)`；B1F `(7,11)` 的 B2F 楼梯保留画面但不登记触发/路由，继续关闭。
+- [x] 复用已验收 `JOHTO_UNION_CAVE` Cave 资源；Slowpoke B1F 的25种 Gold metatile 全部已被现有洞穴 blockset 覆盖，不新增8×8 tile/blockset。
+- [x] 标准 Cave 水域/UP_WALL/尺寸改为按稳定地图 ID 选表；Slowpoke B1F 为20×18 cell、32 WATER、29 UP_WALL，不复制一套地图专用碰撞引擎。
+- [x] 60张活动地图 Surf manifest 已从 Gold 原始数据重新冻结；Union B1F/B2F 与 Slowpoke B1F 共享 Cave water helper，但各自保留独立 Gold WATER 表/尺寸合同。
+- [x] Map-name 合同补齐 Union B1F/B2F 与 Slowpoke B1F；地牢批量预检继续覆盖8组28图。
+- [ ] 用户本机 Red/Blue/TEST + 新 MAP 验收；手机重点测试井口往返、站在楼梯上不重触发、岩壁空气墙、Surf上下岸、B2F楼梯保持无效、旧档存读。
+- [ ] 只有 B1F 实机通过后再做 Slowpoke Well B2F；不要顺手加入火箭队、钢铁、呆呆兽、道具或野生遭遇。
+
+## REF-342 地牢批量转换加固（工具/交班，不改游戏版本）
+- [x] 横向盘点 Gold 8组28张主要城都地牢：Warp 触发、方向墙/跳崖、水/瀑布/漩涡、ICE/PIT、border、NITE/DARK/DAY。
+- [x] 修正工具对 Gold tileset 文件名的错误假设；`TILESET_DARK_CAVE` 等共享 Meta/Coll 通过真实 `gfx/tilesets.asm` 别名解析。
+- [x] 新增 `tools/johto_dungeon_batch_preflight.py`，并挂入批量转换与主迁移审计；失败时禁止继续把山洞候选当安全输入。
+- [x] 写入 `docs/REF342_JOHTO_DUNGEON_BATCH_HANDOFF.md` 和 `RPP_DEVELOPMENT_PITFALLS.md`，以后批量转换先看 profile 再动地图。
+- [ ] 下一验证：`SlowpokeWellB1F`，目标是只填数据/表、不再新增 Union-Cave 专用引擎分支。一次一层，用户实机通过再继续。
+
+
+## REF-342 联合洞穴 LADDER 触发语义修复
+- [x] 按 Gold `CAVE` collision 区分 `LADDER` 与 `WARP_CARPET_DOWN`，不再把所有联合洞穴 Warp 当成站立碰撞触发。
+- [x] 1F `(5,19)/(3,33)`、B1F `(7,19)/(3,33)/(17,31)`、B2F `(5,3)` 作为 LADDER：仅从相邻格踏入时立即换层。
+- [x] 人物已站在 B1F/B2F 楼梯上时，撞墙/其它方向不得再次触发；1F `(17,3)/(17,31)` 继续保持 Gold DOWN-only 地毯。
+- [x] B1F `(3,3)/(3,11)` 遗迹方向地毯继续关闭，不因本修复被误开放。
+- [ ] 用户手机复测三层全部楼梯“踏入触发、站立不重触发”、旧档与 Red/Blue/TEST MAP 空间。
+
+## REF-341 联合洞穴楼层 Warp 落点修复
+- [x] 将 `JOHTO_UNION_CAVE` 纳入 `DungeonTilesets`，保证同 Tileset 跨楼层仍按目标 Warp 重建坐标。
+- [x] B1F `(17,31)` → B2F 应落在 `(5,3)`；不再把源坐标带到 B2F 水池边。
+- [x] 同时修正 1F `(5,19)` ↔ B1F `(7,19)` 的两格落点偏移；另一组 `(3,33)` 坐标相同，行为不变。
+- [ ] 用户手机复测 Red/Blue/TEST、三组楼梯、旧档与 MAP 空间。
+
+# REF-340 联合洞穴碰撞热修（当前）
+
+- [x] 重新逐格审计 1F/B1F/B2F 的 Gold 16×16 collision role；确认旧转换把 `UP_WALL` 错当整格实墙，三层合计造成大量空气墙/错误放行。
+- [x] 不改地图像素、楼梯、边框或固定暗色；改为运行时精确恢复 `UP_WALL` 北边界语义，并恢复 B1F `HOP_RIGHT` 两格的普通落脚。
+- [x] B2F 仍是本阶段唯一新增楼层；训练师、道具、Lapras、野生遭遇继续延期。
+- [ ] 用户手机复测三层靠墙通道、B1F 跳崖、B2F 水边上岸和旧档。
+
+# REF-340｜联合洞穴 B2F 单层测试候选（当前优先，待用户验收）
+
+> 用户已确认 REF-339 联合洞穴 1F/B1F 的楼梯、边缘和固定暗色显示正常。本轮继续遵守“一层一验收”，只接 B2F，不顺手开放遗迹出口或补人物事件。
+
+- [x] 仅新增 Union Cave B2F：固定ID115→活动slot58；活动地图58→59，登记Warp138→140。
+- [x] 只开放 B1F Gold ordinal4 `(17,31)` ↔ B2F ordinal0 `(5,3)` 一组双向楼梯；B1F到阿露福遗迹的 ordinal0/1 继续关闭。
+- [x] B2F 10×18 Gold源地图重新按当前已验收洞穴资源转换；只新增1个32×32运行区块，不新增8×8图块；离线逐像素渲染与Gold一致。
+- [x] B2F 168个Gold WATER格接入Surf；沿用联合洞穴固定NITE暗色和已验收Gold纹理边框。
+- [ ] 本批不接3名训练师、2个道具球、周五拉普拉斯、野生遭遇或剧情。
+- [ ] **验收1：** 用户自行重构 Red、Blue、TEST 并检查新MAP（ROM0至少64B及相关ROMX）；游戏内版本 `REF-340`。
+- [ ] **验收2：** B1F新楼梯下到B2F，再从B2F唯一楼梯返回B1F；确认不循环、不黑屏、不软复位。
+- [ ] **验收3：** B2F水域Surf/上岸、四周边框与固定暗色正常；NPC/道具/拉普拉斯应仍不出现；旧档继续→保存→读取。
+- [ ] **下一轮：** 只有B2F通过后，再决定先补联合洞穴人物/道具，还是转做下一座洞穴/室内。
+
+---
+
+# 当前项目工作总入口｜REF-338 后续规划（2026-11-04，仅文档更新）
+
+> **本节优先于下方大量历史 TODO**。REF-338 提交状态以用户最新 `REF-338.zip` 的实际导出为准；下方旧阶段的“待提交”字样是历史快照，不代表今天还未提交。此次只整理待办/设计，**没有改游戏源码、没有编译 ROM、没有 Commit/Push**。
+>
+> 长期专题文档：[`docs/JOHTO_CONTENT_BACKLOG.md`](docs/JOHTO_CONTENT_BACKLOG.md)（城都洞穴、室内地图和施工路线）；[`docs/POKEMON_IDENTITY_AND_FORM_PLAN.md`](docs/POKEMON_IDENTITY_AND_FORM_PLAN.md)（物种编号/形态/图鉴身份设计）。
+
+## A｜优先级最高：城都地图内容（独立于第二世代物种接入）
+
+- [x] **静态核对范围**：冻结稳定地图 ID 0–221 共222个；REF-338活动地图57个（33 个室外/地形场景、13 门房、10 中心、1 向导家），尚有 **165 个没有活动登记**。活动洞穴内部只有 **Union Cave 1F**；不把预留ID、Gold素材或单个地形块当已开放。
+- [ ] **P0 地图验收基线**：Red/Blue/TEST同版构建/MAP与 ROM0≥64B、旧存档继续→存→读、设备核心路线；验证当前57图实际安全。
+- [ ] **P0 联合洞穴地下层**：Union Cave B1F ID114 / B2F ID115；先做楼梯、洞口、双向 Warp、碰撞、音乐、存档，不等野怪系统。现有1F ID8不等于洞穴完成。
+- [ ] **P0 早期室内第一批**：若叶镇博士研究所及玩家家庭 ID117–121；吉花商店/居民家及30号道路 ID122/124/126–128；先完成可进入、可退出和基本交互。
+- [ ] **P0 桔梗/桧皮室内与塔井**：Violet Mart/学院/住宅 ID129/131/132/134，Azalea Mart/炭窑/钢铁家 ID136–138；Sprout Tower 116/166/167，Slowpoke Well 184/185。道馆/剧情分阶段，不为了这次就写假训练师队伍。
+- [ ] **P1 其它地下/洞穴主干**：Ice Path 70/95–98（Route44→Blackthorn 通路）、Dark Cave ID99/190、Ruins of Alph 研究所与内部 ID108–113、Burned Tower 177/178、Mt Mortar 91–94。
+- [ ] **P1 城市大量普通室内**：满金、圆朱、浅葱、湛蓝、卡吉、烟墨的 Mart/House/Cafe/Pharmacy 等；逐批开放，不把室外有房屋贴图当室内完成。
+- [ ] **P2 大型多层建筑**：Olivine Lighthouse 46–51、Goldenrod Dept Store 149–155、Radio Tower 179–183、Rocket Base 88–90、Underground 186–189；楼层 Warp 和场景旗标各自审核。
+- [ ] **P2/P3 大型后期场景**：Tin Tower 158/159/168–176/191、Whirl Islands 52–59、Dragons Den 100/101、Silver Cave 198/201–204、Tohjo Falls 205、Victory Road 206、港口/联盟等。维护封路边界直到全部实际验收。
+- [ ] **地图逐层完成状态**：为每图分别记录 `R0素材/ID`、`R1地图资源`、`R2可进出与楼层Warp`、`R3物件/NPC`、`R4剧情/遭遇/训练师`，地图通行通过不能写成剧情完成。
+- [ ] **后续填充**：可交互 NPC、商店、道具、洞穴机关、野怪与训练师、道馆徽章和主线剧情独立排期，第二世代未完全接入时优先完成不依赖物种数据的室内/洞穴底座。
+
+## B｜并行研究、暂不动编号：地区形态复用与完整第二世代
+
+- [ ] **冻结现有物种/图鉴编号**，不批量前移、不因合并就立刻复用旧 ID。第二世代新增100只，之前清点已有35、缺65；普通编号空闲41只是编号容量，不等于资源已够。
+- [ ] **可解释的合并方案**：尼多家族 6→3（省3）、伊布8种终阶→1（省7）、飞腿郎/快拳郎/战舞郎3→1（省2）、霸王花/美丽花（省1）、蚊香泳士/蚊香蛙皇（省1）、呆壳兽/呆呆王（省1）、肯泰罗/大奶罐（省1，自定义雌雄对应关系），总共**理论16个候选槽位**；不是已安全回收的空槽。
+- [ ] **玩家看到的图鉴不变**：关都 #001–#151 仍逐条显示原名称、图像、顺序、独立 Seen/Owned；目标第二世代 #152–#251 也是独立条目。形态合并只发生在内部 `Species+Form`，不是玩家可见“地区形态附属页面”。
+- [ ] **架构前置**：实现 `Dex ID ↔ (Species,Form)` 映射、形态独立名称/技能/图鉴/性别/繁殖/进化目标、形态持久标记容量、旧档版本识别与迁移，才考虑旧 Species ID 再分配。
+- [ ] **按家族先试点、验证后回收**：建议先霸王花/美丽花，再尼多家族和伊布多分支；关都旧档、PC/队伍/育成屋、训练师、野生、捕获、进化与图鉴需要一起回归。不要按相似动物或御三家跨世代强行挂靠。
+- [ ] 第三及后续世代现有物种哪些保留/移除待单独决定，**本轮不删除任何宝可梦**。
+
+## C｜立即执行顺序
+
+1. **先解决REF-338当前ROM/MAP/旧档验收缺口**，不在不确定基线上增加风险。
+2. **先开展 Union Cave B1F/B2F + 前期普通室内**，每次最多1–3张关联地图，保证能够进入、返回、存读档。
+3. Species/形态映射方案独立研究并做最小试点，**不作为城都室内地图的阻塞项**。
+4. 每一批按 `docs/JOHTO_CONTENT_BACKLOG.md` 更新 R0–R4 状态，严禁只按活动地图总数报告游戏完成度。
+
+---
+
 ## CLEAN-REF338｜烟墨市中心与城都 Gold 边框收口（待用户双提交）
 - [x] 对齐烟墨市已开放 Gold Center 后事件负向注入的审计错误 ID：`only_gold_center_door_open`，保留错误事件必须被拦截的检查。
 - [x] 联合洞穴 1F 的 `$21` 运行时边框只改注释，明确是 NPC-243 的不透明、不可通行专用边框，不等于 Gold 原版 `$09` 岩壁像素。
@@ -2321,3 +2428,19 @@ This section preserves the original author's roadmap. Status markers reflect the
 - Outdoor door source coordinates Gold (23,27), (13,21), (23,43), (15,13). Existing gatehouses/warps remain unchanged. 52 -> 56 active maps; 119 -> 131 registered warps.
 - Two exit carpets, one nurse, last-successful-heal ID, original town-map landmark and existing Fly unlock only; PC storage/2F/extra NPCs deferred.
 - User to build Red/Blue/TEST MAPs and confirm ROM0 >= 64B; review ROMX headroom, cross-town transfers, floor edge and four START selections on a handset. No assistant ROM build/link, Commit or Push.
+
+### REF-339 联合洞穴边缘/颜色问题（2026-11-04，用户截图反馈）
+
+- [x] Gold 原始 Border `$09` 与 RPP 专用 `$21` 黑边框差异已定位，1F/B1F共用边框。
+- [x] 使用已有像素相同的不可通行 tile `$05` 替换 `$21` 黑色块内容（仅图外填充，不动地图布局/传送）。
+- [ ] **用户实机验收**：1F/B1F四周显示的洞穴背景是否与金版相符，是否保持图外阻挡及上下楼。
+- [x] **联合洞穴固定暗色调色**：Gold 原版 `UnionCave1F/B1F/B2F` 地图属性均为 `PALETTE_NITE`，不随昼夜切换。当前已开放的1F/B1F使用完全对应Gold NITE RGB5的 `CAVE_*` 颜色；不是 `PALETTE_DARK`（需要闪光）模式。待用户手机画面验收。
+- [ ] B2F 暂不开工，等待本层边框和调色问题解决。
+
+### REF-339 联合洞穴固定 NITE 调色（开发候选，待手机验收）
+
+- [x] 对照用户 Gold 源码 `data/maps/maps.asm` 的 `UnionCave1F/B1F/B2F = PALETTE_NITE` 与 `engine/tilesets/timeofday_pals.asm` 固定夜间标志，纠正此前把洞穴看作随时间变色的错误。
+- [x] 用原有 `CAVE_GRAY/RED/GREEN/BLUE/YELLOW/BROWN/LIGHT_BLUE` 替代 `JOHTO_UNION_CAVE` 的 `INDOOR_*`；七组 RGB5 与 Gold `gfx/tilesets/bg_tiles.pal` NITE 逐组匹配。
+- [x] 继续保留上一批的 1F/B1F 金版边缘和 B1F 楼梯调色、Warp、Surf、水域碰撞；B2F 未开放。
+- [ ] 本机 Red/Blue/TEST 编译、MAP 空间、1F/B1F 固定暗色效果、楼梯/Surf/边缘和旧存档需由用户验证。
+- [ ] 下一阶段一层一层推进B2F；不再为联合洞穴规划随时钟切换配色。

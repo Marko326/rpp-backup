@@ -26,10 +26,10 @@ class SurfBuildGate296(unittest.TestCase):
     def test_all_active_water_maps_with_no_external_reference(self):
         result=audit(ROOT)
         self.assertEqual(result['status'],'PASS_STATIC_ONLY',result['errors'])
-        self.assertEqual(result['active_maps'],57)
-        self.assertEqual(result['water_maps'],23)
-        self.assertEqual(len(result['checked']),57)
-        self.assertEqual(sum(x['water_cells'] for x in result['checked']),4948)
+        self.assertEqual(result['active_maps'],60)
+        self.assertEqual(result['water_maps'],26)
+        self.assertEqual(len(result['checked']),60)
+        self.assertEqual(sum(x['water_cells'] for x in result['checked']),5208)
         self.assertEqual(len([r for r in result['checked'] if r['handler']=='GOLD_SPATIAL']),15)
 
     def test_new_active_map_cannot_escape_without_manual_water_review(self):

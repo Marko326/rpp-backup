@@ -30,6 +30,9 @@ class SurfPreflight(unittest.TestCase):
                  'maps/johto_pilot/Route32.runtime.blk',
                  'maps/johto_pilot/RuinsOfAlphOutside.runtime.blk',
                  'maps/johto_pilot/UnionCave1F.runtime.blk',
+                 'maps/johto_pilot/UnionCaveB1F.runtime.blk',
+                 'maps/johto_pilot/UnionCaveB2F.runtime.blk',
+                 'maps/johto_pilot/SlowpokeWellB1F.runtime.blk',
                  'gfx/blocksets/johto_union_cave.bst',
                  'gfx/tilesets/johto_union_cave.tilecoll',
                  'gfx/blocksets/johto.bst', 'gfx/tilesets/johto.tilecoll']

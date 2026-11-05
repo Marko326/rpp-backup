@@ -173,6 +173,8 @@ def audit(root: Path, gold_root: Path | None = None, *, changes: dict[str, str |
               'callab PatchJohtoBordersAfterBlockLoad300' in blockmap and
               'callab PatchJohtoSouthBordersAfterBlockLoad' in wrapper and
               bool(re.search(r'call PatchJohtoAzaleaWestGateBorder\s+call PatchJohtoGoldenrodNorthBorder\s+jp PatchJohtoRoute35SouthBorder',dispatch)) and
+              'SECTION "Johto South Gold Portals", ROMX, BANK[$4D]' in read('main.asm') and
+              'INCLUDE "engine/johto_south_portals.asm"' in read('main.asm') and
               'SECTION "Johto South Gold Geometry", ROMX, BANK[$4E]' in read('main.asm') and
               'INCLUDE "engine/johto_ilex_mature_runtime_275.asm"' in read('main.asm'))
         preview=mature.split('PatchJohtoRoute35SouthBorder::',1)[-1]
