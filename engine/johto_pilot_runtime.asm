@@ -298,6 +298,25 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    ; REF-347 Burned Tower 1F: City Gold door + two DOWN-only carpet exits.
+    db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    ; REF-348: all eleven Gold PIT ordinals 2-12 and the lower ladder ordinal13
+    ; enter B1F. B1F ordinals0-4 are arrival-only; only ordinal5 is a return ladder.
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 6, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 7, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 8, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 9, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 10, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 11, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 12, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 13, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -479,6 +498,8 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 9, MUSIC_DUNGEON2, 0 ; slot58 Union Cave B2F
     johto_map_profile 0, 12, MUSIC_DUNGEON2, 0 ; slot59 Slowpoke Well B1F
     johto_map_profile 0, 12, MUSIC_DUNGEON2, 0 ; slot60 Slowpoke Well B2F
+    johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot61 Burned Tower 1F, no Fly
+    johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot62 Burned Tower B1F, no Fly
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -1302,7 +1323,19 @@ JohtoPilotGateArrivalStep::
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateArrivalDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
-    jr z, .westPortalDispatch
+    jr nz, .notBurnedTowerCityArrival
+    ; Gold Burned Tower door is a step-out DOOR, not Ecruteak's west carpet.
+    ; Only the door at (5,5) advances DOWN on arrival. West gate stays still.
+    ld a, [wXCoord]
+    cp 5
+    jr nz, .westPortalDispatch
+    ld a, [wYCoord]
+    cp 5
+    jr nz, .westPortalDispatch
+    ld e, D_DOWN
+    ret
+.notBurnedTowerCityArrival
+    ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
     jr z, .westPortalDispatch
     cp JOHTO_ROUTE_38_LOCAL_ID
@@ -1422,7 +1455,15 @@ JohtoPilotGateDoorApproachAllowed::
     ret z
     cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     ret z
-    ; REF-336: allow only four Gold source-verified 1F doors.
+    ; REF-347: Gold Burned Tower Ecruteak (5,6) UP beforestep.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr nz, .noBurnedBefore
+    callab JohtoBurnedTowerCityBeforeStep
+    ld a, e
+    and a
+    ret nz
+.noBurnedBefore
     call JohtoBatchCenterDoorBeforeStep336
     ld a, e
     and a
@@ -1675,6 +1716,23 @@ JohtoPilotGateDoorWarpMatched::
     jp z, .centerCarpetStand
     cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     jp z, .centerCarpetStand
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
+    jr nz, .noBurnedAfter
+    callab JohtoBurnedTowerCityAfterStep
+    ld a, e
+    and a
+    ret nz
+.noBurnedAfter
+    ld a, [wCurLocalMapID]
+    cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    jr z, .burnedTowerWarpMode
+    cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    jr nz, .noBurnedCarpet
+.burnedTowerWarpMode
+    callab JohtoBurnedTowerWarpTriggerMode
+    ret
+.noBurnedCarpet
     call JohtoBatchCenterDoorAfterStep336
     ld a, e
     and a
@@ -1955,6 +2013,12 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    jr nz, .notBurnedExit
+    callab JohtoBurnedTower1FDownCarpet
+    ret
+.notBurnedExit
+    ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jr z, .centerCarpetExit
     cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
@@ -2139,6 +2203,12 @@ JohtoPilotGateCollisionExitAllowed::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    jr nz, .notBurnedExit
+    callab JohtoBurnedTower1FDownCarpet
+    ret
+.notBurnedExit
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
     jr z, .centerCarpetExit

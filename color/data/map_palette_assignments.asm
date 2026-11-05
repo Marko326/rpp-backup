@@ -51,5 +51,7 @@ INCLUDE "color/tilesets/johto_south_gold_gate.asm" ; JOHTO_SOUTH_GATE
 INCLUDE "color/tilesets/johto_park.asm" ; JOHTO_PARK
 INCLUDE "color/tilesets/johto_park_gate.asm" ; JOHTO_PARK_GATE
 INCLUDE "color/tilesets/johto_shared_pokecenter.asm" ; JOHTO_POKECENTER
+INCLUDE "color/tilesets/johto_burned_tower_1f.asm" ; Gold TOWER / DAY
+INCLUDE "color/tilesets/johto_burned_tower_b1f.asm" ; Gold CAVE / DAY, static indoor tiles
 MapPaletteAssignmentsEnd::
-ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_POKECENTER + 1) * $60
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_BURNED_TOWER_B1F + 1) * $60

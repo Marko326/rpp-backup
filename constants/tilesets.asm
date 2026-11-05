@@ -38,3 +38,5 @@ const_value = 0
 	const JOHTO_PARK ; 35 ; independent Gold National Park art
 	const JOHTO_PARK_GATE ; 36 ; asymmetric Gold Park gate art
 	const JOHTO_POKECENTER ; 37 ; Gold 5x4 shared center art, NPC-243 conversion
+	const JOHTO_BURNED_TOWER_1F ; 38 ; Gold TOWER / DAY
+	const JOHTO_BURNED_TOWER_B1F ; 39 ; Gold CAVE / DAY, static tower basement

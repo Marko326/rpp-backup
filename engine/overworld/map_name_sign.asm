@@ -289,6 +289,10 @@ UpdateMapNameSign::
 	jp z, .johtoSlowpokeWell
 	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
 	jp z, .johtoSlowpokeWell
+	cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
+	jp z, .johtoBurnedTower
+	cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+	jp z, .johtoBurnedTower
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -383,6 +387,9 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoSlowpokeWell
 	ld hl, .JohtoSlowpokeWellName
+	jr .johtoResolved
+.johtoBurnedTower
+	ld hl, .JohtoBurnedTowerName
 	jr .johtoResolved
 .johtoRoute36
 	ld hl, .JohtoRoute36Name
@@ -1176,6 +1183,7 @@ UpdateMapNameSign::
 .JohtoRoute36Name: db "Route 36@"
 .JohtoUnionCaveName: db "Union Cave@"
 .JohtoSlowpokeWellName: db "Slowpoke Well@"
+.JohtoBurnedTowerName: db "Burned Tower@"
 .JohtoRoute33Name: db "Route 33@"
 .JohtoRoute32Name:      db "Route 32@"
 .JohtoRuinsName: db "Ruins Of Alph@"

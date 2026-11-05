@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 61
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 63
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -86,6 +86,10 @@ JohtoEcruteakPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/EcruteakPokecenter1
 ASSERT @ - JohtoEcruteakPokecenterGoldBlocks == 5 * 4
 JohtoBlackthornPokecenterGoldBlocks:: INCBIN "maps/johto_pilot/BlackthornPokecenter1F.gold.blk"
 ASSERT @ - JohtoBlackthornPokecenterGoldBlocks == 5 * 4
+JohtoBurnedTower1FGoldBlocks:: INCBIN "maps/johto_pilot/BurnedTower1F.gold.blk"
+ASSERT @ - JohtoBurnedTower1FGoldBlocks == 10 * 9
+JohtoBurnedTowerB1FGoldBlocks:: INCBIN "maps/johto_pilot/BurnedTowerB1F.gold.blk"
+ASSERT @ - JohtoBurnedTowerB1FGoldBlocks == JOHTO_BURNED_TOWER_B1F_WIDTH * JOHTO_BURNED_TOWER_B1F_HEIGHT
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -284,6 +288,12 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID, JOHTO_SLOWPOKE_WELL_B2F_WIDTH, JOHTO_SLOWPOKE_WELL_B2F_HEIGHT
     dw JohtoSlowpokeWellB2FGoldBlocks
     db BANK(JohtoSlowpokeWellB2FGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 10, 9
+    dw JohtoBurnedTower1FGoldBlocks
+    db BANK(JohtoBurnedTower1FGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID, JOHTO_BURNED_TOWER_B1F_WIDTH, JOHTO_BURNED_TOWER_B1F_HEIGHT
+    dw JohtoBurnedTowerB1FGoldBlocks
+    db BANK(JohtoBurnedTowerB1FGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 

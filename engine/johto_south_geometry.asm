@@ -435,6 +435,19 @@ JohtoWestCarpetSpatialStep::
     jp z, .route38
     jp .role
 .city
+    ; Burned Tower entrance is the same narrow UP-step Gold DOOR as centers.
+    ld a, [wXCoord]
+    cp 5
+    jr nz, .cityWestCarpet
+    ld a, [wYCoord]
+    cp 6
+    jr nz, .cityWestCarpet
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr nz, .cityWestCarpet
+    ld e, 0
+    ret
+.cityWestCarpet
     ld a, [wXCoord]
     cp 1
     jr nz, .cityVertical

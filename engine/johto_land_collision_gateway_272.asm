@@ -22,6 +22,10 @@ JohtoOverworldSouthLandDecision::
     jp z, .unionCave
     cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
     jp z, .unionCave
+    cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    jp z, .burnedTower1F
+    cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    jp z, .burnedTowerB1F
     ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
     ; The generic Gold role can otherwise treat the door as a solid wall.
     ld a, [wCurRegion]
@@ -157,6 +161,17 @@ JohtoOverworldSouthLandDecision::
     bit 6, a
     jr nz, .allowJump
     callab JohtoRoute33StepPolicy
+    ret
+.burnedTower1F
+    callab JohtoBurnedTower1FLandDecision
+    ret
+.burnedTowerB1F
+    ; Gold HOP cells are passable; HandleLedges owns the two-cell jump.
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
+    callab JohtoBurnedTowerB1FLandDecision
     ret
 .unionCave
     ; Gold Cave UP_WALL is directional LAND, not a solid 16x16 cell.

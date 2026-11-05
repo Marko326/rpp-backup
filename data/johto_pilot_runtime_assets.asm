@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 61
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 63
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -320,6 +320,14 @@ JohtoSlowpokeWellB2FRuntimeDescriptor::
     db JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID, JOHTO_UNION_CAVE, JOHTO_SLOWPOKE_WELL_B2F_WIDTH, JOHTO_SLOWPOKE_WELL_B2F_HEIGHT
     dw JohtoSlowpokeWellB2FRuntimeBlocks
     db BANK(JohtoSlowpokeWellB2FRuntimeBlocks)
+JohtoBurnedTower1FRuntimeDescriptor::
+    db JOHTO_BURNED_TOWER_1F_LOCAL_ID, JOHTO_BURNED_TOWER_1F, 10, 9
+    dw JohtoBurnedTower1FRuntimeBlocks
+    db BANK(JohtoBurnedTower1FRuntimeBlocks)
+JohtoBurnedTowerB1FRuntimeDescriptor::
+    db JOHTO_BURNED_TOWER_B1F_LOCAL_ID, JOHTO_BURNED_TOWER_B1F, JOHTO_BURNED_TOWER_B1F_WIDTH, JOHTO_BURNED_TOWER_B1F_HEIGHT
+    dw JohtoBurnedTowerB1FRuntimeBlocks
+    db BANK(JohtoBurnedTowerB1FRuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -384,6 +392,10 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .slowpokeWellB1F
     cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
     jp z, .slowpokeWellB2F
+    cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    jp z, .burnedTower1F
+    cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    jp z, .burnedTowerB1F
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -470,6 +482,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .slowpokeWellB2F
     ld hl, JohtoSlowpokeWellB2FRuntimeDescriptor
+    jp .valid
+.burnedTower1F
+    ld hl, JohtoBurnedTower1FRuntimeDescriptor
+    jp .valid
+.burnedTowerB1F
+    ld hl, JohtoBurnedTowerB1FRuntimeDescriptor
     jp .valid
 .southAzaleaTown
     ld hl, JohtoSouthAzaleaTownDescriptor

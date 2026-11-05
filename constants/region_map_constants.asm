@@ -33,7 +33,7 @@ INCLUDE "constants/johto_fixed_map_ids.asm"
 ; source-audited outdoors through Violet City and Route32; other maps inactive.
 ; Raise this only alongside the complete header, bank, event, warp, connection,
 ; music, Town Map, and runtime identity records for each added map.
-DEF NUM_JOHTO_ACTIVE_MAPS EQU 61
+DEF NUM_JOHTO_ACTIVE_MAPS EQU 63
 DEF JOHTO_SOUTH_AZALEATOWN_WIDTH EQU 20
 DEF JOHTO_SOUTH_AZALEATOWN_HEIGHT EQU 9
 DEF JOHTO_SOUTH_ILEXFORESTAZALEAGATE_WIDTH EQU 5
@@ -171,3 +171,5 @@ ASSERT JOHTO_ROUTE_30_WIDTH == 10
 ASSERT JOHTO_ROUTE_30_HEIGHT == 27
 ASSERT JOHTO_ROUTE_31_WIDTH == 20
 ASSERT JOHTO_ROUTE_31_HEIGHT == 9
+DEF JOHTO_BURNED_TOWER_B1F_WIDTH EQU 10
+DEF JOHTO_BURNED_TOWER_B1F_HEIGHT EQU 9

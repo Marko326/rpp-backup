@@ -92,12 +92,13 @@ ASSERT JohtoEcruteakHeaderEnd - JohtoEcruteakRuntimeHeader == 45
 JohtoEcruteakTextPointers:
 JohtoEcruteakRuntimeObjects::
     db $05
-    db 5 ; REF-336 center enabled alongside existing warps
+    db 6 ; REF-347 Burned Tower Gold outdoor door added after existing 5 warps
     db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR
     db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR
     db 26, 35, 0, JOHTO_REGISTERED_WARP_SELECTOR
     db 27, 35, 1, JOHTO_REGISTERED_WARP_SELECTOR
     db 27, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Ecruteak #6 Center -> room carpet warp 0
+    db 5, 5, 0, JOHTO_REGISTERED_WARP_SELECTOR ; Gold Ecruteak #12 Burned Tower door -> 1F carpet0
     db 0
     db 0
 

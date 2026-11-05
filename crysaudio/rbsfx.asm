@@ -196,3 +196,7 @@ RedSfxHeaderPointers:
 
 	; Power Gem: PC's opening Metronome sound already exists in sfx.asm.
 	dbw BANK(Sfx_Metronome), Sfx_Metronome
+
+	; Gold FallIntoMapScript cues: reuse the already linked Gen II audio data.
+	dbw BANK(Sfx_Kinesis), Sfx_Kinesis
+	dbw BANK(Sfx_Strength), Sfx_Strength

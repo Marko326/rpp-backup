@@ -19,7 +19,7 @@ GameVersionText::
 	; DEV-325: restore Gold Route44 east cliff preview without activating Blackthorn.
 	; REF-338: Blackthorn Center door #5 and two own return carpets.
 	; REF-337: Ecruteak/Mahogany center doors target the first 1F carpet warp (0).
-	; Canonical project version REF-5.62.344; one in-ROM label REF-343 shared by all builds.
+	; REF-348: Burned Tower B1F, source-only PIT warp and reused RPP Strength/SCY animations.
 	; REF-344: open Slowpoke Well B2F via shared cave adapter and enable Gold B1F boulder via existing Strength engine.
 	; REF-342: Union Cave LADDER warps trigger only on step-in; standing collision cannot re-warp.
 	; REF-341: Union Cave same-tileset floor warps rebuild destination coordinates; cave NPC/events remain closed.
@@ -58,4 +58,4 @@ GameVersionText::
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "REF-344@"
+	db "REF-348@"

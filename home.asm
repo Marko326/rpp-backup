@@ -1107,6 +1107,13 @@ ASSERT JohtoHouse_CollEnd - JohtoHouse_Coll == 4
 JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"
 JohtoUnionCave_CollEnd::
 ASSERT JohtoUnionCave_CollEnd - JohtoUnionCave_Coll == 21
+; Burned Tower 1F: only art tiles safe on ALL usages; Gold spatial mask governs.
+JohtoBurnedTower1F_Coll:: INCBIN "gfx/tilesets/johto_burned_tower_1f.tilecoll"
+ASSERT @ - JohtoBurnedTower1F_Coll == 12
+; Gold B1F spatial role map is authoritative; this minimal tile collision vocabulary
+; is kept in ROM0 for legacy sprite/boulder checking.
+JohtoBurnedTowerB1F_Coll:: INCBIN "gfx/tilesets/johto_burned_tower_b1f.tilecoll"
+ASSERT @ - JohtoBurnedTowerB1F_Coll == 5
 ; Route33 movement uses exact Gold 16x16 spatial collision instead of ambiguous
 ; shared 8x8 visual IDs. The unbanked tileset pointer stays valid.
 JohtoIlexForest_Coll:: INCBIN "gfx/tilesets/johto_ilex_forest.tilecoll"

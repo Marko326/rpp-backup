@@ -987,6 +987,10 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotSlowpokeWellName
     db 138, 78 ; slot60 Slowpoke Well B2F
     dw JohtoPilotSlowpokeWellName
+    db 60, 76 ; slot61 Burned Tower 1F -> Ecruteak City landmark
+    dw JohtoPilotEcruteakName
+    db 60, 76 ; slot62 Burned Tower B1F -> Ecruteak City landmark
+    dw JohtoPilotEcruteakName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -1007,6 +1011,8 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 9 ; slot58 Union Cave B2F -> Union Cave
     db 12 ; slot59 Slowpoke Well B1F -> Slowpoke Well
     db 12 ; slot60 Slowpoke Well B2F -> Slowpoke Well
+    db 21 ; slot61 Burned Tower 1F -> Ecruteak City
+    db 21 ; slot62 Burned Tower B1F -> Ecruteak City
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 

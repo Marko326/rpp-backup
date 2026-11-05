@@ -333,6 +333,18 @@ GetTileTwoStepsInFrontOfPlayer:
 	ret
 
 CheckForCollisionWhenPushingBoulder:
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .legacy
+	ld a, [wCurLocalMapID]
+	cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+	jr nz, .legacy
+	callab JohtoBurnedTowerB1FCheckForCollisionWhenPushingBoulder
+	ret
+.legacy
+	jp CheckForCollisionWhenPushingBoulderLegacy
+
+CheckForCollisionWhenPushingBoulderLegacy:
 	call GetTileTwoStepsInFrontOfPlayer
 	ld hl, wTilesetCollisionPtr
 	ld a, [hli]

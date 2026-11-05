@@ -37,8 +37,10 @@ WarpTileIDPointers:
     dw JohtoParkWarpTileIDs
     dw JohtoParkGateWarpTileIDs
     dw JohtoPokecenterWarpTileIDs ; ID37: Gold bottom carpets are collision-only
+    dw JohtoBurnedTower1FWarpTileIDs ; ID38: Gold bottom carpets require DOWN
+    dw JohtoBurnedTowerB1FWarpTileIDs ; ID39: only the registered ladder is immediate
 WarpTileIDPointersEnd:
-ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_POKECENTER + 1) * 2
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_BURNED_TOWER_B1F + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -118,3 +120,5 @@ JohtoParkGateWarpTileIDs: db $ff
 ; No Gold center tile is STEP_ON. Registered carpets exit only on a
 ; blocked DOWN move from (3/4,7), guarded by the Johto warp collision hook.
 JohtoPokecenterWarpTileIDs: db $ff
+JohtoBurnedTower1FWarpTileIDs: db $ff
+JohtoBurnedTowerB1FWarpTileIDs: db $ff

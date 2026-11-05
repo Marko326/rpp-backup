@@ -11,6 +11,8 @@ HandleLedges:
 	jr z, .johtoPilot
 	cp JOHTO_UNION_CAVE
 	jp z, .unionCaveB1F
+    cp JOHTO_BURNED_TOWER_B1F
+    jp z, .burnedTowerB1F
 	and a ; original Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
@@ -24,6 +26,15 @@ HandleLedges:
 	ret nz
 	ld hl, JohtoUnionCaveB1FGoldHops
 	jp .ruinsCoordinateHopLookup
+.burnedTowerB1F
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    ret nz
+    ld hl, JohtoBurnedTowerB1FGoldHops
+    jp .ruinsCoordinateHopLookup
 .route33Modern
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
@@ -260,12 +271,17 @@ JohtoSouthHopLandingGuard::
     jp z, .route46
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
     jp z, .unionCaveB1F
+    cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+    jp z, .burnedTowerB1F
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
     jp .scan
 .unionCaveB1F
     ld hl, JohtoUnionCaveB1FGoldHops
+    jp .scan
+.burnedTowerB1F
+    ld hl, JohtoBurnedTowerB1FGoldHops
     jp .scan
 .route37
     ld hl, JohtoRoute37GoldHops
@@ -382,6 +398,41 @@ JohtoPilotRoute31LedgeTiles:
 JohtoUnionCaveB1FGoldHops:
     db 12, 10, PLAYER_DIR_RIGHT
     db 12, 11, PLAYER_DIR_RIGHT
+    db $ff
+
+; Gold Burned Tower B1F directed HOPs (source X,Y,direction).
+; HOP_DOWN_LEFT at (15,4) supports both Gold directions.
+JohtoBurnedTowerB1FGoldHops:
+    db 2, 4, PLAYER_DIR_DOWN
+    db 3, 4, PLAYER_DIR_DOWN
+    db 4, 4, PLAYER_DIR_DOWN
+    db 5, 4, PLAYER_DIR_DOWN
+    db 15, 4, PLAYER_DIR_DOWN
+    db 15, 4, PLAYER_DIR_LEFT
+    db 15, 2, PLAYER_DIR_LEFT
+    db 15, 3, PLAYER_DIR_LEFT
+    db 17, 6, PLAYER_DIR_LEFT
+    db 17, 7, PLAYER_DIR_LEFT
+    db 15, 12, PLAYER_DIR_LEFT
+    db 15, 13, PLAYER_DIR_LEFT
+    db 15, 14, PLAYER_DIR_LEFT
+    db 15, 15, PLAYER_DIR_LEFT
+    db 4, 12, PLAYER_DIR_RIGHT
+    db 4, 13, PLAYER_DIR_RIGHT
+    db 4, 14, PLAYER_DIR_RIGHT
+    db 4, 15, PLAYER_DIR_RIGHT
+    db 8, 8, PLAYER_DIR_DOWN
+    db 9, 8, PLAYER_DIR_DOWN
+    db 10, 8, PLAYER_DIR_DOWN
+    db 11, 8, PLAYER_DIR_DOWN
+    db 6, 10, PLAYER_DIR_DOWN
+    db 7, 10, PLAYER_DIR_DOWN
+    db 8, 10, PLAYER_DIR_DOWN
+    db 9, 10, PLAYER_DIR_DOWN
+    db 10, 10, PLAYER_DIR_DOWN
+    db 11, 10, PLAYER_DIR_DOWN
+    db 12, 10, PLAYER_DIR_DOWN
+    db 13, 10, PLAYER_DIR_DOWN
     db $ff
 
 JohtoRoute33Hops:

@@ -46,8 +46,13 @@ Tilesets:
 	tileset JohtoParkGate_Block, JohtoParkGate_GFX, Gate_Coll, $FF,$FF,$FF, $FF, INDOOR
 	; Gold 5x4 art: three tile-ID swaps make Pokecenter_Coll equivalent to Gold $09/$2e.
 	tileset JohtoSharedPokecenter_Block, JohtoSharedPokecenter_GFX, Pokecenter_Coll, $15,$FF,$FF, $FF, INDOOR
+	; Burned Tower TOWER/DAY is a static interior: CAVE water animation overwrites
+	; Gold rock art at tile $14, so use INDOOR (no tile animation).
+	tileset JohtoBurnedTower1F_Block, JohtoBurnedTower1F_GFX, JohtoBurnedTower1F_Coll, $FF,$FF,$FF, $FF, INDOOR
+	; B1F uses Gold CAVE / DAY artwork but must be STATIC: CAVE animates rock tile $14.
+	tileset JohtoBurnedTowerB1F_Block, JohtoBurnedTowerB1F_GFX, JohtoBurnedTowerB1F_Coll, $FF,$FF,$FF, $FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_POKECENTER + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_BURNED_TOWER_B1F + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
@@ -58,6 +63,10 @@ ASSERT BANK(JohtoIlexForest_Coll) == 0
 ASSERT BANK(JohtoModern_Coll) == 0
 ASSERT BANK(JohtoUnionCave_Block) == BANK(JohtoUnionCave_GFX)
 ASSERT BANK(JohtoUnionCave_Coll) == 0
+ASSERT BANK(JohtoBurnedTower1F_Block) == BANK(JohtoBurnedTower1F_GFX)
+ASSERT BANK(JohtoBurnedTower1F_Coll) == 0
+ASSERT BANK(JohtoBurnedTowerB1F_Block) == BANK(JohtoBurnedTowerB1F_GFX)
+ASSERT BANK(JohtoBurnedTowerB1F_Coll) == 0
 ASSERT BANK(JohtoGate_Block) == BANK(JohtoGate_GFX)
 ASSERT BANK(JohtoHouse_Block) == BANK(JohtoHouse_GFX)
 ASSERT BANK(JohtoHouse_Coll) == 0

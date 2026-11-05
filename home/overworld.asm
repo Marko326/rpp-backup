@@ -59,7 +59,7 @@ EnterMap::
 	call nz, MapEntryAfterBattle
 	ld hl, wd732
 	ld a, [hl]
-	and 1 << 4 | 1 << 3 ; fly warp or dungeon warp
+	and 1 << 4 | 1 << 3 | 1 << 7 ; Fly, dungeon, or Gold Burned Tower pitfall arrival
 	jr z, .didNotEnterUsingFlyWarpOrDungeonWarp
 	; MAPFLOOR-5.19.44: for non-Fly warp pads, prepare a changed destination
 	; floor sign before EnterMapAnim fades the target map in. This prevents the
@@ -67,7 +67,7 @@ EnterMap::
 	callab PrimeMapNameSignForWarpPad
 	ld hl, wd732 ; callab does not preserve HL
 	res 3, [hl]
-	callba EnterMapAnim
+	callab JohtoEnterMapAnimationDispatcher
 	call UpdateSprites
 .didNotEnterUsingFlyWarpOrDungeonWarp
 	callba CheckForceBikeOrSurf ; handle currents in SF islands and forced bike riding in cycling road
@@ -681,10 +681,16 @@ WarpFound2::
 	cp $ff
 	jr z,.goBackOutside
  ; if not going back to the previous map
+    callab JohtoBurnedTowerMaybeFallWarp ; non-pit warps return; Gold PITs enter via MAPSETUP_FALL
 	callab JohtoPilotResolveWarpDestination
 	ld a,e
 	ld [hWarpDestinationMap],a
 	ld [wCurMap],a
+	; Burned Tower PIT already faded out. Never play the ordinary warp-pad
+	; leaving animation; the destination will execute the fall-entry animation.
+	ld hl, wd732
+	bit 7, [hl]
+	jr nz, .skipMapChangeSound
 	callba IsPlayerStandingOnWarpPadOrHole
 	ld a,[wStandingOnWarpPadOrHole]
 	dec a ; is the player on a warp pad?

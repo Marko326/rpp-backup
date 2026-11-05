@@ -382,3 +382,6 @@ const_value = 1
 	const GSSFX_BONE_CLUB
 	const GSSFX_DOUBLE_SLAP
 	const GSSFX_METRONOME    ; ANIM-5.62.198: Power Gem opening SFX
+	; REF-348 Gold Burned Tower: exact Gen II field-event cues, pointer aliases only.
+	const GSSFX_BURNED_TOWER_KINESIS
+	const GSSFX_BURNED_TOWER_STRENGTH

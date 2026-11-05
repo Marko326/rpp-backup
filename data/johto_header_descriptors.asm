@@ -138,6 +138,10 @@ JohtoHeaderDescriptors::
     db BANK(JohtoSlowpokeWellB1FRuntimeHeader)
     dw JohtoSlowpokeWellB2FRuntimeHeader
     db BANK(JohtoSlowpokeWellB2FRuntimeHeader)
+    dw JohtoBurnedTower1FRuntimeHeader
+    db BANK(JohtoBurnedTower1FRuntimeHeader)
+    dw JohtoBurnedTowerB1FRuntimeHeader
+    db BANK(JohtoBurnedTowerB1FRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

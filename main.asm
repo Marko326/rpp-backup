@@ -3420,6 +3420,14 @@ INCLUDE "data/johto_ruins_north_runtime.asm"
 SECTION "Johto Union Cave 1F Runtime", ROMX, BANK[$4B]
 INCLUDE "data/johto_union_cave_runtime.asm"
 
+; REF-347 1F + REF-348 B1F independent Gold runtime, no story objects.
+SECTION "Johto Burned Tower 1F", ROMX
+INCLUDE "data/johto_burned_tower/REF347_1f_runtime.asm"
+
+; REF-348: Gold B1F runtime/role grid, physical boulder and pitfall arrival.
+SECTION "Johto Burned Tower B1F", ROMX
+INCLUDE "data/johto_burned_tower/REF348_b1f_runtime.asm"
+
 ; Southern Johto portal dispatch is called through callab; keep it out of the
 ; packed geometry bank. Bank $4D was empty in the last successful REF-342 MAP.
 SECTION "Johto South Gold Portals", ROMX, BANK[$4D]
