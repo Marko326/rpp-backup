@@ -979,6 +979,14 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotMahoganyName
     db 60, 140 ; slot56 Blackthorn Center inherits Blackthorn City
     dw JohtoPilotBlackthornName
+    db 140, 92 ; slot57 Union Cave B1F inherits cave landmark
+    dw JohtoPilotUnionCaveName
+    db 140, 92 ; slot58 Union Cave B2F inherits cave landmark
+    dw JohtoPilotUnionCaveName
+    db 138, 78 ; slot59 Slowpoke Well B1F
+    dw JohtoPilotSlowpokeWellName
+    db 138, 78 ; slot60 Slowpoke Well B2F
+    dw JohtoPilotSlowpokeWellName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -995,6 +1003,10 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 31 ; slot54 Cianwood Center
     db 34 ; slot55 Mahogany Center
     db 39 ; slot56 Blackthorn Center
+    db 9 ; slot57 Union Cave B1F -> Union Cave
+    db 9 ; slot58 Union Cave B2F -> Union Cave
+    db 12 ; slot59 Slowpoke Well B1F -> Slowpoke Well
+    db 12 ; slot60 Slowpoke Well B2F -> Slowpoke Well
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1110,6 +1122,7 @@ JohtoPilotRoute33Name:: db "Route 33@"
 JohtoPilotRoute36Name:: db "Route 36@"
 
 JohtoPilotUnionCaveName:: db "Union Cave@"
+JohtoPilotSlowpokeWellName:: db "Slowpoke Well@"
 
 JohtoPilotSouthAzaleaName:: db "Azalea Town@"
 JohtoPilotSouthIlexName:: db "Ilex Forest@"

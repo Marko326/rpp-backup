@@ -145,9 +145,13 @@ JohtoOverworldSurfDecision::
     jp c, .floorShore
     jp .shore
 .unionCave
-	; The unique cave tileset is not a Kanto water tile set. Its scoped
-	; predicate rejects all inactive/stale non-cave map IDs.
+	; Gold cave WATER remains spatial.  Non-water UP_WALL/HOP cells need
+	; their original directional semantics instead of the legacy tile list.
 	call JohtoUnionCaveWaterAhead
+	jp c, .water
+	call JohtoUnionCaveSpecialShoreAhead
+	jp c, .floorShore
+	jp .shore
 .waterOrShore
 	jp c, .water
 .shore
@@ -1770,9 +1774,17 @@ JohtoRuinsWaterAhead::
 	jp nz, .noWater
 	inc e
 .bounds
+	ld a, [wCurLocalMapID]
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
 	ld a, d
+	jr nz, .unionHeight
+	cp 18
+	jp nc, .noWater
+	jr .width
+.unionHeight
 	cp 36
 	jp nc, .noWater
+.width
 	ld a, e
 	cp 20
 	jp nc, .noWater
@@ -1864,7 +1876,16 @@ JohtoUnionCaveIsActive::
 	jp nz, .no
 	ld a, [wCurLocalMapID]
 	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
-	jp nz, .no
+	jr z, .yes
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jr z, .yes
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jr nz, .no
+.yes
 	scf
 	ret
 .no
@@ -1907,7 +1928,38 @@ JohtoUnionCaveWaterAhead::
 	ld a, e
 	cp 20
 	jp nc, .noWater
+	ld a, [wCurLocalMapID]
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jr z, .wellHeight
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jr nz, .table
+.wellHeight
+	ld a, d
+	cp 18
+	jp nc, .noWater
+.table
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	jr z, .b1fWater
+	cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+	jr z, .b2fWater
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jr z, .slowpokeB1fWater
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jr z, .slowpokeB2fWater
 	ld hl, JohtoUnionCaveGoldWaterCells
+	jr .loop
+.b1fWater
+	ld hl, JohtoUnionCaveB1FGoldWaterCells
+	jr .loop
+.b2fWater
+	ld hl, JohtoUnionCaveB2FGoldWaterCells
+	jr .loop
+.slowpokeB1fWater
+	ld hl, JohtoSlowpokeWellB1FGoldWaterCells
+	jr .loop
+.slowpokeB2fWater
+	ld hl, JohtoSlowpokeWellB2FGoldWaterCells
 .loop
 	ld a, [hli]
 	cp $ff
@@ -2002,3 +2054,838 @@ JohtoUnionCaveGoldWaterCells::
 
 JohtoUnionCaveGoldWaterCellsEnd::
 ASSERT JohtoUnionCaveGoldWaterCellsEnd - JohtoUnionCaveGoldWaterCells == 64 * 2 + 1
+
+JohtoUnionCaveB1FGoldWaterCells::
+	db 14, 16
+	db 14, 17
+	db 15, 16
+	db 15, 17
+	db 16, 6
+	db 16, 7
+	db 16, 8
+	db 16, 9
+	db 16, 10
+	db 16, 11
+	db 16, 12
+	db 16, 13
+	db 16, 14
+	db 16, 15
+	db 16, 16
+	db 16, 17
+	db 17, 6
+	db 17, 7
+	db 17, 8
+	db 17, 9
+	db 17, 10
+	db 17, 11
+	db 17, 12
+	db 17, 13
+	db 17, 14
+	db 17, 15
+	db 17, 16
+	db 17, 17
+	db 18, 10
+	db 18, 11
+	db 19, 10
+	db 19, 11
+	db 30, 4
+	db 30, 5
+	db 30, 6
+	db 30, 7
+	db 30, 8
+	db 30, 9
+	db 30, 10
+	db 30, 11
+	db 30, 12
+	db 30, 13
+	db 31, 4
+	db 31, 5
+	db 31, 6
+	db 31, 7
+	db 31, 8
+	db 31, 9
+	db 31, 10
+	db 31, 11
+	db 31, 12
+	db 31, 13
+	db 32, 6
+	db 32, 7
+	db 32, 8
+	db 32, 9
+	db 33, 6
+	db 33, 7
+	db 33, 8
+	db 33, 9
+	db $ff
+JohtoUnionCaveB1FGoldWaterCellsEnd::
+ASSERT JohtoUnionCaveB1FGoldWaterCellsEnd - JohtoUnionCaveB1FGoldWaterCells == 60 * 2 + 1
+
+JohtoUnionCaveB2FGoldWaterCells::
+	db 6, 2
+	db 6, 3
+	db 6, 4
+	db 6, 5
+	db 6, 6
+	db 6, 7
+	db 6, 8
+	db 6, 9
+	db 7, 2
+	db 7, 3
+	db 7, 4
+	db 7, 5
+	db 7, 6
+	db 7, 7
+	db 7, 8
+	db 7, 9
+	db 8, 2
+	db 8, 3
+	db 8, 4
+	db 8, 5
+	db 8, 6
+	db 8, 7
+	db 8, 8
+	db 8, 9
+	db 8, 10
+	db 8, 11
+	db 8, 16
+	db 8, 17
+	db 9, 2
+	db 9, 3
+	db 9, 4
+	db 9, 5
+	db 9, 6
+	db 9, 7
+	db 9, 8
+	db 9, 9
+	db 9, 10
+	db 9, 11
+	db 9, 16
+	db 9, 17
+	db 10, 8
+	db 10, 9
+	db 10, 10
+	db 10, 11
+	db 10, 12
+	db 10, 13
+	db 10, 14
+	db 10, 15
+	db 10, 16
+	db 10, 17
+	db 11, 8
+	db 11, 9
+	db 11, 10
+	db 11, 11
+	db 11, 12
+	db 11, 13
+	db 11, 14
+	db 11, 15
+	db 11, 16
+	db 11, 17
+	db 12, 10
+	db 12, 11
+	db 13, 10
+	db 13, 11
+	db 14, 10
+	db 14, 11
+	db 15, 10
+	db 15, 11
+	db 16, 6
+	db 16, 7
+	db 16, 8
+	db 16, 9
+	db 16, 10
+	db 16, 11
+	db 16, 12
+	db 16, 13
+	db 17, 6
+	db 17, 7
+	db 17, 8
+	db 17, 9
+	db 17, 10
+	db 17, 11
+	db 17, 12
+	db 17, 13
+	db 18, 8
+	db 18, 9
+	db 19, 8
+	db 19, 9
+	db 20, 8
+	db 20, 9
+	db 21, 8
+	db 21, 9
+	db 22, 8
+	db 22, 9
+	db 22, 10
+	db 22, 11
+	db 23, 8
+	db 23, 9
+	db 23, 10
+	db 23, 11
+	db 28, 8
+	db 28, 9
+	db 28, 10
+	db 28, 11
+	db 28, 12
+	db 28, 13
+	db 28, 14
+	db 28, 15
+	db 28, 16
+	db 28, 17
+	db 29, 8
+	db 29, 9
+	db 29, 10
+	db 29, 11
+	db 29, 12
+	db 29, 13
+	db 29, 14
+	db 29, 15
+	db 29, 16
+	db 29, 17
+	db 30, 4
+	db 30, 5
+	db 30, 6
+	db 30, 7
+	db 30, 8
+	db 30, 9
+	db 30, 10
+	db 30, 11
+	db 30, 12
+	db 30, 13
+	db 30, 14
+	db 30, 15
+	db 30, 16
+	db 30, 17
+	db 31, 4
+	db 31, 5
+	db 31, 6
+	db 31, 7
+	db 31, 8
+	db 31, 9
+	db 31, 10
+	db 31, 11
+	db 31, 12
+	db 31, 13
+	db 31, 14
+	db 31, 15
+	db 31, 16
+	db 31, 17
+	db 32, 6
+	db 32, 7
+	db 32, 8
+	db 32, 9
+	db 32, 10
+	db 32, 11
+	db 32, 12
+	db 32, 13
+	db 32, 14
+	db 32, 15
+	db 33, 6
+	db 33, 7
+	db 33, 8
+	db 33, 9
+	db 33, 10
+	db 33, 11
+	db 33, 12
+	db 33, 13
+	db 33, 14
+	db 33, 15
+	db $ff
+JohtoUnionCaveB2FGoldWaterCellsEnd::
+ASSERT JohtoUnionCaveB2FGoldWaterCellsEnd - JohtoUnionCaveB2FGoldWaterCells == 168 * 2 + 1
+
+JohtoSlowpokeWellB1FGoldWaterCells::
+	db 12, 2
+	db 12, 3
+	db 12, 10
+	db 12, 11
+	db 12, 12
+	db 12, 13
+	db 13, 2
+	db 13, 3
+	db 13, 10
+	db 13, 11
+	db 13, 12
+	db 13, 13
+	db 14, 2
+	db 14, 3
+	db 14, 4
+	db 14, 5
+	db 14, 6
+	db 14, 7
+	db 14, 10
+	db 14, 11
+	db 14, 12
+	db 14, 13
+	db 15, 2
+	db 15, 3
+	db 15, 4
+	db 15, 5
+	db 15, 6
+	db 15, 7
+	db 15, 10
+	db 15, 11
+	db 15, 12
+	db 15, 13
+	db $ff
+JohtoSlowpokeWellB1FGoldWaterCellsEnd::
+ASSERT JohtoSlowpokeWellB1FGoldWaterCellsEnd - JohtoSlowpokeWellB1FGoldWaterCells == 32 * 2 + 1
+
+JohtoSlowpokeWellB2FGoldWaterCells::
+	db 2, 8
+	db 2, 9
+	db 2, 10
+	db 2, 11
+	db 2, 12
+	db 2, 13
+	db 3, 8
+	db 3, 9
+	db 3, 10
+	db 3, 11
+	db 3, 12
+	db 3, 13
+	db 8, 2
+	db 8, 3
+	db 8, 4
+	db 8, 5
+	db 8, 10
+	db 8, 11
+	db 8, 12
+	db 8, 13
+	db 8, 14
+	db 8, 15
+	db 8, 16
+	db 8, 17
+	db 9, 2
+	db 9, 3
+	db 9, 4
+	db 9, 5
+	db 9, 10
+	db 9, 11
+	db 9, 12
+	db 9, 13
+	db 9, 14
+	db 9, 15
+	db 9, 16
+	db 9, 17
+	db 10, 2
+	db 10, 3
+	db 10, 4
+	db 10, 5
+	db 10, 12
+	db 10, 13
+	db 10, 14
+	db 10, 15
+	db 10, 16
+	db 10, 17
+	db 11, 2
+	db 11, 3
+	db 11, 4
+	db 11, 5
+	db 11, 12
+	db 11, 13
+	db 11, 14
+	db 11, 15
+	db 11, 16
+	db 11, 17
+	db 12, 2
+	db 12, 3
+	db 12, 4
+	db 12, 5
+	db 12, 12
+	db 12, 13
+	db 12, 14
+	db 12, 15
+	db 13, 2
+	db 13, 3
+	db 13, 4
+	db 13, 5
+	db 13, 12
+	db 13, 13
+	db 13, 14
+	db 13, 15
+	db 14, 2
+	db 14, 3
+	db 14, 4
+	db 14, 5
+	db 14, 6
+	db 14, 7
+	db 14, 8
+	db 14, 9
+	db 14, 10
+	db 14, 11
+	db 14, 12
+	db 14, 13
+	db 14, 14
+	db 14, 15
+	db 15, 2
+	db 15, 3
+	db 15, 4
+	db 15, 5
+	db 15, 6
+	db 15, 7
+	db 15, 8
+	db 15, 9
+	db 15, 10
+	db 15, 11
+	db 15, 12
+	db 15, 13
+	db 15, 14
+	db 15, 15
+	db $ff
+JohtoSlowpokeWellB2FGoldWaterCellsEnd::
+ASSERT JohtoSlowpokeWellB2FGoldWaterCellsEnd - JohtoSlowpokeWellB2FGoldWaterCells == 100 * 2 + 1
+
+
+; REF-340 collision hotfix: the Gen2 cave UP_WALL role is LAND, not a solid
+; 16x16 cell.  It blocks only the north edge: UP when standing on it, and
+; DOWN when entering it from above.  The old tile-only conversion made every
+; UP_WALL fully solid, creating visible "air walls" on all three cave floors.
+; E=0 allow / E=1 block / E=2 defer to the ordinary RBY tile whitelist.
+JohtoUnionCaveGoldLandDecision::
+	ld e, 2
+	call JohtoUnionCaveIsActive
+	ret nc
+	push bc
+	push hl
+
+	; Crossing north from an UP_WALL cell is blocked in Gold.
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr nz, .target
+	ld a, [wYCoord]
+	ld b, a
+	ld a, [wXCoord]
+	ld c, a
+	call JohtoUnionCaveSelectUpWallTable
+	call JohtoUnionCaveCoordInPairList
+	jr c, .block
+
+.target
+	; Compute the 16x16 destination cell. Standard Cave profiles may have
+	; different heights (Union Cave 36 cells; Slowpoke Well B1F 18).
+	ld a, [wYCoord]
+	ld b, a
+	ld a, [wXCoord]
+	ld c, a
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .up
+	cp PLAYER_DIR_DOWN
+	jr z, .down
+	cp PLAYER_DIR_LEFT
+	jr z, .left
+	cp PLAYER_DIR_RIGHT
+	jr nz, .block
+	inc c
+	jr .bounds
+.up
+	dec b
+	jr .bounds
+.down
+	inc b
+	jr .bounds
+.left
+	dec c
+.bounds
+	ld a, [wCurLocalMapID]
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jr z, .wellHeight
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jr z, .wellHeight
+	ld a, b
+	cp 36
+	jr nc, .block
+	jr .width
+.wellHeight
+	ld a, b
+	cp 18
+	jr nc, .block
+.width
+	ld a, c
+	cp 20
+	jr nc, .block
+
+	; Entering an UP_WALL from above (moving DOWN) crosses its north wall.
+	; Every other approach is legitimate land and must bypass the old solid
+	; visual-tile variant.
+	call JohtoUnionCaveSelectUpWallTable
+	call JohtoUnionCaveCoordInPairList
+	jr nc, .hopRightTarget
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .block
+	jr .allow
+
+.hopRightTarget
+	; B1F's two HOP_RIGHT cells are ordinary land until RIGHT starts the
+	; already-existing ledge jump.  The old conversion also made them solid.
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	jr nz, .defer
+	ld hl, JohtoUnionCaveB1FHopRightCells
+	call JohtoUnionCaveCoordInPairList
+	jr c, .allow
+.defer
+	ld e, 2
+	jr .done
+.allow
+	ld e, 0
+	jr .done
+.block
+	ld e, 1
+.done
+	pop hl
+	pop bc
+	ret
+
+; Carry only when the shoreline target is one of the special Gold LAND roles
+; that the legacy RBY tile whitelist cannot represent.  Ordinary FLOOR/LADDER
+; shores continue through the original passability scan.
+JohtoUnionCaveSpecialShoreAhead::
+	push bc
+	push de
+	push hl
+	call JohtoUnionCaveIsActive
+	jr nc, .no
+	ld a, [wYCoord]
+	ld b, a
+	ld a, [wXCoord]
+	ld c, a
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_UP
+	jr z, .up
+	cp PLAYER_DIR_DOWN
+	jr z, .down
+	cp PLAYER_DIR_LEFT
+	jr z, .left
+	cp PLAYER_DIR_RIGHT
+	jr nz, .no
+	inc c
+	jr .bounds
+.up
+	dec b
+	jr .bounds
+.down
+	inc b
+	jr .bounds
+.left
+	dec c
+.bounds
+	ld a, [wCurLocalMapID]
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jr z, .wellHeight
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jr z, .wellHeight
+	ld a, b
+	cp 36
+	jr nc, .no
+	jr .width
+.wellHeight
+	ld a, b
+	cp 18
+	jr nc, .no
+.width
+	ld a, c
+	cp 20
+	jr nc, .no
+	call JohtoUnionCaveSelectUpWallTable
+	call JohtoUnionCaveCoordInPairList
+	jr nc, .hop
+	ld a, [wPlayerDirection]
+	cp PLAYER_DIR_DOWN
+	jr z, .no
+	jr .yes
+.hop
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	jr nz, .no
+	ld hl, JohtoUnionCaveB1FHopRightCells
+	call JohtoUnionCaveCoordInPairList
+	jr nc, .no
+.yes
+	pop hl
+	pop de
+	pop bc
+	scf
+	ret
+.no
+	pop hl
+	pop de
+	pop bc
+	and a
+	ret
+
+; B/C = y/x.  HL receives the floor-specific UP_WALL coordinate list.
+JohtoUnionCaveSelectUpWallTable::
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	jr z, .b1f
+	cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+	jr z, .b2f
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jr z, .slowpokeB1f
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jr z, .slowpokeB2f
+	ld hl, JohtoUnionCave1FUpWallCells
+	ret
+.b1f
+	ld hl, JohtoUnionCaveB1FUpWallCells
+	ret
+.b2f
+	ld hl, JohtoUnionCaveB2FUpWallCells
+	ret
+.slowpokeB1f
+	ld hl, JohtoSlowpokeWellB1FUpWallCells
+	ret
+.slowpokeB2f
+	ld hl, JohtoSlowpokeWellB2FUpWallCells
+	ret
+
+; B/C = y/x, HL = y/x pair list terminated by $ff. Carry if found.
+JohtoUnionCaveCoordInPairList::
+.loop
+	ld a, [hli]
+	cp $ff
+	jr z, .no
+	cp b
+	jr nz, .skipX
+	ld a, [hli]
+	cp c
+	jr z, .yes
+	jr .loop
+.skipX
+	inc hl
+	jr .loop
+.yes
+	scf
+	ret
+.no
+	and a
+	ret
+
+
+JohtoUnionCave1FUpWallCells::
+	db 4, 15
+	db 4, 16
+	db 8, 7
+	db 8, 8
+	db 10, 10
+	db 10, 11
+	db 10, 12
+	db 10, 13
+	db 10, 14
+	db 12, 2
+	db 12, 3
+	db 12, 4
+	db 12, 5
+	db 16, 17
+	db 18, 3
+	db 18, 4
+	db 18, 5
+	db 18, 6
+	db 18, 11
+	db 18, 12
+	db 22, 14
+	db 22, 15
+	db 22, 16
+	db 22, 17
+	db 28, 7
+	db 28, 8
+	db 32, 5
+	db 32, 15
+	db 32, 16
+	db 34, 2
+	db 34, 3
+	db 34, 10
+	db 34, 11
+	db 34, 12
+	db 34, 13
+	db $ff
+JohtoUnionCave1FUpWallCellsEnd::
+ASSERT JohtoUnionCave1FUpWallCellsEnd - JohtoUnionCave1FUpWallCells == 71
+
+JohtoUnionCaveB1FUpWallCells::
+	db 4, 2
+	db 4, 4
+	db 4, 5
+	db 4, 6
+	db 6, 8
+	db 6, 13
+	db 6, 14
+	db 12, 2
+	db 12, 4
+	db 12, 5
+	db 12, 6
+	db 12, 7
+	db 12, 8
+	db 12, 9
+	db 12, 10
+	db 12, 11
+	db 12, 12
+	db 12, 13
+	db 12, 14
+	db 18, 5
+	db 18, 6
+	db 18, 7
+	db 18, 8
+	db 18, 13
+	db 18, 14
+	db 18, 15
+	db 18, 16
+	db 18, 17
+	db 24, 2
+	db 24, 3
+	db 24, 4
+	db 24, 5
+	db 24, 6
+	db 24, 7
+	db 24, 8
+	db 24, 9
+	db 24, 10
+	db 24, 11
+	db 24, 12
+	db 24, 13
+	db 24, 14
+	db 24, 15
+	db 24, 16
+	db 24, 17
+	db 32, 11
+	db 32, 12
+	db 32, 13
+	db 32, 14
+	db 32, 15
+	db 32, 16
+	db 32, 17
+	db 34, 2
+	db 34, 3
+	db 34, 4
+	db 34, 5
+	db 34, 6
+	db 34, 7
+	db 34, 8
+	db 34, 9
+	db $ff
+JohtoUnionCaveB1FUpWallCellsEnd::
+ASSERT JohtoUnionCaveB1FUpWallCellsEnd - JohtoUnionCaveB1FUpWallCells == 119
+
+JohtoUnionCaveB2FUpWallCells::
+	db 10, 3
+	db 10, 4
+	db 12, 6
+	db 12, 7
+	db 12, 8
+	db 12, 13
+	db 12, 14
+	db 12, 15
+	db 12, 16
+	db 18, 5
+	db 18, 6
+	db 18, 11
+	db 18, 12
+	db 18, 13
+	db 18, 14
+	db 18, 15
+	db 18, 16
+	db 24, 8
+	db 24, 9
+	db 24, 10
+	db 24, 13
+	db 24, 14
+	db 24, 15
+	db 24, 16
+	db 32, 2
+	db 32, 3
+	db 32, 4
+	db 32, 17
+	db 34, 6
+	db 34, 7
+	db 34, 8
+	db 34, 9
+	db 34, 10
+	db 34, 11
+	db 34, 12
+	db 34, 13
+	db 34, 14
+	db 34, 15
+	db $ff
+JohtoUnionCaveB2FUpWallCellsEnd::
+ASSERT JohtoUnionCaveB2FUpWallCellsEnd - JohtoUnionCaveB2FUpWallCells == 77
+
+JohtoSlowpokeWellB1FUpWallCells::
+	db 2, 9
+	db 2, 10
+	db 2, 11
+	db 2, 12
+	db 2, 13
+	db 2, 14
+	db 8, 9
+	db 8, 10
+	db 8, 11
+	db 8, 12
+	db 10, 5
+	db 10, 6
+	db 10, 7
+	db 16, 2
+	db 16, 3
+	db 16, 4
+	db 16, 5
+	db 16, 6
+	db 16, 7
+	db 16, 8
+	db 16, 9
+	db 16, 10
+	db 16, 11
+	db 16, 12
+	db 16, 13
+	db 16, 14
+	db 16, 15
+	db 16, 16
+	db 16, 17
+	db $ff
+JohtoSlowpokeWellB1FUpWallCellsEnd::
+ASSERT JohtoSlowpokeWellB1FUpWallCellsEnd - JohtoSlowpokeWellB1FUpWallCells == 29 * 2 + 1
+
+JohtoSlowpokeWellB2FUpWallCells::
+	db 2, 3
+	db 2, 4
+	db 2, 5
+	db 2, 6
+	db 4, 9
+	db 4, 10
+	db 4, 11
+	db 4, 12
+	db 4, 13
+	db 4, 14
+	db 4, 15
+	db 4, 16
+	db 10, 7
+	db 10, 8
+	db 10, 9
+	db 10, 10
+	db 14, 17
+	db 16, 2
+	db 16, 3
+	db 16, 4
+	db 16, 5
+	db 16, 6
+	db 16, 7
+	db 16, 8
+	db 16, 9
+	db 16, 10
+	db 16, 11
+	db 16, 12
+	db 16, 13
+	db 16, 14
+	db 16, 15
+	db $ff
+JohtoSlowpokeWellB2FUpWallCellsEnd::
+ASSERT JohtoSlowpokeWellB2FUpWallCellsEnd - JohtoSlowpokeWellB2FUpWallCells == 31 * 2 + 1
+
+
+JohtoUnionCaveB1FHopRightCells::
+	db 10, 12
+	db 11, 12
+	db $ff
+JohtoUnionCaveB1FHopRightCellsEnd::
+ASSERT JohtoUnionCaveB1FHopRightCellsEnd - JohtoUnionCaveB1FHopRightCells == 5
+

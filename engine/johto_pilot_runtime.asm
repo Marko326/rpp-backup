@@ -285,6 +285,19 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    ; REF-340 B2F pilot: keep the two REF-339 1F/B1F reciprocal stair pairs.
+    ; B1F Ruins ordinal0/1 remain inactive; ordinal4 now opens B2F and returns via B2F ordinal0.
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    ; Azalea Gold #6 <-> Slowpoke Well B1F Gold #1, B1F Gold #2 <-> B2F Gold #1.
+    db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -462,6 +475,10 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 31, MUSIC_POKECENTER, 0 ; slot54 Cianwood Center ID42
     johto_map_profile 0, 34, MUSIC_POKECENTER, 0 ; slot55 Mahogany Center ID77
     johto_map_profile 0, 39, MUSIC_POKECENTER, 0 ; slot56 Blackthorn Center ID85
+    johto_map_profile 0, 9, MUSIC_DUNGEON2, 0 ; slot57 Union Cave B1F
+    johto_map_profile 0, 9, MUSIC_DUNGEON2, 0 ; slot58 Union Cave B2F
+    johto_map_profile 0, 12, MUSIC_DUNGEON2, 0 ; slot59 Slowpoke Well B1F
+    johto_map_profile 0, 12, MUSIC_DUNGEON2, 0 ; slot60 Slowpoke Well B2F
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -1324,6 +1341,14 @@ JohtoPilotGateArrivalStep::
     ; direction or simulate a step. DOWN is only the voluntary exit input.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     ret z
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    ret z
+    cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    ret z
+    cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    ret z
+    cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+    ret z
     cp JOHTO_ROUTE_32_LOCAL_ID
     jr z, .route32CaveLanding
     cp JOHTO_ROUTE_33_LOCAL_ID
@@ -1456,8 +1481,18 @@ JohtoPilotGateDoorApproachAllowed::
     jp z, .route32Alph
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33Cave
-    ; The cave interior is collision-only: never STEP_ON or override walls.
+    ; Cave interior must never bypass pre-step wall collision here.
+    ; Gold LADDER step-in transfer is handled only after the exact warp
+    ; coordinate matches in JohtoPilotGateDoorWarpMatched below.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    ret z
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    ret z
+    cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    ret z
+    cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    ret z
+    cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
     ret z
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .ruinsAlph
@@ -1714,9 +1749,19 @@ JohtoPilotGateDoorWarpMatched::
     jp z, .route32Alph
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33Cave
-    ; The cave interior is collision-only: never STEP_ON or override walls.
+    ; Gold cave warps are mixed. LADDER warps fire on the step that enters
+    ; the tile; WARP_CARPET_DOWN only arms standing state and waits for DOWN.
+    ; This hook runs after the exact registered warp coordinate has matched.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
-    ret z
+    jr z, .unionCave1FWarpMatched342
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    jr z, .unionCaveB1FWarpMatched342
+    cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    jr z, .unionCaveB2FWarpMatched342
+    cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    jr z, .unionCaveLadder342
+    cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+    jr z, .unionCaveLadder342
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .ruinsAlph
     cp JOHTO_ROUTE_36_LOCAL_ID
@@ -1749,6 +1794,34 @@ JohtoPilotGateDoorWarpMatched::
     cp 25
     jp z, .yesDoor
     ret
+.unionCave1FWarpMatched342
+    ; 1F: (17,3)/(17,31) are WARP_CARPET_DOWN;
+    ; (5,19)/(3,33) are LADDER.
+    ld a, [wXCoord]
+    cp 17
+    jr z, .unionCaveDirectional342
+    jr .unionCaveLadder342
+.unionCaveB1FWarpMatched342
+    ; B1F (3,3)/(3,11) are closed Ruins WARP_CARPET_DOWN entries.
+    ; Active (7,19)/(3,33)/(17,31) are LADDER.
+    ld a, [wXCoord]
+    cp 3
+    jr nz, .unionCaveLadder342
+    ld a, [wYCoord]
+    cp 3
+    jr z, .unionCaveDirectional342
+    cp 11
+    jr z, .unionCaveDirectional342
+    jr .unionCaveLadder342
+.unionCaveB2FWarpMatched342
+    ; B2F (5,3) is LADDER.
+.unionCaveLadder342
+    ld e, 2 ; immediate transfer on the step into the ladder tile
+    ret
+.unionCaveDirectional342
+    ld e, 1 ; stand on the carpet; directional collision decides later
+    ret
+
 .route31
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT
@@ -1960,6 +2033,8 @@ JohtoPilotGateExteriorCollisionAllowed::
     ; Share the final coordinate/facing guard: do not create a second rule.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jp z, JohtoPilotGateCollisionExitAllowed
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    jp z, JohtoPilotGateCollisionExitAllowed
     cp JOHTO_ROUTE_32_LOCAL_ID
     jr z,.route32Alph
     cp JOHTO_ROUTE_36_LOCAL_ID
@@ -2133,13 +2208,21 @@ JohtoPilotGateCollisionExitAllowed::
 .legacyGuard
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
-    jr z, .isGate
+    jp z, .isGate
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
-    jr z, .isGate
+    jp z, .isGate
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
     jr z, .northGateBottom
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jr z, .unionCaveExit
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    jr z, .unionCaveNoCollisionWarp342
+    cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    jr z, .unionCaveNoCollisionWarp342
+    cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    jr z, .unionCaveNoCollisionWarp342
+    cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+    jr z, .unionCaveNoCollisionWarp342
     cp JOHTO_ROUTE_36_LOCAL_ID
     ret nz
     ld e, 0
@@ -2168,6 +2251,12 @@ JohtoPilotGateCollisionExitAllowed::
     cp 48
     ret nz
     jr .yes
+.unionCaveNoCollisionWarp342
+    ; B1F/B2F internal stairs are LADDER: once standing on one, bumping a
+    ; wall or pressing another direction must not transfer. B1F Ruins
+    ; carpets are still inactive, so collision cannot activate them either.
+    ld e, 0
+    ret
 .unionCaveExit
     ; Gold WARP_CARPET_DOWN: collide with the solid south neighbor
     ; while standing exactly on the north entrance at (17,3).

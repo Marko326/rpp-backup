@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 57
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 61
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -272,6 +272,18 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 5, 4
     dw JohtoBlackthornPokecenterGoldBlocks
     db BANK(JohtoBlackthornPokecenterGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, JOHTO_UNION_CAVE_1F_WIDTH, JOHTO_UNION_CAVE_1F_HEIGHT
+    dw JohtoUnionCaveB1FGoldBlocks
+    db BANK(JohtoUnionCaveB1FGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID, JOHTO_UNION_CAVE_1F_WIDTH, JOHTO_UNION_CAVE_1F_HEIGHT
+    dw JohtoUnionCaveB2FGoldBlocks
+    db BANK(JohtoUnionCaveB2FGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID, JOHTO_SLOWPOKE_WELL_B1F_WIDTH, JOHTO_SLOWPOKE_WELL_B1F_HEIGHT
+    dw JohtoSlowpokeWellB1FGoldBlocks
+    db BANK(JohtoSlowpokeWellB1FGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID, JOHTO_SLOWPOKE_WELL_B2F_WIDTH, JOHTO_SLOWPOKE_WELL_B2F_HEIGHT
+    dw JohtoSlowpokeWellB2FGoldBlocks
+    db BANK(JohtoSlowpokeWellB2FGoldBlocks)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 
@@ -419,6 +431,22 @@ JohtoUnionCave1FGoldBlocks::
     INCBIN "maps/johto_pilot/UnionCave1F.gold.blk"
 JohtoUnionCave1FGoldBlocksEnd::
 ASSERT JohtoUnionCave1FGoldBlocksEnd - JohtoUnionCave1FGoldBlocks == JOHTO_UNION_CAVE_1F_WIDTH * JOHTO_UNION_CAVE_1F_HEIGHT
+JohtoUnionCaveB1FGoldBlocks::
+    INCBIN "maps/johto_pilot/UnionCaveB1F.gold.blk"
+JohtoUnionCaveB1FGoldBlocksEnd::
+ASSERT JohtoUnionCaveB1FGoldBlocksEnd - JohtoUnionCaveB1FGoldBlocks == JOHTO_UNION_CAVE_1F_WIDTH * JOHTO_UNION_CAVE_1F_HEIGHT
+JohtoUnionCaveB2FGoldBlocks::
+    INCBIN "maps/johto_pilot/UnionCaveB2F.gold.blk"
+JohtoUnionCaveB2FGoldBlocksEnd::
+ASSERT JohtoUnionCaveB2FGoldBlocksEnd - JohtoUnionCaveB2FGoldBlocks == JOHTO_UNION_CAVE_1F_WIDTH * JOHTO_UNION_CAVE_1F_HEIGHT
+JohtoSlowpokeWellB1FGoldBlocks::
+    INCBIN "maps/johto_pilot/SlowpokeWellB1F.gold.blk"
+JohtoSlowpokeWellB1FGoldBlocksEnd::
+ASSERT JohtoSlowpokeWellB1FGoldBlocksEnd - JohtoSlowpokeWellB1FGoldBlocks == JOHTO_SLOWPOKE_WELL_B1F_WIDTH * JOHTO_SLOWPOKE_WELL_B1F_HEIGHT
+JohtoSlowpokeWellB2FGoldBlocks::
+    INCBIN "maps/johto_pilot/SlowpokeWellB2F.gold.blk"
+JohtoSlowpokeWellB2FGoldBlocksEnd::
+ASSERT JohtoSlowpokeWellB2FGoldBlocksEnd - JohtoSlowpokeWellB2FGoldBlocks == JOHTO_SLOWPOKE_WELL_B2F_WIDTH * JOHTO_SLOWPOKE_WELL_B2F_HEIGHT
 
 ; Gold source original Route33 uses JOHTO_MODERN, never JOHTO_PILOT.
 JohtoRoute33GoldBlocks::

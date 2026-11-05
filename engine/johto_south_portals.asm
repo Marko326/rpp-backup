@@ -30,7 +30,7 @@ JohtoSouthPortalAfterStep::
 .azalea
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
-    jr z, .azaleaCenterDoor
+    jr z, .azaleaUpDoor
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -42,10 +42,17 @@ JohtoSouthPortalAfterStep::
     cp 11
     jp z, .carpet
     ret
-.azaleaCenterDoor
+.azaleaUpDoor
     ld a, [wXCoord]
     cp 15
+    jr z, .azaleaCenterDoor
+    cp 31
     ret nz
+    ld a, [wYCoord]
+    cp 7
+    jp z, .door
+    ret
+.azaleaCenterDoor
     ld a, [wYCoord]
     cp 9
     jp z, .door
@@ -330,10 +337,18 @@ JohtoSouthPortalArrivalStep::
     jp z, .south
     ret
 .azalea
-    ; The only activated Azalea DOOR is (15,9); exit to the street.
+    ; Activated Azalea arrivals: Pokecenter DOOR (15,9) and Slowpoke Well
+    ; CAVE mouth (31,7). Both step one tile south into ordinary street floor.
     ld a, [wXCoord]
     cp 15
+    jr z, .azaleaCenterArrival
+    cp 31
     ret nz
+    ld a, [wYCoord]
+    cp 7
+    jp z, .south
+    ret
+.azaleaCenterArrival
     ld a, [wYCoord]
     cp 9
     jp z, .south
@@ -393,7 +408,7 @@ JohtoSouthPortalBeforeStep::
 .azalea
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_UP
-    jr z, .azaleaCenterDoor
+    jr z, .azaleaUpDoor
     cp PLAYER_DIR_LEFT
     ret nz
     ld a, [wXCoord]
@@ -405,10 +420,17 @@ JohtoSouthPortalBeforeStep::
     cp 11
     jp z, .allow
     ret
-.azaleaCenterDoor
+.azaleaUpDoor
     ld a, [wXCoord]
     cp 15
+    jr z, .azaleaCenterDoor
+    cp 31
     ret nz
+    ld a, [wYCoord]
+    cp 8
+    jp z, .allow
+    ret
+.azaleaCenterDoor
     ld a, [wYCoord]
     cp 10
     jp z, .allow

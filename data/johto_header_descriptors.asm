@@ -130,6 +130,14 @@ JohtoHeaderDescriptors::
     db BANK(JohtoMahoganyPokecenterRuntimeHeader)
     dw JohtoBlackthornPokecenterRuntimeHeader
     db BANK(JohtoBlackthornPokecenterRuntimeHeader)
+    dw JohtoUnionCaveB1FRuntimeHeader
+    db BANK(JohtoUnionCaveB1FRuntimeHeader)
+    dw JohtoUnionCaveB2FRuntimeHeader
+    db BANK(JohtoUnionCaveB2FRuntimeHeader)
+    dw JohtoSlowpokeWellB1FRuntimeHeader
+    db BANK(JohtoSlowpokeWellB1FRuntimeHeader)
+    dw JohtoSlowpokeWellB2FRuntimeHeader
+    db BANK(JohtoSlowpokeWellB2FRuntimeHeader)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

@@ -297,9 +297,11 @@ MapPaletteSets:
 ; JOHTO_GATE (30): exact Gold indoor GREEN/BROWN, isolated from Kanto.
     db INDOOR_GRAY, INDOOR_RED, JOHTO_GATE_GOLD_GREEN, INDOOR_BLUE
     db INDOOR_YELLOW, JOHTO_GATE_GOLD_BROWN, INDOOR_LIGHT_BLUE, CRYS_TEXTBOX
-; JOHTO_UNION_CAVE (31): dedicated cave palette, does not alter Kanto.
-    db INDOOR_GRAY, INDOOR_RED, INDOOR_GREEN, INDOOR_BLUE
-    db INDOOR_YELLOW, INDOOR_BROWN, INDOOR_LIGHT_BLUE, CRYS_TEXTBOX
+; JOHTO_UNION_CAVE (31): Gold's fixed PALETTE_NITE cave colors.
+; Union Cave 1F/B1F/B2F use PALETTE_NITE regardless of the clock.
+; Reuse exact Gold RGB5 CAVE_* colors; do not change Kanto or Ilex Forest.
+    db CAVE_GRAY, CAVE_RED, CAVE_GREEN, CAVE_BLUE
+    db CAVE_YELLOW, CAVE_BROWN, CAVE_LIGHT_BLUE, CRYS_TEXTBOX
 ; JOHTO_MODERN (32): same outdoor color family, separately indexed Gold art.
     db OUTDOOR_GRAY, OUTDOOR_RED, OUTDOOR_GREEN, OUTDOOR_BLUE
     db OUTDOOR_YELLOW, OUTDOOR_BROWN, OUTDOOR_ROOF, CRYS_TEXTBOX

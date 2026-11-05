@@ -281,6 +281,14 @@ UpdateMapNameSign::
 	jp z, .johtoRoute36
 	cp JOHTO_UNION_CAVE_1F_LOCAL_ID
 	jp z, .johtoUnionCave
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	jp z, .johtoUnionCave
+	cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+	jp z, .johtoUnionCave
+	cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+	jp z, .johtoSlowpokeWell
+	cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+	jp z, .johtoSlowpokeWell
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -372,6 +380,9 @@ UpdateMapNameSign::
 	jr .johtoResolved
 .johtoUnionCave
 	ld hl, .JohtoUnionCaveName
+	jr .johtoResolved
+.johtoSlowpokeWell
+	ld hl, .JohtoSlowpokeWellName
 	jr .johtoResolved
 .johtoRoute36
 	ld hl, .JohtoRoute36Name
@@ -1164,6 +1175,7 @@ UpdateMapNameSign::
 .JohtoVioletName:       db "Violet City@"
 .JohtoRoute36Name: db "Route 36@"
 .JohtoUnionCaveName: db "Union Cave@"
+.JohtoSlowpokeWellName: db "Slowpoke Well@"
 .JohtoRoute33Name: db "Route 33@"
 .JohtoRoute32Name:      db "Route 32@"
 .JohtoRuinsName: db "Ruins Of Alph@"

@@ -12,6 +12,16 @@ JohtoOverworldSouthLandDecision::
     ret z
     cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
     ret z
+    cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    jp z, .unionCave
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    jp z, .unionCave
+    cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    jp z, .unionCave
+    cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    jp z, .unionCave
+    cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+    jp z, .unionCave
     ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
     ; The generic Gold role can otherwise treat the door as a solid wall.
     ld a, [wCurRegion]
@@ -147,6 +157,15 @@ JohtoOverworldSouthLandDecision::
     bit 6, a
     jr nz, .allowJump
     callab JohtoRoute33StepPolicy
+    ret
+.unionCave
+    ; Gold Cave UP_WALL is directional LAND, not a solid 16x16 cell.
+    ; Handle the B1F HOP_RIGHT first, then make an exact coordinate decision.
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
+    callab JohtoUnionCaveGoldLandDecision
     ret
 .allowJump
     ld e, 0

@@ -9,10 +9,21 @@ HandleLedges:
 	jp z, .ilexForestModern
 	cp JOHTO_PILOT
 	jr z, .johtoPilot
+	cp JOHTO_UNION_CAVE
+	jp z, .unionCaveB1F
 	and a ; original Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
 	jp .checkPairs
+.unionCaveB1F
+	ld a, [wCurRegion]
+	cp MAP_REGION_JOHTO
+	ret nz
+	ld a, [wCurLocalMapID]
+	cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+	ret nz
+	ld hl, JohtoUnionCaveB1FGoldHops
+	jp .ruinsCoordinateHopLookup
 .route33Modern
 	ld a, [wCurLocalMapID]
 	cp JOHTO_ROUTE_33_LOCAL_ID
@@ -247,9 +258,14 @@ JohtoSouthHopLandingGuard::
     jp z, .route45
     cp JOHTO_ROUTE_46_LOCAL_ID
     jp z, .route46
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    jp z, .unionCaveB1F
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
+    jp .scan
+.unionCaveB1F
+    ld hl, JohtoUnionCaveB1FGoldHops
     jp .scan
 .route37
     ld hl, JohtoRoute37GoldHops
@@ -363,6 +379,11 @@ JohtoPilotRoute31LedgeTiles:
 ; Keep the Gold source coordinate AND facing direction together so the
 ; (9,30) HOP_DOWN with a WALL landing at (9,32) remains blocked.
 ; Gold Route33 one-way HOP coordinates: source tile + direction.
+JohtoUnionCaveB1FGoldHops:
+    db 12, 10, PLAYER_DIR_RIGHT
+    db 12, 11, PLAYER_DIR_RIGHT
+    db $ff
+
 JohtoRoute33Hops:
 	db 9, 10, PLAYER_DIR_LEFT
 	db 9, 11, PLAYER_DIR_LEFT

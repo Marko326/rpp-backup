@@ -1106,7 +1106,7 @@ ASSERT JohtoHouse_CollEnd - JohtoHouse_Coll == 4
 ; Union Cave 1F: collision must be visible to the original unbanked reader.
 JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"
 JohtoUnionCave_CollEnd::
-ASSERT JohtoUnionCave_CollEnd - JohtoUnionCave_Coll == 13
+ASSERT JohtoUnionCave_CollEnd - JohtoUnionCave_Coll == 21
 ; Route33 movement uses exact Gold 16x16 spatial collision instead of ambiguous
 ; shared 8x8 visual IDs. The unbanked tileset pointer stays valid.
 JohtoIlexForest_Coll:: INCBIN "gfx/tilesets/johto_ilex_forest.tilecoll"

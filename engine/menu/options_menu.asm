@@ -1360,6 +1360,10 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot54 Cianwood Center
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot55 Mahogany Center
     db MUSIC_GBP_GSC_POKEMON_CENTER ; slot56 Blackthorn Center
+    db MUSIC_GBP_GSC_UNION_CAVE ; slot57 Union Cave B1F
+    db MUSIC_GBP_GSC_UNION_CAVE ; slot58 Union Cave B2F
+    db MUSIC_GBP_GSC_DARK_CAVE ; slot59 Slowpoke Well B1F (Gold MUSIC_DARK_CAVE)
+    db MUSIC_GBP_GSC_DARK_CAVE ; slot60 Slowpoke Well B2F (Gold MUSIC_DARK_CAVE)
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

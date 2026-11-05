@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 57
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 61
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -304,6 +304,22 @@ JohtoBlackthornPokecenterRuntimeDescriptor::
     db JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, JOHTO_POKECENTER, 5, 4
     dw JohtoSharedPokecenterRuntimeBlocks
     db BANK(JohtoSharedPokecenterRuntimeBlocks)
+JohtoUnionCaveB1FRuntimeDescriptor::
+    db JOHTO_UNION_CAVE_B1F_LOCAL_ID, JOHTO_UNION_CAVE, JOHTO_UNION_CAVE_1F_WIDTH, JOHTO_UNION_CAVE_1F_HEIGHT
+    dw JohtoUnionCaveB1FRuntimeBlocks
+    db BANK(JohtoUnionCaveB1FRuntimeBlocks)
+JohtoUnionCaveB2FRuntimeDescriptor::
+    db JOHTO_UNION_CAVE_B2F_LOCAL_ID, JOHTO_UNION_CAVE, JOHTO_UNION_CAVE_1F_WIDTH, JOHTO_UNION_CAVE_1F_HEIGHT
+    dw JohtoUnionCaveB2FRuntimeBlocks
+    db BANK(JohtoUnionCaveB2FRuntimeBlocks)
+JohtoSlowpokeWellB1FRuntimeDescriptor::
+    db JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID, JOHTO_UNION_CAVE, JOHTO_SLOWPOKE_WELL_B1F_WIDTH, JOHTO_SLOWPOKE_WELL_B1F_HEIGHT
+    dw JohtoSlowpokeWellB1FRuntimeBlocks
+    db BANK(JohtoSlowpokeWellB1FRuntimeBlocks)
+JohtoSlowpokeWellB2FRuntimeDescriptor::
+    db JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID, JOHTO_UNION_CAVE, JOHTO_SLOWPOKE_WELL_B2F_WIDTH, JOHTO_SLOWPOKE_WELL_B2F_HEIGHT
+    dw JohtoSlowpokeWellB2FRuntimeBlocks
+    db BANK(JohtoSlowpokeWellB2FRuntimeBlocks)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -360,6 +376,14 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .route36
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jp z, .unionCave
+    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    jp z, .unionCaveB1F
+    cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
+    jp z, .unionCaveB2F
+    cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
+    jp z, .slowpokeWellB1F
+    cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
+    jp z, .slowpokeWellB2F
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -434,6 +458,18 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .unionCave
     ld hl, JohtoUnionCave1FRuntimeDescriptor
+    jp .valid
+.unionCaveB1F
+    ld hl, JohtoUnionCaveB1FRuntimeDescriptor
+    jp .valid
+.unionCaveB2F
+    ld hl, JohtoUnionCaveB2FRuntimeDescriptor
+    jp .valid
+.slowpokeWellB1F
+    ld hl, JohtoSlowpokeWellB1FRuntimeDescriptor
+    jp .valid
+.slowpokeWellB2F
+    ld hl, JohtoSlowpokeWellB2FRuntimeDescriptor
     jp .valid
 .southAzaleaTown
     ld hl, JohtoSouthAzaleaTownDescriptor

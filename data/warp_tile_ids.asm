@@ -106,7 +106,9 @@ JohtoGateWarpTileIDs:
 ; Union Cave uses coordinate- and facing-verified Gold entrance only.
 ; No generic walkable tile may be used to trigger an arbitrary cave Warp.
 JohtoUnionCaveWarpTileIDs:
-    db $ff
+    ; Gold stair subtiles only. Carpets ($00) MUST stay collision-only.
+    ; Nonmatching cells still require a registered warp object coordinate.
+    db $0e, $0f, $10, $11, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $ff
 
 INCLUDE "data/johto_south_warp_tile_ids.asm"
 

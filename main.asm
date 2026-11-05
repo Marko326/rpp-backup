@@ -3420,10 +3420,14 @@ INCLUDE "data/johto_ruins_north_runtime.asm"
 SECTION "Johto Union Cave 1F Runtime", ROMX, BANK[$4B]
 INCLUDE "data/johto_union_cave_runtime.asm"
 
+; Southern Johto portal dispatch is called through callab; keep it out of the
+; packed geometry bank. Bank $4D was empty in the last successful REF-342 MAP.
+SECTION "Johto South Gold Portals", ROMX, BANK[$4D]
+INCLUDE "engine/johto_south_portals.asm"
+
 ; Route33 independent Gold modern tileset and 16x16 spatial collision mask.
 SECTION "Johto South Gold Geometry", ROMX, BANK[$4E]
 INCLUDE "engine/johto_south_geometry.asm"
-INCLUDE "engine/johto_south_portals.asm"
 INCLUDE "engine/johto_ilex_mature_runtime_275.asm"
 
 SECTION "Johto Route33 Runtime", ROMX, BANK[$4C]

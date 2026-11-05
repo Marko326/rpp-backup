@@ -1,9 +1,10 @@
-; Gold Cave source tile palettes, including passability-only pixel duplicates.
+; Gold Cave visual palettes remapped to RPP tile IDs (including collision-only duplicates).
 	tilepal 0, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN
 	tilepal 0, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN
 	tilepal 0, BROWN, BROWN, BROWN, BROWN, WATER, BROWN, BROWN, BROWN
 	tilepal 0, BROWN, BROWN, YELLOW, YELLOW, BROWN, GRAY, GRAY, GRAY
-	tilepal 0, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY
+	tilepal 0, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN, BROWN
+; IDs $20-$27: Gold cave stair art ($28-$2b, $38-$3b); BROWN in Gold.
 	tilepal 0, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY
 	tilepal 0, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY
 	tilepal 0, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY, GRAY
