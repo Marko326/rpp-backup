@@ -41,7 +41,7 @@ Summary_DisplayBattlePartyMenu::
 	; Reuse the stock party-icon loader from its zero-byte LCD-off entry. Its tail
 	; enables the LCD, after which the stock Party redraw performs the final Delay3.
 	callba LoadMonPartySpriteGfxLCDOff
-	call PartyMenuInitState
+	callab PartyMenuInitState
 	call RedrawPartyMenu
 	jr Summary_HandleBattlePartyMenuInput
 
@@ -77,7 +77,7 @@ Summary_GoBackToBattlePartyMenu::
 	push af
 	xor a
 	ld [hTilesetType], a
-	call PartyMenuInitState
+	callab PartyMenuInitState
 	call RedrawPartyMenu
 
 Summary_HandleBattlePartyMenuInput:

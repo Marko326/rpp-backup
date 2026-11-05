@@ -647,14 +647,15 @@ LeafFishingTiles: ; newly added table of Leaf's sprites
 	dw vNPCSprites2 + $7d0
 
 _HandleMidJump:
-	ld a, [wPlayerJumpingYScreenCoordsIndex]
-	ld c, a
-	inc a
-	; 60FPS: repeat each ledge Y coordinate for one extra rendered frame.
-	call Ledge60FPS
-	cp $10
+	; Jump height must advance even after walking sprite animation stops.
+	; 32 display frames = 16 Gold Y positions held for two frames each.
+	ld hl, wPlayerJumpingYScreenCoordsIndex
+	ld a, [hl]
+	cp $20
 	jr nc, .finishedJump
-	ld [wPlayerJumpingYScreenCoordsIndex], a
+	inc [hl]
+	srl a
+	ld c, a
 	ld b, 0
 	ld hl, PlayerJumpingYScreenCoords
 	add hl, bc
@@ -686,15 +687,6 @@ _HandleMidJump:
 	ld [wSimulatedJoypadStatesEnd + 1], a
 	ld [wWastedByteCD3A], a
 	ld [wJoyIgnore], a
-	ret
-
-; Adjust the ledge animation index using the player sprite's current 60 FPS phase.
-; c2xA is toggled by ToggleSprite60FPSPhase while UpdateSprites runs.
-Ledge60FPS:
-	push hl
-	ld hl, wSpriteStateData2 + $0a
-	sub [hl]
-	pop hl
 	ret
 
 PlayerJumpingYScreenCoords:

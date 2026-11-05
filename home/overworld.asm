@@ -650,7 +650,7 @@ WarpFound2::
 	ld [wWarpedFromWhichWarp],a ; save ID of used warp
 	ld a,[wCurMap]
 	ld [wWarpedFromWhichMap],a
-	call CheckIfInOutsideMap
+	callab CheckIfInOutsideMap
 	jr nz,.indoorMaps
 ; this is for handling "outside" maps that can't have the 0xFF destination map
 	ld a,[wCurMap]
@@ -960,26 +960,6 @@ PlayMapChangeSound::
 	ret nz
 	jp GBFadeOutToWhite ; HAX: Fade to white instead of black. Looks nicer IMO.
 
-CheckIfInOutsideMap::
-; If the player is in an outside map (a town or route), set the z flag.
-; The Johto pilot uses a dedicated nonzero tileset but is still outdoors.
-	ld a, [wCurMap]
-	cp JOHTO_RUNTIME_MAP_HANDLE
-	jr nz, .legacyTileset
-	ld a, [wCurRegion]
-	cp MAP_REGION_JOHTO
-	jr nz, .legacyTileset
-	callab JohtoPilotGetOutdoorFlag ; E = 1 outdoors, 0 indoors
-	ld a, e
-	cp 1
-	ret
-.legacyTileset
-	ld a, [wCurMapTileset]
-	and a ; most Kanto towns/routes have tileset 0 (OVERWORLD)
-	ret z
-	cp PLATEAU ; Route 23 / Indigo Plateau
-	ret
-
 ; this function is an extra check that sometimes has to pass in order to warp, beyond just standing on a warp
 ; the "sometimes" qualification is necessary because of CheckWarpsNoCollision's behavior
 ; depending on the map, either "function 1" or "function 2" is used for the check
@@ -1122,7 +1102,7 @@ LoadPlayerSpriteGraphics::
 .ridingBike
 	; If the bike can't be used,
 	; start walking instead.
-	call IsBikeRidingAllowed
+	callab IsBikeRidingAllowed
 	jr c, .determineGraphics
 
 .startWalking
@@ -1140,67 +1120,6 @@ LoadPlayerSpriteGraphics::
 	dec a
 	jp z, LoadSurfingPlayerSpriteGraphics
 	jp LoadWalkingPlayerSpriteGraphics
-
-IsBikeRidingAllowed::
-; Gold GATE environments allow cycling; check each active gate's stable
-; identity (including vertical north gate), not its shared gate tileset.
-; Gold INDOOR gates and Kanto/house rules stay unchanged.
-; All callers (item, shortcut, warp graphics and summary restore) share
-; this one predicate; carry = allowed.
-	ld a, [wCurMap]
-	cp JOHTO_RUNTIME_MAP_HANDLE
-	jr nz, .legacyBike
-	ld a, [wCurRegion]
-	dec a ; Johto region=1; same Z flag as cp 1, saving one ROM0 byte
-	jr nz, .legacyBike
-	ld a, [wCurLocalMapID]
-	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
-	jr z, .allowed
-	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
-	jr z, .allowed
-	cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-	jr z, .allowed
-	cp JOHTO_ILEX_AZALEA_GATE_LOCAL_ID
-	jr z, .allowed
-	cp JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID
-	jr z, .allowed
-    cp JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID
-    jr z, .allowed
-    cp JOHTO_ROUTE_38_ECRUTEAK_GATE_LOCAL_ID
-    jr z, .allowed
-    cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
-    jr z, .allowed
-    ; ROM0-neutral permit mask: IDs64..67 + 72..75.  At this stage
-    ; 64..67 are town/Route43 and its two Gold gates; 72/73 outdoors,
-    ; 74 is Route29/46 Gold gate, 75 is inactive.  On activating ID75,
-    ; review this predicate before allocating the map to an interior.
-    and $f4
-    cp JOHTO_MAHOGANY_TOWN_LOCAL_ID
-    jr z, .allowed
-.legacyBike
-	ld a, [wCurMap]
-	cp ROUTE_23
-	jr z, .allowed
-	cp INDIGO_PLATEAU
-	jr z, .allowed
-
-	ld a, [wCurMapTileset]
-	ld b, a
-	ld hl, BikeRidingTilesets
-.loop
-	ld a, [hli]
-	cp b
-	jr z, .allowed
-	inc a
-	jr nz, .loop
-	and a
-	ret
-
-.allowed
-	scf
-	ret
-
-INCLUDE "data/bike_riding_tilesets.asm"
 
 ; load the tile pattern data of the current tileset into VRAM
 LoadTilesetTilePatternData::
@@ -1563,12 +1482,10 @@ CollisionCheckOnLand::
     ld a, [wd736]
     bit 6, a ; shared original jump flag
     jr z, .notJumping
-    ; FIX-273: retain the mature shared two-input leap, but never begin
-    ; a third move after reaching the exact Gold second-cell landing.
-    ; Other Johto/Kanto jump paths retain their original no-collision rule.
-    ld a, [wCurMap]
-    cp JOHTO_RUNTIME_MAP_HANDLE
-    jp nz, .noCollision
+    ; REF-348: only the two forced ledge steps may bypass collision.
+    ; While the shadow is still animating after the script ends, all
+    ; real input (including UP after DOWN, with or without B) is blocked.
+    ; This also preserves the existing Gold south landing guard.
     callab JohtoSouthHopLandingGuard
     ld a, e
     and a

@@ -287,7 +287,7 @@ Summary_LoadPlayerSpriteGraphicsLCDOff:
 	jr .startWalking
 
 .ridingBike
-	call IsBikeRidingAllowed
+	callab IsBikeRidingAllowed
 	jr c, .determineGraphics
 .startWalking
 	xor a

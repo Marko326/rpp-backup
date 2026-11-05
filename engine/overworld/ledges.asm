@@ -232,13 +232,20 @@ HandleLedges:
 	call PlaySound
 	ret
 
-; FIX-273: guard a finished two-cell south hop while the shared animation
-; still holds wd736.6.  With the current south spatial collision dispatcher,
-; a pending simulated direction could otherwise start a THIRD movement through
-; trees before _HandleMidJump releases that flag.  This is a compatibility
-; guard, NOT a different hop animator/queue. E=1 only at a Gold landing.
+; The sole jump collision bypass gate for Kanto and Johto. wd736.6
+; lasts through the visual shadow, but the simulated two-step input may
+; already have ended. Only wd730.7 allows a jump collision bypass.
+; E=1 rejects the premature real step; E=0 continues the forced jump.
+; For active Johto south hops, retain FIX-273's exact landing guard.
 JohtoSouthHopLandingGuard::
+    ld e, 1
+    ld a, [wd730]
+    bit 7, a
+    ret z ; script ended: lock movement until _HandleMidJump clears wd736.6
     ld e, 0
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    ret nz ; Kanto forced hop: stock two moves, then normal collision
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz

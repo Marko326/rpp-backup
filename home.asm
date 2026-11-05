@@ -531,57 +531,10 @@ PartyMenuInit::
 	ld a, 1 ; hardcoded bank
 	call BankswitchHome
 	call LoadHpBarAndStatusTilePatterns
-
-PartyMenuInitState::
-	ld hl, wd730
-	set 6, [hl] ; turn off letter printing delay
-	xor a ; PLAYER_PARTY_DATA
-	ld [wMonDataLocation], a
-	ld [wMenuWatchMovingOutOfBounds], a
-	ld hl, wTopMenuItemY
-	inc a
-	ld [hli], a ; top menu item Y
-	xor a
-	ld [hli], a ; top menu item X
-	ld a, [wPartyAndBillsPCSavedMenuItem]
-	push af
-	ld [hli], a ; current menu item ID
-	inc hl
-	ld a, [wPartyCount]
-	and a ; are there more than 0 pokemon in the party?
-	jr z, .storeMaxMenuItemID
-	dec a
-; if party is not empty, the max menu item ID is ([wPartyCount] - 1)
-; otherwise, it is 0
-.storeMaxMenuItemID
-	ld [hli], a ; max menu item ID
-	ld a, [wForcePlayerToChooseMon]
-	and a
-	ld a, A_BUTTON | B_BUTTON
-	jr z, .next
-	xor a
-	ld [wForcePlayerToChooseMon], a
-	inc a ; a = A_BUTTON
-.next
-	; MENU-5.61.17: SELECT belongs only to START -> Pokémon. Other callers may
-	; use NORMAL_PARTY_MENU too, so the dedicated START type is the scope guard.
-	ld b, a
-	ld a, [wIsInBattle]
-	and a
-	jr nz, .restoreWatchedKeys
-	ld a, [wPartyMenuTypeOrMessageID]
-	cp START_PARTY_MENU
-	jr nz, .restoreWatchedKeys
-	ld a, b
-	or SELECT
-	jr .storeWatchedKeys
-.restoreWatchedKeys
-	ld a, b
-.storeWatchedKeys
-	ld [hli], a ; menu watched keys
-	pop af
-	ld [hl], a ; old menu item ID
-	ret
+	; Keep the original Bank 1 graphics setup, but run the state-only initializer
+	; from the shared ROMX relief section. This is a tail far-call: Bankswitch
+	; restores Bank 1 before returning to PartyMenuInit's caller.
+	jpba PartyMenuInitState
 
 SetStartPartyMenuType::
 	; MENU-5.61.17: START -> Pokémon gets a distinct menu type so SELECT cannot
@@ -1177,26 +1130,12 @@ PickUpItemText::
 INCLUDE "home/pic.asm"
 
 
+; REF-350: preserve the bank-1 caller footprint and the original A=1 result.
+; The work is in roomy ROMX $2A. Keep this HOME gateway so no bank-1 code grows.
 ResetPlayerSpriteData::
-	ld hl, wSpriteStateData1
-	call ResetPlayerSpriteData_ClearSpriteData
-	ld hl, wSpriteStateData2
-	call ResetPlayerSpriteData_ClearSpriteData
+	callab ResetPlayerSpriteData_ROMX
 	ld a, $1
-	ld [wSpriteStateData1], a
-	ld [wSpriteStateData2 + $0e], a
-	ld hl, wSpriteStateData1 + 4
-	ld [hl], $3c     ; set Y screen pos
-	inc hl
-	inc hl
-	ld [hl], $40     ; set X screen pos
 	ret
-
-; overwrites sprite data with zeroes
-ResetPlayerSpriteData_ClearSpriteData::
-	ld bc, $10
-	xor a
-	jp FillMemory
 
 FadeOutAudio::
 	ld a, [wAudioFadeOutControl]
@@ -2027,69 +1966,16 @@ GetItemName::
 	jr .Finish
 
 .Machine
-	call GetMachineName
+	; Bankswitch restores flags but uses A for the previous ROM bank. Preserve the
+	; item ID returned by the old HOME implementation.
+	push af
+	callab GetMachineName
+	pop af
 .Finish
 	ld de,wcd6d ; pointer to where item name is stored in RAM
 	pop bc
 	pop hl
 	ret
-
-GetMachineName::
-; copies the name of the TM/HM in [wd11e] to wcd6d
-	push hl
-	push de
-	push bc
-	ld a,[wd11e]
-	push af
-	cp TM_01 ; is this a TM? [not HM]
-	jr nc,.WriteTM
-; if HM, then write "HM" and add 5 to the item ID, so we can reuse the
-; TM printing code
-	add 5
-	ld [wd11e],a
-	ld hl,HiddenPrefix ; points to "HM"
-	ld bc,2
-	jr .WriteMachinePrefix
-.WriteTM
-	ld hl,TechnicalPrefix ; points to "TM"
-	ld bc,2
-.WriteMachinePrefix
-	ld de,wcd6d
-	call CopyData
-
-; now get the machine number and convert it to text
-	ld a,[wd11e]
-	sub TM_01 - 1
-	ld b, "0"
-.FirstDigit
-	sub 10
-	jr c,.SecondDigit
-	inc b
-	jr .FirstDigit
-.SecondDigit
-	add 10
-	push af
-	ld a,b
-	ld [de],a
-	inc de
-	pop af
-	ld b, "0"
-	add b
-	ld [de],a
-	inc de
-	ld a,"@"
-	ld [de],a
-	pop af
-	ld [wd11e],a
-	pop bc
-	pop de
-	pop hl
-	ret
-
-TechnicalPrefix::
-	db "TM"
-HiddenPrefix::
-	db "HM"
 
 ; sets carry if item is HM, clears carry if item is not HM
 ; Input: a = item ID
@@ -2640,13 +2526,13 @@ EngageMapTrainer::
 	ld [wEngagedTrainerSet], a
 	ld a, 1
 	ld [wIsTrainerBattle], a
-	jp PlayTrainerMusic
+	jpba PlayTrainerMusic
 .pokemon
 	and $7F
 	ld [wEngagedTrainerSet], a
 	xor a
 	ld [wIsTrainerBattle], a
-	jp PlayTrainerMusic
+	jpba PlayTrainerMusic
 
 PrintEndBattleText::
 	push hl
@@ -2698,53 +2584,6 @@ DisplayListMenuIDLoop_Hack:
 	cp a, MOVESLISTMENU
 	jp z, skipStoringItemName
 	jp checkIfItemListMenu
-
-PlayTrainerMusic::
-	ld a, [wEngagedTrainerClass]
-	cp OPP_SONY1
-	ret z
-	cp OPP_SONY2
-	ret z
-	cp OPP_SONY3
-	ret z
-	ld a, [wGymLeaderNo]
-	and a
-	ret nz
-	xor a
-	ld [wAudioFadeOutControl], a
-	ld a, $ff
-	call PlaySound
-	ld a, 0 ; BANK(Music_MeetEvilTrainer)
-	ld [wAudioROMBank], a
-	ld [wAudioSavedROMBank], a
-	ld a, [wEngagedTrainerClass]
-	ld b, a
-	ld hl, EvilTrainerList
-.evilTrainerListLoop
-	ld a, [hli]
-	cp $ff
-	jr z, .noEvilTrainer
-	cp b
-	jr nz, .evilTrainerListLoop
-	ld a, MUSIC_MEET_EVIL_TRAINER
-	jr .PlaySound
-.noEvilTrainer
-	ld hl, FemaleTrainerList
-.femaleTrainerListLoop
-	ld a, [hli]
-	cp $ff
-	jr z, .maleTrainer
-	cp b
-	jr nz, .femaleTrainerListLoop
-	ld a, MUSIC_MEET_FEMALE_TRAINER
-	jr .PlaySound
-.maleTrainer
-	ld a, MUSIC_MEET_MALE_TRAINER
-.PlaySound
-	ld [wNewSoundID], a
-	jp PlayMusic
-
-INCLUDE "data/trainer_types.asm"
 
 ; checks if the player's coordinates match an arrow movement tile's coordinates
 ; and if so, decodes the RLE movement data
@@ -3394,7 +3233,17 @@ GetName::
 	jr nz, .noItem
 	
 	cp HM_01        ;it's TM/HM
-	jp nc,GetMachineName
+	jr c,.noItem
+	; Keep GetName's original A/BC/HL contract around callab. DE is preserved by
+	; Bankswitch and GetMachineName; flags are preserved by the far-call gateway.
+	push af
+	push bc
+	push hl
+	callab GetMachineName
+	pop hl
+	pop bc
+	pop af
+	ret
 	
 .noItem          ; Return here if not an item
 	ld a,[H_LOADEDROMBANK]
@@ -4756,3 +4605,6 @@ PrintTextAndYesNoChoice::
 	ld a, [wCurrentMenuItem]
 	and a
 	ret
+
+; REF-349: selected HOME helpers relocated to roomy ROMX Bank $2A.
+INCLUDE "home/rom0_relief_349.asm"

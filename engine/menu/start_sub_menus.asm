@@ -177,7 +177,7 @@ StartMenu_Pokemon:
 	cp MAP_REGION_JOHTO
 	jr z, .canFly ; native pilot outdoor; destinations remain gated
 .checkFlyOutdoor
-	call CheckIfInOutsideMap
+	callab CheckIfInOutsideMap
 	jr z,.canFly
 .cannotFlyHere
 	ld a,[wWhichPokemon]
@@ -265,7 +265,7 @@ StartMenu_Pokemon:
 	cp MAP_REGION_JOHTO
 	jr z, .cannotUseTeleportNow
 .checkTeleportOutdoor
-	call CheckIfInOutsideMap
+	callab CheckIfInOutsideMap
 	jr z,.canTeleport
 .cannotUseTeleportNow
 	ld a,[wWhichPokemon]
