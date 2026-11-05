@@ -1,3 +1,9 @@
+## 2026-11-06｜REF-350 ROM0 已验收空间与移出 HOME 的限制
+- REF-349 的 5 组 HOME helper 和 REF-350 的 `ResetPlayerSpriteData` 主体已经迁入 ROMX `$2A`；最新用户 Red/Blue MAP 的 ROM0 剩余 421B，项目 ZIP 自带 Red MAP 同为421B；`$2A` 余 15,020B。旧 67B/393B/静态预计421B均是历史阶段证据。
+- Bank `$01` 只有 4B 空间，故保留 `ResetPlayerSpriteData` 的 ROM0 `callab` 小入口和 Bank1 两处原近调用。不要为了腾 HOME 而让 Bank1 调用点改成更长的 far-call。
+- `GetItemPrice`、`LoadStartupMusicOption`、`GetTrainerInformation` 涉及 ROM/SRAM Bank 模式切换，不做直接移出 HOME 的低风险迁移。任何未来跨 Bank 修改须审查 A/BC/HL、DE、Carry/Z 返回合同并重新进行 ROM/MAP 和手机回归。
+- 用户反馈指定六项功能及三项 Sprite 回归实机通过；TEST 与烧焦塔所有路线的穷尽设备测试仍不可宣称完成。
+
 ## CLEAN-REF348｜旧阶段断言与现役 Gold 地牢不可混跑
 - REF-345/346 的“烧焦塔必须关闭”阶段负向测试有其历史价值，但在63活动图的REF-348上直接调用会失败；应将旧门禁仅用于临时历史快照，同时用现役专项检查验证已开放的11 PIT、5只接收落点、楼梯/怪力。不能靠直接跳过或放宽Gold规则伪造PASS。
 - 每增加活动地图都要同步 `tools/johto_surf_active_water_manifest_296.json`：即使 Gold 无水格，也需冻结真实源SHA256和空 `water_yx`；烧焦塔1F/B1F经 Gold 校验均无水格。
@@ -1348,3 +1354,10 @@ This file is the persistent, Git-tracked record of repeatable development failur
 - 2026-11-05: adding the Azalea -> Slowpoke Well portal made `SECTION "Johto South Gold Geometry"` grow from the last successful `$3FF0` bytes to `$4001`, one byte beyond a 16 KiB ROMX bank. This is a linker/section-capacity failure, not a map-data syntax failure.
 - Do **not** fix a nearly-full bank by shaving a single byte when a clean bank split is available. `engine/johto_south_portals.asm` is entered externally only through `callab`, so REF-343 places it in dedicated Bank `$4D` (`Johto South Gold Portals`) and leaves geometry/ilex runtime in Bank `$4E`.
 - Before future map batches, inspect the newest successful Red/Blue MAP for every fixed-bank section touched by the patch. Treat <= `$20` bytes slack as a hard warning and prefer moving a callab-safe module to a dedicated bank before adding more map logic.
+
+
+## REF-349｜ROM0 helper 迁移：Banked helper 的数据和返回 ABI 必须一起审
+- `callab`/`jpba` 通过 `Bankswitch` 进入目标 Bank：返回标志与 DE 可保留，但 A/BC/HL 会被入口/恢复路径覆盖。需要 A/BC/HL 的调用方必须在 far call 外显式保存；不能只看被调函数内部是否 push/pop，因为它保存的是 far-call 时传入的 HL/B，而不是原调用者的 HL/B。
+- `GetMachineName` 的 ROMX 迁移保留 TM/HM 前缀在同一 Bank；`GetName` 需要在 `callab` 外保存 AF/BC/HL，`GetItemName` 保存 AF，外层已有的 BC/HL 保存继续生效。DE 由 Bankswitch 和原函数保留。
+- `CheckIfInOutsideMap` 依赖 Z 返回，`IsBikeRidingAllowed` 依赖 Carry 返回；Bankswitch 的 bank restore 只用 LD/POP，不改目标函数最终 flags。更改 Bankswitch 实现时必须重新审查这两个合同。
+- `PlayTrainerMusic` 的代码和 `FemaleTrainerList`/`EvilTrainerList` 必须同 Bank；`IsBikeRidingAllowed` 与 `BikeRidingTilesets` 同 Bank。ROMX section 有余量不等于已成功链接，必须用新 Red/Blue/TEST MAP 证明。

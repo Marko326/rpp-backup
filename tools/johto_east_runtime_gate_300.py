@@ -113,14 +113,14 @@ def audit(project: Path, gold_root: Path, reference_root: Path,
         town=txt('engine/fly_town_map_helpers.asm'); names=txt('engine/overworld/map_name_sign.asm')
         fly=txt('engine/johto_pilot_fly_map.asm'); music=txt('engine/menu/options_menu.asm')
         roof=txt('engine/johto_south_roofs_269.asm'); pal=txt('color/loadpalettes.asm')
-        home=txt('home/overworld.asm'); main=txt('main.asm')
+        home=txt('home/overworld.asm'); relief=txt('home/rom0_relief_349.asm'); main=txt('main.asm')
 
         ck('version_ref304_unified', 'db "REF-312@"' in version and 'TEST-' not in version)
         ck('active_39', re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU 39$',constants) is not None)
         ck('bank53_isolated', 'SECTION "Johto East Runtime 300", ROMX, BANK[$53]' in main and
            'INCLUDE "data/johto_east_runtime_300.asm"' in main)
         ck('post_block_border_hook', 'callab PatchJohtoBordersAfterBlockLoad300' in home)
-        bike=home.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
+        bike=relief.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
         bike_ids=('JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID','JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID',
                   'JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID','JOHTO_ILEX_AZALEA_GATE_LOCAL_ID',
                   'JOHTO_ROUTE34_ILEX_GATE_LOCAL_ID','JOHTO_ROUTE35_GOLDENROD_GATE_LOCAL_ID',
@@ -312,10 +312,10 @@ def fault_tests(root,gold,ref):
     faults['role_grid_drift_rejected']=audit(root,gold,ref,byte_overrides={'maps/johto_pilot/Route42.roles.bin':bytes(b)})['status']=='FAIL'
     badrt=runtime.replace(WARP_ROWS[-1]+'\n','',1)
     faults['missing_reciprocal_gate_warp_rejected']=audit(root,gold,ref,{'engine/johto_pilot_runtime.asm':badrt})['status']=='FAIL'
-    bike_path=root/'home/overworld.asm'; bike=bike_path.read_text(encoding='utf8')
-    bike_bad=bike.replace('cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID\n    jr z, .allowed',
-                          'cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID\n    jr nz, .allowed',1)
-    faults['east_gate_bike_allowance_required']=bike_bad!=bike and audit(root,gold,ref,{'home/overworld.asm':bike_bad})['status']=='FAIL'
+    bike_path=root/'home/rom0_relief_349.asm'; bike=bike_path.read_text(encoding='utf8')
+    bike_bad=bike.replace('cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID\n\tjr z, .allowed',
+                          'cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID\n\tjr nz, .allowed',1)
+    faults['east_gate_bike_allowance_required']=bike_bad!=bike and audit(root,gold,ref,{'home/rom0_relief_349.asm':bike_bad})['status']=='FAIL'
     bad_portal=base.replace('    cp 35\n    ret nz\n    ld a, [wYCoord]\n    cp 26',
                             '    cp 34\n    ret nz\n    ld a, [wYCoord]\n    cp 26',1)
     faults['ecruteak_east_collision_exit_required']=bad_portal!=base and audit(root,gold,ref,{'data/johto_east_runtime_300.asm':bad_portal})['status']=='FAIL'

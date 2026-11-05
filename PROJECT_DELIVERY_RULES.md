@@ -1,3 +1,23 @@
+## CLEAN REF-348 ROM0｜最新清理状态（2026-11-06，适用于当前工作区）
+- 最新输入 `REF-348(1).zip` 是包含未提交修改的真实 Worktree；分支 `常规功能备份`、正式 HEAD `239ff32653c9087da8786532e36c189366ff209e`。仅以此 HEAD 制作累计补丁，不能回退到旧 REF-344 或 REF-337 基线。
+- 当前版本 `REF-348` 不变。本次游戏 ASM 不再改动；源功能包括跳崖/阴影保护，以及 REF-349 五组 ROM0 和 REF-350 精灵复位迁移。用户反馈这些路径的指定手机实测通过。
+- 最新用户 Red/Blue MAP 的 ROM0 均余 421B；最新 ZIP 自带 Red MAP 证实 421B；Bank `$2A` 余 15,020B，Bank `$01` 余 4B。不能把历史 67B/393B 或预计421B冒充当前状态。TEST 本轮尚无对应验收。
+- CLEAN 只同步维护文档与现有离线审计，按模式 A 双提交：运行 ASM 为第一笔；工具/测试/README/TODO/验收文档为第二笔。游戏版号保持 `REF-348`。详细提交范围与未验证边界见 `docs/CLEAN_REF348_ROM0_FINAL_ACCEPTANCE.md`。
+- 尚不代表全量 Gold/主迁移综合审计全绿；旧地图数/Warp数断言与部分依赖完整参考根目录的测试仍需后续处理。助手不编译、链接 ROM，也不执行 Git Commit/Push。
+
+## ROM0-RELIEF-350｜REF-348 定版候选（在已验收 REF-349 上的安全增量）
+- 用户实机验收 REF-349 的骑车、Fly/Teleport、队伍菜单、TM/HM、训练师音乐、旧档重复操作六项已通过；新上传报告显示 Red ROM0 393B。Blue MAP 据用户反馈与 Red 相同，不重复比对；TEST 未验收。
+- 本次仅迁移 `ResetPlayerSpriteData`（含私有清零 helper）到 ROMX `$2A`，HOME 保留 `callab` 入口并恢复原 A=1；Bank `$01` 两个原调用保持原样，因为该 Bank 仅有约4B余量。ROM0 静态预计再省28B，**新 MAP 尚未生成，不得将预计余量421B写成实测**。
+- `LoadStartupMusicOption` 会切 SRAM banking mode；`GetItemPrice` 和 `GetTrainerInformation` 会在执行中切 ROM Bank，因此不迁移，避免 ROMX 自切换/Bank 返回隐患。
+- 游戏显示版本继续 REF-348；未构建 ROM、未 Commit/Push。只有用户新 MAP、ROM 和实机通过后才能宣称定版。
+
+## ROM0-RELIEF-349｜HOME helper 迁移（REF-348 同版开发候选）
+- 基线：用户提供的完整 `REF-348` 源码包（此前跳崖专项修复版）＋ `MAP_20261105_202506.zip`；Red/Blue ROM0 各余67B，ROMX Bank `$2A` 余 `$3c40`（15,424B）。不把10月历史提交包当当前源码。
+- 迁移到 Bank `$2A`：`CheckIfInOutsideMap`、`IsBikeRidingAllowed`＋`BikeRidingTilesets`、`PartyMenuInitState`、`GetMachineName`＋TM/HM前缀、`PlayTrainerMusic`＋训练师分类表。函数指令主体与 REF-348 基线逐条比较一致，仅改变 section/bank 与调用入口。
+- 依据最新 MAP：迁出原始代码/数据共367B；跨Bank调用点增量与寄存器保护开销约53B；预计净释放314B，ROM0 余量约381B；Bank `$2A` 新增约367B，仍有约15,057B空间。该数字是静态预算，**必须由用户新构建 Red/Blue/TEST MAP 复核**。
+- ABI：`Bankswitch` 保留返回标志与 DE，但覆盖 A/BC/HL；`GetMachineName` 调用点显式保存 AF/BC/HL；骑车判断的 Carry 与室外判断的 Z 标志继续作为返回合同；骑车表、TM/HM前缀和训练师表与读取代码同 Bank，并有 `ASSERT BANK(...)`。
+- 新增 ROM0 迁移回归测试；同步更新骑车/门房旧审计的源码定位。全量测试修改前后失败/错误名称集合完全相同（基线774项、修改后779项），新增5项均通过。静态测试不等于 RGBDS 汇编/链接或实机验收。**遵守项目规则：助手不编译/链接 ROM、不 Commit/Push**；用户需新构建 Red/Blue/TEST，确认 ROM0≥64B、Bank `$2A` 余量及菜单/骑车/训练师音乐回归。
+
 ## CLEAN-REF348｜烧焦塔正式清理三件套（不改跳崖）
 - 本次真实输入为用户 `REF-348.patch`，基线干净 HEAD `02a65db8343abb34cae9edbb2d23fe73d9da9578`（`REF-344.zip`）；此 REF-348 工作区还未成为 Git 提交。明确**未应用**最后的“B键跳崖”及“黑影计时”候选补丁。
 - 用户要求两项跳崖问题后续单独处理：偶发黑影滞留，以及 B 快跑跳崖后立即按 UP 可回走。本清理仅修过时测试/Gold Surf manifest及交接文档，不触动跳崖或落洞运行指令、游戏版本 `REF-348`、63活动图/160 Warp。

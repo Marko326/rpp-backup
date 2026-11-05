@@ -1,3 +1,23 @@
+## CLEAN REF-348｜当前定版验收与提交准备（2026-11-06）
+- [x] 使用最新 `REF-348(1).zip` 当前 Worktree，确认分支 `常规功能备份`、基线 HEAD `239ff32653c9087da8786532e36c189366ff209e`，以 ZIP 自带 `current_worktree.patch` 重建差异。
+- [x] 跳崖阴影独立32显示帧计时和强制两步后碰撞保护已存在；用户此前反馈普通及 B 键反向回走、黑影滞留的复测均未再复现，仍保留长期偶发观察。
+- [x] REF-349 五组 ROM0 迁移与 REF-350 玩家精灵复位迁移已完成；用户反馈骑车、Fly/Teleport、队伍菜单、TM/HM、训练师音乐、旧档重复操作及三项玩家精灵回归通过。
+- [x] 用户最新 Red/Blue MAP 显示 ROM0 各剩 421B；最新项目 ZIP 自带 Red MAP 再确认421B、ROMX `$2A` 余15,020B、Bank `$01` 余4B。不再把421B称为预算估算。
+- [x] 模式A两笔提交准备：功能与工具/文档分离，01清理增量（当前Worktree→最终）、02工具反向隔离（最终→仅功能）、03基线全量（HEAD→最终）。
+- [ ] 用户决定执行正式 Git Commit/Push；本轮不代执行。
+- [ ] TEST 构建/空间与实机仍未有本轮证据；烧焦塔11 PIT、5个接收落点、回程梯、怪力及旧综合审计的遗留范围不得因为ROM0验收而自动勾选。
+
+> 下方 REF-349/旧 CLEAN-REF348 与 REF-348 视频条目是当时阶段的开发记录，含过期待测清单；以本节及 `docs/CLEAN_REF348_ROM0_FINAL_ACCEPTANCE.md` 为最新状态。
+
+## ROM0-RELIEF-349｜HOME 低风险函数迁移（待用户新 MAP 验收）
+- [x] 以 `MAP_20261105_202506.zip` 为准：Red/Blue ROM0 各余67B；Bank `$2A` 余15,424B。
+- [x] 将室外判断、骑车许可及其 tileset 表、Party 状态初始化、TM/HM名称生成及前缀、训练师音乐及分类表迁往 Bank `$2A`；旧逻辑主体未改。
+- [x] 所有旧近调用改为 `callab`/`jpba`；GetMachineName 调用保护 A/BC/HL，标志返回和 DE 合同保留；查找表与读取代码同 Bank。
+- [x] 更新门房/骑车审计的 helper 路径，新增 `test_rom0_relief_349.py`。
+- [ ] 用户本机编译 Red/Blue/TEST 并生成新 MAP；静态预算预计净释放314B，ROM0约381B，须确认≥64B且 Bank `$2A` 链接成功。
+- [ ] 实机回归：普通骑车/门房禁骑规则、Fly/Teleport室外判断、START/Battle Party进入与返回、TM/HM背包名称、训练师遭遇音乐；重点确认 Bank 恢复与音频不中断。
+- [ ] 未完成新 MAP 前，不宣称实际释放314B；游戏版本仍 REF-348，未 Commit/Push。
+
 ## CLEAN-REF348｜烧焦塔两层收口（跳崖单独排期）
 - [x] 核对用户 `REF-348.patch` 与 REF-344 HEAD、Gold 资源、11 PIT/5接收落点/双向楼梯/怪力/色板/活动地图表。
 - [x] 当前版过时 REF-347 音效/地图断言与历史 REF-345/346 封闭阶段测试隔离；Gold Surf manifest补齐烧焦塔1F/B1F无水格；烧焦塔相关31测试通过。

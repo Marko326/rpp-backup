@@ -28,11 +28,12 @@ class JohtoBikeCutSurf252(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.home=(ROOT/'home/overworld.asm').read_text()
+        cls.relief=(ROOT/'home/rom0_relief_349.asm').read_text()
         cls.field=(ROOT/'engine/johto_violet_field_skills.asm').read_text()
         cls.contract=json.loads((ROOT/'tools/johto_surf_contracts.json').read_text())
 
     def test_only_active_gold_gate_eligible_and_legacy_untouched(self):
-        b=self.home.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
+        b=self.relief.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
         self.assertRegex(b, r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+(?:cp MAP_REGION_JOHTO|dec a[^\n]*)\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
         self.assertIn('cp ROUTE_23',b)
         self.assertIn('cp INDIGO_PLATEAU',b)
@@ -45,7 +46,7 @@ class JohtoBikeCutSurf252(unittest.TestCase):
         for filename in ('engine/items/items.asm','engine/overworld/bike_shortcut.asm','engine/menu/summary_return_helpers.asm'):
             self.assertIn('IsBikeRidingAllowed',(ROOT/filename).read_text())
         # shared predicate also runs on warp player-sprite reload.
-        self.assertIn('call IsBikeRidingAllowed',self.home.split('LoadPlayerSpriteGraphics::',1)[1].split('LoadTilesetTilePatternData::',1)[0])
+        self.assertIn('callab IsBikeRidingAllowed',self.home.split('LoadPlayerSpriteGraphics::',1)[1].split('LoadTilesetTilePatternData::',1)[0])
 
     @unittest.skipIf(GOLD is None,'Gold primary source is needed')
     def test_gold_environment_allows_gate_and_preserves_bike_on_entry(self):
@@ -59,7 +60,7 @@ class JohtoBikeCutSurf252(unittest.TestCase):
         self.assertNotIn('cp GATE',setup)
 
     def test_negative_gate_identity_mutations_fail_contract(self):
-        body=self.home.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
+        body=self.relief.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
         valid=re.compile(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+(?:cp MAP_REGION_JOHTO|dec a[^\n]*)\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
         for src in (body.replace('dec a ; Johto region=1; same Z flag as cp 1, saving one ROM0 byte','inc a ; tampered region test',1),
                     body.replace('cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID','cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID',1),

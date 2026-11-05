@@ -101,7 +101,7 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
     try:
         contract=json.loads(get(POLICY)); doors=json.loads(get('tools/johto_pilot_door_contracts.json'))
         signs=json.loads(get('tools/johto_map_name_sign_contracts.json'))
-        home=get('home/overworld.asm'); runtime=get('engine/johto_pilot_runtime.asm')
+        home=get('home/overworld.asm'); relief=get('home/rom0_relief_349.asm'); runtime=get('engine/johto_pilot_runtime.asm')
         opt=get('engine/menu/options_menu.asm'); audio=get('home/audio.asm')
         assets=get('data/johto_pilot_runtime_assets.asm')
         active_names=re.findall(r'(?m)^\s*db\s+(JOHTO_\w+_LOCAL_ID)\s*,',
@@ -151,7 +151,7 @@ def audit(root: Path, gold: Path | None = None, overrides: dict[str,str] | None 
             for name in contract['negative_gold_gates']:
                 check('indoor_exception_'+name, env.get(name)=='INDOOR',
                       f'Gold environment must be INDOOR, not automatically bike-enabled: {env.get(name)}')
-        bike=home.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
+        bike=relief.split('IsBikeRidingAllowed::',1)[1].split('\n.legacyBike\n',1)[0]
         bike_ids=re.findall(r'cp\s+(JOHTO_\w+_LOCAL_ID)\s*\n\s*(?:jr|jp) z,\s*\.allowed',bike)
         permitted={p['id'] for p in policies if p['bike_allowed']}
         # Compact ROM0-safe mask accepts current Gold gates IDs65/66/74,

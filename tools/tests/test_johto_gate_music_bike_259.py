@@ -10,7 +10,7 @@ class GoldGateMusicBike259(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.files={name:(ROOT/name).read_text(encoding='utf-8') for name in (
-            'home/overworld.asm','engine/johto_pilot_runtime.asm',
+            'home/overworld.asm','home/rom0_relief_349.asm','engine/johto_pilot_runtime.asm',
             'engine/menu/options_menu.asm','home/audio.asm',
             'data/bike_riding_tilesets.asm','tools/johto_gate_music_bike_contracts.json',
             'tools/johto_map_name_sign_contracts.json')}
@@ -30,8 +30,8 @@ class GoldGateMusicBike259(unittest.TestCase):
         self.assertTrue(report['gold_checked'])
         self.assertEqual(report['status'],'PASS_STATIC_ONLY',report['errors'])
     def test_missing_north_gate_bike_fails(self):
-        home=self.files['home/overworld.asm'].replace('\tcp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n\tjr z, .allowed\n','',1)
-        self.assert_failure('bike_every_eligible_gate',**{'home/overworld.asm':home})
+        relief=self.files['home/rom0_relief_349.asm'].replace('\tcp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID\n\tjr z, .allowed\n','',1)
+        self.assert_failure('bike_every_eligible_gate',**{'home/rom0_relief_349.asm':relief})
     def test_bike_leak_to_house_or_kanto_fails(self):
         tiles=self.files['data/bike_riding_tilesets.asm']+'\n db JOHTO_GATE\n'
         self.assert_failure('bike_no_global_gate_tileset',**{'data/bike_riding_tilesets.asm':tiles})
