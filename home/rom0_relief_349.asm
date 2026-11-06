@@ -38,6 +38,10 @@ IsBikeRidingAllowed::
 	dec a ; Johto region=1; same Z flag as cp 1, saving one ROM0 byte
 	jr nz, .legacyBike
 	ld a, [wCurLocalMapID]
+	; Gold Dark Cave is CAVE (bike-eligible), despite using the RPP
+	; INDOOR animation flag. Restrict this exception to active ID190.
+	cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+	jp z, .darkCaveBike
 	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
 	jr z, .allowed
 	cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
@@ -79,6 +83,15 @@ IsBikeRidingAllowed::
 	ret
 .allowed
 	scf
+	ret
+.darkCaveBike
+	; This helper is also called when loading the riding sprite after a
+	; map transition. Gold keeps an existing bike through CAVE entrances,
+	; even on a carpet. Only mounting anew must require Gold FLOOR_TILE.
+	ld a, [wWalkBikeSurfState]
+	cp 1
+	jr z, .allowed
+	callab JohtoDarkCaveBikeFloorAllowed349
 	ret
 INCLUDE "data/bike_riding_tilesets.asm"
 

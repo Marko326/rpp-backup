@@ -325,10 +325,16 @@ MapPaletteSets:
 ; Gold Burned Tower B1F CAVE/DAY (not NITE and not animated).
     db OUTDOOR_GRAY, OUTDOOR_RED, OUTDOOR_GREEN, OUTDOOR_BLUE
     db OUTDOOR_YELLOW, OUTDOOR_BROWN, OUTDOOR_ROOF, CRYS_TEXTBOX
+; REF-349 hotfix: Gold PALETTE_DARK uses DARKNESS before Flash and
+; NITE_F after Flash. Reuse the existing Gold CAVE/NITE RGB5 family
+; (Union Cave) instead of the outdoor DAY colors. wMapPalOffset=6
+; still selects FadePal2 for DARKNESS and zero selects lit NITE.
+    db CAVE_GRAY, CAVE_RED, CAVE_GREEN, CAVE_BLUE
+    db CAVE_YELLOW, CAVE_BROWN, CAVE_LIGHT_BLUE, CRYS_TEXTBOX
 MapPaletteSetsEnd::
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
 ASSERT JOHTO_UNION_CAVE == 31
 ASSERT JOHTO_MODERN == 32
-ASSERT MapPaletteSetsEnd - MapPaletteSets == (JOHTO_BURNED_TOWER_B1F + 1) * 8
+ASSERT MapPaletteSetsEnd - MapPaletteSets == (JOHTO_DARK_CAVE + 1) * 8

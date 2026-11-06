@@ -40,3 +40,4 @@ const_value = 0
 	const JOHTO_POKECENTER ; 37 ; Gold 5x4 shared center art, NPC-243 conversion
 	const JOHTO_BURNED_TOWER_1F ; 38 ; Gold TOWER / DAY
 	const JOHTO_BURNED_TOWER_B1F ; 39 ; Gold CAVE / DAY, static tower basement
+	const JOHTO_DARK_CAVE ; 40 ; Gold DARK_CAVE / PALETTE_DARK

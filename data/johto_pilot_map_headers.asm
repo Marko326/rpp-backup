@@ -426,15 +426,16 @@ JohtoPilotRoute31SignText:
     db "@"
 JohtoPilotRoute31CaveSignText:
     text "DARK CAVE"
-    para "Entrance closed"
-    line "for now."
+    para "A dark cave."
+    line "FLASH lights it."
     done
     db "@"
 JohtoPilotRoute31RuntimeObjects::
     db $05 ; original Gold outdoor forest border
-    db $02 ; Route31 Gate pair enabled, Dark Cave remains closed
+    db $03 ; Gate pair plus Gold Dark Cave opening (34,5)
     db 6, 4, 2, JOHTO_REGISTERED_WARP_SELECTOR
     db 7, 4, 3, JOHTO_REGISTERED_WARP_SELECTOR
+    db 5, 34, 0, JOHTO_REGISTERED_WARP_SELECTOR
     db $02 ; two original outdoor signs
     db 5, 7, 1
     db 5, 31, 2

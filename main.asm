@@ -3420,6 +3420,11 @@ INCLUDE "data/johto_ruins_north_runtime.asm"
 SECTION "Johto Union Cave 1F Runtime", ROMX, BANK[$4B]
 INCLUDE "data/johto_union_cave_runtime.asm"
 
+; REF-349 stage2: independent Gold Dark Cave assets and spatial logic.
+SECTION "Johto Dark Cave Violet", ROMX
+INCLUDE "data/johto_dark_cave_stage/REF349_stage2_runtime.asm"
+INCLUDE "engine/johto_dark_cave_stage2.asm"
+
 ; REF-347 1F + REF-348 B1F independent Gold runtime, no story objects.
 SECTION "Johto Burned Tower 1F", ROMX
 INCLUDE "data/johto_burned_tower/REF347_1f_runtime.asm"

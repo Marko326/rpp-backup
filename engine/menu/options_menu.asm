@@ -1366,6 +1366,7 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_DARK_CAVE ; slot60 Slowpoke Well B2F (Gold MUSIC_DARK_CAVE)
     db MUSIC_GBP_GSC_BURNED_TOWER ; slot61 Burned Tower 1F (Gold MUSIC_BURNED_TOWER)
     db MUSIC_GBP_GSC_BURNED_TOWER ; slot62 Burned Tower B1F (Gold MUSIC_BURNED_TOWER)
+    db MUSIC_GBP_GSC_DARK_CAVE ; slot63 Dark Cave Violet entrance, Gold MUSIC_DARK_CAVE
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 

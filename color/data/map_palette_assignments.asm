@@ -53,5 +53,6 @@ INCLUDE "color/tilesets/johto_park_gate.asm" ; JOHTO_PARK_GATE
 INCLUDE "color/tilesets/johto_shared_pokecenter.asm" ; JOHTO_POKECENTER
 INCLUDE "color/tilesets/johto_burned_tower_1f.asm" ; Gold TOWER / DAY
 INCLUDE "color/tilesets/johto_burned_tower_b1f.asm" ; Gold CAVE / DAY, static indoor tiles
+INCLUDE "color/tilesets/johto_dark_cave_violet.asm" ; REF-349: Gold Dark Cave CAVE / DAY
 MapPaletteAssignmentsEnd::
-ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_BURNED_TOWER_B1F + 1) * $60
+ASSERT MapPaletteAssignmentsEnd - MapPaletteAssignments == (JOHTO_DARK_CAVE + 1) * $60

@@ -51,8 +51,9 @@ Tilesets:
 	tileset JohtoBurnedTower1F_Block, JohtoBurnedTower1F_GFX, JohtoBurnedTower1F_Coll, $FF,$FF,$FF, $FF, INDOOR
 	; B1F uses Gold CAVE / DAY artwork but must be STATIC: CAVE animates rock tile $14.
 	tileset JohtoBurnedTowerB1F_Block, JohtoBurnedTowerB1F_GFX, JohtoBurnedTowerB1F_Coll, $FF,$FF,$FF, $FF, INDOOR
+	tileset JohtoDarkCave_Block, JohtoDarkCave_GFX, JohtoDarkCave_Coll, $FF,$FF,$FF,$FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_BURNED_TOWER_B1F + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_DARK_CAVE + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
@@ -72,3 +73,6 @@ ASSERT BANK(JohtoHouse_Block) == BANK(JohtoHouse_GFX)
 ASSERT BANK(JohtoHouse_Coll) == 0
 ASSERT BANK(JohtoPilot_Block) == BANK(JohtoPilot_GFX)
 ASSERT BANK(JohtoPilot_Coll) == 0
+
+ASSERT BANK(JohtoDarkCave_Block) == BANK(JohtoDarkCave_GFX)
+ASSERT BANK(JohtoDarkCave_Coll) == 0

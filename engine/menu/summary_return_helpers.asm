@@ -284,6 +284,14 @@ Summary_LoadPlayerSpriteGraphicsLCDOff:
 	ld a, [hTilesetType]
 	and a
 	jr nz, .determineGraphics
+	; Match the ordinary overworld sprite loader: the static-animation
+	; Dark Cave is surfable even though its tileset type is INDOOR.
+	ld a, [wCurMapTileset]
+	cp JOHTO_DARK_CAVE
+	jr nz, .startWalking
+	ld a, [wWalkBikeSurfState]
+	cp 2
+	jr z, .determineGraphics
 	jr .startWalking
 
 .ridingBike

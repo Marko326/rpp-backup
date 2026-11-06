@@ -13,6 +13,8 @@ HandleLedges:
 	jp z, .unionCaveB1F
     cp JOHTO_BURNED_TOWER_B1F
     jp z, .burnedTowerB1F
+    cp JOHTO_DARK_CAVE
+    jp z, .darkCave
 	and a ; original Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
@@ -26,6 +28,15 @@ HandleLedges:
 	ret nz
 	ld hl, JohtoUnionCaveB1FGoldHops
 	jp .ruinsCoordinateHopLookup
+.darkCave
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    ret nz
+    ld hl, JohtoDarkCaveGoldHops
+    jp .ruinsCoordinateHopLookup
 .burnedTowerB1F
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
@@ -280,6 +291,8 @@ JohtoSouthHopLandingGuard::
     jp z, .unionCaveB1F
     cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     jp z, .burnedTowerB1F
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, .darkCave
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
@@ -289,6 +302,9 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .burnedTowerB1F
     ld hl, JohtoBurnedTowerB1FGoldHops
+    jp .scan
+.darkCave
+    ld hl, JohtoDarkCaveGoldHops
     jp .scan
 .route37
     ld hl, JohtoRoute37GoldHops
@@ -409,6 +425,38 @@ JohtoUnionCaveB1FGoldHops:
 
 ; Gold Burned Tower B1F directed HOPs (source X,Y,direction).
 ; HOP_DOWN_LEFT at (15,4) supports both Gold directions.
+; Dark Cave: source is the actual Gold HOP quadrant. The RPP ledge
+; executor simulates TWO steps from this position, crossing the adjacent
+; WALL and landing on the next passable tile. Never shift sources back one
+; cell: that lands on a wall and steals Surf-to-HOP shore movement.
+JohtoDarkCaveGoldHops:
+    db 2, 10, PLAYER_DIR_DOWN
+    db 3, 10, PLAYER_DIR_DOWN
+    db 36, 12, PLAYER_DIR_DOWN
+    db 37, 12, PLAYER_DIR_DOWN
+    db 30, 16, PLAYER_DIR_DOWN
+    db 31, 16, PLAYER_DIR_DOWN
+    db 30, 20, PLAYER_DIR_DOWN
+    db 31, 20, PLAYER_DIR_DOWN
+    db 30, 24, PLAYER_DIR_DOWN
+    db 31, 24, PLAYER_DIR_DOWN
+    db 30, 28, PLAYER_DIR_DOWN
+    db 31, 28, PLAYER_DIR_DOWN
+    db 9, 4, PLAYER_DIR_LEFT
+    db 9, 5, PLAYER_DIR_LEFT
+    db 9, 6, PLAYER_DIR_LEFT
+    db 9, 7, PLAYER_DIR_LEFT
+    db 9, 8, PLAYER_DIR_LEFT
+    db 9, 9, PLAYER_DIR_LEFT
+    db 7, 10, PLAYER_DIR_LEFT
+    db 9, 10, PLAYER_DIR_LEFT
+    db 7, 11, PLAYER_DIR_LEFT
+    db 9, 11, PLAYER_DIR_LEFT
+    db 7, 12, PLAYER_DIR_LEFT
+    db 7, 13, PLAYER_DIR_LEFT
+    db 35, 22, PLAYER_DIR_LEFT
+    db 35, 23, PLAYER_DIR_LEFT
+    db $ff
 JohtoBurnedTowerB1FGoldHops:
     db 2, 4, PLAYER_DIR_DOWN
     db 3, 4, PLAYER_DIR_DOWN

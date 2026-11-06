@@ -955,10 +955,21 @@ PlayMapChangeSound::
 	ld a,SFX_GO_OUTSIDE
 .playSound
 	call PlaySound
+	; REF-349 video: Gold fades the old outdoor scene to WHITE on entry.
+	; The old nonzero offset skipped that fade, flashing a fully lit purple
+	; destination cave. On leaving an unlit cave, the resolver already made
+	; the old screen white; do not run another fade that reveals the cave.
 	ld a,[wMapPalOffset]
+	cp 12 ; FadePalJohtoDark349, not Kanto's offset 6
+	jr z,.johtoDarkTransition349
 	and a
-	ret nz
-	jp GBFadeOutToWhite ; HAX: Fade to white instead of black. Looks nicer IMO.
+	ret nz ; leave Kanto Rock Tunnel behavior unchanged
+	jp GBFadeOutToWhite
+.johtoDarkTransition349
+	ld a,[rBGP]
+	and a
+	ret z ; departing an unlit cave: scene is already white
+	jp GBFadeOutToWhite ; Gold door transition, NOT a black cut
 
 ; this function is an extra check that sometimes has to pass in order to warp, beyond just standing on a warp
 ; the "sometimes" qualification is necessary because of CheckWarpsNoCollision's behavior
@@ -1097,6 +1108,15 @@ LoadPlayerSpriteGraphics::
 	ld a, [hTilesetType]
 	and a
 	jr nz, .determineGraphics
+	; Gold Dark Cave deliberately uses an INDOOR animation type to prevent
+	; the legacy CAVERN animator corrupting its graphics.  It is nevertheless
+	; a surfable cave: keep an already active mount rather than resetting it.
+	ld a, [wCurMapTileset]
+	cp JOHTO_DARK_CAVE
+	jr nz, .startWalking
+	ld a, [wWalkBikeSurfState]
+	cp 2
+	jr z, .determineGraphics
 	jr .startWalking
 
 .ridingBike
@@ -2534,6 +2554,10 @@ LoadMapData::
 	call RunPaletteCommand ; HAX: this function call was moved to be above _LoadMapVramAndColors
 ; copy current map view + corresponding palettes to VRAM
 	call _LoadMapVramAndColors ; HAX
+	; With LCD still disabled, settle the Dark Cave palette registers
+	; for the first visible frame. Also clear the exit's deferred dark offset.
+	; Other rooms and Kanto are intentionally unaffected by this ROMX helper.
+	callab JohtoDarkCavePreLCDPalette349
 
 	ld a,$01
 	ld [wUpdateSpritesEnabled],a

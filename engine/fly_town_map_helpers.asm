@@ -991,6 +991,8 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotEcruteakName
     db 60, 76 ; slot62 Burned Tower B1F -> Ecruteak City landmark
     dw JohtoPilotEcruteakName
+    db 76, 104 ; slot63 Dark Cave inherits Route31 Town Map landmark
+    dw JohtoPilotRoute31Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -1013,6 +1015,7 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 12 ; slot60 Slowpoke Well B2F -> Slowpoke Well
     db 21 ; slot61 Burned Tower 1F -> Ecruteak City
     db 21 ; slot62 Burned Tower B1F -> Ecruteak City
+    db 4  ; slot63 Dark Cave Violet side -> Route31
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1128,6 +1131,7 @@ JohtoPilotRoute33Name:: db "Route 33@"
 JohtoPilotRoute36Name:: db "Route 36@"
 
 JohtoPilotUnionCaveName:: db "Union Cave@"
+JohtoPilotDarkCaveName:: db "Dark Cave@"
 JohtoPilotSlowpokeWellName:: db "Slowpoke Well@"
 
 JohtoPilotSouthAzaleaName:: db "Azalea Town@"

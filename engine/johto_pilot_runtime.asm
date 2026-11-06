@@ -317,6 +317,11 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 12, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 13, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    ; REF-349 stage3: preserve Gold ordinal1 (Blackthorn) unregistered; open ordinal2 (Route46).
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -351,13 +356,13 @@ JohtoPilotResolveRegisteredWarp::
     dec d
     ld a, [hli]
     cp b
-    jr nz, .skipFour
+    jp nz, .skipFour
     ld a, [hli]
     cp c
-    jr nz, .skipThree
+    jp nz, .skipThree
     ld a, [wWarpedFromWhichWarp]
     cp [hl]
-    jr nz, .skipThree
+    jp nz, .skipThree
     inc hl ; warp ordinal
     ld a, [hli] ; destination region
     cp MAP_REGION_JOHTO
@@ -416,6 +421,34 @@ JohtoPilotResolveRegisteredWarp::
     ld [wCurLocalMapID], a
     ld a, MAP_REGION_JOHTO
     ld [wCurRegion], a
+    ; REF-349 video: keep a dedicated dark record with ordinary OBJ colors.
+    ; The destination may be a DARK cave (entry) or the outdoor landing from
+    ; an UNLIT cave (exit). On exit, keep offset 12 until the next map loads;
+    ; the pre-LCD helper will clear it AFTER the source scene fades away.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .unlitDarkPalette349
+    ld a, c ; source stable ID, retained by GetJohtoActiveSlot
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr nz, .normalPalette349
+    ld a, [wMapPalOffset]
+    cp 12 ; was the source cave still unlit?
+    jr nz, .normalPalette349 ; Flash-lit cave exits use regular white fade
+    ; RPP's standard fade-to-white starts at BGP E4, exposing the complete
+    ; purple cave for eight frames before reaching white. Gold's old dark
+    ; scene must NOT brighten; directly prepare the final white frame.
+    ; VBlank applies it before the destination map is loaded.
+    xor a
+    ld [rBGP], a
+    ld [rOBP0], a
+    ld [rOBP1], a
+.unlitDarkPalette349
+    ld a, 12 ; FadePal4 - FadePalJohtoDark349, BG dark / OBJ normal
+    jr .storePalette349
+.normalPalette349
+    xor a
+.storePalette349
+    ld [wMapPalOffset], a
     ld e, JOHTO_RUNTIME_MAP_HANDLE
     ret
 .skipFour
@@ -500,6 +533,7 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 12, MUSIC_DUNGEON2, 0 ; slot60 Slowpoke Well B2F
     johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot61 Burned Tower 1F, no Fly
     johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot62 Burned Tower B1F, no Fly
+    johto_map_profile 0, 4, MUSIC_DUNGEON2, 0 ; slot63 Dark Cave Violet entrance, indoor
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -809,6 +843,8 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .ruinsClosedEdge
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jp z, .unionCaveClosedEdge
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, .darkCaveClosedEdge
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33ClosedEdge
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -945,6 +981,40 @@ JohtoPilotIsClosedOutdoorEdge::
     cp 15
     ret z
     jp .closed
+.darkCaveClosedEdge
+    ; REF-349 LEDGE FIX: this early gateway runs BEFORE HandleLedges.
+    ; Do not test the Gold role in front here: a valid HOP takeoff faces
+    ; a WALL, and rejecting that WALL prevents the jump handler from firing.
+    ; This gateway protects ONLY the finite 40x36 map bounds; the later
+    ; JohtoOverworldSouthLandDecision owns interior walls and Gold HOPs.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr z, .darkCaveNorthEdge
+    cp PLAYER_DIR_DOWN
+    jr z, .darkCaveSouthEdge
+    cp PLAYER_DIR_LEFT
+    jr z, .darkCaveWestEdge
+    cp PLAYER_DIR_RIGHT
+    ret nz
+    ld a, [wXCoord]
+    cp JOHTO_DARK_CAVE_WIDTH * 2 - 1
+    jp nc, .closed
+    ret
+.darkCaveNorthEdge
+    ld a, [wYCoord]
+    and a
+    jp z, .closed
+    ret
+.darkCaveSouthEdge
+    ld a, [wYCoord]
+    cp JOHTO_DARK_CAVE_HEIGHT * 2 - 1
+    jp nc, .closed
+    ret
+.darkCaveWestEdge
+    ld a, [wXCoord]
+    and a
+    jp z, .closed
+    ret
 .unionCaveClosedEdge
     ; Cave has no external seams: its only door is an explicit Warp.
     ld a, [wPlayerDirection]
@@ -1320,6 +1390,22 @@ JohtoPilotGateArrivalStep::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
+    ; Route31 Gold Dark Cave warp #3 deposits the player on the cave-mouth
+    ; door cell (34,5). Its lower-left 8x8 tile is $56, not the common
+    ; Gold house DOOR $39; step out using the existing simulated DOWN step.
+    ; Do not extend this to Route31's gate carpets or the cave interior.
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr nz, .notRoute31CaveArrival349
+    ld a, [wXCoord]
+    cp 34
+    jr nz, .notRoute31CaveArrival349
+    ld a, [wYCoord]
+    cp 5
+    jr nz, .notRoute31CaveArrival349
+    ld e, D_DOWN
+    ret
+.notRoute31CaveArrival349
     call JohtoPilotIsVerticalGatePairMap314
     jr z, .verticalGateArrivalDispatch314
     cp JOHTO_ECRUTEAK_CITY_LOCAL_ID
@@ -1373,6 +1459,8 @@ JohtoPilotGateArrivalStep::
     ; Arrive stationary facing the original UP approach; do not force a
     ; direction or simulate a step. DOWN is only the voluntary exit input.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    ret z
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     ret z
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
     ret z
@@ -1568,6 +1656,18 @@ JohtoPilotGateDoorApproachAllowed::
     jp z, .allow
     ret
 .route31
+    ; Gold Dark Cave at (34,5): approach one cell south, facing UP.
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr nz, .route31GateOld349
+    ld a, [wXCoord]
+    cp 34
+    ret nz
+    ld a, [wYCoord]
+    cp 6
+    jp z, .allow
+    ret
+.route31GateOld349
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT
     ret nz
@@ -1725,6 +1825,8 @@ JohtoPilotGateDoorWarpMatched::
     ret nz
 .noBurnedAfter
     ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .centerCarpetStand
     cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
     jr z, .burnedTowerWarpMode
     cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
@@ -1881,6 +1983,19 @@ JohtoPilotGateDoorWarpMatched::
     ret
 
 .route31
+    ; Gold cave opening: warp immediately on the UP step into (34,5).
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr nz, .route31GateOldAfter349
+    ld a, [wXCoord]
+    cp 34
+    ret nz
+    ld a, [wYCoord]
+    cp 5
+    ret nz
+    ld e, 2
+    ret
+.route31GateOldAfter349
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_LEFT
     ret nz
@@ -2013,6 +2128,11 @@ JohtoPilotGateDoorWarpMatched::
 JohtoPilotGateExteriorCollisionAllowed::
     ld e, 0
     ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, JohtoDarkCaveDownCarpet349
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, JohtoDarkCaveDownCarpet349
     cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
     jr nz, .notBurnedExit
     callab JohtoBurnedTower1FDownCarpet
@@ -2096,6 +2216,8 @@ JohtoPilotGateExteriorCollisionAllowed::
     ; the entry qualification false and making the north exit unreachable.
     ; Share the final coordinate/facing guard: do not create a second rule.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    jp z, JohtoPilotGateCollisionExitAllowed
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, JohtoPilotGateCollisionExitAllowed
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
     jp z, JohtoPilotGateCollisionExitAllowed
@@ -2197,6 +2319,9 @@ JohtoPilotGateExteriorCollisionAllowed::
 ; Result E=1 permits the matched collision warp, E=0 denies it.
 JohtoPilotGateCollisionExitAllowed::
     ld e, 1
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, JohtoDarkCaveDownCarpet349
     ld a, [wCurMap]
     cp JOHTO_RUNTIME_MAP_HANDLE
     ret nz
@@ -2508,4 +2633,27 @@ JohtoBatchCenterDoorAfterStep336::
     ret
 .allow
     ld e, 2
+    ret
+
+; Gold Violet Dark Cave DOWN carpets: Route31 (3,15), Route46 (35,33).
+JohtoDarkCaveDownCarpet349::
+    ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wXCoord]
+    cp 3
+    jr nz, .route46Carpet
+    ld a, [wYCoord]
+    cp 15
+    jr z, .allow
+.route46Carpet
+    ld a, [wXCoord]
+    cp 35
+    ret nz
+    ld a, [wYCoord]
+    cp 33
+    ret nz
+.allow
+    ld e, 1
     ret

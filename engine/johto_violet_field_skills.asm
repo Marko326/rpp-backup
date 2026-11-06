@@ -26,6 +26,8 @@ JohtoOverworldSurfDecision::
     jp z, .southModern
 	cp JOHTO_UNION_CAVE
 	jp z, .unionCave
+    cp JOHTO_DARK_CAVE
+    jp z, .darkCave
 	cp JOHTO_PILOT
 	jp nz, .legacy
 	ld a, [wCurRegion]
@@ -144,6 +146,16 @@ JohtoOverworldSurfDecision::
     callab JohtoSouthGoldShoreProbe
     jp c, .floorShore
     jp .shore
+.darkCave
+    callab JohtoDarkCaveSurfDecision
+    ld a, e
+    cp 2
+    jp z, .water
+    and a
+    jp z, .floorShore
+    ld a, $ff
+    ld [wTileInFrontOfPlayer], a
+    jp .shore
 .unionCave
 	; Gold cave WATER remains spatial.  Non-water UP_WALL/HOP cells need
 	; their original directional semantics instead of the legacy tile list.
@@ -203,6 +215,12 @@ JohtoVioletWaterAhead::
 	ret c
 	call JohtoUnionCaveWaterAhead
 	ret c
+    push bc
+    push hl
+    callab JohtoDarkCaveWaterAhead
+    pop hl
+    pop bc
+    ret c
     callab JohtoWestSeaGoldWaterProbe
     ret c
     callab JohtoEastGoldWaterProbe

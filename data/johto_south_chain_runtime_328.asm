@@ -92,9 +92,10 @@ JohtoRoute45RuntimeObjects::
     db 0
 JohtoRoute46RuntimeObjects::
     db $05 ; Gold Route46 trees
-    db 2 ; Gold Route46 -> Gate north pair, other cave stays closed
+    db 3 ; Gold Route46: Gate north pair + Dark Cave north DOOR
     db 33, 7, 0, JOHTO_REGISTERED_WARP_SELECTOR
     db 33, 8, 1, JOHTO_REGISTERED_WARP_SELECTOR
+    db 5, 14, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold cave door -> cave ordinal2
     db 0
     db 0
 JohtoRoute29Route46GateRuntimeObjects::

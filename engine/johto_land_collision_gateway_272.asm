@@ -26,6 +26,8 @@ JohtoOverworldSouthLandDecision::
     jp z, .burnedTower1F
     cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     jp z, .burnedTowerB1F
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, .darkCave
     ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
     ; The generic Gold role can otherwise treat the door as a solid wall.
     ld a, [wCurRegion]
@@ -136,7 +138,7 @@ JohtoOverworldSouthLandDecision::
     callab HandleLedges
     ld a, [wd736]
     bit 6, a
-    jr nz, .allowJump
+    jp nz, .allowJump
     callab JohtoSouthSpatialStep
     ret
 .westSeaMap
@@ -172,6 +174,13 @@ JohtoOverworldSouthLandDecision::
     bit 6, a
     jr nz, .allowJump
     callab JohtoBurnedTowerB1FLandDecision
+    ret
+.darkCave
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
+    callab JohtoDarkCaveLandDecision
     ret
 .unionCave
     ; Gold Cave UP_WALL is directional LAND, not a solid 16x16 cell.

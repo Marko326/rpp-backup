@@ -21,6 +21,8 @@ JohtoVerticalGateBeforeStepProfiles314::
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 1
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 5, 1
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_UP, 17, 36 ; Gold #3 DOOR only
+    ; Gold Route46 cave door at (14,5): enter from (14,6) while facing UP.
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_UP, 14, 6
     ; DEV-328: Route46 Gold two downward carpet lanes at (7/8,33).
     db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 7, 32
     db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 8, 32
@@ -43,7 +45,7 @@ JohtoVerticalGateBeforeStepProfiles314::
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_LEFT, 18, 31
     db $ff
 JohtoVerticalGateBeforeStepProfilesEnd314::
-ASSERT JohtoVerticalGateBeforeStepProfilesEnd314 - JohtoVerticalGateBeforeStepProfiles314 == 93
+ASSERT JohtoVerticalGateBeforeStepProfilesEnd314 - JohtoVerticalGateBeforeStepProfiles314 == 97
 
 ; After-step rows: map ID, direction, destination X, destination Y, result.
 ; E=2 = exact solid DOOR; E=1 = DOWN collision-only carpet exit;
@@ -61,6 +63,7 @@ JohtoVerticalGateAfterStepProfiles314::
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 4, 0, 2
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, PLAYER_DIR_UP, 5, 0, 2
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_UP, 17, 35, 2 ; solid DOOR
+    db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_UP, 14, 5, 2 ; Gold solid cave door
     db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 7, 33, 1
     db JOHTO_ROUTE_46_LOCAL_ID, PLAYER_DIR_DOWN, 8, 33, 1
     ; E=3 is a lateral lane change, never an outward collision Warp.
@@ -78,7 +81,7 @@ JohtoVerticalGateAfterStepProfiles314::
     db JOHTO_ROUTE_43_LOCAL_ID, PLAYER_DIR_LEFT, 17, 31, 3 ; ID66 lateral lane change only
     db $ff
 JohtoVerticalGateAfterStepProfilesEnd314::
-ASSERT JohtoVerticalGateAfterStepProfilesEnd314 - JohtoVerticalGateAfterStepProfiles314 == 126
+ASSERT JohtoVerticalGateAfterStepProfilesEnd314 - JohtoVerticalGateAfterStepProfiles314 == 131
 
 ; Arrival rows: map ID, landing X, landing Y, automatic step direction.
 ; Town plus ID65/ID66 upper DOOR landings step south. All carpets stay put.
@@ -90,11 +93,12 @@ JohtoVerticalGateArrivalProfiles314::
     db JOHTO_ROUTE_43_GATE_LOCAL_ID, 5, 0, D_DOWN
     db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 4, 0, D_DOWN
     db JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID, 5, 0, D_DOWN
+    db JOHTO_ROUTE_46_LOCAL_ID, 14, 5, D_DOWN ; emerge from cave then step south
     db JOHTO_ROUTE_29_LOCAL_ID, 27, 1, D_DOWN
     db JOHTO_ROUTE_43_LOCAL_ID, 17, 35, D_DOWN ; arrival from ID66 south carpet onto DOOR
     db $ff
 JohtoVerticalGateArrivalProfilesEnd314::
-ASSERT JohtoVerticalGateArrivalProfilesEnd314 - JohtoVerticalGateArrivalProfiles314 == 37
+ASSERT JohtoVerticalGateArrivalProfilesEnd314 - JohtoVerticalGateArrivalProfiles314 == 41
 
 ; Closed-edge rows: map ID, width in 16x16 cells, height in 16x16 cells.
 ; ID65 and ID66 are 10x8 cells; unregistered physical edges stay closed.

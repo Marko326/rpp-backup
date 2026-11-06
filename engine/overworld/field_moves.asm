@@ -32,9 +32,11 @@ TrySurf:
 	call HasPartyMove
 	jr nz, .cannotSurf
 
-	ld a, [wObtainedKantoBadges]
-	bit 4, a ; SOUL_BADGE
-	jr z, .cannotSurf
+	; Gold Dark Cave uses Fog Badge; the established Soul Badge is kept as
+	; a temporary compatibility fallback until Johto gyms are playable.
+	; Outside this cave, the original Kanto badge contract stays unchanged.
+	callab JohtoSurfBadgeAllowed349
+	jr nc, .cannotSurf
 
 ; If SURF can be used, check whether surfing is allowed on the current map.
 	call Text2_EnterTheText

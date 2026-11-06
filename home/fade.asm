@@ -64,8 +64,12 @@ GBFadeDecCommon:
 
 ; HAX: some of these palettes have been modified, mostly to make BGP/OBP0/OBP1 consistent
 ; with each other.
+; Gold DARKNESS keeps the player sprite bright while darkening only the cave BG.
+; Keep Rock Tunnel's existing FadePal2 intact: the native Johto cave uses this
+; separate record (FadePal4 - 12) with a NORMAL OBJ mapping, including on CGB.
+FadePalJohtoDark349:: db %11111110, %11100100, %11100100
 FadePal1:: db %11111111, %11111111, %11111111
-FadePal2:: db %11111110, %11111110, %11111110 ; This is used in dark areas
+FadePal2:: db %11111110, %11111110, %11111110 ; legacy Kanto dark rooms
 FadePal3:: db %11111001, %11111001, %11111001
 FadePal4:: db %11100100, %11100100, %11100100 ; This is the "standard" palette
 ;                rBGP      rOBP0      rOBP1
@@ -73,3 +77,4 @@ FadePal5:: db %11100100, %11100100, %11100100
 FadePal6:: db %10010000, %10010000, %10010000
 FadePal7:: db %01000000, %01000000, %01000000
 FadePal8:: db %00000000, %00000000, %00000000
+ASSERT FadePal4 - FadePalJohtoDark349 == 12

@@ -204,8 +204,10 @@ StartMenu_Pokemon:
 	jp z,.loop
 	jp CloseTextDisplay
 .surf
-	bit 4,a ; does the player have the Soul Badge?
-	jp z,.newBadgeRequired
+	; Keep Bank $04 small: shared ROMX gate checks Fog/Soul for the one
+	; active Gold Dark Cave and the original Soul badge elsewhere.
+	callab JohtoSurfBadgeAllowed349
+	jp nc,.newBadgeRequired
 	callba IsSurfingAllowed
 	ld hl,wd728
 	bit 1,[hl]
@@ -227,11 +229,16 @@ StartMenu_Pokemon:
 	call GBPalWhiteOutWithDelay3
 	jp .goBackToMap
 .flash
-	bit 0,a ; does the player have the Boulder Badge?
-	jp z,.newBadgeRequired
+	; Bank $04 has only 11 bytes of MAP slack. Keep this caller tiny:
+	; the Gold Dark Cave identity, darkness and badge checks live in ROMX.
+	; Helper prints failure text and returns E=0 on success, E=1 on failure.
+	callab JohtoFlashEligibility349
+	ld a, e
+	and a
+	jp nz, .loop
 	xor a
-	ld [wMapPalOffset],a
-	ld hl,.flashLightsAreaText
+	ld [wMapPalOffset], a
+	ld hl, .flashLightsAreaText
 	call PrintText
 	call GBPalWhiteOutWithDelay3
 	jp .goBackToMap

@@ -911,6 +911,17 @@ ItemUseSurfboard:
 	ld hl,TilePairCollisionsWater
 	call CheckForTilePairCollisions
 	jr c,.cannotStopSurfing
+	; This cave's legacy passable-tile list is just $ff. Its Gold shore
+	; permission is spatial, including directional HOP/UP_WALL landings.
+	ld a, [wCurMapTileset]
+	cp JOHTO_DARK_CAVE
+	jr nz, .legacyShore
+	callab JohtoDarkCaveSurfDecision
+	ld a, e
+	and a
+	jr z, .stopSurfing
+	jr .cannotStopSurfing
+.legacyShore
 	ld hl,wTilesetCollisionPtr ; pointer to list of passable tiles
 	ld a,[hli]
 	ld h,[hl]
