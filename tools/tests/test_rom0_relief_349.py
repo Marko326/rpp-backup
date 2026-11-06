@@ -116,6 +116,16 @@ class Rom0Relief349(unittest.TestCase):
             "machine": RELIEF.split("GetMachineName::", 1)[1].split("; Trainer encounter music", 1)[0],
             "trainer": RELIEF.split("PlayTrainerMusic::", 1)[1].split("ASSERT BANK(CheckIfInOutsideMap)", 1)[0],
         }
+        # REF-349 Dark Cave adds a strictly map-scoped bike policy to the
+        # previously relocated helper. Verify the remaining legacy body still
+        # matches the original REF-348 hash instead of replacing that historic
+        # hash with the new implementation's checksum.
+        bikes = bodies["bike"]
+        self.assertIn("cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID\n\tjp z, .darkCaveBike", bikes)
+        self.assertIn("\n.darkCaveBike\n", bikes)
+        bikes = bikes.replace("\tcp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID\n\tjp z, .darkCaveBike\n", "", 1)
+        bikes = bikes.split("\n.darkCaveBike\n", 1)[0]
+        bodies["bike"] = bikes
         for name, body in bodies.items():
             self.assertEqual(EXPECTED_BODY_SHA256[name], normalized_hash(body), name)
 

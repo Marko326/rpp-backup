@@ -33,5 +33,5 @@ def restore_closed_stage(root: Path) -> None:
 
     p = root / 'data/game_version.asm'
     text = p.read_text()
-    assert 'db "REF-348@"' in text
-    p.write_text(text.replace('db "REF-348@"', 'db "REF-344@"'))
+    assert 'db "REF-349@"' in text
+    p.write_text(text.replace('db "REF-349@"', 'db "REF-344@"'))

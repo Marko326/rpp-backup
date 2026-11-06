@@ -28,6 +28,7 @@ EXPECTED = {
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '4', '1'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '5', '1'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_UP', '17', '36'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_UP', '14', '6'),
         ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '7', '32'),
         ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '8', '32'),
         ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_RIGHT', '7', '33'),
@@ -55,6 +56,7 @@ EXPECTED = {
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '4', '0', '2'),
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', 'PLAYER_DIR_UP', '5', '0', '2'),
         ('JOHTO_ROUTE_43_LOCAL_ID', 'PLAYER_DIR_UP', '17', '35', '2'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_UP', '14', '5', '2'),
         ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '7', '33', '1'),
         ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', '8', '33', '1'),
         ('JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_RIGHT', '8', '33', '3'),
@@ -77,6 +79,7 @@ EXPECTED = {
         ('JOHTO_ROUTE_43_GATE_LOCAL_ID', '5', '0', 'D_DOWN'),
         ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', '4', '0', 'D_DOWN'),
         ('JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID', '5', '0', 'D_DOWN'),
+        ('JOHTO_ROUTE_46_LOCAL_ID', '14', '5', 'D_DOWN'),
         ('JOHTO_ROUTE_29_LOCAL_ID', '27', '1', 'D_DOWN'),
         ('JOHTO_ROUTE_43_LOCAL_ID', '17', '35', 'D_DOWN'),
     ],
@@ -375,6 +378,11 @@ def _simulate_text(runtime: str) -> dict:
     route46_lane_change_not_collision_exit = (
         _matches(after, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_RIGHT', 8, 33, result=True) == 3 and
         _matches(after, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_LEFT', 7, 33, result=True) == 3)
+    route46_cave_door = (
+        _matches(before, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_UP', 14, 6) == 1 and
+        _matches(after, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_UP', 14, 5, result=True) == 2 and
+        any(row == ('JOHTO_ROUTE_46_LOCAL_ID','14','5','D_DOWN') for row in arrival) and
+        _matches(after, 'JOHTO_ROUTE_46_LOCAL_ID', 'PLAYER_DIR_DOWN', 14, 5, result=True) == 0)
     route29_door_entry_step_on = (
         _matches(before, 'JOHTO_ROUTE_29_LOCAL_ID', 'PLAYER_DIR_UP', 27, 2) == 1 and
         _matches(after, 'JOHTO_ROUTE_29_LOCAL_ID', 'PLAYER_DIR_UP', 27, 1, result=True) == 2 and
@@ -389,6 +397,7 @@ def _simulate_text(runtime: str) -> dict:
         'id66_lane_change_not_collision_exit': lane_change_not_collision_exit,
         'route46_carpet_lane_change_not_collision_exit': route46_lane_change_not_collision_exit,
         'route29_door_entry_step_on': route29_door_entry_step_on,
+        'route46_cave_door': route46_cave_door,
         'town_arrival_step': arrival_step, 'gate_carpet_no_autostep': no_carpet_autostep,
         'closed_edge_dimensions': edge_ok, 'closed_edge_cases': edge_cases,
     }

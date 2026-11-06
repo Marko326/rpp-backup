@@ -23,6 +23,7 @@ REQUIRED_FILES = (
     "data/johto_indoor_house.asm", "engine/johto_shared_pokecenter.asm", "engine/johto_pilot_warp_tiles.asm", "data/mapObjects/ViridianPokecenter.asm", "maps/johto_pilot/CherrygrovePokecenter1F.runtime.blk", "engine/overworld/healing_machine.asm", "engine/overworld/pokecenter.asm", "engine/johto_gold_healing_machine_337.asm", "gfx/johto_gold_heal_machine.png",
     "gfx/tilesets/johto_shared_pokecenter.png", "gfx/blocksets/johto_shared_pokecenter.bst", "gfx/tilesets/pokecenter.tilecoll",
     "color/tilesets/johto_shared_pokecenter.asm", "color/sprites.asm", "constants/tilesets.asm", "engine/overworld/set_blackout_map.asm", "wram.asm",  "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm", "engine/johto_land_collision_gateway_272.asm",
+    "home/rom0_relief_349.asm", "data/johto_burned_tower/REF347_1f_runtime.asm", "data/johto_burned_tower/REF348_b1f_runtime.asm",
     "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
     "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
     "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/overworld/tileset_header.asm", "color/loadpalettes.asm", "engine/fly_town_map_helpers.asm",
@@ -140,7 +141,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 57",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 63",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -148,7 +149,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 57",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 63",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -268,7 +269,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 57", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 63", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

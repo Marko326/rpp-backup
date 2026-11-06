@@ -75,7 +75,7 @@ def audit(root:Path,gold_root:Path|None=None,changes:dict|None=None)->dict:
                 'gfx/tilesets/johto_park.png','gfx/tilesets/johto_park_gate.png',
                 'gfx/blocksets/johto_park.bst','gfx/blocksets/johto_park_gate.bst')))
         ck('new_warp_pointer_table_in_bounds', 'dw JohtoParkWarpTileIDs' in ptrs and
-            'dw JohtoParkGateWarpTileIDs' in ptrs and 'dw JohtoPokecenterWarpTileIDs' in ptrs and '(JOHTO_POKECENTER + 1) * 2' in ptrs)
+            'dw JohtoParkGateWarpTileIDs' in ptrs and 'dw JohtoPokecenterWarpTileIDs' in ptrs and '(JOHTO_DARK_CAVE + 1) * 2' in ptrs and 'dw JohtoBurnedTowerB1FWarpTileIDs' in ptrs and 'dw JohtoDarkCaveWarpTileIDs' in ptrs)
         ck('park_and_gate_bank50_mounted', 'SECTION "Johto Park Runtime 286", ROMX, BANK[$50]' in main
            and 'INCLUDE "data/johto_park_runtime_286.asm"' in main)
         ck('new_headers_in_final_active_slots', all(x in headers for x in (

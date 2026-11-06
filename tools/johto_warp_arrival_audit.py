@@ -114,9 +114,9 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
            len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 13 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 134 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 160 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 13 gates and 134 activated Warp arcs incl. 30 center arcs')
+           'MUS contract records 3 house arcs, 13 gates and 160 activated Warp arcs incl. 30 center arcs, cave and tower floors')
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "
@@ -489,6 +489,46 @@ def audit(project: Path, gold: Path) -> dict:
             ('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID',0,'JOHTO_BLACKTHORN_CITY_LOCAL_ID'),
             ('JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID',1,'JOHTO_BLACKTHORN_CITY_LOCAL_ID'),
         ))
+    # REF-341..348: reviewed append-only dungeon floors and Burned Tower.
+    # Frozen literal table: never derive expected routes from the runtime under test.
+    expected_routes.extend(('MAP_REGION_JOHTO', source, str(ordinal),
+                            'MAP_REGION_JOHTO', target)
+        for source, ordinal, target in (
+            ('JOHTO_UNION_CAVE_1F_LOCAL_ID', 2, 'JOHTO_UNION_CAVE_B1F_LOCAL_ID'),
+            ('JOHTO_UNION_CAVE_1F_LOCAL_ID', 3, 'JOHTO_UNION_CAVE_B1F_LOCAL_ID'),
+            ('JOHTO_UNION_CAVE_B1F_LOCAL_ID', 2, 'JOHTO_UNION_CAVE_1F_LOCAL_ID'),
+            ('JOHTO_UNION_CAVE_B1F_LOCAL_ID', 3, 'JOHTO_UNION_CAVE_1F_LOCAL_ID'),
+            ('JOHTO_UNION_CAVE_B1F_LOCAL_ID', 4, 'JOHTO_UNION_CAVE_B2F_LOCAL_ID'),
+            ('JOHTO_UNION_CAVE_B2F_LOCAL_ID', 0, 'JOHTO_UNION_CAVE_B1F_LOCAL_ID'),
+            ('JOHTO_AZALEA_TOWN_LOCAL_ID', 3, 'JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID'),
+            ('JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID', 0, 'JOHTO_AZALEA_TOWN_LOCAL_ID'),
+            ('JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID', 1, 'JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID'),
+            ('JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID', 0, 'JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID'),
+            ('JOHTO_ECRUTEAK_CITY_LOCAL_ID', 5, 'JOHTO_BURNED_TOWER_1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 0, 'JOHTO_ECRUTEAK_CITY_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 1, 'JOHTO_ECRUTEAK_CITY_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 2, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 3, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 4, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 5, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 6, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 7, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 8, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 9, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 10, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 11, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 12, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_1F_LOCAL_ID', 13, 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID'),
+            ('JOHTO_BURNED_TOWER_B1F_LOCAL_ID', 5, 'JOHTO_BURNED_TOWER_1F_LOCAL_ID'),
+        ))
+    # REF-349 stage3: Route31 and Route46 external doors are live, Blackthorn stays sealed.
+    # Preserve all earlier routes as an exact multiset; no wildcard additions.
+    expected_routes.extend((
+        ('MAP_REGION_JOHTO', 'JOHTO_ROUTE_31_LOCAL_ID', '2', 'MAP_REGION_JOHTO', 'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID'),
+        ('MAP_REGION_JOHTO', 'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID', '0', 'MAP_REGION_JOHTO', 'JOHTO_ROUTE_31_LOCAL_ID'),
+        ('MAP_REGION_JOHTO', 'JOHTO_ROUTE_46_LOCAL_ID', '2', 'MAP_REGION_JOHTO', 'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID'),
+        ('MAP_REGION_JOHTO', 'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID', '2', 'MAP_REGION_JOHTO', 'JOHTO_ROUTE_46_LOCAL_ID'),
+    ))
     try:
         from collections import Counter
         rows = _route_rows(runtime)

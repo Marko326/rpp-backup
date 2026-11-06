@@ -29,6 +29,14 @@ LEDGE_TABLES = {
     'Route31': ('JOHTO_ROUTE_31_LOCAL_ID', 'JohtoPilotRoute31LedgeTiles'),
     'Route32': ('JOHTO_ROUTE_32_LOCAL_ID', 'JohtoPilotRoute31LedgeTiles'),
 }
+DUNGEON_LEDGE_TABLES = {
+    'UnionCaveB1F': ('JOHTO_UNION_CAVE', 'JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+                    '.unionCaveB1F', 'JohtoUnionCaveB1FGoldHops'),
+    'BurnedTowerB1F': ('JOHTO_BURNED_TOWER_B1F', 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID',
+                      '.burnedTowerB1F', 'JohtoBurnedTowerB1FGoldHops'),
+    'DarkCaveVioletEntrance': ('JOHTO_DARK_CAVE', 'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID',
+                               '.darkCave', 'JohtoDarkCaveGoldHops'),
+}
 LEDGE_COORDINATE_TABLES = {
     'RuinsOfAlphOutside': ('JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JohtoAlphSouthHops',
                            '.ruinsHopTable', '.ruinsCoordinateHopLookup'),
@@ -120,6 +128,12 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
         if not re.search(rf'(?m)^\s*ld hl, {re.escape(table)}\s*\n\s*jp \.ruinsCoordinateHopLookup', body):
             return None
         return table
+    if map_name in DUNGEON_LEDGE_TABLES:
+        tileset, symbol, label, table = DUNGEON_LEDGE_TABLES[map_name]
+        head = source.split('HandleLedges:', 1)[1].split('\n.route33Modern\n', 1)[0]
+        dispatch = (re.search(rf'(?m)^\s*cp {re.escape(tileset)}\s*\n\s*jp z, {re.escape(label)}\s*$', head)
+                    and re.search(rf'(?ms)^{re.escape(label)}\s*$\n(?:(?!^\.).*\n)*?\s*cp {re.escape(symbol)}\s*\n\s*ret nz\s*\n\s*ld hl, {re.escape(table)}\s*\n\s*jp \.ruinsCoordinateHopLookup', head))
+        return table if dispatch else None
     if map_name in LEDGE_COORDINATE_TABLES:
         symbol, table, dispatch_label, lookup_label = LEDGE_COORDINATE_TABLES[map_name]
         body = source.split('HandleLedges:', 1)[1]
@@ -161,6 +175,9 @@ def _ledge_table_for_map(source: str, map_name: str) -> str | None:
 def _landing_guard_has_route_table(source: str, map_name: str) -> bool:
     """Confirm the shared post-hop overrun guard dispatches the exact Gold table."""
     expected = {
+        'UnionCaveB1F': ('JOHTO_UNION_CAVE_B1F_LOCAL_ID', '.unionCaveB1F', 'JohtoUnionCaveB1FGoldHops'),
+        'BurnedTowerB1F': ('JOHTO_BURNED_TOWER_B1F_LOCAL_ID', '.burnedTowerB1F', 'JohtoBurnedTowerB1FGoldHops'),
+        'DarkCaveVioletEntrance': ('JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID', '.darkCave', 'JohtoDarkCaveGoldHops'),
         'Route45': ('JOHTO_ROUTE_45_LOCAL_ID', '.route45', 'JohtoRoute45GoldHops'),
         'Route46': ('JOHTO_ROUTE_46_LOCAL_ID', '.route46', 'JohtoRoute46GoldHops'),
     }.get(map_name)
@@ -334,6 +351,12 @@ def audit(root: Path, gold_root: Path) -> dict:
             and 'JohtoEastGoldWaterProbe' in surf_runtime
             and grid.is_file() and grid.read_bytes().count(2) == water_count):
             surf_maps[map_name] = {'gold_map': map_name, 'dispatch': 'JohtoEastGoldWaterProbe'}
+    # REF-349: register dedicated cave Surf only after a strict Gold role-grid
+    # and executable A/item, movement/shore, and exit/ledge audit passes.
+    if any(r['map']=='DarkCaveVioletEntrance' for r in active):
+        from johto_dark_cave_stage2_audit import check as check_dark_cave
+        if not check_dark_cave(root):
+            surf_maps['DarkCaveVioletEntrance'] = {'gold_map':'DarkCaveVioletEntrance', 'dispatch':'JohtoDarkCaveSurfDecision'}
     cut_records, cut_errors = _cut_records(root, active)
     ledges = (root / 'engine/overworld/ledges.asm').read_text(encoding='utf8')
     rows = []
@@ -380,7 +403,18 @@ def audit(root: Path, gold_root: Path) -> dict:
                 else:
                     ledge_status = 'MISMATCHED_GOLD_HOPS'
                     errors.append('IlexForest: expected exactly ten Gold-directed hops')
-            elif name in LEDGE_COORDINATE_TABLES:
+            elif name == 'DarkCaveVioletEntrance':
+                # Runtime takeoff is adjacent to the Gold HOP cell. The
+                # dedicated stage2 audit derives and verifies all 26 takeoffs,
+                # the executable map dispatch and shared landing guard.
+                from johto_dark_cave_stage2_audit import check as check_dark_cave
+                issues=check_dark_cave(root)
+                if issues:
+                    ledge_status='MISMATCHED_GOLD_HOPS'
+                    errors.extend(f'{name}: '+msg for msg in issues)
+                else:
+                    ledge_status='REGISTERED'
+            elif name in LEDGE_COORDINATE_TABLES or name in DUNGEON_LEDGE_TABLES:
                 actual = _coordinate_hop_entries(ledges, ledge_table)
                 expected = _gold_safe_hop_directions(cells)
                 landing_guard_ok = _landing_guard_has_route_table(ledges, name)
@@ -401,7 +435,7 @@ def audit(root: Path, gold_root: Path) -> dict:
             'cut_trees': len(trees), 'cut': cut_status,
             'hop_cells': len(hops), 'ledge': ledge_status, 'ledge_table': ledge_table,
             **({'safe_hop_directions': len(_gold_safe_hop_directions(cells))}
-               if name in LEDGE_COORDINATE_TABLES and hops else {}),
+               if name in LEDGE_COORDINATE_TABLES or name in DUNGEON_LEDGE_TABLES and hops else {}),
         })
     totals = {
         'active_maps': len(active),

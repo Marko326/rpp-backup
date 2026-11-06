@@ -36,7 +36,7 @@ def audit(root: Path) -> dict:
         routing=runtime.split('JohtoRegisteredWarpRoutes::',1)[1].split('JohtoRegisteredWarpRoutesEnd::',1)[0]
         predicate=runtime.split('JohtoPilotGateDoorWarpMatched::',1)[1].split('JohtoPilotGateCollisionExitAllowed::',1)[0]
         land=land.split('JohtoOverworldSouthLandDecision::',1)[1].split('\n.southMaps\n',1)[0]
-        verify('stable_slot_47', 'NUM_JOHTO_ACTIVE_MAPS EQU 57' in code('constants/region_map_constants.asm') and
+        verify('stable_slot_47', 'NUM_JOHTO_ACTIVE_MAPS EQU 64' in code('constants/region_map_constants.asm') and
                bool(re.search(r'\b47\s*,\s*JOHTO_INVALID_ACTIVE_SLOT\s*,\s*5\s*,',slots)) and
                'dw JohtoSharedPokecenterRuntimeHeader' in header and
                'db BANK(JohtoSharedPokecenterRuntimeHeader)' in header)

@@ -24,6 +24,7 @@ class VerticalGateRuntime314(unittest.TestCase):
         self.assertTrue(result['id66_lane_change_not_collision_exit'])
         self.assertTrue(result['route46_carpet_lane_change_not_collision_exit'])
         self.assertTrue(result['route29_door_entry_step_on'])
+        self.assertTrue(result['route46_cave_door'])
 
     def test_closed_edges_are_fail_closed_but_interior_and_town_are_not(self):
         result = simulate(ROOT)

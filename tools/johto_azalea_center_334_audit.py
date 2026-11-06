@@ -59,7 +59,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         runtime_blk = read('maps/johto_pilot/AzaleaPokecenter1F.runtime.blk', True)
         reference = read('maps/johto_pilot/CherrygrovePokecenter1F.gold.blk', True)
         check('append_only_slot_and_identity',
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 60' in count and
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 64' in count and
               'ASSERT JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID == 135' in room and
               bool(re.search(r'(?m)^\s*db\s+[^\n]*\b49\b[^\n]*; \$80-\$8f', read('data/johto_stable_id_slots.asm'))) and
               'dw JohtoAzaleaPokecenterRuntimeHeader' in headers and
@@ -88,7 +88,7 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
             'db MAP_REGION_JOHTO, '+CENTER+', 1, MAP_REGION_JOHTO, '+TOWN,
         ]
         check('registered_113_exact_bidirectional_center_routes',
-              len(rows) == 142 and all(rows.count(x)==1 for x in target) and
+              len(rows) == 164 and all(rows.count(x)==1 for x in target) and
               'db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID' in routes and
               'db MAP_REGION_JOHTO, JOHTO_AZALEA_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ILEX_AZALEA_GATE_LOCAL_ID' in routes)
         fence = geo.split('JohtoSouthMatureDoorFence::',1)[1].split('JohtoSouthAzaleaTownRoles::',1)[0]

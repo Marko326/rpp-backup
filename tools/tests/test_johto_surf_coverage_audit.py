@@ -31,7 +31,7 @@ class CoverageTests(unittest.TestCase):
             (160, 'EcruteakPokecenter1F'), (30, 'OlivinePokecenter1F'),
             (42, 'CianwoodPokecenter1F'), (77, 'MahoganyPokecenter1F'),
             (85, 'BlackthornPokecenter1F'), (114, 'UnionCaveB1F'),
-            (115, 'UnionCaveB2F'), (184, 'SlowpokeWellB1F')])
+            (115, 'UnionCaveB2F'), (184, 'SlowpokeWellB1F'), (185, 'SlowpokeWellB2F'), (177, 'BurnedTower1F'), (178, 'BurnedTowerB1F')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -46,8 +46,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 60', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 60',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 63', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 63',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)

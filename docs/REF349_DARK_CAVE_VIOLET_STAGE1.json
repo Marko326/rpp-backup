@@ -1,0 +1,79 @@
+{
+  "schema": "ref349-dark-cave-violet-staging-v1",
+  "stage": "VIOLET_ROUTE31_ACTIVE",
+  "gold_map": "DarkCaveVioletEntrance",
+  "stable_local_id": 190,
+  "gold_map_size_blocks": [
+    20,
+    18
+  ],
+  "gold_map_size_cells": [
+    40,
+    36
+  ],
+  "tileset": "TILESET_DARK_CAVE",
+  "tileset_image_gold": "dark_cave.png",
+  "metatile_alias": "cave_metatiles.bin",
+  "collision_alias": "cave_collision.asm",
+  "palette": "PALETTE_DARK",
+  "border_block": 9,
+  "flash_required": true,
+  "gold_warps": [
+    {
+      "ordinal": 0,
+      "x": 3,
+      "y": 15,
+      "destination": "ROUTE_31",
+      "destination_warp": 3,
+      "role": "WARP_CARPET_DOWN",
+      "activation": "DOWN"
+    },
+    {
+      "ordinal": 1,
+      "x": 17,
+      "y": 1,
+      "destination": "DARK_CAVE_BLACKTHORN_ENTRANCE",
+      "destination_warp": 2,
+      "role": "CAVE",
+      "activation": "STEP_IN",
+      "status": "INACTIVE"
+    },
+    {
+      "ordinal": 2,
+      "x": 35,
+      "y": 33,
+      "destination": "ROUTE_46",
+      "destination_warp": 3,
+      "role": "WARP_CARPET_DOWN",
+      "activation": "DOWN",
+      "status": "INACTIVE"
+    }
+  ],
+  "collision_roles": {
+    "CAVE": 1,
+    "FLOOR": 1002,
+    "HOP_DOWN": 12,
+    "HOP_LEFT": 14,
+    "UP_WALL": 41,
+    "WALL": 296,
+    "WARP_CARPET_DOWN": 10,
+    "WATER": 64
+  },
+  "source_sha256": {
+    "maps/johto_pilot/DarkCaveVioletEntrance.gold.blk": "6696798d616d5c009750a66c6c1f78807c88d2d397d3a4783b15fe7423ec7990",
+    "gfx/tilesets/johto_dark_cave_violet_gold.png": "6142f249ac58edcbe5e334af84444e8b0ac527c787da2a197a0bf283183b20cb",
+    "gfx/blocksets/johto_dark_cave_violet_gold.bst": "170c22e8ce99451de10475d4bd284d3c0a01a8d53eb220baacefc013144e0e34",
+    "data/johto_dark_cave_stage/DarkCaveVioletEntrance.events.gold.asm": "0c46c0691476b0a8e85f3c516e4ac3ce6b94fb148e3e010f320475279e078ab9",
+    "data/johto_dark_cave_stage/cave_collision.gold.asm": "4b787e0aa456baf4c6dd6f17e4fbe0f4aaf25cf1991c16e33c9bdd96b9cc0061",
+    "data/johto_dark_cave_stage/cave_palette_map.gold.asm": "e4ad85344f948e2747aec13d802ac638e55ed4c85e2a639378ae2baf95a7fbb5"
+  },
+  "gate": {
+    "main_include": true,
+    "active_map_header": true,
+    "route31_entry": true,
+    "registered_warp": true,
+    "flash_runtime": true,
+    "surf_runtime": true,
+    "directional_hop_runtime": true
+  }
+}

@@ -1,3 +1,57 @@
+## CLEAN REF-349｜版本修订后的正式清理三件套（取代下方上一轮清理说明）
+- 本轮在已上传的 `REF-348.patch` Worktree基础上重做：游戏内 `data/game_version.asm` 等长升级 `REF-348@` → `REF-349@`；除此之外不改变运行功能、地图或ROM布局。正式 HEAD 仍是 `3a53f2d3`，64张地图/164 Warp不变。
+- 版本检查工具与相关旧测试夹具同步升级到 `REF-349@`；对应测试运行详情及剩余失败只写在 `docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md`，**两份 Git 提交日志只列代码、资源、工具及文档的修改内容，不写测试数字或验收结论**。
+- 01用户原始 Worktree→新版清理；02新版清理→仅功能（含版本号）的隔离；03干净HEAD→新版清理全量。01与03互斥。先暂用02提交功能，之后 `git apply -R 02` 恢复工具/文档提交第二笔。不得将旧版三件套叠加到新版。AI不编ROM、不Commit/Push。
+- 用户新 MAP 仍是升级前的 REF-348 Red/Blue，ROM0 386B、Bank1 4B、Bank4 23B只是历史预算参考；REF-349 Red/Blue/TEST MAP 和设备最终验收待用户新构建。
+
+## CLEAN REF-349｜Dark Cave 正式清理三件套（2026-11-06，准备双提交）
+- **真实前置**：用户 `REF-348.patch` 为当前 Worktree，分支 `常规功能备份`、已提交 HEAD 仍为 `3a53f2d3a38e9b0c1ae89d5f4f722a00369d0ad4`；不能用任何 REF-348/349 中间开发补丁当成新 HEAD。经 `REF-348(2).zip` 原工作区补丁反向重建确认，同一干净 HEAD 能正向应用用户最新补丁。
+- **源码冻结**：本轮不修改游戏ASM/资源、版本 `REF-348`，64图/164Warp，ID190的31/46号道路双出口、Surf/26 HOP/Flash/Gold颜色/骑车均按用户当前源码保留。用户明确确认Surf与跳崖正常，不等于46号道路、自行车及所有旧档回归完整实测。
+- **最新空间**：用户 `MAP_20261106_192350.zip` 仅Red/Blue同版 `REF-348` MAP，ROM0各386B（≥64B）、ROMX Bank`$01`各4B、Bank`$04`各23B、`$2A`各15,001B。TEST MAP、ROM二进制与设备全场景验收仍缺，禁止声明三版通过。
+- **模式A两笔**：01 已应用用户工作区→清理的工具/文档增量；02 完整最终→暂时仅功能的隔离补丁；03 干净 HEAD→清理累计全量。01/03互斥；先在最终状态打02并提交功能，再 `git apply -R 02` 恢复工具/文档提交第二笔。ZIP同时附中文 `commit-message.txt`、`commit-message-tool.txt`。AI不自行编ROM、不Git Commit/Push。完整界限见 `docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md`。
+
+## REF-349｜Dark Cave 新地点通用功能审查：Gold 骑车（开发候选）
+- 当前基线：用户已确认跳崖/冲浪正常，最新 Route46 双向出口开发补丁已交付；正式 Git HEAD 无新证据，仍为 `3a53f2d3`。本次在双出口工作区之后增加**一项独立的骑车修正**，不更改活动64地图、164 Warp、显示版本 REF-348。
+- Gold `data/maps/maps.asm:148` 指定 `DarkCaveVioletEntrance` 的环境是 `CAVE`；Gold `engine/events/overworld.asm:BikeFunction.CheckEnvironment` 允许 `CAVE`，但上车时要求脚下为 `FLOOR_TILE`。Gold `FLOOR` ($00) 与 `WARP_CARPET_DOWN` ($70) 均属于 FLOOR 权限；`WATER/WALL/HOP/UP_WALL/CAVE` 不是。
+- RPP 特有的 `JOHTO_DARK_CAVE` 保持 `INDOOR` 图块动画标志防止洞内图像被通用 CAVE 动画写坏，但只对**现役稳定 ID190** 在 `IsBikeRidingAllowed` 里开放骑车：从步行上车时调用 Gold 40x36 角色表检查当前地面（0/6）；已在骑车状态跨图抵达时允许继续骑，符合 Gold 保留 CAVE 骑车状态的行为。未激活 ID99、其他室内、门房、关都规则及通用 BikeRidingTilesets 白名单不变；同一调用点覆盖背包自行车、SELECT 和骑车精灵重载。全程不改 Surf 状态与 Hop 规则。
+- **常规功能对照**：31/46双向出口、暗场/Flash、Surf及合法上岸、26处定向HOP、地名和音乐已经有运行接线；Fly/Teleport在本洞不可用，Gold不要求 Cut/Strength；4块可碎岩、3个道具球、隐藏 Elixer 仍属R3；野生遭遇/FISHGROUP_LAKE 及后续事件属R4，不因R2地图通行自动开放；Gold `TilesetDarkCaveAnim` 仍待独立移植。
+- **明确阻断**：Gold 的 Dig/Escape Rope 可从 CAVE 返回入口，但当前 RPP `CanUseEscapeRope` 白名单不含该洞，旧 `SpecialWarpIn` 的 bit6 走上次治愈中心（黑屏／Fly 表），不具备按31/46入口来源安全返回的城都实现。禁止仅追加 `EscapeRopeTilesets` 后宣布开放；未来需独立设计路线来源、两洞口回程、旧档及实机验收。
+- 开发期按 `docs/JOHTO_CONTENT_BACKLOG.md` 第5节逐项检查：地图/资源/音乐/骑车/场地技能、完整负向审计、ROM0≥64B，Red/Blue/TEST 新链接 MAP、My OldBoy 从两入口骑车、禁骑格、SELECT、Flash、Surf、跳崖、Save/Continue 及旧档仍须用户验证。AI不编ROM、不Commit/Push；交付为一个ZIP内两份互斥的增量与HEAD累计正向补丁。
+
+## REF-349｜Dark Cave 第二个室外出口（Route46，开发候选）
+- 用户实机确认上一轮 Surf 与跳崖已正常；本轮只接通 Gold 第二个室外出口，保留此前动作与视觉代码。
+- Gold 洞穴 Warp ordinal0 Route31、ordinal1 Blackthorn 独立洞穴、ordinal2 Route46；本轮仅开放0和2，保留ordinal1不可达占位，不压缩序号。
+- Route46 Gold 入口 `(14,5)`，从 `(14,6)` 面向 UP 触发；洞穴 `(35,33)` 是 DOWN carpet。返回46号道路 `(14,5)` 后自动 DOWN 一步；31号道路不变。
+- 活动仍64地图，登记Warp从162增至164；Blackthorn房间、NPC、道具、遭遇未接通。需本机Red/Blue/TEST编译/MAP与ROM0/ROMX、My OldBoy双向往返及旧存档验收。AI不代编ROM、不Commit/Push；只交开发期互斥增量/累计补丁。
+
+## REF-349｜Dark Cave Gold 跳崖实机修复（2026-11-06，验收前）
+- 前置：最新 `REF349_DARK_CAVE_SURF_HOP_GOLD_HOTFIX_DEV.zip` 修复候选（已含冲浪及前两轮视觉修复），正式 Git HEAD 仍为 `3a53f2d3`，不能把工作区候选当成已提交 HEAD。
+- **本次根因**：`CollisionCheckOnLand` 先调用 `JohtoPilotIsClosedOutdoorEdge`，旧 Dark Cave 分派直接借用 `JohtoDarkCaveLandDecision`，在角色站在 Gold HOP 地格、面前为 WALL 时提前阻挡，后面的 `HandleLedges` 根本没有机会触发。烧焦塔/联合洞穴的前置检查只做边界，因此行为不同。
+- **修复**：Dark Cave 前置守卫只阻止 40×36 地图四边越界；内部 HOP/WALL/UP_WALL/WATER 统一继续由 `JohtoOverworldSouthLandDecision` 先 `HandleLedges` 再执行 Gold 角色碰撞。26个 Gold HOP 源坐标、两步执行、冲浪、Flash、调色、出洞迈步和其他地图运行代码均不变。
+- **交付**：开发阶段单 ZIP 中两份互斥正向补丁：01 上一轮 Surf/HOP 修复候选→本轮修复，02 正式 HEAD `3a53f2d3`→累计本轮。不能叠加；不编 ROM、不 Commit/Push、不做清理三件套。专项测试/静态审计无法代替用户 Red/Blue/TEST 编译 MAP 与设备实测，需检验 ROM0≥64B、ROMX `$41` 余量、26处跳崖与水边上岸。
+
+## REF-349｜Surf／跳崖 Gold 运行行为修复（2026-11-06，设备验收前）
+- 新输入为上一轮 `REF349_DARK_CAVE_VIDEO_FLASH_HOTFIX_DEV.zip` 的最终候选，正式 Git HEAD 仍为 `3a53f2d3`。修改了 Dark Cave 冲浪状态保留（含队伍摘要 LCD-off）、Surfboard 定向上岸、Fog/Soul 临时徽章兼容，以及26个 Gold HOP 原格起跳与落点合同；其余地图/Warp/黑暗视觉不变，游戏显示 REF-348。
+- 当前开发期只交一个ZIP内**两份互斥正向补丁**：01 上轮视频热修候选→本轮候选，02 正式 HEAD `3a53f2d3`→本轮累计。二选一，不叠加；不编 ROM、不Commit/Push、不提前做正式清理三件套。
+- 旧 MAP 和源级回归不构成本轮编译和手机验收；特别关注 ROM0≥64B、Bank `$04` 几字节余量、坐骑精灵、上下岸、26个跳崖、旧档与关都回归。详见 `docs/REF349_DARK_CAVE_VIOLET_STAGE2.md` 顶部。
+
+## REF-349｜用户 Gold/RPP 视频二次视觉修复（2026-11-06，开发候选）
+- 输入基线：`REF-348(2).zip` 当前 Worktree + `REF349_DARK_CAVE_VIOLET_HOTFIX_DEV.zip` 前一轮修复候选；正式 HEAD 仍以用户最新 RPP 导出 `3a53f2d3a38e9b0c1ae89d5f4f722a00369d0ad4` 为准，未获更新 Git 提交证据。
+- 只改变 Dark Cave 的暗背景/玩家可见性和进出洞调色时序。Gold 进洞的白色淡出是正确效果，RPP 的全亮紫洞暴露是错误；保留已修复的31号道路自动DOWN一步、Flash/Surf和未开放出口。
+- 开发期只交 ZIP 内两份互斥正向补丁：01 从上一轮 `REF349_DARK_CAVE_VIOLET_HOTFIX_DEV` 结果到新候选，02 从确认 HEAD 到相同最终状态。二选一，不能叠加。暂不提交清理三件套或日志。
+- HOME 新增约21B属未编译估算；旧附 MAP 余420B 不代表本轮新 MAP。Red/Blue/TEST构建空间与实机白色淡出、主角可见、出洞不紫闪均待用户验证，助手不编 ROM、不Commit/Push；详见 `docs/REF349_DARK_CAVE_VIOLET_STAGE2.md`。
+
+## REF-349｜Dark Cave 桔梗侧资源第一批（2026-11-06）
+- 当前前置：用户已应用 REF-348 主审计修复。只新增未激活的 Gold 候选资源/离线审计和文档；63图/160Warp/版本REF-348、运行ASM和ROM0均不动。
+- 第一批禁止开放Route31、Route46和烟墨侧洞口；必须先完成 Flash-aware `PALETTE_DARK`、Surf 与方向墙/跳崖专项机制及审计。Gold DARK 不能替换成固定 NITE。
+- 开发期01/02为**两条互斥的正向补丁**：01针对已经安装主审计修复的工程，02针对已提交 REF-348 的既有源码快照且包含主审计修复；不可叠加。提交后的正式 Git HEAD 未获上传确认，02不能声称以某具体 HEAD 为基线。
+- 本轮不构建 ROM、不 Commit/Push。见 `docs/REF349_DARK_CAVE_VIOLET_STAGE1.md`。
+
+## REF-348 静态主审计适配（2026-11-06）
+- 上一轮REF-348用户已自行提交；本轮只更改工具、回归测试、文档。游戏ASM、版本、地图与ROM0布局不变。
+- 63图／160 Warp最新合同、Gold参考及烧焦塔专项纳入统一主审计；**1709检查全过**。全量Python回归仍27项历史失败，不能写成全量全绿；TEST和本轮构建无新证据。
+- 交付增量应以已清理 REF-348 源码为基础，不再叠加之前 CLEAN三件套；助手不执行ROM构建、Git Commit/Push。
+
 ## CLEAN REF-348 ROM0｜最新清理状态（2026-11-06，适用于当前工作区）
 - 最新输入 `REF-348(1).zip` 是包含未提交修改的真实 Worktree；分支 `常规功能备份`、正式 HEAD `239ff32653c9087da8786532e36c189366ff209e`。仅以此 HEAD 制作累计补丁，不能回退到旧 REF-344 或 REF-337 基线。
 - 当前版本 `REF-348` 不变。本次游戏 ASM 不再改动；源功能包括跳崖/阴影保护，以及 REF-349 五组 ROM0 和 REF-350 精灵复位迁移。用户反馈这些路径的指定手机实测通过。

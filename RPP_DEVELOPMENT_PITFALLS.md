@@ -1,3 +1,34 @@
+## CLEAN REF-349｜版本号收口注意事项（2026-11-06）
+- 游戏显示短标签仅在 `data/game_version.asm:GameVersionText` 中统一更新为 `REF-349@`；Red/Blue/TEST共享，不恢复独立 TEST-NNN；短标签等长，不能因此冒称新ROM链接和Bank空间已经验证。
+- 版号修订时必须同步修正仍在执行的Pokémon Center、Burned Tower版本审计及历史测试夹具；历史阶段标题可以保留，但不能拿旧 `REF-348@` 断言作为当前游戏版本合同。
+- 正式清理双提交中版号归第一笔功能提交；两份提交日志只列真实修改。所有静态审计、pytest、MAP和设备剩余项统一写到 `docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md`。
+
+## CLEAN REF-349｜新地图收尾与旧阶段审计合同（2026-11-06）
+- 使用用户最新 `REF-348.patch` 重建准确 Worktree（BASE `3a53f2d3`），不再以窗口开发包作为已经提交的源码。64图/164条 Warp；原中心阶段的四个独立审计仍锁定总数162，会令Gold主审计出现1711/1715的假性失败。本轮仅将总量断言升到164，保留原中心具体Warp、护士与旧门房检查，并增加删除Route46一条路由必失败的负向测试；不得直接删除旧审计来换全绿。
+- 用户上传的同版 Red/Blue MAP：ROM0均386B、Bank`$01`各4B、Bank`$04`各23B、Bank`$2A`各15,001B；这不是TEST构建/手机全覆盖证据。用户Surf和HOP已明确复测正常；Route46往返、自行车SELECT与禁骑格、Dig/Escape Rope安全回程以及R3/R4的Gold物件/遭遇仍单独跟踪。
+- 三件套按模式A功能一笔、工具文档一笔，清理只动工具/文档，不把未提交代码当HEAD，不代编ROM/Commit/Push，详见 `docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md`。
+
+## REF-349｜Dark Cave 新地点通用功能审查：Gold 骑车（开发候选）
+- 当前基线：用户已确认跳崖/冲浪正常，最新 Route46 双向出口开发补丁已交付；正式 Git HEAD 无新证据，仍为 `3a53f2d3`。本次在双出口工作区之后增加**一项独立的骑车修正**，不更改活动64地图、164 Warp、显示版本 REF-348。
+- Gold `data/maps/maps.asm:148` 指定 `DarkCaveVioletEntrance` 的环境是 `CAVE`；Gold `engine/events/overworld.asm:BikeFunction.CheckEnvironment` 允许 `CAVE`，但上车时要求脚下为 `FLOOR_TILE`。Gold `FLOOR` ($00) 与 `WARP_CARPET_DOWN` ($70) 均属于 FLOOR 权限；`WATER/WALL/HOP/UP_WALL/CAVE` 不是。
+- RPP 特有的 `JOHTO_DARK_CAVE` 保持 `INDOOR` 图块动画标志防止洞内图像被通用 CAVE 动画写坏，但只对**现役稳定 ID190** 在 `IsBikeRidingAllowed` 里开放骑车：从步行上车时调用 Gold 40x36 角色表检查当前地面（0/6）；已在骑车状态跨图抵达时允许继续骑，符合 Gold 保留 CAVE 骑车状态的行为。未激活 ID99、其他室内、门房、关都规则及通用 BikeRidingTilesets 白名单不变；同一调用点覆盖背包自行车、SELECT 和骑车精灵重载。全程不改 Surf 状态与 Hop 规则。
+- **常规功能对照**：31/46双向出口、暗场/Flash、Surf及合法上岸、26处定向HOP、地名和音乐已经有运行接线；Fly/Teleport在本洞不可用，Gold不要求 Cut/Strength；4块可碎岩、3个道具球、隐藏 Elixer 仍属R3；野生遭遇/FISHGROUP_LAKE 及后续事件属R4，不因R2地图通行自动开放；Gold `TilesetDarkCaveAnim` 仍待独立移植。
+- **明确阻断**：Gold 的 Dig/Escape Rope 可从 CAVE 返回入口，但当前 RPP `CanUseEscapeRope` 白名单不含该洞，旧 `SpecialWarpIn` 的 bit6 走上次治愈中心（黑屏／Fly 表），不具备按31/46入口来源安全返回的城都实现。禁止仅追加 `EscapeRopeTilesets` 后宣布开放；未来需独立设计路线来源、两洞口回程、旧档及实机验收。
+- 开发期按 `docs/JOHTO_CONTENT_BACKLOG.md` 第5节逐项检查：地图/资源/音乐/骑车/场地技能、完整负向审计、ROM0≥64B，Red/Blue/TEST 新链接 MAP、My OldBoy 从两入口骑车、禁骑格、SELECT、Flash、Surf、跳崖、Save/Continue 及旧档仍须用户验证。AI不编ROM、不Commit/Push；交付为一个ZIP内两份互斥的增量与HEAD累计正向补丁。
+
+## REF-349 Dark Cave Surf/HOP 运行陷阱（2026-11-06）
+- 仅看 Gold role 表正确/静态 pytest 全绿并不足以验收：`HOP_*` 是实际起跳格而不是前一格；RPP 的 `HandleLedges` 一次模拟两步，必须检查 `HOP→WALL→非墙落点`。Surf 从 WATER 上岸到 HOP 是第一步，下一次朝崖移动才跳；严禁把 WATER 注册为起跳点。
+- `hTilesetType=INDOOR` 为避免旧洞穴图块动画，但原 `LoadPlayerSpriteGraphics` 和 `Summary_LoadPlayerSpriteGraphicsLCDOff` 都会撤销室内 Surf。要在两处同时为 Dark Cave 的状态2放行，不把所有室内地图改成 CAVE。
+- `ItemUseSurfboard` 主动上岸走独立旧的 tile 白名单，不能只修方向键 Surf；Dark Cave 的白名单是 `$ff`，须使用空间 `JohtoDarkCaveSurfDecision`。徽章入口至少有按 A 与队伍菜单两条路径；Gold Fog，当前暂兼容旧存档 Soul。
+- 仅靠静态测试不等于 RGBDS bank 容量、Game Boy 运行时序及用户设备验收。Bank `$04` 旧 MAP 空间紧张，任何新增字节必须通过新 MAP 检查。
+
+## REF-349 Dark Cave：源级表一致不代表出口、颜色、Flash、Surf 实机一致
+- Gold Dark Cave 是 `CAVE / PALETTE_DARK`：暗态=Darkness，Flash 后=Night。只把 Dark CAVE 建在新 Tileset 并写 `OUTDOOR_*` DAY 调色会使照亮后的 GBC 颜色不一致。RPP `wMapPalOffset` 通过 `rBGP` 和 `color/vblank.asm` 的转换**同样影响 GBC**，先理解这条路径，再修正基色为洞穴 `CAVE_*`，不能误断「只影响 DMG」。
+- RPP `PlayerStepOutFromDoor` 的门砖通用判定只接受 `$39`，Route31 `(34,5)` 洞口为 `$56`。Warp 表 ID、坐标正确也会在出口原地停住。准确返回坐标指定 `D_DOWN`，洞内方向地毯不能同样自动迈步。
+- Gold 中 `HOP_*`、方向允许的 `UP_WALL` 属可下水上岸的 LAND；仅认可 FLOOR/CARPET 会制造水边空气墙。采用 Gold 角色+面向方向判定，必须有地图稳定 ID 守卫，避免未来同 Tileset 15×18 烟墨洞使用桔梗侧 40×36 表。
+- Bank `$04` 原 MAP 余 11B：切勿在 `StartMenu_Pokemon.flash` 内直接堆积 Zephyr、地图身份、暗态及失败文字；移入浮动 ROMX，仅在原 Caller 保留 `callab` 和状态判定。静态增量预算仅供参考；用户须用 Red/Blue/TEST 新 MAP 证明 Bank 容量。
+- 扩新洞前将相同 Tileset 加入 `DungeonTilesets`，否则相同 Tileset 的注册 Warp 可能跳过目标落点坐标重建。Gold 动画尚需专用移植，不能随便把 INDOOR 改成 CAVERN。
+
 ## 2026-11-06｜REF-350 ROM0 已验收空间与移出 HOME 的限制
 - REF-349 的 5 组 HOME helper 和 REF-350 的 `ResetPlayerSpriteData` 主体已经迁入 ROMX `$2A`；最新用户 Red/Blue MAP 的 ROM0 剩余 421B，项目 ZIP 自带 Red MAP 同为421B；`$2A` 余 15,020B。旧 67B/393B/静态预计421B均是历史阶段证据。
 - Bank `$01` 只有 4B 空间，故保留 `ResetPlayerSpriteData` 的 ROM0 `callab` 小入口和 Bank1 两处原近调用。不要为了腾 HOME 而让 Bank1 调用点改成更长的 far-call。

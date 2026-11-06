@@ -53,14 +53,14 @@ def audit(root:Path,gold_root:Path|None=None,overrides:dict|None=None)->dict:
         down_section=room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         before=routes.split('JohtoBatchCenterDoorBeforeStep336::',1)[1].split('JohtoBatchCenterDoorAfterStep336::',1)[0]
         after=routes.split('JohtoBatchCenterDoorAfterStep336::',1)[1]
-        ck('version_only_REF338', 'db "REF-338@"' in version and 'REF-5.62.338' in version)
+        ck('version_only_REF338', 'db "REF-349@"' in version and 'GameVersionText::' in version)
         ck('stable_id85_appended_slot56_map57',
            f'DEF {CENTER} EQU 85' in fixed and
-           'NUM_JOHTO_ACTIVE_MAPS EQU 57' in constants and
+           'NUM_JOHTO_ACTIVE_MAPS EQU 64' in constants and
            bool(re.search(r'(?m)^\s*db .*\b56\b.*\$50-\$5f',slots)) and
            f'dw JohtoBlackthornPokecenterRuntimeHeader' in descriptors and
            f'db {CENTER}, JOHTO_POKECENTER, 5, 4' in assets and
-           'NUM_JOHTO_ACTIVE_MAPS == 57' in assets)
+           'NUM_JOHTO_ACTIVE_MAPS == 64' in assets)
         ck('gold_5x4_shared_layout_and_adjacent_size_assert',
            len(golden)==len(runtime)==20 and golden==sample and runtime==sample_run and
            bool(re.search(r'(?m)^JohtoBlackthornPokecenterGoldBlocks::\s*INCBIN "maps/johto_pilot/BlackthornPokecenter1F\.gold\.blk"\s*\nASSERT @ - JohtoBlackthornPokecenterGoldBlocks == 5 \* 4$',source)) and
@@ -72,7 +72,7 @@ def audit(root:Path,gold_root:Path|None=None,overrides:dict|None=None)->dict:
                f'db MAP_REGION_JOHTO, {CITY}, 0, MAP_REGION_JOHTO, {CENTER}',
                f'db MAP_REGION_JOHTO, {CENTER}, 0, MAP_REGION_JOHTO, {CITY}',
                f'db MAP_REGION_JOHTO, {CENTER}, 1, MAP_REGION_JOHTO, {CITY}')) and
-           len(re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',routes_section))==134)
+           len(re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',routes_section))==164)
         ck('two_gold_carpet_room_exits_and_nurse_no_upstairs',
            bool(re.search(r'JohtoBlackthornPokecenterRuntimeObjects::\s*db \$0f\s*db 2\s*db 7, 3, 0, JOHTO_REGISTERED_WARP_SELECTOR\s*db 7, 4, 0, JOHTO_REGISTERED_WARP_SELECTOR\s*db 0[^\n]*\s*db 1\s*object SPRITE_NURSE, \$3, \$1, STAY, DOWN, \$1',room)) and
            f'ASSERT {CENTER} == 85' in room)

@@ -353,6 +353,24 @@
       "role": "named",
       "name": "Slowpoke Well",
       "town_map_name": "Slowpoke Well"
+    },
+    {
+      "id": "JOHTO_BURNED_TOWER_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Burned Tower",
+      "town_map_name": "Ecruteak City"
+    },
+    {
+      "id": "JOHTO_BURNED_TOWER_B1F_LOCAL_ID",
+      "role": "named",
+      "name": "Burned Tower",
+      "town_map_name": "Ecruteak City"
+    },
+    {
+      "id": "JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID",
+      "role": "named",
+      "name": "Dark Cave",
+      "town_map_name": "Route 31"
     }
   ]
 }

@@ -48,8 +48,8 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         heal=read('engine/johto_gold_healing_machine_337.asm')
         music=read('engine/menu/options_menu.asm')
         bound=read('data/johto_vertical_gate_runtime_314.asm')
-        ck('new_52_maps_and_119_warps', 'NUM_JOHTO_ACTIVE_MAPS EQU 57' in const and
-           len(re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',r.split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0])) ==134)
+        ck('new_52_maps_and_119_warps', 'NUM_JOHTO_ACTIVE_MAPS EQU 64' in const and
+           len(re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',r.split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0])) ==164)
         ck('independent_stable_ids_slots_and_headers', all(
             f'ASSERT JOHTO_{up}_POKECENTER_1F_LOCAL_ID == {sid}' in room and
             f'dw Johto{nm}PokecenterRuntimeHeader' in header and

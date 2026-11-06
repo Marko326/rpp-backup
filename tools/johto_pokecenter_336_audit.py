@@ -54,9 +54,10 @@ def audit(root):
         t=ptr.split('WarpTileIDPointers:',1)[1].split('WarpTileIDPointersEnd:',1)[0]
         pointers=re.findall(r'(?m)^\s*dw\s+(\w+)',t)
         ck('all_38_warp_tile_pointer_indices',
-           len(pointers)==38 and pointers[6]=='PokecenterWarpTileIDs' and
+           len(pointers)==41 and pointers[6]=='PokecenterWarpTileIDs' and
            pointers[36]=='JohtoParkGateWarpTileIDs' and pointers[37]=='JohtoPokecenterWarpTileIDs' and
-           '(JOHTO_POKECENTER + 1) * 2' in ptr)
+           pointers[38]=='JohtoBurnedTower1FWarpTileIDs' and pointers[39]=='JohtoBurnedTowerB1FWarpTileIDs' and pointers[40]=='JohtoDarkCaveWarpTileIDs' and
+           '(JOHTO_DARK_CAVE + 1) * 2' in ptr)
         ck('gold_exit_not_generic_step_on',
            bool(re.search(r'(?m)^JohtoPokecenterWarpTileIDs:\s*db\s+\$ff\b',ptr)) and
            'JohtoPokecenterWarpTileIDs' not in obj and
@@ -114,8 +115,8 @@ def audit(root):
            bool(re.search(r'cp '+ROOM+r'\s+jr z, \.centerArrival\s+cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID\s+jr z, \.centerArrival\s+cp JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID\s+ret nz',arrival)) and
            bool(re.search(r'\.centerArrival\s+ld hl, wd736\s+res 2, \[hl\]\s+callba IsPlayerStandingOnWarp\s+ret',arrival)) and
            'cp SEAFOAM_ISLANDS_1' in seafoam and 'cp ROUTE_20' in seafoam)
-        ck('same_rom_version_all_builds', 'db "REF-338@"' in version and
-           'Canonical project version REF-5.62.338' in version)
+        ck('same_rom_version_all_builds', 'db "REF-349@"' in version and
+           'GameVersionText::' in version)
     except (IndexError,ValueError,OSError) as exc:
         errors.append('input_error: '+str(exc))
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks':checks,'errors':errors,'rom_built':False,'device_accepted':False}

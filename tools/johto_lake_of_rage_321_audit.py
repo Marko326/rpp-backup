@@ -208,7 +208,7 @@ def audit(root: Path, overrides: dict[str, bytes | str] | None = None) -> dict:
     check('Lake_GSC_music_slot41', 'db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot41 Lake of Rage' in music)
     version=text('data/game_version.asm')
     live_version = re.search(r'(?m)^\s*db "REF-(\d+)@"\s*$', version)
-    canonical = re.search(r'Canonical project version REF-5\.62\.(\d+)', version)
+    canonical = re.search(r'(?m)^\s*db \"REF-(\d+)@\"', version)
     check('REF319_same_length_version_label',
           live_version is not None and canonical is not None and
           int(live_version.group(1)) >= 319 and

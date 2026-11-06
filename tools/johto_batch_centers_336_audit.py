@@ -62,14 +62,16 @@ def audit(root: Path, gold_root: Path|None=None, overrides:dict|None=None)->dict
         guard=room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         writer=heal.split('AnimateHealingMachineRegional337::',1)[1].split('.johto',1)[0]
         ck('current_game_version_REF338_shared_by_all_builds',
-           'Canonical project version REF-5.62.338' in version and 'db "REF-338@"' in version)
+           'GameVersionText::' in version and 'db "REF-349@"' in version)
         ck('frozen_57_maps_and_no_extra_fly_stops',
-           'NUM_JOHTO_ACTIVE_MAPS EQU 57' in constants and
+           'NUM_JOHTO_ACTIVE_MAPS EQU 64' in constants and
            'DEF JOHTO_FLY_TOWN_COUNT EQU 11' in fly and
            'call .isUnlocked\n    jr z, .startRestore' in fly and
            'JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID' not in fly)
         rows=re.findall(r'(?m)^\s*db MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID, \d+, MAP_REGION_JOHTO, JOHTO_\w+_LOCAL_ID',routes)
-        ck('exact_134_registered_warps',len(rows)==134)
+        ck('exact_134_registered_warps',len(rows)==164 and all(any(line.strip()==r for line in rows) for r in (
+            'db MAP_REGION_JOHTO, JOHTO_ECRUTEAK_CITY_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_MAHOGANY_TOWN_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID')))
         ck('identical_gold_5x4_template_and_10_nurses',
            len(rootblk)==len(rootrun)==20 and
            room.count('object SPRITE_NURSE, $3, $1, STAY, DOWN, $1')==10 and
@@ -97,7 +99,7 @@ def audit(root: Path, gold_root: Path|None=None, overrides:dict|None=None)->dict
         # on target warp 0 (left carpet); source ordinals remain Ecruteak=4
         # and Mahogany=1 in the registered route table below.
         ck('ecruteak_entry_targets_left_center_carpet_warp_zero',
-           bool(re.search(r'JohtoEcruteakRuntimeObjects::\s+db \$05\s+db 5[^\n]*\n\s+db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR\s+db 26, 35, 0, JOHTO_REGISTERED_WARP_SELECTOR\s+db 27, 35, 1, JOHTO_REGISTERED_WARP_SELECTOR\s+db 27, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR',ecruteak_map)))
+           bool(re.search(r'JohtoEcruteakRuntimeObjects::\s+db \$05\s+db 6[^\n]*\n\s+db 18, 0, 2, JOHTO_REGISTERED_WARP_SELECTOR\s+db 19, 0, 3, JOHTO_REGISTERED_WARP_SELECTOR\s+db 26, 35, 0, JOHTO_REGISTERED_WARP_SELECTOR\s+db 27, 35, 1, JOHTO_REGISTERED_WARP_SELECTOR\s+db 27, 23, 0, JOHTO_REGISTERED_WARP_SELECTOR',ecruteak_map)))
         ck('mahogany_entry_targets_left_center_carpet_warp_zero',
            bool(re.search(r'JohtoMahoganyRuntimeObjects::\s+db \$71[^\n]*\n\s+db 2[^\n]*\n\s+db 1, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR[^\n]*\n\s+db 13, 15, 0, JOHTO_REGISTERED_WARP_SELECTOR',mahogany_map)))
         ck('all_four_new_outdoor_door_paths_wired',

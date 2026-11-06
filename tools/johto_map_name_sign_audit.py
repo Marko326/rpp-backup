@@ -15,6 +15,14 @@ import re
 from pathlib import Path
 
 CONTRACT = 'tools/johto_map_name_sign_contracts.json'
+# A location card can use the host city while the physical room popup uses its
+# own name. Keep these exceptions explicit: never permit an arbitrary mismatch.
+TOWN_MAP_HOST_EXCEPTIONS = {
+    'JOHTO_BURNED_TOWER_1F_LOCAL_ID': ('Burned Tower', 'Ecruteak City'),
+    'JOHTO_BURNED_TOWER_B1F_LOCAL_ID': ('Burned Tower', 'Ecruteak City'),
+    'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID': ('Dark Cave', 'Route 31'),
+}
+
 
 
 def section(source: str, label: str, end: str) -> str:
@@ -119,7 +127,9 @@ def audit(root: Path) -> dict:
                 actual_name = sign_texts.get(label)
                 check('popup_name_' + ident, actual_name is not None and
                       name_text(actual_name) == name_text(entry['name']) and
-                      name_text(actual_name) == name_text(town_name or ''),
+                      (name_text(actual_name) == name_text(town_name or '') or
+                       (ident in TOWN_MAP_HOST_EXCEPTIONS and
+                        (entry['name'], entry['town_map_name']) == TOWN_MAP_HOST_EXCEPTIONS[ident])),
                       f'dispatch={dispatch.get(ident)}, label={label}, popup={actual_name!r}, '
                       f'Town Map={town_name!r}, expected={entry["name"]!r}; no Johto fallback')
             else:

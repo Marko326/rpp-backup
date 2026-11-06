@@ -41,11 +41,14 @@ class BatchCenters336(unittest.TestCase):
             'JOHTO_ECRUTEAK_CITY_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID',
             'JOHTO_ECRUTEAK_CITY_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID',
             'Ecruteak_independent_bidirectional_gold_warps')
-    def test_game_version_is_bumped_for_runtime_fix(self):
+    def test_game_version_is_current_and_still_one_shared_label(self):
+        # Historical REF-338 version text was replaced by the validated
+        # REF-348 build. Guard the current shared label, not the old comment.
         version=(ROOT/'data/game_version.asm').read_text()
-        self.assertIn('Canonical project version REF-5.62.338',version)
-        self.assertIn('db "REF-338@"',version)
-        self.assertNotIn('db "REF-336@"',version)
+        self.assertIn('SECTION "Game Version", ROM0',version)
+        self.assertEqual(version.count('GameVersionText::'),1)
+        self.assertEqual(version.count('db "REF-349@"'),1)
+        self.assertNotIn('db "REF-338@"',version)
     def test_ecruteak_entry_uses_left_carpet(self):
         path='data/johto_corridor_runtime_294.asm'
         source=(ROOT/path).read_text()

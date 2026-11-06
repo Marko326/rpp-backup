@@ -1,3 +1,89 @@
+## CLEAN REF-349｜最终版本修订（新三件套）
+- [x] 游戏显示版号 `REF-348@` → `REF-349@`，Red/Blue/TEST 统一读取 `GameVersionText`；原有64活动地图/164 Warp、31/46双出口、Surf/跳崖/Flash/骑车源码不改。
+- [x] 更新版本关联的审计和历史测试夹具；重新生成模式A三份补丁、两份不含验收数据的中文 Git 提交日志。
+- [ ] 需本机构建新 REF-349 Red/Blue/TEST 并检查 MAP；用户上传的386B Red/Blue ROM0来自修改版本前的 REF-348 构建，不能等同新构建证明。
+- [ ] Route46、自行车、旧档与完整设备验收仍待确认；既有全仓库测试失败与执行记录保留在 `docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md`，不放进Git提交日志。
+- 以下 CLEAN REF-349 旧清理段落和开发记录保留为历史；本段为最新事实。
+
+## CLEAN REF-349｜黑暗洞穴双出口 / Gold骑车收口（2026-11-06）
+- [x] 已核实用户最新 `REF-348.patch`（HEAD `3a53f2d3`）并按实际未提交工作区进入清理，不混用先前开发候选；64活动地图 / 164登记 Warp / 游戏显示 `REF-348` 不变。
+- [x] 31号道路及46号道路 ↔ Gold桔梗侧黑暗洞穴双向接线在源码中；Surf/26 HOP/Flash/黑暗主角/正常白色入洞/骑车权限保留。用户确认 Surf 与 HOP 实机正常，**未明确报告Route46与自行车完整设备验收**。
+- [x] 本轮 Red/Blue MAP `20261106_192350` 的 ROM0 均386B≥64B；Bank1剩4B、Bank4剩23B，须保护紧张Bank。只有Red/Blue，无同版TEST MAP。
+- [x] 将四个历史中心审计的旧162条Warp总量合同更新为164，保留专项与负向错误注入；准备模式A清理三件套与两份中文提交日志，用户自行Commit/Push。
+- [ ] 设备补测：两室外洞口反复双向、洞口自动DOWN、骑车道具/SELECT/合法地面/水边禁骑、Flash/Surf/HOP与旧档连续状态、Red/Blue/TEST真ROM及MAP对应性。
+- [ ] 全仓库pytest回归：本次846通过、69跳过、54失败（另113子测试通过）；需另批清理旧阶段断言/夹具。不可把Gold静态1715/1715当作完整pytest全绿。
+- [ ] 后续R3/R4独立批次：碎岩、3道具球、隐藏Elixer、野生与钓鱼遭遇、Gold专用动画；烟墨侧ID99尚未接线；Dig/Escape Rope必须先做洞口来源安全回程，不得直接放行旧特殊传送。
+- 详见 `docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md`，此清理无任何运行ASM/ROM游戏版本改动。
+
+## REF-349｜Dark Cave 新地点通用功能审查：Gold 骑车（开发候选）
+- 当前基线：用户已确认跳崖/冲浪正常，最新 Route46 双向出口开发补丁已交付；正式 Git HEAD 无新证据，仍为 `3a53f2d3`。本次在双出口工作区之后增加**一项独立的骑车修正**，不更改活动64地图、164 Warp、显示版本 REF-348。
+- Gold `data/maps/maps.asm:148` 指定 `DarkCaveVioletEntrance` 的环境是 `CAVE`；Gold `engine/events/overworld.asm:BikeFunction.CheckEnvironment` 允许 `CAVE`，但上车时要求脚下为 `FLOOR_TILE`。Gold `FLOOR` ($00) 与 `WARP_CARPET_DOWN` ($70) 均属于 FLOOR 权限；`WATER/WALL/HOP/UP_WALL/CAVE` 不是。
+- RPP 特有的 `JOHTO_DARK_CAVE` 保持 `INDOOR` 图块动画标志防止洞内图像被通用 CAVE 动画写坏，但只对**现役稳定 ID190** 在 `IsBikeRidingAllowed` 里开放骑车：从步行上车时调用 Gold 40x36 角色表检查当前地面（0/6）；已在骑车状态跨图抵达时允许继续骑，符合 Gold 保留 CAVE 骑车状态的行为。未激活 ID99、其他室内、门房、关都规则及通用 BikeRidingTilesets 白名单不变；同一调用点覆盖背包自行车、SELECT 和骑车精灵重载。全程不改 Surf 状态与 Hop 规则。
+- **常规功能对照**：31/46双向出口、暗场/Flash、Surf及合法上岸、26处定向HOP、地名和音乐已经有运行接线；Fly/Teleport在本洞不可用，Gold不要求 Cut/Strength；4块可碎岩、3个道具球、隐藏 Elixer 仍属R3；野生遭遇/FISHGROUP_LAKE 及后续事件属R4，不因R2地图通行自动开放；Gold `TilesetDarkCaveAnim` 仍待独立移植。
+- **明确阻断**：Gold 的 Dig/Escape Rope 可从 CAVE 返回入口，但当前 RPP `CanUseEscapeRope` 白名单不含该洞，旧 `SpecialWarpIn` 的 bit6 走上次治愈中心（黑屏／Fly 表），不具备按31/46入口来源安全返回的城都实现。禁止仅追加 `EscapeRopeTilesets` 后宣布开放；未来需独立设计路线来源、两洞口回程、旧档及实机验收。
+- 开发期按 `docs/JOHTO_CONTENT_BACKLOG.md` 第5节逐项检查：地图/资源/音乐/骑车/场地技能、完整负向审计、ROM0≥64B，Red/Blue/TEST 新链接 MAP、My OldBoy 从两入口骑车、禁骑格、SELECT、Flash、Surf、跳崖、Save/Continue 及旧档仍须用户验证。AI不编ROM、不Commit/Push；交付为一个ZIP内两份互斥的增量与HEAD累计正向补丁。
+
+## REF-349｜Dark Cave 第二个室外出口（Route46，开发候选）
+- 用户实机确认上一轮 Surf 与跳崖已正常；本轮只接通 Gold 第二个室外出口，保留此前动作与视觉代码。
+- Gold 洞穴 Warp ordinal0 Route31、ordinal1 Blackthorn 独立洞穴、ordinal2 Route46；本轮仅开放0和2，保留ordinal1不可达占位，不压缩序号。
+- Route46 Gold 入口 `(14,5)`，从 `(14,6)` 面向 UP 触发；洞穴 `(35,33)` 是 DOWN carpet。返回46号道路 `(14,5)` 后自动 DOWN 一步；31号道路不变。
+- 活动仍64地图，登记Warp从162增至164；Blackthorn房间、NPC、道具、遭遇未接通。需本机Red/Blue/TEST编译/MAP与ROM0/ROMX、My OldBoy双向往返及旧存档验收。AI不代编ROM、不Commit/Push；只交开发期互斥增量/累计补丁。
+
+## REF-349 设备反馈：黑暗洞穴 HOP 前置碰撞拦截（待手机验收）
+- Surf 已获用户实机确认；26个 Gold HOP 起跳点虽然已调整到原格，但第一层 `JohtoPilotIsClosedOutdoorEdge` 提前把前方 Gold WALL 判为碰撞，导致所有跳崖都不能启动。本轮把该早期守卫改为只查 Dark Cave 40×36 边界；第二层先调 `HandleLedges` 再判 Gold 地形，不修改跳崖坐标或冲浪路径。
+- 待用户完成 Red/Blue/TEST 构建、ROM0/Bank41 MAP 检查与实机从上下左右坡道起跳、落点、不反跳、水边上岸/再跳、B键连续操作、旧档验收。源码静态通过不算设备通过。
+
+## 2026-11-06｜REF-349 Dark Cave Surf／跳崖运行闭环修复候选（待设备验收）
+
+- 输入：`REF-348(2).zip` 工作区＋已交付的 `REF349_DARK_CAVE_VIDEO_FLASH_HOTFIX_DEV.zip` 最终状态。可追溯正式 HEAD `3a53f2d3a38e9b0c1ae89d5f4f722a00369d0ad4`，**未出现新的 Git HEAD 证据**。游戏显示 `REF-348` 及活动 64 图 / 162 Warp 均不变。
+- **Surf 主因**：Gold Dark Cave 运行图块动画为静态 `INDOOR`，原 `home/overworld.asm:LoadPlayerSpriteGraphics` 在 Surf 对话框关闭后把 `wWalkBikeSurfState=2` 错误重置为 0，坐骑精灵消失、不能游动。修复仅对 `wCurMapTileset=JOHTO_DARK_CAVE` 且冲浪状态 2 放行；`engine/menu/summary_return_helpers.asm` 的 LCD-off 返回走同一合同，其他室内/关都不放宽。
+- **Surf 上/下岸**：`engine/items/items.asm:ItemUseSurfboard` 再次使用道具下船不再查只含 `$ff` 的旧 passable tile 表；仅在 Dark Cave 使用 `JohtoDarkCaveSurfDecision`，允许合法 Gold LAND（含定向 HOP/UP_WALL），拒绝 WATER/WALL/未开放口，仍按原脚本模拟上岸一步；方向键冲浪与现有 Surf/WATER 分派保持一致。
+- **Surf 徽章**：Gold 原版使用 Fog Badge（Johto bit3）。新增 ROMX 共享 `JohtoSurfBadgeAllowed349`，按 A 和队伍菜单两个入口共用。已开启的 Dark Cave 接受 Fog；原有 Soul Badge（关都 bit4）暂作为旧存档兼容；其他地图继续原 Soul 规则。若日后 Johto Gym 正式开放，须移除/迁移兼容条件，不能标称当前徽章规则为严格 Gold。
+- **26 个跳崖**：原表按 HOP 之前一个格登记，RPP 的两步模拟因此停在 WALL。现在每条表记录都是 Gold 实际 HOP 象限 `(x,y)`：第1步越过相邻 WALL，第2步落在 Gold 非墙地格。特别是水格 `(8,12)`、`(8,13)` LEFT 应先上岸到 `(7,12)`、`(7,13)`，下一次 LEFT 才启动跳崖，不能在水上提前跳。复用全项目的 `HandleLedges` 与 `JohtoSouthHopLandingGuard`，不改跳崖阴影计时、B 键保护和其他地图表。
+- **审计**：升级 `tools/johto_dark_cave_stage2_audit.py` 由 Gold角色推导26个原始HOP坐标及真实两步路径，并检验两个 Surf 精灵加载入口、Surfboard 上岸、两个徽章入口；`tools/tests/test_johto_dark_cave_stage2.py` 增加错误注入。当前这些仅为源级静态合同和模拟的路径断言，未进行 RGBDS 链接/设备行为验证。
+- **ROM预算及交付**：ROM0 新增小型静态动画例外，Bank `$04` 把旧 Surf bit 试验替换为 `callab` 跳转（容量非常紧）；旧 MAP 不能作为新 ROM 的空间证据。Red / Blue / TEST 新编译 MAP、ROM0≥64B、Bank `$04` 和其他 Bank 的实际剩余字节，以及 My OldBoy 手机上 Surf 坐骑/四向游动/合法上岸/26跳崖/反向输入/旧档/反复进出洞，全部**待用户验证**。本轮不由 AI 编 ROM／Commit／Push。
+- **开发期补丁**：01 仅从上一轮 VIDEO_FLASH_HOTFIX 最终源码到本修复；02 从上述正式 HEAD 累计全部 REF-349 未提交改动至同一目标。互斥，不可叠加；交付 ZIP 只包含两份正向 `.patch`，不提前提交清理日志。
+
+---
+
+## REF-349｜用户视频二次修复：人物可见／正常白色入洞淡出／不露紫洞（待用户实机）
+- [x] 对照 Gold(前) / RPP(后) 约24.76秒录屏，辨认 Gold 正常白色门洞淡出与 RPP 错误出现的紫色完整洞穴帧。
+- [x] 增加 Dark Cave 专用 BGP暗／OBP正常映射 `FE/E4/E4`，独立于 Kanto Rock Tunnel 旧 `FE/FE/FE`。
+- [x] 进洞执行 Gold 白色淡出；未照亮状态离洞先白屏隐藏旧洞穴，然后在 LCD 关闭的新地图装载阶段清除临时暗偏移、准备颜色；保持 Gold 洞口自动迈步与 Flash 原逻辑。
+- [x] 扩展 Gold Dark Cave 静态审计及负向测试，新增视觉状态／调用顺序／Kanto 隔离约束。
+- [ ] 待用户本机编译 Red/Blue/TEST，生成新MAP，确认 ROM0≥64B／Bank4；新补丁未实机验收。
+- [ ] 用户手机复测人物在暗洞持续可见、Gold 原有白色入洞淡出、无整图紫闪、出洞自动向下步、Flash 明/暗循环、旧存档与普通室内/岩山隧道回归。
+- 游戏显示版本继续 REF-348；两份开发期互斥补丁，AI 不执行 ROM 编译、Commit/Push。
+
+## REF-349 第二批实机反馈热修（开发候选，尚未 ROM/手机验收）
+- [x] 对照同包 Gold 源码修正 Dark Cave `PALETTE_DARK` 的 CGB 洞穴 NITE RGB5 基色；原有 `wMapPalOffset=6/0` 仍处理暗态/照亮。
+- [x] Route31 `(34,5)` 洞口返回复用 `PlayerStepOutFromDoor` 自动 DOWN 一步；不扩展到其他毯砖或洞内 `(3,15)`。
+- [x] Flash 只允许在未照亮的桔梗侧 Dark Cave，检查城都 Zephyr Badge；Johto 道馆尚未接通，暂保留既有 Boulder Badge 作为已玩存档兼容通道；旧 Kanto Flash 条件不改。
+- [x] Surf 上岸接受 Gold FLOOR／CARPET／方向许可的 UP_WALL／HOP_DOWN／HOP_LEFT，禁止逆向及墙体；角色表限定稳定 ID190，防止未来烟墨侧读错尺寸。
+- [x] 登记 Dark Cave DungeonTilesets（未来同 Tileset 跨洞换层可正确加载目标坐标）；扩展现有静态审计和故障注入。
+- [ ] 用户本机构建 Red/Blue/TEST、新 MAP 与 ROM0≥64B / Bank4 空间；手机复测洞口、暗/亮颜色、Flash、Surf 和旧档。
+- [ ] Gold 专用洞穴背景动画/水色动画、Route46及烟墨侧、NPC／道具／遭遇本轮未接入，不能当作完成。
+- 游戏显示版本继续 REF-348；不由助手编译链接 ROM、Commit/Push。详见 `docs/REF349_DARK_CAVE_VIOLET_STAGE2.md`。
+
+## REF-349 黑暗洞穴桔梗侧第二批（运行候选，需玩家构建／实机）
+- [x] Gold桔梗侧20×18地图、64 WATER、41 UP_WALL、26定向跳崖、黑暗／Flash、Surf和31号道路双向入口；活动地图64、登记Warp162。
+- [x] 完成 Palette／tile palette／Town Map／Music／Warp tile pointer等表扩展；主综合静态审计1715项通过，Gold参考核对通过。
+- [ ] 用户本机编译 Red/Blue/TEST、生成最新MAP并核对ROM0及各Bank空间；实机完成Flash、Surf、跳崖、进出洞、存档回归。
+- [ ] 第三批再开放46号道路及烟墨侧，其余NPC／道具／遭遇继续暂缓。
+- 游戏显示版本暂维持REF-348；未提交或推送。详见 `docs/REF349_DARK_CAVE_VIOLET_STAGE2.md`。
+
+## REF-349｜黑暗洞穴桔梗侧第一批（资源已冻结，入口未开放）
+- [x] Gold 原版 20×18 block、专用暗洞图像、cave metatile/collision alias、`PALETTE_DARK` 和三条 Warp 语义冻结；41方向墙、26跳崖、64水格逐格核查。
+- [x] 保留原有63图/160Warp/REF-348；ID190仍未激活。新增冻结资产/未开放状态审计和故障注入。
+- [ ] 第二批：Flash-aware 黑暗显示/场地 Flash、Surf、方向墙/跳崖、Route31双向入口及实机/MAP 验收。
+- [ ] 第三批：烟墨侧与Route46逐口开放；NPC/道具/野怪后置。
+
+## REF-348 主综合审计适配（2026-11-06）
+- [x] 主审计 34 项旧合同失败已逐项更新：63张活动地图、160 Warp、烧焦塔1F/B1F地点名与存档城市名区别、联合洞穴楼梯及烧焦塔定向跳崖。
+- [x] Gold源码主审计 **1709/1709通过、0失败**；相关回归 **47通过、10跳过**，联合洞穴16项故障注入通过。
+- [x] 全量 Python 测试相较此前同一源码 **50失败→27失败，没有新增失败**；其余27项旧专项测试仍待后续整理，不宣称全量全绿。
+- [ ] 本轮无ROM编译/新MAP/新手机验收；此前ROM0 421B与用户已有实机结果不变。TEST构建和烧焦塔所有路线完整设备验收仍待补。
+
 ## CLEAN REF-348｜当前定版验收与提交准备（2026-11-06）
 - [x] 使用最新 `REF-348(1).zip` 当前 Worktree，确认分支 `常规功能备份`、基线 HEAD `239ff32653c9087da8786532e36c189366ff209e`，以 ZIP 自带 `current_worktree.patch` 重建差异。
 - [x] 跳崖阴影独立32显示帧计时和强制两步后碰撞保护已存在；用户此前反馈普通及 B 键反向回走、黑影滞留的复测均未再复现，仍保留长期偶发观察。

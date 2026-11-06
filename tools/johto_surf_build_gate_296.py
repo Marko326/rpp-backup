@@ -219,6 +219,26 @@ def audit(root: Path, gold_root: Path | None = None, *,
         if sym is None or tileset is None:
             errors.append(f'{name}: active WATER map has no live stable ID/tileset')
             continue
+        # REF-349: Dark Cave is a dedicated Gold 40x36 role-grid module.
+        # Do not let the original three-selector gate silently waive its WATER review.
+        if name == 'DarkCaveVioletEntrance':
+            from johto_dark_cave_stage2_audit import check as dark_cave_check
+            errors.extend(f'{name}: '+err for err in dark_cave_check(root))
+            raw_roles=read_bytes('data/johto_dark_cave_stage/DarkCaveVioletEntrance.roles.bin')
+            actual_water={(y,x) for y in range(36) for x in range(40) if raw_roles[y*40+x]==2} if len(raw_roles)==1440 else set()
+            if sym != 'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID' or tileset != 'JOHTO_DARK_CAVE':
+                errors.append(f'{name}: stable ID or spatial tileset mismatch')
+            if coords != actual_water or len(coords)!=64:
+                errors.append(f'{name}: Gold WATER manifest and active role grid diverge')
+            cave=code_only(read('engine/johto_dark_cave_stage2.asm'))
+            surf_src=sources[SURF]
+            if not (re.search(r'(?m)^cp JOHTO_DARK_CAVE\s*\njp z, \.darkCave$',asm) and
+                    re.search(r'(?s)\.darkCave\s+callab JohtoDarkCaveSurfDecision\s+ld a, e\s+cp 2\s+jp z, \.water\s+and a\s+jp z, \.floorShore',asm) and
+                    'callab JohtoDarkCaveWaterAhead' in initiate and
+                    'JohtoDarkCaveRoleAhead::' in cave and 'JohtoDarkCaveSurfDecision::' in cave):
+                errors.append(f'{name}: live Surf movement/shore/entry contracts missing')
+            records.append({'map':name,'water_cells':len(coords),'handler':'GOLD_DARK_CAVE_SPATIAL','status':'CHECKED'})
+            continue
         if name in legacy:
             item = legacy[name]
             if item['local_id_symbol'] != sym or item['expected_water_cells'] != len(coords):

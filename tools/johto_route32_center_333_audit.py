@@ -51,8 +51,8 @@ def audit(root: Path, gold_root: Path | None = None, overrides: dict | None = No
         objects = room.split('JohtoRoute32PokecenterRuntimeObjects::', 1)[1].split('JohtoSharedCenterDownCollision336::', 1)[0]
         # Unique stable-ID/slot; original slot 47 must retain Cherrygrove.
         check('identity_and_append_only',
-              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 57' in get('constants/region_map_constants.asm') and
-              'ASSERT NUM_JOHTO_ACTIVE_MAPS == 57' in get('data/johto_pilot_runtime_assets.asm') and
+              'DEF NUM_JOHTO_ACTIVE_MAPS EQU 64' in get('constants/region_map_constants.asm') and
+              'ASSERT NUM_JOHTO_ACTIVE_MAPS == 64' in get('data/johto_pilot_runtime_assets.asm') and
               bool(re.search(r'(?m)^\s*db[^\n]*\b48\s*,[^\n]*; \$60-\$6f', slots)) and
               'dw JohtoRoute32PokecenterRuntimeHeader' in headers and
               'db BANK(JohtoRoute32PokecenterRuntimeHeader)' in headers and

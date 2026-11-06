@@ -88,9 +88,9 @@ def audit(root):
         menu=code('engine/town_map.asm');main=code('main.asm')
         ck('isolated_gold_tileset_37',all(t in code('constants/tilesets.asm') for t in ('const JOHTO_POKECENTER','const JOHTO_PARK_GATE')) and
            'tileset JohtoSharedPokecenter_Block, JohtoSharedPokecenter_GFX, Pokecenter_Coll' in tile and
-           '(JOHTO_POKECENTER + 1) * 12' in tile and
-           '(JOHTO_POKECENTER + 1) * 8' in sets and
-           '(JOHTO_POKECENTER + 1) * $60' in pal and
+           '(JOHTO_DARK_CAVE + 1) * 12' in tile and
+           '(JOHTO_DARK_CAVE + 1) * 8' in sets and
+           '(JOHTO_DARK_CAVE + 1) * $60' in pal and
            'INCLUDE "color/tilesets/johto_shared_pokecenter.asm"' in pal and
            'JohtoSharedPokecenter_GFX:: INCBIN "gfx/tilesets/johto_shared_pokecenter.2bpp"' in main and
            'JohtoSharedPokecenter_Block:: INCBIN "gfx/blocksets/johto_shared_pokecenter.bst"' in main)

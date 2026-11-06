@@ -384,12 +384,14 @@ def audit(root: Path, gold_root: Path | None = None) -> dict:
           'PLAYER_DIR_UP' not in cave_exit,
           'only DOWN collision from cave (17,3) or (17,31) may exit; all other coordinates/directions denied')
 
-    warp_row = re.findall(r'(?m)^db\s+3,\s*17,\s*2,\s*JOHTO_REGISTERED_WARP_SELECTOR\b', cave_objects)
-    south_warp = re.findall(r'(?m)^db\s+31,\s*17,\s*0,\s*JOHTO_REGISTERED_WARP_SELECTOR\b', cave_objects)
+    cave_1f_objects = cave_objects.split('JohtoUnionCaveB1FRuntimeBlocks::', 1)[0]
+    warp_row = re.findall(r'(?m)^db\s+3,\s*17,\s*2,\s*JOHTO_REGISTERED_WARP_SELECTOR\b', cave_1f_objects)
+    south_warp = re.findall(r'(?m)^db\s+31,\s*17,\s*0,\s*JOHTO_REGISTERED_WARP_SELECTOR\b', cave_1f_objects)
     check('only_gold_north_south_cave_warps_open',
           len(warp_row)==1 and len(south_warp)==1 and
-          bool(re.search(r'(?m)^db\s+2\s*$', cave_objects)),
-          'cave runtime exposes only north ordinal0 and south ordinal1')
+          bool(re.search(r'(?m)^db\s+4\s*$', cave_1f_objects)) and
+          len(re.findall(r'(?m)^db\s+(?:19,\s*5,\s*2|33,\s*3,\s*3),\s*JOHTO_REGISTERED_WARP_SELECTOR', cave_1f_objects))==2,
+          'cave runtime has two original exits and precisely two Gold stair Warps to B1F')
     check('source_route32_warp',
           bool(re.search(r'db 79, 6, 0, JOHTO_REGISTERED_WARP_SELECTOR', route_objects)),
           'Route32 Gold CAVE (6,79) has registered entrance')
@@ -403,11 +405,15 @@ def audit(root: Path, gold_root: Path | None = None) -> dict:
               'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID',
               'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID',
               'db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
-          ], 'four precise routes in Gold-verified ordinal order; B1F/B2F closed')
+              'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+              'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+              'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
+              'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
+          ], 'original north/south exits preserved, exact two B1F stair pairs appended')
     check('cave_warp_only_by_coordinate_collision',
-          bool(re.search(r'JohtoUnionCaveWarpTileIDs:\s+db \$ff\b', files['data/warp_tile_ids.asm'], re.I)) and
+          bool(re.search(r'JohtoUnionCaveWarpTileIDs:\s+[^;\n]*;[^\n]*\n\s*;[^\n]*\n\s*db \$0e, \$0f, \$10, \$11, \$16, \$17, \$18, \$19, \$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$ff', files['data/warp_tile_ids.asm'], re.I)) and
           'JOHTO_UNION_CAVE,' not in files['engine/overworld/doors.asm'],
-          'no global step-on warp tiles or ordinary DOOR fallback for cave tileset')
+          'Cave carpets remain collision-only; exactly the Gold stair subtile range may step-on, no ordinary DOOR fallback')
     bike_row = re.search(r'(?m)^db\s+([^\n]+)', bike)
     ids = [x.strip() for x in bike_row.group(1).split(',')] if bike_row else []
     check('union_cave_bike_gold_reference_policy',

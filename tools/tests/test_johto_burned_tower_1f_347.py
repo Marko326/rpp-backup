@@ -80,7 +80,7 @@ class TestBurnedTower1F347(unittest.TestCase):
         self.assertIn('INCLUDE "color/tilesets/johto_burned_tower_1f.asm"', read('color/data/map_palette_assignments.asm'))
         self.assertIn('INCLUDE "data/johto_burned_tower/REF347_1f_runtime.asm"',read('main.asm'))
         self.assertNotIn('REF346_runtime_candidate.asm',read('main.asm'))
-        self.assertEqual(read('data/game_version.asm').count('REF-348@' if self.active_maps == 63 else 'REF-347@'),1)
+        self.assertEqual(read('data/game_version.asm').count('REF-349@' if self.active_maps == 64 else ('REF-348@' if self.active_maps == 63 else 'REF-347@')),1)
         if self.active_maps == 63:
             self.assertIn('dw JohtoBurnedTowerB1FRuntimeHeader', read('data/johto_header_descriptors.asm'))
         else:

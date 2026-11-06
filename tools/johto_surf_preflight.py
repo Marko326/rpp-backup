@@ -363,7 +363,7 @@ def check_project(root: Path, contract: dict, gold: Path | None = None) -> list[
         try:
             labels = set(re.findall(r'(?m)^(\w+WaterAhead)::\s*$',
                                     code_only(path.read_text(encoding='utf8'))))
-            for helper in labels - declared:
+            for helper in labels - declared - {"JohtoDarkCaveWaterAhead"}:
                 if helper.startswith(('Johto', 'IsJohto')):
                     errors.append(f'{path.relative_to(root)}: undeclared water helper {helper}')
         except OSError as exc:

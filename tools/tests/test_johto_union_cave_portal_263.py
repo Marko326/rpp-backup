@@ -41,8 +41,8 @@ class UnionCavePortal263(unittest.TestCase):
              'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jr z, .forceCaveUp\n.forceCaveUp\n    ld a, PLAYER_DIR_UP\n    ld [wPlayerDirection], a\n    ret',
              'cave_interior_no_arrival_autostep'),
             ('cave_step_on_unlocked', runtime,
-             '    ; The cave interior is collision-only: never STEP_ON or override walls.\n    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    ret z',
-             '    ; The cave interior is collision-only: never STEP_ON or override walls.\n    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, .unionCaveMouth',
+             '    ; Cave interior must never bypass pre-step wall collision here.\n    ; Gold LADDER step-in transfer is handled only after the exact warp\n    ; coordinate matches in JohtoPilotGateDoorWarpMatched below.\n    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    ret z',
+             '    ; Cave interior must never bypass pre-step wall collision here.\n    ; Gold LADDER step-in transfer is handled only after the exact warp\n    ; coordinate matches in JohtoPilotGateDoorWarpMatched below.\n    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, .unionCaveMouth',
              'cave_not_step_on_collision_override'),
             ('remove_cave_bike', bike, ',JOHTO_UNION_CAVE,JOHTO_MODERN,JOHTO_ILEX_FOREST,JOHTO_PARK,$FF', ',$FF',
              'union_cave_bike_gold_reference_policy'),
@@ -53,7 +53,7 @@ class UnionCavePortal263(unittest.TestCase):
             # FIX-264: previous .263 passed static tests but never reached
             # CheckWarpsCollision: ExtraWarpCheck rejected the cave FIRST.
             ('missing_cave_from_extra_warp_predicate', runtime,
-             '    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, JohtoPilotGateCollisionExitAllowed\n    cp JOHTO_ROUTE_32_LOCAL_ID',
+             '    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, JohtoPilotGateCollisionExitAllowed\n    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID',
              '    cp JOHTO_ROUTE_32_LOCAL_ID',
              'executable_cave_prewrap_to_final_guard'),
             ('preflight_calls_wrong_predicate', 'home/overworld.asm',
