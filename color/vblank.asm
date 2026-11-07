@@ -109,6 +109,18 @@ RefreshPalettesPreVBlank:
 
 	ld a,[rBGP]
 	ld d,a
+	; F9/FE doorway stages scale RGB555 directly, so keep the original
+	; four-color index order instead of applying a second DMG shade remap.
+	ldh a,[hDoorwayCGBFadeActive]
+	and a
+	jr z,.doNextBgColor
+	ldh a,[rBGP]
+	cp $f9
+	jr z,.doorwayBgIdentity
+	cp $fe
+	jr nz,.doNextBgColor
+.doorwayBgIdentity
+	ld d,$e4
 
 .doNextBgColor:
 	ld a,d
@@ -168,10 +180,23 @@ RefreshPalettesPreVBlank:
 .obp1
 	ld a,[rOBP1]
 	ld d,a
-	jr .doNextSprColor
+	jr .checkDoorwaySprIdentity
 .obp0
 	ld a,[rOBP0]
 	ld d,a
+
+.checkDoorwaySprIdentity
+	; BG and OBJ must use the same identity index order during RGB scaling.
+	ldh a,[hDoorwayCGBFadeActive]
+	and a
+	jr z,.doNextSprColor
+	ldh a,[rBGP]
+	cp $f9
+	jr z,.doorwaySprIdentity
+	cp $fe
+	jr nz,.doNextSprColor
+.doorwaySprIdentity
+	ld d,$e4
 
 .doNextSprColor
 	ld a,d
@@ -466,7 +491,44 @@ StatusScreenPictureAttrOffsets:
 	db 1, 33, 65, 97, 129, 161, 193
 
 RefreshPalettesVBlank:
+	; REF-351B: an ordinary doorway fade changes BG and OBJ together. Wait
+	; until both prepared buffers are ready, then commit both within one VBlank
+	; budget so no frame mixes two different fade levels.
+	ldh a,[hDoorwayCGBFadeActive]
+	and a
+	jr z,.normalPaletteRefresh
+	ldh a,[rBGP]
+	cp $f9
+	jr z,.doorwayPaletteBatch
+	cp $fe
+	jr z,.doorwayPaletteBatch
+	cp $ff
+	jr nz,.normalPaletteRefresh
+.doorwayPaletteBatch
+	ld a,[W2_BgPaletteDataModified]
+	and a
+	ret z
+	ld a,[W2_SprPaletteDataModified]
+	and a
+	ret z
+	call .checkScanline
+	jr nc,.end
+	ld a,$80
+	ld [rBGPI],a
+	ld c,rBGPD&$ff
+	ld hl,W2_BgPaletteDataBuffer
+	call .load8
+	ld a,$80
+	ld [rOBPI],a
+	ld c,rOBPD&$ff
+	ld hl,W2_SprPaletteDataBuffer
+	call .load8
+	xor a
+	ld [W2_BgPaletteDataModified],a
+	ld [W2_SprPaletteDataModified],a
+	ret
 
+.normalPaletteRefresh
 .checkBgPalettes
 	ld a,[W2_BgPaletteDataModified]
 	and a
@@ -540,6 +602,22 @@ SetColor:
 	add d
 	ld d,W2_BgPaletteData>>8
 	ld e,a		; de points to W2_BgPaletteData (or SprPaletteData)
+	; During ordinary doors, stages F9 and FE read a precomputed, uniformly
+	; scaled RGB555 copy. Other fades use the untouched source palettes.
+	ldh a,[hDoorwayCGBFadeActive]
+	and a
+	jr z,.paletteSourceReady
+	ldh a,[rBGP]
+	cp $f9
+	jr z,.scaledPaletteSource
+	cp $fe
+	jr nz,.paletteSourceReady
+	ld a,e
+	add LOW(W2_DoorwayFadeOneThirdBuffer)
+	ld e,a
+.scaledPaletteSource
+	ld d,HIGH(W2_DoorwayFadeTwoThirdsBuffer)
+.paletteSourceReady
 
 	ld a,[de]
 	inc de
@@ -567,3 +645,158 @@ SetWhiteColor:
 	dec c
 	jr nz,.loop
 	ret
+
+
+; Prepare the ordinary-door CGB palette copy for the target BGP stage.
+; The caller stores the target stage before changing rBGP/rOBP0/rOBP1, so an
+; interrupt cannot observe a new DMG mapping with an old scaled RGB buffer.
+; RGB555 is little-endian: R=bits 0..4, G=bits 5..9, B=bits 10..14.
+DoorwayFadePreparePalette:
+	ldh a,[hDoorwayFadeTargetBGP]
+	cp $f9
+	jr nz,.checkOneThird
+	ld hl,DoorwayFadeScaleTwoThirds
+	ld de,W2_DoorwayFadeTwoThirdsBuffer
+	jr .scalePalette
+.checkOneThird
+	cp $fe
+	ret nz ; E4 uses the original palettes; FF is handled by SetBlackColor.
+	ld hl,DoorwayFadeScaleOneThird
+	ld de,W2_DoorwayFadeOneThirdBuffer
+.scalePalette
+	ldh a,[rSVBK]
+	ldh [hDoorwayFadeSavedSVBK],a
+	ld a,2
+	ld [rSVBK],a
+	; Save the full table address in WRAM bank 2. The tables live inside the
+	; monolithic bank2C section, so inline ALIGN cannot guarantee page alignment.
+	ld a,l
+	ld [W2_DoorwayFadeScaleTableLow],a
+	ld a,h
+	ld [W2_DoorwayFadeScaleTableHigh],a
+	ld hl,W2_BgPaletteData
+	ld c,64 ; 8 BG + 8 OBJ palettes, four RGB555 colors each
+.colorLoop
+	ld a,[hli]
+	ld [W2_DoorwayFadeTempLow],a
+	ld a,[hli]
+	ld [W2_DoorwayFadeTempHigh],a
+
+	; Red component: low byte bits 0..4.
+	push hl
+	push de
+	ld a,[W2_DoorwayFadeTempLow]
+	and $1f
+	ld e,a
+	ld d,0
+	ld a,[W2_DoorwayFadeScaleTableLow]
+	ld l,a
+	ld a,[W2_DoorwayFadeScaleTableHigh]
+	ld h,a
+	add hl,de
+	ld a,[hl]
+	ld [W2_DoorwayFadeTempR],a
+	pop de
+	pop hl
+
+	; Green component: low byte bits 5..7, then high byte bits 0..1.
+	push hl
+	push de
+	ld a,[W2_DoorwayFadeTempLow]
+	srl a
+	srl a
+	srl a
+	srl a
+	srl a
+	ld e,a
+	ld a,[W2_DoorwayFadeTempHigh]
+	and 3
+	add a
+	add a
+	add a
+	or e
+	ld e,a
+	ld d,0
+	ld a,[W2_DoorwayFadeScaleTableLow]
+	ld l,a
+	ld a,[W2_DoorwayFadeScaleTableHigh]
+	ld h,a
+	add hl,de
+	ld a,[hl]
+	ld [W2_DoorwayFadeTempG],a
+	pop de
+	pop hl
+
+	; Blue component: high byte bits 2..6.
+	push hl
+	push de
+	ld a,[W2_DoorwayFadeTempHigh]
+	srl a
+	srl a
+	and $1f
+	ld e,a
+	ld d,0
+	ld a,[W2_DoorwayFadeScaleTableLow]
+	ld l,a
+	ld a,[W2_DoorwayFadeScaleTableHigh]
+	ld h,a
+	add hl,de
+	ld a,[hl]
+	ld [W2_DoorwayFadeTempB],a
+	pop de
+	pop hl
+
+	; Repack the three scaled 5-bit channels into little-endian RGB555.
+	push de
+	ld a,[W2_DoorwayFadeTempG]
+	and 7
+	add a
+	add a
+	add a
+	add a
+	add a
+	ld e,a
+	ld a,[W2_DoorwayFadeTempR]
+	or e
+	ld [W2_DoorwayFadeTempOut],a
+	pop de
+	ld a,[W2_DoorwayFadeTempOut]
+	ld [de],a
+	inc de
+
+	push de
+	ld a,[W2_DoorwayFadeTempG]
+	srl a
+	srl a
+	srl a
+	ld e,a
+	ld a,[W2_DoorwayFadeTempB]
+	add a
+	add a
+	or e
+	ld [W2_DoorwayFadeTempOut],a
+	pop de
+	ld a,[W2_DoorwayFadeTempOut]
+	ld [de],a
+	inc de
+
+	dec c
+	jp nz,.colorLoop
+	ldh a,[hDoorwayFadeSavedSVBK]
+	ld [rSVBK],a
+	ret
+
+; Floor-scaled 5-bit channel values. Use a full 16-bit base pointer because
+; this file is included in the monolithic bank2C section: an inline ALIGN here
+; cannot insert linker-relocatable padding at the current section offset.
+DoorwayFadeScaleTwoThirds:
+	db 0,0,1,2,2,3,4,4,5,6,6,7,8,8,9,10
+	db 10,11,12,12,13,14,14,15,16,16,17,18,18,19,20,20
+DoorwayFadeScaleTwoThirdsEnd:
+ASSERT DoorwayFadeScaleTwoThirdsEnd - DoorwayFadeScaleTwoThirds == 32
+
+DoorwayFadeScaleOneThird:
+	db 0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5
+	db 5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10
+DoorwayFadeScaleOneThirdEnd:
+ASSERT DoorwayFadeScaleOneThirdEnd - DoorwayFadeScaleOneThird == 32

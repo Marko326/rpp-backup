@@ -965,7 +965,13 @@ PlayMapChangeSound::
 	jr z,.johtoDarkTransition349
 	and a
 	ret nz ; leave Kanto Rock Tunnel behavior unchanged
+	; REF-351B: only ordinary zero-offset CGB doors use the RGB555 fade.
+	; Keep the flag scoped to GBFadeOutToBlack; special cave fades above stay native.
+	ld a,1
+	ldh [hDoorwayCGBFadeActive],a
 	call GBFadeOutToBlack
+	xor a
+	ldh [hDoorwayCGBFadeActive],a
 	ld a,1
 	ldh [hMapLoadVRAMSafeFlag],a
 	ret

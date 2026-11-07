@@ -51,11 +51,33 @@ GBFadeInFromWhite::
 
 GBFadeDecCommon:
 	ld a, [hld]
+	ld d, a ; stage OBP1
+	ld a, [hld]
+	ld e, a ; stage OBP0
+	ld a, [hld]
+	ldh [hDoorwayFadeTargetBGP], a
+	ldh a, [hDoorwayCGBFadeActive]
+	and a
+	jr z, .commitFadePalettes
+	; Prepare the scaled copy before publishing the matching BGP/OBP stage.
+	; Preserve the fade loop's BC counter and HL table cursor across callab.
+	push bc
+	push de
+	push hl
+	callab DoorwayFadePreparePalette
+	pop hl
+	pop de
+	pop bc
+.commitFadePalettes
+	; Publish OBP1/OBP0/BGP as one stage; STAT/VBlank must not see a mixed set.
+	di
+	ld a, d
 	ld [rOBP1], a
-	ld a, [hld]
+	ld a, e
 	ld [rOBP0], a
-	ld a, [hld]
+	ldh a, [hDoorwayFadeTargetBGP]
 	ld [rBGP], a
+	ei
 	ld c, 8
 	call DelayFrames
 	dec b

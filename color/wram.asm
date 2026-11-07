@@ -5,9 +5,30 @@ W2_LastBGP  EQU $d080
 W2_LastOBP0 EQU $d081
 W2_LastOBP1 EQU $d082
 
+; REF-351B: temporary RGB555 doorway-fade work area. The source palette data
+; at D000-D07F remains untouched; the scaled 16-palette copy is selected only
+; while the ordinary doorway fade is active.
+W2_DoorwayFadeTempLow  EQU $d083
+W2_DoorwayFadeTempHigh EQU $d084
+W2_DoorwayFadeTempR    EQU $d085
+W2_DoorwayFadeTempG    EQU $d086
+W2_DoorwayFadeTempB    EQU $d087
+W2_DoorwayFadeTempOut  EQU $d088
+; Bank-2-only pointer scratch; D089-D08A in WRAM bank 1 belongs to unrelated data.
+W2_DoorwayFadeScaleTableLow  EQU $d089
+W2_DoorwayFadeScaleTableHigh EQU $d08a
+W2_DoorwayFadeTwoThirdsBuffer EQU $d100 ; 16 palettes * 4 colors * 2 bytes
+W2_DoorwayFadeOneThirdBuffer  EQU $d180 ; 16 palettes * 4 colors * 2 bytes
+ASSERT W2_DoorwayFadeTempOut < W2_DoorwayFadeScaleTableLow
+ASSERT W2_DoorwayFadeScaleTableHigh < W2_DoorwayFadeTwoThirdsBuffer
+
 ; If W2_TileBasedPalettes is set, each number corresponds to a tile. (takes $180 bytes)
 ; Otherwise this is a 20x18 map of palettes. (takes $168 bytes)
 W2_TilesetPaletteMap	EQU $d200
+ASSERT LOW(W2_DoorwayFadeTwoThirdsBuffer) == 0
+ASSERT LOW(W2_DoorwayFadeOneThirdBuffer) == $80
+ASSERT W2_DoorwayFadeTwoThirdsBuffer + $80 == W2_DoorwayFadeOneThirdBuffer
+ASSERT W2_DoorwayFadeOneThirdBuffer + $80 == W2_TilesetPaletteMap
 
 
 ; Each number here corresponds to a tile, but this isn't used for

@@ -1,6 +1,7 @@
 SECTION "Game Version", ROM0
 
 ; 公共游戏版本号。以后发布新版本时只需要修改这一处。
+; Canonical project version REF-5.62.351; one shared in-ROM label for all build flavors.
 ; 放在 ROM0 中，任何 ROMX bank 都可以直接读取，无需额外切换 ROM bank。
 GameVersionText::
 	; REF-317: add exact north ID66 carpet re-entry/lane-switch profiles; keep coarse role grid fail-closed and DOWN-only Warp.
@@ -59,4 +60,6 @@ GameVersionText::
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
 	; REF-350: keep ordinary door transitions on the black-fade, LCD-on CGB path and upload staged BG tile/attribute rows with HBlank DMA.
-	db "REF-350@"
+	; REF-351A: copy up to two consecutive VRAM bytes per LCD-safe CopyData window.
+	; REF-351B: use uniform RGB555 scaling for ordinary CGB doorway fade stages.
+	db "REF-351B@"

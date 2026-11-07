@@ -349,3 +349,9 @@ hTextBottomRefreshRequest EQU $FFFC
 ; destination map. This byte is armed only after the door fade and guards both
 ; VRAM writes and stale-map VBlank writers until the BG upload is complete.
 hMapLoadVRAMSafeFlag EQU $FFFD
+
+; REF-351B: scope the RGB555 palette fade to the ordinary CGB doorway fade.
+; The target BGP stage is prepared before the three DMG palette registers commit.
+hDoorwayCGBFadeActive  EQU $FFDE
+hDoorwayFadeSavedSVBK  EQU $FFDF
+hDoorwayFadeTargetBGP  EQU $FFE2

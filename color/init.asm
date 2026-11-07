@@ -16,6 +16,9 @@ InitGbcMode: ; Sets double speed & clears extra memory
 	ld [rKEY1], a
 	stop
 	nop ; Harmless instruction immediately after the speed switch.
+	; HRAM is not part of ClearGbcMemory; initialize the doorway-only fade gate.
+	xor a
+	ldh [hDoorwayCGBFadeActive], a
 
 	; Clear memory (banks 2-7)
 ClearGbcMemory:

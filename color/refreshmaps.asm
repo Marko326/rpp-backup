@@ -179,7 +179,7 @@ LoadMapVramAndColors:
 	ld b,4
 .hdmaTailLoop
 .hdmaWaitTailVRAM
-	ld a,[rSTAT]
+	ldh a,[rSTAT]
 	and %10 ; modes 0 and 1 permit VRAM writes
 	jr nz,.hdmaWaitTailVRAM
 	ld a,[hli]

@@ -29,19 +29,45 @@ CopyData::
 	cp $a0
 	jr nc, .fast
 .safe
+	; REF-351A: InitGbcMode enables CGB double speed before overworld doors.
+	; Match the validated Gold cadence: at most two adjacent bytes per safe
+	; STAT window. Keep the odd leading byte separate, then count byte pairs.
+	; Do not change SP or the FarCopyData caller's bank/stack contract.
+	bit 0, c
+	jr z, .pairCount
 	di
-.waitVRAM
-	ld a, [rSTAT]
+.waitSingleVRAM
+	ldh a, [rSTAT]
 	and %10 ; modes 0 and 1 permit VRAM writes
-	jr nz, .waitVRAM
+	jr nz, .waitSingleVRAM
 	ld a, [hli]
 	ld [de], a
 	inc de
 	dec bc
 	ei
-	ld a, c
-	or b
-	jr nz, .safe
+.pairCount
+	srl b
+	rr c
+	ld a, b
+	or c
+	ret z
+.pairLoop
+	di
+.waitPairVRAM
+	ldh a, [rSTAT]
+	and %10 ; modes 0 and 1 permit VRAM writes
+	jr nz, .waitPairVRAM
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hli]
+	ld [de], a
+	inc de
+	dec bc
+	ei
+	ld a, b
+	or c
+	jr nz, .pairLoop
 	ret
 .fast
 	ld a, [hli]
