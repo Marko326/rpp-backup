@@ -62,8 +62,8 @@ def test_older_release_marker_cannot_pass_current_lake_gate():
     path='data/game_version.asm'
     source=text(path)
     import re
-    match=re.search(r'(?m)^\s*db "REF-(\d+)@"\s*$',source)
+    match=re.search(r'(?m)^\s*db "REF-(\d{3})([A-Z]?)@"\s*$',source)
     assert match
-    mutated=source[:match.start()] + match.group(0).replace('REF-'+match.group(1)+'@', 'REF-310@') + source[match.end():]
+    mutated=source[:match.start()] + 'db "REF-310@"' + source[match.end():]
     result=audit(ROOT,{path:mutated})
     assert 'REF319_same_length_version_label' in result['errors']

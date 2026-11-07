@@ -1,3 +1,20 @@
+## REF-351B｜CGB 普通门 RGB555 渐暗边界
+- 仅普通 `wMapPalOffset == 0` 的 `PlayMapChangeSound` 路径置位门控；Rock Tunnel offset 6、Johto Dark Cave offset 12、Flash、Warp Pad、战斗回图不得继承该状态。
+- CGB RGB555 内存按低字节 R[0..4]+G[0..2]、高字节 G[3..4]+B[0..4] 解包；缩放 R/G/B 三通道分别查表后再打包，不能把16位整体右移或缩放字节，否则会跨通道串色。F9/FE还必须临时使用E4身份索引，不能保留原BGP/OBP的灰度重映射，否则会把重映射和RGB缩放叠加成二次变暗。
+- F9 与 FE 必须使用不同 WRAM2 输出缓冲区。准备 FE 缓冲时，当前 rBGP 仍为 F9，VBlank 会继续读取2/3缓冲；禁止原地覆盖当前显示缓冲。
+- `GBFadeDecCommon` 必须先保存目标 BGP，再准备对应缓冲，最后用短暂 DI/EI 原子提交 OBP1/OBP0/BGP，避免 STAT/VBlank 看到混合阶段；调用 Bank2C helper 时保留 BC/DE/HL，并让 helper 在返回前恢复原 SVBK，避免 BANK2 栈与返回地址错位。
+- 普通门渐暗时 BG/OBJ 两个 modified 标志必须同时就绪；只做一次 scanline 检查，再连续写 BG/OBJ 两个64字节缓冲，完成后一起清标志。不要在中间重新检查并拆成两帧。
+- 原始 `W2_BgPaletteData` / `W2_SprPaletteData` 不得被缩放或覆盖；渐暗门控必须在 Fade 返回后清零。RGB555静态穷举不能代替目标CGB设备上的颜色观感、VBlank时序和视频复验。
+- RGBDS 0.5.2 的 `ALIGN n` 参数是对齐指数，但本项目的 `color/vblank.asm` 被包含在单体 `SECTION "bank2C"` 中；用户实测当前 section 偏移 `$1f6c` 时，即使 `ALIGN 8` 仍报 `Section's alignment fails required alignment`。不要继续调整 ALIGN 数字；两张32项表改为保存完整16位基址到 WRAM2 `$D089-$D08A`，通过 `add hl,de` 索引，不再依赖页对齐。
+
+## REF-351A｜LCD-on VRAM 双字节安全窗口边界
+- 只对 `hMapLoadVRAMSafeFlag` 生效且目标起始地址在 `$8000-$9fff` 的 `CopyData` 调用启用双字节窗口；其他内存目标和 LCD-off 继续原快速路径。
+- 奇数长度先单独复制一个字节，再将剩余 BC 右移为 pair 计数；不要对原始字节数直接成对读取，否则奇数尾部会越界。
+- 两个相邻字节必须在同一次 STAT mode 0/1 观察后、同一 DI 区间内完成；写完再 EI。不得把属性+Tile 两平面四次写入塞进同一 HBlank。
+- 该预算依赖 `InitGbcMode` 已切换 CGB double speed；若安全标志未来扩展到初始化、DMG 或未切双速路径，必须回退为单字节安全写。
+- 当前 REF-350 行 DMA 仍按每行16字节 HDMA + 末尾4字节逐次安全写；不要与 350E 的双格四写方案混淆。
+- 350G历史视频仅是旧基线的观测；REF-351A 必须重新构建和同条件录屏。新 Red/Blue/TEST MAP、ROM0≥64B、ROMX空间、音乐连续性和屋顶/旧档回归均待用户验收。
+
 ## CLEAN REF-349｜版本号收口注意事项（2026-11-06）
 - 游戏显示短标签仅在 `data/game_version.asm:GameVersionText` 中统一更新为 `REF-349@`；Red/Blue/TEST共享，不恢复独立 TEST-NNN；短标签等长，不能因此冒称新ROM链接和Bank空间已经验证。
 - 版号修订时必须同步修正仍在执行的Pokémon Center、Burned Tower版本审计及历史测试夹具；历史阶段标题可以保留，但不能拿旧 `REF-348@` 断言作为当前游戏版本合同。

@@ -56,7 +56,7 @@ def check(root: Path, gold: Path|None = None):
     collision=runtime.split('JohtoPilotGateCollisionExitAllowed::',1)[1]
 
     version_text=(root/'data/game_version.asm').read_text()
-    vm=re.search(r'(?m)^\s*db "REF-(\d+)@"',version_text)
+    vm=re.search(r'(?m)^\s*db "REF-(\d+)[A-Z]?@"',version_text)
     req('version_ref342_or_later', vm is not None and int(vm.group(1)) >= 342)
     req('matched_dispatches_all_three_floors', all(tok in matched for tok in (
         'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jr z, .unionCave1FWarpMatched342',

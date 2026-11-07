@@ -1,3 +1,10 @@
+## CLEAN REF-351B｜普通房门 CGB 转场稳定源码基底
+- 普通零偏移房门沿用 REF-350 LCD-on 地图加载与 HBlank DMA，保留 REF-351A 双字节安全 VRAM 复制。
+- REF-351B 只对普通房门 CGB Fade 做 RGB555 R/G/B 独立通道缩放：F9 阶段约2/3、FE阶段约1/3；BG/OBJ 保持身份颜色索引并在同一 VBlank 阶段同步提交。
+- 原始 BG/OBJ 调色板不被改写；DMG、Rock Tunnel、Dark Cave、Flash、Warp Pad、战斗回图等路径不启用本轮缩放。
+- 当前源码已采用完整16位查表基址，不依赖 `bank2C` 单体 Section 内的 `ALIGN` 页对齐。游戏版本保持 `REF-351B`。
+- 本轮清理只整理工具、回归测试与文档；尚未完成 RGBDS 0.5.2 汇编/链接及 Blue/TEST 同版 MAP、设备验收。详见 `docs/CLEAN_REF351B_ACCEPTANCE_AND_HANDOFF.md`。
+
 ## CLEAN-REF338｜烟墨市中心与海岸边框修复正式清理（模式A双提交）
 - 在正式 `REF-337` HEAD `3345afba3ff541e04a73bbf56c8d688786842910` 上，累计新增烟墨市 Gold 5×4 Pokémon Center：活动地图 56→57、登记 Warp 131→134，稳定 ID85，保留其它中心和既有 Fly 限制。
 - 修正六处户外边框：吉花市、浅葱市、40/41号道路、湛蓝市 `$05→$35`；卡吉镇 `$05→$71`。保留所有地图主体 `.blk` 与 Surf/碰撞逻辑，游戏版本仍为 `REF-338`。

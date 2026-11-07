@@ -207,12 +207,13 @@ def audit(root: Path, overrides: dict[str, bytes | str] | None = None) -> dict:
     music=text('engine/menu/options_menu.asm')
     check('Lake_GSC_music_slot41', 'db MUSIC_GBP_GSC_LAKE_OF_RAGE ; slot41 Lake of Rage' in music)
     version=text('data/game_version.asm')
-    live_version = re.search(r'(?m)^\s*db "REF-(\d+)@"\s*$', version)
-    canonical = re.search(r'(?m)^\s*db \"REF-(\d+)@\"', version)
+    live_version = re.search(r'(?m)^\s*db "REF-(\d{3})([A-Z]?)@"\s*$', version)
+    canonical = re.search(r'(?m)^\s*db \"REF-(\d{3})([A-Z]?)@\"', version)
     check('REF319_same_length_version_label',
           live_version is not None and canonical is not None and
           int(live_version.group(1)) >= 319 and
-          int(live_version.group(1)) == int(canonical.group(1)) and
+          live_version.group(1) == canonical.group(1) and
+          live_version.group(2) == canonical.group(2) and
           len(live_version.group(1)) == 3)
 
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL',

@@ -15,7 +15,7 @@ def approved_phase(version_source: str, constants_source: str, minimum_maps: int
     labels = re.findall(r'(?m)^\s*db\s+"([^"\n]+)"\s*(?:;[^\n]*)?$', version_source)
     if len(labels) != 1:
         return False
-    version = re.fullmatch(r'REF-(\d{3})@', labels[0])
+    version = re.fullmatch(r'REF-(\d{3})[A-Z]?@', labels[0])
     if version is None or int(version.group(1)) < minimum_ref:
         return False
 

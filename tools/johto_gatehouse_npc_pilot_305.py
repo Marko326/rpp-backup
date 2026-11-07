@@ -535,7 +535,7 @@ def fault_tests(project: Path, gold_root: Path | None = None) -> dict[str, bool]
     bad_east_text = east.replace("MOUNT MORTAR is", "ROUTE 42 is", 1)
     faults["wrong_east_dialogue_rejected"] = rejected_text(east_rel, bad_east_text)
 
-    bad_version = re.sub(r'db "REF-\d+@"', 'db "TEST-LABEL@"', version, count=1)
+    bad_version = re.sub(r'db "REF-\d+[A-Z]?@"', 'db "TEST-LABEL@"', version, count=1)
     faults["separate_test_version_rejected"] = (
         bad_version != version
         and audit(project, gold_root, {"data/game_version.asm": bad_version})["status"] == "FAIL"

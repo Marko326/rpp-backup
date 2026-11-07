@@ -47,7 +47,10 @@ class BatchCenters336(unittest.TestCase):
         version=(ROOT/'data/game_version.asm').read_text()
         self.assertIn('SECTION "Game Version", ROM0',version)
         self.assertEqual(version.count('GameVersionText::'),1)
-        self.assertEqual(version.count('db "REF-349@"'),1)
+        import re
+        match = re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version)
+        self.assertIsNotNone(match)
+        self.assertGreaterEqual(int(match.group(1)), 349)
         self.assertNotIn('db "REF-338@"',version)
     def test_ecruteak_entry_uses_left_carpet(self):
         path='data/johto_corridor_runtime_294.asm'

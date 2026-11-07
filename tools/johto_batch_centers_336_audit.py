@@ -62,7 +62,7 @@ def audit(root: Path, gold_root: Path|None=None, overrides:dict|None=None)->dict
         guard=room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         writer=heal.split('AnimateHealingMachineRegional337::',1)[1].split('.johto',1)[0]
         ck('current_game_version_REF338_shared_by_all_builds',
-           'GameVersionText::' in version and 'db "REF-349@"' in version)
+           'GameVersionText::' in version and bool(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version)) and int(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version).group(1)) >= 349)
         ck('frozen_57_maps_and_no_extra_fly_stops',
            'NUM_JOHTO_ACTIVE_MAPS EQU 64' in constants and
            'DEF JOHTO_FLY_TOWN_COUNT EQU 11' in fly and

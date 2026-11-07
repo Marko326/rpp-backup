@@ -56,11 +56,11 @@ class FlyVisit280(unittest.TestCase):
 
     def test_release_version_label_matches_canonical_comment(self):
         version=(ROOT/'data/game_version.asm').read_text(encoding='utf-8')
-        match=re.search(r'(?m)^\s*db "REF-(\d{3})@"$',version)
+        match=re.search(r'(?m)^\s*db "REF-(\d{3})([A-Z]?)@"$',version)
         self.assertIsNotNone(match)
         canonical=f"REF-5.62.{match.group(1)}"
         self.assertIn(canonical, version)
-        self.assertEqual(len(f"REF-{match.group(1)}@"), len('REF-317@'))
+        self.assertLessEqual(len(f"REF-{match.group(1)}{match.group(2)}"), 8)
 
 if __name__ == '__main__':
     unittest.main()

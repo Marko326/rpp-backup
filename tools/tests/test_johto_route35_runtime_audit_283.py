@@ -102,7 +102,7 @@ class Route35LiveContractTests(unittest.TestCase):
                           'gate_music_inherited_and_bike_safe')
 
     def test_reject_software_version_out_of_sync(self):
-        self.assertReject('data/game_version.asm', 'db "' + re.search(r'REF-\d+@', (ROOT/'data/game_version.asm').read_text()).group(0) + '"', 'db "MAP-5.62.296@"',
+        self.assertReject('data/game_version.asm', 'db "' + re.search(r'REF-\d+[A-Z]?@', (ROOT/'data/game_version.asm').read_text()).group(0) + '"', 'db "MAP-5.62.296@"',
                           'actual_game_version_and_active_count')
 
 if __name__=='__main__':

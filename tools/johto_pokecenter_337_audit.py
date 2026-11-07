@@ -102,7 +102,7 @@ def audit(root: Path) -> dict:
            re.search(r'ld e, 2\s+ld a, \[wCurLocalMapID\]\s+cp '+ROOM+r'\s+ret z',collision) is not None and
            collision.index('cp '+ROOM) < collision.index('.southMaps'))
         ck('same_version_all_builds', 'GameVersionText::' in version and
-           'db "REF-349@"' in version)
+           bool(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version)) and int(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version).group(1)) >= 349)
     except (OSError, ValueError, IndexError, TypeError) as exc:
         errors.append('input_error: '+str(exc))
     return {'status': 'PASS_STATIC_ONLY' if not errors else 'FAIL', 'checks': checks,

@@ -8,6 +8,7 @@ from johto_audit_phase import approved_phase
 def test_later_release_keeps_valid_older_contract():
     assert approved_phase('db "REF-319@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 42', 26)
     assert approved_phase('db "REF-320@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 43', 28)
+    assert approved_phase('db "REF-351B@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 64', 40, 317)
 
 
 def test_downgrade_or_malformed_contract_rejected():
@@ -15,6 +16,8 @@ def test_downgrade_or_malformed_contract_rejected():
     assert not approved_phase('db "REF-319@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 22', 26)
     assert not approved_phase('db "TEST-319@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 42', 26)
     assert not approved_phase('db "REF-X@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 42', 26)
+    assert not approved_phase('db "REF-351a@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 64', 40, 317)
+    assert not approved_phase('db "REF-351AB@"', 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 64', 40, 317)
 
 
 def test_comment_cannot_spoof_live_version():

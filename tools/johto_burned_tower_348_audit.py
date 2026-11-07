@@ -84,7 +84,7 @@ def audit(root=ROOT, gold=None):
     music_entries=re.findall(r'^\s*db\s+(MUSIC_GBP_GSC_\w+)',music,re.M)
     require(len(music_entries)==63 and music_entries[-1]=='MUSIC_GBP_GSC_BURNED_TOWER','63 music entries; B1F Burned Tower')
     require('== 65 * 16' in below,'B1F graphics must account for 31 trimmed blank tiles')
-    require('db "REF-349@"' in read('data/game_version.asm'), 'ROM version tag')
+    require(bool(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', read('data/game_version.asm'))) and int(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', read('data/game_version.asm')).group(1)) >= 349, 'ROM version tag')
     require('JOHTO_BURNED_TOWER_B1F + 1' in read('color/data/map_palette_assignments.asm'), 'B1F palette assignments')
     require('JOHTO_BURNED_TOWER_B1F + 1' in read('color/data/map_palette_sets.asm'), 'B1F palette set')
     require('JOHTO_BURNED_TOWER_B1F + 1' in read('data/warp_tile_ids.asm'), 'B1F warp pointer')

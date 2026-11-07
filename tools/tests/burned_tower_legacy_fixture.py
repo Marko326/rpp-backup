@@ -33,5 +33,7 @@ def restore_closed_stage(root: Path) -> None:
 
     p = root / 'data/game_version.asm'
     text = p.read_text()
-    assert 'db "REF-349@"' in text
-    p.write_text(text.replace('db "REF-349@"', 'db "REF-344@"'))
+    import re
+    match = re.search(r'(?m)^\s*db "REF-\d{3}[A-Z]?@"$', text)
+    assert match is not None
+    p.write_text(text[:match.start()] + 'db "REF-344@"' + text[match.end():])

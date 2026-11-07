@@ -93,7 +93,7 @@ class AlphSouthFieldHotfix256(unittest.TestCase):
 
     def test_version_is_unified_without_test_label(self):
         src = (ROOT / 'data/game_version.asm').read_text()
-        versions = re.findall(r'(?m)^\s*db "REF-(\d+)@"', src)
+        versions = re.findall(r'(?m)^\s*db "REF-(\d+)[A-Z]?@"', src)
         self.assertEqual(len(versions), 1, versions)
         self.assertGreaterEqual(int(versions[0]), 256)
         self.assertNotIn("TEST-", src)

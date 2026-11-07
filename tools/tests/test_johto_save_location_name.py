@@ -39,7 +39,7 @@ class JohtoSaveLocationTests(unittest.TestCase):
         runtime = read("engine/johto_pilot_runtime.asm")
         section = runtime.split("JohtoPilotMapProfiles::", 1)[1].split("JohtoPilotMapProfilesEnd::", 1)[0]
         landmark_ids = [int(i) for i in re.findall(r"johto_map_profile\s+[01],\s*(\d+),", section)]
-        self.assertEqual(landmark_ids, [0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36, 37, 39, 41, 43, 1, 2, 7, 11, 5, 15, 21, 26, 31, 34, 39])
+        self.assertEqual(landmark_ids, [0, 1, 2, 3, 4, 2, 5, 4, 7, 7, 8, 19, 19, 9, 10, 11, 11, 13, 14, 14, 15, 17, 17, 18, 17, 19, 20, 21, 24, 24, 25, 26, 28, 30, 31, 32, 32, 34, 34, 35, 35, 36, 37, 39, 41, 43, 1, 2, 7, 11, 5, 15, 21, 26, 31, 34, 39, 9, 9, 12, 12, 21, 21, 4])
         browse = read("engine/johto_pilot_town_map_browse.asm")
         entries = browse.split("JohtoBrowseEntries:", 1)[1].split("JohtoBrowseEntriesEnd:", 1)[0]
         labels = re.findall(r"^\s*dw (\w+)\s*$", entries, flags=re.M)
@@ -57,7 +57,7 @@ class JohtoSaveLocationTests(unittest.TestCase):
         self.assertIn("call LoadTownMapEntry", town.split("GetMapNameForSaveScreen:", 1)[1])
         version = read("data/game_version.asm")
         # All build flavors use one compact ROM label; canonical release ID stays in project docs.
-        match = re.search(r'db "REF-(\d+)@"', version)
+        match = re.search(r'db "REF-(\d+)[A-Z]?@"', version)
         self.assertIsNotNone(match)
         self.assertGreaterEqual(int(match.group(1)), 240)
         self.assertNotIn("TEST-", version)

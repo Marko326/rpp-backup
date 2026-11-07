@@ -1,3 +1,17 @@
+# 当前稳定源码基底：REF-351B（正式清理定稿，待用户构建与设备验收）
+
+本轮以用户最新 `REF-351B.zip` 的实际 Worktree 为准。分支 `常规功能备份`，正式 Git HEAD 为 `30bbe52a96ffe8d8238159a855fa1b1002d7fee3`；HEAD 内游戏版本为 `REF-350`，当前未提交 Worktree 已升级为 `REF-351B`。本次清理不再开发 REF-351C，不修改游戏运行 ASM、地图资源或游戏版本号，只整理 REF-351B 的测试、审计与交接资料。
+
+**当前基底保留：** REF-350 普通房门 LCD-on / HBlank DMA 地图加载；REF-351A 双字节 LCD 安全 VRAM 复制；REF-351B 普通房门 CGB RGB555 BG/OBJ 统一渐暗。特殊洞穴、Flash、Warp Pad、战斗回图及其它非普通门 Fade 路径保持原样。
+
+**RGBDS 0.5.2 注意：** 最终源码已移除 `bank2C` 单体 Section 内两张查表的内联页对齐依赖，改为 WRAM2 保存完整16位表基址并以 `add hl,de` 索引。该源码修正尚未由本轮实际 RGBDS 汇编/链接验证；用户之前的 `ALIGN $100` 与 `ALIGN 8` 两次错误均记录在 `docs/REF351B_CGB_DOORWAY_RGB555_FADE.md`。
+
+**空间证据：** ZIP 附带一份与 `REF-351B` 对应的 Red MAP，ROM0 剩余252B（项目最低要求64B）；ROMX `$2A` 剩余15001B、`$2C` 剩余771B。当前没有同版 Blue/TEST MAP，不能据此宣称三种构建均通过。
+
+正式清理记录、已执行审计、未验收边界及三件套应用顺序见 [`docs/CLEAN_REF351B_ACCEPTANCE_AND_HANDOFF.md`](docs/CLEAN_REF351B_ACCEPTANCE_AND_HANDOFF.md)。清理采用模式A双提交；Git Commit/Push 和 ROM 构建由用户自行执行。
+
+---
+
 > **CLEAN REF-349｜版本修订后的双提交交付（2026-11-06）**：用户补充要求正式游戏显示升级为 `REF-349`；`data/game_version.asm` 的 `REF-348@` 已等长改为 `REF-349@`，仍是64图/164 Warp，既有 Dark Cave 功能不改。新版三件套从用户原始 `REF-348.patch` Worktree 或正式HEAD `3a53f2d3` 二选一应用，先功能（含版号）、后工具/文档两笔提交。测试/缺失的TEST MAP和设备待验详情统一写在 [`CLEAN REF-349 验收记录`](docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md)，不写进提交日志。**用户上传的Red/Blue MAP是更改版号前的REF-348构建，不代表新版REF-349已编译。**
 
 > **CLEAN REF-349｜黑暗洞穴清理提交准备（2026-11-06）**：当前用户 `REF-348.patch` 的未提交工作区建立在分支 `常规功能备份` / Git HEAD `3a53f2d3` 上；游戏显示仍 `REF-348`。Gold桔梗侧黑暗洞穴 ID190 在当前代码中接通31号和46号道路双向出口、暗态Flash、Surf、26处跳崖和地图限定骑车（64活动图/164 Warp）。用户明确报告 Surf/跳崖正常；并未据此确认Route46、骑车及所有旧档已完整实测。用户Red/Blue新MAP ROM0均剩386B、Bank`$01`剩4B、Bank`$04`剩23B，缺TEST MAP。本轮不动游戏ASM，仅做工具数量合同与文档清理；Gold静态1715/1715，但全仓库pytest仍54失败（旧断言/夹具待另批审查）；模式A双提交、三份补丁及两份中文日志，见 [`CLEAN REF-349 验收/交接`](docs/CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md)。

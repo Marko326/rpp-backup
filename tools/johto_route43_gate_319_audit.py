@@ -224,7 +224,8 @@ def audit(root: Path, gold_root: Path, overrides: dict[str, str | bytes] | None 
          'JOHTO_LAKE_OF_RAGE_LOCAL_ID' not in warp_tbl)
     test('Rocket_toll_and_TM36_not_faked', 'db 0 ; Rocket and Officer events' in gate_src and
          'Gold 1000-yen Rocket toll/scene and Officer TM36 are NOT ported' in gate_src)
-    test('version_label_keeps_fixed_width', re.search(r'db "REF-\d{3}@"', text('data/game_version.asm')) is not None and len('REF-318@') == len('REF-317@'))
+    version_match = re.search(r'(?m)^\s*db "REF-(\d{3})([A-Z]?)@"$', text('data/game_version.asm'))
+    test('version_label_keeps_fixed_width', version_match is not None and len(f"REF-{version_match.group(1)}{version_match.group(2)}") <= 8)
     errors=[c['name'] for c in checks if not c['passed']]
     return {'status':'PASS_STATIC_ONLY' if not errors else 'FAIL','checks_total':len(checks),
             'checks_passed':len(checks)-len(errors),'errors':errors,'checks':checks,

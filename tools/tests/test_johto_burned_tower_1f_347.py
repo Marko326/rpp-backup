@@ -25,7 +25,7 @@ class TestBurnedTower1F347(unittest.TestCase):
         self.assertIn('cp 4 ; Gold WARP_CARPET_DOWN', self.rt)
         # REF-348 deliberately opens the 1F PIT and LADDER cells; REF-347 kept
         # both closed.  Their Gold role locations never change.
-        if self.active_maps == 63:
+        if self.active_maps >= 63:
             self.assertIn('cp 2 ; Gold PIT, active step-in trigger', self.rt)
             self.assertIn('cp 1 ; Gold LADDER, active step-in trigger', self.rt)
         self.assertIn('cp 20', self.rt)
@@ -52,36 +52,42 @@ class TestBurnedTower1F347(unittest.TestCase):
         self.assertIn((10,15),seen)
 
     def test_only_enter_exit_routes(self):
-        self.assertIn('db 14 ; Gold order: two DOWN carpets, eleven PITs, one lower ladder' if self.active_maps == 63 else 'db 2 ; only paired DOWN-only exit carpets', self.rt)
+        self.assertIn('db 14 ; Gold order: two DOWN carpets, eleven PITs, one lower ladder' if self.active_maps >= 63 else 'db 2 ; only paired DOWN-only exit carpets', self.rt)
         self.assertIn('db 15, 9, 5, JOHTO_REGISTERED_WARP_SELECTOR',self.rt)
         self.assertIn('db 15, 10, 5, JOHTO_REGISTERED_WARP_SELECTOR',self.rt)
         active_routes=read('engine/johto_pilot_runtime.asm').split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0]
         entries=[line for line in active_routes.splitlines() if re.match(r'\s*db MAP_REGION_JOHTO,',line)]
-        self.assertEqual(len(entries),160 if self.active_maps == 63 else 147)
+        self.assertEqual(len(entries),164 if self.active_maps >= 64 else (160 if self.active_maps == 63 else 147))
         # Source registration is distinct from destination mentions.  B1F's
         # first five ordinals are always destination-only, even in REF-348.
         sources = [re.match(r'\s*db MAP_REGION_JOHTO, (\w+), (\d+), MAP_REGION_JOHTO,', line)
                    for line in entries]
         sources = [(m[1], int(m[2])) for m in sources if m]
         self.assertEqual(sum(local == 'JOHTO_BURNED_TOWER_1F_LOCAL_ID'
-                             for local, _ in sources),14 if self.active_maps == 63 else 2)
+                             for local, _ in sources),14 if self.active_maps >= 63 else 2)
         basement = [ordinal for local, ordinal in sources if local == 'JOHTO_BURNED_TOWER_B1F_LOCAL_ID']
-        self.assertEqual(basement, [5] if self.active_maps == 63 else [])
+        self.assertEqual(basement, [5] if self.active_maps >= 63 else [])
         city=read('data/johto_corridor_runtime_294.asm')
         self.assertIn('db 6 ; REF-347',city)
         self.assertIn('db 5, 5, 0, JOHTO_REGISTERED_WARP_SELECTOR',city)
 
     def test_registry_and_tileset(self):
         self.assertIn(f'DEF NUM_JOHTO_ACTIVE_MAPS EQU {self.active_maps}', read('constants/region_map_constants.asm'))
-        self.assertIn(self.active_maps, (62, 63))
+        self.assertIn(self.active_maps, (62, 63, 64))
         slots=read('data/johto_stable_id_slots.asm')
-        self.assertIn('JOHTO_INVALID_ACTIVE_SLOT, 61, 62' if self.active_maps == 63 else 'JOHTO_INVALID_ACTIVE_SLOT, 61, JOHTO_INVALID_ACTIVE_SLOT', slots)
+        self.assertIn('JOHTO_INVALID_ACTIVE_SLOT, 61, 62' if self.active_maps >= 63 else 'JOHTO_INVALID_ACTIVE_SLOT, 61, JOHTO_INVALID_ACTIVE_SLOT', slots)
         self.assertIn('tileset JohtoBurnedTower1F_Block', read('data/tileset_headers.asm'))
         self.assertIn('INCLUDE "color/tilesets/johto_burned_tower_1f.asm"', read('color/data/map_palette_assignments.asm'))
         self.assertIn('INCLUDE "data/johto_burned_tower/REF347_1f_runtime.asm"',read('main.asm'))
         self.assertNotIn('REF346_runtime_candidate.asm',read('main.asm'))
-        self.assertEqual(read('data/game_version.asm').count('REF-349@' if self.active_maps == 64 else ('REF-348@' if self.active_maps == 63 else 'REF-347@')),1)
-        if self.active_maps == 63:
+        version = read('data/game_version.asm')
+        match = re.search(r'(?m)^\s*db "REF-(\d{3})([A-Z]?)@"$', version)
+        self.assertIsNotNone(match)
+        if self.active_maps == 64:
+            self.assertGreaterEqual(int(match.group(1)), 349)
+        else:
+            self.assertEqual(int(match.group(1)), 348 if self.active_maps == 63 else 347)
+        if self.active_maps >= 63:
             self.assertIn('dw JohtoBurnedTowerB1FRuntimeHeader', read('data/johto_header_descriptors.asm'))
         else:
             self.assertNotIn('dw JohtoBurnedTowerB1FRuntimeHeader', read('data/johto_header_descriptors.asm'))
@@ -99,12 +105,12 @@ class TestBurnedTower1F347(unittest.TestCase):
         town_map = read('engine/fly_town_map_helpers.asm')
         self.assertIn('db 60, 76 ; slot61 Burned Tower 1F', town_map)
         self.assertIn('db 21 ; slot61 Burned Tower 1F', town_map)
-        if self.active_maps == 63:
+        if self.active_maps >= 63:
             self.assertIn('db 21 ; slot62 Burned Tower B1F', town_map)
             self.assertIn('db 60, 76 ; slot62 Burned Tower B1F', town_map)
         self.assertIn('MUSIC_GBP_GSC_BURNED_TOWER ; slot61',
                       read('engine/menu/options_menu.asm'))
-        if self.active_maps == 63:
+        if self.active_maps >= 63:
             self.assertIn('MUSIC_GBP_GSC_BURNED_TOWER ; slot62', read('engine/menu/options_menu.asm'))
 
     def test_tile_passthrough_is_safe(self):

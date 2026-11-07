@@ -1,3 +1,29 @@
+## CLEAN REF-351B｜普通房门 CGB 渐暗与 LCD-on 安全加载正式清理
+- [x] 以用户最新 `REF-351B.zip` 的实际 Worktree 为当前清理前置；分支 `常规功能备份`，正式 HEAD `30bbe52a96ffe8d8238159a855fa1b1002d7fee3`，HEAD 游戏版本 `REF-350`，当前游戏版本 `REF-351B`。
+- [x] 确认当前 Worktree 相对正式 HEAD 的41个文件差异可由导出 `current_worktree.patch` 反向重建；不把未提交 Worktree 冒充 HEAD。
+- [x] 冻结游戏运行代码：保留 REF-350 LCD-on / HBlank DMA、REF-351A 双字节安全复制、REF-351B CGB RGB555 普通门渐暗；清理阶段不修改 ASM、地图资源、SRAM/存档结构或游戏版本号。
+- [x] RGBDS 0.5.2 查表对齐问题的最终源码方案为完整16位表基址 + `add hl,de`；不再使用两张查表的内联 `ALIGN`。本轮未运行 RGBDS 汇编/链接，不能写成编译已通过。
+- [x] 相关门房专项回归：84 passed、1 skipped；修改过的工具/审计测试集合：131 passed、6 skipped、4 subtests passed。
+- [x] `asm_symbol_preflight.py`：1850 ASM 文件通过；`johto_table_assert_preflight.py`：3张表 ASSERT 通过；`johto_pilot_migration_audit.py --project .`：1538/1538 `PASS_STATIC_ONLY`；`johto_rom0_space_preflight.py`：`PASS_STATIC_ONLY`。
+- [x] ZIP 附带 REF-351B Red MAP：ROM0 余252B（≥64B）；ROMX `$2A` 余15001B、`$2C` 余771B。该证据只覆盖附带 Red MAP，不代表 Blue/TEST 新构建。
+- [x] 按模式A准备正式清理三件套：当前 Worktree→清理增量、清理最终状态→仅功能状态的工具反向隔离、正式 HEAD→最终状态累计全量；附功能与工具两份中文提交日志。
+- [ ] 用户本机使用 RGBDS 0.5.2 构建 Red、Blue、TEST；确认汇编/链接成功并提供同版 MAP。
+- [ ] 核对 Red/Blue/TEST 的 ROM0 均≥64B及相关 ROMX Bank 余量；特别关注 `$2A`、`$2C`。
+- [ ] 同设备复测普通房门进出、BG/OBJ 同步渐暗、无白闪/单帧跳色、音乐连续性、不同 Tileset/屋顶及旧存档。
+- [ ] 回归 Rock Tunnel、Dark Cave、Flash、Warp Pad、战斗回图等特殊路径。
+- 本轮不编译/链接 ROM，不执行 Git Commit/Push。全仓库 pytest 未完成，不声明全量测试全绿。详见 `docs/CLEAN_REF351B_ACCEPTANCE_AND_HANDOFF.md`。
+
+## REF-351A｜LCD 开启期间双字节安全 VRAM 复制（开发候选）
+- [x] 以用户最新干净 REF-350 HEAD `30bbe52a96ffe8d8238159a855fa1b1002d7fee3` 为本轮正式基线；只移植 REF-350G `CopyData` 双字节安全窗口实现，不应用旧 HEAD 全量补丁。
+- [x] `CopyData` 仅在普通门安全标志有效且目标起始地址位于 `$8000-$9fff` 时启用：奇数首字节单独处理，剩余字节每个 mode 0/1 窗口最多连续写2字节；非VRAM与 LCD-off 快速路径不变。
+- [x] 保留 `FarCopyData` / `FarCopyData2` ROM Bank wrapper，不改 SP；保留 REF-350 的 CGB Attribute + Tile 单格配对与 HBlank DMA 上传。
+- [x] HBlank DMA 末尾4字节的 STAT 轮询改用 `ldh`；不改每行16字节 HDMA、4字节安全尾写、12列不写的边界。
+- [ ] 用户本机重新构建 Red/Blue/TEST 与 MAP；确认 ROM0≥64B、ROMX Bank 空间及链接成功。
+- [ ] 实机复测普通门进出、同/跨 Tileset、Snowy/Gold 屋顶、玩家精灵、音乐连续性、旧存档；并回归 Dark Cave、Rock Tunnel、Warp Pad、战斗回图。
+- [ ] 用同设备/同帧率录像比较 REF-350 与 REF-351A 黑屏驻留和完整转场；350G历史数据不能代替本轮实测。
+- 属性地图生成/上传的进一步组织优化留作下一独立批次；不与本轮双字节 CopyData 混合。
+- 本轮不编译/链接 ROM、不 Commit/Push；开发候选仅交两份互斥正向补丁。
+
 ## REF-350｜普通房门 CGB 黑屏转场与 HBlank DMA（阶段性提交候选）
 
 - [x] 普通房门进出采用黑色渐变；目标地图在 LCD 保持开启时加载，避免 LCD 关闭造成的白闪。

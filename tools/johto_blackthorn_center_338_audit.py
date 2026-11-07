@@ -53,7 +53,7 @@ def audit(root:Path,gold_root:Path|None=None,overrides:dict|None=None)->dict:
         down_section=room.split('JohtoSharedCenterDownCollision336::',1)[1].split('SetLastBlackoutMapRegional::',1)[0]
         before=routes.split('JohtoBatchCenterDoorBeforeStep336::',1)[1].split('JohtoBatchCenterDoorAfterStep336::',1)[0]
         after=routes.split('JohtoBatchCenterDoorAfterStep336::',1)[1]
-        ck('version_only_REF338', 'db "REF-349@"' in version and 'GameVersionText::' in version)
+        ck('version_only_REF338', bool(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version)) and int(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', version).group(1)) >= 349 and 'GameVersionText::' in version)
         ck('stable_id85_appended_slot56_map57',
            f'DEF {CENTER} EQU 85' in fixed and
            'NUM_JOHTO_ACTIVE_MAPS EQU 64' in constants and

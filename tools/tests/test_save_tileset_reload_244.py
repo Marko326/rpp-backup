@@ -74,7 +74,7 @@ class TestSaveTilesetReload244(unittest.TestCase):
 
     def test_version_is_shared_without_removing_test_build_switch(self):
         version = read("data/game_version.asm")
-        official = re.search(r'db "REF-(\d+)@"', version)
+        official = re.search(r'db "REF-(\d+)[A-Z]?@"', version)
         self.assertIsNotNone(official)
         self.assertGreaterEqual(int(official.group(1)), 244)
         self.assertNotIn("TEST-", version)
