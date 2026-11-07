@@ -82,7 +82,7 @@ def test_doorway_hdma_and_single_cell_attribute_path_are_preserved():
 
 def test_version_and_double_speed_precondition_are_explicit():
     version = read("data/game_version.asm")
-    assert 'db "REF-352@"' in version
+    assert 'db "REF-353@"' in version
     init = read("color/init.asm")
     assert "ld [rKEY1], a\n\tstop" in init
     home = read("home.asm")

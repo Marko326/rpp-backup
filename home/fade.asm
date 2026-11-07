@@ -45,6 +45,23 @@ GBFadeOutToBlack::
 	ld b, 4
 	jr GBFadeDecCommon
 
+; REF-353: same four stages/eight frames as a door, without briefly
+; brightening an unlit cave. GBFadeDecCommon walks 3 bytes BACKWARDS
+; per stage; point to the final row (+11), not the first row (+2).
+; Otherwise it reads neighboring FadePal tables and leaves the loader visible.
+; Only PlayMapChangeSound uses these entry points.
+; A dark Johto BG has normally colored sprites; Kanto Rock Tunnel can have
+; both BG and OBJ already dark. Neither path changes the LCD-on loader.
+GBFadeOutToBlackDarkBG353::
+	ld hl, FadePalDarkBG353 + 11
+	ld b, 4
+	jr GBFadeDecCommon
+
+GBFadeOutToBlackAlreadyDark353::
+	ld hl, FadePalAlreadyDark353 + 11
+	ld b, 4
+	jr GBFadeDecCommon
+
 GBFadeInFromWhite::
 	ld hl, FadePal7 + 2
 	ld b, 3
@@ -99,4 +116,15 @@ FadePal5:: db %11100100, %11100100, %11100100
 FadePal6:: db %10010000, %10010000, %10010000
 FadePal7:: db %01000000, %01000000, %01000000
 FadePal8:: db %00000000, %00000000, %00000000
+; Reverse order: the common fade starts at the LAST row (+11) and walks backward.
+FadePalDarkBG353::
+	db $ff, $ff, $ff ; final black
+	db $fe, $fe, $fe ; BG remains dark; OBJ is almost black
+	db $fe, $f9, $f9 ; BG remains dark; OBJ dims
+	db $fe, $e4, $e4 ; no brightening on the first stage
+FadePalAlreadyDark353::
+	db $ff, $ff, $ff
+	db $fe, $fe, $fe
+	db $fe, $fe, $fe
+	db $fe, $fe, $fe
 ASSERT FadePal4 - FadePalJohtoDark349 == 12

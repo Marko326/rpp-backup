@@ -20,15 +20,21 @@ def table_values(source, label):
 
 def audit_source(overworld, fade, vblank, wram, hram, version, init):
     door = overworld.split("PlayMapChangeSound::", 1)[1].split("ExtraWarpCheck::", 1)[0]
-    assert door.index("and a\n\tret nz") < door.index("ldh [hDoorwayCGBFadeActive],a")
+    # REF-353: normal and dark-cave warps share the LCD-on loader; only the
+    # palette fade stage differs if the currently visible scene is already dim.
+    assert "ret nz ; leave Kanto Rock Tunnel" not in door
+    assert "jp GBFadeOutToWhite" not in door
+    assert door.index("ldh [hMapLoadVRAMSafeFlag],a") < door.index("ldh a,[rBGP]")
+    assert "call GBFadeOutToBlackDarkBG353" in door
+    assert "call GBFadeOutToBlackAlreadyDark353" in door
     assert door.index("ldh [hDoorwayCGBFadeActive],a") < door.index("call GBFadeOutToBlack")
     clear = "xor a\n\tldh [hDoorwayCGBFadeActive],a"
     assert clear in door
     assert door.index("call GBFadeOutToBlack") < door.index(clear)
     safe_loader_arm = "ld a,1\n\tldh [hMapLoadVRAMSafeFlag],a"
     assert door.index(clear) < door.index(safe_loader_arm)
-    assert "cp 12 ; FadePalJohtoDark349" in door
-    assert ".johtoDarkTransition349" in door
+    assert "cp $fe" in door
+    assert ".armLCDOnDoor353" in door
 
     common = fade.split("GBFadeDecCommon:\n", 1)[1].split("; HAX: some of these palettes", 1)[0]
     assert common.index("ldh [hDoorwayFadeTargetBGP], a") < common.index("callab DoorwayFadePreparePalette")
@@ -92,7 +98,7 @@ def audit_source(overworld, fade, vblank, wram, hram, version, init):
 
     assert "hDoorwayCGBFadeActive  EQU $FFDE" in hram
     assert "hDoorwayFadeSavedSVBK  EQU $FFDF" in hram
-    assert 'db "REF-352@"' in version
+    assert 'db "REF-353@"' in version
     assert "ldh [hDoorwayCGBFadeActive], a" in init
     assert "W2_DoorwayFadeTwoThirdsBuffer + $80 == W2_DoorwayFadeOneThirdBuffer" in wram
     assert "W2_DoorwayFadeOneThirdBuffer + $80 == W2_TilesetPaletteMap" in wram

@@ -423,8 +423,8 @@ JohtoPilotResolveRegisteredWarp::
     ld [wCurRegion], a
     ; REF-349 video: keep a dedicated dark record with ordinary OBJ colors.
     ; The destination may be a DARK cave (entry) or the outdoor landing from
-    ; an UNLIT cave (exit). On exit, keep offset 12 until the next map loads;
-    ; the pre-LCD helper will clear it AFTER the source scene fades away.
+    ; an UNLIT cave (exit). Preserve offset 12 through the shared doorway fade.
+    ; The palette helper clears it only after the new map has been staged.
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jr z, .unlitDarkPalette349
@@ -434,14 +434,8 @@ JohtoPilotResolveRegisteredWarp::
     ld a, [wMapPalOffset]
     cp 12 ; was the source cave still unlit?
     jr nz, .normalPalette349 ; Flash-lit cave exits use regular white fade
-    ; RPP's standard fade-to-white starts at BGP E4, exposing the complete
-    ; purple cave for eight frames before reaching white. Gold's old dark
-    ; scene must NOT brighten; directly prepare the final white frame.
-    ; VBlank applies it before the destination map is loaded.
-    xor a
-    ld [rBGP], a
-    ld [rOBP0], a
-    ld [rOBP1], a
+    ; REF-353: do not force the source cave white. The common doorway fade
+    ; keeps its dark BG/OBJ monotonic while switching to the LCD-on loader.
 .unlitDarkPalette349
     ld a, 12 ; FadePal4 - FadePalJohtoDark349, BG dark / OBJ normal
     jr .storePalette349

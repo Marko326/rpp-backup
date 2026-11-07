@@ -170,10 +170,13 @@ def check(root:Path,overrides:dict[str,str|bytes]|None=None)->list[str]:
             'Kanto Rock Tunnel legacy darkness must remain unchanged')
         ov=txt('home/overworld.asm')
         map_sound=ov.split('PlayMapChangeSound::',1)[-1].split('ExtraWarpCheck::',1)[0]
-        yes(bool(re.search(r'cp 12[^\n]*\n\s*jr z,\s*\.johtoDarkTransition349',map_sound)) and
-            bool(re.search(r'\.johtoDarkTransition349\s*\n\s*ld a,\[rBGP\]\s*\n\s*and a\s*\n\s*ret z\s*[^\n]*\n\s*jp GBFadeOutToWhite',map_sound)) and
-            'ret nz ; leave Kanto Rock Tunnel behavior unchanged' in map_sound,
-            'Dark Cave must fade old scene to Gold white; white exit must not flash purple')
+        yes('call GBFadeOutToBlackDarkBG353' in map_sound and
+            'call GBFadeOutToBlackAlreadyDark353' in map_sound and
+            'call GBFadeOutToBlack' in map_sound and
+            'ldh [hMapLoadVRAMSafeFlag],a' in map_sound and
+            'ret nz ; leave Kanto Rock Tunnel' not in map_sound and
+            'jp GBFadeOutToWhite' not in map_sound,
+            'Dark Cave and Rock Tunnel must share the LCD-on black doorway with monotonic dim-source fades')
         loader=ov.split('LoadMapData::',1)[-1].split('SwitchToMapRomBank::',1)[0]
         yes('_LoadMapVramAndColors' in loader and
             'callab JohtoDarkCavePreLCDPalette349' in loader and
@@ -182,17 +185,19 @@ def check(root:Path,overrides:dict[str,str|bytes]|None=None)->list[str]:
         resolve=warp.split('JohtoPilotResolveRegisteredWarp::',1)[-1].split('JohtoPilotMapProfiles::',1)[0]
         yes(bool(re.search(r'ld a, c\s*; source stable ID[^\n]*\n\s*cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID',resolve)) and
             'cp 12 ; was the source cave still unlit?' in resolve and
-            all('ld ['+r+'], a' in resolve for r in ('rBGP','rOBP0','rOBP1')) and
-            resolve.index('xor a\n    ld [rBGP], a') < resolve.index('ld a, 12 ; FadePal4 - FadePalJohtoDark349') < resolve.index('ld [wMapPalOffset], a'),
-            'Unlit cave exit must whiten old scene without purple exposure before palette clear')
+            all('ld ['+r+'], a' not in resolve for r in ('rBGP','rOBP0','rOBP1')) and
+            resolve.index('ld a, 12 ; FadePal4 - FadePalJohtoDark349') < resolve.index('ld [wMapPalOffset], a'),
+            'Unlit cave exit must not force a white screen before the common black fade')
         prelcd=sp.split('JohtoDarkCavePreLCDPalette349::',1)[-1] if 'JohtoDarkCavePreLCDPalette349::' in sp else ''
         yes(all(token in prelcd for token in (
                 'cp JOHTO_RUNTIME_MAP_HANDLE','cp MAP_REGION_JOHTO',
                 'cp 12 ; FadePalJohtoDark349',
                 'cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID',
                 'jr z, .apply','ld [wMapPalOffset], a',
+                'ldh a, [hMapLoadVRAMSafeFlag]',
+                'ret nz ; stay black until LoadPlayerSpriteGraphics completes',
                 'jp LoadGBPal')),
-            'pre-LCD helper must retain dark offset inside cave and clear it on outdoor arrival')
+            'Dark Cave palette offset must be cleared on exit but LCD-on map must stay black through sprite upload')
         arrival=warp.split('JohtoPilotGateArrivalStep::',1)[-1].split('JohtoPilotGateDoorApproachAllowed::',1)[0]
         yes('cp JOHTO_ROUTE_31_LOCAL_ID' in arrival and
             'cp 34' in arrival and 'cp 5' in arrival and

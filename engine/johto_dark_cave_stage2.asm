@@ -308,11 +308,11 @@ JohtoFlashEligibility349::
     text "It's not dark here.@@"
 
 
-; Called by LoadMapData with LCD disabled, AFTER the target tile/palette data
-; has been loaded but BEFORE EnableLCD. The previous native warp holds offset
-; 12 through its fade when leaving an unlit Dark Cave, so restore normal map
-; colors only here. Kanto (including Rock Tunnel), ordinary Johto houses, and
-; Flash-lit caves retain the existing transition behavior.
+; Called by LoadMapData after the destination tile/palette upload. An unlit
+; Dark Cave exit holds offset 12 through the old scene's fade, then clears it.
+; With LCD-on safe loading, keep the target hidden (black) until player sprite
+; graphics finish; OverworldLoop restores BGP/OBP from the final offset.
+; LCD-off callers retain the original immediate palette restore.
 JohtoDarkCavePreLCDPalette349::
     ld a, [wCurMap]
     cp JOHTO_RUNTIME_MAP_HANDLE
@@ -330,4 +330,7 @@ JohtoDarkCavePreLCDPalette349::
     xor a
     ld [wMapPalOffset], a
 .apply
+    ldh a, [hMapLoadVRAMSafeFlag]
+    and a
+    ret nz ; stay black until LoadPlayerSpriteGraphics completes
     jp LoadGBPal

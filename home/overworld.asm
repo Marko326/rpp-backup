@@ -667,9 +667,10 @@ WarpFound2::
 	ld [wCurMap],a
 	cp ROCK_TUNNEL_1
 	jr nz,.notRockTunnel
+	; REF-353: the destination still needs Kanto darkness, but the shared
+	; doorway routine now owns the ONE black fade and LCD-on VRAM guard.
 	ld a,$06
 	ld [wMapPalOffset],a
-	call GBFadeOutToBlack
 .notRockTunnel
 	call PlayMapChangeSound
 	jr .done
@@ -955,31 +956,37 @@ PlayMapChangeSound::
 	ld a,SFX_GO_OUTSIDE
 .playSound
 	call PlaySound
-	; REF-350: match the validated DOR-1.18 CGB doorway rhythm. Normal
-	; zero-offset map changes fade to black, then request the LCD-on safe loader.
-	; Keep the existing Rock Tunnel / Johto Dark Cave nonzero-offset handling.
+	; REF-353: every *ordinary warp*, including unlit Rock Tunnel and
+	; Johto Dark Cave, uses the same black transition and LCD-on safe loader.
+	; Darkness/Flash select the destination palette, NOT the loader.
 	xor a
 	ldh [hMapLoadVRAMSafeFlag],a
-	ld a,[wMapPalOffset]
-	cp 12 ; FadePalJohtoDark349, not Kanto's offset 6
-	jr z,.johtoDarkTransition349
-	and a
-	ret nz ; leave Kanto Rock Tunnel behavior unchanged
-	; REF-351B: only ordinary zero-offset CGB doors use the RGB555 fade.
-	; Keep the flag scoped to GBFadeOutToBlack; special cave fades above stay native.
+	ldh [hDoorwayCGBFadeActive],a
+	; The old cave BG is already dark (BGP=FE). Do not brighten it to E4
+	; for eight frames before fading it out. Johto keeps visible sprites;
+	; Rock Tunnel may already have dark sprites too.
+	ldh a,[rBGP]
+	cp $fe
+	jr nz,.normalBlackDoor353
+	ldh a,[rOBP0]
+	cp $fe
+	jr z,.alreadyDimDoor353
+	call GBFadeOutToBlackDarkBG353
+	jr .armLCDOnDoor353
+.alreadyDimDoor353
+	call GBFadeOutToBlackAlreadyDark353
+	jr .armLCDOnDoor353
+.normalBlackDoor353
+	; Preserve REF-351B RGB555 fading for every lit doorway/cave.
 	ld a,1
 	ldh [hDoorwayCGBFadeActive],a
 	call GBFadeOutToBlack
 	xor a
 	ldh [hDoorwayCGBFadeActive],a
+.armLCDOnDoor353
 	ld a,1
 	ldh [hMapLoadVRAMSafeFlag],a
 	ret
-.johtoDarkTransition349
-	ld a,[rBGP]
-	and a
-	ret z ; departing an unlit cave: scene is already white
-	jp GBFadeOutToWhite ; Gold door transition, NOT a black cut
 
 ; this function is an extra check that sometimes has to pass in order to warp, beyond just standing on a warp
 ; the "sometimes" qualification is necessary because of CheckWarpsNoCollision's behavior
@@ -2541,9 +2548,9 @@ CopyMapConnectionHeader::
 LoadMapData::
 	ld a,[H_LOADEDROMBANK]
 	push af
-	; REF-350 / DOR-1.17B CGB path: PlayMapChangeSound arms the guard only
-	; after a normal black doorway fade. Battle returns, warp pads, startup and
-	; cave-special paths therefore keep the original LCD-off loader.
+	; REF-353: PlayMapChangeSound arms this guard for ordinary house AND cave
+	; warps. Battle returns, warp pads, startup and other callers still use
+	; the original LCD-off loader.
 	ldh a,[hMapLoadVRAMSafeFlag]
 	and a
 	jr z,.useLegacyLCDOffLoad
@@ -2583,8 +2590,8 @@ LoadMapData::
 	call RunPaletteCommand ; HAX: this function call was moved to be above _LoadMapVramAndColors
 ; copy current map view + corresponding palettes to VRAM
 	call _LoadMapVramAndColors ; HAX
-	; Dark Cave special paths still use the legacy LCD-off loader. For the
-	; ordinary zero-offset safe path this helper returns immediately.
+	; The helper clears deferred Johto unlit-cave exit darkness, but on
+	; LCD-on door/cave loads it must NOT reveal the target before sprite upload.
 	callab JohtoDarkCavePreLCDPalette349
 
 	ld a,$01

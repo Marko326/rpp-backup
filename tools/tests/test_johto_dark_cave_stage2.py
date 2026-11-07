@@ -102,20 +102,20 @@ def test_darkness_does_not_recolor_legacy_rock_tunnel():
     assert check(ROOT,{rel:src.replace('FadePal2:: db %11111110, %11111110, %11111110',
                                        'FadePal2:: db %11111110, %11100100, %11100100',1)})
 
-def test_entry_must_fade_to_gold_white_not_skip_to_purple():
+def test_entry_uses_shared_cave_black_fade_and_safe_loader():
     rel='home/overworld.asm';src=(ROOT/rel).read_text()
-    assert check(ROOT,{rel:src.replace('jp GBFadeOutToWhite ; Gold door transition, NOT a black cut',
-                                       'jp GBFadeOutToBlack ; wrong fade',1)})
+    assert check(ROOT,{rel:src.replace('call GBFadeOutToBlackDarkBG353',
+                                       'call GBFadeOutToWhite',1)})
 
 def test_exit_must_not_brighten_dark_cave():
     rel='home/overworld.asm';src=(ROOT/rel).read_text()
-    assert check(ROOT,{rel:src.replace('and a\n\tret z ; departing an unlit cave',
-                                       'cp $fe\n\tret z ; departing an unlit cave',1)})
+    assert check(ROOT,{rel:src.replace('call GBFadeOutToBlackAlreadyDark353',
+                                       'call GBFadeOutToBlack',1)})
 
-def test_registered_exit_blacks_out_before_palette_restore():
+def test_registered_exit_must_not_force_white_before_fade():
     rel='engine/johto_pilot_runtime.asm';src=(ROOT/rel).read_text()
-    assert check(ROOT,{rel:src.replace('xor a\n    ld [rBGP], a\n    ld [rOBP0], a\n    ld [rOBP1], a',
-                                       'xor a\n    nop\n    ld [rOBP0], a\n    ld [rOBP1], a',1)})
+    assert check(ROOT,{rel:src.replace('    ; REF-353: do not force the source cave white.',
+                                       '    ld [rBGP], a ; REF-353: do not force the source cave white.',1)})
 
 def test_pre_lcd_palette_must_run_before_enable_lcd():
     rel='home/overworld.asm';src=(ROOT/rel).read_text()

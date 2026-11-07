@@ -1,3 +1,9 @@
+## REF-353｜已暗洞穴转场与倒序淡出表注意事项
+- 原来的特殊洞穴以 `wMapPalOffset` 选择 LCD-off，能造成黑→白→黑；正常房门和洞口 Warp 统一使用 `PlayMapChangeSound` 的安全 LCD-on 加载，不可因 Flash 状态再恢复旧门控。但特殊 Warp、战斗、启动仍须保留原 loader。
+- 旧洞穴已暗（`rBGP=$FE`）时直接调用普通从 E4 开始的渐暗会反向照亮；DarkBG与AlreadyDark两条专用表均依赖 `GBFadeDecCommon` 每次倒序读取3字节、4阶段，因此地址必须指向第4行末尾 `FadePal...+11`，不能写成 `+2`。否则最后不全黑，会泄漏 LCD-on 正在写入的新地图及玩家剪影。
+- 静态测试必须同时核对入口地址、逐阶段读取结果、单调变暗、最终 FF 全黑和 `hMapLoadVRAMSafeFlag` 的装载保护范围；仅测试调色板表内容不能阻止错指针。含 `Flash` 技能动画的全白帧不能误判为进出洞白闪，需按真实 Warp 时间窗逐帧核查。
+- 用户这次仅复测 Route10 ↔ Rock Tunnel，城都 Dark Cave、DMG/CGB、不同出口、音频、旧档、ROM 链接和新 MAP 仍须单独验收。正式清理的功能/工具/文档一笔 Commit 仅是本用户特批，不自动改变其它项目规范。
+
 ## REF-352｜普通房门图形上传提速的防回归边界
 - `CopyVideoData` 不是单纯的显存 memcpy：原路径依赖每帧8块的 VBlank 队列；只有 `hMapLoadVRAMSafeFlag != 0` 且 LCDC.7=1 的普通门口，才能转到已通过 REF-351A 合同的 `FarCopyData2`/`CopyData` 安全窗口。必须换算 `C tiles ×16 -> BC bytes`，保留原始 BC/DE/HL 与 ROM Bank；不能以为调用方永远只传固定32块。
 - `LoadMapData` 的 guard 必须覆盖 `LoadPlayerSpriteGraphics` 并在其完成后清理，否则旧 BG/OAM 上传可能与新图形竞争。不能因单一录像无异常就删掉菜单、战斗或特殊 Warp 的旧 VBlank 回退。严禁再次加第二套地图 HDMA 或恢复历史双格四写路径。

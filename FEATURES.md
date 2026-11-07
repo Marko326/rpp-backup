@@ -1,3 +1,8 @@
+## CLEAN REF-353｜洞穴与房门共用黑色转场（已完成用户录像核对，待工程构建）
+- Rock Tunnel / Johto Dark Cave 的正常洞口共用黑色渐暗与 LCD-on 安全载图；Flash 仅改变洞内明暗，不再决定 LCD-off。暗洞渐暗表逆向读取起点 `+11`，保证末阶段全黑，不提前显示新旧图层。
+- 用户 `353修复.mp4` 的 Rock Tunnel 路线四次进洞与四次出洞（开 Flash 前后）未观察到转场白闪、室外旧图块拼接或角色残影；城都 Dark Cave 与音频/旧档、Red/Blue/TEST 仍待独立验收。
+- 保留 REF-352 房门提速、CGB 地图 HBlank DMA、RGB555 普通明亮门渐暗和特殊 Warp/战斗旧路径；运行时源码收口不再改动。详见 `docs/CLEAN_REF353_CAVE_SHARED_DOORWAY_ACCEPTANCE.md`。
+
 ## CLEAN REF-352｜普通房门快速图形上传（351C 验收收口）
 - 用户满意并批准 351C 房门视频表现；正式版本依据项目规则从 REF-351B 更新为 **REF-352**（开发 351C 的 C 后缀不带入正式版）。
 - 仅普通 LCD-on 房门：`CopyVideoData` 在加载保护有效时复用 REF-351A 的 STAT 安全成对 `FarCopyData2`；文字框、玩家图形不再强制按每次 8 tiles 等 VBlank。完成主角图形后才解除旧地图刷新保护。
