@@ -1,3 +1,15 @@
+## REF-350｜普通房门 CGB 黑屏转场与 HBlank DMA（阶段性提交候选）
+
+- [x] 普通房门进出采用黑色渐变；目标地图在 LCD 保持开启时加载，避免 LCD 关闭造成的白闪。
+- [x] CGB 安全加载保留原 LCD-off 快速路径；普通门路径在 WRAM Bank 2 暂存 20×18 BG Tile 与 Attribute 两平面，每行前16字节使用一块 HBlank DMA，末尾4字节逐次检查 VRAM 可访问模式；12个非显示列保持不写。
+- [x] 保留 ROM Bank shadow 同步、VBK/SVBK 恢复，以及 VBlank 期间旧地图 BG/OAM 写入保护；Dark Cave、Rock Tunnel、Flash、Warp Pad 和战斗回图继续使用各自原路径。
+- [x] 用户提供的 350G 录像：普通进出门画面恢复正常，未观察到白闪、地图乱码或黑屏死机；录像逐帧统计约进门25帧、出门30帧。
+- [x] 源级检查：`python -m pytest -q -rs tools/tests/test_doorway_lcdon_upload_350.py tools/tests/test_johto_dark_cave_stage2.py tools/tests/test_johto_dark_cave_stage_349.py tools/tests/test_johto_gate_music_bike_259.py` 为 67 passed、1 skipped（跳过项需要 Gold 源码做环境对照）；`python tools/asm_symbol_preflight.py` 检查1850个 ASM 文件通过。
+- [ ] 用户本机为 Red、Blue、TEST 重新构建并提供 REF-350 MAP；核实 ROM0 至少64B及相关 ROMX Bank 余量。当前 ZIP 附带 MAP 仍是 REF-350F，不能当作 REF-350 新链接证据。
+- [ ] 用户继续实机回归普通房门多地图往返、旧存档、Dark Cave／Rock Tunnel、Warp Pad、战斗回图及保存/继续。当前视频只证明所录普通房门路线。
+- [ ] 黑屏停留仍略长于汉化版：约进门25帧／出门30帧，对照录像约23帧／27帧；后续可继续优化，但不得以减少安全检查或造成地图数据错误换速度。
+- 本轮为阶段性提交候选，不代表最终转场定版。助手不编译/链接 ROM，也不执行 Git Commit/Push；由用户决定并执行提交。
+
 ## CLEAN REF-349｜最终版本修订（新三件套）
 - [x] 游戏显示版号 `REF-348@` → `REF-349@`，Red/Blue/TEST 统一读取 `GameVersionText`；原有64活动地图/164 Warp、31/46双出口、Surf/跳崖/Flash/骑车源码不改。
 - [x] 更新版本关联的审计和历史测试夹具；重新生成模式A三份补丁、两份不含验收数据的中文 Git 提交日志。
