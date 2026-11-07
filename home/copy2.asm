@@ -45,9 +45,48 @@ FarCopyDataDouble::
 	ret
 
 CopyVideoData::
+; REF-352: ordinary LCD-on doorway loads already mask stale map/OAM writers
+; and have the REF-351A STAT-checked two-byte CopyData path. Use that path
+; for the textbox and player graphics instead of scheduling 8 tiles/VBlank.
+; Keep menus, combat, special warps and every unguarded caller on the original
+; VBlank queue. In particular, do not add another HDMA engine here.
+	ldh a, [hMapLoadVRAMSafeFlag]
+	and a
+	jr z, .vblankQueue
+	ldh a, [rLCDC]
+	bit 7, a
+	jr z, .vblankQueue
+	; Preserve CopyVideoData's pointer and bank arguments for callers.
+	; In: B:DE = 2bpp source, HL = VRAM destination, C = tiles.
+	; FarCopyData2 takes A:HL = source, DE = destination, BC = bytes.
+	push bc
+	push de
+	push hl
+	ld a, b
+	push af
+	push hl
+	ld h, d
+	ld l, e
+	pop de
+	ld a, c
+	swap a
+	and $0f
+	ld b, a ; high byte of tile count * 16
+	ld a, c
+	swap a
+	and $f0
+	ld c, a ; low byte of tile count * 16
+	pop af
+	call FarCopyData2
+	pop hl
+	pop de
+	pop bc
+	ret
+
+.vblankQueue
 ; Wait for the next VBlank, then copy c 2bpp
 ; tiles from b:de to hl, 8 tiles at a time.
-; This takes c/8 frames.
+; This takes c/8 frames (legacy path only).
 
 	ld a, [H_AUTOBGTRANSFERENABLED]
 	push af

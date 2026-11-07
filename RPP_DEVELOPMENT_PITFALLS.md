@@ -1,3 +1,9 @@
+## REF-352｜普通房门图形上传提速的防回归边界
+- `CopyVideoData` 不是单纯的显存 memcpy：原路径依赖每帧8块的 VBlank 队列；只有 `hMapLoadVRAMSafeFlag != 0` 且 LCDC.7=1 的普通门口，才能转到已通过 REF-351A 合同的 `FarCopyData2`/`CopyData` 安全窗口。必须换算 `C tiles ×16 -> BC bytes`，保留原始 BC/DE/HL 与 ROM Bank；不能以为调用方永远只传固定32块。
+- `LoadMapData` 的 guard 必须覆盖 `LoadPlayerSpriteGraphics` 并在其完成后清理，否则旧 BG/OAM 上传可能与新图形竞争。不能因单一录像无异常就删掉菜单、战斗或特殊 Warp 的旧 VBlank 回退。严禁再次加第二套地图 HDMA 或恢复历史双格四写路径。
+- 一段录像黑屏帧数下降不等于全部场景显存时序安全。已上传 351C 视频 5 进/5 出测得 16/19–20 黑帧，汉化版 23/27；RPP 参考虽只有进/出13/14黑色帧，但中间夹有白闪，总过渡并不更短。统一按“连续纯黑”及“首次黑到首帧地图”分别计数，保持相同路线/设备/帧率。
+- REF-352 不新增地图数据或 SRAM 修改；仍要以新 Red/Blue/TEST MAP 和设备确认 ROM0≥64B、图形、色彩、音效与特殊路径。用户说满意是本次视频可见范围的认可，不能冒充未执行的 RGBDS/设备全覆盖验证。本轮用户最新指示全部改动一次提交：功能、3份 tools/tests 脚本及文档全部同批；不可沿用旧包的任何隔离补丁。
+
 ## REF-351B｜CGB 普通门 RGB555 渐暗边界
 - 仅普通 `wMapPalOffset == 0` 的 `PlayMapChangeSound` 路径置位门控；Rock Tunnel offset 6、Johto Dark Cave offset 12、Flash、Warp Pad、战斗回图不得继承该状态。
 - CGB RGB555 内存按低字节 R[0..4]+G[0..2]、高字节 G[3..4]+B[0..4] 解包；缩放 R/G/B 三通道分别查表后再打包，不能把16位整体右移或缩放字节，否则会跨通道串色。F9/FE还必须临时使用E4身份索引，不能保留原BGP/OBP的灰度重映射，否则会把重映射和RGB缩放叠加成二次变暗。

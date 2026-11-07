@@ -1,3 +1,9 @@
+## CLEAN REF-352｜普通房门快速图形上传（351C 验收收口）
+- 用户满意并批准 351C 房门视频表现；正式版本依据项目规则从 REF-351B 更新为 **REF-352**（开发 351C 的 C 后缀不带入正式版）。
+- 仅普通 LCD-on 房门：`CopyVideoData` 在加载保护有效时复用 REF-351A 的 STAT 安全成对 `FarCopyData2`；文字框、玩家图形不再强制按每次 8 tiles 等 VBlank。完成主角图形后才解除旧地图刷新保护。
+- 保留 REF-350 CGB 双层 HBlank DMA、REF-351B RGB555 渐暗及全部非普通房门旧 VBlank 路径。录像纯黑帧 16/19–20 相较汉化版 23/27；MAP 与其他机型路径仍待用户新构建验证。
+- 见 `docs/CLEAN_REF352_DOORWAY_FAST_COPY_ACCEPTANCE.md`。本轮依用户最新明确要求，功能、版号、三份测试脚本与所有清理文档一次提交，不需要隔离补丁；由用户自行执行提交。
+
 ## CLEAN REF-351B｜普通房门 CGB 转场稳定源码基底
 - 普通零偏移房门沿用 REF-350 LCD-on 地图加载与 HBlank DMA，保留 REF-351A 双字节安全 VRAM 复制。
 - REF-351B 只对普通房门 CGB Fade 做 RGB555 R/G/B 独立通道缩放：F9 阶段约2/3、FE阶段约1/3；BG/OBJ 保持身份颜色索引并在同一 VBlank 阶段同步提交。

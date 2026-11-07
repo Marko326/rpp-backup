@@ -1,3 +1,12 @@
+## CLEAN REF-352｜351C 普通房门安全图形上传：收口提交准备（2026-11-07）
+- [x] 核对最新干净 HEAD `2d3942cfddfb22e7568e842bc29d800b5c4ac8b3`；历史 REF-351B 已提交，旧 351B 清理三件套不可重复打入。
+- [x] 用户对 351C 视频表现满意，要求本版清理收口；已按正式版本规则准备游戏内 `REF-352@`，无新增地图、Warp、音效、存档或独立 DMA 修改。
+- [x] 保存视频口径：351C 连续全黑进门 5 次均16帧、出门 19–20 帧；汉化版对应23/27帧；RPP 参考视频白闪5–6帧。该口径只覆盖已上传录制场景。
+- [x] 保留 REF-351A/351B 专项合同，并对普通房门 guard、寄存器、旧 VBlank 回退、版本号加防回归静态测试。
+- [ ] 用户本机构建 Red/Blue/TEST Red/TEST Blue、检查新 MAP：ROM0≥64B及所有受影响 ROMX 空间（REF-351B Red MAP 252B 只是旧证据）。
+- [ ] 用户按需复测门口无白闪、文字框／主角／NPC 图块、音效音乐、不同地图 Tileset；特殊洞穴/Flash/Warp Pad/战斗回图、菜单/战斗和旧档 Continue 仍为未穷尽覆盖。
+- [ ] **一次 Git Commit**（可选 Push）由用户在真实仓库执行；功能/版号、3 个 `tools/tests` 脚本和全部文档同批提交。ZIP 内为两份互斥正向补丁＋一份中文拟提交日志，不再隔离工具或文档。详见 `docs/CLEAN_REF352_DOORWAY_FAST_COPY_ACCEPTANCE.md`。
+
 ## CLEAN REF-351B｜普通房门 CGB 渐暗与 LCD-on 安全加载正式清理
 - [x] 以用户最新 `REF-351B.zip` 的实际 Worktree 为当前清理前置；分支 `常规功能备份`，正式 HEAD `30bbe52a96ffe8d8238159a855fa1b1002d7fee3`，HEAD 游戏版本 `REF-350`，当前游戏版本 `REF-351B`。
 - [x] 确认当前 Worktree 相对正式 HEAD 的41个文件差异可由导出 `current_worktree.patch` 反向重建；不把未提交 Worktree 冒充 HEAD。

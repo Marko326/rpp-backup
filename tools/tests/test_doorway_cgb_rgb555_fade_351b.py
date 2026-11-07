@@ -92,7 +92,7 @@ def audit_source(overworld, fade, vblank, wram, hram, version, init):
 
     assert "hDoorwayCGBFadeActive  EQU $FFDE" in hram
     assert "hDoorwayFadeSavedSVBK  EQU $FFDF" in hram
-    assert 'db "REF-351B@"' in version
+    assert 'db "REF-352@"' in version
     assert "ldh [hDoorwayCGBFadeActive], a" in init
     assert "W2_DoorwayFadeTwoThirdsBuffer + $80 == W2_DoorwayFadeOneThirdBuffer" in wram
     assert "W2_DoorwayFadeOneThirdBuffer + $80 == W2_TilesetPaletteMap" in wram

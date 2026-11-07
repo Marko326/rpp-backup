@@ -2589,17 +2589,18 @@ LoadMapData::
 
 	ld a,$01
 	ld [wUpdateSpritesEnabled],a
-	; DOR-1.17B CGB release point: the BG map/attributes are complete before
-	; normal VBlank map/OAM writers resume. Player graphics use their existing
-	; VBlank-safe transfer path with the LCD already enabled.
-	xor a
-	ldh [hMapLoadVRAMSafeFlag],a
+	; REF-352: keep the doorway guard through the player graphics transfer.
+	; The 351A safe CopyData path is used only for normal LCD-on doorways;
+	; other loaders still take the original VBlank path. Release BG/OAM
+	; writers only after the destination and player tile patterns are complete.
 	ld a,[rLCDC]
 	bit 7,a
 	jr nz,.lcdReady350B
 	call EnableLCD
 .lcdReady350B
 	call LoadPlayerSpriteGraphics
+	xor a
+	ldh [hMapLoadVRAMSafeFlag],a
 	ld a,[wd732]
 	and a,1 << 4 | 1 << 3 ; fly warp or dungeon warp
 	jr nz,.restoreRomBank
