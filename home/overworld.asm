@@ -955,16 +955,20 @@ PlayMapChangeSound::
 	ld a,SFX_GO_OUTSIDE
 .playSound
 	call PlaySound
-	; REF-349 video: Gold fades the old outdoor scene to WHITE on entry.
-	; The old nonzero offset skipped that fade, flashing a fully lit purple
-	; destination cave. On leaving an unlit cave, the resolver already made
-	; the old screen white; do not run another fade that reveals the cave.
+	; REF-350: match the validated DOR-1.18 CGB doorway rhythm. Normal
+	; zero-offset map changes fade to black, then request the LCD-on safe loader.
+	; Keep the existing Rock Tunnel / Johto Dark Cave nonzero-offset handling.
+	xor a
+	ldh [hMapLoadVRAMSafeFlag],a
 	ld a,[wMapPalOffset]
 	cp 12 ; FadePalJohtoDark349, not Kanto's offset 6
 	jr z,.johtoDarkTransition349
 	and a
 	ret nz ; leave Kanto Rock Tunnel behavior unchanged
-	jp GBFadeOutToWhite
+	call GBFadeOutToBlack
+	ld a,1
+	ldh [hMapLoadVRAMSafeFlag],a
+	ret
 .johtoDarkTransition349
 	ld a,[rBGP]
 	and a
@@ -2531,8 +2535,27 @@ CopyMapConnectionHeader::
 LoadMapData::
 	ld a,[H_LOADEDROMBANK]
 	push af
+	; REF-350 / DOR-1.17B CGB path: PlayMapChangeSound arms the guard only
+	; after a normal black doorway fade. Battle returns, warp pads, startup and
+	; cave-special paths therefore keep the original LCD-off loader.
+	ldh a,[hMapLoadVRAMSafeFlag]
+	and a
+	jr z,.useLegacyLCDOffLoad
+	ldh a,[rLCDC]
+	bit 7,a
+	jr nz,.mapLoadLCDReady
+	; An unusual caller reached us with LCD already off: fall back completely.
+	xor a
+	ldh [hMapLoadVRAMSafeFlag],a
+	jr .lcdOffMapLoad
+.useLegacyLCDOffLoad
 	call DisableLCD
+.lcdOffMapLoad
+	; The private map-name font copy masks interrupts and therefore intentionally
+	; remains on the LCD-off path. A normal door warp already has this invariant
+	; bank-1 copy from the current overworld session.
 	callab LoadMapNameSignGFX ; MAPSIGN-5.19.36: private CGB VRAM bank 1 copy
+.mapLoadLCDReady
 	ld a,$98
 	ld [wMapViewVRAMPointer + 1],a
 	xor a
@@ -2554,14 +2577,22 @@ LoadMapData::
 	call RunPaletteCommand ; HAX: this function call was moved to be above _LoadMapVramAndColors
 ; copy current map view + corresponding palettes to VRAM
 	call _LoadMapVramAndColors ; HAX
-	; With LCD still disabled, settle the Dark Cave palette registers
-	; for the first visible frame. Also clear the exit's deferred dark offset.
-	; Other rooms and Kanto are intentionally unaffected by this ROMX helper.
+	; Dark Cave special paths still use the legacy LCD-off loader. For the
+	; ordinary zero-offset safe path this helper returns immediately.
 	callab JohtoDarkCavePreLCDPalette349
 
 	ld a,$01
 	ld [wUpdateSpritesEnabled],a
+	; DOR-1.17B CGB release point: the BG map/attributes are complete before
+	; normal VBlank map/OAM writers resume. Player graphics use their existing
+	; VBlank-safe transfer path with the LCD already enabled.
+	xor a
+	ldh [hMapLoadVRAMSafeFlag],a
+	ld a,[rLCDC]
+	bit 7,a
+	jr nz,.lcdReady350B
 	call EnableLCD
+.lcdReady350B
 	call LoadPlayerSpriteGraphics
 	ld a,[wd732]
 	and a,1 << 4 | 1 << 3 ; fly warp or dungeon warp

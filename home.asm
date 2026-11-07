@@ -3,11 +3,13 @@ _LoadMapVramAndColors:
 	ld a,[H_LOADEDROMBANK]
 	push af
 	ld a,BANK(LoadMapVramAndColors)
-	ld [$2000],a
+	; REF-350: LCD-on map loading can be interrupted inside this ROMX routine.
+	; Keep the bank shadow synchronized so InterruptWrapper restores this bank,
+	; then restore the caller bank through the same helper on return.
+	call SetRomBank
 	call LoadMapVramAndColors
 	pop af
-	ld [$2000],a
-	ret
+	jp SetRomBank
 
 ;SECTION "rst 08", ROM0 [$08]
 

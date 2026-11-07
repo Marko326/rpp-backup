@@ -344,3 +344,8 @@ hColorHackTmp EQU $FFFB
 ; TEXT-5.62.205: one-shot request for a bottom-third tilemap refresh.
 ; Consumed by the LCD pre-VBlank palette preparation, not by the text caller.
 hTextBottomRefreshRequest EQU $FFFC
+
+; REF-350: ordinary door transitions keep the LCD enabled while loading the
+; destination map. This byte is armed only after the door fade and guards both
+; VRAM writes and stale-map VBlank writers until the BG upload is complete.
+hMapLoadVRAMSafeFlag EQU $FFFD

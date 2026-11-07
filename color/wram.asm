@@ -9,6 +9,7 @@ W2_LastOBP1 EQU $d082
 ; Otherwise this is a 20x18 map of palettes. (takes $168 bytes)
 W2_TilesetPaletteMap	EQU $d200
 
+
 ; Each number here corresponds to a tile, but this isn't used for
 ; overworld sprites. I've got a better system for that.
 W2_SpritePaletteMap		EQU $d400
@@ -63,3 +64,12 @@ W2_TransformEnemyPalette       EQU $d796 ; 8 bytes
 
 ; In bank 1, the stack starts at $dfff. So, that's also the stack here when bank 2 is
 ; loaded. Don't use anything too close to there.
+
+; REF-350G: LCD-on ordinary-door BG map staging buffers in WRAM bank 2.
+; Each plane is stored as 18 rows x 32 bytes. Only the first 20 bytes per row
+; are populated/uploaded; the 12 off-screen columns are deliberately untouched.
+; The two 0x240-byte buffers end at $dc80, leaving the bank-2 stack at $dfff clear.
+W2_DoorwayAttrMapBuffer EQU $d800
+W2_DoorwayTileMapBuffer EQU $da40
+ASSERT W2_DoorwayTileMapBuffer == W2_DoorwayAttrMapBuffer + $240
+ASSERT W2_DoorwayTileMapBuffer + $240 <= $df00

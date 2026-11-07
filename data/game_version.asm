@@ -58,4 +58,5 @@ GameVersionText::
 	; CHERRY-249: add exact Gold WATER handling for Cherrygrove Surf.
 	; VIOLET-248: restore the shore tile ID before Surf landing checks.
 	; SAV-244: restore tileset pointers after loading older saves.
-	db "REF-349@"
+	; REF-350: keep ordinary door transitions on the black-fade, LCD-on CGB path and upload staged BG tile/attribute rows with HBlank DMA.
+	db "REF-350@"

@@ -72,13 +72,24 @@ VBlank::
 	ld [rWY], a
 .ok
 
+	; REF-350 / DOR-1.17B: while the destination map is uploaded with LCD on,
+	; do not let stale old-map BG/OAM writers race the manual VRAM copy. Keep
+	; VBlankCopy queues alive for the existing LCD-on tile loaders.
+	ldh a,[hMapLoadVRAMSafeFlag]
+	and a
+	jr nz,.skipMapBgUpdates350B
 	call AutoBgMapTransfer
 	call VBlankCopyBgMap
 	call RedrawRowOrColumn
+.skipMapBgUpdates350B
 	call VBlankCopy
 	call VBlankCopyDouble
 	;call UpdateMovingBgTiles
+	ldh a,[hMapLoadVRAMSafeFlag]
+	and a
+	jr nz,.skipOAM350B
 	call $ff80 ; OAM DMA
+.skipOAM350B
 	rst $10 ; HAX: VBlank hook (loads palettes)
 	nop
 	nop

@@ -338,7 +338,13 @@ GbcVBlankHook:
 	ld a, [wBattleAnimWX]
 	ld [rWX], a
 .battleAnimWXDone
+	; REF-350: this writer was moved here from home/vblank, so it needs the
+	; same map-load guard as the original DOR-1.17B VBlank path.
+	ldh a,[hMapLoadVRAMSafeFlag]
+	and a
+	jr nz,.skipMovingBgTiles350B
 	call UpdateMovingBgTiles ; Removed from caller to make space
+.skipMovingBgTiles350B
 
 	; Use the hblank interrupt to get a head-start with vblank stuff
 	ld a,[rIE]
@@ -363,6 +369,11 @@ GbcVBlankHook:
 
 	call RefreshPalettesVBlank
 .pictureAttributes
+	; A stale status-screen attribute batch is another direct VRAM writer. Do
+	; not let it touch the destination BG map during an LCD-on door load.
+	ldh a,[hMapLoadVRAMSafeFlag]
+	and a
+	jr nz,.end
 	; SUMMARY15: VBlankCopy has already completed this frame's frontpic graphics
 	; batch. If a StatusScreen dual-palette wipe armed a matching batch, switch
 	; exactly those 7x7 Window-map cells to palette 2 before leaving VBlank. This

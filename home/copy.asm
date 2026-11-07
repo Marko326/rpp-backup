@@ -17,14 +17,40 @@ FarCopyData::
 SECTION "Home Copy Data", ROM0
 
 CopyData::
-; Copy bc bytes from hl to de.
+; REF-350 / DOR-1.17B: while an ordinary door destination is loading with
+; the LCD enabled, gate only VRAM destinations ($8000-$9fff) to safe LCD modes.
+; All non-VRAM copies and all legacy LCD-off loads retain the original fast path.
+	ldh a, [hMapLoadVRAMSafeFlag]
+	and a
+	jr z, .fast
+	ld a, d
+	cp $80
+	jr c, .fast
+	cp $a0
+	jr nc, .fast
+.safe
+	di
+.waitVRAM
+	ld a, [rSTAT]
+	and %10 ; modes 0 and 1 permit VRAM writes
+	jr nz, .waitVRAM
+	ld a, [hli]
+	ld [de], a
+	inc de
+	dec bc
+	ei
+	ld a, c
+	or b
+	jr nz, .safe
+	ret
+.fast
 	ld a, [hli]
 	ld [de], a
 	inc de
 	dec bc
 	ld a, c
 	or b
-	jr nz, CopyData
+	jr nz, .fast
 	ret
 
 SECTION "Home Far Copy Data 2", ROM0

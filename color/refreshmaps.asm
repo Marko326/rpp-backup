@@ -2,8 +2,14 @@
 
 
 ; Called when a map is loaded. Loads tilemap and tile attributes.
-; LCD is disabled, so we have free reign over vram.
+; REF-350 keeps the original fast LCD-off path and adds a CGB-only safe path
+; for ordinary door transitions where the LCD remains enabled.
 LoadMapVramAndColors:
+	ldh a,[hMapLoadVRAMSafeFlag]
+	and a
+	jr nz,.safeLCDOn
+
+.fastLCDOff
 	ld a,$02
 	ld [rSVBK],a
 
@@ -43,6 +49,166 @@ LoadMapVramAndColors:
 	ld [rSVBK],a
 	ret
 
+.safeLCDOn
+	; The BG map is 20x18 inside a 32-byte row stride. Stage both planes in
+	; WRAM bank 2 so each row starts on a 16-byte HDMA boundary. Only columns
+	; 0-19 are uploaded; the 12 off-screen columns remain untouched.
+	;
+	; Build one attribute row at a time. Keep SVBK at bank 1 while interrupts
+	; are enabled because the VBlank handlers use the normal game WRAM bank.
+	coord hl, 0, 0
+	ld de,W2_DoorwayAttrMapBuffer
+	ld b,18
+.buildAttrRow
+	di
+	ld a,2
+	ld [rSVBK],a
+	ld c,20
+.buildAttrColumn
+	ld a,[hli]
+	push hl
+	ld h,W2_TilesetPaletteMap>>8
+	ld l,a
+	ld a,[hl]
+	pop hl
+	ld [de],a
+	inc de
+	dec c
+	jr nz,.buildAttrColumn
+	ld a,32 - 20
+	add e
+	ld e,a
+	jr nc,.buildAttrNoCarry
+	inc d
+.buildAttrNoCarry
+	xor a
+	ld [rSVBK],a
+	ei
+	dec b
+	jr nz,.buildAttrRow
+
+	; Build the matching tile plane with the same 32-byte row stride.
+	coord hl, 0, 0
+	ld de,W2_DoorwayTileMapBuffer
+	ld b,18
+.buildTileRow
+	di
+	ld a,2
+	ld [rSVBK],a
+	ld c,20
+.buildTileColumn
+	ld a,[hli]
+	ld [de],a
+	inc de
+	dec c
+	jr nz,.buildTileColumn
+	ld a,32 - 20
+	add e
+	ld e,a
+	jr nc,.buildTileNoCarry
+	inc d
+.buildTileNoCarry
+	xor a
+	ld [rSVBK],a
+	ei
+	dec b
+	jr nz,.buildTileRow
+
+	; Upload attributes to VBK 1, then tile IDs to VBK 0. Each row uses one
+	; 16-byte HBlank DMA block plus four individually mode-checked CPU writes.
+	ld hl,W2_DoorwayAttrMapBuffer
+	ld de,vBGMap0
+	ld b,18
+	ld c,1
+	call .copyDoorwayMapRowsHDMA
+
+	ld hl,W2_DoorwayTileMapBuffer
+	ld de,vBGMap0
+	ld b,18
+	ld c,0
+	call .copyDoorwayMapRowsHDMA
+
+	xor a
+	ld [rVBK],a
+	ld [rSVBK],a
+	ret
+
+; Input: HL = row-padded source buffer in WRAM bank 2, DE = vBGMap0,
+;        B = 18 rows, C = destination VBK (1 attributes, 0 tile IDs).
+; Each row copies 16 bytes with one HBlank DMA block, then copies the final
+; four visible columns with CPU writes that independently wait for mode 0/1.
+; Interrupts remain disabled only while bank 2 / the selected VBK is active.
+.copyDoorwayMapRowsHDMA
+.hdmaRowLoop
+	di
+	ld a,2
+	ld [rSVBK],a
+	push bc
+	ld a,c
+	ld [rVBK],a
+
+	ld a,h
+	ld [rHDMA1],a
+	ld a,l
+	ld [rHDMA2],a
+	ld a,d
+	and $1f
+	ld [rHDMA3],a
+	ld a,e
+	ld [rHDMA4],a
+	ld a,$80 ; one 16-byte HBlank DMA block
+	ld [rHDMA5],a
+.hdmaWaitBlock
+	ld a,[rHDMA5]
+	bit 7,a
+	jr z,.hdmaWaitBlock
+
+	; HDMA updates its own addresses, not HL/DE.
+	ld a,16
+	add l
+	ld l,a
+	jr nc,.hdmaSourceNoCarry
+	inc h
+.hdmaSourceNoCarry
+	ld a,16
+	add e
+	ld e,a
+	jr nc,.hdmaDestNoCarry
+	inc d
+.hdmaDestNoCarry
+	ld b,4
+.hdmaTailLoop
+.hdmaWaitTailVRAM
+	ld a,[rSTAT]
+	and %10 ; modes 0 and 1 permit VRAM writes
+	jr nz,.hdmaWaitTailVRAM
+	ld a,[hli]
+	ld [de],a
+	inc de
+	dec b
+	jr nz,.hdmaTailLoop
+
+	; Skip the 12 off-screen columns to the next 32-byte BG-map row.
+	ld a,32 - 20
+	add l
+	ld l,a
+	jr nc,.hdmaSourceRowNoCarry
+	inc h
+.hdmaSourceRowNoCarry
+	ld a,32 - 20
+	add e
+	ld e,a
+	jr nc,.hdmaDestRowNoCarry
+	inc d
+.hdmaDestRowNoCarry
+	pop bc
+	xor a
+	ld [rVBK],a
+	ld [rSVBK],a
+	ei
+	dec b
+	jr nz,.hdmaRowLoop
+	ret
 
 
 ; Refresh 1/3 of the window each frame. Called during vblank.
