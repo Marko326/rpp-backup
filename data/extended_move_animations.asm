@@ -44,6 +44,14 @@ PrepareCurrentMoveAnimation::
 	ld hl, PlayRoughExtAnim
 	jp StageDedicatedMoveAnimation
 .notPlayRough
+	; REF-354: an active extended ordinal is NOT an ordinary move ID.
+	; For EXT01 and EXT03..40, the current MoveNum already contains the
+	; compatible animation byte from ExtendedMoves (e.g. EXT13=WING_ATTACK).
+	; Leave the ordinary override table alone and let the native animation
+	; player use that byte. EXT02 retains its full-identity recipe above.
+	ld a, [wExtendedActiveMoveOrdinal]
+	and a
+	ret nz
 	call GetCurrentMoveID
 	cp NUM_ATTACKS
 	ret nc

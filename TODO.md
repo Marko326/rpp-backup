@@ -1,3 +1,26 @@
+# REF-354｜正式清理后的战斗遗留问题 / 待验收（2026-11-07）
+
+> **下次继续修战斗系统，先读 [`docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md`](docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md)。** 本轮只记录，不实施下面的待办。已确认的 Spark 威力寄存器、扩展 ordinal 错动画和分类表长度断言已经在 REF-354 修好，不要重复打旧修复补丁。
+
+- [x] **已修复**：`ResolveDynamicMoveCategory` 保存并恢复 DE；普通 Spark 65 基础威力不再被动态分类的地址操作覆盖。`EXT02` 专用动画保留，其他 EXT 根据兼容动画字节播放，不再拿扩展 ordinal 去碰普通专用动画表；255 项表长 ASSERT 已加入。
+- [ ] **MCLS-003 / OPEN-001（扩展前置，暂不触发）**：扩展分类分支未来遇到 `DYNAMIC` 时尚未调用统一动态解析器。当前 40 项扩展类别都为 Physical；**新增扩展 Dynamic 前修**，并测双方 Attack > / = / < Special、烧伤未折半 Attack、菜单/伤害/Counter。
+- [ ] **MCLS-004 / OPEN-002（扩展前置，可构造风险）**：Sucker Punch 查询**目标方**选招尚不读取目标 sidecar 完整身份。EXT14/18/28/39 当前扩展表为 Physical，低字节对应普通 Status，未来若能作为目标选招，可能被误判为非攻击；当前正式遭遇尚无确证。**正式启用扩展来源/特殊/变化招式前修**，双方、槽位和派生路径需对称验证。
+- [ ] **MCLS-005 / OPEN-003（规则待定，禁止擅改）**：Counter 对 Seismic Toss、Super Fang、Bide 释放及其他固定伤害的反击资格，先由用户明确规则，才改效果筛选/测试。维持已冻结的实际 Physical、本体 HP 真实损失、最后一次命中等规则。
+- [x] **REF354-ANIM-001（当前设计已明确，不当成故障）**：扩展招式的兼容动画字节默认仅选**原生基础动画**，不自动复用普通专用配方，如 EXT13/27/36 不调用 `WingAttackDedicatedAnim`。若未来要求“与普通招式完全相同的专用动画”，再立需求，并用兼容 ID 而非 ordinal 做查询。
+- [ ] **运行验收剩余**：REF354 录像已观察 22、23、24、26、27 基本符合预期；**25 敌方 Special Spark 尚缺出招录像**。烧伤、平局、Counter、Metronome/Mirror Move、其余六个 ordinal 动画撞号、EXT27/36 兼容动画也不能当作实测通过。
+- [ ] **构建证据**：Red/Blue/TEST Red/TEST Blue 的当前完整 ROM、MAP 和 ROM0/Bank 空间验证未齐；已有 Red MAP 只能作为部分线索。正式构建与本机 ROM 验收仍需用户在仓库完成。
+
+# REF-354 复核待测试
+- [ ] TEST Red/Blue 重新编译；用 docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md 验证22–27的开场配置、Spark首击扣血与 EXT 动画。
+- [ ] 生成新 ROM/MAP，检查银行与空间；记录设备录像，确认后才做一次提交清理。
+
+## REF-354 Spark / EXT 动画开发候选待验收
+- [ ] 本机 RGBDS 0.5.2：`make red blue test-red test-blue`，核验四套 MAP ROM0≥64B、Bank `$3A` 及测试夹具浮动 Bank 空间。
+- [ ] TEST 独立 SAV：Pokey → SELECT TEST → TRANSFORM TEST，第8页的22–24和第9页的25–27逐项验收；对比双方 Spark 65 威力及物理/特殊伤害、EXT13 Wing Attack/EXT04 Tackle兼容动画，普通 Spark专用动画不变。
+- [ ] 另做烧伤、平局、能力阶段、Metronome/Mirror Move、其他6项扩展ordinal碰撞和普通技能动画回归。静态测试不等于逐项实际扣 HP 测量。
+- [ ] Counter 固定伤害/Bide 资格规则待产品决定；Sucker Punch目标方扩展身份和未来扩展DYNAMIC在正式投放前独立处理，不顺带改变现有规则。
+- [ ] 用户验收满意后按既定指示：功能、测试脚本、文档**一次 Git Commit**，不制作工具隔离批次。
+
 ## CLEAN REF-353｜山洞共用房门转场清理（2026-11-07）
 - [x] 以 `REF-352.zip` 已提交干净 HEAD `d5c2bba00ad769b8fbab0cc749578f1826601446` 为正式基线，最新 `REF-353.patch` 从 HEAD 应用成功；修复后的两个淡出读取游标都是 `+11`，不用叠加任何旧开发补丁。
 - [x] 用户上传 `353修复.mp4`：岩山隧道正常进洞 4 次（17 连续黑帧），无 Flash 出洞 2 次、有 Flash 出洞 2 次（均20 连续黑帧）；过渡无整屏白闪、残留地图块或黑色人物剪影，技能 Flash 动画另计。

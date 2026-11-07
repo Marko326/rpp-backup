@@ -363,6 +363,8 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
     db SPECIAL ;Psystrike
     ; MOV-5.61.31: Iron Head is a physical Steel attack.
     db PHYSICAL;Iron Head
+.MovesTableEnd
+ASSERT .MovesTableEnd - .MovesTable == NUM_ATTACKS
 
 ; MOVE-5.62.199: Spark Dynamic category (not a Counter redesign).
 ; Fight menu only previews the category; the damage path resolves it again.
@@ -371,6 +373,10 @@ _PhysicalSpecialSplit:: ;Determines if a move is Physical or Special
 ; reconstructed from the original stat and its stage, capped at 999.
 ; PHYSICAL when Attack >= Special (including ties), otherwise SPECIAL.
 ResolveDynamicMoveCategory:
+	; REF-354: Damage callers keep base move power in D and level in E.
+	; This routine uses DE for stat pointers; preserve both bytes across
+	; the live, burned/rebuilt and tie/physical/special return paths.
+	push de
 	ldh a, [H_WHOSETURN]
 	and a
 	jr nz, .enemyStats
@@ -439,9 +445,11 @@ ResolveDynamicMoveCategory:
 	jr z, .physical ; tie: restore Spark's original physical class
 .special
 	ld a, SPECIAL
+	pop de
 	ret
 .physical
 	ld a, PHYSICAL
+	pop de
 	ret
 
 

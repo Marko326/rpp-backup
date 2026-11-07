@@ -1,3 +1,29 @@
+# REF-354 测试场景复核修正版（本轮优先）
+
+- 第8/9页的22–27新场景**必须使用复核修正版候选包**；初版 REF-354 错误走到了 Mew 分支，导致新增招式和部分能力夹具未生效。本轮修正后六项均以卡比兽开场，其中 Spark 四项设目标 120/120 HP 和对应100防御，便于区分正确65威力与旧错误威力。
+- 进入：TEST Red/Blue → 玉虹大厦1F Pokey → SELECT TEST → TRANSFORM TEST，光标停在 PAGE 时按右键到 PAGE 8/9，再上移选具体场景。详尽操作及每项正确／错误画面见 **`docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md`**。
+- 22/23（玩家 Spark）：分别预测 Physical/Special、首招 Spark、首击目标存活；24/25（敌方 Spark）：玩家选 Splash，受击后从120HP降到约70–78HP（非暴击）；26 EXT13 兼容 Wing Attack，不能误播普通 Spark；27 EXT04 兼容 Tackle，不能误播 Comet Punch。EXT名称是 `Ext Move ##` 占位名称，检验重点是动作。
+- 原21场景未改；Spark 烧伤/平局、其他六个动画碰撞和所有四种 ROM 的构建/实测仍未验收。
+
+# REF-354 测试 ROM 增补说明（开发候选，位于已有 TEST-217 场景之后）
+
+入口不变：**玉虹大厦 1F → Pokey → SELECT TEST → TRANSFORM TEST**。原21项保留；菜单扩至9页（每页3项），新增第8/9页共6项。测试队伍会覆盖当前队伍，请使用**独立测试 SAV**。所有新增夹具由 `BATTLE_TEST_BUILD` 宏限定，仅 `make test-red` / `make test-blue` 包含；正式构建不包含测试代码。
+
+| 场景 | 页码 | 操作 | 预期 |
+|---|---|---|---|
+| 22 `P-SPARK-P` | 8/9 | 玩家 Snorlax 使用 Spark，敌方 Splash | Attack 170 / Special 65；玩家 Spark 判为 Physical，计算保持65威力 |
+| 23 `P-SPARK-S` | 8/9 | 玩家 Snorlax 使用 Spark，敌方 Splash | Attack 65 / Special 170；玩家 Spark 判为 Special，计算保持65威力 |
+| 24 `E-SPARK-P` | 8/9 | 玩家 Splash，敌方使用 Spark | 敌方 Attack 170 / Special 65；敌方 Spark 为 Physical，保持65威力 |
+| 25 `E-SPARK-S` | 9/9 | 玩家 Splash，敌方使用 Spark | 敌方 Attack 65 / Special 170；敌方 Spark 为 Special，保持65威力 |
+| 26 `EXT13-WING` | 9/9 | 玩家选择第1格扩展招式 Ext Move 13 | 播放兼容 WING_ATTACK 动画，**不调用普通 Spark 专用动画** |
+| 27 `EXT04-TACK` | 9/9 | 玩家选择第1格扩展招式 Ext Move 04 | 播放兼容 TACKLE 动画，**不调用普通 Comet Punch 专用动画** |
+
+注意：22–25的角色能力是受控夹具，不是随机刷怪。它们提供可以重放的画面和扣血条件；精确 HP 范围仍须用实际构建、等级/防御/随机数记录核对。现有菜单没有内置 D 寄存器显示，**不能仅凭击中或动画正常宣布威力65已在运行时得到证明**。26/27优先核对动画，其他6种ordinal冲突由静态表检查先兜底，后续按需扩充动态场景。原 TEST-217 记录在下方，不因版本变更自动升级其验收状态。
+
+---
+
+> 以下是历史 TEST-217 验收原文（当时为7页21项）。当前 REF-354 TEST 开发候选以本文件顶部的9页27项为准；原 TEST-217 的录像结果与边界继续有效。
+
 # DOC-218 — TEST-217 当前有效菜单与录像验收说明（2026-10-25）
 
 **当前有效测试版本为 `TEST-217`，共 21 项 Transform（7 页×3）+ 独立 3 项 Substitute。** 下方 TEST-216 的“18 项／6 页”及其他历史菜单属于归档，不是当前入口。选场景会重建队伍，必须用独立测试 SAV；正式版标记 `TRF-5.62.210`，不带测试 NPC/夹具。

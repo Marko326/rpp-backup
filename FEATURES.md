@@ -1,3 +1,16 @@
+## CLEAN REF-354｜Spark / 扩展招式动画正式收口（2026-11-07）
+- 游戏版号固定 `REF-354@`，保留已验收候选的 Spark DE 保护、扩展动画身份纠正、分类表 ASSERT 及 TEST ROM 六个场景；**此次 CLEAN 不修改战斗/地图运行 ASM，也不调整测试场景行为**。
+- 用户 `REF354.mp4` 的 22/23/24/26/27 场景表现符合既定测试目标；24 的敌方物理 Spark 可观察到 120→71 HP（49伤害），25 敌方特殊 Spark 仍待录像。录像不等于所有伤害路径与全部 ROM 构建通过。
+- 已确认但未在本版修复的未来扩展限制、Counter 待定规则、Wing Attack 原生兼容动画选择及剩余验收，统一登记在 [`docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md`](docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md) 与 `TODO.md` 首段；请勿将待办写成当前所有玩家都能触发的故障。
+- 本次清理按用户要求，功能、TEST-only 夹具、专项测试与文档**同一次 Git Commit**；01 当前 REF-354 修正版→正式收口、02 干净 REF-353→同一最终状态互斥二选一，不隔离工具/文档。
+
+# REF-354 TEST 复核：补足 Spark/EXT 测试场景队伍接线；用 120HP 目标及100防御使65威力区别一眼可见。操作/预期见 docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md。
+
+## REF-354 开发候选：Spark 伤害寄存器和扩展动画身份修复
+- 修复 Dynamic Spark 分类覆盖伤害基础威力 D 的寄存器约定，保留原65威力、烧伤分类和物理/特殊判断；255项普通分类新增编译期长度检查。
+- 扩展招式保留自身兼容动画 ID，避免 EXT04/06/07/08/09/13/17/27 与普通专用动画撞号；EXT02 嬉闹专用动画不变。
+- TEST Red/Blue 的 Pokey 菜单扩为9页27项，新场景22–27，正式版无夹具。`docs/REF354_SPARK_EXT_ANIMATION_DEV.md`。
+
 ## CLEAN REF-353｜洞穴与房门共用黑色转场（已完成用户录像核对，待工程构建）
 - Rock Tunnel / Johto Dark Cave 的正常洞口共用黑色渐暗与 LCD-on 安全载图；Flash 仅改变洞内明暗，不再决定 LCD-off。暗洞渐暗表逆向读取起点 `+11`，保证末阶段全黑，不提前显示新旧图层。
 - 用户 `353修复.mp4` 的 Rock Tunnel 路线四次进洞与四次出洞（开 Flash 前后）未观察到转场白闪、室外旧图块拼接或角色残影；城都 Dark Cave 与音频/旧档、Red/Blue/TEST 仍待独立验收。

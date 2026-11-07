@@ -111,6 +111,6 @@ def test_flash_controls_darkness_not_transfer_selection():
 
 
 def test_new_version_identifies_candidate_without_touching_lcd_copy():
-    assert 'db "REF-353@"' in src("data/game_version.asm")
+    assert 'db "REF-354@"' in src("data/game_version.asm")
     assert ".safeLCDOn" in src("color/refreshmaps.asm")
     assert ".pairLoop" in src("home/copy.asm")

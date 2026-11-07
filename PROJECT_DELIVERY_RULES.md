@@ -1,3 +1,21 @@
+# CLEAN REF-354｜Spark / 扩展动画修复：单次提交规则（2026-11-07）
+- 本轮遵照用户明确要求：**游戏功能、测试场景、专项测试工具、文档一笔 Git Commit，不得做二次提交或隔离补丁**；不修改长期项目其他版本的提交规则。
+- 基线：此前正式清理后 REF-353 源码；用户已确认提交过 REF-353，但**未提供新的 Git HEAD 哈希或当下的 REF-354 工作区补丁**。本三件套的01严格针对上一轮 `REF354_复核修正版_可见伤害及动画测试候选.zip` 的最终内容，02针对本项目记录的干净 REF-353 源码状态，不能伪称已经验证用户手机上的新 HEAD。两份互斥，不叠加；先 `git apply --check`。
+- 正式显示 `REF-354@`；CLEAN 只补项目文档、待办与验收事实，运行 ASM、测试场景、测试逻辑保持修正版原样。遗留条目按“现存已修、未来架构、规则待定、设计选择、证据未全”分开记于 `TODO.md` 与 `docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md`。
+- 录像只覆盖用户录制的22/23/24/26/27（均表现符合预期）；25、烧伤/平局、派生招式、其他扩展 ordinal 和四种新 ROM/MAP 未全面验收。REF-354 中已有 Red MAP 只能提供部分符号/空间线索，不能代表四种构建通过。本助手不代执行 Commit/Push，也不把静态检查冒充真机构建。
+- 本次“清理三件套”是**01 候选增量、02 基线累计、commit-message.txt**三个文件；不制作隔离补丁、不混入审查日志原文充当自动验收，详细说明见 `docs/CLEAN_REF354_BATTLE_FINAL_ACCEPTANCE.md`。
+
+# REF-354 复核记录：测试夹具纠错（开发候选）
+- 用户要求场景可直观看出修复区别，故补全22–27的 Snorlax 开场接线；Spark 四项固定120 HP / 100目标防御，补逐项操作和预期手册。战斗正式算法及 REF-352/353 转场不变。仅交测试修正候选，未真实编译/提交。
+
+# REF-354 开发候选｜Spark 伤害 ABI / EXT 动画身份修复（2026-11-07）
+
+- 用户已将 REF-353 山洞统一房门转场提交为干净工作区；本轮以此前正式清理后的 **REF-353 源码状态**作为开发基线。**当前真实 Git HEAD 新哈希未随本轮附件上传，因此不虚构 HEAD 值**。未应用旧 REF-351A 审查快照或旧 REF-353 补丁。
+- `engine/battle/physical_special_split.asm` 的 Dynamic Spark 计算在所有出口保存/恢复 DE，防止 `GetDamageVarsForPlayerAttack` / `GetDamageVarsForEnemyAttack` 输入的威力 D 被特殊能力地址覆盖；原 Attack≥Special 为 Physical、否则 Special、烧伤分类与伤害分离规则不变；为 255 条普通分类补上长度 ASSERT。
+- `data/extended_move_animations.asm` 在 EXT02 独立嬉闹动画特判后，对其他当前有效扩展 ordinal 直接使用 MoveNum 的**兼容动画字节**，不以 ordinal 进入普通招式动画覆盖表，避免 EXT13→Spark 等8项碰撞。普通 Spark 的 Gold 专用动画保持不变。
+- `BATTLE_TEST_BUILD` 现有 Pokey→SELECT TEST→TRANSFORM TEST 扩为9页27项，新增22–27：双方 Spark 的物理/特殊分支与 EXT13/EXT04 动画。原21项不删，且测试夹具只在 TEST ROM 编入，正式 Red/Blue 不包含。详情及实测步骤见 `docs/REF354_SPARK_EXT_ANIMATION_DEV.md`。
+- 项目长期限制继续有效：AI 不编译 ROM、不 Commit/Push；本轮无 Red/Blue/TEST Red/TEST Blue 新 MAP。静态检查不替代实机 HP 数值及动画验证。验收前仅交开发候选，不制作正式清理三件套；功能、测试、文档将遵守用户此前明确的**一次提交**要求。
+
 ## CLEAN REF-353｜山洞进出统一房门转场（2026-11-07，用户特批单提交）
 - 当前最新提交基线：`常规功能备份` / `d5c2bba00ad769b8fbab0cc749578f1826601446`（干净 `REF-352.zip`）。`REF-353.patch` 为当前未提交工作树，已包含暗洞淡出 `+11` 热修。正式显示 `REF-353@`；本轮清理仅修改文档，不重写经过录像确认的运行 ASM。
 - 本次用户确认 `353修复.mp4` 的 Rock Tunnel 正常进出，无 Flash/有 Flash 出洞未见白闪、角色或地图残留；不把此录像扩大为 Johto Dark Cave/音频/所有四种构建验证。新 ROM/MAP 尚待本机 RGBDS 0.5.2 构建与 ROM0≥64B 检查。

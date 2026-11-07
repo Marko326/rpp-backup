@@ -1,3 +1,9 @@
+# CLEAN REF-354｜Spark 与扩展招式动画（2026-11-07）
+
+- REF-354 的正式战斗修复和 TEST-only 场景在候选阶段已完成；本轮清理**仅更新文档，不改游戏运行代码**。修复说明：[`docs/REF354_SPARK_EXT_ANIMATION_DEV.md`](docs/REF354_SPARK_EXT_ANIMATION_DEV.md)；六项测试操作：[`docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md`](docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md)。
+- **以后继续修战斗遗留问题**：先看 [`TODO.md`](TODO.md) 顶部以及 [`docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md`](docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md)。其中扩展 Dynamic / Sucker Punch 是未来扩展前置，Counter 是规则待定，Wing Attack 兼容动画为本版有意采用的基础动画方案。
+- REF-354 清理的提交范围、录屏覆盖和待补构建证据见 [`docs/CLEAN_REF354_BATTLE_FINAL_ACCEPTANCE.md`](docs/CLEAN_REF354_BATTLE_FINAL_ACCEPTANCE.md)。所有功能、测试、工具与文档只做**一次**提交，无第二批隔离流程。
+
 # CLEAN REF-353｜山洞进出统一普通房门黑色转场（正式清理提交准备）
 
 - **已确认基线**：`REF-352.zip` 的 `常规功能备份` 干净 HEAD `d5c2bba00ad769b8fbab0cc749578f1826601446`。用户最新 `REF-353.patch` 是基于此 HEAD 的未提交工作区，已包含暗洞渐暗游标 `+11` 热修；不能再叠加历史 REF-353 开发补丁。

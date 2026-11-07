@@ -1,9 +1,11 @@
-; TEST-217: verify both Disable fields and native one-move Struggle fallbacks.
-; The 21 slots are disposable test cases, not permanent regression assets.
-; Scene IDs $40..$54; battle guard $a5 / $5a plus staged Disable states; test ROM only.
+; REF-354 TEST: keep 21 TEST-217 scenarios, add six Spark/EXT cases.
+; REVIEW: fixed Snorlax lead routing + 120-HP Spark first-hit control;
+; EXT placeholders are checked by animation, not by on-screen move name.
+; The 27 slots are disposable test cases, not permanent regression assets.
+; Scene IDs $40..$5a; battle guard $a5 / $5a plus staged Disable states; test ROM only.
 
 TestSuiteImposter_ChooseScene::
-    ld a, $e0 ; page 1/7 in transient menu-only phase
+    ld a, $e0 ; page 1/9 in transient menu-only phase
     ld [wTestSuitePhase], a
     ld a, 3 ; PAGE is the default cursor on entering this submenu
     ld [wCurrentMenuItem], a
@@ -17,7 +19,7 @@ TestSuiteImposter_ChooseScene::
     coord hl, 2, 3
     ld de, TestSuiteImposterMenuTitle
     call PlaceString
-    ; Each page has three scenarios and a PAGE x/7 selector (Left/Right).
+    ; Each page has three scenarios and a PAGE x/9 selector (Left/Right).
     ld a, [wTestSuitePhase]
     sub $e0
     add a
@@ -79,7 +81,7 @@ TestSuiteImposter_ChooseScene::
     jr nz, .input
     ld a, [wTestSuitePhase]
     cp $e0
-    jr z, .input ; do not wrap past PAGE 1/7
+    jr z, .input ; do not wrap past PAGE 1/9
     dec a
     ld [wTestSuitePhase], a
     jr .changePage
@@ -88,7 +90,7 @@ TestSuiteImposter_ChooseScene::
     cp 3
     jr nz, .input
     ld a, [wTestSuitePhase]
-    cp $e6
+    cp $e8
     jr z, .input
     inc a
     ld [wTestSuitePhase], a
@@ -123,6 +125,8 @@ TestSuiteImposterMenuChoices:
     dw .s13, .s14, .s15, .p5
     dw .s16, .s17, .s18, .p6
     dw .s19, .s20, .s21, .p7
+    dw .s22, .s23, .s24, .p8
+    dw .s25, .s26, .s27, .p9
 .s01:
     db "01 P-LATE-FLY@"
 .s02:
@@ -165,23 +169,39 @@ TestSuiteImposterMenuChoices:
     db "20 E-ONE-DIS@"
 .s21:
     db "21 REAL-DIS@"
+.s22:
+    db "22 P-SPARK-P@"
+.s23:
+    db "23 P-SPARK-S@"
+.s24:
+    db "24 E-SPARK-P@"
+.s25:
+    db "25 E-SPARK-S@"
+.s26:
+    db "26 EXT13-WING@"
+.s27:
+    db "27 EXT04-TACK@"
 .p1:
-    db "PAGE 1/7@"
+    db "PAGE 1/9@"
 .p2:
-    db "PAGE 2/7@"
+    db "PAGE 2/9@"
 .p3:
-    db "PAGE 3/7@"
+    db "PAGE 3/9@"
 .p4:
-    db "PAGE 4/7@"
+    db "PAGE 4/9@"
 .p5:
-    db "PAGE 5/7@"
+    db "PAGE 5/9@"
 .p6:
-    db "PAGE 6/7@"
+    db "PAGE 6/9@"
 .p7:
-    db "PAGE 7/7@"
+    db "PAGE 7/9@"
+.p8:
+    db "PAGE 8/9@"
+.p9:
+    db "PAGE 9/9@"
 
 ; TEST-217: complex interaction matrix plus native Disable/Struggle edge tests.
-; $40..$54 map to menu slots 01..21. All fixture hooks are test-ROM-only.
+; $40..$5a map to menu slots 01..27. All fixture hooks are test-ROM-only.
 ; $a5 = setup active; $5a = armed; $5c/$5d = Disable pre-state checks.
 TestSuiteImposter_StartScenario::
     ld a, [wTestSuitePhase]
@@ -216,6 +236,14 @@ TestSuiteImposter_StartScenario::
     jr z, .snorlaxLead
     cp $54 ; real Disable cast by player AFTER enemy Transform
     jr z, .snorlaxLead
+    ; REF-354 review: Spark and EXT tests require the Snorlax setup path.
+    ; Without these branches the new scenes accidentally start as Mew and
+    ; skip the Spark/extended move fixture logic below.
+    cp $55
+    jr c, .mewLead
+    cp $5b
+    jr c, .snorlaxLead ; six scenes $55..$5a
+.mewLead
     ld a, MEW
     jr .addFirst
 .snorlaxLead
@@ -298,6 +326,34 @@ TestSuiteImposter_StartScenario::
     ld [wPartyMon1Moves + 1], a
     ld a, 35
     ld [wPartyMon1PP + 1], a
+    ; REF-354: test-only deterministic selected move (never an official learnset).
+    ld a, [wTestSuitePhase]
+    cp $55 ; player Spark, Physical
+    jr z, .playerSpark
+    cp $56 ; player Spark, Special
+    jr z, .playerSpark
+    cp $59 ; extended ordinal 13 = Wing Attack compatibility
+    jr z, .playerExt13
+    cp $5a ; extended ordinal 4 = Tackle compatibility
+    jr z, .playerExt04
+    jr .oldFixture
+.playerSpark
+    ld a, SPARK
+    ld [wPartyMon1Moves], a
+    ld a, 20
+    ld [wPartyMon1PP], a
+    jp .setSpeed
+.playerExt13
+    ld a, 13
+    jr .playerExtended
+.playerExt04
+    ld a, 4
+.playerExtended
+    ld [wPartyMon1Moves], a
+    ld a, 20
+    ld [wPartyMon1PP], a
+    jp .setSpeed
+.oldFixture
     ld a, [wTestSuitePhase]
     cp $52 ; only Tackle; the round-boundary hook disables this one slot
     jr z, .soloPlayerTackle
@@ -305,6 +361,10 @@ TestSuiteImposter_StartScenario::
     jr z, .soloPlayerSplash
     cp $54 ; real Disable AFTER enemy Transform; target copies both moves
     jr z, .realDisablePlayerMoves
+    cp $57 ; enemy Spark vs player's Splash only
+    jr z, .soloPlayerSplash
+    cp $58
+    jr z, .soloPlayerSplash
     jr .regularSnorlaxMovesDone
 .soloPlayerTackle
     ld a, TACKLE
@@ -386,6 +446,52 @@ TestSuiteImposter_StartScenario::
     xor a
     ld [wPartyMon1PP + 1], a
 .setSpeed
+    ; REF-354: Player-Spark fixtures set stats before the actual battle mon
+    ; is loaded. These are unburned, neutral-stage, two-way class controls.
+    ld a, [wTestSuitePhase]
+    cp $55
+    jr z, .playerSparkPhysical
+    cp $56
+    jr z, .playerSparkSpecial
+    cp $57 ; enemy Spark, Physical: fixed 120 HP / 100 Def+Special target
+    jr z, .enemySparkTarget
+    cp $58 ; enemy Spark, Special: same target
+    jr z, .enemySparkTarget
+    jr .statsDone
+.enemySparkTarget
+    xor a
+    ld [wPartyMon1Defense], a
+    ld [wPartyMon1Special], a
+    ld a, 100
+    ld [wPartyMon1Defense + 1], a
+    ld [wPartyMon1Special + 1], a
+    jr .fixedSparkHP
+.playerSparkPhysical
+    ld b, 170 ; Attack >= Special
+    ld c, 65
+    jr .storePlayerStats
+.playerSparkSpecial
+    ld b, 65
+    ld c, 170 ; Attack < Special
+.storePlayerStats
+    xor a
+    ld [wPartyMon1Attack], a
+    ld [wPartyMon1Special], a
+    ld a, b
+    ld [wPartyMon1Attack + 1], a
+    ld a, c
+    ld [wPartyMon1Special + 1], a
+.fixedSparkHP
+    ; Reproducible first-hit visual check: a 65-power Spark should hurt
+    ; but not KO 120 HP with a 100-point corresponding defense. The old
+    ; broken D (WRAM high byte) makes the hit vastly stronger.
+    xor a
+    ld [wPartyMon1HP], a
+    ld [wPartyMon1MaxHP], a
+    ld a, 120
+    ld [wPartyMon1HP + 1], a
+    ld [wPartyMon1MaxHP + 1], a
+.statsDone
     ; Set active stats before LoadBattleMonFromParty reads them.
     xor a
     ld [wPartyMon1Speed], a
@@ -502,7 +608,7 @@ TestSuiteImposter_WildEnemyReady::
     jp c, TestSuite_Disarm
     cp $4b ; $4b is the trainer fixture, not a wild battle
     jp z, TestSuite_Disarm
-    cp $55 ; valid wild scenes are $40..$54 except trainer fixture $4b
+    cp $5b ; valid wild scenes are $40..$5a except trainer fixture $4b
     jp nc, TestSuite_Disarm
     ld hl, wEnemyMonMoves
     ld b, NUM_MOVES
@@ -531,6 +637,18 @@ TestSuiteImposter_WildEnemyReady::
     jp z, .soloEnemyTackle
     cp $54 ; native enemy Transform, then player casts real Disable
     jp z, .enemyTransform
+    cp $55 ; player Spark physical vs enemy Splash
+    jp z, .soloEnemySplash
+    cp $56 ; player Spark special vs enemy Splash
+    jp z, .soloEnemySplash
+    cp $57 ; enemy Spark physical vs player Splash
+    jp z, .enemySpark
+    cp $58 ; enemy Spark special vs player Splash
+    jp z, .enemySpark
+    cp $59 ; player EXT13 vs enemy Splash
+    jp z, .soloEnemySplash
+    cp $5a ; player EXT04 vs enemy Splash
+    jp z, .soloEnemySplash
     cp $41 ; E-LATE-FLY
     jp z, .enemyTransform
     cp $43 ; E-LATE-DIG
@@ -592,6 +710,10 @@ TestSuiteImposter_WildEnemyReady::
 .soloEnemySplash
     ld a, SPLASH
     ld b, 40
+    jp .oneMove
+.enemySpark
+    ld a, SPARK
+    ld b, 20
     jp .oneMove
 .soloEnemyTackle
     ld a, TACKLE
@@ -670,6 +792,50 @@ TestSuiteImposter_WildEnemyReady::
     ld a, b
     ld [wEnemyMonPP], a
 .setEnemySpeed
+    ; REF-354: deterministic enemy Spark Attack/Special at neutral stage.
+    ld a, [wTestSuitePhase]
+    cp $57
+    jr z, .enemySparkPhysical
+    cp $58
+    jr z, .enemySparkSpecial
+    cp $55 ; player's Physical Spark: target has fixed HP/Defense/Special
+    jr z, .playerSparkTarget
+    cp $56
+    jr z, .playerSparkTarget
+    jr .enemyStatsDone
+.playerSparkTarget
+    xor a
+    ld [wEnemyMonDefense], a
+    ld [wEnemyMonSpecial], a
+    ld a, 100
+    ld [wEnemyMonDefense + 1], a
+    ld [wEnemyMonSpecial + 1], a
+    jr .fixedSparkEnemyHP
+.enemySparkPhysical
+    ld b, 170
+    ld c, 65
+    jr .storeEnemySparkStats
+.enemySparkSpecial
+    ld b, 65
+    ld c, 170
+.storeEnemySparkStats
+    xor a
+    ld [wEnemyMonAttack], a
+    ld [wEnemyMonSpecial], a
+    ld [wEnemyMonUnmodifiedAttack], a
+    ld a, b
+    ld [wEnemyMonAttack + 1], a
+    ld [wEnemyMonUnmodifiedAttack + 1], a
+    ld a, c
+    ld [wEnemyMonSpecial + 1], a
+.fixedSparkEnemyHP
+    xor a
+    ld [wEnemyMonHP], a
+    ld [wEnemyMonMaxHP], a
+    ld a, 120
+    ld [wEnemyMonHP + 1], a
+    ld [wEnemyMonMaxHP + 1], a
+.enemyStatsDone
     xor a
     ld [wEnemyMonSpeed], a
     ld [wEnemyMonUnmodifiedSpeed], a
@@ -773,10 +939,19 @@ TestSuiteImposter_OnRoundBoundary::
     jp z, .seedPlayerSingleDisabled
     cp $53 ; enemy has one Tackle, disabled: native enemy Struggle
     jp z, .seedEnemySingleDisabled
+    cp $59 ; player EXT13, ordinal collides with ordinary Spark
+    jr z, .armExtendedSlot0
+    cp $5a ; player EXT04, ordinal collides with ordinary Comet Punch
+    jr z, .armExtendedSlot0
     cp $45 ; E-LATE-EXT only
     ret nz
     ld a, [wExtendedBattleMoveFlags]
     or $0e ; player EXT01 is in slots 1, 2, 3
+    ld [wExtendedBattleMoveFlags], a
+    ret
+.armExtendedSlot0
+    ld a, [wExtendedBattleMoveFlags]
+    or $01 ; player slot 0 is an EXT identity, not ordinary ordinal low-byte
     ld [wExtendedBattleMoveFlags], a
     ret
 .seedPlayerOldDisable
