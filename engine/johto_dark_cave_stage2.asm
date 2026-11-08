@@ -261,29 +261,43 @@ JohtoSurfBadgeAllowed349::
     ret
 
 
-; The START Party Flash handler is in ROMX Bank $04, with almost no slack.
-; This eligibility check stays beside the Dark Cave roles in floating ROMX.
-; E=0 usable; E=1 blocked, with the appropriate text already printed.
-; Outside the active Johto region, preserve the original RBY Boulder rule.
+; Field Flash eligibility shared by Johto and Kanto.
+; Only unlit caves can use Flash. Region-specific badge rules are unchanged:
+; Johto Violet Dark Cave: Zephyr Badge or legacy Boulder fallback;
+; Kanto Rock Tunnel 1F/B1F: Boulder Badge only.
+; Checking both the cave identity and its dark palette avoids consuming Flash
+; on a normal map, in an already-lit cave, or on another palette effect.
+; This is in ROMX because the Bank $04 START menu Flash caller is tight.
+; E=0 usable; E=1 blocked, with failure text already printed.
 JohtoFlashEligibility349::
     ld a, [wCurMap]
     cp JOHTO_RUNTIME_MAP_HANDLE
-    jr nz, .legacyBadge
+    jr nz, .checkKantoCave
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
-    jr nz, .legacyBadge
+    jr nz, .checkKantoCave
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jr nz, .notDark
     ld a, [wMapPalOffset]
-    and a
-    jr z, .notDark
-    ; In Gold the Zephyr Badge is required for Flash. Johto Gyms are not
-    ; active yet in this RPP migration, so previously obtained Boulder
-    ; remains an explicit compatibility fallback for existing player saves.
+    cp 12 ; Johto unlit Dark Cave BG / visible OBJ
+    jr nz, .notDark
+    ; Gold requires Zephyr Badge. Keep the original Boulder fallback for
+    ; existing saves until Johto Gyms become fully available.
     ld a, [wObtainedJohtoBadges]
     bit 0, a ; Zephyr Badge
     jr nz, .allowed
+    jr .legacyBadge
+.checkKantoCave
+    ld a, [wCurMap]
+    cp ROCK_TUNNEL_1
+    jr z, .checkKantoDarkPalette
+    cp ROCK_TUNNEL_2
+    jr nz, .notDark
+.checkKantoDarkPalette
+    ld a, [wMapPalOffset]
+    cp 6 ; Kanto unlit Rock Tunnel BG / OBJ
+    jr nz, .notDark
 .legacyBadge
     ld a, [wObtainedKantoBadges]
     bit 0, a ; original RBY Boulder Badge
@@ -299,6 +313,10 @@ JohtoFlashEligibility349::
 .notDark
     ld hl, .notDarkText
     call PrintText
+    ; Do not return to the Party menu until the player acknowledges the
+    ; failure with a fresh A press.  The text's plain @@ terminator does
+    ; not wait by itself, so Party would otherwise replace it immediately.
+    call WaitForFlashAOnly349
     ld e, 1
     ret
 .badgeText
@@ -307,6 +325,27 @@ JohtoFlashEligibility349::
 .notDarkText
     text "It's not dark here.@@"
 
+; Requiring release first prevents the A used to select FLASH from also
+; dismissing the error.  Unlike the standard A/B text prompt this is A-only.
+; Keep this in ROMX rather than growing the near-full Bank $04 field menu.
+WaitForFlashAOnly349::
+    ld a, "▼"
+    Coorda 18, 16
+.waitForRelease
+    call DelayFrame
+    call Joypad
+    ld a, [hJoyHeld]
+    and A_BUTTON
+    jr nz, .waitForRelease
+.waitForNewA
+    call DelayFrame
+    call Joypad
+    ld a, [hJoyPressed]
+    and A_BUTTON
+    jr z, .waitForNewA
+    ld a, " "
+    Coorda 18, 16
+    ret
 
 ; Called by LoadMapData after the destination tile/palette upload. An unlit
 ; Dark Cave exit holds offset 12 through the old scene's fade, then clears it.

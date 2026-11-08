@@ -2403,10 +2403,12 @@ _PokemartItemBagFullText::
 	line "any more items."
 	prompt
 
-_PokemonSellingGreetingText::
-	text "What would you"
-	line "like to sell?"
-	done
+; REF-355: original SELL greeting text, disabled with its call and wrapper.
+; No active symbol or encoded text is emitted into ROM.
+; _PokemonSellingGreetingText::
+; 	text "What would you"
+; 	line "like to sell?"
+; 	done
 
 _PokemartTellSellPriceText::
 	text "I can pay you"

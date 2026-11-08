@@ -1663,6 +1663,9 @@ DisplayListMenuIDLoop::
 	; Draw the cursor into the same hidden tilemap update as the list.
 	; This prevents a frame where the refreshed list is visible without a cursor.
 	call PlaceMenuCursor
+	; REF-355: redraw the selected Player PC item description while the
+	; conventional list and cursor are still hidden from the next BG transfer.
+	call RefreshPlayerPCItemDescription
 	ld a,1
 	ld [H_AUTOBGTRANSFERENABLED],a ; enable transfer
 	call Delay3
@@ -1923,6 +1926,34 @@ ExitListMenu::
 	xor a
 	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped
 	scf
+	ret
+
+RefreshPlayerPCItemDescription:
+	; Player PC bit 5 and Mart Sell bit 2 are temporary, disjoint gates.
+	; The ROMX helper still verifies the real Bag/PC inventory pointer, so
+	; buying, other list menus, and the PC parent prompt never draw descriptions.
+	ld a,[wBagPocketActive]
+	and a
+	ret nz
+	ld a,[wListMenuID]
+	cp ITEMLISTMENU
+	ret nz
+	ld hl,wFlags_0xcd60
+	bit 5,[hl] ; Player PC session
+	jr nz,.descriptionEnabled
+	bit 2,[hl] ; Mart Sell list only
+	ret z
+.descriptionEnabled
+	; PlayerPCMenu also sets bit 5 on its parent menu. Only a live list
+	; has the out-of-bounds guard set; never overwrite the parent's prompt.
+	ld a,[wMenuWatchMovingOutOfBounds]
+	and a
+	ret z
+	; HandleMenuInput holds the current key mask in B. Far-bank calls and
+	; description drawing change BC, so preserve it on every path.
+	push bc
+	callba UpdatePlayerPCItemDescription
+	pop bc
 	ret
 
 RefreshBagPocketDescription:
@@ -3884,6 +3915,9 @@ HandleMenuInput_::
 	ld [wCurrentMenuItem],a
 .refreshBagDescription
 	call RefreshBagPocketDescription
+	; HandleMenuInput consumes UP/DOWN internally, so a conventional PC list
+	; must refresh here as well as on initial/scroll/page redraw.
+	call RefreshPlayerPCItemDescription
 .checkOtherKeys
 	ld a,[wMenuWatchedKeys]
 	and b ; does the menu care about any of the pressed keys?

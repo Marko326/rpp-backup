@@ -1491,6 +1491,67 @@ LoadBagPocketTitleSpan:
 	ld [wBagPocketTitleSpanWidth], a
 	ret
 
+; REF-355: the conventional Player's PC Deposit/Withdraw/Toss item lists
+; share the already tested Bag/Mart two-line item and TM/HM descriptions.
+; DisplayListMenuID calls this only for ITEMLISTMENU under the Player PC menu;
+; check both inventory pointers again before touching the description area.
+; Only the current list ID and (ID, quantity) pairs are read. No save data,
+; PC inventory, categorized Bag layout, or item swapping is modified.
+UpdatePlayerPCItemDescription::
+	ld a,[wListPointer]
+	ld c,a
+	ld a,[wListPointer + 1]
+	ld b,a
+	ld hl,wNumBagItems
+	ld a,c
+	cp l
+	jr nz,.checkBox
+	ld a,b
+	cp h
+	jr z,.validList
+.checkBox
+	ld hl,wNumBoxItems
+	ld a,c
+	cp l
+	ret nz
+	ld a,b
+	cp h
+	ret nz
+.validList
+	; List count excludes Cancel. Cancel and out-of-range indexes show a
+	; blank description rather than looking past the current inventory.
+	ld a,[wCurrentMenuItem]
+	ld c,a
+	ld a,[wListScrollOffset]
+	add c
+	ld c,a
+	ld a,[wListCount]
+	cp c
+	jr z,.cancel
+	jr c,.cancel
+	; First byte is the inventory count, then each entry is ID + quantity.
+	ld a,c
+	add a
+	ld e,a
+	ld d,0
+	ld a,[wListPointer]
+	ld l,a
+	ld a,[wListPointer + 1]
+	ld h,a
+	inc hl
+	add hl,de
+	ld a,[hl]
+	jr .render
+.cancel
+	ld a,$ff
+.render
+	; This scratch byte is shared with the categorized Bag but its menu is
+	; inactive during Player PC. Force a fresh draw on every list redraw,
+	; including a return from quantity confirmation or a SELECT swap.
+	ld hl,wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET
+	ld [hl],$fe
+	jp UpdateBagPocketDescriptionFromItem
+
 UpdateBagPocketDescription::
 	ld a, [wBagPocketActive]
 	cp BAG_POCKET_MODE_BATTLE

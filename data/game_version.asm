@@ -65,4 +65,5 @@ GameVersionText::
 	; REF-352: reuse LCD-safe two-byte copies for ordinary door graphics loads.
 	; REF-353: unify cave/ordinary door black fades and safe LCD-on loading.
 	; REF-354: preserve Spark damage-power registers and extended animation identity.
-	db "REF-354@"
+	; REF-355: show shared short item descriptions in Player PC item lists.
+	db "REF-355@"

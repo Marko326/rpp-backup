@@ -1,3 +1,10 @@
+# CLEAN REF-355｜Player PC / SELL / Flash（已清理；后续验收保留）
+- [x] Player PC 三操作和商店 SELL 复用道具说明，SELL 不再弹出旧问候语；旧问候的**调用/包装器/正文**已完整逐行注释保存，既可追溯又不占 ROM。`docs/REF355_MART_SELL_DESCRIPTIONS_DEV.md`
+- [x] Flash 只允许关都 Rock Tunnel 1F/B1F（暗场6）与城都 Violet Dark Cave（暗场12）未照亮时使用；非暗场提示 `It's not dark here.`，必须释放旧 A、重新按 A 才结束。地区徽章检查和成功路径不变。`docs/REF355_FLASH_DARK_CAVE_ELIGIBILITY_DEV.md`
+- [x] 用户已反馈 REF-355 候选 PC、SELL、Flash 使用与 A 键确认正常；本地 87 项相关专项静态测试通过。
+- [ ] 补齐可独立核验的 Red/Blue/TEST Red/TEST Blue 构建及 MAP；扩展实机矩阵仍包括 SELL 翻页/SELECT/Cancel/数量框、TM/HM、PC/BUY 回归，以及 Flash 暗洞/非暗洞、徽章边界、A/B 输入和转场。
+- [x] 正式清理三件套：当前已打 REF-355 工作区→最终增量、干净 REF-354→最终累计（**两份互斥**），附中文单次提交说明；不改变候选的运行 ASM。Commit/Push 由用户执行。
+
 # REF-354｜正式清理后的战斗遗留问题 / 待验收（2026-11-07）
 
 > **下次继续修战斗系统，先读 [`docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md`](docs/REF354_BATTLE_FOLLOWUP_BACKLOG.md)。** 本轮只记录，不实施下面的待办。已确认的 Spark 威力寄存器、扩展 ordinal 错动画和分类表长度断言已经在 REF-354 修好，不要重复打旧修复补丁。

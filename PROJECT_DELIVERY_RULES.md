@@ -1,3 +1,9 @@
+## CLEAN REF-355｜一次提交交付及证据边界
+- **功能、专项测试、工具和文档必须同一笔 Git 提交**，不隔离、不得拆第二次；正式交付为两份互斥补丁（当前已打 REF-355 工作区→清理完成，或干净 REF-354 HEAD→同一清理结果）和一份中文提交说明。用户在 Termux 自行 `git apply --check`、应用、Commit/Push；本环境不操作用户 Git。
+- SELL 废弃的调用、包装器和正文恢复为逐行 `;` 注释；保留完整历史，不生成有效汇编指令、符号或文本数据。其他运行 ASM 与上一轮通过验收的候选一致。
+- 删除过重复静态断言和不读取 ASM 的样例测试；保留 Flash 分支/A-only 确认、SELL/PC 核心契约检查。当前 87 项定向测试通过；用户反馈日常测试正常，但尚无本轮完整 Red/Blue/TEST 双版 ROM 与 MAP 可独立核验。
+- 两份详细开发文档：`docs/REF355_MART_SELL_DESCRIPTIONS_DEV.md`、`docs/REF355_FLASH_DARK_CAVE_ELIGIBILITY_DEV.md`；PC 原理另见 `docs/REF355_PLAYER_PC_ITEM_DESCRIPTIONS_DEV.md`。
+
 # CLEAN REF-354｜Spark / 扩展动画修复：单次提交规则（2026-11-07）
 - 本轮遵照用户明确要求：**游戏功能、测试场景、专项测试工具、文档一笔 Git Commit，不得做二次提交或隔离补丁**；不修改长期项目其他版本的提交规则。
 - 基线：此前正式清理后 REF-353 源码；用户已确认提交过 REF-353，但**未提供新的 Git HEAD 哈希或当下的 REF-354 工作区补丁**。本三件套的01严格针对上一轮 `REF354_复核修正版_可见伤害及动画测试候选.zip` 的最终内容，02针对本项目记录的干净 REF-353 源码状态，不能伪称已经验证用户手机上的新 HEAD。两份互斥，不叠加；先 `git apply --check`。

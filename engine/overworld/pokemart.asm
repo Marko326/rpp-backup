@@ -49,8 +49,11 @@ DisplayPokemartDialogue_:
 	jp z,.bagEmpty
 	xor a
 	ld [wWhichPokemon],a ; initial absolute list position
-	ld hl,PokemonSellingGreetingText
-	call PrintText
+	; ld hl,PokemonSellingGreetingText
+	; call PrintText
+	; REF-355: original SELL greeting is intentionally disabled. The item
+	; description now owns this text area; keep the complete old call below
+	; for history, not as assembled instructions (no ROM data or delay).
 	call SaveScreenTilesToBuffer1 ; save screen
 .sellMenuLoop
 	call LoadScreenTilesFromBuffer1DisableBGTransfer ; restore saved screen off-screen
@@ -67,7 +70,16 @@ DisplayPokemartDialogue_:
 	callba RestoreItemListPosition
 	ld a,ITEMLISTMENU
 	ld [wListMenuID],a
+	; Opt into the existing PC/Bag description painter ONLY while the sell
+	; list is active. Keep the original ITEMLISTMENU for SELECT swapping,
+	; scrolling, quantity selection, and Cancel behavior.
+	ld hl,wFlags_0xcd60
+	set 2,[hl]
 	call DisplayListMenuID
+	push af ; preserve Carry (Cancel) across the temporary-mode cleanup
+	ld hl,wFlags_0xcd60
+	res 2,[hl]
+	pop af
 	jp c,.returnToMainPokemartMenu ; if the player closed the menu
 .confirmItemSale ; if the player is trying to sell a specific item
 	call IsKeyItem
@@ -244,9 +256,11 @@ PokemartItemBagFullText:
 	TX_FAR _PokemartItemBagFullText
 	db "@"
 
-PokemonSellingGreetingText:
-	TX_FAR _PokemonSellingGreetingText
-	db "@"
+; REF-355: old SELL greeting wrapper, retained as source history only.
+; All three original lines are comments; the linker emits no label/pointer.
+; PokemonSellingGreetingText:
+; 	TX_FAR _PokemonSellingGreetingText
+; 	db "@"
 
 PokemartTellSellPriceText:
 	TX_FAR _PokemartTellSellPriceText

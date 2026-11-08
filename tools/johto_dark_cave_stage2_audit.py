@@ -211,12 +211,16 @@ def check(root:Path,overrides:dict[str,str|bytes]|None=None)->list[str]:
             'cp JOHTO_RUNTIME_MAP_HANDLE' in eligibility and
             'cp MAP_REGION_JOHTO' in eligibility and
             'cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID' in eligibility and
-            'ld a, [wMapPalOffset]' in eligibility and
-            'jr z, .notDark' in eligibility and
+            'cp 12 ; Johto unlit Dark Cave' in eligibility and
+            'cp ROCK_TUNNEL_1' in eligibility and
+            'cp ROCK_TUNNEL_2' in eligibility and
+            'cp 6 ; Kanto unlit Rock Tunnel' in eligibility and
+            '.checkKantoCave' in eligibility and
+            'jr nz, .notDark' in eligibility and
             'wObtainedJohtoBadges' in eligibility and
             'wObtainedKantoBadges' in eligibility and
             'ld e, 1' in eligibility,
-            'Flash must be scoped to unlit Violet Dark Cave; Zephyr/legacy badge check missing')
+            'Flash must check active unlit Kanto/Johto cave identity and existing badge rules')
         shore=sp.split('JohtoDarkCaveSurfDecision::',1)[-1]
         yes(all(k in shore for k in (
                 'cp JOHTO_RUNTIME_MAP_HANDLE','cp MAP_REGION_JOHTO',

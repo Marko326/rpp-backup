@@ -65,7 +65,23 @@ def test_flash_in_normal_map_is_rejected():
 
 def test_flash_reusable_on_already_lit_cave_is_rejected():
     rel='engine/johto_dark_cave_stage2.asm';src=(ROOT/rel).read_text()
-    assert check(ROOT,{rel:src.replace('jr z, .notDark\n    ; In Gold', 'jr nz, .notDark\n    ; In Gold',1)})
+    old='cp 12 ; Johto unlit Dark Cave BG / visible OBJ'
+    assert old in src
+    assert check(ROOT,{rel:src.replace(old, 'cp 0 ; wrong: already-lit cave',1)})
+
+
+def test_kanto_flash_wrong_map_rejected():
+    rel='engine/johto_dark_cave_stage2.asm';src=(ROOT/rel).read_text()
+    old='cp ROCK_TUNNEL_2'
+    assert old in src
+    assert check(ROOT,{rel:src.replace(old, 'cp ROUTE_10',1)})
+
+
+def test_kanto_flash_wrong_dark_palette_rejected():
+    rel='engine/johto_dark_cave_stage2.asm';src=(ROOT/rel).read_text()
+    old='cp 6 ; Kanto unlit Rock Tunnel BG / OBJ'
+    assert old in src
+    assert check(ROOT,{rel:src.replace(old, 'cp 0 ; incorrectly allowing lit caves',1)})
 
 
 def test_flash_bank4_gate_is_required():

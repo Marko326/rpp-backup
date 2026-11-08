@@ -1,3 +1,9 @@
+## CLEAN REF-355｜Player PC / 商店 SELL 说明 + Flash 暗洞限制（正式收口）
+- Player PC 存入/取出/丢弃与商店 SELL 使用既有两行道具说明；BUY、五分类背包和交易流程不变。
+- SELL 旧提示的**调用两行、包装标签三行、正文四行**保留为 ASM 注释，不编进 ROM；直接显示道具说明，相关原因见 `docs/REF355_MART_SELL_DESCRIPTIONS_DEV.md`。
+- Flash 仅在未照亮的关都 Rock Tunnel 或城都 Violet Dark Cave 使用；失败提示需先松开 A、再按新的 A 才关闭。详见 `docs/REF355_FLASH_DARK_CAVE_ELIGIBILITY_DEV.md`。
+- 游戏版本 `REF-355@`。用户已确认当前候选的 PC、SELL 与 Flash 日常使用表现正常；87 项相关源码专项测试通过。正式收口仅更新维护说明，不改候选的有效游戏汇编、测试或版号。四种 ROM 的本轮构建与 MAP 仍缺独立证据，不能以静态测试替代。
+
 ## CLEAN REF-354｜Spark / 扩展招式动画正式收口（2026-11-07）
 - 游戏版号固定 `REF-354@`，保留已验收候选的 Spark DE 保护、扩展动画身份纠正、分类表 ASSERT 及 TEST ROM 六个场景；**此次 CLEAN 不修改战斗/地图运行 ASM，也不调整测试场景行为**。
 - 用户 `REF354.mp4` 的 22/23/24/26/27 场景表现符合既定测试目标；24 的敌方物理 Spark 可观察到 120→71 HP（49伤害），25 敌方特殊 Spark 仍待录像。录像不等于所有伤害路径与全部 ROM 构建通过。
