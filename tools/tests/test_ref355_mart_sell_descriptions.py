@@ -82,4 +82,3 @@ def test_pc_unchanged_and_flag_reserved_documented():
     assert 'set 5, [hl]' in player and 'res 5, [hl]' in player
     assert 'bit 2: REF-355 temporary Mart Sell' in read('wram.asm')
     assert 'ds 1' in read('wram.asm').split('wFlags_0xcd60::',1)[1].split('wHPBarDamageSpeed::',1)[0]
-    assert 'db "REF-355@"' in read('data/game_version.asm')

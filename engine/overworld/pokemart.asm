@@ -162,8 +162,13 @@ DisplayPokemartDialogue_:
 	ld [wListMenuID],a
 	call DisplayListMenuID_Mart
 	jr c,.returnToMainPokemartMenu ; if the player closed the menu
-	ld a,99
-	ld [wMaxItemQuantity],a
+	; The chosen item's price is already in hItemPrice (packed BCD).
+	; Cap BUY quantity by floor(player money / item price), at most 99.
+	; The helper lives with the quantity menu in floating ROMX, not Bank 1.
+	callab SetMartBuyAffordableQuantity356
+	ld a,[wMaxItemQuantity]
+	and a
+	jp z,.notEnoughMoney ; even one item is unaffordable
 	xor a
 	ld [hHalveItemPrices],a ; don't halve item prices when buying
 	call DisplayChooseQuantityMenu

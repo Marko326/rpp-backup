@@ -110,7 +110,6 @@ def test_flash_controls_darkness_not_transfer_selection():
     assert "FadePalJohtoDark349:: db %11111110, %11100100, %11100100" in fade
 
 
-def test_new_version_identifies_candidate_without_touching_lcd_copy():
-    assert 'db "REF-355@"' in src("data/game_version.asm")
+def test_cave_lcd_safe_copy_paths_remain_unchanged():
     assert ".safeLCDOn" in src("color/refreshmaps.asm")
     assert ".pairLoop" in src("home/copy.asm")

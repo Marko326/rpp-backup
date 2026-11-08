@@ -66,4 +66,5 @@ GameVersionText::
 	; REF-353: unify cave/ordinary door black fades and safe LCD-on loading.
 	; REF-354: preserve Spark damage-power registers and extended animation identity.
 	; REF-355: show shared short item descriptions in Player PC item lists.
-	db "REF-355@"
+	; REF-356: quantity picker local held-key repeat, 40/5 frames.
+	db "REF-356@"

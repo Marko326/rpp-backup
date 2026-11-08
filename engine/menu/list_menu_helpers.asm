@@ -1,6 +1,14 @@
 ; List-menu helpers moved out of ROM0. Public ROM0 entry points remain in home.asm.
 
 DisplayChooseQuantityMenu_::
+; REF-356: quantity input has its own 40/5-frame key repeat timing.
+; Keep the shared input timer/output intact for the menu that called us.
+	ld a,[H_FRAMECOUNTER]
+	push af
+	ld a,[hJoy5]
+	push af
+	ld a,40
+	ld [H_FRAMECOUNTER],a
 ; text box dimensions/coordinates for just quantity
 	coord hl, 15, 9
 	ld b,1 ; height
@@ -26,48 +34,70 @@ DisplayChooseQuantityMenu_::
 	ld [wItemQuantity],a ; initialize current quantity to 0
 	jp .incrementQuantity
 .waitForKeyPressLoop
-	call JoypadLowSensitivity
-	ld a,[hJoyPressed] ; newly pressed buttons
-	bit 0,a ; was the A button pressed?
+	call .readQuantityMenuKeys
+	; Confirm and cancel are always *new* presses, never held repeats.
+	ld a,[hJoyPressed]
+	bit 0,a ; A
 	jp nz,.buttonAPressed
-	bit 1,a ; was the B button pressed?
+	bit 1,a ; B
 	jp nz,.buttonBPressed
-	bit 6,a ; was Up pressed?
-	jr nz,.incrementQuantity
-	bit 7,a ; was Down pressed?
-	jr nz,.decrementQuantity
-	ld b,a
-	ld a,[wListMenuID]
-	cp PRICEDITEMLISTMENU
-	jr nz,.waitForKeyPressLoop ; only buying and selling use Left/Right shortcuts
-	bit 5,b ; was Left pressed?
-	jr nz,.decrementQuantityBy10
-	bit 4,b ; was Right pressed?
-	jr nz,.incrementQuantityBy10
+	; Directions accept the 40/5-frame local repeat stream.
+	; Ignore ambiguous diagonals rather than changing two quantities.
+	ld a,[hJoy5]
+	and D_UP | D_DOWN | D_LEFT | D_RIGHT
+	cp D_UP
+	jr z,.incrementQuantity
+	cp D_DOWN
+	jr z,.decrementQuantity
+	cp D_LEFT
+	jr z,.decrementQuantityBy10
+	cp D_RIGHT
+	jr z,.incrementQuantityBy10
 	jr .waitForKeyPressLoop
 .incrementQuantity
+	; A held UP may reach the maximum, but must not roll during
+	; that hold. Only a fresh UP at the maximum wraps to 1.
+	ld hl,wItemQuantity
 	ld a,[wMaxItemQuantity]
-	inc a
-	ld b,a
-	ld hl,wItemQuantity ; current quantity
+	cp 1
+	jp c,.waitForKeyPressLoop ; zero is not a valid dialog range
+	cp [hl]
+	jr z,.atMaximum
+	jr c,.atMaximum
 	inc [hl]
-	ld a,[hl]
-	cp b
-	jr nz,.handleNewQuantity
-; wrap to 1 if the player goes above the max quantity
-	ld a,1
-	ld [hl],a
-	jr .handleNewQuantity
-.decrementQuantity
-	ld hl,wItemQuantity ; current quantity
-	dec [hl]
-	jr nz,.handleNewQuantity
-; wrap to the max quantity if the player goes below 1
+	jp .handleNewQuantity
+.atMaximum
+	ld a,[hJoyPressed]
+	and D_UP
+	jp z,.waitForKeyPressLoop ; still holding: stay at max
 	ld a,[wMaxItemQuantity]
+	cp 1
+	jp z,.waitForKeyPressLoop ; a one-item range cannot roll
+	ld [hl],1
+	jp .handleNewQuantity
+.decrementQuantity
+	; Mirror UP: hold DOWN at 1 without rolling. A new DOWN at 1
+	; wraps to the current maximum (provided maximum > 1).
+	ld hl,wItemQuantity
+	ld a,[wMaxItemQuantity]
+	cp 1
+	jp c,.waitForKeyPressLoop
+	ld a,[hl]
+	cp 2
+	jr c,.atMinimum
+	dec [hl]
+	jp .handleNewQuantity
+.atMinimum
+	ld a,[hJoyPressed]
+	and D_DOWN
+	jp z,.waitForKeyPressLoop ; still holding: stay at 1
+	ld a,[wMaxItemQuantity]
+	cp 1
+	jp z,.waitForKeyPressLoop
 	ld [hl],a
-	jr .handleNewQuantity
+	jp .handleNewQuantity
 .decrementQuantityBy10
-; Match Crystal's Left-key behavior: subtract 10 and clamp at 1.
+; Left: subtract ten, clamp at one in every quantity dialog.
 	ld hl,wItemQuantity
 	ld a,[hl]
 	sub 10
@@ -76,10 +106,13 @@ DisplayChooseQuantityMenu_::
 	ld [hl],a
 	jr .handleNewQuantity
 .setMinimumQuantity
+	ld a,[hl]
+	cp 1
+	jp z,.waitForKeyPressLoop
 	ld [hl],1
 	jr .handleNewQuantity
 .incrementQuantityBy10
-; Match Crystal's Right-key behavior: add 10 and clamp at the current maximum.
+; Right: add ten, clamp at the current maximum in every quantity dialog.
 	ld hl,wItemQuantity
 	ld a,[hl]
 	add 10
@@ -89,6 +122,9 @@ DisplayChooseQuantityMenu_::
 	jr nc,.storeIncreasedQuantity
 	ld b,a
 .storeIncreasedQuantity
+	ld a,[hl]
+	cp b
+	jp z,.waitForKeyPressLoop
 	ld [hl],b
 .handleNewQuantity
 	coord hl, 17, 10
@@ -146,12 +182,117 @@ DisplayChooseQuantityMenu_::
 	xor a
 	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped
 	ld e,a
-	ret
+	jr .restoreInputState
 .buttonBPressed ; the player chose to cancel the transaction
 	xor a
-	ld [wMenuItemToSwap],a ; 0 means no item is currently being swapped
-	ld a,$ff
-	ld e,a
+	ld [wMenuItemToSwap],a
+	ld e,$ff
+.restoreInputState
+	pop af
+	ld [hJoy5],a
+	pop af
+	ld [H_FRAMECOUNTER],a
+	ret
+
+; Local repeated-directions stream; no change to JoypadLowSensitivity or
+; the global menu repeat policy. VBlank decrements H_FRAMECOUNTER.
+; All four directions share this exact timing: the new press fires at once,
+; then 40 frames to the first held repeat and 5 frames between repeats.
+; LEFT/RIGHT differ only in their +/-10 step and their no-wrap limits.
+.readQuantityMenuKeys
+	call Joypad
+	ld a,[hJoyPressed]
+	and a
+	jr nz,.newKey
+	ld a,[hJoyReleased]
+	and a
+	jr nz,.resetDelay
+	ld a,[hJoyHeld]
+	and D_UP | D_DOWN | D_LEFT | D_RIGHT
+	jr z,.resetDelay
+	ld a,[H_FRAMECOUNTER]
+	and a
+	jr z,.repeatHeld
+	xor a
+	ld [hJoy5],a
+	ret
+.newKey
+	ld a,[hJoyPressed]
+	ld [hJoy5],a
+	ld a,40 ; first repeat after ~40 VBlanks
+	ld [H_FRAMECOUNTER],a
+	ret
+.resetDelay
+	xor a
+	ld [hJoy5],a
+	ld a,40
+	ld [H_FRAMECOUNTER],a
+	ret
+.repeatHeld
+	ld a,[hJoyHeld]
+	and D_UP | D_DOWN | D_LEFT | D_RIGHT
+	ld [hJoy5],a
+	ld a,5 ; subsequent repeats every ~5 VBlanks
+	ld [H_FRAMECOUNTER],a
+	ret
+
+; REF-356: calculate the largest BUY quantity affordable with current BCD
+; money and selected item's BCD price. Output: wMaxItemQuantity = 0..99.
+; 0 lets the caller show the existing "not enough money" text without opening
+; a quantity dialog that would otherwise allow an impossible choice of one.
+; A zero-priced item is limited by the menu's existing 99-item cap.
+; SELL / Player PC / Bag never call this routine.
+SetMartBuyAffordableQuantity356::
+	ld a,[hItemPrice]
+	ld b,a
+	ld a,[hItemPrice + 1]
+	or b
+	ld b,a
+	ld a,[hItemPrice + 2]
+	or b
+	jr z,.cap99
+	; DivideBCDPredef3 consumes hMoney as dividend and the divisor scratch.
+	; The quantity dialog recalculates hMoney from scratch before displaying
+	; its total price; hItemPrice and the actual wPlayerMoney stay untouched.
+	ld a,[wPlayerMoney]
+	ld [hMoney],a
+	ld a,[wPlayerMoney + 1]
+	ld [hMoney + 1],a
+	ld a,[wPlayerMoney + 2]
+	ld [hMoney + 2],a
+	ld a,[hItemPrice]
+	ld [hDivideBCDDivisor],a
+	ld a,[hItemPrice + 1]
+	ld [hDivideBCDDivisor + 1],a
+	ld a,[hItemPrice + 2]
+	ld [hDivideBCDDivisor + 2],a
+	predef DivideBCDPredef3
+	; A quotient of 100 or more must be capped at 99.
+	ld a,[hDivideBCDQuotient]
+	and a
+	jr nz,.cap99
+	ld a,[hDivideBCDQuotient + 1]
+	and a
+	jr nz,.cap99
+	; The last packed-BCD byte is now 00..99; convert to binary.
+	ld a,[hDivideBCDQuotient + 2]
+	ld b,a
+	swap a
+	and $0f
+	ld c,a
+	add a
+	add a
+	add c
+	add a ; tens digit * 10
+	ld c,a
+	ld a,b
+	and $0f
+	add c
+	jr .store
+.cap99
+	ld a,99
+.store
+	ld [wMaxItemQuantity],a
 	ret
 
 InitialQuantityText::

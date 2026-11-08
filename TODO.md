@@ -1,3 +1,11 @@
+# CLEAN REF-356｜数量框长按与 BUY 余额限购（用户已验收，完成收口）
+- [x] 对照 ROM-1.42H #47，统一数量框上下 ±1 / 左右 ±10 的首次40帧、之后每5帧重复；A/B 只认新按。↑/↓ **持续按住到1或上限后停住**，松开并再次按下才允许首尾回卷；←/→ 只截断不回卷。
+- [x] 商店 BUY 使用 BCD 余额和单价计算 `min(99, floor(money/price))` 上限；买不起1件时不进入数量框；保留结账余额二次检查及 SELL、PC、背包各自原数量限制。
+- [x] 用户反馈 REF-356 最新长按、松开重按回卷及左右同频操作已测试无问题；相关 141 项定向 Python 测试通过。保留未逐项上传的机型、存档、输入组合与边界测试证据限制。
+- [x] 两份互斥补丁（用户本轮 `REF-356.patch` 工作区→补入左右同频测试与正式清理，或干净 REF-355 HEAD→同一最终状态）及符合 `feat(menus):`、`Version: REF-355 -> REF-356` 格式的中文提交日志；功能、测试和文档只做一次 Commit，不拆批次。
+- [ ] 在用户仓库归档最新 Red/Blue/TEST Red/TEST Blue 四种构建与 MAP，核对 ROM0 / ROMX 余量；静态测试与用户操作反馈都不代替可独立核验的构建记录。`docs/REF356_QUANTITY_REPEAT_DEV.md`
+- [ ] 后续非汉化对照功能：#43/#55 菜单独立速度表、#45 卧室 PC 前期访问规则、#57 冲浪钓鱼随机等待、#58 HM02 完整操作指引；按需求逐项评估。
+
 # CLEAN REF-355｜Player PC / SELL / Flash（已清理；后续验收保留）
 - [x] Player PC 三操作和商店 SELL 复用道具说明，SELL 不再弹出旧问候语；旧问候的**调用/包装器/正文**已完整逐行注释保存，既可追溯又不占 ROM。`docs/REF355_MART_SELL_DESCRIPTIONS_DEV.md`
 - [x] Flash 只允许关都 Rock Tunnel 1F/B1F（暗场6）与城都 Violet Dark Cave（暗场12）未照亮时使用；非暗场提示 `It's not dark here.`，必须释放旧 A、重新按 A 才结束。地区徽章检查和成功路径不变。`docs/REF355_FLASH_DARK_CAVE_ELIGIBILITY_DEV.md`

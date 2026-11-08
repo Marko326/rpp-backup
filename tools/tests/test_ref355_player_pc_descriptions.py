@@ -92,4 +92,3 @@ def test_redraw_does_not_allocate_wram_or_change_inventory_logic():
     # PC implementation remains the stock inventory code; graphics are separate.
     assert "wPlayerPCItemDescriptionActive" not in src("wram.asm")
     assert "UpdatePlayerPCItemDescription" not in src("engine/menu/players_pc.asm")
-    assert 'db "REF-355@"' in src("data/game_version.asm")
