@@ -1,3 +1,46 @@
+## CLEAN REF-363｜双方训练师退场一次合并提交（2026-11-08）
+- **真实用户补丁**：上传 `REF-363.patch` 明确声明分支 `常规功能备份`，基线 `ab52a4620d5b262ede727d1a663995cf41192677`，工作区路径 `/data/data/com.termux/files/home/rpp-backup`。用户说明 REF-362 原独立提交已撤回，本轮自该基线一次合并 REF-361、REF-362、REF-363，不把中间开发版本当作历史 Git Commit。
+- **精确回放**：从 CLEAN REF-360 源码复原基线，用户补丁涉及 18 个文件；旧文件的 Git Blob 与基线全部匹配，上传补丁正向应用后的 18 个新文件 Git Blob 全部一致。这个核验验证所提供的补丁与源码快照，不冒充在用户手机上执行了 `git rev-parse`。
+- **功能和版本**：`REF-360@` → `REF-363@`。玩家 A=9 向左退场（9 步）和对方 A=8 向右退场（8 步）均使用 7 行单次 VBlank tile-only `$87`，保持每步 2 帧；保存、关闭、恢复原 AutoBG。玩家源 row 5～11、对方源 row 0～6。保留 REF 原 CGB 屏幕坐标属性图，`home/vcopy.asm` 增加跨 VRAM 页进位；不改其他游戏运行路径。
+- **色彩回归教训**：REF-361 初版误用 `WindowTransferBgRowsAndColors`，按 Tile ID 读取本应按屏幕坐标解释的 `W2_TilesetPaletteMap`，意外重写 BG 属性，造成玩家与对方 Pokémon 局部颜色异常。REF-362 改为 bit7 tile-only；REF-363 对双方退场统一使用这条保护路径。永久记录在 `RPP_DEVELOPMENT_PITFALLS.md`；不移植中文项目不同的 Palette ID／缓存／loader。
+- **用户录像**：用户 `363.mp4` 包含三次对方训练师向右退场，逐帧可见约每 33 毫秒右移 8 像素，没有发现明显分行撕裂或局部绿色/粉红跳色；此前 `362.mp4` 的男女玩家退场颜色验收保留。仅认定录像实际覆盖场景，不能外推所有战斗组合。
+- **测试和构建边界**：上传工作区源码的完整 pytest `908 passed, 35 failed, 196 skipped, 98 subtests passed`；35 项历史失败仍未解决。未获得四种新 ROM/MAP 供独立核验，Red/Blue/TEST Red/TEST Blue、ROM0≥64B、Bank `$0F` 与浮动 ROMX 空间由维护者归档；静态测试与视频都不代替该检查。
+- **三件套和一次 Commit**：01 `REF-363` 用户上传工作区→CLEAN 的文档整理补丁；02 用户补丁声明的 `ab52a4620d5b262ede727d1a663995cf41192677`（CLEAN REF-360）→CLEAN REF-363 的累计补丁；03 `commit-message.txt`。01/02 互斥二选一。提交日志只写 REF-360→363 可从运行代码验证的变更，不写文档、测试数量、录像、承诺或无法从代码证明的事项。
+- **操作**：用户在真实 Termux 工作区选择适合基线的唯一补丁执行 `git apply --check`，再应用并核对 `git status` 后自己 Commit/可选 Push。助手不修改用户实时工作区、不执行 Git Commit/Push、不制作额外隔离补丁。
+
+## REF-363 开发期历史记录（已纳入 CLEAN REF-363）｜双方训练师退场原子刷新（2026-11-08）
+- **当时的开发基线记录**：开发候选曾基于 CLEAN REF-362 源码快照；用户随后明确撤回 REF-362 独立提交，改为 REF-360→REF-363 合并提交。当前唯一正式补丁基线以用户提供的 `REF-363.patch` 为准，不再照此前开发候选的基线说明操作。
+- **修改目标**：REF-362 只把玩家 A=9 向左退场改为 7 行单 VBlank tile-only；A=8 对方训练师向右退场仍保留旧 AutoBG 分批刷新。本版将敌方路径也纳入相同的 `$87` tile-only 7 行复制。敌方源行 `coord(0,0)` / 目标偏移 0；玩家源行 `coord(0,5)` / 目标偏移 `5 * BG_MAP_WIDTH`。
+- **必须保持**：玩家左移 9 步、敌方右移 8 步、每步 2 帧、原 `SlideTrainerPicOffScreen` A/HL 跨 Bank ABI、浮动 ROMX 放置；双方都只更新 Tile ID，不触碰 VBK 1 属性。两方向在整个滑动期间保存并关闭 `H_AUTOBGTRANSFERENABLED`，返回时恢复原值（不可硬设为 1）。
+- **边界**：不改训练师移动方向/步数、入场动画、`LoadPlayerBackPic` OAM 属性、战斗 HUD、RGB555 palette loader、HP tile-only 调用或其他菜单；不新增 HRAM/WRAM、不改 VBlank 服务。
+- **验证**：双方退场专项静态测试 `10 passed`；退场测试 + 3 个门口版本回归测试 `30 passed`。完整 pytest `908 passed, 35 failed, 196 skipped, 98 subtests passed`；失败测试标识集合与 REF-362 基线相同，没有新增失败。静态 PASS 不代表 RGBDS 链接、MAP 空间或设备逐帧验收；Red/Blue/TEST Red/TEST Blue 及实机验证待用户执行。
+- **交付边界**：开发阶段只交增量补丁、完整工程 ZIP、中文说明；不制作 CLEAN 三件套，不代编译/链接 ROM，不 Commit/Push。待用户实机验收后再按一次 Commit 清理。
+
+## REF-362 阶段性清理历史（独立提交已撤回，现并入 CLEAN REF-363）
+- **版本与代码范围**：游戏版本 `REF-362@`。玩家左退场 7 行 VBlank 复制使用 bit7 tile-only，仅更新 BG Tile ID、保留战斗 CGB 属性图；`home/vcopy.asm` 为 32-byte VRAM 行步进补目标高字节跨页进位。玩家每步 2 帧与敌方右退场原路径保持。
+- **本次回归原因（必须留在开发陷阱文档）**：REF-361 为实现 7 行同帧提交，选用了普通 `WindowTransferBgRowsAndColors` 属性复制路径；但战斗 `SetPal_Battle_Common` 建立的是 `W2_TileBasedPalettes=0` 屏幕坐标 palette map，普通 helper 却按 Tile ID 查 `W2_TilesetPaletteMap`，导致错误 palette index 写入 VBK 1。CLEAN REF-362 改用 tile-only 保留属性图。不得移植中文工程的另一套 Palette ID/缓存/loader。
+- **用户实机验收**：用户提供 `362.mp4` 并确认男、女主角均已测试；录像未观察到此前玩家局部绿色/粉红跳色或对方 Pokémon 属性异常，退场流畅度保持。验收边界见 `docs/CLEAN_REF362_BATTLE_TRAINER_EXIT_ACCEPTANCE.md`。
+- **自动化验证**：定向静态测试 `40 passed, 1 skipped`；完整 pytest `908 passed, 35 failed, 196 skipped, 98 subtests passed`。保留 35 项既有失败，不能称全仓库全绿。
+- **尚未归档的构建证据**：未获得 Red/Blue/TEST Red/TEST Blue 最新 ROM/MAP；ROM0≥64B、Bank `$0F` 与浮动 ROMX 空间仍由维护者在真实工作区归档。本轮未由助手编译/链接 ROM，也未执行 Git Commit/Push。
+- **清理三件套**：01 `REF-362` 当前候选源码快照→CLEAN 的文档清理增量；02 已知干净 REF-356 HEAD `e8da25d149f2afdf8df0f550668d16807fcb171c`→CLEAN REF-362 的累计补丁；另附中文 Commit 日志。01/02 互斥二选一。01 基于本轮可复查的 REF-362 完整源码快照，不代表已读取用户手机实时 `git status`；应用前必须 `git apply --check`。02 从上述 REF-356 HEAD 起重建 REF-357～REF-362 全部内容。
+- **补丁选择**：用户已说明 REF-360 已提交，因此若当前真实 HEAD 位于 REF-360 提交之后，应使用 01；02 仅适用于 `git rev-parse HEAD` 恰好为上述 REF-356 哈希的仓库。用户未提供 REF-360 提交后的 HEAD 哈希，本轮不虚构该基线，也不把 02 标成用户当前仓库可直接应用。
+- **Commit 日志范围**：只写 REF-361→REF-362 可从源码确认的运行代码变更，不将测试结果、用户录像、文档、工具或未由代码体现的事项写入 Commit message。功能、测试和维护文档仍按项目单次 Commit 规则一起提交。
+- **用户操作边界**：用户自行应用其中一份补丁并核对后 Commit/可选 Push；助手不代 Commit/Push。两份补丁不可叠加。
+
+## REF-362 开发候选｜玩家训练师左退场 CGB 属性保护（2026-11-08）
+- 输入基线：本轮可复查的完整工程是 `REF-361_完整工程_开发候选.zip`；用户上传 `361女性.mp4` 作为颜色异常证据。未获得用户提交后的新 Git HEAD，也无法从连接的 Windows 工作区读取实时 `git status`，因此不虚构 HEAD/hash。交付补丁仅针对该 REF-361 完整工程快照；用户真实 Termux 工作区先执行 `git apply --check`，如有额外改动必须重新核对。
+- **用户明确约束**：中文历史 #012 只作为问题拆分/设计参考；其调色板表、Palette ID、硬件缓存同步及 loader 属另一套颜色架构，禁止直接移植。本次保留 REF 自己的 RGB555、`W2_BgPaletteData`、`W2_SprPaletteData`、`W2_TilesetPaletteMap` 与 VBlank palette pipeline。
+- 根因：战斗 `SetPal_Battle_Common` 将 `W2_TileBasedPalettes=0`，此时 `W2_TilesetPaletteMap` 是屏幕坐标 map；`WindowTransferBgRowsAndColors` 却将源 Tile ID 当索引读取该表。REF-361 用普通 VBlank 全行复制时因此可能把错误 palette 属性写进 VBK 1，导致玩家与对方 Pokémon 局部跳色。
+- 最小修复：玩家左退场 7 行复制改为 `H_VBCOPYBGNUMROWS=$87` 的 bit7 tile-only 模式，只写 VBK 0，保留已经正确建立的 VBK 1 属性；扩展 `home/vcopy.asm` 的 tile-only 行步进，在 32-byte VRAM row stride 跨 `$xxFF->$xx00` 时给目标高字节进位。现有 HP tile-only 调用不跨页，行为保持不变。未改 `LoadPlayerBackPic` OAM 属性、入战白闪、Battle Window、RGB555 palette loader、敌人右移或其他菜单。
+- 游戏 ASM 改动必须升版 `REF-361@` → `REF-362@`；运行源码、专项测试、FEATURES/TODO/开发陷阱与验收文档同一候选补丁。**开发期仅交增量补丁、完整工程 ZIP、中文说明；不制作正式 CLEAN 三件套，不编译/链接 ROM，不 Commit/Push。**
+- 静态测试只证明复制模式和跨页进位合同，不证明实机颜色。用户必须分别测试男/女主角，并构建 Red/Blue/TEST Red/TEST Blue、检查最新 MAP 的 ROM0≥64B 与 ROMX 空间。详见 `docs/REF362_PLAYER_TRAINER_EXIT_PALETTE_DEV.md`。
+
+## REF-361 开发候选历史记录｜玩家训练师左退场 7 行 VBlank 原子刷新（2026-11-08；颜色复制路径已由 REF-362 修正）
+- 输入基线：用户已经确认提交 REF-360，但本轮**尚未上传提交后的新 HEAD**；以经 CLEAN 回放验证的 `REF-360` 源码快照作为可复查工作区基线，不虚构 Git 哈希。补丁只供这个状态，先 `git apply --check`，用户端如果有额外差异需重新核对。
+- **唯一运行修复目标**：对照中文 #012 `c6685bf5`，只处理玩家训练师向左滑出屏幕时 7 行图块的分帧撕裂；保持敌方右移、两帧节奏、已有入战黑色调色板修复、战斗 Window / OAM 头部属性及其他菜单完全不动。
+- Bank `$0F` 在旧 MAP 中只有约3B余量，禁止就地扩大 `SlideTrainerPicOffScreen`。现有标签用 `hSlideAmount`＋`DE` 安全转发 A/HL 到**浮动 ROMX**，不能直接裸 `jpab` 破坏入参。REF-361 初版复用 `VBlankCopyBgMap` 普通 7 行属性复制；该属性路径在 REF-362 被证明不适用于战斗 screen-coordinate palette map，现已改为 bit7 tile-only 并补跨页进位。玩家保存/恢复 `H_AUTOBGTRANSFERENABLED`，不新增 HRAM/WRAM/全局中断逻辑。
+- 实际 ASM 改动，开发阶段立即将游戏版本 `REF-360@` 升为 `REF-361@`；源码、专项测试、文档同一候选补丁；等用户实机验收再按一次 Commit 制作正式 CLEAN 三件套。**本轮不代编译 ROM，不代 Commit/Push**；静态测试与旧 MAP 不证明 RGBDS Red/Blue/TEST Red/TEST Blue 正常链接或手机无撕裂。详见 `docs/REF361_PLAYER_TRAINER_LEFT_EXIT_DEV.md`。
+
 ## CLEAN REF-360｜Player PC 主菜单人物遮挡修复与 PC 菜单累计收口（2026-11-08）
 - **正式基线**：用户本轮上传的 `REF-360.patch` 标明分支 `常规功能备份`、基线 `e8da25d149f2afdf8df0f550668d16807fcb171c`（历史提交 #514，`REF-356`）。不把 REF-360 未提交工作区冒充新 HEAD。
 - **补丁核验**：当前工作区补丁涉及 25 个文件（843 additions / 56 deletions）。以 REF-360 完整源码快照正向应用、反向重建后，25 个变更文件的旧/新 Git blob ID 均与补丁索引吻合；补丁正向 `git apply --check` 与反向 `git apply --reverse --check` 均通过。打包时保留 `scripts/OaksLab.asm`、`text/maps/OaksLab.asm`、`engine/menu/players_pc.asm` 的可执行权限。

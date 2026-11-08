@@ -1398,47 +1398,58 @@ SevenSpacesText:
 ; slides the player or enemy trainer off screen
 ; a is the number of tiles to slide it horizontally (always 9 for the player trainer or 8 for the enemy trainer)
 ; if a is 8, the slide is to the right, else it is to the left
-; bug: when this is called, [H_AUTOBGTRANSFERENABLED] is non-zero, so there is screen tearing
+; REF-360 historical risk: automatic one-third BG transfer can tear a 7-row
+; trainer pic. REF-361/363 route both player and enemy exits through atomic VBlank copies.
 SlideTrainerPicOffScreen:
+; REF-361: bank $0f is packed. Keep the original entry contract and dispatch
+; to a floating ROMX implementation; do not grow the fixed battle core.
+; jpab/Bankswitch overwrite A/BC/HL: save A in the existing slide HRAM,
+; and pass the original tilemap pointer through DE (Bankswitch preserves DE).
 	ld [hSlideAmount], a
-	ld c, a
-.slideStepLoop ; each iteration, the trainer pic is slid one tile left/right
-	push bc
-	push hl
-	ld b, 7 ; number of rows
-.rowLoop
-	push hl
-	ld a, [hSlideAmount]
-	ld c, a
-.columnLoop
-	ld a, [hSlideAmount]
-	cp 8
-	jr z, .slideRight
-.slideLeft ; slide player sprite off screen
-	ld a, [hld]
-	ld [hli], a
-	inc hl
-	jr .nextColumn
-.slideRight ; slide enemy trainer sprite off screen
-	ld a, [hli]
-	ld [hld], a
-	dec hl
-.nextColumn
-	dec c
-	jr nz, .columnLoop
-	pop hl
-	ld de, 20
-	add hl, de
-	dec b
-	jr nz, .rowLoop
-	ld c, 2
-	call DelayFrames
-	pop hl
-	pop bc
-	dec c
-	jr nz, .slideStepLoop
-	ret
+	ld d, h
+	ld e, l
+	jpab SlideTrainerPicOffScreen_Impl
 
+; REF-360 historical implementation (replaced only for atomic player exit):
+; SlideTrainerPicOffScreen:
+; 	ld [hSlideAmount], a
+; 	ld c, a
+; .slideStepLoop ; each iteration, the trainer pic is slid one tile left/right
+; 	push bc
+; 	push hl
+; 	ld b, 7 ; number of rows
+; .rowLoop
+; 	push hl
+; 	ld a, [hSlideAmount]
+; 	ld c, a
+; .columnLoop
+; 	ld a, [hSlideAmount]
+; 	cp 8
+; 	jr z, .slideRight
+; .slideLeft ; slide player sprite off screen
+; 	ld a, [hld]
+; 	ld [hli], a
+; 	inc hl
+; 	jr .nextColumn
+; .slideRight ; slide enemy trainer sprite off screen
+; 	ld a, [hli]
+; 	ld [hld], a
+; 	dec hl
+; .nextColumn
+; 	dec c
+; 	jr nz, .columnLoop
+; 	pop hl
+; 	ld de, 20
+; 	add hl, de
+; 	dec b
+; 	jr nz, .rowLoop
+; 	ld c, 2
+; 	call DelayFrames
+; 	pop hl
+; 	pop bc
+; 	dec c
+; 	jr nz, .slideStepLoop
+; 	ret
 ; send out a trainer's mon
 EnemySendOut:
 	ld hl,wPartyGainExpFlags

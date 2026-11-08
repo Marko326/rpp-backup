@@ -885,6 +885,10 @@ INCLUDE "engine/battle/moveEffects/transform_effect.asm"
 SECTION "Imposter Entry Helpers", ROMX
 INCLUDE "engine/battle/imposter.asm"
 
+; REF-363: palette-safe 7-row atomic BG copy for both trainer exits; floating bank.
+SECTION "Player Trainer Slide Atomic 361", ROMX
+INCLUDE "engine/battle/trainer_slide_atomic_361.asm"
+
 SECTION "bankF",ROMX,BANK[$F]
 
 INCLUDE "engine/battle/core.asm"

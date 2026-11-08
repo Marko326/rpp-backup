@@ -1,3 +1,19 @@
+## CLEAN REF-363｜双方训练师退场的 7 行同步与 CGB 属性保护（REF-361～363 合并提交）
+- 由 CLEAN REF-360 已提交基线（用户补丁标注 `ab52a4620d5b262ede727d1a663995cf41192677`）一次合并 REF-361～363，游戏版本 `REF-363@`；原 REF-362 单独提交已由用户撤回。此前两个版本的退场改动只作为阶段记录，不再要求单独 Commit。
+- `SlideTrainerPicOffScreen` 保留原 ABI，调用浮动 ROMX 实现。玩家向左 9 步、对方向右 8 步，各维持每步 2 帧；双方都暂停分三批的 AutoBG 更新并在每步通过 VBlank 单次提交完整 7 行 Tile ID，退出时恢复原 AutoBG 状态。玩家取 BG row 5～11，对方取 row 0～6。
+- 统一使用 `$87` tile-only 复制，只更新 VBK 0，不改战斗 CGB 属性图；`home/vcopy.asm` 对 32-byte VRAM 行步进补齐跨 `$xxFF->$xx00` 的高字节进位。REF-361 曾错误使用按 Tile ID 查 palette 的 `WindowTransferBgRowsAndColors`，与战斗屏幕坐标 palette map 不匹配，导致局部跳色；已在后续代码中改正。原因与防回归规则保留在 `RPP_DEVELOPMENT_PITFALLS.md`。
+- `363.mp4` 展示三次对方训练师向右退场（约 10.77、21.01、32.37 秒开始），可见位置以约 33 毫秒 / 8 像素的节奏推进，无明显分行错位或绿色/粉红跳色；此前 `362.mp4` 已覆盖男、女玩家向左退场颜色检查。录像不代表全部设备或战斗场景均已穷尽。
+- 当前工作区全仓库 pytest 为 `908 passed, 35 failed, 196 skipped, 98 subtests passed`；原有 35 项历史失败未因此扩展。四种 ROM/MAP 构建与 Bank 余量仍待维护者归档。详见 `docs/CLEAN_REF363_BOTH_TRAINER_EXIT_ACCEPTANCE.md`。
+
+## REF-362 阶段记录（原独立提交已撤回，并入 CLEAN REF-363）｜玩家训练师左退场原子刷新与 CGB 属性保护（2026-11-08）
+- 游戏版本 `REF-362@`。玩家训练师向左退场继续使用 7 行单次 VBlank 图块更新、每步 2 帧；复制模式改为 bit7 tile-only，只更新 BG Tile ID，不重写战斗已建立的 CGB 属性图。`home/vcopy.asm` 补齐 32-byte VRAM 行步进跨 `$xxFF->$xx00` 的目标高字节进位。敌方训练师向右退场保持原路径。
+- REF-361 初版把普通 `WindowTransferBgRowsAndColors` 属性复制路径用于战斗屏幕坐标 palette map，导致玩家训练师及对方 Pokémon 局部颜色异常；REF-362 保留 REF 自身 RGB555 / `W2_BgPaletteData` / `W2_SprPaletteData` 调色板体系，不移植中文版 Palette ID、颜色表、缓存或 loader。原因与防回归规则见 `RPP_DEVELOPMENT_PITFALLS.md`。
+- 用户提供 `362.mp4` 并确认男、女主角均已实测；录像中未再观察到此前的绿色/粉红局部跳色，左退场流畅度保持。该验收只覆盖录像实际展示的场景，不扩写为所有硬件、战斗组合和四种构建均通过。详见 `docs/CLEAN_REF362_BATTLE_TRAINER_EXIT_ACCEPTANCE.md`。
+- REF-362 定向静态测试 `40 passed, 1 skipped`；完整 pytest `908 passed, 35 failed, 196 skipped, 98 subtests passed`。未将历史失败写成全绿；Red/Blue/TEST Red/TEST Blue 最新 MAP 与 Bank 空间记录仍需维护者归档。
+
+## REF-361 实施历史记录（并入 CLEAN REF-363）｜玩家向左退场 7 行同步刷新
+- 用户实测确认 REF-361 左退场更流畅；女主角录像随后暴露 REF-361 普通属性复制路径的颜色问题，REF-362 已改为 tile-only 并由 `362.mp4` 完成男女主角颜色回归。REF-361 仅保留为历史阶段记录，当前实现与验收边界见 `docs/CLEAN_REF362_BATTLE_TRAINER_EXIT_ACCEPTANCE.md`。
+
 ## CLEAN REF-360｜Player PC 主菜单人物遮挡修复与 PC 菜单累计收口（2026-11-08）
 - 游戏版本 `REF-360@`。Player PC 父菜单仅将原有一次 `UpdateSprites` 移到固定底部提示框 `TextBoxBorder`/`PlaceString` 完成后、BG 传输开启前；不增加刷新次数，不改公共精灵函数、宝可梦 PC、道具二级列表、数量框或存档。
 - 本次累计收口 REF-357～REF-360：图鉴前卧室 Player PC 入口、父菜单优先显示与 B 松键门控、三条旧道具提问停用并保留注释、父菜单人物精灵遮挡时序修正。源码、版本、回归测试与维护文档同一次提交。

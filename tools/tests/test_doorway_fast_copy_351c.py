@@ -69,7 +69,7 @@ def test_map_guard_released_only_after_player_graphics():
 
 
 def test_version_and_old_map_hdma_are_untouched():
-    assert 'db "REF-354@"' in src("data/game_version.asm")
+    assert 'db "REF-363@"' in src("data/game_version.asm")
     body = src("color/refreshmaps.asm")
     assert body.count("call .copyDoorwayMapRowsHDMA") == 2
     assert "ld a,$80 ; one 16-byte HBlank DMA block" in body

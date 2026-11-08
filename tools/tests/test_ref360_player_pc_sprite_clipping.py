@@ -73,6 +73,7 @@ def test_bills_pc_and_common_sprite_and_description_paths_still_exist():
 
 def test_version_raised_at_canonical_location():
     code = source("data/game_version.asm")
-    assert re.search(r'^\s*db "REF-360@"$', code, re.M)
+    version = re.search(r'^\s*db "REF-(\d+)@"$', code, re.M)
+    assert version and int(version.group(1)) >= 360
     assert "REF-359: disable obsolete Player PC item-list question printing." in code
     assert 'WhatDoYouWantText:' in source('engine/menu/players_pc.asm')

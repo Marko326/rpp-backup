@@ -1,3 +1,26 @@
+## REF-363｜玩家与对方训练师退场必须共用 palette-safe 7 行 tile-only 刷新
+- **最终合并状态**：用户撤回 REF-362 独立提交，本次 REF-361～363 由 REF-360 一次合并；不能把中间 REF-361 的普通属性复制路径当作最后正确实现。录像 `363.mp4` 覆盖三次敌方右退场，未见绿色/粉红跳色；这不替代未归档的四 ROM/MAP。
+- REF-362 只修了玩家 A=9 向左退场；对方 A=8 向右退场仍走 AutoBG 的旧分批路径。若目标是双方退场都不撕裂，不能只改玩家分支或留下 `.enemyNormalTransfer` 回退；两条方向都必须在每一步把更新后的 7 行提交到同一次 VBlank。
+- 玩家训练师占 BG row 5..11：源 `coord(0,5)`，目标 low offset `5 * BG_MAP_WIDTH`；对方训练师占 row 0..6：源 `coord(0,0)`，目标 low offset `0`。两者均使用 `$87`（7 rows + bit7 tile-only），只写 VBK 0，保留战斗已经建立的屏幕坐标 CGB 属性图。
+- 两条路径都必须在开始循环前保存 `H_AUTOBGTRANSFERENABLED` 原值并关闭自动分批刷新，所有 9/8 步完成后原样恢复（包括原值为 0）。不能只在玩家路径保存，也不能返回时无条件设为 1。每步继续 `DelayFrame` + `DelayFrames 1`，即原 2 帧节奏。
+- `H_VBCOPYBGSRC` low byte 是 VBlank copy 的 enable flag：先清零，写 source high、destination low/high、row count，最后才写 source low。不要让 VBlank 在参数未完整时消费队列。
+- tile-only 每行复制 20 列，VRAM row stride 为 32。敌方 row0..6 不跨 `$xxFF`；玩家 row5..11 会在 row8 跨页，必须保留 `inc h` 进位。旧 HP row2/9/10 tile-only 调用也必须保持地址序列不变。
+- 仍不得使用 `WindowTransferBgRowsAndColors` 覆盖 VBK 1；双方颜色正确性与头身完整性均需在真实战斗画面验收。静态测试不能代替四种 ROM/MAP 和设备录像。
+
+## REF-361→REF-362｜玩家训练师左退场颜色回归的原因与防止方式
+- **这次回归是 REF-361 引入的，不是中文版调色板移植造成的。** REF-361 为了让玩家 7 行训练师图在同一次 VBlank 完整更新，错误地选用了普通 `WindowTransferBgRowsAndColors` 属性复制路径；该路径与 REF 战斗实际使用的屏幕坐标 palette map 不兼容。
+- `color/color.asm::SetPal_Battle_Common` 将 `W2_TileBasedPalettes=0`，此时 `W2_TilesetPaletteMap` 是按屏幕坐标建立的 20×18 palette map；`color/refreshmaps.asm::WindowTransferBgRowsAndColors` 却把源 Tile ID 当索引读取该表。REF-361 通过该 helper 把无关 palette index 写入 VBK 1，因而在玩家开始左退场时可能造成披风/头部和对方 Pokémon 局部绿色、粉红色跳变。
+- **修复原则**：玩家退场只改变 `wTileMap` 中的 Tile ID，不改变屏幕区域的 palette 归属。REF-362 改用 `H_VBCOPYBGNUMROWS` bit7 tile-only 分支，只写 VBK 0、保留已经正确建立的 VBK 1 属性图。不能因 helper 名称带 `AndColors` 就假设其属性索引语义适用于所有 palette map。
+- 不直接移植中文工程的 Palette ID、颜色表、缓存同步或 loader；必须沿用当前 REF RGB555 与 `W2_BgPaletteData` / `W2_SprPaletteData` 管线。
+- tile-only 分支每行复制20列，VRAM row stride 为32；跨 `$xxFF->$xx00` 时必须把目标高字节 `H` 加一。玩家从 row5 复制7行会跨页，缺少进位会破坏后续行；既有 HP row2/9/10 调用虽不跨页，也必须保持原行为。
+- 颜色回归至少覆盖男/女玩家、退场前/逐步移动/完全离场后，以及对方 Pokémon 同时显示的帧。静态检查能证明不再改属性图和地址进位，但不能替代 CGB 实机颜色观察、Red/Blue/TEST 链接与 MAP 空间验证。
+
+## REF-361｜跨 Bank 退场 ABI 与全高度 BG 原子复制
+- 战斗 `$0F` Bank 几乎满载，不能把中文的 7 行原子复制直接粘到 `engine/battle/core.asm`。仅保留原 `SlideTrainerPicOffScreen` 入口，在浮动 ROMX 放实现；通过 `hSlideAmount` 保存 A，DE 保存调用方 HL。普通 `jpab` 会覆盖 A/BC/HL，若无桥接会把训练师图片指针当函数地址，导致错误移动甚至内存损坏。
+- 玩家图高 7 tile rows，而 AutoBgMapTransfer 每帧只上传 6 行，所以图块更新先后帧会造成头身撕裂。玩家左移必须停掉自动分三份刷新，排队 `VBlankCopyBgMap` 复制 `coord(0,5)` 的全部7行，设置源 LOW 字节为最后使能动作；必须补足最后一行且每步保持2帧。敌人右移不走该保护。 该条描述 REF-361/362 的历史范围；REF-363 已把同样的 7 行 tile-only 原子刷新扩展到敌人 row0..6。
+- REF-361 初版曾使用普通 `WindowTransferBgRowsAndColors`，并错误地认为 bit7 tile-only 路径不能用于7行。REF-362 已纠正：战斗使用屏幕坐标 palette map，普通 helper 的 tile-ID 属性查找不兼容；tile-only 分支现已补齐跨页进位，退场只复制图块并保留 CGB 属性。不要再按本历史条目使用普通属性复制路径。
+- 在 `SlideTrainerPicOffScreen` 返回时成对恢复原 `H_AUTOBGTRANSFERENABLED`（包括0），不能强制设置为1；来自用户/训练家两种 A=9/8 调用合同不允许改。静态 pytest 不替代 ROM/MAP 与逐帧视频。详见 `docs/REF361_PLAYER_TRAINER_LEFT_EXIT_DEV.md`。
+
 ## REF-360｜菜单下方文本框与地图精灵 OAM 裁剪的时序约束
 - `UpdateSprites` 会通过 `CheckSpriteAvailability` 读取当前 `wTileMap` 判断地图人物是否被菜单/文本框遮挡。因此，多框菜单若先绘制上方列表并调用 `UpdateSprites`，随后才创建下方提示框，遮挡判断读取的是不完整 TileMap，人物 OAM 可能残留在后画文本框边缘。
 - 对这种布局，精灵裁剪必须在**所有会遮挡地图人物的 BG/Window 文本框与文字均绘制完成后**、重新开启 BG 自动传输前执行。优先移动已有的一次刷新，不盲目新增第二次调用，也不要全局关闭地图精灵更新。

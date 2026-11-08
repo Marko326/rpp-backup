@@ -1,3 +1,29 @@
+# CLEAN REF-363｜双方训练师退场同步与调色板保护（REF-361～363 一次提交）
+- [x] 用户已撤回 REF-362 的独立提交；本次以 `REF-363.patch` 标明的 `ab52a4620d5b262ede727d1a663995cf41192677` 为已提交基线，合并 REF-361～363。原中间阶段文档作为历史保留，不另做 Commit。
+- [x] 玩家左退场 A=9、对方右退场 A=8 均使用 7 行 VBlank tile-only `$87`；分别复制 BG row 5～11 / row 0～6；每步 2 帧，保存、关闭、恢复原 AutoBG 状态。
+- [x] REF-361 曾误用普通按 Tile ID 查 palette 的复制路径，导致训练师及对方 Pokémon 局部绿色/粉红跳色；改为只更新 BG Tile ID 并保留战斗 CGB 属性，给 tile-only 跨 VRAM 页步进增加高字节进位。原因保存在 `RPP_DEVELOPMENT_PITFALLS.md`。
+- [x] 用户上传 `363.mp4`：三次对方训练师向右退场均无明显头身撕裂或局部跳色，移动步进符合每步两帧；此前 `362.mp4` 已覆盖男女玩家退场颜色。验收范围见 `docs/CLEAN_REF363_BOTH_TRAINER_EXIT_ACCEPTANCE.md`。
+- [x] 当前工作区完整 pytest：908 passed，35 failed，196 skipped，98 subtests passed；现有失败仍需独立处理，不记为全绿。
+- [x] 制作 CLEAN REF-363 三件套：01 用户提供 REF-363 工作区→CLEAN 文档增量；02 用户补丁声明的 REF-360 HEAD `ab52a462…`→CLEAN REF-363 累计补丁；中文提交日志仅写从 REF-360 到 REF-363 可从代码核实的改动。01/02 不可叠加。
+- [ ] 维护者仍需归档 Red、Blue、TEST Red、TEST Blue 新 ROM/MAP，核对 ROM0≥64B、Bank `$0F` 与浮动 ROMX 空间。这里不冒充已完成构建，也不代 Commit/Push。
+
+# CLEAN REF-362｜玩家训练师左退场 CGB 属性保护（用户已完成男女主角录像验收）
+- [x] 根因确认：REF-361 普通 7 行复制进入 `WindowTransferBgRowsAndColors`，该 helper 按 Tile ID 查询 `W2_TilesetPaletteMap`；战斗实际使用 `W2_TileBasedPalettes=0` 的屏幕坐标 palette map，导致错误属性可能写入 VBK 1。
+- [x] 修复为 `H_VBCOPYBGNUMROWS=$87` tile-only：只复制 7 行 BG Tile ID，保留已经建立的 CGB 属性图；补齐 32-byte VRAM 行步进跨页进位。保留玩家每步 2 帧、敌方右退场原路径和既有 BG 自动刷新状态恢复。
+- [x] 明确不移植中文历史 #012 的 Palette ID、颜色表、缓存同步或 loader；沿用 REF 自身 RGB555 与 `W2_BgPaletteData` / `W2_SprPaletteData` 调色板体系。
+- [x] 用户提供 `362.mp4`，确认男、女主角均已实测；录像中未再观察到此前绿色/粉红局部跳色，玩家左退场流畅度保持。验收范围和证据边界见 `docs/CLEAN_REF362_BATTLE_TRAINER_EXIT_ACCEPTANCE.md`。
+- [x] REF-362 定向静态测试 `40 passed, 1 skipped`；完整 pytest `908 passed, 35 failed, 196 skipped, 98 subtests passed`。仍有 35 项历史失败，不宣称全仓库全绿。
+- [ ] 维护者归档 Red/Blue/TEST Red/TEST Blue 最新 ROM/MAP，并核对 ROM0≥64B、固定 Bank `$0F` 与浮动 ROMX 空间；本轮没有收到四种构建/MAP 产物，不能标记完成。
+- [x] 此前曾制作 CLEAN REF-362 三件套；用户随后撤回该独立提交，当前以 CLEAN REF-363 合并提交为准，旧补丁不再应用。
+
+# REF-361｜玩家训练师向左退场分行撕裂（开发候选；待设备验收）
+- [x] 用户已实测 REF-361：左退场流畅度有明显改善；随后女主角录像发现退场过程中玩家及对方 Pokémon 局部颜色异常。颜色复制路径已在 REF-362 单独修正，REF-361 不再作为当前交付版本。
+- [x] 与中文历史 #012 对照，确定该提交包含三个独立视觉项目，本轮只补玩家左退场的 7 行单 VBlank 提交，既有入战白闪修复不回退，另外的 OAM 头部属性与 Battle Window 揭屏不改。
+- [x] 原 `$0F` 调用标签桥接至浮动 ROMX；`jpab` 入参 A/HL 改用 hSlideAmount/DE 转发，玩家保存/禁用/恢复 AutoBG；敌人右移逻辑和两个帧等待保持原样；版本升级 `REF-361@`。
+- [x] 新增专项静态回归测试与故障注入，保留项目先前已验收 REF-360 源码。静态 PASS 不代表游戏帧表现。
+- [ ] 用户在实际 Termux 仓库应用候选补丁后，分别编译 Red/Blue/TEST Red/TEST Blue 并检查最新 MAP ROM0≥64B、Bank `$0F` / 新浮动 Bank 余量和 RGBDS 报错。
+- [ ] 手机/模拟器逐帧复测：玩家左滑 9 步的头身完整（野外/训练家/旧档，尽可能 CGB/DMG）、敌方右滑 8 步无回归、两帧节奏、入战白闪不再出现、战斗后 HUD / 地图恢复。未得到验收视频前不制作 CLEAN 三件套或提交。
+
 # CLEAN REF-360｜Player PC 主菜单人物遮挡修复（用户已确认录像，正式清理完成）
 - [x] 用户明确确认 `360.mp4` 是 REF-360 ROM 实测；视频所覆盖的 Player PC 父菜单不再出现人物压住底部提示框，已测道具存入/取出/丢弃、数量确认、返回及退出地图路径正常。
 - [x] 父菜单原有唯一一次 `UpdateSprites` 位于底部固定提示框 `TextBoxBorder`/`PlaceString` 之后、BG 传输开启之前；不增加刷新次数、不修改其他 PC/列表/数量框逻辑，游戏版本 `REF-360@` 保持不变。

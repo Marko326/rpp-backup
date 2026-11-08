@@ -120,9 +120,11 @@ VBlankCopyBgMap::
 	xor a
 	ld [H_VBCOPYBGSRC],a ; disable transfer so it doesn't continue next V-blank
 
-	; BATTLE-5.19.9: bit 7 requests a tile-only row copy for accelerated battle
-	; HP animation. Do it here in ROM0 so CGB attribute/palette bytes are never
-	; touched and no ROMX bank switch is needed while SP points into wTileMap.
+	; BATTLE-5.19.9 / REF-362: bit 7 requests a tile-only row copy. Keep it in
+	; ROM0 so CGB attribute/palette bytes are never touched and no ROMX bank
+	; switch occurs while SP points into wTileMap. REF-362 also uses this path
+	; for both 7-row trainer exits: battle attributes are a screen-coordinate
+	; map, while WindowTransferBgRowsAndColors interprets it as tile-ID indexed.
 	bit 7,b
 	jr nz,.tileOnlyRows
 	jr TransferBgRows
@@ -140,11 +142,16 @@ VBlankCopyBgMap::
 	dec c
 	jr nz,.copyTileOnlyRow
 
-	; This special path is only used for battle rows 2, 9 and 10, whose VRAM
-	; low-byte destinations cannot wrap while advancing to the next 32-tile row.
+	; VRAM rows are 32 bytes wide but only 20 visible columns are copied.
+	; Advance over the 12 hidden columns and carry into H when the destination
+	; crosses a $xxFF->$(xx+1)00 page boundary. Older HP-only callers use rows
+	; 2, 9 and 10 (no carry); REF-362's rows 5..11 cross the boundary at row 8.
 	ld a,32 - 20
 	add l
 	ld l,a
+	jr nc,.tileOnlyNoPageCarry
+	inc h
+.tileOnlyNoPageCarry
 	dec b
 	jr nz,.nextTileOnlyRow
 
