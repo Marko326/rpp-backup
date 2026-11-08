@@ -1202,6 +1202,9 @@ OaksLabText24:
 OaksLabText25:
 	TX_FAR _OaksLabText25
 	TX_SFX_KEY_ITEM
+	; REF-357 (#45): after the Pokédex fanfare, Oak explains that the
+	; bedroom PC now has Pokémon storage. Text starts on a new paragraph.
+	TX_FAR _OaksLabHomePCUpdatedText
 	db "@"
 
 OaksLabText26:

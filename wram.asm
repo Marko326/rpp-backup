@@ -858,6 +858,9 @@ wBattleBagPocket:: ds 1
 wBattleBagCachedPocket:: ds 1
 wBattleBagCachedScroll:: ds 1
 wBattleBagDescriptionCache:: ds 1
+; Player PC description drawing uses this exported byte outside battle.
+; Its START Bag cache at $CCD3 aliases wParentMenuItem, so cannot be used.
+; No new WRAM/SRAM: PC and Battle Bag cannot be active together.
 wBattleBagVisibleSlots:: ds 4
 
 wInGameTradeGiveMonSpecies:: ; cd0f

@@ -1,3 +1,8 @@
+## REF-360｜菜单下方文本框与地图精灵 OAM 裁剪的时序约束
+- `UpdateSprites` 会通过 `CheckSpriteAvailability` 读取当前 `wTileMap` 判断地图人物是否被菜单/文本框遮挡。因此，多框菜单若先绘制上方列表并调用 `UpdateSprites`，随后才创建下方提示框，遮挡判断读取的是不完整 TileMap，人物 OAM 可能残留在后画文本框边缘。
+- 对这种布局，精灵裁剪必须在**所有会遮挡地图人物的 BG/Window 文本框与文字均绘制完成后**、重新开启 BG 自动传输前执行。优先移动已有的一次刷新，不盲目新增第二次调用，也不要全局关闭地图精灵更新。
+- 回归测试应锁定顺序：上方框/菜单 → 下方框/提示文字 → `UpdateSprites` → BG transfer enable；并检查首次打开、B 返回、退出后地图人物恢复。仅检查 `UpdateSprites` 存在或菜单文字正确，不足以覆盖该时序缺陷。
+
 ## REF-353｜已暗洞穴转场与倒序淡出表注意事项
 - 原来的特殊洞穴以 `wMapPalOffset` 选择 LCD-off，能造成黑→白→黑；正常房门和洞口 Warp 统一使用 `PlayMapChangeSound` 的安全 LCD-on 加载，不可因 Flash 状态再恢复旧门控。但特殊 Warp、战斗、启动仍须保留原 loader。
 - 旧洞穴已暗（`rBGP=$FE`）时直接调用普通从 E4 开始的渐暗会反向照亮；DarkBG与AlreadyDark两条专用表均依赖 `GBFadeDecCommon` 每次倒序读取3字节、4阶段，因此地址必须指向第4行末尾 `FadePal...+11`，不能写成 `+2`。否则最后不全黑，会泄漏 LCD-on 正在写入的新地图及玩家剪影。

@@ -17,6 +17,9 @@ PlayerPC:
 	call PrintText
 
 PlayerPCMenu:
+	; REF-358: rebuild the parent menu before gating the old B press.
+	; Waiting before drawing made holding B appear to freeze the item PC,
+	; unlike Bill's PC. The parent will be visible while release is pending.
 	ld a, [wParentMenuItem]
 	ld [wCurrentMenuItem], a
 	ld hl, wFlags_0xcd60
@@ -26,7 +29,6 @@ PlayerPCMenu:
 	ld b, $8
 	ld c, $e
 	call TextBoxBorder
-	call UpdateSprites
 	coord hl, 2, 2
 	ld de, PlayersPCMenuEntries
 	call PlaceString
@@ -47,11 +49,33 @@ PlayerPCMenu:
 	ld [hli], a ; wListScrollOffset
 	ld [hl], a ; wMenuWatchMovingOutOfBounds
 	ld [wPlayerMonNumber], a
-	ld hl, WhatDoYouWantText
-	call PrintText
+	; REF-358: this fixed prompt is UI, not sequential dialogue. Draw the
+	; standard message border and both lines directly into the hidden BG,
+	; avoiding PrintText's textbox setup and character-by-character path.
+	coord hl, 0, 12
+	lb bc, 4, 18
+	call TextBoxBorder
+	coord hl, 1, 14
+	ld de, WhatDoYouWantText
+	call PlaceString
+	; REF-360: clip map sprites against the complete parent menu, including
+	; the bottom message box. Clipping before that box was built allowed
+	; the player sprite to remain visible above its border on return.
+	call UpdateSprites
 	ld a, 1
 	ld [H_AUTOBGTRANSFERENABLED], a
 	call Delay3
+	; The previous B cancels only the item list, never this parent menu.
+	; Wait only before accepting *new* parent input; the complete parent
+	; screen is already visible, regardless of how long B remains held.
+.waitForBRelease
+	call Joypad
+	ld a,[hJoyHeld]
+	and B_BUTTON
+	jr z,.bReleased
+	call DelayFrame
+	jr .waitForBRelease
+.bReleased
 	call HandleMenuInput
 	bit 1, a
 	jp nz, ExitPlayerPC
@@ -98,8 +122,9 @@ PlayerPCDeposit:
 	call PrintText
 	jp PlayerPCMenu
 .loop
-	ld hl, WhatToDepositText
-	call PrintText
+	; REF-359: item descriptions replace this redundant question.
+	; ld hl, WhatToDepositText
+	; call PrintText
 	ld hl, wNumBagItems
 	ld a, l
 	ld [wListPointer], a
@@ -165,8 +190,9 @@ PlayerPCWithdraw:
 	call PrintText
 	jp PlayerPCMenu
 .loop
-	ld hl, WhatToWithdrawText
-	call PrintText
+	; REF-359: item descriptions replace this redundant question.
+	; ld hl, WhatToWithdrawText
+	; call PrintText
 	ld hl, wNumBoxItems
 	ld a, l
 	ld [wListPointer], a
@@ -221,8 +247,9 @@ PlayerPCToss:
 	call PrintText
 	jp PlayerPCMenu
 .loop
-	ld hl, WhatToTossText
-	call PrintText
+	; REF-359: item descriptions replace this redundant question.
+	; ld hl, WhatToTossText
+	; call PrintText
 	ld hl, wNumBoxItems
 	ld a, l
 	ld [wListPointer], a
@@ -265,13 +292,20 @@ TurnedOnPC2Text:
 	TX_FAR _TurnedOnPC2Text
 	db "@"
 
+; REF-357 dialogue command wrapper, disabled in REF-358. The parent
+; prompt no longer needs a far text-command script on every menu return.
+; WhatDoYouWantText:
+; 	TX_FAR _WhatDoYouWantText
+; 	db "@"
 WhatDoYouWantText:
-	TX_FAR _WhatDoYouWantText
+	db "What do you want"
+	next "to do?"
 	db "@"
 
-WhatToDepositText:
-	TX_FAR _WhatToDepositText
-	db "@"
+; REF-359: old DEPOSIT question wrapper, history only.
+; WhatToDepositText:
+; 	TX_FAR _WhatToDepositText
+; 	db "@"
 
 HMItemCantBeStoredText:
 	text "HMs can't be"
@@ -294,9 +328,10 @@ NoRoomToStoreText:
 	TX_FAR _NoRoomToStoreText
 	db "@"
 
-WhatToWithdrawText:
-	TX_FAR _WhatToWithdrawText
-	db "@"
+; REF-359: old WITHDRAW question wrapper, history only.
+; WhatToWithdrawText:
+; 	TX_FAR _WhatToWithdrawText
+; 	db "@"
 
 WithdrawHowManyText:
 	TX_FAR _WithdrawHowManyText
@@ -314,9 +349,10 @@ CantCarryMoreText:
 	TX_FAR _CantCarryMoreText
 	db "@"
 
-WhatToTossText:
-	TX_FAR _WhatToTossText
-	db "@"
+; REF-359: old TOSS question wrapper, history only.
+; WhatToTossText:
+; 	TX_FAR _WhatToTossText
+; 	db "@"
 
 TossHowManyText:
 	TX_FAR _TossHowManyText

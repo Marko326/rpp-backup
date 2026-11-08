@@ -77,7 +77,8 @@ def test_helper_validates_exact_inventory_pointers_and_clamps_cancel():
 def test_selected_id_uses_existing_bag_and_mart_descriptions():
     helper = block(src("engine/menu/bag_pockets.asm"),
                    "UpdatePlayerPCItemDescription::", "UpdateBagPocketDescription::")
-    assert "ld hl,wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET" in helper
+    # REF-357: never use Bag cache $CCD3, which overlaps PC's parent cursor.
+    assert "ld hl,wBattleBagDescriptionCache" in helper
     assert "ld [hl],$fe\n\tjp UpdateBagPocketDescriptionFromItem" in helper
     existing = block(src("engine/menu/bag_pockets.asm"),
                      "UpdateBagPocketDescriptionFromItem:", "BagPocketTitleSpans:")

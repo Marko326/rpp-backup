@@ -317,6 +317,19 @@ _OaksLabText25::
 	para "[PLAYER] got"
 	line "#dex from Oak!@@"
 
+; REF-357 (#45): a separate paragraph after the Pokédex acquisition sound.
+; This is new English text; the existing Oak dialogue stays byte-for-byte.
+_OaksLabHomePCUpdatedText::
+	text ""
+	para "Oak: By the way,"
+	line "your home PC has"
+	cont "been upgraded!"
+
+	para "You can deposit"
+	line "and withdraw"
+	cont "#mon now!"
+	done
+
 _OaksLabText26::
 	text "To make a complete"
 	line "guide on all the"

@@ -67,4 +67,8 @@ GameVersionText::
 	; REF-354: preserve Spark damage-power registers and extended animation identity.
 	; REF-355: show shared short item descriptions in Player PC item lists.
 	; REF-356: quantity picker local held-key repeat, 40/5 frames.
-	db "REF-356@"
+	; REF-357: open bedroom item PC before the Pokédex; full PC afterward.
+	; REF-358: redraw Player PC parent before waiting for B release.
+	; REF-359: disable obsolete Player PC item-list question printing.
+	; REF-360: refresh overworld sprite clipping after the Player PC parent prompt.
+	db "REF-360@"

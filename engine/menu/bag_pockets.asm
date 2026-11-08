@@ -1545,10 +1545,14 @@ UpdatePlayerPCItemDescription::
 .cancel
 	ld a,$ff
 .render
-	; This scratch byte is shared with the categorized Bag but its menu is
-	; inactive during Player PC. Force a fresh draw on every list redraw,
-	; including a return from quantity confirmation or a SELECT swap.
-	ld hl,wFilteredBagItems + BAG_POCKET_DESCRIPTION_CACHE_OFFSET
+	; Never use the START Bag Slot Map cache here: at 100 Bag slots its
+	; address is $ccd3, which is also wParentMenuItem (Player PC's saved
+	; parent cursor). REF-355 was overwriting that cursor with the item ID,
+	; making B return draw an arrow in the bottom text box / outside the menu.
+	; PC and Battle Bag cannot coexist; use the existing exported ROMX-safe
+	; battle-only scratch symbol directly (an EQU alias is not exported).
+	; Always redraw on return from a quantity dialog or SELECT swap.
+	ld hl,wBattleBagDescriptionCache
 	ld [hl],$fe
 	jp UpdateBagPocketDescriptionFromItem
 

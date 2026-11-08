@@ -1581,15 +1581,19 @@ _TurnedOnPC2Text::
 	line "the PC."
 	prompt
 
-_WhatDoYouWantText::
-	text "What do you want"
-	line "to do?"
-	done
+; REF-358: previous Player PC text script, retained for tracing only.
+; The identical two lines are now placed directly by the Player PC menu.
+; _WhatDoYouWantText::
+; 	text "What do you want"
+; 	line "to do?"
+; 	done
 
-_WhatToDepositText::
-	text "What do you want"
-	line "to deposit?"
-	done
+; REF-359: deprecated item-list question; the live item description owns
+; this text area. Retain the full original text without emitting ROM data.
+; _WhatToDepositText::
+; 	text "What do you want"
+; 	line "to deposit?"
+; 	done
 
 _DepositHowManyText::
 	text "How many?"
@@ -1611,10 +1615,12 @@ _NoRoomToStoreText::
 	line "store items."
 	prompt
 
-_WhatToWithdrawText::
-	text "What do you want"
-	line "to withdraw?"
-	done
+; REF-359: deprecated item-list question; the live item description owns
+; this text area. Retain the full original text without emitting ROM data.
+; _WhatToWithdrawText::
+; 	text "What do you want"
+; 	line "to withdraw?"
+; 	done
 
 _WithdrawHowManyText::
 	text "How many?"
@@ -1637,10 +1643,12 @@ _CantCarryMoreText::
 	line "any more items."
 	prompt
 
-_WhatToTossText::
-	text "What do you want"
-	line "to toss away?"
-	done
+; REF-359: deprecated item-list question; the live item description owns
+; this text area. Retain the full original text without emitting ROM data.
+; _WhatToTossText::
+; 	text "What do you want"
+; 	line "to toss away?"
+; 	done
 
 _TossHowManyText::
 	text "How many?"

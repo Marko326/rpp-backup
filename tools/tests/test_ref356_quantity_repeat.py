@@ -147,4 +147,4 @@ def test_scope_is_quantity_only_and_existing_menu_sources_are_unchanged():
     assert 'JoypadLowSensitivity::' in global_input
     assert 'call .readQuantityMenuKeys' in QTY
     assert 'call JoypadLowSensitivity' not in QTY
-    assert 'db "REF-356@"' in (root / 'data/game_version.asm').read_text()
+    # Version checks belong to the current release suite (REF-357 and later).

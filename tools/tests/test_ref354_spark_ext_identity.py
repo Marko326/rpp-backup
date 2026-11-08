@@ -54,7 +54,9 @@ def test_spark_damage_abi_and_player_enemy_calls():
         assert "call PhysicalSpecialSplit" in damage
         assert damage.index("ld d, a") < damage.index("call PhysicalSpecialSplit")
     assert "db DYNAMIC ;SPARK" in src
-    assert 'db "REF-354@"' in read("data/game_version.asm")
+    # Keep the historical Spark contract valid as the shared version advances.
+    version = re.search(r'db "REF-(\d+)@"', read("data/game_version.asm"))
+    assert version and int(version.group(1)) >= 354
 
 
 def test_class_table_is_compile_time_guarded():

@@ -1,10 +1,41 @@
+# CLEAN REF-360｜Player PC 主菜单人物遮挡修复（用户已确认录像，正式清理完成）
+- [x] 用户明确确认 `360.mp4` 是 REF-360 ROM 实测；视频所覆盖的 Player PC 父菜单不再出现人物压住底部提示框，已测道具存入/取出/丢弃、数量确认、返回及退出地图路径正常。
+- [x] 父菜单原有唯一一次 `UpdateSprites` 位于底部固定提示框 `TextBoxBorder`/`PlaceString` 之后、BG 传输开启之前；不增加刷新次数、不修改其他 PC/列表/数量框逻辑，游戏版本 `REF-360@` 保持不变。
+- [x] REF-354～REF-360 相关定向测试 128 项通过；全仓库基线与当前测试对比没有新增失败，但全仓库仍有历史失败，详见 `docs/CLEAN_REF360_PLAYER_PC_MENU_ACCEPTANCE.md`。
+- [x] 已制作一次 Commit 清理三件套：当前 REF-360 工作区增量、REF-356 HEAD 累计全量（互斥二选一）及中文提交日志；不拆功能/工具提交。
+- [ ] 用户在真实仓库应用其中一份补丁并自行 Commit；助手不操作 Git Commit/Push。
+- [ ] 维护者归档 Red/Blue/TEST Red/TEST Blue 新 ROM/MAP，并检查 ROM0/ROMX 余量；本次未获得可独立核验的四种构建/MAP 产物。
+
+## REF-360 实施记录（已纳入上方 CLEAN REF-360）
+- [x] 用户确认仅道具 PC 四选项父菜单曾有人物压在提示框上；Withdraw/Deposit/Toss、数量确认及宝可梦 PC 主/二级菜单不是本次复现故障。
+- [x] 将父菜单既有 `UpdateSprites` 移至固定提示框 `TextBoxBorder` 和 `PlaceString` 之后，确保遮挡检查读取完整 TileMap；未增加调用次数。
+- [x] 用户确认 `360.mp4` 为 REF-360 ROM 实测，当前菜单问题已按视频覆盖范围验收。
+- [ ] Red/Blue/TEST Red/TEST Blue 新 ROM/MAP 与 ROM0/ROMX 空间归档仍待维护者完成。详见 `docs/REF360_PLAYER_PC_MENU_SPRITE_CLIP_DEV.md`。
+
+## REF-359 历史实施记录（已纳入 CLEAN REF-360；独立组合验收仍保留待办）
+- [x] 已逐行注释 Withdraw／Deposit／Toss 三条旧问题调用链（调用、包装、正文），当前道具说明直接绘制；游戏显示 `REF-359@`。
+- [ ] 设备复测首次/再次进入、数量取消、B 返回、光标、Bill’s PC；重编 Red/Blue/TEST ROM 与 MAP。`docs/REF359_PLAYER_PC_ITEM_QUESTIONS_DEV.md`
+
+## REF-358 历史实施记录（已纳入 CLEAN REF-360；完整构建证据仍保留待办）
+- [x] 找回 `357修复.mp4` 尾部 `GBPK-INPUT-LOG`，按 B-down 与解码父菜单首帧比较：宝可梦 PC 约0.20秒，道具 PC 三次0.57～0.60秒，录制缓冲仍影响绝对值。
+- [x] 父菜单优先绘制，B 松开校验移至显示之后；固定两行提示直接画出；游戏版本提升 `REF-358@`，旧文本路径注释保留。
+- [ ] 用户手机重编译／MAP，验证 Withdraw、Deposit、Toss 长按 B 不连退且立即显示父菜单；Bill's PC 存取/放生、TM 说明及 REF-356 数量框回归。
+
+## REF-357 历史实施记录（已纳入 CLEAN REF-360；图鉴前后新旧档专项仍保留待办）
+- [x] 图鉴前卧室 PC 允许 Player's PC 道具存取/丢弃，继续限制宝可梦盒子与 Oak/League 等完整 PC 功能；图鉴后复用原完整 PC 入口。领取图鉴音效后，大木博士补独立英文提示，说明家中 PC 升级并可存取宝可梦。
+- [x] 旧“暂时无法使用”的调用、标签及正文逐行保留为 ASM 注释；不修改公用 PC 逻辑、数量框、商店或其他移植项目。
+- [ ] 本机实测新游戏图鉴前、领取图鉴时的独立英文提示与音效、提示后博士原剧情、图鉴后完整 PC，以及旧存档的卧室 PC 开关、存取/丢弃、退出地图恢复；分别检查 Red/Blue/TEST 构建及 MAP。
+- [x] 用户决定：本轮仅做 #45；不实施 #43/#55 菜单速度、#57 钓鱼随机等待、#58 Fly 教学，后续不作为自动移植计划。
+- [x] 发现并修复 REF-355 Player PC 说明缓存 `$CCD3` 与 `wParentMenuItem` 重叠；转用 `$CD0A` 非战斗临时缓存，B 返回父菜单先等松键，避免下方乱光标及连续退出。
+- [ ] 用新 ROM 复测 `357.mp4` 对应的 Withdraw/Deposit/Toss 单次 B 退一层、光标保留所选行，以及 Bill’s PC 存入/取出/放生列表 B 退一层与返回的光标；未在本地执行模拟器验证。
+
 # CLEAN REF-356｜数量框长按与 BUY 余额限购（用户已验收，完成收口）
 - [x] 对照 ROM-1.42H #47，统一数量框上下 ±1 / 左右 ±10 的首次40帧、之后每5帧重复；A/B 只认新按。↑/↓ **持续按住到1或上限后停住**，松开并再次按下才允许首尾回卷；←/→ 只截断不回卷。
 - [x] 商店 BUY 使用 BCD 余额和单价计算 `min(99, floor(money/price))` 上限；买不起1件时不进入数量框；保留结账余额二次检查及 SELL、PC、背包各自原数量限制。
 - [x] 用户反馈 REF-356 最新长按、松开重按回卷及左右同频操作已测试无问题；相关 141 项定向 Python 测试通过。保留未逐项上传的机型、存档、输入组合与边界测试证据限制。
 - [x] 两份互斥补丁（用户本轮 `REF-356.patch` 工作区→补入左右同频测试与正式清理，或干净 REF-355 HEAD→同一最终状态）及符合 `feat(menus):`、`Version: REF-355 -> REF-356` 格式的中文提交日志；功能、测试和文档只做一次 Commit，不拆批次。
 - [ ] 在用户仓库归档最新 Red/Blue/TEST Red/TEST Blue 四种构建与 MAP，核对 ROM0 / ROMX 余量；静态测试与用户操作反馈都不代替可独立核验的构建记录。`docs/REF356_QUANTITY_REPEAT_DEV.md`
-- [ ] 后续非汉化对照功能：#43/#55 菜单独立速度表、#45 卧室 PC 前期访问规则、#57 冲浪钓鱼随机等待、#58 HM02 完整操作指引；按需求逐项评估。
+- [x] 参考移植取舍：#45 已转入 REF-357 开发；用户明确不需要 #43/#55、#57、#58，保留历史差异记录但不安排实现。
 
 # CLEAN REF-355｜Player PC / SELL / Flash（已清理；后续验收保留）
 - [x] Player PC 三操作和商店 SELL 复用道具说明，SELL 不再弹出旧问候语；旧问候的**调用/包装器/正文**已完整逐行注释保存，既可追溯又不占 ROM。`docs/REF355_MART_SELL_DESCRIPTIONS_DEV.md`
