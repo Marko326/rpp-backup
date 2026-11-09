@@ -3581,9 +3581,18 @@ CheckMapForMon:
 	ld a, [wd11e]
 	cp [hl]
 	jr nz, .nextEntry
+	; One map ID per encounter group; skip its remaining slots after a hit.
+	; Land and water groups are still checked separately by the caller.
 	ld a, c
 	ld [de], a
 	inc de
+.skipRemaining
+	inc hl
+	inc hl
+	dec b
+	jr nz, .skipRemaining
+	dec hl
+	ret
 .nextEntry
 	inc hl
 	inc hl
