@@ -59,7 +59,7 @@ def test_quantity_empty_inventory_and_transaction_messages_still_live():
 def test_version_and_other_pc_and_mart_routes_unchanged():
     # Historical REF-359 behavior must survive later versions (REF-360+).
     version = (ROOT / 'data/game_version.asm').read_text()
-    number = re.search(r'db "REF-(\d+)@"', version)
+    number = re.search(r'db "REF-(\d+)[A-Z]?@"', version)
     assert number and int(number.group(1)) >= 359
     bills = (ROOT/'engine/menu/bills_pc.asm').read_text()
     assert 'call DisplayMonListMenu\n\tjp c, BillsPCMenu' in bills

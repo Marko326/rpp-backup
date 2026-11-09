@@ -1,3 +1,8 @@
+## REF-364｜图鉴栖息地 buffer 写入与地区形态 AREA 区分
+- `ZeroOutDuplicatesInList` 在写入完成之后才去重，不能替代 `FindWildLocationsOfMon` 写入之前的容量保障。#054 在 `CheckMapForMon` 每组匹配到首个物种后直接跳过其余槽位，保留陆地／水面两组独立检查；预算按新记录数+两个逻辑节点+终止符 ≤30B，负向例子为 31B 越界拒绝。
+- `wPokedexViewForm` 只参与形态图鉴详情；栖息地 AREA 仍按 `wd11e` Species 查询 `WildDataTable`，没有读取 `RegionalFormWildEncounters` 的精确槽位映射。**不能把 #054 去重误认作地区形态地点解耦。** 相同地图能出现两种形态，未来必须按 `MapID + 来源 + 槽位 + Species + Form` 核对。
+- 详见 `docs/CLEAN_REF364_POKEDEX_HABITAT_ACCEPTANCE.md`；静态数据检查不代表所有 ROM/MAP 或设备验证。
+
 ## REF-363｜玩家与对方训练师退场必须共用 palette-safe 7 行 tile-only 刷新
 - **最终合并状态**：用户撤回 REF-362 独立提交，本次 REF-361～363 由 REF-360 一次合并；不能把中间 REF-361 的普通属性复制路径当作最后正确实现。录像 `363.mp4` 覆盖三次敌方右退场，未见绿色/粉红跳色；这不替代未归档的四 ROM/MAP。
 - REF-362 只修了玩家 A=9 向左退场；对方 A=8 向右退场仍走 AutoBG 的旧分批路径。若目标是双方退场都不撕裂，不能只改玩家分支或留下 `.enemyNormalTransfer` 回退；两条方向都必须在每一步把更新后的 7 行提交到同一次 VBlank。

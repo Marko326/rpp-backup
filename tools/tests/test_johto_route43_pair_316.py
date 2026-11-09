@@ -23,7 +23,7 @@ class Route43MahoganyGate316(unittest.TestCase):
         shared = (ROOT / 'data/johto_vertical_gate_runtime_314.asm').read_text()
         engine = (ROOT / 'engine/johto_pilot_runtime.asm').read_text()
         self.assertRegex(constants, r'NUM_JOHTO_ACTIVE_MAPS EQU (?:4[1-9]|[5-9][0-9]|[1-9][0-9]{2,})')
-        self.assertRegex(version, r'db "REF-\d{3}@"')
+        self.assertRegex(version, r'db "REF-\d{3}[A-Z]?@"')
         self.assertIn('db 5 ; Gold Route43 warps #1..#5 in original order', route43)
         self.assertIn('db 4 ; Gold lower 2 carpets + upper 2 DOORs, Route43 (ID67) now active', gate)
         self.assertIn('db 4 ; Gold #1/#2 top DOORs -> Route43 north carpets #4/#5', gate66)

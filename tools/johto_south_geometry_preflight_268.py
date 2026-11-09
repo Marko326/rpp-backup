@@ -89,7 +89,7 @@ def verify(root):
     # FIX-276: avoid hard-coded release allowlists that reject each next patch.
     # Still require the correct runtime era: 21-map candidate with ROMX roof
     # wrapper must be 270+, and without wrapper 269+.
-    match=re.search(r'^\s*db\s+"(?:(?:FIX|MAP)-5\.62\.|REF-(?:5\.62\.)?)(\d+)@"', version_text, re.M)
+    match=re.search(r'^\s*db\s+"(?:(?:FIX|MAP)-5\.62\.|REF-(?:5\.62\.)?)(\d+)[A-Z]?@"', version_text, re.M)
     version_num=int(match.group(1)) if match else None
     if (version_num is None or
         (not active and version_num != 267) or

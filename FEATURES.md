@@ -1,3 +1,7 @@
+## CLEAN REF-364｜图鉴地点 #054 去重
+- `CheckMapForMon` 每组陆地／水面遭遇只记录一次 MapID，保证图鉴最终地点集合不变，并缓解 30B `wBuffer` 重复记录。正式版本 `REF-364@`；依据见 `docs/CLEAN_REF364_POKEDEX_HABITAT_ACCEPTANCE.md`。
+- 地区形态遭遇是按地图+槽位区分，但图鉴 AREA 仍只按物种汇总，**尚未解耦**，本版不改地区形态显示；待另项设计。
+
 ## CLEAN REF-363｜双方训练师退场的 7 行同步与 CGB 属性保护（REF-361～363 合并提交）
 - 由 CLEAN REF-360 已提交基线（用户补丁标注 `ab52a4620d5b262ede727d1a663995cf41192677`）一次合并 REF-361～363，游戏版本 `REF-363@`；原 REF-362 单独提交已由用户撤回。此前两个版本的退场改动只作为阶段记录，不再要求单独 Commit。
 - `SlideTrainerPicOffScreen` 保留原 ABI，调用浮动 ROMX 实现。玩家向左 9 步、对方向右 8 步，各维持每步 2 帧；双方都暂停分三批的 AutoBG 更新并在每步通过 VBlank 单次提交完整 7 行 Tile ID，退出时恢复原 AutoBG 状态。玩家取 BG row 5～11，对方取 row 0～6。

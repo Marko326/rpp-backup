@@ -1,3 +1,8 @@
+# CLEAN REF-364｜图鉴地点去重正式清理
+- 累计基线为导出干净 HEAD `bf682c5ca1e7b67c2d0d21a949b86a72b6a08378`（`常规功能备份`），候选 `REF-363A@` 正式收口到 `REF-364@`，#054 只减少同遭遇组的重复 MapID 写入。
+- 按最新版项目要求模式 A 两次提交：ZIP 内 01 候选→CLEAN 与 03 HEAD→CLEAN 互斥；到最终态后应用 02 反向隔离工具文档，提交功能；反向恢复 02，再提交工具审计。不能叠加 01／03。
+- 已研究确认普通/地区形态 AREA 仍混用地点，尚未在本版修复。见 `docs/CLEAN_REF364_POKEDEX_HABITAT_ACCEPTANCE.md`。
+
 # CLEAN REF-354｜Spark 与扩展招式动画（2026-11-07）
 
 - REF-354 的正式战斗修复和 TEST-only 场景在候选阶段已完成；本轮清理**仅更新文档，不改游戏运行代码**。修复说明：[`docs/REF354_SPARK_EXT_ANIMATION_DEV.md`](docs/REF354_SPARK_EXT_ANIMATION_DEV.md)；六项测试操作：[`docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md`](docs/REF354_TEST_SCENE_ACCEPTANCE_GUIDE.md)。

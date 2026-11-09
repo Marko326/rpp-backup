@@ -1,3 +1,9 @@
+## CLEAN REF-364｜#054 图鉴地点去重和地区形态 AREA 调查（2026-11-08）
+- 用户导出 `REF-363(2).zip` 提供分支 `常规功能备份`、干净 HEAD `bf682c5ca1e7b67c2d0d21a949b86a72b6a08378`、版本 `REF-363@`；未读取 Termux 实际新 Git HEAD。以本次 `REF-363A` 候选复建清理状态，正式提升 `REF-364@`，不更改候选已验收的算法。
+- #054 每张地图、每个陆地／水面组只记录一次 MapID；用户提供 Tentacool、Dugtrio、Slowpoke 三张 AREA 正常截图，其他设备/形态尚未实测。另确认地区形态 AREA 仍按 Species 而非槽位过滤，列为后续独立项目，不改运行路径。
+- 累计改动包括 ASM 和 tools 审计／测试，因此执行**模式 A**：ZIP 内 01 REF-363A候选→CLEAN、02 最终→仅功能反向隔离、03 HEAD→CLEAN 累计，以及两份中文日志。01／03 互斥；02 隔离后功能 Commit，反向恢复02后工具 Commit。助手不替用户编译 ROM、Commit 或 Push。
+- 旧 REF-363 MAP 不等于 REF-364 的空间证据；新版本 Red MAP、必要的 Blue/TEST 均由用户核验。详细 `docs/CLEAN_REF364_POKEDEX_HABITAT_ACCEPTANCE.md`。
+
 ## CLEAN REF-363｜双方训练师退场一次合并提交（2026-11-08）
 - **真实用户补丁**：上传 `REF-363.patch` 明确声明分支 `常规功能备份`，基线 `ab52a4620d5b262ede727d1a663995cf41192677`，工作区路径 `/data/data/com.termux/files/home/rpp-backup`。用户说明 REF-362 原独立提交已撤回，本轮自该基线一次合并 REF-361、REF-362、REF-363，不把中间开发版本当作历史 Git Commit。
 - **精确回放**：从 CLEAN REF-360 源码复原基线，用户补丁涉及 18 个文件；旧文件的 Git Blob 与基线全部匹配，上传补丁正向应用后的 18 个新文件 Git Blob 全部一致。这个核验验证所提供的补丁与源码快照，不冒充在用户手机上执行了 `git rev-parse`。

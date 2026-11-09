@@ -53,7 +53,7 @@ def assert_atomic_transfer(text):
 
 def test_v363_version_and_floating_romx_placement():
     version = source("data/game_version.asm")
-    assert re.search(r'^\s*db "REF-363@"$', version, re.M)
+    assert re.search(r'^\s*db "REF-364@"$', version, re.M)
     assert MAIN.index('SECTION "Player Trainer Slide Atomic 361", ROMX') < MAIN.index('SECTION "bankF",ROMX,BANK[$F]')
     assert 'INCLUDE "engine/battle/trainer_slide_atomic_361.asm"' in MAIN
     # No new interrupt code, HRAM registers or WRAM addresses were required.
