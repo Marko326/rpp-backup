@@ -23,7 +23,7 @@ REQUIRED_FILES = (
     "data/johto_indoor_house.asm", "engine/johto_shared_pokecenter.asm", "engine/johto_pilot_warp_tiles.asm", "data/mapObjects/ViridianPokecenter.asm", "maps/johto_pilot/CherrygrovePokecenter1F.runtime.blk", "engine/overworld/healing_machine.asm", "engine/overworld/pokecenter.asm", "engine/johto_gold_healing_machine_337.asm", "gfx/johto_gold_heal_machine.png",
     "gfx/tilesets/johto_shared_pokecenter.png", "gfx/blocksets/johto_shared_pokecenter.bst", "gfx/tilesets/pokecenter.tilecoll",
     "color/tilesets/johto_shared_pokecenter.asm", "color/sprites.asm", "constants/tilesets.asm", "engine/overworld/set_blackout_map.asm", "wram.asm",  "data/johto_route32_runtime.asm", "data/johto_route33_runtime.asm", "data/johto_union_cave_runtime.asm", "data/johto_gate_runtime.asm", "data/johto_ruins_south_runtime.asm", "data/johto_ruins_north_runtime.asm", "engine/johto_pilot_runtime.asm", "engine/johto_land_collision_gateway_272.asm",
-    "home/rom0_relief_349.asm", "data/johto_burned_tower/REF347_1f_runtime.asm", "data/johto_burned_tower/REF348_b1f_runtime.asm",
+    "home/rom0_relief_349.asm", "data/johto_burned_tower/REF347_1f_runtime.asm", "data/johto_burned_tower/REF348_b1f_runtime.asm", "data/johto_dark_cave_stage/REF349_stage2_runtime.asm", "data/johto_dark_cave_stage/DarkCaveVioletEntrance.roles.bin", "engine/johto_dark_cave_stage2.asm", "data/johto_dark_cave_stage/cave_collision.gold.asm", "docs/REF349_DARK_CAVE_VIOLET_STAGE1.json", "gfx/tilesets/johto_dark_cave_violet_gold.png", "color/vblank.asm",
     "home/overworld.asm", "home.asm", "main.asm", "macros/asm_macros.asm",
     "engine/johto_violet_field_skills.asm", "engine/overworld/doors.asm",
     "engine/overworld/npc_movement.asm", "engine/overworld/map_name_sign.asm", "engine/overworld/tileset_header.asm", "color/loadpalettes.asm", "engine/fly_town_map_helpers.asm",
@@ -79,6 +79,28 @@ REQUIRED_FILES = (
 )
 
 
+# REF-349 is now part of the 64-map active roster. The isolated migration
+# fixture must carry its complete staged-source fence so the Surf audit can
+# verify the active cave without depending on files outside the fixture.
+DARK_CAVE_FILES = (
+    "docs/REF349_DARK_CAVE_VIOLET_STAGE1.json",
+    "data/johto_dark_cave_stage/REF349_stage2_runtime.asm",
+    "data/johto_dark_cave_stage/cave_collision.gold.asm",
+    "data/johto_dark_cave_stage/cave_palette_map.gold.asm",
+    "data/johto_dark_cave_stage/DarkCaveVioletEntrance.events.gold.asm",
+    "data/johto_dark_cave_stage/DarkCaveVioletEntrance.special_cells.json",
+    "data/johto_dark_cave_stage/DarkCaveVioletEntrance.roles.bin",
+    "gfx/tilesets/johto_dark_cave_violet_gold.png",
+    "gfx/blocksets/johto_dark_cave_violet_gold.bst",
+    "color/vblank.asm",
+    "data/dungeon_tilesets.asm",
+    "engine/menu/start_sub_menus.asm",
+    "engine/menu/summary_return_helpers.asm",
+    "home/fade.asm",
+)
+REQUIRED_FILES = tuple(dict.fromkeys(REQUIRED_FILES + DARK_CAVE_FILES))
+
+
 class PilotMigrationAuditTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -89,7 +111,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
             target = self.project / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
-        # Source audits now run for all 28 active maps; carry the shared role grids
+        # Source audits now run for all 64 active maps; carry the shared role grids
         # into this isolated fault-injection project rather than omitting them.
         shutil.copytree(ROOT / "maps/johto_pilot", self.project / "maps/johto_pilot", dirs_exist_ok=True)
 
@@ -141,7 +163,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_stale_active_map_count_assert_fails_before_assembly(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 63",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 64",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -149,7 +171,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_other_literal_active_map_assert_fails_before_assembly(self):
         self.mutate("data/johto_pilot_runtime_assets.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 63",
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 64",
                     "ASSERT NUM_JOHTO_ACTIVE_MAPS == 6")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
@@ -269,7 +291,7 @@ class PilotMigrationAuditTests(unittest.TestCase):
 
     def test_missing_stable_router_assert_fails(self):
         self.mutate("data/johto_stable_id_slots.asm",
-                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 63", "")
+                    "ASSERT NUM_JOHTO_ACTIVE_MAPS == 64", "")
         report = self.run_audit()
         self.assertEqual(report["status"], "FAIL")
         self.assertTrue(any("rgbds_literal_active_count_asserts" in e for e in report["errors"]))

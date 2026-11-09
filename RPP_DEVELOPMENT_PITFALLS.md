@@ -1,3 +1,16 @@
+## REF-364 工具审计：不要把历史版本快照当成当前功能合同
+- 可复用审计应验证当前源码之间的关系，不应无理由固定 `REF-343@`、60 张地图或 142 条 Warp。当前 roster 是 64 张活动地图、164 条注册 Warp；主迁移审计负责逐条验证完整路由。
+- 负向故障注入必须锚定具体字段/分支，不应假设某个 token 永远紧邻 `$FF` 或两个地图分支相邻。先定位唯一语义位置，再只修改该处。
+- Union Cave 现行模型是 1F、B1F、B2F 三层：到达不自动迈步；LADDER 与 DOWN 地毯按准确地图/槽位区分；B1F/B2F 内部楼梯不得通过碰撞触发。
+- `johto_union_cave_collision_340_audit.py` 需要外部 Gold 源码，并覆盖主迁移审计没有覆盖的逐格陆地/Surf 移动图；缺少 Gold 输入时应标记未执行，不要因工具无法运行就删除。
+- 上传快照若缺少 `data/wild_mons.asm` 所引用的 `data/wildPokemon/*.asm`，图鉴地点测试不可验证；不要用空文件或 skip 把缺失源数据伪装成通过。
+
+## REF-364 TOOL-CLEANUP-1｜保持工具单一入口并正确归档历史测试
+- 同一预检查器不得在项目根目录和 `tools/` 同时保留副本；双份内容相同也会造成入口与维护责任分叉。当前唯一命令是 `python tools/johto_table_assert_preflight.py --root .`，回归测试锁定模块路径。
+- 仅有 `from *_305 import ...` 的 `_304.py` 六行 shim 不再作为当前入口；历史阶段说明保留，当前实现与测试应指向 `_305.py`。
+- 整类无条件 `@unittest.skip` 的旧快照不应留在活跃测试发现目录；归档时保留原文，并使用 `.py.disabled` 等非测试扩展名。先确认被测试的工具是否仍由总审计调用，不能连工具模块一起误删。
+- 没有静态调用不等于没有维护者手工调用；B1F-339、Collision-340 在完成断言覆盖和依赖对照前继续保留。
+
 ## REF-364｜图鉴栖息地 buffer 写入与地区形态 AREA 区分
 - `ZeroOutDuplicatesInList` 在写入完成之后才去重，不能替代 `FindWildLocationsOfMon` 写入之前的容量保障。#054 在 `CheckMapForMon` 每组匹配到首个物种后直接跳过其余槽位，保留陆地／水面两组独立检查；预算按新记录数+两个逻辑节点+终止符 ≤30B，负向例子为 31B 越界拒绝。
 - `wPokedexViewForm` 只参与形态图鉴详情；栖息地 AREA 仍按 `wd11e` Species 查询 `WildDataTable`，没有读取 `RegionalFormWildEncounters` 的精确槽位映射。**不能把 #054 去重误认作地区形态地点解耦。** 相同地图能出现两种形态，未来必须按 `MapID + 来源 + 槽位 + Species + Form` 核对。

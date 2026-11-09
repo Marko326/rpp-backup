@@ -1,6 +1,7 @@
 """REF-341 Union Cave same-tileset floor Warp landing regression."""
 from pathlib import Path
 from unittest.mock import patch
+import re
 import sys
 import unittest
 
@@ -22,7 +23,7 @@ class UnionCaveWarpLanding341(unittest.TestCase):
         def inject(path, *args, **kwargs):
             text = original(path, *args, **kwargs)
             if path.resolve() == target:
-                return text.replace(", JOHTO_UNION_CAVE, $FF", ", $FF", 1)
+                return re.sub(r",\s*JOHTO_UNION_CAVE(?=,)", "", text, count=1)
             return text
 
         with patch.object(Path, "read_text", inject):

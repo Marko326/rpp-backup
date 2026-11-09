@@ -16,6 +16,10 @@ GOLD = Path(GOLD_ROOT_RAW) if GOLD_ROOT_RAW else None
 
 
 class GatehouseNpcPilot305(unittest.TestCase):
+    def test_305_is_the_only_current_gatehouse_npc_audit_entrypoint(self):
+        self.assertTrue((ROOT / "tools/johto_gatehouse_npc_pilot_305.py").is_file())
+        self.assertFalse((ROOT / "tools/johto_gatehouse_npc_pilot_304.py").exists())
+
     def test_current_two_gatehouse_npcs_use_native_counter_and_gold_red(self):
         report = audit(ROOT, GOLD)
         self.assertEqual("PASS_STATIC_ONLY", report["status"], report["errors"])

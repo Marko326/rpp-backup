@@ -1,3 +1,29 @@
+## CLEAN REF-364 TOOL-CLEANUP｜两轮工具审计一次提交（2026-11-09）
+- 最新输入是用户从 Termux `常规功能备份` 工作区导出的 `REF-364.patch`，声明 Git 基线 `d4e06edc1cd8d7c76b030c87fd34bc47a5237d24`。以该累计差异为本次单提交范围；不将历史已应用的第一轮/第二轮补丁重复叠加。
+- 本次正式清理三件套只有 01（已应用 `REF-364.patch` 的工作区→CLEAN 的文档增量）、02（该导出基线→CLEAN 的累计补丁）、03（完整中文单次 Commit 日志）；01/02 **互斥**，不制作工具反向隔离补丁。
+- 累计差异仅含离线 Python 工具、测试、JSON 审计合同和文档。没有游戏 ASM、地图/图块数据、ROM 构建配置、存档或游戏版本变化，继续 `REF-364@`；这次工具清理不要求 ROM 编译、MAP 或设备验收。
+- 全量 pytest `939 passed / 3 failed / 189 skipped / 106 subtests passed`；3 项 #054 失败来自此源码快照缺少野外遭遇 include 数据，不属于工具清理的新增失败，也不宣称全绿。外部 Gold 逐格碰撞对照未执行，Collision-340 保留。
+- 用户自行在 Termux 先检查 `git status` 与 `git apply --check`，按 01/02 其中一种路线合并为一次提交；助手不代 Commit/Push。
+## CLEAN REF-364 TOOL-CLEANUP-2｜现行地图/Warp 合同与测试收口（2026-11-09）
+- 基准为本轮重新上传的 `REF-364.zip`；第一轮去重和 B1F-339 历史审计归档已在基线中。活跃 Python 文件仍为 233，本轮没有新增脚本或继续删除 Collision-340。
+- B2F 审计改为验证活动地图/source count、描述符 ASSERT、5-byte Warp 记录结构，不再固定 REF-343、60 maps、142 warps；Union Cave 测试更新为 1F/B1F/B2F 三层现行路由。
+- RPP active Gold/header registry 更新为 64 张地图；Warp 合同更新为 164 条。主迁移审计仍逐条验证完整 164 条路由，室内注册工具验证其合同路由有序子集及全表行数。
+- Surf、Town Map、Browse Index、音乐、Map Name Sign、Map Script Bank、Burned Tower 和相关故障注入测试均同步到 64 地图/当前源码结构。
+- Collision-340 保留：它提供主迁移审计没有覆盖的逐格 Gold collision 与四方向陆地/Surf 移动检查。因外部 Gold 源码目录缺失，本轮没有运行 Gold 对照。
+- 验证：Union Cave 17 passed/16 subtests；受影响测试集合 128 passed/31 skipped/36 subtests；B2F 审计 23/23；`validate_current_project.py --skip-pytest` 的 1,538/1,538 主迁移审计通过。
+- 全仓库 pytest：939 passed、3 failed、189 skipped、106 subtests。3 项图鉴地点测试因上传 ZIP 缺少 `data/wildPokemon/` 下 60 个 include 文件而失败；不创建占位文件、不跳过、不宣称通过。
+- 不改 ASM、地图/图块、`REF-364@`、构建配置或存档；不编译/链接 ROM、不生成 MAP、不做设备验收、不执行 Git Commit/Push。详见 `docs/CLEAN_REF364_TOOL_CLEANUP_2.md`。
+- 本轮是当前计划中的第二轮、也是最后一轮工具清理；后续只补齐缺失数据并做最终 ROM/MAP/设备验收，不再自动开启第三轮。
+
+## CLEAN REF-364 TOOL-CLEANUP-1｜第一批离线工具清理（2026-11-09）
+- 基准是本轮用户上传的 `REF-364.zip` 完整源码快照。ZIP 不含 `.git`；本轮没有手机 Termux 实时 HEAD 或新的用户工作区补丁，**不得虚构 HEAD 累计补丁**。
+- 本批仅改 Python 工具、测试、文件索引和维护文档；不改 ASM、地图/资源、构建配置、存档结构或游戏版本 `REF-364@`。独立交付为针对该上传快照的清理增量及清理后完整工程 ZIP，不声称重建 CLEAN REF-364 原始模式 A 三件套。
+- 根目录 `johto_table_assert_preflight.py` 与 `tools/` 文件 SHA-256 相同（175 行），删除根目录副本；唯一命令是 `python tools/johto_table_assert_preflight.py --root .`，同步测试锁定唯一导入路径。
+- 删除 6 行 `johto_gatehouse_npc_pilot_304.py` 转发 shim，保留 REF-305 正式实现；将整类无条件 skip 的 DEV-312 测试原样移至 `tools/archive/historical_tests/*.py.disabled`，但保留仍由 `johto_pilot_migration_audit.py` 调用的 `johto_gatehouse_onboarding_312.py`。
+- B1F-339、Collision-340 两个独立审计暂时保留，完成当前覆盖矩阵对照后再决定。
+- 定向 pytest `15 passed, 5 skipped, 10 subtests passed`；`validate_current_project.py --skip-pytest` 的 ASM 1851 文件、表长 3 项、主迁移审计 1538/1538 均通过。未运行完整 pytest、未编译/链接 ROM、未生成新 MAP、未设备验收；助手不操作用户 Git Commit/Push。
+- 用户在实际仓库应用前先 `git apply --check`，并自行核对 `git status`；本批不升游戏版本。
+
 ## CLEAN REF-364｜#054 图鉴地点去重和地区形态 AREA 调查（2026-11-08）
 - 用户导出 `REF-363(2).zip` 提供分支 `常规功能备份`、干净 HEAD `bf682c5ca1e7b67c2d0d21a949b86a72b6a08378`、版本 `REF-363@`；未读取 Termux 实际新 Git HEAD。以本次 `REF-363A` 候选复建清理状态，正式提升 `REF-364@`，不更改候选已验收的算法。
 - #054 每张地图、每个陆地／水面组只记录一次 MapID；用户提供 Tentacool、Dugtrio、Slowpoke 三张 AREA 正常截图，其他设备/形态尚未实测。另确认地区形态 AREA 仍按 Species 而非槽位过滤，列为后续独立项目，不改运行路径。

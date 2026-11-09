@@ -8,7 +8,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-from johto_table_assert_preflight import inspect
+import johto_table_assert_preflight as table_preflight
+inspect = table_preflight.inspect
 
 
 class ActiveMapTableAssert261(unittest.TestCase):
@@ -42,9 +43,12 @@ class ActiveMapTableAssert261(unittest.TestCase):
         self.assertTrue(issues, tables)
         self.assertTrue(any(detail in x for x in issues), issues)
 
-    def test_build_preflight_and_tool_preflight_are_identical(self):
-        self.assertEqual((ROOT / 'johto_table_assert_preflight.py').read_bytes(),
-                         (ROOT / 'tools/johto_table_assert_preflight.py').read_bytes())
+    def test_preflight_has_one_canonical_tools_entrypoint(self):
+        self.assertEqual(
+            Path(table_preflight.__file__).resolve(),
+            (ROOT / 'tools/johto_table_assert_preflight.py').resolve(),
+        )
+        self.assertFalse((ROOT / 'johto_table_assert_preflight.py').exists())
 
     def test_real_current_tables_all_match(self):
         issues, tables, active = inspect(self.root)

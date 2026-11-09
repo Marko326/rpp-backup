@@ -1,3 +1,14 @@
+## CLEAN REF-364 TOOL-CLEANUP-2｜Union Cave 与 REF-364 现行审计收口
+- B2F 审计不再冻结 REF-343 / 60 maps / 142 warps；Union Cave 测试覆盖 1F/B1F/B2F 三层 10 条洞穴路由与当前碰撞/楼梯规则。
+- 当前 RPP header registry 与活动地图表为 64 张地图，注册 Warp 合同为 164 条；Surf、Town Map、音乐、Map Name Sign 与相关审计同步到当前 roster。
+- 旧测试断言和故障注入锚点已更新到现行 Dark Cave / Burned Tower / 共享跳跃 guard / Surf 路径。详细验证与未完成输入见 `docs/CLEAN_REF364_TOOL_CLEANUP_2.md`。
+
+## CLEAN REF-364 TOOL-CLEANUP-1｜离线工具去重（不改游戏版本）
+- 预检查器唯一入口为 `tools/johto_table_assert_preflight.py`；根目录的字节相同副本已删除。
+- REF-305 是当前 Gatehouse NPC 审计入口；6 行 REF-304 兼容转发 shim 已删除。
+- 整类无条件跳过的 DEV-312 历史测试已原样归档到 `tools/archive/historical_tests/`，`.py.disabled` 不参与自动发现；被总迁移审计调用的 onboarding 审计模块保留。
+- B1F-339、Collision-340 审计工具暂时保留。游戏版本仍为 `REF-364@`。详情见 `docs/CLEAN_REF364_TOOL_CLEANUP_1.md`。
+
 ## CLEAN REF-364｜图鉴地点 #054 去重
 - `CheckMapForMon` 每组陆地／水面遭遇只记录一次 MapID，保证图鉴最终地点集合不变，并缓解 30B `wBuffer` 重复记录。正式版本 `REF-364@`；依据见 `docs/CLEAN_REF364_POKEDEX_HABITAT_ACCEPTANCE.md`。
 - 地区形态遭遇是按地图+槽位区分，但图鉴 AREA 仍只按物种汇总，**尚未解耦**，本版不改地区形态显示；待另项设计。

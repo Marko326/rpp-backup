@@ -1,3 +1,19 @@
+# CLEAN REF-364 TOOL-CLEANUP｜单次 Git 提交收口
+- [x] 使用最新 Termux `REF-364.patch` 声明的 `d4e06edc1cd8d7c76b030c87fd34bc47a5237d24` 为累计基线，两轮工具清理改动合为一次 Git 提交，不制作双提交隔离补丁。
+- [x] 确认本次变更不含游戏 ASM、地图数据、版本和构建配置；工具清理不要求 ROM/MAP/游戏内复测。
+- [x] 本轮全项目测试 939 通过、3 项因缺少野外数据源失败、189 跳过；不宣称全绿。Gold 逐格对照未执行，保留 Collision-340。
+- [ ] 在真实 Termux 项目中确认 HEAD/变更清单，应用三件套中匹配状态的一份补丁后一次提交；不重复应用旧轮次补丁。
+# CLEAN REF-364 TOOL-CLEANUP-2｜Union Cave 与 REF-364 现行审计收口
+- [x] 以本轮重新上传的 REF-364 ZIP 为第二轮基准；确认第一轮去重和 B1F-339 归档已在基线中，活跃 Python 文件仍为 233。
+- [x] B2F 审计移除 REF-343 / 60 maps / 142 warps 固定断言，改为当前活动地图/source count、描述符 ASSERT 与 Warp 记录格式检查。
+- [x] UNION-260 更新为 1F/B1F/B2F 三层现行路由、到达不自动迈步、LADDER/地毯触发和内部楼梯碰撞拒绝。
+- [x] 更新 RPP header registry、Surf、Town Map、Browse Index、音乐、Map Name Sign、Map Script Bank 与 REF-348 审计：64 张活动地图、164 条注册 Warp。
+- [x] 修正 Bike、Burned Tower、Pokecenter、南部跳跃、ROM0 Surf、室内注册、迁移 fixture 等旧源码锚点。
+- [x] Collision-340 保留；外部 Gold 源码未提供，Gold 对照未执行。
+- [x] 验证：受影响测试集合 128 passed/31 skipped/36 subtests；B2F 审计 23/23；统一静态验证迁移审计 1,538/1,538 通过。
+- [x] 全仓库 pytest：939 passed、3 failed、189 skipped、106 subtests。3 项失败来自 ZIP 未提供的 `data/wildPokemon/` 60 个 include 文件；未用占位或 skip 掩盖。
+- [x] 当前计划中的第二轮、也是最后一轮工具清理完成；后续只补齐野外数据并做 ROM/MAP/设备验收，不计划第三轮清理。
+
 # CLEAN REF-364｜图鉴地点去重完成与地区形态 AREA 后续
 - [x] 中文历史 #054：每个陆地／水面遭遇组最多记录一个地图编号，保留终止符和原逻辑地点；正式版本 `REF-364@`，相关静态审计及截图范围见 `docs/CLEAN_REF364_POKEDEX_HABITAT_ACCEPTANCE.md`。
 - [x] 调查确认：地区形态产生端按 `(MapID,来源,槽位)` 选择 Form，但图鉴 AREA 查询仅按 `wd11e` 物种编号，因此普通与地区形态的地点尚未解耦；本版只调查，**不修改形态运行代码**。

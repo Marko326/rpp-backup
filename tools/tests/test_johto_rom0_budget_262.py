@@ -80,8 +80,8 @@ class Rom0Budget262(unittest.TestCase):
 
     def test_union_cave_water_must_be_checked(self):
         report = self.mutate('engine/johto_violet_field_skills.asm',
-                             '\tcall JohtoUnionCaveWaterAhead\n.waterOrShore',
-                             '\tcall JohtoRuinsWaterAhead\n.waterOrShore')
+                             '\tcall JohtoUnionCaveWaterAhead\n\tjp c, .water',
+                             '\tcall JohtoRuinsWaterAhead\n\tjp c, .water')
         self.assertIn('UnionCave', str(report['issues']))
 
     def test_bank48_cannot_be_moved_to_unchecked_bank(self):

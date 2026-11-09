@@ -12,12 +12,13 @@ class TestBurnedTower347Video(unittest.TestCase):
   self.assertIn('ld e, D_DOWN\n    ret',part)
   self.assertIn('JohtoWestPortalArrivalStep',part)
   self.assertIn('call JohtoPilotIsVerticalGatePairMap314',part)
- def test_only_gold_city_door_has_auto_step(self):
+ def test_only_reviewed_cave_and_gold_city_doors_auto_step(self):
   s=source('engine/johto_pilot_runtime.asm')
   part=s.split('JohtoPilotGateArrivalStep::',1)[1].split('\n.verticalGateArrivalDispatch314',1)[0]
-  self.assertEqual(part.count('ld e, D_DOWN'),1)
-  self.assertIn('ld a, [wXCoord]\n    cp 5',part)
-  self.assertIn('ld a, [wYCoord]\n    cp 5',part)
+  self.assertEqual(part.count('ld e, D_DOWN'),2)
+  code='\n'.join(line.split(';',1)[0] for line in part.splitlines())
+  self.assertRegex(code,r'(?s)cp JOHTO_ROUTE_31_LOCAL_ID.*?cp 34.*?cp 5.*?ld e, D_DOWN')
+  self.assertRegex(code,r'(?s)cp JOHTO_ECRUTEAK_CITY_LOCAL_ID.*?cp 5.*?cp 5.*?ld e, D_DOWN')
  def test_burned_tower_location_popup(self):
   s=source('engine/overworld/map_name_sign.asm')
   part=s.split('.ResolvePhysicalLandmark',1)[-1]

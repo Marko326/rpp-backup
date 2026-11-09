@@ -70,24 +70,40 @@ def audit(root=ROOT, gold=None):
     require('callba CheckForCollisionWhenPushingBoulderLegacy' in below and 'callab JohtoBurnedTowerB1FCheckForCollisionWhenPushingBoulder' in read('engine/overworld/player_state.asm'), 'reuse Strength collision entry')
     require('xor $fe' in below and 'ld [hSCY], a' in below, 'reuse elevator SCY shaking waveform')
     require('INCLUDE "data/johto_burned_tower/REF348_b1f_runtime.asm"' in read('main.asm'), 'B1F runtime included')
-    require('DEF NUM_JOHTO_ACTIVE_MAPS EQU 63' in read('constants/region_map_constants.asm'), '63 active maps')
+    require('DEF NUM_JOHTO_ACTIVE_MAPS EQU 64' in read('constants/region_map_constants.asm'), '64 active maps')
     for name in ('data/johto_pilot_runtime_assets.asm','data/johto_stable_id_slots.asm'):
-        require('ASSERT NUM_JOHTO_ACTIVE_MAPS == 63' in read(name),f'{name} stale cardinality')
+        require('ASSERT NUM_JOHTO_ACTIVE_MAPS == 64' in read(name),f'{name} stale cardinality')
     # Compile-blocking contracts must cover all new dense active slots.
     fly=read('engine/fly_town_map_helpers.asm')
     town=fly.split('JohtoPilotTownMapEntries::',1)[1].split('JohtoPilotTownMapEntriesEnd::',1)[0]
-    require(len(re.findall(r'^\s*dw\s+\w+',town,re.M))==63,'63 Town Map coordinate/name entries')
+    town_labels=re.findall(r'^\s*dw\s+(\w+)',town,re.M)
+    require(len(town_labels)==64 and town_labels[-2:] == ['JohtoPilotEcruteakName','JohtoPilotRoute31Name'],
+            '64 Town Map entries; Burned Tower remains slot62 and Dark Cave slot63')
     browse=fly.split('JohtoPilotTownMapBrowseIndexBySlot:',1)[1].split('JohtoPilotTownMapBrowseIndexBySlotEnd:',1)[0]
     bvalues=[int(v) for v in re.findall(r'\d+', '\n'.join(line.split(';',1)[0] for line in browse.splitlines()))]
-    require(len(bvalues)==63 and bvalues[-1]==21,'63 Town Map browse indices; B1F Ecruteak')
+    require(len(bvalues)==64 and bvalues[-2:]==[21,4], '64 Town Map browse indices; Burned Tower slot62, Dark Cave slot63')
     music=read('engine/menu/options_menu.asm').split('JohtoActiveGSCMusic::',1)[1].split('JohtoActiveGSCMusicEnd::',1)[0]
     music_entries=re.findall(r'^\s*db\s+(MUSIC_GBP_GSC_\w+)',music,re.M)
-    require(len(music_entries)==63 and music_entries[-1]=='MUSIC_GBP_GSC_BURNED_TOWER','63 music entries; B1F Burned Tower')
+    require(len(music_entries)==64 and music_entries[-2:] == ['MUSIC_GBP_GSC_BURNED_TOWER','MUSIC_GBP_GSC_DARK_CAVE'],
+            '64 music entries; Burned Tower slot62, Dark Cave slot63')
     require('== 65 * 16' in below,'B1F graphics must account for 31 trimmed blank tiles')
     require(bool(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', read('data/game_version.asm'))) and int(re.search(r'(?m)^\s*db "REF-(\d{3})[A-Z]?@"$', read('data/game_version.asm')).group(1)) >= 349, 'ROM version tag')
-    require('JOHTO_BURNED_TOWER_B1F + 1' in read('color/data/map_palette_assignments.asm'), 'B1F palette assignments')
-    require('JOHTO_BURNED_TOWER_B1F + 1' in read('color/data/map_palette_sets.asm'), 'B1F palette set')
-    require('JOHTO_BURNED_TOWER_B1F + 1' in read('data/warp_tile_ids.asm'), 'B1F warp pointer')
+    require('INCLUDE \"color/tilesets/johto_burned_tower_b1f.asm\" ; Gold CAVE / DAY, static indoor tiles' in read('color/data/map_palette_assignments.asm'), 'B1F tileset palette assignments')
+    palette_sets=read('color/data/map_palette_sets.asm')
+    tower_palette_rows=palette_sets.split('; JOHTO_POKECENTER',1)[1].split('MapPaletteSetsEnd::',1)[0]
+    palette_rows=[line.strip()[3:].strip() for line in tower_palette_rows.splitlines()
+                  if line.split(';',1)[0].strip().startswith('db ')]
+    require(palette_rows == [
+        'INDOOR_GRAY, INDOOR_RED, JOHTO_GATE_GOLD_GREEN, INDOOR_BLUE',
+        'INDOOR_YELLOW, INDOOR_BROWN, POKECENTER_FLOOR, PC_POKEBALL_PAL',
+        'OUTDOOR_GRAY, OUTDOOR_RED, OUTDOOR_GREEN, OUTDOOR_BLUE',
+        'OUTDOOR_YELLOW, OUTDOOR_BROWN, OUTDOOR_ROOF, CRYS_TEXTBOX',
+        'OUTDOOR_GRAY, OUTDOOR_RED, OUTDOOR_GREEN, OUTDOOR_BLUE',
+        'OUTDOOR_YELLOW, OUTDOOR_BROWN, OUTDOOR_ROOF, CRYS_TEXTBOX',
+        'CAVE_GRAY, CAVE_RED, CAVE_GREEN, CAVE_BLUE',
+        'CAVE_YELLOW, CAVE_BROWN, CAVE_LIGHT_BLUE, CRYS_TEXTBOX',
+    ], 'Pokecenter/Burned Tower 1F/B1F/Dark Cave palette-set rows or order changed')
+    require('dw JohtoBurnedTowerB1FWarpTileIDs ; ID39' in read('data/warp_tile_ids.asm') and 'JohtoBurnedTowerB1FWarpTileIDs: db $ff' in read('data/warp_tile_ids.asm'), 'B1F warp pointer and collision-only table')
     require('JohtoBurnedTowerB1F_Coll::' in read('home.asm'), 'B1F ROM0 collision tiles')
     require('JOHTO_BURNED_TOWER_B1F_LOCAL_ID\n\tjp z, .johtoBurnedTower' in read('engine/overworld/map_name_sign.asm'), 'B1F location name')
     hoptext=read('engine/overworld/ledges.asm').split('JohtoBurnedTowerB1FGoldHops:',1)[1].split('JohtoRoute33Hops:',1)[0]
@@ -99,7 +115,7 @@ def audit(root=ROOT, gold=None):
             event_text=script.split('def_warp_events',1)[1].split('def_coord_events',1)[0]
             coords=[tuple(map(int,m.groups())) for m in re.finditer(r'^\s*warp_event\s+(\d+),\s*(\d+),', event_text,re.M)]
             require(coords==expected,f'{filename} Gold source warp coordinates')
-    return 'REF348 audit PASS: 11 PIT, 5 arrival-only, 2 ladders, Strength, 30 hops, tilesets, 63-map registry'
+    return 'REF348 audit PASS: 11 PIT, 5 arrival-only, 2 ladders, Strength, 30 hops, tilesets, 64-map registry'
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=ROOT);p.add_argument('--gold',type=Path)

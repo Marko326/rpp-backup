@@ -1,4 +1,4 @@
-"""UNION-260: fail-closed Gold Union Cave 1F registration / portal tests.
+"""Union Cave 1F entrance plus current multi-floor registration regressions.
 
 Review-only tests: do not link or claim to have executed a ROM.
 """
@@ -33,41 +33,85 @@ class UnionCave260(unittest.TestCase):
         self.assertIn('JohtoUnionCave_Coll:: INCBIN "gfx/tilesets/johto_union_cave.tilecoll"', (ROOT/'home.asm').read_text())
         self.assertIn('ASSERT BANK(JohtoUnionCave_Coll) == 0', tilesets)
 
-    def test_two_cave_exits_both_bidirectional_and_down_only(self):
+    def test_three_floor_routes_preserve_both_surface_exits_and_stairs(self):
         body=self.runtime.split('JohtoRegisteredWarpRoutes::',1)[1].split('JohtoRegisteredWarpRoutesEnd::',1)[0]
+        cave_ids=('JOHTO_UNION_CAVE_1F_LOCAL_ID',
+                  'JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+                  'JOHTO_UNION_CAVE_B2F_LOCAL_ID')
         rows=[x.split(';')[0].strip() for x in body.splitlines()
-              if 'JOHTO_UNION_CAVE_1F_LOCAL_ID' in x.split(';')[0]]
+              if any(local in x.split(';')[0] for local in cave_ids)]
         self.assertEqual([
             'db MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
             'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID',
             'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID',
             'db MAP_REGION_JOHTO, JOHTO_ROUTE_33_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
         ],rows)
         self.assertIn('db 3, 17, 2, JOHTO_REGISTERED_WARP_SELECTOR',self.cave)
         self.assertIn('db 31, 17, 0, JOHTO_REGISTERED_WARP_SELECTOR',self.cave)
         self.assertIn('db 79, 6, 0, JOHTO_REGISTERED_WARP_SELECTOR',self.route)
         self.assertIn('db 9, 11, 1, JOHTO_REGISTERED_WARP_SELECTOR',
                       (ROOT/'data/johto_route33_runtime.asm').read_text())
-        self.assertNotIn('JOHTO_UNION_CAVE_B1F_LOCAL_ID',body)
 
-    def test_cave_arrival_no_step_and_exact_down_collision_only(self):
+    def test_cave_arrival_and_warp_collision_follow_current_floor_semantics(self):
+        def code_only(source):
+            return '\n'.join(line.split(';',1)[0].strip()
+                             for line in source.splitlines()
+                             if line.split(';',1)[0].strip())
+
+        cave_ids=('JOHTO_UNION_CAVE_1F_LOCAL_ID',
+                  'JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+                  'JOHTO_UNION_CAVE_B2F_LOCAL_ID')
         arrival = self.runtime.split('JohtoPilotGateArrivalStep::',1)[1].split('JohtoPilotGateDoorApproachAllowed::',1)[0]
-        self.assertRegex(arrival, r'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\s+ret z')
-        self.assertNotIn('.caveFacing', arrival)
+        for local in cave_ids:
+            self.assertRegex(arrival, rf'cp {local}\s+ret z')
         self.assertNotIn('ld [wPlayerDirection], a', arrival)
         self.assertNotIn('ld [wPlayerMovingDirection], a', arrival)
         self.assertNotIn('ld [wSpriteStateData1 + 9], a', arrival)
-        self.assertNotIn('.unionCaveLanding', arrival)
-        self.assertRegex(arrival, r'(?s)\.route32CaveLanding\s+ld a, \[wXCoord\]\s+cp 6\s+ret nz\s+ld a, \[wYCoord\]\s+cp 79\s+ret nz\s+jr \.down')
-        for start, end in [('JohtoPilotGateDoorApproachAllowed::','JohtoPilotGateDoorWarpMatched::'),
-                           ('JohtoPilotGateDoorWarpMatched::','JohtoPilotGateExteriorCollisionAllowed::')]:
-            part = self.runtime.split(start,1)[1].split(end,1)[0]
-            self.assertRegex(part, r'cp JOHTO_UNION_CAVE_1F_LOCAL_ID\s+ret z')
-            self.assertNotIn('.unionCaveMouth', part)
-        collision = self.runtime.split('JohtoPilotGateCollisionExitAllowed::',1)[1]
-        self.assertRegex(collision, r'(?s)\.unionCaveExit\s+;[^\n]*\n\s+;[^\n]*\n\s+ld e, 0\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+ld a, \[wXCoord\]\s+cp 17\s+ret nz\s+ld a, \[wYCoord\]\s+cp 3\s+jr z, \.yes\s+cp 31\s+ret nz\s+jr \.yes')
+
+        approach = self.runtime.split('JohtoPilotGateDoorApproachAllowed::',1)[1].split('JohtoPilotGateDoorWarpMatched::',1)[0]
+        for local in (*cave_ids, 'JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID',
+                      'JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID'):
+            self.assertRegex(approach, rf'cp {local}\s+ret z')
+
+        matched = self.runtime.split('JohtoPilotGateDoorWarpMatched::',1)[1].split('JohtoPilotGateExteriorCollisionAllowed::',1)[0]
+        matched_code = code_only(matched)
+        for local, label in (
+            ('JOHTO_UNION_CAVE_1F_LOCAL_ID', '.unionCave1FWarpMatched342'),
+            ('JOHTO_UNION_CAVE_B1F_LOCAL_ID', '.unionCaveB1FWarpMatched342'),
+            ('JOHTO_UNION_CAVE_B2F_LOCAL_ID', '.unionCaveB2FWarpMatched342'),
+        ):
+            self.assertRegex(matched_code, rf'cp {local}\s+jr z, {re.escape(label)}')
+        self.assertRegex(matched_code, r'(?s)\.unionCave1FWarpMatched342\s+ld a, \[wXCoord\]\s+cp 17\s+jr z, \.unionCaveDirectional342\s+jr \.unionCaveLadder342')
+        self.assertRegex(matched_code, r'(?s)\.unionCaveB1FWarpMatched342\s+ld a, \[wXCoord\]\s+cp 3\s+jr nz, \.unionCaveLadder342\s+ld a, \[wYCoord\]\s+cp 3\s+jr z, \.unionCaveDirectional342\s+cp 11\s+jr z, \.unionCaveDirectional342\s+jr \.unionCaveLadder342')
+        self.assertRegex(matched_code, r'(?s)\.unionCaveB2FWarpMatched342\s+\.unionCaveLadder342\s+ld e, 2\s+ret')
+        self.assertRegex(matched_code, r'(?s)\.unionCaveDirectional342\s+ld e, 1\s+ret')
+
+        collision = code_only(self.runtime.split('JohtoPilotGateCollisionExitAllowed::',1)[1])
+        self.assertIn('cp JOHTO_UNION_CAVE_1F_LOCAL_ID\njr z, .unionCaveExit', collision)
+        for local in ('JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+                      'JOHTO_UNION_CAVE_B2F_LOCAL_ID',
+                      'JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID',
+                      'JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID'):
+            self.assertIn(f'cp {local}\njr z, .unionCaveNoCollisionWarp342', collision)
+        self.assertRegex(collision, r'(?s)\.unionCaveNoCollisionWarp342\s+ld e, 0\s+ret')
+        self.assertRegex(collision, r'(?s)\.unionCaveExit\s+ld e, 0\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+ld a, \[wXCoord\]\s+cp 17\s+ret nz\s+ld a, \[wYCoord\]\s+cp 3\s+jr z, \.yes\s+cp 31\s+ret nz\s+jr \.yes')
+
         warp_tiles = (ROOT/'data/warp_tile_ids.asm').read_text()
-        self.assertRegex(warp_tiles, r'JohtoUnionCaveWarpTileIDs:\s*db \$ff')
+        warp_section = warp_tiles.split('JohtoUnionCaveWarpTileIDs:',1)[1].split('INCLUDE "data/johto_south_warp_tile_ids.asm"',1)[0]
+        warp_data = re.search(r'(?m)^\s*db\s+([^;\n]+)', warp_section)
+        self.assertIsNotNone(warp_data)
+        self.assertEqual(
+            ['$0e', '$0f', '$10', '$11', '$16', '$17', '$18', '$19',
+             '$20', '$21', '$22', '$23', '$24', '$25', '$26', '$27', '$ff'],
+            [value.strip().lower() for value in warp_data.group(1).split(',')],
+        )
+        self.assertNotIn('$12', warp_data.group(1).lower())
 
     def test_cave_bike_whitelist(self):
         self.assertIn('JOHTO_UNION_CAVE', (ROOT/'data/bike_riding_tilesets.asm').read_text())

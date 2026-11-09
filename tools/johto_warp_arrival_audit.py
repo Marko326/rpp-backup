@@ -114,9 +114,9 @@ def audit(project: Path, gold: Path) -> dict:
            contract.get('gold_reference') == 'MUS-1.0.1' and
            len(contract.get('active_routes', [])) == 3 and
            len(contract.get('gatehouse_activation_policy', {}).get('active_gatehouse_contracts', [])) == 13 and
-           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 160 and
+           contract.get('runtime_invariants', {}).get('registered_warp_route_rows') == 164 and
            contract.get('runtime_invariants', {}).get('indoor_step_on_warp_tile_ids') == [],
-           'MUS contract records 3 house arcs, 13 gates and 160 activated Warp arcs incl. 30 center arcs, cave and tower floors')
+           'MUS contract records 3 house arcs, 13 gates and 164 activated Warp arcs incl. centers, cave/tower floors and Dark Cave' )
     _check(checks, errors, 'gold_inventory', not gold_summary.get('errors'),
            f"MUS Gold inventory errors={len(gold_summary.get('errors', []))}; "
            f"maps={gold_summary.get('stats', {}).get('registered_maps')}; "

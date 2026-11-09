@@ -11,9 +11,9 @@ from johto_rpp_pipeline import current_rpp_active_map_contract,review_rpp_integr
 
 
 class ActiveMapReviewerTests(unittest.TestCase):
-    def test_current_23_maps_have_real_descriptor_and_stable_slot(self):
+    def test_current_64_maps_have_real_descriptor_and_stable_slot(self):
         registered=current_rpp_active_map_contract(ROOT)
-        self.assertEqual(len(registered), 57)
+        self.assertEqual(len(registered), 64)
         self.assertEqual(('CherrygrovePokecenter1F', 123), registered['JohtoSharedPokecenterRuntimeHeader'])
         self.assertEqual(('GoldenrodCity',15), registered['JohtoSouthGoldenrodCityRuntimeHeader'])
         self.assertEqual(('Route34',14), registered['JohtoSouthRoute34RuntimeHeader'])

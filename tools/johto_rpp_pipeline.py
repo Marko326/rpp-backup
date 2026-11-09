@@ -181,6 +181,13 @@ RPP_ACTIVE_GOLD_HEADER_CONTRACT = (
     ('JohtoCianwoodPokecenterRuntimeHeader', 'CianwoodPokecenter1F', 42),
     ('JohtoMahoganyPokecenterRuntimeHeader', 'MahoganyPokecenter1F', 77),
     ('JohtoBlackthornPokecenterRuntimeHeader', 'BlackthornPokecenter1F', 85),
+    ('JohtoUnionCaveB1FRuntimeHeader', 'UnionCaveB1F', 114),
+    ('JohtoUnionCaveB2FRuntimeHeader', 'UnionCaveB2F', 115),
+    ('JohtoSlowpokeWellB1FRuntimeHeader', 'SlowpokeWellB1F', 184),
+    ('JohtoSlowpokeWellB2FRuntimeHeader', 'SlowpokeWellB2F', 185),
+    ('JohtoBurnedTower1FRuntimeHeader', 'BurnedTower1F', 177),
+    ('JohtoBurnedTowerB1FRuntimeHeader', 'BurnedTowerB1F', 178),
+    ('JohtoDarkCaveRuntimeHeader', 'DarkCaveVioletEntrance', 190),
 )
 
 

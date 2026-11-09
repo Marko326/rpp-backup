@@ -1,3 +1,14 @@
+# CLEAN REF-364 TOOL-CLEANUP｜两轮离线工具清理正式收口
+
+- 按用户最新 Termux 导出补丁 `REF-364.patch`（基线 `d4e06edc1cd8d7c76b030c87fd34bc47a5237d24`）一次 Git 提交，不再叠加先前的 REV 补丁；01 工作区文档增量与 02 HEAD 累计补丁二选一。
+- 这批只处理 Python 工具、测试、审计 JSON 和维护文档；游戏 ASM / `REF-364@` 均未改动，工具清理不需要新 ROM/MAP/游戏内测试。实际测试结果及 3 项缺失野外数据输入见 `docs/CLEAN_REF364_TOOL_CLEANUP_2.md`。
+# CLEAN REF-364 TOOL-CLEANUP-1｜Python 工具入口去重（2026-11-09）
+
+- 本批以本轮上传的 `REF-364.zip` 为源码快照，只整理离线工具、测试和索引；不改 ASM、地图资源、ROM 构建配置或游戏版本，继续保持 `REF-364@`。
+- 根目录 `johto_table_assert_preflight.py` 与 `tools/` 版本逐字节相同，现只保留 `tools/johto_table_assert_preflight.py`；统一命令为 `python tools/johto_table_assert_preflight.py --root .`。
+- 删除仅转发到 REF-305 的 6 行 `johto_gatehouse_npc_pilot_304.py` shim；将永久 `skip` 的 DEV-312 测试原样归档为 `.py.disabled`，但保留仍接入主迁移审计的 onboarding 工具。
+- B1F-339 和 Collision-340 审计工具继续保留，待覆盖对照后再决定归档。验证和未完成边界见 [`docs/CLEAN_REF364_TOOL_CLEANUP_1.md`](docs/CLEAN_REF364_TOOL_CLEANUP_1.md)。
+
 # CLEAN REF-364｜图鉴地点去重正式清理
 - 累计基线为导出干净 HEAD `bf682c5ca1e7b67c2d0d21a949b86a72b6a08378`（`常规功能备份`），候选 `REF-363A@` 正式收口到 `REF-364@`，#054 只减少同遭遇组的重复 MapID 写入。
 - 按最新版项目要求模式 A 两次提交：ZIP 内 01 候选→CLEAN 与 03 HEAD→CLEAN 互斥；到最终态后应用 02 反向隔离工具文档，提交功能；反向恢复 02，再提交工具审计。不能叠加 01／03。

@@ -31,7 +31,8 @@ class CoverageTests(unittest.TestCase):
             (160, 'EcruteakPokecenter1F'), (30, 'OlivinePokecenter1F'),
             (42, 'CianwoodPokecenter1F'), (77, 'MahoganyPokecenter1F'),
             (85, 'BlackthornPokecenter1F'), (114, 'UnionCaveB1F'),
-            (115, 'UnionCaveB2F'), (184, 'SlowpokeWellB1F'), (185, 'SlowpokeWellB2F'), (177, 'BurnedTower1F'), (178, 'BurnedTowerB1F')])
+            (115, 'UnionCaveB2F'), (184, 'SlowpokeWellB1F'), (185, 'SlowpokeWellB2F'),
+            (177, 'BurnedTower1F'), (178, 'BurnedTowerB1F'), (190, 'DarkCaveVioletEntrance')])
         self.assertIn('UnionCave1F', [r['map'] for r in rows])
 
     def test_mutated_active_count_is_rejected(self):
@@ -46,8 +47,8 @@ class CoverageTests(unittest.TestCase):
                 shutil.copyfile(ROOT / f, dst / f)
             p = dst / 'constants/region_map_constants.asm'
             src = p.read_text()
-            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 63', src)
-            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 63',
+            self.assertIn('NUM_JOHTO_ACTIVE_MAPS EQU 64', src)
+            p.write_text(src.replace('NUM_JOHTO_ACTIVE_MAPS EQU 64',
                                      'NUM_JOHTO_ACTIVE_MAPS EQU 10'))
             with self.assertRaisesRegex(ValueError, 'count'):
                 read_active_maps(dst)
@@ -118,6 +119,10 @@ class CoverageTests(unittest.TestCase):
             'UnionCaveB1F': (60, 'REGISTERED'),
             'UnionCaveB2F': (168, 'REGISTERED'),
             'SlowpokeWellB1F': (32, 'REGISTERED'),
+            'SlowpokeWellB2F': (100, 'REGISTERED'),
+            'BurnedTower1F': (11, 'REGISTERED'),
+            'BurnedTowerB1F': (1, 'REGISTERED'),
+            'DarkCaveVioletEntrance': (64, 'REGISTERED'),
         })
 
     @unittest.skipIf(GOLD is None, 'Gold reference not supplied')

@@ -53,7 +53,7 @@ class UnionCavePortal263(unittest.TestCase):
             # FIX-264: previous .263 passed static tests but never reached
             # CheckWarpsCollision: ExtraWarpCheck rejected the cave FIRST.
             ('missing_cave_from_extra_warp_predicate', runtime,
-             '    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, JohtoPilotGateCollisionExitAllowed\n    cp JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+             '    cp JOHTO_UNION_CAVE_1F_LOCAL_ID\n    jp z, JohtoPilotGateCollisionExitAllowed',
              '    cp JOHTO_ROUTE_32_LOCAL_ID',
              'executable_cave_prewrap_to_final_guard'),
             ('preflight_calls_wrong_predicate', 'home/overworld.asm',

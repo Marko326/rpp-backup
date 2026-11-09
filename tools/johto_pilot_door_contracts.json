@@ -129,7 +129,7 @@
     }
   ],
   "runtime_invariants": {
-    "registered_warp_route_rows": 160,
+    "registered_warp_route_rows": 164,
     "outdoor_step_on_warp_tile_ids": [
       6,
       57

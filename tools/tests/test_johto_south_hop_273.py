@@ -51,7 +51,10 @@ class MatureSouthHop273(unittest.TestCase):
         self.assertIn('callab JohtoSouthHopLandingGuard',ow)
         self.assertIn('scf ; refuse overrun',ow)
         self.assertIn('ld a, $2\n\tld [wSimulatedJoypadStatesIndex], a',txt)
-        self.assertIn('cp JOHTO_RUNTIME_MAP_HANDLE',ow.split('CollisionCheckOnLand::',1)[1].split('\n.notJumping',1)[0])
+        self.assertIn('cp JOHTO_RUNTIME_MAP_HANDLE',helper)
+        self.assertIn('cp MAP_REGION_JOHTO',helper)
+        collision=ow.split('CollisionCheckOnLand::',1)[1].split('\n.notJumping',1)[0]
+        self.assertNotIn('cp JOHTO_RUNTIME_MAP_HANDLE',collision)
 
     def test_two_mature_gates_use_compact_blocks_without_overwriting_gold(self):
         text=GATES.read_text()

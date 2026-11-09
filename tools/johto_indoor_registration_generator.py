@@ -306,10 +306,23 @@ def generate(rpp: Path, map_name: str = 'GuideGentsHouse') -> dict:
                 ('MAP_REGION_JOHTO', center, '1', 'MAP_REGION_JOHTO', outside),
             ))
         rows = _runtime_warp_rows(runtime)
-        if contract.get('runtime_invariants', {}).get('registered_warp_route_rows') != len(expected_routes):
-            raise ValueError('Warp contract row count differs from exact ordered registration')
-        add('REGISTERED_WARP_ROUTES', rows == expected_routes,
-            f'contract-derived route rows={len(expected_routes)}; runtime rows={len(rows)}; first mismatch=' + str(next(((i, a, b) for i, (a, b) in enumerate(zip(expected_routes, rows)) if a != b), None)))
+        declared_count = contract.get('runtime_invariants', {}).get('registered_warp_route_rows')
+        # This indoor-registration tool owns the rows it derives from its
+        # house/center/gate contracts, not every later route family. Require
+        # those reviewed rows to remain an ordered subsequence and require the
+        # declared global cardinality to match the live table. The main
+        # migration audit separately validates the complete 164-row table.
+        cursor = 0
+        ordered_subset_present = True
+        for expected in expected_routes:
+            while cursor < len(rows) and rows[cursor] != expected:
+                cursor += 1
+            if cursor >= len(rows):
+                ordered_subset_present = False
+                break
+            cursor += 1
+        add('REGISTERED_WARP_ROUTES', declared_count == len(rows) and ordered_subset_present,
+            f'contract-declared rows={declared_count}; runtime rows={len(rows)}; known ordered contract rows={len(expected_routes)}; subset_present={ordered_subset_present}')
     except (ConversionError, OSError, KeyError, ValueError, TypeError) as exc:
         add('REGISTERED_WARP_ROUTES', False, str(exc))
     add('ROM0_COLLISION_ASSERT',

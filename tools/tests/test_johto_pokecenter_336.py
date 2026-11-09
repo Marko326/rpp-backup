@@ -21,6 +21,12 @@ class GoldCenter336(unittest.TestCase):
     def mutate(self,rel,old,new,expected):
         p=self.root/rel;s=p.read_text();self.assertIn(old,s);p.write_text(s.replace(old,new,1))
         self.assertIn(expected,audit(self.root)['errors'])
+    def mutate_section(self,rel,start,end,old,new,expected):
+        p=self.root/rel;s=p.read_text()
+        before,tail=s.split(start,1);body,after=tail.split(end,1)
+        self.assertIn(old,body)
+        p.write_text(before+start+body.replace(old,new,1)+end+after)
+        self.assertIn(expected,audit(self.root)['errors'])
     def test_all_source_guards_valid(self):
         r=audit(self.root)
         self.assertEqual(r['status'],'PASS_STATIC_ONLY',r)
@@ -67,14 +73,18 @@ class GoldCenter336(unittest.TestCase):
                     'cp 4\n    ret nz','cp 5\n    ret nz',
                     'exit_guard_has_exact_map_direction_and_two_carpet_cells')
     def test_no_extra_warp_guard_path(self):
-        self.mutate('engine/johto_pilot_runtime.asm',
-                    'JohtoPilotGateExteriorCollisionAllowed::\n    ld e, 0\n    ld a, [wCurLocalMapID]\n    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID',
-                    'JohtoPilotGateExteriorCollisionAllowed::\n    ld e, 0\n    ld a, [wCurLocalMapID]\n    cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID',
+        self.mutate_section('engine/johto_pilot_runtime.asm',
+                    'JohtoPilotGateExteriorCollisionAllowed::',
+                    'JohtoPilotGateCollisionExitAllowed::',
+                    'cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\n    jr z, .centerCarpetExit',
+                    'cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID\n    jr z, .centerCarpetExit',
                     'extra_warp_entry_calls_guard')
     def test_no_final_collision_warp_guard_path(self):
-        self.mutate('engine/johto_pilot_runtime.asm',
-                    'JohtoPilotGateCollisionExitAllowed::\n    ld e, 1\n    ld a, [wCurMap]\n    cp JOHTO_RUNTIME_MAP_HANDLE\n    ret nz\n    ld a, [wCurRegion]\n    cp MAP_REGION_JOHTO\n    ret nz\n    ld a, [wCurLocalMapID]\n    cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID',
-                    'JohtoPilotGateCollisionExitAllowed::\n    ld e, 1\n    ld a, [wCurMap]\n    cp JOHTO_RUNTIME_MAP_HANDLE\n    ret nz\n    ld a, [wCurRegion]\n    cp MAP_REGION_JOHTO\n    ret nz\n    ld a, [wCurLocalMapID]\n    cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID',
+        self.mutate_section('engine/johto_pilot_runtime.asm',
+                    'JohtoPilotGateCollisionExitAllowed::',
+                    'JohtoBatchCenterDoorBeforeStep336::',
+                    'cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID\n    jr z, .centerCarpetExit',
+                    'cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID\n    jr z, .centerCarpetExit',
                     'collision_warp_entry_calls_same_guard')
     def test_remove_bounds_profile_reenables_black_border(self):
         self.mutate('data/johto_vertical_gate_runtime_314.asm',

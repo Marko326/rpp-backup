@@ -13,14 +13,19 @@ def check(root:Path,gold:Path|None=None):
  def part(s,a,b=None):
   x=s.split(a,1); assert len(x)==2,a
   return x[1].split(b,1)[0] if b else x[1]
- c=txt('constants/region_map_constants.asm'); req('active_count_60','DEF NUM_JOHTO_ACTIVE_MAPS EQU 60' in c)
- req('version_REF343','db "REF-343@"' in txt('data/game_version.asm'))
+ c=txt('constants/region_map_constants.asm')
+ active_match=re.search(r'(?m)^DEF NUM_JOHTO_ACTIVE_MAPS EQU (\d+)\s*$',c)
+ active_count=int(active_match.group(1)) if active_match else None
+ req('active_map_count_present',active_count is not None)
  slots=txt('data/johto_stable_id_slots.asm'); m=re.search(r'(?m)^\s*db\s+([^;]+);\s*\$70-\$7f',slots); v=[x.strip() for x in m.group(1).split(',')] if m else []
  req('b1f_b2f_slots',len(v)==16 and v[2]=='57' and v[3]=='58')
  hdr=part(txt('data/johto_header_descriptors.asm'),'JohtoHeaderDescriptors::','JohtoHeaderDescriptorsEnd::')
  req('b2f_header_present','dw JohtoUnionCaveB2FRuntimeHeader' in hdr and 'db BANK(JohtoUnionCaveB2FRuntimeHeader)' in hdr)
  src=txt('data/johto_pilot_source_resources.asm'); assets=txt('data/johto_pilot_runtime_assets.asm')
- req('source_runtime_count_60','DEF JOHTO_PILOT_SOURCE_COUNT EQU 60' in src and 'ASSERT NUM_JOHTO_ACTIVE_MAPS == 60' in assets)
+ source_match=re.search(r'(?m)^DEF JOHTO_PILOT_SOURCE_COUNT EQU (\d+)\s*$',src)
+ source_count=int(source_match.group(1)) if source_match else None
+ req('active_source_count_matches',active_count is not None and source_count==active_count and 'ASSERT NUM_JOHTO_ACTIVE_MAPS == JOHTO_PILOT_SOURCE_COUNT' in src)
+ req('runtime_descriptor_count_is_derived','ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE' in assets)
  req('b2f_source_registered','JohtoUnionCaveB2FGoldBlocks::' in src and 'JohtoUnionCaveB2FRuntimeDescriptor::' in assets)
  cave=txt('data/johto_union_cave_runtime.asm')
  req('blockset_41','== 41 * 16' in cave and len((root/'gfx/blocksets/johto_union_cave.bst').read_bytes())==41*16)
@@ -38,7 +43,12 @@ def check(root:Path,gold:Path|None=None):
  related=[(a,int(o),d) for a,o,d in rr if a in (b1,b2) or d in (b1,b2)]
  req('six_cave_floor_routes',related==[(one,2,b1),(one,3,b1),(b1,2,one),(b1,3,one),(b1,4,b2),(b2,0,b1)])
  req('ruins_still_closed',not any(a==b1 and o in (0,1) for a,o,d in related))
- req('registered_warps_142',len(re.findall(r'(?m)^\s*db\s+MAP_REGION_',routes))==142)
+ req('registered_warp_record_assertions',
+     'DEF JOHTO_REGISTERED_WARP_RECORD_BYTES EQU 5' in txt('engine/johto_pilot_runtime.asm') and
+     'DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES' in txt('engine/johto_pilot_runtime.asm') and
+     'ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0' in txt('engine/johto_pilot_runtime.asm') and
+     'ASSERT JOHTO_REGISTERED_WARP_COUNT < 256' in txt('engine/johto_pilot_runtime.asm') and
+     len(re.findall(r'(?m)^\s*db\s+MAP_REGION_',routes)) > 0)
  req('townmap_slot58','slot58 Union Cave B2F' in txt('engine/fly_town_map_helpers.asm'))
  req('music_slot58','slot58 Union Cave B2F' in txt('engine/menu/options_menu.asm'))
  req('name_sign_b2f','cp JOHTO_UNION_CAVE_B2F_LOCAL_ID' in txt('engine/overworld/map_name_sign.asm'))

@@ -66,7 +66,9 @@ def audit(root, gold=None):
           for line in source.splitlines()) == len(ids-PARK_IDS))
     defs=(root/'color/data/map_palette_sets.asm').read_text()
     full=palette_sets(defs)
-    ck('palette_set_stride',len(full)==38*8, f'{len(full)} entries')
+    tileset_count=len(re.findall(r'(?m)^\s*tileset\s+', (root/'data/tileset_headers.asm').read_text()))
+    ck('palette_set_stride',len(full)==tileset_count*8 and len(full)%8==0,
+       f'{len(full)} entries for {tileset_count} registered tilesets')
     standard=full[30*8:31*8]; park=full[36*8:37*8]
     ck('both_gate_tilesets_share_exact_gold_colors',standard==park and
        all(park[{'GRAY':0,'RED':1,'GREEN':2,'WATER':3,'BROWN':5}[tag]]==sym

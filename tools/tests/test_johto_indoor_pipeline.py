@@ -77,8 +77,8 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
             copy_files(ROOT, root, REGISTRATION_FILES)
             p = root / 'data/johto_stable_id_slots.asm'
             source = p.read_text(encoding='utf-8')
-            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 57', source)
-            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 57',
+            self.assertIn('ASSERT NUM_JOHTO_ACTIVE_MAPS == 64', source)
+            p.write_text(source.replace('ASSERT NUM_JOHTO_ACTIVE_MAPS == 64',
                                         'ASSERT NUM_JOHTO_ACTIVE_MAPS == 6'), encoding='utf-8')
             report = generate_registration(root, 'GuideGentsHouse')
             self.assertEqual(report['status'], 'FAIL')
@@ -97,7 +97,7 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
                                 for x in report['checks']))
 
     def test_shared_center_warp_order_mutation_is_rejected(self):
-        # A wrong exit ordinal must fail even if the total remains 107 rows.
+        # A wrong exit ordinal must fail even if the total remains 164 rows.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             copy_files(ROOT, root, REGISTRATION_FILES + ('tools/johto_pilot_door_contracts.json',))
@@ -113,7 +113,7 @@ class IndoorStaticRegistrationTests(unittest.TestCase):
                                 for c in result['checks']), result['errors'])
 
     def test_new_ecruteak_center_source_ordinal_mutation_is_rejected(self):
-        # A late appended center must not escape the historical 107-row check.
+        # A late appended center must not escape the full registered route-list check.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             copy_files(ROOT, root, REGISTRATION_FILES + ('tools/johto_pilot_door_contracts.json',))
