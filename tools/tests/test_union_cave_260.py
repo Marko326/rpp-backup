@@ -51,6 +51,11 @@ class UnionCave260(unittest.TestCase):
             'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID',
             'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID',
             'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B2F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+            # REF-366 opens Gold B1F cave mouths to the already active Ruins outside.
+            'db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID',
+            'db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID',
         ],rows)
         self.assertIn('db 3, 17, 2, JOHTO_REGISTERED_WARP_SELECTOR',self.cave)
         self.assertIn('db 31, 17, 0, JOHTO_REGISTERED_WARP_SELECTOR',self.cave)
@@ -94,8 +99,9 @@ class UnionCave260(unittest.TestCase):
 
         collision = code_only(self.runtime.split('JohtoPilotGateCollisionExitAllowed::',1)[1])
         self.assertIn('cp JOHTO_UNION_CAVE_1F_LOCAL_ID\njr z, .unionCaveExit', collision)
-        for local in ('JOHTO_UNION_CAVE_B1F_LOCAL_ID',
-                      'JOHTO_UNION_CAVE_B2F_LOCAL_ID',
+        self.assertIn('cp JOHTO_UNION_CAVE_B1F_LOCAL_ID\njr z, .unionCaveB1FRuinsExit366', collision)
+        self.assertRegex(collision, r'(?s)\.unionCaveB1FRuinsExit366\s+ld e, 0\s+ld a, \[wPlayerDirection\]\s+cp PLAYER_DIR_DOWN\s+ret nz\s+ld a, \[wXCoord\]\s+cp 3\s+ret nz\s+ld a, \[wYCoord\]\s+cp 3\s+jr z, \.yes\s+cp 11\s+ret nz\s+jr \.yes')
+        for local in ('JOHTO_UNION_CAVE_B2F_LOCAL_ID',
                       'JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID',
                       'JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID'):
             self.assertIn(f'cp {local}\njr z, .unionCaveNoCollisionWarp342', collision)

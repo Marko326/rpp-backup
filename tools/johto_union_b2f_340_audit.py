@@ -41,8 +41,11 @@ def check(root:Path,gold:Path|None=None):
  rr=re.findall(r'(?m)^\s*db\s+MAP_REGION_JOHTO\s*,\s*(JOHTO_\w+)\s*,\s*(\d+)\s*,\s*MAP_REGION_JOHTO\s*,\s*(JOHTO_\w+)',routes)
  b1='JOHTO_UNION_CAVE_B1F_LOCAL_ID'; b2='JOHTO_UNION_CAVE_B2F_LOCAL_ID'; one='JOHTO_UNION_CAVE_1F_LOCAL_ID'
  related=[(a,int(o),d) for a,o,d in rr if a in (b1,b2) or d in (b1,b2)]
- req('six_cave_floor_routes',related==[(one,2,b1),(one,3,b1),(b1,2,one),(b1,3,one),(b1,4,b2),(b2,0,b1)])
- req('ruins_still_closed',not any(a==b1 and o in (0,1) for a,o,d in related))
+ req('six_cave_floor_routes_preserved', [(a,o,d) for a,o,d in related if a in (one,b1,b2) and d in (one,b1,b2)] ==
+     [(one,2,b1),(one,3,b1),(b1,2,one),(b1,3,one),(b1,4,b2),(b2,0,b1)])
+ ruins='JOHTO_RUINS_OF_ALPH_LOCAL_ID'
+ req('two_gold_ruins_side_exits_open_ref366', [(a,o,d) for a,o,d in related if a==ruins or d==ruins] ==
+     [(ruins,3,b1),(b1,0,ruins),(ruins,4,b1),(b1,1,ruins)])
  req('registered_warp_record_assertions',
      'DEF JOHTO_REGISTERED_WARP_RECORD_BYTES EQU 5' in txt('engine/johto_pilot_runtime.asm') and
      'DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES' in txt('engine/johto_pilot_runtime.asm') and

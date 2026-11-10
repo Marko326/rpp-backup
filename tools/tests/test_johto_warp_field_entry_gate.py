@@ -30,7 +30,7 @@ def test_current_activation_and_high_risk_arrivals_pass():
     result = audit(ROOT)
     assert result['status'] == 'PASS_SOURCE_ONLY', result['errors']
     assert result['passed'] >= 55
-    assert len(registered_routes((ROOT/PILOT).read_text())) == 168
+    assert len(registered_routes((ROOT/PILOT).read_text())) == 172
     assert len(active_ids((ROOT/ROSTER).read_text())) == 65
 
 

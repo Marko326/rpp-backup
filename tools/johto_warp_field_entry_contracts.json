@@ -143,6 +143,78 @@
         23,
         3
       ]
+    },
+    {
+      "name": "ruins_north_into_union_b1f",
+      "from": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "ordinal": 3,
+      "to": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "landing": [
+        3,
+        3
+      ],
+      "departure": [
+        6,
+        19
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "union_b1f_north_to_ruins",
+      "from": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "landing": [
+        6,
+        19
+      ],
+      "departure": [
+        3,
+        3
+      ],
+      "step": "DOWN",
+      "after_step": [
+        6,
+        20
+      ],
+      "new_route_review": true
+    },
+    {
+      "name": "ruins_south_into_union_b1f",
+      "from": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "ordinal": 4,
+      "to": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "landing": [
+        3,
+        11
+      ],
+      "departure": [
+        6,
+        27
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "union_b1f_south_to_ruins",
+      "from": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "landing": [
+        6,
+        27
+      ],
+      "departure": [
+        3,
+        11
+      ],
+      "step": "DOWN",
+      "after_step": [
+        6,
+        28
+      ],
+      "new_route_review": true
     }
   ],
   "must_stay_stationary": [
@@ -208,6 +280,38 @@
       "xy": [
         13,
         5
+      ]
+    },
+    {
+      "name": "ruins_near_north_cave",
+      "map": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "xy": [
+        7,
+        19
+      ]
+    },
+    {
+      "name": "ruins_near_south_cave",
+      "map": "JOHTO_RUINS_OF_ALPH_LOCAL_ID",
+      "xy": [
+        7,
+        27
+      ]
+    },
+    {
+      "name": "union_b1f_north_carpet_stationary",
+      "map": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "xy": [
+        3,
+        3
+      ]
+    },
+    {
+      "name": "union_b1f_south_carpet_stationary",
+      "map": "JOHTO_UNION_CAVE_B1F_LOCAL_ID",
+      "xy": [
+        3,
+        11
       ]
     }
   ],

@@ -93,7 +93,7 @@ def audit(root:Path,gold_root:Path|None=None)->dict:
   parsed=[(m.group(1),int(m.group(2)),m.group(3)) for m in re.finditer(
     r'(?m)^\s*db MAP_REGION_JOHTO, (JOHTO_\w+_LOCAL_ID), (\d+), MAP_REGION_JOHTO, (JOHTO_\w+_LOCAL_ID)',warp)]
   ck('eight_cave_registered_routes',all(x in parsed for x in ROUTES))
-  ck('168_unique_warp_routes',len(parsed)==168 and len({r[:2] for r in parsed})==168)
+  ck('historic_168_plus_four_reviewed_ruins_routes',len(parsed)==172 and len({r[:2] for r in parsed})==172)
   for a,b,c in ROUTES:
    ck('warp_'+a+'_'+str(b),any(x==a and y==b and z==c for x,y,z in parsed))
   vio=load('data/johto_dark_cave_stage/REF349_stage2_runtime.asm')
@@ -148,7 +148,7 @@ def audit(root:Path,gold_root:Path|None=None)->dict:
   ck('all_three_legal_rope_destinations',all(x in cave for x in ('FLYWARP_DATA JOHTO_ROUTE_31_WIDTH, 6, 34','FLYWARP_DATA JOHTO_ROUTE_46_WIDTH, 6, 14','FLYWARP_DATA JOHTO_ROUTE_45_WIDTH, 6, 2')))
   ck('old_save_no_origin_denies_rope','jr z, .deny ; old save/invalid origin' in cave)
   ck('no_rock_smash_runtime_hook',not re.search(r'JohtoDarkCaveRockSmash|JohtoDarkCaveBreakableRock',cave))
-  ck('REF365_version', 'REF-365@' in load('data/game_version.asm'))
+  ck('REF365_or_newer_version', re.search(r'REF-(?:365@|36[6-9][A-Z]?@)', load('data/game_version.asm')) is not None)
   ck('main_65_slot_descriptors',all(x in load('data/johto_header_descriptors.asm') for x in ('dw JohtoDarkCaveBlackthornRuntimeHeader','NUM_JOHTO_ACTIVE_MAPS')))
  except (OSError,IndexError,ValueError,KeyError,AssertionError) as exc:
   errors.append(f'ERROR loading/parsing reference: {exc}')

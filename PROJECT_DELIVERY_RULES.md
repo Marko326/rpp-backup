@@ -1,3 +1,13 @@
+## CLEAN REF-366 交付基线与模式 A（2026-11-10；按项目自动导出要求）
+- 本轮上次正式 HEAD：`62a851e72ca00db23d4e7ac95aec83ee4d046804`，版本 REF-365@，分支 `常规功能备份`。开发前置状态按此前交付的 REF-366A 双补丁在该干净 HEAD 上应用重建；**尚未收到用户最新手机 Worktree 导出**，若当前工作区另有修改，必须先 `git apply --check` 并核对差异。
+- 游戏标签 `REF-366A@` → `REF-366@`，保持两对联洞与遗迹口、自动迈步、65 地图与 172 Warp。累计有游戏 ASM 与 `tools/` 离线审计改动，因此执行 **模式 A：3 PATCH + 2 TXT**；01 为 REF-366A 开发态→CLEAN，02 为 CLEAN→只保留游戏功能的工具反向隔离，03 为 REF-365 干净 HEAD→CLEAN 完整累计。01/03 是替代起点，不能叠加；使用 02 隔离功能提交，再 `git apply -R 02` 恢复工具提交。
+- 原始自动导出要求 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 优先，不直接修改。禁止 AI 代用户编译 ROM 或 Git Commit/Push；用户已反馈洞口能够进入，但尚无全部 ROM/MAP/双口往返证据。详情见 `docs/CLEAN_REF366_UNION_CAVE_RUINS_FINAL_ACCEPTANCE.md`。
+
+## REF-366A 联合洞穴 B1F ↔ 阿露福遗迹双侧洞口开发期约束（优先于历史例子）
+- 本轮从已核实 CLEAN `REF-365@`、HEAD `62a851e72ca00db23d4e7ac95aec83ee4d046804` 开工；仍未收到新未提交工作区补丁。应以 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 为最高优先级，开发阶段只交一个 ZIP（恰好两份**互斥**正向 `.patch`），不做 CLEAN 三件套、提交日志、Commit 或 Push。
+- 游戏候选 `REF-366A@`，只开已有 ID114 与 ID20 的两对 Gold 真实侧口；保持 65 活动图、增加 Warp 168→172，确保室外朝上踏入、B1F 朝下退出、室外到达后自动下迈一步；按 `docs/REF366_UNION_CAVE_RUINS_PORTALS_DEV.md` 进行逐端验收。
+- 现有联合洞穴楼梯、Surf/Bike、黑暗洞穴 Field Moves 保持；Rock Smash 等未授权内容不做。不要复用上一轮 `REF-365C` 或旧 `REF-364` 的已弃用补丁基线。ROM 编译与四版 MAP、用户手机实测尚待确认。
+
 ## CLEAN REF-365@ 最新交付决议（2026-11-10，严格遵守自动导出要求）
 - 以 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 为最高规范：从 REF-364 正式基线到 REF-365 累计变更同时包含游戏运行与 `tools/` 审计/测试，因此使用模式 A，两笔独立提交，单 ZIP 内 **3 份 patch + 2 份 TXT**。禁止把开发期双补丁交付规则覆盖正式 CLEAN；禁止替用户 Commit/Push。
 - 清理 `01` 仅适用于已安装 REF-365C 游戏修复、未安装随后的 Warp/Field Moves 门禁的工作区；`02` 从全部清理后状态撤下工具+文档（游戏保留），`git apply -R 02` 恢复工具+文档；`03` 从已核实的 REF-364 Git HEAD 到全部清理状态，**01 和 03 不叠加**。

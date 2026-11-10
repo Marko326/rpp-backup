@@ -1,3 +1,12 @@
+## CLEAN REF-366@｜联合洞穴 B1F 阿露福遗迹两侧口（正式提交准备）
+- 以已提交 REF-365@（HEAD `62a851e72ca00db23d4e7ac95aec83ee4d046804`）为全量基线，收口 REF-366A 开发候选。已活动 65 地图不变，注册 Warp 168→172；联合洞穴 B1F (3,3)/(3,11) ↔ 阿露福遗迹外围 (6,19)/(6,27) 两对方向、Gold ordinal、室外 CAVE 踩入与室内 DOWN 地毯碰撞维持候选行为；室外 CAVE 落地自动向下安全迈步。正式显示标签 `REF-366@`。
+- 仅收口源码、审计工具和清理文档；Rock Smash、NPC、遭遇、剧情不做。用户反馈已能通过对应入口，但没有提供两处洞口完整正反向、四版本 ROM/MAP、存档及旧楼梯/冲浪的全部验收证据。不得将静态 PASS 冒充设备 PASS。
+- 当前累计未提交差异同时含游戏 ASM 与 `tools/` 审计，按模式 A 两笔提交、三份 PATCH 与两份中文 TXT；完整限制见 `docs/CLEAN_REF366_UNION_CAVE_RUINS_FINAL_ACCEPTANCE.md`。
+
+## REF-366A@ 开发候选｜联合洞穴 B1F 两处阿露福遗迹侧口
+- 仅开放现有 Union Cave B1F(ID114) ↔ Ruins of Alph Outside(ID20) 两对 Gold 洞口；活动地图仍65，Warp 由168变172。遗迹外 (6,19)/(6,27) CAVE 踏入，B1F (3,3)/(3,11) DOWN 毯碰撞离洞；室外落点自动向南一格，B1F 目的地停在地毯。无 NPC/剧情/遭遇/道具/Rock Smash。
+- 本候选须由用户编译 Red/Blue/TEST、检查新 MAP 和手机上下两口往返、方向限制、旧楼梯与水域回归；不得提前视作正式 CLEAN。
+
 ## CLEAN REF-365@｜黑暗洞穴 Gold 同层双区域与强制 Warp/Field Moves 入口审计（2026-11-10）
 - 正式 Git 目标版本 `REF-365@`（相对已核实 REF-364 HEAD 加 1，去掉开发 C 后缀）。游戏运行 ASM 与资源沿用用户已反馈正常的 REF-365C：65 张活动地图／168 条 Warp，Gold 黑暗洞穴 ID190 ↔ ID99、Route31/45/46 三室外洞口、按角色地形的 Surf/Flash/Bike/HOP、ID99→ID190 `(17,1)` 自动下走 `(17,2)` 以及 Dig／离洞绳入洞来源保存。
 - Rock Smash 技能和四块可碎岩石全部延期，不做 NPC／野怪／剧情／道具。工具提交新增实际 Warp 到达动作与公共 Bike 分派验收门禁，详见 `docs/CLEAN_REF365_DARK_CAVE_FINAL_ACCEPTANCE.md`。用户已确认洞内洞口及自行车修复正常；其余 Field Moves/旧档与四版新 ROM/MAP 未收到完整验收证据，不得宣称全部完成。

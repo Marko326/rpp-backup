@@ -29,9 +29,9 @@ class UnionCaveWarpTrigger342(unittest.TestCase):
         self.mutate('.unionCaveLadder342\n    ld e, 2', '.unionCaveLadder342\n    ld e, 1', 'ladder_mode_is_immediate')
 
     def test_b1f_collision_guard_is_required(self):
-        self.mutate('cp JOHTO_UNION_CAVE_B1F_LOCAL_ID\n    jr z, .unionCaveNoCollisionWarp342',
+        self.mutate('cp JOHTO_UNION_CAVE_B1F_LOCAL_ID\n    jr z, .unionCaveB1FRuinsExit366',
                     'cp JOHTO_UNION_CAVE_B1F_LOCAL_ID\n    jr z, .unionCaveExit',
-                    'b1f_collision_denied')
+                    'b1f_ruins_down_collision_guard')
 
     def test_b2f_collision_guard_is_required(self):
         self.mutate('cp JOHTO_UNION_CAVE_B2F_LOCAL_ID\n    jr z, .unionCaveNoCollisionWarp342',

@@ -4,7 +4,7 @@
 Gold CAVE uses two different warp collision classes here:
 - LADDER: immediate transfer on the step that ENTERS the warp tile.
 - WARP_CARPET_DOWN: stand on the tile; transfer only on the designated DOWN input.
-The two B1F Ruins carpets remain registered placeholders but inactive.
+REF-366 opens the two B1F Ruins carpets through DOWN-only collisions.
 """
 from pathlib import Path
 import argparse, json, re
@@ -65,11 +65,11 @@ def check(root: Path, gold: Path|None = None):
     req('ladder_mode_is_immediate', '.unionCaveLadder342\n    ld e, 2' in matched)
     req('directional_mode_only_arms', '.unionCaveDirectional342\n    ld e, 1' in matched)
     req('onef_carpet_x17_classification', '.unionCave1FWarpMatched342' in matched and 'cp 17\n    jr z, .unionCaveDirectional342' in matched)
-    req('b1f_closed_ruins_carpet_classification', all(tok in matched for tok in (
+    req('b1f_ruins_carpet_directional_classification', all(tok in matched for tok in (
         'cp 3\n    jr z, .unionCaveDirectional342',
         'cp 11\n    jr z, .unionCaveDirectional342')))
     req('b2f_ladder_classification', '.unionCaveB2FWarpMatched342\n    ; B2F (5,3) is LADDER.\n.unionCaveLadder342' in matched)
-    req('b1f_collision_denied', 'cp JOHTO_UNION_CAVE_B1F_LOCAL_ID\n    jr z, .unionCaveNoCollisionWarp342' in collision)
+    req('b1f_ruins_down_collision_guard', 'cp JOHTO_UNION_CAVE_B1F_LOCAL_ID\n    jr z, .unionCaveB1FRuinsExit366' in collision and '.unionCaveB1FRuinsExit366' in collision and 'cp PLAYER_DIR_DOWN' in collision)
     req('b2f_collision_denied', 'cp JOHTO_UNION_CAVE_B2F_LOCAL_ID\n    jr z, .unionCaveNoCollisionWarp342' in collision)
     req('standing_ladder_collision_returns_zero', '.unionCaveNoCollisionWarp342' in collision and 'ld e, 0\n    ret\n.unionCaveExit' in collision)
     req('onef_directional_exit_still_down_only', all(tok in collision for tok in (
@@ -85,7 +85,7 @@ def check(root: Path, gold: Path|None = None):
         'db 3, 5, 4, JOHTO_REGISTERED_WARP_SELECTOR')))
 
     routes=_section(runtime, 'JohtoRegisteredWarpRoutes::', 'JohtoRegisteredWarpRoutesEnd::')
-    req('ruins_routes_still_closed', 'JOHTO_UNION_CAVE_B1F_LOCAL_ID, 0,' not in routes and 'JOHTO_UNION_CAVE_B1F_LOCAL_ID, 1,' not in routes)
+    req('ruins_routes_open_exact_gold_ordinal', all(item in routes for item in ('JOHTO_UNION_CAVE_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JOHTO_UNION_CAVE_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID', 'JOHTO_RUINS_OF_ALPH_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID')))
 
     if gold is not None:
         roles=_gold_roles(gold)

@@ -29,6 +29,8 @@ OBJECTS = {
     'JOHTO_ROUTE_31_LOCAL_ID': ('data/johto_pilot_map_headers.asm', 'JohtoPilotRoute31RuntimeObjects'),
     'JOHTO_ROUTE_45_LOCAL_ID': ('data/johto_south_chain_runtime_328.asm', 'JohtoRoute45RuntimeObjects'),
     'JOHTO_ROUTE_46_LOCAL_ID': ('data/johto_south_chain_runtime_328.asm', 'JohtoRoute46RuntimeObjects'),
+    'JOHTO_RUINS_OF_ALPH_LOCAL_ID': ('data/johto_ruins_south_runtime.asm', 'JohtoPilotAlphOutsideRuntimeObjects'),
+    'JOHTO_UNION_CAVE_B1F_LOCAL_ID': ('data/johto_union_cave_runtime.asm', 'JohtoUnionCaveB1FRuntimeObjects'),
     'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID': ('data/johto_dark_cave_stage/REF349_stage2_runtime.asm', 'JohtoDarkCaveObjects'),
     'JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID': ('data/johto_dark_cave_stage/REF349_stage2_runtime.asm', 'JohtoDarkCaveBlackthornObjects'),
 }
