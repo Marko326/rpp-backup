@@ -59,9 +59,9 @@ JohtoUnionCaveB1FScript::
 JohtoUnionCaveB1FTextPointers:
 JohtoUnionCaveB1FRuntimeObjects::
     db $21 ; same opaque cave border as 1F
-    db 5 ; Ruins ordinals0/1 remain closed; 2/3 return to 1F; 4 opens B2F
-    db 3, 3, 3, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 0: inert Ruins north carpet
-    db 11, 3, 4, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 1: inert Ruins south carpet
+    db 5 ; Ruins ordinal0/1 now open via DOWN-only carpets; 2/3 1F, 4 B2F
+    db 3, 3, 3, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 0: Gold Ruins #7 north DOWN carpet
+    db 11, 3, 4, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 1: Gold Ruins #8 south DOWN carpet
     db 19, 7, 2, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 2: 1F east stair
     db 33, 3, 3, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 3: 1F west stair
     db 31, 17, 0, JOHTO_REGISTERED_WARP_SELECTOR ; ordinal 4: B2F stair

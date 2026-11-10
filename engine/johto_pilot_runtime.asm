@@ -144,7 +144,7 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ROUTE_32_LOCAL_ID
-    ; Ruins south exit eastward to the South Gate; north and inner rooms stay absent.
+    ; Ruins south exit eastward to the South Gate; the two B1F CAVE mouths open in REF-366.
     db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     ; ALPH-NORTH-001: ruins north DOOR (runtime #2) -> north gate south carpet.
@@ -286,7 +286,7 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
     ; REF-340 B2F pilot: keep the two REF-339 1F/B1F reciprocal stair pairs.
-    ; B1F Ruins ordinal0/1 remain inactive; ordinal4 now opens B2F and returns via B2F ordinal0.
+    ; REF-366 activates B1F Ruins ordinal0/1 separately below; ordinal4 stays B2F.
     db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_1F_LOCAL_ID
@@ -317,6 +317,12 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 12, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 13, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID
+    ; REF-366: finish two Gold Union Cave B1F <-> Ruins of Alph cave mouths.
+    ; Ruins RPP source ordinals 3/4 are Gold #7/#8; B1F retains Gold #1/#2 as 0/1.
+    db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_UNION_CAVE_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_RUINS_OF_ALPH_LOCAL_ID
     ; REF-365: both Gold Dark Cave same-floor regions and all three road mouths.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
@@ -1532,13 +1538,25 @@ JohtoPilotGateArrivalStep::
     jr z, .route33CaveLanding
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     ret nz
+    ; Gold B1F cave exits land on outdoor CAVE tiles and must step DOWN
+    ; to the distinct legal FLOOR cells. Do not step on the south-gate carpets.
+    ld a, [wXCoord]
+    cp 6
+    jr nz, .ruinsNorthGateArrival366
+    ld a, [wYCoord]
+    cp 19
+    jp z, .down
+    cp 27
+    jp z, .down
+    ret
+.ruinsNorthGateArrival366
     ld a, [wXCoord]
     cp 7
     ret nz
     ld a, [wYCoord]
     cp 5
     ret nz
-    jr .down
+    jp .down
 .route33CaveLanding
     ld a, [wXCoord]
     cp 11
@@ -1786,12 +1804,22 @@ JohtoPilotGateDoorApproachAllowed::
     cp PLAYER_DIR_UP
     ret nz
     ld a, [wXCoord]
+    cp 6
+    jr z, .ruinsCaveApproach366
     cp 7
     ret nz
     ld a, [wYCoord]
     cp 6
     ret nz
-    jr .allow
+    jp .allow
+.ruinsCaveApproach366
+    ; Outdoor Gold CAVE entrances (6,19)/(6,27) require UP from FLOOR.
+    ld a, [wYCoord]
+    cp 20
+    jp z, .allow
+    cp 28
+    ret nz
+    jp .allow
 .ruinsSouth
     ld a, [wXCoord]
     cp 12
@@ -2033,7 +2061,7 @@ JohtoPilotGateDoorWarpMatched::
     jr z, .unionCaveDirectional342
     jr .unionCaveLadder342
 .unionCaveB1FWarpMatched342
-    ; B1F (3,3)/(3,11) are closed Ruins WARP_CARPET_DOWN entries.
+    ; B1F (3,3)/(3,11) are active Ruins WARP_CARPET_DOWN entries.
     ; Active (7,19)/(3,33)/(17,31) are LADDER.
     ld a, [wXCoord]
     cp 3
@@ -2128,12 +2156,22 @@ JohtoPilotGateDoorWarpMatched::
     cp PLAYER_DIR_UP
     ret nz
     ld a, [wXCoord]
+    cp 6
+    jr z, .ruinsCaveEntered366
     cp 7
     ret nz
     ld a, [wYCoord]
     cp 5
     ret nz
-    jr .yesDoor
+    jp .yesDoor
+.ruinsCaveEntered366
+    ; Gold exterior CAVE tiles are immediate STEP_IN entrances.
+    ld a, [wYCoord]
+    cp 19
+    jp z, .yesDoor
+    cp 27
+    ret nz
+    jp .yesDoor
 .ruinsSouth
     ld a, [wXCoord]
     cp 13
@@ -2481,11 +2519,11 @@ JohtoPilotGateCollisionExitAllowed::
     cp JOHTO_ROUTE_32_RUINS_OF_ALPH_GATE_LOCAL_ID
     jp z, .isGate
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-    jr z, .northGateBottom
+    jp z, .northGateBottom
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jr z, .unionCaveExit
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
-    jr z, .unionCaveNoCollisionWarp342
+    jr z, .unionCaveB1FRuinsExit366
     cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
     jr z, .unionCaveNoCollisionWarp342
     cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
@@ -2520,10 +2558,24 @@ JohtoPilotGateCollisionExitAllowed::
     cp 48
     ret nz
     jr .yes
+.unionCaveB1FRuinsExit366
+    ; Gold B1F Ruins carpets: DOWN-collision only at exact (3,3)/(3,11).
+    ; The other three B1F stairs remain STEP_IN and never collision-warp.
+    ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wXCoord]
+    cp 3
+    ret nz
+    ld a, [wYCoord]
+    cp 3
+    jr z, .yes
+    cp 11
+    ret nz
+    jr .yes
 .unionCaveNoCollisionWarp342
-    ; B1F/B2F internal stairs are LADDER: once standing on one, bumping a
-    ; wall or pressing another direction must not transfer. B1F Ruins
-    ; carpets are still inactive, so collision cannot activate them either.
+    ; B2F and other ladder destinations are step-in only.
     ld e, 0
     ret
 .unionCaveExit
