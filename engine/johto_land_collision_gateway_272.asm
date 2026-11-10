@@ -28,6 +28,8 @@ JohtoOverworldSouthLandDecision::
     jp z, .burnedTowerB1F
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, .darkCave
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jp z, .darkCave
     ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
     ; The generic Gold role can otherwise treat the door as a solid wall.
     ld a, [wCurRegion]

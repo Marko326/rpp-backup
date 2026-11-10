@@ -317,11 +317,15 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 12, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID, 13, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_B1F_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_BURNED_TOWER_1F_LOCAL_ID
-    ; REF-349 stage3: preserve Gold ordinal1 (Blackthorn) unregistered; open ordinal2 (Route46).
+    ; REF-365: both Gold Dark Cave same-floor regions and all three road mouths.
     db MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_31_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ROUTE_46_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -412,6 +416,21 @@ JohtoPilotResolveRegisteredWarp::
     ld a, c
     ld [wJohtoGateMusicSourceLocalID], a
 .notGateMusicEntry
+    ; Capture an OUTDOOR source only. Internal Violet/Blackthorn transfer
+    ; retains the previously saved Route31/46/45 anchor across Continue.
+    ld a, [hl]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .saveDarkOrigin365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr nz, .afterDarkOrigin365
+.saveDarkOrigin365
+    push hl
+    push bc
+    ld e, c
+    callab JohtoDarkCaveRememberOutdoorSource365
+    pop bc
+    pop hl
+.afterDarkOrigin365
     ld e, [hl] ; target stable ID
     call GetJohtoActiveSlot
     ld a, e
@@ -427,17 +446,31 @@ JohtoPilotResolveRegisteredWarp::
     ; The palette helper clears it only after the new map has been staged.
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
-    jr z, .unlitDarkPalette349
-    ld a, c ; source stable ID, retained by GetJohtoActiveSlot
+    jr z, .arriveDark365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr z, .arriveDark365
+    ; Leaving either cave region: preserve dark fade until safe LCD load.
+    ld a, c
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
-    jr nz, .normalPalette349
+    jr z, .carryDark365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr z, .carryDark365
+    jr .normalPalette349
+.arriveDark365
+    ; An internal map transfer keeps FLASH-lit and unlit cave palettes.
+    ld a, c
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .copyDark365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr z, .copyDark365
+    ld a, 12 ; freshly entered from Route31/46/45: dark until Flash
+    jr .storePalette349
+.carryDark365
     ld a, [wMapPalOffset]
-    cp 12 ; was the source cave still unlit?
-    jr nz, .normalPalette349 ; Flash-lit cave exits use regular white fade
-    ; REF-353: do not force the source cave white. The common doorway fade
-    ; keeps its dark BG/OBJ monotonic while switching to the LCD-on loader.
-.unlitDarkPalette349
-    ld a, 12 ; FadePal4 - FadePalJohtoDark349, BG dark / OBJ normal
+    cp 12
+    jr nz, .normalPalette349
+.copyDark365
+    ld a, [wMapPalOffset]
     jr .storePalette349
 .normalPalette349
     xor a
@@ -528,6 +561,7 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot61 Burned Tower 1F, no Fly
     johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot62 Burned Tower B1F, no Fly
     johto_map_profile 0, 4, MUSIC_DUNGEON2, 0 ; slot63 Dark Cave Violet entrance, indoor
+    johto_map_profile 0, 41, MUSIC_DUNGEON2, 0 ; slot64 Dark Cave Blackthorn side -> Route45
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -839,6 +873,8 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .unionCaveClosedEdge
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, .darkCaveClosedEdge
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jp z, .darkCaveClosedEdge
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33ClosedEdge
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -991,7 +1027,14 @@ JohtoPilotIsClosedOutdoorEdge::
     cp PLAYER_DIR_RIGHT
     ret nz
     ld a, [wXCoord]
-    cp JOHTO_DARK_CAVE_WIDTH * 2 - 1
+    ld b, JOHTO_DARK_CAVE_WIDTH * 2 - 1
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr nz, .violetRightEdge365
+    ld b, JOHTO_DARK_CAVE_BLACKTHORN_WIDTH * 2 - 1
+.violetRightEdge365
+    ld a, [wXCoord]
+    cp b
     jp nc, .closed
     ret
 .darkCaveNorthEdge
@@ -1369,6 +1412,8 @@ JohtoPilotIsVerticalGatePairMap314::
     ret z
     cp JOHTO_ROUTE_46_LOCAL_ID
     ret z
+    cp JOHTO_ROUTE_45_LOCAL_ID ; REF-365 exterior Gold cave-mouth profiles
+    ret z
     cp JOHTO_ROUTE_29_LOCAL_ID
     ret z
     cp JOHTO_ROUTE_43_LOCAL_ID
@@ -1448,13 +1493,30 @@ JohtoPilotGateArrivalStep::
 .oldArrival
     ld a, [wCurLocalMapID]
     cp JOHTO_ROUTE36_RUINS_GATE_LOCAL_ID
-    jr z, .gateTop
+    jp z, .gateTop
     ; Gold UnionCave1F (17,3) is WARP_CARPET_DOWN, not a DOOR.
     ; Arrive stationary facing the original UP approach; do not force a
     ; direction or simulate a step. DOWN is only the voluntary exit input.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     ret z
+    ; REF-365C: the internal Blackthorn -> Violet return lands on Gold CAVE
+    ; at (17,1), one cell north of safe FLOOR (17,2). Step DOWN exactly once.
+    ; Outdoor arrivals onto Violet (3,15)/(35,33) are DOWN carpets and stay
+    ; stationary. Blackthorn (3,25) is a carpet with a WALL immediately south,
+    ; so it must never inherit this automatic door-exit step.
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr nz, .notVioletCaveArrival365C
+    ld a, [wXCoord]
+    cp 17
+    ret nz
+    ld a, [wYCoord]
+    cp 1
+    ret nz
+    ld e, D_DOWN
+    ret
+.notVioletCaveArrival365C
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     ret z
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
     ret z
@@ -1791,11 +1853,11 @@ JohtoPilotGateDoorWarpMatched::
     ret nz
     ld a, [wCurLocalMapID]
     cp JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID
-    jr z, .centerCarpetStand
+    jp z, .centerCarpetStand
     cp JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID
-    jr z, .centerCarpetStand
+    jp z, .centerCarpetStand
     cp JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID
-    jr z, .centerCarpetStand
+    jp z, .centerCarpetStand
     cp JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID
     jp z, .centerCarpetStand
     cp JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID
@@ -1820,6 +1882,21 @@ JohtoPilotGateDoorWarpMatched::
 .noBurnedAfter
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr nz, .afterVioletCave365
+    ; Gold (17,1) is a CAVE tile entered from below: immediate STEP_IN.
+    ld a, [wXCoord]
+    cp 17
+    jr nz, .centerCarpetStand
+    ld a, [wYCoord]
+    cp 1
+    jr nz, .centerCarpetStand
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_UP
+    jr nz, .centerCarpetStand
+    ld e, 2
+    ret
+.afterVioletCave365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jr z, .centerCarpetStand
     cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
     jr z, .burnedTowerWarpMode
@@ -2124,8 +2201,7 @@ JohtoPilotGateExteriorCollisionAllowed::
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, JohtoDarkCaveDownCarpet349
-    ld a, [wCurLocalMapID]
-    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, JohtoDarkCaveDownCarpet349
     cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
     jr nz, .notBurnedExit
@@ -2212,6 +2288,8 @@ JohtoPilotGateExteriorCollisionAllowed::
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jp z, JohtoPilotGateCollisionExitAllowed
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, JohtoPilotGateCollisionExitAllowed
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, JohtoPilotGateCollisionExitAllowed
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
     jp z, JohtoPilotGateCollisionExitAllowed
@@ -2315,6 +2393,8 @@ JohtoPilotGateCollisionExitAllowed::
     ld e, 1
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jp z, JohtoDarkCaveDownCarpet349
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, JohtoDarkCaveDownCarpet349
     ld a, [wCurMap]
     cp JOHTO_RUNTIME_MAP_HANDLE
@@ -2635,6 +2715,9 @@ JohtoDarkCaveDownCarpet349::
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_DOWN
     ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr z, .blackthornCarpet365
     ld a, [wXCoord]
     cp 3
     jr nz, .route46Carpet
@@ -2647,6 +2730,21 @@ JohtoDarkCaveDownCarpet349::
     ret nz
     ld a, [wYCoord]
     cp 33
+    ret nz
+    jr .allow
+.blackthornCarpet365
+    ld a, [wXCoord]
+    cp 23
+    jr nz, .internalCarpet365
+    ld a, [wYCoord]
+    cp 3
+    jr z, .allow
+.internalCarpet365
+    ld a, [wXCoord]
+    cp 3
+    ret nz
+    ld a, [wYCoord]
+    cp 25
     ret nz
 .allow
     ld e, 1

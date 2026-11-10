@@ -87,8 +87,9 @@ ASSERT JohtoRoute29Route46GateHeaderEnd - JohtoRoute29Route46GateRuntimeHeader =
 
 JohtoRoute45RuntimeObjects::
     db $71 ; Gold rock border
-    db 0 ; Dark Cave remains closed
-    db 0
+    db 1 ; Gold Route45 north cave DOOR (2,5)
+    db 5, 2, 0, JOHTO_REGISTERED_WARP_SELECTOR
+    db 0 ; no NPCs or Rock Smash objects
     db 0
 JohtoRoute46RuntimeObjects::
     db $05 ; Gold Route46 trees

@@ -3,6 +3,9 @@
 ; Always use stable ID190 in dispatching; other Johto maps stay unchanged.
 ; Input B=Y, C=X; result A=role (out of bounds => 1 WALL). BC/DE unchanged.
 JohtoDarkCaveRoleAt::
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jp z, .blackthorn
     ld a, b
     cp 36
     jr nc, .wall
@@ -24,6 +27,34 @@ JohtoDarkCaveRoleAt::
     ld e, c
     add hl, de
     ld de, JohtoDarkCaveGoldRoles
+    add hl, de
+    ld a, [hl]
+    pop de
+    ret
+.blackthorn
+    ld a, b
+    cp 36
+    jr nc, .wall
+    ld a, c
+    cp 30
+    jr nc, .wall
+    push de
+    ld l, b
+    ld h, 0
+    add hl, hl ; 2y
+    ld d, h
+    ld e, l
+    add hl, hl ; 4y
+    add hl, de ; 6y
+    ld d, h
+    ld e, l ; preserve 6y
+    add hl, hl ; 12y
+    add hl, hl ; 24y
+    add hl, de ; 30y (LR35902 has no SBC HL,DE)
+    ld d, 0
+    ld e, c
+    add hl, de
+    ld de, JohtoDarkCaveBlackthornGoldRoles
     add hl, de
     ld a, [hl]
     pop de
@@ -72,7 +103,7 @@ JohtoDarkCaveRoleAhead::
 
 ; Gold BikeFunction allows CAVE + FLOOR_TILE permission. The Gold
 ; collision low nibble is FLOOR for both FLOOR ($00) and WARP_CARPET_DOWN
-; ($70), but not WATER, WALL, HOP, UP_WALL or the sealed third entrance.
+; ($70), but not WATER, WALL, HOP, UP_WALL or the open CAVE transfer tile (role 7).
 ; Carry=allowed, A/BC/HL preserved only as needed by the caller; the ROMX
 ; bank trampoline preserves flags so IsBikeRidingAllowed can return Carry.
 JohtoDarkCaveBikeFloorAllowed349::
@@ -84,7 +115,10 @@ JohtoDarkCaveBikeFloorAllowed349::
     jr nz, .deny
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .supported365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jr nz, .deny
+.supported365
     push bc
     push hl
     ld a, [wYCoord]
@@ -128,8 +162,7 @@ JohtoDarkCaveLandDecision::
     call JohtoDarkCaveRoleAhead
     cp 1 ; wall
     ret z
-    cp 7 ; Blackthorn-side opening, currently sealed
-    ret z
+    ; REF-365: Gold role7 is the exact Violet->Blackthorn STEP_IN cave door.
     cp 2 ; water must be entered through Surf field move
     jr nz, .directional
     ld a, [wWalkBikeSurfState]
@@ -171,7 +204,10 @@ JohtoDarkCaveWaterAhead::
     jr nz, .no
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .supported365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jr nz, .no
+.supported365
     call JohtoDarkCaveRoleAhead
     cp 2
     jr nz, .no
@@ -195,7 +231,10 @@ JohtoDarkCaveSurfDecision::
     ret nz
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .supported365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     ret nz
+.supported365
     call JohtoDarkCaveRoleAhead
     cp 2
     jr nz, .shore
@@ -212,7 +251,7 @@ JohtoDarkCaveSurfDecision::
     jr z, .hopDown
     cp 5 ; HOP_LEFT is land unless moving against the ledge
     jr z, .hopLeft
-    ret ; WALL and sealed CAVE exit are not shoreline
+    ret ; WALL and open CAVE transfer tile are not shoreline
 .upWall
     ld a, [wPlayerDirection]
     cp PLAYER_DIR_DOWN
@@ -246,7 +285,10 @@ JohtoSurfBadgeAllowed349::
     jr nz, .legacy
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .supported365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jr nz, .legacy
+.supported365
     ld a, [wObtainedJohtoBadges]
     bit 3, a ; Fog Badge
     jr nz, .allowed
@@ -278,7 +320,10 @@ JohtoFlashEligibility349::
     jr nz, .checkKantoCave
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .supported365
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jr nz, .notDark
+.supported365
     ld a, [wMapPalOffset]
     cp 12 ; Johto unlit Dark Cave BG / visible OBJ
     jr nz, .notDark
@@ -365,6 +410,8 @@ JohtoDarkCavePreLCDPalette349::
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jr z, .apply
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr z, .apply
     ; Deferred exit clear: the new Route31 map is now in VRAM, LCD still off.
     xor a
     ld [wMapPalOffset], a
@@ -373,3 +420,98 @@ JohtoDarkCavePreLCDPalette349::
     and a
     ret nz ; stay black until LoadPlayerSpriteGraphics completes
     jp LoadGBPal
+
+; REF-365 safe Dig/Escape Rope uses two SAVE-BACKED unused event bits.
+; 00 means uninitialized (deny old saves), 01 Route31, 10 Route46, 11 Route45.
+; No WRAM layout change and no modification to other event bits.
+DEF JOHTO_DARK_CAVE_ANCHOR_BYTE EQU EVENT_9D6 / 8
+ASSERT (EVENT_9D6 % 8) == 6
+ASSERT (EVENT_9D7 % 8) == 7
+JohtoDarkCaveRememberOutdoorSource365::
+    ; E = source stable ID, preserve BC/HL at the calling side.
+    ld a, e
+    cp JOHTO_ROUTE_31_LOCAL_ID
+    jr z, .route31
+    cp JOHTO_ROUTE_46_LOCAL_ID
+    jr z, .route46
+    cp JOHTO_ROUTE_45_LOCAL_ID
+    ret nz ; interior transfer MUST NOT rewrite the outdoor anchor
+    ld b, $c0
+    jr .save
+.route31
+    ld b, $40
+    jr .save
+.route46
+    ld b, $80
+.save
+    ld hl, wEventFlags + JOHTO_DARK_CAVE_ANCHOR_BYTE
+    ld a, [hl]
+    and $3f
+    or b
+    ld [hl], a
+    ret
+
+JohtoDarkCaveEscapeAllowed365::
+    ld a, [wCurMap]
+    cp JOHTO_RUNTIME_MAP_HANDLE
+    jr nz, .deny
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    jr nz, .deny
+    ld a, [wCurLocalMapID]
+    cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .checkAnchor
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jr nz, .deny
+.checkAnchor
+    ld a, [wEventFlags + JOHTO_DARK_CAVE_ANCHOR_BYTE]
+    and $c0
+    jr z, .deny ; old save/invalid origin, never silently heal-center teleport
+    scf
+    ret
+.deny
+    and a
+    ret
+
+JohtoDarkCaveApplyEscape365::
+    ; Called from the SPECIAL Warp resolver after CanUseEscapeRope approved.
+    ; Preserve the original exterior entry even after both internal Warps.
+    ld a, [wEventFlags + JOHTO_DARK_CAVE_ANCHOR_BYTE]
+    and $c0
+    cp $40
+    jr z, .route31
+    cp $80
+    jr z, .route46
+    ; Valid caller + 2-bit encoding => Route45.
+    ld a, JOHTO_ROUTE_45_LOCAL_ID
+    ld hl, .route45Data
+    jr .land
+.route31
+    ld a, JOHTO_ROUTE_31_LOCAL_ID
+    ld hl, .route31Data
+    jr .land
+.route46
+    ld a, JOHTO_ROUTE_46_LOCAL_ID
+    ld hl, .route46Data
+.land
+    ld [wCurLocalMapID], a
+    ld a, JOHTO_RUNTIME_MAP_HANDLE
+    ld [wCurMap], a
+    ld [wDestinationMap], a
+    ld a, MAP_REGION_JOHTO
+    ld [wCurRegion], a
+    ld de, wCurrentTileBlockMapViewPointer
+    ld c, 6
+.copy
+    ld a, [hli]
+    ld [de], a
+    inc de
+    dec c
+    jr nz, .copy
+    ret
+.route31Data
+    FLYWARP_DATA JOHTO_ROUTE_31_WIDTH, 6, 34
+.route46Data
+    FLYWARP_DATA JOHTO_ROUTE_46_WIDTH, 6, 14
+.route45Data
+    FLYWARP_DATA JOHTO_ROUTE_45_WIDTH, 6, 2

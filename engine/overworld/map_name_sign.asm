@@ -295,6 +295,8 @@ UpdateMapNameSign::
 	jp z, .johtoBurnedTower
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, .johtoDarkCave
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jp z, .johtoDarkCave
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID

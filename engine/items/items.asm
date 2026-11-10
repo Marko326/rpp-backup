@@ -1888,6 +1888,13 @@ CanUseEscapeRope::
 	cp a,AGATHAS_ROOM
 	jr z,.cannotUse
 	ld a,[wCurMapTileset]
+    cp JOHTO_DARK_CAVE
+    jr nz, .oldRopeTilesets365
+    ; Cave-specific return, not the old last-heal-center route. This also
+    ; rejects an old save with an uninitialized outdoor entry anchor.
+    callab JohtoDarkCaveEscapeAllowed365
+    ret
+.oldRopeTilesets365
 	ld b,a
 	ld hl,EscapeRopeTilesets
 .loop

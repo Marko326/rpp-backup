@@ -1,7 +1,7 @@
 SECTION "Game Version", ROM0
 
 ; 公共游戏版本号。以后发布新版本时只需要修改这一处。
-; Canonical project version REF-5.62.364; one shared in-ROM label for all build flavors.
+; Canonical project version REF-5.62.365; one shared in-ROM label for all build flavors.
 ; 放在 ROM0 中，任何 ROMX bank 都可以直接读取，无需额外切换 ROM bank。
 GameVersionText::
 	; REF-317: add exact north ID66 carpet re-entry/lane-switch profiles; keep coarse role grid fail-closed and DOWN-only Warp.
@@ -75,4 +75,4 @@ GameVersionText::
 	; REF-362: copy trainer exit tile IDs only; preserve battle screen-coordinate CGB attributes.
 	; REF-363: use the same palette-safe 7-row atomic tile-only refresh for both trainer exits.
 	; REF-364: dedupe each Pokédex habitat encounter group before writing wBuffer.
-	db "REF-364@"
+	db "REF-365@"

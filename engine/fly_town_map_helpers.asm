@@ -993,6 +993,8 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotEcruteakName
     db 76, 104 ; slot63 Dark Cave inherits Route31 Town Map landmark
     dw JohtoPilotRoute31Name
+    db 80, 140 ; slot64 Dark Cave Blackthorn side follows Route45 landmark
+    dw JohtoPilotRoute45Name
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -1016,6 +1018,7 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 21 ; slot61 Burned Tower 1F -> Ecruteak City
     db 21 ; slot62 Burned Tower B1F -> Ecruteak City
     db 4  ; slot63 Dark Cave Violet side -> Route31
+    db 41 ; slot64 Dark Cave Blackthorn side -> Route45
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1044,6 +1047,18 @@ LoadJohtoPilotTownMapEntryFromSlot::
 TryLoadSpecialFlyWarpData::
 ; in: D = Fly selector (never a physical Johto ID).
 ; out: carry set when fully resolved; no Kanto table lookups for Johto.
+    ; REF-365: the legacy rope destination is last heal center. Reroute only
+    ; a verified Johto Dark Cave rope/Dig special warp to its saved road mouth.
+    ; wd732 bit6 was consumed/cleared by LoadSpecialWarpData before this call.
+    ld a, [wd732]
+    bit 3, a
+    jr z, .ordinaryFly365
+    callab JohtoDarkCaveEscapeAllowed365
+    jr nc, .ordinaryFly365
+    callab JohtoDarkCaveApplyEscape365
+    scf
+    ret
+.ordinaryFly365
 	ld a, d
 	cp JOHTO_PILOT_FLY_SELECTOR
 	jr nz, .otherFly

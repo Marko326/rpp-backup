@@ -34,7 +34,12 @@ HandleLedges:
     ret nz
     ld a, [wCurLocalMapID]
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+    jr z, .violetDark
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     ret nz
+    ld hl, JohtoDarkCaveBlackthornGoldHops
+    jp .ruinsCoordinateHopLookup
+.violetDark
     ld hl, JohtoDarkCaveGoldHops
     jp .ruinsCoordinateHopLookup
 .burnedTowerB1F
@@ -293,6 +298,8 @@ JohtoSouthHopLandingGuard::
     jp z, .burnedTowerB1F
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, .darkCave
+    cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
+    jp z, .darkCaveBlackthorn
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
@@ -305,6 +312,9 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .darkCave
     ld hl, JohtoDarkCaveGoldHops
+    jp .scan
+.darkCaveBlackthorn
+    ld hl, JohtoDarkCaveBlackthornGoldHops
     jp .scan
 .route37
     ld hl, JohtoRoute37GoldHops
@@ -429,6 +439,22 @@ JohtoUnionCaveB1FGoldHops:
 ; executor simulates TWO steps from this position, crossing the adjacent
 ; WALL and landing on the next passable tile. Never shift sources back one
 ; cell: that lands on a wall and steals Surf-to-HOP shore movement.
+JohtoDarkCaveBlackthornGoldHops:
+    db 4, 4, PLAYER_DIR_DOWN
+    db 5, 4, PLAYER_DIR_DOWN
+    db 4, 6, PLAYER_DIR_DOWN
+    db 5, 6, PLAYER_DIR_DOWN
+    db 4, 14, PLAYER_DIR_DOWN
+    db 5, 14, PLAYER_DIR_DOWN
+    db 2, 16, PLAYER_DIR_DOWN
+    db 3, 16, PLAYER_DIR_DOWN
+    db 4, 16, PLAYER_DIR_DOWN
+    db 5, 16, PLAYER_DIR_DOWN
+    db 7, 20, PLAYER_DIR_LEFT
+    db 7, 21, PLAYER_DIR_LEFT
+    db 7, 22, PLAYER_DIR_LEFT
+    db 7, 23, PLAYER_DIR_LEFT
+    db $ff
 JohtoDarkCaveGoldHops:
     db 2, 10, PLAYER_DIR_DOWN
     db 3, 10, PLAYER_DIR_DOWN

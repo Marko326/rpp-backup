@@ -39,8 +39,10 @@ IsBikeRidingAllowed::
 	jr nz, .legacyBike
 	ld a, [wCurLocalMapID]
 	; Gold Dark Cave is CAVE (bike-eligible), despite using the RPP
-	; INDOOR animation flag. Restrict this exception to active ID190.
+	; INDOOR animation flag. Restrict this exception to the two active Dark Cave regions.
 	cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
+	jp z, .darkCaveBike
+	cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
 	jp z, .darkCaveBike
 	cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID
 	jr z, .allowed
