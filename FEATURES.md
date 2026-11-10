@@ -1,3 +1,26 @@
+## CLEAN REF-365@｜黑暗洞穴 Gold 同层双区域与强制 Warp/Field Moves 入口审计（2026-11-10）
+- 正式 Git 目标版本 `REF-365@`（相对已核实 REF-364 HEAD 加 1，去掉开发 C 后缀）。游戏运行 ASM 与资源沿用用户已反馈正常的 REF-365C：65 张活动地图／168 条 Warp，Gold 黑暗洞穴 ID190 ↔ ID99、Route31/45/46 三室外洞口、按角色地形的 Surf/Flash/Bike/HOP、ID99→ID190 `(17,1)` 自动下走 `(17,2)` 以及 Dig／离洞绳入洞来源保存。
+- Rock Smash 技能和四块可碎岩石全部延期，不做 NPC／野怪／剧情／道具。工具提交新增实际 Warp 到达动作与公共 Bike 分派验收门禁，详见 `docs/CLEAN_REF365_DARK_CAVE_FINAL_ACCEPTANCE.md`。用户已确认洞内洞口及自行车修复正常；其余 Field Moves/旧档与四版新 ROM/MAP 未收到完整验收证据，不得宣称全部完成。
+- 本轮累计有游戏 ASM 和 `tools/` 修改，按项目 `03_PROJECT_REQUIREMENTS.txt` **双提交模式 A**（功能、工具审计分开），清理交付 3 个 patch + 2 个日志；若当前手机已经打上工具门禁开发补丁，不能再套用本清理 01 的前置状态。
+## REF-365C 追加｜全城都 Warp / Field Moves 入口防回归门禁（仅工具，不改游戏）
+- 运行版保持 REF-365C@、65 图/168 Warp。`tools/johto_warp_field_entry_gate.py` 接入统一验证：冻结当前活动地图/路由库存，新增必须显式审查；沿八条 Dark Cave 路由和公众 Bike 入口追踪实际落点/自动迈步/危险格，检测曾漏掉的 ID99 自行车分派与 ID99→ID190 出洞迈步问题。Rock Smash 继续延期。详见 `docs/REF365C_WARP_FIELD_ENTRY_GUARD_DEV.md`。
+
+## REF-365C@ 设备反馈修复｜洞内返程自动迈步与烟墨侧自行车（开发测试）
+- 用户在 REF-365B 实机确认室外 Route45 进出正常，但同层洞内返程落点不会自动迈步；源码根因是 `JohtoPilotGateArrivalStep` 对 ID190/ID99 一律直接返回，漏判洞内返回目标。现在仅 **ID99 `(3,25)` → ID190 `(17,1)`** 的到达格在 Gold `CAVE` 上自动向下走到安全 `FLOOR (17,2)`；ID190 的 Route31/46 室外入口地毯和 ID99 的 `(3,25)` / `(23,3)` 都不额外移动（ID99 `(3,26)` 是墙，不能照搬）。保留方向限定和不连环 Warp。
+- 用户反馈 ID99 无法使用自行车；根因是 `IsBikeRidingAllowed` 外层只分派 ID190，尽管 ROMX `JohtoDarkCaveBikeFloorAllowed349` 已兼容两张地图。已将 **ID99** 加到相同分派；仍仅 Gold FLOOR/合法地毯能上车，水、墙、跳崖和洞口不放行。ROM0/Bank0 未修改；场景走现有洞穴动画保护。
+- 维护 `tools/johto_dark_cave_365_audit.py` 的两条实际调用链检查和错误注入测试，原 `test_rom0_relief_349.py` 的旧哈希比对通过剥离两张图专用新增分派恢复历史不变体，避免旧合同误报。使用 `jp z, .gateTop` 避免到达函数增长后潜在 JR 跳转过长。
+- **保持不变**：65 张地图／168 条 Warp、31/46/45 室外路由、两个洞内方向触发、Surf/Flash/跳崖/Dig/离洞绳、Rock Smash 技能与碎岩物件延期；无遭遇、NPC、剧情。需要手机重新构建四版、审查 MAP、实测洞内返程和骑车，才可验收。未自行 ROM 编译／Commit／Push。
+
+## REF-365 开发候选｜黑暗洞穴 Gold 同层双区域通路与 Field Moves（待 ROM/设备验收）
+- 已把 ID99 Blackthorn side 接入第 65 张活动地图：30×36 Gold 角色碰撞、120 水格、14 定向跳崖、49 UP_WALL，独立 Surf/Flash/Bike/上岸判定；与 ID190 `(17,1)`→ID99 `(3,25)` 以及 ID99 `(3,25)`→ID190 `(17,1)` 使用不同 STEP_IN / DOWN 方向触发；Route45 洞口双向可登记，合计 168 条 Warp。
+- Dig/离洞绳新增安全来源记录：户外从 Route31/46/45 进洞，洞内跨区不覆盖、存档保持；旧档无有效记录不强制返回治疗中心。野外遭遇、NPC、事件、道具未接入；**Rock Smash 技能和四块可碎石头全部延期，本版绝无可打碎对象**。
+- 用户本机四版 ROM/MAP、ROM0≥64B 和 My OldBoy 正反向实测尚未完成。本批是开发源码，不是 CLEAN 正式验收。旧 REF-364 规划原文仅保留历史。`docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
+## REF-364 后续范围提示｜黑暗洞穴（只登记需求，尚未施工）
+- 目前开放的是 Dark Cave 桔梗侧 ID190 ↔ Route31/46 的两对室外通路；**同层内部 ID190 `(17,1)` Gold `CAVE` 踩入 → 烟墨侧 ID99 `(3,25)`，返程从 ID99 的 `WARP_CARPET_DOWN` 向下触发**；ID99 与 Route45 尚未开放。原版无 B1F/B2F。
+- 计划完成的地图基本功能包括两区域 Flash/Surf/定向 HOP/方向墙/Bike、四块 Gold Rock Smash、Dig/Escape Rope 按实际入洞来源安全返回，及全部室外/内部 Warp；NPC、训练师、剧情、物品和野外遭遇不在本阶段。Gold 没有 Strength 石头，不擅自增加。
+- **本条只是未来需求**，不代表上述缺项实现。最新拓扑图/编号/验收合同见 `docs/JOHTO_DARK_CAVE_TOPOLOGY_AND_FIELD_MOVES_REF364.md`。
+
 ## CLEAN REF-364 TOOL-CLEANUP-2｜Union Cave 与 REF-364 现行审计收口
 - B2F 审计不再冻结 REF-343 / 60 maps / 142 warps；Union Cave 测试覆盖 1F/B1F/B2F 三层 10 条洞穴路由与当前碰撞/楼梯规则。
 - 当前 RPP header registry 与活动地图表为 64 张地图，注册 Warp 合同为 164 条；Surf、Town Map、音乐、Map Name Sign 与相关审计同步到当前 roster。

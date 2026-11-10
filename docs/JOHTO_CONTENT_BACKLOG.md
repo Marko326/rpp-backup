@@ -1,3 +1,5 @@
+> **REF-364 黑暗洞穴状态纠偏（2026-11-09）**：本文件下方 57 活动地图等为早期阶段快照，不能用于推断 REF-364 现状。当前城都 64 张活动地图 / 164 条 Warp，Dark Cave **桔梗侧 ID190** 已开放 Route31/Route46 两对室外出口；**烟墨侧 ID99** 尚未活动。Gold 整座洞穴是同层两张地图，内部 ID190 `(17,1)` `CAVE` STEP_IN ↔ ID99 `(3,25)` `WARP_CARPET_DOWN` DOWN，连同 Route45 外口尚待实施；不是 B1F/B2F。按用户要求只做地形/Field Moves（含 Rock Smash、Dig/离洞绳），不做 NPC/遭遇/剧情等。以 [`JOHTO_DARK_CAVE_TOPOLOGY_AND_FIELD_MOVES_REF364.md`](JOHTO_DARK_CAVE_TOPOLOGY_AND_FIELD_MOVES_REF364.md) 的五 Warp / 三室外入口及验收标准为最新专项需求；旧表格只作历史背景。
+
 > **REF-349 版本修订（2026-11-06）**：当前游戏显示标签正式改为 `REF-349@`，64活动地图、164 Warp、Dark Cave R2功能不变。下文 `REF-348` 标签是旧开发候选历史说明；新构建与验收见 [`CLEAN REF-349`](CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md)。
 
 > **2026-11-06 REF-349 清理时点**：本文下面的 REF-338/340 地图统计属于历史。最新用户 `REF-348.patch` 的工作区已接入桔梗侧 Dark Cave ID190，31号道路与46号道路双向出口；总64活动地图、164登记 Warp、版本仍REF-348。Surf/跳崖用户反馈正常，自行车与46号道路完整设备回归仍待核验；烟墨侧ID99及物件/遭遇/动画未开放。新Red/Blue MAP 的 ROM0各386B，TEST MAP未提供。详见 [`CLEAN REF-349`](CLEAN_REF349_DARK_CAVE_FINAL_ACCEPTANCE.md)。

@@ -130,7 +130,7 @@ except ImportError:  # Support import through unittest discovery from project ro
     from tools.johto_gold_connection_reference import check_frozen_gold_source
 
 
-EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123, 106, 135, 133, 146, 160, 30, 42, 77, 85, 114, 115, 184, 185, 177, 178, 190]
+EXPECTED_ACTIVE_IDS = [0, 1, 2, 3, 4, 125, 5, 6, 7, 102, 20, 19, 16, 8, 9, 10, 11, 12, 13, 14, 15, 18, 17, 103, 104, 105, 21, 22, 23, 24, 25, 26, 27, 28, 29, 62, 63, 64, 65, 67, 66, 68, 69, 71, 72, 73, 74, 123, 106, 135, 133, 146, 160, 30, 42, 77, 85, 114, 115, 184, 185, 177, 178, 190, 99]
 EXPECTED_CONNECTIONS = {
     (16, "NORTH", 21), (21, "SOUTH", 16),
     (21, "NORTH", 22), (22, "SOUTH", 21),
@@ -224,6 +224,7 @@ MAP_LAYOUTS = {
     "BurnedTower1F": (10, 9),
     "BurnedTowerB1F": (10, 9),
     "DarkCaveVioletEntrance": (20, 18),
+    "DarkCaveBlackthornEntrance": (15, 18),
 }
 GOLD_SOURCE_MAPS = {
     "Route32Pokecenter1F": "Route32Pokecenter1F",
@@ -1137,7 +1138,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                            "JOHTO_ROUTE_43_LOCAL_ID", "JOHTO_ROUTE_43_GATE_LOCAL_ID",
                            "JOHTO_LAKE_OF_RAGE_LOCAL_ID", "JOHTO_ROUTE_44_LOCAL_ID", "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
                            "JOHTO_ROUTE_45_LOCAL_ID", "JOHTO_ROUTE_46_LOCAL_ID", "JOHTO_ROUTE_29_ROUTE_46_GATE_LOCAL_ID",
-                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID", "JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID", "JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID", "JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID", "JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID", "JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID", "JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID", "JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID", "JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID", "JOHTO_UNION_CAVE_B1F_LOCAL_ID", "JOHTO_UNION_CAVE_B2F_LOCAL_ID", "JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID", "JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID", "JOHTO_BURNED_TOWER_1F_LOCAL_ID", "JOHTO_BURNED_TOWER_B1F_LOCAL_ID", "JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID"]
+                           "JOHTO_CHERRYGROVE_POKECENTER_1F_LOCAL_ID", "JOHTO_ROUTE_32_POKECENTER_1F_LOCAL_ID", "JOHTO_AZALEA_POKECENTER_1F_LOCAL_ID", "JOHTO_VIOLET_POKECENTER_1F_LOCAL_ID", "JOHTO_GOLDENROD_POKECENTER_1F_LOCAL_ID", "JOHTO_ECRUTEAK_POKECENTER_1F_LOCAL_ID", "JOHTO_OLIVINE_POKECENTER_1F_LOCAL_ID", "JOHTO_CIANWOOD_POKECENTER_1F_LOCAL_ID", "JOHTO_MAHOGANY_POKECENTER_1F_LOCAL_ID", "JOHTO_BLACKTHORN_POKECENTER_1F_LOCAL_ID", "JOHTO_UNION_CAVE_B1F_LOCAL_ID", "JOHTO_UNION_CAVE_B2F_LOCAL_ID", "JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID", "JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID", "JOHTO_BURNED_TOWER_1F_LOCAL_ID", "JOHTO_BURNED_TOWER_B1F_LOCAL_ID", "JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID", "JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID"]
     descriptor_body = _section(runtime_assets, "JohtoPilotRuntimeResourceDescriptors", "JohtoPilotRuntimeResourceDescriptorsEnd")
     descriptor_ids = []
     for symbol in re.findall(r"(?m)^\s*db\s+(JOHTO_[A-Z0-9_]+_LOCAL_ID)\s*,", descriptor_body):
@@ -1219,6 +1220,7 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
                             (185, 60), (177, 61), (178, 62)):
         expected_slots[stable_id] = slot
     expected_slots[190] = 63
+    expected_slots[99] = 64  # REF-365 Dark Cave Blackthorn same-floor area
     _check(errors, checks, "stable_id_sparse_router",
            len(slot_values) == 256 and slot_values == expected_slots,
            f"stable ID table bytes={len(slot_values)}; active mapping={{0:0,1:1,2:2,3:3,4:4,125:5,5:6,6:7,7:8,102:9,20:10,19:11,16:12,8:13,9:14}}; all others must be inactive")
@@ -1529,12 +1531,16 @@ def audit_project(project: Path, gold_root: Path | None = None, reference_root: 
         ):
             expected_warps.append(("MAP_REGION_JOHTO", source, str(ordinal),
                                    "MAP_REGION_JOHTO", target))
-        # REF-349: Gold Violet Cave Route31 (ordinal0) and Route46 (ordinal2); ordinal1 Blackthorn sealed.
+        # REF-365: Gold Dark Cave two same-floor regions and all three road mouths.
         expected_warps.extend((
             ('MAP_REGION_JOHTO','JOHTO_ROUTE_31_LOCAL_ID','2','MAP_REGION_JOHTO','JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID'),
             ('MAP_REGION_JOHTO','JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID','0','MAP_REGION_JOHTO','JOHTO_ROUTE_31_LOCAL_ID'),
             ('MAP_REGION_JOHTO','JOHTO_ROUTE_46_LOCAL_ID','2','MAP_REGION_JOHTO','JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID'),
             ('MAP_REGION_JOHTO','JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID','2','MAP_REGION_JOHTO','JOHTO_ROUTE_46_LOCAL_ID'),
+            ('MAP_REGION_JOHTO','JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID','1','MAP_REGION_JOHTO','JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID'),
+            ('MAP_REGION_JOHTO','JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID','1','MAP_REGION_JOHTO','JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID'),
+            ('MAP_REGION_JOHTO','JOHTO_ROUTE_45_LOCAL_ID','0','MAP_REGION_JOHTO','JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID'),
+            ('MAP_REGION_JOHTO','JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID','0','MAP_REGION_JOHTO','JOHTO_ROUTE_45_LOCAL_ID'),
         ))
         _check(errors, checks, "registered_warp_routes", warp_rows == expected_warps,
                f"expected {len(expected_warps)} approved routes, got {len(warp_rows)}; "

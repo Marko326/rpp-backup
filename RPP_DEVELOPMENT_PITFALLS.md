@@ -1,3 +1,19 @@
+## CLEAN REF-365｜洞口落点与 Bike 入口审计失败模式（2026-11-10）
+- REF-365C 用户设备反馈揭示：低层洞穴角色地形已支持自行车，但公开 `IsBikeRidingAllowed` 未路由新 ID99；注册 Warp 成功但到达 `JohtoPilotGateArrivalStep` 未执行洞内 CAVE 格的安全自动迈步。
+- 不能只静态搜叶子 helper，也不能对所有 WARP_CARPET_DOWN 统一下走。ID190 `(17,1)` 踩入洞口从 ID99 返回后必须下走到 FLOOR `(17,2)`；ID99 `(3,25)` 目的地下面 `(3,26)` 是墙，必须保持站位。
+- 已在 `tools/johto_warp_field_entry_gate.py`、`tools/tests/test_johto_warp_field_entry_gate.py` 中补入口实际分支追踪与故障注入，统一验证入口优先运行新门禁。旧 168 路的冻结库存 ≠ 168 路均已深度模拟/手机验收。独立留存主迁移审计过期断言，不为凑绿修改游戏 ASM；检查细节与剩余风险见 `docs/CLEAN_REF365_DARK_CAVE_FINAL_ACCEPTANCE.md`。
+## REF-365C｜门口卡住与骑车漏接的审计教训（2026-11-10）
+- **功能存在 ≠ 公开入口可达。** 新增 cave stable ID 时必须从 `IsBikeRidingAllowed` 等玩家实际调用入口追到地图专用 helper；只看到 Gold FLOOR/Bike 函数里有 ID99 仍可能无法上车。
+- **Warp 登记成功 ≠ 出口动作完成。** 源 Objects ordinal、目标 Objects ordinal、目标角色格、`JohtoPilotGateArrivalStep`、自动 DOWN 的安全下一格及邻格负向都必须同查。Gold CAVE `(17,1)` 必须下走；Gold DOWN 地毯 `(3,25)` 下面是墙，必须停留。
+- 禁止为每张图统一强制 DOWN、禁止只增冻结测试里的地图计数或用静态关键词冒充 RGBDS；使用 `tools/johto_warp_field_entry_gate.py` 与负向用例，新增地图扩充可执行覆盖而不靠假绿。
+- **边界**：历史 168 Warp 仅冻结改动库存，其中黑暗洞穴 8 条有新增深入审计；其余历史路线、模拟器动画及旧存档不可被推定通过。完整记录 `docs/REF365C_WARP_FIELD_ENTRY_GUARD_DEV.md`。
+
+## REF-365C@ 设备反馈修复｜洞内返程自动迈步与烟墨侧自行车（开发测试）
+- 用户在 REF-365B 实机确认室外 Route45 进出正常，但同层洞内返程落点不会自动迈步；源码根因是 `JohtoPilotGateArrivalStep` 对 ID190/ID99 一律直接返回，漏判洞内返回目标。现在仅 **ID99 `(3,25)` → ID190 `(17,1)`** 的到达格在 Gold `CAVE` 上自动向下走到安全 `FLOOR (17,2)`；ID190 的 Route31/46 室外入口地毯和 ID99 的 `(3,25)` / `(23,3)` 都不额外移动（ID99 `(3,26)` 是墙，不能照搬）。保留方向限定和不连环 Warp。
+- 用户反馈 ID99 无法使用自行车；根因是 `IsBikeRidingAllowed` 外层只分派 ID190，尽管 ROMX `JohtoDarkCaveBikeFloorAllowed349` 已兼容两张地图。已将 **ID99** 加到相同分派；仍仅 Gold FLOOR/合法地毯能上车，水、墙、跳崖和洞口不放行。ROM0/Bank0 未修改；场景走现有洞穴动画保护。
+- 维护 `tools/johto_dark_cave_365_audit.py` 的两条实际调用链检查和错误注入测试，原 `test_rom0_relief_349.py` 的旧哈希比对通过剥离两张图专用新增分派恢复历史不变体，避免旧合同误报。使用 `jp z, .gateTop` 避免到达函数增长后潜在 JR 跳转过长。
+- **保持不变**：65 张地图／168 条 Warp、31/46/45 室外路由、两个洞内方向触发、Surf/Flash/跳崖/Dig/离洞绳、Rock Smash 技能与碎岩物件延期；无遭遇、NPC、剧情。需要手机重新构建四版、审查 MAP、实测洞内返程和骑车，才可验收。未自行 ROM 编译／Commit／Push。
+
 ## REF-364 工具审计：不要把历史版本快照当成当前功能合同
 - 可复用审计应验证当前源码之间的关系，不应无理由固定 `REF-343@`、60 张地图或 142 条 Warp。当前 roster 是 64 张活动地图、164 条注册 Warp；主迁移审计负责逐条验证完整路由。
 - 负向故障注入必须锚定具体字段/分支，不应假设某个 token 永远紧邻 `$FF` 或两个地图分支相邻。先定位唯一语义位置，再只修改该处。

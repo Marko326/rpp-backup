@@ -13,6 +13,7 @@ WAIT_A = TEXT.split('WaitForFlashAOnly349::', 1)[1].split('JohtoDarkCavePreLCDPa
 SYMBOLS = {
     'JOHTO_RUNTIME_MAP_HANDLE': 'J', 'MAP_REGION_JOHTO': 'JOHTO',
     'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID': 'VIOLET',
+    'JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID': 'BLACKTHORN',
     'ROCK_TUNNEL_1': 'ROCK1', 'ROCK_TUNNEL_2': 'ROCK2',
 }
 
@@ -87,6 +88,9 @@ def run_asm_gate(cur_map, region='KANTO', local='NONE', offset=0,
     ('ROCK1', 'KANTO', 'NONE', 12, 1, 0, (1, '.notDarkText')),
     ('J', 'JOHTO', 'ROUTE31', 0, 1, 1, (1, '.notDarkText')),
     ('J', 'JOHTO', 'VIOLET', 12, 0, 1, (0, None)),
+    ('J', 'JOHTO', 'BLACKTHORN', 12, 0, 1, (0, None)),
+    ('J', 'JOHTO', 'BLACKTHORN', 12, 0, 0, (1, '.badgeText')),
+    ('J', 'JOHTO', 'BLACKTHORN', 0, 1, 1, (1, '.notDarkText')),
     ('J', 'JOHTO', 'VIOLET', 12, 1, 0, (0, None)),
     ('J', 'JOHTO', 'VIOLET', 12, 0, 0, (1, '.badgeText')),
     ('J', 'JOHTO', 'VIOLET', 0, 1, 1, (1, '.notDarkText')),

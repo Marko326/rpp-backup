@@ -53,6 +53,13 @@ def main(argv: list[str] | None = None) -> int:
     checks = [
         ('ASM local-symbol preflight', [sys.executable, 'tools/asm_symbol_preflight.py']),
         ('active table-length preflight', [sys.executable, 'tools/johto_table_assert_preflight.py', '--root', '.']),
+        # Hard gate for newly enabled maps, source Warp object ordinals,
+        # end-to-end arrival movement and field move public-entry dispatch.
+        ('warp / field-entry activation gate',
+         [sys.executable, 'tools/johto_warp_field_entry_gate.py', '--root', '.']),
+        ('Dark Cave Gold field-move audit',
+         [sys.executable, 'tools/johto_dark_cave_365_audit.py', '--root', '.'] +
+         (['--gold-root', str(args.gold_root.resolve())] if args.gold_root else [])),
         ('current migration audit', [sys.executable, 'tools/johto_pilot_migration_audit.py', '--project', '.'] +
             (['--gold-root', str(args.gold_root.resolve())] if args.gold_root else [])),
     ]

@@ -1,3 +1,44 @@
+# CLEAN REF-365｜黑暗洞穴地图与工具审计正式收口（准备双提交，2026-11-10）
+- [x] 保留已由用户反馈正常的 REF-365C 洞内出入口与 Bike 游戏行为，正式版仅换成 `REF-365@`；65 活动图、168 注册 Warp，Rock Smash 继续延期。
+- [x] 将黑暗洞穴 8 条进出方向、Gold 双图地形和公共 Bike 入口及到达自动迈步的强制检查统一纳入工具，故意删除分派／迈步／安全落点时测试应失败。
+- [x] 累计既含游戏也含工具修改，按模式 A 分成游戏功能与工具审计两笔提交；`01` 基于 REF-365C 游戏候选但**尚未应用新增工具门禁**的工作区，`03` 基于 REF-364 HEAD。
+- [ ] 用户自己验收四版新 ROM/MAP（ROM0≥64B），逐入口 Dig／离洞绳、旧档 Save/Continue、Flash／Surf／跳崖和跨图；当前证据仅覆盖用户反馈的洞内 Warp 和 Bike。
+- [ ] 原强制迁移审计尚有 15 项旧版合同失败；全仓库 pytest 另有历史失配，已在正式验收文档列明，不能伪称全绿。
+- [ ] 用户自行按文档安装 3 份补丁中的正确路线并执行两笔 Git Commit，未授权 AI 代提交；Rock Smash／NPC／遭遇／剧情另行开发。
+# REF-365C｜Warp 到达与 Field Moves 入口强制审计（工具阶段）
+- [x] 将 `johto_warp_field_entry_gate.py` 纳入 `validate_current_project.py`；冻结 REF-365C 的 65 图、168 Warp 历史库存，后续新增必须登记独立评审。
+- [x] 洞内外 8 条方向路由的真实 Objects ordinal/坐标、落点动作执行、非法地面自动迈步、相邻格、Bike 公开入口检查，并加入负向故障注入测试。
+- [ ] 其他历史路由仍属“库存受监控”而非 168 条全部 CPU/ROM 验收；新增地图要扩充门口碰撞与其全部适用 Field Moves 专项检查。
+- [ ] 原有主迁移审计有 REF-364 固定数量/封口合同失配，须独立维护；本次不改现有游戏 ASM，也不以静态测试代替手机 ROM/MAP 验收。
+
+## REF-365C@ 设备反馈修复｜洞内返程自动迈步与烟墨侧自行车（开发测试）
+- 用户在 REF-365B 实机确认室外 Route45 进出正常，但同层洞内返程落点不会自动迈步；源码根因是 `JohtoPilotGateArrivalStep` 对 ID190/ID99 一律直接返回，漏判洞内返回目标。现在仅 **ID99 `(3,25)` → ID190 `(17,1)`** 的到达格在 Gold `CAVE` 上自动向下走到安全 `FLOOR (17,2)`；ID190 的 Route31/46 室外入口地毯和 ID99 的 `(3,25)` / `(23,3)` 都不额外移动（ID99 `(3,26)` 是墙，不能照搬）。保留方向限定和不连环 Warp。
+- 用户反馈 ID99 无法使用自行车；根因是 `IsBikeRidingAllowed` 外层只分派 ID190，尽管 ROMX `JohtoDarkCaveBikeFloorAllowed349` 已兼容两张地图。已将 **ID99** 加到相同分派；仍仅 Gold FLOOR/合法地毯能上车，水、墙、跳崖和洞口不放行。ROM0/Bank0 未修改；场景走现有洞穴动画保护。
+- 维护 `tools/johto_dark_cave_365_audit.py` 的两条实际调用链检查和错误注入测试，原 `test_rom0_relief_349.py` 的旧哈希比对通过剥离两张图专用新增分派恢复历史不变体，避免旧合同误报。使用 `jp z, .gateTop` 避免到达函数增长后潜在 JR 跳转过长。
+- **保持不变**：65 张地图／168 条 Warp、31/46/45 室外路由、两个洞内方向触发、Surf/Flash/跳崖/Dig/离洞绳、Rock Smash 技能与碎岩物件延期；无遭遇、NPC、剧情。需要手机重新构建四版、审查 MAP、实测洞内返程和骑车，才可验收。未自行 ROM 编译／Commit／Push。
+
+> **REF-365B@ 开发候选（2026-11-10）**：依据用户真实 REF-365A 工作区编译日志，修复黑暗洞穴 ID99 地图索引的非法 `sbc hl,de` 指令，改用合法 16 位加法和位移；静态审计增加 30×36 全坐标与非法指令错误注入防回归。Rock Smash 仍延期；未经用户 RGBDS 重新构建、MAP 和手机验收，不视为 CLEAN。详情：`docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
+# REF-365A｜黑暗洞穴同层双区域与 Field Moves（开发候选，等待本机 ROM/设备验收）
+- [x] 按 Gold 完成 ID190→ID99 同层入口 `(17,1)` STEP_IN、ID99→ID190 `(3,25)` DOWN 地毯；保持 ID190↔31/46，增加 ID99↔45 外口的门碰撞与返回自动迈步。活动地图 **65**、注册 Warp **168**；独立 30×36 碰撞/源块/运行块。
+- [x] ID99 Gold 120 WATER、14 HOP、49 UP_WALL，接入既有 Flash/Surf/上岸/Bike/方向墙流程；洞内两区角色表不互相串用，切区保留明暗状态。
+- [x] Dig／Escape Rope 针对黑暗洞穴记录 31／46／45 的户外来源，洞内跨区不覆盖来源；旧档没有有效锚点时拒绝使用，不误回治疗中心；复用存档内未使用 event flag bit，不扩充存档结构。
+- [x] **本期不做 Rock Smash**：不创建四块可碎岩对象、不新增技能、不写破石事件/碎岩遭遇；Gold 位置只作为延期记录。也不做 NPC、野怪、钓鱼、剧情和道具球；Gold 无 Strength 石头，不虚构。
+- [x] 运行源码已变，版本 `REF-364@` → `REF-365A@`；增加独立 Gold 逐格及方向入口/回程静态审计和 Flash 分支解释测试。
+- [ ] **必须由用户执行**：RGBDS 0.5.2 编译 Red/Blue/TEST Red/TEST Blue，检查新 MAP ROM0≥64B 和紧张 Bank 余量；My OldBoy 实测 31/46/45 三入口、两向内部洞口、Surf/Flash/跳崖/Bike、Dig／离洞绳及旧档 Save/Continue，确认无自动回弹。
+- [ ] 主迁移审计和旧 Stage2/Surf Manifest 的 REF-364 冻结数量／入口封闭测试仍需后续维护；记录为旧基线测试失败，不能声称主审计已通过。**不为凑测试修改游戏核心逻辑。**
+- [ ] 验收前不要制作 CLEAN 三件套／Git Commit／Push；本次仅交含两份互斥 `.patch` 的开发期 ZIP，不附完整工程或额外说明文件。详见 `docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
+# REF-364 后续｜黑暗洞穴同层内洞口 + Field Moves 施工待办（2026-11-09，未施工）
+- [x] 已核对 Gold `DarkCaveVioletEntrance`、`DarkCaveBlackthornEntrance` 双图 `.asm`、`.blk` 与 `cave_collision.asm`：**黑暗洞穴没有 B1F/B2F**，桔梗侧 ID190 (40×36) 与烟墨侧 ID99 (30×36) 通过洞内跨区口配对，而不是从一个洞口通往二层。
+- [x] 已确认内部两端类型 **不对称**：ID190 `(17,1)` Gold #2 是 `CAVE`、**STEP_IN** → ID99 `(3,25)` Gold #2；返程 ID99 `(3,25)` Gold #2 是 `WARP_CARPET_DOWN`、**DOWN** → ID190 `(17,1)`。不能把两边都实现成室外 DOWN 出口；须防到达目的地反复触发/卡死。
+- [x] 五个洞内 Gold Warp：ID190 `(3,15)`↔Route31、`(17,1)`↔ID99、`(35,33)`↔Route46；ID99 `(23,3)`↔Route45、`(3,25)`↔ID190。Gold 1 基编号（ID190 #1/#2/#3；ID99 #1/#2）必须换成 RPP 0 基 ordinal（0/1/2；0/1）；**保留 ordinal1 不压缩**。
+- [x] REF-364 现状确认：ID190 已开放室外 31/46 两对双向路由（四方向记录）；ID99 未激活，跨区 ordinal1 仍封闭，整洞 R2 **未完成**；原 REF349 Stage1 JSON 的 Route46 INACTIVE 为历史快照，不能当作 REF-364 现状。
+- [ ] **P0 / 本期 Field Moves**：ID190 四块碎岩 Rock Smash `(16,14)/(27,6)/(7,14)/(36,31)`（非 Strength、不加碎岩野怪）；Dig/离洞绳按真正户外入口 Route31/46 记忆与安全返回（跨区开放后含 Route45），覆盖旧存档、Continue、不可用负向路径。
+- [ ] **P0 / 洞内通路**：完成 ID99 独立 30×36 地形/角色表、120 WATER、14 HOP、49 UP_WALL、Flash/Surf/上岸/Bike；新增 ID190 ordinal1 ↔ ID99 ordinal1，Route45 ordinal0 ↔ ID99 ordinal0 **四条方向路由**；保持 31/46 已验收行为、不出现连环 Warp。
+- [ ] **本期全回归**：31/46/45 三室外入口、两洞内方向触发、正确落点、黑暗与 Flash 切区、Surf/HOP、Dig/Escape Rope 从三入口原路返回、存读档及 Red/Blue/TEST ROM+MAP/ROM0≥64B/手机实际往返。NPC/剧情/物品球/隐藏道具/普通野怪、钓鱼、碎岩遇敌 **本期不做**；无 Gold 推石对象不造 Strength。
+- [ ] 在用户实机与构建完成前，这些都是**待做任务**；本轮只写需求与 Gold 地图事实，不改 ASM/ROM、版本号、Git Commit/Push。完整坐标和验收合同：`docs/JOHTO_DARK_CAVE_TOPOLOGY_AND_FIELD_MOVES_REF364.md`；机器可读数据：`docs/JOHTO_DARK_CAVE_TOPOLOGY_REF364.json`。
+
 # CLEAN REF-364 TOOL-CLEANUP｜单次 Git 提交收口
 - [x] 使用最新 Termux `REF-364.patch` 声明的 `d4e06edc1cd8d7c76b030c87fd34bc47a5237d24` 为累计基线，两轮工具清理改动合为一次 Git 提交，不制作双提交隔离补丁。
 - [x] 确认本次变更不含游戏 ASM、地图数据、版本和构建配置；工具清理不要求 ROM/MAP/游戏内复测。

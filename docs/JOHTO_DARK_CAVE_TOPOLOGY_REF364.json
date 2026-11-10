@@ -1,0 +1,192 @@
+{
+  "schema": "johto-dark-cave-ref364-r2-field-moves-requirements-v1",
+  "baseline": "REF-364.zip",
+  "as_of": "2026-11-09",
+  "nature": "planning_and_static_source_audit_only",
+  "gold_source": "JOHTO_HANDOFF_REF306_FLAT_REFERENCES_交接文档.zip / REFERENCES/Gold/pokegold-master",
+  "maps": [
+    {
+      "gold_name": "DarkCaveVioletEntrance",
+      "stable_id": 190,
+      "blocks": [
+        20,
+        18
+      ],
+      "cells": [
+        40,
+        36
+      ],
+      "active_in_ref364": true,
+      "gold_surf_cells": 64,
+      "gold_up_wall_cells": 41,
+      "gold_hop_down": 12,
+      "gold_hop_left": 14,
+      "gold_smash_rocks": [
+        [
+          16,
+          14
+        ],
+        [
+          27,
+          6
+        ],
+        [
+          7,
+          14
+        ],
+        [
+          36,
+          31
+        ]
+      ]
+    },
+    {
+      "gold_name": "DarkCaveBlackthornEntrance",
+      "stable_id": 99,
+      "blocks": [
+        15,
+        18
+      ],
+      "cells": [
+        30,
+        36
+      ],
+      "active_in_ref364": false,
+      "gold_surf_cells": 120,
+      "gold_up_wall_cells": 49,
+      "gold_hop_down": 10,
+      "gold_hop_left": 4,
+      "gold_smash_rocks": []
+    }
+  ],
+  "inside_warps": [
+    {
+      "map_id": 190,
+      "gold_warp_1_based": 1,
+      "rpp_ordinal_0_based": 0,
+      "x": 3,
+      "y": 15,
+      "gold_role": "WARP_CARPET_DOWN",
+      "trigger": "DOWN_COLLISION",
+      "destination": "Route31",
+      "destination_gold_warp_1_based": 3,
+      "active_in_ref364": true
+    },
+    {
+      "map_id": 190,
+      "gold_warp_1_based": 2,
+      "rpp_ordinal_0_based": 1,
+      "x": 17,
+      "y": 1,
+      "gold_role": "CAVE",
+      "trigger": "STEP_IN",
+      "destination": "DarkCaveBlackthornEntrance",
+      "destination_map_id": 99,
+      "destination_gold_warp_1_based": 2,
+      "active_in_ref364": false
+    },
+    {
+      "map_id": 190,
+      "gold_warp_1_based": 3,
+      "rpp_ordinal_0_based": 2,
+      "x": 35,
+      "y": 33,
+      "gold_role": "WARP_CARPET_DOWN",
+      "trigger": "DOWN_COLLISION",
+      "destination": "Route46",
+      "destination_gold_warp_1_based": 3,
+      "active_in_ref364": true
+    },
+    {
+      "map_id": 99,
+      "gold_warp_1_based": 1,
+      "rpp_ordinal_0_based": 0,
+      "x": 23,
+      "y": 3,
+      "gold_role": "WARP_CARPET_DOWN",
+      "trigger": "DOWN_COLLISION",
+      "destination": "Route45",
+      "destination_gold_warp_1_based": 1,
+      "active_in_ref364": false
+    },
+    {
+      "map_id": 99,
+      "gold_warp_1_based": 2,
+      "rpp_ordinal_0_based": 1,
+      "x": 3,
+      "y": 25,
+      "gold_role": "WARP_CARPET_DOWN",
+      "trigger": "DOWN_COLLISION",
+      "destination": "DarkCaveVioletEntrance",
+      "destination_map_id": 190,
+      "destination_gold_warp_1_based": 2,
+      "active_in_ref364": false
+    }
+  ],
+  "outdoor_gold_warps": [
+    {
+      "source": "Route31",
+      "x": 34,
+      "y": 5,
+      "gold_warp_1_based": 3,
+      "destination_map_id": 190,
+      "destination_gold_warp_1_based": 1,
+      "active_in_ref364": true
+    },
+    {
+      "source": "Route46",
+      "x": 14,
+      "y": 5,
+      "gold_warp_1_based": 3,
+      "destination_map_id": 190,
+      "destination_gold_warp_1_based": 3,
+      "active_in_ref364": true
+    },
+    {
+      "source": "Route45",
+      "x": 2,
+      "y": 5,
+      "gold_warp_1_based": 1,
+      "destination_map_id": 99,
+      "destination_gold_warp_1_based": 1,
+      "active_in_ref364": false
+    }
+  ],
+  "rpp_registered_directional_routes_current": 4,
+  "rpp_registered_directional_routes_total_current": 164,
+  "additional_when_complete": 4,
+  "registered_routes_total_if_only_these_are_added": 168,
+  "required_field_moves": [
+    "Flash",
+    "Surf",
+    "Rock Smash",
+    "Dig",
+    "Escape Rope"
+  ],
+  "required_terrain_and_permissions": [
+    "directional ledges",
+    "up-walls",
+    "bicycle legality",
+    "paired cross-map warps",
+    "outdoor entrance origin persistence"
+  ],
+  "not_required_gold_absent": [
+    "Strength boulders",
+    "Cut obstacles",
+    "Whirlpool",
+    "Waterfall"
+  ],
+  "excluded_current_scope": [
+    "wild/fishing/rock-smash encounters",
+    "trainers",
+    "ordinary NPC",
+    "story flags/events",
+    "item balls",
+    "hidden items"
+  ],
+  "warning": "REF349 Stage1 staging manifests contain historical Route46 inactive markers and must not be used as REF364 live status",
+  "implementation_status": "NOT_IMPLEMENTED_BY_THIS_DOC_UPDATE",
+  "superseded_by": "docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md",
+  "ref365_user_rock_smash_scope": "deferred_no_rock_smash_move_or_breakable_rocks",
+  "status_note": "Historical REF364 contract only. REF365 candidate activates ID99; current scope excludes Rock Smash."
+}

@@ -1,3 +1,27 @@
+## CLEAN REF-365@ 最新交付决议（2026-11-10，严格遵守自动导出要求）
+- 以 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 为最高规范：从 REF-364 正式基线到 REF-365 累计变更同时包含游戏运行与 `tools/` 审计/测试，因此使用模式 A，两笔独立提交，单 ZIP 内 **3 份 patch + 2 份 TXT**。禁止把开发期双补丁交付规则覆盖正式 CLEAN；禁止替用户 Commit/Push。
+- 清理 `01` 仅适用于已安装 REF-365C 游戏修复、未安装随后的 Warp/Field Moves 门禁的工作区；`02` 从全部清理后状态撤下工具+文档（游戏保留），`git apply -R 02` 恢复工具+文档；`03` 从已核实的 REF-364 Git HEAD 到全部清理状态，**01 和 03 不叠加**。
+- `docs/CLEAN_REF365_DARK_CAVE_FINAL_ACCEPTANCE.md` 写明真实检查结果、历史失败、验收边界与使用命令；旧的 REF-365A／365C 开发交付条款均为历史记录。
+## REF-365C 后续新地图验收新增约束（2026-11-10；不改变导出项目要求）
+- 每次激活新地图、开通新 Warp，运行 `python tools/johto_warp_field_entry_gate.py --root .`。必须同步审查源/目标对象 Warp ordinal、源/目标坐标、实际到达分支、自动迈步、下一格地形、错误方向和相邻格，并核对 Bike/Surf/Flash/Dig 等实际公共入口是否分派到该地图。
+- 本工具冻结 REF-365C 65 图/168 Warp 历史库存并深入检查黑暗洞穴 8 方向；**历史其余路线未因此获得完整实机认证**。新增非 Dark Cave 地图不能仅填 JSON 不扩充相应语义审计，详情 `docs/REF365C_WARP_FIELD_ENTRY_GUARD_DEV.md`。本轮无 ASM 修改、版本不升、仍按自动导出的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 开发期两份互斥补丁交付。
+
+## REF-365A 开发补丁工作区基线纠正（2026-11-10）
+- 以用户上传 `REF-364.patch`（基线 `9b3609c5345248d09a6849a393019edbf7869a5e`）应用后的工作区为本轮 `01` 的前置状态。这个 patch 只含项目需求文档修改，**未安装 REF-365 游戏功能**；原交付 01 错误地以 REF-365 旧候选为前置状态，现已弃用。
+- `02` 从同一已核验干净 Git HEAD 到本轮 REF-365A 完整结果。开发包只含 01/02 两份互斥正向 `.patch`，不提供源码 ZIP、日志或正式清理包。Rock Smash 技能、碎岩石头及事件全部延后。
+- 不自行编译 ROM、Commit/Push；本轮只验证补丁应用及离线可执行审计，不把静态测试视为实机验收。`RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 优先于此处历史交付示例。
+
+# REF-365 黑暗洞穴开发候选交付规则（2026-11-09；覆盖下方 REF-364 规划条款）
+- **开发阶段、不是正式 CLEAN**：遵循当前分支导出的 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`（优先于本文件历史条款）。本轮显示开发版号 `REF-365A@`，从已确认 REF-364 Git HEAD 到本候选的累计补丁基线固定为 `9b3609c5345248d09a6849a393019edbf7869a5e`。仅交一个 ZIP，**里面严格只有两份互斥补丁**：01 为此前交付的 REF-365@ 开发候选→REF-365A@ 的候选纠正增量（只有用户实际已安装该候选时才适用），02 为上传的原始 REF-364 干净 HEAD 源码→REF-365A@ 的累计全量。二选一、不叠加；不附完整工程、附加报告、提交日志，不 Commit/Push。无实际手机 Worktree 证据时，不得声称 01 是用户当前已应用状态。
+- 完成本期 Gold Dark Cave **双区域同层**（Violet ID190 ↔ Blackthorn ID99）和 Route45 双向门口，Surf、Flash、Bike、跳崖、方向墙，以及 Dig／Escape Rope 的三户外入口锚点回程。活动 65 图、168 条 Warp。零 NPC／遭遇／剧情／道具事件。**用户本轮明确暂缓 Rock Smash：不放四块可碎石头、不实现技能或碎岩逻辑、不拿 Strength 替代。**原版 Rock Smash 坐标仅保留为未来参考，不纳入本期通过条件。
+- 源码测试只保证静态合同与有限 ASM 分支解释，不等于 RGBDS 链接或实机验收。真实 Termux 工作区先 `git status`、`git apply --check`，用户自己构建 Red/Blue/TEST Red/TEST Blue 并核对新 MAP 的 ROM0≥64B、ROMX 空间、手机往返与旧存档；验收后才能考虑正式 CLEAN 与提交。细节见 `docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
+## REF-364 后续专项需求｜Dark Cave 单层双区域 Warp 与 Field Moves（2026-11-09，仅规划）
+- 以 `docs/JOHTO_DARK_CAVE_TOPOLOGY_AND_FIELD_MOVES_REF364.md` 及 `docs/JOHTO_DARK_CAVE_TOPOLOGY_REF364.json` 为本洞后续施工及验收合同；已核 Gold `.asm/.blk/cave_collision.asm`：**桔梗侧 ID190 和烟墨侧 ID99 属同一层两个区域，不是 B1F/B2F**。要完成洞内 ID190 `(17,1)` `CAVE` 踩格 → ID99 `(3,25)`，以及返程 ID99 `(3,25)` `WARP_CARPET_DOWN` 朝下 → ID190 `(17,1)`，两端触发方式不对称，不许自动循环。
+- REF-364 实际只开 ID190 ↔ Route31/46 的四条方向路由（活动 64 地图、164 Warp）；内部 Gold ordinal1 未登记且碰撞封闭、ID99 未活动。未来 Route45 ↔ ID99 和 ID99 ↔ ID190 两对路线共新增四方向记录，完成前**不提前修改现行计数**，始终严格 Gold 1 基 / RPP 0 基 ordinal 对照。
+- 用户本阶段明确只做地形/进出洞口/Field Moves：Flash、Surf、跳崖、UP_WALL、Bike、Gold 原始四块 Rock Smash、Dig/离洞绳保存入洞来源与原路返回；Gold 无 Strength 推石对象，不得虚构。野怪/钓鱼/碎岩遇敌、NPC/训练师、剧情、道具球/隐藏物品不做。
+- 以后实施需要独立 ID99 30×36 碰撞、水格、洞内同层入口到达守卫、防弹回、Flash/Surf状态与存读档；Gold 原版逐格、Warp 双向、错误方向和回程负向审计，以及新 Red/Blue/TEST ROM/MAP、ROM0≥64B 和用户手机验收。此次只是文档和需求合同，不改运行代码、不升级 `REF-364@`、不自代 Commit/Push；已存在的 REF349 Stage1 静态资源的历史 `INACTIVE` 字段不代表当下 Route46 状态。
+
 ## CLEAN REF-364 TOOL-CLEANUP｜两轮工具审计一次提交（2026-11-09）
 - 最新输入是用户从 Termux `常规功能备份` 工作区导出的 `REF-364.patch`，声明 Git 基线 `d4e06edc1cd8d7c76b030c87fd34bc47a5237d24`。以该累计差异为本次单提交范围；不将历史已应用的第一轮/第二轮补丁重复叠加。
 - 本次正式清理三件套只有 01（已应用 `REF-364.patch` 的工作区→CLEAN 的文档增量）、02（该导出基线→CLEAN 的累计补丁）、03（完整中文单次 Commit 日志）；01/02 **互斥**，不制作工具反向隔离补丁。

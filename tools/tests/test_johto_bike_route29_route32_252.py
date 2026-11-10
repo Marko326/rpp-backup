@@ -35,7 +35,7 @@ class JohtoBikeCutSurf252(unittest.TestCase):
     def test_only_active_gold_gate_eligible_and_legacy_untouched(self):
         b=self.relief.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
         code='\n'.join(line.split(';',1)[0].strip() for line in b.splitlines() if line.split(';',1)[0].strip())
-        self.assertRegex(code, r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+dec a\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID\s+jp z, \.darkCaveBike\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
+        self.assertRegex(code, r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+dec a\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID\s+jp z, \.darkCaveBike\s+cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID\s+jp z, \.darkCaveBike\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
         self.assertIn('cp ROUTE_23',b)
         self.assertIn('cp INDIGO_PLATEAU',b)
         self.assertIn('ld hl, BikeRidingTilesets',b)
@@ -62,7 +62,7 @@ class JohtoBikeCutSurf252(unittest.TestCase):
 
     def test_negative_gate_identity_mutations_fail_contract(self):
         body=self.relief.split('IsBikeRidingAllowed::',1)[1].split('INCLUDE "data/bike_riding_tilesets.asm"',1)[0]
-        valid=re.compile(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+dec a\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID\s+jp z, \.darkCaveBike\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
+        valid=re.compile(r'cp JOHTO_RUNTIME_MAP_HANDLE\s+jr nz, \.legacyBike\s+ld a, \[wCurRegion\]\s+dec a\s+jr nz, \.legacyBike\s+ld a, \[wCurLocalMapID\]\s+cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID\s+jp z, \.darkCaveBike\s+cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID\s+jp z, \.darkCaveBike\s+cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID\s+jr z, \.allowed')
         for src in (body.replace('dec a ; Johto region=1; same Z flag as cp 1, saving one ROM0 byte','inc a ; tampered region test',1),
                     body.replace('cp JOHTO_ROUTE31_VIOLET_GATE_LOCAL_ID','cp JOHTO_GUIDE_GENTS_HOUSE_LOCAL_ID',1),
                     body.replace('jr nz, .legacyBike','jr z, .legacyBike',1)):

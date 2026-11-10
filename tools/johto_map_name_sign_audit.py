@@ -21,6 +21,7 @@ TOWN_MAP_HOST_EXCEPTIONS = {
     'JOHTO_BURNED_TOWER_1F_LOCAL_ID': ('Burned Tower', 'Ecruteak City'),
     'JOHTO_BURNED_TOWER_B1F_LOCAL_ID': ('Burned Tower', 'Ecruteak City'),
     'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID': ('Dark Cave', 'Route 31'),
+    'JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID': ('Dark Cave', 'Route 45'),
 }
 
 

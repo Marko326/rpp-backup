@@ -1,3 +1,13 @@
+## REF-365A@ 黑暗洞穴开发候选｜基于实际工作区的补丁说明
+
+本开发阶段只交一个 ZIP，内含两份互斥 `.patch`。这里的 01 以用户上传的 `REF-364.patch` **已应用**工作区为起点（此补丁为需求文档修改，不是 REF-365 功能版）；02 以 Git HEAD `9b3609c5345248d09a6849a393019edbf7869a5e` 干净源码为起点。**只能选择一个补丁，不能叠加。**
+
+使用前执行 `git status --short`、`git rev-parse HEAD`、`git apply --check 所选补丁.patch`。如果工作区已有本候选的部分文件或其他未记录修改，必须先核对差异，不强制覆盖。项目要求不允许 AI 自行编译 ROM 或 Commit/Push；用户通过本机 ROM/MAP/设备测试后再正式清理。
+
+本期接通黑暗洞穴 ID190↔ID99、ID99↔Route45，Surf/Flash/Bike/HOP/方向墙及 Dig/离洞绳来源；**Rock Smash 技能与四块碎岩石头全部延期，不实现。** 详见 `docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
+---
+
 ## REF-5.62.312 / DEV-314｜REF-311 测试合同与纵向门房共享运行逻辑
 
 - 基线：用户上传的 REF-311.zip；仅在该源码副本上增量修改。游戏版本提升为 REF-312，因为本轮改动了运行 ASM。

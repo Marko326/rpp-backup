@@ -1,3 +1,16 @@
+## CLEAN REF-365｜正式双提交准备（最新）
+- 交付模式 A：先功能提交，再工具／审计提交。游戏显示 `REF-365@`，目标是保持已实测 REF-365C 功能不变。用户自行检查工作区、选择清理增量或全量路线，执行 Git Commit/Push；AI 未替用户编译或提交。
+- 清理 `01` 从已应用 REF-365C **但未应用新的 Warp/Field Moves 审计门禁**的状态出发；`03` 从已声明 Git HEAD `9b3609c5345248d09a6849a393019edbf7869a5e` 出发。两者互斥；`02` 只在清理后的完整状态上做工具隔离，详细应用顺序见 `docs/CLEAN_REF365_DARK_CAVE_FINAL_ACCEPTANCE.md`。
+- 旧 REF-365A/B/C 开发说明仅留作历史。主迁移审计和全仓库 pytest 存在过期合同失败，Dig/离洞绳存读档及四版 ROM/MAP 仍待用户完成，Rock Smash 延期。
+> **REF-365B@ 开发候选（2026-11-10）**：依据用户真实 REF-365A 工作区编译日志，修复黑暗洞穴 ID99 地图索引的非法 `sbc hl,de` 指令，改用合法 16 位加法和位移；静态审计增加 30×36 全坐标与非法指令错误注入防回归。Rock Smash 仍延期；未经用户 RGBDS 重新构建、MAP 和手机验收，不视为 CLEAN。详情：`docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
+## REF-365A@ 实际工作区补丁说明（2026-11-10）
+- `01` 适用于 **已应用用户上传 `REF-364.patch`** 的工作区（仅文档需求改动），不是已安装 REF-365 的状态；`02` 适用于干净 `9b3609c5345248d09a6849a393019edbf7869a5e`。不可叠加。实际应用前先 `git apply --check`。
+- 本期 Rock Smash 技能及四块可碎岩石全部延期；开发期未 ROM/手机验收，不自行 Commit/Push。
+
+## REF-365A 研发候选提醒（2026-11-09）
+Johto 黑暗洞穴现在有桔梗侧 ID190 与烟墨侧 ID99 **同一层两片区域**，内部 Gold 双向洞口与 Route45 外部双向洞口，65 图／168 Warp；Surf／Flash／Bike／跳崖／Dig／离洞绳代码已经接入。**Rock Smash 尚未实现，本轮按用户要求不放石头也不做碎岩逻辑**，野外遭遇／NPC／剧情不做。此版本仍需真实 RGBDS/ROM/MAP/手机验收，项目交付规则及安装见 `PROJECT_DELIVERY_RULES.md` 和 `docs/REF365_DARK_CAVE_BLACKTHORN_DEV.md`。
+
 # CLEAN REF-364 TOOL-CLEANUP｜两轮离线工具清理正式收口
 
 - 按用户最新 Termux 导出补丁 `REF-364.patch`（基线 `d4e06edc1cd8d7c76b030c87fd34bc47a5237d24`）一次 Git 提交，不再叠加先前的 REV 补丁；01 工作区文档增量与 02 HEAD 累计补丁二选一。

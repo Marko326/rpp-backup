@@ -371,6 +371,12 @@
       "role": "named",
       "name": "Dark Cave",
       "town_map_name": "Route 31"
+    },
+    {
+      "id": "JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID",
+      "role": "named",
+      "name": "Dark Cave",
+      "town_map_name": "Route 45"
     }
   ]
 }
