@@ -1071,6 +1071,8 @@ JohtoBurnedTowerB1F_Coll:: INCBIN "gfx/tilesets/johto_burned_tower_b1f.tilecoll"
 ASSERT @ - JohtoBurnedTowerB1F_Coll == 5
 ; Cave uses an exact 40x36 spatial Gold mask, not shared visual IDs.
 JohtoDarkCave_Coll:: db $ff
+; 1F Ice Path walking pilot: ROMX Gold role table handles all passability.
+JohtoIcePath_Coll:: db $ff
 ; Route33 movement uses exact Gold 16x16 spatial collision instead of ambiguous
 ; shared 8x8 visual IDs. The unbanked tileset pointer stays valid.
 JohtoIlexForest_Coll:: INCBIN "gfx/tilesets/johto_ilex_forest.tilecoll"

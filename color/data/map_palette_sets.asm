@@ -331,10 +331,14 @@ MapPaletteSets:
 ; still selects FadePal2 for DARKNESS and zero selects lit NITE.
     db CAVE_GRAY, CAVE_RED, CAVE_GREEN, CAVE_BLUE
     db CAVE_YELLOW, CAVE_BROWN, CAVE_LIGHT_BLUE, CRYS_TEXTBOX
+; JOHTO_ICE_PATH (41): Gold Ice Path CAVE/NITE color family, independent of
+; Kanto ICE_CAVERN.  The tile palette assignments below are Gold's 96 IDs.
+    db CAVE_GRAY, CAVE_RED, CAVE_GREEN, CAVE_BLUE
+    db CAVE_YELLOW, CAVE_BROWN, CAVE_LIGHT_BLUE, CRYS_TEXTBOX
 MapPaletteSetsEnd::
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
 ASSERT JOHTO_UNION_CAVE == 31
 ASSERT JOHTO_MODERN == 32
-ASSERT MapPaletteSetsEnd - MapPaletteSets == (JOHTO_DARK_CAVE + 1) * 8
+ASSERT MapPaletteSetsEnd - MapPaletteSets == (JOHTO_ICE_PATH + 1) * 8

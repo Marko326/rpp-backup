@@ -332,6 +332,17 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_45_LOCAL_ID
+    ; REF-367F IcePath 1F outdoors: Route44 Gold #1 <-> 1F Gold #1;
+    ; Blackthorn City Gold #7 <-> 1F Gold #2.  B1F ladders remain sealed.
+    db MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ROUTE_44_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_BLACKTHORN_CITY_LOCAL_ID
+    ; REF-367K: two reciprocal 1F <-> B1F Gold LADDER pairs, not the B2F routes.
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 6, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -568,6 +579,8 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 21, MUSIC_DUNGEON2, 0 ; slot62 Burned Tower B1F, no Fly
     johto_map_profile 0, 4, MUSIC_DUNGEON2, 0 ; slot63 Dark Cave Violet entrance, indoor
     johto_map_profile 0, 41, MUSIC_DUNGEON2, 0 ; slot64 Dark Cave Blackthorn side -> Route45
+    johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot65 IcePath1F Gold landmark, not Route44 two separate walk-only galleries
+    johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot66 Ice Path B1F, same Gold landmark
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -881,6 +894,10 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .darkCaveClosedEdge
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, .darkCaveClosedEdge
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jp z, .darkCaveClosedEdge
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jp z, .darkCaveClosedEdge ; actual B1F 20x36 bounds enforced by Gold role grid
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33ClosedEdge
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1420,6 +1437,10 @@ JohtoPilotIsVerticalGatePairMap314::
     ret z
     cp JOHTO_ROUTE_45_LOCAL_ID ; REF-365 exterior Gold cave-mouth profiles
     ret z
+    cp JOHTO_ROUTE_44_LOCAL_ID ; REF-367F Gold IcePath1F cave entrance
+    ret z
+    cp JOHTO_BLACKTHORN_CITY_LOCAL_ID ; REF-367F Gold IcePath1F cave entrance
+    ret z
     cp JOHTO_ROUTE_29_LOCAL_ID
     ret z
     cp JOHTO_ROUTE_43_LOCAL_ID
@@ -1504,6 +1525,10 @@ JohtoPilotGateArrivalStep::
     ; Arrive stationary facing the original UP approach; do not force a
     ; direction or simulate a step. DOWN is only the voluntary exit input.
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
+    ret z
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID ; Gold indoor DOWN carpet / LADDER arrival stands
+    ret z
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID ; Gold LADDER arrivals stand still
     ret z
     ; REF-365C: the internal Blackthorn -> Violet return lands on Gold CAVE
     ; at (17,1), one cell north of safe FLOOR (17,2). Step DOWN exactly once.
@@ -2011,6 +2036,10 @@ JohtoPilotGateDoorWarpMatched::
     ; Gold cave warps are mixed. LADDER warps fire on the step that enters
     ; the tile; WARP_CARPET_DOWN only arms standing state and waits for DOWN.
     ; This hook runs after the exact registered warp coordinate has matched.
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jr z, .icePathLadderOrCarpet367K
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jr z, .unionCaveLadder342
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jr z, .unionCave1FWarpMatched342
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
@@ -2053,8 +2082,15 @@ JohtoPilotGateDoorWarpMatched::
     cp 25
     jp z, .yesDoor
     ret
+.icePathLadderOrCarpet367K
+    ; Outside carpets 0/1 are directional. Gold LADDER 2/3 is STEP_IN.
+    ld a, [wXCoord]
+    cp 37
+    jr z, .unionCaveLadder342
+    ld e, 1
+    ret
 .unionCave1FWarpMatched342
-    ; 1F: (17,3)/(17,31) are WARP_CARPET_DOWN;
+    ; (17,3)/(17,31) are WARP_CARPET_DOWN;
     ; (5,19)/(3,33) are LADDER.
     ld a, [wXCoord]
     cp 17
@@ -2241,6 +2277,8 @@ JohtoPilotGateExteriorCollisionAllowed::
     jp z, JohtoDarkCaveDownCarpet349
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, JohtoDarkCaveDownCarpet349
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jp z, JohtoIcePath1FDownCarpet367F
     cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
     jr nz, .notBurnedExit
     callab JohtoBurnedTower1FDownCarpet
@@ -2434,6 +2472,8 @@ JohtoPilotGateCollisionExitAllowed::
     jp z, JohtoDarkCaveDownCarpet349
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, JohtoDarkCaveDownCarpet349
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jp z, JohtoIcePath1FDownCarpet367F
     ld a, [wCurMap]
     cp JOHTO_RUNTIME_MAP_HANDLE
     ret nz
@@ -2799,5 +2839,29 @@ JohtoDarkCaveDownCarpet349::
     cp 25
     ret nz
 .allow
+    ld e, 1
+    ret
+
+; REF-367F IcePath1F has two distinct Gold DOWN carpets.  Never trigger
+; when entering them or when turning sideways; no active B1F stair.
+JohtoIcePath1FDownCarpet367F::
+    ld e, 0
+    ld a, [wPlayerDirection]
+    cp PLAYER_DIR_DOWN
+    ret nz
+    ld a, [wXCoord]
+    cp 4
+    jr nz, .east
+    ld a, [wYCoord]
+    cp 19
+    jr z, .open
+    ret
+.east
+    cp 36
+    ret nz
+    ld a, [wYCoord]
+    cp 27
+    ret nz
+.open
     ld e, 1
     ret

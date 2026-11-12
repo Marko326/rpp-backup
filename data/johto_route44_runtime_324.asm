@@ -50,7 +50,8 @@ ASSERT BANK(JohtoRoute44RuntimeHeader) == BANK(JohtoRoute44EastBlackthornPreview
 
 JohtoRoute44RuntimeObjects::
     db $71 ; Gold Route44 map_attributes border: rock, not generic $05 trees
-    db 0   ; IcePath cave entrance is closed until IcePath becomes active
+    db 1   ; Ice Path 1F Gold cave mouth (56,7), source ordinal0
+    db 7, 56, 0, JOHTO_REGISTERED_WARP_SELECTOR
     db 0   ; no signs required for geometry-only expansion
     db 0   ; no trainers/NPCs/items/story events in this phase
 

@@ -40,8 +40,9 @@ WarpTileIDPointers:
     dw JohtoBurnedTower1FWarpTileIDs ; ID38: Gold bottom carpets require DOWN
     dw JohtoBurnedTowerB1FWarpTileIDs ; ID39: only the registered ladder is immediate
 	dw JohtoDarkCaveWarpTileIDs ; ID40: DOWN collision carpet only, never STEP_ON
+	dw JohtoIcePathWarpTileIDs ; ID41: DOWN collision carpets, not STEP_ON
 WarpTileIDPointersEnd:
-ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_DARK_CAVE + 1) * 2
+ASSERT WarpTileIDPointersEnd - WarpTileIDPointers == (JOHTO_ICE_PATH + 1) * 2
 OverworldWarpTileIDs:
 	db 27,88,$FF
 ForestGateWarpTileIDs:
@@ -125,3 +126,5 @@ JohtoBurnedTower1FWarpTileIDs: db $ff
 JohtoBurnedTowerB1FWarpTileIDs: db $ff
 
 JohtoDarkCaveWarpTileIDs: db $ff
+
+JohtoIcePathWarpTileIDs: db $ff ; use exact directional registered warp collision

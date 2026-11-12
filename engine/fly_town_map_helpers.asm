@@ -995,6 +995,10 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotRoute31Name
     db 80, 140 ; slot64 Dark Cave Blackthorn side follows Route45 landmark
     dw JohtoPilotRoute45Name
+    db 54, 138 ; slot65 Ice Path 1F Gold landmark
+    dw JohtoPilotIcePathName
+    db 54, 138 ; slot66 Ice Path B1F shares 1F landmark
+    dw JohtoPilotIcePathName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -1019,6 +1023,8 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 21 ; slot62 Burned Tower B1F -> Ecruteak City
     db 4  ; slot63 Dark Cave Violet side -> Route31
     db 41 ; slot64 Dark Cave Blackthorn side -> Route45
+    db 38 ; slot65 Ice Path 1F -> Gold IcePath browse index
+    db 38 ; slot66 Ice Path B1F Gold landmark
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1169,6 +1175,7 @@ JohtoPilotMahoganyName:: db "Mahogany Town@"
 JohtoPilotRoute43Name:: db "Route 43@"
 JohtoPilotLakeOfRageName:: db "Lake of Rage@"
 JohtoPilotRoute44Name:: db "Route 44@"
+JohtoPilotIcePathName:: db "Ice Path@"
 JohtoPilotBlackthornName:: db "Blackthorn City@"
 JohtoPilotRoute45Name:: db "Route 45@"
 JohtoPilotRoute46Name:: db "Route 46@"

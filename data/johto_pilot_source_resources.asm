@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 65
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 67
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -94,6 +94,10 @@ JohtoDarkCaveVioletGoldBlocks:: INCBIN "maps/johto_pilot/DarkCaveVioletEntrance.
 ASSERT @ - JohtoDarkCaveVioletGoldBlocks == JOHTO_DARK_CAVE_WIDTH * JOHTO_DARK_CAVE_HEIGHT
 JohtoDarkCaveBlackthornGoldBlocks:: INCBIN "maps/johto_pilot/DarkCaveBlackthornEntrance.gold.blk"
 ASSERT @ - JohtoDarkCaveBlackthornGoldBlocks == JOHTO_DARK_CAVE_BLACKTHORN_WIDTH * JOHTO_DARK_CAVE_BLACKTHORN_HEIGHT
+JohtoIcePath1FSourceGoldBlocks:: INCBIN "maps/johto_ice_path_stage/IcePath1F.gold.blk"
+ASSERT @ - JohtoIcePath1FSourceGoldBlocks == JOHTO_ICE_PATH_1F_WIDTH * JOHTO_ICE_PATH_1F_HEIGHT
+JohtoIcePathB1FSourceGoldBlocks367K:: INCBIN "maps/johto_ice_path_stage/IcePathB1F.gold.blk"
+ASSERT @ - JohtoIcePathB1FSourceGoldBlocks367K == 10 * 18
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -304,6 +308,12 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID, JOHTO_DARK_CAVE_BLACKTHORN_WIDTH, JOHTO_DARK_CAVE_BLACKTHORN_HEIGHT
     dw JohtoDarkCaveBlackthornGoldBlocks
     db BANK(JohtoDarkCaveBlackthornGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, JOHTO_ICE_PATH_1F_WIDTH, JOHTO_ICE_PATH_1F_HEIGHT
+    dw JohtoIcePath1FSourceGoldBlocks
+    db BANK(JohtoIcePath1FSourceGoldBlocks)
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 10, 18
+    dw JohtoIcePathB1FSourceGoldBlocks367K
+    db BANK(JohtoIcePathB1FSourceGoldBlocks367K)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 

@@ -60,6 +60,11 @@ IsBikeRidingAllowed::
     jr z, .allowed
     cp JOHTO_ROUTE_42_ECRUTEAK_GATE_LOCAL_ID
     jr z, .allowed
+    ; REF-367J: Ice Path 1F is Gold CAVE; mounting needs Gold FLOOR permission.
+	cp JOHTO_ICE_PATH_1F_LOCAL_ID
+	jp z, .icePathBike
+	cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+	jp z, .icePathB1FBike
     ; ROM0-neutral permit mask: IDs64..67 + 72..75. At this stage
     ; 64..67 are town/Route43 and its two Gold gates; 72/73 outdoors,
     ; 74 is Route29/46 Gold gate, 75 is inactive. Re-review before ID75 activation.
@@ -94,6 +99,19 @@ IsBikeRidingAllowed::
 	cp 1
 	jr z, .allowed
 	callab JohtoDarkCaveBikeFloorAllowed349
+	ret
+.icePathBike
+	; Keep an already-mounted bike on cave entry; only new mounting checks FLOOR.
+	ld a, [wWalkBikeSurfState]
+	cp 1
+	jr z, .allowed
+	callab JohtoIcePath1FBikeFloorAllowed367J
+	ret
+.icePathB1FBike
+	ld a, [wWalkBikeSurfState]
+	cp 1
+	jr z, .allowed
+	callab JohtoIcePathB1FBikeFloorAllowed367K
 	ret
 INCLUDE "data/bike_riding_tilesets.asm"
 

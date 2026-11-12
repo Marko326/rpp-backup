@@ -297,6 +297,10 @@ UpdateMapNameSign::
     jp z, .johtoDarkCave
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, .johtoDarkCave
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jp z, .johtoIcePath
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jp z, .johtoIcePathB1F
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -398,6 +402,14 @@ UpdateMapNameSign::
 .johtoDarkCave
     ld hl, .JohtoDarkCaveName
     jr .johtoResolved
+.johtoIcePath
+    ld hl, .JohtoIcePathName
+    ld b, 1 ; 1F: reuse the existing Kanto map-sign floor suffix path
+    ret
+.johtoIcePathB1F
+    ld hl, .JohtoIcePathName
+    ld b, $81 ; B1F uses the existing Kanto basement floor suffix
+    ret
 .johtoRoute36
 	ld hl, .JohtoRoute36Name
 	jr .johtoResolved
@@ -1192,6 +1204,7 @@ UpdateMapNameSign::
 .JohtoSlowpokeWellName: db "Slowpoke Well@"
 .JohtoBurnedTowerName: db "Burned Tower@"
 .JohtoDarkCaveName: db "Dark Cave@"
+.JohtoIcePathName: db "Ice Path@"
 .JohtoRoute33Name: db "Route 33@"
 .JohtoRoute32Name:      db "Route 32@"
 .JohtoRuinsName: db "Ruins Of Alph@"

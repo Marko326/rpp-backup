@@ -146,6 +146,10 @@ JohtoHeaderDescriptors::
     db BANK(JohtoDarkCaveRuntimeHeader)
     dw JohtoDarkCaveBlackthornRuntimeHeader
     db BANK(JohtoDarkCaveBlackthornRuntimeHeader)
+    dw JohtoIcePath1FRuntimeHeader367E
+    db BANK(JohtoIcePath1FRuntimeHeader367E)
+    dw JohtoIcePathB1FRuntimeHeader367K
+    db BANK(JohtoIcePathB1FRuntimeHeader367K)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

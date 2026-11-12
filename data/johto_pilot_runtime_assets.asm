@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 65
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 67
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -336,6 +336,14 @@ JohtoDarkCaveBlackthornRuntimeDescriptor::
     db JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID, JOHTO_DARK_CAVE, JOHTO_DARK_CAVE_BLACKTHORN_WIDTH, JOHTO_DARK_CAVE_BLACKTHORN_HEIGHT
     dw JohtoDarkCaveBlackthornRuntimeBlocks
     db BANK(JohtoDarkCaveBlackthornRuntimeBlocks)
+JohtoIcePath1FRuntimeDescriptor::
+    db JOHTO_ICE_PATH_1F_LOCAL_ID, JOHTO_ICE_PATH, JOHTO_ICE_PATH_1F_WIDTH, JOHTO_ICE_PATH_1F_HEIGHT
+    dw JohtoIcePath1FRuntimeBlocks367E
+    db BANK(JohtoIcePath1FRuntimeBlocks367E)
+JohtoIcePathB1FRuntimeDescriptor::
+    db JOHTO_ICE_PATH_B1F_LOCAL_ID, JOHTO_ICE_PATH, 10, 18
+    dw JohtoIcePathB1FRuntimeBlocks367K
+    db BANK(JohtoIcePathB1FRuntimeBlocks367K)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -406,6 +414,10 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .burnedTowerB1F
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, .darkCaveBlackthorn
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jp z, .icePath1F
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jp z, .icePathB1F
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, .darkCave
     cp JOHTO_ROUTE_33_LOCAL_ID
@@ -506,6 +518,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .darkCaveBlackthorn
     ld hl, JohtoDarkCaveBlackthornRuntimeDescriptor
+    jp .valid
+.icePath1F
+    ld hl, JohtoIcePath1FRuntimeDescriptor
+    jp .valid
+.icePathB1F
+    ld hl, JohtoIcePathB1FRuntimeDescriptor
     jp .valid
 .southAzaleaTown
     ld hl, JohtoSouthAzaleaTownDescriptor

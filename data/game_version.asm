@@ -75,4 +75,4 @@ GameVersionText::
 	; REF-362: copy trainer exit tile IDs only; preserve battle screen-coordinate CGB attributes.
 	; REF-363: use the same palette-safe 7-row atomic tile-only refresh for both trainer exits.
 	; REF-364: dedupe each Pokédex habitat encounter group before writing wBuffer.
-	db "REF-366@"
+	db "REF-367@"

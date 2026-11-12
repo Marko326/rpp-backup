@@ -30,6 +30,10 @@ JohtoOverworldSouthLandDecision::
     jp z, .darkCave
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, .darkCave
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jp z, .icePath1F
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jp z, .icePathB1F
     ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
     ; The generic Gold role can otherwise treat the door as a solid wall.
     ld a, [wCurRegion]
@@ -147,7 +151,7 @@ JohtoOverworldSouthLandDecision::
     callab HandleLedges
     ld a, [wd736]
     bit 6, a
-    jr nz, .allowJump
+    jp nz, .allowJump
     callab JohtoWestSeaSpatialStep
     ret
 .eastMap
@@ -176,6 +180,14 @@ JohtoOverworldSouthLandDecision::
     bit 6, a
     jr nz, .allowJump
     callab JohtoBurnedTowerB1FLandDecision
+    ret
+.icePath1F
+    ; Gold ICE temporarily behaves as WALKABLE FLOOR. No auto-slide.
+    callab JohtoIcePath1FLandDecision367F
+    ret
+.icePathB1F
+    ; B2F PIT and lower stairs remain sealed; no Strength push yet.
+    callab JohtoIcePathB1FLandDecision367K
     ret
 .darkCave
     callab HandleLedges

@@ -3429,6 +3429,14 @@ SECTION "Johto Dark Cave Violet", ROMX
 INCLUDE "data/johto_dark_cave_stage/REF349_stage2_runtime.asm"
 INCLUDE "engine/johto_dark_cave_stage2.asm"
 
+; REF-367F: live 1F only. Ice walks like FLOOR; basement ladders remain closed.
+; Standalone floating ROMX bank avoids ROM0 art/collision and crowded banks.
+SECTION "Johto Ice Path 1F Walk Pilot 367F", ROMX
+INCLUDE "data/johto_ice_path_stage/ice_path_1f_runtime_367e.asm"
+
+SECTION "Johto Ice Path B1F Walk Pilot 367K", ROMX
+INCLUDE "data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm"
+
 ; REF-347 1F + REF-348 B1F independent Gold runtime, no story objects.
 SECTION "Johto Burned Tower 1F", ROMX
 INCLUDE "data/johto_burned_tower/REF347_1f_runtime.asm"

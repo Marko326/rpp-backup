@@ -52,8 +52,10 @@ Tilesets:
 	; B1F uses Gold CAVE / DAY artwork but must be STATIC: CAVE animates rock tile $14.
 	tileset JohtoBurnedTowerB1F_Block, JohtoBurnedTowerB1F_GFX, JohtoBurnedTowerB1F_Coll, $FF,$FF,$FF, $FF, INDOOR
 	tileset JohtoDarkCave_Block, JohtoDarkCave_GFX, JohtoDarkCave_Coll, $FF,$FF,$FF,$FF, INDOOR
+	; Static 1F Gold art; no automatic ICE movement until a later candidate.
+	tileset JohtoIcePath1FGoldBlocks367E, JohtoIcePath1FGoldGFX367E, JohtoIcePath_Coll, $FF,$FF,$FF,$FF, INDOOR
 TilesetsEnd::
-ASSERT TilesetsEnd - Tilesets == (JOHTO_DARK_CAVE + 1) * 12
+ASSERT TilesetsEnd - Tilesets == (JOHTO_ICE_PATH + 1) * 12
 ASSERT JOHTO_PILOT == 28
 ASSERT JOHTO_HOUSE == 29
 ASSERT JOHTO_GATE == 30
@@ -76,3 +78,6 @@ ASSERT BANK(JohtoPilot_Coll) == 0
 
 ASSERT BANK(JohtoDarkCave_Block) == BANK(JohtoDarkCave_GFX)
 ASSERT BANK(JohtoDarkCave_Coll) == 0
+
+ASSERT BANK(JohtoIcePath1FGoldBlocks367E) == BANK(JohtoIcePath1FGoldGFX367E)
+ASSERT BANK(JohtoIcePath_Coll) == 0

@@ -1368,6 +1368,8 @@ JohtoActiveGSCMusic::
     db MUSIC_GBP_GSC_BURNED_TOWER ; slot62 Burned Tower B1F (Gold MUSIC_BURNED_TOWER)
     db MUSIC_GBP_GSC_DARK_CAVE ; slot63 Dark Cave Violet entrance, Gold MUSIC_DARK_CAVE
     db MUSIC_GBP_GSC_DARK_CAVE ; slot64 Dark Cave Blackthorn entrance, same Gold MUSIC_DARK_CAVE
+    db MUSIC_GBP_GSC_UNION_CAVE ; slot65 Ice Path 1F, interim cave music until original Ice Path theme exists
+    db MUSIC_GBP_GSC_UNION_CAVE ; slot66 Ice Path B1F temporary cave theme
 JohtoActiveGSCMusicEnd::
 ASSERT JohtoActiveGSCMusicEnd - JohtoActiveGSCMusic == NUM_JOHTO_ACTIVE_MAPS
 
