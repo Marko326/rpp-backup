@@ -377,6 +377,18 @@
       "role": "named",
       "name": "Dark Cave",
       "town_map_name": "Route 45"
+    },
+    {
+      "id": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "role": "named",
+      "name": "Ice Path",
+      "town_map_name": "Ice Path"
+    },
+    {
+      "id": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "role": "named",
+      "name": "Ice Path",
+      "town_map_name": "Ice Path"
     }
   ]
 }

@@ -87,13 +87,15 @@ def audit(root:Path,gold_root:Path|None=None)->dict:
    ck(name+'_warp_role_exact',all(actual[y*w+x]==role for x,y,role in spec['warps']))
    ck(name+'_all_coordinate_bounds',all(0<=x<w and 0<=y<h for x,y,_ in spec['warps']))
   constants=load('constants/region_map_constants.asm')
-  ck('65_active_maps','DEF NUM_JOHTO_ACTIVE_MAPS EQU 65' in constants)
+  # The global registry grew after REF-365; keep exact current cardinality
+  # while retaining every Dark Cave-specific direction/ordinal/Gold check.
+  ck('current_67_active_maps','DEF NUM_JOHTO_ACTIVE_MAPS EQU 67' in constants)
   route=load('engine/johto_pilot_runtime.asm')
   warp=route.split('JohtoRegisteredWarpRoutes::')[1].split('JohtoRegisteredWarpRoutesEnd::')[0]
   parsed=[(m.group(1),int(m.group(2)),m.group(3)) for m in re.finditer(
     r'(?m)^\s*db MAP_REGION_JOHTO, (JOHTO_\w+_LOCAL_ID), (\d+), MAP_REGION_JOHTO, (JOHTO_\w+_LOCAL_ID)',warp)]
   ck('eight_cave_registered_routes',all(x in parsed for x in ROUTES))
-  ck('historic_168_plus_four_reviewed_ruins_routes',len(parsed)==172 and len({r[:2] for r in parsed})==172)
+  ck('current_180_unique_registered_routes',len(parsed)==180 and len({r[:2] for r in parsed})==180)
   for a,b,c in ROUTES:
    ck('warp_'+a+'_'+str(b),any(x==a and y==b and z==c for x,y,z in parsed))
   vio=load('data/johto_dark_cave_stage/REF349_stage2_runtime.asm')

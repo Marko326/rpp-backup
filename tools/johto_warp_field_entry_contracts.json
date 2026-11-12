@@ -215,6 +215,142 @@
         28
       ],
       "new_route_review": true
+    },
+    {
+      "name": "route44_into_ice1f",
+      "from": "JOHTO_ROUTE_44_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "landing": [
+        4,
+        19
+      ],
+      "departure": [
+        56,
+        7
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice1f_to_route44",
+      "from": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_ROUTE_44_LOCAL_ID",
+      "landing": [
+        56,
+        7
+      ],
+      "departure": [
+        4,
+        19
+      ],
+      "step": "DOWN",
+      "new_route_review": true,
+      "after_step": [
+        56,
+        8
+      ]
+    },
+    {
+      "name": "blackthorn_into_ice1f",
+      "from": "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "landing": [
+        36,
+        27
+      ],
+      "departure": [
+        36,
+        9
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice1f_to_blackthorn",
+      "from": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_BLACKTHORN_CITY_LOCAL_ID",
+      "landing": [
+        36,
+        9
+      ],
+      "departure": [
+        36,
+        27
+      ],
+      "step": "DOWN",
+      "new_route_review": true,
+      "after_step": [
+        36,
+        10
+      ]
+    },
+    {
+      "name": "ice1f_north_ladder_to_b1f",
+      "from": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "ordinal": 2,
+      "to": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "landing": [
+        3,
+        15
+      ],
+      "departure": [
+        37,
+        5
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "iceb1f_north_return_to_1f",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "landing": [
+        37,
+        5
+      ],
+      "departure": [
+        3,
+        15
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice1f_south_ladder_to_b1f",
+      "from": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "ordinal": 3,
+      "to": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "landing": [
+        5,
+        25
+      ],
+      "departure": [
+        37,
+        13
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "iceb1f_south_return_to_1f",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 6,
+      "to": "JOHTO_ICE_PATH_1F_LOCAL_ID",
+      "landing": [
+        37,
+        13
+      ],
+      "departure": [
+        5,
+        25
+      ],
+      "step": "NONE",
+      "new_route_review": true
     }
   ],
   "must_stay_stationary": [
@@ -556,5 +692,26 @@
     185,
     190
   ],
-  "new_map_activation_reviews": []
+  "new_map_activation_reviews": [
+    {
+      "stable_id": 70,
+      "bike_policy": "FORBID_INDOOR",
+      "surf_policy": "NO_WATER",
+      "flash_policy": "NOT_APPLICABLE",
+      "warp_arrival_review": "Ice Path 1F Gold interior carpets remain still; Route44/Blackthorn exterior return steps DOWN one cell",
+      "source_reference": "docs/REF367A_ICE_PATH_GOLD_SOURCE_CONTRACT.json:IcePath1F",
+      "audit_test_file": "tools/tests/test_johto_ice_path_1f_367e.py",
+      "audit_test_function": "test_ice_path_1f_walk_only_new_map_review"
+    },
+    {
+      "stable_id": 95,
+      "bike_policy": "FLOOR_ONLY_CAVE",
+      "surf_policy": "NO_WATER",
+      "flash_policy": "NOT_APPLICABLE",
+      "warp_arrival_review": "B1F Gold #1/#7 STEP_IN to 1F Gold #3/#4; both arrival ladders stationary. PIT #3-6 and lower B2F #2/#8 sealed",
+      "source_reference": "docs/REF367A_ICE_PATH_GOLD_SOURCE_CONTRACT.json:IcePathB1F",
+      "audit_test_file": "tools/tests/test_johto_ice_path_b1f_367k.py",
+      "audit_test_function": "test_ice_path_b1f_new_map_review"
+    }
+  ]
 }

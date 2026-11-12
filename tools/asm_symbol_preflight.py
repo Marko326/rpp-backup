@@ -54,10 +54,11 @@ def without_comment(line: str) -> str:
 
 
 def check_text(text: str, filename: str = '<source>') -> list[str]:
-    """Report undefined local branches; avoid errors from macro template bodies."""
+    """Report bad local branches and obvious bare prose in RGBDS source."""
     scopes = {}
     global_scope = '<file-start>'
     macro_depth = 0
+    syntax_issues = []
     for line_number, raw in enumerate(text.splitlines(), 1):
         line = without_comment(raw).strip()
         if MACRO_START.match(line):
@@ -67,6 +68,13 @@ def check_text(text: str, filename: str = '<source>') -> list[str]:
             if MACRO_END.match(line):
                 macro_depth -= 1
             continue
+        # An unquoted parenthesized sentence at statement start is not RGBDS
+        # assembly.  REF-367F shipped one after a missing ';' comment marker.
+        # Keep this narrow: complete RGBDS syntax still requires rgbasm.
+        if line.startswith('('):
+            syntax_issues.append(
+                f"{filename}:{line_number}: invalid bare '(' (missing ';' before comment?): {line}"
+            )
         global_match = GLOBAL_DEF.match(line)
         if global_match:
             global_scope = global_match.group(1)
@@ -78,7 +86,7 @@ def check_text(text: str, filename: str = '<source>') -> list[str]:
             name = branch.group(2) or branch.group(4)
             if name and '\\' not in name:
                 scopes.setdefault(global_scope, {'labels': set(), 'refs': []})['refs'].append((line_number, name, line))
-    errors = []
+    errors = list(syntax_issues)
     for scope, details in scopes.items():
         for line_number, name, statement in details['refs']:
             if name not in details['labels']:

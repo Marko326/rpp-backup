@@ -107,3 +107,44 @@ def test_ref365c_entrance_roles_prevent_wrong_side_auto_step():
     assert violet[2*40+17] == 0  # legal FLOOR one tile south
     assert blackthorn[25*30+3] == 6  # return carpet, collision DOWN only
     assert blackthorn[26*30+3] == 1  # never auto-step south into WALL
+
+
+def test_current_global_registry_guard_rejects_stale_ice_path_map_count(monkeypatch):
+    # Fault injection: the Gold Dark Cave checks must still reject a wrong global
+    # registry count even though REF-365 itself was built at 65 active maps.
+    original = Path.read_text
+    def broken_read(path, *args, **kwargs):
+        result = original(path, *args, **kwargs)
+        if path.as_posix().endswith('constants/region_map_constants.asm'):
+            assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 67' in result
+            return result.replace('DEF NUM_JOHTO_ACTIVE_MAPS EQU 67',
+                                  'DEF NUM_JOHTO_ACTIVE_MAPS EQU 66', 1)
+        return result
+    with monkeypatch.context() as ctx:
+        ctx.setattr(Path, 'read_text', broken_read)
+        result = audit(ROOT)
+    assert 'current_67_active_maps' in result['errors']
+
+
+def test_current_global_warp_gate_rejects_dropped_route(monkeypatch):
+    # Fault injection: removing any one registered route must fail the strict
+    # length/unique-source check (other route-specific checks remain intact).
+    original = Path.read_text
+    def broken_read(path, *args, **kwargs):
+        result = original(path, *args, **kwargs)
+        if path.as_posix().endswith('engine/johto_pilot_runtime.asm'):
+            before, sep, after = result.partition('JohtoRegisteredWarpRoutes::')
+            assert sep
+            table, sep2, suffix = after.partition('JohtoRegisteredWarpRoutesEnd::')
+            assert sep2
+            lines = table.splitlines(keepends=True)
+            candidates = [i for i, line in enumerate(lines)
+                          if line.lstrip().startswith('db MAP_REGION_JOHTO, JOHTO_')]
+            assert len(candidates) == 180, len(candidates)
+            lines.pop(candidates[-1])
+            return before + sep + ''.join(lines) + sep2 + suffix
+        return result
+    with monkeypatch.context() as ctx:
+        ctx.setattr(Path, 'read_text', broken_read)
+        result = audit(ROOT)
+    assert 'current_180_unique_registered_routes' in result['errors']

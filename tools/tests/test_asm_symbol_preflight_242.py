@@ -45,6 +45,15 @@ class ASMPreflight242Tests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn('First.done', errors[0])
 
+    def test_ref367f_missing_comment_marker_is_rejected(self):
+        source = (ROOT / 'engine/johto_pilot_runtime.asm').read_text(encoding='utf-8')
+        correct = '    ; (17,3)/(17,31) are WARP_CARPET_DOWN;'
+        assert source.count(correct) == 1
+        assert PREFLIGHT.check_text(source, 'engine/johto_pilot_runtime.asm') == []
+        broken = source.replace(correct, ' (17,3)/(17,31) are WARP_CARPET_DOWN;', 1)
+        errors = PREFLIGHT.check_text(broken, 'engine/johto_pilot_runtime.asm')
+        self.assertTrue(any("invalid bare '('" in issue and '2079' in issue for issue in errors), errors)
+
     def test_all_current_asm_sources_pass(self):
         errs = []
         for source in PREFLIGHT.sources(ROOT, []):

@@ -29,6 +29,10 @@ OBJECTS = {
     'JOHTO_ROUTE_31_LOCAL_ID': ('data/johto_pilot_map_headers.asm', 'JohtoPilotRoute31RuntimeObjects'),
     'JOHTO_ROUTE_45_LOCAL_ID': ('data/johto_south_chain_runtime_328.asm', 'JohtoRoute45RuntimeObjects'),
     'JOHTO_ROUTE_46_LOCAL_ID': ('data/johto_south_chain_runtime_328.asm', 'JohtoRoute46RuntimeObjects'),
+    'JOHTO_ROUTE_44_LOCAL_ID': ('data/johto_route44_runtime_324.asm', 'JohtoRoute44RuntimeObjects'),
+    'JOHTO_BLACKTHORN_CITY_LOCAL_ID': ('data/johto_blackthorn_runtime_326.asm', 'JohtoBlackthornRuntimeObjects'),
+    'JOHTO_ICE_PATH_1F_LOCAL_ID': ('data/johto_ice_path_stage/ice_path_1f_runtime_367e.asm', 'JohtoIcePath1FObjects367E'),
+    'JOHTO_ICE_PATH_B1F_LOCAL_ID': ('data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm', 'JohtoIcePathB1FObjects367K'),
     'JOHTO_RUINS_OF_ALPH_LOCAL_ID': ('data/johto_ruins_south_runtime.asm', 'JohtoPilotAlphOutsideRuntimeObjects'),
     'JOHTO_UNION_CAVE_B1F_LOCAL_ID': ('data/johto_union_cave_runtime.asm', 'JohtoUnionCaveB1FRuntimeObjects'),
     'JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID': ('data/johto_dark_cave_stage/REF349_stage2_runtime.asm', 'JohtoDarkCaveObjects'),
@@ -84,10 +88,10 @@ def warp_objects(source: str, label: str) -> list[tuple[int, int, int]]:
     count = int(rows[1][3:].strip().replace('$', '0x'), 0)
     warps = []
     for line in rows[2:2+count]:
-        m = re.fullmatch(r'db\s+(\d+),\s*(\d+),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR', line)
+        m = re.fullmatch(r'db\s+(\d+|\$ff),\s*(\d+|\$ff),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR', line)
         if not m:
             raise ValueError(f'{label}: bad object Warp {line}')
-        y, x, target_ordinal = map(int, m.groups())
+        y, x, target_ordinal = (int(c[1:], 16) if c.startswith('$') else int(c) for c in m.groups())
         warps.append((x, y, target_ordinal))
     if len(warps) != count:
         raise ValueError(f'{label}: expected {count} Warps, found {len(warps)}')

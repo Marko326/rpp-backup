@@ -1,0 +1,501 @@
+{
+  "assets": {
+    "data/johto_ice_path_stage/IcePath1F.roles.bin": {
+      "sha256": "8ee87999ccf45bc19a2b1b479cd2cacd28ed558b9d239a99303cd5d7411796c7",
+      "size": 1440
+    },
+    "data/johto_ice_path_stage/IcePathB1F.roles.bin": {
+      "sha256": "2d9189d4dd52116df92a434fbc34b585f1a341033776fbea6848e607aa7bac95",
+      "size": 720
+    },
+    "data/johto_ice_path_stage/IcePathB2FBlackthornSide.roles.bin": {
+      "sha256": "9ef5d505a61bfb5ff7fb2ed6e86869115dac2cd425ade7fc0afab4c94840297b",
+      "size": 180
+    },
+    "data/johto_ice_path_stage/IcePathB2FMahoganySide.roles.bin": {
+      "sha256": "e40071228792a292a08b35e52eda46dc5754c42373de4064eb9a4953b301821d",
+      "size": 360
+    },
+    "data/johto_ice_path_stage/IcePathB3F.roles.bin": {
+      "sha256": "38008b61fe5554a4d1d9578968fddca2520707ace7b59cf32f3000e1fba2bebe",
+      "size": 360
+    },
+    "data/johto_ice_path_stage/ice_path_collision.gold.asm": {
+      "sha256": "a31b9becc01c4657157b7032d64b21e4643782d2a6e93df480ef6bca65666732",
+      "size": 2618
+    },
+    "data/johto_ice_path_stage/ice_path_palette_map.gold.asm": {
+      "sha256": "7e8a0ba4b52b1a7865a77dcfbab8e03d34435d56cd4d336468c28fb8fe52e07b",
+      "size": 796
+    },
+    "gfx/blocksets/johto_ice_path_gold.bst": {
+      "sha256": "73ea15c6c4c12ccd9fa7d0d7a9cfa811e7d1639065cd83ed70ef2861772f4f36",
+      "size": 1024
+    },
+    "gfx/tilesets/johto_ice_path_gold.png": {
+      "sha256": "e124dc7a51df2abdb7244d21aecf8d3f03a9ec477d271b41f5f76c7b20acaad4",
+      "size": 1233
+    },
+    "maps/johto_ice_path_stage/IcePath1F.gold.blk": {
+      "sha256": "148a84a2e3721a2d70fad4d5f7b881b95f59099f26b9fcea74ed9077be2e815f",
+      "size": 360
+    },
+    "maps/johto_ice_path_stage/IcePathB1F.gold.blk": {
+      "sha256": "ab18c993f6e69169d0feca17873d75993c2d8373cb5b896b7a6c0f4c5ba80452",
+      "size": 180
+    },
+    "maps/johto_ice_path_stage/IcePathB2FBlackthornSide.gold.blk": {
+      "sha256": "b7695acbfee2223c745c7c44273c78934757de685ff50797fa65292780917a65",
+      "size": 45
+    },
+    "maps/johto_ice_path_stage/IcePathB2FMahoganySide.gold.blk": {
+      "sha256": "f55fa82f6c9d4242aa2f895515eefde406e701eb893bfdb4343687c5fc0839de",
+      "size": 90
+    },
+    "maps/johto_ice_path_stage/IcePathB3F.gold.blk": {
+      "sha256": "04b07136cbaa1d62bf61096f0bf994e2deb171eb850cfb43588cbd99dae56115",
+      "size": 90
+    }
+  },
+  "baseline_head": "a95ac8d1ddaf47575bc4f08935033d014bfa58cf",
+  "baseline_ref": "REF-366@",
+  "maps": [
+    {
+      "border_block": 9,
+      "environment": "CAVE",
+      "height_blocks": 18,
+      "height_cells": 36,
+      "mechanics": {
+        "directional_wall_cells": 61,
+        "fixed_nite_palette": true,
+        "ice_cells": 234,
+        "ledge_cells": 3,
+        "pit_cells": 0,
+        "requires_flash_palette": false,
+        "water_cells": 0,
+        "waterfall_cells": 0,
+        "whirlpool_cells": 0
+      },
+      "name": "IcePath1F",
+      "palette": "PALETTE_NITE",
+      "role_counts": {
+        "FLOOR": 815,
+        "HOP_DOWN": 2,
+        "HOP_DOWN_LEFT": 1,
+        "ICE": 234,
+        "LADDER": 2,
+        "UP_WALL": 61,
+        "WALL": 322,
+        "WARP_CARPET_DOWN": 3
+      },
+      "stable_id": 70,
+      "tileset": "TILESET_ICE_PATH",
+      "warps": [
+        {
+          "destination": "Route44",
+          "destination_warp_1_based": 1,
+          "direction": "DOWN",
+          "ordinal0": 0,
+          "ordinal1": 1,
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "DIRECTIONAL_COLLISION",
+          "x": 4,
+          "y": 19
+        },
+        {
+          "destination": "BlackthornCity",
+          "destination_warp_1_based": 7,
+          "direction": "DOWN",
+          "ordinal0": 1,
+          "ordinal1": 2,
+          "role": "WARP_CARPET_DOWN",
+          "trigger": "DIRECTIONAL_COLLISION",
+          "x": 36,
+          "y": 27
+        },
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 1,
+          "direction": null,
+          "ordinal0": 2,
+          "ordinal1": 3,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 37,
+          "y": 5
+        },
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 7,
+          "direction": null,
+          "ordinal0": 3,
+          "ordinal1": 4,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 37,
+          "y": 13
+        }
+      ],
+      "width_blocks": 20,
+      "width_cells": 40
+    },
+    {
+      "border_block": 25,
+      "environment": "CAVE",
+      "height_blocks": 18,
+      "height_cells": 36,
+      "mechanics": {
+        "directional_wall_cells": 14,
+        "fixed_nite_palette": true,
+        "ice_cells": 44,
+        "ledge_cells": 0,
+        "pit_cells": 4,
+        "requires_flash_palette": false,
+        "water_cells": 0,
+        "waterfall_cells": 0,
+        "whirlpool_cells": 0
+      },
+      "name": "IcePathB1F",
+      "palette": "PALETTE_NITE",
+      "role_counts": {
+        "FLOOR": 251,
+        "ICE": 44,
+        "LADDER": 4,
+        "PIT": 4,
+        "UP_WALL": 14,
+        "WALL": 403
+      },
+      "stable_id": 95,
+      "tileset": "TILESET_ICE_PATH",
+      "warps": [
+        {
+          "destination": "IcePath1F",
+          "destination_warp_1_based": 3,
+          "direction": null,
+          "ordinal0": 0,
+          "ordinal1": 1,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 3,
+          "y": 15
+        },
+        {
+          "destination": "IcePathB2FMahoganySide",
+          "destination_warp_1_based": 1,
+          "direction": null,
+          "ordinal0": 1,
+          "ordinal1": 2,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 17,
+          "y": 3
+        },
+        {
+          "destination": "IcePathB2FMahoganySide",
+          "destination_warp_1_based": 3,
+          "direction": null,
+          "ordinal0": 2,
+          "ordinal1": 3,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 11,
+          "y": 2
+        },
+        {
+          "destination": "IcePathB2FMahoganySide",
+          "destination_warp_1_based": 4,
+          "direction": null,
+          "ordinal0": 3,
+          "ordinal1": 4,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 4,
+          "y": 7
+        },
+        {
+          "destination": "IcePathB2FMahoganySide",
+          "destination_warp_1_based": 5,
+          "direction": null,
+          "ordinal0": 4,
+          "ordinal1": 5,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 5,
+          "y": 12
+        },
+        {
+          "destination": "IcePathB2FMahoganySide",
+          "destination_warp_1_based": 6,
+          "direction": null,
+          "ordinal0": 5,
+          "ordinal1": 6,
+          "role": "PIT",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 12,
+          "y": 13
+        },
+        {
+          "destination": "IcePath1F",
+          "destination_warp_1_based": 4,
+          "direction": null,
+          "ordinal0": 6,
+          "ordinal1": 7,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 5,
+          "y": 25
+        },
+        {
+          "destination": "IcePathB2FBlackthornSide",
+          "destination_warp_1_based": 1,
+          "direction": null,
+          "ordinal0": 7,
+          "ordinal1": 8,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 11,
+          "y": 27
+        }
+      ],
+      "width_blocks": 10,
+      "width_cells": 20
+    },
+    {
+      "border_block": 25,
+      "environment": "CAVE",
+      "height_blocks": 9,
+      "height_cells": 18,
+      "mechanics": {
+        "directional_wall_cells": 0,
+        "fixed_nite_palette": true,
+        "ice_cells": 304,
+        "ledge_cells": 0,
+        "pit_cells": 0,
+        "requires_flash_palette": false,
+        "water_cells": 0,
+        "waterfall_cells": 0,
+        "whirlpool_cells": 0
+      },
+      "name": "IcePathB2FMahoganySide",
+      "palette": "PALETTE_NITE",
+      "role_counts": {
+        "FLOOR": 44,
+        "ICE": 304,
+        "LADDER": 2,
+        "WALL": 10
+      },
+      "stable_id": 96,
+      "tileset": "TILESET_ICE_PATH",
+      "warps": [
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 2,
+          "direction": null,
+          "ordinal0": 0,
+          "ordinal1": 1,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 17,
+          "y": 1
+        },
+        {
+          "destination": "IcePathB3F",
+          "destination_warp_1_based": 1,
+          "direction": null,
+          "ordinal0": 1,
+          "ordinal1": 2,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 9,
+          "y": 11
+        },
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 3,
+          "direction": null,
+          "ordinal0": 2,
+          "ordinal1": 3,
+          "role": "ICE",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW",
+          "x": 11,
+          "y": 4
+        },
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 4,
+          "direction": null,
+          "ordinal0": 3,
+          "ordinal1": 4,
+          "role": "ICE",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW",
+          "x": 4,
+          "y": 6
+        },
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 5,
+          "direction": null,
+          "ordinal0": 4,
+          "ordinal1": 5,
+          "role": "ICE",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW",
+          "x": 4,
+          "y": 12
+        },
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 6,
+          "direction": null,
+          "ordinal0": 5,
+          "ordinal1": 6,
+          "role": "ICE",
+          "trigger": "ARRIVAL_ONLY_OR_SPECIAL_REVIEW",
+          "x": 12,
+          "y": 12
+        }
+      ],
+      "width_blocks": 10,
+      "width_cells": 20
+    },
+    {
+      "border_block": 25,
+      "environment": "CAVE",
+      "height_blocks": 9,
+      "height_cells": 18,
+      "mechanics": {
+        "directional_wall_cells": 3,
+        "fixed_nite_palette": true,
+        "ice_cells": 91,
+        "ledge_cells": 5,
+        "pit_cells": 0,
+        "requires_flash_palette": false,
+        "water_cells": 0,
+        "waterfall_cells": 0,
+        "whirlpool_cells": 0
+      },
+      "name": "IcePathB2FBlackthornSide",
+      "palette": "PALETTE_NITE",
+      "role_counts": {
+        "FLOOR": 36,
+        "HOP_DOWN": 4,
+        "HOP_DOWN_LEFT": 1,
+        "ICE": 91,
+        "LADDER": 2,
+        "UP_WALL": 3,
+        "WALL": 43
+      },
+      "stable_id": 97,
+      "tileset": "TILESET_ICE_PATH",
+      "warps": [
+        {
+          "destination": "IcePathB1F",
+          "destination_warp_1_based": 8,
+          "direction": null,
+          "ordinal0": 0,
+          "ordinal1": 1,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 3,
+          "y": 15
+        },
+        {
+          "destination": "IcePathB3F",
+          "destination_warp_1_based": 2,
+          "direction": null,
+          "ordinal0": 1,
+          "ordinal1": 2,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 3,
+          "y": 3
+        }
+      ],
+      "width_blocks": 5,
+      "width_cells": 10
+    },
+    {
+      "border_block": 25,
+      "environment": "CAVE",
+      "height_blocks": 9,
+      "height_cells": 18,
+      "mechanics": {
+        "directional_wall_cells": 0,
+        "fixed_nite_palette": true,
+        "ice_cells": 0,
+        "ledge_cells": 0,
+        "pit_cells": 0,
+        "requires_flash_palette": false,
+        "water_cells": 0,
+        "waterfall_cells": 0,
+        "whirlpool_cells": 0
+      },
+      "name": "IcePathB3F",
+      "palette": "PALETTE_NITE",
+      "role_counts": {
+        "FLOOR": 75,
+        "LADDER": 2,
+        "WALL": 283
+      },
+      "stable_id": 98,
+      "tileset": "TILESET_ICE_PATH",
+      "warps": [
+        {
+          "destination": "IcePathB2FMahoganySide",
+          "destination_warp_1_based": 2,
+          "direction": null,
+          "ordinal0": 0,
+          "ordinal1": 1,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 3,
+          "y": 5
+        },
+        {
+          "destination": "IcePathB2FBlackthornSide",
+          "destination_warp_1_based": 2,
+          "direction": null,
+          "ordinal0": 1,
+          "ordinal1": 2,
+          "role": "LADDER",
+          "trigger": "STEP_IN_IMMEDIATE",
+          "x": 15,
+          "y": 5
+        }
+      ],
+      "width_blocks": 10,
+      "width_cells": 20
+    }
+  ],
+  "outside_warps": [
+    {
+      "dest_warp_1_based": 1,
+      "destination": "IcePath1F",
+      "role": "CAVE",
+      "source": "Route44",
+      "x": 56,
+      "y": 7
+    },
+    {
+      "dest_warp_1_based": 2,
+      "destination": "IcePath1F",
+      "role": "CAVE",
+      "source": "BlackthornCity",
+      "x": 36,
+      "y": 9
+    }
+  ],
+  "roles": [
+    "FLOOR",
+    "WALL",
+    "ICE",
+    "PIT",
+    "LADDER",
+    "WARP_CARPET_DOWN",
+    "UP_WALL",
+    "HOP_DOWN",
+    "HOP_DOWN_LEFT"
+  ],
+  "schema": "rpp-ref367a-ice-path-source-staging-v1",
+  "source_reference": "REF332 Gold / pokegold-master",
+  "status": "STAGED_ONLY_NOT_RUNTIME_ENABLED"
+}

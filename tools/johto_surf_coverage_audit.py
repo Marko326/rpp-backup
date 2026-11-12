@@ -14,6 +14,11 @@ from pathlib import Path
 import re
 import sys
 
+# Keep both direct ``python tools/...`` and ``from tools...`` imports working.
+# The historical Gold audit modules use their own top-level sibling imports.
+TOOL_DIR = str(Path(__file__).resolve().parent)
+if TOOL_DIR not in sys.path:
+    sys.path.insert(0, TOOL_DIR)
 from johto_gold_door_audit import GoldCollisionIndex
 from johto_surf_preflight import check_project
 
@@ -37,7 +42,7 @@ def read_active_maps(root: Path) -> list[dict]:
     for symbol, value in re.findall(r'^DEF\s+(JOHTO_\w+_LOCAL_ID)\s+EQU\s+(\$[\da-fA-F]+|\d+)\b', defs, re.M):
         id_defs[symbol] = int(value[1:], 16) if value.startswith('$') else int(value)
     labels = dict(re.findall(
-        r'(?m)^(\w+)::\s*INCBIN\s+"(maps/johto_pilot/[^"\n]+)"', src))
+        r'(?m)^(\w+)::\s*INCBIN\s+"(maps/(?:johto_pilot|johto_ice_path_stage)/[^"\n]+)"', src))
     section = src.split('JohtoPilotSourceRecords::', 1)[-1].split('JohtoPilotSourceRecordsEnd::', 1)[0]
     rows = re.findall(r'(?m)^\s*db\s+MAP_REGION_JOHTO\s*,\s*(JOHTO_\w+_LOCAL_ID)\s*,[^\n]*\n\s*dw\s+(\w+)', section)
     if len(rows) != count:

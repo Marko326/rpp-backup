@@ -1,3 +1,78 @@
+# CLEAN REF-367｜冰之通路 1F 与 B1F 分层收口（正式提交材料）
+
+- 上次已确认正式 HEAD：`a95ac8d1ddaf47575bc4f08935033d014bfa58cf`（分支 `常规功能备份`，显示 `REF-366@`）。当前开发候选 `REF-367M@`，正式清理目标 `REF-367@`。游戏运行 ASM 与地图数据均不重新设计，只去掉开发版字母。
+- 67 张活动地图、180 条注册 Warp；冰之通路 1F / B1F（ID70 / ID95）、两组双向楼梯、两处室外出入口、Gold 专用图像与地点牌、合法地面自行车、四块静止可见石头与安全对话纳入本次收口。
+- **明确未完成**：B2F 两区／B3F 尚未活动；冰面按普通步行；四块石头不可推动；四个 PIT 和 B2F 两处楼梯封闭；Rock Smash、NPC、野怪、剧情不做。用户反馈通过金手指穿过石头检查其他区域未见异常，不等于正常怪力流程已经验收。
+- 游戏运行变化仅正式版本标签；工具方面更新冻结在 65/172 的黑暗洞穴全局数量合同至当前 67/180，保留逐格/方向/跃崖/Field Move 审计，并增加故障注入。更早迁移工具仍含多个旧里程碑断言，真实失败与缺少的 ROM/MAP 必须记录，不能宣称全绿。
+- 累计未提交改动涉及游戏与 `tools/`，因此按模式 A 两次提交：清理增量 `01`（REF-367M→CLEAN）或 HEAD 累计 `03`（REF-366→CLEAN）二选一；再用 `02` 从 CLEAN 临时撤下工具与文档提交游戏，反向恢复 `02` 提交工具。AI 不编译 ROM，不 Commit/Push。
+- 验收边界、工具命令及操作顺序见 `docs/CLEAN_REF367_ICE_PATH_1F_B1F_FINAL_ACCEPTANCE.md`。
+
+## REF-367M：冰之通路 B1F 固定石头误入宝可梦中心对话的修复（待设备验收）
+- 根因：REF-367L 的四个 `STAY, NONE` 静止石头采用文本索引 `$1..$4`，但 `JohtoIcePathB1FTextPointers367K` 原来是空表；按 A 触发 `DisplayTextID` 会将随后的对象/路由字节误读为文本指针，可能打开完全无关的 Heal/Cancel 宝可梦中心菜单。
+- 只新增四个同 Bank 的合法文本指针，统一指向有限的普通提示 `A heavy boulder. / It won't budge.`；保留四个可见对象、固定格子硬阻挡、两组 1F↔B1F 双向楼梯及原版 Warp 编号。
+- 不给石头设置 `BOULDER_MOVEMENT_BYTE_2`，所以不会被 `HandleBoulderInteraction` 识别成可推的怪力石头；本次不开放 Strength、滑冰、PIT、B2F。
+- 新增长度及同 Bank ASM 断言，B1F 源码门禁检验四个文本索引、有效文本终止、同 Bank 与普通文本初始化；新增漏指针、错指针、无终止符、跨 Bank 保护缺失、提前启用怪力等负向用例。此前只查碰撞和可见石头，完全没有审计对象文本索引。
+- ROM 替换后模拟器中已加载的地图对象/文本指针 WRAM 可能仍保留旧内容；应先在室外普通存档，再用新 ROM 进洞，或退出并重新进入地图；不将此误认为补丁自动刷新内存。本批未增加自动热重载逻辑。
+- 仍须由用户用 RGBDS 0.5.2 完成 ROM 编译/MAP ROM0≥64B 与手机 A 键交互、两组双向楼梯、石头阻挡、出洞验收；本轮不 Commit/Push。
+
+## REF-367L：B1F 四块临时不可推动石头已显示
+- REF-367K 在 Gold B1F 四个固定石头坐标 (11,7)/(7,8)/(8,9)/(17,7) 提前实施硬阻挡，未生成对应可见对象，导致手机上看到无遮挡地面却撞墙。
+- REF-367L 仅新增四个原版 SPRITE_BOULDER 静止对象，保持原版坐标及已有硬阻挡；未启用 Strength 推动/落洞和滑冰。专项审计增加对象数、坐标与阻挡一致性反向测试。
+- ROM 编译、MAP ROM0≥64 B、手机显示与楼梯返回仍必须由用户验收。
+
+## REF-367K｜B1F 当前施工边界
+- Ice Path ID95 B1F（10×18 block／20×36 8x8 格）开放 Gold 资源、独立碰撞、Ice Path B1F 地点牌，1F ↔ B1F 两组 Gold LADDER 双向传送（1F #3/#4；B1F #1/#7），保持 Gold ordinal。
+- B1F 四个 PIT、两处 B2F 楼梯保持封闭；四处 Gold Strength 石头坐标作为固定阻挡，暂不生成可推动对象。ICE 仍普通行走。ROCK SMASH、剧情、NPC、野怪未启用。
+- 待用户 RGBDS 0.5.2 四版本编译、MAP ROM0≥64 B 与手机双方向楼梯/阻挡验收，不 Commit/Push。
+
+## REF-367I｜Ice Path 1F RGBDS tilepal 宏缩进修复（2026-11-11，待手机构建验收）
+- 本轮 Red 构建日志确认 `color/tilesets/johto_ice_path_1f.asm:4` 的 `tilepal` 顶格导致 RGBDS 0.5.2 报 `syntax error, unexpected number`；`map_palette_assignments.asm:59` 的长度断言是前一条宏调用无法展开的连带失败。
+- 只给第 4 行补充缩进，**不改 96 项调色值、Palette Sets、图像、Tile ID、地图碰撞、Warp、地点牌或普通行走行为**。游戏候选 `REF-367H@` → `REF-367I@`。
+- 旧冰洞审计通过 `strip()` 丢失行首空白，无法发现非法宏；新增对原始 ASM 行的未缩进 `tilepal` 检查，并新增缺缩进故障注入用例；仍不能代替 RGBDS 真正汇编。
+- 依项目要求开发期交一个 ZIP 严格含 01 增量（已应用 REF-367H）与 02 全量（干净 REF-366 HEAD `a95ac8d1ddaf47575bc4f08935033d014bfa58cf`），二选一且不可叠加。无新 ROM/MAP、无手机验收，不执行 Git Commit/Push。
+
+
+## REF-367H｜Ice Path 1F 画面调色与地点牌修复（待设备复测）
+- REF-367H 门禁收口：统一 `tools/validate_current_project.py` 现将 Ice Path 1F **实际调色表/图块/地点牌检查**与地图名审计提前到旧 Dark Cave 冻结合同之前；`tools/johto_surf_coverage_audit.py` 支持从 `maps/johto_ice_path_stage/` 读取真实活动 `.gold.blk`，避免新地图目录使主审计崩溃。新增缺字段、错调色和错名称的负向测试。
+- 根因一：Tileset ID41 已活动，但 `MapPaletteSets`/`MapPaletteAssignments` 都只到 ID40；`LoadTilesetPalette` 按 `$60 * 41` 读取越界调色分配，地图图块和颜色显示错误。新增 Gold 原版 `ice_path_palette_map.asm` 的 96 项、独立 CAVE 调色 8 项，更新两张表的长度 ASSERT，不改 1F 的 Gold 图形原始字节、块表或地形碰撞。
+- 根因二：`engine/overworld/map_name_sign.asm` 未分派稳定地图 ID70，落回 `.JohtoUnknownName` 显示 Johto；新增 Ice Path 专用地点牌字符串，独立于已存在的 Town Map 名称。
+- 旧 `tools/johto_ice_path_1f_367e_audit.py` 只查 GFX/Block/表注册与 Warp，没有验证真正的 CGB palette index 上界或地点牌的运行分派。本次加 Gold 96 项逐格调色、完整运行索引长度、地点牌路径及负向破坏检测，并复用既有统一验证入口。
+- 仍只开放 1F 普通行走与两处室外出口。滑冰、B1F 楼梯、Strength、Rock Smash、NPC、野生遭遇和剧情不做；本轮未构建 ROM、未确认新 MAP 空间、未做手机复测、不 Commit/Push。版本为 REF-367H@ 开发测试版。
+
+## REF-367G｜1F 编译语法修复（开发候选，待用户 RGBDS 验证）
+- 修复 `engine/johto_pilot_runtime.asm` 第 2079 行未加 `;` 的普通说明文字：`(17,3)/(17,31) are WARP_CARPET_DOWN;` 被 rgbasm 当指令解析，产生 `syntax error, unexpected (`。现只加注释符号，**不改 Warp、地图、冰面、碰撞、到达动作和地下层封闭行为**。
+- 将游戏版本标签由 `REF-367F@` 变更为 `REF-367G@`，便于区分此前不能汇编的开发 ROM；不升级正式 Git 版本号（仍以 REF-366 HEAD 为基线）。
+- 在 `tools/asm_symbol_preflight.py` 加入对行首裸 `(` 的保守静态检查，并用错误注入测试证明漏写 `;` 会被拦截。此前的检查只管局部标签，**不会识别这种 RGBDS 语法问题**；静态通过不等于完整汇编成功。
+- 本次未自行编译／链接 ROM。用户须重建 Red/Blue/TEST 与新 MAP，核对 ROM0 余量，再进行 REF-367F 既定的 1F 双室外入口、普通步行与两处楼梯封闭验收。Rock Smash/Strength/自动滑冰仍不启用。
+
+## REF-367F｜Ice Path 1F 单层普通行走开发候选（尚待 ROM/手机验收）
+- **本批只激活 1F ID70**：66 张活动地图／176 条注册 Warp，游戏标签 `REF-367F@`；独立 Gold 图块、Block、40×36 角色数据、Header、Town Map 和背景音乐已接线。**冰面 234 格暂按普通可走地面**，不启用自动滑行或此前暂存的滑行状态机。
+- Route44 洞口 `(56,7)` ↔ 1F `(4,19)`；烟墨市 `(36,9)` ↔ 1F `(36,27)`，室外出洞自动向下走一格；两个 B1F 楼梯（Gold #3/#4）保持 `$ff` 封闭，ordinal 不压缩。两片 1F 区域无法直接互通，不能虚构新通路。
+- **本轮不做** B1F/B2F/B3F、滑冰、Strength 推石、Rock Smash、NPC、野怪、剧情和物品；Dig／离洞绳未专门开放，不能把不支持写成已验收。
+- 构建需用户本机 RGBDS 0.5.2 四版新 ROM/MAP 与 ROM0≥64 B 复查，手机实测双洞口正反往返、退出迈步、正常步行、楼梯封闭。此前的 REF-367A-E 是历史资源和机制准备，并非 ROM 已运行。
+
+## REF-367E 开发阶段 1F 分层合同（优先遵守用户最新范围）
+- 用户要求冰之通路按层施工，REF-367E **只做 IcePath1F** 的 Gold 图像与 1F 运行 Header／Warp 预备；B1F/B2F/B3F 均保持 inactive。1F 两个楼梯目的地 B1F 尚未开放，不能提前安装活动的实际 Warp。
+- 保留原版 #1/#2 的两个室外 DOWN 地毯及 #3/#4 的两个内部 STEP_IN 楼梯编号，源点 `(4,19)/(36,27)/(37,5)/(37,13)`，不得把 B1F 冰洞绕过后直接连通两边出口；完整 Route44↔Blackthorn 需要其他楼层。
+- 运行时滑行、独立 tileset/COLL、地图载入和两端可退出性未真实接线前，不改游戏版本、不加活动地图或注册 Warp；Gold 数据和离线测试 PASS 不是 ROM/手机验收。开发期仍仅一个含两份互斥正向 PATCH 的 ZIP。Rock Smash 延后。
+
+## REF-367D Ice Path 状态控制阶段边界
+- 此轮为未启用 Ice Path 的开发中间版本，新增原生滑冰方向状态函数，但不把它误称为实时玩家滑冰；不得在未有安全存储、Strength/PIT、图形与 Warp 前 INCLUDE 或激活地图。`wUnusedD71F` 已被现有道具代码写入，不可作为滑冰状态槽。
+- 保持 REF-366@/65活动图/172 Warp，按当前最高优先级 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 交 01/02 两份互斥 `.patch` 的单 ZIP，不做 CLEAN 或提交。
+
+## REF-367C｜Ice Path Gold 原生 ASM 地形移动探针（仍属开发前置）
+- 在 REF-367B 已暂存的 Gold 五图与原生角色读取器基础上，增加 **尚未链接** 的 LR35902 前进一步/冰上继续方向判定，及覆盖 3,060 格 × 四方向的分支执行审计。真正的玩家逐帧移动、四块 Strength、掉洞/图块/22 Warp 尚未集成，地图仍应封闭，游戏标签依然 REF-366@／65图／172 Warp；本轮不能宣称已可进入。
+- 仍遵守 `RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt`：开发期只交一个 ZIP、两份互斥正向补丁；01 从已安装 REF-367B 的状态到本批，02 从干净正式 HEAD `a95ac8d1ddaf47575bc4f08935033d014bfa58cf` 到本批累计。用户是否已经安装 B 不得推定，先 `git apply --check`。Rock Smash 继续延期但 Strength 不延期。详情 `docs/REF367C_ICE_PATH_NATIVE_STEP_DEV.md`。
+
+## REF-367B｜Ice Path 第二批运行机制前置（优先于历史项）
+- 本批保留 REF-367A Gold 源资源，增加真实 Gold `.runtime.blk`、离线冰面/落洞/Strength 机制执行合同及独立未链接的 ASM 角色读取候选。不修改游戏 `main.asm`/版本、活动地图/注册 Warp，故只能称为机制前置开发阶段，不宣称可游玩。禁止单独开放 Warp 而留下未实现冰面。
+- 开发期交付单 ZIP／两份互斥正向补丁：01 为已安装 REF-367A 的工作区增量，02 为干净 `REF-366@` HEAD `a95ac8d1ddaf47575bc4f08935033d014bfa58cf`→本批全量。用户是否安装 367A 尚未确认，应用前必须 `git apply --check`，不能叠加。用户自己执行 ROM 构建与 Commit；本批不执行。
+- 本期 **Rock Smash** 不做；Ice Path 真实 **Strength** 石头+PIT/冰面仍属激活前必须功能。`RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 为上位交付规则。
+
+## REF-367A Ice Path 资源前置阶段（遵守自动导出最新规范）
+- 本批在干净 `REF-366@`、HEAD `a95ac8d1ddaf47575bc4f08935033d014bfa58cf` 之上只加入 Gold 资源暂存、审计工具和施工文档；**没有改游戏运行代码或游戏内版本**，不得声称可进入 Ice Path。开发阶段一个 ZIP 两份互斥正向 `.patch`，当前干净工作区增量与已核实 Git 基线全量在本批内容相同；不另附源码包/日志，不提前生成 CLEAN 或 Commit/Push。
+- Gold 原图确有 PIT、ICE 到达点、Strength 石头，必须分不同机制实施；B3F Rock Smash 延期。资源审计只能证明静态数据来源正确，激活前必须重新核对 ROM0、Bank、完整游戏入口路径与手机实际行为。`RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 仍为最高优先级。
+
 ## CLEAN REF-366 交付基线与模式 A（2026-11-10；按项目自动导出要求）
 - 本轮上次正式 HEAD：`62a851e72ca00db23d4e7ac95aec83ee4d046804`，版本 REF-365@，分支 `常规功能备份`。开发前置状态按此前交付的 REF-366A 双补丁在该干净 HEAD 上应用重建；**尚未收到用户最新手机 Worktree 导出**，若当前工作区另有修改，必须先 `git apply --check` 并核对差异。
 - 游戏标签 `REF-366A@` → `REF-366@`，保持两对联洞与遗迹口、自动迈步、65 地图与 172 Warp。累计有游戏 ASM 与 `tools/` 离线审计改动，因此执行 **模式 A：3 PATCH + 2 TXT**；01 为 REF-366A 开发态→CLEAN，02 为 CLEAN→只保留游戏功能的工具反向隔离，03 为 REF-365 干净 HEAD→CLEAN 完整累计。01/03 是替代起点，不能叠加；使用 02 隔离功能提交，再 `git apply -R 02` 恢复工具提交。

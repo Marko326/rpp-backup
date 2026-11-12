@@ -128,6 +128,10 @@ class Rom0Relief349(unittest.TestCase):
         # the pre-349 Kanto / gate bike decision body stays unchanged.
         self.assertIn("cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID\n\tjp z, .darkCaveBike", bikes)
         bikes = bikes.replace("\tcp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID\n\tjp z, .darkCaveBike\n", "", 1)
+        # REF-367J adds an Ice Path-only entry in ROMX; remove this one
+        # explicit exception before comparing the untouched REF-348 legacy body.
+        self.assertIn("cp JOHTO_ICE_PATH_1F_LOCAL_ID\n\tjp z, .icePathBike", bikes)
+        bikes = bikes.replace("\tcp JOHTO_ICE_PATH_1F_LOCAL_ID\n\tjp z, .icePathBike\n", "", 1)
         bikes = bikes.split("\n.darkCaveBike\n", 1)[0]
         bodies["bike"] = bikes
         for name, body in bodies.items():

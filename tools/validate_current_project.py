@@ -57,9 +57,28 @@ def main(argv: list[str] | None = None) -> int:
         # end-to-end arrival movement and field move public-entry dispatch.
         ('warp / field-entry activation gate',
          [sys.executable, 'tools/johto_warp_field_entry_gate.py', '--root', '.']),
+        # REF-367H: active Ice Path tileset ID41 must have runtime CGB palette
+        # tables and a real name-sign dispatcher. Run before legacy milestone
+        # audits which may stop early on obsolete 65-map/168-Warp contracts.
+        ('Ice Path 1F live graphics / palette / name-sign gate',
+         [sys.executable, 'tools/johto_ice_path_1f_367e_audit.py', '--root', '.']),
+        ('Ice Path B1F live stairs / cave safety gate',
+         [sys.executable, 'tools/johto_ice_path_b1f_367k_audit.py', '--root', '.']),
+        ('active map name-sign contract',
+         [sys.executable, 'tools/johto_map_name_sign_audit.py', '--project', '.']),
         ('Dark Cave Gold field-move audit',
          [sys.executable, 'tools/johto_dark_cave_365_audit.py', '--root', '.'] +
          (['--gold-root', str(args.gold_root.resolve())] if args.gold_root else [])),
+        # REF-367A: staged ICE resources must remain exact and inactive until
+        # a separate reviewed ice-slide/PIT/Strength runtime implementation.
+        ('Ice Path Gold source-staging gate',
+         [sys.executable, 'tools/johto_ice_path_367_stage_audit.py', '--root', '.']),
+        ('Ice Path directional movement and Strength/PIT reference gate',
+         [sys.executable, 'tools/johto_ice_path_367_movement.py', '--root', '.']),
+        ('Ice Path native Gold ice / PIT branch-level audit',
+         [sys.executable, 'tools/johto_ice_path_367_native_audit.py', '--root', '.']),
+        ('Ice Path dormant native slide-heading state audit',
+         [sys.executable, 'tools/johto_ice_path_367_slide_audit.py', '--root', '.']),
         ('current migration audit', [sys.executable, 'tools/johto_pilot_migration_audit.py', '--project', '.'] +
             (['--gold-root', str(args.gold_root.resolve())] if args.gold_root else [])),
     ]
