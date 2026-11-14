@@ -301,6 +301,12 @@ UpdateMapNameSign::
     jp z, .johtoIcePath
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID
     jp z, .johtoIcePathB1F
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jp z, .johtoIcePathB2F
+    cp JOHTO_ICE_PATH_B3F_LOCAL_ID
+    jp z, .johtoIcePathB3F
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    jp z, .johtoIcePathB2F
 	cp JOHTO_ROUTE_33_LOCAL_ID
 	jp z, .johtoRoute33
 	cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -409,6 +415,14 @@ UpdateMapNameSign::
 .johtoIcePathB1F
     ld hl, .JohtoIcePathName
     ld b, $81 ; B1F uses the existing Kanto basement floor suffix
+    ret
+.johtoIcePathB2F
+    ld hl, .JohtoIcePathName
+    ld b, $82 ; B2F uses the existing Kanto basement floor suffix
+    ret
+.johtoIcePathB3F
+    ld hl, .JohtoIcePathName
+    ld b, $83 ; B3F uses existing basement suffix
     ret
 .johtoRoute36
 	ld hl, .JohtoRoute36Name

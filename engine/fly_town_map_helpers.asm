@@ -999,6 +999,12 @@ JohtoPilotTownMapEntries::
     dw JohtoPilotIcePathName
     db 54, 138 ; slot66 Ice Path B1F shares 1F landmark
     dw JohtoPilotIcePathName
+    db 54, 138 ; slot67 Ice Path B2F Mahogany Side
+    dw JohtoPilotIcePathName
+    db 54, 138 ; slot68 Ice Path B3F
+    dw JohtoPilotIcePathName
+    db 54, 138 ; slot69 Ice Path B2F Blackthorn Side
+    dw JohtoPilotIcePathName
 JohtoPilotTownMapEntriesEnd::
 ASSERT JohtoPilotTownMapEntriesEnd - JohtoPilotTownMapEntries == NUM_JOHTO_ACTIVE_MAPS * 4
 
@@ -1025,6 +1031,9 @@ JohtoPilotTownMapBrowseIndexBySlot:
     db 41 ; slot64 Dark Cave Blackthorn side -> Route45
     db 38 ; slot65 Ice Path 1F -> Gold IcePath browse index
     db 38 ; slot66 Ice Path B1F Gold landmark
+    db 38 ; slot67 Ice Path B2F Mahogany Side Gold landmark
+    db 38 ; slot68 Ice Path B3F Gold landmark
+    db 38 ; slot69 Ice Path B2F Blackthorn Side Gold landmark
 JohtoPilotTownMapBrowseIndexBySlotEnd:
 ASSERT JohtoPilotTownMapBrowseIndexBySlotEnd - JohtoPilotTownMapBrowseIndexBySlot == NUM_JOHTO_ACTIVE_MAPS
 
@@ -1059,6 +1068,15 @@ TryLoadSpecialFlyWarpData::
     ld a, [wd732]
     bit 3, a
     jr z, .ordinaryFly365
+    ld a, [wCurMapTileset]
+    cp JOHTO_ICE_PATH
+    jr nz, .darkCaveEscape365
+    callab JohtoIcePathEscapeAllowed368D
+    jr nc, .ordinaryFly365
+    callab JohtoIcePathApplyEscape368D
+    scf
+    ret
+.darkCaveEscape365
     callab JohtoDarkCaveEscapeAllowed365
     jr nc, .ordinaryFly365
     callab JohtoDarkCaveApplyEscape365

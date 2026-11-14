@@ -58,6 +58,20 @@ UpdatePlayerSprite:
 	bit 0, a
 	jr nz, .notMoving
 .moving
+	; REF-368G: Gold ICE sliding keeps the walking sprite in a fixed-foot pose.
+	; Continue updating facing and position, but do not cycle the walk frames.
+	; A mounted bicycle keeps its normal riding animation.
+	ld a, [wWalkBikeSurfState]
+	and a
+	jr nz, .animateMovingSprite
+	ld a, [wIcePathSlideHeading]
+	and a
+	jr z, .animateMovingSprite
+	xor a
+	ld [wSpriteStateData1 + 7], a ; clear walking frame delay
+	ld [wSpriteStateData1 + 8], a ; hold neutral foot frame
+	jr .calcImageIndex
+.animateMovingSprite
 	ld a, [wd736]
 	bit 7, a ; is the player sprite spinning due to a spin tile?
 	jr nz, .skipSpriteAnim

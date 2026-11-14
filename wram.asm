@@ -2994,6 +2994,10 @@ wCurrentBoxNum:: ; d679
 wNumHoFTeams:: ; d67b
 	ds 1
 
+; REF-368F: animation-step Ice Path heading. Keep the former $D67C slot
+; and save layout unchanged. Clear on every EnterMap; never infer a heading
+; from a save or an ICE warp arrival. No other live routine reads this slot.
+wIcePathSlideHeading::
 wUnusedD5A3:: ; d67c
 	ds 1
 

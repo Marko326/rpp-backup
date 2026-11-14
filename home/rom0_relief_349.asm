@@ -65,6 +65,12 @@ IsBikeRidingAllowed::
 	jp z, .icePathBike
 	cp JOHTO_ICE_PATH_B1F_LOCAL_ID
 	jp z, .icePathB1FBike
+	cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+	jp z, .icePathB2FMahoganyBike
+	cp JOHTO_ICE_PATH_B3F_LOCAL_ID
+	jp z, .icePathB3FBike
+	cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+	jp z, .icePathB2FBlackthornBike
     ; ROM0-neutral permit mask: IDs64..67 + 72..75. At this stage
     ; 64..67 are town/Route43 and its two Gold gates; 72/73 outdoors,
     ; 74 is Route29/46 Gold gate, 75 is inactive. Re-review before ID75 activation.
@@ -112,6 +118,24 @@ IsBikeRidingAllowed::
 	cp 1
 	jr z, .allowed
 	callab JohtoIcePathB1FBikeFloorAllowed367K
+	ret
+.icePathB2FMahoganyBike
+	ld a, [wWalkBikeSurfState]
+	cp 1
+	jr z, .allowed
+	callab JohtoIcePathB2FMahoganyBikeFloorAllowed368A
+	ret
+.icePathB3FBike
+	ld a, [wWalkBikeSurfState]
+	cp 1
+	jr z, .allowed
+	callab JohtoIcePathB3FBikeFloorAllowed368B
+	ret
+.icePathB2FBlackthornBike
+	ld a, [wWalkBikeSurfState]
+	cp 1
+	jr z, .allowed
+	callab JohtoIcePathB2FBlackthornBikeFloorAllowed368C
 	ret
 INCLUDE "data/bike_riding_tilesets.asm"
 

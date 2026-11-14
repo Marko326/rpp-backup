@@ -1888,6 +1888,13 @@ CanUseEscapeRope::
 	cp a,AGATHAS_ROOM
 	jr z,.cannotUse
 	ld a,[wCurMapTileset]
+    cp JOHTO_ICE_PATH
+    jr nz, .notIcePathRope368D
+    ; Same safe cave-return contract as Dark Cave: require a stored,
+    ; valid outdoor entrance, not the player's last healing center.
+    callab JohtoIcePathEscapeAllowed368D
+    ret
+.notIcePathRope368D
     cp JOHTO_DARK_CAVE
     jr nz, .oldRopeTilesets365
     ; Cave-specific return, not the old last-heal-center route. This also

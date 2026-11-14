@@ -343,6 +343,17 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 6, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
+    ; REF-368A: Gold B1F #2 <-> B2F Mahogany #1. PIT and B3F sealed.
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
+    ; REF-368B Gold B2F Mahogany #2 <-> B3F #1. B3F #2 to Blackthorn B2F stays closed.
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    ; REF-368C final Gold Ice Path region: B1F #8 <-> Blackthorn B2F #1; B3F #2 <-> Blackthorn B2F #2.
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 7, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID
 JohtoRegisteredWarpRoutesEnd::
 DEF JOHTO_REGISTERED_WARP_COUNT EQU (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) / JOHTO_REGISTERED_WARP_RECORD_BYTES
 ASSERT (JohtoRegisteredWarpRoutesEnd - JohtoRegisteredWarpRoutes) % JOHTO_REGISTERED_WARP_RECORD_BYTES == 0
@@ -433,6 +444,18 @@ JohtoPilotResolveRegisteredWarp::
     ld a, c
     ld [wJohtoGateMusicSourceLocalID], a
 .notGateMusicEntry
+    ; REF-368D: only a real exterior -> Ice Path 1F entrance may
+    ; update the save-backed Dig/Escape Rope mouth. Stairs leave it alone.
+    ld a, [hl]
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jr nz, .notIcePathOrigin368D
+    push hl
+    push bc
+    ld e, c
+    callab JohtoIcePathRememberOutdoorSource368D
+    pop bc
+    pop hl
+.notIcePathOrigin368D
     ; Capture an OUTDOOR source only. Internal Violet/Blackthorn transfer
     ; retains the previously saved Route31/46/45 anchor across Continue.
     ld a, [hl]
@@ -581,6 +604,9 @@ JohtoPilotMapProfiles::
     johto_map_profile 0, 41, MUSIC_DUNGEON2, 0 ; slot64 Dark Cave Blackthorn side -> Route45
     johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot65 IcePath1F Gold landmark, not Route44 two separate walk-only galleries
     johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot66 Ice Path B1F, same Gold landmark
+    johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot67 Ice Path B2F Mahogany Side
+    johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot68 Ice Path B3F
+    johto_map_profile 0, 38, MUSIC_DUNGEON2, 0 ; slot69 Ice Path B2F Blackthorn Side
 JohtoPilotMapProfilesEnd::
 ASSERT JohtoPilotMapProfilesEnd - JohtoPilotMapProfiles == NUM_JOHTO_ACTIVE_MAPS * JOHTO_MAP_PROFILE_BYTES
 
@@ -898,6 +924,12 @@ JohtoPilotIsClosedOutdoorEdge::
     jp z, .darkCaveClosedEdge
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID
     jp z, .darkCaveClosedEdge ; actual B1F 20x36 bounds enforced by Gold role grid
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jp z, .darkCaveClosedEdge ; Gold B2F 20x18 role-grid checks bounds
+    cp JOHTO_ICE_PATH_B3F_LOCAL_ID
+    jp z, .darkCaveClosedEdge ; Gold B3F 20x18 role-grid checks bounds
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    jp z, .darkCaveClosedEdge ; Gold Blackthorn B2F 10x18 bounds
     cp JOHTO_ROUTE_33_LOCAL_ID
     jp z, .route33ClosedEdge
     cp JOHTO_AZALEA_TOWN_LOCAL_ID
@@ -1530,6 +1562,12 @@ JohtoPilotGateArrivalStep::
     ret z
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID ; Gold LADDER arrivals stand still
     ret z
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID ; Gold LADDER arrival stands still
+    ret z
+    cp JOHTO_ICE_PATH_B3F_LOCAL_ID ; Gold LADDER arrival stands still
+    ret z
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID ; Gold LADDER arrival stands still
+    ret z
     ; REF-365C: the internal Blackthorn -> Violet return lands on Gold CAVE
     ; at (17,1), one cell north of safe FLOOR (17,2). Step DOWN exactly once.
     ; Outdoor arrivals onto Violet (3,15)/(35,33) are DOWN carpets and stay
@@ -2039,6 +2077,12 @@ JohtoPilotGateDoorWarpMatched::
     cp JOHTO_ICE_PATH_1F_LOCAL_ID
     jr z, .icePathLadderOrCarpet367K
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jp z, .unionCaveLadder342
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jp z, .unionCaveLadder342
+    cp JOHTO_ICE_PATH_B3F_LOCAL_ID
+    jp z, .unionCaveLadder342
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
     jr z, .unionCaveLadder342
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
     jr z, .unionCave1FWarpMatched342

@@ -4,7 +4,7 @@
 ; dispatcher (the Route31/Violet outdoor seam is preview-only; the gate uses
 ; registered Warps). Runtime blocks and headers remain separate in bank $43.
 ; Format: region (1), stable ID (1), width (1), height (1), source .blk ptr (2), ROM bank (1).
-DEF JOHTO_PILOT_SOURCE_COUNT EQU 67
+DEF JOHTO_PILOT_SOURCE_COUNT EQU 70
 DEF JOHTO_PILOT_SOURCE_RECORD_BYTES EQU 7
 DEF JOHTO_PILOT_SOURCE_CONNECTION_COUNT EQU 52
 DEF JOHTO_PILOT_CONNECTION_BYTES EQU 5
@@ -98,6 +98,12 @@ JohtoIcePath1FSourceGoldBlocks:: INCBIN "maps/johto_ice_path_stage/IcePath1F.gol
 ASSERT @ - JohtoIcePath1FSourceGoldBlocks == JOHTO_ICE_PATH_1F_WIDTH * JOHTO_ICE_PATH_1F_HEIGHT
 JohtoIcePathB1FSourceGoldBlocks367K:: INCBIN "maps/johto_ice_path_stage/IcePathB1F.gold.blk"
 ASSERT @ - JohtoIcePathB1FSourceGoldBlocks367K == 10 * 18
+JohtoIcePathB2FMahoganySourceGoldBlocks368A:: INCBIN "maps/johto_ice_path_stage/IcePathB2FMahoganySide.gold.blk"
+ASSERT @ - JohtoIcePathB2FMahoganySourceGoldBlocks368A == 10 * 9
+JohtoIcePathB3FSourceGoldBlocks368B:: INCBIN "maps/johto_ice_path_stage/IcePathB3F.gold.blk"
+ASSERT @ - JohtoIcePathB3FSourceGoldBlocks368B == 10 * 9
+JohtoIcePathB2FBlackthornSourceGoldBlocks368C:: INCBIN "maps/johto_ice_path_stage/IcePathB2FBlackthornSide.gold.blk"
+ASSERT @ - JohtoIcePathB2FBlackthornSourceGoldBlocks368C == 5 * 9
 JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_NEW_BARK_LOCAL_ID, 10, 9
     dw JohtoPilotNewBarkGoldBlocks
@@ -314,6 +320,15 @@ JohtoPilotSourceRecords::
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 10, 18
     dw JohtoIcePathB1FSourceGoldBlocks367K
     db BANK(JohtoIcePathB1FSourceGoldBlocks367K)
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID, 10, 9
+    dw JohtoIcePathB2FMahoganySourceGoldBlocks368A
+    db BANK(JohtoIcePathB2FMahoganySourceGoldBlocks368A)
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID, 10, 9
+    dw JohtoIcePathB3FSourceGoldBlocks368B
+    db BANK(JohtoIcePathB3FSourceGoldBlocks368B)
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID, 5, 9
+    dw JohtoIcePathB2FBlackthornSourceGoldBlocks368C
+    db BANK(JohtoIcePathB2FBlackthornSourceGoldBlocks368C)
 JohtoPilotSourceRecordsEnd::
 ASSERT JohtoPilotSourceRecordsEnd - JohtoPilotSourceRecords == JOHTO_PILOT_SOURCE_COUNT * JOHTO_PILOT_SOURCE_RECORD_BYTES
 

@@ -94,6 +94,9 @@ OverworldLoopLessDelay::
 	and a
 	jp nz,.moveAhead ; if the player sprite has not yet completed the walking animation
 	call JoypadOverworld ; get joypad state (which is possibly simulated)
+	; REF-368F: resume an already-armed ICE slide only at a step boundary.
+	; Do not bypass the existing land/sprite/warp collision pipeline.
+	callab JohtoIcePathInjectSlideInput368F
 	callba SafariZoneCheck
 	ld a,[wSafariZoneGameOver]
 	and a
@@ -384,6 +387,8 @@ OverworldLoopLessDelay::
 	and a
 	jp nz,CheckMapConnections ; it seems like this check will never succeed (the other place where CheckMapConnections is run works)
 ; walking animation finished
+	; REF-368F: arm sliding only after a physical step finishes, not on warp arrival.
+	callab JohtoIcePathArmAfterStep368F
 	ld a,[wd730]
 	bit 7,a
 	jr nz,.doneStepCounting ; if button presses are being simulated, don't count steps
@@ -437,6 +442,7 @@ OverworldLoopLessDelay::
 	set 6,[hl]
 	xor a
 	ld [hJoyHeld],a
+	ld [wIcePathSlideHeading],a ; REF-368F: battle/script must not resume a stale ICE step
 	ld a,[wCurMap]
 	cp CINNABAR_GYM
 	jr nz,.notCinnabarGym
@@ -1589,6 +1595,10 @@ CollisionCheckOnLand::
 	call CheckTilePassable
 	jr nc,.noCollision
 .collision
+	; REF-368F: a forced ICE step hit a sprite, wall or other land obstacle.
+	; Clear heading so the next user input can choose a fresh direction.
+	xor a
+	ld [wIcePathSlideHeading], a
 	;ld a,[wChannelSoundIDs + Ch4]
 	;cp SFX_COLLISION ; check if collision sound is already playing
 	; curSFX is not cleared for some reason.

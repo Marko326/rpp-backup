@@ -150,6 +150,12 @@ JohtoHeaderDescriptors::
     db BANK(JohtoIcePath1FRuntimeHeader367E)
     dw JohtoIcePathB1FRuntimeHeader367K
     db BANK(JohtoIcePathB1FRuntimeHeader367K)
+    dw JohtoIcePathB2FMahoganyRuntimeHeader368A
+    db BANK(JohtoIcePathB2FMahoganyRuntimeHeader368A)
+    dw JohtoIcePathB3FRuntimeHeader368B
+    db BANK(JohtoIcePathB3FRuntimeHeader368B)
+    dw JohtoIcePathB2FBlackthornRuntimeHeader368C
+    db BANK(JohtoIcePathB2FBlackthornRuntimeHeader368C)
 JohtoHeaderDescriptorsEnd::
 ASSERT JohtoHeaderDescriptorsEnd - JohtoHeaderDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_HEADER_DESCRIPTOR_BYTES
 ASSERT JOHTO_HEADER_DESCRIPTOR_BYTES == 3

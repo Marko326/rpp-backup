@@ -1,6 +1,6 @@
 ; REF-367F: LIVE Ice Path 1F (stable ID70) ordinary-walking preview.
 ; Separate Gold ice tileset is registered, only outdoor Warp #1/#2 active.
-; Gold ICE cells are temporarily normal walkable terrain; no auto-slide.
+; Gold ICE cells remain passable here; the live slide controller hooks player movement (REF-368F).
 ; Gold B1F stairs #3/#4 now connect the two B1F return ladders.
 ; Not an R2 completion of the full Ice Path; no Strength, Rock Smash,
 ; wild events or NPCs. B1F preview has blocked lower-floor exits.
@@ -192,4 +192,17 @@ JohtoIcePath1FBikeFloorAllowed367J::
     ret
 .allowed
     scf
+    ret
+
+; REF-368F farcall ABI: Z set only on ICE at BC, other flags inert.
+; Use flags instead of A because Bankswitch restores the old ROM bank in A.
+JohtoIcePath1FIsIce368F::
+    push bc
+    ld a, [wYCoord]
+    ld b, a
+    ld a, [wXCoord]
+    ld c, a
+    call JohtoIcePath1FRoleAt367F
+    cp 2
+    pop bc ; preserve the ICE equality flag
     ret

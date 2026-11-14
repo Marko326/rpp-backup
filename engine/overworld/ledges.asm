@@ -4,17 +4,19 @@ HandleLedges:
 	ret nz
 	ld a, [wCurMapTileset]
 	cp JOHTO_MODERN
-	jr z, .route33Modern
+	jp z, .route33Modern
 	cp JOHTO_ILEX_FOREST
 	jp z, .ilexForestModern
 	cp JOHTO_PILOT
-	jr z, .johtoPilot
+	jp z, .johtoPilot
 	cp JOHTO_UNION_CAVE
 	jp z, .unionCaveB1F
     cp JOHTO_BURNED_TOWER_B1F
     jp z, .burnedTowerB1F
     cp JOHTO_DARK_CAVE
     jp z, .darkCave
+    cp JOHTO_ICE_PATH
+    jp z, .icePathGold368D
 	and a ; original Kanto OVERWORLD
 	ret nz
 	ld hl, LedgeTiles
@@ -41,6 +43,22 @@ HandleLedges:
     jp .ruinsCoordinateHopLookup
 .violetDark
     ld hl, JohtoDarkCaveGoldHops
+    jp .ruinsCoordinateHopLookup
+.icePathGold368D
+    ; Both Ice Path maps with Gold HOP roles require the same native
+    ; two-cell jump executor. The other three floors have no HOP roles.
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    ret nz
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ICE_PATH_1F_LOCAL_ID
+    jr z, .icePath1FHops368D
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    ret nz
+    ld hl, JohtoIcePathBlackthornGoldHops368C
+    jp .ruinsCoordinateHopLookup
+.icePath1FHops368D
+    ld hl, JohtoIcePath1FGoldHops368D
     jp .ruinsCoordinateHopLookup
 .burnedTowerB1F
     ld a, [wCurRegion]
@@ -300,6 +318,8 @@ JohtoSouthHopLandingGuard::
     jp z, .darkCave
     cp JOHTO_DARK_CAVE_BLACKTHORN_ENTRANCE_LOCAL_ID
     jp z, .darkCaveBlackthorn
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    jp z, .icePathBlackthorn368C
     cp JOHTO_ILEX_FOREST_LOCAL_ID
     ret nz
     ld hl, JohtoIlexForestGoldHops
@@ -315,6 +335,9 @@ JohtoSouthHopLandingGuard::
     jp .scan
 .darkCaveBlackthorn
     ld hl, JohtoDarkCaveBlackthornGoldHops
+    jp .scan
+.icePathBlackthorn368C
+    ld hl, JohtoIcePathBlackthornGoldHops368C
     jp .scan
 .route37
     ld hl, JohtoRoute37GoldHops
@@ -428,6 +451,25 @@ JohtoPilotRoute31LedgeTiles:
 ; Keep the Gold source coordinate AND facing direction together so the
 ; (9,30) HOP_DOWN with a WALL landing at (9,32) remains blocked.
 ; Gold Route33 one-way HOP coordinates: source tile + direction.
+; REF-368D: 1F Gold HOP_DOWN_LEFT (35,16) supports LEFT and DOWN;
+; HOP_DOWN at (36,16)/(37,16) supports DOWN only. Exact takeoff
+; cells and two-cell landings checked against the Gold role grid.
+JohtoIcePath1FGoldHops368D:
+    db 35, 16, PLAYER_DIR_LEFT
+    db 35, 16, PLAYER_DIR_DOWN
+    db 36, 16, PLAYER_DIR_DOWN
+    db 37, 16, PLAYER_DIR_DOWN
+    db $ff
+
+; REF-368C Gold original one-way ledges; source quadrant -> 2-cell landing.
+JohtoIcePathBlackthornGoldHops368C:
+    db 5, 8, PLAYER_DIR_LEFT ; HOP_DOWN_LEFT supports both directions
+    db 5, 8, PLAYER_DIR_DOWN
+    db 6, 8, PLAYER_DIR_DOWN
+    db 7, 8, PLAYER_DIR_DOWN
+    db 8, 8, PLAYER_DIR_DOWN
+    db 9, 8, PLAYER_DIR_DOWN
+    db $ff
 JohtoUnionCaveB1FGoldHops:
     db 12, 10, PLAYER_DIR_RIGHT
     db 12, 11, PLAYER_DIR_RIGHT

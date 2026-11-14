@@ -7,7 +7,7 @@ ASSERT JOHTO_PILOT == 28
 ; P5-002 activates five source-audited outdoor maps; other stable IDs remain gated.
 ASSERT JOHTO_NEW_BARK_LOCAL_ID == 0
 ASSERT JOHTO_ROUTE_29_LOCAL_ID == 1
-ASSERT NUM_JOHTO_ACTIVE_MAPS == 67
+ASSERT NUM_JOHTO_ACTIVE_MAPS == 70
 
 JohtoPilot_GFX:: INCBIN "gfx/tilesets/johto.2bpp"
 JohtoPilot_Block:: INCBIN "gfx/blocksets/johto.bst"
@@ -344,6 +344,18 @@ JohtoIcePathB1FRuntimeDescriptor::
     db JOHTO_ICE_PATH_B1F_LOCAL_ID, JOHTO_ICE_PATH, 10, 18
     dw JohtoIcePathB1FRuntimeBlocks367K
     db BANK(JohtoIcePathB1FRuntimeBlocks367K)
+JohtoIcePathB2FMahoganyRuntimeDescriptor::
+    db JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID, JOHTO_ICE_PATH, 10, 9
+    dw JohtoIcePathB2FMahoganyRuntimeBlocks368A
+    db BANK(JohtoIcePathB2FMahoganyRuntimeBlocks368A)
+JohtoIcePathB3FRuntimeDescriptor::
+    db JOHTO_ICE_PATH_B3F_LOCAL_ID, JOHTO_ICE_PATH, 10, 9
+    dw JohtoIcePathB3FRuntimeBlocks368B
+    db BANK(JohtoIcePathB3FRuntimeBlocks368B)
+JohtoIcePathB2FBlackthornRuntimeDescriptor::
+    db JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID, JOHTO_ICE_PATH, 5, 9
+    dw JohtoIcePathB2FBlackthornRuntimeBlocks368C
+    db BANK(JohtoIcePathB2FBlackthornRuntimeBlocks368C)
 JohtoPilotRuntimeResourceDescriptorsEnd::
 ASSERT JohtoPilotRuntimeResourceDescriptorsEnd - JohtoPilotRuntimeResourceDescriptors == NUM_JOHTO_ACTIVE_MAPS * JOHTO_PILOT_RUNTIME_RECORD_SIZE
 
@@ -418,6 +430,12 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp z, .icePath1F
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID
     jp z, .icePathB1F
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jp z, .icePathB2FMahogany
+    cp JOHTO_ICE_PATH_B3F_LOCAL_ID
+    jp z, .icePathB3F
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    jp z, .icePathB2FBlackthorn
     cp JOHTO_DARK_CAVE_VIOLET_ENTRANCE_LOCAL_ID
     jp z, .darkCave
     cp JOHTO_ROUTE_33_LOCAL_ID
@@ -524,6 +542,15 @@ JohtoPilotGetRuntimeResourceDescriptor::
     jp .valid
 .icePathB1F
     ld hl, JohtoIcePathB1FRuntimeDescriptor
+    jp .valid
+.icePathB2FMahogany
+    ld hl, JohtoIcePathB2FMahoganyRuntimeDescriptor
+    jp .valid
+.icePathB3F
+    ld hl, JohtoIcePathB3FRuntimeDescriptor
+    jp .valid
+.icePathB2FBlackthorn
+    ld hl, JohtoIcePathB2FBlackthornRuntimeDescriptor
     jp .valid
 .southAzaleaTown
     ld hl, JohtoSouthAzaleaTownDescriptor

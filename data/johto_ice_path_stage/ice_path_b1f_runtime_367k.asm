@@ -1,6 +1,6 @@
-; REF-367L B1F Gold map preview, ordinary walk, 4 visible fixed boulders, no slide/Strength/PIT.
+; B1F Gold map: live ICE sliding, 4 fixed boulders; Strength push/PIT drops remain disabled.
 ; Original warp ordinals are preserved. Only 1F return ladders #1/#7
-; are active; B2F ladders #2/#8 and PIT #3-#6 are sealed.
+; are active; B2F ladders #2/#8 now live and PIT #3-#6 stay sealed.
 
 JohtoIcePathB1FRuntimeBlocks367K::
     INCBIN "maps/johto_ice_path_stage/IcePathB1F.runtime.blk"
@@ -49,13 +49,13 @@ JohtoIcePathB1FObjects367K::
     db $09 ; Gold ice path border
     db 8 ; original Gold #1-#8 SOURCE slots; third byte is target ordinal
     db 15, 3, 2, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #1 -> 1F #3
-    db $ff, $ff, 1, JOHTO_REGISTERED_WARP_SELECTOR ; #2 B2F sealed
+    db 3, 17, 0, JOHTO_REGISTERED_WARP_SELECTOR ; #2 -> B2F Mahogany Gold #1
     db $ff, $ff, 2, JOHTO_REGISTERED_WARP_SELECTOR ; #3 PIT sealed
     db $ff, $ff, 3, JOHTO_REGISTERED_WARP_SELECTOR ; #4 PIT sealed
     db $ff, $ff, 4, JOHTO_REGISTERED_WARP_SELECTOR ; #5 PIT sealed
     db $ff, $ff, 5, JOHTO_REGISTERED_WARP_SELECTOR ; #6 PIT sealed
     db 25, 5, 3, JOHTO_REGISTERED_WARP_SELECTOR ; Gold #7 -> 1F #4
-    db $ff, $ff, 7, JOHTO_REGISTERED_WARP_SELECTOR ; #8 B2F sealed
+    db 27, 11, 0, JOHTO_REGISTERED_WARP_SELECTOR ; #8 -> B2F Blackthorn Gold #1
     db 0 ; no sign / item / encounter
     ; REF-367M: Gold boulders use four valid local text pointer IDs.
     ; Pushing is intentionally disabled until the B1F PIT/Strength phase.
@@ -160,7 +160,7 @@ JohtoIcePathB1FRoleAhead367K::
     ret
 
 ; E=0 walkable, E=1 wall. Floors and Gold ICE walk normally.
-; B1F holes and two lower-floor ladders remain impassable.
+; B1F holes remain impassable; lower-floor ladders #2/#8 are now live.
 JohtoIcePathB1FLandDecision367K::
     push bc
     call .policy
@@ -188,9 +188,9 @@ JohtoIcePathB1FLandDecision367K::
     ret z
     cp 3 ; PIT (four B2F drops): sealed
     ret z
-    cp 4 ; LADDER: only original B1F #1 and #7 may be walked on
+    cp 4 ; LADDER: all four original B1F stair cells may be walked on
     jr nz, .wallDirection
-    ; Here target is LADDER. Its two other Gold stairs #2/#8 are closed.
+    ; Here target is LADDER. All four Gold stairs #1/#2/#7/#8 are open.
     ; Read current Y/X and direction, derive target again to distinguish.
     ld a, [wYCoord]
     ld b, a
@@ -223,9 +223,23 @@ JohtoIcePathB1FLandDecision367K::
     ret
 .ladder5
     cp 5
-    ret nz
+    jr nz, .ladder11
     ld a, b
     cp 25
+    jr z, .allow
+    ret
+.ladder11
+    cp 11 ; Gold #8 is at (11,27), not (5,25) Gold #7
+    jr nz, .ladder17
+    ld a, b
+    cp 27
+    jr z, .allow
+    ret
+.ladder17
+    cp 17
+    ret nz
+    ld a, b
+    cp 3
     jr z, .allow
     ret
 .wallDirection
@@ -255,4 +269,17 @@ JohtoIcePathB1FBikeFloorAllowed367K::
     ret
 .no
     and a
+    ret
+
+; REF-368F farcall ABI: Z set only on ICE at BC, other flags inert.
+; Use flags instead of A because Bankswitch restores the old ROM bank in A.
+JohtoIcePathB1FIsIce368F::
+    push bc
+    ld a, [wYCoord]
+    ld b, a
+    ld a, [wXCoord]
+    ld c, a
+    call JohtoIcePathB1FRoleAt367K
+    cp 2
+    pop bc ; preserve the ICE equality flag
     ret

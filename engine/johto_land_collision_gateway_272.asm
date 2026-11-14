@@ -34,6 +34,12 @@ JohtoOverworldSouthLandDecision::
     jp z, .icePath1F
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID
     jp z, .icePathB1F
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jp z, .icePathB2FMahogany
+    cp JOHTO_ICE_PATH_B3F_LOCAL_ID
+    jp z, .icePathB3F
+    cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
+    jp z, .icePathB2FBlackthorn
     ; Gold Route32 Center DOOR (11,73), approached from (11,74) UP.
     ; The generic Gold role can otherwise treat the door as a solid wall.
     ld a, [wCurRegion]
@@ -158,7 +164,7 @@ JohtoOverworldSouthLandDecision::
     callab HandleLedges
     ld a, [wd736]
     bit 6, a
-    jr nz, .allowJump
+    jp nz, .allowJump
     callab JohtoEastSpatialStep
     ret
 .route33
@@ -167,7 +173,7 @@ JohtoOverworldSouthLandDecision::
     callab HandleLedges
     ld a, [wd736]
     bit 6, a
-    jr nz, .allowJump
+    jp nz, .allowJump
     callab JohtoRoute33StepPolicy
     ret
 .burnedTower1F
@@ -182,12 +188,33 @@ JohtoOverworldSouthLandDecision::
     callab JohtoBurnedTowerB1FLandDecision
     ret
 .icePath1F
-    ; Gold ICE temporarily behaves as WALKABLE FLOOR. No auto-slide.
+    ; The Gold 1F ledges need HandleLedges before ordinary collision,
+    ; just like Blackthorn B2F. ICE remains walk-only (no auto-slide).
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
     callab JohtoIcePath1FLandDecision367F
     ret
 .icePathB1F
     ; B2F PIT and lower stairs remain sealed; no Strength push yet.
     callab JohtoIcePathB1FLandDecision367K
+    ret
+.icePathB2FMahogany
+    ; B2F Mahogany B1F/B3F ladders active; ICE PIT arrival slots sealed.
+    callab JohtoIcePathB2FMahoganyLandDecision368A
+    ret
+.icePathB3F
+    ; Gold B3F both ladders now connect to B2F Mahogany and Blackthorn.
+    callab JohtoIcePathB3FLandDecision368B
+    ret
+.icePathB2FBlackthorn
+    ; REF-368C: directed HOP ledges (including DOWN_LEFT) and Gold role policy.
+    callab HandleLedges
+    ld a, [wd736]
+    bit 6, a
+    jr nz, .allowJump
+    callab JohtoIcePathB2FBlackthornLandDecision368C
     ret
 .darkCave
     callab HandleLedges

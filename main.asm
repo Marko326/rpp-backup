@@ -3437,6 +3437,21 @@ INCLUDE "data/johto_ice_path_stage/ice_path_1f_runtime_367e.asm"
 SECTION "Johto Ice Path B1F Walk Pilot 367K", ROMX
 INCLUDE "data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm"
 
+SECTION "Johto Ice Path B2F Mahogany Walk Pilot 368A", ROMX
+INCLUDE "data/johto_ice_path_stage/ice_path_b2f_mahogany_runtime_368a.asm"
+
+SECTION "Johto Ice Path B3F Walk Pilot 368B", ROMX
+INCLUDE "data/johto_ice_path_stage/ice_path_b3f_runtime_368b.asm"
+
+SECTION "Johto Ice Path B2F Blackthorn Walk Pilot 368C", ROMX
+INCLUDE "data/johto_ice_path_stage/ice_path_b2f_blackthorn_runtime_368c.asm"
+INCLUDE "engine/johto_ice_path_escape_368d.asm"
+
+; REF-368F live automatic ICE movement state machine.  Floating ROMX only;
+; use the existing five Gold role readers and ordinary overworld collision.
+SECTION "Johto Ice Path Auto Slide 368F", ROMX
+INCLUDE "engine/johto_ice_path_slide_368f.asm"
+
 ; REF-347 1F + REF-348 B1F independent Gold runtime, no story objects.
 SECTION "Johto Burned Tower 1F", ROMX
 INCLUDE "data/johto_burned_tower/REF347_1f_runtime.asm"
