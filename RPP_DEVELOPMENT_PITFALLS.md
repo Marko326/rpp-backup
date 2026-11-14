@@ -1,3 +1,31 @@
+# CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
+
+- 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。
+- 五层 Gold 冰之通路、70 张活动图、188 条方向 Warp；保留楼梯、跳崖、洞穴逃离、合法地面自行车、自动滑行以及步行滑行固定脚步帧。额外保留用户手机工作区五处 `jr`→`jp` 跳转修正，绝不回退到上轮 AI 版本。
+- **骑车边界明确保留**：ICE 上不能新上车；已骑车从 FLOOR 进入 ICE 仍保持骑行，不会自动下车（当前自定义策略，不等于 Gold 原版严格 DUNGEON 下车规则）。用户观察到骑车动画并表示可接受；如需强制下车应另起运行代码开发与手机复测。
+- **尚未完成**：Strength 推四石头、PIT 四落洞、碎岩、道具、NPC 等；无本轮四版本 ROM/MAP 和 ROM0 空间证据，不宣称冰洞所有玩法或全量历史审计已经完成。
+- 累计未提交变更既有游戏功能又有 `tools/` 审计/测试，按最新规范 **模式 A**：单一 ZIP 内三份补丁、两份日志；01（已安装用户 REF-368G → CLEAN）与 03（干净 REF-367 HEAD → CLEAN）互斥；再用 02 暂时撤回工具/文档进行功能提交，反向恢复 02 后提交工具/文档。Git Commit/Push 由用户自己执行。
+- 详细基线、测试命令、历史失败、实测边界与交付步骤见 `docs/CLEAN_REF368_ICE_PATH_SLIDE_FINAL_ACCEPTANCE.md`。
+
+## REF-368G｜冰面滑行不是普通走路动画
+Gold/Silver 冰面滑行时角色仍沿格移动，但脚部不交替迈步；不要把 `AdvancePlayerSprite` 的移动动画直接当成冰面视觉规范。此工程仍复用正常 `AdvancePlayerSprite` 推进坐标和滚屏，只在 `UpdatePlayerSprite` 里、已更新 facing 后且 `wWalkBikeSurfState == 0 && wIcePathSlideHeading != 0` 时把 `wSpriteStateData1+7/+8` 清零并跳过 walk-frame counter；这样固定脚步姿势但保留方向。不能对骑车状态套用此分支，否则会冻结自行车动画。碰撞停下会清滑行头，随后普通站立/步行动画自然恢复。参考 Gold/Silver 冰面动画对照：`docs/REF368G_ICE_PATH_SLIDE_FIXED_POSE_DEV.md`。
+
+# REF-368F｜原生 ICE 滑行跨 Bank ABI 与输入时序
+**易错**：`callab` 把 B 写为目标 Bank、HL 写为入口；不能先以 B=Y/C=X 再跨 Bank 调 Gold role，必须在目标包装函数中重新装载坐标。Bank 恢复会覆盖 A，但 Z 标志可保留，所以以 `cp 2` 的 Z 标志区分 ICE。滑冰不能在读图/落洞 Warp 到达即发射，必须在实际一步动画结束后记录上一移动方向；在下一帧 Joypad 和脚本处理后、常规碰撞前注入方向。普通碰撞失败要清状态，否则会对墙无限自动撞击。使用已有地图进入清零的 `$D67C` 不增 WRAM，不借用 `$D7A3`，不直接改玩家坐标。当前无最新 ROM/MAP/手机证据，不以静态通过冒充运行可玩。
+
+## REF-368D｜看见楼梯却撞墙：别只查 Warp 表
+B1F 第八个 Gold 梯在 `(11,27)`，先前误复制第七个 `(5,25)`，导致第七/八 Warp 同格，真正第八梯又被角色碰撞拒绝。修正对象必须同步放行地形、路由源/目标序数与 `johto_warp_field_entry_contracts.json` 的预期落点，否则新源码也会被旧审计误报。Gold 1F 有四个方向跳崖，B2F Blackthorn 有六个；**地形存在不是可跳**，`HandleLedges` 必须挂到玩家 LAND 网关并检查跳跃状态。新增山洞还要查自行车公共入口、Dig/离洞绳、两端出口和已读存档来源，不能仅在内部写一个 helper。冰洞 Dig/绳首次使用要有从室外进入记录，旧存档无合法来源时拒绝，不得送去旧治疗中心。详见 `docs/REF368D_ICE_PATH_STAIR_HOPS_FIELD_FIX.md`。
+
+## REF-368C｜最后一块 B2F 烟墨侧避免串图／Warp 错位
+ID97 本图只有 10 列 18 行，Gold role 读取必须 y*10+x，不可沿用 ID96 的 y*20+x。两处 Gold LADDER `(3,15)/(3,3)` 分别回 B1F #8 和 B3F #2；不要压缩 Warp ordinal。五个 Gold HOP 格的方向有一格 DOWN_LEFT；跳台必须使用实际源坐标并安全落到两格外，不能将 ICE 当成固体或自动滑行。已接地图不代表 Strength/PIT/ICE 真正完成；同样不能把旧迁移冻结规则失败说成运行 BUG 或把纯静态 PASS 当 ROM 通过。见 `docs/REF368C_ICE_PATH_B2F_BLACKTHORN_FINAL_MAP_DEV.md`。
+
+## REF-368B｜B3F 第四层两梯一开的保护边界
+Gold B3F #1 `(3,5)`↔Mahogany B2F #2 `(9,11)`，且 B3F #2 `(15,5)` 必须封闭至 B2F Blackthorn ID97 真正开放；两个 Gold B3F LADDER 不能全部走通。没有 Rock Smash 不应提前放出岩石或永冻冰道具对象；旧 MAP 属 REF-368A，不能验 REF-368B 的 ROM0。详见 `docs/REF368B_ICE_PATH_B3F_FOURTH_FLOOR_DEV.md`。
+
+## REF-368A｜冰之通路 B2F Mahogany 单区开发候选
+B2F 四格 ICE `warp_event` 是 B1F PIT 的**到达目标**，不能当主动 STEP_IN 源 Warp；B2F Gold #2 是未开放 B3F 的梯子，需保留 ordinal 并封闭。不能把过去的“B2F 全封闭”冻结审计直接放开；应明确允许 Mahogany ID96 并保持 Blackthorn ID97、B3F ID98 关闭。旧存档 WRAM 对象不因换 ROM 自动刷新。
+详见 `docs/REF368A_ICE_PATH_B2F_MAHOGANY_WALK_STAGE.md`。
+
 # CLEAN REF-367｜冰之通路 1F 与 B1F 分层收口（正式提交材料）
 
 - 上次已确认正式 HEAD：`a95ac8d1ddaf47575bc4f08935033d014bfa58cf`（分支 `常规功能备份`，显示 `REF-366@`）。当前开发候选 `REF-367M@`，正式清理目标 `REF-367@`。游戏运行 ASM 与地图数据均不重新设计，只去掉开发版字母。

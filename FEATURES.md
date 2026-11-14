@@ -1,3 +1,31 @@
+# CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
+
+- 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。
+- 五层 Gold 冰之通路、70 张活动图、188 条方向 Warp；保留楼梯、跳崖、洞穴逃离、合法地面自行车、自动滑行以及步行滑行固定脚步帧。额外保留用户手机工作区五处 `jr`→`jp` 跳转修正，绝不回退到上轮 AI 版本。
+- **骑车边界明确保留**：ICE 上不能新上车；已骑车从 FLOOR 进入 ICE 仍保持骑行，不会自动下车（当前自定义策略，不等于 Gold 原版严格 DUNGEON 下车规则）。用户观察到骑车动画并表示可接受；如需强制下车应另起运行代码开发与手机复测。
+- **尚未完成**：Strength 推四石头、PIT 四落洞、碎岩、道具、NPC 等；无本轮四版本 ROM/MAP 和 ROM0 空间证据，不宣称冰洞所有玩法或全量历史审计已经完成。
+- 累计未提交变更既有游戏功能又有 `tools/` 审计/测试，按最新规范 **模式 A**：单一 ZIP 内三份补丁、两份日志；01（已安装用户 REF-368G → CLEAN）与 03（干净 REF-367 HEAD → CLEAN）互斥；再用 02 暂时撤回工具/文档进行功能提交，反向恢复 02 后提交工具/文档。Git Commit/Push 由用户自己执行。
+- 详细基线、测试命令、历史失败、实测边界与交付步骤见 `docs/CLEAN_REF368_ICE_PATH_SLIDE_FINAL_ACCEPTANCE.md`。
+
+# REF-368G@：冰之通路滑行固定脚步姿势
+在 REF-368F 实际自动滑行基础上修正角色动画：步行状态滑行时保持朝向帧并清零步行动画计数，不再交替迈腿；玩家位置仍沿正常步进/滚屏移动。已骑自行车时不套用固定脚步，保留骑车动画。复核五层均有自行车入口：1F/B1F/B2F卡吉侧/B2F烟墨侧/B3F分别 818/251/44/36/75 个可新上车 FLOOR 格；673 个 ICE 格不可直接新上车。维持 70 图/188 方向 Warp；Strength/PIT 未做，ROM/MAP 与手机验收待用户。详见 `docs/REF368G_ICE_PATH_SLIDE_FIXED_POSE_DEV.md`。
+
+## REF-368F@：冰之通路五层的实际自动滑冰
+在真实玩家完整步进、下帧输入、普通碰撞与地图载入处接入 ICE 自动滑行。保存上一步方向并在冰面强制继续，碰撞后解锁转向，跨图/对战/脚本清除；五层 Gold role Bank 采用局部读取坐标返回 Z 标志。维持 70 图/188 方向 Warp；怪力石头和落洞仍未做。仍需 ROM/MAP 与手机验收。详见 `docs/REF368F_ICE_PATH_LIVE_AUTO_SLIDE_DEV.md`。
+
+## REF-368D｜修复 B1F 楼梯、两张地图跃崖与洞穴退出
+修复 B1F Gold 第八梯 `(11,27)` 原误写成第七梯 `(5,25)` 导致的硬阻挡与错传送；补足步入碰撞放行。1F 新接四个方向跳崖，Blackthorn B2F 六方向跳崖保持，两图均走真实 `HandleLedges` 公共入口；五层自行车 FLOOR 判断复核。对照黑暗洞穴补入冰之通路 Dig/逃洞绳室外来源记录与安全出口。活动图 70、方向 Warp 188。尚无 ROM/手机验收；ICE 滑行、Strength、PIT、碎岩、物品等未开发。详见 `docs/REF368D_ICE_PATH_STAIR_HOPS_FIELD_FIX.md`。
+
+## REF-368C｜冰之通路最后地图 B2F 烟墨侧（ID97）
+Gold 5×9 block / 10×18 格，B1F Gold #8 ↔ B2F 烟墨侧 Gold #1、B3F Gold #2 ↔ B2F 烟墨侧 Gold #2 四条路由已接，单向跳台/方向墙、地点牌、存档/Town Map/音乐已登记；70 活动图/188 方向 Warp。冰面暂普通行走，Strength 石头、PIT、Rock Smash、道具和 NPC 仍未启用。详见 `docs/REF368C_ICE_PATH_B2F_BLACKTHORN_FINAL_MAP_DEV.md`。
+
+## REF-368B｜冰之通路 B3F 第四层普通步行候选
+Gold B3F（ID98）开放，与 B2F Mahogany Gold #2↔B3F Gold #1 双向楼梯连通；Blackthorn Side（ID97）与 B3F 另一梯继续封闭。69 活动地图／184 方向 Warp；ICE、PIT、Strength、Rock Smash 与道具不新增。详见 `docs/REF368B_ICE_PATH_B3F_FOURTH_FLOOR_DEV.md`。
+
+## REF-368A｜冰之通路 B2F Mahogany 单区开发候选
+新增 Gold B2F Mahogany Side（ID96）单区普通行走、B1F↔B2F 一对双向楼梯、Ice Path B2F 地点牌、地图 Header 与音乐/存档/Town Map、FLOOR 允许新上车。68 活动地图／182 Warp；ICE 仍普通走路，B3F、另外一块 B2F、PIT 和 Strength 仍封闭。
+详见 `docs/REF368A_ICE_PATH_B2F_MAHOGANY_WALK_STAGE.md`。
+
 # CLEAN REF-367｜冰之通路 1F 与 B1F 分层收口（正式提交材料）
 
 - 上次已确认正式 HEAD：`a95ac8d1ddaf47575bc4f08935033d014bfa58cf`（分支 `常规功能备份`，显示 `REF-366@`）。当前开发候选 `REF-367M@`，正式清理目标 `REF-367@`。游戏运行 ASM 与地图数据均不重新设计，只去掉开发版字母。

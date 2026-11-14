@@ -131,19 +131,21 @@ def audit(root: Path) -> list[str]:
     for x in contract.get('outside_warps', []):
         check(x['role'] == 'CAVE', 'Gold outdoor cave entrance must be CAVE step-in')
 
-    # REF-367K exception: the Gold resources remain verified for all floors;
-    # 1F+B1F are walk-only pilots, B2F/B3F still closed. No slide/PIT/Strength.
+    # REF-368A: 1F/B1F and B2F Mahogany walk-only; B2F Blackthorn/B3F closed.
     region = (root / 'constants/region_map_constants.asm').read_text(encoding='utf-8')
-    check('DEF NUM_JOHTO_ACTIVE_MAPS EQU 67' in region,
-          'only Ice Path 1F and B1F walk pilots should activate, for 67 maps')
+    check('DEF NUM_JOHTO_ACTIVE_MAPS EQU 70' in region,
+          'all five Ice Path Gold map regions active, 70 maps')
     runtime = (root / 'data/johto_header_descriptors.asm').read_text(encoding='utf-8')
     check('dw JohtoIcePath1FRuntimeHeader367E' in runtime,
           'IcePath1F header not registered')
     check('dw JohtoIcePathB1FRuntimeHeader367K' in runtime, 'Ice Path B1F not activated')
-    for closed in ('JohtoIcePathB2F', 'JohtoIcePathB3F'):
-        check(closed not in runtime, f'underground map activated too early: {closed}')
-    check('db "REF-367@"' in (root / 'data/game_version.asm').read_text(encoding='utf-8'),
-          'official CLEAN label mismatch')
+    check('dw JohtoIcePathB2FMahoganyRuntimeHeader368A' in runtime,
+          'Ice Path B2F Mahogany not activated')
+    check('dw JohtoIcePathB2FBlackthornRuntimeHeader368C' in runtime,
+          'Ice Path B2F Blackthorn side not activated')
+    check('dw JohtoIcePathB3FRuntimeHeader368B' in runtime, 'B3F live fourth floor not activated')
+    check('db "REF-368@"' in (root / 'data/game_version.asm').read_text(encoding='utf-8'),
+          'current development label mismatch')
     return problems
 
 
@@ -156,7 +158,7 @@ def main():
         for e in errors: print('FAIL:',e)
         print(f'FAIL {len(errors)} errors')
         return 1
-    print('PASS: Ice Path 5 maps, 3,060 roles, 22 Warps, 4 PIT and 4 arrival-only ICE; only 1F/B1F walk pilots active; B2F/B3F still sealed')
+    print('PASS: Ice Path 5 maps, 3,060 roles, 22 Warps, 4 PIT and 4 arrival-only ICE; all five Ice Path maps active; PIT/Strength still disabled; live slide audited separately')
     return 0
 
 if __name__=='__main__':

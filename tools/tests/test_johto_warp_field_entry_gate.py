@@ -30,8 +30,8 @@ def test_current_activation_and_high_risk_arrivals_pass():
     result = audit(ROOT)
     assert result['status'] == 'PASS_SOURCE_ONLY', result['errors']
     assert result['passed'] >= 55
-    assert len(registered_routes((ROOT/PILOT).read_text())) == 180
-    assert len(active_ids((ROOT/ROSTER).read_text())) == 67
+    assert len(registered_routes((ROOT/PILOT).read_text())) == 188
+    assert len(active_ids((ROOT/ROSTER).read_text())) == 70
 
 
 def test_removing_real_bike_public_entry_fails():
@@ -102,7 +102,7 @@ def test_new_registered_warp_without_review_fails():
 
 def test_new_active_map_without_review_fails():
     old = 'JOHTO_INVALID_ACTIVE_SLOT, 57, 58, JOHTO_INVALID_ACTIVE_SLOT'
-    new = '67, 57, 58, JOHTO_INVALID_ACTIVE_SLOT'
+    new = '70, 57, 58, JOHTO_INVALID_ACTIVE_SLOT'
     _fails('new_active_map_requires_field_and_arrival_review', _mutate(ROSTER, old, new))
 
 

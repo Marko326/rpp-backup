@@ -53,8 +53,8 @@ def test_bad_target_warp_caught(tmp_path):
 def test_cannot_enable_incomplete_map(tmp_path):
     setup_copy(tmp_path)
     f=tmp_path/'constants/region_map_constants.asm'
-    f.write_text(f.read_text().replace('DEF NUM_JOHTO_ACTIVE_MAPS EQU 67','DEF NUM_JOHTO_ACTIVE_MAPS EQU 70'))
-    assert any('only Ice Path 1F and B1F walk pilots should activate' in e for e in audit(tmp_path))
+    f.write_text(f.read_text().replace('DEF NUM_JOHTO_ACTIVE_MAPS EQU 70','DEF NUM_JOHTO_ACTIVE_MAPS EQU 69'))
+    assert any('all five Ice Path Gold map regions active' in e for e in audit(tmp_path))
 
 
 def test_bad_external_door_caught(tmp_path):

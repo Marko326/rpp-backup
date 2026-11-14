@@ -104,7 +104,7 @@ def test_ice_path_save_name_fallback_detected(tmp_path):
 def test_active_surf_inventory_accepts_ice_path_gold_block_directory():
     from tools.johto_surf_coverage_audit import read_active_maps
     active = read_active_maps(ROOT)
-    assert len(active) == 67
+    assert len(active) == 70
     assert any(row['map'] == 'IcePath1F' and row['stable_id'] == 70
                and row['source_asset'] == 'maps/johto_ice_path_stage/IcePath1F.gold.blk'
                for row in active)

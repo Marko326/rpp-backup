@@ -116,14 +116,14 @@ def test_current_global_registry_guard_rejects_stale_ice_path_map_count(monkeypa
     def broken_read(path, *args, **kwargs):
         result = original(path, *args, **kwargs)
         if path.as_posix().endswith('constants/region_map_constants.asm'):
-            assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 67' in result
-            return result.replace('DEF NUM_JOHTO_ACTIVE_MAPS EQU 67',
+            assert 'DEF NUM_JOHTO_ACTIVE_MAPS EQU 70' in result
+            return result.replace('DEF NUM_JOHTO_ACTIVE_MAPS EQU 70',
                                   'DEF NUM_JOHTO_ACTIVE_MAPS EQU 66', 1)
         return result
     with monkeypatch.context() as ctx:
         ctx.setattr(Path, 'read_text', broken_read)
         result = audit(ROOT)
-    assert 'current_67_active_maps' in result['errors']
+    assert 'current_70_active_maps' in result['errors']
 
 
 def test_current_global_warp_gate_rejects_dropped_route(monkeypatch):
@@ -140,11 +140,11 @@ def test_current_global_warp_gate_rejects_dropped_route(monkeypatch):
             lines = table.splitlines(keepends=True)
             candidates = [i for i, line in enumerate(lines)
                           if line.lstrip().startswith('db MAP_REGION_JOHTO, JOHTO_')]
-            assert len(candidates) == 180, len(candidates)
+            assert len(candidates) == 188, len(candidates)
             lines.pop(candidates[-1])
             return before + sep + ''.join(lines) + sep2 + suffix
         return result
     with monkeypatch.context() as ctx:
         ctx.setattr(Path, 'read_text', broken_read)
         result = audit(ROOT)
-    assert 'current_180_unique_registered_routes' in result['errors']
+    assert 'current_188_unique_registered_routes' in result['errors']

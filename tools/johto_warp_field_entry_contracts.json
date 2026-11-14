@@ -351,6 +351,134 @@
       ],
       "step": "NONE",
       "new_route_review": true
+    },
+    {
+      "name": "iceb1f_to_b2f_mahogany_stair",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "landing": [
+        17,
+        1
+      ],
+      "departure": [
+        17,
+        3
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "iceb2f_mahogany_to_b1f_return",
+      "from": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "landing": [
+        17,
+        3
+      ],
+      "departure": [
+        17,
+        1
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "iceb2f_mahogany_to_b3f_stair",
+      "from": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_ICE_PATH_B3F_LOCAL_ID",
+      "landing": [
+        3,
+        5
+      ],
+      "departure": [
+        9,
+        11
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "iceb3f_to_b2f_mahogany_return",
+      "from": "JOHTO_ICE_PATH_B3F_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "landing": [
+        9,
+        11
+      ],
+      "departure": [
+        3,
+        5
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b1f_to_b2fb_blackthorn",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 7,
+      "to": "JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID",
+      "landing": [
+        3,
+        15
+      ],
+      "departure": [
+        11,
+        27
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b2fb_to_b1f_return",
+      "from": "JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID",
+      "ordinal": 0,
+      "to": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "landing": [
+        11,
+        27
+      ],
+      "departure": [
+        3,
+        15
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b3f_to_b2fb_blackthorn",
+      "from": "JOHTO_ICE_PATH_B3F_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID",
+      "landing": [
+        3,
+        3
+      ],
+      "departure": [
+        15,
+        5
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b2fb_to_b3f_return",
+      "from": "JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID",
+      "ordinal": 1,
+      "to": "JOHTO_ICE_PATH_B3F_LOCAL_ID",
+      "landing": [
+        15,
+        5
+      ],
+      "departure": [
+        3,
+        3
+      ],
+      "step": "NONE",
+      "new_route_review": true
     }
   ],
   "must_stay_stationary": [
@@ -448,6 +576,38 @@
       "xy": [
         3,
         11
+      ]
+    },
+    {
+      "name": "iceb2f_pit_arrival_3",
+      "map": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "xy": [
+        11,
+        4
+      ]
+    },
+    {
+      "name": "iceb2f_pit_arrival_4",
+      "map": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "xy": [
+        4,
+        6
+      ]
+    },
+    {
+      "name": "iceb2f_pit_arrival_5",
+      "map": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "xy": [
+        4,
+        12
+      ]
+    },
+    {
+      "name": "iceb2f_pit_arrival_6",
+      "map": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "xy": [
+        12,
+        12
       ]
     }
   ],
@@ -712,6 +872,36 @@
       "source_reference": "docs/REF367A_ICE_PATH_GOLD_SOURCE_CONTRACT.json:IcePathB1F",
       "audit_test_file": "tools/tests/test_johto_ice_path_b1f_367k.py",
       "audit_test_function": "test_ice_path_b1f_new_map_review"
+    },
+    {
+      "stable_id": 96,
+      "bike_policy": "FLOOR_ONLY_CAVE",
+      "surf_policy": "NO_WATER",
+      "flash_policy": "NOT_APPLICABLE",
+      "warp_arrival_review": "B1F Gold #2 (17,3) STEP_IN <-> B2F Mahogany Gold #1 (17,1) stationary. B3F #2 sealed; four ICE #3-#6 are arrival-only and cannot warp. Gold ICE walk-only; no falling boulders or items.",
+      "source_reference": "docs/REF367A_ICE_PATH_GOLD_SOURCE_CONTRACT.json:IcePathB2FMahoganySide",
+      "audit_test_file": "tools/tests/test_johto_ice_path_b2f_mahogany_368a.py",
+      "audit_test_function": "test_new_map_review"
+    },
+    {
+      "stable_id": 98,
+      "bike_policy": "FLOOR_ONLY_CAVE",
+      "surf_policy": "NO_WATER",
+      "flash_policy": "NOT_APPLICABLE",
+      "warp_arrival_review": "Gold B3F #1 (3,5) STEP_IN to Mahogany B2F #2 (9,11), both stationary; B3F Gold #2 (15,5) to inactive Blackthorn B2F sealed; no Rock Smash or item objects.",
+      "source_reference": "docs/REF367A_ICE_PATH_GOLD_SOURCE_CONTRACT.json:IcePathB3F",
+      "audit_test_file": "tools/tests/test_johto_ice_path_b3f_368b.py",
+      "audit_test_function": "test_ice_path_b3f_new_map_review"
+    },
+    {
+      "stable_id": 97,
+      "bike_policy": "FLOOR_ONLY_CAVE",
+      "surf_policy": "NO_WATER",
+      "flash_policy": "NOT_APPLICABLE",
+      "warp_arrival_review": "B1F Gold #8 (11,27) STEP_IN <-> Blackthorn B2F Gold #1 (3,15); B3F Gold #2 (15,5) STEP_IN <-> Blackthorn B2F Gold #2 (3,3), all stationary; Gold ONE_WAY HOP enforced; ICE walks only, no sliding/pits/items",
+      "source_reference": "docs/REF367A_ICE_PATH_GOLD_SOURCE_CONTRACT.json:IcePathB2FBlackthornSide",
+      "audit_test_file": "tools/tests/test_johto_ice_path_b2f_blackthorn_368c.py",
+      "audit_test_function": "test_new_blackthorn_map_review"
     }
   ]
 }

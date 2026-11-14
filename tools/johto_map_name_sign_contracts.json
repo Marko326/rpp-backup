@@ -389,6 +389,24 @@
       "role": "named",
       "name": "Ice Path",
       "town_map_name": "Ice Path"
+    },
+    {
+      "id": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "role": "named",
+      "name": "Ice Path",
+      "town_map_name": "Ice Path"
+    },
+    {
+      "id": "JOHTO_ICE_PATH_B3F_LOCAL_ID",
+      "role": "named",
+      "name": "Ice Path",
+      "town_map_name": "Ice Path"
+    },
+    {
+      "id": "JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID",
+      "role": "named",
+      "name": "Ice Path",
+      "town_map_name": "Ice Path"
     }
   ]
 }

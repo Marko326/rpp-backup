@@ -87,16 +87,16 @@ def audit(root: Path) -> list[str]:
     )}
     must = {
         'main.asm': ('INCLUDE "data/johto_ice_path_stage/ice_path_1f_runtime_367e.asm"',),
-        'constants/region_map_constants.asm': ('NUM_JOHTO_ACTIVE_MAPS EQU 67',),
+        'constants/region_map_constants.asm': ('NUM_JOHTO_ACTIVE_MAPS EQU 70',),
         'data/johto_header_descriptors.asm': ('dw JohtoIcePath1FRuntimeHeader367E',),
         'data/johto_pilot_runtime_assets.asm': ('JohtoIcePath1FRuntimeDescriptor::', '.icePath1F'),
-        'data/johto_pilot_source_resources.asm': ('DEF JOHTO_PILOT_SOURCE_COUNT EQU 67', 'JohtoIcePath1FSourceGoldBlocks::'),
+        'data/johto_pilot_source_resources.asm': ('DEF JOHTO_PILOT_SOURCE_COUNT EQU 70', 'JohtoIcePath1FSourceGoldBlocks::'),
         'data/johto_stable_id_slots.asm': ('37, 38, 40, 39, 41, 42, 65, 43',),
         'data/tileset_headers.asm': ('tileset JohtoIcePath1FGoldBlocks367E, JohtoIcePath1FGoldGFX367E',),
         'data/warp_tile_ids.asm': ('dw JohtoIcePathWarpTileIDs',),
         'data/dungeon_tilesets.asm': ('JOHTO_ICE_PATH, $FF',),
         'home.asm': ('JohtoIcePath_Coll:: db $ff',),
-        'data/game_version.asm': ('db "REF-367@"',),
+        'data/game_version.asm': ('db "REF-368@"',),
         'engine/johto_land_collision_gateway_272.asm': ('callab JohtoIcePath1FLandDecision367F',),
         'engine/johto_pilot_runtime.asm': (
             'JohtoIcePath1FDownCarpet367F::',
@@ -216,10 +216,10 @@ def audit(root: Path) -> list[str]:
     for entry in routes:
         if route_code.count(entry) != 1:
             issues.append(f'1F missing/duplicated real warp route: {entry}')
-    # REF-367K: B1F is separately registered, but no B2F/B3F may activate.
-    for path in ('data/johto_header_descriptors.asm', 'data/johto_pilot_runtime_assets.asm'):
-        for closed in ('JohtoIcePathB2F', 'JohtoIcePathB3F'):
-            if closed in project[path]: issues.append(f'inactive lower Ice Path floor activated: {path}: {closed}')
+    # REF-368C: all five Gold map regions active; PIT/Strength/slide remain delayed.
+    for path, name in [('data/johto_header_descriptors.asm', 'JohtoIcePathB2FBlackthornRuntimeHeader368C'),
+                       ('data/johto_pilot_runtime_assets.asm', 'JohtoIcePathB2FBlackthornRuntimeDescriptor')]:
+        if name not in project[path]: issues.append(f'new Gold Ice Path region not registered: {path}: {name}')
     step_code = (root / SRC).read_text(encoding='utf8')
     if any(token not in step_code for token in (
         'JohtoIcePath1FLandDecision367F::',

@@ -1,3 +1,31 @@
+# CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
+
+- 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。
+- 五层 Gold 冰之通路、70 张活动图、188 条方向 Warp；保留楼梯、跳崖、洞穴逃离、合法地面自行车、自动滑行以及步行滑行固定脚步帧。额外保留用户手机工作区五处 `jr`→`jp` 跳转修正，绝不回退到上轮 AI 版本。
+- **骑车边界明确保留**：ICE 上不能新上车；已骑车从 FLOOR 进入 ICE 仍保持骑行，不会自动下车（当前自定义策略，不等于 Gold 原版严格 DUNGEON 下车规则）。用户观察到骑车动画并表示可接受；如需强制下车应另起运行代码开发与手机复测。
+- **尚未完成**：Strength 推四石头、PIT 四落洞、碎岩、道具、NPC 等；无本轮四版本 ROM/MAP 和 ROM0 空间证据，不宣称冰洞所有玩法或全量历史审计已经完成。
+- 累计未提交变更既有游戏功能又有 `tools/` 审计/测试，按最新规范 **模式 A**：单一 ZIP 内三份补丁、两份日志；01（已安装用户 REF-368G → CLEAN）与 03（干净 REF-367 HEAD → CLEAN）互斥；再用 02 暂时撤回工具/文档进行功能提交，反向恢复 02 后提交工具/文档。Git Commit/Push 由用户自己执行。
+- 详细基线、测试命令、历史失败、实测边界与交付步骤见 `docs/CLEAN_REF368_ICE_PATH_SLIDE_FINAL_ACCEPTANCE.md`。
+
+# REF-368G@｜冰之通路滑行固定脚步姿势
+[x] 五层自行车复核：818/251/44/36/75 个 Gold FLOOR 可新上车格，673 ICE 格不允许直接上车；[x] 步行滑行时固定脚部帧，保持方向与正常地图移动；[x] 已骑车状态保留原骑车动画；[x] 47 条相关测试与 Gold ICE/Bike 静态门禁通过。[ ] RGBDS 四版本 ROM/MAP、ROM0≥64B 与手机逐帧验收；[ ] B1F Strength 四石头 + PIT；[ ] 历史迁移审计 35 项失败继续梳理；[ ] CLEAN 提交。详见 `docs/REF368G_ICE_PATH_SLIDE_FIXED_POSE_DEV.md`。
+
+# REF-368F@｜冰之通路连续滑行接入（仍为开发候选）
+[x] 五张活动地图真实步进完成后才记住 ICE 方向、帧间强制保持朝向；[x] 撞墙/NPC/石头停止滑行、换图/战斗/脚本安全清零；[x] 跨 Bank 坐标 ABI 防护、浮动 ROMX 驱动；[x] 157/157 冰洞回归，当前静态门禁前16组通过。[ ] B1F Strength 四石头 + PIT；[ ] RGBDS 四版本 ROM/MAP、ROM0≥64B、手机冰面/楼梯/跳崖实测；[ ] 旧迁移审计 35 项失败；[ ] CLEAN 提交。详见 `docs/REF368F_ICE_PATH_LIVE_AUTO_SLIDE_DEV.md`。
+
+## REF-368D｜B1F 楼梯／跃崖／山洞通用动作修复
+[x] 第八梯 Gold `(11,27)`、正确唯一对象、碰撞放行以及原第七梯不变；[x] Ice Path 两图全部十个方向 HOP 的公共移动入口；[x] 五图自行车公共入口；[x] 两侧洞口源记录与 Dig/逃洞绳安全出口；[x] 152 Warp/Field entry 静态门禁、15 条新回归与故障注入。[ ] 用户四版 ROM/MAP（ROM0≥64B）、楼梯、跳崖和两侧退出的手机实测；[ ] ICE 自动滑行、四块 Strength 石头和 PIT、碎岩/道具/NPC/剧情；[ ] 历史冻结审计继续清理；[ ] Commit/Push。见 `docs/REF368D_ICE_PATH_STAIR_HOPS_FIELD_FIX.md`。
+
+## REF-368C｜冰之通路五张 Gold 地图全部接入（开发态）
+[x] B2F Blackthorn ID97、两对双向梯、定向 HOP/UP_WALL 碰撞、70 图/188 Warp；[x] 新地图 152/152 Warp/入口检查与 48 相关测试；[ ] 旧迁移门禁 35 条冻结失败／旧全套 83 条测试失败待分步梳理；[ ] 冰面持续滑行、Strength 推石/PIT 与来源传送；[ ] RGBDS 四版本、MAP ROM0≥64B、手机往返/碰撞实测；[ ] 用户自行 Git Commit/Push。详见 `docs/REF368C_ICE_PATH_B2F_BLACKTHORN_FINAL_MAP_DEV.md`。
+
+## REF-368B｜冰之通路第四层 B3F 候选
+[x] B3F ID98 地图、普通步行及 B2F Mahogany 双向梯子；[ ] 手机 RGBDS 四版本构建／MAP ROM0≥64B／实际两向楼梯、存档和图块体验；[ ] B2F Blackthorn ID97 与其未接楼梯；[ ] Strength、PIT、ICE 滑行、B3F Rock Smash／道具。详见 `docs/REF368B_ICE_PATH_B3F_FOURTH_FLOOR_DEV.md`。
+
+## REF-368A｜冰之通路 B2F Mahogany 单区开发候选
+[x] B2F Mahogany ID96 与 B1F 两向楼梯已接入候选；[ ] 手机 RGBDS 0.5.2 四版本编译和 MAP ROM0≥64B、旧模拟器缓存重载、两向楼梯实测；[ ] B2F Blackthorn ID97、B3F ID98；[ ] Strength 四石头、PIT 到达点与滑冰另批施工。
+详见 `docs/REF368A_ICE_PATH_B2F_MAHOGANY_WALK_STAGE.md`。
+
 # CLEAN REF-367｜冰之通路 1F 与 B1F 分层收口（正式提交材料）
 
 - 上次已确认正式 HEAD：`a95ac8d1ddaf47575bc4f08935033d014bfa58cf`（分支 `常规功能备份`，显示 `REF-366@`）。当前开发候选 `REF-367M@`，正式清理目标 `REF-367@`。游戏运行 ASM 与地图数据均不重新设计，只去掉开发版字母。

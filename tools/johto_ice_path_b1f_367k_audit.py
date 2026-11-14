@@ -34,8 +34,8 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     one=code('data/johto_ice_path_stage/ice_path_1f_runtime_367e.asm')
     wh=asm.split('JohtoIcePathB1FObjects367K::',1)[-1].split('JohtoIcePathB1FRoleAt367K::',1)[0]
     rows=re.findall(r'(?m)^\s*db\s+(\$ff|\d+),\s*(\$ff|\d+),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR\s*$', '\n'.join(l.split(';')[0] for l in wh.splitlines()))
-    expected=[('15','3','2'),('$ff','$ff','1'),('$ff','$ff','2'),('$ff','$ff','3'),('$ff','$ff','4'),('$ff','$ff','5'),('25','5','3'),('$ff','$ff','7')]
-    ck(rows==expected,'B1F Gold 8 ordinal objects invalid / B2F/PIT prematurely unsealed')
+    expected=[('15','3','2'),('3','17','0'),('$ff','$ff','2'),('$ff','$ff','3'),('$ff','$ff','4'),('$ff','$ff','5'),('25','5','3'),('27','11','0')]
+    ck(rows==expected,'B1F Gold 8 ordinal objects invalid (including #8 at 11,27) / four PIT slots must remain sealed')
     # REF-367M: text IDs 1..4 on the visible props are live even when
     # pushing is disabled. A missing entry makes DisplayTextID interpret the
     # warp/object bytes as 16-bit text pointers (e.g. an unrelated nurse menu).
@@ -83,6 +83,11 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
             matched = bool(re.search(r'\bcp\s+9\s*\n\s*jr nz,\s*\.read',step_gate)) and bool(re.search(rf'\bcp\s+{x}\s*\n\s*jr z,\s*\.blocked',step_gate))
         ck(matched, f'B1F boulder ({x},{y}) static collision guard missing')
     ck('db 8 ; original Gold #1-#8 SOURCE slots' in asm,'B1F eight warp objects header missing')
+    ck('cp 17' in asm.split('.ladder17',1)[-1] and 'cp 3' in asm.split('.ladder17',1)[-1], 'B1F B2F Mahogany Gold #2 ladder collision not opened')
+    ladder11 = re.search(r'(?ms)^\.ladder11\s*\n(.*?)^\.ladder17\s*$', asm)
+    ladder11 = ladder11.group(1) if ladder11 else ''
+    ck(ladder11 != asm and bool(re.search(r'cp 11\s*;[^\n]*\n\s*jr nz, \.ladder17\s*\n\s*ld a, b\s*\n\s*cp 27\s*\n\s*jr z, \.allow', ladder11)),
+       'B1F #8 at (11,27) collision still blocked despite Gold ladder')
     ck('db 18, 10' in asm and 'db JOHTO_ICE_PATH' in asm,'B1F Gold runtime header missing')
     ck('INCLUDE "data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm"' in code('main.asm'),'B1F native runtime not linked')
     ck('JohtoIcePathB1FRuntimeHeader367K' in code('data/johto_header_descriptors.asm'),'B1F header not registered')
@@ -102,13 +107,13 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     ck('cp JOHTO_ICE_PATH_1F_LOCAL_ID' in lines and 'jr z, .icePathLadderOrCarpet367K' in lines and 'cp 37' in lines and 'jr z, .unionCaveLadder342' in lines,'1F LADDER not immediate STEP_IN')
     ck('cp JOHTO_ICE_PATH_B1F_LOCAL_ID' in lines and 'jr z, .unionCaveLadder342' in lines,'B1F return LADDER not immediate STEP_IN')
     ck('cp JOHTO_ICE_PATH_B1F_LOCAL_ID ; Gold LADDER arrivals stand still' in lines,'B1F ladder arrival must not auto-step')
-    ck('NUM_JOHTO_ACTIVE_MAPS EQU 67' in code('constants/region_map_constants.asm'),'active map roster not raised to 67')
-    ck('db "REF-367@"' in code('data/game_version.asm'),'official label not REF-367@')
+    ck('NUM_JOHTO_ACTIVE_MAPS EQU 70' in code('constants/region_map_constants.asm'),'active map roster must include 70 maps')
+    ck('db "REF-368@"' in code('data/game_version.asm'),'development label not REF-368@')
     return errs
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);args=p.parse_args()
     problems=audit(args.root)
     for problem in problems: print('FAIL:', problem)
-    if not problems:print('PASS: B1F two stair pairs, four fixed visible boulders with safe in-bank dialogue, B2F/PIT sealed')
+    if not problems:print('PASS: B1F four Gold stair pairs, four fixed visible boulders and safe text; PIT remain sealed')
     raise SystemExit(bool(problems))

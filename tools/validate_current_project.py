@@ -64,13 +64,26 @@ def main(argv: list[str] | None = None) -> int:
          [sys.executable, 'tools/johto_ice_path_1f_367e_audit.py', '--root', '.']),
         ('Ice Path B1F live stairs / cave safety gate',
          [sys.executable, 'tools/johto_ice_path_b1f_367k_audit.py', '--root', '.']),
+        ('Ice Path B2F Mahogany sole stair / arrival-only pit / walk gate',
+         [sys.executable, 'tools/johto_ice_path_b2f_mahogany_368a_audit.py', '--root', '.']),
+        ('Ice Path B3F Gold fourth floor / two open reciprocal stair gate',
+         [sys.executable, 'tools/johto_ice_path_b3f_368b_audit.py', '--root', '.']),
+        ('Ice Path B2F Blackthorn Gold stairs / directed hop / source gate',
+         [sys.executable, 'tools/johto_ice_path_b2f_blackthorn_368c_audit.py', '--root', '.']),
+        ('Ice Path REF368D Gold stair / both ledges / bicycle / rope gate',
+         [sys.executable, 'tools/johto_ice_path_stair_ledge_368d_audit.py', '--root', '.']),
+        ('Ice Path REF368E five-floor bicycle item / SELECT / mounted-transfer gate',
+         [sys.executable, 'tools/johto_ice_path_bicycle_368e_audit.py', '--root', '.']),
+        ('Ice Path REF368F live slide step/input/bank-safety gate',
+         [sys.executable, 'tools/johto_ice_path_slide_368f_audit.py', '--root', '.']),
         ('active map name-sign contract',
          [sys.executable, 'tools/johto_map_name_sign_audit.py', '--project', '.']),
         ('Dark Cave Gold field-move audit',
          [sys.executable, 'tools/johto_dark_cave_365_audit.py', '--root', '.'] +
          (['--gold-root', str(args.gold_root.resolve())] if args.gold_root else [])),
-        # REF-367A: staged ICE resources must remain exact and inactive until
-        # a separate reviewed ice-slide/PIT/Strength runtime implementation.
+        # Gold ICE stage: original five source maps remain exact; native
+        # dormant controller is still unlinked, live REF368F slide has its own
+        # separate real-step/joypad gate; PIT/Strength remain unimplemented.
         ('Ice Path Gold source-staging gate',
          [sys.executable, 'tools/johto_ice_path_367_stage_audit.py', '--root', '.']),
         ('Ice Path directional movement and Strength/PIT reference gate',

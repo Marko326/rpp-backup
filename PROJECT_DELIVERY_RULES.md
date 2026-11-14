@@ -1,3 +1,31 @@
+# CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
+
+- 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。
+- 五层 Gold 冰之通路、70 张活动图、188 条方向 Warp；保留楼梯、跳崖、洞穴逃离、合法地面自行车、自动滑行以及步行滑行固定脚步帧。额外保留用户手机工作区五处 `jr`→`jp` 跳转修正，绝不回退到上轮 AI 版本。
+- **骑车边界明确保留**：ICE 上不能新上车；已骑车从 FLOOR 进入 ICE 仍保持骑行，不会自动下车（当前自定义策略，不等于 Gold 原版严格 DUNGEON 下车规则）。用户观察到骑车动画并表示可接受；如需强制下车应另起运行代码开发与手机复测。
+- **尚未完成**：Strength 推四石头、PIT 四落洞、碎岩、道具、NPC 等；无本轮四版本 ROM/MAP 和 ROM0 空间证据，不宣称冰洞所有玩法或全量历史审计已经完成。
+- 累计未提交变更既有游戏功能又有 `tools/` 审计/测试，按最新规范 **模式 A**：单一 ZIP 内三份补丁、两份日志；01（已安装用户 REF-368G → CLEAN）与 03（干净 REF-367 HEAD → CLEAN）互斥；再用 02 暂时撤回工具/文档进行功能提交，反向恢复 02 后提交工具/文档。Git Commit/Push 由用户自己执行。
+- 详细基线、测试命令、历史失败、实测边界与交付步骤见 `docs/CLEAN_REF368_ICE_PATH_SLIDE_FINAL_ACCEPTANCE.md`。
+
+## REF-368G｜冰面滑行固定脚步动画（开发补丁）
+本轮从 REF-368F 实际工作区继续，版本 `REF-368G@`。修正 `UpdatePlayerSprite`：当 `wIcePathSlideHeading != 0` 且步行状态时，将 walking frame delay/index 清零并直接重算朝向图像，保持人物脚部姿势不交替；移动仍由原 `AdvancePlayerSprite` 正常推进。骑车状态优先走原动画，不冻结自行车帧。重新核实五层 Bike 公共入口与 Gold role：1F 818、B1F 251、B2F Mahogany 44、B2F Blackthorn 36、B3F 75 个 FLOOR 可新上车格；673 个 ICE 格不能直接上车。新增固定姿势/保留朝向/骑车动画保护的静态审计和错误注入。冰之通路相关测试及全量旧审计的边界见 `docs/REF368G_ICE_PATH_SLIDE_FIXED_POSE_DEV.md`。仍无新 ROM/MAP 或手机录像；Strength/PIT 继续未完成。开发交付仅一个 ZIP 两份互斥 `.patch`，不 Commit/Push。
+
+## REF-368F｜冰之通路自动滑行开发补丁（不替代上位交付规范）
+本轮已有真实 ASM 改动，显示开发版本 `REF-368F@`；仍 70 张地图、188 方向 Warp。以已应用 368C/368D/368E 01 的 `REF-368E` 工作区为增量前置，以已确认 REF-367 Git HEAD `cd88452a...` 为全量累计源；开发阶段仅交一个 ZIP 内恰好两份**互斥** `.patch`，不可叠加，无正式日志/Commit/Push/ROM。冰面自动滑行完成代码接线但尚未设备验收，Strength/PIT 未完成，迁移审计既有 35 项失败仍需区分。`RPP_PROJECT_CONTEXT/03_PROJECT_REQUIREMENTS.txt` 最高优先，详见 `docs/REF368F_ICE_PATH_LIVE_AUTO_SLIDE_DEV.md`。
+
+## REF-368D｜本轮开发补丁交付（不替代正式项目要求）
+当前是 REF-368D@ 开发态，基于用户已应用的 REF-368C 工作区。一个 ZIP 仅两份互斥 `.patch`：01 REF-368C→REF-368D 增量；02 正式 REF-367 HEAD `cd88452a05e9399b469f12fe2c6c89dd532dfcfb`→REF-368D 全量。**严禁叠加**；不制作正式提交日志、ROM、MAP，不执行 Git Commit/Push。源码测试与旧迁移失败、验收缺口见 `docs/REF368D_ICE_PATH_STAIR_HOPS_FIELD_FIX.md`。
+
+## REF-368C｜最后一块地图 B2F Blackthorn 开发测试交付
+70 张活动地图/188 方向 Warp。单 ZIP 严格两份互斥 `.patch`：01 由用户本次上传的 `REF-368B.zip` 工作区应用；02 从已确认 `REF-367` Git HEAD `cd88452a05e9399b469f12fe2c6c89dd532dfcfb` 全量应用，含 368A/368B/368C 和本次上传的 B 内额外修正。不得叠加；没有 ROM/MAP/手机验收或 Commit/Push；详见 `docs/REF368C_ICE_PATH_B2F_BLACKTHORN_FINAL_MAP_DEV.md`。
+
+## REF-368B｜第四层 B3F 开发测试交付
+沿用项目最新版强制规则：仅一个 ZIP／其中两份互斥 `.patch`；增量以用户 REF-368A 当前未提交 Worktree 为前置状态，全量以已核实 REF-367 Git HEAD `cd88452a...` 为基线并包含 REF-368A 和本轮 REF-368B。仍开发、无正式 Commit/Push 或提交日志，不能把静态检查当设备验收。详见 `docs/REF368B_ICE_PATH_B3F_FOURTH_FLOOR_DEV.md`。
+
+## REF-368A｜冰之通路 B2F Mahogany 单区开发候选
+本轮只开放 ID96 Mahogany B2F 与 B1F 的原版 #2/#1 双向楼梯；继续保证滑冰/Strength/PIT/B3F/Blackthorn B2F 关闭。开发版 REF-368A@，增量与正式 HEAD 两条互斥补丁均以用户新传 REF-367.zip 为验证基线，AI 不编 ROM／Commit／Push，工具静态 PASS 不是手机验收。
+详见 `docs/REF368A_ICE_PATH_B2F_MAHOGANY_WALK_STAGE.md`。
+
 # CLEAN REF-367｜冰之通路 1F 与 B1F 分层收口（正式提交材料）
 
 - 上次已确认正式 HEAD：`a95ac8d1ddaf47575bc4f08935033d014bfa58cf`（分支 `常规功能备份`，显示 `REF-366@`）。当前开发候选 `REF-367M@`，正式清理目标 `REF-367@`。游戏运行 ASM 与地图数据均不重新设计，只去掉开发版字母。
