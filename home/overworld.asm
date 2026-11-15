@@ -962,6 +962,10 @@ PlayMapChangeSound::
 	ld a,SFX_GO_OUTSIDE
 .playSound
 	call PlaySound
+; Player PITs need the *same* black cave transition, but must not play
+; SFX_GO_INSIDE / SFX_GO_OUTSIDE when falling through a floor.
+; No extra HOME bytes: normal doorway calls fall through this entry point.
+PlaySilentMapChange369V::
 	; REF-353: every *ordinary warp*, including unlit Rock Tunnel and
 	; Johto Dark Cave, uses the same black transition and LCD-on safe loader.
 	; Darkness/Flash select the destination palette, NOT the loader.

@@ -1,4 +1,10 @@
 DisplayStartMenu::
+	; REF-369P: temporary Johto smoke must not survive entering a menu.
+	; The OAM renderer pauses in submenus, so relying on its lifetime
+	; counter would leave stale smoke until the menu is closed.
+	xor a
+	ld [wJohtoGoldDustFrames], a
+	ld [wJohtoGoldDustSlot2Frames369R], a
 	ld a,BANK(StartMenu_Pokedex)
 	ld [H_LOADEDROMBANK],a
 	ld [MBC1RomBank],a

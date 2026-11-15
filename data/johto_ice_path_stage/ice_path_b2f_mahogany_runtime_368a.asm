@@ -1,8 +1,8 @@
 ; REF-368A: Ice Path B2F Mahogany Side (Gold stable ID96), walk-only pilot.
 ; B1F Gold #2 <-> B2F Gold #1; B3F Gold #1 <-> B2F Gold #2 now live.
-; Gold ICE is ordinary walkable floor for now; dropped boulders and four
-; ICE arrival-only slots #3-#6 are deliberately not active source warps.
-; ICE movement is now handled by the shared live slide controller; PIT arrivals, Strength, items and NPCs remain disabled.
+; Four receive-only Gold B1F PIT arrivals #3-#6 have their real ICE
+; coordinates. They must not be active EXIT warps; only #1/#2 ladders exit.
+; ICE movement is handled by the live slide controller; items/NPCs deferred.
 JohtoIcePathB2FMahoganyRuntimeBlocks368A::
     INCBIN "maps/johto_ice_path_stage/IcePathB2FMahoganySide.runtime.blk"
 ASSERT @ - JohtoIcePathB2FMahoganyRuntimeBlocks368A == 10 * 9
@@ -24,19 +24,34 @@ ASSERT BANK(JohtoIcePathB2FMahoganyRuntimeHeader368A) == BANK(JohtoIcePathB2FMah
 
 JohtoIcePathB2FMahoganyScript368A::
     call EnableAutoTextBoxDrawing
-    ret
+    callab JohtoIcePathInitializePitState369B
+    jp JohtoIcePathB2FMahoganySyncLanded369B
 JohtoIcePathB2FMahoganyTextPointers368A:
+    dw JohtoIcePathB2FMahoganyStoneText369A
+    dw JohtoIcePathB2FMahoganyStoneText369A
+    dw JohtoIcePathB2FMahoganyStoneText369A
+    dw JohtoIcePathB2FMahoganyStoneText369A
+JohtoIcePathB2FMahoganyStoneText369A:
+    text "It's stuck deep"
+    line "in the ice."
+    done
+    db "@"
+ASSERT BANK(JohtoIcePathB2FMahoganyStoneText369A) == BANK(JohtoIcePathB2FMahoganyRuntimeHeader368A)
 JohtoIcePathB2FMahoganyObjects368A::
-    db $09 ; Gold ice cave border block
-    db 6 ; Gold six source ordinals; only #1 is an active stair
+    db $19 ; Gold B2F Mahogany border: rock wall (Gold map_attributes), not floor $09
+    db 6 ; Gold six ordinals: #1/#2 are exit ladders; #3-#6 arrival-only ICE
     db 1, 17, 1, JOHTO_REGISTERED_WARP_SELECTOR ; #1 -> B1F Gold #2
     db 11, 9, 0, JOHTO_REGISTERED_WARP_SELECTOR ; #2 -> B3F Gold #1
-    db $ff, $ff, 2, JOHTO_REGISTERED_WARP_SELECTOR ; #3 PIT arrival ICE, never return
-    db $ff, $ff, 3, JOHTO_REGISTERED_WARP_SELECTOR ; #4 PIT arrival ICE, never return
-    db $ff, $ff, 4, JOHTO_REGISTERED_WARP_SELECTOR ; #5 PIT arrival ICE, never return
-    db $ff, $ff, 5, JOHTO_REGISTERED_WARP_SELECTOR ; #6 PIT arrival ICE, never return
+    db 4, 11, 2, JOHTO_REGISTERED_WARP_SELECTOR ; #3 PIT receive-only, no return
+    db 6, 4, 3, JOHTO_REGISTERED_WARP_SELECTOR ; #4 PIT receive-only, no return
+    db 12, 4, 4, JOHTO_REGISTERED_WARP_SELECTOR ; #5 PIT receive-only, no return
+    db 12, 12, 5, JOHTO_REGISTERED_WARP_SELECTOR ; #6 PIT receive-only, no return
     db 0 ; no sign / item / encounter
-    db 0 ; no NPC or dropped boulder objects before Strength implementation
+    db 4 ; Gold lower-floor rocks appear only after their B1F PIT is filled
+    object SPRITE_BOULDER, 11, 3, STAY, NONE, $1
+    object SPRITE_BOULDER, 4, 7, STAY, NONE, $2
+    object SPRITE_BOULDER, 3, 12, STAY, NONE, $3
+    object SPRITE_BOULDER, 12, 13, STAY, NONE, $4
 
 ; Gold 20 x 18 8x8 role lookup, B=Y C=X. Fail closed outside the map.
 JohtoIcePathB2FMahoganyRoleAt368A::
@@ -187,4 +202,53 @@ JohtoIcePathB2FMahoganyIsIce368F::
     call JohtoIcePathB2FMahoganyRoleAt368A
     cp 2
     pop bc ; preserve the ICE equality flag
+    ret
+
+; The Gold B2F warp slots #3..#6 are receive-only; a dropped stone is
+; a stationary obstacle, not a new warp or a movable Strength sprite.
+; Use only persistent hole bits; other object and save data stay unchanged.
+; Hidden receiver rocks keep the original nonzero picture ID and VRAM slot.
+; On Save/text return, InitMapSprites enumerates all wNumSprites slots and
+; subtracts one from every picture ID before SpriteSheetPointerTable lookup.
+; Setting a hidden rock ID to zero is invalid and can read rogue sprite data.
+JohtoIcePathB2FMahoganySyncLanded369B::
+    ld a, [wEventFlags + JOHTO_ICE_PATH_PIT_FLAGS_369B]
+    bit 2, a
+    jr nz, .second
+    xor a
+    ; Missing B1F drop must not leave an invisible collision body.
+    dec a ; $ff off map
+    ld [wSpriteStateData1 + $12], a ; hide current rendered OAM frame before fade
+    ld [wSpriteStateData2 + $14], a
+    ld [wSpriteStateData2 + $15], a
+    ld a, [wEventFlags + JOHTO_ICE_PATH_PIT_FLAGS_369B]
+.second
+    bit 3, a
+    jr nz, .third
+    xor a
+    ; Missing B1F drop must not leave an invisible collision body.
+    dec a ; $ff off map
+    ld [wSpriteStateData1 + $22], a ; hide current rendered OAM frame before fade
+    ld [wSpriteStateData2 + $24], a
+    ld [wSpriteStateData2 + $25], a
+    ld a, [wEventFlags + JOHTO_ICE_PATH_PIT_FLAGS_369B]
+.third
+    bit 4, a
+    jr nz, .fourth
+    xor a
+    ; Missing B1F drop must not leave an invisible collision body.
+    dec a ; $ff off map
+    ld [wSpriteStateData1 + $32], a ; hide current rendered OAM frame before fade
+    ld [wSpriteStateData2 + $34], a
+    ld [wSpriteStateData2 + $35], a
+    ld a, [wEventFlags + JOHTO_ICE_PATH_PIT_FLAGS_369B]
+.fourth
+    bit 5, a
+    ret nz
+    xor a
+    ; Missing B1F drop must not leave an invisible collision body.
+    dec a ; $ff off map
+    ld [wSpriteStateData1 + $42], a ; hide current rendered OAM frame before fade
+    ld [wSpriteStateData2 + $44], a
+    ld [wSpriteStateData2 + $45], a
     ret

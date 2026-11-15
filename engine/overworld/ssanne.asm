@@ -1,12 +1,13 @@
+; Kanto's original SS Anne smoke motion without the obsolete global
+; sprite-palette flash. The old public name is retained for compatibility.
 AnimateBoulderDust:
-	ld a, $1
-	ld [wWhichAnimationOffsets], a ; select the boulder dust offsets
+AnimateBoulderDustQuiet369K::
+	ld a, $81 ; quiet dust mode, never toggle rOBP1
+	ld [wWhichAnimationOffsets], a
 	ld a, [wUpdateSpritesEnabled]
 	push af
 	ld a, $ff
 	ld [wUpdateSpritesEnabled], a
-	ld a, %11100100
-	ld [rOBP1], a
 	call LoadSmokeTileFourTimes
 	callba WriteBoulderDustAnimationOAMBlock
 	ld c, 8 ; number of steps in animation
@@ -18,9 +19,6 @@ AnimateBoulderDust:
 	ld c, 4
 	jp hl
 .returnAddress
-	ld a, [rOBP1]
-	xor %01100100
-	ld [rOBP1], a
 	call Delay3
 	pop bc
 	dec c

@@ -1,4 +1,18 @@
 TryPushingBoulder:
+	; Ice Path B1F has a queued one-tile boulder movement. While its PIT
+	; decision is pending, re-running this entry must NOT overwrite
+	; wBoulderSpriteIndex (the 1-based source stone recorded on the push).
+	; Other Johto maps and all Kanto maps still take the original path.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .checkStrength
+	ld a, [wCurLocalMapID]
+	cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+	jr nz, .checkStrength
+	ld a, [wFlags_0xcd60]
+	bit 7, a
+	ret nz
+.checkStrength
 	ld a, [wd728]
 	bit 0, a ; using Strength?
 	ret z
@@ -64,8 +78,14 @@ TryPushingBoulder:
 	ld de, PushBoulderRightMovementData
 .done
 	call MoveSprite
-	ld a, SFX_PUSH_BOULDER
-	call PlaySound
+	; Gold spawns its independent dust when a push is accepted, not
+	; after the 32-display-frame scripted boulder movement finishes.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .noJohtoDustBegin
+	callab BeginJohtoGoldStrengthDust369L
+.noJohtoDustBegin
+	callab PlayStrengthPushSFX369L
 	ld hl, wFlags_0xcd60
 	set 1, [hl]
 	ret
@@ -86,7 +106,16 @@ DoBoulderDustAnimation:
 	ld a, [wd730]
 	bit 0, a
 	ret nz
-	callab AnimateBoulderDust
+	; All Johto Strength boulders use Gold's temporary, nonblocking dust.
+	; Kanto keeps its RPP movement/animation but never cycles rOBP1.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	jr nz, .kantoQuietDust
+	; Gold smoke is already running independently from push acceptance.
+	jr .dustFinished
+.kantoQuietDust
+	callab AnimateBoulderDustQuiet369K
+.dustFinished
 	call DiscardButtonPresses
 	ld [wJoyIgnore], a
 	call ResetBoulderPushFlags
@@ -95,6 +124,12 @@ DoBoulderDustAnimation:
 	ld [H_SPRITEINDEX], a
 	call GetSpriteMovementByte2Pointer
 	ld [hl], $10
+	; Gold Strength already sounds at push start and (if a PIT is filled)
+	; again after the source stone disappears. The old RPP SFX_CUT
+	; here was a third, unintended Johto sound. Kanto retains it.
+	ld a, [wCurMap]
+	cp JOHTO_RUNTIME_MAP_HANDLE
+	ret z
 	ld a, SFX_CUT
 	jp PlaySound
 

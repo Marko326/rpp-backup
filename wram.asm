@@ -1333,9 +1333,33 @@ wSlotMachineBet:: ; cd50
 wSavedPlayerFacingDirection:: ; cd50
 
 wWhichAnimationOffsets:: ; cd50
-; 0 = cut animation, 1 = boulder dust animation
-	ds 9
+; Scratch shared with the original cut / legacy Strength animation.
+	ds 1 ; CD50 remains available to emote / facing data.
+; REF-369R: second overworld-only puff, CD51-CD54. Cut and old Kanto
+; animations never overlap Johto Strength smoke; START/map entry clear it.
+wJohtoGoldDustSlot2Y369R:: ; cd51
+	ds 1
+wJohtoGoldDustSlot2X369R:: ; cd52
+	ds 1
+wJohtoGoldDustSlot2Frames369R:: ; cd53
+	ds 1
+wJohtoGoldDustSlot2Source369R:: ; cd54
+	ds 1
+	ds 1 ; CD55: original final scratch byte
+; REF-369L: transient, not saved, cleared by ClearVariablesOnEnterMap.
+; Gold temporary boulder dust uses its own lifetime and remains after a stone falls.
+wJohtoGoldDustDirection:: ; cd56
+	ds 1
+wJohtoGoldDustSpriteIndex:: ; cd57
+	ds 1
+wJohtoGoldDustFrames:: ; cd58
+	ds 1
 
+; REF-369Q: map-only Strength dust source & direction (high nibble =
+; 1-based boulder index, low 2 bits = push facing / 4). The original CD59
+; trade buffer is used only inside an NPC/Link trade, which does not overlap
+; an active overworld push; never store this transient alias in SRAM.
+wJohtoGoldDustSourceAndFacing369Q:: ; cd59, transient alias
 wTradedEnemyMonOTID:: ; cd59
 	ds 2
 

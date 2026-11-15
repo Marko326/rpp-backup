@@ -165,6 +165,9 @@ INCLUDE "engine/gym_leader_rewards.asm"
 SECTION "GB Player", ROMX
 INCLUDE "engine/menu/gb_player.asm"
 
+SECTION "Johto Gold Strength Dust", ROMX
+INCLUDE "engine/overworld/johto_gold_strength_dust_369l.asm"
+
 SECTION "NPC Sprites 1", ROMX, BANK[NPC_SPRITES_1]
 RocketSprite:          INCBIN "gfx/sprites/rocket.2bpp"
 RocketFSprite:         INCBIN "gfx/sprites/rocketf.2bpp"

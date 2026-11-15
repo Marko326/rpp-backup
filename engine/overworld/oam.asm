@@ -154,6 +154,15 @@ PrepareOAMData:
 	cp $100 % $100
 	jp nz, .spriteLoop
 
+	; REF-369L: compose Gold's transient Johto dust AFTER ordinary sprites,
+	; BEFORE clearing unused slots. Kanto never enters this draw path.
+	ld a, [wJohtoGoldDustFrames]
+	ld b, a
+	ld a, [wJohtoGoldDustSlot2Frames369R]
+	or b
+	jr z, .noGoldDust
+	callab DrawJohtoGoldStrengthDust369L
+.noGoldDust
 	; Clear unused OAM.
 	ld a, [hOAMBufferOffset]
 	ld l, a

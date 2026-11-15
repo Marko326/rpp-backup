@@ -80,6 +80,11 @@ JohtoIcePathInjectSlideInput368F::
 .up
     ld a, D_UP
 .force
+    ; Gold STEP_ICE is fast_slide_step (STEP_BIKE pacing). RPP's 60 FPS
+    ; OverworldLoop advances a normal walker one pixel per VBlank; request
+    ; the existing B-button speedup on forced ICE steps (2 px / VBlank),
+    ; without altering common movement counters or overriding collision.
+    or B_BUTTON
     ld [hJoyHeld], a ; overwrite mid-ICE steering with the last step heading
     xor a
     ld [hJoyPressed], a ; block START/SELECT/A until collision/end of slide

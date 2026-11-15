@@ -189,6 +189,7 @@ StartMenuPrepareClose::
 	xor a
 	ld [H_AUTOBGTRANSFERENABLED],a
 	call StartMenuUseBank0Text
+
 	scf
 	ret
 

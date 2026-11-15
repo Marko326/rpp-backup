@@ -338,7 +338,12 @@ CheckForCollisionWhenPushingBoulder:
 	jr nz, .legacy
 	ld a, [wCurLocalMapID]
 	cp JOHTO_BURNED_TOWER_B1F_LOCAL_ID
+	jr z, .burnedTower
+	cp JOHTO_ICE_PATH_B1F_LOCAL_ID
 	jr nz, .legacy
+	callab JohtoIcePathB1FCheckPush369B
+	ret
+.burnedTower
 	callab JohtoBurnedTowerB1FCheckForCollisionWhenPushingBoulder
 	ret
 .legacy
@@ -441,8 +446,11 @@ CheckForBoulderCollisionWithSprites:
 	add hl, de
 	jr .pushingHorizontallyLoop
 .failure
-	ld a, $ff
+	; Same three-byte footprint as ld a,$ff / ret.  Carry now also
+	; distinguishes a blocked move across the ROM-bank farcall ABI.
+	scf
+	sbc a ; A=$ff, carry=1; stock Kanto/RBY return value unchanged
 	ret
 .success
-	xor a
+	xor a ; A=0, carry=0
 	ret

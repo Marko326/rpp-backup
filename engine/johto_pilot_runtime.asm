@@ -343,9 +343,15 @@ JohtoRegisteredWarpRoutes::
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 6, MAP_REGION_JOHTO, JOHTO_ICE_PATH_1F_LOCAL_ID
-    ; REF-368A: Gold B1F #2 <-> B2F Mahogany #1. PIT and B3F sealed.
+    ; Gold B1F #2 <-> B2F Mahogany #1; four PITs are one-way, not stairs.
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID
+    ; REF-369S: exact Gold B1F PIT #3-#6 -> B2F Mahogany ICE #3-#6.
+    ; Never register the reverse routes; the four B2F targets are arrival-only.
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 2, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 3, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 4, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B1F_LOCAL_ID, 5, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
     ; REF-368B Gold B2F Mahogany #2 <-> B3F #1. B3F #2 to Blackthorn B2F stays closed.
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID, 1, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID
     db MAP_REGION_JOHTO, JOHTO_ICE_PATH_B3F_LOCAL_ID, 0, MAP_REGION_JOHTO, JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
@@ -2075,25 +2081,25 @@ JohtoPilotGateDoorWarpMatched::
     ; the tile; WARP_CARPET_DOWN only arms standing state and waits for DOWN.
     ; This hook runs after the exact registered warp coordinate has matched.
     cp JOHTO_ICE_PATH_1F_LOCAL_ID
-    jr z, .icePathLadderOrCarpet367K
+    jp z, .icePathLadderOrCarpet367K
     cp JOHTO_ICE_PATH_B1F_LOCAL_ID
     jp z, .unionCaveLadder342
     cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
-    jp z, .unionCaveLadder342
+    jp z, .icePathB2FMahoganyWarp369S
     cp JOHTO_ICE_PATH_B3F_LOCAL_ID
     jp z, .unionCaveLadder342
     cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID
-    jr z, .unionCaveLadder342
+    jp z, .unionCaveLadder342
     cp JOHTO_UNION_CAVE_1F_LOCAL_ID
-    jr z, .unionCave1FWarpMatched342
+    jp z, .unionCave1FWarpMatched342
     cp JOHTO_UNION_CAVE_B1F_LOCAL_ID
-    jr z, .unionCaveB1FWarpMatched342
+    jp z, .unionCaveB1FWarpMatched342
     cp JOHTO_UNION_CAVE_B2F_LOCAL_ID
-    jr z, .unionCaveB2FWarpMatched342
+    jp z, .unionCaveB2FWarpMatched342
     cp JOHTO_SLOWPOKE_WELL_B1F_LOCAL_ID
-    jr z, .unionCaveLadder342
+    jp z, .unionCaveLadder342
     cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
-    jr z, .unionCaveLadder342
+    jp z, .unionCaveLadder342
     cp JOHTO_RUINS_OF_ALPH_LOCAL_ID
     jp z, .ruinsAlph
     cp JOHTO_ROUTE_36_LOCAL_ID
@@ -2125,6 +2131,25 @@ JohtoPilotGateDoorWarpMatched::
     ld a, [wYCoord]
     cp 25
     jp z, .yesDoor
+    ret
+.icePathB2FMahoganyWarp369S
+    ; The only exit sources in this map are Gold ladders #1/#2.
+    ; Four PIT arrival ICE cells #3..#6 must never warp to B1F.
+    ld a, [wYCoord]
+    cp 1
+    jr nz, .checkB3FLadder369S
+    ld a, [wXCoord]
+    cp 17
+    jp z, .unionCaveLadder342
+.checkB3FLadder369S
+    ld a, [wYCoord]
+    cp 11
+    jr nz, .iceReceiveOnly369S
+    ld a, [wXCoord]
+    cp 9
+    jp z, .unionCaveLadder342
+.iceReceiveOnly369S
+    ld e, 1 ; exact arrival-only ICE: never STEP_IN to another map
     ret
 .icePathLadderOrCarpet367K
     ; Outside carpets 0/1 are directional. Gold LADDER 2/3 is STEP_IN.
@@ -2614,6 +2639,11 @@ JohtoPilotGateCollisionExitAllowed::
     jr z, .unionCaveNoCollisionWarp342
     cp JOHTO_SLOWPOKE_WELL_B2F_LOCAL_ID
     jr z, .unionCaveNoCollisionWarp342
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jr nz, .notIceReceiveCollision369S
+    ld e, 0 ; B2F Gold PIT ICE arrival can never act as a source warp
+    ret
+.notIceReceiveCollision369S
     cp JOHTO_ROUTE_36_LOCAL_ID
     ret nz
     ld e, 0

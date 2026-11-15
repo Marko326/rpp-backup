@@ -13,6 +13,10 @@ LoadOverworldSpritePalettes:
 	ld hl,SpritePalettesNite
 	cp ICE_CAVERN
 	jr z, .gotPaletteList
+	; The Gold Ice Path cave uses the dark/cave OBJ palettes too.
+	; In particular SPRITE_BOULDER must be grey, not the day ROCK yellow.
+	cp JOHTO_ICE_PATH
+	jr z, .gotPaletteList
 	cp CAVERN
 	jr z, .gotPaletteList
 	cp FOREST

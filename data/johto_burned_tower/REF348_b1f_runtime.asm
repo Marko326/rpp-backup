@@ -256,13 +256,15 @@ JohtoBurnedTowerWarpTriggerMode::
     db 4, 5, 5, 5, 6, 5, 6, 4, 4, 15, 5, 15
     db 7, 10, 14, 5, 14, 4, 14, 14, 14, 15, 15, 7
 
-; Gold FallIntoMapScript: only 1F PIT ordinals 2-12 land with MAPSETUP_FALL.
-; The lower ladder and the B1F return ladder use the ordinary map transition.
+; Gold FallIntoMapScript: Burned Tower 1F PITs and Ice Path B1F #3..#6
+; share the already implemented skyfall/landing animation. Ladders remain normal.
 JohtoBurnedTowerMaybeFallWarp::
     ld a, [wCurRegion]
     cp MAP_REGION_JOHTO
     ret nz
     ld a, [wCurLocalMapID]
+    cp JOHTO_ICE_PATH_B1F_LOCAL_ID
+    jr z, .icePath369S
     cp JOHTO_BURNED_TOWER_1F_LOCAL_ID
     ret nz
     ld a, [wWarpedFromWhichWarp]
@@ -273,17 +275,49 @@ JohtoBurnedTowerMaybeFallWarp::
     ld a, [wDestinationWarpID]
     cp 5
     ret nc
+    jr .fall
+.icePath369S
+    ; B1F Gold #3-#6: exact one-way PIT source ordinals 2..5.
+    ; Ladders #1/#2/#7/#8 never use the falling entrance animation.
+    ld a, [wWarpedFromWhichWarp]
+    cp 2
+    ret c
+    cp 6
+    ret nc
+    ld a, [wDestinationWarpID]
+    cp 2
+    ret c
+    cp 6
+    ret nc
+.fall
     ; Flag the next EnterMap before the ONE registered-warp resolution in
     ; WarpFound2.  Resolving here as well would change the source stable ID and
     ; make the second lookup fail (the B1F landing ordinals are arrival-only).
     ld hl, wd732
     set 7, [hl] ; private pitfall-arrival animation selector
-    call GBFadeOutToWhite
-    ret
+    ; Falling is NOT a door. Reuse the existing cave fade and VRAM-safe
+    ; map loader, but skip the ordinary entry/exit door sound.
+    ; Gold plays KINESIS/STRENGTH later during skyfall/landing, not here.
+    jp PlaySilentMapChange369V
 
 ; EnterMap calls this banked dispatcher instead of EnterMapAnim directly.
 ; All non-pitfall maps retain the stock animation byte-for-byte.
 JohtoEnterMapAnimationDispatcher::
+    ; LoadMapData has already created the destination sprite records, but the
+    ; B2F script runs later. Apply saved stone visibility BEFORE any fade-in
+    ; (including the pitfall skyfall) to avoid one-frame unfallen boulders.
+    ld a, [wCurRegion]
+    cp MAP_REGION_JOHTO
+    jr nz, .stoneVisibilityReady369T
+    ld a, [wCurLocalMapID]
+    cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID
+    jr nz, .stoneVisibilityReady369T
+    callab JohtoIcePathInitializePitState369B
+    callab JohtoIcePathB2FMahoganySyncLanded369B
+    ; REF-369U pre-fade UpdateSprites had no visible benefit in the phone test.
+    ; Remove it; retain the saved PIT sync to avoid unfallen-rock flashes.
+    ; The existing map loader owns sprite activation/render timing.
+.stoneVisibilityReady369T
     ld a, [wd732]
     bit 7, a
     jr z, .normal
@@ -291,8 +325,8 @@ JohtoEnterMapAnimationDispatcher::
     res 7, [hl]
     res 3, [hl] ; no stale warp-pad / dungeon warp after the fall
     res 4, [hl]
-    ; Clear the ordinary step-out and standing-on-warp flags. Five B1F PIT
-    ; landing cells are receive-only, not immediate/standing source triggers.
+    ; Clear ordinary step-out / standing-warp flags on both Burned Tower
+    ; and Ice Path receiver-only landing cells.
     ld hl, wd736
     res 0, [hl]
     res 1, [hl]
@@ -315,7 +349,8 @@ JohtoBurnedTowerFallEntryAnim::
     add -87
     ld [wSpriteStateData1 + 4], a
     call Delay3
-    call GBFadeInFromWhite
+    ; Same cave fade-in for both PIT locations; skyfall motion remains shared.
+    call GBFadeInFromBlack
     ld a, GSSFX_BURNED_TOWER_KINESIS ; exact Gold SFX_KINESIS, existing crysaudio data
     call PlaySound
     ld c, 16
