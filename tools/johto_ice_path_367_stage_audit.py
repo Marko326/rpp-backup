@@ -144,7 +144,7 @@ def audit(root: Path) -> list[str]:
     check('dw JohtoIcePathB2FBlackthornRuntimeHeader368C' in runtime,
           'Ice Path B2F Blackthorn side not activated')
     check('dw JohtoIcePathB3FRuntimeHeader368B' in runtime, 'B3F live fourth floor not activated')
-    check('db "REF-368@"' in (root / 'data/game_version.asm').read_text(encoding='utf-8'),
+    check('db "REF-369@"' in (root / 'data/game_version.asm').read_text(encoding='utf-8'),
           'current development label mismatch')
     return problems
 
@@ -158,7 +158,7 @@ def main():
         for e in errors: print('FAIL:',e)
         print(f'FAIL {len(errors)} errors')
         return 1
-    print('PASS: Ice Path 5 maps, 3,060 roles, 22 Warps, 4 PIT and 4 arrival-only ICE; all five Ice Path maps active; PIT/Strength still disabled; live slide audited separately')
+    print('PASS: Ice Path 5 maps, 3,060 roles, 22 Warps, 4 PIT and 4 arrival-only ICE; all five Ice Path maps active; stone Strength/PIT and player PIT step-in to B2F enabled; live slide audited separately')
     return 0
 
 if __name__=='__main__':

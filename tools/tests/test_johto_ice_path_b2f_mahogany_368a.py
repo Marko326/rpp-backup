@@ -17,9 +17,9 @@ def test_new_map_review():
     assert audit(ROOT) == []
 
 
-def test_arrival_only_ice_must_not_be_live_source_warp():
-    failure(SRC, 'db $ff, $ff, 2, JOHTO_REGISTERED_WARP_SELECTOR',
-            'db 4, 11, 2, JOHTO_REGISTERED_WARP_SELECTOR', 'six-ordinal warp')
+def test_arrival_only_ice_coordinate_must_match_gold():
+    failure(SRC, 'db 4, 11, 2, JOHTO_REGISTERED_WARP_SELECTOR',
+            'db 4, 12, 2, JOHTO_REGISTERED_WARP_SELECTOR', 'six-ordinal warp')
 
 
 def test_b3f_ladder_source_must_match_gold():
@@ -69,13 +69,13 @@ def test_missing_game_map_include_fails():
             '; INCLUDE removed', 'map/header/resource/main ASM')
 
 
-def test_no_invisible_boulder_objects():
-    failure(SRC, 'db 0 ; no NPC or dropped boulder objects',
-            'db 4 ; unseen dropped boulder objects', 'unfinished boulder')
+def test_landed_boulders_require_exact_sprite_roster():
+    failure(SRC, 'object SPRITE_BOULDER, 11, 3, STAY, NONE, $1',
+            'object SPRITE_BOULDER, 11, 4, STAY, NONE, $1', 'dropped boulder')
 
 
-def test_warp_source_b1f_pit_must_stay_sealed():
+def test_warp_source_b1f_pit_must_stay_active():
     f = 'data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm'
     source = (ROOT / f).read_text()
-    assert 'db $ff, $ff, 2, JOHTO_REGISTERED_WARP_SELECTOR' in source
-    assert 'db $ff, $ff, 5, JOHTO_REGISTERED_WARP_SELECTOR' in source
+    assert 'db 2, 11, 2, JOHTO_REGISTERED_WARP_SELECTOR' in source
+    assert 'db 13, 12, 5, JOHTO_REGISTERED_WARP_SELECTOR' in source

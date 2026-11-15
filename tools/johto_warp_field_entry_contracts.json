@@ -479,6 +479,70 @@
       ],
       "step": "NONE",
       "new_route_review": true
+    },
+    {
+      "name": "ice_b1f_pit_3_to_b2f_receive",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 2,
+      "to": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "landing": [
+        11,
+        4
+      ],
+      "departure": [
+        11,
+        2
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b1f_pit_4_to_b2f_receive",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 3,
+      "to": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "landing": [
+        4,
+        6
+      ],
+      "departure": [
+        4,
+        7
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b1f_pit_5_to_b2f_receive",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 4,
+      "to": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "landing": [
+        4,
+        12
+      ],
+      "departure": [
+        5,
+        12
+      ],
+      "step": "NONE",
+      "new_route_review": true
+    },
+    {
+      "name": "ice_b1f_pit_6_to_b2f_receive",
+      "from": "JOHTO_ICE_PATH_B1F_LOCAL_ID",
+      "ordinal": 5,
+      "to": "JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID",
+      "landing": [
+        12,
+        12
+      ],
+      "departure": [
+        12,
+        13
+      ],
+      "step": "NONE",
+      "new_route_review": true
     }
   ],
   "must_stay_stationary": [

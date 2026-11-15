@@ -42,8 +42,8 @@ def test_missing_hop_left_guard():
 
 def test_missing_step_in_dispatch():
     reject('engine/johto_pilot_runtime.asm',
-           'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jr z, .unionCaveLadder342',
-           'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jr z, .notBlackthorn',
+           'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jp z, .unionCaveLadder342',
+           'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jp z, .notBlackthorn',
            'STEP_IN')
 
 def test_wrong_bike_floor():

@@ -1,3 +1,144 @@
+# CLEAN REF-369｜当前任务总览（正式收口口径）
+
+> 本节是 REF-368 正式基线到 REF-369V 开发工作区累计功能的**当前状态**。以下 `REF-369A@`～`REF-369V@` 和更早 CLEAN 的记载为历史开发日志；其中被后续修复／撤销的旧结论不再有效。游戏显示版号清理为 `REF-369@`；用户接受当前表现，不等于四目标构建及所有遗留问题都已通过。
+
+## 已实施／用户已报告相应场景可用（不代表全量验收）
+
+- [x] 冰之通路五层地图、双向楼梯和出入口、Gold 岩石边界、加速冰面滑行。
+- [x] B1F 四块怪力石头、移动碰撞和固定岩石阻挡；四洞落石存档位与 B2F 显示逻辑。
+- [x] 隐藏石头保留合法 Sprite Picture ID；用户复测 B2F 保存不再花屏。
+- [x] 石头落洞及时消失、Strength 音效、局部烟尘、±2 像素震动和可正常关闭的文字提示。烟尘保持当前已接受表现，暂不再重写。
+- [x] 玩家踩 B1F 四个 PIT 单向下落、黑色过渡且不附加普通门声；烧焦塔共享静音黑色落洞过渡；石头洞穴色板灰紫色。
+- [x] 关东怪力原动画保留旧运动／落洞事件，去掉全局调色板闪烁。**关东完整设备回归尚未完成**。
+
+## 已回退或停止重复尝试
+
+- [x] REF-369C/D 保存后 tileset 重载方案已撤销；实际可靠修复是 REF-369E 隐藏石头精灵 ID 非零。
+- [x] REF-369U 额外 B2F `UpdateSprites` 首帧预刷新未产生预期效果，REF-369V 已撤销；不要在 CLEAN 中重新加入。
+- [x] 烟尘采用目前已经被用户接受的双槽跟随实现，不因历史视频差异再做无目标调帧。
+
+## 待修复／未完成（不纳入本次功能完成证明）
+
+- [ ] **P1：关东 Seafoam B4F 非法上岸**：用户实测有非正常区域上岸。`home/overworld.asm:CollisionCheckOnWater` 关东 `.legacySurfTile` 经过跨 Bank 判断后可能未恢复 `C` 的前方地形值；需独立修复 + 关东／城都 Surf 两侧回归。**本 CLEAN 不改行为，也不归咎于原作者。**
+- [ ] **P1：冰之通路 B2F 已落石首帧**：玩家从 B1F 落下后，已落石头可能直到落地后才显示；下一轮按真实精灵激活生命周期诊断，不能再插入无效预刷新。
+- [ ] **P1：REF-369A 旧存档**：曾错误触碰 D855（Fly／Articuno），REF-369B 已停止覆盖但无法从被污染旧值恢复原状。备份、分新／旧档验证。
+- [ ] **P1：完整设备回归**：四块石头、四个 PIT、玩家四个下落入口、B2F 各落点、楼梯、冰面滑行、B2F Save/Continue、START、旧存档、关东推石与双子岛 Surf。当前只具有限定场景用户录像／反馈，不等于全部组合通过。
+- [ ] **P1：四目标构建**：Red / Blue / TEST Red / TEST Blue 全新 ROM 与 MAP；ROM0 剩余至少 64B、ROMX 容量、入口和 Git 可执行权限；AI 不自行构建。
+- [ ] **P2：城都 Fly 目的地**：对照 Gold，湛蓝市/卡吉镇顺序有差异，白银山未开放，愤怒之湖使用项目定制轴；仅在相关地图正式可到达且用户决定保留 Gold 原样后修复。普通城都 Town Map 45 地点顺序已对齐。关东 Town Map/Fly 自定义导航暂保留。
+- [ ] **P2：Gold 动画严格一致性**：用户已接受当前烟尘和震动，不再阻挡本期阶段性功能收口；如果以后要求全逐帧复刻，另开独立需求（多烟尘对象并发／色板／音轨／完整 Gold 流程）。
+- [ ] **后续内容**：冰之通路 Rock Smash、NPC、道具球/隐藏道具、野怪与剧情等未接入。
+- [ ] **历史审计**：旧阶段地图数／Warp／版本／Surf 冻结断言仍有失败；分别修正真正过时的合同，不允许删除失败或声称全仓库门禁通过。
+
+## 当前提交规则
+
+- 正式基线 `935b3fa738dce42f22768e94c92c920bb5b86d89`（`常规功能备份`，用户导出与 99 个旧 Git Blob 校验）；清理前 REF-369V@，最终 REF-369@。
+- 累计同时改游戏源和 `tools/`，按模式 A **一 ZIP／3 PATCH／2 TXT 日志**。01 已应用 REF-369V 工作区 → CLEAN；03 正式 REF-368 基线 → CLEAN，两者互斥；02 在 CLEAN 上暂时撤下全部工具和维护文档，功能提交后反向恢复，再工具提交。
+- 详细要求、执行记录、缺口参见 `docs/CLEAN_REF369_ICE_PATH_STRENGTH_PIT_ACCEPTANCE.md`。
+
+---
+
+## REF-369V@｜玩家踩洞取消门声音效，撤销无效 B2F 预刷新（源码待验收）
+
+- [x] Burned Tower 与 Ice Path 玩家 PIT 复用原黑色换层但绕过 GO_INSIDE/GO_OUTSIDE 门声；保留 Gold skyfall KINESIS/STRENGTH。
+- [x] 已确认 REF-369U B2F 提前 `UpdateSprites` 在手机上无效，撤回；保留原存档石头状态同步与洞穴灰紫调色板、黑屏过渡。
+- [ ] B2F 已落石头仍晚于玩家落地显示，需要另行定位加载生命周期；Seafoam 独立 HideObject/ShowObject，不推断其首次显示正确。
+- [ ] 新版本 ROM/手机、门声与落洞音轨以及 B2F 状态验收；当前保持 REF-369V@ 未提交。
+
+## REF-369U@｜统一玩家落洞黑屏、Gold ICE 石头灰色及下层首帧落石（源码完成／待实测）
+
+- [x] 烧焦塔玩家落洞由旧白屏专用淡入淡出，改成与冰之通路共用普通黑色洞穴过渡；保持 Skyfall 动作和原音效，不新增专用淡入标志。
+- [x] `JOHTO_ICE_PATH` 采用既有洞穴夜间 OBJ 调色板；可推动/落下石头使用灰紫色 ROCK，关东同一 sprite ID 的白天色板不受影响。
+- [x] B2F 落石从地图加载阶段的事件位同步进一步提前到第一次对象刷新，避免已落下石头在玩家落地后才出现；未落下石头仍不得闪现。
+- [x] 加入专项/故障注入源码审计；没有改动烟尘、震动、音效及关东 Seafoam 事件逻辑。
+- [ ] 手机验证烧焦塔黑色玩家落洞、B2F 首帧已落石/未落石、ICE 石头调色、4坑+存读档；四目标 ROM/MAP 空间检查。详见 `docs/REF369U_SHARED_PIT_FADE_CAVE_STONE_FIRST_FRAME_DEV.md`。
+
+## REF-369T@｜冰之通路玩家 PIT 视觉／落石首帧／滑冰速度（三项源码修正，待手机验收）
+
+- [x] 四个 B1F 玩家洞口改复用普通洞穴黑色退出/进入淡入，保留已有坠落角色动作；烧焦塔旧白屏行为不变。
+- [x] B2F Mahogany 首次呈现前就同步落石事件位，未落石头同时清除当前显示帧和碰撞坐标；保存后零图片 ID 的旧风险仍受保护。
+- [x] 自动滑冰按 Gold `STEP_ICE -> fast_slide_step` 使用已有 B 加速分流，目标 60 FPS 时 8 显示帧／格，普通走路、骑车、非 ICE 不变。
+- [x] 新增 REF-369T 独立源码门禁和负向测试；详见 `docs/REF369T_ICE_PATH_PIT_FADE_SPRITE_SLIDE_DEV.md`。
+- [ ] 四洞落点/首帧石头/滑冰速度真机复测、四版本 ROM/MAP 构建、ROM0/ROMX 安全及旧 SAV 回归；通过前不要正式 CLEAN。
+
+## REF-369S@｜Gold 冰之通路玩家踩洞（本轮开发源码完成，设备验收未完成）
+
+- [x] 四个 B1F Gold PIT 单向传送→ B2F Mahogany 四个真实落点；复用烧焦塔玩家坠洞动画，只在 PIT 启用。
+- [x] B2F 落点只接收，防止反向触发／重复传送；原楼梯、四块石头／存档与 Gold 烟尘逻辑保留，烟尘不再调整。
+- [x] 增加 Warp、落点、玩家角色碰撞与掉洞动画负向审计。
+- [ ] 四坑玩家真机踩洞、B2F 掉落动画与安全落地；四石头、存读档、滑冰、楼梯和 B2F Save 无花屏回归。
+- [ ] 四版本 ROM/MAP 重构及 ROM0≥64B、ROMX、旧 SAV 兼容审查；历史冻结测试失败另行确认。
+
+## REF-369Q@｜Gold 烟尘石头对象跟随修复（开发态）
+
+城都怪力烟尘现在记录推动开始时的石头编号及方向，在动画存续期间依据同一石头的实际屏幕坐标更新；石头进入洞口隐藏后定格最后位置，不再采样玩家方向键，也不提前锁在目标洞口。保留关东去闪白、文字提示、震动、存档与碰撞。源码实现待ROM/手机与Gold视频复测。
+
+## REF-369P@｜落洞消息与临时烟尘清理（开发态）
+
+[x] B1F 落洞文字改走 `DisplayTextID` 对话生命周期：地图文本 ID5 在 4 个石头对象之后，等待 A/B 并在关闭时恢复地图/精灵，避免 START 叠加旧文字。 [x] START 入口及落洞文字前清理临时烟尘。 [x] 烟尘从接受推石起产生，缓存目标格坐标，不再跟随已隐藏的石头。 [ ] ROM/MAP、手机确认文字提示、菜单烟尘残留、Gold 烟尘逐帧一致性仍需验收；玩家踩洞功能未开放。
+
+## REF-369O@ | Gold 推石到坑即时衔接 / 音效 / 烟尘寿命（开发态）
+
+[x] 核查 RPP 60FPS 石头移动需要约 32 显示帧（16 个 30Hz 逻辑步），并确认 DelayFrames 只刷新 OAM、不推进 NPC 移动；因此移除旧有人工阻塞等待，改为在 NPC 真正完成后立即处理 PIT；Gold 烟尘 2×移步时长对应 64 显示帧，修复此前 32 帧提前消失；烟尘动画相位按 30Hz 逻辑步换算为每四显示帧变换；城都不再额外播放 RPP `SFX_CUT`，保留普通推动和落洞各自的 Gold Strength 音效，关东仍保留原调用。**[ ] 手机／模拟器逐帧＋音轨验收未完成**；尚未声称全部 Gold 特效精确一致，也不更改 Gold 已对齐的落洞震动。见 `docs/REF369O_GOLD_PUSH_DROP_TIMING_AND_SOUND_DEV.md`。
+
+## REF-369N@ | Gold Strength 四象限烟尘源码修正（开发态）
+
+[x] 对照 Gold 原版 FacingBoulderDust1/2，修复城都 1×8×8 错误烟尘为 4×8×8 组成 16×16，并修正两帧切换起始相位；[ ] ROM/MAP、普通推动与落洞后烟尘手机逐帧验收；[ ] 多石头连续推动与设备回归。关东去闪白和冰之通路震动保持不变。见 `docs/REF369N_GOLD_STRENGTH_FOUR_QUADRANT_DUST_DEV.md`。
+
+## REF-369M@ | Gold Ice Path dust palette and isolated 2px earthquake (development)
+[x] Correct Johto transient dust CGB palette index from 7 (rock) to 5 (Gold EMOTE / RPP EMOJI); keep Kanto quiet legacy animation untouched. [x] B1F `earthquake 80` now uses isolated 16-step +/-2px SCY quake and 16-frame static wait, with exact pre-quake pause and immediate stone hide from prior versions preserved. [ ] Gold-vs-device frame/palette comparison; [ ] ROM/MAP checks, save/strength/Kanto acceptance. No AI ROM build/Commit/Push. See `docs/REF369M_GOLD_DUST_PALETTE_ICE_QUAKE_DEV.md`.
+
+## REF-369K@ | Ice Path B1F palette flash suppression (development)
+
+[x] REF-369L: Johto Strength now uses Gold's original two-frame dust art with independent frame lifetime; Kanto Strength no longer toggles global `rOBP1`. [ ] Gold exact dust timing, sprite palette, multi-push overlap, phone/ROM/MAP acceptance remain unverified. [ ] Gold earthquake amplitude/cadence and player PIT remain separate. No commit. See `docs/REF369L_JOHTO_GOLD_STRENGTH_KANTO_QUIET_DEV.md`.
+
+## REF-369J@ immediate Gold stone disappearance (development)
+Four B1F boulders now set rendered frame C1x2=$ff immediately after a confirmed PIT hit, in addition to existing C2x4/x5 off-map coordinates, before pause/SFX/quake. Gold reference `maps/IcePathB1F.asm` does `disappear` before `.FinishBoulder`; REF-369I previously only changed map coordinates, so OAM could display the stone during wait/quake. This change preserves C1x0 nonzero picture IDs (REF-369E) and existing saves. Static tests cannot replace device verification. Generic dust flicker, exact quake pacing/amplitude, player PIT and four-hole completion remain open.
+
+## REF-369I@｜Gold 冰之通路落石震动节奏校正（开发候选）
+Gold `pause 30` 在脚本解释器中为 60 显示帧；`earthquake 80` 是打包参数 `$50`，其低六位规定 16 步震动＋16 步静止，高两位规定幅度 2，并非 80 步连续震动。已把此前五次 16 步震动改为一次，随后静止 32 帧；保留落洞一次性触发、存档状态和碰撞。复用 Burned Tower 震动的幅度与 Gold 仍可能略有差异；需手机比对，未编译 ROM。旧 TODO 的通用怪力推石闪白／烟尘问题仍独立待办，禁止一并改通用 OAM。详见 `docs/REF369I_ICE_PATH_GOLD_QUAKE_TIMING_DEV.md`。
+
+## REF-369H@｜冰之通路 B1F 推石撞固定岩石（开发态）
+用户手机截图确认 REF-369G 可推动石头能与固定岩石/墙体重叠。根因是 stock `GetTileTwoStepsInFrontOfPlayer` 的 D/E 只代表前方一格（当前石头位置），旧 Ice Path 包装误当二格目标，导致所有源石头 FLOOR 格被误判为合法推动。现在根据 `$ffdb` 朝向再推进地图坐标一格，才查 Gold WALL/FLOOR/ICE/PIT；保留 sprite 碰撞、已满坑禁止、存档位、落洞演出，玩家 PIT 仍关闭。新增 20×36 四方向逐格参考检查、墙/边界/坑专项与负向故障注入；详见 `docs/REF369H_ICE_PATH_PUSH_TARGET_COLLISION_DEV.md`。待新版 ROM 手机验收。
+
+## REF-369G@｜冰之通路四块怪力石头落洞反馈（开发态）
+以 Gold `IcePathB1F.asm` 原版石头落洞演出为依据，补上四块石头落入未填 PIT 后的 30 帧停顿、Strength 音效、80 步地震和文字提示，继续保留独立 PIT/石头事件位、源图隐藏与下层静态落石显示。REF-369E 保存花屏修复和 REF-369F 边界修复不变；玩家踩洞仍封闭，四块石头完整实机碰撞和落洞流程仍需测试。详见 `docs/REF369G_ICE_PATH_BOULDER_FALL_FEEDBACK_DEV.md`。
+
+## REF-369F@｜修复冰之通路外围岩石边界（开发态）
+按 Gold 地图属性核对，B1F 与 B2F Mahogany 地图对象边界块应为 `$19` 岩石，却被早期 REF-367K/368A 误设成 `$09` 地面。只修正两处 Border Block，保留 REF-369E 隐藏精灵修复、不动 `.blk`、Save、事件位、碰撞及 BANK0；新增五层及负向审计。详见 `docs/REF369F_ICE_PATH_GOLD_BORDER_CORRECTION_DEV.md`。用户已确认 REF-369E B2F 保存后不再花屏；本轮地图边界仍需手机验收。
+
+## REF-369E@｜冰洞 B2F 保存返回隐藏落石精灵 ID 修复（开发态）
+撤销 REF-369D 无实机效果的 Save 返回图块重载；修复 B2F 四块未落石头（及 B1F 已掉落石头）将 Sprite ID 写 0 的逻辑。由于 HOME CloseTextDisplay 后的 InitMapSprites 会读取全部对象图片 ID 并减一，零 ID 下溢到 $FF 越出 SpriteSheetPointerTable。仅用非地图坐标 $FF/$FF 隐藏，保留合法 SPRITE_BOULDER 图片 ID 与分配槽，事件位及碰撞策略不变。尚须手机复测，不能宣称花屏已修，详见 docs/REF369E_ICE_PATH_HIDDEN_SPRITE_RELOAD_DEV.md。
+
+# REF-369D@｜保存后花屏当前复测阶段
+
+- [x] 用户新版 `67695.mp4` 证实 REF-369C Save 后花屏仍存在；此前“重载 helper”修复不在 Save 的实际返回路径上。
+- [x] REF-369D 把仅 Ice Path 的现成 tileset reload 接到 `StartMenu_SaveReset` 的 Save 返回路径，移除 REF-369C 无效的旁路分支。
+- [x] 新增真实控制流 gate 与对“错误入口修复”的故障注入，用于避免源代码看似存在但实机根本不运行。
+- [ ] **手机实测必需**：确认版本 REF-369D，B2F Save → 返回地图立即不花屏，移动/楼梯/重启存档/普通地图保存。
+- [ ] 用户本地核验 4 ROM 构建与最新 MAP ROM0≥64B；AI 不自行编译、提交。
+- [ ] 前版 REF-369B 事件位旧档风险及 Strength/PIT WIP 均保持原样，不算验收完成。
+
+详见 `docs/REF369D_ICE_PATH_SAVE_LIVE_RETURN_DEV.md`。
+
+## REF-369C｜保存后花屏（待手机验证）
+
+- [x] 根据 REF-369B 视频复现证据，恢复 START Save 后缺少的 Ice Path 图块图形重载（限 Ice Path/Save 的 full-restore 关闭路径）；采用 ROMX helper，调用现有 `ReloadTilesetTilePatterns`。
+- [x] 门禁验证补上地图范围、图鉴菜单偏移、full-restore HOME tail、原 SRAM Save 路径及 LCD 安全图块载入；包含 10 项故障注入检测。
+- [ ] 用户在新版 ROM 实测 Ice Path B2F 保存立刻返回地图，并测试 B1F/1F、重启读档和楼梯；无／有图鉴菜单分别关注索引 3/5。
+- [ ] 手机确认修好前，不清理／提交；REF-369B 的旧 D855 风险、石头 PIT WIP、玩家 PIT 未启用均保持。
+
+# REF-369B@｜分阶段开发：第一阶段存档事件位隔离
+
+[x] D852–D855 全位所有权清查与命名；[x] PIT flags 改到 D852 bits 2–5；[x] 迁移签名 D852 bits 6–7；[x] D853 bits 4–7 保留为源石头状态；[x] 一次性迁移保留 Seafoam／Ice Path escape bits、不触碰 D854/D855；[x] 新增静态审计、错误注入与 65,536 组字节模型测试。
+
+[ ] **WIP：**四块石头推行和完整碰撞；[ ] 石头落洞；[ ] B2F 落石显示/读档；[ ] 玩家 PIT 传送与动画；[ ] 旧 REF-369A 存档 D855 人工恢复评估；[ ] ROM/MAP 与手机实测。以上功能代码保留，但不视为本阶段已完成。
+
+详见 `docs/REF369B_SAVE_FLAG_ISOLATION_STAGE1.md`。
+
+## REF-369A@｜历史 WIP 代码（未验收）
+
+[WIP] 四块石头对象、Strength 接线、碰撞、石头 PIT 与 B2F 显示代码保留；不代表功能已完成。用户反馈已发现推石碰撞、落洞、玩家 PIT 和存档显示问题，需在 REF-369B 后续阶段逐项修复与实测。REF-369A 的 D855 存档位错误已由 REF-369B 第一阶段隔离；玩家 PIT 仍关闭。详见 `docs/REF369B_SAVE_FLAG_ISOLATION_STAGE1.md`。
+
 # CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
 
 - 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。
@@ -2313,7 +2454,7 @@ Status legend:
 - [~] **Transform 手动招式同回合使用复制招式（TRF-5.62.209，按已测范围收口）**：当前具备玩家选复制招式／敌方续执行主路径，TEST-214 视频记录了部分复杂镜像与画面缓存修复；TEST-215 用户确认 B 在第二菜单无效、普通菜单 B 正常。未完成全量 Red/Blue/MAP、Link 双端、精确 PP／全部异常边界，不把有限实测写成全面通过。
 - [ ] **TM 学习列表增加 Learned 标签**：在 Able／Not able 之外，对已经学过目标招式的宝可梦显示 Learned；当前只有已学判断，未见这一标签的完整显示分支。
 - [ ] **吼叫／瞬间移动／吹飞的对战效果与 -6 优先度**：保留已有多档优先度框架，补齐三招的 -6 行动顺序、训练师战效果及相关失败／换人边界。
-- [ ] **怪力推动岩石的局部视觉反馈**：目前岩石推动没有专用局部烟尘／闪烁演出；目标是仅被推动的那一块岩石播放反馈，不影响同场景其他岩石。
+- [x] **怪力推动岩石的局部视觉反馈（源码实现 REF-369L）**：城都用原版 Gold 两帧烟尘素材及非阻塞精灵叠加，推动石头本体不再切换全局调色板；关东保留原有位移动画但关闭全局 `rOBP1` 闪烁。REF-369N 已修正为 Gold 原版四个象限的 16×16 局部烟尘 OAM（此前单 OAM 项是实现错误），不改变其他石头的图形状态。**[ ] 待验收**：REF-369R 源码增加独立的第二烟尘槽与落洞隐藏后约 60 显示帧保留；原版精确时序／多次连续推动、关东各地图、ROM／MAP 与手机对比，尚不能标记整个视觉效果已最终验收。
 - [?] **持续束缚攻击后续回合的克制音效**：核实火焰旋涡等每次后续伤害是否保留“效果拔群／不太有效”对应音效；用户不确定以前是否修过，应先复现再决定是否修改。
 - [?] **部分宝可梦在特殊半屏画面下被裁切**：用户描述部分宝可梦（如小火龙）移动到屏幕一侧后出现图像缺失；原记录提到孵蛋，但现象来源可能是其他半屏战斗演出。先确认触发动作与复现方法，再定位 OAM／背景裁切。
 - [ ] **战斗中宝可梦被击倒后的状态查看**：强制换人界面目前只能选择下一只上场，无法查看候选宝可梦状态；需要新增状态入口，并确保返回后仍处于强制换人流程。

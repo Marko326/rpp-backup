@@ -51,7 +51,7 @@ def audit(root: Path, overrides: dict[str, str] | None = None) -> tuple[list[str
     movement = get('engine/overworld/movement.asm')
     facing = get('data/facing.asm')
 
-    ck('db "REF-368@"' in get('data/game_version.asm'), 'development game version not advanced to REF-368@')
+    ck('db "REF-369@"' in get('data/game_version.asm'), 'development game version not advanced to REF-368@')
     ck('SECTION "Johto Ice Path Auto Slide 368F", ROMX' in main and
        'INCLUDE "engine/johto_ice_path_slide_368f.asm"' in main and
        'ice_path_slide_state_367d.asm"' not in main,

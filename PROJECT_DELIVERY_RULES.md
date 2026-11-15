@@ -1,3 +1,55 @@
+## CLEAN REF-369｜双提交交付登记（不替代最高优先级项目要求）
+
+- 当前来自 `REF-369V.patch`，用户导出声称分支 `常规功能备份`、正式 HEAD `935b3fa738dce42f22768e94c92c920bb5b86d89`（REF-368）；所有 99 个变更文件的旧 Git Blob 与重建基线一致。最终游戏版号 `REF-369@`，未擅自执行 Commit/Push。
+- 累计运行代码、地图/资源与 `tools/` 审计/测试同时修改，按最高优先级要求 **模式 A**：一个 ZIP 恰好三份 `.patch` + 两份 `.txt` 提交日志。01：实际 REF-369V Worktree → CLEAN；03：已重建 REF-368 正式基线 → CLEAN；01/03 二选一。02：CLEAN → 仅保留功能提交（暂撤工具/文档）；功能提交后 `git apply -R 02` 恢复工具/文档再提交。
+- 用户已接受 REF-369V 当前游戏效果；B2F 石头首帧、双子岛上岸、旧 REF-369A SAV、完整四版 ROM/MAP 和部分历史审计未完成，均作为遗留记录，不作为已验证的修复。详情见 `docs/CLEAN_REF369_ICE_PATH_STRENGTH_PIT_ACCEPTANCE.md`。
+
+## REF-369V@｜玩家踩洞取消门声音效，撤销无效 B2F 预刷新（源码待验收）
+
+- 已实现 Burned Tower 与 Ice Path 玩家 PIT 复用原黑色换层但绕过 GO_INSIDE/GO_OUTSIDE 门声；保留 Gold skyfall KINESIS/STRENGTH。
+- 已实现 已确认 REF-369U B2F 提前 `UpdateSprites` 在手机上无效，撤回；保留原存档石头状态同步与洞穴灰紫调色板、黑屏过渡。
+- 待验收 B2F 已落石头仍晚于玩家落地显示，需要另行定位加载生命周期；Seafoam 独立 HideObject/ShowObject，不推断其首次显示正确。
+- 待验收 新版本 ROM/手机、门声与落洞音轨以及 B2F 状态验收；当前保持 REF-369V@ 未提交。
+
+## REF-369Q@｜本轮开发态与验收边界
+
+城都怪力烟尘现在记录推动开始时的石头编号及方向，在动画存续期间依据同一石头的实际屏幕坐标更新；石头进入洞口隐藏后定格最后位置，不再采样玩家方向键，也不提前锁在目标洞口。保留关东去闪白、文字提示、震动、存档与碰撞。源码实现待ROM/手机与Gold视频复测。
+
+## REF-369P@｜开发补丁交付及验收边界
+
+针对 REF-369O 手机反馈：文字提示未显而 START 叠出残留、临时烟尘菜单残留。城都冰之通路 B1F 用第五条地图文字指针接入 DisplayTextID 的完整生命周期，START 清理临时烟尘计时，城都烟尘位置从推动开始独立缓存。关东路径不改，Save、事件位、震动不动；本轮一个 ZIP 两份互斥正向补丁，ROM/MAP/手机仍待验收，不 Commit/Push。
+
+## REF-369L@｜城都 Gold 临时烟尘、关东推石去闪白（开发态）
+以 REF-369K 工作区为增量起点，正式 REF-368 HEAD 935b3fa7... 为全量基线。城都所有 Strength 推石不再阻塞播放旧烟尘，而是用 Gold 两帧素材、独立 32 帧 OAM 生命周期；关东仍用旧 OAM 流程但关闭 rOBP1 循环闪白。TODO 的代码实施可标记完成，ROM/MAP/Gold 视频逐帧/手机未验收。一个 ZIP 内两份互斥正向补丁；不编 ROM、不 Commit/Push。详见 docs/REF369L_JOHTO_GOLD_STRENGTH_KANTO_QUIET_DEV.md。
+
+## REF-369H@｜冰之通路 B1F 推石撞固定岩石（开发态）
+用户手机截图确认 REF-369G 可推动石头能与固定岩石/墙体重叠。根因是 stock `GetTileTwoStepsInFrontOfPlayer` 的 D/E 只代表前方一格（当前石头位置），旧 Ice Path 包装误当二格目标，导致所有源石头 FLOOR 格被误判为合法推动。现在根据 `$ffdb` 朝向再推进地图坐标一格，才查 Gold WALL/FLOOR/ICE/PIT；保留 sprite 碰撞、已满坑禁止、存档位、落洞演出，玩家 PIT 仍关闭。新增 20×36 四方向逐格参考检查、墙/边界/坑专项与负向故障注入；详见 `docs/REF369H_ICE_PATH_PUSH_TARGET_COLLISION_DEV.md`。待新版 ROM 手机验收。
+
+## REF-369G@｜冰之通路四块怪力石头落洞反馈（开发态）
+以 Gold `IcePathB1F.asm` 原版石头落洞演出为依据，补上四块石头落入未填 PIT 后的 30 帧停顿、Strength 音效、80 步地震和文字提示，继续保留独立 PIT/石头事件位、源图隐藏与下层静态落石显示。REF-369E 保存花屏修复和 REF-369F 边界修复不变；玩家踩洞仍封闭，四块石头完整实机碰撞和落洞流程仍需测试。详见 `docs/REF369G_ICE_PATH_BOULDER_FALL_FEEDBACK_DEV.md`。
+
+## REF-369F@｜修复冰之通路外围岩石边界（开发态）
+按 Gold 地图属性核对，B1F 与 B2F Mahogany 地图对象边界块应为 `$19` 岩石，却被早期 REF-367K/368A 误设成 `$09` 地面。只修正两处 Border Block，保留 REF-369E 隐藏精灵修复、不动 `.blk`、Save、事件位、碰撞及 BANK0；新增五层及负向审计。详见 `docs/REF369F_ICE_PATH_GOLD_BORDER_CORRECTION_DEV.md`。用户已确认 REF-369E B2F 保存后不再花屏；本轮地图边界仍需手机验收。
+
+## REF-369E@｜冰洞 B2F 保存返回隐藏落石精灵 ID 修复（开发态）
+撤销 REF-369D 无实机效果的 Save 返回图块重载；修复 B2F 四块未落石头（及 B1F 已掉落石头）将 Sprite ID 写 0 的逻辑。由于 HOME CloseTextDisplay 后的 InitMapSprites 会读取全部对象图片 ID 并减一，零 ID 下溢到 $FF 越出 SpriteSheetPointerTable。仅用非地图坐标 $FF/$FF 隐藏，保留合法 SPRITE_BOULDER 图片 ID 与分配槽，事件位及碰撞策略不变。尚须手机复测，不能宣称花屏已修，详见 docs/REF369E_ICE_PATH_HIDDEN_SPRITE_RELOAD_DEV.md。
+
+## REF-369D@｜Save 真实入口修复（开发态，等待设备验收）
+
+REF-369C 手机复测 Save 后仍花屏，已确认其重载代码放在 Save 不经过的 `StartMenuPrepareClose`。本版把冰洞 atlas 重载改到 `StartMenu_SaveReset` 的实际执行链，移除无效的菜单关闭分支，复用 HOME loader，不修改 BANK0/保存位，采用 1 个 ZIP/2 份互斥 `.patch`：01 当前 REF-369C→D，02 正式 REF-368 HEAD `935b3fa7...`→D。没有 ROM/MAP 或手机验收证明花屏已修；不 Commit/Push、不自行编译 ROM。见 `docs/REF369D_ICE_PATH_SAVE_LIVE_RETURN_DEV.md`。
+
+## REF-369C@｜Ice Path 保存退出花屏局部修复候选（开发态）
+
+用户手机视频与补充复测：Ice Path B2F 按 Save 后返回地图立刻花屏；重新启动读档与经楼梯换层均恢复。REF-369C 在 ROMX `StartMenuPrepareClose` 的原 full-restore 分支，仅对 `JOHTO_ICE_PATH` 且 START 上次所选为 Save 的两种图鉴菜单索引调用已有 `ReloadTilesetTilePatterns`，重传 96-tile atlas；其余路径及 `SaveSAV`、SRAM/事件位、BANK0 不变。当前为**待实测的显示恢复假设修复**，非已证实根因。门禁和负向测试见 `docs/REF369C_ICE_PATH_SAVE_SCREEN_RESTORE_DEV.md`。正式 HEAD 仍 935b3fa7；开发交付一个 ZIP、两份互斥 `.patch`，不 Commit/Push、不编 ROM。
+
+## REF-369B@｜第一阶段：存档事件位清查与隔离（开发态）
+
+本轮只收口 D852–D855 事件位归属和 REF-369A 一次性状态迁移；四块石头、推石碰撞、石头 PIT 与 B2F 显示代码保留为 WIP，玩家 PIT 仍关闭。开发交付仍按最高优先级规范：一个 ZIP、两份互斥补丁；不写正式提交日志、不 Commit/Push、不编译 ROM。详细事件映射和旧存档限制见 `docs/REF369B_SAVE_FLAG_ISOLATION_STAGE1.md`。
+
+## REF-369A｜Strength 石头与石块落洞开发交付（不替代最高优先级规范）
+
+以正式 REF-368 HEAD `935b3fa738dce42f22768e94c92c920bb5b86d89` 为本轮两条补丁路径的起点，版本 `REF-369A@`。一个 ZIP 内严格只有两份互斥 `.patch`，选择一种，不得叠加；不提供正式提交日志，不代替 Git Commit/Push，不编译 ROM。当前仅石头 PIT 落下实现，玩家坠落流程仍封闭；测试范围和剩余事项详见 `docs/REF369A_ICE_PATH_STRENGTH_BOULDER_PIT_DEV.md`。
+
 # CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
 
 - 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。

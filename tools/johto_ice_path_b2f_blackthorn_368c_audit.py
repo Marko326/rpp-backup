@@ -61,7 +61,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
         warps = warp_objects(asm, 'JohtoIcePathB2FBlackthornObjects368C')
         ck(warps == [(3,15,7),(3,3,1)], 'B2F Blackthorn two Gold warp objects/ordinals incorrect')
         routes = registered_routes(code(ROUTE))
-        ck(len(routes)==188 and len(set(routes))==188,'B2F Blackthorn global route count/uniqueness !=188')
+        ck(len(routes)==192 and len(set(routes))==192,'B2F Blackthorn global route count/uniqueness !=192')
         pairs=[('JOHTO_ICE_PATH_B1F_LOCAL_ID',7,'JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID'),
                ('JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID',0,'JOHTO_ICE_PATH_B1F_LOCAL_ID'),
                ('JOHTO_ICE_PATH_B3F_LOCAL_ID',1,'JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID'),
@@ -102,7 +102,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
        'B2F Blackthorn B1F #8 (11,27)/B3F predecessor stairs not live')
     pilot=code(ROUTE)
     ck('cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID ; Gold LADDER arrival stands still' in pilot and
-       'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jr z, .unionCaveLadder342' in pilot and
+       'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jp z, .unionCaveLadder342' in pilot and
        'cp JOHTO_ICE_PATH_B2F_BLACKTHORN_SIDE_LOCAL_ID\n    jp z, .darkCaveClosedEdge' in pilot,
        'B2F Blackthorn stationary arrival, STEP_IN or edge dispatcher missing')
     ck('dw JohtoIcePathB2FBlackthornRuntimeHeader368C' in code('data/johto_header_descriptors.asm') and
@@ -120,7 +120,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
        'db 38 ; slot69 Ice Path B2F Blackthorn Side Gold landmark' in town and
        'slot69 Ice Path B2F Blackthorn temporary cave theme' in code('engine/menu/options_menu.asm'),
        'B2F Blackthorn Town Map / music slot69 missing')
-    ck('db "REF-368@"' in code('data/game_version.asm'), 'REF-368@ developer version missing')
+    ck('db "REF-369@"' in code('data/game_version.asm'), 'REF-368@ developer version missing')
     return issues
 
 
@@ -128,7 +128,7 @@ def main() -> int:
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]); args=p.parse_args()
     issues=audit(args.root)
     for x in issues:print('FAIL:',x)
-    if not issues:print('PASS: REF368C Gold B2F Blackthorn ID97, 10x18 roles, two stairs, six directed hops, 70 active maps / 188 routes')
+    if not issues:print('PASS: REF368C Gold B2F Blackthorn ID97, 10x18 roles, two stairs, six directed hops, 70 active maps / 192 routes')
     return bool(issues)
 
 if __name__ == '__main__':raise SystemExit(main())

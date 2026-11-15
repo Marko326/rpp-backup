@@ -1,3 +1,80 @@
+# CLEAN REF-369｜当前有效踩坑与验收保护
+
+- **不要以版本／注释替代真实行为验证**：静态检查应检查实际 Save、落洞、脚本、Warp 路由和目标地图首帧。REF-369C/D 将 Save 修复放错路径或使用图块重载没有解决花屏；最终需要保留隐藏精灵的合法 Picture ID，不能用零 ID 隐藏。
+- **两套 PIT 不能混写**：B1F 石头掉洞使用 D852 bits2–5 与 D853 bits4–7 的事件位；玩家踩洞只单向 Warp，不修改石头事件。迁移保持 D854/D855，REF-369A 受损旧 SAV 不自动补猜。
+- **不要将前一轮无效刷新重新引入**：REF-369U 为 B2F 已落石首帧加入 `UpdateSprites`，用户设备反馈无效，REF-369V 撤销；仍存在落地后才显示的已知缺陷。
+- **金版外观与项目扩展区别**：城都洞穴采用夜间 ROCK 灰紫色；关东原图块色板不因城都变更而全局替换；关东去全局闪白是用户要求，Gold 烟尘并发与当前双槽是已接受的非严格等价。
+- **Surf 关东兼容风险**：`CollisionCheckOnWater` 的 `.legacySurfTile` 在 `callab JohtoOverworldSurfDecision` 后应确认 `C` 保存／恢复，当前双子岛 B4F 非法上岸已被用户发现。不要通过改 Seafoam 图块绕开通用寄存器问题；该修复不属于本次 CLEAN。
+- **CLEAN 模式 A**：全部 `tools/`、测试及配套文档归第二笔；所有游戏 `.asm`、图块、版号归第一笔。三补丁两日志，先 01 或 03（二选一），再 02，先提交游戏，反向 02，再提交工具。绝不擅自 Commit/Push。
+- **老记录**：以下 REF-369A～V 与更早阶段说明属于问题发生当时的历史，不可拿旧注释中“PIT 关闭”“白屏正常”“增加预刷新”等作为 REF-369 的现行要求。
+
+---
+
+## REF-369V@｜玩家踩洞取消门声音效，撤销无效 B2F 预刷新（源码待验收）
+
+- 已实现 Burned Tower 与 Ice Path 玩家 PIT 复用原黑色换层但绕过 GO_INSIDE/GO_OUTSIDE 门声；保留 Gold skyfall KINESIS/STRENGTH。
+- 已实现 已确认 REF-369U B2F 提前 `UpdateSprites` 在手机上无效，撤回；保留原存档石头状态同步与洞穴灰紫调色板、黑屏过渡。
+- 待验收 B2F 已落石头仍晚于玩家落地显示，需要另行定位加载生命周期；Seafoam 独立 HideObject/ShowObject，不推断其首次显示正确。
+- 待验收 新版本 ROM/手机、门声与落洞音轨以及 B2F 状态验收；当前保持 REF-369V@ 未提交。
+
+## REF-369U｜不能在淡入完成后才刷新已掉落石头；洞穴颜色应按 tileset 选
+
+不要把 `SyncLanded` 的事件位隐藏当成首次 sprite update：第一次 `UpdateSprites` 如果等到玩家坠落动画结束才运行，下层已落下石头会延迟显示。对于 B2F，在完全淡入前执行状态同步及一次正常对象更新；未落石头继续隐藏且保留合法 Picture ID。Gold 洞穴岩石的灰紫色来自 `SpritePalettesNite`，不是修改 `SPRITE_BOULDER` 的全局调色板索引，更不能改到关东 Seafoam。烧焦塔与 ICE 玩家 PIT 复用同一黑色地图过渡，保持落下动作专用选择位、无需另设 fade 状态。详见 `docs/REF369U_SHARED_PIT_FADE_CAVE_STONE_FIRST_FRAME_DEV.md`。
+
+## REF-369T｜不要把烧焦塔白屏动画直接用于冰之通路玩家 PIT
+
+ICE B1F 的 Gold 四洞保持已存在的玩家下落动作，但标准洞穴进出应走 `PlayMapChangeSound` 黑色通道，入场使用 `GBFadeInFromBlack`；Burned Tower 白色过渡不改。B2F 的石头状态不能等地图脚本运行后才隐藏：地图已加载、入场尚未淡入时预执行事件位迁移及落石同步，同时置隐藏石头 C1x2 `$FF` 和 C2 坐标 `$FF`，切勿把 C1x0 图片 ID 设 0。Gold ICE 使用 STEP_ICE/fast_slide_step，60 FPS 版本需沿用本项目 B_BUTTON 现有的步进加速，不能改玩家共享计时器或者跳过碰撞。详见 `docs/REF369T_ICE_PATH_PIT_FADE_SPRITE_SLIDE_DEV.md`。
+
+## REF-369S｜玩家踩洞与石头入洞不可混用
+
+Ice Path B1F 的 `PIT` 角色要同时支持怪力石头进洞和玩家脚踩单向 Warp，但**玩家不应更改任何石头事件位**。B2F Mahogany 的四个对应 ICE Warp 条目必须保留 Gold 真实坐标供到达，但通过模式守卫与碰撞入口双保险阻止反向传送；绝不能直接把 B2F ICE 也改为主动 STEP_IN。普通楼梯仍走普通换层，只有 B1F Gold #3–#6 才选择坠落动画。此前固定 188 Warp／玩家 PIT 封闭的历史断言要更新为本阶段 192 和仅四个 PIT 开放，不可一键删除或绕开检查。
+
+## REF-369H@｜冰之通路 B1F 推石撞固定岩石（开发态）
+用户手机截图确认 REF-369G 可推动石头能与固定岩石/墙体重叠。根因是 stock `GetTileTwoStepsInFrontOfPlayer` 的 D/E 只代表前方一格（当前石头位置），旧 Ice Path 包装误当二格目标，导致所有源石头 FLOOR 格被误判为合法推动。现在根据 `$ffdb` 朝向再推进地图坐标一格，才查 Gold WALL/FLOOR/ICE/PIT；保留 sprite 碰撞、已满坑禁止、存档位、落洞演出，玩家 PIT 仍关闭。新增 20×36 四方向逐格参考检查、墙/边界/坑专项与负向故障注入；详见 `docs/REF369H_ICE_PATH_PUSH_TARGET_COLLISION_DEV.md`。待新版 ROM 手机验收。
+
+## REF-369G@｜冰之通路四块怪力石头落洞反馈（开发态）
+以 Gold `IcePathB1F.asm` 原版石头落洞演出为依据，补上四块石头落入未填 PIT 后的 30 帧停顿、Strength 音效、80 步地震和文字提示，继续保留独立 PIT/石头事件位、源图隐藏与下层静态落石显示。REF-369E 保存花屏修复和 REF-369F 边界修复不变；玩家踩洞仍封闭，四块石头完整实机碰撞和落洞流程仍需测试。详见 `docs/REF369G_ICE_PATH_BOULDER_FALL_FEEDBACK_DEV.md`。
+
+## REF-369F@｜修复冰之通路外围岩石边界（开发态）
+按 Gold 地图属性核对，B1F 与 B2F Mahogany 地图对象边界块应为 `$19` 岩石，却被早期 REF-367K/368A 误设成 `$09` 地面。只修正两处 Border Block，保留 REF-369E 隐藏精灵修复、不动 `.blk`、Save、事件位、碰撞及 BANK0；新增五层及负向审计。详见 `docs/REF369F_ICE_PATH_GOLD_BORDER_CORRECTION_DEV.md`。用户已确认 REF-369E B2F 保存后不再花屏；本轮地图边界仍需手机验收。
+
+## REF-369E@｜冰洞 B2F 保存返回隐藏落石精灵 ID 修复（开发态）
+撤销 REF-369D 无实机效果的 Save 返回图块重载；修复 B2F 四块未落石头（及 B1F 已掉落石头）将 Sprite ID 写 0 的逻辑。由于 HOME CloseTextDisplay 后的 InitMapSprites 会读取全部对象图片 ID 并减一，零 ID 下溢到 $FF 越出 SpriteSheetPointerTable。仅用非地图坐标 $FF/$FF 隐藏，保留合法 SPRITE_BOULDER 图片 ID 与分配槽，事件位及碰撞策略不变。尚须手机复测，不能宣称花屏已修，详见 docs/REF369E_ICE_PATH_HIDDEN_SPRITE_RELOAD_DEV.md。
+
+# REF-369D｜实际调用链陷阱：不要把 Save 修复写在 EXIT 分支
+
+1. `StartMenu_SaveReset` 保存后直接 `jp HoldTextDisplayOpen`，**不进入** `CloseStartMenu`／`StartMenuPrepareClose`。REF-369C 把 tileset reload 放在后者，并以源码存在性门禁宣告 PASS，但用户新版视频仍然花屏。这是确定的旁路错误，切记先追真实 A/B/START/SAVE 的控制流。
+2. REF-369D 在 `SaveSAV` 与 `LoadScreenTilesFromBuffer2` 之后、`jp HoldTextDisplayOpen` 前以 `wCurMapTileset` 守卫调用 `ReloadTilesetTilePatterns`；撤回旧旁路分支。只用 `call z` 控制调用，ROMX Bank $04 理论 +8B，ROM0 不增；仍需用户用原工程编译核验 Bank 空间。
+3. 新门禁直接审查 Save 块的完整指令顺序，故意把修复搬回关闭 helper 必须 FAIL；单纯检测源码包含 `ReloadTilesetTilePatterns` 不能证明运行时可达。静态测试不代表手机花屏已经修好。
+
+详见 `docs/REF369D_ICE_PATH_SAVE_LIVE_RETURN_DEV.md`。
+
+# REF-369C｜START Save 后地图图块显示恢复（待手机验收）
+
+1. 用户视频表明冰之通路 B2F Save 之后即时花屏，关闭并重新读档或上下楼梯切图后立即正常。这不等于存档本身损坏；也不能据此证明所有旧事件位安全。
+2. `StartMenu_SaveReset` 通过 predef SaveSAV 显示保存 UI，随后走 `StartMenuPrepareClose` 的 full restore 与 HOME `CloseTextDisplayAfterWindowHide`。HOME 恢复人物和地图 tilemap，但不会重载 `vTileset` 的完整图形字节；楼梯进图会调用已有图块加载器。
+3. 本轮作为受限的修复候选，仅在 Ice Path 保存后关闭菜单时调用 `ReloadTilesetTilePatterns`。START 两种菜单索引分别为含图鉴 5／不含图鉴 3；不应无条件给所有 Kanto/Johto 地图加 LCD-off 传输，也不应绕过带 Carry 的 HOME close tail。当前无手机验证能证明图形重载就是唯一根因。
+4. 新增 `tools/johto_ice_path_save_return_369c_audit.py` 校验调用链、地图和菜单索引条件、源码 BANK0 安全入口，并通过负向错误注入验证；不能代替 ROM 编译、MAP、VRAM Bank 逐帧调试及设备检查。
+
+详见 `docs/REF369C_ICE_PATH_SAVE_SCREEN_RESTORE_DEV.md`。
+
+# REF-369B｜存档事件位分配与迁移边界
+
+1. `wEventFlags` 从 `$D7CB` 开始；`EVENT_xxxx / 8` 是相对事件数组的字节偏移。不能把 `EVENT_9D7 / 8` 再加 1，否则从 D854 错跳到 D855。
+2. D855 bits 0–7 全部有归属（Johto Fly 与 Articuno），不是空闲尾部。REF-369A 曾错误把 PIT 状态写到 D855 bits 0–3；不能从旧值推断原始 Fly/Articuno 状态，迁移不得自动清 D855。
+3. REF-369B PIT occupancy 使用 D852 bits 2–5；D852 bits 0–1 是 Seafoam B2F，bits 6–7 是一次性迁移签名。源石头状态用 D853 bits 4–7；D853 bits 0–1 是 Seafoam B3F，bits 2–3 是 Ice Path 出口锚点。迁移必须分别使用 `$C3` 和 `$0F` 保留共享字节的其他所有者。
+4. 每次新增存档位都要审计整段事件常量、实际引用模块、共享字节掩码和旧档迁移；仅检查“索引在 wEventFlags 长度内”不足以证明无冲突。测试必须注入错误地址/掩码，并验证其他地图事件不被修改。
+
+详见 `docs/REF369B_SAVE_FLAG_ISOLATION_STAGE1.md`。
+
+## REF-369A｜历史 WIP：Strength 推石和 PIT 的源码易错点（事件位分配已废弃）
+
+1. 金银版四处 B1F PIT 编号和原版楼梯序号不能压缩；B2F PIT 是到达槽，不可当作主动踩入 Warp。当前**仅石头可入坑**，玩家仍封闭。
+2. 石头从初始格推走后不可保留初始位置的硬编码墙。落下石头或尚未出现的 B2F 石头除了清绘图 ID，还要同时使 SpriteStateData2 的地图 Y/X 离图，避免出现透明碰撞体。
+3. `CheckBoulderCoords` 必须配合正确的 1-based sprite index，保存时区分源石头索引与目标洞索引。持久 event 位避开 Ice Path 出口锚点和 Dark Cave 出口锚点。
+4. ROM Bank3 几乎没有空闲。跨 Bank 对 Sprite 碰撞返回 A 会被切 Bank 覆盖；原 `CheckForBoulderCollisionWithSprites` 阻挡时改为等长 `scf; sbc a; ret`，使 Carry 可靠但保持 A=$ff；无需扩大 Bank3。`SFX_STRENGTH` 并非本工程定义，须使用已有 `GSSFX_BURNED_TOWER_STRENGTH`。
+5. 静态测试无法证明实际 ROM 汇编、声音、落下帧和手机状态。项目规定开发阶段只交单 ZIP/两互斥补丁，用户进行 ROM/MAP 和实机验证。详见 `docs/REF369A_ICE_PATH_STRENGTH_BOULDER_PIT_DEV.md`。
+
 # CLEAN REF-368｜冰之通路五层及冰面滑行动画正式收口（Git 双提交材料）
 
 - 基线：`常规功能备份`／`cd88452a05e9399b469f12fe2c6c89dd532dfcfb`（正式 REF-367）；最新用户上传 `REF-368G.patch` 工作区，目标正式游戏版本 **REF-368@**。

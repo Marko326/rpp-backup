@@ -7,10 +7,10 @@ ROOT=Path(__file__).resolve().parents[2]
 def test_ice_path_b1f_new_map_review():
     assert audit(ROOT)==[]
 
-def test_b1f_sealed_pit_mutation_fails():
+def test_b1f_active_pit_mutation_fails():
     f='data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm'
     source=(ROOT/f).read_text()
-    bad=source.replace('db $ff, $ff, 2, JOHTO_REGISTERED_WARP_SELECTOR', 'db 2, 11, 2, JOHTO_REGISTERED_WARP_SELECTOR',1)
+    bad=source.replace('db 2, 11, 2, JOHTO_REGISTERED_WARP_SELECTOR', 'db $ff, $ff, 2, JOHTO_REGISTERED_WARP_SELECTOR',1)
     assert any('8 ordinal objects' in e for e in audit(ROOT,{f:bad}))
 
 def test_b1f_stair_destination_mutation_fails():
@@ -46,14 +46,14 @@ def test_1f_ladder_illegal_jump_operand_colon_is_detected():
 def test_b1f_airwall_when_stone_sprite_is_missing():
     f='data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm'
     source=(ROOT/f).read_text()
-    bad=source.replace('    object SPRITE_BOULDER, 8, 9, STAY, NONE, $3\n', '', 1)
+    bad=source.replace('    object SPRITE_BOULDER, 8, 9, STAY, BOULDER_MOVEMENT_BYTE_2, $3\n', '', 1)
     assert any('invisible air wall' in e for e in audit(ROOT,{f:bad}))
 
 
 def test_b1f_airwall_when_stone_sprite_uses_wrong_coordinates():
     f='data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm'
     source=(ROOT/f).read_text()
-    bad=source.replace('SPRITE_BOULDER, 11, 7, STAY, NONE', 'SPRITE_BOULDER, 12, 7, STAY, NONE',1)
+    bad=source.replace('SPRITE_BOULDER, 11, 7, STAY, BOULDER_MOVEMENT_BYTE_2', 'SPRITE_BOULDER, 12, 7, STAY, BOULDER_MOVEMENT_BYTE_2',1)
     assert any('invisible air wall' in e for e in audit(ROOT,{f:bad}))
 
 
@@ -67,7 +67,7 @@ def test_b1f_airwall_when_stone_sprite_hidden_by_zero_count():
 def test_b1f_pre_push_stones_must_be_stationary():
     f='data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm'
     source=(ROOT/f).read_text()
-    bad=source.replace('SPRITE_BOULDER, 7, 8, STAY, NONE', 'SPRITE_BOULDER, 7, 8, STAY, BOULDER_MOVEMENT_BYTE_2',1)
+    bad=source.replace('SPRITE_BOULDER, 7, 8, STAY, BOULDER_MOVEMENT_BYTE_2', 'SPRITE_BOULDER, 7, 8, STAY, NONE',1)
     assert any('invisible air wall' in e for e in audit(ROOT,{f:bad}))
 
 
@@ -108,6 +108,25 @@ def test_b1f_stone_text_must_stay_in_map_bank():
 def test_b1f_props_cannot_be_pushed_before_strength_pit_phase():
     f = 'data/johto_ice_path_stage/ice_path_b1f_runtime_367k.asm'
     source = (ROOT / f).read_text()
-    bad = source.replace('SPRITE_BOULDER, 17, 7, STAY, NONE',
-                         'SPRITE_BOULDER, 17, 7, STAY, BOULDER_MOVEMENT_BYTE_2', 1)
+    bad = source.replace('SPRITE_BOULDER, 17, 7, STAY, BOULDER_MOVEMENT_BYTE_2',
+                         'SPRITE_BOULDER, 17, 7, STAY, NONE', 1)
     assert any('invisible air wall' in e for e in audit(ROOT, {f: bad}))
+
+
+def test_b1f_long_jump_gate_rejects_reverting_to_short_jump():
+    # REF-368/369: these dispatcher branches were lengthened to JP by the
+    # accepted worktree; a legacy JR-only source contract was a false failure.
+    f='engine/johto_pilot_runtime.asm'
+    source=(ROOT/f).read_text()
+    assert 'jp z, .icePathLadderOrCarpet367K' in source
+    bad=source.replace('jp z, .icePathLadderOrCarpet367K',
+                       'jr z, .icePathLadderOrCarpet367K',1)
+    assert any('1F LADDER not immediate STEP_IN' in e for e in audit(ROOT,{f:bad}))
+
+def test_b1f_return_long_jump_gate_rejects_wrong_target():
+    f='engine/johto_pilot_runtime.asm'
+    source=(ROOT/f).read_text()
+    assert 'jp z, .unionCaveLadder342' in source
+    bad=source.replace('jp z, .unionCaveLadder342',
+                       'jp z, .icePathLadderOrCarpet367K',1)
+    assert any('B1F return LADDER not immediate STEP_IN' in e for e in audit(ROOT,{f:bad}))

@@ -140,11 +140,11 @@ def test_current_global_warp_gate_rejects_dropped_route(monkeypatch):
             lines = table.splitlines(keepends=True)
             candidates = [i for i, line in enumerate(lines)
                           if line.lstrip().startswith('db MAP_REGION_JOHTO, JOHTO_')]
-            assert len(candidates) == 188, len(candidates)
+            assert len(candidates) == 192, len(candidates)
             lines.pop(candidates[-1])
             return before + sep + ''.join(lines) + sep2 + suffix
         return result
     with monkeypatch.context() as ctx:
         ctx.setattr(Path, 'read_text', broken_read)
         result = audit(ROOT)
-    assert 'current_188_unique_registered_routes' in result['errors']
+    assert 'current_192_unique_registered_routes' in result['errors']

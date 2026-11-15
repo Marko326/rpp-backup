@@ -74,12 +74,18 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     obj = asm.split('JohtoIcePathB2FMahoganyObjects368A::', 1)[-1].split('JohtoIcePathB2FMahoganyRoleAt368A::', 1)[0]
     rows = re.findall(r'(?m)^\s*db\s+(\$ff|\d+),\s*(\$ff|\d+),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR\s*$',
                       '\n'.join(line.split(';')[0] for line in obj.splitlines()))
-    expected = [('1', '17', '1'), ('11', '9', '0'), ('$ff', '$ff', '2'),
-                ('$ff', '$ff', '3'), ('$ff', '$ff', '4'), ('$ff', '$ff', '5')]
-    check(rows == expected and 'db 6 ; Gold six source ordinals' in obj,
+    expected = [('1', '17', '1'), ('11', '9', '0'), ('4', '11', '2'),
+                ('6', '4', '3'), ('12', '4', '4'), ('12', '12', '5')]
+    check(rows == expected and 'db 6 ; Gold six ordinals: #1/#2 are exit ladders; #3-#6 arrival-only ICE' in obj,
           'B2F Mahogany Gold six-ordinal warp table wrong; B3F/ICE return may leak')
-    check(bool(re.search(r'(?m)^\s*db 0 ; no sign / item / encounter\s*\n\s*db 0 ; no NPC or dropped boulder objects', obj)),
-          'B2F Mahogany unfinished boulder/item objects activated prematurely')
+    check('db 4 ; Gold lower-floor rocks appear only after their B1F PIT is filled' in obj and
+          len(re.findall(r'(?m)^\s*object SPRITE_BOULDER,',obj)) == 4 and
+          all(f'object SPRITE_BOULDER, {x}, {y}, STAY, NONE, ${i}' in obj for i,(x,y) in
+              enumerate([(11,3),(4,7),(3,12),(12,13)],1)),
+          'B2F Gold dropped boulder positions/count must match four Gold objects')
+    check('JohtoIcePathB2FMahoganySyncLanded369B::' in asm and
+          'jp JohtoIcePathB2FMahoganySyncLanded369B' in asm,
+          'B2F boulder objects lack saved hole-occupancy visibility control')
     decision = asm.split('JohtoIcePathB2FMahoganyLandDecision368A::', 1)[-1].split('JohtoIcePathB2FMahoganyBikeFloorAllowed368A::', 1)[0]
     for needle in ('call JohtoIcePathB2FMahoganyRoleAhead368A', 'cp 2 ; Gold ICE',
                    'cp 4 ; Gold ladder', 'cp 17', 'cp 1', 'ld e, 0', 'ret nz'):
@@ -119,7 +125,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     check('db 3, 17, 0, JOHTO_REGISTERED_WARP_SELECTOR' in b1f and '.ladder17' in b1f,
           'B1F Gold #2 source (17,3) not opened with actual walk permission')
     check('cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID ; Gold LADDER arrival stands still' in pilot and
-          any('cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID\n    '+op+' z, .unionCaveLadder342' in pilot for op in ('jr','jp')),
+          'cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID\n    jp z, .icePathB2FMahoganyWarp369S' in pilot,
           'B2F ladder arrival or step-in dispatch not wired')
     sign = txt('engine/overworld/map_name_sign.asm')
     check('cp JOHTO_ICE_PATH_B2F_MAHOGANY_SIDE_LOCAL_ID' in sign and
@@ -132,8 +138,8 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
           'B2F Save/Continue/Town Map slot or name missing')
     check('JohtoIcePathB2FBlackthornRuntimeHeader368C' in headers and 'JohtoIcePathB3F' in headers,
           'final Ice Path region/B3F header not active')
-    check('db "REF-368@"' in txt('data/game_version.asm'),
-          'B2F live map should carry current REF-368@ development label')
+    check('db "REF-369@"' in txt('data/game_version.asm'),
+          'B2F live map should carry current REF-369B@ development label')
     return errors
 
 
@@ -141,7 +147,7 @@ def main() -> int:
     p = argparse.ArgumentParser(); p.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1]); a=p.parse_args()
     bad=audit(a.root)
     for problem in bad: print('FAIL:', problem)
-    if not bad: print('PASS: B2F Mahogany exact Gold 10x9, ICE walk-only, 6 ordinals (2 live, 4 sealed), B1F return, map/card/bike public gates')
+    if not bad: print('PASS: B2F Mahogany exact Gold 10x9, ICE walk-only, 6 ordinals (2 outgoing ladders, 4 receive-only PIT cells), B1F return, map/card/bike public gates')
     return bool(bad)
 
 

@@ -34,16 +34,16 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     one=code('data/johto_ice_path_stage/ice_path_1f_runtime_367e.asm')
     wh=asm.split('JohtoIcePathB1FObjects367K::',1)[-1].split('JohtoIcePathB1FRoleAt367K::',1)[0]
     rows=re.findall(r'(?m)^\s*db\s+(\$ff|\d+),\s*(\$ff|\d+),\s*(\d+),\s*JOHTO_REGISTERED_WARP_SELECTOR\s*$', '\n'.join(l.split(';')[0] for l in wh.splitlines()))
-    expected=[('15','3','2'),('3','17','0'),('$ff','$ff','2'),('$ff','$ff','3'),('$ff','$ff','4'),('$ff','$ff','5'),('25','5','3'),('27','11','0')]
-    ck(rows==expected,'B1F Gold 8 ordinal objects invalid (including #8 at 11,27) / four PIT slots must remain sealed')
+    expected=[('15','3','2'),('3','17','0'),('2','11','2'),('7','4','3'),('12','5','4'),('13','12','5'),('25','5','3'),('27','11','0')]
+    ck(rows==expected,'B1F Gold 8 ordinal objects invalid (including #8 at 11,27) / four exact player PIT entries must remain open')
     # REF-367M: text IDs 1..4 on the visible props are live even when
     # pushing is disabled. A missing entry makes DisplayTextID interpret the
     # warp/object bytes as 16-bit text pointers (e.g. an unrelated nurse menu).
     text_table = asm.split('JohtoIcePathB1FTextPointers367K:', 1)[-1].split('JohtoIcePathB1FTextPointers367KEnd::', 1)[0]
     text_refs = re.findall(r'(?m)^\s*dw\s+([A-Za-z_][A-Za-z_0-9]*)\s*(?:;[^\n]*)?$', text_table)
-    ck(text_refs == ['JohtoIcePathB1FStaticStoneText367M'] * 4,
+    ck(text_refs == ['JohtoIcePathB1FStaticStoneText367M'] * 4 + ['JohtoIcePathB1FBoulderFellText369G'],
        'B1F four boulder text IDs do not have four valid in-bank pointers (nurse dialogue leak)')
-    ck(bool(re.search(r'(?m)^ASSERT\s+JohtoIcePathB1FTextPointers367KEnd\s*-\s*JohtoIcePathB1FTextPointers367K\s*==\s*4\s*\*\s*2\s*$', asm)),
+    ck(bool(re.search(r'(?m)^ASSERT\s+JohtoIcePathB1FTextPointers367KEnd\s*-\s*JohtoIcePathB1FTextPointers367K\s*==\s*5\s*\*\s*2\s*$', asm)),
        'B1F four text pointers have no assembly-length assertion')
     text_body = asm.split('JohtoIcePathB1FStaticStoneText367M:', 1)[-1].split('JohtoIcePathB1FObjects367K::', 1)[0]
     ck('JohtoIcePathB1FStaticStoneText367M:' in asm and
@@ -57,31 +57,24 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
        'B1F four boulder text pointers are not guaranteed in same ROM bank')
     ck('call EnableAutoTextBoxDrawing' in asm.split('JohtoIcePathB1FScript367K::',1)[-1].split('JohtoIcePathB1FTextPointers367K:',1)[0],
        'B1F ordinary text engine is not enabled for the four fixed boulders')
-    # REF-367L: four hard-coded blockers MUST be represented by visible boulder
-    # objects at the same world coordinates (x,y), with movement disabled.
+    # REF-369A: original rock coordinates remain visible, but the shared
+    # Strength movement byte replaces the temporary static-hard-wall state.
     objects_section = wh.split('db 0 ; no sign / item / encounter', 1)[-1]
     match = re.search(r'(?m)^\s*db\s+(\d+)\s*$', objects_section)
     ck(match is not None and int(match.group(1)) == 4, 'B1F fixed boulder sprite count != 4 (invisible air wall)')
     boulder_records = re.findall(
-        r'(?m)^\s*object\s+SPRITE_BOULDER,\s*(\d+),\s*(\d+),\s*STAY,\s*NONE,\s*\$(\w+)\s*$',
+        r'(?m)^\s*object\s+SPRITE_BOULDER,\s*(\d+),\s*(\d+),\s*STAY,\s*BOULDER_MOVEMENT_BYTE_2,\s*\$(\w+)\s*$',
         objects_section)
     expected_boulders = [(11,7,1),(7,8,2),(8,9,3),(17,7,4)]
     actual_boulders = [(int(x),int(y),int(n,16)) for x,y,n in boulder_records]
-    ck(actual_boulders == expected_boulders, 'Gold Strength boulder coordinate lacks visible immovable sprite (invisible air wall)')
-    # The four Gold FLOOR locations are temporarily occupied by these sprites.
-    # Never silently block a bare floor cell, nor allow a blocked stone to lack
-    # a corresponding visible object.
+    ck(actual_boulders == expected_boulders, 'Gold Strength sprite missing or wrong movement byte (invisible air wall)')
+    # Moving sprites, not their former absolute positions, now own collision.
     step_gate = asm.split('JohtoIcePathB1FRoleAhead367K::', 1)[-1].split('JohtoIcePathB1FLandDecision367K::',1)[0]
-    for x,y,_ in expected_boulders:
-        # Exact guards are verified by a small independent translation of the
-        # assembly's four branches so renumbering one silently fails the audit.
-        if y == 7:
-            matched = bool(re.search(r'\bcp\s+7\s*\n\s*jr nz,\s*\.y8',step_gate)) and bool(re.search(rf'\bcp\s+{x}\s*\n\s*jr z,\s*\.blocked',step_gate))
-        elif y == 8:
-            matched = bool(re.search(r'\bcp\s+8\s*\n\s*jr nz,\s*\.y9',step_gate)) and bool(re.search(rf'\bcp\s+{x}\s*\n\s*jr z,\s*\.blocked',step_gate))
-        else:
-            matched = bool(re.search(r'\bcp\s+9\s*\n\s*jr nz,\s*\.read',step_gate)) and bool(re.search(rf'\bcp\s+{x}\s*\n\s*jr z,\s*\.blocked',step_gate))
-        ck(matched, f'B1F boulder ({x},{y}) static collision guard missing')
+    ck('call JohtoIcePathB1FRoleAt367K' in step_gate and '.blocked' not in step_gate,
+       'B1F obsolete fixed rock hard-blocks still leave an invisible wall after pushing')
+    ck('call JohtoIcePathB1FHideDropped369B' in asm and
+       'JohtoIcePathB1FCheckStoneDrop369B::' in asm,
+       'B1F push completion and saved rock removal missing')
     ck('db 8 ; original Gold #1-#8 SOURCE slots' in asm,'B1F eight warp objects header missing')
     ck('cp 17' in asm.split('.ladder17',1)[-1] and 'cp 3' in asm.split('.ladder17',1)[-1], 'B1F B2F Mahogany Gold #2 ladder collision not opened')
     ladder11 = re.search(r'(?ms)^\.ladder11\s*\n(.*?)^\.ladder17\s*$', asm)
@@ -94,7 +87,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     ck('JohtoIcePathB1FRuntimeDescriptor::' in code('data/johto_pilot_runtime_assets.asm'),'B1F runtime descriptor not registered')
     ck('JOHTO_ICE_PATH_B1F_LOCAL_ID' in code('engine/johto_land_collision_gateway_272.asm') and 'callab JohtoIcePathB1FLandDecision367K' in code('engine/johto_land_collision_gateway_272.asm'),'B1F movement not linked')
     ck('JohtoIcePathB1FRoleAhead367K::' in asm and 'JohtoIcePathB1FLandDecision367K::' in asm,'B1F Gold role collision missing')
-    for check in ('cp 3 ; PIT', 'cp 4 ; LADDER', 'cp 11', 'cp 17', 'cp 7', 'cp 8'):
+    for check in ('cp 3 ; PIT', 'cp 4 ; LADDER', 'cp 11', 'cp 17', 'cp 7'):
         ck(check in asm, f'B1F collision safety gate missing {check}')
     ck('cp JOHTO_ICE_PATH_B1F_LOCAL_ID' in code('home/rom0_relief_349.asm'),'B1F bike mounting dispatch missing')
     sign=code('engine/overworld/map_name_sign.asm')
@@ -104,16 +97,16 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
         ck(f'db MAP_REGION_JOHTO, {source}, {ord}, MAP_REGION_JOHTO, {target}' in lines,f'B1F reciprocal route missing {source}#{ord}')
     ck('db 5, 37, 0, JOHTO_REGISTERED_WARP_SELECTOR' in one and 'db 13, 37, 6, JOHTO_REGISTERED_WARP_SELECTOR' in one,'1F both original Gold stair objects sealed/changed')
     ck(bool(re.search(r'(?m)^\s*jr nz, \.notLadder367K\s*$', one)) and not re.search(r'(?m)^\s*jr nz, \.notLadder367K:', one), '1F Gold ladder JR operand has illegal label colon')
-    ck('cp JOHTO_ICE_PATH_1F_LOCAL_ID' in lines and 'jr z, .icePathLadderOrCarpet367K' in lines and 'cp 37' in lines and 'jr z, .unionCaveLadder342' in lines,'1F LADDER not immediate STEP_IN')
-    ck('cp JOHTO_ICE_PATH_B1F_LOCAL_ID' in lines and 'jr z, .unionCaveLadder342' in lines,'B1F return LADDER not immediate STEP_IN')
+    ck(bool(re.search(r'cp JOHTO_ICE_PATH_1F_LOCAL_ID\s*\n\s*jp z, \.icePathLadderOrCarpet367K', lines)) and 'cp 37' in lines and 'jr z, .unionCaveLadder342' in lines,'1F LADDER not immediate STEP_IN')
+    ck(bool(re.search(r'cp JOHTO_ICE_PATH_B1F_LOCAL_ID\s*\n\s*jp z, \.unionCaveLadder342', lines)), 'B1F return LADDER not immediate STEP_IN')
     ck('cp JOHTO_ICE_PATH_B1F_LOCAL_ID ; Gold LADDER arrivals stand still' in lines,'B1F ladder arrival must not auto-step')
     ck('NUM_JOHTO_ACTIVE_MAPS EQU 70' in code('constants/region_map_constants.asm'),'active map roster must include 70 maps')
-    ck('db "REF-368@"' in code('data/game_version.asm'),'development label not REF-368@')
+    ck('db "REF-369@"' in code('data/game_version.asm'),'development label not REF-369B@')
     return errs
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);args=p.parse_args()
     problems=audit(args.root)
     for problem in problems: print('FAIL:', problem)
-    if not problems:print('PASS: B1F four Gold stair pairs, four fixed visible boulders and safe text; PIT remain sealed')
+    if not problems:print('PASS: B1F Gold stairs, four movable Strength stones, four step-in player PITs and text pointers')
     raise SystemExit(bool(problems))

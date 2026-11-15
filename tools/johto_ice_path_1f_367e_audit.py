@@ -96,7 +96,7 @@ def audit(root: Path) -> list[str]:
         'data/warp_tile_ids.asm': ('dw JohtoIcePathWarpTileIDs',),
         'data/dungeon_tilesets.asm': ('JOHTO_ICE_PATH, $FF',),
         'home.asm': ('JohtoIcePath_Coll:: db $ff',),
-        'data/game_version.asm': ('db "REF-368@"',),
+        'data/game_version.asm': ('db "REF-369@"',),
         'engine/johto_land_collision_gateway_272.asm': ('callab JohtoIcePath1FLandDecision367F',),
         'engine/johto_pilot_runtime.asm': (
             'JohtoIcePath1FDownCarpet367F::',

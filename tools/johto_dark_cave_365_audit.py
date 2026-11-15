@@ -95,7 +95,7 @@ def audit(root:Path,gold_root:Path|None=None)->dict:
   parsed=[(m.group(1),int(m.group(2)),m.group(3)) for m in re.finditer(
     r'(?m)^\s*db MAP_REGION_JOHTO, (JOHTO_\w+_LOCAL_ID), (\d+), MAP_REGION_JOHTO, (JOHTO_\w+_LOCAL_ID)',warp)]
   ck('eight_cave_registered_routes',all(x in parsed for x in ROUTES))
-  ck('current_188_unique_registered_routes',len(parsed)==188 and len({r[:2] for r in parsed})==188)
+  ck('current_192_unique_registered_routes',len(parsed)==192 and len({r[:2] for r in parsed})==192)
   for a,b,c in ROUTES:
    ck('warp_'+a+'_'+str(b),any(x==a and y==b and z==c for x,y,z in parsed))
   vio=load('data/johto_dark_cave_stage/REF349_stage2_runtime.asm')

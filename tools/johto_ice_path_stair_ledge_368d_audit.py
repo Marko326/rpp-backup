@@ -21,7 +21,7 @@ FILES = {
     'IcePathB2FBlackthornSide': ('data/johto_ice_path_stage/ice_path_b2f_blackthorn_runtime_368c.asm', 'JohtoIcePathB2FBlackthornObjects368C'),
     'IcePathB3F': ('data/johto_ice_path_stage/ice_path_b3f_runtime_368b.asm', 'JohtoIcePathB3FObjects368B'),
 }
-# Original source order, with sealed PIT and ICE-arrival-only ordinals retained.
+# Gold source order: live B1F PIT #3-#6 and B2F receive-only ICE #3-#6.
 DEST_ORDINAL = {
     'IcePath1F': [0, 1, 0, 6],
     'IcePathB1F': [2, 0, 2, 3, 4, 5, 3, 0],
@@ -29,8 +29,7 @@ DEST_ORDINAL = {
     'IcePathB2FBlackthornSide': [7, 1],
     'IcePathB3F': [1, 1],
 }
-SEALED = {'IcePathB1F': set(range(2, 6)),
-          'IcePathB2FMahoganySide': set(range(2, 6))}
+SEALED = {'IcePathB2FMahoganySide': set(range(2, 6))}  # receive-only, real coordinates
 LEDGES = {
     'IcePath1F': ('JohtoIcePath1FGoldHops368D', [(35,16,'PLAYER_DIR_LEFT'),
                    (35,16,'PLAYER_DIR_DOWN'), (36,16,'PLAYER_DIR_DOWN'), (37,16,'PLAYER_DIR_DOWN')]),
@@ -61,7 +60,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
         if not condition: errs.append(message)
     gold = {m['name']: m for m in json.loads(txt(GOLD))['maps']}
     routes = registered_routes(txt('engine/johto_pilot_runtime.asm'))
-    ck(len(routes) == 188 and len(set(routes)) == 188, 'global registered route inventory changed')
+    ck(len(routes) == 192 and len(set(routes)) == 192, 'global registered route inventory changed')
     # Verify all 16 original source ordinals, including 8 non-triggering
     # PIT/ICE entries; a duplicate or displaced step-in fails before routing.
     for name, (rel, label) in FILES.items():
@@ -73,9 +72,8 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
             continue
         expected = []
         for i, w in enumerate(m['warps']):
-            expected.append((255, 255, DEST_ORDINAL[name][i]) if i in SEALED.get(name,set())
-                            else (w['x'], w['y'], DEST_ORDINAL[name][i]))
-        ck(actual == expected, f'{name} live Warp cell/ordinal differs from Gold (sealed special slots preserved)')
+            expected.append((w['x'], w['y'], DEST_ORDINAL[name][i]))
+        ck(actual == expected, f'{name} live Warp cell/ordinal differs from Gold (receiver-only triggers separately guarded)')
         occupied = [(x,y) for x,y,_ in actual if x != 255 or y != 255]
         ck(len(occupied) == len(set(occupied)), f'{name} duplicate active Warp coordinates')
         roles = get('data/johto_ice_path_stage/' + name + '.roles.bin')
@@ -199,7 +197,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
        'ld e, c\n    callab JohtoIcePathRememberOutdoorSource368D' in pilot and
        'push hl\n    push bc\n    ld e, c' in pilot,
        'Ice Path outside-only entrance anchor capture missing/unsafe')
-    ck('db "REF-368@"' in txt('data/game_version.asm'), 'current Ice Path dev label missing')
+    ck('db "REF-369@"' in txt('data/game_version.asm'), 'current Ice Path dev label missing')
     return errs
 
 if __name__=='__main__':

@@ -107,7 +107,7 @@ def audit(root: Path, overrides: dict[str, str | bytes] | None = None) -> list[s
     ck('dw JohtoIcePathB2FBlackthornRuntimeHeader368C' in code('data/johto_header_descriptors.asm') and
        'JohtoIcePathB2FBlackthornRuntimeDescriptor::' in code('data/johto_pilot_runtime_assets.asm'),
        'B3F must connect to final Blackthorn B2F runtime')
-    ck('db "REF-368@"' in code('data/game_version.asm'),'B3F live map should carry REF-368@ development label')
+    ck('db "REF-369@"' in code('data/game_version.asm'),'B3F live map should carry REF-368@ development label')
     return errors
 
 
@@ -115,7 +115,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);a=p.parse_args()
     errors=audit(a.root)
     for e in errors: print('FAIL:',e)
-    if not errors: print('PASS: Gold B3F ID98, 20x18 roles, 2 live ladders, 70 map slots and 188 routes, walk/bike/card contracts')
+    if not errors: print('PASS: Gold B3F ID98, 20x18 roles, 2 live ladders, 70 map slots and 192 routes, walk/bike/card contracts')
     return int(bool(errors))
 
 if __name__ == '__main__':
